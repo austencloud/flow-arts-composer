@@ -57,6 +57,7 @@ private:
     UPROPERTY(Transient) TObjectPtr<USceneComponent> AttachParent;
     UPROPERTY(Transient) FName CharacterId;
     FName CurrentMotion;
+    FTransform StandingPresentation;
     bool bWasInAir = false;
     float LandingUntil = 0.f;
 

@@ -113,9 +113,10 @@ bool UFlowFestAvatarComponent::SetCharacter(FName NewCharacterId)
         UE_LOG(LogTemp, Error, TEXT("Imported character %s lacks normalized hands, feet, or pelvis"), *NewCharacterId.ToString());
         return false;
     }
-    // Avatar3D.setHeight uses the original mesh bounds and lifts its lowest point
-    // to the floor. The FBX exporter also shifts the foot bone, so use the
-    // imported mesh bounds here to avoid carrying that intermediate offset.
+    // RootNode1 exports have a mesh floor offset that must be removed after
+    // scaling. Hips-root exports retain the source root translation already;
+    // lifting those meshes by their bounds shifts every animated joint above
+    // its source position, including the mounted feet.
     const FBoxSphereBounds Bounds = Mesh->GetBounds();
     const float ImportedHeight = Bounds.BoxExtent.Z * 2.f;
     if (!FMath::IsFinite(ImportedHeight) || ImportedHeight < 1.f)
@@ -126,10 +127,17 @@ bool UFlowFestAvatarComponent::SetCharacter(FName NewCharacterId)
     constexpr float PresentationHeightCm = 190.5f;
     const float BodyScale = PresentationHeightCm / ImportedHeight;
     const float ImportedFloor = Bounds.Origin.Z - Bounds.BoxExtent.Z;
+    const FName RootBone = RefSkeleton.GetBoneName(0);
+    if (RootBone != TEXT("Hips") && RootBone != TEXT("RootNode1"))
+    {
+        UE_LOG(LogTemp, Error, TEXT("Unexpected root bone %s for Flow Fest character %s"), *RootBone.ToString(), *NewCharacterId.ToString());
+        return false;
+    }
+    const float FloorLift = RootBone == TEXT("Hips") ? 0.f : -ImportedFloor * BodyScale;
     // FBX's raw lateral X is source lateral X, and raw +Y is source +Z.
     // Actor +X faces source +Z after this yaw; source +X (left hand) is -Y.
     const FQuat Facing = FQuat(FVector::UpVector, -HALF_PI);
-    const FTransform Presentation(Facing, FVector(0.f, 0.f, -ImportedFloor * BodyScale), FVector(BodyScale));
+    const FTransform Presentation(Facing, FVector(0.f, 0.f, FloorLift), FVector(BodyScale));
     // Commit only after every asset and attachment bone has passed validation.
     CharacterId = NewCharacterId;
     Clips = MoveTemp(NewClips);
@@ -138,6 +146,7 @@ bool UFlowFestAvatarComponent::SetCharacter(FName NewCharacterId)
     bWasInAir = false;
     LandingUntil = 0.f;
     BodyMesh->SetSkeletalMeshAsset(Mesh);
+    StandingPresentation = Presentation;
     BodyMesh->SetRelativeTransform(Presentation);
     return PlayMotion(TEXT("Idle"));
 }
@@ -174,10 +183,18 @@ void UFlowFestAvatarComponent::SetMotion(FVector WorldVelocity, bool bInAir, boo
     const float Now = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.f;
     if (bMounted)
     {
+        // The browser ride performer is 156.21 cm below its standing origin
+        // for every deployed rig. The captured bone tracks omit that parent
+        // translation, so place the whole skinned body in its mounted frame.
+        FTransform MountedPresentation = StandingPresentation;
+        MountedPresentation.AddToTranslation(FVector(0.f, 0.f, -156.21f));
+        BodyMesh->SetRelativeTransform(MountedPresentation);
         bWasInAir = false;
         PlayMotion(TEXT("Ride"));
         return;
     }
+    if (CurrentMotion == TEXT("Ride"))
+        BodyMesh->SetRelativeTransform(StandingPresentation);
     if (bInAir)
     {
         LandingUntil = 0.f;
@@ -238,6 +255,7 @@ bool UFlowFestAvatarComponent::PlayPerformance(FName Profile, bool bLoop)
         return false;
     }
     PerformanceClip = Clip;
+    BodyMesh->SetRelativeTransform(StandingPresentation);
     BodyMesh->PlayAnimation(Clip, bLoop);
     CurrentMotion = NAME_None;
     return true;
@@ -247,6 +265,8 @@ void UFlowFestAvatarComponent::StopPerformance()
 {
     PerformanceClip = nullptr;
     CurrentMotion = NAME_None;
+    if (BodyMesh)
+        BodyMesh->SetRelativeTransform(StandingPresentation);
     PlayMotion(TEXT("Idle"));
 }
 

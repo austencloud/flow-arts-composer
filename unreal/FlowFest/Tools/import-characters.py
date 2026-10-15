@@ -87,6 +87,57 @@ def animation_options(skeleton):
     return options
 
 
+def restore_reference_scale(animation, reference_roots, character_id):
+    """Restore imported root transforms to the mesh skeleton's centimetre space.
+
+    The mesh reference pose stores a 100x scale on Hips or RootNode1. Animation
+    FBX import may drop this scale and also leave the root translation in metres.
+    Hips is a top-level bone on four rigs, so its own translation is not affected
+    by its scale and must be converted separately.
+    """
+    model = animation.get_editor_property('data_model_interface')
+    controller = animation.get_editor_property('controller')
+    frame_count = model.get_number_of_frames()
+    if frame_count < 2:
+        raise RuntimeError(f'{character_id}: {animation.get_name()} has no usable animation frames')
+    for bone_name, reference_transform in reference_roots.items():
+        reference_scale = reference_transform.scale3d
+        sampled = [u.AnimationLibrary.get_bone_pose_for_frame(animation, bone_name, frame, False)
+                   for frame in (0, frame_count // 2, frame_count - 1)]
+        scale_matches = all(max(abs(pose.scale3d.x - reference_scale.x),
+                                abs(pose.scale3d.y - reference_scale.y),
+                                abs(pose.scale3d.z - reference_scale.z)) < .01 for pose in sampled)
+        reference_origin = reference_transform.translation
+        reference_height = max(abs(reference_origin.x), abs(reference_origin.y), abs(reference_origin.z))
+        sampled_height = max(max(abs(pose.translation.x), abs(pose.translation.y),
+                                 abs(pose.translation.z)) for pose in sampled)
+        metres_to_centimetres = reference_height > 10 and sampled_height < 10
+        if scale_matches and not metres_to_centimetres:
+            continue
+        positions, rotations, scales = [], [], []
+        for frame in range(frame_count):
+            pose = u.AnimationLibrary.get_bone_pose_for_frame(animation, bone_name, frame, False)
+            factor = 100.0 if metres_to_centimetres else 1.0
+            positions.append(u.Vector(pose.translation.x * factor, pose.translation.y * factor,
+                                      pose.translation.z * factor))
+            rotations.append(pose.rotation)
+            scales.append(u.Vector(reference_scale.x, reference_scale.y, reference_scale.z))
+        if not controller.set_bone_track_keys(bone_name.lower(), positions, rotations, scales, False):
+            raise RuntimeError(f'{character_id}: failed to restore {bone_name} scale on {animation.get_name()}')
+        for frame in (0, frame_count // 2, frame_count - 1):
+            corrected = u.AnimationLibrary.get_bone_pose_for_frame(animation, bone_name, frame, False)
+            scale = corrected.scale3d
+            if max(abs(scale.x - reference_scale.x), abs(scale.y - reference_scale.y),
+                   abs(scale.z - reference_scale.z)) > .01:
+                raise RuntimeError(f'{character_id}: {animation.get_name()} {bone_name} scale was not retained')
+            if metres_to_centimetres and max(abs(corrected.translation.x), abs(corrected.translation.y),
+                                              abs(corrected.translation.z)) < 10:
+                raise RuntimeError(f'{character_id}: {animation.get_name()} {bone_name} translation is still in metres')
+        if not ED.save_loaded_asset(animation):
+            raise RuntimeError(f'{character_id}: could not save corrected {animation.get_name()}')
+        u.log(f'FLOWFEST_RESTORED_ROOT_TRANSFORM {character_id} {animation.get_name()} {bone_name}')
+
+
 def material_asset(character, spec, textures):
     path = spec['asset']
     material = ED.load_asset(path) if ED.does_asset_exist(path) else None
@@ -217,6 +268,15 @@ for character in MANIFEST['characters']:
     expected = character['skeleton'].split('.')[-1]
     if skeleton.get_name() != expected:
         raise RuntimeError(f'{character["id"]}: expected skeleton {expected}; imported {skeleton.get_name()}')
+    reference_pose = skeleton.get_reference_pose()
+    reference_roots = {}
+    for bone_name in reference_pose.get_bone_names():
+        reference_transform = reference_pose.get_ref_bone_pose(bone_name)
+        scale = reference_transform.scale3d
+        if max(scale.x, scale.y, scale.z) > 10:
+            reference_roots[str(bone_name)] = reference_transform
+    if len(reference_roots) != 1:
+        raise RuntimeError(f'{character["id"]}: expected one metre-to-centimetre reference bone, found {list(reference_roots)}')
     if not CAPTURE_ONLY and not LOCOMOTION_ONLY:
         bind_appearance(character, mesh)
     if not CAPTURE_ONLY:
@@ -226,6 +286,7 @@ for character in MANIFEST['characters']:
                 raise RuntimeError(f'{character["id"]}: A_{clip} is not an AnimSequence')
             if animation.get_editor_property('skeleton') != skeleton:
                 raise RuntimeError(f'{character["id"]}: A_{clip} targets another skeleton')
+            restore_reference_scale(animation, reference_roots, character['id'])
     if CAPTURE_ONLY and not character.get('captures'):
         raise RuntimeError(f'{character["id"]}: no staged captures for capture-only import')
     for profile in (() if LOCOMOTION_ONLY else character.get('captures', {})):
@@ -236,6 +297,7 @@ for character in MANIFEST['characters']:
         expected_seconds = 1.0 if profile == 'Ride' else 16.0
         if abs(animation.get_play_length() - expected_seconds) > .05:
             raise RuntimeError(f'{character["id"]}: A_{name} duration {animation.get_play_length():.3f}s, expected {expected_seconds:.3f}s')
+        restore_reference_scale(animation, reference_roots, character['id'])
     ED.save_loaded_asset(mesh)
     ED.save_loaded_asset(skeleton)
     imported_count += 1
