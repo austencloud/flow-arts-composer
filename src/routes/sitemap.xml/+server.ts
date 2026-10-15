@@ -91,7 +91,6 @@ const pages: SitemapEntry[] = [
   { url: "guide/ratios" },
   { url: "guide/motion-paths" },
   { url: "guide/zans-diamond" },
-  { url: "guide/three-levels" },
   { url: "guide/codex" },
   // The interactive lesson course. The index is the course landing; each
   // lesson also gets a stable deep link — see learnConceptsEntries below,
