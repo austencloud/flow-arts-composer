@@ -137,10 +137,10 @@
         </T.Group>
 
         <Avatar3D
-          {leftPropState}
-          {rightPropState}
-          {leftPropAnchorRef}
-          {rightPropAnchorRef}
+          bluePropState={leftPropState}
+          redPropState={rightPropState}
+          bluePropAnchorRef={leftPropAnchorRef}
+          redPropAnchorRef={rightPropAnchorRef}
           position={{ x: 0, y: 0, z: 0 }}
           facingAngle={0}
         />

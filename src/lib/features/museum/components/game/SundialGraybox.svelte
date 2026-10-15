@@ -29,7 +29,6 @@
     DoubleSide,
     MeshStandardMaterial,
     RingGeometry,
-    type Object3D,
   } from "three";
   import type { MuseumGrid } from "../../domain/museum-grid-types";
   import {
@@ -50,6 +49,7 @@
     AIR_ROOM_ID_FOR_SUN,
   } from "../../data/sundial-layout";
   import type { WorldRect } from "../../data/drowned-gallery-terrain";
+  import { castSundialPerformerShadows } from "../../services/sundial-performer-shadows.js";
 
   interface Props {
     grid: MuseumGrid;
@@ -205,7 +205,6 @@
       material,
     };
   }
-
 
   interface Arc {
     id: string;
@@ -483,15 +482,7 @@
   useTask(() => {
     if (!lit || shadowSweepsLeft <= 0) return;
     shadowSweepsLeft -= 1;
-    let flagged = 0;
-    threeScene.traverse((object: Object3D) => {
-      if (!object.name.startsWith("performer-station-cave-sun")) return;
-      flagged += 1;
-      object.traverse((child: Object3D) => {
-        const mesh = child as Object3D & { isMesh?: boolean };
-        if (mesh.isMesh) child.castShadow = true;
-      });
-    });
+    const flagged = castSundialPerformerShadows(threeScene);
     // All four stations found and flagged: stop sweeping.
     if (flagged >= 4) shadowSweepsLeft = 0;
   });

@@ -46,7 +46,7 @@
         value: turnValueToKey(turn),
         label: localizedMatrixTurnSpokenLabel(turn, appState.labelMode),
         shortLabel: matrixTurnVisibleLabel(turn, appState.labelMode),
-        tone: hand === "left" ? "blue" : "red",
+        tone: hand === "left" ? ("blue" as const) : ("red" as const),
       })),
     }))
   );

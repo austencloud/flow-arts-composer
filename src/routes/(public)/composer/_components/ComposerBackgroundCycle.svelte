@@ -15,7 +15,7 @@
   }));
   const current = $derived(
     backgrounds.find((background) => background.type === active) ??
-      backgrounds[0]
+      ANIMATED_BACKGROUNDS[0]
   );
 
   function asButtonAttributes(props: unknown): HTMLButtonAttributes {

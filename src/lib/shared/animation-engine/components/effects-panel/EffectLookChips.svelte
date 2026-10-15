@@ -69,7 +69,7 @@
   );
 </script>
 
-{#snippet dualSwatch(left, right)}
+{#snippet dualSwatch(left: string, right: string)}
   <span class="swatch dual" aria-hidden="true">
     <span class="half" style:background={left}></span>
     <span class="half" style:background={right}></span>

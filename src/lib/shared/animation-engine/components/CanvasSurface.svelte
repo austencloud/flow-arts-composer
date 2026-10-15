@@ -51,12 +51,12 @@ captureEffectDiagnostics to the context menu.
   import {
     AnimationEngine,
     type AdditionalLayerTextureStatus,
-  } from "../services/animation-engine.svelte";
+  } from "../services/animation-engine.svelte.js";
   import { createRenderActivityGate } from "#lib/shared/render-gating/render-activity-gate.js";
   import {
     getAnimationVisibilityManager,
     type AnimationVisibilityStateManager,
-  } from "../state/animation-visibility-state.svelte";
+  } from "../state/animation-visibility-state.svelte.js";
   import { isSeamlesslyLoopable as sequenceLoopabilityCheck } from "#lib/shared/foundation/services/sequence-loopability-checker.js";
   import type { FireOverlayConfig } from "../domain/types/fire-types";
   import type { LedOverlayConfig } from "../domain/types/led-types";
@@ -66,8 +66,8 @@ captureEffectDiagnostics to the context menu.
     EffectType,
   } from "../domain/types/tip-effect-types";
   import { untrack, type Snippet } from "svelte";
-  import { fireCacheInvalidation } from "../state/fire-invalidation-signal.svelte";
-  import { effectErrorSignal } from "../state/effect-error-signal.svelte";
+  import { fireCacheInvalidation } from "../state/fire-invalidation-signal.svelte.js";
+  import { effectErrorSignal } from "../state/effect-error-signal.svelte.js";
   import type { EffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
   import { getEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
   import { tryGetViewerVisibilityContext } from "#lib/shared/sequence-viewer/context/viewer-visibility-context.js";
@@ -436,7 +436,7 @@ captureEffectDiagnostics to the context menu.
     let disposed = false;
     let initializationRevision = 0;
 
-    function initialize() {
+    const initialize = () => {
       const revision = ++initializationRevision;
       initializationError = null;
 
@@ -467,7 +467,7 @@ captureEffectDiagnostics to the context menu.
             );
           });
       });
-    }
+    };
 
     retryInitialization = () => {
       initializationError = null;

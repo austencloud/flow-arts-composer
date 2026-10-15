@@ -222,16 +222,16 @@
       >
         {#if leftPropState && rightPropState}
           <Avatar3D
-            {leftPropState}
-            {rightPropState}
+            bluePropState={leftPropState}
+            redPropState={rightPropState}
             position={{ x: 0, y: 0, z: 0 }}
             facingAngle={0}
             {spinePitchOffset}
             visible={true}
             isActive={false}
             enableLocomotion={false}
-            {leftPropAnchorRef}
-            {rightPropAnchorRef}
+            bluePropAnchorRef={leftPropAnchorRef}
+            redPropAnchorRef={rightPropAnchorRef}
             onCollisionEvents={handleCollisionEvents}
           />
         {/if}
@@ -265,7 +265,11 @@
             position.y={leftPropState.worldPosition.y}
             position.z={leftPropState.worldPosition.z}
           >
-            <Prop3D propType={toScenePropType(PropType.STAFF)} propState={leftPropState} color="blue" />
+            <Prop3D
+              propType={toScenePropType(PropType.STAFF)}
+              propState={leftPropState}
+              color="blue"
+            />
           </T.Group>
         {/if}
         {#if rightPropState}
@@ -275,7 +279,11 @@
             position.y={rightPropState.worldPosition.y}
             position.z={rightPropState.worldPosition.z}
           >
-            <Prop3D propType={toScenePropType(PropType.STAFF)} propState={rightPropState} color="red" />
+            <Prop3D
+              propType={toScenePropType(PropType.STAFF)}
+              propState={rightPropState}
+              color="red"
+            />
           </T.Group>
         {/if}
       </T.Group>
