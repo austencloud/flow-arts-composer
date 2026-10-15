@@ -100,6 +100,7 @@ bool FFlowFestMotionIntegrationTest::RunTest(const FString& Parameters)
 
     constexpr float GripToleranceCm = 3.f;
     float GlobalPeakGrip = 0.f;
+    float GlobalPeakAnchor = 0.f;
     FString GlobalOffender;
     int32 SampledProfiles = 0;
     for (const TSharedPtr<FJsonValue>& CharacterValue : *Characters)
@@ -117,6 +118,7 @@ bool FFlowFestMotionIntegrationTest::RunTest(const FString& Parameters)
             if (!TestTrue(*FString::Printf(TEXT("Base mesh loads: %s/%s"), *CharacterId.ToString(), *Family),
                 HeldProp->Equip(FName(*Family)) && HeldProp->IsReady())) continue;
             float FamilyPeakGrip = 0.f;
+            float FamilyPeakAnchor = 0.f;
             FString FamilyOffender;
             for (int32 Variant = 0; Variant < 2; ++Variant)
             {
@@ -130,6 +132,18 @@ bool FFlowFestMotionIntegrationTest::RunTest(const FString& Parameters)
                 if (!TestTrue(*FString::Printf(TEXT("Sixteen-second native loop: %s"), *Case),
                     FMath::IsNearlyEqual(Length, 16.f, .02f))) { Avatar->StopPerformance(); continue; }
 
+                // Exercise the first blended pose with an actual registered prop root.
+                Avatar->SetPerformancePhase(0.f);
+                Fixture.World->TimeSeconds += .001;
+                Body->TickAnimation(.001f, false);
+                Body->RefreshBoneTransforms();
+                Avatar->TickComponent(.001f, LEVELTICK_All, nullptr);
+                TestTrue(*FString::Printf(TEXT("Finite entry anchor: %s"), *Case),
+                    HeldProp->IsEnteringPerformance() &&
+                    FMath::IsFinite(HeldProp->GetPropAnchorErrorCm()) &&
+                    Finite(HeldProp->GetPropRootTransform(true).GetLocation()) &&
+                    Finite(HeldProp->GetPropRootTransform(false).GetLocation()));
+
                 // Settle the idle-to-performance blend before measuring source grip.
                 for (int32 Warmup = 0; Warmup < 14; ++Warmup)
                 {
@@ -138,6 +152,7 @@ bool FFlowFestMotionIntegrationTest::RunTest(const FString& Parameters)
                     Body->RefreshBoneTransforms();
                 }
                 float CasePeakGrip = 0.f;
+                float CasePeakAnchor = 0.f;
                 bool bPoseValid = true;
                 // 32 evenly spaced samples plus both sides of the loop seam.
                 for (int32 Sample = 0; Sample < 34; ++Sample)
@@ -163,24 +178,45 @@ bool FFlowFestMotionIntegrationTest::RunTest(const FString& Parameters)
                         RightFoot.Z > -80.f && RightFoot.Z < 260.f;
                     bPoseValid &= FMath::Abs(Avatar->GetPerformanceTime() - Seconds) < .03f;
                     const float Error = HeldProp->GetGripErrorCm();
-                    bPoseValid &= FMath::IsFinite(Error);
+                    const float AnchorError = HeldProp->GetPropAnchorErrorCm();
+                    bPoseValid &= FMath::IsFinite(Error) && FMath::IsFinite(AnchorError) &&
+                        !HeldProp->IsEnteringPerformance() &&
+                        Finite(HeldProp->GetPropRootTransform(true).GetLocation()) &&
+                        Finite(HeldProp->GetPropRootTransform(false).GetLocation());
                     CasePeakGrip = FMath::Max(CasePeakGrip, Error);
+                    CasePeakAnchor = FMath::Max(CasePeakAnchor, AnchorError);
                 }
                 TestTrue(*FString::Printf(TEXT("Finite pose and shared clock: %s"), *Case), bPoseValid);
                 if (CasePeakGrip > GlobalPeakGrip) { GlobalPeakGrip = CasePeakGrip; GlobalOffender = Case; }
                 if (CasePeakGrip > FamilyPeakGrip) { FamilyPeakGrip = CasePeakGrip; FamilyOffender = Case; }
+                GlobalPeakAnchor = FMath::Max(GlobalPeakAnchor, CasePeakAnchor);
+                FamilyPeakAnchor = FMath::Max(FamilyPeakAnchor, CasePeakAnchor);
                 TestTrue(*FString::Printf(TEXT("Grip within %.1f cm: %s (peak %.2f cm)"), GripToleranceCm, *Case, CasePeakGrip),
                     CasePeakGrip <= GripToleranceCm);
+                TestTrue(*FString::Printf(TEXT("Prop root anchor within %.1f cm: %s (peak %.2f cm)"), GripToleranceCm, *Case, CasePeakAnchor),
+                    CasePeakAnchor <= GripToleranceCm);
                 ++SampledProfiles;
                 HeldProp->ClearPerformanceTransforms();
                 Avatar->StopPerformance();
+                TestTrue(*FString::Printf(TEXT("Exit blend starts: %s"), *Case), HeldProp->IsReturningToHands());
+                Fixture.World->TimeSeconds += .2;
+                Body->TickAnimation(.1f, false);
+                Body->RefreshBoneTransforms();
+                HeldProp->TickComponent(.2f, LEVELTICK_All, nullptr);
+                const float ExitLeftCm = FVector::Distance(HeldProp->GetPropRootTransform(true).GetLocation(),
+                    Body->GetSocketLocation(TEXT("LeftHand")));
+                const float ExitRightCm = FVector::Distance(HeldProp->GetPropRootTransform(false).GetLocation(),
+                    Body->GetSocketLocation(TEXT("RightHand")));
+                TestTrue(*FString::Printf(TEXT("Exit returns props to live hands: %s"), *Case),
+                    !HeldProp->IsReturningToHands() && FMath::IsFinite(ExitLeftCm) && FMath::IsFinite(ExitRightCm) &&
+                    ExitLeftCm < 80.f && ExitRightCm < 80.f);
             }
-            UE_LOG(LogTemp, Display, TEXT("FlowFestMotionGrip rig=%s family=%s peak=%.2fcm offender=%s"),
-                *CharacterId.ToString(), *Family, FamilyPeakGrip, *FamilyOffender);
+            UE_LOG(LogTemp, Display, TEXT("FlowFestMotionGrip rig=%s family=%s capturedPeak=%.2fcm anchorPeak=%.2fcm offender=%s"),
+                *CharacterId.ToString(), *Family, FamilyPeakGrip, FamilyPeakAnchor, *FamilyOffender);
         }
     }
-    UE_LOG(LogTemp, Display, TEXT("FlowFestMotion sampled %d native rig/family/routine pairs; peak grip %.2f cm at %s"),
-        SampledProfiles, GlobalPeakGrip, *GlobalOffender);
+    UE_LOG(LogTemp, Display, TEXT("FlowFestMotion sampled %d native rig/family/routine pairs; captured peak %.2f cm at %s; prop anchor peak %.2f cm"),
+        SampledProfiles, GlobalPeakGrip, *GlobalOffender, GlobalPeakAnchor);
     TestEqual(TEXT("All 16 rigs by 41 families by two routines were sampled"), SampledProfiles, 16 * 41 * 2);
     return true;
 }

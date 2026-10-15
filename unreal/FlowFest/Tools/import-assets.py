@@ -13,7 +13,9 @@ report = {'meshes': [], 'materials': [], 'errors': []}
 
 def import_file(path, folder, name, mesh=False):
     target = folder + '/' + name
-    if not ED.does_asset_exist(target):
+    # These three small source meshes may change during site art passes. Reimport
+    # them on every run so an existing project never keeps an older silhouette.
+    if not ED.does_asset_exist(target) or folder == '/Game/FlowFest/Assets/Ecology':
         task = u.AssetImportTask()
         task.filename = str(path)
         task.destination_path = folder
@@ -44,6 +46,12 @@ def import_file(path, folder, name, mesh=False):
         for slot in asset.static_materials:
             material = slot.material_interface
             if isinstance(material, u.Material):
+                if job_wind_family(folder):
+                    # All three source GLB materials declare doubleSided=true and
+                    # alphaMode=OPAQUE. FBX drops the sidedness flag; preserve it
+                    # without inventing alpha masking absent from the source.
+                    material.set_editor_property('two_sided', True)
+                    material.set_editor_property('shading_model', u.MaterialShadingModel.MSM_TWO_SIDED_FOLIAGE)
                 if folder.endswith('/Trees/' + name):
                     material.set_editor_property('two_sided', True)
                     # Blender's FBX exporter drops glTF alphaMode. Restore leaf coverage explicitly.
@@ -62,6 +70,8 @@ def import_file(path, folder, name, mesh=False):
                 ME.recompile_material(material)
                 ED.save_loaded_asset(material)
             elif isinstance(material, u.MaterialInstanceConstant):
+                if job_wind_family(folder):
+                    raise RuntimeError('Ecology wind/sidedness needs an editable material: ' + material.get_path_name())
                 usage = u.MaterialUsage.MATUSAGE_INSTANCED_STATIC_MESHES
                 ME.set_material_usage_override(material, usage, True, True)
                 if not ME.has_material_usage(material, usage):
