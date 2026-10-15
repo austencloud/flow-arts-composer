@@ -70,6 +70,20 @@ Public pages may use the shell width token and a centered reading band. This is
 separate from the authenticated workspace and should not be copied into tool
 screens by default.
 
+### Guide pages
+
+Austen set this for every `/guide` page on 2026-10-15
+(`src/routes/(public)/guide/zans-diamond` is the reference):
+
+- Page headers and section intros are centred section breaks. Text beside a
+  player or figure stays left-aligned.
+- Copy is short. Let the players and figures carry routes, proofs, and
+  bookkeeping instead of explaining them step by step.
+- In centred text, each sentence starts on its own line, and a sentence that
+  wraps balances its lines (`display: block; text-wrap: balance` per
+  sentence) so no word is stranded. Split by sentence at render time so every
+  locale follows without separate strings.
+
 ### Composition rules
 
 - Give every region one clear owner.
