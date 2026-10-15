@@ -258,12 +258,12 @@ describe("prop artwork resolution", () => {
   it.fails(
     "gives every prop enum value a same-named animated artwork file",
     () => {
-      // AUDIT INVENTORY (finding F3). Three prop enum values have no same-named
-      // animated file: capsule_baton, fire_double_staff and stick. PropPlane2D
+      // AUDIT INVENTORY (finding F3). Four prop enum values have no same-named
+      // animated file: capsule_baton, fire_double_staff, pen and stick. PropPlane2D
       // is the only production requester established by the source trace; the
       // report classifies other possible consumers as latent or unreferenced.
       // Its one caller, Viewer2DScene, mounts only in UnifiedViewerCanvas,
-      // which nothing imports, so the stick ships pictograph artwork only.
+      // which nothing imports, so the stick and pen ship pictograph artwork only.
       const missing = propTypes
         .map((propType) => `/images/props/animated/${propType}.svg`)
         .filter((assetPath) => !exists(assetPath));
@@ -271,7 +271,7 @@ describe("prop artwork resolution", () => {
     }
   );
 
-  it("names exactly the three animated-artwork gaps that exist today", () => {
+  it("names exactly the four animated-artwork gaps that exist today", () => {
     const missing = propTypes
       .map((propType) => `/images/props/animated/${propType}.svg`)
       .filter((assetPath) => !exists(assetPath))
@@ -279,6 +279,7 @@ describe("prop artwork resolution", () => {
     expect(missing).toEqual([
       "/images/props/animated/capsule_baton.svg",
       "/images/props/animated/fire_double_staff.svg",
+      "/images/props/animated/pen.svg",
       "/images/props/animated/stick.svg",
     ]);
   });

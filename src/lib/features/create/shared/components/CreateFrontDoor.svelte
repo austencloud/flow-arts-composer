@@ -15,6 +15,7 @@
     logCreateFrontDoorViewed,
     logCreateMethodSelected,
   } from "../services/create-entry-analytics";
+  import { createMethodPreviewReveal } from "../state/method-preview-reveal.svelte";
   import { createMethodPreviewTurns } from "../state/method-preview-turns.svelte";
   import CreateMethodPreview from "./method-previews/CreateMethodPreview.svelte";
   import { runAfterBootScreen } from "./method-previews/after-boot-screen";
@@ -69,31 +70,42 @@
     return Object.hasOwn(METHOD_PREVIEW_SCENES, methodId);
   }
 
-  /** Cards whose scene has drawn its finished picture. */
-  const readyIds = new Set<string>();
+  const sceneOrder = (): string[] =>
+    orderedMethods
+      .filter((method) => hasScene(method.id))
+      .map((method) => method.id);
+
+  // The cards arrive together: each holds its tint until the scenes are
+  // ready, then they fade in as one wave in board order. A card takes turns
+  // once it has arrived.
+  const reveal = createMethodPreviewReveal({
+    order: sceneOrder,
+    onReveal: (methodId) => turns.notifyReady(methodId),
+  });
 
   const turns = createMethodPreviewTurns({
-    order: () =>
-      orderedMethods
-        .filter((method) => hasScene(method.id))
-        .map((method) => method.id),
-    isReady: (methodId) => readyIds.has(methodId),
-    // The turns wait for the boot screen to leave, then for the route morph.
+    order: sceneOrder,
+    isReady: (methodId) => reveal.isRevealed(methodId),
+    // The turns wait for the boot screen to leave, then for the route morph,
+    // then for the cards' wave to settle.
     defer: (go) => {
       let cancelMorphIdle = (): void => {};
+      let cancelWave = (): void => {};
       const cancelBoot = runAfterBootScreen(() => {
-        cancelMorphIdle = runAfterNamedRouteMorphIdle(go);
+        cancelMorphIdle = runAfterNamedRouteMorphIdle(() => {
+          cancelWave = reveal.afterWave(go);
+        });
       });
       return () => {
         cancelBoot();
         cancelMorphIdle();
+        cancelWave();
       };
     },
   });
 
   function handleReady(methodId: string): void {
-    readyIds.add(methodId);
-    turns.notifyReady(methodId);
+    reveal.notifyReady(methodId);
   }
 
   // Turns pause while the page is hidden or the board is off screen.
@@ -132,6 +144,7 @@
       unsubscribe();
       previewGate.dispose();
       turns.dispose();
+      reveal.dispose();
     };
   });
 
@@ -245,6 +258,7 @@
                     methodId={method.id}
                     color={method.color ?? "var(--theme-accent)"}
                     open={active}
+                    revealed={reveal.isRevealed(method.id)}
                     playing={turns.playingId === method.id}
                     turn={turns.turn}
                     onready={handleReady}

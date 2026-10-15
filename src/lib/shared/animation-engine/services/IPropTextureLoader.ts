@@ -99,6 +99,10 @@ export const PROP_DIMENSIONS: Record<string, PropDimensions> = {
   // Both hands' branches share it, so a pair places identically.
   stick: { width: 252.8, height: 24 },
 
+  // Pen — staff's exact span. Its box is taller than the fire staff's because
+  // the clip stands off the cap.
+  pen: { width: 252.8, height: 30 },
+
   // Chicken family
   chicken: { width: 325, height: 30.3 },
   bigchicken: { width: 252.8, height: 44.4 },
