@@ -26,7 +26,8 @@ const FVector SmokeLaneStart(24.f * 50.f, 305.f * 50.f, 180.f);
 AMuseumCharacter::AMuseumCharacter()
 {
     PrimaryActorTick.bCanEverTick = true;
-    GetCapsuleComponent()->InitCapsuleSize(35.f, 90.f);
+    // Match MuseumPhysicsProvider's 0.15m visitor collision disc.
+    GetCapsuleComponent()->InitCapsuleSize(15.f, 90.f);
     GetCharacterMovement()->MaxWalkSpeed = WalkSpeedCmPerSecond;
     GetCharacterMovement()->JumpZVelocity = 380.f;
     GetCharacterMovement()->AirControl = .25f;
@@ -34,6 +35,11 @@ AMuseumCharacter::AMuseumCharacter()
     Camera->SetupAttachment(GetCapsuleComponent());
     Camera->SetRelativeLocation(FVector(0, 0, 72));
     Camera->bUsePawnControlRotation = true;
+    // Authored caves use MuseumPostProcessing's fixed 1.1 exposure. Tick enables
+    // these overrides there; older native galleries retain their auto exposure.
+    Camera->PostProcessSettings.AutoExposureMethod = AEM_Manual;
+    Camera->PostProcessSettings.AutoExposureApplyPhysicalCameraExposure = false;
+    Camera->PostProcessSettings.AutoExposureBias = FMath::Log2(1.1f);
     bUseControllerRotationYaw = true;
 }
 
@@ -46,6 +52,7 @@ void AMuseumCharacter::Tick(float DeltaSeconds)
     {
         bReviewStartApplied = true;
         bMovementSmoke = FParse::Param(FCommandLine::Get(), TEXT("MuseumMovementSmoke"));
+        bProgressionSmoke = FParse::Param(FCommandLine::Get(), TEXT("MuseumProgressionSmoke"));
         bMovementBaseline = bMovementSmoke && FParse::Param(FCommandLine::Get(), TEXT("MuseumMovementBaseline"));
         if (bMovementSmoke)
         {
@@ -70,10 +77,14 @@ void AMuseumCharacter::Tick(float DeltaSeconds)
             && FParse::Value(FCommandLine::Get(), TEXT("MuseumStartY="), TileY)
             && FParse::Value(FCommandLine::Get(), TEXT("MuseumStartYaw="), Yaw))
         {
-            SetActorLocation(FVector(TileX * 50.f, TileY * 50.f, 250.f), false, nullptr, ETeleportType::TeleportPhysics);
-            if (Controller) Controller->SetControlRotation(FRotator(0, Yaw, 0));
+            float StartZ = 250.f;
+            float StartPitch = 0.f;
+            FParse::Value(FCommandLine::Get(), TEXT("MuseumStartZ="), StartZ);
+            FParse::Value(FCommandLine::Get(), TEXT("MuseumStartPitch="), StartPitch);
+            SetActorLocation(FVector(TileX * 50.f, TileY * 50.f, StartZ), false, nullptr, ETeleportType::TeleportPhysics);
+            if (Controller) Controller->SetControlRotation(FRotator(StartPitch, Yaw, 0));
             if (FParse::Param(FCommandLine::Get(), TEXT("MuseumShot"))) ReviewScreenshotDelay = 2.f;
-            UE_LOG(LogTemp, Display, TEXT("MuseumGame review start: tile %d,%d yaw %d"), TileX, TileY, Yaw);
+            UE_LOG(LogTemp, Display, TEXT("MuseumGame review start: tile %d,%d z %.0f yaw %d pitch %.0f"), TileX, TileY, StartZ, Yaw, StartPitch);
         }
     }
     if (ReviewScreenshotDelay >= 0.f)
@@ -85,6 +96,12 @@ void AMuseumCharacter::Tick(float DeltaSeconds)
     }
     NearbyExhibit = Museum ? Museum->NearestExhibit(GetActorLocation(), 190.f) : nullptr;
     NearbyPerformer = Museum ? Museum->NearestPerformerStation(GetActorLocation(), 220.f) : nullptr;
+    const bool bFixedCaveExposure = Museum && Museum->UsesAuthoredCaveLighting(GetActorLocation());
+    Camera->PostProcessSettings.bOverride_AutoExposureMethod = bFixedCaveExposure;
+    Camera->PostProcessSettings.bOverride_AutoExposureApplyPhysicalCameraExposure = bFixedCaveExposure;
+    Camera->PostProcessSettings.bOverride_AutoExposureBias = bFixedCaveExposure;
+    if (Museum && Museum->IsLoaded() && !bProgressionSmoke)
+        Museum->UpdateFireProgress(GetActorLocation(), DeltaSeconds);
     if (NoticeTime > 0) { NoticeTime -= DeltaSeconds; if (NoticeTime <= 0) Notice.Empty(); }
     if (!bMovementSmoke)
     {
@@ -320,6 +337,7 @@ void AMuseumCharacter::Interact()
 void AMuseumCharacter::TogglePerformance()
 {
     if (!OpenExhibitId.IsEmpty() || !NearbyPerformer) return;
+    if (Museum && Museum->IsFireStation(NearbyPerformer)) return;
     NearbyPerformer->TogglePlayback();
     ShowNotice(FString::Printf(TEXT("%s: %s"), *NearbyPerformer->GetDisplayLabel(), *NearbyPerformer->GetPlaybackStatus()));
 }
@@ -327,6 +345,7 @@ void AMuseumCharacter::TogglePerformance()
 void AMuseumCharacter::RestartPerformance()
 {
     if (!OpenExhibitId.IsEmpty() || !NearbyPerformer) return;
+    if (Museum && Museum->IsFireStation(NearbyPerformer)) return;
     NearbyPerformer->RestartPlayback();
     ShowNotice(FString::Printf(TEXT("%s: %s"), *NearbyPerformer->GetDisplayLabel(), *NearbyPerformer->GetPlaybackStatus()));
 }
@@ -351,13 +370,15 @@ void AMuseumCharacter::SaveProgress()
     Save->PlayerLocation = GetActorLocation();
     Save->PlayerRotation = GetControlRotation();
     for (const FString& Id : ViewedExhibits) Save->ViewedExhibits.Add(Id);
+    if (Museum) Save->FireProgress = Museum->GetFireProgress();
     ShowNotice(UGameplayStatics::SaveGameToSlot(Save, SaveSlot, 0) ? TEXT("Progress saved") : TEXT("Save failed"));
 }
 
 void AMuseumCharacter::LoadProgress()
 {
     UMuseumSaveGame* Save = Cast<UMuseumSaveGame>(UGameplayStatics::LoadGameFromSlot(SaveSlot, 0));
-    if (!Save || Save->Version != 1 || Save->PlayerLocation.ContainsNaN()) { ShowNotice(TEXT("No valid native save")); return; }
+    if (!Save || (Save->Version != 1 && Save->Version != 2) || Save->PlayerLocation.ContainsNaN()) { ShowNotice(TEXT("No valid native save")); return; }
+    if (Museum) Museum->RestoreFireProgress(Save->Version == 2 ? Save->FireProgress : FMuseumFireProgress());
     SetActorLocation(Save->PlayerLocation, false, nullptr, ETeleportType::TeleportPhysics);
     if (Controller) Controller->SetControlRotation(Save->PlayerRotation);
     ViewedExhibits.Reset();
