@@ -48,7 +48,7 @@ if (fs.existsSync(typesPath)) {
 
 // Reachability only. The endpoint checks sign-in before anything else, and this
 // sends no token and no question, so it can never start a paid model call.
-// A real answer needs a Firebase bearer token, which no script here sends yet.
+// A real answer needs TIKA_ID_TOKEN; see docs/reference/tika-testing.md.
 console.log("\n=== Checking Dev Server ===");
 try {
   const response = await fetch("https://localhost:5173/api/tika/ask", {
