@@ -11,14 +11,15 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
-$repoRoot = (Resolve-Path (Join-Path $projectRoot '..\..')).Path
 $sourceRootPath = (Resolve-Path -LiteralPath $SourceRoot).Path
 $projectFile = Join-Path $projectRoot 'FlowFest.uproject'
 $engineBuild = Join-Path $EngineRoot 'Engine\Build\BatchFiles\Build.bat'
 $editorCmd = Join-Path $EngineRoot 'Engine\Binaries\Win64\UnrealEditor-Cmd.exe'
 $pythonExe = Join-Path $EngineRoot 'Engine\Binaries\ThirdParty\Python3\Win64\python.exe'
 $sourceModules = Join-Path $sourceRootPath 'node_modules'
-$localModules = Join-Path $repoRoot 'node_modules'
+# Shared tools and the project resolve dependencies through their common parent.
+# This also keeps a detached Project/ + Shared/ delivery inside its own folder.
+$localModules = Join-Path (Split-Path -Parent $projectRoot) 'node_modules'
 
 foreach ($required in @($projectFile, $engineBuild, $editorCmd, $sourceModules)) {
     if (-not (Test-Path -LiteralPath $required)) { throw "Missing required path: $required" }
