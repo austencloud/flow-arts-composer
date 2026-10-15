@@ -78,3 +78,9 @@
 - ai-bust mechanical review: `python .agents/skills/ai-bust/ai_bust.py --json --min-severity HIGH <out-R5.json>` returned `[]`, exit 0. Source-derived em dash removed from the export-lock notice. Judgment review kept independent source labels and error messages consistent without adding claims.
 - Uncertainty: the glossary does not establish Korean terms for flow identity (플로우 정체성), command palette (명령 팔레트), prop drawer (프롭 서랍), or Realm (세계). These are provisional UI translations without native review. Named tools retain English in line with the earlier ledger.
 - Delivery: committed only in the assigned codex/i18n-ko worktree for coordinator integration. No primary checkout or other worktree access, push, merge, installation, dev server, full build, broad check, or catalog-validator rewrite was performed.
+
+## REV (coordinator, 2026-10-14)
+
+Astra back-translation review: SAMPLE 240 / FLAGGED 4 / 1.7%. Applied all four
+fixes (visual builder tab hint, Continuous option name, missing particle after
+{hand}, map intro meaning).
