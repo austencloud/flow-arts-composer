@@ -2,6 +2,7 @@
 import { readFileSync, statSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { indexMotionManifest, validateFamilyMotion } from '../../Shared/Tools/motion-contract.mjs';
 
 const data = resolve(process.argv[2] || fileURLToPath(new URL('../Content/Data/', import.meta.url)));
 const read = name => JSON.parse(readFileSync(join(data, name), 'utf8'));
@@ -40,7 +41,7 @@ const profiles = [...legacy, ...props.flatMap(p => [`P_${p.id}_A`, `P_${p.id}_B`
 const manifest = read('PropMotion/manifest.json');
 requireValue(manifest.schema === 'flow-fest-prop-motion-manifest-v1' && Array.isArray(manifest.clips),
   'Invalid compact motion manifest');
-const manifestMap = new Map(manifest.clips.map(c => [`${c.character}/${c.profile}`, c]));
+const manifestMap = indexMotionManifest(manifest);
 requireValue(manifestMap.size === 1376 && manifest.clips.length === 1376,
   `Expected exactly 1376 unique compact clips, found ${manifest.clips.length}`);
 let frameCount = 0;
@@ -60,12 +61,10 @@ for (const character of characters) {
     requireValue(entry?.filename === name && entry.frames === 480, `Manifest mismatch: ${name}`);
     let stride;
     if (family) {
-      requireValue(clip.schema === 'flow-fest-prop-motion-v3' && clip.propId === family &&
-        clip.captureRevision === 'clock-isolated-body-v3' && /^[a-f0-9]{64}$/i.test(clip.sourceSHA256),
-        `Missing corrected absolute visual-body capture: ${name}`);
-      requireValue(entry.schema === clip.schema && entry.captureRevision === clip.captureRevision &&
-        entry.sourceSHA256 === clip.sourceSHA256, `Missing capture provenance in manifest: ${name}`);
-      stride = 28;
+      const result = validateFamilyMotion(clip, { characterId: character.id, propId: family,
+        routine: profile.slice(-1), manifestEntry: entry });
+      frameCount += result.frames;
+      continue;
     } else {
       requireValue(['flow-fest-prop-motion-v1', 'flow-fest-prop-motion-v2'].includes(clip.schema),
         `Invalid legacy schema: ${name}`);
@@ -75,7 +74,7 @@ for (const character of characters) {
       const frame = clip.frames[index];
       requireValue(Array.isArray(frame) && frame.length === stride && frame.every(Number.isFinite),
         `Nonfinite or incomplete frame: ${name}/${index}`);
-      for (const offset of (family ? [3, 10, 20, 24] : [3, 10])) {
+      for (const offset of [3, 10]) {
         const norm = Math.hypot(...frame.slice(offset, offset + 4));
         requireValue(Math.abs(norm - 1) < .001, `Invalid rotation: ${name}/${index}/${offset}`);
       }

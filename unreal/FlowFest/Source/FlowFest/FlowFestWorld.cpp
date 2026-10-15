@@ -117,6 +117,11 @@ AFlowFestWorld::AFlowFestWorld()
     PostProcess->Settings.AutoExposureSpeedUp = 2.f;
     PostProcess->Settings.bOverride_AutoExposureSpeedDown = true;
     PostProcess->Settings.AutoExposureSpeedDown = 1.f;
+    // Preserve sunlit foliage when the player is standing beneath a dark canopy.
+    PostProcess->Settings.bOverride_LocalExposureHighlightContrastScale = true;
+    PostProcess->Settings.LocalExposureHighlightContrastScale = 0.7f;
+    PostProcess->Settings.bOverride_LocalExposureShadowContrastScale = true;
+    PostProcess->Settings.LocalExposureShadowContrastScale = 0.9f;
     PostProcess->Settings.bOverride_BloomIntensity = true;
     PostProcess->Settings.BloomIntensity = 0.45f;
     PostProcess->Settings.bOverride_VignetteIntensity = true;
@@ -930,6 +935,7 @@ void AFlowFestWorld::SetTimeOfDay(float Hour)
     Fog->SetFogDensity(FMath::Lerp(0.013f, 0.008f, Daylight));
     // Limit dark adaptation so moonlit terrain remains visibly darker than the fire circle.
     PostProcess->Settings.AutoExposureMinBrightness = FMath::Lerp(0.f, -3.f, Daylight);
+    PostProcess->Settings.AutoExposureBias = -0.8f * Daylight;
     PostProcess->Settings.BloomIntensity = FMath::Lerp(0.85f, 0.32f, Daylight);
 }
 
