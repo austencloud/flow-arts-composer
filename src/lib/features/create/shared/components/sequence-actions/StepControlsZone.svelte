@@ -424,8 +424,6 @@
     padding-bottom: max(12px, env(safe-area-inset-bottom, 12px));
     flex-shrink: 0;
     min-height: 0;
-    border-top: 1px solid var(--theme-stroke);
-    background: var(--theme-panel-bg);
   }
 
   .controls-zone.stacked {
