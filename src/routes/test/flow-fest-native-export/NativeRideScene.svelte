@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { onDestroy, tick } from "svelte";
-  import { T, useScheduler, useTask, useThrelte } from "@threlte/core";
+  import { onDestroy, onMount, tick } from "svelte";
+  import { T, useScheduler, useThrelte } from "@threlte/core";
   import { Avatar3D } from "@austencloud/scene-3d";
   import type { Group, Scene, SkinnedMesh } from "three";
   import type { CharacterId } from "#lib/shared/3d/domain/character-model.js";
@@ -33,17 +33,21 @@
   let reported = false;
   let attached = false;
 
-  useTask(() => {
-    const performer = scene.getObjectByName(`PERFORMER_${id}`);
-    let hasBones = false;
-    performer?.traverse((object) => {
-      const mesh = object as SkinnedMesh;
-      if (mesh.isSkinnedMesh && mesh.skeleton.bones.length > 0) hasBones = true;
-    });
-    if (!reported && hasBones) {
-      reported = true;
-      props.onReady();
-    }
+  onMount(() => {
+    const timer = setInterval(() => {
+      const performer = scene.getObjectByName(`PERFORMER_${id}`);
+      let hasBones = false;
+      performer?.traverse((object) => {
+        const mesh = object as SkinnedMesh;
+        if (mesh.isSkinnedMesh && mesh.skeleton.bones.length > 0)
+          hasBones = true;
+      });
+      if (!reported && hasBones) {
+        reported = true;
+        props.onReady();
+      }
+    }, 50);
+    return () => clearInterval(timer);
   });
 
   export function pauseAutoLoop(): void {
