@@ -17,7 +17,13 @@ await mkdir(outputDir, { recursive: true });
 const selected = process.env.FLOW_FEST_CAPTURE_CHARACTERS?.split(",").map((id) => id.trim()).filter(Boolean);
 const rideOnly = process.env.FLOW_FEST_CAPTURE_RIDE_ONLY === "1";
 
-const browser = await chromium.launch({ headless: true, channel: "chrome" });
+const browser = await chromium.launch({
+  headless: true,
+  channel: "chrome",
+  // Static capture needs a WebGL context even when no frame is presented.
+  // Keep it independent of the office desktop's hardware GPU availability.
+  args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-webgl"],
+});
 try {
   const page = await browser.newPage({ viewport: { width: 800, height: 700 } });
   page.on("pageerror", (error) =>
