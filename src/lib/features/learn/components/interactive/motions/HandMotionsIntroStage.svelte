@@ -50,7 +50,7 @@
 
   /** The arrow fades in, then the hand follows it, as on the grid. */
   const ARROW_MS = DURATION.emphasis;
-  const FOLLOW_DELAY_MS = DURATION.fast;
+  const FOLLOW_DELAY_MS = DURATION.instant;
   const TRAVEL_MS = DURATION.scene * 0.75;
   const PLAY_MS = FOLLOW_DELAY_MS + TRAVEL_MS;
   /**
