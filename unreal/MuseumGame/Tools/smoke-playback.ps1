@@ -2,6 +2,9 @@ param(
     [string]$ProjectFile = (Join-Path $PSScriptRoot '..\MuseumGame.uproject'),
     [string]$EngineRoot = 'C:\Program Files\Epic Games\UE_5.8',
     [string]$Executable,
+    [ValidateSet('Playback', 'Movement')][string]$Mode = 'Playback',
+    [switch]$MovementBaseline,
+    [int]$FrameRate = 60,
     [int]$TimeoutSeconds = 180
 )
 
@@ -20,6 +23,9 @@ $processIds = [System.Collections.Generic.HashSet[int]]::new()
 $result = 1
 try {
     if ($TimeoutSeconds -le 0) { throw 'TimeoutSeconds must be positive.' }
+    if ($FrameRate -le 0) { throw 'FrameRate must be positive.' }
+    if ($MovementBaseline -and $Mode -ne 'Movement') { throw 'MovementBaseline requires Movement mode.' }
+    $marker = if ($Mode -eq 'Movement') { 'MUSEUM_MOVEMENT_SMOKE' } else { 'MUSEUM_PLAYBACK_SMOKE' }
     $projectPath = (Resolve-Path -LiteralPath $ProjectFile).Path
     $projectDir = Split-Path -Parent $projectPath
     $packaged = -not [string]::IsNullOrWhiteSpace($Executable)
@@ -42,7 +48,7 @@ try {
     $logDir = Join-Path $projectDir 'Saved\Logs'
     New-Item -ItemType Directory -Path $logDir -Force | Out-Null
     $runId = [guid]::NewGuid().ToString('N')
-    $logPath = Join-Path $logDir "MuseumPlaybackSmoke-$runId.log"
+    $logPath = Join-Path $logDir "Museum${Mode}Smoke-$runId.log"
     $screenshotRoots = @((Join-Path $projectDir 'Saved\Screenshots'))
     if ($packaged) {
         $binaryDir = Split-Path -Parent $executablePath
@@ -62,14 +68,20 @@ try {
     }
     $arguments += @(
         '-RenderOffscreen', '-unattended', '-nosplash', '-nop4',
-        '-MuseumPlaybackSmoke', '-MuseumStartX=502', '-MuseumStartY=32',
-        '-MuseumStartYaw=90', '-MuseumShot', '-ResX=1280', '-ResY=720', '-windowed',
+        '-ResX=1280', '-ResY=720', '-windowed',
+        ('-ExecCmds="t.MaxFPS ' + $FrameRate + '"'),
         ('-abslog="' + ($logPath -replace '"', '\"') + '"')
     )
+    if ($Mode -eq 'Movement') {
+        $arguments += '-MuseumMovementSmoke'
+        if ($MovementBaseline) { $arguments += '-MuseumMovementBaseline' }
+    } else {
+        $arguments += @('-MuseumPlaybackSmoke', '-MuseumStartX=502', '-MuseumStartY=32', '-MuseumStartYaw=90', '-MuseumShot')
+    }
     $startedAt = [DateTime]::UtcNow
     $owned = Start-Process -FilePath $executablePath -ArgumentList $arguments -PassThru -WindowStyle Hidden
     [void]$processIds.Add($owned.Id)
-    Write-Host "Museum playback smoke PID $($owned.Id); log $logPath"
+    Write-Host "Museum $Mode smoke PID $($owned.Id); log $logPath"
     $deadline = $startedAt.AddSeconds($TimeoutSeconds)
     $passed = $false
     $screenshot = $null
@@ -82,10 +94,10 @@ try {
         }
         if (Test-Path -LiteralPath $logPath -PathType Leaf) {
             $lines = Get-Content -LiteralPath $logPath -ErrorAction Stop
-            if ($lines -match 'MUSEUM_PLAYBACK_SMOKE FAIL:') {
-                throw (($lines | Select-String 'MUSEUM_PLAYBACK_SMOKE FAIL:' | Select-Object -Last 1).Line)
+            if ($lines -match "$marker FAIL:") {
+                throw (($lines | Select-String "$marker FAIL:" | Select-Object -Last 1).Line)
             }
-            $passed = [bool]($lines -match 'MUSEUM_PLAYBACK_SMOKE PASS:')
+            $passed = [bool]($lines -match "$marker PASS:")
         }
         if (-not $screenshot) {
             foreach ($shot in Get-Screenshots $screenshotRoots) {
@@ -98,7 +110,7 @@ try {
             }
         }
         if ($passed -and $screenshot) {
-            Write-Host "MUSEUM_PLAYBACK_SMOKE PASS; screenshot $screenshot; log $logPath"
+            Write-Host "$marker PASS; screenshot $screenshot; log $logPath"
             $result = 0
             break
         }
@@ -108,7 +120,7 @@ try {
     }
     if ($result -ne 0) { throw "Timed out after $TimeoutSeconds seconds waiting for PASS and a fresh screenshot. Log: $logPath" }
 } catch {
-    Write-Host "MUSEUM_PLAYBACK_SMOKE FAIL: $($_.Exception.Message)"
+    Write-Host "MUSEUM_$($Mode.ToUpperInvariant())_SMOKE FAIL: $($_.Exception.Message)"
 } finally {
     foreach ($id in @($processIds) | Sort-Object -Descending) {
         $child = Get-Process -Id $id -ErrorAction SilentlyContinue

@@ -44,7 +44,7 @@ void AMuseumHUD::DrawHUD()
         DrawText(Room ? Room->Name : TEXT("Between galleries"), Soft, 30, 59, Font, 1.1f);
         DrawText(FString::Printf(TEXT("%d rooms  |  %d exhibits  |  %d figures"), Museum->GetRooms().Num(), Museum->GetExhibitCount(), Museum->GetPerformerCount()), Soft, 30, 82, Font, .85f);
     }
-    DrawText(TEXT("WASD + mouse  |  E examine  |  P play/pause  |  B restart  |  F5 save  |  F9 load  |  R entrance"), Soft, 22, H - 32, Font, 1.f);
+    DrawText(TEXT("WASD + mouse  |  Shift sprint  |  E examine  |  P play/pause  |  B restart  |  F5 save  |  F9 load  |  R entrance"), Soft, 22, H - 32, Font, 1.f);
     if (!Visitor->GetNotice().IsEmpty()) DrawText(Visitor->GetNotice(), Cream, W * .42f, 30, Font, 1.2f);
     if (const FMuseumExhibit* Exhibit = Visitor->GetOpenExhibit())
     {

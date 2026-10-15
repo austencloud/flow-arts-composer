@@ -16,6 +16,8 @@ Museum Game and Flow Fest use Composer as the source for characters, props, sequ
 
 The runtime is `unreal/Shared/FlowArtsRuntime/FlowArtsRuntime.uplugin`, module `FlowArtsRuntime`. `SOURCE-PROVENANCE.json` records the extraction's original source hashes. The `UFlowFest*` reflected class names remain for compatibility; the exported module macro is `FLOWARTSRUNTIME_API`. Flow Fest redirects its former module classes to the plugin and removes its duplicate implementation. Museum instantiates these same components in its station actors.
 
+Native player translation and collision use Unreal's `CharacterMovement` in both games. The player controllers and camera presentations remain game-owned: Museum uses a first-person visitor at 450 cm/s with a held-Shift 750 cm/s sprint; Flow Fest tunes its visible player to its measured walking and running clips. These traversal choices must not change the shared performer animation or authored playback clocks.
+
 ## Character catalog
 
 Both games must obtain native character identities from `Tools/character-catalog.mjs` rather than parsing TypeScript with regular expressions or maintaining another roster. `loadDeployedCharacters(sourceRoot)` returns ordered `{ id, name, key, modelPath, sourceRelativePath }` records. `key` replaces hyphens with underscores for existing native names. Local evaluation characters are excluded and duplicate IDs/key collisions are rejected.
