@@ -4,8 +4,11 @@
   concepts first"). It is the Guide's own flowchart (HandMotionsPage.svelte):
   the blue hand's start, then a branch to each motion with its name and
   caption, ending at real pictographs of the move from that start: both
-  shifts, the dash, and static. Once on screen each plays in turn, its arrow
-  first and then the hand along it. A pointer over one, or a tap, plays it
+  shifts, the dash, and static. Once on screen and drawn, the branches play
+  in a quick cascade from the top, each arrow first and then the hand along
+  it, so the first move starts as the board lands and all four have played
+  in about a second (Austen, 2026-10-15: the one-at-a-time sequence was a
+  long wait). A pointer over one, or a tap, plays it
   again once it has finished, as the Guide's six cards do (Austen,
   2026-10-12, preferred hover to clicking). Under the
   chart, the book's own two lines say what the arrow and the hand show.
@@ -41,17 +44,23 @@
   import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import { whenOnScreen } from "#lib/shared/transitions/build-sequence.js";
   import { reducedMotion } from "#lib/shared/transitions/motion.js";
-  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import { DURATION, STAGGER } from "#lib/shared/transitions/transitions.js";
   import LessonBoardSlot from "../live-board/LessonBoardSlot.svelte";
   import { getLiveLessonBoard } from "../live-board/live-lesson-board.svelte";
 
   /** The arrow fades in, then the hand follows it, as on the grid. */
-  const ARROW_MS = DURATION.dramatic;
-  const FOLLOW_DELAY_MS = DURATION.normal;
-  const TRAVEL_MS = DURATION.scene;
+  const ARROW_MS = DURATION.emphasis;
+  const FOLLOW_DELAY_MS = DURATION.fast;
+  const TRAVEL_MS = DURATION.scene * 0.75;
   const PLAY_MS = FOLLOW_DELAY_MS + TRAVEL_MS;
-  /** Each picture starts this long after the one before. */
-  const STAGGER_MS = DURATION.scene * 0.75;
+  /**
+   * Each branch starts this long after the one above it, so the cascade
+   * reads top to bottom while the moves overlap; pictures in one branch
+   * ripple a beat apart.
+   */
+  const BRANCH_STAGGER_MS = DURATION.emphasis;
+  /** The first move waits for the board arriving from Hand Placements. */
+  const BOARD_LANDING_MS = DURATION.emphasis;
 
   const start = MOTION_MAP_HOME;
   const [shiftOne, shiftTwo, dash] = motionMapTargets(start);
@@ -143,6 +152,18 @@
   const lastPlayed = new Map<string, number>();
   const timers: ReturnType<typeof setTimeout>[] = [];
   let host: HTMLDivElement;
+  /**
+   * The cascade waits until every picture is drawn and ready to play; on a
+   * cold load the moves would otherwise run while the pictures still load.
+   */
+  const pictureCount = branches.reduce(
+    (count, branch) => count + branch.pictures.length,
+    0
+  );
+  const ready = new Set<string>();
+  let onScreen = false;
+  let started = false;
+  let mountedAt = 0;
   const liveBoard = getLiveLessonBoard();
 
   function play(entry: Picture, move: HandMove) {
@@ -187,18 +208,33 @@
   }
 
   function playAll() {
-    let delay = DURATION.dramatic;
-    for (const branch of branches) {
-      for (const entry of branch.pictures) {
+    if (started || !onScreen || ready.size < pictureCount) return;
+    started = true;
+    const landing = Math.max(
+      0,
+      mountedAt + BOARD_LANDING_MS - performance.now()
+    );
+    branches.forEach((branch, row) => {
+      branch.pictures.forEach((entry, index) => {
+        const delay =
+          landing + row * BRANCH_STAGGER_MS + index * STAGGER.relaxed;
         timers.push(setTimeout(() => replay(entry, branch.id), delay));
-        delay += STAGGER_MS;
-      }
-    }
+      });
+    });
+  }
+
+  function pictureReady(entry: Picture) {
+    ready.add(entry.id);
+    playAll();
   }
 
   onMount(() => {
     if (reducedMotion()) return;
-    const stopWatching = whenOnScreen(host, playAll);
+    mountedAt = performance.now();
+    const stopWatching = whenOnScreen(host, () => {
+      onScreen = true;
+      playAll();
+    });
     return () => {
       stopWatching();
       for (const timer of timers) clearTimeout(timer);
@@ -266,6 +302,7 @@
               motionStartData={startPose}
               motionProgress={progress.hand}
               arrowOpacity={progress.arrow}
+              onReady={() => pictureReady(entry)}
             />
             {#if branch.id === "static" && startPoint}
               <svg class="ring" viewBox="0 0 950 950" aria-hidden="true">
