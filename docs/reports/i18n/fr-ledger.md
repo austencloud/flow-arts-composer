@@ -185,3 +185,10 @@
 - Legitimately identical values (29): protected product/prop names, notation and the placeholder-only `{count}` value; French cognates/loans including Mode, Score, Tempo, Visible, Notation, Animation, Canon, Notifications, Messages, Module, Action, Efforts, Orange, Cyan, Violet, Magenta, Turbulence, Public, Max and Flow. `Pro → Arc · Anti → Concave` uses protected categories and French-identical geometry labels.
 - Prose review using ai-bust: mechanical pass reported eight CRITICAL emoji findings, all on the eight `fullscreen_prompt_message_*` entries and all copied from the corresponding English source. Retained for source fidelity under the translation brief; no added emoji or other HIGH/CRITICAL findings. Judgment review preserved FAQ points, tutorial steps, error/retry instructions and source distinctions. No native review is claimed.
 - No primary-checkout access, other-worktree access, integration, push, dependency installation, broad checks or dev server performed. Branch and worktree remain for the coordinator as instructed.
+
+## REV (coordinator, 2026-10-14)
+
+Astra back-translation review of the P batches: SAMPLE 172 / FLAGGED 2 /
+1.2%. Applied the single-turn wording fix. Dismissed the request to write the
+Petals effect as "Petal": effect names describe real flower petals and
+translate normally.
