@@ -13,6 +13,7 @@
   import { T, useTask, useThrelte } from "@threlte/core";
   import type { TipEffectMap } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
   import EffectOrchestrator3D from "#lib/shared/3d/effects/EffectOrchestrator3D.svelte";
+  import { QualityTier } from "#lib/shared/3d/effects/types.js";
   import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
   import { setEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
   import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
@@ -22,6 +23,7 @@
     Group,
     PerspectiveCamera,
     Vector3,
+    Vector2,
     Quaternion,
   } from "three";
   import {
@@ -51,8 +53,12 @@
       led: {
         ...DEFAULT_EFFECTS_CONFIG.led,
         pattern: {
-          ...DEFAULT_EFFECTS_CONFIG.led.pattern,
+          source: "generator",
           generatorId: ledPattern,
+          params:
+            DEFAULT_EFFECTS_CONFIG.led.pattern.source === "generator"
+              ? DEFAULT_EFFECTS_CONFIG.led.pattern.params
+              : {},
         },
         look: { ...DEFAULT_EFFECTS_CONFIG.led.look, brightness: 5 },
       },
@@ -69,8 +75,11 @@
   const MARGIN = 1.1;
   const FRAMES_STABLE = 30;
 
-  const { scene, size: canvasSize } = useThrelte();
-  scene.background = new Color("#070911");
+  const { scene, renderer } = useThrelte();
+  const activeScene = "current" in scene ? scene.current : scene;
+  const gl = "current" in renderer ? renderer.current : renderer;
+  const canvasSize = new Vector2();
+  activeScene.background = new Color("#070911");
 
   const propState = {
     centerPathAngle: 0,
@@ -110,8 +119,8 @@
     box.getSize(size);
 
     const halfFov = (FOV_DEG * Math.PI) / 360;
-    const aspect =
-      $canvasSize.height > 0 ? $canvasSize.width / $canvasSize.height : 1;
+    gl.getSize(canvasSize);
+    const aspect = canvasSize.y > 0 ? canvasSize.x / canvasSize.y : 1;
     const halfHFov = Math.atan(Math.tan(halfFov) * aspect);
     const distForHeight = size.y / 2 / Math.tan(halfFov);
     const distForWidth = size.x / 2 / Math.tan(halfHFov);
@@ -171,7 +180,7 @@
         {propBuild}
         tipEffectMap={LED_TIP_EFFECT_MAP}
         effectsParentRef={effectsGroup}
-        qualityTierOverride="high"
+        qualityTierOverride={QualityTier.HIGH}
       />
     {/if}
   </T.Group>

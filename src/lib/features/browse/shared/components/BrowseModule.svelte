@@ -63,6 +63,9 @@
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import { exploreVisualsVisible } from "#lib/shared/browse/navigation/visuals-promotion.js";
   import ExploreVisualsPanel from "#lib/features/browse/visuals/components/ExploreVisualsPanel.svelte";
+  import BrowseHome, {
+    type BrowseHomeDestination,
+  } from "#lib/features/browse/home/BrowseHome.svelte";
   import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { page } from "$app/state";
@@ -95,7 +98,7 @@
   const { visible = true }: { visible?: boolean } = $props();
 
   const initialGalleryLetter = parseGalleryLetterQuery(
-    new URLSearchParams(page.url.searchParams)
+    new URLSearchParams(page.url.searchParams.toString())
   );
   // Review-only comparison. The unflagged Browse route keeps its current entry.
   const contentFirstShowAllPreview = $derived(
@@ -178,6 +181,61 @@
         ? "visuals"
         : "sequences"
   );
+  // Opening Browse lands on its home screen; the inner location stays
+  // underneath so a tile or tab returns to it.
+  const homeOpen = $derived(navigationState.isModuleHomeOpen("browse"));
+
+  function openFromHome(destination: BrowseHomeDestination): void {
+    const location: BrowseLocation =
+      destination.kind === "you"
+        ? (browseNavigationState.lastLocationFor("you") ?? {
+            primary: "you",
+            section: "sequences",
+            view: "list",
+          })
+        : destination.kind === "visuals"
+          ? {
+              primary: "explore",
+              section: "visuals",
+              view: "list",
+              ...(destination.visualType
+                ? { visualType: destination.visualType }
+                : {}),
+            }
+          : {
+              primary: "explore",
+              section: destination.kind,
+              view: "list",
+            };
+    // Push the inner route first so the address names the destination, then
+    // close the home: setActiveTab clears it and the two agree on the primary.
+    browseNavigationState.navigateTo(location, { forceUrl: true });
+    navigationState.setActiveTab(location.primary);
+  }
+
+  // Leaving the home through a sidebar tab writes the generic
+  // /browse/{primary}/sequences address. Once the home closes, restate the
+  // location Browse actually shows so the address and content agree.
+  let wasHomeOpen = false;
+  $effect(() => {
+    const open = homeOpen;
+    const closed = wasHomeOpen && !open;
+    wasHomeOpen = open;
+    if (!closed) return;
+    queueMicrotask(() => {
+      const location = browseNavigationState.currentLocation;
+      // Only when the home closed into a Browse page. Leaving Browse for
+      // another module also closes the home, and that address is not ours.
+      if (
+        location &&
+        navigationState.currentModule === "browse" &&
+        !navigationState.isModuleHomeOpen("browse")
+      ) {
+        browseNavigationState.replace(location);
+      }
+    });
+  });
+
   let lastTrackedDestination: "gallery" | "library" | "collections" | null =
     null;
 
@@ -185,7 +243,7 @@
   // is hidden means returning to the same destination counts as a fresh visit,
   // while unrelated reactive updates never inflate the event.
   $effect(() => {
-    if (!visible) {
+    if (!visible || homeOpen) {
       lastTrackedDestination = null;
       return;
     }
@@ -215,7 +273,7 @@
   // requiring a remount.
   $effect(() => {
     const requested = parseGalleryLetterQuery(
-      new URLSearchParams(page.url.searchParams)
+      new URLSearchParams(page.url.searchParams.toString())
     );
     if (requested === appliedGalleryLetter) return;
 
@@ -238,7 +296,7 @@
   // the view is still filtered. The next reload therefore tells the same truth.
   $effect(() => {
     const requested = parseGalleryLetterQuery(
-      new URLSearchParams(page.url.searchParams)
+      new URLSearchParams(page.url.searchParams.toString())
     );
     if (!requested) return;
     const active = engine.activeFilters.get(
@@ -411,6 +469,9 @@
     // initialize() ever read the real path.
     const location = browseNavigationState.currentLocation;
     if (!location) return;
+    // The home screen's backing tab is only a memory; acting on it would
+    // rewrite the address under the home.
+    if (homeOpen) return;
 
     const newPrimary: BrowsePrimary =
       navTab === "you" || navTab === "library" ? "you" : "explore";
@@ -430,6 +491,8 @@
   $effect(() => {
     const location = browseNavigationState.currentLocation;
     if (!location) return;
+    // setActiveTab closes the home screen, so leave it alone while open.
+    if (homeOpen) return;
     if (navigationState.activeTab !== location.primary) {
       navigationState.setActiveTab(location.primary);
     }
@@ -681,9 +744,18 @@
        one another in place. The shared primitive overlaps the old and new
        surfaces without either one pushing the other around. -->
   <div class="browse-tab-content">
-    <Crossfade key={activePrimary} duration={DURATION.normal} fill>
+    <Crossfade
+      key={homeOpen ? "home" : activePrimary}
+      duration={DURATION.normal}
+      fill
+    >
       <div class="tab-panel">
-        {#if activePrimary === "explore"}
+        {#if homeOpen}
+          <BrowseHome
+            visualsVisible={exploreVisualsVisible()}
+            onSelect={openFromHome}
+          />
+        {:else if activePrimary === "explore"}
           <div class="explore-shell">
             <header class="explore-header">
               <div class="explore-heading">

@@ -50,6 +50,7 @@
     trail = null,
     loop = false,
     onStepChange,
+    canvasLetter = true,
   }: {
     /** Playable sequence for the animation canvas (the DEFAULT / entry-0 example). */
     sequence: SequenceData;
@@ -108,6 +109,12 @@
      * follows the playing beat (0 while the start pose shows).
      */
     onStepChange?: (step: number) => void;
+    /**
+     * Draw the step's letter on the canvas. A page whose strips hide letters
+     * (`render.showTKA: false`) and plays props passes false so the canvas
+     * matches; hand renders never draw one. Omitted → the letter shows.
+     */
+    canvasLetter?: boolean;
   } = $props();
 
   const propType = $derived(render?.propType ?? PropType.HAND);
@@ -238,6 +245,7 @@
       singlePlay={!loop}
       beatIndicators={false}
       trailSettingsOverride={trail}
+      hideTkaGlyph={!canvasLetter}
       onStepChange={handleStepChange}
     />
   {/if}

@@ -12,6 +12,22 @@ import { parseDeepLink } from "#lib/shared/navigation/services/sequence-encoder.
 const letters = new Set(["A", "B", "W-"]);
 
 describe("letter explorer URL state", () => {
+  it("adds the Atlas category hash only on the Atlas", () => {
+    const url = new URL("https://tkaflowarts.com/guide/codex");
+    writeLetterExplorerRoute(url, {
+      letter: "B",
+      gridMode: GridMode.DIAMOND,
+      variation: 0,
+      leftTurns: 0,
+      rightTurns: 0,
+      leftRotation: RotationDirection.CLOCKWISE,
+      rightRotation: RotationDirection.CLOCKWISE,
+    });
+
+    expect(url.hash).toBe("");
+    expect(url.searchParams.get("letter")).toBe("B");
+  });
+
   it("round-trips the selected grid, variation, and unsaved turn edits", () => {
     const url = new URL("https://tkaflowarts.com/atlas?board=atlas");
 

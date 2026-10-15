@@ -284,8 +284,17 @@
     const module = modules.find((candidate) => candidate.id === moduleId);
     if (!module) return;
 
+    // A module with a home screen opens it directly: the home is its chooser,
+    // so a drill-in list would only repeat it.
+    if (module.home) {
+      hapticService?.trigger("selection");
+      onModuleHomeSelect?.(moduleId);
+      closeDrawer();
+      return;
+    }
+
     const sections = getAccessibleSectionsForModule(moduleId);
-    if (module.home || sections.length > 1) {
+    if (sections.length > 1) {
       selectedModuleId = moduleId;
       return;
     }

@@ -1278,13 +1278,14 @@ export default defineConfig(({ command, mode }) => ({
   build: {
     // Sourcemaps are generated only when BOTH are true: the build environment
     // asks for them (VITE_SOURCEMAP=true), AND this build can actually upload
-    // them. No package script sets VITE_SOURCEMAP. `build` set it until
+    // them. No package script sets VITE_SOURCEMAP; wrangler.toml [vars] does,
+    // and Cloudflare Pages passes those to every build. `build` set it until
     // 2026-09-28, when maps cost the Cloudflare production build ~40 s and
     // ~1 GB of memory while the upload failed anyway (the key lacks PostHog's
-    // error-tracking scope), so nothing reached PostHog. To symbolicate stack
-    // traces again, store a key with "error tracking write" and "organization
-    // read" as POSTHOG_SOURCEMAP_API_KEY and set VITE_SOURCEMAP=true in the
-    // Cloudflare Pages production environment.
+    // error-tracking scope), so nothing reached PostHog. The upload now needs
+    // a key with "error tracking write" and "organization read" stored as the
+    // POSTHOG_SOURCEMAP_API_KEY production secret. Preview builds hold no
+    // PostHog key, so the second condition keeps them map-free.
     // The second condition matters because `npm run build` is shared:
     // web-ci.yml's validate job, the three native pipelines (android/ios/
     // capgo), and anyone's local machine all run it, and none of them have

@@ -222,7 +222,7 @@ const MODEL_BUILD_LENGTHS: Partial<Record<PropType, ModelBuildLength>> = {
   [PropType.CAPSULE_BATON]: { authoredCm: 86.36, stretches: false },
   [PropType.FIRE_DOUBLE_STAFF]: { authoredCm: 90, stretches: true },
   [PropType.STICK]: { authoredCm: 90, stretches: true },
-  [PropType.PEN]: { authoredCm: 14.2, stretches: false },
+  [PropType.PEN]: { authoredCm: 90, stretches: true },
 };
 
 /**

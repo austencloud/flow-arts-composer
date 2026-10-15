@@ -24,6 +24,9 @@
   import { onMount, onDestroy } from "svelte";
   import { SvelteMap } from "svelte/reactivity";
   import ModuleSkeleton from "#lib/shared/modules/skeletons/ModuleSkeleton.svelte";
+  // Releases MainApplication's "module-view" boot hold once the active
+  // module's own view (or its error or sign-in gate) is in the page.
+  import BootHoldRelease from "#lib/shared/application/components/BootHoldRelease.svelte";
   import { authState } from "../auth/state/auth-state.svelte";
   import {
     resolveAccessTier,
@@ -379,6 +382,7 @@
         authDrawerState.show("signin", moduleNudgeTrigger(activeModule!))}
       onDismiss={() => switchModule("create")}
     />
+    <BootHoldRelease name="module-view" />
   </div>
 {:else if activeModule && keepAlive.isKeepAlive(activeModule)}
   <!-- Keep-alive modules render in the persistent host below; the keyed path
@@ -395,6 +399,7 @@
         >
           {t("landing_spinner_try_again")}
         </button>
+        <BootHoldRelease name="module-view" />
       </div>
     {:else if !moduleCache.has(activeModule)}
       {#if activeModule === "museum" || activeModule === "personal-museum"}
@@ -464,6 +469,7 @@
               </button>
             </div>
           {/if}
+          <BootHoldRelease name="module-view" />
         {:catch error}
           <div class="module-error" role="alert">
             <p>{t("module_load_failed")}</p>
@@ -475,6 +481,7 @@
             >
               {t("action_reload_page")}
             </button>
+            <BootHoldRelease name="module-view" />
           </div>
         {/await}
       </div>
@@ -498,6 +505,9 @@
       aria-hidden={moduleId !== visibleId}
     >
       <Loaded visible={moduleId === visibleId} />
+      {#if moduleId === visibleId}
+        <BootHoldRelease name="module-view" />
+      {/if}
     </div>
   {/if}
 {/each}

@@ -42,6 +42,7 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
   import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import { buildStartEndOptions } from "./customize-start-end-options";
   import {
+    describeStyle,
     PRODUCTION_STYLE_BASELINE,
     type CustomizeStyleBaseline,
   } from "./customize-summary";
@@ -50,6 +51,7 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import GenerationSettingsOverlay from "./GenerationSettingsOverlay.svelte";
   import CustomizeOverview from "./CustomizeOverview.svelte";
+  import GenerationStylePanel from "#lib/shared/create/components/GenerationStylePanel.svelte";
   import {
     clampStartOrientationToLevel,
     startOrientationsForLevel,
@@ -72,6 +74,8 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
     onClose,
     entrance = "scale",
     titleId,
+    active = true,
+    session,
   } = $props<{
     constraintPreset: "smooth" | "mixed" | "choppy";
     handPathMode: "smooth" | "mixed" | "choppy";
@@ -94,6 +98,12 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
     /** Forwarded to GenerationSettingsOverlay's heading id, so a host stage's
      *  aria-labelledby points at the title this overlay actually renders. */
     titleId?: string;
+    /** False while a host keeps this overlay built but hidden between opens
+     *  (ExpandedCardStage). Going inactive returns to the root list. */
+    active?: boolean;
+    /** Changes on every open of a kept overlay; each new value while active
+     *  reloads the local settings from the props, as a fresh mount would. */
+    session?: unknown;
   }>();
 
   let hapticService: HapticFeedback | null = $state(null);
@@ -166,6 +176,41 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
   );
   const availableStartOrientations = $derived(startOrientationsForLevel(level));
 
+  // A kept overlay is not remounted per open, so each open reloads what a
+  // mount would have: the settings from the props, and the root list.
+  let wasActive = untrack(() => active);
+  let lastSession = untrack(() => session);
+  $effect.pre(() => {
+    const on = active;
+    const current = session;
+    untrack(() => {
+      if (on && (!wasActive || current !== lastSession)) {
+        loadFromProps();
+      } else if (!on && wasActive) {
+        selected = null;
+        resetConfirmOpen = false;
+      }
+    });
+    wasActive = on;
+    lastSession = current;
+  });
+
+  function loadFromProps() {
+    localConstraintPreset = constraintPreset;
+    localHandPathMode = handPathMode;
+    localMotionTypeFilter = motionTypeFilter;
+    localBlockedPlacements = startEndOptions?.blockedStartPlacements ?? [];
+    localEndPlacements = startEndOptions?.endPlacements ?? [];
+    localLeftOri = clampStartOrientationToLevel(
+      startEndOptions?.leftStartOrientation,
+      level
+    );
+    localRightOri = clampStartOrientationToLevel(
+      startEndOptions?.rightStartOrientation,
+      level
+    );
+  }
+
   // Current preset (All / Classic 3 / Custom) derived from the blocked list.
   const currentPreset = $derived(
     detectPresetFromBlocked(localBlockedPlacements, gridMode)
@@ -235,7 +280,22 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
   //
   // End Placement stays present and locked when LOOP owns it, so a user who
   // saw the setting once is not left with no explanation.
+  const styleValue = $derived(
+    describeStyle(
+      localConstraintPreset,
+      localHandPathMode,
+      localMotionTypeFilter
+    )
+  );
+
+  // Style is a screen of its own only on a panel too small for its controls
+  // beside the placements (CustomizeOverview's rows layout).
   const drillItems = $derived<SettingsDrillItem[]>([
+    {
+      id: "style",
+      label: t("create_ui_style_label"),
+      value: styleValue,
+    },
     {
       id: "startPos",
       label: t("create_ui_start_placement_label"),
@@ -249,6 +309,21 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
       disabledReason: t("create_ui_set_by_loop"),
     },
   ]);
+
+  function handlePropsChange(v: "smooth" | "mixed" | "choppy") {
+    localConstraintPreset = v;
+    onConstraintPresetChange(v);
+  }
+
+  function handleHandsChange(v: "smooth" | "mixed" | "choppy") {
+    localHandPathMode = v;
+    onHandPathModeChange(v);
+  }
+
+  function handleDashesChange(v: "no-dash" | "mixed" | "prefer-dash") {
+    localMotionTypeFilter = v === "mixed" ? null : v;
+    onMotionTypeFilterChange(v);
+  }
 
   function handleClose() {
     hapticService?.trigger("selection");
@@ -359,18 +434,10 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
           motionTypeFilter={localMotionTypeFilter}
           {styleBaseline}
           haptic={hapticService}
-          onPropsChange={(v) => {
-            localConstraintPreset = v;
-            onConstraintPresetChange(v);
-          }}
-          onHandsChange={(v) => {
-            localHandPathMode = v;
-            onHandPathModeChange(v);
-          }}
-          onDashesChange={(v) => {
-            localMotionTypeFilter = v === "mixed" ? null : v;
-            onMotionTypeFilterChange(v);
-          }}
+          onPropsChange={handlePropsChange}
+          onHandsChange={handleHandsChange}
+          onDashesChange={handleDashesChange}
+          {styleValue}
           startBlocked={localBlockedPlacements}
           startValue={startPosDisplay}
           leftStartOrientation={localLeftOri}
@@ -383,7 +450,18 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
       {/snippet}
 
       {#snippet detail(id)}
-        {#if id === "startPos"}
+        {#if id === "style"}
+          <GenerationStylePanel
+            constraintPreset={localConstraintPreset}
+            handPathMode={localHandPathMode}
+            motionTypeFilter={localMotionTypeFilter}
+            baseline={styleBaseline}
+            haptic={hapticService}
+            onPropsChange={handlePropsChange}
+            onHandsChange={handleHandsChange}
+            onDashesChange={handleDashesChange}
+          />
+        {:else if id === "startPos"}
           <div class="drill-fill grid-fill">
             <MultiSelectPlacementPicker
               layout="split"

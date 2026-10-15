@@ -46,6 +46,16 @@ export const ZANS_DIAMOND_CREDIT: { name: string; href: string | null } = {
   href: "https://www.youtube.com/@Zan00",
 };
 
+/**
+ * Zan's own Zan's Diamond tutorial on his channel (title and year checked
+ * against YouTube 2026-10-15). The title stays as he wrote it.
+ */
+export const ZANS_DIAMOND_TUTORIAL = {
+  id: "QhWo4cLj184",
+  title: "Poi Tutorial: Zan's Diamond",
+  year: "2011",
+} as const;
+
 /** The author-verified record the variations were derived from. */
 export const ZANS_DIAMOND_SOURCE_SEQUENCE_ID = "seq_1791923102683_sysj46042";
 

@@ -92,7 +92,7 @@ canvas rendering. This ensures the entire glyph fades as a unified unit.
     const currentLetter = letter;
     if (!currentLetter) {
       loadedLetterDimensions = { width: 100, height: 100 };
-      return;
+      return undefined;
     }
     const cachedDims = getLetterDimensions(currentLetter);
     if (cachedDims.width !== 100 || cachedDims.height !== 100) {
@@ -120,6 +120,7 @@ canvas rendering. This ensures the entire glyph fades as a unified unit.
         superseded = true;
       };
     }
+    return undefined;
   });
 
   // Effective letter dimensions: synchronous cache lookup + async fallback -
@@ -205,7 +206,13 @@ canvas rendering. This ensures the entire glyph fades as a unified unit.
       const glyphCacheKey = `${letter}|${turnsTuple}|${skewedFrame ? "skew" : "plain"}`;
       const cached = serializedGlyphCache.get(glyphCacheKey);
       if (cached) {
-        onSvgReady(cached.svgString, cached.width, cached.height, cached.x, cached.y);
+        onSvgReady(
+          cached.svgString,
+          cached.width,
+          cached.height,
+          cached.x,
+          cached.y
+        );
         return;
       }
 
@@ -326,7 +333,11 @@ canvas rendering. This ensures the entire glyph fades as a unified unit.
           if (oldest !== undefined) serializedGlyphCache.delete(oldest);
         }
         serializedGlyphCache.set(glyphCacheKey, {
-          svgString, width: viewBoxWidth, height: viewBoxHeight, x: viewBoxX, y: viewBoxY,
+          svgString,
+          width: viewBoxWidth,
+          height: viewBoxHeight,
+          x: viewBoxX,
+          y: viewBoxY,
         });
       }
 

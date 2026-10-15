@@ -10,6 +10,7 @@
 import lettersData from "../../level-1/_data/letters.json";
 import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
 
 const pictographs = (
   lettersData as unknown as { pictographs: Record<string, PictographData> }
@@ -88,6 +89,32 @@ export interface CodexTypeDef {
   segs: TypeSeg[]; // colored emphasis segments
   boxes: CodexBoxDef[];
   divider?: boolean; // hairline rule above this type
+}
+
+// Message keys for the coloured segments of a type's name ("Dual", "-Shift").
+const SEGMENT_KEYS: Record<string, string> = {
+  Dual: "guide_codex_dual",
+  "-Shift": "guide_codex_dash_shift",
+  Shift: "guide_codex_shift",
+  Cross: "guide_codex_cross",
+  Dash: "guide_codex_dash",
+  "-Dash": "guide_codex_dash_dash",
+  Static: "guide_codex_static",
+};
+
+/** "Type 1: " in the reader's language. */
+export function codexTypeWord(type: CodexTypeDef): string {
+  return tDynamic("guide_codex_type_number", { number: type.n });
+}
+
+/** One coloured segment of a type's name in the reader's language. */
+export function codexSegmentLabel(seg: TypeSeg): string {
+  return tDynamic(SEGMENT_KEYS[seg.t] ?? "guide_codex_static");
+}
+
+/** The whole type name, "Type 1: Dual-Shift", in the reader's language. */
+export function codexTypeLabel(type: CodexTypeDef): string {
+  return `${codexTypeWord(type)}${type.segs.map(codexSegmentLabel).join("")}`;
 }
 
 export interface CodexSheetDef {

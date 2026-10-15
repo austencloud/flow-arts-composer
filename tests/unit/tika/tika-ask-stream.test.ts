@@ -32,6 +32,7 @@ vi.mock("#lib/features/tika/services/server/tika-server-container.js", () => ({
   }),
 }));
 
+import { requireFirebaseUser } from "#lib/server/auth/requireFirebaseUser.js";
 import { POST } from "../../../src/routes/api/tika/ask/+server";
 
 function event(body: unknown): RequestEvent {
@@ -140,6 +141,18 @@ describe("TIKA main chat streaming", () => {
   it("rejects an unknown model before any generation", async () => {
     const response = await POST(event({ question: "Hello", model: "typo" }));
     expect(response.status).toBe(400);
+    expect(mocks.getModel).not.toHaveBeenCalled();
+  });
+
+  it("reports a rejected sign-in as 401, not a server error", async () => {
+    vi.mocked(requireFirebaseUser).mockRejectedValueOnce(
+      Object.assign(new Error("Invalid or expired token"), { status: 401 })
+    );
+    const response = await POST(event({ question: "Hello" }));
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({
+      error: "Invalid or expired token",
+    });
     expect(mocks.getModel).not.toHaveBeenCalled();
   });
 });

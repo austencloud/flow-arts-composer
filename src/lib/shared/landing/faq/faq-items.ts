@@ -71,9 +71,9 @@ export const FAQ_ITEMS: FaqItem[] = [
     answer:
       "Double staves are the canonical prop. TKA also applies to dual-wielded static props such as fans, clubs, and buugeng. Momentum-based props, tosses, contact rolling, and grip changes are not covered as equals. Composer includes additional prop visuals, but a visual option does not mean every movement applies to that prop.",
     note: {
-      text: "Poi can follow the notation with steady rotation, and the poi notation page shows where momentum draws the line.",
-      linkLabel: "poi notation page",
-      href: "/notation/poi",
+      text: "Poi can follow the notation with steady rotation, and the prop notation page shows where momentum draws the line.",
+      linkLabel: "prop notation page",
+      href: "/notation/props#poi",
     },
     cta: { label: "Try props in the spinner", href: "/endless-spinner" },
   },
