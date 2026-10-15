@@ -10,7 +10,10 @@ export default defineConfig({
   root,
   publicDir: false,
   resolve: {
-    alias: { "#lib": resolve(root, "src/lib") },
+    alias: {
+      "#lib": resolve(root, "src/lib"),
+      "$app/env": resolve(root, "unreal/FlowFest/Tools/native-capture-app-env.js"),
+    },
     conditions: ["svelte", "browser", "module"],
   },
   plugins: [svelte(svelteOptions)],
