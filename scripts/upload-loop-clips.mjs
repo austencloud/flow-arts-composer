@@ -26,6 +26,13 @@ import { fileURLToPath } from "node:url";
 const BUCKET = "tka-assets";
 const CDN = "https://assets.tkaflowarts.com";
 const REPO_ROOT = resolve(fileURLToPath(new URL(".", import.meta.url)), "..");
+const WRANGLER = join(
+  REPO_ROOT,
+  "node_modules",
+  "wrangler",
+  "bin",
+  "wrangler.js"
+);
 
 function parseArgs(argv) {
   const options = { dryRun: false, only: new Set() };
@@ -66,8 +73,7 @@ function findBakeDir() {
 
 function put(token, key, file, contentType, cacheControl, dryRun) {
   const args = [
-    "exec",
-    "wrangler",
+    WRANGLER,
     "r2",
     "object",
     "put",
@@ -84,10 +90,11 @@ function put(token, key, file, contentType, cacheControl, dryRun) {
     console.log(`[dry-run] ${key} <- ${file}`);
     return;
   }
-  const result = spawnSync("pnpm", args, {
+  // Run wrangler's own entry with this node, no shell: a shell on Windows
+  // splits the cache-control value at its spaces.
+  const result = spawnSync(process.execPath, args, {
     cwd: REPO_ROOT,
     stdio: ["ignore", "pipe", "pipe"],
-    shell: process.platform === "win32",
     env: { ...process.env, CLOUDFLARE_API_TOKEN: token },
     encoding: "utf8",
   });

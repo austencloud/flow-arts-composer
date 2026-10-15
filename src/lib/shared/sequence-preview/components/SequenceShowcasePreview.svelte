@@ -665,7 +665,10 @@
     width: 100%;
     height: 100%;
     object-fit: contain;
-    background: var(--sequence-preview-stage-bg);
+    /* Clips are baked on black. Lighten keeps every lit pixel and lets the
+       stage colour through wherever the clip is dark, so a clip tile sits on
+       the same stage as an engine tile instead of in a black square. */
+    mix-blend-mode: lighten;
   }
 
   .sequence-preview.with-controls {
