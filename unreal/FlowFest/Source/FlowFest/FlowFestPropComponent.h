@@ -44,6 +44,8 @@ public:
     bool LoadPerformance(FName CharacterId, FName Profile);
     /** Sample at the avatar animation's own playback clock, including loop interpolation. */
     bool SetPerformanceTime(float Seconds, float PoseWeight = 1.f, const UFlowFestAnimInstance* Animator = nullptr);
+    /** Captured wrist targets in world space for the animation evaluator's hand IK. */
+    bool SampleCapturedWrists(FName Profile, float Seconds, FVector& LeftWorld, FVector& RightWorld) const;
 
     /** Hand-to-captured-grip distance after the synchronized pose was applied. */
     UFUNCTION(BlueprintPure, Category="Flow Fest|Props")

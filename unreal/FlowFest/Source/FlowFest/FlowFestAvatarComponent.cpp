@@ -195,6 +195,7 @@ bool UFlowFestAvatarComponent::SetCharacter(FName NewCharacterId)
         return false;
     }
     Animator->Configure(Clips);
+    Animator->SetGripSource(BoundProp);
     return PlayMotion(TEXT("Idle"));
 }
 
@@ -336,7 +337,7 @@ bool UFlowFestAvatarComponent::PlayPerformance(FName Profile, bool bLoop)
     BodyMesh->SetRelativeTransform(StandingPresentation);
     UFlowFestAnimInstance* Animator = Cast<UFlowFestAnimInstance>(BodyMesh->GetAnimInstance());
     if (!Animator) return false;
-    Animator->StartPerformance(Clip, bLoop);
+    Animator->StartPerformance(Clip, bLoop, Profile);
     CurrentMotion = NAME_None;
     return true;
 }
@@ -385,6 +386,8 @@ void UFlowFestAvatarComponent::BindPerformanceProp(UFlowFestPropComponent* Prop)
 {
     if (Prop && Prop->GetOwner() != GetOwner()) return;
     BoundProp = Prop;
+    if (UFlowFestAnimInstance* Animator = BodyMesh ? Cast<UFlowFestAnimInstance>(BodyMesh->GetAnimInstance()) : nullptr)
+        Animator->SetGripSource(Prop);
 }
 
 void UFlowFestAvatarComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)

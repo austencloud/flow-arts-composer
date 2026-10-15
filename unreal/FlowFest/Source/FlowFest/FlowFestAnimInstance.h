@@ -6,6 +6,7 @@
 #include "FlowFestAnimInstance.generated.h"
 
 class UAnimSequence;
+class UFlowFestPropComponent;
 
 /** Runtime evaluation of authored, skeleton-matched clips. One clock also drives prop samples. */
 UCLASS(Transient)
@@ -19,7 +20,8 @@ public:
     void SetMotionTime(FName Name, float Seconds);
     float GetMotionRate(FName Name) const;
     float GetMotionTime(FName Name) const;
-    void StartPerformance(UAnimSequence* Clip, bool bLoop);
+    void StartPerformance(UAnimSequence* Clip, bool bLoop, FName Profile);
+    void SetGripSource(UFlowFestPropComponent* Prop);
     void StopPerformance();
     void SetPerformancePhase(float NormalizedPhase);
     void SetPerformanceRate(float Rate);
@@ -40,6 +42,8 @@ private:
     friend struct FFlowFestAnimProxy;
     UPROPERTY(Transient) TArray<TObjectPtr<UAnimSequence>> MotionClips;
     UPROPERTY(Transient) TObjectPtr<UAnimSequence> PerformanceClip;
+    TWeakObjectPtr<UFlowFestPropComponent> GripSource;
+    FName PerformanceProfile = NAME_None;
     UPROPERTY(Transient) TArray<TObjectPtr<UAnimSequence>> OutgoingPerformanceClips;
     TArray<float> OutgoingPerformanceTimes;
     TArray<float> OutgoingPerformanceWeights;
@@ -73,5 +77,8 @@ private:
     TArray<float> Weights;
     float FootCorrectionCm[2] = {0.f, 0.f};
     FTransform MeshToWorld = FTransform::Identity;
+    FVector CapturedWristComponent[2] = {FVector::ZeroVector, FVector::ZeroVector};
+    bool bCapturedWristsValid = false;
     void CorrectFoot(FPoseContext& Output, FName UpperName, FName KneeName, FName FootName, float CorrectionCm);
+    void CorrectHand(FPoseContext& Output, FName UpperName, FName ElbowName, FName HandName, const FVector& Target);
 };

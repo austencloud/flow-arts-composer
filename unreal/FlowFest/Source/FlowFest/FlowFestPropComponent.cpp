@@ -518,6 +518,24 @@ bool UFlowFestPropComponent::LoadPerformance(FName CharacterId, FName Profile)
     return true;
 }
 
+bool UFlowFestPropComponent::SampleCapturedWrists(FName Profile, float Seconds,
+    FVector& LeftWorld, FVector& RightWorld) const
+{
+    if (Profile != PerformanceProfile || !bHasGripSamples || !AvatarRoot ||
+        PerformanceFrames.IsEmpty() || !FMath::IsFinite(Seconds)) return false;
+    const float Frame = FMath::Fmod(FMath::Max(0.f, Seconds) * PerformanceFps,
+        static_cast<float>(PerformanceFrames.Num()));
+    const int32 First = FMath::FloorToInt(Frame);
+    const int32 Second = (First + 1) % PerformanceFrames.Num();
+    const float Alpha = Frame - First;
+    const FTransform RootWorld = AvatarRoot->GetComponentTransform();
+    LeftWorld = RootWorld.TransformPosition(FMath::Lerp(
+        PerformanceFrames[First].LeftGrip, PerformanceFrames[Second].LeftGrip, Alpha));
+    RightWorld = RootWorld.TransformPosition(FMath::Lerp(
+        PerformanceFrames[First].RightGrip, PerformanceFrames[Second].RightGrip, Alpha));
+    return !LeftWorld.ContainsNaN() && !RightWorld.ContainsNaN();
+}
+
 bool UFlowFestPropComponent::SetPerformanceTime(float Seconds, float PoseWeight, const UFlowFestAnimInstance* Animator)
 {
     if (PerformanceFrames.IsEmpty() || !FMath::IsFinite(Seconds)) return false;

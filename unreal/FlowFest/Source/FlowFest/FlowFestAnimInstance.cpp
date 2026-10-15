@@ -1,4 +1,5 @@
 #include "FlowFestAnimInstance.h"
+#include "FlowFestPropComponent.h"
 
 #include "Animation/AnimNodeBase.h"
 #include "Animation/AnimSequence.h"
@@ -23,6 +24,7 @@ void UFlowFestAnimInstance::Configure(const TMap<FName, TObjectPtr<UAnimSequence
     }
     TargetMotion = TEXT("Idle");
     PerformanceClip = nullptr;
+    PerformanceProfile = NAME_None;
     OutgoingPerformanceClips.Empty();
     OutgoingPerformanceTimes.Empty();
     OutgoingPerformanceWeights.Empty();
@@ -72,7 +74,7 @@ float UFlowFestAnimInstance::GetMotionTime(FName Name) const
     return MotionTimes.IsValidIndex(Index) ? MotionTimes[Index] : 0.f;
 }
 
-void UFlowFestAnimInstance::StartPerformance(UAnimSequence* Clip, bool bLoop)
+void UFlowFestAnimInstance::StartPerformance(UAnimSequence* Clip, bool bLoop, FName Profile)
 {
     // Keep the outgoing pose alive across StopPerformance/StartPerformance in
     // the same frame. The next clip starts at zero weight, so a routine switch
@@ -86,11 +88,17 @@ void UFlowFestAnimInstance::StartPerformance(UAnimSequence* Clip, bool bLoop)
         OutgoingPerformanceLoops.Add(bPerformanceLoop);
     }
     PerformanceClip = Clip;
+    PerformanceProfile = Profile;
     PerformanceTime = 0.f;
     PerformanceWeight = 0.f;
     PerformanceRate = 1.f;
     bPerformanceLoop = bLoop;
     bPerformanceTarget = true;
+}
+
+void UFlowFestAnimInstance::SetGripSource(UFlowFestPropComponent* Prop)
+{
+    GripSource = Prop;
 }
 
 void UFlowFestAnimInstance::StopPerformance()
@@ -244,6 +252,24 @@ void FFlowFestAnimProxy::PreUpdate(UAnimInstance* Instance, float DeltaSeconds)
     FootCorrectionCm[1] = Source->FootCorrectionCm[1];
     MeshToWorld = Source->GetSkelMeshComponent()
         ? Source->GetSkelMeshComponent()->GetComponentTransform() : FTransform::Identity;
+    bCapturedWristsValid = false;
+    // Prop and body clocks advance together in this PreUpdate. Read the
+    // authored wrist chord here, before the mesh evaluates on another thread.
+    if (Source->PerformanceClip && Source->PerformanceWeight > .999f &&
+        Source->OutgoingPerformanceClips.IsEmpty())
+    {
+        if (const UFlowFestPropComponent* Prop = Source->GripSource.Get())
+        {
+            FVector LeftWorld, RightWorld;
+            if (Prop->SampleCapturedWrists(Source->PerformanceProfile, Source->PerformanceTime,
+                LeftWorld, RightWorld))
+            {
+                CapturedWristComponent[0] = MeshToWorld.InverseTransformPosition(LeftWorld);
+                CapturedWristComponent[1] = MeshToWorld.InverseTransformPosition(RightWorld);
+                bCapturedWristsValid = true;
+            }
+        }
+    }
 }
 
 bool FFlowFestAnimProxy::Evaluate(FPoseContext& Output)
@@ -282,7 +308,42 @@ bool FFlowFestAnimProxy::Evaluate(FPoseContext& Output)
         CorrectFoot(Output, TEXT("LeftUpLeg"), TEXT("LeftLeg"), TEXT("LeftFoot"), FootCorrectionCm[0]);
     if (FMath::Abs(FootCorrectionCm[1]) > .05f)
         CorrectFoot(Output, TEXT("RightUpLeg"), TEXT("RightLeg"), TEXT("RightFoot"), FootCorrectionCm[1]);
+    if (bCapturedWristsValid)
+    {
+        CorrectHand(Output, TEXT("LeftArm"), TEXT("LeftForeArm"), TEXT("LeftHand"), CapturedWristComponent[0]);
+        CorrectHand(Output, TEXT("RightArm"), TEXT("RightForeArm"), TEXT("RightHand"), CapturedWristComponent[1]);
+    }
     return true;
+}
+
+void FFlowFestAnimProxy::CorrectHand(FPoseContext& Output, FName UpperName, FName ElbowName,
+    FName HandName, const FVector& Target)
+{
+    const FBoneContainer& Bones = Output.Pose.GetBoneContainer();
+    const USkeleton* SkeletonAsset = Bones.GetSkeletonAsset();
+    if (!SkeletonAsset) return;
+    const FReferenceSkeleton& Reference = SkeletonAsset->GetReferenceSkeleton();
+    const int32 UpperSkeleton = Reference.FindBoneIndex(UpperName);
+    const int32 ElbowSkeleton = Reference.FindBoneIndex(ElbowName);
+    const int32 HandSkeleton = Reference.FindBoneIndex(HandName);
+    if (UpperSkeleton == INDEX_NONE || ElbowSkeleton == INDEX_NONE || HandSkeleton == INDEX_NONE) return;
+    const FCompactPoseBoneIndex Upper = Bones.GetCompactPoseIndexFromSkeletonIndex(UpperSkeleton);
+    const FCompactPoseBoneIndex Elbow = Bones.GetCompactPoseIndexFromSkeletonIndex(ElbowSkeleton);
+    const FCompactPoseBoneIndex Hand = Bones.GetCompactPoseIndexFromSkeletonIndex(HandSkeleton);
+    if (Upper.GetInt() == INDEX_NONE || Elbow.GetInt() == INDEX_NONE || Hand.GetInt() == INDEX_NONE) return;
+    FCSPose<FCompactPose> ComponentPose;
+    ComponentPose.InitPose(Output.Pose);
+    FTransform UpperTransform = ComponentPose.GetComponentSpaceTransform(Upper);
+    FTransform ElbowTransform = ComponentPose.GetComponentSpaceTransform(Elbow);
+    FTransform HandTransform = ComponentPose.GetComponentSpaceTransform(Hand);
+    if (FVector::DistSquared(HandTransform.GetLocation(), Target) < .01f) return;
+    const FVector JointTarget = ElbowTransform.GetLocation();
+    AnimationCore::SolveTwoBoneIK(UpperTransform, ElbowTransform, HandTransform,
+        JointTarget, Target, false, 1.0, 1.0);
+    ComponentPose.SetComponentSpaceTransform(Upper, UpperTransform);
+    ComponentPose.SetComponentSpaceTransform(Elbow, ElbowTransform);
+    ComponentPose.SetComponentSpaceTransform(Hand, HandTransform);
+    FCSPose<FCompactPose>::ConvertComponentPosesToLocalPosesSafe(ComponentPose, Output.Pose);
 }
 
 void FFlowFestAnimProxy::CorrectFoot(FPoseContext& Output, FName UpperName, FName KneeName, FName FootName, float CorrectionCm)
