@@ -13,6 +13,13 @@ const here = dirname(fileURLToPath(import.meta.url));
 const project = resolve(here, "..");
 const rawDir = resolve(process.argv[2] ?? join(project, "Saved/PerformanceCaptures"));
 const outputDir = join(project, "Content/Data/PropMotion");
+const familyOnly = process.argv.includes('--family-only');
+const allowPartial = process.argv.includes('--allow-partial');
+const captureIdFlag = process.argv.indexOf('--capture-id');
+const captureId = captureIdFlag < 0 ? null : process.argv[captureIdFlag + 1];
+if (allowPartial && !familyOnly) throw new Error('--allow-partial requires --family-only');
+if (captureIdFlag >= 0 && (!captureId || !allowPartial))
+  throw new Error('--capture-id requires an ID and --allow-partial');
 const profiles = new Map([
   ["fire-poi", "FirePoi"],
   ["fire-hoop", "FireHoop"],
@@ -128,12 +135,15 @@ const artifacts = manifests.flatMap(manifest => manifest.artifacts);
 const keys = artifacts.map(entry => `${entry.character}/${entry.role}`);
 if (new Set(keys).size !== keys.length) throw new Error('Duplicate character/role in capture manifests');
 const familyArtifacts = artifacts.filter(entry => entry.role.startsWith('family-'));
-if (familyArtifacts.length && (familyArtifacts.length !== 16 * 82 ||
+if (!allowPartial && familyArtifacts.length && (familyArtifacts.length !== 16 * 82 ||
     new Set(familyArtifacts.map(entry => entry.character)).size !== 16))
   throw new Error(`Expected 1,312 family captures over 16 rigs; found ${familyArtifacts.length}`);
 await mkdir(outputDir, { recursive: true });
 const generated = [];
-for (const entry of artifacts) {
+for (const entry of artifacts.filter(entry =>
+  (!familyOnly || entry.role.startsWith('family-')) &&
+  (!captureId || entry.character === captureId) &&
+  (!allowPartial || existsSync(join(rawDir, entry.filename))))) {
   const profile = profileForRole(entry.role);
   if (!profile) continue; // mounted pose has no held prop
   const capture = JSON.parse(await readFile(join(rawDir, entry.filename), "utf8"));
@@ -172,10 +182,21 @@ for (const entry of artifacts) {
   await writeFile(join(outputDir, filename), JSON.stringify(clip));
   generated.push({ character: entry.character, profile, filename, frames: frames.length });
 }
-const expected = artifacts.filter((entry) => profileForRole(entry.role)).length;
-if (generated.length !== expected || expected < 64)
-  throw new Error(`Expected 64 complete prop clips, got ${generated.length}/${expected}`);
-await writeFile(join(outputDir, "manifest.json"), JSON.stringify({
-  schema: "flow-fest-prop-motion-manifest-v1", clips: generated,
+if (!generated.length) throw new Error('No complete listed prop captures available for staging');
+if (!allowPartial && !familyOnly && !captureId && generated.length !== artifacts.filter(
+  entry => profileForRole(entry.role)).length)
+  throw new Error(`Prop motion generation missed a listed capture: ${generated.length}`);
+const manifestPath = join(outputDir, 'manifest.json');
+let clips = generated;
+if (allowPartial || familyOnly) {
+  const previous = existsSync(manifestPath) ? JSON.parse(await readFile(manifestPath, 'utf8')) : null;
+  if (previous && (previous.schema !== 'flow-fest-prop-motion-manifest-v1' || !Array.isArray(previous.clips)))
+    throw new Error(`Unexpected existing prop manifest: ${manifestPath}`);
+  const byKey = new Map((previous?.clips ?? []).map(clip => [`${clip.character}/${clip.profile}`, clip]));
+  for (const clip of generated) byKey.set(`${clip.character}/${clip.profile}`, clip);
+  clips = [...byKey.values()];
+}
+await writeFile(manifestPath, JSON.stringify({
+  schema: 'flow-fest-prop-motion-manifest-v1', clips,
 }, null, 2));
-console.log(`Prepared ${generated.length} compact prop-motion clips in ${outputDir}`);
+console.log(`Prepared ${generated.length} compact prop-motion clips (${clips.length} staged total) in ${outputDir}`);

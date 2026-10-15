@@ -13,11 +13,15 @@ const capturesDir = capturesFlag < 0 ? null : resolve(process.argv[capturesFlag 
 const captureIdFlag = process.argv.indexOf('--capture-id');
 const captureId = captureIdFlag < 0 ? null : process.argv[captureIdFlag + 1];
 const familyOnly = process.argv.includes('--family-only');
+const legacyOnly = process.argv.includes('--legacy-only');
+const allowPartial = process.argv.includes('--allow-partial');
 if (capturesFlag >= 0 && (!process.argv[capturesFlag + 1] || !existsSync(capturesDir)))
   throw new Error(`Missing native performance capture directory: ${capturesDir}`);
 if (captureIdFlag >= 0 && (!captureId || !capturesDir))
   throw new Error('--capture-id requires an ID and --captures directory');
 if (familyOnly && !capturesDir) throw new Error('--family-only requires --captures directory');
+if (legacyOnly && (!capturesDir || familyOnly)) throw new Error('--legacy-only requires --captures and cannot combine with --family-only');
+if (allowPartial && !familyOnly) throw new Error('--allow-partial requires --family-only');
 const dependencyRoot = existsSync(join(repo, 'node_modules/.pnpm')) ? repo : source;
 const catalogFile = join(source, 'node_modules/@austencloud/scene-3d/src/lib/config/avatar-definitions.ts');
 const catalog = readFileSync(catalogFile, 'utf8');
@@ -99,16 +103,21 @@ const familyRoles = captureManifests.length
   ? [...new Set(captureArtifacts.map(entry => entry.role)
       .filter(role => /^family-[a-z0-9_]+-[AB]$/.test(role)))].sort()
   : [];
-if (familyRoles.length && (familyRoles.length !== 82 ||
+if (familyRoles.length && !allowPartial && !legacyOnly && (familyRoles.length !== 82 ||
     familyRoles.some(role => !familyRoles.includes(role.replace(/-[AB]$/, role.endsWith('-A') ? '-B' : '-A')))))
   throw new Error(`Expected 41 paired family routines; found ${familyRoles.length} roles`);
 const captureProfiles = [...legacyProfiles, ...familyRoles.map(role => {
   const [, family, variant] = /^family-([a-z0-9_]+)-([AB])$/.exec(role);
   return [`P_${family}_${variant.toUpperCase()}`, role];
 })];
+const availableProfiles = (id) => captureProfiles.filter(([, role]) =>
+  (!familyOnly || role.startsWith('family-')) &&
+  (!legacyOnly || !role.startsWith('family-')) &&
+  (!allowPartial || (captureArtifacts.some(entry => entry.character === id && entry.role === role) &&
+    existsSync(join(capturesDir, `${id}_${role}.json`)))));
 if (capturesDir) {
   for (const { id } of definitions.filter(x => !captureId || x.id === captureId)) {
-    for (const [, role] of captureProfiles.filter(([, role]) => !familyOnly || role.startsWith('family-'))) {
+    for (const [, role] of availableProfiles(id)) {
       const file = join(capturesDir, `${id}_${role}.json`);
       if (!existsSync(file)) throw new Error(`Missing native performance capture: ${file}`);
     }
@@ -188,18 +197,21 @@ if (familyOnly) {
   if (stagedManifest.characters?.length !== 16 ||
       stagedManifest.characters.some((entry, index) => entry.id !== definitions[index].id || !existsSync(entry.decoded)))
     throw new Error('--family-only requires the complete decoded 16-character catalog');
-  if (familyRoles.length !== 82) throw new Error('--family-only requires all 41 A/B family routines');
+  if (!allowPartial && familyRoles.length !== 82) throw new Error('--family-only requires all 41 A/B family routines');
+  let prepared = 0;
   for (const character of stagedManifest.characters.filter(x => !captureId || x.id === captureId)) {
     character.captures ||= {};
-    for (const [profile, role] of captureProfiles.filter(([, role]) => role.startsWith('family-'))) {
+    for (const [profile, role] of availableProfiles(character.id)) {
       character.captures[profile] = await prepareCapture(character, profile, `${character.id}_${role}.json`, role);
       const name = `Flow_${profile}`;
       character.animations[name] = `${character.folder}/A_${name}.A_${name}`;
+      prepared++;
     }
   }
+  if (!prepared) throw new Error('No complete listed family captures available for staging');
   writeFileSync(stagedManifestFile, JSON.stringify(stagedManifest, null, 2) + '\n');
   writeCatalog(stagedManifest.characters);
-  console.log(`Prepared family performances for ${captureId || 'all 16'} native characters`);
+  console.log(`Prepared ${prepared} family performances for ${captureId || 'all 16'} native characters`);
   process.exit(0);
 }
 for (const { id, name } of definitions) {
@@ -249,7 +261,7 @@ const manifest = { version: 1, animationSource, animations, characters };
 if (capturesDir) {
   for (const character of characters.filter(x => !captureId || x.id === captureId)) {
     character.captures = {};
-    for (const [profile, captureRole] of captureProfiles)
+    for (const [profile, captureRole] of availableProfiles(character.id))
       character.captures[profile] = await prepareCapture(character, profile, `${character.id}_${captureRole}.json`, captureRole);
     character.captures.Ride = await prepareCapture(character, 'Ride', `${character.id}_ride.json`);
     for (const profile of Object.keys(character.captures)) {
