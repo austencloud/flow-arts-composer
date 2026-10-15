@@ -31,11 +31,14 @@ Packaging verifies the imported performance data before cooking and checks stage
 
 Run `Tools/smoke-playback.ps1` after importing, or pass `-Executable` with a packaged `MuseumGame.exe`. It checks all animated stations, exercises pause/resume/restart, measures body/prop alignment for a full loop, captures a fresh rendered screenshot, and stops its own test process. See [verification results](VERIFICATION.md).
 
+Use `-Mode Movement` for measured walking, sprint, release, diagonal and stopping checks on the entrance floor. `-MovementBaseline` measures the previous 290 cm/s traversal; it only applies to this diagnostic. `-FrameRate 20` checks movement at a lower rendering rate. The runner requires a fresh screenshot and a passing runtime log before stopping its own process.
+
 ## Play
 
 | Key | Action |
 | --- | --- |
 | W A S D, mouse | Walk and look |
+| Hold either Shift | Sprint |
 | Space | Jump |
 | E | Open or close a nearby exhibit plaque |
 | P | Pause or resume the nearest animated station |
@@ -45,6 +48,8 @@ Run `Tools/smoke-playback.ps1` after importing, or pass `-Executable` with a pac
 | Esc | Quit |
 
 The native save records position, view direction, and viewed exhibits in the `MuseumGameNative1` slot. It is separate from browser storage.
+
+First-person traversal is 4.5 m/s normally and 7.5 m/s while holding Shift. Both Museum and Flow Fest use Unreal's `CharacterMovement` for movement and collision. Museum's camera has no visible walking body, so its traversal speeds are tuned independently of Flow Fest's visible gait. Animated exhibit performers continue to use the shared playback runtime.
 
 ## Current native scope
 

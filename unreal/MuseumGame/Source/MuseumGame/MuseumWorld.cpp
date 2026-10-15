@@ -117,6 +117,12 @@ bool AMuseumWorld::LoadMuseum()
     const TSharedPtr<FJsonObject> Spawn = ObjectField(Root, TEXT("spawn"));
     if (!Spawn.IsValid()) return false;
     SpawnLocation = TilePosition(NumberField(Spawn, TEXT("x")), NumberField(Spawn, TEXT("y")), 140.f);
+    // Source north is decreasing grid Y; Unreal yaw zero faces increasing X (east).
+    const FString SpawnFacing = StringField(Spawn, TEXT("facing"));
+    static const TCHAR* Directions[] = { TEXT("north"), TEXT("northeast"), TEXT("east"), TEXT("southeast"),
+        TEXT("south"), TEXT("southwest"), TEXT("west"), TEXT("northwest") };
+    for (int32 Index = 0; Index < UE_ARRAY_COUNT(Directions); ++Index)
+        if (SpawnFacing == Directions[Index]) { SpawnRotation = FRotator(0.f, -90.f + Index * 45.f, 0.f); break; }
 
     const TArray<TSharedPtr<FJsonValue>>* RoomValues = nullptr;
     const TArray<TSharedPtr<FJsonValue>>* TileValues = nullptr;
