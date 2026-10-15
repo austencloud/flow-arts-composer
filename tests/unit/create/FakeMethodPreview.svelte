@@ -6,12 +6,14 @@
   let {
     methodId,
     color,
+    revealed = true,
     playing = false,
     turn = 0,
     onready,
   }: {
     methodId: string;
     color: string;
+    revealed?: boolean;
     playing?: boolean;
     turn?: number;
     onready?: (methodId: string) => void;
@@ -26,6 +28,7 @@
   class="fake-preview"
   data-method={methodId}
   data-color={color}
+  data-revealed={String(revealed)}
   data-playing={String(playing)}
   data-turn={String(turn)}
 ></span>

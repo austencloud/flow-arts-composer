@@ -1271,8 +1271,9 @@ export default defineConfig(({ command, mode }) => ({
     // 2026-09-28, when maps cost the Cloudflare production build ~40 s and
     // ~1 GB of memory while the upload failed anyway (the key lacks PostHog's
     // error-tracking scope), so nothing reached PostHog. To symbolicate stack
-    // traces again, give the build a key with that scope and set
-    // VITE_SOURCEMAP=true in the Cloudflare Pages production environment.
+    // traces again, store a key with "error tracking write" and "organization
+    // read" as POSTHOG_SOURCEMAP_API_KEY and set VITE_SOURCEMAP=true in the
+    // Cloudflare Pages production environment.
     // The second condition matters because `npm run build` is shared:
     // web-ci.yml's validate job, the three native pipelines (android/ios/
     // capgo), and anyone's local machine all run it, and none of them have
@@ -1286,7 +1287,10 @@ export default defineConfig(({ command, mode }) => ({
     // JS-only cleanup would leave behind. Maps only ever reach PostHog.
     sourcemap:
       process.env.VITE_SOURCEMAP === "true" &&
-      Boolean(process.env.POSTHOG_PERSONAL_API_KEY),
+      Boolean(
+        process.env.POSTHOG_SOURCEMAP_API_KEY ||
+        process.env.POSTHOG_PERSONAL_API_KEY
+      ),
     target: "esnext",
     // Vite 8 minifies JS with Oxc and CSS with Lightning CSS by default. The
     // esbuild minifiers this config named before are deprecated.

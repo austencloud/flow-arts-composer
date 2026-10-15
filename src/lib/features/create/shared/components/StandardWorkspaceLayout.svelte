@@ -31,6 +31,8 @@
   import type { PanelCoordinationState } from "../state/panel-coordination-state.svelte";
   import type { IToolPanelMethods } from "../types/create-module-types";
   import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
+  import { getSequenceOverlayState } from "#lib/shared/sequence-viewer/state/sequence-viewer-overlay-state.svelte.js";
+  import { isStepEditorViewShown } from "../services/step-editor-availability";
   import type { LetterSource } from "#lib/shared/create/domain/spell-models.js";
   import { logConstructImmediateUndo } from "../../construct/services/construct-analytics";
   import { isStartPlacementMorphCapturing } from "../../construct/start-placement-picker/services/start-placement-morph";
@@ -153,6 +155,23 @@
   // workspace's own controls fade and stop taking input until the save view
   // is left again.
   const isSaveView = $derived(panelState.isSaveToLibraryPanelOpen);
+  // The step editor takes the tool panel's place the same way (see
+  // CreationToolPanelSlot), but the workspace stays fully live beside it:
+  // picking another step is how you move through the sequence.
+  const sequenceOverlay = getSequenceOverlayState();
+  const isStepEditorView = $derived.by(() => {
+    if (isSaveView) return false;
+    const sequenceState = CreateModuleState.getActiveTabSequenceState();
+    return isStepEditorViewShown({
+      isPanelOpen: panelState.isStepEditorPanelOpen,
+      activeTab: navigationState.activeTab,
+      sequence: sequenceState.currentSequence,
+      selectedStepNumber: sequenceState.selectedStepNumber,
+      selectedStepNumbers: sequenceState.selectedStepNumbers,
+      hasMandalaSelection: panelState.mandalaViewerSelection !== null,
+      isSequenceViewerOpen: sequenceOverlay.isOpen,
+    });
+  });
 
   // A stacked phone-width Assemble workspace spends two control rows around
   // its step pictures. Folding Save into the bottom rail, Undo/Redo into the
@@ -217,22 +236,28 @@
       !useSideBySidePanels &&
       layoutHeight < SAVE_STACKED_SHORT_HEIGHT
   );
+  // Stacked, the step editor's preview, duration and turn controls need most
+  // of the height. The grid keeps a smaller share, still showing the steps to
+  // pick from. Side by side the usual split already gives it a full column.
+  const stepEditorStack = $derived(isStepEditorView && !useSideBySidePanels);
   const defaultPanelSizes = $derived(
     useSideBySidePanels
       ? wideSaveSplit
         ? [7, 3]
         : [1, 1]
-      : shortSaveStack
-        ? [2, 3]
-        : useCompactToolbar
+      : stepEditorStack
+        ? [1, 2]
+        : shortSaveStack
           ? [2, 3]
-          : isAssembleTab
-            ? [3, 7]
-            : [5, 4]
+          : useCompactToolbar
+            ? [2, 3]
+            : isAssembleTab
+              ? [3, 7]
+              : [5, 4]
   );
 
   $effect(() => {
-    const layoutKey = `${useSideBySidePanels}:${isAssembleTab}:${useCompactToolbar}:${wideSaveSplit}:${shortSaveStack}`;
+    const layoutKey = `${useSideBySidePanels}:${isAssembleTab}:${useCompactToolbar}:${wideSaveSplit}:${shortSaveStack}:${stepEditorStack}`;
     if (layoutKey === appliedPanelLayout) return;
 
     appliedPanelLayout = layoutKey;

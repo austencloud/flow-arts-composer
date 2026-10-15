@@ -253,6 +253,7 @@ Used in:
   {#if icon}
     <span
       class="icon-cell"
+      data-loop-component={component}
       style="width: {size}px; height: {size}px;"
       title={icon.label}
     >

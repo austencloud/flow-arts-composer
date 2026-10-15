@@ -231,6 +231,247 @@ html.generate-card-morph-tnd::view-transition-group(tnd-choice-icon) {
   }
 }
 
+/* LOOP is one container that grows into its picker, not a card image fading
+   into a panel image. The box carries only the two surfaces, so the card's
+   colour turns into the panel's ground as it grows. Everything printed on
+   either surface rides inside that box as nested groups clipped to it: the
+   card's words leave where they sit, the picker's rows arrive once the box
+   has room for them, and each chosen LOOP icon flies from the card's strip
+   into its tile's icon. Closing runs the same path back.
+
+   The card stays mounted (hidden) under the open panel, so its words and
+   icons are named only while the panel is closed; otherwise the open side
+   would capture them too.
+
+   The panel itself claims the box, not the stage around it: on the desktop
+   stage and the short-window centred layout the stage is taller than the
+   panel, and its empty bands would stretch into the morph.
+   Owner: features/create/generate/shared/services/generate-card-morph.ts. */
+html.generate-card-morph-loop
+  .expanded-card-stage[data-card-id="loop"]:has(> .loop-expanded-overlay) {
+  view-transition-name: none !important;
+}
+
+html.generate-card-morph-loop
+  .expanded-card-stage[data-card-id="loop"]
+  > .loop-expanded-overlay {
+  view-transition-name: generate-card-loop;
+}
+
+html.generate-card-morph-loop .card-wrapper[data-card-id="loop"],
+html.generate-card-morph-loop
+  .expanded-card-stage[data-card-id="loop"]
+  > .loop-expanded-overlay {
+  view-transition-group: contain;
+}
+
+html.generate-card-morph-loop:not(
+    :has(.expanded-card-stage[data-card-id="loop"])
+  )
+  .card-wrapper[data-card-id="loop"]
+  .loop-consolidated-card {
+  view-transition-name: loop-card-face;
+  view-transition-class: loop-face;
+}
+
+html.generate-card-morph-loop .loop-expanded-overlay > .overlay-header {
+  view-transition-name: loop-panel-head;
+  view-transition-class: loop-face;
+}
+
+html.generate-card-morph-loop .loop-expanded-overlay > .picker-content {
+  view-transition-name: loop-panel-body;
+  view-transition-class: loop-face;
+}
+
+html.generate-card-morph-loop .loop-expanded-overlay > .combo-details {
+  view-transition-name: loop-panel-foot;
+  view-transition-class: loop-face;
+}
+
+/* The card shows one icon per chosen component, and the picker marks the
+   same components as its selected tiles, so each name has one owner on
+   either side. An icon with no partner (a tile chosen after opening) fades
+   where it is. */
+html.generate-card-morph-loop:not(
+    :has(.expanded-card-stage[data-card-id="loop"])
+  )
+  .card-wrapper[data-card-id="loop"]
+  .icon-cell[data-loop-component],
+html.generate-card-morph-loop
+  .loop-expanded-overlay
+  .loop-component-button.selected
+  .loop-component-icon {
+  view-transition-class: loop-icon;
+}
+
+html.generate-card-morph-loop:not(
+    :has(.expanded-card-stage[data-card-id="loop"])
+  )
+  .card-wrapper[data-card-id="loop"]
+  .icon-cell[data-loop-component="rotated"],
+html.generate-card-morph-loop
+  .loop-expanded-overlay
+  [data-component="rotated"]
+  > .loop-component-button.selected
+  .loop-component-icon {
+  view-transition-name: loop-icon-rotated;
+}
+
+html.generate-card-morph-loop:not(
+    :has(.expanded-card-stage[data-card-id="loop"])
+  )
+  .card-wrapper[data-card-id="loop"]
+  .icon-cell[data-loop-component="mirrored"],
+html.generate-card-morph-loop
+  .loop-expanded-overlay
+  [data-component="mirrored"]
+  > .loop-component-button.selected
+  .loop-component-icon {
+  view-transition-name: loop-icon-mirrored;
+}
+
+html.generate-card-morph-loop:not(
+    :has(.expanded-card-stage[data-card-id="loop"])
+  )
+  .card-wrapper[data-card-id="loop"]
+  .icon-cell[data-loop-component="flipped"],
+html.generate-card-morph-loop
+  .loop-expanded-overlay
+  [data-component="flipped"]
+  > .loop-component-button.selected
+  .loop-component-icon {
+  view-transition-name: loop-icon-flipped;
+}
+
+html.generate-card-morph-loop:not(
+    :has(.expanded-card-stage[data-card-id="loop"])
+  )
+  .card-wrapper[data-card-id="loop"]
+  .icon-cell[data-loop-component="swapped"],
+html.generate-card-morph-loop
+  .loop-expanded-overlay
+  [data-component="swapped"]
+  > .loop-component-button.selected
+  .loop-component-icon {
+  view-transition-name: loop-icon-swapped;
+}
+
+html.generate-card-morph-loop:not(
+    :has(.expanded-card-stage[data-card-id="loop"])
+  )
+  .card-wrapper[data-card-id="loop"]
+  .icon-cell[data-loop-component="inverted"],
+html.generate-card-morph-loop
+  .loop-expanded-overlay
+  [data-component="inverted"]
+  > .loop-component-button.selected
+  .loop-component-icon {
+  view-transition-name: loop-icon-inverted;
+}
+
+html.generate-card-morph-loop:not(
+    :has(.expanded-card-stage[data-card-id="loop"])
+  )
+  .card-wrapper[data-card-id="loop"]
+  .icon-cell[data-loop-component="rewound"],
+html.generate-card-morph-loop
+  .loop-expanded-overlay
+  [data-component="rewound"]
+  > .loop-component-button.selected
+  .loop-component-icon {
+  view-transition-name: loop-icon-rewound;
+}
+
+/* The two surfaces fill the box at every size instead of keeping the card's
+   proportions, so the colour change never shows a band of either one. The
+   arriving surface settles over the leaving one before that one lets go, so
+   the box never thins out mid-change even where a theme's card is
+   translucent. */
+html.generate-card-morph-loop::view-transition-old(generate-card-loop),
+html.generate-card-morph-loop::view-transition-new(generate-card-loop) {
+  height: 100%;
+  mix-blend-mode: normal;
+}
+
+html.generate-card-morph-loop::view-transition-old(generate-card-loop) {
+  animation: loop-surface-out var(--duration-dramatic) linear both;
+}
+
+html.generate-card-morph-loop::view-transition-new(generate-card-loop) {
+  animation: loop-surface-in var(--duration-dramatic) linear both;
+}
+
+/* The box clips what rides in it. The margin leaves room for the panel's
+   shadow, which the contents never reach. */
+html.generate-card-morph-loop::view-transition-group-children(
+    generate-card-loop
+  ) {
+  overflow: clip;
+  overflow-clip-margin: 24px;
+}
+
+html.generate-card-morph-loop::view-transition-group(*.loop-face),
+html.generate-card-morph-loop::view-transition-group(*.loop-icon) {
+  animation-duration: var(--duration-dramatic);
+  animation-timing-function: var(--ease-in-out);
+}
+
+html.generate-card-morph-loop::view-transition-old(*.loop-face) {
+  animation: loop-face-out var(--duration-dramatic) linear both;
+}
+
+html.generate-card-morph-loop::view-transition-new(*.loop-face) {
+  animation: loop-face-in var(--duration-dramatic) linear both;
+}
+
+html.generate-card-morph-loop::view-transition-old(*.loop-icon),
+html.generate-card-morph-loop::view-transition-new(*.loop-icon) {
+  animation-duration: var(--duration-dramatic);
+  height: 100%;
+  object-fit: contain;
+}
+
+@keyframes loop-surface-in {
+  0% {
+    opacity: 0;
+  }
+  50%,
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes loop-surface-out {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes loop-face-out {
+  0% {
+    opacity: 1;
+  }
+  30%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes loop-face-in {
+  0%,
+  45% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
 /* Construct: the start placement card the user picks travels into the
    workspace's start cell while the workspace slides open, on the slide's own
    clock. The tapped card holds the name for the old capture and the start

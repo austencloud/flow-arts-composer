@@ -1549,6 +1549,111 @@
     width: 100%;
   }
 
+  /* ===== Guide strip look =====
+     The start column and the steps fuse into one block with hairline seams,
+     the way /guide strips draw them. Only the block's outer corners round. */
+  .grid-surface.timeline {
+    --seam: color-mix(in oklab, var(--theme-text, #fff) 16%, transparent);
+    --block-radius: 12px;
+  }
+
+  /* Seams paint over the artwork: its own square backing would cover a border
+     drawn underneath. Each cell draws its leading and bottom seam; the top row
+     adds the top edge and each row's last cell the trailing one. */
+  .timeline-row > .step-container::after,
+  .timeline-start-column > .timeline-cell::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-inline-start: 1px solid var(--seam);
+    border-block-end: 1px solid var(--seam);
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .timeline-start-column > .timeline-cell {
+    position: relative;
+  }
+
+  .timeline-row:first-child > .step-container::after,
+  .timeline-start-column > .timeline-cell:first-child::after {
+    border-block-start: 1px solid var(--seam);
+  }
+
+  .timeline-row > .step-container:last-child::after {
+    border-inline-end: 1px solid var(--seam);
+  }
+
+  /* Outer corners. The leading pair belongs to the start column when there is
+     one, otherwise to the first step of the top and bottom rows. */
+  .timeline-start-column > .timeline-cell:first-child,
+  .timeline-rows:first-child
+    > .timeline-row:first-child
+    > .step-container:first-child {
+    border-start-start-radius: var(--block-radius);
+  }
+
+  .timeline-start-column > .timeline-cell:last-child,
+  .timeline-rows:first-child
+    > .timeline-row:last-child
+    > .step-container:first-child {
+    border-end-start-radius: var(--block-radius);
+  }
+
+  .timeline-row:first-child > .step-container:last-child {
+    border-start-end-radius: var(--block-radius);
+  }
+
+  .timeline-row:last-child > .step-container:last-child {
+    border-end-end-radius: var(--block-radius);
+  }
+
+  /* The mandala is a cell of the block: the seams frame it, and it takes the
+     slot's corner. */
+  .grid-surface.timeline .mandala-slot > .mandala-cell {
+    border: none;
+    border-radius: inherit;
+  }
+
+  /* The plate always follows its cell's curve; a plate that squared off on
+     hover showed its corner past the block's edge while the ring grew in. */
+  .timeline-row > .step-container > .history-layout-shell,
+  .timeline-start-column > .timeline-cell > .history-layout-shell {
+    border-radius: inherit;
+  }
+
+  /* Rounded cells clip their square artwork to the curve. A hovered cell
+     lifts out of the block and is clipped by its own ring instead. */
+  .timeline-row
+    > .step-container:not(:hover):not(.cell-selected)
+    > .history-layout-shell,
+  .timeline-start-column > .timeline-cell:not(:hover) > .history-layout-shell {
+    overflow: hidden;
+  }
+
+  /* The selected ring keeps its own even corners wherever the cell sits, and
+     the artwork inside follows the ring's inner curve. The resize handle is a
+     sibling of the artwork, so it still overhangs the ring. */
+  .grid-surface.timeline .timeline-row > .step-container.cell-selected {
+    border-radius: 8px;
+    /* `.timeline-cell:has(.history-layout-shell)` clears the background so the
+       shell can carry the plate, and that wiped the gold border-box gradient:
+       the ring showed only its glow. Paint the ring back. */
+    background: linear-gradient(
+        135deg,
+        var(--semantic-warning),
+        var(--semantic-warning),
+        #d97706
+      )
+      border-box;
+  }
+
+  .grid-surface.timeline .cell-selected > .history-layout-shell {
+    border-radius: 5px;
+    overflow: hidden;
+  }
+
   .cell-selected {
     z-index: 10;
     border: 3px solid transparent;
@@ -1600,6 +1705,8 @@
     opacity: 1;
     border: 3px solid rgba(226, 232, 240, 0.85);
     border-radius: 12px;
+    /* The artwork's square backing would poke past the ring's rounded corners. */
+    overflow: hidden;
     box-shadow:
       0 0 16px rgba(226, 232, 240, 0.3),
       0 8px 28px rgba(0, 0, 0, 0.35);

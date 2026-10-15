@@ -56,10 +56,13 @@ describe("Create workspace mandala viewer contract", () => {
     expect(en["create_ui_open_mandala"]).toBe("Open mandala");
   });
 
-  it("routes the click through panel state and reuses the editor drawer", () => {
+  it("routes the click through panel state and reuses the editor view", () => {
     expect(sequenceDisplay).toContain("panelState.openMandalaViewer");
-    expect(coordinator.match(/<CreatePanelDrawer/g)).toHaveLength(1);
-    expect(coordinator).toContain("<Crossfade key={drawerMode}");
+    expect(
+      coordinator.match(/<section\s+class="step-editor-view"/g)
+    ).toHaveLength(1);
+    expect(coordinator).not.toContain("<CreatePanelDrawer");
+    expect(coordinator).toContain("<Crossfade key={viewMode}");
     expect(coordinator).toContain("<MandalaViewerPanel");
   });
 

@@ -1487,11 +1487,12 @@
          cross-document view transition always finds its morph target. -->
     <link rel="expect" href="#boot-capsule" blocking="render" />
     <style>
-      /* The boot screen continues the public site: the same CSS sky the
-         marketing chrome paints first (MarketingChrome .mkt-fallback), so the
-         cross-document crossfade from a public page is surface to surface. The
-         inline script below switches it to the light surface when the app will
-         open light. */
+      /* The boot screen continues the public site: the same plain sky gradient
+         the marketing chrome paints first (MarketingChrome .mkt-fallback), so
+         the cross-document crossfade from a public page is surface to surface.
+         Both are the live sky's own base colors with no CSS star field; the
+         inline script below switches this one to the light surface when the app
+         will open light. */
       #app-loading {
         position: fixed;
         inset: 0;
@@ -1503,84 +1504,20 @@
         gap: 28px;
         overflow: hidden;
         color: rgba(255, 255, 255, 0.62);
-        background-color: #06070f;
-        background:
-          radial-gradient(
-            ellipse at 72% 24%,
-            rgba(92, 72, 170, 0.3),
-            transparent 36%
-          ),
-          radial-gradient(
-            ellipse at 20% 78%,
-            rgba(32, 85, 144, 0.18),
-            transparent 42%
-          ),
-          radial-gradient(
-            130% 100% at 50% -10%,
-            #181b3d 0%,
-            #0c0e20 48%,
-            #06070f 100%
-          );
+        background-color: #0a0a1a;
+        background: linear-gradient(
+          180deg,
+          #0a0a1a 0%,
+          #0d0d1f 10%,
+          #16142c 25%,
+          #1c2538 40%,
+          #1b293f 55%,
+          #163253 70%,
+          #103259 85%,
+          #0a2142 100%
+        );
         opacity: 1;
         transition: opacity 400ms ease-out;
-      }
-
-      #app-loading::before,
-      #app-loading::after {
-        content: "";
-        position: absolute;
-        inset: -15%;
-        pointer-events: none;
-      }
-
-      #app-loading::before {
-        opacity: 0.72;
-        background-image:
-          radial-gradient(
-            circle,
-            rgba(255, 255, 255, 0.82) 0 0.7px,
-            transparent 1px
-          ),
-          radial-gradient(
-            circle,
-            rgba(185, 205, 255, 0.7) 0 0.8px,
-            transparent 1.15px
-          ),
-          radial-gradient(
-            circle,
-            rgba(255, 255, 255, 0.5) 0 0.55px,
-            transparent 0.9px
-          );
-        background-position:
-          7px 13px,
-          43px 71px,
-          103px 29px;
-        background-size:
-          83px 89px,
-          137px 149px,
-          211px 197px;
-      }
-
-      #app-loading::after {
-        opacity: 0.48;
-        background-image:
-          radial-gradient(
-            circle,
-            #ffffff 0 1px,
-            rgba(180, 200, 255, 0.45) 1.4px,
-            transparent 2px
-          ),
-          radial-gradient(
-            circle,
-            rgba(220, 210, 255, 0.9) 0 0.9px,
-            transparent 1.5px
-          );
-        background-position:
-          31px 47px,
-          149px 91px;
-        background-size:
-          263px 241px,
-          347px 311px;
       }
 
       #app-loading > * {
@@ -1607,11 +1544,6 @@
             #eceef6 48%,
             #dfe2ee 100%
           );
-      }
-
-      #app-loading[data-surface="light"]::before,
-      #app-loading[data-surface="light"]::after {
-        content: none;
       }
 
       #app-loading.loaded {

@@ -35,19 +35,25 @@ const OUTPUT_DIR = ".svelte-kit/cloudflare";
 
 // Pin the CLI version via npx so an upstream flag/behavior change can't
 // silently alter a production build. Bump deliberately, not via @latest.
-const POSTHOG_CLI = "@posthog/cli@0.8.4";
+// 0.18 injects a release id into each chunk, so exceptions carry the build
+// they came from; 0.8.4 could not.
+const POSTHOG_CLI = "@posthog/cli@0.18.10";
 
 /**
- * The repo already had ONE name for these credentials before this script
- * existed — POSTHOG_PERSONAL_API_KEY / POSTHOG_PROJECT_ID / POSTHOG_API_HOST,
- * used by .env.example, seo-measurement.yml, scripts/posthog-query.cjs,
- * scripts/seo/provision-posthog-dashboard.ts, and two admin API routes. A
- * second naming scheme for the same PostHog project would mean a key rotated
- * under the name everyone knows silently stops symbolicating, with no error
- * and no failing test to catch it. So read the canonical names and remap them
- * to whatever the CLI wants internally, right here.
+ * The project and host use the repo's one naming scheme —
+ * POSTHOG_PROJECT_ID / POSTHOG_API_HOST, shared with .env.example,
+ * seo-measurement.yml, scripts/posthog-query.cjs and the admin API routes.
+ *
+ * The key is the exception. Uploading needs PostHog's "error tracking write"
+ * and "organization read" scopes, and the general POSTHOG_PERSONAL_API_KEY
+ * never had them: production uploads failed on that, unnoticed, until maps
+ * were switched off on 2026-09-28. POSTHOG_SOURCEMAP_API_KEY holds a key made for
+ * this one job, so the read-only key the admin routes use doesn't have to
+ * gain write access. The general key stays as a fallback for anyone whose
+ * single key already has both scopes.
  */
-const apiKey = process.env.POSTHOG_PERSONAL_API_KEY;
+const apiKey =
+  process.env.POSTHOG_SOURCEMAP_API_KEY || process.env.POSTHOG_PERSONAL_API_KEY;
 const projectId = process.env.POSTHOG_PROJECT_ID;
 // .env.example stores this bare ("us.posthog.com"); the CLI wants a URL.
 const rawHost = process.env.POSTHOG_API_HOST;
@@ -90,7 +96,9 @@ function sweepSourcemaps(dir) {
 
 function finish(reason) {
   const removed = sweepSourcemaps(OUTPUT_DIR);
-  console.log(`${reason} Swept ${removed} local .map file(s) from ${OUTPUT_DIR}.`);
+  console.log(
+    `${reason} Swept ${removed} local .map file(s) from ${OUTPUT_DIR}.`
+  );
   process.exit(0);
 }
 
@@ -109,7 +117,7 @@ if (!outputDirExists()) {
 
 if (!apiKey || !projectId) {
   finish(
-    "Skipping PostHog sourcemap upload (POSTHOG_PERSONAL_API_KEY / " +
+    "Skipping PostHog sourcemap upload (POSTHOG_SOURCEMAP_API_KEY / " +
       "POSTHOG_PROJECT_ID not set — expected everywhere except the Cloudflare " +
       "Pages production build)."
   );
@@ -144,10 +152,29 @@ function runCli(args) {
   return true;
 }
 
+// Name the release after the commit Cloudflare Pages is building, so each
+// exception says which deploy threw it. Without a SHA the CLI derives one
+// from git itself.
+const commitSha = process.env.CF_PAGES_COMMIT_SHA;
+const releaseArgs = [
+  "--release-name",
+  "tka-platform",
+  ...(commitSha ? ["--release-version", commitSha] : []),
+];
+
 console.log("Injecting PostHog sourcemap debug IDs...");
-if (runCli(["sourcemap", "inject", "--directory", OUTPUT_DIR])) {
+if (
+  runCli(["sourcemap", "inject", "--directory", OUTPUT_DIR, ...releaseArgs])
+) {
   console.log("Uploading sourcemaps to PostHog...");
-  runCli(["sourcemap", "upload", "--directory", OUTPUT_DIR, "--delete-after"]);
+  runCli([
+    "sourcemap",
+    "upload",
+    "--directory",
+    OUTPUT_DIR,
+    ...releaseArgs,
+    "--delete-after",
+  ]);
 }
 
 finish("PostHog sourcemap step complete.");

@@ -62,6 +62,9 @@ Delegates ALL logic to services (SRP compliant)
   import { MAX_AVAILABLE_LEVEL } from "#lib/shared/create/utils/config-mapper.js";
   import { DifficultyLevel as SharedDifficultyLevel } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
   import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import { PlacementResetTimer } from "./placement-reset-timer";
+
+  const placementResetTimer = new PlacementResetTimer();
 
   const LONG_TOAST_DURATION_MS = 6_000;
   const NORMAL_TOAST_DURATION_MS = 4_000;
@@ -335,7 +338,10 @@ Delegates ALL logic to services (SRP compliant)
     updateFontSize();
     window.addEventListener("resize", updateFontSize);
 
-    return () => window.removeEventListener("resize", updateFontSize);
+    return () => {
+      window.removeEventListener("resize", updateFontSize);
+      placementResetTimer.cancel();
+    };
   });
 
   function updateFontSize() {
@@ -467,6 +473,7 @@ Delegates ALL logic to services (SRP compliant)
   }
 
   function handleGridModeChange(gridMode: GridMode) {
+    placementResetTimer.cancel();
     updateConfig({ gridMode });
 
     // Check if we have placements to clear
@@ -480,7 +487,7 @@ Delegates ALL logic to services (SRP compliant)
 
       // Clear placements at animation midpoint (150ms into 300ms animation)
       // This makes the text change happen while it's invisible
-      setTimeout(() => {
+      placementResetTimer.schedule(() => {
         startEndState?.setGridMode(gridMode);
       }, 150);
     } else {
