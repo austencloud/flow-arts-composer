@@ -1840,8 +1840,12 @@
       window.__tkaBootBar = __tkaBootBar;
       var __tkaReadyAt = null; // when ready arrived; the holds decide after it
       var __tkaCapTimer = null;
-      // Holds still open this long after ready stop holding the screen.
+      // Each hold gets this long after ready, or after it was asked for if
+      // that came later, before it stops holding the screen. A view that
+      // loads slowly then asks for its own pieces still gives them their
+      // time. No hold keeps the screen past ready + the ceiling.
       var __tkaHoldCapMs = 4000;
+      var __tkaHoldCeilingMs = 8000;
       var __tkaBootTimes = []; // expected arrival per rank, from the profile
       var __tkaBootProfiled = []; // per rank: did the profile record it
       var __tkaBootArrived = {}; // name -> ms, every first arrival
@@ -2316,16 +2320,37 @@
       // --- Holds: the screen stays until the first view is whole ---
       // __tkaBootHold(name) returns release(). The screen leaves once ready
       // has arrived and every hold registered so far is released; that
-      // moment is the `composed` milestone. Holds still open 4 s after ready
-      // are marked timedOut and the screen leaves anyway. A hold asked for
-      // once the screen is leaving, or on a route without it, holds nothing.
+      // moment is the `composed` milestone. A hold still open 4 s after ready,
+      // or 4 s after it was asked for if that was later, is marked timedOut
+      // and stops holding; 8 s after ready none hold. A hold asked for once
+      // the screen is leaving, or on a route without it, holds nothing.
       function __tkaOpenHolds() {
         var holds = __tkaBootBar.holds;
         var open = 0;
         for (var i = 0; i < holds.length; i++) {
-          if (holds[i].releasedAt === undefined) open++;
+          if (holds[i].releasedAt === undefined && !holds[i].timedOut) open++;
         }
         return open;
+      }
+
+      function __tkaHoldDeadline(hold) {
+        return Math.max(__tkaReadyAt, hold.at) + __tkaHoldCapMs;
+      }
+
+      // The cap timer waits for the earliest deadline among the open holds.
+      function __tkaScheduleCap() {
+        var next = __tkaReadyAt + __tkaHoldCeilingMs;
+        var holds = __tkaBootBar.holds;
+        for (var i = 0; i < holds.length; i++) {
+          if (holds[i].releasedAt === undefined && !holds[i].timedOut) {
+            next = Math.min(next, __tkaHoldDeadline(holds[i]));
+          }
+        }
+        clearTimeout(__tkaCapTimer);
+        __tkaCapTimer = setTimeout(
+          __tkaCapHolds,
+          Math.max(0, next - performance.now())
+        );
       }
 
       function __tkaCompose() {
@@ -2344,11 +2369,23 @@
 
       function __tkaCapHolds() {
         try {
+          var now = performance.now();
+          var pastCeiling = now >= __tkaReadyAt + __tkaHoldCeilingMs - 1;
           var holds = __tkaBootBar.holds;
+          var capped = false;
           for (var i = 0; i < holds.length; i++) {
-            if (holds[i].releasedAt === undefined) holds[i].timedOut = true;
+            var hold = holds[i];
+            if (hold.releasedAt !== undefined || hold.timedOut) continue;
+            if (pastCeiling || now >= __tkaHoldDeadline(hold) - 1) {
+              hold.timedOut = true;
+              capped = true;
+            }
           }
-          __tkaMarkSplash("hold-cap");
+          if (capped) __tkaMarkSplash("hold-cap");
+          if (__tkaOpenHolds() > 0) {
+            __tkaScheduleCap();
+            return;
+          }
         } catch (e) {}
         __tkaCompose();
       }
@@ -2360,6 +2397,12 @@
           if (__tkaFinished || !__tkaBarActive) return __tkaNoRelease;
           var entry = { name: String(name), at: Math.round(performance.now()) };
           __tkaBootBar.holds.push(entry);
+          // Asked for after ready: its own deadline may come first.
+          if (__tkaReadyAt !== null) {
+            try {
+              __tkaScheduleCap();
+            } catch (e) {}
+          }
           var released = false;
           return function release() {
             if (released) return;
@@ -2380,7 +2423,7 @@
       };
 
       // Ready arrived: leave now if nothing holds, otherwise when the holds
-      // release, at most __tkaHoldCapMs later. Any error here lets it go.
+      // release or run out of time. Any error here lets it go.
       function __tkaOnReady() {
         if (__tkaReadyAt !== null) return;
         __tkaReadyAt = performance.now();
@@ -2389,7 +2432,7 @@
             __tkaCompose();
             return;
           }
-          __tkaCapTimer = setTimeout(__tkaCapHolds, __tkaHoldCapMs);
+          __tkaScheduleCap();
         } catch (e) {
           __tkaFinishBoot();
         }

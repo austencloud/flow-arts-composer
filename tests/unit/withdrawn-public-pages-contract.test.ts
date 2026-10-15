@@ -17,7 +17,7 @@ const publicLinkSources = [
   "src/lib/shared/landing/components/SiteHeader.svelte",
   "src/lib/shared/landing/components/SiteFooter.svelte",
   "src/routes/(public)/guide/+page.svelte",
-  "src/routes/(public)/notation/staves/+page.svelte",
+  "src/routes/(public)/notation/props/+page.svelte",
   "src/lib/shared/notation/notation-catalog.ts",
   "src/routes/(public)/about/+page.svelte",
   "src/routes/(public)/composer/+page.svelte",
