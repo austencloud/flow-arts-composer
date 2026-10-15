@@ -86,3 +86,19 @@
 - gpt-6-astra review of a sample of this wave flagged a handful of keys (see coordinator notes); all fixes applied.
 - Codex restored as a product name where older strings translated it; Double-Staff uses the glossary prop term.
 - Gate: `Tests 66 passed (66)`.
+
+## P1 — 2026-10-14
+
+- Batch: `batch-P1.json`; 401 translated entries, 0 retranslation entries, 0 review entries. Protected names, loanwords, and language-neutral templates retain identical values where appropriate.
+- Applied exclusively through the supplied `apply-batch.js` script using `out-P1.json`.
+- Initial apply result: `messages/pt.json: inserted 401, replaced 0, refused 0`.
+- Final apply result after checking the inserted Shape Engine name in sentence fragments: `messages/pt.json: inserted 0, replaced 401, refused 0`.
+- Catalog diff before this ledger: only `messages/pt.json`; 401 insertions, 0 deletions (net +401 lines).
+- Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
+- Final result: `Test Files  1 passed (1)`; `Tests  66 passed (66)`; exit 0.
+- Focused inspection: exactly 401 catalog additions, all belonging to this batch; no existing catalog values changed. All output values match the applied catalog. Placeholder names and occurrence counts and markup match English; no multiline values or Unicode replacement characters. `git diff --check` passed. The ai-bust mechanical pass at HIGH severity returned `[]`; manual review preserved the source teaching points and step order.
+- Glossary choices: Brazilian Portuguese with você and infinitive action labels; posição, grade, Quadrado, Diamante, trajetória da mão, volta, sentido de rotação, bastão and props. Motion categories, placement names, protected products, Zan's Diamond, Prospin/Antispin/Inspin, Isolation/Extension and Flower/Petal stay English, with Flowers/Petals for plurals. Orientations use full para dentro / para fora in prose and labels. Sequence positions use passo; musical counts use batida. Spin ratio uses proporção de rotação; hand cycle uses ciclo da mão; lap uses circuito to distinguish a circuit around the center from the counted prop volta.
+- Source context: `src/lib/shared/shape-matrix/app/shape-engine-identity.ts` supplies the literal Shape Engine to the ratios page; the split attribution and explanation strings use masculine agreement around that name. Third Order is rendered Terceira Ordem, and motion-path options use Arco, Linear, Côncava and Híbrida consistently within the guide.
+- Uncertain: driving style / carrier path have no glossary entries; rendered estilo de condução / trajetória de suporte. Cat-eye is olho de gato and triquetra is triquetra. Native terminology review remains needed.
+- Uncertain: turn in the source phrase negative space or a turn is not defined more precisely; rendered giro without assuming which body part turns. Thumb switch is troca de polegar; the glossary does not specify a Portuguese technical term.
+- No native-speaker review performed. No primary checkout access, dependency installation, broad checks, server, integration, or push performed.
