@@ -1,4 +1,5 @@
 #include "MuseumWorld.h"
+#include "MuseumPerformerStation.h"
 #include "Components/BoxComponent.h"
 #include "Components/HierarchicalInstancedStaticMeshComponent.h"
 #include "Components/PointLightComponent.h"
@@ -8,6 +9,8 @@
 #include "Engine/World.h"
 #include "Materials/MaterialInterface.h"
 #include "Misc/FileHelper.h"
+#include "Misc/CommandLine.h"
+#include "Misc/Parse.h"
 #include "Misc/Paths.h"
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
@@ -42,7 +45,8 @@ void AddCube(UHierarchicalInstancedStaticMeshComponent* Component, const FVector
 
 AMuseumWorld::AMuseumWorld()
 {
-    PrimaryActorTick.bCanEverTick = false;
+    PrimaryActorTick.bCanEverTick = true;
+    PrimaryActorTick.bStartWithTickEnabled = false;
     USceneComponent* Scene = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
     SetRootComponent(Scene);
     static ConstructorHelpers::FObjectFinder<UStaticMesh> Cube(TEXT("/Engine/BasicShapes/Cube.Cube"));
@@ -82,6 +86,17 @@ void AMuseumWorld::BeginPlay()
     bLoaded = LoadMuseum();
     UE_LOG(LogTemp, Display, TEXT("MuseumGame layout %s: %d rooms, %d exhibits, %d performers"),
         bLoaded ? TEXT("loaded") : TEXT("FAILED"), Rooms.Num(), Exhibits.Num(), PerformerCount);
+    if (FParse::Param(FCommandLine::Get(), TEXT("MuseumPlaybackSmoke")))
+    {
+        SmokeStage = 0;
+        SetActorTickEnabled(true);
+    }
+}
+
+void AMuseumWorld::Tick(float DeltaSeconds)
+{
+    Super::Tick(DeltaSeconds);
+    if (SmokeStage >= 0) RunPlaybackSmoke(DeltaSeconds);
 }
 
 bool AMuseumWorld::LoadMuseum()
@@ -181,7 +196,7 @@ bool AMuseumWorld::LoadMuseum()
         else if (Type == TEXT("corridor") || Type == TEXT("door")) AddCube(Corridors, Position + FVector(0, 0, -5), FVector(.5f, .5f, .08f));
         else if ((Type == TEXT("wall") || Type == TEXT("rope") || Type == TEXT("scaffolding")) && !bAuthoredShell) AddCube(Walls, Position + FVector(0, 0, 150), FVector(.5f, .5f, 3.f));
         else if (Type == TEXT("exhibit-panel") || Type == TEXT("sequence-screen") || Type == TEXT("sign")) AddCube(Displays, Position + FVector(0, 0, 105), FVector(.45f, .2f, 1.25f));
-        else if (Type == TEXT("performer-station") || Type == TEXT("pedestal")) AddCube(Performers, Position + FVector(0, 0, 45), FVector(.6f, .6f, .8f));
+        else if (Type == TEXT("performer-station") || Type == TEXT("pedestal")) AddCube(Performers, Position + FVector(0, 0, 15), FVector(.6f, .6f, .3f));
     }
     const TArray<TSharedPtr<FJsonValue>>* ShellValues = nullptr;
     if (Root->TryGetArrayField(TEXT("shells"), ShellValues))
@@ -234,15 +249,53 @@ bool AMuseumWorld::LoadMuseum()
     {
         const TSharedPtr<FJsonObject> Json = (*PerformerValues)[Index]->AsObject();
         if (!Json.IsValid()) continue;
+        const FString SequenceId = StringField(Json, TEXT("sequenceId"));
+        const FVector Feet = TilePosition(NumberField(Json, TEXT("tileX")), NumberField(Json, TEXT("tileY")),
+            30.f + NumberField(Json, TEXT("elevation")) * 100.f);
+        const FString Facing = StringField(Json, TEXT("facing"));
+        const float Yaw = Facing == TEXT("north") ? -90.f : Facing == TEXT("south") ? 90.f : Facing == TEXT("west") ? 180.f : 0.f;
+        if (!SequenceId.IsEmpty())
+        {
+            FActorSpawnParameters Spawn;
+            Spawn.Owner = this;
+            Spawn.Name = FName(*FString::Printf(TEXT("MuseumPerformer_%02d"), Index));
+            Spawn.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+            AMuseumPerformerStation* Station = GetWorld()->SpawnActor<AMuseumPerformerStation>(
+                AMuseumPerformerStation::StaticClass(), Feet, FRotator(0, Yaw, 0), Spawn);
+            if (!Station)
+            {
+                UE_LOG(LogTemp, Error, TEXT("Museum performer %s could not spawn"), *StringField(Json, TEXT("id")));
+                continue;
+            }
+            const float Scale = NumberField(Json, TEXT("scale"), 1.0);
+            if (FMath::IsFinite(Scale) && Scale > 0.f) Station->SetActorScale3D(FVector(Scale));
+            else UE_LOG(LogTemp, Error, TEXT("Museum performer %s has invalid scale"), *StringField(Json, TEXT("id")));
+            const TSharedPtr<FJsonObject> Playback = ObjectField(Json, TEXT("nativePlayback"));
+            if (!Playback.IsValid())
+                Station->Configure(StringField(Json, TEXT("id")), StringField(Json, TEXT("label")), SequenceId,
+                    NAME_None, NAME_None, NAME_None, true, false, 1.f);
+            else
+            {
+                bool bBodyVisible = true;
+                bool bAutoPlay = true;
+                Playback->TryGetBoolField(TEXT("bodyVisible"), bBodyVisible);
+                Json->TryGetBoolField(TEXT("autoPlay"), bAutoPlay);
+                Station->Configure(StringField(Json, TEXT("id")), StringField(Json, TEXT("label")), SequenceId,
+                    FName(*StringField(Playback, TEXT("characterId"))), FName(*StringField(Playback, TEXT("profile"))),
+                    FName(*StringField(Playback, TEXT("propId"))), bBodyVisible, bAutoPlay,
+                    NumberField(Playback, TEXT("rate"), 1.0));
+            }
+            AnimatedStations.Add(Station);
+            continue;
+        }
         UStaticMesh* Mesh = AvatarMeshes[Index % UE_ARRAY_COUNT(AvatarIds)];
         if (!Mesh) continue;
         UStaticMeshComponent* Figure = NewObject<UStaticMeshComponent>(this);
         Figure->SetupAttachment(GetRootComponent());
         Figure->SetStaticMesh(Mesh);
-        Figure->SetRelativeLocation(TilePosition(NumberField(Json, TEXT("tileX")), NumberField(Json, TEXT("tileY")),
-            85.f + NumberField(Json, TEXT("elevation")) * 100.f));
-        const FString Facing = StringField(Json, TEXT("facing"));
-        const float Yaw = Facing == TEXT("north") ? -90.f : Facing == TEXT("south") ? 90.f : Facing == TEXT("west") ? 180.f : 0.f;
+        const FBoxSphereBounds Bounds = Mesh->GetBounds();
+        const float LocalFloor = Bounds.Origin.Z - Bounds.BoxExtent.Z;
+        Figure->SetRelativeLocation(Feet - FVector(0, 0, LocalFloor));
         Figure->SetRelativeRotation(FRotator(0, Yaw, 0));
         Figure->SetCollisionEnabled(ECollisionEnabled::NoCollision);
         Figure->RegisterComponent();
@@ -268,6 +321,112 @@ const FMuseumExhibit* AMuseumWorld::NearestExhibit(const FVector& Location, floa
         if (DistSq < BestSq) { Best = &Exhibit; BestSq = DistSq; }
     }
     return Best;
+}
+
+AMuseumPerformerStation* AMuseumWorld::NearestPerformerStation(const FVector& Location, float RadiusCm) const
+{
+    AMuseumPerformerStation* Best = nullptr;
+    float BestSq = RadiusCm * RadiusCm;
+    for (AMuseumPerformerStation* Station : AnimatedStations)
+    {
+        if (!Station) continue;
+        const float DistSq = FVector::DistSquared2D(Location, Station->GetActorLocation());
+        if (DistSq < BestSq) { Best = Station; BestSq = DistSq; }
+    }
+    return Best;
+}
+
+void AMuseumWorld::RunPlaybackSmoke(float DeltaSeconds)
+{
+    auto FailSmoke = [this](const FString& Reason)
+    {
+        UE_LOG(LogTemp, Error, TEXT("MUSEUM_PLAYBACK_SMOKE FAIL: %s"), *Reason);
+        SmokeStage = -1;
+        SetActorTickEnabled(false);
+    };
+    if (!bLoaded || AnimatedStations.Num() != 31 || PerformerCount != 33 || PerformerFigures.Num() != 2)
+    {
+        FailSmoke(FString::Printf(TEXT("station counts: %d animated, %d total, %d static"),
+            AnimatedStations.Num(), PerformerCount, PerformerFigures.Num()));
+        return;
+    }
+    AMuseumPerformerStation* Sample = AnimatedStations[0];
+    if (!Sample) { FailSmoke(TEXT("first station missing")); return; }
+    if (SmokeStage == 0)
+    {
+        TSet<FString> SequenceIds;
+        int32 HiddenBodies = 0;
+        const AMuseumPerformerStation* HiddenStation = nullptr;
+        for (const AMuseumPerformerStation* Station : AnimatedStations)
+        {
+            if (!Station || !Station->IsReady() || !Station->IsPropReady() ||
+                Station->GetCharacterId() != TEXT("x-bot") || Station->GetPropId() != TEXT("staff") ||
+                !FMath::IsFinite(Station->GetGripErrorCm()))
+            { FailSmoke(Station ? Station->GetStationId() + TEXT(" not ready or identity/grip invalid") : TEXT("null station")); return; }
+            FString Expected = Station->GetSequenceId();
+            for (int32 CharacterIndex = 0; CharacterIndex < Expected.Len(); ++CharacterIndex)
+                if (!FChar::IsAlnum(Expected[CharacterIndex]) && Expected[CharacterIndex] != TEXT('_'))
+                    Expected[CharacterIndex] = TEXT('_');
+            Expected = TEXT("M_") + Expected;
+            if (Station->GetProfile().ToString() != Expected)
+            { FailSmoke(Station->GetStationId() + TEXT(" profile differs from authored sequence")); return; }
+            SequenceIds.Add(Station->GetSequenceId());
+            if (!Station->IsBodyVisible()) { ++HiddenBodies; HiddenStation = Station; }
+        }
+        if (SequenceIds.Num() != 25 || HiddenBodies != 1 || !Sample->IsPlaying() ||
+            !HiddenStation || !HiddenStation->IsPlaying())
+        { FailSmoke(TEXT("unique captures, formation visibility, or autoplay mismatch")); return; }
+        SmokePhase = Sample->GetPlaybackPhase();
+        SmokeHiddenPhase = HiddenStation->GetPlaybackPhase();
+        SmokeStage = 1;
+        SmokeElapsed = 0.f;
+        return;
+    }
+    SmokeElapsed += DeltaSeconds;
+    if (SmokeElapsed < .4f) return;
+    SmokeElapsed = 0.f;
+    if (SmokeStage == 1)
+    {
+        const AMuseumPerformerStation* HiddenStation = nullptr;
+        for (const AMuseumPerformerStation* Station : AnimatedStations)
+            if (Station && !Station->IsBodyVisible()) { HiddenStation = Station; break; }
+        if (!HiddenStation || HiddenStation->GetPlaybackPhase() <= SmokeHiddenPhase + .001f)
+        { FailSmoke(TEXT("hidden formation body did not keep animating")); return; }
+        if (Sample->GetPlaybackPhase() <= SmokePhase + .001f)
+        { FailSmoke(TEXT("authored animation phase did not advance")); return; }
+        Sample->TogglePlayback();
+        SmokePhase = Sample->GetPlaybackPhase();
+        SmokeLeftProp = Sample->GetPropRootTransform(true);
+        SmokeRightProp = Sample->GetPropRootTransform(false);
+        SmokeStage = 2;
+    }
+    else if (SmokeStage == 2)
+    {
+        if (!Sample->IsPaused() || FMath::Abs(Sample->GetPlaybackPhase() - SmokePhase) > .001f ||
+            !Sample->GetPropRootTransform(true).Equals(SmokeLeftProp, .01f) ||
+            !Sample->GetPropRootTransform(false).Equals(SmokeRightProp, .01f))
+        { FailSmoke(TEXT("pause did not freeze authored body and props")); return; }
+        Sample->TogglePlayback();
+        SmokeStage = 3;
+    }
+    else if (SmokeStage == 3)
+    {
+        if (!Sample->IsPlaying() || Sample->GetPlaybackPhase() <= SmokePhase + .001f)
+        { FailSmoke(TEXT("resume did not advance authored phase")); return; }
+        Sample->RestartPlayback();
+        if (Sample->GetPlaybackPhase() > .001f)
+        { FailSmoke(TEXT("restart did not reset authored phase")); return; }
+        SmokeStage = 4;
+    }
+    else
+    {
+        if (!Sample->IsPlaying() || Sample->GetPlaybackPhase() <= .001f ||
+            !FMath::IsFinite(Sample->GetGripErrorCm()) || Sample->GetGripErrorCm() > 15.f)
+        { FailSmoke(TEXT("restart did not play within the 15 cm grip bound")); return; }
+        UE_LOG(LogTemp, Display, TEXT("MUSEUM_PLAYBACK_SMOKE PASS: 33 stations, 31 animated, 25 exact captures, one hidden formation; phase, pause, resume, restart, and props within 15 cm grip"));
+        SmokeStage = -1;
+        SetActorTickEnabled(false);
+    }
 }
 
 const FMuseumRoom* AMuseumWorld::RoomAt(const FVector& Location) const
