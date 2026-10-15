@@ -1,8 +1,9 @@
 /**
  * Customize's Start and End tiles draw the sixteen start placements with the
  * live pictograph renderer. The first drawing in a session loads the arrow
- * placement tables and the arrow and prop art, and that load used to land in
- * the middle of the card's morph: the panel stuttered on its first open only.
+ * placement tables, the arrow and prop art, the grid and the placement
+ * letters, and that load used to land in the middle of the card's morph: the
+ * panel stuttered on its first open only.
  * The Generate grid warms the same pictographs while the page is idle, so the
  * first open draws from the preparer's cache like every open after it.
  *
@@ -17,7 +18,9 @@ import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/stat
 import { normalizeFanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
 import { normalizePropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
 import { normalizeTriangleGrip } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
-import type { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { svgPreloader } from "#lib/shared/pictograph/shared/services/svg-preloader.js";
+import { preloadLetterDimensions } from "#lib/shared/pictograph/tka-glyph/components/TKAGlyph.svelte";
 
 const warmed = new Set<GridMode>();
 
@@ -37,7 +40,17 @@ async function warm(gridMode: GridMode): Promise<void> {
     showLeftMotion: true,
     showRightMotion: true,
   };
-  for (const variation of loadStartPlacementVariations(gridMode)) {
+  const variations = loadStartPlacementVariations(gridMode);
+  // GridSvg draws a skewed grid for skewed mode and the diamond grid,
+  // turned, for everything else; TKAGlyph caches each letter once.
+  await Promise.all([
+    svgPreloader.getSvgContent(
+      "grid",
+      gridMode === GridMode.SKEWED ? "skewed_grid" : "diamond_grid"
+    ),
+    preloadLetterDimensions(variations.map((v) => v.letter)),
+  ]);
+  for (const variation of variations) {
     await pictographPreparer.prepareSingle(variation, options);
   }
 }

@@ -78,6 +78,10 @@
       key: "zans_diamond",
       href: "/guide/zans-diamond",
     },
+    {
+      key: "three_levels",
+      href: "/guide/three-levels",
+    },
   ] as const;
 </script>
 
