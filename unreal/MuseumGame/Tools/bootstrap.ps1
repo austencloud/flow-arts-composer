@@ -80,6 +80,9 @@ if (-not $SkipAssets) {
         throw "Museum performer import failed; see $importLog and $engineLog"
     }
     $nativeImportLog = Join-Path $project 'Saved\museum-native-performances-import.log'
+    $nativeLogDirectory = Join-Path $project 'Saved\Logs'
+    New-Item -ItemType Directory -Path $nativeLogDirectory -Force | Out-Null
+    $nativeEngineLog = Join-Path $nativeLogDirectory "MuseumNativePerformanceImport-$([Guid]::NewGuid().ToString('N')).log"
     $importEnvironment = @{
         MUSEUM_PERFORMANCE_MANIFEST = $performanceManifest
         FLOWFEST_STAGED = (Join-Path $project 'Tools\staged\Characters')
@@ -96,10 +99,11 @@ if (-not $SkipAssets) {
             $previousEnvironment[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
             [Environment]::SetEnvironmentVariable($name, $importEnvironment[$name], 'Process')
         }
-        & $editor $file '-run=pythonscript' "-script=$(Join-Path $repo 'unreal\FlowFest\Tools\import-characters.py')" -unattended -nop4 -nosplash -RenderOffscreen 2>&1 | Tee-Object -FilePath $nativeImportLog
+        & $editor $file '-run=pythonscript' "-script=$(Join-Path $repo 'unreal\FlowFest\Tools\import-characters.py')" "-abslog=$nativeEngineLog" -unattended -nop4 -nosplash -RenderOffscreen 2>&1 | Tee-Object -FilePath $nativeImportLog
         if ($LASTEXITCODE -ne 0 -or
-            -not (Select-String -LiteralPath $nativeImportLog -Pattern 'FLOWFEST_CHARACTERS_IMPORTED 1' -Quiet)) {
-            throw "Museum native performance import failed; see $nativeImportLog"
+            -not (Test-Path -LiteralPath $nativeEngineLog) -or
+            -not (Select-String -LiteralPath $nativeEngineLog -Pattern 'FLOWFEST_CHARACTERS_IMPORTED 1\s*$' -Quiet)) {
+            throw "Museum native performance import failed; see $nativeEngineLog and $nativeImportLog"
         }
     } finally {
         foreach ($name in $previousEnvironment.Keys) {
