@@ -174,3 +174,16 @@ Astra back-translation review of the P batches: SAMPLE 172 / FLAGGED 6 /
 Shift as the motion name). Dismissed three flags asking for English "Petal":
 the coordinator narrowed the glossary so counted petals translate normally
 (petalo/petali) while Flower stays English as a pattern name.
+
+## 2026-10-14 - Z1
+
+- Scope: 5 translated keys, 11 retranslated keys, 0 review keys. All 16 supplied entries completed using the NEW English for the rewritten Zan's Diamond guide.
+- Applied exclusively through the supplied apply-batch.js with out-Z1.json and batch-Z1.json.
+- Apply result: `messages/it.json: inserted 5, replaced 11, refused 0`.
+- Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
+- Result: `Test Files  1 passed (1)`; `Tests  66 passed (66)`; duration 34.32s.
+- Before this ledger addition, `git diff --stat` showed only messages/it.json: 16 insertions, 11 deletions, matching 5 new keys and 11 replacements. `git diff --check` passed.
+- Glossary: kept Zan's Diamond, Zan Moore, Shift and Dash unchanged; diamond grid -> griglia Diamante; beat -> battito; step -> passo; collection -> raccolta; props -> attrezzi; Practice -> Pratica. Used informal tu and imperative Apri. Ordinary repeating loop -> ciclo. Used pattern as the Italian loanword for the named movement pattern; lead -> anticipo. Compact labels remain single-line, with placeholders preserved.
+- Manually reviewed all 16 translations against the new English, including the eight-beat path, odd/even leads, seven forward offsets and eight reversed starts for either hand. No native reviewer participated.
+- Uncertain: none.
+- Delivery: committed on codex/i18n-it for coordinator integration. No primary checkout or other worktree accessed; no push, integration, installation, dev server, build, broad check or prohibited validator run.
