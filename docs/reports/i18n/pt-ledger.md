@@ -164,3 +164,9 @@
 - Uncertain: authored performers uses performers com coreografia própria, and stage position frame uses referencial de posição no palco. These source UI terms have no glossary definitions; no additional behavior was assumed.
 - Uncertain: 1 point across / 2 points across uses 1 ponto de distância / 2 pontos de distância. The English does not specify an axis or explicitly say whether this is shared-point count; no axis was invented. Shape Matrix uses matriz de formas, but this surface name has no explicit glossary entry.
 - No native-speaker review performed. No primary checkout access, dependency installation, broad checks, server, integration, or push performed. Changes remain on the assigned worker branch for coordinator integration, as requested.
+
+## REV (coordinator, 2026-10-14)
+
+Astra back-translation review of the P batches: SAMPLE 172 / FLAGGED 3 /
+1.7%. Applied all three fixes (single-turn wording, authored performers,
+Shift as the motion name).
