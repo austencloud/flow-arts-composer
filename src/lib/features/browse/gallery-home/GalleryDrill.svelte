@@ -147,6 +147,8 @@
      * "Show all" sets it from inside; a host can set it to bring the user into
      * the workspace instead of ejecting to the full-page grid tab. */
     showAllPane?: boolean;
+    /** Opt-in review variant for the wide Show all entry only. */
+    contentFirstShowAllPreview?: boolean;
     /** Drill height below which the split pane stays closed even past the
      * width seam. The pane's left column stacks the whole catalog (about
      * 445px of tiles) over the value editor, so a short host such as a modal
@@ -191,6 +193,7 @@
     onSplitPaneChange,
     onSplitCapableChange,
     showAllPane = $bindable(false),
+    contentFirstShowAllPreview = false,
     splitMinHeight = 0,
   }: Props = $props();
 
@@ -317,6 +320,7 @@
       (splitMinHeight <= 0 || drillHeight >= splitMinHeight)
   );
   const splitPane = $derived(splitCapable && (!showLanding || showAllPane));
+  let enteredByShowAll = $state(false);
 
   $effect(() => {
     onSplitPaneChange?.(splitPane);
@@ -366,6 +370,7 @@
       (section === "chooser") !== (next === "chooser") && !unifiedFilterChooser;
     const apply = () => {
       if (next === "chooser") showAllPane = false;
+      enteredByShowAll = false;
       section = next;
     };
     if (crossesLanding) flipWithMorph(apply);
@@ -384,6 +389,7 @@
     // the full grid — otherwise the rules drop a frame later and the results
     // repaint outside the morph.
     flipWithMorph(() => {
+      enteredByShowAll = true;
       showAllPane = true;
       section = "chooser";
       onShowAll?.();
@@ -604,6 +610,8 @@
         {section}
         {ruleCounts}
         idle={showLanding}
+        contentFirstShowAllPreview={contentFirstShowAllPreview &&
+          enteredByShowAll}
         onSelectCategory={selectCategory}
         {resultsHeader}
         {resultsPane}
