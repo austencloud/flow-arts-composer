@@ -183,3 +183,16 @@ Shift as the motion name).
 - Focused inspection: exactly the 21 retranslation keys changed. Reversing only the Petal/Petals substitutions reproduces every original string, confirming that all other wording, placeholders, punctuation, markup and protected names are unchanged. `git diff --check` passed.
 - Uncertain: none. No native-speaker review performed.
 - Changes remain on the assigned worker branch for coordinator integration. No primary checkout access, install, broad checks, dev server, integration or push performed.
+
+## Z1 — 2026-10-14
+
+- Batch: `batch-Z1.json`; 5 translated entries, 11 retranslated entries, 0 review entries. Retranslations follow the new English for the rewritten Zan's Diamond guide.
+- Applied exclusively through the supplied `apply-batch.js` script using `out-Z1.json`.
+- Apply result: `messages/pt.json: inserted 5, replaced 11, refused 0`.
+- Catalog diff before this ledger: only `messages/pt.json`; 16 insertions, 11 deletions (16 batch keys; net +5 lines). `git diff --check` passed.
+- Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
+- Result: `Test Files  1 passed (1)`; `Tests  66 passed (66)`; exit 0.
+- Glossary choices: Zan's Diamond and Zan Moore stay unchanged; motion types stay Shift and Dash. Diamond grid uses grade Diamante, with diamante for the geometric shape in prose. Hand path uses trajetória da mão; timing counts use batida; sequence steps use passo. Props stays props; Practice uses Treinar. Ordinary repeating loops use ciclo. Action text uses Abrir a coleção.
+- Removed explanations about prop rotation and mirrored words because they are absent from the new English; no claims were added. Placeholders {name} and {n} remain unchanged.
+- Uncertain: none. No native-speaker review performed.
+- Changes remain on the assigned worker branch for coordinator integration. No primary checkout access, install, broad checks, dev server, integration or push performed.
