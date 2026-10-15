@@ -205,6 +205,52 @@ bool FFlowFestMotionIntegrationTest::RunTest(const FString& Parameters)
                     CasePeakGrip <= GripToleranceCm);
                 TestTrue(*FString::Printf(TEXT("Prop root anchor within %.1f cm: %s (peak %.2f cm)"), GripToleranceCm, *Case, CasePeakAnchor),
                     CasePeakAnchor <= GripToleranceCm);
+                if (Variant == 0 && FocusVariant.IsEmpty())
+                {
+                    // Exercise the same-frame routine change used by the game,
+                    // then interrupt it before the .18 s body blend settles.
+                    // The prop diagnostic evaluates its authored wrist anchor
+                    // through the actual blended prop root against the live hand.
+                    float SwitchPeakAnchor = 0.f;
+                    float SwitchFirstStepCm = 0.f;
+                    bool bSwitchFinite = true;
+                    auto TickSwitch = [&](float Delta, bool bFirstStep)
+                    {
+                        const FVector BeforeLeft = HeldProp->GetPropRootTransform(true).GetLocation();
+                        const FVector BeforeRight = HeldProp->GetPropRootTransform(false).GetLocation();
+                        Fixture.World->TimeSeconds += Delta;
+                        Body->TickAnimation(Delta, false);
+                        Body->RefreshBoneTransforms();
+                        Avatar->TickComponent(Delta, LEVELTICK_All, nullptr);
+                        const FVector AfterLeft = HeldProp->GetPropRootTransform(true).GetLocation();
+                        const FVector AfterRight = HeldProp->GetPropRootTransform(false).GetLocation();
+                        const float Anchor = HeldProp->GetPropAnchorErrorCm();
+                        bSwitchFinite &= Finite(AfterLeft) && Finite(AfterRight) && FMath::IsFinite(Anchor);
+                        SwitchPeakAnchor = FMath::Max(SwitchPeakAnchor, Anchor);
+                        if (bFirstStep)
+                            SwitchFirstStepCm = FMath::Max(SwitchFirstStepCm,
+                                FMath::Max(FVector::Distance(BeforeLeft, AfterLeft),
+                                    FVector::Distance(BeforeRight, AfterRight)));
+                    };
+                    auto SwitchTo = [&](int32 NextVariant)
+                    {
+                        const FName NextProfile = UFlowFestAvatarComponent::ResolvePerformanceProfile(FName(*Family), NextVariant);
+                        if (!HeldProp->LoadPerformance(CharacterId, NextProfile)) return false;
+                        Avatar->StopPerformance();
+                        return Avatar->PlayPerformance(NextProfile);
+                    };
+                    if (TestTrue(*FString::Printf(TEXT("A to B switch loads: %s"), *Case), SwitchTo(1)))
+                    {
+                        for (int32 Step = 0; Step < 3; ++Step) TickSwitch(.02f, Step == 0);
+                        if (TestTrue(*FString::Printf(TEXT("Interrupted B to A switch loads: %s"), *Case), SwitchTo(0)))
+                            for (int32 Step = 0; Step < 10; ++Step) TickSwitch(.02f, Step == 0);
+                    }
+                    TestTrue(*FString::Printf(TEXT("Finite A/B switch roots and anchors: %s"), *Case), bSwitchFinite);
+                    TestTrue(*FString::Printf(TEXT("A/B switch wrist anchors within 10 cm: %s (peak %.2f cm)"),
+                        *Case, SwitchPeakAnchor), SwitchPeakAnchor <= 10.f);
+                    TestTrue(*FString::Printf(TEXT("A/B switch starts without prop jump: %s (first step %.2f cm)"),
+                        *Case, SwitchFirstStepCm), SwitchFirstStepCm <= 15.f);
+                }
                 ++SampledProfiles;
                 HeldProp->ClearPerformanceTransforms();
                 Avatar->StopPerformance();
