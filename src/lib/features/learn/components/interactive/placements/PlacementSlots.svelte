@@ -99,7 +99,7 @@
 
 <style>
   .slots {
-    --slot-art: 3.25rem;
+    --slot-art: clamp(3.25rem, 9cqw, 6rem);
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.5rem;
@@ -156,49 +156,52 @@
     text-align: center;
   }
 
-  /* Beside the board, each slot is a row: picture, then name and line. */
-  @container (min-width: 44.01rem) {
-    .slots {
-      --slot-art: clamp(4.5rem, 11svh, 7rem);
-      grid-template-columns: minmax(0, 1fr);
-      gap: 0.6rem;
-    }
+  /* Beside the board, each slot is a row: picture, then name and line.
+     Portrait screens keep the slots stacked under the board. */
+  @media (min-aspect-ratio: 1 / 1) {
+    @container (min-width: 44.01rem) {
+      .slots {
+        --slot-art: clamp(4.5rem, 11svh, 7rem);
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0.6rem;
+      }
 
-    li {
-      grid-template-columns: var(--slot-art) minmax(0, 1fr);
-      grid-template-areas:
-        "art name"
-        "art caption";
-      align-content: center;
-      gap: 0.2rem 0.85rem;
-      padding: 0.6rem 2.5rem 0.6rem 0.6rem;
-    }
+      li {
+        grid-template-columns: var(--slot-art) minmax(0, 1fr);
+        grid-template-areas:
+          "art name"
+          "art caption";
+        align-content: center;
+        gap: 0.2rem 0.85rem;
+        padding: 0.6rem 2.5rem 0.6rem 0.6rem;
+      }
 
-    .name {
-      align-self: end;
-      text-align: start;
-    }
+      .name {
+        align-self: end;
+        text-align: start;
+      }
 
-    .caption {
-      position: static;
-      width: auto;
-      height: auto;
-      overflow: visible;
-      clip: auto;
-      white-space: normal;
-      align-self: start;
-    }
+      .caption {
+        position: static;
+        width: auto;
+        height: auto;
+        overflow: visible;
+        clip: auto;
+        white-space: normal;
+        align-self: start;
+      }
 
-    li .check {
-      top: 0.6rem;
-      right: 0.6rem;
-      width: 1.6rem;
-      font-size: 0.8rem;
-    }
+      li .check {
+        top: 0.6rem;
+        right: 0.6rem;
+        width: 1.6rem;
+        font-size: 0.8rem;
+      }
 
-    li:not(:has(.caption)) .name {
-      grid-row: 1 / span 2;
-      align-self: center;
+      li:not(:has(.caption)) .name {
+        grid-row: 1 / span 2;
+        align-self: center;
+      }
     }
   }
 

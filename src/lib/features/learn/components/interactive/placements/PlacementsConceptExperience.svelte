@@ -637,8 +637,16 @@
     min-height: 100%;
     color: var(--theme-text);
     /* The heading above and the hand controls and Continue below take
-       about 28rem; the board gets the rest so Continue stays on screen. */
-    --placement-board-size: clamp(18rem, calc(100svh - 28rem), 52rem);
+       about 28rem; the board gets the rest so Continue stays on screen, and
+       leaves the slot column its width beside it. */
+    --placement-board-size: clamp(
+      18rem,
+      min(
+        calc(100svh - 28rem),
+        calc(100cqw - var(--placement-panel-width) - 3rem)
+      ),
+      52rem
+    );
     --placement-panel-width: clamp(15rem, 26cqw, 21rem);
     --lesson-workshop-max: 78rem;
   }
@@ -752,8 +760,22 @@
     border: 0;
   }
 
-  /* Narrow stages stack the panel under the board, still at a fixed height. */
+  /* Narrow stages stack the slots under the board, as do portrait screens,
+     where the slots beside the board would leave it a third of the width. */
   @container (max-width: 44rem) {
+    .stage-row {
+      grid-template-columns: min(100%, var(--placement-board-size));
+      justify-items: center;
+      gap: 0.75rem;
+    }
+    .placement-slots {
+      width: 100%;
+    }
+  }
+  @media (max-aspect-ratio: 1 / 1) {
+    .placements-experience {
+      --placement-board-size: clamp(18rem, calc(100svh - 33rem), 52rem);
+    }
     .stage-row {
       grid-template-columns: min(100%, var(--placement-board-size));
       justify-items: center;
