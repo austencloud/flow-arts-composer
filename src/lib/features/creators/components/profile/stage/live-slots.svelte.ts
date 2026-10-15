@@ -18,18 +18,19 @@
  * frame, which is exactly the cost this class exists to bound.
  */
 
-export type Medium = "sequence" | "mandala" | "scene" | "tunnel";
+export type Medium = "sequence" | "mandala" | "scene" | "tunnel" | "clip";
 
 export const MEDIA: readonly Medium[] = [
   "sequence",
   "mandala",
   "scene",
   "tunnel",
+  "clip",
 ];
 
 interface Slot {
-  readonly medium: Medium;
-  readonly onChange: (live: boolean) => void;
+  medium: Medium;
+  onChange: (live: boolean) => void;
   visible: boolean;
   distance: number;
   live: boolean;
@@ -71,6 +72,10 @@ export const DEFAULT_BUDGETS: Record<Medium, number> = {
   // through the WebGL2 overlay, so this is the budget most likely to need
   // lowering once measured. Tune it with the on-page controls.
   tunnel: 2,
+  // A pre-rendered loop clip: one <video> element, decoded in hardware, no
+  // engine and no main-thread work. The budget only rations decoders (phones
+  // cap around sixteen) and parks tiles that scrolled away.
+  clip: 12,
 };
 
 export class LiveSlots {
@@ -83,6 +88,7 @@ export class LiveSlots {
     mandala: 0,
     scene: 0,
     tunnel: 0,
+    clip: 0,
   });
 
   /** True while the page is moving. Exposed so the UI can explain itself. */
@@ -155,6 +161,25 @@ export class LiveSlots {
     this.schedule();
 
     return {
+      // A tile can change medium after mounting (a wall learns which of its
+      // sequences have a clip a moment after it draws). Re-rank rather than
+      // remount, so the tile keeps whatever token it already holds.
+      update: (next: {
+        medium: Medium;
+        onChange: (live: boolean) => void;
+        hover?: boolean;
+      }) => {
+        const mediumChanged = slot.medium !== next.medium;
+        slot.medium = next.medium;
+        slot.onChange = next.onChange;
+        if (mediumChanged) {
+          if (slot.live) {
+            slot.live = false;
+            slot.onChange(false);
+          }
+          this.schedule();
+        }
+      },
       destroy: () => {
         if (canHover) {
           node.removeEventListener("pointerenter", onEnter);
@@ -235,6 +260,7 @@ export class LiveSlots {
       mandala: [],
       scene: [],
       tunnel: [],
+      clip: [],
     };
 
     for (const [node, slot] of this.#slots) {
@@ -284,6 +310,7 @@ export class LiveSlots {
       mandala: 0,
       scene: 0,
       tunnel: 0,
+      clip: 0,
     };
     for (const slot of this.#slots.values()) {
       if (slot.live) counts[slot.medium]++;
