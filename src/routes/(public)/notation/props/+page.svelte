@@ -247,8 +247,8 @@
     opacity: 0.6;
     transition: opacity 180ms ease;
   }
-  .prop-switcher :global(.segment.selected) .prop-art,
-  .prop-switcher :global(.segment:hover) .prop-art {
+  .prop-switcher :global(.segment.selected .prop-art),
+  .prop-switcher :global(.segment:hover .prop-art) {
     opacity: 1;
   }
   .prop-option-label {
