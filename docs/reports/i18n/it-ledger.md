@@ -166,3 +166,11 @@
 - Uncertain: the glossary does not define Shape Matrix, authored performers, stage appearance/frame, end hold, Knob or Bulb. Retained Shape Matrix and used performer creati, presenza in scena / riquadro della posizione in scena, pausa finale, pomello and bulbo. These await native/product review.
 - Limitation outside allowed scope: pattern-strip-display.ts currently localizes its sentence helpers only for de. The Italian keys are translated, but those helpers will still return English for it until application routing is extended. Composite Italian sentence agreement (including numeric giro/giri) needs runtime/product review when that routing is enabled; no source or test changes made.
 - Delivery: committed on codex/i18n-it for coordinator integration. No primary checkout or other worktree accessed; no integration, push, install, dev server, build, broad type-check or prohibited validator run.
+
+## REV (coordinator, 2026-10-14)
+
+Astra back-translation review of the P batches: SAMPLE 172 / FLAGGED 6 /
+3.49%. Applied three fixes (axis value hint, "either orientation" meaning,
+Shift as the motion name). Dismissed three flags asking for English "Petal":
+the coordinator narrowed the glossary so counted petals translate normally
+(petalo/petali) while Flower stays English as a pattern name.
