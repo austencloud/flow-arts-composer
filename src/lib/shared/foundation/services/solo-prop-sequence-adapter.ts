@@ -76,6 +76,7 @@ export function soloPropToSequence(
     })
   );
   const startPlacement = createStartPlacementData({
+    gridMode: soloProp.impliedGridMode,
     gridPlacement: null,
     motions: {
       [hand]: buildStartMotion(soloProp, hand),
