@@ -14,14 +14,20 @@
    *   Left/Right ex.   = A[3]   (blue s→w pro cw · red n→e pro cw)
    */
   import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+  import {
+    createMotionData,
+    type MotionData,
+  } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
   import {
     MotionType,
     HandSide,
     Orientation,
     RotationDirection,
   } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
-  import { GridMode, GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import {
+    GridMode,
+    GridLocation,
+  } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
   const S = 816 / 612;
@@ -52,7 +58,7 @@
       propType: PropType.STAFF,
       gridMode: GridMode.DIAMOND,
     });
-  const pic = (id: string, left, right) => ({
+  const pic = (id: string, left: MotionData, right: MotionData) => ({
     id: `l2gp-${id}`,
     letter: null,
     gridMode: GridMode.DIAMOND,
@@ -62,12 +68,36 @@
   const B = HandSide.LEFT;
   const R = HandSide.RIGHT;
   // MCP-verified hybrid examples (variation indices in the header comment).
-  const EX_C = pic("c11", mo(B, MotionType.PRO, SO_, W, CW, IN, IN), mo(R, MotionType.ANTI, N, E, CCW, IN, OUT));
-  const EX_S = pic("s8", mo(B, MotionType.PRO, SO_, W, CW, IN, IN), mo(R, MotionType.PRO, E, SO_, CW, IN, IN));
-  const EX_W = pic("w9", mo(B, MotionType.PRO, SO_, W, CW, IN, IN), mo(R, MotionType.STATIC, E, E, NOROT, IN, IN));
-  const EX_SIGD = pic("sigd9", mo(B, MotionType.PRO, SO_, W, CW, IN, IN), mo(R, MotionType.DASH, SO_, N, NOROT, IN, OUT));
-  const EX_PHI = pic("phi4", mo(B, MotionType.DASH, E, W, NOROT, IN, OUT), mo(R, MotionType.STATIC, E, E, NOROT, IN, IN));
-  const EX_A = pic("a3", mo(B, MotionType.PRO, SO_, W, CW, IN, IN), mo(R, MotionType.PRO, N, E, CW, IN, IN));
+  const EX_C = pic(
+    "c11",
+    mo(B, MotionType.PRO, SO_, W, CW, IN, IN),
+    mo(R, MotionType.ANTI, N, E, CCW, IN, OUT)
+  );
+  const EX_S = pic(
+    "s8",
+    mo(B, MotionType.PRO, SO_, W, CW, IN, IN),
+    mo(R, MotionType.PRO, E, SO_, CW, IN, IN)
+  );
+  const EX_W = pic(
+    "w9",
+    mo(B, MotionType.PRO, SO_, W, CW, IN, IN),
+    mo(R, MotionType.STATIC, E, E, NOROT, IN, IN)
+  );
+  const EX_SIGD = pic(
+    "sigd9",
+    mo(B, MotionType.PRO, SO_, W, CW, IN, IN),
+    mo(R, MotionType.DASH, SO_, N, NOROT, IN, OUT)
+  );
+  const EX_PHI = pic(
+    "phi4",
+    mo(B, MotionType.DASH, E, W, NOROT, IN, OUT),
+    mo(R, MotionType.STATIC, E, E, NOROT, IN, IN)
+  );
+  const EX_A = pic(
+    "a3",
+    mo(B, MotionType.PRO, SO_, W, CW, IN, IN),
+    mo(R, MotionType.PRO, N, E, CW, IN, IN)
+  );
 
   // ── Five hybrid columns ─────────────────────────────────────────────────────
   type Col = {
@@ -85,7 +115,14 @@
   const COLS: Col[] = [
     {
       cx: 78,
-      head: { t1: translate("guide_l2_print_type_1"), t2: "", parts: [["Dual", DUAL], ["-Shift", SHIFT]] },
+      head: {
+        t1: translate("guide_l2_print_type_1"),
+        t2: "",
+        parts: [
+          ["Dual", DUAL],
+          ["-Shift", SHIFT],
+        ],
+      },
       data: EX_C,
       hi: "Pro",
       lo: "Anti",
@@ -94,7 +131,11 @@
     { cx: 212, data: EX_S, hi: "Leading", lo: "Following", letters: ["S, T"] },
     {
       cx: 348,
-      head: { t1: translate("guide_l2_print_type_2"), t2: "", parts: [["Shift", SHIFT]] },
+      head: {
+        t1: translate("guide_l2_print_type_2"),
+        t2: "",
+        parts: [["Shift", SHIFT]],
+      },
       data: EX_W,
       hi: "Shift",
       lo: "Static",
@@ -102,7 +143,14 @@
     },
     {
       cx: 462,
-      head: { t1: translate("guide_l2_print_type_3"), t2: "", parts: [["Cross", CROSS], ["-Shift", SHIFT]] },
+      head: {
+        t1: translate("guide_l2_print_type_3"),
+        t2: "",
+        parts: [
+          ["Cross", CROSS],
+          ["-Shift", SHIFT],
+        ],
+      },
       data: EX_SIGD,
       hi: "Shift",
       lo: "Dash",
@@ -110,7 +158,11 @@
     },
     {
       cx: 562,
-      head: { t1: translate("guide_l2_print_type_4"), t2: "", parts: [["Dash", DASHC]] },
+      head: {
+        t1: translate("guide_l2_print_type_4"),
+        t2: "",
+        parts: [["Dash", DASHC]],
+      },
       data: EX_PHI,
       hi: "Dash",
       lo: "Static",
@@ -122,9 +174,22 @@
   const BOX = 82;
   const BOX_Y = 470;
 
-  type Para = { y: number; fs: number; lh: number; html: string; x?: number; w?: number; left?: boolean };
+  type Para = {
+    y: number;
+    fs: number;
+    lh: number;
+    html: string;
+    x?: number;
+    w?: number;
+    left?: boolean;
+  };
   const PARAS = $derived<Para[]>([
-    { y: 58, fs: 16, lh: 19, html: translate("guide_l2_print_glyphspadspage_0") },
+    {
+      y: 58,
+      fs: 16,
+      lh: 19,
+      html: translate("guide_l2_print_glyphspadspage_0"),
+    },
     {
       y: 92,
       fs: 15.5,
@@ -211,11 +276,18 @@
 <div class="gp-page">
   <!-- Big A with High/Low slots (right of the intro). -->
   <div class="big-a" style="left:{432 * S}px; top:{100 * S}px">A</div>
-  <span class="slot-label" style="left:{506 * S}px; top:{124 * S}px">{translate("guide_l2_print_high")}</span>
-  <span class="slot-label" style="left:{506 * S}px; top:{178 * S}px">{translate("guide_l2_print_low")}</span>
+  <span class="slot-label" style="left:{506 * S}px; top:{124 * S}px"
+    >{translate("guide_l2_print_high")}</span
+  >
+  <span class="slot-label" style="left:{506 * S}px; top:{178 * S}px"
+    >{translate("guide_l2_print_low")}</span
+  >
 
   <!-- Update note box. -->
-  <div class="update-box" style="left:{50 * S}px; top:{136 * S}px; width:{330 * S}px">
+  <div
+    class="update-box"
+    style="left:{50 * S}px; top:{136 * S}px; width:{330 * S}px"
+  >
     <p>{@html translate("guide_l2_print_glyphs_update")}</p>
   </div>
 
@@ -223,10 +295,25 @@
   <div class="pads" style="left:{92 * S}px; top:{288 * S}px">
     <div class="pads-arrow">
       <span class="hl hi">{translate("guide_l2_print_high")}</span>
-      <svg width="16" height={92 * S} viewBox="0 0 16 {92 * S}" aria-hidden="true">
-        <line x1="8" y1="10" x2="8" y2={92 * S - 10} stroke="#141414" stroke-width="2.5" />
+      <svg
+        width="16"
+        height={92 * S}
+        viewBox="0 0 16 {92 * S}"
+        aria-hidden="true"
+      >
+        <line
+          x1="8"
+          y1="10"
+          x2="8"
+          y2={92 * S - 10}
+          stroke="#141414"
+          stroke-width="2.5"
+        />
         <polygon points="8,0 2.5,11 13.5,11" fill="#141414" />
-        <polygon points="8,{92 * S} 2.5,{92 * S - 11} 13.5,{92 * S - 11}" fill="#141414" />
+        <polygon
+          points="8,{92 * S} 2.5,{92 * S - 11} 13.5,{92 * S - 11}"
+          fill="#141414"
+        />
       </svg>
       <span class="hl lo">{translate("guide_l2_print_low")}</span>
     </div>
@@ -235,7 +322,12 @@
     </div>
     <div class="pads-brace">
       <svg width="26" height="52" viewBox="0 0 26 52" aria-hidden="true">
-        <path d="M2 4 Q 14 4 14 14 L 14 20 Q 14 26 24 26 Q 14 26 14 32 L 14 38 Q 14 48 2 48" fill="none" stroke="#141414" stroke-width="1.8" />
+        <path
+          d="M2 4 Q 14 4 14 14 L 14 20 Q 14 26 24 26 Q 14 26 14 32 L 14 38 Q 14 48 2 48"
+          fill="none"
+          stroke="#141414"
+          stroke-width="1.8"
+        />
       </svg>
       <span class="brace-label">Shifts</span>
     </div>
@@ -243,16 +335,31 @@
 
   <!-- Five hybrid columns. -->
   {#each VRULES as vx, vi (vx)}
-    <div class="vrule" style="left:{vx * S}px; top:{(vi === 0 ? COL_TOP + 40 : COL_TOP) * S}px; height:{(vi === 0 ? 172 : 212) * S}px"></div>
+    <div
+      class="vrule"
+      style="left:{vx * S}px; top:{(vi === 0 ? COL_TOP + 40 : COL_TOP) *
+        S}px; height:{(vi === 0 ? 172 : 212) * S}px"
+    ></div>
   {/each}
   {#each COLS as c, i (i)}
     {#if c.head}
-      <div class="type-head" style="left:{(c.cx - (i === 0 ? -66 : 0) - 70) * S}px; top:{COL_TOP * S}px; width:{140 * S}px">
+      <div
+        class="type-head"
+        style="left:{(c.cx - (i === 0 ? -66 : 0) - 70) * S}px; top:{COL_TOP *
+          S}px; width:{140 * S}px"
+      >
         <span class="th1">{c.head.t1}</span><br />
-        {#each c.head.parts as [t, col] (t)}<span class="th2" style="color:{col}">{t}</span>{/each}
+        {#each c.head.parts as [t, col] (t)}<span
+            class="th2"
+            style="color:{col}">{t}</span
+          >{/each}
       </div>
     {/if}
-    <div class="mini" style="left:{(c.cx - BOX / 2) * S}px; top:{BOX_Y * S}px; width:{BOX * S}px; height:{BOX * S}px">
+    <div
+      class="mini"
+      style="left:{(c.cx - BOX / 2) * S}px; top:{BOX_Y * S}px; width:{BOX *
+        S}px; height:{BOX * S}px"
+    >
       <PictographContainer
         pictographData={c.data}
         gridMode={GridMode.DIAMOND}
@@ -271,16 +378,30 @@
         disableTransitions={true}
       />
     </div>
-    <div class="hilo" style="left:{(c.cx - 70) * S}px; top:{(BOX_Y + BOX + 14) * S}px; width:{140 * S}px">
-      <span class="hi-word">{localizePrintLabel(c.hi)}</span><br /><span class="lo-word">{localizePrintLabel(c.lo)}</span>
+    <div
+      class="hilo"
+      style="left:{(c.cx - 70) * S}px; top:{(BOX_Y + BOX + 14) *
+        S}px; width:{140 * S}px"
+    >
+      <span class="hi-word">{localizePrintLabel(c.hi)}</span><br /><span
+        class="lo-word">{localizePrintLabel(c.lo)}</span
+      >
     </div>
-    <div class="letters" style="left:{(c.cx - 70) * S}px; top:{(BOX_Y + BOX + 62) * S}px; width:{140 * S}px">
+    <div
+      class="letters"
+      style="left:{(c.cx - 70) * S}px; top:{(BOX_Y + BOX + 62) *
+        S}px; width:{140 * S}px"
+    >
       {#each c.letters as ln (ln)}{ln}<br />{/each}
     </div>
   {/each}
 
   <!-- Left/Right same-type example. -->
-  <div class="mini" style="left:{(452 - 45) * S}px; top:{648 * S}px; width:{90 * S}px; height:{90 * S}px">
+  <div
+    class="mini"
+    style="left:{(452 - 45) * S}px; top:{648 * S}px; width:{90 *
+      S}px; height:{90 * S}px"
+  >
     <PictographContainer
       pictographData={EX_A}
       gridMode={GridMode.DIAMOND}
@@ -299,15 +420,23 @@
       disableTransitions={true}
     />
   </div>
-  <div class="hilo" style="left:{(452 - 70) * S}px; top:{744 * S}px; width:{140 * S}px">
-    <span class="hi-word">{translate("guide_l2_print_left")}</span><br /><span class="lo-word">{translate("guide_l2_print_right")}</span>
+  <div
+    class="hilo"
+    style="left:{(452 - 70) * S}px; top:{744 * S}px; width:{140 * S}px"
+  >
+    <span class="hi-word">{translate("guide_l2_print_left")}</span><br /><span
+      class="lo-word">{translate("guide_l2_print_right")}</span
+    >
   </div>
 
   {#each PARAS as p, i (i)}
     <p
       class="para"
       class:left={p.left}
-      style="top:{p.y * S}px; font-size:{p.fs * S}px; line-height:{p.lh * S}px; {p.left ? `left:${(p.x ?? 0) * S}px; width:${(p.w ?? 300) * S}px; right:auto; text-align:left;` : ''}"
+      style="top:{p.y * S}px; font-size:{p.fs * S}px; line-height:{p.lh *
+        S}px; {p.left
+        ? `left:${(p.x ?? 0) * S}px; width:${(p.w ?? 300) * S}px; right:auto; text-align:left;`
+        : ''}"
     >
       {@html p.html}
     </p>

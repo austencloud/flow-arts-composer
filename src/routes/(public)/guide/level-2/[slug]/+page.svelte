@@ -18,32 +18,48 @@
   const slug = $derived(data.slug);
   const index = $derived(LEVEL2_TOPIC_PAGES.findIndex((p) => p.slug === slug));
   const meta = $derived(LEVEL2_TOPIC_PAGES[index]);
-  const prev = $derived(index > 0 ? LEVEL2_TOPIC_PAGES[index - 1] : null);
+  const prev = $derived(
+    index > 0 ? (LEVEL2_TOPIC_PAGES[index - 1] ?? null) : null
+  );
   const next = $derived(
     index >= 0 && index < LEVEL2_TOPIC_PAGES.length - 1
-      ? LEVEL2_TOPIC_PAGES[index + 1]
+      ? (LEVEL2_TOPIC_PAGES[index + 1] ?? null)
       : null
   );
 
   const chapterGroup = $derived(
     meta?.chapter === "double-turns" ? "2.1" : "2.0"
   );
-  const chapterHubLabel = $derived(tDynamic(chapterGroup === "2.1" ? "guide_level2_chapter2_title" : "guide_level2_chapter1_title"));
+  const chapterHubLabel = $derived(
+    tDynamic(
+      chapterGroup === "2.1"
+        ? "guide_level2_chapter2_title"
+        : "guide_level2_chapter1_title"
+    )
+  );
   const chapterHubPath = $derived(`/guide/level-2/${meta?.chapter ?? "turns"}`);
 </script>
 
 {#if meta}
   <GuideSeo
-    title={tDynamic("guide_l2_topic_seo_title", { topic: localizedLevel2Topic(meta, "h1") })}
+    title={tDynamic("guide_l2_topic_seo_title", {
+      topic: localizedLevel2Topic(meta, "h1"),
+    })}
     description={localizedLevel2Topic(meta, "description")}
     path={`/guide/level-2/${slug}`}
-    partOf={{ name: tDynamic("guide_level2_seo_title"), path: "/guide/level-2" }}
+    partOf={{
+      name: tDynamic("guide_level2_seo_title"),
+      path: "/guide/level-2",
+    }}
     breadcrumbs={[
       { name: tDynamic("guide_paths_home"), path: "/" },
       { name: tDynamic("guide_paths_part_of"), path: "/guide" },
       { name: tDynamic("guide_level2_subtitle"), path: "/guide/level-2" },
       { name: chapterHubLabel, path: chapterHubPath },
-      { name: localizedLevel2Topic(meta, "h1"), path: `/guide/level-2/${slug}` },
+      {
+        name: localizedLevel2Topic(meta, "h1"),
+        path: `/guide/level-2/${slug}`,
+      },
     ]}
   />
 

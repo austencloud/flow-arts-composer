@@ -1,21 +1,34 @@
 /**
  * Opus Reviewer Script
  *
- * This script uses Claude Opus to review Haiku's TIKA responses.
- * Key capability: Opus has access to the SAME tools as Haiku,
- * allowing it to verify correctness by querying authoritative data.
+ * Claude Opus 5.5 reviews TIKA's answers. It gets the same kind of lookup
+ * tools TIKA has, answered locally from the repository's own data, so it can
+ * check a claim against the source before calling it wrong.
  *
- * When Opus is uncertain about whether Haiku made an error,
- * it can call tools to get the ground truth before making a judgment.
+ * Runs on the root's `ai` + `@ai-sdk/anthropic` packages (the same ones the
+ * TIKA route uses), so it loads from the repository root without mcp-server/'s
+ * dependencies. Needs ANTHROPIC_API_KEY for a review; --dry-run needs nothing.
  *
  * Usage:
- *   npx tsx scripts/tika/opus-reviewer.ts --input evaluation-results.json
- *   npx tsx scripts/tika/opus-reviewer.ts --scenario-id letter-type1-basic
+ *   npx tsx scripts/tika/opus-reviewer.ts --dry-run   # no model call
+ *   npx tsx scripts/tika/opus-reviewer.ts --demo      # one paid review
  */
 
-import Anthropic from "@anthropic-ai/sdk";
+import { anthropic } from "@ai-sdk/anthropic";
+import { generateText, stepCountIs, tool, type LanguageModel } from "ai";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath, pathToFileURL } from "url";
+import { z } from "zod";
+
+// Current Opus (2026-10). Its default effort is medium, which a grading pass
+// needs no more than; thinking is always on, so none is configured here.
+export const REVIEW_MODEL_ID = "claude-opus-5-5";
+// Anthropic list prices for REVIEW_MODEL_ID, US dollars per million tokens.
+export const REVIEW_PRICE_PER_MTOK = { input: 4, output: 20 };
+// One answer, then up to this many verification rounds before it must grade.
+const MAX_REVIEW_STEPS = 8;
+const MAX_OUTPUT_TOKENS = 16000;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Types (inline to keep script self-contained)
@@ -93,141 +106,44 @@ interface OpusReview {
   verificationToolCalls: OpusToolCall[];
   requiredVerification: boolean;
   reviewDurationMs: number;
+  usage: ReviewUsage;
+  costUsd: number;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Tool Definitions (same as TIKA API)
-// ═══════════════════════════════════════════════════════════════════════════
-
-const OPUS_TOOLS: Anthropic.Tool[] = [
-  {
-    name: "get_letter_explanation",
-    description:
-      "Get authoritative explanation of a TKA letter. Use this to verify if Haiku correctly described a letter.",
-    input_schema: {
-      type: "object" as const,
-      properties: {
-        letter: {
-          type: "string",
-          description: "The letter to look up (A-Z or Greek)",
-        },
-        variation: {
-          type: "number",
-          description: "Variation index (0-based, optional)",
-        },
-      },
-      required: ["letter"],
-    },
-  },
-  {
-    name: "get_term_definition",
-    description:
-      "Get authoritative definition of a TKA term. Use this to verify if Haiku correctly defined a term.",
-    input_schema: {
-      type: "object" as const,
-      properties: {
-        term: { type: "string", description: "The term to look up" },
-      },
-      required: ["term"],
-    },
-  },
-  {
-    name: "compare_letters",
-    description:
-      "Get authoritative comparison between two letters. Use this to verify comparison accuracy.",
-    input_schema: {
-      type: "object" as const,
-      properties: {
-        letter1: { type: "string", description: "First letter" },
-        letter2: { type: "string", description: "Second letter" },
-      },
-      required: ["letter1", "letter2"],
-    },
-  },
-  {
-    name: "list_letters_by_type",
-    description:
-      "Get authoritative list of letters in a type. Use this to verify type claims.",
-    input_schema: {
-      type: "object" as const,
-      properties: {
-        type: { type: "number", description: "Letter type 1-6" },
-      },
-      required: ["type"],
-    },
-  },
-  {
-    name: "get_position_info",
-    description:
-      "Get authoritative information about a position. Use to verify position claims.",
-    input_schema: {
-      type: "object" as const,
-      properties: {
-        position: {
-          type: "string",
-          description: "Position name (alpha, beta, gamma, etc.)",
-        },
-      },
-      required: ["position"],
-    },
-  },
-  {
-    name: "read_codebase_file",
-    description:
-      "Read a file from the Flow Arts Composer codebase to verify domain rules or implementation details.",
-    input_schema: {
-      type: "object" as const,
-      properties: {
-        filepath: {
-          type: "string",
-          description:
-            'Path relative to project root (e.g., "mcp-server/data/letter-types.json")',
-        },
-      },
-      required: ["filepath"],
-    },
-  },
-  {
-    name: "flag_for_human_review",
-    description:
-      "Flag this evaluation for human review when you cannot confidently determine correctness.",
-    input_schema: {
-      type: "object" as const,
-      properties: {
-        reason: { type: "string", description: "Why human review is needed" },
-        best_guess: {
-          type: "string",
-          description: "Your best guess if you have one",
-        },
-      },
-      required: ["reason"],
-    },
-  },
-];
+interface ReviewUsage {
+  inputTokens: number;
+  outputTokens: number;
+  steps: number;
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Tool Execution
 // ═══════════════════════════════════════════════════════════════════════════
 
-// Load knowledge base data
-const PROJECT_ROOT = process.cwd();
+// Load knowledge base data. Glossary and letter types are generated from
+// @tka/domain into mcp-server-pkg/data by scripts/sync-mcp-data.mjs.
+// Paths resolve from the repository root, wherever the script is run from.
+const PROJECT_ROOT = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../.."
+);
 
 function loadJsonFile(relativePath: string): unknown {
   const fullPath = path.join(PROJECT_ROOT, relativePath);
   if (fs.existsSync(fullPath)) {
     return JSON.parse(fs.readFileSync(fullPath, "utf-8"));
   }
+  // Without this the verification tools quietly answer "not loaded".
+  console.warn(`[opus-reviewer] Missing data file: ${relativePath}`);
   return null;
 }
 
-const glossary = loadJsonFile("mcp-server/data/tka-glossary.json") as Record<
-  string,
-  unknown
-> | null;
-const letterTypes = loadJsonFile("mcp-server/data/letter-types.json") as Record<
-  string,
-  unknown
-> | null;
+const glossary = loadJsonFile(
+  "mcp-server-pkg/data/tka-glossary.json"
+) as Record<string, unknown> | null;
+const letterTypes = loadJsonFile(
+  "mcp-server-pkg/data/letter-types.json"
+) as Record<string, unknown> | null;
 
 // Load pictograph dataframe
 function loadPictographs(): Array<Record<string, string>> {
@@ -330,7 +246,17 @@ Description: ${typeInfo.description}`;
 
     case "read_codebase_file": {
       const filepath = input.filepath as string;
-      const fullPath = path.join(PROJECT_ROOT, filepath);
+      const fullPath = path.resolve(PROJECT_ROOT, filepath);
+      // Whatever this returns is sent to the API: stay in the repository and
+      // never read the secrets files.
+      const relative = path.relative(PROJECT_ROOT, fullPath);
+      if (
+        relative.startsWith("..") ||
+        path.isAbsolute(relative) ||
+        path.basename(fullPath).startsWith(".env")
+      ) {
+        return `Not readable: ${filepath}`;
+      }
       if (!fs.existsSync(fullPath)) return `File not found: ${filepath}`;
       return fs.readFileSync(fullPath, "utf-8").slice(0, 5000); // Limit size
     }
@@ -425,18 +351,99 @@ After your analysis, output a JSON object with this structure:
 `;
 
 // ═══════════════════════════════════════════════════════════════════════════
+// Tool Definitions (same lookups as the TIKA API, answered by executeTool)
+// ═══════════════════════════════════════════════════════════════════════════
+
+function localTool<INPUT extends Record<string, unknown>>(
+  name: string,
+  description: string,
+  inputSchema: z.ZodType<INPUT>
+) {
+  return tool({
+    description,
+    inputSchema,
+    execute: async (input: INPUT) => executeTool(name, input),
+  });
+}
+
+const OPUS_TOOLS = {
+  get_letter_explanation: localTool(
+    "get_letter_explanation",
+    "Get authoritative explanation of a TKA letter. Use this to verify if Haiku correctly described a letter.",
+    z.object({
+      letter: z.string().describe("The letter to look up (A-Z or Greek)"),
+      variation: z
+        .number()
+        .optional()
+        .describe("Variation index (0-based, optional)"),
+    })
+  ),
+  get_term_definition: localTool(
+    "get_term_definition",
+    "Get authoritative definition of a TKA term. Use this to verify if Haiku correctly defined a term.",
+    z.object({ term: z.string().describe("The term to look up") })
+  ),
+  compare_letters: localTool(
+    "compare_letters",
+    "Get authoritative comparison between two letters. Use this to verify comparison accuracy.",
+    z.object({
+      letter1: z.string().describe("First letter"),
+      letter2: z.string().describe("Second letter"),
+    })
+  ),
+  list_letters_by_type: localTool(
+    "list_letters_by_type",
+    "Get authoritative list of letters in a type. Use this to verify type claims.",
+    z.object({ type: z.number().describe("Letter type 1-6") })
+  ),
+  get_position_info: localTool(
+    "get_position_info",
+    "Get authoritative information about a position. Use to verify position claims.",
+    z.object({
+      position: z.string().describe("Position name (alpha, beta, gamma, etc.)"),
+    })
+  ),
+  read_codebase_file: localTool(
+    "read_codebase_file",
+    "Read a file from the Flow Arts Composer codebase to verify domain rules or implementation details.",
+    z.object({
+      filepath: z
+        .string()
+        .describe(
+          'Path relative to project root (e.g., "mcp-server-pkg/data/letter-types.json")'
+        ),
+    })
+  ),
+  flag_for_human_review: localTool(
+    "flag_for_human_review",
+    "Flag this evaluation for human review when you cannot confidently determine correctness.",
+    z.object({
+      reason: z.string().describe("Why human review is needed"),
+      best_guess: z
+        .string()
+        .optional()
+        .describe("Your best guess if you have one"),
+    })
+  ),
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
 // Review Function
 // ═══════════════════════════════════════════════════════════════════════════
 
-async function reviewWithOpus(
+export function reviewCostUsd(usage: ReviewUsage): number {
+  return (
+    (usage.inputTokens * REVIEW_PRICE_PER_MTOK.input +
+      usage.outputTokens * REVIEW_PRICE_PER_MTOK.output) /
+    1_000_000
+  );
+}
+
+export function buildReviewPrompt(
   scenario: TikaScenario,
   haikuResponse: HaikuResponse
-): Promise<OpusReview> {
-  const startTime = Date.now();
-  const client = new Anthropic();
-  const toolCalls: OpusToolCall[] = [];
-
-  const userPrompt = `
+): string {
+  return `
 ## Scenario
 ID: ${scenario.id}
 Category: ${scenario.category}
@@ -467,106 +474,21 @@ ${scenario.criteria.commonMistakes ? `Common Mistakes to Watch For:\n${scenario.
 Please analyze Haiku's response. If you're unsure about any domain facts, USE YOUR TOOLS to verify before grading.
 Output your evaluation as JSON at the end.
 `;
+}
 
-  const messages: Anthropic.MessageParam[] = [
-    { role: "user", content: userPrompt },
-  ];
+const NEUTRAL_GRADES: GradeBreakdown = {
+  domainAccuracy: 5,
+  levelAppropriateness: 5,
+  toolUsage: 5,
+  conciseness: 5,
+  helpfulness: 5,
+};
 
-  let response = await client.messages.create({
-    model: "claude-sonnet-4-20250514", // Using Sonnet for cost efficiency, Opus for final review
-    max_tokens: 2048,
-    system: OPUS_REVIEW_SYSTEM_PROMPT,
-    tools: OPUS_TOOLS,
-    messages,
-  });
-
-  // Tool use loop
-  while (response.stop_reason === "tool_use") {
-    const toolUseBlocks = response.content.filter(
-      (b): b is Anthropic.ToolUseBlock => b.type === "tool_use"
-    );
-
-    const toolResults: Anthropic.ToolResultBlockParam[] = [];
-
-    for (const toolUse of toolUseBlocks) {
-      const result = executeTool(
-        toolUse.name,
-        toolUse.input as Record<string, unknown>
-      );
-
-      toolCalls.push({
-        tool: toolUse.name,
-        input: toolUse.input as Record<string, unknown>,
-        result,
-        reason: "Verification during review",
-      });
-
-      toolResults.push({
-        type: "tool_result",
-        tool_use_id: toolUse.id,
-        content: result,
-      });
-    }
-
-    messages.push({ role: "assistant", content: response.content });
-    messages.push({ role: "user", content: toolResults });
-
-    response = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 2048,
-      system: OPUS_REVIEW_SYSTEM_PROMPT,
-      tools: OPUS_TOOLS,
-      messages,
-    });
-  }
-
-  // Extract final text
-  const textBlocks = response.content.filter(
-    (b): b is Anthropic.TextBlock => b.type === "text"
-  );
-  const fullText = textBlocks.map((b) => b.text).join("\n");
-
-  // Parse JSON from response
+function parseReviewJson(fullText: string): Partial<EvaluationResult> {
   const jsonMatch = fullText.match(/```json\s*([\s\S]*?)\s*```/);
-  let evaluation: Partial<EvaluationResult> = {};
-
-  if (jsonMatch) {
-    try {
-      const parsed = JSON.parse(jsonMatch[1]);
-      evaluation = {
-        grades: parsed.grades,
-        overallScore: parsed.overallScore,
-        recommendation: parsed.recommendation,
-        opusNotes: parsed.notes,
-        suggestedRewrite: parsed.suggestedRewrite,
-        errorAnalysis: parsed.errorAnalysis,
-        uncertaintyReason: parsed.uncertaintyReason,
-      };
-    } catch (e) {
-      console.error("Failed to parse Opus JSON response:", e);
-      evaluation = {
-        grades: {
-          domainAccuracy: 5,
-          levelAppropriateness: 5,
-          toolUsage: 5,
-          conciseness: 5,
-          helpfulness: 5,
-        },
-        overallScore: 5,
-        recommendation: "flag-for-human",
-        opusNotes: fullText,
-        uncertaintyReason: "Failed to parse structured response",
-      };
-    }
-  } else {
-    evaluation = {
-      grades: {
-        domainAccuracy: 5,
-        levelAppropriateness: 5,
-        toolUsage: 5,
-        conciseness: 5,
-        helpfulness: 5,
-      },
+  if (!jsonMatch) {
+    return {
+      grades: NEUTRAL_GRADES,
       overallScore: 5,
       recommendation: "flag-for-human",
       opusNotes: fullText,
@@ -574,18 +496,69 @@ Output your evaluation as JSON at the end.
     };
   }
 
+  try {
+    const parsed = JSON.parse(jsonMatch[1]);
+    return {
+      grades: parsed.grades,
+      overallScore: parsed.overallScore,
+      recommendation: parsed.recommendation,
+      opusNotes: parsed.notes,
+      suggestedRewrite: parsed.suggestedRewrite,
+      errorAnalysis: parsed.errorAnalysis,
+      uncertaintyReason: parsed.uncertaintyReason,
+    };
+  } catch (e) {
+    console.error("Failed to parse Opus JSON response:", e);
+    return {
+      grades: NEUTRAL_GRADES,
+      overallScore: 5,
+      recommendation: "flag-for-human",
+      opusNotes: fullText,
+      uncertaintyReason: "Failed to parse structured response",
+    };
+  }
+}
+
+async function reviewWithOpus(
+  scenario: TikaScenario,
+  haikuResponse: HaikuResponse,
+  options: { model?: LanguageModel } = {}
+): Promise<OpusReview> {
+  const startTime = Date.now();
+
+  // The SDK runs the tool loop: each step's tool calls go to executeTool and
+  // the results go back to the model until it answers in text or hits the cap.
+  const response = await generateText({
+    model: options.model ?? anthropic(REVIEW_MODEL_ID),
+    system: OPUS_REVIEW_SYSTEM_PROMPT,
+    prompt: buildReviewPrompt(scenario, haikuResponse),
+    tools: OPUS_TOOLS,
+    stopWhen: stepCountIs(MAX_REVIEW_STEPS),
+    maxOutputTokens: MAX_OUTPUT_TOKENS,
+  });
+
+  const toolCalls: OpusToolCall[] = response.steps.flatMap((step) =>
+    step.toolResults.map((toolResult) => ({
+      tool: toolResult.toolName,
+      input: toolResult.input as Record<string, unknown>,
+      result: toolResult.output,
+      reason: "Verification during review",
+    }))
+  );
+
+  const evaluation = parseReviewJson(response.text);
+  const usage: ReviewUsage = {
+    inputTokens: response.totalUsage.inputTokens ?? 0,
+    outputTokens: response.totalUsage.outputTokens ?? 0,
+    steps: response.steps.length,
+  };
+
   const result: EvaluationResult = {
     scenarioId: scenario.id,
     language: "en",
     evaluatedAt: new Date(),
     haikuResponse,
-    grades: evaluation.grades || {
-      domainAccuracy: 5,
-      levelAppropriateness: 5,
-      toolUsage: 5,
-      conciseness: 5,
-      helpfulness: 5,
-    },
+    grades: evaluation.grades || NEUTRAL_GRADES,
     overallScore: evaluation.overallScore || 5,
     opusNotes: evaluation.opusNotes || "",
     recommendation: evaluation.recommendation || "flag-for-human",
@@ -599,12 +572,92 @@ Output your evaluation as JSON at the end.
     verificationToolCalls: toolCalls,
     requiredVerification: toolCalls.length > 0,
     reviewDurationMs: Date.now() - startTime,
+    usage,
+    costUsd: reviewCostUsd(usage),
   };
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CLI Interface
 // ═══════════════════════════════════════════════════════════════════════════
+
+const demoScenario: TikaScenario = {
+  id: "demo-misconception",
+  name: { en: "Demo: Type 1 Misconception" },
+  category: "misconception-correction",
+  userLevel: 1,
+  question: { en: "Type 1 is when both hands move, right?" },
+  criteria: {
+    mustInclude: ["shift", "Type 3", "Type 5"],
+    mustNotInclude: ["turn", "skew"],
+    expectedTools: ["list_letters_by_type"],
+    keyFacts: [
+      { en: "MUST correct this misconception" },
+      { en: "Type 1 is when both hands SHIFT" },
+      { en: "Types 3 and 5 also have both hands moving" },
+    ],
+    commonMistakes: [{ en: "Agreeing that Type 1 = both hands move" }],
+  },
+  difficulty: "hard",
+};
+
+// A deliberately wrong answer, so the demo has something to catch.
+const badHaikuResponse: HaikuResponse = {
+  explanation:
+    "Yes, that's correct! Type 1 letters are characterized by both hands moving. This creates the dynamic, flowing movements that make Type 1 the most common letter type in TKA.",
+  toolsCalled: [],
+  latencyMs: 450,
+};
+
+/** What a review would send and whether its data loads. No model call. */
+export function describeReviewSetup() {
+  return {
+    model: REVIEW_MODEL_ID,
+    pricePerMTok: REVIEW_PRICE_PER_MTOK,
+    maxSteps: MAX_REVIEW_STEPS,
+    apiKeySet: Boolean(process.env.ANTHROPIC_API_KEY?.trim()),
+    tools: Object.keys(OPUS_TOOLS),
+    data: {
+      glossaryTerms: glossary ? Object.keys(glossary).length : 0,
+      letterTypes: letterTypes ? Object.keys(letterTypes).length : 0,
+      pictographRows: pictographs.length,
+    },
+  };
+}
+
+function printDryRun() {
+  const setup = describeReviewSetup();
+  const promptChars =
+    OPUS_REVIEW_SYSTEM_PROMPT.length +
+    buildReviewPrompt(demoScenario, badHaikuResponse).length;
+
+  console.log("DRY RUN - no model call\n");
+  console.log(
+    `Model: ${setup.model} ($${setup.pricePerMTok.input}/$${setup.pricePerMTok.output} per M input/output tokens)`
+  );
+  console.log(
+    `ANTHROPIC_API_KEY: ${setup.apiKeySet ? "set" : "NOT SET (a review would fail)"}`
+  );
+  console.log(`Tools: ${setup.tools.join(", ")}`);
+  console.log(
+    `Data: ${setup.data.glossaryTerms} glossary terms, ${setup.data.letterTypes} letter types, ${setup.data.pictographRows} pictograph rows`
+  );
+  console.log(
+    `Demo prompt: ~${Math.round(promptChars / 4)} tokens before tool definitions\n`
+  );
+
+  console.log("Local tool answers:");
+  const samples: Array<[string, Record<string, unknown>]> = [
+    ["get_letter_explanation", { letter: "A" }],
+    ["get_term_definition", { term: "shift" }],
+    ["list_letters_by_type", { type: 1 }],
+    ["get_position_info", { position: "alpha" }],
+  ];
+  for (const [name, input] of samples) {
+    const answer = executeTool(name, input).split("\n")[0];
+    console.log(`  ${name}(${JSON.stringify(input)}) -> ${answer}`);
+  }
+}
 
 async function main() {
   const args = process.argv.slice(2);
@@ -614,51 +667,28 @@ async function main() {
 Opus Reviewer - Evaluate TIKA responses with tool-backed verification
 
 Usage:
-  npx tsx scripts/tika/opus-reviewer.ts --input <file.json>
+  npx tsx scripts/tika/opus-reviewer.ts --dry-run
   npx tsx scripts/tika/opus-reviewer.ts --demo
 
 Options:
-  --input <file>   JSON file with scenarios and Haiku responses
-  --demo           Run a demo review with sample data
-  --output <file>  Output file for results (default: stdout)
+  --dry-run   Show the model, tools, and loaded data; makes no model call
+  --demo      Review one sample answer (paid ${REVIEW_MODEL_ID} call, about $0.10)
+
+run-evaluation.mjs --opus imports reviewWithOpus for answers scoring under 70.
 `);
+    return;
+  }
+
+  if (args.includes("--dry-run")) {
+    printDryRun();
     return;
   }
 
   if (args.includes("--demo")) {
     console.log("Running demo review...\n");
-
-    const demoScenario: TikaScenario = {
-      id: "demo-misconception",
-      name: { en: "Demo: Type 1 Misconception" },
-      category: "misconception-correction",
-      userLevel: 1,
-      question: { en: "Type 1 is when both hands move, right?" },
-      criteria: {
-        mustInclude: ["shift", "Type 3", "Type 5"],
-        mustNotInclude: ["turn", "skew"],
-        expectedTools: ["list_letters_by_type"],
-        keyFacts: [
-          { en: "MUST correct this misconception" },
-          { en: "Type 1 is when both hands SHIFT" },
-          { en: "Types 3 and 5 also have both hands moving" },
-        ],
-        commonMistakes: [{ en: "Agreeing that Type 1 = both hands move" }],
-      },
-      difficulty: "hard",
-    };
-
-    // Simulate a BAD Haiku response (for demo purposes)
-    const badHaikuResponse: HaikuResponse = {
-      explanation:
-        "Yes, that's correct! Type 1 letters are characterized by both hands moving. This creates the dynamic, flowing movements that make Type 1 the most common letter type in TKA.",
-      toolsCalled: [],
-      latencyMs: 450,
-    };
-
     console.log("Scenario:", demoScenario.question.en);
     console.log("Haiku said:", badHaikuResponse.explanation);
-    console.log("\nAsking Opus to review...\n");
+    console.log(`\nAsking ${REVIEW_MODEL_ID} to review...\n`);
 
     try {
       const review = await reviewWithOpus(demoScenario, badHaikuResponse);
@@ -694,12 +724,26 @@ Options:
         console.log(`  Error: ${review.result.errorAnalysis.error}`);
         console.log(`  Confidence: ${review.result.errorAnalysis.confidence}`);
       }
+
+      console.log(
+        `\nUsage: ${review.usage.inputTokens} input + ${review.usage.outputTokens} output tokens over ${review.usage.steps} steps = $${review.costUsd.toFixed(4)}`
+      );
     } catch (error) {
       console.error("Error during review:", error);
+      process.exitCode = 1;
     }
   }
 }
 
-main().catch(console.error);
+// run-evaluation.mjs imports this module; only the command line runs main().
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href
+) {
+  main().catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+  });
+}
 
 export { reviewWithOpus, OPUS_TOOLS };

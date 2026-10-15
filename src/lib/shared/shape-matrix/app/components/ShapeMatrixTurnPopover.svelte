@@ -27,7 +27,7 @@
   import ShapeMatrixTurnControls from "./ShapeMatrixTurnControls.svelte";
 
   interface Props {
-    onratiofocuschange?: (hand: "left" | "right" | null) => void;
+    onratiofocuschange?: (hand: "left" | "right" | "both" | null) => void;
   }
   let { onratiofocuschange }: Props = $props();
 

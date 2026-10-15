@@ -7,6 +7,10 @@ interface ConceptExperienceProps {
   readingOpen?: boolean;
   onComplete?: (nextConceptId?: string) => void;
   onBack?: () => void;
+  /** Go back to the lesson before this one, on the same live board. */
+  onPrevious?: (conceptId: string) => void;
+  /** The lesson the learner just came from, when they moved between two. */
+  arrivedFrom?: string | null;
 }
 
 export type ConceptExperienceComponent = Component<ConceptExperienceProps>;

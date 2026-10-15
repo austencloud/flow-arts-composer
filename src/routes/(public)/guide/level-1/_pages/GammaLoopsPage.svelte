@@ -1,5 +1,8 @@
 <script lang="ts">
-  import { localizeLevel1Text, localizeLevel1SelectionLabel } from "../_data/localize-level1-content";
+  import {
+    localizeLevel1Text,
+    localizeLevel1SelectionLabel,
+  } from "../_data/localize-level1-content";
   /**
    * Gamma LOOPs - body page (manifest `gamma-loops`), faithful to
    * "1.2 - Type 1 Gamma Permutations - SOTR, VPUQ, MVNU" artboard (old p38;
@@ -34,16 +37,25 @@
     Orientation,
     RotationDirection,
   } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
-  import { GridMode, GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import {
+    GridMode,
+    GridLocation,
+  } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import { getGridPlacementFromLocations } from "#lib/shared/pictograph/grid/services/grid-placement-deriver.js";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
   import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
-  import { pt, ptDrag, editText, guideEdit, registerEditSource } from "../_data/guide-edit.svelte";
+  import {
+    pt,
+    ptDrag,
+    editText,
+    guideEdit,
+    registerEditSource,
+  } from "../_data/guide-edit.svelte.js";
   import { bakeReversals } from "../_data/guide-sequence-adapter";
   import { getGuideSequenceClick } from "../_data/guide-data-context";
-  import { getGuideActiveStep } from "../_data/guide-active-step.svelte";
-  import { overrideStepsFor } from "../_data/guide-overrides.svelte";
+  import { getGuideActiveStep } from "../_data/guide-active-step.svelte.js";
+  import { overrideStepsFor } from "../_data/guide-overrides.svelte.js";
 
   const S = 816 / 612; // pt → px (4/3)
   const { NORTH: N, EAST: E, SOUTH: SO_, WEST: W } = GridLocation;
@@ -58,8 +70,18 @@
 
   const HP_CW = new Set(["s-w", "w-n", "n-e", "e-s"]);
   const flip = (o: Orientation) => (o === IN ? OUT : IN);
-  type HandStep = { anti: boolean; from: GridLocation; to: GridLocation; so: Orientation };
-  const h = (anti: boolean, from: GridLocation, to: GridLocation, so: Orientation = IN): HandStep => ({ anti, from, to, so });
+  type HandStep = {
+    anti: boolean;
+    from: GridLocation;
+    to: GridLocation;
+    so: Orientation;
+  };
+  const h = (
+    anti: boolean,
+    from: GridLocation,
+    to: GridLocation,
+    so: Orientation = IN
+  ): HandStep => ({ anti, from, to, so });
   const handMotion = (color: HandSide, x: HandStep) => {
     const dir = HP_CW.has(`${x.from}-${x.to}`) ? CW : CCW;
     return createMotionData({
@@ -88,7 +110,11 @@
     });
 
   type Step = { letter: Letter; left: HandStep; right: HandStep };
-  const st = (letter: Letter, left, right): Step => ({ letter, left, right });
+  const st = (letter: Letter, left: HandStep, right: HandStep): Step => ({
+    letter,
+    left,
+    right,
+  });
   const { M, V, P, U, Q, O, T, R } = Letter;
   const NL = Letter.N;
   const SL = Letter.S;
@@ -249,13 +275,18 @@
 
 <div class="gamma-loops">
   {#each RULES as ry (ry)}
-    <div class="rule" style="left:{20 * S}px; top:{ry * S}px; width:{572 * S}px"></div>
+    <div
+      class="rule"
+      style="left:{20 * S}px; top:{ry * S}px; width:{572 * S}px"
+    ></div>
   {/each}
 
   <!-- Margin word labels. -->
   {#each MARGINS as m (m.t)}
-    <span class="margin-word" style="left:{8 * S}px; top:{m.y * S}px; width:{96 * S}px; font-size:{19 * S}px"
-      ><span class="tka-font">{m.t}</span></span
+    <span
+      class="margin-word"
+      style="left:{8 * S}px; top:{m.y * S}px; width:{96 * S}px; font-size:{19 *
+        S}px"><span class="tka-font">{m.t}</span></span
     >
   {/each}
 
@@ -265,11 +296,15 @@
       class="loop tka-seq-cell"
       class:is-hovered={selection?.isHovered(l.key)}
       class:is-selected={selection?.isSelected(l.key)}
-      style="left:{START_X * S}px; top:{l.rowYs[0] * S}px; width:{(ROW_X + CELL * 4 - START_X) * S}px; height:{(l.rowYs[1] - l.rowYs[0] + CELL) * S}px"
+      style="left:{START_X * S}px; top:{l.rowYs[0] * S}px; width:{(ROW_X +
+        CELL * 4 -
+        START_X) *
+        S}px; height:{(l.rowYs[1] - l.rowYs[0] + CELL) * S}px"
     >
       <div
         class="mini"
-        class:guide-step-active={activeStep?.key === l.key && activeStep.ringStep === 0}
+        class:guide-step-active={activeStep?.key === l.key &&
+          activeStep.ringStep === 0}
         style="left:0; top:0; width:{CELL * S}px; height:{CELL * S}px"
       >
         <PictographContainer
@@ -284,8 +319,12 @@
       {#each RESOLVED[l.key]!.slice(1) as sd, i (i)}
         <div
           class="mini"
-          class:guide-step-active={activeStep?.key === l.key && activeStep.ringStep === i + 1}
-          style="left:{(ROW_X - START_X + (i % 4) * CELL) * S}px; top:{(Math.floor(i / 4) * (l.rowYs[1] - l.rowYs[0])) * S}px; width:{CELL * S}px; height:{CELL * S}px"
+          class:guide-step-active={activeStep?.key === l.key &&
+            activeStep.ringStep === i + 1}
+          style="left:{(ROW_X - START_X + (i % 4) * CELL) *
+            S}px; top:{Math.floor(i / 4) *
+            (l.rowYs[1] - l.rowYs[0]) *
+            S}px; width:{CELL * S}px; height:{CELL * S}px"
         >
           <PictographContainer
             pictographData={sd}
@@ -301,7 +340,13 @@
         groupId={l.key}
         isGroupStart
         label={localizeLevel1SelectionLabel(`Animate the ${l.word} LOOP`)}
-        onselect={() => emitSequence?.({ strip: loopSteps(l), word: l.word, key: l.key, propType: "staff" })}
+        onselect={() =>
+          emitSequence?.({
+            strip: loopSteps(l),
+            word: l.word,
+            key: l.key,
+            propType: "staff",
+          })}
       />
     </div>
   {/each}
@@ -314,7 +359,12 @@
       class:selected={guideEdit.selectedId === `gl-para-${i}`}
       style="top:{p.y * S}px; font-size:{p.fs * S}px; line-height:{p.lh * S}px"
       use:ptDrag={pt(`gl-para-${i}`, "para", p)}
-      use:editText={{ id: `gl-para-${i}`, label: "para", get: () => p.html, set: (h2) => (p.html = h2) }}
+      use:editText={{
+        id: `gl-para-${i}`,
+        label: "para",
+        get: () => p.html,
+        set: (h2) => (p.html = h2),
+      }}
     >
       {@html localizeLevel1Text(p.html)}
     </p>

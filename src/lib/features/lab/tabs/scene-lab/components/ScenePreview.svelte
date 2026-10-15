@@ -212,8 +212,12 @@
 <div class="scene-preview" data-edit-history-shortcut-scope>
   {#if camMode === "compose"}
     <EditHistoryShortcutBridge
-      onUndo={() => composerState.commands.undo()}
-      onRedo={() => composerState.commands.redo()}
+      onUndo={() => {
+        composerState.commands.undo();
+      }}
+      onRedo={() => {
+        composerState.commands.redo();
+      }}
       canUndo={composerState.commands.canUndo}
       canRedo={composerState.commands.canRedo}
       undoLabel={composerState.commands.undoLabel}
@@ -323,8 +327,8 @@
              come back once we confirm the basic render is stable. -->
         <Avatar3D
           id="scene-lab-player"
-          leftPropState={null}
-          rightPropState={null}
+          bluePropState={null}
+          redPropState={null}
           visible={true}
           isActive={false}
           position={player.avatarState.position}

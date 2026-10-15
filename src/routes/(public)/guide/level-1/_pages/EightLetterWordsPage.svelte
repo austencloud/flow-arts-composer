@@ -1,5 +1,8 @@
 <script lang="ts">
-  import { localizeLevel1Text, localizeLevel1SelectionLabel } from "../_data/localize-level1-content";
+  import {
+    localizeLevel1Text,
+    localizeLevel1SelectionLabel,
+  } from "../_data/localize-level1-content";
   /**
    * 8-Letter Words - body page (manifest `eight-letter-words`), faithful to
    * "1.2 - 8-Letter Words" artboard (word 2 reads CΣNZIΘUW - the U is a U, dataset-confirmed) (old p41; CAP→LOOP
@@ -30,16 +33,25 @@
     Orientation,
     RotationDirection,
   } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
-  import { GridMode, GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import {
+    GridMode,
+    GridLocation,
+  } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import { getGridPlacementFromLocations } from "#lib/shared/pictograph/grid/services/grid-placement-deriver.js";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
   import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
-  import { pt, ptDrag, editText, guideEdit, registerEditSource } from "../_data/guide-edit.svelte";
+  import {
+    pt,
+    ptDrag,
+    editText,
+    guideEdit,
+    registerEditSource,
+  } from "../_data/guide-edit.svelte.js";
   import { bakeReversals } from "../_data/guide-sequence-adapter";
   import { getGuideSequenceClick } from "../_data/guide-data-context";
-  import { getGuideActiveStep } from "../_data/guide-active-step.svelte";
-  import { overrideStepsFor } from "../_data/guide-overrides.svelte";
+  import { getGuideActiveStep } from "../_data/guide-active-step.svelte.js";
+  import { overrideStepsFor } from "../_data/guide-overrides.svelte.js";
 
   const S = 816 / 612; // pt → px (4/3)
   const { NORTH: N, EAST: E, SOUTH: SO_, WEST: W } = GridLocation;
@@ -55,9 +67,25 @@
   // ── Step authoring (shift + per-step static, both orientation-tracked) ─────
   const HP_CW = new Set(["s-w", "w-n", "n-e", "e-s"]);
   const flip = (o: Orientation) => (o === IN ? OUT : IN);
-  type HandStep = { anti?: boolean; still?: boolean; from: GridLocation; to: GridLocation; so: Orientation };
-  const h = (anti: boolean, from: GridLocation, to: GridLocation, so: Orientation = IN): HandStep => ({ anti, from, to, so });
-  const sh = (loc: GridLocation, so: Orientation = IN): HandStep => ({ still: true, from: loc, to: loc, so });
+  type HandStep = {
+    anti?: boolean;
+    still?: boolean;
+    from: GridLocation;
+    to: GridLocation;
+    so: Orientation;
+  };
+  const h = (
+    anti: boolean,
+    from: GridLocation,
+    to: GridLocation,
+    so: Orientation = IN
+  ): HandStep => ({ anti, from, to, so });
+  const sh = (loc: GridLocation, so: Orientation = IN): HandStep => ({
+    still: true,
+    from: loc,
+    to: loc,
+    so,
+  });
   const handMotion = (color: HandSide, x: HandStep) => {
     if (x.still) {
       return createMotionData({
@@ -87,7 +115,11 @@
   };
 
   type Step = { letter: Letter; left: HandStep; right: HandStep };
-  const st = (letter: Letter, left, right): Step => ({ letter, left, right });
+  const st = (letter: Letter, left: HandStep, right: HandStep): Step => ({
+    letter,
+    left,
+    right,
+  });
   const { C, I, K, U, W: WL, X, Y, Z } = Letter;
   const NL = Letter.N;
   const EL = Letter.E;
@@ -255,15 +287,25 @@
 
 <div class="eight-letter">
   {#each RULES as ry (ry)}
-    <div class="rule" style="left:{20 * S}px; top:{ry * S}px; width:{572 * S}px"></div>
+    <div
+      class="rule"
+      style="left:{20 * S}px; top:{ry * S}px; width:{572 * S}px"
+    ></div>
   {/each}
 
   <!-- Word labels + classification tags (left margin). -->
   {#each LABELS as m (m.word)}
-    <span class="margin-word" style="left:{4 * S}px; top:{m.y * S}px; width:{118 * S}px; font-size:{13.5 * S}px"
+    <span
+      class="margin-word"
+      style="left:{4 * S}px; top:{m.y * S}px; width:{118 *
+        S}px; font-size:{13.5 * S}px"
       ><span class="tka-font">{m.word}</span></span
     >
-    <span class="margin-tag" style="left:{4 * S}px; top:{(m.y + 24) * S}px; width:{118 * S}px; font-size:{12.5 * S}px">({localizeLevel1Text(m.tag)})</span>
+    <span
+      class="margin-tag"
+      style="left:{4 * S}px; top:{(m.y + 24) * S}px; width:{118 *
+        S}px; font-size:{12.5 * S}px">({localizeLevel1Text(m.tag)})</span
+    >
   {/each}
 
   <!-- The two words: Start + 4 rows of 4, each one clickable strip. -->
@@ -272,11 +314,15 @@
       class="seq tka-seq-cell"
       class:is-hovered={selection?.isHovered(q.key)}
       class:is-selected={selection?.isSelected(q.key)}
-      style="left:{START_X * S}px; top:{q.rowY * S}px; width:{(ROW_X + CELL * 4 - START_X) * S}px; height:{CELL * 4 * S}px"
+      style="left:{START_X * S}px; top:{q.rowY * S}px; width:{(ROW_X +
+        CELL * 4 -
+        START_X) *
+        S}px; height:{CELL * 4 * S}px"
     >
       <div
         class="mini"
-        class:guide-step-active={activeStep?.key === q.key && activeStep.ringStep === 0}
+        class:guide-step-active={activeStep?.key === q.key &&
+          activeStep.ringStep === 0}
         style="left:0; top:0; width:{CELL * S}px; height:{CELL * S}px"
       >
         <PictographContainer
@@ -291,8 +337,11 @@
       {#each RESOLVED[q.key]!.slice(1) as sd, i (i)}
         <div
           class="mini"
-          class:guide-step-active={activeStep?.key === q.key && activeStep.ringStep === i + 1}
-          style="left:{(ROW_X - START_X + (i % 4) * CELL) * S}px; top:{Math.floor(i / 4) * CELL * S}px; width:{CELL * S}px; height:{CELL * S}px"
+          class:guide-step-active={activeStep?.key === q.key &&
+            activeStep.ringStep === i + 1}
+          style="left:{(ROW_X - START_X + (i % 4) * CELL) *
+            S}px; top:{Math.floor(i / 4) * CELL * S}px; width:{CELL *
+            S}px; height:{CELL * S}px"
         >
           <PictographContainer
             pictographData={sd}
@@ -308,7 +357,13 @@
         groupId={q.key}
         isGroupStart
         label={localizeLevel1SelectionLabel(`Animate ${q.word}`)}
-        onselect={() => emitSequence?.({ strip: RESOLVED[q.key]!, word: q.word, key: q.key, propType: "staff" })}
+        onselect={() =>
+          emitSequence?.({
+            strip: RESOLVED[q.key]!,
+            word: q.word,
+            key: q.key,
+            propType: "staff",
+          })}
       />
     </div>
   {/each}
@@ -321,7 +376,12 @@
       class:selected={guideEdit.selectedId === `el-para-${i}`}
       style="top:{p.y * S}px; font-size:{p.fs * S}px; line-height:{p.lh * S}px"
       use:ptDrag={pt(`el-para-${i}`, "para", p)}
-      use:editText={{ id: `el-para-${i}`, label: "para", get: () => p.html, set: (h2) => (p.html = h2) }}
+      use:editText={{
+        id: `el-para-${i}`,
+        label: "para",
+        get: () => p.html,
+        set: (h2) => (p.html = h2),
+      }}
     >
       {@html localizeLevel1Text(p.html)}
     </p>

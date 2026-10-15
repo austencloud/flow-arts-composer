@@ -111,7 +111,6 @@
   // Set to false to use simple vertex colors (faster, fallback)
   const USE_TERRAIN_TEXTURING = true;
 
-
   interface Props {
     activeConfig: RealmConfig;
     worldSeed: number;
@@ -307,7 +306,6 @@
   const stagePlaneSet = new Set([Plane.WALL, Plane.WHEEL, Plane.FLOOR]);
   const floorPlaneSet = new Set([Plane.FLOOR]);
   const activePlaneSet = $derived(stageMode ? stagePlaneSet : floorPlaneSet);
-
 
   let isInitialized = $state(false);
   let isReadyToRender = $state(false); // True after ground snap - prevents showing underground
@@ -717,7 +715,6 @@
     inputCapabilities.destroy();
   });
 
-
   // Outdoor lighting references (disabled for indoor scenes like the archive)
   let outdoorAmbient: AmbientLight | null = null;
   let outdoorHemisphere: HemisphereLight | null = null;
@@ -766,7 +763,6 @@
     rawScene.add(sun.target);
     sunLight = sun;
   }
-
 
   /**
    * Load a GLTF model and add it to the scene
@@ -1050,8 +1046,8 @@
 {#if isInitialized && isReadyToRender && showAvatar}
   <Avatar3D
     id="realm-player"
-    leftPropState={performerState?.leftPropState ?? null}
-    rightPropState={performerState?.rightPropState ?? null}
+    bluePropState={performerState?.leftPropState ?? null}
+    redPropState={performerState?.rightPropState ?? null}
     visible={true}
     position={playerPosition}
     facingAngle={playerYaw}

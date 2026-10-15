@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolveThrelteScene } from "../../scene-boot/threlte-handles";
   /**
    * GaitProbe
    *
@@ -16,7 +17,7 @@
    * lookups walk the whole subtree, and a cast does not gain legs mid-stride.
    */
 
-  import { useTask, useThrelte } from "@threlte/core";
+  import { useTask, useThrelte, useScheduler } from "@threlte/core";
   import type { Object3D } from "three";
 
   import {
@@ -28,7 +29,7 @@
     type GaitReport,
     type GaitThresholds,
   } from "./gait-analysis";
-  import { gaitProbeState } from "./gait-probe-state.svelte";
+  import { gaitProbeState } from "./gait-probe-state.svelte.js";
   import {
     collectRiggedAvatars,
     GaitRecorder,
@@ -77,7 +78,9 @@
   // In Threlte 8, useThrelte() returns `scene` as the Scene object itself —
   // only camera/dpr/size are `.current` stores — so it is usable everywhere,
   // including inside useTask callbacks.
-  const { scene, renderStage } = useThrelte();
+  const { scene: sceneValue } = useThrelte();
+  const { renderStage } = useScheduler();
+  const scene = resolveThrelteScene(sceneValue);
 
   const recorder = new GaitRecorder(capacity);
   let avatars: RiggedAvatar[] = [];
@@ -140,15 +143,7 @@
   }
 
   if (exposeOnWindow && typeof window !== "undefined") {
-    (
-      window as unknown as {
-        __gaitProbe?: {
-          frames: (id: string) => unknown;
-          ids: () => string[];
-          report: () => Record<string, GaitReport>;
-        };
-      }
-    ).__gaitProbe = {
+    const probe = {
       frames: (id: string) => recorder.frames(id),
       ids: () => recorder.ids(),
       report: () => Object.fromEntries(buildReports()),
@@ -219,6 +214,7 @@
         return { objects, bones, boneNames, avatars: avatars.length, chains };
       },
     };
+    Object.assign(window, { __gaitProbe: probe });
   }
 
   useTask(

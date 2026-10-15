@@ -1,11 +1,56 @@
 /**
  * Stream Client for TIKA API
  *
- * Parses the Vercel AI SDK data protocol:
- * - 0:"text" = text delta
- * - 9:{...}  = tool call
- * - a:{...}  = tool result
+ * Posts one question to /api/tika/ask and reads the answer back from the
+ * AI SDK UI message stream (`result.toUIMessageStreamResponse()` on the
+ * server): Server-Sent Events, one `data: {json}` chunk per event, ending
+ * with `data: [DONE]`.
+ *
+ * The endpoint requires a signed-in Firebase user. Set TIKA_ID_TOKEN to a
+ * Firebase ID token (see docs/reference/tika-testing.md). TIKA_BASE_URL
+ * overrides the default dev server origin.
  */
+
+import {
+	getToolOrDynamicToolName,
+	isTextUIPart,
+	isToolOrDynamicToolUIPart,
+	parseJsonEventStream,
+	readUIMessageStream,
+	uiMessageChunkSchema
+} from 'ai';
+
+export const DEFAULT_TIKA_BASE_URL = 'https://localhost:5173';
+
+/** The sign-in check failed: every later request would fail the same way. */
+export class TikaAuthError extends Error {
+	constructor(message) {
+		super(message);
+		this.name = 'TikaAuthError';
+	}
+}
+
+/**
+ * @param {Record<string, string | undefined>} env
+ * @returns {string}
+ */
+export function resolveTikaEndpoint(env = process.env) {
+	return new URL('/api/tika/ask', env.TIKA_BASE_URL || DEFAULT_TIKA_BASE_URL).href;
+}
+
+/**
+ * @param {Record<string, string | undefined>} env
+ * @returns {string}
+ */
+export function requireTikaIdToken(env = process.env) {
+	const token = env.TIKA_ID_TOKEN?.trim();
+	if (!token) {
+		throw new TikaAuthError(
+			'TIKA_ID_TOKEN is not set. /api/tika/ask needs a Firebase ID token; see docs/reference/tika-testing.md.'
+		);
+	}
+	return token.replace(/^Bearer\s+/i, '');
+}
 
 /**
  * Call TIKA streaming endpoint and parse the response
@@ -13,22 +58,26 @@
  * @param {string} question - The user's question
  * @param {number} userLevel - User's knowledge level (1-4)
  * @param {string[]} completedConcepts - List of completed concept IDs
- * @returns {Promise<{explanation: string, toolsCalled: Array, latencyMs: number}>}
+ * @param {{ env?: Record<string, string | undefined> }} [options]
+ * @returns {Promise<{explanation: string, toolsCalled: Array, latencyMs: number, finishReason: string | null, streamErrors: string[]}>}
  */
-export async function callTikaStreaming(question, userLevel, completedConcepts = []) {
+export async function callTikaStreaming(question, userLevel, completedConcepts = [], options = {}) {
+	const env = options.env ?? process.env;
+	const token = requireTikaIdToken(env);
 	const startTime = Date.now();
 
-	const response = await fetch('http://localhost:5173/api/tika/ask', {
+	const response = await fetch(resolveTikaEndpoint(env), {
 		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
+		headers: {
+			'Content-Type': 'application/json',
+			Authorization: `Bearer ${token}`
+		},
 		body: JSON.stringify({
 			messages: [
 				{
 					id: crypto.randomUUID(),
 					role: 'user',
-					content: question,
-					parts: [{ type: 'text', text: question }],
-					createdAt: new Date().toISOString()
+					parts: [{ type: 'text', text: question }]
 				}
 			],
 			completedConcepts: completedConcepts,
@@ -38,85 +87,79 @@ export async function callTikaStreaming(question, userLevel, completedConcepts =
 
 	if (!response.ok) {
 		const errorText = await response.text();
+		// The route answers 401 now; servers older than 2026-10-15 send 500, so match the message too.
+		if (response.status === 401 || /Bearer token|ID token expired|Invalid or expired token/.test(errorText)) {
+			throw new TikaAuthError(`Sign-in rejected (${response.status}): ${errorText}`);
+		}
 		throw new Error(`API error: ${response.status} - ${errorText}`);
 	}
 
-	const text = await response.text();
-	const parsed = parseDataStream(text);
+	const parsed = await readTikaStream(response.body);
+	if (parsed.errors.length > 0 && !parsed.fullText) {
+		throw new Error(`Stream error: ${parsed.errors.join('; ')}`);
+	}
 
 	return {
 		explanation: parsed.fullText,
 		toolsCalled: parsed.toolCalls,
-		latencyMs: Date.now() - startTime
+		latencyMs: Date.now() - startTime,
+		finishReason: parsed.finishReason,
+		streamErrors: parsed.errors
 	};
 }
 
 /**
- * Parse the Vercel AI SDK data stream format
+ * Read an AI SDK UI message stream into the answer text and tool calls.
  *
- * Protocol reference: https://sdk.vercel.ai/docs/ai-sdk-ui/stream-protocol
+ * Uses the installed `ai` package's own readers, the same path its Chat
+ * transport takes: parseJsonEventStream decodes the SSE `data:` chunks against
+ * uiMessageChunkSchema, and readUIMessageStream assembles them into the final
+ * assistant UIMessage. Text parts are joined with a blank line; tool parts
+ * become {id, name, input, result, error}.
  *
- * Line prefixes:
- * - 0: = text delta (JSON string)
- * - 9: = tool call start
- * - a: = tool result
- * - e: = finish (with usage stats)
- * - d: = done
- *
- * @param {string} text - Raw stream response text
- * @returns {{fullText: string, toolCalls: Array}}
+ * @param {ReadableStream<Uint8Array>} stream - Response body
+ * @returns {Promise<{fullText: string, toolCalls: Array<{id: string, name: string, input: unknown, result: unknown, error: string | null}>, errors: string[], finishReason: string | null}>}
  */
-function parseDataStream(text) {
-	const lines = text.split('\n').filter((l) => l.trim());
-	let fullText = '';
-	const toolCalls = [];
-	const toolCallsById = new Map();
+export async function readTikaStream(stream) {
+	const errors = [];
+	let finishReason = null;
 
-	for (const line of lines) {
-		try {
-			// Text delta: 0:"text content"
-			if (line.startsWith('0:')) {
-				const content = JSON.parse(line.slice(2));
-				if (typeof content === 'string') {
-					fullText += content;
+	const chunks = parseJsonEventStream({ stream, schema: uiMessageChunkSchema }).pipeThrough(
+		new TransformStream({
+			transform(result, controller) {
+				if (!result.success) {
+					errors.push(`Unreadable stream chunk: ${result.error.message}`);
+					return;
 				}
+				if (result.value.type === 'finish') finishReason = result.value.finishReason ?? null;
+				controller.enqueue(result.value);
 			}
-			// Tool call: 9:{toolCallId, toolName, args}
-			else if (line.startsWith('9:')) {
-				const data = JSON.parse(line.slice(2));
-				const toolCall = {
-					id: data.toolCallId,
-					name: data.toolName,
-					input: data.args,
-					result: null
-				};
-				toolCalls.push(toolCall);
-				toolCallsById.set(data.toolCallId, toolCall);
-			}
-			// Tool result: a:{toolCallId, result}
-			else if (line.startsWith('a:')) {
-				const data = JSON.parse(line.slice(2));
-				const toolCall = toolCallsById.get(data.toolCallId);
-				if (toolCall) {
-					toolCall.result = data.result;
-				}
-			}
-			// Finish message: e:{finishReason, usage}
-			else if (line.startsWith('e:')) {
-				// Could extract usage stats if needed
-				// const data = JSON.parse(line.slice(2));
-			}
-			// Done marker: d:{...}
-			else if (line.startsWith('d:')) {
-				// Stream complete
-			}
-		} catch (parseError) {
-			// Skip malformed lines but log for debugging
-			console.warn('Failed to parse stream line:', line, parseError.message);
-		}
+		})
+	);
+
+	let message;
+	for await (const snapshot of readUIMessageStream({
+		stream: chunks,
+		onError: (error) => errors.push(error instanceof Error ? error.message : String(error))
+	})) {
+		message = snapshot;
 	}
 
-	return { fullText, toolCalls };
+	const parts = message?.parts ?? [];
+	const fullText = parts
+		.filter(isTextUIPart)
+		.map((part) => part.text.trim())
+		.filter(Boolean)
+		.join('\n\n');
+	const toolCalls = parts.filter(isToolOrDynamicToolUIPart).map((part) => ({
+		id: part.toolCallId,
+		name: getToolOrDynamicToolName(part),
+		input: part.input ?? null,
+		result: part.state === 'output-available' ? part.output : null,
+		error: part.errorText ?? (part.state === 'output-denied' ? 'denied' : null)
+	}));
+
+	return { fullText, toolCalls, errors, finishReason };
 }
 
 /**

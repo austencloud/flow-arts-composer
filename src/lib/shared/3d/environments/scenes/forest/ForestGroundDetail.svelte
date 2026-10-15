@@ -1,4 +1,8 @@
 <script lang="ts">
+  import {
+    resolveThrelteRenderer,
+    resolveThrelteScene,
+  } from "../../../scene-boot/threlte-handles";
   import { useTask, useThrelte } from "@threlte/core";
   import { onMount } from "svelte";
   import {
@@ -63,7 +67,9 @@
     includeAncestorScene = false,
     onApplied,
   }: Props = $props();
-  const { renderer, scene: threlteScene } = useThrelte();
+  const { renderer: rendererValue, scene: sceneValue } = useThrelte();
+  const renderer = resolveThrelteRenderer(rendererValue);
+  const threlteScene = resolveThrelteScene(sceneValue);
   let detailMaps = $state<Partial<Record<ForestGroundDetailFamily, Texture>>>(
     {}
   );

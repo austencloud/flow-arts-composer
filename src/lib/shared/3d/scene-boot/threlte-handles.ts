@@ -1,5 +1,5 @@
 import type { ThrelteContext } from "@threlte/core";
-import type { Camera, Object3D, WebGLRenderer } from "three";
+import type { Camera, Object3D, Scene, WebGLRenderer } from "three";
 
 /**
  * Threlte returns `camera` wrapped in a CurrentWritable (read `.current`) while
@@ -12,14 +12,14 @@ import type { Camera, Object3D, WebGLRenderer } from "three";
  * `features/museum/components/resolve-threlte-scene.ts`; it is out of scope for
  * this module and consumes nothing from here.
  */
-type MaybeCurrent<T> = T | { current: T };
+export function resolveThrelteScene(value: Scene | { current: Scene }): Scene {
+  return "current" in value ? value.current : value;
+}
 
-function unwrap<T>(value: MaybeCurrent<T> | undefined): T | null {
-  if (value == null) return null;
-  if (typeof value === "object" && "current" in (value as object)) {
-    return (value as { current: T }).current ?? null;
-  }
-  return value as T;
+export function resolveThrelteRenderer(
+  value: WebGLRenderer | { current: WebGLRenderer }
+): WebGLRenderer {
+  return "current" in value ? value.current : value;
 }
 
 export interface ThrelteHandles {
@@ -32,11 +32,9 @@ export function resolveThrelteHandles(
   ctx: ThrelteContext | null | undefined
 ): ThrelteHandles | null {
   if (!ctx) return null;
-  const renderer = unwrap<WebGLRenderer>(
-    ctx.renderer as MaybeCurrent<WebGLRenderer>
-  );
-  const scene = unwrap<Object3D>(ctx.scene as unknown as MaybeCurrent<Object3D>);
-  const camera = unwrap<Camera>(ctx.camera as unknown as MaybeCurrent<Camera>);
+  const renderer = resolveThrelteRenderer(ctx.renderer);
+  const scene = resolveThrelteScene(ctx.scene);
+  const camera = ctx.camera.current;
   if (!renderer?.domElement || !scene || !camera?.isCamera) return null;
   return { renderer, scene, camera };
 }

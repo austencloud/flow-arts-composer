@@ -9,7 +9,10 @@
   again once it has finished, as the Guide's six cards do (Austen,
   2026-10-12, preferred hover to clicking). Under the
   chart, the book's own two lines say what the arrow and the hand show.
-  Reduced motion shows the finished pictures.
+  Reduced motion shows the finished pictures. The Start picture's grid is the
+  session's live board, so arriving from Hand Placements the board the
+  learner left flies into it with the blue hand riding along, and Next grows
+  the Start picture into the motion map (Austen, 2026-10-15).
   Spec: docs/superpowers/specs/2026-10-10-hand-motions-rebuild-design.md
 -->
 <script lang="ts">
@@ -39,6 +42,8 @@
   import { whenOnScreen } from "#lib/shared/transitions/build-sequence.js";
   import { reducedMotion } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import LessonBoardSlot from "../live-board/LessonBoardSlot.svelte";
+  import { getLiveLessonBoard } from "../live-board/live-lesson-board.svelte";
 
   /** The arrow fades in, then the hand follows it, as on the grid. */
   const ARROW_MS = DURATION.dramatic;
@@ -138,6 +143,7 @@
   const lastPlayed = new Map<string, number>();
   const timers: ReturnType<typeof setTimeout>[] = [];
   let host: HTMLDivElement;
+  const liveBoard = getLiveLessonBoard();
 
   function play(entry: Picture, move: HandMove) {
     lastPlayed.set(entry.id, performance.now());
@@ -203,20 +209,25 @@
 
 <div class="intro-stage" bind:this={host}>
   <div class="flowchart">
-    <div class="start" aria-hidden="true">
-      <PictographContainer
-        pictographData={startPicture}
-        gridMode={GridMode.DIAMOND}
-        leftPropTypeOverride={PropType.HAND}
-        rightPropTypeOverride={PropType.HAND}
-        visibleHand={HandSide.LEFT}
-        showTKA={false}
-        showPlacements={false}
-        showReversals={false}
-        showTnD={false}
-        showElemental={false}
-        showNonRadialPoints={false}
-      />
+    <div class="start" data-hand-grid="start" aria-hidden="true">
+      <LessonBoardSlot phase="diamond" look="pictograph" />
+      <div class="start-hand" {@attach (node) => liveBoard?.follow(node)}>
+        <PictographContainer
+          pictographData={startPicture}
+          gridMode={GridMode.DIAMOND}
+          leftPropTypeOverride={PropType.HAND}
+          rightPropTypeOverride={PropType.HAND}
+          visibleHand={HandSide.LEFT}
+          showGrid={false}
+          transparentBackground
+          showTKA={false}
+          showPlacements={false}
+          showReversals={false}
+          showTnD={false}
+          showElemental={false}
+          showNonRadialPoints={false}
+        />
+      </div>
     </div>
     <span class="spine" aria-hidden="true"></span>
     {#each branches as branch (branch.id)}
@@ -317,6 +328,14 @@
 
   .start {
     grid-area: start;
+    position: relative;
+    aspect-ratio: 1;
+  }
+
+  /* The blue hand over the live board's grid. */
+  .start-hand {
+    position: absolute;
+    inset: 0;
   }
 
   .spine {

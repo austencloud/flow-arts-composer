@@ -18,7 +18,10 @@
    * page the slot hand assignment flips vs Type 1: high = right, low = left.
    */
   import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+  import {
+    createMotionData,
+    type MotionData,
+  } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
   import {
     MotionType,
     HandSide,
@@ -68,7 +71,7 @@
       propType: PropType.STAFF,
       gridMode: GridMode.DIAMOND,
     });
-  const pic = (id: string, left, right) => ({
+  const pic = (id: string, left: MotionData, right: MotionData) => ({
     id: `l2st-${id}`,
     letter: null,
     gridMode: GridMode.DIAMOND,

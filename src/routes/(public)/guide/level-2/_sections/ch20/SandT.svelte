@@ -10,20 +10,31 @@
    */
   import GuideSection from "../../../level-1/_components/GuideSection.svelte";
   import SequenceShowcase from "../../../level-1/_components/SequenceShowcase.svelte";
-  import TurnStrip, { type TurnStripFrame } from "../../_components/TurnStrip.svelte";
-  import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+  import TurnStrip, {
+    type TurnStripFrame,
+  } from "../../_components/TurnStrip.svelte";
+  import {
+    createMotionData,
+    type MotionData,
+  } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
   import {
     MotionType,
     HandSide,
     Orientation,
     RotationDirection,
   } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
-  import { GridMode, GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import {
+    GridMode,
+    GridLocation,
+  } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type { HalfwayMotion } from "../../_data/halfway-pose";
-  import { bakeReversals, stripToSequence } from "../../../level-1/_data/guide-sequence-adapter";
+  import {
+    bakeReversals,
+    stripToSequence,
+  } from "../../../level-1/_data/guide-sequence-adapter";
 
   const { EAST: E, SOUTH: SO_, WEST: W } = GridLocation;
   const { IN, OUT } = Orientation;
@@ -58,9 +69,16 @@
   const stat = (color: HandSide, loc: GridLocation, ori: Orientation) =>
     mo(color, MotionType.STATIC, loc, loc, NOROT, ori, ori);
 
-  type Hand = { type: MotionType; from: GridLocation; to: GridLocation; rot: RotationDirection };
-  const halfTurns = (type: MotionType, turns: number): number => (type === MotionType.ANTI ? 1 : 0) + turns;
-  const endOri = (type: MotionType, turns: number): Orientation => (halfTurns(type, turns) % 2 === 0 ? IN : OUT);
+  type Hand = {
+    type: MotionType;
+    from: GridLocation;
+    to: GridLocation;
+    rot: RotationDirection;
+  };
+  const halfTurns = (type: MotionType, turns: number): number =>
+    (type === MotionType.ANTI ? 1 : 0) + turns;
+  const endOri = (type: MotionType, turns: number): Orientation =>
+    halfTurns(type, turns) % 2 === 0 ? IN : OUT;
 
   function makeStrip(opts: {
     id: string;
@@ -72,21 +90,65 @@
   }): { frames: TurnStripFrame[]; sequence: SequenceData } {
     const bEnd = endOri(opts.left.type, opts.leftTurns);
     const rEnd = endOri(opts.right.type, opts.rightTurns);
-    const bHalf: HalfwayMotion = { type: opts.left.type, from: opts.left.from, to: opts.left.to, rot: opts.left.rot, startOri: IN, endOri: bEnd, turns: opts.leftTurns };
-    const rHalf: HalfwayMotion = { type: opts.right.type, from: opts.right.from, to: opts.right.to, rot: opts.right.rot, startOri: IN, endOri: rEnd, turns: opts.rightTurns };
-    const step = (id: string, left, right) => ({
+    const bHalf: HalfwayMotion = {
+      type: opts.left.type,
+      from: opts.left.from,
+      to: opts.left.to,
+      rot: opts.left.rot,
+      startOri: IN,
+      endOri: bEnd,
+      turns: opts.leftTurns,
+    };
+    const rHalf: HalfwayMotion = {
+      type: opts.right.type,
+      from: opts.right.from,
+      to: opts.right.to,
+      rot: opts.right.rot,
+      startOri: IN,
+      endOri: rEnd,
+      turns: opts.rightTurns,
+    };
+    const step = (id: string, left: MotionData, right: MotionData) => ({
       id: `l2st-${opts.id}-${id}`,
       letter: null,
       gridMode: GridMode.DIAMOND,
       motions: { left, right },
     });
-    const startStep = { ...step("start", stat(B, opts.left.from, IN), stat(R, opts.right.from, IN)), stepNumber: 0 } as unknown as StepData;
-    const endStep = { ...step("end", stat(B, opts.left.to, bEnd), stat(R, opts.right.to, rEnd)), stepNumber: 0 } as unknown as StepData;
+    const startStep = {
+      ...step(
+        "start",
+        stat(B, opts.left.from, IN),
+        stat(R, opts.right.from, IN)
+      ),
+      stepNumber: 0,
+    } as unknown as StepData;
+    const endStep = {
+      ...step("end", stat(B, opts.left.to, bEnd), stat(R, opts.right.to, rEnd)),
+      stepNumber: 0,
+    } as unknown as StepData;
     const combinedStep = {
       ...step(
         "full",
-        mo(B, opts.left.type, opts.left.from, opts.left.to, opts.left.rot, IN, bEnd, opts.leftTurns),
-        mo(R, opts.right.type, opts.right.from, opts.right.to, opts.right.rot, IN, rEnd, opts.rightTurns)
+        mo(
+          B,
+          opts.left.type,
+          opts.left.from,
+          opts.left.to,
+          opts.left.rot,
+          IN,
+          bEnd,
+          opts.leftTurns
+        ),
+        mo(
+          R,
+          opts.right.type,
+          opts.right.from,
+          opts.right.to,
+          opts.right.rot,
+          IN,
+          rEnd,
+          opts.rightTurns
+        )
       ),
       stepNumber: 1,
     } as unknown as StepData;
@@ -103,9 +165,18 @@
         frameLabel: "halfway",
       },
       { kind: "end", step: endStep, frameLabel: "end", thumbLabel: "mixed" },
-      { kind: "combined", step: combinedStep, animKey, word: opts.word, rowSteps },
+      {
+        kind: "combined",
+        step: combinedStep,
+        animKey,
+        word: opts.word,
+        rowSteps,
+      },
     ];
-    const sequence = stripToSequence(rowSteps, { word: opts.word, name: opts.word });
+    const sequence = stripToSequence(rowSteps, {
+      word: opts.word,
+      name: opts.word,
+    });
     return { frames, sequence };
   }
 
@@ -116,10 +187,38 @@
   const T_BLUE: Hand = { type: MotionType.ANTI, from: W, to: SO_, rot: CW };
   const T_RED: Hand = { type: MotionType.ANTI, from: SO_, to: E, rot: CW };
 
-  const { frames: sHighFrames, sequence: sHighSequence } = makeStrip({ id: "s-hi", word: "S-High-One", left: S_BLUE, right: S_RED, leftTurns: 1, rightTurns: 0 });
-  const { frames: sLowFrames, sequence: sLowSequence } = makeStrip({ id: "s-lo", word: "S-Low-One", left: S_BLUE, right: S_RED, leftTurns: 0, rightTurns: 1 });
-  const { frames: tHighFrames, sequence: tHighSequence } = makeStrip({ id: "t-hi", word: "T-High-One", left: T_BLUE, right: T_RED, leftTurns: 1, rightTurns: 0 });
-  const { frames: tLowFrames, sequence: tLowSequence } = makeStrip({ id: "t-lo", word: "T-Low-One", left: T_BLUE, right: T_RED, leftTurns: 0, rightTurns: 1 });
+  const { frames: sHighFrames, sequence: sHighSequence } = makeStrip({
+    id: "s-hi",
+    word: "S-High-One",
+    left: S_BLUE,
+    right: S_RED,
+    leftTurns: 1,
+    rightTurns: 0,
+  });
+  const { frames: sLowFrames, sequence: sLowSequence } = makeStrip({
+    id: "s-lo",
+    word: "S-Low-One",
+    left: S_BLUE,
+    right: S_RED,
+    leftTurns: 0,
+    rightTurns: 1,
+  });
+  const { frames: tHighFrames, sequence: tHighSequence } = makeStrip({
+    id: "t-hi",
+    word: "T-High-One",
+    left: T_BLUE,
+    right: T_RED,
+    leftTurns: 1,
+    rightTurns: 0,
+  });
+  const { frames: tLowFrames, sequence: tLowSequence } = makeStrip({
+    id: "t-lo",
+    word: "T-Low-One",
+    left: T_BLUE,
+    right: T_RED,
+    leftTurns: 0,
+    rightTurns: 1,
+  });
 </script>
 
 <GuideSection id="s-and-t" title={translate("guide_l2_st_title")}>
@@ -134,30 +233,70 @@
   </div>
 
   <div class="showcase-wrap">
-    <SequenceShowcase variant="compact" render={{ propType: PropType.STAFF }} sequence={sHighSequence} items={[]} bpm={60}>
+    <SequenceShowcase
+      variant="compact"
+      render={{ propType: PropType.STAFF }}
+      sequence={sHighSequence}
+      items={[]}
+      bpm={60}
+    >
       {#snippet strip(t)}
-        <TurnStrip frames={sHighFrames} activeT={t} caption={translate("guide_l2_st_s_high_caption")} />
+        <TurnStrip
+          frames={sHighFrames}
+          activeT={t}
+          caption={translate("guide_l2_st_s_high_caption")}
+        />
       {/snippet}
     </SequenceShowcase>
   </div>
   <div class="showcase-wrap">
-    <SequenceShowcase variant="compact" render={{ propType: PropType.STAFF }} sequence={sLowSequence} items={[]} bpm={60}>
+    <SequenceShowcase
+      variant="compact"
+      render={{ propType: PropType.STAFF }}
+      sequence={sLowSequence}
+      items={[]}
+      bpm={60}
+    >
       {#snippet strip(t)}
-        <TurnStrip frames={sLowFrames} activeT={t} caption={translate("guide_l2_st_s_low_caption")} />
+        <TurnStrip
+          frames={sLowFrames}
+          activeT={t}
+          caption={translate("guide_l2_st_s_low_caption")}
+        />
       {/snippet}
     </SequenceShowcase>
   </div>
   <div class="showcase-wrap">
-    <SequenceShowcase variant="compact" render={{ propType: PropType.STAFF }} sequence={tHighSequence} items={[]} bpm={60}>
+    <SequenceShowcase
+      variant="compact"
+      render={{ propType: PropType.STAFF }}
+      sequence={tHighSequence}
+      items={[]}
+      bpm={60}
+    >
       {#snippet strip(t)}
-        <TurnStrip frames={tHighFrames} activeT={t} caption={translate("guide_l2_st_t_high_caption")} />
+        <TurnStrip
+          frames={tHighFrames}
+          activeT={t}
+          caption={translate("guide_l2_st_t_high_caption")}
+        />
       {/snippet}
     </SequenceShowcase>
   </div>
   <div class="showcase-wrap">
-    <SequenceShowcase variant="compact" render={{ propType: PropType.STAFF }} sequence={tLowSequence} items={[]} bpm={60}>
+    <SequenceShowcase
+      variant="compact"
+      render={{ propType: PropType.STAFF }}
+      sequence={tLowSequence}
+      items={[]}
+      bpm={60}
+    >
       {#snippet strip(t)}
-        <TurnStrip frames={tLowFrames} activeT={t} caption={translate("guide_l2_st_t_low_caption")} />
+        <TurnStrip
+          frames={tLowFrames}
+          activeT={t}
+          caption={translate("guide_l2_st_t_low_caption")}
+        />
       {/snippet}
     </SequenceShowcase>
   </div>

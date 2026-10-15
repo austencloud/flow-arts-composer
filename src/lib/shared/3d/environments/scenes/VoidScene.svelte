@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolveThrelteScene } from "../../scene-boot/threlte-handles";
   import { useTask, useThrelte } from "@threlte/core";
   import { userProportionsState } from "@austencloud/scene-3d";
   import type { VoidSceneConfig } from "../domain/models/scene-configs";
@@ -16,7 +17,8 @@
 
   let { config, stageRadius = 3, stageRadiusGrowth = 0 }: Props = $props();
 
-  const { scene } = useThrelte();
+  const { scene: sceneValue } = useThrelte();
+  const scene = resolveThrelteScene(sceneValue);
   const sceneFeatures = getSceneFeatureContext();
   let world: VoidEnvironmentWorld | null = null;
 

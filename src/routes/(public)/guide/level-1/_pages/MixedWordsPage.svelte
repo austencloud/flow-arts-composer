@@ -1,5 +1,8 @@
 <script lang="ts">
-  import { localizeLevel1Text, localizeLevel1SelectionLabel } from "../_data/localize-level1-content";
+  import {
+    localizeLevel1Text,
+    localizeLevel1SelectionLabel,
+  } from "../_data/localize-level1-content";
   /**
    * Mixed Words (ACAC, BCBC) - body page (manifest `examples-acac`), faithful
    * to "1.2 - Guide pt. 3 - ACAC, BCBC" artboard (old p36).
@@ -29,16 +32,25 @@
     Orientation,
     RotationDirection,
   } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
-  import { GridMode, GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import {
+    GridMode,
+    GridLocation,
+  } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import { getGridPlacementFromLocations } from "#lib/shared/pictograph/grid/services/grid-placement-deriver.js";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
   import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
-  import { pt, ptDrag, editText, guideEdit, registerEditSource } from "../_data/guide-edit.svelte";
+  import {
+    pt,
+    ptDrag,
+    editText,
+    guideEdit,
+    registerEditSource,
+  } from "../_data/guide-edit.svelte.js";
   import { bakeReversals } from "../_data/guide-sequence-adapter";
   import { getGuideSequenceClick } from "../_data/guide-data-context";
-  import { getGuideActiveStep } from "../_data/guide-active-step.svelte";
-  import { overrideStepsFor } from "../_data/guide-overrides.svelte";
+  import { getGuideActiveStep } from "../_data/guide-active-step.svelte.js";
+  import { overrideStepsFor } from "../_data/guide-overrides.svelte.js";
 
   const S = 816 / 612; // pt → px (4/3)
   const { NORTH: N, EAST: E, SOUTH: SO_, WEST: W } = GridLocation;
@@ -53,8 +65,18 @@
 
   const HP_CW = new Set(["s-w", "w-n", "n-e", "e-s"]);
   const flip = (o: Orientation) => (o === IN ? OUT : IN);
-  type HandStep = { anti: boolean; from: GridLocation; to: GridLocation; so: Orientation };
-  const h = (anti: boolean, from: GridLocation, to: GridLocation, so: Orientation = IN): HandStep => ({ anti, from, to, so });
+  type HandStep = {
+    anti: boolean;
+    from: GridLocation;
+    to: GridLocation;
+    so: Orientation;
+  };
+  const h = (
+    anti: boolean,
+    from: GridLocation,
+    to: GridLocation,
+    so: Orientation = IN
+  ): HandStep => ({ anti, from, to, so });
   const handMotion = (color: HandSide, x: HandStep) => {
     const dir = HP_CW.has(`${x.from}-${x.to}`) ? CW : CCW;
     return createMotionData({
@@ -83,7 +105,11 @@
     });
 
   type Step = { letter: Letter; left: HandStep; right: HandStep };
-  const st = (letter: Letter, left, right): Step => ({ letter, left, right });
+  const st = (letter: Letter, left: HandStep, right: HandStep): Step => ({
+    letter,
+    left,
+    right,
+  });
   const { A, B, C } = Letter;
 
   type SeqDef = { key: string; word: string; y: number; steps: Step[] };
@@ -150,7 +176,10 @@
       letter: Letter.ALPHA,
       gridMode: GridMode.DIAMOND,
       stepNumber: 0,
-      motions: { left: stat(HandSide.LEFT, SO_), right: stat(HandSide.RIGHT, N) },
+      motions: {
+        left: stat(HandSide.LEFT, SO_),
+        right: stat(HandSide.RIGHT, N),
+      },
     }) as unknown as StepData;
 
   const resolvedSeqSteps = (q: SeqDef): StepData[] => {
@@ -173,40 +202,53 @@
   type Para = { y: number; fs: number; lh: number; html: string };
   let PARAS: Para[] = $state([
     {
-      y: 58, fs: 15, lh: 18,
+      y: 58,
+      fs: 15,
+      lh: 18,
       html:
         "When combining a hybrid like C with a non-hybrid like A or B, a prop-reversal is necessary.<br>" +
         "Let’s look at the word ACAC.",
     },
     {
-      y: 102.9, fs: 15, lh: 18,
+      y: 102.9,
+      fs: 15,
+      lh: 18,
       html: "In this variation, the left hand does a reversal on every step. Give it a try:",
     },
     {
-      y: 250.4, fs: 15, lh: 18,
+      y: 250.4,
+      fs: 15,
+      lh: 18,
       html: "It would be impossible to execute ACAC without using a prop-reversal.",
     },
     {
-      y: 316.5, fs: 15, lh: 18,
+      y: 316.5,
+      fs: 15,
+      lh: 18,
       html:
         "The previous example shows the hands moving in a <em>continuous</em> path.<br>" +
         "Let’s change that in the next example by including a full-reversal in the middle.<br>" +
         'In this example, the reversals alternate between left (<strong class="cB">R</strong>) and right (<strong class="cR">R</strong>).',
     },
     {
-      y: 389.5, fs: 15, lh: 18,
+      y: 389.5,
+      fs: 15,
+      lh: 18,
       html:
         "This example uses every type of reversal - <em>hand</em>, <em>prop</em>, and <em>full</em>.<br>" +
         "Challenge yourself to identify where each one occurs.",
     },
     {
-      y: 587.7, fs: 15, lh: 18,
+      y: 587.7,
+      fs: 15,
+      lh: 18,
       html: "Prop-reversals are also required with BCBC, as shown in this example:",
     },
     {
-      y: 747.7, fs: 15, lh: 18,
-      html:
-        'Here, the <strong class="cR">right</strong> hand is prop-reversing after every step. Eventually, it returns to home.',
+      y: 747.7,
+      fs: 15,
+      lh: 18,
+      html: 'Here, the <strong class="cR">right</strong> hand is prop-reversing after every step. Eventually, it returns to home.',
     },
   ]);
 
@@ -234,7 +276,10 @@
 
 <div class="mixed-words">
   {#each RULES as ry (ry)}
-    <div class="rule" style="left:{20 * S}px; top:{ry * S}px; width:{572 * S}px"></div>
+    <div
+      class="rule"
+      style="left:{20 * S}px; top:{ry * S}px; width:{572 * S}px"
+    ></div>
   {/each}
 
   <!-- The three strips, each one clickable sequence. -->
@@ -243,13 +288,17 @@
       class="seq tka-seq-cell"
       class:is-hovered={selection?.isHovered(q.key)}
       class:is-selected={selection?.isSelected(q.key)}
-      style="left:{STRIP_X * S}px; top:{q.y * S}px; width:{CELL * 4 * S}px; height:{CELL * S}px"
+      style="left:{STRIP_X * S}px; top:{q.y * S}px; width:{CELL *
+        4 *
+        S}px; height:{CELL * S}px"
     >
       {#each q.steps as _, i (i)}
         <div
           class="mini"
-          class:guide-step-active={activeStep?.key === q.key && activeStep.ringStep === i + 1}
-          style="left:{i * CELL * S}px; top:0; width:{CELL * S}px; height:{CELL * S}px"
+          class:guide-step-active={activeStep?.key === q.key &&
+            activeStep.ringStep === i + 1}
+          style="left:{i * CELL * S}px; top:0; width:{CELL *
+            S}px; height:{CELL * S}px"
         >
           <PictographContainer
             pictographData={RESOLVED[q.key]!.slice(1)[i]}
@@ -265,7 +314,13 @@
         groupId={q.key}
         isGroupStart
         label={localizeLevel1SelectionLabel(`Animate ${q.word}`)}
-        onselect={() => emitSequence?.({ strip: RESOLVED[q.key]!, word: q.word, key: q.key, propType: "staff" })}
+        onselect={() =>
+          emitSequence?.({
+            strip: RESOLVED[q.key]!,
+            word: q.word,
+            key: q.key,
+            propType: "staff",
+          })}
       />
     </div>
   {/each}
@@ -278,7 +333,12 @@
       class:selected={guideEdit.selectedId === `mw-para-${i}`}
       style="top:{p.y * S}px; font-size:{p.fs * S}px; line-height:{p.lh * S}px"
       use:ptDrag={pt(`mw-para-${i}`, "para", p)}
-      use:editText={{ id: `mw-para-${i}`, label: "para", get: () => p.html, set: (h2) => (p.html = h2) }}
+      use:editText={{
+        id: `mw-para-${i}`,
+        label: "para",
+        get: () => p.html,
+        set: (h2) => (p.html = h2),
+      }}
     >
       {@html localizeLevel1Text(p.html)}
     </p>

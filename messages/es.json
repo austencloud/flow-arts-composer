@@ -7642,7 +7642,7 @@
   "guide_topic_placements_blue_left": "Azul = Izquierda",
   "guide_topic_placements_alpha_brief": "Las manos ocupan puntos opuestos.",
   "guide_topic_placements_beta_brief": "Las manos ocupan el mismo punto.",
-  "guide_topic_placements_gamma_brief": "Las manos forman un ángulo recto.",
+  "guide_topic_placements_gamma_brief": "Las manos ocupan puntos vecinos.",
   "guide_topic_hand_motions_three": "Hay tres movimientos fundamentales de las manos en el alfabeto.",
   "guide_topic_hand_motions_arrow": "La flecha muestra la dirección del movimiento.",
   "guide_topic_hand_motions_hand": "La mano muestra la posición final.",

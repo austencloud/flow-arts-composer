@@ -132,7 +132,7 @@
       position: [-30, 34, -45] as [number, number, number],
     },
   };
-  const meteors = cosmic.particles?.effects?.meteorStreaks;
+  const meteors = cosmic.particles?.meteorStreaks;
   /** How far the arrival shaft is drawn down before it goes to black. */
   const SHAFT_DEPTH = 7;
   const SLAB_T = 0.3;
@@ -432,6 +432,10 @@
 
   interface Scene {
     plain: ShapeGeometry;
+    outerPlain: RingGeometry;
+    farCraterRim: TorusGeometry;
+    hill: SphereGeometry;
+    far: ReturnType<typeof farField>;
     plinth: CylinderGeometry;
     shaft: CylinderGeometry;
     mound: CylinderGeometry;
