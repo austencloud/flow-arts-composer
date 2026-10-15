@@ -226,6 +226,15 @@ def add_foliage_wind(material, tree):
     """Small height-weighted WPO motion, so stems stay planted in the soil."""
     base = ME.get_material_property_input_node(material, u.MaterialProperty.MP_BASE_COLOR)
     if base:
+        if not tree:
+            # The source meadow blades are vivid in UE's midday sunlight.
+            # Shift their existing painted texture toward dry olive while
+            # retaining the source highlights and stem variation.
+            olive = expression(material, u.MaterialExpressionConstant3Vector,
+                               constant=u.LinearColor(1.04, .76, .62, 1))
+            graded = expression(material, u.MaterialExpressionMultiply)
+            connect(base, '', graded, 'A'); connect(olive, '', graded, 'B')
+            base = graded
         random = expression(material, u.MaterialExpressionPerInstanceRandom)
         dark = expression(material, u.MaterialExpressionConstant3Vector,
                           constant=u.LinearColor(.82, .9, .76, 1))
@@ -390,7 +399,7 @@ for name, args in palette.items():
         connect(terms[0], '', first, 'A'); connect(terms[1], '', first, 'B')
         connect(terms[2], '', second, 'A'); connect(terms[3], '', second, 'B')
         connect(first, '', family_color, 'A'); connect(second, '', family_color, 'B')
-        blend = expression(m, u.MaterialExpressionLinearInterpolate, const_alpha=.66)
+        blend = expression(m, u.MaterialExpressionLinearInterpolate, const_alpha=.90)
         connect(sample, 'RGB', blend, 'A'); connect(family_color, '', blend, 'B')
         connect_property(blend, '', u.MaterialProperty.MP_BASE_COLOR)
         if (STAGED / 'GroundNormal.png').exists():
@@ -399,6 +408,7 @@ for name, args in palette.items():
             normal_tex.set_editor_property('srgb', False)
             ED.save_loaded_asset(normal_tex)
             normal = expression(m, u.MaterialExpressionTextureSample, texture=normal_tex, sampler_type=u.MaterialSamplerType.SAMPLERTYPE_NORMAL)
+            connect(detail_uv, '', normal, 'UVs')
             connect_property(normal, 'RGB', u.MaterialProperty.MP_NORMAL)
     if name == 'M_Dirt' and (STAGED / 'GroundDetail.png').exists():
         detail_tex = import_file(STAGED / 'GroundDetail.png', '/Game/FlowFest/Textures', 'GroundDetail')
