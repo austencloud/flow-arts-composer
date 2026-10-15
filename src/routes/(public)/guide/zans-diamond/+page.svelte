@@ -6,6 +6,9 @@
    * arrow placement that separates two hands floating the same path). Every
    * variation loops in a SequenceShowcase (the guide's player + pictograph
    * strip); each family is one showcase that cycles through its variations.
+   * The props section plays the original again with a prop, poi first (Zan
+   * teaches it with poi); the prop picked there also plays in every family
+   * player. The first showcase stays a bare hand path.
    * The record lives in #lib/shared/guide-topics/zans-diamond-topic.ts.
    */
   import { onMount } from "svelte";
@@ -13,7 +16,9 @@
   import GuideSeo from "../level-1/_components/GuideSeo.svelte";
   import SequenceShowcase from "../level-1/_components/SequenceShowcase.svelte";
   import { stripToSequence } from "../level-1/_data/guide-sequence-adapter";
+  import GuidePropTrigger from "../level-1/_components/GuidePropTrigger.svelte";
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
+  import PropSelectionSheet from "#lib/shared/settings/components/tabs/prop-type/PropSelectionSheet.svelte";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import type { PictographRender } from "../level-1/_data/guide-content-blocks";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
@@ -46,6 +51,19 @@
     propType: PropType.HAND,
     showTKA: false,
     showStepNumbers: true,
+  };
+
+  // The prop the props section and every family player use. Page state only:
+  // each visit opens on poi.
+  let propType = $state<PropType>(PropType.POI);
+  let propSheetOpen = $state(false);
+  const PROP_RENDER: PictographRender = $derived({ ...RENDER, propType });
+
+  // The prop's tip draws its petals, kept until the loop restarts.
+  const TIP_TRAIL: TrailSettings = {
+    ...DEFAULT_TRAIL_SETTINGS,
+    mode: TrailMode.LOOP_CLEAR,
+    trackingMode: TrackingMode.RIGHT_END,
   };
 
   const showcase = (variation: ZansDiamondVariation) => {
@@ -146,6 +164,31 @@
       {/snippet}
     </SequenceShowcase>
 
+    <SequenceShowcase
+      sequence={original.sequence}
+      items={original.items}
+      trail={TIP_TRAIL}
+      render={PROP_RENDER}
+      canvasLetter={false}
+      loop
+      {picTheme}
+    >
+      {#snippet text()}
+        <h2>{t("guide_zans_props_title")}</h2>
+        <p>{t("guide_zans_props_spin")}</p>
+        <p>{t("guide_zans_props_turns")}</p>
+        <div class="prop-choice">
+          <span class="prop-label">{t("guide_zans_props_picker")}</span>
+          <GuidePropTrigger
+            {propType}
+            expanded={propSheetOpen}
+            onclick={() => (propSheetOpen = true)}
+          />
+          <p class="prop-hint">{t("guide_zans_props_picker_hint")}</p>
+        </div>
+      {/snippet}
+    </SequenceShowcase>
+
     <section class="families" aria-labelledby="families-heading">
       <div class="families-intro">
         <h2 id="families-heading">{t("guide_zans_families_title")}</h2>
@@ -156,7 +199,8 @@
           sequence={family.first.sequence}
           items={family.first.items}
           pool={family.pool}
-          render={RENDER}
+          render={PROP_RENDER}
+          canvasLetter={false}
           loop
           {picTheme}
         >
@@ -179,6 +223,18 @@
     </footer>
   </article>
 </GuideShell>
+
+<!-- Pictographs draw notation here, so the sheet offers no Version 2 look
+     and no colour edits to the reader's app settings. -->
+<PropSelectionSheet
+  bind:isOpen={propSheetOpen}
+  selectedPropType={propType}
+  title={t("guide_zans_props_picker")}
+  showPropLook={false}
+  propLook="pictograph"
+  showColors={false}
+  onSelect={(pt: PropType) => (propType = pt)}
+/>
 
 <style>
   .zans-guide {
@@ -241,6 +297,21 @@
   }
   .lede a:hover {
     text-decoration-thickness: 2px;
+  }
+
+  .prop-choice {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs, 6px);
+    max-width: 320px;
+  }
+  .prop-label {
+    font-size: var(--font-size-compact, 13px);
+    font-weight: 600;
+    color: var(--theme-text-muted);
+  }
+  .zans-guide .prop-hint {
+    font-size: var(--font-size-compact, 13px);
   }
 
   .families {
