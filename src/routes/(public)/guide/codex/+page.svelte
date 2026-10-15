@@ -69,7 +69,7 @@
     --codex-atlas-chrome: 25rem;
     /* TopicHeader speaks in the guide's ink tokens. */
     --ink: var(--theme-text);
-    --ink-dim: var(--theme-text-muted);
+    --ink-dim: var(--theme-text-dim);
   }
 
   /* The Guide's official header (TopicHeader), the print button under it. */
