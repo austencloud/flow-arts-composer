@@ -5,6 +5,7 @@
     parseWordNotation,
     simplifyAndTruncate,
   } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import type { ComponentProps } from "svelte";
   import WordActionMenu from "#lib/shared/choreo-card/components/WordActionMenu.svelte";
   import type { LetterSource } from "#lib/shared/create/domain/spell-models.js";
   import { practiceAnimationStyle } from "../../../state/practice-animation-style.svelte";
@@ -20,6 +21,10 @@
   const cache = browser ? getGlyphCache() : null;
 
   // Props
+  type WordActionTrigger = Parameters<
+    ComponentProps<typeof WordActionMenu>["trigger"]
+  >[0];
+
   let {
     word = "",
     scrollMode = false,
@@ -342,7 +347,7 @@
 
 {#if shouldShowWordLabel}
   <div class="word-label-container" class:scroll-mode={scrollMode}>
-    {#snippet wordTrigger(actions)}
+    {#snippet wordTrigger(actions: WordActionTrigger)}
       <button
         bind:this={labelElement}
         class="word-label"

@@ -36,7 +36,10 @@ own Escape (which closes the sheet) gets a turn.
   import { getUserIdentityLabels } from "#lib/shared/community/domain/user-identity-labels.js";
   import { collectionsState } from "#lib/features/library/state/collections-state.svelte.js";
   import { communityCollectionsState } from "#lib/features/browse/collections/state/community-collections-state.svelte.js";
-  import { buildPublicCollectionUrl } from "#lib/shared/browse/navigation/browse-route-resolver.js";
+  import {
+    buildPublicCollectionUrl,
+    buildShortCollectionUrl,
+  } from "#lib/shared/browse/navigation/browse-route-resolver.js";
   import { getUrlQRCodeGenerator } from "#lib/shared/qr/get-qr-code-generator.js";
   import { shareOrCopyLink } from "#lib/shared/share/services/link-share.js";
   import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
@@ -106,29 +109,58 @@ own Escape (which closes the sheet) gets a turn.
       !ownCollection.systemType &&
       ownCollection.kind !== "smart"
   );
+  // The link handed out is the short form (tkaflowarts.com/c/A1F8) once the
+  // collection has a code. The code is minted the first time the link screen
+  // opens for a public collection; until it lands, and whenever minting is
+  // refused, the long Explore address stands in, so there is always a link.
+  let claimedCode = $state<string | null>(null);
+  const shareCode = $derived(ownCollection?.shareCode ?? claimedCode);
   const publicUrl = $derived(
-    buildPublicCollectionUrl(payload.ownerId, payload.collectionId)
+    shareCode
+      ? buildShortCollectionUrl(shareCode)
+      : buildPublicCollectionUrl(payload.ownerId, payload.collectionId)
   );
+  let claimingCode = false;
+  $effect(() => {
+    if (route !== "link" || !isPublic || shareCode || claimingCode) return;
+    claimingCode = true;
+    collectionsState
+      .claimShareCode(payload.collectionId)
+      .then((code) => {
+        if (code) claimedCode = code;
+      })
+      .catch(() => {
+        // The long link is already on screen; nothing to tell the person.
+      })
+      .finally(() => {
+        claimingCode = false;
+      });
+  });
   let linkCopied = $state(false);
   let copiedTimer: ReturnType<typeof setTimeout> | null = null;
   let publishing = $state(false);
 
   // The link screen also shows the address as a QR code, so a person standing
-  // next to you can open it on their phone. Made once, the first time the
-  // screen is up for a public collection; the box it lands in is reserved.
+  // next to you can open it on their phone. Made once per address while the
+  // screen is up for a public collection, so it follows the long link to the
+  // short one; the box it lands in is reserved.
   let qrSrc = $state<string | null>(null);
   let qrFailed = $state(false);
-  let qrRequested = false;
+  let qrUrl: string | null = null;
   $effect(() => {
-    if (route !== "link" || !isPublic || qrRequested) return;
-    qrRequested = true;
+    if (route !== "link" || !isPublic) return;
     const url = publicUrl;
+    if (url === qrUrl) return;
+    qrUrl = url;
     getUrlQRCodeGenerator()
       .generateUrlAsImage(url, 512)
       .then((image) => {
+        if (qrUrl !== url) return;
         qrSrc = image.src;
+        qrFailed = false;
       })
       .catch(() => {
+        if (qrUrl !== url) return;
         qrFailed = true;
       });
   });

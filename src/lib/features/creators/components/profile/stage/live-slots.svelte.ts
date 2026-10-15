@@ -20,7 +20,12 @@
 
 export type Medium = "sequence" | "mandala" | "scene" | "tunnel";
 
-export const MEDIA: readonly Medium[] = ["sequence", "mandala", "scene", "tunnel"];
+export const MEDIA: readonly Medium[] = [
+  "sequence",
+  "mandala",
+  "scene",
+  "tunnel",
+];
 
 interface Slot {
   readonly medium: Medium;
@@ -100,10 +105,18 @@ export class LiveSlots {
     this.schedule();
   };
 
-  /** Svelte action: `<div use:slots.tile={{ medium, onChange }}>`. */
+  /** Svelte action: `<div use:slots.tile={{ medium, onChange }}>`.
+   *  `hover: false` keeps the pointer from promoting a tile past the budget,
+   *  for surfaces where hovering reveals the still card instead of playing
+   *  (the Recent Work wall): mounting an engine only to hide it behind the
+   *  card would churn a full animation stack on every pointer sweep. */
   tile = (
     node: HTMLElement,
-    params: { medium: Medium; onChange: (live: boolean) => void }
+    params: {
+      medium: Medium;
+      onChange: (live: boolean) => void;
+      hover?: boolean;
+    }
   ) => {
     this.#ensureObserver();
     const slot: Slot = {
@@ -122,6 +135,7 @@ export class LiveSlots {
     // devices that have a real hover state; on touch this never fires and the
     // ambient budget is the whole story.
     const canHover =
+      params.hover !== false &&
       typeof window !== "undefined" &&
       window.matchMedia("(hover: hover) and (pointer: fine)").matches;
 
@@ -170,6 +184,8 @@ export class LiveSlots {
     if (this.#restTimer) clearTimeout(this.#restTimer);
     this.#restTimer = null;
     this.#slots.clear();
+    // onDestroy also runs during server rendering, where there is no window.
+    if (typeof window === "undefined") return;
     window.removeEventListener("scroll", this.#onScroll);
     window.removeEventListener("resize", this.#onScroll);
   }

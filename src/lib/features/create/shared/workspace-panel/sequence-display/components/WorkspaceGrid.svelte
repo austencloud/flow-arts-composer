@@ -25,6 +25,7 @@
     getTimelineWidthMultiplier,
     waveBandAt,
   } from "#lib/shared/create/utils/grid-calculations.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import { getMandalaPlacements } from "#lib/shared/sequence-viewer/services/get-mandala-placements.js";
   import {
     MIN_DURATION,
@@ -754,7 +755,7 @@
   // The cells carry the sequence's join; the full mandala draws each hand's
   // figure on its own grid, as the card's mandala does.
   const mandalaHandOffsets = $derived.by(() => {
-    const cell = steps[0] ?? startPlacement;
+    const cell: PictographData | null | undefined = steps[0] ?? startPlacement;
     return mandalaGridJoinOffsets(cell?.conjoined, cell?.gridMode);
   });
   const mandalaPaletteOverride = $derived.by((): MandalaPalette | undefined => {

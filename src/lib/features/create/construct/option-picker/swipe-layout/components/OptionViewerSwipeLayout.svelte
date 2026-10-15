@@ -137,7 +137,9 @@ Features:
   }
 
   function prepareForNavigation() {
-    mountedPanels = organizedPictographs.map((_, index) => index);
+    mountedPanels = organizedPictographs.map(
+      (_: OrganizedSection, index: number) => index
+    );
   }
 
   // Give the selected pictographs a paint before preparing each hidden group.

@@ -11,20 +11,7 @@ import {
 import { TKA_CONCEPTS } from "../../../src/lib/features/learn/domain/concepts";
 import { GUIDE_BODY_PAGES } from "../../../src/routes/(public)/guide/level-1/_data/guide-manifest";
 
-const expectedPublishedIds = [
-  "grid",
-  "hand-placements",
-  "hand-motions-intro",
-  "timing-and-direction",
-  "reading-choreo-cards",
-  "rotation-direction",
-  "dual-shifts-alpha-beta",
-  "gamma-motion",
-  "staff-placements",
-  "letter-codex-intro",
-  "type1-abc-ghi",
-  "words-alpha-beta",
-];
+const expectedPublishedIds = ["grid", "hand-placements", "hand-motions-intro"];
 
 const learnDomainDir = resolve(process.cwd(), "src/lib/features/learn/domain");
 const registrySource = readFileSync(
@@ -80,6 +67,7 @@ describe("concept experience registry", () => {
   );
 
   it("lists only lessons that have a real published experience", () => {
+    expect(expectedPublishedIds).toHaveLength(3);
     expect(getAvailableConcepts().map((concept) => concept.id)).toEqual(
       expectedPublishedIds
     );
@@ -87,6 +75,39 @@ describe("concept experience registry", () => {
       expectedPublishedIds
     );
   });
+
+  // Guide slug null: the lesson shared its Guide topic with a lesson that
+  // stays published, so the topic itself still opens that other lesson.
+  it.each<[string, string | null]>([
+    ["staff-placements", "staff-placements"],
+    ["words-alpha-beta", "words"],
+    ["timing-and-direction", null],
+    ["reading-choreo-cards", null],
+    ["rotation-direction", "staff-motions"],
+    ["dual-shifts-alpha-beta", "hm-type1"],
+    ["gamma-motion", "hm-gamma"],
+    ["letter-codex-intro", "codex"],
+    ["type1-abc-ghi", "lt1-abc-ghi"],
+  ])(
+    "withdraws %s while retaining its curriculum and Guide reference",
+    (conceptId, guideSlug) => {
+      expect(TKA_CONCEPTS.some((concept) => concept.id === conceptId)).toBe(
+        true
+      );
+      expect(getConceptExperience(conceptId)).toBeUndefined();
+      if (guideSlug) {
+        expect(GUIDE_BODY_PAGES.some((page) => page.id === guideSlug)).toBe(
+          true
+        );
+        expect(getConceptExperienceForGuideSlug(guideSlug)).toBeUndefined();
+      }
+      expect(isConceptExperienceAvailable(conceptId)).toBe(false);
+      expect(
+        getAvailableConcepts().some((concept) => concept.id === conceptId)
+      ).toBe(false);
+      expect(isConceptExperienceAvailable("grid")).toBe(true);
+    }
+  );
 
   it("maps every experience to one curriculum concept and one Guide topic", () => {
     const curriculumIds = new Set(TKA_CONCEPTS.map((concept) => concept.id));
@@ -110,28 +131,10 @@ describe("concept experience registry", () => {
     expect(isConceptExperienceAvailable("hand-motions")).toBe(false);
   });
 
-  it("publishes rotation direction as its own focused lesson", () => {
-    const rotationDirection = getConceptExperience("rotation-direction");
-
-    expect(rotationDirection?.guideSlug).toBe("staff-motions");
-    expect(rotationDirection?.reviewStatus).toBe("built");
-    expect(isConceptExperienceAvailable("rotation-direction")).toBe(true);
-  });
-
-  it("shares the written reference without displacing the full hand-motions lesson", () => {
-    expect(getConceptExperience("timing-and-direction")?.guideSlug).toBe(
-      "hand-motions"
-    );
+  it("keeps the Hand Motions Guide topic on its lesson while Timing is withdrawn", () => {
     expect(getConceptExperienceForGuideSlug("hand-motions")?.conceptId).toBe(
       "hand-motions-intro"
     );
-  });
-
-  it("opens the dedicated timing reference while retaining the Guide association", () => {
-    expect(getConceptExperience("timing-and-direction")?.reference).toEqual({
-      href: "/timing-and-direction",
-      label: "Timing and Direction",
-    });
     expect(
       getConceptExperience("hand-motions-intro")?.reference
     ).toBeUndefined();

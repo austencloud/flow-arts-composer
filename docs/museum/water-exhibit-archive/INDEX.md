@@ -37,7 +37,7 @@ The original Vulcan Cave water room. You entered through a sump, walked a
 carved corridor, and arrived in a grotto with a waterfall and a mirror pool.
 
 - Spec: [vulcan-cave-water-room-drowned-gallery-design.md](../../superpowers/specs/backlog/2026-08-02-vulcan-cave-water-room-drowned-gallery-design.md)
-- Plan: [drowned-gallery-graybox.md](../../superpowers/plans/2026-08-02-drowned-gallery-graybox.md)
+- Plan: [drowned-gallery-graybox.md](../../superpowers/plans/backlog/2026-08-02-drowned-gallery-graybox.md)
 - Plan sketch: [2026-08-02-drowned-gallery-plan.html](../../../static/sketches/2026-08-02-drowned-gallery-plan.html)
 - Playtest: [drowned-gallery-playtest-report.md](../../superpowers/specs/2026-08-02-drowned-gallery-playtest-report.md)
 - Cold reviews: [Opus](../../superpowers/specs/2026-08-02-drowned-gallery-cold-review-opus.md) · [Codex](../../superpowers/specs/2026-08-02-drowned-gallery-cold-review-codex.md)

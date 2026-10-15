@@ -16,8 +16,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   // The live effective uid, swappable mid-operation.
   currentUserId: { value: "user-A" },
+  showUserError: vi.fn(),
   previewReadOnly: { value: false },
-  updateDoc: vi.fn(async (_ref: { path: string }, _data?: unknown) => undefined),
+  updateDoc: vi.fn(
+    async (_ref: { path: string }, _data?: unknown) => undefined
+  ),
   setDoc: vi.fn(async (_ref: { path: string }, _data?: unknown) => undefined),
   getDoc: vi.fn(),
   getDocs: vi.fn(),
@@ -75,7 +78,7 @@ vi.mock("#lib/shared/debug/state/user-preview-state.svelte.js", () => ({
   isPreviewReadOnly: () => mocks.previewReadOnly.value,
 }));
 vi.mock("#lib/shared/application/get-error-handler.js", () => ({
-  getErrorHandler: () => ({ showUserError: vi.fn() }),
+  getErrorHandler: () => ({ showUserError: mocks.showUserError }),
 }));
 vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({
   toast: { info: vi.fn(), error: vi.fn() },
@@ -202,10 +205,12 @@ describe("publishSequence owner chain", () => {
     const outcome = await settled;
 
     // The headline: not one document of the user who arrived mid-operation.
-    expect(
-      mocks.syncToPublicIndex.mock.calls.map((call) => call[1])
-    ).toEqual([]);
-    expect(writtenPaths().filter((path) => path.includes("user-B"))).toEqual([]);
+    expect(mocks.syncToPublicIndex.mock.calls.map((call) => call[1])).toEqual(
+      []
+    );
+    expect(writtenPaths().filter((path) => path.includes("user-B"))).toEqual(
+      []
+    );
     expect(mocks.updateDoc).not.toHaveBeenCalled();
     expect(outcome).toBeInstanceOf(Error);
     expect((outcome as Error).message).toMatch(/signed-in user changed/i);
@@ -214,7 +219,10 @@ describe("publishSequence owner chain", () => {
   it("writes nothing at all when the identity switches before the mirror is written", async () => {
     // Already public: the repair path goes straight to the mirror and the
     // collection touch, with no visibility write in between.
-    mocks.sequences.set("user-A/seq-1", ownerSequence({ visibility: "public" }));
+    mocks.sequences.set(
+      "user-A/seq-1",
+      ownerSequence({ visibility: "public" })
+    );
     const repository = makeRepository();
     mocks.holdRead.value = true;
 
@@ -240,26 +248,28 @@ describe("publishSequence owner chain", () => {
     await repository.publishSequence("seq-1", "user-A");
 
     // The visibility write went to the captured owner's document.
-    expect(
-      mocks.updateDoc.mock.calls.map((call) => call[0].path)
-    ).toContain("users/user-A/sequences/seq-1");
-    expect(writtenPaths().filter((path) => path.includes("user-B"))).toEqual([]);
+    expect(mocks.updateDoc.mock.calls.map((call) => call[0].path)).toContain(
+      "users/user-A/sequences/seq-1"
+    );
+    expect(writtenPaths().filter((path) => path.includes("user-B"))).toEqual(
+      []
+    );
     expect(mocks.syncToPublicIndex).toHaveBeenCalledWith(
       expect.objectContaining({ id: "seq-1" }),
       "user-A"
     );
     // And the collection touch used the same owner.
-    expect(
-      mocks.updateDoc.mock.calls.map((call) => call[0].path)
-    ).toContain("users/user-A/collections/collection-1");
+    expect(mocks.updateDoc.mock.calls.map((call) => call[0].path)).toContain(
+      "users/user-A/collections/collection-1"
+    );
   });
 
   it("refuses an owner that is not the signed-in user", async () => {
     const repository = makeRepository();
 
-    await expect(
-      repository.publishSequence("seq-1", "user-B")
-    ).rejects.toThrow(/signed-in user changed/i);
+    await expect(repository.publishSequence("seq-1", "user-B")).rejects.toThrow(
+      /signed-in user changed/i
+    );
     expect(writtenPaths()).toEqual([]);
     expect(mocks.syncToPublicIndex).not.toHaveBeenCalled();
   });
@@ -269,8 +279,51 @@ describe("publishSequence owner chain", () => {
 
     await repository.publishSequence("seq-1");
 
+    expect(mocks.updateDoc.mock.calls.map((call) => call[0].path)).toContain(
+      "users/user-A/sequences/seq-1"
+    );
+  });
+});
+
+describe("publish source and collection permission diagnostics", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.currentUserId.value = "user-A";
+    mocks.previewReadOnly.value = false;
+    mocks.holdRead.value = false;
+    mocks.sequences.clear();
+    mocks.updateDoc.mockResolvedValue(undefined);
+    mocks.syncToPublicIndex.mockResolvedValue(undefined);
+  });
+  it("preserves denied source reads instead of reporting not found", async () => {
+    const { firestoreGetDetailed } =
+      await import("#lib/shared/firestore/index.js");
+    vi.mocked(firestoreGetDetailed).mockRejectedValueOnce(
+      Object.assign(new Error("denied"), { code: "permission-denied" })
+    );
+    await expect(makeRepository().publishSequence("seq-1")).rejects.toThrow(
+      "read-publish-source: get users/{uid}/sequences/{sequenceId}"
+    );
     expect(
-      mocks.updateDoc.mock.calls.map((call) => call[0].path)
-    ).toContain("users/user-A/sequences/seq-1");
+      mocks.showUserError.mock.calls.at(-1)![0].technicalDetails
+    ).toContain("read-publish-source");
+  });
+
+  it("reports collection refresh failure during an already-public repair", async () => {
+    mocks.currentUserId.value = "user-A";
+    mocks.previewReadOnly.value = false;
+    mocks.sequences.set(
+      "user-A/seq-1",
+      ownerSequence({ visibility: "public" })
+    );
+    mocks.updateDoc.mockRejectedValueOnce(
+      Object.assign(new Error("denied"), { code: "permission-denied" })
+    );
+    await expect(makeRepository().publishSequence("seq-1")).rejects.toThrow(
+      "refresh-sequence-collection: update users/{uid}/collections/{collectionId}"
+    );
+    expect(
+      mocks.showUserError.mock.calls.at(-1)![0].technicalDetails
+    ).toContain("refresh-sequence-collection");
   });
 });

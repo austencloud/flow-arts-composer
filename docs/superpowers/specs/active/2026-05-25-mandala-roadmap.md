@@ -2,14 +2,16 @@
 status: active
 value: 2
 effort: L
-remaining: "Verify which mandala roadmap phases after the viewer exist in the current sequence viewer, then split remaining phases into independently scoped specs."
+remaining: "Continue from the existing viewer/export, meditation and collection/publication owners; meditation is implemented in src/lib/features/mandala/tabs/meditate (443c7b6fec), and shape morphing exists in mandala-path-interpolator.ts. Trails remain absent, while exact-settings short links, formations/chains, FFT reactivity, fractal nesting, tessellation and 3D extrusion still need their own acceptance review; reuse the existing phase specs instead of creating duplicates."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-10-14
+work_state: in-progress
 ---
 # Mandala Creation Roadmap
+
+> 2026-10-14 triage: Continue from the existing viewer/export, meditation and collection/publication owners; meditation is implemented in src/lib/features/mandala/tabs/meditate (443c7b6fec), and shape morphing exists in mandala-path-interpolator.ts. Trails remain absent, while exact-settings short links, formations/chains, FFT reactivity, fractal nesting, tessellation and 3D extrusion still need their own acceptance review; reuse the existing phase specs instead of creating duplicates. Earlier status banners and execution instructions are historical where they conflict with this review.
 
 The breathing mandala viewer (Phase 1) is the foundation. Everything below builds on it.
 

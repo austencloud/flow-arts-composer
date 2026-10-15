@@ -5,6 +5,7 @@ import {
   type MajorLevel,
 } from "@tka/domain";
 import type { GameId } from "../play/domain/arcade-types";
+import { isConceptExperienceAvailable } from "./concept-experience-registry";
 
 export interface LessonReference {
   lessonId: string;
@@ -193,7 +194,11 @@ function toPlace(concept: KnowledgeConcept): LearnConceptPlace {
     tkaLevel: concept.level,
     concept,
     prerequisites: [...concept.prerequisites],
-    lessonIds: [...resources.lessonIds],
+    // A binding may name a lesson that is withdrawn from the published
+    // registry. Only lessons a learner can open become links.
+    lessonIds: resources.lessonIds.filter((lesson) =>
+      isConceptExperienceAvailable(lesson.lessonId)
+    ),
     guideRefs: [...resources.guideRefs],
     exploration: resources.exploration,
     practice: [...resources.practice],

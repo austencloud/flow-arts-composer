@@ -679,7 +679,9 @@
     "rotation-direction"
   );
   const gatedDuration = gatedPattern(handleDuration, "duration-pattern");
-  const gatedRewind = gatedPattern(handleRewind, "rewind-sequence");
+  const gatedRewind = gatedPattern(async () => {
+    await handleRewind();
+  }, "rewind-sequence");
   const gatedExtend = gatedPattern(handleExtend, "extend-sequence");
   const gatedShiftStart = gatedPattern(handleShiftStart, "choose-start");
 

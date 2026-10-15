@@ -256,7 +256,7 @@
       isFullscreen: layout.isFullscreen,
       fullscreenStackVertical: layout.fullscreenStackVertical,
       isMobile: layout.isMobile,
-      isLandscapeMobile: layout.isLandscapeMobile,
+      isLandscapeMobile: layout.isLandscapeMobile ?? false,
       adaptiveVerticalSplit,
       focusedPane: viewerFocusedPane,
       practiceActive,
@@ -293,16 +293,6 @@
   function resetSplitShare(): void {
     applyUserSplitShare(VIEWER_SPLIT_DEFAULT_SHARE);
   }
-  // Each pane keeps at least a quarter of the axis and the readable minimum.
-  const splitAxisLength = $derived(
-    panelLayout.direction === "horizontal" ? splitWidth : splitHeight
-  );
-  const splitPaneMinSize = $derived(
-    Math.max(
-      MIN_VIEWER_PANE_REVEAL_SIZE,
-      splitAxisLength * VIEWER_SPLIT_MIN_SHARE
-    )
-  );
   let retainedSplitDirection = $state<ViewerPanelDirection | null>(null);
   let focusReleasePending = $state(false);
   let previousFocusedPane: ViewerFocusedPane = viewerFocusedPane;
@@ -360,6 +350,16 @@
     ...responsivePanelLayout,
     direction: panelDirection,
   });
+  // Each pane keeps at least a quarter of the axis and the readable minimum.
+  const splitAxisLength = $derived(
+    panelLayout.direction === "horizontal" ? splitWidth : splitHeight
+  );
+  const splitPaneMinSize = $derived(
+    Math.max(
+      MIN_VIEWER_PANE_REVEAL_SIZE,
+      splitAxisLength * VIEWER_SPLIT_MIN_SHARE
+    )
+  );
   $effect.pre(() => {
     // Clear the covered pane's bound measurements before focus is released.
     // Its first split-mode measurement is therefore guaranteed to be fresh,

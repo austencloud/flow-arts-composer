@@ -108,7 +108,7 @@
   }
 
   function applyPreview(): void {
-    if (!canApplyPreview) return;
+    if (!canApplyPreview || !preview) return;
     hapticService?.trigger("success");
     if (!previewIsCurrent) {
       applyThemeFromColors(undefined, preview.themeColors);
@@ -155,7 +155,7 @@
         theme: themeName(previewType),
       })}
     >
-      <ThemePreview type={previewType} fallback={preview.gradient} />
+      <ThemePreview type={previewType} fallback={preview?.gradient ?? ""} />
       <div class="stage-scrim"></div>
       <div class="stage-copy">
         <p class="stage-label">{t("settings_live_preview")}</p>

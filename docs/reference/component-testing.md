@@ -106,4 +106,4 @@ The `component-tests` job in `.github/workflows/web-ci.yml` installs Chromium an
 - Config: `tests/config/vitest.components.config.ts`
 - a11y helper: `tests/helpers/component-a11y.ts`
 - Examples: `FilterChipBase.svelte.test.ts`, `SegmentedControl.svelte.test.ts`, `PropOrientationControl.svelte.test.ts`
-- Design + plan: `docs/superpowers/specs/2026-06-29-component-test-layer-design.md`, `docs/superpowers/plans/2026-06-29-component-test-layer.md`
+- Design + plan: `docs/superpowers/specs/2026-06-29-component-test-layer-design.md`, `docs/superpowers/plans/shipped/2026-06-29-component-test-layer.md`

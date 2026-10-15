@@ -144,13 +144,13 @@
     return answerWasCorrect
       ? tDynamic("learn_bridge_announcement_connects", {
           result,
-          selected: selectedAnswer,
+          selected: String(selectedAnswer),
           from: currentQuestion.gap.from,
           to: currentQuestion.gap.to,
         })
       : tDynamic("learn_bridge_announcement_fails", {
           result,
-          selected: selectedAnswer,
+          selected: String(selectedAnswer),
           from: currentQuestion.gap.from,
           to: currentQuestion.gap.to,
           valid: validBridges,

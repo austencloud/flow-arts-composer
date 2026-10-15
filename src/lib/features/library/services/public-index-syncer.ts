@@ -1,3 +1,7 @@
+import {
+  publishOperation,
+  PublishPermissionError,
+} from "#lib/shared/library/services/publish-permission-error.js";
 /**
  * PublicIndexSyncer - Public Sequence Index Management
  *
@@ -92,49 +96,64 @@ export class PublicIndexSyncer {
     const normalized = await normalizeSequenceForPersistence(sequence);
     const hydrated = normalized.hydrated;
 
-    // Moderate the DERIVED word. The stored `sequence.word` can be an
-    // auto-title (or empty, which previously skipped moderation entirely);
-    // what the gallery actually displays is the derived word, so that is what
-    // gets checked.
-    if (this.contentModerator) {
-      const result = this.contentModerator.checkWord(normalized.exactWord);
+    try {
+      // Moderate the DERIVED word. The stored `sequence.word` can be an
+      // auto-title (or empty, which previously skipped moderation entirely);
+      // what the gallery actually displays is the derived word, so that is what
+      // gets checked.
+      if (this.contentModerator) {
+        const result = this.contentModerator.checkWord(normalized.exactWord);
 
-      if (!result.isAllowed) {
-        // Check if this content has been whitelisted via appeal
-        const isWhitelisted = this.contentAppealManager
-          ? await this.contentAppealManager.isWhitelisted(
-              "sequence",
+        if (!result.isAllowed) {
+          // Check if this content has been whitelisted via appeal
+          const isWhitelisted = this.contentAppealManager
+            ? await publishOperation(
+                {
+                  step: "read-moderation-appeal",
+                  path: "contentAppeals",
+                  operation: "list",
+                },
+                () =>
+                  this.contentAppealManager!.isWhitelisted(
+                    "sequence",
+                    sequence.id
+                  )
+              )
+            : false;
+
+          if (!isWhitelisted) {
+            throw new ContentModerationError(
+              "Content flagged by moderation",
+              result.flaggedTerms,
+              normalized.exactWord,
               sequence.id
-            )
-          : false;
-
-        if (!isWhitelisted) {
-          throw new ContentModerationError(
-            "Content flagged by moderation",
-            result.flaggedTerms,
-            normalized.exactWord,
-            sequence.id
-          );
+            );
+          }
         }
       }
-    }
 
-    // Authoritative community gate: nothing under the minimum ever enters the
-    // public mirror, regardless of which path called us (save with public
-    // visibility, fork-default-public, explicit publish). Uses the canonical
-    // count — `meetsCommunityMinimum(sequence)` on the raw input could read a
-    // stale stored `sequenceLength`.
-    if (normalized.sequenceLength < MIN_COMMUNITY_STEPS) {
-      throw new Error(
-        `Needs at least ${MIN_COMMUNITY_STEPS} steps to post to the community gallery.`
-      );
-    }
+      // Authoritative community gate: nothing under the minimum ever enters the
+      // public mirror, regardless of which path called us (save with public
+      // visibility, fork-default-public, explicit publish). Uses the canonical
+      // count — `meetsCommunityMinimum(sequence)` on the raw input could read a
+      // stale stored `sequenceLength`.
+      if (normalized.sequenceLength < MIN_COMMUNITY_STEPS) {
+        throw new Error(
+          `Needs at least ${MIN_COMMUNITY_STEPS} steps to post to the community gallery.`
+        );
+      }
 
-    const firestore = await getFirestoreInstance();
+      const firestore = await getFirestoreInstance();
 
-    try {
       // Get user display info for denormalization
-      const userDoc = await getDoc(doc(firestore, `users/${userId}`));
+      const userDoc = await publishOperation(
+        {
+          step: "read-publisher-profile",
+          path: "users/{uid}",
+          operation: "get",
+        },
+        () => getDoc(doc(firestore, `users/${userId}`))
+      );
       const userData = userDoc.data() ?? {};
 
       // Detect circularity and LOOP type from the HYDRATED sequence: it always
@@ -450,8 +469,16 @@ export class PublicIndexSyncer {
 
     let snapshot: QuerySnapshot<DocumentData, DocumentData>;
     try {
-      snapshot = await getDocs(collection(firestore, getUserTagsPath(userId)));
+      snapshot = await publishOperation(
+        {
+          step: "resolve-publish-tags",
+          path: "users/{uid}/tags",
+          operation: "list",
+        },
+        () => getDocs(collection(firestore, getUserTagsPath(userId)))
+      );
     } catch (error) {
+      if (error instanceof PublishPermissionError) throw error;
       throw new Error(
         `Couldn't resolve tag names for "${sequence.word}" — the tag read failed, ` +
           "and publishing with an empty tag list would store 'untagged' as fact.",

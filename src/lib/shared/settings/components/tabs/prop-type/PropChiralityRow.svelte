@@ -98,7 +98,7 @@
           {options}
           value={valueFor(state.flipped)}
           onchange={(next) => onChange(state.hand, next === "b")}
-          color={palette[state.hand]}
+          color={state.hand === "left" ? "blue" : "red"}
           semantics="radiogroup"
           ariaLabel={state.hand === "right"
             ? t("settings_right_buugeng_chirality")

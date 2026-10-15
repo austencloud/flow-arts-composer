@@ -48,10 +48,6 @@
 
   const { variant = "standalone" }: Props = $props();
   const appState = getShapeMatrixAppContext();
-  const focusMode = $derived(
-    appState.compact &&
-      (appState.propPickerOpen || animationState.activeSection !== null)
-  );
   let appElement: HTMLElement | undefined;
   const focusMotion = createLayoutMotion({
     getRoot: () => appElement,
@@ -161,6 +157,10 @@
   // share one animation scope while their workspaces crossfade.
   const animationState = setShapeMatrixAnimationContext(
     createShapeMatrixAnimationState()
+  );
+  const focusMode = $derived(
+    appState.compact &&
+      (appState.propPickerOpen || animationState.activeSection !== null)
   );
   setAnimationScopeContext(animationState.scope);
   setAnimationVisibilityContext(animationState.scope.visibility);

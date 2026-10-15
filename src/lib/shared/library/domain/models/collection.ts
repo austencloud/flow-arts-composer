@@ -173,6 +173,14 @@ export interface LibraryCollection {
   /** Whether this collection is visible to others */
   readonly isPublic: boolean;
 
+  /**
+   * Short share code (4-6 base36 characters) minted the first time the owner
+   * shares a public collection by link; resolves at /c/{code}. Absent until
+   * then, and kept for the life of the collection so handed-out links stay
+   * good.
+   */
+  readonly shareCode?: string;
+
   /** Sort order within user's collections list */
   readonly sortOrder: number;
 

@@ -728,23 +728,23 @@
             <SegmentedControl
               options={[
                 {
-                  value: 0.25,
+                  value: "0.25",
                   label: "0.25x",
                   ariaLabel: t("viewer_detail_quarter_speed"),
                 },
                 {
-                  value: 0.5,
+                  value: "0.5",
                   label: "0.5x",
                   ariaLabel: t("viewer_detail_half_speed"),
                 },
                 {
-                  value: 1,
+                  value: "1",
                   label: "1x",
                   ariaLabel: t("viewer_detail_full_speed"),
                 },
               ]}
-              value={rate}
-              onchange={applyRate}
+              value={String(rate)}
+              onchange={(value) => applyRate(Number(value))}
               size="sm"
               ariaLabel={t("viewer_detail_playback_speed")}
             />

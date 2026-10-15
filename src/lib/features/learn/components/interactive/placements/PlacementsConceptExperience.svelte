@@ -587,7 +587,7 @@
             >
               <SequenceTransformActions
                 toolbar
-                hasSequence={built}
+                hasSequence={Boolean(built)}
                 hasSelection={false}
                 isTransforming={false}
                 showEditInConstructor={false}

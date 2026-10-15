@@ -2,19 +2,21 @@
 status: backlog
 value: 2
 effort: L
-remaining: Current source has the withCheat verdict type but no depth-feasibility solver or solveStepDepth producer; implement the Phase 3 solver and scanner path.
+remaining: "Implement solveStepDepth and its scanner/renderer integration using existing wall-feasibility and concavity owners; the depth solver, scan-wall-feasibility.ts and depth-solver test are absent, while wall-feasibility.ts only declares depthOffset/withCheat (f558fd9fc9). Reconcile current IK owner paths, then validate reachable crossing fixtures, scan-version behavior and Austen's visual gate before claiming a working cheat."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: 2026-10-14
 work_state: ready
 ---
 
 # Wall-Plane Depth-First Joint Feasibility Solver — Design (Phase 3)
 
+> 2026-10-14 triage: Implement solveStepDepth and its scanner/renderer integration using existing wall-feasibility and concavity owners; the depth solver, scan-wall-feasibility.ts and depth-solver test are absent, while wall-feasibility.ts only declares depthOffset/withCheat (f558fd9fc9). Reconcile current IK owner paths, then validate reachable crossing fixtures, scan-version behavior and Austen's visual gate before claiming a working cheat. Earlier status banners and execution instructions are historical where they conflict with this review.
+
 **Date:** 2026-07-13
 **Status:** Approved (brainstormed with Austen 2026-07-13). **Targeted for Fable 5 execution at xhigh effort** — see Fable Handoff.
-**Builds on:** `docs/superpowers/specs/2026-07-13-wall-plane-feasibility-design.md` (Phases 0–2) and its plan `docs/superpowers/plans/2026-07-13-wall-plane-feasibility.md`. This spec supersedes that plan's Tasks 8/9/11 (the concavity-only detection wiring), which were paused.
+**Builds on:** `docs/superpowers/specs/2026-07-13-wall-plane-feasibility-design.md` (Phases 0–2) and its plan `docs/superpowers/plans/shipped/2026-07-13-wall-plane-feasibility.md`. This spec supersedes that plan's Tasks 8/9/11 (the concavity-only detection wiring), which were paused.
 
 ## Why This Exists (the finding that reshaped Phase 3)
 

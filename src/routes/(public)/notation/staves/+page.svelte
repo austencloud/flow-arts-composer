@@ -51,7 +51,7 @@
         The Kinetic Alphabet began on paper with a red pen and a blue pen. A pen
         works like a small staff: each has two visible ends. For the first
         couple of years, sequences were built on a hand-drawn grid, with arrows
-        drawn in the same two colors. Working sequences got their own pages.
+        drawn in the same two colors.
       </p>
       <p>
         A staff's straight shape is easy to draw without covering the arrows in
@@ -106,12 +106,9 @@
           size="inline"
           href="/guide">guide</LinkChip
         >
-        introduces every concept in order, the
+        introduces every concept in order, and the
         <LinkChip size="inline" href="/guide/codex">Double Staff Codex</LinkChip
-        > collects the pictographs themselves, and the <LinkChip
-          size="inline"
-          href="/atlas">Kinetic Atlas</LinkChip
-        > defines every term used on this page.
+        > collects the pictographs themselves.
       </p>
     </div>
   </section>

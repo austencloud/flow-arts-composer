@@ -10,6 +10,7 @@ import {
   showToast,
 } from "#lib/shared/toast/state/toast-state.svelte.js";
 import { LIBRARY_LIMITS } from "#lib/shared/library/data/firestore-paths.js";
+import { claimCollectionShareCode } from "#lib/shared/library/services/collection-share-link.js";
 import type { LibraryCollection } from "#lib/shared/library/domain/models/collection.js";
 import type { SmartFilterSpec } from "#lib/shared/library/domain/models/collection.js";
 import { isSmartCollection } from "#lib/shared/library/domain/models/collection.js";
@@ -470,6 +471,28 @@ class CollectionsState {
     } catch {
       return false; // manager already toasted
     }
+  }
+
+  /**
+   * The collection's short share code, minting it on first use. Public
+   * collections only; returns null when there is nothing to mint or the
+   * write is refused, and the caller keeps the long link. The live copy in
+   * `collections` picks the code up from the snapshot listener as well.
+   */
+  async claimShareCode(collectionId: string): Promise<string | null> {
+    if (this.blockPreviewWrite()) return null;
+    const c = this.collections.find((col) => col.id === collectionId);
+    if (!c || !c.isPublic) return null;
+    if (c.shareCode) return c.shareCode;
+    const code = await claimCollectionShareCode(collectionId);
+    if (code) {
+      this.collections = this.collections.map((col) =>
+        col.id === collectionId && !col.shareCode
+          ? { ...col, shareCode: code }
+          : col
+      );
+    }
+    return code;
   }
 
   /**

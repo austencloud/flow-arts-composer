@@ -100,6 +100,8 @@ export function mapDocToCollection(
     color: data["color"],
     icon: data["icon"] ?? "fa-folder",
     isPublic: data["isPublic"] ?? false,
+    shareCode:
+      typeof data["shareCode"] === "string" ? data["shareCode"] : undefined,
     sortOrder: data["sortOrder"] ?? 0,
     systemType: data["systemType"],
     kind: data["kind"] ?? "manual",

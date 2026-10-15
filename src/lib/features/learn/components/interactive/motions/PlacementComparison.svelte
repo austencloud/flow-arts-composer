@@ -23,7 +23,7 @@
     transformPlacement,
   } from "../placements/hand-placement-lesson";
 
-  let gridMode = $state(GridMode.DIAMOND);
+  let gridMode = $state<GridMode>(GridMode.DIAMOND);
   let pairs = $state(
     PLACEMENT_KINDS.map((kind) => placementExample(kind, GridMode.DIAMOND))
   );

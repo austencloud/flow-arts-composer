@@ -1,7 +1,6 @@
 <script lang="ts">
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import Seo from "#lib/shared/components/Seo.svelte";
-  import OpenChapter from "#lib/shared/landing/components/OpenChapter.svelte";
   import SequenceHeroDemo from "#lib/shared/landing/components/SequenceHeroDemo.svelte";
   import demoJson from "#lib/shared/landing/data/demo-sequence.json";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
@@ -56,8 +55,7 @@
               href="/notation/staves">staff notation</LinkChip
             > carries over, including the isolation and antispin relationships. The
             two end references still apply, as do the grid positions and timing of
-            each letter. Eight rings and double contact ball belong to the same dual-ended
-            family.
+            each letter.
           </p>
           <p>
             Buugeng curve around the body, and many artists turn them with their
@@ -78,13 +76,6 @@
       </div>
     </div>
   </section>
-
-  <OpenChapter prop="Buugeng" heading="How buugeng artists handle the curves">
-    <p>
-      The notation records where each end points. A buugeng artist could add
-      examples of finger spins, grip changes, and movement around the curves.
-    </p>
-  </OpenChapter>
 
   <div class="cta-card">
     <h3>Take it to your buugeng</h3>

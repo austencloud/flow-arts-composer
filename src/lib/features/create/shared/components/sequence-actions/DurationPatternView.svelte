@@ -32,7 +32,7 @@
 
   let { sequence, onPreview, onApply }: Props = $props();
 
-  const DUR_VALUES: StripValue[] = [1, 1.25, 1.5, 2, 4];
+  const DUR_VALUES: number[] = [1, 1.25, 1.5, 2, 4];
   const fmtDur = (v: StripValue) => (v === 1 ? "1×" : `${v}×`);
   const binding: StripBinding = {
     lanes: 1,
