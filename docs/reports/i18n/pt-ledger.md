@@ -147,3 +147,20 @@
 - Source limitations: `feedback_needs_info_hint` contains only the fragment `details below.`. `feedback_no_status_feedback`, `feedback_priority_title` and `feedback_lane_title` receive parameters at their call sites that are absent from their English values. Translations preserve the supplied English text and placeholder sets; no missing content or parameters were invented.
 - Uncertain: creative preset names have no reviewed Portuguese glossary entries. Cold gas-blue burn uses chama azul-gás fria; Gilt Wyrm uses serpente dourada; Banked Ember uses brasa abafada. Native terminology review remains needed.
 - No native-speaker review performed. No primary checkout access, dependency installation, broad checks, server, integration, or push performed. Changes remain on the assigned worker branch for coordinator integration, as requested.
+
+## P5 — 2026-10-14
+
+- Batch: `batch-P5.json`; 917 translated entries, 0 retranslation entries, 0 review entries. Protected names, notation and language-neutral templates retain identical values where appropriate.
+- Applied exclusively through the supplied `apply-batch.js` script using `out-P5.json`.
+- Initial apply result: `messages/pt.json: inserted 917, replaced 0, refused 0`.
+- Final apply result after terminology review: `messages/pt.json: inserted 0, replaced 917, refused 0`.
+- Catalog diff before this ledger: only `messages/pt.json`; 917 insertions, 0 deletions (net +917 lines).
+- Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
+- Final result: `Test Files  1 passed (1)`; `Tests  66 passed (66)`; exit 0. The initial gate also passed before the terminology corrections.
+- Focused inspection: all 917 batch keys match the output and applied catalog; exactly 917 new keys belong to this batch, with all existing catalog values unchanged. Placeholder names and occurrence counts and markup tags match English. No multiline values or Unicode replacement characters. `git diff --check` passed.
+- Glossary choices: Brazilian Portuguese with você and infinitive action labels; posição, grade, Quadrado, Diamante, volta, bastão, props, performer and timing. Sequence positions use passo; musical counts use batida. Protected products, placement names, motion categories and VTG labels remain English. Shape Engine retains the existing product name. Reversal uses reversão, consistent with previous batches; inverted LOOP transforms use invertido. Trail uses rastro; preset uses predefinição. Shape Matrix uses matriz de formas; motion paths uses trajetórias de movimento.
+- Source scope: the actual supplied P5 keys cover training, site and FAQ, onboarding, Composer demonstrations, notifications, pictograph descriptions, shared controls, playback, LOOP selection, tutorials, colors, animation, tunnels and pattern strips. They are not primarily guide_/verified_ teaching keys as the briefing description suggests. The exact supplied batch was translated without adding other keys.
+- Uncertain: knob / bulb have no reviewed Portuguese glossary entries; rendered pomo / bulbo for prop-end tracking labels. Native terminology review remains needed.
+- Uncertain: authored performers uses performers com coreografia própria, and stage position frame uses referencial de posição no palco. These source UI terms have no glossary definitions; no additional behavior was assumed.
+- Uncertain: 1 point across / 2 points across uses 1 ponto de distância / 2 pontos de distância. The English does not specify an axis or explicitly say whether this is shared-point count; no axis was invented. Shape Matrix uses matriz de formas, but this surface name has no explicit glossary entry.
+- No native-speaker review performed. No primary checkout access, dependency installation, broad checks, server, integration, or push performed. Changes remain on the assigned worker branch for coordinator integration, as requested.
