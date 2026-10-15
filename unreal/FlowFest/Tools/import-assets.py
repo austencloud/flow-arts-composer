@@ -80,7 +80,9 @@ def import_file(path, folder, name, mesh=False):
                 ensure_instancing(material)
                 if ((folder.startswith('/Game/FlowFest/Assets/Trees/') and material.get_name().endswith('_leaves')) or job_wind_family(folder)) and not ME.get_material_property_input_node(material, u.MaterialProperty.MP_WORLD_POSITION_OFFSET):
                     add_foliage_wind(material, folder.startswith('/Game/FlowFest/Assets/Trees/'))
-                if ((folder.startswith('/Game/FlowFest/Assets/Trees/') and material.get_name().endswith('_leaves')) or job_wind_family(folder)):
+                # Ecology was just reauthored with explicit scalar mask channels;
+                # only retained legacy tree graphs need a graph migration.
+                if folder.startswith('/Game/FlowFest/Assets/Trees/') and material.get_name().endswith('_leaves'):
                     migrate_wind_masks(material)
                 if job_wind_family(folder):
                     # The ecology source is opaque, two-sided foliage. Give its
