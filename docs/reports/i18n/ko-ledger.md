@@ -47,3 +47,20 @@
 - Uncertainty: the glossary supplies no Korean equivalent for Catdog; its established Korean community usage could not be established. Catdog remains English.
 - Uncertainty: Effort (강약), formation (대형), tunnel (터널), and named palette display labels are provisional Korean wording without native review. Palette labels are translated as display text; no effect identifiers or data were changed.
 - Delivery: committed only in the assigned codex/i18n-ko worktree for coordinator integration. No primary checkout access, other worktree access, push, merge, installation, dev server, full build, broad check, or catalog-validator rewrite was performed.
+
+## R4 (2026-10-14)
+
+- Scope: 852 new catalog keys translated; 0 retranslation entries; 0 review entries. Every assigned key is present.
+- Initial apply: `messages/ko.json: inserted 852, replaced 0, refused 0`.
+- Final apply after phrase review: `messages/ko.json: inserted 0, replaced 852, refused 0`.
+- Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
+- Final result: `Test Files  1 passed (1)`; `Tests  66 passed (66)`; duration 7.57s. Exit 0.
+- Focused checks: exact batch coverage, placeholder names and multiplicities, markup, and single-line values verified. Parsed catalog comparison confirms exactly 852 additions, zero changes to existing values, and zero removals. Before this ledger, `git diff --stat` showed only messages/ko.json, 853 insertions and 1 deletion (net +852); `git diff --check` passed.
+- Glossary: 해요체 sentences and noun labels; sequence = 시퀀스; step = 단계; musical beat = 비트; prop = 프롭; pictograph = 픽토그램; turn = 회전; timing = 타이밍; tempo = 템포. Rotated LOOP = 회전 LOOP. Product names, providers, URLs, formats, placeholders, and notation remain unchanged. Counters follow numbers: {count}개, {count}회. Fuse, Tunnel, Assemble, Construct, 3D Studio, and Post Studio stay English as named tools or surfaces.
+- Appearance display names are translated (Ember = 불씨, Cosmic = 우주, Ocean = 바다, Forest = 숲, Void = 공허); identifiers were not changed. Credit = 크레딧; footer = 하단 문구; take = 테이크; landing = 도착/도착 지점; pass = 반복; mapping = 매핑.
+- Composition review: OfflineLocalDataSection.svelte displays used storage, then settings_offline_of, then total storage. Used `/` to preserve that fixed numeric order naturally. Frame-progress `share_studio_of` also uses `/`. The Post Studio timing keys had no matching Svelte call sites found by exact-key search; standalone meanings were preserved, but rendered phrase composition could not be established.
+- ai-bust mechanical review: 16 HIGH parallel-fragment findings, all spanning independent JSON entries (mostly error/retry messages and paired card/video account requirements); no other HIGH or CRITICAL categories. Retained after judgment review because these are separate source messages requiring consistent Korean wording, not a repeated passage.
+- Uncertainty: the glossary does not establish Korean terms for Post Studio take (테이크), landing (도착/도착 지점), pass (반복), or timing mapping (타이밍 매핑). These are provisional and have not had native review.
+- Uncertainty: appearance display names and named tools outside the glossary lack native review. Tool names remain English to avoid inventing established Korean names.
+- Uncertainty: the source `{seconds}` timing-error values do not establish whether the placeholder already includes a unit. Preserved the placeholder without appending a guessed unit. Post Studio suffix/fragment composition could not be verified from matching Svelte call sites.
+- Delivery: committed only in the assigned codex/i18n-ko worktree for coordinator integration. No primary checkout or other worktree access, push, merge, installation, dev server, full build, broad check, or catalog-validator rewrite was performed.
