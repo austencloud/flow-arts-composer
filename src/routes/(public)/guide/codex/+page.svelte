@@ -10,6 +10,7 @@
    */
   import { browser } from "$app/env";
   import { onMount } from "svelte";
+  import { MediaQuery } from "svelte/reactivity";
   import GuideShell from "../_components/GuideShell.svelte";
   import GuideFontPreload from "../_components/GuideFontPreload.svelte";
   import TopicHeader from "../level-1/_topics/TopicHeader.svelte";
@@ -50,6 +51,13 @@
     return () => window.removeEventListener("popstate", readProp);
   });
 
+  // A short desktop screen (the fit block below, under 1000px tall) gives
+  // the tiles' names to their hover tooltips, so the board keeps that height.
+  const shortScreen = new MediaQuery(
+    "(min-width: 80rem) and (min-height: 700px) and (max-height: 999.98px)",
+    false
+  );
+
   function chooseProp(next: PropType): void {
     if (next === propType) return;
     propType = next;
@@ -86,6 +94,7 @@
       <PropChoiceRow
         value={propType}
         sections={codexPropSections()}
+        iconOnly={shortScreen.current}
         label={tDynamic("guide_codex_prop")}
         onchange={chooseProp}
       />

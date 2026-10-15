@@ -253,6 +253,67 @@ describe("GooRenderer3D", () => {
     material.dispose();
   });
 
+  it("turns a full pool toward the color that keeps landing in it", () => {
+    const material = new MeshPhysicalMaterial({ vertexColors: true });
+    const puddles = new GooPuddleRenderer3D(material);
+    const blue = new Color("#2060d0");
+    const red = new Color("#c01010");
+    for (let i = 0; i < 400; i++)
+      puddles.deposit(0, 0, 0, 0.05, 0, 0.5, blue, 0, 1);
+    puddles.update(2);
+    const colors = puddles.geometry.getAttribute("color");
+    const positions = puddles.geometry.getAttribute("position");
+    const alpha = puddles.geometry.getAttribute("aAlpha");
+    const body = () =>
+      [...drawnVertices(puddles.geometry)].filter(
+        (vertex) => alpha.getX(vertex) > 0.5
+      );
+    const mean = () => {
+      const vertices = body();
+      let red = 0;
+      let blue = 0;
+      for (const vertex of vertices) {
+        red += colors.getX(vertex);
+        blue += colors.getZ(vertex);
+      }
+      return { red: red / vertices.length, blue: blue / vertices.length };
+    };
+    const before = mean();
+    expect(before.blue).toBeGreaterThan(before.red * 3);
+
+    // One red drop shows where it landed before it has mixed in.
+    puddles.deposit(0.2, 0, 0, 0.04, 0, 0.5, red, 0, 1);
+    puddles.update(0.1);
+    const redness = (vertex: number) => colors.getX(vertex) - colors.getZ(vertex);
+    const vertices = body();
+    const distance = (vertex: number) =>
+      Math.hypot(positions.getX(vertex) - 0.2, positions.getZ(vertex));
+    const near = vertices.reduce((a, b) => (distance(a) < distance(b) ? a : b));
+    const far = vertices.reduce((a, b) => (distance(a) > distance(b) ? a : b));
+    expect(redness(near)).toBeGreaterThan(redness(far) + 0.2);
+
+    // Ten seconds of red landing turns most of the pool red.
+    for (let frame = 0; frame < 600; frame++) {
+      if (frame % 6 === 0)
+        puddles.deposit(
+          0.1 * Math.sin(frame),
+          0.1 * Math.cos(frame),
+          0,
+          0.04,
+          0,
+          0.5,
+          red,
+          0,
+          1
+        );
+      puddles.update(1 / 60);
+    }
+    const after = mean();
+    expect(after.red).toBeGreaterThan(after.blue * 3);
+    puddles.dispose();
+    material.dispose();
+  });
+
   it("caps the top surface, joins pools as they spread, and fades idle liquid", () => {
     const material = new MeshPhysicalMaterial({ vertexColors: true });
     const puddles = new GooPuddleRenderer3D(material);
@@ -814,6 +875,44 @@ describe("GooRenderer3D", () => {
     expect(metalnessOf(2)).toBeGreaterThan(0.8);
     const studio = tube.material.envMap!.image.data as Float32Array;
     expect(studio.some((channel) => channel > 1)).toBe(true);
+    renderer.dispose();
+  });
+
+  it("makes Acid glow and Spirit fade as it falls", () => {
+    const renderer = new GooRenderer3D();
+    const parent = new Object3D();
+    renderer.initialize(parent);
+    const classic = source();
+    const acid = source({ sourceId: 2, position: { x: 5, y: 2, z: 3 } });
+    acid.params = resolveGoo3D({ ...acid.params, palette: "acid" });
+    renderer.update([classic, acid], 1 / 15);
+    const tube = parent.children[0] as { geometry: BufferGeometry };
+    const internal = internals(renderer);
+    const glowOf = (sourceId: number) => {
+      const strand = internal.strands.find(
+        (candidate) => candidate.active && candidate.sourceId === sourceId
+      )!;
+      return tube.geometry
+        .getAttribute("aGlow")
+        .getX(internal.strands.indexOf(strand) * RINGS * SIDES);
+    };
+    expect(glowOf(1)).toBe(0);
+    expect(glowOf(2)).toBeGreaterThan(0.5);
+    renderer.clear();
+
+    const sizes = (palette: "classic" | "spirit") => {
+      const tip = source();
+      tip.params = resolveGoo3D({ ...tip.params, palette, spewStyle: "mist" });
+      renderer.clear();
+      renderer.update([tip], 1 / 15);
+      renderer.update([tip], 1 / 15);
+      const drop = internal.drops.find((candidate) => candidate.active)!;
+      const start = drop.radius;
+      for (let frame = 0; frame < 20; frame++) renderer.update([], 1 / 60);
+      return drop.active ? drop.radius / start : 0;
+    };
+    expect(sizes("classic")).toBeCloseTo(1, 5);
+    expect(sizes("spirit")).toBeLessThan(0.8);
     renderer.dispose();
   });
 
