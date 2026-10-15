@@ -96,7 +96,7 @@
   );
 
   // Get prop-specific labels for the ends (e.g., "Thumb"/"Pinky" for staff)
-  const endLabels = $derived.by(() => {
+  const endLabels = $derived.by((): [string, string] => {
     // Use whichever prop is bilateral for the labels
     const propToCheck = effectiveLeftPropType ?? effectiveRightPropType;
     if (propToCheck && isBilateralProp(propToCheck)) {
