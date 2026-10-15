@@ -151,3 +151,20 @@
 - Shape Engine historical attributions, numerical claims and teaching calculations are translated from the supplied English, not independently established facts. No native review is claimed.
 - Prose review using the ai-bust skill: mechanical pass returned `[]` at HIGH/CRITICAL severity; judgment review preserved teaching steps and emphasis, with repeated print/SEO variants reflecting the source.
 - No primary-checkout access, other-worktree access, integration, push, dependency installation, broad checks or dev server performed. Branch and worktree remain for the coordinator as instructed.
+
+
+## P4 — 2026-10-14
+
+- Batch: P4, `batch-P4.json`; 906 translated keys, 0 retranslated keys, 0 review entries. The actual batch contains 211 feedback, 296 inbox and 399 effect keys, with no guide or verified lesson keys despite the generic teaching-prose brief.
+- Apply result: `messages/fr.json: inserted 906, replaced 0, refused 0`.
+- Catalog diff before ledger: only `messages/fr.json` changed; 906 insertions, 0 deletions. Exact comparison confirms every supplied key added, every previous catalog value unchanged, and every output value applied.
+- Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
+- Result: `Test Files 1 passed (1)`; `Tests 66 passed (66)`; duration 9.84s; exit 0.
+- Focused checks: exact batch coverage, placeholder multiplicity and markup parity preserved; all values single-line; no vous/votre/vos forms; Unicode decoding and `git diff --check` passed.
+- Glossary: informal `tu`; infinitive action buttons; prop = `accessoire`, staff = `bâton`, step = `étape`, beat = `temps`, Library = `Bibliothèque`, Viewer = `visionneuse`, Inbox = `boîte de réception`, effect = `effet`. Flow Arts Composer, file formats, technical units and placeholders are retained.
+- Effect names and option strings are display labels mapped through `src/lib/shared/animation-engine/components/effects-panel/effect-ui-label.ts`, so their visible words are translated while keys, identifiers and source lookup strings remain untouched. Visual petals become `pétales`; they are particles, not the protected flow-arts Petal category. Loop in playback options becomes `Boucle`, distinct from the protected notation acronym LOOP.
+- Terms outside the glossary, without native/community review: effect look = `rendu`, tuning = `réglages` / `ajuster`, carry = `entraînement`, curl = `tourbillonnement`, hang = `suspension`, falloff = `atténuation`, streak/trail = `traînée`, chase = `chenillard`, outbox = `boîte d’envoi`, claim = `attribution`. These are translation choices, not established community terminology; carry/curl/hang are especially context-sensitive.
+- Effect preset names use descriptive French (for example Banked Ember = `Braise couvante`, Fairy Dust = `Poussière de fée`, Inchworm = `Chenille arpenteuse`). Tesla and Sumi are retained. Native review of these creative display names remains outstanding.
+- Legitimately identical values include French cognates and loans (Description, Messages, Conversations, Collection, Image, Flash, Capsule, Champagne, Dragon, Glacial, Jungle, Mode, Palette, Plasma, Satin, Sonar, Style, Original, Source, Animal, Halo, Royal, Serpent, Supernova) and technical/proper labels Admin, Bug(s), Type, Destination, Notifications, LED, Tesla and Sumi.
+- Prose review using the ai-bust skill: mechanical pass returned `[]` at HIGH/CRITICAL severity. Judgment review preserved notification outcomes, permission distinctions and failure/retry instructions, with repeated labels kept consistent. No native review is claimed.
+- No primary-checkout access, other-worktree access, integration, push, dependency installation, broad checks or dev server performed. Branch and worktree remain for the coordinator as instructed.
