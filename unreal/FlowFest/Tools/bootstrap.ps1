@@ -31,7 +31,7 @@ $tsx = Join-Path $localModules '.bin\tsx.cmd'
 if (-not (Test-Path -LiteralPath $tsx)) { throw "tsx is missing from $sourceModules" }
 
 if (-not $SkipAssetGeneration) {
-    if (-not $CaptureDirectory) { $CaptureDirectory = Join-Path $projectRoot 'Saved\PerformanceCaptures' }
+    if (-not $CaptureDirectory) { $CaptureDirectory = Join-Path $projectRoot 'Saved\PerformanceCaptures-v3' }
     if (-not (Test-Path -LiteralPath $CaptureDirectory)) {
         throw 'Production performance captures are required. Run Tools/capture-performances.mjs against the native export harness first, then pass -CaptureDirectory. See README.md.'
     }
