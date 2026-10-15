@@ -7,6 +7,7 @@
 #include "Components/InputComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Containers/Set.h"
 #include "Animation/AnimInstance.h"
 #include "Engine/Engine.h"
 #include "Engine/GameViewportClient.h"
@@ -973,6 +974,7 @@ void AFlowFestCharacter::RunSmoke()
             && Foot.Z > -50.f && Foot.Z < 200.f, *FString::Printf(TEXT("plausible imported pose %s"), *Label));
         UE_LOG(LogTemp, Display, TEXT("FlowFestPose %s hips=%s head=%s foot=%s"), *Label, *Hips.ToString(), *Head.ToString(), *Foot.ToString());
     };
+    int32 FamilyProfilesLoaded = 0;
     for (const FFlowFestChoice& Choice : CharacterChoices)
     {
         Expect(Avatar->SetCharacter(Choice.Id), *FString::Printf(TEXT("load character %s and locomotion"), *Choice.Id.ToString()));
@@ -1007,7 +1009,40 @@ void AFlowFestCharacter::RunSmoke()
             Props->ClearPerformanceTransforms();
             Avatar->StopPerformance();
         }
+        TSet<FName> SeenFamilyProfiles;
+        for (const FFlowFestChoice& PropChoice : PropChoices)
+        {
+            const FName ProfileA = UFlowFestAvatarComponent::ResolvePerformanceProfile(PropChoice.Id, 0);
+            const FName ProfileB = UFlowFestAvatarComponent::ResolvePerformanceProfile(PropChoice.Id, 1);
+            if (ProfileA.IsNone() || ProfileB.IsNone() || ProfileA == ProfileB)
+            {
+                Expect(false, *FString::Printf(TEXT("valid family profiles for %s"), *PropChoice.Id.ToString()));
+                continue;
+            }
+            if (SeenFamilyProfiles.Contains(ProfileA) && SeenFamilyProfiles.Contains(ProfileB)) continue;
+            const bool bEquipped = Props->Equip(PropChoice.Id) && Props->IsReady();
+            Expect(bEquipped, *FString::Printf(TEXT("matching family performance prop %s"), *PropChoice.Id.ToString()));
+            if (!bEquipped) continue;
+            for (const FName Profile : {ProfileA, ProfileB})
+            {
+                if (SeenFamilyProfiles.Contains(Profile)) continue;
+                SeenFamilyProfiles.Add(Profile);
+                const FString Label = Choice.Id.ToString() + TEXT("/") + Profile.ToString();
+                const bool bPropLoaded = Props->LoadPerformance(Choice.Id, Profile);
+                const bool bBodyLoaded = Avatar->PlayPerformance(Profile);
+                const bool bExactLength = bBodyLoaded && FMath::IsNearlyEqual(Avatar->GetPerformanceLength(), 16.f, .001f);
+                Expect(bPropLoaded && bBodyLoaded && bExactLength,
+                    *FString::Printf(TEXT("cooked family body, prop track and 16-second loop %s"), *Label));
+                if (bPropLoaded && bBodyLoaded && bExactLength) ++FamilyProfilesLoaded;
+                Props->ClearPerformanceTransforms();
+                Avatar->StopPerformance();
+            }
+        }
+        Expect(SeenFamilyProfiles.Num() == 82,
+            *FString::Printf(TEXT("82 unique family routines for %s"), *Choice.Id.ToString()));
     }
+    Expect(FamilyProfilesLoaded == 1312, TEXT("all 1312 cooked family performances load"));
+    UE_LOG(LogTemp, Display, TEXT("FlowFestSmoke cooked family performances loaded: %d/1312"), FamilyProfilesLoaded);
     for (const FFlowFestChoice& Choice : PropChoices)
     {
         Expect(Props->Equip(Choice.Id) && Props->IsReady(), *FString::Printf(TEXT("load both hands for %s"), *Choice.Id.ToString()));
