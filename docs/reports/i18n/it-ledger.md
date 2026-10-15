@@ -75,3 +75,9 @@
 - Other wording: Jump to -> Vai a; flow identity -> identità nelle flow arts; Realm -> Reame; prop skill -> abilità con un attrezzo. Kept Home, Arena, Mandala, Video and Tunnel where the Italian label is legitimately identical to English. Translated all supplied module and tab keys under the explicit batch scope.
 - Uncertain: the glossary does not define Jump to, flow identity, Realm or prop skill; choices above are provisional pending native/product review. It does not explicitly establish Hall of Shame as a protected brand; retained it for consistency with earlier batches. No native reviewer participated in this run.
 - Delivery: committed on codex/i18n-it for coordinator integration. No primary checkout access, integration, push, installation, dev server, build, broad type-check or prohibited validator was run.
+
+## REV (coordinator) — 2026-10-14
+
+- gpt-6-astra review of a 233-key sample flagged 8 (3.4%); all fixes applied, plus the same thumb-end fix in learn_staff_thumb_end_mark.
+- Full In/Out orientation labels now match the glossary (Verso l’interno, Verso l’esterno); Codex restored as a product name; Double-Staff uses bastone doppio.
+- Gate: `Tests 66 passed (66)`.
