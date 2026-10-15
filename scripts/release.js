@@ -36,6 +36,8 @@
  *   node scripts/release.js --confirm          - Execute release (requires audited --changelog)
  *   node scripts/release.js --changelog file.json - Use audience-audited user-facing entries
  *   node scripts/release.js --highlights 1,3,4   - Select highlight indices (comma-separated, or "none")
+ *   node scripts/release.js --hero-image <url> [--hero-alt "text"] - Picture of the lead highlight for the
+ *                                                release email (make it with scripts/release-hero.mjs)
  *   node scripts/release.js --from-main        - Release directly from main (skip branch workflow)
  *   node scripts/release.js --tag-merged-main  - Protected main: the version bump already merged through
  *                                                a pull request; record, tag origin/main, push only the tag
@@ -670,6 +672,16 @@ function updatePackageVersion(newVersion) {
 // CACHE_NAME is bumped manually, only on breaking cache-shape changes —
 // bumping it per release would wipe every user's offline cache on each deploy.
 
+// Set from --hero-image / --hero-alt; the release email shows it above the
+// headline. It must be in the version document's first write, because the
+// email goes out when that document is created.
+let releaseHeroImage = null;
+
+function withHeroImage(versionData) {
+  if (releaseHeroImage) versionData.heroImage = releaseHeroImage;
+  return versionData;
+}
+
 /**
  * Prepare release in Firestore
  * (archives completed feedback and creates version record)
@@ -715,7 +727,7 @@ async function prepareFirestoreRelease(
     versionData.highlights = highlights;
   }
 
-  batch.set(versionRef, versionData);
+  batch.set(versionRef, withHeroImage(versionData));
 
   // Commit batch
   await batch.commit();
@@ -743,7 +755,7 @@ async function createFirestoreVersion(version, changelogEntries, highlights = []
   }
 
   // Use set with merge to handle both create and update scenarios
-  await versionRef.set(versionData, { merge: true });
+  await versionRef.set(withHeroImage(versionData), { merge: true });
 }
 
 /**
@@ -1198,6 +1210,19 @@ async function main() {
   const tagMergedMain = args.includes("--tag-merged-main");
   const autoGate = args.includes("--auto-gate");
   const updateNotesIndex = args.indexOf("--update-notes");
+  const heroImageIndex = args.indexOf("--hero-image");
+  if (heroImageIndex >= 0) {
+    const url = args[heroImageIndex + 1];
+    if (!url || !/^https:\/\//.test(url)) {
+      console.error("❌ --hero-image needs an https URL");
+      process.exit(1);
+    }
+    const heroAltIndex = args.indexOf("--hero-alt");
+    releaseHeroImage = { url };
+    if (heroAltIndex >= 0 && args[heroAltIndex + 1]) {
+      releaseHeroImage.alt = args[heroAltIndex + 1];
+    }
+  }
   const updateNotesVersion =
     updateNotesIndex >= 0 ? args[updateNotesIndex + 1] : null;
 

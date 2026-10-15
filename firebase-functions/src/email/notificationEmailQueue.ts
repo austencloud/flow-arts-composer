@@ -10,6 +10,7 @@ import {
   footerSignature,
   footerText,
   headline,
+  heroImage,
   insetBlock,
   linkPill,
   metaLine,
@@ -211,6 +212,17 @@ export interface ReleaseChangelogEntry {
   text: string;
 }
 
+/** A picture of the lead feature, usually an animated GIF on the assets CDN. */
+export interface ReleaseHeroImage {
+  url: string;
+  alt?: string;
+  width?: number;
+  height?: number;
+}
+
+// The panel's content column; a square clip fills it.
+const HERO_SIZE = 520;
+
 const RELEASE_SECTIONS = [
   { category: "added", heading: "New" },
   { category: "improved", heading: "Improved" },
@@ -224,6 +236,7 @@ export function createPlatformUpdateEmail(input: {
   releaseNotes?: string;
   highlights?: string[];
   changelogEntries?: ReleaseChangelogEntry[];
+  heroImage?: ReleaseHeroImage;
 }): NotificationEmail {
   const version = plainTextLabel(input.version, "New version");
   const releaseUrl = `${APP_ORIGIN}/settings/release-notes`;
@@ -322,6 +335,15 @@ export function createPlatformUpdateEmail(input: {
         ? richTextToPlain(ledeSource, { withUrls: false })
         : `Flow Arts Composer ${version} is available.`,
       body: [
+        input.heroImage
+          ? heroImage({
+              src: input.heroImage.url,
+              alt: input.heroImage.alt?.trim() || headlineText,
+              width: input.heroImage.width ?? HERO_SIZE,
+              height: input.heroImage.height ?? HERO_SIZE,
+              href: button.href,
+            })
+          : "",
         metaLine(meta),
         headline(headlineText, { editorial: true }),
         ledeSource
