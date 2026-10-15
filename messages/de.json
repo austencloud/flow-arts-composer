@@ -7116,6 +7116,7 @@
   "guide_zans_label_together": "Gemeinsamer Start",
   "guide_zans_label_one_ahead": "Ein Beat voraus",
   "guide_zans_label_ahead": "{n} Beats voraus",
+  "guide_zans_variation_line": "{label}: {word}",
   "guide_zans_collection_body": "Alle 24 sind in der öffentlichen Sammlung Zan's Diamond gespeichert. Öffne dort eines, um die Requisiten zu wechseln oder es unter Üben auszuprobieren.",
   "guide_zans_open_collection": "Sammlung öffnen",
   "guide_zans_read_cross_shifts": "Typ 3: Cross-Shift",
