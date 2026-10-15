@@ -165,8 +165,15 @@ const EXCEPTION_NOISE = [
   // SDK background maintenance by construction, never app code, so match the
   // message shape rather than re-enumerating a list that drifts with the SDK.
   /Failed to obtain primary lease for action '[^']+'/,
-  // Browser-native scheduling backpressure, permitted by the spec.
-  /ResizeObserver loop completed with undelivered notifications/,
+  // Browser-native scheduling backpressure, permitted by the spec. Current
+  // Chrome says "completed with undelivered notifications"; older Chrome and
+  // Android WebViews say "limit exceeded" for the same thing.
+  /ResizeObserver loop (completed with undelivered notifications|limit exceeded)/,
+  // Firestore's own console warning that a document's server update time is
+  // ahead of the client's read time, usually by a millisecond. It is the SDK
+  // noticing clock skew, not a failed read or write; on 2026-10-14 it was 86
+  // of the 98 events PostHog filed under one unrelated issue.
+  /@firebase\/firestore: Firestore \([^)]*\): Detected an update time that is in the future/,
   // iOS Safari has no FCM support. Guarded at the call site now
   // (foreground-message-handler.ts), this covers any path that still reaches
   // the SDK's own feature-detection throw.
