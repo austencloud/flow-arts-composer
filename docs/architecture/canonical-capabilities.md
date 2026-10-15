@@ -5,6 +5,16 @@ wholesale. Each row names the behavior owner. Verify the path in current code
 before relying on it. Add a row only for shared behavior or an intentional
 keep-separate decision, not for every component.
 
+Native Unreal character catalog and family-motion acceptance live in
+`unreal/Shared/Tools/character-catalog.mjs` and `motion-contract.mjs`.
+Searches: Unreal, Museum Game, Flow Fest, native performers, capture provenance,
+shared runtime. The catalog evaluates scene-3d's production definitions; the
+motion contract verifies exact rig/equipment/routine, timing, basis and source
+provenance. Museum imports consume the catalog. Flow Fest owns adoption in its
+active tools and extraction of its stabilized performer into the planned
+`FlowArtsRuntime` plugin; that plugin is not yet implemented. See
+`unreal/Shared/README.md` for ownership, compatibility and migration order.
+
 Theme canvas sizing lives in
 `shared/background/shared/background-canvas-resolution.ts`. Searches: theme
 preview, background resolution, enlarged fish, zoomed blossoms, canvas scale.
