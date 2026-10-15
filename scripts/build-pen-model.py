@@ -4,11 +4,13 @@ static/models/props/pen.glb is the same pen pen.svg draws: every station comes
 from scripts/pen-stations.json, which scripts/build-pen-svg.py writes from the
 reference photo's measurements. Re-run that first if the table is stale.
 
-A pen is a real object at a real size: 142mm end to end, held through its
-middle. Like the LED baton it is drawn at the size it was authored and does
-not stretch to the performer's staff length, so a pen in the 3D view is a pen
-in the hand, not a staff dressed as one. The pictograph draws it at the
-staff's span because every pictograph prop shares that span.
+The stations describe a real 142mm pen, but at that size a pen vanishes
+inside a performer's fist. So the model is a giant pen spun like a staff. It
+is authored 900mm end to end like the stick and the fire staff, and Prop3D
+stretches its long axis to the performer's staff length the same way. Across
+the axis it is 3x a real pen: a 30mm barrel, the stick's grip diameter. That
+makes it about twice as slender as the real thing, which keeps the hand
+around it instead of buried in it.
 
 Authored around the scene-3d hand pivot: long axis local Y, origin at the
 pen's middle, cap (thumb end) at +Y, back plug (pinky end) at -Y. The clip
@@ -42,9 +44,14 @@ STATIONS = json.loads((ROOT / "scripts" / "pen-stations.json").read_text("utf-8"
 MM = 0.001
 LENGTH = STATIONS["length_mm"]
 HALF = LENGTH / 2
-AUTHORED_LENGTH_M = LENGTH * MM
+#: Staff-family models are authored at 900mm and stretched by Prop3D.
+STAFF_LENGTH_MM = 900.0
+AXIAL_SCALE = STAFF_LENGTH_MM / LENGTH
+#: A 30mm barrel, the stick's grip diameter.
+RADIAL_SCALE = 3.0
+AUTHORED_LENGTH_M = STAFF_LENGTH_MM * MM
 #: The pen's two ends are its tracked tips: nothing on it emits from inboard.
-TRACKED_TIP_Y = HALF * MM
+TRACKED_TIP_Y = AUTHORED_LENGTH_M / 2
 
 SEGMENTS = 40
 
@@ -321,6 +328,8 @@ def build_prop() -> tuple[bpy.types.Object, list[bpy.types.Object]]:
     bpy.context.collection.objects.link(root)
     root["tka_prop_type"] = "pen"
     root["authored_length_m"] = AUTHORED_LENGTH_M
+    root["real_length_m"] = LENGTH * MM
+    root["radial_scale"] = RADIAL_SCALE
     root["grip_origin"] = "0,0,0"
     root["local_long_axis"] = "+Y"
     root["thumb_end"] = "+Y (cap)"
@@ -350,6 +359,13 @@ def build_prop() -> tuple[bpy.types.Object, list[bpy.types.Object]]:
         ],
     )
     objects = [barrel, ink_parts]
+    from mathutils import Matrix
+
+    # Every station above is the real pen; scale it up to the staff-size giant.
+    staff_size = Matrix.Diagonal((RADIAL_SCALE, AXIAL_SCALE, RADIAL_SCALE, 1.0))
+    for item in objects:
+        item.data.transform(staff_size)
+        item.data.update()
     for item in objects:
         item.parent = root
         item["tka_runtime_recolor"] = any("Recolor" in m.name for m in item.data.materials)
@@ -440,6 +456,8 @@ def render_preview(path: Path, root: bpy.types.Object) -> None:
     camera.location = (0.0, 0.0, 0.5)
     camera.rotation_euler = (0.0, 0.0, 0.0)
     # Lay the pen across the frame, cap to the right, clip toward the camera's top.
+    # Shrunk uniformly to the real pen's length so the real-size framing holds.
+    root.scale = (1 / AXIAL_SCALE,) * 3
     root.rotation_euler = (0.0, 0.0, -math.pi / 2)
     tint_ink("#3575E2")
     # Rendered transparent and laid onto the other previews' exact navy, which
@@ -450,6 +468,7 @@ def render_preview(path: Path, root: bpy.types.Object) -> None:
     scene.render.filepath = str(png)
     bpy.ops.render.render(write_still=True)
     root.rotation_euler = (0.0, 0.0, 0.0)
+    root.scale = (1.0, 1.0, 1.0)
 
     import numpy as np
 
@@ -476,6 +495,7 @@ def render_proofs(render_dir: Path, root: bpy.types.Object) -> None:
     camera.data.type = "ORTHO"
     camera.data.ortho_scale = LENGTH * MM * 1.1
     tint_ink("#ED1C24")
+    root.scale = (1 / AXIAL_SCALE,) * 3
     root.rotation_euler = (0.0, 0.0, -math.pi / 2)
     for label, rotation in {
         "side": (0.0, 0.0, -math.pi / 2),
@@ -491,6 +511,7 @@ def render_proofs(render_dir: Path, root: bpy.types.Object) -> None:
     scene.render.filepath = str(render_dir / "pen-cap.png")
     bpy.ops.render.render(write_still=True)
     root.rotation_euler = (0.0, 0.0, 0.0)
+    root.scale = (1.0, 1.0, 1.0)
 
 
 def main() -> None:

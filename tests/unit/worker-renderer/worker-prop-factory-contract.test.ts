@@ -31,11 +31,12 @@ const CANONICAL_PROP_SOURCE_HASHES = {
   // Stick: Prop3D stretches the stick the same way, and swaps in the entry's
   // rightHandModelUrl for the red hand. createRegistryWorkerProp makes both
   // choices from STRETCHED_PROP_TYPES and its own rightHandModelUrl.
+  // Pen: stretched the same way; STRETCHED_PROP_TYPES lists it too.
   // Conjoined grid scale (0221d35856): Prop3D wraps the prop in a uniform
   // geometryScale group and hands children length / geometryScale.
   // createWorkerPropVisual divides length and scales its root the same way.
   "Prop3D.svelte":
-    "c12bf6c1d3236e4d6c43cfc8250d7f0692fdce534842b5be03c9dc8dfd9addf5",
+    "979f99085b996914420c156d04501719a9406dabdc88dd9eabe90a0ca4a5c04f",
   // Hand colors (d11b2ce06c): the component re-clones when the hand palette
   // changes. The worker recolors from the same live PROP_COLORS object and
   // rebuilds a performer whose snapshot handColors differ, so it already
@@ -86,8 +87,8 @@ const CANONICAL_PROP_SOURCE_HASHES = {
   "frame-materials.ts":
     "b87df4094b88553c53cf560df7f741655284c52894a48f4b631d8d87336c3ceb",
   // Stick: stick.glb for the left hand, stick-right.glb for the right, the
-  // same pair worker-gltf-props.ts registers. Pen: pen.glb at real size,
-  // registered unstretched in worker-gltf-props.ts too.
+  // same pair worker-gltf-props.ts registers. Pen: pen.glb, registered in
+  // worker-gltf-props.ts too.
   "prop-model-registry.ts":
     "a136778ac2631e81c0444a3f4e4650137f25601fd1d3a8a59f5920ed425fb8a3",
   "prop-model-recolor.ts":
