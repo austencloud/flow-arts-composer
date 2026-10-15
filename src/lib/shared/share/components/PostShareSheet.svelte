@@ -2540,28 +2540,18 @@
                       disabled={!activeBlob ||
                         busyDestination !== null ||
                         qrPending}
-                      ariaBusy={busyDestination === "download" ||
-                        (artifact === "card" &&
-                          !activeBlob &&
-                          !cardRenderFailed)}
+                      ariaBusy={busyDestination === "download"}
                       onclick={() => runDestination(primaryDeliveryId)}
                     >
                       <i
-                        class={busyDestination === "download" ||
-                        (artifact === "card" &&
-                          !activeBlob &&
-                          !cardRenderFailed)
+                        class={busyDestination === "download"
                           ? "fa-solid fa-circle-notch fa-spin"
                           : "fa-solid fa-download"}
                         aria-hidden="true"
                       ></i>
-                      {artifact === "card" && !activeBlob && !cardRenderFailed
-                        ? t("share_creating_image")
-                        : busyDestination === "download"
-                          ? t("share_downloading")
-                          : artifact === "card"
-                            ? t("share_download_card")
-                            : t("share_download_video")}
+                      {busyDestination === "download"
+                        ? t("share_downloading")
+                        : t("share_download_video")}
                     </PanelButton>
                   {/if}
                 {/if}
