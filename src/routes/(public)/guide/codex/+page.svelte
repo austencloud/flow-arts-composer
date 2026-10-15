@@ -146,4 +146,19 @@
       padding-inline: 0;
     }
   }
+
+  /* On a 4K screen the cells run 250px or more; laptop-sized tiles beside
+     them read as a footnote. The tiles grow, and the board's height term
+     takes the taller rows above it so the five rows still fit the screen. */
+  @media (min-width: 2400px) and (min-height: 1400px) {
+    .codex-guide {
+      --codex-atlas-chrome: 52rem;
+    }
+    .props {
+      --prop-tile-width: 6.5rem;
+      --prop-tile-gap: 10px;
+      --prop-img-size: 2.6rem;
+      --font-size-compact: 15px;
+    }
+  }
 </style>
