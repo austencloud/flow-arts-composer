@@ -919,7 +919,8 @@ void AFlowFestWorld::SetTimeOfDay(float Hour)
     const float Altitude = FMath::Sin((TimeOfDay - 6.f) * PI / 12.f) * 68.f;
     Sun->SetWorldRotation(FRotator(-Altitude, 205.f, 0.f));
     const float Daylight = FMath::Clamp((Altitude + 8.f) / 24.f, 0.f, 1.f);
-    Sun->SetIntensity(FMath::Lerp(0.f, 85000.f, Daylight));
+    // Low sun loses energy through the atmosphere before its warm light reaches the valley.
+    Sun->SetIntensity(85000.f * Daylight * Daylight);
     Sun->SetLightColor(FLinearColor::LerpUsingHSV(FLinearColor(1.f, 0.47f, 0.24f), FLinearColor(1.f, 0.94f, 0.82f), FMath::Clamp(Altitude / 35.f, 0.f, 1.f)));
     const float Night = 1.f - FMath::Clamp((Altitude + 3.f) / 9.f, 0.f, 1.f);
     const float MoonAltitude = 31.f + 10.f * FMath::Sin((TimeOfDay - 23.f) * PI / 12.f);
