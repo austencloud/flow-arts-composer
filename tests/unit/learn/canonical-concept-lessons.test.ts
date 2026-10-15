@@ -155,7 +155,11 @@ describe("canonical concept lesson composition", () => {
     expect(motions).toContain('"mapMoves"');
     expect(motions).toContain('"pairsFound"');
     expect(motions).toContain("actionDisabled={!stageDone}");
-    expect(motions).toContain('onComplete?.("timing-and-direction")');
+    // Continue leads on only while Timing and Direction is published.
+    expect(motions).toContain(
+      'isConceptExperienceAvailable("timing-and-direction")'
+    );
+    expect(motions).toContain("onComplete?.(nextConceptId)");
     expect(motions).toContain('t("learn_ui_continue_timing_direction")');
     expect(motions).toContain(
       'viewMode === "scroll" ? BOARD_STAGE : savedStep - 1'

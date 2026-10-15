@@ -1,11 +1,10 @@
 <script lang="ts">
-  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { t, tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import { onDestroy, tick, untrack } from "svelte";
   import { createLayoutMotion } from "#lib/shared/transitions/layout-flip.js";
   import { motionDuration } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { Crossfade } from "#lib/shared/transitions/motion.js";
-  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import UndoButton from "#lib/features/create/shared/workspace-panel/shared/components/buttons/UndoButton.svelte";
   import ClearSequenceButton from "#lib/features/create/shared/workspace-panel/shared/components/buttons/ClearSequenceButton.svelte";
   import SequenceTransformActions from "#lib/shared/create/components/SequenceTransformActions.svelte";
@@ -13,6 +12,8 @@
   import "#lib/shared/selection/selection.css";
   import PropPlacementGrid from "#lib/shared/pictograph/grid/components/PropPlacementGrid.svelte";
   import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import { getPlacementGridPoints } from "#lib/shared/pictograph/grid/services/placement-grid-points.js";
+  import LessonBoardSlot from "../live-board/LessonBoardSlot.svelte";
   import {
     GridMode,
     type GridLocation,
@@ -39,6 +40,7 @@
     placementPreview,
     placementPairPreview,
     placementCorrection,
+    placementCorrectionPair,
     transformPlacement,
     changePlacementGrid,
   } from "./hand-placement-lesson";
@@ -97,7 +99,6 @@
   let replacedPairs = $state<
     { left: GridLocation | null; right: GridLocation | null }[]
   >([]);
-  let showReference = $state<boolean | null>(null);
   let hoveredExample = $state<PlacementType | null>(null);
   let boardWidth = $state(300);
   let boardHeight = $state(320);
@@ -133,6 +134,21 @@
   const built = $derived(
     placementKindFor(placement.leftLocation, placement.rightLocation)
   );
+  // After a wrong try the board marks where the right hand belongs.
+  const correctionTarget = $derived.by(() => {
+    if (!correctionPreview || !workshop.challenge || !placement.leftLocation)
+      return null;
+    const { right } = placementCorrectionPair(
+      placement.leftLocation,
+      workshop.challenge.kind,
+      gridMode
+    );
+    return (
+      getPlacementGridPoints(gridMode).find(
+        (point) => point.location === right
+      ) ?? null
+    );
+  });
   const stageMotion = createLayoutMotion({
     getRoot: () => experienceElement,
     groups: [
@@ -145,7 +161,7 @@
   $effect.pre(() => {
     // Only learning-state changes recompose the stage. Pointer aiming stays
     // with the grid and must never start a layout animation.
-    [workshop.phase, showReference, workshop.challenge?.guided];
+    [workshop.phase];
     if (hasRendered) {
       untrack(() => stageMotion.capture());
       void tick().then(() => stageMotion.play());
@@ -167,12 +183,21 @@
   );
 
   const exploring = $derived(workshop.phase === "explore");
-  const freePlay = $derived(exploring || workshop.canFinish);
-  const referencesVisible = $derived(
-    exploring ||
-      workshop.canFinish ||
-      (showReference ?? workshop.challenge?.guided)
+  // The board comes first. Grid modes, transforms and the worked examples
+  // only appear once all six practice placements are built.
+  const freePlay = $derived(workshop.canFinish);
+  const allFound = $derived(
+    PLACEMENT_KINDS.every((kind) => workshop.explored.includes(kind))
   );
+  const practicing = $derived(!exploring && !workshop.canFinish);
+  /** The placement the side panel names: the one built, or the one asked for. */
+  const featured = $derived<PlacementType | null>(
+    practicing && !correct ? (workshop.challenge?.kind ?? null) : built
+  );
+
+  function placementBrief(kind: PlacementType) {
+    return tDynamic(`guide_topic_placements_${kind}_brief`);
+  }
   const handHistory = {
     get canUndo() {
       return placement.canUndo || replacedPairs.length > 0;
@@ -311,7 +336,6 @@
   async function practice() {
     workshop.practice();
     gridMode = workshop.challenge!.gridMode;
-    showReference = null;
     replacedPairs = [];
     loadPair(null, null);
     await tick();
@@ -326,7 +350,6 @@
     if (!workshop.next()) return;
     if (workshop.challenge) {
       gridMode = workshop.challenge.gridMode;
-      showReference = null;
       replacedPairs = [];
       loadPair(null, null);
     }
@@ -344,23 +367,6 @@
     else onBack?.();
   }
 </script>
-
-{#snippet lessonActions()}
-  <nav class="lesson-navigation" aria-label={t("learn_ui_lesson_navigation")}>
-    <LessonStageControls
-      label={workshop.canFinish
-        ? t("learn_ui_continue_hand_motions")
-        : workshop.round > 0
-          ? t("learn_ui_resume_practice")
-          : t("learn_ui_next_practice")}
-      currentStep={Math.min(workshop.round + 1, PLACEMENT_CHALLENGES.length)}
-      totalSteps={PLACEMENT_CHALLENGES.length}
-      showProgress={false}
-      bind:actionRef={forwardButton}
-      onAction={workshop.canFinish ? finish : practice}
-    />
-  </nav>
-{/snippet}
 
 <div class="placements-experience" class:correct bind:this={experienceElement}>
   <LessonStageFrame artifactLayout="workshop">
@@ -383,33 +389,16 @@
     {#snippet artifact()}
       <div
         class="workshop"
-        class:exploring
         class:free-play={freePlay}
-        class:has-reference={referencesVisible}
         data-placement-layout="workshop"
       >
-        {#if freePlay}
-          <div class="board-toolbar" data-placement-stage="board-tools">
-            <GridModeToggle
-              currentGridMode={gridMode}
-              onGridModeChange={changeGrid}
-            />
-          </div>
-        {/if}
-        <div
-          class="placement-instructions"
-          class:incorrect
-          data-placement-stage="instructions"
-        >
-          <div class="current-task" class:incorrect aria-live="polite">
-            {#if incorrect}<i
-                class="fa-solid fa-circle-xmark"
-                aria-hidden="true"
-              ></i>{/if}
-            <Crossfade key={instruction}>{instruction}</Crossfade>
-          </div>
+        <div class="current-task" class:incorrect aria-live="polite">
+          {#if incorrect}<i class="fa-solid fa-circle-xmark" aria-hidden="true"
+            ></i>{/if}
+          <Crossfade key={instruction}>{instruction}</Crossfade>
         </div>
-        <div class="artifact-row">
+
+        <div class="stage-row">
           <div
             class="board"
             data-placement-stage="board"
@@ -424,6 +413,9 @@
               bind:this={grid}
               {gridMode}
               positionLetter={built ? PLACEMENT_LETTERS[built] : null}
+              pictographLabel={built
+                ? `${PLACEMENT_TYPE_INFO[built].label}. ${placementBrief(built)}`
+                : t("learn_ui_your_placement")}
               animateContent={true}
               leftPropType={PropType.HAND}
               rightPropType={PropType.HAND}
@@ -442,15 +434,40 @@
               editAfterCompletion
               dragLocations
               renderTray={false}
+              showGrid={false}
+              transparentBackground
               onChange={changed}
-            />
+            >
+              {#snippet underlay()}
+                <LessonBoardSlot
+                  phase={gridMode === GridMode.BOX ? "box" : "diamond"}
+                  look="pictograph"
+                />
+              {/snippet}
+              {#snippet figureLayer()}
+                {#if correctionTarget}
+                  <svg class="correction-target" viewBox="0 0 950 950">
+                    <circle
+                      cx={correctionTarget.x}
+                      cy={correctionTarget.y}
+                      r="58"
+                    />
+                  </svg>
+                {/if}
+              {/snippet}
+            </PropPlacementGrid>
             <span class="sr-only" aria-live="polite"
               >{built
                 ? PLACEMENT_TYPE_INFO[built].label
                 : t("learn_ui_your_placement")}</span
             >
-            {#if correctionPreview && workshop.challenge && !referencesVisible}
-              <figure class="correction-guide">
+          </div>
+
+          <!-- The side panel always holds its space, so building a placement
+               never pushes the board around. -->
+          <aside class="placement-panel" class:incorrect>
+            {#if correctionPreview && workshop.challenge}
+              <figure class="correction">
                 <div class="correction-art" aria-hidden="true">
                   <PictographContainer
                     pictographData={correctionPreview}
@@ -463,7 +480,7 @@
                     rightPropTypeOverride={PropType.HAND}
                   />
                 </div>
-                <figcaption class="sr-only">
+                <figcaption>
                   {placementCorrection(
                     placement.leftLocation!,
                     placement.rightLocation!,
@@ -472,101 +489,59 @@
                   )}
                 </figcaption>
               </figure>
-            {/if}
-          </div>
-          {#if referencesVisible}
-            <div class="reference-area">
-              <div
-                class="examples"
-                role="group"
-                aria-label={t("learn_ui_placement_examples")}
-              >
-                {#each examples as example (example.kind)}
-                  {@const matches =
-                    freePlay &&
-                    placement.leftLocation === example.pair.left &&
-                    placement.rightLocation === example.pair.right}
-                  {@const isCorrection =
-                    incorrect && workshop.challenge?.kind === example.kind}
-                  <div
-                    class="example tka-seq-cell"
-                    class:is-target={workshop.challenge?.kind === example.kind}
-                    class:is-selected={matches}
-                    class:is-hovered={hoveredExample === example.kind}
-                    class:correction={isCorrection}
+            {:else if featured}
+              <Crossfade key={`${featured}-${correct}`}>
+                <div
+                  class="reveal"
+                  class:target={practicing && !correct}
+                  class:success={correct}
+                >
+                  <span class="reveal-symbol" aria-hidden="true"
+                    >{PLACEMENT_TYPE_INFO[featured].symbol}</span
                   >
-                    <div class="example-art" aria-hidden="true">
-                      <PictographContainer
-                        pictographData={isCorrection && correctionPreview
-                          ? correctionPreview
-                          : example.data}
-                        showTKA={true}
-                        showPlacements={false}
-                        showReversals={false}
-                        showTnD={false}
-                        showElemental={false}
-                        leftPropTypeOverride={PropType.HAND}
-                        rightPropTypeOverride={PropType.HAND}
-                      />
-                    </div>
-                    {#if freePlay}
-                      <button
-                        type="button"
-                        class="tka-seq-hit"
-                        aria-label={t("learn_ui_study_placement_example", {
-                          placement: PLACEMENT_TYPE_INFO[example.kind].label,
-                        })}
-                        aria-pressed={matches}
-                        onpointerenter={() => (hoveredExample = example.kind)}
-                        onpointerleave={() => (hoveredExample = null)}
-                        onclick={() => study(example.kind)}
-                      ></button>
-                    {:else}
-                      <span class="sr-only"
-                        >{PLACEMENT_TYPE_INFO[example.kind].label}</span
-                      >
-                      {#if isCorrection && workshop.challenge}
-                        <span class="sr-only"
-                          >{placementCorrection(
-                            placement.leftLocation!,
-                            placement.rightLocation!,
-                            workshop.challenge.kind,
-                            gridMode
-                          )}</span
-                        >
-                      {/if}
-                    {/if}
-                  </div>
-                {/each}
+                  <span class="reveal-name"
+                    >{PLACEMENT_TYPE_INFO[featured]
+                      .label}{#if correct}{" ✓"}{/if}</span
+                  >
+                  {#if !practicing || correct || workshop.challenge?.guided}
+                    <span class="reveal-brief">{placementBrief(featured)}</span>
+                  {/if}
+                </div>
+              </Crossfade>
+            {:else}
+              <div class="reveal empty">
+                <span class="reveal-symbol" aria-hidden="true">?</span>
+                <span class="reveal-name">{t("learn_ui_your_placement")}</span>
               </div>
-            </div>
-          {/if}
+            {/if}
+          </aside>
         </div>
-        <div class="advance" data-placement-stage="advance">
-          {#if !exploring && !workshop.canFinish}
-            <LessonStageControls
-              label={workshop.round === PLACEMENT_CHALLENGES.length - 1
-                ? t("learn_ui_finish_practice")
-                : t("learn_ui_next_placement")}
-              currentStep={workshop.round + 1}
-              totalSteps={PLACEMENT_CHALLENGES.length}
-              showProgress={false}
-              actionDisabled={!correct}
-              bind:actionRef={forwardButton}
-              onAction={next}
-            />
-          {:else}
-            {@render lessonActions()}
-          {/if}
-          {#if !exploring && !workshop.canFinish}
-            <progress
-              class="practice-progress"
-              aria-label={t("learn_ui_placements_built")}
-              max={PLACEMENT_CHALLENGES.length}
-              value={workshop.builtCount}
-            ></progress>
-          {/if}
-        </div>
+
+        {#if exploring}
+          <ul class="discoveries" aria-label={t("learn_ui_placement_examples")}>
+            {#each PLACEMENT_KINDS as kind (kind)}
+              {@const found = workshop.explored.includes(kind)}
+              <li class="discovery" class:found>
+                <span class="discovery-symbol" aria-hidden="true"
+                  >{PLACEMENT_TYPE_INFO[kind].symbol}</span
+                >
+                <span class="discovery-name" class:sr-only={!found}
+                  >{PLACEMENT_TYPE_INFO[kind].label}{#if found}{" ✓"}{/if}</span
+                >
+              </li>
+            {/each}
+          </ul>
+        {/if}
+
+        {#if practicing}
+          <progress
+            class="practice-progress"
+            aria-label={t("learn_ui_placements_built")}
+            max={PLACEMENT_CHALLENGES.length}
+            value={workshop.builtCount}
+          ></progress>
+        {/if}
+
         <div
           class="hand-controls"
           data-placement-stage="editing"
@@ -580,6 +555,10 @@
             onclick={() => replacePair(null, null)}
           />
           {#if freePlay}
+            <GridModeToggle
+              currentGridMode={gridMode}
+              onGridModeChange={changeGrid}
+            />
             <div
               class="transform-controls"
               role="group"
@@ -602,17 +581,88 @@
             </div>
           {/if}
         </div>
-        <div class="support-actions">
-          {#if !exploring && !workshop.canFinish}<PanelButton
-              ariaPressed={referencesVisible}
-              onclick={() => (showReference = !referencesVisible)}
-              >{referencesVisible
-                ? t("learn_ui_hide_reference")
-                : t("learn_ui_show_reference")}</PanelButton
-            >
-          {/if}
-        </div>
+
+        {#if freePlay}
+          <div
+            class="examples"
+            role="group"
+            aria-label={t("learn_ui_placement_examples")}
+          >
+            {#each examples as example (example.kind)}
+              {@const matches =
+                placement.leftLocation === example.pair.left &&
+                placement.rightLocation === example.pair.right}
+              <div
+                class="example tka-seq-cell"
+                class:is-selected={matches}
+                class:is-hovered={hoveredExample === example.kind}
+              >
+                <div class="example-art" aria-hidden="true">
+                  <PictographContainer
+                    pictographData={example.data}
+                    showTKA={true}
+                    showPlacements={false}
+                    showReversals={false}
+                    showTnD={false}
+                    showElemental={false}
+                    leftPropTypeOverride={PropType.HAND}
+                    rightPropTypeOverride={PropType.HAND}
+                  />
+                </div>
+                <button
+                  type="button"
+                  class="tka-seq-hit"
+                  aria-label={t("learn_ui_study_placement_example", {
+                    placement: PLACEMENT_TYPE_INFO[example.kind].label,
+                  })}
+                  aria-pressed={matches}
+                  onpointerenter={() => (hoveredExample = example.kind)}
+                  onpointerleave={() => (hoveredExample = null)}
+                  onclick={() => study(example.kind)}
+                ></button>
+              </div>
+            {/each}
+          </div>
+        {/if}
       </div>
+    {/snippet}
+
+    {#snippet controls()}
+      <nav
+        class="lesson-navigation"
+        aria-label={t("learn_ui_lesson_navigation")}
+      >
+        {#if practicing}
+          <LessonStageControls
+            label={workshop.round === PLACEMENT_CHALLENGES.length - 1
+              ? t("learn_ui_finish_practice")
+              : t("learn_ui_next_placement")}
+            currentStep={workshop.round + 1}
+            totalSteps={PLACEMENT_CHALLENGES.length}
+            showProgress={false}
+            actionDisabled={!correct}
+            bind:actionRef={forwardButton}
+            onAction={next}
+          />
+        {:else}
+          <LessonStageControls
+            label={workshop.canFinish
+              ? t("learn_ui_continue_hand_motions")
+              : workshop.round > 0
+                ? t("learn_ui_resume_practice")
+                : t("learn_ui_next_practice")}
+            currentStep={Math.min(
+              workshop.round + 1,
+              PLACEMENT_CHALLENGES.length
+            )}
+            totalSteps={PLACEMENT_CHALLENGES.length}
+            showProgress={false}
+            actionDisabled={exploring && !allFound}
+            bind:actionRef={forwardButton}
+            onAction={workshop.canFinish ? finish : practice}
+          />
+        {/if}
+      </nav>
     {/snippet}
   </LessonStageFrame>
 </div>
@@ -625,110 +675,17 @@
     width: 100%;
     min-height: 100%;
     color: var(--theme-text);
-    --placement-board-size: clamp(18.5rem, calc(100svh - 32rem), 56rem);
+    /* The heading above and the chips, hand controls and Continue below take
+       about 31rem; the board gets the rest so Continue stays on screen. */
+    --placement-board-size: clamp(18rem, calc(100svh - 31rem), 52rem);
+    --placement-panel-width: clamp(11rem, 22cqw, 18rem);
     --lesson-workshop-max: 78rem;
   }
   .workshop {
     display: grid;
-    width: min(100%, var(--placement-board-size));
-    margin-inline: auto;
-  }
-  .artifact-row {
-    display: contents;
-    gap: 1rem;
-    align-items: stretch;
-  }
-  .board-toolbar {
-    order: 0;
-  }
-  .placement-instructions {
-    order: 1;
-  }
-  .artifact-row,
-  .board {
-    order: 2;
-  }
-  .advance {
-    order: 3;
-  }
-  .hand-controls {
-    order: 4;
-  }
-  .support-actions {
-    order: 6;
-  }
-  .reference-area {
-    order: 7;
-  }
-  @container (max-width: 41.999rem) {
-    .workshop.has-reference:not(.free-play) {
-      grid-template-columns: minmax(0, 1fr) 3.75rem;
-      align-items: center;
-      column-gap: 0.5rem;
-    }
-    .has-reference:not(.free-play) .placement-instructions {
-      grid-column: 1;
-      grid-row: 1;
-      margin-bottom: 0;
-    }
-    .has-reference:not(.free-play) .reference-area {
-      grid-column: 2;
-      grid-row: 1;
-      margin-top: 0;
-    }
-    .has-reference:not(.free-play) .examples {
-      grid-template-columns: 1fr;
-    }
-    .has-reference:not(.free-play) .example:not(.is-target) {
-      display: none;
-    }
-    .has-reference:not(.free-play) .board {
-      grid-column: 1 / -1;
-      grid-row: 2;
-    }
-    .has-reference:not(.free-play) .advance,
-    .has-reference:not(.free-play) .hand-controls,
-    .has-reference:not(.free-play) .support-actions {
-      grid-column: 1 / -1;
-    }
-  }
-  @container (min-width: 42rem) {
-    .workshop.has-reference {
-      width: min(100%, calc(var(--placement-board-size) * 1.333 + 1.5rem));
-    }
-    .has-reference .artifact-row {
-      display: grid;
-      grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
-      column-gap: 1.25rem;
-    }
-    .reference-area {
-      position: relative;
-    }
-    .has-reference .examples {
-      position: absolute;
-      inset: 0;
-      grid-template-columns: 1fr;
-      grid-template-rows: repeat(3, minmax(0, 1fr));
-      justify-items: center;
-      gap: 0.75rem;
-    }
-    .has-reference .example {
-      height: 100%;
-      width: auto;
-    }
-  }
-  .board {
-    position: relative;
-    aspect-ratio: 1;
-    width: min(100%, var(--placement-board-size));
-    margin-inline: auto;
-  }
-  .placement-instructions {
-    display: grid;
     justify-items: center;
-    gap: 0.35rem;
-    margin-bottom: 1rem;
-    text-align: center;
+    gap: 0.75rem;
+    width: 100%;
   }
   .current-task {
     display: flex;
@@ -743,35 +700,147 @@
   .current-task.incorrect {
     color: var(--semantic-error);
   }
-  .correction-guide {
-    position: absolute;
-    top: 0.75rem;
-    right: 0.75rem;
-    pointer-events: none;
-    margin: 0;
-    display: flex;
+  .stage-row {
+    display: grid;
+    grid-template-columns: var(--placement-board-size) var(
+        --placement-panel-width
+      );
     align-items: center;
+    gap: clamp(1rem, 2.5cqw, 2rem);
+    max-width: 100%;
+  }
+  .board {
+    position: relative;
+    aspect-ratio: 1;
+    width: 100%;
+    min-width: 0;
+  }
+  .correction-target {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+  .correction-target circle {
+    fill: none;
+    stroke: var(--semantic-error);
+    stroke-width: 8;
+    stroke-dasharray: 22 14;
+    animation: target-turn 6s linear infinite;
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  @keyframes target-turn {
+    to {
+      transform: rotate(1turn);
+    }
+  }
+  .placement-panel {
+    display: grid;
+    align-content: center;
+    min-height: 12rem;
+    min-width: 0;
+  }
+  .reveal {
+    display: grid;
+    justify-items: start;
+    gap: 0.35rem;
+  }
+  .reveal-symbol {
+    font-size: clamp(3.5rem, 7cqw, 6rem);
+    line-height: 1;
+    font-weight: 600;
+    color: var(--theme-accent);
+  }
+  .reveal-name {
+    font-size: clamp(1.4rem, 2.4cqw, 2rem);
+    font-weight: 700;
+    line-height: 1.15;
+    color: var(--theme-text);
+  }
+  .reveal-brief {
+    font-size: 1rem;
+    line-height: 1.45;
+    color: var(--theme-text-dim);
+  }
+  .reveal.target .reveal-symbol {
+    color: var(--theme-text-dim);
+  }
+  .reveal.success .reveal-symbol,
+  .reveal.success .reveal-name {
+    color: var(--semantic-success);
+  }
+  .reveal.empty .reveal-symbol,
+  .reveal.empty .reveal-name {
+    color: var(--theme-text-tertiary, var(--theme-text-dim));
+    opacity: 0.6;
+  }
+  .correction {
+    display: grid;
     gap: 0.75rem;
+    margin: 0;
   }
   .correction-art {
-    width: clamp(4rem, 15cqw, 7rem);
+    width: min(100%, 9rem);
     aspect-ratio: 1;
+    border-radius: 12px;
+    overflow: hidden;
     outline: 2px solid var(--semantic-error);
+    outline-offset: 2px;
   }
-  .advance {
-    display: grid;
-    justify-items: center;
+  .correction figcaption {
+    font-size: 0.95rem;
+    line-height: 1.45;
+    color: var(--theme-text);
+  }
+  .discoveries {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .discovery {
+    display: flex;
+    align-items: center;
     gap: 0.5rem;
-    margin-block: 1rem;
+    min-height: 2.75rem;
+    padding: 0.35rem 1rem;
+    border: 1px dashed var(--theme-stroke);
+    border-radius: 999px;
+    color: var(--theme-text-dim);
+    transition:
+      border-color var(--duration-normal) var(--ease-out),
+      background var(--duration-normal) var(--ease-out),
+      color var(--duration-normal) var(--ease-out);
   }
-  .advance :global(.lesson-stage-controls) {
-    width: 100%;
+  .discovery-symbol {
+    font-size: 1.35rem;
+    line-height: 1;
+    font-weight: 600;
+  }
+  .discovery-name {
+    font-weight: 600;
+  }
+  .discovery.found {
+    border-style: solid;
+    border-color: var(--theme-accent);
+    background: var(--theme-card-bg);
+    color: var(--theme-text);
+    animation: discovery-found var(--duration-emphasis) var(--ease-out);
+  }
+  .discovery.found .discovery-symbol {
+    color: var(--theme-accent);
+  }
+  @keyframes discovery-found {
+    40% {
+      transform: scale(1.08);
+    }
   }
   .practice-progress {
     display: block;
     width: 8rem;
     height: 0.375rem;
-    margin: 0.5rem auto 0;
     accent-color: var(--theme-accent);
   }
   .lesson-navigation {
@@ -782,39 +851,23 @@
     gap: 0.75rem;
     width: 100%;
   }
-  .hand-controls,
-  .support-actions {
+  .lesson-navigation :global(.lesson-stage-controls) {
+    width: 100%;
+  }
+  .hand-controls {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
     align-items: center;
     gap: 0.5rem;
-  }
-  .transform-controls {
-    display: contents;
-  }
-  .hand-controls {
     --workspace-action-width: auto;
     --workspace-action-gap: 0.5rem;
     --workspace-action-padding-inline: 1rem;
     --workspace-action-radius: 999px;
     --workspace-action-label-display: inline;
   }
-  .support-actions {
-    margin-block: 0.75rem;
-  }
-  .support-actions:empty {
-    display: none;
-  }
-  .board-toolbar {
-    width: min(100%, 20rem);
-    margin-inline: auto;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: center;
-    gap: 0.75rem 1.5rem;
-    margin-bottom: 0.5rem;
+  .transform-controls {
+    display: contents;
   }
   p {
     margin: 0;
@@ -826,43 +879,87 @@
   .correct [data-placement-stage="heading"] :global(h1) {
     color: var(--semantic-success);
   }
-  .reference-area {
-    min-width: 0;
-    margin-top: 1rem;
-  }
-  @container (min-width: 42rem) {
-    .has-reference .reference-area {
-      margin-top: 0;
-    }
-  }
   .examples {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.5rem;
+    grid-template-columns: repeat(3, minmax(0, 7rem));
+    gap: 0.75rem;
   }
   .example {
     min-width: 0;
     aspect-ratio: 1;
     --selection-selected-transform: none;
   }
-  .example.correction {
-    outline: 2px solid var(--semantic-error);
-    outline-offset: 2px;
-  }
   .example-art {
     width: 100%;
     aspect-ratio: 1;
     overflow: hidden;
   }
-  @media (max-width: 760px) {
-    .placements-experience {
-      --placement-board-size: 18.5rem;
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* Narrow stages stack the panel under the board, still at a fixed height. */
+  @container (max-width: 44rem) {
+    .stage-row {
+      grid-template-columns: min(100%, var(--placement-board-size));
+      justify-items: center;
+      gap: 0.75rem;
+    }
+    .placement-panel {
+      min-height: 6.5rem;
+      width: 100%;
+    }
+    .reveal {
+      grid-template-columns: auto 1fr;
+      column-gap: 0.75rem;
+      align-items: center;
+    }
+    .reveal-symbol {
+      grid-row: span 2;
+      font-size: 3.25rem;
+    }
+    .reveal-name {
+      font-size: 1.3rem;
+    }
+    .correction {
+      grid-template-columns: 5.5rem 1fr;
+      align-items: center;
     }
   }
+
+  @media (max-width: 760px) {
+    .placements-experience {
+      --placement-board-size: min(
+        calc(100cqw - 1.5rem),
+        calc(100svh - 22rem),
+        26rem
+      );
+    }
+    .discovery {
+      padding-inline: 0.75rem;
+    }
+  }
+
   @media (min-width: 2400px) and (min-height: 1700px) {
     .placements-experience {
-      --placement-board-size: 72rem;
+      --placement-board-size: 64rem;
+      --placement-panel-width: 26rem;
       --lesson-workshop-max: 104rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .correction-target circle,
+    .discovery.found {
+      animation: none;
     }
   }
 </style>
