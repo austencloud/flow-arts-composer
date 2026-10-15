@@ -258,6 +258,9 @@
     moduleName: string,
     recoverOnFailure: boolean
   ): Promise<Component<any>> {
+    const loader = moduleLoaders[moduleName];
+    if (!loader) throw new Error(`Unknown module: ${moduleName}`);
+
     // Load and cache the component
     // Services are already registered synchronously via ITI container
     // Instrument the chunk fetch+eval — this is exactly how long the
@@ -278,10 +281,7 @@
     // page out from under the user.
     let ModuleComponent: Component<any>;
     try {
-      ({ default: ModuleComponent } = await resilientLazyImport(
-        moduleLoaders[moduleName],
-        4
-      )());
+      ({ default: ModuleComponent } = await resilientLazyImport(loader, 4)());
     } catch (err) {
       if (recoverOnFailure) recoverFromModuleChunkFailure(moduleName);
       throw err;
