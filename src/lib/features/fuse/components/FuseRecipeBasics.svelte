@@ -2,15 +2,15 @@
   import GridModeCard from "#lib/features/create/generate/components/cards/GridModeCard.svelte";
   import LevelCard from "#lib/features/create/generate/components/cards/LevelCard.svelte";
   import TurnIntensityCard from "#lib/features/create/generate/components/cards/TurnIntensityCard.svelte";
-  import {
-    maxTurnIntensitiesForLevel,
-    type TurnLevel,
-  } from "#lib/shared/create/services/level-turn-values.js";
+  import { maxTurnIntensitiesForLevel } from "#lib/shared/create/services/level-turn-values.js";
   import StepperCard from "#lib/shared/components/stepper-card/StepperCard.svelte";
-  import { DifficultyLevel } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+  import {
+    fuseDifficultyByLevel,
+    fuseLevelByDifficulty,
+  } from "../domain/fuse-difficulty-levels";
   import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import { getFuseContext } from "../context/fuse-context";
-  import { FUSE_LENGTHS } from "../state/fuse-state.svelte";
+  import { FUSE_LENGTHS } from "../state/fuse-state.svelte.js";
 
   export type FuseRecipeBasicSection = "length" | "level" | "grid";
 
@@ -23,17 +23,6 @@
   } = $props();
 
   const { state: fuseState } = getFuseContext();
-  const levelMap: Record<TurnLevel, DifficultyLevel> = {
-    1: DifficultyLevel.BEGINNER,
-    2: DifficultyLevel.INTERMEDIATE,
-    3: DifficultyLevel.ADVANCED,
-  };
-  const reverseLevelMap: Record<DifficultyLevel, TurnLevel> = {
-    [DifficultyLevel.BEGINNER]: 1,
-    [DifficultyLevel.INTERMEDIATE]: 2,
-    [DifficultyLevel.ADVANCED]: 3,
-    [DifficultyLevel.SKEWED]: 3,
-  };
 
   const disabled = $derived(
     fuseState.isLoadingLength ||
@@ -67,7 +56,7 @@
 
   function selectLevel(level: DifficultyLevel): void {
     if (disabled) return;
-    fuseState.setGenerationLevel(reverseLevelMap[level]);
+    fuseState.setGenerationLevel(fuseLevelByDifficulty[level]);
   }
 
   function selectTurnIntensity(value: number): void {
@@ -108,7 +97,7 @@
   {:else if section === "level"}
     <div class="card-wrapper level-card-slot">
       <LevelCard
-        currentLevel={levelMap[fuseState.generationLevel]}
+        currentLevel={fuseDifficultyByLevel[fuseState.generationLevel]}
         onLevelChange={selectLevel}
         appearance="quiet"
         gridColumnSpan={3}

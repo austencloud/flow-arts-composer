@@ -79,7 +79,7 @@
 </script>
 
 <!-- The recipe editors share their content between the drawer and column. -->
-{#if solo && destination}
+{#if solo && destination && isFuseRecipeDestination(destination)}
   <GenerationSettingsOverlay
     title={DESTINATION_LABELS[destination] ?? "Fuse recipe"}
     titleId="fuse-settings-title"
