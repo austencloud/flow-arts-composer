@@ -27,9 +27,11 @@ const dependencyRoot = existsSync(join(repo, 'node_modules/.pnpm')) ? repo : sou
 const definitions = await loadDeployedCharacters(source);
 if (definitions.length !== 16 || new Set(definitions.map(x => x.id)).size !== 16)
   throw new Error(`Expected exactly 16 unique deployed avatars; found ${definitions.length}`);
-for (const character of definitions) {
-  const input = join(source, character.sourceRelativePath);
-  if (!existsSync(input)) throw new Error(`Missing deployed rig ${input}`);
+if (!familyOnly) {
+  for (const character of definitions) {
+    const input = join(source, character.sourceRelativePath);
+    if (!existsSync(input)) throw new Error(`Missing deployed rig ${input}`);
+  }
 }
 if (captureId && !definitions.some(x => x.id === captureId))
   throw new Error(`Unknown deployed capture character: ${captureId}`);
