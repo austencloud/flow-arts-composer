@@ -76,3 +76,8 @@
 - Source context: `export_ui_performance` identifies the camera/performance-video format in `MediaPieceCard.svelte` and `CompositeControls.svelte`, so it is Apresentação rather than computer desempenho. `library_ui_looks_in` introduces the source scope in `SmartCollectionRuleSummary.svelte`, rendered Buscar em. `nav_ui_your_username` is a placeholder in both username editors, rendered seu_usuario rather than treated as an actual username. Realm / Collect use Reino / Colecionar, matching existing module labels.
 - Uncertain: flow identity and prop preset have no glossary entries; rendered identidade no flow and preset de props. Native terminology review remains needed.
 - No native-speaker review performed. No primary checkout access, dependency installation, broad checks, server, integration, or push performed.
+
+## G1 (coordinator) — 2026-10-14
+
+- 4 older keys restored Codex as a product name (was códice): learn_back_to_codex, tab_choreo_card_codex, tab_desc_choreo_card_codex, tab_learn_codex.
+- Gate: `Tests  66 passed (66)`.
