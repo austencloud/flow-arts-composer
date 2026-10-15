@@ -172,6 +172,10 @@ Supports two navigation modes:
   /** Continue and Previous both keep this view and its board. */
   function moveTo(next: LearnConcept) {
     liveBoard.capture();
+    // The next lesson starts at its top, the way a new page would. On a phone
+    // Continue sits below the board, so keeping the scroll would land the
+    // board off screen. The flight starts from the captured spot on screen.
+    if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: "instant" });
     // Set before the lesson changes, so the next one mounts knowing it.
     arrivedFrom = concept.id;
     onContinue?.(next, getConceptPlaceIdForLesson(next.id));
