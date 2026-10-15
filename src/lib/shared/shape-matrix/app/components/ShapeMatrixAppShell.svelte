@@ -17,7 +17,7 @@
   import type { ModeRealization } from "#lib/shared/shape-matrix/services/build-mode-realizations.js";
 
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
-  import { createShapeMatrixAnimationState } from "../state/shape-matrix-animation-state.svelte";
+  import { createShapeMatrixAnimationState } from "../state/shape-matrix-animation-state.svelte.js";
   import { customizeSection } from "../state/shape-matrix-customize";
   import { setShapeMatrixAnimationContext } from "../context/shape-matrix-animation-context";
   import { setAnimationScopeContext } from "#lib/shared/animation-engine/state/animation-scope-context.js";
@@ -611,7 +611,7 @@
         class="top-action"
         type="button"
         aria-label={t("shape_engine_about_name")}
-        onclick={appState.openAbout}
+        onclick={() => appState.openAbout()}
       >
         <i class="fas fa-circle-info" aria-hidden="true"></i>
         {#if !appState.compact}<span>{t("shape_engine_about")}</span>{/if}

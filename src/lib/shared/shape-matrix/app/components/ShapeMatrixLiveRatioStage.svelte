@@ -358,14 +358,15 @@
     const cached = colorCache.get(color);
     if (cached) return cached;
     const match = VAR_PATTERN.exec(color.trim());
-    if (!match) {
+    const property = match?.[1];
+    if (!property) {
       colorCache.set(color, color);
       return color;
     }
     const declared = getComputedStyle(element)
-      .getPropertyValue(match[1])
+      .getPropertyValue(property)
       .trim();
-    const resolved = declared || match[2]?.trim() || "#ffffff";
+    const resolved = declared || match?.[2]?.trim() || "#ffffff";
     colorCache.set(color, resolved);
     return resolved;
   }
@@ -397,7 +398,8 @@
     let kept = 0;
     while (kept < runtime.length) {
       const at = (runtime.head - 1 - kept + TRAIL_CAPACITY) % TRAIL_CAPACITY;
-      if (runtime.cycles - runtime.trail[at * TRAIL_STRIDE + 4] > closure)
+      const sampledCycle = runtime.trail[at * TRAIL_STRIDE + 4];
+      if (sampledCycle === undefined || runtime.cycles - sampledCycle > closure)
         break;
       kept += 1;
     }
@@ -511,9 +513,11 @@
           if (!guide || guide.length < 2) continue;
           context.strokeStyle = resolveColor(element, hand.color);
           context.beginPath();
-          context.moveTo(guide[0].x, guide[0].y);
-          for (let i = 1; i < guide.length; i += 1) {
-            context.lineTo(guide[i].x, guide[i].y);
+          let firstPoint = true;
+          for (const point of guide) {
+            if (firstPoint) context.moveTo(point.x, point.y);
+            else context.lineTo(point.x, point.y);
+            firstPoint = false;
           }
           context.stroke();
         }
@@ -677,14 +681,21 @@
                   ((runtime.head - kept + i + TRAIL_CAPACITY) %
                     TRAIL_CAPACITY) *
                   TRAIL_STRIDE;
+                const headX = runtime.trail[at];
+                const headY = runtime.trail[at + 1];
+                const tailX = runtime.trail[at + 2];
+                const tailY = runtime.trail[at + 3];
+                if (
+                  headX === undefined ||
+                  headY === undefined ||
+                  tailX === undefined ||
+                  tailY === undefined
+                )
+                  continue;
                 const px =
-                  lane === 2
-                    ? (runtime.trail[at] + runtime.trail[at + 2]) / 2
-                    : runtime.trail[at + lane * 2];
+                  lane === 2 ? (headX + tailX) / 2 : lane === 0 ? headX : tailX;
                 const py =
-                  lane === 2
-                    ? (runtime.trail[at + 1] + runtime.trail[at + 3]) / 2
-                    : runtime.trail[at + lane * 2 + 1];
+                  lane === 2 ? (headY + tailY) / 2 : lane === 0 ? headY : tailY;
                 if (i === start) context.moveTo(px, py);
                 else context.lineTo(px, py);
               }
