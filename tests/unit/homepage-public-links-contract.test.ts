@@ -23,7 +23,11 @@ const marketingChrome = readSource(
   "src/lib/shared/landing/components/MarketingChrome.svelte"
 );
 const pageSurface = readSource("src/lib/shared/landing/domain/page-surface.ts");
-const historyPage = readSource("src/routes/(public)/history/+page.svelte");
+// The archive room moved into one component shared by /history (dev only)
+// and /history/draft while the public page is withdrawn.
+const historyPage = readSource(
+  "src/routes/(public)/history/_components/archive/ArchiveFullPage.svelte"
+);
 
 interface HrefEntry {
   href: string;
@@ -224,7 +228,7 @@ describe("homepage public-links contract", () => {
     // deep guide pages.
     expect(marketingChrome).toContain("pageSurface(path)");
     expect(pageSurface).toContain(
-      'if (path === "/history") return ARCHIVE_INK'
+      'if (path === "/history" && import.meta.env.DEV) return ARCHIVE_INK'
     );
     expect(pageSurface).toContain(
       'if (path === "/guide" || path.startsWith("/guide/")) return GUIDE_CANVAS'

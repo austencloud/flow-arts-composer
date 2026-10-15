@@ -7,43 +7,54 @@
   lives unlisted at /history/draft, so a record can be shown to its author
   during outreach without being advertised.
 
-  To restore: move draft/+page.svelte back here, re-list /history in the
+  A local dev server still shows the full archive here, so the archive can be
+  worked on in place; production builds prerender the note.
+
+  To restore: render ArchiveFullPage here unconditionally, re-list /history in the
   sitemap, header, footer, launchpad tile, and FAQ, and drop the draft route.
 -->
 <script lang="ts">
+  import { dev } from "$app/environment";
   import "#lib/shared/landing/styles/public-editorial.css";
   import UnderConstruction from "#lib/shared/landing/components/UnderConstruction.svelte";
+  import ArchiveFullPage from "./_components/archive/ArchiveFullPage.svelte";
 </script>
 
 <svelte:head>
-  <title>Flow Arts History | Being rebuilt</title>
-  <meta
-    name="description"
-    content="The flow arts history archive is being rebuilt. The notation pages for each prop are still here."
-  />
-  <meta name="robots" content="noindex, follow" />
-  <link rel="canonical" href="https://tkaflowarts.com/history" />
+  {#if !dev}
+    <title>Flow Arts History | Being rebuilt</title>
+    <meta
+      name="description"
+      content="The flow arts history archive is being rebuilt. The notation pages for each prop are still here."
+    />
+    <meta name="robots" content="noindex, follow" />
+    <link rel="canonical" href="https://tkaflowarts.com/history" />
+  {/if}
 </svelte:head>
 
-<UnderConstruction
-  title="Flow Arts History"
-  eyebrow="Being rebuilt"
-  icon="fa-clock-rotate-left"
-  note="The history archive is offline while it is rebuilt with the people whose work it records. The notation pages for each prop are still here."
-  destinations={[
-    {
-      label: "Shape Engine",
-      href: "/shape-engine",
-      icon: "fa-diagram-project",
-    },
-    {
-      label: "Staves",
-      href: "/notation/staves",
-      icon: "fa-grip-lines-vertical",
-    },
-    { label: "Poi", href: "/notation/poi", icon: "fa-circle-dot" },
-    { label: "Fans", href: "/notation/fans", icon: "fa-fan" },
-    { label: "Clubs", href: "/notation/clubs", icon: "fa-wine-bottle" },
-    { label: "Buugeng", href: "/notation/buugeng", icon: "fa-yin-yang" },
-  ]}
-/>
+{#if dev}
+  <ArchiveFullPage canonical="https://tkaflowarts.com/history" />
+{:else}
+  <UnderConstruction
+    title="Flow Arts History"
+    eyebrow="Being rebuilt"
+    icon="fa-clock-rotate-left"
+    note="The history archive is offline while it is rebuilt with the people whose work it records. The notation pages for each prop are still here."
+    destinations={[
+      {
+        label: "Shape Engine",
+        href: "/shape-engine",
+        icon: "fa-diagram-project",
+      },
+      {
+        label: "Staves",
+        href: "/notation/staves",
+        icon: "fa-grip-lines-vertical",
+      },
+      { label: "Poi", href: "/notation/poi", icon: "fa-circle-dot" },
+      { label: "Fans", href: "/notation/fans", icon: "fa-fan" },
+      { label: "Clubs", href: "/notation/clubs", icon: "fa-wine-bottle" },
+      { label: "Buugeng", href: "/notation/buugeng", icon: "fa-yin-yang" },
+    ]}
+  />
+{/if}
