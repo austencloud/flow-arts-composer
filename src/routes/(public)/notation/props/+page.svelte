@@ -264,7 +264,7 @@
     mask-repeat: no-repeat;
     background: currentColor;
     opacity: 0.6;
-    transition: opacity 180ms ease;
+    transition: opacity var(--duration-fast) var(--ease-standard);
   }
   .prop-switcher :global(.segment.selected .prop-art),
   .prop-switcher :global(.segment:hover .prop-art) {
@@ -302,15 +302,15 @@
     visibility: hidden;
     opacity: 0;
     transition:
-      opacity 180ms ease,
-      visibility 0s linear 180ms;
+      opacity var(--duration-fast) var(--ease-standard),
+      visibility 0s linear var(--duration-fast);
   }
   .prop-panel.active {
     position: relative;
     visibility: visible;
     opacity: 1;
     transition:
-      opacity 180ms ease,
+      opacity var(--duration-fast) var(--ease-standard),
       visibility 0s;
   }
   .prop-panel .section-title {
