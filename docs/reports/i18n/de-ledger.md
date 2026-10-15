@@ -24,3 +24,9 @@
 - Copy review: ai-bust mechanical pass on the output JSON returned `[]` at HIGH threshold; judgment pass found no new filler or structural prose issues.
 - Uncertain: the glossary does not specify Cat Dog/Catdog or Moon LED; retained the existing technical/build labels. It does not specify localization of the they/them pronoun preset; retained that identity value without inventing a German equivalent. PADS remains an acronym without an established expansion in the glossary. Lorq Nichols’ heading uses the descriptive translation 144-Formen-Matrix; no established German title or native review was verified.
 - Existing glossary conflicts in adjacent values (such as Diamond/Box prose and other English Turn labels) are outside D2's permitted keys and remain unchanged.
+
+## G1 (coordinator) — 2026-10-14
+
+- 40 existing keys corrected to the glossary by the coordinator: diamond grid is Raute and box is Quadrat (replacing Diamant, Diamantgitter, Diamond-Modus, Box-Modus); The Kinetic Alphabet and Codex stay English (replacing Kinetisches Alphabet and Kodex); Zan's Diamond stays a proper name (replacing Zans Diamant).
+- `effect_deep_option_diamond` keeps Diamant: it names an effect shape, not the grid.
+- Gate: `Test Files  1 passed (1)`; `Tests  66 passed (66)`.
