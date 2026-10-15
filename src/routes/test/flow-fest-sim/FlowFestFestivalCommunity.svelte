@@ -116,7 +116,7 @@
         id={`flow-fest-${person.id}`}
         position={{ x: living.x, y: living.y, z: living.z }}
         facingAngle={living.facingAngle}
-        avatarId={person.avatarId}
+        characterId={person.avatarId}
         propType={profile.propType}
         sequence={flowFestSequenceForPerformer(sequencePool, person.id)}
         effectId={profile.effectId}

@@ -1,9 +1,5 @@
-<script lang="ts">
-  import { onMount } from "svelte";
-  import type {
-    OceanBackgroundOrchestrator,
-    FishMarineLife,
-  } from "@austencloud/backgrounds";
+<script module lang="ts">
+  import type { OceanBackgroundOrchestrator } from "@austencloud/backgrounds";
 
   interface PointerSnapshot {
     x: number;
@@ -58,6 +54,11 @@
       __oceanMotionBenchmark?: OceanInteractionApi;
     }
   }
+</script>
+
+<script lang="ts">
+  import { onMount } from "svelte";
+  import type { FishMarineLife } from "@austencloud/backgrounds";
 
   const TRACE_LIMIT = 1200;
   const implementation = {
@@ -238,13 +239,13 @@
       (event.clientY - rect.top) * (canvas.height / Math.max(1, rect.height));
     pointer.active = true;
     pointer.pointerType = event.pointerType || "mouse";
-    system.setPointer(pointer.x, pointer.y, true, pointer.pointerType);
+    system.setPointer(pointer.x, pointer.y, true);
   }
 
   function handlePointerLeave(event: PointerEvent): void {
     pointer.active = false;
     pointer.pointerType = event.pointerType || pointer.pointerType;
-    system?.setPointer(0, 0, false, pointer.pointerType);
+    system?.setPointer(0, 0, false);
   }
 
   onMount(() => {
@@ -306,7 +307,7 @@
       }
     }
 
-    function animate(now: number): void {
+    const animate = (now: number): void => {
       if (disposed) return;
       const elapsed = Math.min(50, Math.max(1, now - previousFrame));
       previousFrame = now;
@@ -317,7 +318,7 @@
         system.draw(context, dimensions);
       }
       animationFrame = requestAnimationFrame(animate);
-    }
+    };
 
     void boot();
     animationFrame = requestAnimationFrame(animate);

@@ -82,35 +82,25 @@
    * the venue's own trees carry collision and leaf litter, and those consumers
    * read `layout.trees` directly.
    */
-  const renderedTrees = $derived([
-    ...layout.trees,
-    ...layout.backdropTrees,
-  ]);
+  const renderedTrees = $derived([...layout.trees, ...layout.backdropTrees]);
   const { camera } = useThrelte();
   const loaderOptions = {
     dracoLoader: useDraco("/draco/"),
     meshoptDecoder: useMeshopt(),
   };
-  const treeFamilyIds = Object.keys(
-    FLOW_FEST_FOREST_TREE_ASSETS
-  ) as FlowFestForestTreeFamilyId[];
-  // Every family loads its near source plus its own mid and far tier. The
-  // records are keyed `near:`/`mid:`/`far:` + familyId so the ledger, the
-  // scene maps, and the tier builders all address the same load.
+  const treeFamilyIds = Object.keys(FLOW_FEST_FOREST_TREE_ASSETS);
   const treeAssetUrlByKey = new Map<string, string>();
-  for (const familyId of treeFamilyIds) {
-    treeAssetUrlByKey.set(
-      `near:${familyId}`,
-      FLOW_FEST_FOREST_TREE_ASSETS[familyId]
-    );
-    treeAssetUrlByKey.set(
-      `mid:${familyId}`,
-      FLOW_FEST_FOREST_DISTANCE_TREE_ASSETS.mid[familyId]
-    );
-    treeAssetUrlByKey.set(
-      `far:${familyId}`,
-      FLOW_FEST_FOREST_DISTANCE_TREE_ASSETS.far[familyId]
-    );
+  for (const [familyId, nearUrl] of Object.entries(
+    FLOW_FEST_FOREST_TREE_ASSETS
+  )) {
+    const midUrl = FLOW_FEST_FOREST_DISTANCE_TREE_ASSETS.mid[familyId];
+    const farUrl = FLOW_FEST_FOREST_DISTANCE_TREE_ASSETS.far[familyId];
+    if (!midUrl || !farUrl) {
+      throw new Error(`Missing distance tree assets for ${familyId}`);
+    }
+    treeAssetUrlByKey.set(`near:${familyId}`, nearUrl);
+    treeAssetUrlByKey.set(`mid:${familyId}`, midUrl);
+    treeAssetUrlByKey.set(`far:${familyId}`, farUrl);
   }
   const treeGltfByKey = new Map(
     [...treeAssetUrlByKey].map(([key, url]) => [
