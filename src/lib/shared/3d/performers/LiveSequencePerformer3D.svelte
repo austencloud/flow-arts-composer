@@ -205,6 +205,20 @@
   const bodyClearanceTrack = $derived(contact.bodyTrack);
   let readyReported = false;
 
+  /** Deterministic capture seam: one score unit is one production beat. */
+  export function seekScore(score: number): void {
+    if (!Number.isFinite(score) || score < 0)
+      throw new Error("Invalid performer score");
+    const steps = props.sequence.steps.length;
+    if (!steps) throw new Error("Cannot seek an empty performer sequence");
+    const wrapped = score % steps;
+    performerState.pause();
+    performerState.goToStep(
+      performerState.motionStepOffset + Math.floor(wrapped)
+    );
+    performerState.setProgress(wrapped - Math.floor(wrapped));
+  }
+
   function captureReach(diagnostics: AvatarPoseDiagnostics): void {
     if (reachMeasurements) return;
     const measured = measurePerformerReach({
