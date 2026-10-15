@@ -42,6 +42,7 @@ public:
     virtual void Tick(float DeltaSeconds) override;
     bool LoadMuseum();
     FVector GetSpawnLocation() const { return SpawnLocation; }
+    FRotator GetSpawnRotation() const { return SpawnRotation; }
     const FMuseumExhibit* NearestExhibit(const FVector& Location, float RadiusCm) const;
     const FMuseumRoom* RoomAt(const FVector& Location) const;
     AMuseumPerformerStation* NearestPerformerStation(const FVector& Location, float RadiusCm) const;
@@ -67,6 +68,7 @@ private:
     TArray<FMuseumExhibit> Exhibits;
     TArray<FMuseumRoom> Rooms;
     FVector SpawnLocation = FVector::ZeroVector;
+    FRotator SpawnRotation = FRotator(0.f, -90.f, 0.f);
     int32 PerformerCount = 0;
     bool bLoaded = false;
     int32 SmokeStage = -1;

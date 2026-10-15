@@ -23,6 +23,7 @@ void AMuseumGameMode::StartPlay()
         {
             Visitor->SetMuseumWorld(Museum);
             Visitor->SetActorLocation(Museum->GetSpawnLocation());
+            It->Get()->SetControlRotation(Museum->GetSpawnRotation());
         }
     }
 }
