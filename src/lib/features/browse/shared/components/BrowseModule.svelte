@@ -66,7 +66,6 @@
   import BrowseHome, {
     type BrowseHomeDestination,
   } from "#lib/features/browse/home/BrowseHome.svelte";
-  import type { BrowseLocation } from "#lib/shared/browse/navigation/browse-route-resolver.js";
   import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { page } from "$app/state";
@@ -225,7 +224,13 @@
     if (!closed) return;
     queueMicrotask(() => {
       const location = browseNavigationState.currentLocation;
-      if (location && !navigationState.isModuleHomeOpen("browse")) {
+      // Only when the home closed into a Browse page. Leaving Browse for
+      // another module also closes the home, and that address is not ours.
+      if (
+        location &&
+        navigationState.currentModule === "browse" &&
+        !navigationState.isModuleHomeOpen("browse")
+      ) {
         browseNavigationState.replace(location);
       }
     });

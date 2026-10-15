@@ -367,6 +367,19 @@
     .tile-index[data-tile-count="3"] .tile:last-child {
       grid-column: 1 / -1;
     }
+    /* Tiles side by side share two rows, words then chips, so a tile with
+       chips keeps its icon and title level with its neighbours. */
+    .tile {
+      grid-row: span 2;
+      grid-template-rows: subgrid;
+      row-gap: 0;
+    }
+    .tile-main {
+      grid-row: 1;
+    }
+    .tile-chips {
+      grid-row: 2;
+    }
     .tile-main {
       min-height: 132px;
       gap: 16px;
@@ -380,6 +393,31 @@
     }
     .tile-description {
       font-size: clamp(14px, 1.8cqi, 1rem);
+      /* Two lines reserved so a short description keeps titles level. */
+      min-height: 2lh;
+    }
+  }
+
+  /* A tall two-column board (a portrait tablet) fills its height the way
+     Create's board does: tall tiles with the icon centred above the words. */
+  @container browse-home (min-width: 600px) and (min-height: 760px) {
+    .tile-index {
+      --stage-side: clamp(72px, 11cqi, 112px);
+    }
+    .tile-main {
+      min-height: clamp(220px, 30cqh, 360px);
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: 1fr auto;
+      align-items: start;
+      gap: 18px;
+      padding: 22px;
+    }
+    .tile-stage {
+      align-self: center;
+      justify-self: center;
+    }
+    .tile-chips {
+      padding: 0 22px 22px;
     }
   }
 
@@ -388,10 +426,21 @@
   @container browse-home (min-width: 1100px) {
     .browse-home-inner {
       width: calc(100% - clamp(48px, 6cqi, 160px));
-      max-width: 1440px;
+      max-width: 1600px;
       align-content: center;
       gap: 28px;
       padding-block: 40px;
+    }
+    /* Text grows with very large screens so a 4K board reads like Create's. */
+    h1 {
+      font-size: clamp(1.875rem, 1.3cqi, 3rem);
+    }
+    .tile-name {
+      font-size: clamp(1.5rem, 0.9cqi, 2.25rem);
+    }
+    .tile-description,
+    .tile-chip {
+      font-size: clamp(1rem, 0.5cqi, 1.25rem);
     }
     .tile-index {
       --stage-side: clamp(72px, 6.5cqi, 112px);

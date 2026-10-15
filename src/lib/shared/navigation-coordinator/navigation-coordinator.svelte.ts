@@ -267,6 +267,11 @@ const MODULE_ORDER = [
   "settings",
 ];
 
+/** Bare /browse is Browse's home screen, not a legacy alias to rewrite. */
+function isBrowseHomePathname(pathname: string): boolean {
+  return pathname.replace(/\/+$/, "") === "/browse";
+}
+
 function historySectionFor(
   moduleId: ModuleId,
   requestedSection?: string
@@ -794,6 +799,8 @@ function parsePathNavigation(): {
     let sectionId = parts[1] || searchParams.get("section") || undefined;
     const creatorPath = parseCreatorPathname(`/${parts.join("/")}`);
     const browseRoute = resolveBrowsePathname(`/${parts.join("/")}`);
+    const isBrowseHome =
+      isBrowseHomePathname(pathname) && !searchParams.has("section");
 
     // Redirect legacy module URLs to their new locations
     // (Note: these IDs are not in ModuleId type but may exist in legacy URLs)
@@ -806,6 +813,9 @@ function parsePathNavigation(): {
         url.pathname = creatorPath.canonicalPath;
         writeUrl(url, { state: { moduleId: "creators" } });
       }
+    } else if (isBrowseHome) {
+      moduleId = "browse" as ModuleId;
+      sectionId = undefined;
     } else if (browseRoute) {
       if (browseRoute.externalRedirect) {
         window.location.replace(browseRoute.externalRedirect);
@@ -965,7 +975,10 @@ export function initializeNavigationHistory() {
     let needsHistoryUpdate = false;
 
     const browseHistoryRoute = resolveBrowsePathname(window.location.pathname);
-    if (browseHistoryRoute) {
+    if (isBrowseHomePathname(window.location.pathname)) {
+      targetModule = "browse" as ModuleId;
+      targetSection = undefined;
+    } else if (browseHistoryRoute) {
       if (browseHistoryRoute.externalRedirect) {
         window.location.replace(browseHistoryRoute.externalRedirect);
         return;
