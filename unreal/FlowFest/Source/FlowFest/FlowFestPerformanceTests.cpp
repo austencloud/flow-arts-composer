@@ -417,23 +417,48 @@ bool FFlowFestMotionIntegrationTest::RunTest(const FString& Parameters)
                     float SwitchPeakAnchor = 0.f;
                     float SwitchFirstStepCm = 0.f;
                     bool bSwitchFinite = true;
-                    auto TickSwitch = [&](float Delta, bool bFirstStep)
+                    FString SwitchPeakLeg;
+                    FString SwitchPeakHand;
+                    FVector SwitchBeforeRoot = FVector::ZeroVector;
+                    FVector SwitchAfterRoot = FVector::ZeroVector;
+                    FVector SwitchBeforeWrist = FVector::ZeroVector;
+                    FVector SwitchAfterWrist = FVector::ZeroVector;
+                    auto TickSwitch = [&](float Delta, bool bFirstStep, const TCHAR* Leg)
                     {
                         const FVector BeforeLeft = HeldProp->GetPropRootTransform(true).GetLocation();
                         const FVector BeforeRight = HeldProp->GetPropRootTransform(false).GetLocation();
+                        const FVector BeforeLeftWrist = Body->GetSocketLocation(TEXT("LeftHand"));
+                        const FVector BeforeRightWrist = Body->GetSocketLocation(TEXT("RightHand"));
                         Fixture.World->TimeSeconds += Delta;
                         Body->TickAnimation(Delta, false);
                         Body->RefreshBoneTransforms();
                         Avatar->TickComponent(Delta, LEVELTICK_All, nullptr);
                         const FVector AfterLeft = HeldProp->GetPropRootTransform(true).GetLocation();
                         const FVector AfterRight = HeldProp->GetPropRootTransform(false).GetLocation();
+                        const FVector AfterLeftWrist = Body->GetSocketLocation(TEXT("LeftHand"));
+                        const FVector AfterRightWrist = Body->GetSocketLocation(TEXT("RightHand"));
                         const float Anchor = HeldProp->GetPropAnchorErrorCm();
-                        bSwitchFinite &= Finite(AfterLeft) && Finite(AfterRight) && FMath::IsFinite(Anchor);
+                        bSwitchFinite &= Finite(AfterLeft) && Finite(AfterRight) &&
+                            Finite(AfterLeftWrist) && Finite(AfterRightWrist) && FMath::IsFinite(Anchor);
                         SwitchPeakAnchor = FMath::Max(SwitchPeakAnchor, Anchor);
                         if (bFirstStep)
-                            SwitchFirstStepCm = FMath::Max(SwitchFirstStepCm,
-                                FMath::Max(FVector::Distance(BeforeLeft, AfterLeft),
-                                    FVector::Distance(BeforeRight, AfterRight)));
+                        {
+                            auto RecordStep = [&](const TCHAR* Hand, const FVector& BeforeRoot,
+                                const FVector& AfterRoot, const FVector& BeforeWrist, const FVector& AfterWrist)
+                            {
+                                const float DistanceCm = FVector::Distance(BeforeRoot, AfterRoot);
+                                if (DistanceCm <= SwitchFirstStepCm) return;
+                                SwitchFirstStepCm = DistanceCm;
+                                SwitchPeakLeg = Leg;
+                                SwitchPeakHand = Hand;
+                                SwitchBeforeRoot = BeforeRoot;
+                                SwitchAfterRoot = AfterRoot;
+                                SwitchBeforeWrist = BeforeWrist;
+                                SwitchAfterWrist = AfterWrist;
+                            };
+                            RecordStep(TEXT("left"), BeforeLeft, AfterLeft, BeforeLeftWrist, AfterLeftWrist);
+                            RecordStep(TEXT("right"), BeforeRight, AfterRight, BeforeRightWrist, AfterRightWrist);
+                        }
                     };
                     auto SwitchTo = [&](int32 NextVariant)
                     {
@@ -444,10 +469,15 @@ bool FFlowFestMotionIntegrationTest::RunTest(const FString& Parameters)
                     };
                     if (TestTrue(*FString::Printf(TEXT("A to B switch loads: %s"), *Case), SwitchTo(1)))
                     {
-                        for (int32 Step = 0; Step < 3; ++Step) TickSwitch(.02f, Step == 0);
+                        for (int32 Step = 0; Step < 3; ++Step) TickSwitch(.02f, Step == 0, TEXT("A-to-B"));
                         if (TestTrue(*FString::Printf(TEXT("Interrupted B to A switch loads: %s"), *Case), SwitchTo(0)))
-                            for (int32 Step = 0; Step < 10; ++Step) TickSwitch(.02f, Step == 0);
+                            for (int32 Step = 0; Step < 10; ++Step) TickSwitch(.02f, Step == 0, TEXT("interrupted-B-to-A"));
                     }
+                    if (Family.Contains(TEXT("buugeng")) || Family.Contains(TEXT("stick")))
+                        UE_LOG(LogTemp, Warning, TEXT("FlowFestSwitchDiagnostics %s peak=%.2fcm leg=%s hand=%s root=%s->%s wrist=%s->%s"),
+                            *Case, SwitchFirstStepCm, *SwitchPeakLeg, *SwitchPeakHand,
+                            *SwitchBeforeRoot.ToCompactString(), *SwitchAfterRoot.ToCompactString(),
+                            *SwitchBeforeWrist.ToCompactString(), *SwitchAfterWrist.ToCompactString());
                     TestTrue(*FString::Printf(TEXT("Finite A/B switch roots and anchors: %s"), *Case), bSwitchFinite);
                     TestTrue(*FString::Printf(TEXT("A/B switch wrist anchors within 10 cm: %s (peak %.2f cm)"),
                         *Case, SwitchPeakAnchor), SwitchPeakAnchor <= 10.f);
