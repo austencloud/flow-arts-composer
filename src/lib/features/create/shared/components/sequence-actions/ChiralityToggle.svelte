@@ -109,27 +109,27 @@
   .chirality-btn.blue {
     background: rgba(var(--user-left-rgb, 59, 130, 246), 0.15);
     border-color: rgba(var(--user-left-rgb, 59, 130, 246), 0.3);
-    color: rgba(var(--user-left-rgb, 59, 130, 246), 0.8);
+    color: var(--prop-ink, rgba(var(--user-left-rgb, 59, 130, 246), 0.8));
   }
 
   .chirality-btn.blue:hover,
   .chirality-btn.blue.flipped {
     background: rgba(var(--user-left-rgb, 59, 130, 246), 0.28);
     border-color: rgba(var(--user-left-rgb, 59, 130, 246), 0.55);
-    color: var(--user-left-color, var(--semantic-info));
+    color: var(--prop-ink, var(--user-left-color, var(--semantic-info)));
   }
 
   .chirality-btn.red {
     background: rgba(var(--user-right-rgb, 239, 68, 68), 0.15);
     border-color: rgba(var(--user-right-rgb, 239, 68, 68), 0.3);
-    color: rgba(var(--user-right-rgb, 239, 68, 68), 0.8);
+    color: var(--prop-ink, rgba(var(--user-right-rgb, 239, 68, 68), 0.8));
   }
 
   .chirality-btn.red:hover,
   .chirality-btn.red.flipped {
     background: rgba(var(--user-right-rgb, 239, 68, 68), 0.28);
     border-color: rgba(var(--user-right-rgb, 239, 68, 68), 0.55);
-    color: var(--user-right-color, var(--semantic-error));
+    color: var(--prop-ink, var(--user-right-color, var(--semantic-error)));
   }
 
   @media (prefers-reduced-motion: reduce) {
