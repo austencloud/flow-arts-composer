@@ -448,8 +448,17 @@ bool UFlowFestPropComponent::LoadPerformance(FName CharacterId, FName Profile)
     const bool bGrip = Schema != TEXT("flow-fest-prop-motion-v1");
     const bool bVisual = Schema == TEXT("flow-fest-prop-motion-v3");
     double SourceFrameCount = 0;
-    if (bGrip && (!Root->TryGetNumberField(TEXT("sourceFrameCount"), SourceFrameCount) ||
-        SourceFrameCount != Frames->Num() || Fps != 30.0 || Frames->Num() != 480))
+    // Captured festival profiles retain their fixed loop; authored consumers
+    // may supply a different length when the paired body clip matches it.
+    const FString ProfileName = Profile.ToString();
+    const bool bProductionProfile = ProfileName.StartsWith(TEXT("P_")) ||
+        ProfileName == TEXT("FirePoi") || ProfileName == TEXT("FireHoop") ||
+        ProfileName == TEXT("Juggler") || ProfileName == TEXT("LedFlow");
+    const int32 FrameCount = Frames->Num();
+    if (!Root->TryGetNumberField(TEXT("sourceFrameCount"), SourceFrameCount) ||
+        SourceFrameCount != FrameCount || Fps != 30.0 ||
+        (bProductionProfile && FrameCount != 480) ||
+        (!bProductionProfile && (FrameCount < 2 || FrameCount > 18000)))
         return false;
     TArray<FPropMotionFrame> Parsed;
     Parsed.Reserve(Frames->Num());
