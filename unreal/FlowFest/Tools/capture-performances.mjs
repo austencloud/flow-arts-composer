@@ -22,6 +22,7 @@ const selectedFamilies = list("FLOW_FEST_CAPTURE_FAMILIES");
 const selectedVariants = list("FLOW_FEST_CAPTURE_VARIANTS") ?? ["A", "B"];
 const familyMode = process.env.FLOW_FEST_CAPTURE_FAMILY_MODE === "1";
 const rideOnly = process.env.FLOW_FEST_CAPTURE_RIDE_ONLY === "1";
+const familyCaptureRevision = "clock-isolated-preroll-v2";
 if (familyMode && rideOnly)
   throw new Error("Family and ride-only modes cannot be combined");
 
@@ -42,6 +43,7 @@ async function writeJsonAtomic(path, value) {
 
 function validatePerformance(result, character, role, propType) {
   if (
+    (familyMode && result.captureRevision !== familyCaptureRevision) ||
     result.character !== character ||
     result.role !== role ||
     result.propType !== propType ||
@@ -120,6 +122,12 @@ try {
     familyMode ? "family-manifest.json" : "manifest.json"
   );
   const prior = await readJson(manifestPath);
+  if (
+    familyMode &&
+    prior?.artifacts?.length &&
+    prior.captureRevision !== familyCaptureRevision
+  )
+    throw new Error(`Stale family capture manifest in ${outputDir}`);
   const artifacts = new Map(
     (prior?.artifacts ?? []).map((item) => [item.filename, item])
   );
@@ -128,6 +136,7 @@ try {
     if (!familyMode && (selected || rideOnly)) return;
     await writeJsonAtomic(manifestPath, {
       schema: "flow-fest-native-export-manifest-v1",
+      ...(familyMode ? { captureRevision: familyCaptureRevision } : {}),
       sourceUrl: captureUrl,
       mode: familyMode ? "families" : "legacy",
       artifacts: [...artifacts.values()],
