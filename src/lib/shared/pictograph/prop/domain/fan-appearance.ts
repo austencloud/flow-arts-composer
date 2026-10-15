@@ -252,7 +252,7 @@ export function fanPreviewImage(appearance: FanAppearance): string {
     return previewImage("fan-pictograph-front.webp");
   }
   if (appearance.build === "fire") {
-    return previewImage(`fan-fire-${appearance.cover}-complete.webp`);
+    return `${previewImage(`fan-fire-${appearance.cover}-complete.webp`)}?v=2`;
   }
   if (appearance.build === "lotus") {
     return `${previewImage("fan-lotus-bare-complete.webp")}?v=6`;
@@ -260,9 +260,9 @@ export function fanPreviewImage(appearance: FanAppearance): string {
   if (appearance.build === "moon") {
     return previewImage("fan-moon-complete.webp");
   }
-  return previewImage(
+  return `${previewImage(
     `fan-day-${appearance.frameColor}-${appearance.cover}-complete.webp`
-  );
+  )}?v=2`;
 }
 
 export function fanBuildPreviewOptions(
