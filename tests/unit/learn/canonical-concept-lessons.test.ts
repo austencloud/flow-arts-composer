@@ -309,7 +309,10 @@ describe("canonical concept lesson composition", () => {
     expect(timing).not.toContain("HAND_PATH_STEPS");
   });
 
-  it("publishes motion, timing/direction, and anatomy before letters", () => {
+  // Anatomy and the letter lessons are withdrawn; their components stay in
+  // the codebase, so their content checks remain while only the four
+  // confident lessons keep their curriculum order in the registry.
+  it("publishes grid, placements, motions and timing in curriculum order", () => {
     const registry = readSource(
       "src/lib/features/learn/domain/concept-experience-registry.ts"
     );
@@ -317,11 +320,10 @@ describe("canonical concept lesson composition", () => {
       "src/lib/features/learn/components/interactive/foundations/PictographAnatomyConceptExperience.svelte"
     );
     const order = [
+      "grid",
+      "hand-placements",
       "hand-motions-intro",
-      "dual-shifts-alpha-beta",
-      "gamma-motion",
-      "letter-codex-intro",
-      "type1-abc-ghi",
+      "timing-and-direction",
     ].map((id) => registry.indexOf(`conceptId: "${id}"`));
 
     expect(order.every((index) => index >= 0)).toBe(true);

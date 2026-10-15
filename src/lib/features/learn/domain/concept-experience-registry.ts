@@ -31,6 +31,12 @@ function experience(
  * lives in concepts.ts, but this registry is the product truth for published
  * experiences. Cards, routes, and the lesson renderer all read this one list,
  * so a future lesson cannot appear available before its component exists.
+ *
+ * Only lessons Austen is confident in stay here. Rotation Direction,
+ * Dual-Shifts, Gamma, Pictograph Anatomy, Type 1, Reading a Choreo Card,
+ * Staff Placements and Words keep their components in the codebase but are
+ * withdrawn until each is rebuilt to that standard. Re-adding an entry
+ * republishes the lesson, its route, its Guide link and its sitemap entry.
  */
 export const CONCEPT_EXPERIENCES = [
   experience({
@@ -68,54 +74,6 @@ export const CONCEPT_EXPERIENCES = [
     reviewStatus: "built",
     load: () =>
       import("../components/interactive/motions/TimingDirectionConceptExperience.svelte"),
-  }),
-  experience({
-    conceptId: "reading-choreo-cards",
-    guideSlug: "hand-motions",
-    guideLabel: "Hand Motions",
-    reviewStatus: "built",
-    load: () =>
-      import("../components/interactive/cards/ReadingChoreoCardsConceptExperience.svelte"),
-  }),
-  experience({
-    conceptId: "rotation-direction",
-    guideSlug: "staff-motions",
-    guideLabel: "Staff Motions: Prospin and Antispin",
-    reviewStatus: "built",
-    load: () =>
-      import("../components/interactive/rotation/RotationDirectionConceptExperience.svelte"),
-  }),
-  experience({
-    conceptId: "dual-shifts-alpha-beta",
-    guideSlug: "hm-type1",
-    guideLabel: "Type 1 Dual-Shifts: Alpha and Beta",
-    reviewStatus: "built",
-    load: () =>
-      import("../components/interactive/foundations/DualShiftsConceptExperience.svelte"),
-  }),
-  experience({
-    conceptId: "gamma-motion",
-    guideSlug: "hm-gamma",
-    guideLabel: "Gamma: Quarter-Opp and Quarter-Same",
-    reviewStatus: "built",
-    load: () =>
-      import("../components/interactive/foundations/GammaMotionConceptExperience.svelte"),
-  }),
-  experience({
-    conceptId: "letter-codex-intro",
-    guideSlug: "codex",
-    guideLabel: "Codex",
-    reviewStatus: "built",
-    load: () =>
-      import("../components/interactive/foundations/PictographAnatomyConceptExperience.svelte"),
-  }),
-  experience({
-    conceptId: "type1-abc-ghi",
-    guideSlug: "lt1-abc-ghi",
-    guideLabel: "Type 1: ABC and GHI",
-    reviewStatus: "built",
-    load: () =>
-      import("../components/interactive/letters/type1/Type1ConceptExperience.svelte"),
   }),
 ] as const satisfies readonly ConceptExperienceDefinition[];
 
