@@ -3,7 +3,9 @@
   image tiles, each named, for pages that offer props in place without opening
   the full PropSelectionSheet. Callers pass the props to offer, either as one
   list (`options`) or as labelled groups (`sections`) that sit side by side
-  and wrap. Arrow keys move through every tile in order, across groups. Began
+  and wrap. `iconOnly` drops the visible names where height is short; each
+  name stays the tile's accessible name and shows on hover. Arrow keys move
+  through every tile in order, across groups. Began
   as the shop's deck PropPicker, which now wraps it.
 -->
 <script module lang="ts">
@@ -30,9 +32,18 @@
     sections?: readonly PropChoiceSection[];
     /** Accessible name of the group. */
     label: string;
+    /** Images only: names move to the hover tooltip and screen readers. */
+    iconOnly?: boolean;
   }
 
-  let { value, onchange, options = [], sections, label }: Props = $props();
+  let {
+    value,
+    onchange,
+    options = [],
+    sections,
+    label,
+    iconOnly = false,
+  }: Props = $props();
 
   const groups = $derived<readonly PropChoiceSection[]>(
     sections ?? [{ props: options }]
@@ -67,6 +78,8 @@
       id={optionId(prop)}
       class="prop-option"
       class:active
+      class:icon-only={iconOnly}
+      title={iconOnly ? localizedPropName(prop) : undefined}
       role="radio"
       aria-checked={active}
       tabindex={active || (!all.includes(value) && prop === all[0]) ? 0 : -1}
@@ -201,6 +214,22 @@
     font-weight: 700;
     line-height: 1.2;
     text-align: center;
+  }
+
+  /* The name keeps naming the tile for assistive tech; only the eye loses it. */
+  .prop-option.icon-only {
+    position: relative;
+    gap: 0;
+    justify-content: center;
+    padding: 6px 4px;
+  }
+  .prop-option.icon-only .prop-name {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
   @media (prefers-reduced-motion: reduce) {
