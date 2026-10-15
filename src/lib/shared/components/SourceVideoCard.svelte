@@ -10,6 +10,8 @@
   `year` and `note` are optional — a catalog strip often knows the creator and
   the title but has no sourced year for an individual video, and per the
   catalog's sourcing rules an unsourced year is not invented to fill the slot.
+  `start` (seconds) opens the video at that moment and shows the time on the
+  thumbnail, for a link that should land on one person's section.
 -->
 <script lang="ts">
   let {
@@ -18,16 +20,26 @@
     creator,
     year = "",
     note = "",
+    start = 0,
   }: {
     id: string;
     title: string;
     creator: string;
     year?: string;
     note?: string;
+    start?: number;
   } = $props();
 
   let thumbFailed = $state(false);
-  const watchUrl = `https://www.youtube.com/watch?v=${id}`;
+  const watchUrl = $derived(
+    `https://www.youtube.com/watch?v=${id}${start > 0 ? `&t=${start}s` : ""}`
+  );
+  // 197 -> "3:17", the way YouTube writes a timestamp.
+  const startLabel = $derived(
+    start > 0
+      ? `${Math.floor(start / 60)}:${String(start % 60).padStart(2, "0")}`
+      : ""
+  );
 </script>
 
 <figure class="cap-media">
@@ -36,7 +48,7 @@
     href={watchUrl}
     target="_blank"
     rel="noopener"
-    aria-label={`Watch on YouTube: ${title} by ${creator}`}
+    aria-label={`Watch on YouTube: ${title} by ${creator}${startLabel ? `, from ${startLabel}` : ""}`}
   >
     {#if !thumbFailed}
       <img
@@ -51,6 +63,9 @@
     <span class="cap-media-play" aria-hidden="true"
       ><i class="fas fa-play"></i></span
     >
+    {#if startLabel}<span class="cap-media-start" aria-hidden="true"
+        >{startLabel}</span
+      >{/if}
   </a>
   <figcaption>
     <strong>{title}</strong>
@@ -76,6 +91,11 @@
     height: 100%;
     object-fit: cover;
     display: block;
+    transition: scale var(--duration-normal) var(--ease-standard);
+  }
+  .cap-media-thumb:hover img,
+  .cap-media-thumb:focus-visible img {
+    scale: 1.04;
   }
   .cap-media-fallback {
     position: absolute;
@@ -109,6 +129,19 @@
     background: var(--accent, #ed1c24);
     scale: 1.06;
   }
+  /* The start time sits where YouTube puts a duration. */
+  .cap-media-start {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.75);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
   .cap-media figcaption {
     display: flex;
     flex-direction: column;
@@ -120,7 +153,8 @@
     opacity: 0.7;
   }
   @media (prefers-reduced-motion: reduce) {
-    .cap-media-play {
+    .cap-media-play,
+    .cap-media-thumb img {
       transition: none;
     }
   }
