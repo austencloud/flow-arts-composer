@@ -151,6 +151,8 @@
     onShareActionSelect,
   }: Props = $props();
 
+  const patternDescriptionId = $props.id();
+
   const FULL_CHROME_MIN_WIDTH = 1080;
   const LABELLED_CHROME_MIN_WIDTH = 1840;
   const GENEROUS_CHROME_MIN_WIDTH = 2200;
@@ -517,7 +519,7 @@
               word: actions.copyableWord,
             })
           : displayTitle}
-        aria-description={patternDescription}
+        aria-describedby={patternDescription ? patternDescriptionId : undefined}
         title={isWordTitle
           ? t("viewer_header_word_actions_for", { word: actions.copyableWord })
           : displayTitle}
@@ -549,6 +551,12 @@
           ></i>
         {/if}
       </button>
+
+      {#if patternDescription}
+        <span id={patternDescriptionId} class="sr-only"
+          >{patternDescription}</span
+        >
+      {/if}
 
       {#if actions.copied}
         <div class="word-status" role="status" aria-live="polite">
