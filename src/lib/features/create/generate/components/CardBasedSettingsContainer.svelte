@@ -63,6 +63,7 @@ Delegates ALL logic to services (SRP compliant)
   import { DifficultyLevel as SharedDifficultyLevel } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
   import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import { PlacementResetTimer } from "./placement-reset-timer";
+  import { warmCustomizePlacementArtWhenIdle } from "../shared/services/warm-customize-placement-art";
 
   const placementResetTimer = new PlacementResetTimer();
 
@@ -332,6 +333,12 @@ Delegates ALL logic to services (SRP compliant)
   }
 
   // Initialize services
+  // Customize's tiles draw sixteen live pictographs. Warm them while the page
+  // is idle so their first drawing does not land inside the card's morph.
+  $effect(() => {
+    warmCustomizePlacementArtWhenIdle(config.gridMode);
+  });
+
   onMount(() => {
     loopParamProvider = getLOOPParameterProvider();
 
