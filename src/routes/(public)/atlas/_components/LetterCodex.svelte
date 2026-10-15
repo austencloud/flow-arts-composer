@@ -54,13 +54,17 @@
   import { filterSequencesByExactLetter } from "#lib/shared/browse/services/sequence-letter-occurrence.js";
   import { mutateCurrentUrl } from "#lib/shared/navigation/services/url-state.js";
   import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
   let {
     initialLetter = "A",
     board = "atlas",
+    propType,
   }: {
     initialLetter?: string;
     board?: BoardKey;
+    /** The prop the board and explorer draw; omitted keeps the dataset's own. */
+    propType?: PropType;
   } = $props();
 
   const selection = new SequenceSelection();
@@ -343,7 +347,7 @@
   {#if board === "sheets"}
     <BoardSheets onSelect={select} />
   {:else if board === "atlas"}
-    <BoardAtlas onSelect={select} />
+    <BoardAtlas onSelect={select} {propType} />
   {:else}
     <BoardStage
       bind:this={stageBoard}
@@ -399,6 +403,7 @@
       onRetry={() => loadGrid(gridMode)}
       onLearningRetry={loadLearningDeck}
       onCopyLink={copyExactLink}
+      {propType}
     />
   </BaseModal>
 {/if}
@@ -415,6 +420,15 @@
     width: min(94vw, 2200px);
     height: min(92dvh, 1200px);
     max-width: none;
+  }
+
+  /* Desktop: the explorer fits the dialog without a scroll (LetterExplorer),
+     so the dialog may take the screen instead of stopping at 2200 x 1200. */
+  @media (min-width: 64rem) and (min-height: 700px) {
+    :global(dialog.codex-explorer-modal[data-size="xl"]) {
+      width: 94vw;
+      height: 92dvh;
+    }
   }
 
   @media (max-width: 520px) {
