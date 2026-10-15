@@ -6,15 +6,15 @@ Museum Game and Flow Fest use Composer as the source for characters, props, sequ
 
 | Capability | Canonical owner | Native adoption |
 | --- | --- | --- |
-| Character definitions and source rigs | `@austencloud/scene-3d`, production `AVATAR_DEFINITIONS`; source GLBs in `static/models/avatars/_optimized` | `Tools/character-catalog.mjs` evaluates the actual export. Museum consumes it; Flow Fest adoption is assigned to its agent. |
-| Prop families, builds, finishes, handed geometry | `src/lib/shared/3d/domain/scene-prop-catalog.ts` and Composer's existing scene-3d prop implementation | Flow Fest owns the current capture/conversion pipeline and generated equipment. Museum will reuse those assets. |
+| Character definitions and source rigs | `@austencloud/scene-3d`, production `AVATAR_DEFINITIONS`; source GLBs in `static/models/avatars/_optimized` | Both games consume `Tools/character-catalog.mjs`, which evaluates the actual export. |
+| Prop families, builds, finishes, handed geometry | `src/lib/shared/3d/domain/scene-prop-catalog.ts` and Composer's existing scene-3d prop implementation | Flow Fest produces the generated equipment. Museum copies the shared bundle with hashes, retaining its package paths. |
 | Sequence generation and semantics | `@tka/sequence-engine` (`packages/sequence-engine`) and Composer playback | Export/capture through those owners. A second sequence engine in C++ is outside this migration. |
 | Performed body pose, wrist targets, prop motion | Composer's performer and capture pipeline | `Tools/motion-contract.mjs` owns family clip acceptance. Flow Fest owns conversion until extraction. |
-| Native skeletal playback, equipment, grip IK, synchronized clock and transitions | Currently `unreal/FlowFest/Source/FlowFest/FlowFestAvatarComponent`, `FlowFestAnimInstance`, and `FlowFestPropComponent` | Flow Fest agent will extract the stabilized implementation into the shared runtime. Museum will consume it. |
+| Native skeletal playback, equipment, grip IK, synchronized clock and transitions | `FlowArtsRuntime/Source/FlowArtsRuntime` | Both games depend on this runtime plugin. It contains the avatar, animation, prop and footstep components. |
 | Camera, locomotion and rendering | Composer's existing scene-3d/camera packages define browser behavior; Unreal supplies native rendering and movement | Reuse native mechanisms as they stabilize; web packages are source/capture dependencies, not directly executable Unreal modules. Engine settings and performance evidence must be agreed before promising equivalent visuals. |
 | Environments, interaction and progression | Each game | Museum rooms, exhibits and saves; festival terrain, crowds and story remain game-owned. |
 
-The agreed runtime destination is `unreal/Shared/FlowArtsRuntime/FlowArtsRuntime.uplugin`, module `FlowArtsRuntime`. **That plugin has not been extracted yet.** This directory currently contains shared tooling and the contract. Museum's native performers are still static; sharing a catalog does not provide animated playback.
+The runtime is `unreal/Shared/FlowArtsRuntime/FlowArtsRuntime.uplugin`, module `FlowArtsRuntime`. `SOURCE-PROVENANCE.json` records the extraction's original source hashes. The `UFlowFest*` reflected class names remain for compatibility; the exported module macro is `FLOWARTSRUNTIME_API`. Flow Fest redirects its former module classes to the plugin and removes its duplicate implementation. Museum instantiates these same components in its station actors.
 
 ## Character catalog
 
@@ -26,7 +26,7 @@ Both games must obtain native character identities from `Tools/character-catalog
 node unreal/Shared/Tools/character-catalog.mjs --source-root . --output unreal/MuseumGame/Saved/Performers/characters.json
 ```
 
-Museum's converter regenerates this manifest on every invocation. Its existing importer/runtime still require exactly 16 deployed characters. Generalizing that runtime is part of animated-performer adoption.
+The deployed catalog currently contains 16 characters. Museum's authored capture manifest selects x-bot for its animated stations; its two unsequenced figures use the existing static assets.
 
 ## Native family motion contract
 
@@ -79,13 +79,20 @@ node unreal/Shared/Tools/motion-contract.mjs --clip CLIP.json --manifest manifes
 
 Current finalized raw captures are under Flow Fest's `Saved/PerformanceCaptures-v3/<character>/`. The older `Saved/PerformanceCaptures` pilot is obsolete. Preserve immutable capture archives and their hashes, and reuse finalized FBX/native outputs across games rather than running a second capture campaign. Changing a file after conversion invalidates its recorded source hash.
 
-## Migration order and coordination
+## Authored Museum routines
 
-1. Museum owns these shared tools, catalog adoption, tests and this contract. Flow Fest adopts the exported helpers in its game-specific tools.
-2. Flow Fest finishes its current capture/transition repairs and verifies the native performer against those captures.
-3. Flow Fest extracts that implementation, conversion/import tools and relevant native tests into `FlowArtsRuntime` and `Shared/Tools`. Game modules depend on that one implementation. Preserve existing `/Game/FlowFest/...` asset references until an explicit Unreal migration can update and verify them; filesystem-renaming `.uasset` files is not a migration.
-4. Museum replaces its static stations with shared performers and the same generated asset bundle. Verify station placement, character/equipment identity, start/stop/loop timing, wrists, mirrored props and transitions in Museum as well as Flow Fest.
-5. Extend the common runtime for new Composer capabilities through both consumers. Record material format, package, axis or clock changes here and notify the other game agent before changing their boundary.
+Museum exports `Content/Data/museum-performances.json`, schema `museum-native-performances-v1`. Its 31 sequenced stations reference 25 unique authored sequences. Profiles are `M_<sequence_id_with_underscores>`; identical sequence IDs reuse a capture. The capture API accepts the exact sequence payload and uses its summed step duration at 30 fps. Family profiles retain their 16-step/480-frame requirement.
+
+The common production capture scene and existing Flow Fest conversion/import tools handle both manifests. Museum does not implement its own sampler, skeletal conversion, wrist solver or prop-coordinate math. Its native clips and compact tracks retain the existing `/Game/FlowFest` mount and `flow-fest-*` formats. Museum package checks verify the complete station-to-clip mapping.
+
+One telekinetic formation hides the shared rig while displaying its synchronized props. Two figures have no authored sequence. Room-specific console transforms and village simulation remain separate migration work; station captures preserve the authored bound routines.
+
+## Coordination
+
+1. Museum owns the authored station adapters, manifest and capture hooks; Flow Fest owns its game consumer and ongoing cross-rig runtime repairs.
+2. Shared files have one active owner per change. Exchange scoped commits before either consumer changes a shared format or API.
+3. Preserve `/Game/FlowFest/...` references until an explicit Unreal migration can update and verify them; filesystem-renaming `.uasset` files is not a migration.
+4. Verify placement, character/equipment identity, loop timing, wrists, mirrored props and playback controls in both consumers.
 
 Game-specific work can proceed in parallel. Shared files have one active owner per change. Serialize native builds/imports, and coordinate heavy captures and Blender conversion on d2. The current native baseline is UE 5.8.3 with MSVC 14.50.35717; use the projects' existing scripts and bounded parallelism.
 

@@ -10,9 +10,10 @@ Native Unreal character catalog and family-motion acceptance live in
 Searches: Unreal, Museum Game, Flow Fest, native performers, capture provenance,
 shared runtime. The catalog evaluates scene-3d's production definitions; the
 motion contract verifies exact rig/equipment/routine, timing, basis and source
-provenance. Museum imports consume the catalog. Flow Fest owns adoption in its
-active tools and extraction of its stabilized performer into the planned
-`FlowArtsRuntime` plugin; that plugin is not yet implemented. See
+provenance. Both games consume these helpers and the shared runtime at
+`unreal/Shared/FlowArtsRuntime`. Its avatar, animation, equipment and footstep
+components own native playback and synchronized prop motion. Museum maps its
+authored sequence IDs to captures through the common capture/conversion tools. See
 `unreal/Shared/README.md` for ownership, compatibility and migration order.
 
 Theme canvas sizing lives in
