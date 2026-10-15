@@ -16,19 +16,19 @@
 
   const portraitLayout = $derived(viewportHeight / viewportWidth > 1.15);
   const cameraDistanceScale = $derived(portraitLayout ? 1.5 : 1);
-  const cameraPosition = $derived([
+  const cameraPosition = $derived<[number, number, number]>([
     0,
     11.8 * cameraDistanceScale,
     10.8 * cameraDistanceScale,
-  ] as const);
+  ]);
 
   const boolOptions = [
-    { value: true, label: "On" },
-    { value: false, label: "Off" },
+    { value: "true", label: "On" },
+    { value: "false", label: "Off" },
   ];
   const planeOptions = [
-    { value: 1, label: "1" },
-    { value: 2, label: "2" },
+    { value: "1", label: "1" },
+    { value: "2", label: "2" },
   ];
 
   function percent(value: number | undefined, fallback: number): string {
@@ -87,8 +87,8 @@
       <span>Props</span>
       <SegmentedControl
         options={boolOptions}
-        value={showProps}
-        onchange={(value) => (showProps = value)}
+        value={String(showProps)}
+        onchange={(value) => (showProps = value === "true")}
         size="sm"
         ariaLabel="Show props"
       />
@@ -97,8 +97,8 @@
       <span>Playing</span>
       <SegmentedControl
         options={boolOptions}
-        value={playing}
-        onchange={(value) => (playing = value)}
+        value={String(playing)}
+        onchange={(value) => (playing = value === "true")}
         size="sm"
         ariaLabel="Play Animal presets"
       />
@@ -107,8 +107,8 @@
       <span>Labels</span>
       <SegmentedControl
         options={boolOptions}
-        value={showLabels}
-        onchange={(value) => (showLabels = value)}
+        value={String(showLabels)}
+        onchange={(value) => (showLabels = value === "true")}
         size="sm"
         ariaLabel="Show preset labels"
       />
@@ -117,8 +117,8 @@
       <span>Overlay</span>
       <SegmentedControl
         options={planeOptions}
-        value={centerPlanes}
-        onchange={(value) => (centerPlanes = value)}
+        value={String(centerPlanes)}
+        onchange={(value) => (centerPlanes = Number(value))}
         size="sm"
         ariaLabel="Overlaid rigs per preset"
       />

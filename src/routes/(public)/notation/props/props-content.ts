@@ -26,6 +26,7 @@ export const PROPS: Record<PropKey, PropEntry> = {
     propType: "staff",
     note: "both ends of each staff stay visible",
     paragraphs: [
+      "The Kinetic Alphabet began on paper with a red pen and a blue pen. A pen works like a small staff, with two visible ends, so the notation was built around double staff and every other prop is read by translating from it.",
       "Each staff has a thumb end and a pinky end. Hold the thumb end at center during an isolation and the pinky end performs an extension at the same time. One staff shows both the vertical-flower and horizontal-flower antispin that a one-ended prop has to choose between.",
       "A fan or club visibly points in one of eight directions. A staff radiating from center makes those eight look like four. Orientation does not change the letter, so the reduced detail makes patterns easier to tell apart while learning.",
       "Staff lessons keep the thumb and pinky ends as fixed references, without finger spinning or grip changes. Other props use both, and the notation allows them.",

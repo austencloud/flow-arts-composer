@@ -20,6 +20,10 @@
   import MandalaContrast from "#lib/shared/landing/components/MandalaContrast.svelte";
   import demoJson from "#lib/shared/landing/data/demo-sequence.json";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import {
+    findPropTypeByValue,
+    getPropTypeDisplayInfo,
+  } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
   import { PROP_KEYS, PROPS, isPropKey, type PropKey } from "./props-content";
   import "#lib/shared/landing/styles/public-editorial.css";
 
@@ -45,6 +49,15 @@
   }
 
   const current = $derived(PROPS[selected]);
+  // The picker art the app's own prop picker uses, drawn as a mask so it
+  // takes the segment's ink (the raw SVGs are dark blue and vanish here).
+  const propImage = Object.fromEntries(
+    PROP_KEYS.map((key) => {
+      const type = findPropTypeByValue(PROPS[key].propType);
+      return [key, type ? getPropTypeDisplayInfo(type).image : null];
+    })
+  ) as Record<PropKey, string | null>;
+
   const options = PROP_KEYS.map((key) => ({
     value: key,
     label: PROPS[key].label,
@@ -81,21 +94,38 @@
 <div class="editorial">
   <header class="editorial-header">
     <h1 class="page-title">Prop Notation</h1>
-    <p class="page-subtitle">One alphabet, read through each prop</p>
+    <p class="page-subtitle">Pick a prop to play the same sequence with it</p>
   </header>
 
-  <section class="editorial-section" style="--accent: #22c55e">
-    <div class="prose">
-      <p>
-        The Kinetic Alphabet began on paper with a red pen and a blue pen. A pen
-        works like a small staff, with two visible ends, so the notation was
-        built around double staff. Every other prop is read by translating from
-        the staff. Pick a prop to play the same sequence with it.
-      </p>
+  <!-- The prop pick is the page's one decision, so it leads, directly above
+       the player and text it changes (2026-10-15, Austen's call). -->
+  <section
+    class="editorial-section has-duo prop-picker"
+    style="--accent: #14b8a6"
+  >
+    <div class="prop-switcher">
+      <SegmentedControl
+        {options}
+        value={selected}
+        onchange={choose}
+        color="accent"
+        semantics="tabs"
+        ariaLabel="Prop"
+      >
+        {#snippet optionContent(key: PropKey)}
+          <span class="prop-option">
+            {#if propImage[key]}
+              <span
+                class="prop-art"
+                aria-hidden="true"
+                style:mask-image={`url("${propImage[key]}")`}
+              ></span>
+            {/if}
+            <span class="prop-option-label">{PROPS[key].label}</span>
+          </span>
+        {/snippet}
+      </SegmentedControl>
     </div>
-  </section>
-
-  <section class="editorial-section has-duo" style="--accent: #14b8a6">
     <div class="section-duo demo-star">
       <div class="duo-demo">
         <SequenceHeroDemo
@@ -103,18 +133,7 @@
           note={current.note}
           leftPropType={current.propType}
           rightPropType={current.propType}
-        >
-          {#snippet toolbar()}
-            <SegmentedControl
-              {options}
-              value={selected}
-              onchange={choose}
-              color="accent"
-              semantics="tabs"
-              ariaLabel="Prop"
-            />
-          {/snippet}
-        </SequenceHeroDemo>
+        />
       </div>
       <div class="duo-copy">
         <div class="prop-panels">
@@ -157,10 +176,7 @@
             When you're ready to learn the notation, the <LinkChip
               size="inline"
               href="/guide">guide</LinkChip
-            > introduces every concept in order, and the <LinkChip
-              size="inline"
-              href="/guide/codex">Double Staff Codex</LinkChip
-            > collects the pictographs themselves.
+            > introduces every concept in order.
           </p>
         </div>
       </div>
@@ -184,13 +200,88 @@
 </div>
 
 <style>
-  /* All five panels sit in one cell. The tallest sets the height, so the
-     page never shifts when the pick changes. */
+  /* The switcher heads the picker section, centred over both columns. The
+     header above already separates it from the title, so no rule line. */
+  .prop-picker.editorial-section {
+    border-top: 0;
+    padding-top: 0;
+  }
+  /* SegmentedControl fills its container, so the wrapper sets the width.
+     Each tab carries the prop's picture above its name, so the picker reads
+     at a glance and holds its own against the player below it. */
+  .prop-switcher {
+    /* Grows with the screen so it keeps pace with the player on 4K. */
+    width: min(100%, clamp(44rem, 32vw, 76rem));
+    margin: 0 auto clamp(1.5rem, 1rem + 1vw, 2.5rem);
+  }
+  .prop-switcher :global(.segmented-control) {
+    border-radius: 14px;
+    padding: 4px;
+  }
+  .prop-switcher :global(.indicator) {
+    top: 4px;
+    bottom: 4px;
+    border-radius: 10px;
+  }
+  .prop-switcher :global(.segment) {
+    padding: clamp(0.6rem, 0.4rem + 0.4vw, 1.25rem) 0.25rem
+      clamp(0.55rem, 0.35rem + 0.35vw, 1.1rem);
+    min-width: 0;
+  }
+  .prop-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(0.4rem, 0.3rem + 0.25vw, 0.8rem);
+    width: 100%;
+  }
+  .prop-art {
+    display: block;
+    /* A set width, not a share of the label: the label is narrower than
+       most props, so the art would shrink to the word under it. */
+    width: clamp(2.75rem, 1.5rem + 4vw, 9rem);
+    max-width: 100%;
+    height: clamp(1.75rem, 1rem + 1.4vw, 4.5rem);
+    mask-size: contain;
+    mask-position: center;
+    mask-repeat: no-repeat;
+    background: currentColor;
+    opacity: 0.6;
+    transition: opacity 180ms ease;
+  }
+  .prop-switcher :global(.segment.selected .prop-art),
+  .prop-switcher :global(.segment:hover .prop-art) {
+    opacity: 1;
+  }
+  .prop-option-label {
+    font-size: clamp(0.8rem, 0.7rem + 0.3vw, 1.4rem);
+    font-weight: 600;
+  }
+  /* Text and player start on the same line under the switcher. */
+  .prop-picker .section-duo {
+    align-items: start;
+  }
+  /* Side by side, the longest text (Staves) still runs past the player, so
+     the player rides along while it is read instead of leaving a gap. */
+  @media (min-width: 1100px) {
+    .prop-picker .duo-demo {
+      position: sticky;
+      top: 5.5rem;
+    }
+  }
+
+  /* Only the picked prop's text takes up room. When every panel shared one
+     cell, the longest text (Staves) set the height for all five and left a
+     blank band under the player. The switcher sits above, so a height change
+     only moves what is below the section, never the control being pressed.
+     Inactive panels stay in the HTML for search and no-JS readers, laid over
+     the active one so the swap cross-fades. */
   .prop-panels {
-    display: grid;
+    position: relative;
   }
   .prop-panel {
-    grid-area: 1 / 1;
+    position: absolute;
+    inset: 0 0 auto;
     visibility: hidden;
     opacity: 0;
     transition:
@@ -198,6 +289,7 @@
       visibility 0s linear 180ms;
   }
   .prop-panel.active {
+    position: relative;
     visibility: visible;
     opacity: 1;
     transition:
