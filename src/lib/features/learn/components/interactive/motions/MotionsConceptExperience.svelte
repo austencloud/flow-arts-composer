@@ -483,7 +483,7 @@
     .board-stage.quiz {
       --quiz-picture: max(
         8rem,
-        min(16rem, calc(100 * var(--lesson-vh) - 36.5rem))
+        min(16rem, calc(100 * var(--lesson-vh) - 37.5rem))
       );
       width: 100%;
     }
