@@ -5,6 +5,8 @@
 #include "FlowFestAvatarComponent.generated.h"
 
 class UAnimSequence;
+class UFlowFestAnimInstance;
+class UFlowFestPropComponent;
 class USceneComponent;
 class USkeletalMeshComponent;
 
@@ -39,9 +41,16 @@ public:
     UFUNCTION(BlueprintPure, Category="Flow Fest|Avatar")
     FName GetCharacterId() const { return CharacterId; }
 
+    /** Selected locomotion clip; blend weights remain on the animation instance. */
+    FName GetMotionName() const { return CurrentMotion; }
+
     /** Reserved for native per-character A_Flow_<profile> performance clips. */
     UFUNCTION(BlueprintCallable, Category="Flow Fest|Avatar")
     bool PlayPerformance(FName Profile, bool bLoop = true);
+
+    /** Exact physical family profile; variant 0/1 selects independent captured routines. */
+    UFUNCTION(BlueprintPure, Category="Flow Fest|Avatar")
+    static FName ResolvePerformanceProfile(FName PropId, int32 Variant = 0);
 
     UFUNCTION(BlueprintCallable, Category="Flow Fest|Avatar")
     void StopPerformance();
@@ -50,16 +59,37 @@ public:
     UFUNCTION(BlueprintPure, Category="Flow Fest|Avatar")
     float GetPerformanceTime() const;
 
+    UFUNCTION(BlueprintPure, Category="Flow Fest|Avatar")
+    float GetPerformanceLength() const;
+
+    UFUNCTION(BlueprintPure, Category="Flow Fest|Avatar")
+    float GetPerformancePhase() const;
+
+    /** Shift a looping routine without desynchronizing its paired prop track. */
+    UFUNCTION(BlueprintCallable, Category="Flow Fest|Avatar")
+    void SetPerformancePhase(float NormalizedPhase);
+
+    UFUNCTION(BlueprintCallable, Category="Flow Fest|Avatar")
+    void SetPerformanceRate(float Rate);
+
+    /** The avatar's post-mesh tick samples the paired prop on the same clock. */
+    void BindPerformanceProp(UFlowFestPropComponent* Prop);
+
+    virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
 private:
     UPROPERTY(Transient) TObjectPtr<USkeletalMeshComponent> BodyMesh;
     UPROPERTY(Transient) TMap<FName, TObjectPtr<UAnimSequence>> Clips;
     UPROPERTY(Transient) TObjectPtr<UAnimSequence> PerformanceClip;
+    UPROPERTY(Transient) TObjectPtr<UFlowFestPropComponent> BoundProp;
     UPROPERTY(Transient) TObjectPtr<USceneComponent> AttachParent;
     UPROPERTY(Transient) FName CharacterId;
     FName CurrentMotion;
     FTransform StandingPresentation;
     bool bWasInAir = false;
     float LandingUntil = 0.f;
+    float TakeoffUntil = 0.f;
+    float FootCorrectionCm[2] = {0.f, 0.f};
 
     bool PlayMotion(FName Motion);
     FString CharacterFolder() const;

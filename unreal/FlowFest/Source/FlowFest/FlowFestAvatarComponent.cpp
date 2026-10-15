@@ -1,10 +1,13 @@
 #include "FlowFestAvatarComponent.h"
+#include "FlowFestAnimInstance.h"
+#include "FlowFestPropComponent.h"
 
 #include "Animation/AnimSequence.h"
 #include "Components/SceneComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/SkeletalMesh.h"
 #include "Engine/World.h"
+#include "CollisionQueryParams.h"
 #include "ReferenceSkeleton.h"
 #include "UObject/UObjectGlobals.h"
 
@@ -30,7 +33,8 @@ bool IsDeployedId(FName Id)
 
 UFlowFestAvatarComponent::UFlowFestAvatarComponent()
 {
-    PrimaryComponentTick.bCanEverTick = false;
+    PrimaryComponentTick.bCanEverTick = true;
+    PrimaryComponentTick.TickGroup = TG_PostUpdateWork;
 }
 
 void UFlowFestAvatarComponent::Initialize(USceneComponent* Parent, FName InitialCharacterId)
@@ -48,6 +52,7 @@ void UFlowFestAvatarComponent::Initialize(USceneComponent* Parent, FName Initial
         BodyMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
         BodyMesh->SetRelativeTransform(FTransform::Identity);
         BodyMesh->RegisterComponent();
+        AddTickPrerequisiteComponent(BodyMesh);
     }
     else
     {
@@ -145,9 +150,19 @@ bool UFlowFestAvatarComponent::SetCharacter(FName NewCharacterId)
     CurrentMotion = NAME_None;
     bWasInAir = false;
     LandingUntil = 0.f;
+    TakeoffUntil = 0.f;
+    FootCorrectionCm[0] = FootCorrectionCm[1] = 0.f;
     BodyMesh->SetSkeletalMeshAsset(Mesh);
     StandingPresentation = Presentation;
     BodyMesh->SetRelativeTransform(Presentation);
+    BodyMesh->SetAnimInstanceClass(UFlowFestAnimInstance::StaticClass());
+    UFlowFestAnimInstance* Animator = Cast<UFlowFestAnimInstance>(BodyMesh->GetAnimInstance());
+    if (!Animator)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Flow Fest native animation instance failed for %s"), *CharacterId.ToString());
+        return false;
+    }
+    Animator->Configure(Clips);
     return PlayMotion(TEXT("Idle"));
 }
 
@@ -170,8 +185,8 @@ bool UFlowFestAvatarComponent::PlayMotion(FName Motion)
         UE_LOG(LogTemp, Error, TEXT("Character %s missing required motion %s"), *CharacterId.ToString(), *Motion.ToString());
         return false;
     }
-    const bool bLoop = Motion != TEXT("Jump") && Motion != TEXT("Land");
-    BodyMesh->PlayAnimation(*Clip, bLoop);
+    UFlowFestAnimInstance* Animator = Cast<UFlowFestAnimInstance>(BodyMesh->GetAnimInstance());
+    if (!Animator || !Animator->SetMotion(Motion)) return false;
     CurrentMotion = Motion;
     return true;
 }
@@ -198,9 +213,16 @@ void UFlowFestAvatarComponent::SetMotion(FVector WorldVelocity, bool bInAir, boo
     if (bInAir)
     {
         LandingUntil = 0.f;
-        // The authored takeoff plays once; airborne fall then holds until landing.
-        if (!bWasInAir) PlayMotion(TEXT("Jump"));
-        else if (WorldVelocity.Z < -30.f) PlayMotion(TEXT("Fall"));
+        // Keep takeoff through its authored lift. Descending then crossfades
+        // into fall; a brief apex does not reset either one-shot clock.
+        if (!bWasInAir)
+        {
+            const auto* Jump = Clips.Find(TEXT("Jump"));
+            TakeoffUntil = Now + (Jump && *Jump ? FMath::Min((*Jump)->GetPlayLength(), .42f) : .25f);
+            PlayMotion(TEXT("Jump"));
+        }
+        else if (Now >= TakeoffUntil && WorldVelocity.Z < -30.f)
+            PlayMotion(TEXT("Fall"));
         bWasInAir = true;
         return;
     }
@@ -239,12 +261,23 @@ FTransform UFlowFestAvatarComponent::GetHandTransform(bool bLeft) const
     return BodyMesh->GetBoneIndex(Bone) != INDEX_NONE ? BodyMesh->GetSocketTransform(Bone, RTS_World) : FTransform::Identity;
 }
 
+FName UFlowFestAvatarComponent::ResolvePerformanceProfile(FName PropId, int32 Variant)
+{
+    FString Family = PropId.ToString().ToLower();
+    int32 Colon = INDEX_NONE;
+    if (Family.FindChar(TEXT(':'), Colon)) Family.LeftInline(Colon);
+    if (Family.IsEmpty()) return NAME_None;
+    for (const TCHAR Letter : Family)
+        if (!FChar::IsAlnum(Letter) && Letter != TEXT('_')) return NAME_None;
+    return FName(*FString::Printf(TEXT("P_%s_%c"), *Family, Variant % 2 == 0 ? TEXT('A') : TEXT('B')));
+}
+
 bool UFlowFestAvatarComponent::PlayPerformance(FName Profile, bool bLoop)
 {
     const FString Name = Profile.ToString();
     bool bValidName = !Name.IsEmpty();
     for (int32 Index = 0; Index < Name.Len(); ++Index)
-        bValidName &= FChar::IsAlnum(Name[Index]);
+        bValidName &= FChar::IsAlnum(Name[Index]) || Name[Index] == TEXT('_');
     if (!bValidName || !BodyMesh || !BodyMesh->GetSkeletalMeshAsset())
         return false;
     const FString Path = FString::Printf(TEXT("%s/A_Flow_%s.A_Flow_%s"), *CharacterFolder(), *Name, *Name);
@@ -256,7 +289,9 @@ bool UFlowFestAvatarComponent::PlayPerformance(FName Profile, bool bLoop)
     }
     PerformanceClip = Clip;
     BodyMesh->SetRelativeTransform(StandingPresentation);
-    BodyMesh->PlayAnimation(Clip, bLoop);
+    UFlowFestAnimInstance* Animator = Cast<UFlowFestAnimInstance>(BodyMesh->GetAnimInstance());
+    if (!Animator) return false;
+    Animator->StartPerformance(Clip, bLoop);
     CurrentMotion = NAME_None;
     return true;
 }
@@ -265,6 +300,8 @@ void UFlowFestAvatarComponent::StopPerformance()
 {
     PerformanceClip = nullptr;
     CurrentMotion = NAME_None;
+    if (UFlowFestAnimInstance* Animator = BodyMesh ? Cast<UFlowFestAnimInstance>(BodyMesh->GetAnimInstance()) : nullptr)
+        Animator->StopPerformance();
     if (BodyMesh)
         BodyMesh->SetRelativeTransform(StandingPresentation);
     PlayMotion(TEXT("Idle"));
@@ -272,5 +309,72 @@ void UFlowFestAvatarComponent::StopPerformance()
 
 float UFlowFestAvatarComponent::GetPerformanceTime() const
 {
-    return PerformanceClip && BodyMesh ? BodyMesh->GetPosition() : 0.f;
+    const UFlowFestAnimInstance* Animator = BodyMesh ? Cast<UFlowFestAnimInstance>(BodyMesh->GetAnimInstance()) : nullptr;
+    return PerformanceClip && Animator ? Animator->GetPerformanceTime() : 0.f;
+}
+
+float UFlowFestAvatarComponent::GetPerformanceLength() const
+{
+    return PerformanceClip ? PerformanceClip->GetPlayLength() : 0.f;
+}
+
+float UFlowFestAvatarComponent::GetPerformancePhase() const
+{
+    const float Length = GetPerformanceLength();
+    return Length > SMALL_NUMBER ? GetPerformanceTime() / Length : 0.f;
+}
+
+void UFlowFestAvatarComponent::SetPerformancePhase(float NormalizedPhase)
+{
+    if (UFlowFestAnimInstance* Animator = BodyMesh ? Cast<UFlowFestAnimInstance>(BodyMesh->GetAnimInstance()) : nullptr)
+        Animator->SetPerformancePhase(NormalizedPhase);
+}
+
+void UFlowFestAvatarComponent::SetPerformanceRate(float Rate)
+{
+    if (UFlowFestAnimInstance* Animator = BodyMesh ? Cast<UFlowFestAnimInstance>(BodyMesh->GetAnimInstance()) : nullptr)
+        Animator->SetPerformanceRate(Rate);
+}
+
+void UFlowFestAvatarComponent::BindPerformanceProp(UFlowFestPropComponent* Prop)
+{
+    if (Prop && Prop->GetOwner() != GetOwner()) return;
+    BoundProp = Prop;
+}
+
+void UFlowFestAvatarComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+{
+    Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+    if (BodyMesh && GetWorld())
+    {
+        const bool bGroundedMotion = !PerformanceClip && !bWasInAir &&
+            CurrentMotion != TEXT("Ride") && CurrentMotion != TEXT("Jump") && CurrentMotion != TEXT("Fall");
+        FCollisionQueryParams Query(SCENE_QUERY_STAT(FlowFestFooting), false, GetOwner());
+        for (int32 Side = 0; Side < 2; ++Side)
+        {
+            float Target = 0.f;
+            if (bGroundedMotion)
+            {
+                const FName Bone = Side == 0 ? FName(TEXT("LeftFoot")) : FName(TEXT("RightFoot"));
+                const FVector Foot = BodyMesh->GetSocketLocation(Bone);
+                FHitResult Hit;
+                if (GetWorld()->LineTraceSingleByChannel(Hit, Foot + FVector(0, 0, 35.f),
+                    Foot - FVector(0, 0, 85.f), ECC_Visibility, Query))
+                {
+                    const float Gap = Foot.Z - Hit.ImpactPoint.Z;
+                    const float Contact = 1.f - FMath::SmoothStep(12.f, 32.f, Gap);
+                    Target = FMath::Clamp((Hit.ImpactPoint.Z + 8.f - Foot.Z) * Contact, -12.f, 14.f);
+                }
+            }
+            const float Alpha = 1.f - FMath::Exp(-FMath::Clamp(DeltaTime, 0.f, .1f) / .1f);
+            FootCorrectionCm[Side] = FMath::Lerp(FootCorrectionCm[Side], Target, Alpha);
+        }
+        if (UFlowFestAnimInstance* Animator = Cast<UFlowFestAnimInstance>(BodyMesh->GetAnimInstance()))
+            Animator->SetFootCorrection(FootCorrectionCm[0], FootCorrectionCm[1]);
+    }
+    if (BoundProp && PerformanceClip)
+    {
+        if (const UFlowFestAnimInstance* Animator = Cast<UFlowFestAnimInstance>(BodyMesh->GetAnimInstance()))
+            BoundProp->SetPerformanceTime(Animator->GetPerformanceTime(), Animator->GetPerformanceWeight());
+    }
 }

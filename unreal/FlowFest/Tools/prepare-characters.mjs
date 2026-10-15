@@ -1,6 +1,6 @@
 /** Prepare the complete deployed avatar catalog for Blender and Unreal. */
 import { createRequire } from 'node:module';
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -12,10 +12,12 @@ const capturesFlag = process.argv.indexOf('--captures');
 const capturesDir = capturesFlag < 0 ? null : resolve(process.argv[capturesFlag + 1] || '');
 const captureIdFlag = process.argv.indexOf('--capture-id');
 const captureId = captureIdFlag < 0 ? null : process.argv[captureIdFlag + 1];
+const familyOnly = process.argv.includes('--family-only');
 if (capturesFlag >= 0 && (!process.argv[capturesFlag + 1] || !existsSync(capturesDir)))
   throw new Error(`Missing native performance capture directory: ${capturesDir}`);
 if (captureIdFlag >= 0 && (!captureId || !capturesDir))
   throw new Error('--capture-id requires an ID and --captures directory');
+if (familyOnly && !capturesDir) throw new Error('--family-only requires --captures directory');
 const dependencyRoot = existsSync(join(repo, 'node_modules/.pnpm')) ? repo : source;
 const catalogFile = join(source, 'node_modules/@austencloud/scene-3d/src/lib/config/avatar-definitions.ts');
 const catalog = readFileSync(catalogFile, 'utf8');
@@ -79,23 +81,58 @@ const animations = {
 const animationSource = join(source, 'static/animations/locomotion-pack');
 for (const file of Object.values(animations)) if (!existsSync(join(animationSource, file))) throw new Error(`Missing source motion ${file}`);
 const characters = [];
-const captureProfiles = [['FirePoi', 'fire-poi'], ['FireHoop', 'fire-hoop'], ['Juggler', 'juggler'], ['LedFlow', 'led-flow']];
+const legacyProfiles = [['FirePoi', 'fire-poi'], ['FireHoop', 'fire-hoop'], ['Juggler', 'juggler'], ['LedFlow', 'led-flow']];
+const captureManifests = capturesDir
+  ? ['manifest.json', 'family-manifest.json']
+      .filter(file => existsSync(join(capturesDir, file)))
+      .map(file => JSON.parse(readFileSync(join(capturesDir, file), 'utf8')))
+  : [];
+if (capturesDir && !captureManifests.length) throw new Error('Native capture manifest missing');
+for (const manifest of captureManifests)
+  if (manifest.schema !== 'flow-fest-native-export-manifest-v1')
+    throw new Error(`Unexpected native capture manifest: ${manifest.schema}`);
+const captureArtifacts = captureManifests.flatMap(manifest => manifest.artifacts);
+const captureKeys = captureArtifacts.map(entry => `${entry.character}/${entry.role}`);
+if (new Set(captureKeys).size !== captureKeys.length)
+  throw new Error('Duplicate character/role in native capture manifests');
+const familyRoles = captureManifests.length
+  ? [...new Set(captureArtifacts.map(entry => entry.role)
+      .filter(role => /^family-[a-z0-9_]+-[AB]$/.test(role)))].sort()
+  : [];
+if (familyRoles.length && (familyRoles.length !== 82 ||
+    familyRoles.some(role => !familyRoles.includes(role.replace(/-[AB]$/, role.endsWith('-A') ? '-B' : '-A')))))
+  throw new Error(`Expected 41 paired family routines; found ${familyRoles.length} roles`);
+const captureProfiles = [...legacyProfiles, ...familyRoles.map(role => {
+  const [, family, variant] = /^family-([a-z0-9_]+)-([AB])$/.exec(role);
+  return [`P_${family}_${variant.toUpperCase()}`, role];
+})];
 if (capturesDir) {
   for (const { id } of definitions.filter(x => !captureId || x.id === captureId)) {
-    for (const [, role] of captureProfiles) {
+    for (const [, role] of captureProfiles.filter(([, role]) => !familyOnly || role.startsWith('family-'))) {
       const file = join(capturesDir, `${id}_${role}.json`);
       if (!existsSync(file)) throw new Error(`Missing native performance capture: ${file}`);
     }
-    const ride = join(capturesDir, `${id}_ride.json`);
-    if (!existsSync(ride)) throw new Error(`Missing native mounted capture: ${ride}`);
+    if (!familyOnly) {
+      const ride = join(capturesDir, `${id}_ride.json`);
+      if (!existsSync(ride)) throw new Error(`Missing native mounted capture: ${ride}`);
+    }
   }
 }
 async function prepareCapture(character, profile, filename, captureRole = profile) {
-  const capture = JSON.parse(readFileSync(join(capturesDir, filename), 'utf8'));
+  const captureFile = join(capturesDir, filename);
+  const output = join(staged, character.key, `capture_${profile}.glb`);
+  if (existsSync(output) && statSync(output).mtimeMs >= Math.max(
+    statSync(captureFile).mtimeMs, statSync(character.decoded).mtimeMs,
+    statSync(fileURLToPath(import.meta.url)).mtimeMs)) {
+    console.log(`Reusing capture ${character.id}/${profile}`);
+    return output;
+  }
+  const capture = JSON.parse(readFileSync(captureFile, 'utf8'));
   const ride = profile === 'Ride';
   if (capture.character !== character.id || capture.fps !== 30 ||
       capture.schema !== (ride ? 'flow-fest-native-mounted-v1' : 'flow-fest-native-performance-v1') ||
-      (!ride && capture.role !== captureRole) || capture.frames.length < 2)
+      (!ride && (capture.role !== captureRole || capture.frames.length !== 480)) ||
+      capture.frames.length < 2)
     throw new Error(`Invalid native capture contract: ${filename}`);
   const doc = await io.read(character.decoded);
   for (const old of doc.getRoot().listAnimations()) old.dispose();
@@ -134,10 +171,36 @@ async function prepareCapture(character, profile, filename, captureRole = profil
       animation.addSampler(sampler).addChannel(channel);
     }
   }
-  const output = join(staged, character.key, `capture_${profile}.glb`);
   await io.write(output, doc);
   console.log(`Prepared capture ${character.id}/${profile}: ${capture.frames.length} frames`);
   return output;
+}
+function writeCatalog(entries) {
+  writeFileSync(join(project, 'Content/Data/characters.json'), JSON.stringify({ version: 1,
+    characters: entries.map(({ id, name, key, folder, mesh, skeleton, animations, bones, textures, materials }) =>
+      ({ id, name, key, folder, mesh, skeleton, animations, bones,
+        textures: textures.map(({ name, asset }) => ({ name, asset })), materials })) }, null, 2) + '\n');
+}
+if (familyOnly) {
+  const stagedManifestFile = join(staged, 'imports.json');
+  if (!existsSync(stagedManifestFile)) throw new Error('--family-only requires previously staged native rigs');
+  const stagedManifest = JSON.parse(readFileSync(stagedManifestFile, 'utf8'));
+  if (stagedManifest.characters?.length !== 16 ||
+      stagedManifest.characters.some((entry, index) => entry.id !== definitions[index].id || !existsSync(entry.decoded)))
+    throw new Error('--family-only requires the complete decoded 16-character catalog');
+  if (familyRoles.length !== 82) throw new Error('--family-only requires all 41 A/B family routines');
+  for (const character of stagedManifest.characters.filter(x => !captureId || x.id === captureId)) {
+    character.captures ||= {};
+    for (const [profile, role] of captureProfiles.filter(([, role]) => role.startsWith('family-'))) {
+      character.captures[profile] = await prepareCapture(character, profile, `${character.id}_${role}.json`, role);
+      const name = `Flow_${profile}`;
+      character.animations[name] = `${character.folder}/A_${name}.A_${name}`;
+    }
+  }
+  writeFileSync(stagedManifestFile, JSON.stringify(stagedManifest, null, 2) + '\n');
+  writeCatalog(stagedManifest.characters);
+  console.log(`Prepared family performances for ${captureId || 'all 16'} native characters`);
+  process.exit(0);
 }
 for (const { id, name } of definitions) {
   const input = join(source, 'static/models/avatars/_optimized', `${id}.glb`);
@@ -196,5 +259,5 @@ if (capturesDir) {
   }
 }
 writeFileSync(join(staged, 'imports.json'), JSON.stringify(manifest, null, 2) + '\n');
-writeFileSync(join(project, 'Content/Data/characters.json'), JSON.stringify({ version: 1, characters: characters.map(({ id, name, key, folder, mesh, skeleton, animations, bones, textures, materials }) => ({ id, name, key, folder, mesh, skeleton, animations, bones, textures: textures.map(({ name, asset }) => ({ name, asset })), materials })) }, null, 2) + '\n');
+writeCatalog(characters);
 console.log(`Prepared ${characters.length} native characters`);

@@ -4,6 +4,7 @@
  * root quaternion includes the fixed Three-to-Unreal basis rotation.
  */
 import { readFile, mkdir, writeFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Matrix4, Quaternion, Vector3 } from "three";
@@ -18,6 +19,11 @@ const profiles = new Map([
   ["juggler", "Juggler"],
   ["led-flow", "LedFlow"],
 ]);
+function profileForRole(role) {
+  if (profiles.has(role)) return profiles.get(role);
+  const family = /^family-([a-z0-9_]+)-([AB])$/.exec(role);
+  return family ? `P_${family[1]}_${family[2].toUpperCase()}` : null;
+}
 
 const fromSample = ({ position, quaternion, scale }) =>
   new Matrix4().compose(
@@ -69,6 +75,31 @@ function pose(performerInverse, propRootWorld) {
   ];
 }
 
+function gripPosition(frame, side) {
+  const measured = frame[`${side.toLowerCase()}HandWorld`];
+  if (measured) {
+    if (!Array.isArray(measured) || measured.length !== 3 || measured.some(n => !Number.isFinite(n)))
+      throw new Error(`Invalid ${side}HandWorld in captured frame`);
+    const local = new Vector3(...measured).applyMatrix4(fromSample(frame.performerWorld).invert());
+    return local.applyMatrix4(avatarBasis).multiplyScalar(100).toArray().map(round);
+  }
+  // Legacy captures lack explicit hand measurements; recover their skin
+  // origin from the complete local joint hierarchy for diagnostics.
+  const bones = new Map(frame.bones.map((bone) => [bone.name, bone]));
+  const name = frame.bones.find((bone) => bone.name.replace(/^mixamorig\d*:?/, '') === `${side}Hand`)?.name;
+  if (!name) throw new Error(`Missing ${side}Hand in captured frame`);
+  const chain = [];
+  for (let cursor = name; cursor; cursor = bones.get(cursor)?.parent) {
+    const bone = bones.get(cursor);
+    if (!bone || chain.length > bones.size) throw new Error(`Broken ${side}Hand hierarchy`);
+    chain.unshift(bone.local);
+  }
+  const matrix = fromSample(frame.skinnedMeshLocal);
+  for (const local of chain) matrix.multiply(fromSample(local));
+  const hand = new Vector3().setFromMatrixPosition(matrix).applyMatrix4(avatarBasis).multiplyScalar(100);
+  return hand.toArray().map(round);
+}
+
 if (process.argv[2] === "--verify-sample") {
   const sample = JSON.parse(await readFile(resolve(process.argv[3]), "utf8"));
   if (sample.schema !== "flow-fest-native-performance-v1" || !sample.frames?.length)
@@ -77,24 +108,43 @@ if (process.argv[2] === "--verify-sample") {
     const performerInverse = fromSample(frame.performerWorld).invert();
     pose(performerInverse, frame.leftProp.propRootWorld);
     pose(performerInverse, frame.rightProp.propRootWorld);
+    gripPosition(frame, 'Left');
+    gripPosition(frame, 'Right');
   }
   console.log(`Verified mirrored native basis against ${sample.frames.length * 2} captured prop poses`);
   process.exit(0);
 }
 
-const manifest = JSON.parse(await readFile(join(rawDir, "manifest.json"), "utf8"));
-if (manifest.schema !== "flow-fest-native-export-manifest-v1")
-  throw new Error(`Unexpected capture manifest: ${manifest.schema}`);
+const manifests = [];
+for (const filename of ['manifest.json', 'family-manifest.json']) {
+  if (!existsSync(join(rawDir, filename))) continue;
+  const manifest = JSON.parse(await readFile(join(rawDir, filename), "utf8"));
+  if (manifest.schema !== "flow-fest-native-export-manifest-v1")
+    throw new Error(`Unexpected capture manifest: ${manifest.schema}`);
+  manifests.push(manifest);
+}
+if (!manifests.length) throw new Error(`Missing native capture manifest in ${rawDir}`);
+const artifacts = manifests.flatMap(manifest => manifest.artifacts);
+const keys = artifacts.map(entry => `${entry.character}/${entry.role}`);
+if (new Set(keys).size !== keys.length) throw new Error('Duplicate character/role in capture manifests');
+const familyArtifacts = artifacts.filter(entry => entry.role.startsWith('family-'));
+if (familyArtifacts.length && (familyArtifacts.length !== 16 * 82 ||
+    new Set(familyArtifacts.map(entry => entry.character)).size !== 16))
+  throw new Error(`Expected 1,312 family captures over 16 rigs; found ${familyArtifacts.length}`);
 await mkdir(outputDir, { recursive: true });
 const generated = [];
-for (const entry of manifest.artifacts) {
-  const profile = profiles.get(entry.role);
+for (const entry of artifacts) {
+  const profile = profileForRole(entry.role);
   if (!profile) continue; // mounted pose has no held prop
   const capture = JSON.parse(await readFile(join(rawDir, entry.filename), "utf8"));
   if (capture.schema !== "flow-fest-native-performance-v1" ||
       capture.character !== entry.character || capture.role !== entry.role ||
+      (entry.propType && capture.propType !== entry.propType) ||
       capture.fps !== 30 || capture.frames.length !== entry.frames)
     throw new Error(`Invalid production capture: ${entry.filename}`);
+  const family = /^family-([a-z0-9_]+)-[AB]$/.exec(entry.role)?.[1];
+  if (family && (capture.propType !== family || capture.frames.length !== 480))
+    throw new Error(`Capture family/timing mismatch: ${entry.filename}`);
   const frames = capture.frames.map((frame, index) => {
     if (!frame.performerWorld || !frame.leftProp?.propRootWorld ||
         !frame.rightProp?.propRootWorld || frame.frame !== index)
@@ -103,12 +153,14 @@ for (const entry of manifest.artifacts) {
     return [
       ...pose(performerInverse, frame.leftProp.propRootWorld),
       ...pose(performerInverse, frame.rightProp.propRootWorld),
+      ...gripPosition(frame, 'Left'),
+      ...gripPosition(frame, 'Right'),
     ];
   });
   const character = entry.character.replaceAll("-", "_");
   const filename = `${character}_${profile}.json`;
   const clip = {
-    schema: "flow-fest-prop-motion-v1",
+    schema: "flow-fest-prop-motion-v2",
     character: entry.character,
     profile,
     propId: String(capture.propType).toLowerCase(),
@@ -120,8 +172,8 @@ for (const entry of manifest.artifacts) {
   await writeFile(join(outputDir, filename), JSON.stringify(clip));
   generated.push({ character: entry.character, profile, filename, frames: frames.length });
 }
-const expected = manifest.artifacts.filter((entry) => profiles.has(entry.role)).length;
-if (generated.length !== expected || generated.length !== 64)
+const expected = artifacts.filter((entry) => profileForRole(entry.role)).length;
+if (generated.length !== expected || expected < 64)
   throw new Error(`Expected 64 complete prop clips, got ${generated.length}/${expected}`);
 await writeFile(join(outputDir, "manifest.json"), JSON.stringify({
   schema: "flow-fest-prop-motion-manifest-v1", clips: generated,

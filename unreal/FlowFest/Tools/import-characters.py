@@ -17,9 +17,10 @@ CATALOG = json.loads((PROJECT / 'Content' / 'Data' / 'characters.json').read_tex
 FORCE = '--force' in sys.argv or os.environ.get('FLOWFEST_FORCE') == '1'
 CAPTURE_ONLY = os.environ.get('FLOWFEST_CAPTURE_ONLY') == '1'
 LOCOMOTION_ONLY = os.environ.get('FLOWFEST_LOCOMOTION_ONLY') == '1'
+FAMILY_ONLY = os.environ.get('FLOWFEST_FAMILY_ONLY') == '1'
 CAPTURE_ID = os.environ.get('FLOWFEST_CAPTURE_ID')
-if CAPTURE_ONLY and LOCOMOTION_ONLY:
-    raise RuntimeError('Choose capture-only or locomotion-only import')
+if sum((CAPTURE_ONLY, LOCOMOTION_ONLY, FAMILY_ONLY)) > 1:
+    raise RuntimeError('Choose one import subset: capture-only, locomotion-only, or family-only')
 TOOLS = u.AssetToolsHelpers.get_asset_tools()
 ED = u.EditorAssetLibrary
 u.SystemLibrary.execute_console_command(None, 'Interchange.FeatureFlags.Import.FBX 0')
@@ -259,7 +260,7 @@ for character in MANIFEST['characters']:
     key, folder = character['key'], character['folder']
     if character['id'] == 'personal-metaperson':
         raise RuntimeError('Evaluation-only MetaPerson must never enter the native catalog')
-    mesh = ED.load_asset(character['mesh']) if CAPTURE_ONLY or LOCOMOTION_ONLY else import_task(STAGED / key / f'SK_{key}.fbx', folder, f'SK_{key}', mesh_options())
+    mesh = ED.load_asset(character['mesh']) if CAPTURE_ONLY or LOCOMOTION_ONLY or FAMILY_ONLY else import_task(STAGED / key / f'SK_{key}.fbx', folder, f'SK_{key}', mesh_options())
     if not isinstance(mesh, u.SkeletalMesh):
         raise RuntimeError(f'{character["id"]}: imported asset is not a SkeletalMesh')
     skeleton = mesh.get_editor_property('skeleton')
@@ -277,9 +278,9 @@ for character in MANIFEST['characters']:
             reference_roots[str(bone_name)] = reference_transform
     if len(reference_roots) != 1:
         raise RuntimeError(f'{character["id"]}: expected one metre-to-centimetre reference bone, found {list(reference_roots)}')
-    if not CAPTURE_ONLY and not LOCOMOTION_ONLY:
+    if not CAPTURE_ONLY and not LOCOMOTION_ONLY and not FAMILY_ONLY:
         bind_appearance(character, mesh)
-    if not CAPTURE_ONLY:
+    if not CAPTURE_ONLY and not FAMILY_ONLY:
         for clip in MANIFEST['animations']:
             animation = import_task(STAGED / key / f'A_{clip}.fbx', folder, f'A_{clip}', animation_options(skeleton))
             if not isinstance(animation, u.AnimSequence):
@@ -287,9 +288,13 @@ for character in MANIFEST['characters']:
             if animation.get_editor_property('skeleton') != skeleton:
                 raise RuntimeError(f'{character["id"]}: A_{clip} targets another skeleton')
             restore_reference_scale(animation, reference_roots, character['id'])
-    if CAPTURE_ONLY and not character.get('captures'):
-        raise RuntimeError(f'{character["id"]}: no staged captures for capture-only import')
+    if (CAPTURE_ONLY or FAMILY_ONLY) and not character.get('captures'):
+        raise RuntimeError(f'{character["id"]}: no staged captures for performance import')
+    if FAMILY_ONLY and len([profile for profile in character['captures'] if profile.startswith('P_') and profile.endswith(('_A', '_B'))]) != 82:
+        raise RuntimeError(f'{character["id"]}: expected 82 staged family performances')
     for profile in (() if LOCOMOTION_ONLY else character.get('captures', {})):
+        if FAMILY_ONLY and not (profile.startswith('P_') and profile.endswith(('_A', '_B'))):
+            continue
         name = 'Ride' if profile == 'Ride' else f'Flow_{profile}'
         animation = import_task(STAGED / key / f'A_{name}.fbx', folder, f'A_{name}', animation_options(skeleton))
         if not isinstance(animation, u.AnimSequence) or animation.get_editor_property('skeleton') != skeleton:

@@ -12,6 +12,7 @@
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
 #include "Dom/JsonObject.h"
+#include "Engine/World.h"
 
 namespace
 {
@@ -120,7 +121,8 @@ UStaticMeshComponent* AddLED(AActor* Owner, USceneComponent* Root, const FVector
 
 UFlowFestPropComponent::UFlowFestPropComponent()
 {
-    PrimaryComponentTick.bCanEverTick = false;
+    PrimaryComponentTick.bCanEverTick = true;
+    PrimaryComponentTick.TickGroup = TG_PostUpdateWork;
 }
 
 void UFlowFestPropComponent::Initialize(USceneComponent* Parent)
@@ -180,7 +182,10 @@ bool UFlowFestPropComponent::BindHands(USkeletalMeshComponent* BodyMesh)
     LeftRoot->AttachToComponent(BodyMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, TEXT("LeftHand"));
     RightRoot->AttachToComponent(BodyMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, TEXT("RightHand"));
     BoundBodyMesh = BodyMesh;
+    AddTickPrerequisiteComponent(BodyMesh);
     bPerformancePose = false;
+    bEnteringPerformance = false;
+    bReturningToHands = false;
     LeftGripBasis = NewLeftBasis;
     RightGripBasis = NewRightBasis;
     LeftGripOffset = NewLeftOffset;
@@ -305,7 +310,7 @@ void UFlowFestPropComponent::SetHandTransforms(FTransform Left, FTransform Right
     UpdatePose();
 }
 
-void UFlowFestPropComponent::SetPerformanceTransforms(const FTransform& LeftLocalToAvatarRoot, const FTransform& RightLocalToAvatarRoot)
+void UFlowFestPropComponent::SetPerformanceTransforms(const FTransform& LeftLocalToAvatarRoot, const FTransform& RightLocalToAvatarRoot, float PoseWeight)
 {
     if (!AvatarRoot || !LeftRoot || !RightRoot) return;
     if (!bPerformancePose)
@@ -313,20 +318,77 @@ void UFlowFestPropComponent::SetPerformanceTransforms(const FTransform& LeftLoca
         LeftRoot->AttachToComponent(AvatarRoot, FAttachmentTransformRules::KeepWorldTransform);
         RightRoot->AttachToComponent(AvatarRoot, FAttachmentTransformRules::KeepWorldTransform);
         bPerformancePose = true;
+        bReturningToHands = false;
+        bEnteringPerformance = true;
+        TransitionStart = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.f;
+        TransitionLeft = LeftRoot->GetRelativeTransform();
+        TransitionRight = RightRoot->GetRelativeTransform();
     }
-    LeftRoot->SetRelativeTransform(LeftLocalToAvatarRoot);
-    RightRoot->SetRelativeTransform(RightLocalToAvatarRoot);
+    // The body clip is blended in skeletal pose space. Use that exact blend
+    // weight for held props so a transition does not send a prop along its
+    // captured orbit while the wrist is still in the previous body pose.
+    const float Alpha = FMath::Clamp(PoseWeight, 0.f, 1.f);
+    FTransform Left = LeftLocalToAvatarRoot, Right = RightLocalToAvatarRoot;
+    if (BoundBodyMesh && Alpha < .999f)
+    {
+        const FQuat Spin = bSpin ? FQuat(FVector::UpVector, SpinPhase) : FQuat::Identity;
+        const auto Natural = [this, Spin](FName HandName, const FQuat& Basis, const FVector& Offset)
+        {
+            const FTransform Hand = BoundBodyMesh->GetSocketTransform(HandName, RTS_World);
+            const FTransform World(Hand.GetRotation() * Basis * Spin, Hand.TransformPosition(Offset));
+            return World.GetRelativeTransform(AvatarRoot->GetComponentTransform());
+        };
+        Left.Blend(Natural(TEXT("LeftHand"), LeftGripBasis, LeftGripOffset), LeftLocalToAvatarRoot, Alpha);
+        Right.Blend(Natural(TEXT("RightHand"), RightGripBasis, RightGripOffset), RightLocalToAvatarRoot, Alpha);
+        bEnteringPerformance = true;
+    }
+    else bEnteringPerformance = false;
+    LeftRoot->SetRelativeTransform(Left);
+    RightRoot->SetRelativeTransform(Right);
 }
 
 void UFlowFestPropComponent::ClearPerformanceTransforms()
 {
     if (!bPerformancePose) return;
     bPerformancePose = false;
-    if (BoundBodyMesh) BindHands(BoundBodyMesh);
+    bEnteringPerformance = false;
+    GripErrorCm = 0.f;
+    PeakGripErrorCm = 0.f;
+    PropAnchorErrorCm = 0.f;
+    PeakPropAnchorErrorCm = 0.f;
+    GripSampleCount = 0;
+    if (BoundBodyMesh)
+    {
+        LeftRoot->AttachToComponent(BoundBodyMesh, FAttachmentTransformRules::KeepWorldTransform, TEXT("LeftHand"));
+        RightRoot->AttachToComponent(BoundBodyMesh, FAttachmentTransformRules::KeepWorldTransform, TEXT("RightHand"));
+        TransitionLeft = LeftRoot->GetRelativeTransform();
+        TransitionRight = RightRoot->GetRelativeTransform();
+        TransitionStart = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.f;
+        bReturningToHands = true;
+    }
+}
+
+void UFlowFestPropComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+{
+    Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+    if (!bReturningToHands || !LeftRoot || !RightRoot) return;
+    const float Alpha = FMath::Clamp(((GetWorld() ? GetWorld()->GetTimeSeconds() : TransitionStart) - TransitionStart) / .18f, 0.f, 1.f);
+    FTransform Left, Right;
+    Left.Blend(TransitionLeft, FTransform(LeftGripBasis, LeftGripOffset), Alpha);
+    Right.Blend(TransitionRight, FTransform(RightGripBasis, RightGripOffset), Alpha);
+    LeftRoot->SetRelativeTransform(Left);
+    RightRoot->SetRelativeTransform(Right);
+    if (Alpha >= 1.f) bReturningToHands = false;
 }
 
 bool UFlowFestPropComponent::LoadPerformance(FName CharacterId, FName Profile)
 {
+    // A motion capture is valid only for the exact prop family it was made
+    // with. Variant meshes share that family's grip and trajectory contract.
+    FString EquippedFamily = EquippedPropId.ToString().ToLower();
+    int32 Colon = INDEX_NONE;
+    if (EquippedFamily.FindChar(TEXT(':'), Colon)) EquippedFamily.LeftInline(Colon);
+    if (EquippedFamily.IsEmpty()) return false;
     FString Character = CharacterId.ToString();
     Character.ReplaceInline(TEXT("-"), TEXT("_"));
     const FString Path = FPaths::ProjectContentDir() / TEXT("Data/PropMotion") /
@@ -340,22 +402,38 @@ bool UFlowFestPropComponent::LoadPerformance(FName CharacterId, FName Profile)
         return false;
     }
     FString Schema;
+    FString CapturedCharacter, CapturedProfile;
     double Fps = 0;
     const TArray<TSharedPtr<FJsonValue>>* Frames = nullptr;
+    FString CapturedFamily;
     if (!Root->TryGetStringField(TEXT("schema"), Schema) ||
-        Schema != TEXT("flow-fest-prop-motion-v1") ||
+        (Schema != TEXT("flow-fest-prop-motion-v1") && Schema != TEXT("flow-fest-prop-motion-v2")) ||
+        (Schema == TEXT("flow-fest-prop-motion-v2") &&
+            (!Root->TryGetStringField(TEXT("character"), CapturedCharacter) ||
+             !Root->TryGetStringField(TEXT("profile"), CapturedProfile) ||
+             CapturedCharacter != CharacterId.ToString() || CapturedProfile != Profile.ToString())) ||
+        !Root->TryGetStringField(TEXT("propId"), CapturedFamily) ||
+        !CapturedFamily.Equals(EquippedFamily, ESearchCase::IgnoreCase) ||
         !Root->TryGetNumberField(TEXT("fps"), Fps) || Fps <= 0 ||
         !Root->TryGetArrayField(TEXT("frames"), Frames) || !Frames || Frames->IsEmpty())
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Flow Fest prop performance mismatch: %s needs %s"), *Path, *EquippedFamily);
+        return false;
+    }
+    const bool bGrip = Schema == TEXT("flow-fest-prop-motion-v2");
+    double SourceFrameCount = 0;
+    if (bGrip && (!Root->TryGetNumberField(TEXT("sourceFrameCount"), SourceFrameCount) ||
+        SourceFrameCount != Frames->Num() || Fps != 30.0 || Frames->Num() != 480))
         return false;
     TArray<FPropMotionFrame> Parsed;
     Parsed.Reserve(Frames->Num());
     for (const TSharedPtr<FJsonValue>& Entry : *Frames)
     {
         const TArray<TSharedPtr<FJsonValue>>* Values = nullptr;
-        if (!Entry.IsValid() || !Entry->TryGetArray(Values) || !Values || Values->Num() != 14)
+        if (!Entry.IsValid() || !Entry->TryGetArray(Values) || !Values || Values->Num() != (bGrip ? 20 : 14))
             return false;
-        double N[14];
-        for (int32 I = 0; I < 14; ++I)
+        double N[20]{};
+        for (int32 I = 0; I < Values->Num(); ++I)
         {
             if (!(*Values)[I].IsValid() || !(*Values)[I]->TryGetNumber(N[I]) || !FMath::IsFinite(N[I]))
                 return false;
@@ -366,14 +444,21 @@ bool UFlowFestPropComponent::LoadPerformance(FName CharacterId, FName Profile)
             Rotation.Normalize();
             return FTransform(Rotation, FVector(N[Offset], N[Offset+1], N[Offset+2]));
         };
-        Parsed.Add({Transform(0), Transform(7)});
+        Parsed.Add({Transform(0), Transform(7), FVector(N[14], N[15], N[16]), FVector(N[17], N[18], N[19])});
     }
     PerformanceFrames = MoveTemp(Parsed);
     PerformanceFps = static_cast<float>(Fps);
+    PerformanceProfile = Profile;
+    bHasGripSamples = bGrip;
+    GripErrorCm = 0.f;
+    PeakGripErrorCm = 0.f;
+    PropAnchorErrorCm = 0.f;
+    PeakPropAnchorErrorCm = 0.f;
+    GripSampleCount = 0;
     return true;
 }
 
-bool UFlowFestPropComponent::SetPerformanceTime(float Seconds)
+bool UFlowFestPropComponent::SetPerformanceTime(float Seconds, float PoseWeight)
 {
     if (PerformanceFrames.IsEmpty() || !FMath::IsFinite(Seconds)) return false;
     const float Frame = FMath::Fmod(FMath::Max(0.f, Seconds) * PerformanceFps,
@@ -388,8 +473,54 @@ bool UFlowFestPropComponent::SetPerformanceTime(float Seconds)
         return FTransform(FQuat::Slerp(From.GetRotation(), To.GetRotation(), Alpha).GetNormalized(),
             FMath::Lerp(From.GetLocation(), To.GetLocation(), Alpha));
     };
-    SetPerformanceTransforms(Blend(A.Left, B.Left), Blend(A.Right, B.Right));
+    SetPerformanceTransforms(Blend(A.Left, B.Left), Blend(A.Right, B.Right), PoseWeight);
+    if (bHasGripSamples && BoundBodyMesh && AvatarRoot)
+    {
+        const FTransform RootWorld = AvatarRoot->GetComponentTransform();
+        const float Weight = FMath::Clamp(PoseWeight, 0.f, 1.f);
+        const FQuat Spin = bSpin ? FQuat(FVector::UpVector, SpinPhase) : FQuat::Identity;
+        const auto Error = [this, &RootWorld, &A, &B, Alpha, Weight, Spin]
+            (FName HandName, const FTransform& First, const FTransform& Second,
+             const FVector& FirstGrip, const FVector& SecondGrip,
+             const FQuat& Basis, const FVector& Offset, const USceneComponent* PropRoot)
+        {
+            const FTransform Hand = BoundBodyMesh->GetSocketTransform(HandName, RTS_World);
+            const FVector HandLocal = RootWorld.InverseTransformPosition(Hand.GetLocation());
+            const FVector CapturedGrip = FMath::Lerp(FirstGrip, SecondGrip, Alpha);
+            const float CapturedError = FVector::Distance(HandLocal, CapturedGrip);
+            const FVector AuthoredAnchor = FMath::Lerp(
+                First.InverseTransformPosition(FirstGrip), Second.InverseTransformPosition(SecondGrip), Alpha);
+            const FTransform Natural(FTransform(Hand.GetRotation() * Basis * Spin,
+                Hand.TransformPosition(Offset)).GetRelativeTransform(RootWorld));
+            const FVector NaturalAnchor = Natural.InverseTransformPosition(HandLocal);
+            const FVector Anchor = FMath::Lerp(NaturalAnchor, AuthoredAnchor, Weight);
+            const float RootError = FVector::Distance(Hand.GetLocation(),
+                PropRoot->GetComponentTransform().TransformPosition(Anchor));
+            return FVector2D(CapturedError, RootError);
+        };
+        const FVector2D LeftError = Error(TEXT("LeftHand"), A.Left, B.Left, A.LeftGrip, B.LeftGrip,
+            LeftGripBasis, LeftGripOffset, LeftRoot);
+        const FVector2D RightError = Error(TEXT("RightHand"), A.Right, B.Right, A.RightGrip, B.RightGrip,
+            RightGripBasis, RightGripOffset, RightRoot);
+        GripErrorCm = FMath::Max(LeftError.X, RightError.X);
+        PropAnchorErrorCm = FMath::Max(LeftError.Y, RightError.Y);
+        if (!bEnteringPerformance)
+        {
+            PeakGripErrorCm = FMath::Max(PeakGripErrorCm, GripErrorCm);
+            PeakPropAnchorErrorCm = FMath::Max(PeakPropAnchorErrorCm, PropAnchorErrorCm);
+            ++GripSampleCount;
+            if (GripSampleCount % 300 == 0 && (GripErrorCm > 15.f || PropAnchorErrorCm > 15.f))
+                UE_LOG(LogTemp, Warning, TEXT("Flow Fest grip drift captured=%.1f cm prop=%.1f cm: %s / %s"),
+                    GripErrorCm, PropAnchorErrorCm, *EquippedPropId.ToString(), *PerformanceProfile.ToString());
+        }
+    }
     return true;
+}
+
+FTransform UFlowFestPropComponent::GetPropRootTransform(bool bLeft) const
+{
+    const USceneComponent* Root = bLeft ? LeftRoot : RightRoot;
+    return Root ? Root->GetComponentTransform() : FTransform::Identity;
 }
 
 void UFlowFestPropComponent::SetVisible(bool bNewVisible)
@@ -444,7 +575,7 @@ void UFlowFestPropComponent::UpdateEffects()
 void UFlowFestPropComponent::UpdatePose()
 {
     if (!LeftRoot || !RightRoot) return;
-    if (bPerformancePose) return;
+    if (bPerformancePose || bReturningToHands) return;
     const FQuat Spin = bSpin ? FQuat(FVector::UpVector, SpinPhase) : FQuat::Identity;
     if (BoundBodyMesh)
     {

@@ -36,13 +36,27 @@ public:
     void SetHandTransforms(FTransform Left, FTransform Right);
 
     /** Source prop-root poses in avatar-root space, including authored rotation. */
-    void SetPerformanceTransforms(const FTransform& LeftLocalToAvatarRoot, const FTransform& RightLocalToAvatarRoot);
+    void SetPerformanceTransforms(const FTransform& LeftLocalToAvatarRoot, const FTransform& RightLocalToAvatarRoot, float PoseWeight = 1.f);
     void ClearPerformanceTransforms();
 
     /** Load the matching production prop motion for this character and profile. */
     bool LoadPerformance(FName CharacterId, FName Profile);
     /** Sample at the avatar animation's own playback clock, including loop interpolation. */
-    bool SetPerformanceTime(float Seconds);
+    bool SetPerformanceTime(float Seconds, float PoseWeight = 1.f);
+
+    /** Hand-to-captured-grip distance after the synchronized pose was applied. */
+    UFUNCTION(BlueprintPure, Category="Flow Fest|Props")
+    float GetGripErrorCm() const { return GripErrorCm; }
+
+    UFUNCTION(BlueprintPure, Category="Flow Fest|Props")
+    float GetPeakGripErrorCm() const { return PeakGripErrorCm; }
+
+    /** Captured wrist anchor transformed by the actual prop root, compared with the live hand. */
+    float GetPropAnchorErrorCm() const { return PropAnchorErrorCm; }
+    float GetPeakPropAnchorErrorCm() const { return PeakPropAnchorErrorCm; }
+    bool IsEnteringPerformance() const { return bEnteringPerformance; }
+    bool IsReturningToHands() const { return bReturningToHands; }
+    FTransform GetPropRootTransform(bool bLeft) const;
 
     UFUNCTION(BlueprintCallable, Category="Flow Fest|Props")
     void SetVisible(bool bNewVisible);
@@ -61,11 +75,15 @@ public:
     UFUNCTION(BlueprintPure, Category="Flow Fest|Props")
     FName GetPropId() const { return EquippedPropId; }
 
+    virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
 private:
     struct FPropMotionFrame
     {
         FTransform Left;
         FTransform Right;
+        FVector LeftGrip = FVector::ZeroVector;
+        FVector RightGrip = FVector::ZeroVector;
     };
 
     UPROPERTY(Transient) TObjectPtr<USceneComponent> AvatarRoot;
@@ -81,6 +99,7 @@ private:
     UPROPERTY(Transient) TArray<TObjectPtr<UStaticMeshComponent>> LeftLEDs;
     UPROPERTY(Transient) TArray<TObjectPtr<UStaticMeshComponent>> RightLEDs;
     UPROPERTY(Transient) FName EquippedPropId = NAME_None;
+    FName PerformanceProfile = NAME_None;
     bool bVisible = true;
     bool bSpin = false;
     bool bPerformancePose = false;
@@ -95,6 +114,17 @@ private:
     FVector RightGripOffset = FVector::ZeroVector;
     TArray<FPropMotionFrame> PerformanceFrames;
     float PerformanceFps = 30.f;
+    bool bHasGripSamples = false;
+    float GripErrorCm = 0.f;
+    float PeakGripErrorCm = 0.f;
+    float PropAnchorErrorCm = 0.f;
+    float PeakPropAnchorErrorCm = 0.f;
+    int32 GripSampleCount = 0;
+    bool bEnteringPerformance = false;
+    bool bReturningToHands = false;
+    float TransitionStart = 0.f;
+    FTransform TransitionLeft = FTransform::Identity;
+    FTransform TransitionRight = FTransform::Identity;
 
     void UpdatePose();
     void UpdateEffects();

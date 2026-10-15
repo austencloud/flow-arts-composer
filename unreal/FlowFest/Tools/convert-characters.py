@@ -18,8 +18,16 @@ MANIFEST = json.loads((STAGED / 'imports.json').read_text(encoding='utf-8'))
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--id', action='append', help='Only convert these character IDs')
+parser.add_argument('--family-only', action='store_true', help='Convert only staged P_<family>_A/B captures')
+parser.add_argument('--force', action='store_true', help='Re-export assets even when FBX is current')
 args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else [])
 bpy.context.scene.render.fps = 30
+
+
+def is_current(output, *inputs):
+    if args.force or not output.exists():
+        return False
+    return output.stat().st_mtime_ns >= max(path.stat().st_mtime_ns for path in (*inputs, Path(__file__)))
 
 
 def clear_scene():
@@ -102,7 +110,8 @@ def prepare_rig(character):
         root.location.z -= floor
     armature.animation_data_clear()
     mesh_file = STAGED / character['key'] / f'SK_{character["key"]}.fbx'
-    export_fbx(mesh_file, armature, meshes, False)
+    if not args.family_only and not is_current(mesh_file, Path(character['decoded'])):
+        export_fbx(mesh_file, armature, meshes, False)
     return armature, meshes
 
 
@@ -174,12 +183,26 @@ def retarget_clip(character, target, clip_name, source_path, captured=False):
 for character in MANIFEST['characters']:
     if args.id and character['id'] not in args.id:
         continue
+    if args.family_only and len([profile for profile in character.get('captures', {})
+                                 if profile.startswith('P_') and profile.endswith(('_A', '_B'))]) != 82:
+        raise RuntimeError(f'{character["id"]}: expected 82 staged family captures')
     target, meshes = prepare_rig(character)
-    for clip_name, filename in MANIFEST['animations'].items():
-        retarget_clip(character, target, clip_name, Path(MANIFEST['animationSource']) / filename)
+    if not args.family_only:
+        for clip_name, filename in MANIFEST['animations'].items():
+            source_path = Path(MANIFEST['animationSource']) / filename
+            output = STAGED / character['key'] / f'A_{clip_name}.fbx'
+            if is_current(output, source_path, Path(character['decoded'])):
+                continue
+            retarget_clip(character, target, clip_name, source_path)
     for profile, path in character.get('captures', {}).items():
+        if args.family_only and not (profile.startswith('P_') and profile.endswith(('_A', '_B'))):
+            continue
         name = 'Ride' if profile == 'Ride' else f'Flow_{profile}'
-        retarget_clip(character, target, name, Path(path), captured=True)
+        source_path = Path(path)
+        output = STAGED / character['key'] / f'A_{name}.fbx'
+        if is_current(output, source_path, Path(character['decoded'])):
+            continue
+        retarget_clip(character, target, name, source_path, captured=True)
     print(f'FLOWFEST_CHARACTER {character["id"]} {len(meshes)} mesh parts')
 
 if args.id and set(args.id) - {c['id'] for c in MANIFEST['characters']}:
