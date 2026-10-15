@@ -55,6 +55,9 @@ roles are not required dependencies and are not active pilot agents.
 - **Carry the learner forward.** The [Grid copy review](copy-reviews/grid.md)
   records the approved continuation into Hand Positions. Connect through the
   actual prerequisite and route owners instead of inventing a second path.
+  Austen's approved October 14 rule: what the learner sees turns into what
+  comes next, in and between lessons. Lessons share one live board that moves
+  and restyles; no whole-board fade, swap, or loading gap at Continue.
 - **Achievement must reveal the next action.** Austen's September 5 feedback,
   relayed by Hand Positions task `01a06d6d-75fc-7cc3-9d75-32a30d7c1f30`,
   approves Grid's prominent Next and coordinated spatial transitions. It rejects
@@ -64,8 +67,8 @@ roles are not required dependencies and are not active pilot agents.
   Hand Positions requests a success hold followed by
   automatic practice progression; leaving the lesson stays manual. Verify a
   reduced-motion equivalent through shared motion owners. Do not claim measured
-  dopamine effects. This is a requested acceptance gate, not approval of the
-  implementation; [the UX audit](hand-positions-ux-audit.md) owns its evidence.
+  dopamine effects. This is a requested
+  gate, not approval; [the UX audit](hand-positions-ux-audit.md) owns its evidence.
 
 These are recorded decisions, not fresh inspection. Recheck source and runtime;
 historical notes contain superseded sections.

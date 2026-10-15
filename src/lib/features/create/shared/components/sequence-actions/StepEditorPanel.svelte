@@ -779,8 +779,6 @@
     justify-content: space-between;
     gap: 8px;
     padding: 6px 12px;
-    background: rgba(15, 20, 30, 0.95);
-    border-bottom: 1px solid var(--theme-stroke);
     min-height: 44px;
     flex-shrink: 0;
   }
@@ -972,7 +970,6 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    background: rgba(0, 0, 0, 0.1);
     flex: 1 1 0;
     min-height: 0;
     overflow: hidden;
@@ -1018,7 +1015,9 @@
     width: min(90cqw, 90cqh);
     height: min(90cqw, 90cqh);
     aspect-ratio: 1;
-    /* Subtle container styling */
+    /* Subtle container styling. The pictograph paints its own dark board and
+       stroke; on the editor's themed surface it reads as a card, the way it
+       does in the option picker and the sequence. */
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.02));
     border-radius: 12px;
   }
@@ -1050,8 +1049,6 @@
     padding: 12px;
     padding-bottom: max(12px, env(safe-area-inset-bottom, 12px));
     flex-shrink: 0;
-    border-top: 1px solid var(--theme-stroke, var(--theme-stroke));
-    background: var(--theme-panel-bg);
   }
 
   /* Mobile: controls take only what they need - step grid fills the rest */

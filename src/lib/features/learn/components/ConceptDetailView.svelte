@@ -8,7 +8,7 @@ Supports two navigation modes:
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import { getConceptProgressTracker } from "#lib/features/learn/get-concept-progress-tracker.js";
-  import { onMount } from "svelte";
+  import { onMount, untrack } from "svelte";
   import type {
     LearnConcept,
     ConceptProgress,
@@ -17,7 +17,11 @@ Supports two navigation modes:
   import { t, tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import {
     getConceptExperience,
+    getLoadedConceptExperience,
+    getNextConceptExperience,
     isConceptExperienceAvailable,
+    loadConceptExperience,
+    type ConceptExperienceComponent,
   } from "../domain/concept-experience-registry";
   import { getConceptById } from "../domain/concepts";
   import { getConceptPlaceIdForLesson } from "../domain/concept-place-registry";
@@ -26,6 +30,11 @@ Supports two navigation modes:
     trackLessonStarted,
   } from "../services/learn-events";
   import ConceptTopicReading from "./ConceptTopicReading.svelte";
+  import GridMergeAnimation from "./interactive/grid-merge/GridMergeAnimation.svelte";
+  import {
+    createLiveLessonBoard,
+    provideLiveLessonBoard,
+  } from "./interactive/live-board/live-lesson-board.svelte";
 
   let { concept, onClose, onContinue } = $props<{
     concept: LearnConcept;
@@ -60,9 +69,57 @@ Supports two navigation modes:
   let isCompleted = $derived(progress.status === "completed");
   const experience = $derived(getConceptExperience(concept.id));
 
-  // Sync progress when concept changes
+  // One grid for every lesson opened in this view. Continue swaps the lesson
+  // around it, so the grid the learner was looking at becomes the next one's.
+  const liveBoard = createLiveLessonBoard();
+  provideLiveLessonBoard(liveBoard);
+
+  // A lesson that already loaded renders in the same frame, so Continue has
+  // no loading gap. The next lesson loads while this one is being learned.
+  let loadedExperience = $state<{
+    conceptId: string;
+    component: ConceptExperienceComponent;
+  } | null>(null);
+  const Experience = $derived.by(() => {
+    const loaded = loadedExperience;
+    if (loaded && loaded.conceptId === concept.id) return loaded.component;
+    return getLoadedConceptExperience(concept.id);
+  });
   $effect(() => {
-    progress = conceptProgressService.getConceptProgress(concept.id);
+    const conceptId = concept.id;
+    let current = true;
+    void loadConceptExperience(conceptId)
+      .then((component) => {
+        if (!current) return;
+        if (component) loadedExperience = { conceptId, component };
+        const next = getNextConceptExperience(conceptId);
+        return next ? loadConceptExperience(next.conceptId) : undefined;
+      })
+      .catch(() => undefined);
+    return () => {
+      current = false;
+    };
+  });
+
+  // Continue keeps this view mounted, so each newly opened lesson starts from
+  // its own first view and is recorded as started here.
+  let startedConceptId: string | null = null;
+  $effect(() => {
+    const conceptId = concept.id;
+    untrack(() => {
+      progress = conceptProgressService.getConceptProgress(conceptId);
+      if (startedConceptId === conceptId) return;
+      startedConceptId = conceptId;
+      viewMode = "step";
+      readingOpen = false;
+      trackLessonStarted(conceptId, progress.status);
+      if (
+        progress.status === "available" ||
+        progress.status === "in-progress"
+      ) {
+        conceptProgressService.startConcept(conceptId);
+      }
+    });
   });
 
   function toggleViewMode() {
@@ -70,13 +127,7 @@ Supports two navigation modes:
     viewMode = viewMode === "step" ? "scroll" : "step";
   }
 
-  // Start the concept when detail view opens
   onMount(() => {
-    trackLessonStarted(concept.id, progress.status);
-    if (progress.status === "available" || progress.status === "in-progress") {
-      conceptProgressService.startConcept(concept.id);
-    }
-
     // Subscribe to progress updates
     const unsubscribe = conceptProgressService.subscribe(() => {
       progress = conceptProgressService.getConceptProgress(concept.id);
@@ -108,6 +159,7 @@ Supports two navigation modes:
       isConceptExperienceAvailable(nextConcept.id) &&
       onContinue
     ) {
+      liveBoard.capture();
       onContinue(nextConcept, getConceptPlaceIdForLesson(nextConcept.id));
       return;
     }
@@ -187,23 +239,33 @@ Supports two navigation modes:
     </div>
   </div>
 
+  <!-- The live board waits here between lessons; a lesson's slot borrows it. -->
+  <div class="live-board-home" aria-hidden="true">
+    <div class="live-board" {@attach (node) => liveBoard.attach(node)}>
+      <GridMergeAnimation
+        phase={liveBoard.scene.phase}
+        highlightPhase={liveBoard.scene.highlightPhase}
+        look={liveBoard.scene.look}
+      />
+    </div>
+  </div>
+
   <!-- Content - key block forces full remount when concept changes -->
   <div class="concept-detail-content">
     {#key `${concept.id}-${viewMode}`}
       {#if experience}
-        {#await experience.load()}
-          <div class="lesson-loading" role="status">
-            {t("learn_ui_loading_lesson")}
-          </div>
-        {:then loaded}
-          {@const Experience = loaded.default}
+        {#if Experience}
           <Experience
             {viewMode}
             {readingOpen}
             onComplete={handlePracticeComplete}
             onBack={handleClose}
           />
-        {/await}
+        {:else}
+          <div class="lesson-loading" role="status">
+            {t("learn_ui_loading_lesson")}
+          </div>
+        {/if}
       {:else}
         <!-- Coming Soon placeholder -->
         <div class="coming-soon">
@@ -332,6 +394,29 @@ Supports two navigation modes:
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior: contain;
+  }
+
+  .live-board-home {
+    display: none;
+  }
+
+  /* The board fills whichever lesson slot holds it. These rules travel with
+     the element, including while it flies above the page between lessons. */
+  .live-board {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .live-board :global(.grid-merge-container) {
+    width: 100%;
+    height: 100%;
+  }
+
+  .live-board :global(.merge-svg) {
+    width: 100%;
+    height: 100%;
+    max-width: none !important;
   }
 
   .lesson-loading {

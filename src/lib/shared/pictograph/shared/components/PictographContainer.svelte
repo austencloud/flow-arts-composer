@@ -118,6 +118,7 @@ with pre-prepared data for better performance.
     // Transparent background: skip the background fill so the glyph floats
     // on the host surface (decorative embeds on dark tiles).
     transparentBackground = false,
+    ariaLabel = undefined,
     // Choose Start picker: grid and props only, every beat glyph fades out.
     poseOnly = false,
     // Explicit prop types for export/thumbnail rendering
@@ -205,6 +206,8 @@ with pre-prepared data for better performance.
     printMode?: boolean;
     /** Skip the background fill so the glyph floats on the host surface. */
     transparentBackground?: boolean;
+    /** Replaces the generated description, e.g. a placement read as a letter. */
+    ariaLabel?: string;
     poseOnly?: boolean;
     /** Explicit prop type for the left hand. Export/thumbnail rendering provides this for consistency. */
     fanAppearanceOverride?: FanAppearance;
@@ -718,7 +721,7 @@ with pre-prepared data for better performance.
   // pictographs stay decorative (no role/label). Wraps the whole node as role=img,
   // which AT treats as a leaf — so the inner glyph labels aren't double-announced.
   const a11yLabel = $derived(
-    pictographData ? describePictograph(pictographData) : ""
+    ariaLabel ?? (pictographData ? describePictograph(pictographData) : "")
   );
   const hasA11yLabel = $derived(
     !!a11yLabel && a11yLabel !== "Pictograph (empty)"

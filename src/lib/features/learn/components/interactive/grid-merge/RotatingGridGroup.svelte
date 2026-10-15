@@ -9,13 +9,19 @@
     GRID,
     CARDINAL_OUTER,
     CARDINAL_HAND,
+    type BoardLook,
     type Phase,
     type HighlightPhase,
   } from "./grid-merge-constants";
 
-  let { phase, highlightPhase = "none" } = $props<{
+  let {
+    phase,
+    highlightPhase = "none",
+    look = "lesson",
+  } = $props<{
     phase: Phase;
     highlightPhase?: HighlightPhase;
+    look?: BoardLook;
   }>();
 
   const isSplit = $derived(
@@ -36,6 +42,9 @@
   class:split={isSplit}
   class:merged={isMerged}
   class:dimmed={isDimmed}
+  class:diamond={phase === "diamond"}
+  class:box={phase === "box"}
+  class:pictograph={look === "pictograph"}
   class:highlight-center={highlightPhase === "center"}
   class:highlight-hand={highlightPhase === "hand"}
   class:highlight-outer={highlightPhase === "outer"}
@@ -258,6 +267,65 @@
   }
   .highlight-outer .outer-point[data-index="3"] {
     animation-delay: calc(var(--stagger-relaxed) * 3);
+  }
+
+  /* === DIAMOND / BOX: one settled grid, drawn the way a pictograph is ===
+     The diamond keeps solid outer points; turning to the box rings them, so a
+     mode change reads as the same four points rotating in place. */
+  .diamond {
+    transform: rotate(0deg);
+  }
+
+  .box {
+    transform: rotate(45deg);
+  }
+
+  .diamond .center-point,
+  .diamond .outer-point,
+  .diamond .hand-point,
+  .box .center-point,
+  .box .outer-point,
+  .box .hand-point {
+    animation: none;
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .diamond .outer-point {
+    fill-opacity: 1;
+    stroke-opacity: 0;
+  }
+
+  .diamond.highlight-outer .outer-point {
+    fill: var(--theme-accent, #22d3ee);
+    fill-opacity: 1;
+    stroke-opacity: 0;
+  }
+
+  .pictograph .center-point,
+  .pictograph .hand-point {
+    fill: var(--board-ink);
+  }
+
+  .pictograph .outer-point {
+    fill: var(--board-ink);
+    stroke: var(--board-ink);
+  }
+
+  .pictograph .hand-point {
+    r: 4.7px;
+  }
+
+  .pictograph .center-point,
+  .pictograph .outer-point,
+  .pictograph .hand-point {
+    transition:
+      fill var(--merge-duration) var(--ease-standard-out),
+      stroke var(--merge-duration) var(--ease-standard-out),
+      fill-opacity var(--duration-normal) var(--ease-standard-out),
+      stroke-opacity var(--duration-normal) var(--ease-standard-out),
+      opacity var(--highlight-duration) var(--ease-standard-out),
+      r var(--merge-duration) var(--merge-easing);
   }
 
   @keyframes pointPop {

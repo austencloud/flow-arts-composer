@@ -44,11 +44,14 @@ const sitemap = readSource("src/routes/sitemap.xml/+server.ts");
 const componentManifest = readSource("scripts/component-manifest.json");
 
 describe("notation catalog", () => {
-  it("is un-gated: no dev branch, no noindex, and back in the sitemap", () => {
-    expect(notationRoute).not.toContain('from "$app/env"');
-    expect(notationRoute).not.toContain("UnderConstruction");
-    expect(notationRoute).not.toContain('content="noindex');
-    expect(sitemap).toMatch(/\{ url: "history" \}/);
+  it("is withdrawn publicly while its authors are asked, but stays whole on a dev server", () => {
+    // Production prerenders the noindex note; only a local dev server renders
+    // the full archive at /history (see the comment atop the page).
+    expect(notationRoute).toContain('import { dev } from "$app/environment"');
+    expect(notationRoute).toMatch(/\{#if dev\}\s*<ArchiveFullPage/);
+    expect(notationRoute).toContain("UnderConstruction");
+    expect(notationRoute).toContain('content="noindex, follow"');
+    expect(sitemap).not.toMatch(/\{ url: "history" \}/);
   });
 
   it("gives every entry at least one source", () => {

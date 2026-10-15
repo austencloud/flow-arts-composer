@@ -169,8 +169,9 @@
     padding: 14px;
     background: transparent;
     border: none;
-    border-bottom: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
-    margin: 0 0 12px 0; /* Bottom margin creates separation from prop cards */
+    /* Space, not a rule, separates it from the prop cards: the editor is one
+       surface, and a full-width line stopped short at the drawer handle. */
+    margin: 0 0 12px 0;
   }
 
   /* Compact mode: tighter layout matching prop cards */
@@ -353,7 +354,6 @@
       gap: 4px;
       padding: 8px;
       margin-bottom: 0;
-      border-bottom: 0;
     }
   }
 
@@ -365,14 +365,12 @@
         gap: 4px;
         padding: 8px;
         margin-bottom: 0;
-        border-bottom: 0;
       }
     }
   }
 
   /* Beside the preview there is no row under it to separate from. */
   .duration-control.stacked {
-    border-bottom: 0;
     margin-bottom: 0;
   }
 
