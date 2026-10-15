@@ -134,12 +134,14 @@ when it moves between a small box and a large one.
 
   // The Style tile's height at another width: set the width, read the
   // height, put it back. Two reads per resize, on a tile of a few controls.
+  // The height is freed too, since a hidden Style tile is held at zero.
   function styleHeightAt(width: number): number {
     if (!styleTile) return 0;
-    const previous = styleTile.style.width;
+    const previous = styleTile.style.cssText;
     styleTile.style.width = `${width}px`;
+    styleTile.style.height = "auto";
     const height = styleTile.offsetHeight;
-    styleTile.style.width = previous;
+    styleTile.style.cssText = previous;
     return height;
   }
 
@@ -495,9 +497,14 @@ when it moves between a small box and a large one.
     display: none;
   }
 
+  /* Held at zero height, so the hidden tile adds no empty scroll below the
+     rows on a panel too short for them. */
   [data-layout="rows"] .style-tile {
     position: absolute;
     inset-inline: 0;
+    top: 0;
+    height: 0;
+    overflow: hidden;
     visibility: hidden;
   }
 
