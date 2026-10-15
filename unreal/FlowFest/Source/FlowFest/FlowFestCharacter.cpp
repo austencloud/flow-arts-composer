@@ -35,6 +35,15 @@ namespace
 constexpr float InteractionRadius = 1800.f;
 constexpr float ArriveRadius = 2600.f;
 constexpr float VehicleRadius = 3400.f;
+
+float OnFootSpeedCmPerSecond(float ForwardInput, float RightInput, bool bSprint)
+{
+    if (!bSprint) return 185.f;
+    const float InputMagnitude = FVector2D(ForwardInput, RightInput).Size();
+    const float BackwardFraction = InputMagnitude > SMALL_NUMBER
+        ? FMath::Clamp(-ForwardInput / InputMagnitude, 0.f, 1.f) : 0.f;
+    return FMath::Lerp(440.f, 280.f, BackwardFraction);
+}
 }
 
 AFlowFestCharacter::AFlowFestCharacter()
@@ -261,7 +270,11 @@ void AFlowFestCharacter::Tick(float DeltaSeconds)
     }
     if (bPhotoFly) AddMovementInput(FVector::UpVector, (bRise ? 1.f : 0.f) - (bDescend ? 1.f : 0.f));
 
-    const float Speed = bPhotoFly ? 1600.f : bInVehicle ? (bSprint ? 2100.f : 1400.f) : bOnEUC ? 1050.f : bSprint ? 440.f : 185.f;
+    // The only authored reverse gait travels about 117 cm/s at 1x. Keep an S
+    // sprint within its 2.4x cadence range, with diagonal input interpolating
+    // smoothly toward the normal lateral sprint speed.
+    const float Speed = bPhotoFly ? 1600.f : bInVehicle ? (bSprint ? 2100.f : 1400.f)
+        : bOnEUC ? 1050.f : OnFootSpeedCmPerSecond(ForwardInput, RightInput, bSprint);
     GetCharacterMovement()->MaxWalkSpeed = Speed;
     GetCharacterMovement()->MaxFlySpeed = Speed;
     if (Phase == EFlowFestPhase::DriveIn && bInVehicle && !bPhotoFly && !FMath::IsNearlyZero(ForwardInput))
@@ -619,7 +632,11 @@ void AFlowFestCharacter::SyncModeVisuals()
     CameraBoom->bDoCollisionTest = !bWardrobeOpen;
     CameraBoom->TargetArmLength = bWardrobeOpen ? 340.f : (bFirstPerson || bPhotoFly) ? 0.f : bInVehicle ? 680.f : 420.f;
     CameraBoom->SocketOffset = bWardrobeOpen ? FVector(0, 150, -10) : (bFirstPerson || bPhotoFly) ? FVector(25, 0, 68) : FVector(0, 0, 65);
-    GetCharacterMovement()->bOrientRotationToMovement = !bInVehicle;
+    // Keep the standing body facing the view yaw so S and A/D are real
+    // backward and strafe travel in the avatar's local frame. The vehicle
+    // keeps its steering yaw; the unicycle still faces its travel direction.
+    bUseControllerRotationYaw = !bInVehicle && !bOnEUC && !bPhotoFly;
+    GetCharacterMovement()->bOrientRotationToMovement = !bInVehicle && (bOnEUC || bPhotoFly);
     SyncPlayerCamp();
 }
 
@@ -912,6 +929,12 @@ void AFlowFestCharacter::RunSmoke()
         SetActorLocation(FestivalWorld->GetLandmark(Id) + FVector(0, 0, 110), false);
     };
     Expect(CharacterChoices.Num() == 16 && PropChoices.Num() == 71, TEXT("complete deployed character and prop catalogs"));
+    Expect(FMath::IsNearlyEqual(OnFootSpeedCmPerSecond(-1.f, 0.f, true), 280.f)
+        && FMath::IsNearlyEqual(OnFootSpeedCmPerSecond(1.f, 0.f, true), 440.f)
+        && FMath::IsNearlyEqual(OnFootSpeedCmPerSecond(0.f, 1.f, true), 440.f)
+        && OnFootSpeedCmPerSecond(-1.f, 1.f, true) > 280.f
+        && OnFootSpeedCmPerSecond(-1.f, 1.f, true) < 440.f,
+        TEXT("backward sprint cap preserves lateral and forward travel"));
     const FName PreviousCharacter = CharacterId, PreviousProp = EquippedPropId;
     auto CheckPose = [this, &Expect](const FString& Label)
     {
@@ -1023,6 +1046,8 @@ void AFlowFestCharacter::RunSmoke()
             MoveTo(CampIds[CampIndex]); Interact();
             Expect(Phase == EFlowFestPhase::MakeCamp, TEXT("tent camp walk home"));
         }
+        Expect(bUseControllerRotationYaw && !GetCharacterMovement()->bOrientRotationToMovement,
+            TEXT("on-foot view facing leaves reverse and strafe gait reachable"));
         Interact(); Expect(Phase == EFlowFestPhase::WalkToFestival && bCampBuilt, TEXT("make camp"));
         MoveTo(TEXT("workshop")); Interact();
         Expect(Phase == EFlowFestPhase::FestivalNight, TEXT("workshop"));
