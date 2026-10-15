@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { MediaQuery } from "svelte/reactivity";
   import GuidePictograph from "../../../guide/level-1/_components/GuidePictograph.svelte";
   import PictographTypeFrame from "#lib/shared/pictograph/shared/components/PictographTypeFrame.svelte";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
@@ -24,6 +25,7 @@
   import { buildGalleryLetterHref } from "#lib/shared/browse/navigation/gallery-letter-link.js";
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import type { CodexLetterInfo } from "./codex-letters";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
   const GRID_OPTIONS = [
     { value: GridMode.DIAMOND, label: "Diamond" },
@@ -55,6 +57,7 @@
     onRetry,
     onLearningRetry,
     onCopyLink,
+    propType,
   }: {
     info: CodexLetterInfo;
     gridMode: GridModeValue;
@@ -80,6 +83,8 @@
     onRetry: () => void;
     onLearningRetry: () => void;
     onCopyLink: () => void;
+    /** The prop drawn in every picture; omitted keeps the dataset's own. */
+    propType?: PropType;
   } = $props();
 
   const leftMotion = $derived(draft?.motions?.left);
@@ -96,6 +101,35 @@
       (rightMotion?.motionType === MotionType.DASH ||
         rightMotion?.motionType === MotionType.STATIC)
   );
+  // On a desktop screen the explorer fills the dialog and nothing in it
+  // scrolls: the hero takes the height its column has left, and the
+  // variations take the box under their heading, laid out at whatever column
+  // count gives the largest pictures. Keep this query in step with the
+  // stylesheet's and LetterCodex's.
+  const fit = new MediaQuery("(min-width: 64rem) and (min-height: 700px)");
+  const VARIATION_GAP = 10.4; // 0.65rem
+  const SELECTED_RING = 10; // outline and its offset, both sides
+  let stageWidth = $state(0);
+  let stageHeight = $state(0);
+  const fitGrid = $derived.by(() => {
+    const count = variations.length;
+    if (!fit.current || count === 0 || stageWidth <= 0 || stageHeight <= 0) {
+      return null;
+    }
+    const width = stageWidth - SELECTED_RING;
+    const height = stageHeight - SELECTED_RING;
+    let best = { columns: 4, cell: 0 };
+    for (let columns = 1; columns <= count; columns++) {
+      const rows = Math.ceil(count / columns);
+      const cell = Math.min(
+        (width - (columns - 1) * VARIATION_GAP) / columns,
+        (height - (rows - 1) * VARIATION_GAP) / rows
+      );
+      if (cell > best.cell) best = { columns, cell };
+    }
+    return { columns: best.columns, cell: Math.floor(best.cell) };
+  });
+
   const gridLabel = $derived(
     gridMode === GridMode.BOX ? "Box grid" : "Diamond grid"
   );
@@ -131,28 +165,32 @@
         </span>
       </div>
 
-      <div class="hero-frame">
-        {#if draft}
-          <PictographTypeFrame letter={draft.letter}>
-            <GuidePictograph
-              data={draft}
-              size="lg"
-              showGrid
-              showArrows
-              showTKA
-              showNonRadialPoints={gridMode === GridMode.BOX}
-              forceTheme="dark"
-              eager
-            />
-          </PictographTypeFrame>
-        {:else if isLoading}
-          <div class="hero-state" role="status">
-            <i class="fa-solid fa-circle-notch fa-spin" aria-hidden="true"></i>
-            Loading variation…
-          </div>
-        {:else}
-          <div class="hero-state">No variation selected.</div>
-        {/if}
+      <div class="hero-slot">
+        <div class="hero-frame">
+          {#if draft}
+            <PictographTypeFrame letter={draft.letter}>
+              <GuidePictograph
+                data={draft}
+                size="lg"
+                showGrid
+                showArrows
+                showTKA
+                showNonRadialPoints={gridMode === GridMode.BOX}
+                {propType}
+                forceTheme="dark"
+                eager
+              />
+            </PictographTypeFrame>
+          {:else if isLoading}
+            <div class="hero-state" role="status">
+              <i class="fa-solid fa-circle-notch fa-spin" aria-hidden="true"
+              ></i>
+              Loading variation…
+            </div>
+          {:else}
+            <div class="hero-state">No variation selected.</div>
+          {/if}
+        </div>
       </div>
 
       {#if draft}
@@ -251,52 +289,64 @@
           </div>
         </div>
 
-        {#if isLoading}
-          <div class="load-state" role="status">
-            <i class="fa-solid fa-circle-notch fa-spin" aria-hidden="true"></i>
-            Loading {gridLabel.toLowerCase()} variations…
-          </div>
-        {:else if loadError}
-          <div class="load-state" role="alert">
-            <span>The {gridLabel.toLowerCase()} variations did not load.</span>
-            <button type="button" onclick={onRetry}>Try again</button>
-          </div>
-        {:else if variations.length === 0}
-          <div class="load-state">
-            No {gridLabel.toLowerCase()} variations recorded.
-          </div>
-        {:else}
-          <div
-            class="variation-grid themed-scrollbar"
-            aria-label={`${info.label} ${gridLabel} variations`}
-          >
-            {#each variations as pictograph, index (pictograph.id ?? index)}
-              <button
-                class="variation-button"
-                class:selected={index === selectedIndex}
-                type="button"
-                aria-pressed={index === selectedIndex}
-                aria-label={`${info.label}, ${gridLabel}, variation ${index + 1}`}
-                onclick={() => onVariationChange(index)}
+        <div
+          class="variation-stage"
+          bind:clientWidth={stageWidth}
+          bind:clientHeight={stageHeight}
+        >
+          {#if isLoading}
+            <div class="load-state" role="status">
+              <i class="fa-solid fa-circle-notch fa-spin" aria-hidden="true"
+              ></i>
+              Loading {gridLabel.toLowerCase()} variations…
+            </div>
+          {:else if loadError}
+            <div class="load-state" role="alert">
+              <span>The {gridLabel.toLowerCase()} variations did not load.</span
               >
-                <span class="variation-picture">
-                  <PictographTypeFrame letter={pictograph.letter}>
-                    <GuidePictograph
-                      data={pictograph}
-                      size="sm"
-                      showGrid
-                      showArrows
-                      showTKA
-                      showNonRadialPoints={gridMode === GridMode.BOX}
-                      forceTheme="dark"
-                      eager
-                    />
-                  </PictographTypeFrame>
-                </span>
-              </button>
-            {/each}
-          </div>
-        {/if}
+              <button type="button" onclick={onRetry}>Try again</button>
+            </div>
+          {:else if variations.length === 0}
+            <div class="load-state">
+              No {gridLabel.toLowerCase()} variations recorded.
+            </div>
+          {:else}
+            <div
+              class="variation-grid themed-scrollbar"
+              aria-label={`${info.label} ${gridLabel} variations`}
+              style:grid-template-columns={fitGrid
+                ? `repeat(${fitGrid.columns}, ${fitGrid.cell}px)`
+                : undefined}
+            >
+              {#each variations as pictograph, index (pictograph.id ?? index)}
+                <button
+                  class="variation-button"
+                  class:selected={index === selectedIndex}
+                  type="button"
+                  aria-pressed={index === selectedIndex}
+                  aria-label={`${info.label}, ${gridLabel}, variation ${index + 1}`}
+                  onclick={() => onVariationChange(index)}
+                >
+                  <span class="variation-picture">
+                    <PictographTypeFrame letter={pictograph.letter}>
+                      <GuidePictograph
+                        data={pictograph}
+                        size="sm"
+                        showGrid
+                        showArrows
+                        showTKA
+                        showNonRadialPoints={gridMode === GridMode.BOX}
+                        {propType}
+                        forceTheme="dark"
+                        eager
+                      />
+                    </PictographTypeFrame>
+                  </span>
+                </button>
+              {/each}
+            </div>
+          {/if}
+        </div>
       </section>
 
       <section class="contexts" aria-labelledby="contexts-heading">
@@ -687,6 +737,55 @@
     display: block;
     width: 100%;
     aspect-ratio: 1;
+  }
+
+  .hero-slot {
+    display: contents;
+  }
+
+  /* Desktop: the explorer is the dialog's whole body and nothing scrolls.
+     Same query as `fit` in the script. The hero is the largest square its
+     column has left; the variation stage is the box under its heading, and
+     the script picks the column count and cell size that fill it. */
+  @media (min-width: 64rem) and (min-height: 700px) {
+    .explorer-container {
+      height: 100%;
+    }
+    .explorer {
+      box-sizing: border-box;
+      height: 100%;
+      grid-template-rows: minmax(0, 1fr);
+    }
+    .preview-column {
+      position: static;
+      align-self: stretch;
+      min-height: 0;
+    }
+    .hero-slot {
+      flex: 1 1 0;
+      min-height: 12rem;
+      display: grid;
+      place-items: center;
+      container-type: size;
+    }
+    .hero-frame {
+      width: min(100cqi, 100cqb);
+    }
+    .detail-column {
+      min-height: 0;
+    }
+    .variation-section {
+      flex: 1 1 0;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .variation-stage {
+      flex: 1 1 0;
+      min-height: 0;
+      display: grid;
+      place-content: center;
+    }
   }
 
   .context-grid {

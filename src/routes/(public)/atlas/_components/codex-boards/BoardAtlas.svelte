@@ -21,6 +21,7 @@
   import { codexTypeLabel } from "../../../guide/codex/_data/codex-groups";
   import { LETTER_TYPE_COLORS } from "#lib/shared/pictograph/shared/domain/constants/pictograph-constants.js";
   import type { LetterType } from "#lib/shared/foundation/domain/models/letter-type.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {
     MAJOR_TYPE_BANDS,
     MINOR_TYPE_BANDS,
@@ -28,7 +29,10 @@
     type TaggedBox,
   } from "./codex-letters";
 
-  let { onSelect }: { onSelect: (id: string) => void } = $props();
+  let {
+    onSelect,
+    propType,
+  }: { onSelect: (id: string) => void; propType?: PropType } = $props();
 
   interface AtlasFlow {
     boxes: TaggedBox[];
@@ -66,6 +70,7 @@
           <CodexFlow
             boxes={flow.boxes}
             flowHeader={flow.flowHeader}
+            {propType}
             {onSelect}
           />
         {/each}
@@ -83,7 +88,7 @@
           style:--band-secondary={bandColors(band)[1]}
         >
           <CodexBandHead type={band.type} />
-          <CodexFlow boxes={band.boxes} {onSelect} />
+          <CodexFlow boxes={band.boxes} {propType} {onSelect} />
         </section>
       {/each}
     </div>
@@ -201,6 +206,35 @@
     .bands {
       --codex-picto-size: calc((100cqi - 2.6rem) / 4);
       --band-pad-x: 0.5rem;
+    }
+  }
+
+  /* A host that hands the board a fixed box names it `codex-atlas-fit`
+     (container-type: size). Then the height term is that box, not a guess at
+     the page chrome: twelve across and five rows, whichever binds first.
+     Everything in a band that is not a cell - its heading, the caption slot
+     over each row, the padding and frames, the gaps between bands - is a
+     fixed 23.5rem in all (measured at 1440 and 3840 wide; none of it scales
+     with the cells), plus the codex host's own top padding. The board keeps
+     its desktop twelve-across flow at every width the host allows, so the
+     five-row count stays true. */
+  @container codex-atlas-fit (min-width: 0px) {
+    .board-atlas {
+      width: auto;
+      margin-inline: 0;
+    }
+    .bands {
+      --atlas-band-chrome: 24rem;
+      --codex-picto-size: max(
+        3rem,
+        min(
+          calc((100cqi - 5rem) / 12),
+          calc((100cqb - var(--atlas-band-chrome)) / var(--band-rows))
+        )
+      );
+    }
+    .minor-row {
+      gap: 0.75rem 1.5rem;
     }
   }
 </style>
