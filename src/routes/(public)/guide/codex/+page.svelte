@@ -155,4 +155,27 @@
       min-height: 0;
     }
   }
+
+  /* Past 2400px the board's cells run 200-260px; a column set at laptop size
+     reads as a footnote beside them. The column, its header and the picker
+     grow together; the board keeps the rest. */
+  @media (min-width: 2400px) and (min-height: 760px) {
+    .codex-guide {
+      grid-template-columns: clamp(26rem, 14vw, 36rem) minmax(0, 1fr);
+      --codex-prop-chip: 4rem;
+      --codex-prop-words: 1.6rem;
+    }
+    .intro {
+      gap: 1.75rem;
+    }
+    .codex-guide .intro :global(.topic-head) {
+      max-width: none;
+    }
+    .codex-guide .intro :global(.topic-head h1) {
+      font-size: 7rem;
+    }
+    .codex-guide .intro :global(.topic-head .lede) {
+      font-size: 1.9rem;
+    }
+  }
 </style>
