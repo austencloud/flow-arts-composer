@@ -1,0 +1,146 @@
+#pragma once
+
+#include "CoreMinimal.h"
+#include "GameFramework/Actor.h"
+#include "FlowFestWorld.generated.h"
+
+class UDirectionalLightComponent;
+class UExponentialHeightFogComponent;
+class UHierarchicalInstancedStaticMeshComponent;
+class UMaterialInterface;
+class UPostProcessComponent;
+class UPointLightComponent;
+class UProceduralMeshComponent;
+class USkeletalMeshComponent;
+class USkyAtmosphereComponent;
+class USkyLightComponent;
+class UStaticMesh;
+class UStaticMeshComponent;
+class UFlowFestAvatarComponent;
+class UFlowFestPropComponent;
+
+/** Measured Flow Fest site. East and south are metres; UE X and Y are centimetres. */
+UCLASS()
+class FLOWFEST_API AFlowFestWorld : public AActor
+{
+    GENERATED_BODY()
+
+public:
+    AFlowFestWorld();
+    virtual void BeginPlay() override;
+    virtual void Tick(float DeltaSeconds) override;
+
+    UFUNCTION(BlueprintCallable, Category="Flow Fest|Site")
+    FVector GetLandmark(const FString& Id) const;
+
+    /** World-space ground Z, in centimetres. */
+    UFUNCTION(BlueprintCallable, Category="Flow Fest|Site")
+    float SampleGround(float EastMeters, float SouthMeters) const;
+
+    UFUNCTION(BlueprintCallable, Category="Flow Fest|Site")
+    FVector ToWorld(float East, float South, float HeightOffsetCm = 0.f) const;
+
+    UFUNCTION(BlueprintCallable, Category="Flow Fest|Sky")
+    void SetTimeOfDay(float Hour);
+
+    UFUNCTION(BlueprintPure, Category="Flow Fest|Sky")
+    float GetTimeOfDay() const { return TimeOfDay; }
+
+    UFUNCTION(BlueprintCallable, Category="Flow Fest|Camp")
+    void SetPlayerCamp(FString CampLandmark, bool bBuilt);
+
+private:
+    struct FSiteRoad
+    {
+        FString Id;
+        FString Kind;
+        float Width = 3.f;
+        TArray<FVector2D> Points;
+    };
+
+    struct FSiteTree
+    {
+        FVector2D Position;
+        FString Family;
+        float Height = 10.f;
+        float Rotation = 0.f;
+    };
+
+    struct FSiteCamp
+    {
+        FVector2D Position;
+        FString Type;
+        float Rotation = 0.f;
+        float Scale = 1.f;
+    };
+
+    struct FSiteVehicle
+    {
+        FVector2D Position;
+        FString Model;
+        float Rotation = 0.f;
+        int32 PaintIndex = 0;
+    };
+
+    struct FFestivalPerson
+    {
+        AActor* Actor = nullptr;
+        UFlowFestAvatarComponent* Avatar = nullptr;
+        UFlowFestPropComponent* Prop = nullptr;
+        FVector2D Center;
+        float Phase = 0.f;
+        float Radius = 0.f;
+        float Speed = 0.f;
+        float Facing = 0.f;
+        bool bPerformancePlaying = false;
+    };
+
+    UPROPERTY(VisibleAnywhere) TObjectPtr<USceneComponent> SiteRoot;
+    UPROPERTY(VisibleAnywhere) TObjectPtr<UDirectionalLightComponent> Sun;
+    UPROPERTY(VisibleAnywhere) TObjectPtr<UDirectionalLightComponent> Moon;
+    UPROPERTY(VisibleAnywhere) TObjectPtr<USkyLightComponent> SkyLight;
+    UPROPERTY(VisibleAnywhere) TObjectPtr<USkyAtmosphereComponent> Atmosphere;
+    UPROPERTY(VisibleAnywhere) TObjectPtr<UExponentialHeightFogComponent> Fog;
+    UPROPERTY(VisibleAnywhere) TObjectPtr<UPostProcessComponent> PostProcess;
+
+    UPROPERTY(Transient) TArray<TObjectPtr<UProceduralMeshComponent>> TerrainChunks;
+    UPROPERTY(Transient) TArray<TObjectPtr<UHierarchicalInstancedStaticMeshComponent>> InstanceGroups;
+    UPROPERTY(Transient) TObjectPtr<UStaticMeshComponent> PlayerTent;
+    UPROPERTY(Transient) TObjectPtr<UPointLightComponent> FireLight;
+
+    TArray<float> Elevations;
+    TArray<FSiteRoad> Roads;
+    TArray<FSiteTree> Trees;
+    TArray<FSiteTree> BackdropTrees;
+    TArray<FSiteCamp> Camps;
+    FSiteCamp PlayerTentPlacement;
+    bool bHasPlayerTentPlacement = false;
+    TArray<FSiteVehicle> Vehicles;
+    TArray<FFestivalPerson> People;
+    TMap<FString, FVector2D> Landmarks;
+    TMap<FString, float> SourceMeshHeights;
+
+    int32 GridWidth = 0;
+    int32 GridHeight = 0;
+    float GridSpacing = 1.f;
+    float GridMinEast = -512.f;
+    float GridMinSouth = -512.f;
+    float OriginElevation = 270.f;
+    float TimeOfDay = 18.5f;
+
+    bool LoadSite();
+    void BuildTerrain();
+    void BuildRoads();
+    void BuildTrees();
+    void BuildCamps();
+    void BuildVehicles();
+    void BuildFestivalLandmarks();
+    void BuildLanterns();
+    void BuildPeople();
+    void AddSign(const FString& Label, const FVector2D& At, float Yaw);
+    void AddSetPiece(const FString& AssetName, const FVector& Position, const FRotator& Rotation, const FVector& Scale = FVector::OneVector);
+    UHierarchicalInstancedStaticMeshComponent* AddInstanceGroup(UStaticMesh* Mesh, const FString& Name, UMaterialInterface* OverrideMaterial = nullptr);
+    UStaticMesh* LoadSetMesh(const FString& Name) const;
+    UMaterialInterface* LoadMaterial(const FString& Name) const;
+    float ElevationAt(float East, float South) const;
+};

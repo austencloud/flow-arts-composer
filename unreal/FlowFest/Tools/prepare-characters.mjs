@@ -1,0 +1,200 @@
+/** Prepare the complete deployed avatar catalog for Blender and Unreal. */
+import { createRequire } from 'node:module';
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+
+const here = dirname(fileURLToPath(import.meta.url));
+const project = resolve(here, '..');
+const repo = resolve(project, '../..');
+const source = resolve(process.argv[2] || repo);
+const capturesFlag = process.argv.indexOf('--captures');
+const capturesDir = capturesFlag < 0 ? null : resolve(process.argv[capturesFlag + 1] || '');
+const captureIdFlag = process.argv.indexOf('--capture-id');
+const captureId = captureIdFlag < 0 ? null : process.argv[captureIdFlag + 1];
+if (capturesFlag >= 0 && (!process.argv[capturesFlag + 1] || !existsSync(capturesDir)))
+  throw new Error(`Missing native performance capture directory: ${capturesDir}`);
+if (captureIdFlag >= 0 && (!captureId || !capturesDir))
+  throw new Error('--capture-id requires an ID and --captures directory');
+const dependencyRoot = existsSync(join(repo, 'node_modules/.pnpm')) ? repo : source;
+const catalogFile = join(source, 'node_modules/@austencloud/scene-3d/src/lib/config/avatar-definitions.ts');
+const catalog = readFileSync(catalogFile, 'utf8');
+const deployed = catalog.match(/const DEPLOYED_AVATAR_DEFINITIONS:[\s\S]*?= \[([\s\S]*?)\n\];/)?.[1];
+if (!deployed) throw new Error(`Cannot read deployed avatar catalog: ${catalogFile}`);
+const definitions = [...deployed.matchAll(/id:\s*"([^"]+)",\s*name:\s*"([^"]+)"/g)].map(([, id, name]) => ({ id, name }));
+if (definitions.length !== 16 || new Set(definitions.map(x => x.id)).size !== 16)
+  throw new Error(`Expected exactly 16 unique deployed avatars; found ${definitions.length}`);
+if (captureId && !definitions.some(x => x.id === captureId))
+  throw new Error(`Unknown deployed capture character: ${captureId}`);
+
+function glbJson(file) {
+  const bytes = readFileSync(file);
+  if (bytes.toString('ascii', 0, 4) !== 'glTF' || bytes.readUInt32LE(16) !== 0x4e4f534a)
+    throw new Error(`Invalid binary glTF: ${file}`);
+  return JSON.parse(bytes.toString('utf8', 20, 20 + bytes.readUInt32LE(12)));
+}
+function boneName(name) { return name.replace(/^mixamorig\d*:?/, ''); }
+function safeAssetName(name) { return name.replace(/[^A-Za-z0-9_]+/g, '_').replace(/^_+|_+$/g, '') || 'Unnamed'; }
+function metadata(file) {
+  const doc = glbJson(file);
+  const sourceBones = [...new Set((doc.skins || []).flatMap(s => s.joints).map(i => doc.nodes[i]?.name).filter(Boolean))];
+  const boneMap = Object.fromEntries(sourceBones.map(name => [name, boneName(name)]));
+  const imported = new Set(Object.values(boneMap));
+  if (imported.size !== sourceBones.length) throw new Error(`Bone normalization collision: ${file}`);
+  for (const name of ['Hips', 'LeftHand', 'RightHand', 'LeftFoot', 'RightFoot'])
+    if (!imported.has(name)) throw new Error(`Missing ${name} in ${file}`);
+  const arm = side => ['Shoulder', 'Arm', 'ForeArm', 'Hand'].map(part => `${side}${part}`).filter(x => imported.has(x));
+  const leg = side => ['UpLeg', 'Leg', 'Foot', 'ToeBase'].map(part => `${side}${part}`).filter(x => imported.has(x));
+  const morphTargets = (doc.meshes || []).flatMap((mesh, meshIndex) => {
+    const names = mesh.extras?.targetNames || [];
+    return (mesh.primitives || []).flatMap((primitive, primitiveIndex) =>
+      (primitive.targets || []).map((_, index) => ({ mesh: mesh.name || `mesh_${meshIndex}`, primitive: primitiveIndex, name: names[index] || `morph_${index}` })));
+  });
+  return { sourceBones, boneMap, pelvis: 'Hips', hands: { left: 'LeftHand', right: 'RightHand' },
+    feet: { left: 'LeftFoot', right: 'RightFoot' }, toes: { left: imported.has('LeftToeBase') ? 'LeftToeBase' : null, right: imported.has('RightToeBase') ? 'RightToeBase' : null },
+    armChains: { left: arm('Left'), right: arm('Right') }, legChains: { left: leg('Left'), right: leg('Right') }, morphTargets };
+}
+
+const pnpm = join(dependencyRoot, 'node_modules/.pnpm');
+const cli = readdirSync(pnpm).find(x => x.startsWith('@gltf-transform+cli@'));
+if (!cli) throw new Error('Install the repository gltf-transform CLI dependency first.');
+const req = createRequire(join(pnpm, cli, 'node_modules/@gltf-transform/cli/package.json'));
+const { NodeIO } = await import(pathToFileURL(req.resolve('@gltf-transform/core')).href);
+const { ALL_EXTENSIONS } = await import(pathToFileURL(req.resolve('@gltf-transform/extensions')).href);
+const draco = (await import(pathToFileURL(req.resolve('draco3dgltf')).href)).default;
+const { MeshoptDecoder } = await import(pathToFileURL(req.resolve('meshoptimizer')).href);
+const sharp = (await import(pathToFileURL(createRequire(join(dependencyRoot, 'package.json')).resolve('sharp')).href)).default;
+await MeshoptDecoder.ready;
+const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({
+  'draco3d.decoder': await draco.createDecoderModule(), 'meshopt.decoder': MeshoptDecoder,
+});
+const staged = join(here, 'staged/Characters');
+mkdirSync(staged, { recursive: true });
+const animations = {
+  Idle: 'idle-rm.glb', Walk: 'walk-forward-rm.glb', Run: 'run-rm.glb', Jump: 'jump-up-rm.glb',
+  Fall: 'falling-idle-rm.glb', Land: 'falling-to-landing-rm.glb', Backward: 'walk-backward-rm.glb',
+  StrafeLeft: 'strafe-left-rm.glb', StrafeRight: 'strafe-right-rm.glb',
+  RunStrafeLeft: 'strafe-run-left.glb', RunStrafeRight: 'strafe-run-right.glb',
+};
+const animationSource = join(source, 'static/animations/locomotion-pack');
+for (const file of Object.values(animations)) if (!existsSync(join(animationSource, file))) throw new Error(`Missing source motion ${file}`);
+const characters = [];
+const captureProfiles = [['FirePoi', 'fire-poi'], ['FireHoop', 'fire-hoop'], ['Juggler', 'juggler'], ['LedFlow', 'led-flow']];
+if (capturesDir) {
+  for (const { id } of definitions.filter(x => !captureId || x.id === captureId)) {
+    for (const [, role] of captureProfiles) {
+      const file = join(capturesDir, `${id}_${role}.json`);
+      if (!existsSync(file)) throw new Error(`Missing native performance capture: ${file}`);
+    }
+    const ride = join(capturesDir, `${id}_ride.json`);
+    if (!existsSync(ride)) throw new Error(`Missing native mounted capture: ${ride}`);
+  }
+}
+async function prepareCapture(character, profile, filename, captureRole = profile) {
+  const capture = JSON.parse(readFileSync(join(capturesDir, filename), 'utf8'));
+  const ride = profile === 'Ride';
+  if (capture.character !== character.id || capture.fps !== 30 ||
+      capture.schema !== (ride ? 'flow-fest-native-mounted-v1' : 'flow-fest-native-performance-v1') ||
+      (!ride && capture.role !== captureRole) || capture.frames.length < 2)
+    throw new Error(`Invalid native capture contract: ${filename}`);
+  const doc = await io.read(character.decoded);
+  for (const old of doc.getRoot().listAnimations()) old.dispose();
+  const jointName = name => name.replace(/^mixamorig\d*:?/, '');
+  const nodes = new Map(doc.getRoot().listNodes().map(node => [jointName(node.getName()), node]));
+  const firstBones = capture.frames[0].bones;
+  const expected = new Set(character.bones.sourceBones.map(jointName));
+  const capturedNames = firstBones.map(bone => jointName(bone.name));
+  if (firstBones.length !== expected.size || new Set(capturedNames).size !== capturedNames.length ||
+      !['LeftHand', 'RightHand', 'LeftFoot', 'RightFoot'].every(name => capturedNames.includes(name)) ||
+      firstBones.some(bone => !expected.has(jointName(bone.name)) || !nodes.has(jointName(bone.name))))
+    throw new Error(`Capture bones differ from deployed rig: ${filename}`);
+  for (const [index, frame] of capture.frames.entries()) {
+    if (frame.frame !== index || frame.bones.length !== firstBones.length)
+      throw new Error(`Noncontinuous or incomplete frames: ${filename}`);
+  }
+  // Include the loop's closing pose at N/fps. Ending at (N-1)/fps would make
+  // the body wrap one frame before synchronized prop motion does.
+  const keyedFrames = [...capture.frames, capture.frames[0]];
+  const times = Float32Array.from(keyedFrames, (_, index) => index / 30);
+  const buffer = doc.getRoot().listBuffers()[0];
+  const input = doc.createAccessor(`${profile}_times`).setArray(times).setType('SCALAR').setBuffer(buffer);
+  const animation = doc.createAnimation(profile);
+  for (let boneIndex = 0; boneIndex < firstBones.length; boneIndex++) {
+    const node = nodes.get(jointName(firstBones[boneIndex].name));
+    for (const [path, width, field] of [['translation', 3, 'position'], ['rotation', 4, 'quaternion']]) {
+      const values = new Float32Array(keyedFrames.length * width);
+      for (let frameIndex = 0; frameIndex < keyedFrames.length; frameIndex++) {
+        const bone = keyedFrames[frameIndex].bones[boneIndex];
+        if (bone.name !== firstBones[boneIndex].name) throw new Error(`Bone order changed in ${filename}`);
+        values.set(bone.local[field], frameIndex * width);
+      }
+      const output = doc.createAccessor(`${profile}_${boneIndex}_${path}`).setArray(values).setType(width === 4 ? 'VEC4' : 'VEC3').setBuffer(buffer);
+      const sampler = doc.createAnimationSampler().setInput(input).setOutput(output).setInterpolation('LINEAR');
+      const channel = doc.createAnimationChannel().setTargetNode(node).setTargetPath(path).setSampler(sampler);
+      animation.addSampler(sampler).addChannel(channel);
+    }
+  }
+  const output = join(staged, character.key, `capture_${profile}.glb`);
+  await io.write(output, doc);
+  console.log(`Prepared capture ${character.id}/${profile}: ${capture.frames.length} frames`);
+  return output;
+}
+for (const { id, name } of definitions) {
+  const input = join(source, 'static/models/avatars/_optimized', `${id}.glb`);
+  if (!existsSync(input)) throw new Error(`Missing deployed rig ${input}`);
+  const key = id.replaceAll('-', '_');
+  const folder = `/Game/FlowFest/Characters/${key}`;
+  const decoded = join(staged, `${key}.glb`);
+  const doc = await io.read(input);
+  for (const texture of doc.getRoot().listTextures()) {
+    if (texture.getMimeType() === 'image/webp') texture.setImage(await sharp(texture.getImage()).png().toBuffer()).setMimeType('image/png');
+  }
+  for (const extension of [...doc.getRoot().listExtensionsUsed()])
+    if (['EXT_meshopt_compression', 'KHR_draco_mesh_compression', 'EXT_texture_webp'].includes(extension.extensionName)) extension.dispose();
+  await io.write(decoded, doc);
+  const textures = doc.getRoot().listTextures();
+  const textureDir = join(staged, 'textures', key);
+  mkdirSync(textureDir, { recursive: true });
+  const textureInfo = textures.map((texture, index) => {
+    const image = texture.getImage();
+    if (!image || texture.getMimeType() !== 'image/png') throw new Error(`Missing PNG texture ${id} ${index}`);
+    const asset = `T_${key}_${index}_${safeAssetName(texture.getName())}`;
+    const file = join(textureDir, `${asset}.png`);
+    writeFileSync(file, image);
+    return { name: texture.getName(), file, asset: `${folder}/${asset}.${asset}` };
+  });
+  const textureIndex = texture => texture ? textures.indexOf(texture) : null;
+  const materials = doc.getRoot().listMaterials().map((material, index) => ({
+    name: material.getName(), asset: `${folder}/M_${key}_${index}.M_${key}_${index}`,
+    baseColor: textureIndex(material.getBaseColorTexture()),
+    normal: textureIndex(material.getNormalTexture()),
+    metallicRoughness: textureIndex(material.getMetallicRoughnessTexture()),
+    emissive: textureIndex(material.getEmissiveTexture()),
+    occlusion: textureIndex(material.getOcclusionTexture()),
+    alphaMode: material.getAlphaMode(), doubleSided: material.getDoubleSided(),
+    baseColorFactor: material.getBaseColorFactor(),
+    metallicFactor: material.getMetallicFactor(), roughnessFactor: material.getRoughnessFactor(),
+  }));
+  const info = metadata(input);
+  characters.push({ id, name, key, source: input, decoded, folder,
+    mesh: `${folder}/SK_${key}.SK_${key}`, skeleton: `${folder}/SK_${key}_Skeleton.SK_${key}_Skeleton`,
+    animations: Object.fromEntries(Object.keys(animations).map(k => [k, `${folder}/A_${k}.A_${k}`])),
+    bones: info, textures: textureInfo, materials });
+  console.log(`Prepared ${id}: ${info.sourceBones.length} bones, ${info.morphTargets.length} morph targets`);
+}
+const manifest = { version: 1, animationSource, animations, characters };
+if (capturesDir) {
+  for (const character of characters.filter(x => !captureId || x.id === captureId)) {
+    character.captures = {};
+    for (const [profile, captureRole] of captureProfiles)
+      character.captures[profile] = await prepareCapture(character, profile, `${character.id}_${captureRole}.json`, captureRole);
+    character.captures.Ride = await prepareCapture(character, 'Ride', `${character.id}_ride.json`);
+    for (const profile of Object.keys(character.captures)) {
+      const name = profile === 'Ride' ? 'Ride' : `Flow_${profile}`;
+      character.animations[name] = `${character.folder}/A_${name}.A_${name}`;
+    }
+  }
+}
+writeFileSync(join(staged, 'imports.json'), JSON.stringify(manifest, null, 2) + '\n');
+writeFileSync(join(project, 'Content/Data/characters.json'), JSON.stringify({ version: 1, characters: characters.map(({ id, name, key, folder, mesh, skeleton, animations, bones, textures, materials }) => ({ id, name, key, folder, mesh, skeleton, animations, bones, textures: textures.map(({ name, asset }) => ({ name, asset })), materials })) }, null, 2) + '\n');
+console.log(`Prepared ${characters.length} native characters`);
