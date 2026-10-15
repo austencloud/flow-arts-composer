@@ -1053,7 +1053,12 @@ const svelteKitOptions: Parameters<typeof sveltekit>[0] = {
       // Archive record hashes are client-managed selection state. Rendering
       // matching DOM ids would trigger a native jump before hydration and
       // leave the viewport stranded inside the overflow-hidden archive.
-      if (path === "/history" && id.startsWith("archive-record-")) return;
+      // The archive moved to the unlisted /history/draft on 2026-10-14.
+      if (
+        (path === "/history" || path === "/history/draft") &&
+        id.startsWith("archive-record-")
+      )
+        return;
       // Atlas hashes select a category or term after hydration. They are URL
       // state, not scroll targets, so rendering matching ids would make the
       // browser jump inside the full-viewport workspace before Atlas can
