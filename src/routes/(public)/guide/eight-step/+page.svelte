@@ -8,8 +8,9 @@
 <script lang="ts">
   /**
    * Gage's chart reduced to its eight hand paths, shown before it is told.
-   * Three tiles open the page: both hands, then each hand alone (the left
-   * caps, two beats on and one back; the right keeps circling). Then one
+   * Three tiles open the page: the left hand alone (it caps, two beats on
+   * and one back), both hands in the middle with the only step counter, and
+   * the right hand alone (it keeps circling). Then one
    * player with a prop, beside the prop picker and a spin picker per hand:
    * the nine pairings of the chart, named by motion and turns. Picking poi
    * flags the pairings poi can't spin. Then one box per pair of paths in
@@ -270,15 +271,16 @@
         <div class="hand-tiles">
           <HandTile
             sequence={hands}
-            hand="both"
-            caption={t("guide_eightstep_hand_both")}
+            hand="left"
+            caption={t("guide_eightstep_hand_left")}
             trail={HAND_TRAIL}
           />
           <HandTile
             sequence={hands}
-            hand="left"
-            caption={t("guide_eightstep_hand_left")}
+            hand="both"
+            caption={t("guide_eightstep_hand_both")}
             trail={HAND_TRAIL}
+            stepNumbers
           />
           <HandTile
             sequence={hands}

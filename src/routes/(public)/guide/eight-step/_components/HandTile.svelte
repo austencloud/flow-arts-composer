@@ -3,7 +3,8 @@
   or one hand alone. The hidden hand rides in the same sequence: the viewer's
   motion-visibility context (the one the sequence viewer's Blue/Red toggle
   sets) tells the canvas to skip its prop and trail, so a solo tile stays in
-  step with the both-hands tile beside it.
+  step with the both-hands tile beside it. Only a tile that asks for it shows
+  the step number, so a row of tiles carries one counter between them.
 -->
 <script lang="ts">
   import { browser } from "$app/env";
@@ -19,11 +20,13 @@
     hand,
     caption,
     trail,
+    stepNumbers = false,
   }: {
     sequence: SequenceData;
     hand: "both" | "left" | "right";
     caption: string;
     trail: TrailSettings;
+    stepNumbers?: boolean;
   } = $props();
 
   // Set once: a tile never changes which hand it shows.
@@ -49,6 +52,7 @@
         beatIndicators={false}
         trailSettingsOverride={trail}
         hideTkaGlyph
+        hideStepNumbers={!stepNumbers}
       />
     {/if}
   </div>
