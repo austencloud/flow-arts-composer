@@ -32,6 +32,15 @@
     renderer.setAnimationLoop(null);
   }
 
+  export function hasRenderedRig(): boolean {
+    const root = scene.getObjectByName(`PERFORMER_${id}`);
+    let skinned = false;
+    root?.traverse((object) => {
+      if ((object as { isSkinnedMesh?: boolean }).isSkinnedMesh) skinned = true;
+    });
+    return skinned;
+  }
+
   export async function sampleFrame(
     frame: number
   ): Promise<ReturnType<typeof captureNativeFrame>> {

@@ -62,8 +62,15 @@ export function captureNativeFrame(
 ) {
   scene.updateMatrixWorld(true);
   const performer = scene.getObjectByName(`PERFORMER_${id}`);
-  if (!performer || !performer.parent)
-    throw new Error(`Production rig ${id} is not rendered`);
+  if (!performer || !performer.parent) {
+    const names: string[] = [];
+    scene.traverse((object) => {
+      if (object.name.startsWith("PERFORMER_")) names.push(object.name);
+    });
+    throw new Error(
+      `Production rig ${id} is not rendered; found ${names.join(", ") || "none"}`
+    );
+  }
   let skinned: SkinnedMesh | null = null;
   performer.traverse((object) => {
     const mesh = object as SkinnedMesh;
@@ -96,7 +103,9 @@ export function captureNativeFrame(
     const correction = anchor?.children[0];
     if (!anchor || !correction || !containsMesh(correction, false))
       throw new Error(`Incomplete corrected prop tree for ${id}`);
-    const propRoot = correction.children.find((child) => containsMesh(child, false));
+    const propRoot = correction.children.find((child) =>
+      containsMesh(child, false)
+    );
     if (!propRoot) throw new Error(`Animated prop root is missing for ${id}`);
     const meshes: { name: string; world: TransformSample }[] = [];
     correction.traverse((object) => {

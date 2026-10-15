@@ -30,7 +30,10 @@
 
   async function waitReady(key: number): Promise<void> {
     const deadline = performance.now() + 45_000;
-    while (readyKey !== key) {
+    while (
+      readyKey !== key ||
+      (mode === "perform" ? !scene?.hasRenderedRig() : !rideScene)
+    ) {
       if (performance.now() > deadline)
         throw new Error(`Rig ${character} did not become ready`);
       await new Promise((resolve) => setTimeout(resolve, 50));
