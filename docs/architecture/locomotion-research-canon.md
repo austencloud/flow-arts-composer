@@ -1,6 +1,6 @@
 # Locomotion Research Canon
 
-Last verified: 2026-08-28
+Original verification header: 2026-08-28. Later September entries retain their own dates; no new full verification is claimed.
 
 This document turns locomotion research into TKA engineering decisions. It is
 the required starting point for work on walking, footfall planning, gait timing,
@@ -20,7 +20,7 @@ not this file.
 
 Decision status:
 
-- **Shipped**: verified in `main` at the date above.
+- **Shipped**: recorded as verified in `main` at each entry's dated checkpoint.
 - **Prototype**: verified in a task branch or lab, but not a production contract.
 - **Adopted**: the architecture direction is accepted, but implementation is
   incomplete.
@@ -78,7 +78,7 @@ The owners have deliberately different jobs:
    infrastructure, not a shipping motion-matching solver and not a reason to
    create a parallel system.
 7. `measureStandingStance` / `planStandingStance` / `applyStandingStance` in
-   `@austencloud/scene-3d` `src/lib/services/leg-geometry.ts` own the **static
+   `@austencloud/scene-3d` (historical package-internal reference: `src/lib/services/leg-geometry.ts`, not an app-local owner) own the **static
    standing base** a performer holds when nothing is driving its legs. This is
    not locomotion: it owns no gait clock, no contact schedule, and no footfall
    plan. `Avatar3D.svelte` calls it once at load, and only when
@@ -102,7 +102,7 @@ The owners have deliberately different jobs:
 9. **How fast a body is allowed to become** is a separate owner:
    `advanceGroundVelocity()` in `packages/camera-3d/src/lib/ground-velocity.ts`,
    called by `UnifiedCameraController` through `groundAcceleration` and
-   `groundDeceleration`. It bounds the velocity *vector*, so a hard turn carries
+   `groundDeceleration`. It bounds the velocity _vector_, so a hard turn carries
    through its arc; it selects its rate by comparing magnitudes, so releasing a
    sprint brakes rather than coasts; and omitting the props means infinite
    acceleration, which reproduces instant response exactly. This is not a gait
@@ -171,6 +171,7 @@ The owners have deliberately different jobs:
     the settled pelvis sits about 3 cm below idle because the capture's
     standing knees are bent. Contract in
     `tests/unit/3d/terminal-stop-stance.test.ts`.
+
 11. **Clip loop seams and the mixer's write skip** are owned by
     `LocomotionAnimator`. The pack's converted clips key from one frame in
     (0.0333 s at 30 Hz) while their duration counts from zero, and their last
@@ -608,6 +609,7 @@ metric improved.
 ## Rejected assumptions
 
 ### A single hard-coded rotation can serve as a stance for every rig
+
 Rejected 2026-09-03, with runtime bone measurements on four rigs.
 
 `Avatar3D.svelte` widened the default stance with a fixed 8-degree rotation
@@ -637,8 +639,8 @@ in as the new bind pose (see `clear_imported_pose` in
 `40180e87a8`). The runtime stance normalizes both shapes, so fixing the intake
 bake does not invalidate it and it does not excuse leaving the bake in place.
 
-
 ### Foot-path and knee-angle metrics can see a leg posed in the wrong plane
+
 Rejected 2026-09-03, by fault injection against the full gait report.
 
 `ch07` shipped with its left knee's IK hinge axis derived 84 degrees off
@@ -663,28 +665,28 @@ finally posed, so the suite could not have observed the defect even had a metric
 existed. Both are addressed under Anatomical validity above; the blindness
 itself is pinned by an assertion so the claim cannot go stale silently.
 
-| Assumption                                               | Why it is rejected                                                                                                                                     |
-| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Root motion eliminates footskate                         | Source root and foot motion can still mismatch the world controller, retargeted rig, warping, blending, or contact anchors.                            |
-| Motion matching naturally plants feet                    | Selection only chooses from available data. Contacts, coverage, retargeting, blending, and correction remain explicit concerns.                        |
-| Inertialization or a crossfade can create a missing stop | Blending removes a small pose discontinuity. It does not create braking, final foot placement, or weight transfer.                                     |
-| Setting velocity to zero is a terminal transition        | Human gait termination is phase- and speed-dependent and can require another placement.                                                                |
-| Zeroing a clip's weight releases it                      | three.js fills any weight the actions leave missing with the bind pose. A release has to hand the weight to the next clip, not drop it.                 |
-| A scripted root can keep its speed through a stop        | The stop clip decelerates before its terminal plant. A root that does not follow its distance curve drags the declared stance feet across the floor.   |
-| A sidecar's source travel fits every rig                 | Retargeting keeps rotations, so ground covered grows with the leg. Remy covers twice the capture's 0.78 m; scaling against the sidecar planted its feet up to 0.79 m off. |
-| A stop can borrow the walk's pelvis dip                  | The walks carry their dip inside the baked clip, so the borrowed residual is about zero and the stop's bent-knee settle hung 4 to 5 cm over the floor. |
-| Scaling a stride about the pelvis keeps a stop's stance   | A stop's last feet settle ahead of the pelvis, so any scale other than 1 moves the settled stance by that offset times the scale's excess.              |
-| Rotating the root under the avatar is a turn             | A believable turn selects support, places a foot, transfers weight, and rotates through an authored or data-covered window.                            |
-| Negative leg order is always collision                   | Intentional front and back crossovers reverse left/right foot order. Collision requires geometry and continuity evidence.                              |
-| IK can turn a sidestep into a grapevine                  | IK can correct a target near a valid source pose. It cannot supply the missing swing path, support sequence, pelvis action, or self-contact semantics. |
-| Beat alignment equals authored footfalls                 | Cadence or root extrema do not prove which foot planted, at what score time, or for how long.                                                          |
-| Exact root endpoint plus step count equals exact arrival | Root mark, terminal plant, and stable two-foot goal stance are different events.                                                                       |
-| A public dataset is product-cleared                      | Code, annotations, video, music, performer data, body models, and derived assets can carry different terms.                                            |
-| A cited technique is implemented                         | Research, adopted architecture, prototypes, and shipped behavior are separate status classes.                                                          |
-| A knee metric detects a knee posed wrong                  | `kneeJerkRms` is the second derivative of an unsigned joint angle, which a rotated bend plane preserves exactly. Grading a limb needs the plane it moved in, not only how far it moved.  |
-| Clip arm rotations fit every body                         | Retargeting keeps rotations, so a hand that hung beside a slim capture body lands inside a wider rig's thigh. Arm spacing is measured per rig, like the legs. |
-| A harness that drives the animator tests the pose         | Foot IK poses the leg after the animator. A harness that stops short of it cannot observe an IK defect at all, whatever it measures.                                                    |
-| Green unit tests prove top-tier motion                   | Tests cannot see twitching, implausible weight transfer, mesh penetration, or a bad silhouette. Live visual evidence is mandatory.                     |
+| Assumption                                               | Why it is rejected                                                                                                                                                                      |
+| -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Root motion eliminates footskate                         | Source root and foot motion can still mismatch the world controller, retargeted rig, warping, blending, or contact anchors.                                                             |
+| Motion matching naturally plants feet                    | Selection only chooses from available data. Contacts, coverage, retargeting, blending, and correction remain explicit concerns.                                                         |
+| Inertialization or a crossfade can create a missing stop | Blending removes a small pose discontinuity. It does not create braking, final foot placement, or weight transfer.                                                                      |
+| Setting velocity to zero is a terminal transition        | Human gait termination is phase- and speed-dependent and can require another placement.                                                                                                 |
+| Zeroing a clip's weight releases it                      | three.js fills any weight the actions leave missing with the bind pose. A release has to hand the weight to the next clip, not drop it.                                                 |
+| A scripted root can keep its speed through a stop        | The stop clip decelerates before its terminal plant. A root that does not follow its distance curve drags the declared stance feet across the floor.                                    |
+| A sidecar's source travel fits every rig                 | Retargeting keeps rotations, so ground covered grows with the leg. Remy covers twice the capture's 0.78 m; scaling against the sidecar planted its feet up to 0.79 m off.               |
+| A stop can borrow the walk's pelvis dip                  | The walks carry their dip inside the baked clip, so the borrowed residual is about zero and the stop's bent-knee settle hung 4 to 5 cm over the floor.                                  |
+| Scaling a stride about the pelvis keeps a stop's stance  | A stop's last feet settle ahead of the pelvis, so any scale other than 1 moves the settled stance by that offset times the scale's excess.                                              |
+| Rotating the root under the avatar is a turn             | A believable turn selects support, places a foot, transfers weight, and rotates through an authored or data-covered window.                                                             |
+| Negative leg order is always collision                   | Intentional front and back crossovers reverse left/right foot order. Collision requires geometry and continuity evidence.                                                               |
+| IK can turn a sidestep into a grapevine                  | IK can correct a target near a valid source pose. It cannot supply the missing swing path, support sequence, pelvis action, or self-contact semantics.                                  |
+| Beat alignment equals authored footfalls                 | Cadence or root extrema do not prove which foot planted, at what score time, or for how long.                                                                                           |
+| Exact root endpoint plus step count equals exact arrival | Root mark, terminal plant, and stable two-foot goal stance are different events.                                                                                                        |
+| A public dataset is product-cleared                      | Code, annotations, video, music, performer data, body models, and derived assets can carry different terms.                                                                             |
+| A cited technique is implemented                         | Research, adopted architecture, prototypes, and shipped behavior are separate status classes.                                                                                           |
+| A knee metric detects a knee posed wrong                 | `kneeJerkRms` is the second derivative of an unsigned joint angle, which a rotated bend plane preserves exactly. Grading a limb needs the plane it moved in, not only how far it moved. |
+| Clip arm rotations fit every body                        | Retargeting keeps rotations, so a hand that hung beside a slim capture body lands inside a wider rig's thigh. Arm spacing is measured per rig, like the legs.                           |
+| A harness that drives the animator tests the pose        | Foot IK poses the leg after the animator. A harness that stops short of it cannot observe an IK defect at all, whatever it measures.                                                    |
+| Green unit tests prove top-tier motion                   | Tests cannot see twitching, implausible weight transfer, mesh penetration, or a bad silhouette. Live visual evidence is mandatory.                                                      |
 
 ## Open gaps, in priority order
 
@@ -728,9 +730,9 @@ itself is pinned by an assertion so the claim cannot go stale silently.
    This confounds `overSupportFraction`, which reads 49% at a walk and 0% at a
    run, and it cannot be separated without a straight sample.
 10. **Human evaluation protocol.** Add repeatable blinded comparisons for
-   grounding, weight, continuity, intent, and preference alongside diagnostics.
+    grounding, weight, continuity, intent, and preference alongside diagnostics.
 11. **Terrain scope.** Make an explicit product decision before adding slope or
-   obstacle logic to flat-stage locomotion.
+    obstacle logic to flat-stage locomotion.
 12. **Learned controller threshold.** Define the data volume, web runtime budget,
     determinism, editability, and licensing evidence required before training or
     shipping one.

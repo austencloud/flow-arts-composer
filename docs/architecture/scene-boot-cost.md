@@ -351,5 +351,5 @@ steady-state ceiling.
 
 - `src/lib/shared/3d/scene-boot/` — the boot window's owners
 - `docs/architecture/canonical-capabilities.md` — scene-boot routing row
-- `.claude/rules/verification-protocol.md`, `no-assumption-without-evidence.md`
-- `memory/reference_scene_boot_cost_measured.md`
+- `.claude/rules/verification-protocol.md`, `.claude/rules/no-assumption-without-evidence.md`
+- Historical personal-memory reference: `memory/reference_scene_boot_cost_measured.md` (location unestablished in this tree).

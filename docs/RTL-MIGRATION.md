@@ -2,9 +2,10 @@
 
 ## Overview
 
-Flow Arts Composer supports RTL languages like Arabic. When a user switches to an RTL locale, the entire interface automatically flips to right-to-left layout.
+Flow Arts Composer supports RTL languages like Arabic. Selecting an RTL locale sets right-to-left direction for unpinned application content. Public pages pin document language through `siteCopyLocale()` in `src/routes/+layout.svelte` and the document-language pin in `src/lib/shared/i18n/i18n.svelte.ts`.
 
 **Key mechanism:**
+
 - `<html dir="rtl">` attribute is automatically set by the i18n system
 - CSS must use **logical properties** instead of directional properties
 - This ensures layouts mirror correctly without duplicating styles
@@ -49,22 +50,22 @@ Logical properties adapt to writing direction automatically:
 
 ## Migration Table
 
-| Directional Property | Logical Property | Notes |
-|---------------------|------------------|-------|
-| `margin-left` | `margin-inline-start` | Start of inline axis |
-| `margin-right` | `margin-inline-end` | End of inline axis |
-| `padding-left` | `padding-inline-start` | |
-| `padding-right` | `padding-inline-end` | |
-| `left` | `inset-inline-start` | Position context only |
-| `right` | `inset-inline-end` | Position context only |
-| `border-left` | `border-inline-start` | |
-| `border-right` | `border-inline-end` | |
-| `border-left-width` | `border-inline-start-width` | |
-| `border-right-width` | `border-inline-end-width` | |
-| `border-top-left-radius` | `border-start-start-radius` | Corner radius |
-| `border-top-right-radius` | `border-start-end-radius` | Corner radius |
-| `text-align: left` | `text-align: start` | Value change |
-| `text-align: right` | `text-align: end` | Value change |
+| Directional Property      | Logical Property            | Notes                 |
+| ------------------------- | --------------------------- | --------------------- |
+| `margin-left`             | `margin-inline-start`       | Start of inline axis  |
+| `margin-right`            | `margin-inline-end`         | End of inline axis    |
+| `padding-left`            | `padding-inline-start`      |                       |
+| `padding-right`           | `padding-inline-end`        |                       |
+| `left`                    | `inset-inline-start`        | Position context only |
+| `right`                   | `inset-inline-end`          | Position context only |
+| `border-left`             | `border-inline-start`       |                       |
+| `border-right`            | `border-inline-end`         |                       |
+| `border-left-width`       | `border-inline-start-width` |                       |
+| `border-right-width`      | `border-inline-end-width`   |                       |
+| `border-top-left-radius`  | `border-start-start-radius` | Corner radius         |
+| `border-top-right-radius` | `border-start-end-radius`   | Corner radius         |
+| `text-align: left`        | `text-align: start`         | Value change          |
+| `text-align: right`       | `text-align: end`           | Value change          |
 
 ---
 
@@ -78,6 +79,7 @@ npm run css:rtl:summary      # Summary only
 ```
 
 The script categorizes issues by severity:
+
 - 🔴 **High**: Layout-breaking (margins, padding, position, text-align)
 - 🟡 **Medium**: Visual inconsistencies (borders)
 - 🟢 **Low**: Minor (corner radius)
@@ -87,17 +89,20 @@ The script categorizes issues by severity:
 ## Migration Priority
 
 **Phase 1: Core Layouts (High Priority)**
+
 - Navigation components
 - Panel/drawer layouts
 - Grid systems
 - Text alignment in cards
 
 **Phase 2: Visual Polish (Medium Priority)**
+
 - Border decorations
 - Icon positioning
 - Button layouts
 
 **Phase 3: Fine Details (Low Priority)**
+
 - Border radius symmetry
 - Decorative elements
 
@@ -124,6 +129,7 @@ The `<html dir="rtl">` attribute is automatically applied by the i18n system.
 ### 3. Common Issues to Check
 
 **Absolute positioning:**
+
 ```css
 /* ❌ Breaks in RTL */
 .icon {
@@ -139,19 +145,24 @@ The `<html dir="rtl">` attribute is automatically applied by the i18n system.
 ```
 
 **Transform origins:**
+
 ```css
 /* ❌ Hardcoded origin */
 .menu {
   transform-origin: left top;
 }
 
-/* ✅ Logical origin */
-.menu {
-  transform-origin: start top;
+/* Physical origins selected by document direction */
+[dir="ltr"] .menu {
+  transform-origin: left top;
+}
+[dir="rtl"] .menu {
+  transform-origin: right top;
 }
 ```
 
 **Flexbox ordering:**
+
 - `flex-direction: row` automatically reverses in RTL
 - `flex-direction: row-reverse` becomes normal order in RTL
 - Use `flex-direction: row` and let RTL flip it naturally
@@ -161,12 +172,13 @@ The `<html dir="rtl">` attribute is automatically applied by the i18n system.
 ## Browser Support
 
 CSS Logical Properties are supported in:
+
 - Chrome 89+
 - Firefox 66+
 - Safari 12.1+
 - Edge 89+
 
-**Coverage:** 96%+ global browser usage (2025 data)
+**Historical estimate:** 96%+ global browser usage (2025 data); not reverified as current coverage.
 
 ---
 

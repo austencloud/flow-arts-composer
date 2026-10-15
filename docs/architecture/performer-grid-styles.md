@@ -2,7 +2,7 @@
 
 Status: design agreed with Austen on 2026-09-27, with his answers to the first
 three questions recorded below. Groundwork step 1 done on 2026-09-28, and the
-isolation staff cap settled the same day; steps 2 to 6 not started.
+isolation staff cap settled the same day. Step 5 body-clearance groundwork is also implemented in the lab as recorded below; real stepping and production adoption remain open.
 
 ## Two ways to size the grid
 
@@ -176,7 +176,7 @@ in isolation, and 2.05 to 2.09 m in extension. In dual wheel a column or a
 facing pair needs 1.90 m today, twice the staff in isolation, and 1.73 to
 1.79 m in extension.
 
-The presets in the scene-3d package's `src/lib/config/formation-presets.ts`
+The presets in the scene-3d package's `src/lib/features/stage/state/formation-presets.ts`
 use fixed distances. Checked on both rigs in the wall plane and dual wheel:
 
 - **Line, Grid and two-performer V-Shape** stand 2.0 m apart side by side.

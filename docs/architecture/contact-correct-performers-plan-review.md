@@ -1,5 +1,7 @@
 # Contact-correct performers: adversarial plan review
 
+**Repository status (2026-10-14):** The later [implementation review](contact-correct-performers-implementation-review.md) records an implemented candidate and rejection. The [September 21 lab evidence](contact-correct-performers-evidence.md) is experimental; physical acceptance remains incomplete. The original plan and blockers below are historical checkpoints.
+
 Status: findings only; disposition is pending plan revision. Reviewed against
 the current installed `@austencloud/scene-3d` source/runtime and the existing
 grip sweep, contact, and collision tests on 2026-09-20.
@@ -22,7 +24,7 @@ copied to the final prop anchor/correction group and no post-IK code may change
 either. Make the existing contact lock and achieved-knuckle weld mutually
 exclusive with that mode. Add a runtime assertion/test that reads the final
 rendered endpoints after every solve and compares them to the authored segment;
-test source *and* package runtime entries. Do not describe this as an opt-in
+test source _and_ package runtime entries. Do not describe this as an opt-in
 flag until the authoritative boundary owns both translation and rotation.
 
 **Disposition:** pending.
@@ -33,7 +35,7 @@ flag until the authoritative boundary owns both translation and rotation.
 one cylinder radius to local Euler curls. It supplies fallback lengths, assumes
 local X flexion, rounds to whole degrees, and has no staff world transform,
 contact point, segment radii, signed clearance, or per-finger optimization.
-`AvatarAnimator` only fits a channel from the posed *middle* finger; its grip
+`AvatarAnimator` only fits a channel from the posed _middle_ finger; its grip
 axis is root-to-root index/pinky. The existing thumb regression checks thumb
 tip distance to Index2, not thumb-to-cylinder contact. Thus pinky inclusion in
 the current animation is not cylindrical pinky contact.

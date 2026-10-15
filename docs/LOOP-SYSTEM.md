@@ -1,12 +1,15 @@
 # LOOP Detection System
 
-This document consolidates the LOOP (Continuous Assembly Pattern) detection algorithm, pattern types, and taxonomy.
+**Repository status (2026-10-14):** Current execution composition is specified by `LOOPSpec` in `packages/sequence-engine/src/loop/loop-spec.ts` and [LOOP execution ownership](architecture/loop-execution.md). The older flat-detection taxonomy and composition future work below are historical design context; CAP is a separate term.
+
+This document consolidates the LOOP (Linked Orbital Offset Pattern) detection algorithm, pattern types, and taxonomy.
 
 ---
 
 ## Overview
 
 A **LOOP** is a sequence that:
+
 1. Returns to its starting position (circular)
 2. Follows a structured transformation pattern between its halves/quarters
 
@@ -16,28 +19,28 @@ A **LOOP** is a sequence that:
 
 ## LOOP Types
 
-| Type | Definition |
-|------|------------|
-| **Strict LOOP** | Single transformation applies uniformly to ALL step pairs |
-| **Compound LOOP** | Different transformations at different intervals |
-| **Modular LOOP** | Multiple distinct patterns at the SAME interval |
-| **Freeform** | Circular but no recognizable pattern |
+| Type              | Definition                                                |
+| ----------------- | --------------------------------------------------------- |
+| **Strict LOOP**   | Single transformation applies uniformly to ALL step pairs |
+| **Compound LOOP** | Different transformations at different intervals          |
+| **Modular LOOP**  | Multiple distinct patterns at the SAME interval           |
+| **Freeform**      | Circular but no recognizable pattern                      |
 
 ---
 
 ## LOOP Components
 
-| Component | Icon | Color | Description |
-|-----------|------|-------|-------------|
-| **Rotated** | rotate | #36c3ff | Positions rotate 180° (halved) or 90° (quartered) |
-| **Swapped** | shuffle | #2ecc71 | Blue and red hands swap roles |
-| **Reflection** | left-right | #6F2DA8 | Positions reflect across N-S, E-W, NE-SW, or NW-SE |
-| **Mirrored** | left-right | #6F2DA8 | Familiar name for N-S reflection |
-| **Flipped** | up-down | #14b8a6 | Familiar name for E-W reflection |
-| **Inverted** | yin-yang | #eb7d00 | Pro ↔ Anti motion types flip |
-| **Rewound** | backward | #ec4899 | Second half plays in reverse |
-| **Repeated** | repeat | #f59e0b | Sequence repeats 2-4x for circularity |
-| **Modular** | layer-group | #8b5cf6 | Multiple motifs transform independently |
+| Component      | Icon        | Color   | Description                                        |
+| -------------- | ----------- | ------- | -------------------------------------------------- |
+| **Rotated**    | rotate      | #36c3ff | Positions rotate 180° (halved) or 90° (quartered)  |
+| **Swapped**    | shuffle     | #2ecc71 | Blue and red hands swap roles                      |
+| **Reflection** | left-right  | #6F2DA8 | Positions reflect across N-S, E-W, NE-SW, or NW-SE |
+| **Mirrored**   | left-right  | #6F2DA8 | Familiar name for N-S reflection                   |
+| **Flipped**    | up-down     | #14b8a6 | Familiar name for E-W reflection                   |
+| **Inverted**   | yin-yang    | #eb7d00 | Pro ↔ Anti motion types flip                       |
+| **Rewound**    | backward    | #ec4899 | Second half plays in reverse                       |
+| **Repeated**   | repeat      | #f59e0b | Sequence repeats 2-4x for circularity              |
+| **Modular**    | layer-group | #8b5cf6 | Multiple motifs transform independently            |
 
 ---
 
@@ -47,6 +50,7 @@ A **LOOP** is a sequence that:
 - **Quartered (¼)**: Transformation at 90° intervals
 
 Components can combine:
+
 - **rotated+swapped**: Positions rotate AND colors swap
 - **mirrored+swapped+inverted**: All three transformations
 
@@ -149,6 +153,7 @@ For sequences divisible by 4, check 90° rotation patterns at each quarter trans
 Components can operate at different slice granularities:
 
 **Rotated(¼) + Swapped(½)** means:
+
 - Rotation happens at 90° per quarter
 - Swap happens only at the half boundary
 
@@ -157,10 +162,12 @@ Components can operate at different slice granularities:
 ## When is Swap "Meaningful"?
 
 **Meaningful when:**
+
 - Hands have DIFFERENT motion types (one pro, one anti)
 - The swap exchanges distinct choreographic roles
 
 **Not meaningful when:**
+
 - Both hands have SAME motion type
 - Swapping produces identical choreography
 
@@ -207,6 +214,7 @@ The derived letters come from analyzing the reversed motion parameters, not from
 ### Rewound Motion Transformation
 
 For each reversed step:
+
 - `startLocation` ← previous step's `endLocation`
 - `endLocation` ← source step's `startLocation`
 - `rotationDirection`: CW → CCW, CCW → CW
@@ -216,6 +224,7 @@ For each reversed step:
 ### Compound: Rewound + Inverted
 
 `rewound_inverted` combines:
+
 - Temporal reversal (play backwards)
 - Motion type inversion (pro ↔ anti)
 
@@ -226,12 +235,14 @@ For each reversed step:
 A **modular LOOP** has distinct motifs that transform independently at different intervals.
 
 **Key characteristics:**
+
 1. Multiple motifs (2+ distinct recurring phrases)
 2. Independent transformations (each motif has its own rule)
 3. Different intervals (one at quarters, another at halves)
 4. Overall sequence remains circular
 
 **Example - AAKE:**
+
 - **AA motif**: Alternates rotation CCW/CW every quarter
 - **KE motif**: Swaps destination at halfway point
 
@@ -298,6 +309,7 @@ Is it circular? (ends where it starts)
 ### Turn Independence
 
 The LOOP algebra operates on a reduced space of:
+
 - **Grid positions** (where hands are)
 - **Motion types** (pro / anti / static / dash / float)
 - **Hand identity** (blue / red)
@@ -322,6 +334,7 @@ Instead of flat component bags like `{MIRRORED, SWAPPED, INVERTED}`, express LOO
 Example: `SWAPPED + MIRRORED/INVERTED`
 
 This reads as a construction recipe:
+
 1. Take a SWAPPED inner pattern (seed doubled via hand-role swap)
 2. Apply MIRRORED and INVERTED simultaneously to that block (mirror positions to opposite side + flip pro/anti)
 

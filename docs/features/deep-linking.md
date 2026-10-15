@@ -1,5 +1,7 @@
 # Deep Linking System
 
+**Repository status (2026-10-14):** Current encoder APIs live in `src/lib/shared/navigation/services/sequence-encoder.ts`; the sequence model stores performed `steps` separately from `startPlacement`. Follow [URL state ownership](../architecture/url-state.md) and [route evidence](../architecture/browse-route-evidence-manifest.md). The old utility/store, integration snippets and wire examples below are historical; current `URLSyncer` is `src/lib/shared/navigation/services/url-syncer.ts`.
+
 ## Overview
 
 The Deep Linking system allows users to create shareable URLs that open Flow Arts Composer with a specific sequence pre-loaded in any module (Create, Animate, or Browse). This enables easy sharing of sequences without requiring database storage.
@@ -8,7 +10,7 @@ The Deep Linking system allows users to create shareable URLs that open Flow Art
 
 ### Live URL Sync
 
-**The URL bar is always shareable!** When you load or edit a sequence, the URL automatically updates to reflect your current work. Just copy the URL bar at any time to share.
+`URLSyncer` writes an inline `open` payload for callers using `syncURLWithSequence`; that behavior is scoped to those callers and options. `/sequence` and `/q` can resolve identifiers or prepared artifacts, so a complete inline sequence is not guaranteed in every URL.
 
 **Example workflow:**
 
@@ -46,9 +48,9 @@ https://your-app.com/?open=<module>:<encoded-sequence>
 | `tunnel`                     | `animate`      | `tunnel`      | Opens Tunnel mode in Animate module    |
 | `mirror`                     | `animate`      | `mirror`      | Opens Mirror mode in Animate module    |
 | `grid`                       | `animate`      | `grid`        | Opens Grid mode in Animate module      |
-| `browse` or `gallery`       | `browse`      | `gallery`     | Opens Gallery in Browse module        |
+| `browse` or `gallery`        | `browse`       | `gallery`     | Opens Gallery in Browse module         |
 
-## Encoding Specification
+## Historical encoding examples
 
 ### Compact Encoding Format
 
@@ -152,7 +154,7 @@ Compression typically saves 60-70% for sequences with 5+ beats.
 ### Generating Share URLs
 
 ```typescript
-import { generateShareURL } from "$shared/navigation/utils";
+import { generateShareURL } from "#lib/shared/navigation/services/sequence-encoder.js";
 
 // In your component
 const currentSequence = sequenceState.currentSequence;
@@ -185,7 +187,7 @@ Deep links are automatically parsed on app initialization. The system:
 ### Manual Parsing
 
 ```typescript
-import { parseDeepLink } from "$shared/navigation/utils";
+import { parseDeepLink } from "#lib/shared/navigation/services/sequence-encoder.js";
 
 const result = parseDeepLink(window.location.search);
 
@@ -199,7 +201,7 @@ if (result) {
 ### Checking URL Length
 
 ```typescript
-import { estimateURLLength } from "$shared/navigation/utils";
+import { estimateURLLength } from "#lib/shared/navigation/services/sequence-encoder.js";
 
 const length = estimateURLLength(sequence, "construct", true); // with compression
 
@@ -208,7 +210,7 @@ if (length > 1500) {
 }
 ```
 
-## Integration Points
+## Historical integration points
 
 ### 1. MainInterface.svelte
 
@@ -256,7 +258,7 @@ if (deepLinkData) {
 
 ## Architecture
 
-### Deep Link Store
+### Historical Deep Link Store
 
 `deepLinkStore` is a reactive Svelte store that temporarily holds deep link data:
 
@@ -371,7 +373,7 @@ Without compression:
 **Debug:**
 
 ```typescript
-import { parseDeepLink } from "$shared/navigation/utils";
+import { parseDeepLink } from "#lib/shared/navigation/services/sequence-encoder.js";
 
 const result = parseDeepLink(window.location.search);
 console.log("Deep link result:", result);
@@ -405,7 +407,7 @@ Updates the browser URL to reflect the current sequence. Uses `history.replaceSt
 **Example:**
 
 ```typescript
-import { syncURLWithSequence } from "$shared/navigation/utils";
+import { syncURLWithSequence } from "#lib/shared/navigation/services/sequence-encoder.js";
 
 // Sync URL with current sequence (debounced)
 syncURLWithSequence(currentSequence, "construct", { debounce: 500 });
@@ -529,7 +531,7 @@ The URL is always up-to-date with your current sequence!
 
 ```svelte
 <script lang="ts">
-  import { generateShareURL } from "$shared/navigation/utils";
+  import { generateShareURL } from "#lib/shared/navigation/services/sequence-encoder.js";
   import { createModuleState } from "./state";
 
   const state = createModuleState();
@@ -565,7 +567,10 @@ Or even simpler - just tell users to copy the URL bar!
 
 ```typescript
 // Test encoding/decoding
-import { encodeSequence, decodeSequence } from "$shared/navigation/utils";
+import {
+  encodeSequence,
+  decodeSequence,
+} from "#lib/shared/navigation/services/sequence-encoder.js";
 
 const testSequence: SequenceData = {
   /* ... */
@@ -577,6 +582,6 @@ const decoded = decodeSequence(encoded);
 console.log("Decoded:", decoded);
 console.log(
   "Matches:",
-  JSON.stringify(testSequence.beats) === JSON.stringify(decoded.beats)
+  JSON.stringify(testSequence.steps) === JSON.stringify(decoded.steps)
 );
 ```

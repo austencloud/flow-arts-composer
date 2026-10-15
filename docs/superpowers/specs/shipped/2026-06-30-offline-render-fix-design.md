@@ -1,6 +1,6 @@
 # Offline Pictograph Rendering Fix — Design (2026-06-30)
 
-Source: `docs/reference/offline-persistence-audit-2026-06-30.md` findings #1 (BLOCKER) and #2 (HIGH).
+Source: `docs/archive/swarm-2026-10-14/reference/offline-persistence-audit-2026-06-30.md` findings #1 (BLOCKER) and #2 (HIGH).
 Goal: make TKA pictographs render **cold-offline**, and make "Download for offline" actually
 populate the cache the gallery reads (instead of orphaned blobs that evict the working cache).
 

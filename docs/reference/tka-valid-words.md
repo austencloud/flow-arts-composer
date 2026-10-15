@@ -1,18 +1,20 @@
 # Valid TKA English Words
 
+**Repository status (2026-10-14):** The 1,137 count and membership list are the recorded 2026-05-27 Google 10k plus dwyl corpus, not a newly regenerated guarantee under current generator constraints.
+
 Generated: 2026-05-27
 Sources: Google 10k common English + dwyl/english-words (filtered for real words)
 
 ## Summary
 
-| Category | Count |
-|----------|-------|
-| Bridge-free words | 1137 |
+| Category          | Count |
+| ----------------- | ----- |
+| Bridge-free words | 1137  |
 
 ## Bridge-Free Words
 
 Every letter transition is direct — no bridge letters inserted.
-These are the cleanest TKA sequences: beat count = letter count + 1.
+For this dated bridge-free corpus, letters correspond to performed steps. A displayed opening/start cell adds one cell, not one performed beat. Current `SequenceData` stores `startPlacement` separately from `steps`.
 
 ### 12 letters (1)
 
@@ -57,6 +59,63 @@ abac, abba, **able**, acca, acle, alea, alec, alfa, alif, alii, baal, baba, **ba
 ### 2 letters (120)
 
 **aa**, **ab**, **ac**, **aj**, **ak**, **al**, **ba**, **bb**, **bc**, **bk**, **bl**, **ca**, **cb**, **cc**, **cj**, **cl**, **da**, **db**, **dc**, **dj**, **dk**, **dl**, **ea**, **ec**, **el**, **fa**, **fc**, **fl**, **gd**, **ge**, **gg**, **gi**, **hd**, **he**, **hh**, **hi**, **id**, **ie**, **if**, **ii**, **jd**, **je**, **kg**, **ld**, **le**, **lf**, **lg**, **li**, **mm**, **mn**, **mo**, **mp**, **mr**, **ms**, **mt**, **mu**, **mv**, **nm**, **nn**, **no**, **np**, **nr**, **ns**, **nt**, **nu**, **nv**, **om**, **on**, **oo**, **op**, **or**, **os**, **ot**, **ou**, **pm**, **pn**, **po**, **pp**, **pr**, **ps**, **pt**, **qt**, **rm**, **rn**, **ro**, **rp**, **rr**, **rs**, **rt**, **ru**, **rv**, **sm**, **sn**, **so**, **sp**, **sq**, **sr**, **ss**, **st**, **su**, **sv**, **tm**, **tn**, **to**, **tp**, **tr**, **ts**, **tt**, **tu**, **tv**, **um**, **un**, **up**, **ur**, **us**, **ut**, **uv**, **vp**, **vs**, **vt**
+
+## Position-family explanation and earlier corpus
+
+Merged from [bridge-free-words.md](../archive/swarm-2026-10-14/reference/bridge-free-words.md) (original directory: `docs/reference/`) on 2026-10-14.
+
+The February 2026 source explains its gamma-only selection as follows. This is
+corpus provenance, not a newly verified guarantee under current engine constraints.
+
+TKA letters fall into position families. Bridges are needed when consecutive letters cross families. Words that stay within one family need no bridges.
+
+| Group      | Letters                            | Position Family                                 |
+| ---------- | ---------------------------------- | ----------------------------------------------- |
+| Alpha/Beta | A, B, C, D, E, F, G, H, I, J, K, L | alpha / beta                                    |
+| Gamma      | M, N, O, P, Q, R, S, T, U, V       | gamma (all sub-positions covered by variations) |
+
+The gamma group is the sweet spot: each letter has 8-16 variations covering all gamma sub-positions, so the builder always finds compatible pairings. Only vowels available are O and U.
+
+The alpha/beta group has an internal state constraint (alpha-ending must feed alpha-starting, beta-ending must feed beta-starting) that severely limits English word formation.
+
+That source filtered `github.com/dwyl/english-words` (370,105 entries) with
+`^[mnopqrstuv]+$`, sorted by length. Its definitions add context to the longer
+words in the May corpus:
+
+| Length | Word         | Definition                        |
+| ------ | ------------ | --------------------------------- |
+| 12     | UNMONOTONOUS | Not monotonous                    |
+| 11     | UNSUMPTUOUS  | Not sumptuous                     |
+| 11     | UNMURMUROUS  | Not murmurous                     |
+| 11     | NONTUMOROUS  | Not tumorous                      |
+| 11     | NONTORTUOUS  | Not tortuous                      |
+| 11     | MONOSTOMOUS  | Having a single mouth (biology)   |
+| 11     | MONOSPOROUS  | Producing single spores (biology) |
+| 11     | MOTORSPORTS  | Motor racing events               |
+| 10     | MONOTONOUS   | Tediously uniform                 |
+| 10     | NONSUPPORT   | Failure to support                |
+| 10     | UNTORTUOUS   | Not tortuous                      |
+| 10     | UNSONOROUS   | Not sonorous                      |
+| 10     | UNPORTUOUS   | Not portuous                      |
+| 10     | STRUMSTRUM   | A stringed instrument             |
+| 10     | PROSUPPORT   | In favor of support               |
+| 10     | MONOTOMOUS   | Entomology: genus-related         |
+| 9      | MONSTROUS    | Frighteningly large or ugly       |
+| 9      | SUMPTUOUS    | Splendid and expensive            |
+| 9      | TORTUROUS    | Involving torture or pain         |
+| 9      | SURMOUNTS    | Overcomes (a difficulty)          |
+| 9      | OUTTRUMPS    | Surpasses in trumping             |
+| 9      | OUTSTUNTS    | Surpasses in stunts               |
+| 9      | SUSURROUS    | Whispering, rustling              |
+| 9      | MURMUROUS    | Filled with murmuring             |
+| 9      | SPONTOONS    | A type of polearm (plural)        |
+| 9      | SOUPSPOON    | A spoon for soup                  |
+
+Membership reconciliation: 25 of those 26 words also occur in the May list
+above (case-insensitive). `MOTORSPORTS` occurs only in the February source; it
+remains an earlier candidate here, without changing the May list or its count.
+The February source's "letters + 1" counts a displayed start cell in addition
+to performed steps; `SequenceData.startPlacement` is separate from `steps`.
 
 ## Teaching Examples
 

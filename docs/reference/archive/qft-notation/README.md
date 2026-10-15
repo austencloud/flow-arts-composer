@@ -1,7 +1,7 @@
 # QfT Notation — sourcing archive
 
 Reference material for the notation catalog
-(`docs/superpowers/specs/2026-07-26-notation-catalog-design.md`). Captured
+(`docs/superpowers/specs/archived/2026-07-26-notation-catalog-design.md`). Captured
 2026-07-26.
 
 **This is a private sourcing archive, not publishable content.** The prose and

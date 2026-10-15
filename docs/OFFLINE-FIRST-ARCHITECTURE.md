@@ -14,20 +14,20 @@ Transform Flow Arts Composer into the gold standard for offline-first web apps -
 > worker configured in `vite.config.ts`. That was never implemented. There is no
 > Workbox and no VitePWA anywhere in the build; the shipped service worker is
 > hand-rolled. Full audited offline state and the remaining roadmap:
-> `docs/reference/offline-persistence-audit-2026-06-30.md`.
+> `docs/archive/swarm-2026-10-14/reference/offline-persistence-audit-2026-06-30.md`.
 
-| Component | Status | Location |
-|-----------|--------|----------|
-| Firestore offline cache | ✅ Enabled | `src/lib/shared/auth/firebase.ts:356-372` - `persistentLocalCache` + `persistentMultipleTabManager()` in production, with a 5s timeout fallback to memory cache |
-| Auth persistence | ✅ Enabled | `firebase.ts:209-212` - `indexedDBLocalPersistence` with `browserLocalPersistence` fallback |
-| Service worker | ✅ Hand-rolled | `static/sw.js` (`CACHE_NAME` `tka-v3`). Registered in production only (`src/hooks.client.ts:196-209`). The SW bypasses localhost entirely, and dev boot unregisters all SWs and wipes Cache Storage (`hooks.client.ts:44-83`) |
-| SW install precache | ✅ Working | `/app` shell + build-generated SVG manifest. `scripts/generate-svg-precache-manifest.cjs` writes `static/svg-precache-manifest.json` before `vite build` (roughly 200 assets, ~470 KB: ~190 pictograph SVGs plus six elemental glyph WebPs; output is gitignored). Install is failure-tolerant: a missing manifest or a stray 404 never fails it |
-| SW runtime caching | ✅ Working | Stale-while-revalidate for `/images/*` and firebasestorage thumbnails; cache-first for `/_app/immutable/` and `/fonts`; dedicated cache-first `tka-3d-assets-v1` for `/models/*.glb`, `/models/*.ktx2`, `/draco/`; network-first for `/sequence/` and `/q/`; SPA navigate fallback serves cached `/app` |
-| Dexie IndexedDB | ✅ Working | `src/lib/shared/persistence/database/tka-database.ts` (`TKADatabase`) - sequences, pictographs, tab state |
-| Settings offline queue | ✅ Partial | `src/lib/shared/settings/state/settings-state.svelte.ts:432-483` - localStorage queue, flushed on reconnect |
-| Sync status UI | ✅ Working | `src/lib/shared/offline/components/NetworkStatusIndicator.svelte` (synced/syncing/pending/error), rendered in `SidebarFooter.svelte` and `BottomNavigation.svelte`; state in `offline/state/sync-status-state.svelte.ts` |
-| Conflict resolution | ✅ Working | `src/lib/shared/offline/services/conflict-resolver.ts` - `_version` tracking wired into `library-repository.ts`. No prompt UI is registered: resolution defaults to server-wins, and the user gets a toast that their offline edit was replaced |
-| Connection quality | ✅ Detected | `src/lib/shared/sync/services/network-status-monitor.ts` - Network Information API |
+| Component               | Status         | Location                                                                                                                                                                                                                                                                                                                                         |
+| ----------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Firestore offline cache | ✅ Enabled     | `src/lib/shared/auth/firebase.ts:356-372` - `persistentLocalCache` + `persistentMultipleTabManager()` in production, with a 5s timeout fallback to memory cache                                                                                                                                                                                  |
+| Auth persistence        | ✅ Enabled     | `firebase.ts:209-212` - `indexedDBLocalPersistence` with `browserLocalPersistence` fallback                                                                                                                                                                                                                                                      |
+| Service worker          | ✅ Hand-rolled | `static/sw.js` (`CACHE_NAME` `tka-v3`). Registered in production only (`src/hooks.client.ts:196-209`). The SW bypasses localhost entirely, and dev boot unregisters all SWs and wipes Cache Storage (`hooks.client.ts:44-83`)                                                                                                                    |
+| SW install precache     | ✅ Working     | `/app` shell + build-generated SVG manifest. `scripts/generate-svg-precache-manifest.cjs` writes `static/svg-precache-manifest.json` before `vite build` (roughly 200 assets, ~470 KB: ~190 pictograph SVGs plus six elemental glyph WebPs; output is gitignored). Install is failure-tolerant: a missing manifest or a stray 404 never fails it |
+| SW runtime caching      | ✅ Working     | Stale-while-revalidate for `/images/*` and firebasestorage thumbnails; cache-first for `/_app/immutable/` and `/fonts`; dedicated cache-first `tka-3d-assets-v1` for `/models/*.glb`, `/models/*.ktx2`, `/draco/`; network-first for `/sequence/` and `/q/`; SPA navigate fallback serves cached `/app`                                          |
+| Dexie IndexedDB         | ✅ Working     | `src/lib/shared/persistence/database/tka-database.ts` (`TKADatabase`) - sequences, pictographs, tab state                                                                                                                                                                                                                                        |
+| Settings offline queue  | ✅ Partial     | `src/lib/shared/settings/state/settings-state.svelte.ts:432-483` - localStorage queue, flushed on reconnect                                                                                                                                                                                                                                      |
+| Sync status UI          | ✅ Working     | `src/lib/shared/offline/components/NetworkStatusIndicator.svelte` (synced/syncing/pending/error), rendered in `SidebarFooter.svelte` and `BottomNavigation.svelte`; state in `offline/state/sync-status-state.svelte.ts`                                                                                                                         |
+| Conflict resolution     | ✅ Working     | `src/lib/shared/offline/services/conflict-resolver.ts` - `_version` tracking wired into `library-repository.ts`. No prompt UI is registered: resolution defaults to server-wins, and the user gets a toast that their offline edit was replaced                                                                                                  |
+| Connection quality      | ✅ Detected    | `src/lib/shared/sync/services/network-status-monitor.ts` - Network Information API                                                                                                                                                                                                                                                               |
 
 ## Desktop Build (Tauri)
 
@@ -40,7 +40,7 @@ so it runs with no network at all. Details: `docs/reference/desktop-offline-bund
 1. **Background Sync API** - `hooks.client.ts:200-204` registers the `tka-sync-queue` tag, but `static/sw.js` has no `sync` listener, so the registration is a no-op. Nothing replays after the tab closes; queued work syncs only while the app is open.
 2. **Universal sync engine** - Firestore's SDK queues its own writes and settings have a localStorage queue, but there is no IndexedDB-backed operation queue spanning collections (the `SyncOperation` model below is unbuilt).
 3. **SW update notification** - `sw.js` calls `skipWaiting()` + `clients.claim()`; new versions activate silently. No "update available" or "offline ready" UI.
-4. **Cold-offline gaps** - a first-install-then-offline session can white-screen (entry JS chunks are not precached), and `/sequence/[id]` / `/q/[code]` return 503 cold-offline. Severity-ranked list in `docs/reference/offline-persistence-audit-2026-06-30.md`.
+4. **Cold-offline gaps** - a first-install-then-offline session can white-screen (entry JS chunks are not precached), and `/sequence/[id]` / `/q/[code]` return 503 cold-offline. Severity-ranked list in `docs/archive/swarm-2026-10-14/reference/offline-persistence-audit-2026-06-30.md`.
 
 ---
 
@@ -98,22 +98,24 @@ src/lib/shared/offline/
 ```
 
 **Modify existing:**
+
 - `src/lib/shared/persistence/database/tka-database.ts` - Add `syncOperations` table
 - Wire the engine through a module-level getter (`src/lib/shared/offline/get-offline-cache-orchestrator.ts` is the precedent). There is no DI container in this codebase; the container references in the original plan are dead.
 
 **SyncOperation model:**
+
 ```typescript
 interface SyncOperation {
   id: string;
-  type: 'create' | 'update' | 'delete';
-  collection: string;           // 'library', 'feedback', etc.
+  type: "create" | "update" | "delete";
+  collection: string; // 'library', 'feedback', etc.
   documentId: string;
   payload: unknown;
-  version: number;              // Optimistic locking
+  version: number; // Optimistic locking
   createdAt: number;
   retryCount: number;
-  status: 'pending' | 'in-flight' | 'failed';
-  previousValue?: unknown;      // For rollback
+  status: "pending" | "in-flight" | "failed";
+  previousValue?: unknown; // For rollback
 }
 ```
 
@@ -126,20 +128,24 @@ interface SyncOperation {
 > second indicator.
 
 **SyncStatusIndicator** (header component):
+
 - Cloud icon with status: synced (✓), syncing (↻), offline (✕), error (!)
 - Shows pending count on hover/click
 - Uses `$derived` for reactive updates
 
 **OfflineBanner** (toast-like):
+
 - Slides in when going offline: "You're offline. Changes will sync when you reconnect."
 - Auto-dismisses when back online: "Back online! Syncing X changes..."
 
 **Wire into:**
+
 - `src/lib/shared/modules/ModuleRenderer.svelte` or app layout
 
 ### Phase 3: Optimistic Updates
 
 **Pattern for repositories:**
+
 ```typescript
 async saveSequence(sequence: SequenceData): Promise<LibrarySequence> {
   // 1. Optimistic: update local immediately
@@ -161,6 +167,7 @@ async saveSequence(sequence: SequenceData): Promise<LibrarySequence> {
 ```
 
 **Rollback on failure:**
+
 - SyncEngine emits `onOperationFailed`
 - Repository listens and reverts local change using `previousValue`
 - Toast: "Failed to save. Change reverted."
@@ -192,6 +199,7 @@ the SW context) and replays pending mutations. This is what lets queued changes
 sync after the tab closes instead of waiting for the next app open.
 
 Constraints of the hand-rolled SW:
+
 - There is no `BackgroundSyncPlugin`; the queue replay is implemented directly.
   Adopting Workbox would be a separate architecture decision, not a config edit.
 - Do not intercept Firestore traffic in the fetch handler. `sw.js` skips non-GET
@@ -214,6 +222,7 @@ Constraints of the hand-rolled SW:
 | `gamification` | Server-wins | Prevent manipulation |
 
 **For sequences (most important):**
+
 1. Track `_version` field on each sequence
 2. On sync, compare versions
 3. If server version > local version AND local has changes: **prompt user**
@@ -223,13 +232,13 @@ Constraints of the hand-rolled SW:
 
 ## Critical Files to Modify
 
-| File | Change |
-|------|--------|
-| `tka-database.ts` | Add `syncOperations` table |
-| `library-repository.ts` | Route saves through the sync engine queue |
-| `static/sw.js` | Add `sync` listener that drains the operation queue |
-| `hooks.client.ts` | No registration change needed; the `tka-sync-queue` tag is already registered (`:200-204`) |
-| Layout / nav | Extend the existing `NetworkStatusIndicator` (pending-count detail) rather than adding a second indicator |
+| File                    | Change                                                                                                    |
+| ----------------------- | --------------------------------------------------------------------------------------------------------- |
+| `tka-database.ts`       | Add `syncOperations` table                                                                                |
+| `library-repository.ts` | Route saves through the sync engine queue                                                                 |
+| `static/sw.js`          | Add `sync` listener that drains the operation queue                                                       |
+| `hooks.client.ts`       | No registration change needed; the `tka-sync-queue` tag is already registered (`:200-204`)                |
+| Layout / nav            | Extend the existing `NetworkStatusIndicator` (pending-count detail) rather than adding a second indicator |
 
 ---
 
@@ -286,13 +295,13 @@ Constraints of the hand-rolled SW:
 
 ## Phased Rollout
 
-| Phase | Scope | Duration |
-|-------|-------|----------|
-| 1 | Sync engine + operation queue | 3-4 sessions |
-| 2 | Network status UI | 1-2 sessions |
-| 3 | Optimistic updates for LibraryRepository | 2-3 sessions |
-| 4 | Service worker Background Sync | 1-2 sessions |
-| 5 | Conflict resolution dialog (user decides) | 2-3 sessions |
+| Phase | Scope                                     | Duration     |
+| ----- | ----------------------------------------- | ------------ |
+| 1     | Sync engine + operation queue             | 3-4 sessions |
+| 2     | Network status UI                         | 1-2 sessions |
+| 3     | Optimistic updates for LibraryRepository  | 2-3 sessions |
+| 4     | Service worker Background Sync            | 1-2 sessions |
+| 5     | Conflict resolution dialog (user decides) | 2-3 sessions |
 
 **Total estimate:** 10-15 focused sessions
 

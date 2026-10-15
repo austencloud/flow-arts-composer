@@ -323,7 +323,7 @@ bury a reconciliation diff under a reformat. One file
    rest is a bigger sweep.
 
 4. **Two stale paths outside my ownership.**
-   `docs/audits/2026-09-05-scripts-inventory.md:683` and `:911` still point at
+   `docs/archive/swarm-2026-10-14/audits/2026-09-05-scripts-inventory.md:683` and `:911` still point at
    `specs/active/2026-08-01-native-release-surface-hardening.md`, now in
    `shipped/`. Likewise `docs/superpowers/plans/2026-08-21-fuse-choreo-card-contract-repair.md:9`
    and `docs/superpowers/plans/active/2026-08-21-adaptive-scene-control-workspace-plan.md:3`.

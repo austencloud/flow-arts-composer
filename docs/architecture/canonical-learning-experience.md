@@ -83,12 +83,42 @@ the readable Guide and arcade implementations separate.
 
 This decision refines, rather than discards, the earlier ADRs:
 
-- `guide-single-source.md` still governs the Guide's written content and
-  print/online parity.
-- `concepts-convergence-notes.md` governs the instructional experience.
+- The [July Guide source decision](../archive/swarm-2026-10-14/architecture/guide-single-source.md) records the earlier print/online parity plan; the October amendment above governs migrations.
+- The [June convergence notes](../archive/swarm-2026-10-14/learn/concepts-convergence-notes.md) record the earlier instructional rationale.
 
 "Canonical Guide content" and "canonical way to learn" are no longer treated
 as the same product role.
+
+## Print-source continuity
+
+Merged from [guide-single-source.md](../archive/swarm-2026-10-14/architecture/guide-single-source.md) (original directory: `docs/architecture/`) on 2026-10-14.
+
+The faithful-page rebuild tracked in
+`docs/superpowers/specs/audits/2026-06-21-guide-rebuild-tracker.md` preserves
+original PDF artboard fidelity. Its July Guide Reader checkpoint is recorded in
+`docs/superpowers/specs/shipped/2026-07-07-guide-reader-design.md`.
+Keep prose, pictograph data and reading order separate from absolute print
+coordinates so each medium can compose the same content. Preserve Guide SEO,
+canonical URLs and pictograph accessibility labels as individual topics migrate.
+The October amendment above governs topic ownership; reconcile each remaining
+legacy page before retiring it.
+
+## Instructional rationale retained from convergence
+
+Merged from [concepts-convergence-notes.md](../archive/swarm-2026-10-14/learn/concepts-convergence-notes.md) (original directory: `docs/learn/`) on 2026-10-14.
+
+The June 19 rejection of the concept skeleton's simultaneous 2D grid,
+pictograph, animation and 3D panels remains useful: a static hand placement gains
+nothing from a static-hold animation, and duplicating its pictograph adds noise.
+Choose the representation that explains the concept and let that artifact
+transform through progressive reveal and construction. Reserve an avatar-led
+view for concepts where embodiment or motion explains something the flat view
+cannot. Reuse the existing pictographs and motion assets.
+
+Placements describe where hands are. Sliding between placements is a teaching
+transition, not part of a static placement's definition. The June lesson plan and
+September quiz-pending snapshot remain in the archived notes; current lesson
+availability and review status come from the experience registry.
 
 ## Release rules
 
