@@ -192,3 +192,15 @@ Astra back-translation review of the P batches: SAMPLE 172 / FLAGGED 2 /
 1.2%. Applied the single-turn wording fix. Dismissed the request to write the
 Petals effect as "Petal": effect names describe real flower petals and
 translate normally.
+
+
+## P6 - 2026-10-14
+
+- Batch: P6, `batch-P6.json`; 0 translated keys, 21 retranslated keys, 0 review entries.
+- Apply result: `messages/fr.json: inserted 0, replaced 21, refused 0`.
+- Catalog diff before ledger: only `messages/fr.json` changed; 21 insertions, 21 deletions. Exact comparison verified that only the 21 batch values changed and only petal words changed; all other text is preserved.
+- Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
+- Result: `Test Files 1 passed (1)`; `Tests 66 passed (66)`; duration 32.89s; exit 0.
+- Glossary: followed the coordinator's explicit 2026-10-14 clarification overriding the glossary's older protected Petal entry. Ordinary nouns use masculine `pétale` / `pétales`, with singular `demi-pétale`, `aucun pétale` and `{count} pétale`; plural counts use `pétales`. Existing masculine articles and adjectives already agree. Flower and every other word remain unchanged; initial label capitalization is preserved.
+- Uncertain: none. No native review is claimed.
+- `git diff --check` passed. No primary-checkout access, other-worktree access, integration, push, dependency installation, broad checks or dev server performed. Branch and worktree remain for the coordinator as instructed.
