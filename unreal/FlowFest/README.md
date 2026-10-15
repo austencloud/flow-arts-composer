@@ -20,7 +20,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Tools\bootstrap.ps1 -S
 .\Launch.cmd
 ```
 
-`bootstrap.ps1` exports the site data, converts the source GLBs and WebP textures for native import, authors campsite meshes in Blender, converts all 16 deployed characters and their locomotion, converts all 41 physical prop types and 65 variants for both hands, compiles the C++ editor target, and saves the Unreal assets and map. It also ports the authored electric unicycle. It creates a `node_modules` junction in the task worktree when needed. You can override `-EngineRoot`, `-BlenderExe`, and `-CompilerVersion`. Use the skip switches only when rerunning a completed stage.
+`bootstrap.ps1` exports the site data, converts the source GLBs and WebP textures for native import, authors campsite meshes in Blender, converts all 16 deployed characters and their locomotion, converts all 41 physical prop types and 71 variants for both hands, compiles the C++ editor target, and saves the Unreal assets and map. It also ports the authored electric unicycle. It creates a `node_modules` junction in the task worktree when needed. You can override `-EngineRoot`, `-BlenderExe`, and `-CompilerVersion`. Use the skip switches only when rerunning a completed stage.
 
 Performance capture must precede a fresh bootstrap. The harness samples the production performer, IK, fingers, prop transforms, and mounted pose. The static runner uses an isolated browser and closes its temporary server when finished. The 80 captures contain four flow profiles plus one mounted pose for each character. Pass another location with `bootstrap.ps1 -CaptureDirectory <directory>`. Raw captures stay in `Saved`; only compact prop motion goes into the packaged runtime data. See [the capture guide](Tools/native-capture-README.md) for exact revision and repair instructions.
 
@@ -46,7 +46,7 @@ Review positions are `gate`, `camp`, `fire`, and `overview`. A capture is reques
 
 ## Play
 
-Press **C** to choose your character and equipment. All 16 deployed characters and all 65 prop variants are available; selections save with the journey. Choose a departure with **1**, **2**, or **3**, then press **E**. Drive to the gate, check in, and choose lower tent, upper tent, or car camp. Arrive and unload; tent campers stage the car at parking and walk home. Make camp, visit the workshop field, follow the lights to the fire circle, flow in the jam, then return to camp and sleep. Friday morning ends the scripted first-night journey.
+Press **C** to choose your character and equipment. All 16 deployed characters and all 71 prop variants are available; selections save with the journey. Regular and large buugeng each offer four left/right pairings: matching A, mirrored AB, mirrored BA, and matching B. Choose a departure with **1**, **2**, or **3**, then press **E**. Drive to the gate, check in, and choose lower tent, upper tent, or car camp. Arrive and unload; tent campers stage the car at parking and walk home. Make camp, visit the workshop field, follow the lights to the fire circle, flow in the jam, then return to camp and sleep. Friday morning ends the scripted first-night journey.
 
 | Key | Action |
 | --- | --- |

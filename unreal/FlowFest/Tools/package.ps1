@@ -73,8 +73,8 @@ if ($actualHeightBytes -ne $expectedHeightBytes) {
 }
 $characters = Get-Content -LiteralPath (Join-Path $dataDir 'characters.json') -Raw | ConvertFrom-Json
 $props = Get-Content -LiteralPath (Join-Path $dataDir 'props.json') -Raw | ConvertFrom-Json
-if (@($characters.characters).Count -ne 16 -or @($props.props).Count -ne 41 -or @($props.props | ForEach-Object { $_.variants }).Count -ne 65) {
-    throw 'Staged native catalogs are incomplete; expected 16 characters and 41 props / 65 variants.'
+if (@($characters.characters).Count -ne 16 -or @($props.props).Count -ne 41 -or @($props.props | ForEach-Object { $_.variants }).Count -ne 71) {
+    throw 'Staged native catalogs are incomplete; expected 16 characters and 41 props / 71 variants.'
 }
 foreach ($character in $characters.characters) {
     $key = $character.id.Replace('-', '_')
