@@ -27,6 +27,7 @@
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { guideTurnDisplayWord } from "../_data/guide-turn-display-word";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { TrailSettings } from "#lib/shared/animation-engine/domain/types/trail-types.js";
   import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
   import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import type {
@@ -46,6 +47,7 @@
     pool,
     text,
     strip,
+    trail = null,
   }: {
     /** Playable sequence for the animation canvas (the DEFAULT / entry-0 example). */
     sequence: SequenceData;
@@ -88,6 +90,11 @@
      * no per-entry variant to cycle to) - if both are passed, `pool` is ignored.
      */
     strip?: Snippet<[number]>;
+    /**
+     * A trail for the canvas (e.g. hand tracking that draws a path as the
+     * hand travels). Omitted → the player's own trail settings, as before.
+     */
+    trail?: TrailSettings | null;
   } = $props();
 
   const propType = $derived(render?.propType ?? PropType.HAND);
@@ -212,6 +219,7 @@
       scrubbable
       singlePlay
       beatIndicators={false}
+      trailSettingsOverride={trail}
       onStepChange={handleStepChange}
     />
   {/if}

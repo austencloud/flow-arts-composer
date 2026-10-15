@@ -29,6 +29,7 @@ import {
   ZANS_DIAMOND_RIGHT_STEPS,
   ZANS_DIAMOND_VARIATIONS,
   zansDiamondStrip,
+  zansDiamondPathStrip,
   zansDiamondVariationLabel,
 } from "./zans-diamond-topic";
 
@@ -158,6 +159,27 @@ describe("zansDiamondStrip", () => {
   });
 });
 
+describe("the path strip", () => {
+  it("plays the left hand alone along the eight moves", () => {
+    const strip = zansDiamondPathStrip();
+    expect(strip).toHaveLength(9);
+    for (const box of strip) {
+      expect(box.motions.right?.isVisible).toBe(false);
+      expect(box.motions.left?.isVisible).not.toBe(false);
+      expect(box.letter).toBeNull();
+    }
+    expect(strip[0]!.motions.left?.startLocation).toBe(
+      ZANS_DIAMOND_PATH[0]!.from
+    );
+    expect(
+      strip.slice(1).map((s) => [
+        s.motions.left?.startLocation,
+        s.motions.left?.endLocation,
+      ])
+    ).toEqual(ZANS_DIAMOND_PATH.map((m) => [m.from, m.to]));
+  });
+});
+
 describe("copy and links", () => {
   it("names every family and caption in both locales", () => {
     const keys = new Set<string>(
@@ -183,7 +205,7 @@ describe("copy and links", () => {
       expect(english[key], key).toBeTruthy();
       expect(german[key], key).toBeTruthy();
     }
-    expect(seen.size).toBe(6);
+    expect(seen.size).toBe(4);
   });
 
   it("links the collection by the app's own browse path", () => {

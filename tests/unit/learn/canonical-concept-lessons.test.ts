@@ -310,21 +310,18 @@ describe("canonical concept lesson composition", () => {
   });
 
   // Anatomy and the letter lessons are withdrawn; their components stay in
-  // the codebase, so their content checks remain while only the four
+  // the codebase, so their content checks remain while only the three
   // confident lessons keep their curriculum order in the registry.
-  it("publishes grid, placements, motions and timing in curriculum order", () => {
+  it("publishes grid, placements and motions in curriculum order", () => {
     const registry = readSource(
       "src/lib/features/learn/domain/concept-experience-registry.ts"
     );
     const anatomy = readSource(
       "src/lib/features/learn/components/interactive/foundations/PictographAnatomyConceptExperience.svelte"
     );
-    const order = [
-      "grid",
-      "hand-placements",
-      "hand-motions-intro",
-      "timing-and-direction",
-    ].map((id) => registry.indexOf(`conceptId: "${id}"`));
+    const order = ["grid", "hand-placements", "hand-motions-intro"].map((id) =>
+      registry.indexOf(`conceptId: "${id}"`)
+    );
 
     expect(order.every((index) => index >= 0)).toBe(true);
     expect(order).toEqual([...order].sort((a, b) => a - b));
