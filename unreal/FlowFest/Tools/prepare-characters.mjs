@@ -180,6 +180,7 @@ async function prepareCapture(character, profile, filename, captureRole = profil
       animation.addSampler(sampler).addChannel(channel);
     }
   }
+  mkdirSync(dirname(output), { recursive: true });
   await io.write(output, doc);
   console.log(`Prepared capture ${character.id}/${profile}: ${capture.frames.length} frames`);
   return output;
