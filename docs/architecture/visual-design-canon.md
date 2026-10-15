@@ -82,7 +82,8 @@ Austen set this for every `/guide` page on 2026-10-15
 - In centred text, each sentence starts on its own line, and a sentence that
   wraps balances its lines (`display: block; text-wrap: balance` per
   sentence) so no word is stranded. Split by sentence at render time so every
-  locale follows without separate strings.
+  locale follows without separate strings. `src/routes/(public)/guide/_components/Sentences.svelte`
+  does this; text beside a figure sets `--sentence-display: inline`.
 
 ### Composition rules
 

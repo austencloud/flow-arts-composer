@@ -7,17 +7,16 @@
   their headers stay identical.
 -->
 <script lang="ts">
-  let {
-    kicker,
-    title,
-    lede,
-  }: { kicker: string; title: string; lede: string } = $props();
+  import Sentences from "../../_components/Sentences.svelte";
+
+  let { kicker, title, lede }: { kicker: string; title: string; lede: string } =
+    $props();
 </script>
 
 <header class="topic-head">
   <p class="kicker">{kicker}</p>
   <h1>{title}</h1>
-  <p class="lede">{lede}</p>
+  <p class="lede"><Sentences text={lede} /></p>
 </header>
 
 <style>

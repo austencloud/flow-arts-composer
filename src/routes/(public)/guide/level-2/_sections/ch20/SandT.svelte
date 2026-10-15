@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Sentences from "../../../_components/Sentences.svelte";
   import { t as translate } from "#lib/shared/i18n/i18n.svelte.js";
   /**
    * Real-pictograph diagrams for the S/T leading-following breakdown,
@@ -223,13 +224,9 @@
 
 <GuideSection id="s-and-t" title={translate("guide_l2_st_title")}>
   <div class="section-body">
-    <p>
-      {translate("guide_l2_st_intro")}
-    </p>
+    <p><Sentences text={translate("guide_l2_st_intro")} /></p>
 
-    <p>
-      {translate("guide_l2_st_slots")}
-    </p>
+    <p><Sentences text={translate("guide_l2_st_slots")} /></p>
   </div>
 
   <div class="showcase-wrap">
@@ -302,9 +299,7 @@
   </div>
 
   <div class="section-body">
-    <p>
-      {translate("guide_l2_st_uv_exception")}
-    </p>
+    <p><Sentences text={translate("guide_l2_st_uv_exception")} /></p>
   </div>
 </GuideSection>
 

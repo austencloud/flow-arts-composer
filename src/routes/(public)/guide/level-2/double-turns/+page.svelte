@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Sentences from "../../_components/Sentences.svelte";
   /**
    * Chapter hub for 2-Turns. Used to concatenate all 4 ch21 GuideSection
    * components into one long page; each now has its own crawlable
@@ -35,7 +36,7 @@
 <div class="chapter-hub">
   <h1>{tDynamic("guide_l2_double_turns_title")}</h1>
   <p class="intro">
-    {tDynamic("guide_l2_double_turns_intro")}
+    <Sentences text={tDynamic("guide_l2_double_turns_intro")} />
   </p>
 
   <nav class="topic-list" aria-label={tDynamic("guide_l2_double_turns_topics")}>

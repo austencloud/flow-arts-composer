@@ -1,13 +1,12 @@
 <script lang="ts">
+  import Sentences from "../../../_components/Sentences.svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import GuideSection from "../../../level-1/_components/GuideSection.svelte";
 </script>
 
 <GuideSection id="codex-pages" title={t("guide_l2_codex_pages_title")}>
   <div class="section-body">
-    <p>
-      {t("guide_l2_codex_pages_intro")}
-    </p>
+    <p><Sentences text={t("guide_l2_codex_pages_intro")} /></p>
 
     <h3>1|0, 0|1, 1|1</h3>
     <!-- TODO: add codex page grids for 1-turn combinations -->

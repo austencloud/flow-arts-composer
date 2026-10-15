@@ -6,6 +6,7 @@
   three read as a set. Every sentence comes from the shared topic record.
 -->
 <script lang="ts">
+  import Sentences from "../../_components/Sentences.svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
@@ -32,8 +33,9 @@
 
   <div class="intro">
     <p>
-      {placementsTopicText("combine")}
-      {placementsTopicText("transform")}
+      <Sentences
+        text={`${placementsTopicText("combine")} ${placementsTopicText("transform")}`}
+      />
     </p>
     <p class="color-key">
       <span class="key"

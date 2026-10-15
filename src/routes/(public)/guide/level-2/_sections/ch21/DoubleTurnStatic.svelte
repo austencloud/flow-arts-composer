@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Sentences from "../../../_components/Sentences.svelte";
   /**
    * Real-pictograph diagram for the 2-turn static breakdown, mirroring
    * TwoTurnsDashStaticPage.svelte's `staticHalves` strip exactly (same motion/
@@ -175,11 +176,12 @@
   });
 </script>
 
-<GuideSection id="double-turn-static" title={translate("guide_l2_static_title")}>
+<GuideSection
+  id="double-turn-static"
+  title={translate("guide_l2_static_title")}
+>
   <div class="section-body">
-    <p>
-      {translate("guide_l2_double_static_intro")}
-    </p>
+    <p><Sentences text={translate("guide_l2_double_static_intro")} /></p>
   </div>
 
   <div class="showcase-wrap">
@@ -201,9 +203,7 @@
   </div>
 
   <div class="section-body">
-    <p>
-      {translate("guide_l2_double_static_thumb")}
-    </p>
+    <p><Sentences text={translate("guide_l2_double_static_thumb")} /></p>
   </div>
 </GuideSection>
 
