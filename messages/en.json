@@ -3669,6 +3669,7 @@
   "inbox_ui_can_edit": "Can edit",
   "inbox_ui_can_view": "Can view",
   "inbox_ui_this_collection_could_not_be_opened": "This collection could not be opened.",
+  "inbox_ui_collection_is_private": "This collection is private, so only its owner can open it.",
   "inbox_ui_draft": "Draft",
   "inbox_ui_unnamed_group": "Unnamed Group",
   "inbox_ui_conversations": "Conversations",
