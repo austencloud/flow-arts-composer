@@ -137,10 +137,8 @@
             />
           </div>
         </div>
-        <div class="label">
-          <span class="name" data-combination-name={combination.id}
-            >{plainTopicText(combination.name)}</span
-          >
+        <div class="label" data-combination-label={combination.id}>
+          <span class="name">{plainTopicText(combination.name)}</span>
           <span class="bar" aria-hidden="true"></span>
           {#if showDescriptions}
             <span class="description"

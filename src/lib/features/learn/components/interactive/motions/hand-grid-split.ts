@@ -118,9 +118,9 @@ export function runHandGridGrow(mutate: () => void): void {
   void transition.finished.then(release, release);
 }
 
-const SETTLE_PARTS = ["cell", "picture", "name"] as const;
+const SETTLE_PARTS = ["cell", "picture", "label"] as const;
 
-/** Names each combination cell's box, picture and name for the morph. */
+/** Names each combination cell's box, picture and label for the morph. */
 function nameBoardParts(root: HTMLElement): void {
   for (const part of SETTLE_PARTS) {
     for (const element of root.querySelectorAll<HTMLElement>(
@@ -146,7 +146,7 @@ function unnameBoardParts(root: HTMLElement): void {
 
 /**
  * Runs `mutate`, which swaps the finished quiz for the full board, with each
- * combination's cell, picture and name moving from its quiz slot into its
+ * combination's cell, picture and label moving from its quiz slot into its
  * board slot (Austen, 2026-10-15: "morphed all of the corresponding hand
  * motions neatly and nicely so the same component could be reused into its
  * new slot"). The quiz's own picture and prompt fade with the page.
