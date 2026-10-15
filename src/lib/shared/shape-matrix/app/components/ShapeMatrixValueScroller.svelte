@@ -15,7 +15,7 @@
     value: string;
     label: string;
     shortLabel?: string;
-    tone?: string;
+    tone?: "blue" | "red" | "both" | "accent";
     disabled?: boolean;
   }
 

@@ -292,15 +292,17 @@ function createRotatedVisual(
 }
 
 /**
- * Prop3D.svelte stretches the fire double staff's and the stick's long axis to
- * the performer's staff length and keeps the grip diameter. Both are authored
- * 900 mm end to end (scripts/fire-double-staff-stations.json,
- * scripts/stick-stations.json); every other model keeps its size.
+ * Prop3D.svelte stretches the fire double staff's, the stick's and the pen's
+ * long axis to the performer's staff length and keeps the grip diameter. All
+ * three are authored 900 mm end to end (scripts/fire-double-staff-stations.json,
+ * scripts/stick-stations.json, scripts/build-pen-model.py); every other model
+ * keeps its size.
  */
 const STRETCHED_AUTHORED_LENGTH_M = 0.9;
 const STRETCHED_PROP_TYPES: ReadonlySet<string> = new Set([
   CANONICAL_PROP_TYPE.FIRE_DOUBLE_STAFF,
   CANONICAL_PROP_TYPE.STICK,
+  CANONICAL_PROP_TYPE.PEN,
 ]);
 
 function registryLengthScaleY(options: WorkerPropFactoryOptions): number {

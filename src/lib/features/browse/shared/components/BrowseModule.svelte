@@ -98,7 +98,7 @@
   const { visible = true }: { visible?: boolean } = $props();
 
   const initialGalleryLetter = parseGalleryLetterQuery(
-    new URLSearchParams(page.url.searchParams)
+    new URLSearchParams(page.url.searchParams.toString())
   );
   // Review-only comparison. The unflagged Browse route keeps its current entry.
   const contentFirstShowAllPreview = $derived(
@@ -273,7 +273,7 @@
   // requiring a remount.
   $effect(() => {
     const requested = parseGalleryLetterQuery(
-      new URLSearchParams(page.url.searchParams)
+      new URLSearchParams(page.url.searchParams.toString())
     );
     if (requested === appliedGalleryLetter) return;
 
@@ -296,7 +296,7 @@
   // the view is still filtered. The next reload therefore tells the same truth.
   $effect(() => {
     const requested = parseGalleryLetterQuery(
-      new URLSearchParams(page.url.searchParams)
+      new URLSearchParams(page.url.searchParams.toString())
     );
     if (!requested) return;
     const active = engine.activeFilters.get(

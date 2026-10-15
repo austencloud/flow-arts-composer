@@ -180,8 +180,8 @@
         {/if}
         {#if showFigure}
           <Avatar3D
-            {leftPropState}
-            {rightPropState}
+            bluePropState={leftPropState}
+            redPropState={rightPropState}
             position={{ x: 0, y: 0, z: 0 }}
             facingAngle={0}
           />

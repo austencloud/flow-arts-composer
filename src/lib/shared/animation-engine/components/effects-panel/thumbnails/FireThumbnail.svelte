@@ -27,8 +27,10 @@
    */
   const CURVE_STOPS = [0, 0.3, 0.6, 1] as const;
 
+  type FirePalette = [Rgb, Rgb, Rgb, Rgb];
+
   /** The renderer's fallback when a preset leaves colorCurve null. */
-  const DEFAULT_CURVE: [number, number, number][] = [
+  const DEFAULT_CURVE: FirePalette = [
     [0.05, 0.0, 0.0],
     [0.8, 0.1, 0.0],
     [1.0, 0.6, 0.0],
@@ -40,8 +42,8 @@
    * toward prop colours is what colorBlend does in the renderer, so the tile
    * does the same rather than always showing the natural palette.
    */
-  function paletteOf(intent: typeof DEFAULT_EFFECTS_CONFIG.fire): Rgb[] {
-    const curve = intent.colorCurve
+  function paletteOf(intent: typeof DEFAULT_EFFECTS_CONFIG.fire): FirePalette {
+    const curve: FirePalette = intent.colorCurve
       ? [
           toRgb(intent.colorCurve.coldColor),
           toRgb(intent.colorCurve.midColor),
@@ -57,21 +59,26 @@
     const tint = hexToRgb(typeof props[0] === "string" ? props[0] : "#ffffff");
     // The core stays near-white however hard the tint is pushed - that is what
     // the shader does, and it is why prop-coloured fire still reads as fire.
-    return curve.map((c, i) => mix(c, tint, blend * (i === 3 ? 0.35 : 1)));
+    return [
+      mix(curve[0], tint, blend),
+      mix(curve[1], tint, blend),
+      mix(curve[2], tint, blend),
+      mix(curve[3], tint, blend * 0.35),
+    ];
   }
 
   /**
    * Sample the curve at a temperature in [0,1] using the translator's own stop
    * positions, so the tile interpolates colour the same way the shader does.
    */
-  function sampleTemp(palette: Rgb[], u: number): Rgb {
+  function sampleTemp(palette: FirePalette, u: number): Rgb {
     const t = Math.min(1, Math.max(0, u));
-    for (let i = 0; i < CURVE_STOPS.length - 1; i += 1) {
-      const a = CURVE_STOPS[i];
-      const b = CURVE_STOPS[i + 1];
-      if (t <= b) return mix(palette[i], palette[i + 1], (t - a) / (b - a));
-    }
-    return palette[palette.length - 1];
+    const [cold, mid, hot, core] = palette;
+    const [start, middle, warm, end] = CURVE_STOPS;
+    if (t <= middle) return mix(cold, mid, (t - start) / (middle - start));
+    if (t <= warm) return mix(mid, hot, (t - middle) / (warm - middle));
+    if (t <= end) return mix(hot, core, (t - warm) / (end - warm));
+    return core;
   }
 
   /**
@@ -87,7 +94,7 @@
     baseY: number,
     height: number,
     width: number,
-    palette: Rgb[],
+    palette: FirePalette,
     rand: () => number,
     strength: number
   ): void {
@@ -118,7 +125,7 @@
     cx: number,
     baseY: number,
     scale: number,
-    palette: Rgb[],
+    palette: FirePalette,
     liquid: boolean,
     seed: number
   ): void {

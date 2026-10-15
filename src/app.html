@@ -1788,6 +1788,9 @@
       // docs/superpowers/specs/2026-10-14-boot-bar-self-timing.md
       // docs/superpowers/specs/2026-10-14-boot-bar-compositor-fill.md
       // docs/superpowers/specs/2026-10-14-boot-bar-tail-and-gradient.md
+      // `ready` is the app's services; `composed` comes after it, when the
+      // first view is whole and the screen can leave (see __tkaBootHold):
+      // docs/superpowers/specs/2026-10-15-boot-composed-reveal.md
       var __tkaFinished = false;
       var __tkaBootRanks = [
         "start",
@@ -1800,14 +1803,18 @@
         "workspace",
         "settings",
         "ready",
+        "composed",
       ];
       var __tkaBootLast = __tkaBootRanks.length - 1;
+      var __tkaBootReadyRank = __tkaBootLast - 1;
       // A first visit has no profile of its own. This is the measured
       // production cold boot of /create (ms from navigation start, rounded to
       // 10 ms): 2026-10-14, build:fast of codex/boot-bar-self-timing served by
       // wrangler pages dev, fresh browser context, 242 /_app/ chunks and
       // 1.87 MB encoded before ready; the median of three cold boots. Cloud and
       // session arrive after ready on a cold boot, so they are not in it.
+      // `composed` is the median of three cold boots of
+      // codex/boot-composed-reveal measured the same way on 2026-10-15.
       var __tkaDefaultBootProfile = {
         v: 1,
         t: {
@@ -1819,6 +1826,7 @@
           workspace: 3870,
           settings: 3870,
           ready: 3870,
+          composed: 6380,
         },
       };
       // Silent probe for timeline captures; nothing is logged.
@@ -1827,8 +1835,13 @@
         defaultProfile: false,
         milestones: [],
         samples: [],
+        holds: [],
       };
       window.__tkaBootBar = __tkaBootBar;
+      var __tkaReadyAt = null; // when ready arrived; the holds decide after it
+      var __tkaCapTimer = null;
+      // Holds still open this long after ready stop holding the screen.
+      var __tkaHoldCapMs = 4000;
       var __tkaBootTimes = []; // expected arrival per rank, from the profile
       var __tkaBootProfiled = []; // per rank: did the profile record it
       var __tkaBootArrived = {}; // name -> ms, every first arrival
@@ -1890,18 +1903,27 @@
       }
 
       // Expected arrival per rank. Milestones the profile lacks sit between
-      // their neighbours by rank; times never run backwards or past ready.
+      // their neighbours by rank; times never run backwards or past the end.
+      // A profile stored before `composed` existed ends at ready: it gets an
+      // estimated composed 500 ms later. The end always sits at least 50 ms
+      // past ready, so the fill never claims 100% while holds keep it up.
       function __tkaProfileTimes(profile) {
         var times = [];
         var ready = profile.t.ready;
+        var end = profile.t.composed;
+        if (typeof end !== "number" || !isFinite(end) || end < ready) {
+          end = ready + 500;
+        }
+        end = Math.max(end, ready + 50);
         __tkaBootProfiled = [];
         for (var i = 0; i <= __tkaBootLast; i++) {
           var value = profile.t[__tkaBootRanks[i]];
           var known =
             typeof value === "number" && isFinite(value) && value >= 0;
           __tkaBootProfiled.push(known);
-          times.push(known ? Math.min(value, ready) : null);
+          times.push(known ? Math.min(value, end) : null);
         }
+        times[__tkaBootLast] = end;
         if (times[0] === null) times[0] = 0;
         __tkaBootProfiled[0] = true;
         __tkaBootProfiled[__tkaBootLast] = true;
@@ -2090,7 +2112,8 @@
       function __tkaBarSample(now, at) {
         var value = Math.round((100 * (at - 4)) / 96);
         if (value > __tkaBarValue && __tkaBarScreen) {
-          __tkaBarValue = Math.min(100, value);
+          // Full is announced only at composed, by __tkaFinishBoot.
+          __tkaBarValue = Math.min(99, value);
           __tkaBarScreen.setAttribute("aria-valuenow", String(__tkaBarValue));
         }
         if (__tkaBootBar.samples.length < 400) {
@@ -2206,19 +2229,20 @@
         __tkaBarTick();
       }
 
-      // Stored at ready, when the boot went through the app shell. Only the
-      // milestones that arrived in order before ready go in.
-      function __tkaSaveProfile(readyAt) {
+      // Stored at composed, when the boot went through the app shell. Only
+      // the milestones that arrived in order go in.
+      function __tkaSaveProfile(composedAt) {
         if (!__tkaBarActive) return;
         var times = {};
         var log = __tkaBootBar.milestones;
         for (var i = 0; i < log.length; i++) {
-          if (!log[i].ignored && log[i].name !== "ready") {
+          if (!log[i].ignored && log[i].name !== "composed") {
             times[log[i].name] = log[i].t;
           }
         }
         if (times.scripts === undefined || times.shell === undefined) return;
-        times.ready = Math.round(readyAt);
+        if (times.ready === undefined) return;
+        times.composed = Math.round(composedAt);
         localStorage.setItem(
           "tka-boot-profile",
           JSON.stringify({ v: 1, at: Date.now(), t: times })
@@ -2244,6 +2268,8 @@
           __tkaSaveProfile(now);
           return;
         }
+        // Ready with nothing held is composed in the same task: no segment.
+        if (rank === __tkaBootReadyRank && __tkaOpenHolds() === 0) return;
         __tkaStartSegment(now);
       }
 
@@ -2271,7 +2297,7 @@
         clearTimeout(__tkaSlowTimer);
         if (screen) {
           __tkaMarkSplash("dismiss-start");
-          // src/lib/features/create/shared/components/method-previews/after-boot-screen.ts waits on `loaded`, display none, or removal.
+          // src/lib/shared/application/services/boot-screen.ts waits on `loaded`, display none, or removal.
           screen.classList.add("loaded");
           // Reduced motion: no fade, so no transitionend; leave at once.
           if (__tkaReduceMotion) {
@@ -2287,13 +2313,97 @@
         }
       }
 
-      // The app's one entry point. A broken profile, storage or timer can
-      // only cost the fill its motion: ready always lets the screen go.
+      // --- Holds: the screen stays until the first view is whole ---
+      // __tkaBootHold(name) returns release(). The screen leaves once ready
+      // has arrived and every hold registered so far is released; that
+      // moment is the `composed` milestone. Holds still open 4 s after ready
+      // are marked timedOut and the screen leaves anyway. A hold asked for
+      // once the screen is leaving, or on a route without it, holds nothing.
+      function __tkaOpenHolds() {
+        var holds = __tkaBootBar.holds;
+        var open = 0;
+        for (var i = 0; i < holds.length; i++) {
+          if (holds[i].releasedAt === undefined) open++;
+        }
+        return open;
+      }
+
+      function __tkaCompose() {
+        if (__tkaFinished) return;
+        clearTimeout(__tkaCapTimer);
+        try {
+          __tkaRecordMilestone("composed");
+        } catch (e) {}
+        __tkaFinishBoot();
+      }
+
+      function __tkaComposeIfClear() {
+        if (__tkaFinished || __tkaReadyAt === null) return;
+        if (__tkaOpenHolds() === 0) __tkaCompose();
+      }
+
+      function __tkaCapHolds() {
+        try {
+          var holds = __tkaBootBar.holds;
+          for (var i = 0; i < holds.length; i++) {
+            if (holds[i].releasedAt === undefined) holds[i].timedOut = true;
+          }
+          __tkaMarkSplash("hold-cap");
+        } catch (e) {}
+        __tkaCompose();
+      }
+
+      function __tkaNoRelease() {}
+
+      window.__tkaBootHold = function (name) {
+        try {
+          if (__tkaFinished || !__tkaBarActive) return __tkaNoRelease;
+          var entry = { name: String(name), at: Math.round(performance.now()) };
+          __tkaBootBar.holds.push(entry);
+          var released = false;
+          return function release() {
+            if (released) return;
+            released = true;
+            try {
+              entry.releasedAt = Math.round(performance.now());
+              performance.mark("boot:hold:" + entry.name + ":release");
+            } catch (e) {}
+            try {
+              __tkaComposeIfClear();
+            } catch (e) {
+              if (__tkaReadyAt !== null) __tkaFinishBoot();
+            }
+          };
+        } catch (e) {
+          return __tkaNoRelease;
+        }
+      };
+
+      // Ready arrived: leave now if nothing holds, otherwise when the holds
+      // release, at most __tkaHoldCapMs later. Any error here lets it go.
+      function __tkaOnReady() {
+        if (__tkaReadyAt !== null) return;
+        __tkaReadyAt = performance.now();
+        try {
+          if (__tkaOpenHolds() === 0) {
+            __tkaCompose();
+            return;
+          }
+          __tkaCapTimer = setTimeout(__tkaCapHolds, __tkaHoldCapMs);
+        } catch (e) {
+          __tkaFinishBoot();
+        }
+      }
+
+      // The app's one entry point. A broken profile, storage, timer or hold
+      // can only cost the fill its motion: ready always lets the screen go,
+      // at the latest when the hold cap fires.
       function __tkaBootMilestone(name) {
+        if (name === "composed") return; // the holds report it
         try {
           __tkaRecordMilestone(name);
         } catch (e) {}
-        if (name === "ready") __tkaFinishBoot();
+        if (name === "ready") __tkaOnReady();
       }
       window.__tkaBootMilestone = __tkaBootMilestone;
 
