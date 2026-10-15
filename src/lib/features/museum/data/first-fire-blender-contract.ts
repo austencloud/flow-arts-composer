@@ -11,6 +11,7 @@ import { buildFirstFireProcessionBay } from "./first-fire-procession-terrain";
 import {
   buildNominalFirstFireProcessionPlan,
   type FirstFireProcessionPlan,
+  type FirstFireShrineId,
 } from "./first-fire-procession-plan";
 
 export const FIRST_FIRE_BLENDER_CONTRACT_SCHEMA_VERSION = 2;
@@ -83,7 +84,9 @@ export interface FirstFireBlenderContract {
       upAxis: "+Y";
       exporterTransform: "(Blender X, Y, Z) -> (runtime X, Z, -Y)";
       mount: string;
-      integrationStatus: "compiled-cave-fire-room" | "not-the-compiled-cave-fire-room";
+      integrationStatus:
+        | "compiled-cave-fire-room"
+        | "not-the-compiled-cave-fire-room";
       rotationRadians: readonly [0, 0, 0];
       scale: 1;
     };
@@ -153,7 +156,7 @@ export interface FirstFireBlenderContract {
     sharedEntryAndExit: false;
   }>;
   shrines: Array<{
-    id: string;
+    id: FirstFireShrineId;
     label: string;
     performerId: string;
     sequenceId: string;
@@ -483,7 +486,13 @@ export function buildFirstFireBlenderContract(
         planCentre,
         72
       ),
-      camera("ember-bridge", thresholdCentre, gateFor("dj").beacon, planCentre, 68),
+      camera(
+        "ember-bridge",
+        thresholdCentre,
+        gateFor("dj").beacon,
+        planCentre,
+        68
+      ),
       camera("dj-threshold", dj.entry, dj.centre, planCentre, 62),
       camera("ek-threshold", ek.entry, ek.centre, planCentre, 62),
       camera("fl-threshold", fl.entry, fl.centre, planCentre, 62),
@@ -517,6 +526,9 @@ export function buildFirstFireBlenderContract(
  */
 export function buildCompiledFirstFireBlenderContract(): FirstFireBlenderContract {
   const bay = buildFirstFireProcessionBay(buildVulcanCaveFloorPlan().grid);
-  if (!bay) throw new Error("First Fire Blender contract: cave-fire is not in the museum plan");
+  if (!bay)
+    throw new Error(
+      "First Fire Blender contract: cave-fire is not in the museum plan"
+    );
   return buildFirstFireBlenderContract(bay.plan, bay.corridor);
 }

@@ -21,17 +21,28 @@
   let rightPropAnchorRef = $state<Group | undefined>(undefined);
 
   const backgroundType = $derived(
-    settingsService.settings.backgroundType ?? BackgroundType.COSMIC,
+    settingsService.settings.backgroundType ?? BackgroundType.COSMIC
   );
 
   const gridOffset = -WALL_OFFSET;
 
-  function handleMeshClick(meshName: string, _point: { x: number; y: number; z: number }) {
+  function handleMeshClick(
+    meshName: string,
+    _point: { x: number; y: number; z: number }
+  ) {
     if (labState.mode === "sequence") return;
     const lcName = meshName.toLowerCase();
-    if (lcName.includes("blue") || lcName.includes("staff_blue") || lcName.includes("prop_blue")) {
+    if (
+      lcName.includes("blue") ||
+      lcName.includes("staff_blue") ||
+      lcName.includes("prop_blue")
+    ) {
       labState.draggingSide = "left";
-    } else if (lcName.includes("red") || lcName.includes("staff_red") || lcName.includes("prop_red")) {
+    } else if (
+      lcName.includes("red") ||
+      lcName.includes("staff_red") ||
+      lcName.includes("prop_red")
+    ) {
       labState.draggingSide = "right";
     }
   }
@@ -52,8 +63,12 @@
     rafId = requestAnimationFrame(tick);
   }
 
-  onMount(() => { rafId = requestAnimationFrame(tick); });
-  onDestroy(() => { cancelAnimationFrame(rafId); });
+  onMount(() => {
+    rafId = requestAnimationFrame(tick);
+  });
+  onDestroy(() => {
+    cancelAnimationFrame(rafId);
+  });
 </script>
 
 <div class="scene-container">
@@ -112,10 +127,10 @@
           </T.Group>
         </T.Group>
         <Avatar3D
-          leftPropState={labState.leftPropState}
-          rightPropState={labState.rightPropState}
-          {leftPropAnchorRef}
-          {rightPropAnchorRef}
+          bluePropState={labState.leftPropState}
+          redPropState={labState.rightPropState}
+          bluePropAnchorRef={leftPropAnchorRef}
+          redPropAnchorRef={rightPropAnchorRef}
           position={{ x: 0, y: 0, z: 0 }}
           facingAngle={labState.facingAngle}
         />
