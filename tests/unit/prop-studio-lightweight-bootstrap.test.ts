@@ -141,6 +141,16 @@ describe("Prop Studio bootstrap", () => {
     expect(studioSource).toContain("enableEffects={false}");
     expect(pickerSource).toContain("<BentoPropGrid");
     expect(pickerSource).not.toContain("PropCompositionPreview");
+    // Neutral catalog art must not load the visitor's saved composition overrides.
+    const propTypeButtonSource = readFileSync(
+      resolve(
+        "src/lib/shared/settings/components/tabs/prop-type/PropTypeButton.svelte"
+      ),
+      "utf8"
+    );
+    expect(propTypeButtonSource).toContain(
+      "<PropCompositionPreview {propType} neutral useSavedOverrides={false} />"
+    );
     // The canonical rail needs an effects *config* context to render, so the
     // studio builds one — but non-persisting, so a review session never writes
     // back into the visitor's saved effect setup. The heavyweight effects

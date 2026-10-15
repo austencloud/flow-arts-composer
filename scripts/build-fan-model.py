@@ -1,11 +1,12 @@
 """Build the production fan family and optional two-faced cover.
 
-The asset carries five independently switchable groups:
+The asset carries six independently switchable groups:
 
 * ``Fan_Fire``: oil-darkened steel frame with five rolled kevlar wicks.
 * ``Fan_Lotus``: measured five-petal Russian-grip fire fan.
 * ``Fan_Day``: the same reach as a thick HDPE practice frame.
 * ``Fan_Moon``: a measured two-zone LED frame beneath diffusion fabric.
+* ``Fan_Astral``: a 66-pixel open-frame LED fan with blade/side zones.
 * ``Fan_Cover``: a slip-on crescent with a solid front and striped back.
 
 The scene-3d runtime chooses which groups are visible and recolors the day
@@ -65,6 +66,9 @@ DAY_HEIGHT_M = 0.35
 DAY_DEPTH_M = 0.0095
 MOON_WIDTH_M = 0.60
 MOON_HEIGHT_M = 0.38
+ASTRAL_WIDTH_M = 0.4826
+ASTRAL_HEIGHT_M = 0.381
+ASTRAL_LED_COUNT = 66
 
 
 def parse_args() -> argparse.Namespace:
@@ -115,6 +119,23 @@ def make_material(
         principled.inputs["Coat Weight"].default_value = coat
     if "Coat Roughness" in principled.inputs:
         principled.inputs["Coat Roughness"].default_value = min(roughness, 0.3)
+    return material
+
+
+def make_led_material(
+    name: str,
+    color: tuple[float, float, float, float],
+) -> bpy.types.Material:
+    material = make_material(name, color, roughness=0.18, coat=0.2)
+    principled = material.node_tree.nodes.get("Principled BSDF")
+    emission = (
+        principled.inputs.get("Emission Color")
+        or principled.inputs.get("Emission")
+    )
+    if emission:
+        emission.default_value = color
+    if "Emission Strength" in principled.inputs:
+        principled.inputs["Emission Strength"].default_value = 5.0
     return material
 
 
@@ -619,6 +640,28 @@ def add_weld_bead(
     )
     obj = bpy.context.object
     obj.name = name
+    obj.scale.z = 0.72
+    obj.parent = parent
+    return finish_mesh(obj, material)
+
+
+def add_led_pixel(
+    name: str,
+    centre: tuple[float, float, float],
+    radius: float,
+    material: bpy.types.Material,
+    parent: bpy.types.Object,
+) -> bpy.types.Object:
+    """A faceted lens: enough silhouette for a 4mm emitter, no hidden excess."""
+    bpy.ops.mesh.primitive_uv_sphere_add(
+        segments=8,
+        ring_count=4,
+        radius=radius,
+        location=centre,
+    )
+    obj = bpy.context.object
+    obj.name = name
+    obj.data.name = name
     obj.scale.z = 0.72
     obj.parent = parent
     return finish_mesh(obj, material)
@@ -1139,6 +1182,138 @@ def build_moon_fan(
         grip_main,
         grip_guard,
     ]
+
+
+def build_astral_fan(
+    parent: bpy.types.Object,
+    frame: bpy.types.Material,
+    diffuser: bpy.types.Material,
+    led_materials: list[bpy.types.Material],
+) -> list[bpy.types.Object]:
+    """Build Astral's 19 x 15-inch, 66-pixel open-ring LED fan."""
+    radius_x = ASTRAL_WIDTH_M / 2
+    radius_y = 0.28
+    centre_y = 0.04
+    frame_z = -0.0045
+    light_z = 0.0055
+    outer_points = ellipse_arc(
+        radius_x,
+        radius_y,
+        centre_y,
+        segments=60,
+        z=frame_z,
+    )
+    inner_points = ellipse_arc(
+        radius_x - 0.014,
+        radius_y - 0.014,
+        centre_y,
+        segments=60,
+        z=light_z,
+    )
+    objects = [
+        add_round_rod(
+            "Fan_Astral_OuterFrame", outer_points, 0.0032, frame, parent
+        ),
+        add_round_rod(
+            "Fan_Astral_BladeDiffuser", inner_points, 0.0063, diffuser, parent
+        ),
+        add_torus(
+            "Fan_Astral_GripRing",
+            (0, 0, 0),
+            0.043,
+            0.006,
+            0.013,
+            frame,
+            parent,
+        ),
+        add_torus(
+            "Fan_Astral_GripGuard",
+            (0, -0.002, -0.002),
+            0.057,
+            0.0035,
+            0.009,
+            frame,
+            parent,
+        ),
+    ]
+
+    # Thirty emitters form the independently controllable outer blade.
+    for index in range(30):
+        angle = math.pi * index / 29
+        point = ((radius_x - 0.014) * math.cos(angle),
+                 centre_y + (radius_y - 0.014) * math.sin(angle), light_z)
+        objects.append(
+            add_led_pixel(
+                f"Fan_Astral_Blade_LED_{index + 1:02d}",
+                (point[0], point[1], light_z + 0.001),
+                0.0042,
+                led_materials[index % len(led_materials)],
+                parent,
+            )
+        )
+
+    # Six side rails carry six pixels apiece. The two named groups represented
+    # by these meshes are the product's separate Blade and Sides controls.
+    for rail_index, angle_degrees in enumerate((20, 48, 76, 104, 132, 160)):
+        angle = math.radians(angle_degrees)
+        target = (
+            (radius_x - 0.014) * math.cos(angle),
+            centre_y + (radius_y - 0.014) * math.sin(angle),
+            frame_z,
+        )
+        start = (
+            0.052 * math.cos(angle),
+            0.052 * math.sin(angle),
+            frame_z,
+        )
+        objects.append(
+            add_round_rod(
+                f"Fan_Astral_SideFrame_{rail_index + 1}",
+                [start, target],
+                0.003,
+                frame,
+                parent,
+            )
+        )
+        objects.append(
+            add_round_rod(
+                f"Fan_Astral_SideDiffuser_{rail_index + 1}",
+                [(start[0], start[1], light_z), (target[0], target[1], light_z)],
+                0.0055,
+                diffuser,
+                parent,
+            )
+        )
+        for pixel_index in range(6):
+            amount = 0.14 + pixel_index * 0.16
+            point = (
+                start[0] * (1 - amount) + target[0] * amount,
+                start[1] * (1 - amount) + target[1] * amount,
+                light_z + 0.001,
+            )
+            color_index = (30 + rail_index * 6 + pixel_index) % len(led_materials)
+            objects.append(
+                add_led_pixel(
+                    f"Fan_Astral_Sides_LED_{rail_index + 1}_{pixel_index + 1}",
+                    point,
+                    0.004,
+                    led_materials[color_index],
+                    parent,
+                )
+            )
+
+    parent["tka_build"] = "Astral Starlight LED fan"
+    parent["tka_construction"] = (
+        "66 addressable pixels in open ring frame with blade and sides zones"
+    )
+    parent["tka_reference"] = "https://shop.astralhoops.com/products/led-fans"
+    parent["tka_dimensions_m"] = [ASTRAL_WIDTH_M, ASTRAL_HEIGHT_M]
+    parent["tka_led_count"] = ASTRAL_LED_COUNT
+    parent["tka_blade_led_count"] = 30
+    parent["tka_sides_led_count"] = 36
+    parent["tka_led_segments"] = 2
+    parent["tka_control_zones"] = ["blade", "sides"]
+    return objects
 
 
 def build_fire_frame(
@@ -1813,6 +1988,7 @@ def build_asset() -> tuple[
     root["tka_fire_dimensions_m"] = [FIRE_WIDTH_M, FIRE_HEIGHT_M]
     root["tka_lotus_dimensions_m"] = [LOTUS_WIDTH_M, LOTUS_HEIGHT_M]
     root["tka_moon_dimensions_m"] = [MOON_WIDTH_M, MOON_HEIGHT_M]
+    root["tka_astral_dimensions_m"] = [ASTRAL_WIDTH_M, ASTRAL_HEIGHT_M]
     fire_reference = json.loads(DOODLEGRIP_FIRE_REFERENCE.read_text())
     fire_geometry = fire_reference["geometry_m"]
     outer_x, outer_y = fire_geometry["outer_wick_center"]
@@ -1835,6 +2011,7 @@ def build_asset() -> tuple[
         "lotus": add_empty("Fan_Lotus", root),
         "day": add_empty("Fan_Day", root),
         "moon": add_empty("Fan_Moon", root),
+        "astral": add_empty("Fan_Astral", root),
         "cover": add_empty("Fan_Cover", root),
     }
     materials = {
@@ -1877,6 +2054,19 @@ def build_asset() -> tuple[
         "moon_led_b": make_material(
             "TKA_Fan_Moon_LED_B", (0.28, 0.12, 0.28, 1.0), roughness=0.24
         ),
+        "astral_frame": make_material(
+            "TKA_Fan_Astral_Frame",
+            (0.018, 0.022, 0.03, 1),
+            roughness=0.46,
+            metallic=0.34,
+            coat=0.16,
+        ),
+        "astral_diffuser": make_material(
+            "TKA_Fan_Astral_Diffuser",
+            (0.88, 0.92, 0.98, 1),
+            roughness=0.26,
+            coat=0.24,
+        ),
         "cover_solid": make_material(
             "TKA_Fan_Cover_Solid_Recolor", (0.73, 0.08, 0.18, 1), roughness=0.82
         ),
@@ -1900,6 +2090,23 @@ def build_asset() -> tuple[
             materials["moon_frame"],
             materials["moon_led_a"],
             materials["moon_led_b"],
+        )
+    )
+    astral_led_materials = [
+        make_led_material("TKA_Fan_Astral_LED_1", (1.0, 0.03, 0.14, 1)),
+        make_led_material("TKA_Fan_Astral_LED_2", (1.0, 0.34, 0.03, 1)),
+        make_led_material("TKA_Fan_Astral_LED_3", (0.95, 0.92, 0.05, 1)),
+        make_led_material("TKA_Fan_Astral_LED_4", (0.05, 1.0, 0.34, 1)),
+        make_led_material("TKA_Fan_Astral_LED_5", (0.04, 0.42, 1.0, 1)),
+        make_led_material("TKA_Fan_Astral_LED_6", (0.72, 0.05, 1.0, 1)),
+    ]
+    materials["astral_led_materials"] = astral_led_materials[0]
+    objects.extend(
+        build_astral_fan(
+            groups["astral"],
+            materials["astral_frame"],
+            materials["astral_diffuser"],
+            astral_led_materials,
         )
     )
     objects.extend(

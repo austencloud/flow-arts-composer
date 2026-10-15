@@ -296,10 +296,13 @@
   /* The step editor keeps a dense, animated SVG tree open for the lifetime of
      the drawer. Sampling the scene behind that native dialog can corrupt its
      composited surface into a theme-colored ellipse in Chromium. Give this
-     long-lived editor a stable paint surface instead of a backdrop filter.
-     That surface is the app's own themed background, pinned to the viewport,
-     so the editor reads as the same workspace as the option picker it covers
-     instead of a gray slab. The solid color is the fallback under it. */
+     long-lived editor no backdrop filter.
+     Without one it cannot dim what it covers, so CreateModule hides that part
+     of the layout while the editor is open and the editor itself is left
+     see-through: the app's own background (the theme gradient or an animated
+     canvas) runs under it, as it does under the option picker. A browser
+     without :has() cannot hide the layout, so it gets an opaque surface in
+     the theme's gradient instead. */
   :global(.drawer-content.step-editor-panel-container) {
     --sheet-bg: var(--sheet-bg-solid, rgb(15, 15, 20));
     --sheet-filter: none;
@@ -308,6 +311,13 @@
     background-attachment: fixed;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
+  }
+
+  @supports selector(:has(*)) {
+    :global(.drawer-content.step-editor-panel-container) {
+      --sheet-bg: transparent;
+      background: transparent;
+    }
   }
 
   /*
