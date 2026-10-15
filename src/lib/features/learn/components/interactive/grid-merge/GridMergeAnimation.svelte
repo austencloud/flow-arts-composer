@@ -8,6 +8,8 @@
   - "box-labels": Split view with intercardinal labels animating in on box
   - "merged": Both grids animate together to form the 8-point grid
   - "split-highlight": Split view for point type highlighting
+  - "diamond" / "box": One four-point grid, as a pictograph draws it. The box
+    is the same points turned 45 degrees, so switching modes rotates in place.
 
   Highlight phases (for point type teaching, used after merged):
   - "none": No highlighting, all points visible
@@ -16,23 +18,36 @@
   - "outer": Outer points highlighted, others dimmed
 -->
 <script lang="ts">
-	import { GRID, TIMING, RESPONSIVE, type Phase, type HighlightPhase } from './grid-merge-constants';
+	import {
+		GRID,
+		TIMING,
+		RESPONSIVE,
+		type BoardLook,
+		type Phase,
+		type HighlightPhase
+	} from './grid-merge-constants';
 	import GridBackgrounds from './GridBackgrounds.svelte';
 	import RotatingGridGroup from './RotatingGridGroup.svelte';
 	import StaticGridGroup from './StaticGridGroup.svelte';
 	import DirectionLabels from './DirectionLabels.svelte';
 	import ModeLabels from './ModeLabels.svelte';
 
-	let { phase = 'intro', highlightPhase = 'none' } = $props<{
+	let {
+		phase = 'intro',
+		highlightPhase = 'none',
+		look = 'lesson'
+	} = $props<{
 		phase?: Phase;
 		highlightPhase?: HighlightPhase;
+		/** 'pictograph' turns the board into the pictograph card later lessons use. */
+		look?: BoardLook;
 	}>();
 
 	// Derive max-width based on phase
 	const maxWidth = $derived(
 		phase === 'intro'
 			? RESPONSIVE.DESKTOP.MAX_WIDTH_INTRO
-			: phase === 'merged'
+			: phase === 'merged' || phase === 'diamond' || phase === 'box'
 				? RESPONSIVE.DESKTOP.MAX_WIDTH_MERGED
 				: RESPONSIVE.DESKTOP.MAX_WIDTH_SPLIT
 	);
@@ -57,10 +72,11 @@
 	<svg
 		viewBox="0 0 {GRID.SIZE} {GRID.SIZE}"
 		class="merge-svg"
+		class:look-pictograph={look === 'pictograph'}
 		style="{cssVars} --grid-merge-default-max-width: {maxWidth}px;"
 	>
-		<GridBackgrounds {phase} />
-		<RotatingGridGroup {phase} {highlightPhase} />
+		<GridBackgrounds {phase} {look} />
+		<RotatingGridGroup {phase} {highlightPhase} {look} />
 		<StaticGridGroup {phase} {highlightPhase} />
 		<DirectionLabels {phase} {highlightPhase} />
 		<ModeLabels {phase} />
@@ -84,6 +100,13 @@
 		);
 		overflow: visible;
 		transition: max-width var(--merge-duration) var(--merge-easing);
+		/* The pictograph grid's own ink (GridSvg), so the lesson board and a
+		   pictograph card drawn over it read as one grid. */
+		--board-ink: #000;
+	}
+
+	:global(:root.dark) .merge-svg {
+		--board-ink: #d0d0d0;
 	}
 
 	/* === RESPONSIVE: Update CSS variables for tablet/mobile === */
