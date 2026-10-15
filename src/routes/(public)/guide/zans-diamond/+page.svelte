@@ -16,9 +16,8 @@
   import GuideSeo from "../level-1/_components/GuideSeo.svelte";
   import SequenceShowcase from "../level-1/_components/SequenceShowcase.svelte";
   import { stripToSequence } from "../level-1/_data/guide-sequence-adapter";
-  import GuidePropTrigger from "../level-1/_components/GuidePropTrigger.svelte";
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
-  import PropSelectionSheet from "#lib/shared/settings/components/tabs/prop-type/PropSelectionSheet.svelte";
+  import PropChoiceRow from "#lib/shared/pictograph/prop/components/PropChoiceRow.svelte";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import type { PictographRender } from "../level-1/_data/guide-content-blocks";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
@@ -56,7 +55,16 @@
   // The prop the props section and every family player use. Page state only:
   // each visit opens on poi.
   let propType = $state<PropType>(PropType.POI);
-  let propSheetOpen = $state(false);
+  // The short list the section offers in place, poi first. Six tiles keep the
+  // row on one line in the text column; the hand path already plays above.
+  const PROP_CHOICES: readonly PropType[] = [
+    PropType.POI,
+    PropType.STAFF,
+    PropType.CLUB,
+    PropType.BUUGENG,
+    PropType.FAN,
+    PropType.MINIHOOP,
+  ];
   const PROP_RENDER: PictographRender = $derived({ ...RENDER, propType });
 
   // The prop's tip draws its petals, kept until the loop restarts.
@@ -179,10 +187,11 @@
         <p>{t("guide_zans_props_turns")}</p>
         <div class="prop-choice">
           <span class="prop-label">{t("guide_zans_props_picker")}</span>
-          <GuidePropTrigger
-            {propType}
-            expanded={propSheetOpen}
-            onclick={() => (propSheetOpen = true)}
+          <PropChoiceRow
+            value={propType}
+            options={PROP_CHOICES}
+            label={t("guide_zans_props_picker")}
+            onchange={(pt) => (propType = pt)}
           />
           <p class="prop-hint">{t("guide_zans_props_picker_hint")}</p>
         </div>
@@ -223,18 +232,6 @@
     </footer>
   </article>
 </GuideShell>
-
-<!-- Pictographs draw notation here, so the sheet offers no Version 2 look
-     and no colour edits to the reader's app settings. -->
-<PropSelectionSheet
-  bind:isOpen={propSheetOpen}
-  selectedPropType={propType}
-  title={t("guide_zans_props_picker")}
-  showPropLook={false}
-  propLook="pictograph"
-  showColors={false}
-  onSelect={(pt: PropType) => (propType = pt)}
-/>
 
 <style>
   .zans-guide {
@@ -303,7 +300,6 @@
     display: flex;
     flex-direction: column;
     gap: var(--spacing-xs, 6px);
-    max-width: 320px;
   }
   .prop-label {
     font-size: var(--font-size-compact, 13px);
