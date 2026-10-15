@@ -19,6 +19,7 @@ export function createStartPlacementData(
     startPlacement: data.startPlacement ?? null,
     endPlacement: data.endPlacement ?? null,
     motions: data.motions ?? {},
+    ...(data.gridMode !== undefined && { gridMode: data.gridMode }),
 
     // StartPlacement-specific properties
     gridPlacement: data.gridPlacement ?? null,
