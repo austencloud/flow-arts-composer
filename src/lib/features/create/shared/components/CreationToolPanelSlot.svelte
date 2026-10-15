@@ -22,6 +22,11 @@
   import ConstructTabContent from "./ConstructTabContent.svelte";
   import SaveToLibraryView from "./SaveToLibraryView.svelte";
   import { sequenceGridJoin } from "#lib/shared/grid-join/sequence-grid-join.js";
+  import { getSequenceOverlayState } from "#lib/shared/sequence-viewer/state/sequence-viewer-overlay-state.svelte.js";
+  import {
+    isStepEditorViewShown,
+    STEP_EDITOR_TABS,
+  } from "../services/step-editor-availability";
   // GeneratePanel (136-file subtree), AssembleToolPanel (21), FuseTab (235!)
   // and ShapeEngineTab are deferred via LazyMount — only the active build-mode
   // tab's chunk loads. Construct is the default tab so ConstructTabContent
@@ -65,7 +70,6 @@
   const isSaveView = $derived(
     isPersistenceFullyInitialized && panelState.isSaveToLibraryPanelOpen
   );
-  const showGeneratePanel = $derived(isGeneratePanelActive && !isSaveView);
   let generateLoadStatus = $state<"idle" | "loading" | "loaded" | "error">(
     "idle"
   );
@@ -74,6 +78,60 @@
     const state = createModuleState.getActiveTabSequenceState();
     void state.selectedStepNumber;
     return state;
+  });
+
+  const sequenceOverlay = getSequenceOverlayState();
+  // The step editor takes the same place while a step or mandala is selected.
+  // Save outranks it: the save view leaves only once saving is done or
+  // cancelled.
+  const isStepEditorView = $derived(
+    isPersistenceFullyInitialized &&
+      !isSaveView &&
+      isStepEditorViewShown({
+        isPanelOpen: panelState.isStepEditorPanelOpen,
+        activeTab: activeToolPanel,
+        sequence: activeSequenceState.currentSequence,
+        selectedStepNumber: activeSequenceState.selectedStepNumber,
+        selectedStepNumbers: activeSequenceState.selectedStepNumbers,
+        hasMandalaSelection: panelState.mandalaViewerSelection !== null,
+        isSequenceViewerOpen: sequenceOverlay.isOpen,
+      })
+  );
+  const toolStageKey = $derived(
+    isSaveView ? "save" : isStepEditorView ? "step-editor" : "tools"
+  );
+  const showGeneratePanel = $derived(
+    isGeneratePanelActive && !isSaveView && !isStepEditorView
+  );
+  // The sequence viewer survives Create HMR independently from the editor.
+  // If both states restore, the viewer owns the screen and clears the editor.
+  $effect(() => {
+    if (sequenceOverlay.isOpen && panelState.isStepEditorPanelOpen) {
+      panelState.closeStepEditorPanel();
+    }
+  });
+
+  // Re-open the editor when a multi-selection becomes active. Covers the
+  // HMR/refresh restore path: the persisted multi set comes back but
+  // selectedStepNumber is null in multi mode, so the single-step auto-open
+  // effect doesn't fire. Only opens on the false→true transition (never
+  // auto-closes) so it doesn't fight a manual close.
+  const isMultiSelect = $derived(
+    activeSequenceState.isMultiSelectMode &&
+      activeSequenceState.selectedStepNumbers.size > 1
+  );
+  let lastIsMulti = false;
+  $effect(() => {
+    const multi = isMultiSelect;
+    if (
+      multi &&
+      !lastIsMulti &&
+      STEP_EDITOR_TABS.has(activeToolPanel) &&
+      !sequenceOverlay.isOpen
+    ) {
+      panelState.openStepEditorPanel();
+    }
+    lastIsMulti = multi;
   });
 
   const isStartPlacementSelected = $derived(
@@ -230,7 +288,7 @@
   <div
     class="creation-tool-content generate-tool-content"
     class:is-active={isGeneratePanelActive}
-    class:save-mode={isSaveView}
+    class:save-mode={isSaveView || isStepEditorView}
     aria-hidden={!showGeneratePanel}
     aria-busy={showGeneratePanel && generateLoadStatus === "loading"}
     inert={!showGeneratePanel}
@@ -252,22 +310,27 @@
     </div>
   </div>
 
-  <!-- The tools and the save view trade places like the start placement
-       picker and the option picker do: the leaving one fades out, then the
-       arriving one fades in, both pinned to the same box. -->
+  <!-- The tools, the save view and the step editor trade places like the
+       start placement picker and the option picker do: the leaving one fades
+       out, then the arriving one fades in, both pinned to the same box. -->
   <div class="tool-stage" class:is-idle={showGeneratePanel}>
-    <Crossfade
-      key={isSaveView ? "save" : "tools"}
-      duration={DURATION.normal}
-      mode="swap"
-      fill
-    >
+    <Crossfade key={toolStageKey} duration={DURATION.normal} mode="swap" fill>
       {#if isSaveView}
         <div class="creation-tool-content" data-active-tab="save">
           <div class="sub-tab-content" data-tab="save">
             <SaveToLibraryView
               word={currentDisplayWord}
               onClose={() => panelState.closeSaveToLibraryPanel()}
+            />
+          </div>
+        </div>
+      {:else if isStepEditorView}
+        <div class="creation-tool-content" data-active-tab="step-editor">
+          <div class="sub-tab-content" data-tab="step-editor">
+            <LazyMount
+              loader={() =>
+                import("./coordinators/StepEditorCoordinator.svelte")}
+              active
             />
           </div>
         </div>
