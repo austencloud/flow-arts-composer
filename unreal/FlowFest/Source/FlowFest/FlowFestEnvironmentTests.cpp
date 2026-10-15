@@ -2,6 +2,7 @@
 #include "Misc/AutomationTest.h"
 #include "Dom/JsonObject.h"
 #include "Engine/StaticMesh.h"
+#include "Materials/Material.h"
 #include "Materials/MaterialInterface.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
@@ -47,6 +48,11 @@ bool FFlowFestEnvironmentAssetsTest::RunTest(const FString& Parameters)
                 UMaterialInterface* Material = Mesh->GetMaterial(Slot);
                 TestTrue(*FString::Printf(TEXT("Ecology material %s[%d] preserves double-sided source"), Name, Slot),
                     Material && Material->IsTwoSided());
+                UMaterial* BaseMaterial = Material ? Material->GetMaterial() : nullptr;
+                const FExpressionInput* Subsurface = BaseMaterial ?
+                    BaseMaterial->GetExpressionInputForProperty(MP_SubsurfaceColor) : nullptr;
+                TestTrue(*FString::Printf(TEXT("Ecology material %s[%d] has colored subsurface transmission"), Name, Slot),
+                    Subsurface && Subsurface->Expression);
             }
         }
     }
