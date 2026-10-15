@@ -14,6 +14,8 @@ export default defineConfig({
       { find: "#lib", replacement: resolve(root, "src/lib") },
       { find: /^\$app\/env$/, replacement: resolve(root, "unreal/FlowFest/Tools/native-capture-app-env.js") },
       { find: /^\$app\/env\/public$/, replacement: resolve(root, "unreal/FlowFest/Tools/native-capture-public-env.js") },
+      { find: /^\$app\/navigation$/, replacement: resolve(root, "unreal/FlowFest/Tools/native-capture-navigation.js") },
+      { find: /^\$app\/state$/, replacement: resolve(root, "unreal/FlowFest/Tools/native-capture-state.js") },
     ],
     conditions: ["svelte", "browser", "module"],
   },
