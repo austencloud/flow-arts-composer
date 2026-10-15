@@ -125,6 +125,11 @@
     margin-block: clamp(16px, 2vw, 28px) clamp(20px, 2.5vw, 40px);
     --prop-choice-justify: center;
     --prop-choice-label-align: center;
+    /* Sixteen families on one line at laptop width: both groups side by
+       side, wrapping to two lines only on narrower screens. */
+    --prop-tile-width: 4.25rem;
+    --prop-tile-gap: 6px;
+    --prop-img-size: 1.6rem;
   }
 
   .print {

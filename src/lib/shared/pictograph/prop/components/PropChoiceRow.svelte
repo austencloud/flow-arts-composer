@@ -108,7 +108,7 @@
     display: flex;
     flex-wrap: wrap;
     justify-content: var(--prop-choice-justify, flex-start);
-    gap: 14px 28px;
+    gap: 14px 24px;
   }
 
   .prop-section {
@@ -120,6 +120,24 @@
 
   .prop-section .prop-grid {
     justify-content: var(--prop-choice-justify, flex-start);
+  }
+
+  /* Grouped tiles keep one fixed width, so a group is exactly as wide as
+     its tiles and only wraps when the line runs out. Hosts size them with
+     the --prop-tile-* tokens. */
+  .prop-sections .prop-grid {
+    gap: var(--prop-tile-gap, 8px);
+  }
+
+  .prop-sections .prop-option {
+    flex: 0 0 var(--prop-tile-width, 5rem);
+    max-width: none;
+    padding: 8px 4px 6px;
+  }
+
+  .prop-sections .prop-img {
+    width: var(--prop-img-size, 30px);
+    height: var(--prop-img-size, 30px);
   }
 
   .section-label {
