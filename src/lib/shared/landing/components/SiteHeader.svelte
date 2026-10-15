@@ -10,6 +10,10 @@
    * `/create` + sign-in force a full reload (data-sveltekit-reload) because they
    * cross from the chrome-less public pages into the app shell.
    */
+  import {
+    currentRoutePath,
+    localHref,
+  } from "#lib/shared/i18n/localized-href.svelte.js";
   import { page } from "$app/state";
   import { afterNavigate, preloadData } from "$app/navigation";
   import { isShallowGoto } from "#lib/shared/navigation/services/url-state.js";
@@ -79,7 +83,7 @@
   const MORPH_DEST_PATHS = new Set(
     LAUNCHPAD_TILES.filter((t) => t.morphName).map((t) => t.href)
   );
-  const currentPath = $derived(page.url?.pathname ?? "");
+  const currentPath = $derived(page.url ? currentRoutePath() : "");
   const showBack = $derived(MORPH_DEST_PATHS.has(currentPath));
 
   // Load the real authState once (idempotent). Pulls Firebase — only ever
@@ -435,7 +439,7 @@
           />
         {:else}
           <a
-            href={entry.href}
+            href={localHref(entry.href)}
             class:active={isActive(entry.href)}
             aria-current={isActive(entry.href) ? "page" : undefined}
           >
@@ -587,7 +591,7 @@
                   {#each section.items as item}
                     <li>
                       <a
-                        href={item.href}
+                        href={localHref(item.href)}
                         class:active={item.href === activeItemHref}
                       >
                         <i
@@ -608,7 +612,7 @@
           </div>
         {:else}
           <a
-            href={entry.href}
+            href={localHref(entry.href)}
             class:active={isActive(entry.href)}
             aria-current={isActive(entry.href) ? "page" : undefined}
           >

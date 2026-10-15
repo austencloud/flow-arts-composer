@@ -147,6 +147,7 @@
     "seo:scorecard": "tsx scripts/seo/cli.ts scorecard",
     "seo:posthog-dashboard": "tsx scripts/seo/provision-posthog-dashboard.ts",
     "seo:check": "tsc --project scripts/seo/tsconfig.json",
+    "seo:check-locales": "node scripts/check-localized-prerender.mjs",
     "build:tnd-base-words": "tsx --tsconfig scripts/tsconfig.json scripts/build-tnd-base-words.ts",
     "collision-lab:scan": "tsx scripts/scan-collision-lab.ts",
     "collision-lab:scan:verbose": "tsx scripts/scan-collision-lab.ts --verbose",

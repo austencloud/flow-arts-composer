@@ -78,6 +78,8 @@ export const SMALL_BILATERAL_PROPS = [
   "fire_double_staff",
   // A found stick is spun as a staff, cut to the performer's staff length.
   "stick",
+  // A pen is drawn at the staff's span, so it carries the staff's beta offset.
+  "pen",
   // Energy Staff follows staff exactly: same reach, same small-prop beta offset.
   "energy_staff",
   "buugeng",
@@ -217,6 +219,8 @@ const STAFF_FAMILY_PROPS = [
   "fire_double_staff",
   // A stick's thick end is the thumb end of the branch, as the staff's is.
   "stick",
+  // The cap is the pen's thumb end, at +x like the staff's.
+  "pen",
 ] as const;
 
 /**

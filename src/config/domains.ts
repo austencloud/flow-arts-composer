@@ -7,6 +7,7 @@
  * - Future: tkaflowarts.com/embed, tkaflowarts.com/kiosk, etc.
  */
 import { Capacitor } from "@capacitor/core";
+import { routePathFor } from "../lib/shared/i18n/seo-locales";
 
 /**
  * Site mode determines which experience to render.
@@ -96,7 +97,8 @@ const PUBLIC_PATH_PREFIXES = [
 
 export function detectSiteMode(): SiteMode {
   if (typeof window !== "undefined") {
-    const pathname = window.location.pathname;
+    // /de/guide/x is the /guide/x page in German: same public bootstrap.
+    const pathname = routePathFor(window.location.pathname);
     const isStandaloneDevHarness =
       import.meta.env.DEV &&
       pathname.startsWith("/test/") &&

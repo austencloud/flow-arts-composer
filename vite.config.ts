@@ -1,3 +1,4 @@
+import { routePathFor, SEO_LOCALES } from "./src/lib/shared/i18n/seo-locales";
 import { getEnabledFeaturesDefineMap } from "./src/config/feature-flags";
 import { postStudioDraftStoragePlugin } from "./scripts/post-studio-draft-storage.mjs";
 import {
@@ -975,6 +976,8 @@ const pagesRouteExcludes = [
   "/manifest.webmanifest",
   "/og-default.png",
   "/sw.js",
+  // Language editions of public pages (/de/guide/...) are all prerendered.
+  ...SEO_LOCALES.map((locale) => `/${locale}/*`),
   // Serve prerendered pages (landing, about, glossary, …) from the
   // static asset layer instead of waking the Worker — without this,
   // "/" returns cf-cache-status: DYNAMIC and pays ~1-2s Worker TTFB.
@@ -1026,6 +1029,9 @@ const svelteKitOptions: Parameters<typeof sveltekit>[0] = {
 
   prerender: {
     crawl: true,
+    // Each language edition starts from its guide hub; the crawler follows
+    // its links and hreflang alternates to the rest.
+    entries: ["*", ...SEO_LOCALES.map((locale) => `/${locale}/guide`)],
     handleHttpError: ({ path, message, status }) => {
       // These generated or synced asset directories can be absent from a
       // clean CI checkout. Ignore only missing assets; a broken page or any
@@ -1043,11 +1049,16 @@ const svelteKitOptions: Parameters<typeof sveltekit>[0] = {
     handleMissingId: ({ path, id }) => {
       // Guide nav renders section anchor links for the active chapter,
       // but placeholder pages don't have those section elements yet
-      if (path.startsWith("/guide/level-1/")) return;
+      if (routePathFor(path).startsWith("/guide/level-1/")) return;
       // Archive record hashes are client-managed selection state. Rendering
       // matching DOM ids would trigger a native jump before hydration and
       // leave the viewport stranded inside the overflow-hidden archive.
-      if (path === "/history" && id.startsWith("archive-record-")) return;
+      // The archive moved to the unlisted /history/draft on 2026-10-14.
+      if (
+        (path === "/history" || path === "/history/draft") &&
+        id.startsWith("archive-record-")
+      )
+        return;
       // Atlas hashes select a category or term after hydration. They are URL
       // state, not scroll targets, so rendering matching ids would make the
       // browser jump inside the full-viewport workspace before Atlas can

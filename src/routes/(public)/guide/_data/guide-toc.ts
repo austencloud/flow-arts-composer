@@ -11,9 +11,10 @@
  *  - Level 2: `LEVEL2_SECTION_ANCHORS` - the real `<GuideSection id>` ids,
  *    each linking to the topic route that renders it
  *    (`LEVEL2_ANCHOR_ROUTE_SLUG`) with the section anchor.
- *  - Ratios, Motion paths, Codex: single links. Downloads: the three PDFs.
+ *  - Ratios, Motion paths, Zan's Diamond, Three levels, Codex: single links. Downloads: the three PDFs.
  *
- * Call it inside a `$derived` so locale changes re-run the labels.
+ * Call it inside a `$derived` so locale changes re-run the labels. Pass a
+ * localizer to point the rows at a language folder (/de/guide/...).
  */
 import type {
   ModuleDefinition,
@@ -35,6 +36,7 @@ export const GUIDE_TOC_MODULE = {
   ratios: "guide-ratios",
   motionPaths: "guide-motion-paths",
   zansDiamond: "guide-zans-diamond",
+  threeLevels: "guide-three-levels",
   codex: "guide-codex",
   downloads: "guide-downloads",
 } as const;
@@ -48,7 +50,19 @@ const icon = (name: string) =>
 const level2SectionKey = (id: string) =>
   `guide_runtime_section_${id.replaceAll("-", "_")}`;
 
-export function buildGuideToc(): ModuleDefinition[] {
+export function buildGuideToc(
+  localize: (href: string) => string = (href) => href
+): ModuleDefinition[] {
+  return guideToc().map((module) => ({
+    ...module,
+    ...(module.href ? { href: localize(module.href) } : {}),
+    sections: module.sections.map((section) =>
+      section.href ? { ...section, href: localize(section.href) } : section
+    ),
+  }));
+}
+
+function guideToc(): ModuleDefinition[] {
   const level1Groups: SectionGroup[] = [];
   const level1Sections: Section[] = [];
   for (const { group, entries } of bodyPagesByGroup()) {
@@ -132,6 +146,14 @@ export function buildGuideToc(): ModuleDefinition[] {
       sections: [],
     },
     {
+      id: GUIDE_TOC_MODULE.threeLevels,
+      label: tDynamic("guide_hub_three_levels_title"),
+      icon: icon("layer-group"),
+      color: GUIDE_ACCENT,
+      href: "/guide/three-levels",
+      sections: [],
+    },
+    {
       id: GUIDE_TOC_MODULE.codex,
       label: tDynamic("guide_nav_codex"),
       icon: icon("table-cells"),
@@ -165,6 +187,7 @@ export function guideTocModuleFor(pathname: string): string {
   if (pathname === "/guide/ratios") return GUIDE_TOC_MODULE.ratios;
   if (pathname === "/guide/motion-paths") return GUIDE_TOC_MODULE.motionPaths;
   if (pathname === "/guide/zans-diamond") return GUIDE_TOC_MODULE.zansDiamond;
+  if (pathname === "/guide/three-levels") return GUIDE_TOC_MODULE.threeLevels;
   if (pathname.startsWith("/guide/codex")) return GUIDE_TOC_MODULE.codex;
   return "";
 }

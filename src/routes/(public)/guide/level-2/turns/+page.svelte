@@ -7,6 +7,7 @@
    * links, mirroring `/guide/level-2`'s own hub pattern. Kept at this URL
    * (rather than 301'd) since it already carries inbound/search traffic.
    */
+  import { localHref } from "#lib/shared/i18n/localized-href.svelte.js";
   import GuideSeo from "../../level-1/_components/GuideSeo.svelte";
   import { level2TopicPagesForChapter } from "../_data/level2-topic-routes";
   import { localizedLevel2Topic } from "../_data/localize-level2-topic";
@@ -38,7 +39,7 @@
     <ol>
       {#each topics as topic (topic.slug)}
         <li>
-          <a href="/guide/level-2/{topic.slug}">
+          <a href={localHref(`/guide/level-2/${topic.slug}`)}>
             <strong>{localizedLevel2Topic(topic, "h1")}</strong>
             <span>{localizedLevel2Topic(topic, "description")}</span>
           </a>

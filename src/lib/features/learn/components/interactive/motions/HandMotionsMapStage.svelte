@@ -171,7 +171,8 @@
     border-radius: 0.75rem;
     transition:
       background-color var(--transition-normal),
-      border-color var(--transition-normal);
+      border-color var(--transition-normal),
+      box-shadow var(--transition-normal);
   }
 
   /* A stacked slot's picture stays small, so a tall tablet keeps the map
@@ -237,12 +238,13 @@
   }
 
   .moves li.lit {
-    background: color-mix(in srgb, var(--prop-blue, #3b82f6) 16%, transparent);
-    border-color: color-mix(
-      in srgb,
-      var(--prop-blue, #3b82f6) 60%,
-      transparent
-    );
+    /* The slot just built stands out from the blue page: a light ring and
+       glow rather than a blue tint (Austen, 2026-10-14). */
+    background: color-mix(in srgb, var(--theme-text) 12%, transparent);
+    border-color: var(--theme-text);
+    box-shadow:
+      inset 0 0 0 1px var(--theme-text),
+      0 0 1.25rem color-mix(in srgb, var(--theme-text) 30%, transparent);
   }
 
   .art {
@@ -288,7 +290,7 @@
   .ping {
     position: absolute;
     inset: 0;
-    border: 2px solid var(--prop-blue, #3b82f6);
+    border: 2px solid var(--theme-text);
     border-radius: inherit;
     pointer-events: none;
     animation: ping calc(var(--duration-scene) * 0.75) var(--ease-standard-out)

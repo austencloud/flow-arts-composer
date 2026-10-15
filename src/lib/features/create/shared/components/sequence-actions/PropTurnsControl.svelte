@@ -32,10 +32,6 @@
   import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
   import { growFade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
-  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
-  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
-  import { isBuugengFamilyProp } from "#lib/shared/pictograph/prop/domain/enums/prop-classification.js";
-  import ChiralityToggle from "./ChiralityToggle.svelte";
 
   type PathChoice = PathShapeValue | "auto";
 
@@ -86,16 +82,6 @@
   }: Props = $props();
 
   const displayTurns = $derived(turns === "fl" ? "fl" : turns);
-
-  // The A/B flip belongs to the hand's prop, so it shows on every step while
-  // that hand holds a Buugeng-family prop.
-  const settings = $derived(getSettings());
-  const showChirality = $derived(
-    isBuugengFamilyProp(
-      (hand === "left" ? settings.leftPropType : settings.rightPropType) ??
-        PropType.STAFF
-    )
-  );
 
   const directionIcon = $derived(
     rotationDirection === RotationDirection.NO_ROTATION
@@ -190,7 +176,6 @@
   const compactSlots = $derived([
     "turns",
     "rotation",
-    ...(showChirality ? ["chirality"] : []),
     ...(pathAvailable ? ["pathtoggle"] : []),
     ...(trailingControl ? ["trailing"] : []),
   ]);
@@ -217,7 +202,6 @@
   class:red={hand === "right"}
   class:compact
   class:whole-steps={wholeSteps}
-  class:has-chirality={showChirality}
   style:grid-template-columns={compact ? compactColumns : undefined}
   style:grid-template-areas={compact ? compactAreas : undefined}
 >
@@ -304,12 +288,6 @@
         <span class="invert-label">{directionLabel}</span>
       </span>
     </button>
-
-    {#if showChirality}
-      <div class="chirality-slot" class:compact>
-        <ChiralityToggle {hand} {compact} />
-      </div>
-    {/if}
 
     {#if pathAvailable}
       <button
@@ -421,10 +399,6 @@
     display: contents;
   }
 
-  .chirality-slot.compact {
-    grid-area: chirality;
-  }
-
   .turns-row {
     display: flex;
     align-items: center;
@@ -476,8 +450,7 @@
   }
 
   /* Compact card: the stepper (four buttons, a 36px value, 4px gaps = 228px)
-     shares its row with the rotation and Path buttons (4 + 44 + 4 + 44), plus
-     the A/B flip (4 + 44) when the hand holds a Buugeng-family prop. */
+     shares its row with the rotation and Path buttons (4 + 44 + 4 + 44). */
   @container hand-card (min-width: 324px) {
     .turns-controls.compact {
       column-gap: 4px;
@@ -485,25 +458,13 @@
     .turns-controls.compact .turns-row {
       gap: 4px;
     }
-    .turns-controls.compact:not(.has-chirality) .ctrl-btn.whole {
+    .turns-controls.compact .ctrl-btn.whole {
       display: flex;
     }
-    .turns-controls.compact:not(.has-chirality) .half-num {
+    .turns-controls.compact .half-num {
       display: inline;
     }
-    .turns-controls.compact:not(.has-chirality) .half-icon {
-      display: none;
-    }
-  }
-
-  @container hand-card (min-width: 372px) {
-    .turns-controls.compact.has-chirality .ctrl-btn.whole {
-      display: flex;
-    }
-    .turns-controls.compact.has-chirality .half-num {
-      display: inline;
-    }
-    .turns-controls.compact.has-chirality .half-icon {
+    .turns-controls.compact .half-icon {
       display: none;
     }
   }
@@ -576,7 +537,7 @@
   .turns-controls.blue .ctrl-btn {
     background: rgba(var(--prop-color-rgb, 59, 130, 246), 0.2);
     border-color: rgba(var(--prop-color-rgb, 59, 130, 246), 0.4);
-    color: var(--prop-color, var(--semantic-info));
+    color: var(--prop-ink, var(--prop-color, var(--semantic-info)));
   }
 
   .turns-controls.blue .ctrl-btn:hover:not(:disabled) {
@@ -589,7 +550,7 @@
   .turns-controls.red .ctrl-btn {
     background: rgba(var(--prop-color-rgb, 239, 68, 68), 0.2);
     border-color: rgba(var(--prop-color-rgb, 239, 68, 68), 0.4);
-    color: var(--prop-color, var(--semantic-error));
+    color: var(--prop-ink, var(--prop-color, var(--semantic-error)));
   }
 
   .turns-controls.red .ctrl-btn:hover:not(:disabled) {
@@ -665,7 +626,7 @@
   .turns-controls.blue .invert-btn {
     background: rgba(var(--prop-color-rgb, 59, 130, 246), 0.25);
     border-color: rgba(var(--prop-color-rgb, 59, 130, 246), 0.5);
-    color: var(--prop-color, var(--semantic-info));
+    color: var(--prop-ink, var(--prop-color, var(--semantic-info)));
     box-shadow: 0 2px 8px rgba(var(--prop-color-rgb, 59, 130, 246), 0.15);
   }
 
@@ -679,7 +640,7 @@
   .turns-controls.red .invert-btn {
     background: rgba(var(--prop-color-rgb, 239, 68, 68), 0.25);
     border-color: rgba(var(--prop-color-rgb, 239, 68, 68), 0.5);
-    color: var(--prop-color, var(--semantic-error));
+    color: var(--prop-ink, var(--prop-color, var(--semantic-error)));
     box-shadow: 0 2px 8px rgba(var(--prop-color-rgb, 239, 68, 68), 0.15);
   }
 
@@ -706,7 +667,7 @@
     border-radius: 10px;
     border: 1px solid rgba(var(--prop-color-rgb, 255, 255, 255), 0.3);
     background: transparent;
-    color: var(--prop-color, var(--theme-text, #fff));
+    color: var(--prop-ink, var(--prop-color, var(--theme-text, #fff)));
     font-size: 0.95rem;
     font-weight: 600;
     cursor: pointer;
@@ -755,32 +716,6 @@
 
   .path-label.ghost {
     visibility: hidden;
-  }
-
-  /* Full mode with the A/B flip: rotation (~104) + A/B (~67) + a labelled Path
-     (136) overflow a narrow card, so Path drops to its icon (and override
-     dot) until the card can hold all three labels. */
-  .turns-controls.has-chirality:not(.compact) .path-toggle {
-    width: var(--min-touch-target);
-    padding: 0;
-  }
-
-  .turns-controls.has-chirality:not(.compact) .path-label-stack,
-  .turns-controls.has-chirality:not(.compact) .path-toggle-chevron {
-    display: none;
-  }
-
-  @container hand-card (min-width: 340px) {
-    .turns-controls.has-chirality:not(.compact) .path-toggle {
-      width: auto;
-      padding: 0 14px;
-    }
-    .turns-controls.has-chirality:not(.compact) .path-label-stack {
-      display: grid;
-    }
-    .turns-controls.has-chirality:not(.compact) .path-toggle-chevron {
-      display: inline;
-    }
   }
 
   .path-toggle-chevron {

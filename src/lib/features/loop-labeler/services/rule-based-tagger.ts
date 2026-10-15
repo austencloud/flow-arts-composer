@@ -201,6 +201,7 @@ function _getPropName(propType: PropType): string {
     case PropType.CAPSULE_BATON:
     case PropType.FIRE_DOUBLE_STAFF:
     case PropType.STICK:
+    case PropType.PEN:
       return "staff";
     case PropType.FAN:
     case PropType.BIGFAN:

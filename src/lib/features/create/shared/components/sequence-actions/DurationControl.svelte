@@ -167,11 +167,23 @@
     align-items: center;
     gap: 10px;
     padding: 14px;
-    background: transparent;
-    border: none;
-    /* Space, not a rule, separates it from the prop cards: the editor is one
-       surface, and a full-width line stopped short at the drawer handle. */
-    margin: 0 0 12px 0;
+    /* A card like the Left and Right hand cards below it (PropControlPair),
+       in the neutral tone because duration belongs to the step, not a hand.
+       It sits on the same theme ground so its controls read over any
+       backdrop the see-through editor shows. No blur. */
+    box-sizing: border-box;
+    width: fit-content;
+    max-width: 100%;
+    margin: 0 auto 12px;
+    border-radius: 12px;
+    border: 1px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.2));
+    background:
+      linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.08) 0%,
+        rgba(255, 255, 255, 0.03) 100%
+      ),
+      var(--theme-panel-elevated-bg, rgba(0, 0, 0, 0.5));
   }
 
   /* Compact mode: tighter layout matching prop cards */
@@ -179,6 +191,7 @@
     gap: 6px;
     padding: 8px;
     margin-bottom: 6px;
+    border-radius: 10px;
   }
 
   /* Duration label - matches LEFT/RIGHT label styling */

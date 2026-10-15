@@ -7009,7 +7009,7 @@ diff --git a/dist/lib/components/props/prop-model-registry.d.ts.map b/dist/lib/c
 deleted file mode 100644
 index 61d578d9780308efad435cde03d59b9a1636564f..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/props/prop-model-registry.js b/dist/lib/components/props/prop-model-registry.js
-index d26cd3a0b4aecdbc58a6132f134f8d0965a94ebf..e91cd0df9c05a13143aa4b4a16c1cce726219afd 100644
+index d26cd3a0b4aecdbc58a6132f134f8d0965a94ebf..59ccd8a49d9e3b5b196afca4cfa71dd9215db6cd 100644
 --- a/dist/lib/components/props/prop-model-registry.js
 +++ b/dist/lib/components/props/prop-model-registry.js
 @@ -25,6 +25,39 @@ function modelUrl(filename) {
@@ -7052,7 +7052,7 @@ index d26cd3a0b4aecdbc58a6132f134f8d0965a94ebf..e91cd0df9c05a13143aa4b4a16c1cce7
  /**
   * Registry of available GLTF prop models.
   *
-@@ -32,9 +65,131 @@ function modelUrl(filename) {
+@@ -32,9 +65,141 @@ function modelUrl(filename) {
   * Add entries as models become available - the system degrades gracefully.
   */
  export const PROP_MODEL_REGISTRY = {
@@ -7180,13 +7180,23 @@ index d26cd3a0b4aecdbc58a6132f134f8d0965a94ebf..e91cd0df9c05a13143aa4b4a16c1cce7
 +        scale: 1,
 +        gripOffsetY: 0,
 +    },
++    /**
++     * A ballpoint pen, a palm-size double staff. Real size (14.2 cm), held at
++     * the middle; the cap end is the thumb end. Cap, clip and band take the
++     * hand colour; the barrel stays black.
++     */
++    [PropType.PEN]: {
++        modelUrl: modelUrl("pen.glb"),
++        scale: 1,
++        gripOffsetY: 0,
++    },
  };
 +/** Smaller prop families that reuse an authored base model. */
 +export const SHARED_MODEL_VARIANT_MAP = {};
  /**
   * Look up a GLTF model for a prop type. Returns null if no model
   * is available (caller should fall back to procedural geometry).
-@@ -49,11 +204,13 @@ export function getPropModel(propType) {
+@@ -49,11 +214,13 @@ export function getPropModel(propType) {
  export const BIG_VARIANT_MAP = {
      [PropType.BIGSTAFF]: { base: PropType.STAFF, scale: 1.4 },
      [PropType.BIGCLUB]: { base: PropType.CLUB, scale: 1.4 },
@@ -7202,7 +7212,7 @@ index d26cd3a0b4aecdbc58a6132f134f8d0965a94ebf..e91cd0df9c05a13143aa4b4a16c1cce7
      [PropType.BIGDOUBLESTAR]: { base: PropType.DOUBLESTAR, scale: 1.4 },
      [PropType.BIGEIGHTRINGS]: { base: PropType.EIGHTRINGS, scale: 1.4 },
      [PropType.BIGCONTACTBALL]: { base: PropType.CONTACTBALL, scale: 1.4 },
-@@ -72,6 +229,15 @@ export function resolvePropModel(propType) {
+@@ -72,6 +239,15 @@ export function resolvePropModel(propType) {
      const direct = getPropModel(propType);
      if (direct)
          return { entry: direct, scale: direct.scale };
@@ -8005,7 +8015,7 @@ diff --git a/dist/lib/domain/enums/PropType.d.ts.map b/dist/lib/domain/enums/Pro
 deleted file mode 100644
 index b7409eb0c5a99e845b2969440b9c08331729704d..0000000000000000000000000000000000000000
 diff --git a/dist/lib/domain/enums/PropType.js b/dist/lib/domain/enums/PropType.js
-index 15844ec32763c63fe4955b8c893dbcdd5156ff4b..134c1c2ea20defe2202d6c46ab9f3136409245b5 100644
+index 15844ec32763c63fe4955b8c893dbcdd5156ff4b..40a9251ee0d734752750f8eb43aadb4adaf6f382 100644
 --- a/dist/lib/domain/enums/PropType.js
 +++ b/dist/lib/domain/enums/PropType.js
 @@ -20,6 +20,7 @@ export var PropType;
@@ -8016,13 +8026,14 @@ index 15844ec32763c63fe4955b8c893dbcdd5156ff4b..134c1c2ea20defe2202d6c46ab9f3136
      PropType["CHICKEN"] = "chicken";
      PropType["BIGCHICKEN"] = "bigchicken";
      PropType["GUITAR"] = "guitar";
-@@ -33,6 +34,9 @@ export var PropType;
+@@ -33,6 +34,10 @@ export var PropType;
      PropType["DOUBLECONTACTBALL"] = "doublecontactball";
      PropType["BIGDOUBLECONTACTBALL"] = "bigdoublecontactball";
      PropType["QUIAD"] = "quiad";
 +    PropType["CAPSULE_BATON"] = "capsule_baton";
 +    PropType["FIRE_DOUBLE_STAFF"] = "fire_double_staff";
 +    PropType["STICK"] = "stick";
++    PropType["PEN"] = "pen";
      PropType["TORCH"] = "torch";
      PropType["BIGTORCH"] = "bigtorch";
      PropType["POI"] = "poi";
@@ -28212,7 +28223,7 @@ index 6d8e91ce13c491ba06883641fbabc36adb2beeb0..d4e3f130bcf51597c60f8e19a7b66eee
    });
  }
 diff --git a/src/lib/components/props/prop-model-registry.ts b/src/lib/components/props/prop-model-registry.ts
-index 899e076e7e08becffb11b36d6651a9099ab43d6c..6514593a0c7d19ccc71bf88730ac06873a1c42a3 100644
+index 899e076e7e08becffb11b36d6651a9099ab43d6c..c56c74ce70da34e72d292f7a5968e95420e85362 100644
 --- a/src/lib/components/props/prop-model-registry.ts
 +++ b/src/lib/components/props/prop-model-registry.ts
 @@ -20,6 +20,21 @@ export interface PropModelEntry {
@@ -28282,7 +28293,7 @@ index 899e076e7e08becffb11b36d6651a9099ab43d6c..6514593a0c7d19ccc71bf88730ac0687
  /**
   * Registry of available GLTF prop models.
   *
-@@ -46,10 +99,135 @@ function modelUrl(filename: string): string {
+@@ -46,10 +99,145 @@ function modelUrl(filename: string): string {
   * Add entries as models become available - the system degrades gracefully.
   */
  export const PROP_MODEL_REGISTRY: Partial<Record<PropType, PropModelEntry>> = {
@@ -28410,6 +28421,16 @@ index 899e076e7e08becffb11b36d6651a9099ab43d6c..6514593a0c7d19ccc71bf88730ac0687
 +    scale: 1,
 +    gripOffsetY: 0,
 +  },
++  /**
++   * A ballpoint pen, a palm-size double staff. Real size (14.2 cm), held at
++   * the middle; the cap end is the thumb end. Cap, clip and band take the
++   * hand colour; the barrel stays black.
++   */
++  [PropType.PEN]: {
++    modelUrl: modelUrl("pen.glb"),
++    scale: 1,
++    gripOffsetY: 0,
++  },
  };
  
 +/** Smaller prop families that reuse an authored base model. */
@@ -28420,7 +28441,7 @@ index 899e076e7e08becffb11b36d6651a9099ab43d6c..6514593a0c7d19ccc71bf88730ac0687
  /**
   * Look up a GLTF model for a prop type. Returns null if no model
   * is available (caller should fall back to procedural geometry).
-@@ -67,11 +245,13 @@ export const BIG_VARIANT_MAP: Partial<
+@@ -67,11 +255,13 @@ export const BIG_VARIANT_MAP: Partial<
  > = {
    [PropType.BIGSTAFF]: { base: PropType.STAFF, scale: 1.4 },
    [PropType.BIGCLUB]: { base: PropType.CLUB, scale: 1.4 },
@@ -28436,7 +28457,7 @@ index 899e076e7e08becffb11b36d6651a9099ab43d6c..6514593a0c7d19ccc71bf88730ac0687
    [PropType.BIGDOUBLESTAR]: { base: PropType.DOUBLESTAR, scale: 1.4 },
    [PropType.BIGEIGHTRINGS]: { base: PropType.EIGHTRINGS, scale: 1.4 },
    [PropType.BIGCONTACTBALL]: { base: PropType.CONTACTBALL, scale: 1.4 },
-@@ -93,6 +273,16 @@ export function resolvePropModel(
+@@ -93,6 +283,16 @@ export function resolvePropModel(
    const direct = getPropModel(propType);
    if (direct) return { entry: direct, scale: direct.scale };
  
@@ -29484,7 +29505,7 @@ index 0000000000000000000000000000000000000000..7533d55eb9587dc3eda6ea149de226fc
 +  w.__avatarLoadClear = clearAvatarLoadSpans;
 +}
 diff --git a/src/lib/domain/enums/PropType.ts b/src/lib/domain/enums/PropType.ts
-index a6a29aa9b928eb98fc102f572da1ed2035c658ba..0da81cb64e5752aeeb29e8e9cf25065832926447 100644
+index a6a29aa9b928eb98fc102f572da1ed2035c658ba..a836c10409ea0fc3b6fa4d9a51815eb2f160de79 100644
 --- a/src/lib/domain/enums/PropType.ts
 +++ b/src/lib/domain/enums/PropType.ts
 @@ -11,6 +11,7 @@ export enum PropType {
@@ -29503,13 +29524,14 @@ index a6a29aa9b928eb98fc102f572da1ed2035c658ba..0da81cb64e5752aeeb29e8e9cf250658
  	CHICKEN = "chicken",
  	BIGCHICKEN = "bigchicken",
  	GUITAR = "guitar",
-@@ -32,6 +34,9 @@ export enum PropType {
+@@ -32,6 +34,10 @@ export enum PropType {
  	DOUBLECONTACTBALL = "doublecontactball",
  	BIGDOUBLECONTACTBALL = "bigdoublecontactball",
  	QUIAD = "quiad",
 +	CAPSULE_BATON = "capsule_baton",
 +	FIRE_DOUBLE_STAFF = "fire_double_staff",
 +	STICK = "stick",
++	PEN = "pen",
  	TORCH = "torch",
  	BIGTORCH = "bigtorch",
  	POI = "poi",

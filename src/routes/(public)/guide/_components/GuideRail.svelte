@@ -11,9 +11,12 @@
    * can't hover open, and the topic rows have no icons to show in it).
    */
   import { tick } from "svelte";
-  import { page } from "$app/state";
   import { Sidebar } from "@austencloud/sidebar";
   import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
+  import {
+    currentRoutePath,
+    localHref,
+  } from "#lib/shared/i18n/localized-href.svelte.js";
   import {
     buildGuideToc,
     guideTocModuleFor,
@@ -29,8 +32,8 @@
     onReservedWidthChange?: (px: number) => void;
   } = $props();
 
-  const pathname = $derived(page.url.pathname);
-  const modules = $derived(buildGuideToc());
+  const pathname = $derived(currentRoutePath());
+  const modules = $derived(buildGuideToc(localHref));
   const currentModule = $derived(guideTocModuleFor(pathname));
   const currentSection = $derived(
     guideTocSectionFor(pathname, activeSectionId)
@@ -100,7 +103,7 @@
     {currentSection}
     pinStorageKey="guide-rail"
     expandedWidth={EXPANDED_WIDTH}
-    homeHref="/guide"
+    homeHref={localHref("/guide")}
     navigationLabel={tDynamic("guide_nav_aria")}
     homeLabel={tDynamic("guide_paths_part_of")}
     pinLabel={tDynamic("nav_pin_sidebar")}
