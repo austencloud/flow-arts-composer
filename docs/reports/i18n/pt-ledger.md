@@ -47,7 +47,6 @@
 - Uncertain: TKA Core / Core are shelf navigation labels in `WorkShelfRail.svelte`, rendered Núcleo TKA / Núcleo. The glossary does not establish whether Core should be protected as a named deck group; native terminology review remains needed.
 - No native-speaker review performed. No primary checkout access, dependency installation, broad checks, server, integration, or push performed.
 
-
 ## R4 — 2026-10-14
 
 - Batch: `batch-R4.json`; 852 translated entries, 0 retranslation entries, 0 review entries. Shared Portuguese words, platform terms and glossary loanwords retain identical values where appropriate.
