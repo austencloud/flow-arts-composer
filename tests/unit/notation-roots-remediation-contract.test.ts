@@ -47,7 +47,7 @@ describe("notation catalog", () => {
   it("is withdrawn publicly while its authors are asked, but stays whole on a dev server", () => {
     // Production prerenders the noindex note; only a local dev server renders
     // the full archive at /history (see the comment atop the page).
-    expect(notationRoute).toContain('import { dev } from "$app/environment"');
+    expect(notationRoute).toContain('import { dev } from "$app/env"');
     expect(notationRoute).toMatch(/\{#if dev\}\s*<ArchiveFullPage/);
     expect(notationRoute).toContain("UnderConstruction");
     expect(notationRoute).toContain('content="noindex, follow"');

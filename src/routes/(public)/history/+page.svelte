@@ -14,7 +14,7 @@
   sitemap, header, footer, launchpad tile, and FAQ, and drop the draft route.
 -->
 <script lang="ts">
-  import { dev } from "$app/environment";
+  import { dev } from "$app/env";
   import "#lib/shared/landing/styles/public-editorial.css";
   import UnderConstruction from "#lib/shared/landing/components/UnderConstruction.svelte";
   import ArchiveFullPage from "./_components/archive/ArchiveFullPage.svelte";

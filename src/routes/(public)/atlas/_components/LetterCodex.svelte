@@ -83,7 +83,9 @@
   let leftRotation = $state<RotationDirectionValue>(
     RotationDirection.CLOCKWISE
   );
-  let rightRotation = $state<RotationDirectionValue>(RotationDirection.CLOCKWISE);
+  let rightRotation = $state<RotationDirectionValue>(
+    RotationDirection.CLOCKWISE
+  );
   let overlayOpen = $state(false);
   let stageBoard = $state<ReturnType<typeof BoardStage> | undefined>();
 
@@ -350,8 +352,8 @@
       onSelect={select}
       {info}
       variations={stageVariations}
-      isLoading={loadingByGrid[GridMode.DIAMOND]}
-      loadError={errorByGrid[GridMode.DIAMOND]}
+      isLoading={loadingByGrid[GridMode.DIAMOND] ?? false}
+      loadError={errorByGrid[GridMode.DIAMOND] ?? false}
       onRetry={() => loadGrid(GridMode.DIAMOND)}
     />
   {/if}

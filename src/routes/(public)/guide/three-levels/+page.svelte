@@ -17,7 +17,7 @@
    * #lib/shared/guide-topics/three-levels-topic.ts.
    * Spec: docs/superpowers/specs/2026-10-14-three-levels-guide-page-design.md
    */
-  import { dev } from "$app/environment";
+  import { dev } from "$app/env";
   import UnderConstruction from "#lib/shared/landing/components/UnderConstruction.svelte";
   import GuideShell from "../_components/GuideShell.svelte";
   import GuideSeo from "../level-1/_components/GuideSeo.svelte";
