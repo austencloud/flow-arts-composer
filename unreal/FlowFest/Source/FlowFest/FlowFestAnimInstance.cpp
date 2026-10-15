@@ -255,8 +255,12 @@ void FFlowFestAnimProxy::PreUpdate(UAnimInstance* Instance, float DeltaSeconds)
     bCapturedWristsValid = false;
     // Prop and body clocks advance together in this PreUpdate. Read the
     // authored wrist chord here, before the mesh evaluates on another thread.
+    // A faded outgoing clip remains in the array until its weight reaches
+    // 0.0001. Treat it as settled once its contribution is below 0.001;
+    // otherwise the next routine never receives seam correction during tests
+    // or the first loop after a same-frame switch.
     if (Source->PerformanceClip && Source->PerformanceWeight > .999f &&
-        Source->OutgoingPerformanceClips.IsEmpty())
+        Source->GetOutgoingPerformanceWeight() < .001f)
     {
         if (const UFlowFestPropComponent* Prop = Source->GripSource.Get())
         {
