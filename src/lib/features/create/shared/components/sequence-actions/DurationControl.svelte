@@ -194,6 +194,14 @@
     border-radius: 10px;
   }
 
+  /* On a phone the hand card below spans the controls zone inside its 8px
+     padding (StepControlsZone .stacked), so this card spans the same width and
+     their edges line up. Beside the preview (stacked) it keeps its own size. */
+  .duration-control.compact:not(.stacked) {
+    width: auto;
+    margin-inline: 8px;
+  }
+
   /* Duration label - matches LEFT/RIGHT label styling */
   .duration-label {
     font-size: 0.75rem;
