@@ -53,6 +53,13 @@
   import { setSideBySideLayout } from "#lib/shared/application/state/animation-visibility-state.svelte.js";
   import { onMount, setContext, tick, untrack } from "svelte";
   import ErrorBanner from "./ErrorBanner.svelte";
+  import DraftRecovery from "./DraftRecovery.svelte";
+  import { getSequencePersister } from "../get-sequence-persister";
+  import {
+    createDraftRecoveryController,
+    draftMode,
+    type DraftRecoveryController,
+  } from "../state/create-module/draft-recovery-controller.svelte";
   import type { CreateModuleOrchestrators } from "../types/create-module-services";
   import type { CreateModuleInitializer } from "../services/create-module-initializer";
   import type { CreateModuleHandlers } from "../services/create-module-handlers";
@@ -104,7 +111,7 @@
   import type { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
   import { loopTypeLabel } from "#lib/features/create/generate/components/loop-component-presentation.js";
   import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
-  import { UndoOperationType } from "../services/undo-manager";
+  import { UndoOperationType, undoManager } from "../services/undo-manager";
   import PropUnlockCelebration from "#lib/shared/gamification/components/PropUnlockCelebration.svelte";
   import { getPropUnlockManager } from "#lib/shared/gamification/get-prop-unlock-manager.js";
   import { createConstructTutorialState } from "../../construct/tutorial/state/construct-tutorial-state.svelte";
@@ -143,6 +150,41 @@
   // Session management services
   let sessionManager: SessionManager | null = $state(null);
   let autosaver: Autosaver | null = $state(null);
+  let draftRecovery: DraftRecoveryController | null = $state(null);
+
+  $effect(() => {
+    draftRecovery?.observeActiveMode();
+  });
+
+  $effect(() => {
+    const mode = draftMode(navigationState.activeTab);
+    const recovery = draftRecovery;
+    const saver = autosaver;
+    const status = recovery?.status;
+    if (!mode || !recovery || !saver || !status) return;
+    const sessionId = status.sessionId;
+    // Cloud/session tracking follows the same accepted local draft. A blocked
+    // save must not publish an unresolved version under another draft's name.
+    untrack(() => {
+      saver.stopAutosave();
+      if (["conflict", "recovery", "error"].includes(status.status)) return;
+      if (sessionManager?.getSessionId() !== sessionId) {
+        sessionManager = new SessionManager(sessionId);
+      }
+      saver.startAutosave(
+        () =>
+          CreateModuleState?.isTutorialWorkspaceIsolated
+            ? null
+            : (CreateModuleState?.getSequenceStateForTab(mode)
+                .currentSequence ?? null),
+        sessionId,
+        30000,
+        (sequence) =>
+          sessionManager?.recordAutosave(sequence.steps.length, sequence.name)
+      );
+    });
+    return () => saver.stopAutosave();
+  });
 
   // Settings service for user preferences
   let settingsService: SettingsState | null = $state(null);
@@ -473,6 +515,17 @@
     bootProfiler.milestone("create:mounted");
     const finishActivation = bootProfiler.startSpan("create:activation");
     let checkIsMobile: (() => void) | null = null;
+    const flushDraft = () => {
+      if (document.visibilityState === "hidden") draftRecovery?.flushPending();
+    };
+    const warnBeforeLeaving = (event: BeforeUnloadEvent) => {
+      if (!draftRecovery?.hasUnsavedChanges) return;
+      draftRecovery.flushPending();
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    document.addEventListener("visibilitychange", flushDraft);
+    window.addEventListener("beforeunload", warnBeforeLeaving);
 
     // Hydrate the prop-unlock collection on entry so the redemption badge and
     // celebration reflect the user's pending picks immediately.
@@ -492,6 +545,11 @@
             import("#lib/features/create/shared/get-create-module-initializer.js")
         );
         const initService = getCreateModuleInitializer();
+        getSequencePersister().setHistoryAdapter({
+          capture: (mode) => undoManager.captureDraftHistory(mode),
+          restore: (mode, sessionId, history) =>
+            undoManager.restoreDraftHistory(mode, sessionId, history),
+        });
 
         initProgress = t("create_ui_initializing_workspace");
         const result = await bootProfiler.measureAsync(
@@ -516,6 +574,15 @@
 
         CreateModuleState = result.CreateModuleState;
         constructTabState = result.constructTabState;
+        draftRecovery = createDraftRecoveryController({
+          persister: result.SequencePersister,
+          getActiveMode: () => navigationState.activeTab as BuildModeId,
+          getSequenceState: (mode) =>
+            CreateModuleState!.getSequenceStateForTab(mode),
+          onRestored: (mode) => {
+            if (mode === "construct") syncConstructWorkspaceUi();
+          },
+        });
 
         // Extract UI coordination services from result (no manual resolution needed)
         handlers = result.handlers;
@@ -594,9 +661,14 @@
           "create:restore-sequence",
           () =>
             initService.loadSequenceAndInitializePersistence(
-              (sequence: any) =>
-                CreateModuleState!.sequenceState.setCurrentSequence(sequence),
-              () => CreateModuleState!.initializeWithPersistence()
+              (sequence, mode) =>
+                CreateModuleState!
+                  .getSequenceStateForTab(
+                    mode ?? (navigationState.activeTab as BuildModeId)
+                  )
+                  .setCurrentSequence(sequence),
+              (skipRestore) =>
+                CreateModuleState!.initializeWithPersistence(skipRestore)
             )
         );
 
@@ -614,40 +686,6 @@
 
           hasDeepLink = true;
         }
-
-        // A browser/WebContent reload resumes the same draft and analytics
-        // session. Explicitly loaded work gets a fresh identity instead.
-        const sessionStart = await bootProfiler.measureAsync(
-          "create:resolve-session",
-          () => autosaver!.resolveSessionForStart(!loadResult.sequenceLoaded)
-        );
-        sessionManager = new SessionManager(sessionStart.sessionId);
-        if (sessionStart.recovered) {
-          try {
-            await bootProfiler.measureAsync(
-              "create:restore-session-metadata",
-              () => sessionManager!.loadSession(sessionStart.sessionId)
-            );
-          } catch (sessionError) {
-            logger.warn(
-              "[CreateModule] Existing session metadata could not be restored:",
-              sessionError
-            );
-          }
-        }
-
-        // The first non-empty autosave creates or resumes the Firestore session.
-        // Opening and closing an untouched workspace leaves no empty cloud record.
-        autosaver.startAutosave(
-          () =>
-            CreateModuleState?.isTutorialWorkspaceIsolated
-              ? null
-              : CreateModuleState?.sequenceState.currentSequence || null,
-          sessionStart.sessionId,
-          30000,
-          (sequence) =>
-            sessionManager?.recordAutosave(sequence.steps.length, sequence.name)
-        );
 
         logger.success("Autosave started");
         logger.success("CreateModule initialized successfully");
@@ -686,7 +724,11 @@
         // start-placement-only sequence as non-empty, so a guest who began a
         // build isn't interrupted. Skippable and self-suppressing after the
         // first decision (appEntryState persists it).
-        if (!hasDeepLink && CreateModuleState.isWorkspaceEmpty()) {
+        if (
+          !hasDeepLink &&
+          !draftRecovery.hasUnresolvedDraft &&
+          CreateModuleState.isWorkspaceEmpty()
+        ) {
           appEntryState.offerCreateTutorial();
         }
 
@@ -710,6 +752,8 @@
     // Return cleanup function synchronously (required for Svelte 5 onMount)
     return () => {
       finishActivation("cancelled");
+      document.removeEventListener("visibilitychange", flushDraft);
+      window.removeEventListener("beforeunload", warnBeforeLeaving);
       finishTutorialWorkspace();
 
       if (checkIsMobile) {
@@ -738,6 +782,8 @@
 
       // Cleanup session management
       autosaver?.stopAutosave();
+      draftRecovery?.flushPending();
+      draftRecovery?.dispose();
       if (sessionManager?.getCurrentSession()) {
         void sessionManager.abandonSession().catch((sessionError) => {
           logger.warn("[CreateModule] Session cleanup failed:", sessionError);
@@ -1041,6 +1087,9 @@
 
 {#snippet workspaceSurface()}
   <div class="create-workspace-source">
+    {#if draftRecovery}
+      <DraftRecovery controller={draftRecovery} />
+    {/if}
     <div class="create-workspace-body">
       {#if error}
         <ErrorBanner message={error} onDismiss={clearError} />

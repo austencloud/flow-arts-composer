@@ -31,6 +31,7 @@ import type { TargetHand } from "./panel-coordination-state.svelte";
 import { logSequenceAction } from "#lib/shared/analytics/services/posthog-activity-logger.js";
 import { startPlacementDeriver } from "#lib/shared/pictograph/shared/services/start-placement-deriver.js";
 import type { SequencePersister } from "#lib/features/create/shared/services/sequence-persister.js";
+import type { WorkspaceDraftState } from "#lib/features/create/shared/services/draft-types.js";
 import type { SequenceRepository } from "#lib/shared/create/services/sequence-repository.js";
 import type { ReversalDetector } from "#lib/shared/create/services/reversal-detector.js";
 import type { SequenceStatsCalculator } from "#lib/features/create/shared/services/sequence-stats-calculator.js";
@@ -122,7 +123,7 @@ export function createSequenceState(services: SequenceStateServices) {
     onSave: saveSequenceDataOnly,
   });
 
-  async function initializeWithPersistence(): Promise<void> {
+  async function initializeWithPersistence(skipRestore = false): Promise<void> {
     // Check if there's a pending deep link OR pending edit - if so, skip persistence restoration
     // This prevents overwriting deep link/pending edit sequences with old saved state
     let hasDeepLink = false;
@@ -138,23 +139,42 @@ export function createSequenceState(services: SequenceStateServices) {
       void 0; // Suppress unused catch binding warning
     }
 
-    if (hasDeepLink || hasPendingEdit) {
+    if (skipRestore || hasDeepLink || hasPendingEdit) {
       // Still initialize the coordinator but don't load saved state
-      await persistenceCoordinator.initialize();
+      await persistenceCoordinator.initialize(true);
       return;
     }
 
     const savedState = await persistenceCoordinator.initialize();
 
     if (savedState) {
-      coreState.setCurrentSequence(savedState.currentSequence);
-      selectionState.setStartPlacement(savedState.selectedStartPlacement);
+      restoreDraftState(savedState);
+    }
+  }
+
+  function restoreDraftState(workspace: WorkspaceDraftState): void {
+    cancelPendingSave();
+    setCurrentSequence(workspace.currentSequence, { restore: true });
+    setSelectedStartPlacement(workspace.selectedStartPlacement, {
+      restore: true,
+    });
+    persistenceCoordinator.updateCachedActiveTab(workspace.activeBuildSection);
+  }
+
+  function cancelPendingSave(): void {
+    if (saveTimeout) {
+      clearTimeout(saveTimeout);
+      saveTimeout = null;
     }
   }
 
   async function saveCurrentState(
     activeBuildSection: BuildModeId
   ): Promise<void> {
+    if (saveTimeout) {
+      clearTimeout(saveTimeout);
+      saveTimeout = null;
+    }
     await persistenceCoordinator.saveState({
       currentSequence: coreState.currentSequence,
       selectedStartPlacement: selectionState.selectedStartPlacement,
@@ -389,7 +409,10 @@ export function createSequenceState(services: SequenceStateServices) {
     }
   }
 
-  function setCurrentSequence(sequence: SequenceData | null): void {
+  function setCurrentSequence(
+    sequence: SequenceData | null,
+    options?: { restore?: boolean }
+  ): void {
     // Normalize step numbers for imported sequences (e.g., from Browse gallery).
     // Steps loaded from Firestore may lack stepNumber, causing step selection to fail
     // because selectStep() validates stepNumber against the sequence length.
@@ -468,11 +491,15 @@ export function createSequenceState(services: SequenceStateServices) {
       selectionState.setStartPlacement(null);
     }
 
+    if (options?.restore) return;
+    persistenceCoordinator.markDirty();
+
     // 🚀 PERFORMANCE: Debounced auto-save to prevent blocking on every step addition
     if (saveTimeout) {
       clearTimeout(saveTimeout);
     }
     saveTimeout = setTimeout(() => {
+      saveTimeout = null;
       saveSequenceDataOnly().catch((error) => {
         console.error("Failed to auto-save sequence state:", error);
       });
@@ -494,15 +521,20 @@ export function createSequenceState(services: SequenceStateServices) {
   }
 
   function setSelectedStartPlacement(
-    startPlacement: StartPlacementData | null
+    startPlacement: StartPlacementData | null,
+    options?: { restore?: boolean }
   ): void {
     selectionState.setStartPlacement(startPlacement);
+
+    if (options?.restore) return;
+    persistenceCoordinator.markDirty();
 
     // 🚀 PERFORMANCE: Debounced auto-save
     if (saveTimeout) {
       clearTimeout(saveTimeout);
     }
     saveTimeout = setTimeout(() => {
+      saveTimeout = null;
       saveSequenceDataOnly().catch((error) => {
         console.error("Failed to auto-save start placement state:", error);
       });
@@ -858,6 +890,8 @@ export function createSequenceState(services: SequenceStateServices) {
 
     // Persistence
     initializeWithPersistence,
+    restoreDraftState,
+    cancelPendingSave,
     saveCurrentState,
     saveSequenceDataOnly,
     clearPersistedState: async () => {

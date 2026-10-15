@@ -381,26 +381,9 @@ export function createConstructTabState(
     isInitialized = true;
 
     // Now load persisted state asynchronously - this may update the picker state
-    if (hasPendingEdit) {
-      // Just initialize without loading saved state
-      if (sequenceState) {
-        await sequenceState.initializeWithPersistence();
-      }
-      // Don't set showStartPlacementPicker here - let the pending edit effect handle it
-    } else if (SequencePersister && sequenceState) {
+    if (SequencePersister && sequenceState) {
       try {
-        await sequenceState.initializeWithPersistence();
-
-        // Check if we have a persisted state that should affect UI
-        // IMPORTANT: Pass "construct" to load only Construct's persisted data
-        // Without this, it loads based on navigationState.currentSection which could be another tab
-        const savedState =
-          await SequencePersister.loadCurrentState("construct");
-        debug.log("init: savedState =", savedState);
-        debug.log(
-          "init: savedState?.hasStartPlacement =",
-          savedState?.hasStartPlacement
-        );
+        await sequenceState.initializeWithPersistence(hasPendingEdit);
         debug.log(
           "init: sequenceState.hasStartPlacement =",
           sequenceState.hasStartPlacement
@@ -410,18 +393,18 @@ export function createConstructTabState(
           sequenceState.getCurrentSequenceData()
         );
 
-        if (savedState?.hasStartPlacement) {
+        if (sequenceState.hasStartPlacement) {
           debug.log(
             "Persisted state has start placement, setting showStartPlacementPicker = false"
           );
           setShowStartPlacementPicker(false);
-          setSelectedStartPlacement(savedState.selectedStartPlacement);
-          if (savedState.selectedStartPlacement) {
+          setSelectedStartPlacement(sequenceState.selectedStartPlacement);
+          if (sequenceState.selectedStartPlacement) {
             startPlacementStateService.setSelectedPlacement(
-              savedState.selectedStartPlacement
+              sequenceState.selectedStartPlacement
             );
           }
-        } else {
+        } else if (!hasPendingEdit) {
           // No saved state - we already set the default above, just clear any stale state
           debug.log(
             "No persisted start placement, keeping showStartPlacementPicker = true"
