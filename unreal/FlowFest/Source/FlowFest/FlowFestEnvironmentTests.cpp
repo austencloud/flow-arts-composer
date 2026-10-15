@@ -2,6 +2,7 @@
 #include "Misc/AutomationTest.h"
 #include "Dom/JsonObject.h"
 #include "Engine/StaticMesh.h"
+#include "Materials/MaterialInterface.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "Serialization/JsonReader.h"
@@ -36,7 +37,18 @@ bool FFlowFestEnvironmentAssetsTest::RunTest(const FString& Parameters)
     for (const TCHAR* Name : { TEXT("ForestGrass"), TEXT("DampSedge"), TEXT("HazelShrub") })
     {
         const FString Path = FString::Printf(TEXT("/Game/FlowFest/Assets/Ecology/%s.%s"), Name, Name);
-        TestNotNull(*FString::Printf(TEXT("Imported ecology mesh %s"), Name), LoadObject<UStaticMesh>(nullptr, *Path));
+        UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, *Path);
+        if (TestNotNull(*FString::Printf(TEXT("Imported ecology mesh %s"), Name), Mesh))
+        {
+            TestTrue(*FString::Printf(TEXT("Ecology mesh %s has materials"), Name),
+                !Mesh->GetStaticMaterials().IsEmpty());
+            for (int32 Slot = 0; Slot < Mesh->GetStaticMaterials().Num(); ++Slot)
+            {
+                UMaterialInterface* Material = Mesh->GetMaterial(Slot);
+                TestTrue(*FString::Printf(TEXT("Ecology material %s[%d] preserves double-sided source"), Name, Slot),
+                    Material && Material->IsTwoSided());
+            }
+        }
     }
     for (const TCHAR* Name : { TEXT("WoodlandWind"), TEXT("Birds"), TEXT("Insects"), TEXT("Camp"), TEXT("Fire"), TEXT("Crowd") })
     {
