@@ -180,6 +180,21 @@ export const MODULE_DEFINITIONS: ModuleDefinition[] = [
     description: "Browse sequences and collections",
     isMain: true,
     sections: BROWSE_TABS,
+    home: {
+      get label() {
+        return t("module_browse");
+      },
+      get optionLabel() {
+        return t("module_browse");
+      },
+      get ariaLabel() {
+        return t("nav_browse_home");
+      },
+      get description() {
+        return t("nav_browse_home_description");
+      },
+      icon: '<i class="fas fa-compass" aria-hidden="true"></i>',
+    },
   },
   {
     id: "creators",

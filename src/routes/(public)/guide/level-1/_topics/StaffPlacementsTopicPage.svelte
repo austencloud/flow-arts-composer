@@ -7,6 +7,7 @@
   Every sentence comes from the shared topic record.
 -->
 <script lang="ts">
+  import Sentences from "../../_components/Sentences.svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
@@ -49,8 +50,9 @@
 
   <div class="intro">
     <p>
-      {staffPlacementsTopicText("trackRotations")}
-      {staffPlacementsTopicText("negativeSpace")}
+      <Sentences
+        text={`${staffPlacementsTopicText("trackRotations")} ${staffPlacementsTopicText("negativeSpace")}`}
+      />
     </p>
     <p>
       {staffPlacementsTopicText("centerEnd")}
@@ -99,8 +101,8 @@
   </div>
 
   <aside class="remember">
-    <p>{staffPlacementsTopicText("unmarked")}</p>
-    <p>{staffPlacementsTopicText("thumbsInFirst")}</p>
+    <p><Sentences text={staffPlacementsTopicText("unmarked")} /></p>
+    <p><Sentences text={staffPlacementsTopicText("thumbsInFirst")} /></p>
   </aside>
 
   {#if lessonHref}

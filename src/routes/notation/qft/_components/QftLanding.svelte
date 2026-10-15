@@ -31,7 +31,7 @@
     >
   </div>
 
-  <a class="exit" href="/notation/poi">
+  <a class="exit" href="/notation/props#poi">
     <i class="fas fa-chevron-left" aria-hidden="true"></i>
     <span>Poi notation</span>
   </a>

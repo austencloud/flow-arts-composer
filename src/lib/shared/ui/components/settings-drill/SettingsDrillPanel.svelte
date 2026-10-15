@@ -37,6 +37,9 @@ named in .claude/rules/crossfade-primitive.md.
     value: string;
     disabled?: boolean;
     disabledReason?: string;
+    /** A screen opened from inside another: Back returns to that one, and
+     * the root list leaves it out. */
+    parent?: string;
   };
 </script>
 
@@ -86,8 +89,20 @@ named in .claude/rules/crossfade-primitive.md.
   // them — collapse the duration instead.
   const motionMs = $derived(reducedMotion ? 0 : DURATION.normal);
 
-  // Push slides in from the right, pop slides back in from the left.
-  const enterX = $derived(activeItem ? 32 : -32);
+  // Push slides in from the right, pop slides back in from the left. Depth,
+  // not presence, says which: Back from a nested screen lands on a detail.
+  function depthOf(id: string | null): number {
+    const item = items.find((i) => i.id === id);
+    return item ? (item.parent ? 2 : 1) : 0;
+  }
+  let shownDepth = 0;
+  const enterX = $derived.by(() => {
+    const depth = depthOf(selected);
+    const x = depth >= shownDepth ? 32 : -32;
+    shownDepth = depth;
+    return x;
+  });
+  const rootItems = $derived(items.filter((i) => !i.parent));
 
   function choose(item: SettingsDrillItem) {
     // A locked row explains itself in place; it never navigates to a detail
@@ -98,8 +113,8 @@ named in .claude/rules/crossfade-primitive.md.
   }
 
   function goBack() {
-    selected = null;
-    onSelect?.(null);
+    selected = activeItem?.parent ?? null;
+    onSelect?.(selected);
   }
 </script>
 
@@ -116,7 +131,7 @@ named in .claude/rules/crossfade-primitive.md.
               {@render listContent()}
             {:else}
               <div class="row-list">
-                {#each items as item (item.id)}
+                {#each rootItems as item (item.id)}
                   <SettingsDrillRow
                     label={item.label}
                     value={item.value}

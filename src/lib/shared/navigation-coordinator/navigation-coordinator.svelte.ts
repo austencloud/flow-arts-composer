@@ -267,6 +267,11 @@ const MODULE_ORDER = [
   "settings",
 ];
 
+/** Bare /browse is Browse's home screen, not a legacy alias to rewrite. */
+function isBrowseHomePathname(pathname: string): boolean {
+  return pathname.replace(/\/+$/, "") === "/browse";
+}
+
 function historySectionFor(
   moduleId: ModuleId,
   requestedSection?: string
@@ -291,7 +296,9 @@ export async function handleModuleChange(
 ) {
   markNavigationIntent();
 
-  if (moduleId === "browse") {
+  // No tab means "open Browse" and lands on its home screen; a named tab
+  // (including legacy names like "gallery" or "library") maps to Explore or You.
+  if (moduleId === "browse" && targetTab !== undefined) {
     targetTab = normalizeBrowsePrimary(targetTab);
   }
 
@@ -504,13 +511,12 @@ export function handleSectionChange(
     return;
   }
 
-  // Selecting the backing method from the Create home still changes the
-  // visible surface and URL, even when the remembered tab ID already matches.
-  const entersCreateWorkspace =
-    module === "create" && navigationState.isCreateFrontDoorOpen;
+  // Picking a tab from a module's home screen still changes the visible
+  // surface and URL, even when the remembered backing tab already matches.
+  const leavesModuleHome = navigationState.isModuleHomeOpen(module);
 
   // Don't switch if same section and no surface transition is required.
-  if (sectionId === currentSectionId && !entersCreateWorkspace) {
+  if (sectionId === currentSectionId && !leavesModuleHome) {
     navDebug("SKIPPED: Already on this section");
     return;
   }
@@ -536,7 +542,7 @@ export function handleSectionChange(
   };
 
   // Use View Transitions if available
-  if (typeof doc.startViewTransition === "function" && !entersCreateWorkspace) {
+  if (typeof doc.startViewTransition === "function" && !leavesModuleHome) {
     // Add direction class for CSS to target
     document.documentElement.classList.remove(
       "tab-slide-left",
@@ -616,6 +622,18 @@ export function handleCreateFrontDoor(
   handleModuleHome("create", source, options);
 }
 
+/**
+ * Whether getModuleDefinitions() has its final list: until auth and the
+ * feature flags are initialized it shows only the core modules. A guest's
+ * list is those core modules, so a guest waits only for auth; the flags'
+ * Firestore round trip matters only to a signed-in account. Reactive.
+ */
+export function isModuleListFinal(): boolean {
+  if (!authState.isInitialized) return false;
+  if (!authState.isAuthenticated || authState.isAnonymous) return true;
+  return featureFlagService.isInitialized;
+}
+
 // Export as a getter function that reads feature flags reactively
 // This ensures the module list updates when user role or feature flags change
 export function getModuleDefinitions() {
@@ -692,6 +710,8 @@ function buildPath(moduleId: ModuleId, sectionId?: string) {
   // Browse's own resolver at the end of the View Transition and used to leave
   // the address bar at /browse/you after the content had already changed.
   if (moduleId === "browse") {
+    // No section is Browse's home screen.
+    if (!normalizedSectionId) return "/browse";
     return normalizeBrowsePrimary(normalizedSectionId) === "you"
       ? "/browse/you/sequences"
       : "/browse/explore/sequences";
@@ -791,6 +811,8 @@ function parsePathNavigation(): {
     let sectionId = parts[1] || searchParams.get("section") || undefined;
     const creatorPath = parseCreatorPathname(`/${parts.join("/")}`);
     const browseRoute = resolveBrowsePathname(`/${parts.join("/")}`);
+    const isBrowseHome =
+      isBrowseHomePathname(pathname) && !searchParams.has("section");
 
     // Redirect legacy module URLs to their new locations
     // (Note: these IDs are not in ModuleId type but may exist in legacy URLs)
@@ -803,6 +825,9 @@ function parsePathNavigation(): {
         url.pathname = creatorPath.canonicalPath;
         writeUrl(url, { state: { moduleId: "creators" } });
       }
+    } else if (isBrowseHome) {
+      moduleId = "browse" as ModuleId;
+      sectionId = undefined;
     } else if (browseRoute) {
       if (browseRoute.externalRedirect) {
         window.location.replace(browseRoute.externalRedirect);
@@ -962,7 +987,10 @@ export function initializeNavigationHistory() {
     let needsHistoryUpdate = false;
 
     const browseHistoryRoute = resolveBrowsePathname(window.location.pathname);
-    if (browseHistoryRoute) {
+    if (isBrowseHomePathname(window.location.pathname)) {
+      targetModule = "browse" as ModuleId;
+      targetSection = undefined;
+    } else if (browseHistoryRoute) {
       if (browseHistoryRoute.externalRedirect) {
         window.location.replace(browseHistoryRoute.externalRedirect);
         return;
@@ -1009,7 +1037,7 @@ export function initializeNavigationHistory() {
     } else if (
       targetSection &&
       (targetSection !== navigationState.activeTab ||
-        (targetModule === "create" && navigationState.isCreateFrontDoorOpen))
+        navigationState.isModuleHomeOpen(targetModule))
     ) {
       handleSectionChange(targetSection, {
         skipHistory: true,

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Sentences from "../../../_components/Sentences.svelte";
   /**
    * Real-pictograph diagram for the 1-turn static breakdown, mirroring
    * DashStaticTurnsPage.svelte's static row (`ROWS[1]`) exactly - same
@@ -181,9 +182,7 @@
 
 <GuideSection id="turn-static" title={translate("guide_l2_static_title")}>
   <div class="section-body">
-    <p>
-      {translate("guide_l2_static_intro")}
-    </p>
+    <p><Sentences text={translate("guide_l2_static_intro")} /></p>
   </div>
 
   <div class="showcase-wrap">
@@ -205,21 +204,23 @@
   </div>
 
   <div class="section-body">
-    <p>
-      {translate("guide_l2_static_any_point")}
-    </p>
+    <p><Sentences text={translate("guide_l2_static_any_point")} /></p>
 
-    <p>
-      {translate("guide_l2_static_arrow_intro")}
-    </p>
+    <p><Sentences text={translate("guide_l2_static_arrow_intro")} /></p>
 
     <!-- TODO: add diagram - comparison of static turn arrow vs prospin turn arrow -->
 
     <p>
-      <strong>{translate("guide_l2_static_title")}:</strong> {translate("guide_l2_static_arrow")}
+      <Sentences text={translate("guide_l2_static_arrow")}
+        >{#snippet lead()}<strong>{translate("guide_l2_static_title")}:</strong
+          >{" "}{/snippet}</Sentences
+      >
     </p>
     <p>
-      <strong>{translate("guide_l2_shift_title")}:</strong> {translate("guide_l2_shift_arrow")}
+      <Sentences text={translate("guide_l2_shift_arrow")}
+        >{#snippet lead()}<strong>{translate("guide_l2_shift_title")}:</strong
+          >{" "}{/snippet}</Sentences
+      >
     </p>
   </div>
 </GuideSection>

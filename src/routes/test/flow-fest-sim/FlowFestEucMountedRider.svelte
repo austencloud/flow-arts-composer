@@ -76,7 +76,12 @@
     (delta) => {
       const { vehicleRoot, riderFrame, leftPedalAnchor, rightPedalAnchor } =
         props;
-      if (!vehicleRoot || !riderFrame || !leftPedalAnchor || !rightPedalAnchor) {
+      if (
+        !vehicleRoot ||
+        !riderFrame ||
+        !leftPedalAnchor ||
+        !rightPedalAnchor
+      ) {
         return;
       }
 
@@ -159,8 +164,8 @@
   <Avatar3D
     id={PERFORMER_ID}
     avatarId={FLOW_FEST_EUC_CONFIG.riderAvatarId}
-    leftPropState={null}
-    rightPropState={null}
+    bluePropState={null}
+    redPropState={null}
     visible={true}
     isActive={false}
     position={{ x: 0, y: 0, z: 0 }}

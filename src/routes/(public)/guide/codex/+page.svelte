@@ -1,47 +1,58 @@
 <script lang="ts">
+  /**
+   * The Codex as a guide page: the Atlas letter board on the guide's own
+   * canvas, drawn in whichever prop the reader picks. Every letter opens the same explorer the Atlas uses
+   * (variations, Diamond/Box, turns, Composer draft), and the explorer state
+   * rides in this page's URL, so a letter link from here is shareable too.
+   *
+   * The two printed sheets live at /guide/codex/print; this page links there
+   * instead of drawing paper on screen.
+   */
+  import { browser } from "$app/env";
   import { onMount } from "svelte";
-  import CodexSheet from "./_components/CodexSheet.svelte";
-  import { SHEETS } from "./_data/codex-groups";
+  import GuideShell from "../_components/GuideShell.svelte";
+  import GuideFontPreload from "../_components/GuideFontPreload.svelte";
+  import TopicHeader from "../level-1/_topics/TopicHeader.svelte";
   import GuideSeo from "../level-1/_components/GuideSeo.svelte";
+  import LetterCodex from "../../atlas/_components/LetterCodex.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import { localHref } from "#lib/shared/i18n/localized-href.svelte.js";
   import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
+  import { mutateCurrentUrl } from "#lib/shared/navigation/services/url-state.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import CodexPropPicker from "./_components/CodexPropPicker.svelte";
+  import { CODEX_DEFAULT_PROP, parseCodexProp } from "./_data/codex-props";
 
-  function print() {
-    window.print();
+  // A letter link (?letter=K) opens on that letter; LetterCodex reads the rest
+  // of the explorer state from the URL itself.
+  const initialLetter = browser
+    ? (new URLSearchParams(window.location.search).get("letter") ?? "A")
+    : "A";
+
+  // The prop is this page's own choice (?prop=), never the reader's saved
+  // prop. Read after mount so the prerendered markup and the first client
+  // render agree.
+  let propType = $state<PropType>(CODEX_DEFAULT_PROP);
+
+  function readProp(): void {
+    propType =
+      parseCodexProp(new URLSearchParams(window.location.search).get("prop")) ??
+      CODEX_DEFAULT_PROP;
   }
 
-  // Scale-to-fit-width (client-only) - same treatment as GuidePageHost's print-
-  // sheet toggle: each artboard is a fixed 816x1056 (8.5x11in) print page that
-  // otherwise renders at its native size regardless of viewport, floating tiny
-  // in a wide/4K viewport. Shrinks below 816px available width (mobile),
-  // upscales up to 1.9x above it (past that the raster gets soft, not crisp).
-  // One shared scale for every sheet on the page - they're all the same
-  // nominal size, so a single measurement covers all of them.
-  let sheetsEl = $state<HTMLDivElement>();
-  let scale = $state(1);
-  // .sheets flex-centers each .sheet-wrap; .sheet-wrap is 816px wide but capped
-  // at max-width: 100%, so on narrow viewports it shrinks to the viewport
-  // instead of leaving an 816px layout box hanging past the right edge
-  // (phantom horizontal scroll). That cap splits the geometry in two regimes,
-  // exactly like GuidePageHost's margin:auto version:
-  // - scale < 1 (viewport < 816): wrap hugs the viewport, .sheet-scale's
-  //   top-left origin sits at 0, and the scaled-down sheet exactly spans the
-  //   wrap - no shift needed.
-  // - scale >= 1: wrap is the full 816 and flex-centered, but transform-origin:
-  //   top left grows the sheet rightward from its already-centred left edge -
-  //   shift left by half the EXTRA width the upscale adds (816 * (scale-1) / 2)
-  //   to re-centre.
-  const shiftPx = $derived(-408 * Math.max(0, scale - 1));
-
   onMount(() => {
-    const fit = () => {
-      if (!sheetsEl) return;
-      scale = Math.min(sheetsEl.clientWidth / 816, 1.9);
-    };
-    fit();
-    const ro = new ResizeObserver(fit);
-    if (sheetsEl) ro.observe(sheetsEl);
-    return () => ro.disconnect();
+    readProp();
+    window.addEventListener("popstate", readProp);
+    return () => window.removeEventListener("popstate", readProp);
   });
+
+  function chooseProp(next: PropType): void {
+    propType = next;
+    mutateCurrentUrl((url) => {
+      if (next === CODEX_DEFAULT_PROP) url.searchParams.delete("prop");
+      else url.searchParams.set("prop", next);
+    });
+  }
 </script>
 
 <GuideSeo
@@ -55,111 +66,116 @@
   ]}
 />
 
-<div class="codex-print-root">
-  <div class="toolbar">
-    <button class="print-btn" onclick={print}>{tDynamic("guide_codex_print")}</button>
-  </div>
+<GuideFontPreload />
 
-  <div class="sheets" bind:this={sheetsEl}>
-    {#each SHEETS as sheet, i (i)}
-      <div class="sheet-wrap" style="height: {1056 * scale}px">
-        <div class="sheet-scale" style="transform: translateX({shiftPx}px) scale({scale})">
-          <CodexSheet {sheet} />
-        </div>
-      </div>
-    {/each}
-  </div>
-</div>
+<GuideShell>
+  <article class="codex-guide guide-page-route">
+    <div class="intro">
+      <TopicHeader
+        title={tDynamic("guide_codex_heading")}
+        lede={tDynamic("guide_codex_intro")}
+      />
+      <CodexPropPicker value={propType} onChange={chooseProp} />
+      <PanelButton variant="secondary" href={localHref("/guide/codex/print")}>
+        {tDynamic("guide_codex_print")}
+      </PanelButton>
+    </div>
+
+    <div class="board-host">
+      <LetterCodex {initialLetter} board="atlas" {propType} />
+    </div>
+  </article>
+</GuideShell>
 
 <style>
-  .codex-print-root {
-    min-height: 100vh;
-    background: #4a4f57;
-    padding: 1.5rem 0 3rem;
+  .codex-guide {
+    width: 100%;
+    min-width: 0;
+    max-width: 1480px;
+    margin-inline: auto;
+    padding: clamp(20px, 3vw, 56px);
+    color: var(--theme-text);
+    /* The board sizes its cells so all five rows fit under the page chrome.
+       This page's chrome is the site header, the padding above and the
+       centred intro with its print button underneath; the Atlas default
+       (28.5rem) also counts the glossary's own header row. */
+    --codex-atlas-chrome: 25rem;
+    /* TopicHeader speaks in the guide's ink tokens. */
+    --ink: var(--theme-text);
+    --ink-dim: var(--theme-text-dim);
   }
 
-  .toolbar {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    display: flex;
-    justify-content: center;
-    padding: 0 0 1.25rem;
-  }
-
-  .print-btn {
-    font: 600 0.95rem/1 system-ui, sans-serif;
-    padding: 0.7rem 1.4rem;
-    border: none;
-    border-radius: 999px;
-    background: #111;
-    color: #fff;
-    cursor: pointer;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
-  }
-
-  .print-btn:hover {
-    background: #000;
-  }
-
-  .sheets {
+  /* The Guide's official header (TopicHeader), the print button under it. */
+  .intro {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1.5rem;
+    gap: var(--spacing-md, 16px);
+    margin-bottom: clamp(20px, 2.5vw, 40px);
+    text-align: center;
   }
 
-  /* Reserves the SCALED footprint (bound in the markup to 1056 * scale) so a
-     stack of upscaled sheets doesn't overlap the next one down (transform
-     doesn't affect layout). 816px matches .sheet-scale's own unscaled width so
-     flex `align-items: center` on .sheets centers it; max-width keeps the
-     layout box inside narrow viewports (the scaled-down sheet fits visually -
-     without the cap the untransformed 816px box adds phantom horizontal
-     scroll). */
-  .sheet-wrap {
-    width: 816px;
-    max-width: 100%;
-  }
-
-  /* The actual print-page artboard: fixed native size, scaled to fit via
-     transform (see shiftPx above for the centering compensation). */
-  .sheet-scale {
-    width: 816px;
-    height: 1056px;
-    transform-origin: top left;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
-  }
-
-  @media print {
-    .codex-print-root {
-      background: #fff;
-      padding: 0;
-    }
-    .toolbar {
-      display: none;
-    }
-    .sheets {
-      gap: 0;
-    }
-    /* Printing always wants the native 1:1 page size, never the screen-fit
-       scale (a wide-monitor 1.9x scale would print oversized/clipped) - the
-       reserved height and transform are both screen-only concerns. */
-    .sheet-wrap {
-      width: auto;
-      height: auto !important;
-      break-after: page;
-    }
-    .sheet-wrap:last-child {
-      break-after: auto;
-    }
-    .sheet-scale {
-      transform: none !important;
-      box-shadow: none;
+  /* Past 3000px the board widens to min(88vw, 3400px) (BoardAtlas); the
+     page takes the same column. */
+  @media (min-width: 3000px) {
+    .codex-guide {
+      max-width: min(88vw, 3400px);
+      padding-inline: 0;
     }
   }
 
-  @page {
-    size: letter portrait;
-    margin: 0;
+  /* A desktop screen holds the whole Codex without a scroll. The board is
+     wider than the screen is tall (twelve cells by five rows), so the free
+     space is beside it, not above: the header, prop picker and print button
+     take a column on the left and the board gets the full height to the
+     right, sized to that box (BoardAtlas, `codex-atlas-fit`). Below this
+     size the page reads top to bottom and the board scrolls as before. The
+     height floor keeps cells at about 56px or more; a shorter screen scrolls. */
+  @media (min-width: 80rem) and (min-height: 760px) {
+    .codex-guide {
+      display: grid;
+      grid-template-columns: clamp(17rem, 19vw, 26rem) minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr);
+      column-gap: clamp(1.5rem, 2.5vw, 4.5rem);
+      box-sizing: border-box;
+      max-width: none;
+      height: calc(100dvh - var(--marketing-header-h, 64px));
+      padding: clamp(16px, 2.5vh, 48px) clamp(20px, 2.5vw, 64px);
+    }
+    .intro {
+      justify-content: center;
+      margin: 0;
+      min-height: 0;
+    }
+    .board-host {
+      container: codex-atlas-fit / size;
+      display: grid;
+      align-content: center;
+      min-width: 0;
+      min-height: 0;
+    }
+  }
+
+  /* Past 2400px the board's cells run 200-260px; a column set at laptop size
+     reads as a footnote beside them. The column, its header and the picker
+     grow together; the board keeps the rest. */
+  @media (min-width: 2400px) and (min-height: 760px) {
+    .codex-guide {
+      grid-template-columns: clamp(26rem, 14vw, 36rem) minmax(0, 1fr);
+      --codex-prop-chip: 4rem;
+      --codex-prop-words: 1.6rem;
+    }
+    .intro {
+      gap: 1.75rem;
+    }
+    .codex-guide .intro :global(.topic-head) {
+      max-width: none;
+    }
+    .codex-guide .intro :global(.topic-head h1) {
+      font-size: 7rem;
+    }
+    .codex-guide .intro :global(.topic-head .lede) {
+      font-size: 1.9rem;
+    }
   }
 </style>

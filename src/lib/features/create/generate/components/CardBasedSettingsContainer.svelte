@@ -730,7 +730,9 @@ Delegates ALL logic to services (SRP compliant)
   data-desktop-layout={isDesktopLayout}
   style="--header-font-size: {headerFontSize}"
 >
-  <div class="level-toolbar">
+  <!-- A grown card stays open across a level change: what it shows can follow
+       the level (Customize's orientation choices do). -->
+  <div class="level-toolbar" data-keeps-generate-card>
     <div class="level-selector-slot">
       <LevelSelector
         value={selectedLevel}

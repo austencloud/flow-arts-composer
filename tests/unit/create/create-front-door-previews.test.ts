@@ -8,7 +8,7 @@
  * they were. Spec:
  * docs/superpowers/specs/2026-10-06-create-method-previews-design.md
  */
-import { flushSync, mount, unmount } from "svelte";
+import { flushSync, mount, tick, unmount } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Section } from "#lib/shared/navigation/domain/types.js";
 import { CREATE_TABS } from "#lib/shared/navigation/config/tab-definitions.js";
@@ -68,6 +68,7 @@ vi.mock(
 );
 
 const { default: FrontDoorHost } = await import("./FrontDoorHost.svelte");
+const { heldBack } = await import("./FakeMethodPreview.svelte");
 
 // vitest-setup.ts swaps document.createElement for canvas stubs that are not
 // DOM nodes. Mounting a component needs jsdom's own, from document's prototype.
@@ -239,6 +240,8 @@ describe("Create front door, method previews", () => {
     host.remove();
     bootScreen?.remove();
     bootScreen = null;
+    heldBack.clear();
+    delete window.__tkaBootHold;
     document.createElement = stubbedCreateElement;
     delete document.documentElement.dataset.motionPreference;
     appMotionSetting.clear();
@@ -355,6 +358,94 @@ describe("Create front door, method previews", () => {
     advance(1);
     expect(playingMethod()).toBe("construct");
     expect(preview("construct")?.dataset.playing).toBe("true");
+  });
+
+  /** app.html's boot hold registry: which holds are open. */
+  function stubBootHolds(): { open: Set<string>; asked: string[] } {
+    const open = new Set<string>();
+    const asked: string[] = [];
+    window.__tkaBootHold = (name: string) => {
+      asked.push(name);
+      open.add(name);
+      return () => open.delete(name);
+    };
+    return { open, asked };
+  }
+
+  it("prepares every card behind the boot screen and holds it until all have drawn", async () => {
+    bootScreen = document.createElement("div");
+    bootScreen.id = "app-loading";
+    document.body.append(bootScreen);
+    const holds = stubBootHolds();
+
+    render();
+    setOpen(true);
+
+    // Preparation does not wait for the screen: every stand-in drew on
+    // mount, so all arrive at once, with no fade, and the hold is released
+    // once that has reached the page.
+    expect(holds.asked).toEqual(["create-previews"]);
+    expect(holds.open.size).toBe(1);
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(holds.open.size).toBe(0);
+    for (const id of WITH_SCENES) {
+      expect(preview(id)?.dataset.revealed).toBe("true");
+      expect(preview(id)?.dataset.instant).toBe("true");
+    }
+
+    // Playback does: no turn until the screen leaves and the page settles.
+    advance(FIRST_TURN_MS + TURN_CYCLE_MS * 2);
+    expect(playingMethod()).toBeNull();
+    bootScreen.classList.add("loaded");
+    await Promise.resolve();
+    advance(FIRST_TURN_MS);
+    expect(playingMethod()).toBe("construct");
+  });
+
+  it("brings the ready cards in at once when the screen leaves on its hold cap", async () => {
+    bootScreen = document.createElement("div");
+    bootScreen.id = "app-loading";
+    document.body.append(bootScreen);
+    const holds = stubBootHolds();
+    const hung = WITH_SCENES[WITH_SCENES.length - 1]!;
+    heldBack.add(hung);
+
+    render();
+    setOpen(true);
+    expect(holds.open.has("create-previews")).toBe(true);
+    for (const id of WITH_SCENES) {
+      expect(preview(id)?.dataset.revealed).toBe("false");
+    }
+
+    // app.html's cap dismisses with the hold still open.
+    bootScreen.classList.add("loaded");
+    await Promise.resolve();
+    await tick();
+    for (const id of WITH_SCENES) {
+      const shown = id === hung ? "false" : "true";
+      expect(preview(id)?.dataset.revealed).toBe(shown);
+      if (id !== hung) expect(preview(id)?.dataset.instant).toBe("true");
+    }
+  });
+
+  it("does not hold the boot screen for a board that is not the first view", () => {
+    bootScreen = document.createElement("div");
+    bootScreen.id = "app-loading";
+    document.body.append(bootScreen);
+    const holds = stubBootHolds();
+
+    // A visit that lands on a workspace: the board stays closed behind it.
+    render();
+    advance(1000);
+    expect(holds.asked).toEqual([]);
+
+    // Opened after the screen has gone: nothing to hold, the wave as usual.
+    bootScreen.classList.add("loaded");
+    setOpen(true);
+    expect(holds.asked).toEqual([]);
+    expect(preview("construct")?.dataset.instant).toBe("false");
+    expect(preview("generate")?.dataset.revealed).toBe("false");
   });
 
   it("ends the turns when a method is chosen", () => {

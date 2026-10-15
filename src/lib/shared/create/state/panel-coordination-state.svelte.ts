@@ -349,6 +349,20 @@ export interface PanelCoordinationState {
 
   openCustomizeOverlay(props: CustomizeOverlayProps): void;
   closeCustomizeOverlay(): void;
+  /**
+   * The latest Customize props, kept while the panel is closed: the card
+   * hands them over when the page is idle and every open refreshes them.
+   * ExpandedCardStage keeps the panel built from them between opens; each
+   * open still delivers its own snapshot through customizeOverlayProps.
+   */
+  get customizeOverlayPrimer(): CustomizeOverlayProps | null;
+  primeCustomizeOverlay(props: CustomizeOverlayProps): void;
+  /**
+   * Replace the open panel's snapshot, for a change made outside the panel
+   * that it has to follow while open (the Level strip). Does nothing while
+   * the panel is closed.
+   */
+  refreshCustomizeOverlay(props: CustomizeOverlayProps): void;
 
   // TnD panel state (Hands, Props, Match turns)
   get isTnDPanelOpen(): boolean;
@@ -577,6 +591,7 @@ export function createPanelCoordinationState(): PanelCoordinationState {
   // Customize overlay state (Style + Rhythm + Start/End in one overlay)
   let isCustomizeOverlayOpen = $state(false);
   let customizeOverlayProps = $state<CustomizeOverlayProps | null>(null);
+  let customizeOverlayPrimer = $state<CustomizeOverlayProps | null>(null);
 
   // Sequence Viewer state (triggers SequenceViewerDrawerHost on mobile, /sequence/[id] on desktop)
   let isSequenceViewerOpen = $state(false);
@@ -1109,11 +1124,26 @@ export function createPanelCoordinationState(): PanelCoordinationState {
       const screen = recallCustomizeScreen();
       closeAllPanels();
       customizeOverlayProps = props;
+      customizeOverlayPrimer = props;
       isCustomizeOverlayOpen = true;
       rememberCustomizeOverlayOpen(screen);
     },
 
     closeCustomizeOverlay,
+
+    get customizeOverlayPrimer() {
+      return customizeOverlayPrimer;
+    },
+
+    primeCustomizeOverlay(props: CustomizeOverlayProps) {
+      customizeOverlayPrimer = props;
+    },
+
+    refreshCustomizeOverlay(props: CustomizeOverlayProps) {
+      if (!customizeOverlayProps) return;
+      customizeOverlayProps = props;
+      customizeOverlayPrimer = props;
+    },
 
     // Preset Drawer Getters
     get isPresetDrawerOpen() {

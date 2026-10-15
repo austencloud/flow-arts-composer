@@ -266,6 +266,16 @@ export function createNavigationState() {
                 } else {
                   activeTab = urlModuleDefinition.sections[0]?.id || "";
                 }
+                // A bare /module address is the module's home screen when it
+                // has one. Longer unknown paths belong to the module's own
+                // router (Browse's /browse/gallery, /browse/library/...).
+                if (
+                  urlModuleDefinition.home &&
+                  pathParts.length === 1 &&
+                  !searchParams.has("section")
+                ) {
+                  activeModuleHome = normalizedModule;
+                }
               }
             } else {
               activeTab = "";

@@ -67,7 +67,11 @@
   const INTERMEDIATE_DIFFICULTY = "intermediate" as DifficultyLevel;
   const CONTINUOUS_PROPS = "continuous" as PropContinuity;
 
-  const REVIEW_CAMERAS: readonly ReviewCamera[] = [
+  const REVIEW_CAMERAS: readonly [
+    ReviewCamera,
+    ReviewCamera,
+    ...ReviewCamera[],
+  ] = [
     {
       id: "front",
       label: "Front",
@@ -227,7 +231,8 @@
 
   /** Which presentation the shared rail resolved to, so the transport dock
    *  knows whether a right-hand rail is occupying the stage edge. */
-  let controlPresentation = $state<SceneControlLayout["presentation"]>("docked");
+  let controlPresentation =
+    $state<SceneControlLayout["presentation"]>("docked");
   /** Measured so the rail and its inspector stop exactly above the dock. */
   let dockHeight = $state(96);
   let titleHeight = $state(52);
@@ -241,7 +246,9 @@
    *  has to clear the dock's TOP edge, which is that inset plus its height —
    *  clearing the height alone left the inspector overlapping the dock's
    *  corner by the inset's own few pixels. */
-  const dockInset = $derived(Math.min(28, Math.max(12, viewportHeight * 0.024)));
+  const dockInset = $derived(
+    Math.min(28, Math.max(12, viewportHeight * 0.024))
+  );
   const railBottomOffset = $derived(
     `${Math.round(dockHeight + dockInset + 10)}px`
   );
@@ -633,8 +640,7 @@
         onStepBackward={() => playback?.stepFullBeatBackward()}
         topOffset={railTopOffset}
         bottomOffset={railBottomOffset}
-        onLayoutChange={(layout) =>
-          (controlPresentation = layout.presentation)}
+        onLayoutChange={(layout) => (controlPresentation = layout.presentation)}
       />
     {/if}
 
@@ -932,7 +938,7 @@
   /* Narrow or short: the LOOP swap keeps its icon and drops its word, and the
      dock stops reserving the rail's edge because the rail is a bottom bar
      there. Two lines of controls in a 412px-tall window is not a dock. */
-  @container (max-width: 760px), (max-height: 620px) {
+  @container (max-width: 760px) or (max-height: 620px) {
     .title-block {
       max-width: calc(100% - 36px);
     }

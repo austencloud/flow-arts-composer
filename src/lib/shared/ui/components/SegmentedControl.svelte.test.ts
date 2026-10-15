@@ -129,10 +129,16 @@ describe("SegmentedControl", () => {
       .toHaveAttribute("aria-pressed", "true");
 
     // Shrinking back drops it again — no orphaned node left behind by the key.
+    // It shrinks in flow on the way out, so the survivors close the gap with
+    // it instead of jumping once it is gone.
     await screen.rerender({ options: OPTIONS, value: "a", onchange });
-    expect(page.getByRole("button", { name: "Delta" }).elements()).toHaveLength(
-      0
-    );
+    const leaving = page.getByRole("button", { name: "Delta" }).elements();
+    for (const node of leaving) {
+      expect(getComputedStyle(node).position).not.toBe("absolute");
+    }
+    await expect
+      .element(page.getByRole("button", { name: "Delta" }))
+      .not.toBeInTheDocument();
   });
 
   // Icon-only options (the picker's All/Continuous filter) drop the visible

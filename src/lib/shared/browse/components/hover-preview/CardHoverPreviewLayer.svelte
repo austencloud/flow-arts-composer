@@ -22,6 +22,7 @@
   import AnimatorCanvas from "#lib/shared/animation-engine/components/AnimatorCanvas.svelte";
   import WordHeader from "#lib/shared/animation-engine/components/layers/WordHeader.svelte";
   import { calculateDifficultyLevel } from "#lib/shared/browse/services/sequence-difficulty-calculator.js";
+  import { deriveHeaderPatternGlyphs } from "#lib/shared/foundation/domain/sequence-patterns/header-pattern-glyphs.js";
   import {
     tryGetLoopDisplayResolver,
     type LoopDisplay,
@@ -249,6 +250,9 @@
     const steps = playback?.sequence.steps;
     return steps?.length ? calculateDifficultyLevel([...steps]) : null;
   });
+  const headerPatterns = $derived(
+    deriveHeaderPatternGlyphs(playback?.sequence)
+  );
 
   const EMPTY_LOOP_DISPLAY = {
     components: new Set(),
@@ -321,6 +325,8 @@
         inversionPeriod={headerLoop.inversionPeriod}
         reflectionAxis={headerLoop.reflectionAxis}
         overlayComponents={headerLoop.overlayComponents}
+        turnGlyphEntries={headerPatterns.turnGlyphEntries}
+        reversalGlyph={headerPatterns.reversalGlyph}
       />
     </div>
 

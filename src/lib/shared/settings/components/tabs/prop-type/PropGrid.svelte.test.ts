@@ -3,6 +3,11 @@ import { page } from "vitest/browser";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
+vi.mock("./BuugengPairPreview.svelte", async () => ({
+  default: (await import("./__test-stubs__/BuugengPairPreviewStub.svelte"))
+    .default,
+}));
+
 import PropGrid from "./PropGrid.svelte";
 
 const FIRE_FAN = {

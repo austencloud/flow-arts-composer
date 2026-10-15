@@ -25,9 +25,16 @@ Supports letter highlighting during animation playback.
   import { untrack } from "svelte";
   import DifficultyBadge from "#lib/shared/components/DifficultyBadge.svelte";
   import LOOPIconStrip from "#lib/shared/components/LOOPIconStrip.svelte";
+  import TurnPatternGlyph from "#lib/shared/components/TurnPatternGlyph.svelte";
+  import ReversalPatternGlyph from "#lib/shared/components/ReversalPatternGlyph.svelte";
+  import { deriveTurnLabel } from "#lib/shared/foundation/domain/sequence-patterns/turn-pattern.js";
   import type { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
   import type { Period } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
-  import type { LoopReflectionAxis } from "@tka/render-composition";
+  import type {
+    LoopReflectionAxis,
+    ReversalGlyphData,
+    TurnGlyphEntry,
+  } from "@tka/render-composition";
   import { getGlyphCache } from "#lib/shared/render/get-glyph-cache.js";
   import {
     isDashLetter,
@@ -74,6 +81,8 @@ Supports letter highlighting during animation playback.
     inversionPeriod,
     reflectionAxis,
     overlayComponents,
+    turnGlyphEntries = null,
+    reversalGlyph = null,
   }: {
     word?: string | null;
     visible?: boolean;
@@ -90,6 +99,8 @@ Supports letter highlighting during animation playback.
      * dot — same segment grammar as the group-dot in the word text above.
      */
     overlayComponents?: Set<LOOPComponent> | null;
+    turnGlyphEntries?: readonly TurnGlyphEntry[] | null;
+    reversalGlyph?: ReversalGlyphData | null;
   } = $props();
 
   // Animation state machine: "idle" | "exiting" | "entering"
@@ -347,6 +358,41 @@ Supports letter highlighting during animation playback.
   // baked card header's do, so a card-sized preview keeps room for its word.
   // The viewer chrome keeps the fixed 20px icons: it has the width to spare.
   let headerWidth = $state(0);
+  const patternWidth = $derived(
+    ((presentation === "chrome"
+      ? 20
+      : Math.min(34, Math.max(16, headerWidth * 0.07))) *
+      10) /
+      6
+  );
+  const patternGap = 4;
+  const patternsFit = $derived.by(() => {
+    if (headerWidth < (presentation === "chrome" ? 180 : 300)) return false;
+    const edge = Math.min(12, Math.max(6, headerWidth * 0.03));
+    const left =
+      (difficultyLevel != null ? difficultyBadgeWidth : 0) +
+      (turnGlyphEntries?.length ? patternWidth + patternGap : 0);
+    const right =
+      (loopComponents ? loopBadgeWidth : 0) +
+      (reversalGlyph ? patternWidth + patternGap : 0);
+    // Keep the word at its intended size. Dense metadata yields first.
+    const wordWidth =
+      wordEmWidth *
+      (presentation === "chrome"
+        ? 28
+        : Math.min(28, Math.max(10, headerWidth * 0.06)));
+    return headerWidth - 2 * (Math.max(left, right) + edge + 10) >= wordWidth;
+  });
+  const showTurnGlyph = $derived(patternsFit && !!turnGlyphEntries?.length);
+  const showReversalGlyph = $derived(patternsFit && !!reversalGlyph);
+  const leftIndicatorWidth = $derived(
+    (difficultyLevel != null ? difficultyBadgeWidth : 0) +
+      (showTurnGlyph ? patternWidth + patternGap : 0)
+  );
+  const rightIndicatorWidth = $derived(
+    (loopComponents ? loopBadgeWidth : 0) +
+      (showReversalGlyph ? patternWidth + patternGap : 0)
+  );
   const loopIconSize = $derived(
     presentation === "chrome"
       ? 20
@@ -432,16 +478,49 @@ Supports letter highlighting during animation playback.
       </div>
     {/if}
 
+    {#if showTurnGlyph && turnGlyphEntries}
+      <div
+        class="pattern-glyph turn-pattern"
+        style:left="calc(clamp(6px, 3cqw, 12px) + {difficultyLevel != null
+          ? difficultyBadgeWidth + patternGap
+          : 0}px)"
+        role="img"
+        aria-label="Turn pattern: {deriveTurnLabel(turnGlyphEntries)}"
+        title="Turn pattern: {deriveTurnLabel(turnGlyphEntries)}"
+      >
+        <TurnPatternGlyph entries={turnGlyphEntries} />
+      </div>
+    {/if}
+    {#if showReversalGlyph && reversalGlyph}
+      <div
+        class="pattern-glyph reversal-pattern"
+        style:right="calc(clamp(6px, 3cqw, 12px) + {loopComponents
+          ? loopBadgeWidth + patternGap
+          : 0}px)"
+        role="img"
+        aria-label="Reversal pattern: {reversalGlyph.sequence.slice(
+          0,
+          reversalGlyph.period
+        )}"
+        title="Reversal pattern: {reversalGlyph.sequence.slice(
+          0,
+          reversalGlyph.period
+        )}"
+      >
+        <ReversalPatternGlyph {...reversalGlyph} maxWidthCqi={10} />
+      </div>
+    {/if}
+
     <!-- `--word-em` lets the CSS shrink the WHOLE word to fit rather than letting
          flex squeeze the glyphs individually. See .word-text. -->
     <span
       class="word-text"
       style="--word-em: {wordEmWidth.toFixed(
         2
-      )}; --badge-left: {difficultyBadgeWidth}px; --badge-right: {loopBadgeWidth}px; --badge-left-on: {difficultyLevel !=
-      null
+      )}; --badge-left: {leftIndicatorWidth}px; --badge-right: {rightIndicatorWidth}px; --badge-left-on: {difficultyLevel !=
+        null || showTurnGlyph
         ? 1
-        : 0}; --badge-right-on: {loopComponents
+        : 0}; --badge-right-on: {loopComponents || showReversalGlyph
         ? 1
         : 0}; --brace-scale: {SKEW_BRACE_FONT_SCALE}; --brace-drop: {BRACE_DROP}"
     >
@@ -603,6 +682,27 @@ Supports letter highlighting during animation playback.
     background: rgba(255, 255, 255, 0.1);
   }
 
+  .pattern-glyph {
+    --glyph-unit: calc(var(--badge-size) / 6);
+    --glyph-muted: #6b7280;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: calc(var(--glyph-unit) * 10);
+    height: var(--badge-size);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .turn-pattern {
+    align-items: flex-end;
+  }
+
+  .word-header.dark-mode .pattern-glyph {
+    --glyph-muted: #9ca3af;
+  }
+
   .word-text {
     display: flex;
     align-items: center;
@@ -704,6 +804,11 @@ Supports letter highlighting during animation playback.
       clamp(18px, 40cqw, 28px),
       calc(var(--word-room) / max(var(--word-em, 1), 1))
     );
+  }
+
+  .word-header.chrome .pattern-glyph {
+    --glyph-unit: calc(20px / 6);
+    height: 20px;
   }
 
   :global(:root.dark) .word-header:not([data-controlled]) {

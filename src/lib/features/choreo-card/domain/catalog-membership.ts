@@ -9,7 +9,7 @@
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import type { Catalog } from "./models/Catalog";
-import { matchReversalPatternId } from "./reversal-matcher";
+import { matchReversalPatternId } from "#lib/shared/foundation/domain/sequence-patterns/reversal-matcher.js";
 import { detectLevelFeatures } from "#lib/shared/domain/curriculum/level-feature-detector.js";
 
 export interface CatalogSignals {

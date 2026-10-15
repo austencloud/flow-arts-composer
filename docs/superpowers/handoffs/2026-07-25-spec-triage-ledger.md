@@ -205,7 +205,7 @@ Action: refresh `value`/`effort`/`remaining`/`last_triaged`. No move.
 | Spec | Remaining | V/E |
 |---|---|---|
 | active/2026-05-30-deriver-collapse-design.md | **All sub-jobs.** Documents a real divergence; note the mcp-server half is now FIXED (see handoff) so re-scope before starting. Assemble-lab target moved | 4/L |
-| active/2026-06-04-header-pattern-glyphs-design.md | Everything; accurate "specced, not started" | 2/M |
+| shipped/2026-06-04-header-pattern-glyphs-design.md | Everything; accurate "specced, not started" | 2/M |
 | active/2026-06-21-tutorial-coach-mark-start-position-design.md | Spotlight/coach-mark; the duplicate picker is still mounted | 3/S |
 | active/2026-06-24-effect-defaults-tuning-progress.md | 15 effects; the 1/√N normalization helper genuinely absent; bloom radius 36-vs-50 unresolved | 3/L |
 | active/2026-07-22-trail-hand-tracking-mode.md | Feature shipped; the thumb/pinky bug is real and its prescribed dev-log was never added | 4/XS |

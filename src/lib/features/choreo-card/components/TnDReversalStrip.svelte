@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { SIMPLE_PATTERNS } from "../domain/reversal-patterns";
+  import { SIMPLE_PATTERNS } from "#lib/shared/foundation/domain/sequence-patterns/reversal-patterns.js";
   import {
     resolvePattern,
     type ResolvedReversalPattern,

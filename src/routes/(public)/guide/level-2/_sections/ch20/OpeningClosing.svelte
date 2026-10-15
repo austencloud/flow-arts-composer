@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Sentences from "../../../_components/Sentences.svelte";
   import { t as translate } from "#lib/shared/i18n/i18n.svelte.js";
   /**
    * Real-pictograph diagrams for the Lam (Λ) opening/closing breakdown,
@@ -228,9 +229,7 @@
   title={translate("guide_l2_open_close_title")}
 >
   <div class="section-body">
-    <p>
-      {translate("guide_l2_open_close_intro")}
-    </p>
+    <p><Sentences text={translate("guide_l2_open_close_intro")} /></p>
   </div>
 
   <div class="showcase-wrap">
@@ -269,9 +268,7 @@
   </div>
 
   <div class="section-body">
-    <p>
-      {translate("guide_l2_open_close_static_turn")}
-    </p>
+    <p><Sentences text={translate("guide_l2_open_close_static_turn")} /></p>
   </div>
 
   <div class="showcase-wrap">
@@ -310,13 +307,9 @@
   </div>
 
   <div class="section-body">
-    <p>
-      {translate("guide_l2_open_close_speech")}
-    </p>
+    <p><Sentences text={translate("guide_l2_open_close_speech")} /></p>
 
-    <p>
-      {translate("guide_l2_open_close_code")}
-    </p>
+    <p><Sentences text={translate("guide_l2_open_close_code")} /></p>
   </div>
 </GuideSection>
 

@@ -14,6 +14,7 @@
   import GuideGridExplorer from "./GuideGridExplorer.svelte";
   import GuideStepStrip from "./GuideStepStrip.svelte";
   import SequenceShowcase from "./SequenceShowcase.svelte";
+  import Sentences from "../../_components/Sentences.svelte";
   import GridSvg from "#lib/shared/pictograph/grid/components/GridSvg.svelte";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
@@ -26,7 +27,10 @@
     GuideBlock,
     PictographRender,
   } from "../_data/guide-content-blocks";
-  import { localizeLevel1Block, localizeLevel1Text } from "../_data/localize-level1-content";
+  import {
+    localizeLevel1Block,
+    localizeLevel1Text,
+  } from "../_data/localize-level1-content";
   import { stripHtml, taglineInIntro } from "../_data/flow-intro";
 
   let {
@@ -205,13 +209,17 @@
 
   const gridLabel = (mode: "diamond" | "box" | "merged") =>
     mode === "diamond"
-      ? localizeLevel1Text("Diamond grid: four points at north, east, south, and west")
+      ? localizeLevel1Text(
+          "Diamond grid: four points at north, east, south, and west"
+        )
       : mode === "box"
         ? localizeLevel1Text("Box grid: four points on the diagonals")
         : localizeLevel1Text("8-point grid: diamond and box combined");
 
   const areaClass = (block: GuideBlock) =>
     block.flowArea ? `flow-area-${block.flowArea}` : "";
+  const besideFigure = (block: GuideBlock) =>
+    block.flowArea === "grid-overview" || block.flowArea === "grid-points";
 </script>
 
 <div class="flow-frame" class:grid-reference={layout === "grid-reference"}>
@@ -271,7 +279,14 @@
           <h3 class="flow-h3">{block.text}</h3>
         {/if}
       {:else if block.kind === "prose"}
-        <p class="flow-p {areaClass(block)}">{@html flowProse(block.html)}</p>
+        <!-- Centred prose sets one sentence per line; the grid reference's
+             overview and points sit beside the hands figure, so they stay
+             whole paragraphs. -->
+        <p class="flow-p {areaClass(block)}">
+          {#if besideFigure(block)}{@html flowProse(
+              block.html
+            )}{:else}<Sentences html={flowProse(block.html)} />{/if}
+        </p>
       {:else if block.kind === "glyphImage"}
         <img class="flow-glyph" src={block.src} alt={block.alt} />
       {:else if block.kind === "pictograph"}
@@ -366,7 +381,7 @@
       {:else if block.kind === "printOnly"}
         {#each block.flow as fb, m (m)}
           {#if fb.kind === "prose"}<p class="flow-p">
-              {@html flowProse(fb.html)}
+              <Sentences html={flowProse(fb.html)} />
             </p>{/if}
           {#if fb.kind === "heading"}<h3 class="flow-h3">{fb.text}</h3>{/if}
         {/each}
