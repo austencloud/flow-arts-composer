@@ -1616,13 +1616,19 @@
     border-radius: inherit;
   }
 
+  /* The plate always follows its cell's curve; a plate that squared off on
+     hover showed its corner past the block's edge while the ring grew in. */
+  .timeline-row > .step-container > .history-layout-shell,
+  .timeline-start-column > .timeline-cell > .history-layout-shell {
+    border-radius: inherit;
+  }
+
   /* Rounded cells clip their square artwork to the curve. A hovered cell
      lifts out of the block and is clipped by its own ring instead. */
   .timeline-row
     > .step-container:not(:hover):not(.cell-selected)
     > .history-layout-shell,
   .timeline-start-column > .timeline-cell:not(:hover) > .history-layout-shell {
-    border-radius: inherit;
     overflow: hidden;
   }
 
