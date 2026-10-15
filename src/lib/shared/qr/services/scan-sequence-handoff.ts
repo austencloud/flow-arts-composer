@@ -15,7 +15,7 @@ export interface ScanSequencePropFallback {
  */
 export function buildScanSequenceDestination(
   shortCode: string,
-  scanSearchParams: URLSearchParams,
+  scanSearchParams: Iterable<[string, string]>,
   propFallback?: ScanSequencePropFallback | null
 ): string {
   const viewerParams = new URLSearchParams(scanSearchParams);
@@ -37,8 +37,8 @@ export function buildScanSequenceDestination(
 
 /** A sequence URL only inherits scan analytics when it came through `/q`. */
 export function readScanSequenceCode(
-  routeId: string,
-  searchParams: URLSearchParams
+  routeId: string | undefined,
+  searchParams: Pick<URLSearchParams, "get">
 ): string | null {
   if (searchParams.get("from") !== "scan") return null;
   const code = searchParams.get("code");
