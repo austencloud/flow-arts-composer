@@ -527,6 +527,14 @@ measures it to decide when it returns.
     width: var(--fit-grid, 100%);
   }
 
+  /* Stacked, the grid is centred whenever the box is wider than it; the
+     choices and status centre on the same axis so the screen reads as one
+     column instead of a left-hung band over a centred grid. */
+  [data-arrangement="stack"] .quick-actions,
+  [data-arrangement="stack"] .status-row {
+    justify-content: center;
+  }
+
   /* Side by side. The column sits at the grid's top edge so the chips stay
      next to the cells they act on. */
   [data-arrangement="side"] .picker-layout {
