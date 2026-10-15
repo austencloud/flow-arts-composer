@@ -29,3 +29,22 @@
 - Uncertain: negative space → негативное пространство. The glossary does not define this flow-arts term; its preferred Russian community wording needs native review. The source meaning is retained without adding an unsupported definition.
 - Uncertain: bridge letter → переходная буква and reversal → реверс are contextual choices outside the glossary's explicit rows; native/product terminology review is still needed.
 - No native review or live UI inspection was performed in this scoped catalog run. No source claims about notation or product behavior were independently verified.
+
+
+## R3 — 2026-10-14
+
+- Batch: R3. Translated 1107 keys; retranslated 0; reviewed 0. The batch has no retranslate or review section.
+- Initial apply: `messages/ru.json: inserted 1107, replaced 0, refused 0`.
+- Final apply after contextual wording refinements: `messages/ru.json: inserted 0, replaced 1107, refused 0`. Reapplying the full output does not represent an additional retranslation batch.
+- Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
+- Final result: `Test Files  1 passed (1)`; `Tests  66 passed (66)`; duration 10.05s. The initial gate also passed all 66 tests.
+- Before this ledger update, only `messages/ru.json` changed: 1108 insertions and 1 deletion, including the comma on the former last entry. `git diff --check` passed.
+- Final output audit: exactly 1107 batch keys; every output value equals its applied catalog value; all pre-existing catalog values remain unchanged. Placeholder multiplicity and markup match English; every value is one line.
+- Glossary: lowercase вы; infinitive action labels; последовательность, позиция, шаг, оборот, реквизит, пиктограмма, тайминг. Diamond/Box use Ромб/Квадрат; joined grids use сопряжённые сетки. Numeric messages use number-independent constructions such as «Совпадений: {count}» and «Добавлено карточек: {count}».
+- Placement names remain Alpha/Beta/Gamma under the explicit worker brief. Product names, Latin A–Z, point identifiers, formats, placeholders, and dynamic user data remain unchanged. LOOP transforms use Зеркальный, Повёрнутый, Инвертированный, С перестановкой, Пополам, На четверти.
+- Context checks: `viewer_ui_static` is a mandala static/animated display choice, not the Static motion category, so it uses Статичный. Mandala stroke weight uses Толщина; export fidelity uses Качество. These meanings were checked in MandalaCategoryControl.svelte. Generated-instance labels use «экз.» to remain grammatical after any count.
+- Other choices: Smart Collection → умная коллекция; Fork → создать ответвление; Creep → плавный рост; Staircase → ступени. Palette display names are translated; no internal identifiers were changed.
+- Writing review: ai-bust mechanical and judgment passes completed. Em dashes were removed. Three remaining HIGH parallel-fragment findings span independent JSON messages (delete failures, card-scan failures, and export announcements); consistent UI phrasing was retained. This English-oriented scan does not establish native Russian quality.
+- Uncertain: the glossary does not define Smart Collection, Effort, Creep, or Staircase. The contextual choices умная коллекция, усилие, плавный рост, and ступени need native/product terminology review.
+- Uncertain: Catdog is retained in English as a mixed-prop community term; ProfileHeroSection.svelte confirms the paired-prop context, but the preferred Russian community name is not established by the glossary.
+- No native review or live UI inspection was performed in this scoped catalog run. Notation and product-behavior claims were translated from the supplied English without independent verification.
