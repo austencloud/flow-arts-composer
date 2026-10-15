@@ -1,4 +1,5 @@
 #include "FlowFestPropComponent.h"
+#include "FlowFestAnimInstance.h"
 #include "Components/PointLightComponent.h"
 #include "Components/SceneComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -467,6 +468,10 @@ bool UFlowFestPropComponent::LoadPerformance(FName CharacterId, FName Profile)
         SwitchLeft = LeftRoot->GetComponentTransform().GetRelativeTransform(RootWorld);
         SwitchRight = RightRoot->GetComponentTransform().GetRelativeTransform(RootWorld);
     }
+    if (bSwitchingPerformance)
+        OutgoingPerformanceTracks.Add({MoveTemp(PerformanceFrames), PerformanceFps});
+    else
+        OutgoingPerformanceTracks.Reset();
     PerformanceFrames = MoveTemp(Parsed);
     PerformanceFps = static_cast<float>(Fps);
     PerformanceProfile = Profile;
@@ -479,7 +484,7 @@ bool UFlowFestPropComponent::LoadPerformance(FName CharacterId, FName Profile)
     return true;
 }
 
-bool UFlowFestPropComponent::SetPerformanceTime(float Seconds, float PoseWeight)
+bool UFlowFestPropComponent::SetPerformanceTime(float Seconds, float PoseWeight, const UFlowFestAnimInstance* Animator)
 {
     if (PerformanceFrames.IsEmpty() || !FMath::IsFinite(Seconds)) return false;
     const float Frame = FMath::Fmod(FMath::Max(0.f, Seconds) * PerformanceFps,
@@ -494,7 +499,86 @@ bool UFlowFestPropComponent::SetPerformanceTime(float Seconds, float PoseWeight)
         return FTransform(FQuat::Slerp(From.GetRotation(), To.GetRotation(), Alpha).GetNormalized(),
             FMath::Lerp(From.GetLocation(), To.GetLocation(), Alpha));
     };
-    SetPerformanceTransforms(Blend(A.Left, B.Left), Blend(A.Right, B.Right), PoseWeight);
+    bool bBlendOutgoing = false;
+    FVector BlendedLeftGrip = FVector::ZeroVector, BlendedRightGrip = FVector::ZeroVector;
+    FVector BlendedLeftAnchor = FVector::ZeroVector, BlendedRightAnchor = FVector::ZeroVector;
+    if (Animator && AvatarRoot && BoundBodyMesh)
+    {
+        const int32 Count = Animator->GetOutgoingPerformanceCount();
+        if (OutgoingPerformanceTracks.Num() > Count)
+            OutgoingPerformanceTracks.RemoveAt(0, OutgoingPerformanceTracks.Num() - Count);
+        bBlendOutgoing = Count > 0 && Count == OutgoingPerformanceTracks.Num();
+    }
+    if (bBlendOutgoing)
+    {
+        const FTransform RootWorld = AvatarRoot->GetComponentTransform();
+        const FQuat Spin = bSpin ? FQuat(FVector::UpVector, SpinPhase) : FQuat::Identity;
+        const auto Natural = [this, &RootWorld, Spin](FName HandName, const FQuat& Basis, const FVector& Offset)
+        {
+            const FTransform Hand = BoundBodyMesh->GetSocketTransform(HandName, RTS_World);
+            return FTransform(Hand.GetRotation() * Basis * Spin, Hand.TransformPosition(Offset))
+                .GetRelativeTransform(RootWorld);
+        };
+        FTransform Left = FTransform::Identity, Right = FTransform::Identity;
+        float Total = 0.f;
+        auto Add = [&Left, &Right, &Total, &BlendedLeftGrip, &BlendedRightGrip,
+            &BlendedLeftAnchor, &BlendedRightAnchor]
+            (const FTransform& NextLeft, const FTransform& NextRight,
+             const FVector& LeftGrip, const FVector& RightGrip, float Weight)
+        {
+            if (Weight <= 0.f) return;
+            if (Total <= 0.f) { Left = NextLeft; Right = NextRight; }
+            else
+            {
+                FTransform L, R;
+                L.Blend(Left, NextLeft, Weight / (Total + Weight));
+                R.Blend(Right, NextRight, Weight / (Total + Weight));
+                Left = L; Right = R;
+            }
+            BlendedLeftGrip += LeftGrip * Weight;
+            BlendedRightGrip += RightGrip * Weight;
+            BlendedLeftAnchor += NextLeft.InverseTransformPosition(LeftGrip) * Weight;
+            BlendedRightAnchor += NextRight.InverseTransformPosition(RightGrip) * Weight;
+            Total += Weight;
+        };
+        const FVector NaturalLeftGrip = RootWorld.InverseTransformPosition(
+            BoundBodyMesh->GetSocketLocation(TEXT("LeftHand")));
+        const FVector NaturalRightGrip = RootWorld.InverseTransformPosition(
+            BoundBodyMesh->GetSocketLocation(TEXT("RightHand")));
+        float OutgoingWeight = 0.f;
+        for (int32 Index = 0; Index < OutgoingPerformanceTracks.Num(); ++Index)
+        {
+            float Time = 0.f, Weight = 0.f;
+            if (!Animator->GetOutgoingPerformanceSample(Index, Time, Weight)) continue;
+            const FPropMotionTrack& Track = OutgoingPerformanceTracks[Index];
+            if (Track.Frames.IsEmpty()) continue;
+            const float TrackFrame = FMath::Fmod(FMath::Max(0.f, Time) * Track.Fps, static_cast<float>(Track.Frames.Num()));
+            const int32 I = FMath::FloorToInt(TrackFrame), J = (I + 1) % Track.Frames.Num();
+            const float Fraction = TrackFrame - I;
+            FTransform L, R;
+            L.Blend(Track.Frames[I].Left, Track.Frames[J].Left, Fraction);
+            R.Blend(Track.Frames[I].Right, Track.Frames[J].Right, Fraction);
+            Add(L, R, FMath::Lerp(Track.Frames[I].LeftGrip, Track.Frames[J].LeftGrip, Fraction),
+                FMath::Lerp(Track.Frames[I].RightGrip, Track.Frames[J].RightGrip, Fraction), Weight);
+            OutgoingWeight += Weight;
+        }
+        Add(Blend(A.Left, B.Left), Blend(A.Right, B.Right),
+            FMath::Lerp(A.LeftGrip, B.LeftGrip, Alpha), FMath::Lerp(A.RightGrip, B.RightGrip, Alpha),
+            FMath::Clamp(PoseWeight, 0.f, 1.f));
+        const float NaturalWeight = FMath::Max(0.f, 1.f - OutgoingWeight - FMath::Clamp(PoseWeight, 0.f, 1.f));
+        Add(Natural(TEXT("LeftHand"), LeftGripBasis, LeftGripOffset),
+            Natural(TEXT("RightHand"), RightGripBasis, RightGripOffset),
+            NaturalLeftGrip, NaturalRightGrip, NaturalWeight);
+        if (Total > SMALL_NUMBER)
+        {
+            BlendedLeftGrip /= Total; BlendedRightGrip /= Total;
+            BlendedLeftAnchor /= Total; BlendedRightAnchor /= Total;
+            bSwitchingPerformance = false;
+            SetPerformanceTransforms(Left, Right, 1.f);
+            bEnteringPerformance = OutgoingWeight > .001f || PoseWeight < .999f;
+        }
+    }
+    else SetPerformanceTransforms(Blend(A.Left, B.Left), Blend(A.Right, B.Right), PoseWeight);
     if (bHasGripSamples && BoundBodyMesh && AvatarRoot)
     {
         const FTransform RootWorld = AvatarRoot->GetComponentTransform();
@@ -525,6 +609,20 @@ bool UFlowFestPropComponent::SetPerformanceTime(float Seconds, float PoseWeight)
             RightGripBasis, RightGripOffset, RightRoot);
         GripErrorCm = FMath::Max(LeftError.X, RightError.X);
         PropAnchorErrorCm = FMath::Max(LeftError.Y, RightError.Y);
+        if (bBlendOutgoing)
+        {
+            const FVector LeftHandLocal = RootWorld.InverseTransformPosition(
+                BoundBodyMesh->GetSocketLocation(TEXT("LeftHand")));
+            const FVector RightHandLocal = RootWorld.InverseTransformPosition(
+                BoundBodyMesh->GetSocketLocation(TEXT("RightHand")));
+            GripErrorCm = FMath::Max(FVector::Distance(LeftHandLocal, BlendedLeftGrip),
+                FVector::Distance(RightHandLocal, BlendedRightGrip));
+            PropAnchorErrorCm = FMath::Max(FVector::Distance(
+                BoundBodyMesh->GetSocketLocation(TEXT("LeftHand")),
+                LeftRoot->GetComponentTransform().TransformPosition(BlendedLeftAnchor)),
+                FVector::Distance(BoundBodyMesh->GetSocketLocation(TEXT("RightHand")),
+                RightRoot->GetComponentTransform().TransformPosition(BlendedRightAnchor)));
+        }
         if (!bEnteringPerformance)
         {
             PeakGripErrorCm = FMath::Max(PeakGripErrorCm, GripErrorCm);

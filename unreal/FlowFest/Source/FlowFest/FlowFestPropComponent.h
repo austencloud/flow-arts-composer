@@ -9,6 +9,7 @@ class UProceduralMeshComponent;
 class USceneComponent;
 class USkeletalMeshComponent;
 class UStaticMeshComponent;
+class UFlowFestAnimInstance;
 
 /** Two real, hand-attached instances of one catalog prop. */
 UCLASS(ClassGroup=(FlowFest), meta=(BlueprintSpawnableComponent))
@@ -42,7 +43,7 @@ public:
     /** Load the matching production prop motion for this character and profile. */
     bool LoadPerformance(FName CharacterId, FName Profile);
     /** Sample at the avatar animation's own playback clock, including loop interpolation. */
-    bool SetPerformanceTime(float Seconds, float PoseWeight = 1.f);
+    bool SetPerformanceTime(float Seconds, float PoseWeight = 1.f, const UFlowFestAnimInstance* Animator = nullptr);
 
     /** Hand-to-captured-grip distance after the synchronized pose was applied. */
     UFUNCTION(BlueprintPure, Category="Flow Fest|Props")
@@ -85,6 +86,11 @@ private:
         FVector LeftGrip = FVector::ZeroVector;
         FVector RightGrip = FVector::ZeroVector;
     };
+    struct FPropMotionTrack
+    {
+        TArray<FPropMotionFrame> Frames;
+        float Fps = 30.f;
+    };
 
     UPROPERTY(Transient) TObjectPtr<USceneComponent> AvatarRoot;
     UPROPERTY(Transient) TObjectPtr<USceneComponent> LeftRoot;
@@ -113,6 +119,7 @@ private:
     FVector LeftGripOffset = FVector::ZeroVector;
     FVector RightGripOffset = FVector::ZeroVector;
     TArray<FPropMotionFrame> PerformanceFrames;
+    TArray<FPropMotionTrack> OutgoingPerformanceTracks;
     float PerformanceFps = 30.f;
     bool bHasGripSamples = false;
     float GripErrorCm = 0.f;

@@ -22,6 +22,8 @@ public:
     float GetPerformanceTime() const { return PerformanceTime; }
     float GetPerformanceWeight() const { return PerformanceWeight; }
     float GetOutgoingPerformanceWeight() const;
+    int32 GetOutgoingPerformanceCount() const { return OutgoingPerformanceClips.Num(); }
+    bool GetOutgoingPerformanceSample(int32 Index, float& Seconds, float& Weight) const;
     bool IsPerforming() const { return bPerformanceTarget; }
     float GetMotionWeight(FName Name) const;
     void SetFootCorrection(float LeftCm, float RightCm);

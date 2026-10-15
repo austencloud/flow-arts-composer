@@ -375,6 +375,6 @@ void UFlowFestAvatarComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
     if (BoundProp && PerformanceClip)
     {
         if (const UFlowFestAnimInstance* Animator = Cast<UFlowFestAnimInstance>(BodyMesh->GetAnimInstance()))
-            BoundProp->SetPerformanceTime(Animator->GetPerformanceTime(), Animator->GetPerformanceWeight());
+            BoundProp->SetPerformanceTime(Animator->GetPerformanceTime(), Animator->GetPerformanceWeight(), Animator);
     }
 }

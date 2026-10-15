@@ -95,6 +95,14 @@ float UFlowFestAnimInstance::GetOutgoingPerformanceWeight() const
     return Sum;
 }
 
+bool UFlowFestAnimInstance::GetOutgoingPerformanceSample(int32 Index, float& Seconds, float& Weight) const
+{
+    if (!OutgoingPerformanceTimes.IsValidIndex(Index)) return false;
+    Seconds = OutgoingPerformanceTimes[Index];
+    Weight = OutgoingPerformanceWeights[Index];
+    return true;
+}
+
 void UFlowFestAnimInstance::SetFootCorrection(float LeftCm, float RightCm)
 {
     FootCorrectionCm[0] = FMath::Clamp(LeftCm, -12.f, 14.f);
