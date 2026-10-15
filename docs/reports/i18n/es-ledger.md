@@ -102,7 +102,6 @@
 - Copy review: used the ai-bust mechanical pre-pass on the output (HIGH/CRITICAL findings: none) and reviewed meaning, terminology and split-label composition against the source. No additional product claims were introduced.
 - Delivery: committed on the assigned codex/i18n-es branch for the coordinator. No primary-checkout access, integration, push, server, installation, broad checks or prohibited git commands were used.
 
-
 ## P2 — 2026-10-14
 
 - Scope: 401 translated entries, 0 retranslated entries, 0 review entries. All 401 required keys are present. The supplied batch contains Level 2 teaching prose, printable guide text, navigation and animation controls. No native-language review was performed.
@@ -134,7 +133,7 @@
 
 ## P4 — 2026-10-14
 
-- Scope: 906 translated entries, 0 retranslated entries, 0 review entries. All 906 required output keys are present. The supplied JSON contains feedback, inbox and visual-effect text; it contains no guide_ or verified_ keys despite the prose-oriented batch description. No native-language review was performed.
+- Scope: 906 translated entries, 0 retranslated entries, 0 review entries. All 906 required output keys are present. The supplied JSON contains feedback, inbox and visual-effect text; it contains no guide* or verified* keys despite the prose-oriented batch description. No native-language review was performed.
 - Applied only with the supplied apply-batch.js command. Result: `messages/es.json: inserted 906, replaced 0, refused 0`.
 - Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
 - Gate result: `Test Files  1 passed (1)` and `Tests  66 passed (66)`; duration 9.28s, exit 0.
@@ -147,10 +146,9 @@
 - Uncertainty: the glossary has no explicit rows for visual-effect terms such as carry, hang, curl, jitter or Goo. The choices above follow their effect context; native acceptance has not been established.
 - Delivery: committed on the assigned codex/i18n-es branch for the coordinator. No primary-checkout access, other-worktree access, integration, push, server, installation, broad checks or prohibited git commands were used.
 
-
 ## P5 — 2026-10-14
 
-- Scope: 917 translated entries, 0 retranslated entries, 0 review entries. Required/output/applied: 917/917/917. The actual batch contains practice, public-site/FAQ, onboarding, notifications, shared controls, pictograph descriptions, LOOP, tutorial, animation, tunnel and pattern-strip text; no guide_ or verified_ keys occur. No native-language review was performed.
+- Scope: 917 translated entries, 0 retranslated entries, 0 review entries. Required/output/applied: 917/917/917. The actual batch contains practice, public-site/FAQ, onboarding, notifications, shared controls, pictograph descriptions, LOOP, tutorial, animation, tunnel and pattern-strip text; no guide* or verified* keys occur. No native-language review was performed.
 - Applied only with the supplied apply-batch.js command. Result: `messages/es.json: inserted 917, replaced 0, refused 0`.
 - Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
 - Gate result: `Test Files  1 passed (1)` and `Tests  66 passed (66)`; duration 10.26s, exit 0.
@@ -159,7 +157,7 @@
 - Glossary choices: neutral Latin American Spanish with tú and infinitive action buttons; posición, cuadrícula, Diamante/Cuadrado, vuelta, sincronización, trayectoria de la mano, prop/props, bastón, abanico, clava, intérprete, bandeja de entrada and ajustes. Preserved TKA, The Kinetic Alphabet, Composer, Flow Arts Composer, Choreo Cards, LOOP, Codex, Shift/Dash/Static/Float/Pro/Anti, Dual-Shift/Cross-Shift/Dual-Dash, Prospin/Antispin, Alpha/Beta/Gamma, VTG labels as supplied, notation data and placeholders. Normalized lowercase descriptive alpha/beta/gamma to the glossary's placement-name capitalization. Kept Shape Engine as the established product name; generic Shape Matrix controls use matriz de formas consistently with existing catalog controls. Flower remains English in the shape-generator description.
 - Context checks: practice auto-advance and animation navigation/count controls refer to sequence positions, so beat becomes paso there; musical tempo remains tiempo/BPM. VisualPane.svelte confirms the Beat # toggle controls step numbers. TrailsPanel.svelte confirms Knob/Bulb identify club ends: pomo/bulbo. Effort domain descriptors establish movement qualities, rendered as esfuerzos. Grid-join labels describe one/two-point separation. Tunnel authored means an independently defined performer with its own choreography, rendered as con coreografía propia; source means fuente and start offset means desfase inicial.
 - Pattern-strip choices: singular mano izquierda/derecha subjects use gira/invierte el giro; the plural pasos subject uses duran for hold and tienen duraciones distintas for mixed hold values. The mixed-turn adjective is mixtas. Preserved every repeat interval and step placeholder.
-- Copy review: applied translate, testing and ai-bust guidance within the explicit batch scope. The supplied apply script and focused gate supersede broad catalog sorting/regeneration. ai-bust mechanical pre-pass found only eight CRITICAL emoji findings, all copied from fullscreen_prompt_message_1 through _8 in English; retained those source symbols for translation fidelity. No HIGH findings. Meaning review preserved source sentence/step order, recovery instructions, conditions and claims.
+- Copy review: applied translate, testing and ai-bust guidance within the explicit batch scope. The supplied apply script and focused gate supersede broad catalog sorting/regeneration. ai-bust mechanical pre-pass found only eight CRITICAL emoji findings, all copied from fullscreen_prompt_message_1 through \_8 in English; retained those source symbols for translation fidelity. No HIGH findings. Meaning review preserved source sentence/step order, recovery instructions, conditions and claims.
 - Uncertainty: the glossary does not define effort qualities, club-end knob/bulb, tunnel authored performers or generic Shape Matrix controls; the choices above follow source context but have no native acceptance evidence. pattern-strip-display.ts currently localizes several sentence fragments only when locale is de, so these Spanish entries alone do not activate that runtime localization. Runtime changes are outside this worker's authorized paths and were not made.
 - Delivery: committed on the assigned codex/i18n-es branch for the coordinator. No primary-checkout access, other-worktree access, integration, push, server, installation, broad checks or prohibited git commands were used.
 

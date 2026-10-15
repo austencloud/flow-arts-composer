@@ -12,7 +12,6 @@
 - Uncertain: named rhythm-template labels are translated descriptively; no native review or live UI inspection was performed in this scoped catalog run.
 - Source fidelity: retained the English help text's differing descriptions of inversion and rewind rather than reconciling product behavior. No independent behavior claim is made.
 
-
 ## R2 — 2026-10-14
 
 - Batch: R2. Translated 871 keys; retranslated 0; reviewed 0. The batch has no retranslate or review section.
@@ -29,7 +28,6 @@
 - Uncertain: negative space → негативное пространство. The glossary does not define this flow-arts term; its preferred Russian community wording needs native review. The source meaning is retained without adding an unsupported definition.
 - Uncertain: bridge letter → переходная буква and reversal → реверс are contextual choices outside the glossary's explicit rows; native/product terminology review is still needed.
 - No native review or live UI inspection was performed in this scoped catalog run. No source claims about notation or product behavior were independently verified.
-
 
 ## R3 — 2026-10-14
 
@@ -48,7 +46,6 @@
 - Uncertain: the glossary does not define Smart Collection, Effort, Creep, or Staircase. The contextual choices умная коллекция, усилие, плавный рост, and ступени need native/product terminology review.
 - Uncertain: Catdog is retained in English as a mixed-prop community term; ProfileHeroSection.svelte confirms the paired-prop context, but the preferred Russian community name is not established by the glossary.
 - No native review or live UI inspection was performed in this scoped catalog run. Notation and product-behavior claims were translated from the supplied English without independent verification.
-
 
 ## R4 — 2026-10-14
 

@@ -114,7 +114,6 @@
 - Uncertain: the glossary does not define opening/closing, leading/following, Same/Opp dot terminology, staged steps, animation companion or Remix; the choices above await native/product review. As in P1, the source phrase negative space or a turn does not establish the kind of turn; retained spazio negativo o un giro without adding a body-turn claim. Preserved the source's turn counts and in/out examples, including compressed in-to-in examples, without inferring intermediate states. No native reviewer participated in this run.
 - Delivery: committed on codex/i18n-it for coordinator integration. No primary checkout access, integration, push, installation, dev server, build, broad type-check or prohibited validator was run.
 
-
 ## 2026-10-14 - P3
 
 - Scope: 676 translated batch entries, 0 retranslate entries, 0 review entries; all supplied keys completed. Actual contents: 239 Shape Engine keys and 437 verified Level 1 guide keys, including print labels, SEO and animation controls.
@@ -131,7 +130,6 @@
 - Text review: ai-bust mechanical pass on final out-P3.json returned `[]` at HIGH severity and above. Manually reviewed source meaning, teaching-step order, emphasis, orientation phrases and compact labels. No native reviewer participated.
 - Uncertain: the glossary does not define wall plane/wheel plane, negative space, hand/prop/full reversals, realization or Ratio Playground. Used piano frontale/piano della ruota, spazio negativo, inversione della mano/dell'attrezzo/completa, realizzazione and area rapporti; these await native/product review. The bilingual mnemonic presentation also awaits product review. Source teaching claims and ratios were preserved without independently validating them.
 - Delivery: committed on codex/i18n-it for coordinator integration. No primary checkout or other worktree accessed, integration, push, installation, dev server, build, broad type-check or prohibited validator run.
-
 
 ## 2026-10-14 - P4
 
@@ -150,10 +148,9 @@
 - Uncertain: evocative effect names such as Banked Ember, Gilt Wyrm, Cold gas-blue burn and One point, drawn long have no glossary definitions. Used Brace sotto la cenere, Drago dorato, Fiamma fredda blu da gas and Un punto allungato without adding behavioral claims. These names await native/product review.
 - Delivery: committed on codex/i18n-it for coordinator integration. No primary checkout or other worktree accessed, integration, push, installation, dev server, build, broad type-check or prohibited validator run.
 
-
 ## 2026-10-14 - P5
 
-- Scope: 917 translated batch entries, 0 retranslate entries, 0 review entries; all supplied keys completed. Actual contents: practice controls, site/FAQ copy, onboarding, Composer demo, notifications, pictograph descriptions, shared controls, playback/LOOP controls, tutorials, colors, animation, tunnel and pattern-strip text. No guide_/verified_ teaching prose is present in this batch.
+- Scope: 917 translated batch entries, 0 retranslate entries, 0 review entries; all supplied keys completed. Actual contents: practice controls, site/FAQ copy, onboarding, Composer demo, notifications, pictograph descriptions, shared controls, playback/LOOP controls, tutorials, colors, animation, tunnel and pattern-strip text. No guide*/verified* teaching prose is present in this batch.
 - Applied exclusively through the supplied apply-batch.js with out-P5.json and batch-P5.json.
 - Apply result: `messages/it.json: inserted 917, replaced 0, refused 0`.
 - Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
