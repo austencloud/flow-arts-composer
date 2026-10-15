@@ -14,7 +14,13 @@
    * while the visible label remains the cue for anyone who cannot read color.
    */
   import { flip } from "svelte/animate";
-  import { flipDuration, popIn } from "#lib/shared/transitions/motion.js";
+  import {
+    easeOut,
+    flexPresence,
+    flipDuration,
+    popIn,
+  } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import type { Snippet } from "svelte";
   import { Icon, type IconDefinition } from "@austencloud/video-editor/icons";
 
@@ -114,6 +120,52 @@
 
     const nextValue = toggleTarget();
     if (nextValue !== undefined) onchange(nextValue);
+  }
+
+  // An option that joins or leaves a single row (the orientation choices
+  // when the level changes) widens out of or narrows into its neighbours,
+  // which travel to make room; in a wrapped grid it pops into its cell. Not
+  // when the control itself mounts. The row runs on the indicator's duration
+  // and curve, so the indicator, sized from the option count, stays on the
+  // selected option the whole way.
+  const rowPresence = {
+    axis: "x",
+    duration: DURATION.normal,
+    measured: true,
+    easing: easeOut,
+  } as const;
+
+  function segmentAttributes(option: Option) {
+    const selected = value === option.value;
+    const ghost = ghostKind && !selected && !option.disabled;
+    return {
+      "data-tone": option.tone,
+      "data-ghost": ghost ? "safe" : undefined,
+      "data-ghost-kind": ghost ? ghostKind : undefined,
+      onclick: () => handleSelect(option.value),
+      onkeydown: (event: KeyboardEvent) =>
+        handleSingleSelectKeydown(event, options.indexOf(option)),
+      id: option.id,
+      role:
+        semantics === "tabs"
+          ? "tab"
+          : semantics === "radiogroup"
+            ? "radio"
+            : undefined,
+      "aria-controls": semantics === "tabs" ? option.controls : undefined,
+      "aria-selected": semantics === "tabs" ? selected : undefined,
+      "aria-checked": semantics === "radiogroup" ? selected : undefined,
+      tabindex:
+        semantics !== "button-group"
+          ? options.indexOf(option) === focusIndex
+            ? 0
+            : -1
+          : 0,
+      "aria-label": option.ariaLabel ?? option.label,
+      title: option.label,
+      "aria-pressed": semantics === "button-group" ? selected : undefined,
+      disabled: option.disabled,
+    };
   }
 
   // Find selected index for indicator position
@@ -254,65 +306,57 @@
     style="--index: {selectedIndex}; --col: {selectedColumn}; --row: {selectedRow}"
   ></div>
 
-  {#each options as option (option.value)}
-    <button
-      type="button"
-      class="segment"
-      class:selected={value === option.value}
-      data-tone={option.tone}
-      data-ghost={ghostKind && value !== option.value && !option.disabled
-        ? "safe"
-        : undefined}
-      data-ghost-kind={ghostKind && value !== option.value && !option.disabled
-        ? ghostKind
-        : undefined}
-      onclick={() => handleSelect(option.value)}
-      onkeydown={(event) =>
-        handleSingleSelectKeydown(event, options.indexOf(option))}
-      id={option.id}
-      role={semantics === "tabs"
-        ? "tab"
-        : semantics === "radiogroup"
-          ? "radio"
-          : undefined}
-      aria-controls={semantics === "tabs" ? option.controls : undefined}
-      aria-selected={semantics === "tabs" ? value === option.value : undefined}
-      aria-checked={semantics === "radiogroup"
-        ? value === option.value
-        : undefined}
-      tabindex={semantics !== "button-group"
-        ? options.indexOf(option) === focusIndex
-          ? 0
-          : -1
-        : 0}
-      aria-label={option.ariaLabel ?? option.label}
-      title={option.label}
-      aria-pressed={semantics === "button-group"
-        ? value === option.value
-        : undefined}
-      disabled={option.disabled}
-      in:popIn
-      animate:flip={{ duration: flipDuration() }}
-    >
-      {#if optionContent}
-        <span class="segment-label">
-          {@render optionContent(option.value)}
-        </span>
-      {:else if option.icon}
-        {#if typeof option.icon === "string"}
-          <i class={option.icon} aria-hidden="true"></i>
-        {:else}
-          <Icon icon={option.icon} />
-        {/if}
-      {:else}
-        <span class="segment-label">{option.shortLabel ?? option.label}</span>
-      {/if}
-      {#if option.count != null}
-        <span class="segment-count">{option.count}</span>
-      {/if}
-    </button>
-  {/each}
+  <!-- A wrapped grid reflows its cells when an option comes or goes, which
+       flip animates; that also lifts a departing option out of the flow. A
+       single row needs the departing option in the flow, to narrow in place,
+       so it does without flip. -->
+  {#if gridColumns !== null}
+    {#each options as option (option.value)}
+      <button
+        type="button"
+        class="segment"
+        class:selected={value === option.value}
+        {...segmentAttributes(option)}
+        in:popIn
+        animate:flip={{ duration: flipDuration() }}
+      >
+        {@render segmentBody(option)}
+      </button>
+    {/each}
+  {:else}
+    {#each options as option (option.value)}
+      <button
+        type="button"
+        class="segment"
+        class:selected={value === option.value}
+        {...segmentAttributes(option)}
+        in:flexPresence={rowPresence}
+        out:flexPresence={rowPresence}
+      >
+        {@render segmentBody(option)}
+      </button>
+    {/each}
+  {/if}
 </div>
+
+{#snippet segmentBody(option: Option)}
+  {#if optionContent}
+    <span class="segment-label">
+      {@render optionContent(option.value)}
+    </span>
+  {:else if option.icon}
+    {#if typeof option.icon === "string"}
+      <i class={option.icon} aria-hidden="true"></i>
+    {:else}
+      <Icon icon={option.icon} />
+    {/if}
+  {:else}
+    <span class="segment-label">{option.shortLabel ?? option.label}</span>
+  {/if}
+  {#if option.count != null}
+    <span class="segment-count">{option.count}</span>
+  {/if}
+{/snippet}
 
 <style>
   .segmented-control {

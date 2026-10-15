@@ -41,6 +41,13 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
   import MultiSelectPlacementPicker from "#lib/shared/components/placement-picker/MultiSelectPlacementPicker.svelte";
   import PropOrientationControl from "../../../shared/components/sequence-actions/PropOrientationControl.svelte";
   import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import { getLetterBorderColorSafe } from "#lib/shared/pictograph/shared/utils/letter-border-utils.js";
+  import {
+    loadStartPlacementVariations,
+    orientStartPlacementVariations,
+  } from "#lib/shared/components/placement-picker/placement-variations.js";
   import { buildStartEndOptions } from "./customize-start-end-options";
   import {
     describeStyle,
@@ -176,6 +183,30 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
     )
   );
   const availableStartOrientations = $derived(startOrientationsForLevel(level));
+
+  // The Prop orientations screen draws one start position with the props as
+  // chosen, the first one the start picker allows, so the screen keeps what
+  // the grid beside the controls gave: the setting and its result together.
+  // Loaded only once that screen is first opened.
+  let oriVariations = $state<PictographData[]>([]);
+
+  $effect(() => {
+    if (selected !== "startOri" || oriVariations.length > 0) return;
+    oriVariations = loadStartPlacementVariations(gridMode);
+  });
+
+  const oriPreview = $derived.by(() => {
+    const blocked = new Set(localBlockedPlacements);
+    const first =
+      oriVariations.find(
+        (v) => !blocked.has(v.startPlacement as GridPlacement)
+      ) ?? oriVariations[0];
+    if (!first) return null;
+    return (
+      orientStartPlacementVariations([first], localLeftOri, localRightOri)[0] ??
+      null
+    );
+  });
 
   // A kept overlay is not remounted per open, so each open reloads what a
   // mount would have: the settings from the props, and the root list.
@@ -510,7 +541,23 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
             </MultiSelectPlacementPicker>
           </div>
         {:else if id === "startOri"}
-          {@render orientationControls(false)}
+          <div class="drill-fill ori-screen">
+            <div class="ori-layout">
+              <div class="ori-preview-box" aria-hidden="true">
+                <div
+                  class="ori-preview"
+                  style:--letter-border-color={oriPreview
+                    ? getLetterBorderColorSafe(oriPreview.letter)
+                    : null}
+                >
+                  {#if oriPreview}
+                    <PictographContainer pictographData={oriPreview} />
+                  {/if}
+                </div>
+              </div>
+              {@render orientationControls(false)}
+            </div>
+          </div>
         {:else if id === "endPos"}
           <div class="drill-fill grid-fill">
             <MultiSelectPlacementPicker
@@ -587,6 +634,70 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
     min-height: 0;
   }
 
+  /* The Prop orientations screen, on a panel too small for the controls beside
+     the start grid: a start position drawn as large as the box allows, the
+     controls under it, or beside it on a box wider than it is tall. */
+  .ori-screen {
+    container: ori-screen / size;
+    display: flex;
+    min-width: 0;
+  }
+
+  /* One level in: a container's own size query cannot restyle it. */
+  .ori-layout {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    min-width: 0;
+  }
+
+  .ori-preview-box {
+    container-type: size;
+    flex: 1 1 0;
+    align-self: stretch;
+    min-height: 6rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .ori-preview {
+    width: min(100cqw, 100cqh);
+    aspect-ratio: 1;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    border: 2px solid
+      var(
+        --letter-border-color,
+        color-mix(in srgb, var(--theme-text, white) 14%, transparent)
+      );
+    background: color-mix(in srgb, var(--theme-text, white) 4%, transparent);
+  }
+
+  .ori-layout > .ori-block {
+    flex: 0 0 auto;
+    width: min(100%, 54rem);
+  }
+
+  @container ori-screen (min-aspect-ratio: 5 / 4) {
+    .ori-layout {
+      flex-direction: row;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .ori-preview-box {
+      align-self: stretch;
+      min-height: 0;
+    }
+
+    .ori-layout > .ori-block {
+      width: min(40%, 26rem);
+    }
+  }
+
   .ori-block {
     container: ori-block / inline-size;
     display: flex;
@@ -614,7 +725,7 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
 
   /* Wide enough for both hands on one line: half the height, which under a
      stacked grid is height the grid gets back. */
-  @container ori-block (min-width: 38rem) {
+  @container ori-block (min-width: 34rem) {
     .ori-hands {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));

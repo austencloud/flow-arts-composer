@@ -13,7 +13,7 @@ to three rows. Click opens the expanded overlay.
     StartEndOptions,
     PanelCoordinationState,
   } from "#lib/shared/create/state/panel-coordination-state.svelte.js";
-  import { onMount, getContext } from "svelte";
+  import { onMount, getContext, untrack } from "svelte";
   import { customizeOverlayWasOpen } from "#lib/shared/create/state/customize-overlay-hmr.js";
   import { morphGenerateCard } from "../../shared/services/generate-card-morph";
   import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
@@ -78,6 +78,17 @@ to three rows. Click opens the expanded overlay.
   let primed = $state(false);
   $effect(() => {
     if (primed) panelState?.primeCustomizeOverlay?.(overlayProps());
+  });
+
+  // The Level strip stays usable beside the open panel, and the level decides
+  // which start orientations the panel offers, so a level change reaches the
+  // open panel too, with the orientations the change brought into range.
+  let lastLevel = untrack(() => level);
+  $effect(() => {
+    const next = level;
+    if (next === lastLevel) return;
+    lastLevel = next;
+    untrack(() => panelState?.refreshCustomizeOverlay?.(overlayProps()));
   });
 
   onMount(() => {
