@@ -2,6 +2,7 @@
 #include "Misc/AutomationTest.h"
 #include "Dom/JsonObject.h"
 #include "Engine/StaticMesh.h"
+#include "Engine/Texture.h"
 #include "Materials/Material.h"
 #include "Materials/MaterialExpressionTextureSample.h"
 #include "Materials/MaterialInterface.h"
@@ -29,6 +30,46 @@ bool FFlowFestEnvironmentAssetsTest::RunTest(const FString& Parameters)
     if (!TestTrue(TEXT("Understory placements exist"), Site->TryGetArrayField(TEXT("groundLife"), GroundLife) && GroundLife)) return false;
     TestTrue(TEXT("Source grass density retained"), Grass->Num() >= 20000);
     TestTrue(TEXT("Source understory retained"), GroundLife->Num() >= 20);
+
+    const TSharedPtr<FJsonObject>* Surface = nullptr;
+    if (TestTrue(TEXT("Registered ground family exists"), Site->TryGetObjectField(TEXT("groundSurface"), Surface) && Surface))
+    {
+        const int32 Width = (*Surface)->GetIntegerField(TEXT("width"));
+        const int32 Height = (*Surface)->GetIntegerField(TEXT("height"));
+        TArray<uint8> Mask;
+        TestTrue(TEXT("Registered ground mask loads"),
+            FFileHelper::LoadFileToArray(Mask, *(FPaths::ProjectContentDir() / TEXT("Data/ground-family-mask.rgba"))));
+        TestEqual(TEXT("Registered ground mask has four channels per pixel"), Mask.Num(), Width * Height * 4);
+        if (Mask.Num() == Width * Height * 4)
+        {
+            int32 Packed = 0, Meadow = 0, Litter = 0;
+            for (int32 Pixel = 0; Pixel < Width * Height; ++Pixel)
+            {
+                Packed += Mask[Pixel * 4] > 127;
+                Meadow += Mask[Pixel * 4 + 1] > 127;
+                Litter += Mask[Pixel * 4 + 2] > 127;
+            }
+            TestTrue(TEXT("Registered ground mask distinguishes roads, clearing and woodland"),
+                Packed > 100 && Meadow > 100 && Litter > 100);
+        }
+    }
+    UMaterial* GroundMaterial = LoadObject<UMaterial>(nullptr,
+        TEXT("/Game/FlowFest/Materials/M_Ground.M_Ground"));
+    if (TestNotNull(TEXT("Imported registered ground material"), GroundMaterial))
+    {
+        TSet<FString> GroundTextures;
+        for (const TObjectPtr<UMaterialExpression>& Expression : GroundMaterial->GetExpressions())
+        {
+            if (const UMaterialExpressionTextureSample* Sample = Cast<UMaterialExpressionTextureSample>(Expression.Get()))
+            {
+                TestNotNull(TEXT("Ground texture sample is bound"), Sample->Texture.Get());
+                if (Sample->Texture) GroundTextures.Add(Sample->Texture->GetName());
+            }
+        }
+        for (const TCHAR* Name : { TEXT("TerrainOrtho"), TEXT("GroundFamilyMask"), TEXT("GroundDetail"),
+                                   TEXT("GroundMeadow"), TEXT("GroundLitter"), TEXT("GroundDamp") })
+            TestTrue(*FString::Printf(TEXT("Ground material uses %s"), Name), GroundTextures.Contains(Name));
+    }
 
     const TSharedPtr<FJsonObject>* Audit = nullptr;
     if (TestTrue(TEXT("Ecology clearance audit exists"), Site->TryGetObjectField(TEXT("ecologyAudit"), Audit) && Audit))

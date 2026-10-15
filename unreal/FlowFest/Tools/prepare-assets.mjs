@@ -66,9 +66,21 @@ for (const job of jobs) {
 }
 const ortho = join(source,'static/data/flow-fest-sim/ortho.webp');
 if (existsSync(ortho)) await sharp(ortho).png().toFile(join(staged,'TerrainOrtho.png'));
-for (const [file, output] of [['forest-ground-detail-neutral.jpg','GroundDetail.png'],['normal.jpg','GroundNormal.png'],['roughness.jpg','GroundRoughness.png']]) {
+const ground = site.groundSurface;
+if (!ground || ground.width <= 0 || ground.height <= 0) throw new Error('Site ground-family mask metadata missing');
+const maskBytes = readFileSync(join(project, 'Content/Data', ground.file));
+if (maskBytes.length !== ground.width * ground.height * 4) throw new Error('Site ground-family mask bytes invalid');
+await sharp(maskBytes, { raw: { width: ground.width, height: ground.height, channels: 4 } })
+  .png().toFile(join(staged, 'GroundFamilyMask.png'));
+for (const [file, output] of [
+  ['forest-ground-detail-neutral.jpg','GroundDetail.png'],
+  ['forest-ground-detail-meadow.jpg','GroundMeadow.png'],
+  ['forest-ground-detail-litter.jpg','GroundLitter.png'],
+  ['forest-ground-detail-damp.jpg','GroundDamp.png'],
+  ['normal.jpg','GroundNormal.png'],['roughness.jpg','GroundRoughness.png']]) {
   const input = join(source,'static/textures/forest-floor',file);
-  if (existsSync(input)) await sharp(input).png().toFile(join(staged,output));
+  if (!existsSync(input)) throw new Error(`Missing source forest-floor texture: ${input}`);
+  await sharp(input).png().toFile(join(staged,output));
 }
 writeFileSync(join(staged, 'imports.json'), JSON.stringify(jobs, null, 2));
 console.log(`Prepared ${jobs.length} assets`);

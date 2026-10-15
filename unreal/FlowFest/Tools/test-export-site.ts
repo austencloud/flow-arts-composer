@@ -48,6 +48,14 @@ assert.ok(first.grass.length > 20000, "source woodland and clearing grass must b
 assert.ok(first.groundLife.length > 0, "source sedge and hazel understory must be retained");
 assert.equal(first.ecologyAudit.grassRouteIntrusions, 0);
 assert.equal(first.ecologyAudit.groundLifeRouteIntrusions, 0);
+assert.equal(first.groundSurface.file, "ground-family-mask.rgba");
+assert.equal(first.groundSurface.width, 512);
+assert.equal(first.groundSurface.height, 512);
+assert.equal(first.groundSurface.audit.sourceRouteCount, first.roads.length);
+assert.ok(first.groundSurface.audit.lowerLoopPaintedPixels > 0);
+const groundMask = await readFile(join(outputDir, first.groundSurface.file));
+assert.equal(groundMask.length, first.groundSurface.width * first.groundSurface.height * 4);
+assert.ok(groundMask.includes(255), "registered source mask must include painted families");
 assert.deepEqual(new Set(first.grass.map((item) => item.species)), new Set(["summer-sward", "woodland-grass"]));
 for (const item of [...first.grass, ...first.groundLife]) {
   assert.ok(Number.isFinite(item.x) && Number.isFinite(item.y) && Number.isFinite(item.z));

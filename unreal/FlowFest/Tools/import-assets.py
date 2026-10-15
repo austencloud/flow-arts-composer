@@ -16,7 +16,10 @@ def import_file(path, folder, name, mesh=False):
     # These three small source meshes may change during site art passes. Reimport
     # them on every run so an existing project never keeps an older silhouette.
     if (not ED.does_asset_exist(target)
-            or folder in ('/Game/FlowFest/Assets/Ecology', '/Game/FlowFest/Textures/Ecology')):
+            or folder in ('/Game/FlowFest/Assets/Ecology', '/Game/FlowFest/Textures/Ecology')
+            or (folder == '/Game/FlowFest/Textures' and name in (
+                'TerrainOrtho', 'GroundFamilyMask', 'GroundDetail', 'GroundMeadow',
+                'GroundLitter', 'GroundDamp', 'GroundNormal', 'GroundRoughness'))):
         task = u.AssetImportTask()
         task.filename = str(path)
         task.destination_path = folder
@@ -186,10 +189,12 @@ def migrate_wind_masks(material):
     x_mask = height_mask = None
     while stack:
         node = stack.pop()
+        if not node:
+            continue
         if node.get_path_name() in visited:
             continue
         visited.add(node.get_path_name())
-        inputs = ME.get_inputs_for_material_expression(material, node)
+        inputs = [item for item in ME.get_inputs_for_material_expression(material, node) if item]
         if isinstance(node, u.MaterialExpressionComponentMask) and len(inputs) == 1:
             source = inputs[0]
             if isinstance(source, u.MaterialExpressionWorldPosition):
@@ -288,32 +293,94 @@ palette = {
     'M_Canvas': ((.43,.25,.10),.92,0,0), 'M_Metal': ((.18,.22,.23),.38,.8,0),
     'M_Ember': ((1,.17,.012),.7,0,9), 'M_Grass': ((.10,.18,.035),.96,0,0),
 }
+site = json.loads((PROJECT / 'Content' / 'Data' / 'site.json').read_text())
+ground_bounds = site['groundSurface']
+if ground_bounds['file'] != 'ground-family-mask.rgba':
+    raise RuntimeError('Unexpected registered ground-family mask contract')
+
+def ground_uv(material, world, bounds, flip_z=False):
+    """Map native X/Y centimetres to the source site's X/Z metre mask."""
+    x = expression(material, u.MaterialExpressionComponentMask, r=True, g=False, b=False, a=False)
+    y = expression(material, u.MaterialExpressionComponentMask, r=False, g=True, b=False, a=False)
+    connect(world, '', x, '')
+    connect(world, '', y, '')
+    x_div = expression(material, u.MaterialExpressionDivide)
+    x_add = expression(material, u.MaterialExpressionAdd)
+    y_div = expression(material, u.MaterialExpressionDivide)
+    y_add = expression(material, u.MaterialExpressionAdd)
+    uv = expression(material, u.MaterialExpressionAppendVector)
+    width_cm = (bounds['maxX'] - bounds['minX']) * 100
+    height_cm = (bounds['maxZ'] - bounds['minZ']) * 100
+    connect(x, '', x_div, 'A'); connect(scalar(material, width_cm), '', x_div, 'B')
+    connect(x_div, '', x_add, 'A')
+    connect(scalar(material, -bounds['minX'] * 100 / width_cm), '', x_add, 'B')
+    connect(y, '', y_div, 'A'); connect(scalar(material, height_cm), '', y_div, 'B')
+    if flip_z:
+        negative_y = expression(material, u.MaterialExpressionMultiply)
+        connect(y_div, '', negative_y, 'A'); connect(scalar(material, -1), '', negative_y, 'B')
+        connect(negative_y, '', y_add, 'A')
+        connect(scalar(material, bounds['maxZ'] * 100 / height_cm), '', y_add, 'B')
+    else:
+        connect(y_div, '', y_add, 'A')
+        connect(scalar(material, -bounds['minZ'] * 100 / height_cm), '', y_add, 'B')
+    connect(x_add, '', uv, 'A'); connect(y_add, '', uv, 'B')
+    return uv
+
 for name, args in palette.items():
     m = material(name, *args)
     if name == 'M_Ground' and (STAGED / 'TerrainOrtho.png').exists():
         tex = import_file(STAGED / 'TerrainOrtho.png', '/Game/FlowFest/Textures', 'TerrainOrtho')
         world = expression(m, u.MaterialExpressionWorldPosition)
-        mask = expression(m, u.MaterialExpressionComponentMask,
-                          r=True, g=True, b=False, a=False)
-        divide = expression(m, u.MaterialExpressionDivide)
-        add = expression(m, u.MaterialExpressionAdd)
         sample = expression(m, u.MaterialExpressionTextureSample, texture=tex)
-        connect(world, '', mask, '')  # UE 5.8 shortens this pin name; empty selects input 0.
-        connect(mask, '', divide, 'A')
-        connect(scalar(m, 102400), '', divide, 'B')
-        connect(divide, '', add, 'A')
-        connect(scalar(m, .5), '', add, 'B')
-        connect(add, '', sample, 'UVs')
+        connect(ground_uv(m, world, ground_bounds), '', sample, 'UVs')
         connect_property(sample, 'RGB', u.MaterialProperty.MP_BASE_COLOR)
-        if (STAGED / 'GroundDetail.png').exists():
-            detail_tex = import_file(STAGED / 'GroundDetail.png', '/Game/FlowFest/Textures', 'GroundDetail')
+        required_ground = ('GroundFamilyMask', 'GroundDetail', 'GroundMeadow', 'GroundLitter', 'GroundDamp')
+        for source_name in required_ground:
+            if not (STAGED / (source_name + '.png')).is_file():
+                raise RuntimeError('Missing source ground texture: ' + source_name)
+        mask_tex = import_file(STAGED / 'GroundFamilyMask.png', '/Game/FlowFest/Textures', 'GroundFamilyMask')
+        mask_tex.set_editor_property('compression_settings', u.TextureCompressionSettings.TC_MASKS)
+        mask_tex.set_editor_property('srgb', False)
+        ED.save_loaded_asset(mask_tex)
+        mask_sample = expression(m, u.MaterialExpressionTextureSample,
+                                 texture=mask_tex, sampler_type=u.MaterialSamplerType.SAMPLERTYPE_MASKS)
+        connect(ground_uv(m, world, ground_bounds, True), '', mask_sample, 'UVs')
+        # The registered RGBA mask carries packed, meadow and litter weights;
+        # damp is the remaining weight. It was painted from the same roads,
+        # camps and measured tree locations as the source browser scene.
+        weights = []
+        for channel in ('r', 'g', 'b'):
+            weight = expression(m, u.MaterialExpressionComponentMask,
+                                r=channel == 'r', g=channel == 'g', b=channel == 'b', a=False)
+            connect(mask_sample, 'RGB', weight, '')
+            weights.append(weight)
+        rg = expression(m, u.MaterialExpressionAdd)
+        rgb = expression(m, u.MaterialExpressionAdd)
+        damp = expression(m, u.MaterialExpressionOneMinus)
+        connect(weights[0], '', rg, 'A'); connect(weights[1], '', rg, 'B')
+        connect(rg, '', rgb, 'A'); connect(weights[2], '', rgb, 'B')
+        connect(rgb, '', damp, '')
+        detail_uv = expression(m, u.MaterialExpressionDivide)
+        xy = expression(m, u.MaterialExpressionComponentMask, r=True, g=True, b=False, a=False)
+        connect(world, '', xy, '')
+        connect(xy, '', detail_uv, 'A'); connect(scalar(m, 245), '', detail_uv, 'B')
+        terms = []
+        for source_name, weight in zip(('GroundDetail', 'GroundMeadow', 'GroundLitter', 'GroundDamp'), (*weights, damp)):
+            detail_tex = import_file(STAGED / (source_name + '.png'), '/Game/FlowFest/Textures', source_name)
             detail = expression(m, u.MaterialExpressionTextureSample, texture=detail_tex)
-            # Surveyed imagery establishes the field/woodland structure; detail is
-            # a close-range modulation, not a replacement photograph.
-            blend = expression(m, u.MaterialExpressionLinearInterpolate, const_alpha=.27)
-            connect(sample, 'RGB', blend, 'A')
-            connect(detail, 'RGB', blend, 'B')
-            connect_property(blend, '', u.MaterialProperty.MP_BASE_COLOR)
+            connect(detail_uv, '', detail, 'UVs')
+            term = expression(m, u.MaterialExpressionMultiply)
+            connect(detail, 'RGB', term, 'A'); connect(weight, '', term, 'B')
+            terms.append(term)
+        first = expression(m, u.MaterialExpressionAdd)
+        second = expression(m, u.MaterialExpressionAdd)
+        family_color = expression(m, u.MaterialExpressionAdd)
+        connect(terms[0], '', first, 'A'); connect(terms[1], '', first, 'B')
+        connect(terms[2], '', second, 'A'); connect(terms[3], '', second, 'B')
+        connect(first, '', family_color, 'A'); connect(second, '', family_color, 'B')
+        blend = expression(m, u.MaterialExpressionLinearInterpolate, const_alpha=.66)
+        connect(sample, 'RGB', blend, 'A'); connect(family_color, '', blend, 'B')
+        connect_property(blend, '', u.MaterialProperty.MP_BASE_COLOR)
         if (STAGED / 'GroundNormal.png').exists():
             normal_tex = import_file(STAGED / 'GroundNormal.png', '/Game/FlowFest/Textures', 'GroundNormal')
             normal_tex.set_editor_property('compression_settings', u.TextureCompressionSettings.TC_NORMALMAP)
