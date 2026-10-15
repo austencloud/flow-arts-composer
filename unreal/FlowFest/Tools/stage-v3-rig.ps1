@@ -1,6 +1,7 @@
 param(
     [Parameter(Mandatory = $true)][string]$Rig,
-    [string]$D2ConvertRoot = 'E:/FlowFestLivingConvert'
+    [string]$D2ConvertRoot = 'E:/FlowFestLivingConvert',
+    [switch]$FbxOnly
 )
 
 $ErrorActionPreference = 'Stop'
@@ -17,11 +18,22 @@ $scp = 'C:/Windows/System32/OpenSSH/scp.exe'
 New-Item -ItemType Directory -Path $rigPath, (Split-Path -Parent $remoteManifest) -Force | Out-Null
 & $scp -q -o BatchMode=yes "$remote/imports.json" $remoteManifest
 if ($LASTEXITCODE -ne 0) { throw "Could not transfer $Rig conversion manifest" }
-for ($attempt = 1; $attempt -le 3; $attempt++) {
-    & $scp -q -o BatchMode=yes -r "$remote/$key/." "$rigPath/"
-    if ($LASTEXITCODE -eq 0) { break }
-    if ($attempt -eq 3) { throw "Could not transfer $Rig GLBs/FBXs after $attempt attempts" }
-    Start-Sleep -Seconds 5
+if ($FbxOnly) {
+    $remoteFiles = & 'C:/Windows/System32/OpenSSH/ssh.exe' d2 "Get-ChildItem -LiteralPath '$D2ConvertRoot/rigs/$Rig/unreal/FlowFest/Tools/staged/Characters/$key' -Filter 'A_Flow_P_*.fbx' -File | Select-Object -ExpandProperty Name"
+    if ($LASTEXITCODE -ne 0 -or @($remoteFiles).Count -ne 82) { throw "Expected 82 remote $Rig family FBXs" }
+    foreach ($file in $remoteFiles) {
+        $localPath = Join-Path $rigPath $file
+        if ((Test-Path -LiteralPath $localPath) -and (Get-Item -LiteralPath $localPath).Length -ge 1024) { continue }
+        & $scp -q -o BatchMode=yes "$remote/$key/$file" "$rigPath/"
+        if ($LASTEXITCODE -ne 0) { throw "Could not transfer $Rig/$file" }
+    }
+} else {
+    for ($attempt = 1; $attempt -le 3; $attempt++) {
+        & $scp -q -o BatchMode=yes -r "$remote/$key/." "$rigPath/"
+        if ($LASTEXITCODE -eq 0) { break }
+        if ($attempt -eq 3) { throw "Could not transfer $Rig GLBs/FBXs after $attempt attempts" }
+        Start-Sleep -Seconds 5
+    }
 }
 
 $converted = Get-Content $remoteManifest -Raw | ConvertFrom-Json
@@ -38,7 +50,7 @@ if ($profiles.Count -ne 82 -or @($profiles | Select-Object -Unique).Count -ne 82
     throw "$Rig conversion manifest has $($profiles.Count)/82 family profiles"
 }
 foreach ($profile in $profiles) {
-    foreach ($file in @("capture_$profile.glb", "A_Flow_$profile.fbx")) {
+    foreach ($file in $(if ($FbxOnly) { @("A_Flow_$profile.fbx") } else { @("capture_$profile.glb", "A_Flow_$profile.fbx") })) {
         $path = Join-Path $rigPath $file
         if (-not (Test-Path -LiteralPath $path) -or (Get-Item -LiteralPath $path).Length -lt 1024) {
             throw "Missing converted $Rig/$file"
