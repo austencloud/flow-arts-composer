@@ -183,10 +183,17 @@
     border-top: 0;
     padding-top: 0;
   }
+  /* SegmentedControl fills its container, so the wrapper sets the width:
+     enough for five labels, never a page-wide bar. */
   .prop-switcher {
-    display: flex;
-    justify-content: center;
-    margin-bottom: clamp(1.5rem, 1rem + 1vw, 2.5rem);
+    width: min(100%, 32rem);
+    margin: 0 auto clamp(1.5rem, 1rem + 1vw, 2.5rem);
+  }
+  /* Text and player start on the same line under the switcher. The panel
+     cell is sized for the longest prop, so centring would float a short
+     prop's text away from the top. */
+  .prop-picker .section-duo {
+    align-items: start;
   }
 
   /* All five panels sit in one cell. The tallest sets the height, so the
