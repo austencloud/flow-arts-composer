@@ -93,7 +93,12 @@
     );
     if (pairedSteps >= maxSteps) {
       if (accessTier === "guest") {
-        authDrawerState.show("signup", "step-cap-guest", sequenceId);
+        authDrawerState.show(
+          "signup",
+          "step-cap-guest",
+          sequenceId,
+          props.tabState.sequenceState?.currentSequence
+        );
       } else {
         toast.info(`Assemble supports up to ${maxSteps} steps.`, 4000);
       }

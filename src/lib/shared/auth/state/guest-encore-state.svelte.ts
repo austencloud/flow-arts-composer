@@ -3,7 +3,7 @@ import { getMaxSteps, type AccessTier } from "../domain/access-tier";
 import type { GuestEncorePrompt } from "../domain/auth-nudge-trigger";
 export const GUEST_ENCORE_STORAGE_KEY = "fac:guest-encore:v1";
 const ENCORE_ATTEMPT = 5;
-const ENCORE_STEPS = 16;
+export const ENCORE_STEPS = 16;
 
 type EncoreStorage = Pick<Storage, "getItem" | "setItem">;
 
