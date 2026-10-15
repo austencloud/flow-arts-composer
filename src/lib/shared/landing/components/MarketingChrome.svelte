@@ -229,7 +229,7 @@
     inset: 0;
     z-index: 1;
     opacity: 0;
-    transition: opacity 600ms ease-out;
+    transition: opacity var(--duration-scene) var(--ease-out);
   }
 
   .mkt-bg-shown {

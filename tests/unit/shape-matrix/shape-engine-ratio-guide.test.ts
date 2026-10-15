@@ -64,7 +64,9 @@ describe("Shape Engine ratio guide", () => {
     expect(page).not.toContain("5:1");
   });
 
-  it("connects the guide, Shape Engine, and both relevant history records", () => {
+  // The history archive is withdrawn until its authors have been asked
+  // (d861660de7), so neither surface links into its records any more.
+  it("connects the guide and Shape Engine without linking the withdrawn archive", () => {
     const page = read(PAGE_PATH);
     const about = read(
       "src/lib/shared/shape-matrix/app/components/ShapeMatrixAboutModal.svelte"
@@ -73,13 +75,11 @@ describe("Shape Engine ratio guide", () => {
     const sitemap = read("src/routes/sitemap.xml/+server.ts");
 
     expect(page).toContain('path="/guide/ratios"');
-    expect(page).toContain("/history#archive-record-vtg");
-    expect(page).toContain("/history#archive-record-lorq");
+    expect(page).not.toContain("/history#archive-record");
     expect(page).toContain("/shape-engine?");
     expect(about).toContain('size="xl"');
     expect(about).toContain('href="/guide/ratios"');
-    expect(about).toContain("/history#archive-record-vtg");
-    expect(about).toContain("/history#archive-record-lorq");
+    expect(about).not.toContain("/history#archive-record");
     expect(toc).toContain('href: "/guide/ratios"');
     expect(sitemap).toContain('{ url: "guide/ratios" }');
   });

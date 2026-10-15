@@ -78,7 +78,10 @@ export function localizePath(path: string, locale: PageLocale): string {
 }
 
 /** Point an internal link at the current page's language when that page exists. */
-export function localizeHref(href: string, current: URL): string {
+export function localizeHref(
+  href: string,
+  current: Pick<URL, "pathname">
+): string {
   if (!href.startsWith("/") || href.startsWith("//")) return href;
   const { locale } = splitLocalePath(current.pathname);
   if (locale === "en") return href;

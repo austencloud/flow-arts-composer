@@ -276,16 +276,10 @@ describe("roots-to-archive route migration", () => {
     expect(sitemap).not.toContain('{ url: "notation/letters" }');
     expect(sitemap).toContain('{ url: "roots/software" }');
     expect(sitemap).not.toMatch(/\{ url: "roots",/);
-    expect(softwarePage).toMatch(
-      /name:\s*"Flow Arts History",\s*item:\s*"https:\/\/tkaflowarts\.com\/history"/
-    );
-    // The source wraps this LinkChip across lines (f13606f440 reformatted it as
-    // an incidental side effect of an unrelated edit further down the file),
-    // which leaves whitespace between the closing quote and `>` once this
-    // raw-source check collapses runs of whitespace to one space.
-    expect(softwareCopy).toMatch(
-      /href="\/history#archive-record-vtg"\s*>VTG record in the history archive<\/LinkChip\s*>/
-    );
+    // The history archive is withdrawn until its authors have been asked
+    // (d861660de7), so the software page no longer links into it.
+    expect(softwarePage).not.toContain("tkaflowarts.com/history");
+    expect(softwareCopy).not.toContain('href="/history');
     expect(componentManifest).not.toContain(
       '"file": "routes/(public)/roots/+page.svelte"'
     );

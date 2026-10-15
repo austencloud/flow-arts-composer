@@ -147,7 +147,7 @@ describe("crawl route (paginated, one surface)", () => {
   it("links to sibling topics + the guide hub (internal-link graph)", () => {
     const src = read(host);
     expect(src).toContain("/guide/level-1/"); // prev/next sibling routes
-    expect(src).toContain('href="/guide"'); // hub
+    expect(src).toContain('href={localHref("/guide")}'); // hub, in the reader's language
   });
 });
 

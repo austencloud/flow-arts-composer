@@ -158,7 +158,9 @@ describe("chapter hubs (/guide/level-2/turns, /guide/level-2/double-turns)", () 
       );
       expect(src, chapterDir).toContain("level2TopicPagesForChapter");
       expect(src, chapterDir).toContain(`"${chapter}"`);
-      expect(src, chapterDir).toMatch(/href="\/guide\/level-2\/\{topic\.slug\}"/);
+      expect(src, chapterDir).toMatch(
+        /href=\{localHref\(`\/guide\/level-2\/\$\{topic\.slug\}`\)\}/
+      );
       // The old concatenation imported every ch20/ch21 section component
       // directly; the hub must not still do that.
       expect(src, chapterDir).not.toMatch(/_sections\/ch2[01]\//);

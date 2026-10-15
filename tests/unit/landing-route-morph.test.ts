@@ -41,10 +41,6 @@ const routeSourceByPath: Record<string, string[]> = {
   "/learn/concepts": [
     "src/lib/features/learn/components/ConceptPathView.svelte",
   ],
-  "/history": [
-    "src/routes/(public)/history/+page.svelte",
-    "src/routes/(public)/history/_components/archive/PlayableArchive.svelte",
-  ],
   "/faq": ["src/routes/(public)/faq/+page.svelte"],
   "/atlas": ["src/routes/(public)/atlas/+page.svelte"],
 };
@@ -142,10 +138,15 @@ describe("landing route morph allowlist", () => {
   });
 });
 
+const MORPHING_TILES = LAUNCHPAD_TILES.filter((tile) => tile.morphName);
+
 describe("landing shared-element contract", () => {
-  it("gives every tile one unique name and a matching destination participant", () => {
-    const morphNames = LAUNCHPAD_TILES.map((tile) => tile.morphName);
-    expect(morphNames.every(Boolean)).toBe(true);
+  // A tile may opt out of the morph when its destination has no hero to grow
+  // into (Notation fronts Shape Engine since the History archive was
+  // withdrawn); every tile that has a name keeps the full contract.
+  it("gives every morphing tile one unique name and a matching destination participant", () => {
+    const morphNames = MORPHING_TILES.map((tile) => tile.morphName);
+    expect(morphNames.length).toBeGreaterThan(0);
     expect(new Set(morphNames).size).toBe(morphNames.length);
     expect(Object.keys(routeSourceByPath).sort()).toEqual(
       [...LAUNCHPAD_MORPH_PATHS].sort()
@@ -156,7 +157,7 @@ describe("landing shared-element contract", () => {
     );
     expect(tileSource).toContain("style:view-transition-name={tile.morphName}");
 
-    for (const tile of LAUNCHPAD_TILES) {
+    for (const tile of MORPHING_TILES) {
       const morphName = tile.morphName;
       expect(morphName).toBeTruthy();
       if (!morphName) continue;
@@ -191,7 +192,7 @@ describe("landing shared-element contract", () => {
     const namedMorphCss = readSource(
       "node_modules/@austencloud/motion/css/named-route-morph.css"
     );
-    for (const morphName of LAUNCHPAD_TILES.map((tile) => tile.morphName)) {
+    for (const morphName of MORPHING_TILES.map((tile) => tile.morphName)) {
       expect(css).toContain(`::view-transition-group(${morphName})`);
     }
 

@@ -46,7 +46,7 @@ function intersect(nodes: Element[]): void {
 type StubTile = HTMLElement & { fire(type: string): void };
 
 function makeTile(top: number): StubTile {
-  const node = document.createElement("div") as StubTile;
+  const node = document.createElement("div") as unknown as StubTile;
   const listeners = new Map<string, () => void>();
   node.addEventListener = ((type: string, fn: () => void) => {
     listeners.set(type, fn);
