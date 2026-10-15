@@ -31,10 +31,12 @@
   const scene = resolveThrelteScene(sceneValue) as Scene;
   const { scheduler, resetFrameInvalidation } = useScheduler();
   let performer: LiveSequencePerformer3D;
+  let captureClockOriginMs = 0;
 
   export function pauseAutoLoop(): void {
     renderer.setAnimationLoop(null);
     autoRenderTask.stop();
+    captureClockOriginMs = performance.now();
   }
 
   export function hasRenderedRig(): boolean {
@@ -47,7 +49,7 @@
     const score = frame / 30;
     performer.seekScore(score);
     await tick();
-    const ms = frame * (1000 / 30);
+    const ms = captureClockOriginMs + frame * (1000 / 30);
     scheduler.run(ms);
     resetFrameInvalidation();
     // The first pass applies score-driven state; the second settles IK and grip correction.
