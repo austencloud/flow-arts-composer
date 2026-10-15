@@ -53,9 +53,6 @@ export const ZANS_DIAMOND_SOURCE_SEQUENCE_ID = "seq_1791923102683_sysj46042";
 export const ZANS_DIAMOND_COLLECTION_PATH =
   "/browse/explore/collections/PBp3GSBO6igCKPwJyLZNmVEmamI3/dab5fdca-b279-4a50-bd7a-67f291fce071";
 
-/** The Level 1 topic whose letters most of the variations are spelled in. */
-export const ZANS_DIAMOND_CROSS_SHIFTS_PATH = "/guide/level-1/hm-type34";
-
 type Raw = readonly [
   from: string,
   to: string,
