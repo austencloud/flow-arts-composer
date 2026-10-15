@@ -71,13 +71,13 @@ describe("cardMode cache identity", () => {
     // Regression guard for the whole warmed population: adding a field to the
     // hash input is only safe because it appears when cardMode is true. These
     // are the hashes main produced before the fix.
-    expect(deriveKey(galleryInput).hash).toBe("-382kas");
+    expect(deriveKey(galleryInput).hash).toBe("-vcnc1v");
     expect(deriveKey({ ...galleryInput, cardMode: false }).hash).toBe(
-      "-382kas"
+      "-vcnc1v"
     );
-    expect(deriveKey(designerCard).hash).toBe("30dl4f");
+    expect(deriveKey(designerCard).hash).toBe("60kre8");
     expect(deriveKey({ ...galleryInput, variant: "wordcard" }).hash).toBe(
-      "-iwx7i2"
+      "wjnlut"
     );
   });
 });

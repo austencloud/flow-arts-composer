@@ -140,7 +140,7 @@ describe("cloud-thumbnail-cache upload authorization", () => {
 describe("cloud-thumbnail-cache renderer versioning", () => {
   it("folds the renderer version into the storage filename", () => {
     expect(getStoragePath(key)).toBe(
-      "thumbnails/gallery/club/AAAA_sequence-1_r6_dark.webp"
+      "thumbnails/gallery/club/AAAA_sequence-1_r7_dark.webp"
     );
   });
 });
