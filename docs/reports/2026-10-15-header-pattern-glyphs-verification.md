@@ -65,6 +65,10 @@ glyphs; short words retained them. Empty sequences and nine-step aperiodic
 signatures produced no glyphs. See
 [mobile fixtures](../../.artifacts/header-pattern-glyphs/fixtures-mobile.webp).
 
+Viewer-title fixtures also showed all eight turn pairs and reversal columns in
+a 219 px title slot. Long words and a 179 px title slot omitted the patterns.
+See [viewer-title fixtures](../../.artifacts/header-pattern-glyphs/fixtures-chrome.webp).
+
 The visual pass checks composition and geometry. It makes no claim about
 detecting AI authorship.
 
