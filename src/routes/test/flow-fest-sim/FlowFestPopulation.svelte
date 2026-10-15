@@ -224,7 +224,7 @@
       // Covers every avatar in the scene, not only the slots: the fire-circle
       // community and the rider share characters with the walkers, and a
       // shared character is exactly how the fade leftover spreads.
-      sweepFlowFestAvatarMaterials(scene);
+      sweepFlowFestAvatarMaterials("current" in scene ? scene.current : scene);
     }
     pushTransforms(frame);
     props.onFrame?.(frame);
@@ -236,8 +236,8 @@
     <Avatar3D
       id={`flow-fest-population-${slot.agentId}`}
       avatarId={slot.avatarId}
-      leftPropState={null}
-      rightPropState={null}
+      bluePropState={null}
+      redPropState={null}
       visible={slot.visible}
       isActive={false}
       position={{ x: slot.x, y: slot.y, z: slot.z }}
