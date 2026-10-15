@@ -68,6 +68,7 @@
     showElemental: render?.showElemental ?? false,
     showReversals: render?.showReversals ?? false,
     showNonRadialPoints: render?.showNonRadialPoints ?? false,
+    showStepNumbers: render?.showStepNumbers ?? false,
   });
 
   const MIN_CELL = 104;
@@ -153,6 +154,7 @@
         showElemental={r.showElemental}
         showReversals={r.showReversals}
         showNonRadialPoints={r.showNonRadialPoints}
+        showStepNumbers={r.showStepNumbers}
       />
       {#if label}
         <!-- Inside the cell (the card's step-number convention) so labels never

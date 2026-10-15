@@ -118,5 +118,21 @@ export const INTERCARDINAL_LABELS = [
 ] as const;
 
 
-export type Phase = 'intro' | 'split' | 'diamond-labels' | 'box-labels' | 'merged' | 'split-highlight';
+/**
+ * 'diamond' and 'box' are the single four-point grids a pictograph draws. They
+ * let the lesson board settle from the merged grid into the grid that later
+ * lessons place hands on, without swapping in a different drawing.
+ */
+export type Phase =
+	| 'intro'
+	| 'split'
+	| 'diamond-labels'
+	| 'box-labels'
+	| 'merged'
+	| 'split-highlight'
+	| 'diamond'
+	| 'box';
+
+/** 'lesson' uses the theme's quiet points; 'pictograph' matches a pictograph card. */
+export type BoardLook = 'lesson' | 'pictograph';
 export type HighlightPhase = 'none' | 'center' | 'hand' | 'outer';

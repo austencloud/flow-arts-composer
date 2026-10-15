@@ -13,7 +13,8 @@ export type EffectivePhase =
   | "split"
   | "diamond-labels"
   | "box-labels"
-  | "merged";
+  | "merged"
+  | "diamond";
 export type HighlightPhase = "none" | "center" | "hand" | "outer";
 
 export const GRID_LAST_STEP = 2;
@@ -52,7 +53,9 @@ export function createGridExperienceState(isScrollMode: boolean = false) {
 
   // Derived phases for GridMergeAnimation
   const effectivePhase = $derived<EffectivePhase>(
-    step === 0 ? "intro" : step === 1 ? gridPhase : "merged"
+    // Point types are taught on the four-point diamond the copy describes,
+    // which is also the grid Hand Placements continues on.
+    step === 0 ? "intro" : step === 1 ? gridPhase : "diamond"
   );
 
   const effectiveHighlightPhase = $derived<HighlightPhase>(

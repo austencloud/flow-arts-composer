@@ -26,7 +26,10 @@
       phase === "split-highlight"
   );
 
-  const isIntro = $derived(phase === "intro");
+  // The single-grid scenes draw only the turning group, as a pictograph would.
+  const isIntro = $derived(
+    phase === "intro" || phase === "diamond" || phase === "box"
+  );
   const isMerged = $derived(phase === "merged");
   const isDimmed = $derived(phase === "box-labels");
 </script>

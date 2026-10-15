@@ -9,6 +9,12 @@ import CreateMethodPreview from "#lib/features/create/shared/components/method-p
 import FakeMethodScene, { fakeScene } from "./FakeMethodScene.svelte";
 import { mountMethodPreview } from "./create-method-preview-harness.svelte";
 
+// The preview also waits for the signed-in account's settings. Nobody signs
+// in here, so that wait is already over.
+vi.mock("#lib/shared/settings/state/account-settings-ready.js", () => ({
+  awaitAccountSettings: () => Promise.resolve(),
+}));
+
 // vitest-setup.ts swaps document.createElement for stubs that are not DOM
 // nodes. Mounting a component needs jsdom's own, from document's prototype.
 const realCreateElement = Object.getPrototypeOf(document)

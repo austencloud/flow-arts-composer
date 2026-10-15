@@ -14,6 +14,31 @@ export interface ScenePropVariant {
   label: string;
 }
 
+/** Source-only registrations; public picker options deliberately ignore these. */
+export const INTERNAL_LED_PROP_BUILDS = [
+  {
+    id: "fan-astral",
+    props: [PropType.FAN, PropType.BIGFAN],
+    model: "/models/props/fan.glb",
+    group: "Fan_Astral",
+    build: { fanBuild: "astral", fanCover: "bare" },
+  },
+  {
+    id: "triquetra-tubing",
+    props: [PropType.TRIQUETRA, PropType.TRIQUETRA2],
+    model: "/models/props/led-shapes.glb",
+    group: "Triquetra_LED",
+    build: { shapeBuild: "led" },
+  },
+  {
+    id: "triangle-tubing",
+    props: [PropType.TRIANGLE],
+    model: "/models/props/led-shapes.glb",
+    group: "Triangle_LED",
+    build: { shapeBuild: "led" },
+  },
+] as const;
+
 export interface ScenePropFamily {
   tileLabel: string;
   controlLabel: string;
