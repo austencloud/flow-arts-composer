@@ -27,3 +27,17 @@
 - Wording uncertainty: `learn_trace_sync_feedback` says to bring the hands closer together on beat changes. The key and surrounding synchronization context were interpreted as bringing their timing closer together (`Sincroniza más las manos en los cambios de paso`). This run did not establish whether the source intended physical distance instead.
 - Copy review: applied the ai-bust mechanical pre-pass and a meaning/terminology judgment pass. Its only HIGH/CRITICAL finding was the fire emoji in `learn_ui_on_fire`; retained because it is present in the English source. No new marketing claims or copy structure were added.
 - Delivery: committed on the assigned `codex/i18n-es` branch for the coordinator. No primary-checkout access, integration, push, server, installation, or broad check was run.
+
+## R3 — 2026-10-14
+
+- Scope: 1107 translated entries, 0 retranslation entries, 0 review entries. All 1107 required output keys are present. No native-language review was performed.
+- Applied only with the supplied apply-batch.js command. Initial result: `messages/es.json: inserted 1107, replaced 0, refused 0`. Final result after the contextual Static correction: `messages/es.json: inserted 0, replaced 1107, refused 0`.
+- Gate: `npx vitest run --config tests/config/vitest.config.ts tests/unit/i18n-catalog-contract.test.ts`.
+- Final gate result: `Test Files  1 passed (1)` and `Tests  66 passed (66)`; duration 5.34s, exit 0.
+- Focused contract review: required/applied 1107/1107; all 2873 preexisting catalog values preserved; placeholder occurrence counts and markup preserved; all values single-line; no usted/ustedes/vosotros/vuestro address forms. Result: 0 errors. Final diff whitespace check passed.
+- Catalog diff before this ledger: only messages/es.json, 1108 insertions and 1 deletion. Net addition is exactly 1107 lines; the replaced existing line only gained a comma before appended keys.
+- Glossary choices: neutral Latin American Spanish with tú and infinitive action buttons. Used posición, cuadrícula, trayectoria de la mano, secuencia, paso, tiempo, vuelta, intérprete, prop/props, Cuadrado and Diamante. Notation labels, product names, coordinates, user names, units and placeholders retained. LOOP remains the notation name; playback loop is repetición. Mandala's Static/Animated control uses Estático/Animado: source shows this is paused versus animated display, not the Static motion category.
+- Other wording choices: Smart Collection → colección inteligente; fork → crear copia; remix → remezclar; preset → preajuste; film → filmación; take → toma; stagger → desfase; reversal → inversión (consistent with R1/R2); showcase → muestra; roster view → vista de lista. Palette labels translated as display names; their identifiers were not changed.
+- Naming uncertainty: TKA Core / Core are retained as the named shelf for the founding decks. The glossary has no explicit row for this shelf; whether its short name should instead be localized was not established. Post is retained as shorthand for Post Studio.
+- Copy review: used the ai-bust mechanical pre-pass on the output (HIGH/CRITICAL findings: none) and a meaning/terminology judgment pass. Existing quotation marks, arrows, shared Spanish words, names, symbols and placeholder-only values retained where appropriate.
+- Delivery: committed on the assigned codex/i18n-es branch for the coordinator. No primary-checkout access, integration, push, server, installation, broad checks or prohibited git commands were used.
