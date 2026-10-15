@@ -183,7 +183,11 @@ void AFlowFestWorld::Tick(float DeltaSeconds)
                     Person.Avatar->SetPerformancePhase(FMath::Frac(Agent.PhaseOffset / (2.f * PI)));
                     Person.Prop->SetFinish(Agent.FinishId);
                 }
-                else Person.Avatar->StopPerformance();
+                else
+                {
+                    Person.Avatar->StopPerformance();
+                    Person.Prop->ClearPerformanceTransforms();
+                }
             }
             else if (Person.bPerformancePlaying)
             {
@@ -922,7 +926,8 @@ void AFlowFestWorld::SetTimeOfDay(float Hour)
     Sun->SetWorldRotation(FRotator(-Altitude, 205.f, 0.f));
     const float Daylight = FMath::Clamp((Altitude + 8.f) / 24.f, 0.f, 1.f);
     // Low sun loses energy through the atmosphere before its warm light reaches the valley.
-    Sun->SetIntensity(85000.f * Daylight * Daylight);
+    const float SunLux = 85000.f * Daylight * Daylight;
+    Sun->SetIntensity(SunLux);
     Sun->SetLightColor(FLinearColor::LerpUsingHSV(FLinearColor(1.f, 0.47f, 0.24f), FLinearColor(1.f, 0.94f, 0.82f), FMath::Clamp(Altitude / 35.f, 0.f, 1.f)));
     const float Night = 1.f - FMath::Clamp((Altitude + 3.f) / 9.f, 0.f, 1.f);
     const float MoonAltitude = 31.f + 10.f * FMath::Sin((TimeOfDay - 23.f) * PI / 12.f);
@@ -930,8 +935,11 @@ void AFlowFestWorld::SetTimeOfDay(float Hour)
     Moon->SetIntensity(1.2f * Night);
     SkyLight->SetIntensity(FMath::Lerp(0.8f, 1.2f, Daylight));
     Fog->SetFogDensity(FMath::Lerp(0.013f, 0.008f, Daylight));
-    // Limit dark adaptation so moonlit terrain remains visibly darker than the fire circle.
-    PostProcess->Settings.AutoExposureMinBrightness = FMath::Lerp(0.f, -3.f, Daylight);
+    // Keep the camera within two stops of an incident-light exposure in daylight.
+    // A histogram dominated by shaded ground otherwise overexposes the sunlit canopy.
+    // The zero EV100 floor still limits dark adaptation around the nighttime fire.
+    PostProcess->Settings.AutoExposureMinBrightness = FMath::Max(0.f,
+        FMath::Log2(FMath::Max(1.f, SunLux) / 2.5f) - 2.f);
     PostProcess->Settings.AutoExposureBias = -0.8f * Daylight;
     PostProcess->Settings.BloomIntensity = FMath::Lerp(0.85f, 0.32f, Daylight);
 }
