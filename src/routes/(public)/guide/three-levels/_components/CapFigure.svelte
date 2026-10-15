@@ -16,7 +16,7 @@
    * Engine's flower painter.
    */
   import { onMount } from "svelte";
-  import { browser } from "$app/environment";
+  import { browser } from "$app/env";
   import InlineAnimationPlayer from "#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte";
   import GuideStepStrip from "../../level-1/_components/GuideStepStrip.svelte";
   import GuidePictograph from "../../level-1/_components/GuidePictograph.svelte";

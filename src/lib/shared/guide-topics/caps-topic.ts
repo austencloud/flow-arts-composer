@@ -174,7 +174,7 @@ export function capHandSteps(hand: CapHand): SoloPropStepData[] {
   for (let i = 0; i < 8; i++) {
     const spin = CAP_CYCLE[(i + hand.phase) % 4]!;
     const to = nextPoint(at, hand.travel);
-    const step =
+    const step: SoloPropStepData =
       spin === "extension"
         ? soloStep(
             at,

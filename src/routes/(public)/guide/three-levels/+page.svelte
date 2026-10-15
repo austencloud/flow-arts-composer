@@ -18,7 +18,7 @@
    * #lib/shared/guide-topics/caps-topic.ts.
    */
   import { onMount } from "svelte";
-  import { browser, dev } from "$app/environment";
+  import { browser, dev } from "$app/env";
   import UnderConstruction from "#lib/shared/landing/components/UnderConstruction.svelte";
   import GuideShell from "../_components/GuideShell.svelte";
   import GuideSeo from "../level-1/_components/GuideSeo.svelte";
