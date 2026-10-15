@@ -4,7 +4,7 @@
   import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import { getPlacementGridPoints } from "#lib/shared/pictograph/grid/services/placement-grid-points.js";
-  import { getSoloAuthoringContext } from "./solo-authoring-state.svelte";
+  import { getSoloAuthoringContext } from "./solo-authoring-state.svelte.js";
   import { createSoloStart, handName } from "./construct-solo-proposal";
   const authoring = getSoloAuthoringContext();
   let orientationWidth = $state(0);
@@ -75,7 +75,7 @@
           pictographData={choice.pictograph}
           gridMode={authoring.draft.gridMode}
           disableTransitions
-          showStepNumber={false}
+          stepNumberOverride={false}
         /></span
       >
       <span>{choice.label}</span>

@@ -15,7 +15,7 @@ import {
   clampTurnToLevel,
   type TurnValue,
 } from "#lib/shared/create/services/level-turn-values.js";
-import { CommandStack } from "#lib/shared/history/command-stack.svelte";
+import { CommandStack } from "#lib/shared/history/command-stack.svelte.js";
 import {
   appendSoloContinuation,
   createSoloContinuationOptions,

@@ -9,7 +9,7 @@
     formatTurnValue,
   } from "#lib/shared/create/services/level-turn-values.js";
   import { RotationDirection } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
-  import { getSoloAuthoringContext } from "./solo-authoring-state.svelte";
+  import { getSoloAuthoringContext } from "./solo-authoring-state.svelte.js";
   import { handName } from "./construct-solo-proposal";
   import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
   const authoring = getSoloAuthoringContext();
@@ -129,7 +129,7 @@
           ><PictographContainer
             pictographData={picture(option)}
             disableTransitions
-            showStepNumber={false}
+            stepNumberOverride={false}
           /></span
         >
         <span>{label(option)}</span>

@@ -3,18 +3,17 @@
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
-  import Crossfade from "#lib/shared/components/Crossfade.svelte";
   import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import InlineAnimationPlayer from "#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte";
-  import { AnimationVisibilityStateManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte";
-  import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte";
+  import { AnimationVisibilityStateManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
   import { motionQueryHandler } from "#lib/shared/pictograph/shared/services/motion-query-handler.js";
   import { deriveLettersForSequence } from "#lib/shared/navigation/services/letter-deriver.js";
   import { createConstructSoloReviewSequence } from "./construct-solo-review-fixture";
   import {
     createSoloAuthoringState,
     setSoloAuthoringContext,
-  } from "./solo-authoring-state.svelte";
+  } from "./solo-authoring-state.svelte.js";
   import { handName, otherHand } from "./construct-solo-proposal";
   import SoloStartChoices from "./SoloStartChoices.svelte";
   import SoloMotionChoices from "./SoloMotionChoices.svelte";
@@ -178,7 +177,7 @@
     >
       <header class="task-heading">
         <div class="task-copy">
-          <Crossfade key={title}><h2>{title}</h2></Crossfade>
+          <h2>{title}</h2>
           <p>
             {authoring.result
               ? "Play your sequence, or return to editing."
@@ -196,7 +195,7 @@
                 pictographData={referencePicture}
                 gridMode={authoring.draft.gridMode}
                 disableTransitions
-                showStepNumber={false}
+                stepNumberOverride={false}
               />
             </div>
             <figcaption>
