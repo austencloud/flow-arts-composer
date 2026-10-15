@@ -15,12 +15,27 @@ const MAX_IMPACTS = 4;
 const IMPACT_LIFETIME = 2.2;
 /** Grid vertices one frame may rebuild across every pool. */
 const FRAME_VERTICES = 6000;
+const MAX_DYES = 6;
+/** Seconds a landing's color takes to spread through its pool. */
+const DYE_LIFETIME = 4;
 
 interface Impact {
   x: number;
   z: number;
   age: number;
   amplitude: number;
+}
+
+/** Liquid of another color that has landed in a pool and not yet mixed in. */
+interface Dye {
+  x: number;
+  z: number;
+  radius: number;
+  age: number;
+  /** Share of the pool's color this liquid takes once fully mixed. */
+  share: number;
+  color: Color;
+  glow: number;
 }
 
 interface Puddle {
@@ -35,6 +50,8 @@ interface Puddle {
   color: Color;
   metalness: number;
   alpha: number;
+  glow: number;
+  dyes: Dye[];
   seed: number;
   /** Length along the travel direction over width; relaxes toward 1. */
   stretch: number;
@@ -59,6 +76,7 @@ export class GooPuddleRenderer3D {
   private readonly colors = new Float32Array(CAPACITY * VERTICES * 3);
   private readonly alphas = new Float32Array(CAPACITY * VERTICES);
   private readonly metalnesses = new Float32Array(CAPACITY * VERTICES);
+  private readonly glows = new Float32Array(CAPACITY * VERTICES);
   private readonly normals = new Float32Array(CAPACITY * VERTICES * 3);
   private readonly waveData = new Float32Array(4 * MAX_IMPACTS * 5);
   private readonly material: MeshPhysicalMaterial;
@@ -84,6 +102,10 @@ export class GooPuddleRenderer3D {
     this.geometry.setAttribute(
       "aMetalness",
       new BufferAttribute(this.metalnesses, 1).setUsage(DynamicDrawUsage)
+    );
+    this.geometry.setAttribute(
+      "aGlow",
+      new BufferAttribute(this.glows, 1).setUsage(DynamicDrawUsage)
     );
     this.geometry.setAttribute(
       "normal",
@@ -126,7 +148,8 @@ export class GooPuddleRenderer3D {
     alpha: number,
     impactSpeed = 1,
     velocityX = 0,
-    velocityZ = 0
+    velocityZ = 0,
+    glow = 0
   ): void {
     if (![x, z, floorY, beadRadius].every(Number.isFinite) || beadRadius <= 0)
       return;
@@ -163,9 +186,6 @@ export class GooPuddleRenderer3D {
         const pull = (added / total) * 0.5;
         nearest.x += (x - nearest.x) * pull;
         nearest.z += (z - nearest.z) * pull;
-        nearest.color.lerp(color, added / total);
-        nearest.viscosity += (viscosity - nearest.viscosity) * (added / total);
-        nearest.tension += (tension - nearest.tension) * (added / total);
         nearest.volume = total;
       }
       nearest.radius = Math.max(
@@ -173,8 +193,18 @@ export class GooPuddleRenderer3D {
         Math.cbrt(nearest.volume) * 1.25
       );
       nearest.idle = 0;
-      nearest.alpha = alpha;
-      nearest.metalness = metalness;
+      // New liquid keeps mixing in after a pool stops growing: it takes the
+      // share of the surface it lands on, so a long run of a new color turns
+      // the whole pool.
+      const share = Math.min(
+        0.4,
+        Math.max(added / total, 2.5 * (incomingRadius / nearest.radius) ** 2)
+      );
+      nearest.viscosity += (viscosity - nearest.viscosity) * share;
+      nearest.tension += (tension - nearest.tension) * share;
+      nearest.alpha += (alpha - nearest.alpha) * share;
+      nearest.metalness += (metalness - nearest.metalness) * share;
+      this.addDye(nearest, x, z, incomingRadius, color, glow, share);
       this.addImpact(nearest, x, z, beadRadius, impactSpeed);
       return;
     }
@@ -200,6 +230,8 @@ export class GooPuddleRenderer3D {
       color: color.clone(),
       metalness,
       alpha,
+      glow,
+      dyes: [],
       seed: Math.sin(x * 12.9898 + z * 78.233 + floorY * 37.719),
       stretch,
       dirX,
@@ -231,8 +263,18 @@ export class GooPuddleRenderer3D {
         if (impact.age >= IMPACT_LIFETIME)
           puddle.impacts.splice(impactIndex, 1);
       }
+      for (let dyeIndex = puddle.dyes.length - 1; dyeIndex >= 0; dyeIndex--) {
+        const dye = puddle.dyes[dyeIndex]!;
+        const step = Math.min(dt, DYE_LIFETIME - dye.age);
+        this.mix(puddle, dye, (dye.share * step) / DYE_LIFETIME);
+        dye.age += dt;
+        if (dye.age >= DYE_LIFETIME) puddle.dyes.splice(dyeIndex, 1);
+      }
+      // Liquid that refuses to wet the floor (mercury) gathers into beads.
+      const beading = puddle.tension ** 6;
       const target =
-        Math.cbrt(puddle.volume) * (2.3 + 0.6 * (1 - puddle.tension));
+        Math.cbrt(puddle.volume) *
+        (2.3 + 0.6 * (1 - puddle.tension) - 0.9 * beading);
       const spread = 1 - Math.exp(-(1.8 - 1.45 * puddle.viscosity) * dt);
       puddle.radius += (target - puddle.radius) * spread;
       // Surface tension slowly pulls a smear back toward round.
@@ -338,7 +380,7 @@ export class GooPuddleRenderer3D {
         puddle.domeHeight = Math.min(
           // Liquid on a floor settles a few millimetres deep, so a pool reads
           // as a flat glossy film with a soft meniscus, not a dome.
-          0.009,
+          0.009 + 0.01 * puddle.tension ** 6,
           Math.max(0.0025, (puddle.volume / (Math.PI * puddle.radius ** 2)) * 1.5)
         );
       }
@@ -354,6 +396,11 @@ export class GooPuddleRenderer3D {
           let lift = 0;
           let strongest = group[0]!;
           let strongestField = -Infinity;
+          let red = 0;
+          let green = 0;
+          let blue = 0;
+          let glow = 0;
+          let weight = 0;
           for (const puddle of candidates) {
             const offsetX = vx - puddle.x;
             const offsetZ = vz - puddle.z;
@@ -402,6 +449,44 @@ export class GooPuddleRenderer3D {
               strongestField = signed;
               strongest = puddle;
             }
+            // Neighboring pools of different colors blend across their seam.
+            const blend = reach * 0.2;
+            if (signed > -blend) {
+              const share = (signed + blend) ** 2;
+              red += puddle.color.r * share;
+              green += puddle.color.g * share;
+              blue += puddle.color.b * share;
+              glow += puddle.glow * share;
+              weight += share;
+            }
+          }
+          if (weight > 0) {
+            red /= weight;
+            green /= weight;
+            blue /= weight;
+            glow /= weight;
+          } else {
+            red = strongest.color.r;
+            green = strongest.color.g;
+            blue = strongest.color.b;
+            glow = strongest.glow;
+          }
+          // Fresh liquid shows where it landed, fading as it spreads and mixes.
+          for (const puddle of candidates) {
+            for (const dye of puddle.dyes) {
+              const life = dye.age / DYE_LIFETIME;
+              const spread =
+                dye.radius *
+                (1 + (2.4 - 1.6 * puddle.viscosity) * Math.sqrt(life));
+              const d2 =
+                ((vx - dye.x) ** 2 + (vz - dye.z) ** 2) / (spread * spread);
+              if (d2 >= 1) continue;
+              const k = 0.9 * (1 - d2) * (1 - life);
+              red += (dye.color.r - red) * k;
+              green += (dye.color.g - green) * k;
+              blue += (dye.color.b - blue) * k;
+              glow += (dye.glow - glow) * k;
+            }
           }
           this.positions[offset] = vx;
           let wave = 0;
@@ -420,9 +505,10 @@ export class GooPuddleRenderer3D {
               : 0.0012);
           this.positions[offset + 2] = vz;
           const shade = field > 0 ? 1 : 0.45;
-          this.colors[offset] = strongest.color.r * shade;
-          this.colors[offset + 1] = strongest.color.g * shade;
-          this.colors[offset + 2] = strongest.color.b * shade;
+          this.colors[offset] = red * shade;
+          this.colors[offset + 1] = green * shade;
+          this.colors[offset + 2] = blue * shade;
+          this.glows[vertex] = glow * shade;
           const fade = Math.min(1, Math.max(0, (18 - strongest.idle) / 3));
           // The pool thins toward its rim, so the floor shows through there.
           const depth = Math.min(1, Math.max(0, field / (averageRadius * 0.35)));
@@ -431,7 +517,8 @@ export class GooPuddleRenderer3D {
           this.alphas[vertex] =
             strongest.alpha *
             fade *
-            Math.max(body, 0.3 * wet * wet);
+            // Metal does not wet the floor, so it leaves no damp rim.
+            Math.max(body, 0.3 * wet * wet * (1 - strongest.metalness));
           this.metalnesses[vertex] = strongest.metalness;
         }
       }
@@ -467,8 +554,46 @@ export class GooPuddleRenderer3D {
     this.geometry.getAttribute("color").needsUpdate = true;
     this.geometry.getAttribute("aAlpha").needsUpdate = true;
     this.geometry.getAttribute("aMetalness").needsUpdate = true;
+    this.geometry.getAttribute("aGlow").needsUpdate = true;
     this.geometry.getAttribute("normal").needsUpdate = true;
     this.mesh.visible = true;
+  }
+
+  private addDye(
+    puddle: Puddle,
+    x: number,
+    z: number,
+    radius: number,
+    color: Color,
+    glow: number,
+    share: number
+  ): void {
+    const difference =
+      Math.abs(color.r - puddle.color.r) +
+      Math.abs(color.g - puddle.color.g) +
+      Math.abs(color.b - puddle.color.b) +
+      Math.abs(glow - puddle.glow);
+    if (difference < 0.03) {
+      // The same liquid: no spot to show, only the small drift to absorb.
+      this.mix(puddle, { color, glow }, share);
+      return;
+    }
+    if (puddle.dyes.length === MAX_DYES) {
+      // Make room by mixing the oldest spot in at once.
+      const oldest = puddle.dyes.shift()!;
+      this.mix(puddle, oldest, oldest.share * (1 - oldest.age / DYE_LIFETIME));
+    }
+    puddle.dyes.push({ x, z, radius, age: 0, share, color: color.clone(), glow });
+  }
+
+  private mix(
+    puddle: Puddle,
+    liquid: Pick<Dye, "color" | "glow">,
+    amount: number
+  ): void {
+    if (amount <= 0) return;
+    puddle.color.lerp(liquid.color, amount);
+    puddle.glow += (liquid.glow - puddle.glow) * amount;
   }
 
   private addImpact(
