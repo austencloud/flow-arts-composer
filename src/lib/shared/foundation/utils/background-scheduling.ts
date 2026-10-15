@@ -5,6 +5,8 @@
  * `yieldToScheduler()` breaks a long synchronous loop into separate tasks so no
  * single task overruns the frame budget. `runAtBackgroundPriority()` defers work
  * that has no deadline (prefetch, warm-up) behind whatever the user can see.
+ * `runAtUserVisiblePriority()` starts chunked work that someone is waiting
+ * for, so its yields do not inherit an idle callback's background priority.
  *
  * Both are progressive: `scheduler.yield()` / `scheduler.postTask()` are
  * Chromium-only and explicitly NOT Baseline (verified against MDN 2026-09-03),
@@ -16,7 +18,7 @@
 
 type SchedulerLike = {
   postTask?: (
-    callback: () => void,
+    callback: () => unknown,
     options?: { priority?: "user-blocking" | "user-visible" | "background" }
   ) => Promise<unknown>;
   yield?: () => Promise<void>;
@@ -58,6 +60,29 @@ export async function yieldToScheduler(): Promise<void> {
   await new Promise<void>((resolve) => {
     setTimeout(resolve, 0);
   });
+}
+
+/**
+ * Run `task` as its own task at "user-visible" priority and resolve with its
+ * result.
+ *
+ * Use it to start chunked work that someone is waiting to see from inside a
+ * `requestIdleCallback` callback. `scheduler.yield()` inherits the priority of
+ * the task that called it, and an idle callback counts as "background" (MDN,
+ * checked 2026-10-14), so every yield in that chain queues behind all other
+ * work and can wait hundreds of milliseconds. A `postTask` priority does not
+ * come from the caller, and the yields inside the task inherit it instead.
+ * Without `postTask`, the task runs on a microtask and yields fall back as in
+ * `yieldToScheduler`.
+ */
+export function runAtUserVisiblePriority<T>(
+  task: () => T | Promise<T>
+): Promise<T> {
+  const scheduler = schedulerApi();
+  if (typeof scheduler?.postTask === "function") {
+    return scheduler.postTask(task, { priority: "user-visible" }) as Promise<T>;
+  }
+  return Promise.resolve().then(task);
 }
 
 /**

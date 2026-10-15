@@ -1,14 +1,16 @@
 # Unified Meters Scale System
 
-## Status: Complete
+**Repository status (2026-10-14):** `src/lib/shared/3d/physics/player-controller.ts` imports `SCALE` from `@austencloud/scene-3d`. Camera values live in `packages/camera-3d/src/lib/constants.ts`; `src/lib/shared/3d/domain/constants/plane-transforms.ts` retains meter units and `GRID_RADIUS_3D = 0.52`. The old `3d-core` and `realm` entries below are historical.
+
+## Historical status: January migration recorded complete
 
 > **Note (Jan 2026):** Paths referencing `infinite-worlds/` have been renamed to `realm/`.
 
-All 3D destinations now use **1 unit = 1 meter** as the universal scale.
+The January migration adopted **1 unit = 1 meter**. The conversion table below records that migration; it is not a current file-owner inventory.
 
-## The Single Source of Truth
+## Historical local scale definition
 
-**`src/lib/shared/3d-core/scale/scale-constants.ts`**
+Historical owner (now absent): `src/lib/shared/3d-core/scale/scale-constants.ts`.
 
 ```typescript
 export const SCALE = {
@@ -42,55 +44,55 @@ export const SCALE = {
 
 ### Movement & Camera (Phase 1)
 
-| File | Changes |
-|------|---------|
-| `realm/core/systems.ts` | Uses SCALE.* for movement, gravity |
-| `gallery/components/navigation/ModelFirstPerson.svelte` | Uses SCALE.* for player dimensions |
-| `3d-animation/state/avatar-instance-state.svelte.ts` | Scene bounds now in meters |
-| `3d-core/camera/UnifiedCameraController.svelte` | All SETTINGS in meters |
-| `3d-core/camera/types.ts` | DEFAULT_CAMERA_CONFIG in meters |
+| File                                                    | Changes                             |
+| ------------------------------------------------------- | ----------------------------------- |
+| `realm/core/systems.ts`                                 | Uses SCALE.\* for movement, gravity |
+| `gallery/components/navigation/ModelFirstPerson.svelte` | Uses SCALE.\* for player dimensions |
+| `3d-animation/state/avatar-instance-state.svelte.ts`    | Scene bounds now in meters          |
+| `3d-core/camera/UnifiedCameraController.svelte`         | All SETTINGS in meters              |
+| `3d-core/camera/types.ts`                               | DEFAULT_CAMERA_CONFIG in meters     |
 
 ### Geometry (Phase 2)
 
-| File | Changes |
-|------|---------|
+| File                    | Changes                                            |
+| ----------------------- | -------------------------------------------------- |
 | `avatar-proportions.ts` | `CM_TO_UNITS = 0.01` (cm→meters), `figureZ = -0.4` |
-| `user-proportions.ts` | Grid padding now `0.25` meters |
-| `grid-layout.ts` | Point sizes in meters (0.04, 0.025, 0.08) |
-| `formation.ts` | Spacing = 2.0m, wall offset = -0.3m |
+| `user-proportions.ts`   | Grid padding now `0.25` meters                     |
+| `grid-layout.ts`        | Point sizes in meters (0.04, 0.025, 0.08)          |
+| `formation.ts`          | Spacing = 2.0m, wall offset = -0.3m                |
 
 ### Environment Scenes (Phase 3)
 
-| File | Key Conversions |
-|------|-----------------|
-| `ForestScene.svelte` | Tree rings 10-20.5m, clearing 10m, campfire at 3m |
-| `OceanScene.svelte` | Ground 15m radius, bubbles 3m area |
-| `WinterScene.svelte` | Ground 15m radius, snow 4m area |
-| `SakuraScene.svelte` | Ground 15m radius, petals 3.5m area |
-| `CherryBlossomScene.svelte` | Ground 15m radius, petals 3.5m area |
-| `EmberScene.svelte` | Ground 15m radius, embers 3m area |
-| `CosmicScene.svelte` | Asteroid 1.25m radius, stars 7.5m area |
+| File                        | Key Conversions                                   |
+| --------------------------- | ------------------------------------------------- |
+| `ForestScene.svelte`        | Tree rings 10-20.5m, clearing 10m, campfire at 3m |
+| `OceanScene.svelte`         | Ground 15m radius, bubbles 3m area                |
+| `WinterScene.svelte`        | Ground 15m radius, snow 4m area                   |
+| `SakuraScene.svelte`        | Ground 15m radius, petals 3.5m area               |
+| `CherryBlossomScene.svelte` | Ground 15m radius, petals 3.5m area               |
+| `EmberScene.svelte`         | Ground 15m radius, embers 3m area                 |
+| `CosmicScene.svelte`        | Asteroid 1.25m radius, stars 7.5m area            |
 
 ### Environment Primitives
 
-| File | Changes |
-|------|---------|
-| `GroundPlane.svelte` | Default size 25m radius |
-| `TexturedGroundPlane.svelte` | Default size 25m radius |
-| `FallingParticles.svelte` | Physics values in m/s, shader point scale updated |
-| `ScatteredModels.svelte` | Default area 2m, minDistance 0.4m |
+| File                         | Changes                                           |
+| ---------------------------- | ------------------------------------------------- |
+| `GroundPlane.svelte`         | Default size 25m radius                           |
+| `TexturedGroundPlane.svelte` | Default size 25m radius                           |
+| `FallingParticles.svelte`    | Physics values in m/s, shader point scale updated |
+| `ScatteredModels.svelte`     | Default area 2m, minDistance 0.4m                 |
 
 ## Key Conversions
 
-| Old Value | New Value | Meaning |
-|-----------|-----------|---------|
-| `CM_TO_UNITS = 2` | `CM_TO_UNITS = 0.01` | 1 cm = 0.01 meters |
-| `distance: 250` | `distance: 3.0` | 3 meters camera distance |
-| `height: 120` | `height: 2.0` | 2 meters camera height |
-| `firstPerson.height: 85` | `SCALE.EYE_HEIGHT` | 1.6 meters |
-| `FORMATION_SPACING: 400` | `2.0` | 2 meters between performers |
-| `figureZ: -80` | `figureZ: -0.4` | 40cm behind grid |
-| `gridPadding: 50` | `0.25` | 25cm padding |
+| Old Value                | New Value            | Meaning                     |
+| ------------------------ | -------------------- | --------------------------- |
+| `CM_TO_UNITS = 2`        | `CM_TO_UNITS = 0.01` | 1 cm = 0.01 meters          |
+| `distance: 250`          | `distance: 3.0`      | 3 meters camera distance    |
+| `height: 120`            | `height: 2.0`        | 2 meters camera height      |
+| `firstPerson.height: 85` | `SCALE.EYE_HEIGHT`   | 1.6 meters                  |
+| `FORMATION_SPACING: 400` | `2.0`                | 2 meters between performers |
+| `figureZ: -80`           | `figureZ: -0.4`      | 40cm behind grid            |
+| `gridPadding: 50`        | `0.25`               | 25cm padding                |
 
 ## Design Principles
 
@@ -102,6 +104,7 @@ export const SCALE = {
 ## Testing Checklist
 
 After these changes, verify:
+
 - [x] TypeScript compiles without errors
 - [x] Svelte-check passes
 - [ ] Stage avatar appears at correct scale
@@ -118,8 +121,8 @@ The `LEGACY_CONVERSION` export is deprecated but kept for historical reference:
 ```typescript
 // @deprecated - All code now uses meters
 export const LEGACY_CONVERSION = {
-  STAGE_TO_METERS: 0.005,    // Old: 1 unit = 0.5cm
-  METERS_TO_STAGE: 200,       // Old: 200 units = 1 meter
+  STAGE_TO_METERS: 0.005, // Old: 1 unit = 0.5cm
+  METERS_TO_STAGE: 200, // Old: 200 units = 1 meter
 };
 ```
 

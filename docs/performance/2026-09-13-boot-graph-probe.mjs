@@ -1,7 +1,7 @@
 /**
  * Cold-startup probe: boot JS accounting + hydration timing for a locally
  * served production build. Companion to
- * `docs/performance/2026-09-13-startup-boot-graph.md`.
+ * `docs/archive/swarm-2026-10-14/performance/2026-09-13-startup-boot-graph.md`.
  *
  *   npm run build:fast
  *   npx vite preview --port 4173 --host 127.0.0.1

@@ -165,7 +165,7 @@ VTG Collection
 
 ## Out of Scope
 
-- 0:1 ratio (float-float) — excluded from deck browser. Only 6 sequences (one per family, no rotation variants). Theoretical analysis at `docs/reference/float-float-naming-analysis.md`
+- 0:1 ratio (float-float) — excluded from deck browser. Only 6 sequences (one per family, no rotation variants). Theoretical analysis at `docs/archive/swarm-2026-10-14/reference/float-float-naming-analysis.md`
 - Elemental glyph visibility toggle in pictographs
 - Cross-collection family browsing (LOOPs don't have VTG families)
 - Drag-to-reorder cards

@@ -37,9 +37,9 @@ const SHEET_PATH = `${PROP_TYPE_DIR}/PropSelectionSheet.svelte`;
 
 /**
  * Every surface that hands the picker a chirality seam. Add new ones here.
- * The Create step editor no longer opens the picker: its prop button changed
- * the prop for the whole sequence, so it was removed, and a buugeng hand's
- * A/B flip sits in the editor's own action row (ChiralityToggle) instead.
+ * The Create step editor no longer opens the picker or flips chirality: both
+ * changed the prop for the whole sequence rather than the step, so they were
+ * removed and the prop picker's picture toggle is the one place for A/B.
  */
 const HOSTS: Record<string, string> = {
   "global prop drawer (P key)":

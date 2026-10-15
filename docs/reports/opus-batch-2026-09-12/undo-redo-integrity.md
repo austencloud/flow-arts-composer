@@ -1,5 +1,7 @@
 # Undo/Redo Integrity — Opus batch 2026-09-12
 
+**Repository status (2026-10-14):** F1's `appendBridge`, `applyLoop` and `applyOrientationRepeat` triggers are superseded by current `src/lib/features/create/shared/services/sequence-actions-orchestrator.ts`: snapshots are committed inside successful changed-result branches. [The September 28 coverage record](../undo-coverage-2026-09-28.md) records failed/unchanged-operation fixes. This closes only those specific triggers; other F1, F4 and museum persistence follow-ups still require their own reconciliation.
+
 Scope: `src/lib/shared/history/command-stack.svelte.ts`, the Create module edit
 history managers and their call sites, plus focused tests. Excluded by
 assignment and untouched here: generation/inversion transforms, guest/library
@@ -10,10 +12,10 @@ persistence, prop-swap playback baseline, timeline rendering.
 Two silent defects reproduced against real code and fixed. Both lose user work
 without an error, a log line, or any visible failure.
 
-| | Defect | Status |
-| - | - | - |
-| 1 | A redone or newly created sequence is wiped by a clear that was already in flight | Fixed, before/after proof |
-| 2 | One Beat Editor delete records two history entries; the second undo press changes nothing | Fixed, before/after proof |
+|     | Defect                                                                                    | Status                    |
+| --- | ----------------------------------------------------------------------------------------- | ------------------------- |
+| 1   | A redone or newly created sequence is wiped by a clear that was already in flight         | Fixed, before/after proof |
+| 2   | One Beat Editor delete records two history entries; the second undo press changes nothing | Fixed, before/after proof |
 
 Five further findings are reported below without runtime edits.
 
@@ -39,11 +41,11 @@ Five further findings are reported below without runtime edits.
 
 ## Files owned by this task
 
-| File | Change |
-| - | - |
-| `src/lib/features/create/shared/state/sequence-state-orchestrator.svelte.ts` | +15 lines: `clearSequenceCompletely` ownership guard |
-| `src/lib/features/create/shared/components/coordinators/StepEditorCoordinator.svelte` | -2/+7 lines: removed the duplicate delete snapshot |
-| `src/lib/features/create/shared/state/create-module/__tests__/undo-redo-integrity.test.ts` | New, 469 lines |
+| File                                                                                       | Change                                               |
+| ------------------------------------------------------------------------------------------ | ---------------------------------------------------- |
+| `src/lib/features/create/shared/state/sequence-state-orchestrator.svelte.ts`               | +15 lines: `clearSequenceCompletely` ownership guard |
+| `src/lib/features/create/shared/components/coordinators/StepEditorCoordinator.svelte`      | -2/+7 lines: removed the duplicate delete snapshot   |
+| `src/lib/features/create/shared/state/create-module/__tests__/undo-redo-integrity.test.ts` | New, 469 lines                                       |
 
 No instruction file, no shared history primitive, and no other agent's path was
 modified. `src/lib/shared/history/command-stack.svelte.ts` was audited and left
@@ -148,15 +150,15 @@ which is also the path that carries the useful metadata.
 
 All commands run in this cloud checkout; no laptop, no dev server, no browser.
 
-| Command | Result |
-| - | - |
-| `npx vitest run --config tests/config/vitest.config.ts src/lib/features/create/shared/state/create-module/__tests__/undo-redo-integrity.test.ts` | 10/10 passed, no stderr |
-| Same file with both fixed sources reverted to the base commit | 3 failed / 7 passed — the three defect guards |
-| `npx vitest run --config tests/config/vitest.config.ts src/lib/features/create src/lib/shared/create src/lib/shared/history src/lib/features/assemble-lab` | 53 files, 373 tests passed |
-| `npm run check:fast` at `HEAD` | 582 errors, 44 warnings |
-| `npm run check:fast` with the fixed sources reverted to the base commit | 582 errors, 44 warnings — identical baseline, no new errors |
-| `npm run check:fast`, filtered to the changed files | no errors or warnings in any of them |
-| `npx eslint` on the changed `.ts` files | clean (the `.svelte` file is in the eslint ignore list) |
+| Command                                                                                                                                                    | Result                                                      |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| `npx vitest run --config tests/config/vitest.config.ts src/lib/features/create/shared/state/create-module/__tests__/undo-redo-integrity.test.ts`           | 10/10 passed, no stderr                                     |
+| Same file with both fixed sources reverted to the base commit                                                                                              | 3 failed / 7 passed — the three defect guards               |
+| `npx vitest run --config tests/config/vitest.config.ts src/lib/features/create src/lib/shared/create src/lib/shared/history src/lib/features/assemble-lab` | 53 files, 373 tests passed                                  |
+| `npm run check:fast` at `HEAD`                                                                                                                             | 582 errors, 44 warnings                                     |
+| `npm run check:fast` with the fixed sources reverted to the base commit                                                                                    | 582 errors, 44 warnings — identical baseline, no new errors |
+| `npm run check:fast`, filtered to the changed files                                                                                                        | no errors or warnings in any of them                        |
+| `npx eslint` on the changed `.ts` files                                                                                                                    | clean (the `.svelte` file is in the eslint ignore list)     |
 
 Setup required in the cloud container before any of this: `pnpm install
 --frozen-lockfile` and `npx tsc --build packages/tsconfig.build.json` (the
@@ -215,7 +217,7 @@ group uses no fake at all.
 **F1 — an operation that changes nothing still destroys the redo future.**
 `pushUndoSnapshot` records unconditionally and `UndoManager.pushUndo` clears the
 section's redo stack at push time. An operation that pushes a snapshot and then
-bails without mutating therefore adds a phantom undo entry *and* discards the
+bails without mutating therefore adds a phantom undo entry _and_ discards the
 whole redo future. Measured: with a redo available, a snapshot pushed with no
 following mutation flipped `canRedo` from `true` to `false` and left an entry
 whose undo restores an identical state. Reachable triggers found by inspection:

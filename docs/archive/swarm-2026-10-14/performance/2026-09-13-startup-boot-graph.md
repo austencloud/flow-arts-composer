@@ -1,6 +1,6 @@
 # Startup pass 4: the boot import graph
 
-**October 7 follow-up:** the [vendor split and startup chunk report](2026-10-07-vendor-chunk-split.md)
+**October 7 follow-up:** the [vendor split and startup chunk report](../../../performance/2026-10-07-vendor-chunk-split.md)
 records fresh measurements and repairs to automatic chunk merging. The numbers
 below describe the September build, not the current startup graph.
 
@@ -230,7 +230,7 @@ can still be expensive and any dependency bump inside it invalidates the whole
 file for returning visitors. Splitting it is a build-configuration change with
 a real chunk-cycle risk (the 2026-06-16 TDZ outage), so it is specified rather
 than attempted here:
-[`docs/superpowers/specs/shipped/2026-09-13-vendor-chunk-split-design.md`](../superpowers/specs/shipped/2026-09-13-vendor-chunk-split-design.md).
+[`docs/superpowers/specs/shipped/2026-09-13-vendor-chunk-split-design.md`](../../../superpowers/specs/shipped/2026-09-13-vendor-chunk-split-design.md).
 
 `MainApplication.svelte` statically reaches zod, bits-ui, fabric, dexie,
 `qr-code-styling` and the backgrounds package across a 644-module graph, so
@@ -253,5 +253,5 @@ BASE=http://127.0.0.1:4174 \
   node docs/performance/2026-09-13-boot-graph-probe.mjs after out.json
 ```
 
-Numeric evidence: [`2026-09-13-startup-evidence.json`](2026-09-13-startup-evidence.json)
+Numeric evidence: [`2026-09-13-startup-evidence.json`](../../../performance/2026-09-13-startup-evidence.json)
 (both runs, every repeat, per-route resource accounting and marks).

@@ -7,7 +7,7 @@ owns pictograph lookup, letter recovery, view metadata, and editing history.
 ## Migration contract
 
 The September 2026 migration resolves the competing app executors and engine
-pipeline described in `docs/reports/opus-batch-2026-09-12/sequence-engine-parity.md`.
+pipeline described in `docs/archive/swarm-2026-10-14/reports/opus-batch-2026-09-12/sequence-engine-parity.md`.
 That report is historical evidence. Its tests originally asserted that defects
 were present; a passing historical defect assertion did not mean correct output.
 

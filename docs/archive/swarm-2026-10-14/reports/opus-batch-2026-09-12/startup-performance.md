@@ -1,6 +1,6 @@
 # Startup performance — Opus batch report
 
-**October 7 follow-up:** see the [vendor split and startup chunk report](../../performance/2026-10-07-vendor-chunk-split.md)
+**October 7 follow-up:** see the [vendor split and startup chunk report](../../../../performance/2026-10-07-vendor-chunk-split.md)
 for the later implementation and measurements. This report preserves the
 September baseline and results.
 
@@ -16,7 +16,7 @@ algorithms or the thumbnail engine was touched.
 | Implementation commit | `1d7410f9` — the whole code change; this report and the evidence are the branch tip |
 
 Full evidence, methodology and limitations:
-[`docs/performance/2026-09-13-startup-boot-graph.md`](../../performance/2026-09-13-startup-boot-graph.md).
+[`docs/archive/swarm-2026-10-14/performance/2026-09-13-startup-boot-graph.md`](../../performance/2026-09-13-startup-boot-graph.md).
 
 ## What was wrong
 
@@ -105,13 +105,13 @@ guards now genuinely prevent the download.
 | `src/lib/shared/navigation/services/url-parameter-policy.ts`             | reads the names from the params module        |
 | `tests/unit/boot-import-boundary.test.ts`                                | new boundary guard (11 assertions)            |
 | `tests/unit/background-hold.test.ts`                                     | registry seam + two new ordering cases        |
-| `docs/performance/2026-09-13-startup-boot-graph.md`                      | evidence document                             |
+| `docs/archive/swarm-2026-10-14/performance/2026-09-13-startup-boot-graph.md`                      | evidence document                             |
 | `docs/performance/2026-09-13-startup-evidence.json`                      | both runs, every repeat                       |
 | `docs/performance/2026-09-13-boot-closure.mjs`                           | manifest closure probe                        |
 | `docs/performance/2026-09-13-boot-graph-probe.mjs`                       | runtime probe                                 |
 | `docs/performance/2026-09-13-gzip-preview-proxy.mjs`                     | transfer-honest preview proxy                 |
 | `docs/superpowers/specs/shipped/2026-09-13-vendor-chunk-split-design.md` | follow-up spec                                |
-| `docs/reports/opus-batch-2026-09-12/startup-performance.md`              | this report                                   |
+| `docs/archive/swarm-2026-10-14/reports/opus-batch-2026-09-12/startup-performance.md`              | this report                                   |
 
 ## Commands and results
 

@@ -70,7 +70,7 @@ non-obvious algorithm details. A cleanup is successful when the remaining
 comments are more trustworthy, not when it reaches a deletion target.
 
 For repository-wide review criteria and the token-aware audit tool, see
-`docs/specs/comment-noise-retirement.md` and
+`docs/archive/swarm-2026-10-14/specs/comment-noise-retirement.md` and
 `scripts/strip-noise-comments.mjs`.
 
 **Good:**

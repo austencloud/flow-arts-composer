@@ -32,12 +32,12 @@ roles are not required dependencies and are not active pilot agents.
   live registry before promising coverage.
 - **Make construction meaningful.** The Grid is a recorded confirmed example
   of a transforming artifact with a construction payoff. Consult [convergence
-  notes](concepts-convergence-notes.md#the-gold-standard-model-the-grid-concept)
+  notes](../archive/swarm-2026-10-14/learn/concepts-convergence-notes.md#the-gold-standard-model-the-grid-concept)
   for the historical rationale and current status for acceptance. This is an
   interaction reference, not permission to copy its old CSS or exact step arc.
 - **Do not show every representation just because it exists.** The rejected
   Hand Positions skeleton duplicated static information across layers. See the
-  [recorded rejection](concepts-convergence-notes.md#anti-pattern-rejected-2026-06-19-the-layer-salad).
+  [recorded rejection](../archive/swarm-2026-10-14/learn/concepts-convergence-notes.md#anti-pattern-rejected-2026-06-19-the-layer-salad).
   Select representations for the learning job. This does not override the
   current simultaneous notation-and-motion contract when both are informative.
 - **Keep editing and progression distinguishable.** The [September 5 Hand

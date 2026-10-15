@@ -19,7 +19,7 @@ original SpiroAnim URL.
 ## Attribution
 
 The Eight Step handpaths are **Gage's source data**, re-paginated by Mentive
-(his `docs/EIGHT_STEP.md` documents the correction). The VTG matrix descends
+(the upstream `rbgirard/spiroanim` document `docs/EIGHT_STEP.md` records the correction; the local Eight Step artifact records source commit `6bd56cde61c82bd9a047727ceff70d22428113d3`). The VTG matrix descends
 from Noel Yee's Vulcan Tech Gospel (2010). Nothing here is TKA-original; it is
 a transcription of other people's systems into TKA's vocabulary. Credit them on
 any surface built from this. See `.claude/rules/no-fabrication.md` and the
@@ -159,7 +159,7 @@ That date identifies these copies, not the origin of Quarter Space Tech.
    inserts a beat before each relationship change and derives the handoff as
    `-turns - 2*arc`, reversing the local rotation axis while preserving compiled
    prop rotation. That is a worked solution to the reversal problem
-   `poi-legality.md` §5 says we have no language for.
+   [poi-legality.md](../../reference/poi-legality.md) §5 says we have no language for.
 4. **Parallel-transport plane solving** — plane is relative to an orthogonal
    reference transported through every preceding frame, not a fixed CW/CCW
    lookup, which breaks when the capping hand reverses.
@@ -173,7 +173,7 @@ pedagogical corpus (Yee's book, Gage's pages), not an enumeration. It shows
 these patterns are performed; absence from it is not a physics claim. The 24
 wall-plane marks are the exception and are disproportionately valuable.
 
-**Do not canonicalize by rotation.** `poi-legality.md` §4: TKA is rotation- and
+**Do not canonicalize by rotation.** [poi-legality.md](../../reference/poi-legality.md) §4: TKA is rotation- and
 reflection-invariant because gravity is irrelevant to it; poi notation is
 gravity-bound and rotation is not a symmetry. VTG _rules_ may be canonicalized;
 Eight Step handpaths and the wall-plane marks must not be, or the gravity

@@ -3,9 +3,10 @@
 Everything we know about the wire protocol used by the **Ignis Pixel Utility 2.1.37** to talk to **iPixel HD** hardware (104 / 144 / 200 / 256). Source: static analysis of `PixelUtility2.exe`. Wire-level capture pending.
 
 See also:
-- Design spec: `docs/superpowers/specs/2026-04-08-led-strip-pattern-engine-design.md`
-- Implementation plan: `docs/superpowers/plans/2026-04-10-led-strip-pattern-engine.md`
-- Working adapter (reference pattern): `src/lib/features/poi/services/implementations/OpenPixelPoiAdapter.ts`
+
+- Design spec: `docs/superpowers/specs/backlog/someday/2026-04-08-led-strip-pattern-engine-design.md`
+- Implementation plan: `docs/superpowers/plans/backlog/someday/2026-04-10-led-strip-pattern-engine.md`
+- Working adapter (reference pattern): `src/lib/features/poi/services/open-pixel-poi-adapter.ts`
 
 ---
 
@@ -48,11 +49,11 @@ IPIXEL_CTRL
 
 The Utility implements three distinct device classes:
 
-| Class | Meaning | Used by |
-|---|---|---|
-| `C_DEVICE_LEGACY` | Old ASCII/line-based protocol (`^iPixel$` regex match) | First-gen iPixel |
-| `C_DEVICE_PACK` | "packed" binary protocol (middle generation) | Tech / intermediate models |
-| `C_DEVICE_TLV` | "packed tlv" — TLV (Tag-Length-Value) binary protocol | **All HD models (104/144/200/256)** |
+| Class             | Meaning                                                | Used by                             |
+| ----------------- | ------------------------------------------------------ | ----------------------------------- |
+| `C_DEVICE_LEGACY` | Old ASCII/line-based protocol (`^iPixel$` regex match) | First-gen iPixel                    |
+| `C_DEVICE_PACK`   | "packed" binary protocol (middle generation)           | Tech / intermediate models          |
+| `C_DEVICE_TLV`    | "packed tlv" — TLV (Tag-Length-Value) binary protocol  | **All HD models (104/144/200/256)** |
 
 **iPixel 200 HD uses `C_DEVICE_TLV`.** This is the one we care about.
 
@@ -71,6 +72,7 @@ Messages wrap in a `CTAG_ROOT` node. Reliable requests use `CTAG_ROOT_RED_REQ` /
 ### Full tag vocabulary (extracted from string table)
 
 **Root / framing:**
+
 ```
 CTAG_ROOT
 CTAG_ROOT_RED_REQ
@@ -80,6 +82,7 @@ CTAG_WAIT
 ```
 
 **Request / capability / status (safe reads):**
+
 ```
 CTAG_REQ_INFO           TAG_REQ_ID, TAG_REQ_TYPE, TAG_REQ_LEVEL
 CTAG_DEV_CAP            TAG_DEV_CAP_MAX_NODES, TAG_DEV_CAP_MAX_SIZE,
@@ -112,6 +115,7 @@ CTAG_JRNL_FLY
 ```
 
 **Flash info (read) + mode data (read/write):**
+
 ```
 CTAG_EXT_FLASH          TAG_FLASH_ID, TAG_FLASH_TOTAL_SIZE, TAG_FLASH_TOTAL_BLOCKS,
                         TAG_FLASH_FREE_SIZE, TAG_FLASH_FREE_BLOCKS
@@ -129,23 +133,27 @@ CTAG_MODE_DATA          (actual pixel bytes go here; wrapped with TAG_DATA_CRC)
 ```
 
 **Control & runtime:**
+
 ```
 CTAG_CTRL               TAG_CTRL_CMD, TAG_CTRL_ARG, TAG_CTRL_TIME, TAG_CTRL_REBOOT
 ```
 
 **Training / debug:**
+
 ```
 CTAG_TRAIN
 CTAG_DEBUG
 ```
 
 **⚠️ DANGEROUS — NEVER SEND ⚠️**
+
 ```
 CTAG_BL_FW_UPLOAD       (bootloader firmware upload — bricks firmware if malformed)
 CTAG_BL_CONFIG          TAG_BL_CONFIG_TYPE
 ```
 
 Commands / modes (state machine names from strings):
+
 ```
 ERASE_MODE   — enter erase-pending state
 ERASE_SEC    — erase one sector
@@ -157,6 +165,7 @@ WRITE_FW     — write firmware    ⚠️ NEVER
 ```
 
 **Ack codes (responses):**
+
 ```
 ACK_CMD_UNKNOW     — command code not recognized
 ACK_MSG_UNKNOW     — message not recognized
@@ -224,21 +233,21 @@ The device exposes `TAG_HW_INFO_PIXEL_MAX_CURR` and `TAG_HW_INFO_PIXEL_MAX_CH_CU
 
 ## Hardware facts (Austen's poi)
 
-| | |
-|---|---|
-| Model | iPixel 200 HD |
-| Firmware | 3.0.11.10 |
-| Bootloader | 3.0.2 |
-| Type code | 010B |
-| LED type | SK9822 (DotStar) |
-| LED count | 200 |
-| Connection | STM32 USB CDC VCP (COM3 + COM5) |
-| BLE MAC | `78:a5:88:05:ae:37` |
-| Serial 1 | `004F-0040-5109-3035-3338-3434` |
-| Serial 2 | `0064-0048-5113-3037-3538-3636` |
-| Max brightness | 21 (from brightness formula) |
-| Max power | 0.226 (normalized) |
-| Group size | 8 LEDs per power-group |
+|                |                                 |
+| -------------- | ------------------------------- |
+| Model          | iPixel 200 HD                   |
+| Firmware       | 3.0.11.10                       |
+| Bootloader     | 3.0.2                           |
+| Type code      | 010B                            |
+| LED type       | SK9822 (DotStar)                |
+| LED count      | 200                             |
+| Connection     | STM32 USB CDC VCP (COM3 + COM5) |
+| BLE MAC        | `78:a5:88:05:ae:37`             |
+| Serial 1       | `004F-0040-5109-3035-3338-3434` |
+| Serial 2       | `0064-0048-5113-3037-3538-3636` |
+| Max brightness | 21 (from brightness formula)    |
+| Max power      | 0.226 (normalized)              |
+| Group size     | 8 LEDs per power-group          |
 
 ---
 
@@ -247,5 +256,5 @@ The device exposes `TAG_HW_INFO_PIXEL_MAX_CURR` and `TAG_HW_INFO_PIXEL_MAX_CH_CU
 1. Install Wireshark + USBPcap on Austen's Windows machine.
 2. Capture one known-safe upload from Ignis Utility: small test pattern (4 LED × 4 frame solid color), one poi connected.
 3. Diff the capture against the TAG/CTAG vocabulary above — derive numeric tag IDs, length encoding, framing, baud rate.
-4. Implement `IgnisPixelAdapter` (Web Serial API) in `src/lib/features/poi/services/implementations/IgnisPixelAdapter.ts` — read-only path first (scan → connect → query `CTAG_DEV_INFO` + `CTAG_HW_INFO`), then write path.
+4. Proposed, not implemented: `IgnisPixelAdapter` (Web Serial API) in `src/lib/features/poi/services/implementations/IgnisPixelAdapter.ts` — read-only path first (scan → connect → query `CTAG_DEV_INFO` + `CTAG_HW_INFO`), then write path.
 5. Verify against second poi before promoting "untouchable" poi to test role.

@@ -12,7 +12,7 @@ last_triaged: 2026-07-30
 
 > **Archived 2026-07-30:** Superseded by
 > `active/2026-04-24-native-mobile-integration-design.md` and
-> `docs/reference/offline-persistence-audit-2026-06-30.md`. Android App Links
+> `docs/archive/swarm-2026-10-14/reference/offline-persistence-audit-2026-06-30.md`. Android App Links
 > and cold/warm `appUrlOpen` routing landed in `d321342cc3`. iOS Universal
 > Links and device verification remain in the native-mobile spec. The proposed
 > festival default of dense self-contained `s~...` QRs was later rejected in

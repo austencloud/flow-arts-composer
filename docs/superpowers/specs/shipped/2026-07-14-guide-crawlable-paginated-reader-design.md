@@ -9,7 +9,7 @@ funnel-to-reader model). That spec's content-model (`GuideBlock[]`, `FlowFrame`,
 `SheetFrame`, drift guard) is KEPT and built on; only the two-surface doorway
 topology is replaced.
 **Related:** `2026-07-07-guide-reader-design.md` (reader shell + frame seam),
-`docs/architecture/guide-single-source.md`, `project_seo_overhaul`,
+`docs/archive/swarm-2026-10-14/architecture/guide-single-source.md`, `project_seo_overhaul`,
 `project_guide_single_source`, rules `no-ghostwriting-austen`, `never-hand-roll`,
 `sequence-viewer-shell` (one-model / contract-test pattern), `no-layout-shift`,
 `chip-primitives` (`SegmentedControl`), `clickable-links`.

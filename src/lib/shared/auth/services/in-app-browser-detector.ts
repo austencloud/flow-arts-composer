@@ -16,7 +16,7 @@
  * from an Instagram DM was told sign-in was impossible while sitting on a page
  * he could have used as a guest.
  *
- * Design: docs/architecture/in-app-browser-path.md
+ * Design: docs/archive/swarm-2026-10-14/architecture/in-app-browser-path.md
  */
 
 import { Capacitor } from "@capacitor/core";

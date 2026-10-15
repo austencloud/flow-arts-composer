@@ -1,8 +1,11 @@
 # Negative Space and the Two Routes Through a Wall-Plane Reach
 
+**Repository status (2026-10-14):** Later implementation evidence includes isolation keyframes, Grip Lab teaching channels and relaxed grip inputs in [the contact lab record](../architecture/contact-correct-performers-evidence.md), plus the body-offset experiment in `src/lib/shared/3d/collision/body-clearance.ts`. Those experiments do not establish the unresolved domain mappings below.
+
 **Source: Austen, 2026-09-04, spoken description.** This is primary domain
 material. It was not derived from code, from the MCP knowledge server, or from
-any prior document, and nothing in the repository currently encodes it. He asked
+any prior document. The still-open pocket/turn mapping, crossed-weave/depth rules
+and Level 3 maps require further domain evidence. He asked
 that it be treated as gold and preserved as a durable reference, and said he
 intends to add more descriptions like it "until we really truly understand it."
 

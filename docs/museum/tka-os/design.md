@@ -1,6 +1,8 @@
 # TKA-OS: The Windows 93 Experience
 
-> This document describes the retro operating system experience accessible via the CRT in Wing 5.
+**Repository status (2026-10-14):** The CRT and `/retro` or `/tka-os` route choices below are proposals, not current route guarantees. "TKA Scribe v1.0 for Windows" remains the fictional retro label; the real application handoff is Flow Arts Composer. Current spatial placement and delivery platform require reconciliation with the museum canon.
+
+> Proposed retro operating system experience. Its Wing 5 placement is historical and belongs to the retired numbered layout.
 
 ---
 
@@ -19,7 +21,7 @@ Click the monitor. The camera zooms in. The screen fills your view. You're IN.
 Player clicks the CRT monitor in the museum. A plaque reads:
 
 > **TKA Scribe v1.0 for Windows**
-> *Bellweather Technical Institute, 1993*
+> _Bellweather Technical Institute, 1993_
 >
 > This interactive exhibit allows visitors to experience the original digital implementation of kinetic notation.
 >
@@ -77,20 +79,21 @@ Classic Windows 3.1/95 hybrid desktop. Gray background. Chunky icons. System fon
 
 ### Desktop Icons
 
-| Icon | Name | Function |
-|------|------|----------|
-| 📁 | My Sequences | Opens file browser with .SEQ files |
-| 📝 | TKA Scribe | Opens the main notation application |
-| 🗑️ | Recycle Bin | Contains deleted sequences with funny errors |
-| 💾 | Save to Floppy | Fake "export" function |
-| 📖 | README.TXT | Fake readme with lore |
-| ⚠️ | VIRUS.EXE | Fake virus (see Easter Eggs) |
-| 🎮 | TKA Solitaire | Fake game (optional) |
-| ❓ | HELP.HLP | Fake help file |
+| Icon | Name           | Function                                     |
+| ---- | -------------- | -------------------------------------------- |
+| 📁   | My Sequences   | Opens file browser with .SEQ files           |
+| 📝   | TKA Scribe     | Opens the main notation application          |
+| 🗑️   | Recycle Bin    | Contains deleted sequences with funny errors |
+| 💾   | Save to Floppy | Fake "export" function                       |
+| 📖   | README.TXT     | Fake readme with lore                        |
+| ⚠️   | VIRUS.EXE      | Fake virus (see Easter Eggs)                 |
+| 🎮   | TKA Solitaire  | Fake game (optional)                         |
+| ❓   | HELP.HLP       | Fake help file                               |
 
 ### Taskbar
 
 Bottom of screen:
+
 - Start button (opens Start menu)
 - Quick launch icons
 - System tray (clock, volume, suspicious "monitoring" icon)
@@ -147,18 +150,19 @@ The main application is a retro-skinned version of the real TKA Scribe functiona
 
 ### Functional Features
 
-| Feature | Works? | Notes |
-|---------|--------|-------|
-| Generate sequence from word | Yes | Core functionality |
-| View pictographs | Yes | Rendered in pixel/retro style |
-| Export/Save | Fake | "Saved to A:\\" message, downloads real file |
-| Print | Fake | "Printer not found" or prints to PDF |
-| Browse library | Limited | Shows a few pre-made sequences |
-| Type selection | Yes | Level 1/2/3 as in real app |
+| Feature                     | Works?  | Notes                                        |
+| --------------------------- | ------- | -------------------------------------------- |
+| Generate sequence from word | Yes     | Core functionality                           |
+| View pictographs            | Yes     | Rendered in pixel/retro style                |
+| Export/Save                 | Fake    | "Saved to A:\\" message, downloads real file |
+| Print                       | Fake    | "Printer not found" or prints to PDF         |
+| Browse library              | Limited | Shows a few pre-made sequences               |
+| Type selection              | Yes     | Level 1/2/3 as in real app                   |
 
 ### Retro Pictograph Rendering
 
 Pictographs are rendered in a deliberately retro style:
+
 - Limited color palette (16 colors max)
 - Pixelated edges
 - Simpler geometry
@@ -189,6 +193,7 @@ Opening "My Sequences" shows a file browser:
 ```
 
 Pre-loaded sequences visitors can open and view:
+
 - OOGA.SEQ - The famous paleolithic sequence
 - UG.SEQ - Simple alpha-to-alpha
 - FIRE_DANCE.SEQ - A longer demonstration sequence
@@ -223,6 +228,7 @@ Certain actions trigger a BSOD:
 ```
 
 Triggers:
+
 - Trying to generate a sequence longer than 10 letters
 - Clicking certain hidden elements
 - Opening VIRUS.EXE
@@ -240,6 +246,7 @@ A suspicious executable on the desktop. If clicked:
 ### Recycle Bin
 
 Contains:
+
 - DELETED_MOVE.SEQ - "Cannot restore: Motion has been forgotten"
 - ORDER_MEMO.DOC - "Access denied: Clearance level insufficient"
 - BACKUP.ZIP - "File corrupted during suppression event"
@@ -338,6 +345,7 @@ A small "EXIT" button in corner of screen for players who don't want to navigate
 ### URL Handling
 
 When entering TKA-OS:
+
 - URL changes to `/retro` or `/tka-os`
 - Session state preserved
 - Can potentially be accessed directly (easter egg URL?)
@@ -345,9 +353,10 @@ When entering TKA-OS:
 ### Saving Work
 
 If player generates a sequence in TKA-OS:
+
 - "Saved to A:\\" message
 - Actually downloads as image file (with retro styling)
-- Or saves to their TKA Scribe account if logged in
+- Or saves to their Flow Arts Composer account if logged in
 
 ### Performance
 
@@ -360,6 +369,7 @@ The retro aesthetic should be performant - it's simpler graphics, not more compl
 Primary inspiration: https://www.windows93.net/
 
 Study their:
+
 - Boot sequence timing
 - Error message humor
 - Desktop icon design
@@ -370,4 +380,4 @@ TKA-OS should feel like it belongs in that universe while being specifically abo
 
 ---
 
-*Last updated: 2026-01-27*
+_Last updated: 2026-01-27_

@@ -393,9 +393,9 @@ Grouped by reason. None of these were deleted.
 | `scripts/autumn-hero-material-grades.mjs` | 2026-08-10 | 4 | `scripts/optimize-autumn-environment.mjs`, `scripts/verify-autumn-environment-performance.mjs`, `tests/unit/3d-autumn/autumn-hero-material-grades.test.ts` |
 | `scripts/autumn-material-sidedness.mjs` | 2026-09-01 | 3 | `scripts/optimize-autumn-environment.mjs`, `scripts/patch-autumn-material-sidedness.mjs`, `tests/unit/3d-autumn/autumn-optimized-glb-contract.test.ts` |
 | `scripts/autumn-meshy-assets.json` | 2026-08-10 | 4 | `docs/superpowers/plans/2026-06-21-enchanted-autumn-dusk.md`, `docs/superpowers/specs/2026-08-06-autumn-living-forest-floor-handoff.md`, `scripts/generate-autumn-meshy.mjs` |
-| `scripts/autumn-meshy-images.json` | 2026-06-22 | 3 | `docs/reference/autumn-meshy-image-prompts.md`, `docs/superpowers/specs/active/2026-06-21-enchanted-autumn-dusk-design.md`, `scripts/generate-autumn-meshy-from-image.mjs` |
+| `scripts/autumn-meshy-images.json` | 2026-06-22 | 3 | `docs/archive/swarm-2026-10-14/reference/autumn-meshy-image-prompts.md`, `docs/superpowers/specs/active/2026-06-21-enchanted-autumn-dusk-design.md`, `scripts/generate-autumn-meshy-from-image.mjs` |
 | `scripts/autumn-mushroom-layout.json` | 2026-08-31 | 3 | `scripts/build-autumn-environment.py`, `src/lib/shared/3d/environments/scenes/autumn/runtime/interaction/autumn-magic-habitat-layout.test.ts`, `src/lib/shared/3d/environments/scenes/autumn/runtime/interaction/autumn-magic-habitat-layout.ts` |
-| `scripts/avatar-bakeoff/convert-candidate.py` | 2026-08-28 | 2 | `docs/research/avatar-source-bakeoff-2026-08-28.md`, `scripts/characters/character-tools.mjs` |
+| `scripts/avatar-bakeoff/convert-candidate.py` | 2026-08-28 | 2 | `docs/archive/swarm-2026-10-14/research/avatar-source-bakeoff-2026-08-28.md`, `scripts/characters/character-tools.mjs` |
 | `scripts/backfill-active-prop.cjs` | 2026-08-31 | 1 | `docs/superpowers/specs/active/2026-06-12-canon-prop-creators-redesign.md` |
 | `scripts/backfill-missing-user-profiles.cjs` | 2026-08-05 | 1 | `~/.claude/projects/E--tka-platform/memory/reference_signup_profile_provisioning.md` |
 | `scripts/backfill-sequence-loop-type.cjs` | 2026-08-22 | 1 | `tests/unit/parity/legacy-script-parity-boundaries.test.ts` |
@@ -496,9 +496,9 @@ Grouped by reason. None of these were deleted.
 | `scripts/capture-devices.cjs` | 2026-04-15 | 1 | `scripts/install-ios-tunneld.ps1` |
 | `scripts/capture-seraphic-vault-gate4.mjs` | 2026-08-25 | 2 | `scripts/capture-seraphic-vault-gate5.mjs`, `scripts/lib/chrome-cdp.mjs` |
 | `scripts/celestial-meshy-images.json` | 2026-08-09 | 1 | `scripts/generate-celestial-meshy-from-image.mjs` |
-| `scripts/ceremony-flatten-kebab.cjs` | 2026-05-29 | 3 | `docs/audits/2026-08-16-repo-janitor-cruft-audit.md`, `docs/superpowers/plans/active/2026-05-31-ceremony-phase5-stateless.md`, `docs/superpowers/specs/active/2026-05-31-ceremony-phase5-stateless-isolated-design.md` |
-| `scripts/ceremony-inventory.mjs` | 2026-08-27 | 7 | `docs/audits/2026-08-16-repo-janitor-cruft-audit.md`, `docs/superpowers/handoffs/2026-05-31-ceremony-phase5-merge-handoff.md`, `docs/superpowers/plans/active/2026-05-31-ceremony-phase5-stateless.md` |
-| `scripts/ceremony-manifest.json` | 2026-08-03 | 8 | `docs/audits/2026-08-16-repo-janitor-cruft-audit.md`, `docs/specs/god-component-decomposition.md`, `docs/superpowers/handoffs/2026-07-30-endless-spinner-rebuild-handoff.md` |
+| `scripts/ceremony-flatten-kebab.cjs` | 2026-05-29 | 3 | `docs/archive/swarm-2026-10-14/audits/2026-08-16-repo-janitor-cruft-audit.md`, `docs/superpowers/plans/active/2026-05-31-ceremony-phase5-stateless.md`, `docs/superpowers/specs/active/2026-05-31-ceremony-phase5-stateless-isolated-design.md` |
+| `scripts/ceremony-inventory.mjs` | 2026-08-27 | 7 | `docs/archive/swarm-2026-10-14/audits/2026-08-16-repo-janitor-cruft-audit.md`, `docs/superpowers/handoffs/2026-05-31-ceremony-phase5-merge-handoff.md`, `docs/superpowers/plans/active/2026-05-31-ceremony-phase5-stateless.md` |
+| `scripts/ceremony-manifest.json` | 2026-08-03 | 8 | `docs/archive/swarm-2026-10-14/audits/2026-08-16-repo-janitor-cruft-audit.md`, `docs/specs/god-component-decomposition.md`, `docs/superpowers/handoffs/2026-07-30-endless-spinner-rebuild-handoff.md` |
 | `scripts/characters/README.md` | 2026-08-31 | 147 | `docs/museum/devlog/2026-01-27-creation-session.md`, `docs/museum/devlog/2026-01-29-creation-session.ini`, `docs/reference/human-generator-license-finding.md` |
 | `scripts/characters/blender-proportion-rescale.py` | 2026-09-03 | 2 | `docs/architecture/locomotion-research-canon.md`, `scripts/characters/character-proportion-sweep.mjs` |
 | `scripts/characters/character-glb.mjs` | 2026-08-31 | 3 | `scripts/characters/character-intake.mjs`, `scripts/characters/character-proportion-sweep.mjs`, `tests/unit/scripts/character-intake.test.ts` |
@@ -610,7 +610,7 @@ Grouped by reason. None of these were deleted.
 | `scripts/forest-tree-regeneration.json` | 2026-08-10 | 8 | `docs/superpowers/specs/moonlit-firefly-forest/evidence/tree-regeneration/forest-tree-regeneration-meshy6-tasks.json`, `docs/superpowers/specs/moonlit-firefly-forest/evidence/tree-regeneration/forest-tree-regeneration-tasks.json`, `scripts/forest-tree-regeneration-analyze.py` |
 | `scripts/forest_ground_life.py` | 2026-08-23 | 1 | `docs/superpowers/plans/active/2026-08-08-forest-environment-pass-one.md` |
 | `scripts/forest_prop_assets.py` | 2026-08-10 | 1 | `docs/superpowers/plans/active/2026-08-08-forest-environment-pass-one.md` |
-| `scripts/generate-autumn-meshy-from-image.mjs` | 2026-08-08 | 2 | `docs/reference/autumn-meshy-image-prompts.md`, `docs/superpowers/specs/active/2026-06-21-enchanted-autumn-dusk-design.md` |
+| `scripts/generate-autumn-meshy-from-image.mjs` | 2026-08-08 | 2 | `docs/archive/swarm-2026-10-14/reference/autumn-meshy-image-prompts.md`, `docs/superpowers/specs/active/2026-06-21-enchanted-autumn-dusk-design.md` |
 | `scripts/generate-autumn-meshy.mjs` | 2026-08-06 | 3 | `docs/superpowers/plans/2026-06-21-enchanted-autumn-dusk.md`, `docs/superpowers/specs/2026-08-06-autumn-living-forest-floor-handoff.md`, `docs/superpowers/specs/active/2026-06-21-enchanted-autumn-dusk-design.md` |
 | `scripts/generate-caps-trochoids.mjs` | 2026-08-03 | 3 | `docs/superpowers/specs/2026-08-01-notation-caps-exhibit-redesign.md`, `docs/superpowers/specs/2026-08-02-notation-caps-4k-density-correction.md`, `~/.claude/projects/E--tka-platform/memory/project_notation_loops_caps.md` |
 | `scripts/generate-cosmic-meshy.mjs` | 2026-07-19 | 1 | `docs/superpowers/handoffs/2026-07-19-cosmic-astral-reliquary-handoff.md` |
@@ -756,7 +756,7 @@ Grouped by reason. None of these were deleted.
 | `scripts/ocean_zone_refine.py` | 2026-08-09 | 1 | `docs/superpowers/specs/active/2026-08-09-fathom-ocean-lighting-palette-handoff.md` |
 | `scripts/offline-sw-e2e.mjs` | 2026-07-02 | 1 | `docs/OFFLINE-FIRST-ARCHITECTURE.md` |
 | `scripts/optimize-autumn-environment.mjs` | 2026-09-01 | 7 | `docs/superpowers/plans/active/2026-08-06-autumn-hero-environment.md`, `docs/superpowers/specs/2026-08-06-autumn-living-forest-floor-handoff.md`, `docs/superpowers/specs/2026-08-10-autumn-delivery-contract.md` |
-| `scripts/optimize-autumn-meshy.mjs` | 2026-08-06 | 4 | `docs/reference/autumn-meshy-image-prompts.md`, `docs/superpowers/plans/2026-06-21-enchanted-autumn-dusk.md`, `docs/superpowers/specs/2026-08-06-autumn-living-forest-floor-handoff.md` |
+| `scripts/optimize-autumn-meshy.mjs` | 2026-08-06 | 4 | `docs/archive/swarm-2026-10-14/reference/autumn-meshy-image-prompts.md`, `docs/superpowers/plans/2026-06-21-enchanted-autumn-dusk.md`, `docs/superpowers/specs/2026-08-06-autumn-living-forest-floor-handoff.md` |
 | `scripts/optimize-avatars.mjs` | 2026-08-31 | 1 | `~/.claude/projects/E--tka-platform/memory/reference_avatar_optimize_pipeline.md` |
 | `scripts/optimize-blossom-glb.mjs` | 2026-08-25 | 2 | `docs/superpowers/specs/2026-08-23-blossom-scene-rebuild-handoff.md`, `scripts/build-blossom-environment.py` |
 | `scripts/optimize-cosmic-glb.mjs` | 2026-07-19 | 1 | `docs/superpowers/handoffs/2026-07-19-cosmic-astral-reliquary-handoff.md` |
@@ -826,8 +826,8 @@ Grouped by reason. None of these were deleted.
 | `scripts/seed-tnd-turn-decks.cjs` | 2026-08-31 | 10 | `.agents/skills/deck/SKILL.md`, `.agents/skills/deck/deck-reference.md`, `.claude/skills/deck/SKILL.md` |
 | `scripts/seo/cli.ts` | 2026-07-22 | 1 | `package.json` |
 | `scripts/seo/config.ts` | 2026-07-22 | 298 | `.agents/skills/deadcode/SKILL.md`, `.agents/skills/devfix/SKILL.md`, `.agents/skills/museum-scene-production/references/reviews/2026-08-08-opus.md` |
-| `scripts/seo/core.ts` | 2026-07-22 | 6 | `docs/architecture/in-app-browser-path.md`, `docs/superpowers/plans/2026-08-04-session-triage.md`, `docs/superpowers/specs/shipped/2026-05-29-mandala-export-experience-design.md` |
-| `scripts/seo/posthog.ts` | 2026-07-21 | 18 | `docs/architecture/in-app-browser-path.md`, `docs/architecture/landing-analytics-taxonomy.md`, `docs/architecture/product-analytics-coverage.md` |
+| `scripts/seo/core.ts` | 2026-07-22 | 6 | `docs/archive/swarm-2026-10-14/architecture/in-app-browser-path.md`, `docs/superpowers/plans/2026-08-04-session-triage.md`, `docs/superpowers/specs/shipped/2026-05-29-mandala-export-experience-design.md` |
+| `scripts/seo/posthog.ts` | 2026-07-21 | 18 | `docs/archive/swarm-2026-10-14/architecture/in-app-browser-path.md`, `docs/architecture/landing-analytics-taxonomy.md`, `docs/architecture/product-analytics-coverage.md` |
 | `scripts/seo/provision-posthog-dashboard.ts` | 2026-07-21 | 2 | `package.json`, `scripts/upload-sourcemaps.js` |
 | `scripts/seo/scorecard.ts` | 2026-07-22 | 2 | `docs/superpowers/specs/active/2026-07-03-fable-real-flow-notation-validation-design.md`, `src/lib/features/train/prop-tracking-lab/services/tka-pose-classifier.ts` |
 | `scripts/seo/tsconfig.json` | 2026-07-20 | 115 | `.claude/hooks/pre-commit-check.cjs`, `.codex/hooks/post-edit-typecheck.cjs`, `.codex/hooks/pre-commit-check.cjs` |
@@ -843,7 +843,7 @@ Grouped by reason. None of these were deleted.
 | `scripts/start-dev.ps1` | 2026-08-31 | 16 | `.agents/skills/devfix/SKILL.md`, `.claude/rules/never-start-the-dev-server.md`, `.claude/settings.local.json` |
 | `scripts/start-stable-preview.ps1` | 2026-07-22 | 1 | `.vscode/launch.json` |
 | `scripts/strip-desktop-assets.cjs` | 2026-08-17 | 4 | `docs/audits/2026-08-16-knip-unused-files.txt`, `docs/superpowers/specs/shipped/2026-05-23-dependency-asset-cleanup-design.md`, `scripts/tauri-build-frontend.cjs` |
-| `scripts/strip-noise-comments.mjs` | 2026-08-27 | 4 | `.agents/skills/code-style/SKILL.md`, `.claude/skills/code-style/SKILL.md`, `docs/specs/comment-noise-retirement.md` |
+| `scripts/strip-noise-comments.mjs` | 2026-08-27 | 4 | `.agents/skills/code-style/SKILL.md`, `.claude/skills/code-style/SKILL.md`, `docs/archive/swarm-2026-10-14/specs/comment-noise-retirement.md` |
 | `scripts/submit-feedback.js` | 2026-08-27 | 7 | `.agents/skills/done/SKILL.md`, `.agents/skills/submitfb/SKILL.md`, `.claude/skills/done/SKILL.md` |
 | `scripts/svelte-kit-sync-if-needed.mjs` | 2026-08-31 | 4 | `docs/superpowers/specs/2026-09-03-create-sequence-actions-handoff.md`, `package.json`, `scripts/start-dev.ps1` |
 | `scripts/switch-environment.js` | 2025-12-23 | 2 | `package.json`, `scripts/check-environment.js` |
