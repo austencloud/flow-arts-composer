@@ -176,10 +176,7 @@
             When you're ready to learn the notation, the <LinkChip
               size="inline"
               href="/guide">guide</LinkChip
-            > introduces every concept in order, and the <LinkChip
-              size="inline"
-              href="/guide/codex">Double Staff Codex</LinkChip
-            > collects the pictographs themselves.
+            > introduces every concept in order.
           </p>
         </div>
       </div>
@@ -238,7 +235,10 @@
   }
   .prop-art {
     display: block;
-    width: min(100%, 5.5rem);
+    /* A set width, not a share of the label: the label is narrower than
+       most props, so the art would shrink to the word under it. */
+    width: clamp(2.75rem, 1.5rem + 4vw, 5.5rem);
+    max-width: 100%;
     height: clamp(1.75rem, 1.4rem + 1.4vw, 2.75rem);
     mask-size: contain;
     mask-position: center;
