@@ -10,7 +10,8 @@
    */
   import { browser } from "$app/env";
   import GuideShell from "../_components/GuideShell.svelte";
-  import Sentences from "../_components/Sentences.svelte";
+  import GuideFontPreload from "../_components/GuideFontPreload.svelte";
+  import TopicHeader from "../level-1/_topics/TopicHeader.svelte";
   import GuideSeo from "../level-1/_components/GuideSeo.svelte";
   import LetterCodex from "../../atlas/_components/LetterCodex.svelte";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
@@ -35,17 +36,19 @@
   ]}
 />
 
+<GuideFontPreload />
+
 <GuideShell>
   <article class="codex-guide guide-page-route">
-    <header class="intro">
-      <div class="intro-text">
-        <h1>{tDynamic("guide_codex_heading")}</h1>
-        <p><Sentences text={tDynamic("guide_codex_intro")} /></p>
-      </div>
+    <div class="intro">
+      <TopicHeader
+        title={tDynamic("guide_codex_heading")}
+        lede={tDynamic("guide_codex_intro")}
+      />
       <PanelButton variant="secondary" href={localHref("/guide/codex/print")}>
         {tDynamic("guide_codex_print")}
       </PanelButton>
-    </header>
+    </div>
 
     <LetterCodex {initialLetter} board="atlas" />
   </article>
@@ -64,9 +67,12 @@
        centred intro with its print button underneath; the Atlas default
        (28.5rem) also counts the glossary's own header row. */
     --codex-atlas-chrome: 25rem;
+    /* TopicHeader speaks in the guide's ink tokens. */
+    --ink: var(--theme-text);
+    --ink-dim: var(--theme-text-muted);
   }
 
-  /* A centred section break, like every Guide page header. */
+  /* The Guide's official header (TopicHeader), the print button under it. */
   .intro {
     display: flex;
     flex-direction: column;
@@ -74,23 +80,6 @@
     gap: var(--spacing-md, 16px);
     margin-bottom: clamp(20px, 2.5vw, 40px);
     text-align: center;
-  }
-
-  .intro-text {
-    min-width: 0;
-  }
-
-  .intro h1 {
-    text-align: center;
-    padding: 0 0 var(--spacing-sm, 8px);
-  }
-
-  .intro p {
-    margin: 0 auto;
-    max-width: 60ch;
-    font-size: clamp(16px, 1.3vw, 20px);
-    line-height: 1.5;
-    color: var(--theme-text-muted);
   }
 
   /* Past 3000px the board widens to min(88vw, 3400px) (BoardAtlas); the
