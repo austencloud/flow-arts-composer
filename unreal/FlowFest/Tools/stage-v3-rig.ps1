@@ -21,11 +21,14 @@ if ($LASTEXITCODE -ne 0) { throw "Could not transfer $Rig conversion manifest" }
 if ($FbxOnly) {
     $remoteFiles = & 'C:/Windows/System32/OpenSSH/ssh.exe' d2 "Get-ChildItem -LiteralPath '$D2ConvertRoot/rigs/$Rig/unreal/FlowFest/Tools/staged/Characters/$key' -Filter 'A_Flow_P_*.fbx' -File | Select-Object -ExpandProperty Name"
     if ($LASTEXITCODE -ne 0 -or @($remoteFiles).Count -ne 82) { throw "Expected 82 remote $Rig family FBXs" }
-    foreach ($file in $remoteFiles) {
-        $localPath = Join-Path $rigPath $file
-        if ((Test-Path -LiteralPath $localPath) -and (Get-Item -LiteralPath $localPath).Length -ge 1024) { continue }
-        & $scp -q -o BatchMode=yes "$remote/$key/$file" "$rigPath/"
-        if ($LASTEXITCODE -ne 0) { throw "Could not transfer $Rig/$file" }
+    $missing = @($remoteFiles | Where-Object {
+        $localPath = Join-Path $rigPath $_
+        -not (Test-Path -LiteralPath $localPath) -or (Get-Item -LiteralPath $localPath).Length -lt 1024
+    })
+    if ($missing.Count -gt 0) {
+        # One SFTP session is materially faster than 82 individual connections.
+        & $scp -q -o BatchMode=yes "$remote/$key/A_Flow_P_*.fbx" "$rigPath/"
+        if ($LASTEXITCODE -ne 0) { throw "Could not transfer $Rig family FBXs" }
     }
 } else {
     for ($attempt = 1; $attempt -le 3; $attempt++) {
