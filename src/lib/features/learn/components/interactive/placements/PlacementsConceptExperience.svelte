@@ -119,6 +119,9 @@
   let boardWidth = $state(300);
   let boardHeight = $state(320);
   let experienceElement: HTMLDivElement;
+  const built = $derived(
+    placementKindFor(placement.leftLocation, placement.rightLocation)
+  );
   const stageMotion = createLayoutMotion({
     getRoot: () => experienceElement,
     groups: [
