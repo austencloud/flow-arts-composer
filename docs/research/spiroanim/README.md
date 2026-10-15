@@ -114,6 +114,9 @@ shared start frame, the column sets the continuation.
   position, per-hand turns (`blueTurns`/`redTurns`), colour-swap flag.
 - `cell-catalogue.json` — 288 rows, the canonical reading of each cell
   (diamond, non-anti, Qtr #1), with its TKA word and start position.
+- `eightstep-72-base.json` and `eightstep-72-sequences.json`: Gage's 72 Eight
+  Step patterns (12 beats each, all Type 1, diamond grid) as raw beats and as
+  playable TKA sequences. `/guide/three-levels` reads the sequences file.
 - `editor-v9-quarter-turn-club-loop.json`: the 24-step TKA transcription of
   the supplied SpiroAnim v9 editor artifact, including all 48 explicit
   interradial start/end orientations and 0.25-turn values.
@@ -163,7 +166,7 @@ That date identifies these copies, not the origin of Quarter Space Tech.
 5. Speed ratio as a first-class axis (1:1, 1:2, 1:3, 1:4, 1:5, 2:3, 2:5 bridge
    to TKA turns; 2:1 has no TKA reading).
 
-## Two cautions for anything built on this
+## Cautions for anything built on this
 
 **It is positive evidence, not a legality boundary.** This is a curated
 pedagogical corpus (Yee's book, Gage's pages), not an enumeration. It shows
@@ -175,6 +178,15 @@ reflection-invariant because gravity is irrelevant to it; poi notation is
 gravity-bound and rotation is not a symmetry. VTG _rules_ may be canonicalized;
 Eight Step handpaths and the wall-plane marks must not be, or the gravity
 information that makes this corpus worth having is destroyed.
+
+**Eight Step `timing` labels conflict with the letter canon.** In
+`eightstep-72-base.json`, 108 of the 864 beats carry a `timing` value that
+contradicts `TYPE1_ROTATION` in `@tka/domain`: D, E and F are labelled `split`
+where the canon says together, and J, K and L are labelled `tog` where the
+canon says split (checked 2026-10-14). These six letters move between split and
+together positions, so the same letter gets both labels across beats. Take
+timing and direction from `TYPE1_ROTATION`, as `/guide/three-levels` does. The
+data is left as transcribed.
 
 ## Reproducing
 
