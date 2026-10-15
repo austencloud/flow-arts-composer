@@ -33,6 +33,10 @@
   let performer: LiveSequencePerformer3D;
   let captureClockOriginMs = 0;
 
+  // The rig must not accumulate an arbitrary number of live idle/mixer frames
+  // while its asynchronous assets load. Manual capture owns the first frame.
+  renderer.setAnimationLoop(null);
+
   export function pauseAutoLoop(): void {
     renderer.setAnimationLoop(null);
     autoRenderTask.stop();
