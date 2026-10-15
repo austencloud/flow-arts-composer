@@ -16,7 +16,7 @@
  */
 import { untrack } from "svelte";
 import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
-import { DURATION } from "#lib/shared/transitions/transitions.js";
+import { DURATION, STAGGER } from "#lib/shared/transitions/transitions.js";
 import { reducedMotion as systemReducedMotion } from "#lib/shared/transitions/motion.js";
 
 /**
@@ -44,6 +44,15 @@ export interface MethodPreviewTiming {
   startDelayMs: number;
   /** Automatic rounds each time the front door opens. */
   rounds: number;
+  /**
+   * How long the board holds every card on its tint after the first scene is
+   * ready, waiting for the rest so they arrive together.
+   */
+  revealHoldMs: number;
+  /** The delay between one card's arrival and the next, in board order. */
+  revealStaggerMs: number;
+  /** How long one card's tint takes to fade into its scene. */
+  revealFadeMs: number;
 }
 
 /** The one owner of preview timing. Six cards take about 45 seconds. */
@@ -58,6 +67,12 @@ export const METHOD_PREVIEW_TIMING: Readonly<MethodPreviewTiming> =
     readyWaitMs: 2500,
     startDelayMs: DURATION.emphasis,
     rounds: 2,
+    // Measured 2026-10-14 on the live board: on a desktop every scene was
+    // ready within 1.8 s of the first, on a phone-speed CPU all but Shape
+    // within 2.9 s. A scene slower than this arrives on its own.
+    revealHoldMs: 3000,
+    revealStaggerMs: STAGGER.relaxed,
+    revealFadeMs: DURATION.emphasis,
   });
 
 /** How long a card's turn plays. */
