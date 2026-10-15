@@ -19,6 +19,8 @@ class UStaticMesh;
 class UStaticMeshComponent;
 class UFlowFestAvatarComponent;
 class UFlowFestPropComponent;
+class UFlowFestEcologyComponent;
+class UFlowFestSoundscapeComponent;
 
 /** Measured Flow Fest site. East and south are metres; UE X and Y are centimetres. */
 UCLASS()
@@ -59,6 +61,9 @@ public:
 
     UFUNCTION(BlueprintPure, Category="Flow Fest|Crowd")
     int32 GetCrowdSize() const { return People.Num(); }
+
+    void SetSoundEnabled(bool bEnabled);
+    void SetJamSoundActive(bool bActive);
 
 private:
     struct FSiteRoad
@@ -103,6 +108,8 @@ private:
     };
 
     UPROPERTY(VisibleAnywhere) TObjectPtr<USceneComponent> SiteRoot;
+    UPROPERTY(VisibleAnywhere) TObjectPtr<UFlowFestEcologyComponent> Ecology;
+    UPROPERTY(VisibleAnywhere) TObjectPtr<UFlowFestSoundscapeComponent> Soundscape;
     UPROPERTY(VisibleAnywhere) TObjectPtr<UDirectionalLightComponent> Sun;
     UPROPERTY(VisibleAnywhere) TObjectPtr<UDirectionalLightComponent> Moon;
     UPROPERTY(VisibleAnywhere) TObjectPtr<USkyLightComponent> SkyLight;

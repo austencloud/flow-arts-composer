@@ -79,6 +79,8 @@ private:
     float JamSpinSeconds = 0.f;
     bool bInitialPlacementDone = false;
     bool bWardrobeOpen = false;
+    bool bSoundEnabled = true;
+    int32 PerformanceVariant = 0;
     FName CharacterId = TEXT("ch01");
     FName EquippedPropId = TEXT("capsule_baton");
     TArray<FFlowFestChoice> CharacterChoices;
@@ -132,6 +134,8 @@ private:
     void TogglePhotoFly();
     void ToggleEUC();
     void ToggleStaff();
+    void CyclePerformance();
+    void ToggleSound();
     void StopFlow();
     void TravelToObjective();
     void CycleTime();

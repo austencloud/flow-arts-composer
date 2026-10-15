@@ -1,6 +1,8 @@
 #include "FlowFestWorld.h"
 #include "FlowFestAvatarComponent.h"
 #include "FlowFestPropComponent.h"
+#include "FlowFestEcologyComponent.h"
+#include "FlowFestSoundscapeComponent.h"
 
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Components/SceneComponent.h"
@@ -60,6 +62,10 @@ AFlowFestWorld::AFlowFestWorld()
     PrimaryActorTick.bStartWithTickEnabled = false;
     SiteRoot = CreateDefaultSubobject<USceneComponent>(TEXT("SiteRoot"));
     RootComponent = SiteRoot;
+    Ecology = CreateDefaultSubobject<UFlowFestEcologyComponent>(TEXT("Ecology"));
+    Ecology->SetupAttachment(SiteRoot);
+    Soundscape = CreateDefaultSubobject<UFlowFestSoundscapeComponent>(TEXT("Soundscape"));
+    Soundscape->SetupAttachment(SiteRoot);
 
     Sun = CreateDefaultSubobject<UDirectionalLightComponent>(TEXT("Sun"));
     Sun->SetupAttachment(SiteRoot);
@@ -127,11 +133,13 @@ void AFlowFestWorld::BeginPlay()
     BuildTerrain();
     BuildRoads();
     BuildTrees();
+    if (!Ecology->BuildFromSite()) UE_LOG(LogTemp, Error, TEXT("Flow Fest ecology could not load; run the environment asset import."));
     BuildCamps();
     BuildVehicles();
     BuildFestivalLandmarks();
     BuildLanterns();
     BuildPeople();
+    if (!Soundscape->BuildFromSite(this)) UE_LOG(LogTemp, Error, TEXT("Flow Fest soundscape could not load; run the audio import."));
     SetTimeOfDay(TimeOfDay);
 }
 
@@ -160,15 +168,15 @@ void AFlowFestWorld::Tick(float DeltaSeconds)
         {
             if (bPerforming && Person.Prop && !Agent.PerformanceId.IsNone())
             {
-                Person.bPerformancePlaying = Person.Avatar->PlayPerformance(Agent.PerformanceId);
+                const FName Profile = UFlowFestAvatarComponent::ResolvePerformanceProfile(Agent.PropId, I % 2);
+                Person.bPerformancePlaying = Person.Avatar->PlayPerformance(Profile);
                 if (Person.bPerformancePlaying)
                 {
                     Person.Avatar->SetPerformancePhase(FMath::Frac(Agent.PhaseOffset / (2.f * PI)));
-                    Person.bPerformancePlaying = Person.Prop->LoadPerformance(Agent.AvatarId, Agent.PerformanceId);
+                    Person.bPerformancePlaying = Person.Prop->LoadPerformance(Agent.AvatarId, Profile);
                     if (Person.bPerformancePlaying)
                     {
                         Person.Prop->SetFinish(Agent.FinishId);
-                        Person.Prop->SetPerformanceTime(Person.Avatar->GetPerformanceTime());
                     }
                     else Person.Avatar->StopPerformance();
                 }
@@ -184,12 +192,9 @@ void AFlowFestWorld::Tick(float DeltaSeconds)
         }
         const FVector WorldVelocity = SiteRoot->GetComponentTransform().TransformVectorNoScale(FVector(Agent.Velocity.X, Agent.Velocity.Y, 0.f) * MetresToCm);
         Person.Avatar->SetMotion(WorldVelocity, false, false);
-        if (Person.Prop)
+        if (Person.Prop && !Person.bPerformancePlaying)
         {
-            if (Person.bPerformancePlaying)
-                Person.Prop->SetPerformanceTime(Person.Avatar->GetPerformanceTime());
-            else
-                Person.Prop->SetHandTransforms(Person.Avatar->GetHandTransform(true), Person.Avatar->GetHandTransform(false));
+            Person.Prop->SetHandTransforms(Person.Avatar->GetHandTransform(true), Person.Avatar->GetHandTransform(false));
         }
     }
 }
@@ -870,6 +875,7 @@ void AFlowFestWorld::BuildPeople()
                 if (Person.Prop->Equip(Agent.PropId))
                 {
                     Person.Prop->BindHands(Person.Avatar->GetBodyMesh());
+                    Person.Avatar->BindPerformanceProp(Person.Prop);
                     Person.Prop->SetFinish(NAME_None);
                     Person.Prop->SetHandTransforms(Person.Avatar->GetHandTransform(true),
                                                    Person.Avatar->GetHandTransform(false));
@@ -884,10 +890,21 @@ void AFlowFestWorld::BuildPeople()
     SetActorTickEnabled(People.Num() > 0 || FireLight != nullptr);
 }
 
+void AFlowFestWorld::SetSoundEnabled(bool bEnabled)
+{
+    Soundscape->SetEnabled(bEnabled);
+}
+
+void AFlowFestWorld::SetJamSoundActive(bool bActive)
+{
+    Soundscape->SetJamActive(bActive);
+}
+
 void AFlowFestWorld::SetTimeOfDay(float Hour)
 {
     TimeOfDay = FMath::Fmod(FMath::Fmod(Hour, 24.f) + 24.f, 24.f);
     Crowd.SetTimeOfDay(TimeOfDay);
+    Soundscape->SetTimeOfDay(TimeOfDay);
     // Two atmosphere lights retain a cool terrain silhouette after the sun leaves the horizon.
     // The moon stays high enough for paths to catch grazing light; the fire stays much brighter locally.
     const float Altitude = FMath::Sin((TimeOfDay - 6.f) * PI / 12.f) * 68.f;

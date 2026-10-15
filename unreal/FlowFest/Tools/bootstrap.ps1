@@ -16,6 +16,7 @@ $sourceRootPath = (Resolve-Path -LiteralPath $SourceRoot).Path
 $projectFile = Join-Path $projectRoot 'FlowFest.uproject'
 $engineBuild = Join-Path $EngineRoot 'Engine\Build\BatchFiles\Build.bat'
 $editorCmd = Join-Path $EngineRoot 'Engine\Binaries\Win64\UnrealEditor-Cmd.exe'
+$pythonExe = Join-Path $EngineRoot 'Engine\Binaries\ThirdParty\Python3\Win64\python.exe'
 $sourceModules = Join-Path $sourceRootPath 'node_modules'
 $localModules = Join-Path $repoRoot 'node_modules'
 
@@ -39,6 +40,8 @@ if (-not $SkipAssetGeneration) {
     if ($LASTEXITCODE -ne 0) { throw "Site export failed ($LASTEXITCODE)" }
     & node (Join-Path $PSScriptRoot 'prepare-assets.mjs') $sourceRootPath
     if ($LASTEXITCODE -ne 0) { throw "Asset preparation failed ($LASTEXITCODE)" }
+    & $pythonExe (Join-Path $PSScriptRoot 'prepare-audio.py')
+    if ($LASTEXITCODE -ne 0) { throw "Ambient sound preparation failed ($LASTEXITCODE)" }
     & $BlenderExe --factory-startup --background --threads 2 --python (Join-Path $PSScriptRoot 'author-assets.py')
     if ($LASTEXITCODE -ne 0) { throw "Blender asset authoring failed ($LASTEXITCODE)" }
     & node (Join-Path $PSScriptRoot 'prepare-characters.mjs') $sourceRootPath --captures $CaptureDirectory
@@ -71,7 +74,7 @@ if (-not $SkipImport) {
     $fireScript = Join-Path $PSScriptRoot 'create-fire-material.py'
     & $editorCmd $projectFile '-run=pythonscript' "-script=$fireScript" -unattended -nop4 -nosplash -RenderOffscreen
     if ($LASTEXITCODE -ne 0) { throw "Unreal fire material generation failed ($LASTEXITCODE)" }
-    foreach ($script in @('import-characters.py', 'import-props.py', 'import-euc.py')) {
+    foreach ($script in @('import-characters.py', 'import-props.py', 'import-euc.py', 'import-audio.py')) {
         & $editorCmd $projectFile '-run=pythonscript' "-script=$(Join-Path $PSScriptRoot $script)" -unattended -nop4 -nosplash -RenderOffscreen
         if ($LASTEXITCODE -ne 0) { throw "Unreal $script failed ($LASTEXITCODE)" }
     }

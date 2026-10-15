@@ -8,7 +8,6 @@
 #include "Components/StaticMeshComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Animation/AnimInstance.h"
-#include "Animation/AnimSingleNodeInstance.h"
 #include "Engine/Engine.h"
 #include "Engine/GameViewportClient.h"
 #include "Engine/World.h"
@@ -123,6 +122,7 @@ void AFlowFestCharacter::BeginPlay()
     Props->Initialize(AvatarRoot);
     Props->Equip(EquippedPropId);
     Props->BindHands(Avatar->GetBodyMesh());
+    Avatar->BindPerformanceProp(Props);
     SyncModeVisuals();
     if (FParse::Param(FCommandLine::Get(), TEXT("FlowFestWardrobe"))) ToggleWardrobe();
 }
@@ -145,7 +145,7 @@ void AFlowFestCharacter::Tick(float DeltaSeconds)
         bInitialPlacementDone = true;
         if (!bReviewMode) ApplyPhaseTime();
         SyncPlayerCamp();
-        if (Showcase == TEXT("flow") || Showcase == TEXT("ride"))
+        if (Showcase == TEXT("flow") || Showcase == TEXT("ride") || Showcase == TEXT("jump") || Showcase == TEXT("walk"))
         {
             Phase = EFlowFestPhase::FestivalNight;
             SetActorLocationAndRotation(FestivalWorld->GetLandmark(TEXT("workshop")) + FVector(0, 0, 110), FRotator::ZeroRotator, false);
@@ -165,6 +165,13 @@ void AFlowFestCharacter::Tick(float DeltaSeconds)
     {
         bShowcaseStarted = true;
         ToggleStaff();
+    }
+    // Review-only input follows the same movement and animation path as play.
+    if (Showcase == TEXT("walk")) bForward = StartupSeconds >= 22.f && StartupSeconds < 27.f;
+    if (Showcase == TEXT("jump") && !bShowcaseStarted && StartupSeconds >= 24.7f && GetCharacterMovement()->IsMovingOnGround())
+    {
+        bShowcaseStarted = true;
+        JumpOrRise();
     }
     if ((bReviewMode || !Showcase.IsEmpty() || !CapturePath.IsEmpty()) && StartupSeconds >= 10.f)
     {
@@ -262,7 +269,12 @@ void AFlowFestCharacter::Tick(float DeltaSeconds)
     Avatar->SetMotion(GetVelocity(), GetCharacterMovement()->IsFalling(), bOnEUC && !bWardrobeOpen);
     if (bOnEUC && !bWardrobeOpen) EUCWheel->AddLocalRotation(FRotator(0, 0, FMath::RadiansToDegrees(GetVelocity().Dot(GetActorForwardVector()) * DeltaSeconds / 36.3f)));
     Props->SetHandTransforms(Avatar->GetHandTransform(true), Avatar->GetHandTransform(false));
-    if (bStaffSpinning) Props->SetPerformanceTime(Avatar->GetPerformanceTime());
+    if (FestivalWorld)
+    {
+        const bool bAtFire = Near(TEXT("fire"), 24.f);
+        FestivalWorld->SetPlayerCrowdPresence(GetActorLocation(), bAtFire, bAtFire && bStaffSpinning);
+        FestivalWorld->SetJamSoundActive(bAtFire && (bStaffSpinning || Jam == EFlowFestJam::Active));
+    }
 }
 
 void AFlowFestCharacter::SetupPlayerInputComponent(UInputComponent* Input)
@@ -293,6 +305,8 @@ void AFlowFestCharacter::SetupPlayerInputComponent(UInputComponent* Input)
     Input->BindKey(EKeys::P, IE_Pressed, this, &AFlowFestCharacter::TogglePhotoFly);
     Input->BindKey(EKeys::V, IE_Pressed, this, &AFlowFestCharacter::ToggleEUC);
     Input->BindKey(EKeys::Q, IE_Pressed, this, &AFlowFestCharacter::ToggleStaff);
+    Input->BindKey(EKeys::R, IE_Pressed, this, &AFlowFestCharacter::CyclePerformance);
+    Input->BindKey(EKeys::M, IE_Pressed, this, &AFlowFestCharacter::ToggleSound);
     Input->BindKey(EKeys::T, IE_Pressed, this, &AFlowFestCharacter::TravelToObjective);
     Input->BindKey(EKeys::G, IE_Pressed, this, &AFlowFestCharacter::CycleTime);
     Input->BindKey(EKeys::F5, IE_Pressed, this, &AFlowFestCharacter::SaveProgress);
@@ -493,9 +507,7 @@ void AFlowFestCharacter::ToggleStaff()
     if (bWardrobeOpen) return;
     if (bInVehicle || bPhotoFly || bOnEUC) { Notify(TEXT("Step onto the ground to flow")); return; }
     if (bStaffSpinning) { StopFlow(); return; }
-    const FString Id = EquippedPropId.ToString();
-    const FName Profile = Id.StartsWith(TEXT("poi")) ? TEXT("FirePoi") : Id.Contains(TEXT("hoop")) ? TEXT("FireHoop") :
-        Id.Contains(TEXT("club")) ? TEXT("Juggler") : TEXT("LedFlow");
+    const FName Profile = UFlowFestAvatarComponent::ResolvePerformanceProfile(EquippedPropId, PerformanceVariant);
     if (!Props->LoadPerformance(CharacterId, Profile) || !Avatar->PlayPerformance(Profile))
     {
         StopFlow();
@@ -504,8 +516,22 @@ void AFlowFestCharacter::ToggleStaff()
     }
     GetCharacterMovement()->StopMovementImmediately();
     bStaffSpinning = true;
-    Props->SetFinish(Profile == TEXT("FirePoi") || Profile == TEXT("FireHoop") ? TEXT("fire") : TEXT("led"));
-    Props->SetPerformanceTime(0.f);
+    Props->ResetFinish();
+}
+void AFlowFestCharacter::CyclePerformance()
+{
+    if (bWardrobeOpen) return;
+    const bool bResume = bStaffSpinning;
+    if (bResume) StopFlow();
+    PerformanceVariant = (PerformanceVariant + 1) % 2;
+    if (bResume) ToggleStaff();
+    Notify(PerformanceVariant == 0 ? TEXT("Flow routine A") : TEXT("Flow routine B"));
+}
+void AFlowFestCharacter::ToggleSound()
+{
+    bSoundEnabled = !bSoundEnabled;
+    if (FestivalWorld) FestivalWorld->SetSoundEnabled(bSoundEnabled);
+    Notify(bSoundEnabled ? TEXT("Festival sound on") : TEXT("Festival sound muted"));
 }
 void AFlowFestCharacter::StopFlow()
 {
@@ -650,6 +676,7 @@ void AFlowFestCharacter::ChooseCharacter(FName Id)
     if (!Avatar->SetCharacter(Id)) { Notify(TEXT("Character asset could not load")); return; }
     CharacterId = Id;
     Props->BindHands(Avatar->GetBodyMesh());
+    Avatar->BindPerformanceProp(Props);
     SyncModeVisuals();
     SaveProgress();
 }
@@ -661,6 +688,7 @@ void AFlowFestCharacter::ChooseProp(FName Id)
     if (!Props->Equip(Id)) { Notify(TEXT("Prop asset could not load")); return; }
     EquippedPropId = Id;
     Props->BindHands(Avatar->GetBodyMesh());
+    Avatar->BindPerformanceProp(Props);
     SaveProgress();
 }
 
@@ -713,6 +741,7 @@ void AFlowFestCharacter::SaveProgress()
     Save->Hour = FestivalWorld ? FestivalWorld->GetTimeOfDay() : 15.f;
     Save->bInVehicle = bInVehicle; Save->bCampBuilt = bCampBuilt;
     Save->CharacterId = CharacterId; Save->PropId = EquippedPropId; Save->bOnEUC = bOnEUC;
+    Save->bSoundEnabled = bSoundEnabled; Save->PerformanceVariant = PerformanceVariant;
     if (!UGameplayStatics::SaveGameToSlot(Save, SaveSlot(), 0)) Notify(TEXT("Save failed"));
 }
 
@@ -748,12 +777,16 @@ void AFlowFestCharacter::LoadProgress()
     Energy = Save->Energy; bInVehicle = Save->bInVehicle; bCampBuilt = Save->bCampBuilt;
     bOnEUC = Save->bOnEUC && !bInVehicle; bPhotoFly = false; bStaffSpinning = false;
     CharacterId = Save->CharacterId; EquippedPropId = Save->PropId;
+    bSoundEnabled = Save->bSoundEnabled;
+    PerformanceVariant = FMath::Clamp(Save->PerformanceVariant, 0, 1);
     Avatar->SetCharacter(CharacterId); Props->Equip(EquippedPropId);
     Props->BindHands(Avatar->GetBodyMesh());
+    Avatar->BindPerformanceProp(Props);
     JamSpinSeconds = 0.f;
     GetCharacterMovement()->SetMovementMode(MOVE_Walking);
     SetActorLocationAndRotation(Save->Position, Save->Rotation, false);
     if (FestivalWorld) FestivalWorld->SetTimeOfDay(Save->Hour);
+    if (FestivalWorld) FestivalWorld->SetSoundEnabled(bSoundEnabled);
     bInitialPlacementDone = true;
     SyncModeVisuals();
     Notify(TEXT("Native journey loaded"));
@@ -878,7 +911,7 @@ void AFlowFestCharacter::RunSmoke()
     auto CheckPose = [this, &Expect](const FString& Label)
     {
         USkeletalMeshComponent* Body = Avatar->GetBodyMesh();
-        Body->TickAnimation(0.f, false);
+        for (int32 Settle = 0; Settle < 24; ++Settle) Body->TickAnimation(.05f, false);
         Body->RefreshBoneTransforms();
         const FVector Origin = AvatarRoot->GetComponentLocation();
         const FVector Hips = Body->GetSocketLocation(TEXT("Hips")) - Origin;
@@ -897,11 +930,6 @@ void AFlowFestCharacter::RunSmoke()
         Expect(LoadObject<UObject>(nullptr, *FString::Printf(TEXT("/Game/FlowFest/Characters/%s/A_Ride.A_Ride"), *Key)) != nullptr,
             *FString::Printf(TEXT("pedal-contact ride for %s"), *Choice.Id.ToString()));
         Avatar->SetMotion(FVector::ZeroVector, false, true);
-        if (UAnimSingleNodeInstance* Instance = Avatar->GetBodyMesh()->GetSingleNodeInstance())
-        {
-            Expect(FMath::IsNearlyEqual(Instance->GetLength(), 1.f, .001f), TEXT("mounted pose has exact one-second loop duration"));
-            Instance->SetPosition(.5f, false);
-        }
         CheckPose(Choice.Id.ToString() + TEXT("/Ride"));
         const FTransform AvatarFrame = AvatarRoot->GetComponentTransform();
         const FVector LeftRideFoot = AvatarFrame.InverseTransformPosition(Avatar->GetBodyMesh()->GetSocketLocation(TEXT("LeftFoot")));
@@ -914,12 +942,13 @@ void AFlowFestCharacter::RunSmoke()
             *FString::Printf(TEXT("mounted feet align with native wheel for %s"), *Choice.Id.ToString()));
         for (const TCHAR* Profile : {TEXT("FirePoi"), TEXT("FireHoop"), TEXT("Juggler"), TEXT("LedFlow")})
         {
+            const FName PhysicalProp = FCString::Strcmp(Profile, TEXT("FirePoi")) == 0 ? FName(TEXT("poi"))
+                : FCString::Strcmp(Profile, TEXT("FireHoop")) == 0 ? FName(TEXT("bighoop"))
+                : FCString::Strcmp(Profile, TEXT("Juggler")) == 0 ? FName(TEXT("club")) : FName(TEXT("capsule_baton"));
+            Expect(Props->Equip(PhysicalProp), TEXT("matching legacy performance prop"));
             Expect(Avatar->PlayPerformance(FName(Profile)), *FString::Printf(TEXT("production performance %s/%s"), *Choice.Id.ToString(), Profile));
-            if (UAnimSingleNodeInstance* Instance = Avatar->GetBodyMesh()->GetSingleNodeInstance())
-            {
-                Expect(FMath::IsNearlyEqual(Instance->GetLength(), 16.f, .001f), TEXT("performance has exact 16-second loop duration"));
-                Instance->SetPosition(.5f, false);
-            }
+            Expect(FMath::IsNearlyEqual(Avatar->GetPerformanceLength(), 16.f, .001f), TEXT("performance has exact 16-second loop duration"));
+            Avatar->SetPerformancePhase(.5f / 16.f);
             CheckPose(Choice.Id.ToString() + TEXT("/") + Profile);
             Expect(Props->LoadPerformance(Choice.Id, FName(Profile)), *FString::Printf(TEXT("prop motion %s/%s"), *Choice.Id.ToString(), Profile));
             Props->SetPerformanceTime(.5f);
@@ -933,7 +962,7 @@ void AFlowFestCharacter::RunSmoke()
         Props->SetFinish(TEXT("fire")); Props->SetVisible(false); Props->SetVisible(true);
         Props->SetFinish(TEXT("led")); Props->SetFinish(TEXT("none"));
     }
-    Avatar->SetCharacter(PreviousCharacter); Props->Equip(PreviousProp); Props->BindHands(Avatar->GetBodyMesh());
+    Avatar->SetCharacter(PreviousCharacter); Props->Equip(PreviousProp); Props->BindHands(Avatar->GetBodyMesh()); Avatar->BindPerformanceProp(Props);
     Expect(EUCMesh->GetStaticMesh() && EUCWheel->GetStaticMesh(), TEXT("authored unicycle body and rotating wheel"));
     ChooseCharacter(TEXT("ch44")); ChooseProp(TEXT("fan:day_white_covered"));
     SaveProgress();

@@ -78,13 +78,24 @@ if (@($characters.characters).Count -ne 16 -or @($props.props).Count -ne 41 -or 
 }
 foreach ($character in $characters.characters) {
     $key = $character.id.Replace('-', '_')
-    foreach ($profile in @('FirePoi', 'FireHoop', 'Juggler', 'LedFlow')) {
+    $profiles = @('FirePoi', 'FireHoop', 'Juggler', 'LedFlow')
+    foreach ($prop in $props.props) {
+        $profiles += "P_$($prop.id)_A"
+        $profiles += "P_$($prop.id)_B"
+    }
+    foreach ($profile in $profiles) {
         $clipPath = Join-Path $dataDir "PropMotion\${key}_${profile}.json"
         $clip = Get-Content -LiteralPath $clipPath -Raw | ConvertFrom-Json
-        if ($clip.schema -ne 'flow-fest-prop-motion-v1' -or $clip.fps -le 0 -or @($clip.frames).Count -lt 2) {
+        if ($clip.schema -notin @('flow-fest-prop-motion-v1', 'flow-fest-prop-motion-v2') -or $clip.fps -ne 30 -or @($clip.frames).Count -ne 480) {
             throw "Staged prop motion is invalid: $clipPath"
         }
+        if ($profile.StartsWith('P_') -and ($clip.schema -ne 'flow-fest-prop-motion-v2' -or @($clip.frames[0]).Count -ne 20)) {
+            throw "Staged family performance lacks grip validation samples: $clipPath"
+        }
     }
+}
+if (@($siteData.grass).Count -lt 20000 -or @($siteData.groundLife).Count -lt 20) {
+    throw 'Staged living ecology data is incomplete.'
 }
 foreach ($document in @('README.md', 'CREDITS.md')) {
     Copy-Item -LiteralPath (Join-Path $projectRoot $document) -Destination (Join-Path $packageRoot $document) -Force

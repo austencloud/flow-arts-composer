@@ -10,6 +10,8 @@
 #include "Misc/AutomationTest.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
+#include "Misc/CommandLine.h"
+#include "Misc/Parse.h"
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
 #include "UObject/UObjectGlobals.h"
@@ -42,6 +44,11 @@ struct FScopedMotionWorld
 
 bool FFlowFestMotionIntegrationTest::RunTest(const FString& Parameters)
 {
+    FString FocusCharacter, FocusFamily, FocusVariant;
+    FParse::Value(FCommandLine::Get(), TEXT("FlowFestMotionCharacter="), FocusCharacter);
+    FParse::Value(FCommandLine::Get(), TEXT("FlowFestMotionFamily="), FocusFamily);
+    FParse::Value(FCommandLine::Get(), TEXT("FlowFestMotionVariant="), FocusVariant);
+    if (!TestTrue(TEXT("Focused routine must be A or B"), FocusVariant.IsEmpty() || FocusVariant == TEXT("A") || FocusVariant == TEXT("B"))) return false;
     const TSharedPtr<FJsonObject> CharacterCatalog = ReadCatalog(TEXT("characters.json"));
     const TSharedPtr<FJsonObject> PropCatalog = ReadCatalog(TEXT("props.json"));
     if (!TestTrue(TEXT("Character and prop catalogs load"), CharacterCatalog.IsValid() && PropCatalog.IsValid())) return false;
@@ -108,6 +115,7 @@ bool FFlowFestMotionIntegrationTest::RunTest(const FString& Parameters)
         const TSharedPtr<FJsonObject> Character = CharacterValue->AsObject();
         if (!Character.IsValid()) return false;
         const FName CharacterId(*Character->GetStringField(TEXT("id")));
+        if (!FocusCharacter.IsEmpty() && CharacterId.ToString() != FocusCharacter) continue;
         if (!TestTrue(*FString::Printf(TEXT("Native rig loads: %s"), *CharacterId.ToString()), Avatar->SetCharacter(CharacterId))) continue;
         if (!TestTrue(*FString::Printf(TEXT("Hands bind: %s"), *CharacterId.ToString()),
             HeldProp->BindHands(Avatar->GetBodyMesh()))) continue;
@@ -115,6 +123,7 @@ bool FFlowFestMotionIntegrationTest::RunTest(const FString& Parameters)
         for (const TSharedPtr<FJsonValue>& PropValue : *Props)
         {
             const FString Family = PropValue->AsObject()->GetStringField(TEXT("id"));
+            if (!FocusFamily.IsEmpty() && Family != FocusFamily) continue;
             if (!TestTrue(*FString::Printf(TEXT("Base mesh loads: %s/%s"), *CharacterId.ToString(), *Family),
                 HeldProp->Equip(FName(*Family)) && HeldProp->IsReady())) continue;
             float FamilyPeakGrip = 0.f;
@@ -122,6 +131,7 @@ bool FFlowFestMotionIntegrationTest::RunTest(const FString& Parameters)
             FString FamilyOffender;
             for (int32 Variant = 0; Variant < 2; ++Variant)
             {
+                if (!FocusVariant.IsEmpty() && Variant != (FocusVariant == TEXT("A") ? 0 : 1)) continue;
                 const FName Profile = UFlowFestAvatarComponent::ResolvePerformanceProfile(FName(*Family), Variant);
                 const FString Case = CharacterId.ToString() + TEXT("/") + Profile.ToString();
                 if (!TestTrue(*FString::Printf(TEXT("Captured prop roots load: %s"), *Case),
@@ -217,7 +227,8 @@ bool FFlowFestMotionIntegrationTest::RunTest(const FString& Parameters)
     }
     UE_LOG(LogTemp, Display, TEXT("FlowFestMotion sampled %d native rig/family/routine pairs; captured peak %.2f cm at %s; prop anchor peak %.2f cm"),
         SampledProfiles, GlobalPeakGrip, *GlobalOffender, GlobalPeakAnchor);
-    TestEqual(TEXT("All 16 rigs by 41 families by two routines were sampled"), SampledProfiles, 16 * 41 * 2);
+    const int32 ExpectedProfiles = (FocusCharacter.IsEmpty() ? 16 : 1) * (FocusFamily.IsEmpty() ? 41 : 1) * (FocusVariant.IsEmpty() ? 2 : 1);
+    TestEqual(TEXT("Every requested rig, family and routine was sampled"), SampledProfiles, ExpectedProfiles);
     return true;
 }
 #endif

@@ -6,7 +6,7 @@ param(
     [string]$LogPath = '',
     [string]$Character = '',
     [string]$Prop = '',
-    [ValidateSet('', 'flow', 'ride')][string]$Showcase = '',
+    [ValidateSet('', 'flow', 'ride', 'walk', 'jump')][string]$Showcase = '',
     [switch]$Wardrobe,
     [switch]$Offscreen,
     [switch]$AutoExit,
