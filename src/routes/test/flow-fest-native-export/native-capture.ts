@@ -58,6 +58,19 @@ function boneSamples(mesh: SkinnedMesh) {
   }));
 }
 
+function handWorld(
+  mesh: SkinnedMesh,
+  side: "left" | "right"
+): [number, number, number] {
+  const names =
+    side === "left"
+      ? /LeftHand$|^l_hand$|^hand\.L$/i
+      : /RightHand$|^r_hand$|^hand\.R$/i;
+  const hand = posedBones(mesh).find((bone) => names.test(bone.name));
+  if (!hand) throw new Error(`Production rig has no ${side} hand bone`);
+  return worldTransform(hand).position;
+}
+
 function containsMesh(root: Object3D, skinned: boolean): boolean {
   let found = false;
   root.traverse((object) => {
@@ -170,6 +183,8 @@ export function captureNativeFrame(
     performerWorld: worldTransform(performer),
     skinnedMeshLocal: localTransform(skinned),
     bones: boneSamples(skinned),
+    leftHandWorld: handWorld(skinned, "left"),
+    rightHandWorld: handWorld(skinned, "right"),
     leftProp: prop(propBranches[0]!),
     rightProp: prop(propBranches[1]!),
   };

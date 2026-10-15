@@ -9,18 +9,18 @@
   import LiveSequencePerformer3D from "#lib/shared/3d/performers/LiveSequencePerformer3D.svelte";
   import type { CharacterId } from "#lib/shared/3d/domain/character-model.js";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
-  import type { FlowFestPerformerRole } from "../flow-fest-sim/flow-fest-performer-sequences.js";
-  import { FLOW_FEST_PERFORMER_PROFILES } from "../flow-fest-sim/flow-fest-performer-sequences.js";
+  import type { PropType as AppPropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { PropType as ScenePropType } from "@austencloud/scene-3d";
   import { captureNativeFrame, productionRigReady } from "./native-capture.js";
 
   interface Props {
     character: CharacterId;
-    role: FlowFestPerformerRole;
+    propType: ScenePropType;
+    effectId: "fire" | "led";
     sequence: SequenceData;
     onReady: () => void;
   }
   const props: Props = $props();
-  const profile = $derived(FLOW_FEST_PERFORMER_PROFILES[props.role]);
   const id = "native-export";
   const { renderer: rendererValue, scene: sceneValue } = useThrelte();
   const renderer = resolveThrelteRenderer(rendererValue);
@@ -59,8 +59,8 @@
   position={{ x: 0, y: 0, z: 0 }}
   facingAngle={0}
   characterId={props.character}
-  propType={profile.propType}
-  effectId={profile.effectId}
+  propType={props.propType as unknown as AppPropType}
+  effectId={props.effectId}
   sequence={props.sequence}
   active={false}
   playbackSpeed={1}

@@ -5,6 +5,7 @@
   import { DEPLOYED_CHARACTER_IDS } from "#lib/shared/3d/config/deployed-characters.js";
   import type { CharacterId } from "#lib/shared/3d/domain/character-model.js";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { PropType } from "@austencloud/scene-3d";
   import {
     FLOW_FEST_PERFORMER_PROFILES,
     flowFestSequenceForPerformer,
@@ -18,10 +19,28 @@
   const roles = Object.keys(
     FLOW_FEST_PERFORMER_PROFILES
   ) as FlowFestPerformerRole[];
+  const families = Object.values(PropType).filter(
+    (prop) => prop !== PropType.HAND
+  );
+  type Variant = "A" | "B";
+  type CaptureRole = FlowFestPerformerRole | `family-${PropType}-${Variant}`;
+  const familyKey = (
+    family: PropType,
+    variant: Variant
+  ): `family-${PropType}-${Variant}` => `family-${family}-${variant}`;
   let pool = $state<FlowFestPerformerSequencePool | null>(null);
-  let sequenceSnapshots = $state<Partial<Record<FlowFestPerformerRole, SequenceData>>>({});
+  let sequenceSnapshots = $state<
+    Partial<Record<FlowFestPerformerRole, SequenceData>>
+  >({});
+  let familySnapshots = $state<Record<string, SequenceData>>({});
   let character = $state<CharacterId>(DEPLOYED_CHARACTER_IDS[0]!);
-  let role = $state<FlowFestPerformerRole>(roles[0]!);
+  let role = $state<CaptureRole>(roles[0]!);
+  let propType = $state<PropType>(
+    FLOW_FEST_PERFORMER_PROFILES[roles[0]!].propType as unknown as PropType
+  );
+  let effectId = $state<"fire" | "led">(
+    FLOW_FEST_PERFORMER_PROFILES[roles[0]!].effectId
+  );
   let sceneKey = $state(0);
   let readyKey = $state(-1);
   let scene = $state<NativeCaptureScene>();
@@ -37,11 +56,47 @@
     return flowFestSequenceForPerformer(pool, nextRole);
   }
 
-  function setSequenceSnapshots(snapshots: Partial<Record<FlowFestPerformerRole, SequenceData>>): void {
+  function setSequenceSnapshots(
+    snapshots: Partial<Record<FlowFestPerformerRole, SequenceData>>
+  ): void {
     for (const nextRole of roles)
       if (!snapshots[nextRole]?.steps.length)
         throw new Error(`Missing preserved ${nextRole} sequence`);
     sequenceSnapshots = snapshots;
+  }
+
+  function setFamilySequenceSnapshots(
+    snapshots: Record<string, SequenceData>
+  ): void {
+    for (const [key, sequence] of Object.entries(snapshots)) {
+      if (!sequence?.steps?.length || sequence.steps.length !== 16)
+        throw new Error(`Invalid preserved 16-step LOOP for ${key}`);
+    }
+    familySnapshots = { ...familySnapshots, ...snapshots };
+  }
+
+  async function prepareFamily(
+    family: PropType,
+    variant: Variant
+  ): Promise<SequenceData> {
+    if (!families.includes(family) || (variant !== "A" && variant !== "B"))
+      throw new Error("Unknown physical prop family or variant");
+    const key = familyKey(family, variant);
+    if (familySnapshots[key]) return familySnapshots[key];
+    const generated = await generateFlowFestPerformerPool({ count: 1 });
+    if (
+      generated.generatedCount !== 1 ||
+      generated.loops[0]?.steps.length !== 16
+    )
+      throw new Error(
+        `Production 16-step LOOP generation failed for ${key}: ${generated.notes.join("; ")}`
+      );
+    familySnapshots = { ...familySnapshots, [key]: generated.loops[0] };
+    return generated.loops[0]!;
+  }
+
+  function getFamilySequenceSnapshots(): Record<string, SequenceData> {
+    return familySnapshots;
   }
 
   async function waitReady(key: number): Promise<void> {
@@ -56,25 +111,25 @@
     }
   }
 
-  async function captureOne(
+  async function capturePerformance(
     nextCharacter: CharacterId,
-    nextRole: FlowFestPerformerRole
+    nextRole: CaptureRole,
+    nextSequence: SequenceData,
+    nextPropType: PropType,
+    nextEffectId: "fire" | "led"
   ) {
     if (busy) throw new Error("Capture already running");
-    if (!pool || pool.sources.some((source) => source !== "generated"))
-      throw new Error(
-        "Production LOOP snapshot is unavailable; refusing placeholder motion"
-      );
-    if (
-      !DEPLOYED_CHARACTER_IDS.includes(nextCharacter) ||
-      !roles.includes(nextRole)
-    )
+    if (!DEPLOYED_CHARACTER_IDS.includes(nextCharacter))
       throw new Error("Unknown deployed rig or Flow Fest profile");
+    if (nextSequence.steps.length !== 16)
+      throw new Error("Native performance requires one generated 16-step LOOP");
     busy = true;
     try {
       mode = "perform";
       character = nextCharacter;
       role = nextRole;
+      propType = nextPropType;
+      effectId = nextEffectId;
       sceneKey += 1;
       const key = sceneKey;
       status = `Loading ${character} / ${role}`;
@@ -82,12 +137,10 @@
       await waitReady(key);
       if (!scene) throw new Error("Performer capture scene is not mounted");
       scene.pauseAutoLoop();
-      const sequence = sequenceForRole(role);
       const frames = [];
-      for (let frame = 0; frame < sequence.steps.length * 30; frame += 1) {
+      for (let frame = 0; frame < 480; frame += 1) {
         frames.push(await scene.sampleFrame(frame));
-        if (frame % 30 === 0)
-          status = `${character} / ${role}: ${frame}/${sequence.steps.length * 30}`;
+        if (frame % 30 === 0) status = `${character} / ${role}: ${frame}/480`;
       }
       status = `Captured ${character} / ${role}`;
       return {
@@ -95,12 +148,12 @@
         source: "LiveSequencePerformer3D production generator",
         character,
         role,
-        propType: FLOW_FEST_PERFORMER_PROFILES[role].propType,
-        effectId: FLOW_FEST_PERFORMER_PROFILES[role].effectId,
+        propType: nextPropType,
+        effectId: nextEffectId,
         fps: 30,
         scoreUnitsPerSecond: 1,
-        scoreSteps: sequence.steps.length,
-        sequence,
+        scoreSteps: nextSequence.steps.length,
+        sequence: nextSequence,
         coordinateSystem:
           "Three.js: meters, +Y up; bone TRS is local to parent; performer and prop TRS are world-space",
         propTransform:
@@ -110,6 +163,48 @@
     } finally {
       busy = false;
     }
+  }
+
+  async function captureOne(
+    nextCharacter: CharacterId,
+    nextRole: FlowFestPerformerRole
+  ) {
+    if (!pool || pool.sources.some((source) => source !== "generated"))
+      throw new Error(
+        "Production LOOP snapshot is unavailable; refusing placeholder motion"
+      );
+    if (!roles.includes(nextRole)) throw new Error("Unknown Flow Fest profile");
+    const profile = FLOW_FEST_PERFORMER_PROFILES[nextRole];
+    return capturePerformance(
+      nextCharacter,
+      nextRole,
+      sequenceForRole(nextRole),
+      profile.propType as unknown as PropType,
+      profile.effectId
+    );
+  }
+
+  async function captureFamily(
+    nextCharacter: CharacterId,
+    family: PropType,
+    variant: Variant
+  ) {
+    if (!families.includes(family) || (variant !== "A" && variant !== "B"))
+      throw new Error("Unknown physical prop family or variant");
+    const sequence = await prepareFamily(family, variant);
+    const effect: "fire" | "led" =
+      family.includes("fire") ||
+      family.includes("torch") ||
+      family === PropType.POI
+        ? "fire"
+        : "led";
+    return capturePerformance(
+      nextCharacter,
+      familyKey(family, variant),
+      sequence,
+      family,
+      effect
+    );
   }
 
   async function captureRide(nextCharacter: CharacterId) {
@@ -152,16 +247,24 @@
     const api = {
       characters: DEPLOYED_CHARACTER_IDS,
       roles,
+      families,
       captureOne,
+      captureFamily,
       captureRide,
       setSequenceSnapshots,
+      prepareFamily,
+      setFamilySequenceSnapshots,
+      getFamilySequenceSnapshots,
       getStatus: () => status,
       isReady: () => pool !== null,
     };
     (
       window as Window & { flowFestNativeCapture?: typeof api }
     ).flowFestNativeCapture = api;
-    void generateFlowFestPerformerPool({ count: 4 })
+    const familyCapture = new URLSearchParams(window.location.search).has(
+      "family"
+    );
+    void generateFlowFestPerformerPool({ count: familyCapture ? 1 : 4 })
       .then((generated) => {
         pool = generated;
         status = generated.sources.every((source) => source === "generated")
@@ -202,8 +305,11 @@
             <NativeCaptureScene
               bind:this={scene}
               {character}
-              {role}
-              sequence={sequenceForRole(role)}
+              {propType}
+              {effectId}
+              sequence={role.startsWith("family-")
+                ? familySnapshots[role]!
+                : sequenceForRole(role as FlowFestPerformerRole)}
               onReady={() => {
                 readyKey = sceneKey;
               }}
