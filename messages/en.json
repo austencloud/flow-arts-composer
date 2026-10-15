@@ -7794,6 +7794,7 @@
   "guide_zans_label_together": "Starting together",
   "guide_zans_label_one_ahead": "One beat ahead",
   "guide_zans_label_ahead": "{n} beats ahead",
+  "guide_zans_variation_line": "{label}: {word}",
   "guide_zans_collection_body": "All 24 are saved in the public Zan's Diamond collection. Open one there to change its props or try it in Practice.",
   "guide_zans_open_collection": "Open the collection",
   "guide_zans_read_cross_shifts": "Type 3 Cross-Shifts",
