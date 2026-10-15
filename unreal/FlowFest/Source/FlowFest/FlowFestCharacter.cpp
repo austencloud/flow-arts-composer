@@ -22,6 +22,7 @@
 #include "HAL/FileManager.h"
 #include "HAL/PlatformMisc.h"
 #include "Misc/CommandLine.h"
+#include "Misc/App.h"
 #include "Misc/Paths.h"
 #include "Misc/Parse.h"
 #include "Misc/FileHelper.h"
@@ -117,6 +118,23 @@ void AFlowFestCharacter::BeginPlay()
         UE_LOG(LogTemp, Error, TEXT("FlowFestCapture must be an absolute .png path"));
         CapturePath.Empty();
     }
+    if (!CapturePath.IsEmpty())
+    {
+        FParse::Value(FCommandLine::Get(), TEXT("FlowFestCaptureFrames="), CaptureFrames);
+        FParse::Value(FCommandLine::Get(), TEXT("FlowFestCaptureStart="), CaptureStart);
+        FParse::Value(FCommandLine::Get(), TEXT("FlowFestCaptureInterval="), CaptureInterval);
+        CaptureFrames = FMath::Clamp(CaptureFrames, 1, 300);
+        CaptureStart = FMath::Clamp(CaptureStart, 0.f, 300.f);
+        CaptureInterval = FMath::Clamp(CaptureInterval, 1.f / 30.f, 5.f);
+        // A screenshot may stall wall time. Review sequences use the same
+        // 30 Hz simulation step so that stalls cannot skip animation poses.
+        if (CaptureFrames > 1)
+        {
+            FApp::SetFixedDeltaTime(1.0 / 30.0);
+            FApp::SetUseFixedTimeStep(true);
+            UE_LOG(LogTemp, Display, TEXT("FlowFestVisual fixed 30 Hz capture; not a performance benchmark"));
+        }
+    }
     if (APlayerController* PC = Cast<APlayerController>(GetController()))
     {
         PC->bShowMouseCursor = false;
@@ -202,13 +220,16 @@ void AFlowFestCharacter::Tick(float DeltaSeconds)
             RunSmoke();
         }
     }
-    if (!CapturePath.IsEmpty() && !bCaptureRequested && StartupSeconds >= 25.f)
+    if (!CapturePath.IsEmpty() && !bCaptureRequested && CapturedFrames < CaptureFrames &&
+        StartupSeconds >= CaptureStart + CapturedFrames * CaptureInterval)
     {
         if (GEngine && GEngine->GameViewport && GEngine->GameViewport->Viewport)
         {
             FHighResScreenshotConfig& Screenshot = GetHighResScreenshotConfig();
-            CapturePreviousTimestamp = IFileManager::Get().GetTimeStamp(*CapturePath);
-            Screenshot.SetFilename(CapturePath);
+            ActiveCapturePath = CapturedFrames == 0 ? CapturePath :
+                FPaths::GetPath(CapturePath) / FString::Printf(TEXT("%s-%03d.png"), *FPaths::GetBaseFilename(CapturePath), CapturedFrames);
+            CapturePreviousTimestamp = IFileManager::Get().GetTimeStamp(*ActiveCapturePath);
+            Screenshot.SetFilename(ActiveCapturePath);
             Screenshot.SetResolution(1920, 1080);
             UE_LOG(LogTemp, Display, TEXT("FlowFestVisual character=%s body=%s bounds=%s camera=%s arm=%.1f"),
                 *CharacterId.ToString(), *Avatar->GetBodyMesh()->GetComponentLocation().ToString(),
@@ -221,17 +242,20 @@ void AFlowFestCharacter::Tick(float DeltaSeconds)
                 *Body->GetSocketLocation(TEXT("LeftHand")).ToString(), *Body->Bounds.Origin.ToString(), *BodyScreen.ToString(),
                 Body->IsVisible(), Body->bHiddenInGame, Body->bOwnerNoSee, *FollowCamera->GetComponentRotation().ToString());
             bCaptureRequested = GEngine->GameViewport->Viewport->TakeHighResScreenShot();
-            UE_LOG(LogTemp, Display, TEXT("Flow Fest high-res screenshot %s: %s"), bCaptureRequested ? TEXT("requested") : TEXT("failed"), *CapturePath);
+            UE_LOG(LogTemp, Display, TEXT("Flow Fest high-res screenshot %s frame=%d time=%.3f: %s"), bCaptureRequested ? TEXT("requested") : TEXT("failed"), CapturedFrames, StartupSeconds, *ActiveCapturePath);
             ReportFrameTiming();
         }
     }
-    if (bCaptureRequested && !bCaptureReady && FPlatformFileManager::Get().GetPlatformFile().FileExists(*CapturePath)
-        && IFileManager::Get().GetTimeStamp(*CapturePath) > CapturePreviousTimestamp)
+    if (bCaptureRequested && FPlatformFileManager::Get().GetPlatformFile().FileExists(*ActiveCapturePath)
+        && IFileManager::Get().GetTimeStamp(*ActiveCapturePath) > CapturePreviousTimestamp)
     {
-        bCaptureReady = true;
-        UE_LOG(LogTemp, Display, TEXT("Flow Fest screenshot written: %s"), *CapturePath);
+        ++CapturedFrames;
+        bCaptureRequested = false;
+        bCaptureReady = CapturedFrames == CaptureFrames;
+        UE_LOG(LogTemp, Display, TEXT("Flow Fest screenshot written (%d/%d): %s"), CapturedFrames, CaptureFrames, *ActiveCapturePath);
     }
-    if (bAutoExit && StartupSeconds >= 40.f)
+    const float ExitSeconds = FMath::Max(40.f, CaptureStart + (CaptureFrames - 1) * CaptureInterval + 15.f);
+    if (bAutoExit && StartupSeconds >= ExitSeconds)
     {
         ReportFrameTiming();
         const bool bCaptureFailed = !CapturePath.IsEmpty() && !bCaptureReady;
@@ -341,7 +365,7 @@ void AFlowFestCharacter::QuitGame() { if (bWardrobeOpen) { ToggleWardrobe(); ret
 
 void AFlowFestCharacter::ReportFrameTiming()
 {
-    if ((!bReviewMode && Showcase.IsEmpty() && CapturePath.IsEmpty()) || bTimingReported) return;
+    if ((!bReviewMode && Showcase.IsEmpty() && CapturePath.IsEmpty()) || bTimingReported || CaptureFrames > 1) return;
     bTimingReported = true;
     if (FrameSampleCount > 0)
     {

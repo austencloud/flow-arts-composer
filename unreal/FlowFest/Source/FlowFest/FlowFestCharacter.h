@@ -107,6 +107,11 @@ private:
     FString Showcase;
     bool bShowcaseStarted = false;
     FString CapturePath;
+    FString ActiveCapturePath;
+    int32 CaptureFrames = 1;
+    int32 CapturedFrames = 0;
+    float CaptureStart = 25.f;
+    float CaptureInterval = .1f;
     FDateTime CapturePreviousTimestamp;
 
     void SetForward() { bForward = true; }
