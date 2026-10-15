@@ -4,14 +4,23 @@
 #include "CanvasItem.h"
 #include "Engine/Canvas.h"
 #include "Engine/Engine.h"
+#include "Engine/Font.h"
 #include "GameFramework/PlayerController.h"
-#include "Styling/CoreStyle.h"
+#include "UObject/ConstructorHelpers.h"
+
+AFlowFestHUD::AFlowFestHUD()
+{
+    static ConstructorHelpers::FObjectFinder<UFont> FontAsset(TEXT("/Engine/EngineFonts/Roboto.Roboto"));
+    RuntimeFont = FontAsset.Object;
+}
 
 void AFlowFestHUD::DrawLabel(const FString& Text, FLinearColor Color, float X, float Y, UFont* Font, float Scale)
 {
     // Rasterize at the final pixel size instead of enlarging a small bitmap font.
-    const int32 PointSize = FMath::Max(8, FMath::RoundToInt(10.f * Scale));
-    const FSlateFontInfo Face = FCoreStyle::GetDefaultFontStyle(TEXT("Regular"), PointSize);
+    if (!RuntimeFont) { DrawText(Text, Color, X, Y, Font, Scale); return; }
+    const int32 PointSize = FMath::Max(8, FMath::RoundToInt(11.f * Scale));
+    // Canvas requires a UFont-backed face; a standalone Slate composite is silently skipped.
+    const FSlateFontInfo Face(RuntimeFont, PointSize);
     FCanvasTextItem Item(FVector2D(X, Y), FText::FromString(Text), Face, Color);
     Canvas->DrawItem(Item);
 }
@@ -41,7 +50,7 @@ void AFlowFestHUD::DrawHUD()
     DrawRect(Accent, Pad, Pad, 5.f * Scale, 199.f * Scale);
     DrawLabel(Traveler->Phase == EFlowFestPhase::Morning ? TEXT("FLOW FEST  /  FRIDAY MORNING") : TEXT("FLOW FEST  /  THURSDAY ARRIVAL"), Accent, Pad + 22.f * Scale, Pad + 17.f * Scale, Small, 1.22f * Scale);
     const FString Title = Traveler->GetObjectiveTitle();
-    DrawLabel(Title, Ink, Pad + 22.f * Scale, Pad + 51.f * Scale, Title.Len() > 37 ? Small : Medium, (Title.Len() > 37 ? 1.38f : 1.15f) * Scale);
+    DrawLabel(Title, Ink, Pad + 22.f * Scale, Pad + 51.f * Scale, Medium, (Title.Len() > 37 ? 1.8f : 2.1f) * Scale);
     const FString Detail = Traveler->GetObjectiveDetail();
     const int32 MaxDetailChars = W < 1100.f ? 43 : 75;
     int32 BreakAt = INDEX_NONE;
@@ -49,7 +58,7 @@ void AFlowFestHUD::DrawHUD()
     DrawLabel(BreakAt > 0 ? Detail.Left(BreakAt) : Detail, Muted, Pad + 22.f * Scale, Pad + 102.f * Scale, Small, 1.18f * Scale);
     if (BreakAt > 0) DrawLabel(Detail.Mid(BreakAt + 1), Muted, Pad + 22.f * Scale, Pad + 120.f * Scale, Small, 1.18f * Scale);
     DrawRect(Line, Pad + 22.f * Scale, Pad + 145.f * Scale, PanelWidth - 44.f * Scale, 1.f * Scale);
-    DrawLabel(Traveler->GetInteractHint(), Accent, Pad + 22.f * Scale, Pad + 157.f * Scale, Medium, 1.05f * Scale);
+    DrawLabel(Traveler->GetInteractHint(), Accent, Pad + 22.f * Scale, Pad + 157.f * Scale, Medium, 1.35f * Scale);
     const FString Notice = Traveler->GetNotice();
     if (!Notice.IsEmpty())
     {

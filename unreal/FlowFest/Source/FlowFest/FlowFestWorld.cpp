@@ -143,7 +143,7 @@ void AFlowFestWorld::Tick(float DeltaSeconds)
         const float Seconds = GetWorld()->GetTimeSeconds();
         const float Flicker = 0.88f + 0.08f * FMath::Sin(Seconds * 8.1f)
             + 0.04f * FMath::Sin(Seconds * 13.7f + 1.3f);
-        FireLight->SetIntensity(6000.f * Flicker);
+        FireLight->SetIntensity(15000.f * Flicker);
     }
     for (FFestivalPerson& Person : People)
     {
@@ -741,8 +741,9 @@ void AFlowFestWorld::BuildFestivalLandmarks()
         UPointLightComponent* Light = NewObject<UPointLightComponent>(this);
         Light->SetupAttachment(SiteRoot);
         Light->SetRelativeLocation(ToWorld(Fire->X, Fire->Y, 120.f));
-        Light->SetLightColor(FLinearColor(1.f, 0.27f, 0.055f));
-        Light->SetIntensity(6000.f);
+        Light->SetLightColor(FLinearColor(1.f, 0.42f, 0.12f));
+        Light->SetIntensity(15000.f);
+        Light->SetSourceRadius(45.f);
         Light->SetAttenuationRadius(1600.f);
         Light->CastShadows = true;
         Light->RegisterComponent();

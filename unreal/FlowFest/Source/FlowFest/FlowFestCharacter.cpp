@@ -166,7 +166,7 @@ void AFlowFestCharacter::Tick(float DeltaSeconds)
         bShowcaseStarted = true;
         ToggleStaff();
     }
-    if (bReviewMode && StartupSeconds >= 10.f)
+    if ((bReviewMode || !Showcase.IsEmpty() || !CapturePath.IsEmpty()) && StartupSeconds >= 10.f)
     {
         const float DeltaMs = DeltaSeconds * 1000.f;
         FrameDeltaTotalMs += DeltaMs;
@@ -309,7 +309,7 @@ void AFlowFestCharacter::QuitGame() { if (bWardrobeOpen) { ToggleWardrobe(); ret
 
 void AFlowFestCharacter::ReportFrameTiming()
 {
-    if (!bReviewMode || bTimingReported) return;
+    if ((!bReviewMode && Showcase.IsEmpty() && CapturePath.IsEmpty()) || bTimingReported) return;
     bTimingReported = true;
     if (FrameSampleCount > 0)
     {
@@ -421,7 +421,7 @@ void AFlowFestCharacter::Interact()
         return;
     case EFlowFestPhase::NightFreeRoam:
         if (!Near(TEXT("fire"), 18.f)) { Notify(TEXT("Return to the fire circle")); return; }
-        if (bOnEUC) { Notify(TEXT("Park the wheel [V] before entering the circle")); return; }
+        if (bOnEUC && Jam != EFlowFestJam::Completed) { Notify(TEXT("Park the wheel [V] before entering the circle")); return; }
         if (Jam == EFlowFestJam::NotStarted) { StopFlow(); Jam = EFlowFestJam::Active; JamSpinSeconds = 0.f; Notify(TEXT("You're in the circle. Flow [Q], then [E] to finish.")); }
         else if (Jam == EFlowFestJam::Active)
         {
@@ -896,6 +896,22 @@ void AFlowFestCharacter::RunSmoke()
         FString Key = Choice.Id.ToString().Replace(TEXT("-"), TEXT("_"));
         Expect(LoadObject<UObject>(nullptr, *FString::Printf(TEXT("/Game/FlowFest/Characters/%s/A_Ride.A_Ride"), *Key)) != nullptr,
             *FString::Printf(TEXT("pedal-contact ride for %s"), *Choice.Id.ToString()));
+        Avatar->SetMotion(FVector::ZeroVector, false, true);
+        if (UAnimSingleNodeInstance* Instance = Avatar->GetBodyMesh()->GetSingleNodeInstance())
+        {
+            Expect(FMath::IsNearlyEqual(Instance->GetLength(), 1.f, .001f), TEXT("mounted pose has exact one-second loop duration"));
+            Instance->SetPosition(.5f, false);
+        }
+        CheckPose(Choice.Id.ToString() + TEXT("/Ride"));
+        const FTransform AvatarFrame = AvatarRoot->GetComponentTransform();
+        const FVector LeftRideFoot = AvatarFrame.InverseTransformPosition(Avatar->GetBodyMesh()->GetSocketLocation(TEXT("LeftFoot")));
+        const FVector RightRideFoot = AvatarFrame.InverseTransformPosition(Avatar->GetBodyMesh()->GetSocketLocation(TEXT("RightFoot")));
+        // Foot joints sit above each shoe sole; the captured rigs have different
+        // ankle origins. Check both sides in the vehicle frame, independent of yaw.
+        Expect(LeftRideFoot.Y > -27.f && LeftRideFoot.Y < -18.f && RightRideFoot.Y > 18.f && RightRideFoot.Y < 27.f
+            && LeftRideFoot.X > -16.f && LeftRideFoot.X < 2.f && RightRideFoot.X > -16.f && RightRideFoot.X < 2.f
+            && LeftRideFoot.Z > 30.f && LeftRideFoot.Z < 50.f && RightRideFoot.Z > 30.f && RightRideFoot.Z < 50.f,
+            *FString::Printf(TEXT("mounted feet align with native wheel for %s"), *Choice.Id.ToString()));
         for (const TCHAR* Profile : {TEXT("FirePoi"), TEXT("FireHoop"), TEXT("Juggler"), TEXT("LedFlow")})
         {
             Expect(Avatar->PlayPerformance(FName(Profile)), *FString::Printf(TEXT("production performance %s/%s"), *Choice.Id.ToString(), Profile));
@@ -1046,7 +1062,9 @@ FString AFlowFestCharacter::GetObjectiveDetail() const
     {
     case EFlowFestPhase::Loadout: return TEXT("1 Early   2 Afternoon   3 Evening. Choose character and gear with C; E to depart.");
     case EFlowFestPhase::ChooseCamp: return TEXT("1 Lower tent   2 Upper tent   3 Car camp");
-    case EFlowFestPhase::NightFreeRoam: return Jam == EFlowFestJam::Active ? TEXT("Flow [Q], then press E to finish the jam.") : TEXT("Enter the circle on foot and press E.");
+    case EFlowFestPhase::NightFreeRoam:
+        if (Jam == EFlowFestJam::Completed) return TEXT("Your turn is complete. Press E to head back to camp.");
+        return Jam == EFlowFestJam::Active ? TEXT("Flow [Q], then press E to finish the jam.") : TEXT("Enter the circle on foot and press E.");
     case EFlowFestPhase::Morning: return TEXT("The first night is complete. Explore Friday or press F10 for a new Thursday.");
     default: return TEXT("Follow the marker. Press E when you reach the objective.");
     }
