@@ -1,6 +1,6 @@
 <script lang="ts">
   import { t, tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
-  import { onDestroy, tick, untrack } from "svelte";
+  import { onDestroy, onMount, tick, untrack } from "svelte";
   import { createLayoutMotion } from "#lib/shared/transitions/layout-flip.js";
   import { motionDuration } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
@@ -14,6 +14,7 @@
   import LessonBoardSlot from "../live-board/LessonBoardSlot.svelte";
   import { getLiveLessonBoard } from "../live-board/live-lesson-board.svelte";
   import { MOTION_MAP_HOME } from "#lib/shared/guide-topics/hand-motions-topic.js";
+  import { warmHandMotionsIntroWhenIdle } from "../motions/warm-hand-motions-intro";
   import {
     GridMode,
     type GridLocation,
@@ -336,6 +337,10 @@
     if (workshop.canFinish) forwardButton?.focus();
     else boardElement.focus({ preventScroll: true });
   }
+
+  // Hand Motions comes next; its opening pictures are prepared while the
+  // learner is here, so they play the moment the board lands there.
+  onMount(warmHandMotionsIntroWhenIdle);
 
   async function finish() {
     if (!workshop.canFinish || leaving) return;
