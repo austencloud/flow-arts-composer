@@ -298,6 +298,33 @@ describe("ExpandedCardStage", () => {
     }
   });
 
+  it("keeps the desktop stage open for a click on the Level strip", async () => {
+    const strip = document.createElement("div");
+    strip.dataset.keepsGenerateCard = "";
+    const levelButton = document.createElement("button");
+    levelButton.type = "button";
+    levelButton.textContent = "Level 3";
+    strip.appendChild(levelButton);
+    document.body.appendChild(strip);
+
+    try {
+      const state = createPanelCoordinationState();
+      render(ExpandedCardStage, props(state, true));
+
+      state.openTnDPanel();
+      flushSync();
+      await tick();
+
+      levelButton.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      flushSync();
+
+      expect(state.openGenerateCard).toBe("tnd");
+    } finally {
+      strip.remove();
+    }
+  });
+
   it("opens the step editor only after the expanded card has settled", async () => {
     const stepButton = document.createElement("button");
     stepButton.type = "button";
@@ -758,6 +785,21 @@ describe("ExpandedCardStage keeps Customize built", () => {
         .querySelector(".expanded-card-stage")
         ?.querySelector(".generation-settings-overlay")
     ).toBe(built);
+  });
+
+  it("hands the open panel a level change, and only while open", () => {
+    const state = createPanelCoordinationState();
+    render(ExpandedCardStage, props(state, true));
+
+    state.refreshCustomizeOverlay({ ...customizeProps(), level: 3 });
+    expect(state.customizeOverlayProps).toBeNull();
+
+    state.openCustomizeOverlay({ ...customizeProps(), level: 2 });
+    flushSync();
+    state.refreshCustomizeOverlay({ ...customizeProps(), level: 3 });
+    flushSync();
+    expect(state.customizeOverlayProps?.level).toBe(3);
+    expect(state.openGenerateCard).toBe("customize");
   });
 
   it("hands the panel back when another card replaces Customize", () => {
