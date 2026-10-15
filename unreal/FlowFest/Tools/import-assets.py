@@ -275,7 +275,10 @@ def add_foliage_wind(material, tree):
 def material(name, color, roughness=.8, metallic=0, emissive=0):
     path = '/Game/FlowFest/Materials/' + name
     m = ED.load_asset(path) if ED.does_asset_exist(path) else TOOLS.create_asset(name, '/Game/FlowFest/Materials', u.Material, u.MaterialFactoryNew())
-    ME.delete_all_material_expressions(m)
+    for old in list(ME.get_material_expressions(m)):
+        ME.delete_material_expression(m, old)
+    if ME.get_material_expressions(m):
+        raise RuntimeError('Palette material graph did not clear: ' + path)
     c = expression(m, u.MaterialExpressionConstant3Vector, constant=u.LinearColor(*color, 1))
     connect_property(c, '', u.MaterialProperty.MP_BASE_COLOR)
     connect_property(scalar(m, roughness), '', u.MaterialProperty.MP_ROUGHNESS)
