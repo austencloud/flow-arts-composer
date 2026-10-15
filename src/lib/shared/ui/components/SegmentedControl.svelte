@@ -1,4 +1,4 @@
-<script lang="ts" generics="T extends string">
+<script lang="ts" generics="T extends string | number">
   /**
    * Generic segmented button group shared across app and public surfaces.
    * Uses shared theme and motion-color variables for consistent theming.
