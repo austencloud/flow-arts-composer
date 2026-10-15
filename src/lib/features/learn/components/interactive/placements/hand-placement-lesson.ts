@@ -26,22 +26,6 @@ export const PLACEMENT_LETTERS: Record<PlacementType, Letter> = {
   gamma: Letter.GAMMA,
 };
 
-// Verbatim definitions from the written Level 1 Guide.
-export const PLACEMENT_DEFINITIONS: Record<PlacementType, string> = {
-  alpha: "In Alpha, the hands occupy the points across from each other.",
-  beta: "In Beta, the hands occupy the same point.",
-  gamma: "In Gamma, the hands form a right angle.",
-};
-
-export const PLACEMENT_CHALLENGES = [
-  { kind: "alpha", gridMode: GridMode.DIAMOND, guided: true },
-  { kind: "beta", gridMode: GridMode.DIAMOND, guided: true },
-  { kind: "gamma", gridMode: GridMode.DIAMOND, guided: true },
-  { kind: "gamma", gridMode: GridMode.BOX, guided: false },
-  { kind: "alpha", gridMode: GridMode.BOX, guided: false },
-  { kind: "beta", gridMode: GridMode.BOX, guided: false },
-] satisfies { kind: PlacementType; gridMode: GridMode; guided: boolean }[];
-
 export function placementKindFor(
   left: GridLocation | null,
   right: GridLocation | null
@@ -71,17 +55,6 @@ export function placementExample(kind: PlacementType, gridMode: GridMode) {
   };
 }
 
-export function placementPreview(
-  kind: PlacementType,
-  gridMode: GridMode,
-  fixedLeft?: GridLocation
-) {
-  const example = fixedLeft
-    ? placementCorrectionPair(fixedLeft, kind, gridMode)
-    : placementExample(kind, gridMode);
-  return placementPairPreview(example, gridMode);
-}
-
 export function placementPairPreview(
   example: { left: GridLocation; right: GridLocation },
   gridMode: GridMode
@@ -99,18 +72,6 @@ export function placementPairPreview(
   });
   const kind = placementKindFor(example.left, example.right);
   return { ...data, letter: kind ? PLACEMENT_LETTERS[kind] : null };
-}
-
-/** Keep the learner's first hand in place so the visual target shows a single edit. */
-export function placementCorrectionPair(
-  left: GridLocation,
-  target: PlacementType,
-  gridMode: GridMode
-) {
-  const point = getPlacementGridPoints(gridMode).find(
-    (point) => placementKindFor(left, point.location) === target
-  );
-  return { left, right: point?.location ?? left };
 }
 
 export function transformPlacement(
@@ -146,62 +107,58 @@ export function changePlacementGrid(
   };
 }
 
-export function placementCorrection(
-  left: GridLocation,
-  right: GridLocation,
-  target: PlacementType,
-  gridMode: GridMode
-) {
-  const built = placementKindFor(left, right);
-  if (!built || built === target) return "";
-  const correction = placementCorrectionPair(left, target, gridMode);
-  const point = getPlacementGridPoints(gridMode).find(
-    (point) => point.location === correction.right
-  );
-  return `You built ${PLACEMENT_TYPE_INFO[built].label}. ${PLACEMENT_DEFINITIONS[built]}${point ? ` Keep the left hand where it is. Move the right hand to ${point.label}.` : ""}`;
-}
+/**
+ * The lesson is two rounds of finding all three placements, first on the
+ * diamond grid and then on the box grid, then free play. There are no
+ * prompts: every two-hand build is one of the three, so the learner fills
+ * the slots in any order (Austen, 2026-10-14).
+ */
+export type PlacementWorkshopPhase = "explore" | "box" | "complete";
 
 export interface PlacementWorkshopCheckpoint {
-  version: 1;
-  phase: "explore" | "practice" | "complete";
-  round: number;
+  version: 2;
+  phase: PlacementWorkshopPhase;
   explored: PlacementType[];
+  boxFound: PlacementType[];
+}
+
+function kindsFrom(value: unknown) {
+  return Array.isArray(value)
+    ? PLACEMENT_KINDS.filter((kind) => value.includes(kind))
+    : [];
 }
 
 export function restorePlacementWorkshop(
   value: unknown
 ): PlacementWorkshopCheckpoint {
   const fresh: PlacementWorkshopCheckpoint = {
-    version: 1,
+    version: 2,
     phase: "explore",
-    round: 0,
     explored: [],
+    boxFound: [],
   };
-  if (
-    !value ||
-    typeof value !== "object" ||
-    !("version" in value) ||
-    value.version !== 1
-  )
+  if (!value || typeof value !== "object" || !("version" in value))
     return fresh;
-  const saved = value as Partial<PlacementWorkshopCheckpoint>;
-  const round =
-    Number.isInteger(saved.round) &&
-    saved.round! >= 0 &&
-    saved.round! <= PLACEMENT_CHALLENGES.length
-      ? saved.round!
-      : 0;
-  return {
-    version: 1,
-    round,
-    phase:
-      round === PLACEMENT_CHALLENGES.length
-        ? "complete"
-        : saved.phase === "practice"
-          ? "practice"
-          : "explore",
-    explored: Array.isArray(saved.explored)
-      ? PLACEMENT_KINDS.filter((kind) => saved.explored!.includes(kind))
-      : [],
-  };
+  const saved = value as Record<string, unknown>;
+  // Version 1 had six prompted practice rounds. A finished pass stays
+  // finished, and a learner part way through practice resumes on the box
+  // round, which replaced it.
+  if (saved.version === 1) {
+    const explored = kindsFrom(saved.explored);
+    if (saved.phase === "complete" && saved.round === 6)
+      return { ...fresh, phase: "complete", explored: [...PLACEMENT_KINDS] };
+    if (saved.phase === "practice" && explored.length === 3)
+      return { ...fresh, phase: "box", explored };
+    return { ...fresh, explored };
+  }
+  if (saved.version !== 2) return fresh;
+  const explored = kindsFrom(saved.explored);
+  const boxFound = kindsFrom(saved.boxFound);
+  const phase: PlacementWorkshopPhase =
+    saved.phase === "complete"
+      ? "complete"
+      : saved.phase === "box" && explored.length === 3
+        ? "box"
+        : "explore";
+  return { version: 2, phase, explored, boxFound };
 }
