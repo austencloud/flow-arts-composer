@@ -23,7 +23,7 @@ import {
   PLANE_MODE_CONFIGS,
   type PlaneModeConfig,
 } from "@austencloud/scene-3d";
-import { createPlaybackState } from "./playback-state.svelte";
+import { createPlaybackState } from "./playback-state.svelte.js";
 import { calculatePropState } from "../services/prop-state-interpolator";
 import {
   gridJoinScale3D,
@@ -297,6 +297,18 @@ export function createCharacterInstanceState(
   let beatPlaneOverrides = $state<Map<number, { left?: Plane; right?: Plane }>>(
     new Map()
   );
+  const rigBeatPlaneOverrides = $derived(
+    new Map(
+      Array.from(
+        beatPlaneOverrides,
+        ([step, override]) =>
+          [
+            step,
+            { ...override, blue: override.left, red: override.right },
+          ] as const
+      )
+    )
+  );
 
   // Whether we're editing planes per-beat (true) or whole-sequence (false)
   let beatEditMode = $state(false);
@@ -432,7 +444,9 @@ export function createCharacterInstanceState(
   let baseHandDistance = $state.raw<PerformerHandDistance>(
     DEFAULT_PERFORMER_HAND_DISTANCE
   );
-  const gridScale = $derived(gridJoinScale3D(resolveGridJoin3D(loadedSequence)));
+  const gridScale = $derived(
+    gridJoinScale3D(resolveGridJoin3D(loadedSequence))
+  );
   const handDistance = $derived(
     scalePerformerHandDistance3D(baseHandDistance, gridScale)
   );
@@ -566,9 +580,11 @@ export function createCharacterInstanceState(
   function setGridJoin(join: GridJoin | null | undefined) {
     if (
       (_settings.gridJoin === undefined && join === undefined) ||
-      (_settings.gridJoin !== undefined && join !== undefined &&
+      (_settings.gridJoin !== undefined &&
+        join !== undefined &&
         gridJoinsEqual(_settings.gridJoin, join))
-    ) return;
+    )
+      return;
     _settings.gridJoin = join;
     reconvertWithConfig(getEffectiveModeConfig(effectivePlaneMode));
     if (beatPlaneOverrides.size > 0) applyBeatPlaneOverrides();
@@ -1453,7 +1469,7 @@ export function createCharacterInstanceState(
       return currentStepPlanes.right;
     },
     get beatPlaneOverrides() {
-      return beatPlaneOverrides;
+      return rigBeatPlaneOverrides;
     },
     get hasStepOverrides() {
       return beatPlaneOverrides.size > 0;
@@ -1519,6 +1535,13 @@ export function createCharacterInstanceState(
       return activeRightConfig;
     },
 
+    // PerformerRig still reads the color names; both pairs stay live as playback advances.
+    get bluePropState() {
+      return leftPropState;
+    },
+    get redPropState() {
+      return rightPropState;
+    },
     // Prop states
     get leftPropState() {
       return leftPropState;

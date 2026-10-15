@@ -1,4 +1,8 @@
 <script lang="ts">
+  import {
+    resolveThrelteScene,
+    resolveThrelteRenderer,
+  } from "../../scene-boot/threlte-handles";
   /**
    * Environment3D
    *
@@ -75,7 +79,9 @@
     transitionVisualMode = "internal",
   }: Props = $props();
 
-  const { scene, renderer } = useThrelte();
+  const { scene: sceneValue, renderer: rendererValue } = useThrelte();
+  const scene = resolveThrelteScene(sceneValue);
+  const renderer = resolveThrelteRenderer(rendererValue);
   const sceneFeatures = getSceneFeatureContext();
   // Full viewer canvases provide the DOM veil and shader readiness signal.
   // Smaller embedded canvases can still mount Environment3D safely; they use

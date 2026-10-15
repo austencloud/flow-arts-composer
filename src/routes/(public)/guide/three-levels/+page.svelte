@@ -1,3 +1,10 @@
+<!--
+  /guide/three-levels — WITHDRAWN 2026-10-15 while it is rethought.
+
+  It went out in v0.48.0 before it was ready. Production prerenders the
+  "being written" note (noindex) and the page is off the Guide hub, the Guide
+  contents and the sitemap. A local dev server still shows the draft below.
+-->
 <script lang="ts">
   /**
    * /guide/three-levels: one of Gage DeMello's Eight Step patterns read at
@@ -10,6 +17,8 @@
    * #lib/shared/guide-topics/three-levels-topic.ts.
    * Spec: docs/superpowers/specs/2026-10-14-three-levels-guide-page-design.md
    */
+  import { dev } from "$app/environment";
+  import UnderConstruction from "#lib/shared/landing/components/UnderConstruction.svelte";
   import GuideShell from "../_components/GuideShell.svelte";
   import GuideSeo from "../level-1/_components/GuideSeo.svelte";
   import PatternPlayer from "./_components/PatternPlayer.svelte";
@@ -91,233 +100,256 @@
   };
 </script>
 
-<GuideSeo
-  title={t("guide_three_levels_seo_title")}
-  description={t("guide_three_levels_seo_description")}
-  path="/guide/three-levels"
-  datePublished="2026-10-15"
-  partOf={{ name: t("guide_three_levels_part_of"), path: "/guide" }}
-  breadcrumbs={[
-    { name: "Home", path: "/" },
-    { name: "Guide", path: "/guide" },
-    { name: t("guide_three_levels_title"), path: "/guide/three-levels" },
-  ]}
-/>
+<svelte:head>
+  {#if !dev}
+    <title>Being written · The Kinetic Alphabet Guide</title>
+    <meta name="robots" content="noindex, follow" />
+  {/if}
+</svelte:head>
 
-{#snippet vtgLine(beat: VtgBeat, mark?: (side: "blue" | "red") => boolean)}
-  <span class="vtg-group">{beat.group}</span>
-  <span class="vtg-hands"
-    >{#each handsTemplate as part, i (i)}{#if part === BLUE_SLOT}<span
-          class="hand blue"
-          class:differs={mark?.("blue")}>{hand(beat.blue)}</span
-        >{:else if part === RED_SLOT}<span
-          class="hand red"
-          class:differs={mark?.("red")}>{hand(beat.red)}</span
-        >{:else}{part}{/if}{/each}</span
-  >
-  {#if beat.hybrid}<span class="vtg-hybrid"
-      >{t("guide_three_levels_hybrid")}</span
-    >{/if}
-{/snippet}
+{#if !dev}
+  <UnderConstruction
+    title="Being written"
+    eyebrow="The Guide"
+    icon="fa-pen-nib"
+    note="This page is still being written. The rest of the Guide is here."
+    destinations={[
+      { label: "The Guide", href: "/guide", icon: "fa-book-open" },
+    ]}
+  />
+{:else}
+  <GuideSeo
+    title={t("guide_three_levels_seo_title")}
+    description={t("guide_three_levels_seo_description")}
+    path="/guide/three-levels"
+    datePublished="2026-10-15"
+    partOf={{ name: t("guide_three_levels_part_of"), path: "/guide" }}
+    breadcrumbs={[
+      { name: "Home", path: "/" },
+      { name: "Guide", path: "/guide" },
+      { name: t("guide_three_levels_title"), path: "/guide/three-levels" },
+    ]}
+  />
 
-<GuideShell>
-  <article class="levels-guide guide-page-route">
-    <header class="intro">
-      <h1>{t("guide_three_levels_title")}</h1>
-      <p class="lede">{t("guide_three_levels_lede")}</p>
-      <p class="thesis">{t("guide_three_levels_thesis")}</p>
-    </header>
+  {#snippet vtgLine(beat: VtgBeat, mark?: (side: "blue" | "red") => boolean)}
+    <span class="vtg-group">{beat.group}</span>
+    <span class="vtg-hands"
+      >{#each handsTemplate as part, i (i)}{#if part === BLUE_SLOT}<span
+            class="hand blue"
+            class:differs={mark?.("blue")}>{hand(beat.blue)}</span
+          >{:else if part === RED_SLOT}<span
+            class="hand red"
+            class:differs={mark?.("red")}>{hand(beat.red)}</span
+          >{:else}{part}{/if}{/each}</span
+    >
+    {#if beat.hybrid}<span class="vtg-hybrid"
+        >{t("guide_three_levels_hybrid")}</span
+      >{/if}
+  {/snippet}
 
-    <section class="stage" aria-label={t("guide_three_levels_title")}>
-      <div class="picker" bind:clientWidth={pickerWidth}>
-        <SegmentedControl
-          options={pickerOptions}
-          value={selectedCode}
-          onchange={choose}
-          semantics="radiogroup"
-          ariaLabel={t("guide_three_levels_picker_label")}
-          columns={pickerWidth > 0 && pickerWidth < 520 ? 3 : undefined}
-        >
-          {#snippet optionContent(code: string)}
-            <span class="option-code">{code}</span>
-            <span class="option-word">{cellOf(code)}</span>
-          {/snippet}
-        </SegmentedControl>
-        <p class="credit">
-          {t("guide_three_levels_credit")}
-          <LinkChip size="inline" href={EIGHT_STEP_SOURCE_HREF}
-            >{t("guide_three_levels_source_link")}</LinkChip
+  <GuideShell>
+    <article class="levels-guide guide-page-route">
+      <header class="intro">
+        <h1>{t("guide_three_levels_title")}</h1>
+        <p class="lede">{t("guide_three_levels_lede")}</p>
+        <p class="thesis">{t("guide_three_levels_thesis")}</p>
+      </header>
+
+      <section class="stage" aria-label={t("guide_three_levels_title")}>
+        <div class="picker" bind:clientWidth={pickerWidth}>
+          <SegmentedControl
+            options={pickerOptions}
+            value={selectedCode}
+            onchange={choose}
+            semantics="radiogroup"
+            ariaLabel={t("guide_three_levels_picker_label")}
+            columns={pickerWidth > 0 && pickerWidth < 520 ? 3 : undefined}
           >
-        </p>
-      </div>
-
-      <div class="stage-body">
-        <div class="canvas-column">
-          {#key selectedCode}
-            <PatternPlayer
-              record={selected.record}
-              label={t("guide_three_levels_player_label", {
-                code: selectedCode,
-              })}
-              onStepChange={(step) => (liveStep = step)}
-              onSeekRef={(fn) => (seek = fn)}
-            />
-          {/key}
-          <p class="hint">{t("guide_three_levels_hint")}</p>
+            {#snippet optionContent(code: string)}
+              <span class="option-code">{code}</span>
+              <span class="option-word">{cellOf(code)}</span>
+            {/snippet}
+          </SegmentedControl>
+          <p class="credit">
+            {t("guide_three_levels_credit")}
+            <LinkChip size="inline" href={EIGHT_STEP_SOURCE_HREF}
+              >{t("guide_three_levels_source_link")}</LinkChip
+            >
+          </p>
         </div>
 
-        <div class="levels">
-          <section class="level" aria-labelledby="level-name">
-            <h2 id="level-name" class="level-label">
-              {t("guide_three_levels_level_name")}
-            </h2>
-            <p class="code">{pattern.name.code}</p>
-            <p class="decode">
-              {t("guide_three_levels_decode", {
-                column: pattern.name.column,
-                relationship: pattern.name.relationship,
-                row: pattern.name.row,
-                capping: pattern.name.capping,
-                continual: pattern.name.continual,
-              })}
-            </p>
-            <p class="note">
-              {t("guide_three_levels_name_note", { total: data.chartSize })}
-            </p>
-          </section>
+        <div class="stage-body">
+          <div class="canvas-column">
+            {#key selectedCode}
+              <PatternPlayer
+                record={selected.record}
+                label={t("guide_three_levels_player_label", {
+                  code: selectedCode,
+                })}
+                onStepChange={(step) => (liveStep = step)}
+                onSeekRef={(fn) => (seek = fn)}
+              />
+            {/key}
+            <p class="hint">{t("guide_three_levels_hint")}</p>
+          </div>
 
-          <section class="level" aria-labelledby="level-word">
-            <h2 id="level-word" class="level-label">
-              {t("guide_three_levels_level_word")}
-            </h2>
-            <div class="word">
-              {#each cells as cell, c (c)}
-                <span class="cell">
-                  {#each cell as { letter, beat } (beat)}
+          <div class="levels">
+            <section class="level" aria-labelledby="level-name">
+              <h2 id="level-name" class="level-label">
+                {t("guide_three_levels_level_name")}
+              </h2>
+              <p class="code">{pattern.name.code}</p>
+              <p class="decode">
+                {t("guide_three_levels_decode", {
+                  column: pattern.name.column,
+                  relationship: pattern.name.relationship,
+                  row: pattern.name.row,
+                  capping: pattern.name.capping,
+                  continual: pattern.name.continual,
+                })}
+              </p>
+              <p class="note">
+                {t("guide_three_levels_name_note", { total: data.chartSize })}
+              </p>
+            </section>
+
+            <section class="level" aria-labelledby="level-word">
+              <h2 id="level-word" class="level-label">
+                {t("guide_three_levels_level_word")}
+              </h2>
+              <div class="word">
+                {#each cells as cell, c (c)}
+                  <span class="cell">
+                    {#each cell as { letter, beat } (beat)}
+                      <button
+                        type="button"
+                        class="letter"
+                        class:active={activeBeat === beat}
+                        aria-current={activeBeat === beat ? "step" : undefined}
+                        aria-label="{t('guide_three_levels_beat', {
+                          n: beat,
+                        })}: {letter}"
+                        onpointerenter={() => (pointedBeat = beat)}
+                        onpointerleave={() => (pointedBeat = null)}
+                        onfocus={() => (pointedBeat = beat)}
+                        onblur={() => (pointedBeat = null)}
+                        onclick={() => seek?.(beat)}>{letter}</button
+                      >
+                    {/each}
+                  </span>
+                {/each}
+              </div>
+              <p class="note">
+                {t("guide_three_levels_word_note", {
+                  length: pattern.cell.length,
+                  repeats: pattern.repeats,
+                })}
+              </p>
+            </section>
+
+            <section class="level" aria-labelledby="level-vtg">
+              <h2 id="level-vtg" class="level-label">
+                {t("guide_three_levels_level_vtg")}
+              </h2>
+              <ol class="vtg-rows">
+                {#each pattern.beats as beat (beat.beat)}
+                  <li
+                    class:cell-start={beat.beat > 1 &&
+                      (beat.beat - 1) % pattern.cell.length === 0}
+                  >
                     <button
                       type="button"
-                      class="letter"
-                      class:active={activeBeat === beat}
-                      aria-current={activeBeat === beat ? "step" : undefined}
-                      aria-label="{t('guide_three_levels_beat', {
-                        n: beat,
-                      })}: {letter}"
-                      onpointerenter={() => (pointedBeat = beat)}
+                      class="vtg-row"
+                      class:active={activeBeat === beat.beat}
+                      aria-current={activeBeat === beat.beat
+                        ? "step"
+                        : undefined}
+                      onpointerenter={() => (pointedBeat = beat.beat)}
                       onpointerleave={() => (pointedBeat = null)}
-                      onfocus={() => (pointedBeat = beat)}
+                      onfocus={() => (pointedBeat = beat.beat)}
                       onblur={() => (pointedBeat = null)}
-                      onclick={() => seek?.(beat)}>{letter}</button
+                      onclick={() => seek?.(beat.beat)}
                     >
-                  {/each}
-                </span>
-              {/each}
-            </div>
-            <p class="note">
-              {t("guide_three_levels_word_note", {
-                length: pattern.cell.length,
-                repeats: pattern.repeats,
-              })}
-            </p>
-          </section>
-
-          <section class="level" aria-labelledby="level-vtg">
-            <h2 id="level-vtg" class="level-label">
-              {t("guide_three_levels_level_vtg")}
-            </h2>
-            <ol class="vtg-rows">
-              {#each pattern.beats as beat (beat.beat)}
-                <li
-                  class:cell-start={beat.beat > 1 &&
-                    (beat.beat - 1) % pattern.cell.length === 0}
-                >
-                  <button
-                    type="button"
-                    class="vtg-row"
-                    class:active={activeBeat === beat.beat}
-                    aria-current={activeBeat === beat.beat ? "step" : undefined}
-                    onpointerenter={() => (pointedBeat = beat.beat)}
-                    onpointerleave={() => (pointedBeat = null)}
-                    onfocus={() => (pointedBeat = beat.beat)}
-                    onblur={() => (pointedBeat = null)}
-                    onclick={() => seek?.(beat.beat)}
-                  >
-                    <span class="vtg-beat"
-                      ><span class="sr-only"
-                        >{t("guide_three_levels_beat", { n: beat.beat })}</span
-                      ><span aria-hidden="true">{beat.beat}</span></span
-                    >
-                    <span class="vtg-letter">{beat.letter}</span>
-                    <span class="vtg-text">{@render vtgLine(beat)}</span>
-                  </button>
-                </li>
-              {/each}
-            </ol>
-            <p class="note">{t("guide_three_levels_vtg_note")}</p>
-          </section>
-        </div>
-      </div>
-    </section>
-
-    <section class="stop" aria-labelledby="stop-heading">
-      <div class="stop-intro">
-        <h2 id="stop-heading">{t("guide_three_levels_stop_title")}</h2>
-        <p>
-          {t("guide_three_levels_stop_body", {
-            a: data.pair[0]!.pattern.name.code,
-            b: data.pair[1]!.pattern.name.code,
-            total: data.chartSize,
-            words: data.distinctWords,
-          })}
-        </p>
-      </div>
-      <div class="pair">
-        {#each data.pair as { record, pattern: p } (p.name.code)}
-          <figure class="pair-item">
-            <PatternPlayer
-              {record}
-              label={t("guide_three_levels_player_label", {
-                code: p.name.code,
-              })}
-            />
-            <figcaption>
-              <span class="pair-heading">
-                <span class="pair-code">{p.name.code}</span>
-                <span class="pair-word">{p.cell.join("")} ×{p.repeats}</span>
-              </span>
-              <ol class="vtg-rows compact">
-                {#each pairCell(p) as beat (beat.beat)}
-                  <li class="vtg-row static">
-                    <span class="vtg-letter">{beat.letter}</span>
-                    <span class="vtg-text"
-                      >{@render vtgLine(beat, (side) =>
-                        differs(beat, side)
-                      )}</span
-                    >
+                      <span class="vtg-beat"
+                        ><span class="sr-only"
+                          >{t("guide_three_levels_beat", {
+                            n: beat.beat,
+                          })}</span
+                        ><span aria-hidden="true">{beat.beat}</span></span
+                      >
+                      <span class="vtg-letter">{beat.letter}</span>
+                      <span class="vtg-text">{@render vtgLine(beat)}</span>
+                    </button>
                   </li>
                 {/each}
               </ol>
-            </figcaption>
-          </figure>
-        {/each}
-      </div>
-    </section>
+              <p class="note">{t("guide_three_levels_vtg_note")}</p>
+            </section>
+          </div>
+        </div>
+      </section>
 
-    <footer class="exits">
-      <h2>{t("guide_three_levels_exits_title")}</h2>
-      <div class="links">
-        <LinkChip href={localHref("/guide/level-1/permutations")}
-          >{t("guide_three_levels_exit_loops")}</LinkChip
-        >
-        <LinkChip href={localHref("/guide/codex")}
-          >{t("guide_nav_codex")}</LinkChip
-        >
-        <LinkChip href={localHref("/guide/ratios")}
-          >{t("guide_hub_ratios_title")}</LinkChip
-        >
-      </div>
-    </footer>
-  </article>
-</GuideShell>
+      <section class="stop" aria-labelledby="stop-heading">
+        <div class="stop-intro">
+          <h2 id="stop-heading">{t("guide_three_levels_stop_title")}</h2>
+          <p>
+            {t("guide_three_levels_stop_body", {
+              a: data.pair[0]!.pattern.name.code,
+              b: data.pair[1]!.pattern.name.code,
+              total: data.chartSize,
+              words: data.distinctWords,
+            })}
+          </p>
+        </div>
+        <div class="pair">
+          {#each data.pair as { record, pattern: p } (p.name.code)}
+            <figure class="pair-item">
+              <PatternPlayer
+                {record}
+                label={t("guide_three_levels_player_label", {
+                  code: p.name.code,
+                })}
+              />
+              <figcaption>
+                <span class="pair-heading">
+                  <span class="pair-code">{p.name.code}</span>
+                  <span class="pair-word">{p.cell.join("")} ×{p.repeats}</span>
+                </span>
+                <ol class="vtg-rows compact">
+                  {#each pairCell(p) as beat (beat.beat)}
+                    <li class="vtg-row static">
+                      <span class="vtg-letter">{beat.letter}</span>
+                      <span class="vtg-text"
+                        >{@render vtgLine(beat, (side) =>
+                          differs(beat, side)
+                        )}</span
+                      >
+                    </li>
+                  {/each}
+                </ol>
+              </figcaption>
+            </figure>
+          {/each}
+        </div>
+      </section>
+
+      <footer class="exits">
+        <h2>{t("guide_three_levels_exits_title")}</h2>
+        <div class="links">
+          <LinkChip href={localHref("/guide/level-1/permutations")}
+            >{t("guide_three_levels_exit_loops")}</LinkChip
+          >
+          <LinkChip href={localHref("/guide/codex")}
+            >{t("guide_nav_codex")}</LinkChip
+          >
+          <LinkChip href={localHref("/guide/ratios")}
+            >{t("guide_hub_ratios_title")}</LinkChip
+          >
+        </div>
+      </footer>
+    </article>
+  </GuideShell>
+{/if}
 
 <style>
   .levels-guide {

@@ -44,7 +44,6 @@
     [$glb0, $glb1, $glb2, $glb3, $glb4, $glb5, $glb6].filter(Boolean)
   );
 
-
   interface MeshData {
     mesh: InstancedMesh;
     material: MeshStandardMaterial | MeshPhysicalMaterial;
@@ -145,8 +144,8 @@
       );
       mesh.userData.composerInstanceIds = groupIds[i];
       mesh.userData.composerInstanceObjectKeys = groupObjectKeys[i];
-      mesh.userData.composerInstanceLabels = groupObjectKeys[i].map((key) =>
-        key.replaceAll("-", " ")
+      mesh.userData.composerInstanceLabels = (groupObjectKeys[i] ?? []).map(
+        (key) => key.replaceAll("-", " ")
       );
       newMeshes.push({ mesh, material });
     }
@@ -157,7 +156,6 @@
 
     return () => disposeAll(newMeshes);
   });
-
 
   let time = $state(0);
 
@@ -170,7 +168,6 @@
   });
 
   onDestroy(() => disposeAll(meshes));
-
 
   const glowLights = $derived.by(() => {
     if (!config.enabled) return [];

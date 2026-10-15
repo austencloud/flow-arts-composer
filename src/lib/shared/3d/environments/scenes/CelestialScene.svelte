@@ -66,7 +66,11 @@
     const request = ++generation;
     const worldConfig = config ?? createDefaultCelestialConfig();
     const groundY = userProportionsState.groundY;
-    const contentTier = adaptiveQuality?.contentTier ?? "standard";
+    const qualityTier = adaptiveQuality?.contentTier;
+    const contentTier =
+      qualityTier === "low" || qualityTier === "high"
+        ? qualityTier
+        : "standard";
     const motionScale = resolveMotionScale(prefersReducedMotion());
     let cancelled = false;
     let mounted: CelestialEnvironmentWorld | null = null;

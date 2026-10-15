@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolveThrelteScene } from "../../../scene-boot/threlte-handles";
   /**
    * ForestConfigurableScene
    *
@@ -120,7 +121,8 @@
     });
   });
 
-  const { scene } = useThrelte();
+  const { scene: sceneValue } = useThrelte();
+  const scene = resolveThrelteScene(sceneValue);
 
   // All positions and scales in METERS (1 unit = 1 meter)
 
