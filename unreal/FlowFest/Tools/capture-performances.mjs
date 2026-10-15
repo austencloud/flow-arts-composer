@@ -22,7 +22,7 @@ const selectedFamilies = list("FLOW_FEST_CAPTURE_FAMILIES");
 const selectedVariants = list("FLOW_FEST_CAPTURE_VARIANTS") ?? ["A", "B"];
 const familyMode = process.env.FLOW_FEST_CAPTURE_FAMILY_MODE === "1";
 const rideOnly = process.env.FLOW_FEST_CAPTURE_RIDE_ONLY === "1";
-const familyCaptureRevision = "clock-isolated-preroll-v2";
+const familyCaptureRevision = "clock-isolated-body-v3";
 if (familyMode && rideOnly)
   throw new Error("Family and ride-only modes cannot be combined");
 
@@ -55,6 +55,8 @@ function validatePerformance(result, character, role, propType) {
         !frame.bones?.length ||
         !frame.leftProp?.renderedMeshes?.length ||
         !frame.rightProp?.renderedMeshes?.length ||
+        !frame.leftProp?.rotatedBodyWorld ||
+        !frame.rightProp?.rotatedBodyWorld ||
         !Array.isArray(frame.leftHandWorld) ||
         frame.leftHandWorld.length !== 3 ||
         !Array.isArray(frame.rightHandWorld) ||

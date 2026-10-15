@@ -161,6 +161,20 @@ export function captureNativeFrame(
       containsMesh(child, false)
     );
     if (!propRoot) throw new Error(`Animated prop root is missing for ${id}`);
+    let rotatedBody: Object3D | null = null;
+    propRoot.traverse((object) => {
+      if (!object.name.endsWith("-rotated-body")) return;
+      if (rotatedBody)
+        throw new Error(`Multiple rotated prop bodies found for ${id}`);
+      rotatedBody = object;
+    });
+    // The packaged procedural and GLTF components place their rotation group
+    // directly inside Prop3D's scale group; Staff3D names its nested group.
+    rotatedBody ??=
+      propRoot.children.find(
+        (child) => child.type === "Group" && containsMesh(child, false)
+      ) ?? null;
+    if (!rotatedBody) throw new Error(`Rotated prop body is missing for ${id}`);
     const meshes: { name: string; world: TransformSample }[] = [];
     correction.traverse((object) => {
       if (
@@ -172,6 +186,7 @@ export function captureNativeFrame(
     return {
       correctionWorld: worldTransform(correction),
       propRootWorld: worldTransform(propRoot),
+      rotatedBodyWorld: worldTransform(rotatedBody),
       renderedMeshes: meshes,
     };
   };

@@ -146,7 +146,7 @@
       status = `Captured ${character} / ${role}`;
       return {
         schema: "flow-fest-native-performance-v1",
-        captureRevision: "clock-isolated-preroll-v2",
+        captureRevision: "clock-isolated-body-v3",
         source: "LiveSequencePerformer3D production generator",
         character,
         role,
