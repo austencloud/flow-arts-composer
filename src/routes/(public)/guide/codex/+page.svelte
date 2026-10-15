@@ -10,7 +10,6 @@
    */
   import { browser } from "$app/env";
   import { onMount } from "svelte";
-  import { MediaQuery } from "svelte/reactivity";
   import GuideShell from "../_components/GuideShell.svelte";
   import GuideFontPreload from "../_components/GuideFontPreload.svelte";
   import TopicHeader from "../level-1/_topics/TopicHeader.svelte";
@@ -24,7 +23,7 @@
   import PropChoiceRow from "#lib/shared/pictograph/prop/components/PropChoiceRow.svelte";
   import {
     CODEX_DEFAULT_PROP,
-    codexPropSections,
+    CODEX_PROPS,
     parseCodexProp,
   } from "./_data/codex-props";
 
@@ -50,13 +49,6 @@
     window.addEventListener("popstate", readProp);
     return () => window.removeEventListener("popstate", readProp);
   });
-
-  // A short desktop screen (the fit block below, under 1000px tall) gives
-  // the tiles' names to their hover tooltips, so the board keeps that height.
-  const shortScreen = new MediaQuery(
-    "(min-width: 80rem) and (min-height: 700px) and (max-height: 999.98px)",
-    false
-  );
 
   function chooseProp(next: PropType): void {
     if (next === propType) return;
@@ -89,12 +81,13 @@
     />
 
     <!-- The app's inline prop choice, the same tiles the other guide pages
-         use. Each tile names its prop, so the choice needs no caption. -->
+         use, as pictures alone: each name is the tile's tooltip and its
+         accessible name. -->
     <div class="props">
       <PropChoiceRow
         value={propType}
-        sections={codexPropSections()}
-        iconOnly={shortScreen.current}
+        options={CODEX_PROPS}
+        iconOnly
         label={tDynamic("guide_codex_prop")}
         onchange={chooseProp}
       />
@@ -135,12 +128,7 @@
   .props {
     margin-block: clamp(16px, 2vw, 28px) clamp(20px, 2.5vw, 40px);
     --prop-choice-justify: center;
-    --prop-choice-label-align: center;
-    /* Sixteen families on one line at laptop width: both groups side by
-       side, wrapping to two lines only on narrower screens. */
-    --prop-tile-width: 4.25rem;
-    --prop-tile-gap: 6px;
-    --prop-img-size: 1.6rem;
+    --prop-img-size: 2.5rem;
   }
 
   .print {
@@ -176,16 +164,10 @@
       font-size: clamp(1rem, 1.8vh, 1.8rem);
       line-height: 1.3;
     }
-    /* All sixteen tiles on one line: the tile width shares the column, so
-       the two groups never wrap onto a second line of tiles. */
+    /* The icons scale with the screen's height, like the header. */
     .props {
-      container-type: inline-size;
       margin-block: clamp(6px, 1.2vh, 28px);
-      --prop-tile-width: clamp(
-        3.6rem,
-        calc((100cqi - 15 * var(--prop-tile-gap) - 24px) / 16),
-        4.75rem
-      );
+      --prop-img-size: clamp(2.25rem, 4.2vh, 4.5rem);
     }
     .board-host {
       container: codex-atlas-fit / size;
@@ -208,17 +190,6 @@
     .codex-guide {
       max-width: min(88vw, 3400px);
       padding-inline: 0;
-    }
-  }
-
-  /* On a 4K screen the cells run 250px or more; laptop-sized tiles beside
-     them read as a footnote. The tiles grow; the board fits what is left. */
-  @media (min-width: 2400px) and (min-height: 1400px) {
-    .props {
-      --prop-tile-width: 6.5rem;
-      --prop-tile-gap: 10px;
-      --prop-img-size: 2.6rem;
-      --font-size-compact: 15px;
     }
   }
 </style>

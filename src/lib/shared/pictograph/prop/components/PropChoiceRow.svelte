@@ -167,6 +167,7 @@
        on wide columns. Wraps on narrow screens. */
     display: flex;
     flex-wrap: wrap;
+    justify-content: var(--prop-choice-justify, flex-start);
     gap: 10px;
   }
 
@@ -203,8 +204,8 @@
   }
 
   .prop-img {
-    width: 34px;
-    height: 34px;
+    width: var(--prop-img-size, 34px);
+    height: var(--prop-img-size, 34px);
     object-fit: contain;
     pointer-events: none;
   }
@@ -219,9 +220,11 @@
   /* The name keeps naming the tile for assistive tech; only the eye loses it. */
   .prop-option.icon-only {
     position: relative;
+    flex: 0 0 auto;
+    max-width: none;
     gap: 0;
     justify-content: center;
-    padding: 6px 4px;
+    padding: 8px 14px;
   }
   .prop-option.icon-only .prop-name {
     position: absolute;
