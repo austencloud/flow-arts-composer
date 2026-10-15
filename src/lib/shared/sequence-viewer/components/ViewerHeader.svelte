@@ -12,6 +12,7 @@
   import RobustAvatar from "#lib/shared/components/avatar/RobustAvatar.svelte";
   import WordHeader from "#lib/shared/animation-engine/components/layers/WordHeader.svelte";
   import { deriveHeaderPatternGlyphs } from "#lib/shared/foundation/domain/sequence-patterns/header-pattern-glyphs.js";
+  import { deriveTurnLabel } from "#lib/shared/foundation/domain/sequence-patterns/turn-pattern.js";
   import TkaLabel from "#lib/shared/components/TkaLabel.svelte";
   import type { ComponentProps } from "svelte";
   import WordActionMenu from "#lib/shared/choreo-card/components/WordActionMenu.svelte";
@@ -179,6 +180,19 @@
   const headerPatterns = $derived(
     isWordTitle ? deriveHeaderPatternGlyphs(sequence) : null
   );
+  const patternDescription = $derived.by(() => {
+    const descriptions: string[] = [];
+    if (headerPatterns?.turnGlyphEntries?.length) {
+      descriptions.push(
+        `Turn pattern: ${deriveTurnLabel(headerPatterns.turnGlyphEntries)}`
+      );
+    }
+    if (headerPatterns?.reversalGlyph) {
+      const { sequence: symbols, period } = headerPatterns.reversalGlyph;
+      descriptions.push(`Reversal pattern: ${symbols.slice(0, period)}`);
+    }
+    return descriptions.length ? descriptions.join(". ") : undefined;
+  });
   const activeWordStepNumber = $derived(
     ctx.editingPane !== "image" &&
       ctx.highlightedStepIndex !== null &&
@@ -503,6 +517,7 @@
               word: actions.copyableWord,
             })
           : displayTitle}
+        aria-description={patternDescription}
         title={isWordTitle
           ? t("viewer_header_word_actions_for", { word: actions.copyableWord })
           : displayTitle}

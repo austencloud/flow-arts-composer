@@ -17,7 +17,7 @@ Method: read each reviewed spec completely; inspect named source paths/symbols a
 | `backlog/2026-05-29-glb-environment-registry-design.md` | ready | ready | 24fab771cc, 66d9541160; inventory below | high |
 | `backlog/2026-07-27-staff-choreography-first-lesson-design.md` | blocked | blocked | f59e0af77c, a97b743f05; inventory below | high |
 | `backlog/2026-08-30-3d-scene-zero-jank-startup-design.md` | unverified | ready | 7d1dfff785, dfe4d3cafa, a97b743f05; inventory below | high |
-| `active/2026-06-04-header-pattern-glyphs-design.md` | unverified | ready | 7de49088a8, eca23555b1; inventory below | high |
+| `shipped/2026-06-04-header-pattern-glyphs-design.md` | unverified | ready | 7de49088a8, eca23555b1; inventory below | high |
 | `backlog/2026-05-23-accessibility-fixes-design.md` | unverified | in-progress | 7d1dfff785, b44d0acb4c, a97b743f05; inventory below | high |
 | `backlog/2026-07-13-wall-plane-depth-solver-design.md` | ready | ready | f558fd9fc9, f13606f440, acb57580f7; inventory below | high |
 | `backlog/2026-07-28-release-notes-deep-linking-design.md` | ready | ready | 24a63db357, 18e572b3b9; inventory below | high |
@@ -100,7 +100,7 @@ Observed: manager, coordinator, Viewer3DScene, Viewer3DCanvas and SceneControlWo
 
 Remaining: Implement demand-loaded pooled effects and conditional control imports, then measure the specified 1080p/4K startup and reveal acceptance. scene-effects-manager-3d.ts still statically imports renderers and initializes every pool at lines 154–166, SceneControlWorkspace imports closed controls eagerly, and scene-effect-task-scheduler-3d.ts is absent despite later startup work (7d1dfff785).
 
-### active/2026-06-04-header-pattern-glyphs-design.md
+### shipped/2026-06-04-header-pattern-glyphs-design.md
 
 Observed: TurnPatternGlyph, ReversalPatternGlyph, reversal-patterns and reversal-matcher remain feature-local; proposed shared glyph/sequence-pattern paths are absent. Actual header owner is `src/lib/shared/animation-engine/components/layers/WordHeader.svelte`; `rg -n 'TurnPattern|ReversalPattern|turnGlyph|reversalGlyph' src/lib/shared/animation-engine src/lib/shared/video-export` returns no matches. Export owners are now `src/lib/shared/video-export/services/{canvas-renderer,export-frame-compositor}.ts`. History: `7de49088a8 feat(motion): animation surfaces move on the shared motion clock`; `eca23555b1 fix: render current shop hero card fronts and inverse word groups`. Inference: reusable glyphs are pre-existing dependencies; header/export feature remains unbuilt.
 
@@ -201,7 +201,7 @@ Shipped: none. Archived: active/2026-05-12-spatial-lab-design.md. Replacement de
 - CLEARED: `backlog/2026-05-29-glb-environment-registry-design.md`. Traffic does not establish the requested deliverable; see evidence above.
 - CLEARED: `backlog/2026-07-27-staff-choreography-first-lesson-design.md`. Traffic does not establish the requested deliverable; see evidence above.
 - CLEARED: `backlog/2026-08-30-3d-scene-zero-jank-startup-design.md`. Traffic does not establish the requested deliverable; see evidence above.
-- CLEARED: `active/2026-06-04-header-pattern-glyphs-design.md`. Traffic does not establish the requested deliverable; see evidence above.
+- CLEARED: `shipped/2026-06-04-header-pattern-glyphs-design.md`. Traffic does not establish the requested deliverable; see evidence above.
 - CONFIRMED: `backlog/2026-05-23-accessibility-fixes-design.md`. Reuse existing scope; inspect the remaining gap above.
 - CLEARED: `backlog/2026-07-13-wall-plane-depth-solver-design.md`. Traffic does not establish the requested deliverable; see evidence above.
 - CLEARED: `backlog/2026-07-28-release-notes-deep-linking-design.md`. Traffic does not establish the requested deliverable; see evidence above.

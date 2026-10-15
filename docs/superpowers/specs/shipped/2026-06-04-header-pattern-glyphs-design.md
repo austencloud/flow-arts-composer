@@ -1,20 +1,20 @@
 ---
-status: active
+status: shipped
 value: 3
 effort: M
-remaining: "Implementation and focused regression checks complete. Finish browser viewport/theme checks and verify an encoded video frame after local integration."
+remaining: "None. Implementation, browser acceptance, card-back regression, and encoded-video checks are complete."
 depends_on: ""
 plan_path: ""
 tags: []
 last_triaged: 2026-10-15
-work_state: verification
+work_state: complete
 ---
 # Turn + Reversal Pattern Glyphs in the Animation Header — Design
 
 > 2026-10-14 triage: Promote turn/reversal domain and glyph primitives, wire capped raw signatures into WordHeader/AnimatorCanvas, and add video-export parity. Glyphs and reversal modules remain under features/choreo-card, no turnGlyph/reversalGlyph wiring was found in animation-engine or video-export, and 7de49088a8 changed header motion rather than implementing this scope. Earlier status banners and execution instructions are historical where they conflict with this review.
 
 **Date:** 2026-06-04
-**Status:** Implemented; browser acceptance in progress (2026-10-15)
+**Status:** Shipped to local main (2026-10-15)
 
 ## Implementation evidence — 2026-10-15
 
@@ -31,8 +31,21 @@ did not implement header glyphs; its scaling behavior is preserved here.
 Focused checks: 64 domain/card tests, 26 package tests, and 17 app bitmap/export
 tests pass. Card painter parity compares the prior drawing operations for numeric
 turns, floats, eight-entry turn patterns, and reversal periods 1, 4, and 8.
-Independent review identified the gallery hover header's separate wiring; it is
-now connected. Browser acceptance remains to be recorded before moving this spec.
+Independent review identified the gallery hover header's separate wiring. Browser
+acceptance also identified the main viewer's separate title bar. Both are now
+connected; the viewer's word action describes the patterns for assistive technology.
+
+The actual viewer passed all seven required viewport tiers. Light/dark component
+fixtures covered floats, eight-entry patterns, long words, narrow containers,
+aperiodic data, and empty data. A complete 822 × 1122 card composition had zero
+changed pixels when comparing the previous and current glyph painters. Decoded
+H.264 MP4 frames retained the glyphs in both themes. The encoding fixture used the
+application services directly because the guest export UI requires sign-in.
+
+Implementation commits: `072cec902d`, `5bf24edd7e`, `ce2f40e4c7`.
+See [acceptance evidence](../../../reports/2026-10-15-header-pattern-glyphs-verification.md)
+for measurements, artifacts, and test boundaries. The original design and paths
+below remain as historical context.
 
 ## Problem
 
