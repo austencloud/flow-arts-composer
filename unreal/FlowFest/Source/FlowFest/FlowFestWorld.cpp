@@ -19,6 +19,8 @@
 #include "Dom/JsonObject.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
+#include "GameFramework/Pawn.h"
+#include "Kismet/GameplayStatics.h"
 #include "GameFramework/Actor.h"
 #include "HAL/PlatformFileManager.h"
 #include "Json.h"
@@ -865,6 +867,7 @@ void AFlowFestWorld::BuildPeople()
             Person.Avatar = NewObject<UFlowFestAvatarComponent>(Person.Actor, TEXT("Avatar"));
             Person.Avatar->RegisterComponent();
             Person.Avatar->Initialize(Feet, Agent.AvatarId);
+            Person.Avatar->SetFootstepsEnabled(bSoundEnabled);
             Person.Avatar->SetPresentation(true, false);
             if (!Agent.PropId.IsNone() && Person.Avatar->GetBodyMesh() &&
                 Person.Avatar->GetBodyMesh()->GetSkeletalMeshAsset())
@@ -892,7 +895,13 @@ void AFlowFestWorld::BuildPeople()
 
 void AFlowFestWorld::SetSoundEnabled(bool bEnabled)
 {
+    bSoundEnabled = bEnabled;
     Soundscape->SetEnabled(bEnabled);
+    if (APawn* Player = UGameplayStatics::GetPlayerPawn(this, 0))
+        if (UFlowFestAvatarComponent* PlayerAvatar = Player->FindComponentByClass<UFlowFestAvatarComponent>())
+            PlayerAvatar->SetFootstepsEnabled(bEnabled);
+    for (FFestivalPerson& Person : People)
+        if (IsValid(Person.Avatar)) Person.Avatar->SetFootstepsEnabled(bEnabled);
 }
 
 void AFlowFestWorld::SetJamSoundActive(bool bActive)

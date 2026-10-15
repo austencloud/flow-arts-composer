@@ -1,5 +1,6 @@
 #include "FlowFestAvatarComponent.h"
 #include "FlowFestAnimInstance.h"
+#include "FlowFestFootstepComponent.h"
 #include "FlowFestPropComponent.h"
 
 #include "Animation/AnimSequence.h"
@@ -77,7 +78,19 @@ void UFlowFestAvatarComponent::Initialize(USceneComponent* Parent, FName Initial
     {
         BodyMesh->AttachToComponent(Parent, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
     }
+    if (!Footsteps)
+    {
+        Footsteps = NewObject<UFlowFestFootstepComponent>(GetOwner());
+        Footsteps->RegisterComponent();
+    }
+    Footsteps->SetEnabled(bFootstepsEnabled);
     SetCharacter(InitialCharacterId);
+}
+
+void UFlowFestAvatarComponent::SetFootstepsEnabled(bool bEnabled)
+{
+    bFootstepsEnabled = bEnabled;
+    if (Footsteps) Footsteps->SetEnabled(bEnabled);
 }
 
 FString UFlowFestAvatarComponent::CharacterFolder() const
@@ -382,18 +395,22 @@ void UFlowFestAvatarComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
         const bool bGroundedMotion = !PerformanceClip && !bWasInAir &&
             CurrentMotion != TEXT("Ride") && CurrentMotion != TEXT("Jump") && CurrentMotion != TEXT("Fall");
         FCollisionQueryParams Query(SCENE_QUERY_STAT(FlowFestFooting), false, GetOwner());
+        FVector FootLocations[2] = {FVector::ZeroVector, FVector::ZeroVector};
+        float FootGapsCm[2] = {TNumericLimits<float>::Max(), TNumericLimits<float>::Max()};
         for (int32 Side = 0; Side < 2; ++Side)
         {
             float Target = 0.f;
+            const FName Bone = Side == 0 ? FName(TEXT("LeftFoot")) : FName(TEXT("RightFoot"));
+            const FVector Foot = BodyMesh->GetSocketLocation(Bone);
+            FootLocations[Side] = Foot;
             if (bGroundedMotion)
             {
-                const FName Bone = Side == 0 ? FName(TEXT("LeftFoot")) : FName(TEXT("RightFoot"));
-                const FVector Foot = BodyMesh->GetSocketLocation(Bone);
                 FHitResult Hit;
                 if (GetWorld()->LineTraceSingleByChannel(Hit, Foot + FVector(0, 0, 35.f),
                     Foot - FVector(0, 0, 85.f), ECC_Visibility, Query))
                 {
                     const float Gap = Foot.Z - Hit.ImpactPoint.Z;
+                    FootGapsCm[Side] = Gap;
                     const float Contact = 1.f - FMath::SmoothStep(12.f, 32.f, Gap);
                     Target = FMath::Clamp((Hit.ImpactPoint.Z + 8.f - Foot.Z) * Contact, -12.f, 14.f);
                 }
@@ -403,6 +420,8 @@ void UFlowFestAvatarComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
         }
         if (UFlowFestAnimInstance* Animator = Cast<UFlowFestAnimInstance>(BodyMesh->GetAnimInstance()))
             Animator->SetFootCorrection(FootCorrectionCm[0], FootCorrectionCm[1]);
+        if (Footsteps) Footsteps->Evaluate(DeltaTime, CurrentMotion, bGroundedMotion,
+            BodyMesh->IsVisible(), FootLocations, FootGapsCm);
     }
     if (BoundProp && PerformanceClip)
     {

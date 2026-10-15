@@ -110,6 +110,7 @@ private:
     UPROPERTY(VisibleAnywhere) TObjectPtr<USceneComponent> SiteRoot;
     UPROPERTY(VisibleAnywhere) TObjectPtr<UFlowFestEcologyComponent> Ecology;
     UPROPERTY(VisibleAnywhere) TObjectPtr<UFlowFestSoundscapeComponent> Soundscape;
+    bool bSoundEnabled = true;
     UPROPERTY(VisibleAnywhere) TObjectPtr<UDirectionalLightComponent> Sun;
     UPROPERTY(VisibleAnywhere) TObjectPtr<UDirectionalLightComponent> Moon;
     UPROPERTY(VisibleAnywhere) TObjectPtr<USkyLightComponent> SkyLight;

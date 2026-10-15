@@ -6,6 +6,7 @@
 
 class UAnimSequence;
 class UFlowFestAnimInstance;
+class UFlowFestFootstepComponent;
 class UFlowFestPropComponent;
 class USceneComponent;
 class USkeletalMeshComponent;
@@ -27,6 +28,9 @@ public:
 
     UFUNCTION(BlueprintCallable, Category="Flow Fest|Avatar")
     void SetPresentation(bool bVisible, bool bOwnerNoSee);
+
+    /** Shared world sound toggle also controls contact and landing sounds. */
+    void SetFootstepsEnabled(bool bEnabled);
 
     UFUNCTION(BlueprintCallable, Category="Flow Fest|Avatar")
     void SetMotion(FVector WorldVelocity, bool bInAir, bool bMounted);
@@ -82,11 +86,13 @@ private:
     UPROPERTY(Transient) TMap<FName, TObjectPtr<UAnimSequence>> Clips;
     UPROPERTY(Transient) TObjectPtr<UAnimSequence> PerformanceClip;
     UPROPERTY(Transient) TObjectPtr<UFlowFestPropComponent> BoundProp;
+    UPROPERTY(Transient) TObjectPtr<UFlowFestFootstepComponent> Footsteps;
     UPROPERTY(Transient) TObjectPtr<USceneComponent> AttachParent;
     UPROPERTY(Transient) FName CharacterId;
     FName CurrentMotion;
     FTransform StandingPresentation;
     bool bWasInAir = false;
+    bool bFootstepsEnabled = true;
     float LandingUntil = 0.f;
     float TakeoffUntil = 0.f;
     float FootCorrectionCm[2] = {0.f, 0.f};
