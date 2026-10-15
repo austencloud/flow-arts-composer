@@ -82,3 +82,11 @@
 - Writing review: ai-bust mechanical and judgment passes completed. Removed em dashes and UI semicolons. Final mechanical HIGH/CRITICAL scan returned `[]`. Assessment: clean for these checks; this English-oriented scan does not establish native Russian quality.
 - Uncertain: the glossary does not define Flow identity, Realm, Collect, or prop preset. Contextual choices профиль исполнителя, Мир, Коллекционирование, and набор реквизита need native/product terminology review. No glossary-approved Russian names were established for these labels.
 - No native review or live UI inspection was performed in this scoped catalog run. Product behavior claims were translated from the supplied English without independent verification beyond the stated Performance context check.
+
+## REV (coordinator, 2026-10-14)
+
+Astra back-translation review: SAMPLE 231 / FLAGGED 7 / 3.0%. Applied the
+four wording fixes (viewer resize label, performer color label, turn-pattern
+preset name, "thumbs stay in" phrasing). Dismissed three flags asking for
+Альфа/Бета: the coordinator kept placement names in Latin script for ru, ja
+and ko to match all 31 existing catalog strings; the glossary now says so.
