@@ -46,10 +46,18 @@ export const onNewVersionEmail = onDocumentCreated(
           (highlight): highlight is string => typeof highlight === "string"
         )
       : undefined;
+    const changelogEntries = Array.isArray(data.changelogEntries)
+      ? data.changelogEntries.filter(
+          (entry): entry is { category: string; text: string } =>
+            typeof entry?.category === "string" &&
+            typeof entry?.text === "string"
+        )
+      : undefined;
     const email = createPlatformUpdateEmail({
       version,
       releaseNotes,
       highlights,
+      changelogEntries,
     });
     const failures: unknown[] = [];
 

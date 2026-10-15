@@ -166,6 +166,47 @@ describe("notification email content", () => {
     expect(email.html).not.toContain("<strong>today</strong>");
   });
 
+  it("renders release Markdown instead of leaking its markers", () => {
+    const highlight =
+      "**New in Explore: [Zan's Diamond](https://tkaflowarts.com/browse/explore/collections/abc), 24 versions of one pattern.** Each one delays a hand.";
+    const email = createPlatformUpdateEmail({
+      version: "0.47.0",
+      highlights: [highlight],
+      changelogEntries: [
+        { category: "added", text: highlight },
+        {
+          category: "improved",
+          text: "Saving now happens in [Create](/create/construct).",
+        },
+        {
+          category: "fixed",
+          text: "A [bad link](javascript:alert(1)) stays text.",
+        },
+      ],
+    });
+
+    for (const part of [email.html, email.text]) {
+      expect(part).not.toContain("**");
+      expect(part).not.toContain("](");
+    }
+    expect(email.html).toContain(
+      "New in Explore: Zan&#39;s Diamond, 24 versions of one pattern."
+    );
+    expect(email.html).toContain(
+      'href="https://tkaflowarts.com/browse/explore/collections/abc"'
+    );
+    expect(email.html).toContain("Open Zan&#39;s Diamond");
+    expect(email.html).toContain(
+      'href="https://tkaflowarts.com/create/construct"'
+    );
+    expect(email.html).not.toContain("javascript:");
+    // The lead highlight is the headline, so it is not repeated in the list.
+    expect(email.html.split("24 versions of one pattern").length).toBe(2);
+    expect(email.text).toContain(
+      "Create (https://tkaflowarts.com/create/construct)"
+    );
+  });
+
   it("links each notification to its canonical app route", () => {
     const message = createMessageEmail("Austen", "conversation-1");
     const feedback = createFeedbackEmail({

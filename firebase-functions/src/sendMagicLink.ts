@@ -7,8 +7,6 @@
 
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
-import * as fs from "fs";
-import * as path from "path";
 import { randomUUID } from "crypto";
 import {
   createMagicLinkSignInState,
@@ -18,6 +16,7 @@ import {
   type RedeemedMagicLinkCode,
   type ResolvedMagicLinkSignInState,
 } from "./auth/magicLinkStateStore";
+import { createSignInCodeHtml } from "./email/signInEmail";
 
 // Brevo transactional email API endpoint
 const BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
@@ -29,27 +28,6 @@ const PROVIDER_TIMEOUT_MS = 10_000;
 const MAGIC_LINK_STATE_PARAM = "magicLinkState";
 const REQUEST_ID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-// Load HTML template at cold start (efficient)
-const templatePath = path.join(__dirname, "templates", "magic-link.html");
-let emailTemplate: string;
-
-try {
-  emailTemplate = fs.readFileSync(templatePath, "utf-8");
-} catch (err) {
-  console.error("Failed to load email template:", err);
-  emailTemplate = `
-    <html>
-      <body style="font-family: sans-serif; padding: 40px; text-align: center;">
-        <h1>Your sign-in code</h1>
-        <p style="font-size: 28px;"><strong>{{ONE_TIME_CODE}}</strong></p>
-        <p>Return to Flow Arts Composer and enter the code. It expires in 30 minutes.</p>
-        <p><a href="{{MAGIC_LINK}}" style="display: inline-block; padding: 12px 24px; background: #8b5cf6; color: white; text-decoration: none; border-radius: 8px;">Sign in in a browser</a></p>
-        <p style="color: #666; font-size: 12px;">Didn't request this? Ignore it.</p>
-      </body>
-    </html>
-  `;
-}
 
 export interface SendMagicLinkRequest {
   email: string;
@@ -388,9 +366,7 @@ export async function handleSendMagicLink(
       handleCodeInApp: true,
     });
 
-    const htmlContent = emailTemplate
-      .replace(/\{\{MAGIC_LINK\}\}/g, magicLink)
-      .replace(/\{\{ONE_TIME_CODE\}\}/g, oneTimeCode);
+    const htmlContent = createSignInCodeHtml(oneTimeCode, magicLink);
     const textContent = `Your Flow Arts Composer sign-in code
 
 ${oneTimeCode}

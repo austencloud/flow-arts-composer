@@ -1,5 +1,29 @@
 import * as admin from "firebase-admin";
 import * as crypto from "crypto";
+import {
+  buttonRow,
+  changeSection,
+  divider,
+  escapeHtml,
+  footerLink,
+  footerSignature,
+  footerText,
+  headline,
+  insetBlock,
+  metaLine,
+  monogram,
+  paragraph,
+  renderEmail,
+  statusChip,
+  type EmailButton,
+  type EmailTone,
+} from "./emailLayout";
+import {
+  richTextLinks,
+  richTextToHtml,
+  richTextToPlain,
+  splitLeadingBold,
+} from "./emailRichText";
 
 const APP_ORIGIN = "https://tkaflowarts.com";
 const INBOX_URL = `${APP_ORIGIN}/create?sheet=inbox`;
@@ -116,9 +140,6 @@ export function createMessageEmail(
 ): NotificationEmail {
   const conversationUrl = `${INBOX_URL}&conversation=${encodeURIComponent(conversationId)}`;
   const senderLabel = plainTextLabel(senderName, "Someone");
-  const safeSenderName = escapeHtml(senderLabel);
-  const safeConversationUrl = escapeHtml(conversationUrl);
-  const safeSettingsUrl = escapeHtml(SETTINGS_URL);
 
   return {
     subject: `New message from ${senderLabel}`,
@@ -129,13 +150,18 @@ export function createMessageEmail(
       "",
       `Manage notification settings: ${SETTINGS_URL}`,
     ].join("\n"),
-    html: emailShell(
-      "New message",
-      `${safeSenderName} sent you a message in Flow Arts Composer.`,
-      "Open conversation",
-      safeConversationUrl,
-      safeSettingsUrl
-    ),
+    // The message itself stays out of email; the reader opens it in the app.
+    html: renderEmail({
+      title: `New message from ${senderLabel}`,
+      preheader: `${senderLabel} sent you a message in Flow Arts Composer.`,
+      body: [
+        monogram(senderLabel),
+        headline(`${senderLabel} sent you a message`),
+        paragraph("Open the conversation to read it and reply."),
+        buttonRow([{ label: "Open conversation", href: conversationUrl }]),
+      ].join("\n"),
+      footer: settingsFooter("message emails"),
+    }),
   };
 }
 
@@ -145,13 +171,14 @@ export function createFeedbackEmail(input: {
   feedbackTitle?: string;
   message: string;
 }): NotificationEmail {
-  const status = feedbackStatusLabel(input.type);
+  const status = feedbackStatus(input.type);
   const title = plainTextLabel(input.feedbackTitle || "", "Your feedback");
   const feedbackUrl = `${APP_ORIGIN}/feedback/my-feedback?feedback=${encodeURIComponent(input.feedbackId)}`;
-  const body = input.message.trim() || `${title}: ${status}`;
+  const body = input.message.trim() || `${title}: ${status.label}`;
+  const bodyHtml = escapeHtml(body).replace(/\n/g, "<br>");
 
   return {
-    subject: `${status}: ${title}`,
+    subject: `${status.label}: ${title}`,
     text: [
       title,
       body,
@@ -160,92 +187,162 @@ export function createFeedbackEmail(input: {
       "",
       `Manage notification settings: ${SETTINGS_URL}`,
     ].join("\n"),
-    html: emailShell(
-      escapeHtml(title),
-      escapeHtml(body),
-      "View feedback",
-      escapeHtml(feedbackUrl),
-      escapeHtml(SETTINGS_URL)
-    ),
+    html: renderEmail({
+      title: `${status.label}: ${title}`,
+      preheader: plainTextLabel(body, status.label),
+      body: [
+        statusChip(status.label, status.tone),
+        headline(title),
+        // A reply is someone else's words, so it sits in a quoted surface.
+        input.type === "feedback-response"
+          ? insetBlock(bodyHtml)
+          : paragraph(bodyHtml),
+        buttonRow([{ label: "View feedback", href: feedbackUrl }]),
+      ].join("\n"),
+      footer: settingsFooter("feedback emails"),
+    }),
   };
 }
+
+export interface ReleaseChangelogEntry {
+  category: string;
+  text: string;
+}
+
+const RELEASE_SECTIONS = [
+  { category: "added", heading: "New", tone: "added" },
+  { category: "improved", heading: "Improved", tone: "improved" },
+  { category: "fixed", heading: "Fixed", tone: "fixed" },
+] as const;
+const RELEASE_ITEMS_PER_SECTION = 4;
 
 export function createPlatformUpdateEmail(input: {
   version: string;
   releaseNotes?: string;
   highlights?: string[];
+  changelogEntries?: ReleaseChangelogEntry[];
 }): NotificationEmail {
   const version = plainTextLabel(input.version, "New version");
   const releaseUrl = `${APP_ORIGIN}/settings/release-notes`;
-  const detail =
-    input.highlights?.filter(Boolean).slice(0, 3).join("\n") ||
-    input.releaseNotes?.trim() ||
-    "Open the release notes to see what changed.";
+  const highlights = (input.highlights ?? [])
+    .map((highlight) => highlight.trim())
+    .filter(Boolean);
+  const entries = (input.changelogEntries ?? []).filter(
+    (entry) => typeof entry.text === "string" && entry.text.trim()
+  );
+
+  // The first highlight leads: its bold run becomes the headline and the
+  // thing it links to becomes the main button.
+  const lead =
+    highlights[0] ?? entries.find((entry) => entry.category === "added")?.text;
+  const split = lead ? splitLeadingBold(lead) : null;
+  const headlineText = split?.lead || `What's new in ${version}`;
+  const ledeSource = split ? split.rest : lead;
+  const leadLink = lead ? richTextLinks(lead)[0] : undefined;
+
+  const sections: {
+    heading: string;
+    tone: EmailTone;
+    items: string[];
+  }[] = RELEASE_SECTIONS.map((section) => ({
+    heading: section.heading,
+    tone: section.tone,
+    items: entries
+      .filter((entry) => entry.category === section.category)
+      .map((entry) => entry.text)
+      .filter((text) => text !== lead),
+  })).filter((section) => section.items.length > 0);
+  if (sections.length === 0 && highlights.length > 1) {
+    sections.push({
+      heading: "Also in this release",
+      tone: "added",
+      items: highlights.slice(1),
+    });
+  }
+  const fallbackDetail = lead
+    ? ""
+    : input.releaseNotes?.trim() ||
+      "Open the release notes to see what changed.";
+
+  const buttons: EmailButton[] = leadLink
+    ? [
+        { label: `Open ${leadLink.label}`, href: leadLink.href },
+        { label: "Release notes", href: releaseUrl, variant: "secondary" },
+      ]
+    : [{ label: "Read the release notes", href: releaseUrl }];
+
+  const sectionHtml = sections.map((section, index) =>
+    changeSection({
+      heading: section.heading,
+      tone: section.tone,
+      items: section.items
+        .slice(0, RELEASE_ITEMS_PER_SECTION)
+        .map((item) => richTextToHtml(item)),
+      more:
+        section.items.length > RELEASE_ITEMS_PER_SECTION
+          ? `${section.items.length - RELEASE_ITEMS_PER_SECTION} more in the release notes`
+          : undefined,
+      last: index === sections.length - 1,
+    })
+  );
+
+  const textSections = sections.flatMap((section) => [
+    "",
+    section.heading,
+    ...section.items.map((item) => `- ${richTextToPlain(item)}`),
+  ]);
 
   return {
     subject: `Flow Arts Composer ${version} is available`,
     text: [
       `Flow Arts Composer ${version} is available.`,
       "",
-      detail,
+      headlineText,
+      ledeSource ? richTextToPlain(ledeSource) : fallbackDetail,
+      ...textSections,
       "",
       `Read the release notes: ${releaseUrl}`,
       "",
       `Manage notification settings: ${SETTINGS_URL}`,
-    ].join("\n"),
-    html: emailShell(
-      `Version ${escapeHtml(version)}`,
-      escapeHtml(detail).replace(/\n/g, "<br>"),
-      "Read release notes",
-      escapeHtml(releaseUrl),
-      escapeHtml(SETTINGS_URL)
+    ]
+      .join("\n")
+      .replace(/\n{3,}/g, "\n\n"),
+    html: renderEmail({
+      title: `Flow Arts Composer ${version}`,
+      preheader: ledeSource
+        ? richTextToPlain(ledeSource, { withUrls: false })
+        : `Flow Arts Composer ${version} is available.`,
+      body: [
+        metaLine(`Version ${version}`),
+        headline(headlineText),
+        ledeSource
+          ? paragraph(richTextToHtml(ledeSource))
+          : paragraph(escapeHtml(fallbackDetail).replace(/\n/g, "<br>")),
+        buttonRow(buttons),
+        sectionHtml.length ? divider() + sectionHtml.join("\n") : "",
+      ].join("\n"),
+      footer: settingsFooter("release emails"),
+    }),
+  };
+}
+
+function settingsFooter(category: string): string {
+  return [
+    footerText(
+      `You get these because ${escapeHtml(category)} are on. ${footerLink("Email settings", SETTINGS_URL)}`
     ),
+    footerSignature(),
+  ].join("\n");
+}
+
+function feedbackStatus(type: string): { label: string; tone: EmailTone } {
+  const statuses: Record<string, { label: string; tone: EmailTone }> = {
+    "feedback-resolved": { label: "Feedback resolved", tone: "added" },
+    "feedback-in-progress": { label: "Feedback in progress", tone: "improved" },
+    "feedback-needs-info": { label: "More information needed", tone: "fixed" },
+    "feedback-response": { label: "New feedback response", tone: "accent" },
   };
-}
-
-function feedbackStatusLabel(type: string): string {
-  const labels: Record<string, string> = {
-    "feedback-resolved": "Feedback resolved",
-    "feedback-in-progress": "Feedback in progress",
-    "feedback-needs-info": "More information needed",
-    "feedback-response": "New feedback response",
-  };
-  return labels[type] || "Feedback update";
-}
-
-function emailShell(
-  heading: string,
-  body: string,
-  actionLabel: string,
-  actionUrl: string,
-  settingsUrl: string
-): string {
-  return `<!doctype html>
-<html>
-  <body style="margin:0;background:#101018;color:#f7f7fb;font-family:Arial,sans-serif">
-    <div style="max-width:600px;margin:0 auto;padding:32px 20px">
-      <p style="margin:0 0 8px;color:#a78bfa;font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase">Flow Arts Composer</p>
-      <h1 style="margin:0 0 16px;font-size:24px;line-height:1.25">${heading}</h1>
-      <p style="margin:0 0 24px;color:#d8d8e5;font-size:16px;line-height:1.55">${body}</p>
-      <a href="${actionUrl}" style="display:inline-block;padding:12px 18px;border-radius:10px;background:#8b5cf6;color:#fff;text-decoration:none;font-weight:700">${actionLabel}</a>
-      <p style="margin:28px 0 0;color:#8f8fa3;font-size:13px;line-height:1.5">Email is optional. <a href="${settingsUrl}" style="color:#c4b5fd">Change notification settings</a>.</p>
-    </div>
-  </body>
-</html>`;
-}
-
-function escapeHtml(value: string): string {
-  return value.replace(
-    /[&<>'"]/g,
-    (character) =>
-      ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        "'": "&#39;",
-        '"': "&quot;",
-      })[character] || character
-  );
+  return statuses[type] || { label: "Feedback update", tone: "accent" };
 }
 
 function plainTextLabel(value: string, fallback: string): string {
