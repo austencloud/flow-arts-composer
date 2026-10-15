@@ -9,7 +9,7 @@
    */
   import { T, useTask } from "@threlte/core";
   import { onDestroy } from "svelte";
-  import type { Object3D, Vector3 } from "three";
+  import type { Group, Vector3 } from "three";
   import type { Bubbles3DParams } from "#lib/shared/effects/translators/webgl3d-types.js";
   import type { BubbleTipSource3D } from "../scene-effects/scene-effect-source-3d";
   import { QualityTier } from "../types";
@@ -35,7 +35,7 @@
     enabled,
     qualityTier = QualityTier.MEDIUM,
   }: Props = $props();
-  let root = $state<Object3D>();
+  let root = $state<Group>();
   const renderer = new BubbleRenderer3D();
   const source: BubbleTipSource3D = {
     effect: "bubbles",
