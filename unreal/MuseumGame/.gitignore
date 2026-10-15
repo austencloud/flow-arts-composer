@@ -4,5 +4,7 @@ Content/
 DerivedDataCache/
 Intermediate/
 Saved/
+Tools/staged/
+Tools/__pycache__/
 *.sln
 *.VC.db

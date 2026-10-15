@@ -9,31 +9,54 @@
   import LiveSequencePerformer3D from "#lib/shared/3d/performers/LiveSequencePerformer3D.svelte";
   import type { CharacterId } from "#lib/shared/3d/domain/character-model.js";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
-  import type { FlowFestPerformerRole } from "../flow-fest-sim/flow-fest-performer-sequences.js";
-  import { FLOW_FEST_PERFORMER_PROFILES } from "../flow-fest-sim/flow-fest-performer-sequences.js";
+  import type { PropType as AppPropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { PropType as ScenePropType } from "@austencloud/scene-3d";
   import { captureNativeFrame, productionRigReady } from "./native-capture.js";
 
   interface Props {
     character: CharacterId;
-    role: FlowFestPerformerRole;
+    propType: ScenePropType;
+    effectId: "fire" | "led";
     sequence: SequenceData;
     onReady: () => void;
   }
   const props: Props = $props();
-  const profile = $derived(FLOW_FEST_PERFORMER_PROFILES[props.role]);
   const id = "native-export";
-  const { renderer: rendererValue, scene: sceneValue } = useThrelte();
+  const {
+    renderer: rendererValue,
+    scene: sceneValue,
+    autoRenderTask,
+  } = useThrelte();
   const renderer = resolveThrelteRenderer(rendererValue);
   const scene = resolveThrelteScene(sceneValue) as Scene;
   const { scheduler, resetFrameInvalidation } = useScheduler();
   let performer: LiveSequencePerformer3D;
+  let captureClockOriginMs = 0;
+
+  // The rig must not accumulate an arbitrary number of live idle/mixer frames
+  // while its asynchronous assets load. Manual capture owns the first frame.
+  renderer.setAnimationLoop(null);
 
   export function pauseAutoLoop(): void {
     renderer.setAnimationLoop(null);
+    autoRenderTask.stop();
+    captureClockOriginMs = performance.now();
   }
 
   export function hasRenderedRig(): boolean {
     return productionRigReady(scene, id);
+  }
+
+  export async function settleCapturePose(): Promise<void> {
+    performer.seekScore(0);
+    await tick();
+    const frameMs = 1000 / 30;
+    for (let step = 1; step <= 12; step += 1) {
+      scheduler.run(captureClockOriginMs + step * frameMs);
+      resetFrameInvalidation();
+      await tick();
+    }
+    captureClockOriginMs += 12 * frameMs;
   }
 
   export async function sampleFrame(
@@ -42,7 +65,7 @@
     const score = frame / 30;
     performer.seekScore(score);
     await tick();
-    const ms = frame * (1000 / 30);
+    const ms = captureClockOriginMs + frame * (1000 / 30);
     scheduler.run(ms);
     resetFrameInvalidation();
     // The first pass applies score-driven state; the second settles IK and grip correction.
@@ -59,8 +82,8 @@
   position={{ x: 0, y: 0, z: 0 }}
   facingAngle={0}
   characterId={props.character}
-  propType={profile.propType}
-  effectId={profile.effectId}
+  propType={props.propType as unknown as AppPropType}
+  effectId={props.effectId}
   sequence={props.sequence}
   active={false}
   playbackSpeed={1}

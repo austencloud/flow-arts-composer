@@ -8,6 +8,7 @@ class UHierarchicalInstancedStaticMeshComponent;
 class UBoxComponent;
 class UPointLightComponent;
 class UStaticMeshComponent;
+class AMuseumPerformerStation;
 
 USTRUCT()
 struct FMuseumExhibit
@@ -38,10 +39,13 @@ class MUSEUMGAME_API AMuseumWorld : public AActor
 public:
     AMuseumWorld();
     virtual void BeginPlay() override;
+    virtual void Tick(float DeltaSeconds) override;
     bool LoadMuseum();
     FVector GetSpawnLocation() const { return SpawnLocation; }
     const FMuseumExhibit* NearestExhibit(const FVector& Location, float RadiusCm) const;
     const FMuseumRoom* RoomAt(const FVector& Location) const;
+    AMuseumPerformerStation* NearestPerformerStation(const FVector& Location, float RadiusCm) const;
+    const TArray<TObjectPtr<AMuseumPerformerStation>>& GetAnimatedStations() const { return AnimatedStations; }
     const TArray<FMuseumRoom>& GetRooms() const { return Rooms; }
     int32 GetExhibitCount() const { return Exhibits.Num(); }
     int32 GetPerformerCount() const { return PerformerCount; }
@@ -59,9 +63,19 @@ private:
     UPROPERTY() TArray<UPointLightComponent*> RoomLights;
     UPROPERTY() TArray<UStaticMeshComponent*> AuthoredShells;
     UPROPERTY() TArray<UStaticMeshComponent*> PerformerFigures;
+    UPROPERTY() TArray<TObjectPtr<AMuseumPerformerStation>> AnimatedStations;
     TArray<FMuseumExhibit> Exhibits;
     TArray<FMuseumRoom> Rooms;
     FVector SpawnLocation = FVector::ZeroVector;
     int32 PerformerCount = 0;
     bool bLoaded = false;
+    int32 SmokeStage = -1;
+    float SmokeElapsed = 0.f;
+    float SmokePhase = 0.f;
+    float SmokeHiddenPhase = 0.f;
+    float SmokePeakGripCm = 0.f;
+    float SmokePeakAnchorCm = 0.f;
+    FTransform SmokeLeftProp = FTransform::Identity;
+    FTransform SmokeRightProp = FTransform::Identity;
+    void RunPlaybackSmoke(float DeltaSeconds);
 };

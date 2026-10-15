@@ -4,20 +4,48 @@
  * root quaternion includes the fixed Three-to-Unreal basis rotation.
  */
 import { readFile, mkdir, writeFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { createHash } from "node:crypto";
 import { Matrix4, Quaternion, Vector3 } from "three";
+import { museumPerformanceEntries, assertMuseumRawCapture,
+  MUSEUM_PROP_COORDINATE_BASIS } from '../../Shared/Tools/museum-performance-contract.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const project = resolve(here, "..");
-const rawDir = resolve(process.argv[2] ?? join(project, "Saved/PerformanceCaptures"));
+const option = name => {
+  const index = process.argv.indexOf(name);
+  return index < 0 ? null : process.argv[index + 1];
+};
+const project = resolve(option('--project') ?? resolve(here, ".."));
+const performanceManifestFile = option('--performance-manifest');
+const museumMode = performanceManifestFile !== null;
+if ((process.argv.includes('--project') && !option('--project')) ||
+    (process.argv.includes('--performance-manifest') && !performanceManifestFile))
+  throw new Error('--project and --performance-manifest require paths');
+const rawDir = resolve(process.argv[2]?.startsWith('--') ? join(project, "Saved/PerformanceCaptures") :
+  (process.argv[2] ?? join(project, "Saved/PerformanceCaptures")));
 const outputDir = join(project, "Content/Data/PropMotion");
+const familyOnly = process.argv.includes('--family-only');
+const allowPartial = process.argv.includes('--allow-partial');
+const captureIdFlag = process.argv.indexOf('--capture-id');
+const captureId = captureIdFlag < 0 ? null : process.argv[captureIdFlag + 1];
+if (allowPartial && !familyOnly) throw new Error('--allow-partial requires --family-only');
+if (captureIdFlag >= 0 && (!captureId || !allowPartial))
+  throw new Error('--capture-id requires an ID and --allow-partial');
+if (museumMode && (familyOnly || allowPartial || captureId))
+  throw new Error('Museum manifest mode cannot combine with family or partial capture flags');
 const profiles = new Map([
   ["fire-poi", "FirePoi"],
   ["fire-hoop", "FireHoop"],
   ["juggler", "Juggler"],
   ["led-flow", "LedFlow"],
 ]);
+function profileForRole(role) {
+  if (profiles.has(role)) return profiles.get(role);
+  const family = /^family-([a-z0-9_]+)-([AB])$/.exec(role);
+  return family ? `P_${family[1]}_${family[2].toUpperCase()}` : null;
+}
 
 const fromSample = ({ position, quaternion, scale }) =>
   new Matrix4().compose(
@@ -44,6 +72,30 @@ const pos = new Vector3();
 const rot = new Quaternion();
 const scale = new Vector3();
 const round = (n) => Math.round(n * 1e5) / 1e5;
+const mirrorX = new Matrix4().makeScale(-1, 1, 1);
+function visualRotation(prop) {
+  if (!prop.rotatedBodyWorld)
+    throw new Error('Capture lacks rotatedBodyWorld for native visual rotation');
+  // The static FBX is baked in the source prop's unrotated +Y geometry pose.
+  // The source rotates that geometry below propRoot. The native static mesh
+  // has a fixed X reflection; conjugating by it keeps the rotation proper.
+  const root = fromSample(prop.propRootWorld);
+  const body = fromSample(prop.rotatedBodyWorld);
+  const local = root.invert().multiply(body);
+  local.decompose(pos, rot, scale);
+  if (pos.length() > 1e-4)
+    throw new Error(`Rotated body has unsupported animated pivot offset: ${pos.toArray()}`);
+  if (Math.max(Math.abs(scale.x - 1), Math.abs(scale.y - 1), Math.abs(scale.z - 1)) > 1e-4)
+    throw new Error(`Unexpected rotated-body scale: ${scale.toArray()}`);
+  const native = mirrorX.clone().multiply(new Matrix4().makeRotationFromQuaternion(rot)).multiply(mirrorX);
+  const q = new Quaternion().setFromRotationMatrix(native).normalize();
+  const asymmetric = new Vector3(.17, .29, -.11);
+  const expected = asymmetric.clone().applyQuaternion(rot).applyMatrix4(mirrorX);
+  const actual = asymmetric.clone().applyMatrix4(mirrorX).applyQuaternion(q);
+  if (actual.distanceTo(expected) > 1e-6)
+    throw new Error(`Visual prop basis mismatch: ${actual.distanceTo(expected)}`);
+  return [q.x, q.y, q.z, q.w].map(round);
+}
 function pose(performerInverse, propRootWorld) {
   performerInverse.clone().multiply(fromSample(propRootWorld)).decompose(pos, rot, scale);
   if (Math.max(Math.abs(scale.x - 1), Math.abs(scale.y - 1), Math.abs(scale.z - 1)) > 1e-4)
@@ -69,6 +121,31 @@ function pose(performerInverse, propRootWorld) {
   ];
 }
 
+function gripPosition(frame, side) {
+  const measured = frame[`${side.toLowerCase()}HandWorld`];
+  if (measured) {
+    if (!Array.isArray(measured) || measured.length !== 3 || measured.some(n => !Number.isFinite(n)))
+      throw new Error(`Invalid ${side}HandWorld in captured frame`);
+    const local = new Vector3(...measured).applyMatrix4(fromSample(frame.performerWorld).invert());
+    return local.applyMatrix4(avatarBasis).multiplyScalar(100).toArray().map(round);
+  }
+  // Legacy captures lack explicit hand measurements; recover their skin
+  // origin from the complete local joint hierarchy for diagnostics.
+  const bones = new Map(frame.bones.map((bone) => [bone.name, bone]));
+  const name = frame.bones.find((bone) => bone.name.replace(/^mixamorig\d*:?/, '') === `${side}Hand`)?.name;
+  if (!name) throw new Error(`Missing ${side}Hand in captured frame`);
+  const chain = [];
+  for (let cursor = name; cursor; cursor = bones.get(cursor)?.parent) {
+    const bone = bones.get(cursor);
+    if (!bone || chain.length > bones.size) throw new Error(`Broken ${side}Hand hierarchy`);
+    chain.unshift(bone.local);
+  }
+  const matrix = fromSample(frame.skinnedMeshLocal);
+  for (const local of chain) matrix.multiply(fromSample(local));
+  const hand = new Vector3().setFromMatrixPosition(matrix).applyMatrix4(avatarBasis).multiplyScalar(100);
+  return hand.toArray().map(round);
+}
+
 if (process.argv[2] === "--verify-sample") {
   const sample = JSON.parse(await readFile(resolve(process.argv[3]), "utf8"));
   if (sample.schema !== "flow-fest-native-performance-v1" || !sample.frames?.length)
@@ -77,53 +154,117 @@ if (process.argv[2] === "--verify-sample") {
     const performerInverse = fromSample(frame.performerWorld).invert();
     pose(performerInverse, frame.leftProp.propRootWorld);
     pose(performerInverse, frame.rightProp.propRootWorld);
+    gripPosition(frame, 'Left');
+    gripPosition(frame, 'Right');
+    visualRotation(frame.leftProp);
+    visualRotation(frame.rightProp);
   }
   console.log(`Verified mirrored native basis against ${sample.frames.length * 2} captured prop poses`);
   process.exit(0);
 }
 
-const manifest = JSON.parse(await readFile(join(rawDir, "manifest.json"), "utf8"));
-if (manifest.schema !== "flow-fest-native-export-manifest-v1")
-  throw new Error(`Unexpected capture manifest: ${manifest.schema}`);
+const manifests = [];
+let museumManifest = null;
+let museumEntries = null;
+if (museumMode) {
+  museumManifest = JSON.parse(await readFile(resolve(performanceManifestFile), 'utf8'));
+  museumEntries = museumPerformanceEntries(museumManifest);
+}
+if (!museumMode) {
+for (const filename of ['manifest.json', 'family-manifest.json']) {
+  if (!existsSync(join(rawDir, filename))) continue;
+  const manifest = JSON.parse(await readFile(join(rawDir, filename), "utf8"));
+  if (manifest.schema !== "flow-fest-native-export-manifest-v1")
+    throw new Error(`Unexpected capture manifest: ${manifest.schema}`);
+  manifests.push(manifest);
+}
+if (!manifests.length) throw new Error(`Missing native capture manifest in ${rawDir}`);
+}
+const artifacts = museumMode
+  ? museumEntries.map(item => {
+      return { character: 'x-bot', role: item.profile, filename: `x_bot_${item.profile}.json`,
+        propType: 'staff', frames: item.frames, sequence: item.sequence };
+    })
+  : manifests.flatMap(manifest => manifest.artifacts);
+const keys = artifacts.map(entry => `${entry.character}/${entry.role}`);
+if (new Set(keys).size !== keys.length) throw new Error('Duplicate character/role in capture manifests');
+const familyArtifacts = artifacts.filter(entry => entry.role.startsWith('family-'));
+if (!allowPartial && familyArtifacts.length && (familyArtifacts.length !== 16 * 82 ||
+    new Set(familyArtifacts.map(entry => entry.character)).size !== 16))
+  throw new Error(`Expected 1,312 family captures over 16 rigs; found ${familyArtifacts.length}`);
 await mkdir(outputDir, { recursive: true });
 const generated = [];
-for (const entry of manifest.artifacts) {
-  const profile = profiles.get(entry.role);
+for (const entry of artifacts.filter(entry =>
+  (!familyOnly || entry.role.startsWith('family-')) &&
+  (!captureId || entry.character === captureId) &&
+  (!allowPartial || existsSync(join(rawDir, entry.filename))))) {
+  const profile = museumMode ? entry.role : profileForRole(entry.role);
   if (!profile) continue; // mounted pose has no held prop
-  const capture = JSON.parse(await readFile(join(rawDir, entry.filename), "utf8"));
+  const captureBytes = await readFile(join(rawDir, entry.filename));
+  const capture = JSON.parse(captureBytes.toString('utf8'));
   if (capture.schema !== "flow-fest-native-performance-v1" ||
       capture.character !== entry.character || capture.role !== entry.role ||
+      (entry.propType && capture.propType !== entry.propType) ||
       capture.fps !== 30 || capture.frames.length !== entry.frames)
     throw new Error(`Invalid production capture: ${entry.filename}`);
+  if (museumMode) assertMuseumRawCapture(capture, museumEntries.find(item => item.profile === profile));
+  const family = /^family-([a-z0-9_]+)-[AB]$/.exec(entry.role)?.[1];
+  if (family && (capture.propType !== family || capture.frames.length !== 480))
+    throw new Error(`Capture family/timing mismatch: ${entry.filename}`);
+  if (family && capture.captureRevision !== 'clock-isolated-body-v3')
+    throw new Error(`Capture revision mismatch: ${entry.filename}`);
+  const hasVisualBody = capture.frames.every(frame =>
+    frame.leftProp?.rotatedBodyWorld && frame.rightProp?.rotatedBodyWorld);
+  if ((family || museumMode) && !hasVisualBody)
+    throw new Error(`Family capture lacks animated visual bodies: ${entry.filename}`);
   const frames = capture.frames.map((frame, index) => {
     if (!frame.performerWorld || !frame.leftProp?.propRootWorld ||
         !frame.rightProp?.propRootWorld || frame.frame !== index)
       throw new Error(`Incomplete prop pose: ${entry.filename} frame ${index}`);
     const performerInverse = fromSample(frame.performerWorld).invert();
-    return [
+    const compact = [
       ...pose(performerInverse, frame.leftProp.propRootWorld),
       ...pose(performerInverse, frame.rightProp.propRootWorld),
+      ...gripPosition(frame, 'Left'),
+      ...gripPosition(frame, 'Right'),
     ];
+    if (hasVisualBody) compact.push( ...visualRotation(frame.leftProp), ...visualRotation(frame.rightProp));
+    return compact;
   });
   const character = entry.character.replaceAll("-", "_");
   const filename = `${character}_${profile}.json`;
   const clip = {
-    schema: "flow-fest-prop-motion-v1",
+    schema: hasVisualBody ? "flow-fest-prop-motion-v3" : "flow-fest-prop-motion-v2",
     character: entry.character,
     profile,
     propId: String(capture.propType).toLowerCase(),
     fps: 30,
     sourceFrameCount: frames.length,
-    coordinateBasis: "source XYZ to UE Feet (Z,-X,Y); rotation uses mirrored avatar basis and fixed native mesh X=-1",
+    captureRevision: capture.captureRevision ?? 'legacy',
+    sourceSHA256: createHash('sha256').update(captureBytes).digest('hex'),
+    coordinateBasis: MUSEUM_PROP_COORDINATE_BASIS,
     frames,
   };
   await writeFile(join(outputDir, filename), JSON.stringify(clip));
-  generated.push({ character: entry.character, profile, filename, frames: frames.length });
+  generated.push({ character: entry.character, profile, filename, frames: frames.length,
+    schema: clip.schema, captureRevision: clip.captureRevision, sourceSHA256: clip.sourceSHA256,
+    ...(museumMode ? { sequenceId: museumEntries.find(item => item.profile === profile).sequenceId } : {}) });
 }
-const expected = manifest.artifacts.filter((entry) => profiles.has(entry.role)).length;
-if (generated.length !== expected || generated.length !== 64)
-  throw new Error(`Expected 64 complete prop clips, got ${generated.length}/${expected}`);
-await writeFile(join(outputDir, "manifest.json"), JSON.stringify({
-  schema: "flow-fest-prop-motion-manifest-v1", clips: generated,
+if (!generated.length) throw new Error('No complete listed prop captures available for staging');
+if (!allowPartial && !familyOnly && !captureId && generated.length !== artifacts.filter(
+  entry => museumMode || profileForRole(entry.role)).length)
+  throw new Error(`Prop motion generation missed a listed capture: ${generated.length}`);
+const manifestPath = join(outputDir, 'manifest.json');
+let clips = generated;
+  if (allowPartial || familyOnly) {
+  const previous = existsSync(manifestPath) ? JSON.parse(await readFile(manifestPath, 'utf8')) : null;
+  if (previous && (previous.schema !== 'flow-fest-prop-motion-manifest-v1' || !Array.isArray(previous.clips)))
+    throw new Error(`Unexpected existing prop manifest: ${manifestPath}`);
+  const byKey = new Map((previous?.clips ?? []).map(clip => [`${clip.character}/${clip.profile}`, clip]));
+  for (const clip of generated) byKey.set(`${clip.character}/${clip.profile}`, clip);
+  clips = [...byKey.values()];
+}
+await writeFile(manifestPath, JSON.stringify({
+  schema: 'flow-fest-prop-motion-manifest-v1', clips,
 }, null, 2));
-console.log(`Prepared ${generated.length} compact prop-motion clips in ${outputDir}`);
+console.log(`Prepared ${generated.length} compact prop-motion clips (${clips.length} staged total) in ${outputDir}`);

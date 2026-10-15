@@ -5,6 +5,7 @@
 
 class UCameraComponent;
 class AMuseumWorld;
+class AMuseumPerformerStation;
 struct FMuseumExhibit;
 
 UCLASS()
@@ -19,6 +20,7 @@ public:
     const AMuseumWorld* GetMuseumWorld() const { return Museum; }
     const FMuseumExhibit* GetOpenExhibit() const;
     const FMuseumExhibit* GetNearbyExhibit() const { return NearbyExhibit; }
+    const AMuseumPerformerStation* GetNearbyPerformer() const { return NearbyPerformer; }
     const TSet<FString>& GetViewedExhibits() const { return ViewedExhibits; }
     FString GetNotice() const { return Notice; }
 
@@ -26,6 +28,7 @@ private:
     UPROPERTY() UCameraComponent* Camera;
     UPROPERTY() AMuseumWorld* Museum = nullptr;
     const FMuseumExhibit* NearbyExhibit = nullptr;
+    UPROPERTY() TObjectPtr<AMuseumPerformerStation> NearbyPerformer = nullptr;
     FString OpenExhibitId;
     TSet<FString> ViewedExhibits;
     FString Notice;
@@ -35,6 +38,8 @@ private:
     void MoveForward(float Value);
     void MoveRight(float Value);
     void Interact();
+    void TogglePerformance();
+    void RestartPerformance();
     void SaveProgress();
     void LoadProgress();
     void ResetToEntrance();

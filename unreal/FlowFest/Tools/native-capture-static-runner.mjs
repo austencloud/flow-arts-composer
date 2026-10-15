@@ -7,10 +7,39 @@ import { fileURLToPath } from "node:url";
 
 const toolsDir = dirname(fileURLToPath(import.meta.url));
 const root = resolve(toolsDir, "../../..");
-const built = resolve(root, "unreal/FlowFest/Intermediate/native-capture-static");
+const built = resolve(
+  root,
+  "unreal/FlowFest/Intermediate/native-capture-static"
+);
 const publicRoot = resolve(root, "static");
 const html = resolve(built, "unreal/FlowFest/Tools/native-capture.html");
-const output = resolve(process.argv[2] ?? "unreal/FlowFest/Saved/PerformanceCaptures");
+const args = process.argv.slice(2);
+let outputArg;
+let runnerArg;
+let manifestArg;
+for (let index = 0; index < args.length; index += 1) {
+  const value = args[index];
+  if (value === "--runner" || value === "--manifest") {
+    const argument = args[++index];
+    if (!argument || argument.startsWith("--"))
+      throw new Error(`${value} requires a path`);
+    if (value === "--runner") runnerArg = argument;
+    else manifestArg = argument;
+  } else if (!value.startsWith("--") && !outputArg) {
+    outputArg = value;
+  } else {
+    throw new Error(`Unknown static capture argument: ${value}`);
+  }
+}
+if (Boolean(runnerArg) !== Boolean(manifestArg))
+  throw new Error("A custom capture runner requires --runner and --manifest");
+const output = resolve(
+  outputArg ?? "unreal/FlowFest/Saved/PerformanceCaptures"
+);
+const runner = runnerArg
+  ? resolve(runnerArg)
+  : resolve(toolsDir, "capture-performances.mjs");
+const runnerArgs = manifestArg ? [resolve(manifestArg)] : [];
 const mime = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
@@ -29,17 +58,27 @@ async function fileInside(base, path) {
   if (rel.startsWith("..") || isAbsolute(rel)) return null;
   try {
     if ((await stat(candidate)).isFile()) return candidate;
-  } catch { /* try next root */ }
+  } catch {
+    /* try next root */
+  }
   return null;
 }
 
 const server = createServer(async (request, response) => {
   try {
     const path = new URL(request.url ?? "/", "http://localhost").pathname;
-    const file = (await fileInside(built, path)) ?? (await fileInside(publicRoot, path)) ??
+    const file =
+      (await fileInside(built, path)) ??
+      (await fileInside(publicRoot, path)) ??
       (path === "/test/flow-fest-native-export" ? html : null);
-    if (!file) { response.writeHead(404); response.end("Not found"); return; }
-    response.writeHead(200, { "content-type": mime[extname(file)] ?? "application/octet-stream" });
+    if (!file) {
+      response.writeHead(404);
+      response.end("Not found");
+      return;
+    }
+    response.writeHead(200, {
+      "content-type": mime[extname(file)] ?? "application/octet-stream",
+    });
     response.end(await readFile(file));
   } catch (error) {
     response.writeHead(500);
@@ -52,12 +91,16 @@ await new Promise((ok, fail) => {
   server.listen(0, "127.0.0.1", ok);
 });
 const address = server.address();
-if (!address || typeof address === "string") throw new Error("Static capture server has no port");
+if (!address || typeof address === "string")
+  throw new Error("Static capture server has no port");
 console.log(`Static capture bundle on port ${address.port}`);
 try {
   const code = await new Promise((ok, fail) => {
-    const child = spawn(process.execPath, [resolve(toolsDir, "capture-performances.mjs"),
-      `http://127.0.0.1:${address.port}`, output], { stdio: "inherit" });
+    const child = spawn(
+      process.execPath,
+      [runner, `http://127.0.0.1:${address.port}`, output, ...runnerArgs],
+      { stdio: "inherit" }
+    );
     child.once("error", fail);
     child.once("exit", (exitCode) => ok(exitCode ?? 1));
   });

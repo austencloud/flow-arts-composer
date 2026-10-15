@@ -1,5 +1,6 @@
 #include "MuseumCharacter.h"
 #include "MuseumWorld.h"
+#include "MuseumPerformerStation.h"
 #include "MuseumSaveGame.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -54,6 +55,7 @@ void AMuseumCharacter::Tick(float DeltaSeconds)
                 Player->ConsoleCommand(TEXT("HighResShot 1"));
     }
     NearbyExhibit = Museum ? Museum->NearestExhibit(GetActorLocation(), 190.f) : nullptr;
+    NearbyPerformer = Museum ? Museum->NearestPerformerStation(GetActorLocation(), 220.f) : nullptr;
     if (NoticeTime > 0) { NoticeTime -= DeltaSeconds; if (NoticeTime <= 0) Notice.Empty(); }
 }
 
@@ -65,6 +67,8 @@ void AMuseumCharacter::SetupPlayerInputComponent(UInputComponent* Input)
     Input->BindAxis(TEXT("Turn"), this, &APawn::AddControllerYawInput);
     Input->BindAxis(TEXT("LookUp"), this, &APawn::AddControllerPitchInput);
     Input->BindAction(TEXT("Interact"), IE_Pressed, this, &AMuseumCharacter::Interact);
+    Input->BindAction(TEXT("TogglePerformance"), IE_Pressed, this, &AMuseumCharacter::TogglePerformance);
+    Input->BindAction(TEXT("RestartPerformance"), IE_Pressed, this, &AMuseumCharacter::RestartPerformance);
     Input->BindAction(TEXT("Jump"), IE_Pressed, this, &ACharacter::Jump);
     Input->BindAction(TEXT("Jump"), IE_Released, this, &ACharacter::StopJumping);
     Input->BindAction(TEXT("Save"), IE_Pressed, this, &AMuseumCharacter::SaveProgress);
@@ -92,6 +96,20 @@ void AMuseumCharacter::Interact()
         OpenExhibitId = NearbyExhibit->Id;
         ViewedExhibits.Add(OpenExhibitId);
     }
+}
+
+void AMuseumCharacter::TogglePerformance()
+{
+    if (!OpenExhibitId.IsEmpty() || !NearbyPerformer) return;
+    NearbyPerformer->TogglePlayback();
+    ShowNotice(FString::Printf(TEXT("%s: %s"), *NearbyPerformer->GetDisplayLabel(), *NearbyPerformer->GetPlaybackStatus()));
+}
+
+void AMuseumCharacter::RestartPerformance()
+{
+    if (!OpenExhibitId.IsEmpty() || !NearbyPerformer) return;
+    NearbyPerformer->RestartPlayback();
+    ShowNotice(FString::Printf(TEXT("%s: %s"), *NearbyPerformer->GetDisplayLabel(), *NearbyPerformer->GetPlaybackStatus()));
 }
 
 const FMuseumExhibit* AMuseumCharacter::GetOpenExhibit() const
