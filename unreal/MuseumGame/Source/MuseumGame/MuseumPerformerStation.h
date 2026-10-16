@@ -28,14 +28,16 @@ public:
     FString GetDisplayLabel() const { return Label.IsEmpty() ? StationId : Label; }
     FString GetPlaybackStatus() const;
     bool IsReady() const { return bReady; }
-    bool IsPlaying() const { return bPlaying && !bPaused; }
-    bool IsPaused() const { return bPaused; }
+    bool IsPlaying() const;
+    bool IsPaused() const;
     bool IsBodyVisible() const { return bShowBody; }
     float GetPlaybackPhase() const;
     float GetGripErrorCm() const;
     float GetPropAnchorErrorCm() const;
     FTransform GetPropRootTransform(bool bLeft) const;
     bool IsPropReady() const;
+    UFlowFestAvatarComponent* GetAvatar() const { return Avatar; }
+    UFlowFestPropComponent* GetProp() const { return Prop; }
 
 private:
     UPROPERTY() TObjectPtr<USceneComponent> Feet;
@@ -50,8 +52,6 @@ private:
     FName PropName = NAME_None;
     float PlaybackRate = 1.f;
     bool bReady = false;
-    bool bPlaying = false;
-    bool bPaused = false;
     bool bShowBody = true;
     bool StartPlayback();
     bool Fail(const FString& Reason);

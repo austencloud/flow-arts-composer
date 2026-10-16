@@ -1,6 +1,7 @@
 #include "MuseumCharacter.h"
 #include "MuseumWorld.h"
 #include "MuseumPerformerStation.h"
+#include "FlowArtsPerformancePanel.h"
 #include "MuseumSaveGame.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -96,6 +97,11 @@ void AMuseumCharacter::Tick(float DeltaSeconds)
     }
     NearbyExhibit = Museum ? Museum->NearestExhibit(GetActorLocation(), 190.f) : nullptr;
     NearbyPerformer = Museum ? Museum->NearestPerformerStation(GetActorLocation(), 220.f) : nullptr;
+    if (!bLibraryReviewApplied && NearbyPerformer && FParse::Param(FCommandLine::Get(), TEXT("MuseumLibraryReview")))
+    {
+        bLibraryReviewApplied = true;
+        OpenPerformanceLibrary();
+    }
     const bool bFixedCaveExposure = Museum && Museum->UsesAuthoredCaveLighting(GetActorLocation());
     Camera->PostProcessSettings.bOverride_AutoExposureMethod = bFixedCaveExposure;
     Camera->PostProcessSettings.bOverride_AutoExposureApplyPhysicalCameraExposure = bFixedCaveExposure;
@@ -124,6 +130,7 @@ void AMuseumCharacter::SetupPlayerInputComponent(UInputComponent* Input)
     Input->BindAction(TEXT("Interact"), IE_Pressed, this, &AMuseumCharacter::Interact);
     Input->BindAction(TEXT("TogglePerformance"), IE_Pressed, this, &AMuseumCharacter::TogglePerformance);
     Input->BindAction(TEXT("RestartPerformance"), IE_Pressed, this, &AMuseumCharacter::RestartPerformance);
+    Input->BindKey(EKeys::F6, IE_Pressed, this, &AMuseumCharacter::OpenPerformanceLibrary);
     Input->BindAction(TEXT("Jump"), IE_Pressed, this, &ACharacter::Jump);
     Input->BindAction(TEXT("Jump"), IE_Released, this, &ACharacter::StopJumping);
     Input->BindAction(TEXT("Save"), IE_Pressed, this, &AMuseumCharacter::SaveProgress);
@@ -348,6 +355,13 @@ void AMuseumCharacter::RestartPerformance()
     if (Museum && Museum->IsFireStation(NearbyPerformer)) return;
     NearbyPerformer->RestartPlayback();
     ShowNotice(FString::Printf(TEXT("%s: %s"), *NearbyPerformer->GetDisplayLabel(), *NearbyPerformer->GetPlaybackStatus()));
+}
+
+void AMuseumCharacter::OpenPerformanceLibrary()
+{
+    if (!OpenExhibitId.IsEmpty() || !NearbyPerformer) { ShowNotice(TEXT("Approach a performer to open the library")); return; }
+    if (APlayerController* Player = Cast<APlayerController>(Controller))
+        FFlowArtsPerformancePanel::Open(Player, NearbyPerformer->GetAvatar(), NearbyPerformer->GetProp());
 }
 
 const FMuseumExhibit* AMuseumCharacter::GetOpenExhibit() const

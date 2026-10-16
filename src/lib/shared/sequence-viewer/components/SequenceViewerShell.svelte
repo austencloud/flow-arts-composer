@@ -1691,6 +1691,7 @@
                       out:flyFade={{ y: 0, duration: DURATION.fast }}
                     >
                       <ViewerSharePanel
+                        sequence={ctx.effectiveSequence ?? sequence}
                         subject={shareSubject}
                         downloadLabel={shareDownloadLabel}
                         downloadText={shareDownload.text}
