@@ -58,7 +58,6 @@
     onViewSequence,
     visible = true,
     compact = false,
-    leadingActions,
     trailingActions,
   }: {
     onClearSequence?: () => void;
@@ -66,7 +65,6 @@
     visible?: boolean;
     /** One-row rail: Save joins the panel and Share leaves it */
     compact?: boolean;
-    leadingActions?: Snippet;
     trailingActions?: Snippet;
   } = $props();
 
@@ -214,9 +212,6 @@
             </div>
           {/if}
         {/each}
-        {#if compact && leadingActions}
-          {@render leadingActions()}
-        {/if}
       </div>
 
       <!-- CENTER ZONE: Primary Play action -->

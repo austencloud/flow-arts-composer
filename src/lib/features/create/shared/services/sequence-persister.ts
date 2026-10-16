@@ -60,6 +60,10 @@ export class SequencePersister {
   private readonly writerId = newId();
   private readonly revisions = new Map<ActiveCreateModule, number | null>();
   private readonly sessions = new Map<ActiveCreateModule, string>();
+  private readonly preparedResumes = new Map<
+    ActiveCreateModule,
+    DraftVersion
+  >();
   private readonly statuses = new Map<ActiveCreateModule, DraftStatus>();
   private readonly listeners = new Map<
     ActiveCreateModule,
@@ -171,6 +175,10 @@ export class SequencePersister {
   }
   async initialize(): Promise<void> {
     await persistenceInitialize();
+  }
+  async waitForPendingSaves(): Promise<void> {
+    // Failed primary writes can still have a durable recovery copy to list.
+    await Promise.allSettled([...this.queues.values()]);
   }
   private enqueue<T>(
     mode: ActiveCreateModule,
@@ -459,14 +467,28 @@ export class SequencePersister {
       return null;
     }
   }
+  async prepareDraftResume(
+    mode: ActiveCreateModule,
+    id: string
+  ): Promise<void> {
+    this.preparedResumes.delete(mode);
+    const chosen = (await this.listDrafts(mode)).find(
+      (version) => version.id === id
+    );
+    // Initialization can autosave equivalent state with a new ID. Hold the
+    // selected version until recovery accepts it, before those effects start.
+    if (chosen) this.preparedResumes.set(mode, clone(chosen));
+  }
   async recoverDraft(
     mode: ActiveCreateModule,
     id: string
   ): Promise<WorkspaceDraftState | null> {
     return this.enqueue(mode, async () => {
-      const chosen = (await this.listDrafts(mode)).find(
-        (version) => version.id === id
-      );
+      const prepared = this.preparedResumes.get(mode);
+      const chosen =
+        prepared?.id === id
+          ? prepared
+          : (await this.listDrafts(mode)).find((version) => version.id === id);
       if (!chosen) return null;
       try {
         if (!this.revisions.has(mode)) {
@@ -502,6 +524,7 @@ export class SequencePersister {
         this.pending.delete(mode);
         this.pendingHistory.delete(mode);
         this.pendingRecovery.delete(mode);
+        this.preparedResumes.delete(mode);
         this.durableGeneration.set(mode, this.dirtyGeneration.get(mode) ?? 0);
         this.setStatus(mode, {
           status: "saved",
@@ -551,6 +574,7 @@ export class SequencePersister {
         await clearCurrentSequenceState(mode);
         const sessionId = newId();
         this.sessions.set(mode, sessionId);
+        this.preparedResumes.delete(mode);
         this.historyAdapter?.restore(mode, sessionId);
         this.pending.delete(mode);
         this.pendingHistory.delete(mode);
@@ -570,6 +594,7 @@ export class SequencePersister {
     });
   }
   async beginNewSession(mode: ActiveCreateModule): Promise<void> {
+    this.preparedResumes.delete(mode);
     await this.enqueue(mode, async () => {
       const head = await getDraftHead(mode);
       this.revisions.set(mode, head?.revision ?? null);

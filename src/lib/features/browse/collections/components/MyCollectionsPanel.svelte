@@ -23,7 +23,7 @@ instead of showing an empty shell.
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  import { onMount, type Component } from "svelte";
+  import { onMount, tick, type Component } from "svelte";
   import { dev } from "$app/env";
   import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
   import { userPreviewState } from "#lib/shared/debug/state/user-preview-state.svelte.js";
@@ -57,6 +57,8 @@ instead of showing an empty shell.
   import { getSharedCollectionsContext } from "../context/shared-collections-context";
   import UserVideoLibraryView from "#lib/shared/video-collaboration/components/UserVideoLibraryView.svelte";
   import WorkShelfRail, { type WorkShelfId } from "./WorkShelfRail.svelte";
+  import DraftsShelf from "./DraftsShelf.svelte";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import SortPopover, {
     type SortPopoverOption,
   } from "#lib/features/browse/shared/components/SortPopover.svelte";
@@ -345,6 +347,10 @@ instead of showing an empty shell.
   );
 
   let activeShelf = $state<WorkShelfId>("collections");
+  const isYouDrafts = $derived(
+    browseNavigationState.currentLocation?.primary === "you" &&
+      browseNavigationState.currentLocation?.section === "drafts"
+  );
 
   const hasSharedShelf = $derived(
     sharedCollections.length > 0 ||
@@ -368,8 +374,36 @@ instead of showing an empty shell.
   // contains the item showing in the detail pane. Switching shelves locally
   // does not disturb that detail until the user chooses a new card.
   $effect(() => {
-    activeShelf = shelfForSelection(railSelection);
+    activeShelf = isYouDrafts ? "drafts" : shelfForSelection(railSelection);
   });
+
+  function selectShelf(shelfId: WorkShelfId): void {
+    activeShelf = shelfId;
+    if (shelfId === "drafts") {
+      browseNavigationState.navigateTo({
+        primary: "you",
+        section: "drafts",
+        view: "list",
+      });
+    } else if (isYouDrafts) {
+      browseNavigationState.viewCollections();
+      void tick().then(() => {
+        activeShelf = shelfId;
+      });
+    }
+  }
+  function openDrafts(event: MouseEvent): void {
+    if (
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    )
+      return;
+    event.preventDefault();
+    selectShelf("drafts");
+  }
   const isYouSequences = $derived(
     browseNavigationState.currentLocation?.primary === "you" &&
       browseNavigationState.currentLocation?.section === "sequences"
@@ -863,7 +897,9 @@ instead of showing an empty shell.
 {/snippet}
 
 {#snippet shelfContent(shelfId: WorkShelfId)}
-  {#if shelfId === "collections"}
+  {#if shelfId === "drafts"}
+    <DraftsShelf />
+  {:else if shelfId === "collections"}
     <div class="rail-cards">
       {@render ownShelves(railSelection)}
     </div>
@@ -896,15 +932,61 @@ instead of showing an empty shell.
   {/if}
 {/snippet}
 
-{#if isYouSequences && (!isSideBySide || !hasLibrarySession)}
-  <AllLibraryView onBack={backToList} />
+{#if isYouDrafts && (!isSideBySide || !hasLibrarySession)}
+  <div class="collections-list"><DraftsShelf /></div>
+{:else if isYouDrafts}
+  <div class="drafts-workspace">
+    <WorkShelfRail
+      value={activeShelf}
+      sharedAvailable={hasSharedShelf}
+      onchange={selectShelf}
+      content={shelfContent}
+    />
+  </div>
+{:else if isYouSequences && !hasLibrarySession}
+  <div class="collections-list">
+    <DraftsShelf />
+    <div class="signed-out">
+      <p class="signed-out-title">
+        {t("browse_verified_saved_work_guest_title")}
+      </p>
+      <p class="signed-out-hint">
+        {t("browse_verified_saved_work_guest_hint")}
+      </p>
+      <div class="auth-actions">
+        <PanelButton
+          variant="primary"
+          onclick={() => navigationState.setActiveTab("explore")}
+        >
+          {t("browse_verified_browse_gallery")}
+        </PanelButton>
+        <PanelButton
+          variant="secondary"
+          onclick={() => authDrawerState.show("signup", "sync-library")}
+        >
+          {t("browse_ui_create_account")}
+        </PanelButton>
+      </div>
+    </div>
+  </div>
+{:else if isYouSequences && !isSideBySide}
+  <div class="mobile-you-overview">
+    <div class="mobile-drafts-entry">
+      <LinkChip href="/browse/you/drafts" onclick={openDrafts}
+        >Drafts · On this device</LinkChip
+      >
+    </div>
+    <div class="mobile-library">
+      <AllLibraryView onBack={backToList} />
+    </div>
+  </div>
 {:else if isSideBySide && hasLibrarySession}
   <div class="library-split">
     <aside class="rail" aria-label={t("browse_ui_your_collections")}>
       <WorkShelfRail
         value={activeShelf}
         sharedAvailable={hasSharedShelf}
-        onchange={(shelfId) => (activeShelf = shelfId)}
+        onchange={selectShelf}
         content={shelfContent}
       />
     </aside>
@@ -967,6 +1049,12 @@ instead of showing an empty shell.
     <header class="list-header">
       <h2 class="list-title">{t("browse_ui_your_work")}</h2>
     </header>
+
+    <div class="mobile-drafts-entry">
+      <LinkChip href="/browse/you/drafts" onclick={openDrafts}
+        >Drafts · On this device</LinkChip
+      >
+    </div>
 
     {#if !hasLibrarySession}
       <div class="signed-out">
@@ -1057,6 +1145,33 @@ instead of showing an empty shell.
     width: 100%;
     height: 100%;
     min-height: 0;
+  }
+
+  .drafts-workspace {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+  }
+  .mobile-you-overview {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+  }
+  .mobile-you-overview > .mobile-drafts-entry {
+    flex: 0 0 auto;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--theme-stroke);
+  }
+  .mobile-library {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+  .mobile-drafts-entry {
+    display: flex;
   }
 
   .rail {

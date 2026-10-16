@@ -4,9 +4,8 @@
  * pictograph still shows where the props end, so each end orientation is
  * recalculated from the chosen start (a 0-turn anti ends with the thumb out).
  *
- * The shared letter data keeps its stored end orientations for the Level 1
- * and Level 2 guide pages; only the Codex board and its explorer draw from
- * here.
+ * `codexData` already gives the thumbs-in start with correct ends, so this
+ * module only matters when the reader picks another start.
  */
 import { calculateEndOrientation } from "#lib/shared/pictograph/prop/services/orientation-calculator.js";
 import {
@@ -68,7 +67,8 @@ export function codexDataFrom(
   start: CodexStartOrientations
 ): PictographData | null {
   const base = codexData(id);
-  return base ? withStartOrientations(base, start) : null;
+  if (!base || isDefaultStart(start)) return base;
+  return withStartOrientations(base, start);
 }
 
 /** `?ori=out,in` (blue, then red); anything else is the default. */
@@ -84,8 +84,12 @@ export function parseCodexOrientations(
 export function formatCodexOrientations(
   start: CodexStartOrientations
 ): string | null {
-  return start.left === CODEX_DEFAULT_ORIENTATIONS.left &&
+  return isDefaultStart(start) ? null : `${start.left},${start.right}`;
+}
+
+function isDefaultStart(start: CodexStartOrientations): boolean {
+  return (
+    start.left === CODEX_DEFAULT_ORIENTATIONS.left &&
     start.right === CODEX_DEFAULT_ORIENTATIONS.right
-    ? null
-    : `${start.left},${start.right}`;
+  );
 }
