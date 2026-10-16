@@ -76,7 +76,7 @@ export function registerPreferenceTools(server: McpServer): void {
         .describe("Right prop type or null for default"),
       fanAppearance: z
         .object({
-          build: z.enum(["pictograph", "fire", "flat-grip", "lotus", "day", "moon"]),
+          build: z.enum(["pictograph", "fire", "flat-grip", "lotus", "day", "moon", "star", "sense"]),
           frameColor: z.enum(["black", "white"]),
           cover: z.enum(["bare", "covered"]),
         })

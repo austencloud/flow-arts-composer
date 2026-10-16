@@ -349,6 +349,8 @@ const FAN_BUILDS = [
   "lotus",
   "day",
   "moon",
+  "star",
+  "sense",
 ] as const;
 type FanBuild = (typeof FAN_BUILDS)[number];
 

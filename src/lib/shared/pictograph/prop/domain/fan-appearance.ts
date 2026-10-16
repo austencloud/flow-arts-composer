@@ -14,6 +14,7 @@ export const FAN_BUILDS = [
   "day",
   "moon",
   "star",
+  "sense",
 ] as const;
 export type FanBuild = (typeof FAN_BUILDS)[number];
 
@@ -38,7 +39,8 @@ export interface PropBuildPreviewOption<T extends string> {
   crop?: PropTileCrop;
   designCredit?: {
     originator: string;
-    sourceUrl: string;
+    /** Absent until the originator names a product page. */
+    sourceUrl?: string;
   };
 }
 
@@ -50,6 +52,7 @@ export const COMPACT_FAN_LOOKS = [
   "day",
   "moon",
   "star",
+  "sense",
   "covered-fire",
 ] as const;
 export type CompactFanLook = (typeof COMPACT_FAN_LOOKS)[number];
@@ -124,6 +127,9 @@ export function resolveFanRenderKey(
   if (appearance.build === "star") {
     return `${normalized}__star`;
   }
+  if (appearance.build === "sense") {
+    return `${normalized}__sense`;
+  }
   return `${normalized}__lotus`;
 }
 
@@ -150,6 +156,15 @@ export function parseFanRenderKey(value: string): FanRenderKey | null {
     return {
       propType: star[1] as FanRenderKey["propType"],
       build: "star",
+      frameColor: DEFAULT_FAN_APPEARANCE.frameColor,
+      cover: DEFAULT_FAN_APPEARANCE.cover,
+    };
+  }
+  const sense = /^(fan|bigfan)__sense$/.exec(normalized);
+  if (sense) {
+    return {
+      propType: sense[1] as FanRenderKey["propType"],
+      build: "sense",
       frameColor: DEFAULT_FAN_APPEARANCE.frameColor,
       cover: DEFAULT_FAN_APPEARANCE.cover,
     };
@@ -207,6 +222,9 @@ export function fanAppearanceArtwork(
   if (build === "star") {
     return "/images/props/appearances/fan-star.svg?v=1";
   }
+  if (build === "sense") {
+    return "/images/props/appearances/fan-sense.svg?v=1";
+  }
   if (build === "fire") {
     const file = cover === "covered" ? "fan-fire-covered.svg" : "fan-fire.svg";
     return `/images/props/appearances/${file}?v=2`;
@@ -247,6 +265,9 @@ export function fanPreviewImage(appearance: FanAppearance): string {
   }
   if (appearance.build === "star") {
     return previewImage("fan-star-complete.webp");
+  }
+  if (appearance.build === "sense") {
+    return previewImage("fan-sense-complete.webp");
   }
   if (appearance.build === "pictograph") {
     return previewImage("fan-pictograph-front.webp");
@@ -341,6 +362,16 @@ export function fanBuildPreviewOptions(
         originator: "Renegade Juggling",
         sourceUrl: "https://renegadejuggling.com/products/fire-fan-star",
       },
+    },
+    {
+      id: "sense",
+      label: "Sense Fan",
+      image: fanPreviewImage({ ...appearance, build: "sense" }),
+      // Its 468mm span fills 535px of the same 640px render, matching the
+      // Flat Grip's 536px, so it needs no scaling.
+      imageScale: 1,
+      // Flow DNA has not named a product page yet; the credit stays text.
+      designCredit: { originator: "Flow DNA" },
     },
   ];
 }
