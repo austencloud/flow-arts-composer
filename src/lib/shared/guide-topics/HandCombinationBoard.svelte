@@ -255,8 +255,7 @@
   .cell.missed {
     border-color: color-mix(in srgb, var(--semantic-error) 75%, transparent);
     background: color-mix(in srgb, var(--semantic-error) 8%, transparent);
-    animation: missed-shake var(--duration-dramatic, 350ms)
-      var(--ease-standard, ease);
+    animation: missed-shake var(--duration-dramatic) var(--ease-standard);
   }
 
   .missed .picture {
