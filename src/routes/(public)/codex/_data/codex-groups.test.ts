@@ -4,7 +4,7 @@ import {
   Orientation,
 } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
-import { codexTurnData } from "../../level-2/_data/codex-turns";
+import { codexTurnData } from "../../guide/level-2/_data/codex-turns";
 import { codexData } from "./codex-groups";
 
 const hands = (data: PictographData) => ({

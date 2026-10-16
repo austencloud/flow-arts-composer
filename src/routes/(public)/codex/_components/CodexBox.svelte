@@ -3,7 +3,7 @@
   import CodexTransitionGlyph from "./CodexTransitionGlyph.svelte";
   import type { CodexBoxDef } from "../_data/codex-groups";
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
-  import type { GuideCodexVisibility } from "../../level-1/_data/guide-codex-persistence";
+  import type { CodexVisibility } from "../_data/codex-view";
   import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
 
@@ -40,7 +40,7 @@
     /** Interactive-reader overrides - undefined for print/card callers, which
      *  keeps this component's default (canonical) rendering untouched. */
     propType?: PropType;
-    visibility?: GuideCodexVisibility;
+    visibility?: CodexVisibility;
     getData?: (id: string) => PictographData | null | undefined;
     getCellHref?: (id: string) => string | undefined;
     onCellSelect?: (id: string) => void;

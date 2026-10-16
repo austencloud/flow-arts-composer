@@ -14,10 +14,12 @@ const startsWith = (prefix: string) => (pathname: string) =>
   pathname === prefix || pathname.startsWith(`${prefix}/`);
 
 // The letter explorer's state (`letter`, `grid`, `variation`, turns). The
-// Codex guide page hosts the same explorer, in any of its languages.
+// Codex page hosts the same explorer, in any of its languages. Its old
+// /guide/codex address keeps the state so it can forward it to /codex.
 const isAtlasPath = (pathname: string) =>
   startsWith("/atlas")(pathname) ||
   startsWith("/glossary")(pathname) ||
+  routePathFor(pathname) === "/codex" ||
   routePathFor(pathname) === "/guide/codex";
 
 // Routes whose own page mounts a sequence viewer without needing `?v=`.
@@ -56,6 +58,8 @@ const ROUTE_SCOPED_PARAMETERS: readonly RouteScopedParameter[] = [
   { name: "redTurns", isValidForPath: isAtlasPath },
   { name: "blueRotation", isValidForPath: isAtlasPath },
   { name: "redRotation", isValidForPath: isAtlasPath },
+  // The Codex board's rotate/mirror/swap presses.
+  { name: "tf", isValidForPath: isAtlasPath },
   {
     name: "scan",
     isValidForPath: (pathname) =>

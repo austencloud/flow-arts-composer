@@ -22,7 +22,7 @@
     codexSegmentLabel,
     codexTypeWord,
     type CodexTypeDef,
-  } from "../../../guide/codex/_data/codex-groups";
+  } from "../../../codex/_data/codex-groups";
 
   let { type }: { type: CodexTypeDef } = $props();
 </script>
