@@ -16,6 +16,9 @@ function setup(initial: DraftStatus["status"] = "recovery") {
   };
   const listeners: ((s: DraftStatus) => void)[] = [];
   const state = {
+    currentSequence: null,
+    selectedStartPlacement: null,
+    hasStartPlacement: false,
     restoreDraftState: vi.fn(),
     cancelPendingSave: vi.fn(),
     saveCurrentState: vi.fn().mockResolvedValue(undefined),
@@ -28,6 +31,8 @@ function setup(initial: DraftStatus["status"] = "recovery") {
     }),
     getDraftStatus: vi.fn(() => status),
     listDrafts: vi.fn().mockResolvedValue([]),
+    hasUncommittedEditorChanges: vi.fn(() => false),
+    preserveEditorSnapshot: vi.fn().mockResolvedValue(true),
     recoverDraft: vi.fn().mockResolvedValue(null),
     startFreshDraft: vi.fn().mockResolvedValue(null),
   };
@@ -90,5 +95,69 @@ describe("draft recovery choices", () => {
     const { controller, state } = setup("error");
     await controller.retry();
     expect(state.saveCurrentState).toHaveBeenCalledWith("construct");
+  });
+
+  it("preserves the latest editor state before applying a choice after conflict", async () => {
+    const { controller, state, persister } = setup("conflict");
+    persister.hasUncommittedEditorChanges.mockReturnValue(true);
+    const liveSequence = { id: "newest", name: "newest", steps: [] };
+    state.currentSequence = liveSequence as never;
+    const chosen = {
+      currentSequence: null,
+      selectedStartPlacement: null,
+      hasStartPlacement: false,
+      activeBuildSection: "construct",
+    };
+    persister.recoverDraft.mockResolvedValue(chosen as never);
+    await controller.showDrafts();
+    persister.preserveEditorSnapshot.mockClear();
+    await controller.recover("chosen-id");
+    expect(persister.preserveEditorSnapshot).toHaveBeenCalledWith(
+      {
+        currentSequence: liveSequence,
+        selectedStartPlacement: null,
+        hasStartPlacement: false,
+        activeBuildSection: "construct",
+      },
+      "chosen-id"
+    );
+    expect(
+      persister.preserveEditorSnapshot.mock.invocationCallOrder[0]
+    ).toBeLessThan(state.cancelPendingSave.mock.invocationCallOrder[0]);
+    expect(
+      persister.preserveEditorSnapshot.mock.invocationCallOrder[0]
+    ).toBeLessThan(persister.recoverDraft.mock.invocationCallOrder[0]);
+  });
+
+  it("blocks recovery and starting fresh when the live editor cannot be preserved", async () => {
+    const { controller, state, persister } = setup("error");
+    persister.hasUncommittedEditorChanges.mockReturnValue(true);
+    await controller.showDrafts();
+    persister.preserveEditorSnapshot.mockRejectedValue(
+      new Error("disk failed")
+    );
+    state.cancelPendingSave.mockClear();
+    await controller.recover("saved-id");
+    expect(persister.recoverDraft).not.toHaveBeenCalled();
+    expect(state.cancelPendingSave).not.toHaveBeenCalled();
+    expect(controller.open).toBe(true);
+    await controller.startFresh();
+    expect(persister.startFreshDraft).not.toHaveBeenCalled();
+    expect(state.restoreDraftState).not.toHaveBeenCalled();
+  });
+
+  it("warns and attempts preservation when conflict edits are still pending", () => {
+    const { controller, persister } = setup("conflict");
+    persister.hasUncommittedEditorChanges.mockImplementation(
+      (mode) => mode === "construct"
+    );
+    expect(controller.hasUnsavedChanges).toBe(true);
+    controller.flushPending();
+    expect(persister.preserveEditorSnapshot).toHaveBeenCalledWith({
+      currentSequence: null,
+      selectedStartPlacement: null,
+      hasStartPlacement: false,
+      activeBuildSection: "construct",
+    });
   });
 });

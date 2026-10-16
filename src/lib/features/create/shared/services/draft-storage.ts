@@ -16,6 +16,15 @@ type DraftRecord =
 const tabKey = (mode: ActiveCreateModule, suffix: string) =>
   `create-draft-v2:${mode}:${suffix}`;
 
+function contentKey(version: DraftVersion): string {
+  // IDs and save times change on retry; the editor state and undo history do not.
+  return JSON.stringify([
+    version.workspace,
+    version.history?.undo ?? [],
+    version.history?.redo ?? [],
+  ]);
+}
+
 async function getRecord(tabId: string): Promise<UserWorkData | undefined> {
   return db.userWork
     .where("[type+tabId]")
@@ -108,20 +117,28 @@ export async function listStoredDraftVersions(
     const data = row.data as DraftRecord;
     if (data?.kind === "head")
       return data.head?.version && validVersion(data.head.version, mode)
-        ? [data.head.version]
+        ? [{ version: data.head.version, isHead: true }]
         : [];
     return data?.kind === "version" && validVersion(data.version, mode)
-      ? [data.version]
+      ? [{ version: data.version, isHead: false }]
       : [];
   });
-  const seen = new Set<string>();
+  const seenIds = new Set<string>();
+  const seenContent = new Set<string>();
   return versions
-    .sort((a, b) => b.savedAt - a.savedAt)
-    .filter((version) => {
-      if (seen.has(version.id)) return false;
-      seen.add(version.id);
+    .sort(
+      (a, b) =>
+        b.version.savedAt - a.version.savedAt ||
+        Number(b.isHead) - Number(a.isHead)
+    )
+    .filter(({ version }) => {
+      const content = contentKey(version);
+      if (seenIds.has(version.id) || seenContent.has(content)) return false;
+      seenIds.add(version.id);
+      seenContent.add(content);
       return true;
-    });
+    })
+    .map(({ version }) => version);
 }
 
 export async function commitDraft(
@@ -146,10 +163,12 @@ export async function commitDraft(
 
     if (head?.version && version) {
       // Keep one successful predecessor. Normal editing cannot grow this without bound.
-      await putRecord(tabKey(mode, "previous"), {
-        kind: "version",
-        version: head.version,
-      });
+      if (contentKey(head.version) !== contentKey(version)) {
+        await putRecord(tabKey(mode, "previous"), {
+          kind: "version",
+          version: head.version,
+        });
+      }
       if (head.version.sessionId !== version.sessionId) {
         // Starting a different session keeps the work it replaced available
         // even after the new session has saved several more edits.
@@ -171,19 +190,25 @@ export async function commitDraft(
     }
     const next = { revision: (head?.revision ?? 0) + 1, version };
     await putRecord(tabKey(mode, "head"), { kind: "head", head: next });
-    if (version && writerId) {
-      const conflict = await getRecord(tabKey(mode, `conflict:${writerId}`));
-      if (conflict?.id !== undefined) await db.userWork.delete(conflict.id);
-    }
     return { accepted: true, revision: next.revision, head: next };
   });
 }
 
 export async function storeDivergentDraft(
   version: DraftVersion,
-  writerId: string
+  writerId: string,
+  retainCandidateId?: string
 ): Promise<void> {
   await db.transaction("rw", db.userWork, async () => {
+    if (retainCandidateId) {
+      const existing = await getRecord(
+        tabKey(version.mode, `conflict:${writerId}`)
+      );
+      const prior = existing?.data as DraftRecord | undefined;
+      if (prior?.kind === "version" && prior.version.id === retainCandidateId) {
+        await putRecord(tabKey(version.mode, `review:${writerId}`), prior);
+      }
+    }
     await putRecord(tabKey(version.mode, `conflict:${writerId}`), {
       kind: "version",
       version,

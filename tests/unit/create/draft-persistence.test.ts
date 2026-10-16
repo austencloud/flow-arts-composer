@@ -4,6 +4,10 @@ import { createSequenceData } from "#lib/shared/foundation/domain/models/sequenc
 import { db } from "#lib/shared/persistence/database/tka-database.js";
 import { UserWorkType } from "#lib/shared/persistence/domain/enums/user-work-type.js";
 import {
+  dismissError,
+  getCurrentError,
+} from "#lib/shared/error/state/error-state.svelte.js";
+import {
   SequencePersister,
   type WorkspaceDraftState,
 } from "#lib/features/create/shared/services/sequence-persister.js";
@@ -176,7 +180,9 @@ describe("durable Create drafts", () => {
   });
 
   it("retries the latest pending edit after a primary write fails", async () => {
+    dismissError();
     const persister = new SequencePersister();
+    const diagnostic = vi.spyOn(console, "error").mockImplementation(() => {});
     const original = Storage.prototype.setItem;
     const spy = vi
       .spyOn(Storage.prototype, "setItem")
@@ -188,16 +194,30 @@ describe("durable Create drafts", () => {
     try {
       await expect(
         persister.saveCurrentState(workspace("older"))
-      ).rejects.toThrow();
+      ).rejects.toThrow("storage unavailable");
       await expect(
         persister.saveCurrentState(workspace("latest"))
-      ).rejects.toThrow();
+      ).rejects.toThrow("storage unavailable");
       expect(persister.getDraftStatus("construct").status).toBe("error");
+      expect(persister.getDraftStatus("construct").error).toBe(
+        "storage unavailable"
+      );
+      expect(getCurrentError()).toBeNull();
+      expect(diagnostic).toHaveBeenCalledWith(
+        "❌ Failed to save current sequence state:",
+        expect.objectContaining({ message: "storage unavailable" })
+      );
     } finally {
       spy.mockRestore();
+      diagnostic.mockRestore();
     }
     await persister.retrySave("construct");
     expect(persister.getDraftStatus("construct").status).toBe("saved");
+    expect(
+      (await persister.listDrafts("construct")).filter(
+        (draft) => draft.workspace.currentSequence?.name === "latest"
+      )
+    ).toHaveLength(1);
     expect(
       (await new SequencePersister().loadCurrentState("construct"))
         ?.currentSequence?.name
@@ -371,10 +391,40 @@ describe("durable Create drafts", () => {
     await persister.saveCurrentState(workspace("original"));
     await persister.beginNewSession("construct");
     await persister.saveCurrentState(workspace("replacement"));
+    const replacement = (await persister.listDrafts("construct"))[0];
+    await db.userWork.add({
+      type: UserWorkType.SEQUENCE_DRAFT,
+      tabId: "create-draft-v2:construct:conflict:duplicate",
+      data: {
+        kind: "version",
+        version: { ...replacement, id: "duplicate", savedAt: replacement.savedAt },
+      },
+      lastModified: new Date(),
+      version: 2,
+    });
     const ids = (await persister.listDrafts("construct")).map(
       (draft) => draft.id
     );
     expect(ids).toEqual([...new Set(ids)]);
+    expect(ids).toHaveLength(2);
+    expect(ids).toContain(replacement.id);
+  });
+
+  it("keeps matching workspaces with different undo histories as separate versions", async () => {
+    const persister = new SequencePersister();
+    let undoId = "first-undo";
+    persister.setHistoryAdapter({
+      capture: () => ({ undo: [{ id: undoId }] as never, redo: [] }),
+      restore: vi.fn(),
+    });
+    await persister.saveCurrentState(workspace("same workspace"));
+    undoId = "second-undo";
+    await persister.saveCurrentState(workspace("same workspace"));
+    expect(
+      (await persister.listDrafts("construct")).map(
+        (draft) => draft.history?.undo[0]?.id
+      )
+    ).toEqual(["second-undo", "first-undo"]);
   });
 
   it("starts a fresh mode with its own empty history session", async () => {
@@ -389,5 +439,48 @@ describe("durable Create drafts", () => {
       "spell",
       persister.getSessionId("spell")
     );
+  });
+
+  it("retains edits made immediately after conflict when choosing the older candidate", async () => {
+    const first = new SequencePersister();
+    await first.saveCurrentState(workspace("seed"));
+    const second = new SequencePersister();
+    await second.loadCurrentState("construct");
+    await first.saveCurrentState(workspace("other tab"));
+    await expect(
+      second.saveCurrentState(workspace("conflicted edit"))
+    ).rejects.toThrow();
+    const chosen = (await second.listDrafts("construct")).find(
+      (draft) => draft.workspace.currentSequence?.name === "conflicted edit"
+    );
+    expect(chosen).toBeDefined();
+    second.markDirty("construct");
+    expect(second.getDraftStatus("construct").status).toBe("conflict");
+    expect(second.hasUncommittedEditorChanges("construct")).toBe(true);
+    expect(
+      await second.preserveEditorSnapshot(workspace("newest edit"), chosen!.id)
+    ).toBe(true);
+    expect(
+      (await second.recoverDraft("construct", chosen!.id))?.currentSequence
+        ?.name
+    ).toBe("conflicted edit");
+    const names = (await second.listDrafts("construct")).map(
+      (draft) => draft.workspace.currentSequence?.name
+    );
+    expect(names).toContain("newest edit");
+    expect(names).toContain("conflicted edit");
+  });
+
+  it("keeps the latest unsaved edit selectable after starting fresh", async () => {
+    const persister = new SequencePersister();
+    await persister.saveCurrentState(workspace("old save"));
+    persister.markDirty("construct");
+    await persister.preserveEditorSnapshot(workspace("latest edit"));
+    await persister.startFreshDraft("construct");
+    expect(
+      (await persister.listDrafts("construct")).map(
+        (draft) => draft.workspace.currentSequence?.name
+      )
+    ).toContain("latest edit");
   });
 });

@@ -51,22 +51,10 @@ import type { AssembleTabState } from "../state/assemble-tab-state.svelte";
 import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
 import type { ActiveCreateModule } from "#lib/shared/foundation/ui/ui-types.js";
 
-const CREATE_DRAFT_MODES: readonly ActiveCreateModule[] = [
-  "construct",
-  "assemble",
-  "generate",
-  "shape-engine",
-  "fuse",
-  "tunnel",
-  "spell",
-  "one-handed",
-  "guided",
-];
-
 function draftMode(tab: string | undefined): ActiveCreateModule {
-  return CREATE_DRAFT_MODES.includes(tab as ActiveCreateModule)
-    ? (tab as ActiveCreateModule)
-    : "construct";
+  if (tab === "generate" || tab === "spell") return "generate";
+  if (tab === "assemble") return "assemble";
+  return "construct";
 }
 
 export interface CreateModuleInitializationResult {

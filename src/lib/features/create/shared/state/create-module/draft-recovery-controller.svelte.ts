@@ -20,7 +20,7 @@ export function createDraftRecoveryController(deps: {
   getSequenceState: (mode: DraftMode) => SequenceState;
   onRestored: (mode: DraftMode) => void;
 }) {
-  let statuses = $state<Partial<Record<DraftMode, DraftStatus>>>({});
+  const statuses = $state<Partial<Record<DraftMode, DraftStatus>>>({});
   let open = $state(false);
   let busy = $state(false);
   let versions = $state<DraftVersion[]>([]);
@@ -37,6 +37,32 @@ export function createDraftRecoveryController(deps: {
     })
   );
 
+  function snapshotEditor(mode: DraftMode) {
+    const state = deps.getSequenceState(mode);
+    return {
+      currentSequence: state.currentSequence,
+      selectedStartPlacement: state.selectedStartPlacement,
+      hasStartPlacement: state.hasStartPlacement,
+      activeBuildSection: mode,
+    };
+  }
+
+  async function preserveCurrentEditor(
+    mode: DraftMode,
+    retainCandidateId?: string
+  ): Promise<boolean> {
+    if (!deps.persister.hasUncommittedEditorChanges(mode)) return true;
+    const preserved = await deps.persister.preserveEditorSnapshot(
+      snapshotEditor(mode),
+      retainCandidateId
+    );
+    if (preserved) return true;
+    message =
+      "Your latest edits are still changing. Try again before choosing a draft.";
+    versions = await deps.persister.listDrafts(mode);
+    return false;
+  }
+
   async function showDrafts(mode = draftMode(deps.getActiveMode())) {
     if (!mode || busy) return;
     dialogMode = mode;
@@ -52,9 +78,11 @@ export function createDraftRecoveryController(deps: {
       if (status.status === "saving") {
         await deps.getSequenceState(mode).saveCurrentState(mode);
       }
+      if (!(await preserveCurrentEditor(mode))) return;
       versions = await deps.persister.listDrafts(mode);
     } catch {
-      message = "Saved drafts could not be read. Try again.";
+      message =
+        "Your latest edits could not be saved. Try again before choosing a draft.";
     } finally {
       busy = false;
     }
@@ -78,6 +106,7 @@ export function createDraftRecoveryController(deps: {
     busy = true;
     message = null;
     try {
+      if (!(await preserveCurrentEditor(dialogMode, id))) return;
       deps.getSequenceState(dialogMode).cancelPendingSave();
       const workspace = await deps.persister.recoverDraft(dialogMode, id);
       if (!workspace) {
@@ -103,6 +132,7 @@ export function createDraftRecoveryController(deps: {
     busy = true;
     message = null;
     try {
+      if (!(await preserveCurrentEditor(dialogMode))) return;
       deps.getSequenceState(dialogMode).cancelPendingSave();
       await deps.persister.startFreshDraft(dialogMode);
       if (deps.persister.getDraftStatus(dialogMode).status !== "idle") {
@@ -119,6 +149,9 @@ export function createDraftRecoveryController(deps: {
       deps.onRestored(dialogMode);
       open = false;
       offered.delete(dialogMode);
+    } catch {
+      message =
+        "Your latest edits could not be saved. Try again before starting a new draft.";
     } finally {
       busy = false;
     }
@@ -140,6 +173,10 @@ export function createDraftRecoveryController(deps: {
     for (const mode of draftModes) {
       if (statuses[mode]?.status === "saving") {
         void deps.getSequenceState(mode).saveCurrentState(mode);
+      } else if (deps.persister.hasUncommittedEditorChanges(mode)) {
+        void deps.persister
+          .preserveEditorSnapshot(snapshotEditor(mode))
+          .catch(() => undefined);
       }
     }
   }
@@ -158,9 +195,13 @@ export function createDraftRecoveryController(deps: {
       );
     },
     get hasUnsavedChanges() {
-      return Object.values(statuses).some(
-        (s) => s && ["saving", "error"].includes(s.status)
-      );
+      return draftModes.some((mode) => {
+        const status = statuses[mode];
+        return (
+          deps.persister.hasUncommittedEditorChanges(mode) ||
+          (!!status && ["saving", "error"].includes(status.status))
+        );
+      });
     },
     get open() {
       return open;

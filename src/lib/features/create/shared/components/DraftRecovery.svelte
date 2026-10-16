@@ -2,9 +2,16 @@
   import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
   import StepGrid from "../workspace-panel/sequence-display/components/StepGrid.svelte";
   import { sequenceGridJoin } from "#lib/shared/grid-join/sequence-grid-join.js";
+  import { deriveWordFromBeats } from "#lib/shared/foundation/services/word-deriver.js";
   import type { DraftRecoveryController } from "../state/create-module/draft-recovery-controller.svelte";
 
-  let { controller }: { controller: DraftRecoveryController } = $props();
+  let {
+    controller,
+    surface,
+  }: {
+    controller: DraftRecoveryController;
+    surface: "status" | "dialog";
+  } = $props();
   const status = $derived(controller.status?.status ?? "idle");
   const needsReview = $derived(status === "recovery" || status === "conflict");
   const labels = {
@@ -38,7 +45,7 @@
   }
 </script>
 
-{#if controller.mode}
+{#if surface === "status" && controller.mode}
   <div
     class="draft-status"
     class:attention={status === "error" || needsReview}
@@ -63,106 +70,122 @@
   </div>
 {/if}
 
-<BaseModal
-  open={controller.open}
-  onclose={() => controller.close()}
-  closeOnBackdrop={!controller.busy}
-  closeOnEscape={!controller.busy}
-  size="lg"
-  labelledBy="draft-recovery-title"
-  describedBy="draft-recovery-description"
->
-  <section
-    class="draft-dialog"
-    data-testid="draft-recovery-dialog"
-    aria-busy={controller.busy}
+{#if surface === "dialog"}
+  <BaseModal
+    open={controller.open}
+    onclose={() => controller.close()}
+    closeOnBackdrop={!controller.busy}
+    closeOnEscape={!controller.busy}
+    size="lg"
+    labelledBy="draft-recovery-title"
+    describedBy="draft-recovery-description"
   >
-    <header>
-      <p class="mode-label">{modeNames[controller.dialogMode]}</p>
-      <h2 id="draft-recovery-title">{title}</h2>
-      <p id="draft-recovery-description">
-        {#if controller.dialogKind === "conflict"}
-          Both versions are kept. Choose the one you want to continue editing.
-        {:else if controller.dialogKind === "recovery"}
-          Your workspace could not be reopened, but a saved draft is available
-          on this device.
-        {:else}
-          Continue a saved version with its editing history.
-        {/if}
-      </p>
-    </header>
-
-    {#if controller.message}
-      <p class="recovery-error" role="alert">{controller.message}</p>
-    {/if}
-
-    <div class="versions">
-      {#each controller.versions as version (version.id)}
-        {@const sequence = version.workspace.currentSequence}
-        {@const start =
-          version.workspace.selectedStartPlacement ??
-          sequence?.startPlacement ??
-          null}
-        {@const steps = sequence?.steps ?? []}
-        <article class="version" data-testid="draft-version">
-          <div class="version-heading">
-            <h3>
-              {sequence?.word ||
-                sequence?.name ||
-                (start ? "Starting position" : "Empty draft")}
-            </h3>
-            <p>
-              {steps.length}
-              {steps.length === 1 ? "step" : "steps"} ·
-              <time datetime={new Date(version.savedAt).toISOString()}
-                >{savedTime(version.savedAt)}</time
-              >
-            </p>
-          </div>
-          {#if steps.length || start}
-            <div class="version-preview" aria-label="Saved sequence preview">
-              <StepGrid
-                {steps}
-                startPlacement={start}
-                gridJoin={sequence ? sequenceGridJoin(sequence) : null}
-                sequenceWord={sequence?.word ?? ""}
-                sizingProfile="preview"
-                fitAllSteps={true}
-                stepIdentityPrefix={`draft-${version.id}`}
-                autoFocusSelectedStep={false}
-              />
-            </div>
+    <section
+      class="draft-dialog"
+      data-testid="draft-recovery-dialog"
+      aria-busy={controller.busy}
+    >
+      <header>
+        <p class="mode-label">{modeNames[controller.dialogMode]}</p>
+        <h2 id="draft-recovery-title">{title}</h2>
+        <p id="draft-recovery-description">
+          {#if controller.dialogKind === "conflict"}
+            Choose the version you want to continue editing. The others stay
+            available.
+          {:else if controller.dialogKind === "recovery"}
+            Your workspace could not be reopened, but a saved draft is available
+            on this device.
+          {:else if controller.dialogMode !== "assemble"}
+            Continue a saved version with its editing history.
+          {:else}
+            Continue a saved version.
           {/if}
-          <button
-            class="continue"
-            disabled={controller.busy}
-            onclick={() => controller.recover(version.id)}
-          >
-            Continue this version
-          </button>
-        </article>
-      {:else}
-        <p class="empty">
-          {controller.busy
-            ? "Reading saved drafts…"
-            : "No saved drafts yet. Your sequence will appear here after you start building."}
         </p>
-      {/each}
-    </div>
+      </header>
 
-    <footer>
-      <button disabled={controller.busy} onclick={() => controller.close()}
-        >Close</button
-      >
-      {#if controller.dialogKind !== "history"}
-        <button
-          disabled={controller.busy}
-          onclick={() => controller.startFresh()}>Start a new draft</button
-        >
+      {#if controller.message}
+        <p class="recovery-error" role="alert">{controller.message}</p>
       {/if}
-    </footer>
-  </section>
-</BaseModal>
+
+      <div class="versions">
+        {#each controller.versions as version, index (version.id)}
+          {@const sequence = version.workspace.currentSequence}
+          {@const start =
+            version.workspace.selectedStartPlacement ??
+            sequence?.startPlacement ??
+            null}
+          {@const steps = sequence?.steps ?? []}
+          {@const word = deriveWordFromBeats(steps) || sequence?.word || ""}
+          <article class="version" data-testid="draft-version">
+            <div class="version-heading">
+              <p class="version-recency">
+                {index === 0 ? "Most recent save" : "Earlier save"}
+              </p>
+              <h3>
+                {word ||
+                  sequence?.name ||
+                  (start ? "Starting position" : "Empty draft")}
+              </h3>
+              <p>
+                {steps.length}
+                {steps.length === 1 ? "step" : "steps"} ·
+                <time datetime={new Date(version.savedAt).toISOString()}
+                  >{savedTime(version.savedAt)}</time
+                >
+              </p>
+            </div>
+            {#if steps.length || start}
+              <div
+                class="version-preview"
+                role="img"
+                aria-label={`${word || "Starting position"}, ${steps.length} ${steps.length === 1 ? "step" : "steps"}. Saved sequence preview.`}
+              >
+                <div class="preview-content" inert>
+                  <StepGrid
+                    {steps}
+                    startPlacement={start}
+                    gridJoin={sequence ? sequenceGridJoin(sequence) : null}
+                    sequenceWord={word}
+                    sizingProfile="preview"
+                    fitAllSteps={true}
+                    stepIdentityPrefix={`draft-${version.id}`}
+                    autoFocusSelectedStep={false}
+                  />
+                </div>
+              </div>
+            {/if}
+            <button
+              class="continue"
+              disabled={controller.busy}
+              onclick={() => controller.recover(version.id)}
+            >
+              Continue this version
+            </button>
+          </article>
+        {:else}
+          <p class="empty">
+            {controller.busy
+              ? "Reading saved drafts…"
+              : "No saved drafts yet. Your sequence will appear here after you start building."}
+          </p>
+        {/each}
+      </div>
+    </section>
+    {#snippet footer()}
+      <footer>
+        <button disabled={controller.busy} onclick={() => controller.close()}
+          >Close</button
+        >
+        {#if controller.dialogKind !== "history"}
+          <button
+            disabled={controller.busy}
+            onclick={() => controller.startFresh()}>Start a new draft</button
+          >
+        {/if}
+      </footer>
+    {/snippet}
+  </BaseModal>
+{/if}
 
 <style>
   .draft-status {
@@ -268,10 +291,18 @@
     line-height: 1.5;
     color: var(--theme-text-secondary, #cbd5e1);
   }
+  .version-heading .version-recency {
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
   .version-preview {
     height: 190px;
     min-width: 0;
     margin: 12px 0;
+  }
+  .preview-content {
+    width: 100%;
+    height: 100%;
   }
   .continue {
     width: 100%;
@@ -283,7 +314,8 @@
     flex-wrap: wrap;
     justify-content: flex-end;
     gap: 8px;
-    margin-top: 20px;
+    padding: 12px clamp(16px, 3vw, 28px);
+    border-top: 1px solid var(--theme-stroke, #475569);
   }
   .empty,
   .recovery-error {

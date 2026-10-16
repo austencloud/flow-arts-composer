@@ -1,5 +1,3 @@
-import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
-import type { ErrorHandler } from "#lib/shared/application/services/error-handler.js";
 import {
   initialize as persistenceInitialize,
   saveCurrentSequenceState,
@@ -77,6 +75,8 @@ export class SequencePersister {
     ActiveCreateModule,
     DraftVersion
   >();
+  private readonly dirtyGeneration = new Map<ActiveCreateModule, number>();
+  private readonly durableGeneration = new Map<ActiveCreateModule, number>();
   private historyAdapter: HistoryAdapter | null = null;
 
   private currentMode(): ActiveCreateModule {
@@ -131,6 +131,7 @@ export class SequencePersister {
     this.listeners.get(mode)?.forEach((listener) => listener(status));
   }
   markDirty(mode: ActiveCreateModule): void {
+    this.dirtyGeneration.set(mode, (this.dirtyGeneration.get(mode) ?? 0) + 1);
     const current = this.getDraftStatus(mode).status;
     if (
       current === "recovery" ||
@@ -139,6 +140,31 @@ export class SequencePersister {
     )
       return;
     this.setStatus(mode, { status: "saving", error: null });
+  }
+  hasUncommittedEditorChanges(mode: ActiveCreateModule): boolean {
+    return (
+      (this.dirtyGeneration.get(mode) ?? 0) >
+      (this.durableGeneration.get(mode) ?? 0)
+    );
+  }
+  async preserveEditorSnapshot(
+    state: WorkspaceDraftState,
+    retainCandidateId?: string
+  ): Promise<boolean> {
+    const mode = state.activeBuildSection;
+    if (!this.hasUncommittedEditorChanges(mode)) return true;
+    const generation = this.dirtyGeneration.get(mode) ?? 0;
+    const version = this.makeVersion(
+      mode,
+      state,
+      this.historyAdapter?.capture(mode)
+    );
+    return this.enqueue(mode, async () => {
+      await storeDivergentDraft(version, this.writerId, retainCandidateId);
+      this.durableGeneration.set(mode, generation);
+      this.setStatus(mode, { candidates: await this.listDrafts(mode) });
+      return !this.hasUncommittedEditorChanges(mode);
+    });
   }
   setHistoryAdapter(adapter: HistoryAdapter): void {
     this.historyAdapter = adapter;
@@ -185,16 +211,6 @@ export class SequencePersister {
       })
     );
   }
-  private showSaveError(error: unknown): void {
-    const handler = getErrorHandler() as ErrorHandler;
-    handler.showUserError({
-      message: "Couldn't save your sequence",
-      technicalDetails: errorText(error),
-      error: error instanceof Error ? error : new Error(errorText(error)),
-      severity: "error",
-      context: { module: "create", action: "save-sequence" },
-    });
-  }
   async saveCurrentState(state: WorkspaceDraftState): Promise<void> {
     return this.saveSnapshot(
       state,
@@ -210,6 +226,7 @@ export class SequencePersister {
     this.pending.set(mode, snapshot);
     this.pendingHistory.set(mode, history);
     this.markDirty(mode);
+    const generation = this.dirtyGeneration.get(mode) ?? 0;
     return this.enqueue(mode, async () => {
       const version = this.makeVersion(mode, snapshot, history);
       try {
@@ -220,6 +237,7 @@ export class SequencePersister {
           this.pendingRecovery.has(mode)
         ) {
           await storeDivergentDraft(version, this.writerId);
+          this.durableGeneration.set(mode, generation);
           this.setStatus(mode, {
             status: "conflict",
             error: "Choose a draft version before continuing.",
@@ -237,6 +255,7 @@ export class SequencePersister {
         );
         if (!result.accepted) {
           this.revisions.set(mode, result.revision);
+          this.durableGeneration.set(mode, generation);
           this.setStatus(mode, {
             status: "conflict",
             error: "Another tab changed this draft.",
@@ -248,7 +267,11 @@ export class SequencePersister {
         }
         this.revisions.set(mode, result.revision);
         await this.writePrimary(version);
-        if (this.pending.get(mode) === snapshot) {
+        this.durableGeneration.set(mode, generation);
+        if (
+          this.pending.get(mode) === snapshot &&
+          !this.hasUncommittedEditorChanges(mode)
+        ) {
           this.pending.delete(mode);
           this.pendingHistory.delete(mode);
           this.setStatus(mode, {
@@ -261,7 +284,6 @@ export class SequencePersister {
       } catch (error) {
         if (this.getDraftStatus(mode).status !== "conflict") {
           this.setStatus(mode, { status: "error", error: errorText(error) });
-          this.showSaveError(error);
         }
         throw error;
       }
@@ -480,6 +502,7 @@ export class SequencePersister {
         this.pending.delete(mode);
         this.pendingHistory.delete(mode);
         this.pendingRecovery.delete(mode);
+        this.durableGeneration.set(mode, this.dirtyGeneration.get(mode) ?? 0);
         this.setStatus(mode, {
           status: "saved",
           savedAt: accepted.savedAt,
@@ -532,6 +555,7 @@ export class SequencePersister {
         this.pending.delete(mode);
         this.pendingHistory.delete(mode);
         this.pendingRecovery.delete(mode);
+        this.durableGeneration.set(mode, this.dirtyGeneration.get(mode) ?? 0);
         this.setStatus(mode, {
           status: "idle",
           savedAt: null,
@@ -555,6 +579,7 @@ export class SequencePersister {
       this.pending.delete(mode);
       this.pendingHistory.delete(mode);
       this.pendingRecovery.delete(mode);
+      this.durableGeneration.set(mode, this.dirtyGeneration.get(mode) ?? 0);
       this.setStatus(mode, {
         status: "idle",
         savedAt: null,

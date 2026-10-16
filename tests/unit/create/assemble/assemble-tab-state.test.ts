@@ -261,6 +261,59 @@ describe("Assemble tab document synchronization", () => {
     );
   });
 
+  it("cannot undo a recovered version into the previous Assemble document", async () => {
+    const tabState = createAssembleTabState(sequenceRepository);
+    states.push(tabState);
+    const sequenceState = tabState.sequenceState!;
+    const original = makeBlueSequence();
+    sequenceState.setCurrentSequence(original);
+    sequenceState.setCurrentSequence({
+      ...original,
+      steps: [{ ...original.steps[0]!, duration: 8 }],
+    });
+    await Promise.resolve();
+    expect(tabState.canUndo).toBe(true);
+
+    sequenceState.restoreDraftState({
+      currentSequence: original,
+      selectedStartPlacement: original.startPlacement ?? null,
+      hasStartPlacement: true,
+      activeBuildSection: "assemble",
+    });
+    await Promise.resolve();
+
+    expect(sequenceState.currentSequence?.steps[0]?.duration).toBe(2);
+    expect(tabState.canUndo).toBe(false);
+    expect(tabState.undo()).toBe(false);
+  });
+
+  it("cannot undo a new Assemble import into the preceding session", async () => {
+    let sessionId = "old-session";
+    const persister = {
+      getSessionId: vi.fn(() => sessionId),
+      saveCurrentState: vi.fn(async () => undefined),
+      markDirty: vi.fn(),
+    } as unknown as SequencePersister;
+    const tabState = createAssembleTabState(sequenceRepository, persister);
+    states.push(tabState);
+    const sequenceState = tabState.sequenceState!;
+    const original = makeBlueSequence();
+    sequenceState.setCurrentSequence(original);
+    sequenceState.setCurrentSequence({
+      ...original,
+      steps: [{ ...original.steps[0]!, duration: 8 }],
+    });
+    await Promise.resolve();
+    expect(tabState.canUndo).toBe(true);
+
+    sessionId = "import-session";
+    sequenceState.setCurrentSequence(original);
+    await Promise.resolve();
+
+    expect(sequenceState.currentSequence?.steps[0]?.duration).toBe(2);
+    expect(tabState.canUndo).toBe(false);
+  });
+
   it("keeps an editor deletion deleted and rebuilds from the remaining start pose", () => {
     const tabState = createAssembleTabState(sequenceRepository);
     states.push(tabState);

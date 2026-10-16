@@ -68,6 +68,7 @@ export interface SequenceStateServices {
    */
   tabId?: BuildModeId;
   onCurrentSequenceChange?: (sequence: SequenceData | null) => void;
+  onDraftRestored?: () => void;
 }
 
 export function createSequenceState(services: SequenceStateServices) {
@@ -80,6 +81,7 @@ export function createSequenceState(services: SequenceStateServices) {
     tabId, // Tab ID for persistence isolation
     ReversalDetector,
     onCurrentSequenceChange,
+    onDraftRestored,
   } = services;
 
   // Create sub-states
@@ -159,6 +161,7 @@ export function createSequenceState(services: SequenceStateServices) {
       restore: true,
     });
     persistenceCoordinator.updateCachedActiveTab(workspace.activeBuildSection);
+    onDraftRestored?.();
   }
 
   function cancelPendingSave(): void {

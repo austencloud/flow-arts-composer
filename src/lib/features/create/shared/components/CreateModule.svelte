@@ -153,21 +153,30 @@
   let draftRecovery: DraftRecoveryController | null = $state(null);
 
   $effect(() => {
-    draftRecovery?.observeActiveMode();
+    if (!navigationState.isCreateFrontDoorOpen) {
+      draftRecovery?.observeActiveMode();
+    }
   });
 
+  const autosaveMode = $derived(draftMode(navigationState.activeTab));
+  const autosaveSessionId = $derived.by(() => draftRecovery?.status?.sessionId);
+  const autosaveBlocked = $derived.by(() =>
+    ["conflict", "recovery", "error"].includes(
+      draftRecovery?.status?.status ?? "recovery"
+    )
+  );
+
   $effect(() => {
-    const mode = draftMode(navigationState.activeTab);
-    const recovery = draftRecovery;
+    const mode = autosaveMode;
+    const sessionId = autosaveSessionId;
+    const blocked = autosaveBlocked;
     const saver = autosaver;
-    const status = recovery?.status;
-    if (!mode || !recovery || !saver || !status) return;
-    const sessionId = status.sessionId;
+    if (!mode || !saver || !sessionId) return;
     // Cloud/session tracking follows the same accepted local draft. A blocked
     // save must not publish an unresolved version under another draft's name.
     untrack(() => {
       saver.stopAutosave();
-      if (["conflict", "recovery", "error"].includes(status.status)) return;
+      if (blocked) return;
       if (sessionManager?.getSessionId() !== sessionId) {
         sessionManager = new SessionManager(sessionId);
       }
@@ -1088,7 +1097,7 @@
 {#snippet workspaceSurface()}
   <div class="create-workspace-source">
     {#if draftRecovery}
-      <DraftRecovery controller={draftRecovery} />
+      <DraftRecovery controller={draftRecovery} surface="status" />
     {/if}
     <div class="create-workspace-body">
       {#if error}
@@ -1224,6 +1233,10 @@
     duration={DURATION.emphasis}
   />
 </div>
+
+{#if draftRecovery}
+  <DraftRecovery controller={draftRecovery} surface="dialog" />
+{/if}
 
 <style>
   .create-module-stage,

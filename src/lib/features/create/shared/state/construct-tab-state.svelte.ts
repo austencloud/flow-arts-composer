@@ -173,7 +173,9 @@ export function createConstructTabState(
   ) {
     if (!pictographData) {
       setSelectedStartPlacement(null);
-      if (sequenceState) {
+      // Picker synchronization during startup/recovery reflects sequence state;
+      // writing it back would mark an empty workspace dirty and save a draft.
+      if (source === "user" && sequenceState) {
         sequenceState.setSelectedStartPlacement(null);
       }
       if (source === "user") {
@@ -193,7 +195,6 @@ export function createConstructTabState(
     if (source !== "user" || !sequenceState) {
       setShowStartPlacementPicker(false);
       setSelectedStartPlacement(startPlacementData);
-      sequenceState?.setSelectedStartPlacement(startPlacementData);
       return;
     }
 
