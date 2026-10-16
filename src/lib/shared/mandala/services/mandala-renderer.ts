@@ -303,8 +303,11 @@ function resolveFigureExtent(
 		: tracedExtent;
 }
 
+/** The still SVG mandala's line width, in mandala units, when none is given. */
+export const MANDALA_SVG_STROKE_WIDTH = 2.5;
+
 export function renderMandalaSVG(paths: MandalaPaths, options: MandalaRenderOptions): string {
-	const { size, style, show, strokeWidth = 2.5 } = options;
+	const { size, style, show, strokeWidth = MANDALA_SVG_STROKE_WIDTH } = options;
 	const center = size / 2;
 
 	const maxExtent = resolveMandalaRenderExtent(paths, options);
