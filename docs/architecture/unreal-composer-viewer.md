@@ -67,7 +67,7 @@ The existing [shared native foundation](../../unreal/Shared/README.md) remains a
 9. Reconnect, resize and saved-scene restoration have one explicit reconciliation path. A second viewer must not overwrite another viewer's persistence slot or session state.
 10. DOM controls consume their own pointer and keyboard input. Forward interaction within the streamed viewport to native picking/navigation, with correct viewport coordinates and cancellation when focus or connection changes.
 
-Museum's shared contracts are named `tka-performance-transfer-v1` and `tka-performance-library-v1`. Its `FFlowArtsPerformanceLibrary` and `FFlowArtsPerformanceSession` APIs, plus additive avatar transport methods, landed in `08f9c92dfc`. The viewer consumes these methods; runtime fixes remain coordinated with Museum. Its native F6 panel is a game consumer of the same transport. A packaged pause failure is under investigation and must be verified on the real performer before pause is accepted.
+Museum's shared contracts are named `tka-performance-transfer-v1` and `tka-performance-library-v1`. Its `FFlowArtsPerformanceLibrary` and `FFlowArtsPerformanceSession` APIs, plus additive avatar transport methods, landed in `08f9c92dfc`. The viewer consumes these methods; runtime fixes remain coordinated with Museum. Its native F6 panel is a game consumer of the same transport. Museum traced its pause smoke failure to observation before avatar and prop ticks; corrected real playback and shared regression checks pass without changing the production pause API. The Composer viewer still requires its own browser transport check.
 
 ## Capability and parity acceptance
 
