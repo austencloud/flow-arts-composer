@@ -506,6 +506,19 @@ export const FAN_STAR_TIP_POINTS: PropTipConfig = {
   ],
 };
 
+// Flow DNA Sense Fan: the shell rim points from scripts/assets/sense-fan-reference.json
+// at the DoodleGrip's 417.3 px/m. The outline is slightly asymmetric, so the
+// points are listed as converted rather than mirrored.
+export const FAN_SENSE_TIP_POINTS: PropTipConfig = {
+  points: [
+    { dx: 33.87, dy: -94.08 },
+    { dx: 81.57, dy: -73.97 },
+    { dx: 110.12, dy: 0.0 },
+    { dx: 81.69, dy: 74.07 },
+    { dx: 33.93, dy: 94.26 },
+  ],
+};
+
 // DoodleGrip Day: the plate rim points shared with the 3D build, through the
 // same box mapping as the fire fan at the day build's 0.97 fit. The frame
 // colour only changes paint, not geometry, so all four keys share it.
@@ -554,6 +567,7 @@ function fanBuildTables(
     [`${propType}__lotus`]: scaledTips(FAN_LOTUS_TIP_POINTS, scale),
     [`${propType}__flat-grip`]: scaledTips(FAN_FLAT_GRIP_TIP_POINTS, scale),
     [`${propType}__star`]: scaledTips(FAN_STAR_TIP_POINTS, scale),
+    [`${propType}__sense`]: scaledTips(FAN_SENSE_TIP_POINTS, scale),
     [`${propType}__moon`]: scaledTips(FAN_MOON_TIP_POINTS, scale),
     [`${propType}__day_black_bare`]: day,
     [`${propType}__day_black_covered`]: day,

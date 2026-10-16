@@ -8,18 +8,21 @@ import {
   type GridMode as GridModeValue,
 } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
-export interface LetterExplorerRouteState {
-  letter: string;
-  gridMode: GridModeValue;
-  variation: number;
+/** The turns and spin each hand is set to, apart from which letter shows. */
+export interface LetterExplorerEdits {
   leftTurns: TurnValue;
   rightTurns: TurnValue;
   leftRotation: RotationDirectionValue;
   rightRotation: RotationDirectionValue;
 }
 
-const CANONICAL_LETTER_EXPLORER_PATH = "/atlas";
-const CANONICAL_LETTER_EXPLORER_BOARD = "atlas";
+export interface LetterExplorerRouteState extends LetterExplorerEdits {
+  letter: string;
+  gridMode: GridModeValue;
+  variation: number;
+}
+
+const CANONICAL_LETTER_EXPLORER_PATH = "/codex";
 
 export const LETTER_EXPLORER_PARAMS = [
   "letter",
@@ -56,6 +59,25 @@ function parseRotation(value: string | null): RotationDirectionValue {
     : RotationDirection.CLOCKWISE;
 }
 
+export function parseLetterExplorerEdits(
+  searchParams: URLSearchParams
+): LetterExplorerEdits {
+  return {
+    leftTurns: parseTurn(
+      searchParams.get("leftTurns") ?? searchParams.get("blueTurns")
+    ),
+    rightTurns: parseTurn(
+      searchParams.get("rightTurns") ?? searchParams.get("redTurns")
+    ),
+    leftRotation: parseRotation(
+      searchParams.get("leftRotation") ?? searchParams.get("blueRotation")
+    ),
+    rightRotation: parseRotation(
+      searchParams.get("rightRotation") ?? searchParams.get("redRotation")
+    ),
+  };
+}
+
 export function parseLetterExplorerRoute(
   searchParams: URLSearchParams,
   allowedLetters: ReadonlySet<string>
@@ -74,18 +96,7 @@ export function parseLetterExplorerRoute(
         ? GridMode.BOX
         : GridMode.DIAMOND,
     variation,
-    leftTurns: parseTurn(
-      searchParams.get("leftTurns") ?? searchParams.get("blueTurns")
-    ),
-    rightTurns: parseTurn(
-      searchParams.get("rightTurns") ?? searchParams.get("redTurns")
-    ),
-    leftRotation: parseRotation(
-      searchParams.get("leftRotation") ?? searchParams.get("blueRotation")
-    ),
-    rightRotation: parseRotation(
-      searchParams.get("rightRotation") ?? searchParams.get("redRotation")
-    ),
+    ...parseLetterExplorerEdits(searchParams),
   };
 }
 
@@ -102,30 +113,50 @@ export function writeLetterExplorerRoute(
   url.searchParams.set("letter", state.letter);
   url.searchParams.set("grid", state.gridMode);
   url.searchParams.set("variation", String(state.variation));
-  if (state.leftTurns !== 0) {
-    url.searchParams.set("leftTurns", String(state.leftTurns));
-    url.searchParams.set("leftRotation", state.leftRotation);
-  }
-  if (state.rightTurns !== 0) {
-    url.searchParams.set("rightTurns", String(state.rightTurns));
-    url.searchParams.set("rightRotation", state.rightRotation);
-  }
-  // The Atlas drills into its letter category by this hash. Other hosts of
-  // the explorer (the guide's codex page) have no such section.
-  if (url.pathname === CANONICAL_LETTER_EXPLORER_PATH) url.hash = "cat-letter";
+  writeLetterExplorerEdits(url, state);
 }
 
 /**
- * Stable entry point for an unedited dataframe letter. Atlas type lists use
- * this same route contract as the explorer instead of assembling a second URL
- * shape that can drift from the share-link behavior.
+ * Write only the turns and spin, leaving no letter open. The Codex board
+ * follows these too, so they outlive the explorer there.
+ */
+export function writeLetterExplorerEdits(
+  url: URL,
+  edits: LetterExplorerEdits | null
+): void {
+  for (const parameter of [
+    "leftTurns",
+    "rightTurns",
+    "leftRotation",
+    "rightRotation",
+    "blueTurns",
+    "redTurns",
+    "blueRotation",
+    "redRotation",
+  ]) {
+    url.searchParams.delete(parameter);
+  }
+  if (!edits) return;
+  if (edits.leftTurns !== 0) {
+    url.searchParams.set("leftTurns", String(edits.leftTurns));
+    url.searchParams.set("leftRotation", edits.leftRotation);
+  }
+  if (edits.rightTurns !== 0) {
+    url.searchParams.set("rightTurns", String(edits.rightTurns));
+    url.searchParams.set("rightRotation", edits.rightRotation);
+  }
+}
+
+/**
+ * Stable entry point for an unedited dataframe letter, on the Codex page.
+ * Atlas type lists use this same route contract as the explorer instead of
+ * assembling a second URL shape that can drift from the share-link behavior.
  */
 export function buildCanonicalLetterExplorerHref(letter: string): string {
   const url = new URL(
     CANONICAL_LETTER_EXPLORER_PATH,
     "https://tkaflowarts.com"
   );
-  url.searchParams.set("board", CANONICAL_LETTER_EXPLORER_BOARD);
   writeLetterExplorerRoute(url, {
     letter,
     gridMode: GridMode.DIAMOND,
@@ -139,7 +170,7 @@ export function buildCanonicalLetterExplorerHref(letter: string): string {
 }
 
 export function hasLetterExplorerEdits(
-  state: LetterExplorerRouteState
+  state: LetterExplorerEdits
 ): boolean {
   return state.leftTurns !== 0 || state.rightTurns !== 0;
 }

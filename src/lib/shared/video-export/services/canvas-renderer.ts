@@ -12,6 +12,8 @@ import {
   renderHeader,
   type LOOPComponentId,
   type LoopReflectionAxis,
+  type TurnGlyphEntry,
+  type ReversalGlyphData,
 } from "@tka/render-composition";
 import { Period } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 export {
@@ -125,7 +127,9 @@ export function renderWordHeaderToCanvas(
   rotationPeriod?: Period,
   inversionPeriod?: Period,
   overlayComponents: Set<string> | null = null,
-  reflectionAxis?: LoopReflectionAxis
+  reflectionAxis?: LoopReflectionAxis,
+  turnGlyphEntries?: readonly TurnGlyphEntry[] | null,
+  reversalGlyph?: ReversalGlyphData | null
 ): void {
   drawWordHeader(
     ctx,
@@ -138,7 +142,9 @@ export function renderWordHeaderToCanvas(
     rotationPeriod,
     inversionPeriod,
     overlayComponents,
-    reflectionAxis
+    reflectionAxis,
+    turnGlyphEntries,
+    reversalGlyph
   );
 }
 
@@ -313,7 +319,9 @@ function drawWordHeader(
   rotationPeriod: Period | undefined,
   inversionPeriod: Period | undefined,
   overlayComponents: Set<string> | null = null,
-  reflectionAxis?: LoopReflectionAxis
+  reflectionAxis?: LoopReflectionAxis,
+  turnGlyphEntries?: readonly TurnGlyphEntry[] | null,
+  reversalGlyph?: ReversalGlyphData | null
 ): void {
   if (!word || word.trim() === "") return;
 
@@ -380,6 +388,8 @@ function drawWordHeader(
     overlayComponents: (overlayComponents ?? undefined) as
       | Set<LOOPComponentId>
       | undefined,
+    turnGlyphEntries,
+    reversalGlyph,
     darkMode,
     letterStyles,
     glyphImages: glyphImages.size > 0 ? glyphImages : undefined,

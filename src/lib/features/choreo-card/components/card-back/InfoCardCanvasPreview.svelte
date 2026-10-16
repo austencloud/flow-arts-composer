@@ -6,7 +6,10 @@
   The card is drawn at full print resolution and scaled down by CSS.
 -->
 <script lang="ts">
-  import { renderInfoCardFront, renderInfoCardBack } from "../../services/info-card-canvas-renderer";
+  import {
+    renderInfoCardFront,
+    renderInfoCardBack,
+  } from "../../services/info-card-canvas-renderer";
   import { CARD_SIZES, type CardSizeId } from "../../domain/card-sizes";
   import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
 
@@ -19,7 +22,7 @@
 
   let { face, deckNumber, cardSize = "poker" }: Props = $props();
 
-  const theme = $derived(settingsService.settings.backgroundType);
+  const theme = $derived(settingsService.settings.backgroundType ?? "cosmic");
 
   let host: HTMLDivElement | undefined = $state();
 
@@ -50,7 +53,9 @@
       el.replaceChildren(copy);
     });
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   });
 </script>
 

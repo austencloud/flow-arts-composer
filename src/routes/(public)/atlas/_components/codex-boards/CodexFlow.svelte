@@ -10,10 +10,13 @@
   Rendering is CodexBox's and CodexCell's. Nothing is re-implemented here.
 -->
 <script lang="ts">
-  import CodexBox from "../../../guide/codex/_components/CodexBox.svelte";
-  import CodexTransitionGlyph from "../../../guide/codex/_components/CodexTransitionGlyph.svelte";
+  import CodexBox from "../../../codex/_components/CodexBox.svelte";
+  import CodexTransitionGlyph from "../../../codex/_components/CodexTransitionGlyph.svelte";
   import { CODEX_BOXES, type TaggedBox } from "./codex-letters";
-  import { codexTypeLabel } from "../../../guide/codex/_data/codex-groups";
+  import { codexTypeLabel } from "../../../codex/_data/codex-groups";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import type { CodexVisibility } from "../../../codex/_data/codex-view";
 
   let {
     onSelect,
@@ -24,10 +27,19 @@
      *  Atlas uses this for the Type 1 gamma land, where the printed sheet only
      *  repeats the caption over M-O even though it describes M-V. */
     flowHeader,
+    /** The prop drawn in every cell; omitted keeps the dataset's own. */
+    propType,
+    /** Each letter's pictograph, in place of the stored one. */
+    getData,
+    /** Which layers every cell draws; omitted keeps the cell defaults. */
+    visibility,
   }: {
     onSelect: (id: string) => void;
     boxes?: TaggedBox[];
     flowHeader?: string;
+    propType?: PropType;
+    getData?: (id: string) => PictographData | null | undefined;
+    visibility?: CodexVisibility;
   } = $props();
 
   function boxForFlow(tagged: TaggedBox, index: number) {
@@ -51,6 +63,9 @@
         theme="dark"
         reserveHead
         showName={false}
+        {propType}
+        {getData}
+        {visibility}
         onCellSelect={onSelect}
       />
     </div>

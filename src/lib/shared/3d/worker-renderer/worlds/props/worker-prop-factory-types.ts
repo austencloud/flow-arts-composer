@@ -61,7 +61,8 @@ export interface WorkerPropBuild {
     | "day"
     | "moon"
     | "flat-grip"
-    | "star";
+    | "star"
+    | "sense";
   fanFrameColor: "black" | "white";
   fanCover: "bare" | "covered";
   triangleGrip: "corner" | "side";

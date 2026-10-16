@@ -13,6 +13,7 @@
   practice line closes the page as a plain centered line.
 -->
 <script lang="ts">
+  import Sentences from "../../_components/Sentences.svelte";
   import { onMount } from "svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
@@ -222,7 +223,7 @@
       {#each LOOPS[name] as { mode, start, counts } (mode.id)}
         <li class="slot">
           {#if MODE_LEADS[mode.id]}
-            <p class="lead">{t(MODE_LEADS[mode.id]!)}</p>
+            <p class="lead"><Sentences text={t(MODE_LEADS[mode.id]!)} /></p>
           {/if}
           <!-- Replay is a pointer extra; every loop has already played on view. -->
           <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
@@ -271,7 +272,7 @@
   <TopicHeader {kicker} title={t("verified_level1_hm_type1_105")} {lede} />
 
   <section class="set">
-    <p class="intro">{@html t(DUAL_SHIFTS_WEB_COPY.modesLead)}</p>
+    <p class="intro"><Sentences html={t(DUAL_SHIFTS_WEB_COPY.modesLead)} /></p>
 
     <!-- The four modes as timing x direction, in the lesson's words; each
        chip opens that mode's Timing and Direction guide. -->
@@ -329,11 +330,11 @@
   {@render pair("same")}
 
   <section class="set">
-    <p class="lead">{t(DUAL_SHIFTS_WEB_COPY.oppLead)}</p>
+    <p class="lead"><Sentences text={t(DUAL_SHIFTS_WEB_COPY.oppLead)} /></p>
     {@render pair("opp")}
   </section>
 
-  <p class="lead">{@html dualShiftsTopicHtml("practice")}</p>
+  <p class="lead"><Sentences html={dualShiftsTopicHtml("practice")} /></p>
 
   {#if lessonHref}
     <p class="lesson-link">
@@ -377,10 +378,6 @@
     font-size: clamp(1rem, 1.4cqw, 1.15rem);
     line-height: 1.55;
     text-wrap: balance;
-  }
-  /* One sentence per line, as the book sets it. */
-  .lead .line {
-    display: block;
   }
   /* A line and the pictures it introduces stay together. */
   .set {

@@ -24,15 +24,10 @@
     makeStandaloneDeps,
   } from "#lib/shared/3d/state/character-instance-state.svelte.js";
   import { toScenePropType } from "#lib/shared/3d/domain/scene-prop-type.js";
-  import {
-    buildStanceYawTrackForSource,
-    resolveTrackedUpperBodyStance,
-    type StanceYawTrack,
-  } from "#lib/shared/3d/collision/stance-yaw-track.js";
+  import { type StanceYawTrack } from "#lib/shared/3d/collision/stance-yaw-track.js";
   import type { HardBeatTrack } from "#lib/shared/3d/collision/hard-beat-displacement.js";
   import type { BodyClearanceTrack } from "#lib/shared/3d/collision/body-clearance.js";
   import { resolvePerformerContact } from "#lib/shared/3d/domain/performer-contact-displacement.js";
-  import { performerScoreClock } from "#lib/shared/3d/domain/performer-score-clock.js";
   import {
     fitStaffLengthForHug,
     measurePerformerReach,
@@ -167,28 +162,6 @@
           : userProportionsState.staffLength;
     return baseLength * performerState.gridScale;
   });
-  // The turn's timing is planned once per sequence, not re-derived per frame:
-  // the curve needs the whole score to know when to start leading.
-  const stanceTrack = $derived(
-    buildStanceYawTrackForSource(performerState, PlaneMode.WALL)
-  );
-  const upperBodyStance = $derived(
-    resolveTrackedUpperBodyStance(
-      stanceTrack,
-      performerScoreClock(performerState),
-      PlaneMode.WALL,
-      performerState.leftPropState,
-      performerState.rightPropState,
-      reachMeasurements
-    )
-  );
-  const renderedUpperBodyStance = $derived(
-    props.authoredUpperBodyStance ?? {
-      yawRad: upperBodyStance.yawRad,
-      segments: upperBodyStance.segments,
-      pitchRad: upperBodyStance.pitchRad,
-    }
-  );
   const authoredStanceActive = $derived(props.authoredUpperBodyStance != null);
   // Staffs the hands cannot hold from this stance move toward them, radially
   // and in depth, and a seek clears the animator's contact history. A pose
@@ -201,9 +174,32 @@
       measurements: reachMeasurements,
     })
   );
+  const stanceTrack = $derived(contact.stanceTrack);
+  const upperBodyStance = $derived(contact.stance);
+  const renderedUpperBodyStance = $derived(
+    props.authoredUpperBodyStance ?? {
+      yawRad: upperBodyStance.yawRad,
+      segments: upperBodyStance.segments,
+      pitchRad: upperBodyStance.pitchRad,
+    }
+  );
   const hardBeatTrack = $derived(contact.track);
   const bodyClearanceTrack = $derived(contact.bodyTrack);
   let readyReported = false;
+
+  /** Deterministic capture seam: one score unit is one production beat. */
+  export function seekScore(score: number): void {
+    if (!Number.isFinite(score) || score < 0)
+      throw new Error("Invalid performer score");
+    const steps = props.sequence.steps.length;
+    if (!steps) throw new Error("Cannot seek an empty performer sequence");
+    const wrapped = score % steps;
+    performerState.pause();
+    performerState.goToStep(
+      performerState.motionStepOffset + Math.floor(wrapped)
+    );
+    performerState.setProgress(wrapped - Math.floor(wrapped));
+  }
 
   function captureReach(diagnostics: AvatarPoseDiagnostics): void {
     if (reachMeasurements) return;

@@ -1,25 +1,20 @@
 <script lang="ts">
+  import Sentences from "../../../_components/Sentences.svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import GuideSection from "../../../level-1/_components/GuideSection.svelte";
 </script>
 
 <GuideSection id="type-4-turns" title={t("guide_l2_type4_title")}>
   <div class="section-body">
-    <p>
-      {t("guide_l2_type4_intro")}
-    </p>
+    <p><Sentences text={t("guide_l2_type4_intro")} /></p>
 
-    <p>
-      {t("guide_l2_type4_slots")}
-    </p>
+    <p><Sentences text={t("guide_l2_type4_slots")} /></p>
 
     <!-- TODO: add diagram - Phi-High-One (only one prop rotating, no rotational relationship) -->
 
     <!-- TODO: add diagram - Phi-Low-One (pause at halfway, hand-to-end relationship with left hand and right pinky end) -->
 
-    <p>
-      {t("guide_l2_type4_code")}
-    </p>
+    <p><Sentences text={t("guide_l2_type4_code")} /></p>
   </div>
 </GuideSection>
 

@@ -32,6 +32,7 @@ Last audit: 2025-12-27
   import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
   import type { TrailSettings } from "../domain/types/trail-types";
   import { activeWordHeaderStep } from "../domain/word-header-highlight";
+  import { deriveHeaderPatternGlyphs } from "#lib/shared/foundation/domain/sequence-patterns/header-pattern-glyphs.js";
   import type { AdditionalLayerProps } from "#lib/shared/animation-engine/domain/types/trail-capture-types.js";
   import type { TunnelPropColorPair } from "#lib/shared/sequence-viewer/tunnel/tunnel-prop-colors.js";
   import CanvasSurface from "./CanvasSurface.svelte";
@@ -787,6 +788,7 @@ Last audit: 2025-12-27
     if (!sequenceData?.steps?.length) return null;
     return calculateSequenceDifficultyLevel([...sequenceData.steps]);
   });
+  const headerPatternGlyphs = $derived(deriveHeaderPatternGlyphs(sequenceData));
 
   // Shared resolver: same components + slice-aware rotation as every other
   // LOOP badge surface, cached by sequence id.
@@ -893,6 +895,8 @@ Last audit: 2025-12-27
         inversionPeriod={computedInversionPeriod}
         reflectionAxis={computedReflectionAxis}
         overlayComponents={computedOverlayComponents}
+        turnGlyphEntries={headerPatternGlyphs.turnGlyphEntries}
+        reversalGlyph={headerPatternGlyphs.reversalGlyph}
       />
     </div>
 

@@ -263,6 +263,18 @@ const MISSING_SOURCE_PROBLEM =
   "Its source sequence is missing, so it stays on this device.";
 const SYNC_PROBLEM = "It could not sync, so it stays on this device.";
 
+/**
+ * The projects the last listing settled on, for the account it listed, so
+ * library cards draw from what was just read instead of reading each again.
+ */
+let listed: { uid: string; projects: Map<string, PostProject> } | null = null;
+
+/** The project the last listing chose for this id, while that account is signed in. */
+export function listedPostProject(sequenceId: string): PostProject | null {
+  if (!listed || auth.currentUser?.uid !== listed.uid) return null;
+  return listed.projects.get(sequenceId) ?? null;
+}
+
 export async function listSyncedPostProjects(): Promise<{
   projects: PostProjectChoice[];
   error: string | null;
@@ -394,9 +406,11 @@ export async function listSyncedPostProjects(): Promise<{
     }
   }
   const choices = new Map<string, PostProjectChoice>();
+  const chosen = new Map<string, PostProject>();
   for (const project of [...local.values(), ...cloudById.values()]) {
     const existing = choices.get(project.sequenceId);
     if (!existing || project.updatedAt > existing.updatedAt) {
+      chosen.set(project.sequenceId, project);
       const arrangement = arrangementSummaryOf(project);
       choices.set(project.sequenceId, {
         sequenceId: project.sequenceId,
@@ -408,6 +422,7 @@ export async function listSyncedPostProjects(): Promise<{
       });
     }
   }
+  if (auth.currentUser?.uid === uid) listed = { uid, projects: chosen };
   for (const [sequenceId, problem] of problems) {
     const choice = choices.get(sequenceId);
     if (choice) choices.set(sequenceId, { ...choice, problem: problem.card });

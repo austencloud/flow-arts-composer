@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { onDestroy } from "svelte";
+  import { MediaQuery } from "svelte/reactivity";
   import GuidePictograph from "../../../guide/level-1/_components/GuidePictograph.svelte";
   import PictographTypeFrame from "#lib/shared/pictograph/shared/components/PictographTypeFrame.svelte";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
@@ -24,6 +26,8 @@
   import { buildGalleryLetterHref } from "#lib/shared/browse/navigation/gallery-letter-link.js";
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import type { CodexLetterInfo } from "./codex-letters";
+  import { fanOutDeck, type Box } from "./codex-fan";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
   const GRID_OPTIONS = [
     { value: GridMode.DIAMOND, label: "Diamond" },
@@ -55,6 +59,9 @@
     onRetry,
     onLearningRetry,
     onCopyLink,
+    propType,
+    fan = null,
+    onFanDone,
   }: {
     info: CodexLetterInfo;
     gridMode: GridModeValue;
@@ -80,6 +87,12 @@
     onRetry: () => void;
     onLearningRetry: () => void;
     onCopyLink: () => void;
+    /** The prop drawn in every picture; omitted keeps the dataset's own. */
+    propType?: PropType;
+    /** Fan the variations out from this viewport rect (the clicked board
+     *  cell) once they are laid out. A new key plays it again. */
+    fan?: { origin: Box; key: number } | null;
+    onFanDone?: () => void;
   } = $props();
 
   const leftMotion = $derived(draft?.motions?.left);
@@ -96,6 +109,78 @@
       (rightMotion?.motionType === MotionType.DASH ||
         rightMotion?.motionType === MotionType.STATIC)
   );
+  // On a desktop screen the explorer fills the dialog and nothing in it
+  // scrolls: the variations take the box under their heading, laid out at
+  // whatever column count gives the largest pictures. Keep this query in step
+  // with the stylesheet's and LetterCodex's.
+  const fit = new MediaQuery("(min-width: 64rem) and (min-height: 700px)");
+  const VARIATION_GAP = 10.4; // 0.65rem
+  const SELECTED_RING = 10; // outline and its offset, both sides
+  let stageWidth = $state(0);
+  let stageHeight = $state(0);
+  const fitGrid = $derived.by(() => {
+    const count = variations.length;
+    if (!fit.current || count === 0 || stageWidth <= 0 || stageHeight <= 0) {
+      return null;
+    }
+    const width = stageWidth - SELECTED_RING;
+    const height = stageHeight - SELECTED_RING;
+    let best = { columns: 4, cell: 0 };
+    for (let columns = 1; columns <= count; columns++) {
+      const rows = Math.ceil(count / columns);
+      const cell = Math.min(
+        (width - (columns - 1) * VARIATION_GAP) / columns,
+        (height - (rows - 1) * VARIATION_GAP) / rows
+      );
+      if (cell > best.cell) best = { columns, cell };
+    }
+    return { columns: best.columns, cell: Math.floor(best.cell) };
+  });
+
+  // The deck fans out once the cards have their final layout: variations
+  // loaded and, on desktop, the fitted column count applied. Until then the
+  // cards are hidden so they never flash in their slots first.
+  let variationGrid = $state<HTMLElement | null>(null);
+  let fannedKey = $state<number | null>(null);
+  let stopFan: (() => void) | null = null;
+  const awaitingFan = $derived(fan !== null && fan.key !== fannedKey);
+
+  function settleFan(key: number): void {
+    fannedKey = key;
+    onFanDone?.();
+  }
+
+  $effect(() => {
+    if (!fan || fan.key === fannedKey) return;
+    const { key, origin } = fan;
+    // Give up rather than hide the cards if they never lay out.
+    const giveUp = setTimeout(() => settleFan(key), 2000);
+    const grid = variationGrid;
+    if (!grid || variations.length === 0 || (fit.current && !fitGrid)) {
+      return () => clearTimeout(giveUp);
+    }
+    const unclip = fit.current;
+    const frame = requestAnimationFrame(() => {
+      clearTimeout(giveUp);
+      stopFan?.();
+      fannedKey = key;
+      stopFan = fanOutDeck(grid, origin, {
+        selectedIndex,
+        unclip,
+        onDone: () => {
+          stopFan = null;
+          onFanDone?.();
+        },
+      });
+    });
+    return () => {
+      clearTimeout(giveUp);
+      cancelAnimationFrame(frame);
+    };
+  });
+
+  onDestroy(() => stopFan?.());
+
   const gridLabel = $derived(
     gridMode === GridMode.BOX ? "Box grid" : "Diamond grid"
   );
@@ -129,30 +214,6 @@
         <span class="variation-count">
           {gridLabel} · {variations.length} pictographs
         </span>
-      </div>
-
-      <div class="hero-frame">
-        {#if draft}
-          <PictographTypeFrame letter={draft.letter}>
-            <GuidePictograph
-              data={draft}
-              size="lg"
-              showGrid
-              showArrows
-              showTKA
-              showNonRadialPoints={gridMode === GridMode.BOX}
-              forceTheme="dark"
-              eager
-            />
-          </PictographTypeFrame>
-        {:else if isLoading}
-          <div class="hero-state" role="status">
-            <i class="fa-solid fa-circle-notch fa-spin" aria-hidden="true"></i>
-            Loading variation…
-          </div>
-        {:else}
-          <div class="hero-state">No variation selected.</div>
-        {/if}
       </div>
 
       {#if draft}
@@ -234,7 +295,7 @@
           <div>
             <h3 id="variation-heading">{info.label} variations</h3>
             <p class="heading-note">
-              Select any pictograph to inspect it at full size.
+              Every variation is the same letter. Pick one to edit and share.
             </p>
           </div>
           <div class="grid-switcher">
@@ -251,52 +312,67 @@
           </div>
         </div>
 
-        {#if isLoading}
-          <div class="load-state" role="status">
-            <i class="fa-solid fa-circle-notch fa-spin" aria-hidden="true"></i>
-            Loading {gridLabel.toLowerCase()} variations…
-          </div>
-        {:else if loadError}
-          <div class="load-state" role="alert">
-            <span>The {gridLabel.toLowerCase()} variations did not load.</span>
-            <button type="button" onclick={onRetry}>Try again</button>
-          </div>
-        {:else if variations.length === 0}
-          <div class="load-state">
-            No {gridLabel.toLowerCase()} variations recorded.
-          </div>
-        {:else}
-          <div
-            class="variation-grid themed-scrollbar"
-            aria-label={`${info.label} ${gridLabel} variations`}
-          >
-            {#each variations as pictograph, index (pictograph.id ?? index)}
-              <button
-                class="variation-button"
-                class:selected={index === selectedIndex}
-                type="button"
-                aria-pressed={index === selectedIndex}
-                aria-label={`${info.label}, ${gridLabel}, variation ${index + 1}`}
-                onclick={() => onVariationChange(index)}
+        <div
+          class="variation-stage"
+          bind:clientWidth={stageWidth}
+          bind:clientHeight={stageHeight}
+        >
+          {#if isLoading}
+            <div class="load-state" role="status">
+              <i class="fa-solid fa-circle-notch fa-spin" aria-hidden="true"
+              ></i>
+              Loading {gridLabel.toLowerCase()} variations…
+            </div>
+          {:else if loadError}
+            <div class="load-state" role="alert">
+              <span>The {gridLabel.toLowerCase()} variations did not load.</span
               >
-                <span class="variation-picture">
-                  <PictographTypeFrame letter={pictograph.letter}>
-                    <GuidePictograph
-                      data={pictograph}
-                      size="sm"
-                      showGrid
-                      showArrows
-                      showTKA
-                      showNonRadialPoints={gridMode === GridMode.BOX}
-                      forceTheme="dark"
-                      eager
-                    />
-                  </PictographTypeFrame>
-                </span>
-              </button>
-            {/each}
-          </div>
-        {/if}
+              <button type="button" onclick={onRetry}>Try again</button>
+            </div>
+          {:else if variations.length === 0}
+            <div class="load-state">
+              No {gridLabel.toLowerCase()} variations recorded.
+            </div>
+          {:else}
+            <div
+              bind:this={variationGrid}
+              class="variation-grid themed-scrollbar"
+              class:awaiting-fan={awaitingFan}
+              aria-label={`${info.label} ${gridLabel} variations`}
+              style:grid-template-columns={fitGrid
+                ? `repeat(${fitGrid.columns}, ${fitGrid.cell}px)`
+                : undefined}
+            >
+              {#each variations as pictograph, index (pictograph.id ?? index)}
+                <button
+                  class="variation-button"
+                  data-variation-index={index}
+                  class:selected={index === selectedIndex}
+                  type="button"
+                  aria-pressed={index === selectedIndex}
+                  aria-label={`${info.label}, ${gridLabel}, variation ${index + 1}`}
+                  onclick={() => onVariationChange(index)}
+                >
+                  <span class="variation-picture">
+                    <PictographTypeFrame letter={pictograph.letter}>
+                      <GuidePictograph
+                        data={pictograph}
+                        size="sm"
+                        showGrid
+                        showArrows
+                        showTKA
+                        showNonRadialPoints={gridMode === GridMode.BOX}
+                        {propType}
+                        forceTheme="dark"
+                        eager
+                      />
+                    </PictographTypeFrame>
+                  </span>
+                </button>
+              {/each}
+            </div>
+          {/if}
+        </div>
       </section>
 
       <section class="contexts" aria-labelledby="contexts-heading">
@@ -377,7 +453,7 @@
 
   .explorer {
     display: grid;
-    grid-template-columns: minmax(17rem, 0.8fr) minmax(0, 1.8fr);
+    grid-template-columns: minmax(16rem, 0.6fr) minmax(0, 2fr);
     gap: clamp(1rem, 2cqi, 2rem);
     min-width: 0;
     padding: clamp(0.9rem, 1.6cqi, 1.6rem);
@@ -453,18 +529,6 @@
     text-align: right;
   }
 
-  .hero-frame {
-    display: grid;
-    place-items: center;
-    width: min(100%, clamp(16rem, 31cqi, 30rem));
-    aspect-ratio: 1;
-    margin-inline: auto;
-    overflow: hidden;
-    background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
-  }
-
-  .hero-frame :global(.guide-pictograph),
-  .hero-frame :global(.guide-pictograph.size-lg .pictograph-wrapper),
   .variation-picture :global(.guide-pictograph),
   .variation-picture :global(.guide-pictograph.size-sm .pictograph-wrapper) {
     width: 100%;
@@ -473,7 +537,6 @@
     gap: 0;
   }
 
-  .hero-state,
   .load-state,
   .context-state {
     display: flex;
@@ -689,6 +752,52 @@
     aspect-ratio: 1;
   }
 
+  /* The deck (codex-fan.ts): cards wait unseen for their first frame, then
+     each flies on its own compositor layer, made up front rather than on
+     the first animated frame. */
+  .variation-grid.awaiting-fan .variation-button {
+    opacity: 0;
+  }
+
+  .variation-grid:global(.fanning) .variation-button {
+    will-change: transform;
+  }
+
+  /* Desktop: the explorer is the dialog's whole body and nothing scrolls.
+     Same query as `fit` in the script. The variation stage is the box under
+     its heading, and the script picks the column count and cell size that
+     fill it. */
+  @media (min-width: 64rem) and (min-height: 700px) {
+    .explorer-container {
+      height: 100%;
+    }
+    .explorer {
+      box-sizing: border-box;
+      height: 100%;
+      grid-template-rows: minmax(0, 1fr);
+    }
+    .preview-column {
+      position: static;
+      align-self: stretch;
+      min-height: 0;
+    }
+    .detail-column {
+      min-height: 0;
+    }
+    .variation-section {
+      flex: 1 1 0;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .variation-stage {
+      flex: 1 1 0;
+      min-height: 0;
+      display: grid;
+      place-content: center;
+    }
+  }
+
   .context-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -719,17 +828,28 @@
     flex-direction: column;
   }
 
+  /* One column: the variations lead, then the turns and links, then where
+     the letter appears. */
   @container letter-explorer (max-width: 58rem) {
     .explorer {
       grid-template-columns: 1fr;
     }
 
+    .detail-column {
+      display: contents;
+    }
+
+    .variation-section {
+      order: 1;
+    }
+
     .preview-column {
+      order: 2;
       position: static;
     }
 
-    .hero-frame {
-      width: min(100%, 25rem);
+    .contexts {
+      order: 3;
     }
   }
 
@@ -744,17 +864,8 @@
     }
 
     .variation-grid {
-      display: flex;
-      gap: 0.65rem;
-      overflow-x: auto;
-      overscroll-behavior-inline: contain;
-      scroll-snap-type: inline proximity;
-      padding: 0.15rem 0.15rem 0.75rem;
-    }
-
-    .variation-button {
-      flex: 0 0 7.5rem;
-      scroll-snap-align: start;
+      grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr));
+      padding: 0.3rem;
     }
 
     .context-grid {
@@ -791,10 +902,6 @@
 
     .preview-column {
       position: sticky;
-    }
-
-    .hero-frame {
-      width: min(100%, 16rem);
     }
 
     .section-heading {

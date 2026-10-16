@@ -18,6 +18,12 @@ export interface PropChiralitySeam {
    * carries both, because chirality is never shared the way prop type is.
    */
   readonly hands: readonly PropChiralityHandState[];
+  /**
+   * The other hand, read-only, for a picker that governs one hand. The pair
+   * picker draws it faintly beside the hand being set, because chirality only
+   * shows against the other prop.
+   */
+  readonly partner?: PropChiralityHandState;
   onChange: (hand: ChiralityHand, flipped: boolean) => void;
 }
 
@@ -53,6 +59,7 @@ export function createGlobalChiralitySeam(
 
   return {
     hands: hand ? [handState(hand)] : [handState("left"), handState("right")],
+    ...(hand ? { partner: handState(hand === "left" ? "right" : "left") } : {}),
     onChange(which: ChiralityHand, flipped: boolean) {
       updateSettings(
         which === "right"

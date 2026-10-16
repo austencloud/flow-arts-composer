@@ -2,99 +2,44 @@ import { describe, it, expect, vi } from "vitest";
 import {
   Silk2DRenderer,
   resolveSilk2DEnergyScale,
-  resolveSilk2DMaterialColors,
-  resolveSilk2DWidthEnvelope,
+  resolveSilk2DOpacity,
 } from "./silk-2d-renderer";
 import type { Silk2DParams } from "../translators/canvas2d-types";
 import type { SilkPalette } from "../domain/silk-palettes";
 import type { EmitterTip } from "./emitter-tip";
 
-type PosBag = {
-  leftPosA?: { x: number; y: number };
-  leftPosB?: { x: number; y: number };
-  rightPosA?: { x: number; y: number };
-  rightPosB?: { x: number; y: number };
-};
-
-/** Convert the legacy 4-slot bag to the flat emitter contract (base props). */
-function toEmitters(s: PosBag): EmitterTip[] {
-  const out: EmitterTip[] = [];
-  if (s.leftPosA)
-    out.push({
-      ...s.leftPosA,
-      propIndex: 0,
-      tipIndex: 0,
-      end: "A",
-      color: "#3a7fd9",
-    });
-  if (s.leftPosB)
-    out.push({
-      ...s.leftPosB,
-      propIndex: 0,
-      tipIndex: 1,
-      end: "B",
-      color: "#3a7fd9",
-    });
-  if (s.rightPosA)
-    out.push({
-      ...s.rightPosA,
-      propIndex: 1,
-      tipIndex: 0,
-      end: "A",
-      color: "#d94f4f",
-    });
-  if (s.rightPosB)
-    out.push({
-      ...s.rightPosB,
-      propIndex: 1,
-      tipIndex: 1,
-      end: "B",
-      color: "#d94f4f",
-    });
-  return out;
-}
+// No WebGL2 here, so these drive the flat Canvas2D fallback: the same cloth,
+// filled patch by patch onto the mock context.
 
 const SATIN: SilkPalette = {
   id: "satin",
   body: "#c0c0d0",
   edge: "#ffffff",
 };
+const STEP = 1 / 60;
 
 function makeCtx(): CanvasRenderingContext2D {
-  const ctx = {
+  return {
     canvas: { width: 800, height: 600 },
     globalCompositeOperation: "source-over" as GlobalCompositeOperation,
     globalAlpha: 1,
-    filter: "none",
     strokeStyle: "" as string | CanvasGradient,
     fillStyle: "" as string | CanvasGradient,
     lineWidth: 1,
-    lineCap: "butt" as CanvasLineCap,
     lineJoin: "miter" as CanvasLineJoin,
     beginPath: vi.fn(),
     moveTo: vi.fn(),
     lineTo: vi.fn(),
-    bezierCurveTo: vi.fn(),
-    quadraticCurveTo: vi.fn(),
     closePath: vi.fn(),
-    clip: vi.fn(),
     stroke: vi.fn(),
-    arc: vi.fn(),
-    ellipse: vi.fn(),
     fill: vi.fn(),
     drawImage: vi.fn(),
     save: vi.fn(),
     restore: vi.fn(),
-    translate: vi.fn(),
-    rotate: vi.fn(),
-    scale: vi.fn(),
     getTransform: vi.fn(() => ({ a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 })),
     setTransform: vi.fn(),
     clearRect: vi.fn(),
-    createLinearGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
-    createRadialGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
   } as unknown as CanvasRenderingContext2D;
-  return ctx;
 }
 
 function makeParams(overrides: Partial<Silk2DParams> = {}): Silk2DParams {
@@ -116,201 +61,150 @@ function makeParams(overrides: Partial<Silk2DParams> = {}): Silk2DParams {
   };
 }
 
-/** Drive the tips along +x so each emitter records a moving ribbon. */
-function moveBag(i: number): PosBag {
+function tip(x: number, y: number, propIndex = 0, tipIndex = 0): EmitterTip {
   return {
-    leftPosA: { x: 100 + i * 8, y: 100 },
-    leftPosB: { x: 120 + i * 8, y: 140 },
-    rightPosA: { x: 200 + i * 8, y: 100 },
-    rightPosB: { x: 220 + i * 8, y: 140 },
+    x,
+    y,
+    propIndex,
+    tipIndex,
+    end: tipIndex === 0 ? "A" : "B",
+    color: propIndex % 2 ? "#d94f4f" : "#3a7fd9",
   };
 }
 
-/** Two base props + one tunnel layer (propIndex 2/3) to prove layer coverage. */
-function moveWithLayer(i: number): EmitterTip[] {
-  return [
-    ...toEmitters(moveBag(i)),
-    {
-      x: 300 + i * 8,
-      y: 100,
-      propIndex: 2,
-      tipIndex: 0,
-      end: "A",
-      color: "#22cc88",
-    },
-    {
-      x: 320 + i * 8,
-      y: 140,
-      propIndex: 2,
-      tipIndex: 1,
-      end: "B",
-      color: "#22cc88",
-    },
-    {
-      x: 400 + i * 8,
-      y: 100,
-      propIndex: 3,
-      tipIndex: 0,
-      end: "A",
-      color: "#cc4488",
-    },
-    {
-      x: 420 + i * 8,
-      y: 140,
-      propIndex: 3,
-      tipIndex: 1,
-      end: "B",
-      color: "#cc4488",
-    },
-  ];
+/** Both ends of `props` staffs, moving right together. */
+function staffs(frame: number, props = 2): EmitterTip[] {
+  const out: EmitterTip[] = [];
+  for (let p = 0; p < props; p++) {
+    out.push(tip(100 + p * 100 + frame * 4, 100, p, 0));
+    out.push(tip(120 + p * 100 + frame * 4, 140, p, 1));
+  }
+  return out;
+}
+
+/** Every point the cloth was drawn through on `ctx`. */
+function drawnPoints(ctx: CanvasRenderingContext2D): { x: number; y: number }[] {
+  return [...vi.mocked(ctx.moveTo).mock.calls, ...vi.mocked(ctx.lineTo).mock.calls].map(
+    ([x, y]) => ({ x, y })
+  );
 }
 
 describe("Silk2DRenderer", () => {
-  it("tapers the free tail and gathers the prop attachment", () => {
-    const middle = resolveSilk2DWidthEnvelope(0.5);
-    expect(resolveSilk2DWidthEnvelope(0)).toBeLessThan(middle);
-    expect(resolveSilk2DWidthEnvelope(1)).toBeLessThan(middle);
-    expect(middle).toBeCloseTo(1);
-  });
-
   it("normalizes overlapping ribbon energy without erasing dense tunnels", () => {
     expect(resolveSilk2DEnergyScale(2)).toBe(1);
     expect(resolveSilk2DEnergyScale(4)).toBe(1);
-    expect(resolveSilk2DEnergyScale(16)).toBeLessThan(
-      resolveSilk2DEnergyScale(8)
-    );
+    expect(resolveSilk2DEnergyScale(16)).toBeLessThan(resolveSilk2DEnergyScale(8));
     expect(resolveSilk2DEnergyScale(100)).toBe(0.32);
   });
 
-  it("carries prop color into neutral silk materials", () => {
-    const left = resolveSilk2DMaterialColors(SATIN, "#3a7fd9", 0.5);
-    const right = resolveSilk2DMaterialColors(SATIN, "#d94f4f", 0.5);
-    expect(left.body).not.toBe(right.body);
-    expect(left.edge).not.toBe(right.edge);
-    expect(left.body).not.toBe("rgb(192,192,208)");
+  it("makes the fabric more opaque with intensity, never fully solid", () => {
+    expect(resolveSilk2DOpacity(0.8, 2)).toBeGreaterThan(resolveSilk2DOpacity(0.2, 2));
+    expect(resolveSilk2DOpacity(1, 2)).toBeLessThan(1);
+    expect(resolveSilk2DOpacity(0.8, 16)).toBeLessThan(resolveSilk2DOpacity(0.8, 2));
   });
 
-  it("renders ribbons once enough samples accumulate", () => {
+  it("draws one streamer per tracked end, through finite points", () => {
     const r = new Silk2DRenderer();
     const ctx = makeCtx();
-    const params = makeParams();
-    for (let i = 0; i < 30; i++) {
-      r.render(ctx, params, toEmitters(moveBag(i)), 1 / 60, 1, false);
+    for (let i = 0; i < 30; i++) r.render(ctx, makeParams(), staffs(i), STEP);
+    expect(r.streamerCount).toBe(4);
+    expect(vi.mocked(ctx.fill).mock.calls.length).toBeGreaterThan(0);
+    for (const point of drawnPoints(ctx)) {
+      expect(Number.isFinite(point.x)).toBe(true);
+      expect(Number.isFinite(point.y)).toBe(true);
     }
-    // One body fill per trail is the primary draw call. Satin intentionally
-    // avoids local panel gradients, which made the cloth look laminated.
-    expect(
-      (ctx.fill as ReturnType<typeof vi.fn>).mock.calls.length
-    ).toBeGreaterThan(0);
-    expect(
-      (ctx.createLinearGradient as ReturnType<typeof vi.fn>).mock.calls.length
-    ).toBe(0);
-    expect((ctx.save as ReturnType<typeof vi.fn>).mock.calls.length).toBe(
-      (ctx.restore as ReturnType<typeof vi.fn>).mock.calls.length
-    );
+    expect(vi.mocked(ctx.save).mock.calls.length).toBe(vi.mocked(ctx.restore).mock.calls.length);
   });
 
-  it("renders ribbons from tunnel layer emitters (propIndex >= 2)", () => {
-    const rBase = new Silk2DRenderer();
-    const rLayered = new Silk2DRenderer();
-    const ctxBase = makeCtx();
-    const ctxLayered = makeCtx();
-    const params = makeParams();
-    for (let i = 0; i < 30; i++) {
-      rBase.render(ctxBase, params, toEmitters(moveBag(i)), 1 / 60, 1, false);
-      rLayered.render(ctxLayered, params, moveWithLayer(i), 1 / 60, 1, false);
-    }
-    const baseCalls = (ctxBase.fill as ReturnType<typeof vi.fn>).mock.calls
-      .length;
-    const layeredCalls = (ctxLayered.fill as ReturnType<typeof vi.fn>).mock
-      .calls.length;
-    // 4 base ends vs 8 base+layer ends ⇒ strictly more body-fill segments.
-    // Confirms layer emitters (propIndex >= 2) actually draw ribbons.
-    expect(layeredCalls).toBeGreaterThan(baseCalls);
-  });
-
-  it("respects trackingMode left_end (no crash, still draws)", () => {
+  it("gives tunnel layer emitters (propIndex >= 2) their own streamers", () => {
     const r = new Silk2DRenderer();
     const ctx = makeCtx();
-    const params = makeParams({ trackingMode: "left_end" });
-    for (let i = 0; i < 30; i++) {
-      r.render(ctx, params, toEmitters(moveBag(i)), 1 / 60, 1, false);
-    }
-    expect(
-      (ctx.fill as ReturnType<typeof vi.fn>).mock.calls.length
-    ).toBeGreaterThan(0);
+    for (let i = 0; i < 10; i++) r.render(ctx, makeParams(), staffs(i, 4), STEP);
+    expect(r.streamerCount).toBe(8);
   });
 
-  it("retains trails for emitters that vanish (does not hard-prune)", () => {
+  it("only ties silk to the ends tracking asks for", () => {
     const r = new Silk2DRenderer();
     const ctx = makeCtx();
-    const params = makeParams();
-    // Build up ribbons for all four base ends.
-    for (let i = 0; i < 20; i++) {
-      r.render(ctx, params, toEmitters(moveBag(i)), 1 / 60, 1, false);
+    for (let i = 0; i < 10; i++) {
+      r.render(ctx, makeParams({ trackingMode: "left_end" }), staffs(i), STEP);
     }
-    // Now feed ONLY the blue prop — red emitters vanish this frame. Their trails
-    // must keep painting (aged out by lifetime, not deleted immediately).
-    const ctxAfter = makeCtx();
-    r.render(
-      ctxAfter,
-      params,
-      [
-        {
-          x: 260,
-          y: 100,
-          propIndex: 0,
-          tipIndex: 0,
-          end: "A",
-          color: "#3a7fd9",
-        },
-        {
-          x: 280,
-          y: 140,
-          propIndex: 0,
-          tipIndex: 1,
-          end: "B",
-          color: "#3a7fd9",
-        },
-      ],
-      1 / 60,
-      1,
-      false
-    );
-    // Red trails (propIndex 1) still have samples within lifetime ⇒ still fill.
-    expect(
-      (ctxAfter.fill as ReturnType<typeof vi.fn>).mock.calls.length
-    ).toBeGreaterThan(0);
+    expect(r.streamerCount).toBe(2);
   });
 
-  it("loopDetected skips recording without crashing", () => {
+  it("hangs down the screen from a still tip", () => {
     const r = new Silk2DRenderer();
-    const ctx = makeCtx();
-    const params = makeParams();
-    for (let i = 0; i < 20; i++) {
-      r.render(ctx, params, toEmitters(moveBag(i)), 1 / 60, 1, false);
+    let ctx = makeCtx();
+    for (let i = 0; i < 120; i++) {
+      ctx = makeCtx();
+      r.render(ctx, makeParams(), [tip(400, 100)], STEP);
     }
-    const before = (ctx.fill as ReturnType<typeof vi.fn>).mock.calls.length;
-    // A loop boundary teleports the tips; loopDetected must not throw and must
-    // not record a spike sample this frame (trail length unchanged-ish).
-    expect(() =>
-      r.render(ctx, params, toEmitters(moveBag(0)), 1 / 60, 1, true)
-    ).not.toThrow();
-    const after = (ctx.fill as ReturnType<typeof vi.fn>).mock.calls.length;
-    // Still drawing from the retained trail, so fill count keeps climbing.
-    expect(after).toBeGreaterThanOrEqual(before);
+    const ys = drawnPoints(ctx).map((p) => p.y);
+    expect(Math.max(...ys)).toBeGreaterThan(160);
+    expect(Math.min(...ys)).toBeGreaterThan(95);
   });
 
-  it("dispose resets state", () => {
+  it("stays finite whipped through a tight turn", () => {
     const r = new Silk2DRenderer();
     const ctx = makeCtx();
-    const params = makeParams();
-    for (let i = 0; i < 20; i++) {
-      r.render(ctx, params, toEmitters(moveBag(i)), 1 / 60, 1, false);
+    for (let frame = 0; frame < 120; frame++) {
+      const angle = frame * 0.5;
+      r.render(
+        ctx,
+        makeParams(),
+        [tip(220 + Math.cos(angle) * 90, 220 + Math.sin(angle) * 55)],
+        STEP
+      );
     }
+    for (const point of drawnPoints(ctx)) {
+      expect(Number.isFinite(point.x)).toBe(true);
+      expect(Number.isFinite(point.y)).toBe(true);
+    }
+  });
+
+  it("lets a missing prop's silk fall and fade away", () => {
+    const r = new Silk2DRenderer();
+    const ctx = makeCtx();
+    for (let i = 0; i < 24; i++) r.render(ctx, makeParams(), [tip(100 + i * 4, 180)], STEP);
+
+    vi.mocked(ctx.fill).mockClear();
+    r.render(ctx, makeParams(), [], 0.05);
+    expect(r.streamerCount).toBe(1);
+    expect(vi.mocked(ctx.fill).mock.calls.length).toBeGreaterThan(0);
+
+    for (let i = 0; i < 30; i++) r.render(ctx, makeParams(), [], 0.05);
+    expect(r.streamerCount).toBe(0);
+    vi.mocked(ctx.fill).mockClear();
+    r.render(ctx, makeParams(), [], 0.05);
+    expect(vi.mocked(ctx.fill)).not.toHaveBeenCalled();
+  });
+
+  it("carries the cloth with a prop across a loop seam instead of dragging it", () => {
+    const r = new Silk2DRenderer();
+    for (let i = 0; i < 24; i++) r.render(makeCtx(), makeParams(), [tip(100 + i * 4, 180)], STEP);
+    const ctx = makeCtx();
+    r.render(ctx, makeParams(), [tip(700, 180)], STEP, 1, true);
+    const xs = drawnPoints(ctx).map((p) => p.x);
+    expect(xs.length).toBeGreaterThan(0);
+    expect(Math.min(...xs)).toBeGreaterThan(500);
+  });
+
+  it("starts fresh silk at a tip that jumps across the stage", () => {
+    const r = new Silk2DRenderer();
+    for (let i = 0; i < 24; i++) r.render(makeCtx(), makeParams(), [tip(100 + i * 4, 180)], STEP);
+    const ctx = makeCtx();
+    r.render(ctx, makeParams(), [tip(700, 180)], STEP);
+    const xs = drawnPoints(ctx).map((p) => p.x);
+    expect(xs.length).toBeGreaterThan(0);
+    expect(Math.min(...xs)).toBeGreaterThan(500);
+  });
+
+  it("dispose clears every streamer", () => {
+    const r = new Silk2DRenderer();
+    const ctx = makeCtx();
+    for (let i = 0; i < 20; i++) r.render(ctx, makeParams(), staffs(i), STEP);
     r.dispose();
-    expect(() =>
-      r.render(ctx, params, toEmitters(moveBag(0)), 1 / 60, 1, false)
-    ).not.toThrow();
+    expect(r.streamerCount).toBe(0);
+    expect(() => r.render(ctx, makeParams(), staffs(0), STEP)).not.toThrow();
   });
 });

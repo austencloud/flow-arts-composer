@@ -2,23 +2,34 @@ import { PlaneMode, userProportionsState } from "@austencloud/scene-3d";
 import type { CharacterInstanceState } from "../state/character-instance-state.svelte";
 import {
   buildStanceYawTrackForSource,
+  resolveTrackedUpperBodyStance,
+  type FrontRouteEvent,
   type StanceYawTrack,
 } from "../collision/stance-yaw-track";
 import {
   buildHardBeatTrack,
   displaceProp,
+  hardBeatActualOverreach,
   NO_HARD_BEAT_DISPLACEMENT,
   sampleHardBeatTrack,
+  withFrontRouteReport,
+  type HardBeatBodyModel,
   type HardBeatSample,
   type HardBeatTrack,
 } from "../collision/hard-beat-displacement";
 import {
   buildBodyClearanceTrack,
+  bodyClearanceNeed,
+  defaultBodyClearanceModel,
   NO_BODY_CLEARANCE,
   sampleBodyClearanceTrack,
   type BodyClearanceSample,
   type BodyClearanceTrack,
+  type BodyClearanceModel,
+  type StaffLine,
 } from "../collision/body-clearance";
+import { propStateToStaffTarget } from "../services/swept-volume/swept-volume-builder";
+import { MAX_STANCE_YAW_RAD } from "../collision/upper-body-stance-planner";
 import type { PerformerReachMeasurements } from "./performer-reach-measurements";
 import {
   sameScoreMotionKey,
@@ -74,6 +85,11 @@ export class ScoreSeekDetector {
 interface HardBeatTrackKey extends ScoreMotionKey {
   heightCm: number;
   staffLengthM: number;
+  characterId: CharacterInstanceState["characterId"];
+  upperArmM: number | null;
+  forearmM: number | null;
+  shoulderWidthM: number | null;
+  reachM: number | null;
 }
 
 interface CachedHardBeatTrack {
@@ -86,15 +102,19 @@ interface CachedHardBeatTrack {
 function hardBeatTrackKey(
   performer: CharacterInstanceState,
   heightCm: number,
-  staffLengthM: number
+  staffLengthM: number,
+  measurements: PerformerReachMeasurements | null
 ): HardBeatTrackKey {
   const motion = scoreMotionKey(performer);
-  // Only dual-wheel grip anchors depend on staff length. Other modes keep
-  // their existing track and contact history when the staff changes size.
   return {
     ...motion,
     heightCm,
-    staffLengthM: motion.planeMode === PlaneMode.DUAL_WHEEL ? staffLengthM : 0,
+    staffLengthM,
+    characterId: performer.characterId,
+    upperArmM: measurements?.upperArmM ?? null,
+    forearmM: measurements?.forearmM ?? null,
+    shoulderWidthM: measurements?.shoulderWidthM ?? null,
+    reachM: measurements?.reachM ?? null,
   };
 }
 
@@ -130,6 +150,274 @@ function seekDetectorFor(performer: CharacterInstanceState): ScoreSeekDetector {
   return detector;
 }
 
+const FRONT_ROUTE_HALF_WINDOW_STEPS = 0.25;
+const FRONT_ROUTE_RAMP_STEPS = 0.15;
+// The default hard-beat reach includes 90 mm from hand bone to palm centre
+// (the shortest measured calibration rig). Preserve that reference point when
+// checking a live rig's arm-chain measurement.
+const MIN_PALM_EXTENT_M = 0.09;
+
+/** A brief prop-only side cue may be safer in the front depth lane. */
+function frontRouteCandidates(
+  performer: CharacterInstanceState,
+  stanceTrack: StanceYawTrack
+): FrontRouteEvent[] {
+  if (!stanceTrack.loop || performer.planeMode !== PlaneMode.WALL) return [];
+  const candidates: FrontRouteEvent[] = [];
+  for (let index = 0; index < stanceTrack.rawTimes.length; index++) {
+    const center = stanceTrack.rawTimes[index]!;
+    const pose = (time: number) => {
+      const props = performer.propStatesAtScoreTime(time);
+      return resolveTrackedUpperBodyStance(
+        stanceTrack,
+        time,
+        PlaneMode.WALL,
+        props.left,
+        props.right
+      );
+    };
+    const at = pose(center);
+    if (
+      at.corridorBlend < 0.65 ||
+      Math.abs(at.segments.chestRad) >= MAX_STANCE_YAW_RAD * 0.8 ||
+      Math.abs(stanceTrack.rawDesire[index]!) <= MAX_STANCE_YAW_RAD * 0.8 ||
+      at.corridorBlend -
+        Math.max(
+          pose(center - 1 / 30).corridorBlend,
+          pose(center + 1 / 30).corridorBlend
+        ) <
+        0.25 ||
+      pose(center - FRONT_ROUTE_HALF_WINDOW_STEPS).corridorBlend > 0.02 ||
+      pose(center + FRONT_ROUTE_HALF_WINDOW_STEPS).corridorBlend > 0.02
+    )
+      continue;
+    if (
+      candidates.some((event) => {
+        const priorCenter =
+          (event.startStep + FRONT_ROUTE_HALF_WINDOW_STEPS) %
+          stanceTrack.stepCount;
+        const distance = Math.abs(center - priorCenter);
+        return Math.min(distance, stanceTrack.stepCount - distance) < 0.5;
+      })
+    )
+      continue;
+    candidates.push({
+      startStep:
+        (((center - FRONT_ROUTE_HALF_WINDOW_STEPS) % stanceTrack.stepCount) +
+          stanceTrack.stepCount) %
+        stanceTrack.stepCount,
+      durationSteps: FRONT_ROUTE_HALF_WINDOW_STEPS * 2,
+      enterRampSteps: FRONT_ROUTE_RAMP_STEPS,
+      exitRampSteps: FRONT_ROUTE_RAMP_STEPS,
+    });
+  }
+  return candidates;
+}
+
+interface RouteSample {
+  contact: boolean;
+  overreach: readonly number[];
+  targets: readonly ({ x: number; y: number; z: number } | null)[];
+}
+
+function routeSample(
+  performer: CharacterInstanceState,
+  stanceTrack: StanceYawTrack,
+  hardBeatTrack: HardBeatTrack,
+  time: number,
+  staffLengthM: number,
+  model: BodyClearanceModel,
+  measurements: PerformerReachMeasurements | null,
+  measuredReachBody: HardBeatBodyModel | null
+): RouteSample {
+  const props = performer.propStatesAtScoreTime(time);
+  const stance = resolveTrackedUpperBodyStance(
+    stanceTrack,
+    time,
+    PlaneMode.WALL,
+    props.left,
+    props.right,
+    measurements
+  );
+  const displacement = sampleHardBeatTrack(hardBeatTrack, time);
+  const shifted = [
+    displaceProp(props.left, displacement.left),
+    displaceProp(props.right, displacement.right),
+  ] as const;
+  const corridors = [
+    stance.leftDepthOffsetM,
+    stance.rightDepthOffsetM,
+  ] as const;
+  const lines = shifted.map((prop, index): StaffLine | null => {
+    if (!prop) return null;
+    const line = propStateToStaffTarget(prop, staffLengthM / 2);
+    const depth = corridors[index]!;
+    return {
+      a: { ...line.tipAWorld, z: line.tipAWorld.z + depth },
+      b: { ...line.tipBWorld, z: line.tipBWorld.z + depth },
+    };
+  });
+  const contact =
+    bodyClearanceNeed(
+      lines,
+      {
+        chestRad: stance.segments.chestRad,
+        spine1Rad: stance.segments.spine1Rad,
+      },
+      model,
+      { x: 0, z: -1 }
+    ) > 1e-6;
+  return {
+    contact,
+    overreach: [
+      hardBeatActualOverreach(
+        hardBeatTrack,
+        props.left,
+        displacement.left,
+        stance.segments.chestRad,
+        corridors[0],
+        "left"
+      ),
+      hardBeatActualOverreach(
+        hardBeatTrack,
+        props.right,
+        displacement.right,
+        stance.segments.chestRad,
+        corridors[1],
+        "right"
+      ),
+      ...(measuredReachBody
+        ? ([
+            hardBeatActualOverreach(
+              hardBeatTrack,
+              props.left,
+              displacement.left,
+              stance.segments.chestRad,
+              corridors[0],
+              "left",
+              measuredReachBody
+            ),
+            hardBeatActualOverreach(
+              hardBeatTrack,
+              props.right,
+              displacement.right,
+              stance.segments.chestRad,
+              corridors[1],
+              "right",
+              measuredReachBody
+            ),
+          ] as const)
+        : []),
+    ],
+    targets: shifted.map((prop, index) =>
+      prop
+        ? {
+            x: prop.worldPosition.x,
+            y: prop.worldPosition.y,
+            z: prop.worldPosition.z + corridors[index]!,
+          }
+        : null
+    ),
+  };
+}
+
+function routeImprovesMotion(
+  performer: CharacterInstanceState,
+  baseStance: StanceYawTrack,
+  baseHardBeat: HardBeatTrack,
+  candidateStance: StanceYawTrack,
+  candidateHardBeat: HardBeatTrack,
+  event: FrontRouteEvent,
+  staffLengthM: number,
+  heightM: number,
+  measurements: PerformerReachMeasurements | null
+): boolean {
+  const stepCount = baseStance.stepCount;
+  const model = defaultBodyClearanceModel({
+    heightM,
+    shoulderHalfWidthM:
+      measurements?.shoulderWidthM != null
+        ? measurements.shoulderWidthM / 2
+        : null,
+  });
+  const measuredReachBody = measurements
+    ? {
+        ...baseHardBeat.body,
+        shoulderHalfWidthM: measurements.shoulderWidthM / 2,
+        reachM: measurements.reachM + MIN_PALM_EXTENT_M,
+      }
+    : null;
+  const targets: { old: RouteSample[]; next: RouteSample[] } = {
+    old: [],
+    next: [],
+  };
+  for (const rate of [48, 30]) {
+    const oldSamples: RouteSample[] = [];
+    const nextSamples: RouteSample[] = [];
+    for (let index = 0; index < stepCount * rate; index++) {
+      const time = index / rate;
+      const old = routeSample(
+        performer,
+        baseStance,
+        baseHardBeat,
+        time,
+        staffLengthM,
+        model,
+        measurements,
+        measuredReachBody
+      );
+      const next = routeSample(
+        performer,
+        candidateStance,
+        candidateHardBeat,
+        time,
+        staffLengthM,
+        model,
+        measurements,
+        measuredReachBody
+      );
+      if (next.contact && !old.contact) return false;
+      if (
+        next.overreach.some(
+          (value, side) => value > old.overreach[side]! + 0.001
+        )
+      )
+        return false;
+      if (rate === 30) {
+        oldSamples.push(old);
+        nextSamples.push(next);
+      }
+    }
+    if (rate === 30) {
+      targets.old = oldSamples;
+      targets.next = nextSamples;
+    }
+  }
+  const center = (event.startStep + FRONT_ROUTE_HALF_WINDOW_STEPS) % stepCount;
+  const distance = (time: number) =>
+    Math.abs(((time - center + stepCount * 1.5) % stepCount) - stepCount / 2);
+  const maxJump = (samples: RouteSample[]) => {
+    let largest = 0;
+    for (let index = 0; index < samples.length; index++) {
+      if (distance(index / 30) > FRONT_ROUTE_HALF_WINDOW_STEPS + 1 / 30)
+        continue;
+      const next = samples[(index + 1) % samples.length]!;
+      for (let side = 0; side < 2; side++) {
+        const a = samples[index]!.targets[side],
+          b = next.targets[side];
+        if (!a || !b) continue;
+        largest = Math.max(
+          largest,
+          Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z)
+        );
+      }
+    }
+    return largest;
+  };
+  const baselineJump = maxJump(targets.old);
+  return baselineJump > 0.1 && maxJump(targets.next) < baselineJump * 0.7;
+}
+
 /**
  * The performer's hard-beat track, rebuilt only when the score's motion or the
  * body changes: the steps, plane mode, loop, effort and path policy all move
@@ -140,28 +428,90 @@ function seekDetectorFor(performer: CharacterInstanceState): ScoreSeekDetector {
 function resolveHardBeatTrack(
   performer: CharacterInstanceState,
   heightCm: number,
-  staffLengthM: number
+  staffLengthM: number,
+  measurements: PerformerReachMeasurements | null
 ): CachedHardBeatTrack {
-  const key = hardBeatTrackKey(performer, heightCm, staffLengthM);
+  const key = hardBeatTrackKey(performer, heightCm, staffLengthM, measurements);
   const cached = hardBeatTracks.get(performer);
   if (cached && sameScoreMotionKey(cached.key, key)) return cached;
 
   // A performer without a playable score (or a stand-in without one) keeps its
   // authored props.
-  const stanceTrack =
+  const baselineStance =
     key.stepCount > 0
       ? buildStanceYawTrackForSource(performer, key.planeMode)
       : null;
-  const track =
+  const baselineHardBeat =
     key.stepCount > 0
       ? buildHardBeatTrack({
           source: performer,
-          stanceTrack,
+          stanceTrack: baselineStance,
           heightM: heightCm / 100,
           staffLengthM,
           planeMode: key.planeMode,
         })
       : null;
+  let stanceTrack = baselineStance;
+  let track = baselineHardBeat;
+  if (
+    baselineStance &&
+    baselineHardBeat &&
+    key.planeMode === PlaneMode.WALL &&
+    staffLengthM > 0
+  ) {
+    const candidates = frontRouteCandidates(performer, baselineStance);
+    if (candidates.length) {
+      const alternateStance: StanceYawTrack = {
+        ...baselineStance,
+        frontRouteOnly: true,
+      };
+      const alternateHardBeat = buildHardBeatTrack({
+        source: performer,
+        stanceTrack: alternateStance,
+        heightM: heightCm / 100,
+        staffLengthM,
+        planeMode: key.planeMode,
+        laneForwardShare: 1,
+      });
+      if (alternateHardBeat) {
+        const accepted: FrontRouteEvent[] = [];
+        for (const event of candidates) {
+          const nextEvents = [...accepted, event];
+          const candidateStance: StanceYawTrack = {
+            ...baselineStance,
+            frontRouteEvents: nextEvents,
+          };
+          const candidateHardBeat: HardBeatTrack = {
+            ...baselineHardBeat,
+            frontRouteOverlay: {
+              events: nextEvents,
+              alternate: alternateHardBeat,
+            },
+          };
+          if (
+            routeImprovesMotion(
+              performer,
+              stanceTrack!,
+              track!,
+              candidateStance,
+              candidateHardBeat,
+              event,
+              staffLengthM,
+              heightCm / 100,
+              measurements
+            )
+          ) {
+            accepted.push(event);
+            stanceTrack = candidateStance;
+            track = candidateHardBeat;
+          }
+        }
+      }
+    }
+  }
+  if (stanceTrack && track?.frontRouteOverlay) {
+    track = withFrontRouteReport(track, performer, stanceTrack, key.planeMode);
+  }
   // History built against the previous score does not apply to this one.
   if (cached) seekDetectorFor(performer).bump();
   const entry = { key, track, stanceTrack };
@@ -182,8 +532,7 @@ function resolveBodyClearanceTrack(
 ): BodyClearanceTrack | null {
   const cached = bodyClearanceTracks.get(performer);
   if (
-    cached &&
-    cached.key.hardBeat === hardBeat &&
+    cached?.key.hardBeat === hardBeat &&
     cached.key.staffLengthM === staffLengthM &&
     cached.key.measurements === measurements
   ) {
@@ -201,7 +550,7 @@ function resolveBodyClearanceTrack(
       })
     : null;
   // Contact history belongs to where the body stood.
-  if (cached) seekDetectorFor(performer).bump();
+  if (cached?.key.hardBeat === hardBeat) seekDetectorFor(performer).bump();
   bodyClearanceTracks.set(performer, {
     key: { hardBeat, staffLengthM, measurements },
     track,
@@ -231,6 +580,8 @@ export interface PerformerContactOptions {
 
 export interface PerformerContact {
   track: HardBeatTrack | null;
+  stanceTrack: StanceYawTrack | null;
+  stance: ReturnType<typeof resolveTrackedUpperBodyStance>;
   sample: HardBeatSample;
   /** The props to render: displaced copies, or the live state untouched. */
   leftProp: CharacterInstanceState["leftPropState"];
@@ -260,7 +611,12 @@ export function resolvePerformerContact(
 ): PerformerContact {
   const heightCm = options.heightCm ?? userProportionsState.heightCm;
   const staffLengthM = options.staffLengthM ?? userProportionsState.staffLength;
-  const hardBeat = resolveHardBeatTrack(performer, heightCm, staffLengthM);
+  const hardBeat = resolveHardBeatTrack(
+    performer,
+    heightCm,
+    staffLengthM,
+    options.measurements ?? null
+  );
   const { track } = hardBeat;
   const bodyTrack =
     track && options.displace !== false && options.clearBody === true
@@ -272,6 +628,14 @@ export function resolvePerformerContact(
         )
       : null;
   const scoreTime = performerScoreClock(performer);
+  const stance = resolveTrackedUpperBodyStance(
+    hardBeat.stanceTrack,
+    scoreTime,
+    performer.planeMode ?? PlaneMode.WALL,
+    performer.leftPropState,
+    performer.rightPropState,
+    options.measurements ?? null
+  );
   const resetKey = seekDetectorFor(performer).observe(
     scoreTime,
     performer.motionStepCount,
@@ -280,6 +644,8 @@ export function resolvePerformerContact(
   if (!track || options.displace === false) {
     return {
       track,
+      stanceTrack: hardBeat.stanceTrack,
+      stance,
       sample: NO_HARD_BEAT_DISPLACEMENT,
       leftProp: performer.leftPropState,
       rightProp: performer.rightPropState,
@@ -292,6 +658,8 @@ export function resolvePerformerContact(
   const sample = sampleHardBeatTrack(track, scoreTime);
   return {
     track,
+    stanceTrack: hardBeat.stanceTrack,
+    stance,
     sample,
     leftProp: displaceProp(performer.leftPropState, sample.left),
     rightProp: displaceProp(performer.rightPropState, sample.right),

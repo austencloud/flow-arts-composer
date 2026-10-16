@@ -78,6 +78,8 @@
     performerSteps?: readonly (number | null | undefined)[] | null;
     /** Host world geometry rendered in the performer coordinate frame. */
     worldChildren?: Snippet;
+    /** A host renderer can replace the canvas while retaining the scene controls. */
+    surface?: Snippet;
     /** Host commands added to the left of the HUD's command bar. */
     hudActions?: Snippet;
     /** Host editor shares the scene inspector's space and dismissal behavior. */
@@ -147,6 +149,7 @@
     visiblePerformerCount,
     performerSteps = null,
     worldChildren,
+    surface,
     hudActions,
     hostPanel,
     hostPanelTitle,
@@ -187,7 +190,7 @@
   onMount(() => {
     // Shared decoders and the selected environment's models, warmed on idle so
     // a scene switch inside this surface reads them from cache.
-    warmSelectedSceneAssets();
+    if (!surface) warmSelectedSceneAssets();
 
     let active = true;
     void import("./controls/SceneControlWorkspace.svelte").then(
@@ -288,34 +291,38 @@
     data-scene-inspector-docked={reservedSceneWidth > 0 || undefined}
     style:--scene-control-reserved-width="{reservedSceneWidth}px"
   >
-    <Viewer3DCanvas
-      {sequenceData}
-      {currentStep}
-      {isPlaying}
-      {bpm}
-      {onBpmChange}
-      {leftPropType}
-      {rightPropType}
-      hideOverlays={immersive || hideCanvasOverlays}
-      {initialRevealMode}
-      {initialRevealDeferredFeatures}
-      {onPlaybackToggle}
-      {isLooping}
-      {onLoopToggle}
-      {onProgressBarSeek}
-      {playbackMode}
-      {onPlaybackModeChange}
-      {onSystemPlaybackChange}
-      {onSceneReadyChange}
-      {weldPerformerGrip}
-      {enablePerformerLocomotion}
-      {renderEmptyScene}
-      {cameraFov}
-      {visiblePerformerCount}
-      {performerSteps}
-      {worldChildren}
-      {stageExtent}
-    />
+    {#if surface}
+      {@render surface()}
+    {:else}
+      <Viewer3DCanvas
+        {sequenceData}
+        {currentStep}
+        {isPlaying}
+        {bpm}
+        {onBpmChange}
+        {leftPropType}
+        {rightPropType}
+        hideOverlays={immersive || hideCanvasOverlays}
+        {initialRevealMode}
+        {initialRevealDeferredFeatures}
+        {onPlaybackToggle}
+        {isLooping}
+        {onLoopToggle}
+        {onProgressBarSeek}
+        {playbackMode}
+        {onPlaybackModeChange}
+        {onSystemPlaybackChange}
+        {onSceneReadyChange}
+        {weldPerformerGrip}
+        {enablePerformerLocomotion}
+        {renderEmptyScene}
+        {cameraFov}
+        {visiblePerformerCount}
+        {performerSteps}
+        {worldChildren}
+        {stageExtent}
+      />
+    {/if}
   </div>
 
   {#if overlayChildren}

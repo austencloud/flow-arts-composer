@@ -28,7 +28,7 @@ import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/mot
 import {
   SIMPLE_PATTERNS,
   getCompatiblePatterns,
-} from "../domain/reversal-patterns";
+} from "#lib/shared/foundation/domain/sequence-patterns/reversal-patterns.js";
 import { resolvePattern, type ResolvedReversalPattern } from "../domain/reversal-transform";
 import { transformSequence } from "./reversal-transform-apply";
 import type { CsvEdge } from "./pictograph-letter-lookup";

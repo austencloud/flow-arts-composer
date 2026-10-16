@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Sentences from "../../../_components/Sentences.svelte";
   /**
    * Real-pictograph diagrams for the 1-turn shifts breakdown, mirroring
    * TurnsPage.svelte's `ROWS` (pro, anti) exactly - same motions/turns/
@@ -226,15 +227,20 @@
   });
 </script>
 
-<GuideSection id="turn-shifts" title={translate("guide_l2_shifts_title")} subtitle="VTG: 1:3">
+<GuideSection
+  id="turn-shifts"
+  title={translate("guide_l2_shifts_title")}
+  subtitle="VTG: 1:3"
+>
   <div class="section-body">
     <p>
-      <strong>{translate("guide_l2_turns_label")}:</strong> {translate("guide_l2_shifts_intro")}
+      <Sentences text={translate("guide_l2_shifts_intro")}
+        >{#snippet lead()}<strong>{translate("guide_l2_turns_label")}:</strong
+          >{" "}{/snippet}</Sentences
+      >
     </p>
 
-    <p>
-      {translate("guide_l2_shifts_pro_intro")}
-    </p>
+    <p><Sentences text={translate("guide_l2_shifts_pro_intro")} /></p>
   </div>
 
   <div class="showcase-wrap">
@@ -256,15 +262,15 @@
   </div>
 
   <div class="section-body">
-    <p>{translate("guide_l2_shifts_thumb_rule")}</p>
+    <p><Sentences text={translate("guide_l2_shifts_thumb_rule")} /></p>
 
     <p>
-      <strong>Pro:</strong> {translate("guide_l2_shifts_pro_thumb")}
+      <Sentences text={translate("guide_l2_shifts_pro_thumb")}
+        >{#snippet lead()}<strong>Pro:</strong>{" "}{/snippet}</Sentences
+      >
     </p>
 
-    <p>
-      {translate("guide_l2_shifts_anti_intro")}
-    </p>
+    <p><Sentences text={translate("guide_l2_shifts_anti_intro")} /></p>
   </div>
 
   <div class="showcase-wrap">
@@ -287,7 +293,9 @@
 
   <div class="section-body">
     <p>
-      <strong>Anti:</strong> {translate("guide_l2_shifts_anti_thumb")}
+      <Sentences text={translate("guide_l2_shifts_anti_thumb")}
+        >{#snippet lead()}<strong>Anti:</strong>{" "}{/snippet}</Sentences
+      >
     </p>
   </div>
 </GuideSection>

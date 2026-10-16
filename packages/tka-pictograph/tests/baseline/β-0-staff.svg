@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 950 950" width="950" height="950"><defs><filter id="arrow-halo" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#0a0a0f"/><feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#0a0a0f"/><feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#0a0a0f"/></filter></defs>
+<rect width="950" height="950" fill="#0a0a0f"/>
+<g style="color: #ffffff" opacity="0.85"><circle cx="475" cy="475" r="12" fill="#ffffff"/><circle cx="475" cy="175" r="25" fill="#ffffff"/><circle cx="775" cy="475" r="25" fill="#ffffff"/><circle cx="475" cy="775" r="25" fill="#ffffff"/><circle cx="175" cy="475" r="25" fill="#ffffff"/><circle cx="475" cy="331.9" r="4.7" fill="#ffffff"/><circle cx="618.1" cy="475" r="4.7" fill="#ffffff"/><circle cx="475" cy="618.1" r="4.7" fill="#ffffff"/><circle cx="331.9" cy="475" r="4.7" fill="#ffffff"/></g>
+<g transform="translate(618.1, 453.8888888888889) rotate(180) translate(-126.4, -38.9)">
+  <path d="M251.4 67.7V10.1c0-4.8-4.1-8.7-9.1-8.7s-9.1 3.9-9.1 8.7v19.2H10.3c-4.9 0-8.9 3.8-8.9 8.5V41c0 4.6 4 8.5 8.9 8.5h222.9v18.2c0 4.8 4.1 8.7 9.1 8.7s9.1-3.9 9.1-8.7z" style="fill:#3575E2"/>
+</g>
+<g transform="translate(618.1, 496.1111111111111) rotate(180) translate(-126.4, -38.9)">
+  <path d="M251.4 67.7V10.1c0-4.8-4.1-8.7-9.1-8.7s-9.1 3.9-9.1 8.7v19.2H10.3c-4.9 0-8.9 3.8-8.9 8.5V41c0 4.6 4 8.5 8.9 8.5h222.9v18.2c0 4.8 4.1 8.7 9.1 8.7s9.1-3.9 9.1-8.7z" style="fill:#ED1C24"/>
+</g>
+<g transform="translate(50, 800)">
+  <svg width="65" height="100" viewBox="0 0 65 100">
+    
+<path fill="#e6e6e6"  d="M60.4,41.3c-1.6-2-3.3-3.7-5.2-5.3C84.2,2.5,16.6-18.2,15.6,22.5c-0.1,19.3-0.2,34.5-0.2,53.8C8.7,74.2,1.1,78.6,0,86.1
+	c-0.7,18.9,17.9,15.6,24.6,7.4c2.6-3.1,3.5-5.6,4.4-15.1C54.4,92.1,74.3,63.6,60.4,41.3 M49.5,67.2c-7.6,6.1-11,0.1-16.3-1.5
+	c-1.2-0.3-2.5-0.2-3.6,0.3c0-15.4,0.1-30.6,0.2-46.2c-1.3-8.6,10.8-11.4,16.1-5.6c4.5,4.9,3.6,13.3-1.7,15.2
+	c-17.4-4.7-15.7,20.8,0,14.4C51.6,46,57.1,59.2,49.5,67.2"/>
+
+  </svg>
+
+
+
+</g>
+</svg>

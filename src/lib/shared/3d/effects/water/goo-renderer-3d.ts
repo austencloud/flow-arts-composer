@@ -4,15 +4,11 @@ import {
   Color,
   DataTexture,
   DynamicDrawUsage,
-  EquirectangularReflectionMapping,
-  FloatType,
   InstancedBufferAttribute,
   InstancedMesh,
   Mesh,
   MeshPhysicalMaterial,
   Object3D,
-  RGBAFormat,
-  LinearSRGBColorSpace,
   SphereGeometry,
   Vector3,
 } from "three";
@@ -20,41 +16,134 @@ import {
   isTrackedTip,
   type GooTipSource3D,
 } from "../scene-effects/scene-effect-source-3d";
+import { createStudioMap } from "../studio-map-3d";
 import { GooPuddleRenderer3D } from "./goo-puddle-renderer-3d";
 
-const STRANDS = 64;
-const DROPS = 512;
-const RINGS = 25;
-const CAP_RINGS = 7;
-const SIDES = 12;
-const PINCH_TIME = 0.075;
-const RETRACT_TIME = 0.11;
+const STRANDS = 48;
+/** Most points one rope can hold; about 70 cm of hanging liquid. */
+const NODES = 20;
+/** Centerline samples per rope segment. */
+const SUB = 3;
+/** Rings in each rounded end. */
+const CAP = 6;
+const SAMPLES = (NODES - 1) * SUB + 1;
+const RINGS = SAMPLES + CAP * 2;
+const SIDES = 14;
 const VERTICES = RINGS * SIDES;
+const DROPS = 512;
+/** Rest length a new rope point is laid at. */
+const SEGMENT = 0.035;
+const MIN_REST = 0.0015;
+const SUBSTEP = 1 / 120;
+const ITERATIONS = 5;
 const TELEPORT_DISTANCE = 0.75;
+/** Ropes and drops below this equivalent radius are spent. */
+const SPENT_RADIUS = 0.0018;
 const UP = new Vector3(0, 1, 0);
 const RIGHT = new Vector3(1, 0, 0);
 
+const sphereVolume = (radius: number) => (4 / 3) * Math.PI * radius ** 3;
+const sphereRadius = (volume: number) =>
+  Math.cbrt((3 * Math.max(0, volume)) / (4 * Math.PI));
+const clamp01 = (value: number) =>
+  Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 0;
+
+/** What a body of liquid carries from its source into drops and puddles. */
+interface Liquid {
+  gravity: number;
+  floorY: number;
+  viscosity: number;
+  tension: number;
+  core: Color;
+  puddle: Color;
+  alpha: number;
+  metalness: number;
+  pools: boolean;
+  /** 0-1: how readily a landing throws satellite droplets. */
+  splashy: number;
+  /** Light the liquid gives off in its own color (acid, spirit). */
+  glow: number;
+  /** Fraction of its size a free drop loses each second (spirit fades). */
+  evaporate: number;
+}
+
+/** Repeatable 0-1 scatter, so a replay sprays the same way. */
+function scatter(n: number): number {
+  const x = Math.sin(n * 12.9898) * 43758.5453;
+  return x - Math.floor(x);
+}
+
+function makeLiquid(): Liquid {
+  return {
+    gravity: -9.8,
+    floorY: -Infinity,
+    viscosity: 0,
+    tension: 0.5,
+    core: new Color(),
+    puddle: new Color(),
+    alpha: 1,
+    metalness: 0,
+    pools: true,
+    splashy: 0.5,
+    glow: 0,
+    evaporate: 0,
+  };
+}
+
+function copyLiquid(target: Liquid, source: Liquid): void {
+  target.gravity = source.gravity;
+  target.floorY = source.floorY;
+  target.viscosity = source.viscosity;
+  target.tension = source.tension;
+  target.core.copy(source.core);
+  target.puddle.copy(source.puddle);
+  target.alpha = source.alpha;
+  target.metalness = source.metalness;
+  target.pools = source.pools;
+  target.splashy = source.splashy;
+  target.glow = source.glow;
+  target.evaporate = source.evaporate;
+}
+
+/**
+ * A rope of liquid: points joined by segments that each hold a volume, so a
+ * segment's thickness follows from how far it has been stretched. Node 0 is
+ * pinned to the prop tip while attached; the last node carries the bulb.
+ */
 interface Strand {
   active: boolean;
   sourceId: number;
   attached: boolean;
-  releaseAge: number;
-  dropReleased: boolean;
+  seenFrame: number;
   age: number;
-  maxAge: number;
-  tension: number;
-  viscosity: number;
-  radius: number;
-  gravity: number;
-  floorY: number;
-  tail: Vector3;
-  bend: Vector3;
-  head: Vector3;
-  velocity: Vector3;
-  core: Color;
-  edge: Color;
-  alpha: number;
-  metalness: number;
+  count: number;
+  maxNodes: number;
+  /** Longest rope the tip can hold before its lower part lets go. */
+  maxLength: number;
+  pos: Float32Array;
+  prev: Float32Array;
+  rest: Float32Array;
+  vol: Float32Array;
+  bulb: number;
+  nozzle: number;
+  /** Neck radius at which the liquid breaks. */
+  pinch: number;
+  /** Largest bulb radius the neck can carry. */
+  maxBulb: number;
+  /** Rate liquid drains down the rope toward the bulb, 1/s. */
+  flow: number;
+  /** Rate a pulled segment yields and lengthens, 1/s. */
+  yieldRate: number;
+  /** Stretch stiffness: how hard the rope resists being pulled longer. */
+  stiffness: number;
+  /** Per-segment constraint impulse within one substep. */
+  lambda: Float32Array;
+  /** Rate surface tension draws the rope back together, 1/s. */
+  shrink: number;
+  rootFrom: Vector3;
+  rootTo: Vector3;
+  step: number;
+  liquid: Liquid;
 }
 
 interface Drop {
@@ -62,58 +151,34 @@ interface Drop {
   age: number;
   maxAge: number;
   radius: number;
-  gravity: number;
-  floorY: number;
-  viscosity: number;
-  tension: number;
+  satellite: boolean;
+  wobble: number;
   position: Vector3;
   velocity: Vector3;
-  color: Color;
-  alpha: number;
-  metalness: number;
+  axis: Vector3;
+  liquid: Liquid;
 }
 
-// A tiny owned studio map gives the liquid broad reflections even in a dim
-// scene. The dark surroundings preserve the resolved palette's body color.
-function createStudioMap(): DataTexture {
-  const width = 128;
-  const height = 64;
-  const pixels = new Float32Array(width * height * 4);
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const u = x / width;
-      const v = y / height;
-      const key =
-        Math.exp(-Math.pow((u - 0.3) / 0.065, 4)) *
-        Math.exp(-Math.pow((v - 0.38) / 0.24, 4));
-      const fill =
-        Math.exp(-Math.pow((u - 0.7) / 0.11, 4)) *
-        Math.exp(-Math.pow((v - 0.54) / 0.16, 4));
-      const light = 0.025 + 3.5 * key + 1 * fill;
-      const offset = (y * width + x) * 4;
-      pixels[offset] = light;
-      pixels[offset + 1] = light;
-      pixels[offset + 2] = light;
-      pixels[offset + 3] = 1;
-    }
-  }
-  const texture = new DataTexture(pixels, width, height, RGBAFormat, FloatType);
-  texture.mapping = EquirectangularReflectionMapping;
-  texture.colorSpace = LinearSRGBColorSpace;
-  texture.needsUpdate = true;
-  return texture;
+interface SourceState {
+  accumulator: number;
+  /** Fountain drops owed to this source, carried between frames. */
+  jet: number;
+  lastSeen: number;
+  strand: number;
+  last: Vector3;
 }
 
 function createWetMaterial(envMap: DataTexture): MeshPhysicalMaterial {
   const material = new MeshPhysicalMaterial({
     color: 0xffffff,
     vertexColors: true,
-    roughness: 0.24,
+    roughness: 0.09,
     metalness: 1,
-    clearcoat: 0.7,
-    clearcoatRoughness: 0.16,
+    clearcoat: 1,
+    clearcoatRoughness: 0.04,
+    ior: 1.42,
     envMap,
-    envMapIntensity: 0.8,
+    envMapIntensity: 1,
     transparent: true,
     depthWrite: false,
     fog: true,
@@ -125,21 +190,31 @@ function createWetMaterial(envMap: DataTexture): MeshPhysicalMaterial {
         `#include <common>
          attribute float aAlpha;
          attribute float aMetalness;
+         attribute float aGlow;
          varying float vGooAlpha;
-         varying float vGooMetalness;`
+         varying float vGooMetalness;
+         varying float vGooGlow;`
       )
       .replace(
         "#include <begin_vertex>",
         `#include <begin_vertex>
          vGooAlpha = aAlpha;
-         vGooMetalness = aMetalness;`
+         vGooMetalness = aMetalness;
+         vGooGlow = aGlow;`
       );
     shader.fragmentShader = shader.fragmentShader
       .replace(
         "#include <common>",
         `#include <common>
          varying float vGooAlpha;
-         varying float vGooMetalness;`
+         varying float vGooMetalness;
+         varying float vGooGlow;`
+      )
+      .replace(
+        "#include <emissivemap_fragment>",
+        `#include <emissivemap_fragment>
+         // Glowing liquid lights itself, densest where the view crosses most of it.
+         totalEmissiveRadiance += diffuseColor.rgb * vGooGlow;`
       )
       .replace(
         "#include <color_fragment>",
@@ -150,6 +225,26 @@ function createWetMaterial(envMap: DataTexture): MeshPhysicalMaterial {
         "#include <metalnessmap_fragment>",
         `#include <metalnessmap_fragment>
          metalnessFactor *= vGooMetalness;`
+      )
+      .replace(
+        "#include <opaque_fragment>",
+        `float gooFacing = saturate( dot( normal, geometryViewDir ) );
+         #ifndef GOO_FLAT
+           // A view ray crosses more liquid through a bead's middle than its rim.
+           diffuseColor.a *= mix( 0.62, 1.0, gooFacing );
+         #endif
+         // Light skimming through thin liquid lights its edge in its own color.
+         outgoingLight += diffuseColor.rgb * pow( 1.0 - gooFacing, 3.0 ) * 0.45 * ( 1.0 - vGooMetalness );
+         // Reflections ride on the surface, so transparency must not dim them.
+         outgoingLight += totalSpecular * ( 1.0 / max( diffuseColor.a, 0.35 ) - 1.0 );
+         #ifdef GOO_FLAT
+           // A metal pool is all mirror, so its reflections carry the look.
+           outgoingLight += totalSpecular * vGooMetalness * 1.6;
+           // A floor film mirrors lights at grazing angles; roll those glints
+           // off softly so a pool shines without blooming into a white patch.
+           outgoingLight = outgoingLight / ( 1.0 + outgoingLight * 0.9 );
+         #endif
+         #include <opaque_fragment>`
       );
   };
   return material;
@@ -161,6 +256,7 @@ function makeTubeGeometry(): BufferGeometry {
   const colors = new Float32Array(positions.length);
   const alphas = new Float32Array(STRANDS * VERTICES);
   const metalnesses = new Float32Array(STRANDS * VERTICES);
+  const glows = new Float32Array(STRANDS * VERTICES);
   const indices = new Uint16Array(STRANDS * (RINGS - 1) * SIDES * 6);
   let index = 0;
   for (let strand = 0; strand < STRANDS; strand++) {
@@ -181,80 +277,77 @@ function makeTubeGeometry(): BufferGeometry {
     }
   }
   geometry.setIndex(new BufferAttribute(indices, 1));
-  geometry.setAttribute(
-    "position",
-    new BufferAttribute(positions, 3).setUsage(DynamicDrawUsage)
-  );
-  geometry.setAttribute(
-    "color",
-    new BufferAttribute(colors, 3).setUsage(DynamicDrawUsage)
-  );
-  geometry.setAttribute(
-    "aAlpha",
-    new BufferAttribute(alphas, 1).setUsage(DynamicDrawUsage)
-  );
-  geometry.setAttribute(
-    "aMetalness",
-    new BufferAttribute(metalnesses, 1).setUsage(DynamicDrawUsage)
-  );
-  geometry.setAttribute(
-    "normal",
-    new BufferAttribute(new Float32Array(positions.length), 3).setUsage(
-      DynamicDrawUsage
-    )
-  );
+  const dynamic = (array: Float32Array, size: number) =>
+    new BufferAttribute(array, size).setUsage(DynamicDrawUsage);
+  geometry.setAttribute("position", dynamic(positions, 3));
+  geometry.setAttribute("normal", dynamic(new Float32Array(positions.length), 3));
+  geometry.setAttribute("color", dynamic(colors, 3));
+  geometry.setAttribute("aAlpha", dynamic(alphas, 1));
+  geometry.setAttribute("aMetalness", dynamic(metalnesses, 1));
+  geometry.setAttribute("aGlow", dynamic(glows, 1));
   return geometry;
 }
 
-export class GooRenderer3D {
-  private readonly strands: Strand[] = Array.from({ length: STRANDS }, () => ({
+function makeStrand(): Strand {
+  return {
     active: false,
     sourceId: -1,
     attached: false,
-    releaseAge: -1,
-    dropReleased: false,
+    seenFrame: -1,
     age: 0,
-    maxAge: 0,
-    tension: 0,
-    viscosity: 0,
-    radius: 0,
-    gravity: -9.8,
-    floorY: -Infinity,
-    tail: new Vector3(),
-    bend: new Vector3(),
-    head: new Vector3(),
-    velocity: new Vector3(),
-    core: new Color(),
-    edge: new Color(),
-    alpha: 1,
-    metalness: 0.08,
-  }));
+    count: 0,
+    maxNodes: NODES,
+    maxLength: 0.5,
+    pos: new Float32Array(NODES * 3),
+    prev: new Float32Array(NODES * 3),
+    rest: new Float32Array(NODES),
+    vol: new Float32Array(NODES),
+    bulb: 0,
+    nozzle: 0.02,
+    pinch: 0.005,
+    maxBulb: 0.04,
+    flow: 4,
+    yieldRate: 10,
+    stiffness: 10,
+    lambda: new Float32Array(NODES),
+    shrink: 1,
+    rootFrom: new Vector3(),
+    rootTo: new Vector3(),
+    step: SUBSTEP,
+    liquid: makeLiquid(),
+  };
+}
+
+export class GooRenderer3D {
+  private readonly strands: Strand[] = Array.from({ length: STRANDS }, makeStrand);
   private readonly drops: Drop[] = Array.from({ length: DROPS }, () => ({
     active: false,
     age: 0,
     maxAge: 0,
     radius: 0,
-    gravity: -9.8,
-    floorY: -Infinity,
-    viscosity: 0,
-    tension: 0.5,
+    satellite: false,
+    wobble: 0,
     position: new Vector3(),
     velocity: new Vector3(),
-    color: new Color(),
-    alpha: 1,
-    metalness: 0.08,
+    axis: new Vector3(0, 1, 0),
+    liquid: makeLiquid(),
   }));
   private readonly tubeGeometry = makeTubeGeometry();
   private readonly studioMap = createStudioMap();
   private readonly wetMaterial = createWetMaterial(this.studioMap);
-  private readonly puddles = new GooPuddleRenderer3D(this.wetMaterial);
+  private readonly floorMap = createStudioMap(true);
+  private readonly puddles = new GooPuddleRenderer3D(this.wetMaterial, this.floorMap);
   private readonly tubeMesh = new Mesh(this.tubeGeometry, this.wetMaterial);
-  private readonly sphereGeometry = new SphereGeometry(1, 12, 8);
+  private readonly sphereGeometry = new SphereGeometry(1, 20, 14);
   private readonly dropAlphas = new InstancedBufferAttribute(
     new Float32Array(DROPS),
     1
   ).setUsage(DynamicDrawUsage);
   private readonly dropMetalnesses = new InstancedBufferAttribute(
+    new Float32Array(DROPS),
+    1
+  ).setUsage(DynamicDrawUsage);
+  private readonly dropGlows = new InstancedBufferAttribute(
     new Float32Array(DROPS),
     1
   ).setUsage(DynamicDrawUsage);
@@ -264,24 +357,30 @@ export class GooRenderer3D {
     DROPS
   );
   private readonly dropObject = new Object3D();
-  private readonly dropScale = new Vector3();
+  private readonly sourceLiquid = makeLiquid();
+  private readonly sources = new Map<number, SourceState>();
+  private readonly strandDrawn = new Uint8Array(STRANDS);
+  // Scratch space for one rope's rings.
+  private readonly ringX = new Float32Array(RINGS);
+  private readonly ringY = new Float32Array(RINGS);
+  private readonly ringZ = new Float32Array(RINGS);
+  private readonly ringR = new Float32Array(RINGS);
   private readonly tangent = new Vector3();
   private readonly side = new Vector3();
   private readonly binormal = new Vector3();
-  private readonly center = new Vector3();
-  private readonly next = new Vector3();
-  private readonly tint = new Color();
-  private readonly sources = new Map<
-    number,
-    { accumulator: number; lastSeen: number }
-  >();
+  private readonly radial = new Vector3();
+  private readonly scratch = new Vector3();
+  private readonly velocity = new Vector3();
   private frame = 0;
+  private jets = 0;
+  private readonly jetVelocity = new Vector3();
   private strandCursor = 0;
   private dropCursor = 0;
+  private seed = 0x2f6b1d;
   private parent: Object3D | null = null;
 
   constructor() {
-    // ShaderMaterial expects a vertex color even on the uncolored unit sphere.
+    // The shared material reads vertex colors even on the uncolored sphere.
     const colors = new Float32Array(
       this.sphereGeometry.getAttribute("position").count * 3
     );
@@ -289,6 +388,7 @@ export class GooRenderer3D {
     this.sphereGeometry.setAttribute("color", new BufferAttribute(colors, 3));
     this.sphereGeometry.setAttribute("aAlpha", this.dropAlphas);
     this.sphereGeometry.setAttribute("aMetalness", this.dropMetalnesses);
+    this.sphereGeometry.setAttribute("aGlow", this.dropGlows);
     this.tubeMesh.frustumCulled = false;
     this.dropMesh.frustumCulled = false;
     this.dropMesh.instanceMatrix.setUsage(DynamicDrawUsage);
@@ -315,26 +415,41 @@ export class GooRenderer3D {
       if (!isTrackedTip(source.params.trackingMode, source.tipIndex)) continue;
       let state = this.sources.get(source.sourceId);
       if (!state) {
-        state = { accumulator: 0, lastSeen: this.frame };
+        state = {
+          accumulator: 0,
+          jet: 0,
+          lastSeen: this.frame,
+          strand: -1,
+          last: new Vector3(source.position.x, source.position.y, source.position.z),
+        };
         this.sources.set(source.sourceId, state);
       }
       state.lastSeen = this.frame;
       this.advanceSource(source, state, dt);
+      state.last.set(source.position.x, source.position.y, source.position.z);
     }
     for (const [id, state] of this.sources) {
       if (state.lastSeen !== this.frame) this.sources.delete(id);
     }
-    this.advanceStrands(sources, dt);
+    for (const strand of this.strands) {
+      // A rope whose tip vanished keeps falling on its own.
+      if (strand.active && strand.attached && strand.seenFrame !== this.frame)
+        this.detach(strand);
+    }
+    this.advanceStrands(dt);
     this.advanceDrops(dt);
     this.puddles.update(dt);
-    if (!this.hasActiveStrands() && !this.hasActiveDrops()) {
-      this.tubeMesh.visible = false;
-      this.dropMesh.visible = false;
-      this.dropMesh.count = 0;
-      return;
-    }
     this.writeStrands();
     this.writeDrops();
+  }
+
+  /** Live liquid counts for labs and tests. */
+  debugCounts(): { strands: number; drops: number; puddles: number } {
+    return {
+      strands: this.strands.filter((strand) => strand.active).length,
+      drops: this.drops.filter((drop) => drop.active).length,
+      puddles: this.puddles.count,
+    };
   }
 
   clear(): void {
@@ -345,11 +460,10 @@ export class GooRenderer3D {
     this.dropMesh.count = 0;
     this.dropMesh.visible = false;
     this.tubeMesh.visible = false;
-    const positions = this.tubeGeometry.getAttribute(
-      "position"
-    ) as BufferAttribute;
+    const positions = this.tubeGeometry.getAttribute("position") as BufferAttribute;
     (positions.array as Float32Array).fill(0);
     positions.needsUpdate = true;
+    this.strandDrawn.fill(0);
   }
 
   dispose(): void {
@@ -359,14 +473,17 @@ export class GooRenderer3D {
     this.tubeGeometry.dispose();
     this.sphereGeometry.dispose();
     this.puddles.dispose();
-    // This renderer owns the material shared by its strands, drops, and puddles.
+    // This renderer owns the material shared by its ropes, drops and puddles.
     this.wetMaterial.dispose();
     this.studioMap.dispose();
+    this.floorMap.dispose();
   }
+
+  // ---------------------------------------------------------------- sources
 
   private advanceSource(
     source: GooTipSource3D,
-    state: { accumulator: number; lastSeen: number },
+    state: SourceState,
     dt: number
   ): void {
     const p = source.params;
@@ -379,227 +496,695 @@ export class GooRenderer3D {
       p.ambientEmission * p.ambientSpawnRate +
         p.motionEmission * speed * p.motionSpawnRate
     );
-    if (rate === 0) {
-      state.accumulator = 0;
-      return;
-    }
-    const styleRate =
-      p.spewStyle === "flow" ? 1 : p.spewStyle === "splash" ? 0.7 : 0.3;
-    state.accumulator = Math.min(1, state.accumulator + dt * rate * styleRate);
+    const liquid = this.sourceLiquid;
+    this.readLiquid(liquid, source);
     if (p.spewStyle === "mist") {
+      if (rate === 0) {
+        state.accumulator = 0;
+        return;
+      }
+      state.accumulator = Math.min(1, state.accumulator + dt * rate * 0.3);
       if (state.accumulator >= 1) {
         state.accumulator = 0;
+        liquid.gravity = p.worldGravity * 0.35;
+        const radius = p.baseRadius * 0.28;
         this.spawnDrop(
           source.position,
           source.velocity,
-          p.baseRadius * 0.28,
-          p.worldGravity * 0.35,
-          p.resolvedPalette.edge,
-          p.palette === "mercury" ? 0.88 : 0,
-          0.94 - p.clarity * 0.12,
+          radius,
+          liquid,
           this.dropLifetime(
             source.position.y,
             source.collisionFloorY,
             source.velocity.y,
-            p.worldGravity * 0.35,
+            liquid.gravity,
             0.34
           ),
-          source.collisionFloorY,
-          p.viscosity,
-          p.surfaceTension
+          0,
+          true
         );
       }
-    } else if (
-      state.accumulator >= 1 &&
-      !this.hasSourceStrand(source.sourceId)
+      return;
+    }
+
+    this.welling(source, state, liquid, dt);
+
+    let strand =
+      state.strand >= 0 ? this.strands[state.strand]! : undefined;
+    if (
+      strand &&
+      (!strand.active || !strand.attached || strand.sourceId !== source.sourceId)
     ) {
-      if (this.spawnStrand(source)) state.accumulator = 0;
+      strand = undefined;
+      state.strand = -1;
+    }
+    if (
+      strand &&
+      state.last.distanceTo(this.scratch.set(source.position.x, source.position.y, source.position.z)) >
+        TELEPORT_DISTANCE
+    ) {
+      this.detach(strand);
+      strand = undefined;
+      state.strand = -1;
+    }
+    if (!strand && rate > 0) {
+      const index = this.spawnStrand(source);
+      if (index >= 0) {
+        state.strand = index;
+        strand = this.strands[index]!;
+        state.last.set(source.position.x, source.position.y, source.position.z);
+      }
+    }
+    if (!strand) return;
+
+    strand.seenFrame = this.frame;
+    copyLiquid(strand.liquid, liquid);
+    this.tune(strand, source);
+    strand.rootFrom.copy(state.last);
+    strand.rootTo.set(source.position.x, source.position.y, source.position.z);
+    // Liquid leaves the tip at the emission rate, measured in drips.
+    // It eases toward its ceiling instead of hitting it, so a hard spin
+    // still pours more than a gentle one and each preset's amount shows.
+    const drips =
+      6 * (1 - Math.exp((-rate * (p.spewStyle === "splash" ? 0.45 : 0.32)) / 6));
+    const added = drips * sphereVolume(strand.nozzle * 1.45) * dt;
+    if (strand.count >= 2) strand.vol[0] = strand.vol[0]! + added;
+    else strand.bulb += added;
+  }
+
+  /**
+   * Liquid the prop gives off on its own wells up out of the tip in a small
+   * fountain, while liquid thrown by motion stays in the rope: Fountain
+   * sprays, Classic spits now and then, Whip only flings.
+   */
+  private welling(
+    source: GooTipSource3D,
+    state: SourceState,
+    liquid: Liquid,
+    dt: number
+  ): void {
+    const p = source.params;
+    const ambient = clamp01(p.ambientEmission);
+    const rate = Math.min(
+      32,
+      ambient ** 3 * p.ambientSpawnRate * 4 * (1 - 0.7 * liquid.viscosity)
+    );
+    if (!(rate > 0)) {
+      state.jet = 0;
+      return;
+    }
+    state.jet = Math.min(4, state.jet + dt * rate);
+    while (state.jet >= 1) {
+      state.jet -= 1;
+      const n = ++this.jets;
+      // A strong source throws a tall, tight column of fat drops; a weak
+      // one spits low and wide.
+      const angle = scatter(n) * Math.PI * 2;
+      const spread = (0.08 + 0.3 * scatter(n + 0.31)) * (1.6 - ambient);
+      const lift = (1.2 + 2.2 * ambient * ambient) * (0.85 + 0.3 * scatter(n + 0.57));
+      const velocity = this.jetVelocity.set(
+        source.velocity.x * 0.4 + Math.cos(angle) * spread,
+        source.velocity.y * 0.4 + lift,
+        source.velocity.z * 0.4 + Math.sin(angle) * spread
+      );
+      this.spawnDrop(
+        source.position,
+        velocity,
+        p.baseRadius * (0.2 + 0.3 * ambient) * (0.8 + 0.4 * scatter(n + 0.83)),
+        liquid,
+        this.dropLifetime(
+          source.position.y,
+          source.collisionFloorY,
+          velocity.y,
+          liquid.gravity,
+          0.34
+        ),
+        0,
+        true
+      );
     }
   }
 
-  private spawnStrand(source: GooTipSource3D): boolean {
+  private readLiquid(liquid: Liquid, source: GooTipSource3D): void {
     const p = source.params;
-    const index = this.takeStrand();
-    if (index < 0) return false;
-    const strand = this.strands[index]!;
-    strand.active = true;
-    strand.sourceId = source.sourceId;
-    strand.attached = true;
-    strand.releaseAge = -1;
-    strand.dropReleased = false;
-    strand.age = 0;
-    strand.tension = Math.min(1, Math.max(0, p.surfaceTension));
-    strand.viscosity = Math.min(1, Math.max(0, p.viscosity));
-    strand.maxAge =
-      (p.spewStyle === "flow" ? 0.68 : 0.4) +
-      0.3 * strand.tension +
-      0.22 * strand.viscosity;
-    strand.radius =
-      p.baseRadius *
-      (0.55 + 0.35 * p.intensity) *
-      (p.spewStyle === "flow" ? 0.86 : 0.7);
-    strand.gravity = p.worldGravity;
-    strand.floorY = source.collisionFloorY;
-    strand.tail.set(source.position.x, source.position.y, source.position.z);
-    strand.bend.copy(strand.tail);
-    strand.head.copy(strand.tail);
-    strand.velocity
-      .set(source.velocity.x, source.velocity.y, source.velocity.z)
-      .multiplyScalar(0.25);
-    strand.velocity.y += p.spewStyle === "splash" ? 0.3 : -0.15;
-    strand.core.set(p.resolvedPalette.core);
-    strand.edge.set(p.resolvedPalette.edge);
-    strand.metalness = p.palette === "mercury" ? 0.88 : 0;
-    strand.alpha = 0.98 - p.clarity * 0.05;
-    return true;
+    liquid.gravity = p.worldGravity;
+    liquid.floorY = source.collisionFloorY;
+    liquid.viscosity = clamp01(p.viscosity);
+    liquid.tension = clamp01(p.surfaceTension);
+    liquid.core.set(p.resolvedPalette.core);
+    liquid.puddle.set(p.resolvedPalette.puddleTint).lerp(liquid.core, 0.35);
+    liquid.metalness = p.palette === "mercury" ? 0.9 : 0;
+    // Liquid metal is opaque however clear the setting is.
+    liquid.alpha = Math.max(liquid.metalness, 0.97 - 0.22 * clamp01(p.clarity));
+    liquid.pools = !p.resolvedPalette.suppressPuddles;
+    liquid.splashy =
+      p.spewStyle === "splash" ? 1 : p.spewStyle === "flow" ? 0.45 : 0.15;
+    // Each palette is its own liquid, not only its own color.
+    liquid.glow = p.palette === "acid" ? 0.7 : p.palette === "spirit" ? 1.1 : 0;
+    liquid.evaporate = 0;
+    if (p.palette === "spirit") {
+      // Ectoplasm drifts down slowly and fades before it reaches the floor.
+      liquid.gravity *= 0.4;
+      liquid.evaporate = 0.9;
+    }
   }
 
-  private advanceStrands(sources: readonly GooTipSource3D[], dt: number): void {
+  /** Map the source's liquid controls onto the rope's physics. */
+  private tune(strand: Strand, source: GooTipSource3D): void {
+    const p = source.params;
+    const viscosity = strand.liquid.viscosity;
+    const tension = strand.liquid.tension;
+    const splash = p.spewStyle === "splash";
+    strand.nozzle =
+      p.baseRadius * (0.45 + 0.35 * clamp01(p.intensity)) * (splash ? 0.7 : 0.82);
+    strand.maxNodes = splash ? 8 : NODES;
+    strand.maxLength = (splash ? 0.16 : 0.32) * (1 + 0.8 * viscosity + 0.4 * tension);
+    strand.pinch = strand.nozzle * ((splash ? 0.5 : 0.42) - 0.17 * tension);
+    strand.maxBulb = strand.nozzle * ((splash ? 1.45 : 1.75) + 0.9 * tension + 0.8 * viscosity);
+    strand.flow = (1.4 + 5 * (1 - viscosity)) * (splash ? 1.6 : 1);
+    strand.yieldRate = (3 + 12 * (1 - viscosity)) * (splash ? 1.4 : 1);
+    strand.stiffness = (1.2 + 8 * viscosity ** 1.5 + 2.5 * tension) * (splash ? 0.7 : 1);
+    // Surface tension draws a rope in at a speed set by tension over viscosity.
+    strand.shrink = (0.25 + 1.1 * tension) * (1 - 0.8 * viscosity);
+  }
+
+  private spawnStrand(source: GooTipSource3D): number {
+    const index = this.takeStrand();
+    if (index < 0) return -1;
+    const strand = this.strands[index]!;
+    strand.active = true;
+    strand.attached = true;
+    strand.sourceId = source.sourceId;
+    strand.seenFrame = this.frame;
+    strand.age = 0;
+    this.readLiquid(strand.liquid, source);
+    this.tune(strand, source);
+    const { x, y, z } = source.position;
+    const v = source.velocity;
+    strand.count = 2;
+    strand.pos.set([x, y, z, x, y - 0.004, z]);
+    strand.prev.set([
+      x - v.x * SUBSTEP,
+      y - v.y * SUBSTEP,
+      z - v.z * SUBSTEP,
+      x - v.x * SUBSTEP,
+      y - 0.004 - v.y * SUBSTEP,
+      z - v.z * SUBSTEP,
+    ]);
+    strand.rest[0] = 0.004;
+    strand.vol[0] = Math.PI * strand.nozzle ** 2 * 0.004;
+    strand.bulb = sphereVolume(strand.nozzle * 0.7);
+    strand.rootFrom.set(x, y, z);
+    strand.rootTo.set(x, y, z);
+    strand.step = SUBSTEP;
+    return index;
+  }
+
+  private detach(strand: Strand): void {
+    strand.attached = false;
+    strand.sourceId = -1;
+    strand.age = 0;
+    strand.shrink = 3 + 7 * strand.liquid.tension;
+  }
+
+  // ---------------------------------------------------------------- ropes
+
+  private advanceStrands(dt: number): void {
+    if (dt <= 0) return;
+    const steps = Math.max(1, Math.ceil(dt / SUBSTEP - 1e-6));
+    const h = dt / steps;
     for (const strand of this.strands) {
       if (!strand.active) continue;
       strand.age += dt;
-      const source =
-        strand.attached && strand.releaseAge < 0
-          ? sources.find(
-              (item) =>
-                item.sourceId === strand.sourceId &&
-                isTrackedTip(item.params.trackingMode, item.tipIndex)
-            )
-          : undefined;
-      if (source) {
-        strand.gravity = source.params.worldGravity;
-        strand.viscosity = source.params.viscosity;
-        strand.floorY = source.collisionFloorY;
-      }
-      if (strand.attached && strand.releaseAge < 0) {
-        if (source) {
-          this.next.set(
-            source.position.x,
-            source.position.y,
-            source.position.z
-          );
-          if (this.next.distanceTo(strand.tail) < TELEPORT_DISTANCE) {
-            if (dt > 0 && strand.viscosity > 0) {
-              // While joined, thick liquid approaches the prop's actual motion.
-              // Damping velocity also preserves its slower speed at separation.
-              this.side.copy(this.next).sub(strand.tail).divideScalar(dt);
-              this.side.clampLength(0, 12);
-              strand.velocity.lerp(
-                this.side,
-                1 - Math.exp(-1.8 * strand.viscosity * dt)
-              );
-            }
-            strand.tail.copy(this.next);
-          } else strand.attached = false;
-        } else strand.attached = false;
-      }
-      this.center.copy(strand.head);
-      strand.velocity.y += strand.gravity * dt;
-      strand.head.addScaledVector(strand.velocity, dt);
-      if (
-        Number.isFinite(strand.floorY) &&
-        strand.head.y <= strand.floorY + strand.radius
-      ) {
-        if (!strand.dropReleased) {
-          const crossing = this.groundCrossing(
-            this.center.y,
-            strand.head.y,
-            strand.floorY + strand.radius
-          );
-          this.puddles.deposit(
-            this.center.x + (strand.head.x - this.center.x) * crossing,
-            this.center.z + (strand.head.z - this.center.z) * crossing,
-            strand.floorY,
-            strand.radius,
-            strand.viscosity,
-            strand.tension,
-            strand.edge,
-            strand.metalness,
-            strand.alpha,
-            Math.abs(strand.velocity.y)
-          );
+      strand.step = h;
+      for (let step = 0; step < steps && strand.active; step++) {
+        if (strand.attached) {
+          const from = step / steps;
+          const to = (step + 1) / steps;
+          const a = strand.rootFrom;
+          const b = strand.rootTo;
+          strand.prev[0] = a.x + (b.x - a.x) * from;
+          strand.prev[1] = a.y + (b.y - a.y) * from;
+          strand.prev[2] = a.z + (b.z - a.z) * from;
+          strand.pos[0] = a.x + (b.x - a.x) * to;
+          strand.pos[1] = a.y + (b.y - a.y) * to;
+          strand.pos[2] = a.z + (b.z - a.z) * to;
         }
+        this.integrate(strand, h);
+        strand.lambda.fill(0);
+        for (let iteration = 0; iteration < ITERATIONS; iteration++)
+          this.solve(strand, h);
+        this.yieldSegments(strand, h);
+        this.collide(strand);
+      }
+      if (!strand.active) continue;
+      if (!strand.attached && strand.liquid.evaporate > 0) {
+        // A fading rope thins everywhere at once: volume goes as size cubed.
+        const keep = Math.exp(-3 * strand.liquid.evaporate * dt);
+        strand.bulb *= keep;
+        for (let segment = 0; segment < strand.count - 1; segment++)
+          strand.vol[segment] = strand.vol[segment]! * keep;
+      }
+      this.drain(strand, dt);
+      this.resample(strand);
+      this.breakNeck(strand);
+      if (strand.active && !strand.attached) this.ballUp(strand);
+      if (strand.active && this.totalVolume(strand) < sphereVolume(SPENT_RADIUS))
         strand.active = false;
-        continue;
-      }
-      const reach = strand.head.distanceTo(strand.tail);
-      strand.bend.copy(strand.tail).add(strand.head).multiplyScalar(0.5);
-      strand.bend.y -=
-        Math.min(
-          0.07,
-          Math.abs(strand.gravity) * strand.age * strand.age * 0.08
-        ) * Math.min(1, reach / 0.15);
-      const pinch = 0.52 + 0.38 * strand.tension;
-      if (
-        strand.releaseAge < 0 &&
-        (strand.age >= strand.maxAge || reach > pinch || !strand.attached)
-      ) {
-        strand.releaseAge = 0;
-        strand.attached = false;
-      }
-      if (strand.releaseAge >= 0) {
-        strand.releaseAge += dt;
-        if (!strand.dropReleased && strand.releaseAge >= PINCH_TIME) {
-          strand.dropReleased = true;
-          const length = strand.head.distanceTo(strand.tail);
-          if (strand.age > 0.045 && length > 0.002) {
-            const bulbRadius = Math.min(
-              strand.radius *
-                (1.38 + 0.1 * Math.min(1, strand.age / strand.maxAge)),
-              length * 0.32
-            );
-            const bulbT = 1 - bulbRadius / length;
-            const oneMinusT = 1 - bulbT;
-            this.next
-              .copy(strand.tail)
-              .multiplyScalar(oneMinusT * oneMinusT)
-              .addScaledVector(strand.bend, 2 * oneMinusT * bulbT)
-              .addScaledVector(strand.head, bulbT * bulbT);
-            this.spawnDrop(
-              this.next,
-              strand.velocity,
-              bulbRadius,
-              strand.gravity,
-              strand.edge,
-              strand.metalness,
-              strand.alpha,
-              this.dropLifetime(
-                this.next.y,
-                strand.floorY,
-                strand.velocity.y,
-                strand.gravity,
-                0.32
-              ),
-              strand.floorY,
-              strand.viscosity,
-              strand.tension
-            );
-            // The bead takes the old bulb's place; only its neck remains.
-            strand.head.copy(this.next);
-          }
-        }
-        if (strand.dropReleased) {
-          strand.tail.lerp(strand.head, Math.min(1, dt * 13));
-          strand.bend.lerp(strand.head, Math.min(1, dt * 16));
-          if (strand.releaseAge >= PINCH_TIME + RETRACT_TIME)
-            strand.active = false;
-        }
+    }
+  }
+
+  private integrate(strand: Strand, h: number): void {
+    const gravity = strand.liquid.gravity * h * h;
+    const drag = Math.exp(-0.35 * h);
+    for (let node = strand.attached ? 1 : 0; node < strand.count; node++) {
+      const o = node * 3;
+      for (let axis = 0; axis < 3; axis++) {
+        const current = strand.pos[o + axis]!;
+        const moved = (current - strand.prev[o + axis]!) * drag;
+        strand.prev[o + axis] = current;
+        strand.pos[o + axis] = current + moved + (axis === 1 ? gravity : 0);
       }
     }
   }
+
+  /**
+   * Liquid under load stays stretched (the constraint is soft), and that
+   * stretch flows into new length, so a heavy bulb or a fast spin draws the
+   * rope out. Slack liquid draws together.
+   */
+  private yieldSegments(strand: Strand, h: number): void {
+    const give = 1 - Math.exp(-strand.yieldRate * h);
+    const gather = 1 - Math.exp(-8 * h);
+    const shrink = Math.exp(-strand.shrink * h);
+    for (let segment = 0; segment < strand.count - 1; segment++) {
+      const length = this.distance(strand, segment, segment + 1);
+      let rest = strand.rest[segment]!;
+      rest += (length - rest) * (length > rest ? give : gather);
+      strand.rest[segment] = Math.max(MIN_REST, rest * shrink);
+    }
+  }
+
+  private mass(strand: Strand, node: number): number {
+    let mass = 1e-9;
+    if (node > 0) mass += 0.5 * strand.vol[node - 1]!;
+    if (node < strand.count - 1) mass += 0.5 * strand.vol[node]!;
+    else mass += strand.bulb;
+    return mass;
+  }
+
+  /**
+   * XPBD distance constraints. Compliance grows with length over cross
+   * section, so a thin neck gives more than a thick one and keeps thinning.
+   */
+  private solve(strand: Strand, h: number): void {
+    for (let segment = 0; segment < strand.count - 1; segment++) {
+      const a = segment * 3;
+      const b = a + 3;
+      const wa = segment === 0 && strand.attached ? 0 : 1 / this.mass(strand, segment);
+      const wb = 1 / this.mass(strand, segment + 1);
+      const dx = strand.pos[b]! - strand.pos[a]!;
+      const dy = strand.pos[b + 1]! - strand.pos[a + 1]!;
+      const dz = strand.pos[b + 2]! - strand.pos[a + 2]!;
+      const length = Math.hypot(dx, dy, dz);
+      if (length < 1e-9) continue;
+      const rest = strand.rest[segment]!;
+      const area = Math.max(Math.PI * this.segmentRadius(strand, segment) ** 2, 1e-7);
+      const compliance = rest / (strand.stiffness * area) / (h * h);
+      const lambda = strand.lambda[segment]!;
+      const delta =
+        (length - rest + compliance * lambda) / (wa + wb + compliance);
+      strand.lambda[segment] = lambda - delta;
+      const correction = delta / length;
+      strand.pos[a] = strand.pos[a]! + dx * correction * wa;
+      strand.pos[a + 1] = strand.pos[a + 1]! + dy * correction * wa;
+      strand.pos[a + 2] = strand.pos[a + 2]! + dz * correction * wa;
+      strand.pos[b] = strand.pos[b]! - dx * correction * wb;
+      strand.pos[b + 1] = strand.pos[b + 1]! - dy * correction * wb;
+      strand.pos[b + 2] = strand.pos[b + 2]! - dz * correction * wb;
+    }
+  }
+
+  private collide(strand: Strand): void {
+    const floor = strand.liquid.floorY;
+    if (!Number.isFinite(floor)) return;
+    for (let node = strand.attached ? 1 : 0; node < strand.count; node++) {
+      const o = node * 3;
+      const radius = this.nodeRadius(strand, node);
+      if (strand.pos[o + 1]! > floor + radius) continue;
+      if (!strand.attached) {
+        // A falling rope lands as a streak along its own length.
+        this.depositStrand(strand);
+        strand.active = false;
+        return;
+      }
+      if (node === strand.count - 1) {
+        const share = strand.count > 1 ? 0.5 * strand.vol[node - 1]! : 0;
+        this.depositVolume(strand, node, strand.bulb + share);
+        if (strand.count > 1) strand.vol[node - 1] = strand.vol[node - 1]! - share;
+        strand.bulb = 0;
+        strand.count--;
+        if (strand.count < 2) this.regrow(strand);
+        return;
+      }
+      // A rope lying on the floor rests on it and drags.
+      strand.pos[o + 1] = floor + radius;
+      strand.prev[o + 1] = floor + radius;
+      strand.prev[o] = strand.prev[o]! + (strand.pos[o]! - strand.prev[o]!) * 0.5;
+      strand.prev[o + 2] =
+        strand.prev[o + 2]! + (strand.pos[o + 2]! - strand.prev[o + 2]!) * 0.5;
+    }
+  }
+
+  /** Liquid runs down the rope into its bulb, fastest where the rope hangs. */
+  private drain(strand: Strand, dt: number): void {
+    for (let segment = 0; segment < strand.count - 1; segment++) {
+      // A short segment cannot hold more than a fat column; the rest runs on.
+      const length = Math.max(strand.rest[segment]!, this.distance(strand, segment, segment + 1));
+      const column = Math.PI * (strand.nozzle * 1.35) ** 2;
+      let spill = strand.vol[segment]! - column * length;
+      if (spill <= 0) continue;
+      if (segment === 0 && strand.attached) {
+        // Thick liquid leaving the tip extrudes as a column instead of running on.
+        const extrude = spill * strand.liquid.viscosity;
+        strand.rest[0] = strand.rest[0]! + extrude / column;
+        spill -= extrude;
+      }
+      strand.vol[segment] = strand.vol[segment]! - spill;
+      if (segment === strand.count - 2) strand.bulb += spill;
+      else strand.vol[segment + 1] = strand.vol[segment + 1]! + spill;
+    }
+    // Surface tension squeezes a thread's thin spots into its fat ones, so a
+    // stretched rope beads up and necks before it breaks.
+    const bead = (0.6 + 4 * strand.liquid.tension) * (1 - 0.7 * strand.liquid.viscosity) * dt;
+    for (let segment = 0; segment < strand.count - 2; segment++) {
+      const thick = this.segmentRadius(strand, segment);
+      const next = this.segmentRadius(strand, segment + 1);
+      if (thick <= 0 || next <= 0) continue;
+      const contrast = Math.abs(thick - next) / Math.max(thick, next);
+      const from = thick < next ? segment : segment + 1;
+      const to = thick < next ? segment + 1 : segment;
+      const moved = strand.vol[from]! * Math.min(0.5, bead * contrast * 3);
+      strand.vol[from] = strand.vol[from]! - moved;
+      strand.vol[to] = strand.vol[to]! + moved;
+    }
+    for (let segment = strand.count - 2; segment >= 0; segment--) {
+      const a = segment * 3;
+      const length = Math.max(1e-6, this.distance(strand, segment, segment + 1));
+      const downhill = (strand.pos[a + 1]! - strand.pos[a + 4]!) / length;
+      const rate = strand.flow * (0.3 + 0.7 * Math.max(0, downhill));
+      const moved = strand.vol[segment]! * (1 - Math.exp(-rate * dt));
+      strand.vol[segment] = strand.vol[segment]! - moved;
+      if (segment === strand.count - 2) strand.bulb += moved;
+      else strand.vol[segment + 1] = strand.vol[segment + 1]! + moved;
+    }
+  }
+
+  /** Lay new points at the tip as the rope lengthens and merge crowded ones. */
+  private resample(strand: Strand): void {
+    if (strand.attached) {
+      while (strand.rest[0]! > SEGMENT * 1.5 && strand.count < strand.maxNodes)
+        this.insertNode(strand, 0);
+    }
+    for (let segment = 0; segment < strand.count - 1; segment++) {
+      if (strand.count >= strand.maxNodes) break;
+      if (strand.rest[segment]! > SEGMENT * 2.4) this.insertNode(strand, segment);
+    }
+    for (let node = strand.count - 2; node >= 1; node--) {
+      if (strand.count <= 2) break;
+      if (strand.rest[node - 1]! + strand.rest[node]! < SEGMENT * 0.85)
+        this.removeNode(strand, node);
+    }
+  }
+
+  /** The thinnest neck below its breaking radius lets go. */
+  private breakNeck(strand: Strand): void {
+    if (strand.count < 2) return;
+    let thinnest = -1;
+    let thinnestRadius = Infinity;
+    for (let segment = 0; segment < strand.count - 1; segment++) {
+      const radius = this.segmentRadius(strand, segment);
+      if (radius < thinnestRadius) {
+        thinnestRadius = radius;
+        thinnest = segment;
+      }
+    }
+    let length = 0;
+    for (let segment = 0; segment < strand.count - 1; segment++)
+      length += strand.rest[segment]!;
+    const crowded =
+      strand.attached &&
+      strand.count > 3 &&
+      (length > strand.maxLength ||
+        (strand.count >= strand.maxNodes && strand.rest[0]! > SEGMENT * 1.5));
+    if (crowded) {
+      // A rope at its point budget sheds its lower part at its thinnest neck.
+      let neck = Math.floor(strand.count / 3);
+      for (let segment = neck; segment < strand.count - 1; segment++) {
+        if (this.segmentRadius(strand, segment) < this.segmentRadius(strand, neck))
+          neck = segment;
+      }
+      this.split(strand, neck);
+      return;
+    }
+    if (sphereRadius(strand.bulb) > strand.maxBulb) {
+      this.split(strand, strand.count - 2);
+      return;
+    }
+    const settled = strand.attached ? strand.age > 0.06 : true;
+    if (settled && thinnestRadius < strand.pinch) this.split(strand, thinnest);
+  }
+
+  /** Break segment `at`: everything below it falls on its own. */
+  private split(strand: Strand, at: number): void {
+    const half = strand.vol[at]! * 0.5;
+    const lowerCount = strand.count - at - 1;
+    if (lowerCount >= 2) {
+      const index = this.takeStrand();
+      if (index >= 0) {
+        const lower = this.strands[index]!;
+        lower.active = true;
+        lower.attached = false;
+        lower.sourceId = -1;
+        lower.seenFrame = this.frame;
+        lower.age = 0;
+        lower.count = lowerCount;
+        lower.maxNodes = strand.maxNodes;
+        lower.pos.set(strand.pos.subarray((at + 1) * 3, strand.count * 3));
+        lower.prev.set(strand.prev.subarray((at + 1) * 3, strand.count * 3));
+        lower.rest.set(strand.rest.subarray(at + 1, strand.count - 1));
+        lower.vol.set(strand.vol.subarray(at + 1, strand.count - 1));
+        lower.vol[0] = lower.vol[0]! + half;
+        lower.bulb = strand.bulb;
+        lower.nozzle = strand.nozzle;
+        lower.pinch = strand.pinch;
+        lower.maxBulb = strand.maxBulb * 1.4;
+        lower.flow = strand.flow;
+        lower.yieldRate = strand.yieldRate;
+        lower.stiffness = strand.stiffness;
+        lower.shrink = 3 + 7 * strand.liquid.tension;
+        lower.step = strand.step;
+        copyLiquid(lower.liquid, strand.liquid);
+      } else {
+        this.dropFromNodes(strand, at + 1, strand.count, half);
+      }
+    } else {
+      this.dropFromNodes(strand, at + 1, strand.count, half);
+    }
+    strand.count = at + 1;
+    strand.bulb = half;
+    strand.vol[at] = 0;
+    if (strand.count < 2) {
+      if (strand.attached) this.regrow(strand);
+      else this.ballUp(strand, true);
+    }
+  }
+
+  /** An attached stub keeps a second point so it can hang and grow again. */
+  private regrow(strand: Strand): void {
+    if (!strand.attached) {
+      this.ballUp(strand, true);
+      return;
+    }
+    const volume = strand.bulb + (strand.count > 1 ? strand.vol[0]! : 0);
+    strand.count = 2;
+    for (let axis = 0; axis < 3; axis++) {
+      strand.pos[3 + axis] = strand.pos[axis]! - (axis === 1 ? 0.003 : 0);
+      strand.prev[3 + axis] = strand.prev[axis]! - (axis === 1 ? 0.003 : 0);
+    }
+    strand.rest[0] = 0.003;
+    strand.vol[0] = volume * 0.4;
+    strand.bulb = volume * 0.6;
+  }
+
+  /** A free rope that has drawn itself short becomes one wobbling drop. */
+  private ballUp(strand: Strand, force = false): void {
+    const volume = this.totalVolume(strand);
+    const radius = sphereRadius(volume);
+    let length = 0;
+    for (let segment = 0; segment < strand.count - 1; segment++)
+      length += strand.rest[segment]!;
+    if (!force && strand.count > 1 && length > radius * 2.4 && strand.age < 1.2)
+      return;
+    this.dropFromNodes(strand, 0, strand.count, 0, length / Math.max(radius * 2, 1e-4));
+    strand.active = false;
+  }
+
+  /** Turn nodes [from, to) into one drop at their center of mass. */
+  private dropFromNodes(
+    strand: Strand,
+    from: number,
+    to: number,
+    extra: number,
+    elongation = 1.3
+  ): void {
+    let volume = extra;
+    const center = this.scratch.set(0, 0, 0);
+    this.velocity.set(0, 0, 0);
+    for (let node = from; node < to; node++) {
+      const share =
+        (node === to - 1 ? strand.bulb : 0) +
+        (node < strand.count - 1 && node < to - 1 ? strand.vol[node]! : 0) +
+        1e-12;
+      const o = node * 3;
+      center.x += strand.pos[o]! * share;
+      center.y += strand.pos[o + 1]! * share;
+      center.z += strand.pos[o + 2]! * share;
+      this.velocity.x += ((strand.pos[o]! - strand.prev[o]!) / strand.step) * share;
+      this.velocity.y += ((strand.pos[o + 1]! - strand.prev[o + 1]!) / strand.step) * share;
+      this.velocity.z += ((strand.pos[o + 2]! - strand.prev[o + 2]!) / strand.step) * share;
+      volume += share;
+    }
+    const weight = volume - extra;
+    if (weight <= 0) return;
+    center.divideScalar(weight);
+    this.velocity.divideScalar(weight);
+    const radius = sphereRadius(volume);
+    if (radius < SPENT_RADIUS) return;
+    const liquid = strand.liquid;
+    this.spawnDrop(
+      center,
+      this.velocity,
+      radius,
+      liquid,
+      this.dropLifetime(center.y, liquid.floorY, this.velocity.y, liquid.gravity, 0.4),
+      Math.min(0.45, 0.12 + 0.18 * (elongation - 1)),
+      false
+    );
+  }
+
+  private insertNode(strand: Strand, segment: number): void {
+    const at = segment + 1;
+    for (let node = strand.count; node > at; node--) {
+      strand.pos.copyWithin(node * 3, (node - 1) * 3, node * 3);
+      strand.prev.copyWithin(node * 3, (node - 1) * 3, node * 3);
+    }
+    for (let index = strand.count - 1; index > segment; index--) {
+      strand.rest[index] = strand.rest[index - 1]!;
+      strand.vol[index] = strand.vol[index - 1]!;
+    }
+    const a = segment * 3;
+    const b = (segment + 2) * 3;
+    for (let axis = 0; axis < 3; axis++) {
+      strand.pos[at * 3 + axis] = (strand.pos[a + axis]! + strand.pos[b + axis]!) / 2;
+      strand.prev[at * 3 + axis] = (strand.prev[a + axis]! + strand.prev[b + axis]!) / 2;
+    }
+    strand.rest[segment] = strand.rest[segment]! / 2;
+    strand.rest[segment + 1] = strand.rest[segment]!;
+    strand.vol[segment] = strand.vol[segment]! / 2;
+    strand.vol[segment + 1] = strand.vol[segment]!;
+    strand.count++;
+  }
+
+  private removeNode(strand: Strand, node: number): void {
+    strand.rest[node - 1] = strand.rest[node - 1]! + strand.rest[node]!;
+    strand.vol[node - 1] = strand.vol[node - 1]! + strand.vol[node]!;
+    strand.pos.copyWithin(node * 3, (node + 1) * 3, strand.count * 3);
+    strand.prev.copyWithin(node * 3, (node + 1) * 3, strand.count * 3);
+    strand.rest.copyWithin(node, node + 1, strand.count - 1);
+    strand.vol.copyWithin(node, node + 1, strand.count - 1);
+    strand.count--;
+  }
+
+  private distance(strand: Strand, a: number, b: number): number {
+    const i = a * 3;
+    const j = b * 3;
+    return Math.hypot(
+      strand.pos[j]! - strand.pos[i]!,
+      strand.pos[j + 1]! - strand.pos[i + 1]!,
+      strand.pos[j + 2]! - strand.pos[i + 2]!
+    );
+  }
+
+  /** A segment's radius follows from its volume spread over its length. */
+  private segmentRadius(strand: Strand, segment: number): number {
+    const length = Math.max(strand.rest[segment]!, this.distance(strand, segment, segment + 1), 1e-4);
+    return Math.min(
+      strand.nozzle * 1.35,
+      Math.sqrt(strand.vol[segment]! / (Math.PI * length))
+    );
+  }
+
+  private nodeRadius(strand: Strand, node: number): number {
+    if (node === strand.count - 1)
+      return Math.max(sphereRadius(strand.bulb), node > 0 ? this.segmentRadius(strand, node - 1) : 0);
+    const below = this.segmentRadius(strand, node);
+    return node > 0 ? (below + this.segmentRadius(strand, node - 1)) / 2 : below;
+  }
+
+  private totalVolume(strand: Strand): number {
+    let volume = strand.bulb;
+    for (let segment = 0; segment < strand.count - 1; segment++)
+      volume += strand.vol[segment]!;
+    return volume;
+  }
+
+  private depositVolume(strand: Strand, node: number, volume: number): void {
+    const liquid = strand.liquid;
+    const radius = sphereRadius(volume);
+    if (!liquid.pools || radius < SPENT_RADIUS) return;
+    const o = node * 3;
+    const h = strand.step;
+    this.puddles.deposit(
+      strand.pos[o]!,
+      strand.pos[o + 2]!,
+      liquid.floorY,
+      radius,
+      liquid.viscosity,
+      liquid.tension,
+      liquid.puddle,
+      liquid.metalness,
+      liquid.alpha,
+      Math.abs((strand.pos[o + 1]! - strand.prev[o + 1]!) / h),
+      (strand.pos[o]! - strand.prev[o]!) / h,
+      (strand.pos[o + 2]! - strand.prev[o + 2]!) / h,
+      liquid.glow
+    );
+  }
+
+  private depositStrand(strand: Strand): void {
+    let carried = 0;
+    for (let node = 0; node < strand.count; node++) {
+      carried += node === strand.count - 1 ? strand.bulb : 0;
+      if (node > 0) carried += 0.5 * strand.vol[node - 1]!;
+      if (node < strand.count - 1) carried += 0.5 * strand.vol[node]!;
+      // Thin stretches pool their liquid into the next landing spot.
+      if (sphereRadius(carried) < 0.006 && node < strand.count - 1) continue;
+      this.depositVolume(strand, node, carried);
+      carried = 0;
+    }
+  }
+
+  // ---------------------------------------------------------------- drops
 
   private spawnDrop(
     position: { x: number; y: number; z: number },
     velocity: { x: number; y: number; z: number },
     radius: number,
-    gravity: number,
-    color: string | Color,
-    metalness: number,
-    alpha: number,
+    liquid: Liquid,
     maxAge: number,
-    floorY: number,
-    viscosity: number,
-    tension: number
+    wobble: number,
+    satellite: boolean
   ): void {
     const index = this.takeDrop();
     if (index < 0) return;
@@ -608,50 +1193,107 @@ export class GooRenderer3D {
     drop.age = 0;
     drop.maxAge = maxAge;
     drop.radius = radius;
-    drop.gravity = gravity;
-    drop.floorY = floorY;
-    drop.viscosity = viscosity;
-    drop.tension = tension;
+    drop.satellite = satellite;
+    drop.wobble = wobble;
     drop.position.set(position.x, position.y, position.z);
     drop.velocity.set(velocity.x, velocity.y, velocity.z);
-    drop.color.set(color);
-    drop.metalness = metalness;
-    drop.alpha = alpha;
+    drop.axis.copy(drop.velocity);
+    if (drop.axis.lengthSq() < 1e-6) drop.axis.copy(UP);
+    drop.axis.normalize();
+    copyLiquid(drop.liquid, liquid);
   }
 
   private advanceDrops(dt: number): void {
+    if (dt <= 0) return;
     for (const drop of this.drops) {
       if (!drop.active) continue;
       drop.age += dt;
-      this.next.copy(drop.position);
-      drop.velocity.y += drop.gravity * dt;
+      if (drop.liquid.evaporate > 0) {
+        drop.radius *= Math.exp(-drop.liquid.evaporate * dt);
+        if (drop.radius < SPENT_RADIUS) {
+          drop.active = false;
+          continue;
+        }
+      }
+      const previousY = drop.position.y;
+      drop.velocity.y += drop.liquid.gravity * dt;
       drop.position.addScaledVector(drop.velocity, dt);
-      if (
-        Number.isFinite(drop.floorY) &&
-        drop.position.y <= drop.floorY + drop.radius
-      ) {
-        const crossing = this.groundCrossing(
-          this.next.y,
-          drop.position.y,
-          drop.floorY + drop.radius
-        );
-        this.puddles.deposit(
-          this.next.x + (drop.position.x - this.next.x) * crossing,
-          this.next.z + (drop.position.z - this.next.z) * crossing,
-          drop.floorY,
-          drop.radius,
-          drop.viscosity,
-          drop.tension,
-          drop.color,
-          drop.metalness,
-          drop.alpha,
-          Math.abs(drop.velocity.y)
-        );
+      const floor = drop.liquid.floorY;
+      const contact = floor + drop.radius;
+      if (Number.isFinite(floor) && drop.position.y <= contact) {
+        const crossing = this.groundCrossing(previousY, drop.position.y, contact);
+        drop.position.addScaledVector(drop.velocity, -dt * (1 - crossing));
         drop.active = false;
+        this.land(drop);
       } else if (drop.age >= drop.maxAge) {
         drop.active = false;
       }
     }
+  }
+
+  /** A landing feeds a puddle and, when it hits hard, throws satellites. */
+  private land(drop: Drop): void {
+    const liquid = drop.liquid;
+    const impact = Math.abs(drop.velocity.y);
+    let volume = sphereVolume(drop.radius);
+    const throws =
+      drop.satellite || impact < 1.6 || drop.radius < 0.008
+        ? 0
+        : Math.min(
+            5,
+            Math.floor(
+              (0.3 + 4.5 * liquid.splashy ** 2) *
+                Math.min(1.2, impact / 4.5) *
+                (1 - 0.6 * liquid.viscosity) +
+                this.random() * 0.8
+            )
+          );
+    if (throws > 0) {
+      const thrown = volume * (0.18 + 0.14 * liquid.splashy);
+      const radius = sphereRadius(thrown / throws);
+      volume -= thrown;
+      const reach = impact * (1 - 0.55 * liquid.viscosity);
+      for (let index = 0; index < throws; index++) {
+        const angle = ((index + this.random() * 0.8) / throws) * Math.PI * 2;
+        const out = reach * (0.14 + 0.12 * this.random());
+        const cos = Math.cos(angle);
+        const sin = Math.sin(angle);
+        this.spawnDrop(
+          this.scratch.set(
+            drop.position.x + cos * drop.radius * 0.7,
+            liquid.floorY + radius * 1.1,
+            drop.position.z + sin * drop.radius * 0.7
+          ),
+          this.velocity.set(
+            cos * out + drop.velocity.x * 0.3,
+            reach * (0.12 + 0.12 * this.random()),
+            sin * out + drop.velocity.z * 0.3
+          ),
+          radius,
+          liquid,
+          1.2,
+          0.25,
+          true
+        );
+      }
+    }
+    // The finest spray soaks in without a pool of its own.
+    if (!liquid.pools || (drop.satellite && drop.radius < 0.005)) return;
+    this.puddles.deposit(
+      drop.position.x,
+      drop.position.z,
+      liquid.floorY,
+      sphereRadius(volume),
+      liquid.viscosity,
+      liquid.tension,
+      liquid.puddle,
+      liquid.metalness,
+      liquid.alpha,
+      impact,
+      drop.velocity.x,
+      drop.velocity.z,
+      liquid.glow
+    );
   }
 
   private dropLifetime(
@@ -686,146 +1328,211 @@ export class GooRenderer3D {
     );
   }
 
+  // ---------------------------------------------------------------- geometry
+
   private writeStrands(): void {
-    if (!this.hasActiveStrands()) {
+    let any = false;
+    for (const strand of this.strands) if (strand.active) any = true;
+    if (!any && !this.strandDrawn.some(Boolean)) {
       this.tubeMesh.visible = false;
       return;
     }
-    this.tubeMesh.visible = true;
-    const positions = (
-      this.tubeGeometry.getAttribute("position") as BufferAttribute
-    ).array as Float32Array;
+    const positions = (this.tubeGeometry.getAttribute("position") as BufferAttribute)
+      .array as Float32Array;
+    const normals = (this.tubeGeometry.getAttribute("normal") as BufferAttribute)
+      .array as Float32Array;
     const colors = (this.tubeGeometry.getAttribute("color") as BufferAttribute)
       .array as Float32Array;
     const alphas = (this.tubeGeometry.getAttribute("aAlpha") as BufferAttribute)
       .array as Float32Array;
-    const metalnesses = (
-      this.tubeGeometry.getAttribute("aMetalness") as BufferAttribute
-    ).array as Float32Array;
+    const metalnesses = (this.tubeGeometry.getAttribute("aMetalness") as BufferAttribute)
+      .array as Float32Array;
+    const glows = (this.tubeGeometry.getAttribute("aGlow") as BufferAttribute)
+      .array as Float32Array;
     for (let index = 0; index < STRANDS; index++) {
       const strand = this.strands[index]!;
-      const base = index * VERTICES * 3;
-      if (!strand.active) {
-        positions.fill(0, base, base + VERTICES * 3);
+      const base = index * VERTICES;
+      if (!strand.active || strand.count < 1) {
+        if (this.strandDrawn[index]) {
+          positions.fill(0, base * 3, (base + VERTICES) * 3);
+          this.strandDrawn[index] = 0;
+        }
         continue;
       }
-      const length = strand.head.distanceTo(strand.tail);
-      if (length < 0.002) {
-        positions.fill(0, base, base + VERTICES * 3);
-        continue;
-      }
-      const life = Math.min(1, strand.age / strand.maxAge);
-      const stretch = Math.min(
-        1,
-        Math.max(life, length / (0.42 + 0.3 * strand.tension))
-      );
-      const bulbRadius = Math.min(
-        strand.radius * (1.38 + 0.1 * life),
-        length * 0.32
-      );
-      const capArc = bulbRadius / length;
-      const capStart = 1 - capArc;
-      const retraction = strand.dropReleased
-        ? Math.max(0.04, 1 - (strand.releaseAge - PINCH_TIME) / RETRACT_TIME)
-        : 1;
-      const pinch =
-        strand.releaseAge < 0 ? 0 : Math.min(1, strand.releaseAge / PINCH_TIME);
-      const shaftEnd = RINGS - CAP_RINGS - 1;
-      // As a strand stretches, its shaft narrows instead of gaining volume.
-      const thinning = Math.max(0.55, Math.sqrt(0.18 / Math.max(0.18, length)));
-      for (let ring = 0; ring < RINGS; ring++) {
-        // Reserve seven intervals for the hemisphere regardless of strand
-        // length, so a long strand cannot turn its rounded tip into a cone.
-        const t = strand.dropReleased
-          ? ring / (RINGS - 1)
-          : ring <= shaftEnd
-            ? (capStart * ring) / shaftEnd
-            : capStart + (capArc * (ring - shaftEnd)) / CAP_RINGS;
-        const oneMinusT = 1 - t;
-        this.center
-          .copy(strand.tail)
-          .multiplyScalar(oneMinusT * oneMinusT)
-          .addScaledVector(strand.bend, 2 * oneMinusT * t)
-          .addScaledVector(strand.head, t * t);
-        this.tangent
-          .subVectors(strand.bend, strand.tail)
-          .multiplyScalar(2 * oneMinusT);
-        this.next.subVectors(strand.head, strand.bend);
-        this.tangent.addScaledVector(this.next, 2 * t);
-        if (this.tangent.lengthSq() < 1e-10) {
-          this.tangent.subVectors(strand.head, strand.tail);
-        }
-        this.tangent.normalize();
-        if (ring === 0) {
-          this.side.crossVectors(
-            this.tangent,
-            Math.abs(this.tangent.y) < 0.85 ? UP : RIGHT
-          );
-        } else {
-          // Carry the preceding ring frame along the curve. A fresh cross with
-          // UP changes sign as the tangent passes through vertical.
-          this.side.addScaledVector(this.tangent, -this.side.dot(this.tangent));
-        }
-        if (this.side.lengthSq() < 1e-10) {
-          this.side.crossVectors(
-            this.tangent,
-            Math.abs(this.tangent.y) < 0.85 ? UP : RIGHT
-          );
-        }
-        this.side.normalize();
-        this.binormal.crossVectors(this.tangent, this.side).normalize();
-        const rise = Math.max(0, Math.min(1, (t - capStart + 0.24) / 0.24));
-        const roundedRise = rise * rise * (3 - 2 * rise);
-        const neck =
-          1 -
-          (0.27 * stretch + 0.66 * pinch) *
-            Math.exp(-Math.pow((t - capStart + 0.24) / 0.075, 2));
-        const pulsePosition = 0.28 + 0.46 * life;
-        const pulse =
-          0.13 *
-          Math.exp(-Math.pow((t - pulsePosition) / 0.14, 2)) *
-          Math.min(1, strand.age / 0.09);
-        const shaft =
-          strand.radius *
-          (0.62 + 0.1 * t + pulse) *
-          thinning *
-          neck *
-          Math.min(1, t / 0.055);
-        const neckEnd = Math.max(0, Math.min(1, (t - 0.72) / 0.28));
-        const radius = strand.dropReleased
-          ? shaft * (1 - neckEnd * neckEnd * (3 - 2 * neckEnd)) * retraction
-          : t < capStart
-            ? shaft * (1 - roundedRise) + bulbRadius * roundedRise
-            : bulbRadius *
-              Math.sqrt(Math.max(0, 1 - Math.pow((t - capStart) / capArc, 2)));
-        for (let side = 0; side < SIDES; side++) {
-          const angle = (side * Math.PI * 2) / SIDES;
-          const offset = base + (ring * SIDES + side) * 3;
-          const c = Math.cos(angle) * radius;
-          const s = Math.sin(angle) * radius;
-          positions[offset] =
-            this.center.x + this.side.x * c + this.binormal.x * s;
-          positions[offset + 1] =
-            this.center.y + this.side.y * c + this.binormal.y * s;
-          positions[offset + 2] =
-            this.center.z + this.side.z * c + this.binormal.z * s;
-          this.tint
-            .copy(strand.core)
-            .lerp(strand.edge, 0.8 + 0.08 * (1 - Math.cos(angle)));
-          colors[offset] = this.tint.r;
-          colors[offset + 1] = this.tint.g;
-          colors[offset + 2] = this.tint.b;
-          alphas[index * VERTICES + ring * SIDES + side] = strand.alpha;
-          metalnesses[index * VERTICES + ring * SIDES + side] =
-            strand.metalness;
-        }
+      this.strandDrawn[index] = 1;
+      const rings = this.buildRings(strand);
+      this.writeRings(rings, base, positions, normals);
+      const { r, g, b } = strand.liquid.core;
+      for (let vertex = base; vertex < base + VERTICES; vertex++) {
+        colors[vertex * 3] = r;
+        colors[vertex * 3 + 1] = g;
+        colors[vertex * 3 + 2] = b;
+        alphas[vertex] = strand.liquid.alpha;
+        metalnesses[vertex] = strand.liquid.metalness;
+        glows[vertex] = strand.liquid.glow;
       }
     }
-    this.tubeGeometry.getAttribute("position").needsUpdate = true;
-    this.tubeGeometry.getAttribute("color").needsUpdate = true;
-    this.tubeGeometry.getAttribute("aAlpha").needsUpdate = true;
-    this.tubeGeometry.getAttribute("aMetalness").needsUpdate = true;
-    this.tubeGeometry.computeVertexNormals();
+    this.tubeMesh.visible = any;
+    for (const name of ["position", "normal", "color", "aAlpha", "aMetalness", "aGlow"])
+      this.tubeGeometry.getAttribute(name).needsUpdate = true;
+  }
+
+  /**
+   * Fill the ring scratch arrays: a rounded root, the rope's centerline as a
+   * Catmull-Rom curve whose radius follows each segment's volume, the bulb
+   * blended in as a sphere, and a rounded end. Returns rings used.
+   */
+  private buildRings(strand: Strand): number {
+    const n = strand.count;
+    const { ringX: X, ringY: Y, ringZ: Z, ringR: R } = this;
+    const bulb = sphereRadius(strand.bulb);
+    const glob = strand.attached ? strand.nozzle * 0.75 : 0;
+    let ring = CAP;
+    const p = strand.pos;
+    const point = (node: number, axis: number) => {
+      if (node < 0) return 2 * p[axis]! - p[3 + axis]!;
+      if (node >= n) return 2 * p[(n - 1) * 3 + axis]! - p[(n - 2) * 3 + axis]!;
+      return p[node * 3 + axis]!;
+    };
+    const nodeRadius = (node: number) => this.nodeRadius(strand, node);
+    const blend = (radius: number, x: number, y: number, z: number) => {
+      const o = (n - 1) * 3;
+      const toBulb = Math.hypot(x - p[o]!, y - p[o + 1]!, z - p[o + 2]!);
+      const toRoot = Math.hypot(x - p[0]!, y - p[1]!, z - p[2]!);
+      radius = this.smoothMax(radius, Math.sqrt(Math.max(0, bulb * bulb - toBulb * toBulb)), bulb * 0.35);
+      if (glob > 0)
+        radius = this.smoothMax(radius, Math.sqrt(Math.max(0, glob * glob - toRoot * toRoot)), glob * 0.35);
+      return radius;
+    };
+    if (n === 1) {
+      X[ring] = p[0]!;
+      Y[ring] = p[1]!;
+      Z[ring] = p[2]!;
+      R[ring] = Math.max(bulb, glob);
+      ring++;
+    } else {
+      for (let segment = 0; segment < n - 1; segment++) {
+        const thread = this.segmentRadius(strand, segment);
+        const start = nodeRadius(segment);
+        const end = segment + 1 === n - 1 ? thread : nodeRadius(segment + 1);
+        for (let sample = 0; sample < SUB; sample++) {
+          const t = sample / SUB;
+          const t2 = t * t;
+          const t3 = t2 * t;
+          for (let axis = 0; axis < 3; axis++) {
+            const p0 = point(segment - 1, axis);
+            const p1 = point(segment, axis);
+            const p2 = point(segment + 1, axis);
+            const p3 = point(segment + 2, axis);
+            const value =
+              0.5 *
+              (2 * p1 +
+                (p2 - p0) * t +
+                (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2 +
+                (3 * p1 - p0 - 3 * p2 + p3) * t3);
+            (axis === 0 ? X : axis === 1 ? Y : Z)[ring] = value;
+          }
+          const radius =
+            (1 - t) * (1 - t) * start + 2 * t * (1 - t) * thread + t * t * end;
+          R[ring] = blend(radius, X[ring]!, Y[ring]!, Z[ring]!);
+          ring++;
+        }
+      }
+      const o = (n - 1) * 3;
+      X[ring] = p[o]!;
+      Y[ring] = p[o + 1]!;
+      Z[ring] = p[o + 2]!;
+      R[ring] = Math.max(bulb, this.segmentRadius(strand, n - 2));
+      ring++;
+    }
+    const last = ring - 1;
+    // Rounded ends: hemispheres along the curve's end tangents.
+    this.endTangent(CAP, last, false);
+    const rootRadius = R[CAP]!;
+    for (let cap = 0; cap < CAP; cap++) {
+      const angle = (Math.PI / 2) * (1 - cap / CAP);
+      X[cap] = X[CAP]! - this.tangent.x * rootRadius * Math.sin(angle);
+      Y[cap] = Y[CAP]! - this.tangent.y * rootRadius * Math.sin(angle);
+      Z[cap] = Z[CAP]! - this.tangent.z * rootRadius * Math.sin(angle);
+      R[cap] = rootRadius * Math.cos(angle);
+    }
+    this.endTangent(CAP, last, true);
+    const endRadius = R[last]!;
+    for (let cap = 1; cap <= CAP; cap++) {
+      const angle = (Math.PI / 2) * (cap / CAP);
+      X[ring] = X[last]! + this.tangent.x * endRadius * Math.sin(angle);
+      Y[ring] = Y[last]! + this.tangent.y * endRadius * Math.sin(angle);
+      Z[ring] = Z[last]! + this.tangent.z * endRadius * Math.sin(angle);
+      R[ring] = cap === CAP ? 0 : endRadius * Math.cos(angle);
+      ring++;
+    }
+    R[0] = 0;
+    // Unused rings collapse onto the far pole.
+    for (let extra = ring; extra < RINGS; extra++) {
+      X[extra] = X[ring - 1]!;
+      Y[extra] = Y[ring - 1]!;
+      Z[extra] = Z[ring - 1]!;
+      R[extra] = 0;
+    }
+    return ring;
+  }
+
+  /** Unit tangent at the root (pointing into the rope) or at the far end. */
+  private endTangent(first: number, last: number, far: boolean): void {
+    const { ringX: X, ringY: Y, ringZ: Z } = this;
+    if (last > first) {
+      const a = far ? last - 1 : first;
+      const b = far ? last : first + 1;
+      this.tangent.set(X[b]! - X[a]!, Y[b]! - Y[a]!, Z[b]! - Z[a]!);
+    } else this.tangent.set(0, 0, 0);
+    if (this.tangent.lengthSq() < 1e-14) this.tangent.set(0, -1, 0);
+    this.tangent.normalize();
+  }
+
+  private writeRings(
+    used: number,
+    base: number,
+    positions: Float32Array,
+    normals: Float32Array
+  ): void {
+    const { ringX: X, ringY: Y, ringZ: Z, ringR: R } = this;
+    for (let ring = 0; ring < RINGS; ring++) {
+      const a = Math.max(0, Math.min(ring - 1, used - 2));
+      const b = Math.min(used - 1, Math.max(ring + 1, 1));
+      this.tangent.set(X[b]! - X[a]!, Y[b]! - Y[a]!, Z[b]! - Z[a]!);
+      const span = this.tangent.length();
+      if (span < 1e-9) this.tangent.set(0, -1, 0);
+      else this.tangent.divideScalar(span);
+      if (ring === 0) {
+        this.side.crossVectors(this.tangent, Math.abs(this.tangent.y) < 0.85 ? UP : RIGHT);
+      } else {
+        // Carry the previous ring's frame so it never flips through vertical.
+        this.side.addScaledVector(this.tangent, -this.side.dot(this.tangent));
+      }
+      if (this.side.lengthSq() < 1e-10)
+        this.side.crossVectors(this.tangent, Math.abs(this.tangent.y) < 0.85 ? UP : RIGHT);
+      this.side.normalize();
+      this.binormal.crossVectors(this.tangent, this.side).normalize();
+      // The surface leans toward the narrowing end, so its normal does too.
+      const slope = span > 1e-9 ? (R[a]! - R[b]!) / span : 0;
+      for (let side = 0; side < SIDES; side++) {
+        const angle = (side * Math.PI * 2) / SIDES;
+        const cos = Math.cos(angle);
+        const sin = Math.sin(angle);
+        this.radial
+          .copy(this.side)
+          .multiplyScalar(cos)
+          .addScaledVector(this.binormal, sin);
+        const offset = (base + ring * SIDES + side) * 3;
+        positions[offset] = X[ring]! + this.radial.x * R[ring]!;
+        positions[offset + 1] = Y[ring]! + this.radial.y * R[ring]!;
+        positions[offset + 2] = Z[ring]! + this.radial.z * R[ring]!;
+        this.radial.addScaledVector(this.tangent, slope).normalize();
+        normals[offset] = this.radial.x;
+        normals[offset + 1] = this.radial.y;
+        normals[offset + 2] = this.radial.z;
+      }
+    }
   }
 
   private writeDrops(): void {
@@ -834,38 +1541,57 @@ export class GooRenderer3D {
       if (!drop.active) continue;
       const life = drop.age / drop.maxAge;
       const size =
-        drop.radius * (life > 0.78 ? Math.max(0.05, (1 - life) / 0.22) : 1);
+        drop.radius * (life > 0.85 ? Math.max(0.05, (1 - life) / 0.15) : 1);
+      // Surface tension rings a fresh drop between long and flat.
+      const omega =
+        2 * Math.PI * (7 + 9 * drop.liquid.tension) *
+        Math.sqrt(0.02 / Math.max(drop.radius, 0.003));
+      const ring =
+        drop.wobble *
+        Math.exp(-drop.age * (5 + 12 * drop.liquid.viscosity)) *
+        Math.cos(drop.age * omega);
+      const speed = drop.velocity.length();
+      const stretch = Math.max(0.6, 1 + ring + Math.min(0.22, speed * 0.035));
+      this.tangent.copy(speed > 0.05 ? drop.velocity : drop.axis).normalize();
       this.dropObject.position.copy(drop.position);
-      const stretch =
-        1 +
-        Math.min(0.42, drop.velocity.length() * 0.08) *
-          Math.exp(-drop.age * 18);
-      const width = size / Math.sqrt(stretch);
-      this.dropScale.set(width, size * stretch, width);
-      this.dropObject.scale.copy(this.dropScale);
-      this.tangent.copy(drop.velocity);
-      if (this.tangent.lengthSq() > 0.0001)
-        this.dropObject.quaternion.setFromUnitVectors(
-          UP,
-          this.tangent.normalize()
-        );
-      else this.dropObject.quaternion.identity();
+      this.dropObject.scale.set(
+        size / Math.sqrt(stretch),
+        size * stretch,
+        size / Math.sqrt(stretch)
+      );
+      this.dropObject.quaternion.setFromUnitVectors(UP, this.tangent);
       this.dropObject.updateMatrix();
       this.dropMesh.setMatrixAt(count, this.dropObject.matrix);
-      this.dropMesh.setColorAt(count, drop.color);
-      this.dropAlphas.setX(count, drop.alpha);
-      this.dropMetalnesses.setX(count, drop.metalness);
+      this.dropMesh.setColorAt(count, drop.liquid.core);
+      this.dropAlphas.setX(count, drop.liquid.alpha);
+      this.dropMetalnesses.setX(count, drop.liquid.metalness);
+      this.dropGlows.setX(count, drop.liquid.glow);
       count++;
     }
+    const wasVisible = this.dropMesh.visible;
     this.dropMesh.count = count;
     this.dropMesh.visible = count > 0;
-    if (count > 0) {
+    if (count > 0 || wasVisible) {
       this.dropMesh.instanceMatrix.needsUpdate = true;
       if (this.dropMesh.instanceColor)
         this.dropMesh.instanceColor.needsUpdate = true;
       this.dropAlphas.needsUpdate = true;
       this.dropMetalnesses.needsUpdate = true;
+      this.dropGlows.needsUpdate = true;
     }
+  }
+
+  // ---------------------------------------------------------------- pools
+
+  private smoothMax(a: number, b: number, width: number): number {
+    if (width <= 0) return Math.max(a, b);
+    const overlap = Math.max(0, width - Math.abs(a - b)) / width;
+    return Math.max(a, b) + overlap * overlap * width * 0.25;
+  }
+
+  private random(): number {
+    this.seed = (Math.imul(this.seed, 1664525) + 1013904223) >>> 0;
+    return this.seed / 4294967296;
   }
 
   private takeStrand(): number {
@@ -877,23 +1603,6 @@ export class GooRenderer3D {
       }
     }
     return -1;
-  }
-
-  private hasActiveStrands(): boolean {
-    for (const strand of this.strands) if (strand.active) return true;
-    return false;
-  }
-
-  private hasSourceStrand(sourceId: number): boolean {
-    for (const strand of this.strands) {
-      if (strand.active && strand.sourceId === sourceId) return true;
-    }
-    return false;
-  }
-
-  private hasActiveDrops(): boolean {
-    for (const drop of this.drops) if (drop.active) return true;
-    return false;
   }
 
   private takeDrop(): number {

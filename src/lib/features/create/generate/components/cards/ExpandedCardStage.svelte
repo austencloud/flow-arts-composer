@@ -21,7 +21,8 @@
 
   No backdrop beside the desktop stage: the workspace beside the grown card
   stays live. On desktop, a click outside closes the card without consuming
-  the interaction, so the workspace control underneath still works. A tap on
+  the interaction, so the workspace control underneath still works; the Level
+  strip is the exception, since the card follows the level. A tap on
   the bottom panel's backdrop closes it. X and Escape close everywhere.
   Focus moves in on open and back to the card that opened it on close. The
   {#key destination} remount on a layout flip (desktop <-> stacked) drops the
@@ -242,6 +243,18 @@
     const card = openCard;
     const dismissFromOutside = (event: MouseEvent): void => {
       if (!root || event.composedPath().includes(root)) return;
+      // Controls the grown card reads from (the Level strip): changing one
+      // changes what the card shows, so the card stays open to show it.
+      if (
+        event
+          .composedPath()
+          .some(
+            (target) =>
+              target instanceof HTMLElement &&
+              target.dataset.keepsGenerateCard !== undefined
+          )
+      )
+        return;
 
       // Svelte delegates component click handlers above the native document
       // listener. Defer to the next task so every delegated selection effect

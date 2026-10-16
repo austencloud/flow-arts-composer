@@ -1,0 +1,48 @@
+{
+  "sourceRepository": "tka-platform",
+  "sourceCommit": "ee7b87b0ca9aadbd4c4c7ccc3d7e248402d7d559",
+  "sourceDirectory": "unreal/FlowFest/Source/FlowFest",
+  "transformation": "Headers: replace the single FLOWFEST_API token with FLOWARTSRUNTIME_API; otherwise preserve all bytes. C++ sources: byte-identical copies. Headers reside in Public, C++ sources in Private.",
+  "files": {
+    "FlowFestAvatarComponent.h": {
+      "sourceSha256": "ee3714f9ab3bab5a82d57d515d288bc70f40c66001e9439b90f56120f7b4d873",
+      "outputSha256": "81dae476b05959b83e5a4f2af5bc66780108f6b9b03ffc9bb752e448cf196bc5",
+      "destination": "Source/FlowArtsRuntime/Public/FlowFestAvatarComponent.h"
+    },
+    "FlowFestAvatarComponent.cpp": {
+      "sourceSha256": "2ca0ed24ef6edcf9a18bd82224b73455549722b949dfd300548ff06e3d9a841f",
+      "outputSha256": "2ca0ed24ef6edcf9a18bd82224b73455549722b949dfd300548ff06e3d9a841f",
+      "destination": "Source/FlowArtsRuntime/Private/FlowFestAvatarComponent.cpp"
+    },
+    "FlowFestAnimInstance.h": {
+      "sourceSha256": "4489054dbee630179b78395c16262f0555d3ba3ae5b515c91f1e33a83e8e7f2d",
+      "outputSha256": "5f9e761d26b223317eabe6f079386ad77b3fbeea9bf2b6d26aea66c6700dd333",
+      "destination": "Source/FlowArtsRuntime/Public/FlowFestAnimInstance.h"
+    },
+    "FlowFestAnimInstance.cpp": {
+      "sourceSha256": "933693cfb7f44216c978c0c3a46ba7b4ec14d5b4d93f7106fbb6d8a1dc280351",
+      "outputSha256": "933693cfb7f44216c978c0c3a46ba7b4ec14d5b4d93f7106fbb6d8a1dc280351",
+      "destination": "Source/FlowArtsRuntime/Private/FlowFestAnimInstance.cpp"
+    },
+    "FlowFestPropComponent.h": {
+      "sourceSha256": "0eb1d6b21beccb2e024e17f04354a699cbb7108a283494a1a8515efa8109e0b9",
+      "outputSha256": "feb366d1f168eab28405429d38f80ba7cc9f072ffe609771ff36feb9223b33ab",
+      "destination": "Source/FlowArtsRuntime/Public/FlowFestPropComponent.h"
+    },
+    "FlowFestPropComponent.cpp": {
+      "sourceSha256": "74f260f1a646ecc64200e20cb1bedc0031401c2aa87b0eda191c9ade5a86f48a",
+      "outputSha256": "74f260f1a646ecc64200e20cb1bedc0031401c2aa87b0eda191c9ade5a86f48a",
+      "destination": "Source/FlowArtsRuntime/Private/FlowFestPropComponent.cpp"
+    },
+    "FlowFestFootstepComponent.h": {
+      "sourceSha256": "34ed45849f6fd5805a3741cc0bd084947b007112903c14f5dec0006def179ec8",
+      "outputSha256": "6b106c0b8abb6c0b54d19ac2615519d55edd34c36d04671ceea7bbb92f6551cd",
+      "destination": "Source/FlowArtsRuntime/Public/FlowFestFootstepComponent.h"
+    },
+    "FlowFestFootstepComponent.cpp": {
+      "sourceSha256": "8c846d1b1c0dbfdfb588a48bce85792184043fc2e64dbd73ceda0d22534ca86f",
+      "outputSha256": "8c846d1b1c0dbfdfb588a48bce85792184043fc2e64dbd73ceda0d22534ca86f",
+      "destination": "Source/FlowArtsRuntime/Private/FlowFestFootstepComponent.cpp"
+    }
+  }
+}

@@ -4,6 +4,8 @@ export type BrowsePrimary = "explore" | "you";
 export type BrowseExploreSection = "sequences" | "collections" | "visuals";
 export type BrowseYouSection =
   | "sequences"
+  | "drafts"
+  | "following"
   | "visuals"
   | "videos"
   | "collections";
@@ -146,6 +148,10 @@ export function buildBrowsePath(location: BrowseLocation): string {
 
   if (location.section === "videos") return "/browse/you/videos";
 
+  if (location.section === "drafts") return "/browse/you/drafts";
+
+  if (location.section === "following") return "/browse/you/following";
+
   if (location.section === "collections") {
     if (location.ownerId && location.contextId) {
       return `/browse/you/collections/${encodeURIComponent(location.ownerId)}/${encodeURIComponent(location.contextId)}`;
@@ -284,6 +290,18 @@ export function resolveBrowsePathname(
 
   if (first === "you") {
     const section = parts[2];
+    if (section === "following") {
+      return resolved(
+        { primary: "you", section: "following", view: "list" },
+        normalized
+      );
+    }
+    if (section === "drafts") {
+      return resolved(
+        { primary: "you", section: "drafts", view: "list" },
+        normalized
+      );
+    }
     if (!section || section === "sequences") {
       return resolved(
         { primary: "you", section: "sequences", view: "list" },

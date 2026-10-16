@@ -51,8 +51,6 @@ const HOSTS: Record<string, string> = {
     "src/lib/features/create/shared/components/coordinators/StepEditorCoordinator.svelte",
   "arena prop drawer":
     "src/lib/features/arena/components/battle/ArenaPropDrawer.svelte",
-  "guide codex controls":
-    "src/routes/(public)/guide/level-1/_components/GuideCodexControls.svelte",
   "sequence viewer props panel":
     "src/lib/shared/sequence-viewer/components/SequenceViewerShell.svelte",
   "shape matrix customize":

@@ -17,6 +17,8 @@
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
   import GuideShell from "../_components/GuideShell.svelte";
+  import Sentences from "../_components/Sentences.svelte";
+  import { sentences } from "../_components/sentences";
   import GuideSeo from "../level-1/_components/GuideSeo.svelte";
   import ShapeMatrixGrid from "#lib/shared/shape-matrix/components/ShapeMatrixGrid.svelte";
   import ShapeMatrixMandalaArt from "#lib/shared/shape-matrix/components/ShapeMatrixMandalaArt.svelte";
@@ -49,9 +51,7 @@
     type ShapePathStyle,
   } from "#lib/shared/shape-matrix/domain/flower-signature.js";
   import { matrixTurnsForLevel } from "#lib/shared/shape-matrix/domain/matrix-turn-band.js";
-  import {
-    SHAPE_MATRIX_LEVELS,
-  } from "#lib/shared/shape-matrix/app/shape-matrix-levels.js";
+  import { SHAPE_MATRIX_LEVELS } from "#lib/shared/shape-matrix/app/shape-matrix-levels.js";
   import {
     levelForTurnValue,
     levelForTurns,
@@ -126,9 +126,16 @@
   function flowerFacing(flower: RotatingFlower): string {
     const atBottom = (flower.style === "pro") === (flower.ori === "in");
     const petals = flower.petals;
-    if (petals % 2 === 1) return tDynamic(atBottom ? "guide_ratios_petal_down" : "guide_ratios_petal_up");
-    if (petals % 4 === 2) return tDynamic(atBottom ? "guide_ratios_vertical" : "guide_ratios_horizontal");
-    if (petals === 4) return tDynamic(atBottom ? "guide_ratios_diamond" : "guide_ratios_box");
+    if (petals % 2 === 1)
+      return tDynamic(
+        atBottom ? "guide_ratios_petal_down" : "guide_ratios_petal_up"
+      );
+    if (petals % 4 === 2)
+      return tDynamic(
+        atBottom ? "guide_ratios_vertical" : "guide_ratios_horizontal"
+      );
+    if (petals === 4)
+      return tDynamic(atBottom ? "guide_ratios_diamond" : "guide_ratios_box");
     return tDynamic(atBottom ? "guide_ratios_upright" : "guide_ratios_tilted");
   }
 
@@ -161,28 +168,42 @@
   }
 
   /** One row per turn value the Kinetic Alphabet can carry, Float included. */
-  const ladder = $derived(matrixTurnsForLevel(4).map((turns: TurnValue) => ({
-    turns,
-    ratio: ratioLabel(turns),
-    level: levelForTurnValue(turns),
-    turnLabel: turns === "fl" ? tDynamic("guide_ratios_float_name") : String(turns),
-    turnWords: turns === "fl" ? tDynamic("guide_ratios_float_name") : turnWords(turns as number),
-    family: turns === 0 || turns === 1 || turns === 2,
-    starts: turns === "fl" ? null : cardStarts(turns as number),
-  })));
+  const ladder = $derived(
+    matrixTurnsForLevel(4).map((turns: TurnValue) => ({
+      turns,
+      ratio: ratioLabel(turns),
+      level: levelForTurnValue(turns),
+      turnLabel:
+        turns === "fl" ? tDynamic("guide_ratios_float_name") : String(turns),
+      turnWords:
+        turns === "fl"
+          ? tDynamic("guide_ratios_float_name")
+          : turnWords(turns as number),
+      family: turns === 0 || turns === 1 || turns === 2,
+      starts: turns === "fl" ? null : cardStarts(turns as number),
+    }))
+  );
 
   /* The ladder groups by level, because that is the order a reader meets
      these turn values in: each level opens a set of new ratios on top of the
      ones below it. Names and blurbs come from the level table the matrix
      selector reads, so the page and the selector cannot disagree. */
-  const levelGroups = $derived(SHAPE_MATRIX_LEVELS.map((level) => {
-    const rows = ladder.filter((row) => row.level === level);
-    /* Whole turns and quarter turns each carry one note card after their
+  const levelGroups = $derived(
+    SHAPE_MATRIX_LEVELS.map((level) => {
+      const rows = ladder.filter((row) => row.level === level);
+      /* Whole turns and quarter turns each carry one note card after their
        ratios: how a turn adds petals, and the two hand cycle arithmetic. */
-    const noted = level === WHOLE_TURN_LEVEL || level === QUARTER_TURN_LEVEL;
-    const cells = rows.length + (noted ? 1 : 0);
-    return { level, name: tDynamic(`guide_ratios_level_${level}_name`), blurb: tDynamic(`guide_ratios_level_${level}_blurb`), rows, cells };
-  }).filter((group) => group.level !== BASE_LEVEL && group.rows.length > 0));
+      const noted = level === WHOLE_TURN_LEVEL || level === QUARTER_TURN_LEVEL;
+      const cells = rows.length + (noted ? 1 : 0);
+      return {
+        level,
+        name: tDynamic(`guide_ratios_level_${level}_name`),
+        blurb: tDynamic(`guide_ratios_level_${level}_blurb`),
+        rows,
+        cells,
+      };
+    }).filter((group) => group.level !== BASE_LEVEL && group.rows.length > 0)
+  );
 
   /**
    * What spinners call the flowers that have a common name. Every name
@@ -207,23 +228,33 @@
    * different base motions, the four shapes the original matrix gives this
    * ratio, so collapsing them to the in start would hide half of Level 1.
    */
-  const BASE_NAMES = { in: "guide_ratios_isolation", out: "guide_ratios_extension" } as const;
-  const baseLevel = $derived({ name: tDynamic("guide_ratios_level_1_name"), blurb: tDynamic("guide_ratios_level_1_blurb") });
+  const BASE_NAMES = {
+    in: "guide_ratios_isolation",
+    out: "guide_ratios_extension",
+  } as const;
+  const baseLevel = $derived({
+    name: tDynamic("guide_ratios_level_1_name"),
+    blurb: tDynamic("guide_ratios_level_1_blurb"),
+  });
   const baseRatio = ratioLabel(0);
-  const baseCards = $derived((["in", "out"] as const).map((ori) => ({
-    ori,
-    label: tDynamic(ori === "in" ? "guide_ratios_starts_in" : "guide_ratios_starts_out"),
-    flowers: (["pro", "anti"] as const).map((style) => {
-      const flower = rotating(0, style, ori);
-      return {
-        flower,
-        meta:
-          style === "pro"
-            ? tDynamic(BASE_NAMES[ori])
-            : `${petalWord(flower.petals)}, ${flowerFacing(flower).toLowerCase()}`,
-      };
-    }),
-  })));
+  const baseCards = $derived(
+    (["in", "out"] as const).map((ori) => ({
+      ori,
+      label: tDynamic(
+        ori === "in" ? "guide_ratios_starts_in" : "guide_ratios_starts_out"
+      ),
+      flowers: (["pro", "anti"] as const).map((style) => {
+        const flower = rotating(0, style, ori);
+        return {
+          flower,
+          meta:
+            style === "pro"
+              ? tDynamic(BASE_NAMES[ori])
+              : `${petalWord(flower.petals)}, ${flowerFacing(flower).toLowerCase()}`,
+        };
+      }),
+    }))
+  );
 
   /**
    * The board is a grid of equal cards, two, four, or eight across. Each
@@ -250,7 +281,10 @@
   function turnWords(turns: number): string {
     const size = Math.abs(turns);
     const sign = turns < 0 ? "−" : "";
-    return tDynamic(size === 1 ? "guide_ratios_one_turn" : "guide_ratios_many_turns", { count: `${sign}${size}` });
+    return tDynamic(
+      size === 1 ? "guide_ratios_one_turn" : "guide_ratios_many_turns",
+      { count: `${sign}${size}` }
+    );
   }
 
   const example = { pro: rotating(1, "pro"), anti: rotating(1, "anti") };
@@ -307,7 +341,10 @@
           flowers: [far],
           label: tDynamic("guide_ratios_starts_out"),
           meta:
-            names?.out ?? (twoCycles ? tDynamic("guide_ratios_same_path") : petalWord(far.petals)),
+            names?.out ??
+            (twoCycles
+              ? tDynamic("guide_ratios_same_path")
+              : petalWord(far.petals)),
         },
         {
           flowers: twoCycles ? [near] : [near, far],
@@ -334,20 +371,14 @@
   }
 
   const endsLevels: EndsLevel[] = $derived([
-    endsLevel(
-      0,
-      tDynamic("guide_ratios_ends_summary_1"),
-      { in: tDynamic("guide_ratios_isolation"), out: tDynamic("guide_ratios_extension"), both: tDynamic("guide_ratios_point_in_circle") }
-    ),
+    endsLevel(0, tDynamic("guide_ratios_ends_summary_1"), {
+      in: tDynamic("guide_ratios_isolation"),
+      out: tDynamic("guide_ratios_extension"),
+      both: tDynamic("guide_ratios_point_in_circle"),
+    }),
     endsLevel(1, tDynamic("guide_ratios_ends_summary_2")),
-    endsLevel(
-      0.5,
-      tDynamic("guide_ratios_ends_summary_3")
-    ),
-    endsLevel(
-      0.25,
-      tDynamic("guide_ratios_ends_summary_4")
-    ),
+    endsLevel(0.5, tDynamic("guide_ratios_ends_summary_3")),
+    endsLevel(0.25, tDynamic("guide_ratios_ends_summary_4")),
   ]);
 
   /**
@@ -384,12 +415,17 @@
 
   function styleWord(style: ShapePathStyle): string {
     if (style === "float") return tDynamic("guide_ratios_float_name");
-    return tDynamic(style === "pro" ? "guide_ratios_prospin" : "guide_ratios_antispin");
+    return tDynamic(
+      style === "pro" ? "guide_ratios_prospin" : "guide_ratios_antispin"
+    );
   }
 
   function petalWord(petals: number): string {
     if (petals === 0) return tDynamic("guide_ratios_no_petals");
-    return tDynamic(petals === 1 ? "guide_ratios_one_petal" : "guide_ratios_many_petals", { count: petals });
+    return tDynamic(
+      petals === 1 ? "guide_ratios_one_petal" : "guide_ratios_many_petals",
+      { count: petals }
+    );
   }
 
   function flowerAlt(flower: Flower): string {
@@ -485,6 +521,16 @@
       loadError = error instanceof Error ? error.message : String(error);
     }
   });
+
+  // The origins line continues after its inline link; its first sentence
+  // closes the link's sentence, the rest set their own lines.
+  const originsAfter = $derived(
+    sentences(
+      tDynamic("guide_ratios_origins_after", {
+        name: ORIGINAL_SHAPE_MATRIX_NAME,
+      })
+    )
+  );
 </script>
 
 <GuideSeo
@@ -505,12 +551,18 @@
     <div class="opening">
       <header class="page-head">
         <h1>{tDynamic("guide_ratios_title")}</h1>
-        <p>{tDynamic("guide_ratios_intro")}</p>
+        <p><Sentences text={tDynamic("guide_ratios_intro")} /></p>
+        <!-- The Spin Science link sits mid-sentence: the sentence it closes
+             takes the link and the first sentence of the text after it. -->
         <p>
-          {tDynamic("guide_ratios_origins_before")}
-          <LinkChip size="inline" href={SPIN_SCIENCE_URL} newTabLabel={tDynamic("guide_ratios_new_tab")}
-            >Spin Science</LinkChip
-          >{tDynamic("guide_ratios_origins_after", { name: ORIGINAL_SHAPE_MATRIX_NAME })}
+          <Sentences text={tDynamic("guide_ratios_origins_before")}
+            >{#snippet tail()}{" "}<LinkChip
+                size="inline"
+                href={SPIN_SCIENCE_URL}
+                newTabLabel={tDynamic("guide_ratios_new_tab")}
+                >Spin Science</LinkChip
+              >{originsAfter[0]}{/snippet}</Sentences
+          >{" "}<Sentences text={originsAfter.slice(1).join(" ")} />
         </p>
         {#if loadError}
           <p class="notice error" role="alert">
@@ -537,14 +589,18 @@
 
           <p>
             {tDynamic("guide_ratios_formula_before")}
-            <code>P / H = 2 × turns + 1</code>{tDynamic("guide_ratios_formula_between")}
+            <code>P / H = 2 × turns + 1</code>{tDynamic(
+              "guide_ratios_formula_between"
+            )}
             <code>turns = (P / H − 1) / 2</code>.
           </p>
           <p>
             {tDynamic("guide_ratios_petals_before")}
             <code>|P − H|</code>{tDynamic("guide_ratios_petals_between")}
             <code>P + H</code>{tDynamic("guide_ratios_petals_after")}
-            <LinkChip size="inline" href="#ends-heading">{tDynamic("guide_ratios_one_or_two")}</LinkChip>{tDynamic("guide_ratios_petals_end")}
+            <LinkChip size="inline" href="#ends-heading"
+              >{tDynamic("guide_ratios_one_or_two")}</LinkChip
+            >{tDynamic("guide_ratios_petals_end")}
           </p>
           <p>
             {tDynamic("guide_ratios_float")}
@@ -564,7 +620,9 @@
           </dl>
           <p>
             {tDynamic("guide_ratios_names_note")}
-            <LinkChip size="inline" href={localHref("/guide/level-1/staff-motions")}
+            <LinkChip
+              size="inline"
+              href={localHref("/guide/level-1/staff-motions")}
               >{tDynamic("verified_level1_staff_motions_274")}</LinkChip
             >{spaced(tDynamic("guide_ratios_names_note_end"))}
           </p>
@@ -613,7 +671,10 @@
           <DifficultyBadge level={BASE_LEVEL} size="2rem" />
           <span class="level-title">
             <span id="level-{BASE_LEVEL}-heading" class="level-name">
-              {tDynamic("guide_ratios_level_heading", { level: BASE_LEVEL, name: baseLevel.name })}
+              {tDynamic("guide_ratios_level_heading", {
+                level: BASE_LEVEL,
+                name: baseLevel.name,
+              })}
             </span>
             <span class="level-blurb">{baseLevel.blurb}</span>
           </span>
@@ -667,7 +728,10 @@
                 <DifficultyBadge level={group.level} size="2rem" />
                 <span class="level-title">
                   <span id={`level-${group.level}-heading`} class="level-name">
-                    {tDynamic("guide_ratios_level_heading", { level: group.level, name: group.name })}
+                    {tDynamic("guide_ratios_level_heading", {
+                      level: group.level,
+                      name: group.name,
+                    })}
                   </span>
                   <span class="level-blurb">{group.blurb}</span>
                 </span>
@@ -683,8 +747,12 @@
                     {#if row.starts}
                       {@const paired = row.starts.length > 1}
                       <div class="card-grid">
-                        <span class="card-style">{tDynamic("guide_ratios_prospin")}</span>
-                        <span class="card-style">{tDynamic("guide_ratios_antispin")}</span>
+                        <span class="card-style"
+                          >{tDynamic("guide_ratios_prospin")}</span
+                        >
+                        <span class="card-style"
+                          >{tDynamic("guide_ratios_antispin")}</span
+                        >
                         {#each row.starts as start (start.ori)}
                           {#each start.flowers as flower (flowerKey(flower))}
                             {@const facing = (
@@ -723,11 +791,19 @@
                                 <ShapeMatrixMandalaArt
                                   paint={paintFlower(flower)}
                                   artKey={flowerKey(flower)}
-                                  alt={tDynamic("guide_ratios_float_alt", { ratio: row.ratio, direction: tDynamic(FLOAT_FACING[flower.ori] ?? "guide_ratios_up") })}
+                                  alt={tDynamic("guide_ratios_float_alt", {
+                                    ratio: row.ratio,
+                                    direction: tDynamic(
+                                      FLOAT_FACING[flower.ori] ??
+                                        "guide_ratios_up"
+                                    ),
+                                  })}
                                 />
                               </span>
                               <span class="card-facing" aria-hidden="true"
-                                >{tDynamic(FLOAT_FACING[flower.ori] ?? "guide_ratios_up")}</span
+                                >{tDynamic(
+                                  FLOAT_FACING[flower.ori] ?? "guide_ratios_up"
+                                )}</span
                               >
                             </div>
                           {/each}
@@ -769,7 +845,9 @@
           </p>
           <p>
             {tDynamic("guide_ratios_swap_quarter_before")}
-            <LinkChip size="inline" href="#ends-heading">{tDynamic("guide_ratios_one_or_two")}</LinkChip>{tDynamic("guide_ratios_swap_quarter_after")}
+            <LinkChip size="inline" href="#ends-heading"
+              >{tDynamic("guide_ratios_one_or_two")}</LinkChip
+            >{tDynamic("guide_ratios_swap_quarter_after")}
           </p>
         </div>
 
@@ -787,11 +865,19 @@
       <div class="family-band">
         <div class="family-list">
           {#each families as family (family.turns)}
-            <section class="family" aria-label={tDynamic("guide_ratios_family", { ratio: family.ratio })}>
+            <section
+              class="family"
+              aria-label={tDynamic("guide_ratios_family", {
+                ratio: family.ratio,
+              })}
+            >
               <header class="family-head">
                 <span class="family-ratio">{family.ratio}</span>
                 <span class="family-turns"
-                  >{tDynamic("guide_ratios_family_turns", { turns: turnWords(family.turns), level: family.level })}</span
+                  >{tDynamic("guide_ratios_family_turns", {
+                    turns: turnWords(family.turns),
+                    level: family.level,
+                  })}</span
                 >
                 <LinkChip class="family-link" href={bandHref(family.turns)}>
                   {tDynamic("guide_ratios_open_band", { ratio: family.ratio })}
@@ -809,7 +895,14 @@
                     </span>
                     <span class="shape-name">{styleWord(flower.style)}</span>
                     <span class="shape-meta">
-                      {tDynamic("guide_ratios_flower_start", { petals: petalWord(flower.petals), direction: tDynamic(flower.ori === "in" ? "guide_ratios_in" : "guide_ratios_out") })}
+                      {tDynamic("guide_ratios_flower_start", {
+                        petals: petalWord(flower.petals),
+                        direction: tDynamic(
+                          flower.ori === "in"
+                            ? "guide_ratios_in"
+                            : "guide_ratios_out"
+                        ),
+                      })}
                     </span>
                   </li>
                 {/each}
@@ -827,7 +920,11 @@
         <p>{tDynamic("guide_ratios_ends_opposite")}</p>
         <p>{tDynamic("guide_ratios_ends_level1")}</p>
         <p>
-          {tDynamic("guide_ratios_ends_level4_before")}{SHAPE_ENGINE_SHORT_NAME}{tDynamic("guide_ratios_ends_level4_after")}
+          {tDynamic(
+            "guide_ratios_ends_level4_before"
+          )}{SHAPE_ENGINE_SHORT_NAME}{tDynamic(
+            "guide_ratios_ends_level4_after"
+          )}
         </p>
       </div>
 
@@ -841,7 +938,10 @@
             <header class="ends-level-head">
               <DifficultyBadge level={tray.level} size="1.6rem" />
               <span id={`ends-level-${tray.level}`} class="level-name"
-                >{tDynamic("guide_ratios_level_heading", { level: tray.level, name: tray.name })}</span
+                >{tDynamic("guide_ratios_level_heading", {
+                  level: tray.level,
+                  name: tray.name,
+                })}</span
               >
             </header>
             <ul class="ends-cards" role="list">
@@ -885,7 +985,11 @@
         <h2 id="pairings-heading">{tDynamic("guide_ratios_pairings_title")}</h2>
         <p>{tDynamic("guide_ratios_pairings_intro")}</p>
         <p>
-          {tDynamic("guide_ratios_pairings_choose_before")}{SHAPE_ENGINE_SHORT_NAME}{tDynamic("guide_ratios_pairings_choose_after")}
+          {tDynamic(
+            "guide_ratios_pairings_choose_before"
+          )}{SHAPE_ENGINE_SHORT_NAME}{tDynamic(
+            "guide_ratios_pairings_choose_after"
+          )}
         </p>
         <p class="scroll-hint">
           {tDynamic("guide_ratios_pairings_scroll")}
@@ -902,7 +1006,9 @@
                 alt={tDynamic("guide_ratios_anatomy_left_alt")}
               />
             </span>
-            <span class="anatomy-label">{tDynamic("guide_ratios_row_left")}</span>
+            <span class="anatomy-label"
+              >{tDynamic("guide_ratios_row_left")}</span
+            >
           </div>
           <div class="anatomy-part">
             <span class="still">
@@ -913,7 +1019,9 @@
                 alt={tDynamic("guide_ratios_anatomy_right_alt")}
               />
             </span>
-            <span class="anatomy-label">{tDynamic("guide_ratios_column_right")}</span>
+            <span class="anatomy-label"
+              >{tDynamic("guide_ratios_column_right")}</span
+            >
           </div>
           <div class="anatomy-part anatomy-cell">
             <span class="still">
@@ -929,7 +1037,9 @@
         </div>
         <figcaption>
           {tDynamic("guide_ratios_pairing_caption")}
-          <LinkChip class="pairing-link" href={pairHref(anatomyLeft, anatomyRight)}
+          <LinkChip
+            class="pairing-link"
+            href={pairHref(anatomyLeft, anatomyRight)}
             >{tDynamic("guide_ratios_open_pairing")}</LinkChip
           >
         </figcaption>
@@ -937,7 +1047,9 @@
 
       <div class="matrix-stage">
         {#if loadError}
-          <p class="load-status error">{tDynamic("guide_ratios_drawings_unavailable")}</p>
+          <p class="load-status error">
+            {tDynamic("guide_ratios_drawings_unavailable")}
+          </p>
         {:else if !data}
           <p class="load-status">{tDynamic("guide_ratios_building_flowers")}</p>
         {:else}
@@ -963,14 +1075,27 @@
       <h2 id="sources-heading">{tDynamic("guide_ratios_sources")}</h2>
       <ul class="source-list">
         <li>
-          <LinkChip href={ORIGINAL_SHAPE_MATRIX_URL} newTabLabel={tDynamic("guide_ratios_new_tab")}
-            >{tDynamic("guide_ratios_source_label", { author: "Lorq Nichols", name: ORIGINAL_SHAPE_MATRIX_NAME })}</LinkChip
+          <LinkChip
+            href={ORIGINAL_SHAPE_MATRIX_URL}
+            newTabLabel={tDynamic("guide_ratios_new_tab")}
+            >{tDynamic("guide_ratios_source_label", {
+              author: "Lorq Nichols",
+              name: ORIGINAL_SHAPE_MATRIX_NAME,
+            })}</LinkChip
           >
         </li>
-        <li><LinkChip href="/shape-engine">{SHAPE_ENGINE_SHORT_NAME}</LinkChip></li>
+        <li>
+          <LinkChip href="/shape-engine">{SHAPE_ENGINE_SHORT_NAME}</LinkChip>
+        </li>
       </ul>
       <p class="attribution">
-        {tDynamic("guide_ratios_attribution_before")}{SHAPE_ENGINE_SHORT_NAME}{tDynamic("guide_ratios_attribution_middle")}{KINETIC_SHAPE_ENGINE_AUTHOR}{tDynamic("guide_ratios_attribution_after")}
+        {tDynamic(
+          "guide_ratios_attribution_before"
+        )}{SHAPE_ENGINE_SHORT_NAME}{tDynamic(
+          "guide_ratios_attribution_middle"
+        )}{KINETIC_SHAPE_ENGINE_AUTHOR}{tDynamic(
+          "guide_ratios_attribution_after"
+        )}
       </p>
     </section>
   </article>
@@ -1055,6 +1180,18 @@
     white-space: nowrap;
   }
 
+  /* Stacked above the worked example, the header is a centred section
+     break, one sentence per line. */
+  .page-head {
+    text-align: center;
+  }
+  .ratios .page-head h1 {
+    text-align: center;
+  }
+  .page-head p {
+    max-inline-size: var(--copy);
+    margin-inline: auto;
+  }
   .page-head p:last-child {
     margin-bottom: 0;
   }
@@ -1968,7 +2105,6 @@
     margin: 0;
   }
 
-
   .attribution {
     color: var(--ink-faint);
     font-size: var(--font-size-min, 0.875rem);
@@ -1991,9 +2127,16 @@
       display: contents;
     }
 
+    /* Beside the worked example it reads left, as one paragraph. */
     .page-head {
       grid-column: 1;
       grid-row: 1;
+      text-align: left;
+      --sentence-display: inline;
+    }
+
+    .ratios .page-head h1 {
+      text-align: left;
     }
 
     .reading-copy {

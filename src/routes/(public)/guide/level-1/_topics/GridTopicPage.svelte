@@ -6,6 +6,7 @@
   from the shared topic record.
 -->
 <script lang="ts">
+  import Sentences from "../../_components/Sentences.svelte";
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import MessageMarkup from "#lib/shared/i18n/MessageMarkup.svelte";
   import { gridTopicText } from "#lib/shared/guide-topics/grid-topic.js";
@@ -50,15 +51,19 @@
   <section class="modes" aria-labelledby="grid-modes-heading">
     <h2 id="grid-modes-heading">{gridTopicText("eightPoint")}</h2>
     <p>
-      <MessageMarkup text={gridTopicText("twoModes")} />
-      <MessageMarkup text={gridTopicText("translates")} />
+      <span class="line"
+        ><MessageMarkup text={gridTopicText("twoModes")} /></span
+      >
+      <span class="line"
+        ><MessageMarkup text={gridTopicText("translates")} /></span
+      >
     </p>
     <p>{gridTopicText("combination")}</p>
     <GridModesEquation {darkMode} />
   </section>
 
   <aside class="remember">
-    <p>{gridTopicText("closing")}</p>
+    <p><Sentences text={gridTopicText("closing")} /></p>
   </aside>
 
   {#if lessonHref}
@@ -195,6 +200,11 @@
     margin: 0;
     line-height: 1.55;
     text-wrap: pretty;
+  }
+  /* Each message is one sentence on its own balanced line. */
+  .modes .line {
+    display: block;
+    text-wrap: balance;
   }
   .remember {
     justify-self: center;

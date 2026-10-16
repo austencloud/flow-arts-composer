@@ -14,6 +14,7 @@ import { loadPostDraft } from "#lib/shared/media-composition/services/post-draft
 import { loadPostProject } from "#lib/shared/media-composition/services/post-project-store.js";
 import {
   currentPostAccount,
+  listedPostProject,
   readAccountPostProjectPreview,
 } from "./post-account-projects.js";
 import {
@@ -121,6 +122,23 @@ export function describeStudioProject(
 }
 
 /** Reads a visible card's saved project without selecting it or opening an editor. */
+/**
+ * A card's preview from the listing that just ran, with no further read;
+ * null when the listing lacks the project or its sequence.
+ */
+export function listedStudioProjectPreview(
+  sequenceId: string | undefined
+): StudioProjectPreview | null {
+  const project = sequenceId ? listedPostProject(sequenceId) : null;
+  if (!project) return null;
+  const sequence =
+    project.sourceKind === "none"
+      ? null
+      : cachedPostSequence(project.sequenceId);
+  if (project.sourceKind !== "none" && !sequence) return null;
+  return describeStudioProject(project, sequence);
+}
+
 export async function loadStudioProjectPreview(input: {
   sequenceId?: string;
   featureSlug?: string;

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Sentences from "../../../_components/Sentences.svelte";
   import { t as translate } from "#lib/shared/i18n/i18n.svelte.js";
   /**
    * Real-pictograph diagram for the 1-turn dash breakdown, mirroring
@@ -175,11 +176,13 @@
   });
 </script>
 
-<GuideSection id="turn-dashes" title={translate("guide_l2_dashes_title")} subtitle="VTG: 1:1">
+<GuideSection
+  id="turn-dashes"
+  title={translate("guide_l2_dashes_title")}
+  subtitle="VTG: 1:1"
+>
   <div class="section-body">
-    <p>
-      {translate("guide_l2_dashes_intro")}
-    </p>
+    <p><Sentences text={translate("guide_l2_dashes_intro")} /></p>
   </div>
 
   <div class="showcase-wrap">
@@ -201,13 +204,9 @@
   </div>
 
   <div class="section-body">
-    <p>
-      {translate("guide_l2_dashes_thumb_switches")}
-    </p>
+    <p><Sentences text={translate("guide_l2_dashes_thumb_switches")} /></p>
 
-    <p>
-      {translate("guide_l2_dashes_extension")}
-    </p>
+    <p><Sentences text={translate("guide_l2_dashes_extension")} /></p>
   </div>
 </GuideSection>
 

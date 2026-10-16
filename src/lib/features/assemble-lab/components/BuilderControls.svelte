@@ -7,7 +7,7 @@
   stays one row and the grid gets the height.
 -->
 <script lang="ts">
-  import type { AssembleState } from "../state/assemble-state.svelte";
+  import type { AssembleState } from "../state/assemble-state.svelte.js";
   import BuilderHandPicker from "./BuilderHandPicker.svelte";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import EditHistoryShortcutBridge from "#lib/shared/keyboard/components/EditHistoryShortcutBridge.svelte";
@@ -22,8 +22,12 @@
 </script>
 
 <EditHistoryShortcutBridge
-  onUndo={builderState.undoStep}
-  onRedo={builderState.redoStep}
+  onUndo={() => {
+    builderState.undoStep();
+  }}
+  onRedo={() => {
+    builderState.redoStep();
+  }}
   canUndo={builderState.canUndo}
   canRedo={builderState.canRedo}
   undoLabel={builderState.undoLabel}

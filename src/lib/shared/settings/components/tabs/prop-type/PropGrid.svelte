@@ -789,8 +789,9 @@
   const RAIL_CREDIT_SHORT_NAMES: Partial<Record<FanBuild, string>> = {
     "flat-grip": "Forged",
     star: "Renegade",
+    sense: "Flow DNA",
   };
-  type RailCredit = { originator: string; sourceUrl: string; short: string };
+  type RailCredit = { originator: string; sourceUrl?: string; short: string };
   const railCredit = $derived.by((): RailCredit | undefined => {
     if (drill?.kind === "fan-look") {
       const credit = fanLook?.designCredit;
@@ -988,7 +989,15 @@
           {#if showSize}{@render sizeControl()}{/if}
           {#if showGrip}{@render gripControl()}{/if}
         {/if}
-        {#if railCredit}
+        {#if railCredit && !railCredit.sourceUrl}
+          <!-- A maker with no product page yet is credited by name alone. -->
+          <span class="rail-credit rail-credit-text"
+            ><span class="credit-long">{railCredit.originator}</span><span
+              class="credit-short"
+              aria-hidden="true">{railCredit.short}</span
+            ></span
+          >
+        {:else if railCredit}
           <LinkChip
             class="rail-credit"
             href={railCredit.sourceUrl}
@@ -1208,6 +1217,7 @@
                 <PropChiralityRow
                   propType={drill.prop}
                   hands={chirality.hands}
+                  partner={chirality.partner}
                   {colors}
                   {propLook}
                   onChange={chirality.onChange}
@@ -1243,6 +1253,7 @@
                     <PropChiralityRow
                       propType={familyMember}
                       hands={chirality.hands}
+                  partner={chirality.partner}
                       {colors}
                       {propLook}
                       onChange={chirality.onChange}
@@ -1395,6 +1406,10 @@
     flex: 0 0 auto;
     margin-left: 0.25rem;
     font-size: var(--font-size-min, 14px);
+  }
+  .rail-credit-text {
+    color: var(--theme-text-dim, currentColor);
+    white-space: nowrap;
   }
   .credit-short {
     display: none;
@@ -1926,6 +1941,13 @@
     overscroll-behavior-y: contain;
     scrollbar-width: thin;
     padding: 0 2px 8px;
+  }
+
+  /* The version cards fill the room the settings below them leave, but never
+     shrink under their own height: on a short sheet they once slid beneath the
+     buugeng pair picker. The options scroll instead. */
+  .detail-options.fill > :global(.prop-look-picker) {
+    min-height: auto;
   }
 
   .detail-options.fill > :global(.fan-style-options) {

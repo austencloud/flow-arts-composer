@@ -73,7 +73,10 @@
     onready?: (methodId: string) => void;
     /** Fires once, when the scene's code could not load. */
     onfailed?: (methodId: string) => void;
-    /** Test seam. Defaults to the method's registered scene. */
+    /**
+     * The scene to load. Defaults to the method's registered scene; boards
+     * outside Create (the Browse home) pass their own, and tests use it too.
+     */
     loader?: () => Promise<MethodPreviewSceneModule>;
   } = $props();
 

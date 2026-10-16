@@ -4,7 +4,7 @@
  *
  * Symbols: P both · R red only · B blue only · - none.
  * Shared by the Turns and (Phase 2) Reversals drawers. ids intentionally match
- * the reversal pattern ids in choreo-card/domain/reversal-patterns.ts.
+ * the reversal pattern ids in shared/foundation/domain/sequence-patterns/reversal-patterns.ts.
  */
 export interface RhythmDef {
   readonly id: string;
@@ -36,7 +36,7 @@ export const PER_HAND_RHYTHMS: readonly RhythmDef[] = [
   { id: "alternating", label: "Alternating", plainLabel: "Trade off", sym: "RB" },
   { id: "red-book", label: "Red Book", plainLabel: "Right only", sym: "R" },
   { id: "blue-book", label: "Blue Book", plainLabel: "Left only", sym: "B" },
-  // Solo family (canonical: choreo-card/domain/reversal-patterns.ts → solo-1).
+  // Solo family (canonical: shared/foundation/domain/sequence-patterns/reversal-patterns.ts → solo-1).
   // One hand per step across an 8-step cycle; never both, never neither.
   {
     id: "solo-1",

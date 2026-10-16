@@ -351,7 +351,12 @@
           source = { ...base, effect, params: resolvedInk };
           break;
         case "silk":
-          source = { ...base, effect, params: resolvedSilk };
+          source = {
+            ...base,
+            effect,
+            params: resolvedSilk,
+            collisionFloorY: userProportionsState.groundY,
+          };
           break;
         case "animal":
           source = { ...base, effect, params: resolvedAnimal };
@@ -420,6 +425,9 @@
         break;
       case "silk":
         source.params = resolvedSilk;
+        pooledPosition.set(0, userProportionsState.groundY, 0);
+        if (effectsParentRef) effectsParentRef.localToWorld(pooledPosition);
+        source.collisionFloorY = pooledPosition.y;
         break;
       case "animal":
         source.params = resolvedAnimal;

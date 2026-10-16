@@ -168,7 +168,6 @@
     <PictographRenderer
       pictograph={displayed}
       {darkMode}
-      transitionKey={live.transitionKey}
       transparentBackground={exportPresentation}
       showDuration={false}
       showHandColorKey={stepNumber === 0
