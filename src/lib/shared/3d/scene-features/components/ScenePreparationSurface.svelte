@@ -111,7 +111,10 @@
 
 <style>
   .scene-preparation-surface {
-    --horizon: 62%;
+    /* Where the scenes' own horizons land under the viewer's camera (about
+       half height in Cosmic and Celestial), so the stage dissolves into the
+       scene without a second horizon crossing it. */
+    --horizon: 50%;
     position: absolute;
     inset: 0;
     z-index: 30;
