@@ -1,5 +1,6 @@
 <!--
-  /guide/eight-step: Gage DeMello's Eight Step CAPs, still a draft.
+  /guide/eight-step: the eight hand paths behind Gage DeMello's CAPs, still a
+  draft.
 
   Production prerenders the "being written" note (noindex), and the page is
   off the Guide hub, the Guide contents and the sitemap until Austen approves
@@ -7,16 +8,18 @@
 -->
 <script lang="ts">
   /**
-   * Gage's chart reduced to its eight hand paths, shown before it is told.
+   * Gage DeMello's 72 CAPs reduced to their eight hand paths, shown before
+   * they are told.
    * Three tiles open the page: the left hand alone (it caps, two beats on
    * and one back), both hands in the middle with the only step counter, and
    * the right hand alone (it keeps circling). Then one
    * player with a prop, beside the prop picker and a spin picker per hand:
    * the nine pairings of the chart, named by motion and turns. Picking poi
-   * flags the pairings poi can't spin. Then one box per pair of paths in
-   * Gage's chart, each stepping through its two paths in all nine spins with
-   * "Show another example", as Zan's Diamond does. These are hand paths, so
-   * the strips show no letters.
+   * flags the pairings poi can't spin. Then the paths in VTG's terms, a row
+   * per timing (split, together, quarter) and a box per direction (same,
+   * opposite). Each box steps through its spins with "Show another example",
+   * as Zan's Diamond does; a quarter box also swaps which hand leads. These
+   * are hand paths, so the strips show no letters.
    * The record lives in #lib/shared/guide-topics/caps-topic.ts.
    */
   import { onMount } from "svelte";
@@ -41,20 +44,18 @@
     type TrailSettings,
   } from "#lib/shared/animation-engine/domain/types/trail-types.js";
   import {
+    CAP_DIRECTIONS,
     CAP_HAND_PATHS,
-    CAP_RELATIONS,
+    CAP_TIMINGS,
     capPairing,
     capStrip,
     capWorksOnPoi,
     type Cap,
+    type CapDirection,
     type CapHandPath,
-    type CapRelation,
     type CapSpin,
+    type CapTiming,
   } from "#lib/shared/guide-topics/caps-topic.js";
-
-  // Gage's own write-up of the chart, in Mentive's SpiroAnim repository.
-  const EIGHT_STEP_SOURCE =
-    "https://github.com/rbgirard/spiroanim/blob/main/docs/EIGHT_STEP.md";
 
   // The bare hands draw their path as they travel: the left hand closes the
   // ring once in twelve beats, the right in four. The drawing stays until the
@@ -126,41 +127,39 @@
   const notForPoi = (cap: Cap) =>
     propType === PropType.POI && !capWorksOnPoi(cap);
 
-  // What tells the two paths in each of Gage's pairs apart.
-  const PATH_TITLE: Record<number, Parameters<typeof t>[0]> = {
-    1: "guide_eightstep_path_split_title",
-    2: "guide_eightstep_path_together_title",
-    3: "guide_eightstep_path_together_title",
-    4: "guide_eightstep_path_split_title",
+  // A quarter box holds two paths; this tells them apart. Split and
+  // together boxes hold one path each and need no name for it.
+  const QUARTER_PATH: Record<number, Parameters<typeof t>[0]> = {
     5: "guide_eightstep_path_ahead_title",
     6: "guide_eightstep_path_behind_title",
     7: "guide_eightstep_path_swap_title",
     8: "guide_eightstep_path_apart_title",
   };
 
-  // Each group's heading says what its paths share; Gage's own name for the
-  // pair rides above it.
-  const GROUP_COPY: Record<
-    CapRelation,
-    { title: Parameters<typeof t>[0]; gage: string }
+  const TIMING_COPY: Record<
+    CapTiming,
+    { title: Parameters<typeof t>[0]; body: Parameters<typeof t>[0] }
   > = {
-    opposite: {
-      title: "guide_eightstep_group_opposite_title",
-      gage: "Opposite",
+    split: {
+      title: "guide_eightstep_timing_split_title",
+      body: "guide_eightstep_timing_split_body",
     },
-    same: { title: "guide_eightstep_group_same_title", gage: "Same" },
-    "quarter-aligned": {
-      title: "guide_eightstep_group_quarter_aligned_title",
-      gage: "Quarter Aligned",
+    together: {
+      title: "guide_eightstep_timing_together_title",
+      body: "guide_eightstep_timing_together_body",
     },
-    "quarter-opposed": {
-      title: "guide_eightstep_group_quarter_opposed_title",
-      gage: "Quarter Opposed",
+    quarter: {
+      title: "guide_eightstep_timing_quarter_title",
+      body: "guide_eightstep_timing_quarter_body",
     },
+  };
+  const DIRECTION_TITLE: Record<CapDirection, Parameters<typeof t>[0]> = {
+    same: "guide_eightstep_direction_same",
+    opposite: "guide_eightstep_direction_opposite",
   };
 
   // Poi-friendly pairings first, so a box's opening examples suit every
-  // prop; each pairing then shows both of the pair's paths in turn.
+  // prop; in a quarter box each pairing then shows both of its paths.
   const PAIRINGS: readonly [CapSpin, CapSpin][] = [
     ["antispin", "antispin"],
     ["antispin", "extension"],
@@ -174,33 +173,43 @@
   ];
   const exampleProse = (path: CapHandPath, cap: Cap) => {
     const { capping, circling } = capPairing(cap);
-    const line = t("guide_eightstep_example", {
-      path: t(PATH_TITLE[path.column]!),
+    const spins = {
       left: t(SPIN_LABEL[capping]),
       right: t(SPIN_LABEL[circling]),
-    });
+    };
+    const variant = QUARTER_PATH[path.column];
+    const line = variant
+      ? t("guide_eightstep_example_variant", { variant: t(variant), ...spins })
+      : t("guide_eightstep_example", spins);
     return notForPoi(cap) ? `${line} ${t("guide_eightstep_not_poi")}` : line;
   };
 
-  // One box per pair: its examples cycle with "Show another example".
-  const groups = $derived(
-    CAP_RELATIONS.map((relation) => {
-      const paths = CAP_HAND_PATHS.filter((p) => p.relation === relation);
-      const entries = PAIRINGS.flatMap(([capping, circling]) =>
-        paths.map((path) => ({ path, cap: capOf(path, capping, circling) }))
-      );
-      return {
-        relation,
-        ...GROUP_COPY[relation],
-        first: showcase(entries[0]!.cap),
-        pool: entries.map(({ path, cap }) => ({
-          word: cap.id,
-          loopLabel: "",
-          proseHtml: exampleProse(path, cap),
-          items: capStrip(cap),
-        })),
-      };
-    })
+  // A row per timing, a box per direction; each box's examples cycle with
+  // "Show another example".
+  const rows = $derived(
+    CAP_TIMINGS.map((timing) => ({
+      timing,
+      ...TIMING_COPY[timing],
+      boxes: CAP_DIRECTIONS.map((direction) => {
+        const paths = CAP_HAND_PATHS.filter(
+          (p) => p.timing === timing && p.direction === direction
+        );
+        const entries = PAIRINGS.flatMap(([capping, circling]) =>
+          paths.map((path) => ({ path, cap: capOf(path, capping, circling) }))
+        );
+        return {
+          direction,
+          title: DIRECTION_TITLE[direction],
+          first: showcase(entries[0]!.cap),
+          pool: entries.map(({ path, cap }) => ({
+            word: cap.id,
+            loopLabel: "",
+            proseHtml: exampleProse(path, cap),
+            items: capStrip(cap),
+          })),
+        };
+      }),
+    }))
   );
 
   // Pictographs follow the site theme, as the Level 1 pages do.
@@ -358,41 +367,37 @@
           <h2 id="paths-heading">{t("guide_eightstep_paths_title")}</h2>
           <p>{t("guide_eightstep_paths_body")}</p>
         </div>
-        <div class="group-grid">
-          {#each groups as group (group.relation)}
-            <SequenceShowcase
-              sequence={group.first.sequence}
-              items={group.first.items}
-              pool={group.pool}
-              trail={TIP_TRAIL}
-              render={PROP_RENDER}
-              canvasLetter={false}
-              loop
-              {picTheme}
-            >
-              {#snippet text()}
-                <div class="group-text">
-                  <span class="gage-name"
-                    >{t("guide_eightstep_gage_name", {
-                      name: group.gage,
-                    })}</span
-                  >
-                  <h3>{t(group.title)}</h3>
-                </div>
-              {/snippet}
-            </SequenceShowcase>
-          {/each}
-        </div>
+        {#each rows as row (row.timing)}
+          <section class="timing-row" aria-labelledby="timing-{row.timing}">
+            <div class="timing-head">
+              <h3 id="timing-{row.timing}">{t(row.title)}</h3>
+              <p>{t(row.body)}</p>
+            </div>
+            <div class="box-grid">
+              {#each row.boxes as box (box.direction)}
+                <SequenceShowcase
+                  sequence={box.first.sequence}
+                  items={box.first.items}
+                  pool={box.pool}
+                  trail={TIP_TRAIL}
+                  render={PROP_RENDER}
+                  canvasLetter={false}
+                  loop
+                  {picTheme}
+                >
+                  {#snippet text()}
+                    <h4 class="box-title">{t(box.title)}</h4>
+                  {/snippet}
+                </SequenceShowcase>
+              {/each}
+            </div>
+          </section>
+        {/each}
       </section>
 
       <footer class="credit">
         <p>{t("guide_caps_cap_credit")}</p>
         <div class="links">
-          <LinkChip
-            href={EIGHT_STEP_SOURCE}
-            target="_blank"
-            rel="noopener noreferrer">{t("guide_caps_link_source")}</LinkChip
-          >
           <LinkChip href={localHref("/notation/caps")}
             >{t("guide_caps_link_caps")}</LinkChip
           >
@@ -559,36 +564,40 @@
     flex-direction: column;
     gap: clamp(40px, 5vw, 72px);
   }
-  /* One box per pair of paths: a column on most screens, two side by side
-     once each has room for its canvas and a full strip. */
-  .group-grid {
+  /* A row per timing: its heading, then a box per direction, side by side
+     once each has room for its canvas beside a wrapping strip. */
+  .timing-row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg, 20px);
+  }
+  .timing-head {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    text-align: center;
+  }
+  .timing-head h3 {
+    font-size: 1.375rem;
+  }
+  .box-grid {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: clamp(28px, 3vw, 48px);
   }
-  @container (min-width: 2300px) {
-    .group-grid {
+  @container (min-width: 1100px) {
+    .box-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
-  .gage-name {
-    font-size: var(--font-size-compact, 13px);
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    color: var(--theme-text-muted);
+  .box-title {
+    font-size: 1.125rem;
+    color: var(--theme-text);
   }
-  .group-text {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-  .group-grid h3 {
-    font-size: 1.375rem;
-  }
-  /* Stacked, the showcase centres its example line; the heading follows. */
+  /* Stacked, the showcase centres its example line; the title follows. */
   @container (max-width: 600px) {
-    .group-text {
-      align-items: center;
+    .box-title {
       text-align: center;
     }
   }

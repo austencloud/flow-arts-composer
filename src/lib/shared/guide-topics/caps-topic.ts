@@ -1,20 +1,21 @@
 /**
- * Gage DeMello's twelve-beat CAPs (his Eight Step chart), the record behind the
- * /guide/three-levels essay. Transcribed into TKA from Mentive's SpiroAnim; the
- * full transcription is docs/research/spiroanim/eightstep-72-sequences.json.
+ * Gage DeMello's twelve-beat CAPs, the record behind the /guide/three-levels
+ * essay and /guide/eight-step. Transcribed into TKA from Mentive's SpiroAnim,
+ * whose Eight Step chart lays them out; the full transcription is
+ * docs/research/spiroanim/eightstep-72-sequences.json.
  *
  * In every one, one hand caps: it travels two beats round the diamond and
  * doubles back for one, changing its spin on the way back. The other hand keeps
- * circling. Gage's chart sets the hands against each other four ways
- * (opposite, same, quarter aligned, quarter opposed) and gives each hand one
- * of three spins, which TKA writes as anti with one turn, pro with no turns
- * and pro with one turn.
+ * circling. The pages sort them by VTG timing and direction, read from where
+ * the hands start and which way each sets off, and give each hand one of three
+ * spins, which TKA writes as anti with one turn, pro with no turns and pro
+ * with one turn.
  *
  * Each row keeps only what the page needs: where each hand starts, the points
  * it reaches beat by beat, and its spin on each beat. Rotation direction and
  * orientation follow from those, and caps-topic.test.ts rebuilds every step
- * and checks it against the transcription. Gage's chart codes stay here as
- * ids; the essay never shows them.
+ * and checks it against the transcription. The chart codes stay here as ids;
+ * the pages never show them.
  */
 import { ratioLabel } from "#lib/shared/shape-matrix/domain/flower-signature.js";
 import { deriveTnDFromPictograph } from "#lib/shared/pictograph/shared/domain/utils/tnd-deriver.js";
@@ -44,19 +45,20 @@ import type { SoloPropStepData } from "#lib/shared/foundation/domain/models/solo
 /** A hand's spin on one beat: pro with no turns, anti with one, pro with one. */
 export type CapSpin = "extension" | "antispin" | "prospin";
 
-/** How Gage's chart sets the two hands against each other. */
-export type CapRelation =
-  | "opposite"
-  | "same"
-  | "quarter-aligned"
-  | "quarter-opposed";
+/**
+ * Where the hands start against each other, in VTG's terms: at the same
+ * point (together), on opposite sides (split), or a quarter apart.
+ */
+export type CapTiming = "split" | "together" | "quarter";
+/** Whether the hands set off round the circle the same way or opposite ways. */
+export type CapDirection = "same" | "opposite";
 
-export const CAP_RELATIONS: readonly CapRelation[] = [
-  "opposite",
-  "same",
-  "quarter-aligned",
-  "quarter-opposed",
+export const CAP_TIMINGS: readonly CapTiming[] = [
+  "split",
+  "together",
+  "quarter",
 ];
+export const CAP_DIRECTIONS: readonly CapDirection[] = ["same", "opposite"];
 
 export const CAP_BEATS = 12;
 
@@ -83,10 +85,11 @@ export interface CapHand {
 }
 
 export interface Cap {
-  /** Gage's chart code, kept as an id only. */
+  /** The SpiroAnim chart code, kept as an id only. */
   id: string;
   word: string;
-  relation: CapRelation;
+  timing: CapTiming;
+  direction: CapDirection;
   left: CapHand;
   right: CapHand;
 }
@@ -825,16 +828,20 @@ const CAP_ROWS: readonly Row[] = [
   ],
 ];
 
-const RELATION_BY_COLUMN: Record<string, CapRelation> = {
-  "1": "opposite",
-  "2": "opposite",
-  "3": "same",
-  "4": "same",
-  "5": "quarter-aligned",
-  "6": "quarter-aligned",
-  "7": "quarter-opposed",
-  "8": "quarter-opposed",
-};
+const DEGREES: Record<string, number> = { n: 0, e: 90, s: 180, w: 270 };
+
+/** Read from the start points: the same, opposite, or a quarter apart. */
+function timingOf(left: CapHand, right: CapHand): CapTiming {
+  const gap = (DEGREES[right.start]! - DEGREES[left.start]! + 360) % 360;
+  return gap === 0 ? "together" : gap === 180 ? "split" : "quarter";
+}
+
+/** Read from each hand's first beat, clockwise or counterclockwise. */
+function directionOf(left: CapHand, right: CapHand): CapDirection {
+  const turn = (h: CapHand) =>
+    (DEGREES[h.path[0]!]! - DEGREES[h.start]! + 360) % 360;
+  return turn(left) === turn(right) ? "same" : "opposite";
+}
 
 function hand(start: string, path: string, spins: string): CapHand {
   return {
@@ -844,21 +851,27 @@ function hand(start: string, path: string, spins: string): CapHand {
   };
 }
 
-/** All 72, in the order of Gage's chart. */
+/** All 72, in chart order. */
 export const CAPS: readonly Cap[] = CAP_ROWS.map(
-  ([id, word, ls, lp, lsp, rs, rp, rsp]): Cap => ({
-    id,
-    word,
-    relation: RELATION_BY_COLUMN[id.split("-")[0]!]!,
-    left: hand(ls, lp, lsp),
-    right: hand(rs, rp, rsp),
-  })
+  ([id, word, ls, lp, lsp, rs, rp, rsp]): Cap => {
+    const left = hand(ls, lp, lsp);
+    const right = hand(rs, rp, rsp);
+    return {
+      id,
+      word,
+      timing: timingOf(left, right),
+      direction: directionOf(left, right),
+      left,
+      right,
+    };
+  }
 );
 
 /** A word and the CAPs that spell it, which differ only in their turns. */
 export interface CapWord {
   word: string;
-  relation: CapRelation;
+  timing: CapTiming;
+  direction: CapDirection;
   caps: readonly Cap[];
 }
 
@@ -872,32 +885,38 @@ export const CAP_WORDS: readonly CapWord[] = (() => {
   }
   return [...byWord.entries()].map(([word, caps]) => ({
     word,
-    relation: caps[0]!.relation,
+    timing: caps[0]!.timing,
+    direction: caps[0]!.direction,
     caps,
   }));
 })();
 
 /**
- * Gage's eight hand paths, one per chart column. The nine CAPs in a column
+ * The eight hand paths, one per chart column. The nine CAPs in a column
  * move the hands along the same two paths and differ only in how each hand
  * spins. The left hand caps in every one.
  */
 export interface CapHandPath {
   column: number;
-  relation: CapRelation;
+  timing: CapTiming;
+  direction: CapDirection;
   caps: readonly Cap[];
 }
 
 export const CAP_HAND_PATHS: readonly CapHandPath[] = [
   1, 2, 3, 4, 5, 6, 7, 8,
-].map((column) => ({
-  column,
-  relation: RELATION_BY_COLUMN[String(column)]!,
-  caps: CAPS.filter((cap) => cap.id.startsWith(`${column}-`)),
-}));
+].map((column) => {
+  const caps = CAPS.filter((cap) => cap.id.startsWith(`${column}-`));
+  return {
+    column,
+    timing: caps[0]!.timing,
+    direction: caps[0]!.direction,
+    caps,
+  };
+});
 
 /**
- * Gage's row for a CAP: the capping (left) hand's spin against the circling
+ * The chart row for a CAP: the capping (left) hand's spin against the circling
  * (right) hand's, each read from its first beat.
  */
 export function capPairing(cap: Cap): { capping: CapSpin; circling: CapSpin } {
