@@ -55,6 +55,22 @@ const REST_MS = 180;
  */
 const INCUMBENT_ADVANTAGE = 0.5;
 
+/**
+ * A medium that stands in for another. A tile playing a pre-rendered clip
+ * shows the same motion a live engine would, at a fraction of the cost, so
+ * every live clip uses up one of the replaced medium's tokens: clips take the
+ * place of engines instead of running on top of them. Measured 2026-10-16 on
+ * the Creators wall: 3 clips added to the 2-engine budget cut 17 fps to 10.
+ */
+export const REPLACES: Partial<Record<Medium, Medium>> = { clip: "sequence" };
+
+/** Media that replace another are ranked first, so their live count is known
+ *  before the replaced medium hands out what is left of its budget. */
+const RANK_ORDER: readonly Medium[] = [
+  ...MEDIA.filter((medium) => REPLACES[medium]),
+  ...MEDIA.filter((medium) => !REPLACES[medium]),
+];
+
 /** Starting budgets. Tunable live on the test page — these are guesses until
  *  measured, which is the whole point of the prototype. */
 export const DEFAULT_BUDGETS: Record<Medium, number> = {
@@ -273,7 +289,8 @@ export class LiveSlots {
       ranked[slot.medium].push(slot);
     }
 
-    for (const medium of MEDIA) {
+    const replacedBy: Partial<Record<Medium, number>> = {};
+    for (const medium of RANK_ORDER) {
       const group = ranked[medium];
       // Incumbents rank as if they were closer, so a tile that is already
       // playing is not evicted by a rival a few pixels nearer the centre.
@@ -282,15 +299,22 @@ export class LiveSlots {
           a.distance * (a.live ? INCUMBENT_ADVANTAGE : 1) -
           b.distance * (b.live ? INCUMBENT_ADVANTAGE : 1)
       );
-      const budget = this.budgets[medium];
+      const budget = Math.max(
+        0,
+        this.budgets[medium] - (replacedBy[medium] ?? 0)
+      );
 
+      let granted = 0;
       group.forEach((slot, index) => {
         const live = slot.hovered || index < budget;
+        if (live) granted++;
         if (slot.live !== live) {
           slot.live = live;
           slot.onChange(live);
         }
       });
+      const replaced = REPLACES[medium];
+      if (replaced) replacedBy[replaced] = (replacedBy[replaced] ?? 0) + granted;
     }
 
     // Slots that scrolled out entirely still hold a stale token.
