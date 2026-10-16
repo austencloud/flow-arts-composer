@@ -36,11 +36,6 @@ import {
   type PropState3D,
 } from "@austencloud/scene-3d";
 import {
-  planUpperBodyStanceYawTarget,
-  stanceSideBlend,
-  stanceTargetsForPropStates,
-} from "./upper-body-stance-planner";
-import {
   resolveTrackedUpperBodyStance,
   type StanceYawTrack,
 } from "./stance-yaw-track";
@@ -720,12 +715,7 @@ export function buildHardBeatTrack(
     );
     const chestRad = stance.segments.chestRad;
     chest[i] = chestRad;
-    sideBlend[i] = stanceSideBlend(
-      chestRad,
-      planUpperBodyStanceYawTarget(
-        stanceTargetsForPropStates(PlaneMode.WALL, left, right)
-      )
-    );
+    sideBlend[i] = stance.corridorBlend;
     hands[i] = {
       left: { prop: left, corridorM: stance.leftDepthOffsetM },
       right: { prop: right, corridorM: stance.rightDepthOffsetM },
