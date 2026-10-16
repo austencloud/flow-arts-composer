@@ -17,6 +17,9 @@ foreach ($path in @($file, $map, $data, $uat)) {
 if (-not $ArchiveDirectory) { $ArchiveDirectory = Join-Path $project 'Builds' }
 & node (Join-Path $PSScriptRoot 'verify-playback-data.mjs') --project $project --captures $CaptureDirectory --stage imported
 if ($LASTEXITCODE -ne 0) { throw "Museum imported playback verification failed ($LASTEXITCODE)" }
+$bundleTool = Join-Path $PSScriptRoot '..\..\Shared\Tools\performance-bundle.mjs'
+& node $bundleTool verify --project $project
+if ($LASTEXITCODE -ne 0) { throw "Museum performance bundle verification failed ($LASTEXITCODE)" }
 $ubt = '-WaitMutex -MaxParallelActions=4 -NoUBA'
 if ($CompilerVersion) { $ubt += " -CompilerVersion=$CompilerVersion" }
 & $uat BuildCookRun "-project=$file" -noP4 -platform=Win64 -clientconfig=Development -build -skipbuildeditor -cook -stage -package -archive -pak "-archivedirectory=$ArchiveDirectory" "-ubtargs=$ubt"
@@ -32,4 +35,6 @@ if ($json.version -ne 1 -or $json.rooms.Count -lt 20 -or $json.exhibits.Count -l
 }
 & node (Join-Path $PSScriptRoot 'verify-playback-data.mjs') --project $project --stage packaged --packaged-data (Split-Path -Parent $staged)
 if ($LASTEXITCODE -ne 0) { throw "Museum packaged playback verification failed ($LASTEXITCODE)" }
+& node $bundleTool verify --project $project --packaged-data (Split-Path -Parent $staged)
+if ($LASTEXITCODE -ne 0) { throw "Museum packaged performance bundle verification failed ($LASTEXITCODE)" }
 Write-Host "MUSEUM_PACKAGE_OK $exe"

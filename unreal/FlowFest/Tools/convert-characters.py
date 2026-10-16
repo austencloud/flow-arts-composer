@@ -6,6 +6,8 @@ FBXs contain the same normalized armature as their matching skeletal mesh FBX.
 import argparse
 import json
 import re
+import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -13,6 +15,15 @@ import bpy
 from mathutils import Vector
 
 HERE = Path(__file__).resolve().parent
+BUNDLE_TOOL = HERE.parent.parent / 'Shared' / 'Tools' / 'performance-bundle.mjs'
+
+
+def performance_contract(command, **paths):
+    subprocess.run([os.environ.get('TKA_NODE', 'node'), str(BUNDLE_TOOL), command,
+                    *[str(item) for key, value in paths.items() for item in (f'--{key}', value)]],
+                   check=True)
+
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--project', type=Path, help='Unreal project containing Tools/staged/Characters')
 parser.add_argument('--staged', type=Path, help='Explicit staged Characters directory')
@@ -216,9 +227,22 @@ for character in MANIFEST['characters']:
         name = 'Ride' if profile == 'Ride' else f'Flow_{profile}'
         source_path = Path(path)
         output = STAGED / character['key'] / f'A_{name}.fbx'
+        if profile != 'Ride':
+            performance_contract('validate-body', **{'body': source_path, 'character': character['id'],
+                                 'profile': profile, 'decoded-rig': character['decoded']})
         if is_current(output, source_path, Path(character['decoded'])):
-            continue
+            if profile == 'Ride':
+                continue
+            # A recent timestamp cannot establish which capture made an FBX.
+            # Rebuild old or invalid receipts instead of certifying an old file.
+            try:
+                performance_contract('validate-fbx', body=source_path, fbx=output, converter=Path(__file__))
+                continue
+            except subprocess.CalledProcessError:
+                pass
         retarget_clip(character, target, name, source_path, captured=True)
+        if profile != 'Ride':
+            performance_contract('record-fbx', body=source_path, fbx=output, converter=Path(__file__))
     print(f'FLOWFEST_CHARACTER {character["id"]} {len(meshes)} mesh parts')
 
 if args.id and set(args.id) - {c['id'] for c in MANIFEST['characters']}:

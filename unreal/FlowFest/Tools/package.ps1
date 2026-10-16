@@ -16,6 +16,9 @@ foreach ($required in @($projectFile, $map, $site, $uat)) {
 }
 & node (Join-Path $PSScriptRoot 'validate-runtime-data.mjs') (Join-Path $projectRoot 'Content\Data')
 if ($LASTEXITCODE -ne 0) { throw 'Native runtime data failed validation before packaging.' }
+$bundleTool = Join-Path $PSScriptRoot '..\..\Shared\Tools\performance-bundle.mjs'
+& node $bundleTool verify --project $projectRoot
+if ($LASTEXITCODE -ne 0) { throw "Performance bundle verification failed ($LASTEXITCODE)" }
 if (-not (Test-Path -LiteralPath $ArchiveDirectory)) { New-Item -ItemType Directory -Path $ArchiveDirectory -Force | Out-Null }
 $archivePath = (Resolve-Path -LiteralPath $ArchiveDirectory).Path
 
@@ -39,6 +42,8 @@ if (-not (Test-Path -LiteralPath $gameExe) -or -not (Test-Path -LiteralPath $pak
 
 # Data is staged as NonUFS; a successful cook does not prove these files made it into the archive.
 $dataDir = Join-Path $packageRoot 'FlowFest\Content\Data'
+& node $bundleTool verify --project $projectRoot --packaged-data $dataDir
+if ($LASTEXITCODE -ne 0) { throw "Packaged performance bundle verification failed ($LASTEXITCODE)" }
 $stagedSite = Join-Path $dataDir 'site.json'
 if (-not (Test-Path -LiteralPath $stagedSite -PathType Leaf)) {
     throw "UAT completed, but staged site JSON is missing: $stagedSite"
