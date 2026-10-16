@@ -1,6 +1,7 @@
 #include "MuseumPerformerStation.h"
 #include "FlowFestAvatarComponent.h"
 #include "FlowFestPropComponent.h"
+#include "FlowArtsWorldScoreComponent.h"
 #include "Components/SceneComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 
@@ -11,6 +12,13 @@ AMuseumPerformerStation::AMuseumPerformerStation()
     SetRootComponent(Feet);
     Avatar = CreateDefaultSubobject<UFlowFestAvatarComponent>(TEXT("Avatar"));
     Prop = CreateDefaultSubobject<UFlowFestPropComponent>(TEXT("Prop"));
+    Score = CreateDefaultSubobject<UFlowArtsWorldScoreComponent>(TEXT("Score"));
+    Score->SetupAttachment(Feet);
+    // A physical score beside the performer, clear of the body and spinning prop.
+    Score->SetRelativeLocation(FVector(15.f, -180.f, 155.f));
+    // Performer and score face the shared visitor aisle.
+    Score->SetRelativeRotation(FRotator::ZeroRotator);
+    Score->SetRelativeScale3D(FVector(.13f));
 }
 
 bool AMuseumPerformerStation::Fail(const FString& Reason)
@@ -19,6 +27,7 @@ bool AMuseumPerformerStation::Fail(const FString& Reason)
     bReady = false;
     if (Avatar) Avatar->SetPresentation(false, false);
     if (Prop) Prop->SetVisible(false);
+    if (Score) Score->SetVisibility(false);
     UE_LOG(LogTemp, Error, TEXT("Museum performer %s (%s, profile %s): %s"),
         *StationId, *SequenceId, *PerformanceProfile.ToString(), *Reason);
     return false;
@@ -58,7 +67,8 @@ bool AMuseumPerformerStation::Configure(const FString& InId, const FString& InLa
         return Fail(TEXT("exact authored prop track is missing"));
     Avatar->BindPerformanceProp(Prop);
     bReady = true;
-    if (bAutoPlay) return StartPlayback();
+    if (bAutoPlay && !StartPlayback()) return false;
+    if (StationId.StartsWith(TEXT("iso-"))) Score->ShowPerformance(Avatar, Prop, GetDisplayLabel());
     return true;
 }
 

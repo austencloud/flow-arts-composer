@@ -84,7 +84,12 @@ void AMuseumCharacter::Tick(float DeltaSeconds)
             FParse::Value(FCommandLine::Get(), TEXT("MuseumStartPitch="), StartPitch);
             SetActorLocation(FVector(TileX * 50.f, TileY * 50.f, StartZ), false, nullptr, ETeleportType::TeleportPhysics);
             if (Controller) Controller->SetControlRotation(FRotator(StartPitch, Yaw, 0));
-            if (FParse::Param(FCommandLine::Get(), TEXT("MuseumShot"))) ReviewScreenshotDelay = 2.f;
+            if (FParse::Param(FCommandLine::Get(), TEXT("MuseumShot")))
+            {
+                ReviewScreenshotDelay = 8.f;
+                FParse::Value(FCommandLine::Get(), TEXT("MuseumShotDelay="), ReviewScreenshotDelay);
+                ReviewScreenshotDelay = FMath::Clamp(ReviewScreenshotDelay, 2.f, 120.f);
+            }
             UE_LOG(LogTemp, Display, TEXT("MuseumGame review start: tile %d,%d z %.0f yaw %d pitch %.0f"), TileX, TileY, StartZ, Yaw, StartPitch);
         }
     }
