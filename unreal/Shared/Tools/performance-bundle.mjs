@@ -11,7 +11,18 @@ const save = (file, value) => { mkdirSync(dirname(file), { recursive: true }); w
 const insist = (condition, message) => { if (!condition) throw new Error(message); };
 const same = (a, b, what) => insist(a === b, `${what} is missing or stale`);
 const receipt = file => `${file}.performance.json`;
-const prepareScript = resolve(dirname(fileURLToPath(import.meta.url)), '../../FlowFest/Tools/prepare-characters.mjs');
+export const resolvePreparer = (moduleDir = dirname(fileURLToPath(import.meta.url)), override = process.env.TKA_PERFORMANCE_PREPARER) => {
+  if (override) {
+    const file = resolve(override);
+    insist(existsSync(file), `Missing body preparation tool: ${file}`);
+    return file;
+  }
+  const candidates = ['../../FlowFest/Tools/prepare-characters.mjs', '../../Project/Tools/prepare-characters.mjs']
+    .map(path => resolve(moduleDir, path));
+  const found = candidates.find(existsSync);
+  insist(found, `Missing body preparation tool: ${candidates.join(' or ')}`);
+  return found;
+};
 export const inside = (root, file) => {
   const rel = relative(resolve(root), resolve(file));
   insist(rel && !isAbsolute(rel) && rel !== '..' && !rel.startsWith(`..${sep}`), `Path escapes root: ${file}`);
@@ -53,7 +64,7 @@ export async function recordBody({ body, captureFile, capture, character, profil
   const value = { schema: 'tka-performance-body-v1', character, profile, propId,
     captureRelativePath: relative(dirname(body), captureFile).replaceAll('\\', '/'), captureSHA256: requireFile(captureFile), provenance: capture.provenance,
     sourceRigSHA256: rig.sourceRigSHA256, decodedRigSHA256: rig.decodedRigSHA256,
-    prepareSHA256: requireFile(prepareScript),
+    prepareSHA256: requireFile(resolvePreparer()),
     bodySHA256: requireFile(body) };
   save(receipt(body), value);
   return value;
@@ -63,7 +74,7 @@ export async function validateBody(body, { captureFile, sourceRig, decodedRig, c
   const value = read(receipt(body));
   same(value.schema, 'tka-performance-body-v1', 'Body receipt schema');
   same(value.bodySHA256, requireFile(body), 'Body GLB');
-  same(value.prepareSHA256, requireFile(prepareScript), 'Body preparation tool');
+  same(value.prepareSHA256, requireFile(resolvePreparer()), 'Body preparation tool');
   if (character) same(value.character, character, 'Body character');
   if (profile) same(value.profile, profile, 'Body profile');
   const source = captureFile ?? (value.captureRelativePath ? resolve(dirname(body), value.captureRelativePath) : null);
