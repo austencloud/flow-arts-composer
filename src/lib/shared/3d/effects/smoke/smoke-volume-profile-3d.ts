@@ -69,8 +69,8 @@ const PROFILES: Record<SmokePalette["id"], Readonly<SmokeVolumeProfile3D>> = {
   },
   campfire: {
     injectionRadiusWorld: 0.12,
-    density: 1.35,
-    dissipation: 0.16,
+    density: 1.0,
+    dissipation: 0.32,
     temperature: 0.95,
     vorticity: 0.62,
     lateralSpread: 0.14,
