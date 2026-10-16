@@ -1,10 +1,10 @@
 # Flow Fest for Unreal Engine 5.8
 
-This is a native Unreal Engine 5.8 C++ game of the Thursday arrival and first night at Flow Fest. It uses the measured site terrain and placements exported from the browser simulator's source data. It does not embed or run the browser simulator. The living-world delivery is staged at `E:/FlowFestLivingWorld58` with an editable `Project` and sibling `Shared` plugin directory. See [VERIFICATION.md](VERIFICATION.md) for the current build and package gates. The earlier `E:/FlowFestNative58` delivery remains separate.
+This is a native Unreal Engine 5.8 C++ game of the Thursday arrival and first night at Flow Fest. It uses the measured site terrain and placements exported from the browser simulator's source data. It does not embed or run the browser simulator. The prior verified living-world delivery is staged at `E:/FlowFestLivingWorld58` with an editable `Project` and sibling `Shared` plugin directory. See [VERIFICATION.md](VERIFICATION.md) for that package's build and verification gates. The earlier `E:/FlowFestNative58` delivery remains separate.
 
-The source revision adds attendee intentions and player needs. Its editor build, focused crowd tests, native activity smoke, and full family motion test have passed. A later source correction improves staff carry depth; its corrected native capture/import and the new Windows package remain pending. See [EMBODIMENT.md](EMBODIMENT.md) for evidence and limits. The delivery links below still point to the previously verified living-world package until this revision has its own verified package.
+The source revision adds attendee intentions, player needs, and the shared performance library. Its editor build, focused crowd tests, native activity smoke, full family motion test, game Development build, repository gate, and initial Windows packaged smoke have passed. The staff-clearance correction has imported ch01 pilots with paired body/prop receipts and verified native continuity. A complete source comparison across 82 routines and 16 rigs established the final 699-performance replacement set. That batch is being prepared on d2; final native import and package verification at `E:/FlowFestEmbodiment58` remain pending. See [EMBODIMENT.md](EMBODIMENT.md) for evidence and limits. The links below point to the previously verified living-world package.
 
-## Play the delivered build
+## Play the prior verified living-world build
 
 - [Play Flow Fest](E:/FlowFestLivingWorld58/Builds/Windows/FlowFest.exe) — open the packaged Windows game.
 - [Open the editable Unreal project](E:/FlowFestLivingWorld58/Project/FlowFest.uproject) — requires Unreal Engine 5.8.3 and the delivered [Shared runtime plugin](E:/FlowFestLivingWorld58/Shared/FlowArtsRuntime) beside `Project`.
@@ -48,15 +48,18 @@ The earlier archive at `E:/FlowFestNative58/Evidence/production-performances.tar
 .\Tools\launch.ps1 -Character ch01 -Showcase ride
 ```
 
-For a cooked Windows build from generated assets, run `Package.cmd` in the repository project. It invokes Unreal Automation Tool's `BuildCookRun` with build, cook, stage, package, pak, and archive enabled. The default archive directory is `Builds`; `-ArchiveDirectory` can target another local directory. `-EngineRoot` and `-CompilerVersion` are also accepted. The packaging script checks the staged site, character and prop catalogs, and complete compact motion set before packaging. The package result for this upgrade is recorded in [VERIFICATION.md](VERIFICATION.md). Launch a completed Windows archive with:
+For a cooked Windows build from generated assets, run `Package.cmd` in the repository project. It invokes Unreal Automation Tool's `BuildCookRun` with build, cook, stage, package, pak, and archive enabled. The default archive directory is `Builds`; `-ArchiveDirectory` can target another local directory. `-EngineRoot` and `-CompilerVersion` are also accepted. The packaging script checks the staged site, character and prop catalogs, and complete compact motion set before packaging. The prior living-world package result is recorded in [VERIFICATION.md](VERIFICATION.md). Launch a completed Windows archive with:
 
 ```powershell
 .\Tools\launch.ps1 -PackageRoot .\Builds\Windows
+.\Tools\launch.ps1 -PackageRoot .\Builds\Windows -Explore
 ```
 
 The package launcher requires both `FlowFest.exe` and `FlowFest/Content/Paks` inside the supplied root. Without `-PackageRoot`, it launches the editor game mode.
 
-Review positions are `gate`, `camp`, `fire`, and `overview`. A capture is requested after 25 seconds so shaders and assets can settle; automatic exit occurs after 40 seconds. Review mode logs average and maximum game frame delta after a 10-second warmup at capture or exit; these are not GPU timings. Review placement changes only the current session and does not alter saved progress. `-Smoke` checks the 1,312 family performances, legacy rigs, movement, camp journeys, and save/load in a separate `FlowFestNative58Smoke` slot. The `FlowFest.Motion` automation test samples the family routines against imported bodies and props. A filtered pilot is useful for diagnosis; it cannot establish the full 1,312-routine gate. The full native test and packaged smoke have passed; see [VERIFICATION.md](VERIFICATION.md) for the logs and remaining review gates.
+The source launcher also accepts `-Explore` to start on foot beside the fire circle with the normal third-person camera. Add `-Review camp` or `-Review gate` to choose another ground location. This shortcut keeps food, rest, greetings, and flow available; F10 starts the arrival journey. It still awaits final packaged verification.
+
+Review positions are `gate`, `camp`, `fire`, and `overview`. A capture is requested after 25 seconds so shaders and assets can settle; automatic exit occurs after 40 seconds. Review mode logs average and maximum game frame delta after a 10-second warmup at capture or exit; these are not GPU timings. Review placement changes only the current session and does not alter saved progress. `-Smoke` checks the 1,312 family performances, legacy rigs, movement, camp journeys, and save/load in a separate `FlowFestNative58Smoke` slot. The `FlowFest.Motion` automation test samples the family routines against imported bodies and props. A filtered pilot is useful for diagnosis; it cannot establish the full 1,312-routine gate. The prior living-world package passed its full native test and packaged smoke; see [VERIFICATION.md](VERIFICATION.md) for its logs and review gates.
 
 ## Play
 
@@ -80,6 +83,7 @@ Press **C** to choose your character and equipment. All 16 deployed characters a
 | T | Travel near the current objective for review; interaction is still required |
 | G | Cycle time-of-day presets |
 | F5 / F9 | Save / load native progress |
+| F6 | Open the shared performance library while on foot (embodiment source revision) |
 | F10 | Begin a new Thursday journey |
 | Esc | Quit the game |
 
@@ -93,7 +97,7 @@ The native world builds terrain, roads, trees, camps, parked cars, landmarks, vi
 
 The embodiment source revision gives the 38 attendees bounded needs, preferences, homes, equipment, and inspectable goals. They travel to food, camp, practice, watch, socialize in pairs, or take reserved turns at the fire circle. Needs and completed actions affect the next goal; ongoing routes, actions, and fire reservations are saved. Practice and performance use authored prop routines. Food, rest, and social stops have destinations, facing, and timing, but currently use existing idle clips. There is no eating, sitting, or talking animation, and stowed equipment has no visible holster.
 
-The food stop has a canopy and benches, with attendees arriving at it; the player sees an E food/water prompt. Close walk views show hands remaining attached to carried handles through a stride. The existing arm swing can still bring a carried staff across the torso; there is no separate carry arm pose. The source correction for staff clearance awaits new native capture/import and package verification.
+The food stop has a canopy and benches, with attendees arriving at it; the player sees an E food/water prompt. Close walk views show hands remaining attached to carried handles through a stride. The existing arm swing can still bring a carried staff across the torso; there is no separate carry arm pose. The staff-clearance correction has passed ch01 paired body and prop pilots, including an instrumented native capture. Those numerical checks do not establish physical staff realism. Full cohort validation and package verification remain pending.
 
 The scripted experience covers the first night. Car and EUC movement remains simple; the car has no Chaos vehicle physics. The EUC uses the production mounted contact pose. Each of the 41 prop families has two finite captured routines rather than an arbitrary native TKA sequence evaluator. Camp dressing, visitor behavior, and fire use native implementations. Photo flight and travel near objective are review aids.
 
