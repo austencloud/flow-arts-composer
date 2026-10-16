@@ -273,7 +273,7 @@ export class SmokeFluidRenderer3D {
     // Floor to the top of the box, centred on the performer.
     domain.origin.set(
       source.position.x - extent.x / 2,
-      source.collisionFloorY ?? 0,
+      Number.isFinite(source.collisionFloorY) ? source.collisionFloorY : 0,
       source.position.z - extent.z / 2
     );
     this.snapOrigin(domain);
