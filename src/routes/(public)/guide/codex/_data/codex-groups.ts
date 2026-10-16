@@ -9,7 +9,15 @@
 
 import lettersData from "../../level-1/_data/letters.json";
 import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
-import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import {
+  createMotionData,
+  type MotionData,
+} from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import {
+  HandSide,
+  Orientation,
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { calculateEndOrientation } from "#lib/shared/pictograph/prop/services/orientation-calculator.js";
 import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
 
 const pictographs = (
@@ -45,9 +53,14 @@ export function transitionFor(id: string): string {
  *  Zeroing is a plain field set (not the heavy canonical apply-turns service):
  *  this module is imported by prerendered routes and the whole app's codex
  *  surfaces, so it must stay dependency-light - pulling the create-services
- *  graph in here wedges the SSR module graph. `createMotionData` recomputes end
- *  orientation from turns=0, and the pictograph-preparer re-keys placement to
- *  the turn-0 lookups at render time, so a base radial letter resolves cleanly. */
+ *  graph in here wedges the SSR module graph. The pictograph-preparer re-keys
+ *  placement to the turn-0 lookups at render time, so a base radial letter
+ *  resolves cleanly.
+ *
+ *  Every letter starts with both thumbs in. letters.json stores "in" for every
+ *  end too, which is wrong for most letters, so each end is recalculated from
+ *  that start (a 0-turn anti ends thumb out, a pro ends thumb in). The
+ *  calculator is a pure function with no service graph behind it. */
 export function codexData(id: string): PictographData | null {
   const d = pictographs[id];
   if (!d) return null;
@@ -56,10 +69,22 @@ export function codexData(id: string): PictographData | null {
   return {
     ...d,
     motions: {
-      left: createMotionData({ ...left, turns: 0 }),
-      right: createMotionData({ ...right, turns: 0 }),
+      left: baseMotion(left, HandSide.LEFT),
+      right: baseMotion(right, HandSide.RIGHT),
     },
   };
+}
+
+function baseMotion(motion: MotionData, hand: HandSide): MotionData {
+  const started = createMotionData({
+    ...motion,
+    turns: 0,
+    startOrientation: Orientation.IN,
+  });
+  return createMotionData({
+    ...started,
+    endOrientation: calculateEndOrientation(started, hand),
+  });
 }
 
 export type CellMode = "OPEN" | "CLOSE";
