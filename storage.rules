@@ -229,12 +229,14 @@ service firebase.storage {
     // and the binaries land here. Metadata doc lives at
     // /users/{uid}/poi-images/{id} in Firestore.
     match /users/{userId}/poi-images/{allPaths=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId
+      // Reading the uploaded image URL must not depend on upload metadata.
+      // request.resource is absent on reads in production Storage rules.
+      allow read, delete: if request.auth != null && request.auth.uid == userId;
+      allow create, update: if request.auth != null && request.auth.uid == userId
         // Limit to image types the lab actually accepts
-        && (request.resource == null
-          || request.resource.contentType.matches('image/(png|jpeg|bmp|webp)'))
+        && request.resource.contentType.matches('image/(png|jpeg|bmp|webp)')
         // Cap at 10MB — POV images are typically much smaller
-        && (request.resource == null || request.resource.size < 10 * 1024 * 1024);
+        && request.resource.size < 10 * 1024 * 1024;
     }
 
     // Screenshots - users can only access their own screenshots
