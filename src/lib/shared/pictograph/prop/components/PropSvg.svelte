@@ -240,16 +240,20 @@ even when Svelte recreates the component instance.
   const shouldMirror = $derived.by(() => {
     const settings = getSettings();
 
-    // Determine the actual prop type being rendered.
-    // Settings prop type takes precedence — it's what the user chose to display.
+    // Determine the actual prop type being rendered. When the assets don't
+    // say, the settings prop type is what the user chose to display.
     const settingsPropType =
       motionData.hand === HandSide.LEFT
         ? settings.leftPropType
         : motionData.hand === HandSide.RIGHT
           ? settings.rightPropType
           : undefined;
+    // The preparer records the prop it actually drew on its assets. A page
+    // that draws its own prop (the Codex, guides, export) must not take the
+    // reader's saved prop's mirroring: a flipped buugeng in settings would
+    // otherwise mirror a red staff and reverse its thumb end.
     const actualPropType: PropType | string | undefined =
-      settingsPropType ?? motionData.propType;
+      propAssets.propType ?? settingsPropType ?? motionData.propType;
 
     // Red hand is always mirrored (left/right hands are anatomically mirrored).
     // Also check the prepared motion's own prop type: a per-pictograph override

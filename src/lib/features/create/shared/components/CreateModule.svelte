@@ -1106,6 +1106,7 @@
         <div class="create-tab">
           {#if WorkspaceLayout}
             <WorkspaceLayout
+              {draftRecovery}
               {shouldUseSideBySideLayout}
               {CreateModuleState}
               {panelState}
