@@ -99,6 +99,15 @@ content wrapper remains the independent source of natural geometry. Clear the
 owned height on teardown, not between transitions. Observe both the OS setting
 and the app's `data-motion-preference` setting, including changes mid-animation.
 
+A button whose label changes its width (a lesson's "Next" becoming
+"Continue to Hand Placements") uses the same controller on the other axis:
+`createIntrinsicSizeMotion(button, { dimension: "width", release: true })`.
+Measure the width before the label commits, measure the natural width after,
+ease between them, and fade the new words in with `createDestinationFade`.
+`release` hands the width back to content sizing when the ease lands, so a
+container query can still make the button full width. `LessonStageControls`
+is the consumer.
+
 Outgoing `Crossfade` layers remain painted during their outro but become inert
 and hidden from assistive technology. Rapid reversal must restore only the
 current controls. Heavy live cards and video players retain their existing
