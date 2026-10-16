@@ -692,7 +692,7 @@
   /* The compact tray sits over animated backgrounds. A deeper accent keeps
      the selected filter label readable at enhanced contrast without changing
      the shared control everywhere else it appears. */
-  .oph.compact .filter-seg :global(.segmented-control.accent .indicator) {
+  .oph.compact .filter-seg :global(.segmented-control.accent .segment.selected) {
     background: color-mix(in srgb, var(--theme-accent, #8b6cff) 48%, black);
   }
 
