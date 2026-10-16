@@ -16,7 +16,7 @@
   import {
     createFestivalSamplerTurnReviewState,
     type FestivalTurnReviewFilter,
-  } from "./state/festival-sampler-turn-review-state.svelte";
+  } from "./state/festival-sampler-turn-review-state.svelte.js";
 
   interface Props {
     onBack: () => void;
@@ -144,7 +144,7 @@
     };
   });
 
-  function turnValue(value: number | undefined): string {
+  function turnValue(value: number | "fl" | undefined): string {
     return value === 0.5 ? "½" : String(value ?? 0);
   }
 

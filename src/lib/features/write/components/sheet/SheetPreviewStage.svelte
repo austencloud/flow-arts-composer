@@ -1,7 +1,7 @@
 <script lang="ts">
   import SheetPreviewPages from "./SheetPreviewPages.svelte";
   import SheetReadingView from "./SheetReadingView.svelte";
-  import { getChoreoSheetContext } from "../../state/choreo-sheet-state.svelte";
+  import { getChoreoSheetContext } from "../../state/choreo-sheet-state.svelte.js";
   import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
   import { onDestroy } from "svelte";
   import ShimmerBlock from "#lib/shared/components/loading/ShimmerBlock.svelte";
@@ -11,7 +11,7 @@
   const { state: builder } = getChoreoSheetContext();
   let {
     viewMode,
-    zoom = $bindable(),
+    zoom = $bindable(1),
     actStepIndex = null,
   }: {
     viewMode: "reading" | "page";

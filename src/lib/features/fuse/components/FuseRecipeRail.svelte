@@ -14,16 +14,17 @@
   import ToggleCard from "#lib/features/create/generate/components/cards/ToggleCard.svelte";
   import TurnIntensityCard from "#lib/features/create/generate/components/cards/TurnIntensityCard.svelte";
   import StepperCard from "#lib/shared/components/stepper-card/StepperCard.svelte";
+  import type { DifficultyLevel } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+  import { maxTurnIntensitiesForLevel } from "#lib/shared/create/services/level-turn-values.js";
   import {
-    maxTurnIntensitiesForLevel,
-    type TurnLevel,
-  } from "#lib/shared/create/services/level-turn-values.js";
-  import { DifficultyLevel } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+    fuseDifficultyByLevel,
+    fuseLevelByDifficulty,
+  } from "../domain/fuse-difficulty-levels";
   import type { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import { getFuseContext } from "../context/fuse-context";
   import type { FuseRecipeDestination } from "../domain/fuse-recipe-destination";
   import type { FuseRecipeSummaries } from "../domain/fuse-recipe-summaries";
-  import { FUSE_LENGTHS, type FuseMode } from "../state/fuse-state.svelte";
+  import { FUSE_LENGTHS, type FuseMode } from "../state/fuse-state.svelte.js";
   import FuseRecipePopover from "./FuseRecipePopover.svelte";
 
   let {
@@ -44,18 +45,6 @@
   } = $props();
 
   const { state: fuseState } = getFuseContext();
-
-  const levelMap: Record<TurnLevel, DifficultyLevel> = {
-    1: DifficultyLevel.BEGINNER,
-    2: DifficultyLevel.INTERMEDIATE,
-    3: DifficultyLevel.ADVANCED,
-  };
-  const reverseLevelMap: Record<DifficultyLevel, TurnLevel> = {
-    [DifficultyLevel.BEGINNER]: 1,
-    [DifficultyLevel.INTERMEDIATE]: 2,
-    [DifficultyLevel.ADVANCED]: 3,
-    [DifficultyLevel.SKEWED]: 3,
-  };
 
   const minimumLength = FUSE_LENGTHS[0]!;
   const maximumLength = FUSE_LENGTHS[FUSE_LENGTHS.length - 1]!;
@@ -83,7 +72,7 @@
 
   function selectLevel(level: DifficultyLevel): void {
     if (disabled) return;
-    fuseState.setGenerationLevel(reverseLevelMap[level]);
+    fuseState.setGenerationLevel(fuseLevelByDifficulty[level]);
   }
 
   function selectGridMode(value: GridMode): void {
@@ -123,7 +112,7 @@
 
   <div class="card-slot">
     <LevelCard
-      currentLevel={levelMap[fuseState.generationLevel]}
+      currentLevel={fuseDifficultyByLevel[fuseState.generationLevel]}
       onLevelChange={selectLevel}
       appearance="quiet"
       gridColumnSpan={1}
