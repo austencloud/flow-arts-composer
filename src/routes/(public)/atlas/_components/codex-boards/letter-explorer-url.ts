@@ -23,7 +23,6 @@ export interface LetterExplorerRouteState extends LetterExplorerEdits {
 }
 
 const CANONICAL_LETTER_EXPLORER_PATH = "/codex";
-const ATLAS_PATH = "/atlas";
 
 export const LETTER_EXPLORER_PARAMS = [
   "letter",
@@ -115,9 +114,6 @@ export function writeLetterExplorerRoute(
   url.searchParams.set("grid", state.gridMode);
   url.searchParams.set("variation", String(state.variation));
   writeLetterExplorerEdits(url, state);
-  // The Atlas drills into its letter category by this hash. The Codex page
-  // has no such section.
-  if (url.pathname === ATLAS_PATH) url.hash = "cat-letter";
 }
 
 /**
