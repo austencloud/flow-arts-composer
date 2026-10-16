@@ -15,6 +15,7 @@
   import BoardAtlas from "./codex-boards/BoardAtlas.svelte";
   import LetterExplorer from "./codex-boards/LetterExplorer.svelte";
   import CodexBoardControls from "./codex-boards/CodexBoardControls.svelte";
+  import type { Box } from "./codex-boards/codex-fan";
   import {
     CODEX_BY_LABEL,
     CODEX_LETTERS,
@@ -155,6 +156,22 @@
     RotationDirection.CLOCKWISE
   );
   let overlayOpen = $state(false);
+  // A click on a board cell opens the explorer as a deck dealt from that
+  // cell (codex-fan.ts). The dialog skips its own pop so the cards measure
+  // their true slots, and goes back to it once the deck has landed.
+  let fan = $state<{ origin: Box; key: number } | null>(null);
+  let fanning = $state(false);
+  let fanCount = 0;
+  let press: { origin: Box; at: number } | null = null;
+
+  function notePress(event: Event): void {
+    const picture = (event.target as Element | null)
+      ?.closest(".codex-cell")
+      ?.querySelector(".picto");
+    if (!picture) return;
+    const { x, y, width, height } = picture.getBoundingClientRect();
+    press = { origin: { x, y, width, height }, at: performance.now() };
+  }
 
   let pictographsByGrid = $state<Record<string, PictographData[]>>({
     [GridMode.DIAMOND]: [],
@@ -402,12 +419,18 @@
     selectedVariationIndex = 0;
     if (cell) landOn(cell);
     if (!boardControls) resetEdits();
+    const origin = press && performance.now() - press.at < 1500 ? press.origin : null;
+    press = null;
+    fan = origin ? { origin, key: ++fanCount } : null;
+    fanning = fan !== null;
     overlayOpen = true;
     commitRoute("push");
   }
 
   function closeExplorer(): void {
     overlayOpen = false;
+    fan = null;
+    fanning = false;
     pendingCell = null;
     mutateCurrentUrl(
       (url) => {
@@ -486,7 +509,11 @@
   }
 </script>
 
-<div class="codex codex-dark">
+<div
+  class="codex codex-dark"
+  onpointerdowncapture={notePress}
+  onkeydowncapture={notePress}
+>
   {#if boardControls}
     <CodexBoardControls
       {leftTurns}
@@ -514,6 +541,7 @@
 <BaseModal
   bind:open={overlayOpen}
   size="xl"
+  animation={fanning ? "none" : "pop"}
   labelledBy="codex-overlay-title"
   class="codex-explorer-modal codex-dark"
   onclose={closeExplorer}
@@ -553,6 +581,8 @@
     onLearningRetry={loadLearningDeck}
     onCopyLink={copyExactLink}
     {propType}
+    {fan}
+    onFanDone={() => (fanning = false)}
   />
 </BaseModal>
 
@@ -576,6 +606,40 @@
     :global(dialog.codex-explorer-modal[data-size="xl"]) {
       width: 94vw;
       height: 92dvh;
+    }
+  }
+
+  /* While the deck is dealt the dialog appears at once (no pop), and the
+     words around the cards rise in with them. */
+  :global(dialog.codex-explorer-modal[data-animation="none"] .modal-header-slot),
+  :global(dialog.codex-explorer-modal[data-animation="none"] .preview-column),
+  :global(dialog.codex-explorer-modal[data-animation="none"] .variation-section > .section-heading),
+  :global(dialog.codex-explorer-modal[data-animation="none"] .contexts) {
+    animation: codex-explorer-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* The backdrop only fades: a blur growing from zero repaints the whole
+     screen on the main thread every frame, under the deck. */
+  @starting-style {
+    :global(dialog.codex-explorer-modal[data-animation="none"][open]::backdrop) {
+      backdrop-filter: blur(var(--modal-backdrop-blur));
+      -webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :global(dialog.codex-explorer-modal[data-animation="none"] .modal-header-slot),
+    :global(dialog.codex-explorer-modal[data-animation="none"] .preview-column),
+    :global(dialog.codex-explorer-modal[data-animation="none"] .variation-section > .section-heading),
+    :global(dialog.codex-explorer-modal[data-animation="none"] .contexts) {
+      animation: none;
+    }
+  }
+
+  @keyframes -global-codex-explorer-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
     }
   }
 
