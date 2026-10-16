@@ -15,6 +15,13 @@ export const studioKindLabels: Record<StudioIntent, { one: string; many: string 
     arrangement: { one: "Arrangement", many: "Arrangements" },
   };
 
+/** What each kind of project is for, on the start tiles and in the create sheet. */
+export const studioKindDescriptions: Record<StudioIntent, string> = {
+  tutorial: "Teach a sequence. Reuse an edit or choose a new sequence.",
+  showcase: "Show what the app can do with footage, captures and titles.",
+  arrangement: "Put sequences side by side, layer them and set their timing.",
+};
+
 export interface StudioLibraryEntry {
   id: string;
   title: string;
