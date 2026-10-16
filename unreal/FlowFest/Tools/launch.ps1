@@ -2,6 +2,7 @@ param(
     [string]$EngineRoot = 'C:\Program Files\Epic Games\UE_5.8',
     [string]$PackageRoot = '',
     [ValidateSet('', 'gate', 'camp', 'fire', 'overview')][string]$Review = '',
+    [switch]$Explore,
     [string]$Capture = '',
     [ValidateRange(1, 300)][int]$CaptureFrames = 1,
     [ValidateRange(0, 300)][double]$CaptureStart = 25,
@@ -25,6 +26,11 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+if ($Explore) {
+    if ($Showcase -or $Wardrobe -or $Smoke) { throw '-Explore cannot combine with showcase, wardrobe, or smoke runs.' }
+    if (-not $Review) { $Review = 'fire' }
+    if ($Review -eq 'overview') { throw '-Explore requires a ground location: gate, camp, or fire.' }
+}
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $projectFile = Join-Path $projectRoot 'FlowFest.uproject'
 $editor = Join-Path $EngineRoot 'Engine\Binaries\Win64\UnrealEditor.exe'
@@ -58,6 +64,7 @@ if ($PackageRoot) {
     $arguments = @($projectFile, '-game', '-windowed', '-ResX=1600', '-ResY=900', '-NoSplash')
 }
 if ($Review) { $arguments += "-FlowFestReview=$Review" }
+if ($Explore) { $arguments += '-FlowFestExplore' }
 if ($Character) { $arguments += "-FlowFestCharacter=$Character" }
 if ($Prop) { $arguments += "-FlowFestProp=$Prop" }
 if ($Showcase) { $arguments += "-FlowFestShowcase=$Showcase" }

@@ -761,6 +761,19 @@ void AFlowFestCharacter::PlaceReviewCamera()
     if (AController* C = GetController()) C->SetControlRotation((Target - Position - FVector(0, 0, 68)).Rotation());
     FestivalWorld->SetTimeOfDay(ReviewSite == TEXT("gate") ? 16.f : ReviewSite == TEXT("fire") ? 23.f : ReviewSite == TEXT("camp") ? 17.5f : 17.f);
     SyncModeVisuals();
+    if (FParse::Param(FCommandLine::Get(), TEXT("FlowFestExplore")))
+    {
+        Position.Z = FestivalWorld->SampleGround(Position.X * .01f, Position.Y * .01f) + 110.f;
+        SetActorLocation(Position, false);
+        bPhotoFly = false;
+        bFirstPerson = false;
+        bInVehicle = false;
+        bOnEUC = false;
+        GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+        SyncModeVisuals();
+        Notify(TEXT("Explore the festival: WASD move, Q flow, H greet, E food or rest. F10 starts the journey."));
+        UE_LOG(LogTemp, Display, TEXT("FlowFestExplore ready on foot at %s"), *ReviewSite);
+    }
 }
 
 void AFlowFestCharacter::ApplyPhaseTime()
