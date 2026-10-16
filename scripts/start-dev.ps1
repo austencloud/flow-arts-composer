@@ -457,16 +457,18 @@ try {
             $nextHealthProbeAt = (Get-Date).AddSeconds(10)
         } elseif ((Get-Date) -ge $nextHealthProbeAt) {
             $originStatus = Get-HttpStatus $originUrl $true
-            if ($originStatus -eq "000" -and (Test-VitePing $originUrl)) {
+            if ($originStatus -ne "200" -and (Test-SvelteKitGeneratedStateError $originUrl $true)) {
+                throw "SvelteKit's generated root route proxy is unavailable. Exiting so pm2 can repair the generated state and restart the dev stack."
+            } elseif ($originStatus -ne "200" -and (Test-VitePing $originUrl)) {
                 # The page outlasted the probe, but Vite itself answered. The
                 # first render after a restart can take minutes on a loaded
-                # machine; counting it as a failure turned a slow restart into
-                # a full cold boot.
+                # machine, including cached SSR 500s after a module timeout;
+                # restarting a live server repeatedly prevents it warming up.
                 if (-not $originBusySince) { $originBusySince = Get-Date }
                 $originBusySeconds = [int]((Get-Date) - $originBusySince).TotalSeconds
                 $originFailureCount = 0
                 $publicFailureCount = 0
-                Write-Status "Local Vite origin is busy: Vite answers, but the page took over 8s (${originBusySeconds}s so far)."
+                Write-Status "Local Vite origin is busy: Vite answers, but the page returned $originStatus (${originBusySeconds}s so far)."
                 if ($originBusySeconds -ge 300) {
                     throw "Local Vite origin answered pings but served no page for five minutes. Exiting so pm2 can restart the complete dev stack."
                 }
@@ -474,9 +476,6 @@ try {
                 $originFailureCount += 1
                 $publicFailureCount = 0
                 Write-Status "Local Vite origin probe failed ($originFailureCount/3)."
-                if (Test-SvelteKitGeneratedStateError $originUrl $true) {
-                    throw "SvelteKit's generated root route proxy is unavailable. Exiting so pm2 can repair the generated state and restart the dev stack."
-                }
                 if ($originFailureCount -ge 3) {
                     throw "Local Vite origin remained unavailable across three probes. Exiting so pm2 can restart the complete dev stack."
                 }
