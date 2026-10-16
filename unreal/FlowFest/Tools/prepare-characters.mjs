@@ -111,7 +111,7 @@ async function ensureDecodedRig(character) {
   try { validateDecodedRig(character.decoded, character.source); }
   catch { await decodeRig(character.source, character.decoded); }
 }
-const staged = museumMode ? join(project, 'Tools/staged/Characters') : join(here, 'staged/Characters');
+const staged = join(project, 'Tools/staged/Characters');
 mkdirSync(staged, { recursive: true });
 const animations = {
   Idle: 'idle-rm.glb', Walk: 'walk-forward-rm.glb', Run: 'run-rm.glb', Jump: 'jump-up-rm.glb',
@@ -277,7 +277,9 @@ if (familyOnly) {
   for (const character of stagedManifest.characters.filter(x => !captureId || x.id === captureId)) {
     character.decoded = join(staged, `${character.id.replaceAll('-', '_')}.glb`);
     await ensureDecodedRig(character);
-    character.captures ||= {};
+    // A partial run must only offer captures it actually prepared. The catalog
+    // keeps every animation path, while importers consume this staging map.
+    character.captures = {};
     for (const [profile, role] of availableProfiles(character.id)) {
       character.captures[profile] = await prepareCapture(character, profile, `${character.id}_${role}.json`, role);
       const name = `Flow_${profile}`;
