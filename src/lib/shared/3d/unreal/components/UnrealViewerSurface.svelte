@@ -12,6 +12,10 @@
   import type { NativeViewerState } from "../domain/bridge-protocol";
   import type { CharacterId } from "../../domain/character-model";
   import { Plane, PlaneMode } from "@austencloud/scene-3d";
+  import { computeGroupBounds } from "#lib/shared/sequence-viewer/camera-choreography/presets/shots.js";
+
+  const NATIVE_PERFORMER_CENTER_Y = 0.9;
+  const FRAMING_PADDING = 1.5;
 
   let { connection }: { connection: NativeViewerConnection } = $props();
   const viewer = getViewer3DContext();
@@ -68,6 +72,52 @@
         360) /
       Math.PI
     );
+  }
+
+  function frameNativeCamera(
+    position: { x: number; y: number; z: number },
+    target: { x: number; y: number; z: number }
+  ) {
+    const aspect = Math.max(0.1, streamView().aspect);
+    const horizontalHalfFov =
+      ((connection.state?.camera.fov ?? 50) * Math.PI) / 360;
+    const verticalHalfFov = Math.atan(Math.tan(horizontalHalfFov) / aspect);
+    const radius = computeGroupBounds(
+      viewer.performerManager.performers.map((performer) => ({
+        position: performer.position,
+      }))
+    ).radius;
+    const minimumDistance =
+      (radius * FRAMING_PADDING) /
+      Math.sin(Math.min(horizontalHalfFov, verticalHalfFov));
+    const requestedDirection = {
+      x: position.x - target.x,
+      y: position.y - target.y,
+      z: position.z - target.z,
+    };
+    const distance = Math.hypot(
+      requestedDirection.x,
+      requestedDirection.y,
+      requestedDirection.z
+    );
+    const direction =
+      distance > 0.001 ? requestedDirection : { x: 0, y: 0, z: 1 };
+    const scale =
+      distance > 0.001
+        ? Math.max(1, minimumDistance / distance)
+        : minimumDistance;
+    const framedTarget = {
+      ...target,
+      y: target.y === 0 ? NATIVE_PERFORMER_CENTER_Y : target.y,
+    };
+    return {
+      position: {
+        x: framedTarget.x + direction.x * scale,
+        y: framedTarget.y + direction.y * scale,
+        z: framedTarget.z + direction.z * scale,
+      },
+      target: framedTarget,
+    };
   }
 
   function desiredScene() {
@@ -190,6 +240,7 @@
       if (!initialized) {
         reconcile(state);
         initialized = true;
+        viewer.focusSelectedPerformers();
       }
     });
   });
@@ -418,13 +469,12 @@
   }
 
   onMount(() => {
-    // The native host keeps feet at y=0 and looks at the torso around y=1.1.
-    // Shared camera preset buttons use this value as their target height.
-    viewer.setStageGroundOffset(1.1);
-    void connection.mount(host);
+    // Native feet rest at floor zero; shared shots add their own target height.
+    viewer.setStageGroundOffset(0);
     const removeCamera = viewer.registerSnapTo((position, target) =>
-      sendCamera({ position, target })
+      sendCamera(frameNativeCamera(position, target))
     );
+    void connection.mount(host);
     const removePlacement = viewer.registerPerformerPlacement(() => {
       placing = true;
       host.focus();
