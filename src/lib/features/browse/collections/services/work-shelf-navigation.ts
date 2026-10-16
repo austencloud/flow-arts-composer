@@ -26,7 +26,14 @@ export function shelfForLocation(location: BrowseLocation | null): WorkShelfId {
   if (location.section === "collections" && location.view === "detail") {
     if (location.ownerId) return "shared";
     if (location.contextId && isFoundingId(location.contextId)) return "core";
-    if (location.contextId?.startsWith("art_")) return "art";
+    if (location.contextId === "video_performances") return "performances";
+    if (
+      location.contextId === "art_tunnels" ||
+      location.contextId === "art_scenes" ||
+      location.contextId === "art_mandala" ||
+      location.contextId === "art_films"
+    )
+      return "art";
   }
   return "collections";
 }
