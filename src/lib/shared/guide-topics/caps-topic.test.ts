@@ -234,7 +234,30 @@ describe("what the Eight Step page says about them", () => {
     }
   });
 
-  it("names each pairing as Gage's row code does", () => {
+  it("reads each path's timing and direction from where the hands start", () => {
+    expect(
+      CAP_HAND_PATHS.map((p) => [p.column, p.timing, p.direction])
+    ).toEqual([
+      [1, "split", "opposite"],
+      [2, "together", "opposite"],
+      [3, "together", "same"],
+      [4, "split", "same"],
+      [5, "quarter", "same"],
+      [6, "quarter", "same"],
+      [7, "quarter", "opposite"],
+      [8, "quarter", "opposite"],
+    ]);
+    for (const path of CAP_HAND_PATHS) {
+      for (const cap of path.caps) {
+        expect([cap.timing, cap.direction], cap.id).toEqual([
+          path.timing,
+          path.direction,
+        ]);
+      }
+    }
+  });
+
+  it("names each pairing as the chart's row code does", () => {
     const CODE = { A: "antispin", E: "extension", I: "prospin" } as const;
     for (const cap of CAPS) {
       const [capping, circling] = [...cap.id.split("-")[1]!] as (
