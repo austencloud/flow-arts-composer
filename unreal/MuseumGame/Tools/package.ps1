@@ -24,6 +24,12 @@ if ($LASTEXITCODE -ne 0) { throw "Museum performance bundle verification failed 
 $libraryTool = Join-Path $PSScriptRoot '..\..\Shared\Tools\performance-library.mjs'
 & node $libraryTool build --project $project
 if ($LASTEXITCODE -ne 0) { throw "Museum performance library export failed ($LASTEXITCODE)" }
+$pictographTool = Join-Path $PSScriptRoot '..\..\Shared\Tools\performance-pictographs.mjs'
+$hasPictographs = Test-Path -LiteralPath (Join-Path $project 'Content\Data\performance-pictographs.json')
+if ($hasPictographs) {
+    & node $pictographTool verify --project $project
+    if ($LASTEXITCODE -ne 0) { throw "Museum performance pictograph verification failed ($LASTEXITCODE)" }
+}
 $ubt = "-WaitMutex -MaxParallelActions=$MaxParallelActions -NoUBA"
 if ($CompilerVersion) { $ubt += " -CompilerVersion=$CompilerVersion" }
 & $uat BuildCookRun "-project=$file" -noP4 -platform=Win64 -clientconfig=Development -build -skipbuildeditor -cook -stage -package -archive -pak "-archivedirectory=$ArchiveDirectory" "-ubtargs=$ubt"
@@ -43,4 +49,8 @@ if ($LASTEXITCODE -ne 0) { throw "Museum packaged playback verification failed (
 if ($LASTEXITCODE -ne 0) { throw "Museum packaged performance bundle verification failed ($LASTEXITCODE)" }
 & node $libraryTool verify --project $project --packaged-data (Split-Path -Parent $staged)
 if ($LASTEXITCODE -ne 0) { throw "Museum packaged performance library verification failed ($LASTEXITCODE)" }
+if ($hasPictographs) {
+    & node $pictographTool verify --project $project --packaged-data (Split-Path -Parent $staged)
+    if ($LASTEXITCODE -ne 0) { throw "Museum packaged pictograph verification failed ($LASTEXITCODE)" }
+}
 Write-Host "MUSEUM_PACKAGE_OK $exe"

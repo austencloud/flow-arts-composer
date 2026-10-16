@@ -4957,6 +4957,8 @@
   "browse_audit_new_matches_join": "Les nouvelles séquences correspondantes rejoignent automatiquement cette collection.",
   "browse_audit_no_limit": "Sans limite",
   "browse_audit_no_public_sequences": "Cette collection n'a aucune séquence publique pour le moment.",
+  "browse_audit_collection_unavailable_title": "Cette collection n'est pas disponible",
+  "browse_audit_collection_unavailable_hint": "Elle est peut-être privée, ou son propriétaire l'a supprimée.",
   "browse_audit_no_turn_limit_matches": "Sans limite de tours, {count} résultats",
   "browse_audit_one_match": "{count} résultat",
   "browse_audit_one_sequence": "{count} séquence",
