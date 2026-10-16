@@ -14,8 +14,6 @@
   import ButtonPanel from "../workspace-panel/shared/components/ButtonPanel.svelte";
   import UndoButton from "../workspace-panel/shared/components/buttons/UndoButton.svelte";
   import SaveToLibraryButton from "../workspace-panel/shared/components/buttons/SaveToLibraryButton.svelte";
-  import DraftRecovery from "./DraftRecovery.svelte";
-  import type { DraftRecoveryController } from "../state/create-module/draft-recovery-controller.svelte";
   import LazyMount from "#lib/shared/components/LazyMount.svelte";
   import PanelGroup from "#lib/shared/panels/PanelGroup.svelte";
   import {
@@ -42,7 +40,6 @@
   type CreateModuleState = ReturnType<typeof CreateModuleStateType>;
 
   let {
-    draftRecovery = null,
     shouldUseSideBySideLayout,
     CreateModuleState,
     panelState,
@@ -61,7 +58,6 @@
     onOpenFilters,
     onCloseFilters,
   }: {
-    draftRecovery?: DraftRecoveryController | null;
     shouldUseSideBySideLayout: boolean;
     CreateModuleState: CreateModuleState;
     panelState: PanelCoordinationState;
@@ -426,12 +422,6 @@
   });
 </script>
 
-{#snippet draftControl()}
-  {#if draftRecovery}
-    <DraftRecovery controller={draftRecovery} surface="control" />
-  {/if}
-{/snippet}
-
 {#snippet compactSaveAction()}
   {#if canSaveToLibrary}
     <div class="compact-save-action">
@@ -500,13 +490,12 @@
       </div>
     {/if}
 
-    {#if shouldShowWorkspace && !useCompactToolbar}
+    {#if shouldShowWorkspace && !useCompactToolbar && canSaveToLibrary}
       <div
         class="workspace-save-action"
         class:save-mode={isSaveView}
         inert={isSaveView}
       >
-        {@render draftControl()}
         {#if canSaveToLibrary}
           <SaveToLibraryButton
             sequence={currentSequence}
@@ -528,7 +517,6 @@
           {onClearSequence}
           {onViewSequence}
           compact={useCompactToolbar}
-          leadingActions={draftControl}
           trailingActions={compactSaveAction}
         />
       </div>
@@ -554,12 +542,9 @@
   <!-- Tool Panel -->
   <div
     class="tool-panel-container"
-    class:has-clear-recovery={(showHistoryRecovery ||
-      (!shouldShowWorkspace && draftRecovery?.mode)) &&
-      !showCompactHistory}
+    class:has-clear-recovery={showHistoryRecovery && !showCompactHistory}
     style:--history-recovery-count={Number(CreateModuleState.canUndo) +
-      Number(CreateModuleState.canRedo) +
-      Number(!shouldShowWorkspace && !!draftRecovery?.mode)}
+      Number(CreateModuleState.canRedo)}
     bind:this={toolPanelElement}
   >
     <!-- On phones Undo/Redo sit in the grid panel's empty top-left corner,
@@ -573,11 +558,8 @@
         <UndoButton {CreateModuleState} onAction={handleWorkspaceUndo} quiet />
         <UndoButton {CreateModuleState} direction="redo" quiet />
       </div>
-    {:else if showHistoryRecovery || (!shouldShowWorkspace && draftRecovery?.mode)}
+    {:else if showHistoryRecovery}
       <div class="clear-recovery-action">
-        {#if !shouldShowWorkspace}
-          {@render draftControl()}
-        {/if}
         {#if CreateModuleState.canUndo}
           <UndoButton {CreateModuleState} />
         {/if}

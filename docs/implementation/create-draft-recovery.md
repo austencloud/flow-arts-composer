@@ -11,7 +11,7 @@ the old builder command history.
 
 UI review: VR-1; evidence ledger checked 2026-09-21; calibration not calibrated.
 
-Two compositions considered before implementation:
+The first recovery interface considered two compositions:
 
 1. An inline recovery panel above the workspace, containing version previews and
    actions. It keeps the decision beside the editor but takes most of the editing
@@ -20,13 +20,30 @@ Two compositions considered before implementation:
    The row keeps save state accessible during editing; the modal gives the recovery
    decision enough space without permanently shrinking the sequence grid.
 
-The initial reserved status row took too much editing space. After user review on
-2026-10-15, draft access moved beside Save in the existing workspace controls.
-On narrow screens Save uses its icon so both controls fit the same row. Empty
-workspaces keep draft access beside the existing clear-recovery controls; compact
-Assemble places Drafts beside Clear in its action rail so Play keeps its space.
-Normal saving adds no row or height to the editor.
-Only a failed save or unresolved recovery/conflict shows the inline warning.
+The initial reserved status row took too much editing space. Moving its button
+beside Save also left draft browsing in the wrong place. After user review on
+2026-10-15, draft browsing moved to **You → Drafts** at `/browse/you/drafts`.
+The editor has no permanent Drafts button or normal-save status row. Only a failed
+save or unresolved recovery/conflict shows the inline warning.
+
+For You, two compositions were considered: a lead Resume panel above the saved
+library, and a Drafts shelf alongside Saved, Visuals, and Videos. The shelf keeps
+unfinished work in You without adding another permanent band above other work.
+Each draft has a real sequence preview, last-edited time, and Resume action;
+earlier versions expand within that draft. The mobile You overview has a compact
+Drafts link. Guests can access local drafts without an account. The shelf says
+“On this device” because these recovery copies do not sync between devices.
+
+Drafts are grouped by editor mode and session, not by their sequence contents.
+Each session retains its latest and previous distinct saved versions; existing
+recovery and conflict copies remain available. Leaving Create flushes pending
+edits before the shelf reads them. Resume preserves the current editor before
+restoring the chosen version, and consumes its URL request after initialization.
+Resume links use full app navigation because client navigation between the
+catchall routes alone does not switch the app's active module.
+The selected version is held in memory before editor initialization, so an
+initial autosave cannot rotate its stored ID before Resume reads it. Recovery
+still checks the draft revision before replacing the active version.
 
 The chooser uses the existing BaseModal and StepGrid. Keep each version's word,
 step count, date, pictographs, and Continue action together. Keep the editor
@@ -75,7 +92,7 @@ Evidence was retained outside the disposable worktree in
 `C:/Users/Austen/AppData/Local/Temp/draft-recovery-evidence/`. Final recovery and
 restored-editor captures are `08-recovery-final.png` and `09-restored-final.png`.
 
-### Compact controls follow-up
+### Earlier compact controls follow-up (superseded)
 
 Verified the corrected controls on 2026-10-15 at 1440×900, 375×667,
 960×412, and Assemble's narrow 350px/360px breakpoint. Normal saving creates
@@ -87,6 +104,37 @@ overlap between Play and Actions at 360px. The final rail has 44px action target
 and a 50px Play target without overlap. Captures are `13-compact-desktop.png`,
 `14-compact-phone.png`, `16-compact-empty-phone.png`, and
 `22-compact-assemble-fixed.png` in the evidence directory above.
+
+### You → Drafts follow-up
+
+Verified on 2026-10-15 against the task worktree at `https://localhost:5187`:
+
+- You lists Construct and Assemble drafts with their real sequence previews.
+  Saved and Drafts switch correctly, and the mobile “Drafts · On this device”
+  link opens the same shelf. A fresh guest browser can access the empty shelf
+  and use Start a sequence without signing in.
+- Resume opened the seven-step Construct draft; Undo restored six steps and
+  Redo restored seven. Choosing an earlier version restored its five steps.
+  The consumed URL request was removed after loading.
+- Assemble Resume restored its selected one-step sequence after fixing an
+  initialization autosave race. A regression test reproduces the selected
+  version's stored ID being rotated away before recovery.
+- The editor has no Drafts button or normal save-status row. Failed-save and
+  recovery controls remain available.
+- Populated layouts passed 375×667, 960×412, 820×1180, 1440×900, 1920×1080,
+  2560×1440, and 3840×2160 without horizontal overflow. Resume and version
+  controls are 44px tall. In short landscape, the shelf scrolls to expose the
+  final Resume action fully. Keyboard Enter expands versions and Tab reaches
+  the earlier version's Resume link. No page errors were recorded.
+- Independent review found no remaining blocker in the resume race fix,
+  revision checks, or desktop/mobile navigation. Visual review remains
+  uncalibrated, as recorded above.
+
+Focused coverage includes draft grouping, canonical routes, independent session
+retention through repeated autosaves, Resume preservation, and the initialization
+race. Browser captures are in the evidence directory's `you-drafts` subfolder;
+`final-1440.png`, `final-375.png`, `final-phone-versions.png`,
+`resumed-construct.png`, and `resumed-assemble.png` show the working surfaces.
 
 ## Limits
 

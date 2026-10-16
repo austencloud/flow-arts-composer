@@ -28,6 +28,84 @@ describe("durable Create drafts", () => {
     await db.userWork.clear();
   });
 
+  it("resumes the selected version even if initialization autosaves before recovery", async () => {
+    const persister = new SequencePersister();
+    await persister.saveCurrentState(workspace("chosen", "assemble"));
+    const [chosen] = await persister.listDrafts("assemble");
+    const reloaded = new SequencePersister();
+    await reloaded.prepareDraftResume("assemble", chosen!.id);
+    await reloaded.loadCurrentState("assemble");
+    await reloaded.saveCurrentState(workspace("chosen", "assemble"));
+    // Equivalent autosaves replace the stored ID. Later initialization edits
+    // can also rotate the two retained slots before the UI is ready.
+    await reloaded.saveCurrentState(workspace("initialized", "assemble"));
+    await reloaded.saveCurrentState(workspace("initialized-again", "assemble"));
+    expect(
+      (await reloaded.listDrafts("assemble")).some((v) => v.id === chosen!.id)
+    ).toBe(false);
+    expect(
+      (await reloaded.recoverDraft("assemble", chosen!.id))?.currentSequence
+        ?.name
+    ).toBe("chosen");
+    expect(
+      (await reloaded.listDrafts("assemble")).some(
+        (v) => v.workspace.currentSequence?.name === "initialized-again"
+      )
+    ).toBe(true);
+    // The request is consumed; stale links cannot keep replaying its memory copy.
+    expect(await reloaded.recoverDraft("assemble", chosen!.id)).toBeNull();
+  });
+
+  it("retains several unfinished sessions while keeping autosaves bounded per draft", async () => {
+    const persister = new SequencePersister();
+    for (const name of ["first", "second", "third"]) {
+      await persister.beginNewSession("construct");
+      await persister.saveCurrentState(workspace(name));
+      for (let edit = 0; edit < 5; edit++) {
+        await persister.saveCurrentState(workspace(`${name}-${edit}`));
+      }
+    }
+    const reloaded = new SequencePersister();
+    const drafts = await reloaded.listDrafts("construct");
+    const names = drafts.map((draft) => draft.workspace.currentSequence?.name);
+    expect(names).toEqual(
+      expect.arrayContaining(["first-4", "second-4", "third-4"])
+    );
+    const sessions = new Set(drafts.map((draft) => draft.sessionId));
+    expect(sessions.size).toBe(3);
+    for (const session of sessions) {
+      expect(
+        drafts.filter((draft) => draft.sessionId === session)
+      ).toHaveLength(2);
+    }
+    const oldest = drafts.find(
+      (draft) => draft.workspace.currentSequence?.name === "first-4"
+    )!;
+    expect(
+      (await reloaded.recoverDraft("construct", oldest.id))?.currentSequence
+        ?.name
+    ).toBe("first-4");
+    expect(
+      (await reloaded.listDrafts("construct")).some(
+        (draft) => draft.workspace.currentSequence?.name === "third-4"
+      )
+    ).toBe(true);
+  });
+
+  it("keeps identical sequences from separate sessions as separate drafts", async () => {
+    const persister = new SequencePersister();
+    await persister.saveCurrentState(workspace("same"));
+    await persister.beginNewSession("construct");
+    await persister.saveCurrentState(workspace("same"));
+    expect(
+      new Set(
+        (await persister.listDrafts("construct")).map(
+          (draft) => draft.sessionId
+        )
+      ).size
+    ).toBe(2);
+  });
+
   it("keeps the losing tab’s latest work and refuses a silent overwrite", async () => {
     const first = new SequencePersister();
     await first.saveCurrentState(workspace("initial"));
@@ -397,7 +475,11 @@ describe("durable Create drafts", () => {
       tabId: "create-draft-v2:construct:conflict:duplicate",
       data: {
         kind: "version",
-        version: { ...replacement, id: "duplicate", savedAt: replacement.savedAt },
+        version: {
+          ...replacement,
+          id: "duplicate",
+          savedAt: replacement.savedAt,
+        },
       },
       lastModified: new Date(),
       version: 2,

@@ -364,6 +364,12 @@ float UFlowFestAvatarComponent::GetPerformanceLength() const
     return PerformanceClip ? PerformanceClip->GetPlayLength() : 0.f;
 }
 
+FName UFlowFestAvatarComponent::GetPerformanceProfile() const
+{
+    const UFlowFestAnimInstance* Animator = BodyMesh ? Cast<UFlowFestAnimInstance>(BodyMesh->GetAnimInstance()) : nullptr;
+    return PerformanceClip && Animator ? Animator->GetPerformanceProfile() : NAME_None;
+}
+
 float UFlowFestAvatarComponent::GetPerformancePhase() const
 {
     const float Length = GetPerformanceLength();
@@ -380,6 +386,36 @@ void UFlowFestAvatarComponent::SetPerformanceRate(float Rate)
 {
     if (UFlowFestAnimInstance* Animator = BodyMesh ? Cast<UFlowFestAnimInstance>(BodyMesh->GetAnimInstance()) : nullptr)
         Animator->SetPerformanceRate(Rate);
+}
+
+void UFlowFestAvatarComponent::SetPerformancePaused(bool bPaused)
+{
+    if (UFlowFestAnimInstance* Animator = BodyMesh ? Cast<UFlowFestAnimInstance>(BodyMesh->GetAnimInstance()) : nullptr)
+        Animator->SetPerformancePaused(bPaused);
+}
+
+bool UFlowFestAvatarComponent::IsPerformancePaused() const
+{
+    const UFlowFestAnimInstance* Animator = BodyMesh ? Cast<UFlowFestAnimInstance>(BodyMesh->GetAnimInstance()) : nullptr;
+    return Animator && Animator->IsPerformancePaused();
+}
+
+void UFlowFestAvatarComponent::SeekPerformance(float Seconds)
+{
+    if (UFlowFestAnimInstance* Animator = BodyMesh ? Cast<UFlowFestAnimInstance>(BodyMesh->GetAnimInstance()) : nullptr)
+        Animator->SeekPerformance(Seconds);
+}
+
+float UFlowFestAvatarComponent::GetPerformanceRate() const
+{
+    const UFlowFestAnimInstance* Animator = BodyMesh ? Cast<UFlowFestAnimInstance>(BodyMesh->GetAnimInstance()) : nullptr;
+    return Animator ? Animator->GetPerformanceRate() : 1.f;
+}
+
+void UFlowFestAvatarComponent::RestartPerformance()
+{
+    if (UFlowFestAnimInstance* Animator = BodyMesh ? Cast<UFlowFestAnimInstance>(BodyMesh->GetAnimInstance()) : nullptr)
+        Animator->RestartPerformance();
 }
 
 void UFlowFestAvatarComponent::BindPerformanceProp(UFlowFestPropComponent* Prop)

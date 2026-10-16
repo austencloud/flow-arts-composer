@@ -152,6 +152,18 @@ function wetVertices(geometry: BufferGeometry): number[] {
   return [...drawnVertices(geometry)].filter((vertex) => alpha.getX(vertex) > 0);
 }
 
+/**
+ * Opacity the shader draws at a vertex: the pool body inside the rim
+ * (aField > 0), the damp film outside it.
+ */
+function drawnOpacity(geometry: BufferGeometry) {
+  const field = geometry.getAttribute("aField");
+  const body = geometry.getAttribute("aAlpha");
+  const wet = geometry.getAttribute("aWet");
+  return (vertex: number) =>
+    field.getX(vertex) > 0 ? body.getX(vertex) : wet.getX(vertex);
+}
+
 describe("GooRenderer3D", () => {
   it("lands a falling mist bead once on its own source floor", () => {
     const renderer = new GooRenderer3D();
@@ -386,7 +398,7 @@ describe("GooRenderer3D", () => {
     puddles.deposit(0.3, 0, 0, 0.1, 0, 0.5, color, 0, 1, 0);
     const sample = (x: number) => {
       const positions = puddles.geometry.getAttribute("position");
-      const alpha = puddles.geometry.getAttribute("aAlpha");
+      const opacity = drawnOpacity(puddles.geometry);
       let best = Infinity;
       let result = { height: 0, alpha: 0 };
       for (const vertex of drawnVertices(puddles.geometry)) {
@@ -398,19 +410,20 @@ describe("GooRenderer3D", () => {
           best = distance;
           result = {
             height: positions.getY(vertex),
-            alpha: alpha.getX(vertex),
+            alpha: opacity(vertex),
           };
         }
       }
       return result;
     };
-    puddles.update(0.15);
+    // At 50 ms the two pools are still about 3 cm apart.
+    puddles.update(0.05);
     const beforeLeft = sample(0);
     const beforeRight = sample(0.3);
     // Before contact the gap shows only the faint wet halo.
     const gap = sample(0.15).alpha;
     expect(gap).toBeLessThan(0.3);
-    puddles.update(0.25);
+    puddles.update(0.35);
     expect(sample(0.15).alpha).toBeGreaterThan(gap + 0.2);
     expect(Math.abs(sample(0).height - beforeLeft.height)).toBeLessThan(0.006);
     expect(Math.abs(sample(0.3).height - beforeRight.height)).toBeLessThan(
@@ -452,16 +465,16 @@ describe("GooRenderer3D", () => {
       puddles.deposit(x!, z!, 0, 0.1, 0, 0.5, color, 0, 1, 0);
     puddles.update(0.8);
     const positions = puddles.geometry.getAttribute("position");
-    const alpha = puddles.geometry.getAttribute("aAlpha");
+    const opacity = drawnOpacity(puddles.geometry);
     let dryGap = false;
     let wetArm = false;
     for (let vertex = 0; vertex < positions.count; vertex++) {
       const x = positions.getX(vertex);
       const z = positions.getZ(vertex);
       if (Math.abs(x) < 0.025 && Math.abs(z - 0.15) < 0.025)
-        dryGap = alpha.getX(vertex) === 0;
+        dryGap = opacity(vertex) === 0;
       if (Math.abs(x + 0.3) < 0.025 && Math.abs(z - 0.15) < 0.025)
-        wetArm = alpha.getX(vertex) > 0;
+        wetArm = opacity(vertex) > 0;
     }
     expect(dryGap && wetArm).toBe(true);
     puddles.dispose();
@@ -604,7 +617,9 @@ describe("GooRenderer3D", () => {
       // The wave never digs below the floor.
       expect(moving.getY(vertex)).toBeGreaterThan(0);
     }
-    expect(peak).toBeGreaterThan(0.002);
+    // Ripples on a coarse grid are widened and lowered to keep their energy
+    // without faceting, so a small drop lifts the surface a little under 2 mm.
+    expect(peak).toBeGreaterThan(0.0015);
     still.dispose();
     impacted.dispose();
     material.dispose();

@@ -9,6 +9,7 @@ import {
 } from "#lib/shared/effects/translators/webgl3d-translator.js";
 import { InkRenderer3D } from "#lib/shared/3d/effects/ink/ink-renderer-3d.js";
 import { SilkRenderer3D } from "#lib/shared/3d/effects/silk/silk-renderer-3d.js";
+import { SILK_CLOTH_COLUMNS } from "#lib/shared/3d/effects/silk/silk-cloth-3d.js";
 import { AnimalRenderer3D } from "#lib/shared/3d/effects/animal/animal-renderer-3d.js";
 import { PulseRenderer3D } from "#lib/shared/3d/effects/pulse/pulse-renderer-3d.js";
 import { TipPositionBridge3D } from "#lib/shared/3d/effects/tip-position-bridge-3d.js";
@@ -83,7 +84,7 @@ describe("native 3D full-roster renderers", () => {
     expect(scene.children).toHaveLength(0);
   });
 
-  it("renders Silk as one continuous anisotropic fabric surface", () => {
+  it("renders Silk as one cloth streamer tied to the tip", () => {
     const scene = new Scene();
     const renderer = new SilkRenderer3D();
     renderer.initialize(scene);
@@ -93,6 +94,7 @@ describe("native 3D full-roster renderers", () => {
       velocity: { ...base.velocity },
       effect: "silk",
       params: resolveSilk3D(DEFAULT_EFFECTS_CONFIG.silk),
+      collisionFloorY: -10,
     };
     renderer.update([source], 1 / 60);
     source.position.x = 0.2;
@@ -124,10 +126,12 @@ describe("native 3D full-roster renderers", () => {
         )
       ).toBeCloseTo(1, 5);
     }
+    // The middle of the head row is the knot at the tip.
+    const knot = (SILK_CLOTH_COLUMNS - 1) / 2;
     const headCenter = {
-      x: (positions.getX(0) + positions.getX(1)) * 0.5,
-      y: (positions.getY(0) + positions.getY(1)) * 0.5,
-      z: (positions.getZ(0) + positions.getZ(1)) * 0.5,
+      x: positions.getX(knot),
+      y: positions.getY(knot),
+      z: positions.getZ(knot),
     };
     expect(
       Math.hypot(
@@ -135,7 +139,7 @@ describe("native 3D full-roster renderers", () => {
         headCenter.y - source.position.y,
         headCenter.z - source.position.z
       )
-    ).toBeLessThan(0.025);
+    ).toBeLessThan(1e-6);
     renderer.dispose();
     expect(scene.children).toHaveLength(0);
   });

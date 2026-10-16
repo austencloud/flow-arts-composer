@@ -34,6 +34,7 @@ private:
     FString Notice;
     float NoticeTime = 0;
     bool bReviewStartApplied = false;
+    bool bLibraryReviewApplied = false;
     float ReviewScreenshotDelay = -1.f;
     bool bSprinting = false;
     bool bMovementSmoke = false;
@@ -65,6 +66,7 @@ private:
     void Interact();
     void TogglePerformance();
     void RestartPerformance();
+    void OpenPerformanceLibrary();
     void SaveProgress();
     void LoadProgress();
     void ResetToEntrance();
