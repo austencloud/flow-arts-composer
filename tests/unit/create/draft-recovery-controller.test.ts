@@ -56,6 +56,48 @@ function setup(initial: DraftStatus["status"] = "recovery") {
 }
 
 describe("draft recovery choices", () => {
+  it("resumes a You draft in its own mode and preserves current edits first", async () => {
+    const { controller, state, persister, onRestored } = setup("saved");
+    const workspace = {
+      currentSequence: null,
+      selectedStartPlacement: null,
+      hasStartPlacement: true,
+      activeBuildSection: "assemble",
+    };
+    persister.hasUncommittedEditorChanges.mockReturnValue(true);
+    persister.recoverDraft.mockResolvedValue(workspace);
+    expect(await controller.resume("assemble", "chosen")).toBe(true);
+    expect(persister.preserveEditorSnapshot).toHaveBeenCalledWith(
+      expect.objectContaining({ activeBuildSection: "assemble" }),
+      "chosen"
+    );
+    expect(
+      persister.preserveEditorSnapshot.mock.invocationCallOrder[0]
+    ).toBeLessThan(persister.recoverDraft.mock.invocationCallOrder[0]);
+    expect(persister.recoverDraft).toHaveBeenCalledWith("assemble", "chosen");
+    expect(state.restoreDraftState).toHaveBeenCalledWith(workspace);
+    expect(onRestored).toHaveBeenCalledWith("assemble");
+    expect(controller.open).toBe(false);
+  });
+
+  it("shows an actionable recovery dialog when a You link is stale", async () => {
+    const { controller, state } = setup("saved");
+    expect(await controller.resume("generate", "missing")).toBe(false);
+    expect(state.restoreDraftState).not.toHaveBeenCalled();
+    expect(controller.open).toBe(true);
+    expect(controller.dialogMode).toBe("generate");
+    expect(controller.message).toContain("could not be opened");
+  });
+
+  it("does not replace the editor when its latest edits could not be preserved", async () => {
+    const { controller, state, persister } = setup("saved");
+    persister.hasUncommittedEditorChanges.mockReturnValue(true);
+    persister.preserveEditorSnapshot.mockResolvedValue(false);
+    expect(await controller.resume("construct", "chosen")).toBe(false);
+    expect(persister.recoverDraft).not.toHaveBeenCalled();
+    expect(state.restoreDraftState).not.toHaveBeenCalled();
+    expect(controller.open).toBe(true);
+  });
   it("keeps the existing editor and dialog when recovery fails", async () => {
     const { controller, state } = setup();
     await controller.showDrafts();
