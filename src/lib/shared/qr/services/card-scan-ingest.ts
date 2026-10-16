@@ -33,7 +33,9 @@ export type ScanPidState = "valid" | "malformed" | "absent";
  * A malformed value is dropped and the scan records as a legacy scan. Sent
  * as-is, it fails the endpoint's pattern and the whole scan is rejected.
  */
-export function readScanPhysicalCardId(searchParams: URLSearchParams): {
+export function readScanPhysicalCardId(
+  searchParams: Pick<URLSearchParams, "get">
+): {
   physicalCardId: string | null;
   pidState: ScanPidState;
 } {

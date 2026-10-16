@@ -460,17 +460,23 @@ try {
             if ($originStatus -ne "200" -and (Test-SvelteKitGeneratedStateError $originUrl $true)) {
                 throw "SvelteKit's generated root route proxy is unavailable. Exiting so pm2 can repair the generated state and restart the dev stack."
             } elseif ($originStatus -ne "200" -and (Test-VitePing $originUrl)) {
-                # The page outlasted the probe, but Vite itself answered. The
-                # first render after a restart can take minutes on a loaded
-                # machine, including cached SSR 500s after a module timeout;
-                # restarting a live server repeatedly prevents it warming up.
-                if (-not $originBusySince) { $originBusySince = Get-Date }
-                $originBusySeconds = [int]((Get-Date) - $originBusySince).TotalSeconds
                 $originFailureCount = 0
                 $publicFailureCount = 0
-                Write-Status "Local Vite origin is busy: Vite answers, but the page returned $originStatus (${originBusySeconds}s so far)."
-                if ($originBusySeconds -ge 300) {
-                    throw "Local Vite origin answered pings but served no page for five minutes. Exiting so pm2 can restart the complete dev stack."
+                if ($originStatus -eq "000") {
+                    # An eight-second page probe can time out while browsers
+                    # successfully render and load modules. A responsive Vite
+                    # must not be recycled solely for exceeding that deadline.
+                    $originBusySince = $null
+                    Write-Status "Local Vite origin is busy: Vite answers, but the page probe timed out; preserving the live server."
+                } else {
+                    # Explicit SSR errors may be transient during warmup, but
+                    # persistent failures still need a bounded recovery path.
+                    if (-not $originBusySince) { $originBusySince = Get-Date }
+                    $originBusySeconds = [int]((Get-Date) - $originBusySince).TotalSeconds
+                    Write-Status "Local Vite origin is busy: Vite answers, but the page returned $originStatus (${originBusySeconds}s so far)."
+                    if ($originBusySeconds -ge 300) {
+                        throw "Local Vite origin answered pings but returned page errors for five minutes. Exiting so pm2 can restart the complete dev stack."
+                    }
                 }
             } elseif ($originStatus -ne "200") {
                 $originFailureCount += 1

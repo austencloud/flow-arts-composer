@@ -61,9 +61,10 @@
       normalizedFavorite && draftProps.includes(normalizedFavorite)
         ? normalizedFavorite
         : null;
-    const initialFamily = getProfilePropFamily(
-      draftProfileProp ?? draftProps[0]
-    );
+    const initialProp = draftProfileProp ?? draftProps[0];
+    const initialFamily = initialProp
+      ? getProfilePropFamily(initialProp)
+      : null;
     activeFamily =
       initialFamily && initialFamily.choices.length > 1
         ? initialFamily.representative

@@ -210,7 +210,7 @@
     // Half-composed text is not a query. Searching "ｋ" on the way to "京都"
     // burns a request per keystroke and shows results for a syllable the user
     // never asked about. `compositionend` runs the search once the word exists.
-    if ((event as InputEvent).isComposing || isComposing) return;
+    if (("isComposing" in event && event.isComposing) || isComposing) return;
     runSearch();
   }
 

@@ -167,11 +167,13 @@ async function applyWrite(write: UrlWrite, id: number): Promise<void> {
  * changing skip them, so a query parameter or overlay update does not close
  * menus, start a route morph or restart a QR hand-off.
  */
-export function isShallowGoto(navigation: {
-  type?: unknown;
-  shallow?: unknown;
-}): boolean {
-  return navigation.type === "goto" && navigation.shallow === true;
+export function isShallowGoto(navigation: object): boolean {
+  return (
+    "type" in navigation &&
+    navigation.type === "goto" &&
+    "shallow" in navigation &&
+    navigation.shallow === true
+  );
 }
 
 export function writeUrl(
