@@ -10,9 +10,13 @@
 #include "BonePose.h"
 #include "Components/SkeletalMeshComponent.h"
 
-void UFlowFestAnimInstance::Configure(const TMap<FName, TObjectPtr<UAnimSequence>>& InMotions)
+void UFlowFestAnimInstance::Configure(const TMap<FName, TObjectPtr<UAnimSequence>>& InMotions,
+    const FString& InCharacterFolder)
 {
     MotionClips.Empty(); MotionNames.Empty(); MotionTimes.Empty(); MotionRates.Empty(); MotionTargetRates.Empty(); MotionWeights.Empty();
+    CharacterFolderPath = InCharacterFolder;
+    IdleGripFamily = NAME_None;
+    IdleGripClip = nullptr;
     for (const auto& Pair : InMotions)
     {
         MotionNames.Add(Pair.Key);
@@ -123,6 +127,30 @@ void UFlowFestAnimInstance::StartPerformance(UAnimSequence* Clip, bool bLoop, FN
 void UFlowFestAnimInstance::SetGripSource(UFlowFestPropComponent* Prop)
 {
     GripSource = Prop;
+    IdleGripFamily = NAME_None;
+    IdleGripClip = nullptr;
+}
+
+void UFlowFestAnimInstance::UpdateIdleGripClip()
+{
+    if (!GripSource.IsValid() || !GripSource->HasVisibleGrip()) return;
+    FString Family = GripSource->GetPropId().ToString().ToLower();
+    int32 Colon = INDEX_NONE;
+    if (Family.FindChar(TEXT(':'), Colon)) Family.LeftInline(Colon);
+    if (Family.IsEmpty() || FName(*Family) == IdleGripFamily) return;
+    IdleGripFamily = FName(*Family);
+    // The web applies SQUARE to every equipped prop, then calibrates finger
+    // contact against that family's geometry. Use a settled authored frame
+    // from the matching rig and family for idle and travel only.
+    const FString Name = FString::Printf(TEXT("A_Flow_P_%s_A"), *Family);
+    const FString Path = FString::Printf(TEXT("%s/%s.%s"), *CharacterFolderPath, *Name, *Name);
+    UAnimSequence* Clip = LoadObject<UAnimSequence>(nullptr, *Path);
+    const USkeletalMeshComponent* Mesh = GetSkelMeshComponent();
+    IdleGripClip = Clip && Mesh && Mesh->GetSkeletalMeshAsset() &&
+        Clip->GetSkeleton() == Mesh->GetSkeletalMeshAsset()->GetSkeleton() && Clip->GetPlayLength() >= 4.f
+        ? Clip : nullptr;
+    if (!IdleGripClip)
+        UE_LOG(LogTemp, Error, TEXT("Missing or mismatched Flow Fest grip capture: %s"), *Path);
 }
 
 void UFlowFestAnimInstance::StopPerformance()
@@ -302,27 +330,33 @@ void FFlowFestAnimProxy::PreUpdate(UAnimInstance* Instance, float DeltaSeconds)
 {
     FAnimInstanceProxy::PreUpdate(Instance, DeltaSeconds);
     UFlowFestAnimInstance* Source = CastChecked<UFlowFestAnimInstance>(Instance);
+    Source->UpdateIdleGripClip();
     // UE calls proxy PreUpdate before NativeUpdateAnimation. Advance here so
     // the pose evaluated this tick and the prop sampled after mesh tick agree.
     Source->Advance(DeltaSeconds);
-    Clips.Reset(); Times.Reset(); Weights.Reset();
+    Clips.Reset(); bMotionSamples.Reset(); Times.Reset(); Weights.Reset();
+    IdleGripClip = Source->GripSource.IsValid() && Source->GripSource->HasVisibleGrip()
+        ? Source->IdleGripClip.Get() : nullptr;
     for (int32 Index = 0; Index < Source->MotionClips.Num(); ++Index)
     {
         const float Weight = Source->MotionWeights[Index];
         if (Weight <= 0.0001f) continue;
         Clips.Add(Source->MotionClips[Index].Get());
+        bMotionSamples.Add(true);
         Times.Add(Source->MotionTimes[Index]);
         Weights.Add(Weight);
     }
     for (int32 Index = 0; Index < Source->OutgoingPerformanceClips.Num(); ++Index)
     {
         Clips.Add(Source->OutgoingPerformanceClips[Index].Get());
+        bMotionSamples.Add(false);
         Times.Add(Source->OutgoingPerformanceTimes[Index]);
         Weights.Add(Source->OutgoingPerformanceWeights[Index]);
     }
     if (Source->PerformanceClip && Source->PerformanceWeight > .0001f)
     {
         Clips.Add(Source->PerformanceClip.Get());
+        bMotionSamples.Add(false);
         Times.Add(Source->PerformanceTime);
         Weights.Add(Source->PerformanceWeight);
     }
@@ -391,6 +425,13 @@ bool FFlowFestAnimProxy::Evaluate(FPoseContext& Output)
         Output.ResetToRefPose();
         return true;
     }
+    FPoseContext GripPose(Output);
+    if (IdleGripClip)
+    {
+        GripPose.ResetToRefPose();
+        FAnimationPoseData GripData(GripPose);
+        IdleGripClip->GetAnimationPose(GripData, FAnimExtractContext(4.f, false));
+    }
     // Blend every active source in local bone space. Sequential normalized
     // weighted blending is algebraically equivalent to the full weighted sum.
     float Accumulated = 0.f;
@@ -400,6 +441,32 @@ bool FFlowFestAnimProxy::Evaluate(FPoseContext& Output)
         Sample.ResetToRefPose();
         FAnimationPoseData SampleData(Sample);
         Clips[Index]->GetAnimationPose(SampleData, FAnimExtractContext(Times[Index], false));
+        if (IdleGripClip && bMotionSamples[Index])
+        {
+            const FBoneContainer& Bones = Output.Pose.GetBoneContainer();
+            const USkeleton* SkeletonAsset = Bones.GetSkeletonAsset();
+            if (SkeletonAsset)
+            {
+                const FReferenceSkeleton& Reference = SkeletonAsset->GetReferenceSkeleton();
+                static const TArray<FName> FingerBones = []
+                {
+                    TArray<FName> Names;
+                    for (const TCHAR* Side : {TEXT("Left"), TEXT("Right")})
+                        for (const TCHAR* Finger : {TEXT("Thumb"), TEXT("Index"), TEXT("Middle"), TEXT("Ring"), TEXT("Pinky")})
+                            for (int32 Joint = 1; Joint <= 3; ++Joint)
+                                Names.Add(FName(*FString::Printf(TEXT("%sHand%s%d"), Side, Finger, Joint)));
+                    return Names;
+                }();
+                for (const FName BoneName : FingerBones)
+                {
+                    const int32 SkeletonIndex = Reference.FindBoneIndex(BoneName);
+                    if (SkeletonIndex == INDEX_NONE) continue;
+                    const FCompactPoseBoneIndex BoneIndex = Bones.GetCompactPoseIndexFromSkeletonIndex(SkeletonIndex);
+                    if (BoneIndex.GetInt() == INDEX_NONE) continue;
+                    Sample.Pose[BoneIndex].SetRotation(GripPose.Pose[BoneIndex].GetRotation());
+                }
+            }
+        }
         const float Weight = Weights[Index];
         if (Accumulated <= SMALL_NUMBER)
         {

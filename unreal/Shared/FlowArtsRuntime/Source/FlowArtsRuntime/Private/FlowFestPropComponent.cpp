@@ -169,23 +169,33 @@ bool UFlowFestPropComponent::BindHands(USkeletalMeshComponent* BodyMesh)
     if (BodyMesh->GetBoneIndex(TEXT("LeftHand")) == INDEX_NONE ||
         BodyMesh->GetBoneIndex(TEXT("RightHand")) == INDEX_NONE ||
         BodyMesh->GetBoneIndex(TEXT("LeftHandMiddle1")) == INDEX_NONE ||
-        BodyMesh->GetBoneIndex(TEXT("RightHandMiddle1")) == INDEX_NONE) return false;
-    auto Grip = [BodyMesh](FName HandName, FName FingerName, FQuat& Basis, FVector& Offset)
+        BodyMesh->GetBoneIndex(TEXT("RightHandMiddle1")) == INDEX_NONE ||
+        BodyMesh->GetBoneIndex(TEXT("LeftHandIndex1")) == INDEX_NONE ||
+        BodyMesh->GetBoneIndex(TEXT("RightHandIndex1")) == INDEX_NONE ||
+        BodyMesh->GetBoneIndex(TEXT("LeftHandPinky1")) == INDEX_NONE ||
+        BodyMesh->GetBoneIndex(TEXT("RightHandPinky1")) == INDEX_NONE) return false;
+    auto Grip = [BodyMesh](FName HandName, FName MiddleName, FName IndexName, FName PinkyName,
+                           FQuat& Basis, FVector& Offset)
     {
         const FTransform Hand = BodyMesh->GetSocketTransform(HandName, RTS_World);
-        const FVector FingerWorld = BodyMesh->GetSocketLocation(FingerName);
-        const FVector FingerLocal = Hand.InverseTransformPosition(FingerWorld);
-        if (FingerLocal.IsNearlyZero()) return false;
-        // The authored prop axis is +Y. Aim it along the actual palm/finger
-        // direction, using this rig's hand basis rather than the wrist quaternion.
-        Basis = FQuat::FindBetweenNormals(FVector::YAxisVector, FingerLocal.GetSafeNormal());
-        Offset = FingerLocal * .4f; // hold within the palm, past the wrist joint
+        const FVector Middle = Hand.InverseTransformPosition(BodyMesh->GetSocketLocation(MiddleName));
+        const FVector Index = Hand.InverseTransformPosition(BodyMesh->GetSocketLocation(IndexName));
+        const FVector Pinky = Hand.InverseTransformPosition(BodyMesh->GetSocketLocation(PinkyName));
+        if (Middle.IsNearlyZero()) return false;
+        const FVector Longitudinal = Middle.GetSafeNormal();
+        FVector Transverse = Pinky - Index;
+        Transverse -= Longitudinal * FVector::DotProduct(Transverse, Longitudinal);
+        if (!Transverse.Normalize()) return false;
+        // Match the web grip calibration: Index1 -> Pinky1 points toward the
+        // staff's -Y end. The grip center lies 65% along wrist -> Middle1.
+        Basis = FQuat::FindBetweenNormals(FVector::YAxisVector, -Transverse);
+        Offset = Middle * .65f;
         return true;
     };
     FQuat NewLeftBasis, NewRightBasis;
     FVector NewLeftOffset, NewRightOffset;
-    if (!Grip(TEXT("LeftHand"), TEXT("LeftHandMiddle1"), NewLeftBasis, NewLeftOffset) ||
-        !Grip(TEXT("RightHand"), TEXT("RightHandMiddle1"), NewRightBasis, NewRightOffset)) return false;
+    if (!Grip(TEXT("LeftHand"), TEXT("LeftHandMiddle1"), TEXT("LeftHandIndex1"), TEXT("LeftHandPinky1"), NewLeftBasis, NewLeftOffset) ||
+        !Grip(TEXT("RightHand"), TEXT("RightHandMiddle1"), TEXT("RightHandIndex1"), TEXT("RightHandPinky1"), NewRightBasis, NewRightOffset)) return false;
     LeftRoot->AttachToComponent(BodyMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, TEXT("LeftHand"));
     RightRoot->AttachToComponent(BodyMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, TEXT("RightHand"));
     BoundBodyMesh = BodyMesh;

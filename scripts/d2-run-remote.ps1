@@ -57,7 +57,7 @@ if ($r.ReturnValue -ne 0) { throw "Win32_Process Create failed ($($r.ReturnValue
 Set-Content (Join-Path $JobDir 'meta.txt') "sha=$Sha`nworktree=$wt`npid=$($r.ProcessId)`nstarted=$(Get-Date -Format o)"
 "[d2-run] started pid $($r.ProcessId) in $wt"
 
-# This helper deletes nothing. Old run-* worktrees are mostly hard links into the
-# pnpm store; report the count so cleanup can be a separate, deliberate step.
+# This helper deletes nothing. The d2 scheduled task "d2 scratch prune"
+# (scripts/d2-prune.ps1) clears old run-* worktrees every two hours.
 $runs = @(Get-ChildItem $root -Directory -Filter 'run-*').Count
 if ($runs -gt $keep) { "[d2-run] note: $runs scratch worktrees in $root" }

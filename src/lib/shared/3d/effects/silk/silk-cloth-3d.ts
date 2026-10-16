@@ -74,9 +74,15 @@ export const SILK_CLOTH_VERTICES = SILK_CLOTH_ROWS * SILK_CLOTH_COLUMNS;
 const PIN = (SILK_CLOTH_COLUMNS - 1) / 2;
 const GRAVITY = -9.8;
 const ITERATIONS = 4;
-/** Silk is light: drag per unit mass for a patch facing the air, 1/m. */
-const NORMAL_DRAG = 9;
-const TANGENT_DRAG = 0.35;
+/**
+ * Silk is light, so air pushes hard on it: drag per unit mass for a patch
+ * facing the air, 1/m. About 20 g/m2 of fabric with a flat plate's drag.
+ */
+const NORMAL_DRAG = 35;
+/** A little drag on any motion through the air, 1/s. */
+const TANGENT_DRAG = 0.1;
+/** Air rubbing along both faces as the fabric slides edgewise, 1/m. */
+const SKIN_DRAG = 0.6;
 const FLOOR_GAP = 0.004;
 /** Longest physics step, s: the cloth moves the same at any frame rate. */
 const MAX_SUBSTEP = 1 / 240;
@@ -278,7 +284,9 @@ export class SilkCloth3D {
   private sampleWind(settings: SilkClothSettings): void {
     const p = this.positions;
     const w = this.wind;
-    const gust = 0.25 + 1.6 * settings.flutter;
+    // Gentle: silk feels the slightest draft, and a still staff should hang
+    // and sway, not stream out sideways.
+    const gust = 0.62 * (0.25 + 1.6 * settings.flutter);
     const time = this.clock;
     for (let o = 0; o < w.length; o += 3) {
       const x = p[o]!;
@@ -319,6 +327,14 @@ export class SilkCloth3D {
       vx += push * nx - TANGENT_DRAG * rx * h;
       vy += push * ny - TANGENT_DRAG * ry * h + GRAVITY * h;
       vz += push * nz - TANGENT_DRAG * rz * h;
+      // Skin friction on the motion along the fabric, capped the same way.
+      const sx = rx - facing * nx;
+      const sy = ry - facing * ny;
+      const sz = rz - facing * nz;
+      const rub = Math.min(1, SKIN_DRAG * Math.sqrt(sx * sx + sy * sy + sz * sz) * h);
+      vx -= rub * sx;
+      vy -= rub * sy;
+      vz -= rub * sz;
       q[o] = x;
       q[o + 1] = y;
       q[o + 2] = z;

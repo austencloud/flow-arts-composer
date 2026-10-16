@@ -10,11 +10,17 @@
     value: number;
     /** Callback when speed changes */
     onchange: (speed: number) => void;
+    /** A renderer can offer only the rates its playback transport supports. */
+    speeds?: number[];
+    disabled?: boolean;
   }
 
-  let { value, onchange }: Props = $props();
-
-  const speeds = [0.25, 0.5, 1, 2];
+  let {
+    value,
+    onchange,
+    speeds = [0.25, 0.5, 1, 2],
+    disabled = false,
+  }: Props = $props();
 
   function formatSpeed(speed: number): string {
     if (speed === 0.25) return "\u00BC";
@@ -28,6 +34,7 @@
     <button
       class="speed-btn"
       class:active={value === speed}
+      {disabled}
       onclick={() => onchange(speed)}
       aria-label={`Speed: ${speed}x`}
       aria-pressed={value === speed}
