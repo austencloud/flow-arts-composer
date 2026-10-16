@@ -18,6 +18,10 @@ Navigation via bottom tabs (mobile-first UX pattern)
   import { DURATION, SLIDE } from "#lib/shared/transitions/transitions.js";
   import ConceptPathView from "./components/ConceptPathView.svelte";
   import ConceptDetailView from "./components/ConceptDetailView.svelte";
+  import {
+    closeLessonWithMorph,
+    openLessonWithMorph,
+  } from "./services/lesson-open-morph.svelte";
   import LazyMount from "#lib/shared/components/LazyMount.svelte";
   import type { LearnConcept } from "./domain/types";
   import { getConceptById } from "./domain/concepts";
@@ -270,8 +274,11 @@ Navigation via bottom tabs (mobile-first UX pattern)
   });
 
   // Handle concept selection
+  // The tapped card grows into the lesson (lesson-open-morph).
   function handleConceptClick(concept: LearnConcept, conceptPlaceId?: string) {
-    openConcept(concept, "push", conceptPlaceId ?? null);
+    openLessonWithMorph(concept.id, () =>
+      openConcept(concept, "push", conceptPlaceId ?? null)
+    );
   }
 
   function handleConceptContinue(
@@ -291,8 +298,13 @@ Navigation via bottom tabs (mobile-first UX pattern)
       window.history.back();
       return;
     }
-    selectedConcept = null;
-    writeConceptUrl(undefined, "replace", returnPlaceId);
+    const closing = selectedConcept;
+    const close = () => {
+      selectedConcept = null;
+      writeConceptUrl(undefined, "replace", returnPlaceId);
+    };
+    if (closing) closeLessonWithMorph(closing.id, close);
+    else close();
   }
 
   // Check if mode is active

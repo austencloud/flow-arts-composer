@@ -4,6 +4,12 @@
   import ConceptPreview from "./ConceptPreview.svelte";
   import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import { localizedConcept } from "../domain/localized-concept";
+  import { claimedViewTransitionName } from "#lib/shared/transitions/claimed-view-transition-name.js";
+  import {
+    isLessonMorphCard,
+    noteLessonCardTap,
+    warmLesson,
+  } from "../services/lesson-open-morph.svelte";
 
   let {
     concept,
@@ -30,9 +36,18 @@
           : tDynamic("learn_card_start")
   );
 
+  // While this card opens its lesson (or the lesson closes back into it),
+  // the card, its picture and its name carry the lesson's names.
+  const morphing = $derived(isLessonMorphCard(concept.id, prominent));
+
+  function warm() {
+    if (status !== "locked") warmLesson(concept.id);
+  }
+
   function openLesson() {
     if (status === "locked") return;
     haptic?.trigger("selection");
+    noteLessonCardTap(concept.id, prominent);
     onClick?.(concept);
   }
 </script>
@@ -42,26 +57,52 @@
   class:prominent
   class:in-progress={status === "in-progress"}
   onclick={openLesson}
+  onpointerenter={warm}
+  onpointerdown={warm}
+  onfocus={warm}
+  use:claimedViewTransitionName={{
+    name: "learn-lesson-surface",
+    enabled: morphing,
+  }}
   disabled={status === "locked"}
   aria-label={`${action}: ${localizedConcept(concept, "name")}`}
 >
-  <span class="preview"><ConceptPreview conceptId={concept.id} /></span>
+  <span
+    class="preview"
+    use:claimedViewTransitionName={{
+      name: "learn-grid-stage",
+      enabled: morphing,
+    }}><ConceptPreview conceptId={concept.id} /></span
+  >
   <span class="lesson-info">
     {#if prominent}<span class="recommendation"
         >{status === "in-progress"
           ? tDynamic("learn_card_resume")
           : tDynamic("learn_card_up_next")}</span
       >{/if}
-    <span class="name">{localizedConcept(concept, "name")}</span>
+    <span
+      class="name"
+      use:claimedViewTransitionName={{
+        name: "learn-lesson-title",
+        enabled: morphing,
+      }}>{localizedConcept(concept, "name")}</span
+    >
     <span class="description">{localizedConcept(concept, "description")}</span>
     <span class="meta">
-      <span>{tDynamic("learn_card_minutes", { minutes: concept.estimatedMinutes })}</span>
+      <span
+        >{tDynamic("learn_card_minutes", {
+          minutes: concept.estimatedMinutes,
+        })}</span
+      >
       {#if status === "completed"}
         <span class="completion"
-          ><i class="fa-solid fa-check" aria-hidden="true"></i> {tDynamic("learn_card_completed")}</span
+          ><i class="fa-solid fa-check" aria-hidden="true"></i>
+          {tDynamic("learn_card_completed")}</span
         >
       {:else if premiumGated}
-        <span><i class="fa-solid fa-crown" aria-hidden="true"></i> {tDynamic("learn_card_premium")}</span
+        <span
+          ><i class="fa-solid fa-crown" aria-hidden="true"></i>
+          {tDynamic("learn_card_premium")}</span
         >
       {/if}
     </span>
@@ -115,7 +156,10 @@
     flex-direction: column;
     min-width: 0;
   }
+  /* Sized to its words, so it meets the lesson title word for word when the
+     card grows into the lesson. */
   .name {
+    align-self: flex-start;
     font-size: 1rem;
     font-weight: 700;
     line-height: 1.3;
