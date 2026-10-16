@@ -1,13 +1,15 @@
 # Flow Fest for Unreal Engine 5.8
 
-This is a native Unreal Engine 5.8 C++ game of the Thursday arrival and first night at Flow Fest. It uses the measured site terrain and placements exported from the browser simulator's source data. It does not embed or run the browser simulator. The prior verified living-world delivery is staged at `E:/FlowFestLivingWorld58` with an editable `Project` and sibling `Shared` plugin directory. See [VERIFICATION.md](VERIFICATION.md) for that package's build and verification gates. The earlier `E:/FlowFestNative58` delivery remains separate.
+This native Unreal Engine 5.8 C++ game covers Thursday arrival and the first night at Flow Fest. It uses measured site terrain and placements exported from the browser simulator's source data. The earlier verified living-world build is at `E:/FlowFestLivingWorld58`; see [VERIFICATION.md](VERIFICATION.md).
 
-The source revision adds attendee intentions, player needs, and the shared performance library. Its editor build, focused crowd tests, native activity smoke, full family motion test, game Development build, repository gate, and initial Windows packaged smoke have passed. The staff-clearance correction has imported ch01 pilots with paired body/prop receipts and verified native continuity. A complete source comparison across 82 routines and 16 rigs established the final 699-performance replacement set. That batch is being prepared on d2; final native import and package verification at `E:/FlowFestEmbodiment58` remain pending. See [EMBODIMENT.md](EMBODIMENT.md) for evidence and limits. The links below point to the previously verified living-world package.
+The embodiment upgrade adds attendee intentions, player needs, and the shared performance library. Native import and bundle verification passed for 699 replacements, with 677 legacy performances unchanged. Library, 1,312-routine motion, and all-rig hand-pose checks passed. The final Windows package passed numerical checks, packaged smoke, and sampled visual review. [EMBODIMENT.md](EMBODIMENT.md) records the evidence and limits.
 
-## Play the prior verified living-world build
+## Play the embodiment build
 
-- [Play Flow Fest](E:/FlowFestLivingWorld58/Builds/Windows/FlowFest.exe) — open the packaged Windows game.
-- [Open the editable Unreal project](E:/FlowFestLivingWorld58/Project/FlowFest.uproject) — requires Unreal Engine 5.8.3 and the delivered [Shared runtime plugin](E:/FlowFestLivingWorld58/Shared/FlowArtsRuntime) beside `Project`.
+- [Play Flow Fest](E:/FlowFestEmbodiment58/Play.cmd): open the packaged Windows game.
+- [Open the editable Unreal project](E:/FlowFestEmbodiment58/Project/FlowFest.uproject): requires Unreal Engine 5.8.3 and the delivered [Shared runtime plugin](E:/FlowFestEmbodiment58/Shared/FlowArtsRuntime) beside `Project`.
+
+The detached delivery keeps `Project` and `Shared` side by side. Its `Evidence/editable-file-manifest.json` records the copied project files after delivery finalization. The earlier living-world build at `E:/FlowFestLivingWorld58` remains separate.
 
 Use **W A S D** and the mouse to move and look. Press **C** to choose a character and props, **E** to interact, **Q** to flow, **R** to switch the equipped family's A/B routine, and **M** to toggle sound. **F5** saves and **F9** loads. The full controls and first-night route are in [Play](#play).
 
@@ -57,7 +59,7 @@ For a cooked Windows build from generated assets, run `Package.cmd` in the repos
 
 The package launcher requires both `FlowFest.exe` and `FlowFest/Content/Paks` inside the supplied root. Without `-PackageRoot`, it launches the editor game mode.
 
-The source launcher also accepts `-Explore` to start on foot beside the fire circle with the normal third-person camera. Add `-Review camp` or `-Review gate` to choose another ground location. This shortcut keeps food, rest, greetings, and flow available; F10 starts the arrival journey. It still awaits final packaged verification.
+The source launcher also accepts `-Explore` to start on foot beside the fire circle with the normal third-person camera. Add `-Review camp` or `-Review gate` to choose another ground location. This shortcut keeps food, rest, greetings, and flow available; F10 starts the arrival journey. The final packaged visual review used this on-foot route.
 
 Review positions are `gate`, `camp`, `fire`, and `overview`. A capture is requested after 25 seconds so shaders and assets can settle; automatic exit occurs after 40 seconds. Review mode logs average and maximum game frame delta after a 10-second warmup at capture or exit; these are not GPU timings. Review placement changes only the current session and does not alter saved progress. `-Smoke` checks the 1,312 family performances, legacy rigs, movement, camp journeys, and save/load in a separate `FlowFestNative58Smoke` slot. The `FlowFest.Motion` automation test samples the family routines against imported bodies and props. A filtered pilot is useful for diagnosis; it cannot establish the full 1,312-routine gate. The prior living-world package passed its full native test and packaged smoke; see [VERIFICATION.md](VERIFICATION.md) for its logs and review gates.
 
@@ -89,7 +91,7 @@ Press **C** to choose your character and equipment. All 16 deployed characters a
 
 Progress is also saved as the story advances. Load explicitly with F9. The native `FlowFestNative58` save slot is separate from browser storage. Version 2 saves add the A/B routine and sound setting; version 1 saves still load.
 
-In the embodiment source revision, **E** at the food stop near the workshop gets food and water, and **E** at camp rests. Eating and resting take time, replenish hunger or energy, and can be ended early with **E** or by moving away. **H** greets a nearby available attendee; the reply names them and their current purpose. These actions become available during the festival night. F5/F9 also save and restore player needs, an active player break, and attendee intentions. This source revision uses save version 3 and accepts older saves. Editor and smoke checks have passed, but these controls are not yet verified in a new packaged delivery and are not part of the linked living-world package above.
+In the embodiment build, **E** at the food stop near the workshop gets food and water, and **E** at camp rests. These timed actions replenish hunger or energy and can end early with **E** or movement. **H** greets a nearby available attendee; the reply names them and their current purpose. These actions become available during the festival night. F5/F9 save and restore player needs, an active break, and attendee intentions. Save version 3 accepts older saves. Native activity checks and final packaged smoke passed.
 
 ## Native scope and limits
 
@@ -97,7 +99,7 @@ The native world builds terrain, roads, trees, camps, parked cars, landmarks, vi
 
 The embodiment source revision gives the 38 attendees bounded needs, preferences, homes, equipment, and inspectable goals. They travel to food, camp, practice, watch, socialize in pairs, or take reserved turns at the fire circle. Needs and completed actions affect the next goal; ongoing routes, actions, and fire reservations are saved. Practice and performance use authored prop routines. Food, rest, and social stops have destinations, facing, and timing, but currently use existing idle clips. There is no eating, sitting, or talking animation, and stowed equipment has no visible holster.
 
-The food stop has a canopy and benches, with attendees arriving at it; the player sees an E food/water prompt. Close walk views show hands remaining attached to carried handles through a stride. The existing arm swing can still bring a carried staff across the torso; there is no separate carry arm pose. The staff-clearance correction has passed ch01 paired body and prop pilots, including an instrumented native capture. Those numerical checks do not establish physical staff realism. Full cohort validation and package verification remain pending.
+The food stop has a canopy and benches, with attendees arriving at it; the player sees an E food/water prompt. Close walk views show hands remaining attached to carried handles through a stride. The existing arm swing can still bring a carried staff across the torso; there is no separate carry arm pose. The final cohort passed native motion and hand-pose checks. Nine packaged performer images sampled ch01 fire double staff and ch22/ch42 stick; no gross hand detachment was observed. These checks do not establish collision-free motion, full prop-tip clearance, or physical staff realism.
 
 The scripted experience covers the first night. Car and EUC movement remains simple; the car has no Chaos vehicle physics. The EUC uses the production mounted contact pose. Each of the 41 prop families has two finite captured routines rather than an arbitrary native TKA sequence evaluator. Camp dressing, visitor behavior, and fire use native implementations. Photo flight and travel near objective are review aids.
 
