@@ -66,8 +66,8 @@ describe("viewer-state params are scoped to an open viewer", () => {
     expect(url.searchParams.get("pane")).toBeNull();
   });
 
-  it("keeps the letter explorer's state on the Codex guide page", () => {
-    for (const path of ["/guide/codex", "/de/guide/codex"]) {
+  it("keeps the letter explorer's state on the Codex page", () => {
+    for (const path of ["/codex", "/de/codex", "/guide/codex"]) {
       const url = at(`${path}?letter=B&grid=box&variation=2&leftTurns=1`);
       pruneRouteScopedParams(url, path);
 
@@ -77,8 +77,8 @@ describe("viewer-state params are scoped to an open viewer", () => {
       expect(url.searchParams.get("leftTurns")).toBe("1");
     }
 
-    const print = at("/guide/codex/print?letter=B");
-    pruneRouteScopedParams(print, "/guide/codex/print");
+    const print = at("/codex/print?letter=B");
+    pruneRouteScopedParams(print, "/codex/print");
     expect(print.searchParams.get("letter")).toBeNull();
   });
 });

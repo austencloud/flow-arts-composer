@@ -79,7 +79,7 @@ void AMuseumHUD::DrawHUD()
             if (!Museum || !Museum->IsFireStation(Station))
         {
             DrawRect(FLinearColor(.025f, .033f, .035f, .88f), W / 2 - 240, H - 167, 480, 48);
-            DrawText(FString::Printf(TEXT("%s  |  %s  |  P pause/play  B restart"),
+            DrawText(FString::Printf(TEXT("%s  |  %s  |  P pause/play  B restart  F6 library"),
                 *Station->GetDisplayLabel(), *Station->GetPlaybackStatus()), Cream, W / 2 - 225, H - 152, Font, .9f);
         }
 }

@@ -93,7 +93,8 @@ void AMuseumCharacter::Tick(float DeltaSeconds)
         ReviewScreenshotDelay -= DeltaSeconds;
         if (ReviewScreenshotDelay < 0.f)
             if (APlayerController* Player = Cast<APlayerController>(Controller))
-                Player->ConsoleCommand(TEXT("HighResShot 1"));
+                Player->ConsoleCommand(FParse::Param(FCommandLine::Get(), TEXT("MuseumLibraryReview"))
+                    ? TEXT("Shot showui") : TEXT("HighResShot 1"));
     }
     NearbyExhibit = Museum ? Museum->NearestExhibit(GetActorLocation(), 190.f) : nullptr;
     NearbyPerformer = Museum ? Museum->NearestPerformerStation(GetActorLocation(), 220.f) : nullptr;

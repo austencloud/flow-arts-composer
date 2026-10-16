@@ -135,7 +135,7 @@ describe("public glossary taxonomy", () => {
     expect(lettersByType?.flat()).toHaveLength(47);
     expect(lettersByType?.flat()).not.toContain("τ-");
     expect(letterTypes?.terms[0]?.letters[0]?.href).toBe(
-      "/atlas?board=atlas&letter=A&grid=diamond&variation=0#cat-letter"
+      "/codex?letter=A&grid=diamond&variation=0"
     );
   });
 

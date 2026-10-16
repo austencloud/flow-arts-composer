@@ -38,7 +38,7 @@
       { label: "Open the guide", href: "/guide", icon: "fa-book-open" },
       {
         label: "Double Staff Codex",
-        href: "/guide/codex",
+        href: "/codex",
         icon: "fa-graduation-cap",
       },
     ]}
