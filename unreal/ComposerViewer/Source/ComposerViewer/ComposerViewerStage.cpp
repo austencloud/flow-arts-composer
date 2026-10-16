@@ -3,6 +3,7 @@
 #include "Async/Async.h"
 #include "Camera/CameraActor.h"
 #include "Camera/CameraComponent.h"
+#include "Camera/PlayerCameraManager.h"
 #include "Components/DirectionalLightComponent.h"
 #include "Components/PointLightComponent.h"
 #include "Components/SceneComponent.h"
@@ -295,6 +296,23 @@ void AComposerViewerStage::HandleCommand(const FString& PlayerId, const FString&
     if (Version != 1) { SendResult(PlayerId, Id, false, TEXT("unsupported_version"), TEXT("Bridge version must be 1")); return; }
     if (Type == TEXT("hello"))
     {
+        APlayerController* Player = GetWorld()->GetFirstPlayerController();
+        APlayerCameraManager* Manager = Player ? Player->PlayerCameraManager.Get() : nullptr;
+        UCameraComponent* View = Camera ? Camera->GetCameraComponent() : nullptr;
+        const FMinimalViewInfo* CachedView = Manager ? &Manager->GetCameraCacheView() : nullptr;
+        int32 ViewportWidth = 0, ViewportHeight = 0;
+        if (Player) Player->GetViewportSize(ViewportWidth, ViewportHeight);
+        UE_LOG(LogTemp, Display,
+            TEXT("ComposerViewer camera diagnostic: viewTarget=%s targetMatches=%d cameraManager=%d cameraComponent=%d componentConstrained=%d componentAspect=%.6f cachedConstrained=%d cachedAspect=%.6f viewport=%dx%d"),
+            *GetNameSafe(Player ? Player->GetViewTarget() : nullptr),
+            Player && Player->GetViewTarget() == Camera.Get() ? 1 : 0,
+            Manager ? 1 : 0,
+            View ? 1 : 0,
+            View && View->bConstrainAspectRatio ? 1 : 0,
+            View ? View->AspectRatio : 0.f,
+            CachedView && CachedView->bConstrainAspectRatio ? 1 : 0,
+            CachedView ? CachedView->AspectRatio : 0.f,
+            ViewportWidth, ViewportHeight);
         Session = IncomingSession;
         Revision = IncomingRevision;
         SendResult(PlayerId, Id, true);
