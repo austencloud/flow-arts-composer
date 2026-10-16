@@ -3740,6 +3740,8 @@
   "browse_audit_new_matches_join": "Новые подходящие последовательности добавляются в коллекцию автоматически.",
   "browse_audit_no_limit": "Без ограничения",
   "browse_audit_no_public_sequences": "В этой коллекции сейчас нет общедоступных последовательностей.",
+  "browse_audit_collection_unavailable_title": "Эта коллекция недоступна",
+  "browse_audit_collection_unavailable_hint": "Возможно, она закрыта или владелец её удалил.",
   "browse_audit_no_turn_limit_matches": "Без ограничения оборотов, совпадений: {count}",
   "browse_audit_one_match": "Совпадений: {count}",
   "browse_audit_one_sequence": "Последовательностей: {count}",

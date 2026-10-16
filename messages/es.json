@@ -4940,6 +4940,8 @@
   "browse_audit_new_matches_join": "Las nuevas secuencias que coincidan se agregan automáticamente a esta colección.",
   "browse_audit_no_limit": "Sin límite",
   "browse_audit_no_public_sequences": "Esta colección no tiene secuencias públicas por ahora.",
+  "browse_audit_collection_unavailable_title": "Esta colección no está disponible",
+  "browse_audit_collection_unavailable_hint": "Puede que sea privada o que su dueño la haya eliminado.",
   "browse_audit_no_turn_limit_matches": "Sin límite de vueltas, {count} coincidencias",
   "browse_audit_one_match": "{count} coincidencia",
   "browse_audit_one_sequence": "{count} secuencia",
