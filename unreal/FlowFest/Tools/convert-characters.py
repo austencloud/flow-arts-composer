@@ -118,7 +118,10 @@ def normalize_bones(armature, expected):
 
 def prepare_rig(character):
     clear_scene()
-    objects = import_glb(character['decoded'])
+    decoded = STAGED / f'{character["key"]}.glb'
+    if not decoded.is_file():
+        raise RuntimeError(f'Missing staged decoded rig: {decoded}')
+    objects = import_glb(decoded)
     armature = armature_of(objects, character['id'])
     meshes = [obj for obj in objects if obj.type == 'MESH']
     if not meshes or not any(any(mod.type == 'ARMATURE' for mod in mesh.modifiers) for mesh in meshes):
@@ -132,7 +135,7 @@ def prepare_rig(character):
         root.location.z -= floor
     armature.animation_data_clear()
     mesh_file = STAGED / character['key'] / f'SK_{character["key"]}.fbx'
-    if not args.family_only and not args.profiles_only and not is_current(mesh_file, Path(character['decoded'])):
+    if not args.family_only and not args.profiles_only and not is_current(mesh_file, decoded):
         export_fbx(mesh_file, armature, meshes, False)
     return armature, meshes
 
@@ -212,25 +215,28 @@ for character in MANIFEST['characters']:
                                      for profile in character.get('captures', {})):
         raise RuntimeError(f'{character["id"]}: no staged family captures for pilot')
     target, meshes = prepare_rig(character)
+    decoded = STAGED / f'{character["key"]}.glb'
     if not args.family_only and not args.profiles_only:
         for clip_name, filename in MANIFEST['animations'].items():
             source_path = Path(MANIFEST['animationSource']) / filename
             output = STAGED / character['key'] / f'A_{clip_name}.fbx'
-            if is_current(output, source_path, Path(character['decoded'])):
+            if is_current(output, source_path, decoded):
                 continue
             retarget_clip(character, target, clip_name, source_path)
-    for profile, path in character.get('captures', {}).items():
+    for profile in character.get('captures', {}):
         if args.profiles_only and not profile.startswith('M_'):
             continue
         if args.family_only and not (profile.startswith('P_') and profile.endswith(('_A', '_B'))):
             continue
         name = 'Ride' if profile == 'Ride' else f'Flow_{profile}'
-        source_path = Path(path)
+        source_path = STAGED / character['key'] / f'capture_{profile}.glb'
+        if not source_path.is_file():
+            raise RuntimeError(f'Missing staged capture: {source_path}')
         output = STAGED / character['key'] / f'A_{name}.fbx'
         if profile != 'Ride':
             performance_contract('validate-body', **{'body': source_path, 'character': character['id'],
-                                 'profile': profile, 'decoded-rig': character['decoded']})
-        if is_current(output, source_path, Path(character['decoded'])):
+                                 'profile': profile, 'decoded-rig': decoded})
+        if is_current(output, source_path, decoded):
             if profile == 'Ride':
                 continue
             # A recent timestamp cannot establish which capture made an FBX.

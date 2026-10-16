@@ -251,7 +251,7 @@ if (museumMode) {
   const sourceCharacter = sourceManifest.characters.find(entry => entry.id === 'x-bot');
   if (!sourceCharacter) throw new Error('Missing prepared x-bot rig');
   const character = structuredClone(sourceCharacter);
-  character.decoded = join(baseStaged, 'x_bot.glb');
+  character.decoded = join(staged, 'x_bot.glb');
   await ensureDecodedRig(character);
   character.captures = {};
   for (const item of museumEntries) {

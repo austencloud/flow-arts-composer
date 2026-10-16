@@ -344,7 +344,9 @@ for character in MANIFEST['characters']:
         if FAMILY_ONLY and not (profile.startswith('P_') and profile.endswith(('_A', '_B'))):
             continue
         name = 'Ride' if profile == 'Ride' else f'Flow_{profile}'
-        body_file = Path(character['captures'][profile])
+        body_file = STAGED / key / f'capture_{profile}.glb'
+        if not body_file.is_file():
+            raise RuntimeError(f'Missing staged capture: {body_file}')
         fbx_file = STAGED / key / f'A_{name}.fbx'
         if profile != 'Ride':
             performance_contract('validate-body', body=body_file, character=character['id'], profile=profile)
