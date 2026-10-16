@@ -3867,7 +3867,7 @@ diff --git a/dist/lib/components/props/Fan3D.svelte b/dist/lib/components/props/
 index dc635e752d11561cb585cbaaffa05b1e525d31e8..8e83233d5b701391fd39c9d0e79fb6a446227165 100644
 --- a/dist/lib/components/props/Fan3D.svelte
 +++ b/dist/lib/components/props/Fan3D.svelte
-@@ -1,29 +1,58 @@
+@@ -1,29 +1,59 @@
 +<script module lang="ts">
 +  import type { BufferGeometry } from "three";
 +  import { buildFanShape, FAN_FRAME_WIDTH } from "./fan-profile";
@@ -3934,6 +3934,7 @@ index dc635e752d11561cb585cbaaffa05b1e525d31e8..8e83233d5b701391fd39c9d0e79fb6a4
 +  const SEPARATE_BUILD_MODEL_URLS: Partial<Record<PropBuild["fanBuild"], string>> = {
 +    "flat-grip": "/models/props/fan-flat-grip.glb",
 +    star: "/models/props/fan-star.glb",
++    sense: "/models/props/fan-sense.glb",
 +  };
 +  const DAY_FRAME_COLORS = {
 +    black: "#11141a",
@@ -3942,7 +3943,7 @@ index dc635e752d11561cb585cbaaffa05b1e525d31e8..8e83233d5b701391fd39c9d0e79fb6a4
  
    let {
      propState,
-@@ -33,156 +62,125 @@
+@@ -33,156 +63,125 @@
      thickness,
      isActivePlayer = false,
      scale = 1,
@@ -24503,7 +24504,7 @@ diff --git a/src/lib/components/props/Fan3D.svelte b/src/lib/components/props/Fa
 index dc635e752d11561cb585cbaaffa05b1e525d31e8..8e83233d5b701391fd39c9d0e79fb6a446227165 100644
 --- a/src/lib/components/props/Fan3D.svelte
 +++ b/src/lib/components/props/Fan3D.svelte
-@@ -1,29 +1,58 @@
+@@ -1,29 +1,59 @@
 +<script module lang="ts">
 +  import type { BufferGeometry } from "three";
 +  import { buildFanShape, FAN_FRAME_WIDTH } from "./fan-profile";
@@ -24570,6 +24571,7 @@ index dc635e752d11561cb585cbaaffa05b1e525d31e8..8e83233d5b701391fd39c9d0e79fb6a4
 +  const SEPARATE_BUILD_MODEL_URLS: Partial<Record<PropBuild["fanBuild"], string>> = {
 +    "flat-grip": "/models/props/fan-flat-grip.glb",
 +    star: "/models/props/fan-star.glb",
++    sense: "/models/props/fan-sense.glb",
 +  };
 +  const DAY_FRAME_COLORS = {
 +    black: "#11141a",
@@ -24578,7 +24580,7 @@ index dc635e752d11561cb585cbaaffa05b1e525d31e8..8e83233d5b701391fd39c9d0e79fb6a4
  
    let {
      propState,
-@@ -33,156 +62,125 @@
+@@ -33,156 +63,125 @@
      thickness,
      isActivePlayer = false,
      scale = 1,
@@ -45230,7 +45232,7 @@ new file mode 100644
 index 0000000000000000000000000000000000000000..e2e21cf354a4c90c5e5e9c84eedec1b83f00276a
 --- /dev/null
 +++ b/src/lib/state/prop-finish-state.svelte.ts
-@@ -0,0 +1,126 @@
+@@ -0,0 +1,127 @@
 +/**
 + * Prop Finish State
 + *
@@ -45252,7 +45254,8 @@ index 0000000000000000000000000000000000000000..e2e21cf354a4c90c5e5e9c84eedec1b8
 +  | "day"
 +  | "moon"
 +  | "flat-grip"
-+  | "star";
++  | "star"
++  | "sense";
 +export type FanFrameColor = "black" | "white";
 +export type FanCover = "bare" | "covered";
 +export type TriangleGrip = "corner" | "side";
