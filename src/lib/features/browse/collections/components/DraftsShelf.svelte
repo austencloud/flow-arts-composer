@@ -159,7 +159,12 @@
   .drafts-header {
     display: flex;
     align-items: baseline;
+    width: fit-content;
     margin-bottom: 14px;
+    padding: 10px 14px;
+    border: 1px solid var(--theme-stroke);
+    border-radius: 12px;
+    background: var(--theme-card-bg);
   }
   .drafts-header h2 {
     margin: 0;
