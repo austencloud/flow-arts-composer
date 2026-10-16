@@ -1,7 +1,9 @@
+import "fake-indexeddb/auto";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import type { ActiveCreateModule } from "#lib/shared/foundation/ui/ui-types.js";
 import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { db } from "#lib/shared/persistence/database/tka-database.js";
 import { SequencePersister } from "../../services/sequence-persister.js";
 import { createSequencePersistenceCoordinator } from "./sequence-persistence-coordinator.svelte.js";
 
@@ -38,7 +40,10 @@ async function expectOnlyCleared(
 }
 
 describe("Create workspace persistence isolation", () => {
-  beforeEach(() => localStorage.clear());
+  beforeEach(async () => {
+    localStorage.clear();
+    await db.userWork.clear();
+  });
   afterEach(() => localStorage.clear());
 
   it.each(tabs)("clears only the %s workspace", async (tab) => {
@@ -89,5 +94,47 @@ describe("Create workspace persistence isolation", () => {
     await coordinator.clearState();
 
     await expectOnlyCleared("construct");
+  });
+
+  it("saves to its fixed tab even when navigation supplies another mode", async () => {
+    const persister = new SequencePersister();
+    const coordinator = createSequencePersistenceCoordinator(
+      persister,
+      undefined,
+      "generate"
+    );
+    coordinator.updateCachedActiveTab("construct");
+    await coordinator.saveState({
+      currentSequence: createSequenceData({ id: "generate-work" }),
+      selectedStartPlacement: null,
+      hasStartPlacement: false,
+      activeBuildSection: "construct",
+    });
+
+    expect(
+      (await persister.loadCurrentState("generate"))?.currentSequence?.id
+    ).toBe("generate-work");
+    expect(await persister.loadCurrentState("construct")).toBeNull();
+  });
+
+  it("skips loading the old workspace for an explicit import", async () => {
+    const persister = new SequencePersister();
+    await persister.saveCurrentState({
+      currentSequence: createSequenceData({ id: "older-draft" }),
+      selectedStartPlacement: null,
+      hasStartPlacement: false,
+      activeBuildSection: "construct",
+    });
+
+    const coordinator = createSequencePersistenceCoordinator(
+      persister,
+      undefined,
+      "construct"
+    );
+    expect(await coordinator.initialize(true)).toBeNull();
+    expect(coordinator.isInitialized).toBe(true);
+    expect(
+      (await persister.loadCurrentState("construct"))?.currentSequence?.id
+    ).toBe("older-draft");
   });
 });

@@ -81,6 +81,7 @@ export interface CreateModuleStateSnapshot {
  */
 export interface UndoHistoryEntry {
   id: string;
+  sessionId?: string;
   type: UndoOperationType;
   timestamp: number;
   beforeState: CreateModuleStateSnapshot;
@@ -102,6 +103,81 @@ const UNDO_HISTORY_STORAGE_KEY = "tka_build_undo_history";
  * LocalStorage key for persisting redo history
  */
 const REDO_HISTORY_STORAGE_KEY = "tka_build_redo_history";
+
+const CREATE_MODES: ReadonlySet<string> = new Set([
+  "assemble",
+  "construct",
+  "generate",
+  "shape-engine",
+  "fuse",
+  "tunnel",
+  "one-handed",
+  "guided",
+  "spell",
+]);
+
+function isManagedMode(value: unknown): value is ActiveCreateModule {
+  return typeof value === "string" && CREATE_MODES.has(value);
+}
+
+function isValidSnapshot(
+  value: unknown,
+  mode: ActiveCreateModule
+): value is CreateModuleStateSnapshot {
+  if (!value || typeof value !== "object") return false;
+  const snapshot = value as Partial<CreateModuleStateSnapshot>;
+  return (
+    snapshot.activeSection === mode &&
+    (snapshot.sequence === null ||
+      (typeof snapshot.sequence === "object" &&
+        snapshot.sequence !== null &&
+        Array.isArray(snapshot.sequence.steps))) &&
+    (snapshot.selectedStepNumber === null ||
+      (typeof snapshot.selectedStepNumber === "number" &&
+        Number.isFinite(snapshot.selectedStepNumber))) &&
+    typeof snapshot.timestamp === "number" &&
+    Number.isFinite(snapshot.timestamp)
+  );
+}
+
+function sanitizeDraftEntries(
+  value: unknown,
+  mode: ActiveCreateModule,
+  sessionId: string,
+  limit: number
+): UndoHistoryEntry[] {
+  if (!Array.isArray(value)) return [];
+  const entries: UndoHistoryEntry[] = [];
+  for (const candidate of value) {
+    if (!candidate || typeof candidate !== "object") continue;
+    const entry = candidate as Partial<UndoHistoryEntry>;
+    if (
+      typeof entry.id !== "string" ||
+      !entry.id ||
+      !Object.values(UndoOperationType).includes(
+        entry.type as UndoOperationType
+      ) ||
+      typeof entry.timestamp !== "number" ||
+      !Number.isFinite(entry.timestamp) ||
+      !isValidSnapshot(entry.beforeState, mode) ||
+      (entry.afterState !== undefined &&
+        !isValidSnapshot(entry.afterState, mode)) ||
+      (entry.sessionId !== undefined && entry.sessionId !== sessionId) ||
+      (entry.metadata !== undefined &&
+        (!entry.metadata ||
+          typeof entry.metadata !== "object" ||
+          Array.isArray(entry.metadata)))
+    )
+      continue;
+    try {
+      const [normalized] = normalizeUndoHistoryEntries([entry]);
+      if (normalized) entries.push({ ...normalized, sessionId });
+    } catch {
+      // One damaged entry should not discard the rest of the draft's history.
+    }
+  }
+  return entries.slice(-limit);
+}
 
 export function normalizeUndoHistoryEntries(
   value: unknown
@@ -162,6 +238,7 @@ export class UndoManager {
   private _maxHistorySize: number = DEFAULT_MAX_HISTORY_SIZE;
   private _changeCallbacks: Set<() => void> = new Set();
   private _saveQueued = false;
+  private _draftSessions = new Map<ActiveCreateModule, string>();
 
   constructor() {
     // Load persisted history
@@ -232,19 +309,79 @@ export class UndoManager {
     return this._redoHistory;
   }
 
+  getDraftSessionId(mode: ActiveCreateModule): string | undefined {
+    return this._draftSessions.get(mode);
+  }
+
+  captureDraftHistory(mode: ActiveCreateModule): {
+    undo: UndoHistoryEntry[];
+    redo: UndoHistoryEntry[];
+  } {
+    const sessionId = this._draftSessions.get(mode);
+    if (!sessionId) return { undo: [], redo: [] };
+    const matches = (entry: UndoHistoryEntry) =>
+      entry.beforeState.activeSection === mode && entry.sessionId === sessionId;
+    // The saved draft must own its history even if later edits mutate live entries.
+    return JSON.parse(
+      JSON.stringify({
+        undo: this._undoHistory.filter(matches).slice(-this._maxHistorySize),
+        redo: this._redoHistory.filter(matches).slice(-this._maxHistorySize),
+      })
+    ) as { undo: UndoHistoryEntry[]; redo: UndoHistoryEntry[] };
+  }
+
+  restoreDraftHistory(
+    mode: ActiveCreateModule,
+    sessionId: string,
+    history?: { undo: UndoHistoryEntry[]; redo: UndoHistoryEntry[] }
+  ): void {
+    this._draftSessions.set(mode, sessionId);
+    this._undoHistory = this._undoHistory.filter(
+      (entry) => entry.beforeState.activeSection !== mode
+    );
+    this._redoHistory = this._redoHistory.filter(
+      (entry) => entry.beforeState.activeSection !== mode
+    );
+    this._undoHistory.push(
+      ...sanitizeDraftEntries(
+        history?.undo,
+        mode,
+        sessionId,
+        this._maxHistorySize
+      )
+    );
+    this._redoHistory.push(
+      ...sanitizeDraftEntries(
+        history?.redo,
+        mode,
+        sessionId,
+        this._maxHistorySize
+      )
+    );
+    this.queueSave();
+    this.notifyChange();
+  }
+
   /**
    * Push a new action to the undo history
    */
   pushUndo(
     type: UndoOperationType,
     beforeState: CreateModuleStateSnapshot,
-    metadata?: UndoMetadata
+    metadata?: UndoMetadata,
+    capturedSessionId?: string
   ): string {
+    const mode = beforeState.activeSection;
+    const activeSessionId = mode ? this._draftSessions.get(mode) : undefined;
+    if (arguments.length >= 4 && capturedSessionId !== activeSessionId) {
+      return "";
+    }
     // Generate unique ID for this action
     const id = this.generateActionId();
 
     const entry: UndoHistoryEntry = {
       id,
+      ...(activeSessionId && { sessionId: activeSessionId }),
       type,
       timestamp: Date.now(),
       beforeState,
@@ -507,12 +644,28 @@ export class UndoManager {
     try {
       const undoData = localStorage.getItem(UNDO_HISTORY_STORAGE_KEY);
       if (undoData) {
-        this._undoHistory = normalizeUndoHistoryEntries(JSON.parse(undoData));
+        const legacy = normalizeUndoHistoryEntries(JSON.parse(undoData));
+        this._undoHistory = [
+          ...this._undoHistory.filter((entry) =>
+            isManagedMode(entry.beforeState?.activeSection)
+          ),
+          ...legacy.filter(
+            (entry) => !isManagedMode(entry.beforeState?.activeSection)
+          ),
+        ];
       }
 
       const redoData = localStorage.getItem(REDO_HISTORY_STORAGE_KEY);
       if (redoData) {
-        this._redoHistory = normalizeUndoHistoryEntries(JSON.parse(redoData));
+        const legacy = normalizeUndoHistoryEntries(JSON.parse(redoData));
+        this._redoHistory = [
+          ...this._redoHistory.filter((entry) =>
+            isManagedMode(entry.beforeState?.activeSection)
+          ),
+          ...legacy.filter(
+            (entry) => !isManagedMode(entry.beforeState?.activeSection)
+          ),
+        ];
       }
 
       // Notify subscribers after loading
@@ -522,10 +675,7 @@ export class UndoManager {
         "❌ UndoManager: Failed to load history from storage:",
         error
       );
-      // Reset to empty on error
-      this._undoHistory = [];
-      this._redoHistory = [];
-      this.notifyChange();
+      // A damaged legacy key must not erase history recovered from a draft.
     }
   }
 
@@ -541,11 +691,19 @@ export class UndoManager {
     try {
       localStorage.setItem(
         UNDO_HISTORY_STORAGE_KEY,
-        JSON.stringify(this._undoHistory)
+        JSON.stringify(
+          this._undoHistory.filter(
+            (entry) => !isManagedMode(entry.beforeState.activeSection)
+          )
+        )
       );
       localStorage.setItem(
         REDO_HISTORY_STORAGE_KEY,
-        JSON.stringify(this._redoHistory)
+        JSON.stringify(
+          this._redoHistory.filter(
+            (entry) => !isManagedMode(entry.beforeState.activeSection)
+          )
+        )
       );
     } catch (error) {
       console.error(
