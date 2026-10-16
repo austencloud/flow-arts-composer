@@ -831,10 +831,10 @@ void UFlowFestPropComponent::ResetFinish()
     UpdateEffects();
 }
 
-void UFlowFestPropComponent::SyncEffectPlayback(float Seconds, bool bPaused)
+void UFlowFestPropComponent::SyncEffectPlayback(float Seconds, bool bPaused, float PlaybackRate)
 {
-    if (NiagaraEffects && FMath::IsFinite(Seconds))
-        NiagaraEffects->SyncPlayback(Seconds, bPaused);
+    if (NiagaraEffects && FMath::IsFinite(Seconds) && FMath::IsFinite(PlaybackRate))
+        NiagaraEffects->SyncPlayback(Seconds, bPaused, PlaybackRate);
 }
 
 void UFlowFestPropComponent::ResetEffectHistory()
@@ -858,7 +858,8 @@ void UFlowFestPropComponent::UpdateEffects()
     }
     for (const TArray<TObjectPtr<UProceduralMeshComponent>>* Group : { &LeftFlames, &RightFlames })
         for (UProceduralMeshComponent* Flame : *Group)
-            if (Flame) Flame->SetVisibility(bVisible && bFire && !NiagaraEffects);
+            if (Flame) Flame->SetVisibility(bVisible && bFire &&
+                (!NiagaraEffects || !NiagaraEffects->IsAvailable()));
     for (const TArray<TObjectPtr<UStaticMeshComponent>>* Group : { &LeftLEDs, &RightLEDs })
         for (UStaticMeshComponent* LED : *Group)
             if (LED) LED->SetVisibility(bVisible && bLed);

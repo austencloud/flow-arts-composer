@@ -378,20 +378,24 @@ float UFlowFestAvatarComponent::GetPerformancePhase() const
 
 void UFlowFestAvatarComponent::SetPerformancePhase(float NormalizedPhase)
 {
+    if (BoundProp) BoundProp->ResetEffectHistory();
     if (UFlowFestAnimInstance* Animator = BodyMesh ? Cast<UFlowFestAnimInstance>(BodyMesh->GetAnimInstance()) : nullptr)
         Animator->SetPerformancePhase(NormalizedPhase);
+    if (BoundProp) BoundProp->SyncEffectPlayback(GetPerformanceTime(), IsPerformancePaused(), GetPerformanceRate());
 }
 
 void UFlowFestAvatarComponent::SetPerformanceRate(float Rate)
 {
     if (UFlowFestAnimInstance* Animator = BodyMesh ? Cast<UFlowFestAnimInstance>(BodyMesh->GetAnimInstance()) : nullptr)
         Animator->SetPerformanceRate(Rate);
+    if (BoundProp) BoundProp->SyncEffectPlayback(GetPerformanceTime(), IsPerformancePaused(), GetPerformanceRate());
 }
 
 void UFlowFestAvatarComponent::SetPerformancePaused(bool bPaused)
 {
     if (UFlowFestAnimInstance* Animator = BodyMesh ? Cast<UFlowFestAnimInstance>(BodyMesh->GetAnimInstance()) : nullptr)
         Animator->SetPerformancePaused(bPaused);
+    if (BoundProp) BoundProp->SyncEffectPlayback(GetPerformanceTime(), IsPerformancePaused(), GetPerformanceRate());
 }
 
 bool UFlowFestAvatarComponent::IsPerformancePaused() const
@@ -402,8 +406,10 @@ bool UFlowFestAvatarComponent::IsPerformancePaused() const
 
 void UFlowFestAvatarComponent::SeekPerformance(float Seconds)
 {
+    if (BoundProp) BoundProp->ResetEffectHistory();
     if (UFlowFestAnimInstance* Animator = BodyMesh ? Cast<UFlowFestAnimInstance>(BodyMesh->GetAnimInstance()) : nullptr)
         Animator->SeekPerformance(Seconds);
+    if (BoundProp) BoundProp->SyncEffectPlayback(GetPerformanceTime(), IsPerformancePaused(), GetPerformanceRate());
 }
 
 float UFlowFestAvatarComponent::GetPerformanceRate() const
@@ -414,8 +420,10 @@ float UFlowFestAvatarComponent::GetPerformanceRate() const
 
 void UFlowFestAvatarComponent::RestartPerformance()
 {
+    if (BoundProp) BoundProp->ResetEffectHistory();
     if (UFlowFestAnimInstance* Animator = BodyMesh ? Cast<UFlowFestAnimInstance>(BodyMesh->GetAnimInstance()) : nullptr)
         Animator->RestartPerformance();
+    if (BoundProp) BoundProp->SyncEffectPlayback(GetPerformanceTime(), IsPerformancePaused(), GetPerformanceRate());
 }
 
 void UFlowFestAvatarComponent::BindPerformanceProp(UFlowFestPropComponent* Prop)
@@ -465,6 +473,9 @@ void UFlowFestAvatarComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
     if (BoundProp && PerformanceClip)
     {
         if (const UFlowFestAnimInstance* Animator = Cast<UFlowFestAnimInstance>(BodyMesh->GetAnimInstance()))
+        {
             BoundProp->SetPerformanceTime(Animator->GetPerformanceTime(), Animator->GetPerformanceWeight(), Animator);
+            BoundProp->SyncEffectPlayback(Animator->GetPerformanceTime(), Animator->IsPerformancePaused(), Animator->GetPerformanceRate());
+        }
     }
 }

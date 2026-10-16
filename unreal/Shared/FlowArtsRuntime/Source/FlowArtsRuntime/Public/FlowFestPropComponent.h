@@ -79,7 +79,7 @@ public:
     void ResetFinish();
 
     /** Drive wick effects from the same clock as the performance, including pause. */
-    void SyncEffectPlayback(float Seconds, bool bPaused);
+    void SyncEffectPlayback(float Seconds, bool bPaused, float PlaybackRate = 1.f);
     /** Clear particle trails after a seek or playback restart. */
     void ResetEffectHistory();
 
