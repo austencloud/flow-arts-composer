@@ -2,6 +2,8 @@
 
 This is a native Unreal Engine 5.8 C++ game of the Thursday arrival and first night at Flow Fest. It uses the measured site terrain and placements exported from the browser simulator's source data. It does not embed or run the browser simulator. The living-world delivery is staged at `E:/FlowFestLivingWorld58` with an editable `Project` and sibling `Shared` plugin directory. See [VERIFICATION.md](VERIFICATION.md) for the current build and package gates. The earlier `E:/FlowFestNative58` delivery remains separate.
 
+The source revision adds attendee intentions and player needs. Its editor build, focused crowd tests, native activity smoke, and full family motion test have passed. A later source correction improves staff carry depth; its corrected native capture/import and the new Windows package remain pending. See [EMBODIMENT.md](EMBODIMENT.md) for evidence and limits. The delivery links below still point to the previously verified living-world package until this revision has its own verified package.
+
 ## Play the delivered build
 
 - [Play Flow Fest](E:/FlowFestLivingWorld58/Builds/Windows/FlowFest.exe) — open the packaged Windows game.
@@ -83,9 +85,15 @@ Press **C** to choose your character and equipment. All 16 deployed characters a
 
 Progress is also saved as the story advances. Load explicitly with F9. The native `FlowFestNative58` save slot is separate from browser storage. Version 2 saves add the A/B routine and sound setting; version 1 saves still load.
 
+In the embodiment source revision, **E** at the food stop near the workshop gets food and water, and **E** at camp rests. Eating and resting take time, replenish hunger or energy, and can be ended early with **E** or by moving away. **H** greets a nearby available attendee; the reply names them and their current purpose. These actions become available during the festival night. F5/F9 also save and restore player needs, an active player break, and attendee intentions. This source revision uses save version 3 and accepts older saves. Editor and smoke checks have passed, but these controls are not yet verified in a new packaged delivery and are not part of the linked living-world package above.
+
 ## Native scope and limits
 
 The native world builds terrain, roads, trees, camps, parked cars, landmarks, visitors, fire, sky, and fog from exported site data and imported assets. The ecology export adds 21,731 grass placements and 20 damp-sedge and hazel understory placements, with tree and grass wind, varied foliage tint, and ground surface layers. Native attendee schedules use 38 named crowd members with route following, social stops, and rotating fire turns. Six original procedural mono loops provide woodland, camp, crowd, and fire ambience with distance attenuation, configured occlusion, and gains that change with time of day and jam state. The HUD and C++ state machine cover loadout, arrival, gate check-in, three camp choices, camp setup, workshop field, fire jam, and Friday morning. The character system retains the 16 deployed meshes and 11 locomotion clips per rig. Props retain all 71 authored variants, hand colors, and physical dimensions.
+
+The embodiment source revision gives the 38 attendees bounded needs, preferences, homes, equipment, and inspectable goals. They travel to food, camp, practice, watch, socialize in pairs, or take reserved turns at the fire circle. Needs and completed actions affect the next goal; ongoing routes, actions, and fire reservations are saved. Practice and performance use authored prop routines. Food, rest, and social stops have destinations, facing, and timing, but currently use existing idle clips. There is no eating, sitting, or talking animation, and stowed equipment has no visible holster.
+
+The food stop has a canopy and benches, with attendees arriving at it; the player sees an E food/water prompt. Close walk views show hands remaining attached to carried handles through a stride. The existing arm swing can still bring a carried staff across the torso; there is no separate carry arm pose. The source correction for staff clearance awaits new native capture/import and package verification.
 
 The scripted experience covers the first night. Car and EUC movement remains simple; the car has no Chaos vehicle physics. The EUC uses the production mounted contact pose. Each of the 41 prop families has two finite captured routines rather than an arbitrary native TKA sequence evaluator. Camp dressing, visitor behavior, and fire use native implementations. Photo flight and travel near objective are review aids.
 
