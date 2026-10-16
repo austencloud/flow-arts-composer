@@ -22,8 +22,11 @@
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import type { SequenceSendSession } from "#lib/shared/inbox/state/send-sequence-state.svelte.js";
   import SendSequenceWorkspace from "./SendSequenceWorkspace.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import PerformanceTransferActions from "#lib/shared/3d/components/PerformanceTransferActions.svelte";
 
   interface Props {
+    sequence: SequenceData;
     /** The view on stage, as the rail names it. */
     subject: { label: string; icon: string };
     /** What Download produces from that view, e.g. "Card image" or "Video". */
@@ -63,6 +66,7 @@
   }
 
   let {
+    sequence,
     subject,
     downloadLabel,
     downloadText: downloadTextOverride,
@@ -205,6 +209,8 @@
       </PanelButton>
     {/if}
   </div>
+
+  <PerformanceTransferActions {sequence} />
 
   <div class="recipients">
     {#if session}
