@@ -177,15 +177,15 @@ export function createPostTimingSession(
         })
       : null;
   });
-  const paintFrame = $derived<PaintFrame | null>(
+  const paintFrame = $derived(
     frame
-      ? {
+      ? ({
           projectProgress: 0,
           sourceTimeSeconds: mediaSeconds,
           sequenceFrame: frame,
           sequencePosition: frame.enginePosition,
           displayedBeatNumber: frame.move,
-        }
+        } satisfies PaintFrame)
       : null
   );
   const readout = $derived(

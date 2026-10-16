@@ -10,9 +10,9 @@ import {
  */
 export function buildScanAppHandoffPath(
   shortCode: string,
-  scanSearchParams: URLSearchParams
+  scanSearchParams: Iterable<[string, string]>
 ): string {
-  const viewerParams = new URLSearchParams(scanSearchParams);
+  const viewerParams = new URLSearchParams(Array.from(scanSearchParams));
   viewerParams.delete("demo");
   viewerParams.set("from", "scan");
   viewerParams.set("code", shortCode);
@@ -28,7 +28,7 @@ export function buildScanAppHandoffPath(
  */
 export function buildScanAppHandoffHref(
   shortCode: string,
-  scanSearchParams: URLSearchParams,
+  scanSearchParams: Iterable<[string, string]>,
   options: { android: boolean; origin: string }
 ): string {
   const bridgePath = buildScanAppHandoffPath(shortCode, scanSearchParams);

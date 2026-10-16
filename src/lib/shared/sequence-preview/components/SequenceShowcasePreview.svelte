@@ -124,12 +124,12 @@
   const clipActive = $derived(
     !alwaysLive && activation === "ambient" && !!loopClipUrl && !clipFailed
   );
+  const sequence = $derived(directSequence ?? loadedSequence);
   const clipStepDurations = $derived(
     (sequence?.steps ?? []).map((step) => step.duration ?? 1)
   );
   let directSequenceId = $state<string | null>(null);
   let resolutionPromise: Promise<SequenceData | null> | null = null;
-  const sequence = $derived(directSequence ?? loadedSequence);
 
   // Creator-recorded presentation, resolved ONCE and handed to the player,
   // the step strip, and the Choreo Card together so all three render the same

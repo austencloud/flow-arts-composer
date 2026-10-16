@@ -62,7 +62,7 @@
     undefined,
     undefined,
     { tipEnds: 1, pathShape: "arc" },
-    { dx: clubTipDx, dy: 0 },
+    { dx: clubTipDx, dy: 0 }
   );
 
   // Trails on the red (solo) hand only — index 1 = red.
@@ -77,7 +77,7 @@
   // page also plays clubs and takes the same visible-tip correction.
   $effect(() => {
     setTipPointOverrideProvider((propType) =>
-      propType === "club" ? { points: [{ dx: 150, dy: 0 }] } : null,
+      propType === "club" ? { points: [{ dx: 150, dy: 0 }] } : null
     );
     return () => setTipPointOverrideProvider(null);
   });
@@ -87,7 +87,9 @@
   // visitor's — or Austen's — in-app glide leaks into this embed) and
   // setSpeed WRITES the embed's BPM back into that singleton. Ephemeral =
   // defaults, no localStorage, no DOM sync; fully isolated both directions.
-  const visibilityManager = new AnimationVisibilityStateManager({ ephemeral: true });
+  const visibilityManager = new AnimationVisibilityStateManager({
+    ephemeral: true,
+  });
 
   // The shipped look, tuned by Austen on 2026-07-19.
   const BPM = 80;
@@ -144,21 +146,23 @@
         height="500"
       />
     {/if}
-    <MandalaHeroLayer paths={mandalaPaths} artKey="yuta-cap" opacity={1} />
+    <MandalaHeroLayer
+      paths={mandalaPaths}
+      artKey="yuta-cap"
+      tipDx={clubTipDx}
+      opacity={1}
+    />
     {#if !reduceMotion.current}
       <div class="player-layer">
         <LazyMount
           loader={() =>
-            import(
-              "#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte"
-            )}
+            import("#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte")}
           active={true}
           props={playerProps}
         />
       </div>
     {/if}
   </div>
-
 </div>
 
 <style>

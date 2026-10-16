@@ -49,6 +49,7 @@
     strip,
     trail = null,
     loop = false,
+    onStepChange,
     canvasLetter = true,
   }: {
     /** Playable sequence for the animation canvas (the DEFAULT / entry-0 example). */
@@ -104,6 +105,11 @@
      */
     loop?: boolean;
     /**
+     * The player's live 1-based fractional beat, for a host whose text
+     * follows the playing beat (0 while the start pose shows).
+     */
+    onStepChange?: (step: number) => void;
+    /**
      * Draw the step's letter on the canvas. A page whose strips hide letters
      * (`render.showTKA: false`) and plays props passes false so the canvas
      * matches; hand renders never draw one. Omitted → the letter shows.
@@ -148,6 +154,20 @@
   }
 
   let rootEl: HTMLElement | undefined = $state();
+
+  // Compact band: it hugs its strip, so the strip can't learn from its own
+  // width how much room it has - it would keep the grid it first chose when
+  // the window widens. Measure the room here instead: the whole showcase,
+  // less the canvas and the band's gap when they sit side by side.
+  let showcaseW = $state(0);
+  let compactCanvasW = $state(0);
+  let bandEl: HTMLElement | undefined = $state();
+  const stripRoom = $derived.by(() => {
+    if (!bandEl || !showcaseW) return undefined;
+    const style = getComputedStyle(bandEl);
+    if (style.flexDirection === "column") return showcaseW;
+    return showcaseW - compactCanvasW - (parseFloat(style.columnGap) || 0);
+  });
   let near = $state(false);
   let inView = $state(false);
 
@@ -172,6 +192,7 @@
   let liveStep = $state(0);
   function handleStepChange(step: number) {
     liveStep = step;
+    onStepChange?.(step);
   }
   const totalBeats = $derived(curSequence?.steps?.length ?? 0);
   const activeT = $derived.by(() => {
@@ -281,6 +302,7 @@
   class:pair={variant === "pair"}
   class:has-strip={!!strip}
   bind:this={rootEl}
+  bind:clientWidth={showcaseW}
 >
   {#if variant === "pair"}
     <!-- Text on top, then the canvas and the pictograph that draws the whole
@@ -311,8 +333,12 @@
   {:else if variant === "compact"}
     <!-- One tight band: canvas | (label over strip). Hugs its content and
          centres - a caption-sized label gets no empty text column. -->
-    <div class="compact-band">
-      <div class="canvas-box" class:in-view={inView}>
+    <div class="compact-band" bind:this={bandEl}>
+      <div
+        class="canvas-box"
+        class:in-view={inView}
+        bind:clientWidth={compactCanvasW}
+      >
         {@render player()}
       </div>
       <div class="compact-right">
@@ -328,6 +354,7 @@
             {picTheme}
             startAside={text}
             {activeBeat}
+            availableWidth={stripRoom}
           />
         {/if}
       </div>

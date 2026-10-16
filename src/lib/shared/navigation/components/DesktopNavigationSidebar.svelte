@@ -248,7 +248,7 @@
           isMain: true,
           sections: [],
         }))
-      : modules.map((module) => ({
+      : modules.map((module: ModuleDefinition) => ({
           ...module,
           opensOnTap: module.home !== undefined,
         }))

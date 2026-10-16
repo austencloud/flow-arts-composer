@@ -345,6 +345,7 @@
             effect,
             params: resolvedSmoke,
             qualityTier,
+            collisionFloorY: userProportionsState.groundY,
           };
           break;
         case "ink":
@@ -419,6 +420,9 @@
       case "smoke":
         source.params = resolvedSmoke;
         source.qualityTier = qualityTier;
+        pooledPosition.set(0, userProportionsState.groundY, 0);
+        if (effectsParentRef) effectsParentRef.localToWorld(pooledPosition);
+        source.collisionFloorY = pooledPosition.y;
         break;
       case "ink":
         source.params = resolvedInk;

@@ -56,9 +56,6 @@ export function mountPropSvg(target: HTMLElement, initial: PropSvgFrame) {
       );
       return Number(match?.[1]);
     },
-    transitionsOff(): boolean {
-      return prop().classList.contains("no-transition");
-    },
     destroy(): void {
       unmount(component);
     },

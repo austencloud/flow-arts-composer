@@ -3,7 +3,7 @@
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import TakeTimingLane from "./TakeTimingLane.svelte";
-  import type { PostTimingSession } from "./post-timing-session.svelte";
+  import type { PostTimingSession } from "./post-timing-session.svelte.js";
   import TypeableValue from "#lib/shared/ui/components/TypeableValue.svelte";
   import { formatTakeClock, parseClock } from "./post-builder-format";
 
@@ -114,7 +114,12 @@
         <select
           aria-label="Playback speed"
           value={session.speed}
-          onchange={(event) => (session.speed = event.currentTarget.value)}
+          onchange={(event) => {
+            const speed = event.currentTarget.value;
+            if (speed === "1" || speed === "0.75" || speed === "0.5") {
+              session.speed = speed;
+            }
+          }}
         >
           <option value="1">1×</option><option value="0.75">¾×</option><option
             value="0.5">½×</option

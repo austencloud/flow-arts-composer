@@ -5,6 +5,7 @@ import { detectSiteMode } from "../../src/config/domains";
 import { GUIDE_BODY_PAGES } from "../../src/routes/(public)/guide/level-1/_data/guide-manifest";
 import { TIMING_DIRECTION_ARTICLE_SLUGS } from "../../src/routes/(public)/timing-and-direction/_data/timing-direction-articles";
 import { TRICK_NAMES } from "../../src/routes/(public)/tricks/_data/trick-names";
+import { isPropKey } from "../../src/routes/(public)/notation/props/props-content";
 
 vi.mock("@capacitor/core", () => ({
   Capacitor: { isNativePlatform: () => false },
@@ -25,6 +26,9 @@ function resolves(href: string): boolean {
   if (tnd) return TIMING_DIRECTION_ARTICLE_SLUGS.includes(tnd[1]!);
   const guide = path.match(/^\/guide\/level-1\/(.+)$/);
   if (guide) return GUIDE_BODY_PAGES.some((page) => page.id === guide[1]);
+  // The props page picks its panel from the hash (#clubs, #buugeng-chirality).
+  if (path === "/notation/props")
+    return !anchor || isPropKey(anchor.split("-")[0] ?? "");
   const file = `src/routes/(public)${path}/+page.svelte`;
   if (!existsSync(file)) return false;
   return !anchor || readFileSync(file, "utf8").includes(`id="${anchor}"`);

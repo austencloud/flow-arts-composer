@@ -25,6 +25,7 @@ export type LandingMark =
   | "hero:activate"
   /** The player chunk finished importing and reported itself loaded. */
   | "hero:player-loaded"
+  | "hero:canvas-ready"
   /** The background's first frame reached the canvas. */
   | "background:first-frame";
 
@@ -70,6 +71,5 @@ export function readLandingMarks(): Record<string, number> {
  */
 export function installLandingMarkReader(): void {
   if (typeof window === "undefined") return;
-  (window as unknown as Record<string, unknown>).__tkaMarks =
-    readLandingMarks;
+  (window as unknown as Record<string, unknown>).__tkaMarks = readLandingMarks;
 }

@@ -105,7 +105,8 @@ workspace spec, the main gallery next — one component, never a copy.
   }
 
   function fallbackDuration(): number {
-    return typeof document !== "undefined" && document.startViewTransition
+    return typeof document !== "undefined" &&
+      typeof document.startViewTransition === "function"
       ? 0
       : DURATION.emphasis;
   }

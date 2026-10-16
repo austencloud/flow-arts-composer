@@ -5,6 +5,12 @@ export interface SVGPathData {
 	d: string;
 	/** Index into prop's tip points array - matches trail system tipIndex */
 	tipIndex: number;
+	/**
+	 * The on-curve points the path passes through, one list per beat, in
+	 * order; each beat's list starts where the one before ended. A change
+	 * morph reads them to move only the beats an edit changed.
+	 */
+	beats?: readonly (readonly MandalaPoint[])[];
 }
 
 /** Mandala color mode: fixed two-color pair, or animated flow morph. */
