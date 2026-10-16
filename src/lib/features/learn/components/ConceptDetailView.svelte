@@ -19,6 +19,7 @@ Supports two navigation modes:
     getConceptExperience,
     getLoadedConceptExperience,
     getNextConceptExperience,
+    getPreviousConceptExperience,
     isConceptExperienceAvailable,
     loadConceptExperience,
     type ConceptExperienceComponent,
@@ -31,7 +32,10 @@ Supports two navigation modes:
   } from "../services/learn-events";
   import ConceptTopicReading from "./ConceptTopicReading.svelte";
   import { claimedViewTransitionName } from "#lib/shared/transitions/claimed-view-transition-name.js";
-  import { isLessonMorphRunning } from "../services/lesson-open-morph.svelte";
+  import {
+    continueLessonWithMorph,
+    isLessonMorphRunning,
+  } from "../services/lesson-open-morph.svelte";
   import GridMergeAnimation from "./interactive/grid-merge/GridMergeAnimation.svelte";
   import {
     createLiveLessonBoard,
@@ -96,8 +100,14 @@ Supports two navigation modes:
       .then((component) => {
         if (!current) return;
         if (component) loadedExperience = { conceptId, component };
-        const next = getNextConceptExperience(conceptId);
-        return next ? loadConceptExperience(next.conceptId) : undefined;
+        // Warm both neighbours, so Continue and Previous morph right away.
+        const neighbours = [
+          getNextConceptExperience(conceptId),
+          getPreviousConceptExperience(conceptId),
+        ].filter((entry) => entry !== undefined);
+        return Promise.all(
+          neighbours.map((entry) => loadConceptExperience(entry.conceptId))
+        );
       })
       .catch(() => undefined);
     return () => {
@@ -178,9 +188,13 @@ Supports two navigation modes:
     // Continue sits below the board, so keeping the scroll would land the
     // board off screen. The flight starts from the captured spot on screen.
     if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: "instant" });
-    // Set before the lesson changes, so the next one mounts knowing it.
-    arrivedFrom = concept.id;
-    onContinue?.(next, getConceptPlaceIdForLesson(next.id));
+    const from = concept.id;
+    // The heading and controls turn into the next lesson's (lesson-open-morph).
+    continueLessonWithMorph(next.id, () => {
+      // Set before the lesson changes, so the next one mounts knowing it.
+      arrivedFrom = from;
+      onContinue?.(next, getConceptPlaceIdForLesson(next.id));
+    });
   }
 
   function handlePrevious(conceptId: string) {
