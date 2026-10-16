@@ -56,17 +56,22 @@
   export function captureSettings() {
     const model =
       PROP_MODEL_REGISTRY[props.propType as keyof typeof PROP_MODEL_REGISTRY];
+    const loadedPropPaths = performance
+      .getEntriesByType("resource")
+      .map((entry) => entry.name)
+      .filter((path) =>
+        new URL(path, location.href).pathname.startsWith("/models/props/")
+      );
     return {
       rigPath: getCharacterModelPath(props.character),
-      propPaths: model
-        ? [
-            ...new Set(
-              [model.modelUrl, model.rightHandModelUrl].filter(
-                (path): path is string => typeof path === "string"
-              )
-            ),
-          ]
-        : [],
+      propPaths: [
+        ...new Set(
+          [
+            ...(model ? [model.modelUrl, model.rightHandModelUrl] : []),
+            ...loadedPropPaths,
+          ].filter((path): path is string => typeof path === "string")
+        ),
+      ],
       motionOptions: {
         bodyClearance: null,
         enableLocomotion: true,
