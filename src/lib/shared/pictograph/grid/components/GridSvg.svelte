@@ -581,7 +581,13 @@ Pure reactive approach - grid mode determines styling, rotation provides animati
   // SKEWED mode: no rotation needed (shows all 8 positions without rotation)
   $effect(() => {
     // First render - set initial rotation without animation
-    if (rotationOverride !== null) return;
+    if (rotationOverride !== null) {
+      // The caller's clock owns the turn. Rest where it leaves the grid so
+      // the mode change it drew does not play a second time afterwards.
+      cumulativeRotation = rotationOverride;
+      previousGridMode = gridMode;
+      return;
+    }
     if (previousGridMode === null) {
       // SKEWED mode: no rotation (already shows all positions)
       // BOX mode: 45° rotation

@@ -2,25 +2,14 @@ import { render } from "vitest-browser-svelte";
 import { describe, it, expect, vi } from "vitest";
 import { flushSync } from "svelte";
 
-// PropSvg's fade-on-swap logic reads only `propAssets.imageSrc`. It does not
-// touch app settings or the visibility manager (those feed mirroring/transform
-// only). Stub both so the test doesn't drag in the entire app dependency graph
+// PropSvg's fade-on-swap logic reads only `propAssets.imageSrc`. App settings
+// feed mirroring only. Stub them so the test doesn't drag in the entire app dependency graph
 // (firebase, posthog, capacitor, dexie) — which would make this test slow and
 // flaky under Vite's cold dep-optimize. Isolating the unit keeps it lean.
 const mockSettings = vi.hoisted(() => ({}) as Record<string, unknown>);
 vi.mock("../../../application/state/app-state.svelte", () => ({
   getSettings: () => mockSettings,
 }));
-vi.mock(
-  "../../../animation-engine/state/animation-visibility-state.svelte",
-  () => ({
-    getAnimationVisibilityManager: () => ({
-      isTransforming: () => false,
-      registerObserver: () => {},
-      unregisterObserver: () => {},
-    }),
-  })
-);
 
 import PropSvg from "./PropSvg.svelte";
 import {
@@ -73,7 +62,6 @@ describe("PropSvg fade-on-swap regression", () => {
       motionData,
       propAssets: assets(SVG_A),
       propPosition,
-      cellIndex: null,
     });
 
     // Real content swap A -> B triggers the brief fade.
@@ -81,7 +69,6 @@ describe("PropSvg fade-on-swap regression", () => {
       motionData,
       propAssets: assets(SVG_B),
       propPosition,
-      cellIndex: null,
     });
     flushSync();
     expect(propGroup()?.classList.contains("prop-fading")).toBe(true);
@@ -92,7 +79,6 @@ describe("PropSvg fade-on-swap regression", () => {
       motionData,
       propAssets: assets(SVG_B),
       propPosition,
-      cellIndex: null,
     });
     flushSync();
 
@@ -103,7 +89,7 @@ describe("PropSvg fade-on-swap regression", () => {
   });
 });
 
-describe("PropSvg orientation transitions", () => {
+describe("PropSvg paints the prepared angle", () => {
   async function rerenderOrientation(
     fromOrientation: Orientation,
     fromRotation: number,
@@ -136,7 +122,7 @@ describe("PropSvg orientation transitions", () => {
     flushSync();
   }
 
-  it("animates a left-arrow center change counterclockwise", async () => {
+  it("lands a center change on the prepared angle, not a wrapped one", async () => {
     await rerenderOrientation(
       Orientation.CENTER_N,
       270,
@@ -148,7 +134,7 @@ describe("PropSvg orientation transitions", () => {
     expect(propTransform()).not.toContain("rotate(585deg)");
   });
 
-  it("animates a right-arrow center change clockwise", async () => {
+  it("lands a clockwise center change on the prepared angle", async () => {
     await rerenderOrientation(
       Orientation.CENTER_N,
       270,
@@ -159,7 +145,7 @@ describe("PropSvg orientation transitions", () => {
     expect(propTransform()).toContain("rotate(315deg)");
   });
 
-  it("uses the selected direction for interradial changes", async () => {
+  it("lands an interradial change on the prepared angle", async () => {
     await rerenderOrientation(Orientation.IN, 90, Orientation.CLOCK_IN, 45);
 
     expect(propTransform()).toContain("rotate(45deg)");
