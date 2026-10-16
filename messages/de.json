@@ -4977,6 +4977,8 @@
   "browse_audit_new_matches_join": "Neue passende Sequenzen werden dieser Sammlung automatisch hinzugefügt.",
   "browse_audit_no_limit": "Ohne Begrenzung",
   "browse_audit_no_public_sequences": "Diese Sammlung enthält derzeit keine öffentlichen Sequenzen.",
+  "browse_audit_collection_unavailable_title": "Diese Sammlung ist nicht verfügbar",
+  "browse_audit_collection_unavailable_hint": "Sie ist vielleicht privat, oder ihr Besitzer hat sie gelöscht.",
   "browse_audit_no_turn_limit_matches": "Keine Drehungsbegrenzung, {count} Treffer",
   "browse_audit_one_match": "{count} Treffer",
   "browse_audit_one_sequence": "{count} Sequenz",

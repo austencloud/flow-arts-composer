@@ -5640,6 +5640,8 @@
   "browse_audit_new_matches_join": "New matching sequences join this collection automatically.",
   "browse_audit_no_limit": "No limit",
   "browse_audit_no_public_sequences": "This collection doesn't have any public sequences right now.",
+  "browse_audit_collection_unavailable_title": "This collection isn't available",
+  "browse_audit_collection_unavailable_hint": "It may be private, or its owner may have deleted it.",
   "browse_audit_no_turn_limit_matches": "No turn limit, {count} matches",
   "browse_audit_one_match": "{count} match",
   "browse_audit_one_sequence": "{count} sequence",
