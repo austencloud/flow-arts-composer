@@ -2,7 +2,8 @@ param(
     [string]$ArchiveDirectory = '',
     [string]$EngineRoot = 'C:\Program Files\Epic Games\UE_5.8',
     [string]$CompilerVersion = '',
-    [string]$CaptureDirectory = ''
+    [string]$CaptureDirectory = '',
+    [ValidateRange(1, 16)][int]$MaxParallelActions = 4
 )
 $ErrorActionPreference = 'Stop'
 $project = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
@@ -20,7 +21,10 @@ if ($LASTEXITCODE -ne 0) { throw "Museum imported playback verification failed (
 $bundleTool = Join-Path $PSScriptRoot '..\..\Shared\Tools\performance-bundle.mjs'
 & node $bundleTool verify --project $project
 if ($LASTEXITCODE -ne 0) { throw "Museum performance bundle verification failed ($LASTEXITCODE)" }
-$ubt = '-WaitMutex -MaxParallelActions=4 -NoUBA'
+$libraryTool = Join-Path $PSScriptRoot '..\..\Shared\Tools\performance-library.mjs'
+& node $libraryTool build --project $project
+if ($LASTEXITCODE -ne 0) { throw "Museum performance library export failed ($LASTEXITCODE)" }
+$ubt = "-WaitMutex -MaxParallelActions=$MaxParallelActions -NoUBA"
 if ($CompilerVersion) { $ubt += " -CompilerVersion=$CompilerVersion" }
 & $uat BuildCookRun "-project=$file" -noP4 -platform=Win64 -clientconfig=Development -build -skipbuildeditor -cook -stage -package -archive -pak "-archivedirectory=$ArchiveDirectory" "-ubtargs=$ubt"
 if ($LASTEXITCODE -ne 0) { throw "Museum package failed ($LASTEXITCODE)" }
@@ -37,4 +41,6 @@ if ($json.version -ne 1 -or $json.rooms.Count -lt 20 -or $json.exhibits.Count -l
 if ($LASTEXITCODE -ne 0) { throw "Museum packaged playback verification failed ($LASTEXITCODE)" }
 & node $bundleTool verify --project $project --packaged-data (Split-Path -Parent $staged)
 if ($LASTEXITCODE -ne 0) { throw "Museum packaged performance bundle verification failed ($LASTEXITCODE)" }
+& node $libraryTool verify --project $project --packaged-data (Split-Path -Parent $staged)
+if ($LASTEXITCODE -ne 0) { throw "Museum packaged performance library verification failed ($LASTEXITCODE)" }
 Write-Host "MUSEUM_PACKAGE_OK $exe"

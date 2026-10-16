@@ -13,7 +13,11 @@ public class FlowArtsRuntime : ModuleRules
 
         PrivateDependencyModuleNames.AddRange(new[]
         {
-            "AnimationCore", "Json"
+            "AnimationCore", "Json", "Slate", "SlateCore", "InputCore", "ApplicationCore"
         });
+        if (Target.Platform == UnrealTargetPlatform.Win64)
+        {
+            PublicSystemLibraries.Add("bcrypt.lib");
+        }
     }
 }

@@ -66,6 +66,10 @@ public:
     UFUNCTION(BlueprintPure, Category="Flow Fest|Avatar")
     float GetPerformanceLength() const;
 
+    /** Active native clip profile, or None after playback stops. */
+    UFUNCTION(BlueprintPure, Category="Flow Fest|Avatar")
+    FName GetPerformanceProfile() const;
+
     UFUNCTION(BlueprintPure, Category="Flow Fest|Avatar")
     float GetPerformancePhase() const;
 
@@ -75,6 +79,23 @@ public:
 
     UFUNCTION(BlueprintCallable, Category="Flow Fest|Avatar")
     void SetPerformanceRate(float Rate);
+
+    UFUNCTION(BlueprintCallable, Category="Flow Fest|Avatar")
+    void SetPerformancePaused(bool bPaused);
+
+    UFUNCTION(BlueprintPure, Category="Flow Fest|Avatar")
+    bool IsPerformancePaused() const;
+
+    /** Seek in clip seconds; clamps to the clip bounds and settles old blends. */
+    UFUNCTION(BlueprintCallable, Category="Flow Fest|Avatar")
+    void SeekPerformance(float Seconds);
+
+    UFUNCTION(BlueprintPure, Category="Flow Fest|Avatar")
+    float GetPerformanceRate() const;
+
+    /** Return to the first frame and resume playback. */
+    UFUNCTION(BlueprintCallable, Category="Flow Fest|Avatar")
+    void RestartPerformance();
 
     /** The avatar's post-mesh tick samples the paired prop on the same clock. */
     void BindPerformanceProp(UFlowFestPropComponent* Prop);

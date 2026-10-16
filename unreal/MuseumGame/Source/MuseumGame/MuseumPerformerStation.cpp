@@ -17,8 +17,6 @@ bool AMuseumPerformerStation::Fail(const FString& Reason)
 {
     Failure = Reason;
     bReady = false;
-    bPlaying = false;
-    bPaused = false;
     if (Avatar) Avatar->SetPresentation(false, false);
     if (Prop) Prop->SetVisible(false);
     UE_LOG(LogTemp, Error, TEXT("Museum performer %s (%s, profile %s): %s"),
@@ -67,47 +65,44 @@ bool AMuseumPerformerStation::Configure(const FString& InId, const FString& InLa
 bool AMuseumPerformerStation::StartPlayback()
 {
     if (!bReady) return false;
-    if (USkeletalMeshComponent* Body = Avatar->GetBodyMesh()) Body->bPauseAnims = false;
-    Avatar->SetComponentTickEnabled(true);
-    Prop->SetComponentTickEnabled(true);
     if (!Avatar->PlayPerformance(PerformanceProfile, true))
         return Fail(TEXT("exact authored body clip is missing"));
     Avatar->SetPerformanceRate(PlaybackRate);
+    Avatar->SetPerformancePaused(false);
     Prop->SetPerformanceTime(Avatar->GetPerformanceTime());
-    bPlaying = true;
-    bPaused = false;
     return true;
 }
 
 void AMuseumPerformerStation::TogglePlayback()
 {
     if (!bReady) return;
-    if (!bPlaying) { StartPlayback(); return; }
-    bPaused = !bPaused;
-    if (USkeletalMeshComponent* Body = Avatar->GetBodyMesh()) Body->bPauseAnims = bPaused;
-    Avatar->SetComponentTickEnabled(!bPaused);
-    Prop->SetComponentTickEnabled(!bPaused);
+    if (Avatar->GetPerformanceLength() <= 0.f) { StartPlayback(); return; }
+    Avatar->SetPerformancePaused(!Avatar->IsPerformancePaused());
 }
 
 void AMuseumPerformerStation::RestartPlayback()
 {
     if (!bReady) return;
-    if (!bPlaying) { StartPlayback(); return; }
-    if (USkeletalMeshComponent* Body = Avatar->GetBodyMesh()) Body->bPauseAnims = false;
-    Avatar->SetComponentTickEnabled(true);
-    Prop->SetComponentTickEnabled(true);
-    Avatar->SetPerformancePhase(0.f);
-    Avatar->SetPerformanceRate(PlaybackRate);
-    Prop->SetPerformanceTime(0.f);
-    bPaused = false;
+    if (Avatar->GetPerformanceLength() <= 0.f) { StartPlayback(); return; }
+    Avatar->RestartPerformance();
 }
 
 FString AMuseumPerformerStation::GetPlaybackStatus() const
 {
     if (!Failure.IsEmpty()) return FString::Printf(TEXT("Unavailable: %s"), *Failure);
     if (!bReady) return TEXT("Unavailable");
-    if (!bPlaying) return TEXT("Ready");
-    return bPaused ? TEXT("Paused") : TEXT("Playing");
+    if (Avatar->GetPerformanceLength() <= 0.f) return TEXT("Ready");
+    return Avatar->IsPerformancePaused() ? TEXT("Paused") : TEXT("Playing");
+}
+
+bool AMuseumPerformerStation::IsPlaying() const
+{
+    return bReady && Avatar && Avatar->GetPerformanceLength() > 0.f && !Avatar->IsPerformancePaused();
+}
+
+bool AMuseumPerformerStation::IsPaused() const
+{
+    return bReady && Avatar && Avatar->GetPerformanceLength() > 0.f && Avatar->IsPerformancePaused();
 }
 
 float AMuseumPerformerStation::GetPlaybackPhase() const
