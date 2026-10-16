@@ -11,9 +11,9 @@
   import Viewer3DCanvas from "#lib/shared/3d/components/Viewer3DCanvas.svelte";
   import { setViewer3DContext } from "#lib/shared/3d/context/viewer-3d-context.js";
   import {
-    SmokeVolumeRenderer3D,
-    type SmokeVolumeRendererDiagnostic3D,
-  } from "#lib/shared/3d/effects/smoke/smoke-volume-renderer-3d.js";
+    SmokeFluidRenderer3D,
+    type SmokeFluidDiagnostic3D,
+  } from "#lib/shared/3d/effects/smoke/smoke-fluid-renderer-3d.js";
   import { createScene3DRenderState } from "#lib/shared/3d/scene-features/state/scene-3d-render-state.svelte.js";
   import { setScene3DRenderContext } from "#lib/shared/3d/scene-features/state/scene-3d-render-context.js";
   import { createViewer3DState } from "#lib/shared/3d/state/viewer-3d-state.svelte.js";
@@ -93,7 +93,7 @@
   let activePresetId = $state(SMOKE_PRESETS[0]?.id ?? "smoke-classic");
   let performerCount = $state<1 | 4 | 8>(1);
   let stageReady = $state(false);
-  let diagnostic = $state<SmokeVolumeRendererDiagnostic3D | null>(null);
+  let diagnostic = $state<SmokeFluidDiagnostic3D | null>(null);
   let generator: InfiniteSequenceGenerator | null = null;
   let generationToken = 0;
   let animationFrame = 0;
@@ -201,7 +201,7 @@
   }
 
   onMount(() => {
-    stopDiagnostics = SmokeVolumeRenderer3D.observeDiagnostics((snapshot) => {
+    stopDiagnostics = SmokeFluidRenderer3D.observeDiagnostics((snapshot) => {
       const now = performance.now();
       if (now - lastDiagnosticAt < 180) return;
       lastDiagnosticAt = now;
@@ -299,39 +299,31 @@
 
     <aside class="telemetry" aria-label="Smoke renderer telemetry">
       <div>
-        <span>Bricks</span><strong>{diagnostic?.activeBricks ?? 0}</strong>
+        <span>Domains</span><strong>{diagnostic?.domains ?? 0}</strong>
       </div>
       <div>
-        <span>Sources</span><strong>{diagnostic?.sourceCount ?? 0}</strong>
+        <span>Steps</span><strong>{diagnostic?.steps ?? 0}</strong>
       </div>
       <div>
-        <span>Ray steps</span><strong>{diagnostic?.raySteps ?? 0}</strong>
+        <span>Cells</span><strong>{diagnostic?.occupied ?? 0}</strong>
       </div>
       <div>
-        <span>Density</span>
-        <strong>{diagnostic ? diagnostic.densitySum.toFixed(1) : "—"}</strong>
+        <span>Smoke</span>
+        <strong>{diagnostic ? diagnostic.total.toFixed(0) : "—"}</strong>
+      </div>
+      <div>
+        <span>Densest</span>
+        <strong>{diagnostic ? diagnostic.max.toFixed(2) : "—"}</strong>
       </div>
       <div>
         <span>Flow</span>
-        <strong
-          >{diagnostic
-            ? `${Math.sqrt(diagnostic.velocityEnergy).toFixed(2)} m/s`
-            : "—"}</strong
-        >
+        <strong>{diagnostic ? `${diagnostic.speed.toFixed(2)} m/s` : "—"}</strong>
       </div>
       <div>
-        <span>Wake</span>
+        <span>Height</span>
         <strong
-          >{diagnostic
-            ? `${diagnostic.wakeDistance.toFixed(2)} m`
-            : "—"}</strong
-        >
-      </div>
-      <div>
-        <span>CPU sim</span>
-        <strong
-          >{diagnostic
-            ? `${diagnostic.simulationCpuMs.toFixed(1)} ms`
+          >{diagnostic?.centroidWorld
+            ? `${diagnostic.centroidWorld.y.toFixed(2)} m`
             : "—"}</strong
         >
       </div>

@@ -244,8 +244,6 @@ export interface SmokeVolumeProfile3D {
   density: number;
   /** Fraction of density lost per second. */
   dissipation: number;
-  /** Heat added with density, which becomes upward motion. */
-  temperature: number;
   /** Strength of rotational detail restored after advection. */
   vorticity: number;
   /** Sideways impulse applied at injection. */
