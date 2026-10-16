@@ -20,10 +20,18 @@ Two compositions considered before implementation:
    The row keeps save state accessible during editing; the modal gives the recovery
    decision enough space without permanently shrinking the sequence grid.
 
-Use the second composition with the existing BaseModal and StepGrid. Keep each
-version's word, step count, date, pictographs, and Continue action together. Keep
-the editor mounted during errors and recovery. Closing the dialog leaves a visible
-Review action; it does not discard the drafts or resolve a conflict.
+The initial reserved status row took too much editing space. After user review on
+2026-10-15, draft access moved beside Save in the existing workspace controls.
+On narrow screens Save uses its icon so both controls fit the same row. Empty
+workspaces keep draft access beside the existing clear-recovery controls; compact
+Assemble places Drafts beside Clear in its action rail so Play keeps its space.
+Normal saving adds no row or height to the editor.
+Only a failed save or unresolved recovery/conflict shows the inline warning.
+
+The chooser uses the existing BaseModal and StepGrid. Keep each version's word,
+step count, date, pictographs, and Continue action together. Keep the editor
+mounted during errors and recovery. Closing the dialog leaves a visible Review
+action; it does not discard the drafts or resolve a conflict.
 
 ## Acceptance evidence
 
@@ -66,6 +74,19 @@ data-loss or mode-isolation blocker.
 Evidence was retained outside the disposable worktree in
 `C:/Users/Austen/AppData/Local/Temp/draft-recovery-evidence/`. Final recovery and
 restored-editor captures are `08-recovery-final.png` and `09-restored-final.png`.
+
+### Compact controls follow-up
+
+Verified the corrected controls on 2026-10-15 at 1440×900, 375×667,
+960×412, and Assemble's narrow 350px/360px breakpoint. Normal saving creates
+no status row. Drafts opens the chooser from both the workspace controls and
+Assemble's compact rail, and remains available in empty Construct and Generate.
+A simulated primary-storage failure showed Retry; a successful retry removed
+the warning. Moving Drafts beside Clear in compact Assemble resolved a 5px
+overlap between Play and Actions at 360px. The final rail has 44px action targets
+and a 50px Play target without overlap. Captures are `13-compact-desktop.png`,
+`14-compact-phone.png`, `16-compact-empty-phone.png`, and
+`22-compact-assemble-fixed.png` in the evidence directory above.
 
 ## Limits
 
