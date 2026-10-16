@@ -60,28 +60,38 @@ export function cacheFor(source: ArtSource): ArtCache {
   return cache;
 }
 
+/** Node's fs, loaded only when art is read from disk, so browsers never ask for it. */
+const nodeFs = () => import("node:fs");
+
+/** A file's text, or null when it does not exist. */
+function readFileOrNull(fs: typeof import("node:fs"), file: string | URL): string | null {
+  try {
+    return fs.readFileSync(file, "utf-8");
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+    throw error;
+  }
+}
+
 /** Reads art from a folder on disk. Node only. */
 export async function fsArtSource(root: string): Promise<ArtSource> {
-  const fs = await import("node:fs");
+  const fs = await nodeFs();
   const base = root.replace(/[\\/]+$/, "");
-  const readSync = (path: string): string | null => {
-    try {
-      return fs.readFileSync(`${base}/${path}`, "utf-8");
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
-      throw error;
-    }
-  };
+  const readSync = (path: string) => readFileOrNull(fs, `${base}/${path}`);
   return { readSync, read: async (path) => readSync(path) };
 }
 
-/** Fetches art from a base URL. A 404 is absent art; any other failure throws. */
+/**
+ * Fetches art from a base URL. A 404 is absent art; any other failure throws.
+ * A file: URL, which Node's fetch cannot read, is read from disk instead.
+ */
 export function urlArtSource(base: string | URL): ArtSource {
   const root = new URL(base);
   if (!root.pathname.endsWith("/")) root.pathname += "/";
   return {
     async read(path) {
       const url = new URL(path.split("/").map(encodeURIComponent).join("/"), root);
+      if (url.protocol === "file:") return readFileOrNull(await nodeFs(), url);
       const response = await fetch(url);
       if (response.status === 404) return null;
       if (!response.ok) throw new Error(`Pictograph art ${path}: HTTP ${response.status}`);

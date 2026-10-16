@@ -19,3 +19,16 @@ describe("renderPictographSvg matches the knowledge server's renderer before the
     expect(svg).toBe(baselineSvg(name));
   });
 });
+
+describe("the default art source", () => {
+  it("reads the packaged art from disk when running in Node", async () => {
+    const [first] = cases;
+    const svg = await renderPictographSvg(first.input, {
+      darkMode: true,
+      showTKA: true,
+      leftPropType: first.prop,
+      rightPropType: first.prop,
+    });
+    expect(svg).toBe(baselineSvg(first.name));
+  });
+});
