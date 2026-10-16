@@ -33,6 +33,7 @@ public:
     UPROPERTY(BlueprintReadOnly) EFlowFestCamp Camp = EFlowFestCamp::None;
     UPROPERTY(BlueprintReadOnly) EFlowFestJam Jam = EFlowFestJam::NotStarted;
     UPROPERTY(BlueprintReadOnly) float Energy = 100.f;
+    UPROPERTY(BlueprintReadOnly) float Hunger = 15.f;
     UPROPERTY(BlueprintReadOnly) bool bInVehicle = false;
     UPROPERTY(BlueprintReadOnly) bool bOnEUC = false;
     UPROPERTY(BlueprintReadOnly) bool bPhotoFly = false;
@@ -49,6 +50,7 @@ public:
     FString GetInteractHint() const;
     FString GetModeLabel() const;
     FString GetNotice() const;
+    FString GetNearbyIntent() const;
     FVector GetObjectiveLocation() const;
     float GetObjectiveDistanceMeters() const;
     AFlowFestWorld* GetFestivalWorld() const { return FestivalWorld.Get(); }
@@ -77,6 +79,8 @@ private:
     float SaveNoticeUntil = 0.f;
     FString SaveNotice;
     float JamSpinSeconds = 0.f;
+    EFlowFestVisitorAction VisitorAction = EFlowFestVisitorAction::None;
+    float VisitorActionRemaining = 0.f;
     bool bInitialPlacementDone = false;
     bool bWardrobeOpen = false;
     bool bSoundEnabled = true;
@@ -87,6 +91,8 @@ private:
     TArray<FFlowFestChoice> PropChoices;
     FRotator PreWardrobeView;
     bool bReviewMode = false;
+    bool bLibraryReview = false;
+    bool bLibraryReviewOpened = false;
     bool bCaptureRequested = false;
     bool bCaptureReady = false;
     bool bAutoExit = false;
@@ -106,6 +112,8 @@ private:
     FString ReviewSite;
     FString Showcase;
     bool bShowcaseStarted = false;
+    bool bShowcaseStopped = false;
+    float ShowcaseStopAt = 0.f;
     FString CapturePath;
     FString ActiveCapturePath;
     int32 CaptureFrames = 1;
@@ -131,6 +139,11 @@ private:
     void LookX(float Value);
     void LookY(float Value);
     void Interact();
+    bool TryVisitorActivity();
+    void GreetNearby();
+    void EndVisitorActivity();
+    void TickVisitorActivity(float DeltaSeconds);
+    FString VisitorActivityHint() const;
     void SelectOne();
     void SelectTwo();
     void SelectThree();
@@ -140,6 +153,9 @@ private:
     void ToggleEUC();
     void ToggleStaff();
     void CyclePerformance();
+    void OpenPerformanceLibrary();
+    void SyncPerformanceActivity();
+    bool IsFlowPlaying() const;
     void ToggleSound();
     void StopFlow();
     void TravelToObjective();

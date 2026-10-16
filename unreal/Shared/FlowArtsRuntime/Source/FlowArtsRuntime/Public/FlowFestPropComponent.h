@@ -32,6 +32,7 @@ public:
 
     UFUNCTION(BlueprintPure, Category="Flow Fest|Props")
     bool IsReady() const;
+    bool HasVisibleGrip() const { return bVisible && IsReady() && BoundBodyMesh != nullptr; }
 
     UFUNCTION(BlueprintCallable, Category="Flow Fest|Props")
     void SetHandTransforms(FTransform Left, FTransform Right);
