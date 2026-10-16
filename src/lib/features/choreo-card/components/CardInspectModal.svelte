@@ -256,7 +256,7 @@
           {/if}
         {:else}
           <CardPreviewStack
-            {sequence}
+            sequence={sequence ?? null}
             {showWord}
             {includeStartPlacement}
             startPlacementLayout={getCatalogLayoutPolicy(

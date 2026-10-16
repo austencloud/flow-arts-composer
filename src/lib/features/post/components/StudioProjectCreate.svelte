@@ -245,9 +245,10 @@
           type="file"
           accept="video/*,.mp4,.mov,.webm,.m4v"
           aria-label="Choose footage for your showcase"
-          onchange={() => {
-            const file = footageInput.files?.[0];
-            footageInput.value = "";
+          onchange={(event) => {
+            const input = event.currentTarget;
+            const file = input.files?.[0];
+            input.value = "";
             if (file) void createShowcase(file);
           }}
         />
@@ -267,8 +268,8 @@
                 aria-label={`Create a copy of ${entry.title}${entry.subtitle ? `, ${entry.subtitle}` : ""}`}
               >
                 <i class="far fa-copy" aria-hidden="true"></i><span
-                  >{entry.title}{#if entry.subtitle}<small class="template-subtitle"
-                      >{entry.subtitle}</small
+                  >{entry.title}{#if entry.subtitle}<small
+                      class="template-subtitle">{entry.subtitle}</small
                     >{/if}</span
                 ><span class="copy-label"
                   >Create copy <i class="fas fa-arrow-right" aria-hidden="true"

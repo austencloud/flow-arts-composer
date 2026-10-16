@@ -22,6 +22,7 @@ import type { SequenceCoreState } from "../core/sequence-core-state.svelte";
 import type { SequenceSelectionState } from "../selection/sequence-selection-state.svelte";
 import type { ValidationResult } from "#lib/shared/validation/validation-result.js";
 import type { TargetHand } from "../panel-coordination-state.svelte";
+import { announcePictographEdit } from "#lib/shared/pictograph/shared/state/pictograph-edit-motion.svelte.js";
 
 export interface TransformOperationsConfig {
   coreState: SequenceCoreState;
@@ -100,6 +101,7 @@ export function createSequenceTransformOperations(
         );
 
         // Update state immediately - animation starts here
+        announcePictographEdit({ kind: "reflect", axis: "vertical" });
         coreState.setCurrentSequence(transformedSequence);
         const transformedRevision = coreState.currentSequenceRevision;
         if (transformedSequence.startPlacement) {
@@ -148,6 +150,7 @@ export function createSequenceTransformOperations(
         const updatedSequence = SequenceTransformer.swapHands(
           coreState.currentSequence
         );
+        announcePictographEdit({ kind: "swap" });
         coreState.setCurrentSequence(updatedSequence);
 
         // Update selection state with transformed start placement so UI re-renders
@@ -187,6 +190,11 @@ export function createSequenceTransformOperations(
         );
 
         // Update state immediately - animation starts here
+        announcePictographEdit({
+          kind: "rotate",
+          direction,
+          steps: rotationSteps,
+        });
         coreState.setCurrentSequence(transformedSequence);
         const transformedRevision = coreState.currentSequenceRevision;
         if (transformedSequence.startPlacement) {
@@ -329,6 +337,7 @@ export function createSequenceTransformOperations(
         );
 
         // Update state immediately - animation starts here
+        announcePictographEdit({ kind: "reflect", axis: "horizontal" });
         coreState.setCurrentSequence(transformedSequence);
         const transformedRevision = coreState.currentSequenceRevision;
         if (transformedSequence.startPlacement) {
@@ -375,6 +384,7 @@ export function createSequenceTransformOperations(
         );
 
         // Update state immediately - animation starts here
+        announcePictographEdit({ kind: "spin" });
         coreState.setCurrentSequence(transformedSequence);
         const transformedRevision = coreState.currentSequenceRevision;
         if (transformedSequence.startPlacement) {

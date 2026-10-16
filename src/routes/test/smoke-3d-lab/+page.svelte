@@ -1,5 +1,5 @@
 <!--
-  Smoke 3D lab: the production smoke renderers (the volume and its low-tier
+  Smoke 3D lab: the production smoke renderers (the GPU fluid and its low-tier
   sprite fallback) driven by prop tips over a tiled floor, with the app's
   bloom settings, so the smoke can be judged frame by frame without a
   sequence.
@@ -28,7 +28,7 @@
   } from "three";
   import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
   import { ScenePostProcessingPipeline } from "#lib/shared/3d/effects/post-processing/scene-post-processing-pipeline";
-  import { SmokeVolumeRenderer3D } from "#lib/shared/3d/effects/smoke/smoke-volume-renderer-3d";
+  import { SmokeFluidRenderer3D } from "#lib/shared/3d/effects/smoke/smoke-fluid-renderer-3d";
   import { SmokePoolRenderer3D } from "#lib/shared/3d/effects/smoke/smoke-pool-renderer-3d";
   import type { SmokeTipSource3D } from "#lib/shared/3d/effects/scene-effects/scene-effect-source-3d";
   import { QualityTier } from "#lib/shared/3d/effects/types";
@@ -132,7 +132,7 @@
     });
     let bloomShown = bloom;
 
-    const volume = new SmokeVolumeRenderer3D();
+    const volume = new SmokeFluidRenderer3D(renderer);
     volume.initialize(scene);
     const sprites = new SmokePoolRenderer3D();
     sprites.initialize(scene);
@@ -228,10 +228,10 @@
     for (const tip of tips) tip.prev.copy(tip.pos);
 
     function applyView(next: View): void {
-      if (next === "front") camera.position.set(0, 1.55, 4.4);
+      if (next === "front") camera.position.set(0, 1.7, 5.2);
       if (next === "low") camera.position.set(0.9, 0.45, 1.9);
       if (next === "top") camera.position.set(0.01, 4.2, 1.2);
-      controls.target.set(0, next === "low" ? 0.25 : 0.8, 0);
+      controls.target.set(0, next === "low" ? 0.25 : next === "front" ? 1.55 : 0.8, 0);
       controls.update();
     }
     applyView(view);
