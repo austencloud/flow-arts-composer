@@ -32,7 +32,7 @@ export default {
   // them so the advisory run is clean; they are parser false-positives, not bugs.
   ignoreFiles: [
     "src/routes/test/mandala-mobile/+page.svelte",
-    "src/routes/(public)/guide/codex/poster/+page.svelte",
+    "src/routes/(public)/codex/poster/+page.svelte",
     "src/lib/shared/sequence-viewer/components/CardGridLayout.svelte",
     "src/lib/shared/sequence-viewer/components/MandalaExportTakeover.svelte",
     "src/lib/shared/sequence-viewer/components/MandalaPane.svelte",

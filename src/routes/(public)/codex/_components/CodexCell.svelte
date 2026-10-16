@@ -5,7 +5,7 @@
    * printing) pass NOTHING beyond `cell`: they get the exact byte-identical
    * static Double-Staff rendering this component always produced.
    *
-   * The interactive guide reader (GuideCodexPage.svelte) additionally passes
+   * The /codex board (via CodexBox) additionally passes
    * `propType`/`visibility`/`dataOverride`/`onSelect` - the SAME sheet, live:
    * propType re-skins the pictograph, visibility toggles its layers, and
    * `onSelect` makes the cell clickable via the shared sequence-selection
@@ -14,7 +14,7 @@
    * never a hand-rolled button/hover style. No gray fill is added either way -
    * the printable white-paper look is preserved.
    */
-  import GuidePictograph from "../../level-1/_components/GuidePictograph.svelte";
+  import GuidePictograph from "../../guide/level-1/_components/GuidePictograph.svelte";
   import CodexTransitionGlyph from "./CodexTransitionGlyph.svelte";
   import PictographTypeFrame from "#lib/shared/pictograph/shared/components/PictographTypeFrame.svelte";
   import SelectionHit from "#lib/shared/selection/SelectionHit.svelte";

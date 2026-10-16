@@ -9,8 +9,6 @@
   import GlossaryTermDetail from "./GlossaryTermDetail.svelte";
   import KineticAtlasOverview from "./KineticAtlasOverview.svelte";
   import LetterCodex from "./LetterCodex.svelte";
-  import CodexBoardSwitcher from "./codex-boards/CodexBoardSwitcher.svelte";
-  import { readBoard, type BoardKey } from "./codex-boards/board-choice";
   import { mutateCurrentUrl } from "#lib/shared/navigation/services/url-state.js";
   import {
     matchesGlossaryTerm,
@@ -239,16 +237,6 @@
   // the content sits centered instead of shoved right by an 18rem placeholder.
   const landingView = $derived(view === "landing");
 
-  // Which codex board is showing. It lives here, not in LetterCodex, because
-  // its switcher rides in the category header row below rather than claiming a
-  // row of its own - see _components/codex-boards/board-choice.ts. Scaffolding:
-  // this and the switcher come out with the two losing boards.
-  let codexBoard = $state<BoardKey>("atlas");
-  function setCodexBoard(next: BoardKey): void {
-    codexBoard = next;
-    mutateCurrentUrl((url) => url.searchParams.set("board", next));
-  }
-
   const selectedEntry = $derived(
     selected ? (slugToEntry.get(selected) ?? null) : null
   );
@@ -471,7 +459,6 @@
       // URLSearchParams, not new URL(): this module shadows the global URL with
       // the page's canonical href constant.
       const searchParams = new URLSearchParams(window.location.search);
-      codexBoard = readBoard(searchParams.get("board"));
       const slug = window.location.hash.slice(1);
       if (!slug) {
         view = "landing";
@@ -671,20 +658,13 @@
         </button>
         <h2 class="view-title">{viewTitle}</h2>
         <span class="view-count">{viewCountLabel}</span>
-        <!-- A category's own controls ride in this row rather than stacking a
-             second full-width row under it. -->
-        {#if codexView}
-          <div class="view-tools">
-            <CodexBoardSwitcher board={codexBoard} onchange={setCodexBoard} />
-          </div>
-        {/if}
       </div>
     {/if}
 
     {#if codexView}
       <div class="codex-host">
         {#key codexInitialLetter}
-          <LetterCodex initialLetter={codexInitialLetter} board={codexBoard} />
+          <LetterCodex initialLetter={codexInitialLetter} />
         {/key}
       </div>
     {/if}
@@ -1082,9 +1062,6 @@
   }
   /* Pushed to the far end, and allowed to drop to its own line only when the
      row genuinely runs out of width (narrow phones). */
-  .view-tools {
-    margin-left: auto;
-  }
   .back-btn {
     all: unset;
     box-sizing: border-box;

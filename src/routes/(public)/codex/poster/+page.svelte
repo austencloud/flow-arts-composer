@@ -1,16 +1,16 @@
 <!--
-  Codex Wall Poster - dev tool (lives under (public)/guide/codex so it inherits
+  Codex Wall Poster - dev tool (lives under (public)/codex so it inherits
   the bare public layout reset; the root app-shell layout would redirect a
   non-module URL via module-state).
 
   v1 of the printable-for-the-wall direction: the Level 1 guide's Double-Staff
   Codex, re-flowed from the guide's two 8.5×11 sheets into ONE tall single sheet
   you hang on a wall. Reuses the real render wholesale - CodexSheet → CodexBox →
-  CodexCell, fed by the same SHEET1/SHEET2 defs the printable guide/codex route
+  CodexCell, fed by the same SHEET1/SHEET2 defs the printable codex route
   uses - so cell content can never drift from the guide. The only new thing here
   is the tall single-column arrangement + an exact-height print page.
 
-  This IS the prod home (/guide/codex/poster); the toolbar is dev-only chrome to
+  This IS the prod home (/codex/poster); the toolbar is dev-only chrome to
   strip once the tall layout is dialed in.
 -->
 <script lang="ts">
@@ -63,7 +63,7 @@
   <header class="toolbar">
     <div class="title">
       <strong>Codex Wall Poster</strong>
-      <span class="dev">dev tool · reuses guide/codex render</span>
+      <span class="dev">dev tool · reuses codex render</span>
     </div>
     <div class="controls">
       <label class="ctl">

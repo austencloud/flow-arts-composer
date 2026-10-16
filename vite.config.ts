@@ -1117,7 +1117,10 @@ const svelteKitOptions: Parameters<typeof sveltekit>[0] = {
     crawl: true,
     // Each language edition starts from its guide hub; the crawler follows
     // its links and hreflang alternates to the rest.
-    entries: ["*", ...SEO_LOCALES.map((locale) => `/${locale}/guide`)],
+    entries: [
+      "*",
+      ...SEO_LOCALES.flatMap((locale) => [`/${locale}/guide`, `/${locale}/codex`]),
+    ],
     handleHttpError: ({ path, message, status }) => {
       // These generated or synced asset directories can be absent from a
       // clean CI checkout. Ignore only missing assets; a broken page or any

@@ -109,24 +109,6 @@
 
   let clicked = $state<SequenceData | null>(null);
   let companionOpen = $state(false);
-  // Codex mode: the active body page is the interactive Codex sheet (manifest
-  // id "codex"). The companion auto-opens to host its controls (prop family,
-  // visibility, transforms) even before any cell is clicked - see
-  // GuideCodexControls.svelte / guide-codex-state.svelte.ts.
-  const isCodexPage = $derived(
-    config.isCodexSlug(
-      config.bodyPages[activeIndex - config.frontMatterCount]?.id ?? ""
-    )
-  );
-  $effect(() => {
-    if (isCodexPage) {
-      companionOpen = true;
-    } else if (!clicked) {
-      // Leaving the Codex page with nothing animating - close the panel that
-      // was opened purely to host its controls.
-      companionOpen = false;
-    }
-  });
 
   // Golden step ring: the companion animates a clicked strip while THIS signal
   // rings the matching cell on the page's on-screen strip, in sync - the same
@@ -154,7 +136,7 @@
     // 'scroll'/'scrollend' event during the animation via a throttled rAF, so
     // it can land on activeIndex === i mid-transit and never get a final
     // correcting pass if the tab is backgrounded/inactive enough to starve
-    // requestAnimationFrame (observed: isCodexPage - and any page's nav
+    // requestAnimationFrame (observed: a page's nav
     // highlight - can go stale after a nav click otherwise). Calling the pure
     // recompute directly (no rAF) once the smooth scroll should be done closes
     // that gap without touching the scroll-event path at all.
@@ -189,7 +171,7 @@
   // the settle-correction timer in go() can call it directly. If a scroll
   // handler's rAF never gets scheduled (backgrounded/inactive tab throttling
   // can starve it indefinitely), this direct call still lands, so activeIndex
-  // (and anything derived from it, like isCodexPage) can't get stuck stale
+  // (and anything derived from it) can't get stuck stale
   // after a nav click's smooth scroll settles.
   function recomputeActiveIndex() {
     if (!docWrap) return;
@@ -334,13 +316,10 @@
 
   onMount(async () => {
     loadOverrides();
-    // Restore a companion left open before a reload / HMR remount. The Codex
-    // page opens its own companion (isCodexPage effect), so skip there to avoid
-    // fighting it; otherwise re-run the click to reopen the animation drawer.
-    if (!isCodexPage) {
-      const saved = savedCompanion();
-      if (saved) void handleSequenceClick(saved);
-    }
+    // Restore a companion left open before a reload / HMR remount: re-run the
+    // click to reopen the animation drawer.
+    const saved = savedCompanion();
+    if (saved) void handleSequenceClick(saved);
 
     // One-shot physical-book scan handoff (guide-scan-intent.ts): a QR scan
     // stashed a request to reproduce what a tap would do once the reader
@@ -640,7 +619,6 @@
         pageTitle={clickedPageTitle}
         levelLabel={config.levelLabel}
         showPlacementGlyph={clickedShowPlacementGlyph}
-        isCodexMode={isCodexPage}
         {isMobile}
         onStep={(s) => activeStep.report(s)}
         onClose={() => {

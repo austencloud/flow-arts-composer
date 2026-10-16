@@ -14,6 +14,7 @@ vi.mock("#lib/shared/pictograph/prop/services/orientation-calculator.js", () => 
 
 import {
   applyTurnsToVariations,
+  findMatchingVariation,
   motionAllowsFloat,
 } from "./letter-explorer-variations";
 
@@ -75,5 +76,31 @@ describe("applyTurnsToVariations", () => {
 
     expect(motionAllowsFloat(input, HandSide.LEFT)).toBe(false);
     expect(motionAllowsFloat(input, HandSide.RIGHT)).toBe(true);
+  });
+
+  it("keeps a float setting off the hands that cannot float", () => {
+    const [result] = applyTurnsToVariations(
+      [variation("Z-", MotionType.DASH, MotionType.ANTI)],
+      "fl",
+      "fl",
+      CW,
+      CW
+    );
+
+    expect(result?.motions.left?.turns).toBe(0);
+    expect(result?.motions.right?.turns).toBe("fl");
+  });
+});
+
+describe("findMatchingVariation", () => {
+  it("finds the variation drawing the same hands, whatever its order", () => {
+    const first = variation("Z-", MotionType.DASH, MotionType.ANTI);
+    const swapped = {
+      ...first,
+      motions: { left: first.motions.right, right: first.motions.left },
+    } as PictographData;
+
+    expect(findMatchingVariation([first, swapped], swapped)).toBe(1);
+    expect(findMatchingVariation([first], swapped)).toBe(-1);
   });
 });

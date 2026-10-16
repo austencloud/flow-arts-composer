@@ -77,7 +77,6 @@
   import { rotateSequenceGeometry } from "#lib/shared/create/services/sequence-derived-fields.js";
   import OptionPicker from "#lib/features/create/construct/option-picker/components/OptionPicker.svelte";
   import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import GuideCodexControls from "./GuideCodexControls.svelte";
   import { guideTurnDisplayWord } from "../_data/guide-turn-display-word";
   import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
@@ -95,7 +94,6 @@
     stripKey = null,
     pageTitle = "",
     levelLabel = "Level 1",
-    isCodexMode = false,
     isMobile = false,
     showPlacementGlyph = false,
   }: {
@@ -115,10 +113,6 @@
     pageTitle?: string;
     /** Guide level for the Copy-for-AI header prefix ("Level 1" | "Level 2"). */
     levelLabel?: string;
-    /** True while the reader's active page is the interactive Codex sheet -
-     *  renders GuideCodexControls above the player region (or above the "click
-     *  a sequence" hint, if nothing's been clicked yet). */
-    isCodexMode?: boolean;
     /** True in the reader's mobile (≤720px container) layout - the companion
      *  renders as a hero-animator bottom sheet with an overflow region instead
      *  of the desktop right-panel layout. Owned by GuideReader (single source
@@ -516,8 +510,6 @@
 {#snippet animatorOrHint()}
   {#if sequence}
     {#key sequence.id}
-      <!-- In codex mode the animation matches the Version 1 cells beside it
-           instead of the account's version. -->
       <InlineAnimationPlayer
         {sequence}
         displayWord={sequence.word ? guideTurnDisplayWord(sequence.word) : null}
@@ -527,7 +519,6 @@
         externalBpm={bpm}
         leftPropType={propType}
         rightPropType={propType}
-        propLook={isCodexMode ? "pictograph" : undefined}
         {showPlacementGlyph}
         onStepChange={onStep}
       />
@@ -572,9 +563,6 @@
         aria-hidden={!overflowOpen}
         inert={!overflowOpen}
       >
-        {#if isCodexMode}
-          <GuideCodexControls />
-        {/if}
         {@render bpmRow()}
         {@render adminActions(true, true)}
       </div>
@@ -585,7 +573,7 @@
   {:else}
     <div class="head">
       <span class="ttl"
-        >{isCodexMode && !sequence ? "Codex" : t("guide_paths_animation")}</span
+        >{t("guide_paths_animation")}</span
       >
       <div class="head-actions">
         {#if authState.isAdmin}
@@ -606,9 +594,6 @@
     </div>
 
     <div class="body">
-      {#if isCodexMode}
-        <GuideCodexControls />
-      {/if}
       {#if editing && stagedStrip}
         {@render editPanel()}
       {:else}
