@@ -182,9 +182,9 @@
     left: 16px;
     margin: 0;
     overflow: hidden;
-    color: rgba(255, 255, 255, 0.92);
-    font-size: clamp(1.5rem, 6cqi, 5rem);
-    font-weight: 700;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: clamp(1.5rem, 4.5cqi, 4.5rem);
+    font-weight: 600;
     letter-spacing: 0.06em;
     line-height: 1.1;
     text-align: center;
