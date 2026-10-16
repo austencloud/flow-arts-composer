@@ -26,7 +26,9 @@ describe("Kinetic Atlas production gate", () => {
 
   it("preserves the complete Atlas at its canonical development URL", () => {
     expect(draft).toContain("KineticAtlasOverview");
-    expect(draft).toContain("LetterCodex");
+    // The Letter Codex has its own page (0a66ee9fc4); the Atlas links to it.
+    expect(draft).toContain('"/codex"');
+    expect(draft).not.toContain("<LetterCodex");
     expect(draft).toContain("GlossaryTermDetail");
     expect(draft).toContain("<svelte:head>");
   });

@@ -35,6 +35,7 @@
     picTheme = "light",
     startAside,
     activeBeat = null,
+    availableWidth,
   }: {
     items: PictographData[];
     /** Per-cell labels ("Start", "1", …), parallel to `items`. Omitted → unlabeled. */
@@ -59,6 +60,13 @@
      * every existing caller (FlowFrame) renders byte-identical.
      */
     activeBeat?: number | null;
+    /**
+     * The width the strip may fill, measured by a host whose band hugs the
+     * strip (SequenceShowcase's compact variant). The strip's own width there
+     * is the grid it last chose, so measuring itself would never let it grow
+     * when the window widens. Omitted → the strip measures itself.
+     */
+    availableWidth?: number;
   } = $props();
 
   const r = $derived({
@@ -89,7 +97,8 @@
     return rows;
   };
 
-  let measuredW = $state(0);
+  let ownW = $state(0);
+  const measuredW = $derived(availableWidth || ownW);
 
   const layout = $derived.by(() => {
     const n = steps.length;
@@ -165,7 +174,7 @@
   </div>
 {/snippet}
 
-<figure class="guide-step-strip" role="group" aria-label={caption ?? "Sequence"} bind:clientWidth={measuredW}>
+<figure class="guide-step-strip" role="group" aria-label={caption ?? "Sequence"} bind:clientWidth={ownW}>
   {#if layout.mode === "scroll"}
     <!-- Pre-measurement fallback (SSR / no-JS): aside above, everything in one
          scrollable row rather than overflowing the page. Vanishes once measured. -->
