@@ -62,7 +62,9 @@
     return new Set((patternOptions ?? []).map((o) => o.turnPattern));
   }
 
-  function filteredPatterns(pred: (left, right) => boolean): Set<string> {
+  function filteredPatterns(
+    pred: (left: number, right: number) => boolean
+  ): Set<string> {
     const out = new Set<string>();
     for (const opt of patternOptions ?? []) {
       const coord = parseTurnPattern(opt.turnPattern);

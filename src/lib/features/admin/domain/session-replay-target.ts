@@ -23,7 +23,7 @@ export function buildAdminSessionReplayUrl(
 }
 
 export function parseAdminSessionReplayTarget(
-  params: URLSearchParams
+  params: Pick<URLSearchParams, "get">
 ): AdminSessionReplayTarget | null {
   const userId = nonEmpty(params.get(ADMIN_USER_TARGET_PARAM));
   if (!userId) return null;

@@ -220,6 +220,15 @@ an interrupted slide restarts from the shown frame. Every live pictograph
 Searches: join slide, grid join tween, re-join animation. Do not animate a
 join anywhere else.
 
+The in-place travel for sequence edits (rotate, mirror, flip, swap hands,
+invert) is owned by `shared/pictograph/shared/state/pictograph-edit-motion.svelte.ts`
+(`announcePictographEdit`, one shared clock) with paths from
+`shared/pictograph/shared/services/pictograph-edit-travel.ts`;
+`PictographContainer` joins it and plays the props through
+`calculatePictographMotionPositions`. Searches: edit travel, transform
+animation, rotate arc, mirror animation. Do not add per-cell position caches
+or transform transitions to `PropSvg` or `ArrowSvg`.
+
 The 2D animation draws the join its sequence carries, never a viewer
 preference: `animation-engine/services/animation-grid-join.ts`
 (`resolveAnimationGridJoin`) reads `conjoined` off the sequence data the

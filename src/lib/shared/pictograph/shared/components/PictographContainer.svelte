@@ -31,7 +31,7 @@ with pre-prepared data for better performance.
 
 <script lang="ts">
   import PanelSpinner from "#lib/shared/components/panel/PanelSpinner.svelte";
-  import { onMount, untrack, tick } from "svelte";
+  import { onDestroy, onMount, untrack, tick } from "svelte";
   import { getVisibilityStateManager } from "../state/visibility-state.svelte";
   import { getAnimationVisibilityManager } from "../../../animation-engine/state/animation-visibility-state.svelte";
   import { getSettings } from "../../../application/state/app-state.svelte";
@@ -55,6 +55,16 @@ with pre-prepared data for better performance.
   } from "../../prop/domain/prop-look";
   import { normalizeTriangleGrip } from "../../prop/domain/triangle-appearance";
   import { calculatePictographMotionPositions } from "../../prop/services/pictograph-motion-positioner";
+  import type { PropPosition } from "../../prop/domain/models/prop-position";
+  import {
+    buildEditTravelStep,
+    editGridTurn,
+    pictographGeometryKey,
+  } from "../services/pictograph-edit-travel";
+  import {
+    getPictographEditMotion,
+    type EditMotionTicket,
+  } from "../state/pictograph-edit-motion.svelte";
   import { GridMode, GridLocation } from "../../grid/domain/enums/grid-enums";
   import PictographRenderer from "./PictographRenderer.svelte";
   import { gridJoinKey, isGridJoin } from "@tka/render-core";
@@ -605,6 +615,10 @@ with pre-prepared data for better performance.
       return;
     }
 
+    // A sequence edit that moves this drawing's props joins the shared edit
+    // clock before the new drawing prepares, so the old one can stay on screen.
+    untrack(() => considerEditTravel(data));
+
     const mySequence = ++prepareSequence;
 
     (async () => {
@@ -675,8 +689,8 @@ with pre-prepared data for better performance.
   });
 
   // Content key for fade transitions (when loading different pictographs)
-  // CRITICAL: Do NOT include motion data - we want CSS animations for transforms
-  // Only trigger fade when the pictograph itself changes (different id)
+  // Motion data stays out: an edit keeps the id and travels in place (see the
+  // sequence-edit travel below). Only a different pictograph crossfades.
   const contentKey = $derived.by(() => {
     if (!pictographData) return "empty";
     // Just use id - transforms keep same id, loading different sequence changes id
@@ -705,6 +719,168 @@ with pre-prepared data for better performance.
       endPlacements: preparedData._prepared.propPositions,
     });
   });
+
+  // ── Sequence-edit travel ────────────────────────────────────────────────
+  // Rotate, mirror, flip, swap and invert change this drawing in place. The
+  // edit's props travel on the shared clock (pictograph-edit-motion) through
+  // the same positioner as motionProgress above: the old drawing holds while
+  // its arrows fade, the props travel to the new drawing, its arrows come in.
+  type PropPositions = Partial<Record<HandSide, PropPosition>>;
+
+  interface EditTravel {
+    readonly ticket: EditMotionTicket;
+    /** The drawing on screen when the edit landed, held while its arrows fade. */
+    readonly start: PreparedPictographData;
+    /** Where the props stood on screen; mid-flight when one edit interrupts another. */
+    readonly startPositions: PropPositions;
+    /** Arrow opacity on screen at that moment, so an interrupt never flashes them back. */
+    readonly startArrowOpacity: number;
+    readonly target: PictographData;
+    readonly targetGeometry: string;
+    readonly step: StepData;
+    readonly gridTurn: { from: number; to: number } | null;
+  }
+
+  const editMotion = getPictographEditMotion();
+  const editIdentity = $derived(transitionKey ?? cellIndex);
+  // Live drawings only; a caller-driven motion or a drag already owns the props.
+  const editEligible = $derived(
+    liveAnimateVisibility &&
+      motionStartData === null &&
+      motionProgress === null &&
+      !directPropPositioning
+  );
+  let editTravel = $state.raw<EditTravel | null>(null);
+
+  function endEditTravel(): void {
+    if (editTravel) editMotion.leave(editTravel.ticket.token);
+    editTravel = null;
+  }
+
+  // Runs untracked from the prepare effect, before the new drawing prepares.
+  function considerEditTravel(data: PictographData): void {
+    const current = editTravel;
+    const shown = preparedData;
+    if (!shown || !editEligible) {
+      endEditTravel();
+      return;
+    }
+    const geometry = pictographGeometryKey(data);
+    const shownGeometry = current
+      ? current.targetGeometry
+      : pictographGeometryKey(shown);
+    // A letter derived after the move, a duration or a selection: no travel.
+    if (geometry === shownGeometry) return;
+
+    // Same drawing slot: an edited pictograph keeps its id, a grid cell keeps
+    // its identity. Anything else is a different pictograph and crossfades.
+    const hasIdentity = editIdentity != null;
+    if (!hasIdentity && shown.id !== data.id) {
+      endEditTravel();
+      return;
+    }
+
+    const targetShown =
+      current !== null && editTargetApplied ? shown : (current?.start ?? shown);
+    const startPositions =
+      (current && editPropPositionOverrides) ??
+      targetShown._prepared?.propPositions ??
+      {};
+    const startArrowOpacity = current ? (editArrowOpacity ?? 1) : 1;
+    const before = current?.target ?? shown;
+
+    const ticket = editMotion.join({ unannounced: hasIdentity });
+    if (current) editMotion.leave(current.ticket.token);
+    const step = ticket ? buildEditTravelStep(before, data, ticket.edit) : null;
+    if (!ticket || !step) {
+      if (ticket) editMotion.leave(ticket.token);
+      editTravel = null;
+      return;
+    }
+    editTravel = {
+      ticket,
+      start: targetShown,
+      startPositions,
+      startArrowOpacity,
+      target: data,
+      targetGeometry: geometry,
+      step,
+      gridTurn: editGridTurn(before, data, ticket.edit),
+    };
+  }
+
+  const editFrame = $derived(
+    editTravel ? editMotion.frameFor(editTravel.ticket.epoch) : null
+  );
+  // The new drawing is the one prepared (a later letter-only re-prepare keeps it).
+  const editTargetApplied = $derived(
+    editTravel !== null &&
+      preparedData !== null &&
+      pictographGeometryKey(preparedData) === editTravel.targetGeometry
+  );
+  const editHolding = $derived(
+    editFrame !== null && (editFrame.holdingOld || !editTargetApplied)
+  );
+  const renderedData = $derived(
+    editHolding && editTravel ? editTravel.start : preparedData
+  );
+
+  const editPropPositionOverrides = $derived.by((): PropPositions | null => {
+    const travel = editTravel;
+    const frame = editFrame;
+    if (!travel || !frame) return null;
+    if (editHolding) return travel.startPositions;
+    const prepared = preparedData?._prepared;
+    if (!prepared) return null;
+    return calculatePictographMotionPositions({
+      step: travel.step,
+      progress: frame.progress,
+      gridMode: overrideGridMode ?? prepared.gridMode ?? GridMode.DIAMOND,
+      leftPropType: effectiveLeftPropType,
+      rightPropType: effectiveRightPropType,
+      startPlacements: travel.startPositions,
+      endPlacements: prepared.propPositions,
+    });
+  });
+
+  const editArrowOpacity = $derived.by((): number | null => {
+    const travel = editTravel;
+    const frame = editFrame;
+    if (!travel || !frame) return null;
+    return editHolding
+      ? frame.oldArrowOpacity * travel.startArrowOpacity
+      : frame.newArrowOpacity;
+  });
+
+  const editGridRotation = $derived.by((): number | null => {
+    const turn = editTravel?.gridTurn;
+    if (!turn || !editFrame) return null;
+    return editHolding
+      ? turn.from
+      : turn.from + (turn.to - turn.from) * editFrame.progress;
+  });
+
+  const effectivePropPositionOverrides = $derived(
+    motionPropPositionOverrides ?? editPropPositionOverrides
+  );
+  const effectiveArrowOpacity = $derived(
+    editArrowOpacity !== null
+      ? editArrowOpacity * arrowOpacity
+      : disableTransitions && appliedPrepareKey !== prepareKey
+        ? 0
+        : arrowOpacity
+  );
+
+  // The clock waits for this drawing's new pose before it starts.
+  $effect(() => {
+    if (editTravel && editTargetApplied)
+      editMotion.ready(editTravel.ticket.token);
+  });
+  // The run finished or a newer one replaced it: rest on the new drawing.
+  $effect(() => {
+    if (editTravel && !editFrame) endEditTravel();
+  });
+  onDestroy(endEditTravel);
 
   // The path-shape glyph marks a step's own override. An in-place travel forces
   // its path shape to draw the move, and for a moment after it ends the old
@@ -773,7 +949,7 @@ with pre-prepared data for better performance.
   {#if preparedData}
     {#if disableTransitions || disableContentTransitions}
       <PictographRenderer
-        pictograph={preparedData}
+        pictograph={renderedData ?? preparedData}
         {leftReversal}
         {rightReversal}
         leftMotionVisible={effectiveLeftMotion}
@@ -796,7 +972,7 @@ with pre-prepared data for better performance.
         {previewMode}
         animateVisibility={liveAnimateVisibility}
         gridModeOverride={overrideGridMode}
-        {gridRotation}
+        gridRotation={gridRotation ?? editGridRotation}
         {visibleHand}
         {arrowsClickable}
         {showArrow}
@@ -816,16 +992,12 @@ with pre-prepared data for better performance.
         {onToggleReversals}
         {onToggleNonRadial}
         {widthMultiplier}
-        {cellIndex}
-        {transitionKey}
         {duration}
-        propPositionOverrides={motionPropPositionOverrides}
+        propPositionOverrides={effectivePropPositionOverrides}
         {directPropPositioning}
         animateContent={animateContent && liveAnimateVisibility}
-        arrowOpacity={disableTransitions && appliedPrepareKey !== prepareKey
-          ? 0
-          : arrowOpacity}
-        {disableTransitions}
+        arrowOpacity={effectiveArrowOpacity}
+        disableTransitions={disableTransitions || editTravel !== null}
         onGridReady={handleGridReady}
       />
     {:else}
@@ -836,7 +1008,7 @@ with pre-prepared data for better performance.
           out:opaqueFade={{ duration: DURATION.fast }}
         >
           <PictographRenderer
-            pictograph={preparedData}
+            pictograph={renderedData ?? preparedData}
             {leftReversal}
             {rightReversal}
             showGrid={effectiveShowGrid}
@@ -857,7 +1029,7 @@ with pre-prepared data for better performance.
             {previewMode}
             animateVisibility={liveAnimateVisibility}
             gridModeOverride={overrideGridMode}
-            {gridRotation}
+            gridRotation={gridRotation ?? editGridRotation}
             {visibleHand}
             {arrowsClickable}
             {showArrow}
@@ -877,16 +1049,12 @@ with pre-prepared data for better performance.
             {onToggleReversals}
             {onToggleNonRadial}
             {widthMultiplier}
-            {cellIndex}
-            {transitionKey}
             {duration}
-            propPositionOverrides={motionPropPositionOverrides}
+            propPositionOverrides={effectivePropPositionOverrides}
             {directPropPositioning}
             animateContent={animateContent && liveAnimateVisibility}
-            arrowOpacity={disableTransitions && appliedPrepareKey !== prepareKey
-              ? 0
-              : arrowOpacity}
-            {disableTransitions}
+            arrowOpacity={effectiveArrowOpacity}
+            disableTransitions={disableTransitions || editTravel !== null}
             onGridReady={handleGridReady}
           />
         </div>

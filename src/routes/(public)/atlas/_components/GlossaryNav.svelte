@@ -21,6 +21,8 @@
     terms: NavTerm[];
     /** Non-term surfaces, such as the visual Codex, report their own unit. */
     countLabel?: string;
+    /** A row that lives on another page (the Codex) links there instead. */
+    href?: string;
   };
 
   let {
@@ -97,7 +99,7 @@
           class="gnav-cat"
           class:active={groupActive}
           aria-current={groupActive ? "true" : undefined}
-          href={`#${g.sectionSlug}`}
+          href={g.href ?? `#${g.sectionSlug}`}
           onclick={(e) => onNavigate?.(g.sectionSlug, e)}
         >
           <span class="gnav-label">{g.label}</span>
