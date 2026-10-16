@@ -29,7 +29,10 @@
 <svelte:head>
   <meta name="robots" content="noindex" />
   <link rel="canonical" href={`${LANDING_DOMAIN}${target}`} />
-  <meta http-equiv="refresh" content={`0; url=${target}`} />
+  <!-- Without scripts the query cannot ride along, so only then fall back. -->
+  <noscript>
+    <meta http-equiv="refresh" content={`0; url=${target}`} />
+  </noscript>
 </svelte:head>
 
 <p class="moved">The Codex has moved to <a href={target}>{target}</a>.</p>

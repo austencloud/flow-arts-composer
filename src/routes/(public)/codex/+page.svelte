@@ -142,7 +142,6 @@
     <div class="board-host">
       <LetterCodex
         {initialLetter}
-        board="atlas"
         {propType}
         {startOrientations}
       />
