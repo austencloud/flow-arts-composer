@@ -13,7 +13,10 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
   import { claimedViewTransitionName } from "#lib/shared/transitions/claimed-view-transition-name.js";
-  import { isLessonMorphRunning } from "../../services/lesson-open-morph.svelte";
+  import {
+    isLessonContinueRunning,
+    isLessonMorphRunning,
+  } from "../../services/lesson-open-morph.svelte";
 
   let {
     heading,
@@ -36,6 +39,9 @@
   // ride inside the growing lesson surface instead of fading in at their final
   // places over the map (lesson-open-morph).
   const ownRegions = $derived(!isLessonMorphRunning());
+  // Continue and Previous fly the live board themselves, so the board region
+  // sits that morph out instead of moving twice.
+  const ownBoard = $derived(!isLessonContinueRunning());
 </script>
 
 <div class="lesson-stage-frame" class:workshop={artifactLayout === "workshop"}>
@@ -53,7 +59,10 @@
     <div
       class="artifact-inner"
       class:wide={artifactLayout !== "square"}
-      use:claimedViewTransitionName={{ name: "learn-grid-stage" }}
+      use:claimedViewTransitionName={{
+        name: "learn-grid-stage",
+        enabled: ownBoard,
+      }}
     >
       {@render artifact()}
     </div>

@@ -13,6 +13,11 @@
  * holds `learn-grid-stage`; the card, surface and title names stay off
  * otherwise, so the lesson's own view transitions (the Hand Motions grid
  * split) never capture the whole lesson.
+ *
+ * Continue and Previous swap one lesson for the next inside the same view.
+ * The live board flies itself there (live-lesson-board), so that morph keeps
+ * `learn-grid-stage` off and carries only the heading and the controls, which
+ * would otherwise cut from one lesson's words to the next.
  */
 import { flushSync } from "svelte";
 import { startMorph } from "#lib/shared/transitions/results-morph.js";
@@ -86,6 +91,32 @@ export function closeLessonWithMorph(conceptId: string, mutate: () => void) {
       : { conceptId, prominent: null };
   openedFrom = null;
   run(source, mutate);
+}
+
+let continuing = $state(false);
+
+/** True while Continue or Previous hands one lesson to the next. */
+export function isLessonContinueRunning() {
+  return continuing;
+}
+
+/** Continue or Previous: the heading and controls turn into the next lesson's. */
+export function continueLessonWithMorph(conceptId: string, mutate: () => void) {
+  void loadConceptExperience(conceptId)
+    .catch(() => undefined)
+    .then(() => {
+      continuing = true;
+      // The board's name must be off before the browser captures the lesson.
+      flushSync();
+      const transition = startMorph(mutate);
+      if (!transition) {
+        continuing = false;
+        return;
+      }
+      void transition.finished
+        .catch(() => undefined)
+        .finally(() => (continuing = false));
+    });
 }
 
 /** Warm a lesson's code ahead of the tap (hover, focus, press). */
