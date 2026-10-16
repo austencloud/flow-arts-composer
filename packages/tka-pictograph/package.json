@@ -1,6 +1,6 @@
 {
   "name": "@austencloud/tka-pictograph",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Draws The Kinetic Alphabet's pictographs as SVG, in Node or a browser, from Austen Cloud's own renderer and art.",
   "license": "Elastic-2.0",
   "author": "Austen Cloud",

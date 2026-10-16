@@ -10,7 +10,6 @@
    */
 
   import { untrack } from "svelte";
-  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import ButtonPanel from "../workspace-panel/shared/components/ButtonPanel.svelte";
   import UndoButton from "../workspace-panel/shared/components/buttons/UndoButton.svelte";
   import SaveToLibraryButton from "../workspace-panel/shared/components/buttons/SaveToLibraryButton.svelte";
@@ -29,7 +28,10 @@
   import GenerateEmptyState from "../../generate/components/GenerateEmptyState.svelte";
   import type { createCreateModuleState as CreateModuleStateType } from "../state/create-module-state.svelte";
   import type { PanelCoordinationState } from "../state/panel-coordination-state.svelte";
-  import type { IToolPanelMethods } from "../types/create-module-types";
+  import type {
+    IToolPanelMethods,
+    OptionSelectedHandler,
+  } from "../types/create-module-types";
   import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
   import { getSequenceOverlayState } from "#lib/shared/sequence-viewer/state/sequence-viewer-overlay-state.svelte.js";
   import { isStepEditorViewShown } from "../services/step-editor-availability";
@@ -72,7 +74,7 @@
     toolPanelElement?: HTMLElement | null;
     onClearSequence: () => void;
     onViewSequence?: () => void;
-    onOptionSelected: (option: PictographData) => Promise<void>;
+    onOptionSelected: OptionSelectedHandler;
     onOpenFilters: () => void;
     onCloseFilters: () => void;
   } = $props();

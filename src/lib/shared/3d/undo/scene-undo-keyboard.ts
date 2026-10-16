@@ -5,7 +5,7 @@ const TEXT_INPUT_TAGS = new Set(["INPUT", "TEXTAREA", "SELECT"]);
 export function attachSceneUndoKeyboard(
   manager: SceneUndoManager,
   onUndo?: (description: string) => void,
-  onRedo?: (description: string) => void,
+  onRedo?: (description: string) => void
 ): () => void {
   function handler(e: KeyboardEvent) {
     if (TEXT_INPUT_TAGS.has((e.target as HTMLElement)?.tagName)) return;
@@ -13,15 +13,13 @@ export function attachSceneUndoKeyboard(
 
     const isCtrlOrMeta = e.ctrlKey || e.metaKey;
     if (!isCtrlOrMeta) return;
+    const key = e.key.toLowerCase();
 
-    if (e.key === "z" && !e.shiftKey) {
+    if (key === "z" && !e.shiftKey) {
       e.preventDefault();
       const result = manager.undo();
       if (result) onUndo?.(result.description);
-    } else if (
-      (e.key === "z" && e.shiftKey) ||
-      (e.key === "y" && !e.shiftKey)
-    ) {
+    } else if ((key === "z" && e.shiftKey) || (key === "y" && !e.shiftKey)) {
       e.preventDefault();
       const result = manager.redo();
       if (result) onRedo?.(result.description);

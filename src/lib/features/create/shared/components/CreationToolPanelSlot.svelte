@@ -16,7 +16,10 @@
 
   import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
   import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
-  import type { IToolPanelMethods } from "../types/create-module-types";
+  import type {
+    IToolPanelMethods,
+    OptionSelectedHandler,
+  } from "../types/create-module-types";
   import { getCreateModuleContext } from "../context/create-module-context";
   import LazyMount from "#lib/shared/components/LazyMount.svelte";
   import ConstructTabContent from "./ConstructTabContent.svelte";
@@ -248,7 +251,7 @@
     toolPanelRef?: IToolPanelMethods | null;
     /** The workspace word, named in the save view. */
     currentDisplayWord?: string;
-    onOptionSelected: (option: PictographData) => Promise<void>;
+    onOptionSelected: OptionSelectedHandler;
     onPracticeStepIndexChange: (index: number | null) => void;
     onOpenFilters: () => void;
     onCloseFilters: () => void;
