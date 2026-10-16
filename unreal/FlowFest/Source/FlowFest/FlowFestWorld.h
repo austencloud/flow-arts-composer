@@ -62,6 +62,12 @@ public:
     UFUNCTION(BlueprintPure, Category="Flow Fest|Crowd")
     int32 GetCrowdSize() const { return People.Num(); }
 
+    FString GetNearbyAttendeeIntent(FVector WorldPosition) const;
+    bool GreetNearbyAttendee(FVector WorldPosition, FString& Reply);
+    FString SaveCrowdState() const { return Crowd.SerializeState(); }
+    bool RestoreCrowdState(const FString& State);
+    void ResetCrowd();
+
     void SetSoundEnabled(bool bEnabled);
     void SetJamSoundActive(bool bActive);
 
@@ -105,6 +111,7 @@ private:
         UFlowFestPropComponent* Prop = nullptr;
         EFlowFestCrowdActivity LastActivity = EFlowFestCrowdActivity::Rest;
         bool bPerformancePlaying = false;
+        bool bNeedsActivityRefresh = true;
     };
 
     UPROPERTY(VisibleAnywhere) TObjectPtr<USceneComponent> SiteRoot;

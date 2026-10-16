@@ -194,7 +194,7 @@ bool UFlowFestAvatarComponent::SetCharacter(FName NewCharacterId)
         UE_LOG(LogTemp, Error, TEXT("Flow Fest native animation instance failed for %s"), *CharacterId.ToString());
         return false;
     }
-    Animator->Configure(Clips);
+    Animator->Configure(Clips, Folder);
     Animator->SetGripSource(BoundProp);
     return PlayMotion(TEXT("Idle"));
 }

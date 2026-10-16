@@ -43,6 +43,50 @@ bool FiniteUnit(const FQuat& Q)
         FMath::Abs(Q.SizeSquared() - 1.f) < .01f;
 }
 
+bool ReadProbePoint(const TSharedPtr<FJsonObject>& Frame, const FString& Name, FVector& Point)
+{
+    const TArray<TSharedPtr<FJsonValue>>* Values = nullptr;
+    if (!Frame.IsValid() || !Frame->TryGetArrayField(Name, Values) || !Values || Values->Num() != 3)
+        return false;
+    Point = FVector((*Values)[0]->AsNumber(), (*Values)[1]->AsNumber(), (*Values)[2]->AsNumber());
+    return Finite(Point);
+}
+
+void LogIndependentGripProbe(const TSharedPtr<FJsonObject>& SourceFrame, const FString& Case,
+    int32 FrameIndex, USkeletalMeshComponent* Body, const FTransform& AvatarFrame,
+    UFlowFestPropComponent* Prop)
+{
+    if (!SourceFrame.IsValid() || !Body || !Prop) return;
+    const auto NativeBone = [Body, &AvatarFrame](const FString& Name)
+    {
+        return AvatarFrame.InverseTransformPosition(Body->GetSocketLocation(FName(*Name)));
+    };
+    for (const FString Side : {FString(TEXT("Left")), FString(TEXT("Right"))})
+    {
+        FVector SourceArm, SourceElbow, SourceWrist, SourceFinger, SourcePivot;
+        const FString Prefix = Side == TEXT("Left") ? TEXT("left") : TEXT("right");
+        if (!ReadProbePoint(SourceFrame, Side + TEXT("Arm"), SourceArm) ||
+            !ReadProbePoint(SourceFrame, Side + TEXT("ForeArm"), SourceElbow) ||
+            !ReadProbePoint(SourceFrame, Side + TEXT("Hand"), SourceWrist) ||
+            !ReadProbePoint(SourceFrame, Side + TEXT("HandMiddle1"), SourceFinger) ||
+            !ReadProbePoint(SourceFrame, Prefix + TEXT("PropPivot"), SourcePivot)) continue;
+        const FVector Arm = NativeBone(Side + TEXT("Arm"));
+        const FVector Elbow = NativeBone(Side + TEXT("ForeArm"));
+        const FVector Wrist = NativeBone(Side + TEXT("Hand"));
+        const FVector Finger = NativeBone(Side + TEXT("HandMiddle1"));
+        const FVector Pivot = AvatarFrame.InverseTransformPosition(
+            Prop->GetPropRootTransform(Side == TEXT("Left")).GetLocation());
+        UE_LOG(LogTemp, Display, TEXT("FlowFestIndependentGrip %s frame=%d side=%s importedArm=%s sourceArm=%s armError=%.3f importedElbow=%s sourceElbow=%s elbowError=%.3f importedWrist=%s sourceWrist=%s wristError=%.3f importedFinger=%s sourceFinger=%s fingerError=%.3f importedPivot=%s sourcePivot=%s pivotError=%.3f nativeFingerPivot=%.3f sourceFingerPivot=%.3f"),
+            *Case, FrameIndex, *Side,
+            *Arm.ToCompactString(), *SourceArm.ToCompactString(), FVector::Distance(Arm, SourceArm),
+            *Elbow.ToCompactString(), *SourceElbow.ToCompactString(), FVector::Distance(Elbow, SourceElbow),
+            *Wrist.ToCompactString(), *SourceWrist.ToCompactString(), FVector::Distance(Wrist, SourceWrist),
+            *Finger.ToCompactString(), *SourceFinger.ToCompactString(), FVector::Distance(Finger, SourceFinger),
+            *Pivot.ToCompactString(), *SourcePivot.ToCompactString(), FVector::Distance(Pivot, SourcePivot),
+            FVector::Distance(Finger, Pivot), FVector::Distance(SourceFinger, SourcePivot));
+    }
+}
+
 bool ReadVisualTrack(FName CharacterId, FName Profile, TArray<FQuat>& Left, TArray<FQuat>& Right)
 {
     FString Character = CharacterId.ToString();
@@ -171,6 +215,16 @@ struct FScopedMotionWorld
 bool FFlowFestMotionIntegrationTest::RunTest(const FString& Parameters)
 {
     FString FocusCharacter, FocusFamily, FocusVariant;
+    const bool bGripProbe = FParse::Param(FCommandLine::Get(), TEXT("FlowFestGripProbe"));
+    TSharedPtr<FJsonObject> GripProbe;
+    if (bGripProbe)
+    {
+        FString ProbeText;
+        const FString ProbePath = FPaths::ProjectSavedDir() / TEXT("diagnose-grip-report.json");
+        if (!FFileHelper::LoadFileToString(ProbeText, *ProbePath) ||
+            !FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(ProbeText), GripProbe) || !GripProbe.IsValid())
+            UE_LOG(LogTemp, Warning, TEXT("FlowFestGripProbe missing independent source report: %s"), *ProbePath);
+    }
     FParse::Value(FCommandLine::Get(), TEXT("FlowFestMotionCharacter="), FocusCharacter);
     FParse::Value(FCommandLine::Get(), TEXT("FlowFestMotionFamily="), FocusFamily);
     FParse::Value(FCommandLine::Get(), TEXT("FlowFestMotionVariant="), FocusVariant);
@@ -258,12 +312,72 @@ bool FFlowFestMotionIntegrationTest::RunTest(const FString& Parameters)
         if (!TestTrue(*FString::Printf(TEXT("Hands bind: %s"), *CharacterId.ToString()),
             HeldProp->BindHands(Avatar->GetBodyMesh()))) continue;
         USkeletalMeshComponent* Body = Avatar->GetBodyMesh();
+        if (bGripProbe && Body && Body->GetSkeletalMeshAsset())
+        {
+            const FBoxSphereBounds Bounds = Body->GetSkeletalMeshAsset()->GetBounds();
+            UE_LOG(LogTemp, Display, TEXT("FlowFestImportedBounds character=%s origin=%s extent=%s presentationScale=%s"),
+                *CharacterId.ToString(), *Bounds.Origin.ToCompactString(),
+                *Bounds.BoxExtent.ToCompactString(), *Body->GetRelativeScale3D().ToCompactString());
+        }
         for (const TSharedPtr<FJsonValue>& PropValue : *Props)
         {
             const FString Family = PropValue->AsObject()->GetStringField(TEXT("id"));
             if (!FocusFamily.IsEmpty() && Family != FocusFamily) continue;
             if (!TestTrue(*FString::Printf(TEXT("Base mesh loads: %s/%s"), *CharacterId.ToString(), *Family),
                 HeldProp->Equip(FName(*Family)) && HeldProp->IsReady())) continue;
+            if (Family == TEXT("staff"))
+            {
+                // Compare the actual idle finger geometry with and without a
+                // visible prop. A target-to-target wrist metric cannot detect
+                // an open hand or a shaft aimed along the fingers.
+                HeldProp->SetVisible(false);
+                for (int32 Step = 0; Step < 20; ++Step)
+                {
+                    Fixture.World->TimeSeconds += .1f;
+                    Body->TickAnimation(.1f, false);
+                    Body->RefreshBoneTransforms();
+                    HeldProp->TickComponent(.1f, LEVELTICK_All, nullptr);
+                }
+                const float RelaxedSpan[2] = {
+                    FVector::Distance(Body->GetSocketLocation(TEXT("LeftHandIndex1")),
+                        Body->GetSocketLocation(TEXT("LeftHandIndex3"))),
+                    FVector::Distance(Body->GetSocketLocation(TEXT("RightHandIndex1")),
+                        Body->GetSocketLocation(TEXT("RightHandIndex3")))};
+                HeldProp->SetVisible(true);
+                Fixture.World->TimeSeconds += .1f;
+                Body->TickAnimation(.1f, false);
+                Body->RefreshBoneTransforms();
+                for (const bool bLeft : {true, false})
+                {
+                    const TCHAR* Hand = bLeft ? TEXT("LeftHand") : TEXT("RightHand");
+                    const TCHAR* Middle = bLeft ? TEXT("LeftHandMiddle1") : TEXT("RightHandMiddle1");
+                    const TCHAR* Index = bLeft ? TEXT("LeftHandIndex1") : TEXT("RightHandIndex1");
+                    const TCHAR* IndexTip = bLeft ? TEXT("LeftHandIndex3") : TEXT("RightHandIndex3");
+                    const TCHAR* Pinky = bLeft ? TEXT("LeftHandPinky1") : TEXT("RightHandPinky1");
+                    const FVector WristWorld = Body->GetSocketLocation(Hand);
+                    const FVector MiddleWorld = Body->GetSocketLocation(Middle);
+                    const FVector Longitudinal = (MiddleWorld - WristWorld).GetSafeNormal();
+                    FVector Transverse = Body->GetSocketLocation(Pinky) - Body->GetSocketLocation(Index);
+                    Transverse -= Longitudinal * FVector::DotProduct(Transverse, Longitudinal);
+                    Transverse.Normalize();
+                    const FTransform PropRoot = HeldProp->GetPropRootTransform(bLeft);
+                    const float AxisDot = FVector::DotProduct(
+                        PropRoot.GetRotation().RotateVector(FVector::YAxisVector), -Transverse);
+                    const float PalmError = FVector::Distance(PropRoot.GetLocation(),
+                        FMath::Lerp(WristWorld, MiddleWorld, .65f));
+                    const float GraspSpan = FVector::Distance(Body->GetSocketLocation(Index),
+                        Body->GetSocketLocation(IndexTip));
+                    const float OpenSpan = RelaxedSpan[bLeft ? 0 : 1];
+                    UE_LOG(LogTemp, Display, TEXT("FlowFestIdleGrip rig=%s hand=%s axisDot=%.4f palm=%.3fcm indexSpan=%.3fcm relaxed=%.3fcm"),
+                        *CharacterId.ToString(), Hand, AxisDot, PalmError, GraspSpan, OpenSpan);
+                    TestTrue(*FString::Printf(TEXT("Transverse idle grip axis: %s/%s"), *CharacterId.ToString(), Hand),
+                        AxisDot > .98f);
+                    TestTrue(*FString::Printf(TEXT("Idle prop at palm: %s/%s"), *CharacterId.ToString(), Hand),
+                        PalmError < 2.f);
+                    TestTrue(*FString::Printf(TEXT("Equipped index finger curls: %s/%s"), *CharacterId.ToString(), Hand),
+                        GraspSpan + .2f < OpenSpan);
+                }
+            }
             float FamilyPeakGrip = 0.f;
             float FamilyPeakAnchor = 0.f;
             FString FamilyOffender;
@@ -338,6 +452,21 @@ bool FFlowFestMotionIntegrationTest::RunTest(const FString& Parameters)
                     bPoseValid &= FMath::Abs(Avatar->GetPerformanceTime() - Seconds) < .03f;
                     const float Error = HeldProp->GetGripErrorCm();
                     const float AnchorError = HeldProp->GetPropAnchorErrorCm();
+                    if (bGripProbe && GripProbe.IsValid() && Family == TEXT("staff") && Variant == 0 &&
+                        (Sample == 0 || Sample == 2 || Sample == 4 || Sample == 8 ||
+                         Sample == 12 || Sample == 16 || Sample == 24 || Sample == 28))
+                    {
+                        const TSharedPtr<FJsonObject>* ProbeCharacters = nullptr;
+                        const TSharedPtr<FJsonObject>* SourceCharacter = nullptr;
+                        const TSharedPtr<FJsonObject>* Frames = nullptr;
+                        const TSharedPtr<FJsonObject>* SourceFrame = nullptr;
+                        if (GripProbe->TryGetObjectField(TEXT("characters"), ProbeCharacters) && ProbeCharacters &&
+                            (*ProbeCharacters)->TryGetObjectField(CharacterId.ToString(), SourceCharacter) && SourceCharacter &&
+                            (*SourceCharacter)->TryGetObjectField(TEXT("staffALandmarksAvatarLocalCm"), Frames) && Frames &&
+                            (*Frames)->TryGetObjectField(FString::FromInt(FMath::RoundToInt(Seconds * 30.f)), SourceFrame) && SourceFrame)
+                            LogIndependentGripProbe(*SourceFrame, Case, FMath::RoundToInt(Seconds * 30.f),
+                                Body, Frame, HeldProp);
+                    }
                     for (const bool bLeft : {true, false})
                     {
                         const TArray<FQuat>& Track = bLeft ? LeftVisualTrack : RightVisualTrack;
