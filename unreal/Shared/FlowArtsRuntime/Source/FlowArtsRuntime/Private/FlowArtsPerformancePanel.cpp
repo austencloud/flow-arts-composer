@@ -53,6 +53,36 @@ const FTextBlockStyle& ButtonTextStyle()
     return Style;
 }
 
+struct FPanelMetrics
+{
+    float Scale = 1.f;
+    float Width = 560.f;
+    float Height = 500.f;
+};
+
+FPanelMetrics GetPanelMetrics(const TWeakObjectPtr<UGameViewportClient>& WeakViewport)
+{
+    FPanelMetrics Metrics;
+    UGameViewportClient* Viewport = WeakViewport.Get();
+    if (!Viewport || !Viewport->Viewport) return Metrics;
+
+    const FIntPoint ViewportPixels = Viewport->Viewport->GetSizeXY();
+    if (ViewportPixels.X <= 0 || ViewportPixels.Y <= 0) return Metrics;
+
+    const TSharedPtr<SViewport> ViewportWidget = Viewport->GetGameViewportWidget();
+    const float PlatformScale = ViewportWidget.IsValid()
+        ? FMath::Max(ViewportWidget->GetCachedGeometry().Scale, 0.01f) : 1.f;
+    const float GameUIScale = FMath::Max(
+        GetDefault<UUserInterfaceSettings>()->GetDPIScaleBasedOnSize(ViewportPixels), 0.01f);
+    // The game layer divides its UI curve by platform DPI. Undo only its shrink,
+    // leaving the platform's own DPI scale in place.
+    Metrics.Scale = 1.f / FMath::Min(1.f, GameUIScale / PlatformScale);
+    const float EffectiveScale = GameUIScale * Metrics.Scale;
+    Metrics.Width = FMath::Clamp(ViewportPixels.X / EffectiveScale - 24.f, 0.f, 720.f);
+    Metrics.Height = FMath::Clamp(ViewportPixels.Y / EffectiveScale - 24.f, 0.f, 640.f);
+    return Metrics;
+}
+
 struct FPanelState
 {
     FFlowArtsPerformanceLibrary Library;
@@ -240,10 +270,12 @@ private:
     {
         Entries->ClearChildren();
         for (const FFlowArtsPerformanceEntry* Entry : State->VisibleEntries)
+        {
+            const FText Label = FText::FromString(FString::Printf(TEXT("%s  |  %s  |  %.1f s"),
+                *Entry->Title, *Entry->Profile.ToString(), Entry->DurationSeconds));
             Entries->AddSlot().AutoHeight().Padding(0, 2)
             [SNew(SButton).TextStyle(&ButtonTextStyle()).ContentPadding(FMargin(8, 12))
-                .Text(FText::FromString(FString::Printf(TEXT("%s  |  %s  |  %.1f s"),
-                    *Entry->Title, *Entry->Profile.ToString(), Entry->DurationSeconds)))
+                .Text(Label)
                 .OnClicked_Lambda([this, Entry]()
                 {
                     FString Error;
@@ -258,7 +290,10 @@ private:
                         RebuildEntries();
                     }
                     return FReply::Handled();
-                })];
+                })
+                [SNew(STextBlock).Font(BodyFont()).ColorAndOpacity(FLinearColor::White)
+                    .Text(Label).AutoWrapText(true)]];
+        }
         if (State->VisibleEntries.IsEmpty())
             Entries->AddSlot().AutoHeight().Padding(0, 8)
             [SNew(STextBlock).Font(BodyFont()).ColorAndOpacity(FLinearColor::White)
@@ -284,23 +319,17 @@ void FFlowArtsPerformancePanel::Open(APlayerController* Player,
     State->Matches = State->Library.ForTarget(State->Session.GetCharacterId(), State->Session.GetPropFamily());
     State->Session.AttachCurrent(State->Library);
     TSharedRef<SFlowArtsPerformancePanel> Content = SNew(SFlowArtsPerformancePanel).State(State);
-    const FIntPoint ViewportPixels = Viewport->Viewport->GetSizeXY();
-    const TSharedPtr<SViewport> ViewportWidget = Viewport->GetGameViewportWidget();
-    const float PlatformScale = ViewportWidget.IsValid()
-        ? FMath::Max(ViewportWidget->GetCachedGeometry().Scale, 1.f) : 1.f;
-    const float GameUIScale = GetDefault<UUserInterfaceSettings>()->GetDPIScaleBasedOnSize(ViewportPixels);
-    // The game layer divides its UI curve by platform DPI. Undo only its shrink,
-    // leaving the platform's own DPI scale in place.
-    const float PanelScale = 1.f / FMath::Min(1.f, GameUIScale / PlatformScale);
-    const float EffectiveScale = GameUIScale * PanelScale;
-    const float AvailableWidth = ViewportPixels.X / EffectiveScale - 24.f;
-    const float AvailableHeight = ViewportPixels.Y / EffectiveScale - 24.f;
-    const float PanelWidth = FMath::Clamp(AvailableWidth, 0.f, 720.f);
-    const float PanelHeight = FMath::Clamp(AvailableHeight, 0.f, 640.f);
+    const TWeakObjectPtr<UGameViewportClient> WeakViewport = State->Viewport;
     TSharedRef<SWidget> Overlay = SNew(SOverlay)
         + SOverlay::Slot().HAlign(HAlign_Center).VAlign(VAlign_Center).Padding(12)
-        [SNew(SDPIScaler).DPIScale(PanelScale)
-            [SNew(SBox).WidthOverride(PanelWidth).HeightOverride(PanelHeight)[Content]]];
+        [SNew(SDPIScaler).DPIScale_Lambda([WeakViewport]()
+            { return GetPanelMetrics(WeakViewport).Scale; })
+            [SNew(SBox)
+                .WidthOverride_Lambda([WeakViewport]()
+                    { return FOptionalSize(GetPanelMetrics(WeakViewport).Width); })
+                .HeightOverride_Lambda([WeakViewport]()
+                    { return FOptionalSize(GetPanelMetrics(WeakViewport).Height); })
+                [Content]]];
     State->Overlay = Overlay;
     Viewport->AddViewportWidgetContent(Overlay, 100);
     FInputModeUIOnly InputMode;
