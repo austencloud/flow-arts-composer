@@ -87,11 +87,15 @@
     if (!visible || preview || failed) return;
     let current = true;
     void import("../services/studio-project-library.js")
-      .then((service) =>
-        service.loadStudioProjectPreview({
-          sequenceId: entry.sequenceId,
-          featureSlug: entry.featureSlug,
-        })
+      .then(
+        (service) =>
+          // The listing already read most projects; only the rest read again.
+          (!entry.featureSlug &&
+            service.listedStudioProjectPreview(entry.sequenceId)) ||
+          service.loadStudioProjectPreview({
+            sequenceId: entry.sequenceId,
+            featureSlug: entry.featureSlug,
+          })
       )
       .then((result) => {
         if (current) {
@@ -241,6 +245,8 @@
 
 <style>
   .project-card {
+    display: flex;
+    flex-direction: column;
     min-width: 0;
     border: 1px solid var(--theme-stroke);
     border-radius: 12px;
@@ -257,7 +263,9 @@
     opacity: 0.6;
   }
   .open-project {
-    display: block;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
     width: 100%;
     padding: 0;
     border: 0;
@@ -331,12 +339,14 @@
   }
   .card-text {
     display: grid;
+    flex: 1;
+    align-content: start;
     gap: 8px;
     padding: 16px 16px 8px;
   }
   .kind {
     color: var(--theme-text-secondary);
-    font-size: 12px;
+    font-size: var(--studio-card-meta, 12px);
   }
   .kind-row {
     display: flex;
@@ -370,7 +380,7 @@
     color: var(--semantic-warning-text, var(--semantic-warning));
   }
   .title {
-    font-size: 17px;
+    font-size: var(--studio-card-title, 17px);
     font-weight: 650;
     line-height: 1.35;
     overflow: hidden;
@@ -379,7 +389,7 @@
     min-height: 25px;
   }
   .details {
-    font-size: 12px;
+    font-size: var(--studio-card-meta, 12px);
     line-height: 1.5;
     color: var(--theme-text-secondary);
     min-height: 18px;
@@ -394,7 +404,7 @@
     gap: 8px;
     padding: 0 8px 8px 16px;
     color: var(--theme-text-secondary);
-    font-size: 12px;
+    font-size: var(--studio-card-meta, 12px);
   }
   .copy {
     border: 0;
@@ -402,7 +412,7 @@
     background: transparent;
     min-height: 44px;
     padding: 8px;
-    font-size: 12px;
+    font-size: var(--studio-card-meta, 12px);
   }
   .copy:hover {
     color: var(--theme-text);

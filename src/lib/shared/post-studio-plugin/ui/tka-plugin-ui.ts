@@ -16,6 +16,7 @@ import { TKA_TOOLS } from "./tka-tools";
 import TkaItemTools from "./TkaItemTools.svelte";
 import TkaLookPanel from "./TkaLookPanel.svelte";
 import TkaMediaSublayer from "./TkaMediaSublayer.svelte";
+import TkaSequenceAside from "./TkaSequenceAside.svelte";
 import TkaStripGuide from "./TkaStripGuide.svelte";
 
 /**
@@ -52,6 +53,11 @@ export function createTkaPluginUi(): PluginUi {
     transitionOffered: (item, editor) =>
       item.kind !== "arrangement" || !tkaEditorOf(editor)?.wrapper.selectedCell,
     itemLanes: TKA_ARRANGEMENT_LANES,
+    // The sequence card beside the preview, following the playhead.
+    stageAside: {
+      component: TkaSequenceAside,
+      shown: (editor) => (tkaEditorOf(editor)?.sequence?.steps.length ?? 0) > 0,
+    },
     addItems: tkaAddItems,
     cropSteps: tkaCropSteps,
     timelineJoin: tkaTimelineJoin,

@@ -10,6 +10,7 @@
   import type { PostProjectChoice } from "../services/post-workspace-projects.js";
   import type { FeatureVideoSummary } from "#lib/shared/media-composition/domain/feature-video.js";
   import {
+    studioKindDescriptions,
     studioKindLabels,
     studioLibraryEntries,
     type StudioIntent,
@@ -43,6 +44,8 @@
   type KindFilter = StudioIntent | "all";
   type SortOrder = "recent" | "name";
   const kinds: StudioIntent[] = ["tutorial", "showcase", "arrangement"];
+  /** Cells in the start tiles' small pictures. */
+  const MINI_CELLS = [0, 1, 2, 3, 4, 5];
   let query = $state("");
   let filter = $state<KindFilter>("all");
   let sort = $state<SortOrder>("recent");
@@ -140,20 +143,40 @@
   <div class="library-top">
     <header class="library-header">
       <h1>Your projects <span class="count">{entries.length}</span></h1>
-      <div class="start" role="group" aria-label="Start a project">
-        {#each kinds as kind (kind)}
-          <button
-            type="button"
-            class="start-button"
-            aria-label={`New ${studioKindLabels[kind].one.toLocaleLowerCase()}`}
-            onclick={() => start(kind)}
-            ><i class="fas fa-plus" aria-hidden="true"></i><span
-              >{studioKindLabels[kind].one}</span
-            ></button
-          >
-        {/each}
-      </div>
     </header>
+    <div class="start" role="group" aria-label="Start a project">
+      {#each kinds as kind (kind)}
+        <button
+          type="button"
+          class="start-tile"
+          aria-label={`New ${studioKindLabels[kind].one.toLocaleLowerCase()}`}
+          onclick={() => start(kind)}
+        >
+          <span class="mini" aria-hidden="true">
+            {#if kind === "tutorial"}
+              <span class="mini-video"></span>
+              <span class="mini-card">
+                {#each MINI_CELLS as cell (cell)}<span></span>{/each}
+              </span>
+            {:else if kind === "showcase"}
+              <span class="mini-screen"><i class="fas fa-play"></i></span>
+            {:else}
+              <span class="mini-grid">
+                {#each MINI_CELLS as cell (cell)}<span></span>{/each}
+              </span>
+            {/if}
+          </span>
+          <span class="start-text">
+            <strong
+              ><i class="fas fa-plus" aria-hidden="true"></i>
+              New {studioKindLabels[kind].one.toLocaleLowerCase()}</strong
+            >
+            <span class="start-description">{studioKindDescriptions[kind]}</span
+            >
+          </span>
+        </button>
+      {/each}
+    </div>
     <div class="library-tools">
       <div class="filter">
         <SegmentedControl
@@ -341,36 +364,102 @@
     outline: 2px solid var(--theme-accent);
     outline-offset: 3px;
   }
+  /* Three ways to start, each a tile with a small picture of what it makes. */
   .start {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
   }
-  .start-button {
-    display: inline-flex;
+  .start-tile {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
     align-items: center;
-    justify-content: center;
-    gap: 8px;
+    gap: 16px;
     min-height: 44px;
-    padding: 10px 16px;
+    padding: 12px 16px 12px 12px;
     border: 1px solid var(--theme-stroke);
-    border-radius: 999px;
+    border-radius: 12px;
     background: var(--theme-card-bg);
     color: var(--theme-text);
-    font-size: 14px;
-    font-weight: 600;
-    white-space: nowrap;
+    text-align: left;
     transition:
       border-color var(--duration-fast) var(--ease-out),
       background-color var(--duration-fast) var(--ease-out);
   }
-  .start-button i {
-    font-size: 12px;
-    color: var(--theme-accent);
-  }
-  .start-button:hover {
+  .start-tile:hover {
     border-color: var(--theme-text-secondary);
     background: var(--theme-card-hover-bg, var(--theme-card-bg));
+  }
+  .start-text {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+  }
+  .start-text strong {
+    font-size: var(--start-title-size, 15px);
+    font-weight: 650;
+  }
+  .start-text strong i {
+    margin-right: 2px;
+    font-size: 0.8em;
+    color: var(--theme-accent);
+  }
+  .start-description {
+    color: var(--theme-text-secondary);
+    font-size: var(--start-description-size, 13px);
+    line-height: 1.4;
+  }
+  /* The pictures: a video with its card, a screen, a grid of sequences. */
+  .mini {
+    --mini-ink: color-mix(in srgb, var(--theme-accent) 70%, transparent);
+    --mini-fill: color-mix(in srgb, var(--theme-accent) 16%, transparent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: var(--mini-width, 96px);
+    aspect-ratio: 16 / 10;
+    border-radius: 8px;
+    background: var(--theme-bg);
+  }
+  .mini-video {
+    height: 72%;
+    aspect-ratio: 9 / 16;
+    border: 1.5px solid var(--mini-ink);
+    border-radius: 3px;
+    background: var(--mini-fill);
+  }
+  .mini-card,
+  .mini-grid {
+    display: grid;
+    gap: 2px;
+  }
+  .mini-card {
+    grid-template-columns: repeat(2, 1fr);
+    height: 60%;
+    aspect-ratio: 2 / 3;
+  }
+  .mini-grid {
+    grid-template-columns: repeat(3, 1fr);
+    height: 64%;
+    aspect-ratio: 3 / 2;
+  }
+  .mini-card span,
+  .mini-grid span {
+    border: 1px solid var(--mini-ink);
+    border-radius: 2px;
+    background: var(--mini-fill);
+  }
+  .mini-screen {
+    display: grid;
+    place-items: center;
+    height: 64%;
+    aspect-ratio: 16 / 10;
+    border: 1.5px solid var(--mini-ink);
+    border-radius: 3px;
+    background: var(--mini-fill);
+    color: var(--mini-ink);
+    font-size: 11px;
   }
   .library-tools {
     display: grid;
@@ -415,14 +504,16 @@
     overscroll-behavior: contain;
     padding: 4px var(--library-pad) var(--library-pad);
   }
+  /* Every card in a row is as tall as the tallest, so the row reads as one. */
   .project-grid {
     position: relative;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 270px), 1fr));
-    align-items: start;
+    align-items: stretch;
     gap: 24px;
   }
   .card-slot {
+    display: grid;
     min-width: 0;
   }
   .empty {
@@ -493,6 +584,11 @@
     line-height: 1.5;
   }
   @container studio-library (max-width: 850px) {
+    .start-tile {
+      grid-template-columns: minmax(0, 1fr);
+      justify-items: start;
+      gap: 10px;
+    }
     .library-tools {
       grid-template-columns: minmax(0, 1fr) 10rem;
       grid-template-areas:
@@ -508,23 +604,49 @@
       display: grid;
     }
     .start {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
     }
-    .start-button {
-      flex-direction: column;
-      gap: 4px;
-      min-height: 56px;
+    .start-tile {
+      justify-items: center;
+      gap: 6px;
       padding: 8px 4px;
-      border-radius: 12px;
+      text-align: center;
+    }
+    .mini {
+      --mini-width: 64px;
+    }
+    .start-description {
+      display: none;
     }
     .project-grid {
       gap: 16px;
     }
   }
+  /* A 4K screen makes the words larger rather than the gaps. */
   @container studio-library (min-width: 2000px) {
+    .studio-library {
+      --start-title-size: 19px;
+      --start-description-size: 16px;
+      --mini-width: 128px;
+      --studio-card-title: 21px;
+      --studio-card-meta: 15px;
+    }
+    h1 {
+      font-size: 2.25rem;
+    }
+    .count {
+      font-size: 1.25rem;
+    }
+    input {
+      font-size: 17px;
+      min-height: 50px;
+    }
+    .library-footer {
+      font-size: 15px;
+    }
     .project-grid {
       grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 32px;
     }
   }
 </style>
