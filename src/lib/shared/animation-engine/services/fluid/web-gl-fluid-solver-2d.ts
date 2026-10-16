@@ -100,6 +100,7 @@ export const FLUID_PROGRAM_DEFINITIONS: readonly FluidProgramDefinition[] = [
       "u_dt",
       "u_strength",
       "u_time",
+      "u_minGradient",
     ],
   },
   {
@@ -321,7 +322,12 @@ export class WebGLFluidSolver2D {
     this.swap(target);
   }
 
-  applyVorticity(dt: number, strength: number, time: number): void {
+  applyVorticity(
+    dt: number,
+    strength: number,
+    time: number,
+    minGradient = 0
+  ): void {
     const gl = this.gl;
     this.computeCurl();
 
@@ -337,6 +343,7 @@ export class WebGLFluidSolver2D {
     gl.uniform1f(program.uniforms.get("u_dt")!, dt);
     gl.uniform1f(program.uniforms.get("u_strength")!, strength);
     gl.uniform1f(program.uniforms.get("u_time")!, time);
+    gl.uniform1f(program.uniforms.get("u_minGradient")!, minGradient);
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.velocity.write.fbo);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
     this.swap(this.velocity);

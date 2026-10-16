@@ -1,5 +1,6 @@
 <script lang="ts">
 	import {
+		MANDALA_SVG_STROKE_WIDTH,
 		renderMandalaSVG,
 		renderMandalaToCanvas,
 		resolveMandalaRenderExtent,
@@ -53,7 +54,16 @@
 	import { TrackingMode } from "#lib/shared/animation-engine/domain/types/trail-types.js";
 	import { pairTipEnds } from "#lib/shared/pictograph/prop/domain/prop-tip-ends.js";
 	import { DURATION } from "#lib/shared/transitions/transitions.js";
-	import type { MandalaHandOffsets } from "../services/mandala-grid-join";
+	import { motionDuration } from "#lib/shared/transitions/motion.js";
+	import {
+		CENTERED_HAND_OFFSETS,
+		GRID_JOIN_TWEEN_MS,
+		GridJoinTween,
+	} from "#lib/shared/grid-join/grid-join-tween.js";
+	import {
+		mandalaHandOffsetsKey,
+		type MandalaHandOffsets,
+	} from "../services/mandala-grid-join";
 
 	export type { MandalaPathShape, UndulationEasing } from "../domain/mandala-types";
 
@@ -263,18 +273,41 @@
 	let morphRafId: number = 0;
 	let lastShape: MandalaPathShape = pathShape;
 	let activeMorph: { from: MandalaPathShape; t: number } | null = $state(null);
+	// A mandala that morphs its changes (the workspace, the card grid) stays on
+	// the canvas the whole time, at rest and in motion. Swapping to the canvas
+	// for a morph and back to the SVG after it showed a second picture, drawn
+	// with other lines and glow, for a few frames: the flash on every edit.
+	// Every change rides one frame loop: the path morph and the join slide each
+	// sample their own clock and the canvas paints once per frame.
 	const CHANGE_MORPH_MS = DURATION.dramatic;
-	let changeMorphRafId = 0;
+	// The edit that changes a mandala re-renders the whole workspace, which can
+	// hold the main thread for a third of a second. A frame gap advances the
+	// morph by at most this much, so the stall delays the morph instead of
+	// eating it and leaving only its last frame to show.
+	const CHANGE_MORPH_MAX_STEP_MS = 1000 / 30;
+	let changeRafId = 0;
 	let changeMorphPaths: MandalaPaths | null = $state(null);
-	let changeMorphActive = $state(false);
+	let pathMorph: {
+		readonly at: (t: number) => MandalaPaths;
+		readonly duration: number;
+		elapsed: number;
+		last: number | null;
+	} | null = null;
 	let lastChangeTarget: MandalaPaths | null = null;
+	// The join slide: the shared GridJoinTween on the pictographs' clock, so the
+	// two figures glide apart or together in step with the joined grids.
+	// `slidingHandOffsets` is the shown frame while it runs, undefined at rest.
+	const joinTween = new GridJoinTween();
+	let slidingHandOffsets: MandalaHandOffsets | undefined = $state(undefined);
+	let lastJoinOffsets: MandalaHandOffsets | null = null;
+	let lastJoinKey: string | null = null;
 
 	onMount(() => {
 		calcReady = true;
 		return () => {
 			if (rafId) cancelAnimationFrame(rafId);
 			if (morphRafId) cancelAnimationFrame(morphRafId);
-			if (changeMorphRafId) cancelAnimationFrame(changeMorphRafId);
+			if (changeRafId) cancelAnimationFrame(changeRafId);
 		};
 	});
 
@@ -437,15 +470,12 @@
 			return;
 		}
 
-		const reducedMotion =
-			typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-		const canMorph = morphChanges && !animate && activeMorph === null && !reducedMotion;
+		const duration = motionDuration(CHANGE_MORPH_MS);
+		const canMorph = morphChanges && !animate && activeMorph === null && duration > 0;
 
 		if (!lastChangeTarget || !canMorph) {
-			if (changeMorphRafId) cancelAnimationFrame(changeMorphRafId);
-			changeMorphRafId = 0;
+			pathMorph = null;
 			changeMorphPaths = null;
-			changeMorphActive = false;
 			lastChangeTarget = target;
 			return;
 		}
@@ -457,34 +487,76 @@
 
 		const from = untrack(() => changeMorphPaths ?? lastChangeTarget)!;
 		lastChangeTarget = target;
-		if (changeMorphRafId) cancelAnimationFrame(changeMorphRafId);
 		changeMorphPaths = from;
-		changeMorphActive = true;
-		const morphAt = createMandalaMorph(from, target);
+		pathMorph = { at: createMandalaMorph(from, target), duration, elapsed: 0, last: null };
+		startChangeLoop();
+	});
 
-		let start: number | null = null;
-		const stepChangeMorph = (timestamp: number) => {
-			if (start === null) start = timestamp;
-			const linearProgress = Math.min(1, (timestamp - start) / CHANGE_MORPH_MS);
-			const progress = EASING_FNS.bloom(linearProgress);
-			changeMorphPaths = morphAt(progress);
-			draw();
+	// A new join slides the figures from where they are shown to where the join
+	// puts them; one grid is both figures at the center.
+	$effect(() => {
+		const next = handOffsets ?? null;
+		const key = mandalaHandOffsetsKey(next);
+		const last = lastJoinOffsets;
+		const lastKey = lastJoinKey;
+		lastJoinOffsets = next;
+		lastJoinKey = key;
+		if (lastKey === null || key === lastKey) return;
 
+		const duration = motionDuration(GRID_JOIN_TWEEN_MS);
+		if (!morphChanges || animate || duration <= 0) {
+			joinTween.stop();
+			slidingHandOffsets = undefined;
+			return;
+		}
+		const shown = untrack(() => slidingHandOffsets) ?? last ?? CENTERED_HAND_OFFSETS;
+		const now = performance.now();
+		joinTween.start(shown, next ?? CENTERED_HAND_OFFSETS, now, duration);
+		slidingHandOffsets = joinTween.sample(now)?.offsets ?? undefined;
+		startChangeLoop();
+	});
+
+	function startChangeLoop(): void {
+		if (!changeRafId) changeRafId = requestAnimationFrame(changeFrame);
+	}
+
+	// One frame of every running change. Painting follows from the state it
+	// sets (see the standing-canvas effect below), once per frame.
+	function changeFrame(now: number): void {
+		changeRafId = 0;
+		let running = false;
+
+		const morph = pathMorph;
+		if (morph) {
+			morph.elapsed += morph.last === null ? 0 : Math.min(now - morph.last, CHANGE_MORPH_MAX_STEP_MS);
+			morph.last = now;
+			const linearProgress = Math.min(1, morph.elapsed / morph.duration);
 			if (linearProgress < 1) {
-				changeMorphRafId = requestAnimationFrame(stepChangeMorph);
+				changeMorphPaths = morph.at(EASING_FNS.bloom(linearProgress));
+				running = true;
 			} else {
-				changeMorphRafId = 0;
-				changeMorphActive = false;
+				pathMorph = null;
 				changeMorphPaths = null;
 			}
-		};
+		}
 
-		changeMorphRafId = requestAnimationFrame(stepChangeMorph);
-	});
+		const slide = joinTween.sample(now);
+		if (slide && slide.t < 1) {
+			slidingHandOffsets = slide.offsets;
+			running = true;
+		} else if (slidingHandOffsets !== undefined) {
+			joinTween.stop();
+			slidingHandOffsets = undefined;
+		}
+
+		if (running) changeRafId = requestAnimationFrame(changeFrame);
+	}
 
 	const paths = $derived(changeMorphPaths ?? calculatedPaths);
 
 	const effectiveDarkMode = $derived(darkMode ?? settingsService.settings.darkMode);
+
+	const shownHandOffsets = $derived(slidingHandOffsets ?? handOffsets);
 
 	const renderOptions = $derived.by((): MandalaRenderOptions => {
 		return {
@@ -498,14 +570,16 @@
 			tipDx: effectiveDx,
 			strokeWidth,
 			gradient,
-			...(handOffsets ? { handOffsets } : {}),
+			...(shownHandOffsets ? { handOffsets: shownHandOffsets } : {}),
 		};
 	});
 
-	// Canvas while motion is live (undulation or shape-morph), SVG when fully
-	// static. `svgString` is lazy — it isn't read in the canvas branch, so the
-	// expensive SVG-string build is skipped entirely during animation.
-	const useCanvas = $derived(exportRaster || animate || activeMorph !== null || changeMorphActive);
+	// Canvas while motion is live (undulation or shape-morph) and for a mandala
+	// that morphs its changes, SVG for every other still mandala. `svgString` is
+	// lazy — it isn't read in the canvas branch, so the expensive SVG-string
+	// build is skipped entirely during animation.
+	const standingCanvas = $derived(morphChanges && !animate && !exportRaster);
+	const useCanvas = $derived(exportRaster || animate || activeMorph !== null || standingCanvas);
 
 	const svgString = $derived.by((): string => {
 		if (useCanvas || !paths) return "";
@@ -536,7 +610,7 @@
 		if (!canvas || typeof ResizeObserver === "undefined") return;
 		const observer = new ResizeObserver(() => {
 			canvasSize.invalidate();
-			if (!rafId && !morphRafId && !changeMorphRafId) draw();
+			if (!rafId && !morphRafId && !changeRafId) draw();
 		});
 		observer.observe(canvas);
 		return () => {
@@ -607,11 +681,22 @@
 						// Device-space glow blur mirrors the SVG `#glow` filter.
 						const renderExtent = resolveMandalaRenderExtent(p, opts);
 						const renderScale = logicalSize / 2 / (renderExtent * 1.05);
+						// The standing canvas stands in for the still SVG every
+						// other mandala shows, so it is tuned to look like it: a
+						// canvas shadowBlur is twice the SVG filter's standard
+						// deviation, so the overlap bloom doubles, and the line is
+						// a touch under the SVG's width. Against the SVG raster of
+						// a workspace mandala (2026-10-16) this cut the mean pixel
+						// difference from 18 to 11 and matched its brightness.
+						const bloomSpread = standingCanvas ? 2 : 1;
 						return {
 							glow: {
 								blur: GLOW_STDDEV * renderScale * ratio,
-								bloomBlur: DEFAULT_OVERLAP_CONFIG.bloomBlur * renderScale * ratio,
+								bloomBlur: DEFAULT_OVERLAP_CONFIG.bloomBlur * renderScale * ratio * bloomSpread,
 							},
+							...(standingCanvas
+								? { strokeWidth: opts.strokeWidth ?? MANDALA_SVG_STROKE_WIDTH * 0.9 }
+								: {}),
 						};
 					})()),
 			offsetX: 0,
@@ -624,9 +709,20 @@
 	// the actual draw() reads (paths/palette/…) are untracked so this never
 	// re-fires per frame — the rAF loops own per-frame redraws.
 	$effect(() => {
-		if (!useCanvas) return;
+		if (!useCanvas || standingCanvas) return;
 		void canvasEl;
 		void size;
+		untrack(() => draw());
+	});
+
+	// The standing canvas paints whenever what it shows changes: a new result,
+	// a morph or slide frame, a palette or size change. The change loop sets
+	// its state once per frame, so this paints once per frame.
+	$effect(() => {
+		if (!standingCanvas) return;
+		void canvasEl;
+		void paths;
+		void renderOptions;
 		untrack(() => draw());
 	});
 </script>

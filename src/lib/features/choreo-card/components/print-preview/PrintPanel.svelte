@@ -350,7 +350,6 @@
     : isRendering
       ? "Rendering cards..."
       : "Building download..."}
-  detail={exportTotal > 0 ? `Card ${exportProgress} / ${exportTotal}` : null}
   onCancel={() => {}}
   cancelDisabledReason="Deck rendering runs in one pass and can't be stopped part-way."
   label="Preparing the deck"

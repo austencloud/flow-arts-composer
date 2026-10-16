@@ -4,7 +4,7 @@
   import { createStartPlacementFromBeatStart } from "#lib/shared/create/services/sequence-transforms.js";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
-  import type { FuseSide } from "../state/fuse-shuffle-pool.svelte";
+  import type { FuseSide } from "../state/fuse-shuffle-pool.svelte.js";
   import { FUSE_LIVE_GRID_GAP } from "../services/fuse-workspace-split";
 
   let {
@@ -132,7 +132,7 @@
         {sequence}
         mode="card-back"
         style={"stroke"}
-        show={side === "left" ? "blue" : "red"}
+        show={side}
         size={mandalaSize}
         darkMode={true}
         {leftPropType}
