@@ -306,9 +306,19 @@ try {
             frames: 480,
             motion,
           });
+          // The production arm pose has page-lifetime state: remounting even the
+          // same rig on this page can leave its first frames in a stale rest pose.
+          // Capture each performance in an isolated page lifetime, then restore
+          // the exact preserved LOOP before the next character is inspected.
+          await loadPage();
+          await page.evaluate(
+            ([key, sequence]) =>
+              window.flowFestNativeCapture.setFamilySequenceSnapshots({
+                [key]: sequence,
+              }),
+            [role, snapshot]
+          );
         }
-        // A fresh page releases WebGL resources accumulated by dozens of production rigs.
-        await loadPage();
       }
   } else {
     if (selected && !rideOnly) {
