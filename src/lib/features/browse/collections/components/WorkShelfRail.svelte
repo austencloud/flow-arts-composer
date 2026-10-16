@@ -1,11 +1,12 @@
 <!--
-  The fixed navigation shell for the desktop Your Work rail.
+  The desktop You shelf selector and its active panel.
 
-  The shelf tabs stay visible while only the selected shelf's cards scroll.
+  The selector sits above the content area while only the selected shelf's cards scroll.
   Accounts with hundreds of collections can therefore reach Visuals, videos, and
   the TKA decks without crossing the collection list first. The caller keeps
   ownership of the cards and their navigation; this component only presents
-  the shelf choice and its active panel.
+  the shelf choice and its active panel. The caller places these two regions
+  around either the full-width Drafts pane or the rail/detail split.
 -->
 <script module lang="ts">
   export type WorkShelfId =
@@ -34,9 +35,10 @@
     sharedAvailable: boolean;
     onchange: (shelfId: WorkShelfId) => void;
     content: Snippet<[WorkShelfId]>;
+    region: "tabs" | "panel";
   }
 
-  let { value, sharedAvailable, onchange, content }: Props = $props();
+  let { value, sharedAvailable, onchange, content, region }: Props = $props();
 
   const shelves = $derived<Record<WorkShelfId, ShelfDefinition>>({
     drafts: {
@@ -108,37 +110,40 @@
   </span>
 {/snippet}
 
-<!-- The shelf tabs are the header. The module's own tab bar already says
-     "You" above this rail, so a second title row only spent a band of the
-     rail on a word; the tab group carries that name for assistive tech. -->
-<header class="rail-header">
-  <SegmentedControl
-    {options}
-    {value}
-    {onchange}
-    color="accent"
-    density="tight"
-    semantics="tabs"
-    ariaLabel={t("browse_ui_you")}
-    optionContent={tabContent}
-  />
-</header>
+{#if region === "tabs"}
+  <header class="rail-header">
+    <div class="tab-width">
+      <SegmentedControl
+        {options}
+        {value}
+        {onchange}
+        color="accent"
+        density="tight"
+        semantics="tabs"
+        ariaLabel={t("browse_ui_you")}
+        optionContent={tabContent}
+      />
+    </div>
+  </header>
+{/if}
 
-<div
-  class="shelf-panel"
-  id="work-shelf-panel-{value}"
-  role="tabpanel"
-  aria-labelledby="work-shelf-tab-{value}"
->
-  {#if value !== "collections" && value !== "drafts"}
-    <header class="shelf-panel-header">
-      <h3>{shelves[value].label}</h3>
-      <p>{shelves[value].description}</p>
-    </header>
-  {/if}
+{#if region === "panel"}
+  <div
+    class="shelf-panel"
+    id="work-shelf-panel-{value}"
+    role="tabpanel"
+    aria-labelledby="work-shelf-tab-{value}"
+  >
+    {#if value !== "collections" && value !== "drafts"}
+      <header class="shelf-panel-header">
+        <h3>{shelves[value].label}</h3>
+        <p>{shelves[value].description}</p>
+      </header>
+    {/if}
 
-  {@render content(value)}
-</div>
+    {@render content(value)}
+  </div>
+{/if}
 
 <style>
   .rail-header {
@@ -148,6 +153,12 @@
     padding: clamp(8px, 1.2cqi, 12px) clamp(10px, 1.6cqi, 16px);
     border-bottom: 1px solid var(--theme-stroke);
     background: transparent;
+  }
+
+  .tab-width {
+    width: 100%;
+    max-width: 840px;
+    margin-inline: auto;
   }
 
   .shelf-tab-content {
@@ -162,9 +173,6 @@
   }
 
   .shelf-tab-content span {
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
   }
 
