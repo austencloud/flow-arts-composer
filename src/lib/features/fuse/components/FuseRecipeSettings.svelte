@@ -80,6 +80,7 @@
 
 <!-- The recipe editors share their content between the drawer and column. -->
 {#if solo && destination}
+  {@const activeDestination = destination}
   <GenerationSettingsOverlay
     title={DESTINATION_LABELS[destination] ?? "Fuse recipe"}
     titleId="fuse-settings-title"
@@ -95,7 +96,7 @@
            rather than a third of the way down an otherwise empty panel. -->
       <div class="solo-body themed-scrollbar">
         <FuseRecipeSettingContent
-          {destination}
+          destination={activeDestination}
           presentation="drawer"
           onCancel={onClose}
           onApply={onClose}

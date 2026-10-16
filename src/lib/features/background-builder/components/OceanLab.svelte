@@ -14,10 +14,11 @@
   import * as BackgroundsPackage from "@austencloud/backgrounds";
   import { ChipToggle, ChipGroup } from "@austencloud/chip-toggle";
   import CollapsibleLabSection from "#lib/shared/components/lab/CollapsibleLabSection.svelte";
+  import type { ComponentProps } from "svelte";
   import LabStatusBar from "#lib/shared/components/lab/LabStatusBar.svelte";
   import PersonalityBars from "./PersonalityBars.svelte";
   import type { CoralSceneRenderer } from "../services/coral-scene-renderer";
-  import { createOceanLabState } from "../state/deep-ocean-lab-state.svelte";
+  import { createOceanLabState } from "../state/deep-ocean-lab-state.svelte.js";
   import {
     type ColorPreset,
     moodOptions as MOOD_OPTIONS,
@@ -147,23 +148,25 @@
   ]);
 
   // Status chips for selected fish
-  let statusChips = $derived.by(() => {
-    if (!selectedFish) return [];
-    return [
-      {
-        label: selectedFish.resident ? "resident" : "ambient",
-        color: selectedFish.resident ? "cyan" : "gray",
-      },
-      {
-        label: selectedFish.behavior,
-        color: getBehaviorChipColor(selectedFish.behavior),
-      },
-      {
-        label: selectedFish.mood ?? "calm",
-        color: getMoodChipColor(selectedFish.mood ?? "calm"),
-      },
-    ];
-  });
+  let statusChips = $derived.by<ComponentProps<typeof LabStatusBar>["chips"]>(
+    () => {
+      if (!selectedFish) return [];
+      return [
+        {
+          label: selectedFish.resident ? "resident" : "ambient",
+          color: selectedFish.resident ? "cyan" : "gray",
+        },
+        {
+          label: selectedFish.behavior,
+          color: getBehaviorChipColor(selectedFish.behavior),
+        },
+        {
+          label: selectedFish.mood ?? "calm",
+          color: getMoodChipColor(selectedFish.mood ?? "calm"),
+        },
+      ];
+    }
+  );
 
   function getBehaviorChipColor(
     behavior: string
