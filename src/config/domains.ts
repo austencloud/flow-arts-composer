@@ -83,6 +83,7 @@ const PUBLIC_PATH_PREFIXES = [
   "/atlas",
   "/faq",
   "/guide",
+  "/codex",
   "/privacy",
   // /roots redirects to /history (see routes/(public)/roots/+page.ts), but the
   // prefix stays so /roots/software still resolves in public/landing mode.

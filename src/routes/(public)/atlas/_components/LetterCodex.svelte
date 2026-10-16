@@ -3,7 +3,7 @@
   overview; LetterExplorer owns the focused, shareable letter destination.
 -->
 <script lang="ts">
-  import { onMount, tick } from "svelte";
+  import { onMount } from "svelte";
   import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
   import ModalHeader from "#lib/shared/foundation/ui/modal/ModalHeader.svelte";
   import {
@@ -12,12 +12,10 @@
   } from "#lib/shared/selection/sequence-selection.svelte.js";
   import "#lib/shared/selection/selection.css";
   import "./codex-boards/codex-dark.css";
-  import BoardSheets from "./codex-boards/BoardSheets.svelte";
   import BoardAtlas from "./codex-boards/BoardAtlas.svelte";
-  import BoardStage from "./codex-boards/BoardStage.svelte";
-  import CodexTypeLegend from "./codex-boards/CodexTypeLegend.svelte";
   import LetterExplorer from "./codex-boards/LetterExplorer.svelte";
-  import type { BoardKey } from "./codex-boards/board-choice";
+  import CodexBoardControls from "./codex-boards/CodexBoardControls.svelte";
+  import type { Box } from "./codex-boards/codex-fan";
   import {
     CODEX_BY_LABEL,
     CODEX_LETTERS,
@@ -25,8 +23,11 @@
   } from "./codex-boards/codex-letters";
   import {
     hasLetterExplorerEdits,
+    parseLetterExplorerEdits,
     parseLetterExplorerRoute,
+    writeLetterExplorerEdits,
     writeLetterExplorerRoute,
+    type LetterExplorerEdits,
     type LetterExplorerRouteState,
   } from "./codex-boards/letter-explorer-url";
   import {
@@ -48,8 +49,20 @@
   import type { TurnValue } from "#lib/shared/create/domain/turn-pattern-data.js";
   import {
     applyTurnsToVariations,
+    findMatchingVariation,
     motionAllowsFloat,
   } from "./codex-boards/letter-explorer-variations";
+  import { codexData } from "../../codex/_data/codex-groups";
+  import {
+    CODEX_VISIBILITY_STORAGE_KEY,
+    defaultCodexVisibility,
+    formatCodexTransforms,
+    parseCodexTransforms,
+    restoreCodexVisibility,
+    transformCodexPictograph,
+    type CodexTransformOp,
+    type CodexVisibility,
+  } from "../../codex/_data/codex-view";
   import { loadFoundingCollectionSequences } from "#lib/features/browse/collections/config/founding-collections.js";
   import { filterSequencesByExactLetter } from "#lib/shared/browse/services/sequence-letter-occurrence.js";
   import { mutateCurrentUrl } from "#lib/shared/navigation/services/url-state.js";
@@ -59,16 +72,19 @@
     codexDataFrom,
     withStartOrientations,
     type CodexStartOrientations,
-  } from "../../guide/codex/_data/codex-orientation";
+  } from "../../codex/_data/codex-orientation";
 
   let {
     initialLetter = "A",
-    board = "atlas",
     propType,
     startOrientations,
+    boardControls = false,
   }: {
     initialLetter?: string;
-    board?: BoardKey;
+    /** Show turns, transforms and layers above the board, and draw the board
+     *  with them. Turns are then one setting shared by the board and the
+     *  explorer, so they survive opening, closing and changing letters. */
+    boardControls?: boolean;
     /** The prop the board and explorer draw; omitted keeps the dataset's own. */
     propType?: PropType;
     /** Where each hand starts on the Atlas board and in the explorer, with
@@ -77,11 +93,39 @@
     startOrientations?: CodexStartOrientations;
   } = $props();
 
-  const getBoardData = $derived(
-    startOrientations
-      ? (id: string) => codexDataFrom(id, startOrientations)
-      : undefined
-  );
+  let transforms = $state<CodexTransformOp[]>([]);
+  let visibility = $state<CodexVisibility>(defaultCodexVisibility());
+
+  /** A board cell as drawn: its start, then the transforms in the order
+   *  pressed. Turns go on last and never move a hand. */
+  function placedCell(
+    id: string,
+    ops: readonly CodexTransformOp[]
+  ): PictographData | null {
+    const base = startOrientations
+      ? codexDataFrom(id, startOrientations)
+      : codexData(id);
+    return base && ops.length > 0 ? transformCodexPictograph(base, ops) : base;
+  }
+
+  // Every setting is read here, not inside the returned function, so the
+  // board redraws when one changes.
+  const boardData = $derived.by(() => {
+    if (!boardControls) {
+      return startOrientations
+        ? (id: string) => codexDataFrom(id, startOrientations)
+        : undefined;
+    }
+    const ops = [...transforms];
+    const edits = [leftTurns, rightTurns, leftRotation, rightRotation] as const;
+    void startOrientations;
+    return (id: string): PictographData | null => {
+      const placed = placedCell(id, ops);
+      return placed
+        ? (applyTurnsToVariations([placed], ...edits)[0] ?? null)
+        : null;
+    };
+  });
 
   function begun(pictographs: readonly PictographData[]): PictographData[] {
     return startOrientations
@@ -100,7 +144,6 @@
   selection.select(fallback.id);
 
   const info = $derived(CODEX_LETTERS.get(selectedId) ?? fallback);
-  const overlayBoard = $derived(board !== "stage");
 
   let gridMode = $state<GridModeValue>(GridMode.DIAMOND);
   let selectedVariationIndex = $state(0);
@@ -113,7 +156,22 @@
     RotationDirection.CLOCKWISE
   );
   let overlayOpen = $state(false);
-  let stageBoard = $state<ReturnType<typeof BoardStage> | undefined>();
+  // A click on a board cell opens the explorer as a deck dealt from that
+  // cell (codex-fan.ts). The dialog skips its own pop so the cards measure
+  // their true slots, and goes back to it once the deck has landed.
+  let fan = $state<{ origin: Box; key: number } | null>(null);
+  let fanning = $state(false);
+  let fanCount = 0;
+  let press: { origin: Box; at: number } | null = null;
+
+  function notePress(event: Event): void {
+    const picture = (event.target as Element | null)
+      ?.closest(".codex-cell")
+      ?.querySelector(".picto");
+    if (!picture) return;
+    const { x, y, width, height } = picture.getBoundingClientRect();
+    press = { origin: { x, y, width, height }, at: performance.now() };
+  }
 
   let pictographsByGrid = $state<Record<string, PictographData[]>>({
     [GridMode.DIAMOND]: [],
@@ -135,13 +193,6 @@
   const variations = $derived(
     begun(
       (pictographsByGrid[gridMode] ?? []).filter(
-        (pictograph) => pictograph.letter === info.label
-      )
-    )
-  );
-  const stageVariations = $derived(
-    begun(
-      (pictographsByGrid[GridMode.DIAMOND] ?? []).filter(
         (pictograph) => pictograph.letter === info.label
       )
     )
@@ -188,6 +239,27 @@
     };
   }
 
+  function edits(): LetterExplorerEdits {
+    return { leftTurns, rightTurns, leftRotation, rightRotation };
+  }
+
+  function setEdits(next: LetterExplorerEdits): void {
+    leftTurns = next.leftTurns;
+    rightTurns = next.rightTurns;
+    leftRotation = next.leftRotation;
+    rightRotation = next.rightRotation;
+  }
+
+  /** Turns changed: the whole route while a letter is open, else just the
+   *  turns, which the board follows on its own. */
+  function commitEdits(): void {
+    if (overlayOpen) {
+      commitRoute();
+      return;
+    }
+    mutateCurrentUrl((url) => writeLetterExplorerEdits(url, edits()));
+  }
+
   function commitRoute(mode: "push" | "replace" = "replace"): void {
     mutateCurrentUrl((url) => writeLetterExplorerRoute(url, routeState()), {
       mode,
@@ -202,12 +274,12 @@
   }
 
   function syncFromUrl(): void {
-    const state = parseLetterExplorerRoute(
-      new URLSearchParams(window.location.search),
-      allowedLetters
-    );
+    const params = new URLSearchParams(window.location.search);
+    if (boardControls) transforms = parseCodexTransforms(params.get("tf"));
+    const state = parseLetterExplorerRoute(params, allowedLetters);
     if (!state) {
       overlayOpen = false;
+      if (boardControls) setEdits(parseLetterExplorerEdits(params));
       return;
     }
 
@@ -217,18 +289,39 @@
     selection.select(selectedInfo.id);
     gridMode = state.gridMode;
     selectedVariationIndex = state.variation;
-    leftTurns = state.leftTurns;
-    rightTurns = state.rightTurns;
-    leftRotation = state.leftRotation;
-    rightRotation = state.rightRotation;
-    overlayOpen = overlayBoard;
+    pendingCell = null;
+    setEdits(state);
+    overlayOpen = true;
+  }
+
+  /** The cell last clicked, waiting for its grid's variations to load so
+   *  the explorer can land on the variation it draws. */
+  let pendingCell: PictographData | null = null;
+
+  function letterVariations(mode: GridModeValue): PictographData[] {
+    return (pictographsByGrid[mode] ?? []).filter(
+      (pictograph) => pictograph.letter === info.label
+    );
+  }
+
+  function landOn(cell: PictographData): void {
+    const options = letterVariations(gridMode);
+    if (options.length === 0) {
+      pendingCell = cell;
+      return;
+    }
+    pendingCell = null;
+    selectedVariationIndex = Math.max(0, findMatchingVariation(options, cell));
   }
 
   function normalizeVariation(mode: GridModeValue): void {
     if (mode !== gridMode) return;
-    const count = (pictographsByGrid[mode] ?? []).filter(
-      (pictograph) => pictograph.letter === info.label
-    ).length;
+    if (pendingCell) {
+      landOn(pendingCell);
+      commitRoute();
+      return;
+    }
+    const count = letterVariations(mode).length;
     if (count === 0 || selectedVariationIndex < count) return;
     selectedVariationIndex = 0;
     commitRoute();
@@ -263,7 +356,50 @@
     }
   }
 
+  function persistVisibility(): void {
+    try {
+      localStorage.setItem(
+        CODEX_VISIBILITY_STORAGE_KEY,
+        JSON.stringify(visibility)
+      );
+    } catch {
+      // Private mode or a full store: the layers just are not remembered.
+    }
+  }
+
+  function toggleLayer(key: keyof CodexVisibility): void {
+    visibility = { ...visibility, [key]: !visibility[key] };
+    persistVisibility();
+  }
+
+  function writeTransforms(): void {
+    const value = formatCodexTransforms(transforms);
+    mutateCurrentUrl((url) => {
+      if (value === null) url.searchParams.delete("tf");
+      else url.searchParams.set("tf", value);
+    });
+  }
+
+  function transformBoard(op: CodexTransformOp): void {
+    transforms = [...transforms, op];
+    writeTransforms();
+  }
+
+  function resetTransforms(): void {
+    transforms = [];
+    writeTransforms();
+  }
+
   onMount(() => {
+    if (boardControls) {
+      try {
+        visibility = restoreCodexVisibility(
+          localStorage.getItem(CODEX_VISIBILITY_STORAGE_KEY)
+        );
+      } catch {
+        // Storage blocked: keep the default layers.
+      }
+    }
     syncFromUrl();
     void Promise.all([loadGrid(GridMode.DIAMOND), loadGrid(GridMode.BOX)]);
     void loadLearningDeck();
@@ -276,30 +412,41 @@
     if (!selectedInfo) return;
     selectedId = id;
     selection.select(id);
-
-    if (overlayBoard) {
-      selectedVariationIndex = 0;
-      resetEdits();
-      overlayOpen = true;
-      commitRoute("push");
-      return;
-    }
-
-    tick().then(() => stageBoard?.revealStage());
+    // The explorer opens on the variation the clicked cell draws, in that
+    // cell's grid: a rotated board shows Box cells.
+    const cell = placedCell(id, boardControls ? transforms : []);
+    gridMode = cell?.motions?.[HandSide.LEFT]?.gridMode ?? GridMode.DIAMOND;
+    selectedVariationIndex = 0;
+    if (cell) landOn(cell);
+    if (!boardControls) resetEdits();
+    const origin = press && performance.now() - press.at < 1500 ? press.origin : null;
+    press = null;
+    fan = origin ? { origin, key: ++fanCount } : null;
+    fanning = fan !== null;
+    overlayOpen = true;
+    commitRoute("push");
   }
 
   function closeExplorer(): void {
     overlayOpen = false;
-    mutateCurrentUrl((url) => writeLetterExplorerRoute(url, null), {
-      mode: "push",
-    });
+    fan = null;
+    fanning = false;
+    pendingCell = null;
+    mutateCurrentUrl(
+      (url) => {
+        writeLetterExplorerRoute(url, null);
+        if (boardControls) writeLetterExplorerEdits(url, edits());
+      },
+      { mode: "push" }
+    );
   }
 
   function selectGrid(next: GridModeValue): void {
     if (next === gridMode) return;
     gridMode = next;
     selectedVariationIndex = 0;
-    resetEdits();
+    pendingCell = null;
+    if (!boardControls) resetEdits();
     commitRoute("push");
   }
 
@@ -324,20 +471,15 @@
   }
 
   function changeTurns(color: HandSide, delta: number): void {
+    // From the board every kind of letter is in play, so float is allowed;
+    // letters that cannot float stay at zero (applyTurnsToVariations).
+    const allowFloat = !overlayOpen || motionAllowsFloat(selectedBase, color);
     if (color === HandSide.LEFT) {
-      leftTurns = nextTurns(
-        leftTurns,
-        delta,
-        motionAllowsFloat(selectedBase, color)
-      );
+      leftTurns = nextTurns(leftTurns, delta, allowFloat);
     } else {
-      rightTurns = nextTurns(
-        rightTurns,
-        delta,
-        motionAllowsFloat(selectedBase, color)
-      );
+      rightTurns = nextTurns(rightTurns, delta, allowFloat);
     }
-    commitRoute();
+    commitEdits();
   }
 
   function changeRotation(
@@ -346,12 +488,12 @@
   ): void {
     if (color === HandSide.LEFT) leftRotation = direction;
     else rightRotation = direction;
-    commitRoute();
+    commitEdits();
   }
 
   function resetExplorerEdits(): void {
     resetEdits();
-    commitRoute();
+    commitEdits();
   }
 
   async function copyExactLink(): Promise<void> {
@@ -367,74 +509,82 @@
   }
 </script>
 
-<div class="codex codex-dark">
-  {#if board === "stage"}
-    <CodexTypeLegend />
-  {/if}
-
-  {#if board === "sheets"}
-    <BoardSheets onSelect={select} />
-  {:else if board === "atlas"}
-    <BoardAtlas onSelect={select} {propType} getData={getBoardData} />
-  {:else}
-    <BoardStage
-      bind:this={stageBoard}
-      onSelect={select}
-      {info}
-      variations={stageVariations}
-      isLoading={loadingByGrid[GridMode.DIAMOND]}
-      loadError={errorByGrid[GridMode.DIAMOND]}
-      onRetry={() => loadGrid(GridMode.DIAMOND)}
-    />
-  {/if}
-</div>
-
-{#if overlayBoard}
-  <BaseModal
-    bind:open={overlayOpen}
-    size="xl"
-    labelledBy="codex-overlay-title"
-    class="codex-explorer-modal codex-dark"
-    onclose={closeExplorer}
-  >
-    {#snippet header()}
-      <ModalHeader
-        id="codex-overlay-title"
-        title={info.name ? `${info.label} · ${info.name}` : info.label}
-        subtitle={`${gridMode === GridMode.BOX ? "Box" : "Diamond"} pictographs`}
-        iconColor={info.typeColor}
-        onClose={closeExplorer}
-      />
-    {/snippet}
-    <LetterExplorer
-      {info}
-      {gridMode}
-      variations={editedVariations}
-      selectedIndex={selectedVariationIndex}
-      {draft}
+<div
+  class="codex codex-dark"
+  onpointerdowncapture={notePress}
+  onkeydowncapture={notePress}
+>
+  {#if boardControls}
+    <CodexBoardControls
       {leftTurns}
       {rightTurns}
       {leftRotation}
       {rightRotation}
-      edited={hasLetterExplorerEdits(routeState())}
-      {isLoading}
-      {loadError}
-      {learningMatches}
-      {learningLoading}
-      {learningError}
-      {composerHref}
-      onGridChange={selectGrid}
-      onVariationChange={selectVariation}
+      transformed={transforms.length > 0}
+      {visibility}
       onTurnsChange={changeTurns}
       onRotationChange={changeRotation}
-      onReset={resetExplorerEdits}
-      onRetry={() => loadGrid(gridMode)}
-      onLearningRetry={loadLearningDeck}
-      onCopyLink={copyExactLink}
-      {propType}
+      onTransform={transformBoard}
+      onResetTransforms={resetTransforms}
+      onResetTurns={resetExplorerEdits}
+      onToggleLayer={toggleLayer}
     />
-  </BaseModal>
-{/if}
+  {/if}
+  <BoardAtlas
+    onSelect={select}
+    {propType}
+    getData={boardData}
+    visibility={boardControls ? visibility : undefined}
+  />
+</div>
+
+<BaseModal
+  bind:open={overlayOpen}
+  size="xl"
+  animation={fanning ? "none" : "pop"}
+  labelledBy="codex-overlay-title"
+  class="codex-explorer-modal codex-dark"
+  onclose={closeExplorer}
+>
+  {#snippet header()}
+    <ModalHeader
+      id="codex-overlay-title"
+      title={info.name ? `${info.label} · ${info.name}` : info.label}
+      subtitle={`${gridMode === GridMode.BOX ? "Box" : "Diamond"} pictographs`}
+      iconColor={info.typeColor}
+      onClose={closeExplorer}
+    />
+  {/snippet}
+  <LetterExplorer
+    {info}
+    {gridMode}
+    variations={editedVariations}
+    selectedIndex={selectedVariationIndex}
+    {draft}
+    {leftTurns}
+    {rightTurns}
+    {leftRotation}
+    {rightRotation}
+    edited={hasLetterExplorerEdits(routeState())}
+    {isLoading}
+    {loadError}
+    {learningMatches}
+    {learningLoading}
+    {learningError}
+    {composerHref}
+    onGridChange={selectGrid}
+    onVariationChange={selectVariation}
+    onTurnsChange={changeTurns}
+    onRotationChange={changeRotation}
+    onReset={resetExplorerEdits}
+    onRetry={() => loadGrid(gridMode)}
+    onLearningRetry={loadLearningDeck}
+    onCopyLink={copyExactLink}
+    {propType}
+    {fan}
+    onFanDone={() => (fanning = false)}
+  />
+</BaseModal>
 
 <style>
   .codex {
@@ -456,6 +606,40 @@
     :global(dialog.codex-explorer-modal[data-size="xl"]) {
       width: 94vw;
       height: 92dvh;
+    }
+  }
+
+  /* While the deck is dealt the dialog appears at once (no pop), and the
+     words around the cards rise in with them. */
+  :global(dialog.codex-explorer-modal[data-animation="none"] .modal-header-slot),
+  :global(dialog.codex-explorer-modal[data-animation="none"] .preview-column),
+  :global(dialog.codex-explorer-modal[data-animation="none"] .variation-section > .section-heading),
+  :global(dialog.codex-explorer-modal[data-animation="none"] .contexts) {
+    animation: codex-explorer-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* The backdrop only fades: a blur growing from zero repaints the whole
+     screen on the main thread every frame, under the deck. */
+  @starting-style {
+    :global(dialog.codex-explorer-modal[data-animation="none"][open]::backdrop) {
+      backdrop-filter: blur(var(--modal-backdrop-blur));
+      -webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :global(dialog.codex-explorer-modal[data-animation="none"] .modal-header-slot),
+    :global(dialog.codex-explorer-modal[data-animation="none"] .preview-column),
+    :global(dialog.codex-explorer-modal[data-animation="none"] .variation-section > .section-heading),
+    :global(dialog.codex-explorer-modal[data-animation="none"] .contexts) {
+      animation: none;
+    }
+  }
+
+  @keyframes -global-codex-explorer-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
     }
   }
 

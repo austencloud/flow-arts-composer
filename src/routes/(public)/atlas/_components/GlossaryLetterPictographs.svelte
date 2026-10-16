@@ -1,5 +1,5 @@
 <script lang="ts">
-  import CodexCell from "../../guide/codex/_components/CodexCell.svelte";
+  import CodexCell from "../../codex/_components/CodexCell.svelte";
   import { CODEX_CELLS_BY_LABEL } from "./codex-boards/codex-letters";
 
   interface LetterRef {

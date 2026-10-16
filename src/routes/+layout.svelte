@@ -201,6 +201,7 @@
     "/learn/concepts",
     "/timing-and-direction",
     "/guide",
+    "/codex",
   ];
   // Carve-outs inside those subtrees. The QfT app is an instrument, not a page
   // about one: it wants the whole viewport, owns its own bottom chrome, and
@@ -211,11 +212,11 @@
   const MARKETING_EXCLUDE = new Set(["/notation/qft"]);
   // The guide's sheet surfaces stay chrome-free: the print, book, handbook and
   // cover-lab pages (+page@(public)) render bare 8.5x11 sheets for printing,
-  // and so do the Codex sub-pages: its print sheets (/guide/codex/print) and
-  // two noindex dev tools (poster, parity). /guide/codex itself is a guide
-  // page whose rail sits under the site header, so it keeps the chrome.
+  // and so do the Codex sub-pages: its print sheets (/codex/print) and two
+  // noindex dev tools (poster, parity). /codex itself sits under the site
+  // header, so it keeps the chrome.
   const MARKETING_EXCLUDE_PATTERN =
-    /^\/guide\/(?:codex\/|level-[12]\/(?:print|book|handbook|cover-lab)\/?$)/;
+    /^\/(?:codex\/|guide\/level-[12]\/(?:print|book|handbook|cover-lab)\/?$)/;
   const isMarketing = $derived.by(() => {
     const p = routePathFor(page.url.pathname);
     if (MARKETING_EXCLUDE.has(p)) return false;

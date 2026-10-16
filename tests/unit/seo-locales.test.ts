@@ -29,14 +29,16 @@ describe("seo locale registry", () => {
     });
   });
 
-  it("localizes only the guide tree, minus replicas and tools", () => {
+  it("localizes only the guide and the Codex, minus replicas and tools", () => {
     expect(isLocalizedPublicPath("/guide")).toBe(true);
     expect(isLocalizedPublicPath("/guide/zans-diamond")).toBe(true);
     expect(isLocalizedPublicPath("/guide/level-1/print")).toBe(false);
     expect(isLocalizedPublicPath("/guide/level-1/book/3")).toBe(false);
     expect(isLocalizedPublicPath("/guide/level-2/print")).toBe(false);
-    expect(isLocalizedPublicPath("/guide/codex/poster")).toBe(false);
-    expect(isLocalizedPublicPath("/guide/codex")).toBe(true);
+    expect(isLocalizedPublicPath("/codex/poster")).toBe(false);
+    expect(isLocalizedPublicPath("/codex/print")).toBe(false);
+    expect(isLocalizedPublicPath("/codex")).toBe(true);
+    expect(isLocalizedPublicPath("/codexes")).toBe(false);
     expect(isLocalizedPublicPath("/guidebook")).toBe(false);
     expect(isLocalizedPublicPath("/about")).toBe(false);
   });

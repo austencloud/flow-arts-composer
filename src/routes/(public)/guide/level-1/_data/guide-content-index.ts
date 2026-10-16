@@ -1,4 +1,4 @@
-import { SHEET1, SHEET2, type CodexSheetDef } from "../../codex/_data/codex-groups";
+import { SHEET1, SHEET2, type CodexSheetDef } from "../../../codex/_data/codex-groups";
 
 // The Codex spans two printed pages (Types 1-2 on `codex`, Types 3-6 on
 // `codex-2`). Each letter points at the page that actually renders it, so a

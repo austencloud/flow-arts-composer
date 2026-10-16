@@ -243,7 +243,13 @@
           label: "Read the Guide",
           href: "/guide",
           icon: "fa-book-open",
-          desc: "Written reference, Codex, and PDFs",
+          desc: "Written reference and PDFs",
+        },
+        {
+          label: "Codex",
+          href: "/codex",
+          icon: "fa-table-cells",
+          desc: "Every base letter, in every prop",
         },
         {
           label: "Kinetic Atlas",
