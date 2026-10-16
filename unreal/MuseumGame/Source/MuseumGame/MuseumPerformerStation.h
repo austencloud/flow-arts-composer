@@ -6,6 +6,7 @@
 
 class UFlowFestAvatarComponent;
 class UFlowFestPropComponent;
+class UFlowArtsWorldScoreComponent;
 class USceneComponent;
 
 /** One exported Museum station, driven by its exact authored native capture. */
@@ -43,6 +44,7 @@ private:
     UPROPERTY() TObjectPtr<USceneComponent> Feet;
     UPROPERTY() TObjectPtr<UFlowFestAvatarComponent> Avatar;
     UPROPERTY() TObjectPtr<UFlowFestPropComponent> Prop;
+    UPROPERTY(VisibleAnywhere, Category="Museum|Score") TObjectPtr<UFlowArtsWorldScoreComponent> Score;
     FString StationId;
     FString Label;
     FString SequenceId;
