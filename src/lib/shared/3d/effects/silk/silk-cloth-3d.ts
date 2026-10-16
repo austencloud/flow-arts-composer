@@ -284,7 +284,9 @@ export class SilkCloth3D {
   private sampleWind(settings: SilkClothSettings): void {
     const p = this.positions;
     const w = this.wind;
-    const gust = 0.25 + 1.6 * settings.flutter;
+    // Gentle: silk feels the slightest draft, and a still staff should hang
+    // and sway, not stream out sideways.
+    const gust = 0.62 * (0.25 + 1.6 * settings.flutter);
     const time = this.clock;
     for (let o = 0; o < w.length; o += 3) {
       const x = p[o]!;
