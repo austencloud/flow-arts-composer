@@ -3,6 +3,7 @@
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "HAL/IConsoleManager.h"
 #include "Misc/PackageName.h"
+#include "Misc/App.h"
 #include "NiagaraEditorUtilities.h"
 #include "NiagaraGraph.h"
 #include "EdGraph/EdGraphPin.h"
@@ -162,6 +163,64 @@ bool TuneEmitter(FNiagaraEmitterHandle& Handle, int32 Kind, UMaterialInterface* 
     }
     return bTuned;
 }
+bool ValidateCompiledSystem(UNiagaraSystem& System)
+{
+    // IsValid permits pending compilation and scalability-disabled emitters. Authoring
+    // requires every authored CPU emitter to have complete, successful executable data.
+    if (System.HasOutstandingCompilationRequests(true) ||
+        System.GetEmitterHandles().Num() != 3 ||
+        System.GetEmitterCompiledData().Num() != System.GetEmitterHandles().Num())
+    {
+        UE_LOG(LogTemp, Error, TEXT("NS_PropFire compilation incomplete: Outstanding=%d Emitters=%d CompiledEmitters=%d"),
+            System.HasOutstandingCompilationRequests(true), System.GetEmitterHandles().Num(), System.GetEmitterCompiledData().Num());
+        return false;
+    }
+    auto ValidateScript = [](const UNiagaraScript* Script)
+    {
+        if (!Script)
+        {
+            UE_LOG(LogTemp, Error, TEXT("NS_PropFire has a missing executable script"));
+            return false;
+        }
+        const ENiagaraScriptCompileStatus Status = Script->GetLastCompileStatus();
+        const bool bCurrent = Status == ENiagaraScriptCompileStatus::NCS_UpToDate ||
+            Status == ENiagaraScriptCompileStatus::NCS_UpToDateWithWarnings;
+        if (!bCurrent || Script->IsScriptCompilationPending(false) || !Script->DidScriptCompilationSucceed(false))
+        {
+            UE_LOG(LogTemp, Error, TEXT("NS_PropFire script validation failed: %s Status=%d Pending=%d Succeeded=%d Error=%s"),
+                *Script->GetPathName(), static_cast<int32>(Status), Script->IsScriptCompilationPending(false),
+                Script->DidScriptCompilationSucceed(false), *Script->GetVMExecutableData().ErrorMsg);
+            return false;
+        }
+        return true;
+    };
+    const UNiagaraScript* Spawn = System.GetSystemSpawnScript();
+    const UNiagaraScript* Update = System.GetSystemUpdateScript();
+    if (!ValidateScript(Spawn) || !ValidateScript(Update)) return false;
+    if (Spawn->GetVMExecutableData().Attributes != Update->GetVMExecutableData().Attributes)
+    {
+        UE_LOG(LogTemp, Error, TEXT("NS_PropFire system spawn/update attributes disagree"));
+        return false;
+    }
+    for (const FNiagaraEmitterHandle& Handle : System.GetEmitterHandles())
+    {
+        const FVersionedNiagaraEmitterData* Data = Handle.GetEmitterData();
+        if (!Handle.GetIsEnabled() || !Data || Data->SimTarget != ENiagaraSimTarget::CPUSim ||
+            !Data->IsValid() || !Data->IsReadyToRun())
+        {
+            UE_LOG(LogTemp, Error, TEXT("NS_PropFire emitter %s must be enabled, CPU simulated, valid and compilation complete"), *Handle.GetName().ToString());
+            return false;
+        }
+        TArray<UNiagaraScript*> Scripts;
+        Data->GetScripts(Scripts);
+        for (const UNiagaraScript* Script : Scripts)
+        {
+            if (!ValidateScript(Script)) return false;
+        }
+    }
+    return System.IsValid();
+}
+
 /** Run in an editor project with the plugin mounted: FlowArts.BuildNiagara */
 void BuildPropFire()
 {
@@ -228,6 +287,12 @@ void BuildPropFire()
     }
     System->RequestCompile(false);
     System->WaitForCompilationComplete();
+    // Headless compilation proves executable data, not renderer/PSO readiness.
+    if (!ValidateCompiledSystem(*System) || (FApp::CanEverRender() && !System->IsReadyToRun()))
+    {
+        UE_LOG(LogTemp, Error, TEXT("NS_PropFire failed Niagara compilation or has an invalid emitter; asset was not saved. See preceding Niagara compiler errors."));
+        return;
+    }
     Package->MarkPackageDirty();
     FAssetRegistryModule::AssetCreated(System);
     const FString Filename = FPackageName::LongPackageNameToFilename(
@@ -235,7 +300,8 @@ void BuildPropFire()
     const bool bSaved = UPackage::SavePackage(Package, System, *Filename, FSavePackageArgs());
     if (bSaved)
     {
-        UE_LOG(LogTemp, Display, TEXT("Flow Arts Niagara saved: %s (three editable native emitters)"), *Filename);
+        UE_LOG(LogTemp, Display, TEXT("Flow Arts Niagara saved: %s (three compiled editable CPU emitters; %s)"),
+            *Filename, FApp::CanEverRender() ? TEXT("RHI readiness passed") : TEXT("RHI runtime readiness unverified"));
     }
     else
     {

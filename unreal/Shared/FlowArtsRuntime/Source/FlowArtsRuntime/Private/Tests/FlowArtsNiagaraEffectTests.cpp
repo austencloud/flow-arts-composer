@@ -13,7 +13,7 @@
 #include <limits>
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FFlowArtsNiagaraPlaybackTest,
-    "FlowArts.Niagara.ShippedAssetPlayback", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+    "FlowArts.Niagara.ShippedAssetPlayback", EAutomationTestFlags::EditorContext | EAutomationTestFlags::ClientContext | EAutomationTestFlags::EngineFilter)
 
 bool FFlowArtsNiagaraPlaybackTest::RunTest(const FString& Parameters)
 {
