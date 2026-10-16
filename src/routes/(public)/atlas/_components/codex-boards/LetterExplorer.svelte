@@ -828,13 +828,28 @@
     flex-direction: column;
   }
 
+  /* One column: the variations lead, then the turns and links, then where
+     the letter appears. */
   @container letter-explorer (max-width: 58rem) {
     .explorer {
       grid-template-columns: 1fr;
     }
 
+    .detail-column {
+      display: contents;
+    }
+
+    .variation-section {
+      order: 1;
+    }
+
     .preview-column {
+      order: 2;
       position: static;
+    }
+
+    .contexts {
+      order: 3;
     }
   }
 
@@ -849,17 +864,8 @@
     }
 
     .variation-grid {
-      display: flex;
-      gap: 0.65rem;
-      overflow-x: auto;
-      overscroll-behavior-inline: contain;
-      scroll-snap-type: inline proximity;
-      padding: 0.15rem 0.15rem 0.75rem;
-    }
-
-    .variation-button {
-      flex: 0 0 7.5rem;
-      scroll-snap-align: start;
+      grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr));
+      padding: 0.3rem;
     }
 
     .context-grid {
