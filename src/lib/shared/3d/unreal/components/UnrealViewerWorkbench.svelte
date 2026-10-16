@@ -8,6 +8,7 @@
   import { setViewer3DContext } from "../../context/viewer-3d-context";
   import { createFullscreenController } from "#lib/shared/fullscreen/state/fullscreen-controller.svelte.js";
   import { createNativeViewerConnection } from "../state/native-viewer-connection.svelte";
+  import { attachSceneUndoKeyboard } from "../../undo/scene-undo-keyboard";
   import UnrealViewerSurface from "./UnrealViewerSurface.svelte";
 
   const connection = createNativeViewerConnection();
@@ -61,7 +62,15 @@
   onMount(() => {
     viewer.enter3D(null);
     mounted = true;
-    return () => viewer.dispose();
+    const detachUndo = attachSceneUndoKeyboard(
+      viewer.sceneUndo,
+      (description) => (announcement = `Undid: ${description}`),
+      (description) => (announcement = `Redid: ${description}`)
+    );
+    return () => {
+      detachUndo();
+      viewer.dispose();
+    };
   });
 </script>
 
