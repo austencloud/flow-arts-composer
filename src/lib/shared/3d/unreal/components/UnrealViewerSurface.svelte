@@ -15,6 +15,10 @@
   import { computeGroupBounds } from "#lib/shared/sequence-viewer/camera-choreography/presets/shots.js";
 
   import { frameNativeCamera } from "../domain/native-camera-framing";
+  import {
+    nativePropId,
+    nativePropSelection,
+  } from "../domain/native-prop-selection";
 
   let { connection }: { connection: NativeViewerConnection } = $props();
   const viewer = getViewer3DContext();
@@ -95,7 +99,10 @@
       performers: viewer.performerManager.performers.map((performer) => ({
         performerId: "performer-0",
         characterId: performer.characterId,
-        propId: performer.effectiveProp,
+        propId: nativePropId(
+          performer.effectiveProp,
+          performer.effectivePropBuild
+        ),
         position: { x: performer.position.x, z: performer.position.z },
         facingAngle: performer.facingAngle,
       })),
@@ -172,13 +179,22 @@
         customLeftPlane: Plane.WALL,
         customRightPlane: Plane.WALL,
         settings: {
-          prop: performer.propId,
+          prop: nativePropSelection(performer.propId).prop,
           effortId: null,
           effect: null,
           staffLengthCm: null,
         },
       })),
       selectedPerformerIndices: state.selectedPerformerId ? [0] : [],
+    });
+    viewer.sceneUndo.withoutUndo(() => {
+      state.performers.forEach((performer, index) => {
+        const local = viewer.performerManager.performers[index];
+        if (!local) return;
+        const { build } = nativePropSelection(performer.propId);
+        if (build) local.setPropBuild(build);
+        else local.resetPropBuild();
+      });
     });
     restoreUnsupported();
     confirmedScene = sceneSignature(state);
@@ -263,7 +279,10 @@
           const state = await connection.command("select", {
             performerId: scene.selected && performer ? "performer-0" : null,
           });
-          if (edit === editRevision) reconcile(state);
+          if (edit === editRevision) {
+            reconcile(state);
+            connection.report("");
+          }
         } catch (cause) {
           if (edit !== editRevision || connection.status !== "ready") return;
           connection.report(

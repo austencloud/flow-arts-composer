@@ -1140,8 +1140,8 @@
     flex-direction: column;
     gap: 6px;
     container-type: inline-size;
-    /* One accent for the whole tray: retint the Info SegmentedControl's
-       indicator (it reads var(--theme-accent), the dynamic cyan) to the same
+    /* One accent for the whole tray: retint the selected Info segment
+       (it reads var(--theme-accent), the dynamic cyan) to the same
        fixed blue the rt-chips use for their active state (--rail-accent in
        rail-tile.css). Chips read --rail-accent directly, so this override only
        touches the segmented — no other tray control uses --theme-accent. */
@@ -1151,7 +1151,7 @@
      height matches the 44px chips instead of towering ~7px over them (44px
      touch target + 3px track pad + 1px border was ~51px). */
   /* Info segmented matches the compact-pill chips: a 34px visible track +
-     indicator (drawn inset 5px, same frame as .rt-chip::before) over 44px-tap
+     selected fill (drawn inset 5px, same frame as .rt-chip::before) over 44px-tap
      segments, so it sits at the chips' visual height on the Pictograph tab
      instead of towering over them. */
   .dock-dense :global(.segmented-control.sm) {
@@ -1170,14 +1170,21 @@
     z-index: 0;
     pointer-events: none;
   }
-  .dock-dense :global(.segmented-control.sm .indicator) {
-    top: 5px;
-    bottom: 5px;
-    border-radius: 9px;
-    z-index: 1;
-  }
   .dock-dense :global(.segmented-control.sm .segment) {
+    position: relative;
     z-index: 2;
+  }
+  .dock-dense :global(.segmented-control.sm .segment.selected) {
+    background: transparent;
+  }
+  .dock-dense :global(.segmented-control.sm .segment.selected)::before {
+    content: "";
+    position: absolute;
+    inset: 5px 0;
+    border-radius: 9px;
+    background: var(--theme-accent);
+    z-index: -1;
+    pointer-events: none;
   }
   /* Inline label-left rows: each section is one row, not a label line + chips line. */
   .dock-dense .field {

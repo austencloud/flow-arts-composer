@@ -6,7 +6,6 @@ import {
   userProportionsState,
 } from "@austencloud/scene-3d";
 import type { CharacterInstanceState } from "../../state/character-instance-state.svelte";
-import { resolvePerformerUpperBodyStance } from "../../domain/performer-upper-body-stance";
 import { resolvePerformerContact } from "../../domain/performer-contact-displacement";
 import { CANONICAL_PERFORMER_ANCHOR_Y } from "../../environments/domain/stage-coordinate-frame";
 import type {
@@ -145,13 +144,13 @@ export function createWorkerPerformerSnapshot(
       "Worker performer effect intent uses a different prop build"
     );
   }
-  const stance = resolvePerformerUpperBodyStance(performer);
   // The same displaced props and reset key the interactive viewer hands its
   // rig.
   const staffLength = resolveWorkerPerformerStaffLength(performer);
   const contact = resolvePerformerContact(performer, {
     staffLengthM: staffLength,
   });
+  const stance = contact.stance;
   const modeConfig = PLANE_MODE_CONFIGS[performer.planeMode];
   const dualWheel = performer.planeMode === PlaneMode.DUAL_WHEEL;
   const gridOffset = GRID_OFFSETS[performer.planeMode];

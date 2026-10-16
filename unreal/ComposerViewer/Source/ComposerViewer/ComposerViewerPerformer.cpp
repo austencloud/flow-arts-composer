@@ -15,7 +15,10 @@ AComposerViewerPerformer::AComposerViewerPerformer()
 
 bool AComposerViewerPerformer::Configure(const FString& InId, FName InCharacter, FName InProp, float InRate)
 {
-    if (InId.IsEmpty() || InCharacter != TEXT("ch01") || (InProp != TEXT("staff") && InProp != TEXT("fan")) ||
+    FString Family = InProp.ToString().ToLower();
+    int32 VariantSeparator = INDEX_NONE;
+    if (Family.FindChar(TEXT(':'), VariantSeparator)) Family.LeftInline(VariantSeparator);
+    if (InId.IsEmpty() || InCharacter != TEXT("ch01") || (Family != TEXT("staff") && Family != TEXT("fan")) ||
         !FMath::IsFinite(InRate) || InRate < .5f || InRate > 1.75f) return false;
     PerformerId = InId;
     CharacterId = InCharacter;
@@ -30,7 +33,7 @@ bool AComposerViewerPerformer::Configure(const FString& InId, FName InCharacter,
     Prop->Initialize(Feet);
     if (!Prop->Equip(PropId) || !Prop->IsReady() || !Prop->BindHands(Body)) return false;
     Prop->SetHandTransforms(Avatar->GetHandTransform(true), Avatar->GetHandTransform(false));
-    const FName Profile(*FString::Printf(TEXT("P_%s_A"), *PropId.ToString()));
+    const FName Profile(*FString::Printf(TEXT("P_%s_A"), *Family));
     if (!Prop->LoadPerformance(CharacterId, Profile)) return false;
     Avatar->BindPerformanceProp(Prop);
     if (!Avatar->PlayPerformance(Profile, true)) return false;
@@ -65,4 +68,16 @@ bool AComposerViewerPerformer::SetRate(float NewRate)
 float AComposerViewerPerformer::GetPhase() const
 {
     return Avatar ? Avatar->GetPerformancePhase() : 0.f;
+}
+
+float AComposerViewerPerformer::GetPerformanceTime() const
+{
+    return Avatar ? Avatar->GetPerformanceTime() : 0.f;
+}
+
+void AComposerViewerPerformer::SeekPerformance(float Seconds)
+{
+    if (!Avatar || !Prop) return;
+    Avatar->SeekPerformance(Seconds);
+    Prop->SetPerformanceTime(Avatar->GetPerformanceTime());
 }

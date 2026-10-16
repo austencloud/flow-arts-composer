@@ -40,6 +40,7 @@ private:
     bool bCameraBound = false;
     bool bStaffReady = false;
     bool bFanReady = false;
+    TArray<FString> SupportedPropIds;
     FVector CameraTarget = FVector(0, 0, 110);
     FString CameraMode = TEXT("orbit");
     TWeakPtr<IPixelStreaming2Streamer> Streamer;
@@ -53,4 +54,5 @@ private:
     bool SetCamera(const TSharedPtr<FJsonObject>& Payload, FString& ErrorCode, FString& ErrorMessage);
     bool SetPlayback(const TSharedPtr<FJsonObject>& Payload, FString& ErrorCode, FString& ErrorMessage);
     void AimCamera();
+    void LoadSupportedPropIds();
 };

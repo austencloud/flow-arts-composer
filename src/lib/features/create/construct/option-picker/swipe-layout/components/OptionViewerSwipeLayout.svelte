@@ -812,7 +812,7 @@ Features:
     min-width: 0;
   }
 
-  .type-navigation :global(.segmented-control.accent .indicator) {
+  .type-navigation :global(.segmented-control.accent .segment.selected) {
     background: color-mix(in srgb, var(--theme-text) 14%, var(--theme-card-bg));
     box-shadow: inset 0 0 0 1px
       color-mix(in srgb, var(--theme-text) 18%, transparent);

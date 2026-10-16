@@ -93,6 +93,10 @@ becomes private while open, we bail back to the list instead of showing a ghost.
   // The subscription's first answer decides "exists" vs "deleted"; until it
   // lands we can't tell the difference, so we hold off on the bail-out.
   let firstSnapshotSeen = $state(false);
+  // A foreign collection that was deleted or made private answers with a
+  // permission error, not an empty snapshot. A shared link can still land
+  // here, so say so instead of showing a nameless, empty collection.
+  let loadFailed = $state(false);
   let memberLoadEpoch = 0;
 
   const selectionState = createMultiSelectionState({
@@ -155,6 +159,7 @@ becomes private while open, we bail back to the list instead of showing a ghost.
     const isCurrentIdentity = () =>
       authState.effectiveUserId === effectiveUserId;
     firstSnapshotSeen = false;
+    loadFailed = false;
     collection = null;
     members = [];
     loadingMembers = true;
@@ -189,6 +194,8 @@ becomes private while open, we bail back to the list instead of showing a ghost.
           "[CollectionDetail] Collection subscription failed:",
           err
         );
+        memberLoadEpoch++;
+        if (!collection) loadFailed = true;
         loadingMembers = false;
       };
       const unsubscribe = accessRole
@@ -739,7 +746,7 @@ becomes private while open, we bail back to the list instead of showing a ghost.
       {:else}
         <div class="header-text">
           <h2 class="header-name">{collection?.name ?? ""}</h2>
-          <span class="header-count">
+          <span class="header-count" class:hidden-count={loadFailed}>
             {#if ownerName}{t("browse_audit_by_owner", { owner: ownerName })} ·
             {/if}{visibleCount !== null ? countLabel(visibleCount) : ""}
             {#if accessRole}
@@ -845,7 +852,23 @@ becomes private while open, we bail back to the list instead of showing a ghost.
   {/if}
 
   <div class="detail-body">
-    {#if loadingMembers}
+    {#if loadFailed}
+      <div class="empty-state" role="status">
+        <span class="empty-icon">
+          <i class="fas fa-lock" aria-hidden="true"></i>
+        </span>
+        <p class="empty-title">
+          {t("browse_audit_collection_unavailable_title")}
+        </p>
+        <p class="empty-hint">
+          {t("browse_audit_collection_unavailable_hint")}
+        </p>
+        <button type="button" class="empty-cta" onclick={onBack}>
+          <i class="fas fa-arrow-left" aria-hidden="true"></i>
+          <span>{t("browse_ui_back_to_collections")}</span>
+        </button>
+      </div>
+    {:else if loadingMembers}
       <div class="skeleton-grid" aria-hidden="true">
         {#each Array(6) as _}
           <span class="card-skeleton"></span>
@@ -1215,6 +1238,10 @@ becomes private while open, we bail back to the list instead of showing a ghost.
     50% {
       opacity: 0.85;
     }
+  }
+
+  .header-count.hidden-count {
+    visibility: hidden;
   }
 
   .empty-state {
