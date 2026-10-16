@@ -30,7 +30,9 @@ describe("viewer-state params are scoped to an open viewer", () => {
   });
 
   it("keeps viewer state on the viewer's own route without ?v=", () => {
-    const url = at("/sequence/EHWE?pane=split&split=animation,card&cols=4&s=d1:abc");
+    const url = at(
+      "/sequence/EHWE?pane=split&split=animation,card&cols=4&s=d1:abc"
+    );
     pruneRouteScopedParams(url, "/sequence/EHWE");
 
     expect(url.searchParams.get("pane")).toBe("split");
@@ -62,5 +64,21 @@ describe("viewer-state params are scoped to an open viewer", () => {
     expect(url.searchParams.get("letter")).toBe("A");
     expect(url.searchParams.get("grid")).toBe("diamond");
     expect(url.searchParams.get("pane")).toBeNull();
+  });
+
+  it("keeps the letter explorer's state on the Codex guide page", () => {
+    for (const path of ["/guide/codex", "/de/guide/codex"]) {
+      const url = at(`${path}?letter=B&grid=box&variation=2&leftTurns=1`);
+      pruneRouteScopedParams(url, path);
+
+      expect(url.searchParams.get("letter")).toBe("B");
+      expect(url.searchParams.get("grid")).toBe("box");
+      expect(url.searchParams.get("variation")).toBe("2");
+      expect(url.searchParams.get("leftTurns")).toBe("1");
+    }
+
+    const print = at("/guide/codex/print?letter=B");
+    pruneRouteScopedParams(print, "/guide/codex/print");
+    expect(print.searchParams.get("letter")).toBeNull();
   });
 });
