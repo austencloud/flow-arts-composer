@@ -7,8 +7,10 @@ import {
 } from "../petals/petal-world-art-direction";
 import { SparkleRenderer3D } from "../particles/sparkle-renderer-3d";
 import { SmokePoolRenderer3D } from "../smoke/smoke-pool-renderer-3d";
-import { SmokeVolumeRenderer3D } from "../smoke/smoke-volume-renderer-3d";
-import type { SmokeVolumeDebugSnapshot3D } from "../smoke/smoke-volume-solver-3d";
+import {
+  SmokeFluidRenderer3D,
+  type SmokeFluidDiagnostic3D,
+} from "../smoke/smoke-fluid-renderer-3d";
 import { QualityTier, TIER_CONFIGS } from "../types";
 import { FireRenderer3D, type FireTipInput } from "../fire/fire-renderer-3d";
 import { GooRenderer3D } from "../water/goo-renderer-3d";
@@ -89,7 +91,7 @@ export class SceneEffectsManager3D {
   private bubbleRenderer: BubbleRenderer3D | null = null;
   private petalRenderer: PetalPoolRenderer3D | null = null;
   private smokeFallbackRenderer: SmokePoolRenderer3D | null = null;
-  private smokeVolumeRenderer: SmokeVolumeRenderer3D | null = null;
+  private smokeVolumeRenderer: SmokeFluidRenderer3D | null = null;
   private inkRenderer: InkRenderer3D | null = null;
   private silkRenderer: SilkRenderer3D | null = null;
   private animalRenderer: AnimalRenderer3D | null = null;
@@ -134,7 +136,7 @@ export class SceneEffectsManager3D {
     this.petalRenderer.setEnvironmentProfile(this.petalEnvironmentProfile);
     this.smokeFallbackRenderer = new SmokePoolRenderer3D();
     if (renderer?.capabilities.isWebGL2 === true)
-      this.smokeVolumeRenderer = new SmokeVolumeRenderer3D();
+      this.smokeVolumeRenderer = new SmokeFluidRenderer3D(renderer);
     this.inkRenderer = new InkRenderer3D();
     this.silkRenderer = new SilkRenderer3D();
     this.animalRenderer = new AnimalRenderer3D();
@@ -330,7 +332,9 @@ export class SceneEffectsManager3D {
           this.fallbackSmoke.push(source);
         else this.volumeSmoke.push(source);
       }
-      this.smokeVolumeRenderer.update(this.volumeSmoke, delta);
+      // Performers past the fluid's budget fall back to sprites.
+      for (const source of this.smokeVolumeRenderer.update(this.volumeSmoke, delta))
+        this.fallbackSmoke.push(source);
       this.smokeFallbackRenderer?.update(this.fallbackSmoke, delta);
     } else {
       this.smokeFallbackRenderer?.update(this.smoke, delta);
@@ -398,7 +402,7 @@ export class SceneEffectsManager3D {
     this.fireWasActive = false;
   }
 
-  getSmokeDebugSnapshot(): SmokeVolumeDebugSnapshot3D | null {
+  getSmokeDebugSnapshot(): SmokeFluidDiagnostic3D | null {
     return this.smokeVolumeRenderer?.getDebugSnapshot() ?? null;
   }
 

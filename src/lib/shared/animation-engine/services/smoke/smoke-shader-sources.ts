@@ -97,12 +97,16 @@ void main() {
   float interior = smoothstep(0.04, 0.9, density);
   float warmInterior = smoothstep(0.0, 0.8, temperature);
   vec3 base = mix(u_edgeColor, u_coreColor, interior * 0.7 + warmInterior * 0.3);
-  base = mix(base, rotateHue(base, sin(u_time * 0.72) * 0.34), u_hueShift);
+  // Genie travels through its hues in bands that climb with the smoke.
+  float travel = sin(u_time * 1.35 - v_uv.y * 7.0 + v_uv.x * 2.0) * 0.9;
+  base = mix(base, rotateHue(base, travel), u_hueShift);
 
   float light = selfShadow * (0.55 + 0.45 * facing);
   vec3 shade = mix(base * vec3(0.34, 0.35, 0.4), base * 1.14, light);
   float rim = (1.0 - interior) * sqrt(selfShadow) * smoothstep(0.0, 0.5, facing);
   vec3 color = shade + u_edgeColor * rim * 0.32;
+  // Genie smoke is magic: it carries a soft glow of its own.
+  color += base * u_hueShift * 0.3;
   color = pow(max(color, vec3(0.0)), vec3(1.0 / 2.2));
   fragColor = vec4(color * alpha, alpha);
 }

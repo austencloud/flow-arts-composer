@@ -30,8 +30,15 @@ const MAX_SUBSTEP = 1 / 45;
 export const SMOKE_EDGE_SPONGE = {
   rate: 5,
   sideBand: 0.1,
-  topBand: 0.24,
+  topBand: 0.14,
 } as const;
+
+/** Confinement above this breaks strong-curl presets like Genie into
+ * grid-aligned streaks. */
+const MAX_CONFINEMENT = 3.5;
+
+/** Curl gradient (grid units) below which confinement eases off. */
+const CONFINEMENT_MIN_GRADIENT = 8;
 
 /** How hard the tip drags the surrounding air, as a share of its speed. */
 const TIP_DRAG = 0.12;
@@ -116,6 +123,21 @@ export function computeSmokeLift(riseGridVelocity: number): {
 } {
   const terminalVelocity = 10 + Math.max(0, riseGridVelocity) * 1.6;
   return { buoyancy: terminalVelocity * 5, terminalVelocity };
+}
+
+/** Air temperature on the palette warmth scale. */
+const AMBIENT_WARMTH = 0.35;
+
+/**
+ * Heat carried with each puff, from the palette's warmth. Smoke warmer than
+ * the air gets full heat; cooler smoke gets less, down to negative heat for
+ * fog, which then settles instead of climbing. Coolness rides on the smooth
+ * temperature field rather than as weight on the sharp density field, which
+ * shreds falling fog into grid-sized fingers.
+ */
+export function computeSmokeHeat(warmth: number): number {
+  const relative = Math.max(0, warmth) / AMBIENT_WARMTH;
+  return Math.min(1, relative) - 1.25 * Math.max(0, 1 - relative);
 }
 
 export function hexToLinearRgb(hex: string): readonly [number, number, number] {
@@ -250,7 +272,13 @@ export class WebGLSmokeRenderer {
       this.height,
       this.solver.height
     );
-    this.emit(params, emitters, frameDt, metrics);
+    this.emit(
+      params,
+      emitters,
+      frameDt,
+      metrics,
+      computeSmokeHeat(params.resolvedPalette.warmth)
+    );
 
     const substeps = Math.max(1, Math.ceil(frameDt / MAX_SUBSTEP));
     const stepDt = frameDt / substeps;
@@ -274,8 +302,9 @@ export class WebGLSmokeRenderer {
       // smoke; Curl and the noise below supply the curls instead.
       this.solver.applyVorticity(
         stepDt,
-        1.5 + params.resolvedCurlStrength * 5,
-        this.clock
+        Math.min(MAX_CONFINEMENT, 1.5 + params.resolvedCurlStrength * 5),
+        this.clock,
+        CONFINEMENT_MIN_GRADIENT
       );
       this.solver.applyBuoyancy({
         temperature: this.temperature.read,
@@ -332,7 +361,8 @@ export class WebGLSmokeRenderer {
     params: Smoke2DParams,
     emitters: EmitterTip[],
     dt: number,
-    metrics: SmokeEmitterMetrics
+    metrics: SmokeEmitterMetrics,
+    heat: number
   ): void {
     const densitySplats: FluidSplat[] = [];
     const thermalSplats: FluidSplat[] = [];
@@ -381,7 +411,7 @@ export class WebGLSmokeRenderer {
           x,
           y,
           radius: radius * 0.82,
-          value: [amount * 0.72, 0, 0],
+          value: [amount * 0.72 * heat, 0, 0],
         });
         velocitySplats.push({
           x,
