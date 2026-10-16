@@ -12,6 +12,9 @@
   import type { NativeViewerState } from "../domain/bridge-protocol";
   import type { CharacterId } from "../../domain/character-model";
   import { Plane, PlaneMode } from "@austencloud/scene-3d";
+  import { computeGroupBounds } from "#lib/shared/sequence-viewer/camera-choreography/presets/shots.js";
+
+  import { frameNativeCamera } from "../domain/native-camera-framing";
 
   let { connection }: { connection: NativeViewerConnection } = $props();
   const viewer = getViewer3DContext();
@@ -70,6 +73,23 @@
     );
   }
 
+  function frameCamera(
+    position: { x: number; y: number; z: number },
+    target: { x: number; y: number; z: number }
+  ) {
+    const radius = computeGroupBounds(
+      viewer.performerManager.performers.map((performer) => ({
+        position: performer.position,
+      }))
+    ).radius;
+    return frameNativeCamera(
+      position,
+      target,
+      radius,
+      streamView().aspect,
+      connection.state?.camera.fov ?? 50
+    );
+  }
   function desiredScene() {
     return {
       performers: viewer.performerManager.performers.map((performer) => ({
@@ -190,6 +210,7 @@
       if (!initialized) {
         reconcile(state);
         initialized = true;
+        viewer.focusSelectedPerformers();
       }
     });
   });
@@ -418,13 +439,12 @@
   }
 
   onMount(() => {
-    // The native host keeps feet at y=0 and looks at the torso around y=1.1.
-    // Shared camera preset buttons use this value as their target height.
-    viewer.setStageGroundOffset(1.1);
-    void connection.mount(host);
+    // Native feet rest at floor zero; shared shots add their own target height.
+    viewer.setStageGroundOffset(0);
     const removeCamera = viewer.registerSnapTo((position, target) =>
-      sendCamera({ position, target })
+      sendCamera(frameCamera(position, target))
     );
+    void connection.mount(host);
     const removePlacement = viewer.registerPerformerPlacement(() => {
       placing = true;
       host.focus();

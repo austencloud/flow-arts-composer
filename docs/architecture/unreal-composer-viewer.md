@@ -1,6 +1,6 @@
 # Unreal inside the Composer 3D viewer
 
-Date: 2026-10-15. Status: first local viewer slice implemented; native and browser acceptance checks are in progress. Full viewer parity remains the roadmap below.
+Date: 2026-10-15. Status: real Unreal video and command replies verified in Composer; remaining control and visual acceptance checks are in progress. Full viewer parity remains the roadmap below.
 
 Austen wants the existing Composer 3D viewer experience with Unreal rendering: the same controls, performer editing, prop picker, camera behavior, saved scenes, and visual identity. Flow Fest and Museum already share native performer infrastructure. The next layer should consume that work and retain Composer's actual Svelte controls.
 
@@ -35,6 +35,18 @@ Open `/test/unreal-viewer` in the local Composer app. The route reuses `Viewer3D
 This version does not accept arbitrary Composer scores. Staff uses Flow Fest's verified sealed pilot; fan is a labeled prepared practice output. Neither is presented as a substitute for a user's score. The exact-score library remains the shared Museum/Flow Fest integration path. Additional avatars, environments, effects, effort, plane changes, saved scenes, and full cast editing still need native support. Unsupported changes must not remain falsely selected in the web state.
 
 Signalling and staged native assets live under `%LOCALAPPDATA%/FlowArtsComposer/ComposerViewer`, outside Git and outside the task worktree. The streamer and player sockets bind to loopback only. A scoped Vite WebSocket upgrade handler preserves HTTPS/2 and rejects remote connections and foreign origins. The native GPU process must remain running to render the viewer.
+
+## Local acceptance record
+
+On 2026-10-15, the primary Composer route displayed real UE 5.8 video at 1430 × 900 with the existing DOM rails surrounding it. The Pixel Streaming data channel returned successful, correlated `hello` and `camera` replies from the native host, including the loaded `ch01` staff performer and shared playback state. This establishes the live renderer connection; it does not establish complete control parity.
+
+The native follow-up build succeeded in 117.6 seconds. The next live run showed the full performer, brighter front lighting, and no Lumen distance-field warning. Twenty browser commands received twenty correlated native replies. Actual UI actions verified placement from x=0 to x=0.1, camera orbit and a left preset, staff-to-fan switching, pause, rates 0.5 and 1.5, restart, and reconnect. Reconnect retained the fan, position, paused state, rate and phase. Paused phase stayed unchanged through placement and camera edits. This measures command acknowledgement, not input-to-image latency.
+
+The compact stream eventually resized to 366 × 668; its first frame after resizing was stale. Compact disconnected layouts were inspected at 375 × 667, 960 × 412, and 720 × 450, with the prepared-loop caption hidden until connected. The live run exposed a remaining camera framing problem and missing undo keyboard wiring. Follow-up web changes refit the camera using native horizontal FOV, center the body and prop envelope above the floor, and attach the existing scene undo handler. Focused framing and keyboard regression tests pass. Final live undo/redo, unsupported-prop rollback, explicit resume and settled compact framing checks remain pending.
+
+The native handshake now logs the active view target, camera component and cached POV constraints, and viewport dimensions. This will diagnose the apparent 16:9 scene region inside a correctly resized video frame without guessing at a browser transport failure.
+
+During control testing, the primary development server stopped serving modules. Its existing watchdog restarted the stack automatically. This was independent of the native stream connection. The viewer returned its Unreal process slot to Flow Fest for shared asset import while the remaining acceptance work continued. Native render sessions and builds remain coordinated with that owner.
 
 ## Shared ownership
 

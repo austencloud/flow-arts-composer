@@ -25,7 +25,7 @@ bool FFlowArtsPerformanceTransportTest::RunTest(const FString& Parameters)
     if (!TestNotNull(TEXT("Animation instance outer"), Mesh)) return false;
     UFlowFestAnimInstance* Anim = NewObject<UFlowFestAnimInstance>(Mesh);
     if (!TestNotNull(TEXT("Shared animation clock"), Anim)) return false;
-    Anim->Configure({});
+    Anim->Configure({}, FString());
     Anim->StartPerformance(Clip, true, TEXT("FirePoi"));
     Anim->Advance(.05f);
     Anim->SetPerformanceRate(1.5f);
