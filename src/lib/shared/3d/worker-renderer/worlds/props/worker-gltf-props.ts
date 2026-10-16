@@ -359,13 +359,14 @@ function forEachNamedMaterial(
 }
 
 /**
- * Fire, Lotus, Day and Moon share one GLB and switch groups; the Flat Grip
- * and Star fans ship as their own single-group files. Fan3D.svelte in the
+ * Fire, Lotus, Day and Moon share one GLB and switch groups; the Flat Grip,
+ * Star and Sense fans ship as their own single-group files. Fan3D.svelte in the
  * scene package makes the same choice from the same build value.
  */
 export function fanModelUrl(fanBuild: WorkerPropBuild["fanBuild"]): string {
   if (fanBuild === "flat-grip") return "/models/props/fan-flat-grip.glb";
   if (fanBuild === "star") return "/models/props/fan-star.glb";
+  if (fanBuild === "sense") return "/models/props/fan-sense.glb";
   return "/models/props/fan.glb";
 }
 
