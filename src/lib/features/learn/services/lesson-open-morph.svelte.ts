@@ -6,13 +6,13 @@
  * the next thing you look at). Wrapping the swap in `startMorph` lets the
  * browser carry the tapped card into the lesson: the card box grows into the
  * lesson surface, its picture into the lesson's board and its name into the
- * heading, while the rest of the map fades. Back runs the same names the other
- * way.
+ * lesson title, while the rest of the map fades. Back runs the same names the
+ * other way.
  *
  * The names are claimed only while a morph runs. `LessonStageFrame` always
- * holds `learn-grid-stage` and `learn-lesson-heading`; the card and surface
- * names stay off otherwise, so the lesson's own view transitions (the Hand
- * Motions grid split) never capture the whole lesson.
+ * holds `learn-grid-stage`; the card, surface and title names stay off
+ * otherwise, so the lesson's own view transitions (the Hand Motions grid
+ * split) never capture the whole lesson.
  */
 import { flushSync } from "svelte";
 import { startMorph } from "#lib/shared/transitions/results-morph.js";
@@ -42,9 +42,6 @@ export function isLessonMorphRunning() {
   return morphing !== null;
 }
 
-/** Scopes the heading's timing to this morph (view-transitions.css). */
-const MORPH_CLASS = "learn-lesson-morph";
-
 function run(source: LessonMorphSource, mutate: () => void) {
   morphing = source;
   // The tapped card must carry its names before the browser captures the map.
@@ -54,14 +51,10 @@ function run(source: LessonMorphSource, mutate: () => void) {
     morphing = null;
     return;
   }
-  const root = document.documentElement;
-  root.classList.add(MORPH_CLASS);
   void transition.finished
     .catch(() => undefined)
     .finally(() => {
-      if (morphing !== source) return;
-      morphing = null;
-      root.classList.remove(MORPH_CLASS);
+      if (morphing === source) morphing = null;
     });
 }
 

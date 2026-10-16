@@ -83,7 +83,7 @@
     <span
       class="name"
       use:claimedViewTransitionName={{
-        name: "learn-lesson-heading",
+        name: "learn-lesson-title",
         enabled: morphing,
       }}>{localizedConcept(concept, "name")}</span
     >
@@ -156,7 +156,10 @@
     flex-direction: column;
     min-width: 0;
   }
+  /* Sized to its words, so it meets the lesson title word for word when the
+     card grows into the lesson. */
   .name {
+    align-self: flex-start;
     font-size: 1rem;
     font-weight: 700;
     line-height: 1.3;

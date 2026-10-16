@@ -35,10 +35,10 @@
 
 /* A course-map card grows into its lesson and back. The card box becomes the
    lesson surface, its picture the board (learn-grid-stage) and its name the
-   heading, while the rest of the map fades under it. Names exist only while
+   lesson title, while the rest of the map fades under it. Names exist only while
    the morph runs. Owner: features/learn/services/lesson-open-morph.svelte.ts. */
 ::view-transition-group(learn-lesson-surface),
-html.learn-lesson-morph::view-transition-group(learn-lesson-heading) {
+::view-transition-group(learn-lesson-title) {
   animation-duration: var(--duration-dramatic);
   animation-timing-function: var(--ease-in-out);
 }
