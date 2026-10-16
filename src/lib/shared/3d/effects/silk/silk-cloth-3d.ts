@@ -10,6 +10,8 @@
  * the way a streamer tied to a point does.
  */
 
+import type { SilkIntent } from "#lib/shared/effects/domain/effects-config.js";
+
 export interface SilkClothSettings {
   /** Streamer length in metres. */
   length: number;
@@ -25,6 +27,45 @@ export interface SilkVector {
   x: number;
   y: number;
   z: number;
+}
+
+/** Streamer shape from the user's settings; 2D and 3D share it. */
+export function resolveSilkClothSettings(intent: SilkIntent): SilkClothSettings {
+  return {
+    length: 0.6 + 1.4 * clamp01(intent.duration),
+    // The same 5-30 cm half width range the old ribbon used, at 80%.
+    width: (0.8 * (5 + 25 * clamp01(intent.width))) / 60,
+    flutter: clamp01(intent.flutter),
+    tautness: clamp01(intent.tautness),
+  };
+}
+
+/** How each palette's fabric handles light. */
+export interface SilkFabricProfile3D {
+  /** Surface roughness: low reads as satin, high as velvet. */
+  roughness: number;
+  /** Strength of the soft cloth sheen at grazing angles. */
+  sheen: number;
+  /** Light from behind that shows through the fabric. */
+  translucency: number;
+  /** Metallic share, for leaf that is really foil. */
+  metalness: number;
+  /** How far the body color leans toward the prop color. */
+  identityMix: number;
+}
+
+const PROFILES: Record<string, SilkFabricProfile3D> = {
+  satin: { roughness: 0.3, sheen: 0.9, translucency: 0.35, metalness: 0, identityMix: 0.68 },
+  velvet: { roughness: 0.85, sheen: 1, translucency: 0.06, metalness: 0, identityMix: 0.2 },
+  ethereal: { roughness: 0.42, sheen: 0.8, translucency: 0.75, metalness: 0, identityMix: 0.22 },
+  shadow: { roughness: 0.7, sheen: 0.45, translucency: 0.2, metalness: 0, identityMix: 0.18 },
+  gold_leaf: { roughness: 0.24, sheen: 0.6, translucency: 0.05, metalness: 0.55, identityMix: 0.06 },
+  ember: { roughness: 0.45, sheen: 0.7, translucency: 0.6, metalness: 0, identityMix: 0.04 },
+  custom: { roughness: 0.4, sheen: 0.75, translucency: 0.3, metalness: 0, identityMix: 0.42 },
+};
+
+export function resolveSilkFabricProfile3D(paletteId: string): SilkFabricProfile3D {
+  return PROFILES[paletteId] ?? PROFILES.custom!;
 }
 
 export const SILK_CLOTH_ROWS = 26;
@@ -107,6 +148,21 @@ export class SilkCloth3D {
     this.pinZ = pin.z;
     this.started = true;
     this.writeNormals();
+  }
+
+  /** Carry the whole streamer, motion and all, by an offset: a loop seam. */
+  translate(dx: number, dy: number, dz: number): void {
+    for (let o = 0; o < this.positions.length; o += 3) {
+      this.positions[o] = this.positions[o]! + dx;
+      this.positions[o + 1] = this.positions[o + 1]! + dy;
+      this.positions[o + 2] = this.positions[o + 2]! + dz;
+      this.previous[o] = this.previous[o]! + dx;
+      this.previous[o + 1] = this.previous[o + 1]! + dy;
+      this.previous[o + 2] = this.previous[o + 2]! + dz;
+    }
+    this.pinX += dx;
+    this.pinY += dy;
+    this.pinZ += dz;
   }
 
   get isStarted(): boolean {
@@ -314,6 +370,10 @@ export class SilkCloth3D {
     list.sort((left, right) => Math.min(left.a, left.b) - Math.min(right.a, right.b));
     this.constraints = list;
   }
+}
+
+function clamp01(value: number): number {
+  return Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0));
 }
 
 function smoothstep(value: number, minimum: number, maximum: number): number {

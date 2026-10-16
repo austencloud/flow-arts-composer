@@ -1,33 +1,5 @@
 import { DoubleSide, MeshPhysicalMaterial, type Texture } from "three";
 
-/** How each palette's fabric handles light. */
-export interface SilkFabricProfile3D {
-  /** Surface roughness: low reads as satin, high as velvet. */
-  roughness: number;
-  /** Strength of the soft cloth sheen at grazing angles. */
-  sheen: number;
-  /** Light from behind that shows through the fabric. */
-  translucency: number;
-  /** Metallic share, for leaf that is really foil. */
-  metalness: number;
-  /** How far the body color leans toward the prop color. */
-  identityMix: number;
-}
-
-const PROFILES: Record<string, SilkFabricProfile3D> = {
-  satin: { roughness: 0.3, sheen: 0.9, translucency: 0.35, metalness: 0, identityMix: 0.68 },
-  velvet: { roughness: 0.85, sheen: 1, translucency: 0.06, metalness: 0, identityMix: 0.2 },
-  ethereal: { roughness: 0.42, sheen: 0.8, translucency: 0.75, metalness: 0, identityMix: 0.22 },
-  shadow: { roughness: 0.7, sheen: 0.45, translucency: 0.2, metalness: 0, identityMix: 0.18 },
-  gold_leaf: { roughness: 0.24, sheen: 0.6, translucency: 0.05, metalness: 0.55, identityMix: 0.06 },
-  ember: { roughness: 0.45, sheen: 0.7, translucency: 0.6, metalness: 0, identityMix: 0.04 },
-  custom: { roughness: 0.4, sheen: 0.75, translucency: 0.3, metalness: 0, identityMix: 0.42 },
-};
-
-export function resolveSilkFabricProfile3D(paletteId: string): SilkFabricProfile3D {
-  return PROFILES[paletteId] ?? PROFILES.custom!;
-}
-
 /**
  * Lit fabric. Each vertex carries its own roughness, sheen, translucency and
  * metalness (aFabric), opacity and glow (aLook) and sheen color (aSheen), so

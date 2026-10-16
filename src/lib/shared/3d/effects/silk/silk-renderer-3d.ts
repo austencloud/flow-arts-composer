@@ -17,12 +17,10 @@ import {
   SILK_CLOTH_ROWS,
   SILK_CLOTH_VERTICES,
   SilkCloth3D,
-  type SilkClothSettings,
-} from "./silk-cloth-3d";
-import {
-  createSilkClothMaterial3D,
+  resolveSilkClothSettings,
   resolveSilkFabricProfile3D,
-} from "./silk-cloth-material-3d";
+} from "./silk-cloth-3d";
+import { createSilkClothMaterial3D } from "./silk-cloth-material-3d";
 
 const STREAMERS = 16;
 const QUADS = (SILK_CLOTH_ROWS - 1) * (SILK_CLOTH_COLUMNS - 1);
@@ -54,16 +52,6 @@ export function resolveSilkSourceEnergyScale(sourceCount: number): number {
 /** Cloth vertices each streamer gets when `sourceCount` share the buffers. */
 export function resolveSilkSourceSampleBudget(sourceCount: number): number {
   return Math.max(2, Math.floor((STREAMERS * SILK_CLOTH_VERTICES) / Math.max(1, sourceCount)));
-}
-
-/** Streamer shape from the user's settings. */
-export function resolveSilkClothSettings(params: Silk3DParams): SilkClothSettings {
-  return {
-    length: 0.6 + 1.4 * clamp01(params.duration),
-    width: params.baseHalfWidthWorld * 0.8,
-    flutter: clamp01(params.flutter),
-    tautness: clamp01(params.tautness),
-  };
 }
 
 export class SilkRenderer3D {
