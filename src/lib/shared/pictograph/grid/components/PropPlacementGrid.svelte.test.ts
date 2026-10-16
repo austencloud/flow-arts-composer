@@ -100,7 +100,7 @@ describe("PropPlacementGrid", () => {
 
     await expect
       .element(preview)
-      .toHaveAttribute("data-blue-location", GridLocation.WEST);
+      .toHaveAttribute("data-left-location", GridLocation.WEST);
     await expect.element(preview).toHaveAttribute("data-letter", "A");
     await expect.element(preview).toHaveAttribute("data-step-number", "0");
   });
@@ -124,7 +124,8 @@ describe("PropPlacementGrid", () => {
     expect(onChange).toHaveBeenLastCalledWith({
       leftLocation: GridLocation.EAST,
       rightLocation: null,
-      activeHand: "red",
+      activeHand: HandSide.RIGHT,
+      placedHand: HandSide.LEFT,
       complete: false,
       canUndo: true,
     });
@@ -158,6 +159,7 @@ describe("PropPlacementGrid", () => {
       leftLocation: GridLocation.EAST,
       rightLocation: GridLocation.NORTH,
       activeHand: null,
+      placedHand: HandSide.RIGHT,
       complete: true,
       canUndo: true,
     });
@@ -166,7 +168,8 @@ describe("PropPlacementGrid", () => {
     expect(onChange).toHaveBeenLastCalledWith({
       leftLocation: GridLocation.EAST,
       rightLocation: GridLocation.WEST,
-      activeHand: "red",
+      activeHand: HandSide.RIGHT,
+      placedHand: null,
       complete: true,
       // The undo just consumed the only entry in the history.
       canUndo: false,
@@ -202,8 +205,12 @@ describe("PropPlacementGrid", () => {
 
   it("re-aims a prop from an already-complete position", async () => {
     const onOrientationChange = vi.fn();
+    // Staffs, not the default bare hands: hands have no visible aim, so the
+    // grid hides the aiming prompt for them.
     render(PropPlacementGrid, {
       gridMode: GridMode.DIAMOND,
+      leftPropType: PropType.STAFF,
+      rightPropType: PropType.STAFF,
       initialLeftLocation: GridLocation.EAST,
       initialRightLocation: GridLocation.WEST,
       betaSwapped: true,
@@ -314,7 +321,8 @@ describe("PropPlacementGrid", () => {
     expect(onChange).toHaveBeenLastCalledWith({
       leftLocation: GridLocation.NORTHEAST,
       rightLocation: null,
-      activeHand: "red",
+      activeHand: HandSide.RIGHT,
+      placedHand: HandSide.LEFT,
       complete: false,
       canUndo: true,
     });
