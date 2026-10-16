@@ -932,17 +932,72 @@ instead of showing an empty shell.
   {/if}
 {/snippet}
 
-{#if isYouDrafts && (!isSideBySide || !hasLibrarySession)}
-  <div class="collections-list"><DraftsShelf /></div>
-{:else if isYouDrafts}
-  <div class="drafts-workspace">
+{#if isSideBySide && hasLibrarySession}
+  <div class="you-workspace">
     <WorkShelfRail
+      region="tabs"
       value={activeShelf}
       sharedAvailable={hasSharedShelf}
       onchange={selectShelf}
       content={shelfContent}
     />
+    {#if isYouDrafts}
+      <div class="drafts-workspace">
+        <WorkShelfRail
+          region="panel"
+          value={activeShelf}
+          sharedAvailable={hasSharedShelf}
+          onchange={selectShelf}
+          content={shelfContent}
+        />
+      </div>
+    {:else}
+      <div class="library-split">
+        <aside class="rail" aria-label={t("browse_ui_your_collections")}>
+          <WorkShelfRail
+            region="panel"
+            value={activeShelf}
+            sharedAvailable={hasSharedShelf}
+            onchange={selectShelf}
+            content={shelfContent}
+          />
+        </aside>
+
+        <section class="detail-pane">
+          {#if railSelection.id === "all" && !railSelection.ownerId}
+            <AllLibraryView />
+          {:else if !railSelection.ownerId && isPerformancesId(railSelection.id)}
+            {@render performancesDetail(false)}
+          {:else if !railSelection.ownerId && isArtId(railSelection.id)}
+            {#key railSelection.id}
+              {@render artDetail(railSelection.id, false)}
+            {/key}
+          {:else if isOwnSmart(railSelection.id, railSelection.ownerId) || isFoundingId(railSelection.id)}
+            {#key railSelection.id}
+              <SmartCollectionDetailView
+                collectionId={railSelection.id}
+                onBack={backToList}
+                showBack={false}
+              />
+            {/key}
+          {:else}
+            <CollectionDetailView
+              collectionId={railSelection.id}
+              foreignOwnerId={railSelection.ownerId}
+              ownerName={railSelection.ownerName}
+              accessRole={"accessRole" in railSelection
+                ? railSelection.accessRole
+                : undefined}
+              onBack={backToList}
+              showBack={false}
+            />
+          {/if}
+        </section>
+      </div>
+    {/if}
   </div>
+{:else if isYouDrafts}
+  <div class="collections-list"><DraftsShelf /></div>
 {:else if isYouSequences && !hasLibrarySession}
   <div class="collections-list">
     <DraftsShelf />
@@ -979,48 +1034,6 @@ instead of showing an empty shell.
     <div class="mobile-library">
       <AllLibraryView onBack={backToList} />
     </div>
-  </div>
-{:else if isSideBySide && hasLibrarySession}
-  <div class="library-split">
-    <aside class="rail" aria-label={t("browse_ui_your_collections")}>
-      <WorkShelfRail
-        value={activeShelf}
-        sharedAvailable={hasSharedShelf}
-        onchange={selectShelf}
-        content={shelfContent}
-      />
-    </aside>
-
-    <section class="detail-pane">
-      {#if railSelection.id === "all" && !railSelection.ownerId}
-        <AllLibraryView />
-      {:else if !railSelection.ownerId && isPerformancesId(railSelection.id)}
-        {@render performancesDetail(false)}
-      {:else if !railSelection.ownerId && isArtId(railSelection.id)}
-        {#key railSelection.id}
-          {@render artDetail(railSelection.id, false)}
-        {/key}
-      {:else if isOwnSmart(railSelection.id, railSelection.ownerId) || isFoundingId(railSelection.id)}
-        {#key railSelection.id}
-          <SmartCollectionDetailView
-            collectionId={railSelection.id}
-            onBack={backToList}
-            showBack={false}
-          />
-        {/key}
-      {:else}
-        <CollectionDetailView
-          collectionId={railSelection.id}
-          foreignOwnerId={railSelection.ownerId}
-          ownerName={railSelection.ownerName}
-          accessRole={"accessRole" in railSelection
-            ? railSelection.accessRole
-            : undefined}
-          onBack={backToList}
-          showBack={false}
-        />
-      {/if}
-    </section>
   </div>
 {:else if detail}
   {#if detail.id === "all" && !detail.ownerId}
@@ -1139,11 +1152,19 @@ instead of showing an empty shell.
 <style>
   /* ── Desktop split: rail + detail pane ──────────────────────────── */
 
+  .you-workspace {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+  }
+
   .library-split {
     display: grid;
     grid-template-columns: clamp(300px, 24cqi, 400px) minmax(0, 1fr);
     width: 100%;
-    height: 100%;
+    flex: 1 1 auto;
     min-height: 0;
   }
 
@@ -1151,7 +1172,7 @@ instead of showing an empty shell.
     display: flex;
     flex-direction: column;
     width: 100%;
-    height: 100%;
+    flex: 1 1 auto;
     min-height: 0;
   }
   .mobile-you-overview {
