@@ -35,6 +35,7 @@
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import SettingToggleButton from "#lib/shared/settings/components/SettingToggleButton.svelte";
   import { popIn } from "#lib/shared/transitions/motion.js";
+  import { getEscapeLayerManager } from "#lib/shared/keyboard/get-escape-layer-manager.js";
   import { cardPresentationFromFooterSettings } from "#lib/shared/share/domain/models/card-presentation.js";
 
   // The saved card's footer defaults come from the same composition settings
@@ -132,25 +133,34 @@
     return () => observer.disconnect();
   });
 
-  // Enter saves, Escape leaves the save view (the drawer used to own Escape).
+  // Escape leaves the save view (the drawer used to own Escape). It goes
+  // through the shared escape layers, so a dialog opened from the view (the
+  // prop picker, the appeal modal, the age gate) sits above it and one press
+  // closes only that dialog.
+  $effect(() => {
+    if (!s.isOpen) return;
+    return getEscapeLayerManager().register({
+      id: "create:save-view",
+      canDismiss: () =>
+        !s.isSaving &&
+        !s.showAppealModal &&
+        !s.showShameGate &&
+        !document.querySelector('[role="listbox"]'),
+      dismiss: () => s.handleClose(),
+    });
+  });
+
+  // Enter saves.
   $effect(() => {
     if (!s.isOpen) return;
 
     function onKeydown(e: KeyboardEvent) {
       if (e.defaultPrevented) return;
-      if (e.key === "Escape") {
-        if (s.isSaving) return;
-        // A dialog or popover above the view (prop picker, appeal modal, age
-        // gate) takes its own Escape first.
-        if (s.showAppealModal || s.showShameGate) return;
-        if (document.querySelector('[role="dialog"], [role="listbox"]')) return;
-        e.preventDefault();
-        s.handleClose();
-        return;
-      }
       if (e.key === "Enter" && !e.shiftKey && s.canSave) {
         const target = e.target as HTMLElement;
         if (target.tagName === "TEXTAREA" || target.tagName === "INPUT") return;
+        // Enter on a dialog control (a prop tile) belongs to that dialog.
+        if (target.closest("dialog")) return;
         e.preventDefault();
         s.handleSave();
       }
@@ -210,6 +220,7 @@
           disabled={s.isSaving}
           hint={t("prop_pair_saved_default_hint")}
           fill
+          picker="modal"
         />
       </div>
     {/if}

@@ -8,7 +8,7 @@
 
   - prop:   scene-3d PropType value (staff, triad, quiad, trigeng, ...)
   - finish: fire | day (props with finish variants)
-  - fanBuild: pictograph | fire | lotus | day | moon | flat-grip | star
+  - fanBuild: pictograph | fire | lotus | day | moon | flat-grip | star | sense
   - fanFrameColor: black | white
   - fanCover: bare | covered
   - triangleGrip: corner | side
@@ -82,7 +82,8 @@
       fanBuild === "day" ||
       fanBuild === "moon" ||
       fanBuild === "flat-grip" ||
-      fanBuild === "star"
+      fanBuild === "star" ||
+      fanBuild === "sense"
     ) {
       propFinishState.setFanBuild(fanBuild satisfies FanBuild);
     }

@@ -75,6 +75,20 @@ describe("PropGrid fan look credit", () => {
     }
   );
 
+  it("names Flow DNA without a link until it has a product page", async () => {
+    renderRail({ build: "sense", frameColor: "black", cover: "bare" });
+
+    await page.getByTestId("fan-look-chip").click();
+
+    await expect
+      .element(page.getByRole("button", { name: "Back to all props" }))
+      .toBeVisible();
+    const credit = document.querySelector(".rail-credit");
+    expect(credit?.tagName).toBe("SPAN");
+    expect(credit?.querySelector(".credit-long")?.textContent).toBe("Flow DNA");
+    expect(document.querySelector("a.rail-credit, .rail-credit a")).toBeNull();
+  });
+
   it("keeps the heading plain for the house DoodleGrip", async () => {
     renderRail({ build: "fire", frameColor: "black", cover: "bare" });
 
