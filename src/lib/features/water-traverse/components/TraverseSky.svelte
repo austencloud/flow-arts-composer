@@ -36,6 +36,14 @@
 
   // The colour uniforms hold the caller's own objects, so the scene's
   // per-frame mutation of them is already the shader's input.
+  const uniforms = {
+    uHorizon: { value: props.horizon },
+    uZenith: { value: props.zenith },
+    uSunColor: { value: props.sunColor },
+    uSunDirection: { value: props.sunDirection },
+    uSubmersion: { value: 0 },
+  };
+
   const material = new ShaderMaterial({
     side: BackSide,
     depthWrite: false,
@@ -45,13 +53,7 @@
     // the flat clear colour and the trench looked roofed in black.
     depthTest: false,
     fog: false,
-    uniforms: {
-      uHorizon: { value: props.horizon },
-      uZenith: { value: props.zenith },
-      uSunColor: { value: props.sunColor },
-      uSunDirection: { value: props.sunDirection },
-      uSubmersion: { value: 0 },
-    },
+    uniforms,
     vertexShader: /* glsl */ `
       varying vec3 vDirection;
       void main() {
@@ -113,10 +115,10 @@
     `,
   });
 
-  let dome = $state.raw<Mesh | null>(null);
+  let dome = $state.raw<Mesh>();
 
   useTask(() => {
-    material.uniforms.uSubmersion.value = props.live.submersion;
+    uniforms.uSubmersion.value = props.live.submersion;
     const cam = camera.current;
     if (cam && dome) dome.position.copy(cam.position);
   });

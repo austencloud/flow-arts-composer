@@ -163,7 +163,7 @@
         <div class="chosen-block" transition:growFade>
           <div class="sequence-chosen">
             <div class="thumb">
-              <PropAwareThumbnail sequence={movementMap.sequence} alt="" />
+              <PropAwareThumbnail sequence={movementMap.sequence} />
             </div>
             <div class="sequence-meta">
               <p class="chosen">
