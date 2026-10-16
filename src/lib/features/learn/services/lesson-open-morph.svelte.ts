@@ -24,7 +24,9 @@ interface LessonMorphSource {
   prominent: boolean | null;
 }
 
-let morphing = $state<LessonMorphSource | null>(null);
+// Raw, so `morphing === source` compares the object run() was handed rather
+// than a deep-state proxy of it.
+let morphing = $state.raw<LessonMorphSource | null>(null);
 /** The card the learner opened, so Back returns to that same card. */
 let openedFrom: LessonMorphSource | null = null;
 
