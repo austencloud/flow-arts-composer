@@ -2,6 +2,12 @@
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import ExperienceProgressIndicator from "./ExperienceProgressIndicator.svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import {
+    createDestinationFade,
+    createIntrinsicSizeMotion,
+    type IntrinsicSizeMotion,
+  } from "#lib/shared/transitions/motion.js";
+  import { untrack } from "svelte";
 
   let {
     label,
@@ -32,6 +38,67 @@
     showProgress?: boolean;
     progressAppearance?: "dots" | "steps";
   } = $props();
+
+  // A new label ("Next" becoming "Continue to Hand Placements") eases the
+  // button to its new width while the words fade in, instead of snapping.
+  let labelElement = $state<HTMLElement | null>(null);
+  let widthMotion: IntrinsicSizeMotion | null = null;
+  let labelFade: ReturnType<typeof createDestinationFade> | null = null;
+  let widthBefore: number | null = null;
+
+  $effect(() => {
+    const button = actionRef;
+    if (!button) return;
+    const motion = createIntrinsicSizeMotion(button, {
+      dimension: "width",
+      release: true,
+    });
+    widthMotion = motion;
+    return () => {
+      motion.cancel();
+      if (widthMotion === motion) widthMotion = null;
+    };
+  });
+
+  $effect(() => {
+    const element = labelElement;
+    if (!element) return;
+    const fade = createDestinationFade(element);
+    labelFade = fade;
+    return () => {
+      fade.destroy();
+      if (labelFade === fade) labelFade = null;
+    };
+  });
+
+  // Before the DOM takes the new label: the width on screen, mid-ease included.
+  $effect.pre(() => {
+    void label;
+    untrack(() => {
+      widthBefore = actionRef?.offsetWidth ?? null;
+    });
+  });
+
+  $effect(() => {
+    void label;
+    untrack(() => {
+      const button = actionRef;
+      const from = widthBefore;
+      widthBefore = null;
+      if (!button || from === null || !widthMotion) return;
+      widthMotion.cancel();
+      const target = button.offsetWidth;
+      if (Math.abs(target - from) < 0.5) return;
+      const animation = widthMotion.resize(from, target);
+      labelFade?.play();
+      if (!animation) return;
+      // The words keep one line while the box is narrower than they are.
+      button.dataset.resizing = "";
+      const settle = () => delete button.dataset.resizing;
+      animation.addEventListener("finish", settle, { once: true });
+      animation.addEventListener("cancel", settle, { once: true });
+    });
+  });
 </script>
 
 <div class="lesson-stage-controls" class:navigation={onPrevious !== undefined}>
@@ -60,7 +127,7 @@
       disabled={actionDisabled}
       bind:ref={actionRef}
     >
-      <span>{label}</span>
+      <span bind:this={labelElement}>{label}</span>
       {#if actionIcon === "check"}
         <i class="fa-solid fa-check" aria-hidden="true"></i>
       {:else}
@@ -72,7 +139,8 @@
       class="primary-action"
       onclick={onAction}
       disabled={actionDisabled}
-      bind:this={actionRef}>{label}</button
+      bind:this={actionRef}
+      ><span bind:this={labelElement}>{label}</span></button
     >
     {#if showProgress}<ExperienceProgressIndicator
         {currentStep}
@@ -154,6 +222,11 @@
   .primary-action:focus-visible {
     outline: 2px solid var(--theme-accent);
     outline-offset: 3px;
+  }
+
+  .lesson-stage-controls :global([data-resizing]) {
+    overflow: clip;
+    white-space: nowrap;
   }
 
   .primary-action:disabled {

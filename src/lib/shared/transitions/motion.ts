@@ -113,16 +113,39 @@ export interface IntrinsicHeightMotion {
   cancel(): void;
 }
 
+/** The same motion on either axis: a control whose label changes eases its
+ * width the way a dialog eases its height. */
+export interface IntrinsicSizeMotion {
+  resize(from: number, target: number): Animation | null;
+  currentSize(): number | null;
+  cancel(): void;
+}
+
+export interface IntrinsicSizeMotionOptions {
+  dimension?: "width" | "height";
+  duration?: number;
+  /**
+   * Hand the size back to content sizing once the ease lands. A dialog keeps
+   * owning its frame between observations; a button whose layout can still
+   * change (a container query making it full width) must not stay pinned.
+   */
+  release?: boolean;
+}
+
 /**
- * Animate an overlay's own height without scaling the content inside it.
- * `target` must come from layout metrics such as `offsetHeight`, rather than a
- * transformed screen rectangle, so opening transforms cannot freeze a card at
- * the wrong size.
+ * Animate an element's own width or height without scaling the content inside
+ * it. `target` must come from layout metrics such as `offsetHeight`, rather
+ * than a transformed screen rectangle, so opening transforms cannot freeze a
+ * card at the wrong size.
  */
-export function createIntrinsicHeightMotion(
+export function createIntrinsicSizeMotion(
   element: HTMLElement,
-  duration = DURATION.normal
-): IntrinsicHeightMotion {
+  {
+    dimension = "height",
+    duration = DURATION.normal,
+    release = false,
+  }: IntrinsicSizeMotionOptions = {}
+): IntrinsicSizeMotion {
   let animation: Animation | null = null;
   let animationStart = 0;
   let animationTarget = 0;
@@ -133,17 +156,18 @@ export function createIntrinsicHeightMotion(
       animation = null;
 
       // The live style is the destination. `backwards` holds the visible
-      // starting height until the first animation frame, so the box cannot
+      // starting size until the first animation frame, so the box cannot
       // flash at its new size before moving there.
-      element.style.height = `${target}px`;
+      element.style[dimension] = `${target}px`;
       const effectiveDuration =
         element.dataset.dragging === "true" ? 0 : motionDuration(duration);
       if (effectiveDuration === 0 || Math.abs(from - target) < 0.5) {
+        if (release) element.style[dimension] = "";
         return null;
       }
 
       const nextAnimation = element.animate(
-        [{ height: `${from}px` }, { height: `${target}px` }],
+        [{ [dimension]: `${from}px` }, { [dimension]: `${target}px` }],
         {
           duration: effectiveDuration,
           easing: STANDARD_MOTION_EASING,
@@ -158,16 +182,18 @@ export function createIntrinsicHeightMotion(
         () => {
           if (animation !== nextAnimation) return;
           animation = null;
-          // Keep owning the frame between observations. Releasing it to auto
-          // lets a child's first reflow briefly move the frame before RO runs.
-          // The independently sized content wrapper supplies the next target.
+          // Without `release` this keeps owning the frame between
+          // observations. Releasing it to auto would let a child's first
+          // reflow briefly move the frame before RO runs; the independently
+          // sized content wrapper supplies the next target.
+          if (release) element.style[dimension] = "";
         },
         { once: true }
       );
       return nextAnimation;
     },
 
-    currentHeight(): number | null {
+    currentSize(): number | null {
       if (!animation) return null;
       const progress = animation.effect?.getComputedTiming().progress;
       if (typeof progress !== "number") return animationStart;
@@ -177,8 +203,26 @@ export function createIntrinsicHeightMotion(
     cancel(): void {
       animation?.cancel();
       animation = null;
-      element.style.height = "";
+      element.style[dimension] = "";
     },
+  };
+}
+
+/**
+ * Animate an overlay's own height without scaling the content inside it.
+ * `target` must come from layout metrics such as `offsetHeight`, rather than a
+ * transformed screen rectangle, so opening transforms cannot freeze a card at
+ * the wrong size.
+ */
+export function createIntrinsicHeightMotion(
+  element: HTMLElement,
+  duration = DURATION.normal
+): IntrinsicHeightMotion {
+  const motion = createIntrinsicSizeMotion(element, { duration });
+  return {
+    resize: motion.resize,
+    currentHeight: motion.currentSize,
+    cancel: motion.cancel,
   };
 }
 
