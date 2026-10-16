@@ -11,8 +11,8 @@ Two layouts share one nav model:
 - Desktop (side-by-side): a persistent collection rail on the left with the
   real detail view filling the rest of the monitor — no more tiny folders
   swimming in space, and switching collections is one click, not a
-  back-and-forth. Nothing selected shows the All shelf, so the pane is never
-  empty.
+  back-and-forth. The route selects the shelf and its detail; an empty Following
+  shelf has its own explanation.
 
 List vs detail is derived straight from browseNavigationState's current
 location, so the module's back/forward buttons, deep links, and the
@@ -23,7 +23,7 @@ instead of showing an empty shell.
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  import { onMount, tick, type Component } from "svelte";
+  import { onMount, type Component } from "svelte";
   import { dev } from "$app/env";
   import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
   import { userPreviewState } from "#lib/shared/debug/state/user-preview-state.svelte.js";
@@ -56,7 +56,12 @@ instead of showing an empty shell.
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import { getSharedCollectionsContext } from "../context/shared-collections-context";
   import UserVideoLibraryView from "#lib/shared/video-collaboration/components/UserVideoLibraryView.svelte";
-  import WorkShelfRail, { type WorkShelfId } from "./WorkShelfRail.svelte";
+  import WorkShelfRail from "./WorkShelfRail.svelte";
+  import {
+    locationForShelf,
+    shelfForLocation,
+    type WorkShelfId,
+  } from "../services/work-shelf-navigation.js";
   import DraftsShelf from "./DraftsShelf.svelte";
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import SortPopover, {
@@ -335,9 +340,8 @@ instead of showing an empty shell.
     return { id: loc.contextId, ownerId: null, ownerName: undefined };
   });
 
-  // Split mode never shows an empty pane: with nothing selected, the All
-  // shelf fills in. Display-only — no history entry is written until the
-  // user actually clicks something, so back/forward stay truthful.
+  // The general You landing uses All when nothing is selected. Following has
+  // its own list route and empty state, handled before this fallback renders.
   const railSelection = $derived(
     detail ?? {
       id: "all",
@@ -346,51 +350,34 @@ instead of showing an empty shell.
     }
   );
 
-  let activeShelf = $state<WorkShelfId>("collections");
+  const activeShelf = $derived(
+    shelfForLocation(browseNavigationState.currentLocation)
+  );
   const isYouDrafts = $derived(
     browseNavigationState.currentLocation?.primary === "you" &&
       browseNavigationState.currentLocation?.section === "drafts"
   );
 
-  const hasSharedShelf = $derived(
-    sharedCollections.length > 0 ||
-      sharedCollectionsState.loading ||
-      !!sharedCollectionsState.error ||
-      followedCollectionsState.items.length > 0
-  );
-
-  function shelfForSelection(selection: {
-    id: string;
-    ownerId: string | null;
-  }): WorkShelfId {
-    if (selection.ownerId) return "shared";
-    if (isPerformancesId(selection.id)) return "performances";
-    if (isArtId(selection.id)) return "art";
-    if (isFoundingId(selection.id)) return "core";
-    return "collections";
-  }
-
-  // Back, forward, and restored deep links keep the rail on the shelf that
-  // contains the item showing in the detail pane. Switching shelves locally
-  // does not disturb that detail until the user chooses a new card.
-  $effect(() => {
-    activeShelf = isYouDrafts ? "drafts" : shelfForSelection(railSelection);
-  });
-
   function selectShelf(shelfId: WorkShelfId): void {
-    activeShelf = shelfId;
-    if (shelfId === "drafts") {
-      browseNavigationState.navigateTo({
-        primary: "you",
-        section: "drafts",
-        view: "list",
-      });
-    } else if (isYouDrafts) {
-      browseNavigationState.viewCollections();
-      void tick().then(() => {
-        activeShelf = shelfId;
-      });
-    }
+    const followed = followedCollectionsState.items[0];
+    const shared = sharedCollections[0];
+    browseNavigationState.navigateTo(
+      locationForShelf(
+        shelfId,
+        followed && {
+          ownerId: followed.ownerId,
+          collectionId: followed.collection.id,
+          name: followed.collection.name,
+          ownerName: followed.ownerName,
+        },
+        shared && {
+          ownerId: shared.grant.ownerId,
+          collectionId: shared.grant.collectionId,
+          name: shared.collection.name,
+          ownerName: shared.ownerName,
+        }
+      )
+    );
   }
   function openDrafts(event: MouseEvent): void {
     if (
@@ -407,6 +394,10 @@ instead of showing an empty shell.
   const isYouSequences = $derived(
     browseNavigationState.currentLocation?.primary === "you" &&
       browseNavigationState.currentLocation?.section === "sequences"
+  );
+  const isYouFollowing = $derived(
+    browseNavigationState.currentLocation?.primary === "you" &&
+      browseNavigationState.currentLocation?.section === "following"
   );
 
   function openCollection(
@@ -928,21 +919,96 @@ instead of showing an empty shell.
       <div class="rail-cards">
         {@render followedShelves(railSelection)}
       </div>
+    {:else if followedCollectionsState.loading}
+      <div class="shared-shelf-state" role="status">
+        <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
+        {t("browse_following")}
+      </div>
+    {:else if sharedCollections.length === 0 && !sharedCollectionsState.loading && !followedCollectionsState.loading && !sharedCollectionsState.error}
+      <div class="shared-shelf-state" role="status">
+        Collections you follow or that people share with you will appear here.
+      </div>
     {/if}
   {/if}
 {/snippet}
 
-{#if isYouDrafts && (!isSideBySide || !hasLibrarySession)}
-  <div class="collections-list"><DraftsShelf /></div>
-{:else if isYouDrafts}
-  <div class="drafts-workspace">
+{#if isSideBySide && hasLibrarySession}
+  <div class="you-workspace">
     <WorkShelfRail
+      region="tabs"
       value={activeShelf}
-      sharedAvailable={hasSharedShelf}
       onchange={selectShelf}
       content={shelfContent}
     />
+    {#if isYouDrafts}
+      <div class="drafts-workspace">
+        <WorkShelfRail
+          region="panel"
+          value={activeShelf}
+          onchange={selectShelf}
+          content={shelfContent}
+        />
+      </div>
+    {:else}
+      <div class="library-split">
+        <aside class="rail" aria-label={t("browse_ui_your_collections")}>
+          <WorkShelfRail
+            region="panel"
+            value={activeShelf}
+            onchange={selectShelf}
+            content={shelfContent}
+          />
+        </aside>
+
+        <section class="detail-pane">
+          {#if isYouFollowing}
+            <div class="following-empty-detail">
+              <i class="fas fa-user-group" aria-hidden="true"></i>
+              <h3>{t("browse_following")}</h3>
+              <p>
+                {sharedCollectionsState.loading ||
+                followedCollectionsState.loading
+                  ? t("browse_verified_loading_shared_collections")
+                  : followedCollectionsState.items.length > 0 ||
+                      sharedCollections.length > 0
+                    ? "Choose a collection from the list."
+                    : "Collections you follow or that people share with you will appear here."}
+              </p>
+            </div>
+          {:else if railSelection.id === "all" && !railSelection.ownerId}
+            <AllLibraryView />
+          {:else if !railSelection.ownerId && isPerformancesId(railSelection.id)}
+            {@render performancesDetail(false)}
+          {:else if !railSelection.ownerId && isArtId(railSelection.id)}
+            {#key railSelection.id}
+              {@render artDetail(railSelection.id, false)}
+            {/key}
+          {:else if isOwnSmart(railSelection.id, railSelection.ownerId) || isFoundingId(railSelection.id)}
+            {#key railSelection.id}
+              <SmartCollectionDetailView
+                collectionId={railSelection.id}
+                onBack={backToList}
+                showBack={false}
+              />
+            {/key}
+          {:else}
+            <CollectionDetailView
+              collectionId={railSelection.id}
+              foreignOwnerId={railSelection.ownerId}
+              ownerName={railSelection.ownerName}
+              accessRole={"accessRole" in railSelection
+                ? railSelection.accessRole
+                : undefined}
+              onBack={backToList}
+              showBack={false}
+            />
+          {/if}
+        </section>
+      </div>
+    {/if}
   </div>
+{:else if isYouDrafts}
+  <div class="collections-list"><DraftsShelf /></div>
 {:else if isYouSequences && !hasLibrarySession}
   <div class="collections-list">
     <DraftsShelf />
@@ -980,47 +1046,28 @@ instead of showing an empty shell.
       <AllLibraryView onBack={backToList} />
     </div>
   </div>
-{:else if isSideBySide && hasLibrarySession}
-  <div class="library-split">
-    <aside class="rail" aria-label={t("browse_ui_your_collections")}>
-      <WorkShelfRail
-        value={activeShelf}
-        sharedAvailable={hasSharedShelf}
-        onchange={selectShelf}
-        content={shelfContent}
-      />
-    </aside>
-
-    <section class="detail-pane">
-      {#if railSelection.id === "all" && !railSelection.ownerId}
-        <AllLibraryView />
-      {:else if !railSelection.ownerId && isPerformancesId(railSelection.id)}
-        {@render performancesDetail(false)}
-      {:else if !railSelection.ownerId && isArtId(railSelection.id)}
-        {#key railSelection.id}
-          {@render artDetail(railSelection.id, false)}
-        {/key}
-      {:else if isOwnSmart(railSelection.id, railSelection.ownerId) || isFoundingId(railSelection.id)}
-        {#key railSelection.id}
-          <SmartCollectionDetailView
-            collectionId={railSelection.id}
-            onBack={backToList}
-            showBack={false}
-          />
-        {/key}
-      {:else}
-        <CollectionDetailView
-          collectionId={railSelection.id}
-          foreignOwnerId={railSelection.ownerId}
-          ownerName={railSelection.ownerName}
-          accessRole={"accessRole" in railSelection
-            ? railSelection.accessRole
-            : undefined}
-          onBack={backToList}
-          showBack={false}
-        />
-      {/if}
-    </section>
+{:else if isYouFollowing}
+  <div class="collections-list">
+    <header class="list-header">
+      <h2 class="list-title">{t("browse_following")}</h2>
+    </header>
+    {#if sharedCollections.length > 0 || sharedCollectionsState.loading || sharedCollectionsState.error}
+      <h3 class="shelf-heading">{t("browse_ui_shared_with_you")}</h3>
+      <div class="card-grid">{@render sharedShelfContent(null)}</div>
+    {/if}
+    {#if followedCollectionsState.items.length > 0}
+      <h3 class="shelf-heading">{t("browse_following")}</h3>
+      <div class="card-grid">{@render followedShelves(null)}</div>
+    {:else if followedCollectionsState.loading}
+      <div class="shared-shelf-state" role="status">
+        <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
+        {t("browse_following")}
+      </div>
+    {:else if sharedCollections.length === 0 && !sharedCollectionsState.loading && !followedCollectionsState.loading && !sharedCollectionsState.error}
+      <div class="shared-shelf-state" role="status">
+        Collections you follow or that people share with you will appear here.
+      </div>
+    {/if}
   </div>
 {:else if detail}
   {#if detail.id === "all" && !detail.ownerId}
@@ -1139,11 +1186,19 @@ instead of showing an empty shell.
 <style>
   /* ── Desktop split: rail + detail pane ──────────────────────────── */
 
+  .you-workspace {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+  }
+
   .library-split {
     display: grid;
     grid-template-columns: clamp(300px, 24cqi, 400px) minmax(0, 1fr);
     width: 100%;
-    height: 100%;
+    flex: 1 1 auto;
     min-height: 0;
   }
 
@@ -1151,7 +1206,7 @@ instead of showing an empty shell.
     display: flex;
     flex-direction: column;
     width: 100%;
-    height: 100%;
+    flex: 1 1 auto;
     min-height: 0;
   }
   .mobile-you-overview {
@@ -1202,6 +1257,31 @@ instead of showing an empty shell.
     min-height: 0;
     height: 100%;
     overflow: hidden;
+  }
+
+  .following-empty-detail {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    height: 100%;
+    padding: 24px;
+    color: var(--theme-text-dim);
+    text-align: center;
+  }
+
+  .following-empty-detail i {
+    font-size: 28px;
+  }
+
+  .following-empty-detail h3,
+  .following-empty-detail p {
+    margin: 0;
+  }
+
+  .following-empty-detail h3 {
+    color: var(--theme-text);
   }
 
   /* ── Embedded Art gallery (tunnels / scenes / mandalas) ──────────── */
