@@ -104,7 +104,7 @@ export function resolveSmokeFluidStep3D(
     // A puff at full heat climbs at about the rise setting.
     lift: 5 + 22 * params.resolvedRiseSpeed,
     // Cool smoke (fog) is heavier than the air around it and settles.
-    weight: 30 * Math.max(0, 0.35 - profile.temperature),
+    weight: 30 * Math.max(0, 0.35 - params.resolvedPalette.warmth),
   };
 }
 
@@ -386,7 +386,7 @@ export class SmokeFluidRenderer3D {
       const volumeCells = Math.PI * radius * radius * length + Math.PI ** 1.5 * radius ** 3;
       const output = resolveSmokeFluidOutput3D(params, tip.velocity.length());
       s.smoke = (output * SMOKE_FLUID_STEP) / (volumeCells * h * h * h);
-      s.heat = s.smoke * params.volumeProfile.temperature * 1.6;
+      s.heat = s.smoke * params.resolvedPalette.warmth * 1.6;
       s.velocity.copy(tip.velocity);
       s.drag = HEAD_DRAG;
     }

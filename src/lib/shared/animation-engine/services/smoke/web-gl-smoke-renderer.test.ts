@@ -5,8 +5,10 @@ import {
   computeSmokeLift,
   computeSmokeSimulationResolution,
   computeSmokeEmitterMetrics,
+  computeSmokeHeat,
   hexToLinearRgb,
 } from "./web-gl-smoke-renderer";
+import { SMOKE_PALETTES } from "#lib/shared/effects/domain/smoke-palettes.js";
 
 describe("fluid smoke quality", () => {
   it("maps existing pool tiers to bounded simulation grids", () => {
@@ -73,6 +75,16 @@ describe("fluid smoke quality", () => {
     expect(wallSurvivalPerSecond).toBeLessThan(longestLifetime / 10);
     expect(SMOKE_EDGE_SPONGE.topBand).toBeGreaterThan(
       SMOKE_EDGE_SPONGE.sideBand
+    );
+  });
+
+  it("lets cool fog settle while warm palettes keep their full lift", () => {
+    expect(computeSmokeHeat(SMOKE_PALETTES.fog.warmth)).toBeLessThan(0);
+    for (const palette of ["incense", "genie", "campfire"] as const) {
+      expect(computeSmokeHeat(SMOKE_PALETTES[palette].warmth)).toBe(1);
+    }
+    expect(computeSmokeHeat(SMOKE_PALETTES.cursed.warmth)).toBeGreaterThan(
+      computeSmokeHeat(SMOKE_PALETTES.fog.warmth)
     );
   });
 });
