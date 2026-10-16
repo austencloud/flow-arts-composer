@@ -324,7 +324,7 @@ export function registerPresetTools(server: McpServer): void {
       fanAppearance: z
         .object({
           build: z
-            .enum(["pictograph", "fire", "flat-grip", "lotus", "day", "moon"])
+            .enum(["pictograph", "fire", "flat-grip", "lotus", "day", "moon", "star", "sense"])
             .optional(),
           frameColor: z.enum(["black", "white"]).optional(),
           cover: z.enum(["bare", "covered"]).optional(),
