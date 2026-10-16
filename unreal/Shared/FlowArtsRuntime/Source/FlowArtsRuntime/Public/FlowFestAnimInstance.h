@@ -14,7 +14,7 @@ class FLOWARTSRUNTIME_API UFlowFestAnimInstance : public UAnimInstance
 {
     GENERATED_BODY()
 public:
-    void Configure(const TMap<FName, TObjectPtr<UAnimSequence>>& InMotions);
+    void Configure(const TMap<FName, TObjectPtr<UAnimSequence>>& InMotions, const FString& InCharacterFolder);
     bool SetMotion(FName Name);
     void SetMotionRate(FName Name, float Rate);
     void SetMotionTime(FName Name, float Seconds);
@@ -42,6 +42,9 @@ private:
     friend struct FFlowFestAnimProxy;
     UPROPERTY(Transient) TArray<TObjectPtr<UAnimSequence>> MotionClips;
     UPROPERTY(Transient) TObjectPtr<UAnimSequence> PerformanceClip;
+    UPROPERTY(Transient) TObjectPtr<UAnimSequence> IdleGripClip;
+    FString CharacterFolderPath;
+    FName IdleGripFamily = NAME_None;
     TWeakObjectPtr<UFlowFestPropComponent> GripSource;
     FName PerformanceProfile = NAME_None;
     UPROPERTY(Transient) TArray<TObjectPtr<UAnimSequence>> OutgoingPerformanceClips;
@@ -63,6 +66,7 @@ private:
     bool bPerformanceLoop = true;
     float FootCorrectionCm[2] = {0.f, 0.f};
     void Advance(float DeltaSeconds);
+    void UpdateIdleGripClip();
 };
 
 /** Immutable game-thread snapshot copied before animation evaluation. */
@@ -74,8 +78,10 @@ struct FFlowFestAnimProxy final : FAnimInstanceProxy
     virtual bool Evaluate(FPoseContext& Output) override;
 private:
     TArray<const UAnimSequence*> Clips;
+    TArray<bool> bMotionSamples;
     TArray<float> Times;
     TArray<float> Weights;
+    const UAnimSequence* IdleGripClip = nullptr;
     float FootCorrectionCm[2] = {0.f, 0.f};
     FTransform MeshToWorld = FTransform::Identity;
     FVector CapturedWristComponent[2] = {FVector::ZeroVector, FVector::ZeroVector};
