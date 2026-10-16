@@ -198,9 +198,11 @@
     text-shadow: 0 1px 16px rgba(255, 255, 255, 0.35);
   }
 
+  /* Low on the ground, in the band the playback controls take when the
+     scene arrives. */
   .status {
     position: absolute;
-    top: calc(var(--horizon) + clamp(28px, 10cqh, 96px));
+    bottom: clamp(20px, 5cqh, 40px);
     right: 16px;
     left: 16px;
     display: flex;
