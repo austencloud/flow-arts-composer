@@ -70,7 +70,10 @@
   import type { createConstructTabState as ConstructTabStateType } from "../state/construct-tab-state.svelte";
   import { createPanelCoordinationState } from "../state/panel-coordination-state.svelte";
   import { setCreateModuleStateRef } from "#lib/shared/create/state/create-module-state-ref.svelte.js";
-  import type { IToolPanelMethods } from "../types/create-module-types";
+  import type {
+    IToolPanelMethods,
+    OptionSelectedHandler,
+  } from "../types/create-module-types";
   import TransferConfirmDialog from "./TransferConfirmDialog.svelte";
   import ConfirmDialog from "#lib/shared/foundation/ui/ConfirmDialog.svelte";
   import CreateFrontDoor from "./CreateFrontDoor.svelte";
@@ -827,11 +830,13 @@
   // ============================================================================
   // EVENT HANDLERS (Delegated to Services)
   // ============================================================================
-  async function handleOptionSelected(option: PictographData): Promise<void> {
-    if (panelState.workspacePlayback) return;
+  // Refusals return false synchronously so the option picker stays on the step
+  // it is showing instead of loading options for a step that was never added.
+  const handleOptionSelected: OptionSelectedHandler = (option) => {
+    if (panelState.workspacePlayback) return false;
     if (!handlers) {
       error = "Handlers service not initialized";
-      return;
+      return false;
     }
 
     // Enforce tier step cap before adding a new step to the sequence
@@ -843,9 +848,16 @@
     );
     if (currentSteps >= maxSteps) {
       showStepCapGate();
-      return;
+      return false;
     }
 
+    return addOption(handlers, option);
+  };
+
+  async function addOption(
+    handlers: CreateModuleHandlers,
+    option: PictographData
+  ): Promise<void> {
     try {
       await handlers.handleOptionSelected(option);
       if (!appEntryState.isCreateTutorial()) {

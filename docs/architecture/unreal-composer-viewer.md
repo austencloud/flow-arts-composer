@@ -1,6 +1,6 @@
 # Unreal inside the Composer 3D viewer
 
-Date: 2026-10-15. Status: first local viewer slice implemented; native and browser acceptance checks are in progress. Full viewer parity remains the roadmap below.
+Date: 2026-10-16 UTC. Status: the local native control slice and portrait caption placement are verified in Composer. Measured streaming quality and full viewer parity remain open.
 
 Austen wants the existing Composer 3D viewer experience with Unreal rendering: the same controls, performer editing, prop picker, camera behavior, saved scenes, and visual identity. Flow Fest and Museum already share native performer infrastructure. The next layer should consume that work and retain Composer's actual Svelte controls.
 
@@ -36,6 +36,18 @@ This version does not accept arbitrary Composer scores. Staff uses Flow Fest's v
 
 Signalling and staged native assets live under `%LOCALAPPDATA%/FlowArtsComposer/ComposerViewer`, outside Git and outside the task worktree. The streamer and player sockets bind to loopback only. A scoped Vite WebSocket upgrade handler preserves HTTPS/2 and rejects remote connections and foreign origins. The native GPU process must remain running to render the viewer.
 
+## Local acceptance record
+
+On 2026-10-15, the primary Composer route displayed real UE 5.8 video at 1430 × 900 with the existing DOM rails surrounding it. The Pixel Streaming data channel returned correlated `hello` and `camera` replies from the native host, including the loaded `ch01` staff performer and shared playback state. A follow-up build succeeded in 117.6 seconds. The next run showed the full performer with brighter front lighting and no Lumen distance-field warning. Twenty UI commands received twenty native replies and verified placement, camera controls, staff-to-fan switching, pause, rates 0.5 and 1.5, restart and reconnect.
+
+A further native build succeeded in 133.87 seconds. In the final live control run on 2026-10-16 UTC, 23 actual UI commands received 23 native replies: 22 succeeded and one rejected an unsupported Sword prop as expected. The web picker restored Double Staff after that rejection; Fan then succeeded. `hello` loaded the `ch01` staff performer. Pausing held phase at 0.256032794713974 while Shift+Right moved the performer from x=0 to x=0.1, Ctrl+Z returned it to x=0, and Ctrl+Shift+Z restored x=0.1. The paused phase remained unchanged through those edits. The explicit Play control resumed playback. Focus set the native camera position to (0.1, 2.1577132573, 4.15009078175) and target to (0.1, 1.2, 0). Reconnect retained the fan, x=0.1, playing state and rate 1.
+
+At a 375 × 667 portrait viewport, the stream settled at 366 × 668 and its video advanced. At a 1440 × 900 desktop viewport, video reached 1430 × 900. The latest native screenshot fills the viewport, so the earlier suspected 16:9 scene bars are not established. The native handshake reported `CameraActor_0`, `targetMatches=1`, component and cached camera constraints both 0, and viewports of 1280 × 720 then 1430 × 900. The evidence is recorded outside Git in `%LOCALAPPDATA%/FlowArtsComposer/ComposerViewer/Host/controls-final-evidence.json` and `viewer-desktop.png`.
+
+At 05:46–05:47 UTC on 2026-10-16, a further live check at 375 × 667 showed the caption above the full performer, with the focused body and floor in frame. Selecting unsupported Sword returned an error, retained Staff, and displayed the taller message above the body. The real screenshots are stored outside Git beside the other host evidence as `viewer-portrait-final.png` and `viewer-portrait-error.png`.
+
+These checks establish command replies and observed playback after resize, not input-to-image latency or long-run reliability. One PixelCapture GPU fence timeout appeared at 05:09:01 UTC; the stream subsequently advanced, resized and accepted controls. During earlier control testing, the primary development server stopped serving modules and its watchdog restarted the stack. The Unreal process slot was returned to Flow Fest after the earlier run; native render sessions and builds remain coordinated with that owner.
+
 ## Shared ownership
 
 The existing [shared native foundation](../../unreal/Shared/README.md) remains authoritative for formats, coordinate conversion, provenance and asset mounts.
@@ -67,7 +79,7 @@ The existing [shared native foundation](../../unreal/Shared/README.md) remains a
 9. Reconnect, resize and saved-scene restoration have one explicit reconciliation path. A second viewer must not overwrite another viewer's persistence slot or session state.
 10. DOM controls consume their own pointer and keyboard input. Forward interaction within the streamed viewport to native picking/navigation, with correct viewport coordinates and cancellation when focus or connection changes.
 
-Museum's shared contracts are named `tka-performance-transfer-v1` and `tka-performance-library-v1`. Its `FFlowArtsPerformanceLibrary` and `FFlowArtsPerformanceSession` APIs, plus additive avatar transport methods, landed in `08f9c92dfc`. The viewer consumes these methods; runtime fixes remain coordinated with Museum. Its native F6 panel is a game consumer of the same transport. Museum traced its pause smoke failure to observation before avatar and prop ticks; corrected real playback and shared regression checks pass without changing the production pause API. The Composer viewer still requires its own browser transport check.
+Museum's shared contracts are named `tka-performance-transfer-v1` and `tka-performance-library-v1`. Its `FFlowArtsPerformanceLibrary` and `FFlowArtsPerformanceSession` APIs, plus additive avatar transport methods, landed in `08f9c92dfc`. The viewer consumes these methods; runtime fixes remain coordinated with Museum. Its native F6 panel is a game consumer of the same transport. Museum traced its pause smoke failure to observation before avatar and prop ticks; corrected real playback and shared regression checks pass without changing the production pause API. Composer's limited native control slice now has a live browser transport check. Exact user-score playback and full viewer parity still require their own acceptance work.
 
 ## Capability and parity acceptance
 

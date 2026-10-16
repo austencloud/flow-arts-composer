@@ -28,13 +28,19 @@ export interface PropBuildEquip {
 }
 
 /**
- * `flat-grip` and `star` remain supported persisted fan appearances even when
- * the shared scene package's `PropBuild` catalog lags behind. Accept them at
- * this compatibility boundary so enabling fire preserves their five-wick
- * builds; writes remain restricted to the current package shape.
+ * `flat-grip`, `star` and `sense` remain supported persisted fan appearances
+ * even when the shared scene package's `PropBuild` catalog lags behind. Accept
+ * them at this compatibility boundary so enabling fire preserves the five-wick
+ * builds (the unlit Sense Fan swaps to DoodleGrip Fire like Moon does); writes
+ * remain restricted to the current package shape.
  */
 type EffectPropBuild = Omit<PropBuild, "fanBuild"> & {
-  readonly fanBuild: PropBuild["fanBuild"] | "flat-grip" | "star" | "astral";
+  readonly fanBuild:
+    | PropBuild["fanBuild"]
+    | "flat-grip"
+    | "star"
+    | "sense"
+    | "astral";
 };
 
 /** Every member of the "Double Staff build" family. */

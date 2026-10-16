@@ -115,6 +115,15 @@ export interface IAnimationStateRef {
 }
 
 /**
+ * Adds a picked option to the sequence. Returns `false`, synchronously, when
+ * the pick is refused (a guest at the step limit, playback running); the
+ * sequence is unchanged, so the picker must not move on to the next step.
+ */
+export type OptionSelectedHandler = (
+  option: PictographData
+) => Promise<void> | false;
+
+/**
  * Tool Panel Props Interface
  *
  * Props passed to ToolPanel component from parent CreateModule.
@@ -122,7 +131,7 @@ export interface IAnimationStateRef {
 export interface IToolPanelProps {
   createModuleState: ICreateModuleState;
   constructTabState: IConstructTabState;
-  onOptionSelected: (option: PictographData) => Promise<void>;
+  onOptionSelected: OptionSelectedHandler;
   onPracticeStepIndexChange?: (index: number | null) => void;
   isSideBySideLayout?: () => boolean;
   activeTab?: BuildModeId | null;
