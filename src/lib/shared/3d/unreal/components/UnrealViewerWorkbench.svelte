@@ -79,7 +79,7 @@
     onBpmChange={rate}
     immersive={fullscreen.immersive}
     onToggleImmersive={(host) => fullscreen.toggleImmersive(host)}
-    sceneControlsBottomOffset="132px"
+    sceneControlsBottomOffset="max(1rem, env(safe-area-inset-bottom))"
   >
     {#snippet surface()}<UnrealViewerSurface {connection} />{/snippet}
     {#snippet hudActions()}
@@ -117,6 +117,9 @@
               ? "Waiting for the local performer stream."
               : "Start the local viewer host, then reconnect."}
           </p>
+          {#if connection.error}
+            <p class="connection-error" role="alert">{connection.error}</p>
+          {/if}
           {#if connection.status === "disconnected"}
             <button class="retry" onclick={() => connection.reconnect()}
               >Reconnect</button
@@ -129,32 +132,36 @@
           >Show live scene</button
         >
       {/if}
-      <div class="scene-caption">
-        <div class="caption-title">
-          <span class:live={ready} class="status-dot" aria-hidden="true"
-          ></span><strong
-            >{connection.state?.playback.preparedClip?.title ??
-              "Unreal studio"}</strong
-          ><span class="renderer-label">Unreal</span>
+      {#if ready}
+        <div class="scene-caption">
+          <div class="caption-title">
+            <span class:live={ready} class="status-dot" aria-hidden="true"
+            ></span><strong
+              >{connection.state?.playback.preparedClip?.title ??
+                "Unreal studio"}</strong
+            ><span class="renderer-label">Unreal</span>
+          </div>
+          <p class="scene-capabilities">
+            One performer · staff &amp; fan · camera &amp; placement
+          </p>
+          <div class="playback-rate">
+            <span>Speed</span>
+            <SpeedControlBar
+              value={connection.state?.playback.rate ?? 1}
+              speeds={[0.5, 1, 1.5]}
+              disabled={!ready}
+              onchange={(speed) => rate(speed * 60)}
+            />
+          </div>
+          <p class="scope">
+            Prepared practice animation. Other scene settings and Composer
+            scores are not connected yet.
+          </p>
+          {#if connection.error}
+            <p class="connection-error" role="alert">{connection.error}</p>
+          {/if}
         </div>
-        <p>One performer · staff &amp; fan · camera &amp; placement</p>
-        <div class="playback-rate">
-          <span>Speed</span>
-          <SpeedControlBar
-            value={connection.state?.playback.rate ?? 1}
-            speeds={[0.5, 1, 1.5]}
-            disabled={!ready}
-            onchange={(speed) => rate(speed * 60)}
-          />
-        </div>
-        <p class="scope">
-          Prepared practice animation. Other scene settings and Composer scores
-          are not connected yet.
-        </p>
-        {#if connection.error}<p class="connection-error" role="alert">
-            {connection.error}
-          </p>{/if}
-      </div>
+      {/if}
     {/snippet}
   </Viewer3DFullscreen>
 {/if}
@@ -260,11 +267,16 @@
     clip-path: inset(50%);
     white-space: nowrap;
   }
-  @media (max-width: 600px) {
+  @media (max-width: 767px),
+    (max-height: 500px),
+    (max-width: 1099px) and (max-height: 543px) {
     .scene-caption {
-      max-width: calc(100vw - 2rem);
-      bottom: 6rem;
+      max-width: min(28rem, calc(100vw - 2rem));
+      bottom: calc(max(1rem, env(safe-area-inset-bottom)) + 4.75rem);
       padding: 0.6rem 0.75rem;
+    }
+    .scene-capabilities {
+      display: none;
     }
     .scene-caption p {
       font-size: 0.75rem;
