@@ -16,11 +16,18 @@
 import { readFileSync } from "node:fs";
 import { JSDOM } from "jsdom";
 import { afterEach, describe, expect, it } from "vitest";
+import { inlineSelfTimingBar } from "#lib/server/performance/self-timing-bar-inline.js";
 
-const template = readFileSync("src/app.html", "utf8");
-const loadingScript = [...template.matchAll(/<script>([\s\S]*?)<\/script>/g)]
-  .map((match) => match[1] ?? "")
-  .find((script) => script.includes("var __tkaFinished = false"))!;
+// The page as the server sends it: the shared bar engine inlined.
+const template = inlineSelfTimingBar(readFileSync("src/app.html", "utf8"));
+const pageScripts = [...template.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(
+  (match) => match[1] ?? ""
+);
+// The engine's script, then the boot script that drives it, as in the page.
+const loadingScript = [
+  pageScripts.find((script) => script.includes("__tkaCreateSelfTimingBar ="))!,
+  pageScripts.find((script) => script.includes("var __tkaFinished = false"))!,
+].join(";\n");
 
 const SCREEN =
   '<div id="app-loading" aria-valuenow="5"><div id="boot-capsule">' +
