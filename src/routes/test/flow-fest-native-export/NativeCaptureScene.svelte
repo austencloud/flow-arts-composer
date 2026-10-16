@@ -28,6 +28,14 @@
   }
   const props: Props = $props();
   const id = "native-export";
+  const motionOptions = {
+    bodyClearance: null,
+    enableLocomotion: true,
+    enableFootPlanting: true,
+    playbackSpeed: 1,
+    phaseOffsetSteps: 0,
+    showEffects: false,
+  } as const;
   const {
     renderer: rendererValue,
     scene: sceneValue,
@@ -72,14 +80,7 @@
           ].filter((path): path is string => typeof path === "string")
         ),
       ],
-      motionOptions: {
-        bodyClearance: null,
-        enableLocomotion: true,
-        enableFootPlanting: true,
-        playbackSpeed: 1,
-        phaseOffsetSteps: 0,
-        showEffects: false,
-      },
+      motionOptions,
     };
   }
 
@@ -122,11 +123,11 @@
   effectId={props.effectId}
   sequence={props.sequence}
   active={false}
-  playbackSpeed={1}
-  phaseOffsetSteps={0}
-  showEffects={false}
-  enableLocomotion={true}
-  enableFootPlanting={true}
-  bodyClearance={null}
+  playbackSpeed={motionOptions.playbackSpeed}
+  phaseOffsetSteps={motionOptions.phaseOffsetSteps}
+  showEffects={motionOptions.showEffects}
+  enableLocomotion={motionOptions.enableLocomotion}
+  enableFootPlanting={motionOptions.enableFootPlanting}
+  bodyClearance={motionOptions.bodyClearance}
   onReady={props.onReady}
 />
