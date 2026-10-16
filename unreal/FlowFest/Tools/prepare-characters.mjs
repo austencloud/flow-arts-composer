@@ -5,6 +5,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { loadDeployedCharacters } from '../../Shared/Tools/character-catalog.mjs';
 import { museumPerformanceEntries, assertMuseumRawCapture } from '../../Shared/Tools/museum-performance-contract.mjs';
+import { validateRawCapture, recordDecodedRig, validateDecodedRig, recordBody, validateBody } from '../../Shared/Tools/performance-bundle.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const option = name => {
@@ -93,6 +94,23 @@ await MeshoptDecoder.ready;
 const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({
   'draco3d.decoder': await draco.createDecoderModule(), 'meshopt.decoder': MeshoptDecoder,
 });
+async function decodeRig(input, decoded) {
+  const doc = await io.read(input);
+  for (const texture of doc.getRoot().listTextures())
+    if (texture.getMimeType() === 'image/webp') texture.setImage(await sharp(texture.getImage()).png().toBuffer()).setMimeType('image/png');
+  for (const extension of [...doc.getRoot().listExtensionsUsed()])
+    if (['EXT_meshopt_compression', 'KHR_draco_mesh_compression', 'EXT_texture_webp'].includes(extension.extensionName)) extension.dispose();
+  await io.write(decoded, doc);
+  recordDecodedRig(decoded, input);
+  return doc;
+}
+async function ensureDecodedRig(character) {
+  const definition = definitions.find(entry => entry.id === character.id);
+  if (!definition) throw new Error(`Unknown staged rig ${character.id}`);
+  character.source = join(source, definition.sourceRelativePath);
+  try { validateDecodedRig(character.decoded, character.source); }
+  catch { await decodeRig(character.source, character.decoded); }
+}
 const staged = museumMode ? join(project, 'Tools/staged/Characters') : join(here, 'staged/Characters');
 mkdirSync(staged, { recursive: true });
 const animations = {
@@ -158,11 +176,20 @@ async function prepareCapture(character, profile, filename, captureRole = profil
       capture.frames.length < 2)
     throw new Error(`Invalid native capture contract: ${filename}`);
   if (museumEntry) assertMuseumRawCapture(capture, museumEntry);
+  if (!ride) {
+    await validateRawCapture(capture, captureFile, character.id, character.source);
+    validateDecodedRig(character.decoded, character.source);
+  }
   if (existsSync(output) && statSync(output).mtimeMs >= Math.max(
     statSync(captureFile).mtimeMs, statSync(character.decoded).mtimeMs,
     statSync(fileURLToPath(import.meta.url)).mtimeMs)) {
-    console.log(`Reusing capture ${character.id}/${profile}`);
-    return output;
+    if (ride) { console.log(`Reusing capture ${character.id}/${profile}`); return output; }
+    try {
+      await validateBody(output, { captureFile, sourceRig: character.source,
+        decodedRig: character.decoded, character: character.id, profile });
+      console.log(`Reusing capture ${character.id}/${profile}`);
+      return output;
+    } catch (error) { console.log(`Rebuilding stale capture ${character.id}/${profile}: ${error.message}`); }
   }
   const doc = await io.read(character.decoded);
   for (const old of doc.getRoot().listAnimations()) old.dispose();
@@ -203,6 +230,8 @@ async function prepareCapture(character, profile, filename, captureRole = profil
   }
   mkdirSync(dirname(output), { recursive: true });
   await io.write(output, doc);
+  if (!ride) await recordBody({ body: output, captureFile, capture, character: character.id,
+    profile, propId: capture.propType, sourceRig: character.source, decodedRig: character.decoded });
   console.log(`Prepared capture ${character.id}/${profile}: ${capture.frames.length} frames`);
   return output;
 }
@@ -222,8 +251,8 @@ if (museumMode) {
   const sourceCharacter = sourceManifest.characters.find(entry => entry.id === 'x-bot');
   if (!sourceCharacter) throw new Error('Missing prepared x-bot rig');
   const character = structuredClone(sourceCharacter);
-  if (!existsSync(character.decoded)) character.decoded = join(baseStaged, 'x_bot.glb');
-  if (!existsSync(character.decoded)) throw new Error('Missing prepared x-bot rig');
+  character.decoded = join(baseStaged, 'x_bot.glb');
+  await ensureDecodedRig(character);
   character.captures = {};
   for (const item of museumEntries) {
     character.captures[item.profile] = await prepareCapture(character, item.profile,
@@ -241,11 +270,13 @@ if (familyOnly) {
   if (!existsSync(stagedManifestFile)) throw new Error('--family-only requires previously staged native rigs');
   const stagedManifest = JSON.parse(readFileSync(stagedManifestFile, 'utf8'));
   if (stagedManifest.characters?.length !== 16 ||
-      stagedManifest.characters.some((entry, index) => entry.id !== definitions[index].id || !existsSync(entry.decoded)))
+      stagedManifest.characters.some((entry, index) => entry.id !== definitions[index].id))
     throw new Error('--family-only requires the complete decoded 16-character catalog');
   if (!allowPartial && familyRoles.length !== 82) throw new Error('--family-only requires all 41 A/B family routines');
   let prepared = 0;
   for (const character of stagedManifest.characters.filter(x => !captureId || x.id === captureId)) {
+    character.decoded = join(staged, `${character.id.replaceAll('-', '_')}.glb`);
+    await ensureDecodedRig(character);
     character.captures ||= {};
     for (const [profile, role] of availableProfiles(character.id)) {
       character.captures[profile] = await prepareCapture(character, profile, `${character.id}_${role}.json`, role);
@@ -265,13 +296,7 @@ for (const { id, name, sourceRelativePath } of definitions) {
   const key = id.replaceAll('-', '_');
   const folder = `/Game/FlowFest/Characters/${key}`;
   const decoded = join(staged, `${key}.glb`);
-  const doc = await io.read(input);
-  for (const texture of doc.getRoot().listTextures()) {
-    if (texture.getMimeType() === 'image/webp') texture.setImage(await sharp(texture.getImage()).png().toBuffer()).setMimeType('image/png');
-  }
-  for (const extension of [...doc.getRoot().listExtensionsUsed()])
-    if (['EXT_meshopt_compression', 'KHR_draco_mesh_compression', 'EXT_texture_webp'].includes(extension.extensionName)) extension.dispose();
-  await io.write(decoded, doc);
+  const doc = await decodeRig(input, decoded);
   const textures = doc.getRoot().listTextures();
   const textureDir = join(staged, 'textures', key);
   mkdirSync(textureDir, { recursive: true });
