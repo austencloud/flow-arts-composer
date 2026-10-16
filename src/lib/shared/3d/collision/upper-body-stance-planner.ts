@@ -213,7 +213,8 @@ export function planUpperBodyStanceDepth(
   yawRad: number,
   targets: UpperBodyStanceTargets,
   measurements: PerformerReachMeasurements | null = null,
-  propDesireRad: number = yawRad
+  propDesireRad: number = yawRad,
+  plannedSideBlend?: number
 ): UpperBodyStancePlan {
   if (yawRad === 0) return SQUARE_STANCE;
 
@@ -231,7 +232,7 @@ export function planUpperBodyStanceDepth(
   // the chest is still half square, which is where the bulkier rigs took shaft
   // hits mid-transition. Below SIDE_ON_YAW_KNEE the grips keep their authored
   // depth and the pose is simply the old square-ish reach.
-  const sideBlend = stanceSideBlend(yawRad, propDesireRad);
+  const sideBlend = plannedSideBlend ?? stanceSideBlend(yawRad, propDesireRad);
   // Rig convention: the performer's left is rig-local +X, so a positive stance
   // yaw swings the left shoulder toward negative depth.
   const leftLaneM = -Math.sign(yawRad) * sameSideLaneM(measurements);

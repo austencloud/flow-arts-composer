@@ -16,7 +16,7 @@
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import { PHASE_ANCHORS } from "../domain/movement-annotation";
   import { timeForPhase } from "../domain/step-phase";
-  import { FRAME_RATES } from "../state/movement-map-state.svelte";
+  import { FRAME_RATES } from "../state/movement-map-state.svelte.js";
   import { getMovementMapContext } from "../context/movement-map-context";
 
   const { state: movementMap } = getMovementMapContext();
@@ -24,13 +24,13 @@
   const PLAYBACK_RATES = [0.1, 0.25, 0.5, 1] as const;
 
   const rateOptions = PLAYBACK_RATES.map((rate) => ({
-    value: rate,
+    value: String(rate),
     label: `${rate}x speed`,
     shortLabel: `${rate}×`,
   }));
 
   const frameOptions = FRAME_RATES.map((fps) => ({
-    value: fps as number,
+    value: String(fps),
     label: `${fps} frames per second`,
     shortLabel: `${fps}`,
   }));
@@ -100,8 +100,10 @@
       <span class="setting-label">Speed</span>
       <SegmentedControl
         options={rateOptions}
-        value={movementMap.playbackRate}
-        onchange={(rate: number) => (movementMap.playbackRate = rate)}
+        value={String(movementMap.playbackRate)}
+        onchange={(rate) => {
+          movementMap.playbackRate = Number(rate);
+        }}
         size="sm"
         density="tight"
         ariaLabel="Playback speed"
@@ -115,8 +117,10 @@
       </span>
       <SegmentedControl
         options={frameOptions}
-        value={movementMap.frameRate}
-        onchange={(fps: number) => (movementMap.frameRate = fps)}
+        value={String(movementMap.frameRate)}
+        onchange={(fps) => {
+          movementMap.frameRate = Number(fps);
+        }}
         size="sm"
         density="tight"
         ariaLabel="Frame rate of the footage"

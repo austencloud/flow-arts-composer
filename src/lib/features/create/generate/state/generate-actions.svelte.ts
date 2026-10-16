@@ -8,8 +8,7 @@
 import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
 import type { SequenceState } from "#lib/features/create/shared/state/sequence-state-orchestrator.svelte.js";
 import { setPendingGenerationAnimation } from "#lib/features/create/shared/workspace-panel/sequence-display/state/step-grid-display-state.svelte.js";
-import { clearArrowPositionCache } from "#lib/shared/pictograph/arrow/rendering/arrow-position-cache.js";
-import { clearPropPositionCache } from "#lib/shared/pictograph/prop/prop-position-cache.js";
+import { snapNextPictographEdits } from "#lib/shared/pictograph/shared/state/pictograph-edit-motion.svelte.js";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import { deriveWordFromBeats } from "#lib/shared/foundation/services/word-deriver.js";
 import type { GenerationOptions } from "../shared/domain/models/generate-models";
@@ -774,10 +773,9 @@ export function createGenerationActionsState(
         await new Promise((resolve) => setTimeout(resolve, 300));
       }
 
-      // Flush stale positions so incoming steps render at their correct
-      // locations immediately rather than animating from the old sequence's spots.
-      clearArrowPositionCache();
-      clearPropPositionCache();
+      // The incoming steps arrive at their own places; a reused slot (the
+      // start tile) must not travel from the old sequence's spots.
+      snapNextPictographEdits();
 
       const isSequential = getIsSequential?.() ?? false;
 

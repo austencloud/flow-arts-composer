@@ -8,7 +8,9 @@
   word="TEST"
   showDirector={false}
   directorHref="/test/stage"
-  onApply={() => (appliedCount += 1)}
+  onApply={() => {
+    appliedCount += 1;
+  }}
   onChooseSequence={() => undefined}
   onOpenChoreography={() => undefined}
   onVisibilityChange={() => undefined}
@@ -24,7 +26,12 @@
     background: #08090d;
     color: #f7f7fa;
     font-family:
-      Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-      "Segoe UI", sans-serif;
+      Inter,
+      ui-sans-serif,
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      sans-serif;
   }
 </style>

@@ -11,7 +11,12 @@
 <script lang="ts">
   import { Canvas, T } from "@threlte/core";
   import { untrack, onDestroy } from "svelte";
-  import { PerformerRig, Plane, PlaneMode, userProportionsState } from "@austencloud/scene-3d";
+  import {
+    PerformerRig,
+    Plane,
+    PlaneMode,
+    userProportionsState,
+  } from "@austencloud/scene-3d";
   import type { GridMode } from "@austencloud/scene-3d";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {
@@ -22,10 +27,15 @@
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import { toScenePropType } from "#lib/shared/3d/domain/scene-prop-type.js";
 
-  let { sequence, active = true }: { sequence: SequenceData; active?: boolean } = $props();
+  let {
+    sequence,
+    active = true,
+  }: { sequence: SequenceData; active?: boolean } = $props();
 
   const PLATFORM_HEIGHT = 0.2;
-  const groundOffset = $derived(-userProportionsState.groundY + PLATFORM_HEIGHT);
+  const groundOffset = $derived(
+    -userProportionsState.groundY + PLATFORM_HEIGHT
+  );
 
   const shot = $derived(
     computeFramingShot({
@@ -44,7 +54,9 @@
     2 * shot.target.z - shot.eye.z,
   ]);
 
-  let performerState = $state<ReturnType<typeof createCharacterInstanceState> | null>(null);
+  let performerState = $state<ReturnType<
+    typeof createCharacterInstanceState
+  > | null>(null);
 
   try {
     performerState = createCharacterInstanceState(
@@ -106,9 +118,9 @@
         avatarState={performerState}
         showGrid={false}
         visiblePlanes={new Set([Plane.WALL])}
-        gridMode={((sequence?.gridMode ?? "diamond") as GridMode)}
-        leftPropType={toScenePropType(PropType.STAFF)}
-        rightPropType={toScenePropType(PropType.STAFF)}
+        gridMode={(sequence?.gridMode ?? "diamond") as GridMode}
+        bluePropType={toScenePropType(PropType.STAFF)}
+        redPropType={toScenePropType(PropType.STAFF)}
         {groundOffset}
         enableLocomotion={true}
         enableFootPlanting={true}
