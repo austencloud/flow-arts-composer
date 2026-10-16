@@ -5,12 +5,23 @@ left untouched by default; pass --force to replace imports from staged FBX.
 """
 import json
 import os
+import subprocess
 import sys
 from pathlib import Path
 
 import unreal as u
 
 PROJECT = Path(u.Paths.project_dir()).resolve()
+HERE = Path(__file__).resolve().parent
+BUNDLE_TOOL = HERE.parent.parent / 'Shared' / 'Tools' / 'performance-bundle.mjs'
+
+
+def performance_contract(command, **paths):
+    subprocess.run([os.environ.get('TKA_NODE', 'node'), str(BUNDLE_TOOL), command,
+                    *[str(item) for key, value in paths.items() for item in (f'--{key}', value)]],
+                   check=True)
+
+
 STAGED = Path(os.environ.get('FLOWFEST_STAGED', PROJECT / 'Tools' / 'staged' / 'Characters')).resolve()
 MANIFEST = json.loads((STAGED / 'imports.json').read_text(encoding='utf-8'))
 PERFORMANCE_MANIFEST_FILE = os.environ.get('MUSEUM_PERFORMANCE_MANIFEST')
@@ -44,11 +55,11 @@ if not PROFILES_ONLY and [x['id'] for x in MANIFEST['characters']] != [x['id'] f
     raise RuntimeError('Staged and packaged character catalogs disagree')
 
 
-def import_task(filename, folder, name, options):
+def import_task(filename, folder, name, options, force=False):
     if not filename.is_file() or filename.stat().st_size < 1024:
         raise RuntimeError(f'Missing staged character asset: {filename}')
     path = f'{folder}/{name}'
-    if ED.does_asset_exist(path) and not FORCE:
+    if ED.does_asset_exist(path) and not (FORCE or force):
         asset = ED.load_asset(path)
         if not asset:
             raise RuntimeError(f'Cannot load existing asset {path}')
@@ -58,7 +69,7 @@ def import_task(filename, folder, name, options):
     task.destination_path = folder
     task.destination_name = name
     task.automated = True
-    task.replace_existing = FORCE
+    task.replace_existing = FORCE or force
     task.save = True
     task.options = options
     TOOLS.import_asset_tasks([task])
@@ -333,13 +344,30 @@ for character in MANIFEST['characters']:
         if FAMILY_ONLY and not (profile.startswith('P_') and profile.endswith(('_A', '_B'))):
             continue
         name = 'Ride' if profile == 'Ride' else f'Flow_{profile}'
-        animation = import_task(STAGED / key / f'A_{name}.fbx', folder, f'A_{name}', animation_options(skeleton))
+        body_file = STAGED / key / f'capture_{profile}.glb'
+        if not body_file.is_file():
+            raise RuntimeError(f'Missing staged capture: {body_file}')
+        fbx_file = STAGED / key / f'A_{name}.fbx'
+        if profile != 'Ride':
+            performance_contract('validate-body', body=body_file, character=character['id'], profile=profile)
+            performance_contract('validate-fbx', body=body_file, fbx=fbx_file, converter=HERE / 'convert-characters.py')
+        # A new receipt is evidence of this import, never of an asset left over
+        # from an earlier capture. Performance imports always replace the clip.
+        animation = import_task(fbx_file, folder, f'A_{name}', animation_options(skeleton), force=profile != 'Ride')
         if not isinstance(animation, u.AnimSequence) or animation.get_editor_property('skeleton') != skeleton:
             raise RuntimeError(f'{character["id"]}: captured A_{name} is missing or targets another skeleton')
         expected_seconds = expected_museum[profile] if PROFILES_ONLY else 1.0 if profile == 'Ride' else 16.0
         if abs(animation.get_play_length() - expected_seconds) > .05:
             raise RuntimeError(f'{character["id"]}: A_{name} duration {animation.get_play_length():.3f}s, expected {expected_seconds:.3f}s')
         restore_reference_scale(animation, reference_roots, character['id'])
+        if profile != 'Ride':
+            if not ED.save_loaded_asset(animation):
+                raise RuntimeError(f'Could not persist performance {character["id"]}/{profile}')
+            asset_file = PROJECT / 'Content' / folder.removeprefix('/Game/') / f'A_{name}.uasset'
+            performance_contract('record-import', body=body_file, fbx=fbx_file,
+                                 asset=asset_file, importer=Path(__file__),
+                                 character=character['id'], profile=profile,
+                                 converter=HERE / 'convert-characters.py')
         if FAMILY_ONLY:
             imported_family_profiles += 1
     if not PROFILES_ONLY:

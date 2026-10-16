@@ -79,7 +79,8 @@ if (-not $SkipImport) {
         & $editorCmd $projectFile '-run=pythonscript' "-script=$(Join-Path $PSScriptRoot $script)" -unattended -nop4 -nosplash -RenderOffscreen
         if ($LASTEXITCODE -ne 0) { throw "Unreal $script failed ($LASTEXITCODE)" }
     }
-
+    & node (Join-Path $PSScriptRoot '..\..\Shared\Tools\performance-bundle.mjs') seal --project $projectRoot
+    if ($LASTEXITCODE -ne 0) { throw "Performance bundle sealing failed ($LASTEXITCODE)" }
 }
 
 Write-Host "Flow Fest native bootstrap completed: $projectFile"

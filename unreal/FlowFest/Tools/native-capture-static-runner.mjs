@@ -1,9 +1,21 @@
 /** Serve only the built capture bundle and source public assets during capture. */
 import { spawn } from "node:child_process";
 import { createServer } from "node:http";
-import { readFile, stat } from "node:fs/promises";
-import { dirname, extname, isAbsolute, relative, resolve } from "node:path";
+import { readFile, readdir, stat } from "node:fs/promises";
+import {
+  dirname,
+  extname,
+  isAbsolute,
+  join,
+  relative,
+  resolve,
+} from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  buildId,
+  sha256,
+  stableStringify,
+} from "../../Shared/Tools/capture-provenance.mjs";
 
 const toolsDir = dirname(fileURLToPath(import.meta.url));
 const root = resolve(toolsDir, "../../..");
@@ -13,6 +25,35 @@ const built = resolve(
 );
 const publicRoot = resolve(root, "static");
 const html = resolve(built, "unreal/FlowFest/Tools/native-capture.html");
+const receipt = JSON.parse(
+  await readFile(resolve(built, "native-capture-build.json"), "utf8")
+);
+if (
+  receipt.schema !== "tka-native-capture-build-v1" ||
+  receipt.id !== (await buildId(receipt))
+)
+  throw new Error(
+    "Native capture build receipt is missing or invalid; rebuild with native-capture.vite.config.mjs"
+  );
+async function outputHashes(directory) {
+  const hashes = {};
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    const path = join(directory, entry.name);
+    if (entry.isDirectory()) Object.assign(hashes, await outputHashes(path));
+    else if (entry.isFile() && entry.name !== "native-capture-build.json")
+      hashes[relative(built, path).replaceAll("\\", "/")] = await sha256(
+        await readFile(path)
+      );
+  }
+  return hashes;
+}
+if (
+  receipt.outputSHA256 !==
+  (await sha256(stableStringify(await outputHashes(built))))
+)
+  throw new Error(
+    "Native capture build bytes changed after receipt creation; rebuild before capture"
+  );
 const args = process.argv.slice(2);
 let outputArg;
 let runnerArg;

@@ -72,7 +72,8 @@
     /** The prop the board and explorer draw; omitted keeps the dataset's own. */
     propType?: PropType;
     /** Where each hand starts on the Atlas board and in the explorer, with
-     *  every end recalculated; omitted keeps the stored orientations. */
+     *  every end recalculated; omitted starts the board thumbs in and keeps
+     *  the explorer's stored orientations. */
     startOrientations?: CodexStartOrientations;
   } = $props();
 
