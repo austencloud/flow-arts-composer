@@ -309,6 +309,7 @@ bool UFlowFestPropComponent::Equip(FName PropId, float LengthCm)
                 Light->SetupAttachment(Root);
                 Light->SetRelativeLocation(Location);
                 Light->SetAttenuationRadius(150.f);
+                Light->SetIntensityUnits(ELightUnits::Lumens);
                 Light->SetIntensity(0.f);
                 Light->RegisterComponent();
                 return Light;
@@ -853,7 +854,7 @@ void UFlowFestPropComponent::UpdateEffects()
         {
             if (!Light) continue;
             Light->SetLightColor(bFire ? FLinearColor(1.f,.19f,.03f) : FLinearColor(.05f,.45f,1.f));
-            Light->SetIntensity(bVisible ? (bFire ? 650.f : bLed ? 200.f : 0.f) : 0.f);
+            Light->SetIntensity(bVisible ? (bFire ? 25.f : bLed ? 3.f : 0.f) : 0.f);
         }
     }
     for (const TArray<TObjectPtr<UProceduralMeshComponent>>* Group : { &LeftFlames, &RightFlames })

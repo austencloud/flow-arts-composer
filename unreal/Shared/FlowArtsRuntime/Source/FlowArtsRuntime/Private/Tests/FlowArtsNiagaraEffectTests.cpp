@@ -40,6 +40,10 @@ bool FFlowArtsNiagaraPlaybackTest::RunTest(const FString& Parameters)
     // The isolated world has no gameplay initialization pass to register controllers.
     World->AddController(Player);
     Player->PlayerCameraManager = Camera;
+    // Match SpawnPlayerCameraManager: ownership and InitializeFor are both required.
+    // Assigning the controller's pointer alone leaves the camera's PCOwner null.
+    Camera->SetOwner(Player);
+    Camera->InitializeFor(Player);
     USceneComponent* Left = NewObject<USceneComponent>(Prop);
     USceneComponent* Right = NewObject<USceneComponent>(Prop);
     Prop->SetRootComponent(Left);
