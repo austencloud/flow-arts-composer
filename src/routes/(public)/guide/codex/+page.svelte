@@ -10,7 +10,6 @@
    */
   import { browser } from "$app/env";
   import { onMount } from "svelte";
-  import { MediaQuery } from "svelte/reactivity";
   import GuideShell from "../_components/GuideShell.svelte";
   import GuideFontPreload from "../_components/GuideFontPreload.svelte";
   import TopicHeader from "../level-1/_topics/TopicHeader.svelte";
@@ -24,9 +23,17 @@
   import PropChoiceRow from "#lib/shared/pictograph/prop/components/PropChoiceRow.svelte";
   import {
     CODEX_DEFAULT_PROP,
-    codexPropSections,
+    CODEX_PROPS,
     parseCodexProp,
   } from "./_data/codex-props";
+  import OrientationCycler from "#lib/features/create/construct/start-placement-picker/components/OrientationCycler.svelte";
+  import type { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import {
+    CODEX_DEFAULT_ORIENTATIONS,
+    formatCodexOrientations,
+    parseCodexOrientations,
+    type CodexStartOrientations,
+  } from "./_data/codex-orientation";
 
   // A letter link (?letter=K) opens on that letter; LetterCodex reads the rest
   // of the explorer state from the URL itself.
@@ -38,25 +45,23 @@
   // prop. Read after mount so the prerendered markup and the first client
   // render agree.
   let propType = $state<PropType>(CODEX_DEFAULT_PROP);
+  // Every letter starts with both thumbs in unless the reader picks another
+  // start for either hand (?ori=blue,red).
+  let startOrientations = $state<CodexStartOrientations>(
+    CODEX_DEFAULT_ORIENTATIONS
+  );
 
-  function readProp(): void {
-    propType =
-      parseCodexProp(new URLSearchParams(window.location.search).get("prop")) ??
-      CODEX_DEFAULT_PROP;
+  function readChoices(): void {
+    const params = new URLSearchParams(window.location.search);
+    propType = parseCodexProp(params.get("prop")) ?? CODEX_DEFAULT_PROP;
+    startOrientations = parseCodexOrientations(params.get("ori"));
   }
 
   onMount(() => {
-    readProp();
-    window.addEventListener("popstate", readProp);
-    return () => window.removeEventListener("popstate", readProp);
+    readChoices();
+    window.addEventListener("popstate", readChoices);
+    return () => window.removeEventListener("popstate", readChoices);
   });
-
-  // A short desktop screen (the fit block below, under 1000px tall) gives
-  // the tiles' names to their hover tooltips, so the board keeps that height.
-  const shortScreen = new MediaQuery(
-    "(min-width: 80rem) and (min-height: 700px) and (max-height: 999.98px)",
-    false
-  );
 
   function chooseProp(next: PropType): void {
     if (next === propType) return;
@@ -64,6 +69,16 @@
     mutateCurrentUrl((url) => {
       if (next === CODEX_DEFAULT_PROP) url.searchParams.delete("prop");
       else url.searchParams.set("prop", next);
+    });
+  }
+
+  function chooseStart(hand: "left" | "right", next: Orientation): void {
+    if (next === startOrientations[hand]) return;
+    startOrientations = { ...startOrientations, [hand]: next };
+    const value = formatCodexOrientations(startOrientations);
+    mutateCurrentUrl((url) => {
+      if (value === null) url.searchParams.delete("ori");
+      else url.searchParams.set("ori", value);
     });
   }
 </script>
@@ -89,19 +104,47 @@
     />
 
     <!-- The app's inline prop choice, the same tiles the other guide pages
-         use. Each tile names its prop, so the choice needs no caption. -->
-    <div class="props">
-      <PropChoiceRow
-        value={propType}
-        sections={codexPropSections()}
-        iconOnly={shortScreen.current}
-        label={tDynamic("guide_codex_prop")}
-        onchange={chooseProp}
-      />
+         use, as pictures alone: each name is the tile's tooltip and its
+         accessible name. Beside it, Construct's orientation cyclers set where
+         each hand starts; the pictures show where the props end from there. -->
+    <div class="controls">
+      <div class="props">
+        <PropChoiceRow
+          value={propType}
+          options={CODEX_PROPS}
+          iconOnly
+          label={tDynamic("guide_codex_prop")}
+          onchange={chooseProp}
+        />
+      </div>
+      <div class="start" role="group" aria-labelledby="codex-start-label">
+        <span id="codex-start-label" class="start-label"
+          >{tDynamic("guide_codex_start")}</span
+        >
+        <div class="cycler">
+          <OrientationCycler
+            orientation={startOrientations.left}
+            onOrientationChange={(next) => chooseStart("left", next)}
+            color="blue"
+          />
+        </div>
+        <div class="cycler">
+          <OrientationCycler
+            orientation={startOrientations.right}
+            onOrientationChange={(next) => chooseStart("right", next)}
+            color="red"
+          />
+        </div>
+      </div>
     </div>
 
     <div class="board-host">
-      <LetterCodex {initialLetter} board="atlas" {propType} />
+      <LetterCodex
+        {initialLetter}
+        board="atlas"
+        {propType}
+        {startOrientations}
+      />
     </div>
   </article>
 
@@ -132,15 +175,37 @@
     --ink-dim: var(--theme-text-dim);
   }
 
-  .props {
+  /* The prop tiles and the start cyclers share one centred row, and wrap
+     to two on a narrow screen. */
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 12px clamp(16px, 2vw, 40px);
     margin-block: clamp(16px, 2vw, 28px) clamp(20px, 2.5vw, 40px);
+  }
+
+  .props {
     --prop-choice-justify: center;
-    --prop-choice-label-align: center;
-    /* Sixteen families on one line at laptop width: both groups side by
-       side, wrapping to two lines only on narrower screens. */
-    --prop-tile-width: 4.25rem;
-    --prop-tile-gap: 6px;
-    --prop-img-size: 1.6rem;
+    --prop-img-size: 2.5rem;
+  }
+
+  .start {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .start-label {
+    font-size: var(--font-size-min, 14px);
+    font-weight: 600;
+    color: var(--theme-text-dim);
+  }
+
+  .cycler {
+    display: flex;
+    width: 9.5rem;
   }
 
   .print {
@@ -176,16 +241,12 @@
       font-size: clamp(1rem, 1.8vh, 1.8rem);
       line-height: 1.3;
     }
-    /* All sixteen tiles on one line: the tile width shares the column, so
-       the two groups never wrap onto a second line of tiles. */
-    .props {
-      container-type: inline-size;
+    /* The icons scale with the screen's height, like the header. */
+    .controls {
       margin-block: clamp(6px, 1.2vh, 28px);
-      --prop-tile-width: clamp(
-        3.6rem,
-        calc((100cqi - 15 * var(--prop-tile-gap) - 24px) / 16),
-        4.75rem
-      );
+    }
+    .props {
+      --prop-img-size: clamp(2.25rem, 4.2vh, 4.5rem);
     }
     .board-host {
       container: codex-atlas-fit / size;
@@ -208,17 +269,6 @@
     .codex-guide {
       max-width: min(88vw, 3400px);
       padding-inline: 0;
-    }
-  }
-
-  /* On a 4K screen the cells run 250px or more; laptop-sized tiles beside
-     them read as a footnote. The tiles grow; the board fits what is left. */
-  @media (min-width: 2400px) and (min-height: 1400px) {
-    .props {
-      --prop-tile-width: 6.5rem;
-      --prop-tile-gap: 10px;
-      --prop-img-size: 2.6rem;
-      --font-size-compact: 15px;
     }
   }
 </style>

@@ -43,6 +43,12 @@ void AMuseumHUD::DrawHUD()
         const FMuseumRoom* Room = Museum->RoomAt(Visitor->GetActorLocation());
         DrawText(Room ? Room->Name : TEXT("Between galleries"), Soft, 30, 59, Font, 1.1f);
         DrawText(FString::Printf(TEXT("%d rooms  |  %d exhibits  |  %d figures"), Museum->GetRooms().Num(), Museum->GetExhibitCount(), Museum->GetPerformerCount()), Soft, 30, 82, Font, .85f);
+        if (Museum->HasFireProgression() && Room &&
+            (Room->Id == TEXT("cave-fire") || (Room->Id == TEXT("cave-earth") && Museum->GetFireProgress().Phase >= 6)))
+        {
+            DrawRect(FLinearColor(.035f, .025f, .02f, .90f), 16, 112, 320, 42);
+            DrawText(Museum->GetFireStatus(), Cream, 30, 125, Font, 1.f);
+        }
     }
     DrawText(TEXT("WASD + mouse  |  Shift sprint  |  E examine  |  P play/pause  |  B restart  |  F5 save  |  F9 load  |  R entrance"), Soft, 22, H - 32, Font, 1.f);
     if (!Visitor->GetNotice().IsEmpty()) DrawText(Visitor->GetNotice(), Cream, W * .42f, 30, Font, 1.2f);
@@ -70,6 +76,7 @@ void AMuseumHUD::DrawHUD()
     }
     if (!Visitor->GetOpenExhibit())
         if (const AMuseumPerformerStation* Station = Visitor->GetNearbyPerformer())
+            if (!Museum || !Museum->IsFireStation(Station))
         {
             DrawRect(FLinearColor(.025f, .033f, .035f, .88f), W / 2 - 240, H - 167, 480, 48);
             DrawText(FString::Printf(TEXT("%s  |  %s  |  P pause/play  B restart"),

@@ -48,6 +48,14 @@ import type { Sharer } from "#lib/shared/share/services/sharer.js";
 import type { ConstructTabState } from "../state/construct-tab-state.svelte";
 import type { GeneratorTabState } from "../state/generator-tab-state.svelte";
 import type { AssembleTabState } from "../state/assemble-tab-state.svelte";
+import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
+import type { ActiveCreateModule } from "#lib/shared/foundation/ui/ui-types.js";
+
+function draftMode(tab: string | undefined): ActiveCreateModule {
+  if (tab === "generate" || tab === "spell") return "generate";
+  if (tab === "assemble") return "assemble";
+  return "construct";
+}
 
 export interface CreateModuleInitializationResult {
   // State objects
@@ -213,17 +221,29 @@ export class CreateModuleInitializer {
   }
 
   async loadSequenceAndInitializePersistence(
-    setSequence: (sequence: SequenceData) => void,
-    initializePersistence: () => Promise<void>
+    setSequence: (sequence: SequenceData, mode?: ActiveCreateModule) => void,
+    initializePersistence: (skipRestore?: boolean) => Promise<void>
   ): Promise<SequenceLoadResult> {
-    // Try to load from deep link or pending edit
+    // The loader publishes a base sequence immediately and enrichment later.
+    // Hold the base until its new draft session is ready, then let later updates
+    // flow through normally.
+    let ready = false;
+    let pendingSequence: SequenceData | null = null;
+    let loadedMode: ActiveCreateModule | undefined;
+    const receiveSequence = (sequence: SequenceData) => {
+      if (ready) setSequence(sequence, loadedMode);
+      else pendingSequence = sequence;
+    };
     const loadResult =
-      await this.deepLinkService.loadFromAnySource(setSequence);
+      await this.deepLinkService.loadFromAnySource(receiveSequence);
 
     if (loadResult.loaded) {
-      // Initialize persistence so the deep link sequence can be saved
-      // This ensures the sequence persists across navigation/reloads
-      await initializePersistence();
+      const mode = draftMode(loadResult.targetTab ?? navigationState.activeTab);
+      loadedMode = mode;
+      await this.SequencePersister.beginNewSession(mode);
+      await initializePersistence(true);
+      ready = true;
+      if (pendingSequence) setSequence(pendingSequence, mode);
 
       return {
         sequenceLoaded: true,
@@ -232,6 +252,7 @@ export class CreateModuleInitializer {
     }
 
     // No sequence from deep link/pending edit - initialize from persistence
+    ready = true;
     await initializePersistence();
 
     return {

@@ -62,6 +62,7 @@ export function createAssembleTabState(
   let isApplyingBuilderChange = false;
   let isDestroyed = false;
   let lastSynchronizedDocument: SequenceData | null = null;
+  let lastDraftSessionId = sequencePersister?.getSessionId?.("assemble");
   const letterCache = new Map<string, Letter | null>();
 
   // The builder reports document changes at the mutation boundary. This keeps
@@ -102,6 +103,7 @@ export function createAssembleTabState(
         ...(ReversalDetector && { ReversalDetector }),
         tabId: "assemble",
         onCurrentSequenceChange: syncSequenceToBuilder,
+        onDraftRestored: () => builderState.clearHistory(),
       })
     : null;
 
@@ -149,7 +151,10 @@ export function createAssembleTabState(
       generated.motions.left,
       existing.motions.left
     );
-    const right = mergeBuilderMotion(generated.motions.right, existing.motions.right);
+    const right = mergeBuilderMotion(
+      generated.motions.right,
+      existing.motions.right
+    );
 
     return {
       ...generated,
@@ -343,6 +348,14 @@ export function createAssembleTabState(
 
   function syncSequenceToBuilder(sequence: SequenceData | null): void {
     if (isApplyingBuilderChange || isDestroyed) return;
+    const sessionId = sequencePersister?.getSessionId?.("assemble");
+    if (sessionId !== lastDraftSessionId) {
+      // An import begins a new draft even when it reuses the same sequence ID.
+      // Its first edit must not be able to undo into the previous document.
+      lastDraftSessionId = sessionId;
+      lastSynchronizedDocument = null;
+      builderState.clearHistory();
+    }
     if (sequence) {
       const previousDocument = lastSynchronizedDocument;
       lastSynchronizedDocument = sequence;

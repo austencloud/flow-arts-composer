@@ -15,6 +15,7 @@
   import { CODEX_BOXES, type TaggedBox } from "./codex-letters";
   import { codexTypeLabel } from "../../../guide/codex/_data/codex-groups";
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 
   let {
     onSelect,
@@ -27,11 +28,14 @@
     flowHeader,
     /** The prop drawn in every cell; omitted keeps the dataset's own. */
     propType,
+    /** Each letter's pictograph, in place of the stored one. */
+    getData,
   }: {
     onSelect: (id: string) => void;
     boxes?: TaggedBox[];
     flowHeader?: string;
     propType?: PropType;
+    getData?: (id: string) => PictographData | null | undefined;
   } = $props();
 
   function boxForFlow(tagged: TaggedBox, index: number) {
@@ -56,6 +60,7 @@
         reserveHead
         showName={false}
         {propType}
+        {getData}
         onCellSelect={onSelect}
       />
     </div>

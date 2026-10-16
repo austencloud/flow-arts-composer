@@ -10,9 +10,9 @@
   for each would be three rows spent on nine cells - they share one row instead,
   each still named.
 
-  Type colour is drawn once per section: each band carries the type's two
-  frame colours as its outline, and the pictographs inside keep only a quiet
-  neutral edge. Forty-seven individually coloured frames read as noise; six
+  Type colour is drawn once per section: each band's outline blends the
+  type's two frame colours into each other over a faint wash of the same
+  pair, and the pictographs inside keep only a quiet neutral edge. Forty-seven individually coloured frames read as noise; six
   coloured sections read as the grouping they are.
 -->
 <script lang="ts">
@@ -22,6 +22,7 @@
   import { LETTER_TYPE_COLORS } from "#lib/shared/pictograph/shared/domain/constants/pictograph-constants.js";
   import type { LetterType } from "#lib/shared/foundation/domain/models/letter-type.js";
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import {
     MAJOR_TYPE_BANDS,
     MINOR_TYPE_BANDS,
@@ -32,7 +33,13 @@
   let {
     onSelect,
     propType,
-  }: { onSelect: (id: string) => void; propType?: PropType } = $props();
+    getData,
+  }: {
+    onSelect: (id: string) => void;
+    propType?: PropType;
+    /** Each letter's pictograph, in place of the stored one. */
+    getData?: (id: string) => PictographData | null | undefined;
+  } = $props();
 
   interface AtlasFlow {
     boxes: TaggedBox[];
@@ -71,6 +78,7 @@
             boxes={flow.boxes}
             flowHeader={flow.flowHeader}
             {propType}
+            {getData}
             {onSelect}
           />
         {/each}
@@ -88,7 +96,7 @@
           style:--band-secondary={bandColors(band)[1]}
         >
           <CodexBandHead type={band.type} />
-          <CodexFlow boxes={band.boxes} {propType} {onSelect} />
+          <CodexFlow boxes={band.boxes} {propType} {getData} {onSelect} />
         </section>
       {/each}
     </div>
@@ -144,9 +152,37 @@
     min-width: 0;
     padding: var(--band-pad-y) var(--band-pad-x)
       calc(var(--band-pad-y) + 0.3rem);
-    border: var(--band-frame) solid var(--band-primary);
-    box-shadow: inset 0 0 0 var(--band-frame) var(--band-secondary);
+    /* The frame keeps its width (the fit measurement counts it) but draws
+       nothing; the ring below and the wash carry the colour. */
+    position: relative;
+    border: var(--band-frame) solid transparent;
     border-radius: 14px;
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--band-primary) 6%, transparent),
+      color-mix(in srgb, var(--band-secondary) 6%, transparent)
+    );
+  }
+
+  /* One thin ring that runs from the type's first colour into its second,
+     at reduced strength: both colours read without two hard lines. */
+  .band::before {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--band-frame));
+    padding: 1.5px;
+    border-radius: inherit;
+    background: linear-gradient(
+      135deg,
+      var(--band-primary),
+      var(--band-secondary)
+    );
+    mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    opacity: 0.55;
+    pointer-events: none;
   }
 
   /* A wrapped row begins with its placement transition, not with another
