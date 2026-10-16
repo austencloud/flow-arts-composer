@@ -52,13 +52,10 @@ own Escape (which closes the sheet) gets a turn.
     onSent: (conversationIds: string[]) => void;
   }
 
-  interface SelectedPerson {
-    id: string;
-    displayName: string;
-    username?: string | null;
-    avatar?: string;
-    conversationId?: string;
-  }
+  import {
+    recentCollectionRecipients,
+    type CollectionShareRecipient as SelectedPerson,
+  } from "./recent-collection-recipients";
 
   type ShareRoute = "home" | "link" | "people" | "access";
 
@@ -221,31 +218,14 @@ own Escape (which closes the sheet) gets a turn.
       ...selectedPeople.map((person) => person.id),
     ].filter(Boolean)
   );
-  const recentPeople = $derived.by(() => {
-    const seen = new Set<string>();
-    const people: SelectedPerson[] = [];
-    for (const conversation of inboxState.conversations) {
-      if (conversation.type === "group" || !conversation.otherParticipant)
-        continue;
-      const person = conversation.otherParticipant;
-      if (
-        !person.id ||
-        seen.has(person.id) ||
-        excludeUserIds.includes(person.id)
-      )
-        continue;
-      seen.add(person.id);
-      people.push({
-        id: person.id,
-        displayName: person.displayName || t("inbox_ui_unknown"),
-        username: person.username,
-        avatar: person.avatar,
-        conversationId: conversation.id,
-      });
-      if (people.length === MAX_RECENT_PEOPLE) break;
-    }
-    return people;
-  });
+  const recentPeople = $derived(
+    recentCollectionRecipients(
+      inboxState.conversations,
+      excludeUserIds,
+      t("inbox_ui_unknown"),
+      MAX_RECENT_PEOPLE
+    )
+  );
   const shareLabel = $derived(
     selectedPeople.length > 1
       ? t("inbox_share_count", { count: selectedPeople.length })
