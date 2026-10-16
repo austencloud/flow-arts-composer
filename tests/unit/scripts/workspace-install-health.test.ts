@@ -620,10 +620,82 @@ describe("dev launcher install guard", () => {
       'Get-HttpStatus $Url $true 5 "text/x-vite-ping"'
     );
     expect(launcher).toContain(
-      '$originStatus -eq "000" -and (Test-VitePing $originUrl)'
+      '$originStatus -ne "200" -and (Test-VitePing $originUrl)'
     );
     expect(launcher).toContain("$originBusySeconds -ge 300");
   });
+
+  it.skipIf(process.platform !== "win32")(
+    "handles SSR failure, dead Vite, fatal generated state, and recovery distinctly",
+    () => {
+      // Run the real supervisor branch with synthetic probes; never start Vite
+      // or contact the managed server during this regression check.
+      const probeBody = launcher.slice(
+        launcher.indexOf(
+          "            $originStatus = Get-HttpStatus $originUrl $true"
+        ),
+        launcher.indexOf(
+          "            $nextHealthProbeAt = (Get-Date).AddSeconds(30)"
+        )
+      );
+      const result = spawnSync(
+        "pwsh",
+        [
+          "-NoProfile",
+          "-NonInteractive",
+          "-Command",
+          `
+$ErrorActionPreference = 'Stop'
+$probe = [scriptblock]::Create(@'
+${probeBody}
+'@)
+function Get-HttpStatus { return $case.status }
+function Test-SvelteKitGeneratedStateError { return $case.fatal }
+function Test-VitePing { $script:pingCalled = $true; return $case.ping }
+function Write-Status { }
+$cases = @(
+    @{ status='500'; ping=$true; fatal=$false; age=0; failures=2 },
+    @{ status='000'; ping=$true; fatal=$false; age=0; failures=2 },
+    @{ status='500'; ping=$true; fatal=$false; age=301; failures=0 },
+    @{ status='500'; ping=$true; fatal=$true; age=0; failures=0 },
+    @{ status='000'; ping=$false; fatal=$false; age=0; failures=1 },
+    @{ status='000'; ping=$false; fatal=$false; age=0; failures=2 },
+    @{ status='200'; ping=$false; fatal=$false; age=30; failures=2 }
+)
+$results = foreach ($case in $cases) {
+    $originFailureCount = $case.failures
+    $publicFailureCount = 2
+    $originBusySince = if ($case.age) { (Get-Date).AddSeconds(-$case.age) } else { $null }
+    $originUrl = 'synthetic'
+    $tunnelProc = $null
+    $script:pingCalled = $false
+    $failure = ''
+    try { . $probe } catch { $failure = $_.Exception.Message }
+    [pscustomobject]@{ failures=$originFailureCount; busy=($null -ne $originBusySince); ping=$script:pingCalled; error=$failure }
+}
+$results | ConvertTo-Json -Compress
+`,
+        ],
+        { encoding: "utf8", timeout: 15_000 }
+      );
+
+      expect(result.status, result.stderr).toBe(0);
+      const cases = JSON.parse(result.stdout);
+      expect(cases[0]).toMatchObject({ failures: 0, busy: true, error: "" });
+      expect(cases[1]).toMatchObject({ failures: 0, busy: true, error: "" });
+      expect(cases[2].error).toContain("five minutes");
+      expect(cases[3]).toMatchObject({ ping: false });
+      expect(cases[3].error).toContain("generated root route proxy");
+      expect(cases[4]).toMatchObject({ failures: 2, error: "" });
+      expect(cases[5].error).toContain("three probes");
+      expect(cases[6]).toMatchObject({
+        failures: 0,
+        busy: false,
+        ping: false,
+        error: "",
+      });
+    }
+  );
 
   it("supervises public tunnel health without restarting Vite", () => {
     expect(launcher).toContain('Test-Http200 "https://dev.tkaflowarts.com/"');
@@ -638,11 +710,16 @@ describe("dev launcher install guard", () => {
   it("tears its own tree down once the pm2 shim is gone", () => {
     // pm2 on Windows kills only the shim; the launcher must notice and stop
     // its Vite instead of orphaning it against the next boot.
-    const shim = readFileSync(path.resolve("scripts/start-dev-pm2.cjs"), "utf8");
+    const shim = readFileSync(
+      path.resolve("scripts/start-dev-pm2.cjs"),
+      "utf8"
+    );
     expect(shim).toContain("TKA_PM2_PARENT_PID: String(process.pid)");
     expect(launcher).toContain("$env:TKA_PM2_PARENT_PID");
     expect(launcher).toContain("function Test-SupervisorAlive");
     expect(launcher).toContain("if (-not (Test-SupervisorAlive)) { break }");
-    expect(launcher).toContain("if (-not (Test-SupervisorAlive)) { return $false }");
+    expect(launcher).toContain(
+      "if (-not (Test-SupervisorAlive)) { return $false }"
+    );
   });
 });
