@@ -941,6 +941,92 @@ const devHttps =
     ? { cert: fs.readFileSync(devCertPath), key: fs.readFileSync(devKeyPath) }
     : undefined;
 
+// Keep Vite's HTTPS/2 server intact: server.proxy forces Vite back to HTTP/1.1.
+// Pixel Streaming uses one scoped WebSocket upgrade on that same server.
+const unrealStreamUpgradePlugin = () => ({
+  name: "composer-unreal-stream-upgrade",
+  apply: "serve" as const,
+  async configureServer(server: ViteDevServer) {
+    // A merged config can reload before the primary checkout installs its new dependency.
+    const proxyPackage = "http-proxy-3";
+    let proxyModule: typeof import("http-proxy-3");
+    try {
+      proxyModule = await import(proxyPackage);
+    } catch (error) {
+      if (
+        !(error instanceof Error) ||
+        !("code" in error) ||
+        error.code !== "ERR_MODULE_NOT_FOUND" ||
+        !error.message.includes(proxyPackage)
+      ) {
+        throw error;
+      }
+      server.config.logger.warn(
+        "Composer Unreal WebSocket bridge unavailable: install http-proxy-3 with pnpm install.",
+      );
+      return;
+    }
+    const proxy = proxyModule.createProxyServer({
+      target: "ws://127.0.0.1:18889",
+      ws: true,
+    });
+    proxy.on("error", (_error, _req, socket) => {
+      socket?.destroy();
+    });
+    const proxiedSockets = new Set<import("node:net").Socket>();
+    const handleUpgrade = (
+      req: IncomingMessage,
+      socket: import("node:stream").Duplex,
+      head: Buffer,
+    ) => {
+      const requestUrl = new URL(req.url ?? "/", "https://localhost");
+      if (
+        requestUrl.pathname !== "/unreal-stream" &&
+        requestUrl.pathname !== "/unreal-stream/"
+      ) {
+        return;
+      }
+
+      const address = req.socket.remoteAddress;
+      const isLocal =
+        address === "127.0.0.1" ||
+        address === "::1" ||
+        address === "::ffff:127.0.0.1";
+      const origin = req.headers.origin;
+      let localOrigin = true;
+      if (origin) {
+        try {
+          const hostname = new URL(origin).hostname;
+          localOrigin =
+            hostname === "localhost" ||
+            hostname === "127.0.0.1" ||
+            hostname === "[::1]";
+        } catch {
+          localOrigin = false;
+        }
+      }
+      if (!isLocal || !localOrigin) {
+        socket.end("HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n");
+        return;
+      }
+
+      req.url = `/${requestUrl.search}`;
+      const netSocket = socket as import("node:net").Socket;
+      proxiedSockets.add(netSocket);
+      netSocket.once("close", () => proxiedSockets.delete(netSocket));
+      proxy.ws(req, netSocket, head);
+    };
+    server.httpServer?.on("upgrade", handleUpgrade);
+    server.httpServer?.once("close", () => {
+      server.httpServer?.off("upgrade", handleUpgrade);
+      for (const socket of proxiedSockets) socket.destroy();
+      proxiedSockets.clear();
+      proxy.close();
+      proxy.removeAllListeners();
+    });
+  },
+});
+
 const dependencyCachePlan = createViteDependencyCachePlan({
   projectRoot: dirname,
 });
@@ -1116,6 +1202,7 @@ export default defineConfig(({ command, mode }) => ({
     ...getEnabledFeaturesDefineMap(),
   },
   plugins: [
+    unrealStreamUpgradePlugin(),
     postStudioDraftStoragePlugin(),
     createViteDependencyRefreshPlugin({ projectRoot: dirname }),
     featureGatePlugin(),
