@@ -31,6 +31,7 @@
   import type { ExperienceViewMode } from "../../../domain/types";
   import { isConceptExperienceAvailable } from "../../../domain/concept-experience-registry";
   import { getExperiencePersistence } from "../../../state/experience-persistence.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import LessonStageControls from "../LessonStageControls.svelte";
   import LessonStageFrame from "../LessonStageFrame.svelte";
   import LessonStageHeading from "../LessonStageHeading.svelte";
@@ -44,7 +45,11 @@
   import HandMotionsMapStage from "./HandMotionsMapStage.svelte";
   import HandPairsStage from "./HandPairsStage.svelte";
   import HandMotionsQuizStage from "./HandMotionsQuizStage.svelte";
-  import { runHandGridGrow, runHandGridSplit } from "./hand-grid-split";
+  import {
+    runBoardSettle,
+    runHandGridGrow,
+    runHandGridSplit,
+  } from "./hand-grid-split";
 
   let {
     onComplete,
@@ -125,12 +130,16 @@
           .filter((id): id is HandCombinationId => COMBINATION_IDS.has(id))
       : []
   );
-  // Review opens on the finished board.
-  const quizDone = $derived(
-    viewMode === "scroll" || quizAnswered.length === HAND_COMBINATIONS.length
+  const quizDone = $derived(quizAnswered.length === HAND_COMBINATIONS.length);
+  /** Done stays open once the quiz has been finished, through any replay. */
+  let quizPassed = $state(
+    viewMode === "scroll" ||
+      (current && persistence.getPhaseData<boolean>("quizPassed", false)) ||
+      untrack(() => quizDone)
   );
-  /** The quiz stays up until its last answer has had its moment. */
-  let quizOpen = $state(untrack(() => !quizDone));
+  /** The quiz stays up until its last answer has had its moment. Review
+      opens on the finished board. */
+  let quizOpen = $state(viewMode !== "scroll" && untrack(() => !quizDone));
 
   if (viewMode !== "scroll" && !current) {
     persistence.saveStep(savedStep);
@@ -159,7 +168,7 @@
       : stepIndex === PAIRS_STAGE
         ? Object.keys(pairsFound).length === HAND_COMBINATIONS.length
         : stepIndex === BOARD_STAGE
-          ? !quizOpen
+          ? quizPassed
           : true
   );
   const description = $derived(
@@ -188,6 +197,7 @@
   function goToStep(next: number): void {
     const clamped = Math.min(BOARD_STAGE, Math.max(INTRO_STAGE, next));
     if (clamped === stepIndex) return;
+    if (clamped === BOARD_STAGE && !quizOpen) resetQuiz();
     const revision = ++layoutRevision;
     const grows =
       (stepIndex === INTRO_STAGE && clamped === MAP_STAGE) ||
@@ -238,6 +248,25 @@
         ? "success"
         : "selection"
     );
+  }
+
+  /** A fresh round: the six are asked again in a new order. */
+  function resetQuiz(): void {
+    quizAnswered = [];
+    quizOpen = true;
+    if (viewMode !== "scroll") persistence.savePhaseData("quizAnswered", []);
+  }
+
+  /** The finished board turns back into the quiz, each card into its slot. */
+  function replayQuiz(): void {
+    runBoardSettle(experienceElement, resetQuiz);
+    haptic?.trigger("selection");
+  }
+
+  function finishedQuiz(): void {
+    runBoardSettle(experienceElement, () => (quizOpen = false));
+    quizPassed = true;
+    if (viewMode !== "scroll") persistence.savePhaseData("quizPassed", true);
   }
 
   function answeredQuiz(id: HandCombinationId): void {
@@ -320,6 +349,12 @@
     {#snippet heading()}
       <LessonStageHeading key={stageKey} title={handMotionsTopicText("title")}>
         {#if description}<p class="stage-description">{description}</p>{/if}
+        {#if stepIndex === BOARD_STAGE && !quizOpen}
+          <PanelButton variant="secondary" onclick={replayQuiz}>
+            <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
+            <span>{t("learn_ui_practice_again")}</span>
+          </PanelButton>
+        {/if}
       </LessonStageHeading>
     {/snippet}
 
@@ -337,7 +372,7 @@
               answered={quizAnswered}
               onAnswer={answeredQuiz}
               onMiss={() => haptic?.trigger("warning")}
-              onFinish={() => (quizOpen = false)}
+              onFinish={finishedQuiz}
             />
           </div>
         {:else}
@@ -469,11 +504,11 @@
     }
   }
 
-  /* The quiz puts the picture to name over the board, so the board's
-     pictures give up height to it: two rows of three under it, or one row
-     of six on a landscape screen. */
+  /* The quiz puts the picture to name and its answer line over the board,
+     so the board's pictures give up height to them: two rows of three under
+     it, or one row of six on a landscape screen. */
   .board-stage.quiz {
-    --board-art: max(5.5rem, calc((100 * var(--lesson-vh) - 35.5rem) / 3.4));
+    --board-art: max(5.5rem, calc((100 * var(--lesson-vh) - 38.5rem) / 3.4));
     --quiz-picture: calc(1.4 * var(--board-art));
     width: min(100%, calc(3 * var(--board-art) + 6.5rem));
   }
@@ -483,7 +518,7 @@
     .board-stage.quiz {
       --quiz-picture: max(
         8rem,
-        min(16rem, calc(100 * var(--lesson-vh) - 33.5rem))
+        min(16rem, calc(100 * var(--lesson-vh) - 37.5rem))
       );
       width: 100%;
     }
@@ -491,14 +526,14 @@
 
   @media (min-aspect-ratio: 3 / 2) {
     .board-stage.quiz {
-      --board-art: max(6rem, calc((100 * var(--lesson-vh) - 32rem) / 2.4));
+      --board-art: max(6rem, calc((100 * var(--lesson-vh) - 35rem) / 2.4));
       width: min(100%, calc(6 * var(--board-art) + 9rem));
     }
   }
 
   @media (min-aspect-ratio: 3 / 2) and (max-aspect-ratio: 11 / 5) and (min-height: 1100px) {
     .board-stage.quiz {
-      --board-art: max(5.5rem, calc((100 * var(--lesson-vh) - 35.5rem) / 3.4));
+      --board-art: max(5.5rem, calc((100 * var(--lesson-vh) - 38.5rem) / 3.4));
       width: min(100%, calc(3 * var(--board-art) + 6.5rem));
     }
   }

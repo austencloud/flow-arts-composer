@@ -161,8 +161,8 @@ export function createCreateModuleState(
   /**
    * Initialize with persisted state
    */
-  async function initializeWithPersistence() {
-    await persistenceController.initialize();
+  async function initializeWithPersistence(skipRestore = false) {
+    await persistenceController.initialize(skipRestore);
   }
 
   function addOptionToHistory(stepIndex: number, stepData: StepData) {
@@ -534,6 +534,7 @@ export function createCreateModuleState(
 
     // Tab-aware sequence access
     getActiveTabSequenceState,
+    getSequenceStateForTab,
 
     // Tab states (will be attached by initialization service)
     get constructorTabState() {

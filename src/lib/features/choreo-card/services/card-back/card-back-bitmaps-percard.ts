@@ -38,11 +38,12 @@
 
 import { rasterizeLoopIconByKind } from "./card-back-bitmaps-constant";
 import {
-  layoutTurnGlyph,
+  paintTurnGlyph,
+  paintReversalGlyph,
   TURN_GLYPH_BOX_W_CQI,
   TURN_GLYPH_BOX_H_CQI,
-} from "../../components/card-back/turn-glyph-layout";
-import type { TurnGlyphEntry } from "../../components/card-back/card-back-data";
+  type TurnGlyphEntry,
+} from "@tka/render-composition";
 import type { DirectRenderOptions } from "#lib/shared/render/services/IDirectRenderer.js";
 import type { RenderCanvas } from "#lib/shared/render/services/types.js";
 import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
@@ -147,40 +148,6 @@ function makeCanvas(
   return { canvas, ctx };
 }
 
-/**
- * Trace a top-rounded rect (rounded top-left/top-right, square bottom) —
- * matches the turn-glyph `.bar { border-radius: 0.2cqi 0.2cqi 0 0 }`.
- */
-function topRoundedRectPath(
-  ctx: OffscreenCanvasRenderingContext2D,
-  x: number, y: number, w: number, h: number, r: number,
-): void {
-  const rr = Math.min(r, w / 2, h);
-  ctx.beginPath();
-  ctx.moveTo(x, y + h);
-  ctx.lineTo(x, y + rr);
-  ctx.arcTo(x, y, x + rr, y, rr);
-  ctx.lineTo(x + w - rr, y);
-  ctx.arcTo(x + w, y, x + w, y + rr, rr);
-  ctx.lineTo(x + w, y + h);
-  ctx.closePath();
-}
-
-// ── Turn-glyph bar geometry (verbatim from TurnPatternGlyph.svelte) ─────────
-const TURN_HEIGHT_PER_TURN = 1.8;
-const TURN_MIN_HEIGHT = 0.5;
-const TURN_FLOAT_HEIGHT = 1.2;
-
-/** Bar height in cqi for a turn value (TurnPatternGlyph.barHeight). */
-function turnBarHeightCqi(value: number, isFloat: boolean): number {
-  if (isFloat) return TURN_FLOAT_HEIGHT;
-  return value === 0 ? TURN_MIN_HEIGHT : value * TURN_HEIGHT_PER_TURN;
-}
-
-/** TurnPatternGlyph hand colors (`var(--tka-blue-hand)`/`--tka-red-hand`). */
-const BLUE_HAND = "#3498db";
-const RED_HAND = "#e74c3c";
-
 // ── Turn glyph (per-card) ──────────────────────────────────────────────────
 
 /**
@@ -208,52 +175,9 @@ export async function rasterizeTurnGlyph(
   const boxH = Math.round(TURN_GLYPH_BOX_H_CQI * cqi);
   const { canvas, ctx: ctx2d } = makeCanvas(boxW, boxH);
 
-  const layout = layoutTurnGlyph(entries.length);
-  const barW = layout.barW * cqi;
-  const intraGap = layout.intraGap * cqi;
-  const groupGap = layout.groupGap * cqi;
-  const radius = layout.radius * cqi;
-
-  const clusterW = layout.clusterW * cqi;
-  let x = (boxW - clusterW) / 2;
-
-  for (const entry of entries) {
-    drawTurnBar(ctx2d, x, boxH, barW, turnBarHeightCqi(entry.left, !!entry.leftFloat) * cqi, radius, BLUE_HAND, !!entry.leftFloat);
-    x += barW + intraGap;
-    drawTurnBar(ctx2d, x, boxH, barW, turnBarHeightCqi(entry.right, !!entry.rightFloat) * cqi, radius, RED_HAND, !!entry.rightFloat);
-    x += barW + groupGap;
-  }
+  paintTurnGlyph(ctx2d, entries, { x: 0, y: 0, width: boxW, height: boxH }, {}, cqi);
 
   return createImageBitmap(canvas);
-}
-
-/** Draw one bottom-aligned turn bar (solid, or 0.7-alpha hatched for floats). */
-function drawTurnBar(
-  ctx2d: OffscreenCanvasRenderingContext2D,
-  x: number, boxH: number, w: number, h: number, radius: number,
-  color: string, isFloat: boolean,
-): void {
-  const y = boxH - h; // bottom-align
-  topRoundedRectPath(ctx2d, x, y, w, h, radius);
-  if (isFloat) {
-    // 45° hatch approximation of the live repeating-linear-gradient + opacity:0.7.
-    ctx2d.save();
-    ctx2d.clip();
-    ctx2d.globalAlpha = 0.7;
-    ctx2d.strokeStyle = color;
-    ctx2d.lineWidth = 0.4 * (w / 1.1); // ~0.4cqi stripe relative to 1.1cqi bar width
-    const step = 0.8 * (w / 1.1);
-    for (let d = -h; d < w + h; d += step) {
-      ctx2d.beginPath();
-      ctx2d.moveTo(x + d, y + h);
-      ctx2d.lineTo(x + d + h, y);
-      ctx2d.stroke();
-    }
-    ctx2d.restore();
-  } else {
-    ctx2d.fillStyle = color;
-    ctx2d.fill();
-  }
 }
 
 // ── Reversal glyph (per-card) ──────────────────────────────────────────────
@@ -278,57 +202,9 @@ export async function rasterizeReversalGlyph(
   const boxH = Math.round(6 * cqi);
   const { canvas, ctx: ctx2d } = makeCanvas(boxW, boxH);
 
-  const symbols = sequence.slice(0, Math.min(8, period)).split("");
-  const r = 0.9 * cqi; // 1.8cqi diameter
-  const colGap = 0.6 * cqi;
-  const dotGap = 0.3 * cqi;
-  const colW = r * 2;
-  const colH = r * 4 + dotGap; // two dots + gap
-
-  const rowW = symbols.length > 0
-    ? symbols.length * colW + (symbols.length - 1) * colGap
-    : 0;
-  let cx = (boxW - rowW) / 2 + r; // center of first column
-  const topCy = (boxH - colH) / 2 + r; // center of top dot (row vertically centered)
-  const botCy = topCy + r * 2 + dotGap;
-
-  for (const symbol of symbols) {
-    const dots = reversalDots(symbol);
-    drawReversalDot(ctx2d, cx, topCy, r, dots.right ? RED_HAND : null, ctx.textMutedColor);
-    drawReversalDot(ctx2d, cx, botCy, r, dots.left ? BLUE_HAND : null, ctx.textMutedColor);
-    cx += colW + colGap;
-  }
+  paintReversalGlyph(ctx2d, { sequence, period }, { x: 0, y: 0, width: boxW, height: boxH }, { muted: ctx.textMutedColor }, false, cqi);
 
   return createImageBitmap(canvas);
-}
-
-/** Reversal symbol → which dots are filled (ReversalPatternGlyph.getDots). */
-function reversalDots(symbol: string): { right: boolean; left: boolean } {
-  switch (symbol) {
-    case "P": return { right: true, left: true };
-    case "R": return { right: true, left: false };
-    case "B": return { right: false, left: true };
-    default: return { right: false, left: false };
-  }
-}
-
-/** Draw one reversal dot. `color === null` → empty dot (muted @ 0.4 alpha). */
-function drawReversalDot(
-  ctx2d: OffscreenCanvasRenderingContext2D,
-  cx: number, cy: number, r: number,
-  color: string | null, mutedColor: string,
-): void {
-  ctx2d.save();
-  ctx2d.beginPath();
-  ctx2d.arc(cx, cy, r, 0, Math.PI * 2);
-  if (color === null) {
-    ctx2d.globalAlpha = 0.4;
-    ctx2d.fillStyle = mutedColor;
-  } else {
-    ctx2d.fillStyle = color;
-  }
-  ctx2d.fill();
-  ctx2d.restore();
 }
 
 // ── Loop row (per-card) ────────────────────────────────────────────────────

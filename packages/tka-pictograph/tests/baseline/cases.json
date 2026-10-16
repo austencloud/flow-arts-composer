@@ -1,0 +1,1001 @@
+[
+  {
+    "name": "A-0-staff",
+    "input": {
+      "letter": "A",
+      "startPlacement": "alpha3",
+      "endPlacement": "alpha5",
+      "leftMotion": {
+        "motionType": "pro",
+        "rotationDirection": "cw",
+        "startLocation": "w",
+        "endLocation": "n",
+        "hand": "left",
+        "turns": 0,
+        "startOrientation": "in"
+      },
+      "rightMotion": {
+        "motionType": "pro",
+        "rotationDirection": "cw",
+        "startLocation": "e",
+        "endLocation": "s",
+        "hand": "right",
+        "turns": 0,
+        "startOrientation": "in"
+      }
+    },
+    "prop": "staff"
+  },
+  {
+    "name": "A-0-fan",
+    "input": {
+      "letter": "A",
+      "startPlacement": "alpha3",
+      "endPlacement": "alpha5",
+      "leftMotion": {
+        "motionType": "pro",
+        "rotationDirection": "cw",
+        "startLocation": "w",
+        "endLocation": "n",
+        "hand": "left",
+        "turns": 0,
+        "startOrientation": "in"
+      },
+      "rightMotion": {
+        "motionType": "pro",
+        "rotationDirection": "cw",
+        "startLocation": "e",
+        "endLocation": "s",
+        "hand": "right",
+        "turns": 0,
+        "startOrientation": "in"
+      }
+    },
+    "prop": "fan"
+  },
+  {
+    "name": "A-1-staff",
+    "input": {
+      "letter": "A",
+      "startPlacement": "alpha3",
+      "endPlacement": "alpha5",
+      "leftMotion": {
+        "motionType": "pro",
+        "rotationDirection": "cw",
+        "startLocation": "w",
+        "endLocation": "n",
+        "hand": "left",
+        "turns": 1,
+        "startOrientation": "in"
+      },
+      "rightMotion": {
+        "motionType": "pro",
+        "rotationDirection": "cw",
+        "startLocation": "e",
+        "endLocation": "s",
+        "hand": "right",
+        "turns": 1,
+        "startOrientation": "in"
+      }
+    },
+    "prop": "staff"
+  },
+  {
+    "name": "A-1-fan",
+    "input": {
+      "letter": "A",
+      "startPlacement": "alpha3",
+      "endPlacement": "alpha5",
+      "leftMotion": {
+        "motionType": "pro",
+        "rotationDirection": "cw",
+        "startLocation": "w",
+        "endLocation": "n",
+        "hand": "left",
+        "turns": 1,
+        "startOrientation": "in"
+      },
+      "rightMotion": {
+        "motionType": "pro",
+        "rotationDirection": "cw",
+        "startLocation": "e",
+        "endLocation": "s",
+        "hand": "right",
+        "turns": 1,
+        "startOrientation": "in"
+      }
+    },
+    "prop": "fan"
+  },
+  {
+    "name": "A-2.5-staff",
+    "input": {
+      "letter": "A",
+      "startPlacement": "alpha3",
+      "endPlacement": "alpha5",
+      "leftMotion": {
+        "motionType": "pro",
+        "rotationDirection": "cw",
+        "startLocation": "w",
+        "endLocation": "n",
+        "hand": "left",
+        "turns": 2.5,
+        "startOrientation": "in"
+      },
+      "rightMotion": {
+        "motionType": "pro",
+        "rotationDirection": "cw",
+        "startLocation": "e",
+        "endLocation": "s",
+        "hand": "right",
+        "turns": 2.5,
+        "startOrientation": "in"
+      }
+    },
+    "prop": "staff"
+  },
+  {
+    "name": "A-2.5-fan",
+    "input": {
+      "letter": "A",
+      "startPlacement": "alpha3",
+      "endPlacement": "alpha5",
+      "leftMotion": {
+        "motionType": "pro",
+        "rotationDirection": "cw",
+        "startLocation": "w",
+        "endLocation": "n",
+        "hand": "left",
+        "turns": 2.5,
+        "startOrientation": "in"
+      },
+      "rightMotion": {
+        "motionType": "pro",
+        "rotationDirection": "cw",
+        "startLocation": "e",
+        "endLocation": "s",
+        "hand": "right",
+        "turns": 2.5,
+        "startOrientation": "in"
+      }
+    },
+    "prop": "fan"
+  },
+  {
+    "name": "β-0-staff",
+    "input": {
+      "letter": "β",
+      "startPlacement": "beta3",
+      "endPlacement": "beta3",
+      "leftMotion": {
+        "motionType": "static",
+        "rotationDirection": "noRotation",
+        "startLocation": "e",
+        "endLocation": "e",
+        "hand": "left",
+        "turns": 0,
+        "startOrientation": "in"
+      },
+      "rightMotion": {
+        "motionType": "static",
+        "rotationDirection": "noRotation",
+        "startLocation": "e",
+        "endLocation": "e",
+        "hand": "right",
+        "turns": 0,
+        "startOrientation": "in"
+      }
+    },
+    "prop": "staff"
+  },
+  {
+    "name": "β-0-fan",
+    "input": {
+      "letter": "β",
+      "startPlacement": "beta3",
+      "endPlacement": "beta3",
+      "leftMotion": {
+        "motionType": "static",
+        "rotationDirection": "noRotation",
+        "startLocation": "e",
+        "endLocation": "e",
+        "hand": "left",
+        "turns": 0,
+        "startOrientation": "in"
+      },
+      "rightMotion": {
+        "motionType": "static",
+        "rotationDirection": "noRotation",
+        "startLocation": "e",
+        "endLocation": "e",
+        "hand": "right",
+        "turns": 0,
+        "startOrientation": "in"
+      }
+    },
+    "prop": "fan"
+  },
+  {
+    "name": "β-1-staff",
+    "input": {
+      "letter": "β",
+      "startPlacement": "beta3",
+      "endPlacement": "beta3",
+      "leftMotion": {
+        "motionType": "static",
+        "rotationDirection": "noRotation",
+        "startLocation": "e",
+        "endLocation": "e",
+        "hand": "left",
+        "turns": 1,
+        "startOrientation": "in"
+      },
+      "rightMotion": {
+        "motionType": "static",
+        "rotationDirection": "noRotation",
+        "startLocation": "e",
+        "endLocation": "e",
+        "hand": "right",
+        "turns": 1,
+        "startOrientation": "in"
+      }
+    },
+    "prop": "staff"
+  },
+  {
+    "name": "β-1-fan",
+    "input": {
+      "letter": "β",
+      "startPlacement": "beta3",
+      "endPlacement": "beta3",
+      "leftMotion": {
+        "motionType": "static",
+        "rotationDirection": "noRotation",
+        "startLocation": "e",
+        "endLocation": "e",
+        "hand": "left",
+        "turns": 1,
+        "startOrientation": "in"
+      },
+      "rightMotion": {
+        "motionType": "static",
+        "rotationDirection": "noRotation",
+        "startLocation": "e",
+        "endLocation": "e",
+        "hand": "right",
+        "turns": 1,
+        "startOrientation": "in"
+      }
+    },
+    "prop": "fan"
+  },
+  {
+    "name": "β-2.5-staff",
+    "input": {
+      "letter": "β",
+      "startPlacement": "beta3",
+      "endPlacement": "beta3",
+      "leftMotion": {
+        "motionType": "static",
+        "rotationDirection": "noRotation",
+        "startLocation": "e",
+        "endLocation": "e",
+        "hand": "left",
+        "turns": 2.5,
+        "startOrientation": "in"
+      },
+      "rightMotion": {
+        "motionType": "static",
+        "rotationDirection": "noRotation",
+        "startLocation": "e",
+        "endLocation": "e",
+        "hand": "right",
+        "turns": 2.5,
+        "startOrientation": "in"
+      }
+    },
+    "prop": "staff"
+  },
+  {
+    "name": "β-2.5-fan",
+    "input": {
+      "letter": "β",
+      "startPlacement": "beta3",
+      "endPlacement": "beta3",
+      "leftMotion": {
+        "motionType": "static",
+        "rotationDirection": "noRotation",
+        "startLocation": "e",
+        "endLocation": "e",
+        "hand": "left",
+        "turns": 2.5,
+        "startOrientation": "in"
+      },
+      "rightMotion": {
+        "motionType": "static",
+        "rotationDirection": "noRotation",
+        "startLocation": "e",
+        "endLocation": "e",
+        "hand": "right",
+        "turns": 2.5,
+        "startOrientation": "in"
+      }
+    },
+    "prop": "fan"
+  },
+  {
+    "name": "γ-0-staff",
+    "input": {
+      "letter": "γ",
+      "startPlacement": "gamma11",
+      "endPlacement": "gamma11",
+      "leftMotion": {
+        "motionType": "static",
+        "rotationDirection": "noRotation",
+        "startLocation": "s",
+        "endLocation": "s",
+        "hand": "left",
+        "turns": 0,
+        "startOrientation": "in"
+      },
+      "rightMotion": {
+        "motionType": "static",
+        "rotationDirection": "noRotation",
+        "startLocation": "e",
+        "endLocation": "e",
+        "hand": "right",
+        "turns": 0,
+        "startOrientation": "in"
+      }
+    },
+    "prop": "staff"
+  },
+  {
+    "name": "γ-0-fan",
+    "input": {
+      "letter": "γ",
+      "startPlacement": "gamma11",
+      "endPlacement": "gamma11",
+      "leftMotion": {
+        "motionType": "static",
+        "rotationDirection": "noRotation",
+        "startLocation": "s",
+        "endLocation": "s",
+        "hand": "left",
+        "turns": 0,
+        "startOrientation": "in"
+      },
+      "rightMotion": {
+        "motionType": "static",
+        "rotationDirection": "noRotation",
+        "startLocation": "e",
+        "endLocation": "e",
+        "hand": "right",
+        "turns": 0,
+        "startOrientation": "in"
+      }
+    },
+    "prop": "fan"
+  },
+  {
+    "name": "γ-1-staff",
+    "input": {
+      "letter": "γ",
+      "startPlacement": "gamma11",
+      "endPlacement": "gamma11",
+      "leftMotion": {
+        "motionType": "static",
+        "rotationDirection": "noRotation",
+        "startLocation": "s",
+        "endLocation": "s",
+        "hand": "left",
+        "turns": 1,
+        "startOrientation": "in"
+      },
+      "rightMotion": {
+        "motionType": "static",
+        "rotationDirection": "noRotation",
+        "startLocation": "e",
+        "endLocation": "e",
+        "hand": "right",
+        "turns": 1,
+        "startOrientation": "in"
+      }
+    },
+    "prop": "staff"
+  },
+  {
+    "name": "γ-1-fan",
+    "input": {
+      "letter": "γ",
+      "startPlacement": "gamma11",
+      "endPlacement": "gamma11",
+      "leftMotion": {
+        "motionType": "static",
+        "rotationDirection": "noRotation",
+        "startLocation": "s",
+        "endLocation": "s",
+        "hand": "left",
+        "turns": 1,
+        "startOrientation": "in"
+      },
+      "rightMotion": {
+        "motionType": "static",
+        "rotationDirection": "noRotation",
+        "startLocation": "e",
+        "endLocation": "e",
+        "hand": "right",
+        "turns": 1,
+        "startOrientation": "in"
+      }
+    },
+    "prop": "fan"
+  },
+  {
+    "name": "γ-2.5-staff",
+    "input": {
+      "letter": "γ",
+      "startPlacement": "gamma11",
+      "endPlacement": "gamma11",
+      "leftMotion": {
+        "motionType": "static",
+        "rotationDirection": "noRotation",
+        "startLocation": "s",
+        "endLocation": "s",
+        "hand": "left",
+        "turns": 2.5,
+        "startOrientation": "in"
+      },
+      "rightMotion": {
+        "motionType": "static",
+        "rotationDirection": "noRotation",
+        "startLocation": "e",
+        "endLocation": "e",
+        "hand": "right",
+        "turns": 2.5,
+        "startOrientation": "in"
+      }
+    },
+    "prop": "staff"
+  },
+  {
+    "name": "γ-2.5-fan",
+    "input": {
+      "letter": "γ",
+      "startPlacement": "gamma11",
+      "endPlacement": "gamma11",
+      "leftMotion": {
+        "motionType": "static",
+        "rotationDirection": "noRotation",
+        "startLocation": "s",
+        "endLocation": "s",
+        "hand": "left",
+        "turns": 2.5,
+        "startOrientation": "in"
+      },
+      "rightMotion": {
+        "motionType": "static",
+        "rotationDirection": "noRotation",
+        "startLocation": "e",
+        "endLocation": "e",
+        "hand": "right",
+        "turns": 2.5,
+        "startOrientation": "in"
+      }
+    },
+    "prop": "fan"
+  },
+  {
+    "name": "W--0-staff",
+    "input": {
+      "letter": "W-",
+      "startPlacement": "gamma11",
+      "endPlacement": "alpha5",
+      "leftMotion": {
+        "motionType": "dash",
+        "rotationDirection": "noRotation",
+        "startLocation": "s",
+        "endLocation": "n",
+        "hand": "left",
+        "turns": 0,
+        "startOrientation": "in"
+      },
+      "rightMotion": {
+        "motionType": "pro",
+        "rotationDirection": "cw",
+        "startLocation": "e",
+        "endLocation": "s",
+        "hand": "right",
+        "turns": 0,
+        "startOrientation": "in"
+      }
+    },
+    "prop": "staff"
+  },
+  {
+    "name": "W--0-fan",
+    "input": {
+      "letter": "W-",
+      "startPlacement": "gamma11",
+      "endPlacement": "alpha5",
+      "leftMotion": {
+        "motionType": "dash",
+        "rotationDirection": "noRotation",
+        "startLocation": "s",
+        "endLocation": "n",
+        "hand": "left",
+        "turns": 0,
+        "startOrientation": "in"
+      },
+      "rightMotion": {
+        "motionType": "pro",
+        "rotationDirection": "cw",
+        "startLocation": "e",
+        "endLocation": "s",
+        "hand": "right",
+        "turns": 0,
+        "startOrientation": "in"
+      }
+    },
+    "prop": "fan"
+  },
+  {
+    "name": "W--1-staff",
+    "input": {
+      "letter": "W-",
+      "startPlacement": "gamma11",
+      "endPlacement": "alpha5",
+      "leftMotion": {
+        "motionType": "dash",
+        "rotationDirection": "noRotation",
+        "startLocation": "s",
+        "endLocation": "n",
+        "hand": "left",
+        "turns": 1,
+        "startOrientation": "in"
+      },
+      "rightMotion": {
+        "motionType": "pro",
+        "rotationDirection": "cw",
+        "startLocation": "e",
+        "endLocation": "s",
+        "hand": "right",
+        "turns": 1,
+        "startOrientation": "in"
+      }
+    },
+    "prop": "staff"
+  },
+  {
+    "name": "W--1-fan",
+    "input": {
+      "letter": "W-",
+      "startPlacement": "gamma11",
+      "endPlacement": "alpha5",
+      "leftMotion": {
+        "motionType": "dash",
+        "rotationDirection": "noRotation",
+        "startLocation": "s",
+        "endLocation": "n",
+        "hand": "left",
+        "turns": 1,
+        "startOrientation": "in"
+      },
+      "rightMotion": {
+        "motionType": "pro",
+        "rotationDirection": "cw",
+        "startLocation": "e",
+        "endLocation": "s",
+        "hand": "right",
+        "turns": 1,
+        "startOrientation": "in"
+      }
+    },
+    "prop": "fan"
+  },
+  {
+    "name": "W--2.5-staff",
+    "input": {
+      "letter": "W-",
+      "startPlacement": "gamma11",
+      "endPlacement": "alpha5",
+      "leftMotion": {
+        "motionType": "dash",
+        "rotationDirection": "noRotation",
+        "startLocation": "s",
+        "endLocation": "n",
+        "hand": "left",
+        "turns": 2.5,
+        "startOrientation": "in"
+      },
+      "rightMotion": {
+        "motionType": "pro",
+        "rotationDirection": "cw",
+        "startLocation": "e",
+        "endLocation": "s",
+        "hand": "right",
+        "turns": 2.5,
+        "startOrientation": "in"
+      }
+    },
+    "prop": "staff"
+  },
+  {
+    "name": "W--2.5-fan",
+    "input": {
+      "letter": "W-",
+      "startPlacement": "gamma11",
+      "endPlacement": "alpha5",
+      "leftMotion": {
+        "motionType": "dash",
+        "rotationDirection": "noRotation",
+        "startLocation": "s",
+        "endLocation": "n",
+        "hand": "left",
+        "turns": 2.5,
+        "startOrientation": "in"
+      },
+      "rightMotion": {
+        "motionType": "pro",
+        "rotationDirection": "cw",
+        "startLocation": "e",
+        "endLocation": "s",
+        "hand": "right",
+        "turns": 2.5,
+        "startOrientation": "in"
+      }
+    },
+    "prop": "fan"
+  },
+  {
+    "name": "Φ--0-staff",
+    "input": {
+      "letter": "Φ-",
+      "startPlacement": "alpha3",
+      "endPlacement": "alpha7",
+      "leftMotion": {
+        "motionType": "dash",
+        "rotationDirection": "noRotation",
+        "startLocation": "w",
+        "endLocation": "e",
+        "hand": "left",
+        "turns": 0,
+        "startOrientation": "in"
+      },
+      "rightMotion": {
+        "motionType": "dash",
+        "rotationDirection": "noRotation",
+        "startLocation": "e",
+        "endLocation": "w",
+        "hand": "right",
+        "turns": 0,
+        "startOrientation": "in"
+      }
+    },
+    "prop": "staff"
+  },
+  {
+    "name": "Φ--0-fan",
+    "input": {
+      "letter": "Φ-",
+      "startPlacement": "alpha3",
+      "endPlacement": "alpha7",
+      "leftMotion": {
+        "motionType": "dash",
+        "rotationDirection": "noRotation",
+        "startLocation": "w",
+        "endLocation": "e",
+        "hand": "left",
+        "turns": 0,
+        "startOrientation": "in"
+      },
+      "rightMotion": {
+        "motionType": "dash",
+        "rotationDirection": "noRotation",
+        "startLocation": "e",
+        "endLocation": "w",
+        "hand": "right",
+        "turns": 0,
+        "startOrientation": "in"
+      }
+    },
+    "prop": "fan"
+  },
+  {
+    "name": "Φ--1-staff",
+    "input": {
+      "letter": "Φ-",
+      "startPlacement": "alpha3",
+      "endPlacement": "alpha7",
+      "leftMotion": {
+        "motionType": "dash",
+        "rotationDirection": "noRotation",
+        "startLocation": "w",
+        "endLocation": "e",
+        "hand": "left",
+        "turns": 1,
+        "startOrientation": "in"
+      },
+      "rightMotion": {
+        "motionType": "dash",
+        "rotationDirection": "noRotation",
+        "startLocation": "e",
+        "endLocation": "w",
+        "hand": "right",
+        "turns": 1,
+        "startOrientation": "in"
+      }
+    },
+    "prop": "staff"
+  },
+  {
+    "name": "Φ--1-fan",
+    "input": {
+      "letter": "Φ-",
+      "startPlacement": "alpha3",
+      "endPlacement": "alpha7",
+      "leftMotion": {
+        "motionType": "dash",
+        "rotationDirection": "noRotation",
+        "startLocation": "w",
+        "endLocation": "e",
+        "hand": "left",
+        "turns": 1,
+        "startOrientation": "in"
+      },
+      "rightMotion": {
+        "motionType": "dash",
+        "rotationDirection": "noRotation",
+        "startLocation": "e",
+        "endLocation": "w",
+        "hand": "right",
+        "turns": 1,
+        "startOrientation": "in"
+      }
+    },
+    "prop": "fan"
+  },
+  {
+    "name": "Φ--2.5-staff",
+    "input": {
+      "letter": "Φ-",
+      "startPlacement": "alpha3",
+      "endPlacement": "alpha7",
+      "leftMotion": {
+        "motionType": "dash",
+        "rotationDirection": "noRotation",
+        "startLocation": "w",
+        "endLocation": "e",
+        "hand": "left",
+        "turns": 2.5,
+        "startOrientation": "in"
+      },
+      "rightMotion": {
+        "motionType": "dash",
+        "rotationDirection": "noRotation",
+        "startLocation": "e",
+        "endLocation": "w",
+        "hand": "right",
+        "turns": 2.5,
+        "startOrientation": "in"
+      }
+    },
+    "prop": "staff"
+  },
+  {
+    "name": "Φ--2.5-fan",
+    "input": {
+      "letter": "Φ-",
+      "startPlacement": "alpha3",
+      "endPlacement": "alpha7",
+      "leftMotion": {
+        "motionType": "dash",
+        "rotationDirection": "noRotation",
+        "startLocation": "w",
+        "endLocation": "e",
+        "hand": "left",
+        "turns": 2.5,
+        "startOrientation": "in"
+      },
+      "rightMotion": {
+        "motionType": "dash",
+        "rotationDirection": "noRotation",
+        "startLocation": "e",
+        "endLocation": "w",
+        "hand": "right",
+        "turns": 2.5,
+        "startOrientation": "in"
+      }
+    },
+    "prop": "fan"
+  },
+  {
+    "name": "Λ-0-staff",
+    "input": {
+      "letter": "Λ",
+      "startPlacement": "gamma3",
+      "endPlacement": "gamma15",
+      "leftMotion": {
+        "motionType": "static",
+        "rotationDirection": "noRotation",
+        "startLocation": "n",
+        "endLocation": "n",
+        "hand": "left",
+        "turns": 0,
+        "startOrientation": "in"
+      },
+      "rightMotion": {
+        "motionType": "dash",
+        "rotationDirection": "noRotation",
+        "startLocation": "e",
+        "endLocation": "w",
+        "hand": "right",
+        "turns": 0,
+        "startOrientation": "in"
+      }
+    },
+    "prop": "staff"
+  },
+  {
+    "name": "Λ-0-fan",
+    "input": {
+      "letter": "Λ",
+      "startPlacement": "gamma3",
+      "endPlacement": "gamma15",
+      "leftMotion": {
+        "motionType": "static",
+        "rotationDirection": "noRotation",
+        "startLocation": "n",
+        "endLocation": "n",
+        "hand": "left",
+        "turns": 0,
+        "startOrientation": "in"
+      },
+      "rightMotion": {
+        "motionType": "dash",
+        "rotationDirection": "noRotation",
+        "startLocation": "e",
+        "endLocation": "w",
+        "hand": "right",
+        "turns": 0,
+        "startOrientation": "in"
+      }
+    },
+    "prop": "fan"
+  },
+  {
+    "name": "Λ-1-staff",
+    "input": {
+      "letter": "Λ",
+      "startPlacement": "gamma3",
+      "endPlacement": "gamma15",
+      "leftMotion": {
+        "motionType": "static",
+        "rotationDirection": "noRotation",
+        "startLocation": "n",
+        "endLocation": "n",
+        "hand": "left",
+        "turns": 1,
+        "startOrientation": "in"
+      },
+      "rightMotion": {
+        "motionType": "dash",
+        "rotationDirection": "noRotation",
+        "startLocation": "e",
+        "endLocation": "w",
+        "hand": "right",
+        "turns": 1,
+        "startOrientation": "in"
+      }
+    },
+    "prop": "staff"
+  },
+  {
+    "name": "Λ-1-fan",
+    "input": {
+      "letter": "Λ",
+      "startPlacement": "gamma3",
+      "endPlacement": "gamma15",
+      "leftMotion": {
+        "motionType": "static",
+        "rotationDirection": "noRotation",
+        "startLocation": "n",
+        "endLocation": "n",
+        "hand": "left",
+        "turns": 1,
+        "startOrientation": "in"
+      },
+      "rightMotion": {
+        "motionType": "dash",
+        "rotationDirection": "noRotation",
+        "startLocation": "e",
+        "endLocation": "w",
+        "hand": "right",
+        "turns": 1,
+        "startOrientation": "in"
+      }
+    },
+    "prop": "fan"
+  },
+  {
+    "name": "Λ-2.5-staff",
+    "input": {
+      "letter": "Λ",
+      "startPlacement": "gamma3",
+      "endPlacement": "gamma15",
+      "leftMotion": {
+        "motionType": "static",
+        "rotationDirection": "noRotation",
+        "startLocation": "n",
+        "endLocation": "n",
+        "hand": "left",
+        "turns": 2.5,
+        "startOrientation": "in"
+      },
+      "rightMotion": {
+        "motionType": "dash",
+        "rotationDirection": "noRotation",
+        "startLocation": "e",
+        "endLocation": "w",
+        "hand": "right",
+        "turns": 2.5,
+        "startOrientation": "in"
+      }
+    },
+    "prop": "staff"
+  },
+  {
+    "name": "Λ-2.5-fan",
+    "input": {
+      "letter": "Λ",
+      "startPlacement": "gamma3",
+      "endPlacement": "gamma15",
+      "leftMotion": {
+        "motionType": "static",
+        "rotationDirection": "noRotation",
+        "startLocation": "n",
+        "endLocation": "n",
+        "hand": "left",
+        "turns": 2.5,
+        "startOrientation": "in"
+      },
+      "rightMotion": {
+        "motionType": "dash",
+        "rotationDirection": "noRotation",
+        "startLocation": "e",
+        "endLocation": "w",
+        "hand": "right",
+        "turns": 2.5,
+        "startOrientation": "in"
+      }
+    },
+    "prop": "fan"
+  },
+  {
+    "name": "A-fl-staff",
+    "input": {
+      "letter": "A",
+      "startPlacement": "alpha3",
+      "endPlacement": "alpha5",
+      "leftMotion": {
+        "motionType": "pro",
+        "rotationDirection": "cw",
+        "startLocation": "w",
+        "endLocation": "n",
+        "hand": "left",
+        "turns": "fl",
+        "startOrientation": "in"
+      },
+      "rightMotion": {
+        "motionType": "pro",
+        "rotationDirection": "cw",
+        "startLocation": "e",
+        "endLocation": "s",
+        "hand": "right",
+        "turns": "fl",
+        "startOrientation": "in"
+      }
+    },
+    "prop": "staff"
+  }
+]

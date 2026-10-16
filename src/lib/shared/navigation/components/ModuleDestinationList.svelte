@@ -30,30 +30,6 @@
 </script>
 
 <nav class="destination-list" aria-label={`${module.label} destinations`}>
-  {#if module.home}
-    <button
-      type="button"
-      class="destination-button home-destination"
-      class:active={currentModule === module.id && moduleHomeActive}
-      style:--destination-color={module.color}
-      aria-current={currentModule === module.id && moduleHomeActive
-        ? "page"
-        : undefined}
-      onclick={() => onSelect()}
-    >
-      <span class="destination-icon" aria-hidden="true">
-        {@html module.home.icon ?? module.icon}
-      </span>
-      <span class="destination-copy">
-        <strong>{module.home.optionLabel ?? module.home.label}</strong>
-        {#if module.home.description}
-          <small>{module.home.description}</small>
-        {/if}
-      </span>
-      <i class="fas fa-arrow-right destination-arrow" aria-hidden="true"></i>
-    </button>
-  {/if}
-
   {#each sections as section (section.id)}
     <button
       type="button"

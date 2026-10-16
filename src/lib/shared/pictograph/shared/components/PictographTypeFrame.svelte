@@ -27,7 +27,9 @@
 <style>
   /* The desktop Codex used two nested full borders, each 1.6% of the
      pictograph width. Keep the geometry here so every Codex surface carries
-     the same type identity without restating the type in prose. */
+     the same type identity without restating the type in prose. A board that
+     carries the type on the whole section instead sets
+     --pictograph-type-frame-width to 0. */
   .type-frame {
     width: 100%;
     height: 100%;
@@ -59,13 +61,15 @@
 
   .type-border::before {
     inset: 0;
-    border: max(1px, 1.6cqi) solid var(--type-border-primary);
+    border: var(--pictograph-type-frame-width, max(1px, 1.6cqi)) solid
+      var(--type-border-primary);
     border-radius: inherit;
   }
 
   .type-border::after {
-    inset: max(1px, 1.6cqi);
-    border: max(1px, 1.6cqi) solid var(--type-border-secondary);
+    inset: var(--pictograph-type-frame-width, max(1px, 1.6cqi));
+    border: var(--pictograph-type-frame-width, max(1px, 1.6cqi)) solid
+      var(--type-border-secondary);
     border-radius: inherit;
   }
 </style>

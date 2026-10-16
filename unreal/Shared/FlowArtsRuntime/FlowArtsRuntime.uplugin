@@ -1,0 +1,19 @@
+{
+  "FileVersion": 3,
+  "Version": 1,
+  "VersionName": "1.0",
+  "FriendlyName": "Flow Arts Runtime",
+  "Description": "Shared native avatar, animation, prop, and footstep runtime for Flow Fest and Museum Game.",
+  "Category": "Runtime",
+  "CanContainContent": false,
+  "Plugins": [
+    { "Name": "ProceduralMeshComponent", "Enabled": true }
+  ],
+  "Modules": [
+    {
+      "Name": "FlowArtsRuntime",
+      "Type": "Runtime",
+      "LoadingPhase": "Default"
+    }
+  ]
+}

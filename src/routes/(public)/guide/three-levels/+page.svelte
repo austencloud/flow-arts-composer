@@ -339,7 +339,7 @@
           <LinkChip href={localHref("/guide/level-1/permutations")}
             >{t("guide_three_levels_exit_loops")}</LinkChip
           >
-          <LinkChip href={localHref("/guide/codex")}
+          <LinkChip href={localHref("/codex")}
             >{t("guide_nav_codex")}</LinkChip
           >
           <LinkChip href={localHref("/guide/ratios")}

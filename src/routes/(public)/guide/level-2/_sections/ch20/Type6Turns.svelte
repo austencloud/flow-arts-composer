@@ -1,29 +1,22 @@
 <script lang="ts">
+  import Sentences from "../../../_components/Sentences.svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import GuideSection from "../../../level-1/_components/GuideSection.svelte";
 </script>
 
 <GuideSection id="type-6-turns" title={t("guide_l2_type6_title")}>
   <div class="section-body">
-    <p>
-      {t("guide_l2_type6_intro")}
-    </p>
+    <p><Sentences text={t("guide_l2_type6_intro")} /></p>
 
-    <p>
-      {t("guide_l2_type6_letters")}
-    </p>
+    <p><Sentences text={t("guide_l2_type6_letters")} /></p>
 
     <!-- TODO: add diagram - Alpha-One -->
 
-    <p>
-      {t("guide_l2_type6_arrow")}
-    </p>
+    <p><Sentences text={t("guide_l2_type6_arrow")} /></p>
 
     <!-- TODO: add diagram - Gamma-One opening (◌) / Gamma-One closing (◍) -->
 
-    <p>
-      {t("guide_l2_type6_next")}
-    </p>
+    <p><Sentences text={t("guide_l2_type6_next")} /></p>
   </div>
 </GuideSection>
 

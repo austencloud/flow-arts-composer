@@ -19,9 +19,11 @@ import {
 import { resolveLoopDisplay } from "#lib/features/loop-labeler/services/loop-display-resolver.js";
 import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
 import { TND_TURNS_RATIO_MAP } from "../../domain/tnd-element";
-import { getReversalPattern } from "../../domain/reversal-patterns";
-import { matchReversalPatternId } from "../../domain/reversal-matcher";
+import { getReversalPattern } from "#lib/shared/foundation/domain/sequence-patterns/reversal-patterns.js";
+import { matchReversalPatternId } from "#lib/shared/foundation/domain/sequence-patterns/reversal-matcher.js";
 import { calculateDifficultyLevel } from "#lib/shared/browse/services/sequence-difficulty-calculator.js";
+import type { TurnGlyphEntry } from "@tka/render-composition";
+import { deriveTurnGlyphEntries, deriveTurnLabel } from "#lib/shared/foundation/domain/sequence-patterns/turn-pattern.js";
 
 // The anatomy grid shows which elements appear in the sequence.
 // Each field is a set of string values; the card renders present
@@ -48,13 +50,6 @@ export interface LevelBadgeData {
   reason: string;
   gradient: string;
   textColor: string;
-}
-
-export interface TurnGlyphEntry {
-  readonly left: number;
-  readonly right: number;
-  readonly leftFloat?: boolean;
-  readonly rightFloat?: boolean;
 }
 
 export interface CardBackData {
@@ -539,77 +534,4 @@ function deriveStartPlacementLabel(info: StartPlacementInfo | null): string | nu
   if (info.gridMode === "diamond") return "diamond";
   if (info.gridMode === "box") return "box";
   return null;
-}
-
-function formatTurnValue(v: number): string {
-  if (v === 0.5) return "½";
-  if (v === 1.5) return "1½";
-  if (v === 2.5) return "2½";
-  return String(v);
-}
-
-function deriveTurnLabel(entries: TurnGlyphEntry[]): string {
-  const hasFloat = entries.some(e => e.leftFloat || e.rightFloat);
-  const allFloat = entries.every(e => e.leftFloat && e.rightFloat);
-  if (allFloat) return "FL";
-
-  const values = new Set<number>();
-  for (const e of entries) {
-    if (!e.leftFloat) values.add(e.left);
-    if (!e.rightFloat) values.add(e.right);
-  }
-
-  if (values.size === 0) return "0";
-  if (values.size === 1) {
-    const v = [...values][0]!;
-    const label = formatTurnValue(v);
-    return hasFloat ? `${label}+FL` : label;
-  }
-
-  const sorted = [...values].sort((a, b) => a - b);
-  const label = sorted.map(formatTurnValue).join("-");
-  return hasFloat ? `${label}+FL` : label;
-}
-
-/**
- * Derive turn glyph entries from a sequence's motion data.
- * Each entry = one step with blue and red turn values.
- * Detects the repeating period and returns only one period.
- */
-function deriveTurnGlyphEntries(sequence: SequenceData): TurnGlyphEntry[] {
-  const steps = sequence.steps ?? [];
-  if (steps.length === 0) return [{ left: 0, right: 0 }];
-
-  const all: TurnGlyphEntry[] = steps.map((step) => {
-    const leftT = step.motions?.left?.turns;
-    const rightT = step.motions?.right?.turns;
-    return {
-      left: typeof leftT === "number" ? leftT : 0,
-      right: typeof rightT === "number" ? rightT : 0,
-      leftFloat: leftT === "fl",
-      rightFloat: rightT === "fl",
-    };
-  });
-
-  // Detect period: find the smallest repeating unit
-  const period = detectPeriod(all);
-  return all.slice(0, period);
-}
-
-function detectPeriod(entries: TurnGlyphEntry[]): number {
-  const n = entries.length;
-  if (n <= 1) return n;
-
-  outer:
-  for (let p = 1; p <= n; p++) {
-    if (n % p !== 0) continue;
-    for (let i = p; i < n; i++) {
-      const ref = entries[i % p]!;
-      const cur = entries[i]!;
-      if (ref.left !== cur.left || ref.right !== cur.right ||
-          ref.leftFloat !== cur.leftFloat || ref.rightFloat !== cur.rightFloat) continue outer;
-    }
-    return p;
-  }
-  return n;
 }

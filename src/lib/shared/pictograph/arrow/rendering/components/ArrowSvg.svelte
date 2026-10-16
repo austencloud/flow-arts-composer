@@ -1,22 +1,11 @@
 <!--
-Simple Arrow Component - Just renders an arrow with provided data
-Now with click interaction and selection visual feedback
-Now with intelligent rotation animation matching prop behavior!
+Renders one arrow at its prepared position, with click selection.
 
-Position Cache System:
-When components are recreated (e.g., during {#each} rerender), the module-level
-cache preserves the last rendered position. This allows the component to start
-at the cached position and animate to the new one, enabling smooth transitions
-even when Svelte recreates the component instance.
+The arrow paints exactly where it is told. A sequence edit fades arrows out and
+back in through PictographContainer's shared edit clock rather than gliding
+them between drawings.
 -->
 <script module lang="ts">
-  import {
-    getArrowPositionCache,
-    clearArrowPositionCache,
-  } from "../arrow-position-cache";
-  const arrowPositionCache = getArrowPositionCache();
-  export { clearArrowPositionCache };
-
   // Per-instance unique id source for the halo <filter>, so multiple arrows /
   // pictographs in one document don't collide on filter ids.
   let haloIdCounter = 0;
@@ -27,11 +16,7 @@ even when Svelte recreates the component instance.
   import type { HapticFeedback } from "../../../../application/services/haptic-feedback";
   import type { MotionData } from "../../../shared/domain/models/motion-data";
   import type { PictographData } from "../../../shared/domain/models/pictograph-data";
-  import {
-    Orientation,
-    RotationDirection,
-    HandSide,
-  } from "../../../shared/domain/enums/pictograph-enums";
+  import { HandSide } from "../../../shared/domain/enums/pictograph-enums";
   import type {
     ArrowAssets,
     ArrowPosition,
@@ -39,10 +24,6 @@ even when Svelte recreates the component instance.
   import { selectedArrowState } from "#lib/shared/create/state/selected-arrow-state.svelte.js";
   import { getAnimationVisibilityManager } from "../../../../animation-engine/state/animation-visibility-state.svelte";
   import { buildArrowHaloFilter } from "../arrow-halo";
-  import {
-    getArrowOrientationTransitionDirection,
-    type ArrowRotationAnimationDirection,
-  } from "../services/arrow-orientation-transition";
   import { applyColorToSvg as applyDisplayColor } from "#lib/shared/utils/svg-color-utils.js";
 
   let {
@@ -54,10 +35,6 @@ even when Svelte recreates the component instance.
     color,
     pictographData = null,
     isClickable = false,
-    // Cell index for position caching (enables smooth transitions on regeneration)
-    cellIndex = null,
-    transitionKey = null,
-    disableTransitions = false,
     // Dark mode override - when provided, takes precedence over global state.
     // This lets containers like PictographTimeline force dark mode even when
     // the user's global setting is light mode.
@@ -73,12 +50,6 @@ even when Svelte recreates the component instance.
     color: HandSide;
     pictographData?: PictographData | null;
     isClickable?: boolean;
-    /** Cell index for position caching (enables smooth transitions on regeneration) */
-    cellIndex?: number | null;
-    /** Stable editor identity used instead of the mutable grid index when available. */
-    transitionKey?: string | null;
-    /** Timeline playback supplies fixed geometry and its own frame opacity. */
-    disableTransitions?: boolean;
     /** Dark mode override. When set, overrides global AnimationVisibilityStateManager detection. */
     darkMode?: boolean;
     renderPart?: "shaft" | "tip";
@@ -118,7 +89,7 @@ even when Svelte recreates the component instance.
   // Get centralized visibility manager for dark mode state and cached colors
   const visibilityManager = getAnimationVisibilityManager();
 
-  // Track dark mode, colors, and transform state from centralized cache.
+  // Track dark mode and colors from centralized cache.
   // When darkMode prop is provided, it overrides the global state so that
   // containers rendered on dark backgrounds (e.g. PictographTimeline) don't
   // get the white drop-shadow meant for light backgrounds.
@@ -127,14 +98,12 @@ even when Svelte recreates the component instance.
     darkMode !== undefined ? darkMode : globalIsDarkMode
   );
   let cachedColors = $state(visibilityManager.getMotionColors());
-  let isTransforming = $state(visibilityManager.isTransforming());
 
   // Register for updates when visibility state changes
   $effect(() => {
     const handler = () => {
       globalIsDarkMode = visibilityManager.isDarkMode();
       cachedColors = visibilityManager.getMotionColors();
-      isTransforming = visibilityManager.isTransforming();
     };
     visibilityManager.registerObserver(handler);
     return () => visibilityManager.unregisterObserver(handler);
@@ -176,285 +145,6 @@ even when Svelte recreates the component instance.
     x: Number.isFinite(arrowPosition?.x) ? arrowPosition.x : 0,
     y: Number.isFinite(arrowPosition?.y) ? arrowPosition.y : 0,
   });
-
-  // ============================================================================
-  // INTELLIGENT ROTATION ANIMATION SYSTEM (matching PropSvg behavior)
-  // ============================================================================
-
-  type MotionSnapshot = {
-    startOrientation?: Orientation;
-    turns?: number | "fl";
-    rotationDirection?: RotationDirection;
-  };
-
-  type RotationAnimationDirection = ArrowRotationAnimationDirection;
-
-  const EPSILON = 0.0001;
-
-  /**
-   * The transform this arrow must already carry on its very first paint.
-   *
-   * Initializing the displayed values to 0 and letting the $effect below correct
-   * them puts `translate(0, 0)` — the SVG origin, i.e. the top-left corner — into
-   * the DOM for however long it takes that effect to flush. A grid of option
-   * pictographs mounting at once made that window visible: every arrow appeared
-   * tucked at the top left before snapping into place.
-   *
-   * This mirrors the first-run branches of the two effects below exactly, so the
-   * animated paths are unchanged. A cached entry means the effect is about to
-   * animate FROM that cached position, so it is the correct first frame; with no
-   * cache entry the effect sets the target immediately, so the target is.
-   */
-  function initialPosition(): { x: number; y: number } {
-    const target = { x: safePosition.x, y: safePosition.y };
-    if (disableTransitions) return target;
-    const cacheIdentity = transitionKey ?? cellIndex;
-    if (cacheIdentity === null) return target;
-    return arrowPositionCache.get(`${cacheIdentity}-${color}`) ?? target;
-  }
-
-  const firstFrame = initialPosition();
-
-  // Track rotation state for intelligent animation
-  // $effect below handles subsequent prop changes
-  let displayedRotation = $state<number>(arrowPosition?.rotation ?? 0);
-  let previousRotation: number | null = null;
-  let previousSnapshot: MotionSnapshot | null = null;
-
-  // Track displayed position for smooth CSS transitions
-  // CSS transitions require the old value to be rendered before the new value
-  // We achieve this by deferring position updates by one frame
-  let displayedX = $state<number>(firstFrame.x);
-  let displayedY = $state<number>(firstFrame.y);
-  let pendingPositionFrame: number | null = null;
-
-  // Update displayed position with cache-aware frame deferral for CSS transitions
-  // The cache allows smooth transitions even when component instances are recreated
-  $effect(() => {
-    const targetX = safePosition?.x ?? 0;
-    const targetY = safePosition?.y ?? 0;
-
-    // Cancel any pending position update
-    if (pendingPositionFrame !== null) {
-      cancelAnimationFrame(pendingPositionFrame);
-      pendingPositionFrame = null;
-    }
-
-    // No cell index means we're not in a grid context (option picker, etc.)
-    // Set position immediately without caching
-    const cacheIdentity = transitionKey ?? cellIndex;
-    if (disableTransitions || cacheIdentity === null) {
-      displayedX = targetX;
-      displayedY = targetY;
-      // Remember where it snapped to, so turning transitions back on (after
-      // a join slide, say) does not glide in from an older position.
-      if (cacheIdentity !== null) {
-        arrowPositionCache.set(`${cacheIdentity}-${color}`, {
-          x: targetX,
-          y: targetY,
-        });
-      }
-      return;
-    }
-
-    // Build cache key from cell index and arrow color
-    const key = `${cacheIdentity}-${color}`;
-    const cached = arrowPositionCache.get(key);
-
-    if (cached && (cached.x !== targetX || cached.y !== targetY)) {
-      // Position changed and we have a cached previous position
-      // Start at cached position and animate to target
-      displayedX = cached.x;
-      displayedY = cached.y;
-
-      // Double-RAF pattern: first RAF lets the browser paint the "from" state,
-      // second RAF sets the "to" state which triggers CSS transition
-      pendingPositionFrame = requestAnimationFrame(() => {
-        pendingPositionFrame = requestAnimationFrame(() => {
-          displayedX = targetX;
-          displayedY = targetY;
-          pendingPositionFrame = null;
-        });
-      });
-    } else {
-      // First render for this cell OR position hasn't changed
-      // Set immediately (no animation needed)
-      displayedX = targetX;
-      displayedY = targetY;
-    }
-
-    // Update cache with current target position
-    arrowPositionCache.set(key, { x: targetX, y: targetY });
-
-    // Cleanup on unmount
-    return () => {
-      if (pendingPositionFrame !== null) {
-        cancelAnimationFrame(pendingPositionFrame);
-      }
-    };
-  });
-
-  // Determine optimal rotation animation based on motion data changes
-  $effect(() => {
-    const targetRotation = arrowPosition?.rotation ?? 0;
-    const snapshot: MotionSnapshot = {
-      startOrientation: motionData?.startOrientation,
-      turns: motionData?.turns,
-      rotationDirection: motionData?.rotationDirection,
-    };
-
-    if (
-      disableTransitions ||
-      previousSnapshot === null ||
-      previousRotation === null
-    ) {
-      // First render - no transition
-      displayedRotation = targetRotation;
-    } else {
-      // Determine animation direction based on motion data changes
-      const direction = determineAnimationDirection(previousSnapshot, snapshot);
-      // Resolve rotation to animate in the correct direction
-      displayedRotation = resolveRotation(
-        previousRotation,
-        targetRotation,
-        direction
-      );
-    }
-
-    previousRotation = displayedRotation;
-    previousSnapshot = snapshot;
-  });
-
-  /**
-   * Determines the optimal rotation direction based on motion data changes
-   */
-  function determineAnimationDirection(
-    previous: MotionSnapshot,
-    current: MotionSnapshot
-  ): RotationAnimationDirection {
-    const previousTurns =
-      typeof previous.turns === "number" ? previous.turns : null;
-    const currentTurns =
-      typeof current.turns === "number" ? current.turns : null;
-
-    // Check for turn count changes
-    if (
-      previousTurns !== null &&
-      currentTurns !== null &&
-      previousTurns !== currentTurns
-    ) {
-      const rotationDir = current.rotationDirection;
-      if (currentTurns > previousTurns) {
-        // Turns increased - rotate in specified direction
-        return mapRotationDirection(rotationDir) ?? "cw";
-      }
-      if (currentTurns < previousTurns) {
-        // Turns decreased - rotate in opposite direction
-        const direction = mapRotationDirection(rotationDir);
-        if (direction === "cw") return "ccw";
-        if (direction === "ccw") return "cw";
-        return "ccw";
-      }
-    }
-
-    // Check for orientation changes
-    if (
-      previous.startOrientation &&
-      current.startOrientation &&
-      previous.startOrientation !== current.startOrientation
-    ) {
-      return getOrientationDirection(
-        previous.startOrientation,
-        current.startOrientation,
-        current.rotationDirection
-      );
-    }
-
-    // Default to auto (shortest path)
-    return "auto";
-  }
-
-  /**
-   * Maps RotationDirection enum to animation direction
-   */
-  function mapRotationDirection(
-    direction?: RotationDirection
-  ): Exclude<RotationAnimationDirection, "auto"> | null {
-    if (!direction || direction === RotationDirection.NO_ROTATION) {
-      return null;
-    }
-    return direction === RotationDirection.COUNTER_CLOCKWISE ? "ccw" : "cw";
-  }
-
-  /**
-   * Determines rotation direction for orientation changes
-   */
-  function getOrientationDirection(
-    previousOrientation: Orientation,
-    nextOrientation: Orientation,
-    rotationDirection?: RotationDirection
-  ): RotationAnimationDirection {
-    return getArrowOrientationTransitionDirection(
-      previousOrientation,
-      nextOrientation,
-      mapRotationDirection(rotationDirection) ?? "cw"
-    );
-  }
-
-  /**
-   * Resolves the actual rotation value that will animate in the correct direction
-   */
-  function resolveRotation(
-    previous: number,
-    target: number,
-    direction: RotationAnimationDirection
-  ): number {
-    if (!Number.isFinite(previous)) {
-      return target;
-    }
-
-    // For auto mode: take shortest path
-    if (direction === "auto") {
-      const delta = normalizeDelta(target - previous);
-      return previous + delta;
-    }
-
-    // Normalize both angles to [0, 360) range
-    const normalizedPrevious = ((previous % 360) + 360) % 360;
-    const normalizedTarget = ((target % 360) + 360) % 360;
-
-    // Calculate the delta in the specified direction
-    let delta: number;
-
-    if (direction === "cw") {
-      // Clockwise: Calculate positive delta
-      delta = (normalizedTarget - normalizedPrevious + 360) % 360;
-      // If delta is 0, we're at the same angle - no rotation needed
-      if (delta < EPSILON) {
-        return target;
-      }
-    } else {
-      // Counter-clockwise: Calculate negative delta
-      delta = (normalizedTarget - normalizedPrevious - 360) % 360;
-      // If delta is 0, we're at the same angle - no rotation needed
-      if (Math.abs(delta) < EPSILON) {
-        return target;
-      }
-    }
-
-    // Apply the delta to previous rotation
-    return previous + delta;
-  }
-
-  /**
-   * Normalizes rotation delta to [-180, 180] range
-   */
-  function normalizeDelta(delta: number): number {
-    let normalized = ((delta % 360) + 360) % 360;
-    if (normalized > 180) normalized -= 360;
-    if (normalized <= -180) normalized += 360;
-    return normalized;
-  }
 
   // ============================================================================
   // SELECTION & INTERACTION LOGIC
@@ -515,7 +205,6 @@ even when Svelte recreates the component instance.
     class:mirrored={shouldMirror}
     class:clickable={isClickable}
     class:selected={isSelected}
-    class:no-transition={isTransforming || disableTransitions}
     onclick={isClickable ? handleArrowClick : undefined}
     onkeydown={isClickable
       ? (e) => (e.key === "Enter" || e.key === " ") && handleArrowClick(e)
@@ -526,12 +215,8 @@ even when Svelte recreates the component instance.
       ? `${color} arrow - ${motionData.motionType} ${motionData.turns}`
       : undefined}
     style="
-      transform: translate({disableTransitions
-      ? safePosition.x
-      : displayedX}px, {disableTransitions ? safePosition.y : displayedY}px)
-                 rotate({disableTransitions
-      ? (arrowPosition?.rotation ?? 0)
-      : displayedRotation}deg)
+      transform: translate({safePosition.x}px, {safePosition.y}px)
+                 rotate({arrowPosition?.rotation ?? 0}deg)
                  {shouldMirror
       ? motionData.segment
         ? 'scale(1, -1)'
@@ -577,17 +262,9 @@ even when Svelte recreates the component instance.
 <style>
   .arrow-svg {
     pointer-events: none;
-    /* Smooth transition for position and rotation changes - matches prop behavior */
-    /* IMPORTANT: transform must be a CSS property (not SVG attribute) for transitions to work */
-    /* Intelligent rotation direction is calculated in the component logic above */
-    transition:
-      transform var(--duration-normal) var(--ease-out, var(--ease-standard)),
-      filter var(--duration-normal) var(--ease-out, var(--ease-standard));
-  }
-
-  /* Disable transitions during sequence transforms to prevent janky mid-calculation animation */
-  .arrow-svg.no-transition {
-    transition: none;
+    /* Only the hover and selection glow eases; position comes from the caller. */
+    transition: filter var(--duration-normal)
+      var(--ease-out, var(--ease-standard));
   }
 
   .arrow-svg.clickable {

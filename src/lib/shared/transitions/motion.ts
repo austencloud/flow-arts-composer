@@ -47,6 +47,10 @@ export const EASE_OUT = "cubic-bezier(0.16, 1, 0.3, 1)";
 /** JS twin of `--ease-spring` (app.css): the overshoot curve, for Web Animations. */
 export const EASE_SPRING = "cubic-bezier(0.34, 1.56, 0.64, 1)";
 
+/** JS twin of `--ease-out`, for a Svelte transition that has to move in step
+ *  with a CSS transition on that curve. */
+export const easeOut = cssCubicBezier(0.16, 1, 0.3, 1);
+
 /**
  * motion — reduced-motion-aware Svelte transitions on the DURATION tokens.
  *
@@ -183,6 +187,15 @@ interface FlexPresenceParams {
   delay?: number;
   /** The PanelGroup direction. Used when flex-basis resolves to `auto`. */
   axis?: "x" | "y";
+  /**
+   * Animate the element's measured size instead of its flex share. Its
+   * siblings then resize in step with the transition's own curve, so a CSS
+   * transition on the same duration and curve (a sliding indicator sized from
+   * the item count) tracks them exactly. A shrinking flex share moves its
+   * siblings on a different curve from the one the transition runs.
+   */
+  measured?: boolean;
+  easing?: (t: number) => number;
 }
 
 /**
@@ -201,10 +214,41 @@ export function flexPresence(
     duration = DURATION.emphasis,
     delay = 0,
     axis = "y",
+    measured = false,
+    easing = cubicInOut,
   }: FlexPresenceParams = {}
 ): TransitionConfig {
   const style = getComputedStyle(node);
   const rect = node.getBoundingClientRect();
+  if (measured) {
+    // Its padding and its share of the container's gap go with it: a flex
+    // item cannot shrink below its padding, and either one left behind makes
+    // the siblings jump the rest of the way when the item is removed.
+    const size = axis === "y" ? rect.height : rect.width;
+    const padStart = Number.parseFloat(
+      axis === "y" ? style.paddingTop : style.paddingLeft
+    );
+    const padEnd = Number.parseFloat(
+      axis === "y" ? style.paddingBottom : style.paddingRight
+    );
+    const parent = node.parentElement;
+    const parentStyle = parent ? getComputedStyle(parent) : null;
+    const gap =
+      Number.parseFloat(
+        (axis === "y" ? parentStyle?.rowGap : parentStyle?.columnGap) ?? ""
+      ) || 0;
+    const side = axis === "y" ? "block" : "inline";
+    return {
+      duration: motionDuration(duration),
+      delay,
+      easing,
+      css: (t) =>
+        `flex: 0 0 ${t * size}px; min-${axis === "y" ? "height" : "width"}: 0;` +
+        ` padding-${side}: ${t * padStart}px ${t * padEnd}px;` +
+        ` margin-${side}-end: ${-(1 - t) * gap}px;` +
+        ` opacity: ${Math.min(1, t * 1.35)}; overflow: hidden;`,
+    };
+  }
   const flexGrow = Number.parseFloat(style.flexGrow) || 0;
   const parsedBasis = Number.parseFloat(style.flexBasis);
   const flexBasis = Number.isFinite(parsedBasis)
@@ -216,7 +260,7 @@ export function flexPresence(
   return {
     duration: motionDuration(duration),
     delay,
-    easing: cubicInOut,
+    easing,
     css: (t) =>
       `flex-grow: ${t * flexGrow}; flex-basis: ${t * flexBasis}px;` +
       ` opacity: ${Math.min(1, t * 1.35)}; overflow: hidden;`,

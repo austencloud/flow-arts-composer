@@ -192,31 +192,31 @@
         // my prop" has an answer from any page, not only the front door.
         {
           label: "Staves",
-          href: "/notation/staves",
+          href: "/notation/props#staves",
           icon: "fa-grip-lines-vertical",
           group: "By prop",
         },
         {
           label: "Poi",
-          href: "/notation/poi",
+          href: "/notation/props#poi",
           icon: "fa-circle-dot",
           group: "By prop",
         },
         {
           label: "Fans",
-          href: "/notation/fans",
+          href: "/notation/props#fans",
           icon: "fa-fan",
           group: "By prop",
         },
         {
           label: "Clubs",
-          href: "/notation/clubs",
+          href: "/notation/props#clubs",
           icon: "fa-wine-bottle",
           group: "By prop",
         },
         {
           label: "Buugeng",
-          href: "/notation/buugeng",
+          href: "/notation/props#buugeng",
           icon: "fa-yin-yang",
           group: "By prop",
         },
@@ -243,7 +243,13 @@
           label: "Read the Guide",
           href: "/guide",
           icon: "fa-book-open",
-          desc: "Written reference, Codex, and PDFs",
+          desc: "Written reference and PDFs",
+        },
+        {
+          label: "Codex",
+          href: "/codex",
+          icon: "fa-table-cells",
+          desc: "Every base letter, in every prop",
         },
         {
           label: "Kinetic Atlas",

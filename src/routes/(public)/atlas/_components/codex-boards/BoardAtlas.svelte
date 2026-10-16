@@ -9,10 +9,21 @@
   gamma placement lands. Types 4, 5 and 6 hold three apiece, so a full-width row
   for each would be three rows spent on nine cells - they share one row instead,
   each still named.
+
+  Type colour is drawn once per section: each band's outline blends the
+  type's two frame colours into each other over a faint wash of the same
+  pair, and the pictographs inside keep only a quiet neutral edge. Forty-seven individually coloured frames read as noise; six
+  coloured sections read as the grouping they are.
 -->
 <script lang="ts">
   import CodexFlow from "./CodexFlow.svelte";
   import CodexBandHead from "./CodexBandHead.svelte";
+  import { codexTypeLabel } from "../../../codex/_data/codex-groups";
+  import { LETTER_TYPE_COLORS } from "#lib/shared/pictograph/shared/domain/constants/pictograph-constants.js";
+  import type { LetterType } from "#lib/shared/foundation/domain/models/letter-type.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import type { CodexVisibility } from "../../../codex/_data/codex-view";
   import {
     MAJOR_TYPE_BANDS,
     MINOR_TYPE_BANDS,
@@ -20,11 +31,29 @@
     type TaggedBox,
   } from "./codex-letters";
 
-  let { onSelect }: { onSelect: (id: string) => void } = $props();
+  let {
+    onSelect,
+    propType,
+    getData,
+    visibility,
+  }: {
+    onSelect: (id: string) => void;
+    propType?: PropType;
+    /** Each letter's pictograph, in place of the stored one. */
+    getData?: (id: string) => PictographData | null | undefined;
+    /** Which layers every cell draws; omitted keeps the cell defaults. */
+    visibility?: CodexVisibility;
+  } = $props();
 
   interface AtlasFlow {
     boxes: TaggedBox[];
     flowHeader?: string;
+  }
+
+  /** The type's two frame colours - the same pair each pictograph used to
+   *  carry - drawn once around the type's whole section. */
+  function bandColors(band: CodexTypeBand): readonly [string, string] {
+    return LETTER_TYPE_COLORS[`Type${band.type.n}` as LetterType];
   }
 
   function placementLandFlows(band: CodexTypeBand): AtlasFlow[] {
@@ -43,13 +72,18 @@
       <section
         class="band"
         class:paired-letters={band.type.n === 2 || band.type.n === 3}
-        aria-label={band.type.word.replace(/:\s*$/, "")}
+        aria-label={codexTypeLabel(band.type)}
+        style:--band-primary={bandColors(band)[0]}
+        style:--band-secondary={bandColors(band)[1]}
       >
         <CodexBandHead type={band.type} />
         {#each placementLandFlows(band) as flow, index (`${band.type.n}-${index}`)}
           <CodexFlow
             boxes={flow.boxes}
             flowHeader={flow.flowHeader}
+            {propType}
+            {getData}
+            {visibility}
             {onSelect}
           />
         {/each}
@@ -62,10 +96,18 @@
       {#each MINOR_TYPE_BANDS as band (band.type.n)}
         <section
           class="band minor"
-          aria-label={band.type.word.replace(/:\s*$/, "")}
+          aria-label={codexTypeLabel(band.type)}
+          style:--band-primary={bandColors(band)[0]}
+          style:--band-secondary={bandColors(band)[1]}
         >
           <CodexBandHead type={band.type} />
-          <CodexFlow boxes={band.boxes} {onSelect} />
+          <CodexFlow
+            boxes={band.boxes}
+            {propType}
+            {getData}
+            {visibility}
+            {onSelect}
+          />
         </section>
       {/each}
     </div>
@@ -87,22 +129,71 @@
     --settings-codex-row-caption-gap: 0.75rem;
     --codex-flow-row-gap: var(--settings-codex-row-caption-gap);
 
+    /* The type colour lives on the section outline, not on each pictograph. */
+    --pictograph-type-frame-width: 0px;
+    --codex-cell-frame: 1px solid var(--codex-cell-border);
+    --band-frame: 2px;
+    --band-pad-x: 0.9rem;
+    --band-pad-y: 0.6rem;
+
     /* Five rows of cells at desktop: Type 1 uses one row for A-L and one for
        M-V, Types 2 and 3 are one each, and the short types share one.
        Whichever binds first - twelve cells across the band, or those five rows'
        share of the screen left under the page chrome. The subtrahend is the
        measured chrome plus the four band headings and the type rules; it is why
        this board lands inside the fold from the top of the page instead of
-       needing a scroll. */
+       needing a scroll. The extra 2rem across and 6rem down are the section
+       outlines' padding and frames. */
     --band-rows: 5;
     --codex-picto-size: min(
-      calc((100cqi - 3rem) / 12),
-      calc((100dvh - var(--codex-atlas-chrome, 28.5rem)) / var(--band-rows))
+      calc((100cqi - 5rem) / 12),
+      calc(
+        (100dvh - var(--codex-atlas-chrome, 28.5rem) - 6rem) / var(--band-rows)
+      )
     );
   }
 
+  /* Each section hugs its own letters, so the outline frames the type and
+     not an empty band of page. content-box keeps the paired-letters width
+     below measuring cells, with the padding and frame added outside it. */
   .band {
+    box-sizing: content-box;
+    align-self: center;
+    max-width: calc(100% - 2 * (var(--band-pad-x) + var(--band-frame)));
     min-width: 0;
+    padding: var(--band-pad-y) var(--band-pad-x)
+      calc(var(--band-pad-y) + 0.3rem);
+    /* The frame keeps its width (the fit measurement counts it) but draws
+       nothing; the ring below and the wash carry the colour. */
+    position: relative;
+    border: var(--band-frame) solid transparent;
+    border-radius: 14px;
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--band-primary) 6%, transparent),
+      color-mix(in srgb, var(--band-secondary) 6%, transparent)
+    );
+  }
+
+  /* One thin ring that runs from the type's first colour into its second,
+     at reduced strength: both colours read without two hard lines. */
+  .band::before {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--band-frame));
+    padding: 1.5px;
+    border-radius: inherit;
+    background: linear-gradient(
+      135deg,
+      var(--band-primary),
+      var(--band-secondary)
+    );
+    mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    opacity: 0.55;
+    pointer-events: none;
   }
 
   /* A wrapped row begins with its placement transition, not with another
@@ -138,12 +229,12 @@
      row of 25px thumbnails. */
   @container (max-width: 69.999rem) {
     .bands {
-      --codex-picto-size: calc((100cqi - 3rem) / 8);
+      --codex-picto-size: calc((100cqi - 5rem) / 8);
     }
   }
   @container (max-width: 47.999rem) {
     .bands {
-      --codex-picto-size: calc((100cqi - 2rem) / 6);
+      --codex-picto-size: calc((100cqi - 4rem) / 6);
     }
     .minor-row {
       gap: 0.75rem 1.5rem;
@@ -160,7 +251,41 @@
   }
   @container (max-width: 29.999rem) {
     .bands {
-      --codex-picto-size: calc((100cqi - 1.2rem) / 4);
+      --codex-picto-size: calc((100cqi - 2.6rem) / 4);
+      --band-pad-x: 0.5rem;
+    }
+  }
+
+  /* A host that hands the board a fixed box names it `codex-atlas-fit`
+     (container-type: size). Then the height term is that box, not a guess at
+     the page chrome: twelve across and five rows, whichever binds first.
+     Everything in a band that is not a cell - its heading, the caption slot
+     over each row, the padding and frames, the gaps between bands - is
+     tightened here so the cells get the height, and is then a fixed 20.75rem
+     in all (measured with 60px and 80px cells; none of it scales with the
+     cells), plus the codex host's own top padding. The board keeps
+     its desktop twelve-across flow at every width the host allows, so the
+     five-row count stays true. */
+  @container codex-atlas-fit (min-width: 0px) {
+    .board-atlas {
+      width: auto;
+      margin-inline: 0;
+    }
+    .bands {
+      gap: 0.6rem;
+      --band-pad-y: 0.4rem;
+      --settings-codex-row-caption-gap: 0.45rem;
+      --atlas-band-chrome: 21rem;
+      --codex-picto-size: max(
+        3rem,
+        min(
+          calc((100cqi - 5rem) / 12),
+          calc((100cqb - var(--atlas-band-chrome)) / var(--band-rows))
+        )
+      );
+    }
+    .minor-row {
+      gap: 0.75rem 1.5rem;
     }
   }
 </style>

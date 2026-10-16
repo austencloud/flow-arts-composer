@@ -24,7 +24,7 @@
     type FlowFestSiteMarker,
     type FlowFestSiteMarkerDraft,
   } from "./_lib/flow-fest-site-markers";
-  import { createNarrationCapture } from "./_lib/narration-capture.svelte";
+  import { createNarrationCapture } from "./_lib/narration-capture.svelte.js";
   import { flyFade } from "#lib/shared/transitions/motion.js";
 
   type InteractionMode = "place" | "pan";
@@ -77,7 +77,10 @@
     {
       title: "Move the map",
       rows: [
-        { keys: ["Space", "drag"], does: "Hand tool, any time the pointer is over the map" },
+        {
+          keys: ["Space", "drag"],
+          does: "Hand tool, any time the pointer is over the map",
+        },
         { keys: ["Middle-drag"], does: "The same, without the keyboard" },
         { keys: ["Scroll"], does: "Zoom at the cursor" },
         { keys: ["Ctrl", "scroll"], does: "Fine zoom, and a trackpad pinch" },
@@ -144,7 +147,9 @@
   let activePresetId = $state<string>("fire-circle");
   let selectedMarkerId = $state<string | null>(null);
   let interactionMode = $state<InteractionMode>("place");
-  let view = $state({ ...MIDDLE_EARTH_VIEW });
+  let view = $state<{ x: number; y: number; width: number }>({
+    ...MIDDLE_EARTH_VIEW,
+  });
   let svgElement = $state<SVGSVGElement | null>(null);
   let mapWidth = $state(1);
   let mapHeight = $state(1);
@@ -264,7 +269,8 @@
         ? { startedAt, segments: segments.map((segment) => ({ ...segment })) }
         : null;
     if (next === null && draft.narration === null) return;
-    if (next && draft.narration?.segments.length === next.segments.length) return;
+    if (next && draft.narration?.segments.length === next.segments.length)
+      return;
     draft.narration = next;
     persist();
   });
@@ -274,7 +280,11 @@
     noticeKind = kind;
   }
 
-  function reportFailure(message: string, cause: unknown, action: string): void {
+  function reportFailure(
+    message: string,
+    cause: unknown,
+    action: string
+  ): void {
     const error = cause instanceof Error ? cause : new Error(String(cause));
     report(message, "error");
     getErrorHandler().showUserError({
@@ -361,7 +371,10 @@
     persist();
   }
 
-  function pointFromClient(clientX: number, clientY: number): ImagePoint | null {
+  function pointFromClient(
+    clientX: number,
+    clientY: number
+  ): ImagePoint | null {
     if (!svgElement) return null;
     const bounds = svgElement.getBoundingClientRect();
     if (bounds.width === 0 || bounds.height === 0) return null;
@@ -699,8 +712,10 @@
       /** Tab stays focus navigation; N cycles markers. See `isControlTarget`. */
       if (onControl) return;
       event.preventDefault();
-      const stepX = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
-      const stepY = event.key === "ArrowDown" ? 1 : event.key === "ArrowUp" ? -1 : 0;
+      const stepX =
+        event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
+      const stepY =
+        event.key === "ArrowDown" ? 1 : event.key === "ArrowUp" ? -1 : 0;
       /**
        * Arrows serve the selection when there is one and the window when there
        * is not. That split is what every editor does and it never needs a mode.
@@ -711,7 +726,10 @@
           : NUDGE_IMAGE_PIXELS;
         nudgeSelected(stepX * distance, stepY * distance);
       } else {
-        panBy(stepX * (event.shiftKey ? 4 : 1), stepY * (event.shiftKey ? 4 : 1));
+        panBy(
+          stepX * (event.shiftKey ? 4 : 1),
+          stepY * (event.shiftKey ? 4 : 1)
+        );
       }
       return;
     }
@@ -814,7 +832,8 @@
     /** A window taller than the picture just shows the void; keep it inside. */
     if (viewHeight > FLOW_FEST_IMAGE.height) {
       view.width =
-        (FLOW_FEST_IMAGE.height * Math.max(mapWidth, 1)) / Math.max(mapHeight, 1);
+        (FLOW_FEST_IMAGE.height * Math.max(mapWidth, 1)) /
+        Math.max(mapHeight, 1);
     }
     view.x = Math.min(Math.max(view.x, 0), FLOW_FEST_IMAGE.width - view.width);
     view.y = Math.min(
@@ -1014,7 +1033,8 @@
     const distance = Math.hypot(deltaX, deltaY);
     if (distance < 1e-6) return to;
     const increment = Math.PI / 4;
-    const angle = Math.round(Math.atan2(deltaY, deltaX) / increment) * increment;
+    const angle =
+      Math.round(Math.atan2(deltaY, deltaX) / increment) * increment;
     return {
       x: from.x + Math.cos(angle) * distance,
       y: from.y + Math.sin(angle) * distance,
@@ -1065,7 +1085,10 @@
       marker.id === id ? { ...marker, handle: null } : marker
     );
     persist();
-    report("Cleared its direction. Drag from the marker to set a new one.", "quiet");
+    report(
+      "Cleared its direction. Drag from the marker to set a new one.",
+      "quiet"
+    );
   }
 
   async function copyMarkers(): Promise<void> {
@@ -1092,11 +1115,14 @@
     }
     saving = true;
     try {
-      const response = await fetch("/test/flow-fest-site-markers/save-markers", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(createFlowFestSiteMarkerSubmission(draft)),
-      });
+      const response = await fetch(
+        "/test/flow-fest-site-markers/save-markers",
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(createFlowFestSiteMarkerSubmission(draft)),
+        }
+      );
       const result = (await response.json()) as {
         ok: boolean;
         path?: string;
@@ -1128,7 +1154,9 @@
       `${record.position.x.toFixed(1)}, ${record.position.z.toFixed(1)}`,
     ];
     if (record.facingDegrees !== null) {
-      parts.push(`${record.facingDegrees.toFixed(0)}° ${compass(record.facingDegrees)}`);
+      parts.push(
+        `${record.facingDegrees.toFixed(0)}° ${compass(record.facingDegrees)}`
+      );
     }
     if (record.radiusMeters !== null) parts.push(`r ${record.radiusMeters} m`);
     if (record.runLengthMeters !== null)
@@ -1227,7 +1255,8 @@
       </PanelButton>
       <PanelButton
         variant={narration.recording ? "primary" : "secondary"}
-        onclick={() => (narration.recording ? narration.stop() : narration.start())}
+        onclick={() =>
+          narration.recording ? narration.stop() : narration.start()}
         ariaPressed={narration.recording}
       >
         {narration.recording
@@ -1304,7 +1333,8 @@
       <div class="map-bar">
         <p class="instruction">
           {#if tracingMarker}
-            Tracing {tracingMarker.label} — {markerVertices(tracingMarker).length}
+            Tracing {tracingMarker.label} — {markerVertices(tracingMarker)
+              .length}
             {markerVertices(tracingMarker).length === 1 ? "point" : "points"}.
             Enter finishes, Backspace takes one back, Shift snaps to 45°, Escape
             drops it.
@@ -1387,10 +1417,7 @@
                 class="marker-circle"
                 cx={marker.anchor.x}
                 cy={marker.anchor.y}
-                r={Math.hypot(
-                  tip.x - marker.anchor.x,
-                  tip.y - marker.anchor.y
-                )}
+                r={Math.hypot(tip.x - marker.anchor.x, tip.y - marker.anchor.y)}
               />
             {/if}
             {#if tip && marker.shape !== "circle"}
@@ -1477,7 +1504,9 @@
       {#if unfinishedDirectionCount > 0}
         <p class="warn">
           {unfinishedDirectionCount}
-          {unfinishedDirectionCount === 1 ? "marker still needs" : "markers still need"}
+          {unfinishedDirectionCount === 1
+            ? "marker still needs"
+            : "markers still need"}
           a direction. Press one on the map and drag.
         </p>
       {/if}
@@ -1491,8 +1520,8 @@
 
       {#if draft.markers.length === 0}
         <p class="empty">
-          Nothing placed yet. Choose something on the left, then press on the map
-          and drag.
+          Nothing placed yet. Choose something on the left, then press on the
+          map and drag.
         </p>
       {:else}
         <ul class="marker-list">
@@ -1735,7 +1764,11 @@
 
   .preset--active,
   .marker-row--active {
-    background: color-mix(in srgb, var(--theme-accent, #4493f8) 18%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #4493f8) 18%,
+      transparent
+    );
     border-color: var(--theme-accent, #4493f8);
   }
 

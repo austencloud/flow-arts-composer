@@ -11,17 +11,21 @@
 import { readFileSync } from "node:fs";
 import { JSDOM } from "jsdom";
 import { afterEach, describe, expect, it } from "vitest";
+import { inlineSelfTimingBar } from "#lib/server/performance/self-timing-bar-inline.js";
 import { stripRootAppOnlyBlocks } from "#lib/server/performance/landing-preload-policy.js";
 
 const KEY = "tka-composer-handoff";
-const template = readFileSync("src/app.html", "utf8");
+// The page as the server sends it: the shared bar engine inlined.
+const template = inlineSelfTimingBar(readFileSync("src/app.html", "utf8"));
 const scripts = [...template.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(
   (match) => match[1] ?? ""
 );
 const handoffScript = scripts.find((script) => script.includes(`"${KEY}"`))!;
-const loadingScript = scripts.find((script) =>
-  script.includes("var __tkaFinished = false")
-)!;
+// The engine's script, then the boot script that drives it, as in the page.
+const loadingScript = [
+  scripts.find((script) => script.includes("__tkaCreateSelfTimingBar ="))!,
+  scripts.find((script) => script.includes("var __tkaFinished = false"))!,
+].join(";\n");
 
 interface HandoffRecord {
   mode: string;

@@ -110,7 +110,8 @@ describe("performer contact", () => {
     });
     expect(authoredOnly.track).toBe(contact.track);
     expect(authoredOnly.planned).toBe(false);
-    expect(authoredOnly.leftProp).toBe(performer.leftPropState);
+    // The derived live prop getter returns a fresh value on each read.
+    expect(authoredOnly.leftProp).toStrictEqual(performer.leftPropState);
   });
 
   it("changes the reset key on a seek or a new body, not during playback", () => {

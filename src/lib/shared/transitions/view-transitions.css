@@ -137,17 +137,49 @@ html.hand-grid-grow [inert] [data-hand-grid="map"] {
   height: 100%;
 }
 
+/* Hand Motions: the finished quiz board settling into the full board. Each
+   cell, picture and label carries its own name while the morph runs (set
+   inline by hand-grid-split.ts runBoardSettle); the cell boxes stretch, the
+   pictures stay square and the labels keep their size, so the name and bar
+   ride along and the description fades in. */
+::view-transition-group(*.hand-board-cell),
+::view-transition-group(*.hand-board-picture),
+::view-transition-group(*.hand-board-label) {
+  animation-duration: var(--duration-dramatic);
+  animation-timing-function: var(--ease-standard);
+}
+::view-transition-group(*.hand-board-picture),
+::view-transition-group(*.hand-board-label) {
+  z-index: 2;
+}
+::view-transition-old(*.hand-board-cell),
+::view-transition-new(*.hand-board-cell),
+::view-transition-old(*.hand-board-picture),
+::view-transition-new(*.hand-board-picture) {
+  animation-duration: var(--duration-dramatic);
+  height: 100%;
+}
+::view-transition-old(*.hand-board-label),
+::view-transition-new(*.hand-board-label) {
+  animation-duration: var(--duration-dramatic);
+  width: auto;
+  height: auto;
+}
+
 /* A generate bento card growing into its workspace (Customize, LOOP, Setups,
    TnD). The card wrapper and the expanded stage share one name, so the group
    carries the box between the grid slot and the stage or viewport while the
-   old card content cross-fades into the panel. Owner:
+   old card content cross-fades into the panel. The box decelerates rather
+   than easing in: a symmetric curve barely moves for the first tenth of a
+   second, which Austen (2026-10-15) felt as a delay after every tap. Every
+   group riding with the box uses the same curve so it stays in step. Owner:
    features/create/generate/shared/services/generate-card-morph.ts. */
 ::view-transition-group(generate-card-customize),
 ::view-transition-group(generate-card-loop),
 ::view-transition-group(generate-card-preset),
 ::view-transition-group(generate-card-tnd) {
   animation-duration: var(--duration-dramatic);
-  animation-timing-function: var(--ease-in-out);
+  animation-timing-function: var(--ease-out);
 }
 
 /* Every expandable card is named before the click so any one can become the
@@ -232,14 +264,14 @@ html.generate-card-morph-tnd::view-transition-new(generate-card-tnd) {
 html.generate-card-morph-tnd::view-transition-group(tnd-choice-icon) {
   z-index: 3;
   animation-duration: var(--duration-dramatic);
-  animation-timing-function: var(--ease-in-out);
+  animation-timing-function: var(--ease-out);
 }
 
 @keyframes tnd-tile-face-out {
   0% {
     opacity: 1;
   }
-  35%,
+  15%,
   100% {
     opacity: 0;
   }
@@ -247,10 +279,10 @@ html.generate-card-morph-tnd::view-transition-group(tnd-choice-icon) {
 
 @keyframes tnd-tile-face-in {
   0%,
-  25% {
+  5% {
     opacity: 0;
   }
-  65%,
+  35%,
   100% {
     opacity: 1;
   }
@@ -428,18 +460,22 @@ html.generate-card-morph-loop::view-transition-new(generate-card-loop) {
 }
 
 /* The box clips what rides in it. The margin leaves room for the panel's
-   shadow, which the contents never reach. */
+   shadow, which the contents never reach. The clip resizes on its own
+   animation, which defaults to plain ease; it runs on the box's curve so its
+   edge never trails the box. */
 html.generate-card-morph-loop::view-transition-group-children(
     generate-card-loop
   ) {
   overflow: clip;
   overflow-clip-margin: 24px;
+  animation-duration: var(--duration-dramatic);
+  animation-timing-function: var(--ease-out);
 }
 
 html.generate-card-morph-loop::view-transition-group(*.loop-face),
 html.generate-card-morph-loop::view-transition-group(*.loop-icon) {
   animation-duration: var(--duration-dramatic);
-  animation-timing-function: var(--ease-in-out);
+  animation-timing-function: var(--ease-out);
 }
 
 html.generate-card-morph-loop::view-transition-old(*.loop-face) {
@@ -461,7 +497,7 @@ html.generate-card-morph-loop::view-transition-new(*.loop-icon) {
   0% {
     opacity: 0;
   }
-  50%,
+  25%,
   100% {
     opacity: 1;
   }
@@ -469,9 +505,10 @@ html.generate-card-morph-loop::view-transition-new(*.loop-icon) {
 
 @keyframes loop-surface-out {
   0%,
-  50% {
+  25% {
     opacity: 1;
   }
+  50%,
   100% {
     opacity: 0;
   }
@@ -481,7 +518,7 @@ html.generate-card-morph-loop::view-transition-new(*.loop-icon) {
   0% {
     opacity: 1;
   }
-  30%,
+  10%,
   100% {
     opacity: 0;
   }
@@ -489,9 +526,10 @@ html.generate-card-morph-loop::view-transition-new(*.loop-icon) {
 
 @keyframes loop-face-in {
   0%,
-  45% {
+  18% {
     opacity: 0;
   }
+  55%,
   100% {
     opacity: 1;
   }

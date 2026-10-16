@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Sentences from "../../../_components/Sentences.svelte";
   import { t as translate } from "#lib/shared/i18n/i18n.svelte.js";
   /**
    * Real-pictograph diagrams for the Type 1 (dual-shift) 1|1 breakdown,
@@ -230,12 +231,10 @@
 
 <GuideSection id="one-one-turns" title={translate("guide_l2_one_one_title")}>
   <div class="section-body">
-    <p>
-      {translate("guide_l2_one_one_intro")}
-    </p>
+    <p><Sentences text={translate("guide_l2_one_one_intro")} /></p>
 
     <h3>{translate("guide_l2_type1_heading")}</h3>
-    <p>{translate("guide_l2_one_one_practice")}</p>
+    <p><Sentences text={translate("guide_l2_one_one_practice")} /></p>
   </div>
 
   <div class="showcase-wrap">

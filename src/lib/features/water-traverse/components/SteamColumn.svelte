@@ -33,19 +33,21 @@
 
   const props: Props = $props();
 
+  const uniforms = {
+    uTime: { value: 0 },
+    uColor: { value: new Color(props.color ?? "#e6eef0") },
+    uStrength: { value: props.strength ?? 0.34 },
+    uRiseSpeed: { value: props.riseSpeed ?? 0.16 },
+    uHeight: { value: props.height },
+    uFogDensity: { value: props.fog?.density ?? 0 },
+  };
+
   const material = new ShaderMaterial({
     transparent: true,
     depthWrite: false,
     blending: AdditiveBlending,
     side: DoubleSide,
-    uniforms: {
-      uTime: { value: 0 },
-      uColor: { value: new Color(props.color ?? "#e6eef0") },
-      uStrength: { value: props.strength ?? 0.34 },
-      uRiseSpeed: { value: props.riseSpeed ?? 0.16 },
-      uHeight: { value: props.height },
-      uFogDensity: { value: props.fog?.density ?? 0 },
-    },
+    uniforms,
     vertexShader: /* glsl */ `
       varying vec3 vLocal;
       varying vec3 vViewDir;
@@ -133,10 +135,10 @@
   });
 
   useTask((delta) => {
-    material.uniforms.uTime.value += delta;
+    uniforms.uTime.value += delta;
     // Read the fog every frame: the traverse's fog density is a continuous
     // function of where the visitor is standing, not a constant.
-    if (props.fog) material.uniforms.uFogDensity.value = props.fog.density;
+    if (props.fog) uniforms.uFogDensity.value = props.fog.density;
   });
 
   onDestroy(() => material.dispose());

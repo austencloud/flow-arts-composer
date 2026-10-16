@@ -214,6 +214,10 @@ uniform vec2 u_texelSize;
 uniform float u_dt;
 uniform float u_strength;    // vorticity confinement coefficient
 uniform float u_time;        // seconds, for flickering pulse
+// Gradients weaker than this get proportionally less push instead of a
+// full-strength unit direction; normalizing near-flat curl turns grid noise
+// into blocky streaks. Unset (Fire) reads 0, the old behavior.
+uniform float u_minGradient;
 
 void main() {
   float cL = texture(u_curl, v_uv - vec2(u_texelSize.x, 0.0)).x;
@@ -224,7 +228,7 @@ void main() {
 
   // Gradient of absolute curl
   vec2 grad = vec2(abs(cR) - abs(cL), abs(cT) - abs(cB)) * 0.5;
-  float len = max(length(grad), 1e-5);
+  float len = max(length(grad), max(u_minGradient, 1e-5));
   vec2 N = grad / len;
 
   // Time-varying vorticity pulse: real flames flicker at ~10-15 Hz due to

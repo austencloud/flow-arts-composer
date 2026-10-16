@@ -21,7 +21,7 @@ import {
   resolveSilk2DSampleSpacing,
   resolveSilk2DWidthEnvelope,
   smoothSilk2DPath,
-} from "#lib/shared/effects/renderers/silk-2d-renderer.js";
+} from "./silk-tile-shape";
 import {
   traceCentripetalBackward,
   traceCentripetalForward,
@@ -57,7 +57,7 @@ interface MaterialProfile {
   sheenWidth: number;
 }
 
-/** Copy of the renderer's private `MATERIAL_PROFILES` alphas (silk-2d-renderer.ts). */
+/** Material alphas from the old path-swept 2D renderer this portrait was drawn from. */
 const PROFILES: Record<string, MaterialProfile> = {
   satin: {
     bodyAlpha: 0.9,

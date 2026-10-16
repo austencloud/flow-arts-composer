@@ -2,6 +2,19 @@
 export * from "./types.js";
 export { tokenizeGlyphWord } from "./glyph-word.js";
 export {
+  layoutTurnGlyph,
+  paintTurnGlyph,
+  paintReversalGlyph,
+  turnBarHeightCqi,
+  TURN_GLYPH_BOX_W_CQI,
+  TURN_GLYPH_BOX_H_CQI,
+  type TurnGlyphEntry,
+  type ReversalGlyphData,
+  type TurnGlyphLayout,
+  type GlyphBox,
+  type GlyphColors,
+} from "./pattern-glyphs.js";
+export {
   compressWord,
   simplifyRepeatedWord,
   splitWordLetterUnits,

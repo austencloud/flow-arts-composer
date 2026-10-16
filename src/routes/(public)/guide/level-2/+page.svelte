@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Sentences from "../_components/Sentences.svelte";
   import { localHref } from "#lib/shared/i18n/localized-href.svelte.js";
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import GuideSeo from "../level-1/_components/GuideSeo.svelte";
@@ -19,11 +20,13 @@
 
 <div class="landing">
   <h1>The Kinetic Alphabet</h1>
-  <p class="subtitle">{tDynamic("guide_level2_subtitle")}</p>
+  <p class="subtitle">
+    <Sentences text={tDynamic("guide_level2_subtitle")} />
+  </p>
   <p class="byline">{tDynamic("guide_level2_byline")}</p>
 
   <section class="intro">
-    <p>{tDynamic("guide_level2_intro")}</p>
+    <p><Sentences text={tDynamic("guide_level2_intro")} /></p>
   </section>
 
   <nav class="toc" aria-label={tDynamic("guide_level2_toc")}>

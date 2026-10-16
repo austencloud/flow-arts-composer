@@ -21,12 +21,19 @@
 
   No backdrop beside the desktop stage: the workspace beside the grown card
   stays live. On desktop, a click outside closes the card without consuming
-  the interaction, so the workspace control underneath still works. A tap on
+  the interaction, so the workspace control underneath still works; the Level
+  strip is the exception, since the card follows the level. A tap on
   the bottom panel's backdrop closes it. X and Escape close everywhere.
   Focus moves in on open and back to the card that opened it on close. The
   {#key destination} remount on a layout flip (desktop <-> stacked) drops the
   panel's local state and focus along with it; acceptable for a resize or fold
   event, which is rare and not mid-task.
+
+  Customize stays built between opens. Its thirty-two pictograph tiles took
+  several times longer to build than any other panel, and building them inside
+  the tap's morph held the motion back. The panel is built once, while the page
+  is idle, in a hidden parking spot; an open moves the built panel into the
+  stage root and a close moves it back.
 -->
 <script lang="ts">
   import { tick } from "svelte";
@@ -52,6 +59,7 @@
   import SetupsPanel from "../presets/SetupsPanel.svelte";
   import TnDPanel from "./TnDPanel.svelte";
   import { expandedCardTitleId } from "./expanded-card-stage-props";
+  import type { CustomizeOverlayProps } from "#lib/shared/create/state/panel-coordination-state.svelte.js";
   import type {
     LoopStageProps,
     SetupsStageProps,
@@ -99,6 +107,46 @@
           : "fill"
   );
   const customize = $derived(panelState.customizeOverlayProps);
+
+  // The props the kept Customize panel is built from: the open snapshot while
+  // open, otherwise the card's latest. Held, never cleared, so a close leaves
+  // the panel built.
+  let retainedCustomize = $state<CustomizeOverlayProps | null>(null);
+  $effect.pre(() => {
+    const next = customize ?? panelState.customizeOverlayPrimer;
+    if (next) retainedCustomize = next;
+  });
+  let customizeParking = $state<HTMLElement | null>(null);
+  let customizeHost = $state<HTMLElement | null>(null);
+
+  // Moves the built Customize panel into a stage root while Customize is
+  // open, and back to its parking spot otherwise. On teardown the root has
+  // already left the document, so the panel goes with it and is returned to
+  // the parking spot from there.
+  function holdCustomize(
+    node: HTMLElement,
+    params: { held: boolean; host: HTMLElement | null }
+  ) {
+    let current = params;
+    const place = ({ held, host }: typeof params) => {
+      if (!host) return;
+      if (held) {
+        if (host.parentNode !== node) node.append(host);
+      } else if (host.parentNode === node) {
+        customizeParking?.append(host);
+      }
+    };
+    place(params);
+    return {
+      update(next: typeof params) {
+        current = next;
+        place(next);
+      },
+      destroy() {
+        place({ ...current, held: false });
+      },
+    };
+  }
 
   let root = $state<HTMLElement | null>(null);
   let editorHandoffInFlight = false;
@@ -195,6 +243,18 @@
     const card = openCard;
     const dismissFromOutside = (event: MouseEvent): void => {
       if (!root || event.composedPath().includes(root)) return;
+      // Controls the grown card reads from (the Level strip): changing one
+      // changes what the card shows, so the card stays open to show it.
+      if (
+        event
+          .composedPath()
+          .some(
+            (target) =>
+              target instanceof HTMLElement &&
+              target.dataset.keepsGenerateCard !== undefined
+          )
+      )
+        return;
 
       // Svelte delegates component click handlers above the native document
       // listener. Defer to the next task so every delegated selection effect
@@ -313,25 +373,8 @@
 </script>
 
 {#snippet body(titleId: string)}
-  {#if openCard === "customize" && customize}
-    <CustomizeExpandedOverlay
-      constraintPreset={customize.constraintPreset}
-      handPathMode={customize.handPathMode}
-      motionTypeFilter={customize.motionTypeFilter}
-      startEndOptions={customize.startEndOptions}
-      level={customize.level}
-      gridMode={customize.gridMode}
-      isFreeformMode={customize.isFreeformMode}
-      styleBaseline={customize.styleBaseline}
-      onConstraintPresetChange={customize.onConstraintPresetChange}
-      onHandPathModeChange={customize.onHandPathModeChange}
-      onMotionTypeFilterChange={customize.onMotionTypeFilterChange}
-      onStartEndChange={customize.onStartEndChange}
-      onResetAll={customize.onResetAll}
-      onClose={close}
-      entrance="none"
-      {titleId}
-    />
+  {#if openCard === "customize"}
+    <!-- The kept panel, moved in by holdCustomize. -->
   {:else if openCard === "loop" && panelState.loopSelectedComponents && panelState.loopOnChange && panelState.loopCurrentType}
     <LOOPExpandedOverlay
       currentType={panelState.loopCurrentType}
@@ -380,6 +423,34 @@
   {/if}
 {/snippet}
 
+{#if retainedCustomize}
+  {@const kept = retainedCustomize}
+  <div class="customize-parking" bind:this={customizeParking}>
+    <div class="customize-host" bind:this={customizeHost}>
+      <CustomizeExpandedOverlay
+        constraintPreset={kept.constraintPreset}
+        handPathMode={kept.handPathMode}
+        motionTypeFilter={kept.motionTypeFilter}
+        startEndOptions={kept.startEndOptions}
+        level={kept.level}
+        gridMode={kept.gridMode}
+        isFreeformMode={kept.isFreeformMode}
+        styleBaseline={kept.styleBaseline}
+        onConstraintPresetChange={kept.onConstraintPresetChange}
+        onHandPathModeChange={kept.onHandPathModeChange}
+        onMotionTypeFilterChange={kept.onMotionTypeFilterChange}
+        onStartEndChange={kept.onStartEndChange}
+        onResetAll={kept.onResetAll}
+        onClose={close}
+        entrance="none"
+        active={openCard === "customize"}
+        session={kept}
+        titleId={expandedCardTitleId("customize")}
+      />
+    </div>
+  </div>
+{/if}
+
 {#key destination}
   {#if destination === "viewport"}
     {#if openCard && presentation === "sheet"}
@@ -404,6 +475,10 @@
         tabindex="-1"
         bind:this={root}
         onkeydown={onKeydown}
+        use:holdCustomize={{
+          held: openCard === "customize",
+          host: customizeHost,
+        }}
         use:portal
         use:claimedViewTransitionName={{
           name: generateCardMorphName(openCard),
@@ -423,6 +498,10 @@
       tabindex="-1"
       bind:this={root}
       onkeydown={onKeydown}
+      use:holdCustomize={{
+        held: openCard === "customize",
+        host: customizeHost,
+      }}
       use:claimedViewTransitionName={{
         name: generateCardMorphName(openCard),
       }}
@@ -437,6 +516,17 @@
   .expanded-card-stage {
     /* The panels inside are absolute inset 0 (GenerationSettingsOverlay and
        LOOPExpandedOverlay both are), so this box is what sets their size. */
+  }
+
+  .customize-parking {
+    display: none;
+  }
+
+  /* No box of its own: the panel inside sizes to the stage root. The
+     presentation rules below reach through it with :global, since it is
+     moved into the root at runtime where the compiler cannot see it. */
+  .customize-host {
+    display: contents;
   }
 
   .expanded-card-stage:focus-visible {
@@ -480,6 +570,9 @@
   /* Edge to edge: the overlay chrome's rounded border is for the in-grid
      case. */
   .expanded-card-stage[data-presentation="fill"]
+    > :global(.generation-settings-overlay),
+  .expanded-card-stage[data-presentation="fill"]
+    > :global(.customize-host)
     > :global(.generation-settings-overlay) {
     border-radius: 0;
     border: none;
@@ -551,6 +644,9 @@
 
   /* The panel rests on the bottom edge: only its top corners round. */
   .expanded-card-stage[data-presentation="sheet"]
+    > :global(.generation-settings-overlay),
+  .expanded-card-stage[data-presentation="sheet"]
+    > :global(.customize-host)
     > :global(.generation-settings-overlay),
   .expanded-card-stage[data-presentation="sheet"]
     > :global(.loop-expanded-overlay) {

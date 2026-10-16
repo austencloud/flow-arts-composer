@@ -6,8 +6,10 @@ import type { ComponentProps } from "svelte";
 import ExpandedCardStage from "./ExpandedCardStage.svelte";
 import {
   createPanelCoordinationState,
+  type CustomizeOverlayProps,
   type PanelCoordinationState,
 } from "#lib/shared/create/state/panel-coordination-state.svelte.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 import {
   countViewTransitionNameClaims,
@@ -293,6 +295,33 @@ describe("ExpandedCardStage", () => {
       await tick();
     } finally {
       outsideButton.remove();
+    }
+  });
+
+  it("keeps the desktop stage open for a click on the Level strip", async () => {
+    const strip = document.createElement("div");
+    strip.dataset.keepsGenerateCard = "";
+    const levelButton = document.createElement("button");
+    levelButton.type = "button";
+    levelButton.textContent = "Level 3";
+    strip.appendChild(levelButton);
+    document.body.appendChild(strip);
+
+    try {
+      const state = createPanelCoordinationState();
+      render(ExpandedCardStage, props(state, true));
+
+      state.openTnDPanel();
+      flushSync();
+      await tick();
+
+      levelButton.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      flushSync();
+
+      expect(state.openGenerateCard).toBe("tnd");
+    } finally {
+      strip.remove();
     }
   });
 
@@ -708,5 +737,87 @@ describe("ExpandedCardStage on stacked layouts", () => {
     flushSync();
     await tick();
     expect(viewportRoot().dataset.presentation).toBe("sheet");
+  });
+});
+
+describe("ExpandedCardStage keeps Customize built", () => {
+  function customizeProps(): CustomizeOverlayProps {
+    return {
+      constraintPreset: "mixed",
+      handPathMode: "mixed",
+      motionTypeFilter: null,
+      startEndOptions: null,
+      level: 3,
+      gridMode: GridMode.DIAMOND,
+      isFreeformMode: true,
+      onConstraintPresetChange: vi.fn(),
+      onHandPathModeChange: vi.fn(),
+      onMotionTypeFilterChange: vi.fn(),
+      onStartEndChange: null,
+      onResetAll: null,
+    };
+  }
+
+  it("builds the panel before the first open and reuses it on every open", () => {
+    const state = createPanelCoordinationState();
+    const { container } = render(ExpandedCardStage, props(state, true));
+
+    state.primeCustomizeOverlay(customizeProps());
+    flushSync();
+    const built = container.querySelector(".generation-settings-overlay");
+    expect(built).not.toBeNull();
+    expect(built!.closest(".customize-parking")).not.toBeNull();
+
+    state.openCustomizeOverlay(customizeProps());
+    flushSync();
+    const root = container.querySelector(".expanded-card-stage");
+    expect(root?.querySelector(".generation-settings-overlay")).toBe(built);
+
+    state.closeCustomizeOverlay();
+    flushSync();
+    expect(container.querySelector(".expanded-card-stage")).toBeNull();
+    expect(built!.closest(".customize-parking")).not.toBeNull();
+
+    state.openCustomizeOverlay(customizeProps());
+    flushSync();
+    expect(
+      container
+        .querySelector(".expanded-card-stage")
+        ?.querySelector(".generation-settings-overlay")
+    ).toBe(built);
+  });
+
+  it("hands the open panel a level change, and only while open", () => {
+    const state = createPanelCoordinationState();
+    render(ExpandedCardStage, props(state, true));
+
+    state.refreshCustomizeOverlay({ ...customizeProps(), level: 3 });
+    expect(state.customizeOverlayProps).toBeNull();
+
+    state.openCustomizeOverlay({ ...customizeProps(), level: 2 });
+    flushSync();
+    state.refreshCustomizeOverlay({ ...customizeProps(), level: 3 });
+    flushSync();
+    expect(state.customizeOverlayProps?.level).toBe(3);
+    expect(state.openGenerateCard).toBe("customize");
+  });
+
+  it("hands the panel back when another card replaces Customize", () => {
+    const state = createPanelCoordinationState();
+    const { container } = render(ExpandedCardStage, props(state, true));
+
+    state.openCustomizeOverlay(customizeProps());
+    flushSync();
+    const built = container.querySelector(".generation-settings-overlay");
+    expect(built?.closest(".expanded-card-stage")).not.toBeNull();
+
+    state.openPresetDrawer();
+    flushSync();
+    expect(built!.closest(".customize-parking")).not.toBeNull();
+    expect(
+      container.querySelectorAll(
+        ".expanded-card-stage .generation-settings-overlay"
+      ).length
+    ).toBe(1);
   });
 });

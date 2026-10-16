@@ -6,7 +6,7 @@ import {
 import {
   SHEET1,
   SHEET2,
-} from "../../../src/routes/(public)/guide/codex/_data/codex-groups";
+} from "../../../src/routes/(public)/codex/_data/codex-groups";
 
 describe("Letter Codex Atlas semantics", () => {
   it("keeps both accents for combined motion families", () => {

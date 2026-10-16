@@ -50,12 +50,9 @@ const pages: SitemapEntry[] = [
   // until each archive record carries its author's say-so; the unlisted
   // /history/draft never lists. Re-list "history" when the archive returns.
   // /notation and /roots 301 there and stay omitted.
-  // Per-prop notation pages (2026-07-16-per-prop-notation-pages-design.md)
-  { url: "notation/staves" },
-  { url: "notation/fans" },
-  { url: "notation/clubs" },
-  { url: "notation/buugeng" },
-  { url: "notation/poi" },
+  // One page for every prop. The five per-prop addresses 301 to it
+  // (merged 2026-10-15) and stay omitted.
+  { url: "notation/props" },
   { url: "shape-engine" },
   // /notation/loops is gated in production (404 via its +page.server.ts) while
   // the LOOP algebra page gets rebuilt. Un-gate before re-listing it.
@@ -91,7 +88,7 @@ const pages: SitemapEntry[] = [
   { url: "guide/ratios" },
   { url: "guide/motion-paths" },
   { url: "guide/zans-diamond" },
-  { url: "guide/codex" },
+  { url: "codex" },
   // The interactive lesson course. The index is the course landing; each
   // lesson also gets a stable deep link — see learnConceptsEntries below,
   // derived from the published-lesson registry so a new lesson is listed

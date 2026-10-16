@@ -7,17 +7,19 @@
   their headers stay identical.
 -->
 <script lang="ts">
+  import Sentences from "../../_components/Sentences.svelte";
+
   let {
     kicker,
     title,
     lede,
-  }: { kicker: string; title: string; lede: string } = $props();
+  }: { kicker?: string; title: string; lede: string } = $props();
 </script>
 
 <header class="topic-head">
-  <p class="kicker">{kicker}</p>
+  {#if kicker}<p class="kicker">{kicker}</p>{/if}
   <h1>{title}</h1>
-  <p class="lede">{lede}</p>
+  <p class="lede"><Sentences text={lede} /></p>
 </header>
 
 <style>

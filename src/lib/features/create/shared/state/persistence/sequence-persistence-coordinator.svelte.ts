@@ -57,11 +57,15 @@ export function createSequencePersistenceCoordinator(
     },
 
     // Core operations
-    async initialize(): Promise<PersistenceState | null> {
+    async initialize(skipRestore = false): Promise<PersistenceState | null> {
       if (!persistenceService || state.isInitialized) return null;
 
       try {
         await persistenceService.initialize();
+        if (skipRestore) {
+          state.isInitialized = true;
+          return null;
+        }
         // IMPORTANT: Use tabId if provided to load only this tab's data
         // This prevents cross-tab data pollution where Generator's sequence
         // appears in Assembler's beat grid
@@ -98,8 +102,11 @@ export function createSequencePersistenceCoordinator(
 
       try {
         // Update cached active tab
-        cachedActiveTab = persistenceState.activeBuildSection;
-        await persistenceService.saveCurrentState(persistenceState);
+        cachedActiveTab = tabId ?? persistenceState.activeBuildSection;
+        await persistenceService.saveCurrentState({
+          ...persistenceState,
+          activeBuildSection: cachedActiveTab,
+        });
       } catch (error) {
         console.error(
           "❌ PersistenceCoordinator: Failed to save state:",
@@ -122,7 +129,7 @@ export function createSequencePersistenceCoordinator(
           currentSequence,
           selectedStartPlacement,
           hasStartPlacement,
-          activeBuildSection: cachedActiveTab,
+          activeBuildSection: tabId ?? cachedActiveTab,
         });
 
         // This is the 500ms-debounced autosave that runs on every beat edit,
@@ -153,7 +160,7 @@ export function createSequencePersistenceCoordinator(
       if (!persistenceService || !state.autoSaveEnabled) return;
 
       try {
-        await persistenceService.clearCurrentState();
+        await persistenceService.clearCurrentState(tabId ?? cachedActiveTab);
       } catch (error) {
         console.error(
           "❌ PersistenceCoordinator: Failed to clear state:",
@@ -163,7 +170,13 @@ export function createSequencePersistenceCoordinator(
     },
 
     updateCachedActiveTab(activeTab: ActiveCreateModule) {
-      cachedActiveTab = activeTab;
+      if (!tabId) cachedActiveTab = activeTab;
+    },
+
+    markDirty() {
+      if (state.autoSaveEnabled) {
+        persistenceService?.markDirty(tabId ?? cachedActiveTab);
+      }
     },
 
     setAutoSaveEnabled(enabled: boolean) {

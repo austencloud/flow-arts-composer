@@ -12,10 +12,8 @@
 import type { BuildModeId } from "#lib/shared/foundation/ui/ui-types.js";
 import type { SequenceState } from "../sequence-state-orchestrator.svelte";
 import type { SequencePersister } from "#lib/features/create/shared/services/sequence-persister.js";
-import { deepLinker } from "#lib/shared/navigation/services/deep-linker.js";
+import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
 import type { OptionHistoryManager } from "./option-history-manager.svelte";
-
-import { getDeepLinkSequenceHandler } from "#lib/features/create/shared/get-deep-link-sequence-handler.js";
 
 type ConstructTabState =
   | {
@@ -40,6 +38,7 @@ export function createCreateModulePersistenceController({
   getSequenceStateForTab,
 }: PersistenceControllerDeps) {
   let isPersistenceInitialized = $state(false);
+  const initializedModes = new Set<BuildModeId>();
 
   /**
    * Get the sequence state for a specific tab.
@@ -52,22 +51,15 @@ export function createCreateModulePersistenceController({
     return sequenceState;
   }
 
-  async function initialize(): Promise<BuildModeId> {
-    let modeToLoad: BuildModeId = "construct";
+  async function initialize(skipRestore = false): Promise<BuildModeId> {
+    const modeToLoad =
+      (navigationState.activeTab as BuildModeId) || "construct";
 
     try {
       if (SequencePersister) {
-        const lastActiveState = await SequencePersister.loadCurrentState();
-        if (lastActiveState?.activeBuildSection) {
-          modeToLoad = lastActiveState.activeBuildSection;
-        }
-      }
-
-      await sequenceState.initializeWithPersistence();
-
-      if (SequencePersister) {
         await restoreWorkspaceForMode(modeToLoad, null, {
           bypassInitializationGuard: true,
+          skipRestore,
         });
       }
 
@@ -105,7 +97,7 @@ export function createCreateModulePersistenceController({
   async function restoreWorkspaceForMode(
     panel: BuildModeId,
     constructTabState: ConstructTabState,
-    options?: { bypassInitializationGuard?: boolean }
+    options?: { bypassInitializationGuard?: boolean; skipRestore?: boolean }
   ): Promise<void> {
     if (!SequencePersister) {
       return;
@@ -119,63 +111,18 @@ export function createCreateModulePersistenceController({
     const tabSequenceState = getSequenceStateFor(panel);
     tabSequenceState.updateCachedActiveTab(panel);
 
-    // Check if there's a pending deep link OR pending edit - if so, skip restoring saved state
-    // This prevents overwriting deep link/pending edit sequences with empty/old persisted state
-    let hasDeepLink = false;
-    let hasPendingEdit = false;
-    let pendingEditWasProcessed = false;
-    try {
-      hasDeepLink = deepLinker.hasDataForModule("create") ?? false;
-
-      // Also check for pending edit from Browse gallery (stored in localStorage)
-      hasPendingEdit =
-        localStorage.getItem("tka-pending-edit-sequence") !== null;
-
-      // CRITICAL: Also check session flag - pending edit may have already been processed
-      // (and localStorage cleared) by the $effect before this function runs
-      const DeepLinkSequenceHandler = getDeepLinkSequenceHandler();
-      pendingEditWasProcessed =
-        DeepLinkSequenceHandler.wasPendingEditProcessedThisSession();
-    } catch {
-      // Service not available - assume no deep link
-      void 0; // Suppress unused catch binding warning
-    }
-
-    if (hasDeepLink || hasPendingEdit || pendingEditWasProcessed) {
-      return;
-    }
-
-    try {
-      const savedState = await SequencePersister.loadCurrentState(panel);
-
-      if (savedState) {
-        // Load saved state for this tab's specific sequence state
-        tabSequenceState.setCurrentSequence(savedState.currentSequence);
-        tabSequenceState.setSelectedStartPlacement(
-          savedState.selectedStartPlacement ?? null
-        );
-
-        syncConstructTabState(
-          constructTabState,
-          savedState.hasStartPlacement,
-          savedState.selectedStartPlacement
-        );
-      } else {
-        // FIX: No saved state exists - preserve in-memory sequence!
-        // Previously, this would unconditionally clear in-memory sequences on every tab switch
-        // if no localStorage data existed. This caused the workspace collapse bug where
-        // Constructor's in-memory sequence was cleared when switching back from other tabs.
-        // Now we only preserve existing in-memory data instead of clearing it.
-
-        // Don't touch the sequence state - it may already have valid in-memory data
-        // Only sync construct tab state to show the start placement picker if needed
-        if (constructTabState && !tabSequenceState.currentSequence) {
-          syncConstructTabState(constructTabState, false, null);
-        }
+    if (!initializedModes.has(panel)) {
+      if (!tabSequenceState.isInitialized) {
+        await tabSequenceState.initializeWithPersistence(options?.skipRestore);
       }
-    } catch (error) {
-      console.error(`? Failed to load ${panel} state:`, error);
+      initializedModes.add(panel);
     }
+
+    syncConstructTabState(
+      constructTabState,
+      tabSequenceState.hasStartPlacement,
+      tabSequenceState.selectedStartPlacement
+    );
   }
 
   function syncConstructTabState(

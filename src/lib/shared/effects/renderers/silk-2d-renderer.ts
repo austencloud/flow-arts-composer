@@ -1,126 +1,58 @@
-import type { SilkPalette } from "../domain/silk-palettes";
 import type { Silk2DParams } from "../translators/canvas2d-types";
 import type { EmitterTip } from "./emitter-tip";
 import { emitterId } from "./emitter-tip";
+import { SILK_GL_VERTEX_FLOATS, SilkClothGL } from "./silk-cloth-gl";
 import {
-  traceCentripetalBackward,
-  traceCentripetalForward,
-} from "./ribbon-trace";
+  SILK_CLOTH_COLUMNS,
+  SILK_CLOTH_ROWS,
+  SilkCloth3D,
+  resolveSilkClothSettings,
+  resolveSilkFabricProfile3D,
+  type SilkFabricProfile3D,
+} from "#lib/shared/3d/effects/silk/silk-cloth-3d.js";
 
-interface RibbonSample {
-  x: number;
-  y: number;
-  t: number;
-  speed: number;
-  pathDistance: number;
-}
+/**
+ * 2D Silk: the same cloth streamer the 3D view simulates, seen from the
+ * front. Screen x and y are the cloth's x and y (y flipped, so gravity pulls
+ * down the screen); the cloth still moves in depth, so it twists, turns its
+ * back to the viewer and folds over itself. Each patch of fabric is shaded
+ * from the way it faces: a lit face, a darker turned-away face, sheen where
+ * it turns edge-on, a satin highlight, and light glowing through from
+ * behind. Patches are drawn far to near, on the GPU (silk-cloth-gl) where
+ * WebGL2 is available, else flat-filled on a Canvas2D layer.
+ */
 
-interface RibbonTrail {
-  samples: RibbonSample[];
+/** Screen pixels per metre of cloth at the reference canvas size. */
+const PIXELS_PER_METRE = 140;
+/** A tip that jumps further than this in one frame starts a fresh streamer. */
+const TELEPORT_METRES = 0.5;
+/** Seconds a let-go streamer takes to fall and fade out. */
+const RELEASE_SECONDS = 1.2;
+const QUADS = (SILK_CLOTH_ROWS - 1) * (SILK_CLOTH_COLUMNS - 1);
+const VERTICES = SILK_CLOTH_ROWS * SILK_CLOTH_COLUMNS;
+/** Drawn rows per simulated row: the strip is smoothed between them. */
+const SMOOTHING = 3;
+const FINE_ROWS = (SILK_CLOTH_ROWS - 1) * SMOOTHING + 1;
+const FINE_VERTICES = FINE_ROWS * SILK_CLOTH_COLUMNS;
+const FINE_QUADS = (FINE_ROWS - 1) * (SILK_CLOTH_COLUMNS - 1);
+/** Key light from the upper left, a little in front of the stage. */
+const LIGHT = normalize3(-0.45, 0.65, 0.62);
+/** Halfway between the light and the viewer, for the satin highlight. */
+const HALF = normalize3(LIGHT[0], LIGHT[1], LIGHT[2] + 1);
+
+interface Streamer {
+  cloth: SilkCloth3D;
   color: string;
-  phase: number;
-  lastSeenAt: number;
-  headX: number;
-  headY: number;
-  headSpeed: number;
-  distanceSinceSample: number;
+  lastX: number;
+  lastY: number;
+  seenAt: number;
+  /** 0 while held, rising to 1 as a let-go streamer fades. */
+  released: number;
+  /** 0 to 1 as a new streamer fades in. */
+  grown: number;
 }
 
-interface SilkMaterialProfile {
-  propColorMix: number;
-  edgeBodyMix: number;
-  shadowMix: number;
-  bodyAlpha: number;
-  glowAlpha: number;
-  edgeAlpha: number;
-  foldStrength: number;
-  sheenAlpha: number;
-  sheenWidth: number;
-}
-
-const MAX_SAMPLES = 96;
-const AURA_STRIDE = 8;
-const TAU = Math.PI * 2;
-
-const MATERIAL_PROFILES: Record<SilkPalette["id"], SilkMaterialProfile> = {
-  satin: {
-    propColorMix: 0.82,
-    edgeBodyMix: 0.88,
-    shadowMix: 0.28,
-    bodyAlpha: 0.9,
-    glowAlpha: 0.02,
-    edgeAlpha: 0.14,
-    foldStrength: 0.24,
-    sheenAlpha: 0.21,
-    sheenWidth: 1.35,
-  },
-  velvet: {
-    propColorMix: 0.2,
-    edgeBodyMix: 0.35,
-    shadowMix: 0.54,
-    bodyAlpha: 0.94,
-    glowAlpha: 0.018,
-    edgeAlpha: 0.22,
-    foldStrength: 0.3,
-    sheenAlpha: 0.08,
-    sheenWidth: 0.9,
-  },
-  ethereal: {
-    propColorMix: 0.42,
-    edgeBodyMix: 0.45,
-    shadowMix: 0.3,
-    bodyAlpha: 0.62,
-    glowAlpha: 0.12,
-    edgeAlpha: 0.38,
-    foldStrength: 0.22,
-    sheenAlpha: 0.18,
-    sheenWidth: 0.68,
-  },
-  shadow: {
-    propColorMix: 0.3,
-    edgeBodyMix: 0.5,
-    shadowMix: 0.65,
-    bodyAlpha: 0.72,
-    glowAlpha: 0.01,
-    edgeAlpha: 0.24,
-    foldStrength: 0.34,
-    sheenAlpha: 0.05,
-    sheenWidth: 0.82,
-  },
-  gold_leaf: {
-    propColorMix: 0.14,
-    edgeBodyMix: 0.28,
-    shadowMix: 0.48,
-    bodyAlpha: 0.96,
-    glowAlpha: 0.03,
-    edgeAlpha: 0.34,
-    foldStrength: 0.32,
-    sheenAlpha: 0.3,
-    sheenWidth: 0.64,
-  },
-  ember: {
-    propColorMix: 0.16,
-    edgeBodyMix: 0.32,
-    shadowMix: 0.46,
-    bodyAlpha: 0.8,
-    glowAlpha: 0.18,
-    edgeAlpha: 0.38,
-    foldStrength: 0.24,
-    sheenAlpha: 0.22,
-    sheenWidth: 0.7,
-  },
-  custom: {
-    propColorMix: 0.36,
-    edgeBodyMix: 0.48,
-    shadowMix: 0.45,
-    bodyAlpha: 0.9,
-    glowAlpha: 0.035,
-    edgeAlpha: 0.3,
-    foldStrength: 0.28,
-    sheenAlpha: 0.18,
-    sheenWidth: 0.74,
-  },
-};
+type Rgb = [number, number, number];
 
 /**
  * Keeps the normal two-prop, two-end view vivid while preventing tunnel layers
@@ -132,91 +64,28 @@ export function resolveSilk2DEnergyScale(sourceCount: number): number {
   return Math.max(0.32, Math.sqrt(4 / sourceCount));
 }
 
-/**
- * Silk opens quickly from its free tail, holds a broad middle, then gathers
- * into the prop tip. Both ends stay non-zero so the spline remains stable.
- */
-export function resolveSilk2DWidthEnvelope(positionFraction: number): number {
-  const p = clamp01(positionFraction);
-  const tailTaper = smoothstep(0, 0.14, p);
-  const attachmentThroat = 1 - 0.9 * smoothstep(0.84, 1, p);
-  return Math.max(0.06, tailTaper * attachmentThroat);
-}
-
-/**
- * Duration changes the reach of the attached cloth, not the number of old
- * frames painted on screen. The cap stays compact enough for crossings to
- * remain readable at the longest setting.
- */
-export function resolveSilk2DMaximumLength(
-  duration: number,
-  scale: number
-): number {
-  return (120 + clamp01(duration) * 240) * Math.max(0.25, scale);
-}
-
-/** Distance-based sampling keeps the cloth equally smooth at every frame rate. */
-export function resolveSilk2DSampleSpacing(scale: number): number {
-  return 4 * Math.max(0.25, scale);
-}
-
-/**
- * Motion interpolation can leave tiny frame-to-frame corners in an otherwise
- * smooth path. Three light neighbor passes remove that grit while keeping both
- * the free tail and the prop attachment exactly where they were recorded.
- */
-export function smoothSilk2DPath(points: readonly { x: number; y: number }[]): {
-  x: number[];
-  y: number[];
-} {
-  let x = points.map((point) => point.x);
-  let y = points.map((point) => point.y);
-  if (points.length < 3) return { x, y };
-
-  for (let pass = 0; pass < 3; pass++) {
-    const nextX = [...x];
-    const nextY = [...y];
-    for (let index = 1; index < points.length - 1; index++) {
-      nextX[index] = x[index]! * 0.56 + (x[index - 1]! + x[index + 1]!) * 0.22;
-      nextY[index] = y[index]! * 0.56 + (y[index - 1]! + y[index + 1]!) * 0.22;
-    }
-    x = nextX;
-    y = nextY;
-  }
-
-  return { x, y };
-}
-
-/** Resolve palette material color while retaining each prop's identity. */
-export function resolveSilk2DMaterialColors(
-  palette: SilkPalette,
-  propColor: string,
-  positionFraction: number
-): { body: string; edge: string; shadow: string } {
-  const profile = MATERIAL_PROFILES[palette.id] ?? MATERIAL_PROFILES.satin;
-  const p = clamp01(positionFraction);
-  const paletteBody =
-    palette.hueShift && palette.bodyAlt
-      ? mixColor(palette.body, palette.bodyAlt, p)
-      : palette.body;
-  const paletteEdge =
-    palette.hueShift && palette.edgeAlt
-      ? mixColor(palette.edge, palette.edgeAlt, p)
-      : palette.edge;
-  const body = mixColor(paletteBody, propColor, profile.propColorMix);
-  const edge = mixColor(paletteEdge, body, profile.edgeBodyMix);
-
-  return {
-    body,
-    edge,
-    shadow: mixColor(body, "#05050c", profile.shadowMix),
-  };
+/** Opacity of the fabric for an intensity, before fades. */
+export function resolveSilk2DOpacity(intensity: number, sourceCount: number): number {
+  const energy = resolveSilk2DEnergyScale(sourceCount);
+  return Math.min(0.97, 0.25 + 1.1 * clamp01(intensity)) * (0.85 + 0.15 * energy);
 }
 
 export class Silk2DRenderer {
   private time = 0;
-  private tipTrails = new Map<string, RibbonTrail>();
-  private lastTipPos = new Map<string, { x: number; y: number }>();
+  private readonly streamers = new Map<string, Streamer>();
+  private nextSeed = 1;
+  private layer: HTMLCanvasElement | OffscreenCanvas | null = null;
+  private layerContext: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null = null;
+  // Reused per-frame buffers: quad depth, owner and corner indices.
+  private depth = new Float32Array(0);
+  private order = new Uint32Array(0);
+  // Lit color (0-255) and alpha (0-1) of every vertex, for the flat fallback.
+  private shades = new Float32Array(0);
+  // The smoothed strip handed to the GPU.
+  private painter: SilkClothGL | null | undefined;
+  private fineVertices = new Float32Array(0);
+  private fineDepth = new Float32Array(0);
+  private fineIndices = new Uint32Array(0);
 
   render(
     ctx: CanvasRenderingContext2D,
@@ -226,482 +95,339 @@ export class Silk2DRenderer {
     scale: number = 1,
     loopDetected: boolean = false
   ): void {
-    this.time += dt;
+    const step = Math.min(Math.max(dt, 0), 1 / 15);
+    this.time += step;
+    const settings = resolveSilkClothSettings(params);
+    const pixels = PIXELS_PER_METRE * Math.max(0.25, scale);
 
-    const present = new Map<string, EmitterTip>();
-    for (const emitter of emitters) {
-      if (!this.isEndEnabled(emitter.end, params)) continue;
-      present.set(emitterId(emitter.propIndex, emitter.tipIndex), emitter);
-    }
-
-    // Keep vanished emitters in the union so their fabric decays instead of
-    // disappearing on the first missing frame.
-    const ids = new Set<string>(this.tipTrails.keys());
-    for (const id of present.keys()) ids.add(id);
-
-    for (const id of ids) {
-      const tip = present.get(id);
-      if (!tip) {
-        const trail = this.tipTrails.get(id);
-        if (trail) {
-          const fadeDuration = Math.max(0.12, params.lifetimeSeconds * 0.7);
-          if (this.time - trail.lastSeenAt > fadeDuration) {
-            this.tipTrails.delete(id);
-          }
-        }
-        this.lastTipPos.delete(id);
-        continue;
-      }
-
-      let trail = this.tipTrails.get(id);
-      if (!trail) {
-        const initialSample = createRibbonSample(tip.x, tip.y, this.time, 0, 0);
-        trail = {
-          samples: [initialSample],
+    for (const tip of emitters) {
+      if (!this.isEndEnabled(tip.end, params)) continue;
+      const id = emitterId(tip.propIndex, tip.tipIndex);
+      const pin = { x: tip.x / pixels, y: -tip.y / pixels, z: 0 };
+      let streamer = this.streamers.get(id);
+      if (!streamer) {
+        streamer = {
+          cloth: new SilkCloth3D(this.nextSeed++),
           color: tip.color,
-          phase: phaseFromId(id),
-          lastSeenAt: this.time,
-          headX: tip.x,
-          headY: tip.y,
-          headSpeed: 0,
-          distanceSinceSample: 0,
+          lastX: pin.x,
+          lastY: pin.y,
+          seenAt: this.time,
+          released: 0,
+          grown: 0,
         };
-        this.tipTrails.set(id, trail);
-        this.lastTipPos.set(id, { x: tip.x, y: tip.y });
+        this.streamers.set(id, streamer);
+      }
+      const dx = pin.x - streamer.lastX;
+      const dy = pin.y - streamer.lastY;
+      streamer.color = tip.color;
+      streamer.seenAt = this.time;
+      streamer.released = 0;
+      if (!streamer.cloth.isStarted || (!loopDetected && Math.hypot(dx, dy) > TELEPORT_METRES)) {
+        const vx = step > 0 ? dx / step : 0;
+        const vy = step > 0 ? dy / step : 0;
+        streamer.cloth.reset(pin, { x: -vx, y: -vy, z: 0 }, settings);
+        streamer.grown = 0;
+      } else if (loopDetected) {
+        // A sequence seam teleports the prop; carry the cloth with it rather
+        // than dragging it across the stage.
+        streamer.cloth.translate(dx, dy, 0);
+      } else if (step > 0) {
+        streamer.cloth.step(pin, step, settings, -1e6);
+      }
+      streamer.grown = Math.min(1, streamer.grown + step / 0.25);
+      streamer.lastX = pin.x;
+      streamer.lastY = pin.y;
+    }
+
+    for (const [id, streamer] of this.streamers) {
+      if (streamer.seenAt === this.time) continue;
+      streamer.released += step / RELEASE_SECONDS;
+      if (streamer.released >= 1) {
+        this.streamers.delete(id);
         continue;
       }
-      trail.color = tip.color;
-      trail.lastSeenAt = this.time;
-
-      if (loopDetected) {
-        // Move the existing cloth with the attachment at a sequence seam.
-        // Recording the teleport would create a diagonal slash across stage.
-        const dx = tip.x - trail.headX;
-        const dy = tip.y - trail.headY;
-        this.translateTrail(trail, dx, dy);
-        trail.headX = tip.x;
-        trail.headY = tip.y;
-        trail.headSpeed = 0;
-        this.lastTipPos.set(id, { x: tip.x, y: tip.y });
-        continue;
-      }
-
-      const last = this.lastTipPos.get(id);
-      let speed = 0;
-      if (last && dt > 0) {
-        speed = Math.hypot(tip.x - last.x, tip.y - last.y) / dt;
-        speed /= 60 * scale;
-      }
-
-      if (last) this.recordSegment(trail, last, tip, speed, dt, scale);
-      else {
-        this.translateTrail(trail, tip.x - trail.headX, tip.y - trail.headY);
-        trail.distanceSinceSample = 0;
-      }
-      trail.headX = tip.x;
-      trail.headY = tip.y;
-      trail.headSpeed = speed;
-      this.trimTrailToLength(
-        trail,
-        resolveSilk2DMaximumLength(params.duration, scale)
-      );
-
-      if (last) {
-        last.x = tip.x;
-        last.y = tip.y;
-      } else {
-        this.lastTipPos.set(id, { x: tip.x, y: tip.y });
-      }
+      if (step > 0) streamer.cloth.step(null, step, settings, -1e6);
     }
+    if (this.streamers.size === 0) return;
 
-    const drawableTrails = [...this.tipTrails.values()].filter(
-      (trail) => trail.samples.length >= 2
-    );
-    if (drawableTrails.length === 0) return;
-
-    const energyScale = resolveSilk2DEnergyScale(drawableTrails.length);
-    const prevAlpha = ctx.globalAlpha;
-    const prevComposite = ctx.globalCompositeOperation;
-    ctx.save();
-    try {
-      ctx.globalCompositeOperation = params.blendMode ?? "source-over";
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-
-      for (const trail of drawableTrails) {
-        this.drawRibbon(ctx, params, trail, scale, energyScale);
-      }
-    } finally {
-      ctx.restore();
-      // Test contexts do not implement a state stack; explicitly restore the
-      // two shared properties that other overlay renderers depend on.
-      ctx.globalAlpha = prevAlpha;
-      ctx.globalCompositeOperation = prevComposite;
-    }
+    this.draw(ctx, params, pixels);
   }
 
-  private recordSegment(
-    trail: RibbonTrail,
-    from: { x: number; y: number },
-    to: { x: number; y: number },
-    speed: number,
-    dt: number,
-    scale: number
-  ): void {
-    const spacing = resolveSilk2DSampleSpacing(scale);
-    const segmentLength = Math.hypot(to.x - from.x, to.y - from.y);
-    if (segmentLength < 0.001) return;
-
-    let consumed = 0;
-    let distanceToNext = Math.max(0.001, spacing - trail.distanceSinceSample);
-    while (
-      consumed + distanceToNext <= segmentLength + 0.001 &&
-      trail.samples.length < MAX_SAMPLES
-    ) {
-      consumed += distanceToNext;
-      const fraction = clamp01(consumed / segmentLength);
-      const previous = trail.samples[trail.samples.length - 1]!;
-      trail.samples.push(
-        createRibbonSample(
-          from.x + (to.x - from.x) * fraction,
-          from.y + (to.y - from.y) * fraction,
-          this.time - dt * (1 - fraction),
-          speed,
-          previous.pathDistance + spacing
-        )
-      );
-      trail.distanceSinceSample = 0;
-      distanceToNext = spacing;
+  private draw(ctx: CanvasRenderingContext2D, params: Silk2DParams, pixels: number): void {
+    const list = [...this.streamers.values()];
+    const opacity = resolveSilk2DOpacity(params.intensity, list.length);
+    const profile = resolveSilkFabricProfile3D(params.resolvedPalette.id);
+    const glow = params.resolvedPalette.emissive ? 0.2 + 0.35 * clamp01(params.intensity) : 0;
+    if (this.painter === undefined || this.painter?.lost) this.painter = SilkClothGL.create();
+    if (this.painter && this.drawSmooth(ctx, this.painter, list, params, pixels, opacity, profile, glow)) {
+      return;
     }
-    trail.distanceSinceSample += Math.max(0, segmentLength - consumed);
+    this.drawFlat(ctx, list, params, pixels, opacity, profile, glow);
   }
 
-  private trimTrailToLength(trail: RibbonTrail, maximumLength: number): void {
-    const samples = trail.samples;
-    if (samples.length < 2) return;
-
-    let currentLength =
-      samples[samples.length - 1]!.pathDistance - samples[0]!.pathDistance;
-    currentLength += Math.hypot(
-      trail.headX - samples[samples.length - 1]!.x,
-      trail.headY - samples[samples.length - 1]!.y
-    );
-
-    while (samples.length > 2 && currentLength > maximumLength) {
-      currentLength -= Math.hypot(
-        samples[1]!.x - samples[0]!.x,
-        samples[1]!.y - samples[0]!.y
-      );
-      samples.shift();
-    }
-
-    if (samples.length > MAX_SAMPLES) {
-      samples.splice(0, samples.length - MAX_SAMPLES);
-    }
-  }
-
-  private translateTrail(trail: RibbonTrail, dx: number, dy: number): void {
-    for (const sample of trail.samples) {
-      sample.x += dx;
-      sample.y += dy;
-    }
-  }
-
-  private drawRibbon(
+  /**
+   * The cloth on the GPU: rows smoothed into a finer strip, lit per pixel and
+   * multisampled, then laid on the stage.
+   */
+  private drawSmooth(
     ctx: CanvasRenderingContext2D,
+    painter: SilkClothGL,
+    list: readonly Streamer[],
     params: Silk2DParams,
-    trail: RibbonTrail,
-    scale: number,
-    energyScale: number
-  ): void {
-    const samples = resolveDrawableSamples(trail, scale);
-    const n = samples.length;
-    if (n < 3) return;
-    const basePath = smoothSilk2DPath(
-      samples.map((sample) => ({
-        x: sample.x,
-        y: sample.y,
-      }))
-    );
-    const leftX = new Array<number>(n);
-    const leftY = new Array<number>(n);
-    const rightX = new Array<number>(n);
-    const rightY = new Array<number>(n);
-    const spineX = new Array<number>(n);
-    const spineY = new Array<number>(n);
-    const halfWidths = new Array<number>(n);
-    const sheenAcross = new Array<number>(n);
-    const shadowAcross = new Array<number>(n);
-    const palette = params.resolvedPalette;
-    const profile = MATERIAL_PROFILES[palette.id] ?? MATERIAL_PROFILES.satin;
+    pixels: number,
+    opacity: number,
+    profile: SilkFabricProfile3D,
+    glow: number
+  ): boolean {
+    const width = ctx.canvas?.width ?? 0;
+    const height = ctx.canvas?.height ?? 0;
+    if (width <= 0 || height <= 0 || typeof ctx.drawImage !== "function") return false;
+    const m =
+      typeof ctx.getTransform === "function"
+        ? ctx.getTransform()
+        : { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 };
 
-    let lastTx = 1;
-    let lastTy = 0;
-    let maxHalfWidth = 1;
-
-    for (let i = 0; i < n; i++) {
-      const sample = samples[i]!;
-      const previousIndex = Math.max(0, i - 2);
-      const nextIndex = Math.min(n - 1, i + 2);
-      let tx = basePath.x[nextIndex]! - basePath.x[previousIndex]!;
-      let ty = basePath.y[nextIndex]! - basePath.y[previousIndex]!;
-      const tangentLength = Math.hypot(tx, ty);
-      if (tangentLength > 0.001) {
-        tx /= tangentLength;
-        ty /= tangentLength;
-        lastTx = tx;
-        lastTy = ty;
-      } else {
-        tx = lastTx;
-        ty = lastTy;
-      }
-
-      const px = -ty;
-      const py = tx;
-      const speedFraction = clamp01(
-        params.motionReferenceSpeed > 0
-          ? sample.speed / params.motionReferenceSpeed
-          : 0
-      );
-      const positionFraction = i / (n - 1);
-      const freeEnd = Math.pow(1 - positionFraction, 0.72);
-      const tautWidth = 1 - speedFraction * params.tautness * 0.58;
-      const widthEnvelope = resolveSilk2DWidthEnvelope(positionFraction);
-      const turn = clamp(signedTurn(basePath.x, basePath.y, i), -0.45, 0.45);
-      const flutterEnergy =
-        (0.3 + speedFraction * 0.7) * (1 - params.tautness * 0.42);
-      const flutterAmplitude =
-        params.flutter * scale * (8 + flutterEnergy * 32);
-      const stableDistance = Number.isFinite(sample.pathDistance)
-        ? sample.pathDistance
-        : i * scale * 4;
-      const pathCoordinate = stableDistance / Math.max(0.001, scale);
-      const waveA = Math.sin(
-        pathCoordinate * 0.018 -
-          this.time * (0.38 + speedFraction * 0.5) +
-          trail.phase
-      );
-      const waveB = Math.sin(
-        pathCoordinate * 0.0085 + this.time * 0.19 + trail.phase * 1.7
-      );
-      const centerFlutter =
-        (waveA + waveB * 0.42) *
-          flutterAmplitude *
-          freeEnd *
-          (0.3 + smoothstep(0, 0.1, positionFraction) * 0.7) +
-        turn * params.flutter * 7 * scale * freeEnd;
-      const gravitySag =
-        params.baseHalfWidth *
-        scale *
-        (0.16 + params.flutter * 2.4) *
-        (1 - params.tautness * 0.55) *
-        Math.pow(freeEnd, 1.45);
-      const foldWave = Math.sin(
-        pathCoordinate * 0.026 + this.time * 0.28 + trail.phase * 1.31
-      );
-      const minimumHalfWidth =
-        (0.04 + smoothstep(0, 0.16, positionFraction) * 0.5) * scale;
-      const widthBillow =
-        1 +
-        (waveA * 0.7 + waveB * 0.3) * params.flutter * (0.18 + freeEnd * 0.2);
-      const clothVolume = 1.16 + params.flutter * 0.28;
-      const halfWidth = Math.max(
-        minimumHalfWidth,
-        params.baseHalfWidth *
-          scale *
-          params.intensity *
-          tautWidth *
-          widthEnvelope *
-          widthBillow *
-          clothVolume
-      );
-      halfWidths[i] = halfWidth;
-      maxHalfWidth = Math.max(maxHalfWidth, halfWidth);
-
-      const fold =
-        foldWave *
-        halfWidth *
-        params.flutter *
-        0.52 *
-        freeEnd *
-        profile.foldStrength;
-      const leftWidth = Math.max(minimumHalfWidth, halfWidth + fold);
-      const rightWidth = Math.max(minimumHalfWidth, halfWidth - fold);
-      sheenAcross[i] = clamp(
-        0.64 + foldWave * params.flutter * 0.22 + turn * 0.18,
-        0.42,
-        0.82
-      );
-      shadowAcross[i] = clamp(
-        0.27 - foldWave * params.flutter * 0.18 - turn * 0.12,
-        0.12,
-        0.46
-      );
-
-      spineX[i] = basePath.x[i]! + px * centerFlutter;
-      spineY[i] = basePath.y[i]! + py * centerFlutter + gravitySag;
-      leftX[i] = spineX[i]! + px * leftWidth;
-      leftY[i] = spineY[i]! + py * leftWidth;
-      rightX[i] = spineX[i]! - px * rightWidth;
-      rightY[i] = spineY[i]! - py * rightWidth;
+    const vertexCount = list.length * FINE_VERTICES;
+    const quadCount = list.length * FINE_QUADS;
+    if (this.fineVertices.length < vertexCount * SILK_GL_VERTEX_FLOATS) {
+      this.fineVertices = new Float32Array(vertexCount * SILK_GL_VERTEX_FLOATS);
+      this.fineDepth = new Float32Array(vertexCount);
     }
-
-    // Width modulation happens after the centerline is smoothed, so smooth
-    // the two final hems as well. This removes pixel-scale silhouette chatter
-    // without softening the filled fabric or moving either endpoint.
-    const leftEdge = smoothSilk2DPath(
-      leftX.map((x, index) => ({ x, y: leftY[index]! }))
-    );
-    const rightEdge = smoothSilk2DPath(
-      rightX.map((x, index) => ({ x, y: rightY[index]! }))
-    );
-    const sheenPath = smoothSilk2DPath(
-      sheenAcross.map((across, index) => ({
-        x:
-          rightEdge.x[index]! +
-          (leftEdge.x[index]! - rightEdge.x[index]!) * across,
-        y:
-          rightEdge.y[index]! +
-          (leftEdge.y[index]! - rightEdge.y[index]!) * across,
-      }))
-    );
-    const shadowPath = smoothSilk2DPath(
-      shadowAcross.map((across, index) => ({
-        x:
-          rightEdge.x[index]! +
-          (leftEdge.x[index]! - rightEdge.x[index]!) * across,
-        y:
-          rightEdge.y[index]! +
-          (leftEdge.y[index]! - rightEdge.y[index]!) * across,
-      }))
-    );
-
-    const representative = resolveSilk2DMaterialColors(
-      palette,
-      trail.color,
-      0.55
-    );
-    const disappearanceDuration = Math.max(0.12, params.lifetimeSeconds * 0.7);
-    const trailVisibility =
-      1 - smoothstep(0, disappearanceDuration, this.time - trail.lastSeenAt);
-    const ribbonAlpha =
-      Math.sqrt(params.intensity) * energyScale * trailVisibility;
-    if (ribbonAlpha <= 0.01) return;
-
-    // Every layer follows one unbroken path. Restarting the body and selvedges
-    // every few samples created visible joints that read as frayed fabric.
-    if (profile.glowAlpha > 0) {
-      ctx.globalAlpha = profile.glowAlpha * ribbonAlpha;
-      ctx.strokeStyle = representative.body;
-      ctx.lineWidth = maxHalfWidth * (palette.emissive ? 2.8 : 2.15);
-      ctx.beginPath();
-      traceCentripetalForward(ctx, spineX, spineY, 0, n - 1, n);
-      ctx.stroke();
+    if (this.depth.length < quadCount) {
+      this.depth = new Float32Array(quadCount);
+      this.order = new Uint32Array(quadCount);
     }
+    if (this.fineIndices.length < quadCount * 6) this.fineIndices = new Uint32Array(quadCount * 6);
+    const out = this.fineVertices;
+    const z = this.fineDepth;
 
-    if (palette.emissive) {
-      ctx.globalAlpha = ribbonAlpha * 0.12;
-      for (let index = 0; index < n; index += AURA_STRIDE) {
-        const radius = halfWidths[index]! * 3.2;
-        const gradient = ctx.createRadialGradient(
-          spineX[index]!,
-          spineY[index]!,
-          0,
-          spineX[index]!,
-          spineY[index]!,
-          radius
-        );
-        gradient.addColorStop(0, representative.edge);
-        gradient.addColorStop(1, "rgba(0,0,0,0)");
-        ctx.beginPath();
-        ctx.arc(spineX[index]!, spineY[index]!, radius, 0, TAU);
-        ctx.fillStyle = gradient;
-        ctx.fill();
+    for (let s = 0; s < list.length; s++) {
+      const streamer = list[s]!;
+      const p = streamer.cloth.positions;
+      const n = streamer.cloth.normals;
+      const colors = streamerColors(params, streamer.color, profile);
+      const fade = smooth(streamer.grown) * (1 - smooth(streamer.released));
+      for (let row = 0; row < FINE_ROWS; row++) {
+        const segment = Math.min(SILK_CLOTH_ROWS - 2, Math.floor(row / SMOOTHING));
+        const t = row / SMOOTHING - segment;
+        const along = row / (FINE_ROWS - 1);
+        // The tail thins and dissolves; the head stays solid where it is tied.
+        const alpha = opacity * fade * (1 - 0.9 * smooth((along - 0.7) / 0.3));
+        const body = colors.emissive
+          ? mixRgb(colors.sheen, colors.body, Math.sqrt(along))
+          : mixRgb(colors.body, colors.bodyAlt, along);
+        const sheen = mixRgb(colors.sheen, colors.sheenAlt, along);
+        const r0 = Math.max(0, segment - 1);
+        const r1 = segment;
+        const r2 = segment + 1;
+        const r3 = Math.min(SILK_CLOTH_ROWS - 1, segment + 2);
+        for (let column = 0; column < SILK_CLOTH_COLUMNS; column++) {
+          const v0 = (r0 * SILK_CLOTH_COLUMNS + column) * 3;
+          const v1 = (r1 * SILK_CLOTH_COLUMNS + column) * 3;
+          const v2 = (r2 * SILK_CLOTH_COLUMNS + column) * 3;
+          const v3 = (r3 * SILK_CLOTH_COLUMNS + column) * 3;
+          const x = catmullRom(p[v0]!, p[v1]!, p[v2]!, p[v3]!, t) * pixels;
+          const y = -catmullRom(p[v0 + 1]!, p[v1 + 1]!, p[v2 + 1]!, p[v3 + 1]!, t) * pixels;
+          const vertex = s * FINE_VERTICES + row * SILK_CLOTH_COLUMNS + column;
+          const o = vertex * SILK_GL_VERTEX_FLOATS;
+          z[vertex] = catmullRom(p[v0 + 2]!, p[v1 + 2]!, p[v2 + 2]!, p[v3 + 2]!, t);
+          out[o] = m.a * x + m.c * y + m.e;
+          out[o + 1] = m.b * x + m.d * y + m.f;
+          out[o + 2] = n[v1]! + (n[v2]! - n[v1]!) * t;
+          out[o + 3] = n[v1 + 1]! + (n[v2 + 1]! - n[v1 + 1]!) * t;
+          out[o + 4] = n[v1 + 2]! + (n[v2 + 2]! - n[v1 + 2]!) * t;
+          out[o + 5] = body[0];
+          out[o + 6] = body[1];
+          out[o + 7] = body[2];
+          out[o + 8] = sheen[0];
+          out[o + 9] = sheen[1];
+          out[o + 10] = sheen[2];
+          out[o + 11] = alpha;
+        }
       }
     }
 
-    // One continuous body reads as fabric. Short gradient panels looked like
-    // stacked acetate and exposed their seams whenever the path turned.
-    ctx.globalAlpha = ribbonAlpha * profile.bodyAlpha;
-    ctx.fillStyle = representative.body;
-    ctx.beginPath();
-    traceCentripetalForward(ctx, leftEdge.x, leftEdge.y, 0, n - 1, n);
-    traceCentripetalBackward(ctx, rightEdge.x, rightEdge.y, 0, n - 1, n);
-    ctx.closePath();
-    ctx.fill();
+    // Patches of every streamer, far to near, so folds layer correctly.
+    const depth = this.depth;
+    const order = this.order.subarray(0, quadCount);
+    for (let i = 0; i < quadCount; i++) {
+      const a = fineCorner(i);
+      depth[i] = z[a]! + z[a + 1]! + z[a + SILK_CLOTH_COLUMNS]! + z[a + SILK_CLOTH_COLUMNS + 1]!;
+      order[i] = i;
+    }
+    order.sort((left, right) => depth[left]! - depth[right]!);
+    const indices = this.fineIndices;
+    let cursor = 0;
+    for (const i of order) {
+      const a = fineCorner(i);
+      const b = a + 1;
+      const c = a + SILK_CLOTH_COLUMNS;
+      const d = c + 1;
+      indices[cursor++] = a;
+      indices[cursor++] = c;
+      indices[cursor++] = b;
+      indices[cursor++] = b;
+      indices[cursor++] = c;
+      indices[cursor++] = d;
+    }
 
-    // Two broad, soft bands model the changing angle across the cloth. Both
-    // follow the local surface and stay clipped to the filled silhouette, so
-    // the material gets depth without reviving the detached white centerline.
-    const previousFilter = ctx.filter;
-    ctx.save();
     try {
-      ctx.beginPath();
-      traceCentripetalForward(ctx, leftEdge.x, leftEdge.y, 0, n - 1, n);
-      traceCentripetalBackward(ctx, rightEdge.x, rightEdge.y, 0, n - 1, n);
-      ctx.closePath();
-      ctx.clip();
-
-      ctx.filter = `blur(${Math.max(0.9, scale * 1.45)}px)`;
-      ctx.globalAlpha = ribbonAlpha * (0.075 + profile.foldStrength * 0.26);
-      ctx.strokeStyle = representative.shadow;
-      ctx.lineWidth = Math.max(0.9 * scale, maxHalfWidth * 1.06);
-      ctx.beginPath();
-      traceCentripetalForward(ctx, shadowPath.x, shadowPath.y, 0, n - 1, n);
-      ctx.stroke();
-
-      ctx.globalAlpha = ribbonAlpha * profile.sheenAlpha;
-      ctx.strokeStyle = mixColor(
-        representative.body,
-        representative.edge,
-        0.38
+      painter.draw(
+        width,
+        height,
+        out.subarray(0, vertexCount * SILK_GL_VERTEX_FLOATS),
+        indices.subarray(0, cursor),
+        {
+          roughness: profile.roughness,
+          sheen: profile.sheen,
+          translucency: profile.translucency,
+          metalness: profile.metalness,
+          glow,
+          light: LIGHT,
+          half: HALF,
+        }
       );
-      ctx.lineWidth = Math.max(0.8 * scale, maxHalfWidth * profile.sheenWidth);
-      ctx.beginPath();
-      traceCentripetalForward(ctx, sheenPath.x, sheenPath.y, 0, n - 1, n);
-      ctx.stroke();
-    } finally {
+    } catch {
+      this.painter = null;
+      return false;
+    }
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = params.blendMode ?? "source-over";
+    ctx.drawImage(painter.canvas as CanvasImageSource, 0, 0);
+    ctx.restore();
+    return true;
+  }
+
+  /**
+   * Without WebGL2: each patch filled flat with its corners' average light,
+   * on an opaque layer laid on the stage at the fabric's opacity.
+   */
+  private drawFlat(
+    ctx: CanvasRenderingContext2D,
+    list: readonly Streamer[],
+    params: Silk2DParams,
+    pixels: number,
+    opacity: number,
+    profile: SilkFabricProfile3D,
+    glow: number
+  ): void {
+    const total = list.length * QUADS;
+    if (this.depth.length < total) {
+      this.depth = new Float32Array(total);
+      this.order = new Uint32Array(total);
+    }
+    for (let s = 0; s < list.length; s++) {
+      const p = list[s]!.cloth.positions;
+      for (let q = 0; q < QUADS; q++) {
+        const [a, b, c, d] = corners(q);
+        const i = s * QUADS + q;
+        this.depth[i] = p[a * 3 + 2]! + p[b * 3 + 2]! + p[c * 3 + 2]! + p[d * 3 + 2]!;
+        this.order[i] = i;
+      }
+    }
+    const order = this.order.subarray(0, total);
+    const depth = this.depth;
+    order.sort((left, right) => depth[left]! - depth[right]!);
+
+    if (this.shades.length < list.length * VERTICES * 4) {
+      this.shades = new Float32Array(list.length * VERTICES * 4);
+    }
+    const shades = this.shades;
+    for (let s = 0; s < list.length; s++) {
+      const streamer = list[s]!;
+      const colors = streamerColors(params, streamer.color, profile);
+      const fade = smooth(streamer.grown) * (1 - smooth(streamer.released));
+      for (let row = 0; row < SILK_CLOTH_ROWS; row++) {
+        const along = row / (SILK_CLOTH_ROWS - 1);
+        const tail = 1 - 0.9 * smooth((along - 0.7) / 0.3);
+        for (let column = 0; column < SILK_CLOTH_COLUMNS; column++) {
+          const v = row * SILK_CLOTH_COLUMNS + column;
+          const at = (s * VERTICES + v) * 4;
+          shadeVertex(streamer.cloth, v, along, colors, profile, glow, shades, at);
+          shades[at + 3] = tail * fade;
+        }
+      }
+    }
+
+    const target = this.layerFor(ctx);
+    const paint = target ?? ctx;
+    if (target) {
+      const transform = ctx.getTransform?.();
+      target.setTransform(1, 0, 0, 1, 0, 0);
+      target.clearRect(0, 0, target.canvas.width, target.canvas.height);
+      if (transform) target.setTransform(transform);
+    }
+    paint.save();
+    if (!target) paint.globalCompositeOperation = params.blendMode ?? "source-over";
+    paint.lineJoin = "round";
+    paint.lineWidth = 0.9;
+    for (const i of order) {
+      const s = Math.floor(i / QUADS);
+      const q = i - s * QUADS;
+      const p = list[s]!.cloth.positions;
+      const quad = corners(q);
+      const color = [0, 0, 0, 0];
+      for (const v of quad) {
+        const at = (s * VERTICES + v) * 4;
+        for (let channel = 0; channel < 4; channel++) color[channel]! += shades[at + channel]! / 4;
+      }
+      const alpha = color[3]! * (target ? 1 : opacity);
+      if (alpha <= 0.004) continue;
+      const style = `rgb(${byte(color[0]!)},${byte(color[1]!)},${byte(color[2]!)})`;
+      paint.globalAlpha = alpha;
+      paint.fillStyle = style;
+      paint.strokeStyle = style;
+      paint.beginPath();
+      paint.moveTo(p[quad[0] * 3]! * pixels, -p[quad[0] * 3 + 1]! * pixels);
+      paint.lineTo(p[quad[1] * 3]! * pixels, -p[quad[1] * 3 + 1]! * pixels);
+      paint.lineTo(p[quad[3] * 3]! * pixels, -p[quad[3] * 3 + 1]! * pixels);
+      paint.lineTo(p[quad[2] * 3]! * pixels, -p[quad[2] * 3 + 1]! * pixels);
+      paint.closePath();
+      paint.fill();
+      // Hairline seams between neighboring patches would show the grid.
+      if (target) paint.stroke();
+    }
+    paint.restore();
+
+    if (target) {
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.globalAlpha = opacity;
+      ctx.globalCompositeOperation = params.blendMode ?? "source-over";
+      ctx.drawImage(target.canvas as CanvasImageSource, 0, 0);
       ctx.restore();
-      // Test canvases do not implement a real state stack.
-      ctx.filter = previousFilter;
     }
+  }
 
-    let edgeStyle: string | CanvasGradient = representative.edge;
-    if (
-      palette.hueShift &&
-      Math.hypot(spineX[n - 1]! - spineX[0]!, spineY[n - 1]! - spineY[0]!) > 1
-    ) {
-      const edgeGradient = ctx.createLinearGradient(
-        spineX[0]!,
-        spineY[0]!,
-        spineX[n - 1]!,
-        spineY[n - 1]!
-      );
-      edgeGradient.addColorStop(
-        0,
-        resolveSilk2DMaterialColors(palette, trail.color, 0).edge
-      );
-      edgeGradient.addColorStop(0.5, representative.edge);
-      edgeGradient.addColorStop(
-        1,
-        resolveSilk2DMaterialColors(palette, trail.color, 1).edge
-      );
-      edgeStyle = edgeGradient;
+  /**
+   * Fabric is drawn opaque on its own layer, then laid on the stage at the
+   * fabric's opacity, so patches meet without see-through seams.
+   */
+  private layerFor(
+    ctx: CanvasRenderingContext2D
+  ): CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null {
+    const width = ctx.canvas?.width ?? 0;
+    const height = ctx.canvas?.height ?? 0;
+    if (width <= 0 || height <= 0 || typeof ctx.drawImage !== "function") return null;
+    if (!this.layer) {
+      try {
+        if (typeof OffscreenCanvas !== "undefined") this.layer = new OffscreenCanvas(width, height);
+        else if (typeof document !== "undefined") this.layer = document.createElement("canvas");
+      } catch {
+        this.layer = null;
+      }
+      this.layerContext = (this.layer?.getContext("2d") ?? null) as
+        | CanvasRenderingContext2D
+        | OffscreenCanvasRenderingContext2D
+        | null;
     }
-
-    ctx.globalAlpha = ribbonAlpha * profile.edgeAlpha * 0.55;
-    ctx.strokeStyle = representative.shadow;
-    ctx.lineWidth = 0.65 * scale;
-    ctx.beginPath();
-    traceCentripetalForward(ctx, rightEdge.x, rightEdge.y, 0, n - 1, n);
-    ctx.stroke();
-
-    ctx.globalAlpha = ribbonAlpha * profile.edgeAlpha;
-    ctx.strokeStyle = edgeStyle;
-    ctx.lineWidth = 0.7 * scale;
-    ctx.beginPath();
-    traceCentripetalForward(ctx, leftEdge.x, leftEdge.y, 0, n - 1, n);
-    ctx.stroke();
+    // Test doubles and headless stubs can hand back a partial context.
+    if (!this.layer || typeof this.layerContext?.setTransform !== "function") return null;
+    if (this.layer.width !== width) this.layer.width = width;
+    if (this.layer.height !== height) this.layer.height = height;
+    return this.layerContext;
   }
 
   private isEndEnabled(end: "A" | "B", params: Silk2DParams): boolean {
@@ -709,125 +435,162 @@ export class Silk2DRenderer {
     return params.trackingMode === "left_end" ? end === "A" : end === "B";
   }
 
+  /** Number of streamers alive, held or falling. */
+  get streamerCount(): number {
+    return this.streamers.size;
+  }
+
   dispose(): void {
-    this.tipTrails.clear();
-    this.lastTipPos.clear();
+    this.streamers.clear();
     this.time = 0;
   }
 }
 
-function createRibbonSample(
-  x: number,
-  y: number,
-  t: number,
-  speed: number,
-  pathDistance: number
-): RibbonSample {
-  return {
-    x,
-    y,
-    t,
-    speed,
-    pathDistance,
-  };
+interface StreamerColors {
+  body: Rgb;
+  bodyAlt: Rgb;
+  sheen: Rgb;
+  sheenAlt: Rgb;
+  emissive: boolean;
 }
 
-function resolveDrawableSamples(
-  trail: RibbonTrail,
-  scale: number
-): RibbonSample[] {
-  const samples = trail.samples;
-  const last = samples[samples.length - 1];
-  if (!last) return [];
+function streamerColors(
+  params: Silk2DParams,
+  propColor: string,
+  profile: SilkFabricProfile3D
+): StreamerColors {
+  const palette = params.resolvedPalette;
+  const prop = hexToRgb(propColor) ?? hexToRgb(palette.body)!;
+  const body = mixRgb(hexToRgb(palette.body)!, prop, profile.identityMix);
+  const bodyAlt = palette.hueShift
+    ? mixRgb(hexToRgb(palette.bodyAlt ?? palette.body)!, prop, profile.identityMix)
+    : body;
+  const edgeMix = Math.min(0.42, profile.identityMix + 0.08);
+  const sheen = mixRgb(hexToRgb(palette.edge)!, prop, edgeMix);
+  const sheenAlt = palette.hueShift
+    ? mixRgb(hexToRgb(palette.edgeAlt ?? palette.edge)!, prop, edgeMix)
+    : sheen;
+  return { body, bodyAlt, sheen, sheenAlt, emissive: !!palette.emissive };
+}
 
-  if (
-    Math.hypot(trail.headX - last.x, trail.headY - last.y) <
-    Math.max(0.05, scale * 0.2)
-  ) {
-    return samples;
+/** Lights vertex `v` and writes its color, as 0-255 channels, at `out`. */
+function shadeVertex(
+  cloth: SilkCloth3D,
+  v: number,
+  along: number,
+  colors: StreamerColors,
+  profile: SilkFabricProfile3D,
+  glow: number,
+  target: Float32Array,
+  out: number
+): void {
+  const n = cloth.normals;
+  let nx = n[v * 3]!;
+  let ny = n[v * 3 + 1]!;
+  let nz = n[v * 3 + 2]!;
+  // Whichever side faces the viewer is the side we light.
+  if (nz < 0) {
+    nx = -nx;
+    ny = -ny;
+    nz = -nz;
   }
-
-  const targetGap = Math.hypot(trail.headX - last.x, trail.headY - last.y);
-  return [
-    ...samples,
-    {
-      x: trail.headX,
-      y: trail.headY,
-      t: trail.lastSeenAt,
-      speed: trail.headSpeed,
-      pathDistance: last.pathDistance + targetGap,
-    },
-  ];
-}
-
-function signedTurn(x: number[], y: number[], index: number): number {
-  if (index <= 0 || index >= x.length - 1) return 0;
-  let ax = x[index]! - x[index - 1]!;
-  let ay = y[index]! - y[index - 1]!;
-  let bx = x[index + 1]! - x[index]!;
-  let by = y[index + 1]! - y[index]!;
-  const aLength = Math.hypot(ax, ay);
-  const bLength = Math.hypot(bx, by);
-  if (aLength < 0.001 || bLength < 0.001) return 0;
-  ax /= aLength;
-  ay /= aLength;
-  bx /= bLength;
-  by /= bLength;
-  return ax * by - ay * bx;
-}
-
-function phaseFromId(id: string): number {
-  let hash = 2166136261;
-  for (let i = 0; i < id.length; i++) {
-    hash ^= id.charCodeAt(i);
-    hash = Math.imul(hash, 16777619);
+  const body: Rgb = colors.emissive
+    ? mixRgb(colors.sheen, colors.body, Math.sqrt(along))
+    : mixRgb(colors.body, colors.bodyAlt, along);
+  const sheen = mixRgb(colors.sheen, colors.sheenAlt, along);
+  const facing = nx * LIGHT[0] + ny * LIGHT[1] + nz * LIGHT[2];
+  const diffuse = 0.3 + 0.7 * Math.max(0, facing);
+  // Light on the far side of thin silk glows through it.
+  const through = Math.max(0, -facing) * profile.translucency * 0.9;
+  const grazing = 1 - nz;
+  const sheenAmount = profile.sheen * 0.55 * grazing * grazing;
+  const shininess = 6 + 90 * (1 - profile.roughness) ** 2;
+  const highlight =
+    Math.max(0, nx * HALF[0] + ny * HALF[1] + nz * HALF[2]) ** shininess *
+    (0.15 + 0.7 * (1 - profile.roughness) + 0.4 * profile.metalness);
+  // The room reflected in the weave, as silk-cloth-gl does.
+  const fresnel = 0.04 + 0.96 * (1 - nz) ** 5;
+  const soft = Math.max(0, nx * HALF[0] + ny * HALF[1] + nz * HALF[2]) ** 3;
+  const dark = Math.min(1, Math.max(0.25, 1.15 - (0.3 * body[0] + 0.59 * body[1] + 0.11 * body[2])));
+  const room = (0.12 + 0.5 * fresnel + 0.3 * soft) * (1 - 0.6 * profile.roughness) * dark;
+  for (let k = 0; k < 3; k++) {
+    const specular = 1 + (body[k]! - 1) * profile.metalness;
+    target[out + k] = toByte(
+      body[k]! * (diffuse * (1 - 0.5 * profile.metalness) + through + glow) +
+        sheen[k]! * sheenAmount +
+        specular * (highlight + room)
+    );
   }
-  return ((hash >>> 0) / 0xffffffff) * TAU;
 }
 
-function smoothstep(edge0: number, edge1: number, value: number): number {
-  const t = clamp01((value - edge0) / (edge1 - edge0));
-  return t * t * (3 - 2 * t);
+function byte(value: number): number {
+  return Math.round(Math.max(0, Math.min(255, value)));
 }
 
-function clamp01(value: number): number {
-  return Math.max(0, Math.min(1, value));
+/** Smooth curve through b and c, with a and d as the neighbors beyond. */
+function catmullRom(a: number, b: number, c: number, d: number, t: number): number {
+  const t2 = t * t;
+  return (
+    0.5 *
+    (2 * b + (c - a) * t + (2 * a - 5 * b + 4 * c - d) * t2 + (3 * b - a - 3 * c + d) * t2 * t)
+  );
 }
 
-function clamp(value: number, minimum: number, maximum: number): number {
-  return Math.max(minimum, Math.min(maximum, value));
+/** First vertex of smoothed patch `i`, counting across all streamers. */
+function fineCorner(i: number): number {
+  const streamer = Math.floor(i / FINE_QUADS);
+  const q = i - streamer * FINE_QUADS;
+  const row = Math.floor(q / (SILK_CLOTH_COLUMNS - 1));
+  const column = q - row * (SILK_CLOTH_COLUMNS - 1);
+  return streamer * FINE_VERTICES + row * SILK_CLOTH_COLUMNS + column;
 }
 
-function colorToRgb(color: string): [number, number, number] {
-  if (color.startsWith("rgb")) {
-    const channels = color
-      .match(/[\d.]+/g)
-      ?.slice(0, 3)
-      .map(Number);
-    if (channels?.length === 3) return channels as [number, number, number];
-  }
+/** Corner vertices of quad `q`: a, b along the head side, c, d toward the tail. */
+function corners(q: number): [number, number, number, number] {
+  const row = Math.floor(q / (SILK_CLOTH_COLUMNS - 1));
+  const column = q - row * (SILK_CLOTH_COLUMNS - 1);
+  const a = row * SILK_CLOTH_COLUMNS + column;
+  return [a, a + 1, a + SILK_CLOTH_COLUMNS, a + SILK_CLOTH_COLUMNS + 1];
+}
 
+function hexToRgb(color: string): Rgb | null {
   const source = color.replace(/^#/, "");
-  const normalized =
+  const full =
     source.length === 3
       ? source
           .split("")
           .map((channel) => channel + channel)
           .join("")
       : source.slice(0, 6);
+  if (!/^[0-9a-fA-F]{6}$/.test(full)) return null;
   return [
-    parseInt(normalized.slice(0, 2), 16),
-    parseInt(normalized.slice(2, 4), 16),
-    parseInt(normalized.slice(4, 6), 16),
+    parseInt(full.slice(0, 2), 16) / 255,
+    parseInt(full.slice(2, 4), 16) / 255,
+    parseInt(full.slice(4, 6), 16) / 255,
   ];
 }
 
-function mixColor(a: string, b: string, amount: number): string {
-  const [ar, ag, ab] = colorToRgb(a);
-  const [br, bg, bb] = colorToRgb(b);
+function mixRgb(a: Rgb, b: Rgb, amount: number): Rgb {
   const t = clamp01(amount);
-  const r = Math.round(ar + (br - ar) * t);
-  const g = Math.round(ag + (bg - ag) * t);
-  const blue = Math.round(ab + (bb - ab) * t);
-  return `rgb(${r},${g},${blue})`;
+  return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+}
+
+function toByte(value: number): number {
+  // Soft roll-off so highlights saturate instead of clipping flat.
+  const v = value / (1 + Math.max(0, value - 0.8) * 0.8);
+  return clamp01(v) * 255;
+}
+
+function normalize3(x: number, y: number, z: number): [number, number, number] {
+  const length = Math.hypot(x, y, z) || 1;
+  return [x / length, y / length, z / length];
+}
+
+function clamp01(value: number): number {
+  return Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0));
+}
+
+function smooth(value: number): number {
+  const t = clamp01(value);
+  return t * t * (3 - 2 * t);
 }

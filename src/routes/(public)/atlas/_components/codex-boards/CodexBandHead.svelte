@@ -18,15 +18,20 @@
   space ("Type 1: ") and a flex item swallows a trailing space.
 -->
 <script lang="ts">
-  import type { CodexTypeDef } from "../../../guide/codex/_data/codex-groups";
+  import {
+    codexSegmentLabel,
+    codexTypeWord,
+    type CodexTypeDef,
+  } from "../../../codex/_data/codex-groups";
 
   let { type }: { type: CodexTypeDef } = $props();
 </script>
 
 <h3 class="band-head">
   <span class="band-label"
-    ><span class="band-word">{type.word}</span
-    >{#each type.segs as seg (seg.t)}<span style:color={seg.c}>{seg.t}</span
+    ><span class="band-word">{codexTypeWord(type)}</span
+    >{#each type.segs as seg (seg.t)}<span style:color={seg.c}
+        >{codexSegmentLabel(seg)}</span
       >{/each}</span
   >
 </h3>

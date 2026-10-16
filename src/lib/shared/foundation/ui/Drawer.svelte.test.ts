@@ -109,6 +109,76 @@ describe("Drawer accessible name", () => {
   });
 });
 
+describe("Drawer close lifecycle", () => {
+  afterEach(() => { document.body.innerHTML = ""; });
+
+  it("lets a guard veto a request, then reports one accepted close", async () => {
+    const onBeforeClose = vi.fn().mockReturnValueOnce(false).mockReturnValue(true);
+    const onclose = vi.fn();
+    render(DrawerKeyboardTestHarness, { isOpen: true, onBeforeClose, onclose });
+    await settle();
+
+    await userEvent.click(document.querySelector<HTMLElement>('[data-testid="request-close"]')!);
+    await settle(50);
+    expect(drawer()?.dataset.state).toBe("open");
+    expect(onclose).not.toHaveBeenCalled();
+
+    await userEvent.click(document.querySelector<HTMLElement>('[data-testid="request-close"]')!);
+    await settle(50);
+    expect(isDismissed()).toBe(true);
+    expect(onBeforeClose).toHaveBeenCalledTimes(2);
+    expect(onclose).toHaveBeenCalledTimes(1);
+    expect(onclose.mock.calls[0][0].detail.reason).toBe("programmatic");
+  });
+
+  it("keeps Escape available after a veto and reports one Escape close", async () => {
+    const onBeforeClose = vi.fn().mockReturnValueOnce(false).mockReturnValue(true);
+    const onclose = vi.fn();
+    render(DrawerKeyboardTestHarness, { isOpen: true, onBeforeClose, onclose });
+    await settle();
+    document.querySelector<HTMLElement>('[data-testid="inside"]')?.focus();
+
+    await userEvent.keyboard("{Escape}");
+    await settle(50);
+    expect(drawer()?.dataset.state).toBe("open");
+    expect(onclose).not.toHaveBeenCalled();
+
+    await userEvent.keyboard("{Escape}");
+    await settle(50);
+    expect(isDismissed()).toBe(true);
+    expect(onBeforeClose).toHaveBeenCalledTimes(2);
+    expect(onclose).toHaveBeenCalledTimes(1);
+    expect(onclose.mock.calls[0][0].detail.reason).toBe("escape");
+  });
+
+  it("allows an authoritative prop close without calling the request guard", async () => {
+    const onBeforeClose = vi.fn().mockReturnValue(false);
+    const onclose = vi.fn();
+    const screen = render(DrawerKeyboardTestHarness, { isOpen: true, onBeforeClose, onclose });
+    await settle();
+
+    await screen.rerender({ isOpen: false });
+    await settle(50);
+    expect(isDismissed()).toBe(true);
+    expect(onBeforeClose).not.toHaveBeenCalled();
+    expect(onclose).toHaveBeenCalledTimes(1);
+    expect(onclose.mock.calls[0][0].detail.reason).toBe("programmatic");
+  });
+
+  it("returns focus to the opener after an accepted close", async () => {
+    const screen = render(DrawerKeyboardTestHarness, { isOpen: false });
+    const opener = document.querySelector<HTMLElement>('[data-testid="outside"]')!;
+    opener.focus();
+    await screen.rerender({ isOpen: true });
+    await settle();
+    expect(drawer()?.contains(document.activeElement)).toBe(true);
+
+    await userEvent.click(document.querySelector<HTMLElement>('[data-testid="request-close"]')!);
+    await settle(50);
+    expect(document.activeElement).toBe(opener);
+  });
+});
+
 describe("Drawer held opening", () => {
   afterEach(() => {
     document.body.innerHTML = "";

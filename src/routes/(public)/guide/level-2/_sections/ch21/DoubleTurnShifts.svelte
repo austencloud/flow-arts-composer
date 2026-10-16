@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Sentences from "../../../_components/Sentences.svelte";
   /**
    * Real-pictograph diagrams for the 2-turn shifts breakdown, mirroring
    * TwoTurnsShiftsPage.svelte's `proStrip` and `antiThirds` strips exactly
@@ -239,14 +240,15 @@
   });
 </script>
 
-<GuideSection id="double-turn-shifts" title={translate("guide_l2_shifts_title")}>
+<GuideSection
+  id="double-turn-shifts"
+  title={translate("guide_l2_shifts_title")}
+>
   <div class="section-body">
-    <p>{translate("guide_l2_double_shifts_intro")}</p>
+    <p><Sentences text={translate("guide_l2_double_shifts_intro")} /></p>
 
     <h3>Pro</h3>
-    <p>
-      {translate("guide_l2_double_shifts_pro_intro")}
-    </p>
+    <p><Sentences text={translate("guide_l2_double_shifts_pro_intro")} /></p>
   </div>
 
   <div class="showcase-wrap">
@@ -268,14 +270,10 @@
   </div>
 
   <div class="section-body">
-    <p>
-      {translate("guide_l2_double_shifts_pro_thumb")}
-    </p>
+    <p><Sentences text={translate("guide_l2_double_shifts_pro_thumb")} /></p>
 
     <h3>Anti</h3>
-    <p>
-      {translate("guide_l2_double_shifts_anti_intro")}
-    </p>
+    <p><Sentences text={translate("guide_l2_double_shifts_anti_intro")} /></p>
   </div>
 
   <div class="showcase-wrap">
@@ -297,9 +295,7 @@
   </div>
 
   <div class="section-body">
-    <p>
-      {translate("guide_l2_double_shifts_anti_thumb")}
-    </p>
+    <p><Sentences text={translate("guide_l2_double_shifts_anti_thumb")} /></p>
   </div>
 </GuideSection>
 

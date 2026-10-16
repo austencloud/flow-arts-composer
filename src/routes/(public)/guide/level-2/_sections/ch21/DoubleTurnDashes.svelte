@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Sentences from "../../../_components/Sentences.svelte";
   /**
    * Real-pictograph diagrams for the 2-turn dash breakdown, mirroring
    * TwoTurnsDashStaticPage.svelte's `dashQuarters` and `dashHalves` strips
@@ -228,11 +229,12 @@
   });
 </script>
 
-<GuideSection id="double-turn-dashes" title={translate("guide_l2_dashes_title")}>
+<GuideSection
+  id="double-turn-dashes"
+  title={translate("guide_l2_dashes_title")}
+>
   <div class="section-body">
-    <p>
-      {translate("guide_l2_double_dashes_intro")}
-    </p>
+    <p><Sentences text={translate("guide_l2_double_dashes_intro")} /></p>
   </div>
 
   <div class="showcase-wrap">
@@ -254,17 +256,11 @@
   </div>
 
   <div class="section-body">
-    <p>
-      {translate("guide_l2_double_dashes_thumb")}
-    </p>
+    <p><Sentences text={translate("guide_l2_double_dashes_thumb")} /></p>
 
-    <p>
-      {translate("guide_l2_double_dashes_direction")}
-    </p>
+    <p><Sentences text={translate("guide_l2_double_dashes_direction")} /></p>
 
-    <p>
-      {translate("guide_l2_double_dashes_path")}
-    </p>
+    <p><Sentences text={translate("guide_l2_double_dashes_path")} /></p>
   </div>
 
   <div class="showcase-wrap">

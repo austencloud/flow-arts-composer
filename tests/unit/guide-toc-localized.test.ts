@@ -17,7 +17,10 @@ describe("guide contents in a language folder", () => {
 
     const guideRows = rows.filter((href) => !href.endsWith(".pdf"));
     expect(guideRows.length).toBeGreaterThan(10);
-    for (const href of guideRows) expect(href).toMatch(/^\/de\/guide(\/|$|#)/);
+    // The Codex is its own page now, still in the reader's language.
+    for (const href of guideRows) {
+      expect(href).toMatch(/^\/de\/(guide|codex)(\/|$|#)/);
+    }
     expect(rows.filter((href) => href.endsWith(".pdf"))).toEqual([
       "/guides/level-1.pdf",
       "/guides/level-2.pdf",

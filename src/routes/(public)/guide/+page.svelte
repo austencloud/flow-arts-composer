@@ -2,6 +2,7 @@
   import GuideShell from "./_components/GuideShell.svelte";
   import HubHeroBuild from "./_components/HubHeroBuild.svelte";
   import HubPictograph from "./_components/HubPictograph.svelte";
+  import Sentences from "./_components/Sentences.svelte";
   import DifficultyBadge from "#lib/shared/components/DifficultyBadge.svelte";
   import {
     GROUP_TITLES,
@@ -68,7 +69,7 @@
     },
     {
       key: "codex",
-      href: "/guide/codex",
+      href: "/codex",
     },
     {
       key: "motion_paths",
@@ -141,7 +142,9 @@
           <DifficultyBadge level={1} size="1.4em" />
           {tDynamic("guide_hub_level1_title")}
         </h2>
-        <p class="section-lead">{tDynamic("guide_welcome_pictographs")}</p>
+        <p class="section-lead">
+          <Sentences text={tDynamic("guide_welcome_pictographs")} />
+        </p>
         <ol class="stages">
           {#each levelOne as stage (stage.group)}
             <li class="stage" class:word-stage={stage.group === "1.2"}>
@@ -371,9 +374,20 @@
     margin-top: clamp(4rem, 8vw, 7rem);
   }
 
+  /* Section intros are centred breaks (the Guide pages rule); the hero
+     copy stays left beside its art. */
+  .level-one > h2 {
+    justify-content: center;
+    text-align: center;
+  }
+  .section-index > h2 {
+    text-align: center;
+  }
+
   .section-lead {
     max-width: 44rem;
-    margin: 0.85rem 0 0;
+    margin: 0.85rem auto 0;
+    text-align: center;
     color: var(--guide-text-dim);
     font-size: clamp(1rem, 1.2vw, 1.1rem);
     line-height: 1.65;

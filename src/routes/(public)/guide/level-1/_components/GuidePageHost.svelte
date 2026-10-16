@@ -1,5 +1,6 @@
 <script lang="ts">
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
+  import Sentences from "../../_components/Sentences.svelte";
   /**
    * GuidePageHost - ONE guide topic rendered as its own page: the crawlable,
    * prerendered SEO surface AND the interactive reader for that topic, in one
@@ -221,7 +222,7 @@
         <div class="topic-title">
           <h1 class:visually-hidden={!canFlow}>{seo.h1}</h1>
           {#if heroTagline}<p class="hero-tagline">
-              {heroTagline}
+              <Sentences text={heroTagline} />
             </p>{/if}
         </div>
         {#if interactiveLesson || relatedLinks.length > 0}
@@ -314,21 +315,20 @@
        narrow. inline-size only: block-size (min-height: 100vh) is unaffected. */
     container-type: inline-size;
   }
+  /* A centred section break, like every Guide page header: title, tagline,
+     then the lesson links, on the reading column's axis. */
   .topic-hero {
     max-width: 76rem;
     margin: 0 auto;
     padding: 1rem 1.5rem 0.75rem;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 1.5rem;
-    text-align: left;
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    gap: 0.65rem;
+    text-align: center;
   }
   .topic-title {
     min-width: 0;
-    display: flex;
-    align-items: baseline;
-    gap: 1.5rem;
   }
   /* The page title in the guide's signature calligraphic script (the same
      --guide-script the printed sheet uses for its title), so the crawl/flow
@@ -373,7 +373,7 @@
     --theme-accent: #647ff1;
     display: inline-flex;
     flex-wrap: wrap;
-    justify-content: flex-end;
+    justify-content: center;
     gap: 0.5rem;
   }
   /* Print-friendly sheet: fit-to-width scale (up to 1.9x - see sheetShiftPx),
@@ -458,20 +458,11 @@
 
   @container (max-width: 44rem) {
     .topic-hero {
-      grid-template-columns: 1fr;
-      gap: 0.65rem;
       padding: 1rem 1rem 0.5rem;
       position: relative;
-      text-align: center;
     }
     .topic-hero h1 {
       font-size: clamp(2.8rem, 15cqw, 3.6rem);
-    }
-    .topic-title {
-      display: block;
-    }
-    .interactive-lesson {
-      justify-self: center;
     }
     /* On a phone the empty slot beside the first or last page would push
        the two buttons to one side; let the buttons share the row instead. */

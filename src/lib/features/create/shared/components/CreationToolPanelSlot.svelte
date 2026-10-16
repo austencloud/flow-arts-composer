@@ -16,7 +16,10 @@
 
   import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
   import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
-  import type { IToolPanelMethods } from "../types/create-module-types";
+  import type {
+    IToolPanelMethods,
+    OptionSelectedHandler,
+  } from "../types/create-module-types";
   import { getCreateModuleContext } from "../context/create-module-context";
   import LazyMount from "#lib/shared/components/LazyMount.svelte";
   import ConstructTabContent from "./ConstructTabContent.svelte";
@@ -84,7 +87,7 @@
   // The step editor takes the same place while a step or mandala is selected.
   // Save outranks it: the save view leaves only once saving is done or
   // cancelled.
-  const isStepEditorView = $derived(
+  const wantsStepEditorView = $derived(
     isPersistenceFullyInitialized &&
       !isSaveView &&
       isStepEditorViewShown({
@@ -97,6 +100,41 @@
         isSequenceViewerOpen: sequenceOverlay.isOpen,
       })
   );
+
+  // The editor is its own chunk. Opening it before the chunk arrived faded the
+  // stage into an empty layer and then popped the whole editor in. So the
+  // chunk warms while the browser is idle, and if a step is picked before it
+  // lands, the picker stays put until it does; the swap then fades into a
+  // finished editor. A failed load still switches over, so LazyMount can show
+  // its error state.
+  const loadStepEditor = () =>
+    import("./coordinators/StepEditorCoordinator.svelte");
+  let stepEditorLoaded = $state(false);
+  let stepEditorLoad: Promise<void> | null = null;
+  function warmStepEditor(): void {
+    stepEditorLoad ??= loadStepEditor().then(
+      () => {
+        stepEditorLoaded = true;
+      },
+      () => {
+        stepEditorLoaded = true;
+      }
+    );
+  }
+  $effect(() => {
+    if (wantsStepEditorView) warmStepEditor();
+  });
+  $effect(() => {
+    if (!isPersistenceFullyInitialized || stepEditorLoad) return;
+    if (typeof requestIdleCallback === "undefined") {
+      const handle = setTimeout(warmStepEditor, 1000);
+      return () => clearTimeout(handle);
+    }
+    const handle = requestIdleCallback(warmStepEditor, { timeout: 4000 });
+    return () => cancelIdleCallback(handle);
+  });
+  const isStepEditorView = $derived(wantsStepEditorView && stepEditorLoaded);
+
   const isOverlayView = $derived(isSaveView || isStepEditorView);
   const toolStageKey = $derived(
     isSaveView ? "save" : isStepEditorView ? "step-editor" : "tools"
@@ -213,7 +251,7 @@
     toolPanelRef?: IToolPanelMethods | null;
     /** The workspace word, named in the save view. */
     currentDisplayWord?: string;
-    onOptionSelected: (option: PictographData) => Promise<void>;
+    onOptionSelected: OptionSelectedHandler;
     onPracticeStepIndexChange: (index: number | null) => void;
     onOpenFilters: () => void;
     onCloseFilters: () => void;
@@ -425,11 +463,7 @@
       {:else if isStepEditorView}
         <div class="creation-tool-content" data-active-tab="step-editor">
           <div class="sub-tab-content" data-tab="step-editor">
-            <LazyMount
-              loader={() =>
-                import("./coordinators/StepEditorCoordinator.svelte")}
-              active
-            />
+            <LazyMount loader={loadStepEditor} active />
           </div>
         </div>
       {/if}

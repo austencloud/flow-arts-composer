@@ -26,8 +26,8 @@ import { describe, it, expect, vi } from "vitest";
 vi.mock("../../../components/card-back/CardBackBrand.svelte", () => ({ default: {} }));
 vi.mock("../../../components/card-back/CardBackUrl.svelte", () => ({ default: {} }));
 vi.mock("../../../components/card-back/CardBackLoopIcon.svelte", () => ({ default: {} }));
-vi.mock("../../../components/card-back/TurnPatternGlyph.svelte", () => ({ default: {} }));
-vi.mock("../../../components/card-back/ReversalPatternGlyph.svelte", () => ({ default: {} }));
+vi.mock("#lib/shared/components/TurnPatternGlyph.svelte", () => ({ default: {} }));
+vi.mock("#lib/shared/components/ReversalPatternGlyph.svelte", () => ({ default: {} }));
 vi.mock("../../../components/card-back/StartPlacementPictograph.svelte", () => ({ default: {} }));
 vi.mock("../../../components/card-back/CardBackStepCount.svelte", () => ({ default: {} }));
 
