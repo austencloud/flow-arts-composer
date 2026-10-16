@@ -49,6 +49,17 @@ describe("the built bundle drawing with art fetched over HTTP", () => {
     expect(requested.some((p) => p.startsWith("/images/"))).toBe(true);
   });
 
+  it("draws from its own packaged art when no source is given", async () => {
+    const [first] = cases;
+    const svg = await renderPictographSvg(first.input, {
+      darkMode: true,
+      showTKA: true,
+      leftPropType: first.prop,
+      rightPropType: first.prop,
+    });
+    expect(svg).toBe(baselineSvg(first.name));
+  });
+
   it("finds every letter of a placement group", () => {
     expect(pictographsForLetter("A", { start: "alpha" }).length).toBeGreaterThan(1);
   });
