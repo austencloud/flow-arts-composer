@@ -7,10 +7,16 @@
     resolveThrelteScene,
   } from "#lib/shared/3d/scene-boot/threlte-handles.js";
   import LiveSequencePerformer3D from "#lib/shared/3d/performers/LiveSequencePerformer3D.svelte";
-  import type { CharacterId } from "#lib/shared/3d/domain/character-model.js";
+  import {
+    getCharacterModelPath,
+    type CharacterId,
+  } from "#lib/shared/3d/domain/character-model.js";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type { PropType as AppPropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
-  import type { PropType as ScenePropType } from "@austencloud/scene-3d";
+  import {
+    PROP_MODEL_REGISTRY,
+    type PropType as ScenePropType,
+  } from "@austencloud/scene-3d";
   import { captureNativeFrame, productionRigReady } from "./native-capture.js";
 
   interface Props {
@@ -45,6 +51,31 @@
 
   export function hasRenderedRig(): boolean {
     return productionRigReady(scene, id);
+  }
+
+  export function captureSettings() {
+    const model =
+      PROP_MODEL_REGISTRY[props.propType as keyof typeof PROP_MODEL_REGISTRY];
+    return {
+      rigPath: getCharacterModelPath(props.character),
+      propPaths: model
+        ? [
+            ...new Set(
+              [model.modelUrl, model.rightHandModelUrl].filter(
+                (path): path is string => typeof path === "string"
+              )
+            ),
+          ]
+        : [],
+      motionOptions: {
+        bodyClearance: null,
+        enableLocomotion: true,
+        enableFootPlanting: true,
+        playbackSpeed: 1,
+        phaseOffsetSteps: 0,
+        showEffects: false,
+      },
+    };
   }
 
   export async function settleCapturePose(): Promise<void> {
@@ -91,5 +122,6 @@
   showEffects={false}
   enableLocomotion={true}
   enableFootPlanting={true}
+  bodyClearance={null}
   onReady={props.onReady}
 />
