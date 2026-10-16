@@ -30,6 +30,8 @@ Supports two navigation modes:
     trackLessonStarted,
   } from "../services/learn-events";
   import ConceptTopicReading from "./ConceptTopicReading.svelte";
+  import { claimedViewTransitionName } from "#lib/shared/transitions/claimed-view-transition-name.js";
+  import { isLessonMorphRunning } from "../services/lesson-open-morph.svelte";
   import GridMergeAnimation from "./interactive/grid-merge/GridMergeAnimation.svelte";
   import {
     createLiveLessonBoard,
@@ -192,7 +194,14 @@ Supports two navigation modes:
   }
 </script>
 
-<div class="concept-detail">
+<!-- The course-map card grows into this surface, and back (lesson-open-morph). -->
+<div
+  class="concept-detail"
+  use:claimedViewTransitionName={{
+    name: "learn-lesson-surface",
+    enabled: isLessonMorphRunning(),
+  }}
+>
   <!-- Header bar with back button and mode toggle -->
   <div class="header-bar">
     <button

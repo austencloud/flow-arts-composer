@@ -13,6 +13,7 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
   import { claimedViewTransitionName } from "#lib/shared/transitions/claimed-view-transition-name.js";
+  import { isLessonMorphRunning } from "../../services/lesson-open-morph.svelte";
 
   let {
     heading,
@@ -30,12 +31,20 @@
      */
     artifactLayout?: "square" | "wide" | "workshop";
   } = $props();
+
+  // While a course-map card grows into this lesson, the heading and controls
+  // ride inside the growing lesson surface instead of fading in at their final
+  // places over the map (lesson-open-morph).
+  const ownRegions = $derived(!isLessonMorphRunning());
 </script>
 
 <div class="lesson-stage-frame" class:workshop={artifactLayout === "workshop"}>
   <div
     class="stage-heading"
-    use:claimedViewTransitionName={{ name: "learn-lesson-heading" }}
+    use:claimedViewTransitionName={{
+      name: "learn-lesson-heading",
+      enabled: ownRegions,
+    }}
   >
     {@render heading()}
   </div>
@@ -52,7 +61,10 @@
 
   {#if controls}<div
       class="stage-controls"
-      use:claimedViewTransitionName={{ name: "learn-lesson-controls" }}
+      use:claimedViewTransitionName={{
+        name: "learn-lesson-controls",
+        enabled: ownRegions,
+      }}
     >
       {@render controls()}
     </div>{/if}
