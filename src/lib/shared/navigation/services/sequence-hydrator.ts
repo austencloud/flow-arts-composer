@@ -31,6 +31,7 @@ import { derivePositionsForSequence } from "#lib/shared/navigation/services/posi
 import type { ILOOPDetector } from "#lib/shared/create/services/ILOOPDetector.js";
 import { deriveGridMode } from "../../pictograph/grid/services/grid-mode-deriver";
 import { startPlacementDeriver } from "#lib/shared/pictograph/shared/services/start-placement-deriver.js";
+import { advancePerformanceTransferEditorBaseline } from "#lib/shared/3d/services/performance-transfer.js";
 
 export interface SequenceHydratorDeps {
   loopDetector: ILOOPDetector | null;
@@ -132,7 +133,7 @@ export async function hydrateSequence(
     }
   }
 
-  return {
+  const hydrated: SequenceData = {
     ...placementHydrated,
     startPlacement: renderableStart ?? undefined,
     startingPlacement: renderableStart ?? undefined,
@@ -146,4 +147,5 @@ export async function hydrateSequence(
       _hydratedAt: Date.now(),
     },
   };
+  return advancePerformanceTransferEditorBaseline(sequence, hydrated);
 }

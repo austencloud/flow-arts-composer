@@ -153,6 +153,35 @@ export function setPerformanceTransferEditorBaseline(
   };
 }
 
+/** Carry an unchanged editor baseline through the viewer's semantic hydration. */
+export function advancePerformanceTransferEditorBaseline(
+  before: SequenceData,
+  after: SequenceData
+): SequenceData {
+  const origin = originOf(before);
+  if (
+    !origin?.baselineJson ||
+    origin.baselineJson !==
+      stableStringify(
+        JSON.parse(JSON.stringify(withoutEditorTransferData(before)))
+      )
+  )
+    return after;
+
+  return {
+    ...after,
+    metadata: {
+      ...after.metadata,
+      [ORIGIN_KEY]: {
+        ...origin,
+        baselineJson: stableStringify(
+          JSON.parse(JSON.stringify(withoutEditorTransferData(after)))
+        ),
+      },
+    },
+  };
+}
+
 export async function encodePerformanceTransfer(
   sequence: SequenceData,
   options: {
