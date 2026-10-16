@@ -35,6 +35,11 @@ export interface SmokePalette {
   /** 0-2 multiplier on the user's riseSpeed. */
   readonly riseBias: number;
   /**
+   * Heat the smoke carries, against air at 0.35. Warmer smoke rises; cooler
+   * smoke (fog) is heavier than the air and settles.
+   */
+  readonly warmth: number;
+  /**
    * True = genie-style rim hue shift over particle lifetime.
    * Implementation deferred to 1i.iii; the flag is set here so translators
    * and renderers can branch on it once shipped.
@@ -49,6 +54,7 @@ const INCENSE: SmokePalette = {
   lifetime: 5.0,
   curlBias: 0.3,
   riseBias: 0.4,
+  warmth: 0.42,
 };
 
 const FOG: SmokePalette = {
@@ -58,6 +64,7 @@ const FOG: SmokePalette = {
   lifetime: 6.0,
   curlBias: 0.5,
   riseBias: 0.2,
+  warmth: 0.08,
 };
 
 const GENIE: SmokePalette = {
@@ -67,6 +74,7 @@ const GENIE: SmokePalette = {
   lifetime: 2.0,
   curlBias: 1.0,
   riseBias: 0.9,
+  warmth: 1.05,
   hueShift: true,
 };
 
@@ -77,6 +85,7 @@ const CURSED: SmokePalette = {
   lifetime: 5.0,
   curlBias: 0.8,
   riseBias: 0.3,
+  warmth: 0.22,
 };
 
 const SPIRIT: SmokePalette = {
@@ -86,6 +95,7 @@ const SPIRIT: SmokePalette = {
   lifetime: 6.0,
   curlBias: 0.4,
   riseBias: 0.5,
+  warmth: 0.32,
 };
 
 const CAMPFIRE: SmokePalette = {
@@ -95,6 +105,7 @@ const CAMPFIRE: SmokePalette = {
   lifetime: 4.0,
   curlBias: 0.6,
   riseBias: 0.6,
+  warmth: 0.95,
 };
 
 export const SMOKE_PALETTES = {
@@ -125,6 +136,7 @@ export function resolveSmokePalette(intent: SmokeIntent): SmokePalette {
  *   lifetime   = 7.0s  (neutral)
  *   curlBias   = 0.5   (neutral)
  *   riseBias   = 0.5   (neutral)
+ *   warmth     = 0.35  (neutral: neither rises nor sinks on its own)
  *   hueShift   = false
  */
 export function deriveCustomPalette(hex: string): SmokePalette {
@@ -138,6 +150,7 @@ export function deriveCustomPalette(hex: string): SmokePalette {
     lifetime: 7.0,
     curlBias: 0.5,
     riseBias: 0.5,
+    warmth: 0.35,
   };
 }
 

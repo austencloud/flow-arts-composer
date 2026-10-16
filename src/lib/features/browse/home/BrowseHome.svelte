@@ -4,6 +4,13 @@
   Explore by content type, or your own library. The visuals tile carries
   chips for its types so a named type is one tap away without becoming a
   peer tile of its own.
+
+  Each tile shows its place at work, the way Create's method cards do, and
+  through Create's own machinery: the preview box (CreateMethodPreview), the
+  arrival wave that brings every card in together (createMethodPreviewReveal),
+  the turns the cards take (createMethodPreviewTurns), the hover and focus
+  hold (methodPreviewHold), the boot-screen hold, and the render gate that
+  pauses turns off screen. The scenes are Browse's own (previews/).
 -->
 <script module lang="ts">
   import type { BrowseVisualType } from "#lib/shared/browse/navigation/browse-route-resolver.js";
@@ -16,8 +23,25 @@
 </script>
 
 <script lang="ts">
+  import { onMount, tick, untrack } from "svelte";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
+  import {
+    bootScreenCovers,
+    holdBootScreen,
+    runAfterBootScreen,
+  } from "#lib/shared/application/services/boot-screen.js";
+  import {
+    createRenderActivityGate,
+    renderGateTarget,
+  } from "#lib/shared/render-gating/render-activity-gate.js";
+  import { runAfterNamedRouteMorphIdle } from "#lib/shared/transitions/named-route-morph-state.svelte.js";
+  import CreateMethodPreview from "#lib/features/create/shared/components/method-previews/CreateMethodPreview.svelte";
+  import { methodPreviewHold } from "#lib/features/create/shared/components/method-previews/method-preview-hold.js";
+  import { createMethodPreviewReveal } from "#lib/features/create/shared/state/method-preview-reveal.svelte.js";
+  import { createMethodPreviewTurns } from "#lib/features/create/shared/state/method-preview-turns.svelte.js";
+  import { BROWSE_HOME_SCENES } from "./previews/browse-home-scenes";
 
   let {
     visualsVisible,
@@ -85,8 +109,109 @@
     ALL_TILES.filter((tile) => tile.id !== "visuals" || visualsVisible)
   );
 
-  function select(tile: Tile): void {
-    onSelect({ kind: tile.id });
+  const sceneOrder = (): string[] => tiles.map((tile) => tile.id);
+
+  // The tiles arrive together, then take turns, exactly as Create's board
+  // does (CreateFrontDoor): the turns wait for the boot screen, then the
+  // route morph, then the arrival wave.
+  const reveal = createMethodPreviewReveal({
+    order: sceneOrder,
+    onReveal: (id) => turns.notifyReady(id),
+    covered: bootScreenCovers,
+  });
+
+  const turns = createMethodPreviewTurns({
+    order: sceneOrder,
+    isReady: (id) => reveal.isRevealed(id),
+    defer: (go) => {
+      let cancelMorphIdle = (): void => {};
+      let cancelWave = (): void => {};
+      const cancelBoot = runAfterBootScreen(() => {
+        cancelMorphIdle = runAfterNamedRouteMorphIdle(() => {
+          cancelWave = reveal.afterWave(go);
+        });
+      });
+      return () => {
+        cancelBoot();
+        cancelMorphIdle();
+        cancelWave();
+      };
+    },
+  });
+
+  // When Browse's home is the visit's first view, the boot screen waits
+  // for every tile's first picture, so none is an empty tint when it leaves.
+  let releasePreviewHold = (): void => {};
+  let cancelLeavingReveal = (): void => {};
+  const settledPreviews = new Set<string>();
+
+  function settlePreview(id: string): void {
+    settledPreviews.add(id);
+    if (sceneOrder().every((tileId) => settledPreviews.has(tileId))) {
+      void tick().then(() => releasePreviewHold());
+    }
+  }
+
+  function handleReady(id: string): void {
+    reveal.notifyReady(id);
+    settlePreview(id);
+  }
+
+  function handleFailed(id: string): void {
+    reveal.notifyFailed(id);
+    settlePreview(id);
+  }
+
+  const previewGate = createRenderActivityGate({
+    name: "browse-home-previews",
+  });
+
+  // The system setting reports changes through its media query.
+  let systemMotion = $state(0);
+  const appReducedMotion = $derived(getSettings().reducedMotion ?? false);
+
+  onMount(() => {
+    if (bootScreenCovers()) {
+      releasePreviewHold = holdBootScreen("browse-home-previews");
+      cancelLeavingReveal = runAfterBootScreen(() => reveal.revealNow());
+    }
+    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const onMotionChange = (): void => {
+      systemMotion += 1;
+    };
+    motionQuery.addEventListener("change", onMotionChange);
+    turns.setActive(previewGate.active);
+    const unsubscribe = previewGate.subscribe((value) =>
+      turns.setActive(value)
+    );
+    return () => {
+      releasePreviewHold();
+      cancelLeavingReveal();
+      motionQuery.removeEventListener("change", onMotionChange);
+      unsubscribe();
+      previewGate.dispose();
+      turns.dispose();
+      reveal.dispose();
+    };
+  });
+
+  // The home is mounted only while open, so the turns start with it. A
+  // change to either reduce-motion setting starts over, as on Create's
+  // board, so the turns stop at once when motion is reduced.
+  $effect(() => {
+    void systemMotion;
+    void appReducedMotion;
+    untrack(() => turns.start());
+  });
+
+  function choose(
+    destination: BrowseHomeDestination,
+    trigger: HTMLElement
+  ): void {
+    trigger.blur();
+    // Choosing a place ends the turns; the home fades out behind it.
+    turns.stop();
+    onSelect(destination);
   }
 </script>
 
@@ -101,6 +226,8 @@
       role="list"
       aria-label={t("browse_home_destinations")}
       data-tile-count={tiles.length}
+      data-playing-tile={turns.playingId}
+      use:renderGateTarget={previewGate}
     >
       {#each tiles as tile (tile.id)}
         <div
@@ -114,21 +241,27 @@
             type="button"
             class="tile-main"
             data-browse-home-tile={tile.id}
-            onclick={() => select(tile)}
+            onclick={(event) => choose({ kind: tile.id }, event.currentTarget)}
+            use:methodPreviewHold={{ turns, id: tile.id }}
           >
             <span class="tile-stage" aria-hidden="true">
-              {#if tile.id === "visuals"}
-                <span class="emblem-cycle">
-                  {#each VISUAL_TYPES as visual (visual.type)}
-                    <i class="fas {visual.icon} emblem"></i>
-                  {/each}
-                </span>
-              {:else}
-                <i class="fas {tile.icon}"></i>
-              {/if}
+              <CreateMethodPreview
+                methodId={tile.id}
+                loader={BROWSE_HOME_SCENES[tile.id]}
+                color={tile.color}
+                revealed={reveal.isRevealed(tile.id)}
+                instant={reveal.isInstant(tile.id)}
+                playing={turns.playingId === tile.id}
+                turn={turns.turn}
+                onready={handleReady}
+                onfailed={handleFailed}
+              />
             </span>
             <span class="tile-copy">
-              <span class="tile-name">{t(tile.labelKey)}</span>
+              <span class="tile-name"
+                ><i class="fas {tile.icon} tile-glyph" aria-hidden="true"
+                ></i>{t(tile.labelKey)}</span
+              >
               <span class="tile-description">{t(tile.descKey)}</span>
             </span>
           </button>
@@ -144,8 +277,11 @@
                   type="button"
                   class="tile-chip"
                   data-browse-home-chip={visual.type}
-                  onclick={() =>
-                    onSelect({ kind: "visuals", visualType: visual.type })}
+                  onclick={(event) =>
+                    choose(
+                      { kind: "visuals", visualType: visual.type },
+                      event.currentTarget
+                    )}
                 >
                   <i class="fas {visual.icon}" aria-hidden="true"></i>
                   {t(visual.labelKey)}
@@ -189,9 +325,10 @@
     text-wrap: balance;
   }
 
-  /* One column on a phone: each tile sets its icon square beside its words. */
+  /* One column on a phone: each tile's preview strip sits above its words,
+     the strip shape Create's preview box composes its widest scenes for. */
   .tile-index {
-    --stage-side: clamp(48px, 13cqi, 64px);
+    --stage-height: clamp(64px, 10cqh, 88px);
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: 10px;
@@ -225,12 +362,12 @@
 
   .tile-main {
     min-width: 0;
-    min-height: 92px;
     display: grid;
-    grid-template-columns: var(--stage-side) minmax(0, 1fr);
-    align-items: center;
-    gap: 14px;
-    padding: 14px;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    align-content: start;
+    gap: 12px;
+    padding: 12px 14px 14px;
     border: 0;
     border-radius: inherit;
     background: transparent;
@@ -246,54 +383,12 @@
     outline-offset: 2px;
   }
 
+  /* The preview box fills the stage; the stage sets its size. */
   .tile-stage {
-    width: var(--stage-side);
-    aspect-ratio: 1;
-    display: grid;
-    place-items: center;
-    border: 1px solid
-      color-mix(in srgb, var(--tile-color) 42%, var(--theme-stroke));
+    position: relative;
+    min-width: 0;
+    height: var(--stage-height);
     border-radius: var(--radius-2026-sm, 10px);
-    background: color-mix(in srgb, var(--tile-color) 20%, var(--theme-card-bg));
-    color: var(--tile-color);
-    font-size: calc(var(--stage-side) * 0.38);
-  }
-
-  /* The visuals emblem shows each published type in turn. */
-  .emblem-cycle {
-    display: grid;
-    place-items: center;
-  }
-  .emblem {
-    grid-area: 1 / 1;
-    animation: emblem-turn 6s ease-in-out infinite;
-  }
-  .emblem:nth-child(2) {
-    animation-delay: -3s;
-  }
-  @keyframes emblem-turn {
-    0%,
-    42% {
-      opacity: 1;
-      transform: rotate(0deg) scale(1);
-    }
-    50%,
-    92% {
-      opacity: 0;
-      transform: rotate(45deg) scale(0.8);
-    }
-    100% {
-      opacity: 1;
-      transform: rotate(0deg) scale(1);
-    }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .emblem {
-      animation: none;
-    }
-    .emblem:nth-child(2) {
-      opacity: 0;
-    }
   }
 
   .tile-copy {
@@ -308,6 +403,13 @@
     font-weight: 720;
     line-height: 1.15;
   }
+  /* The place's icon stays beside its name, as on Create's board. */
+  .tile-glyph {
+    display: inline-block;
+    margin-inline-end: 0.4em;
+    color: var(--tile-color);
+    font-size: 0.9em;
+  }
   .tile-description {
     color: var(--theme-text-dim);
     font-size: var(--font-size-min, 14px);
@@ -315,12 +417,12 @@
     text-wrap: pretty;
   }
 
-  /* Chips sit under the words, aligned with them rather than the icon. */
+  /* Chips sit under the words, aligned with them. */
   .tile-chips {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    padding: 0 14px 14px calc(14px + var(--stage-side) + 14px);
+    padding: 0 14px 14px;
   }
   .tile-chip {
     min-height: 44px;
@@ -353,14 +455,14 @@
     );
   }
 
-  /* Two columns once a tile has room for its square and a readable line.
-     An odd count lets the last tile (You) take the full row. */
+  /* Two columns once a tile has room for a strip and a readable line. An
+     odd count lets the last tile (You) take the full row. */
   @container browse-home (min-width: 600px) {
     .browse-home-inner {
       width: calc(100% - 28px);
     }
     .tile-index {
-      --stage-side: clamp(56px, 9cqi, 84px);
+      --stage-height: clamp(76px, 13cqh, 128px);
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 12px;
     }
@@ -368,7 +470,7 @@
       grid-column: 1 / -1;
     }
     /* Tiles side by side share two rows, words then chips, so a tile with
-       chips keeps its icon and title level with its neighbours. */
+       chips keeps its preview and title level with its neighbours. */
     .tile {
       grid-row: span 2;
       grid-template-rows: subgrid;
@@ -376,17 +478,12 @@
     }
     .tile-main {
       grid-row: 1;
+      gap: 14px;
+      padding: 16px 18px 18px;
     }
     .tile-chips {
       grid-row: 2;
-    }
-    .tile-main {
-      min-height: 132px;
-      gap: 16px;
-      padding: 18px;
-    }
-    .tile-chips {
-      padding: 0 18px 18px calc(18px + var(--stage-side) + 16px);
+      padding: 0 18px 18px;
     }
     .tile-name {
       font-size: clamp(1.125rem, 2.6cqi, 1.5rem);
@@ -398,31 +495,49 @@
     }
   }
 
-  /* A tall two-column board (a portrait tablet) fills its height the way
-     Create's board does: tall tiles with the icon centred above the words. */
-  @container browse-home (min-width: 600px) and (min-height: 760px) {
+  /* A short wide board (a phone on its side) keeps every tile in view: the
+     preview square sits beside the words, as on Create's short board. */
+  @container browse-home (min-width: 760px) and (max-height: 640px) {
     .tile-index {
-      --stage-side: clamp(72px, 11cqi, 112px);
+      --stage-side: clamp(56px, 22cqh, 104px);
     }
     .tile-main {
-      min-height: clamp(220px, 30cqh, 360px);
-      grid-template-columns: minmax(0, 1fr);
-      grid-template-rows: 1fr auto;
-      align-items: start;
-      gap: 18px;
-      padding: 22px;
+      grid-template-columns: var(--stage-side) minmax(0, 1fr);
+      grid-template-rows: auto;
+      align-items: center;
+      padding: 12px 14px;
     }
     .tile-stage {
-      align-self: center;
-      justify-self: center;
+      width: var(--stage-side);
+      height: auto;
+      aspect-ratio: 1;
+    }
+    .tile-chips {
+      padding: 0 14px 12px calc(14px + var(--stage-side) + 14px);
+    }
+  }
+
+  /* A tall two-column board (a portrait tablet) fills its height the way
+     Create's board does: tall tiles whose preview takes the room above the
+     words. */
+  @container browse-home (min-width: 600px) and (min-height: 760px) {
+    .tile-main {
+      min-height: clamp(240px, 32cqh, 380px);
+      grid-template-rows: minmax(0, 1fr) auto;
+      gap: 18px;
+      padding: 20px 22px 22px;
+    }
+    .tile-stage {
+      height: auto;
+      min-height: var(--stage-height);
     }
     .tile-chips {
       padding: 0 22px 22px;
     }
   }
 
-  /* A wide board puts every tile in one row, icon above words, centred in
-     the height like Create's board. */
+  /* A wide board puts every tile in one row, preview above words, centred
+     in the height like Create's board. */
   @container browse-home (min-width: 1100px) {
     .browse-home-inner {
       width: calc(100% - clamp(48px, 6cqi, 160px));
@@ -443,7 +558,7 @@
       font-size: clamp(1rem, 0.5cqi, 1.25rem);
     }
     .tile-index {
-      --stage-side: clamp(72px, 6.5cqi, 112px);
+      --stage-height: clamp(110px, 16cqh, 280px);
       grid-template-columns: repeat(var(--tile-columns, 4), minmax(0, 1fr));
       gap: 16px;
     }
@@ -454,16 +569,17 @@
       grid-column: auto;
     }
     .tile-main {
-      min-height: clamp(220px, 34cqh, 360px);
+      min-height: clamp(240px, 36cqh, 560px);
       grid-template-columns: minmax(0, 1fr);
-      grid-template-rows: 1fr auto;
-      align-items: start;
+      grid-template-rows: minmax(0, 1fr) auto;
       gap: 18px;
-      padding: 22px;
+      padding: 20px 22px 22px;
     }
     .tile-stage {
-      align-self: center;
-      justify-self: center;
+      width: auto;
+      height: auto;
+      aspect-ratio: auto;
+      min-height: var(--stage-height);
     }
     .tile-chips {
       padding: 0 22px 22px;
