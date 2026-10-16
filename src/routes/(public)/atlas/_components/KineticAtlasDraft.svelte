@@ -441,7 +441,7 @@
       const catKey = sectionSlugToKey.get(slug);
       if (catKey === data.codex.key || searchParams.has("letter")) {
         void goto(`${codexHref()}${window.location.search}`, {
-          replaceState: true,
+          replace: true,
         });
         return;
       }
