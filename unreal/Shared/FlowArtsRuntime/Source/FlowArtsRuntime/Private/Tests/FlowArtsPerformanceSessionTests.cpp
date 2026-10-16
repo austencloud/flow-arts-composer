@@ -64,12 +64,13 @@ bool FFlowArtsPerformanceSessionTest::RunTest(const FString& Parameters)
     }
     TestTrue(TEXT("Session retains selected entry"), Session.GetSelected() == Entry);
     TestTrue(TEXT("Prepared clip has duration"), Session.GetLength() > 0.f);
-    const auto Step = [World, Body, Avatar](float Seconds)
+    const auto Step = [World, Body, Avatar, Prop](float Seconds)
     {
         World->TimeSeconds += Seconds;
         Body->TickAnimation(Seconds, false);
         Body->RefreshBoneTransforms();
         Avatar->TickComponent(Seconds, LEVELTICK_All, nullptr);
+        Prop->TickComponent(Seconds, LEVELTICK_All, nullptr);
     };
     const auto Finite = [](const FVector& Point)
     {
@@ -91,7 +92,9 @@ bool FFlowArtsPerformanceSessionTest::RunTest(const FString& Parameters)
     Session.Seek(Session.GetLength() * .7f);
     Step(.05f);
     const FVector SecondHand = Body->GetSocketLocation(TEXT("LeftHand"));
-    const FVector SecondProp = Prop->GetPropRootTransform(true).GetLocation();
+    const FTransform SecondLeftProp = Prop->GetPropRootTransform(true);
+    const FTransform SecondRightProp = Prop->GetPropRootTransform(false);
+    const FVector SecondProp = SecondLeftProp.GetLocation();
     TestTrue(TEXT("Seek moves the body and paired prop to another sample"),
         FVector::Distance(FirstHand, SecondHand) > .1f && FVector::Distance(FirstProp, SecondProp) > .1f);
     TestTrue(TEXT("Paired prop remains near the captured hand anchor"),
@@ -100,7 +103,8 @@ bool FFlowArtsPerformanceSessionTest::RunTest(const FString& Parameters)
     TestTrue(TEXT("Pause holds the body and prop sample through ticks"),
         FMath::IsNearlyEqual(Session.GetTime(), Session.GetLength() * .7f, .002f) &&
         FVector::Distance(SecondHand, Body->GetSocketLocation(TEXT("LeftHand"))) < .01f &&
-        FVector::Distance(SecondProp, Prop->GetPropRootTransform(true).GetLocation()) < .01f);
+        SecondLeftProp.Equals(Prop->GetPropRootTransform(true), .01f) &&
+        SecondRightProp.Equals(Prop->GetPropRootTransform(false), .01f));
 
     FString TransferJson;
     FFlowArtsPerformanceSession Reopened(Avatar, Prop);
