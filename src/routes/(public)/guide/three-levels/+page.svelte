@@ -39,15 +39,13 @@
   } from "#lib/shared/guide-topics/zans-diamond-topic.js";
   import {
     CAPS,
-    CAP_RELATIONS,
+    CAP_DIRECTIONS,
+    CAP_TIMINGS,
     CAP_WORDS,
     capStrip,
-    type CapRelation,
+    type CapDirection,
+    type CapTiming,
   } from "#lib/shared/guide-topics/caps-topic.js";
-
-  // Gage's own write-up of the chart, in Mentive's SpiroAnim repository.
-  const EIGHT_STEP_SOURCE =
-    "https://github.com/rbgirard/spiroanim/blob/main/docs/EIGHT_STEP.md";
 
   // The opening pattern is shown by name only: its strip carries no letters,
   // just the app's step labels, and its player gets no letters to draw.
@@ -88,22 +86,28 @@
     capIndex = CAPS.indexOf(next);
   };
 
-  // The picker offers each word once, grouped the way Gage's chart sets the
-  // hands against each other. A word shared by several CAPs plays the first.
-  const GROUP_LABEL: Record<CapRelation, Parameters<typeof t>[0]> = {
-    opposite: "guide_eightstep_group_opposite_title",
-    same: "guide_eightstep_group_same_title",
-    "quarter-aligned": "guide_eightstep_group_quarter_aligned_title",
-    "quarter-opposed": "guide_eightstep_group_quarter_opposed_title",
+  // The picker offers each word once, grouped by VTG timing and direction,
+  // as the Eight Step page sorts its paths. A word shared by several CAPs
+  // plays the first.
+  const TIMING_LABEL: Record<CapTiming, Parameters<typeof t>[0]> = {
+    split: "guide_eightstep_timing_split_title",
+    together: "guide_eightstep_timing_together_title",
+    quarter: "guide_eightstep_timing_quarter_title",
   };
-  const groups = CAP_RELATIONS.map((relation) => ({
-    relation,
-    label: GROUP_LABEL[relation],
-    words: CAP_WORDS.filter((w) => w.relation === relation).map((w) => ({
-      word: w.word,
-      i: CAPS.indexOf(w.caps[0]!),
-    })),
-  }));
+  const DIRECTION_LABEL: Record<CapDirection, Parameters<typeof t>[0]> = {
+    same: "guide_eightstep_direction_same",
+    opposite: "guide_eightstep_direction_opposite",
+  };
+  const groups = CAP_TIMINGS.flatMap((timing) =>
+    CAP_DIRECTIONS.map((direction) => ({
+      key: `${timing}-${direction}`,
+      timing,
+      direction,
+      words: CAP_WORDS.filter(
+        (w) => w.timing === timing && w.direction === direction
+      ).map((w) => ({ word: w.word, i: CAPS.indexOf(w.caps[0]!) })),
+    }))
+  );
 
   // Every level plays the chosen CAP. By name it shows no letters, on the
   // canvas or in the strip; the VTG level adds each beat's element.
@@ -254,9 +258,6 @@
         <div class="centered">
           <p class="credit">{t("guide_caps_cap_credit")}</p>
           <div class="links">
-            <LinkChip href={EIGHT_STEP_SOURCE} target="_blank" rel="noopener"
-              >{t("guide_caps_link_source")}</LinkChip
-            >
             <LinkChip href={localHref("/guide/eight-step")}
               >{t("guide_eightstep_title")}</LinkChip
             >
@@ -290,9 +291,13 @@
           role="group"
           aria-label={t("guide_caps_picker_label")}
         >
-          {#each groups as group (group.relation)}
+          {#each groups as group (group.key)}
             <div class="picker-group">
-              <p class="picker-heading">{t(group.label)}</p>
+              <p class="picker-heading">
+                {t(TIMING_LABEL[group.timing])} · {t(
+                  DIRECTION_LABEL[group.direction]
+                )}
+              </p>
               <div class="picker-words">
                 {#each group.words as entry (entry.word)}
                   <button
