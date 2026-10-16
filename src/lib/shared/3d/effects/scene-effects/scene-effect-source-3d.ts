@@ -67,6 +67,8 @@ export interface SmokeTipSource3D extends SceneEffectTipBase3D {
   effect: "smoke";
   params: Smoke3DParams;
   qualityTier: QualityTier;
+  /** World-space supporting surface the smoke settles on. */
+  collisionFloorY: number;
 }
 
 export interface InkTipSource3D extends SceneEffectTipBase3D {

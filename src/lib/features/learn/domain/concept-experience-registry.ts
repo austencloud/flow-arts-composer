@@ -141,3 +141,13 @@ export function getNextConceptExperience(
   );
   return index < 0 ? undefined : CONCEPT_EXPERIENCES[index + 1];
 }
+
+/** The published lesson before this one, which Previous returns to. */
+export function getPreviousConceptExperience(
+  conceptId: string
+): ConceptExperienceDefinition | undefined {
+  const index = CONCEPT_EXPERIENCES.findIndex(
+    (entry) => entry.conceptId === conceptId
+  );
+  return index < 1 ? undefined : CONCEPT_EXPERIENCES[index - 1];
+}

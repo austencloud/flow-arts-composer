@@ -97,3 +97,27 @@ The final screenshots are in `Builds/Windows/MuseumGame/Saved/Screenshots/Window
 ### Remaining parity work
 
 Water console transformations and prop switching, the Water surface and waterfall shaders, collaboration village simulation, remaining room dressing, animated flames, and full browser lighting parity are still incomplete. The growth doorway remains dark under the authored lamp values. This wave does not establish complete visual parity or test every room's traversal. See the README for the current native scope.
+
+## Native Isolation exhibit — October 16, 2026
+
+The verified native build is preserved in the detached `E:/MuseumNativeExhibit58` project. Isolation stations have a shared world-space score. It draws the sealed pictograph sequence and reads the prepared performance session's avatar clock, so its active beat, progress, and time follow the same transport as body and prop playback. A missing or mismatched prepared performance leaves the score unavailable instead of showing an unrelated sequence. The exhibit lighting uses six native key lights at 600 lm each, a 7,500 lm fill, and exposure bounded to EV 4.5–5. First Fire has native effects: the shared Niagara system contains three editable CPU emitters, attached at the prop wick anchors and carried by prop transport. The shared prop fixtures use explicit lumen units for the 25 lm fire and 3 lm LED sources.
+
+### Evidence to date
+
+| Check | Result and evidence under `E:/MuseumNativeExhibit58` |
+| --- | --- |
+| Unreal editor C++ builds | Passed: `editor-build-4.log`, `editor-build-5.log`, and `editor-build-7.log` end with `Result: Succeeded`. The last build includes the explicit-lumen prop fixtures and camera fixture correction. |
+| Unreal game C++ build | Passed: `game-build.log` ends with `Result: Succeeded`. |
+| Shared data and transport automation | Four tests performed, zero failures: three succeeded and one succeeded with a warning. See `shared-data-tests.log` and `TestResults-shared-data/index.json`. The warning is from the intentional missing-animation fixture in `PreparedPerformanceSession`. |
+| Niagara asset authoring and RHI test | `author-niagara-6.log` reports that `NS_PropFire` was saved with three compiled editable CPU emitters. `niagara-tests.log` and `TestResults-niagara/index.json` show `FlowArts.Niagara.ShippedAssetPlayback` passed with zero warnings and errors under D3D12 SM6 RHI. |
+| Rendered editor views | The earlier `Project/Saved/ExhibitReview/Hero-20261016-035440/HighresScreenshot00004.png` exposed white clipping. The corrected `Project/Saved/ExhibitReview/Hero-20261016-040354/HighresScreenshot00007.png` shows body shading and legible score pictographs without that clipping. The full-room `Project/Saved/ExhibitReview/Room-20261016-040442/HighresScreenshot00008.png` passed visual inspection for the exhibit lighting, performers, score, and effects. |
+| Windows package and data contract | `package.log` ends with `BUILD SUCCESSFUL` and `MUSEUM_PACKAGE_OK E:/MuseumNativeExhibit58/Builds/Windows/MuseumGame.exe`. Packaged data verification retained 33 stations, 31 animated stations, 25 profiles, 641 receipt assets, 25 sealed bundles and library entries, and 98 pictograph images. |
+| Packaged playback | `packaged-playback.log` exits successfully. `Project/Saved/Logs/MuseumPlaybackSmoke-3dc36785760d4130add911603987a518.log` reports PASS for 33 stations, 31 animated stations, 25 exact captures, pause/resume/restart, and a full cycle with 0.11 cm peak grip and prop-anchor error. |
+| Packaged progression and collision | `packaged-progression.log` exits successfully. `Project/Saved/Logs/MuseumProgressionSmoke-d3ab724d41664a6d80a515a9adc07a1c.log` reports PASS for DJ → EK → FL, save/restore, the 2.2-second blackout, Earth growth, a grounded swept Fire–Earth round trip, and a blocked cave boundary. |
+| Packaged visual review | `Project/Saved/ExhibitReview/Hero-20261016-041823/HighresScreenshot00002.png` was inspected: score and body shading remain readable, and Niagara draws in the packaged build. This image used the `-FireEffect` diagnostic; Isolation normally uses LED props, while First Fire progression enables the actual fire effect. |
+| Source parity | `source-parity.json` compares 87 files with zero mismatches against shared runtime commit `9a49f41a9561b8cd4c0e4c7a6b10071de26e6586`. |
+| d2 application check | Job `museum-native-2118261421-035004` at commit `2118261421bdb22252e5812cadedd4272db4fdf8` completed `pnpm run check` with exit 0; `svelte-check` reported zero errors and zero warnings. Later changes in this exhibit wave are native C++ and authoring code, covered by the Unreal builds above. |
+
+Launch the packaged exhibit with `E:/MuseumNativeExhibit58/PlayIsolation.cmd`; the executable is `E:/MuseumNativeExhibit58/Builds/Windows/MuseumGame.exe`. `E:/MuseumNativeExhibit58/BUILD-PROVENANCE.json` records source parity, checks, runtime evidence, and artifact hashes. Flow Fest adopted shared commits `24e1d62a21` and `e524798dfb` for the native wick effects and score, plus the lumen and camera fixes. This build includes Flow Fest's shared prop and transport hooks. Flow Fest's unfinished embodiment wave is not part of this acceptance.
+
+The gallery furniture and environment remain blockout art. These checks verify the native exhibit lighting, shared score, performers, effects, packaged playback, and progression; they do not establish a completed museum art pass.

@@ -487,8 +487,15 @@
 
 		const from = untrack(() => changeMorphPaths ?? lastChangeTarget)!;
 		lastChangeTarget = target;
+		const morph = createMandalaMorph(from, target);
+		// The same picture with its lines re-dealt between tips: nothing moves.
+		if (morph.still) {
+			pathMorph = null;
+			changeMorphPaths = null;
+			return;
+		}
 		changeMorphPaths = from;
-		pathMorph = { at: createMandalaMorph(from, target), duration, elapsed: 0, last: null };
+		pathMorph = { at: morph, duration, elapsed: 0, last: null };
 		startChangeLoop();
 	});
 

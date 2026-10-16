@@ -7,6 +7,7 @@ import unreal as u
 project = Path(u.Paths.project_dir()).resolve()
 sys.path.insert(0, str(project / "Tools"))
 from museum_surface_materials import restore_shell_materials
+from museum_isolation_lighting import create_isolation_lighting
 data = json.loads((project / "Content" / "Data" / "museum.json").read_text(encoding="utf-8"))
 if data.get("version") != 1 or len(data.get("rooms", [])) < 20:
     raise RuntimeError("Museum export is incomplete")
@@ -91,6 +92,10 @@ if not ed.does_asset_exist(map_path):
     sky = u.EditorLevelLibrary.spawn_actor_from_class(u.SkyLight, u.Vector(0, 0, 500))
     if sky:
         sky.get_editor_property("light_component").set_editor_property("intensity", .45)
-    level.save_current_level()
+else:
+    if not level.load_level(map_path):
+        raise RuntimeError("Could not load museum level for lighting update")
+create_isolation_lighting(data)
+level.save_current_level()
 ed.save_directory("/Game/MuseumGame", only_if_is_dirty=True, recursive=True)
 u.log("MUSEUM_ASSETS_OK")
