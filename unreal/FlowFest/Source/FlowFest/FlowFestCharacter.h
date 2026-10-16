@@ -151,6 +151,9 @@ private:
     void ToggleEUC();
     void ToggleStaff();
     void CyclePerformance();
+    void OpenPerformanceLibrary();
+    void SyncPerformanceActivity();
+    bool IsFlowPlaying() const;
     void ToggleSound();
     void StopFlow();
     void TravelToObjective();

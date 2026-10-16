@@ -2,6 +2,7 @@
 #include "FlowFestWorld.h"
 #include "FlowFestAvatarComponent.h"
 #include "FlowFestPropComponent.h"
+#include "FlowArtsPerformancePanel.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
@@ -286,6 +287,8 @@ void AFlowFestCharacter::Tick(float DeltaSeconds)
         FPlatformMisc::RequestExitWithStatus(false, bCaptureFailed || bSmokeFailed ? 1 : 0);
     }
 
+    SyncPerformanceActivity();
+
     const float ForwardInput = bWardrobeOpen ? 0.f : (bForward ? 1.f : 0.f) - (bBack ? 1.f : 0.f);
     const float RightInput = bWardrobeOpen ? 0.f : (bRight ? 1.f : 0.f) - (bLeft ? 1.f : 0.f);
     if (VisitorAction != EFlowFestVisitorAction::None &&
@@ -329,7 +332,7 @@ void AFlowFestCharacter::Tick(float DeltaSeconds)
     if (Phase == EFlowFestPhase::DriveIn && bInVehicle && !bPhotoFly && !FMath::IsNearlyZero(ForwardInput))
         Energy = FMath::Max(0.f, Energy - DeltaSeconds * .075f);
 
-    if (bStaffSpinning)
+    if (IsFlowPlaying())
     {
         if (Phase == EFlowFestPhase::NightFreeRoam && Jam == EFlowFestJam::Active) JamSpinSeconds += DeltaSeconds;
     }
@@ -339,8 +342,8 @@ void AFlowFestCharacter::Tick(float DeltaSeconds)
     if (FestivalWorld)
     {
         const bool bAtFire = Near(TEXT("fire"), 24.f);
-        FestivalWorld->SetPlayerCrowdPresence(GetActorLocation(), bAtFire, bAtFire && bStaffSpinning);
-        FestivalWorld->SetJamSoundActive(bAtFire && (bStaffSpinning || Jam == EFlowFestJam::Active));
+        FestivalWorld->SetPlayerCrowdPresence(GetActorLocation(), bAtFire, bAtFire && IsFlowPlaying());
+        FestivalWorld->SetJamSoundActive(bAtFire && (IsFlowPlaying() || Jam == EFlowFestJam::Active));
     }
 }
 
@@ -378,6 +381,7 @@ void AFlowFestCharacter::SetupPlayerInputComponent(UInputComponent* Input)
     Input->BindKey(EKeys::T, IE_Pressed, this, &AFlowFestCharacter::TravelToObjective);
     Input->BindKey(EKeys::G, IE_Pressed, this, &AFlowFestCharacter::CycleTime);
     Input->BindKey(EKeys::F5, IE_Pressed, this, &AFlowFestCharacter::SaveProgress);
+    Input->BindKey(EKeys::F6, IE_Pressed, this, &AFlowFestCharacter::OpenPerformanceLibrary);
     Input->BindKey(EKeys::F9, IE_Pressed, this, &AFlowFestCharacter::LoadProgress);
     Input->BindKey(EKeys::F10, IE_Pressed, this, &AFlowFestCharacter::Restart);
     Input->BindKey(EKeys::Escape, IE_Pressed, this, &AFlowFestCharacter::QuitGame);
@@ -580,7 +584,7 @@ void AFlowFestCharacter::TickVisitorActivity(float DeltaSeconds)
     if (!bPhotoFly && !bWardrobeOpen && !bInVehicle)
     {
         Hunger = FMath::Min(100.f, Hunger + DeltaSeconds * .025f);
-        Energy = FMath::Max(0.f, Energy - DeltaSeconds * (bStaffSpinning ? .07f : GetVelocity().Size2D() > 100.f ? .035f : .008f));
+        Energy = FMath::Max(0.f, Energy - DeltaSeconds * (IsFlowPlaying() ? .07f : GetVelocity().Size2D() > 100.f ? .035f : .008f));
     }
     if (VisitorAction == EFlowFestVisitorAction::None) return;
     const float ActionStep = FMath::Min(DeltaSeconds, VisitorActionRemaining);
@@ -669,6 +673,32 @@ void AFlowFestCharacter::CyclePerformance()
     if (bResume) ToggleStaff();
     Notify(PerformanceVariant == 0 ? TEXT("Flow routine A") : TEXT("Flow routine B"));
 }
+void AFlowFestCharacter::OpenPerformanceLibrary()
+{
+    if (bWardrobeOpen) { Notify(TEXT("Close the wardrobe to open the performance library")); return; }
+    if (bInVehicle || bPhotoFly || bOnEUC) { Notify(TEXT("Step onto the ground to open the performance library")); return; }
+    bForward = bBack = bLeft = bRight = bSprint = bRise = bDescend = false;
+    GetCharacterMovement()->StopMovementImmediately();
+    if (APlayerController* Player = Cast<APlayerController>(GetController()))
+        FFlowArtsPerformancePanel::Open(Player, Avatar, Props);
+}
+
+void AFlowFestCharacter::SyncPerformanceActivity()
+{
+    // Shared library sessions start through the avatar rather than ToggleStaff.
+    if (!bStaffSpinning && Avatar->GetPerformanceLength() > 0.f)
+    {
+        if (VisitorAction != EFlowFestVisitorAction::None) { EndVisitorActivity(); SaveProgress(); }
+        GetCharacterMovement()->StopMovementImmediately();
+        bStaffSpinning = true;
+    }
+}
+
+bool AFlowFestCharacter::IsFlowPlaying() const
+{
+    return bStaffSpinning && Avatar->GetPerformanceLength() > 0.f && !Avatar->IsPerformancePaused();
+}
+
 void AFlowFestCharacter::ToggleSound()
 {
     bSoundEnabled = !bSoundEnabled;
@@ -1253,6 +1283,23 @@ void AFlowFestCharacter::RunSmoke()
             LoadProgress();
             Expect(VisitorAction == EFlowFestVisitorAction::None && VisitorActionRemaining == 0.f,
                 TEXT("load does not resurrect a food break canceled by flow"));
+            Interact();
+            const FName LibraryProfile = UFlowFestAvatarComponent::ResolvePerformanceProfile(EquippedPropId, PerformanceVariant);
+            Expect(Props->LoadPerformance(CharacterId, LibraryProfile) && Avatar->PlayPerformance(LibraryProfile),
+                TEXT("library target starts through the shared avatar and prop owners"));
+            SyncPerformanceActivity();
+            Expect(VisitorAction == EFlowFestVisitorAction::None && IsFlowPlaying(),
+                TEXT("library playback joins flow state and ends the food break"));
+            Avatar->SetPerformancePaused(true);
+            const float EnergyBeforePause = Energy;
+            TickVisitorActivity(1.f);
+            Expect(bStaffSpinning && !IsFlowPlaying() && FMath::IsNearlyEqual(Energy, EnergyBeforePause - .008f, .001f),
+                TEXT("paused flow retains its session without earning active flow or consuming flow energy"));
+            Avatar->SetPerformancePaused(false);
+            Expect(IsFlowPlaying(), TEXT("library resume restores active flow"));
+            LoadProgress();
+            Expect(!bStaffSpinning && VisitorAction == EFlowFestVisitorAction::None,
+                TEXT("library cancellation of a break persists across load"));
             MoveTo(CampIds[CampIndex]); Energy = 40.f; Interact();
             Expect(VisitorAction == EFlowFestVisitorAction::Rest, TEXT("player can rest at the same camp as attendees"));
             TickVisitorActivity(20.f);
