@@ -21,7 +21,7 @@ by the captured library entry's `scoreUnitsPerSecond`; they must end within
 
 Images are rendered offscreen from each library entry's complete `sequenceJson`
 with the existing MCP `StandaloneRenderer`. This preserves the captured motions,
-orientations, turns, placements, grid mode, and prop family. The builder does
+orientations, turns, grid mode, and prop family. The builder does
 not regenerate pictographs by letter or consult the letter CSV. Identical scores
 with the same prop family share PNGs even when captured at different rates.
 Image paths carry a renderer-style revision so a future appearance change can
