@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import { baseline, verify, inside, resolvedInside, recordDecodedRig, recordBody, validateBody, recordFbx, validateFbx, recordImport, validateImport } from '../../../unreal/Shared/Tools/performance-bundle.mjs';
+import { baseline, verify, inside, resolvedInside, resolvePreparer, recordDecodedRig, recordBody, validateBody, recordFbx, validateFbx, recordImport, validateImport } from '../../../unreal/Shared/Tools/performance-bundle.mjs';
 import { buildId, sha256, stableStringify } from '../../../unreal/Shared/Tools/capture-provenance.mjs';
 
 const put = (path: string, value: string) => { mkdirSync(dirname(path), { recursive: true }); writeFileSync(path, value); };
@@ -58,6 +58,19 @@ describe('performance legacy coverage', () => {
 });
 
 describe('performance stage receipts', () => {
+  it('resolves the actual preparer in repository or detached project layout', () => {
+    const root = mkdtempSync(join(tmpdir(), 'performance-preparer-'));
+    const moduleDir = join(root, 'Shared/Tools');
+    const flow = join(root, 'FlowFest/Tools/prepare-characters.mjs');
+    const project = join(root, 'Project/Tools/prepare-characters.mjs');
+    expect(() => resolvePreparer(moduleDir, undefined)).toThrow(/Missing body preparation tool/);
+    put(project, 'project preparer');
+    expect(resolvePreparer(moduleDir, undefined)).toBe(project);
+    put(flow, 'flow preparer');
+    expect(resolvePreparer(moduleDir, undefined)).toBe(flow);
+    expect(resolvePreparer(moduleDir, project)).toBe(project);
+    expect(() => resolvePreparer(moduleDir, join(root, 'missing.mjs'))).toThrow(/Missing body preparation tool/);
+  });
   it('binds raw capture, source rig, decoded rig, body, FBX and converter bytes', async () => {
     const root = mkdtempSync(join(tmpdir(), 'performance-chain-'));
     const sourceRig = join(root, 'rig.glb'), decodedRig = join(root, 'decoded.glb');
