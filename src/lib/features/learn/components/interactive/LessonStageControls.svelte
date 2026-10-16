@@ -7,6 +7,7 @@
     createIntrinsicSizeMotion,
     type IntrinsicSizeMotion,
   } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { untrack } from "svelte";
 
   let {
@@ -63,7 +64,13 @@
   $effect(() => {
     const element = labelElement;
     if (!element) return;
-    const fade = createDestinationFade(element);
+    // The words wait until the box has mostly grown, so they are never read
+    // cut off at both edges.
+    const fade = createDestinationFade(element, {
+      from: 0,
+      delay: DURATION.normal / 2,
+      duration: DURATION.normal / 2,
+    });
     labelFade = fade;
     return () => {
       fade.destroy();

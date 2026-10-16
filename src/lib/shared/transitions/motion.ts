@@ -60,8 +60,23 @@ export const easeOut = cssCubicBezier(0.16, 1, 0.3, 1);
  * raw `svelte/transition` imports in feature code.
  */
 
+export interface DestinationFadeOptions {
+  /** Starting opacity of a fresh fade. The default is a quiet dip. */
+  from?: number;
+  /** Hold the start for this long, e.g. until a resizing box has room. */
+  delay?: number;
+  duration?: number;
+}
+
 /** A quiet arrival cue for an instant jump within a mounted content surface. */
-export function createDestinationFade(element: HTMLElement) {
+export function createDestinationFade(
+  element: HTMLElement,
+  {
+    from = 0.55,
+    delay = 0,
+    duration = DURATION.fast,
+  }: DestinationFadeOptions = {}
+) {
   let animation: Animation | null = null;
   const cancel = () => {
     animation?.cancel();
@@ -82,12 +97,17 @@ export function createDestinationFade(element: HTMLElement) {
     play() {
       // Repeated navigation continues from the visible frame instead of
       // flashing back to the beginning or queuing another animation.
-      const opacity = animation ? getComputedStyle(element).opacity : "0.55";
+      const opacity = animation
+        ? getComputedStyle(element).opacity
+        : String(from);
       cancel();
       if (reducedMotion()) return;
       const next = element.animate([{ opacity }, { opacity: 1 }], {
-        duration: DURATION.fast,
+        duration,
+        delay,
         easing: STANDARD_MOTION_EASING,
+        // Hold the starting opacity through the delay.
+        fill: "backwards",
       });
       animation = next;
       next.onfinish = () => {
