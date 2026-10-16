@@ -106,36 +106,6 @@
     else controller?.set(join);
   }
 
-  // The pictures are sized in CSS from the groups box less the two heads.
-  // A head's height depends on how its hint wraps, which CSS cannot read, so
-  // it is measured. The heads span the full width, so their height does not
-  // depend on the picture size and this settles in one pass.
-  let groupsEl = $state<HTMLElement | null>(null);
-  let headsHeight = $state(0);
-  $effect(() => {
-    const el = groupsEl;
-    if (!el || !fill) return;
-    const measure = () => {
-      const heads = el.querySelectorAll<HTMLElement>(".group-head");
-      const style = getComputedStyle(el);
-      const groupGap = parseFloat(style.rowGap) || 0;
-      let total = groupGap * Math.max(0, heads.length - 1);
-      for (const head of heads) {
-        const groupGapInner =
-          parseFloat(getComputedStyle(head.parentElement!).rowGap) || 0;
-        total += head.offsetHeight + groupGapInner;
-      }
-      headsHeight = Math.ceil(total);
-    };
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(el);
-    el.querySelectorAll(".group-head").forEach((head) =>
-      observer.observe(head)
-    );
-    return () => observer.disconnect();
-  });
-
   const groupName = `grid-join-${Math.random().toString(36).slice(2, 10)}`;
 </script>
 
@@ -163,7 +133,7 @@
             {darkMode}
             {leftPropType}
             {rightPropType}
-            size={embedded ? 384 : 160}
+            size={embedded || fill ? 384 : 160}
           />
         </span>
         <span class="one-text">
@@ -174,11 +144,7 @@
         </span>
       </label>
 
-      <div
-        class="groups"
-        bind:this={groupsEl}
-        style:--measured-heads={headsHeight ? `${headsHeight}px` : undefined}
-      >
+      <div class="groups">
         {#each DISTANCES as distance (distance.steps)}
           <div class="group">
             <div class="group-head">
@@ -230,12 +196,11 @@
     container-type: inline-size;
   }
 
-  .join-host.embedded.fill {
-    container: performer-grid-choices / size;
+  .join-host.fill {
+    container: grid-join-choices / size;
   }
 
   .embedded .join-page {
-    --art-max: 100cqw;
     padding: 0;
   }
 
@@ -350,9 +315,10 @@
     width: 4rem;
   }
 
-  /* In the performer panel, one grid is a full-size choice alongside the
-     joined previews. Keep the short standalone tray at its original scale. */
-  .embedded .one-card {
+  /* With room (a panel, or a host it fills), one grid is a full-size choice
+     alongside the joined previews. Keep the short standalone tray at its
+     original scale. */
+  :is(.embedded, .fill) .one-card {
     gap: clamp(14px, 2cqw, 24px);
     padding: clamp(10px, 1.5cqw, 18px);
   }
@@ -361,15 +327,11 @@
     width: clamp(5rem, 30cqw, 10rem);
   }
 
-  .embedded.fill .one-art {
-    width: clamp(5rem, min(30cqw, 22cqh), 24rem);
-  }
-
-  .embedded .one-text {
+  :is(.embedded, .fill) .one-text {
     gap: clamp(4px, 0.7cqw, 8px);
   }
 
-  .embedded .one-card .tile-name {
+  :is(.embedded, .fill) .one-card .tile-name {
     font-size: clamp(1.125rem, 2.5cqw, 1.5rem);
   }
 
@@ -441,99 +403,26 @@
     max-width: var(--art, 9rem);
   }
 
+  .one-card:not(.chosen) .one-art,
   .join-tile:not(.chosen) .tile-art {
     opacity: 0.78;
     transition: opacity var(--transition-fast);
   }
 
+  .one-card:hover .one-art,
   .join-tile:hover .tile-art {
     opacity: 1;
   }
 
-  /* ── Filling the host ──
-     The groups box has a definite size, so each picture is the largest square
-     both its column and its row allow. A wide box puts each group's four
-     tiles in one row; a tall one gives each group two rows of two, which
-     makes the pictures larger there. Below the smallest readable picture the
-     box scrolls instead of shrinking further; the width always fits, so a
-     narrow phone never scrolls sideways. */
-  .fill .groups {
-    flex: 1 1 0;
-    min-height: 0;
-    overflow-y: auto;
-    container: join-groups / size;
-    /* Both group heads and the gaps around them, measured (headsHeight);
-       the fallback holds until the first measurement. */
-    --heads: var(--measured-heads, 5rem);
-    --chrome: calc(2 * var(--tile-pad) + 4px + var(--tile-name) + 2px);
-  }
-
-  /* Tiles hug their pictures and the grid sits centred under a centred
-     head, rather than tiles stretching to the column and leaving the picture
-     adrift inside. */
-  .fill .group-head {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-  }
-
-  .fill .tile-grid {
-    --art-w: calc(
-      (100cqw - 3 * var(--tile-gap)) / 4 - 2 * var(--tile-pad) - 2px
-    );
-    --art: min(
-      var(--art-w),
-      max(
-        5rem,
-        min(
-          var(--art-max, 14rem),
-          (100cqh - var(--heads)) / 2 - var(--chrome) - 1px
-        )
-      )
-    );
-    grid-template-columns: repeat(
-      4,
-      minmax(0, calc(var(--art) + 2 * var(--tile-pad) + 2px))
-    );
-    justify-content: center;
-  }
-
-  /* The columns may give up a scrollbar's width, so the picture never
-     outgrows its tile. */
-  .fill .tile-art {
-    width: min(var(--art), 100%);
-  }
-
-  @container join-groups (aspect-ratio < 1) {
-    .fill .tile-grid {
-      --art-w: calc((100cqw - var(--tile-gap)) / 2 - 2 * var(--tile-pad) - 2px);
-      --art: min(
-        var(--art-w),
-        max(
-          5rem,
-          min(
-            var(--art-max, 14rem),
-            (100cqh - var(--heads) - 2 * var(--tile-gap)) / 4 - var(--chrome) -
-              1px
-          )
-        )
-      );
-      grid-template-columns: repeat(
-        2,
-        minmax(0, calc(var(--art) + 2 * var(--tile-pad) + 2px))
-      );
-    }
-  }
-
   /* All nine choices share the available panel height. Artwork fits inside
      its allotted row, so choosing a larger standard grid never hides a join. */
-  .embedded.fill .join-page {
+  .join-host.fill .join-page {
     display: grid;
     grid-template-rows: minmax(56px, 1fr) minmax(0, 2.8fr);
     gap: clamp(8px, 2cqh, 20px);
   }
 
-  .embedded.fill .one-card {
+  .join-host.fill .one-card {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
     min-height: 0;
@@ -541,8 +430,8 @@
     padding: clamp(6px, 1cqh, 14px);
   }
 
-  .embedded.fill .one-art,
-  .embedded.fill .tile-art {
+  .join-host.fill .one-art,
+  .join-host.fill .tile-art {
     position: relative;
     width: 100%;
     height: 100%;
@@ -550,18 +439,18 @@
     max-width: none;
   }
 
-  .embedded.fill :global(.grid-join-preview) {
+  .join-host.fill :global(.grid-join-preview) {
     position: absolute;
     inset: 0;
     height: 100%;
     aspect-ratio: auto;
   }
 
-  .embedded.fill :global(.grid-join-preview img) {
+  .join-host.fill :global(.grid-join-preview img) {
     object-fit: contain;
   }
 
-  .embedded.fill .groups {
+  .join-host.fill .groups {
     display: grid;
     grid-template-rows: repeat(2, minmax(0, 1fr));
     gap: clamp(10px, 2cqh, 24px);
@@ -569,106 +458,106 @@
     container-type: normal;
   }
 
-  .embedded.fill .group {
+  .join-host.fill .group {
     display: grid;
     grid-template-rows: auto minmax(0, 1fr);
     min-height: 0;
     gap: 6px;
   }
 
-  .embedded.fill .group-head {
+  .join-host.fill .group-head {
     flex-direction: row;
     align-items: baseline;
     text-align: left;
   }
 
-  .embedded.fill .tile-grid {
+  .join-host.fill .tile-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     grid-auto-rows: minmax(0, 1fr);
     min-height: 0;
   }
 
-  .embedded.fill .join-tile {
+  .join-host.fill .join-tile {
     display: grid;
     grid-template-rows: minmax(0, 1fr) auto;
     justify-items: center;
     min-height: 0;
   }
 
-  @container performer-grid-choices (min-height: 700px) and (aspect-ratio < 0.85) {
-    .embedded.fill .tile-grid {
+  @container grid-join-choices (min-height: 700px) and (aspect-ratio < 0.85) {
+    .join-host.fill .tile-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 
-  @container performer-grid-choices (max-height: 420px) {
-    .embedded.fill .group-head .hint {
+  @container grid-join-choices (max-height: 420px) {
+    .join-host.fill .group-head .hint {
       display: none;
     }
 
-    .embedded.fill .join-tile {
+    .join-host.fill .join-tile {
       padding: 4px;
     }
 
-    .embedded.fill .tile-name {
+    .join-host.fill .tile-name {
       font-size: 14px;
     }
   }
 
-  @container performer-grid-choices (max-width: 360px) {
-    .embedded.fill .tile-grid {
+  @container grid-join-choices (max-width: 360px) {
+    .join-host.fill .tile-grid {
       gap: 4px;
     }
 
-    .embedded.fill .join-tile .tile-name {
+    .join-host.fill .join-tile .tile-name {
       white-space: normal;
       text-align: center;
     }
   }
 
-  @container performer-grid-choices (max-height: 340px) and (min-width: 360px) {
-    .embedded.fill .join-page {
+  @container grid-join-choices (max-height: 340px) and (min-width: 360px) {
+    .join-host.fill .join-page {
       grid-template-columns: minmax(0, 1fr) minmax(0, 3fr);
       grid-template-rows: minmax(0, 1fr);
     }
 
-    .embedded.fill .one-card {
+    .join-host.fill .one-card {
       grid-template-columns: minmax(0, 1fr);
       grid-template-rows: minmax(0, 1fr) auto;
       gap: 6px;
     }
 
-    .embedded.fill .one-text {
+    .join-host.fill .one-text {
       text-align: center;
     }
   }
 
-  @container performer-grid-choices (max-height: 340px) and (360px <= width < 450px) {
-    .embedded.fill .groups {
+  @container grid-join-choices (max-height: 340px) and (360px <= width < 450px) {
+    .join-host.fill .groups {
       grid-template-columns: repeat(2, minmax(0, 1fr));
       grid-template-rows: minmax(0, 1fr);
       gap: 8px;
     }
 
-    .embedded.fill .tile-grid {
+    .join-host.fill .tile-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 4px;
     }
 
-    .embedded.fill .join-tile .tile-name {
+    .join-host.fill .join-tile .tile-name {
       white-space: normal;
       text-align: center;
     }
   }
 
-  @container performer-grid-choices (max-height: 240px) and (min-width: 450px) {
-    .embedded.fill .join-tile {
+  @container grid-join-choices (max-height: 240px) and (min-width: 450px) {
+    .join-host.fill .join-tile {
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
       grid-template-rows: minmax(0, 1fr);
       gap: 4px;
     }
 
-    .embedded.fill .join-tile .tile-name {
+    .join-host.fill .join-tile .tile-name {
       white-space: normal;
       text-align: left;
     }
@@ -677,6 +566,7 @@
   @media (prefers-reduced-motion: reduce) {
     .one-card,
     .join-tile,
+    .one-art,
     .tile-art {
       transition: none;
     }
