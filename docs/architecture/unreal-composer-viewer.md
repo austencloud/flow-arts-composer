@@ -1,6 +1,6 @@
 # Unreal inside the Composer 3D viewer
 
-Date: 2026-10-15. Status: real Unreal video and command replies verified in Composer; remaining control and visual acceptance checks are in progress. Full viewer parity remains the roadmap below.
+Date: 2026-10-16 UTC. Status: the local native control slice is verified in Composer. Caption placement, measured streaming quality and full viewer parity remain open.
 
 Austen wants the existing Composer 3D viewer experience with Unreal rendering: the same controls, performer editing, prop picker, camera behavior, saved scenes, and visual identity. Flow Fest and Museum already share native performer infrastructure. The next layer should consume that work and retain Composer's actual Svelte controls.
 
@@ -38,11 +38,13 @@ Signalling and staged native assets live under `%LOCALAPPDATA%/FlowArtsComposer/
 
 ## Local acceptance record
 
-On 2026-10-15, the primary Composer route displayed real UE 5.8 video at 1430 × 900 with the existing DOM rails surrounding it. The Pixel Streaming data channel returned successful, correlated `hello` and `camera` replies from the native host, including the loaded `ch01` staff performer and shared playback state. This establishes the live renderer connection; it does not establish complete control parity.
+On 2026-10-15, the primary Composer route displayed real UE 5.8 video at 1430 × 900 with the existing DOM rails surrounding it. The Pixel Streaming data channel returned correlated `hello` and `camera` replies from the native host, including the loaded `ch01` staff performer and shared playback state. A follow-up build succeeded in 117.6 seconds. The next run showed the full performer with brighter front lighting and no Lumen distance-field warning. Twenty UI commands received twenty native replies and verified placement, camera controls, staff-to-fan switching, pause, rates 0.5 and 1.5, restart and reconnect.
 
-The first view exposed an overly close camera, constrained camera aspect ratio, and a Lumen distance-field configuration warning. The follow-up corrects native floor and frustum framing, camera aspect behavior, renderer configuration, and front lighting. Those visual changes require another coordinated native run. Compact disconnected layouts were inspected at 375 × 667, 960 × 412, and 720 × 450, with the prepared-loop caption hidden until connected.
+A further native build succeeded in 133.87 seconds. In the final live control run on 2026-10-16 UTC, 23 actual UI commands received 23 native replies: 22 succeeded and one rejected an unsupported Sword prop as expected. The web picker restored Double Staff after that rejection; Fan then succeeded. `hello` loaded the `ch01` staff performer. Pausing held phase at 0.256032794713974 while Shift+Right moved the performer from x=0 to x=0.1, Ctrl+Z returned it to x=0, and Ctrl+Shift+Z restored x=0.1. The paused phase remained unchanged through those edits. The explicit Play control resumed playback. Focus set the native camera position to (0.1, 2.1577132573, 4.15009078175) and target to (0.1, 1.2, 0). Reconnect retained the fan, x=0.1, playing state and rate 1.
 
-During control testing, the primary development server stopped serving modules. Its existing watchdog restarted the stack automatically. This was independent of the native stream connection. The viewer returned its Unreal process slot to Flow Fest for shared asset import while the remaining acceptance work continued. Native render sessions and builds remain coordinated with that owner.
+At a 375 × 667 portrait viewport, the stream settled at 366 × 668 and its video advanced. At a 1440 × 900 desktop viewport, video reached 1430 × 900. The latest native screenshot fills the viewport, so the earlier suspected 16:9 scene bars are not established. The native handshake reported `CameraActor_0`, `targetMatches=1`, component and cached camera constraints both 0, and viewports of 1280 × 720 then 1430 × 900. The evidence is recorded outside Git in `%LOCALAPPDATA%/FlowArtsComposer/ComposerViewer/Host/controls-final-evidence.json` and `viewer-desktop.png`.
+
+These checks establish command replies and observed playback after resize, not input-to-image latency or long-run reliability. One PixelCapture GPU fence timeout appeared at 05:09:01 UTC; the stream subsequently advanced, resized and accepted controls. Caption overlap is being addressed separately and has not yet passed visual verification. During earlier control testing, the primary development server stopped serving modules and its watchdog restarted the stack. The native viewer is now stopped, with its Unreal process slot returned to Flow Fest. Native render sessions and builds remain coordinated with that owner.
 
 ## Shared ownership
 

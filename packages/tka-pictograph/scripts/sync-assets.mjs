@@ -4,7 +4,7 @@
  * pictograph dataframes into JSON for the letter lookup.
  */
 import { execFileSync } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -41,6 +41,15 @@ for (const rel of COPY) {
     recursive: true,
     filter: (path) => !SKIP.has(path.split(/[\\/]/).pop() ?? ""),
   });
+}
+
+// A Windows checkout can hold the art with CRLF endings. The renderer inlines
+// SVG text, so normalize to LF and the package draws the same wherever it is built.
+for (const rel of readdirSync(to, { recursive: true })) {
+  if (!/\.(svg|json)$/.test(rel)) continue;
+  const file = join(to, rel);
+  const text = readFileSync(file, "utf-8");
+  if (text.includes("\r\n")) writeFileSync(file, text.replace(/\r\n/g, "\n"));
 }
 
 const dataDir = join(pkg, "src/data");
