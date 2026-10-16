@@ -171,12 +171,13 @@
     visibility: hidden;
   }
 
-  /* Line: the status over a slim track, sized by its container. */
+  /* Line: the status over a slim track. The host may size it to its view
+     with --loading-line-width and --loading-line-font-size. */
   .loading-capsule.line {
     flex-direction: column;
     align-items: stretch;
     gap: 12px;
-    width: min(320px, 100%);
+    width: min(var(--loading-line-width, 320px), 100%);
     min-width: 0;
     max-width: none;
     height: auto;
@@ -189,6 +190,7 @@
 
   .line .loading-capsule-label {
     color: rgba(255, 255, 255, 0.86);
+    font-size: var(--loading-line-font-size, var(--font-size-sm, 14px));
     font-weight: 500;
     letter-spacing: 0.02em;
     text-shadow: 0 1px 8px rgba(0, 0, 0, 0.45);

@@ -183,7 +183,7 @@
     margin: 0;
     overflow: hidden;
     color: rgba(255, 255, 255, 0.92);
-    font-size: clamp(1.5rem, 7cqi, 3.5rem);
+    font-size: clamp(1.5rem, 6cqi, 5rem);
     font-weight: 700;
     letter-spacing: 0.06em;
     line-height: 1.1;
@@ -203,6 +203,9 @@
   .status {
     position: absolute;
     bottom: clamp(20px, 5cqh, 40px);
+    /* The bar and its status grow with the stage, up to 4K. */
+    --loading-line-width: clamp(240px, 24cqi, 560px);
+    --loading-line-font-size: clamp(14px, 0.9cqi, 20px);
     right: 16px;
     left: 16px;
     display: flex;
