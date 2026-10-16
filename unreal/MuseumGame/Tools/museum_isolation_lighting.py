@@ -100,7 +100,7 @@ def create_isolation_lighting(data):
         light = _component(actor, u.SpotLightComponent)
         light.set_mobility(u.ComponentMobility.MOVABLE)
         light.set_editor_property("intensity_units", u.LightUnits.LUMENS)
-        light.set_editor_property("intensity", 4000.0)
+        light.set_editor_property("intensity", 600.0)
         light.set_editor_property("attenuation_radius", 650.0)
         light.set_editor_property("inner_cone_angle", 16.0)
         light.set_editor_property("outer_cone_angle", 32.0)
@@ -115,7 +115,7 @@ def create_isolation_lighting(data):
     fill_light = _component(fill, u.PointLightComponent)
     fill_light.set_mobility(u.ComponentMobility.MOVABLE)
     fill_light.set_editor_property("intensity_units", u.LightUnits.LUMENS)
-    fill_light.set_editor_property("intensity", 2500.0)
+    fill_light.set_editor_property("intensity", 7500.0)
     fill_light.set_editor_property("attenuation_radius", max(bounds["width"], bounds["height"]) * TILE_CM)
     fill_light.set_editor_property("cast_shadows", False)
     fill_light.set_light_color(u.LinearColor(0.9, 0.87, 0.8, 1.0))
@@ -138,9 +138,9 @@ def create_isolation_lighting(data):
     ))
     settings = volume.get_editor_property("settings")
     # Renderer config enables extended luminance, so these values are EV100.
-    # A narrow adaptive range handles a visitor crossing a dim partition or
-    # looking straight into the brighter performer pool without flash pumping.
-    for name, value in (("auto_exposure_min_brightness", 3.0),
+    # Keep adaptation close to the brighter EV needed to retain body shading
+    # when the pale performer and its fire enter the view.
+    for name, value in (("auto_exposure_min_brightness", 4.5),
                         ("auto_exposure_max_brightness", 5.0)):
         settings.set_editor_property(name, value)
         settings.set_editor_property("override_" + name, True)
