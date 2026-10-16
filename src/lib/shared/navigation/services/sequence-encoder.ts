@@ -1096,7 +1096,7 @@ export function parsePropTypeFromURLValue(
 }
 
 export function parsePropsFromURL(
-  searchParams: URLSearchParams
+  searchParams: Pick<URLSearchParams, "get">
 ): URLPropOptions {
   const result: URLPropOptions = {};
 

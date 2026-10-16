@@ -66,9 +66,10 @@
 
   const clamped = $derived(Math.min(max, Math.max(min, value)));
   const text = $derived(format ? format(clamped) : String(clamped));
-  const ends = $derived(
-    [min, max].map((end) => (format ? format(end) : String(end)))
-  );
+  const ends = $derived([
+    format ? format(min) : String(min),
+    format ? format(max) : String(max),
+  ] as const);
   /** The longer end's reading holds the box's width. */
   const widest = $derived(ends[0].length >= ends[1].length ? ends[0] : ends[1]);
   /** A track that reads below zero is typed with a minus. */

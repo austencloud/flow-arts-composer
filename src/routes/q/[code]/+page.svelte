@@ -31,7 +31,7 @@
       : "Watch and practice a flow arts choreography sequence."
   );
   const canonical = $derived(
-    `https://tkaflowarts.com/sequence/${encodeURIComponent(page.params.code)}`
+    `https://tkaflowarts.com/sequence/${encodeURIComponent(page.params.code ?? "")}`
   );
 
   let QScanPageComponent: typeof import("./QScanPage.svelte").default | null =

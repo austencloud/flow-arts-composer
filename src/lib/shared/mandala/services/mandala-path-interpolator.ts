@@ -8,6 +8,12 @@ import { parsePoints } from "./mandala-fingerprint";
 
 const PATH_GROUPS = ["left", "right", "purple"] as const;
 
+/** Points closer than this (mandala units) count as the same point. */
+const SAME_POINT = 1e-3;
+
+/** Lines per hand the beat pairing tries every arrangement of. */
+const MAX_PAIRED_LINES = 4;
+
 function interpolatePoint(
   from: MandalaPoint,
   to: MandalaPoint,
@@ -41,6 +47,208 @@ function resamplePoints(
 function collapsedPoints(point: MandalaPoint, count: number): MandalaPoint[] {
   return Array.from({ length: count }, () => ({ ...point }));
 }
+
+function squaredGap(a: MandalaPoint, b: MandalaPoint): number {
+  const dx = a.x - b.x;
+  const dy = a.y - b.y;
+  return dx * dx + dy * dy;
+}
+
+function samePoint(a: MandalaPoint, b: MandalaPoint): boolean {
+  return squaredGap(a, b) <= SAME_POINT * SAME_POINT;
+}
+
+function samePoints(
+  a: readonly MandalaPoint[],
+  b: readonly MandalaPoint[]
+): boolean {
+  return a.length === b.length && a.every((point, i) => samePoint(point, b[i]!));
+}
+
+function blendPoints(
+  from: readonly MandalaPoint[],
+  to: readonly MandalaPoint[],
+  t: number
+): MandalaPoint[] {
+  return from.map((start, i) => interpolatePoint(start, to[i]!, t));
+}
+
+// ─── Beat morph ─────────────────────────────────────────────────────────────
+//
+// A hand's drawing is one line per prop tip, and each line is a run of beats.
+// An edit usually changes one beat, but it can also change which tip draws
+// which line from that beat on: one more turn swaps a staff's two ends for
+// the rest of the sequence, so the old tip 0 line becomes the new tip 1 line.
+// Pairing lines by tip then sends every later beat across the figure to a
+// shape it already had. Instead, each beat's old segments are paired with the
+// new segments they are closest to, keeping each line joined from beat to
+// beat where it can, so a beat the edit did not change stays exactly where it
+// is and only the changed beats move.
+
+type Beats = readonly (readonly MandalaPoint[])[];
+
+/** One beat of one line: equal-length point lists to blend. */
+interface BeatPair {
+  readonly from: readonly MandalaPoint[];
+  readonly to: readonly MandalaPoint[];
+  readonly still: boolean;
+  /** True when this beat does not continue the one before it as one stroke. */
+  readonly breaks: boolean;
+}
+
+interface LineMorph {
+  readonly tipIndex: number;
+  readonly beats: readonly BeatPair[];
+}
+
+function pathBeats(paths: readonly SVGPathData[]): Beats[] | null {
+  const all = paths.map((path) => path.beats);
+  if (all.some((beats) => !beats || beats.length === 0)) return null;
+  const count = all[0]?.length ?? 0;
+  if (all.some((beats) => beats!.length !== count)) return null;
+  return all as Beats[];
+}
+
+function permutations(count: number): number[][] {
+  if (count === 0) return [[]];
+  return permutations(count - 1).flatMap((rest) =>
+    Array.from({ length: count }, (_, at) => [
+      ...rest.slice(0, at),
+      count - 1,
+      ...rest.slice(at),
+    ])
+  );
+}
+
+/** Mean squared distance a segment's points travel to become the other. */
+function segmentCost(
+  from: readonly MandalaPoint[],
+  to: readonly MandalaPoint[]
+): number {
+  const count = Math.max(from.length, to.length);
+  const a = from.length === count ? from : resamplePoints(from, count);
+  const b = to.length === count ? to : resamplePoints(to, count);
+  let sum = 0;
+  for (let i = 0; i < count; i++) sum += squaredGap(a[i]!, b[i]!);
+  return count === 0 ? 0 : sum / count;
+}
+
+/**
+ * For each beat, which new line each old line's segment becomes: the
+ * arrangement with the least travel, where a line that leaves its new
+ * neighbour mid-morph pays the size of that gap. Solved over all beats at
+ * once (each beat's choice depends only on the one before), so a swap is
+ * taken at the beat where it costs least.
+ */
+function pairBeats(from: Beats[], to: Beats[]): number[][] {
+  const lines = from.length;
+  const beatCount = from[0]?.length ?? 0;
+  const arrangements = permutations(lines);
+  // Identity first, so equal costs keep each tip on its own line.
+  arrangements.sort((a, b) =>
+    a.every((value, i) => value === i) ? -1 : b.every((value, i) => value === i) ? 1 : 0
+  );
+
+  const own: number[][] = [];
+  for (let beat = 0; beat < beatCount; beat++) {
+    const pairCost = from.map((line) =>
+      to.map((target) => segmentCost(line[beat]!, target[beat]!))
+    );
+    own.push(
+      arrangements.map((arrangement) =>
+        arrangement.reduce((sum, target, line) => sum + pairCost[line]![target]!, 0)
+      )
+    );
+  }
+
+  let cost = own[0] ?? [];
+  const back: number[][] = [];
+  for (let beat = 1; beat < beatCount; beat++) {
+    const next: number[] = [];
+    const choice: number[] = [];
+    arrangements.forEach((arrangement, index) => {
+      let best = Infinity;
+      let bestPrevious = 0;
+      arrangements.forEach((previous, previousIndex) => {
+        let gap = 0;
+        for (let line = 0; line < lines; line++) {
+          const end = to[previous[line]!]![beat - 1]!;
+          const start = to[arrangement[line]!]![beat]![0]!;
+          gap += squaredGap(end[end.length - 1]!, start);
+        }
+        const total = cost[previousIndex]! + gap;
+        if (total < best) {
+          best = total;
+          bestPrevious = previousIndex;
+        }
+      });
+      next.push(best + own[beat]![index]!);
+      choice.push(bestPrevious);
+    });
+    back.push(choice);
+    cost = next;
+  }
+
+  let last = cost.indexOf(Math.min(...cost));
+  const chosen: number[][] = new Array(beatCount);
+  for (let beat = beatCount - 1; beat >= 0; beat--) {
+    chosen[beat] = arrangements[last]!;
+    if (beat > 0) last = back[beat - 1]![last]!;
+  }
+  return chosen;
+}
+
+function prepareBeatGroup(
+  fromPaths: readonly SVGPathData[],
+  toPaths: readonly SVGPathData[]
+): LineMorph[] | null {
+  if (fromPaths.length !== toPaths.length) return null;
+  if (fromPaths.length === 0 || fromPaths.length > MAX_PAIRED_LINES) return null;
+  const from = pathBeats(fromPaths);
+  const to = pathBeats(toPaths);
+  if (!from || !to || from[0]!.length !== to[0]!.length) return null;
+
+  const pairing = pairBeats(from, to);
+  return from.map((line, index) => ({
+    tipIndex: fromPaths[index]!.tipIndex,
+    beats: line.map((segment, beat): BeatPair => {
+      const target = to[pairing[beat]![index]!]![beat]!;
+      const count = Math.max(segment.length, target.length);
+      const previousFrom = beat > 0 ? line[beat - 1]! : null;
+      const previousTo = beat > 0 ? to[pairing[beat - 1]![index]!]![beat - 1]! : null;
+      return {
+        from: segment.length === count ? segment : resamplePoints(segment, count),
+        to: target.length === count ? target : resamplePoints(target, count),
+        still: samePoints(segment, target),
+        breaks:
+          !previousFrom ||
+          !previousTo ||
+          !samePoint(previousFrom[previousFrom.length - 1]!, segment[0]!) ||
+          !samePoint(previousTo[previousTo.length - 1]!, target[0]!),
+      };
+    }),
+  }));
+}
+
+function blendLines(lines: readonly LineMorph[], t: number): SVGPathData[] {
+  return lines.flatMap((line) => {
+    const beats = line.beats.map((pair) =>
+      pair.still ? pair.to : blendPoints(pair.from, pair.to, t)
+    );
+    const strokes: MandalaPoint[][] = [];
+    line.beats.forEach((pair, beat) => {
+      if (pair.breaks || strokes.length === 0) strokes.push([]);
+      strokes[strokes.length - 1]!.push(...beats[beat]!);
+    });
+    const d = strokes
+      .map((points) => pointsToSVGPath(points))
+      .filter(Boolean)
+      .join(" ");
+    return d ? [{ d, tipIndex: line.tipIndex, beats }] : [];
+  });
+}
+
+// ─── Tip morph (paths without beats) ────────────────────────────────────────
 
 function pathsByTipIndex(
   paths: readonly SVGPathData[]
@@ -90,7 +298,7 @@ function prepareTipMorph(
   };
 }
 
-function preparePathGroup(
+function prepareTipGroup(
   fromPaths: readonly SVGPathData[],
   toPaths: readonly SVGPathData[]
 ): TipMorph[] {
@@ -110,7 +318,7 @@ function preparePathGroup(
   });
 }
 
-function blendPathGroup(morphs: readonly TipMorph[], t: number): SVGPathData[] {
+function blendTipGroup(morphs: readonly TipMorph[], t: number): SVGPathData[] {
   return morphs.flatMap((morph) => {
     if (morph.kind === "fixed") return [morph.path];
 
@@ -125,6 +333,34 @@ function blendPathGroup(morphs: readonly TipMorph[], t: number): SVGPathData[] {
     const d = pointsToSVGPath(frame);
     return d ? [{ d, tipIndex: morph.tipIndex }] : [];
   });
+}
+
+// ─── Public ─────────────────────────────────────────────────────────────────
+
+type GroupMorph =
+  | { kind: "beats"; lines: LineMorph[] }
+  | { kind: "tips"; morphs: TipMorph[] };
+
+function prepareGroup(
+  fromPaths: readonly SVGPathData[],
+  toPaths: readonly SVGPathData[]
+): GroupMorph {
+  const lines = prepareBeatGroup(fromPaths, toPaths);
+  return lines
+    ? { kind: "beats", lines }
+    : { kind: "tips", morphs: prepareTipGroup(fromPaths, toPaths) };
+}
+
+function groupIsStill(group: GroupMorph): boolean {
+  return group.kind === "beats"
+    ? group.lines.every((line) => line.beats.every((pair) => pair.still))
+    : group.morphs.every((morph) => morph.kind === "fixed");
+}
+
+function blendGroup(group: GroupMorph, t: number): SVGPathData[] {
+  return group.kind === "beats"
+    ? blendLines(group.lines, t)
+    : blendTipGroup(group.morphs, t);
 }
 
 export function mandalaPathsEqual(
@@ -145,31 +381,45 @@ export function mandalaPathsEqual(
   });
 }
 
+/** A morph between two geometries, as a function of progress. */
+export interface MandalaMorph {
+  (t: number): MandalaPaths;
+  /**
+   * True when both geometries draw the same picture (the lines may only have
+   * changed which tip draws them), so there is nothing to show moving.
+   */
+  readonly still: boolean;
+}
+
 /**
  * A morph between two calculated geometries, as a function of progress.
- * Paths are paired by prop tip, and unequal sample counts are normalized
- * before the points move. A hand whose geometry did not change is returned
- * untouched. Pairing and normalizing happen once here, so each frame only
+ * Paths that carry their beats move beat by beat, each beat's segments paired
+ * with the new segments they are closest to, so only what an edit changed
+ * moves. Paths without beats pair by prop tip, with unequal sample counts
+ * normalized. Pairing and normalizing happen once here, so each frame only
  * blends numbers and writes the path strings.
  */
 export function createMandalaMorph(
   from: MandalaPaths,
   to: MandalaPaths
-): (t: number) => MandalaPaths {
+): MandalaMorph {
   const groups = {
-    left: preparePathGroup(from.left, to.left),
-    right: preparePathGroup(from.right, to.right),
-    purple: preparePathGroup(from.purple, to.purple),
+    left: prepareGroup(from.left, to.left),
+    right: prepareGroup(from.right, to.right),
+    purple: prepareGroup(from.purple, to.purple),
   };
-  return (t) => {
+  const morph = (t: number): MandalaPaths => {
     if (t <= 0) return from;
     if (t >= 1) return to;
     return {
-      left: blendPathGroup(groups.left, t),
-      right: blendPathGroup(groups.right, t),
-      purple: blendPathGroup(groups.purple, t),
+      left: blendGroup(groups.left, t),
+      right: blendGroup(groups.right, t),
+      purple: blendGroup(groups.purple, t),
     };
   };
+  return Object.assign(morph, {
+    still: PATH_GROUPS.every((group) => groupIsStill(groups[group])),
+  });
 }
 
 /** One frame of the morph from `from` to `to`. */

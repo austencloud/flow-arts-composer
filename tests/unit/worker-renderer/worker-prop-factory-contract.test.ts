@@ -45,14 +45,14 @@ const CANONICAL_PROP_SOURCE_HASHES = {
   // worker's model transform now does too.
   "GltfProp3D.svelte":
     "01fc59727841afb81bda5c9b86a6b8d9949f789f1faa2492696dc5f1095dc21b",
-  // Flat-grip (43bf94fc40) and Star builds: the component picks the build's
+  // Flat-grip (43bf94fc40), Star and Flow DNA Sense (bbb82c228e) builds: the component picks the build's
   // own GLB through SEPARATE_BUILD_MODEL_URLS, and fanModelUrl() in
   // worker-gltf-props.ts makes the same choice from the same build.fanBuild
   // value, so the worker is already in parity. Hand colors (d11b2ce06c) paint
   // the cover and moon frame from the live hand palette; createFanModelWorkerProp
   // reads the same live PROP_PALETTES for both.
   "Fan3D.svelte":
-    "2ee4c18f29f0048242fe702da10fb79a704430617f540ddf0dfc6f6be1853d06",
+    "ca36cf77a0244979e78073554ed17f580796d92203e5a458a61640e62107cf63",
   "club-profile.ts":
     "23e6db6928f508be7b6b15d915a6fd5bf22365418708075390edae2e74e796b1",
   "fan-profile.ts":

@@ -11,7 +11,6 @@ import {
   TextureLoader,
   Vector3,
   type Camera,
-  type ColorSpace,
   type InstancedMesh,
   type Object3D,
   type Texture,
@@ -50,7 +49,7 @@ export interface WinterEnvironmentWorldOptions {
   deviceTier: WinterDetailTier;
   motionScale?: number;
   random?: () => number;
-  outputColorSpace?: ColorSpace;
+  outputColorSpace?: Texture["colorSpace"];
   assetUrl?: (path: string) => string;
   loadTexture?: (url: string) => Texture;
 }
@@ -126,7 +125,10 @@ export function createWinterEnvironmentWorld(
   let motionScale = options.motionScale ?? 1;
   let disposed = false;
 
-  function loadTexture(path: string, colorSpace?: ColorSpace): Texture {
+  function loadTexture(
+    path: string,
+    colorSpace?: Texture["colorSpace"]
+  ): Texture {
     const url = assetUrl(path);
     const value = options.loadTexture
       ? options.loadTexture(url)

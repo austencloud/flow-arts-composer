@@ -226,7 +226,7 @@
     leftPropType={resolvedLeftPropType}
     rightPropType={resolvedRightPropType}
     catDogModeEnabled={hasMixedPropTypes}
-    primaryPropColors={visibility?.primaryPropColors}
+    primaryPropColors={visibility?.primaryPropColors ?? undefined}
     columnCount={liveColumnCount}
     startPlacementLayoutOverride={automaticLayout
       ? null

@@ -32,7 +32,7 @@
   import {
     postAnimationEffectsConfig,
     postAnimationTrailSettings,
-  } from "#lib/shared/media-composition/domain/post-animation-effects.svelte";
+  } from "#lib/shared/media-composition/domain/post-animation-effects.svelte.js";
   import { sequenceArrowLayers } from "#lib/shared/media-composition/domain/sequence-frame.js";
   import {
     tunnelHookCopyOpacity,

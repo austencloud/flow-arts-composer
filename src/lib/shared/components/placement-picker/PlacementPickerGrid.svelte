@@ -126,7 +126,7 @@ Uses StartPlacementManager to load variations and displays actual pictographs
             placement.letter
           )}
           aria-label={t("shared_controls_select_position", {
-            position: placement.startPlacement,
+            position: placement.startPlacement ?? "",
           })}
         >
           <div class="pictograph-wrapper">

@@ -181,6 +181,7 @@ Props:
         superseded = true;
       };
     }
+    return undefined;
   });
 
   // Effective letter dimensions: synchronous cache lookup + prop + async fallback.

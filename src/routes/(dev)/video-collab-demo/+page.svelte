@@ -14,7 +14,10 @@
   import PendingInviteCard from "#lib/shared/video-collaboration/components/PendingInviteCard.svelte";
   import InviteCollaboratorsSheet from "#lib/shared/video-collaboration/components/InviteCollaboratorsSheet.svelte";
   import VideoUploadSheet from "#lib/shared/video-collaboration/components/VideoUploadSheet.svelte";
-  import type { CollaborativeVideo, VideoCollaborator } from "#lib/shared/video-collaboration/domain/collaborative-video.js";
+  import type {
+    CollaborativeVideo,
+    VideoCollaborator,
+  } from "#lib/shared/video-collaboration/domain/collaborative-video.js";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
   // Demo data
@@ -55,6 +58,8 @@
     visibility: "public",
     creatorId: "user1",
     collaborators: mockCollaborators,
+    associations: [],
+    performers: [],
     pendingInvites: [
       {
         userId: "user4",
@@ -149,14 +154,19 @@
       <section class="demo-section">
         <h2>What is this?</h2>
         <p>
-          These are UI components for a <strong>collaborative video</strong> feature that was
-          designed but never integrated into the app. The concept:
+          These are UI components for a <strong>collaborative video</strong> feature
+          that was designed but never integrated into the app. The concept:
         </p>
         <ul>
           <li>Users can upload performance videos of sequences</li>
           <li>Creators can invite collaborators to be credited on videos</li>
-          <li>Videos can have visibility settings (public, collaborators-only, private)</li>
-          <li>Users get a "video library" showing their videos and collaborations</li>
+          <li>
+            Videos can have visibility settings (public, collaborators-only,
+            private)
+          </li>
+          <li>
+            Users get a "video library" showing their videos and collaborations
+          </li>
           <li>Pending invites show up in a dedicated tab</li>
         </ul>
         <h3>Components Status</h3>
@@ -227,7 +237,6 @@
           </tbody>
         </table>
       </section>
-
     {:else if activeDemo === "card"}
       <section class="demo-section">
         <h2>CollaborativeVideoCard</h2>
@@ -240,7 +249,6 @@
           />
         </div>
       </section>
-
     {:else if activeDemo === "avatars"}
       <section class="demo-section">
         <h2>CollaboratorAvatars</h2>
@@ -248,27 +256,45 @@
         <div class="demo-row">
           <div class="demo-item">
             <h4>Small</h4>
-            <CollaboratorAvatars collaborators={mockCollaborators} size="sm" maxVisible={3} />
+            <CollaboratorAvatars
+              collaborators={mockCollaborators}
+              size="sm"
+              maxVisible={3}
+            />
           </div>
           <div class="demo-item">
             <h4>Medium</h4>
-            <CollaboratorAvatars collaborators={mockCollaborators} size="md" maxVisible={3} />
+            <CollaboratorAvatars
+              collaborators={mockCollaborators}
+              size="md"
+              maxVisible={3}
+            />
           </div>
           <div class="demo-item">
             <h4>Large</h4>
-            <CollaboratorAvatars collaborators={mockCollaborators} size="lg" maxVisible={3} />
+            <CollaboratorAvatars
+              collaborators={mockCollaborators}
+              size="lg"
+              maxVisible={3}
+            />
           </div>
           <div class="demo-item">
             <h4>With overflow</h4>
-            <CollaboratorAvatars collaborators={mockCollaborators} size="md" maxVisible={2} />
+            <CollaboratorAvatars
+              collaborators={mockCollaborators}
+              size="md"
+              maxVisible={2}
+            />
           </div>
         </div>
       </section>
-
     {:else if activeDemo === "invite"}
       <section class="demo-section">
         <h2>PendingInviteCard</h2>
-        <p>Card showing a pending collaboration invite with accept/decline actions.</p>
+        <p>
+          Card showing a pending collaboration invite with accept/decline
+          actions.
+        </p>
         <div class="demo-box" style="max-width: 500px;">
           <PendingInviteCard
             video={mockVideo}
@@ -277,17 +303,21 @@
           />
         </div>
       </section>
-
     {:else if activeDemo === "library"}
       <section class="demo-section">
         <h2>UserVideoLibraryView</h2>
-        <p>Full library view with tabs for All/My Videos/Collaborations/Invites.</p>
-        <p class="note">Note: This requires real Firebase data to show content.</p>
+        <p>
+          Full library view with tabs for All/My Videos/Collaborations/Invites.
+        </p>
+        <p class="note">
+          Note: This requires real Firebase data to show content.
+        </p>
         <div class="demo-box library-demo">
-          <UserVideoLibraryView onVideoClick={(v) => console.log("Video clicked:", v)} />
+          <UserVideoLibraryView
+            onVideoClick={(v) => console.log("Video clicked:", v)}
+          />
         </div>
       </section>
-
     {:else if activeDemo === "sheets"}
       <section class="demo-section">
         <h2>Bottom Sheets</h2>
@@ -490,7 +520,11 @@
     align-items: center;
     gap: 0.5rem;
     padding: 1rem 1.5rem;
-    background: linear-gradient(135deg, var(--semantic-info, #3b82f6) 0%, #2563eb 100%);
+    background: linear-gradient(
+      135deg,
+      var(--semantic-info, #3b82f6) 0%,
+      #2563eb 100%
+    );
     border: none;
     border-radius: 10px;
     color: white;

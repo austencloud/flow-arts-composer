@@ -58,7 +58,7 @@
   import {
     postAnimationEffectsConfig,
     postAnimationTrailSettings,
-  } from "#lib/shared/media-composition/domain/post-animation-effects.svelte";
+  } from "#lib/shared/media-composition/domain/post-animation-effects.svelte.js";
   import { tkaEditorOf } from "./tka-editor-context";
 
   type Section = "props" | "effects" | "efforts" | "display";
@@ -263,33 +263,33 @@
   trailSettings.replaceAll(animationSettings.snapshot());
   const pills = $derived(
     [
-    {
-      id: "props" as const,
-      label: "Props",
-      propType: pickedPropType ?? defaultPropType,
-      accentColor: RAIL_CATEGORY_ACCENTS.props,
-    },
-    {
-      id: "effects" as const,
-      label: "Effects",
-      icon: effectNavIcon(trailEffects.activeEffect),
-      accentColor:
-        EFFECT_COLORS[trailEffects.activeEffect] ??
-        RAIL_CATEGORY_ACCENTS.effects,
-    },
-    {
-      id: "efforts" as const,
-      label: "Efforts",
-      accentColor:
-        EFFORTS.find((effort) => effort.id === appliedEffort)?.color ??
-        EFFORTS[0]!.color,
-    },
-    {
-      id: "display" as const,
-      label: "Display",
-      icon: "fa-eye",
-      accentColor: RAIL_CATEGORY_ACCENTS.display,
-    },
+      {
+        id: "props" as const,
+        label: "Props",
+        propType: pickedPropType ?? defaultPropType,
+        accentColor: RAIL_CATEGORY_ACCENTS.props,
+      },
+      {
+        id: "effects" as const,
+        label: "Effects",
+        icon: effectNavIcon(trailEffects.activeEffect),
+        accentColor:
+          EFFECT_COLORS[trailEffects.activeEffect] ??
+          RAIL_CATEGORY_ACCENTS.effects,
+      },
+      {
+        id: "efforts" as const,
+        label: "Efforts",
+        accentColor:
+          EFFORTS.find((effort) => effort.id === appliedEffort)?.color ??
+          EFFORTS[0]!.color,
+      },
+      {
+        id: "display" as const,
+        label: "Display",
+        icon: "fa-eye",
+        accentColor: RAIL_CATEGORY_ACCENTS.display,
+      },
     ].filter((pill) => sections.includes(pill.id))
   );
   const keys = [

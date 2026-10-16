@@ -220,7 +220,7 @@
   }
 
   .mystery.wrong .shake {
-    animation: shake var(--duration-dramatic, 350ms) var(--ease-standard, ease);
+    animation: shake var(--duration-dramatic) var(--ease-standard);
   }
 
   .mystery-picture {
@@ -245,8 +245,7 @@
     color: white;
     font-size: 1.05rem;
     box-shadow: 0 0.25rem 0.75rem rgb(0 0 0 / 0.35);
-    animation: check-pop var(--duration-dramatic, 350ms)
-      cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: check-pop var(--duration-dramatic) var(--ease-spring);
   }
 
   /* One line under the picture, reserved so an answer moves nothing. */
@@ -264,8 +263,7 @@
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    animation: verdict-in var(--duration-normal, 200ms)
-      var(--ease-standard, ease);
+    animation: verdict-in var(--duration-normal) var(--ease-standard);
   }
 
   .verdict-line i {

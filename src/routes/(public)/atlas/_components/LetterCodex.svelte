@@ -615,7 +615,8 @@
   :global(dialog.codex-explorer-modal[data-animation="none"] .preview-column),
   :global(dialog.codex-explorer-modal[data-animation="none"] .variation-section > .section-heading),
   :global(dialog.codex-explorer-modal[data-animation="none"] .contexts) {
-    animation: codex-explorer-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: codex-explorer-in var(--duration-emphasis) var(--ease-standard-out)
+      both;
   }
 
   /* The backdrop only fades: a blur growing from zero repaints the whole

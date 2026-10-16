@@ -17,7 +17,9 @@ function nonProdHost(): boolean {
  * the build. `?appLaunched=1` overrides it only off production — a shared link
  * carrying the flag must not route real visitors to an unbuilt app/store path.
  */
-export function isAppLaunched(searchParams?: URLSearchParams): boolean {
+export function isAppLaunched(
+  searchParams?: Pick<URLSearchParams, "get">
+): boolean {
   if ((dev || nonProdHost()) && searchParams?.get("appLaunched") === "1") {
     return true;
   }

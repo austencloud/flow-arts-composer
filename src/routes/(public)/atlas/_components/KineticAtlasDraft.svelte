@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { insertCodexGroup } from "./codex-navigation";
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import "#lib/shared/landing/styles/public-editorial.css";
   import { onMount, tick } from "svelte";
@@ -125,7 +126,6 @@
   let drawerCloseBtn: HTMLButtonElement | undefined = $state();
 
   type GlossaryTerm = (typeof data.groups)[number]["terms"][number];
-  type GlossaryGroup = (typeof data.groups)[number];
   type NavigationGroup = {
     key: string;
     label: string;
@@ -153,21 +153,10 @@
     href: codexHref(),
   };
 
-  function insertCodexGroup(groups: GlossaryGroup[]): NavigationGroup[] {
-    // "position" is the external @tka/domain GlossaryCategory key (see
-    // +page.server.ts) for what this UI displays as "Placements".
-    const placementIndex = groups.findIndex(
-      (group) => group.key === "position"
-    );
-    const insertionIndex = placementIndex >= 0 ? placementIndex + 1 : 0;
-    return [
-      ...groups.slice(0, insertionIndex),
-      codexGroup,
-      ...groups.slice(insertionIndex),
-    ];
-  }
-
-  const landingGroups = insertCodexGroup(data.groups);
+  const landingGroups = insertCodexGroup<NavigationGroup>(
+    data.groups,
+    codexGroup
+  );
   const atlasRegionViewKey = (regionKey: string) => `atlas-${regionKey}`;
   const activeAtlasRegion = $derived(
     data.atlasRegions.find(
@@ -273,7 +262,7 @@
   const sidebarGroups = $derived(
     filtering
       ? codexSearchLetter
-        ? insertCodexGroup(searchGroups)
+        ? insertCodexGroup<NavigationGroup>(searchGroups, codexGroup)
         : searchGroups
       : activeAtlasRegion
         ? data.groups.filter((group) =>

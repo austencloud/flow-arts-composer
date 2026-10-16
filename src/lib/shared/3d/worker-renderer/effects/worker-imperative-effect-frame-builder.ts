@@ -129,12 +129,18 @@ function pooledSource(
   };
   switch (effect) {
     case "sparkles":
-    case "petals":
     case "ink":
-    case "silk":
     case "animal":
     case "pulse":
       return { ...base, effect, params } as SceneEffectTipSource3D;
+    case "petals":
+    case "silk":
+      return {
+        ...base,
+        effect,
+        params,
+        collisionFloorY: input.collisionFloorY,
+      } as SceneEffectTipSource3D;
     case "goo":
       return {
         ...base,
@@ -142,8 +148,15 @@ function pooledSource(
         params: params as Goo3DParams,
         collisionFloorY: input.collisionFloorY,
       };
-    case "bubbles":
     case "smoke":
+      return {
+        ...base,
+        effect,
+        params,
+        qualityTier: input.intent.qualityTier,
+        collisionFloorY: input.collisionFloorY,
+      } as SceneEffectTipSource3D;
+    case "bubbles":
     case "bloom":
       return {
         ...base,
