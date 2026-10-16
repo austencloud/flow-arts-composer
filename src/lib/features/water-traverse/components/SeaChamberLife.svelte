@@ -33,7 +33,6 @@
   import {
     PMREMGenerator,
     Vector3,
-    type Camera,
     type Group,
     type Mesh,
     type Material,
@@ -46,7 +45,8 @@
   import { createFishScatterState } from "#lib/shared/3d/environments/scenes/ocean/runtime/interaction/fish-scatter.js";
   import JellyfishSwarm from "#lib/shared/3d/environments/scenes/ocean/runtime/fauna/jellyfish/JellyfishSwarm.svelte";
   import TrenchGallery from "./TrenchGallery.svelte";
-  import { WATER_Y } from "#lib/shared/3d/environments/scenes/ocean/runtime/atmosphere/god-ray-axis.js";
+  import { userProportionsState } from "@austencloud/scene-3d";
+  import { OCEAN_WATER_DEPTH_METERS } from "#lib/shared/3d/environments/domain/models/ocean-water-depth.js";
 
   interface Props {
     quality: OceanQualityConfig;
@@ -77,13 +77,13 @@
   const length = $derived(toZ - fromZ);
 
   /**
-   * God rays are an 18 m column hung from the ocean's own water plane at local
-   * y = WATER_Y. Aligning that plane with OUR waterline is the whole placement:
-   * the column then falls 18 m from the surface, which is exactly our trench
-   * depth, so the shafts stand on the seabed. Note this is NOT floor-relative —
-   * anchoring it to floorY put the whole column below the seabed.
+   * God rays hang from the ocean's water plane at local y = groundY + depth.
+   * Align that plane with the traverse's waterline. This is not floor-relative:
+   * anchoring it to floorY would put the whole column below the seabed.
    */
-  const godRayY = $derived(waterlineY - WATER_Y);
+  const godRayY = $derived(
+    waterlineY - (userProportionsState.groundY + OCEAN_WATER_DEPTH_METERS)
+  );
 
   /**
    * Tile spacing. The shaft cluster covers a radius of about 15, so a stride
@@ -115,13 +115,13 @@
    */
   const { renderer, camera } = useThrelte();
   const REEF_ENV_INTENSITY = 0.55;
-  let reefGroup = $state.raw<Group | null>(null);
+  let reefGroup = $state.raw<Group>();
 
   function lightTheReef(): void {
     const group = reefGroup;
     if (!group) return;
 
-    const pmrem = new PMREMGenerator(renderer);
+    const pmrem = new PMREMGenerator(renderer.current);
     const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
     pmrem.dispose();
 
@@ -199,8 +199,7 @@
   });
 
   useTask(() => {
-    const cam = (camera as unknown as { current?: Camera })?.current ??
-      (camera as unknown as Camera);
+    const cam = camera.current;
     if (!cam) return;
     const locked =
       typeof document !== "undefined" && document.pointerLockElement !== null;

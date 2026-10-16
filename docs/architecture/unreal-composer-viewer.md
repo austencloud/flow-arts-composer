@@ -1,6 +1,6 @@
 # Unreal inside the Composer 3D viewer
 
-Date: 2026-10-16 UTC. Status: the local native control slice is verified in Composer. Caption placement, measured streaming quality and full viewer parity remain open.
+Date: 2026-10-16 UTC. Status: the local native control slice and portrait caption placement are verified in Composer. Measured streaming quality and full viewer parity remain open.
 
 Austen wants the existing Composer 3D viewer experience with Unreal rendering: the same controls, performer editing, prop picker, camera behavior, saved scenes, and visual identity. Flow Fest and Museum already share native performer infrastructure. The next layer should consume that work and retain Composer's actual Svelte controls.
 
@@ -44,7 +44,9 @@ A further native build succeeded in 133.87 seconds. In the final live control ru
 
 At a 375 × 667 portrait viewport, the stream settled at 366 × 668 and its video advanced. At a 1440 × 900 desktop viewport, video reached 1430 × 900. The latest native screenshot fills the viewport, so the earlier suspected 16:9 scene bars are not established. The native handshake reported `CameraActor_0`, `targetMatches=1`, component and cached camera constraints both 0, and viewports of 1280 × 720 then 1430 × 900. The evidence is recorded outside Git in `%LOCALAPPDATA%/FlowArtsComposer/ComposerViewer/Host/controls-final-evidence.json` and `viewer-desktop.png`.
 
-These checks establish command replies and observed playback after resize, not input-to-image latency or long-run reliability. One PixelCapture GPU fence timeout appeared at 05:09:01 UTC; the stream subsequently advanced, resized and accepted controls. Caption overlap is being addressed separately and has not yet passed visual verification. During earlier control testing, the primary development server stopped serving modules and its watchdog restarted the stack. The native viewer is now stopped, with its Unreal process slot returned to Flow Fest. Native render sessions and builds remain coordinated with that owner.
+At 05:46–05:47 UTC on 2026-10-16, a further live check at 375 × 667 showed the caption above the full performer, with the focused body and floor in frame. Selecting unsupported Sword returned an error, retained Staff, and displayed the taller message above the body. The real screenshots are stored outside Git beside the other host evidence as `viewer-portrait-final.png` and `viewer-portrait-error.png`.
+
+These checks establish command replies and observed playback after resize, not input-to-image latency or long-run reliability. One PixelCapture GPU fence timeout appeared at 05:09:01 UTC; the stream subsequently advanced, resized and accepted controls. During earlier control testing, the primary development server stopped serving modules and its watchdog restarted the stack. The Unreal process slot was returned to Flow Fest after the earlier run; native render sessions and builds remain coordinated with that owner.
 
 ## Shared ownership
 
@@ -77,7 +79,7 @@ The existing [shared native foundation](../../unreal/Shared/README.md) remains a
 9. Reconnect, resize and saved-scene restoration have one explicit reconciliation path. A second viewer must not overwrite another viewer's persistence slot or session state.
 10. DOM controls consume their own pointer and keyboard input. Forward interaction within the streamed viewport to native picking/navigation, with correct viewport coordinates and cancellation when focus or connection changes.
 
-Museum's shared contracts are named `tka-performance-transfer-v1` and `tka-performance-library-v1`. Its `FFlowArtsPerformanceLibrary` and `FFlowArtsPerformanceSession` APIs, plus additive avatar transport methods, landed in `08f9c92dfc`. The viewer consumes these methods; runtime fixes remain coordinated with Museum. Its native F6 panel is a game consumer of the same transport. Museum traced its pause smoke failure to observation before avatar and prop ticks; corrected real playback and shared regression checks pass without changing the production pause API. The Composer viewer still requires its own browser transport check.
+Museum's shared contracts are named `tka-performance-transfer-v1` and `tka-performance-library-v1`. Its `FFlowArtsPerformanceLibrary` and `FFlowArtsPerformanceSession` APIs, plus additive avatar transport methods, landed in `08f9c92dfc`. The viewer consumes these methods; runtime fixes remain coordinated with Museum. Its native F6 panel is a game consumer of the same transport. Museum traced its pause smoke failure to observation before avatar and prop ticks; corrected real playback and shared regression checks pass without changing the production pause API. Composer's limited native control slice now has a live browser transport check. Exact user-score playback and full viewer parity still require their own acceptance work.
 
 ## Capability and parity acceptance
 

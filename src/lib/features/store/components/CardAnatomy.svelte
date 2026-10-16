@@ -369,9 +369,10 @@
       qr: measureRegion([".qr-cell-wrapper", ".duration-start-col .qr-cell"]),
     };
   });
-  const activeFrontRegions = $derived(
-    handPathCard ? liveFrontRegions : frontRegions
-  );
+  const activeFrontRegions = $derived<Record<
+    string,
+    ReturnType<typeof measureRegion>
+  > | null>(handPathCard ? liveFrontRegions : frontRegions);
 
   function measureBack(id: string) {
     const layout = backLayout;

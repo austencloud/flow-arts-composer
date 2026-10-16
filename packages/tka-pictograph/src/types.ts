@@ -52,7 +52,15 @@ export interface HandColorPair {
 }
 
 export interface FanAppearanceInput {
-  build?: "pictograph" | "fire" | "flat-grip" | "lotus" | "day" | "moon";
+  build?:
+    | "pictograph"
+    | "fire"
+    | "flat-grip"
+    | "lotus"
+    | "day"
+    | "moon"
+    | "star"
+    | "sense";
   frameColor?: "black" | "white";
   cover?: "bare" | "covered";
 }

@@ -79,9 +79,6 @@ export class AnimationVisibilityStateManager {
     grid: "#000000",
   };
 
-  /** Suppresses CSS transitions while a transform applies its final state. */
-  private transforming: boolean = false;
-
   /** Scoped instances neither persist nor alter the global theme class. */
   private readonly ephemeral: boolean;
 
@@ -636,15 +633,6 @@ export class AnimationVisibilityStateManager {
     >
   ): void {
     this.setVisibility(key, !(this.settings[key] as boolean));
-  }
-
-  isTransforming(): boolean {
-    return this.transforming;
-  }
-
-  setTransforming(transforming: boolean): void {
-    this.transforming = transforming;
-    this.notifyObservers();
   }
 }
 

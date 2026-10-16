@@ -40,7 +40,7 @@
   import type {
     StageEditMode,
     StageSelection,
-  } from "../state/stage-edit-mode.svelte";
+  } from "../state/stage-edit-mode.svelte.js";
   import StageFloorLane from "./StageFloorLane.svelte";
   import StageHandsClipContent from "./StageHandsClipContent.svelte";
   import StageMotionLane from "./StageMotionLane.svelte";
@@ -216,13 +216,13 @@
   });
 
   const selectedFloorTravel = $derived.by(() => {
-    if (editMode.selection.kind !== "travel") return null;
+    const selection = editMode.selection;
+    if (selection.kind !== "travel") return null;
     return (
       floorTravelByPerformer
-        .get(editMode.selection.performerId)
-        ?.find(
-          (segment) => segment.formationId === editMode.selection.formationId
-        ) ?? null
+        .get(selection.performerId)
+        ?.find((segment) => segment.formationId === selection.formationId) ??
+      null
     );
   });
 

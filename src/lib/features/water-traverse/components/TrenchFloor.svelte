@@ -84,7 +84,7 @@
   $effect(() => () => envTexture?.dispose());
 
   function lightTheFloor(): void {
-    const pmrem = new PMREMGenerator(renderer);
+    const pmrem = new PMREMGenerator(renderer.current);
     const texture = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
     pmrem.dispose();
     material.envMap = texture;

@@ -85,6 +85,7 @@
     open={choosing && !disabled}
     onclose={() => (choosing = false)}
     size="fit"
+    class="prop-pair-dialog"
     labelledBy={titleId}
   >
     {#snippet header()}<h2 id={titleId}>{label}</h2>{/snippet}
@@ -183,6 +184,19 @@
 
   .picker.in-modal {
     padding: 0 20px;
+  }
+
+  /* Wide enough for the prop grid's eight-column tier (850px of grid), so a
+     laptop shows every prop in three rows with no scrollbar. Narrower
+     screens take the full width less the gutters and the grid steps down. */
+  :global(dialog.base-modal.prop-pair-dialog[data-size="fit"]) {
+    width: min(calc(100vw - 32px), 920px);
+  }
+
+  /* Three short choices: the control sizes to them instead of spanning the
+     wide dialog. */
+  .picker.in-modal :global(.segmented-control) {
+    max-width: 26rem;
   }
 
   .modal-actions {

@@ -1,7 +1,12 @@
 <script lang="ts">
   import { Canvas, T } from "@threlte/core";
   import { untrack, onDestroy } from "svelte";
-  import { PerformerRig, Plane, PlaneMode, userProportionsState } from "@austencloud/scene-3d";
+  import {
+    PerformerRig,
+    Plane,
+    PlaneMode,
+    userProportionsState,
+  } from "@austencloud/scene-3d";
   import type { GridMode } from "@austencloud/scene-3d";
   import { OrbitControls } from "@threlte/extras";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
@@ -16,10 +21,16 @@
   import StepNumber from "#lib/shared/pictograph/shared/components/StepNumber.svelte";
   import { toScenePropType } from "#lib/shared/3d/domain/scene-prop-type.js";
 
-  let { sequence, backgroundType }: { sequence: SequenceData | null; backgroundType: BackgroundType } = $props();
+  let {
+    sequence,
+    backgroundType,
+  }: { sequence: SequenceData | null; backgroundType: BackgroundType } =
+    $props();
 
   const PLATFORM_HEIGHT = 0.2;
-  const groundOffset = $derived(-userProportionsState.groundY + PLATFORM_HEIGHT);
+  const groundOffset = $derived(
+    -userProportionsState.groundY + PLATFORM_HEIGHT
+  );
 
   const shot = $derived(
     computeFramingShot({
@@ -38,7 +49,9 @@
     2 * shot.target.z - shot.eye.z,
   ]);
 
-  let performerState = $state<ReturnType<typeof createCharacterInstanceState> | null>(null);
+  let performerState = $state<ReturnType<
+    typeof createCharacterInstanceState
+  > | null>(null);
 
   const displayedStepNumber = $derived(
     performerState ? performerState.currentStepIndex : null
@@ -75,7 +88,11 @@
 </script>
 
 <div class="stage-container">
-  <svg class="step-overlay" viewBox="0 0 950 950" preserveAspectRatio="xMinYMin meet">
+  <svg
+    class="step-overlay"
+    viewBox="0 0 950 950"
+    preserveAspectRatio="xMinYMin meet"
+  >
     <StepNumber
       stepNumber={displayedStepNumber}
       {isStartPlacement}
@@ -83,11 +100,7 @@
     />
   </svg>
   <Canvas>
-    <T.PerspectiveCamera
-      makeDefault
-      position={frontEye}
-      fov={50}
-    >
+    <T.PerspectiveCamera makeDefault position={frontEye} fov={50}>
       <OrbitControls
         enableZoom={false}
         enablePan={false}
@@ -95,7 +108,9 @@
         maxPolarAngle={Math.PI / 2.2}
         autoRotate={false}
         target={[shot.target.x, shot.target.y, shot.target.z]}
-        oncreate={(ref) => { ref.update(); }}
+        oncreate={(ref) => {
+          ref.update();
+        }}
       />
     </T.PerspectiveCamera>
 
@@ -109,9 +124,9 @@
         avatarState={performerState}
         showGrid={false}
         visiblePlanes={new Set([Plane.WALL])}
-        gridMode={((sequence?.gridMode ?? "diamond") as GridMode)}
-        leftPropType={toScenePropType(PropType.STAFF)}
-        rightPropType={toScenePropType(PropType.STAFF)}
+        gridMode={(sequence?.gridMode ?? "diamond") as GridMode}
+        bluePropType={toScenePropType(PropType.STAFF)}
+        redPropType={toScenePropType(PropType.STAFF)}
         {groundOffset}
         enableLocomotion={true}
         enableFootPlanting={true}

@@ -71,8 +71,20 @@ pictograph renderer, so every surface that draws the step moves the same
 way. The join slide (`shared/grid-join/join-slide.svelte.ts`) is the first:
 re-joining the grids glides each hand's grid, props and arrows over
 `GRID_JOIN_TWEEN_MS`. A different drawing snaps, an interruption restarts
-from the shown frame, and reduced motion snaps. Sequence transforms (mirror,
-flip, rotate) are next to move onto this rule.
+from the shown frame, and reduced motion snaps.
+
+Sequence transforms (rotate, mirror, flip, swap hands, invert) follow the same
+rule through `shared/pictograph/shared/state/pictograph-edit-motion.svelte.ts`.
+The transform announces its edit just before the sequence commits; each live
+`PictographContainer` whose drawing changes joins one shared clock, holds its
+old drawing while the old arrows fade, carries the props along the edit's path
+(`shared/pictograph/shared/services/pictograph-edit-travel.ts`: rotate arcs
+round the center, mirror and flip dash across the axis, swap trades places,
+invert spins in place) through `calculatePictographMotionPositions`, then
+fades the new arrows in. A grid cell whose drawing changes unannounced (undo,
+a turns edit) travels on the same clock; a newly generated sequence snaps.
+`PropSvg` and `ArrowSvg` paint the positions they are given and keep no
+transform transitions or position caches of their own.
 
 ## Verification
 
