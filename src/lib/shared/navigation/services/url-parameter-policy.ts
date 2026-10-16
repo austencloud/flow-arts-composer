@@ -2,6 +2,7 @@
 // layout's `afterNavigate`, and the codec's fflate compression stack has no
 // business on every route's hydration path. See viewer-url-state-params.ts.
 import { VIEWER_STATE_PARAM_NAMES } from "#lib/shared/sequence-viewer/services/viewer-url-state-params.js";
+import { routePathFor } from "#lib/shared/i18n/seo-locales.js";
 
 interface RouteScopedParameter {
   name: string;
@@ -12,8 +13,12 @@ interface RouteScopedParameter {
 const startsWith = (prefix: string) => (pathname: string) =>
   pathname === prefix || pathname.startsWith(`${prefix}/`);
 
+// The letter explorer's state (`letter`, `grid`, `variation`, turns). The
+// Codex guide page hosts the same explorer, in any of its languages.
 const isAtlasPath = (pathname: string) =>
-  startsWith("/atlas")(pathname) || startsWith("/glossary")(pathname);
+  startsWith("/atlas")(pathname) ||
+  startsWith("/glossary")(pathname) ||
+  routePathFor(pathname) === "/guide/codex";
 
 // Routes whose own page mounts a sequence viewer without needing `?v=`.
 const isViewerRoute = (pathname: string) =>
