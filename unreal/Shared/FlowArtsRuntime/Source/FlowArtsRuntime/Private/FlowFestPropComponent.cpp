@@ -1,5 +1,6 @@
 #include "FlowFestPropComponent.h"
 #include "FlowFestAnimInstance.h"
+#include "FlowArtsNiagaraEffectComponent.h"
 #include "Components/PointLightComponent.h"
 #include "Components/SceneComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -14,6 +15,7 @@
 #include "Serialization/JsonSerializer.h"
 #include "Dom/JsonObject.h"
 #include "Engine/World.h"
+#include "NiagaraSystem.h"
 
 namespace
 {
@@ -160,6 +162,14 @@ void UFlowFestPropComponent::Initialize(USceneComponent* Parent)
     RightRoot->SetAbsolute(false, false, true);
     LeftMesh = CreateMesh(TEXT("FlowFestLeftPropMesh"), LeftVisualRoot);
     RightMesh = CreateMesh(TEXT("FlowFestRightPropMesh"), RightVisualRoot);
+    // Keep the catalog flame meshes as a fallback when the plugin particle
+    // system has not been installed in this project.
+    if (LoadObject<UNiagaraSystem>(nullptr, TEXT("/FlowArtsRuntime/Effects/NS_PropFire.NS_PropFire")))
+    {
+        NiagaraEffects = NewObject<UFlowArtsNiagaraEffectComponent>(GetOwner(), TEXT("FlowFestNiagaraEffects"));
+        NiagaraEffects->RegisterComponent();
+        NiagaraEffects->Initialize(LeftVisualRoot, RightVisualRoot);
+    }
     SetVisible(bVisible);
 }
 
@@ -282,6 +292,7 @@ bool UFlowFestPropComponent::Equip(FName PropId, float LengthCm)
     RightFlames.Empty();
     LeftLEDs.Empty();
     RightLEDs.Empty();
+    TArray<FVector> WickOffsets;
     const TArray<TSharedPtr<FJsonValue>>* Effects = nullptr;
     if (Build->TryGetArrayField(TEXT("effectAttachments"), Effects) && Effects)
     {
@@ -291,6 +302,7 @@ bool UFlowFestPropComponent::Equip(FName PropId, float LengthCm)
             const TArray<TSharedPtr<FJsonValue>>* Offset = nullptr;
             if (!Effect.IsValid() || !Effect->TryGetArrayField(TEXT("offsetCm"), Offset) || !Offset || Offset->Num() != 3) continue;
             const FVector Location(-(*Offset)[0]->AsNumber(), (*Offset)[1]->AsNumber() * LongScale, (*Offset)[2]->AsNumber());
+            WickOffsets.Add(Location);
             auto AddLight = [this, Location](USceneComponent* Root)
             {
                 UPointLightComponent* Light = NewObject<UPointLightComponent>(GetOwner());
@@ -317,6 +329,11 @@ bool UFlowFestPropComponent::Equip(FName PropId, float LengthCm)
     }
     else DefaultFinish = NAME_None;
     EffectFinish = DefaultFinish;
+    if (NiagaraEffects)
+    {
+        NiagaraEffects->Configure(WickOffsets, PropId);
+        NiagaraEffects->ResetHistory();
+    }
     UpdateEffects();
     SetVisible(bVisible);
     UpdatePose();
@@ -814,10 +831,22 @@ void UFlowFestPropComponent::ResetFinish()
     UpdateEffects();
 }
 
+void UFlowFestPropComponent::SyncEffectPlayback(float Seconds, bool bPaused)
+{
+    if (NiagaraEffects && FMath::IsFinite(Seconds))
+        NiagaraEffects->SyncPlayback(Seconds, bPaused);
+}
+
+void UFlowFestPropComponent::ResetEffectHistory()
+{
+    if (NiagaraEffects) NiagaraEffects->ResetHistory();
+}
+
 void UFlowFestPropComponent::UpdateEffects()
 {
     const bool bFire = EffectFinish == TEXT("fire");
     const bool bLed = EffectFinish == TEXT("led");
+    if (NiagaraEffects) NiagaraEffects->SetPresentation(EffectFinish, bVisible);
     for (const TArray<TObjectPtr<UPointLightComponent>>* Group : { &LeftEffectLights, &RightEffectLights })
     {
         for (UPointLightComponent* Light : *Group)
@@ -829,7 +858,7 @@ void UFlowFestPropComponent::UpdateEffects()
     }
     for (const TArray<TObjectPtr<UProceduralMeshComponent>>* Group : { &LeftFlames, &RightFlames })
         for (UProceduralMeshComponent* Flame : *Group)
-            if (Flame) Flame->SetVisibility(bVisible && bFire);
+            if (Flame) Flame->SetVisibility(bVisible && bFire && !NiagaraEffects);
     for (const TArray<TObjectPtr<UStaticMeshComponent>>* Group : { &LeftLEDs, &RightLEDs })
         for (UStaticMeshComponent* LED : *Group)
             if (LED) LED->SetVisibility(bVisible && bLed);
