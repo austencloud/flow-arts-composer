@@ -84,7 +84,19 @@ export class GooPuddleRenderer3D {
   private readonly puddles: Puddle[] = [];
   private readonly positions = new Float32Array(MAX_VERTICES * 3);
   private readonly colors = new Float32Array(MAX_VERTICES * 3);
+  /** Opacity of the pool's body at each vertex, edge aside. */
   private readonly alphas = new Float32Array(MAX_VERTICES);
+  /** Opacity of the damp film just past the rim. */
+  private readonly wets = new Float32Array(MAX_VERTICES);
+  /** Signed distance into the pool, m; the shader draws the rim where it is 0. */
+  private readonly fields = new Float32Array(MAX_VERTICES);
+  /**
+   * Offset from the nearest pool's center in its own frame, its rim distance
+   * that way, and the pool's tag. Offset and rim vary linearly across a cell,
+   * so where a cell's corners share one pool the shader can measure a round
+   * rim exactly instead of the chord the cell's field cuts.
+   */
+  private readonly rims = new Float32Array(MAX_VERTICES * 4);
   private readonly metalnesses = new Float32Array(MAX_VERTICES);
   private readonly glows = new Float32Array(MAX_VERTICES);
   private readonly normals = new Float32Array(MAX_VERTICES * 3);
@@ -112,6 +124,18 @@ export class GooPuddleRenderer3D {
       new BufferAttribute(this.alphas, 1).setUsage(DynamicDrawUsage)
     );
     this.geometry.setAttribute(
+      "aWet",
+      new BufferAttribute(this.wets, 1).setUsage(DynamicDrawUsage)
+    );
+    this.geometry.setAttribute(
+      "aField",
+      new BufferAttribute(this.fields, 1).setUsage(DynamicDrawUsage)
+    );
+    this.geometry.setAttribute(
+      "aRim",
+      new BufferAttribute(this.rims, 4).setUsage(DynamicDrawUsage)
+    );
+    this.geometry.setAttribute(
       "aMetalness",
       new BufferAttribute(this.metalnesses, 1).setUsage(DynamicDrawUsage)
     );
@@ -128,7 +152,57 @@ export class GooPuddleRenderer3D {
     this.material = material.clone();
     // Three does not clone shader hooks. Keep the per-vertex opacity and metalness
     // used by the shared wet material while letting the liquid have its own shine.
-    this.material.onBeforeCompile = material.onBeforeCompile;
+    // The rim is drawn per pixel from the signed distance: interpolating
+    // opacity across grid cells would leave it a soft smear several
+    // centimeters wide.
+    this.material.onBeforeCompile = (shader, renderer) => {
+      material.onBeforeCompile(shader, renderer);
+      shader.vertexShader = shader.vertexShader
+        .replace(
+          "#include <common>",
+          `#include <common>
+           attribute float aWet;
+           attribute float aField;
+           attribute vec4 aRim;
+           varying float vGooWet;
+           varying float vGooField;
+           varying vec4 vGooRim;`
+        )
+        .replace(
+          "#include <begin_vertex>",
+          `#include <begin_vertex>
+           vGooWet = aWet;
+           vGooField = aField;
+           vGooRim = aRim;`
+        );
+      shader.fragmentShader = shader.fragmentShader
+        .replace(
+          "#include <common>",
+          `#include <common>
+           varying float vGooWet;
+           varying float vGooField;
+           varying vec4 vGooRim;`
+        )
+        .replace(
+          "diffuseColor.a *= vGooAlpha;",
+          `// The grid's field cuts each rim into chords; the nearest pool's own
+           // distance rounds them back out where the cell has one pool.
+           float gooField = vGooField;
+           if ( fwidth( vGooRim.w ) < 1e-4 ) gooField = max( gooField, vGooRim.z - length( vGooRim.xy ) );
+           float gooRim = smoothstep( -0.5, 0.5, gooField / max( fwidth( gooField ), 1e-6 ) );
+           // Past the rim only a darker damp film remains.
+           diffuseColor.rgb *= mix( 0.45, 1.0, gooRim );
+           diffuseColor.a *= mix( vGooWet, vGooAlpha, gooRim );`
+        )
+        .replace(
+          "#include <opaque_fragment>",
+          `// The meniscus curls down to the floor and catches the light as a
+           // thin bright line just inside the rim.
+           float gooMeniscus = gooRim * ( 1.0 - smoothstep( 0.0, max( 0.0035, 1.5 * fwidth( gooField ) ), gooField ) );
+           outgoingLight += vec3( 0.36, 0.4, 0.46 ) * gooMeniscus * ( 0.35 + 0.65 * ( 1.0 - vGooMetalness ) );
+           #include <opaque_fragment>`
+        );
+    };
     this.material.roughness = 0.05;
     this.material.clearcoat = 1;
     this.material.clearcoatRoughness = 0.07;
@@ -305,6 +379,7 @@ export class GooPuddleRenderer3D {
     }
     this.positions.fill(0);
     this.alphas.fill(0);
+    this.wets.fill(0);
     const index = this.geometry.getIndex() as BufferAttribute;
     const triangles = index.array as Uint16Array;
     let vertexStart = 0;
@@ -362,11 +437,11 @@ export class GooPuddleRenderer3D {
       if (vertexStart + columns * rows > MAX_VERTICES) continue;
       const stepX = width / (columns - 1);
       const stepZ = depth / (rows - 1);
-      const edgeWidth = Math.max(stepX, stepZ);
       const averageRadius =
         group.reduce((sum, puddle) => sum + puddle.radius, 0) / group.length;
       // A thin wet film darkens the floor just past the pool's rim.
       const halo = averageRadius * 0.22;
+      const edge = Math.max(stepX, stepZ);
       // Bin pools on a coarse 2D grid so each vertex tests only its neighbors.
       const binSize = Math.max(averageRadius, Math.sqrt((width * depth) / 1024));
       const binsX = Math.max(1, Math.min(columns, Math.ceil(width / binSize)));
@@ -380,7 +455,7 @@ export class GooPuddleRenderer3D {
             right.impacts[right.impacts.length - 1]!.age
         )
         .slice(0, 4);
-      const waves = this.liveWaves(impactSources);
+      const waves = this.liveWaves(impactSources, edge);
       const binOf = (value: number, min: number, span: number, count: number) =>
         Math.max(0, Math.min(count - 1, Math.floor(((value - min) / span) * count)));
       for (const puddle of group) {
@@ -400,7 +475,7 @@ export class GooPuddleRenderer3D {
         puddle.domeHeight = Math.min(
           // Liquid on a floor settles a few millimetres deep, so a pool reads
           // as a flat glossy film with a soft meniscus, not a dome.
-          0.009 + 0.01 * puddle.tension ** 6,
+          0.005 + 0.004 * puddle.tension ** 6,
           Math.max(0.0025, (puddle.volume / (Math.PI * puddle.radius ** 2)) * 1.5)
         );
       }
@@ -413,9 +488,12 @@ export class GooPuddleRenderer3D {
           const vertex = vertexStart + row * columns + column;
           const offset = vertex * 3;
           let field = -Infinity;
-          let lift = 0;
+          let domeHeight = 0;
           let strongest = group[0]!;
           let strongestField = -Infinity;
+          let rimX = 0;
+          let rimZ = 0;
+          let rimReach = 0;
           let red = 0;
           let green = 0;
           let blue = 0;
@@ -460,14 +538,12 @@ export class GooPuddleRenderer3D {
                     signed,
                     Math.min(reach, puddle.radius) * 0.12
                   );
-            const local2 = local * local;
-            const dome = Math.sqrt(Math.max(0, 1 - local2 * local2));
-            const localLift =
-              puddle.domeHeight * dome * (0.85 + 0.15 * Math.min(1, local));
-            lift = this.smoothMax(lift, localLift, 0.002);
             if (signed > strongestField) {
               strongestField = signed;
               strongest = puddle;
+              rimX = localX;
+              rimZ = localZ;
+              rimReach = reach;
             }
             // Neighboring pools of different colors blend across their seam.
             const blend = reach * 0.2;
@@ -477,6 +553,7 @@ export class GooPuddleRenderer3D {
               green += puddle.color.g * share;
               blue += puddle.color.b * share;
               glow += puddle.glow * share;
+              domeHeight += puddle.domeHeight * share;
               weight += share;
             }
           }
@@ -485,11 +562,13 @@ export class GooPuddleRenderer3D {
             green /= weight;
             blue /= weight;
             glow /= weight;
+            domeHeight /= weight;
           } else {
             red = strongest.color.r;
             green = strongest.color.g;
             blue = strongest.color.b;
             glow = strongest.glow;
+            domeHeight = strongest.domeHeight;
           }
           // Fresh liquid shows where it landed, fading as it spreads and mixes.
           for (const puddle of candidates) {
@@ -514,6 +593,15 @@ export class GooPuddleRenderer3D {
             const edgeFade = Math.min(1, field / (averageRadius * 0.125));
             if (waves > 0) wave = this.waveHeight(waves, vx, vz, edgeFade);
           }
+          // One level surface over the whole group, rising over a rounded rim a
+          // few cells wide: merged pools read as one body of liquid, not a
+          // cluster of bumps, and the grid can resolve the rim's curve.
+          const rimWidth = Math.min(
+            strongest.radius * 0.5,
+            Math.max(2.5 * edge, domeHeight * 4)
+          );
+          const rise = Math.min(1, Math.max(0, field / rimWidth));
+          const lift = domeHeight * rise * (2 - rise);
           const wet = field > 0 ? 0 : Math.max(0, 1 + field / halo);
           this.positions[offset + 1] =
             group[0]!.floorY +
@@ -524,26 +612,32 @@ export class GooPuddleRenderer3D {
                 )
               : 0.0012);
           this.positions[offset + 2] = vz;
-          const shade = field > 0 ? 1 : 0.45;
-          this.colors[offset] = red * shade;
-          this.colors[offset + 1] = green * shade;
-          this.colors[offset + 2] = blue * shade;
-          this.glows[vertex] = glow * shade;
+          this.colors[offset] = red;
+          this.colors[offset + 1] = green;
+          this.colors[offset + 2] = blue;
+          this.glows[vertex] = glow;
           const fade =
             Math.min(1, Math.max(0, (18 - strongest.idle) / 3)) *
             Math.max(0, strongest.fade);
-          // The pool thins toward its rim, so the floor shows through there.
+          // Clamped so cells far outside every pool still interpolate cleanly.
+          this.fields[vertex] = Math.max(field, -averageRadius);
+          const rim = vertex * 4;
+          this.rims[rim] = rimX;
+          this.rims[rim + 1] = rimZ;
+          // A vertex no pool reaches must not round a rim out toward it.
+          this.rims[rim + 2] = strongestField === -Infinity ? -averageRadius : rimReach;
+          this.rims[rim + 3] = strongestField === -Infinity ? -1 : strongest.seed;
+          // The pool thins toward its rim, so the floor shows through there,
+          // but even the rim is deep enough to read as liquid, not a stain.
           const depth = Math.min(1, Math.max(0, field / (averageRadius * 0.35)));
-          const body =
-            Math.min(1, Math.max(0, field / edgeWidth)) * (0.45 + 0.55 * depth);
-          this.alphas[vertex] =
-            strongest.alpha *
-            fade *
-            // Metal does not wet the floor, so it leaves no damp rim.
-            Math.max(body, 0.3 * wet * wet * (1 - strongest.metalness));
+          this.alphas[vertex] = strongest.alpha * fade * (0.86 + 0.14 * depth);
+          // Metal does not wet the floor, so it leaves no damp rim.
+          this.wets[vertex] =
+            strongest.alpha * fade * 0.3 * wet * wet * (1 - strongest.metalness);
           this.metalnesses[vertex] = strongest.metalness;
         }
       }
+      // A round rim bulges past the chord between two cells outside it.
       for (let row = 0; row < rows - 1; row++) {
         for (let column = 0; column < columns - 1; column++) {
           const a = vertexStart + row * columns + column;
@@ -551,10 +645,10 @@ export class GooPuddleRenderer3D {
           const c = a + columns;
           const d = c + 1;
           if (
-            this.alphas[a] === 0 &&
-            this.alphas[b] === 0 &&
-            this.alphas[c] === 0 &&
-            this.alphas[d] === 0
+            !this.covers(a, edge) &&
+            !this.covers(b, edge) &&
+            !this.covers(c, edge) &&
+            !this.covers(d, edge)
           )
             continue;
           triangles[indexCount++] = a;
@@ -575,6 +669,9 @@ export class GooPuddleRenderer3D {
     this.geometry.getAttribute("position").needsUpdate = true;
     this.geometry.getAttribute("color").needsUpdate = true;
     this.geometry.getAttribute("aAlpha").needsUpdate = true;
+    this.geometry.getAttribute("aWet").needsUpdate = true;
+    this.geometry.getAttribute("aField").needsUpdate = true;
+    this.geometry.getAttribute("aRim").needsUpdate = true;
     this.geometry.getAttribute("aMetalness").needsUpdate = true;
     this.geometry.getAttribute("aGlow").needsUpdate = true;
     this.geometry.getAttribute("normal").needsUpdate = true;
@@ -642,14 +739,19 @@ export class GooPuddleRenderer3D {
   }
 
   /** Flatten this frame's visible ripples: x, z, front, width, amplitude. */
-  private liveWaves(sources: readonly Puddle[]): number {
+  private liveWaves(sources: readonly Puddle[], cell: number): number {
     let count = 0;
     for (const puddle of sources) {
-      const width = Math.max(0.03, puddle.radius * 0.23);
+      // A ring narrower than two grid cells aliases into faceted spikes, so a
+      // coarse grid gets a wider, lower ring carrying the same energy.
+      const crisp = Math.max(0.03, puddle.radius * 0.23);
+      const width = Math.max(crisp, 2 * cell);
+      const scale = crisp / width;
       const speed = 0.28 + 0.25 * (1 - puddle.viscosity);
       const damping = 1.4 + 3.4 * puddle.viscosity;
       for (const impact of puddle.impacts) {
-        const amplitude = impact.amplitude * Math.exp(-damping * impact.age);
+        const amplitude =
+          impact.amplitude * scale * Math.exp(-damping * impact.age);
         if (amplitude < 0.0002) continue;
         const offset = count * 5;
         this.waveData[offset] = impact.x;
@@ -685,6 +787,14 @@ export class GooPuddleRenderer3D {
   }
 
   /** Grid normals from height differences; no per-triangle pass needed. */
+  /** Whether a vertex is near enough pool or damp film that its cells must be drawn. */
+  private covers(vertex: number, edge: number): boolean {
+    return (
+      (this.fields[vertex]! > -edge && this.alphas[vertex]! > 0) ||
+      this.wets[vertex]! > 0
+    );
+  }
+
   private writeNormals(
     start: number,
     columns: number,

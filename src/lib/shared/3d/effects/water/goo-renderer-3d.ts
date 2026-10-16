@@ -618,7 +618,7 @@ export class GooRenderer3D {
     const drips =
       6 * (1 - Math.exp((-rate * (p.spewStyle === "splash" ? 0.45 : 0.32)) / 6));
     const added = drips * sphereVolume(strand.nozzle * 1.45) * dt;
-    if (strand.count >= 2) strand.vol[0] += added;
+    if (strand.count >= 2) strand.vol[0] = strand.vol[0]! + added;
     else strand.bulb += added;
   }
 

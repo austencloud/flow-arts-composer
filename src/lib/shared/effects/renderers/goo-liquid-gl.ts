@@ -197,11 +197,15 @@ void main() {
   // Light skimming through thin liquid lights its edge in its own color.
   vec3 edge = base * pow(1.0 - facing, 3.0) * 0.45 * (1.0 - metal);
   vec3 glow = base * uGlow;
+  // Light from the studio behind passes through the gel and gathers on the
+  // far side of the bead, lit deeper in the liquid's own color.
+  float through = max(0.0, dot(n, normalize(vec3(0.35, -0.55, 0.76))));
+  vec3 inner = base * (0.12 + 0.55 * through * through * through) * facing * (1.0 - metal);
 
   // A view ray crosses more liquid through a bead's middle than its rim.
   float alpha = uAlpha * vB.w * mix(0.62, 1.0, facing);
   // Reflections ride on the surface, so transparency must not dim them.
-  vec3 color = diffuse + edge + glow + spec / max(alpha, 0.35);
+  vec3 color = diffuse + edge + inner + glow + spec / max(alpha, 0.35);
   color = encode(aces(color));
   alpha = min(1.0, alpha + 0.5 * dot(aces(spec), vec3(0.333))) * coverage;
   outColor = vec4(color * alpha, alpha);
