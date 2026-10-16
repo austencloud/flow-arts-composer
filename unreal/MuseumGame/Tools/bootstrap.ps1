@@ -110,6 +110,8 @@ if (-not $SkipAssets) {
             [Environment]::SetEnvironmentVariable($name, $previousEnvironment[$name], 'Process')
         }
     }
+    & node (Join-Path $PSScriptRoot '..\..\Shared\Tools\performance-bundle.mjs') seal --project $project --captures $CaptureDirectory --converter (Join-Path $repo 'unreal\FlowFest\Tools\convert-characters.py') --importer (Join-Path $repo 'unreal\FlowFest\Tools\import-characters.py')
+    if ($LASTEXITCODE -ne 0) { throw "Museum performance bundle sealing failed ($LASTEXITCODE)" }
     & node (Join-Path $PSScriptRoot 'verify-playback-data.mjs') --project $project --captures $CaptureDirectory --stage imported
     if ($LASTEXITCODE -ne 0) { throw "Museum imported playback verification failed ($LASTEXITCODE)" }
 }
