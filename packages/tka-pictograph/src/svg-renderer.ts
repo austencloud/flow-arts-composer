@@ -1,19 +1,18 @@
 /**
- * Standalone Pictograph Renderer - Node.js Implementation
- *
- * A properly-implemented renderer that uses the same calculation logic
- * as the Canvas2D browser renderer to achieve pixel-perfect parity.
- *
- * This replaces the half-assed StandalonePictographRenderer.ts that had
- * completely wrong position/rotation calculations.
+ * Draws one TKA pictograph as SVG, with the same placement logic as the
+ * app's Canvas2D renderer. Moved from the knowledge server's standalone
+ * renderer; art now comes through an ArtCache instead of the disk, so the
+ * same code runs in Node and in a browser.
  */
 
-import { Resvg } from "@resvg/resvg-js";
-import { createCanvas, loadImage } from "@napi-rs/canvas/node-canvas.js";
-import { readFileSync, existsSync } from "fs";
-import { join, dirname } from "path";
-import { fileURLToPath } from "url";
-import type { HandColorPair } from "@tka/render-composition";
+import { ArtCache, MISSING } from "./art-source.js";
+import type {
+  FanAppearanceInput,
+  HandColorPair,
+  MotionInput,
+  PictographInput,
+  RenderVisibilityOptions,
+} from "./types.js";
 
 import { GridLocation, GridMode, MotionType, Orientation } from "./enums.js";
 // Import shared core calculations - the SINGLE SOURCE OF TRUTH for rendering logic
@@ -44,7 +43,6 @@ import {
   calculateDashLocation,
   type DashLocationInput,
   calculateReversalPositions,
-  drawHandColorKey,
   renderHandColorKeySvg,
   applyColorToSvg,
   applyFanFrameColor,
@@ -52,8 +50,6 @@ import {
   SELECTIVE_COLOR_PROP_TYPES,
   BLUE_COLOR_DARK,
   BLUE_COLOR_LIGHT,
-  RED_COLOR_DARK,
-  RED_COLOR_LIGHT,
   getBetaOffsetSize,
   getGridPoints,
   gridPointsSvg,
@@ -87,28 +83,13 @@ import {
   type ArrowAdjustmentMotion,
   type ArrowAdjustmentPictograph,
 } from "./arrow-adjustment.js";
-import { ensureGelasioRegistered } from "./gelasio-fonts.js";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const VIEWBOX_SIZE = 950;
-const CENTER = VIEWBOX_SIZE / 2; // 475
-
-// Colors imported from shared core
-// Use the shared constants for consistency
-const BLUE_COLOR = BLUE_COLOR_DARK; // Dark mode blue - bright on dark backgrounds
-const RED_COLOR = RED_COLOR_DARK; // Dark mode red - standard red works well
-
-function resolveMotionColor(
-  hand: "left" | "right",
-  darkMode: boolean,
-  customColors?: HandColorPair | null
-): string {
-  if (customColors) return customColors[hand];
-  if (hand === "left") return darkMode ? BLUE_COLOR : BLUE_COLOR_LIGHT;
-  return darkMode ? RED_COLOR : RED_COLOR_LIGHT;
+import { resolveMotionColor, VIEWBOX_SIZE } from "./palette.js";
+/** Art paths are relative to the assets folder, always with forward slashes. */
+function artPath(...parts: string[]): string {
+  return parts.join("/").replace(/\/{2,}/g, "/").replace(/^\//, "");
 }
+
+const CENTER = VIEWBOX_SIZE / 2; // 475
 
 // Glyph positioning (matching real renderer)
 const TKA_GLYPH_X = 50;
@@ -289,59 +270,6 @@ const VTG_TO_ELEMENTAL: Record<VTGMode, ElementalType> = {
   QO: "moon", // Quarter Opp
 };
 
-export interface MotionInput {
-  motionType: string;
-  rotationDirection: string;
-  startLocation: string;
-  endLocation: string;
-  startOrientation?: string;
-  endOrientation?: string;
-  hand: "left" | "right";
-  turns?: number | "fl"; // 0, 0.5, 1, 1.5, 2, 2.5, 3, or "fl" (float)
-}
-
-export interface PictographInput {
-  letter: string;
-  startPlacement?: string;
-  endPlacement?: string;
-  leftMotion: MotionInput;
-  rightMotion: MotionInput;
-  gridMode?: string;
-  /** Whether the left-hand motion has a reversal (direction change from previous step) */
-  leftReversal?: boolean;
-  /** Whether the right-hand motion has a reversal (direction change from previous step) */
-  rightReversal?: boolean;
-  /** Whether the beta offset is swapped between hands. */
-  betaSwapped?: boolean;
-  /**
-   * Draws each hand on its own grid, the blue grid the anchor. Absent or null
-   * draws the one shared grid.
-   */
-  conjoined?: GridJoinSpec | null;
-}
-
-export interface RenderVisibilityOptions {
-  darkMode?: boolean;
-  size?: number;
-  showTKA?: boolean;
-  showTND?: boolean;
-  showElemental?: boolean;
-  showPlacements?: boolean;
-  showReversals?: boolean;
-  /** Start-placement legend: L/R swatches in the bottom-centre band. */
-  showHandColorKey?: boolean;
-  showGrid?: boolean;
-  showNonRadialPoints?: boolean;
-  showLeftMotion?: boolean;
-  showRightMotion?: boolean;
-  // Prop type options (null = use default staff)
-  leftPropType?: string | null;
-  rightPropType?: string | null;
-  /** Physical fan build used when either hand holds fan or bigfan. */
-  fanAppearance?: FanAppearanceInput | null;
-  primaryPropColors?: HandColorPair | null;
-}
-
 const FAN_BUILDS = [
   "pictograph",
   "fire",
@@ -351,12 +279,6 @@ const FAN_BUILDS = [
   "moon",
 ] as const;
 type FanBuild = (typeof FAN_BUILDS)[number];
-
-export interface FanAppearanceInput {
-  build?: FanBuild;
-  frameColor?: "black" | "white";
-  cover?: "bare" | "covered";
-}
 
 interface ResolvedFanAppearance {
   build: FanBuild;
@@ -415,18 +337,20 @@ interface PlacedProp {
   content: string;
 }
 
-export class StandaloneRenderer {
-  private assetsRoot: string;
+export class PictographSvgRenderer {
+  constructor(private readonly cache: ArtCache) {}
 
-  constructor() {
-    // Resolve to the package root where assets/ lives
-    // When compiled: esbuild bundles to dist/index.js -> go up 1 level to package root
-    // When dev (tsx): src/core -> go up 2 levels to package root
-    const inDist = __dirname.includes("dist");
-    const packageRoot = inDist
-      ? join(__dirname, "..") // dist/index.js (esbuild bundle) -> package root
-      : join(__dirname, "../.."); // src/core -> package root
-    this.assetsRoot = join(packageRoot, "assets");
+  private hasArt(path: string): boolean {
+    return this.cache.get(path) !== null && this.cache.get(path) !== MISSING;
+  }
+
+  private readArt(path: string): string {
+    return this.cache.text(path) ?? "";
+  }
+
+  /** Logs only on a pass with all art in hand, so a browser's first pass stays quiet. */
+  private warn(...args: unknown[]): void {
+    if (this.cache.misses.size === 0) console.error(...args);
   }
 
   /**
@@ -458,34 +382,11 @@ export class StandaloneRenderer {
     };
   }
 
-  async renderToPng(
-    input: PictographInput,
-    options: RenderVisibilityOptions = {}
-  ): Promise<Buffer> {
-    const svg = await this.renderToSvg(input, {
-      ...options,
-      // Canvas supplies the key below because Resvg cannot rasterize bundled WOFF2 text.
-      showHandColorKey: false,
-    });
-    const size = options.size || 950;
-    const png = this.svgToPng(svg, size);
-    return options.showHandColorKey
-      ? this.drawHandColorKeyOnPng(png, size, input, options)
-      : png;
-  }
-
-  async renderToBase64(
-    input: PictographInput,
-    options: RenderVisibilityOptions = {}
-  ): Promise<string> {
-    const png = await this.renderToPng(input, options);
-    return png.toString("base64");
-  }
-
-  async renderToSvg(
+  /** One pass. Art not fetched yet is recorded in the cache's misses. */
+  render(
     rawInput: PictographInput,
     options: RenderVisibilityOptions = {}
-  ): Promise<string> {
+  ): string {
     // Preprocess input to ensure orientations are calculated
     const prepared = this.preprocessInput(rawInput);
     // Two hands draw their hand paths, the way the app prepares them.
@@ -876,10 +777,10 @@ ${svgParts.join("\n")}
       fanFile ??
       `${propArtworkStem(currentPropType ?? "staff", motion.hand === "right" ? "right" : "left")}.svg`;
     const propPath = fanFile
-      ? join(this.assetsRoot, "images/props/appearances", propFileName)
-      : join(this.assetsRoot, "images", PICTOGRAPH_PROP_ARTWORK_DIR, propFileName);
-    if (!existsSync(propPath)) {
-      console.error("[Renderer] Prop file not found:", propPath);
+      ? artPath("images/props/appearances", propFileName)
+      : artPath("images", PICTOGRAPH_PROP_ARTWORK_DIR, propFileName);
+    if (!this.hasArt(propPath)) {
+      this.warn("[Renderer] Prop file not found:", propPath);
       return null;
     }
 
@@ -891,7 +792,7 @@ ${svgParts.join("\n")}
     const rotation = isHand ? 0 : placement.rotation;
 
     try {
-      const propSvg = readFileSync(propPath, "utf-8");
+      const propSvg = this.readArt(propPath);
 
       // Get viewBox dimensions
       const viewBoxMatch = propSvg.match(/viewBox\s*=\s*"([^"]+)"/i);
@@ -942,7 +843,7 @@ ${svgParts.join("\n")}
         content: innerContent,
       };
     } catch (error) {
-      console.error("[Renderer] Failed to load prop:", error);
+      this.warn("[Renderer] Failed to load prop:", error);
       return null;
     }
   }
@@ -1106,10 +1007,11 @@ ${svgParts.join("\n")}
     const solo = { solo: !!joinOffset };
 
     const rotation = rotatePlacementAngleToDisplayed(
-      resolveArrowRotation(adjustmentInput, arrowMotion, canonicalLocation, solo),
+      resolveArrowRotation(this.cache, adjustmentInput, arrowMotion, canonicalLocation, solo),
       frameRotation
     );
     const [canonicalAdjustX, canonicalAdjustY] = calculateArrowAdjustment(
+      this.cache,
       adjustmentInput,
       arrowMotion,
       canonicalLocation,
@@ -1130,13 +1032,13 @@ ${svgParts.join("\n")}
       startOrientation,
       motion.turns
     );
-    if (!arrowPath || !existsSync(arrowPath)) {
-      console.error("[Renderer] Arrow file not found:", arrowPath);
+    if (!arrowPath || !this.hasArt(arrowPath)) {
+      this.warn("[Renderer] Arrow file not found:", arrowPath);
       return "";
     }
 
     try {
-      let arrowSvg = readFileSync(arrowPath, "utf-8");
+      let arrowSvg = this.readArt(arrowPath);
 
       // Get viewBox dimensions
       const viewBoxMatch = arrowSvg.match(/viewBox\s*=\s*"([^"]+)"/i);
@@ -1176,7 +1078,7 @@ ${svgParts.join("\n")}
   ${innerContent}
 </g>`;
     } catch (error) {
-      console.error("[Renderer] Failed to load arrow:", error);
+      this.warn("[Renderer] Failed to load arrow:", error);
       return "";
     }
   }
@@ -1189,11 +1091,10 @@ ${svgParts.join("\n")}
     // Float turns use a special arrow that's the same regardless of motion type
     // Located at static/images/arrows/float.svg
     if (turns === "fl") {
-      return join(this.assetsRoot, "images/arrows/float.svg");
+      return artPath("images/arrows/float.svg");
     }
 
-    return join(
-      this.assetsRoot,
+    return artPath(
       resolveFullArrowAssetPath({
         motionType: motionType as RenderMotionType,
         startOrientation: startOrientation as RenderOrientation | undefined,
@@ -1265,15 +1166,15 @@ ${svgParts.join("\n")}
   ): string {
     // Convert turns value to filename
     const filename = turns === "fl" ? "float.svg" : `${turns}.svg`; // "half" is the halved-motion mark
-    const turnPath = join(this.assetsRoot, "images/numbers", filename);
+    const turnPath = artPath("images/numbers", filename);
 
-    if (!existsSync(turnPath)) {
-      console.error("[Renderer] Turn number file not found:", turnPath);
+    if (!this.hasArt(turnPath)) {
+      this.warn("[Renderer] Turn number file not found:", turnPath);
       return "";
     }
 
     try {
-      let turnSvg = readFileSync(turnPath, "utf-8");
+      let turnSvg = this.readArt(turnPath);
 
       // Get viewBox dimensions
       const viewBoxMatch = turnSvg.match(/viewBox\s*=\s*"([^"]+)"/i);
@@ -1341,7 +1242,7 @@ ${svgParts.join("\n")}
   ${innerContent}
 </svg>`;
     } catch (error) {
-      console.error("[Renderer] Failed to load turn number:", error);
+      this.warn("[Renderer] Failed to load turn number:", error);
       return "";
     }
   }
@@ -1359,20 +1260,19 @@ ${svgParts.join("\n")}
     const hasDash = letter.endsWith("-");
     const baseLetter = hasDash ? letter.slice(0, -1) : letter;
     const typeFolder = LETTER_TYPE_FOLDER[baseLetter] || "Type1";
-    const letterPath = join(
-      this.assetsRoot,
+    const letterPath = artPath(
       "images/letters_trimmed",
       typeFolder,
       `${baseLetter}.svg`
     );
 
-    if (!existsSync(letterPath)) {
+    if (!this.hasArt(letterPath)) {
       const textColor = darkMode ? "#e6e6e6" : "#000000";
       return `<text x="${TKA_GLYPH_X}" y="${TKA_GLYPH_Y + 80}" font-family="Georgia, serif" font-size="100" font-weight="bold" fill="${textColor}">${letter}</text>`;
     }
 
     try {
-      let letterSvg = readFileSync(letterPath, "utf-8");
+      let letterSvg = this.readArt(letterPath);
 
       // Get the FULL viewBox - including any offset (critical for trimmed letters)
       const viewBoxMatch = letterSvg.match(/viewBox\s*=\s*"([^"]+)"/i);
@@ -1441,7 +1341,7 @@ ${turnNumbersSvg}
 ${directionDotSvg}
 </g>`;
     } catch (error) {
-      console.error("[Renderer] Failed to load letter:", error);
+      this.warn("[Renderer] Failed to load letter:", error);
       const textColor = darkMode ? "#e6e6e6" : "#000000";
       return `<text x="${TKA_GLYPH_X}" y="${TKA_GLYPH_Y + 80}" font-family="Georgia, serif" font-size="100" font-weight="bold" fill="${textColor}">${letter}</text>`;
     }
@@ -1455,18 +1355,17 @@ ${directionDotSvg}
     const vtgMode = this.calculateVTGMode(letter, startPlacement);
     if (!vtgMode) return "";
 
-    const vtgPath = join(
-      this.assetsRoot,
+    const vtgPath = artPath(
       "images/vtg_glyphs",
       `${vtgMode}.svg`
     );
-    if (!existsSync(vtgPath)) {
-      console.error("[Renderer] TnD glyph not found:", vtgPath);
+    if (!this.hasArt(vtgPath)) {
+      this.warn("[Renderer] TnD glyph not found:", vtgPath);
       return "";
     }
 
     try {
-      let vtgSvg = readFileSync(vtgPath, "utf-8");
+      let vtgSvg = this.readArt(vtgPath);
 
       // Extract inner content
       const innerMatch = vtgSvg.match(/<svg[^>]*>([\s\S]*)<\/svg>/i);
@@ -1496,7 +1395,7 @@ ${directionDotSvg}
   </svg>
 </g>`;
     } catch (error) {
-      console.error("[Renderer] Failed to load TnD glyph:", error);
+      this.warn("[Renderer] Failed to load TnD glyph:", error);
       return "";
     }
   }
@@ -1523,18 +1422,17 @@ ${directionDotSvg}
     const elementalType = VTG_TO_ELEMENTAL[vtgMode];
     if (!elementalType) return "";
 
-    const elementalPath = join(
-      this.assetsRoot,
+    const elementalPath = artPath(
       "images/elements",
       `${elementalType}.svg`
     );
-    if (!existsSync(elementalPath)) {
-      console.error("[Renderer] Elemental glyph not found:", elementalPath);
+    if (!this.hasArt(elementalPath)) {
+      this.warn("[Renderer] Elemental glyph not found:", elementalPath);
       return "";
     }
 
     try {
-      let elementalSvg = readFileSync(elementalPath, "utf-8");
+      let elementalSvg = this.readArt(elementalPath);
 
       // Extract viewBox from original SVG
       const viewBoxMatch = elementalSvg.match(/viewBox="([^"]+)"/i);
@@ -1623,7 +1521,7 @@ ${directionDotSvg}
   </svg>
 </g>`;
     } catch (error) {
-      console.error("[Renderer] Failed to load elemental glyph:", error);
+      this.warn("[Renderer] Failed to load elemental glyph:", error);
       return "";
     }
   }
@@ -1649,24 +1547,22 @@ ${directionDotSvg}
 
     if (!startFileName || !endFileName) return "";
 
-    const startPath = join(
-      this.assetsRoot,
+    const startPath = artPath(
       "images/letters_trimmed/Type6",
       startFileName
     );
-    const endPath = join(
-      this.assetsRoot,
+    const endPath = artPath(
       "images/letters_trimmed/Type6",
       endFileName
     );
-    const arrowPath = join(this.assetsRoot, "images/arrow.svg");
+    const arrowPath = artPath("images/arrow.svg");
 
     if (
-      !existsSync(startPath) ||
-      !existsSync(endPath) ||
-      !existsSync(arrowPath)
+      !this.hasArt(startPath) ||
+      !this.hasArt(endPath) ||
+      !this.hasArt(arrowPath)
     ) {
-      console.error("[Renderer] Placement glyph files not found");
+      this.warn("[Renderer] Placement glyph files not found");
       return "";
     }
 
@@ -1676,7 +1572,7 @@ ${directionDotSvg}
         filePath: string,
         isArrow: boolean = false
       ): { content: string; viewBox: string } => {
-        const svg = readFileSync(filePath, "utf-8");
+        const svg = this.readArt(filePath);
 
         // Extract viewBox from original SVG
         const viewBoxMatch = svg.match(/viewBox="([^"]+)"/i);
@@ -1760,7 +1656,7 @@ ${directionDotSvg}
   </svg>
 </g>`;
     } catch (error) {
-      console.error("[Renderer] Failed to render placement glyph:", error);
+      this.warn("[Renderer] Failed to render placement glyph:", error);
       return "";
     }
   }
@@ -1817,32 +1713,6 @@ ${directionDotSvg}
     });
   }
 
-  /** Draw the complete key with bundled Gelasio after Resvg draws every other glyph. */
-  private async drawHandColorKeyOnPng(
-    png: Buffer,
-    size: number,
-    input: PictographInput,
-    options: RenderVisibilityOptions
-  ): Promise<Buffer> {
-    ensureGelasioRegistered();
-    const canvas = createCanvas(size, size);
-    const context = canvas.getContext("2d");
-    context.drawImage(await loadImage(png), 0, 0, size, size);
-
-    const scale = size / VIEWBOX_SIZE;
-    const darkMode = options.darkMode !== false;
-    drawHandColorKey(context, {
-      showLeft: (options.showLeftMotion ?? true) && !!input.leftMotion,
-      showRight: (options.showRightMotion ?? true) && !!input.rightMotion,
-      scale,
-      centerX: (VIEWBOX_SIZE / 2) * scale,
-      textColor: darkMode ? "#ffffff" : "#231f20",
-      colorForHand: (hand) =>
-        resolveMotionColor(hand, darkMode, options.primaryPropColors),
-    });
-    return canvas.toBuffer("image/png");
-  }
-
   private parseGridMode(gridMode?: string): GridMode {
     if (!gridMode) return GridMode.DIAMOND;
     const normalized = gridMode.toLowerCase();
@@ -1873,29 +1743,4 @@ ${directionDotSvg}
     const match = placement.match(/[a-z]+/i);
     return match ? match[0].toLowerCase() : null;
   }
-
-  private svgToPng(svg: string, size: number): Buffer {
-    const resvg = new Resvg(svg, {
-      fitTo: {
-        mode: "width",
-        value: size,
-      },
-      font: {
-        loadSystemFonts: true,
-      },
-    });
-
-    const pngData = resvg.render();
-    return Buffer.from(pngData.asPng());
-  }
-}
-
-// Singleton instance
-let rendererInstance: StandaloneRenderer | null = null;
-
-export function getStandaloneRenderer(): StandaloneRenderer {
-  if (!rendererInstance) {
-    rendererInstance = new StandaloneRenderer();
-  }
-  return rendererInstance;
 }

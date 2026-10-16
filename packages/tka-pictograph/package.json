@@ -23,7 +23,7 @@
   "scripts": {
     "sync-assets": "node scripts/sync-assets.mjs",
     "build": "node scripts/sync-assets.mjs && node build.mjs",
-    "test": "node scripts/sync-assets.mjs && vitest run",
+    "test": "npm run build && vitest run",
     "prepublishOnly": "npm run build && vitest run"
   },
   "devDependencies": {
