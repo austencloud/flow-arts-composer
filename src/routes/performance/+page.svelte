@@ -228,6 +228,9 @@
   input[type="file"] {
     width: 15rem;
     max-width: 100%;
+    min-height: 2.75rem;
+    box-sizing: border-box;
+    padding-block: 0.5rem;
   }
   .result {
     margin-top: 2rem;
@@ -245,7 +248,7 @@
   }
   dl div {
     display: grid;
-    grid-template-columns: 7rem 1fr;
+    grid-template-columns: 9rem minmax(0, 1fr);
     gap: 0.5rem;
   }
   dt {
