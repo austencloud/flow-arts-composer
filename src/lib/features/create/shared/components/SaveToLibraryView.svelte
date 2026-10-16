@@ -210,6 +210,7 @@
           disabled={s.isSaving}
           hint={t("prop_pair_saved_default_hint")}
           fill
+          picker="modal"
         />
       </div>
     {/if}
