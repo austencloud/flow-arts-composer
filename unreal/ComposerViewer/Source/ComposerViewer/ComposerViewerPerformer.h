@@ -22,6 +22,8 @@ public:
     bool IsPlaying() const { return bPlaying; }
     float GetRate() const { return Rate; }
     float GetPhase() const;
+    float GetPerformanceTime() const;
+    void SeekPerformance(float Seconds);
     const FString& GetPerformerId() const { return PerformerId; }
     FName GetCharacterId() const { return CharacterId; }
     FName GetPropId() const { return PropId; }
