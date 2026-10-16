@@ -158,7 +158,7 @@ export const APP_CAPABILITIES: AppCapability[] = [
     tab: "Guide",
     keywords: ["codex", "dictionary", "glossary", "reference", "lookup", "definition"],
     instructions:
-      "Go to Learn > Guide and open the Codex section (deep link /learn/guide/codex). Browse the interactive letter catalog with live pictograph variations.",
+      "Open the Codex (deep link /codex). Browse the interactive letter catalog with live pictograph variations.",
   },
 
   // ═══════════════════════════════════════════════════════════════════════════

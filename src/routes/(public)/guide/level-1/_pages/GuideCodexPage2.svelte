@@ -5,7 +5,7 @@
    * component and CodexPageBody for the print/reader/scan wiring.
    */
   import CodexPageBody from "./CodexPageBody.svelte";
-  import { SHEET2 } from "../../codex/_data/codex-groups";
+  import { SHEET2 } from "../../../codex/_data/codex-groups";
 </script>
 
 <CodexPageBody sheet={SHEET2} />

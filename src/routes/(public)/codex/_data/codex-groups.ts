@@ -7,7 +7,7 @@
 // OPEN/CLOSE tags, and Greek names are design choices matched to the reference
 // artboards (`1.1 - Base Letters - Double Staff`).
 
-import lettersData from "../../level-1/_data/letters.json";
+import lettersData from "../../guide/level-1/_data/letters.json";
 import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 import {
   createMotionData,
@@ -46,7 +46,7 @@ export function transitionFor(id: string): string {
  *  The codex is the base-letter reference, which is canonically 0 turns -
  *  letters.json happens to bake in 1 turn, so we normalize to 0 here. This is
  *  the single 0-turns baseline every codex surface shares (this reader page,
- *  the /guide/codex print route, the poster, and Choreo Card codex printing) so
+ *  the /codex print route, the poster, and Choreo Card codex printing) so
  *  the printable and interactive artifacts are identical; the interactive
  *  reader layers its own live turn state on top.
  *

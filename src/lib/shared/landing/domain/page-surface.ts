@@ -38,5 +38,7 @@ export function pageSurface(path: string): string | undefined {
   if (path === "/history/draft") return ARCHIVE_INK;
   if (path === "/history" && import.meta.env.DEV) return ARCHIVE_INK;
   if (path === "/guide" || path.startsWith("/guide/")) return GUIDE_CANVAS;
+  // The Codex left the guide but keeps its canvas.
+  if (path === "/codex") return GUIDE_CANVAS;
   return undefined;
 }
