@@ -37,6 +37,8 @@ import {
 } from "@austencloud/scene-3d";
 import {
   resolveTrackedUpperBodyStance,
+  sampleFrontRouteWeight,
+  type FrontRouteEvent,
   type StanceYawTrack,
 } from "./stance-yaw-track";
 
@@ -175,6 +177,11 @@ export interface HardBeatTrack {
   readonly body: Readonly<HardBeatBodyModel>;
   /** Share of the lane width the downstage hand takes toward the audience. */
   readonly laneForwardShare: number;
+  /** Final solved front path mixed only over accepted score events. */
+  readonly frontRouteOverlay?: {
+    readonly events: readonly FrontRouteEvent[];
+    readonly alternate: HardBeatTrack;
+  };
   readonly report: readonly DisplacedBeat[];
   /** Dense curves; sample i sits at score time i / samplesPerStep. */
   readonly leftRadialIn: Float64Array;
@@ -1120,7 +1127,7 @@ export function sampleHardBeatTrack(
     track.downstage[nearest] ||
     track.downstage[at.i0] ||
     track.downstage[at.i1];
-  return {
+  const baseline: HardBeatSample = {
     left: {
       radialInM: lerpAt(track.leftRadialIn, at),
       depthM: lerpAt(track.leftDepth, at),
@@ -1130,6 +1137,29 @@ export function sampleHardBeatTrack(
       depthM: lerpAt(track.rightDepth, at),
     },
     downstageHand: down === 1 ? "left" : down === -1 ? "right" : null,
+  };
+  const overlay = track.frontRouteOverlay;
+  if (!overlay) return baseline;
+  const weight = sampleFrontRouteWeight(
+    overlay.events,
+    scoreTime,
+    track.stepCount,
+    track.loop
+  );
+  if (weight === 0) return baseline;
+  const alternative = sampleHardBeatTrack(overlay.alternate, scoreTime);
+  const mix = (a: number, b: number) => a + (b - a) * weight;
+  return {
+    left: {
+      radialInM: mix(baseline.left.radialInM, alternative.left.radialInM),
+      depthM: mix(baseline.left.depthM, alternative.left.depthM),
+    },
+    right: {
+      radialInM: mix(baseline.right.radialInM, alternative.right.radialInM),
+      depthM: mix(baseline.right.depthM, alternative.right.depthM),
+    },
+    downstageHand:
+      weight < 0.5 ? baseline.downstageHand : alternative.downstageHand,
   };
 }
 
@@ -1159,6 +1189,52 @@ export function displaceProp<P extends HardBeatProp>(
       (prop.gridCenter?.z ?? 0) + local.z * scale + depth
     ),
   };
+}
+
+/** Remaining distance past full palm reach after the final rendered move. */
+export function hardBeatActualOverreach(
+  track: HardBeatTrack,
+  prop: HardBeatProp | null,
+  hand: HandDisplacement,
+  chestRad: number,
+  corridorM: number,
+  side: "left" | "right",
+  body: HardBeatBodyModel = track.body
+): number {
+  return hardBeatReachExcess(
+    track,
+    prop,
+    hand,
+    chestRad,
+    corridorM,
+    side,
+    body.reachM,
+    body
+  );
+}
+
+function hardBeatReachExcess(
+  track: HardBeatTrack,
+  prop: HardBeatProp | null,
+  hand: HandDisplacement,
+  chestRad: number,
+  corridorM: number,
+  side: "left" | "right",
+  limitM: number,
+  body: HardBeatBodyModel = track.body
+): number {
+  const shifted = displaceProp(prop, hand);
+  if (!shifted) return 0;
+  const shoulder = shoulders(body, chestRad)[side];
+  const position = shifted.worldPosition;
+  return Math.max(
+    0,
+    Math.hypot(
+      position.x - shoulder.x,
+      position.y - shoulder.y,
+      position.z + corridorM - shoulder.z
+    ) - limitM
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -1216,6 +1292,17 @@ function buildReport(
         : null;
     const sample = sampleHardBeatTrack(track, sampleTime);
     const at = locate(track, sampleTime);
+    const overlay = track.frontRouteOverlay;
+    const routeTrack =
+      overlay &&
+      sampleFrontRouteWeight(
+        overlay.events,
+        sampleTime,
+        track.stepCount,
+        track.loop
+      ) >= 0.5
+        ? overlay.alternate
+        : track;
     for (const side of ["left", "right"] as const) {
       const prop = side === "left" ? left : right;
       if (!prop) continue;
@@ -1239,18 +1326,33 @@ function buildReport(
         continue;
       }
       const shortfall =
-        side === "left" ? track.leftShortfall : track.rightShortfall;
-      const capped = side === "left" ? track.leftCapped : track.rightCapped;
+        side === "left" ? routeTrack.leftShortfall : routeTrack.rightShortfall;
+      const capped =
+        side === "left" ? routeTrack.leftCapped : routeTrack.rightCapped;
       const unavailable =
         side === "left"
-          ? track.leftDepthUnavailable
-          : track.rightDepthUnavailable;
+          ? routeTrack.leftDepthUnavailable
+          : routeTrack.rightDepthUnavailable;
       const laneAt =
-        track.laneRule[at.i0]! >= 0
+        routeTrack.laneRule[at.i0]! >= 0
           ? at.i0
-          : track.laneRule[at.i1]! >= 0
+          : routeTrack.laneRule[at.i1]! >= 0
             ? at.i1
             : -1;
+      const finalShortfall =
+        overlay && stance
+          ? hardBeatReachExcess(
+              track,
+              prop,
+              hand,
+              stance.segments.chestRad,
+              side === "left"
+                ? stance.leftDepthOffsetM
+                : stance.rightDepthOffsetM,
+              side,
+              track.body.reachM - track.body.reachMarginM
+            )
+          : Math.max(shortfall[at.i0]!, shortfall[at.i1]!);
       for (const step of steps) {
         const key = `${step}|${side}`;
         let entry = beats.get(key);
@@ -1286,19 +1388,15 @@ function buildReport(
           beat.corridorDepthMaxAbsM,
           corridor
         );
-        beat.shortfallMaxM = Math.max(
-          beat.shortfallMaxM,
-          shortfall[at.i0]!,
-          shortfall[at.i1]!
-        );
+        beat.shortfallMaxM = Math.max(beat.shortfallMaxM, finalShortfall);
         beat.capped ||= capped[at.i0] === 1 || capped[at.i1] === 1;
         beat.depthUnavailable ||=
           unavailable[at.i0] === 1 || unavailable[at.i1] === 1;
         if (radialIn > REPORT_EPS_M) entry.causes.add("reach");
         if (Math.abs(depth) > REPORT_EPS_M && laneAt >= 0) {
-          const kind = LANE_KINDS[track.laneKind[laneAt]!];
+          const kind = LANE_KINDS[routeTrack.laneKind[laneAt]!];
           if (kind) entry.causes.add(kind);
-          beat.laneRule ??= LANE_RULES[track.laneRule[laneAt]!] ?? null;
+          beat.laneRule ??= LANE_RULES[routeTrack.laneRule[laneAt]!] ?? null;
         }
         if (corridor > REPORT_EPS_M) entry.causes.add("stance-corridor");
       }
@@ -1320,6 +1418,19 @@ function buildReport(
     .sort((a, b) =>
       a.step !== b.step ? a.step - b.step : a.hand === "left" ? -1 : 1
     );
+}
+
+/** Keep diagnostics tied to the same mixed hand and torso path that renders. */
+export function withFrontRouteReport(
+  track: HardBeatTrack,
+  source: HardBeatScoreSource,
+  stanceTrack: StanceYawTrack,
+  planeMode: PlaneMode
+): HardBeatTrack {
+  return {
+    ...track,
+    report: buildReport(track, source, stanceTrack, planeMode),
+  };
 }
 
 const cm = (metres: number) => (metres * 100).toFixed(1);

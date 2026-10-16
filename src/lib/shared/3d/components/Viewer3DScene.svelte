@@ -75,7 +75,6 @@
     createPerformerPointerInteraction,
     type PerformerPointerInteraction,
   } from "./performer-interaction/performer-pointer-interaction.svelte.js";
-  import { resolvePerformerUpperBodyStance } from "../domain/performer-upper-body-stance";
   import { resolvePerformerContact } from "../domain/performer-contact-displacement";
   import { resolveGridJoin3D } from "../services/grid-join-3d";
   import { getAvatarSequenceCollisionAudit } from "../collision/avatar-sequence-collision-audit";
@@ -856,13 +855,13 @@
         performerStepOffsets[i] ?? 0,
         performer.totalSteps
       )}
-      {@const upperBodyStance = resolvePerformerUpperBodyStance(performer)}
       <!-- Staffs the hands cannot hold from the planned stance move toward
          them, radially and in depth; a seek clears the animator's contact
          history. -->
       {@const contact = resolvePerformerContact(performer, {
         staffLengthM: propLength,
       })}
+      {@const upperBodyStance = contact.stance}
       <PerformerVisualPickTarget
         performerIndex={i}
         register={performerInteraction?.registerVisualPickTarget}

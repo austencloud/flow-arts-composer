@@ -199,6 +199,42 @@ export interface StanceYawTrack {
   readonly rawLateral: readonly number[];
   /** Local correction to the continuous corridor at the same score samples. */
   readonly corridorDelta: readonly number[];
+  /** Full front route used while solving the alternative hard-beat track. */
+  readonly frontRouteOnly?: boolean;
+  /** Accepted front route episodes, shared with the displaced prop track. */
+  readonly frontRouteEvents?: readonly FrontRouteEvent[];
+}
+
+export interface FrontRouteEvent {
+  readonly startStep: number;
+  readonly durationSteps: number;
+  readonly enterRampSteps: number;
+  readonly exitRampSteps: number;
+}
+
+/** Cyclic event weight; shifting a loop's score origin preserves its route. */
+export function sampleFrontRouteWeight(
+  events: readonly FrontRouteEvent[] | undefined,
+  scoreTime: number,
+  stepCount: number,
+  loop: boolean
+): number {
+  if (!events?.length || !(stepCount > 0)) return 0;
+  let weight = 0;
+  for (const event of events) {
+    const elapsed = loop
+      ? (((scoreTime - event.startStep) % stepCount) + stepCount) % stepCount
+      : scoreTime - event.startStep;
+    if (elapsed < 0 || elapsed >= event.durationSteps) continue;
+    const smooth = (value: number) => {
+      const t = clamp(value, 0, 1);
+      return t * t * (3 - 2 * t);
+    };
+    const enter = smooth(elapsed / event.enterRampSteps);
+    const exit = smooth((event.durationSteps - elapsed) / event.exitRampSteps);
+    weight = Math.max(weight, Math.min(enter, exit));
+  }
+  return weight;
 }
 
 /**
@@ -404,8 +440,7 @@ function applyAnticipationLead(
     if (Math.abs(keyValues[i + 1]! - keyValues[i]!) <= PLATEAU_EPSILON_RAD) {
       continue;
     }
-    const floor =
-      i === 0 ? keyTimes[0]! : keyTimes[i - 1]! + MIN_KEY_GAP_STEPS;
+    const floor = i === 0 ? keyTimes[0]! : keyTimes[i - 1]! + MIN_KEY_GAP_STEPS;
     keyTimes[i] = Math.max(floor, keyTimes[i]! - leadSteps);
   }
 }
@@ -468,7 +503,10 @@ export function buildStanceYawTrack(
     const previous = options.loop
       ? (index - 1 + total) % total
       : Math.max(index - 1, 0);
-    return Math.abs(value - corridorRaw[previous]!) * perStep > CORRIDOR_ABRUPT_RATE_PER_STEP;
+    return (
+      Math.abs(value - corridorRaw[previous]!) * perStep >
+      CORRIDOR_ABRUPT_RATE_PER_STEP
+    );
   });
   const corridorBlend = corridorRaw.map((_, index) => {
     const nearJump = Array.from({ length: radius * 2 + 1 }, (_, offset) => {
@@ -491,7 +529,12 @@ export function buildStanceYawTrack(
     }
     return weighted / weightTotal;
   });
-  return { ...track, corridorDelta: corridorBlend.map((value, index) => value - corridorRaw[index]!) };
+  return {
+    ...track,
+    corridorDelta: corridorBlend.map(
+      (value, index) => value - corridorRaw[index]!
+    ),
+  };
 }
 
 /** Interpolate only the local correction; all other times retain the source corridor. */
@@ -500,10 +543,13 @@ function sampleCorridorDelta(track: StanceYawTrack, scoreTime: number): number {
   if (samples.length === 0) return 0;
   const perStep = samples.length / track.stepCount;
   const position = track.loop
-    ? (((scoreTime % track.stepCount) + track.stepCount) % track.stepCount) * perStep
+    ? (((scoreTime % track.stepCount) + track.stepCount) % track.stepCount) *
+      perStep
     : clamp(scoreTime * perStep, 0, samples.length - 1);
   const before = Math.floor(position);
-  const after = track.loop ? (before + 1) % samples.length : Math.min(before + 1, samples.length - 1);
+  const after = track.loop
+    ? (before + 1) % samples.length
+    : Math.min(before + 1, samples.length - 1);
   const fraction = position - before;
   return samples[before]! * (1 - fraction) + samples[after]! * fraction;
 }
@@ -649,9 +695,22 @@ export function resolveTrackedUpperBodyStance(
         headLagRad: 0,
       } satisfies StanceYawSegments);
   const rawCorridorBlend = stanceSideBlend(segments.chestRad, desireRad);
-  const corridorBlend = track && segments.chestRad !== 0 && Math.sign(segments.chestRad) === Math.sign(desireRad)
-    ? clamp(rawCorridorBlend + sampleCorridorDelta(track, scoreTime), 0, 1)
-    : rawCorridorBlend;
+  const baseCorridorBlend =
+    track &&
+    segments.chestRad !== 0 &&
+    Math.sign(segments.chestRad) === Math.sign(desireRad)
+      ? clamp(rawCorridorBlend + sampleCorridorDelta(track, scoreTime), 0, 1)
+      : rawCorridorBlend;
+  const corridorBlend = track?.frontRouteOnly
+    ? 0
+    : baseCorridorBlend *
+      (1 -
+        sampleFrontRouteWeight(
+          track?.frontRouteEvents,
+          scoreTime,
+          track?.stepCount ?? 0,
+          track?.loop ?? false
+        ));
   return {
     ...planUpperBodyStanceDepth(
       segments.chestRad,
@@ -783,7 +842,10 @@ export function describeStanceYawTrack(
     );
   }
 
-  const firstCrossing = (values: number[], threshold: number): number | null => {
+  const firstCrossing = (
+    values: number[],
+    threshold: number
+  ): number | null => {
     for (let i = 0; i < values.length; i += 1) {
       const value = values[i];
       if (value === undefined) continue;
@@ -799,13 +861,17 @@ export function describeStanceYawTrack(
       ? firstCrossing(desire, ONSET_FRACTION * peakDesireRad)
       : null;
   const onsetLeadSteps =
-    chestOnset !== null && desireOnset !== null ? desireOnset - chestOnset : null;
+    chestOnset !== null && desireOnset !== null
+      ? desireOnset - chestOnset
+      : null;
   const spineOnset = firstCrossing(
     spine1,
     ONSET_FRACTION * SPINE1_SHARE * peakChestRad
   );
   const spineOnsetLeadSteps =
-    spineOnset !== null && desireOnset !== null ? desireOnset - spineOnset : null;
+    spineOnset !== null && desireOnset !== null
+      ? desireOnset - spineOnset
+      : null;
 
   // The largest turn in the score: from where the chest leaves square, through
   // its extreme, to where it settles again.
