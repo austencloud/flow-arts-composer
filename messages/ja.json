@@ -3740,6 +3740,8 @@
   "browse_audit_new_matches_join": "新しく条件に一致したシーケンスは、このコレクションに自動で追加されます。",
   "browse_audit_no_limit": "制限なし",
   "browse_audit_no_public_sequences": "現在、このコレクションには公開シーケンスがありません。",
+  "browse_audit_collection_unavailable_title": "このコレクションは表示できません",
+  "browse_audit_collection_unavailable_hint": "非公開になったか、所有者が削除した可能性があります。",
   "browse_audit_no_turn_limit_matches": "回転数の制限なし、{count}件一致",
   "browse_audit_one_match": "{count}件一致",
   "browse_audit_one_sequence": "シーケンス{count}件",

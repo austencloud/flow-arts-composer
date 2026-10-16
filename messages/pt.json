@@ -4941,6 +4941,8 @@
   "browse_audit_new_matches_join": "Novas sequências que correspondam aos filtros entram nesta coleção automaticamente.",
   "browse_audit_no_limit": "Sem limite",
   "browse_audit_no_public_sequences": "Esta coleção não tem sequências públicas no momento.",
+  "browse_audit_collection_unavailable_title": "Esta coleção não está disponível",
+  "browse_audit_collection_unavailable_hint": "Talvez seja privada, ou o dono a tenha excluído.",
   "browse_audit_no_turn_limit_matches": "Sem limite de voltas, {count} resultados",
   "browse_audit_one_match": "{count} resultado",
   "browse_audit_one_sequence": "{count} sequência",

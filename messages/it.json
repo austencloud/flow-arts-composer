@@ -4938,6 +4938,8 @@
   "browse_audit_new_matches_join": "Le nuove sequenze corrispondenti vengono aggiunte automaticamente a questa raccolta.",
   "browse_audit_no_limit": "Nessun limite",
   "browse_audit_no_public_sequences": "Questa raccolta al momento non contiene sequenze pubbliche.",
+  "browse_audit_collection_unavailable_title": "Questa raccolta non è disponibile",
+  "browse_audit_collection_unavailable_hint": "Potrebbe essere privata, oppure il proprietario l'ha eliminata.",
   "browse_audit_no_turn_limit_matches": "Nessun limite di giri, {count} corrispondenze",
   "browse_audit_one_match": "{count} corrispondenza",
   "browse_audit_one_sequence": "{count} sequenza",
