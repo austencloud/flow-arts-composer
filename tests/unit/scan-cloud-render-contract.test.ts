@@ -74,7 +74,7 @@ describe("QR scan cloud-render contract", () => {
       ingress.indexOf("await goto(destination")
     );
     expect(route).toMatch(
-      /\{#await loadSequenceViewerPage\(\)\}\s*<div class="sequence-route-loading">\s*<LoadingGate/
+      /\{#await loadSequenceViewerPage\(\)\}\s*<div class="sequence-route-loading">\s*\{#if loadingSession\}\s*<SequencePageLoading/
     );
   });
 

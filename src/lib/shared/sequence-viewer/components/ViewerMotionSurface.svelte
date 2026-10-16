@@ -15,6 +15,7 @@
   import type { SceneControlLayout } from "#lib/shared/3d/domain/scene-control-layout.js";
   import ContactViewerRequired from "#lib/shared/3d/components/ContactViewerRequired.svelte";
   import ScenePreparationSurface from "#lib/shared/3d/scene-features/components/ScenePreparationSurface.svelte";
+  import { getSequenceDisplayName } from "#lib/shared/foundation/services/word-deriver.js";
   import { provideSceneLoadingSession } from "#lib/shared/3d/scene-features/scene-loading-session.svelte.js";
   import { sceneNeedsContactViewer } from "#lib/shared/3d/domain/prop-motion-discipline.js";
   import VisualSequenceSaveContextMenuHost from "#lib/shared/library/components/VisualSequenceSaveContextMenuHost.svelte";
@@ -511,6 +512,9 @@
   <ScenePreparationSurface
     statusText="Opening 3D"
     session={sceneLoading.current}
+    title={playback.animationState.sequenceData
+      ? getSequenceDisplayName(playback.animationState.sequenceData)
+      : null}
   />
 {/snippet}
 

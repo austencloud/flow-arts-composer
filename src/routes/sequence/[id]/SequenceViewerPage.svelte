@@ -58,7 +58,8 @@
     IAB_BANNER_HEIGHT,
   } from "#lib/shared/auth/state/iab-banner-state.svelte.js";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
-  import LoadingGate from "#lib/shared/components/loading/LoadingGate.svelte";
+  import SequencePageLoading from "./SequencePageLoading.svelte";
+  import { useSequencePageLoading } from "./sequence-page-loading.svelte.js";
   import { markScan } from "#lib/shared/analytics/scan-perf.js";
   import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
   import { registerLibraryRepository } from "#lib/shared/composition-root/register-library-repository.js";
@@ -212,6 +213,15 @@
   });
   let isLoading = $state(true);
   let loadError = $state<string | null>(null);
+  // The route's bar (or this page's own, in the embed), carried on until the
+  // sequence resolves. A failed load is given up so its timing isn't kept.
+  const loading = useSequencePageLoading();
+  const loadingSession = browser ? loading.open() : null;
+  $effect(() => {
+    if (!loadingSession || isLoading) return;
+    if (loadError || !sequence) loadingSession.abandon();
+    else loadingSession.complete();
+  });
   let handoffData = $state<SequenceRouteHandoff | null>(null);
 
   // IAB banner padding. The measured height is what the banner actually
@@ -252,6 +262,7 @@
 
   onMount(async () => {
     markScan("viewer-page-mounted");
+    loadingSession?.reach("viewer");
     // The root layout only imports composition-root in app mode, so this
     // standalone route never got the short-code registration and
     // getShortCodeManager() threw on EVERY id that is not an inline blob —
@@ -741,7 +752,9 @@
 {#if isLoading}
   <div class="sequence-route-page">
     <div class="loading-container">
-      <LoadingGate variant="card" message="Loading sequence..." />
+      {#if loadingSession}
+        <SequencePageLoading session={loadingSession} />
+      {/if}
     </div>
   </div>
 {:else if loadError || !sequence}

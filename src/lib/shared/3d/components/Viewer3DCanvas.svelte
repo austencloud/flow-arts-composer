@@ -47,6 +47,7 @@
     tryGetSceneFeatureContext,
   } from "../scene-features/context/scene-feature-context";
   import SceneLoadingCurtain from "../scene-features/components/SceneLoadingCurtain.svelte";
+  import { getSequenceDisplayName } from "#lib/shared/foundation/services/word-deriver.js";
   import { createViewerCameraPlayerState } from "@austencloud/camera-3d";
   import { getInputCapabilities } from "#lib/shared/input/InputCapabilities.svelte.js";
   import {
@@ -875,6 +876,8 @@
     </div>
     {#if sequenceData && initialRevealMode === "gated"}
       <SceneLoadingCurtain
+        environmentId={viewer3DState.environmentId}
+        title={getSequenceDisplayName(sequenceData)}
         additionalRevealReady={performersReady}
         additionalRevealProgress={waitForPerformersOnInitialReveal
           ? performerRevealProgress

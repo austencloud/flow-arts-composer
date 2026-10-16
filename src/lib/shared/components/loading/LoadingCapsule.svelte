@@ -8,6 +8,10 @@
    *
    * `labels` lists every status this load can show; the capsule reserves
    * the widest, so a status change crossfades in place without resizing it.
+   *
+   * `variant="line"` is the same bar inside a view rather than over a whole
+   * screen: the status above a slim track in the theme accent, for a load
+   * that has a stage of its own to show (the 3D viewer's loading screen).
    */
   import { onMount } from "svelte";
   import { Crossfade } from "#lib/shared/transitions/motion.js";
@@ -23,9 +27,16 @@
     labels?: readonly string[];
     /** "light" is the deep-tinted track for light surfaces. */
     tone?: "dark" | "light";
+    variant?: "capsule" | "line";
   }
 
-  let { session, label, labels = [], tone = "dark" }: Props = $props();
+  let {
+    session,
+    label,
+    labels = [],
+    tone = "dark",
+    variant = "capsule",
+  }: Props = $props();
 
   let fillElement = $state<HTMLDivElement>();
 
@@ -55,6 +66,7 @@
 <div
   class="loading-capsule"
   class:light={tone === "light"}
+  class:line={variant === "line"}
   role="progressbar"
   aria-label={label}
   aria-valuemin={0}
@@ -63,11 +75,26 @@
   data-loading-bar={session.key}
   data-loading-bar-label={label}
 >
+  {#if variant === "line"}
+    {@render status()}
+    <div class="loading-line-track">
+      {@render fill()}
+    </div>
+  {:else}
+    {@render fill()}
+    {@render status()}
+  {/if}
+</div>
+
+{#snippet fill()}
   <div
     class="loading-capsule-fill"
     bind:this={fillElement}
     data-loading-bar-fill
   ></div>
+{/snippet}
+
+{#snippet status()}
   <span class="loading-capsule-label">
     {#each sizing as text (text)}
       <span class="ghost" aria-hidden="true">{text}</span>
@@ -76,7 +103,7 @@
       <Crossfade key={label} duration={DURATION.normal}>{label}</Crossfade>
     </span>
   </span>
-</div>
+{/snippet}
 
 <style>
   /* Kept in step with src/app.html .boot-capsule: one loading bar look. */
@@ -142,5 +169,44 @@
 
   .ghost {
     visibility: hidden;
+  }
+
+  /* Line: the status over a slim track, sized by its container. */
+  .loading-capsule.line {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    width: min(320px, 100%);
+    min-width: 0;
+    max-width: none;
+    height: auto;
+    padding: 0;
+    overflow: visible;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+  }
+
+  .line .loading-capsule-label {
+    color: rgba(255, 255, 255, 0.86);
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.45);
+  }
+
+  .loading-line-track {
+    position: relative;
+    height: 4px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.16);
+  }
+
+  .line .loading-capsule-fill {
+    background: linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--theme-accent, #8b6cff) 70%, white),
+      var(--theme-accent, #8b6cff)
+    );
   }
 </style>

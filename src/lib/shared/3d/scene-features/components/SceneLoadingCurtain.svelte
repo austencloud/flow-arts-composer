@@ -17,18 +17,25 @@
   import { getSceneFeatureContext } from "../context/scene-feature-context";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { opaqueFade } from "#lib/shared/transitions/motion.js";
+  import type { SceneEnvironmentId } from "../../environments/domain/scene-environment.js";
   import { useSceneLoadingSession } from "../scene-loading-session.svelte.js";
   import ScenePreparationSurface, {
     SCENE_LOADING_LABELS,
   } from "./ScenePreparationSurface.svelte";
 
   interface Props {
+    /** The environment loading, so the curtain paints its sky. */
+    environmentId?: SceneEnvironmentId;
+    /** The sequence's name, shown above the horizon. */
+    title?: string | null;
     additionalRevealReady?: boolean;
     additionalRevealProgress?: number | null;
     additionalRevealLabel?: string;
   }
 
   let {
+    environmentId,
+    title = null,
     additionalRevealReady = true,
     additionalRevealProgress = null,
     additionalRevealLabel = "Finishing the scene",
@@ -126,7 +133,13 @@
 
 {#if showCurtain}
   <div class="curtain" out:opaqueFade={{ duration: DURATION.emphasis }}>
-    <ScenePreparationSurface {statusText} {session} {labels} />
+    <ScenePreparationSurface
+      {statusText}
+      {session}
+      {labels}
+      {environmentId}
+      {title}
+    />
   </div>
 {/if}
 
