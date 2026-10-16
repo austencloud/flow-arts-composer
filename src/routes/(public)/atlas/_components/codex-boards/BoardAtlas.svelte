@@ -22,6 +22,7 @@
   import { LETTER_TYPE_COLORS } from "#lib/shared/pictograph/shared/domain/constants/pictograph-constants.js";
   import type { LetterType } from "#lib/shared/foundation/domain/models/letter-type.js";
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import {
     MAJOR_TYPE_BANDS,
     MINOR_TYPE_BANDS,
@@ -32,7 +33,13 @@
   let {
     onSelect,
     propType,
-  }: { onSelect: (id: string) => void; propType?: PropType } = $props();
+    getData,
+  }: {
+    onSelect: (id: string) => void;
+    propType?: PropType;
+    /** Each letter's pictograph, in place of the stored one. */
+    getData?: (id: string) => PictographData | null | undefined;
+  } = $props();
 
   interface AtlasFlow {
     boxes: TaggedBox[];
@@ -71,6 +78,7 @@
             boxes={flow.boxes}
             flowHeader={flow.flowHeader}
             {propType}
+            {getData}
             {onSelect}
           />
         {/each}
@@ -88,7 +96,7 @@
           style:--band-secondary={bandColors(band)[1]}
         >
           <CodexBandHead type={band.type} />
-          <CodexFlow boxes={band.boxes} {propType} {onSelect} />
+          <CodexFlow boxes={band.boxes} {propType} {getData} {onSelect} />
         </section>
       {/each}
     </div>
