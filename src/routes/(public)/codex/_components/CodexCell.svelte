@@ -5,7 +5,7 @@
    * printing) pass NOTHING beyond `cell`: they get the exact byte-identical
    * static Double-Staff rendering this component always produced.
    *
-   * The interactive guide reader (GuideCodexPage.svelte) additionally passes
+   * The /codex board (via CodexBox) additionally passes
    * `propType`/`visibility`/`dataOverride`/`onSelect` - the SAME sheet, live:
    * propType re-skins the pictograph, visibility toggles its layers, and
    * `onSelect` makes the cell clickable via the shared sequence-selection
