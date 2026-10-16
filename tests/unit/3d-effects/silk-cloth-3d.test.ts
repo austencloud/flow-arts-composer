@@ -68,6 +68,40 @@ describe("SilkCloth3D", () => {
     expect(longest / row).toBeLessThan(1.05);
   });
 
+  it("trails through the air in a spin instead of sticking out like a blade", () => {
+    const spin = 2 * Math.PI * 1.25;
+    let blade = 0;
+    let frames = 0;
+    for (const seed of [1, 2, 3, 4]) {
+      const cloth = new SilkCloth3D(seed);
+      // A spinning hand drifts a little, the way the lab's staff does.
+      const tip = (t: number) => ({
+        x: 0.13 * Math.sin(2.1 * t) + 0.46 * Math.cos(spin * t),
+        y: 0.46 * Math.sin(spin * t),
+        z: 0,
+      });
+      cloth.reset(tip(0), { x: 0, y: -1, z: 0 }, SETTINGS);
+      for (let frame = 1; frame <= 300; frame++) {
+        cloth.step(tip(frame * DT), DT, SETTINGS, -50);
+        if (frame < 120) continue;
+        let path = 0;
+        for (let row = 1; row < SILK_CLOTH_ROWS; row++) {
+          const a = point(cloth, (row - 1) * SILK_CLOTH_COLUMNS + KNOT);
+          const b = point(cloth, row * SILK_CLOTH_COLUMNS + KNOT);
+          path += Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z);
+        }
+        const knot = point(cloth, KNOT);
+        const tail = tailCenter(cloth);
+        const chord = Math.hypot(tail.x - knot.x, tail.y - knot.y, tail.z - knot.z);
+        frames++;
+        if (chord / path > 0.95) blade++;
+      }
+    }
+    // Air holds light silk back, so it curves along the swing; with too
+    // little drag it flings out ramrod straight.
+    expect(blade / frames).toBeLessThan(0.06);
+  });
+
   it("swirls the same way at any frame rate", () => {
     const tailAngle = (fps: number) => {
       const cloth = new SilkCloth3D(7);
