@@ -247,7 +247,7 @@ public:
                 + SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Right)
                 [SNew(SButton).TextStyle(&ButtonTextStyle()).ContentPadding(FMargin(8, 12))
                     .Text(FText::FromString(TEXT("Close  ·  Esc")))
-                    .OnClicked_Lambda([this]() { State->Close(); return FReply::Handled(); })]]]]];
+                    .OnClicked_Lambda([this]() { State->Close(); return FReply::Handled(); })]]]];
     }
 
     virtual FReply OnKeyDown(const FGeometry& Geometry, const FKeyEvent& Event) override
