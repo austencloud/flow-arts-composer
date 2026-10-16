@@ -171,8 +171,9 @@ void AFlowFestWorld::Tick(float DeltaSeconds)
         Person.Actor->SetActorLocation(SiteRoot->GetComponentTransform().TransformPosition(LocalFoot));
         Person.Actor->SetActorRotation(FRotator(0.f, Agent.Facing + SiteRoot->GetComponentRotation().Yaw, 0.f));
         const bool bPerforming = Agent.Activity == EFlowFestCrowdActivity::Perform || Agent.Activity == EFlowFestCrowdActivity::Practice;
-        if (Person.LastActivity != Agent.Activity)
+        if (Person.bNeedsActivityRefresh || Person.LastActivity != Agent.Activity)
         {
+            Person.bNeedsActivityRefresh = false;
             if (bPerforming && Person.Prop && !Agent.PerformanceId.IsNone())
             {
                 const FName Profile = Agent.PerformanceId;
@@ -200,6 +201,7 @@ void AFlowFestWorld::Tick(float DeltaSeconds)
         }
         const FVector WorldVelocity = SiteRoot->GetComponentTransform().TransformVectorNoScale(FVector(Agent.Velocity.X, Agent.Velocity.Y, 0.f) * MetresToCm);
         Person.Avatar->SetMotion(WorldVelocity, false, false);
+        if (Person.Prop) Person.Prop->SetVisible(Agent.bPropInHands);
         if (Person.Prop && !Person.bPerformancePlaying)
         {
             Person.Prop->SetHandTransforms(Person.Avatar->GetHandTransform(true), Person.Avatar->GetHandTransform(false));
@@ -714,6 +716,10 @@ void AFlowFestWorld::AddSign(const FString& Label, const FVector2D& At, float Ya
 
 void AFlowFestWorld::BuildFestivalLandmarks()
 {
+    // Reuse the authored canopy and benches beside the existing workshop path.
+    if (!Landmarks.Contains(TEXT("food")))
+        if (const FVector2D* Workshop = Landmarks.Find(TEXT("workshop")))
+            Landmarks.Add(TEXT("food"), *Workshop + FVector2D(22.f, 0.f));
     if (const FVector2D* Gate = Landmarks.Find(TEXT("gate")))
     {
         AddSetPiece(TEXT("Gatehouse"), ToWorld(Gate->X, Gate->Y), FRotator::ZeroRotator);
@@ -792,6 +798,13 @@ void AFlowFestWorld::BuildFestivalLandmarks()
     {
         AddSetPiece(TEXT("Canopy"), ToWorld(Workshop->X, Workshop->Y), FRotator::ZeroRotator, FVector(1.5f));
         AddSign(TEXT("WORKSHOPS"), *Workshop + FVector2D(0.f, -5.f), 0.f);
+    }
+    if (const FVector2D* Food = Landmarks.Find(TEXT("food")))
+    {
+        AddSetPiece(TEXT("Canopy"), ToWorld(Food->X, Food->Y), FRotator::ZeroRotator);
+        AddSetPiece(TEXT("Bench"), ToWorld(Food->X - 2.f, Food->Y), FRotator(0.f, 90.f, 0.f));
+        AddSetPiece(TEXT("Bench"), ToWorld(Food->X + 2.f, Food->Y), FRotator(0.f, 90.f, 0.f));
+        AddSign(TEXT("FOOD + WATER"), *Food + FVector2D(0.f, -4.f), 0.f);
     }
     const struct { const TCHAR* Id; const TCHAR* Label; } Signs[] = {
         {TEXT("camp-lower"), TEXT("LOWER CAMP")},
@@ -886,6 +899,7 @@ void AFlowFestWorld::BuildPeople()
                     Person.Prop->BindHands(Person.Avatar->GetBodyMesh());
                     Person.Avatar->BindPerformanceProp(Person.Prop);
                     Person.Prop->SetFinish(NAME_None);
+                    Person.Prop->SetVisible(Agent.bPropInHands);
                     Person.Prop->SetHandTransforms(Person.Avatar->GetHandTransform(true),
                                                    Person.Avatar->GetHandTransform(false));
                 }
@@ -952,6 +966,41 @@ void AFlowFestWorld::SetPlayerCrowdPresence(FVector WorldPosition, bool bAtFire,
 
 int32 AFlowFestWorld::GetCrowdActivityCount(int32 Activity) const
 {
-    if (Activity < 0 || Activity > static_cast<int32>(EFlowFestCrowdActivity::Rest)) return 0;
+    if (Activity < 0 || Activity > static_cast<int32>(EFlowFestCrowdActivity::Idle)) return 0;
     return Crowd.GetCount(static_cast<EFlowFestCrowdActivity>(Activity));
+}
+
+FString AFlowFestWorld::GetNearbyAttendeeIntent(FVector WorldPosition) const
+{
+    const FVector Local = SiteRoot->GetComponentTransform().InverseTransformPosition(WorldPosition);
+    const FVector2D Position(Local.X / MetresToCm, Local.Y / MetresToCm);
+    const FFlowFestCrowdAgent* Nearest = nullptr;
+    float DistanceSquared = FMath::Square(4.f);
+    for (const FFlowFestCrowdAgent& Agent : Crowd.GetAgents())
+    {
+        const float Distance = FVector2D::DistSquared(Position, Agent.Position);
+        if (Distance < DistanceSquared) { Nearest = &Agent; DistanceSquared = Distance; }
+    }
+    return Nearest ? FFlowFestCrowd::IntentText(*Nearest) : FString();
+}
+
+bool AFlowFestWorld::GreetNearbyAttendee(FVector WorldPosition, FString& Reply)
+{
+    const FVector Local = SiteRoot->GetComponentTransform().InverseTransformPosition(WorldPosition);
+    return Crowd.GreetNearby(FVector2D(Local.X, Local.Y) / MetresToCm, Reply);
+}
+
+bool AFlowFestWorld::RestoreCrowdState(const FString& State)
+{
+    if (!Crowd.RestoreState(State)) return false;
+    for (FFestivalPerson& Person : People) Person.bNeedsActivityRefresh = true;
+    return true;
+}
+
+void AFlowFestWorld::ResetCrowd()
+{
+    TArray<TArray<FVector2D>> RoadLines;
+    for (const FSiteRoad& Road : Roads) RoadLines.Add(Road.Points);
+    Crowd.Initialize(Landmarks, RoadLines, TimeOfDay);
+    for (FFestivalPerson& Person : People) Person.bNeedsActivityRefresh = true;
 }

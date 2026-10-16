@@ -9,7 +9,14 @@ param(
     [string]$LogPath = '',
     [string]$Character = '',
     [string]$Prop = '',
-    [ValidateSet('', 'flow', 'ride', 'walk', 'jump')][string]$Showcase = '',
+    [ValidateSet('', 'flow', 'idle', 'ride', 'walk', 'jump')][string]$Showcase = '',
+    [ValidateRange(80, 1000)][double]$CameraDistance = 350,
+    [double]$CameraYaw = 145,
+    [ValidateRange(-80, 80)][double]$CameraPitch = -6,
+    [ValidateRange(-100, 100)][double]$CameraHeight = 0,
+    [ValidateRange(-50, 50)][double]$ShowcaseEast = 0,
+    [ValidateRange(-50, 50)][double]$ShowcaseSouth = 0,
+    [ValidateRange(0, 300)][double]$FlowStopAt = 0,
     [ValidateRange(0, 24)][double]$Hour = 17,
     [switch]$Wardrobe,
     [switch]$Offscreen,
@@ -54,6 +61,13 @@ if ($Review) { $arguments += "-FlowFestReview=$Review" }
 if ($Character) { $arguments += "-FlowFestCharacter=$Character" }
 if ($Prop) { $arguments += "-FlowFestProp=$Prop" }
 if ($Showcase) { $arguments += "-FlowFestShowcase=$Showcase" }
+foreach ($cameraOption in @('CameraDistance', 'CameraYaw', 'CameraPitch', 'CameraHeight', 'ShowcaseEast', 'ShowcaseSouth', 'FlowStopAt')) {
+    if ($PSBoundParameters.ContainsKey($cameraOption)) {
+        if (-not $Showcase) { throw "-$cameraOption requires -Showcase." }
+        $optionValue = Get-Variable -Name $cameraOption -ValueOnly
+        $arguments += '-FlowFest' + $cameraOption + '=' + $optionValue.ToString([Globalization.CultureInfo]::InvariantCulture)
+    }
+}
 if ($PSBoundParameters.ContainsKey('Hour')) {
     if (-not $Review -and -not $Showcase) { throw '-Hour requires a review location or character showcase.' }
     $arguments += '-FlowFestHour=' + $Hour.ToString([Globalization.CultureInfo]::InvariantCulture)
