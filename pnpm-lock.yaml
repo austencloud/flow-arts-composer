@@ -121,6 +121,9 @@ importers:
       '@dimforge/rapier3d-compat':
         specifier: ^0.19.3
         version: 0.19.3
+      '@epicgames-ps/lib-pixelstreamingfrontend-ue5.8':
+        specifier: 0.1.2
+        version: 0.1.2
       '@flow-arts/core':
         specifier: workspace:*
         version: link:packages/flow-arts-core
@@ -431,6 +434,9 @@ importers:
       globals:
         specifier: ^17.6.0
         version: 17.6.0
+      http-proxy-3:
+        specifier: 1.23.3
+        version: 1.23.3
       jsdom:
         specifier: ^27.4.0
         version: 27.4.0(canvas@3.2.1)
@@ -1250,6 +1256,12 @@ packages:
 
   '@epic-web/invariant@1.0.0':
     resolution: {integrity: sha512-lrTPqgvfFQtR/eY/qkIzp98OGdNJu0m5ji3q/nJI8v3SXkRKEnWiOxMmbvcSoAIzv/cGiuvRy57k4suKQSAdwA==}
+
+  '@epicgames-ps/lib-pixelstreamingcommon-ue5.8@0.1.0':
+    resolution: {integrity: sha512-Za+1lC0MotucgSRBkCnRx4KSGXJAe2E6AcdJIGsG1SKa51sOIYtvACwIQ31C5SF6fUZiHwBk06JixfHmRkmhxA==}
+
+  '@epicgames-ps/lib-pixelstreamingfrontend-ue5.8@0.1.2':
+    resolution: {integrity: sha512-Ii/dGs/LHzdkD4iT2Az5trvswha8dQvvtJxfpnfvZKMtbg7VFpiBNlZORmhQodeYeKCPWbKpACHBB+MBop06HA==}
 
   '@esbuild/aix-ppc64@0.25.12':
     resolution: {integrity: sha512-Hhmwd6CInZ3dwpuGTF8fJG6yoWmsToE+vYgD4nytZVxcu1ulHpUQRAB1UJ8+N1Am3Mz4+xOByoQoSZf4D+CpkA==}
@@ -3202,6 +3214,9 @@ packages:
 
   '@posthog/types@1.341.0':
     resolution: {integrity: sha512-lIQzaPzfxdhonj2nXI2Nh3z45wyfb/e48cyy/+GawNDeRnkzqyhifpyAimVafBJIP7RR1lQqEnM8Xk55H7SRgQ==}
+
+  '@protobuf-ts/runtime@2.11.1':
+    resolution: {integrity: sha512-KuDaT1IfHkugM2pyz+FwiY80ejWrkH1pAtOBOZFuR6SXEFTsnb/jiQWQ1rCIrcKx2BtyxnxW6BWwsVSA/Ie+WQ==}
 
   '@protobufjs/aspromise@1.1.2':
     resolution: {integrity: sha512-j+gKExEuLmKwvz3OgROXtrJ2UG2x8Ch2YZUxahh+s1F2HZ+wAceUNLkvy6zKCPVRkU++ZWQrdxsUeQXmcg4uoQ==}
@@ -5719,6 +5734,15 @@ packages:
   fn.name@1.1.0:
     resolution: {integrity: sha512-GRnmB5gPyJpAhTQdSZTSp9uaPSvl09KoYcMQtsB9rQoOmzs9dH6ffeccH+Z+cv6P68Hu5bC6JjRh4Ah/mHSNRw==}
 
+  follow-redirects@1.16.1:
+    resolution: {integrity: sha512-FNvFGzoMLWmE6Yj9spb/zjd7yiNCHiAW9/Tg9CXrQ8wuu32HtlJOwWO11OJafl5FfY3DxTdQ0vj42zU1kvv5jg==}
+    engines: {node: '>=4.0'}
+    peerDependencies:
+      debug: '*'
+    peerDependenciesMeta:
+      debug:
+        optional: true
+
   foreground-child@3.3.1:
     resolution: {integrity: sha512-gIXjKqtFuWEgzFRJA9WCQeSJLZDjgJUOMCMzxtvFq/37KojM1BFGufqsCy0r4qSQmYLsZYMeyRqzIWOMup03sw==}
     engines: {node: '>=14'}
@@ -6055,6 +6079,10 @@ packages:
 
   http-parser-js@0.5.10:
     resolution: {integrity: sha512-Pysuw9XpUq5dVc/2SMHpuTY01RFl8fttgcyunjL7eEMhGM3cI4eOmiCycJDVCo/7O7ClfQD3SaI6ftDzqOXYMA==}
+
+  http-proxy-3@1.23.3:
+    resolution: {integrity: sha512-zm8JCrJUwB3Rn0HJypwwDraljDt7YbF+r7Gz0exDRlaT8Yimjs5VRfwug1GrhoasMna1DjwHeEs48+iKxCozyA==}
+    engines: {node: '>=18'}
 
   http-proxy-agent@5.0.0:
     resolution: {integrity: sha512-n2hY8YdoRE1i7r6M0w9DIw5GgZN0G25P8zLCRQ8rjXtTU3vsNFBI/vWK/UIeE6g5MUUz6avwAPXmL6Fy9D/90w==}
@@ -10028,6 +10056,23 @@ snapshots:
 
   '@epic-web/invariant@1.0.0': {}
 
+  '@epicgames-ps/lib-pixelstreamingcommon-ue5.8@0.1.0':
+    dependencies:
+      '@protobuf-ts/runtime': 2.11.1
+      '@types/ws': 8.18.1
+      ws: 8.22.0
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+
+  '@epicgames-ps/lib-pixelstreamingfrontend-ue5.8@0.1.2':
+    dependencies:
+      '@epicgames-ps/lib-pixelstreamingcommon-ue5.8': 0.1.0
+      sdp: 3.2.1
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+
   '@esbuild/aix-ppc64@0.25.12':
     optional: true
 
@@ -11815,6 +11860,8 @@ snapshots:
       cross-spawn: 7.0.6
 
   '@posthog/types@1.341.0': {}
+
+  '@protobuf-ts/runtime@2.11.1': {}
 
   '@protobufjs/aspromise@1.1.2': {}
 
@@ -14705,6 +14752,10 @@ snapshots:
 
   fn.name@1.1.0: {}
 
+  follow-redirects@1.16.1(debug@4.4.3):
+    optionalDependencies:
+      debug: 4.4.3
+
   foreground-child@3.3.1:
     dependencies:
       cross-spawn: 7.0.6
@@ -15134,6 +15185,13 @@ snapshots:
       toidentifier: 1.0.1
 
   http-parser-js@0.5.10: {}
+
+  http-proxy-3@1.23.3:
+    dependencies:
+      debug: 4.4.3
+      follow-redirects: 1.16.1(debug@4.4.3)
+    transitivePeerDependencies:
+      - supports-color
 
   http-proxy-agent@5.0.0:
     dependencies:
@@ -16810,7 +16868,7 @@ snapshots:
       devtools-protocol: 0.0.1495869
       typed-query-selector: 2.12.2
       webdriver-bidi-protocol: 0.2.11
-      ws: 8.21.0
+      ws: 8.22.0
     transitivePeerDependencies:
       - bare-abort-controller
       - bare-buffer

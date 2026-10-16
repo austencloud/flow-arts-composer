@@ -1,0 +1,11 @@
+{
+  "name": "@tka/composer-unreal-tools",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "signal": "node signalling.mjs"
+  },
+  "dependencies": {
+    "@epicgames-ps/lib-pixelstreamingsignalling-ue5.8": "0.2.0"
+  }
+}

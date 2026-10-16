@@ -149,7 +149,7 @@ function guideToc(): ModuleDefinition[] {
       label: tDynamic("guide_nav_codex"),
       icon: icon("table-cells"),
       color: GUIDE_ACCENT,
-      href: "/guide/codex",
+      href: "/codex",
       sections: [],
     },
     {
@@ -178,7 +178,6 @@ export function guideTocModuleFor(pathname: string): string {
   if (pathname === "/guide/ratios") return GUIDE_TOC_MODULE.ratios;
   if (pathname === "/guide/motion-paths") return GUIDE_TOC_MODULE.motionPaths;
   if (pathname === "/guide/zans-diamond") return GUIDE_TOC_MODULE.zansDiamond;
-  if (pathname.startsWith("/guide/codex")) return GUIDE_TOC_MODULE.codex;
   return "";
 }
 

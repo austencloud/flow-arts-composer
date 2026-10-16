@@ -1,6 +1,8 @@
 #include "MuseumWorld.h"
 #include "MuseumPerformerStation.h"
 #include "MuseumCharacter.h"
+#include "FlowFestAvatarComponent.h"
+#include "FlowFestPropComponent.h"
 #include "Components/BoxComponent.h"
 #include "Components/HierarchicalInstancedStaticMeshComponent.h"
 #include "Components/PointLightComponent.h"
@@ -112,6 +114,17 @@ void AMuseumWorld::BeginPlay()
         bLoaded ? TEXT("loaded") : TEXT("FAILED"), Rooms.Num(), Exhibits.Num(), PerformerCount);
     if (FParse::Param(FCommandLine::Get(), TEXT("MuseumPlaybackSmoke")))
     {
+        // Read completed body and prop samples, including the first frame after
+        // a transport command. Both components tick in PostUpdateWork.
+        PrimaryActorTick.TickGroup = TG_PostUpdateWork;
+        for (AMuseumPerformerStation* Station : AnimatedStations)
+        {
+            if (!Station) continue;
+            if (UFlowFestAvatarComponent* Avatar = Station->FindComponentByClass<UFlowFestAvatarComponent>())
+                PrimaryActorTick.AddPrerequisite(Avatar, Avatar->PrimaryComponentTick);
+            if (UFlowFestPropComponent* Prop = Station->FindComponentByClass<UFlowFestPropComponent>())
+                PrimaryActorTick.AddPrerequisite(Prop, Prop->PrimaryComponentTick);
+        }
         SmokeStage = 0;
         SetActorTickEnabled(true);
     }
@@ -601,10 +614,18 @@ void AMuseumWorld::RunPlaybackSmoke(float DeltaSeconds)
     }
     else if (SmokeStage == 2)
     {
-        if (!Sample->IsPaused() || FMath::Abs(Sample->GetPlaybackPhase() - SmokePhase) > .001f ||
-            !Sample->GetPropRootTransform(true).Equals(SmokeLeftProp, .01f) ||
-            !Sample->GetPropRootTransform(false).Equals(SmokeRightProp, .01f))
-        { FailSmoke(TEXT("pause did not freeze authored body and props")); return; }
+        const float PhaseDelta = FMath::Abs(Sample->GetPlaybackPhase() - SmokePhase);
+        const FTransform Left = Sample->GetPropRootTransform(true);
+        const FTransform Right = Sample->GetPropRootTransform(false);
+        if (!Sample->IsPaused() || PhaseDelta > .001f ||
+            !Left.Equals(SmokeLeftProp, .01f) || !Right.Equals(SmokeRightProp, .01f))
+        {
+            FailSmoke(FString::Printf(TEXT("pause did not freeze authored body and props: paused=%d phase delta=%.6f left position delta=%.4f cm right position delta=%.4f cm"),
+                Sample->IsPaused() ? 1 : 0, PhaseDelta,
+                FVector::Distance(Left.GetLocation(), SmokeLeftProp.GetLocation()),
+                FVector::Distance(Right.GetLocation(), SmokeRightProp.GetLocation())));
+            return;
+        }
         Sample->TogglePlayback();
         SmokeStage = 3;
     }

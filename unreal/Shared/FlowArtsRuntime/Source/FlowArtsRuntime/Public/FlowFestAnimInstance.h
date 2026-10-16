@@ -25,7 +25,13 @@ public:
     void StopPerformance();
     void SetPerformancePhase(float NormalizedPhase);
     void SetPerformanceRate(float Rate);
+    void SetPerformancePaused(bool bPaused);
+    bool IsPerformancePaused() const { return bPerformancePaused; }
+    void SeekPerformance(float Seconds);
+    float GetPerformanceRate() const { return PerformanceRate; }
+    void RestartPerformance();
     float GetPerformanceTime() const { return PerformanceTime; }
+    FName GetPerformanceProfile() const { return bPerformanceTarget && PerformanceClip ? PerformanceProfile : NAME_None; }
     float GetPerformanceWeight() const { return PerformanceWeight; }
     float GetOutgoingPerformanceWeight() const;
     int32 GetOutgoingPerformanceCount() const { return OutgoingPerformanceClips.Num(); }
@@ -40,6 +46,9 @@ protected:
 
 private:
     friend struct FFlowFestAnimProxy;
+#if WITH_DEV_AUTOMATION_TESTS
+    friend class FFlowArtsPerformanceTransportTest;
+#endif
     UPROPERTY(Transient) TArray<TObjectPtr<UAnimSequence>> MotionClips;
     UPROPERTY(Transient) TObjectPtr<UAnimSequence> PerformanceClip;
     TWeakObjectPtr<UFlowFestPropComponent> GripSource;
@@ -61,7 +70,9 @@ private:
     float PerformanceRate = 1.f;
     bool bPerformanceTarget = false;
     bool bPerformanceLoop = true;
+    bool bPerformancePaused = false;
     float FootCorrectionCm[2] = {0.f, 0.f};
+    void SettlePerformanceBlend();
     void Advance(float DeltaSeconds);
 };
 

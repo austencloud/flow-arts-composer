@@ -15,6 +15,7 @@
   import type { SceneControlLayout } from "#lib/shared/3d/domain/scene-control-layout.js";
   import ContactViewerRequired from "#lib/shared/3d/components/ContactViewerRequired.svelte";
   import ScenePreparationSurface from "#lib/shared/3d/scene-features/components/ScenePreparationSurface.svelte";
+  import { provideSceneLoadingSession } from "#lib/shared/3d/scene-features/scene-loading-session.svelte.js";
   import { sceneNeedsContactViewer } from "#lib/shared/3d/domain/prop-motion-discipline.js";
   import VisualSequenceSaveContextMenuHost from "#lib/shared/library/components/VisualSequenceSaveContextMenuHost.svelte";
   import Viewer3DRailHint from "#lib/shared/3d/components/onboarding/Viewer3DRailHint.svelte";
@@ -133,6 +134,16 @@
 
   const loadViewer3DCanvas = () =>
     import("#lib/shared/3d/components/Viewer3DCanvas.svelte");
+
+  // One loading bar from the moment 3D is asked for: the placeholder below
+  // shows it while the 3D code downloads, and the scene's curtain carries it
+  // on to the reveal.
+  const sceneLoading = provideSceneLoadingSession();
+  $effect(() => {
+    if (is3DActive && !requiresContactViewer && !sceneLoading.current) {
+      sceneLoading.open();
+    }
+  });
 
   // 3D is one click away from here, and its models are the slowest thing in the
   // app to arrive. Pull them into the browser cache while it is idle so the
@@ -497,7 +508,10 @@
 </script>
 
 {#snippet viewer3DLoading()}
-  <ScenePreparationSurface statusText="Opening 3D" />
+  <ScenePreparationSurface
+    statusText="Opening 3D"
+    session={sceneLoading.current}
+  />
 {/snippet}
 
 {#snippet viewer3DError(_error: unknown, retry: () => void)}

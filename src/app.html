@@ -410,6 +410,7 @@
           p.startsWith("/test/environment-transition") ||
           p.startsWith("/test/film-director") ||
           p.startsWith("/guide") ||
+          p.startsWith("/codex") ||
           p.startsWith("/1989") ||
           p.startsWith("/1995") ||
           p.startsWith("/1998") ||
@@ -1686,6 +1687,9 @@
         }
       })();
     </script>
+    <!-- The shared self-timing bar engine, inlined here by the server
+         (src/lib/server/performance/self-timing-bar-inline.ts). -->
+    <!-- tka-self-timing-bar -->
     <script>
       // Two plain status strings: "Opening Flow Arts Composer" from first
       // paint, then "Almost there" if the app is still starting well past its
@@ -1778,16 +1782,16 @@
       // The app reports named milestones, in a fixed order, through
       // __tkaBootMilestone(name). Each boot stores when they arrived
       // (localStorage "tka-boot-profile", last boot wins) and the next boot
-      // replays that profile: between two milestones the fill moves at the
-      // pace the last boot took, and a step that runs late keeps creeping but
-      // never claims the next milestone before it arrives. Each segment,
-      // late tail included, is one transform animation, which the compositor
-      // keeps running while the main thread is blocked; an 80 ms ticker only
-      // reports the progressbar value, feeds the probe and pauses in hidden
-      // tabs. Design and the measurements behind it:
+      // replays that profile. The motion itself is the shared self-timing
+      // bar (src/lib/shared/loading/self-timing-bar.engine.js, inlined by
+      // the server just before this script), the same engine every in-app
+      // loading capsule runs. This script owns what is the boot's alone: its
+      // milestones and default profile, the holds, the status text and the
+      // screen leaving. Design and the measurements behind it:
       // docs/superpowers/specs/2026-10-14-boot-bar-self-timing.md
       // docs/superpowers/specs/2026-10-14-boot-bar-compositor-fill.md
       // docs/superpowers/specs/2026-10-14-boot-bar-tail-and-gradient.md
+      // docs/superpowers/specs/2026-10-15-shared-loading-bar.md
       // `ready` is the app's services; `composed` comes after it, when the
       // first view is whole and the screen can leave (see __tkaBootHold):
       // docs/superpowers/specs/2026-10-15-boot-composed-reveal.md
@@ -1846,59 +1850,17 @@
       // time. No hold keeps the screen past ready + the ceiling.
       var __tkaHoldCapMs = 4000;
       var __tkaHoldCeilingMs = 8000;
-      var __tkaBootTimes = []; // expected arrival per rank, from the profile
-      var __tkaBootProfiled = []; // per rank: did the profile record it
-      var __tkaBootArrived = {}; // name -> ms, every first arrival
-      var __tkaBootTop = -1; // highest rank that has arrived in order
-      var __tkaBootTopAt = 0;
-      // The fill's position, in percent of the capsule shown (5 at first
-      // paint, from the CSS). The last move written, as stops (percent) at
-      // offsets of its duration with the easing that leaves each stop, so
-      // the position can be modelled when the computed transform lags the
-      // compositor or cannot be read. `to` is the last stop.
-      var __tkaBarMove = {
-        at: 0,
-        ms: 0,
-        stops: [5],
-        offsets: [0],
-        eases: [],
-        to: 5,
-      };
-      var __tkaBarAnim = null; // the running move's Animation
-      var __tkaBarTailAt = 0; // when the running segment's linear part ends
-      var __tkaBarEndAt = 0; // when its tail ends, at 0.98 of the segment
       var __tkaBarValue = 5; // the last aria-valuenow written
-      var __tkaBarTicker = null;
       var __tkaBarFill = document.getElementById("loading-bar-fill");
       var __tkaBarScreen = document.getElementById("app-loading");
-      // Landing and retro routes hide the screen above: no ticker, no profile.
+      // Landing and retro routes hide the screen above: no bar, no profile.
       var __tkaBarActive = Boolean(
         __tkaBarFill &&
         __tkaBarScreen &&
         __tkaBarScreen.style.display !== "none"
       );
-      // Reduced motion, or a browser without the Web Animations API: no
-      // animations; the fill is placed per milestone and per tick.
-      var __tkaBarStill =
-        __tkaReduceMotion ||
-        !__tkaBarFill ||
-        typeof __tkaBarFill.animate !== "function";
+      var __tkaBar = null; // the shared engine's bar, once the profile is read
       var __tkaAlmostAt = 4000;
-      // Segments start on an animation frame, for the time left. Before the
-      // first frame the browser has no rendered style to start a move from,
-      // so one written then can jump to its end (cold and dev boots showed
-      // the fill at the first segment's target in their first frame). Later,
-      // a pin written between frames can reach the screen a frame or more
-      // after it was read, while the compositor kept moving the fill, and a
-      // busy page showed that as a step back; a pin read inside a frame is
-      // committed in that same frame.
-      var __tkaBarFrames = typeof requestAnimationFrame === "function";
-      var __tkaBarWaiting = false;
-      var __tkaBarFrameAsked = false;
-      // The tail's ease-out, settling at 0.98 of the segment. Of the
-      // decelerating curves, the plain CSS one spreads the tail's few pixels
-      // most evenly, so a long tail still visibly moves near its end.
-      var __tkaTailEase = "ease-out";
 
       function __tkaMarkSplash(label, detail) {
         try {
@@ -1906,214 +1868,8 @@
         } catch (e) {}
       }
 
-      // Expected arrival per rank. Milestones the profile lacks sit between
-      // their neighbours by rank; times never run backwards or past the end.
-      // A profile stored before `composed` existed ends at ready: it gets an
-      // estimated composed 500 ms later. The end always sits at least 50 ms
-      // past ready, so the fill never claims 100% while holds keep it up.
-      function __tkaProfileTimes(profile) {
-        var times = [];
-        var ready = profile.t.ready;
-        var end = profile.t.composed;
-        if (typeof end !== "number" || !isFinite(end) || end < ready) {
-          end = ready + 500;
-        }
-        end = Math.max(end, ready + 50);
-        __tkaBootProfiled = [];
-        for (var i = 0; i <= __tkaBootLast; i++) {
-          var value = profile.t[__tkaBootRanks[i]];
-          var known =
-            typeof value === "number" && isFinite(value) && value >= 0;
-          __tkaBootProfiled.push(known);
-          times.push(known ? Math.min(value, end) : null);
-        }
-        times[__tkaBootLast] = end;
-        if (times[0] === null) times[0] = 0;
-        __tkaBootProfiled[0] = true;
-        __tkaBootProfiled[__tkaBootLast] = true;
-        for (i = 1; i < __tkaBootLast; i++) {
-          if (times[i] !== null) continue;
-          var next = i + 1;
-          while (times[next] === null) next++;
-          times[i] =
-            times[i - 1] + (times[next] - times[i - 1]) / (next - i + 1);
-        }
-        for (i = 1; i <= __tkaBootLast; i++) {
-          if (times[i] < times[i - 1]) times[i] = times[i - 1];
-        }
-        return times;
-      }
-
-      function __tkaShare(rank) {
-        return __tkaBootTimes[rank] / __tkaBootTimes[__tkaBootLast];
-      }
-
-      // Linear to 85% of a segment, then an asymptote short of the next one.
-      // Reduced motion places the fill by it, tick by tick.
-      function __tkaSegmentEase(x) {
-        if (x <= 0.85) return x < 0 ? 0 : x;
-        return 0.85 + 0.13 * (1 - Math.exp(-(x - 0.85) * 1.5));
-      }
-
-      // The segment the fill is in: from the highest arrived rank to the next
-      // milestone the profile recorded. One it only interpolated (the last
-      // boot never saw it before ready) still anchors the fill if it
-      // arrives, but is never waited for.
-      function __tkaSegment() {
-        var rank = __tkaBootTop;
-        var next = rank + 1;
-        while (next < __tkaBootLast && !__tkaBootProfiled[next]) next++;
-        return {
-          from: __tkaShare(rank),
-          to: __tkaShare(next),
-          span: Math.max(__tkaBootTimes[next] - __tkaBootTimes[rank], 50),
-        };
-      }
-
-      function __tkaExpectedFraction(now) {
-        if (__tkaBootTop >= __tkaBootLast) return 1;
-        var segment = __tkaSegment();
-        return (
-          segment.from +
-          (segment.to - segment.from) *
-            __tkaSegmentEase((now - __tkaBootTopAt) / segment.span)
-        );
-      }
-
-      function __tkaPercent(fraction) {
-        return Math.min(100, 4 + 96 * fraction);
-      }
-
-      // The tail easing at x (0 to 1): ease-out, cubic-bezier(0, 0, 0.58, 1),
-      // solved for its time parameter by bisection.
-      function __tkaTailEaseAt(x) {
-        var lo = 0;
-        var hi = 1;
-        var s = x;
-        for (var i = 0; i < 30; i++) {
-          s = (lo + hi) / 2;
-          var r = 1 - s;
-          if (3 * r * s * s * 0.58 + s * s * s < x) {
-            lo = s;
-          } else {
-            hi = s;
-          }
-        }
-        return 3 * (1 - s) * s * s + s * s * s;
-      }
-
-      // Where the last move has the fill at `now`. A running animation's own
-      // start time is the compositor's; one still waiting for its first
-      // frame counts from when it was written, which can only overstate it.
-      function __tkaBarPlanned(now) {
-        var move = __tkaBarMove;
-        if (move.ms <= 0) return move.to;
-        var start = move.at;
-        try {
-          if (__tkaBarAnim && __tkaBarAnim.startTime !== null) {
-            start = __tkaBarAnim.startTime;
-          }
-        } catch (e) {}
-        var x = (now - start) / move.ms;
-        if (x <= 0) return move.stops[0];
-        for (var i = 1; i < move.stops.length; i++) {
-          if (x < move.offsets[i]) {
-            var f =
-              (x - move.offsets[i - 1]) /
-              (move.offsets[i] - move.offsets[i - 1]);
-            // Segments use only these two; the ready glide is never read.
-            if (move.eases[i - 1] === __tkaTailEase) f = __tkaTailEaseAt(f);
-            return move.stops[i - 1] + (move.stops[i] - move.stops[i - 1]) * f;
-          }
-        }
-        return move.to;
-      }
-
-      // Where the fill is on screen, in percent: its computed scale. While
-      // an animation runs on the compositor, the computed value can lag it:
-      // the main thread's animation clock only moves per rendered frame, so
-      // in a long task it shows the fill where it was. The larger of that
-      // and the move's own schedule is used, so pinning the fill never pulls
-      // it backwards on screen.
-      function __tkaBarAt(now) {
-        var computed = null;
-        try {
-          var matrix = getComputedStyle(__tkaBarFill).transform;
-          var scale = parseFloat(
-            matrix.slice(matrix.indexOf("(") + 1).split(",")[0]
-          );
-          // "none" is a style not resolved yet (seen on a cold boot under
-          // reduced motion): the CSS always gives the fill a transform.
-          if (matrix !== "none" && isFinite(scale)) computed = 100 * scale;
-        } catch (e) {}
-        var estimate = __tkaBarPlanned(now);
-        // The fill only ever moves toward the last stop written, so it is
-        // never past it: a computed value beyond it (a style not resolved
-        // yet, or another animation on the element) is not the screen.
-        return Math.min(
-          __tkaBarMove.to,
-          computed === null ? estimate : Math.max(computed, estimate)
-        );
-      }
-
-      function __tkaScale(percent) {
-        return "scaleX(" + (percent / 100).toFixed(4) + ")";
-      }
-
-      // Place the fill with no animation. Positions are written to 0.01%,
-      // and remembered as written.
-      function __tkaSetBar(percent, now) {
-        percent = Math.round(percent * 100) / 100;
-        __tkaBarMove = {
-          at: now,
-          ms: 0,
-          stops: [percent],
-          offsets: [0],
-          eases: [],
-          to: percent,
-        };
-        __tkaBarFill.style.transform = __tkaScale(percent);
-      }
-
-      // One compositor animation through the stops, from where the fill is
-      // on screen (the first stop). That value is written inline before the
-      // previous animation is cancelled, in the same task, so the fill never
-      // shows an older position in between, and rounded up, so writing it to
-      // 0.01% never steps back. Never backwards: a move whose end is at or
-      // behind the fill is not started.
-      function __tkaMoveBar(stops, offsets, eases, ms, now) {
-        stops[0] = Math.ceil(stops[0] * 100) / 100;
-        if (stops[stops.length - 1] <= stops[0]) return;
-        var old = __tkaBarAnim;
-        __tkaBarAnim = null;
-        __tkaSetBar(stops[0], now);
-        if (old) old.cancel();
-        var frames = [];
-        var kept = [];
-        for (var i = 0; i < stops.length; i++) {
-          kept.push(Math.round(stops[i] * 100) / 100);
-          frames.push({
-            transform: __tkaScale(kept[i]),
-            offset: offsets[i],
-            easing: eases[i] || "linear",
-          });
-        }
-        __tkaBarAnim = __tkaBarFill.animate(frames, {
-          duration: ms,
-          fill: "forwards",
-        });
-        __tkaBarMove = {
-          at: now,
-          ms: ms,
-          stops: kept,
-          offsets: offsets,
-          eases: eases,
-          to: kept[kept.length - 1],
-        };
-      }
-
       // The probe and the progressbar value report what is on screen.
-      function __tkaBarSample(now, at) {
+      function __tkaBarSample(now, at, target) {
         var value = Math.round((100 * (at - 4)) / 96);
         if (value > __tkaBarValue && __tkaBarScreen) {
           // Full is announced only at composed, by __tkaFinishBoot.
@@ -2124,126 +1880,17 @@
           __tkaBootBar.samples.push({
             t: Math.round(now),
             pct: Math.round(at * 10) / 10,
-            target: Math.round(__tkaBarMove.to * 10) / 10,
+            target: Math.round(target * 10) / 10,
           });
         }
-      }
-
-      // A milestone starts its segment as one animation from wherever the
-      // fill is: linear to 0.85 of the way to the next share, ending at 0.85
-      // of the time the profile expects, then an ease-out tail to 0.98 of
-      // the way over max(3 segments, 1.5 s), where it holds until the
-      // milestone arrives. The compositor runs all of it with no main-thread
-      // help. An early milestone just makes the linear slope steeper.
-      // Reduced motion places the fill at the expected position instead.
-      function __tkaStartSegment(now) {
-        if (__tkaFinished || !__tkaBarActive) return;
-        if (__tkaBootTop >= __tkaBootLast) return;
-        var span = __tkaSegment().span;
-        __tkaBarTailAt = now + 0.85 * span;
-        __tkaBarEndAt = __tkaBarTailAt + Math.max(3 * span, 1500);
-        if (__tkaBarFrames && !__tkaBarStill) {
-          __tkaBarWaiting = true;
-          __tkaBarSample(now, __tkaBarAt(now));
-          __tkaAskFrame();
-          return;
-        }
-        __tkaRunSegment(now);
-      }
-
-      function __tkaAskFrame() {
-        if (__tkaBarFrameAsked) return;
-        __tkaBarFrameAsked = true;
-        try {
-          requestAnimationFrame(__tkaOnFrame);
-        } catch (e) {
-          __tkaBarFrames = false;
-          __tkaOnFrame();
-        }
-      }
-
-      // Reduced motion: the fill where the profile expects it now.
-      function __tkaPlaceBar(now, at) {
-        var percent = __tkaPercent(__tkaExpectedFraction(now));
-        if (percent > at) __tkaSetBar(percent, now);
-      }
-
-      // The segment's move, for the time left until its tail ends. A frame
-      // that comes after the linear part should have ended (a blocked page)
-      // starts straight on the tail.
-      function __tkaRunSegment(now) {
-        if (__tkaFinished || __tkaBootTop >= __tkaBootLast) return;
-        var at = __tkaBarAt(now);
-        if (__tkaBarStill) {
-          __tkaPlaceBar(now, at);
-        } else {
-          var segment = __tkaSegment();
-          var gap = segment.to - segment.from;
-          var linear = __tkaPercent(segment.from + 0.85 * gap);
-          var tail = __tkaPercent(segment.from + 0.98 * gap);
-          var ms = Math.max(__tkaBarEndAt - now, 200);
-          var split = (__tkaBarTailAt - now) / ms;
-          if (split > 0 && linear > at) {
-            __tkaMoveBar(
-              [at, linear, tail],
-              [0, split, 1],
-              ["linear", __tkaTailEase],
-              ms,
-              now
-            );
-          } else {
-            __tkaMoveBar([at, tail], [0, 1], [__tkaTailEase], ms, now);
-          }
-        }
-        __tkaBarSample(now, at);
-      }
-
-      function __tkaOnFrame() {
-        __tkaBarFrameAsked = false;
-        if (!__tkaBarWaiting) return;
-        __tkaBarWaiting = false;
-        try {
-          __tkaRunSegment(performance.now());
-        } catch (e) {}
-      }
-
-      // The ticker writes no fill: the segment's animation carries it, tail
-      // included. It reports the progressbar value and feeds the probe;
-      // under reduced motion it places the fill outright.
-      function __tkaBarTick() {
-        try {
-          if (__tkaFinished || !__tkaBarActive) return;
-          var now = performance.now();
-          var at = __tkaBarAt(now);
-          if (__tkaBarStill) __tkaPlaceBar(now, at);
-          __tkaBarSample(now, at);
-        } catch (e) {}
-      }
-
-      function __tkaStopTicker() {
-        if (__tkaBarTicker === null) return;
-        clearInterval(__tkaBarTicker);
-        __tkaBarTicker = null;
-      }
-
-      function __tkaStartTicker() {
-        if (__tkaBarTicker !== null || __tkaFinished || !__tkaBarActive) return;
-        if (document.hidden) return;
-        __tkaBarTicker = setInterval(__tkaBarTick, 80);
-        __tkaBarTick();
       }
 
       // Stored at composed, when the boot went through the app shell. Only
       // the milestones that arrived in order go in.
       function __tkaSaveProfile(composedAt) {
-        if (!__tkaBarActive) return;
-        var times = {};
-        var log = __tkaBootBar.milestones;
-        for (var i = 0; i < log.length; i++) {
-          if (!log[i].ignored && log[i].name !== "composed") {
-            times[log[i].name] = log[i].t;
-          }
-        }
+        if (!__tkaBar) return;
+        var times = __tkaBar.profile().t;
+        delete times.composed;
         if (times.scripts === undefined || times.shell === undefined) return;
         if (times.ready === undefined) return;
         times.composed = Math.round(composedAt);
@@ -2253,28 +1900,31 @@
         );
       }
 
+      // Without a bar (a hidden screen, or no engine) arrivals still leave
+      // their profiler mark and log line.
+      var __tkaSeen = {};
       function __tkaRecordMilestone(name) {
         var rank = __tkaBootRanks.indexOf(name);
-        if (rank === -1 || __tkaBootArrived.hasOwnProperty(name)) return;
-        var now = performance.now();
-        __tkaBootArrived[name] = now;
-        __tkaMarkSplash(name);
-        var entry = { name: name, t: Math.round(now) };
-        __tkaBootBar.milestones.push(entry);
-        // Late lower ranks keep their mark and log line but not the bar.
-        if (rank < __tkaBootTop) {
-          entry.ignored = true;
+        if (!__tkaBar) {
+          if (rank === -1 || __tkaSeen.hasOwnProperty(name)) return;
+          __tkaSeen[name] = true;
+          __tkaMarkSplash(name);
+          __tkaBootBar.milestones.push({
+            name: name,
+            t: Math.round(performance.now()),
+          });
           return;
         }
-        __tkaBootTop = rank;
-        __tkaBootTopAt = now;
-        if (rank === __tkaBootLast) {
-          __tkaSaveProfile(now);
-          return;
-        }
+        if (rank === -1 || __tkaBar.arrived(name)) return;
         // Ready with nothing held is composed in the same task: no segment.
-        if (rank === __tkaBootReadyRank && __tkaOpenHolds() === 0) return;
-        __tkaStartSegment(now);
+        var entry = __tkaBar.milestone(name, {
+          segment: !(rank === __tkaBootReadyRank && __tkaOpenHolds() === 0),
+        });
+        if (!entry) return;
+        __tkaMarkSplash(name);
+        if (rank === __tkaBootLast && !entry.ignored) {
+          __tkaSaveProfile(performance.now());
+        }
       }
 
       // Hand control to the shell immediately. Feature readiness is separate,
@@ -2282,18 +1932,10 @@
       function __tkaFinishBoot() {
         if (__tkaFinished) return;
         __tkaFinished = true;
-        try {
-          __tkaStopTicker();
-        } catch (e) {}
         var screen = document.getElementById("app-loading");
         // The fill runs to full in 200 ms while the screen fades.
         try {
-          if (__tkaBarFill) {
-            var now = performance.now();
-            var at = __tkaBarAt(now);
-            if (__tkaBarStill) __tkaSetBar(100, now);
-            else __tkaMoveBar([at, 100], [0, 1], ["ease"], 200, now);
-          }
+          if (__tkaBar) __tkaBar.finish(200, "ease");
         } catch (e) {}
         if (screen) screen.setAttribute("aria-valuenow", "100");
         __tkaMarkSplash("shell-handoff");
@@ -2480,8 +2122,21 @@
         } catch (e) {}
         __tkaBootBar.defaultProfile = !__tkaSavedProfile;
         __tkaBootBar.profile = __tkaSavedProfile || __tkaDefaultBootProfile;
-        __tkaBootTimes = __tkaProfileTimes(__tkaBootBar.profile);
-        __tkaAlmostAt = Math.max(4000, __tkaBootTimes[__tkaBootLast] + 1000);
+        if (__tkaBarActive && window.__tkaCreateSelfTimingBar) {
+          // The CSS starts the fill at 5%; 4% is the empty end of the scale.
+          __tkaBar = window.__tkaCreateSelfTimingBar({
+            fill: __tkaBarFill,
+            ranks: __tkaBootRanks,
+            profile: __tkaBootBar.profile,
+            endAfter: "ready",
+            shown: 5,
+            floor: 4,
+            still: __tkaReduceMotion,
+            log: __tkaBootBar.milestones,
+            onSample: __tkaBarSample,
+          });
+          __tkaAlmostAt = Math.max(4000, __tkaBar.times[__tkaBootLast] + 1000);
+        }
       } catch (e) {}
 
       // Still starting well past the expected finish: say so once, plainly.
@@ -2496,17 +2151,20 @@
 
       __tkaBootMilestone("start");
       try {
-        __tkaStartTicker();
-        document.addEventListener("visibilitychange", function () {
-          if (document.hidden) __tkaStopTicker();
-          else __tkaStartTicker();
-        });
+        if (__tkaBar) {
+          __tkaBar.startTicker();
+          document.addEventListener("visibilitychange", function () {
+            if (!__tkaBar) return;
+            if (document.hidden) __tkaBar.stopTicker();
+            else __tkaBar.startTicker();
+          });
+        }
       } catch (e) {}
 
       // Safety net: if ready never arrives, force-dismiss after 15s
       window.__tkaLoadTimeout = setTimeout(function () {
         try {
-          __tkaStopTicker();
+          if (__tkaBar) __tkaBar.stopTicker();
         } catch (e) {}
         var screen = document.getElementById("app-loading");
         if (screen && !screen.classList.contains("loaded")) {

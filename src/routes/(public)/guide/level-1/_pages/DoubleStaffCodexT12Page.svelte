@@ -9,8 +9,8 @@
    * title; GuidePage paints the manifest title). One source of truth for the
    * codex content, two frames.
    */
-  import CodexSheet from "../../codex/_components/CodexSheet.svelte";
-  import { SHEET1 } from "../../codex/_data/codex-groups";
+  import CodexSheet from "../../../codex/_components/CodexSheet.svelte";
+  import { SHEET1 } from "../../../codex/_data/codex-groups";
 </script>
 
 <div class="codex-page">

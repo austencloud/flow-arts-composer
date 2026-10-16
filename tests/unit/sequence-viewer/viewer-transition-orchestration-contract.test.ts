@@ -388,18 +388,19 @@ describe("Sequence Viewer transition orchestration contract", () => {
       "is2DActive || (isTunnelActive && !keep3DUntilTunnelPaints)"
     );
     expect(motionSurface).toContain('initialRevealMode: "gated"');
-    expect(motionSurface).toContain(
-      '<ScenePreparationSurface statusText="Opening 3D" />'
+    // One loading bar from "Opening 3D" to the reveal: the host's
+    // placeholder and the scene's curtain show the same session.
+    expect(motionSurface).toContain("provideSceneLoadingSession()");
+    expect(motionSurface).toMatch(
+      /<ScenePreparationSurface\s+statusText="Opening 3D"\s+session=\{sceneLoading\.current\}/
     );
+    expect(sceneLoadingCurtain).toContain("useSceneLoadingSession().open()");
     expect(sceneLoadingCurtain).toContain(
-      "<ScenePreparationSurface {statusText} {progress} />"
+      "<ScenePreparationSurface {statusText} {session} {labels} />"
     );
     expect(scenePreparationSurface).toContain("data-scene-preparation");
     expect(scenePreparationSurface).toContain("3D viewer");
-    expect(scenePreparationSurface).toContain('role="progressbar"');
-    expect(scenePreparationSurface).toContain(
-      "aria-valuenow={percent ?? undefined}"
-    );
+    expect(scenePreparationSurface).toContain("<LoadingCapsule");
     expect(motionSurface).not.toContain("viewer-3d-handoff-status");
     expect(motionSurface).toMatch(
       /!inStudio\s*&&\s*preparationCanvasWidth !== null/
