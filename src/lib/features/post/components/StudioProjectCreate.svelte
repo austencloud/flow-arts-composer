@@ -1,9 +1,10 @@
 <script lang="ts">
   import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
-  import type {
-    StudioIntent,
-    StudioLibraryEntry,
+  import {
+    studioKindDescriptions,
+    type StudioIntent,
+    type StudioLibraryEntry,
   } from "./studio-library-entry.js";
 
   let {
@@ -33,21 +34,19 @@
       id: "tutorial" as const,
       icon: "fas fa-person-chalkboard",
       title: "Tutorial video",
-      description: "Teach a sequence. Reuse an edit or choose a new sequence.",
+      description: studioKindDescriptions.tutorial,
     },
     {
       id: "showcase" as const,
       icon: "fas fa-display",
       title: "Software showcase",
-      description:
-        "Show what the app can do with footage, captures and titles.",
+      description: studioKindDescriptions.showcase,
     },
     {
       id: "arrangement" as const,
       icon: "fas fa-table-cells",
       title: "Sequence arrangement",
-      description:
-        "Put sequences side by side, layer them and set their timing.",
+      description: studioKindDescriptions.arrangement,
     },
   ];
   const option = $derived(options.find((item) => item.id === chosen));
