@@ -25,15 +25,9 @@
     Vector3,
     WebGLRenderer,
     ACESFilmicToneMapping,
-    HalfFloatType,
   } from "three";
   import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-  import {
-    BloomEffect,
-    EffectComposer,
-    EffectPass,
-    RenderPass,
-  } from "postprocessing";
+  import { ScenePostProcessingPipeline } from "#lib/shared/3d/effects/post-processing/scene-post-processing-pipeline";
   import { SmokeVolumeRenderer3D } from "#lib/shared/3d/effects/smoke/smoke-volume-renderer-3d";
   import { SmokePoolRenderer3D } from "#lib/shared/3d/effects/smoke/smoke-pool-renderer-3d";
   import type { SmokeTipSource3D } from "#lib/shared/3d/effects/scene-effects/scene-effect-source-3d";
@@ -112,19 +106,31 @@
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
 
-    const composer = new EffectComposer(renderer, { frameBufferType: HalfFloatType });
-    composer.addPass(new RenderPass(scene, camera));
-    const bloomPass = new EffectPass(
+    // The app's own pass graph, so the smoke gets the scene depth it uses to
+    // sit behind the floor and props, and the HIGH tier's bloom.
+    const pipelineConfig = (enableBloom: boolean) => ({
+      enabled: true,
+      isOcean: false,
+      tierBloom: true,
+      enableShadows: false,
+      bloomResolutionScale: 1,
+      bloomLevels: 8,
+      tierBloomResolutionScale: 1,
+      tierBloomLevels: 8,
+      enableBloom,
+      enableChromaticAberration: false,
+      oceanBloom: false,
+      oceanWaterTint: false,
+      oceanWaterTintStrength: 0,
+      oceanUnderwaterDistortion: false,
+    });
+    const pipeline = new ScenePostProcessingPipeline({
+      renderer,
+      scene,
       camera,
-      new BloomEffect({
-        intensity: 0.8,
-        luminanceThreshold: 0.6,
-        luminanceSmoothing: 0.3,
-        mipmapBlur: true,
-        radius: 0.5,
-      })
-    );
-    composer.addPass(bloomPass);
+      config: pipelineConfig(bloom),
+    });
+    let bloomShown = bloom;
 
     const volume = new SmokeVolumeRenderer3D();
     volume.initialize(scene);
@@ -233,7 +239,6 @@
     function resize(): void {
       const { clientWidth: w, clientHeight: h } = host;
       renderer.setSize(w, h, false);
-      composer.setSize(w, h);
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
     }
@@ -256,9 +261,12 @@
     }
     function render(): void {
       controls.update();
-      bloomPass.enabled = bloom;
-      if (bloom) composer.render();
-      else renderer.render(scene, camera);
+      if (bloomShown !== bloom) {
+        bloomShown = bloom;
+        pipeline.updateConfig(pipelineConfig(bloom));
+      }
+      // Smoke reads the depth of the frame before, as in the app.
+      pipeline.render(STEP, { forceBaseRender: true });
     }
     raf = requestAnimationFrame(frame);
 
@@ -294,7 +302,7 @@
       observer.disconnect();
       volume.dispose();
       sprites.dispose();
-      composer.dispose();
+      pipeline.dispose();
       renderer.dispose();
       renderer.domElement.remove();
     };
