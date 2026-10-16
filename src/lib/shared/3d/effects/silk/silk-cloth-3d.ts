@@ -73,11 +73,15 @@ export const SILK_CLOTH_COLUMNS = 7;
 export const SILK_CLOTH_VERTICES = SILK_CLOTH_ROWS * SILK_CLOTH_COLUMNS;
 const PIN = (SILK_CLOTH_COLUMNS - 1) / 2;
 const GRAVITY = -9.8;
-const ITERATIONS = 7;
+const ITERATIONS = 4;
 /** Silk is light: drag per unit mass for a patch facing the air, 1/m. */
 const NORMAL_DRAG = 9;
 const TANGENT_DRAG = 0.35;
 const FLOOR_GAP = 0.004;
+/** Longest physics step, s: the cloth moves the same at any frame rate. */
+const MAX_SUBSTEP = 1 / 240;
+/** Velocity lost to everything that is not air drag, per second. */
+const DAMPING = 0.6;
 
 /** How wide the fabric is at a point along it, 0 at the tip to 1 at the tail. */
 export function silkWidthProfile(along: number): number {
@@ -86,24 +90,33 @@ export function silkWidthProfile(along: number): number {
   return gather * taper;
 }
 
-interface Constraint {
-  a: number;
-  b: number;
-  rest: number;
-  stiffness: number;
-}
-
 export class SilkCloth3D {
   readonly positions = new Float32Array(SILK_CLOTH_VERTICES * 3);
   readonly normals = new Float32Array(SILK_CLOTH_VERTICES * 3);
   private readonly previous = new Float32Array(SILK_CLOTH_VERTICES * 3);
-  private constraints: Constraint[] = [];
+  /** The air around each point, sampled once a frame: it turns slowly. */
+  private readonly wind = new Float32Array(SILK_CLOTH_VERTICES * 3);
+  // Distance constraints, flat for speed: the two points' offsets into
+  // `positions`, rest length, stiffness, and the share of the correction
+  // the first point takes while the tip is held.
+  private links = new Uint16Array(0);
+  private rests = new Float32Array(0);
+  private stiffnesses = new Float32Array(0);
+  private heldShares = new Float32Array(0);
+  /** Furthest each point can be from the tip: silk does not stretch. */
+  private tethers = new Float32Array(SILK_CLOTH_VERTICES);
   private builtFor = "";
   private clock = 0;
   private readonly phase: number;
   private pinX = 0;
   private pinY = 0;
   private pinZ = 0;
+  // Where the tip was a step earlier and how long ago, so its path between
+  // frames can follow the curve it is on rather than cut straight across.
+  private lastX = 0;
+  private lastY = 0;
+  private lastZ = 0;
+  private lastDt = 0;
   private started = false;
 
   constructor(seed: number) {
@@ -146,6 +159,7 @@ export class SilkCloth3D {
     this.pinX = pin.x;
     this.pinY = pin.y;
     this.pinZ = pin.z;
+    this.lastDt = 0;
     this.started = true;
     this.writeNormals();
   }
@@ -163,6 +177,9 @@ export class SilkCloth3D {
     this.pinX += dx;
     this.pinY += dy;
     this.pinZ += dz;
+    this.lastX += dx;
+    this.lastY += dy;
+    this.lastZ += dz;
   }
 
   get isStarted(): boolean {
@@ -181,20 +198,37 @@ export class SilkCloth3D {
   ): void {
     if (!this.started || dt <= 0) return;
     this.build(settings);
-    // Enough substeps that the tip never moves more than half a row per step.
+    // Steps of the same length whatever the frame rate, and short enough that
+    // the tip never moves more than half a row in one.
     const segment = settings.length / (SILK_CLOTH_ROWS - 1);
     const travel = pin
       ? Math.hypot(pin.x - this.pinX, pin.y - this.pinY, pin.z - this.pinZ)
       : 0;
-    const substeps = Math.min(6, Math.max(2, Math.ceil(travel / (segment * 0.5))));
+    const substeps = Math.min(
+      10,
+      Math.max(1, Math.ceil(dt / MAX_SUBSTEP - 1e-6), Math.ceil(travel / (segment * 0.5)))
+    );
     const h = dt / substeps;
+    this.sampleWind(settings);
     const startX = this.pinX;
     const startY = this.pinY;
     const startZ = this.pinZ;
+    // The parabola through the last three tip positions, when they came at a
+    // steady pace; a straight line otherwise.
+    const d0 = this.lastDt;
+    const curved = pin !== null && d0 > dt * 0.4 && d0 < dt * 2.5;
     for (let s = 1; s <= substeps; s++) {
       this.clock += h;
-      this.integrate(h, settings, floorY);
-      if (pin) {
+      this.integrate(h, floorY);
+      if (pin && curved) {
+        const t = s * h;
+        const a = (t * (t - dt)) / (d0 * (d0 + dt));
+        const b = -((t + d0) * (t - dt)) / (d0 * dt);
+        const c = ((t + d0) * t) / ((d0 + dt) * dt);
+        this.pinX = a * this.lastX + b * startX + c * pin.x;
+        this.pinY = a * this.lastY + b * startY + c * pin.y;
+        this.pinZ = a * this.lastZ + b * startZ + c * pin.z;
+      } else if (pin) {
         const t = s / substeps;
         this.pinX = startX + (pin.x - startX) * t;
         this.pinY = startY + (pin.y - startY) * t;
@@ -202,12 +236,17 @@ export class SilkCloth3D {
       }
       for (let iteration = 0; iteration < ITERATIONS; iteration++) {
         if (pin) this.holdPin();
-        this.solve();
+        this.solve(pin !== null);
+        if (pin) this.tether();
       }
       if (pin) this.holdPin();
       this.collideFloor(floorY);
       this.writeNormals();
     }
+    this.lastX = startX;
+    this.lastY = startY;
+    this.lastZ = startZ;
+    this.lastDt = pin ? dt : 0;
   }
 
   private holdPin(): void {
@@ -217,12 +256,46 @@ export class SilkCloth3D {
     this.positions[o + 2] = this.pinZ;
   }
 
-  private integrate(h: number, settings: SilkClothSettings, floorY: number): void {
+  /** Pull back any point that has drifted further from the tip than the fabric reaches. */
+  private tether(): void {
+    const p = this.positions;
+    for (let i = 0; i < SILK_CLOTH_VERTICES; i++) {
+      const reach = this.tethers[i]!;
+      const o = i * 3;
+      const dx = p[o]! - this.pinX;
+      const dy = p[o + 1]! - this.pinY;
+      const dz = p[o + 2]! - this.pinZ;
+      const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      if (distance <= reach || distance < 1e-9) continue;
+      const k = reach / distance;
+      p[o] = this.pinX + dx * k;
+      p[o + 1] = this.pinY + dy * k;
+      p[o + 2] = this.pinZ + dz * k;
+    }
+  }
+
+  /** Slow-turning air, different at every point of the fabric. */
+  private sampleWind(settings: SilkClothSettings): void {
+    const p = this.positions;
+    const w = this.wind;
+    const gust = 0.25 + 1.6 * settings.flutter;
+    const time = this.clock;
+    for (let o = 0; o < w.length; o += 3) {
+      const x = p[o]!;
+      const y = p[o + 1]!;
+      const z = p[o + 2]!;
+      w[o] = gust * Math.sin(2.3 * y + 1.7 * time + this.phase) * Math.cos(1.1 * z + 0.9 * time);
+      w[o + 1] = 0.5 * gust * Math.sin(2.9 * z + 2.1 * time + 2 * this.phase);
+      w[o + 2] = gust * Math.sin(2.1 * x + 1.3 * time - this.phase) * Math.cos(1.7 * y - 0.7 * time);
+    }
+  }
+
+  private integrate(h: number, floorY: number): void {
     const p = this.positions;
     const q = this.previous;
     const n = this.normals;
-    const gust = 0.25 + 1.6 * settings.flutter;
-    const time = this.clock;
+    const w = this.wind;
+    const keep = Math.exp(-DAMPING * h);
     for (let i = 0; i < SILK_CLOTH_VERTICES; i++) {
       const o = i * 3;
       const x = p[o]!;
@@ -231,13 +304,9 @@ export class SilkCloth3D {
       let vx = (x - q[o]!) / h;
       let vy = (y - q[o + 1]!) / h;
       let vz = (z - q[o + 2]!) / h;
-      // Slow-turning air, different at every point of the fabric.
-      const wx = gust * Math.sin(2.3 * y + 1.7 * time + this.phase) * Math.cos(1.1 * z + 0.9 * time);
-      const wy = 0.5 * gust * Math.sin(2.9 * z + 2.1 * time + 2 * this.phase);
-      const wz = gust * Math.sin(2.1 * x + 1.3 * time - this.phase) * Math.cos(1.7 * y - 0.7 * time);
-      const rx = vx - wx;
-      const ry = vy - wy;
-      const rz = vz - wz;
+      const rx = vx - w[o]!;
+      const ry = vy - w[o + 1]!;
+      const rz = vz - w[o + 2]!;
       const relative = Math.hypot(rx, ry, rz);
       const nx = n[o]!;
       const ny = n[o + 1]!;
@@ -253,29 +322,41 @@ export class SilkCloth3D {
       q[o] = x;
       q[o + 1] = y;
       q[o + 2] = z;
-      p[o] = x + vx * h * 0.996;
-      p[o + 1] = Math.max(floorY + FLOOR_GAP, y + vy * h * 0.996);
-      p[o + 2] = z + vz * h * 0.996;
+      p[o] = x + vx * h * keep;
+      p[o + 1] = Math.max(floorY + FLOOR_GAP, y + vy * h * keep);
+      p[o + 2] = z + vz * h * keep;
     }
   }
 
-  private solve(): void {
+  /**
+   * One pass over every constraint. A held tip does not give: the fabric
+   * beside it takes the whole correction, or the head would hang off it on
+   * a spring.
+   */
+  private solve(held: boolean): void {
     const p = this.positions;
-    for (const { a, b, rest, stiffness } of this.constraints) {
-      const ao = a * 3;
-      const bo = b * 3;
+    const links = this.links;
+    const rests = this.rests;
+    const stiffnesses = this.stiffnesses;
+    const shares = this.heldShares;
+    for (let c = 0; c < rests.length; c++) {
+      const ao = links[c * 2]!;
+      const bo = links[c * 2 + 1]!;
+      const rest = rests[c]!;
       const dx = p[bo]! - p[ao]!;
       const dy = p[bo + 1]! - p[ao + 1]!;
       const dz = p[bo + 2]! - p[ao + 2]!;
       const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
       if (distance < 1e-9) continue;
-      const k = (0.5 * stiffness * (distance - rest)) / distance;
-      p[ao] = p[ao]! + dx * k;
-      p[ao + 1] = p[ao + 1]! + dy * k;
-      p[ao + 2] = p[ao + 2]! + dz * k;
-      p[bo] = p[bo]! - dx * k;
-      p[bo + 1] = p[bo + 1]! - dy * k;
-      p[bo + 2] = p[bo + 2]! - dz * k;
+      const k = (stiffnesses[c]! * (distance - rest)) / distance;
+      const ka = k * (held ? shares[c]! : 0.5);
+      const kb = k - ka;
+      p[ao] = p[ao]! + dx * ka;
+      p[ao + 1] = p[ao + 1]! + dy * ka;
+      p[ao + 2] = p[ao + 2]! + dz * ka;
+      p[bo] = p[bo]! - dx * kb;
+      p[bo + 1] = p[bo + 1]! - dy * kb;
+      p[bo + 2] = p[bo + 2]! - dz * kb;
     }
   }
 
@@ -348,8 +429,9 @@ export class SilkCloth3D {
     }
     const rest = (a: number, b: number) =>
       Math.hypot(flat[a * 2]! - flat[b * 2]!, flat[a * 2 + 1]! - flat[b * 2 + 1]!);
+    for (let i = 0; i < SILK_CLOTH_VERTICES; i++) this.tethers[i] = rest(PIN, i) * 1.01;
     const bend = 0.08 + 0.5 * settings.tautness;
-    const list: Constraint[] = [];
+    const list: { a: number; b: number; rest: number; stiffness: number }[] = [];
     const add = (a: number, b: number, stiffness: number) =>
       list.push({ a, b, rest: rest(a, b), stiffness });
     for (let row = 0; row < R; row++) {
@@ -368,7 +450,17 @@ export class SilkCloth3D {
     // Solve from the pinned head outward so the pull travels down the fabric
     // within one pass instead of creeping a row per iteration.
     list.sort((left, right) => Math.min(left.a, left.b) - Math.min(right.a, right.b));
-    this.constraints = list;
+    this.links = new Uint16Array(list.length * 2);
+    this.rests = new Float32Array(list.length);
+    this.stiffnesses = new Float32Array(list.length);
+    this.heldShares = new Float32Array(list.length);
+    list.forEach(({ a, b, rest, stiffness }, c) => {
+      this.links[c * 2] = a * 3;
+      this.links[c * 2 + 1] = b * 3;
+      this.rests[c] = rest;
+      this.stiffnesses[c] = stiffness;
+      this.heldShares[c] = a === PIN ? 0 : b === PIN ? 1 : 0.5;
+    });
   }
 }
 
