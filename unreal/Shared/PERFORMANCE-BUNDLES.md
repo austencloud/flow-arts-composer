@@ -1,6 +1,6 @@
 # Native performance bundles
 
-Run capture and conversion from the source repository, with dependencies installed. Long capture, Blender, and Unreal jobs belong on d2. The same Flow Arts Composer production performer and static capture build produce raw clips for Flow Fest and Museum Game; each game has its own capture runner, manifest, and native project output.
+Run capture and conversion from the source repository, with dependencies installed. Run long capture and Blender jobs on d2. Run Unreal jobs there when Unreal is installed; otherwise use the project's local fallback and resource limits. The same Flow Arts Composer production performer and static capture build produce raw clips for Flow Fest and Museum Game; each game has its own capture runner, manifest, and native project output.
 
 ## Capture the source
 
