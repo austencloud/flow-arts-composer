@@ -30,9 +30,11 @@ describe("FilterRuleStrip read-only presentation", () => {
       interactive: false,
     });
 
+    // Built-in LOOP labels read in the interface language, so the picker's
+    // "Rotated (halved)" shows as its translated chip name.
     const strip = document.querySelector('[aria-label="Current rule"]');
     expect(strip).toHaveTextContent(
-      "LOOPs: Rotated (halved) and Rotated (quartered) · Length: 4 steps · Search: fire drums"
+      "LOOPs: Rotated Halved and Rotated Quartered · Length: 4 steps · Search: fire drums"
     );
     expect(strip?.querySelectorAll("button")).toHaveLength(0);
     expect(strip?.querySelectorAll(".filter-chip.active")).toHaveLength(4);

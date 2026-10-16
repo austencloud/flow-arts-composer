@@ -53,6 +53,7 @@ function makePersister() {
     service: {
       initialize: vi.fn().mockResolvedValue(undefined),
       loadCurrentState: vi.fn().mockResolvedValue(null),
+      markDirty: vi.fn(),
       saveCurrentState,
       clearCurrentState,
     } as unknown as SequencePersister,
