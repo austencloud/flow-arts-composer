@@ -14,7 +14,7 @@
    * never a hand-rolled button/hover style. No gray fill is added either way -
    * the printable white-paper look is preserved.
    */
-  import GuidePictograph from "../../level-1/_components/GuidePictograph.svelte";
+  import GuidePictograph from "../../guide/level-1/_components/GuidePictograph.svelte";
   import CodexTransitionGlyph from "./CodexTransitionGlyph.svelte";
   import PictographTypeFrame from "#lib/shared/pictograph/shared/components/PictographTypeFrame.svelte";
   import SelectionHit from "#lib/shared/selection/SelectionHit.svelte";

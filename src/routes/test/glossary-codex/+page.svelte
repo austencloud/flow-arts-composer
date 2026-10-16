@@ -14,12 +14,12 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import CodexSheet from "../../(public)/guide/codex/_components/CodexSheet.svelte";
+  import CodexSheet from "../../(public)/codex/_components/CodexSheet.svelte";
   import {
     SHEET1,
     SHEET2,
     type CodexSheetDef,
-  } from "../../(public)/guide/codex/_data/codex-groups";
+  } from "../../(public)/codex/_data/codex-groups";
   import {
     SequenceSelection,
     setSequenceSelection,

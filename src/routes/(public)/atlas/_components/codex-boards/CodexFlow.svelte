@@ -10,10 +10,10 @@
   Rendering is CodexBox's and CodexCell's. Nothing is re-implemented here.
 -->
 <script lang="ts">
-  import CodexBox from "../../../guide/codex/_components/CodexBox.svelte";
-  import CodexTransitionGlyph from "../../../guide/codex/_components/CodexTransitionGlyph.svelte";
+  import CodexBox from "../../../codex/_components/CodexBox.svelte";
+  import CodexTransitionGlyph from "../../../codex/_components/CodexTransitionGlyph.svelte";
   import { CODEX_BOXES, type TaggedBox } from "./codex-letters";
-  import { codexTypeLabel } from "../../../guide/codex/_data/codex-groups";
+  import { codexTypeLabel } from "../../../codex/_data/codex-groups";
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 

@@ -3,7 +3,7 @@
   overview; LetterExplorer owns the focused, shareable letter destination.
 -->
 <script lang="ts">
-  import { onMount, tick } from "svelte";
+  import { onMount } from "svelte";
   import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
   import ModalHeader from "#lib/shared/foundation/ui/modal/ModalHeader.svelte";
   import {
@@ -12,12 +12,8 @@
   } from "#lib/shared/selection/sequence-selection.svelte.js";
   import "#lib/shared/selection/selection.css";
   import "./codex-boards/codex-dark.css";
-  import BoardSheets from "./codex-boards/BoardSheets.svelte";
   import BoardAtlas from "./codex-boards/BoardAtlas.svelte";
-  import BoardStage from "./codex-boards/BoardStage.svelte";
-  import CodexTypeLegend from "./codex-boards/CodexTypeLegend.svelte";
   import LetterExplorer from "./codex-boards/LetterExplorer.svelte";
-  import type { BoardKey } from "./codex-boards/board-choice";
   import {
     CODEX_BY_LABEL,
     CODEX_LETTERS,
@@ -59,16 +55,14 @@
     codexDataFrom,
     withStartOrientations,
     type CodexStartOrientations,
-  } from "../../guide/codex/_data/codex-orientation";
+  } from "../../codex/_data/codex-orientation";
 
   let {
     initialLetter = "A",
-    board = "atlas",
     propType,
     startOrientations,
   }: {
     initialLetter?: string;
-    board?: BoardKey;
     /** The prop the board and explorer draw; omitted keeps the dataset's own. */
     propType?: PropType;
     /** Where each hand starts on the Atlas board and in the explorer, with
@@ -100,7 +94,6 @@
   selection.select(fallback.id);
 
   const info = $derived(CODEX_LETTERS.get(selectedId) ?? fallback);
-  const overlayBoard = $derived(board !== "stage");
 
   let gridMode = $state<GridModeValue>(GridMode.DIAMOND);
   let selectedVariationIndex = $state(0);
@@ -113,7 +106,6 @@
     RotationDirection.CLOCKWISE
   );
   let overlayOpen = $state(false);
-  let stageBoard = $state<ReturnType<typeof BoardStage> | undefined>();
 
   let pictographsByGrid = $state<Record<string, PictographData[]>>({
     [GridMode.DIAMOND]: [],
@@ -135,13 +127,6 @@
   const variations = $derived(
     begun(
       (pictographsByGrid[gridMode] ?? []).filter(
-        (pictograph) => pictograph.letter === info.label
-      )
-    )
-  );
-  const stageVariations = $derived(
-    begun(
-      (pictographsByGrid[GridMode.DIAMOND] ?? []).filter(
         (pictograph) => pictograph.letter === info.label
       )
     )
@@ -221,7 +206,7 @@
     rightTurns = state.rightTurns;
     leftRotation = state.leftRotation;
     rightRotation = state.rightRotation;
-    overlayOpen = overlayBoard;
+    overlayOpen = true;
   }
 
   function normalizeVariation(mode: GridModeValue): void {
@@ -276,16 +261,10 @@
     if (!selectedInfo) return;
     selectedId = id;
     selection.select(id);
-
-    if (overlayBoard) {
-      selectedVariationIndex = 0;
-      resetEdits();
-      overlayOpen = true;
-      commitRoute("push");
-      return;
-    }
-
-    tick().then(() => stageBoard?.revealStage());
+    selectedVariationIndex = 0;
+    resetEdits();
+    overlayOpen = true;
+    commitRoute("push");
   }
 
   function closeExplorer(): void {
@@ -368,73 +347,53 @@
 </script>
 
 <div class="codex codex-dark">
-  {#if board === "stage"}
-    <CodexTypeLegend />
-  {/if}
-
-  {#if board === "sheets"}
-    <BoardSheets onSelect={select} />
-  {:else if board === "atlas"}
-    <BoardAtlas onSelect={select} {propType} getData={getBoardData} />
-  {:else}
-    <BoardStage
-      bind:this={stageBoard}
-      onSelect={select}
-      {info}
-      variations={stageVariations}
-      isLoading={loadingByGrid[GridMode.DIAMOND]}
-      loadError={errorByGrid[GridMode.DIAMOND]}
-      onRetry={() => loadGrid(GridMode.DIAMOND)}
-    />
-  {/if}
+  <BoardAtlas onSelect={select} {propType} getData={getBoardData} />
 </div>
 
-{#if overlayBoard}
-  <BaseModal
-    bind:open={overlayOpen}
-    size="xl"
-    labelledBy="codex-overlay-title"
-    class="codex-explorer-modal codex-dark"
-    onclose={closeExplorer}
-  >
-    {#snippet header()}
-      <ModalHeader
-        id="codex-overlay-title"
-        title={info.name ? `${info.label} · ${info.name}` : info.label}
-        subtitle={`${gridMode === GridMode.BOX ? "Box" : "Diamond"} pictographs`}
-        iconColor={info.typeColor}
-        onClose={closeExplorer}
-      />
-    {/snippet}
-    <LetterExplorer
-      {info}
-      {gridMode}
-      variations={editedVariations}
-      selectedIndex={selectedVariationIndex}
-      {draft}
-      {leftTurns}
-      {rightTurns}
-      {leftRotation}
-      {rightRotation}
-      edited={hasLetterExplorerEdits(routeState())}
-      {isLoading}
-      {loadError}
-      {learningMatches}
-      {learningLoading}
-      {learningError}
-      {composerHref}
-      onGridChange={selectGrid}
-      onVariationChange={selectVariation}
-      onTurnsChange={changeTurns}
-      onRotationChange={changeRotation}
-      onReset={resetExplorerEdits}
-      onRetry={() => loadGrid(gridMode)}
-      onLearningRetry={loadLearningDeck}
-      onCopyLink={copyExactLink}
-      {propType}
+<BaseModal
+  bind:open={overlayOpen}
+  size="xl"
+  labelledBy="codex-overlay-title"
+  class="codex-explorer-modal codex-dark"
+  onclose={closeExplorer}
+>
+  {#snippet header()}
+    <ModalHeader
+      id="codex-overlay-title"
+      title={info.name ? `${info.label} · ${info.name}` : info.label}
+      subtitle={`${gridMode === GridMode.BOX ? "Box" : "Diamond"} pictographs`}
+      iconColor={info.typeColor}
+      onClose={closeExplorer}
     />
-  </BaseModal>
-{/if}
+  {/snippet}
+  <LetterExplorer
+    {info}
+    {gridMode}
+    variations={editedVariations}
+    selectedIndex={selectedVariationIndex}
+    {draft}
+    {leftTurns}
+    {rightTurns}
+    {leftRotation}
+    {rightRotation}
+    edited={hasLetterExplorerEdits(routeState())}
+    {isLoading}
+    {loadError}
+    {learningMatches}
+    {learningLoading}
+    {learningError}
+    {composerHref}
+    onGridChange={selectGrid}
+    onVariationChange={selectVariation}
+    onTurnsChange={changeTurns}
+    onRotationChange={changeRotation}
+    onReset={resetExplorerEdits}
+    onRetry={() => loadGrid(gridMode)}
+    onLearningRetry={loadLearningDeck}
+    onCopyLink={copyExactLink}
+    {propType}
+  />
+</BaseModal>
 
 <style>
   .codex {

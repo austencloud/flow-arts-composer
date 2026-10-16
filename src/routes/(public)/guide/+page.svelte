@@ -69,7 +69,7 @@
     },
     {
       key: "codex",
-      href: "/guide/codex",
+      href: "/codex",
     },
     {
       key: "motion_paths",

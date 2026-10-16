@@ -34,7 +34,7 @@ import {
   SHEET1,
   SHEET2,
   type CodexSheetDef,
-} from "../../codex/_data/codex-groups";
+} from "../../../codex/_data/codex-groups";
 import {
   GUIDE_CODEX_STORAGE_KEY,
   defaultGuideCodexPrefs,

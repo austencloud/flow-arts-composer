@@ -18,7 +18,7 @@
 <script lang="ts">
   import CodexFlow from "./CodexFlow.svelte";
   import CodexBandHead from "./CodexBandHead.svelte";
-  import { codexTypeLabel } from "../../../guide/codex/_data/codex-groups";
+  import { codexTypeLabel } from "../../../codex/_data/codex-groups";
   import { LETTER_TYPE_COLORS } from "#lib/shared/pictograph/shared/domain/constants/pictograph-constants.js";
   import type { LetterType } from "#lib/shared/foundation/domain/models/letter-type.js";
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";

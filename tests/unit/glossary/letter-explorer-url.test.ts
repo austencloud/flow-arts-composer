@@ -13,7 +13,7 @@ const letters = new Set(["A", "B", "W-"]);
 
 describe("letter explorer URL state", () => {
   it("adds the Atlas category hash only on the Atlas", () => {
-    const url = new URL("https://tkaflowarts.com/guide/codex");
+    const url = new URL("https://tkaflowarts.com/codex");
     writeLetterExplorerRoute(url, {
       letter: "B",
       gridMode: GridMode.DIAMOND,

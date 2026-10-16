@@ -42,13 +42,13 @@
   import { getGuideCodexState } from "../_data/guide-codex-state.svelte";
   import { registerCodexCellTrigger } from "../_data/guide-scan-intent";
   import { buildCanonicalLetterExplorerHref } from "../../../atlas/_components/codex-boards/letter-explorer-url";
-  import CodexSheet from "../../codex/_components/CodexSheet.svelte";
+  import CodexSheet from "../../../codex/_components/CodexSheet.svelte";
   import {
     SHEET1,
     SHEET2,
     type CodexCellDef,
     type CodexSheetDef,
-  } from "../../codex/_data/codex-groups";
+  } from "../../../codex/_data/codex-groups";
 
   let { sheet }: { sheet: CodexSheetDef } = $props();
 
