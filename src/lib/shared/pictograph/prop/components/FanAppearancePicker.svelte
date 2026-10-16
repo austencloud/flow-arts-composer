@@ -51,6 +51,8 @@
         return t("shared_fan_build_moon");
       case "star":
         return t("shared_fan_build_star");
+      case "sense":
+        return t("shared_fan_build_sense");
     }
   }
 
