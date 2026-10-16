@@ -43,7 +43,10 @@ Get-ChildItem $root -Directory -Filter 'run-*' | Sort-Object LastWriteTime -Desc
   $wt = $_.FullName
   if ($busy -contains $wt) { $kept += "$($_.Name) (job running)"; return }
   if ($_.LastWriteTime -gt (Get-Date).AddHours(-2)) { $kept += "$($_.Name) (used in the last 2 hours)"; return }
-  $loose = git -C $wt status --porcelain 2>$null | Where-Object { $_ -notmatch '^\?\? node_modules' }
+  # Untracked or changed files may be a job's output. Deleted files are a
+  # half-finished earlier removal, so they do not count.
+  $loose = git -C $wt status --porcelain 2>$null |
+    Where-Object { $_ -notmatch '^\?\? node_modules' -and $_ -notmatch '^ ?D' }
   if ($loose) { $kept += "$($_.Name) (files git does not track: $(@($loose).Count))"; return }
   if ($DryRun) { $removed++; return }
   # rmdir /s removes junctions without following them into their targets.
