@@ -110,7 +110,7 @@ void AFlowFestHUD::DrawHUD()
     DrawRect(Surface, Pad, H - FooterH - Pad, W - 2.f * Pad, FooterH);
     DrawLabel(TEXT("WASD MOVE  |  MOUSE LOOK  |  SHIFT SPRINT  |  SPACE JUMP  |  E INTERACT  |  Q FLOW  |  V EUC  |  C CHARACTER + GEAR"), Ink,
         Pad + 15.f * Scale, H - FooterH - Pad + 11.f * Scale, Small, 1.08f * Scale);
-    DrawLabel(TEXT("H SAY HELLO  |  R ROUTINE  |  M SOUND  |  F CAMERA  |  P PHOTO FLY  |  T TRAVEL  |  G LIGHT  |  F5 SAVE  |  F9 LOAD  |  F10 RESTART"), Muted,
+    DrawLabel(TEXT("H HELLO  |  R ROUTINE  |  F6 LIBRARY  |  M SOUND  |  F CAMERA  |  P FLY  |  T TRAVEL  |  G LIGHT  |  F5 SAVE  |  F9 LOAD  |  F10 RESTART"), Muted,
         Pad + 15.f * Scale, H - FooterH - Pad + 36.f * Scale, Small, 1.03f * Scale);
 
     // Minimal crosshair remains visible over complex terrain.
