@@ -35,6 +35,7 @@ void UFlowFestAnimInstance::Configure(const TMap<FName, TObjectPtr<UAnimSequence
     PerformanceWeight = 0.f;
     PerformanceRate = 1.f;
     bPerformanceTarget = false;
+    bPerformancePaused = false;
 }
 
 bool UFlowFestAnimInstance::SetMotion(FName Name)
@@ -116,6 +117,7 @@ void UFlowFestAnimInstance::StartPerformance(UAnimSequence* Clip, bool bLoop, FN
     PerformanceRate = 1.f;
     bPerformanceLoop = bLoop;
     bPerformanceTarget = true;
+    bPerformancePaused = false;
 }
 
 void UFlowFestAnimInstance::SetGripSource(UFlowFestPropComponent* Prop)
@@ -126,6 +128,7 @@ void UFlowFestAnimInstance::SetGripSource(UFlowFestPropComponent* Prop)
 void UFlowFestAnimInstance::StopPerformance()
 {
     bPerformanceTarget = false;
+    bPerformancePaused = false;
     TargetMotion = TEXT("Idle");
 }
 
@@ -138,6 +141,40 @@ void UFlowFestAnimInstance::SetPerformancePhase(float NormalizedPhase)
 void UFlowFestAnimInstance::SetPerformanceRate(float Rate)
 {
     if (FMath::IsFinite(Rate)) PerformanceRate = FMath::Clamp(Rate, .5f, 1.75f);
+}
+
+void UFlowFestAnimInstance::SetPerformancePaused(bool bPaused)
+{
+    if (bPerformanceTarget && PerformanceClip) bPerformancePaused = bPaused;
+}
+
+void UFlowFestAnimInstance::SettlePerformanceBlend()
+{
+    // A transport jump names one exact pose. Keeping an outgoing clip at its
+    // previous clock would blend that pose with an unrelated instant.
+    OutgoingPerformanceClips.Empty();
+    OutgoingPerformanceTimes.Empty();
+    OutgoingPerformanceWeights.Empty();
+    OutgoingPerformanceRates.Empty();
+    OutgoingPerformanceLoops.Empty();
+    OutgoingPerformanceProfiles.Empty();
+    PerformanceWeight = 1.f;
+    for (float& Weight : MotionWeights) Weight = 0.f;
+}
+
+void UFlowFestAnimInstance::SeekPerformance(float Seconds)
+{
+    if (!bPerformanceTarget || !PerformanceClip || !FMath::IsFinite(Seconds)) return;
+    const float Length = PerformanceClip->GetPlayLength();
+    PerformanceTime = FMath::Clamp(Seconds, 0.f, FMath::Max(0.f, Length));
+    SettlePerformanceBlend();
+}
+
+void UFlowFestAnimInstance::RestartPerformance()
+{
+    if (!bPerformanceTarget || !PerformanceClip) return;
+    SeekPerformance(0.f);
+    bPerformancePaused = false;
 }
 
 float UFlowFestAnimInstance::GetMotionWeight(FName Name) const
@@ -170,6 +207,8 @@ void UFlowFestAnimInstance::SetFootCorrection(float LeftCm, float RightCm)
 
 void UFlowFestAnimInstance::Advance(float DeltaSeconds)
 {
+    if (!FMath::IsFinite(DeltaSeconds)) return;
+    if (bPerformancePaused && bPerformanceTarget && PerformanceClip) return;
     const float Dt = FMath::Clamp(DeltaSeconds, 0.f, .1f);
     // All channels have continuous, independent clocks. A newly selected gait
     // never snaps a pose back to its first frame while its weight is rising.
