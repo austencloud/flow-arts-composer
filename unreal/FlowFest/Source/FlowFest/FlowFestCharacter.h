@@ -91,6 +91,8 @@ private:
     TArray<FFlowFestChoice> PropChoices;
     FRotator PreWardrobeView;
     bool bReviewMode = false;
+    bool bLibraryReview = false;
+    bool bLibraryReviewOpened = false;
     bool bCaptureRequested = false;
     bool bCaptureReady = false;
     bool bAutoExit = false;
