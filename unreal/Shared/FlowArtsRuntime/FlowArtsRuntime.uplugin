@@ -5,14 +5,20 @@
   "FriendlyName": "Flow Arts Runtime",
   "Description": "Shared native avatar, animation, prop, and footstep runtime for Flow Fest and Museum Game.",
   "Category": "Runtime",
-  "CanContainContent": false,
+  "CanContainContent": true,
   "Plugins": [
-    { "Name": "ProceduralMeshComponent", "Enabled": true }
+    { "Name": "ProceduralMeshComponent", "Enabled": true },
+    { "Name": "Niagara", "Enabled": true }
   ],
   "Modules": [
     {
       "Name": "FlowArtsRuntime",
       "Type": "Runtime",
+      "LoadingPhase": "Default"
+    },
+    {
+      "Name": "FlowArtsNiagaraEditor",
+      "Type": "Editor",
       "LoadingPhase": "Default"
     }
   ]
