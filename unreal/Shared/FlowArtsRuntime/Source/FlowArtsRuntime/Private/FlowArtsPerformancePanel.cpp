@@ -6,7 +6,9 @@
 #include "Framework/Application/SlateApplication.h"
 #include "Engine/GameViewportClient.h"
 #include "Engine/Engine.h"
+#include "Engine/UserInterfaceSettings.h"
 #include "Engine/World.h"
+#include "UnrealClient.h"
 #include "GameFramework/PlayerController.h"
 #include "HAL/PlatformApplicationMisc.h"
 #include "Input/Reply.h"
@@ -15,15 +17,72 @@
 #include "Widgets/Input/SSlider.h"
 #include "Widgets/Layout/SBorder.h"
 #include "Widgets/Layout/SBox.h"
+#include "Widgets/Layout/SDPIScaler.h"
 #include "Widgets/SOverlay.h"
+#include "Widgets/SViewport.h"
 #include "Widgets/Layout/SScrollBox.h"
 #include "Widgets/Layout/SSeparator.h"
 #include "Widgets/SBoxPanel.h"
 #include "Widgets/SCompoundWidget.h"
 #include "Widgets/Text/STextBlock.h"
+#include "Styling/CoreStyle.h"
 
 namespace
 {
+const FSlateFontInfo& BodyFont()
+{
+    static const FSlateFontInfo Font = FCoreStyle::GetDefaultFontStyle(TEXT("Regular"), 16);
+    return Font;
+}
+
+const FSlateFontInfo& TitleFont()
+{
+    static const FSlateFontInfo Font = FCoreStyle::GetDefaultFontStyle(TEXT("Bold"), 22);
+    return Font;
+}
+
+const FTextBlockStyle& ButtonTextStyle()
+{
+    static const FTextBlockStyle Style = []
+    {
+        FTextBlockStyle TextStyle = FCoreStyle::Get().GetWidgetStyle<FTextBlockStyle>(TEXT("ButtonText"));
+        TextStyle.SetFont(BodyFont());
+        TextStyle.SetColorAndOpacity(FSlateColor(FLinearColor::White));
+        return TextStyle;
+    }();
+    return Style;
+}
+
+struct FPanelMetrics
+{
+    float Scale = 1.f;
+    float Width = 560.f;
+    float Height = 500.f;
+};
+
+FPanelMetrics GetPanelMetrics(const TWeakObjectPtr<UGameViewportClient>& WeakViewport)
+{
+    FPanelMetrics Metrics;
+    UGameViewportClient* Viewport = WeakViewport.Get();
+    if (!Viewport || !Viewport->Viewport) return Metrics;
+
+    const FIntPoint ViewportPixels = Viewport->Viewport->GetSizeXY();
+    if (ViewportPixels.X <= 0 || ViewportPixels.Y <= 0) return Metrics;
+
+    const TSharedPtr<SViewport> ViewportWidget = Viewport->GetGameViewportWidget();
+    const float PlatformScale = ViewportWidget.IsValid()
+        ? FMath::Max(ViewportWidget->GetCachedGeometry().Scale, 0.01f) : 1.f;
+    const float GameUIScale = FMath::Max(
+        GetDefault<UUserInterfaceSettings>()->GetDPIScaleBasedOnSize(ViewportPixels), 0.01f);
+    // The game layer divides its UI curve by platform DPI. Undo only its shrink,
+    // leaving the platform's own DPI scale in place.
+    Metrics.Scale = 1.f / FMath::Min(1.f, GameUIScale / PlatformScale);
+    const float EffectiveScale = GameUIScale * Metrics.Scale;
+    Metrics.Width = FMath::Clamp(ViewportPixels.X / EffectiveScale - 24.f, 0.f, 720.f);
+    Metrics.Height = FMath::Clamp(ViewportPixels.Y / EffectiveScale - 24.f, 0.f, 640.f);
+    return Metrics;
+}
+
 struct FPanelState
 {
     FFlowArtsPerformanceLibrary Library;
@@ -69,16 +128,24 @@ public:
 
         ChildSlot
         [SNew(SBorder).Padding(16)
+            .BorderImage(FCoreStyle::Get().GetBrush(TEXT("WhiteBrush")))
+            .BorderBackgroundColor(FLinearColor(0.035f, 0.055f, 0.075f, 1.f))
+            [SNew(SScrollBox)
+            + SScrollBox::Slot()
             [SNew(SVerticalBox)
                 + SVerticalBox::Slot().AutoHeight().Padding(0, 0, 0, 8)
-                [SNew(STextBlock).Text(FText::FromString(TEXT("Prepared performances")))]
+                [SNew(STextBlock).Font(TitleFont()).ColorAndOpacity(FLinearColor::White)
+                    .Text(FText::FromString(TEXT("Prepared performances")))]
                 + SVerticalBox::Slot().AutoHeight().Padding(0, 0, 0, 8)
-                [SNew(STextBlock).Text(FText::FromString(FString::Printf(TEXT("%s  ·  %s"),
+                [SNew(STextBlock).Font(BodyFont()).ColorAndOpacity(FLinearColor::White)
+                    .Text(FText::FromString(FString::Printf(TEXT("%s  ·  %s"),
                     *State->Session.GetCharacterId().ToString(), *State->Session.GetPropFamily().ToString())))]
-                + SVerticalBox::Slot().FillHeight(1)
-                [SNew(SScrollBox) + SScrollBox::Slot() [Entries.ToSharedRef()]]
+                + SVerticalBox::Slot().AutoHeight()
+                [SNew(SBox).HeightOverride(160)
+                    [SNew(SScrollBox) + SScrollBox::Slot() [Entries.ToSharedRef()]]]
                 + SVerticalBox::Slot().AutoHeight().Padding(0, 4)
-                [SNew(SButton).Text(FText::FromString(TEXT("Show all prepared performances")))
+                [SNew(SButton).TextStyle(&ButtonTextStyle()).ContentPadding(FMargin(8, 12))
+                    .Text(FText::FromString(TEXT("Show all prepared performances")))
                     .OnClicked_Lambda([this]()
                     {
                         State->PendingTransfer.Reset();
@@ -90,7 +157,7 @@ public:
                 + SVerticalBox::Slot().AutoHeight().Padding(0, 8)
                 [SNew(SSeparator)]
                 + SVerticalBox::Slot().AutoHeight().Padding(0, 0, 0, 7)
-                [SNew(STextBlock).Text_Lambda([this]()
+                [SNew(STextBlock).Font(BodyFont()).ColorAndOpacity(FLinearColor::White).Text_Lambda([this]()
                 {
                     return FText::FromString(FString::Printf(TEXT("%.1f / %.1f s   ·   %.2fx   ·   %s"),
                         State->Session.GetTime(), State->Session.GetLength(), State->Session.GetRate(),
@@ -98,33 +165,38 @@ public:
                             State->Session.IsPaused() ? TEXT("Paused") : TEXT("Playing")));
                 })]
                 + SVerticalBox::Slot().AutoHeight().Padding(0, 0, 0, 8)
+                [SNew(SBox).HeightOverride(32)
                 [SNew(SSlider).Value_Lambda([this]()
                     { const float Length = State->Session.GetLength(); return Length > 0 ? State->Session.GetTime() / Length : 0.f; })
                     .OnValueChanged_Lambda([this](float Fraction)
-                    { State->Session.Seek(Fraction * State->Session.GetLength()); })]
+                    { State->Session.Seek(Fraction * State->Session.GetLength()); })]]
                 + SVerticalBox::Slot().AutoHeight().Padding(0, 0, 0, 8)
                 [SNew(SHorizontalBox)
                     + SHorizontalBox::Slot().FillWidth(1).Padding(2, 0)
-                    [SNew(SButton).Text_Lambda([this]()
+                    [SNew(SButton).TextStyle(&ButtonTextStyle()).ContentPadding(FMargin(8, 12)).Text_Lambda([this]()
                         { return FText::FromString(State->Session.IsPaused() ? TEXT("Resume") : TEXT("Pause")); })
                         .OnClicked_Lambda([this]()
                         { State->Session.Pause(!State->Session.IsPaused()); return FReply::Handled(); })]
                     + SHorizontalBox::Slot().FillWidth(1).Padding(2, 0)
-                    [SNew(SButton).Text(FText::FromString(TEXT("Restart")))
+                    [SNew(SButton).TextStyle(&ButtonTextStyle()).ContentPadding(FMargin(8, 12))
+                        .Text(FText::FromString(TEXT("Restart")))
                         .OnClicked_Lambda([this]()
                         { State->Session.Restart(); return FReply::Handled(); })]
                     + SHorizontalBox::Slot().FillWidth(1).Padding(2, 0)
-                    [SNew(SButton).Text(FText::FromString(TEXT("Slower")))
+                    [SNew(SButton).TextStyle(&ButtonTextStyle()).ContentPadding(FMargin(8, 12))
+                        .Text(FText::FromString(TEXT("Slower")))
                         .OnClicked_Lambda([this]()
                         { State->Session.SetRate(State->Session.GetRate() - .25f); return FReply::Handled(); })]
                     + SHorizontalBox::Slot().FillWidth(1).Padding(2, 0)
-                    [SNew(SButton).Text(FText::FromString(TEXT("Faster")))
+                    [SNew(SButton).TextStyle(&ButtonTextStyle()).ContentPadding(FMargin(8, 12))
+                        .Text(FText::FromString(TEXT("Faster")))
                         .OnClicked_Lambda([this]()
                         { State->Session.SetRate(State->Session.GetRate() + .25f); return FReply::Handled(); })]]
                 + SVerticalBox::Slot().AutoHeight().Padding(0, 0, 0, 8)
                 [SNew(SHorizontalBox)
                     + SHorizontalBox::Slot().FillWidth(1).Padding(2, 0)
-                    [SNew(SButton).Text(FText::FromString(TEXT("Paste Composer transfer")))
+                    [SNew(SButton).TextStyle(&ButtonTextStyle()).ContentPadding(FMargin(8, 12))
+                        .Text(FText::FromString(TEXT("Paste Composer transfer")))
                         .OnClicked_Lambda([this]()
                         {
                             FString Clipboard, Error;
@@ -156,7 +228,8 @@ public:
                             return FReply::Handled();
                         })]
                     + SHorizontalBox::Slot().FillWidth(1).Padding(2, 0)
-                    [SNew(SButton).Text(FText::FromString(TEXT("Copy to Composer /performance")))
+                    [SNew(SButton).TextStyle(&ButtonTextStyle()).ContentPadding(FMargin(8, 12))
+                        .Text(FText::FromString(TEXT("Copy to Composer /performance")))
                         .OnClicked_Lambda([this]()
                         {
                             FString Transfer;
@@ -169,10 +242,12 @@ public:
                             return FReply::Handled();
                         })]]
                 + SVerticalBox::Slot().AutoHeight().Padding(0, 0, 0, 8)
-                [SNew(STextBlock).Text_Lambda([this]() { return FText::FromString(State->Notice); }).AutoWrapText(true)]
+                [SNew(STextBlock).Font(BodyFont()).ColorAndOpacity(FLinearColor::White)
+                    .Text_Lambda([this]() { return FText::FromString(State->Notice); }).AutoWrapText(true)]
                 + SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Right)
-                [SNew(SButton).Text(FText::FromString(TEXT("Close  ·  Esc")))
-                    .OnClicked_Lambda([this]() { State->Close(); return FReply::Handled(); })]]];
+                [SNew(SButton).TextStyle(&ButtonTextStyle()).ContentPadding(FMargin(8, 12))
+                    .Text(FText::FromString(TEXT("Close  ·  Esc")))
+                    .OnClicked_Lambda([this]() { State->Close(); return FReply::Handled(); })]]]]];
     }
 
     virtual FReply OnKeyDown(const FGeometry& Geometry, const FKeyEvent& Event) override
@@ -195,10 +270,12 @@ private:
     {
         Entries->ClearChildren();
         for (const FFlowArtsPerformanceEntry* Entry : State->VisibleEntries)
+        {
+            const FText Label = FText::FromString(FString::Printf(TEXT("%s  |  %s  |  %.1f s"),
+                *Entry->Title, *Entry->Profile.ToString(), Entry->DurationSeconds));
             Entries->AddSlot().AutoHeight().Padding(0, 2)
-            [SNew(SButton)
-                .Text(FText::FromString(FString::Printf(TEXT("%s  |  %s  |  %.1f s"),
-                    *Entry->Title, *Entry->Profile.ToString(), Entry->DurationSeconds)))
+            [SNew(SButton).TextStyle(&ButtonTextStyle()).ContentPadding(FMargin(8, 12))
+                .Text(Label)
                 .OnClicked_Lambda([this, Entry]()
                 {
                     FString Error;
@@ -213,10 +290,14 @@ private:
                         RebuildEntries();
                     }
                     return FReply::Handled();
-                })];
+                })
+                [SNew(STextBlock).Font(BodyFont()).ColorAndOpacity(FLinearColor::White)
+                    .Text(Label).AutoWrapText(true)]];
+        }
         if (State->VisibleEntries.IsEmpty())
             Entries->AddSlot().AutoHeight().Padding(0, 8)
-            [SNew(STextBlock).Text(FText::FromString(TEXT("No prepared performance fits this character and prop. Preparation is required.")))
+            [SNew(STextBlock).Font(BodyFont()).ColorAndOpacity(FLinearColor::White)
+                .Text(FText::FromString(TEXT("No prepared performance fits this character and prop. Preparation is required.")))
                 .AutoWrapText(true)];
     }
 };
@@ -238,9 +319,17 @@ void FFlowArtsPerformancePanel::Open(APlayerController* Player,
     State->Matches = State->Library.ForTarget(State->Session.GetCharacterId(), State->Session.GetPropFamily());
     State->Session.AttachCurrent(State->Library);
     TSharedRef<SFlowArtsPerformancePanel> Content = SNew(SFlowArtsPerformancePanel).State(State);
+    const TWeakObjectPtr<UGameViewportClient> WeakViewport = State->Viewport;
     TSharedRef<SWidget> Overlay = SNew(SOverlay)
         + SOverlay::Slot().HAlign(HAlign_Center).VAlign(VAlign_Center).Padding(12)
-        [SNew(SBox).WidthOverride(560).HeightOverride(500)[Content]];
+        [SNew(SDPIScaler).DPIScale_Lambda([WeakViewport]()
+            { return GetPanelMetrics(WeakViewport).Scale; })
+            [SNew(SBox)
+                .WidthOverride_Lambda([WeakViewport]()
+                    { return FOptionalSize(GetPanelMetrics(WeakViewport).Width); })
+                .HeightOverride_Lambda([WeakViewport]()
+                    { return FOptionalSize(GetPanelMetrics(WeakViewport).Height); })
+                [Content]]];
     State->Overlay = Overlay;
     Viewport->AddViewportWidgetContent(Overlay, 100);
     FInputModeUIOnly InputMode;
