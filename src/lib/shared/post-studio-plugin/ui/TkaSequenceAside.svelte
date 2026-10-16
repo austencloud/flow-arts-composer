@@ -54,7 +54,6 @@
         rightPropType={options?.rightPropTypeOverride ??
           options?.propTypeOverride}
         forceContain
-        fitWidth
       />
     </div>
   </div>
@@ -62,16 +61,16 @@
 
 <style>
   .sequence-aside {
-    display: grid;
-    align-items: center;
     width: 100%;
     height: 100%;
     min-height: 0;
   }
 
+  /* The card fits itself inside the box it is given, so the box takes the
+     column's full size; an auto-height box would shrink the card to nothing. */
   .card {
-    max-height: 100%;
-    min-height: 0;
+    width: 100%;
+    height: 100%;
     overflow: hidden;
     border: 1px solid var(--ve-theme-stroke, rgba(255, 255, 255, 0.08));
     border-radius: 0.75rem;

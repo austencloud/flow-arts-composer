@@ -44,8 +44,8 @@
   // Services
   const localizedSections = $derived(
     sections
-      .filter((section) => !section.navigationHidden)
-      .map((section) => ({
+      .filter((section: Section) => !section.navigationHidden)
+      .map((section: Section) => ({
         ...section,
         label: t(section.labelKey),
         description: t(section.descKey),

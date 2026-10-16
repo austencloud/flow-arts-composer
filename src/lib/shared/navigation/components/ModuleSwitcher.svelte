@@ -94,7 +94,9 @@
 
   $effect(() => () => headerMotion.cancel());
   const localizedCurrentModuleName = $derived.by(() => {
-    const module = modules.find((item) => item.id === currentModule);
+    const module = modules.find(
+      (item: ModuleDefinition) => item.id === currentModule
+    );
     return module ? t(module.labelKey) : currentModuleName;
   });
 
@@ -152,7 +154,9 @@
   });
 
   const selectedModule = $derived(
-    modules.find((module) => module.id === selectedModuleId) ?? null
+    modules.find(
+      (module: ModuleDefinition) => module.id === selectedModuleId
+    ) ?? null
   );
   const selectedSections = $derived(
     selectedModuleId ? getAccessibleSectionsForModule(selectedModuleId) : []
@@ -281,7 +285,9 @@
   });
 
   async function handleModuleSelect(moduleId: ModuleId) {
-    const module = modules.find((candidate) => candidate.id === moduleId);
+    const module = modules.find(
+      (candidate: ModuleDefinition) => candidate.id === moduleId
+    );
     if (!module) return;
 
     // A module with a home screen opens it directly: the home is its chooser,

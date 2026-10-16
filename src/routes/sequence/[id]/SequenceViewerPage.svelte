@@ -768,6 +768,7 @@
     </div>
   </div>
 {:else}
+  {@const resolvedSequence = sequence}
   <SequenceViewerOrchestrator
     {sequence}
     {isMobile}
@@ -807,7 +808,7 @@
       >
         <SequenceViewerShell
           {ctx}
-          {sequence}
+          sequence={resolvedSequence}
           analyticsSource={scanOriginCode
             ? "qr"
             : fromShapeEngine

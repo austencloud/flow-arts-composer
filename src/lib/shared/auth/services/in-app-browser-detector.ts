@@ -91,13 +91,13 @@ export class InAppBrowserDetector {
    * signInWithGoogle(), which is a dead button rather than merely wrong copy.
    * Four call sites each re-deriving this is four chances to forget the check.
    */
-  getForcedValue(searchParams?: URLSearchParams): string | null {
+  getForcedValue(searchParams?: Pick<URLSearchParams, "get">): string | null {
     if (Capacitor.isNativePlatform()) return null;
     return searchParams?.get("forceIAB") ?? null;
   }
 
   /** Real detection, plus the test hook. The only form call sites should use. */
-  isInAppBrowserOrForced(searchParams?: URLSearchParams): boolean {
+  isInAppBrowserOrForced(searchParams?: Pick<URLSearchParams, "get">): boolean {
     return this.isInAppBrowser() || this.getForcedValue(searchParams) !== null;
   }
 
@@ -106,7 +106,9 @@ export class InAppBrowserDetector {
    * the test matrix actually exercises those paths on a desktop. A forced value
    * that isn't a platform (true/false) falls back to real detection.
    */
-  getEffectivePlatform(searchParams?: URLSearchParams): InAppBrowserPlatform {
+  getEffectivePlatform(
+    searchParams?: Pick<URLSearchParams, "get">
+  ): InAppBrowserPlatform {
     const forced = this.getForcedValue(searchParams);
     if (forced === "ios" || forced === "android") return forced;
     return this.getPlatform();
@@ -165,7 +167,7 @@ export class InAppBrowserDetector {
    * signals plus the launch flag. One call so every escape surface stays in
    * lockstep and nothing hardcodes a browser-vs-app decision.
    */
-  getEscapeTarget(searchParams?: URLSearchParams): EscapeTarget {
+  getEscapeTarget(searchParams?: Pick<URLSearchParams, "get">): EscapeTarget {
     return resolveEscapeTarget({
       platform: this.getEffectivePlatform(searchParams),
       iosMajorVersion: this.getIosMajorVersion(),
@@ -194,6 +196,8 @@ export class InAppBrowserDetector {
     // version in its UA, so getIosMajorVersion stays null and the resolver hands
     // back the safe iOS guide rather than firing a scheme it can't vouch for.
     const nav = navigator as Navigator & { maxTouchPoints?: number };
-    return /Macintosh/i.test(navigator.userAgent) && (nav.maxTouchPoints ?? 0) > 1;
+    return (
+      /Macintosh/i.test(navigator.userAgent) && (nav.maxTouchPoints ?? 0) > 1
+    );
   }
 }

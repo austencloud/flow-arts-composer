@@ -615,7 +615,7 @@ describe("dev launcher install guard", () => {
   it("waits out a slow render while Vite still answers its ping", () => {
     // After a restart the first render can outlast the 8 s probe for minutes.
     // Vite answers its ping header itself, so a timed-out page plus a ping
-    // answer means busy, not dead. Busy is capped rather than trusted forever.
+    // answer preserves the server. Explicit SSR errors still have a time cap.
     expect(launcher).toContain(
       'Get-HttpStatus $Url $true 5 "text/x-vite-ping"'
     );
@@ -626,7 +626,7 @@ describe("dev launcher install guard", () => {
   });
 
   it.skipIf(process.platform !== "win32")(
-    "handles SSR failure, dead Vite, fatal generated state, and recovery distinctly",
+    "preserves long live timeouts while bounding SSR errors and recovering dead Vite",
     () => {
       // Run the real supervisor branch with synthetic probes; never start Vite
       // or contact the managed server during this regression check.
@@ -660,7 +660,8 @@ $cases = @(
     @{ status='500'; ping=$true; fatal=$true; age=0; failures=0 },
     @{ status='000'; ping=$false; fatal=$false; age=0; failures=1 },
     @{ status='000'; ping=$false; fatal=$false; age=0; failures=2 },
-    @{ status='200'; ping=$false; fatal=$false; age=30; failures=2 }
+    @{ status='200'; ping=$false; fatal=$false; age=30; failures=2 },
+    @{ status='000'; ping=$true; fatal=$false; age=363; failures=2 }
 )
 $results = foreach ($case in $cases) {
     $originFailureCount = $case.failures
@@ -682,7 +683,7 @@ $results | ConvertTo-Json -Compress
       expect(result.status, result.stderr).toBe(0);
       const cases = JSON.parse(result.stdout);
       expect(cases[0]).toMatchObject({ failures: 0, busy: true, error: "" });
-      expect(cases[1]).toMatchObject({ failures: 0, busy: true, error: "" });
+      expect(cases[1]).toMatchObject({ failures: 0, busy: false, error: "" });
       expect(cases[2].error).toContain("five minutes");
       expect(cases[3]).toMatchObject({ ping: false });
       expect(cases[3].error).toContain("generated root route proxy");
@@ -692,6 +693,12 @@ $results | ConvertTo-Json -Compress
         failures: 0,
         busy: false,
         ping: false,
+        error: "",
+      });
+      expect(cases[7]).toMatchObject({
+        failures: 0,
+        busy: false,
+        ping: true,
         error: "",
       });
     }
