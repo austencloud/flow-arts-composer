@@ -4,6 +4,10 @@
 import { chromium } from "playwright";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
+import {
+  validateCaptureProvenance,
+  stableStringify,
+} from "../../Shared/Tools/capture-provenance.mjs";
 
 const [baseUrl, outputArg] = process.argv.slice(2);
 if (!baseUrl || !outputArg)
@@ -133,6 +137,16 @@ try {
     if (!status.startsWith("Generated ")) throw new Error(status);
   }
   await loadPage();
+  const receiptResponse = await page.request.get(
+    new URL("/native-capture-build.json", baseUrl).href
+  );
+  if (!receiptResponse.ok())
+    throw new Error(
+      "Native capture requires a fingerprinted static build; run the native capture Vite build and static runner."
+    );
+  const buildReceipt = await receiptResponse.json();
+  if (buildReceipt.schema !== "tka-native-capture-build-v1")
+    throw new Error("Invalid native capture build receipt");
   const catalog = await page.evaluate(() => ({
     characters: window.flowFestNativeCapture.characters,
     roles: window.flowFestNativeCapture.roles,
@@ -167,9 +181,13 @@ try {
     prior?.artifacts?.length &&
     prior.captureRevision !== familyCaptureRevision
   )
-    throw new Error(`Stale family capture manifest in ${outputDir}`);
+    process.stdout.write(
+      "Old family manifest found; checking each capture before reuse.\n"
+    );
   const artifacts = new Map(
-    (prior?.artifacts ?? []).map((item) => [item.filename, item])
+    (prior?.buildId === buildReceipt.id ? (prior.artifacts ?? []) : []).map(
+      (item) => [item.filename, item]
+    )
   );
   async function record(artifact) {
     artifacts.set(artifact.filename, artifact);
@@ -178,6 +196,7 @@ try {
       schema: "flow-fest-native-export-manifest-v1",
       ...(familyMode ? { captureRevision: familyCaptureRevision } : {}),
       sourceUrl: captureUrl,
+      buildId: buildReceipt.id,
       mode: familyMode ? "families" : "legacy",
       artifacts: [...artifacts.values()],
     });
@@ -214,23 +233,56 @@ try {
           const path = resolve(outputDir, filename);
           const existing = await readJson(path);
           if (existing) {
-            const motion = validatePerformance(
-              existing,
-              character,
-              role,
-              family
-            );
-            if (JSON.stringify(existing.sequence) !== JSON.stringify(snapshot))
-              throw new Error(`Preserved LOOP differs from ${filename}`);
-            await record({
-              character,
-              role,
-              propType: family,
-              filename,
-              frames: 480,
-              motion,
-            });
-            continue;
+            try {
+              const effect =
+                family.includes("fire") ||
+                family.includes("torch") ||
+                family === "poi"
+                  ? "fire"
+                  : "led";
+              const expected = await page.evaluate(
+                ([id, profile, sequence, prop, fx]) =>
+                  window.flowFestNativeCapture.inspectCapture(
+                    id,
+                    profile,
+                    sequence,
+                    prop,
+                    fx
+                  ),
+                [character, role, snapshot, family, effect]
+              );
+              await validateCaptureProvenance(existing, {
+                expectedBuildId: buildReceipt.id,
+                expectedSequence: snapshot,
+                expectedMotionOptions: expected.motionOptions,
+                expectedRig: expected.rig,
+                expectedProps: expected.props,
+                expectedClock: expected.clock,
+              });
+              const motion = validatePerformance(
+                existing,
+                character,
+                role,
+                family
+              );
+              if (
+                stableStringify(existing.sequence) !== stableStringify(snapshot)
+              )
+                throw new Error("Sequence differs");
+              await record({
+                character,
+                role,
+                propType: family,
+                filename,
+                frames: 480,
+                motion,
+              });
+              continue;
+            } catch (error) {
+              process.stdout.write(
+                `Recapturing ${filename}: ${error.message}\n`
+              );
+            }
           }
           process.stdout.write(`${character} / ${role}\n`);
           const result = await page.evaluate(
@@ -239,6 +291,10 @@ try {
             [character, family, variant]
           );
           const motion = validatePerformance(result, character, role, family);
+          await validateCaptureProvenance(result, {
+            expectedBuildId: buildReceipt.id,
+            expectedSequence: snapshot,
+          });
           if (JSON.stringify(result.sequence) !== JSON.stringify(snapshot))
             throw new Error(`Captured LOOP differs from ${snapshotPath}`);
           await writeJsonAtomic(path, result);
@@ -250,9 +306,19 @@ try {
             frames: 480,
             motion,
           });
+          // The production arm pose has page-lifetime state: remounting even the
+          // same rig on this page can leave its first frames in a stale rest pose.
+          // Capture each performance in an isolated page lifetime, then restore
+          // the exact preserved LOOP before the next character is inspected.
+          await loadPage();
+          await page.evaluate(
+            ([key, sequence]) =>
+              window.flowFestNativeCapture.setFamilySequenceSnapshots({
+                [key]: sequence,
+              }),
+            [role, snapshot]
+          );
         }
-        // A fresh page releases WebGL resources accumulated by dozens of production rigs.
-        await loadPage();
       }
   } else {
     if (selected && !rideOnly) {
@@ -279,6 +345,9 @@ try {
           [character, role]
         );
         validatePerformance(result, character, role, result.propType);
+        await validateCaptureProvenance(result, {
+          expectedBuildId: buildReceipt.id,
+        });
         const filename = `${character}_${role}.json`;
         await writeJsonAtomic(resolve(outputDir, filename), result);
         await record({

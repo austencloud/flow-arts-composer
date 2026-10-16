@@ -11,6 +11,7 @@ import { createHash } from "node:crypto";
 import { Matrix4, Quaternion, Vector3 } from "three";
 import { museumPerformanceEntries, assertMuseumRawCapture,
   MUSEUM_PROP_COORDINATE_BASIS } from '../../Shared/Tools/museum-performance-contract.mjs';
+import { validateCaptureProvenance } from '../../Shared/Tools/capture-provenance.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const option = name => {
@@ -211,6 +212,7 @@ for (const entry of artifacts.filter(entry =>
       capture.fps !== 30 || capture.frames.length !== entry.frames)
     throw new Error(`Invalid production capture: ${entry.filename}`);
   if (museumMode) assertMuseumRawCapture(capture, museumEntries.find(item => item.profile === profile));
+  const provenance = await validateCaptureProvenance(capture);
   const family = /^family-([a-z0-9_]+)-[AB]$/.exec(entry.role)?.[1];
   if (family && (capture.propType !== family || capture.frames.length !== 480))
     throw new Error(`Capture family/timing mismatch: ${entry.filename}`);
@@ -245,12 +247,15 @@ for (const entry of artifacts.filter(entry =>
     sourceFrameCount: frames.length,
     captureRevision: capture.captureRevision ?? 'legacy',
     sourceSHA256: createHash('sha256').update(captureBytes).digest('hex'),
+    captureSHA256: createHash('sha256').update(captureBytes).digest('hex'),
+    provenance,
     coordinateBasis: MUSEUM_PROP_COORDINATE_BASIS,
     frames,
   };
   await writeFile(join(outputDir, filename), JSON.stringify(clip));
   generated.push({ character: entry.character, profile, filename, frames: frames.length,
     schema: clip.schema, captureRevision: clip.captureRevision, sourceSHA256: clip.sourceSHA256,
+    captureSHA256: clip.captureSHA256,
     ...(museumMode ? { sequenceId: museumEntries.find(item => item.profile === profile).sequenceId } : {}) });
 }
 if (!generated.length) throw new Error('No complete listed prop captures available for staging');

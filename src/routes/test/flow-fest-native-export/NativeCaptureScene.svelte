@@ -7,10 +7,16 @@
     resolveThrelteScene,
   } from "#lib/shared/3d/scene-boot/threlte-handles.js";
   import LiveSequencePerformer3D from "#lib/shared/3d/performers/LiveSequencePerformer3D.svelte";
-  import type { CharacterId } from "#lib/shared/3d/domain/character-model.js";
+  import {
+    getCharacterModelPath,
+    type CharacterId,
+  } from "#lib/shared/3d/domain/character-model.js";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type { PropType as AppPropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
-  import type { PropType as ScenePropType } from "@austencloud/scene-3d";
+  import {
+    PROP_MODEL_REGISTRY,
+    type PropType as ScenePropType,
+  } from "@austencloud/scene-3d";
   import { captureNativeFrame, productionRigReady } from "./native-capture.js";
 
   interface Props {
@@ -22,6 +28,14 @@
   }
   const props: Props = $props();
   const id = "native-export";
+  const motionOptions = {
+    bodyClearance: null,
+    enableLocomotion: true,
+    enableFootPlanting: true,
+    playbackSpeed: 1,
+    phaseOffsetSteps: 0,
+    showEffects: false,
+  } as const;
   const {
     renderer: rendererValue,
     scene: sceneValue,
@@ -45,6 +59,29 @@
 
   export function hasRenderedRig(): boolean {
     return productionRigReady(scene, id);
+  }
+
+  export function captureSettings() {
+    const model =
+      PROP_MODEL_REGISTRY[props.propType as keyof typeof PROP_MODEL_REGISTRY];
+    const loadedPropPaths = performance
+      .getEntriesByType("resource")
+      .map((entry) => entry.name)
+      .filter((path) =>
+        new URL(path, location.href).pathname.startsWith("/models/props/")
+      );
+    return {
+      rigPath: getCharacterModelPath(props.character),
+      propPaths: [
+        ...new Set(
+          [
+            ...(model ? [model.modelUrl, model.rightHandModelUrl] : []),
+            ...loadedPropPaths,
+          ].filter((path): path is string => typeof path === "string")
+        ),
+      ],
+      motionOptions,
+    };
   }
 
   export async function settleCapturePose(): Promise<void> {
@@ -86,10 +123,11 @@
   effectId={props.effectId}
   sequence={props.sequence}
   active={false}
-  playbackSpeed={1}
-  phaseOffsetSteps={0}
-  showEffects={false}
-  enableLocomotion={true}
-  enableFootPlanting={true}
+  playbackSpeed={motionOptions.playbackSpeed}
+  phaseOffsetSteps={motionOptions.phaseOffsetSteps}
+  showEffects={motionOptions.showEffects}
+  enableLocomotion={motionOptions.enableLocomotion}
+  enableFootPlanting={motionOptions.enableFootPlanting}
+  bodyClearance={motionOptions.bodyClearance}
   onReady={props.onReady}
 />

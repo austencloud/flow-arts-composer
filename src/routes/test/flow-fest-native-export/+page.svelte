@@ -3,6 +3,10 @@
   import { Canvas, T } from "@threlte/core";
   import CanvasLifecycle from "#lib/shared/3d/components/CanvasLifecycle.svelte";
   import { DEPLOYED_CHARACTER_IDS } from "#lib/shared/3d/config/deployed-characters.js";
+  import {
+    sha256,
+    stableStringify,
+  } from "../../../../unreal/Shared/Tools/capture-provenance.mjs";
   import type { CharacterId } from "#lib/shared/3d/domain/character-model.js";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import { PropType } from "@austencloud/scene-3d";
@@ -50,6 +54,97 @@
   let mode = $state<"perform" | "ride">("perform");
   let busy = false;
   let status = $state("Generating production LOOP snapshot…");
+  let buildReceipt: {
+    schema: string;
+    id: string;
+    sourceCommit: string;
+    sourceSHA256: string;
+    outputSHA256: string;
+  } | null = null;
+
+  async function verifiedBuild() {
+    if (buildReceipt) return buildReceipt;
+    const response = await fetch("/native-capture-build.json", {
+      cache: "no-store",
+    });
+    if (!response.ok)
+      throw new Error(
+        "Native capture requires a fingerprinted static build. Build with native-capture.vite.config.mjs and use native-capture-static-runner.mjs."
+      );
+    const receipt = await response.json();
+    if (
+      receipt.schema !== "tka-native-capture-build-v1" ||
+      !/^[a-f0-9]{64}$/.test(receipt.id)
+    )
+      throw new Error("Invalid native capture build receipt");
+    buildReceipt = receipt;
+    return receipt;
+  }
+
+  async function assetSHA256(path: string): Promise<string> {
+    const response = await fetch(path);
+    if (!response.ok) throw new Error(`Capture asset unavailable: ${path}`);
+    return sha256(await response.arrayBuffer());
+  }
+
+  async function captureProvenance(sequence: SequenceData, frameCount: number) {
+    if (!scene) throw new Error("Performer capture scene is not mounted");
+    const build = await verifiedBuild();
+    const settings = scene.captureSettings();
+    return {
+      schema: "tka-performance-capture-v1",
+      build: {
+        id: build.id,
+        sourceCommit: build.sourceCommit,
+        sourceSHA256: build.sourceSHA256,
+        outputSHA256: build.outputSHA256,
+      },
+      sequenceSHA256: await sha256(stableStringify(sequence)),
+      rig: {
+        characterId: character,
+        sourcePath: settings.rigPath,
+        sourceSHA256: await assetSHA256(settings.rigPath),
+      },
+      props: {
+        family: propType,
+        buildSHA256: build.outputSHA256,
+        assets: await Promise.all(
+          settings.propPaths.map(async (path: string) => ({
+            path,
+            sha256: await assetSHA256(path),
+          }))
+        ),
+      },
+      motionOptions: settings.motionOptions,
+      clock: {
+        fps: 30,
+        frameCount,
+        scoreUnitsPerSecond: 1,
+        loopClosure: "first-frame-at-duration",
+      },
+    };
+  }
+
+  async function inspectCapture(
+    nextCharacter: CharacterId,
+    nextRole: string,
+    nextSequence: SequenceData,
+    nextPropType: PropType,
+    nextEffectId: "fire" | "led"
+  ) {
+    if (busy) throw new Error("Capture already running");
+    mode = "perform";
+    character = nextCharacter;
+    role = nextRole;
+    customSequence = nextSequence;
+    propType = nextPropType;
+    effectId = nextEffectId;
+    sceneKey += 1;
+    const key = sceneKey;
+    await tick();
+    await waitReady(key);
+    return captureProvenance(nextSequence, captureFrameCount(nextSequence));
+  }
 
   function sequenceForRole(nextRole: FlowFestPerformerRole): SequenceData {
     const snapshot = sequenceSnapshots[nextRole];
@@ -167,6 +262,7 @@
       if (!scene) throw new Error("Performer capture scene is not mounted");
       scene.pauseAutoLoop();
       await scene.settleCapturePose();
+      const provenance = await captureProvenance(nextSequence, frameCount);
       const frames = [];
       for (let frame = 0; frame < frameCount; frame += 1) {
         frames.push(await scene.sampleFrame(frame));
@@ -186,6 +282,7 @@
         scoreUnitsPerSecond: 1,
         scoreSteps: nextSequence.steps.length,
         sequence: nextSequence,
+        provenance,
         coordinateSystem:
           "Three.js: meters, +Y up; bone TRS is local to parent; performer and prop TRS are world-space",
         propTransform:
@@ -312,6 +409,7 @@
       captureOne,
       captureFamily,
       captureSequence,
+      inspectCapture,
       captureRide,
       setSequenceSnapshots,
       prepareFamily,

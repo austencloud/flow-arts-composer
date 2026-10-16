@@ -3,6 +3,7 @@
 import { chromium } from "playwright";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
+import { validateCaptureProvenance } from "../../Shared/Tools/capture-provenance.mjs";
 
 const [baseUrl, outputArg, manifestArg] = process.argv.slice(2);
 if (!baseUrl || !outputArg || !manifestArg)
@@ -135,6 +136,16 @@ const browser = await chromium.launch({
 });
 try {
   const page = await browser.newPage({ viewport: { width: 800, height: 700 } });
+  const receiptResponse = await page.request.get(
+    new URL("/native-capture-build.json", baseUrl).href
+  );
+  if (!receiptResponse.ok())
+    throw new Error(
+      "Museum capture requires a fingerprinted native capture static build"
+    );
+  const buildReceipt = await receiptResponse.json();
+  if (buildReceipt.schema !== "tka-native-capture-build-v1")
+    throw new Error("Invalid native capture build receipt");
   page.on("pageerror", (error) =>
     process.stderr.write(`Page error: ${error.message}\n`)
   );
@@ -148,9 +159,46 @@ try {
       if (error.code !== "ENOENT") throw error;
     }
     if (existing) {
-      validateCapture(existing, performance);
-      process.stdout.write(`Reused ${filename}\n`);
-      continue;
+      try {
+        await page.goto(captureUrl, {
+          waitUntil: "domcontentloaded",
+          timeout: 120_000,
+        });
+        await page.waitForFunction(
+          () => window.flowFestNativeCapture?.isReady(),
+          null,
+          { timeout: 120_000 }
+        );
+        const expected = await page.evaluate(
+          ({ characterId, profile, sequence, propId }) =>
+            window.flowFestNativeCapture.inspectCapture(
+              characterId,
+              profile,
+              sequence,
+              propId,
+              "led"
+            ),
+          {
+            characterId: source.characterId,
+            profile: performance.profile,
+            sequence: performance.sequence,
+            propId: source.propId,
+          }
+        );
+        await validateCaptureProvenance(existing, {
+          expectedBuildId: buildReceipt.id,
+          expectedSequence: performance.sequence,
+          expectedMotionOptions: expected.motionOptions,
+          expectedRig: expected.rig,
+          expectedProps: expected.props,
+          expectedClock: expected.clock,
+        });
+        validateCapture(existing, performance);
+        process.stdout.write(`Reused ${filename}\n`);
+        continue;
+      } catch (error) {
+        process.stdout.write(`Recapturing ${filename}: ${error.message}\n`);
+      }
     }
     await page.goto(captureUrl, {
       waitUntil: "domcontentloaded",
@@ -178,6 +226,10 @@ try {
       }
     );
     const frames = validateCapture(capture, performance);
+    await validateCaptureProvenance(capture, {
+      expectedBuildId: buildReceipt.id,
+      expectedSequence: performance.sequence,
+    });
     const temporary = `${outputPath}.${process.pid}.tmp`;
     await writeFile(temporary, JSON.stringify(capture));
     await rename(temporary, outputPath);
