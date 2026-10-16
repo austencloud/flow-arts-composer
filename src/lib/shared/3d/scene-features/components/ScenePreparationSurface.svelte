@@ -78,7 +78,7 @@
   style:--sky-mid={sky.mid}
   style:--sky-horizon={sky.horizon}
   aria-busy="true"
-  aria-label={`3D viewer, ${statusText}`}
+  aria-label="3D viewer"
   data-scene-preparation
   data-scene-preparation-label={statusText}
   data-scene-preparation-progress={session ? session.percent / 100 : 0}
@@ -149,28 +149,35 @@
       color-mix(in srgb, var(--sky-horizon) 38%, black),
       color-mix(in srgb, var(--sky-horizon) 14%, black)
     );
-    box-shadow: 0 -1px 0 color-mix(in srgb, var(--sky-horizon) 55%, white 20%);
   }
 
+  /* Soft 1.5px lines (no seams where a hard 1px line lands between pixels),
+     a cell that grows with the stage so the floor still reads at 4K, and a
+     fade at both ends so no line sits on the horizon or the bottom edge. */
   .floor-grid {
+    --grid-line: color-mix(in srgb, var(--sky-mid) 40%, white);
+    --grid-cell: clamp(48px, 4cqi, 120px);
     position: absolute;
     top: 0;
     right: -40%;
     left: -40%;
     height: 220%;
-    opacity: 0.16;
+    opacity: 0.14;
     background-image:
-      linear-gradient(
-        color-mix(in srgb, var(--sky-mid) 40%, white) 1px,
-        transparent 1px
-      ),
+      linear-gradient(transparent calc(100% - 1.5px), var(--grid-line) 100%),
       linear-gradient(
         90deg,
-        color-mix(in srgb, var(--sky-mid) 40%, white) 1px,
-        transparent 1px
+        transparent calc(100% - 1.5px),
+        var(--grid-line) 100%
       );
-    background-size: 56px 56px;
-    mask-image: linear-gradient(to bottom, transparent, #000 18%);
+    background-size: var(--grid-cell) var(--grid-cell);
+    mask-image: linear-gradient(
+      to bottom,
+      transparent,
+      #000 18%,
+      #000 40%,
+      transparent 48%
+    );
     transform: perspective(360px) rotateX(64deg);
     transform-origin: center top;
   }
