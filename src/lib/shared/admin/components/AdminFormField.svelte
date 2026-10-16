@@ -69,6 +69,7 @@
   {required}
   {disabled}
   class="admin-form-field {className}"
+  style="--ui-error: var(--semantic-error, #b3261e); --ui-text: var(--theme-text, currentColor); --ui-text-muted: var(--theme-text-dim, currentColor)"
 >
   {#snippet children(field)}
     {#if type === "text" || type === "number"}
