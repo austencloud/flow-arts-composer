@@ -40,20 +40,20 @@ export const SCENE_LOADING_RANKS = [
 ] as const;
 
 /**
- * A first visit's timing (ms from open), shaped on the old curtain's
- * 2026-10-15 dev-server timeline of /sequence/[id]?render=3d. Each completed
- * load replaces it with its own.
+ * A first visit's timing (ms from open): the dev server's
+ * /sequence/[id]?render=3d measured 2026-10-15 in the agent Chrome. Each
+ * completed load replaces it with its own.
  */
 export const SCENE_LOADING_DEFAULT_PROFILE: Record<string, number> = {
   open: 0,
-  canvas: 3300,
-  "load-25": 7600,
-  "load-50": 7700,
-  "load-75": 10300,
-  loaded: 14900,
-  "warm-40": 14950,
-  compiled: 15000,
-  smooth: 15100,
+  canvas: 4000,
+  "load-25": 8400,
+  "load-50": 8450,
+  "load-75": 10100,
+  loaded: 14200,
+  "warm-40": 14250,
+  compiled: 14300,
+  smooth: 14400,
 };
 
 const SCENE_LOADING_KEY = "3d-stage";

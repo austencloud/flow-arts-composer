@@ -108,8 +108,10 @@ export function createLoadingSession(spec: LoadingSessionSpec): LoadingSession {
     shown: LOADING_FLOOR_PERCENT,
     floor: LOADING_FLOOR_PERCENT,
     still: reducedMotion(),
+    // Never reported backwards: while parked, the bar's position is an
+    // estimate that a long task can overstate until its animation starts.
     onSample: (_now, at) => {
-      percent = at;
+      if (at > percent) percent = at;
     },
   });
   const entry: LoadingBarProbe = {
