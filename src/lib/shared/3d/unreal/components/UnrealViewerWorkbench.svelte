@@ -291,4 +291,10 @@
       font-size: 0.75rem;
     }
   }
+  @media (max-width: 767px) and (orientation: portrait) {
+    .scene-caption {
+      top: calc(max(1rem, env(safe-area-inset-top)) + 4rem);
+      bottom: auto;
+    }
+  }
 </style>
