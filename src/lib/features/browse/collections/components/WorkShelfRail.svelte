@@ -8,20 +8,11 @@
   the shelf choice and its active panel. The caller places these two regions
   around either the full-width Drafts pane or the rail/detail split.
 -->
-<script module lang="ts">
-  export type WorkShelfId =
-    | "drafts"
-    | "collections"
-    | "art"
-    | "performances"
-    | "core"
-    | "shared";
-</script>
-
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { Snippet } from "svelte";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import type { WorkShelfId } from "../services/work-shelf-navigation.js";
 
   interface ShelfDefinition {
     label: string;
@@ -32,13 +23,12 @@
 
   interface Props {
     value: WorkShelfId;
-    sharedAvailable: boolean;
     onchange: (shelfId: WorkShelfId) => void;
     content: Snippet<[WorkShelfId]>;
     region: "tabs" | "panel";
   }
 
-  let { value, sharedAvailable, onchange, content, region }: Props = $props();
+  let { value, onchange, content, region }: Props = $props();
 
   const shelves = $derived<Record<WorkShelfId, ShelfDefinition>>({
     drafts: {
@@ -72,8 +62,8 @@
       icon: "fa-book-open",
     },
     shared: {
-      label: t("browse_verified_shared"),
-      shortLabel: t("browse_verified_more"),
+      label: t("browse_following"),
+      shortLabel: t("browse_following"),
       description: t("browse_verified_shared_description"),
       icon: "fa-user-group",
     },
@@ -86,19 +76,13 @@
       label: shelves[shelfId].label,
       id: `work-shelf-tab-${shelfId}`,
       controls: `work-shelf-panel-${shelfId}`,
-      disabled: shelfId === "shared" && !sharedAvailable,
       ariaLabel:
-        shelfId === "shared" && !sharedAvailable
-          ? t("browse_verified_shelf_no_collections", {
+        shelves[shelfId].shortLabel === shelves[shelfId].label
+          ? shelves[shelfId].label
+          : t("browse_verified_shelf_label", {
               short: shelves[shelfId].shortLabel,
               label: shelves[shelfId].label,
-            })
-          : shelves[shelfId].shortLabel === shelves[shelfId].label
-            ? shelves[shelfId].label
-            : t("browse_verified_shelf_label", {
-                short: shelves[shelfId].shortLabel,
-                label: shelves[shelfId].label,
-              }),
+            }),
     }))
   );
 </script>
@@ -157,8 +141,6 @@
 
   .tab-width {
     width: 100%;
-    max-width: 840px;
-    margin-inline: auto;
   }
 
   .shelf-tab-content {
