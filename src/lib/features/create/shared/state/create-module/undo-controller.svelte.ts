@@ -76,12 +76,13 @@ export function createUndoController({
       shouldShowStartPlacementPicker:
         type === UndoOperationType.SELECT_START_PLACEMENT,
     };
+    const capturedSessionId = UndoManager.getDraftSessionId(getActiveSection());
     let committed = false;
 
     return () => {
       if (committed) return;
       committed = true;
-      UndoManager.pushUndo(type, beforeState, metadata);
+      UndoManager.pushUndo(type, beforeState, metadata, capturedSessionId);
     };
   }
 

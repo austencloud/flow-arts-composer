@@ -1,45 +1,44 @@
 <!--
   PropChiralityRow.svelte
 
-  Chirality picker for buugeng-family props, docked at the bottom of
-  BentoPropGrid so every surface that mounts the picker inherits it.
+  The buugeng pair picker, docked under the prop picker's tiles so every
+  surface that mounts the picker inherits it (the Animation Panel, the Arena
+  drawer, My Props, Tunnel art settings).
 
-  Chirality used to live on an unlabelled 36px icon button in two places only
-  (the Create step-editor row and the Settings readout) while the picker itself
-  — mounted in eleven surfaces — had no way to express it at all. Moving the
-  control into the picker is what makes it reachable from the Animation Panel,
-  the Arena drawer, My Props and Tunnel art settings without adding a twelfth
-  copy of the button.
+  Chirality is stored per hand, but what anyone sees is the pair: two buugeng
+  facing opposite ways stack into one figure eight at a shared hand point, and
+  two facing the same way get the beta separation and sit side by side. The
+  old control offered A and B per hand on a lone prop, which showed nothing
+  about that. So a host that sets both hands offers the four pairs, each drawn
+  by the real pictograph renderer at the south hand point on the real grid
+  (BuugengPairPreview), and a pick writes both hands. A host that sets one hand
+  (cat-dog mode) offers A and B with the other hand drawn faintly beside it.
 
-  Buugeng chirality is a statement about the PAIR: two of the same handedness
-  stay apart, two of opposite handedness nest into one shape. So a host that
-  sets both hands gets one control per hand rather than a single control
-  writing both — the relationship is the whole point, and a shared control
-  cannot express it. Prop type still travels together in those hosts.
-
-  Exactly one of two states is always active per hand, so this routes to
-  SegmentedControl per .claude/rules/chip-primitives.md. Each segment renders
-  the selected prop's own art in its hand's canonical colour, one upright and one mirrored,
-  — through the primitive's existing optionContent slot. The hand cards keep
-  visible Left/Right labels as well as their aria-labels because this choice is a
-  primary part of selecting a buugeng, not an expert-only adjustment.
-
-  The two are named A and B, matching what pictograph-inspect already prints
-  (sequence-actions/pictograph-inspect/formatters.ts). Neither handedness is
-  the canonical one — which SVG happens to be the base asset is the only thing
-  that would make one "standard" — so a neutral index tells the truth where
-  Standard/Mirrored implied a deviation from a norm that does not exist.
+  Exactly one option is always active, so this routes to SegmentedControl per
+  .claude/rules/chip-primitives.md. A is the unflipped artwork and B its
+  mirror; every version draws A the same way
+  (tests/unit/buugeng-art-handedness.test.ts). The "What's this?" chip opens
+  the explainer on the props page.
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
-  import PropCompositionPreview from "#lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
   import {
     resolveViewerCustomColorPair,
     type ViewerCustomColorPair,
   } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
   import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
+  import BuugengPairPreview from "./BuugengPairPreview.svelte";
+  import {
+    BUUGENG_PAIRS,
+    buugengPair,
+    buugengPairFor,
+    chiralityLetter,
+    type BuugengPair,
+    type BuugengPairId,
+  } from "./buugeng-pair";
   import type {
     ChiralityHand,
     PropChiralityHandState,
@@ -50,53 +49,137 @@
   let {
     propType,
     hands,
+    partner,
     onChange,
     colors,
     propLook,
   }: {
-    /** The prop whose art the segments preview. */
+    /** The buugeng-family prop the tiles draw. */
     propType: PropType;
     /** One entry per hand this picker governs, left first. */
     hands: readonly PropChiralityHandState[];
+    /** The other hand, drawn faintly, when this picker governs one hand. */
+    partner?: PropChiralityHandState;
     onChange: (hand: ChiralityHand, flipped: boolean) => void;
     colors?: ViewerCustomColorPair | null;
     propLook?: PropLook;
   } = $props();
 
   const palette = $derived(resolveViewerCustomColorPair(colors));
+  const leftState = $derived(hands.find((state) => state.hand === "left"));
+  const rightState = $derived(hands.find((state) => state.hand === "right"));
+  const bothHands = $derived(leftState !== undefined && rightState !== undefined);
 
-  const options = [
+  let width = $state(0);
+  // One row of four keeps the picker short enough to sit under the version
+  // cards on a phone; each picture still reads at about 70px. Two by two only
+  // in the narrowest hosts.
+  const pairColumns = $derived(width === 0 || width >= 300 ? 4 : 2);
+
+  function pairName(pair: BuugengPair): string {
+    return pair.kind === "mirrored"
+      ? t("settings_buugeng_pair_mirrored")
+      : t("settings_buugeng_pair_matching");
+  }
+
+  function pairLetters(pair: BuugengPair): string {
+    return pair.kind === "mirrored"
+      ? t("settings_buugeng_pair_letters", {
+          left: chiralityLetter(pair.leftFlipped),
+          right: chiralityLetter(pair.rightFlipped),
+        })
+      : t("settings_buugeng_pair_both", {
+          letter: chiralityLetter(pair.leftFlipped),
+        });
+  }
+
+  const pairOptions = $derived(
+    BUUGENG_PAIRS.map((pair) => ({
+      value: pair.id,
+      label: `${pairName(pair)}, ${pairLetters(pair)}`,
+      tone: "both" as const,
+    }))
+  );
+
+  const pairValue = $derived(
+    buugengPairFor(leftState?.flipped ?? false, rightState?.flipped ?? false).id
+  );
+
+  function choosePair(id: BuugengPairId) {
+    const pair = buugengPair(id);
+    if (pair.leftFlipped !== (leftState?.flipped ?? false)) {
+      onChange("left", pair.leftFlipped);
+    }
+    if (pair.rightFlipped !== (rightState?.flipped ?? false)) {
+      onChange("right", pair.rightFlipped);
+    }
+  }
+
+  const handOptions = [
     { value: "a" as const, label: "A" },
     { value: "b" as const, label: "B" },
   ];
-
-  function valueFor(flipped: boolean): Chirality {
-    return flipped ? "b" : "a";
-  }
 </script>
 
-<div class="chirality-row">
+<div class="chirality-row" bind:clientWidth={width}>
   <div class="chirality-heading">
-    <span class="chirality-label">{t("settings_buugeng_chirality")}</span>
-    <span class="chirality-hint">{t("settings_buugeng_choose_side")}</span>
+    <span class="chirality-label">{t("settings_buugeng_pair")}</span>
+    <LinkChip size="inline" href="/notation/props#buugeng-chirality">
+      {t("settings_buugeng_whats_this")}
+    </LinkChip>
   </div>
-  <div class="chirality-controls">
+  <p class="chirality-hint">
+    {t("settings_buugeng_pair_hint")}
+    {#if !bothHands && partner}
+      {t("settings_buugeng_pair_one_hand_hint")}
+    {/if}
+  </p>
+
+  {#if bothHands}
+    <SegmentedControl
+      options={pairOptions}
+      value={pairValue}
+      onchange={choosePair}
+      color="accent"
+      columns={pairColumns}
+      semantics="radiogroup"
+      ariaLabel={t("settings_buugeng_pair")}
+    >
+      {#snippet optionContent(id)}
+        {@const pair = buugengPair(id)}
+        <span class="pair-tile">
+          <BuugengPairPreview
+            {propType}
+            {propLook}
+            leftFlipped={pair.leftFlipped}
+            rightFlipped={pair.rightFlipped}
+            leftColor={palette.left}
+            rightColor={palette.right}
+          />
+          <span class="pair-name">{pairName(pair)}</span>
+          <span class="pair-letters">{pairLetters(pair)}</span>
+        </span>
+      {/snippet}
+    </SegmentedControl>
+  {:else}
     {#each hands as state (state.hand)}
-      <div
-        class="chirality-hand"
-        class:red={state.hand === "right"}
-        style:--dm-motion-blue={palette.left}
-        style:--dm-motion-red={palette.right}
-      >
+      {@const other = state.hand === "left" ? "right" : "left"}
+      <div class="chirality-hand" class:red={state.hand === "right"}>
         <span class="chirality-hand-label">
-          <span class="chirality-hand-dot" aria-hidden="true"></span>
+          <span
+            class="chirality-hand-dot"
+            style:background={state.hand === "right"
+              ? palette.right
+              : palette.left}
+            aria-hidden="true"
+          ></span>
           {state.hand === "right"
             ? t("settings_right_prop")
             : t("settings_left_prop")}
         </span>
         <SegmentedControl
-          {options}
-          value={valueFor(state.flipped)}
+          options={handOptions}
+          value={(state.flipped ? "b" : "a") as Chirality}
           onchange={(next) => onChange(state.hand, next === "b")}
           color={state.hand === "left" ? "blue" : "red"}
           semantics="radiogroup"
@@ -105,24 +188,25 @@
             : t("settings_left_buugeng_chirality")}
         >
           {#snippet optionContent(option)}
-            <PropCompositionPreview
-              {propType}
-              size={40}
-              pairedGlyph
-              singleHand={state.hand}
-              darkBackground
-              useSavedOverrides={false}
-              colors={palette}
-              appearanceOverride={{ propLook }}
-              leftFlipped={option === "b"}
-              rightFlipped={option === "b"}
-            />
-            <span class="chirality-word">{option === "b" ? "B" : "A"}</span>
+            {@const flipped = option === "b"}
+            {@const partnerFlipped = partner?.flipped ?? false}
+            <span class="pair-tile">
+              <BuugengPairPreview
+                {propType}
+                {propLook}
+                leftFlipped={state.hand === "left" ? flipped : partnerFlipped}
+                rightFlipped={state.hand === "right" ? flipped : partnerFlipped}
+                leftColor={palette.left}
+                rightColor={palette.right}
+                dimHand={other}
+              />
+              <span class="pair-name">{chiralityLetter(flipped)}</span>
+            </span>
           {/snippet}
         </SegmentedControl>
       </div>
     {/each}
-  </div>
+  {/if}
 </div>
 
 <style>
@@ -130,7 +214,7 @@
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: 12px;
+    gap: 10px;
     margin: 0 12px 12px;
     padding: 12px;
     border: 1px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.14));
@@ -144,7 +228,7 @@
 
   .chirality-heading {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     justify-content: space-between;
     gap: 12px;
   }
@@ -157,63 +241,54 @@
   }
 
   .chirality-hint {
+    margin: 0;
     color: var(--theme-text-dim);
     font-size: var(--font-size-compact, 12px);
-    line-height: 1.3;
-    text-align: right;
+    line-height: 1.35;
   }
 
-  .chirality-controls {
+  .chirality-row :global(.segment-label) {
+    display: block;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .pair-tile {
     display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    /* Wide enough that two controls read as two groups. At 10px the four
-       segments ran together as one A/B/A/B bar. */
-    gap: 12px;
-    flex: 1;
-    min-width: 0;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+    padding: 4px 0;
   }
 
-  /* Each hand's control is a two-option selector, not a progress bar. Without
-     a ceiling it stretches to whatever the host panel is wide — the exact
-     failure .claude/rules/visual-verification-mandatory.md opens with. The
-     ceiling is sized for a glyph and a letter: once the words became A and B
-     the shape is what the segment is really showing, so the control hugs it
-     instead of stranding 250px of empty track. The 11rem basis is what still
-     wraps the pair one per line on the narrowest sheet. */
+  .pair-tile :global(.pair-crop) {
+    max-width: 120px;
+  }
+
+  .pair-name {
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  .pair-letters {
+    color: var(--theme-text-dim);
+    font-size: var(--font-size-compact, 12px);
+    line-height: 1.2;
+    white-space: normal;
+    text-align: center;
+  }
+
   .chirality-hand {
-    flex: 0 1 11rem;
-    min-width: 0;
-    max-width: 13rem;
-    padding: 8px;
-    border-radius: 14px;
-    /* The wash and ring repeat the visible hand label in the control's chrome,
-       so the identity stays clear while attention moves between A and B. */
-    background: color-mix(
-      in srgb,
-      var(--dm-motion-blue, #3d44b8) 12%,
-      transparent
-    );
-    box-shadow: inset 0 0 0 1px
-      color-mix(in srgb, var(--dm-motion-blue, #3d44b8) 38%, transparent);
-  }
-
-  .chirality-hand.red {
-    background: color-mix(
-      in srgb,
-      var(--dm-motion-red, #dc2626) 12%,
-      transparent
-    );
-    box-shadow: inset 0 0 0 1px
-      color-mix(in srgb, var(--dm-motion-red, #dc2626) 38%, transparent);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
   }
 
   .chirality-hand-label {
     display: flex;
     align-items: center;
-    justify-content: center;
     gap: 6px;
-    min-height: 20px;
     color: var(--theme-text);
     font-size: var(--font-size-compact, 12px);
     font-weight: 700;
@@ -223,41 +298,5 @@
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: var(--dm-motion-blue, #3d44b8);
-    box-shadow: 0 0 8px
-      color-mix(in srgb, var(--dm-motion-blue, #3d44b8) 70%, transparent);
-  }
-
-  .chirality-hand.red .chirality-hand-dot {
-    background: var(--dm-motion-red, #dc2626);
-    box-shadow: 0 0 8px
-      color-mix(in srgb, var(--dm-motion-red, #dc2626) 70%, transparent);
-  }
-
-  .chirality-row :global(.segment-label) {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    min-width: 0;
-  }
-
-  .chirality-word {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  /* The summary becomes one readable block before either phrase is forced
-     below the 12px typography floor. */
-  @container prop-grid (max-width: 340px) {
-    .chirality-heading {
-      flex-direction: column;
-      align-items: center;
-      gap: 2px;
-    }
-
-    .chirality-hint {
-      text-align: center;
-    }
   }
 </style>

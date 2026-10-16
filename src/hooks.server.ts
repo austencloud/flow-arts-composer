@@ -13,6 +13,7 @@ import {
   shouldPreloadRouteAsset,
 } from "#lib/server/performance/landing-preload-policy.js";
 import { normalizeModuleId } from "#lib/shared/navigation/config/module-definitions.js";
+import { inlineSelfTimingBar } from "#lib/server/performance/self-timing-bar-inline.js";
 import { guardInternalRoute } from "./config/build-flags";
 import { getRequestEvent, read } from "$app/server";
 import { rtlLocales } from "#lib/shared/i18n/i18n.svelte.js";
@@ -247,7 +248,7 @@ export const handle: Handle = async ({ event, resolve }) => {
   const response = await resolve(event, {
     preload: (asset) => shouldPreloadRouteAsset(routePath, asset),
     transformPageChunk: (chunk) => {
-      const html = transformLandingChunk(chunk);
+      const html = inlineSelfTimingBar(transformLandingChunk(chunk));
       const lang = localizedLocale;
       if (!lang) return html;
       const dir = rtlLocales.includes(lang) ? "rtl" : "ltr";

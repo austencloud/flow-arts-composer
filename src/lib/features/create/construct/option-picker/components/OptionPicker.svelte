@@ -61,7 +61,8 @@ Delegates all rendering to child components.
     /** The sequence's grid join: tiles draw each candidate step on it, as the
      *  workspace will once it is added. Display only; never stored on a step. */
     gridJoin?: GridJoin | null;
-    onOptionSelected: (option: PictographData) => void | Promise<void>;
+    /** Returns `false` when the pick is refused and the sequence stays put. */
+    onOptionSelected: (option: PictographData) => void | false | Promise<void>;
     isContinuousOnly?: boolean;
     onToggleContinuous?: (value: boolean) => void;
     isSideBySideLayout?: () => boolean;
@@ -428,8 +429,13 @@ Delegates all rendering to child components.
     hapticService?.trigger("selection");
     isSelecting = true;
 
-    // Notify parent first (triggers step grid animation synchronously)
-    onOptionSelected(option);
+    // Notify parent first (triggers step grid animation synchronously). A
+    // refused pick (a guest at the step limit) leaves the sequence as it was,
+    // so the picker keeps showing the options for the step it is on.
+    if (onOptionSelected(option) === false) {
+      isSelecting = false;
+      return;
+    }
 
     // When a filterPredicate is provided (e.g., tutorial loop filter), skip the fast
     // path and let the reactive $effect handle reloading. The predicate may change

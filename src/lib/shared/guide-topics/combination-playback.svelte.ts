@@ -7,10 +7,41 @@
  * keep the finished pictures.
  */
 import { reducedMotion } from "#lib/shared/transitions/motion.js";
+import { startPlacementDeriver } from "#lib/shared/pictograph/shared/services/start-placement-deriver.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 import {
   HAND_COMBINATIONS,
+  combinationPictographData,
+  type HandCombination,
   type HandCombinationId,
 } from "./hand-motions-topic.js";
+
+/** Where the example's hands start, for a picture that plays its move. */
+function startPose(data: PictographData): PictographData | null {
+  try {
+    return startPlacementDeriver.deriveFromFirstStep(
+      data as unknown as StepData
+    ) as unknown as PictographData;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * A combination's finished picture plus what a PictographContainer needs to
+ * play its move: the start pose and the move as a step (the container plays
+ * a move only for a step).
+ */
+export function combinationMove(combination: HandCombination) {
+  const data = combinationPictographData(combination);
+  return {
+    data,
+    start: startPose(data),
+    step: createStepData({ ...data, id: data.id }),
+  };
+}
 
 const PLAY_MS = 1050;
 const STAGGER_MS = 350;

@@ -52,7 +52,15 @@
   import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import { setSideBySideLayout } from "#lib/shared/application/state/animation-visibility-state.svelte.js";
   import { onMount, setContext, tick, untrack } from "svelte";
+  import { replaceState } from "$app/navigation";
   import ErrorBanner from "./ErrorBanner.svelte";
+  import DraftRecovery from "./DraftRecovery.svelte";
+  import { getSequencePersister } from "../get-sequence-persister";
+  import {
+    createDraftRecoveryController,
+    draftMode,
+    type DraftRecoveryController,
+  } from "../state/create-module/draft-recovery-controller.svelte";
   import type { CreateModuleOrchestrators } from "../types/create-module-services";
   import type { CreateModuleInitializer } from "../services/create-module-initializer";
   import type { CreateModuleHandlers } from "../services/create-module-handlers";
@@ -62,7 +70,10 @@
   import type { createConstructTabState as ConstructTabStateType } from "../state/construct-tab-state.svelte";
   import { createPanelCoordinationState } from "../state/panel-coordination-state.svelte";
   import { setCreateModuleStateRef } from "#lib/shared/create/state/create-module-state-ref.svelte.js";
-  import type { IToolPanelMethods } from "../types/create-module-types";
+  import type {
+    IToolPanelMethods,
+    OptionSelectedHandler,
+  } from "../types/create-module-types";
   import TransferConfirmDialog from "./TransferConfirmDialog.svelte";
   import ConfirmDialog from "#lib/shared/foundation/ui/ConfirmDialog.svelte";
   import CreateFrontDoor from "./CreateFrontDoor.svelte";
@@ -104,7 +115,7 @@
   import type { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
   import { loopTypeLabel } from "#lib/features/create/generate/components/loop-component-presentation.js";
   import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
-  import { UndoOperationType } from "../services/undo-manager";
+  import { UndoOperationType, undoManager } from "../services/undo-manager";
   import PropUnlockCelebration from "#lib/shared/gamification/components/PropUnlockCelebration.svelte";
   import { getPropUnlockManager } from "#lib/shared/gamification/get-prop-unlock-manager.js";
   import { createConstructTutorialState } from "../../construct/tutorial/state/construct-tutorial-state.svelte";
@@ -143,6 +154,51 @@
   // Session management services
   let sessionManager: SessionManager | null = $state(null);
   let autosaver: Autosaver | null = $state(null);
+  let draftRecovery: DraftRecoveryController | null = $state(null);
+  let resolvingDraftRequest = $state(true);
+
+  $effect(() => {
+    if (!resolvingDraftRequest && !navigationState.isCreateFrontDoorOpen) {
+      draftRecovery?.observeActiveMode();
+    }
+  });
+
+  const autosaveMode = $derived(draftMode(navigationState.activeTab));
+  const autosaveSessionId = $derived.by(() => draftRecovery?.status?.sessionId);
+  const autosaveBlocked = $derived.by(() =>
+    ["conflict", "recovery", "error"].includes(
+      draftRecovery?.status?.status ?? "recovery"
+    )
+  );
+
+  $effect(() => {
+    const mode = autosaveMode;
+    const sessionId = autosaveSessionId;
+    const blocked = autosaveBlocked;
+    const saver = autosaver;
+    if (!mode || !saver || !sessionId) return;
+    // Cloud/session tracking follows the same accepted local draft. A blocked
+    // save must not publish an unresolved version under another draft's name.
+    untrack(() => {
+      saver.stopAutosave();
+      if (blocked) return;
+      if (sessionManager?.getSessionId() !== sessionId) {
+        sessionManager = new SessionManager(sessionId);
+      }
+      saver.startAutosave(
+        () =>
+          CreateModuleState?.isTutorialWorkspaceIsolated
+            ? null
+            : (CreateModuleState?.getSequenceStateForTab(mode)
+                .currentSequence ?? null),
+        sessionId,
+        30000,
+        (sequence) =>
+          sessionManager?.recordAutosave(sequence.steps.length, sequence.name)
+      );
+    });
+    return () => saver.stopAutosave();
+  });
 
   // Settings service for user preferences
   let settingsService: SettingsState | null = $state(null);
@@ -473,6 +529,17 @@
     bootProfiler.milestone("create:mounted");
     const finishActivation = bootProfiler.startSpan("create:activation");
     let checkIsMobile: (() => void) | null = null;
+    const flushDraft = () => {
+      if (document.visibilityState === "hidden") draftRecovery?.flushPending();
+    };
+    const warnBeforeLeaving = (event: BeforeUnloadEvent) => {
+      if (!draftRecovery?.hasUnsavedChanges) return;
+      draftRecovery.flushPending();
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    document.addEventListener("visibilitychange", flushDraft);
+    window.addEventListener("beforeunload", warnBeforeLeaving);
 
     // Hydrate the prop-unlock collection on entry so the redemption badge and
     // celebration reflect the user's pending picks immediately.
@@ -484,6 +551,17 @@
       let hasDeepLink = false;
 
       try {
+        const draftUrl = new URL(window.location.href);
+        const requestedDraft = draftUrl.searchParams.get("draft");
+        const requestedMode = draftMode(navigationState.activeTab);
+        if (requestedDraft && requestedMode) {
+          await getSequencePersister()
+            .prepareDraftResume(requestedMode, requestedDraft)
+            .catch(() => {
+              // The recovery dialog reports storage failures after the editor
+              // mounts, so a failed preload must not prevent editing.
+            });
+        }
         const initStart = performance.now();
         initProgress = t("create_ui_resolving_services");
         const { getCreateModuleInitializer } = await bootProfiler.measureAsync(
@@ -492,6 +570,11 @@
             import("#lib/features/create/shared/get-create-module-initializer.js")
         );
         const initService = getCreateModuleInitializer();
+        getSequencePersister().setHistoryAdapter({
+          capture: (mode) => undoManager.captureDraftHistory(mode),
+          restore: (mode, sessionId, history) =>
+            undoManager.restoreDraftHistory(mode, sessionId, history),
+        });
 
         initProgress = t("create_ui_initializing_workspace");
         const result = await bootProfiler.measureAsync(
@@ -516,6 +599,15 @@
 
         CreateModuleState = result.CreateModuleState;
         constructTabState = result.constructTabState;
+        draftRecovery = createDraftRecoveryController({
+          persister: result.SequencePersister,
+          getActiveMode: () => navigationState.activeTab as BuildModeId,
+          getSequenceState: (mode) =>
+            CreateModuleState!.getSequenceStateForTab(mode),
+          onRestored: (mode) => {
+            if (mode === "construct") syncConstructWorkspaceUi();
+          },
+        });
 
         // Extract UI coordination services from result (no manual resolution needed)
         handlers = result.handlers;
@@ -594,9 +686,14 @@
           "create:restore-sequence",
           () =>
             initService.loadSequenceAndInitializePersistence(
-              (sequence: any) =>
-                CreateModuleState!.sequenceState.setCurrentSequence(sequence),
-              () => CreateModuleState!.initializeWithPersistence()
+              (sequence, mode) =>
+                CreateModuleState!
+                  .getSequenceStateForTab(
+                    mode ?? (navigationState.activeTab as BuildModeId)
+                  )
+                  .setCurrentSequence(sequence),
+              (skipRestore) =>
+                CreateModuleState!.initializeWithPersistence(skipRestore)
             )
         );
 
@@ -615,39 +712,14 @@
           hasDeepLink = true;
         }
 
-        // A browser/WebContent reload resumes the same draft and analytics
-        // session. Explicitly loaded work gets a fresh identity instead.
-        const sessionStart = await bootProfiler.measureAsync(
-          "create:resolve-session",
-          () => autosaver!.resolveSessionForStart(!loadResult.sequenceLoaded)
-        );
-        sessionManager = new SessionManager(sessionStart.sessionId);
-        if (sessionStart.recovered) {
-          try {
-            await bootProfiler.measureAsync(
-              "create:restore-session-metadata",
-              () => sessionManager!.loadSession(sessionStart.sessionId)
-            );
-          } catch (sessionError) {
-            logger.warn(
-              "[CreateModule] Existing session metadata could not be restored:",
-              sessionError
-            );
-          }
+        if (requestedDraft && requestedMode) {
+          hasDeepLink = true;
+          await draftRecovery.resume(requestedMode, requestedDraft);
+          // A reload should restore the resumed editor, not reopen an old version.
+          draftUrl.searchParams.delete("draft");
+          replaceState(draftUrl, {});
         }
-
-        // The first non-empty autosave creates or resumes the Firestore session.
-        // Opening and closing an untouched workspace leaves no empty cloud record.
-        autosaver.startAutosave(
-          () =>
-            CreateModuleState?.isTutorialWorkspaceIsolated
-              ? null
-              : CreateModuleState?.sequenceState.currentSequence || null,
-          sessionStart.sessionId,
-          30000,
-          (sequence) =>
-            sessionManager?.recordAutosave(sequence.steps.length, sequence.name)
-        );
+        resolvingDraftRequest = false;
 
         logger.success("Autosave started");
         logger.success("CreateModule initialized successfully");
@@ -686,7 +758,11 @@
         // start-placement-only sequence as non-empty, so a guest who began a
         // build isn't interrupted. Skippable and self-suppressing after the
         // first decision (appEntryState persists it).
-        if (!hasDeepLink && CreateModuleState.isWorkspaceEmpty()) {
+        if (
+          !hasDeepLink &&
+          !draftRecovery.hasUnresolvedDraft &&
+          CreateModuleState.isWorkspaceEmpty()
+        ) {
           appEntryState.offerCreateTutorial();
         }
 
@@ -698,6 +774,7 @@
         window.addEventListener("resize", checkIsMobile);
         finishActivation();
       } catch (err) {
+        resolvingDraftRequest = false;
         finishActivation("error");
         error =
           err instanceof Error
@@ -710,6 +787,8 @@
     // Return cleanup function synchronously (required for Svelte 5 onMount)
     return () => {
       finishActivation("cancelled");
+      document.removeEventListener("visibilitychange", flushDraft);
+      window.removeEventListener("beforeunload", warnBeforeLeaving);
       finishTutorialWorkspace();
 
       if (checkIsMobile) {
@@ -738,6 +817,8 @@
 
       // Cleanup session management
       autosaver?.stopAutosave();
+      draftRecovery?.flushPending();
+      draftRecovery?.dispose();
       if (sessionManager?.getCurrentSession()) {
         void sessionManager.abandonSession().catch((sessionError) => {
           logger.warn("[CreateModule] Session cleanup failed:", sessionError);
@@ -749,11 +830,13 @@
   // ============================================================================
   // EVENT HANDLERS (Delegated to Services)
   // ============================================================================
-  async function handleOptionSelected(option: PictographData): Promise<void> {
-    if (panelState.workspacePlayback) return;
+  // Refusals return false synchronously so the option picker stays on the step
+  // it is showing instead of loading options for a step that was never added.
+  const handleOptionSelected: OptionSelectedHandler = (option) => {
+    if (panelState.workspacePlayback) return false;
     if (!handlers) {
       error = "Handlers service not initialized";
-      return;
+      return false;
     }
 
     // Enforce tier step cap before adding a new step to the sequence
@@ -765,9 +848,16 @@
     );
     if (currentSteps >= maxSteps) {
       showStepCapGate();
-      return;
+      return false;
     }
 
+    return addOption(handlers, option);
+  };
+
+  async function addOption(
+    handlers: CreateModuleHandlers,
+    option: PictographData
+  ): Promise<void> {
     try {
       await handlers.handleOptionSelected(option);
       if (!appEntryState.isCreateTutorial()) {
@@ -1041,6 +1131,9 @@
 
 {#snippet workspaceSurface()}
   <div class="create-workspace-source">
+    {#if draftRecovery}
+      <DraftRecovery controller={draftRecovery} surface="status" />
+    {/if}
     <div class="create-workspace-body">
       {#if error}
         <ErrorBanner message={error} onDismiss={clearError} />
@@ -1175,6 +1268,10 @@
     duration={DURATION.emphasis}
   />
 </div>
+
+{#if draftRecovery}
+  <DraftRecovery controller={draftRecovery} surface="dialog" />
+{/if}
 
 <style>
   .create-module-stage,

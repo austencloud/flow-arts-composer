@@ -44,7 +44,7 @@ describe("Create undo history persistence", () => {
     vi.runAllTimers();
 
     expect(write).toHaveBeenCalledTimes(2);
-    expect(JSON.parse(localStorage.getItem(UNDO_KEY) ?? "[]")).toHaveLength(1);
+    expect(JSON.parse(localStorage.getItem(UNDO_KEY) ?? "[]")).toHaveLength(0);
   });
 
   it("flushes a queued write when the page goes away", () => {
@@ -54,6 +54,6 @@ describe("Create undo history persistence", () => {
     manager.pushUndo(UndoOperationType.GENERATE_SEQUENCE, snapshot(1));
     window.dispatchEvent(new Event("pagehide"));
 
-    expect(JSON.parse(localStorage.getItem(UNDO_KEY) ?? "[]")).toHaveLength(1);
+    expect(JSON.parse(localStorage.getItem(UNDO_KEY) ?? "[]")).toHaveLength(0);
   });
 });

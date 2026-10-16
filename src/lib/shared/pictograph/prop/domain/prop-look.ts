@@ -446,7 +446,8 @@ export function modelSpriteCrop(
 /** The maker whose product a look was traced from, and where to find it. */
 export interface PropDesignCredit {
   originator: string;
-  sourceUrl: string;
+  /** Absent until the originator names a product page. */
+  sourceUrl?: string;
 }
 
 /**

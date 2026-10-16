@@ -3,6 +3,11 @@ import { page } from "vitest/browser";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
+vi.mock("./BuugengPairPreview.svelte", async () => ({
+  default: (await import("./__test-stubs__/BuugengPairPreviewStub.svelte"))
+    .default,
+}));
+
 import PropGrid from "./PropGrid.svelte";
 
 const FIRE_FAN = {
@@ -69,6 +74,20 @@ describe("PropGrid fan look credit", () => {
       );
     }
   );
+
+  it("names Flow DNA without a link until it has a product page", async () => {
+    renderRail({ build: "sense", frameColor: "black", cover: "bare" });
+
+    await page.getByTestId("fan-look-chip").click();
+
+    await expect
+      .element(page.getByRole("button", { name: "Back to all props" }))
+      .toBeVisible();
+    const credit = document.querySelector(".rail-credit");
+    expect(credit?.tagName).toBe("SPAN");
+    expect(credit?.querySelector(".credit-long")?.textContent).toBe("Flow DNA");
+    expect(document.querySelector("a.rail-credit, .rail-credit a")).toBeNull();
+  });
 
   it("keeps the heading plain for the house DoodleGrip", async () => {
     renderRail({ build: "fire", frameColor: "black", cover: "bare" });

@@ -10,7 +10,7 @@
    * and letting the reader flip between them instead of scrolling inside one.
    */
   import CodexPageBody from "./CodexPageBody.svelte";
-  import { SHEET1 } from "../../codex/_data/codex-groups";
+  import { SHEET1 } from "../../../codex/_data/codex-groups";
 </script>
 
 <CodexPageBody sheet={SHEET1} />

@@ -77,6 +77,8 @@ export interface InkTipSource3D extends SceneEffectTipBase3D {
 export interface SilkTipSource3D extends SceneEffectTipBase3D {
   effect: "silk";
   params: Silk3DParams;
+  /** World-space supporting surface the fabric rests on. */
+  collisionFloorY: number;
 }
 
 export interface AnimalTipSource3D extends SceneEffectTipBase3D {

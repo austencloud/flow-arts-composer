@@ -11,6 +11,8 @@
   import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
   import RobustAvatar from "#lib/shared/components/avatar/RobustAvatar.svelte";
   import WordHeader from "#lib/shared/animation-engine/components/layers/WordHeader.svelte";
+  import { deriveHeaderPatternGlyphs } from "#lib/shared/foundation/domain/sequence-patterns/header-pattern-glyphs.js";
+  import { deriveTurnLabel } from "#lib/shared/foundation/domain/sequence-patterns/turn-pattern.js";
   import TkaLabel from "#lib/shared/components/TkaLabel.svelte";
   import type { ComponentProps } from "svelte";
   import WordActionMenu from "#lib/shared/choreo-card/components/WordActionMenu.svelte";
@@ -149,6 +151,8 @@
     onShareActionSelect,
   }: Props = $props();
 
+  const patternDescriptionId = $props.id();
+
   const FULL_CHROME_MIN_WIDTH = 1080;
   const LABELLED_CHROME_MIN_WIDTH = 1840;
   const GENEROUS_CHROME_MIN_WIDTH = 2200;
@@ -175,6 +179,22 @@
   /** True only when the slot is showing `sequence.word` itself — gates the
    *  glyph renderer and the word-specific actions in the menu below. */
   const isWordTitle = $derived(!trimmedTitleOverride && !!sequence.word);
+  const headerPatterns = $derived(
+    isWordTitle ? deriveHeaderPatternGlyphs(sequence) : null
+  );
+  const patternDescription = $derived.by(() => {
+    const descriptions: string[] = [];
+    if (headerPatterns?.turnGlyphEntries?.length) {
+      descriptions.push(
+        `Turn pattern: ${deriveTurnLabel(headerPatterns.turnGlyphEntries)}`
+      );
+    }
+    if (headerPatterns?.reversalGlyph) {
+      const { sequence: symbols, period } = headerPatterns.reversalGlyph;
+      descriptions.push(`Reversal pattern: ${symbols.slice(0, period)}`);
+    }
+    return descriptions.length ? descriptions.join(". ") : undefined;
+  });
   const activeWordStepNumber = $derived(
     ctx.editingPane !== "image" &&
       ctx.highlightedStepIndex !== null &&
@@ -499,6 +519,7 @@
               word: actions.copyableWord,
             })
           : displayTitle}
+        aria-describedby={patternDescription ? patternDescriptionId : undefined}
         title={isWordTitle
           ? t("viewer_header_word_actions_for", { word: actions.copyableWord })
           : displayTitle}
@@ -511,6 +532,8 @@
               darkMode
               presentation="chrome"
               activeStepNumber={activeWordStepNumber}
+              turnGlyphEntries={headerPatterns?.turnGlyphEntries ?? null}
+              reversalGlyph={headerPatterns?.reversalGlyph ?? null}
             />
           {:else}
             <!-- A tunnel name sets TKA words against prose ("BBBA × ΩORZ
@@ -528,6 +551,12 @@
           ></i>
         {/if}
       </button>
+
+      {#if patternDescription}
+        <span id={patternDescriptionId} class="sr-only"
+          >{patternDescription}</span
+        >
+      {/if}
 
       {#if actions.copied}
         <div class="word-status" role="status" aria-live="polite">

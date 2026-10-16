@@ -7,6 +7,7 @@
   Motions record the lesson also reads.
 -->
 <script lang="ts">
+  import Sentences from "../../_components/Sentences.svelte";
   import { onMount } from "svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
@@ -88,7 +89,7 @@
     lede={t(COPY.three)}
   />
 
-  <p class="intro">{t(COPY.arrow)} {t(COPY.hand)}</p>
+  <p class="intro"><Sentences text={`${t(COPY.arrow)} ${t(COPY.hand)}`} /></p>
 
   <div class="moves-wrap">
     <ul class="moves">
@@ -113,7 +114,7 @@
 
   <section class="combinations" aria-labelledby="hand-combinations-lead">
     <p id="hand-combinations-lead" class="lead">
-      {handMotionsTopicText("combinationsLead")}
+      <Sentences text={handMotionsTopicText("combinationsLead")} />
     </p>
     <div class="board" class:dark={darkMode} bind:this={board}>
       <HandCombinationBoard

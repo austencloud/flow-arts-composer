@@ -52,6 +52,13 @@ those holds `timedOut`. The 15 s safety net stays. A thrown error anywhere
 in the registry must still leave `ready` able to dismiss (same wrapping
 rule as round 1).
 
+Revised 2026-10-15 after a check in Austen's Chrome on 5173: the Create view
+mounted 3.4 s after `ready` and only then asked for `create-previews`, so a
+cap counted from `ready` timed the previews out 0.6 s later and the screen
+left on empty tiles. Each hold now times out 4000 ms after `ready` or after
+it was asked for, whichever is later, and no hold keeps the screen past
+`ready` + 8000 ms.
+
 ### A final milestone `composed`
 
 Add `composed` after `ready` in the fixed rank order. It is reported by the

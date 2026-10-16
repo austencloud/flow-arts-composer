@@ -655,8 +655,8 @@
     // CurrentWritable stores. Reading `.current` yielded undefined, so this
     // effect returned early on every run: the fog, the tone-mapping exposure
     // and the terrain grade below it had never reached the renderer.
-    const activeScene = scene;
-    const activeRenderer = renderer;
+    const activeScene = "current" in scene ? scene.current : scene;
+    const activeRenderer = "current" in renderer ? renderer.current : renderer;
     if (!activeScene || !activeRenderer) return;
     activeScene.fog = fog;
     activeRenderer.toneMappingExposure = atmosphere.grade.exposure;
@@ -738,7 +738,7 @@
 
   useTask((delta) => {
     sceneElapsed += delta;
-    const activeScene = scene;
+    const activeScene = "current" in scene ? scene.current : scene;
     const proof = (globalThis as Record<string, unknown>)
       .__flowFestProduction as Record<string, unknown> | undefined;
     if (proof) {

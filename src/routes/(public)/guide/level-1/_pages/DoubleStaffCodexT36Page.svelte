@@ -5,8 +5,8 @@
    *
    * Pure reuse of the printable codex's SHEET2 (see DoubleStaffCodexT12Page).
    */
-  import CodexSheet from "../../codex/_components/CodexSheet.svelte";
-  import { SHEET2 } from "../../codex/_data/codex-groups";
+  import CodexSheet from "../../../codex/_components/CodexSheet.svelte";
+  import { SHEET2 } from "../../../codex/_data/codex-groups";
 </script>
 
 <div class="codex-page">

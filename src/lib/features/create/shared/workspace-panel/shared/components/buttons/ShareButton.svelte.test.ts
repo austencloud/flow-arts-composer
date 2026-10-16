@@ -287,6 +287,40 @@ describe("ShareButton", () => {
       .not.toBeInTheDocument();
   });
 
+  it("copies the link from the first screen and offers Send to a friend there", async () => {
+    shareButtonMocks.createShortCode.mockResolvedValueOnce({
+      code: "COPY",
+      url: "https://tka.run/COPY",
+    });
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    const write = vi.fn(async (items: ClipboardItem[]) => {
+      await items[0]?.getType("text/plain");
+    });
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { write, writeText },
+    });
+    render(ShareButton, { sequence });
+
+    await page.getByRole("button", { name: "Share sequence" }).click();
+    await expect
+      .element(page.getByRole("button", { name: /Send to a friend/ }))
+      .toBeInTheDocument();
+    await page.getByRole("button", { name: /Copy link/ }).click();
+
+    await vi.waitFor(() =>
+      expect(writeText).toHaveBeenCalledWith(
+        "https://tkaflowarts.com/sequence/COPY"
+      )
+    );
+    await expect
+      .element(page.getByRole("button", { name: /Link copied/ }))
+      .toHaveTextContent("tkaflowarts.com/sequence/COPY");
+    await expect
+      .element(page.getByRole("dialog", { name: "Share sequence" }))
+      .toBeInTheDocument();
+  });
+
   it("renders the workspace snapshot offscreen and downloads its returned video", async () => {
     render(ShareButton, { sequence });
 

@@ -24,8 +24,9 @@
   named by `hintLabel`; `goal` rings the cell asked for (Austen, 2026-10-12:
   learners could not tell what the six were, so they can tap one for help).
 
-  `peek` shows an unfound cell's picture for a moment, without its check:
-  the Learn quiz uses it to show what a wrong answer looks like.
+  `missed` marks wrong answers in the Learn quiz: each shows its own picture
+  with a cross instead of a check, so the learner can compare it with the
+  picture asked about. It stays until the round's right answer.
 
   A host can set `--board-wide-columns` (6 by default) for a wide board.
 -->
@@ -34,16 +35,12 @@
   import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { LETTER_TYPE_COLORS } from "#lib/shared/pictograph/shared/domain/constants/pictograph-constants.js";
-  import { startPlacementDeriver } from "#lib/shared/pictograph/shared/services/start-placement-deriver.js";
-  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
-  import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
-  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import {
     HAND_COMBINATIONS,
-    combinationPictographData,
     plainTopicText,
     type HandCombinationId,
   } from "./hand-motions-topic.js";
+  import { combinationMove } from "./combination-playback.svelte.js";
 
   interface Props {
     found?: ReadonlySet<HandCombinationId> | null;
@@ -58,7 +55,7 @@
     goal?: HandCombinationId | null;
     onHint?: (id: HandCombinationId) => void;
     hintLabel?: (name: string) => string;
-    peek?: HandCombinationId | null;
+    missed?: ReadonlySet<HandCombinationId> | null;
   }
 
   let {
@@ -74,31 +71,14 @@
     goal = null,
     onHint = undefined,
     hintLabel = (name) => name,
-    peek = null,
+    missed = null,
   }: Props = $props();
 
-  /** Where the example's hands start, for a cell that plays its move. */
-  function startPose(data: PictographData): PictographData | null {
-    try {
-      return startPlacementDeriver.deriveFromFirstStep(
-        data as unknown as StepData
-      ) as unknown as PictographData;
-    } catch {
-      return null;
-    }
-  }
-
-  const cells = HAND_COMBINATIONS.map((combination) => {
-    const data = combinationPictographData(combination);
-    return {
-      combination,
-      data,
-      start: startPose(data),
-      // The container plays a move only for a step.
-      step: createStepData({ ...data, id: data.id }),
-      tones: LETTER_TYPE_COLORS[combination.letterType],
-    };
-  });
+  const cells = HAND_COMBINATIONS.map((combination) => ({
+    combination,
+    ...combinationMove(combination),
+    tones: LETTER_TYPE_COLORS[combination.letterType],
+  }));
 </script>
 
 <div class="board-frame">
@@ -118,11 +98,12 @@
       <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
       <li
         class="cell"
+        data-combination-cell={combination.id}
         class:found={isFound}
         class:lit={lit === combination.id}
         class:hintable
         class:goal={hintable && goal === combination.id}
-        class:peek={!isFound && peek === combination.id}
+        class:missed={!isFound && !!missed?.has(combination.id)}
         style:--tone-a={tones[0]}
         style:--tone-b={tones[1]}
         aria-hidden={isFound || hintable ? undefined : "true"}
@@ -134,7 +115,7 @@
           : undefined}
       >
         <div class="art" aria-hidden="true">
-          <div class="picture">
+          <div class="picture" data-combination-picture={combination.id}>
             <PictographContainer
               pictographData={data}
               gridMode={GridMode.DIAMOND}
@@ -156,7 +137,7 @@
             />
           </div>
         </div>
-        <div class="label">
+        <div class="label" data-combination-label={combination.id}>
           <span class="name">{plainTopicText(combination.name)}</span>
           <span class="bar" aria-hidden="true"></span>
           {#if showDescriptions}
@@ -165,7 +146,12 @@
             >
           {/if}
         </div>
-        <i class="fa-solid fa-check check" aria-hidden="true"></i>
+        <i
+          class="fa-solid check"
+          class:fa-check={!missed?.has(combination.id)}
+          class:fa-xmark={!isFound && !!missed?.has(combination.id)}
+          aria-hidden="true"
+        ></i>
         {#if hintable}
           <button
             type="button"
@@ -265,18 +251,37 @@
     border-color: color-mix(in srgb, var(--tone-a) 70%, transparent);
   }
 
-  /* A wrong answer's own picture, shown for a moment. */
-  .cell.peek {
-    border-style: dashed;
-    border-color: currentColor;
+  /* A wrong answer: its own picture and a cross, to compare. */
+  .cell.missed {
+    border-color: color-mix(in srgb, var(--semantic-error) 75%, transparent);
+    background: color-mix(in srgb, var(--semantic-error) 8%, transparent);
+    animation: missed-shake var(--duration-dramatic, 350ms)
+      var(--ease-standard, ease);
   }
 
-  .peek .picture {
+  .missed .picture {
     opacity: 1;
   }
 
-  .peek .name,
-  .peek .bar,
+  .missed .check {
+    opacity: 1;
+    background: var(--semantic-error);
+    color: white;
+  }
+
+  @keyframes missed-shake {
+    20%,
+    60% {
+      translate: -0.3rem 0;
+    }
+    40%,
+    80% {
+      translate: 0.3rem 0;
+    }
+  }
+
+  .missed .name,
+  .missed .bar,
   .goal .name,
   .goal .bar,
   .hintable:hover .name,
@@ -386,6 +391,10 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
+    .cell.missed {
+      animation: none;
+    }
+
     .cell,
     .picture,
     .name,

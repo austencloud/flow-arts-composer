@@ -27,6 +27,9 @@ export interface DeepLinkLoadResult {
 import type { DeepLinker } from "#lib/shared/navigation/services/deep-linker.js";
 import { deriveLettersForSequence } from "#lib/shared/navigation/services/letter-deriver.js";
 import { derivePositionsForSequence } from "#lib/shared/navigation/services/position-deriver.js";
+import { setPerformanceTransferEditorBaseline } from "#lib/shared/3d/services/performance-transfer.js";
+import { processReversals } from "#lib/shared/create/services/reversal-detector.js";
+import { normalizeSequenceDerived } from "#lib/shared/create/services/sequence-derived-fields.js";
 
 const PENDING_EDIT_KEY = "tka-pending-edit-sequence";
 
@@ -167,7 +170,21 @@ export class DeepLinkSequenceHandler {
           sequenceWithPlacements,
           sequenceWithLetters
         );
-        setSequence(enrichedSequence);
+        setSequence(
+          setPerformanceTransferEditorBaseline(
+            enrichedSequence,
+            (candidate) => {
+              const numbered = {
+                ...candidate,
+                steps: candidate.steps.map((step, index) => ({
+                  ...step,
+                  stepNumber: index + 1,
+                })),
+              };
+              return normalizeSequenceDerived(processReversals(numbered));
+            }
+          )
+        );
       })
       .catch((err) => {
         console.warn("Placement/letter derivation failed:", err);
@@ -191,7 +208,8 @@ export class DeepLinkSequenceHandler {
           step.startPlacement ??
           sequenceWithPlacements.steps[index]?.startPlacement,
         endPlacement:
-          step.endPlacement ?? sequenceWithPlacements.steps[index]?.endPlacement,
+          step.endPlacement ??
+          sequenceWithPlacements.steps[index]?.endPlacement,
       })),
       startPlacement: sequenceWithLetters.startPlacement
         ? {

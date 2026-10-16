@@ -42,6 +42,7 @@
         "fan__lotus",
         "fan__flat-grip",
         "fan__star",
+        "fan__sense",
         "fan__day_black_bare",
         "fan__moon",
         "bigfan",

@@ -26,7 +26,7 @@ import { calculateDifficultyLevel } from "#lib/shared/browse/services/sequence-d
 import { processReversals } from "#lib/shared/create/services/reversal-detector.js";
 import { transformSequence } from "#lib/features/choreo-card/services/reversal-seed-service.js";
 import { loadDiamondEdges } from "#lib/features/choreo-card/services/pictograph-letter-lookup.js";
-import { getReversalPattern } from "#lib/features/choreo-card/domain/reversal-patterns.js";
+import { getReversalPattern } from "#lib/shared/foundation/domain/sequence-patterns/reversal-patterns.js";
 import type { ResolvedReversalPattern } from "#lib/features/choreo-card/domain/reversal-transform.js";
 
 /** Reserved author for the defined T&D alphabet, so it is filterable and

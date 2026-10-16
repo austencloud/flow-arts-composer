@@ -1,179 +1,633 @@
-/**
- * Sequence Persistence Service Implementation
- *
- * Manages sequence state persistence that survives hot module replacement.
- * Uses the shared persistence service to store and restore sequence state.
- *
- * Each creation mode (Constructor, Generator, Assembler) has its own workspace
- * with independent localStorage persistence.
- */
-
-import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
 import {
   initialize as persistenceInitialize,
   saveCurrentSequenceState,
   loadCurrentSequenceState,
   clearCurrentSequenceState,
 } from "#lib/shared/persistence/services/dexie-persistence-service.js";
-import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
-import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { db } from "#lib/shared/persistence/database/tka-database.js";
+import { UserWorkType } from "#lib/shared/persistence/domain/enums/user-work-type.js";
 import type { ActiveCreateModule } from "#lib/shared/foundation/ui/ui-types.js";
 import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
-import type { ErrorHandler } from '#lib/shared/application/services/error-handler.js'
+import {
+  commitDraft,
+  getDraftHead,
+  listStoredDraftVersions,
+  storeDivergentDraft,
+} from "./draft-storage.js";
+import type {
+  DraftHistory,
+  DraftStatus,
+  DraftVersion,
+  WorkspaceDraftState,
+} from "./draft-types.js";
+
+export type {
+  DraftHistory,
+  DraftStatus,
+  DraftVersion,
+  WorkspaceDraftState,
+} from "./draft-types.js";
+
+type HistoryAdapter = {
+  capture(mode: ActiveCreateModule): DraftHistory;
+  restore(
+    mode: ActiveCreateModule,
+    sessionId: string,
+    history?: DraftHistory
+  ): void;
+};
+type LocalDraft = {
+  workspace: WorkspaceDraftState | null;
+  id: string | null;
+  sessionId: string | null;
+};
+const modes: ActiveCreateModule[] = [
+  "construct",
+  "generate",
+  "assemble",
+  "spell",
+];
+const localKey = (mode: ActiveCreateModule) => `tka-${mode}-sequence-state-v1`;
+const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
+const newId = () =>
+  globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
+const isMode = (value: unknown): value is ActiveCreateModule =>
+  typeof value === "string" && modes.includes(value as ActiveCreateModule);
+const errorText = (error: unknown): string =>
+  error instanceof Error ? error.message : String(error);
 
 export class SequencePersister {
-  /**
-   * Get the current active mode from navigation state
-   * Dynamically imported to avoid circular dependencies
-   */
-  private async getCurrentMode(): Promise<string> {
-    try {
-      return navigationState.currentSection || "construct";
-    } catch (error) {
-      console.warn(
-        "⚠️ Failed to get current mode, defaulting to construct:",
-        error
-      );
-      return "construct";
-    }
-  }
+  private readonly writerId = newId();
+  private readonly revisions = new Map<ActiveCreateModule, number | null>();
+  private readonly sessions = new Map<ActiveCreateModule, string>();
+  private readonly preparedResumes = new Map<
+    ActiveCreateModule,
+    DraftVersion
+  >();
+  private readonly statuses = new Map<ActiveCreateModule, DraftStatus>();
+  private readonly listeners = new Map<
+    ActiveCreateModule,
+    Set<(status: DraftStatus) => void>
+  >();
+  private readonly queues = new Map<ActiveCreateModule, Promise<unknown>>();
+  private readonly pending = new Map<ActiveCreateModule, WorkspaceDraftState>();
+  private readonly pendingHistory = new Map<
+    ActiveCreateModule,
+    DraftHistory | undefined
+  >();
+  private readonly pendingRecovery = new Map<
+    ActiveCreateModule,
+    DraftVersion
+  >();
+  private readonly dirtyGeneration = new Map<ActiveCreateModule, number>();
+  private readonly durableGeneration = new Map<ActiveCreateModule, number>();
+  private historyAdapter: HistoryAdapter | null = null;
 
+  private currentMode(): ActiveCreateModule {
+    return isMode(navigationState.currentSection)
+      ? navigationState.currentSection
+      : "construct";
+  }
+  private session(mode: ActiveCreateModule): string {
+    let session = this.sessions.get(mode);
+    if (!session) {
+      session = newId();
+      this.sessions.set(mode, session);
+    }
+    return session;
+  }
+  getSessionId(mode: ActiveCreateModule): string {
+    return this.session(mode);
+  }
+  getDraftStatus(mode: ActiveCreateModule): DraftStatus {
+    return (
+      this.statuses.get(mode) ?? {
+        status: "idle",
+        savedAt: null,
+        error: null,
+        candidates: [],
+        sessionId: this.session(mode),
+      }
+    );
+  }
+  subscribeDraftStatus(
+    mode: ActiveCreateModule,
+    listener: (status: DraftStatus) => void
+  ): () => void {
+    const listeners = this.listeners.get(mode) ?? new Set();
+    listeners.add(listener);
+    this.listeners.set(mode, listeners);
+    listener(this.getDraftStatus(mode));
+    return () => {
+      listeners.delete(listener);
+    };
+  }
+  private setStatus(
+    mode: ActiveCreateModule,
+    update: Partial<DraftStatus>
+  ): void {
+    const status = {
+      ...this.getDraftStatus(mode),
+      ...update,
+      sessionId: this.session(mode),
+    };
+    this.statuses.set(mode, status);
+    this.listeners.get(mode)?.forEach((listener) => listener(status));
+  }
+  markDirty(mode: ActiveCreateModule): void {
+    this.dirtyGeneration.set(mode, (this.dirtyGeneration.get(mode) ?? 0) + 1);
+    const current = this.getDraftStatus(mode).status;
+    if (
+      current === "recovery" ||
+      current === "conflict" ||
+      this.pendingRecovery.has(mode)
+    )
+      return;
+    this.setStatus(mode, { status: "saving", error: null });
+  }
+  hasUncommittedEditorChanges(mode: ActiveCreateModule): boolean {
+    return (
+      (this.dirtyGeneration.get(mode) ?? 0) >
+      (this.durableGeneration.get(mode) ?? 0)
+    );
+  }
+  async preserveEditorSnapshot(
+    state: WorkspaceDraftState,
+    retainCandidateId?: string
+  ): Promise<boolean> {
+    const mode = state.activeBuildSection;
+    if (!this.hasUncommittedEditorChanges(mode)) return true;
+    const generation = this.dirtyGeneration.get(mode) ?? 0;
+    const version = this.makeVersion(
+      mode,
+      state,
+      this.historyAdapter?.capture(mode)
+    );
+    return this.enqueue(mode, async () => {
+      await storeDivergentDraft(version, this.writerId, retainCandidateId);
+      this.durableGeneration.set(mode, generation);
+      this.setStatus(mode, { candidates: await this.listDrafts(mode) });
+      return !this.hasUncommittedEditorChanges(mode);
+    });
+  }
+  setHistoryAdapter(adapter: HistoryAdapter): void {
+    this.historyAdapter = adapter;
+  }
   async initialize(): Promise<void> {
-    try {
-      await persistenceInitialize();
-    } catch (error) {
-      console.error("❌ SequencePersister: Failed to initialize:", error);
-      throw error;
-    }
+    await persistenceInitialize();
   }
-
-  async saveCurrentState(state: {
-    currentSequence: SequenceData | null;
-    selectedStartPlacement: StartPlacementData | null;
-    hasStartPlacement: boolean;
-    activeBuildSection: ActiveCreateModule;
-  }): Promise<void> {
+  async waitForPendingSaves(): Promise<void> {
+    // Failed primary writes can still have a durable recovery copy to list.
+    await Promise.allSettled([...this.queues.values()]);
+  }
+  private enqueue<T>(
+    mode: ActiveCreateModule,
+    operation: () => Promise<T>
+  ): Promise<T> {
+    const previous = this.queues.get(mode) ?? Promise.resolve();
+    const next = previous.catch(() => undefined).then(operation);
+    this.queues.set(mode, next);
+    return next;
+  }
+  private makeVersion(
+    mode: ActiveCreateModule,
+    workspace: WorkspaceDraftState,
+    history?: DraftHistory
+  ): DraftVersion {
+    return {
+      id: newId(),
+      sessionId: this.session(mode),
+      mode,
+      savedAt: Date.now(),
+      workspace: clone(workspace),
+      ...(history ? { history: clone(history) } : {}),
+    };
+  }
+  private async writePrimary(version: DraftVersion): Promise<void> {
+    await saveCurrentSequenceState(version.workspace);
+    const key = localKey(version.mode);
+    const raw = JSON.parse(localStorage.getItem(key) ?? "{}") as Record<
+      string,
+      unknown
+    >;
+    localStorage.setItem(
+      key,
+      JSON.stringify({
+        ...raw,
+        draftId: version.id,
+        draftSessionId: version.sessionId,
+      })
+    );
+  }
+  async saveCurrentState(state: WorkspaceDraftState): Promise<void> {
+    return this.saveSnapshot(
+      state,
+      this.historyAdapter?.capture(state.activeBuildSection)
+    );
+  }
+  private async saveSnapshot(
+    state: WorkspaceDraftState,
+    history?: DraftHistory
+  ): Promise<void> {
+    const mode = state.activeBuildSection;
+    const snapshot = clone(state);
+    this.pending.set(mode, snapshot);
+    this.pendingHistory.set(mode, history);
+    this.markDirty(mode);
+    const generation = this.dirtyGeneration.get(mode) ?? 0;
+    return this.enqueue(mode, async () => {
+      const version = this.makeVersion(mode, snapshot, history);
+      try {
+        const current = this.getDraftStatus(mode).status;
+        if (
+          current === "recovery" ||
+          current === "conflict" ||
+          this.pendingRecovery.has(mode)
+        ) {
+          await storeDivergentDraft(version, this.writerId);
+          this.durableGeneration.set(mode, generation);
+          this.setStatus(mode, {
+            status: "conflict",
+            error: "Choose a draft version before continuing.",
+            candidates: await this.listDrafts(mode),
+          });
+          throw new Error("Choose a draft version before continuing.");
+        }
+        // An ordinary reread never grants this editor permission to replace another tab's changes.
+        const result = await commitDraft(
+          mode,
+          this.revisions.get(mode) ?? null,
+          version,
+          version,
+          this.writerId
+        );
+        if (!result.accepted) {
+          this.revisions.set(mode, result.revision);
+          this.durableGeneration.set(mode, generation);
+          this.setStatus(mode, {
+            status: "conflict",
+            error: "Another tab changed this draft.",
+            candidates: await this.listDrafts(mode),
+          });
+          throw new Error(
+            "Another tab changed this draft. Choose a version to continue."
+          );
+        }
+        this.revisions.set(mode, result.revision);
+        await this.writePrimary(version);
+        this.durableGeneration.set(mode, generation);
+        if (
+          this.pending.get(mode) === snapshot &&
+          !this.hasUncommittedEditorChanges(mode)
+        ) {
+          this.pending.delete(mode);
+          this.pendingHistory.delete(mode);
+          this.setStatus(mode, {
+            status: "saved",
+            savedAt: version.savedAt,
+            error: null,
+            candidates: [],
+          });
+        }
+      } catch (error) {
+        if (this.getDraftStatus(mode).status !== "conflict") {
+          this.setStatus(mode, { status: "error", error: errorText(error) });
+        }
+        throw error;
+      }
+    });
+  }
+  async retrySave(mode: ActiveCreateModule): Promise<void> {
+    const pending = this.pending.get(mode);
+    if (pending)
+      await this.saveSnapshot(pending, this.pendingHistory.get(mode));
+  }
+  private async readLocal(mode: ActiveCreateModule): Promise<LocalDraft> {
+    let raw: Record<string, unknown> | null = null;
     try {
-      await saveCurrentSequenceState(state);
-    } catch (error) {
-      console.error(
-        "❌ SequencePersister: Failed to save current state:",
-        error
-      );
-      const errorHandler = getErrorHandler() as ErrorHandler;
-      errorHandler.showUserError({
-        message: "Couldn't save your sequence",
-        technicalDetails: error instanceof Error ? error.message : String(error),
-        error: error instanceof Error ? error : new Error(String(error)),
-        severity: "error",
-        context: {
-          module: "create",
-          action: "save-sequence",
-        },
+      const text = localStorage.getItem(localKey(mode));
+      raw = text ? (JSON.parse(text) as Record<string, unknown>) : null;
+    } catch {
+      /* The legacy loader discards a damaged copy. */
+    }
+    const loaded = await loadCurrentSequenceState(mode);
+    return {
+      workspace: loaded ? { ...loaded, activeBuildSection: mode } : null,
+      id: typeof raw?.draftId === "string" ? raw.draftId : null,
+      sessionId:
+        typeof raw?.draftSessionId === "string" ? raw.draftSessionId : null,
+    };
+  }
+  private async legacyBackup(
+    mode: ActiveCreateModule
+  ): Promise<DraftVersion | null> {
+    if (mode !== "construct") return null;
+    const rows = await db.userWork
+      .where("[type+tabId]")
+      .equals([UserWorkType.SEQUENCE_DRAFT, "create"])
+      .sortBy("lastModified");
+    const row = rows.at(-1);
+    const data = row?.data as
+      | { sessionId?: unknown; sequenceData?: unknown }
+      | undefined;
+    if (
+      typeof data?.sessionId !== "string" ||
+      !data.sequenceData ||
+      typeof data.sequenceData !== "object" ||
+      !Array.isArray((data.sequenceData as { steps?: unknown }).steps)
+    )
+      return null;
+    return {
+      id: `legacy-create-${row?.id ?? data.sessionId}`,
+      sessionId: data.sessionId,
+      mode,
+      savedAt: row?.lastModified?.getTime() ?? Date.now(),
+      workspace: {
+        currentSequence:
+          data.sequenceData as WorkspaceDraftState["currentSequence"],
+        selectedStartPlacement: null,
+        hasStartPlacement: false,
+        activeBuildSection: mode,
+      },
+    };
+  }
+  async listDrafts(mode: ActiveCreateModule): Promise<DraftVersion[]> {
+    const versions = await listStoredDraftVersions(mode);
+    const retry = this.pendingRecovery.get(mode);
+    if (retry && !versions.some((version) => version.id === retry.id))
+      versions.push(retry);
+    let hasHead = true;
+    try {
+      hasHead = !!(await getDraftHead(mode));
+    } catch {
+      // A damaged head must not hide the independently stored versions.
+    }
+    if (!hasHead) {
+      const backup = await this.legacyBackup(mode);
+      if (backup) versions.push(backup);
+    }
+    return versions.sort((a, b) => b.savedAt - a.savedAt);
+  }
+  async loadCurrentState(mode?: string): Promise<WorkspaceDraftState | null> {
+    const target = isMode(mode) ? mode : this.currentMode();
+    try {
+      const head = await getDraftHead(target);
+      const local = await this.readLocal(target);
+      const originalRevision = this.revisions.get(target);
+      if (!this.revisions.has(target))
+        this.revisions.set(target, head?.revision ?? null);
+      if (
+        originalRevision !== undefined &&
+        originalRevision !== (head?.revision ?? null)
+      ) {
+        const pending = this.pending.get(target);
+        if (pending)
+          await storeDivergentDraft(
+            this.makeVersion(target, pending, this.pendingHistory.get(target)),
+            this.writerId
+          );
+        this.revisions.set(target, head?.revision ?? null);
+        this.setStatus(target, {
+          status: "conflict",
+          error: "Another tab changed this draft.",
+          candidates: await this.listDrafts(target),
+        });
+        return null;
+      }
+      if (head && !head.version) {
+        this.historyAdapter?.restore(target, this.session(target));
+        this.setStatus(target, {
+          status: "idle",
+          savedAt: null,
+          error: null,
+          candidates: [],
+        });
+        return null;
+      }
+      if (head?.version && local.workspace && local.id === head.version.id) {
+        this.sessions.set(target, head.version.sessionId);
+        this.historyAdapter?.restore(
+          target,
+          head.version.sessionId,
+          head.version.history
+        );
+        this.setStatus(target, {
+          status: "saved",
+          savedAt: head.version.savedAt,
+          error: null,
+          candidates: [],
+        });
+        return local.workspace;
+      }
+      if (head?.version) {
+        if (local.workspace && local.id !== head.version.id) {
+          await storeDivergentDraft(
+            {
+              id: local.id ?? newId(),
+              sessionId: local.sessionId ?? newId(),
+              mode: target,
+              savedAt: Date.now(),
+              workspace: clone(local.workspace),
+            },
+            this.writerId
+          );
+        }
+        this.setStatus(target, {
+          status: local.workspace ? "conflict" : "recovery",
+          savedAt: head.version.savedAt,
+          error: null,
+          candidates: await this.listDrafts(target),
+        });
+        return null;
+      }
+      if (local.workspace) {
+        this.historyAdapter?.restore(target, this.session(target));
+        this.setStatus(target, {
+          status: "idle",
+          savedAt: null,
+          error: null,
+          candidates: [],
+        });
+        return local.workspace;
+      }
+      const backup = await this.legacyBackup(target);
+      if (!backup) this.historyAdapter?.restore(target, this.session(target));
+      this.setStatus(target, {
+        status: backup ? "recovery" : "idle",
+        candidates: backup ? [backup] : [],
+        error: null,
       });
-      throw error;
+      return null;
+    } catch (error) {
+      this.setStatus(target, {
+        status: "error",
+        error: errorText(error),
+        candidates: await listStoredDraftVersions(target).catch(() => []),
+      });
+      return null;
     }
   }
-
-  async loadCurrentState(mode?: string): Promise<{
-    currentSequence: SequenceData | null;
-    selectedStartPlacement: StartPlacementData | null;
-    hasStartPlacement: boolean;
-    activeBuildSection: ActiveCreateModule;
-  } | null> {
-    try {
-      const targetMode = mode ?? (await this.getCurrentMode());
-
-      const state = await loadCurrentSequenceState(targetMode);
-      if (state) {
-        const activeBuildSection = isActiveCreateModule(
-          state.activeBuildSection
-        )
-          ? state.activeBuildSection
-          : (targetMode as ActiveCreateModule);
-
-        return {
-          currentSequence: state.currentSequence,
-          selectedStartPlacement: state.selectedStartPlacement,
-          hasStartPlacement: state.hasStartPlacement,
-          activeBuildSection,
+  async prepareDraftResume(
+    mode: ActiveCreateModule,
+    id: string
+  ): Promise<void> {
+    this.preparedResumes.delete(mode);
+    const chosen = (await this.listDrafts(mode)).find(
+      (version) => version.id === id
+    );
+    // Initialization can autosave equivalent state with a new ID. Hold the
+    // selected version until recovery accepts it, before those effects start.
+    if (chosen) this.preparedResumes.set(mode, clone(chosen));
+  }
+  async recoverDraft(
+    mode: ActiveCreateModule,
+    id: string
+  ): Promise<WorkspaceDraftState | null> {
+    return this.enqueue(mode, async () => {
+      const prepared = this.preparedResumes.get(mode);
+      const chosen =
+        prepared?.id === id
+          ? prepared
+          : (await this.listDrafts(mode)).find((version) => version.id === id);
+      if (!chosen) return null;
+      try {
+        if (!this.revisions.has(mode)) {
+          const head = await getDraftHead(mode);
+          this.revisions.set(mode, head?.revision ?? null);
+        }
+        const accepted: DraftVersion = {
+          ...clone(chosen),
+          id: newId(),
+          savedAt: Date.now(),
         };
+        const result = await commitDraft(
+          mode,
+          this.revisions.get(mode) ?? null,
+          accepted,
+          accepted,
+          this.writerId
+        );
+        if (!result.accepted) {
+          this.revisions.set(mode, result.revision);
+          this.pendingRecovery.set(mode, chosen);
+          this.setStatus(mode, {
+            status: "conflict",
+            error: "Another tab changed this draft.",
+            candidates: await this.listDrafts(mode),
+          });
+          return null;
+        }
+        this.revisions.set(mode, result.revision);
+        await this.writePrimary(accepted);
+        this.sessions.set(mode, chosen.sessionId);
+        this.historyAdapter?.restore(mode, chosen.sessionId, chosen.history);
+        this.pending.delete(mode);
+        this.pendingHistory.delete(mode);
+        this.pendingRecovery.delete(mode);
+        this.preparedResumes.delete(mode);
+        this.durableGeneration.set(mode, this.dirtyGeneration.get(mode) ?? 0);
+        this.setStatus(mode, {
+          status: "saved",
+          savedAt: accepted.savedAt,
+          error: null,
+          candidates: [],
+        });
+        return clone(chosen.workspace);
+      } catch (error) {
+        this.pendingRecovery.set(mode, chosen);
+        try {
+          await storeDivergentDraft(chosen, this.writerId);
+        } catch {
+          // The current editor can still retry the selected version.
+        }
+        this.setStatus(mode, {
+          status: "error",
+          error: errorText(error),
+          candidates: await this.listDrafts(mode),
+        });
+        return null;
       }
-      return null;
-    } catch (error) {
-      console.error(
-        "❌ SequencePersister: Failed to load current state:",
-        error
-      );
-      const errorHandler = getErrorHandler() as ErrorHandler;
-      errorHandler.showUserError({
-        message: "Couldn't load your sequence",
-        technicalDetails: error instanceof Error ? error.message : String(error),
-        error: error instanceof Error ? error : new Error(String(error)),
-        severity: "error",
-        context: {
-          module: "create",
-          action: "load-sequence",
-        },
+    });
+  }
+  async startFreshDraft(
+    mode: ActiveCreateModule
+  ): Promise<WorkspaceDraftState | null> {
+    return this.enqueue(mode, async () => {
+      try {
+        const result = await commitDraft(
+          mode,
+          this.revisions.get(mode) ?? null,
+          null,
+          undefined,
+          this.writerId
+        );
+        if (!result.accepted) {
+          this.revisions.set(mode, result.revision);
+          this.setStatus(mode, {
+            status: "conflict",
+            error: "Another tab changed this draft.",
+            candidates: await this.listDrafts(mode),
+          });
+          return null;
+        }
+        this.revisions.set(mode, result.revision);
+        await clearCurrentSequenceState(mode);
+        const sessionId = newId();
+        this.sessions.set(mode, sessionId);
+        this.preparedResumes.delete(mode);
+        this.historyAdapter?.restore(mode, sessionId);
+        this.pending.delete(mode);
+        this.pendingHistory.delete(mode);
+        this.pendingRecovery.delete(mode);
+        this.durableGeneration.set(mode, this.dirtyGeneration.get(mode) ?? 0);
+        this.setStatus(mode, {
+          status: "idle",
+          savedAt: null,
+          error: null,
+          candidates: [],
+        });
+        return null;
+      } catch (error) {
+        this.setStatus(mode, { status: "error", error: errorText(error) });
+        return null;
+      }
+    });
+  }
+  async beginNewSession(mode: ActiveCreateModule): Promise<void> {
+    this.preparedResumes.delete(mode);
+    await this.enqueue(mode, async () => {
+      const head = await getDraftHead(mode);
+      this.revisions.set(mode, head?.revision ?? null);
+      const sessionId = newId();
+      this.sessions.set(mode, sessionId);
+      this.historyAdapter?.restore(mode, sessionId);
+      this.pending.delete(mode);
+      this.pendingHistory.delete(mode);
+      this.pendingRecovery.delete(mode);
+      this.durableGeneration.set(mode, this.dirtyGeneration.get(mode) ?? 0);
+      this.setStatus(mode, {
+        status: "idle",
+        savedAt: null,
+        error: null,
+        candidates: [],
       });
-      return null;
-    }
+    });
   }
-
   async clearCurrentState(mode?: string): Promise<void> {
-    try {
-      await clearCurrentSequenceState(mode);
-    } catch (error) {
-      console.error(
-        "❌ SequencePersister: Failed to clear current state:",
-        error
-      );
-      throw error;
+    const target = isMode(mode) ? mode : this.currentMode();
+    await this.startFreshDraft(target);
+    const status = this.getDraftStatus(target);
+    if (status.status === "error" || status.status === "conflict") {
+      throw new Error(status.error ?? "Could not clear draft");
     }
   }
-
   async hasSavedState(mode?: string): Promise<boolean> {
-    try {
-      const targetMode = mode ?? (await this.getCurrentMode());
-      const state = await loadCurrentSequenceState(targetMode);
-      return state !== null;
-    } catch (error) {
-      console.error(
-        "❌ SequencePersister: Failed to check for saved state:",
-        error
-      );
-      return false;
-    }
+    return (await this.loadCurrentState(mode)) !== null;
   }
-
   async getLastSaveTimestamp(mode?: string): Promise<number | null> {
-    try {
-      const targetMode = mode ?? (await this.getCurrentMode());
-      const state = await loadCurrentSequenceState(targetMode);
-      if (state && "timestamp" in state) {
-        const stateWithTimestamp = state as Record<string, unknown>;
-        const timestamp = stateWithTimestamp["timestamp"];
-        return typeof timestamp === "number" ? timestamp : null;
-      }
-      return null;
-    } catch (error) {
-      console.error(
-        "❌ SequencePersister: Failed to get last save timestamp:",
-        error
-      );
-      return null;
-    }
+    const target = isMode(mode) ? mode : this.currentMode();
+    return (await getDraftHead(target))?.version?.savedAt ?? null;
   }
-}
-
-function isActiveCreateModule(value: unknown): value is ActiveCreateModule {
-  return (
-    typeof value === "string" &&
-    (value === "construct" ||
-      value === "generate" ||
-      value === "assemble" ||
-      value === "spell")
-  );
 }
 
 export const sequencePersister = new SequencePersister();

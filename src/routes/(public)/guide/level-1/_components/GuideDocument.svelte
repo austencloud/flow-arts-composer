@@ -12,6 +12,7 @@
    */
   import type { Snippet, Component } from "svelte";
   import GuideCover from "./GuideCover.svelte";
+  import GuideFontPreload from "../../_components/GuideFontPreload.svelte";
   import GuideTOC from "./GuideTOC.svelte";
   import PagePlaceholder from "./PagePlaceholder.svelte";
   import ProofTextPage from "../_pages/ProofTextPage.svelte";
@@ -90,17 +91,9 @@
   );
 </script>
 
-<!-- Load the guide typefaces via a real <link> (robust) rather than relying on
-     the @import in guide.css, which Vite can drop when bundling per route - that
-     was making Tangerine fall back to Segoe Script on /print but not /book. -->
-<svelte:head>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
-  <link
-    rel="stylesheet"
-    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&family=Tangerine:wght@400;700&display=swap"
-  />
-</svelte:head>
+<!-- guide.css declares the self-hosted faces; this preloads the title and
+     lede faces so the sheets never paint in Segoe Script first. -->
+<GuideFontPreload />
 
 {#snippet coverContent()}
   <div class="cover-fill"><GuideCover theme={coverTheme} /></div>

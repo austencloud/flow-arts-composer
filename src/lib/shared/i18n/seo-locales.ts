@@ -21,7 +21,7 @@ export const OG_LOCALE: Record<PageLocale, string> = {
   pt: "pt_BR",
 };
 
-const LOCALIZED_ROOTS = ["/guide"];
+const LOCALIZED_ROOTS = ["/guide", "/codex"];
 
 // Noindex replicas (print, book) and dev tools inside the guide tree.
 const EXCLUDED_PREFIXES = [
@@ -31,8 +31,9 @@ const EXCLUDED_PREFIXES = [
   "/guide/level-1/cover-lab",
   "/guide/level-2/print",
   "/guide/level-2/book",
-  "/guide/codex/parity",
-  "/guide/codex/poster",
+  "/codex/parity",
+  "/codex/poster",
+  "/codex/print",
 ];
 
 const under = (path: string, prefix: string) =>

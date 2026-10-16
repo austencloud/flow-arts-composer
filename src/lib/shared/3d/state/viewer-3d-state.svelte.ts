@@ -547,6 +547,8 @@ export interface Viewer3DStateSeed extends Partial<Viewer3DPersistConfig> {
 }
 
 export interface Viewer3DStateOptions {
+  /** A renderer may expose fewer cast slots than the shared viewer supports. */
+  maxPerformers?: number;
   /** Used only when this user has never chosen a 3D environment. */
   firstUseEnvironment?: SceneEnvironmentId;
   /**
@@ -729,7 +731,16 @@ function buildViewer3DState(
   // keep their shared cap (4) by not passing maxPerformers at all.
   const performerManager: PerformerManager = createPerformerManager({
     initialCharacterId: DEFAULT_CHARACTER_ID,
-    maxPerformers: STAGE.MAX_VIEWER_PERFORMERS,
+    maxPerformers:
+      options.maxPerformers === undefined
+        ? STAGE.MAX_VIEWER_PERFORMERS
+        : Math.max(
+            1,
+            Math.min(
+              STAGE.MAX_VIEWER_PERFORMERS,
+              Math.floor(options.maxPerformers)
+            )
+          ),
     getDefaults: () => _defaultSettings,
     getFrontStageFacingAngle: () =>
       getViewerFrontStageFacingAngle(environmentId),

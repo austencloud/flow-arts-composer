@@ -12,7 +12,7 @@ import {
   type CodexBoxDef,
   type CodexCellDef,
   type CodexTypeDef,
-} from "../../../guide/codex/_data/codex-groups";
+} from "../../../codex/_data/codex-groups";
 
 export interface CodexLetterInfo {
   id: string;

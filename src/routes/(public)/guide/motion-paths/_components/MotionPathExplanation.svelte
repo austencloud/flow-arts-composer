@@ -732,13 +732,22 @@
       margin-block: clamp(1.5rem, 4vw, 3rem);
     }
 
+    /* Beside the drawing the words and Next read left, as Guide text
+       beside a figure does; stacked above it they stay centred. */
     .intro-copy {
       align-self: end;
+      place-items: end start;
+      text-align: left;
+    }
+
+    .copy-layer {
+      justify-items: start;
     }
 
     .intro-controls {
       align-self: start;
       min-height: 0;
+      justify-items: start;
     }
 
     .route-stage {

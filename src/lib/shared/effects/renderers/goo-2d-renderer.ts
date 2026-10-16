@@ -1,126 +1,66 @@
+import { normalizeGooLiquidControls } from "../domain/effects-config";
 import type { GooParams } from "../translators/canvas2d-types";
 import type { EmitterTip } from "./emitter-tip";
 import { emitterId } from "./emitter-tip";
+import { resolveGooLook2D, type GooLook2D } from "./goo-look-2d";
 import {
+  GOO_PIECE_FLOATS,
+  GooLiquidGL,
+  GooPieces,
+  hexToLinear,
+  type GooLiquidShade,
+} from "./goo-liquid-gl";
+import {
+  GOO_NODES,
   GooStrandSim,
-  gooBulbRadius,
-  resolveGooShape,
+  nodeRadius,
+  segmentRadius,
+  sphereRadius,
   type GooDrop,
   type GooMaterial,
-  type GooShape,
   type GooStrand,
   type GooTipInput,
 } from "./goo-strand-sim";
 
 /**
- * Goo for the Canvas2D backend: the 2D telling of the 3D goo.
+ * Goo for the Canvas2D backend: the 3D goo, seen flat.
  *
- * Each tracked tip carries a strand of thick liquid (see `GooStrandSim`): it
- * coats the tip, hangs from it under gravity, swings and stretches as the prop
- * moves, necks thin, and pinches off into falling drops. Viscosity decides how
- * long it clings before it lets go.
+ * Each tracked tip grows a rope of liquid with the 3D goo's physics (see
+ * `GooStrandSim`): it hangs, stretches, swings and curls as the prop moves,
+ * beads and necks, and lets go of drops that ring as they fall away.
  *
- * Drawing is plain vector work, no filters. Every shape is first filled in the
- * palette's deep tint, then the same shapes are redrawn smaller and nudged
- * toward one light up and to the left, clipped to the body: core color, a
- * brighter sheen, a backlit glow on the far side, and a sharp specular streak.
- * Because every highlight agrees on where the light is, the blobs read as one
- * wet surface. The shading happens on a transparent layer, so nothing outside
- * the goo is ever painted.
+ * Drawing is the 3D goo's wet material on a WebGL2 canvas (see
+ * `GooLiquidGL`): every rope, drop and bead is a lit, rounded body of liquid
+ * reflecting the same night studio. Where WebGL2 is missing the same shapes
+ * are filled flat.
  */
 
-const PX_PER_WORLD = 60;
-const LIGHT_LEN = Math.hypot(0.55, 0.83);
-/** Unit vector toward the key light, up and to the left (canvas y is down). */
-const LIGHT_X = -0.55 / LIGHT_LEN;
-const LIGHT_Y = -0.83 / LIGHT_LEN;
-const STRAND_SAMPLES = 18;
-/** Seconds a fresh drop keeps the torn neck as a tail behind it. */
-const SNAP_TIME = 0.18;
+/** Canvas pixels per meter of liquid at the reference canvas. */
+const PX_PER_METER = 145;
+/** Size of the liquid at the default base radius, m. */
+const BASE_RADIUS = 0.04;
+/** Centerline samples per rope segment. */
+const SUB = 3;
+const RINGS = (GOO_NODES - 1) * SUB + 1;
+/** Thinnest a thread is drawn, device px; finer ones would flicker. */
+const HAIRLINE = 0.6;
+/** Depth every piece is drawn at; the union of pieces sorts within it. */
+const DEPTH_AIR = 0.75;
 
 type Ctx2D = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
-
-interface Tube {
-  kind: "tube";
-  x: Float32Array;
-  y: Float32Array;
-  r: Float32Array;
-}
-
-interface Ball {
-  kind: "ball";
-  x: number;
-  y: number;
-  r: number;
-}
-
-interface Tear {
-  kind: "tear";
-  x: number;
-  y: number;
-  r: number;
-  /** Unit direction of travel; the tail trails the other way. */
-  ux: number;
-  uy: number;
-  tail: number;
-}
-
-type Piece = Tube | Ball | Tear;
-
-interface ShadePass {
-  op: GlobalCompositeOperation;
-  color: (p: GooParams["resolvedPalette"]) => string;
-  alpha: number;
-  /** Center offset toward the light, in local radii. */
-  shift: number;
-  /** Radius multiplier. */
-  size: number;
-}
-
-/**
- * Body, then light. Every pass after the first is clipped to the body
- * (`source-atop`), so the offsets can never paint outside the liquid.
- */
-const SHADE_PASSES: readonly ShadePass[] = [
-  {
-    op: "source-over",
-    color: (p) => p.puddleTint,
-    alpha: 1,
-    shift: 0,
-    size: 1,
-  },
-  { op: "source-atop", color: (p) => p.core, alpha: 1, shift: 0.22, size: 0.9 },
-  {
-    op: "source-atop",
-    color: (p) => p.edge,
-    alpha: 0.55,
-    shift: 0.4,
-    size: 0.55,
-  },
-  // Light that went through the liquid and came out the shadow side.
-  {
-    op: "source-atop",
-    color: (p) => p.edge,
-    alpha: 0.32,
-    shift: -0.52,
-    size: 0.38,
-  },
-  {
-    op: "source-atop",
-    color: (p) => p.highlight,
-    alpha: 0.9,
-    shift: 0.48,
-    size: 0.2,
-  },
-];
+type Matrix = { a: number; b: number; c: number; d: number; e: number; f: number };
 
 export class Goo2DRenderer {
-  private sim = new GooStrandSim();
-  private pieces: Piece[] = [];
-  private tubes: Tube[] = [];
+  readonly sim = new GooStrandSim();
+  private painter: GooLiquidGL | null | undefined;
+  private air = new GooPieces();
   private tips: GooTipInput[] = [];
-  private layer: HTMLCanvasElement | OffscreenCanvas | null = null;
-  private layerCtx: Ctx2D | null = null;
+  private layers: Array<{ canvas: HTMLCanvasElement | OffscreenCanvas; ctx: Ctx2D }> = [];
+  private ringX = new Float32Array(RINGS);
+  private ringY = new Float32Array(RINGS);
+  private ringR = new Float32Array(RINGS);
+  private shadeKey = "";
+  private shade: GooLiquidShade | null = null;
 
   render(
     ctx: CanvasRenderingContext2D,
@@ -131,7 +71,7 @@ export class Goo2DRenderer {
   ): void {
     const W = ctx.canvas.width;
     const H = ctx.canvas.height;
-    const m =
+    const m: Matrix =
       typeof ctx.getTransform === "function"
         ? ctx.getTransform()
         : { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 };
@@ -143,248 +83,340 @@ export class Goo2DRenderer {
     this.tips.length = 0;
     for (const e of emitters) {
       if (!isEndEnabled(e.end, params)) continue;
-      this.tips.push({
-        id: emitterId(e.propIndex, e.tipIndex),
-        x: e.x,
-        y: e.y,
-      });
+      this.tips.push({ id: emitterId(e.propIndex, e.tipIndex), x: e.x, y: e.y });
     }
+    const look = resolveGooLook2D(params.palette);
+    const liquid = normalizeGooLiquidControls(params);
+    const k = PX_PER_METER * scale;
     const material: GooMaterial = {
-      viscosity: params.surfaceTension,
-      amount: params.motionEmission,
-      ambient: params.ambientEmission,
-      intensity: params.intensity,
-      gravity: Number.isFinite(params.gravity)
-        ? Math.max(0, Math.min(2, params.gravity))
-        : 1,
-      scale,
-      referenceSpeed: params.motionReferenceSpeed * PX_PER_WORLD * scale,
+      viscosity: liquid.viscosity,
+      tension: liquid.surfaceTension,
+      intensity: clamp01(params.intensity),
+      ambient: clamp01(params.ambientEmission),
+      motion: clamp01(params.motionEmission),
+      ambientSpawnRate: params.ambientSpawnRate,
+      motionSpawnRate: params.motionSpawnRate,
+      referenceSpeed: params.motionReferenceSpeed,
+      baseRadius: BASE_RADIUS * (params.baseRadius > 0 ? params.baseRadius / 4 : 1),
+      gravity: liquid.gravity,
+      spew: params.spewStyle ?? "flow",
+      pxPerMeter: k,
+      look,
     };
     this.sim.step(this.tips, dt, material, bounds);
 
-    this.buildPieces(resolveGooShape(material), scale, bounds);
-    if (!this.pieces.length) return;
+    const rs = Math.sqrt(Math.abs(m.a * m.d - m.b * m.c)) || 1;
+    this.buildAir(material, m, k, rs);
+    if (!this.air.count) return;
 
-    const layer = this.ensureLayer(W, H);
-    if (!layer || !this.layer) return;
-    layer.setTransform(1, 0, 0, 1, 0, 0);
-    layer.globalCompositeOperation = "source-over";
-    layer.globalAlpha = 1;
-    layer.clearRect(0, 0, W, H);
-    layer.setTransform(m.a, m.b, m.c, m.d, m.e, m.f);
-
-    const palette = params.resolvedPalette;
-    for (const pass of SHADE_PASSES) {
-      layer.globalCompositeOperation = pass.op;
-      layer.globalAlpha = pass.alpha;
-      layer.fillStyle = pass.color(palette);
-      for (const piece of this.pieces) {
-        layer.beginPath();
-        tracePiece(layer, piece, pass.shift, pass.size);
-        layer.fill();
-      }
+    const shade = this.resolveShade(params, look);
+    if (this.painter === undefined || this.painter?.lost) {
+      this.painter = GooLiquidGL.create();
     }
-
     ctx.save();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalCompositeOperation = params.blendMode ?? "source-over";
-    ctx.globalAlpha = 0.72 + 0.28 * clamp01(params.intensity);
-    ctx.drawImage(this.layer as CanvasImageSource, 0, 0);
+    ctx.globalAlpha = 1;
+    const glow = look.glow > 0 ? this.glowLayers(W, H) : null;
+    let image: HTMLCanvasElement | OffscreenCanvas | null = null;
+    if (this.painter) {
+      this.painter.draw(W, H, this.air, shade);
+      image = this.painter.canvas;
+    } else {
+      image = this.fillFlat(W, H, this.air, params.resolvedPalette.core, shade.alpha);
+    }
+    if (image) {
+      ctx.drawImage(image as CanvasImageSource, 0, 0);
+      if (glow) {
+        for (const level of glow) {
+          level.ctx.drawImage(
+            image as CanvasImageSource,
+            0,
+            0,
+            level.canvas.width,
+            level.canvas.height
+          );
+        }
+        this.addGlow(ctx, look, W, H, glow);
+      }
+    }
     ctx.restore();
   }
 
-  /** Turn the sim's strands and drops into this frame's drawable shapes. */
-  private buildPieces(
-    shape: GooShape,
-    scale: number,
-    bounds: { width: number; height: number }
-  ): void {
-    this.pieces.length = 0;
-    let tubeIndex = 0;
-    const root = shape.bulbMaxRadius * 0.3;
-    for (const strand of this.sim.strands.values()) {
-      const rb = gooBulbRadius(shape, strand.fill);
-      const { tail, head } = strand;
-      const len = Math.hypot(head.x - tail.x, head.y - tail.y);
-      if (len > 0.5 * scale) {
-        const tube = (this.tubes[tubeIndex++] ??= {
-          kind: "tube",
-          x: new Float32Array(STRAND_SAMPLES + 1),
-          y: new Float32Array(STRAND_SAMPLES + 1),
-          r: new Float32Array(STRAND_SAMPLES + 1),
-        });
-        sampleStrand(tube, strand, root, rb, len, shape.pinchLength, scale);
-        this.pieces.push(tube);
+  /** The ropes and the drops in flight, in device pixels. */
+  private buildAir(material: GooMaterial, m: Matrix, k: number, rs: number): void {
+    this.air.clear();
+    for (const strand of this.sim.strands) this.ropePieces(strand, m, k, rs);
+    for (const drop of this.sim.drops) this.dropPiece(drop, material, m, k, rs);
+  }
+
+  /**
+   * The 3D goo's rope surface: a rounded root, the centerline as a
+   * Catmull-Rom curve whose radius follows each segment's volume, and the
+   * bulb blended in as a sphere.
+   */
+  private ropePieces(strand: GooStrand, m: Matrix, k: number, rs: number): void {
+    const n = strand.count;
+    if (n < 1) return;
+    const { ringX: X, ringY: Y, ringR: R } = this;
+    const bulb = sphereRadius(strand.bulb);
+    const glob = strand.attached ? strand.nozzle * 0.75 : 0;
+    const px = strand.x;
+    const py = strand.y;
+    const point = (p: Float32Array, node: number) => {
+      if (node < 0) return 2 * p[0]! - p[1]!;
+      if (node >= n) return 2 * p[n - 1]! - p[n - 2]!;
+      return p[node]!;
+    };
+    const blend = (radius: number, x: number, y: number) => {
+      const toBulb = Math.hypot(x - px[n - 1]!, y - py[n - 1]!);
+      radius = smoothMax(radius, Math.sqrt(Math.max(0, bulb * bulb - toBulb * toBulb)), bulb * 0.35);
+      if (glob > 0) {
+        const toRoot = Math.hypot(x - px[0]!, y - py[0]!);
+        radius = smoothMax(radius, Math.sqrt(Math.max(0, glob * glob - toRoot * toRoot)), glob * 0.35);
       }
-      this.pieces.push({ kind: "ball", x: tail.x, y: tail.y, r: root });
-      this.pieces.push({ kind: "ball", x: head.x, y: head.y, r: rb });
+      return radius;
+    };
+    let rings = 0;
+    if (n === 1) {
+      X[0] = px[0]!;
+      Y[0] = py[0]!;
+      R[0] = Math.max(bulb, glob);
+      rings = 1;
+    } else {
+      for (let segment = 0; segment < n - 1; segment++) {
+        const thread = segmentRadius(strand, segment);
+        const start = nodeRadius(strand, segment);
+        const end = segment + 1 === n - 1 ? thread : nodeRadius(strand, segment + 1);
+        for (let sample = 0; sample < SUB; sample++) {
+          const t = sample / SUB;
+          const x = catmull(point(px, segment - 1), point(px, segment), point(px, segment + 1), point(px, segment + 2), t);
+          const y = catmull(point(py, segment - 1), point(py, segment), point(py, segment + 1), point(py, segment + 2), t);
+          const radius = (1 - t) * (1 - t) * start + 2 * t * (1 - t) * thread + t * t * end;
+          X[rings] = x;
+          Y[rings] = y;
+          R[rings] = blend(radius, x, y);
+          rings++;
+        }
+      }
+      X[rings] = px[n - 1]!;
+      Y[rings] = py[n - 1]!;
+      R[rings] = Math.max(bulb, segmentRadius(strand, n - 2));
+      rings++;
     }
-    for (const drop of this.sim.drops) {
-      const piece = dropPiece(drop, bounds);
-      if (piece) this.pieces.push(piece);
+    const scale = k * rs;
+    let ax = m.a * X[0]! * k + m.c * Y[0]! * k + m.e;
+    let ay = m.b * X[0]! * k + m.d * Y[0]! * k + m.f;
+    let ar = Math.max(HAIRLINE, R[0]! * scale);
+    if (rings === 1) {
+      this.air.push(ax, ay, ar, ax, ay, ar, 1, 1, DEPTH_AIR, 0);
+      return;
+    }
+    for (let ring = 1; ring < rings; ring++) {
+      const bx = m.a * X[ring]! * k + m.c * Y[ring]! * k + m.e;
+      const by = m.b * X[ring]! * k + m.d * Y[ring]! * k + m.f;
+      const br = Math.max(HAIRLINE, R[ring]! * scale);
+      this.air.push(ax, ay, ar, bx, by, br, 1, 1, DEPTH_AIR, 0);
+      ax = bx;
+      ay = by;
+      ar = br;
     }
   }
 
-  private ensureLayer(w: number, h: number): Ctx2D | null {
-    if (
-      this.layer &&
-      this.layerCtx &&
-      this.layer.width === w &&
-      this.layer.height === h
-    ) {
-      return this.layerCtx;
+  /**
+   * A falling drop rings between long and flat as surface tension pulls it
+   * round, and leans out along its flight.
+   */
+  private dropPiece(
+    drop: GooDrop,
+    material: GooMaterial,
+    m: Matrix,
+    k: number,
+    rs: number
+  ): void {
+    const size = drop.r;
+    const tension = clamp01(material.tension);
+    const omega =
+      2 * Math.PI * (7 + 9 * tension) * Math.sqrt(0.02 / Math.max(drop.r, 0.003));
+    const ring =
+      drop.wobble *
+      Math.exp(-drop.age * (5 + 12 * clamp01(material.viscosity))) *
+      Math.cos(drop.age * omega);
+    const speed = Math.hypot(drop.vx, drop.vy);
+    const stretch = Math.max(0.6, 1 + ring + Math.min(0.22, speed * 0.035));
+    let ux = speed > 0.05 ? drop.vx / speed : drop.ax;
+    let uy = speed > 0.05 ? drop.vy / speed : drop.ay;
+    let radius = size / Math.sqrt(stretch);
+    let half = size * stretch - radius;
+    if (stretch < 1) {
+      // Flattened across its flight instead.
+      [ux, uy] = [-uy, ux];
+      radius = size * stretch;
+      half = size / Math.sqrt(stretch) - radius;
     }
+    const x = drop.x * k;
+    const y = drop.y * k;
+    const hx = ux * half * k;
+    const hy = uy * half * k;
+    const r = Math.max(HAIRLINE, radius * k * rs);
+    this.air.push(
+      m.a * (x - hx) + m.c * (y - hy) + m.e,
+      m.b * (x - hx) + m.d * (y - hy) + m.f,
+      r,
+      m.a * (x + hx) + m.c * (y + hy) + m.e,
+      m.b * (x + hx) + m.d * (y + hy) + m.f,
+      r,
+      1,
+      1,
+      DEPTH_AIR,
+      0
+    );
+  }
+
+  private resolveShade(params: GooParams, look: GooLook2D): GooLiquidShade {
+    const palette = params.resolvedPalette;
+    const key = `${palette.core}|${palette.puddleTint}|${params.clarity}|${look.metal}|${look.glow}`;
+    if (this.shade && key === this.shadeKey) return this.shade;
+    const core = hexToLinear(palette.core);
+    const tint = hexToLinear(palette.puddleTint, core);
+    const metal = look.metal * 0.9;
+    this.shadeKey = key;
+    this.shade = {
+      core,
+      // Pooled liquid is the deep tint warmed toward the core, as in 3D.
+      puddle: [
+        tint[0] + (core[0] - tint[0]) * 0.35,
+        tint[1] + (core[1] - tint[1]) * 0.35,
+        tint[2] + (core[2] - tint[2]) * 0.35,
+      ],
+      // Liquid metal is opaque however clear the setting is.
+      alpha: Math.max(metal, 0.97 - 0.22 * clamp01(params.clarity)),
+      metal,
+      glow: look.glow,
+    };
+    return this.shade;
+  }
+
+  /** Without WebGL2: the same shapes, filled in the body color. */
+  private fillFlat(
+    W: number,
+    H: number,
+    pieces: GooPieces,
+    color: string,
+    alpha: number
+  ): HTMLCanvasElement | OffscreenCanvas | null {
+    const layer = this.layer(0, W, H);
+    if (!layer) return null;
+    const g = layer.ctx;
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.globalCompositeOperation = "source-over";
+    g.globalAlpha = 1;
+    g.clearRect(0, 0, W, H);
+    g.globalAlpha = alpha;
+    g.fillStyle = color;
+    g.beginPath();
+    const d = pieces.data;
+    for (let i = 0; i < pieces.count; i++) {
+      const o = i * GOO_PIECE_FLOATS;
+      traceRoundCone(g, d[o]!, d[o + 1]!, d[o + 4]!, d[o + 2]!, d[o + 3]!, d[o + 5]!);
+    }
+    g.fill();
+    return layer.canvas;
+  }
+
+  private glowLayers(
+    W: number,
+    H: number
+  ): Array<{ canvas: HTMLCanvasElement | OffscreenCanvas; ctx: Ctx2D }> | null {
+    const near = this.layer(1, Math.ceil(W / 8), Math.ceil(H / 8));
+    const far = this.layer(2, Math.ceil(W / 24), Math.ceil(H / 24));
+    if (!near || !far) return null;
+    for (const { canvas, ctx } of [near, far]) {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.globalCompositeOperation = "source-over";
+      ctx.globalAlpha = 1;
+      ctx.imageSmoothingEnabled = true;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+    return [near, far];
+  }
+
+  /** A soft halo: the liquid shrunk, smeared by scaling, and added back. */
+  private addGlow(
+    ctx: CanvasRenderingContext2D,
+    look: GooLook2D,
+    W: number,
+    H: number,
+    levels: Array<{ canvas: HTMLCanvasElement | OffscreenCanvas; ctx: Ctx2D }>
+  ): void {
+    ctx.imageSmoothingEnabled = true;
+    ctx.globalCompositeOperation = "lighter";
+    ctx.globalAlpha = Math.min(1, 0.45 * look.glow);
+    ctx.drawImage(levels[0]!.canvas as CanvasImageSource, 0, 0, W, H);
+    ctx.globalAlpha = Math.min(1, 0.35 * look.glow);
+    ctx.drawImage(levels[1]!.canvas as CanvasImageSource, 0, 0, W, H);
+  }
+
+  private layer(
+    slot: number,
+    w: number,
+    h: number
+  ): { canvas: HTMLCanvasElement | OffscreenCanvas; ctx: Ctx2D } | null {
+    const held = this.layers[slot];
+    if (held && held.canvas.width === w && held.canvas.height === h) return held;
     const canvas = createOffscreen(w, h);
     const ctx = canvas?.getContext("2d") as Ctx2D | null | undefined;
     if (!canvas || !ctx) return null;
-    this.layer = canvas;
-    this.layerCtx = ctx;
-    return ctx;
+    this.layers[slot] = { canvas, ctx };
+    return this.layers[slot]!;
   }
 
   dispose(): void {
     this.sim.clear();
-    this.pieces = [];
-    this.tubes = [];
+    this.air.clear();
     this.tips = [];
-    this.layer = null;
-    this.layerCtx = null;
+    this.layers = [];
   }
 }
 
-/**
- * Lay the strand along a quadratic through tail, middle node and bulb. Like
- * the 3D goo it holds onto the tip by a slim root, runs as a thin thread, and
- * widens into a teardrop bulb; the thread thins further as the strand is
- * pulled toward its pinch length, which tells the eye it is about to let go.
- */
-function sampleStrand(
-  tube: Tube,
-  strand: GooStrand,
-  root: number,
-  bulb: number,
-  len: number,
-  pinchLength: number,
-  scale: number
-): void {
-  const { tail, mid, head } = strand;
-  const cx = 2 * mid.x - (tail.x + head.x) / 2;
-  const cy = 2 * mid.y - (tail.y + head.y) / 2;
-  const pull = Math.min(1, Math.max(0, len / pinchLength));
-  const thread = Math.max(0.9 * scale, bulb * (0.32 - 0.16 * pull));
-  const swell = 0.92 * bulb;
-  for (let i = 0; i <= STRAND_SAMPLES; i++) {
-    const t = i / STRAND_SAMPLES;
-    const s = 1 - t;
-    tube.x[i] = s * s * tail.x + 2 * s * t * cx + t * t * head.x;
-    tube.y[i] = s * s * tail.y + 2 * s * t * cy + t * t * head.y;
-    const upper = root + (thread - root) * smoothstep(0, 0.45, t);
-    const drop = Math.pow(smoothstep(0.35, 1, t), 2);
-    tube.r[i] = upper + (swell - upper) * drop;
-  }
-}
-
-function smoothstep(edge0: number, edge1: number, x: number): number {
-  const t = Math.min(1, Math.max(0, (x - edge0) / (edge1 - edge0)));
-  return t * t * (3 - 2 * t);
-}
-
-function dropPiece(
-  drop: GooDrop,
-  bounds: { width: number; height: number }
-): Ball | Tear | null {
-  const left = 1 - drop.age / drop.life;
-  const r = drop.r * Math.min(1, left / 0.25);
-  if (r < 0.4) return null;
-  const pad = r * 6;
-  if (
-    drop.x < -pad ||
-    drop.y < -pad ||
-    drop.x > bounds.width + pad ||
-    drop.y > bounds.height + pad
-  ) {
-    return null;
-  }
-  // A falling glob is round. Only a fresh one still trails the neck it tore
-  // from; a speed tail on every drop made them read as water.
-  const speed = Math.hypot(drop.vx, drop.vy);
-  const tail = drop.age < SNAP_TIME ? (1 - drop.age / SNAP_TIME) * 2 * r : 0;
-  if (speed < 1e-3 || tail < 0.05 * r) {
-    return { kind: "ball", x: drop.x, y: drop.y, r };
-  }
-  return {
-    kind: "tear",
-    x: drop.x,
-    y: drop.y,
-    r,
-    ux: drop.vx / speed,
-    uy: drop.vy / speed,
-    tail,
-  };
-}
-
-/**
- * Add one piece to the current path, shrunk by `size` and shifted toward the
- * light by `shift` of its local radius.
- */
-function tracePiece(
+/** Two circles joined by their outer tangents. */
+function traceRoundCone(
   ctx: Ctx2D,
-  piece: Piece,
-  shift: number,
-  size: number
+  ax: number,
+  ay: number,
+  ar: number,
+  bx: number,
+  by: number,
+  br: number
 ): void {
-  if (piece.kind === "ball") {
-    const ox = LIGHT_X * shift * piece.r;
-    const oy = LIGHT_Y * shift * piece.r;
-    ctx.moveTo(piece.x + ox + piece.r * size, piece.y + oy);
-    ctx.arc(piece.x + ox, piece.y + oy, piece.r * size, 0, Math.PI * 2);
+  const length = Math.hypot(bx - ax, by - ay);
+  if (length <= Math.abs(ar - br)) {
+    const [x, y, r] = ar >= br ? [ax, ay, ar] : [bx, by, br];
+    ctx.moveTo(x + r, y);
+    ctx.arc(x, y, r, 0, Math.PI * 2);
     return;
   }
-  if (piece.kind === "tear") {
-    const r = piece.r * size;
-    const cx = piece.x + LIGHT_X * shift * piece.r;
-    const cy = piece.y + LIGHT_Y * shift * piece.r;
-    const d = r + piece.tail * size;
-    const px = cx - piece.ux * d;
-    const py = cy - piece.uy * d;
-    const back = Math.atan2(-piece.uy, -piece.ux);
-    const spread = Math.acos(Math.min(1, r / d));
-    ctx.moveTo(px, py);
-    ctx.arc(cx, cy, r, back + spread, back - spread + Math.PI * 2);
-    ctx.closePath();
-    return;
-  }
-  traceTube(ctx, piece, shift, size);
+  const heading = Math.atan2(by - ay, bx - ax);
+  const spread = Math.acos((ar - br) / length);
+  ctx.moveTo(ax + ar * Math.cos(heading + spread), ay + ar * Math.sin(heading + spread));
+  ctx.arc(ax, ay, ar, heading + spread, heading - spread + Math.PI * 2);
+  ctx.arc(bx, by, br, heading - spread, heading + spread);
+  ctx.closePath();
 }
 
-/** Outline a variable-width tube: down one side, back up the other. */
-function traceTube(ctx: Ctx2D, tube: Tube, shift: number, size: number): void {
-  const n = tube.x.length;
-  let nx = 0;
-  let ny = 0;
-  for (let pass = 0; pass < 2; pass++) {
-    const side = pass === 0 ? 1 : -1;
-    for (let k = 0; k < n; k++) {
-      const i = pass === 0 ? k : n - 1 - k;
-      const a = Math.max(0, i - 1);
-      const b = Math.min(n - 1, i + 1);
-      const tx = tube.x[b]! - tube.x[a]!;
-      const ty = tube.y[b]! - tube.y[a]!;
-      const tl = Math.hypot(tx, ty);
-      if (tl > 1e-6) {
-        nx = -ty / tl;
-        ny = tx / tl;
-      } else if (nx === 0 && ny === 0) {
-        nx = 1;
-      }
-      const r = tube.r[i]!;
-      const x = tube.x[i]! + LIGHT_X * shift * r + nx * r * size * side;
-      const y = tube.y[i]! + LIGHT_Y * shift * r + ny * r * size * side;
-      if (k === 0 && pass === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    }
-  }
-  ctx.closePath();
+function catmull(p0: number, p1: number, p2: number, p3: number, t: number): number {
+  const t2 = t * t;
+  const t3 = t2 * t;
+  return (
+    0.5 *
+    (2 * p1 + (p2 - p0) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2 + (3 * p1 - p0 - 3 * p2 + p3) * t3)
+  );
+}
+
+function smoothMax(a: number, b: number, width: number): number {
+  if (width <= 0) return Math.max(a, b);
+  const overlap = Math.max(0, width - Math.abs(a - b)) / width;
+  return Math.max(a, b) + overlap * overlap * width * 0.25;
 }
 
 function isEndEnabled(end: "A" | "B", params: GooParams): boolean {
@@ -393,16 +425,12 @@ function isEndEnabled(end: "A" | "B", params: GooParams): boolean {
 }
 
 function clamp01(value: number): number {
-  return Math.min(1, Math.max(0, value));
+  return Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 0;
 }
 
-function createOffscreen(
-  w: number,
-  h: number
-): HTMLCanvasElement | OffscreenCanvas | null {
+function createOffscreen(w: number, h: number): HTMLCanvasElement | OffscreenCanvas | null {
   try {
-    if (typeof OffscreenCanvas !== "undefined")
-      return new OffscreenCanvas(w, h);
+    if (typeof OffscreenCanvas !== "undefined") return new OffscreenCanvas(w, h);
   } catch {
     /* fall through */
   }

@@ -12,6 +12,8 @@
     expanded?: boolean;
     focused?: boolean;
     wide?: boolean;
+    /** Home with a preview stage: the sheet sizes to the stage beside the actions on wide screens. */
+    showcase?: boolean;
     children: Snippet<[surface: "modal" | "drawer"]>;
   }
   let {
@@ -24,6 +26,7 @@
     expanded = false,
     focused = false,
     wide = false,
+    showcase = false,
     children,
   }: Props = $props();
   const headingId = $props.id();
@@ -32,7 +35,7 @@
 <!-- The native modal layer keeps editor toolbars behind sharing on phones too. -->
 <BaseModal
   open={isOpen}
-  class={`share-sheet-modal${narrow ? " share-sheet-modal--narrow" : ""}${compact ? " share-sheet-modal--compact" : ""}${expanded ? " share-sheet-modal--expanded" : ""}${focused ? " share-sheet-modal--focused" : ""}${wide ? " share-sheet-modal--wide" : ""}`}
+  class={`share-sheet-modal${narrow ? " share-sheet-modal--narrow" : ""}${compact ? " share-sheet-modal--compact" : ""}${expanded ? " share-sheet-modal--expanded" : ""}${focused ? " share-sheet-modal--focused" : ""}${wide ? " share-sheet-modal--wide" : ""}${showcase ? " share-sheet-modal--showcase" : ""}`}
   size={compact ? "fit" : "full"}
   position="center"
   animation="pop"
@@ -115,6 +118,12 @@
     width: calc(100vw - 1rem);
     height: calc(var(--viewport-height, 100dvh) - 1rem);
     max-height: calc(var(--viewport-height, 100dvh) - 1rem);
+  }
+  @media (min-width: 900px) {
+    :global(dialog.base-modal.share-sheet-modal--showcase[data-size]) {
+      width: fit-content;
+      max-width: calc(100vw - 3rem);
+    }
   }
   @media (max-width: 899px) {
     :global(dialog.base-modal.share-sheet-modal[data-size]) {

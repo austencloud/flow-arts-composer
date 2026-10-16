@@ -60,6 +60,7 @@ import { calculateDifficultyLevel as calculateSequenceDifficultyLevel } from "#l
 import { resolveLoopDisplay } from "#lib/features/loop-labeler/services/loop-display-resolver.js";
 import type { Period } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+import { deriveHeaderPatternGlyphs } from "#lib/shared/foundation/domain/sequence-patterns/header-pattern-glyphs.js";
 import type { TipEffectMap } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
 
 export class VideoExportOrchestrator implements IVideoExportOrchestrator {
@@ -137,6 +138,7 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
           ...(panelState.sequenceData.steps ?? []),
         ])
       : null;
+    const { turnGlyphEntries, reversalGlyph } = deriveHeaderPatternGlyphs(panelState.sequenceData);
 
     // Resolve once per export: both the component set (for the icon strip)
     // and the rotation slice size (so quartered LOOPs render with fa-arrows-spin
@@ -597,6 +599,8 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
         isCompositeMode: !!isCompositeMode,
         sequenceWord: panelState.sequenceWord,
         difficultyLevel,
+        turnGlyphEntries,
+        reversalGlyph,
         loopComponents,
         rotationPeriod,
         inversionPeriod,

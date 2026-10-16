@@ -251,7 +251,7 @@
   let presetsOpen = $state(false);
   /** Opening Share must not spend a render on a link or sequence handoff. */
   let filePreparationOpen = $state(false);
-  type ShareRoute = "home" | "download" | "link" | "publish";
+  type ShareRoute = "home" | "download" | "publish";
   let shareRoute = $state<ShareRoute>("home");
   let pendingDownload = $state(false);
   let pendingDownloadVersion = $state<number | null>(null);
@@ -451,6 +451,8 @@
   let copyLinkMessage = $state("");
   /** Shown when no clipboard path is open, so the link is still obtainable. */
   let revealedLinkUrl = $state<string | null>(null);
+  /** The link the last copy put on the clipboard, shown on the Copy link tile. */
+  let copiedLinkUrl = $state<string | null>(null);
 
   let qrDataUrl = $state<string | null>(null);
   let qrPending = $state(false);
@@ -507,6 +509,21 @@
   }
 
   const copyLinkUrl = $derived.by(() => buildCopyLinkUrl(postUrl || shareUrl));
+  const copyLinkState = $derived(
+    copyLinkPending ? "pending" : copiedLinkUrl ? "copied" : "idle"
+  );
+
+  function displayLink(url: string): string {
+    return url.replace(/^https?:\/\//, "");
+  }
+
+  // A wide screen gives the sequence its own stage beside the share actions.
+  // Phones keep the compact list, so no second player mounts there.
+  const showcaseHome = new MediaQuery("(min-width: 900px)");
+  const homeLivePreview = $derived(!!liveVideoPreview && showcaseHome.current);
+  const homeHasStage = $derived(
+    showcaseHome.current && (homeLivePreview || !!animationPreviewUrl)
+  );
 
   const presets = $derived(
     captions.buildPresets({
@@ -869,6 +886,7 @@
     postedPermalinks = {};
     copyLinkMessage = "";
     revealedLinkUrl = null;
+    copiedLinkUrl = null;
     shortUrl = seededShortUrl || null;
     shareRoute = initialEntry === "chooser" ? "home" : initialEntry;
     filePreparationOpen = shareRoute === "download";
@@ -1085,6 +1103,7 @@
     const viewerUrl = shareUrl;
     copyLinkPending = true;
     copyLinkMessage = "";
+    copiedLinkUrl = null;
     try {
       const result = copyLinkUrl
         ? await copyLink(copyLinkUrl)
@@ -1094,6 +1113,10 @@
 
       if (target && linkSessionIsCurrent(session, target) && result.message) {
         copyLinkMessage = result.message;
+        if (result.status === "done") {
+          copiedLinkUrl =
+            copyLinkUrl || buildCopyLinkUrl(shortUrl || viewerUrl, viewerUrl);
+        }
         if (result.status === "failed") {
           const fallbackUrl =
             copyLinkUrl || buildCopyLinkUrl(shortUrl || viewerUrl, viewerUrl);
@@ -1843,22 +1866,19 @@
   {isOpen}
   ariaLabel={shareRoute === "publish"
     ? t("share_publish_post")
-    : shareRoute === "link"
-      ? t("share_a_link")
-      : shareRoute === "download"
-        ? artifact === "video"
-          ? videoSettingsAvailable
-            ? t("share_download_animation")
-            : t("share_download_post")
-          : t("share_download_card")
-        : t("share_sequence")}
+    : shareRoute === "download"
+      ? artifact === "video"
+        ? videoSettingsAvailable
+          ? t("share_download_animation")
+          : t("share_download_post")
+        : t("share_download_card")
+      : t("share_sequence")}
   {onClose}
   onClosed={runPendingHandoff}
   narrow={!!qrDataUrl}
   compact={shareRoute === "home" && !qrDataUrl}
-  focused={shareRoute === "download" ||
-    shareRoute === "link" ||
-    shareRoute === "publish"}
+  showcase={shareRoute === "home" && !qrDataUrl && homeHasStage}
+  focused={shareRoute === "download" || shareRoute === "publish"}
   wide={shareRoute === "download"}
 >
   {#snippet children(surface)}
@@ -1900,15 +1920,13 @@
               <h2 class="panel-title">
                 {shareRoute === "publish"
                   ? t("share_publish_post")
-                  : shareRoute === "link"
-                    ? t("share_a_link")
-                    : shareRoute === "download"
-                      ? artifact === "video"
-                        ? videoSettingsAvailable
-                          ? t("share_download_animation")
-                          : t("share_download_post")
-                        : t("share_download_card")
-                      : t("share_sequence")}
+                  : shareRoute === "download"
+                    ? artifact === "video"
+                      ? videoSettingsAvailable
+                        ? t("share_download_animation")
+                        : t("share_download_post")
+                      : t("share_download_card")
+                    : t("share_sequence")}
               </h2>
               <div class="sequence-identity">
                 <TKAWordGlyph word={glyphWord} height={glyphHeight} darkMode />
@@ -1933,105 +1951,129 @@
             motion="step"
           >
             {#if shareRoute === "home"}
-              <div class="share-intents">
-                {#if animationPreviewUrl}
+              <div class="share-intents" class:has-stage={homeHasStage}>
+                {#if homeLivePreview}
+                  <div class="home-stage">
+                    {@render liveVideoPreview?.()}
+                  </div>
+                {:else if animationPreviewUrl}
                   <img
                     class="home-preview"
                     src={animationPreviewUrl}
                     alt={t("share_current_sequence_view")}
                   />
                 {/if}
-                <div class="intent-grid">
-                  <button
-                    type="button"
-                    class="intent"
-                    onclick={() => beginDownload(artifact)}
-                  >
-                    <i class="fa-solid fa-download" aria-hidden="true"></i>
-                    <span>{t("share_download_file")}</span>
-                    <small>{t("share_download_file_hint")}</small>
-                  </button>
-                  <button
-                    type="button"
-                    class="intent"
-                    disabled={busyLocalTile !== null || copyLinkPending}
-                    onclick={() => (shareRoute = "link")}
-                  >
-                    <i class="fa-solid fa-link" aria-hidden="true"></i>
-                    <span>{t("share_a_link")}</span>
-                    <small>{t("share_link_hint")}</small>
-                  </button>
-                  <button type="button" class="intent" onclick={openPublish}>
-                    <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
-                    <span>{t("share_publish_socially")}</span>
-                    <small>{t("share_publish_hint")}</small>
-                  </button>
+                <div class="intent-list">
+                  <div class="intent-grid">
+                    <button
+                      type="button"
+                      class="intent"
+                      aria-busy={copyLinkPending}
+                      onclick={handleCopyLinkIntent}
+                    >
+                      <Crossfade
+                        key={copyLinkState}
+                        duration={DURATION.fast}
+                        mode="crossfade"
+                      >
+                        <span class="intent-body">
+                          <i
+                            class={copyLinkState === "pending"
+                              ? "fa-solid fa-circle-notch fa-spin"
+                              : copyLinkState === "copied"
+                                ? "fa-solid fa-check"
+                                : "fa-solid fa-link"}
+                            aria-hidden="true"
+                          ></i>
+                          <span class="intent-label">
+                            {copyLinkState === "pending"
+                              ? t("share_copying_link")
+                              : copyLinkState === "copied"
+                                ? t("share_link_copied")
+                                : t("share_copy_link")}
+                          </span>
+                          <small
+                            class="intent-hint"
+                            class:link-value={copyLinkState === "copied"}
+                          >
+                            {copyLinkState === "copied" && copiedLinkUrl
+                              ? displayLink(copiedLinkUrl)
+                              : t("share_link_description")}
+                          </small>
+                        </span>
+                      </Crossfade>
+                    </button>
+                    {#if onSendInTka}
+                      <button
+                        type="button"
+                        class="intent"
+                        onclick={() => handOffAfterClose(() => onSendInTka?.())}
+                      >
+                        <span class="intent-body">
+                          <i class="fa-solid fa-user-group" aria-hidden="true"
+                          ></i>
+                          <span class="intent-label"
+                            >{t("share_send_friend")}</span
+                          >
+                          <small class="intent-hint"
+                            >{t("share_send_friend_hint")}</small
+                          >
+                        </span>
+                      </button>
+                    {/if}
+                    <button
+                      type="button"
+                      class="intent"
+                      onclick={() => beginDownload(artifact)}
+                    >
+                      <span class="intent-body">
+                        <i class="fa-solid fa-download" aria-hidden="true"></i>
+                        <span class="intent-label"
+                          >{t("share_download_file")}</span
+                        >
+                        <small class="intent-hint"
+                          >{t("share_download_file_hint")}</small
+                        >
+                      </span>
+                    </button>
+                    <button type="button" class="intent" onclick={openPublish}>
+                      <span class="intent-body">
+                        <i class="fa-solid fa-paper-plane" aria-hidden="true"
+                        ></i>
+                        <span class="intent-label"
+                          >{t("share_publish_socially")}</span
+                        >
+                        <small class="intent-hint"
+                          >{t("share_publish_hint")}</small
+                        >
+                      </span>
+                    </button>
+                  </div>
+                  {#if copyLinkMessage && copyLinkMessage !== t("share_link_copied")}
+                    <p
+                      class="delivery-feedback"
+                      role="status"
+                      transition:growFade={{ axis: "y" }}
+                    >
+                      {copyLinkMessage}
+                    </p>
+                  {/if}
+                  {#if revealedLinkUrl}
+                    <label
+                      class="link-reveal"
+                      transition:growFade={{ axis: "y" }}
+                    >
+                      <span>{t("share_sequence_link")}</span>
+                      <input
+                        type="url"
+                        readonly
+                        value={revealedLinkUrl}
+                        use:selectOnMount
+                        onfocus={(event) => event.currentTarget.select()}
+                      />
+                    </label>
+                  {/if}
                 </div>
-              </div>
-            {:else if shareRoute === "link"}
-              <div class="sheet-scroll link-route">
-                <button
-                  type="button"
-                  class="back-to-chooser"
-                  onclick={returnToChooser}
-                  ><i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
-                  {t("share_back")}</button
-                >
-                <p class="link-description">
-                  {t("share_link_description")}
-                </p>
-                <PanelButton
-                  variant="primary"
-                  fullWidth
-                  disabled={copyLinkPending}
-                  onclick={handleCopyLinkIntent}
-                >
-                  <i
-                    class={copyLinkPending
-                      ? "fa-solid fa-circle-notch fa-spin"
-                      : copyLinkMessage === t("share_link_copied")
-                        ? "fa-solid fa-check"
-                        : "fa-solid fa-copy"}
-                    aria-hidden="true"
-                  ></i>
-                  {copyLinkPending
-                    ? t("share_copying_link")
-                    : copyLinkMessage === t("share_link_copied")
-                      ? t("share_link_copied")
-                      : t("share_copy_link")}
-                </PanelButton>
-                {#if copyLinkMessage && copyLinkMessage !== t("share_link_copied")}
-                  <p
-                    class="delivery-feedback"
-                    role="status"
-                    transition:growFade={{ axis: "y" }}
-                  >
-                    {copyLinkMessage}
-                  </p>
-                {/if}
-                {#if revealedLinkUrl}
-                  <label
-                    class="link-reveal"
-                    transition:growFade={{ axis: "y" }}
-                  >
-                    <span>{t("share_sequence_link")}</span>
-                    <input
-                      type="url"
-                      readonly
-                      value={revealedLinkUrl}
-                      use:selectOnMount
-                      onfocus={(event) => event.currentTarget.select()}
-                    />
-                  </label>
-                {/if}
-                {#if onSendInTka}
-                  <PanelButton
-                    onclick={() => handOffAfterClose(() => onSendInTka?.())}
-                  >
-                    <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
-                    {t("share_send_friend")}
-                  </PanelButton>
-                {/if}
               </div>
             {:else if shareRoute === "download"}
               <div
@@ -3399,20 +3441,23 @@
     flex: 0 0 auto;
     overflow: visible;
   }
+  .home-stage {
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid var(--theme-stroke);
+    border-radius: 0.875rem;
+    background: var(--theme-card-bg);
+  }
+  .intent-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-width: 0;
+  }
   .intent-grid {
     display: grid;
     grid-template-columns: 1fr;
     gap: 0.75rem;
-  }
-  .link-route {
-    display: flex;
-    flex-direction: column;
-    gap: 0.875rem;
-  }
-  .link-description {
-    margin: 0;
-    color: var(--theme-text-secondary);
-    font-size: var(--font-size-min, 0.875rem);
   }
   .intent,
   .publish-route {
@@ -3424,27 +3469,36 @@
   }
   .intent {
     display: grid;
-    grid-template-columns: 2rem minmax(0, 1fr);
-    column-gap: 0.75rem;
-    align-items: center;
+    align-content: center;
     min-height: 5.25rem;
     padding: 0.875rem 1rem;
     border-radius: 0.75rem;
     text-align: left;
   }
-  .intent > i {
+  .intent-body {
+    display: grid;
+    grid-template-columns: 2rem minmax(0, 1fr);
+    column-gap: 0.75rem;
+    align-items: center;
+  }
+  .intent-body > i {
     grid-row: span 2;
     font-size: 1.125rem;
     color: var(--theme-accent, #8b7cff);
   }
-  .intent > span {
+  .intent-label {
     font-weight: 650;
   }
-  .intent > small {
+  /* Two lines are reserved so the copied link can replace the hint in place. */
+  .intent-hint {
     min-height: 2.7em;
     color: var(--theme-text-secondary, rgba(255, 255, 255, 0.68));
     font-size: var(--font-size-compact, 0.75rem);
     line-height: 1.35;
+  }
+  .intent-hint.link-value {
+    color: var(--theme-text, #fff);
+    overflow-wrap: anywhere;
   }
   .intent:hover:not(:disabled),
   .publish-route:hover {
@@ -3718,8 +3772,7 @@
       width: min(100%, 72rem);
       margin-inline: auto;
     }
-    .sheet-scroll.publish-route,
-    .sheet-scroll.link-route {
+    .sheet-scroll.publish-route {
       display: flex;
       flex-direction: column;
       gap: 0.875rem;
@@ -3760,6 +3813,29 @@
     }
     .share-intents {
       padding: 1.75rem;
+    }
+    /* The stage is square and sized by the screen's height, so a tall monitor
+       shows the sequence large while the actions keep their normal size. */
+    .share-intents.has-stage {
+      --home-stage-size: clamp(
+        14rem,
+        min(
+          calc(var(--viewport-height, 100dvh) - 17rem),
+          calc(100vw - 32rem)
+        ),
+        88rem
+      );
+      display: grid;
+      grid-template-columns: var(--home-stage-size) minmax(19rem, 24rem);
+      gap: 1.75rem;
+      align-items: center;
+    }
+    .share-intents.has-stage .home-stage,
+    .share-intents.has-stage .home-preview {
+      width: var(--home-stage-size);
+      height: var(--home-stage-size);
+      max-height: none;
+      margin: 0;
     }
     .editing-column {
       margin-top: 0;
@@ -3807,6 +3883,16 @@
     }
     .share-dock {
       padding-block: 0.5rem;
+    }
+  }
+  @media (min-width: 900px) and (max-height: 560px) {
+    .share-intents.has-stage {
+      grid-template-columns: var(--home-stage-size) minmax(28rem, 34rem);
+      gap: 1.25rem;
+      padding: 1rem 1.25rem;
+    }
+    .share-intents.has-stage .intent-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
   @media (min-width: 900px) and (max-height: 500px) {

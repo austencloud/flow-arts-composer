@@ -7,8 +7,9 @@ import { flushSync } from "svelte";
 // only). Stub both so the test doesn't drag in the entire app dependency graph
 // (firebase, posthog, capacitor, dexie) — which would make this test slow and
 // flaky under Vite's cold dep-optimize. Isolating the unit keeps it lean.
+const mockSettings = vi.hoisted(() => ({}) as Record<string, unknown>);
 vi.mock("../../../application/state/app-state.svelte", () => ({
-  getSettings: () => ({}),
+  getSettings: () => mockSettings,
 }));
 vi.mock(
   "../../../animation-engine/state/animation-visibility-state.svelte",
@@ -163,5 +164,43 @@ describe("PropSvg orientation transitions", () => {
 
     expect(propTransform()).toContain("rotate(45deg)");
     expect(propTransform()).not.toContain("rotate(405deg)");
+  });
+});
+
+describe("PropSvg mirroring follows the prop actually drawn", () => {
+  const redStaff = {
+    ...(motion(HandSide.RIGHT, PropType.STAFF) as Record<string, unknown>),
+    hand: HandSide.RIGHT,
+  } as never;
+
+  it("ignores a saved flipped buugeng when the page draws a staff", () => {
+    Object.assign(mockSettings, {
+      rightPropType: PropType.BUUGENG,
+      rightBuugengFlipped: true,
+    });
+    try {
+      render(PropSvg, {
+        motionData: redStaff,
+        propAssets: assets(SVG_A, PropType.STAFF),
+        propPosition,
+      });
+      expect(propTransform()).not.toContain("scaleX(-1)");
+    } finally {
+      for (const key of Object.keys(mockSettings)) delete mockSettings[key];
+    }
+  });
+
+  it("still flips a drawn buugeng by the saved preference", () => {
+    Object.assign(mockSettings, { rightBuugengFlipped: true });
+    try {
+      render(PropSvg, {
+        motionData: redStaff,
+        propAssets: assets(SVG_A, PropType.BUUGENG),
+        propPosition,
+      });
+      expect(propTransform()).toContain("scaleX(-1)");
+    } finally {
+      for (const key of Object.keys(mockSettings)) delete mockSettings[key];
+    }
   });
 });

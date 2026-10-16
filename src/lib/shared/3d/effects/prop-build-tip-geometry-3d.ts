@@ -30,7 +30,8 @@ export interface PropBuildTipGeometry3D {
     | "moon"
     | "astral"
     | "flat-grip"
-    | "star";
+    | "star"
+    | "sense";
   readonly finish: "fire" | "day";
 }
 
@@ -163,6 +164,20 @@ export const FAN_MOON_RIM_POINTS_M = [
   { x: 0.2897787, y: 0.1045398, z: 0 },
 ] as const;
 
+/**
+ * The Flow DNA Sense Fan's shell rim, from `scripts/assets/sense-fan-reference.json`:
+ * where rays from the grip at the fire fan's bearings leave the traced
+ * silhouette, pulled 8mm in. The shell is unlit, so the rim is what a trail
+ * traces.
+ */
+export const FAN_SENSE_RIM_POINTS_M = [
+  { x: -0.22545, y: 0.08117, z: 0 },
+  { x: -0.17725, y: 0.19548, z: 0 },
+  { x: 0, y: 0.26388, z: 0 },
+  { x: 0.1775, y: 0.19575, z: 0 },
+  { x: 0.22588, y: 0.08132, z: 0 },
+] as const;
+
 export const FAN_ASTRAL_RIM_POINTS_M = [1, 0.75, 0.5, 0.25, 0].map(
   (amount) => ({ ...astralFanBladePoint(amount), z: 0 })
 );
@@ -237,6 +252,9 @@ function fanAnchors(
   }
   if (build.fanBuild === "moon") {
     return fixedAnchors(FAN_MOON_RIM_POINTS_M, scale);
+  }
+  if (build.fanBuild === "sense") {
+    return fixedAnchors(FAN_SENSE_RIM_POINTS_M, scale);
   }
   if (build.fanBuild === "astral") {
     return fixedAnchors(FAN_ASTRAL_RIM_POINTS_M, scale);

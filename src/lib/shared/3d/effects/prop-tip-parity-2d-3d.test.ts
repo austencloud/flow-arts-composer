@@ -35,6 +35,7 @@ const FAN_BUILDS: readonly PropBuildTipGeometry3D["fanBuild"][] = [
   "moon",
   "flat-grip",
   "star",
+  "sense",
 ];
 
 const cases = Object.keys(PROP_TIP_POINTS)
