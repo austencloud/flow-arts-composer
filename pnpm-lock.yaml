@@ -879,7 +879,7 @@ packages:
       svelte: ^5.0.0
 
   '@austencloud/drawer@file:vendor/austencloud-drawer-0.2.0.tgz':
-    resolution: {integrity: sha512-8X/3xTaMewD+ej/H+wTUINQzKD8USMOsT6+yo6AO6wequtcAObFGmInrUOuUQ0q2AxzhF7bqa/RmVX9ScY/goQ==, tarball: file:vendor/austencloud-drawer-0.2.0.tgz}
+    resolution: {integrity: sha512-qXgfVIdRrqAKxV2BG/56c6eoMqNRQx+l1/xdtfeFmATYSM9MWlt8D2xyKvDZmIK4pXq3WZW2B9cVuAWuyYsXTg==, tarball: file:vendor/austencloud-drawer-0.2.0.tgz}
     version: 0.2.0
     peerDependencies:
       svelte: ^5.0.0
