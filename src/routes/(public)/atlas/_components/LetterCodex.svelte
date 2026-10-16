@@ -14,6 +14,7 @@
   import "./codex-boards/codex-dark.css";
   import BoardAtlas from "./codex-boards/BoardAtlas.svelte";
   import LetterExplorer from "./codex-boards/LetterExplorer.svelte";
+  import CodexBoardControls from "./codex-boards/CodexBoardControls.svelte";
   import {
     CODEX_BY_LABEL,
     CODEX_LETTERS,
@@ -21,8 +22,11 @@
   } from "./codex-boards/codex-letters";
   import {
     hasLetterExplorerEdits,
+    parseLetterExplorerEdits,
     parseLetterExplorerRoute,
+    writeLetterExplorerEdits,
     writeLetterExplorerRoute,
+    type LetterExplorerEdits,
     type LetterExplorerRouteState,
   } from "./codex-boards/letter-explorer-url";
   import {
@@ -44,8 +48,20 @@
   import type { TurnValue } from "#lib/shared/create/domain/turn-pattern-data.js";
   import {
     applyTurnsToVariations,
+    findMatchingVariation,
     motionAllowsFloat,
   } from "./codex-boards/letter-explorer-variations";
+  import { codexData } from "../../codex/_data/codex-groups";
+  import {
+    CODEX_VISIBILITY_STORAGE_KEY,
+    defaultCodexVisibility,
+    formatCodexTransforms,
+    parseCodexTransforms,
+    restoreCodexVisibility,
+    transformCodexPictograph,
+    type CodexTransformOp,
+    type CodexVisibility,
+  } from "../../codex/_data/codex-view";
   import { loadFoundingCollectionSequences } from "#lib/features/browse/collections/config/founding-collections.js";
   import { filterSequencesByExactLetter } from "#lib/shared/browse/services/sequence-letter-occurrence.js";
   import { mutateCurrentUrl } from "#lib/shared/navigation/services/url-state.js";
@@ -61,8 +77,13 @@
     initialLetter = "A",
     propType,
     startOrientations,
+    boardControls = false,
   }: {
     initialLetter?: string;
+    /** Show turns, transforms and layers above the board, and draw the board
+     *  with them. Turns are then one setting shared by the board and the
+     *  explorer, so they survive opening, closing and changing letters. */
+    boardControls?: boolean;
     /** The prop the board and explorer draw; omitted keeps the dataset's own. */
     propType?: PropType;
     /** Where each hand starts on the Atlas board and in the explorer, with
@@ -71,11 +92,39 @@
     startOrientations?: CodexStartOrientations;
   } = $props();
 
-  const getBoardData = $derived(
-    startOrientations
-      ? (id: string) => codexDataFrom(id, startOrientations)
-      : undefined
-  );
+  let transforms = $state<CodexTransformOp[]>([]);
+  let visibility = $state<CodexVisibility>(defaultCodexVisibility());
+
+  /** A board cell as drawn: its start, then the transforms in the order
+   *  pressed. Turns go on last and never move a hand. */
+  function placedCell(
+    id: string,
+    ops: readonly CodexTransformOp[]
+  ): PictographData | null {
+    const base = startOrientations
+      ? codexDataFrom(id, startOrientations)
+      : codexData(id);
+    return base && ops.length > 0 ? transformCodexPictograph(base, ops) : base;
+  }
+
+  // Every setting is read here, not inside the returned function, so the
+  // board redraws when one changes.
+  const boardData = $derived.by(() => {
+    if (!boardControls) {
+      return startOrientations
+        ? (id: string) => codexDataFrom(id, startOrientations)
+        : undefined;
+    }
+    const ops = [...transforms];
+    const edits = [leftTurns, rightTurns, leftRotation, rightRotation] as const;
+    void startOrientations;
+    return (id: string): PictographData | null => {
+      const placed = placedCell(id, ops);
+      return placed
+        ? (applyTurnsToVariations([placed], ...edits)[0] ?? null)
+        : null;
+    };
+  });
 
   function begun(pictographs: readonly PictographData[]): PictographData[] {
     return startOrientations
@@ -173,6 +222,27 @@
     };
   }
 
+  function edits(): LetterExplorerEdits {
+    return { leftTurns, rightTurns, leftRotation, rightRotation };
+  }
+
+  function setEdits(next: LetterExplorerEdits): void {
+    leftTurns = next.leftTurns;
+    rightTurns = next.rightTurns;
+    leftRotation = next.leftRotation;
+    rightRotation = next.rightRotation;
+  }
+
+  /** Turns changed: the whole route while a letter is open, else just the
+   *  turns, which the board follows on its own. */
+  function commitEdits(): void {
+    if (overlayOpen) {
+      commitRoute();
+      return;
+    }
+    mutateCurrentUrl((url) => writeLetterExplorerEdits(url, edits()));
+  }
+
   function commitRoute(mode: "push" | "replace" = "replace"): void {
     mutateCurrentUrl((url) => writeLetterExplorerRoute(url, routeState()), {
       mode,
@@ -187,12 +257,12 @@
   }
 
   function syncFromUrl(): void {
-    const state = parseLetterExplorerRoute(
-      new URLSearchParams(window.location.search),
-      allowedLetters
-    );
+    const params = new URLSearchParams(window.location.search);
+    if (boardControls) transforms = parseCodexTransforms(params.get("tf"));
+    const state = parseLetterExplorerRoute(params, allowedLetters);
     if (!state) {
       overlayOpen = false;
+      if (boardControls) setEdits(parseLetterExplorerEdits(params));
       return;
     }
 
@@ -202,18 +272,39 @@
     selection.select(selectedInfo.id);
     gridMode = state.gridMode;
     selectedVariationIndex = state.variation;
-    leftTurns = state.leftTurns;
-    rightTurns = state.rightTurns;
-    leftRotation = state.leftRotation;
-    rightRotation = state.rightRotation;
+    pendingCell = null;
+    setEdits(state);
     overlayOpen = true;
+  }
+
+  /** The cell last clicked, waiting for its grid's variations to load so
+   *  the explorer can land on the variation it draws. */
+  let pendingCell: PictographData | null = null;
+
+  function letterVariations(mode: GridModeValue): PictographData[] {
+    return (pictographsByGrid[mode] ?? []).filter(
+      (pictograph) => pictograph.letter === info.label
+    );
+  }
+
+  function landOn(cell: PictographData): void {
+    const options = letterVariations(gridMode);
+    if (options.length === 0) {
+      pendingCell = cell;
+      return;
+    }
+    pendingCell = null;
+    selectedVariationIndex = Math.max(0, findMatchingVariation(options, cell));
   }
 
   function normalizeVariation(mode: GridModeValue): void {
     if (mode !== gridMode) return;
-    const count = (pictographsByGrid[mode] ?? []).filter(
-      (pictograph) => pictograph.letter === info.label
-    ).length;
+    if (pendingCell) {
+      landOn(pendingCell);
+      commitRoute();
+      return;
+    }
+    const count = letterVariations(mode).length;
     if (count === 0 || selectedVariationIndex < count) return;
     selectedVariationIndex = 0;
     commitRoute();
@@ -248,7 +339,50 @@
     }
   }
 
+  function persistVisibility(): void {
+    try {
+      localStorage.setItem(
+        CODEX_VISIBILITY_STORAGE_KEY,
+        JSON.stringify(visibility)
+      );
+    } catch {
+      // Private mode or a full store: the layers just are not remembered.
+    }
+  }
+
+  function toggleLayer(key: keyof CodexVisibility): void {
+    visibility = { ...visibility, [key]: !visibility[key] };
+    persistVisibility();
+  }
+
+  function writeTransforms(): void {
+    const value = formatCodexTransforms(transforms);
+    mutateCurrentUrl((url) => {
+      if (value === null) url.searchParams.delete("tf");
+      else url.searchParams.set("tf", value);
+    });
+  }
+
+  function transformBoard(op: CodexTransformOp): void {
+    transforms = [...transforms, op];
+    writeTransforms();
+  }
+
+  function resetTransforms(): void {
+    transforms = [];
+    writeTransforms();
+  }
+
   onMount(() => {
+    if (boardControls) {
+      try {
+        visibility = restoreCodexVisibility(
+          localStorage.getItem(CODEX_VISIBILITY_STORAGE_KEY)
+        );
+      } catch {
+        // Storage blocked: keep the default layers.
+      }
+    }
     syncFromUrl();
     void Promise.all([loadGrid(GridMode.DIAMOND), loadGrid(GridMode.BOX)]);
     void loadLearningDeck();
@@ -261,24 +395,35 @@
     if (!selectedInfo) return;
     selectedId = id;
     selection.select(id);
+    // The explorer opens on the variation the clicked cell draws, in that
+    // cell's grid: a rotated board shows Box cells.
+    const cell = placedCell(id, boardControls ? transforms : []);
+    gridMode = cell?.motions?.[HandSide.LEFT]?.gridMode ?? GridMode.DIAMOND;
     selectedVariationIndex = 0;
-    resetEdits();
+    if (cell) landOn(cell);
+    if (!boardControls) resetEdits();
     overlayOpen = true;
     commitRoute("push");
   }
 
   function closeExplorer(): void {
     overlayOpen = false;
-    mutateCurrentUrl((url) => writeLetterExplorerRoute(url, null), {
-      mode: "push",
-    });
+    pendingCell = null;
+    mutateCurrentUrl(
+      (url) => {
+        writeLetterExplorerRoute(url, null);
+        if (boardControls) writeLetterExplorerEdits(url, edits());
+      },
+      { mode: "push" }
+    );
   }
 
   function selectGrid(next: GridModeValue): void {
     if (next === gridMode) return;
     gridMode = next;
     selectedVariationIndex = 0;
-    resetEdits();
+    pendingCell = null;
+    if (!boardControls) resetEdits();
     commitRoute("push");
   }
 
@@ -303,20 +448,15 @@
   }
 
   function changeTurns(color: HandSide, delta: number): void {
+    // From the board every kind of letter is in play, so float is allowed;
+    // letters that cannot float stay at zero (applyTurnsToVariations).
+    const allowFloat = !overlayOpen || motionAllowsFloat(selectedBase, color);
     if (color === HandSide.LEFT) {
-      leftTurns = nextTurns(
-        leftTurns,
-        delta,
-        motionAllowsFloat(selectedBase, color)
-      );
+      leftTurns = nextTurns(leftTurns, delta, allowFloat);
     } else {
-      rightTurns = nextTurns(
-        rightTurns,
-        delta,
-        motionAllowsFloat(selectedBase, color)
-      );
+      rightTurns = nextTurns(rightTurns, delta, allowFloat);
     }
-    commitRoute();
+    commitEdits();
   }
 
   function changeRotation(
@@ -325,12 +465,12 @@
   ): void {
     if (color === HandSide.LEFT) leftRotation = direction;
     else rightRotation = direction;
-    commitRoute();
+    commitEdits();
   }
 
   function resetExplorerEdits(): void {
     resetEdits();
-    commitRoute();
+    commitEdits();
   }
 
   async function copyExactLink(): Promise<void> {
@@ -347,7 +487,28 @@
 </script>
 
 <div class="codex codex-dark">
-  <BoardAtlas onSelect={select} {propType} getData={getBoardData} />
+  {#if boardControls}
+    <CodexBoardControls
+      {leftTurns}
+      {rightTurns}
+      {leftRotation}
+      {rightRotation}
+      transformed={transforms.length > 0}
+      {visibility}
+      onTurnsChange={changeTurns}
+      onRotationChange={changeRotation}
+      onTransform={transformBoard}
+      onResetTransforms={resetTransforms}
+      onResetTurns={resetExplorerEdits}
+      onToggleLayer={toggleLayer}
+    />
+  {/if}
+  <BoardAtlas
+    onSelect={select}
+    {propType}
+    getData={boardData}
+    visibility={boardControls ? visibility : undefined}
+  />
 </div>
 
 <BaseModal

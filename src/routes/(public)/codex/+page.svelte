@@ -144,6 +144,7 @@
         {initialLetter}
         {propType}
         {startOrientations}
+        boardControls
       />
     </div>
   </article>

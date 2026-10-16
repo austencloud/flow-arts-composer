@@ -23,6 +23,7 @@
   import type { LetterType } from "#lib/shared/foundation/domain/models/letter-type.js";
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import type { CodexVisibility } from "../../../codex/_data/codex-view";
   import {
     MAJOR_TYPE_BANDS,
     MINOR_TYPE_BANDS,
@@ -34,11 +35,14 @@
     onSelect,
     propType,
     getData,
+    visibility,
   }: {
     onSelect: (id: string) => void;
     propType?: PropType;
     /** Each letter's pictograph, in place of the stored one. */
     getData?: (id: string) => PictographData | null | undefined;
+    /** Which layers every cell draws; omitted keeps the cell defaults. */
+    visibility?: CodexVisibility;
   } = $props();
 
   interface AtlasFlow {
@@ -79,6 +83,7 @@
             flowHeader={flow.flowHeader}
             {propType}
             {getData}
+            {visibility}
             {onSelect}
           />
         {/each}
@@ -96,7 +101,13 @@
           style:--band-secondary={bandColors(band)[1]}
         >
           <CodexBandHead type={band.type} />
-          <CodexFlow boxes={band.boxes} {propType} {getData} {onSelect} />
+          <CodexFlow
+            boxes={band.boxes}
+            {propType}
+            {getData}
+            {visibility}
+            {onSelect}
+          />
         </section>
       {/each}
     </div>

@@ -58,6 +58,8 @@ const ROUTE_SCOPED_PARAMETERS: readonly RouteScopedParameter[] = [
   { name: "redTurns", isValidForPath: isAtlasPath },
   { name: "blueRotation", isValidForPath: isAtlasPath },
   { name: "redRotation", isValidForPath: isAtlasPath },
+  // The Codex board's rotate/mirror/swap presses.
+  { name: "tf", isValidForPath: isAtlasPath },
   {
     name: "scan",
     isValidForPath: (pathname) =>

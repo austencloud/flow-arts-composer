@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import { RotationDirection } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
+  buildCanonicalLetterExplorerHref,
+  parseLetterExplorerEdits,
   parseLetterExplorerRoute,
+  writeLetterExplorerEdits,
   writeLetterExplorerRoute,
 } from "../../../src/routes/(public)/atlas/_components/codex-boards/letter-explorer-url";
 import { buildComposerDraftHref } from "../../../src/routes/(public)/atlas/_components/codex-boards/letter-explorer-draft";
@@ -115,6 +118,26 @@ describe("letter explorer URL state", () => {
     writeLetterExplorerRoute(url, null);
 
     expect(url.searchParams.toString()).toBe("board=atlas");
+  });
+
+  it("sends canonical letter links to the Codex page", () => {
+    expect(buildCanonicalLetterExplorerHref("A")).toBe(
+      "/codex?letter=A&grid=diamond&variation=0"
+    );
+  });
+
+  it("keeps the turns on the Codex board after the letter closes", () => {
+    const url = new URL(
+      "https://tkaflowarts.com/codex?tf=r&letter=B&grid=box&variation=3&leftTurns=1&leftRotation=ccw"
+    );
+    const edits = parseLetterExplorerEdits(url.searchParams);
+
+    writeLetterExplorerRoute(url, null);
+    writeLetterExplorerEdits(url, edits);
+
+    expect(url.searchParams.toString()).toBe(
+      "tf=r&leftTurns=1&leftRotation=ccw"
+    );
   });
 
   it("hands the draft to the Construct route with a self-contained payload", () => {
