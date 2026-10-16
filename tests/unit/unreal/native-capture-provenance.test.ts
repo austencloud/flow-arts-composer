@@ -120,4 +120,28 @@ describe("native capture provenance", () => {
     delete (capture as { provenance?: unknown }).provenance;
     await expect(validateCaptureProvenance(capture)).rejects.toThrow(/schema/);
   });
+
+  it("rejects props tied to a different production build", async () => {
+    const capture = await fixture();
+    capture.provenance.props.buildSHA256 = "e".repeat(64);
+    await expect(validateCaptureProvenance(capture)).rejects.toThrow(/props/);
+  });
+
+  it.each([
+    { fps: 0 },
+    { fps: 29.5 },
+    { frameCount: 0 },
+    { frameCount: 29.5 },
+    { scoreUnitsPerSecond: 0 },
+    { scoreUnitsPerSecond: Number.POSITIVE_INFINITY },
+  ])("rejects invalid clock values: %j", async (change) => {
+    const capture = await fixture();
+    Object.assign(capture.provenance.clock, change);
+    if ("fps" in change) capture.fps = change.fps!;
+    if ("frameCount" in change && Number.isSafeInteger(change.frameCount))
+      capture.frames = Array.from({ length: change.frameCount! }, () => ({}));
+    if ("scoreUnitsPerSecond" in change)
+      capture.scoreUnitsPerSecond = change.scoreUnitsPerSecond!;
+    await expect(validateCaptureProvenance(capture)).rejects.toThrow(/clock/);
+  });
 });

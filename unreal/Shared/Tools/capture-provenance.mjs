@@ -78,6 +78,7 @@ export async function validateCaptureProvenance(
     !p.props ||
     p.props.family !== capture.propType ||
     !HEX.test(p.props.buildSHA256) ||
+    p.props.buildSHA256 !== p.build.outputSHA256 ||
     !Array.isArray(p.props.assets) ||
     p.props.assets.some((asset) => !asset.path || !HEX.test(asset.sha256)) ||
     (expectedProps &&
@@ -100,6 +101,13 @@ export async function validateCaptureProvenance(
   const clock = p.clock;
   if (
     !clock ||
+    !Number.isSafeInteger(clock.fps) ||
+    clock.fps <= 0 ||
+    !Number.isSafeInteger(clock.frameCount) ||
+    clock.frameCount <= 0 ||
+    !Number.isFinite(clock.scoreUnitsPerSecond) ||
+    clock.scoreUnitsPerSecond <= 0 ||
+    !Array.isArray(capture.frames) ||
     clock.fps !== capture.fps ||
     clock.frameCount !== capture.frames?.length ||
     clock.scoreUnitsPerSecond !== capture.scoreUnitsPerSecond ||
