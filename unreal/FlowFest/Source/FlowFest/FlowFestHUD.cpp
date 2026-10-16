@@ -68,7 +68,7 @@ void AFlowFestHUD::DrawHUD()
 
     const float StatusWidth = 250.f * Scale;
     const float StatusX = W - StatusWidth - Pad;
-    DrawRect(Surface, StatusX, Pad, StatusWidth, 125.f * Scale);
+    DrawRect(Surface, StatusX, Pad, StatusWidth, 143.f * Scale);
     DrawLabel(Traveler->GetModeLabel(), Accent, StatusX + 16.f * Scale, Pad + 15.f * Scale, Small, 1.3f * Scale);
     const AFlowFestWorld* FestivalWorld = Traveler->GetFestivalWorld();
     if (FestivalWorld)
@@ -81,6 +81,17 @@ void AFlowFestHUD::DrawHUD()
     }
     DrawLabel(FString::Printf(TEXT("ENERGY  %d%%"), FMath::RoundToInt(Traveler->Energy)), Muted,
         StatusX + 16.f * Scale, Pad + 81.f * Scale, Small, 1.12f * Scale);
+    DrawLabel(FString::Printf(TEXT("HUNGER  %d%%"), FMath::RoundToInt(Traveler->Hunger)), Muted,
+        StatusX + 16.f * Scale, Pad + 106.f * Scale, Small, 1.12f * Scale);
+    const FString NearbyIntent = Traveler->GetNearbyIntent();
+    if (!NearbyIntent.IsEmpty())
+    {
+        const float IntentY = Pad + (Notice.IsEmpty() ? 210.f : 263.f) * Scale;
+        DrawRect(Surface, Pad, IntentY, PanelWidth, 66.f * Scale);
+        int32 IntentBreak = NearbyIntent.Len() > 66 ? NearbyIntent.Find(TEXT(" "), ESearchCase::CaseSensitive, ESearchDir::FromEnd, 66) : INDEX_NONE;
+        DrawLabel(IntentBreak > 0 ? NearbyIntent.Left(IntentBreak) : NearbyIntent, Ink, Pad + 16.f * Scale, IntentY + 10.f * Scale, Small, 1.05f * Scale);
+        if (IntentBreak > 0) DrawLabel(NearbyIntent.Mid(IntentBreak + 1), Muted, Pad + 16.f * Scale, IntentY + 34.f * Scale, Small, 1.05f * Scale);
+    }
 
     // A restrained in-world direction cue. It reports distance but does not complete objectives.
     if (Traveler->Phase != EFlowFestPhase::Loadout && Traveler->Phase != EFlowFestPhase::ChooseCamp && Traveler->Phase != EFlowFestPhase::Morning)
@@ -99,7 +110,7 @@ void AFlowFestHUD::DrawHUD()
     DrawRect(Surface, Pad, H - FooterH - Pad, W - 2.f * Pad, FooterH);
     DrawLabel(TEXT("WASD MOVE  |  MOUSE LOOK  |  SHIFT SPRINT  |  SPACE JUMP  |  E INTERACT  |  Q FLOW  |  V EUC  |  C CHARACTER + GEAR"), Ink,
         Pad + 15.f * Scale, H - FooterH - Pad + 11.f * Scale, Small, 1.08f * Scale);
-    DrawLabel(TEXT("R ROUTINE  |  M SOUND  |  F CAMERA  |  P PHOTO FLY  |  T TRAVEL  |  G LIGHT  |  F5 SAVE  |  F9 LOAD  |  F10 RESTART"), Muted,
+    DrawLabel(TEXT("H SAY HELLO  |  R ROUTINE  |  M SOUND  |  F CAMERA  |  P PHOTO FLY  |  T TRAVEL  |  G LIGHT  |  F5 SAVE  |  F9 LOAD  |  F10 RESTART"), Muted,
         Pad + 15.f * Scale, H - FooterH - Pad + 36.f * Scale, Small, 1.03f * Scale);
 
     // Minimal crosshair remains visible over complex terrain.

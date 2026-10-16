@@ -109,6 +109,7 @@ void AFlowFestCharacter::BeginPlay()
     Super::BeginPlay();
     FParse::Value(FCommandLine::Get(), TEXT("FlowFestReview="), ReviewSite);
     FParse::Value(FCommandLine::Get(), TEXT("FlowFestShowcase="), Showcase);
+    FParse::Value(FCommandLine::Get(), TEXT("FlowFestFlowStopAt="), ShowcaseStopAt);
     ReviewSite = ReviewSite.ToLower();
     bReviewMode = ReviewSite == TEXT("gate") || ReviewSite == TEXT("camp") || ReviewSite == TEXT("fire") || ReviewSite == TEXT("overview");
     FParse::Value(FCommandLine::Get(), TEXT("FlowFestCapture="), CapturePath);
@@ -173,17 +174,30 @@ void AFlowFestCharacter::Tick(float DeltaSeconds)
         bInitialPlacementDone = true;
         if (!bReviewMode) ApplyPhaseTime();
         SyncPlayerCamp();
-        if (Showcase == TEXT("flow") || Showcase == TEXT("ride") || Showcase == TEXT("jump") || Showcase == TEXT("walk"))
+        if (Showcase == TEXT("flow") || Showcase == TEXT("idle") || Showcase == TEXT("ride") || Showcase == TEXT("jump") || Showcase == TEXT("walk"))
         {
             Phase = EFlowFestPhase::FestivalNight;
             SetActorLocationAndRotation(FestivalWorld->GetLandmark(TEXT("workshop")) + FVector(0, 0, 110), FRotator::ZeroRotator, false);
             FestivalWorld->SetTimeOfDay(17.f);
             if (Showcase == TEXT("ride")) bOnEUC = true;
             SyncModeVisuals();
+            // Keep the review camera independent of the actor's facing.
+            bUseControllerRotationYaw = false;
             CameraBoom->bDoCollisionTest = false;
-            CameraBoom->TargetArmLength = 350.f;
-            CameraBoom->SocketOffset = FVector(0, 0, 0);
-            if (AController* C = GetController()) C->SetControlRotation(FRotator(-6.f, 145.f, 0));
+            float CameraDistance = 350.f, CameraYaw = 145.f, CameraPitch = -6.f, CameraHeight = 0.f;
+            float ShowcaseEast = 0.f, ShowcaseSouth = 0.f;
+            FParse::Value(FCommandLine::Get(), TEXT("FlowFestCameraDistance="), CameraDistance);
+            FParse::Value(FCommandLine::Get(), TEXT("FlowFestCameraYaw="), CameraYaw);
+            FParse::Value(FCommandLine::Get(), TEXT("FlowFestCameraPitch="), CameraPitch);
+            FParse::Value(FCommandLine::Get(), TEXT("FlowFestCameraHeight="), CameraHeight);
+            FParse::Value(FCommandLine::Get(), TEXT("FlowFestShowcaseEast="), ShowcaseEast);
+            FParse::Value(FCommandLine::Get(), TEXT("FlowFestShowcaseSouth="), ShowcaseSouth);
+            FVector ShowcasePosition = GetActorLocation() + FVector(FMath::Clamp(ShowcaseEast, -50.f, 50.f), FMath::Clamp(ShowcaseSouth, -50.f, 50.f), 0.f) * 100.f;
+            ShowcasePosition.Z = FestivalWorld->SampleGround(ShowcasePosition.X * .01f, ShowcasePosition.Y * .01f) + 110.f;
+            SetActorLocation(ShowcasePosition, false);
+            CameraBoom->TargetArmLength = FMath::Clamp(CameraDistance, 80.f, 1000.f);
+            CameraBoom->SocketOffset = FVector(0, 0, FMath::Clamp(CameraHeight, -100.f, 100.f));
+            if (AController* C = GetController()) C->SetControlRotation(FRotator(FMath::Clamp(CameraPitch, -80.f, 80.f), CameraYaw, 0));
         }
         float ReviewHour = -1.f;
         if ((bReviewMode || !Showcase.IsEmpty()) &&
@@ -198,6 +212,12 @@ void AFlowFestCharacter::Tick(float DeltaSeconds)
     {
         bShowcaseStarted = true;
         ToggleStaff();
+    }
+    if (Showcase == TEXT("flow") && bShowcaseStarted && !bShowcaseStopped &&
+        ShowcaseStopAt > 2.f && StartupSeconds >= ShowcaseStopAt)
+    {
+        bShowcaseStopped = true;
+        StopFlow();
     }
     // Review-only input follows the same movement and animation path as play.
     if (Showcase == TEXT("walk")) bForward = StartupSeconds >= 22.f && StartupSeconds < 27.f;
@@ -268,6 +288,10 @@ void AFlowFestCharacter::Tick(float DeltaSeconds)
 
     const float ForwardInput = bWardrobeOpen ? 0.f : (bForward ? 1.f : 0.f) - (bBack ? 1.f : 0.f);
     const float RightInput = bWardrobeOpen ? 0.f : (bRight ? 1.f : 0.f) - (bLeft ? 1.f : 0.f);
+    if (VisitorAction != EFlowFestVisitorAction::None &&
+        (!FMath::IsNearlyZero(ForwardInput) || !FMath::IsNearlyZero(RightInput) || bPhotoFly || bOnEUC || bWardrobeOpen || GetCharacterMovement()->IsFalling()))
+        { EndVisitorActivity(); SaveProgress(); }
+    TickVisitorActivity(DeltaSeconds);
     if (bStaffSpinning && (!FMath::IsNearlyZero(ForwardInput) || !FMath::IsNearlyZero(RightInput) || GetCharacterMovement()->IsFalling())) StopFlow();
     if (bInVehicle && !bPhotoFly)
     {
@@ -340,6 +364,7 @@ void AFlowFestCharacter::SetupPlayerInputComponent(UInputComponent* Input)
     Input->BindAxisKey(EKeys::MouseX, this, &AFlowFestCharacter::LookX);
     Input->BindAxisKey(EKeys::MouseY, this, &AFlowFestCharacter::LookY);
     Input->BindKey(EKeys::E, IE_Pressed, this, &AFlowFestCharacter::Interact);
+    Input->BindKey(EKeys::H, IE_Pressed, this, &AFlowFestCharacter::GreetNearby);
     Input->BindKey(EKeys::One, IE_Pressed, this, &AFlowFestCharacter::SelectOne);
     Input->BindKey(EKeys::Two, IE_Pressed, this, &AFlowFestCharacter::SelectTwo);
     Input->BindKey(EKeys::Three, IE_Pressed, this, &AFlowFestCharacter::SelectThree);
@@ -427,9 +452,10 @@ void AFlowFestCharacter::Advance(EFlowFestPhase Next)
 void AFlowFestCharacter::Interact()
 {
     if (bWardrobeOpen) return;
-    if (bReviewMode) { Notify(TEXT("Review camera active. F10 starts a new journey.")); return; }
     if (!FestivalWorld) { Notify(TEXT("Festival world is loading")); return; }
     if (bPhotoFly) { Notify(TEXT("Leave photo flight to interact [P]")); return; }
+    if (TryVisitorActivity()) return;
+    if (bReviewMode) { Notify(TEXT("Explore on foot; F10 starts the Thursday journey.")); return; }
     switch (Phase)
     {
     case EFlowFestPhase::Loadout:
@@ -498,6 +524,78 @@ void AFlowFestCharacter::Interact()
     }
 }
 
+FString AFlowFestCharacter::VisitorActivityHint() const
+{
+    if (!FestivalWorld || bInVehicle || bPhotoFly || bOnEUC || bWardrobeOpen) return FString();
+    if (VisitorAction != EFlowFestVisitorAction::None)
+        return FString::Printf(TEXT("%s  %ds  /  E TO FINISH EARLY"),
+            VisitorAction == EFlowFestVisitorAction::Eat ? TEXT("EATING") : TEXT("RESTING"), FMath::CeilToInt(VisitorActionRemaining));
+    if (!bReviewMode && Phase < EFlowFestPhase::FestivalNight) return FString();
+    if (Near(TEXT("food"), 6.f)) return TEXT("E  GET FOOD + WATER");
+    if ((bReviewMode || Phase != EFlowFestPhase::NightReturn) &&
+        (Near(TEXT("camp-lower"), 7.f) || Near(TEXT("camp-upper"), 7.f) || Near(TEXT("camp-car"), 7.f)))
+        return TEXT("E  REST AT CAMP");
+    return FString();
+}
+
+bool AFlowFestCharacter::TryVisitorActivity()
+{
+    const FString Hint = VisitorActivityHint();
+    if (!Hint.IsEmpty())
+    {
+        if (VisitorAction != EFlowFestVisitorAction::None) { EndVisitorActivity(); SaveProgress(); return true; }
+        StopFlow();
+        GetCharacterMovement()->StopMovementImmediately();
+        VisitorAction = Near(TEXT("food"), 6.f) ? EFlowFestVisitorAction::Eat : EFlowFestVisitorAction::Rest;
+        VisitorActionRemaining = VisitorAction == EFlowFestVisitorAction::Eat ? 12.f : 20.f;
+        SyncModeVisuals();
+        Notify(VisitorAction == EFlowFestVisitorAction::Eat ? TEXT("Take a food and water break; move to leave.") : TEXT("Rest a while; move to leave."));
+        SaveProgress();
+        return true;
+    }
+    return false;
+}
+
+void AFlowFestCharacter::GreetNearby()
+{
+    if (!FestivalWorld || bInVehicle || bOnEUC || bPhotoFly || bWardrobeOpen) return;
+    FString Reply;
+    if (FestivalWorld->GreetNearbyAttendee(GetActorLocation(), Reply))
+    {
+        Notify(Reply);
+        SaveProgress();
+    }
+    else Notify(TEXT("Come closer to someone taking a break to say hello."));
+}
+
+void AFlowFestCharacter::EndVisitorActivity()
+{
+    VisitorAction = EFlowFestVisitorAction::None;
+    VisitorActionRemaining = 0.f;
+    SyncModeVisuals();
+}
+
+void AFlowFestCharacter::TickVisitorActivity(float DeltaSeconds)
+{
+    if (!bPhotoFly && !bWardrobeOpen && !bInVehicle)
+    {
+        Hunger = FMath::Min(100.f, Hunger + DeltaSeconds * .025f);
+        Energy = FMath::Max(0.f, Energy - DeltaSeconds * (bStaffSpinning ? .07f : GetVelocity().Size2D() > 100.f ? .035f : .008f));
+    }
+    if (VisitorAction == EFlowFestVisitorAction::None) return;
+    const float ActionStep = FMath::Min(DeltaSeconds, VisitorActionRemaining);
+    if (VisitorAction == EFlowFestVisitorAction::Eat) Hunger = FMath::Max(0.f, Hunger - ActionStep * 4.f);
+    else Energy = FMath::Min(100.f, Energy + ActionStep * 1.5f);
+    VisitorActionRemaining = FMath::Max(0.f, VisitorActionRemaining - DeltaSeconds);
+    if (VisitorActionRemaining <= 0.f) { EndVisitorActivity(); SaveProgress(); Notify(TEXT("Ready to head back out")); }
+}
+
+FString AFlowFestCharacter::GetNearbyIntent() const
+{
+    const FString Intent = FestivalWorld && !bPhotoFly && !bInVehicle ? FestivalWorld->GetNearbyAttendeeIntent(GetActorLocation()) : FString();
+    return Intent.IsEmpty() ? Intent : Intent + TEXT("  /  H SAY HELLO");
+}
+
 void AFlowFestCharacter::SelectOne()
 {
     if (bWardrobeOpen) return;
@@ -549,6 +647,7 @@ void AFlowFestCharacter::ToggleStaff()
 {
     if (bWardrobeOpen) return;
     if (bInVehicle || bPhotoFly || bOnEUC) { Notify(TEXT("Step onto the ground to flow")); return; }
+    if (VisitorAction != EFlowFestVisitorAction::None) { EndVisitorActivity(); SaveProgress(); }
     if (bStaffSpinning) { StopFlow(); return; }
     const FName Profile = UFlowFestAvatarComponent::ResolvePerformanceProfile(EquippedPropId, PerformanceVariant);
     if (!Props->LoadPerformance(CharacterId, Profile) || !Avatar->PlayPerformance(Profile))
@@ -651,7 +750,7 @@ void AFlowFestCharacter::SyncModeVisuals()
     CarMesh->SetVisibility(bInVehicle && !bPhotoFly && !bWardrobeOpen);
     Avatar->SetPresentation(bWardrobeOpen || (!bInVehicle && !bPhotoFly), bFirstPerson && !bWardrobeOpen);
     EUCMesh->SetVisibility(bOnEUC && !bInVehicle && !bPhotoFly && !bWardrobeOpen, true);
-    Props->SetVisible(bWardrobeOpen || (!bInVehicle && !bPhotoFly));
+    Props->SetVisible(bWardrobeOpen || (!bInVehicle && !bPhotoFly && VisitorAction == EFlowFestVisitorAction::None));
     // A_Ride contains the production pedal-contact pose relative to wheel ground.
     AvatarRoot->SetRelativeLocation(FVector(0, 0, -92.f));
     CameraBoom->bDoCollisionTest = !bWardrobeOpen;
@@ -785,6 +884,9 @@ void AFlowFestCharacter::SaveProgress()
     Save->Phase = Phase; Save->Camp = Camp; Save->Jam = Jam;
     Save->LoadoutChoice = LoadoutChoice; Save->DepartureChoice = DepartureChoice;
     Save->Energy = Energy; Save->Position = GetActorLocation(); Save->Rotation = GetActorRotation();
+    Save->Hunger = Hunger; Save->VisitorAction = VisitorAction; Save->VisitorActionRemaining = VisitorActionRemaining;
+    Save->CrowdState = FestivalWorld ? FestivalWorld->SaveCrowdState() : FString();
+    Save->bExplorationOnly = bReviewMode;
     Save->Hour = FestivalWorld ? FestivalWorld->GetTimeOfDay() : 15.f;
     Save->bInVehicle = bInVehicle; Save->bCampBuilt = bCampBuilt;
     Save->CharacterId = CharacterId; Save->PropId = EquippedPropId; Save->bOnEUC = bOnEUC;
@@ -794,13 +896,16 @@ void AFlowFestCharacter::SaveProgress()
 
 bool AFlowFestCharacter::ValidateSave(const UFlowFestSaveGame* S) const
 {
-    if (!S || (S->Version != 1 && S->Version != UFlowFestSaveGame::CurrentVersion) || static_cast<uint8>(S->Phase) > static_cast<uint8>(EFlowFestPhase::Morning)
+    if (!S || S->Version < 1 || S->Version > UFlowFestSaveGame::CurrentVersion || static_cast<uint8>(S->Phase) > static_cast<uint8>(EFlowFestPhase::Morning)
         || static_cast<uint8>(S->Camp) > static_cast<uint8>(EFlowFestCamp::CarCamp)
         || static_cast<uint8>(S->Jam) > static_cast<uint8>(EFlowFestJam::Completed)
         || !FMath::IsFinite(S->Energy) || S->Energy < 0.f || S->Energy > 100.f
         || !FMath::IsFinite(S->Hour) || S->Hour < 0.f || S->Hour >= 24.f
         || S->LoadoutChoice < 0 || S->LoadoutChoice > 2 || S->DepartureChoice < 0 || S->DepartureChoice > 2
         || S->Position.ContainsNaN() || S->Rotation.ContainsNaN() || S->Position.GetAbsMax() > 1000000.f) return false;
+    if (S->Version >= 3 && (!FMath::IsFinite(S->Hunger) || S->Hunger < 0.f || S->Hunger > 100.f
+        || static_cast<uint8>(S->VisitorAction) > static_cast<uint8>(EFlowFestVisitorAction::Rest)
+        || !FMath::IsFinite(S->VisitorActionRemaining) || S->VisitorActionRemaining < 0.f || S->VisitorActionRemaining > 20.f)) return false;
     if (!CharacterChoices.ContainsByPredicate([S](const FFlowFestChoice& Choice) { return Choice.Id == S->CharacterId; })
         || !PropChoices.ContainsByPredicate([S](const FFlowFestChoice& Choice) { return Choice.Id == S->PropId; })) return false;
     const bool bNeedsCamp = S->Phase >= EFlowFestPhase::CampArrival;
@@ -819,9 +924,13 @@ void AFlowFestCharacter::LoadProgress()
     if (!ValidateSave(Save)) { Notify(TEXT("No valid native save; journey unchanged")); return; }
     StopFlow();
     Phase = Save->Phase; Camp = Save->Camp; Jam = Save->Jam;
-    bReviewMode = false; bFirstPerson = false;
+    bReviewMode = Save->bExplorationOnly; bFirstPerson = false;
     LoadoutChoice = Save->LoadoutChoice; DepartureChoice = Save->DepartureChoice;
     Energy = Save->Energy; bInVehicle = Save->bInVehicle; bCampBuilt = Save->bCampBuilt;
+    Hunger = Save->Hunger;
+    VisitorAction = Save->VisitorAction;
+    VisitorActionRemaining = Save->VisitorActionRemaining;
+    if (VisitorActionRemaining <= 0.f || bInVehicle || Save->bOnEUC) VisitorAction = EFlowFestVisitorAction::None;
     bOnEUC = Save->bOnEUC && !bInVehicle; bPhotoFly = false; bStaffSpinning = false;
     CharacterId = Save->CharacterId; EquippedPropId = Save->PropId;
     bSoundEnabled = Save->bSoundEnabled;
@@ -834,6 +943,11 @@ void AFlowFestCharacter::LoadProgress()
     SetActorLocationAndRotation(Save->Position, Save->Rotation, false);
     if (FestivalWorld) FestivalWorld->SetTimeOfDay(Save->Hour);
     if (FestivalWorld) FestivalWorld->SetSoundEnabled(bSoundEnabled);
+    if (FestivalWorld && (Save->CrowdState.IsEmpty() || !FestivalWorld->RestoreCrowdState(Save->CrowdState)))
+    {
+        FestivalWorld->ResetCrowd();
+        UE_LOG(LogTemp, Display, TEXT("Saved crowd state was absent or invalid; crowd restarted for the saved time of day"));
+    }
     bInitialPlacementDone = true;
     SyncModeVisuals();
     Notify(TEXT("Native journey loaded"));
@@ -847,11 +961,14 @@ void AFlowFestCharacter::Restart()
     bFirstPerson = false;
     Phase = EFlowFestPhase::Loadout; Camp = EFlowFestCamp::None; Jam = EFlowFestJam::NotStarted;
     Energy = 100.f; LoadoutChoice = 0; DepartureChoice = 0;
+    Hunger = 15.f; VisitorAction = EFlowFestVisitorAction::None; VisitorActionRemaining = 0.f;
     bInVehicle = false; bOnEUC = false; bPhotoFly = false; bCampBuilt = false; bStaffSpinning = false;
     JamSpinSeconds = 0.f;
     GetCharacterMovement()->SetMovementMode(MOVE_Walking);
     if (FestivalWorld) SetActorLocation(FestivalWorld->GetLandmark(TEXT("start")) + FVector(0, 0, 110), false);
-    ApplyPhaseTime(); SyncModeVisuals(); SaveProgress(); Notify(TEXT("New Thursday started"));
+    ApplyPhaseTime();
+    if (FestivalWorld) FestivalWorld->ResetCrowd();
+    SyncModeVisuals(); SaveProgress(); Notify(TEXT("New Thursday started"));
 }
 
 bool AFlowFestCharacter::RunSmokeDrive()
@@ -1108,8 +1225,40 @@ void AFlowFestCharacter::RunSmoke()
         Expect(bUseControllerRotationYaw && !GetCharacterMovement()->bOrientRotationToMovement,
             TEXT("on-foot view facing leaves reverse and strafe gait reachable"));
         Interact(); Expect(Phase == EFlowFestPhase::WalkToFestival && bCampBuilt, TEXT("make camp"));
-        MoveTo(TEXT("workshop")); Interact();
+        MoveTo(CampIndex == 0 ? TEXT("food") : TEXT("workshop")); Interact();
         Expect(Phase == EFlowFestPhase::FestivalNight, TEXT("workshop"));
+        Expect(VisitorAction == EFlowFestVisitorAction::None, TEXT("workshop progression takes priority over nearby food"));
+        if (CampIndex == 0)
+        {
+            Hunger = 80.f;
+            MoveTo(TEXT("food")); Interact();
+            Expect(VisitorAction == EFlowFestVisitorAction::Eat && Phase == EFlowFestPhase::FestivalNight,
+                TEXT("food stop shares crowd landmark without advancing journey"));
+            TickVisitorActivity(3.f);
+            Expect(Hunger < 69.f && VisitorActionRemaining == 9.f, TEXT("food restores hunger over elapsed action time"));
+            SaveProgress();
+            const FString CrowdBeforeLoad = FestivalWorld->SaveCrowdState();
+            EndVisitorActivity(); Hunger = 100.f;
+            LoadProgress();
+            Expect(VisitorAction == EFlowFestVisitorAction::Eat && VisitorActionRemaining == 9.f && Hunger < 69.f,
+                TEXT("food break and needs resume from save"));
+            Expect(FestivalWorld->SaveCrowdState() == CrowdBeforeLoad, TEXT("journey load restores attendee intentions"));
+            Interact();
+            Expect(VisitorAction == EFlowFestVisitorAction::None, TEXT("food break can end early"));
+            Interact();
+            Expect(VisitorAction == EFlowFestVisitorAction::Eat, TEXT("food break can resume"));
+            ToggleStaff();
+            Expect(VisitorAction == EFlowFestVisitorAction::None && bStaffSpinning,
+                TEXT("flow cancels the food break"));
+            LoadProgress();
+            Expect(VisitorAction == EFlowFestVisitorAction::None && VisitorActionRemaining == 0.f,
+                TEXT("load does not resurrect a food break canceled by flow"));
+            MoveTo(CampIds[CampIndex]); Energy = 40.f; Interact();
+            Expect(VisitorAction == EFlowFestVisitorAction::Rest, TEXT("player can rest at the same camp as attendees"));
+            TickVisitorActivity(20.f);
+            Expect(VisitorAction == EFlowFestVisitorAction::None && Energy > 69.f && Energy <= 100.f,
+                TEXT("camp rest finishes and restores bounded energy"));
+        }
         MoveTo(TEXT("fire")); Interact();
         Expect(Phase == EFlowFestPhase::NightFreeRoam, TEXT("fire circle"));
         Interact(); Expect(Jam == EFlowFestJam::Active, TEXT("join jam"));
@@ -1200,6 +1349,8 @@ FString AFlowFestCharacter::GetObjectiveDetail() const
 
 FString AFlowFestCharacter::GetInteractHint() const
 {
+    const FString ActivityHint = VisitorActivityHint();
+    if (!ActivityHint.IsEmpty()) return ActivityHint;
     if (bReviewMode) return TEXT("F10  BEGIN JOURNEY");
     if (Phase == EFlowFestPhase::ChooseCamp) return TEXT("1 / 2 / 3  CHOOSE CAMP");
     if (Phase == EFlowFestPhase::Morning) return TEXT("F10  NEW JOURNEY");
