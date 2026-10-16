@@ -158,6 +158,24 @@
     }
   }
 
+  /* Reduced motion keeps one quiet opacity cue, as the viewer's 2D and 3D
+     handoff does (viewer-split-pane.css): the host sets no scale there, and
+     this narrowly outranks the app-wide 0.01ms reduction so the stage fades
+     rather than cuts. */
+  @media (prefers-reduced-motion: reduce) {
+    :global(:root)
+      .scene-preparation-surface[data-scene-preparation].leaving
+      .stage {
+      animation-duration: var(--leave-stage, 200ms) !important;
+    }
+  }
+
+  :global(:root[data-motion-preference="reduce"])
+    .scene-preparation-surface[data-scene-preparation].leaving
+    .stage {
+    animation-duration: var(--leave-stage, 200ms) !important;
+  }
+
   .sky {
     position: absolute;
     inset: 0 0 calc(100% - var(--horizon));
