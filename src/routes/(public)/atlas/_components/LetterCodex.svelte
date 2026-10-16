@@ -55,17 +55,38 @@
   import { mutateCurrentUrl } from "#lib/shared/navigation/services/url-state.js";
   import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import {
+    codexDataFrom,
+    withStartOrientations,
+    type CodexStartOrientations,
+  } from "../../guide/codex/_data/codex-orientation";
 
   let {
     initialLetter = "A",
     board = "atlas",
     propType,
+    startOrientations,
   }: {
     initialLetter?: string;
     board?: BoardKey;
     /** The prop the board and explorer draw; omitted keeps the dataset's own. */
     propType?: PropType;
+    /** Where each hand starts on the Atlas board and in the explorer, with
+     *  every end recalculated; omitted keeps the stored orientations. */
+    startOrientations?: CodexStartOrientations;
   } = $props();
+
+  const getBoardData = $derived(
+    startOrientations
+      ? (id: string) => codexDataFrom(id, startOrientations)
+      : undefined
+  );
+
+  function begun(pictographs: readonly PictographData[]): PictographData[] {
+    return startOrientations
+      ? pictographs.map((p) => withStartOrientations(p, startOrientations))
+      : [...pictographs];
+  }
 
   const selection = new SequenceSelection();
   setSequenceSelection(selection);
@@ -87,7 +108,9 @@
   let leftRotation = $state<RotationDirectionValue>(
     RotationDirection.CLOCKWISE
   );
-  let rightRotation = $state<RotationDirectionValue>(RotationDirection.CLOCKWISE);
+  let rightRotation = $state<RotationDirectionValue>(
+    RotationDirection.CLOCKWISE
+  );
   let overlayOpen = $state(false);
   let stageBoard = $state<ReturnType<typeof BoardStage> | undefined>();
 
@@ -109,13 +132,17 @@
   let learningError = $state(false);
 
   const variations = $derived(
-    (pictographsByGrid[gridMode] ?? []).filter(
-      (pictograph) => pictograph.letter === info.label
+    begun(
+      (pictographsByGrid[gridMode] ?? []).filter(
+        (pictograph) => pictograph.letter === info.label
+      )
     )
   );
   const stageVariations = $derived(
-    (pictographsByGrid[GridMode.DIAMOND] ?? []).filter(
-      (pictograph) => pictograph.letter === info.label
+    begun(
+      (pictographsByGrid[GridMode.DIAMOND] ?? []).filter(
+        (pictograph) => pictograph.letter === info.label
+      )
     )
   );
   const editedVariations = $derived(
@@ -347,7 +374,7 @@
   {#if board === "sheets"}
     <BoardSheets onSelect={select} />
   {:else if board === "atlas"}
-    <BoardAtlas onSelect={select} {propType} />
+    <BoardAtlas onSelect={select} {propType} getData={getBoardData} />
   {:else}
     <BoardStage
       bind:this={stageBoard}
