@@ -23,8 +23,11 @@
    * The 3D viewer's loading screen: the environment that is about to appear,
    * painted from its sky colours before any of it has loaded, with the
    * sequence's name above the horizon and the load's bar on the ground,
-   * where the playback controls will be. When the scene is ready it fades in
-   * over the same place.
+   * where the playback controls will be.
+   *
+   * `leaving` plays the reveal: the title and bar fade, then the stage pushes
+   * forward and dissolves into the scene behind it. The host sets the
+   * timing through `--leave-chrome`, `--leave-delay` and `--leave-stage`.
    *
    * The bar shows `session`, the one bar that runs from "Opening 3D" until
    * the scene is smooth, so the host's placeholder and the scene's curtain
@@ -49,6 +52,8 @@
     environmentId?: SceneEnvironmentId;
     /** The sequence's name, shown above the horizon. */
     title?: string | null;
+    /** The scene is ready behind it: play the reveal. */
+    leaving?: boolean;
   }
 
   let {
@@ -57,6 +62,7 @@
     labels = SCENE_LOADING_LABELS,
     environmentId,
     title = null,
+    leaving = false,
   }: Props = $props();
 
   const sky = $derived(
@@ -74,6 +80,7 @@
 <div
   class="scene-preparation-surface"
   class:light-horizon={lightHorizon}
+  class:leaving
   style:--sky-top={sky.top}
   style:--sky-mid={sky.mid}
   style:--sky-horizon={sky.horizon}
@@ -83,10 +90,12 @@
   data-scene-preparation-label={statusText}
   data-scene-preparation-progress={session ? session.percent / 100 : 0}
 >
-  <div class="sky" aria-hidden="true"></div>
-  <div class="horizon-glow" aria-hidden="true"></div>
-  <div class="ground" aria-hidden="true">
-    <div class="floor-grid"></div>
+  <div class="stage" aria-hidden="true">
+    <div class="sky"></div>
+    <div class="horizon-glow"></div>
+    <div class="ground">
+      <div class="floor-grid"></div>
+    </div>
   </div>
 
   {#if title}
@@ -108,7 +117,42 @@
     z-index: 30;
     overflow: hidden;
     container-type: size;
+  }
+
+  .stage {
+    position: absolute;
+    inset: 0;
     background: var(--sky-mid);
+    transform-origin: 50% var(--horizon);
+  }
+
+  /* The reveal. The title and bar leave first, so neither ghosts over the
+     performer or crosses the playback controls coming up beneath. Then the
+     stage moves toward the viewer as it fades, opening onto the scene. Only
+     opacity and transform move, so it holds its frame rate on any device
+     while the scene renders. */
+  .leaving .title,
+  .leaving .status {
+    opacity: 0;
+    transition:
+      opacity var(--leave-chrome, 200ms) cubic-bezier(0.7, 0, 0.84, 0),
+      transform var(--leave-chrome, 200ms) cubic-bezier(0.7, 0, 0.84, 0);
+  }
+
+  .leaving .title {
+    transform: translateY(calc(var(--leave-lift, 8px) * -1));
+  }
+
+  .leaving .stage {
+    animation: stage-push-through var(--leave-stage, 800ms)
+      cubic-bezier(0.4, 0, 0.2, 1) var(--leave-delay, 0ms) both;
+  }
+
+  @keyframes stage-push-through {
+    to {
+      opacity: 0;
+      transform: scale(var(--leave-scale, 1.08));
+    }
   }
 
   .sky {

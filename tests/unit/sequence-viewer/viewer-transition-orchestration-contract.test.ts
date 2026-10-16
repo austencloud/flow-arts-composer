@@ -396,8 +396,17 @@ describe("Sequence Viewer transition orchestration contract", () => {
     );
     expect(sceneLoadingCurtain).toContain("useSceneLoadingSession().open()");
     expect(sceneLoadingCurtain).toMatch(
-      /<ScenePreparationSurface\s+\{statusText\}\s+\{session\}\s+\{labels\}/
+      /<ScenePreparationSurface\s+statusText=\{shownStatus\}\s+\{session\}\s+\{labels\}/
     );
+    // The reveal plays in order: the bar finishes, the stage leaves, and the
+    // 3D rail waits until the scene is showing rather than popping in over
+    // the curtain.
+    expect(sceneLoadingCurtain).toContain('leaving={phase === "leaving"}');
+    expect(sceneLoadingCurtain).toContain("after(motion.hold,");
+    expect(motionSurface).toContain(
+      "is3DActive && scene3DReady && scene3DRevealed"
+    );
+    expect(motionSurface).toContain("onSceneRevealedChange:");
     expect(scenePreparationSurface).toContain("data-scene-preparation");
     expect(scenePreparationSurface).toContain("3D viewer");
     expect(scenePreparationSurface).toContain("<LoadingCapsule");

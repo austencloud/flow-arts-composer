@@ -153,6 +153,9 @@
     warmSelectedSceneAssets();
   });
   let scene3DReady = $state(false);
+  // Ready is when the stage is set; revealed is when the loading curtain has
+  // opened far enough that the scene is what you see. The rail waits for it.
+  let scene3DRevealed = $state(false);
   let animatorReady = $state(false);
   let animatorReadyFrame = 0;
   const preparedTunnelLayers = $derived(
@@ -308,7 +311,9 @@
     is2DActive || (isTunnelActive && !keep3DUntilTunnelPaints)
   );
   const is2DRailPresented = $derived(isAnimatorActive);
-  const is3DRailPresented = $derived(is3DActive && scene3DReady);
+  const is3DRailPresented = $derived(
+    is3DActive && scene3DReady && scene3DRevealed
+  );
   const is3DPreparing = $derived(
     side === "left" && is3DActive && is2DMounted && !scene3DReady
   );
@@ -610,6 +615,10 @@
               scene3DReady = ready;
               onSceneReadyChange?.(ready);
             },
+            onSceneRevealedChange: (revealed: boolean) => {
+              if (side !== "left") return;
+              scene3DRevealed = revealed;
+            },
             initialRevealMode: "gated",
           }}
         />
@@ -831,7 +840,7 @@
       onAction={onViewer3DAction}
       onLayoutChange={(next) => (sceneControlLayout = next)}
     />
-    {#if is3DActive && scene3DReady && showViewer3DIntro}
+    {#if is3DRailPresented && showViewer3DIntro}
       <Viewer3DRailHint
         onSettingChange={onViewer3DSettingChange}
         force={replayViewer3DIntro}

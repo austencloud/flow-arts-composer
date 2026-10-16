@@ -11,12 +11,17 @@
    * same one the viewer host showed while the 3D code downloaded, so it
    * carries on from there. This component tells it which milestones the
    * scene has reached; the bar's timing comes from the last completed load.
+   *
+   * The reveal runs in order, so each piece has the screen to itself: the
+   * bar fills to the end under the status it already showed, the title and
+   * bar leave, the stage pushes through into the scene, and `onRevealed`
+   * lets the host bring its controls in once the scene is showing.
    */
 
-  import { onMount } from "svelte";
+  import { onDestroy, onMount } from "svelte";
   import { getSceneFeatureContext } from "../context/scene-feature-context";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
-  import { opaqueFade } from "#lib/shared/transitions/motion.js";
+  import { reducedMotion } from "#lib/shared/transitions/motion.js";
   import type { SceneEnvironmentId } from "../../environments/domain/scene-environment.js";
   import { useSceneLoadingSession } from "../scene-loading-session.svelte.js";
   import ScenePreparationSurface, {
@@ -31,6 +36,8 @@
     additionalRevealReady?: boolean;
     additionalRevealProgress?: number | null;
     additionalRevealLabel?: string;
+    /** The scene is showing: the host's controls can come in. */
+    onRevealed?: () => void;
   }
 
   let {
@@ -39,6 +46,7 @@
     additionalRevealReady = true,
     additionalRevealProgress = null,
     additionalRevealLabel = "Finishing the scene",
+    onRevealed,
   }: Props = $props();
 
   const sceneFeatures = getSceneFeatureContext();
@@ -72,6 +80,14 @@
         ? additionalRevealLabel
         : "Warming up"
   );
+  // The status the bar finishes under. Whatever settled the load also moves
+  // the status on, and a new word flashing in as the bar completes reads as
+  // one more step, so the last word shown while loading stays.
+  let loadingStatus = $state<string | null>(null);
+  $effect.pre(() => {
+    if (!revealSettled) loadingStatus = statusText;
+  });
+  const shownStatus = $derived(loadingStatus ?? statusText);
   const labels = $derived(
     SCENE_LOADING_LABELS.includes(
       additionalRevealLabel as (typeof SCENE_LOADING_LABELS)[number]
@@ -79,6 +95,10 @@
       ? SCENE_LOADING_LABELS
       : [...SCENE_LOADING_LABELS, additionalRevealLabel]
   );
+
+  // The bar takes 200 ms to fill once the load completes; the reveal waits
+  // for it and one beat more so the full bar is seen.
+  const FINISH_HOLD_MS = DURATION.normal + DURATION.instant;
 
   // Track whether the initial load has completed. Once it has,
   // the curtain never comes back - even if the user toggles on
@@ -103,17 +123,51 @@
     if (sceneFeatures.warmupProgress >= 0.8) session.reach("compiled");
   });
 
+  // The reveal's beats. Reduced motion keeps the order but drops the push
+  // and shortens the dissolve to a plain fade.
+  const motion = reducedMotion()
+    ? {
+        hold: FINISH_HOLD_MS,
+        chrome: DURATION.fast,
+        delay: 0,
+        stage: DURATION.normal,
+        scale: 1,
+        lift: 0,
+      }
+    : {
+        hold: FINISH_HOLD_MS,
+        chrome: DURATION.normal,
+        delay: DURATION.fast,
+        stage: DURATION.scene,
+        scale: 1.08,
+        lift: 8,
+      };
+
+  type RevealPhase = "loading" | "finishing" | "leaving" | "gone";
+  let phase = $state<RevealPhase>("loading");
+  const timers: ReturnType<typeof setTimeout>[] = [];
+  const after = (ms: number, run: () => void) =>
+    timers.push(setTimeout(run, ms));
+  onDestroy(() => timers.forEach(clearTimeout));
+
   $effect(() => {
-    if (revealSettled && !initialLoadComplete) {
-      session.complete();
-      initialLoadComplete = true;
-    }
+    if (!revealSettled || initialLoadComplete) return;
+    initialLoadComplete = true;
+    session.complete();
+    phase = "finishing";
+    after(motion.hold, () => {
+      phase = "leaving";
+      // Halfway through the dissolve the scene is the larger part of the
+      // picture, so the controls arrive onto it rather than onto the stage.
+      after(motion.delay + motion.stage / 2, () => onRevealed?.());
+      after(motion.delay + motion.stage, () => (phase = "gone"));
+    });
   });
 
-  const showCurtain = $derived(!initialLoadComplete);
+  const showCurtain = $derived(phase !== "gone");
 
   $effect(() => {
-    if (!showCurtain) return;
+    if (initialLoadComplete) return;
     const enabled = sceneFeatures.features.filter(
       (f) =>
         f.requiresAsyncLoad &&
@@ -132,13 +186,22 @@
 </script>
 
 {#if showCurtain}
-  <div class="curtain" out:opaqueFade={{ duration: DURATION.emphasis }}>
+  <div
+    class="curtain"
+    data-reveal-phase={phase}
+    style:--leave-chrome="{motion.chrome}ms"
+    style:--leave-delay="{motion.delay}ms"
+    style:--leave-stage="{motion.stage}ms"
+    style:--leave-scale={motion.scale}
+    style:--leave-lift="{motion.lift}px"
+  >
     <ScenePreparationSurface
-      {statusText}
+      statusText={shownStatus}
       {session}
       {labels}
       {environmentId}
       {title}
+      leaving={phase === "leaving"}
     />
   </div>
 {/if}
@@ -149,5 +212,10 @@
     inset: 0;
     z-index: 30;
     overflow: hidden;
+  }
+
+  /* Let the scene take the pointer as soon as it starts to show. */
+  .curtain[data-reveal-phase="leaving"] {
+    pointer-events: none;
   }
 </style>
