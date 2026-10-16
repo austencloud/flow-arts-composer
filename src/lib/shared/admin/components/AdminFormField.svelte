@@ -8,6 +8,7 @@
     AdminFormFieldType,
     SelectOption,
   } from "../types/admin-component-types";
+  import { FormField } from "@austencloud/ui";
 
   interface AdminFormFieldProps {
     label: string;
@@ -37,21 +38,6 @@
     class: className = "",
   }: AdminFormFieldProps = $props();
 
-  // Stable unique ID for accessibility - generated once per component instance.
-  // Using $props.id() (Svelte 5) avoids the re-derive churn of Math.random().
-  const baseId = $props.id();
-  const fieldId = baseId;
-  const errorId = `${baseId}-error`;
-  const helpId = `${baseId}-help`;
-
-  // Build aria-describedby value from available descriptions
-  const describedBy = $derived.by(() => {
-    const ids: string[] = [];
-    if (error) ids.push(errorId);
-    if (helpText) ids.push(helpId);
-    return ids.length > 0 ? ids.join(" ") : undefined;
-  });
-
   function handleChange(e: Event) {
     const target = e.target as
       | HTMLInputElement
@@ -76,101 +62,83 @@
   }
 </script>
 
-<div class="admin-form-field {className}" class:has-error={error}>
-  <label class="field-label" for={fieldId}>
-    {label}
-    {#if required}
-      <span class="required">*</span>
+<FormField
+  {label}
+  help={helpText}
+  {error}
+  {required}
+  {disabled}
+  class="admin-form-field {className}"
+>
+  {#snippet children(field)}
+    {#if type === "text" || type === "number"}
+      <input
+        id={field.id}
+        class="field-input"
+        {type}
+        bind:value
+        {placeholder}
+        {required}
+        {disabled}
+        aria-required={field.required}
+        aria-invalid={field.invalid}
+        aria-describedby={field.describedBy}
+        onchange={handleChange}
+      />
+    {:else if type === "textarea"}
+      <textarea
+        id={field.id}
+        class="field-textarea"
+        bind:value
+        {placeholder}
+        {required}
+        {disabled}
+        aria-required={field.required}
+        aria-invalid={field.invalid}
+        aria-describedby={field.describedBy}
+        onchange={handleChange}
+        rows="3"
+      ></textarea>
+    {:else if type === "select"}
+      <select
+        id={field.id}
+        class="field-select"
+        bind:value
+        {required}
+        {disabled}
+        aria-required={field.required}
+        aria-invalid={field.invalid}
+        aria-describedby={field.describedBy}
+        onchange={handleChange}
+      >
+        {#each options as option}
+          <option value={option.value} disabled={option.disabled}>
+            {option.label}
+          </option>
+        {/each}
+      </select>
+    {:else if type === "toggle"}
+      <button
+        id={field.id}
+        type="button"
+        class="field-toggle"
+        class:checked={value}
+        role="switch"
+        aria-checked={!!value}
+        aria-label={label}
+        aria-invalid={field.invalid}
+        aria-required={field.required}
+        aria-describedby={field.describedBy}
+        {disabled}
+        onclick={handleToggle}
+      >
+        <span class="toggle-slider" aria-hidden="true"></span>
+      </button>
     {/if}
-  </label>
-
-  {#if type === "text" || type === "number"}
-    <input
-      id={fieldId}
-      class="field-input"
-      {type}
-      bind:value
-      {placeholder}
-      {required}
-      {disabled}
-      aria-required={required}
-      aria-invalid={!!error}
-      aria-describedby={describedBy}
-      onchange={handleChange}
-    />
-  {:else if type === "textarea"}
-    <textarea
-      id={fieldId}
-      class="field-textarea"
-      bind:value
-      {placeholder}
-      {required}
-      {disabled}
-      aria-required={required}
-      aria-invalid={!!error}
-      aria-describedby={describedBy}
-      onchange={handleChange}
-      rows="3"
-    ></textarea>
-  {:else if type === "select"}
-    <select
-      id={fieldId}
-      class="field-select"
-      bind:value
-      {disabled}
-      onchange={handleChange}
-    >
-      {#each options as option}
-        <option value={option.value} disabled={option.disabled}>
-          {option.label}
-        </option>
-      {/each}
-    </select>
-  {:else if type === "toggle"}
-    <button
-      id={fieldId}
-      type="button"
-      class="field-toggle"
-      class:checked={value}
-      role="switch"
-      aria-checked={!!value}
-      aria-label={label}
-      aria-describedby={describedBy}
-      {disabled}
-      onclick={handleToggle}
-    >
-      <span class="toggle-slider" aria-hidden="true"></span>
-    </button>
-  {/if}
-
-  {#if helpText}
-    <span id={helpId} class="field-help">{helpText}</span>
-  {/if}
-
-  {#if error}
-    <span id={errorId} class="field-error" role="alert" aria-live="assertive"
-      >{error}</span
-    >
-  {/if}
-</div>
+  {/snippet}
+</FormField>
 
 <style>
-  .admin-form-field {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .field-label {
-    font-size: var(--font-size-sm);
-    font-weight: 500;
-    color: var(--theme-text);
-  }
-
-  .required {
-    color: var(--semantic-error);
-  }
-
   .field-input,
   .field-textarea,
   .field-select {
@@ -211,8 +179,8 @@
   .field-toggle {
     position: relative;
     display: inline-block;
-    width: var(--min-touch-target);
-    height: 24px;
+    width: var(--min-touch-target, 44px);
+    height: var(--min-touch-target, 44px);
     padding: 0;
     border: none;
     background: transparent;
@@ -233,10 +201,11 @@
 
   .toggle-slider {
     position: absolute;
-    top: 0;
+    top: 50%;
     left: 0;
     right: 0;
-    bottom: 0;
+    height: 24px;
+    transform: translateY(-50%);
     background-color: var(--theme-card-bg);
     transition: var(--duration-emphasis);
     border-radius: 24px;
@@ -262,20 +231,9 @@
     transform: translateX(24px);
   }
 
-  /* Help and error text */
-  .field-help {
-    font-size: var(--font-size-compact);
-    color: var(--theme-text-dim, var(--theme-text-dim));
-  }
-
-  .field-error {
-    font-size: var(--font-size-compact);
-    color: color-mix(in srgb, var(--semantic-error) 60%, white);
-  }
-
-  .has-error .field-input,
-  .has-error .field-textarea,
-  .has-error .field-select {
+  .field-input[aria-invalid="true"],
+  .field-textarea[aria-invalid="true"],
+  .field-select[aria-invalid="true"] {
     border-color: var(--semantic-error);
   }
 
