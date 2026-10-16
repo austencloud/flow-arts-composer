@@ -101,30 +101,41 @@ export function createDraftRecoveryController(deps: {
     void showDrafts(mode);
   }
 
-  async function recover(id: string) {
-    if (busy) return;
+  async function recover(id: string): Promise<boolean> {
+    if (busy) return false;
     busy = true;
     message = null;
     try {
-      if (!(await preserveCurrentEditor(dialogMode, id))) return;
+      if (!(await preserveCurrentEditor(dialogMode, id))) return false;
       deps.getSequenceState(dialogMode).cancelPendingSave();
       const workspace = await deps.persister.recoverDraft(dialogMode, id);
       if (!workspace) {
         message =
           "This version could not be opened. Review the saved versions and try again.";
         versions = await deps.persister.listDrafts(dialogMode);
-        return;
+        return false;
       }
       deps.getSequenceState(dialogMode).restoreDraftState(workspace);
       deps.onRestored(dialogMode);
       open = false;
       offered.delete(dialogMode);
+      return true;
     } catch {
       message =
         "This version could not be opened. Your drafts are still available.";
+      return false;
     } finally {
       busy = false;
     }
+  }
+
+  async function resume(mode: DraftMode, id: string): Promise<boolean> {
+    if (busy) return false;
+    dialogMode = mode;
+    dialogKind = "history";
+    const restored = await recover(id);
+    if (!restored) open = true;
+    return restored;
   }
 
   async function startFresh() {
@@ -227,6 +238,7 @@ export function createDraftRecoveryController(deps: {
     showDrafts,
     observeActiveMode,
     recover,
+    resume,
     startFresh,
     retry,
     flushPending,

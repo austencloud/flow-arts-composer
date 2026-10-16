@@ -9,6 +9,7 @@
 -->
 <script module lang="ts">
   export type WorkShelfId =
+    | "drafts"
     | "collections"
     | "art"
     | "performances"
@@ -38,6 +39,12 @@
   let { value, sharedAvailable, onchange, content }: Props = $props();
 
   const shelves = $derived<Record<WorkShelfId, ShelfDefinition>>({
+    drafts: {
+      label: "Drafts",
+      shortLabel: "Drafts",
+      description: "Unfinished sequences on this device",
+      icon: "fa-pen-to-square",
+    },
     collections: {
       label: t("browse_ui_my_collections"),
       shortLabel: t("browse_verified_saved"),
@@ -70,7 +77,7 @@
     },
   });
 
-  const shelfIds = Object.keys(shelves) as WorkShelfId[];
+  const shelfIds = $derived(Object.keys(shelves) as WorkShelfId[]);
   const options = $derived(
     shelfIds.map((shelfId) => ({
       value: shelfId,
@@ -123,7 +130,7 @@
   role="tabpanel"
   aria-labelledby="work-shelf-tab-{value}"
 >
-  {#if value !== "collections"}
+  {#if value !== "collections" && value !== "drafts"}
     <header class="shelf-panel-header">
       <h3>{shelves[value].label}</h3>
       <p>{shelves[value].description}</p>

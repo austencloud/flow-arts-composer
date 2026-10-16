@@ -132,7 +132,7 @@ export async function listStoredDraftVersions(
         Number(b.isHead) - Number(a.isHead)
     )
     .filter(({ version }) => {
-      const content = contentKey(version);
+      const content = `${version.sessionId}:${contentKey(version)}`;
       if (seenIds.has(version.id) || seenContent.has(content)) return false;
       seenIds.add(version.id);
       seenContent.add(content);
@@ -161,37 +161,27 @@ export async function commitDraft(
       return { accepted: false, revision: head?.revision ?? 0, head };
     }
 
-    if (head?.version && version) {
-      // Keep one successful predecessor. Normal editing cannot grow this without bound.
-      if (contentKey(head.version) !== contentKey(version)) {
-        await putRecord(tabKey(mode, "previous"), {
-          kind: "version",
-          version: head.version,
-        });
-      }
-      if (head.version.sessionId !== version.sessionId) {
-        // Starting a different session keeps the work it replaced available
-        // even after the new session has saved several more edits.
-        await putRecord(tabKey(mode, "archive"), {
-          kind: "version",
-          version: head.version,
-        });
-      }
-    }
-    if (!version) {
-      if (head?.version) {
-        await putRecord(tabKey(mode, "archive"), {
-          kind: "version",
-          version: head.version,
-        });
-      }
-      const previous = await getRecord(tabKey(mode, "previous"));
-      if (previous?.id !== undefined) await db.userWork.delete(previous.id);
-    }
+    // Keep each unfinished session, with one predecessor per session. Autosaves
+    // replace these slots; only starting another draft adds a new pair.
+    // Retain legacy archive/previous rows so upgrading cannot discard old work.
+    if (head?.version) await retainSessionVersion(head.version);
+    if (version) await retainSessionVersion(version);
     const next = { revision: (head?.revision ?? 0) + 1, version };
     await putRecord(tabKey(mode, "head"), { kind: "head", head: next });
     return { accepted: true, revision: next.revision, head: next };
   });
+}
+
+async function retainSessionVersion(version: DraftVersion): Promise<void> {
+  const key = tabKey(version.mode, `session:${version.sessionId}`);
+  const existing = (await getRecord(key))?.data as DraftRecord | undefined;
+  if (
+    existing?.kind === "version" &&
+    contentKey(existing.version) !== contentKey(version)
+  ) {
+    await putRecord(`${key}:previous`, existing);
+  }
+  await putRecord(key, { kind: "version", version });
 }
 
 export async function storeDivergentDraft(

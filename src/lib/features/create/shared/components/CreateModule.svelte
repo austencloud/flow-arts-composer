@@ -52,6 +52,7 @@
   import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import { setSideBySideLayout } from "#lib/shared/application/state/animation-visibility-state.svelte.js";
   import { onMount, setContext, tick, untrack } from "svelte";
+  import { replaceState } from "$app/navigation";
   import ErrorBanner from "./ErrorBanner.svelte";
   import DraftRecovery from "./DraftRecovery.svelte";
   import { getSequencePersister } from "../get-sequence-persister";
@@ -151,9 +152,10 @@
   let sessionManager: SessionManager | null = $state(null);
   let autosaver: Autosaver | null = $state(null);
   let draftRecovery: DraftRecoveryController | null = $state(null);
+  let resolvingDraftRequest = $state(true);
 
   $effect(() => {
-    if (!navigationState.isCreateFrontDoorOpen) {
+    if (!resolvingDraftRequest && !navigationState.isCreateFrontDoorOpen) {
       draftRecovery?.observeActiveMode();
     }
   });
@@ -546,6 +548,17 @@
       let hasDeepLink = false;
 
       try {
+        const draftUrl = new URL(window.location.href);
+        const requestedDraft = draftUrl.searchParams.get("draft");
+        const requestedMode = draftMode(navigationState.activeTab);
+        if (requestedDraft && requestedMode) {
+          await getSequencePersister()
+            .prepareDraftResume(requestedMode, requestedDraft)
+            .catch(() => {
+              // The recovery dialog reports storage failures after the editor
+              // mounts, so a failed preload must not prevent editing.
+            });
+        }
         const initStart = performance.now();
         initProgress = t("create_ui_resolving_services");
         const { getCreateModuleInitializer } = await bootProfiler.measureAsync(
@@ -696,6 +709,15 @@
           hasDeepLink = true;
         }
 
+        if (requestedDraft && requestedMode) {
+          hasDeepLink = true;
+          await draftRecovery.resume(requestedMode, requestedDraft);
+          // A reload should restore the resumed editor, not reopen an old version.
+          draftUrl.searchParams.delete("draft");
+          replaceState(draftUrl, {});
+        }
+        resolvingDraftRequest = false;
+
         logger.success("Autosave started");
         logger.success("CreateModule initialized successfully");
         bootProfiler.milestone("create:workspace-initialized");
@@ -749,6 +771,7 @@
         window.addEventListener("resize", checkIsMobile);
         finishActivation();
       } catch (err) {
+        resolvingDraftRequest = false;
         finishActivation("error");
         error =
           err instanceof Error
@@ -1106,7 +1129,6 @@
         <div class="create-tab">
           {#if WorkspaceLayout}
             <WorkspaceLayout
-              {draftRecovery}
               {shouldUseSideBySideLayout}
               {CreateModuleState}
               {panelState}

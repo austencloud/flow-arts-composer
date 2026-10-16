@@ -10,7 +10,7 @@
     surface,
   }: {
     controller: DraftRecoveryController;
-    surface: "status" | "control" | "dialog";
+    surface: "status" | "dialog";
   } = $props();
   const status = $derived(controller.status?.status ?? "idle");
   const needsReview = $derived(status === "recovery" || status === "conflict");
@@ -45,26 +45,8 @@
   }
 </script>
 
-{#if surface === "control" && controller.mode}
-  <button
-    type="button"
-    class="draft-control"
-    class:attention={status === "error" || needsReview}
-    disabled={controller.busy}
-    onclick={() => controller.showDrafts()}
-    aria-label={needsReview ? "Review draft" : "Saved drafts"}
-    aria-haspopup="dialog"
-    title="{needsReview ? 'Review draft' : 'Saved drafts'} — {labels[status]}"
-    data-testid="drafts-control"
-  >
-    <i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i>
-    {#if status === "error" || needsReview}
-      <span class="attention-dot" aria-hidden="true"></span>
-    {/if}
-    <span class="sr-only" role="status" aria-live="polite"
-      >{labels[status]}</span
-    >
-  </button>
+{#if surface === "status" && controller.mode}
+  <span class="sr-only" role="status" aria-live="polite">{labels[status]}</span>
 {/if}
 
 {#if surface === "status" && controller.mode && (status === "error" || needsReview)}
@@ -210,28 +192,6 @@
 {/if}
 
 <style>
-  .draft-control {
-    pointer-events: auto;
-    position: relative;
-    display: grid;
-    place-items: center;
-    width: var(--min-touch-target, 44px);
-    height: var(--min-touch-target, 44px);
-    flex: 0 0 var(--min-touch-target, 44px);
-    padding: 0;
-    border-radius: 50%;
-    font-size: var(--font-size-lg, 18px);
-  }
-  .attention-dot {
-    position: absolute;
-    top: 3px;
-    right: 3px;
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
-    background: var(--semantic-warning, #fbbf24);
-    border: 2px solid var(--theme-panel-bg);
-  }
   .draft-status {
     display: flex;
     align-items: center;
