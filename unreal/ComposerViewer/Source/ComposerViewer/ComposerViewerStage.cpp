@@ -101,17 +101,30 @@ void AComposerViewerStage::BeginPlay()
     Dais->SetRelativeScale3D(FVector(3.2f, 3.2f, .18f));
     if (UMaterialInterface* Metal = LoadObject<UMaterialInterface>(nullptr,
         TEXT("/Game/FlowFest/Materials/M_Metal.M_Metal"))) Dais->SetMaterial(0, Metal);
-    KeyLight->SetWorldRotation(FRotator(-38, -28, 0));
+    // The camera looks in from +X. Shine the key toward -X so the visible face is lit.
+    KeyLight->SetWorldRotation(FRotator(-38, 145, 0));
     KeyLight->SetIntensity(4.f);
-    KeyLight->SetLightColor(FLinearColor(1.f, .82f, .63f));
+    KeyLight->SetLightColor(FLinearColor(1.f, .91f, .83f));
     RimLight->SetRelativeLocation(FVector(-210, 240, 280));
     RimLight->SetIntensity(1600.f);
     RimLight->SetAttenuationRadius(850.f);
     RimLight->SetLightColor(FLinearColor(.36f, .62f, 1.f));
     FillLight->SetIntensity(.6f);
+    UPointLightComponent* FaceFill = NewObject<UPointLightComponent>(this, TEXT("FaceFill"));
+    FaceFill->SetupAttachment(Root);
+    FaceFill->RegisterComponent();
+    FaceFill->SetRelativeLocation(FVector(260, -180, 260));
+    FaceFill->SetIntensity(1800.f);
+    FaceFill->SetAttenuationRadius(700.f);
+    FaceFill->SetLightColor(FLinearColor(.86f, .92f, 1.f));
+    FaceFill->SetCastShadows(false);
     Camera = GetWorld()->SpawnActor<ACameraActor>();
     Camera->SetActorLocation(FVector(520, 0, 230));
-    Camera->GetCameraComponent()->SetFieldOfView(50.f);
+    UCameraComponent* View = Camera->GetCameraComponent();
+    View->SetConstraintAspectRatio(false);
+    View->bOverrideAspectRatioAxisConstraint = true;
+    View->SetAspectRatioAxisConstraint(EAspectRatioAxisConstraint::AspectRatio_MaintainXFOV);
+    View->SetFieldOfView(50.f);
     AimCamera();
     if (APlayerController* Player = GetWorld()->GetFirstPlayerController())
     {
