@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   decodePerformanceTransfer,
@@ -11,6 +11,11 @@ import { stableStringify } from "../../../../../unreal/Shared/Tools/capture-prov
 import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import { processReversals } from "#lib/shared/create/services/reversal-detector.js";
 import { normalizeSequenceDerived } from "#lib/shared/create/services/sequence-derived-fields.js";
+import { hydrateSequence } from "#lib/shared/navigation/services/sequence-hydrator.js";
+import { loopDetector } from "#lib/shared/create/services/loop-detector.js";
+import { DeepLinkSequenceHandler } from "#lib/features/create/shared/services/deep-link-sequence-handler.js";
+import type { DeepLinker } from "#lib/shared/navigation/services/deep-linker.js";
+import nativeTransfer from "./performance-transfer.native-fixture.json";
 
 const richSequence = {
   id: "sequence-42",
@@ -207,5 +212,62 @@ describe("performance transfer", () => {
     await expect(encodePerformanceTransfer(tampered)).rejects.toThrow(
       "SHA-256"
     );
+  });
+
+  it("retains the actual native snapshot through viewer hydration, but not edited scores", async () => {
+    const source = await decodePerformanceTransfer(
+      JSON.stringify(nativeTransfer)
+    );
+    const editor = withPerformanceTransferOrigin(
+      { ...createSequenceData(source.sequence), ...source.sequence },
+      source.transfer
+    );
+    const published: SequenceData[] = [];
+    const deepLinker = {
+      consumeData: () => ({ sequence: editor, tabId: "construct" }),
+      clearDeepLinkFromURL: () => undefined,
+    } as unknown as DeepLinker;
+    await new DeepLinkSequenceHandler(deepLinker).loadFromDeepLink(
+      (sequence) => {
+        published.push(sequence);
+      }
+    );
+    await vi.waitFor(() => expect(published).toHaveLength(2));
+    // This is the same derived-state pass Create applies to the enriched callback.
+    const ready = normalizeSequenceDerived(processReversals(published[1]!));
+    const viewer = await hydrateSequence(ready, { loopDetector });
+    const unchanged = JSON.parse(await encodePerformanceTransfer(viewer));
+    expect(unchanged.sequenceSHA256).toBe(nativeTransfer.sequenceSHA256);
+    expect(unchanged.sequenceJson).toBe(nativeTransfer.sequenceJson);
+    expect(unchanged.selection).toEqual(nativeTransfer.selection);
+    expect(unchanged.playback).toEqual(nativeTransfer.playback);
+
+    for (const changed of [
+      { ...ready, name: "Edited title" },
+      {
+        ...ready,
+        steps: ready.steps.map((step, index) =>
+          index === 0 ? { ...step, duration: 2 } : step
+        ),
+      },
+      {
+        ...ready,
+        steps: ready.steps.map((step, index) =>
+          index === 0
+            ? {
+                ...step,
+                motions: {
+                  ...step.motions,
+                  left: { ...step.motions.left, propType: "clubs" },
+                },
+              }
+            : step
+        ),
+      },
+    ]) {
+      const editedViewer = await hydrateSequence(changed, { loopDetector });
+      const edited = JSON.parse(await encodePerformanceTransfer(editedViewer));
+      expect(edited.sequenceSHA256).not.toBe(nativeTransfer.sequenceSHA256);
+    }
   });
 });

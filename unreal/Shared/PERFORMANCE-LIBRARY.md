@@ -87,9 +87,10 @@ inspect and explicitly open the score for editing. Downloaded transfer files can
 also be opened on that page. Native file-picker import is not provided.
 
 Composer retains the verified source snapshot through its initial editor
-enrichment. An unchanged score copies back with its original identity, selection
-and transport intent. The complete normalized editor snapshot is compared before
-reuse; edits, including duration and metadata changes, produce a new identity.
+enrichment and viewer hydration. Each hydration boundary advances the baseline
+only when the incoming score still matches the previous complete editor snapshot.
+An unchanged score copies back with its original identity, selection and transport
+intent; edits, including duration and metadata changes, produce a new identity.
 An enrichment failure cannot silently reuse an unverified snapshot.
 
 Version 1 does not bake arbitrary new scores inside a running game. A changed
