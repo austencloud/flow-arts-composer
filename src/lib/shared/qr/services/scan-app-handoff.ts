@@ -12,7 +12,7 @@ export function buildScanAppHandoffPath(
   shortCode: string,
   scanSearchParams: Iterable<[string, string]>
 ): string {
-  const viewerParams = new URLSearchParams(scanSearchParams);
+  const viewerParams = new URLSearchParams(Array.from(scanSearchParams));
   viewerParams.delete("demo");
   viewerParams.set("from", "scan");
   viewerParams.set("code", shortCode);

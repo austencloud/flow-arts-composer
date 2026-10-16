@@ -18,7 +18,7 @@ export function buildScanSequenceDestination(
   scanSearchParams: Iterable<[string, string]>,
   propFallback?: ScanSequencePropFallback | null
 ): string {
-  const viewerParams = new URLSearchParams(scanSearchParams);
+  const viewerParams = new URLSearchParams(Array.from(scanSearchParams));
   viewerParams.delete("v");
   viewerParams.set("from", "scan");
   viewerParams.set("code", shortCode);
