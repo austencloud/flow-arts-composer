@@ -186,8 +186,12 @@ export function createPictographEditMotion() {
   function frameFor(epoch: number): EditFrame | null {
     const current = run;
     if (current?.epoch !== epoch) return null;
+    // Read `elapsed` before checking the start: `startedAt` is not reactive, so
+    // a reader that skipped `elapsed` while the clock waited would never see
+    // it move once the clock started.
+    const at = elapsed;
     return sampleEditTimeline(
-      current.startedAt === null ? 0 : elapsed,
+      current.startedAt === null ? 0 : at,
       current.timeline
     );
   }

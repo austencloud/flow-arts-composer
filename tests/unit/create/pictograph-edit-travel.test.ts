@@ -25,6 +25,7 @@ import {
   type PictographEdit,
 } from "#lib/shared/pictograph/shared/services/pictograph-edit-travel.js";
 import { createPictographEditMotion } from "#lib/shared/pictograph/shared/state/pictograph-edit-motion.svelte.js";
+import { watchEditFrame } from "./pictograph-edit-frame-harness.svelte";
 
 const CENTER = 475;
 
@@ -310,6 +311,25 @@ describe("pictograph edit motion clock", () => {
 
     vi.advanceTimersByTime(editTimelineTotal(EDIT_TIMELINE));
     expect(clock.frameFor(cell!.epoch)).toBeNull();
+  });
+
+  it("tells a reactive reader that joined before the start about every frame", () => {
+    fakeClock();
+    const clock = createPictographEditMotion();
+    clock.announce({ kind: "reflect", axis: "vertical" });
+    const ticket = clock.join({ unannounced: false })!;
+    const watch = watchEditFrame(clock, ticket.epoch);
+    clock.ready(ticket.token);
+    vi.advanceTimersByTime(
+      EDIT_TIMELINE.arrowsOutMs + EDIT_TIMELINE.travelMs / 2
+    );
+    watch.flush();
+    const mid = watch.seen.at(-1);
+    watch.stop();
+
+    expect(mid?.holdingOld).toBe(false);
+    expect(mid?.progress).toBeGreaterThan(0);
+    expect(mid?.progress).toBeLessThan(1);
   });
 
   it("starts after the cap even if a drawing never reports ready", () => {
