@@ -6,14 +6,14 @@
   } from "../../domain/sheet-title-block";
 
   let {
-    header,
+    header = { showTitleBlock: false },
     onchange,
     readonly = false,
     sheetName = "",
     pageIndex = 0,
     startTimestamp = "",
   }: {
-    header: SheetHeader;
+    header?: SheetHeader;
     onchange?: (patch: Partial<SheetHeader>) => void;
     readonly?: boolean;
     sheetName?: string;

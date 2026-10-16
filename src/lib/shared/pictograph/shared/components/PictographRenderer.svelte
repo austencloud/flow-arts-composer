@@ -153,9 +153,6 @@ Usage:
     // Width multiplier for expanded timeline cells (1 = normal square, >1 = wider viewBox)
     widthMultiplier = 1,
     glyphLayout = "edges",
-    // Cell index for position caching (enables smooth transitions on regeneration)
-    cellIndex = null,
-    transitionKey = null,
     // Live motion geometry. When present, the same prop SVGs used by
     // the finished pictograph render at these interpolated coordinates.
     propPositionOverrides = null,
@@ -241,16 +238,12 @@ Usage:
     widthMultiplier?: number;
     /** Match the card compositor's square core and separate TKA overlay. */
     glyphLayout?: "edges" | "card" | "card-custom";
-    /** Cell index for position caching (enables smooth transitions on regeneration) */
-    cellIndex?: number | null;
-    /** Stable editor identity for prop and arrow position caching. */
-    transitionKey?: string | null;
     /** Per-hand live positions for an in-place pictograph motion. */
     propPositionOverrides?: Partial<Record<HandSideValue, PropPosition>> | null;
     directPropPositioning?: boolean;
     /** Opacity applied to the complete arrow layer. */
     arrowOpacity?: number;
-    /** Use exact frame geometry and opacity during timeline playback. */
+    /** Apply arrowOpacity on the frame it is set (playback, edit travel). */
     disableTransitions?: boolean;
     /** Duration multiplier for the step (1 = default one beat, shown when != 1) */
     duration?: number;
@@ -777,8 +770,6 @@ Usage:
             onPropClick={propsClickable && onPropClick
               ? () => onPropClick(hand)
               : undefined}
-            {cellIndex}
-            {transitionKey}
             directPositioning={directPropPositioning ||
               !!slide ||
               propPositionOverrides?.[hand] !== undefined}
@@ -812,11 +803,8 @@ Usage:
                   shouldMirror={arrowMirroring[hand] || false}
                   {showArrow}
                   isClickable={arrowsClickable}
-                  {cellIndex}
-                  {transitionKey}
                   {darkMode}
                   renderPart="shaft"
-                  disableTransitions={disableTransitions || !!slide}
                   colorOverride={hand === HandSide.LEFT
                     ? effectiveLeftColor
                     : effectiveRightColor}
@@ -836,11 +824,8 @@ Usage:
                   shouldMirror={arrowMirroring[hand] || false}
                   {showArrow}
                   isClickable={arrowsClickable}
-                  {cellIndex}
-                  {transitionKey}
                   {darkMode}
                   renderPart="tip"
-                  disableTransitions={disableTransitions || !!slide}
                   colorOverride={hand === HandSide.LEFT
                     ? effectiveLeftColor
                     : effectiveRightColor}
@@ -862,10 +847,7 @@ Usage:
                   shouldMirror={arrowMirroring[hand] || false}
                   {showArrow}
                   isClickable={arrowsClickable}
-                  {cellIndex}
-                  {transitionKey}
                   {darkMode}
-                  disableTransitions={disableTransitions || !!slide}
                   colorOverride={hand === HandSide.LEFT
                     ? effectiveLeftColor
                     : effectiveRightColor}

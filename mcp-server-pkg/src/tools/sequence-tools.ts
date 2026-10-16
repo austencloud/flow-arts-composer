@@ -793,6 +793,8 @@ export function registerSequenceTools(server: McpServer): void {
             "lotus",
             "day",
             "moon",
+            "star",
+            "sense",
           ]),
           frameColor: z.enum(["black", "white"]),
           cover: z.enum(["bare", "covered"]),
