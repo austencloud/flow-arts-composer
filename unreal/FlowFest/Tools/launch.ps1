@@ -3,6 +3,7 @@ param(
     [string]$PackageRoot = '',
     [ValidateSet('', 'gate', 'camp', 'fire', 'overview')][string]$Review = '',
     [switch]$Explore,
+    [switch]$Library,
     [string]$Capture = '',
     [ValidateRange(1, 300)][int]$CaptureFrames = 1,
     [ValidateRange(0, 300)][double]$CaptureStart = 25,
@@ -26,6 +27,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+if ($Library -and -not $Explore) { throw '-Library requires -Explore to open the performance library on foot.' }
 if ($Explore) {
     if ($Showcase -or $Wardrobe -or $Smoke) { throw '-Explore cannot combine with showcase, wardrobe, or smoke runs.' }
     if (-not $Review) { $Review = 'fire' }
@@ -65,6 +67,7 @@ if ($PackageRoot) {
 }
 if ($Review) { $arguments += "-FlowFestReview=$Review" }
 if ($Explore) { $arguments += '-FlowFestExplore' }
+if ($Library) { $arguments += '-FlowFestLibrary' }
 if ($Character) { $arguments += "-FlowFestCharacter=$Character" }
 if ($Prop) { $arguments += "-FlowFestProp=$Prop" }
 if ($Showcase) { $arguments += "-FlowFestShowcase=$Showcase" }

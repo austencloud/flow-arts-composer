@@ -116,6 +116,7 @@ void AFlowFestCharacter::BeginPlay()
     FParse::Value(FCommandLine::Get(), TEXT("FlowFestCapture="), CapturePath);
     bAutoExit = FParse::Param(FCommandLine::Get(), TEXT("FlowFestAutoExit"));
     bSmoke = FParse::Param(FCommandLine::Get(), TEXT("FlowFestSmoke"));
+    bLibraryReview = FParse::Param(FCommandLine::Get(), TEXT("FlowFestLibrary"));
     if (!CapturePath.IsEmpty() && (FPaths::IsRelative(CapturePath) || !CapturePath.EndsWith(TEXT(".png"), ESearchCase::IgnoreCase)))
     {
         UE_LOG(LogTemp, Error, TEXT("FlowFestCapture must be an absolute .png path"));
@@ -208,6 +209,13 @@ void AFlowFestCharacter::Tick(float DeltaSeconds)
     }
 
     StartupSeconds += DeltaSeconds;
+    if (bLibraryReview && !bLibraryReviewOpened && bInitialPlacementDone &&
+        StartupSeconds >= 3.f && GetCharacterMovement()->IsMovingOnGround())
+    {
+        bLibraryReviewOpened = true;
+        OpenPerformanceLibrary();
+        UE_LOG(LogTemp, Display, TEXT("FlowFestLibrary opened through player adapter"));
+    }
     // Wait for CharacterMovement to settle after the showcase teleport.
     if (Showcase == TEXT("flow") && !bShowcaseStarted && StartupSeconds >= 2.f && !GetCharacterMovement()->IsFalling())
     {
@@ -247,12 +255,9 @@ void AFlowFestCharacter::Tick(float DeltaSeconds)
     {
         if (GEngine && GEngine->GameViewport && GEngine->GameViewport->Viewport)
         {
-            FHighResScreenshotConfig& Screenshot = GetHighResScreenshotConfig();
             ActiveCapturePath = CapturedFrames == 0 ? CapturePath :
                 FPaths::GetPath(CapturePath) / FString::Printf(TEXT("%s-%03d.png"), *FPaths::GetBaseFilename(CapturePath), CapturedFrames);
             CapturePreviousTimestamp = IFileManager::Get().GetTimeStamp(*ActiveCapturePath);
-            Screenshot.SetFilename(ActiveCapturePath);
-            Screenshot.SetResolution(1920, 1080);
             UE_LOG(LogTemp, Display, TEXT("FlowFestVisual character=%s body=%s bounds=%s camera=%s arm=%.1f"),
                 *CharacterId.ToString(), *Avatar->GetBodyMesh()->GetComponentLocation().ToString(),
                 *Avatar->GetBodyMesh()->Bounds.BoxExtent.ToString(), *FollowCamera->GetComponentLocation().ToString(), CameraBoom->TargetArmLength);
@@ -263,8 +268,20 @@ void AFlowFestCharacter::Tick(float DeltaSeconds)
                 *Body->GetSocketLocation(TEXT("Hips")).ToString(), *Body->GetSocketLocation(TEXT("LeftFoot")).ToString(),
                 *Body->GetSocketLocation(TEXT("LeftHand")).ToString(), *Body->Bounds.Origin.ToString(), *BodyScreen.ToString(),
                 Body->IsVisible(), Body->bHiddenInGame, Body->bOwnerNoSee, *FollowCamera->GetComponentRotation().ToString());
-            bCaptureRequested = GEngine->GameViewport->Viewport->TakeHighResScreenShot();
-            UE_LOG(LogTemp, Display, TEXT("Flow Fest high-res screenshot %s frame=%d time=%.3f: %s"), bCaptureRequested ? TEXT("requested") : TEXT("failed"), CapturedFrames, StartupSeconds, *ActiveCapturePath);
+            if (bLibraryReview)
+            {
+                // Slate is composited after the high-resolution scene pass.
+                FScreenshotRequest::RequestScreenshot(ActiveCapturePath, true, false);
+                bCaptureRequested = true;
+            }
+            else
+            {
+                FHighResScreenshotConfig& Screenshot = GetHighResScreenshotConfig();
+                Screenshot.SetFilename(ActiveCapturePath);
+                Screenshot.SetResolution(1920, 1080);
+                bCaptureRequested = GEngine->GameViewport->Viewport->TakeHighResScreenShot();
+            }
+            UE_LOG(LogTemp, Display, TEXT("Flow Fest screenshot %s frame=%d time=%.3f: %s"), bCaptureRequested ? TEXT("requested") : TEXT("failed"), CapturedFrames, StartupSeconds, *ActiveCapturePath);
             ReportFrameTiming();
         }
     }
