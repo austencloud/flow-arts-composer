@@ -215,12 +215,17 @@
     const video = clipElement;
     if (!video || !clipActive) return;
     const step = clipStripStep(clipStepDurations, video.currentTime);
-    playbackStep = step;
+    // The strip here shows whole steps only (stepPulse is off), so it moves
+    // when the step number changes, not on every decoded frame. Writing the
+    // fraction each frame re-ran the strip's props and the tile's attributes
+    // per frame: on a 4K /creators wall (d2, 2026-10-16) that alone took
+    // three playing clips from ~26 fps to ~15 fps.
+    const whole = Math.floor(step);
+    if (whole !== playbackStep) playbackStep = whole;
     onStepChange?.(step, sequence?.id ?? null);
   }
-  // Per decoded frame where the browser offers it (the strip's ring then
-  // moves as smoothly as it does under a live engine); timeupdate (~4 Hz)
-  // is the floor everywhere else.
+  // Per decoded frame where the browser offers it, so a listener that wants
+  // the fraction gets it smoothly; timeupdate (~4 Hz) is the floor elsewhere.
   function followClipFrames(): void {
     const video = clipElement;
     if (!video || video.paused || !clipActive) return;
@@ -471,7 +476,8 @@
               beatIndicators: false,
               onStepChange: (step: number, sequenceId: string | null) => {
                 if (directSequence && sequenceId !== directSequence.id) return;
-                playbackStep = step;
+                const whole = Math.floor(step);
+                if (whole !== playbackStep) playbackStep = whole;
                 onStepChange?.(step, sequenceId);
               },
               onSeekRef,
