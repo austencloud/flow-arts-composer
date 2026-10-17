@@ -40,6 +40,7 @@ import {
 import { createWorkerSelectionMarker } from "./selection-markers/worker-selection-marker";
 import type { WorkerSelectionMarkerVisual } from "./selection-markers/worker-selection-marker";
 import { WorkerImperativeEffectFrameBuilder } from "../effects/worker-imperative-effect-frame-builder";
+import { TIP_EFFECT_SLOTS_PER_RIG } from "#lib/shared/3d/effects/prop-tip-geometry-3d.js";
 import { applyLegacyContactLock } from "./worker-contact-lock";
 
 const STAFF_HORIZONTAL_QUATERNION = new Quaternion().setFromEuler(
@@ -751,7 +752,7 @@ export class WorkerPerformerStage {
     let effectSourceIdBase = this.effectSourceIdBases.get(snapshot.id);
     if (effectSourceIdBase === undefined) {
       effectSourceIdBase = this.nextEffectSourceIdBase;
-      this.nextEffectSourceIdBase += 4;
+      this.nextEffectSourceIdBase += TIP_EFFECT_SLOTS_PER_RIG;
       this.effectSourceIdBases.set(snapshot.id, effectSourceIdBase);
     }
     const loading = this.createPerformer(snapshot)

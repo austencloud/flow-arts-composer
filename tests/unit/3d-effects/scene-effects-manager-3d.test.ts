@@ -10,6 +10,7 @@ import {
 } from "#lib/shared/effects/translators/webgl3d-translator.js";
 import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
 import { QualityTier } from "#lib/shared/3d/effects/types.js";
+import { TIP_EFFECT_SLOTS_PER_RIG } from "#lib/shared/3d/effects/prop-tip-geometry-3d.js";
 
 describe("SceneEffectsManager3D", () => {
   it("owns one scene-level mesh per material variant and releases them together", () => {
@@ -31,7 +32,9 @@ describe("SceneEffectsManager3D", () => {
     const manager = new SceneEffectsManager3D();
     const first = manager.registerRig({ playing: false, sources: [] });
     const second = manager.registerRig({ playing: false, sources: [] });
-    expect(second.sourceIdBase - first.sourceIdBase).toBe(4);
+    expect(second.sourceIdBase - first.sourceIdBase).toBe(
+      TIP_EFFECT_SLOTS_PER_RIG
+    );
     first.dispose();
     second.dispose();
   });

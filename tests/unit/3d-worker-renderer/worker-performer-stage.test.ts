@@ -2,6 +2,7 @@ import { Group, Scene } from "three";
 import { describe, expect, it, vi } from "vitest";
 import type { WorkerPerformerSnapshot } from "#lib/shared/3d/worker-renderer/domain/worker-renderer-protocol.js";
 import { WorkerPerformerStage } from "#lib/shared/3d/worker-renderer/worlds/worker-performer.js";
+import { TIP_EFFECT_SLOTS_PER_RIG } from "#lib/shared/3d/effects/prop-tip-geometry-3d.js";
 
 function snapshot(angle: number): WorkerPerformerSnapshot {
   return {
@@ -125,7 +126,9 @@ describe("worker performer stage", () => {
     ]);
 
     expect(performers[0].setEffectSourceIdBase).toHaveBeenCalledWith(1);
-    expect(performers[1].setEffectSourceIdBase).toHaveBeenCalledWith(5);
+    expect(performers[1].setEffectSourceIdBase).toHaveBeenCalledWith(
+      1 + TIP_EFFECT_SLOTS_PER_RIG
+    );
     expect(stage.getEffects()).toMatchObject({
       playing: true,
       sources: [{ sourceId: 1 }, { sourceId: 5 }],

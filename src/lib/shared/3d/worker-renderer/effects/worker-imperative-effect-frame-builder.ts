@@ -12,6 +12,7 @@ import {
   TipPositionBridge3D,
 } from "../../effects/tip-position-bridge-3d";
 import { QualityTier, type TipPositionData3D } from "../../effects/types";
+import { tipEffectSlot3D } from "../../effects/prop-tip-geometry-3d";
 import type {
   Charcoal3DParams,
   Fire3DParams,
@@ -116,7 +117,7 @@ function pooledSource(
   if (!params)
     throw new Error(`Missing resolved ${effect} parameters for worker effect`);
   const base = {
-    sourceId: input.sourceIdBase + propIndex * 2 + tip.tipIndex,
+    sourceId: input.sourceIdBase + tipEffectSlot3D(propIndex, tip.emitterIndex),
     propIndex,
     tipIndex: tip.tipIndex,
     position: { ...tip.position },
@@ -340,7 +341,7 @@ export class WorkerImperativeEffectFrameBuilder {
         this.pushLedSamples(
           tips,
           state,
-          `${propIndex}-${tip.tipIndex}`,
+          `${propIndex}-${tip.emitterIndex}`,
           tip,
           color,
           brightness,

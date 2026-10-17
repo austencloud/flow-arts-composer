@@ -8,6 +8,7 @@ import {
 } from "@austencloud/scene-3d";
 import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
 import {
+  resolveFire3D,
   resolveLed3D,
   resolveGoo3D,
   resolveSparkles3D,
@@ -23,6 +24,10 @@ import {
   WORKER_UNSUPPORTED_EFFECTS,
   isWorkerEffectExact,
 } from "#lib/shared/3d/worker-renderer/effects/worker-effect-support.js";
+import {
+  MAX_TIP_EMITTERS_PER_PROP,
+  TIP_EFFECT_SLOTS_PER_RIG,
+} from "#lib/shared/3d/effects/prop-tip-geometry-3d.js";
 
 function prop(x = 0): PropState3D {
   return {
@@ -215,6 +220,45 @@ describe("worker imperative effect frame builder", () => {
         position: expect.objectContaining({ y: 5 }),
       }),
     ]);
+  });
+
+  it("gives each of a Lotus fan's five wicks its own fire source", () => {
+    const fans = input("trails");
+    fans.left.propType = PropType.FAN;
+    fans.right = {
+      state: prop(1),
+      propType: PropType.FAN,
+      worldCenter: [1, 0, 0],
+      worldRotation: [0, 0, 0, 1],
+    };
+    fans.intent.propBuild = {
+      ...propFinishState.build,
+      fanBuild: "lotus",
+      finish: "fire",
+    };
+    fans.intent.tips = [
+      { propIndex: 0, tipIndex: 1, effect: "fire" },
+      { propIndex: 1, tipIndex: 1, effect: "fire" },
+    ];
+    fans.intent.pooled.fire = resolveFire3D(DEFAULT_EFFECTS_CONFIG.fire);
+
+    const sources = new WorkerImperativeEffectFrameBuilder().build(
+      fans
+    ).sources;
+    const ids = sources.map((source) => source.sourceId);
+
+    expect(sources).toHaveLength(2 * MAX_TIP_EMITTERS_PER_PROP);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(
+      ids.every((id) => id >= 9 && id < 9 + TIP_EFFECT_SLOTS_PER_RIG)
+    ).toBe(true);
+    const leftPositions = sources
+      .filter((source) => source.propIndex === 0)
+      .map(
+        (source) =>
+          `${source.position.x.toFixed(4)},${source.position.y.toFixed(4)}`
+      );
+    expect(new Set(leftPositions).size).toBe(MAX_TIP_EMITTERS_PER_PROP);
   });
 
   it("names every exact and fail-closed effect family", () => {
