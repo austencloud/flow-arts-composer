@@ -12,13 +12,22 @@
   } = $props();
 
   let darkMode = $state(false);
-  const topic = $derived(
-    open
-      ? conceptId === "grid"
-        ? import("../../../../routes/(public)/guide/level-1/_topics/GridTopicPage.svelte")
-        : import("../../../../routes/(public)/guide/level-1/_topics/PlacementsTopicPage.svelte")
-      : null
-  );
+  // Load the page on first open and keep it, so closing fades the sheet out
+  // with the page still in it instead of blanking it on the first frame.
+  function loadPage(id: string) {
+    return id === "grid"
+      ? import("../../../../routes/(public)/guide/level-1/_topics/GridTopicPage.svelte")
+      : import("../../../../routes/(public)/guide/level-1/_topics/PlacementsTopicPage.svelte");
+  }
+  let loaded: { conceptId: string; page: ReturnType<typeof loadPage> } | null =
+    null;
+  const topic = $derived.by(() => {
+    if (!open && !loaded) return null;
+    if (loaded?.conceptId !== conceptId) {
+      loaded = { conceptId, page: loadPage(conceptId) };
+    }
+    return loaded.page;
+  });
 
   onMount(() => {
     const root = document.documentElement;
