@@ -462,6 +462,9 @@
         break;
     }
 
+    // A slot outlives a prop swap, so a staff's left end can become a fan's
+    // first wick; refresh the end it reports along with its position.
+    source.tipIndex = tipIndex;
     pooledPosition.set(tip.position.x, tip.position.y, tip.position.z);
     pooledVelocity.set(tip.velocity.x, tip.velocity.y, tip.velocity.z);
     if (effectsParentRef) {
