@@ -18,7 +18,7 @@ import {
   resolveInkNibWidth,
   resolveInkStrokeWidth,
   resolveInkTurnLoad,
-} from "#lib/shared/effects/renderers/ink-2d-renderer.js";
+} from "#lib/shared/effects/renderers/ink-brush-2d.js";
 import {
   TILE_H,
   TILE_W,

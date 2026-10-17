@@ -194,9 +194,13 @@ export class SceneEffectsManager3D {
     this.fire.length = 0;
     this.charcoal.length = 0;
     let anyPlaying = false;
+    let motionDelta: number | undefined;
 
     for (const rig of this.rigs) {
-      if (rig.playing) anyPlaying = true;
+      if (rig.playing) {
+        anyPlaying = true;
+        motionDelta ??= rig.motionDelta;
+      }
       for (const source of rig.sources) {
         if (source.effect === "bloom") {
           this.bloom.push(source);
@@ -245,6 +249,9 @@ export class SceneEffectsManager3D {
     // Emission-based effects still freeze with the animation.
     this.bloomRenderer?.update(this.bloom, delta);
     if (!anyPlaying) return;
+    // Emission effects step by the time the props moved, so velocities read
+    // from tip displacement stay true across uneven frames.
+    const step = motionDelta ?? delta;
     if (this.fire.length > 0 && this.fireRenderer) {
       this.fireRenderer.updateConfig(this.fire[0]!.params);
       for (let index = 0; index < this.fire.length; index++) {
@@ -276,7 +283,7 @@ export class SceneEffectsManager3D {
         input.propColor = color;
       }
       this.fireInputs.length = this.fire.length;
-      this.fireRenderer.update(this.fireInputs, delta);
+      this.fireRenderer.update(this.fireInputs, step);
       this.fireWasActive = true;
     } else if (this.fireWasActive) {
       this.fireRenderer?.reset();
@@ -315,7 +322,7 @@ export class SceneEffectsManager3D {
       }
       this.charcoalInputs.length = this.charcoal.length;
       const continuity = this.charcoal[0]!;
-      this.charcoalRenderer.update(this.charcoalInputs, delta, {
+      this.charcoalRenderer.update(this.charcoalInputs, step, {
         currentStep: continuity.currentStep,
         totalSteps: continuity.totalSteps,
         collisionFloorY: continuity.collisionFloorY,
@@ -324,10 +331,10 @@ export class SceneEffectsManager3D {
       this.charcoalInputs.length = 0;
       this.charcoalRenderer?.reset();
     }
-    this.sparkleRenderer?.update(this.sparkles, delta);
-    this.gooRenderer?.update(this.goo, delta);
-    this.bubbleRenderer?.update(this.bubbles, delta);
-    this.petalRenderer?.update(this.petals, delta);
+    this.sparkleRenderer?.update(this.sparkles, step);
+    this.gooRenderer?.update(this.goo, step);
+    this.bubbleRenderer?.update(this.bubbles, step);
+    this.petalRenderer?.update(this.petals, step);
     if (this.smokeVolumeRenderer) {
       for (const source of this.smoke) {
         if (source.qualityTier === QualityTier.LOW)
@@ -337,17 +344,17 @@ export class SceneEffectsManager3D {
       // Performers past the fluid's budget fall back to sprites.
       for (const source of this.smokeVolumeRenderer.update(
         this.volumeSmoke,
-        delta
+        step
       ))
         this.fallbackSmoke.push(source);
-      this.smokeFallbackRenderer?.update(this.fallbackSmoke, delta);
+      this.smokeFallbackRenderer?.update(this.fallbackSmoke, step);
     } else {
-      this.smokeFallbackRenderer?.update(this.smoke, delta);
+      this.smokeFallbackRenderer?.update(this.smoke, step);
     }
-    this.inkRenderer?.update(this.ink, delta);
-    this.silkRenderer?.update(this.silk, delta);
-    this.animalRenderer?.update(this.animal, delta);
-    this.pulseRenderer?.update(this.pulse, delta);
+    this.inkRenderer?.update(this.ink, step);
+    this.silkRenderer?.update(this.silk, step);
+    this.animalRenderer?.update(this.animal, step);
+    this.pulseRenderer?.update(this.pulse, step);
   }
 
   clear(): void {

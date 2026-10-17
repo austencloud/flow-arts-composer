@@ -74,6 +74,8 @@ export interface SmokeTipSource3D extends SceneEffectTipBase3D {
 export interface InkTipSource3D extends SceneEffectTipBase3D {
   effect: "ink";
   params: Ink3DParams;
+  /** World-space stage the ink splats and stains on. */
+  collisionFloorY: number;
 }
 
 export interface SilkTipSource3D extends SceneEffectTipBase3D {
@@ -136,6 +138,11 @@ export type SceneEffectTipSource3D =
 export interface SceneEffectRigFrame3D {
   playing: boolean;
   sources: SceneEffectTipSource3D[];
+  /**
+   * Seconds the rig's props moved this frame, from EffectMotionClock. Emission
+   * effects step by it so tip velocities match the poses they were read from.
+   */
+  motionDelta?: number;
 }
 
 export function isTrackedTip(
