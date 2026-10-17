@@ -146,7 +146,10 @@ export class LedSampler {
               : scale(getPixel(pattern, frameIndex, 0), gain),
             right: config.primaryPropColors
               ? tunnelColorFromHex(config.primaryPropColors.right).rgb01
-              : scale(getPixel(pattern, frameIndex, pattern.ledCount - 1), gain),
+              : scale(
+                  getPixel(pattern, frameIndex, pattern.ledCount - 1),
+                  gain
+                ),
           }
         : null;
 
@@ -165,7 +168,7 @@ export class LedSampler {
         gain,
         config.tunnelPropColors
           ? tunnelColorFromHex(config.tunnelPropColors.left).rgb01
-          : handColors?.left ?? null,
+          : (handColors?.left ?? null),
         count
       );
     }
@@ -183,7 +186,7 @@ export class LedSampler {
         gain,
         config.tunnelPropColors
           ? tunnelColorFromHex(config.tunnelPropColors.right).rgb01
-          : handColors?.right ?? null,
+          : (handColors?.right ?? null),
         count
       );
     }
@@ -220,7 +223,7 @@ export class LedSampler {
               ? tunnelColorFromHex(exact.left).rgb01
               : spectrum
                 ? tunnelPropColor(propIndex, layers.length).rgb01
-                : handColors?.left ?? null,
+                : (handColors?.left ?? null),
             count,
             ledFadeFlux(layer.opacity ?? 1)
           );
@@ -242,7 +245,7 @@ export class LedSampler {
               ? tunnelColorFromHex(exact.right).rgb01
               : spectrum
                 ? tunnelPropColor(propIndex, layers.length).rgb01
-                : handColors?.right ?? null,
+                : (handColors?.right ?? null),
             count,
             ledFadeFlux(layer.opacity ?? 1)
           );
@@ -293,12 +296,12 @@ export class LedSampler {
     const sinA = Math.sin(angle);
     const mirror = flipped ? -1 : 1;
 
-    // A capsule lights the prop's own tip points. A pixel staff spans the
-    // strip between the first and last of those same tracked points, so it
-    // needs no new tracking — and a single-point prop (e.g. a club) simply
-    // lights that one point.
+    // A capsule lights every one of the prop's own tip points: a staff's two
+    // ends, a club's one, all five fan wicks. A pixel staff spans the strip
+    // between the first and last of those same tracked points, so it needs no
+    // new tracking.
     const spanStrip = ledCount > points.length && points.length >= 2;
-    const emitCount = spanStrip ? ledCount : Math.min(ledCount, points.length);
+    const emitCount = spanStrip ? ledCount : points.length;
     const first = points[0]!;
     const last = points[points.length - 1]!;
 
