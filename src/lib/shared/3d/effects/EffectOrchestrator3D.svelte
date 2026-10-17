@@ -40,7 +40,11 @@
     TipPositionBridge3D,
     type TrailSourceId3D,
   } from "./tip-position-bridge-3d";
-  import { resolveScaledPropTipAnchors3D } from "./prop-tip-geometry-3d";
+  import {
+    resolveScaledPropTipAnchors3D,
+    TIP_EFFECT_SLOTS_PER_RIG,
+    tipEffectSlot3D,
+  } from "./prop-tip-geometry-3d";
   import {
     PovStripRenderer3D,
     shutterToPovPersistence,
@@ -258,12 +262,11 @@
   const resolvedCharcoal = $derived(resolveCharcoal3D(effectsState.charcoal));
 
   const pooledFrame: SceneEffectRigFrame3D = { playing: false, sources: [] };
-  const pooledSources: Array<SceneEffectTipSource3D | null> = [
-    null,
-    null,
-    null,
-    null,
-  ];
+  // One slot per emitter, so a fan's five wicks are five sources.
+  const pooledSources: Array<SceneEffectTipSource3D | null> = Array.from(
+    { length: TIP_EFFECT_SLOTS_PER_RIG },
+    () => null
+  );
   const pooledRegistration =
     sceneEffectsManager?.registerRig(pooledFrame) ?? null;
   const pooledPosition = new Vector3();
@@ -274,7 +277,6 @@
 
   function publishPooledTip(
     propIndex: 0 | 1,
-    tipIndex: 0 | 1,
     tip: TipPositionData3D,
     effect: EffectType
   ): void {
@@ -295,7 +297,8 @@
     )
       return;
 
-    const slot = propIndex * 2 + tipIndex;
+    const slot = tipEffectSlot3D(propIndex, tip.emitterIndex);
+    const tipIndex = tip.tipIndex;
     let source = pooledSources[slot];
     if (!source || source.effect !== effect) {
       const base = {
@@ -515,7 +518,10 @@
 
     if (charcoalRenderer) {
       charcoalRenderer.dispose();
-      charcoalRenderer = new CharcoalRenderer3D(nextTier);
+      charcoalRenderer = new CharcoalRenderer3D(
+        nextTier,
+        TIP_EFFECT_SLOTS_PER_RIG
+      );
       charcoalRenderer.initialize(parent);
     }
     if (fireRenderer) {
@@ -626,7 +632,7 @@
   // between prev→current gives an effective 60·N Hz sample rate that
   // reads as a continuous glowing arc, matching how real LEDs look to
   // the human eye (persistence of vision integrates continuous emission).
-  // Keyed by `${propIndex}-${tipIndex}`. Cleared on playback reset.
+  // Keyed by `${propIndex}-${emitterIndex}`. Cleared on playback reset.
   const _ledPrevPositions = new Map<string, Vector3>();
 
   // Supersample count per quality tier. Higher = smoother fast motion at
@@ -928,7 +934,7 @@
         // "none" renders nothing - no silent fallback to trails. The default
         // effect comes from the resolved tip map, not an invented value here.
         const effect = resolved;
-        publishPooledTip(0, tipIndex, tip, effect);
+        publishPooledTip(0, tip, effect);
 
         if (effect === "led") {
           // Both props run the same pattern on the same clock, exactly as
@@ -945,7 +951,7 @@
               : ledColorAt(tipIndex);
             pushSupersampledLed(
               leftLedTips,
-              leftIsMoonFan ? `0-moon-${emitterIndex}` : `0-${tipIndex}`,
+              leftIsMoonFan ? `0-moon-${emitterIndex}` : `0-${emitterIndex}`,
               tip.position,
               tip.velocity,
               tip.speed,
@@ -957,7 +963,7 @@
           }
         } else if (effect === "charcoal" && sceneEffectsManager === null) {
           charcoalTips.push({
-            sourceId: tipIndex,
+            sourceId: tipEffectSlot3D(0, emitterIndex),
             position: new Vector3(
               tip.position.x,
               tip.position.y,
@@ -1031,7 +1037,7 @@
         // "none" renders nothing - no silent fallback to trails. The default
         // effect comes from the resolved tip map, not an invented value here.
         const effect = resolved;
-        publishPooledTip(1, tipIndex, tip, effect);
+        publishPooledTip(1, tip, effect);
 
         if (effect === "led") {
           rightLedAssigned = true;
@@ -1046,7 +1052,7 @@
               : ledColorAt(tipIndex);
             pushSupersampledLed(
               rightLedTips,
-              rightIsMoonFan ? `1-moon-${emitterIndex}` : `1-${tipIndex}`,
+              rightIsMoonFan ? `1-moon-${emitterIndex}` : `1-${emitterIndex}`,
               tip.position,
               tip.velocity,
               tip.speed,
@@ -1058,7 +1064,7 @@
           }
         } else if (effect === "charcoal" && sceneEffectsManager === null) {
           charcoalTips.push({
-            sourceId: 2 + tipIndex,
+            sourceId: tipEffectSlot3D(1, emitterIndex),
             position: new Vector3(
               tip.position.x,
               tip.position.y,
@@ -1251,7 +1257,10 @@
       // Charcoal renderer (single pool for all tips)
       if (charcoalTips.length > 0) {
         if (!charcoalRenderer) {
-          charcoalRenderer = new CharcoalRenderer3D(qualityTier);
+          charcoalRenderer = new CharcoalRenderer3D(
+            qualityTier,
+            TIP_EFFECT_SLOTS_PER_RIG
+          );
           charcoalRenderer.initialize(imperativeParent);
         }
         charcoalRenderer.updateConfig(resolveCharcoal3D(effectsState.charcoal));

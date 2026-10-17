@@ -39,8 +39,10 @@ import type {
   FireTipSource3D,
   CharcoalTipSource3D,
 } from "./scene-effect-source-3d";
+import { TIP_EFFECT_SLOTS_PER_RIG } from "../prop-tip-geometry-3d";
 
-const MAX_SCENE_EFFECT_TIPS = 8 * 2 * 2;
+// Eight performers, each with every emitter on both props.
+const MAX_SCENE_EFFECT_TIPS = 8 * TIP_EFFECT_SLOTS_PER_RIG;
 
 function hexToRgb(hex: string): { r: number; g: number; b: number } {
   const value = Number.parseInt(hex.replace("#", ""), 16);
@@ -108,7 +110,7 @@ export class SceneEffectsManager3D {
   registerRig(frame: SceneEffectRigFrame3D): SceneEffectsRigRegistration3D {
     this.rigs.add(frame);
     const sourceIdBase = this.nextSourceId;
-    this.nextSourceId += 4;
+    this.nextSourceId += TIP_EFFECT_SLOTS_PER_RIG;
     let registered = true;
     return {
       sourceIdBase,
@@ -147,7 +149,7 @@ export class SceneEffectsManager3D {
       MAX_SCENE_EFFECT_TIPS
     );
     this.fireRenderer = new FireRenderer3D(QualityTier.HIGH, {
-      // Eight performers × two props × two live ends. One scene pool keeps the
+      // Eight performers × two props × every live emitter. One scene pool keeps the
       // shipped high-tier density without constructing eight renderers when
       // the Fire control is pressed.
       poolSize: TIER_CONFIGS[QualityTier.HIGH].maxParticles,
@@ -333,7 +335,10 @@ export class SceneEffectsManager3D {
         else this.volumeSmoke.push(source);
       }
       // Performers past the fluid's budget fall back to sprites.
-      for (const source of this.smokeVolumeRenderer.update(this.volumeSmoke, delta))
+      for (const source of this.smokeVolumeRenderer.update(
+        this.volumeSmoke,
+        delta
+      ))
         this.fallbackSmoke.push(source);
       this.smokeFallbackRenderer?.update(this.fallbackSmoke, delta);
     } else {
