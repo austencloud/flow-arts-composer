@@ -3,7 +3,10 @@
   import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { claimedViewTransitionName } from "#lib/shared/transitions/claimed-view-transition-name.js";
-  import { isLessonMorphRunning } from "../../services/lesson-open-morph.svelte";
+  import {
+    isLessonMorphRunning,
+    isLessonViewSwitchRunning,
+  } from "../../services/lesson-open-morph.svelte";
 
   let {
     key,
@@ -22,16 +25,25 @@
   <Crossfade {key} duration={DURATION.normal}>
     <div class="heading-copy">
       {#if eyebrow}<span class="eyebrow">{eyebrow}</span>{/if}
-      <!-- The course-map card's name becomes this title (lesson-open-morph). -->
+      <!-- The course-map card's name becomes this title, and Review carries
+           the title and lead line into its first section (lesson-open-morph). -->
       <h1
         use:claimedViewTransitionName={{
           name: "learn-lesson-title",
-          enabled: isLessonMorphRunning(),
+          enabled: isLessonMorphRunning() || isLessonViewSwitchRunning(),
         }}
       >
         {title}
       </h1>
-      <div class="description">{@render children()}</div>
+      <div
+        class="description"
+        use:claimedViewTransitionName={{
+          name: "learn-lesson-lead",
+          enabled: isLessonViewSwitchRunning(),
+        }}
+      >
+        {@render children()}
+      </div>
     </div>
   </Crossfade>
 </div>
