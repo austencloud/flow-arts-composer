@@ -59,7 +59,7 @@ function meshAtRenderOrder(scene: Scene, renderOrder: number): InstancedMesh {
 }
 
 describe("native 3D full-roster renderers", () => {
-  it("renders one connected Ink stroke and releases its mesh", () => {
+  it("renders an Ink strand thrown off the tip and releases its meshes", () => {
     const scene = new Scene();
     const renderer = new InkRenderer3D();
     renderer.initialize(scene);
@@ -69,10 +69,15 @@ describe("native 3D full-roster renderers", () => {
       velocity: { ...base.velocity },
       effect: "ink",
       params: resolveInk3D(DEFAULT_EFFECTS_CONFIG.ink),
+      collisionFloorY: -10,
     };
-    renderer.update([source], 1 / 60);
-    source.position.x = 0.2;
-    renderer.update([source], 1 / 60);
+    // Ink leaves a turning tip, so swing it round for a few frames.
+    for (let frame = 0; frame < 12; frame++) {
+      const angle = (frame / 60) * Math.PI * 2;
+      source.position.x = Math.cos(angle) * 0.6;
+      source.position.y = 1.2 + Math.sin(angle) * 0.6;
+      renderer.update([source], 1 / 60);
+    }
     const stroke = scene.children.find(
       (child): child is Mesh =>
         child instanceof Mesh && child.renderOrder === 104

@@ -130,11 +130,11 @@ function pooledSource(
   };
   switch (effect) {
     case "sparkles":
-    case "ink":
     case "animal":
     case "pulse":
       return { ...base, effect, params } as SceneEffectTipSource3D;
     case "petals":
+    case "ink":
     case "silk":
       return {
         ...base,

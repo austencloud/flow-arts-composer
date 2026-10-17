@@ -19,6 +19,7 @@
    */
 
   import { useThrelte, useTask } from "@threlte/core";
+  import { EffectMotionClock } from "./scene-effects/effect-motion-clock";
   import { onDestroy } from "svelte";
   import { tryGetViewer3DContext } from "../context/viewer-3d-context";
   import { Vector3, Object3D, Matrix3, type Camera } from "three";
@@ -262,6 +263,7 @@
   const resolvedCharcoal = $derived(resolveCharcoal3D(effectsState.charcoal));
 
   const pooledFrame: SceneEffectRigFrame3D = { playing: false, sources: [] };
+  const motionClock = new EffectMotionClock();
   // One slot per emitter, so a fan's five wicks are five sources.
   const pooledSources: Array<SceneEffectTipSource3D | null> = Array.from(
     { length: TIP_EFFECT_SLOTS_PER_RIG },
@@ -352,7 +354,12 @@
           };
           break;
         case "ink":
-          source = { ...base, effect, params: resolvedInk };
+          source = {
+            ...base,
+            effect,
+            params: resolvedInk,
+            collisionFloorY: userProportionsState.groundY,
+          };
           break;
         case "silk":
           source = {
@@ -429,6 +436,9 @@
         break;
       case "ink":
         source.params = resolvedInk;
+        pooledPosition.set(0, userProportionsState.groundY, 0);
+        if (effectsParentRef) effectsParentRef.localToWorld(pooledPosition);
+        source.collisionFloorY = pooledPosition.y;
         break;
       case "silk":
         source.params = resolvedSilk;
@@ -726,6 +736,7 @@
    */
   function updateEffectsFrame(delta: number): void {
     pooledFrame.playing = isPlaying;
+    pooledFrame.motionDelta = motionClock.advance(delta, currentStep, isPlaying);
     pooledFrame.sources.length = 0;
     if (!isPlaying) {
       tipBridge.reset();
