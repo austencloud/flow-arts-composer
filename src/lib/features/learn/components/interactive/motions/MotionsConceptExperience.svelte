@@ -199,6 +199,11 @@
       land short of the settled layout and jump. */
   const stageKey = $derived(isHandsStage(stepIndex) ? MAP_STAGE : stepIndex);
 
+  /** The grow morph captures the stage once; a box still easing to its new
+      height underneath would land a few pixels off when the morph ends. */
+  let gridGrowing = $state(false);
+  let gridGrowRun = 0;
+
   function goToStep(next: number): void {
     const clamped = Math.min(BOARD_STAGE, Math.max(INTRO_STAGE, next));
     if (clamped === stepIndex) return;
@@ -209,7 +214,11 @@
       (stepIndex === MAP_STAGE && clamped === INTRO_STAGE);
     if (grows) {
       stageMotion.cancel();
-      runHandGridGrow(() => (stepIndex = clamped));
+      const run = ++gridGrowRun;
+      gridGrowing = true;
+      void runHandGridGrow(() => (stepIndex = clamped)).then(() => {
+        if (run === gridGrowRun) gridGrowing = false;
+      });
     } else if (isHandsStage(stepIndex) && isHandsStage(clamped)) {
       stageMotion.cancel();
       runHandGridSplit(
@@ -388,7 +397,14 @@
     {/snippet}
 
     {#snippet artifact()}
-      <Crossfade key={stageKey} duration={DURATION.emphasis}>
+      <!-- The pairs grids stand taller than the board; the box eases between
+           them so the heading and buttons glide instead of jumping when the
+           pairs leave. -->
+      <Crossfade
+        key={stageKey}
+        duration={DURATION.emphasis}
+        animateHeight={!gridGrowing}
+      >
         {#if stepIndex === INTRO_STAGE}
           <HandMotionsIntroStage />
         {:else if stepIndex === MAP_STAGE}
