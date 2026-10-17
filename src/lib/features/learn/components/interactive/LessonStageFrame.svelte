@@ -16,7 +16,7 @@
   import {
     isLessonContinueRunning,
     isLessonMorphRunning,
-    isLessonViewSwitchRunning,
+    isLessonHeadingSplit,
   } from "../../services/lesson-open-morph.svelte";
 
   let {
@@ -43,9 +43,9 @@
   // Continue and Previous fly the live board themselves, so the board region
   // sits that morph out instead of moving twice.
   const ownBoard = $derived(!isLessonContinueRunning());
-  // Review and Steps fly the title and lead line on their own, so the heading
-  // block sits that swap out.
-  const ownHeading = $derived(ownRegions && !isLessonViewSwitchRunning());
+  // Review and Steps, and the Hand Motions quiz and board, carry the heading's
+  // parts on their own, so the heading block sits those swaps out.
+  const ownHeading = $derived(ownRegions && !isLessonHeadingSplit());
 </script>
 
 <div class="lesson-stage-frame" class:workshop={artifactLayout === "workshop"}>

@@ -31,6 +31,11 @@
   import type { ExperienceViewMode } from "../../../domain/types";
   import { isConceptExperienceAvailable } from "../../../domain/concept-experience-registry";
   import { getExperiencePersistence } from "../../../state/experience-persistence.svelte";
+  import {
+    isLessonHeadingSplit,
+    splitLessonHeadingDuring,
+  } from "../../../services/lesson-open-morph.svelte";
+  import { claimedViewTransitionName } from "#lib/shared/transitions/claimed-view-transition-name.js";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import LessonStageControls from "../LessonStageControls.svelte";
   import LessonStageFrame from "../LessonStageFrame.svelte";
@@ -259,12 +264,18 @@
 
   /** The finished board turns back into the quiz, each card into its slot. */
   function replayQuiz(): void {
-    runBoardSettle(experienceElement, resetQuiz);
+    splitLessonHeadingDuring(() =>
+      runBoardSettle(experienceElement, resetQuiz)
+    );
     haptic?.trigger("selection");
   }
 
   function finishedQuiz(): void {
-    runBoardSettle(experienceElement, () => (quizOpen = false));
+    // The quiz's prompt fades out before Practice again fades in under the
+    // title, instead of the two crossfading in one squashed heading.
+    splitLessonHeadingDuring(() =>
+      runBoardSettle(experienceElement, () => (quizOpen = false))
+    );
     quizPassed = true;
     if (viewMode !== "scroll") persistence.savePhaseData("quizPassed", true);
   }
@@ -348,12 +359,30 @@
   <LessonStageFrame artifactLayout="workshop">
     {#snippet heading()}
       <LessonStageHeading key={stageKey} title={handMotionsTopicText("title")}>
-        {#if description}<p class="stage-description">{description}</p>{/if}
+        {#if description}
+          <p
+            class="stage-description"
+            use:claimedViewTransitionName={{
+              name: "learn-lesson-prompt",
+              enabled: isLessonHeadingSplit(),
+            }}
+          >
+            {description}
+          </p>
+        {/if}
         {#if stepIndex === BOARD_STAGE && !quizOpen}
-          <PanelButton variant="secondary" onclick={replayQuiz}>
-            <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
-            <span>{t("learn_ui_practice_again")}</span>
-          </PanelButton>
+          <span
+            class="stage-action"
+            use:claimedViewTransitionName={{
+              name: "learn-lesson-action",
+              enabled: isLessonHeadingSplit(),
+            }}
+          >
+            <PanelButton variant="secondary" onclick={replayQuiz}>
+              <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
+              <span>{t("learn_ui_practice_again")}</span>
+            </PanelButton>
+          </span>
         {/if}
       </LessonStageHeading>
     {/snippet}
@@ -471,6 +500,18 @@
   .motions-experience :global(.curriculum-progress) {
     color: var(--theme-text-dim);
     font-weight: 500;
+  }
+
+  .stage-action {
+    display: inline-flex;
+  }
+
+  /* While the quiz and board swap, the heading recentres. The prompt and
+     Practice again ride inside the lead line's box (learn-lesson-lead) as it
+     glides, instead of holding still while the title passes over them. */
+  .stage-description,
+  .stage-action {
+    view-transition-group: nearest;
   }
 
   .stage-description {

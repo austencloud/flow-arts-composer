@@ -5,7 +5,7 @@
   import { claimedViewTransitionName } from "#lib/shared/transitions/claimed-view-transition-name.js";
   import {
     isLessonMorphRunning,
-    isLessonViewSwitchRunning,
+    isLessonHeadingSplit,
   } from "../../services/lesson-open-morph.svelte";
 
   let {
@@ -30,7 +30,7 @@
       <h1
         use:claimedViewTransitionName={{
           name: "learn-lesson-title",
-          enabled: isLessonMorphRunning() || isLessonViewSwitchRunning(),
+          enabled: isLessonMorphRunning() || isLessonHeadingSplit(),
         }}
       >
         {title}
@@ -39,7 +39,7 @@
         class="description"
         use:claimedViewTransitionName={{
           name: "learn-lesson-lead",
-          enabled: isLessonViewSwitchRunning(),
+          enabled: isLessonHeadingSplit(),
         }}
       >
         {@render children()}

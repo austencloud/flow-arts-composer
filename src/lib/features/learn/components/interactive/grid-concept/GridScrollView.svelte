@@ -11,10 +11,10 @@
   import GridMergeAnimation from "../grid-merge/GridMergeAnimation.svelte";
   import PageDivider from "../PageDivider.svelte";
   import { claimedViewTransitionName } from "#lib/shared/transitions/claimed-view-transition-name.js";
-  import { isLessonViewSwitchRunning } from "../../../services/lesson-open-morph.svelte";
+  import { isLessonHeadingSplit } from "../../../services/lesson-open-morph.svelte";
 
   // Names exist only while Review or Steps swaps the views (lesson-open-morph).
-  const switching = $derived(isLessonViewSwitchRunning());
+  const switching = $derived(isLessonHeadingSplit());
 </script>
 
 <div

@@ -151,13 +151,17 @@ function unnameBoardParts(root: HTMLElement): void {
  * motions neatly and nicely so the same component could be reused into its
  * new slot"). The quiz's own picture and prompt fade with the page.
  */
-export function runBoardSettle(root: HTMLElement, mutate: () => void): void {
+export function runBoardSettle(
+  root: HTMLElement,
+  mutate: () => void
+): ViewTransition | null {
   nameBoardParts(root);
   const transition = startMorph(mutate, async () => nameBoardParts(root));
   if (!transition) {
     unnameBoardParts(root);
-    return;
+    return null;
   }
   const release = () => unnameBoardParts(root);
   void transition.finished.then(release, release);
+  return transition;
 }
