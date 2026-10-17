@@ -62,6 +62,21 @@
   animation-duration: var(--duration-emphasis);
 }
 
+/* A prompt or action under the title that leaves or arrives in the same swap
+   (Hand Motions: the quiz's prompt and Practice again) fades out first and the
+   newcomer fades in after it, so the two never sit on top of each other. */
+::view-transition-old(learn-lesson-prompt):only-child,
+::view-transition-old(learn-lesson-action):only-child {
+  animation-duration: var(--duration-fast);
+}
+
+::view-transition-new(learn-lesson-prompt):only-child,
+::view-transition-new(learn-lesson-action):only-child {
+  animation-duration: var(--duration-emphasis);
+  animation-delay: var(--duration-fast);
+  animation-fill-mode: both;
+}
+
 /* Hand Motions: the one-hand map splits into the two hands' grids and merges
    back. Names exist only while hand-grid-split.ts runs the change; it flies
    each grid's group between its boxes, so the images here only fade. The

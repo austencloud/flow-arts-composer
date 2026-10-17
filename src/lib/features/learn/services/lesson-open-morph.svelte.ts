@@ -14,8 +14,9 @@
  * otherwise, so the lesson's own view transitions (the Hand Motions grid
  * split) never capture the whole lesson.
  *
- * Review and Steps swap one lesson's two views the same way: the title and
- * lead line claim names only while that swap runs.
+ * Review and Steps swap one lesson's two views the same way, and the Hand
+ * Motions quiz and board swap inside one view: the title, lead line, prompt
+ * and action claim names only while such a swap runs.
  *
  * Continue and Previous swap one lesson for the next inside the same view.
  * The live board flies itself there (live-lesson-board), so that morph keeps
@@ -122,11 +123,34 @@ export function continueLessonWithMorph(conceptId: string, mutate: () => void) {
     });
 }
 
-let switchingView = $state(false);
+let headingSplit = $state(false);
 
-/** True while Review or Steps swaps a lesson's two views. */
-export function isLessonViewSwitchRunning() {
-  return switchingView;
+/**
+ * True while a change inside one lesson carries the heading's parts on their
+ * own: the title, the lead line, and a prompt or action under it.
+ */
+export function isLessonHeadingSplit() {
+  return headingSplit;
+}
+
+/**
+ * Runs `start`, which begins a view transition, with the lesson heading's
+ * parts named separately, so the title holds or glides and the prompt and
+ * action under it fade out and in on their own instead of crossfading as one
+ * squashed block.
+ */
+export function splitLessonHeadingDuring(start: () => ViewTransition | null) {
+  headingSplit = true;
+  // The heading's parts must carry names before the capture.
+  flushSync();
+  const transition = start();
+  if (!transition) {
+    headingSplit = false;
+    return;
+  }
+  void transition.finished
+    .catch(() => undefined)
+    .finally(() => (headingSplit = false));
 }
 
 /**
@@ -135,17 +159,7 @@ export function isLessonViewSwitchRunning() {
  * the board flies into its first picture, and the review's cards fade.
  */
 export function switchLessonViewWithMorph(mutate: () => void) {
-  switchingView = true;
-  // The step view's title and lead must carry names before the capture.
-  flushSync();
-  const transition = startMorph(mutate);
-  if (!transition) {
-    switchingView = false;
-    return;
-  }
-  void transition.finished
-    .catch(() => undefined)
-    .finally(() => (switchingView = false));
+  splitLessonHeadingDuring(() => startMorph(mutate));
 }
 
 /** Warm a lesson's code ahead of the tap (hover, focus, press). */
