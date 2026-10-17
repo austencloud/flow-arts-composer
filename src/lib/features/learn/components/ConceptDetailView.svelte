@@ -35,7 +35,9 @@ Supports two navigation modes:
   import {
     continueLessonWithMorph,
     isLessonMorphRunning,
+    switchLessonViewWithMorph,
   } from "../services/lesson-open-morph.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import GridMergeAnimation from "./interactive/grid-merge/GridMergeAnimation.svelte";
   import {
     createLiveLessonBoard,
@@ -138,7 +140,9 @@ Supports two navigation modes:
 
   function toggleViewMode() {
     hapticService?.trigger("selection");
-    viewMode = viewMode === "step" ? "scroll" : "step";
+    const next = viewMode === "step" ? "scroll" : "step";
+    // The lesson's heading and board carry into the review and back.
+    switchLessonViewWithMorph(() => (viewMode = next));
   }
 
   onMount(() => {
@@ -273,13 +277,27 @@ Supports two navigation modes:
             ? t("learn_switch_to_scroll")
             : t("learn_switch_to_step")}
         >
-          {#if viewMode === "step"}
-            <i class="fa-solid fa-scroll" aria-hidden="true"></i>
-            <span class="mode-label">{t("learn_review")}</span>
-          {:else}
-            <i class="fa-solid fa-stairs" aria-hidden="true"></i>
-            <span class="mode-label">{t("learn_steps")}</span>
-          {/if}
+          {#snippet face(mode: ExperienceViewMode)}
+            {#if mode === "step"}
+              <i class="fa-solid fa-scroll" aria-hidden="true"></i>
+              <span class="mode-label">{t("learn_review")}</span>
+            {:else}
+              <i class="fa-solid fa-stairs" aria-hidden="true"></i>
+              <span class="mode-label">{t("learn_steps")}</span>
+            {/if}
+          {/snippet}
+          <!-- Both faces size the button, so swapping them moves nothing. -->
+          <span class="mode-face">
+            <span class="mode-sizer" aria-hidden="true"
+              >{@render face("step")}</span
+            >
+            <span class="mode-sizer" aria-hidden="true"
+              >{@render face("scroll")}</span
+            >
+            <Crossfade key={viewMode}>
+              <span class="mode-current">{@render face(viewMode)}</span>
+            </Crossfade>
+          </span>
         </button>
       {/if}
     </div>
@@ -434,6 +452,26 @@ Supports two navigation modes:
 
   .mode-label {
     font-size: 0.8125rem;
+  }
+
+  .mode-face {
+    display: grid;
+    justify-items: center;
+  }
+
+  .mode-face > :global(*) {
+    grid-area: 1 / 1;
+  }
+
+  .mode-sizer {
+    visibility: hidden;
+  }
+
+  .mode-sizer,
+  .mode-current {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
 
   .concept-detail-content {

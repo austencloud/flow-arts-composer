@@ -14,6 +14,9 @@
  * otherwise, so the lesson's own view transitions (the Hand Motions grid
  * split) never capture the whole lesson.
  *
+ * Review and Steps swap one lesson's two views the same way: the title and
+ * lead line claim names only while that swap runs.
+ *
  * Continue and Previous swap one lesson for the next inside the same view.
  * The live board flies itself there (live-lesson-board), so that morph keeps
  * `learn-grid-stage` off and carries only the heading and the controls, which
@@ -117,6 +120,32 @@ export function continueLessonWithMorph(conceptId: string, mutate: () => void) {
         .catch(() => undefined)
         .finally(() => (continuing = false));
     });
+}
+
+let switchingView = $state(false);
+
+/** True while Review or Steps swaps a lesson's two views. */
+export function isLessonViewSwitchRunning() {
+  return switchingView;
+}
+
+/**
+ * Review and Steps swap the same lesson's two views. While the swap runs, the
+ * lesson's title and lead line carry to the review's first section and back,
+ * the board flies into its first picture, and the review's cards fade.
+ */
+export function switchLessonViewWithMorph(mutate: () => void) {
+  switchingView = true;
+  // The step view's title and lead must carry names before the capture.
+  flushSync();
+  const transition = startMorph(mutate);
+  if (!transition) {
+    switchingView = false;
+    return;
+  }
+  void transition.finished
+    .catch(() => undefined)
+    .finally(() => (switchingView = false));
 }
 
 /** Warm a lesson's code ahead of the tap (hover, focus, press). */

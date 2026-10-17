@@ -48,6 +48,20 @@
   animation-duration: var(--duration-emphasis);
 }
 
+/* Review and Steps: the lesson's title and lead line carry to the review's
+   first section and back, the board (learn-grid-stage) flies into its first
+   picture, and the review's cards fade as one layer. Names exist only while the
+   swap runs. Owner: switchLessonViewWithMorph in lesson-open-morph.svelte.ts. */
+::view-transition-group(learn-lesson-lead) {
+  animation-duration: var(--duration-dramatic);
+  animation-timing-function: var(--ease-in-out);
+}
+
+::view-transition-old(learn-review),
+::view-transition-new(learn-review) {
+  animation-duration: var(--duration-emphasis);
+}
+
 /* Hand Motions: the one-hand map splits into the two hands' grids and merges
    back. Names exist only while hand-grid-split.ts runs the change; it flies
    each grid's group between its boxes, so the images here only fade. The
