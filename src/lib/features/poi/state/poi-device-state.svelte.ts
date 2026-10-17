@@ -7,7 +7,10 @@
 
 import type { StripPattern } from "#lib/shared/poi/domain/strip-pattern.js";
 import type { PoiDeviceInfo } from "../domain/device-types";
-import { getIgnisSerialAdapter, getPoiDeviceManager } from "../get-poi-device-manager";
+import {
+  getIgnisSerialAdapter,
+  getPoiDeviceManager,
+} from "../get-poi-device-manager";
 import { getOpenPixelPoiAdapter } from "../get-open-pixel-poi-adapter";
 import { IGNIS_BRIGHT, IGNIS_IMAGE_SLOTS } from "../services/ignis/ignis-image";
 import {
@@ -30,7 +33,10 @@ function message(err: unknown, fallback: string): string {
 
 /** The chooser was closed without picking: not an error worth showing. */
 function cancelled(err: unknown): boolean {
-  return err instanceof DOMException && (err.name === "NotFoundError" || err.name === "AbortError");
+  return (
+    err instanceof DOMException &&
+    (err.name === "NotFoundError" || err.name === "AbortError")
+  );
 }
 
 function loadSettings(): { slot: number; brightness: number } {
@@ -41,20 +47,33 @@ function loadSettings(): { slot: number; brightness: number } {
     const s = JSON.parse(raw) as Partial<typeof fallback>;
     return {
       slot: clampInt(s.slot, 1, IGNIS_IMAGE_SLOTS, fallback.slot),
-      brightness: clampInt(s.brightness, 1, IGNIS_BRIGHT.maxBright, fallback.brightness),
+      brightness: clampInt(
+        s.brightness,
+        1,
+        IGNIS_BRIGHT.maxBright,
+        fallback.brightness
+      ),
     };
   } catch {
     return fallback;
   }
 }
 
-function clampInt(v: unknown, min: number, max: number, fallback: number): number {
-  return typeof v === "number" && Number.isFinite(v) ? Math.min(max, Math.max(min, Math.round(v))) : fallback;
+function clampInt(
+  v: unknown,
+  min: number,
+  max: number,
+  fallback: number
+): number {
+  return typeof v === "number" && Number.isFinite(v)
+    ? Math.min(max, Math.max(min, Math.round(v)))
+    : fallback;
 }
 
 export class PoiDeviceState {
   readonly usbSupported = isWebSerialSupported();
-  readonly bluetoothSupported = typeof navigator !== "undefined" && "bluetooth" in navigator;
+  readonly bluetoothSupported =
+    typeof navigator !== "undefined" && "bluetooth" in navigator;
   readonly slotCount = IGNIS_IMAGE_SLOTS;
   readonly maxBrightness = IGNIS_BRIGHT.maxBright;
 
@@ -65,8 +84,12 @@ export class PoiDeviceState {
   slot = $state(1);
   brightness = $state<number>(IGNIS_BRIGHT.maxBright);
 
-  readonly sending = $derived(Object.values(this.uploads).some((u) => u.phase === "sending"));
-  readonly uploadable = $derived(this.devices.filter((d) => d.supported !== false));
+  readonly sending = $derived(
+    Object.values(this.uploads).some((u) => u.phase === "sending")
+  );
+  readonly uploadable = $derived(
+    this.devices.filter((d) => d.supported !== false)
+  );
 
   private readonly manager = getPoiDeviceManager();
   private readonly ignis = getIgnisSerialAdapter();
@@ -83,7 +106,9 @@ export class PoiDeviceState {
   start(): void {
     if (!this.usbSupported) return;
     this.cleanups.push(this.ignis.onPlugIn((port) => void this.openPort(port)));
-    void this.ignis.grantedPorts().then((ports) => Promise.all(ports.map((p) => this.openPort(p))));
+    void this.ignis
+      .grantedPorts()
+      .then((ports) => Promise.all(ports.map((p) => this.openPort(p))));
   }
 
   dispose(): void {
@@ -97,7 +122,8 @@ export class PoiDeviceState {
     try {
       port = await this.ignis.requestPort();
     } catch (err) {
-      if (!cancelled(err)) this.error = message(err, "Could not open the USB chooser");
+      if (!cancelled(err))
+        this.error = message(err, "Could not open the USB chooser");
       return;
     }
     await this.openPort(port);
@@ -108,9 +134,11 @@ export class PoiDeviceState {
     this.connecting = true;
     try {
       const found = await this.manager.scan(getOpenPixelPoiAdapter());
-      for (const device of found) this.track(await this.manager.connect(device));
+      for (const device of found)
+        this.track(await this.manager.connect(device));
     } catch (err) {
-      if (!cancelled(err)) this.error = message(err, "Bluetooth connection failed");
+      if (!cancelled(err))
+        this.error = message(err, "Bluetooth connection failed");
     } finally {
       this.connecting = false;
     }
@@ -127,7 +155,12 @@ export class PoiDeviceState {
   }
 
   setBrightness(level: number): void {
-    this.brightness = clampInt(level, 1, IGNIS_BRIGHT.maxBright, this.brightness);
+    this.brightness = clampInt(
+      level,
+      1,
+      IGNIS_BRIGHT.maxBright,
+      this.brightness
+    );
     this.save();
   }
 
@@ -136,23 +169,31 @@ export class PoiDeviceState {
     if (this.sending) return;
     this.error = null;
     const targets = this.uploadable.map((d) => d.id);
-    this.uploads = Object.fromEntries(targets.map((id) => [id, { phase: "sending", pct: 0 } as UploadStatus]));
+    this.uploads = Object.fromEntries(
+      targets.map((id) => [id, { phase: "sending", pct: 0 } as UploadStatus])
+    );
     const failures = await this.manager
       .uploadToAll(
         pattern,
         this.slot - 1,
         (id, pct) => {
-          if (this.uploads[id]?.phase === "sending") this.uploads[id] = { phase: "sending", pct };
+          if (this.uploads[id]?.phase === "sending")
+            this.uploads[id] = { phase: "sending", pct };
         },
         { maxBright: this.brightness }
       )
-      .catch((err: unknown) => targets.map((deviceId) => ({ deviceId, error: err })));
+      .catch((err: unknown) =>
+        targets.map((deviceId) => ({ deviceId, error: err }))
+      );
     const failed = new Map(failures.map((f) => [f.deviceId, f.error]));
     this.uploads = Object.fromEntries(
       targets.map((id) => [
         id,
         failed.has(id)
-          ? ({ phase: "error", message: message(failed.get(id), "Upload failed") } as UploadStatus)
+          ? ({
+              phase: "error",
+              message: message(failed.get(id), "Upload failed"),
+            } as UploadStatus)
           : ({ phase: "done" } as UploadStatus),
       ])
     );
@@ -172,7 +213,8 @@ export class PoiDeviceState {
   private track(connection: IPoiConnection): void {
     this.manager.register(connection);
     const info = connection.deviceInfo;
-    if (!this.devices.some((d) => d.id === info.id)) this.devices = [...this.devices, info];
+    if (!this.devices.some((d) => d.id === info.id))
+      this.devices = [...this.devices, info];
     if (connection instanceof IgnisSerialConnection) {
       connection.onClose(() => {
         this.manager.forget(info.id);
@@ -189,7 +231,10 @@ export class PoiDeviceState {
 
   private save(): void {
     try {
-      localStorage.setItem(SETTINGS_KEY, JSON.stringify({ slot: this.slot, brightness: this.brightness }));
+      localStorage.setItem(
+        SETTINGS_KEY,
+        JSON.stringify({ slot: this.slot, brightness: this.brightness })
+      );
     } catch {
       // Private window or blocked storage: settings just won't persist.
     }

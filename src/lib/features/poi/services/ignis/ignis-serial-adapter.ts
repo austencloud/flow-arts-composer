@@ -40,7 +40,9 @@ export interface WebSerialPort extends EventTarget {
 
 interface WebSerial extends EventTarget {
   getPorts(): Promise<WebSerialPort[]>;
-  requestPort(options?: { filters?: { usbVendorId?: number; usbProductId?: number }[] }): Promise<WebSerialPort>;
+  requestPort(options?: {
+    filters?: { usbVendorId?: number; usbProductId?: number }[];
+  }): Promise<WebSerialPort>;
 }
 
 /** STMicroelectronics: the poi's USB virtual COM port. */
@@ -77,7 +79,10 @@ export class IgnisSerialConnection implements IPoiConnection {
   ignisInfo: IgnisDeviceInfo = {};
   private open = false;
   private reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
-  private waiter: { accept: (r: IgnisReply) => boolean; resolve: (r: IgnisReply) => void } | null = null;
+  private waiter: {
+    accept: (r: IgnisReply) => boolean;
+    resolve: (r: IgnisReply) => void;
+  } | null = null;
   private queue: Promise<unknown> = Promise.resolve();
   private readonly listeners = new Set<() => void>();
 
@@ -158,7 +163,8 @@ export class IgnisSerialConnection implements IPoiConnection {
     timeoutMs: number
   ): Promise<IgnisReply> {
     const run = async () => {
-      if (!this.open || !this.port.writable) throw new IgnisError("Poi is not connected");
+      if (!this.open || !this.port.writable)
+        throw new IgnisError("Poi is not connected");
       let deadline = Date.now() + timeoutMs;
       const reply = new Promise<IgnisReply>((resolve, reject) => {
         const tick = () => {
@@ -195,7 +201,11 @@ export class IgnisSerialConnection implements IPoiConnection {
   }
 
   async refreshInfo(): Promise<IgnisDeviceInfo> {
-    const reply = await this.request(toWire(infoRequest()), (r) => r.deviceInfo !== undefined, INFO_TIMEOUT_MS);
+    const reply = await this.request(
+      toWire(infoRequest()),
+      (r) => r.deviceInfo !== undefined,
+      INFO_TIMEOUT_MS
+    );
     const info = reply.deviceInfo!;
     this.ignisInfo = info;
     const family = resolveFamily(info);
@@ -213,13 +223,21 @@ export class IgnisSerialConnection implements IPoiConnection {
     return info;
   }
 
-  private async modeRequest(wire: Uint8Array, action: number, timeoutMs: number): Promise<void> {
+  private async modeRequest(
+    wire: Uint8Array,
+    action: number,
+    timeoutMs: number
+  ): Promise<void> {
     const reply = await this.request(
       wire,
-      (r) => r.ack !== undefined && r.ack.requestTag === CTAG.MODE && r.ack.action === action,
+      (r) =>
+        r.ack !== undefined &&
+        r.ack.requestTag === CTAG.MODE &&
+        r.ack.action === action,
       timeoutMs
     );
-    if (reply.ack!.code !== 0) throw new IgnisError(describeAck(reply.ack!.code));
+    if (reply.ack!.code !== 0)
+      throw new IgnisError(describeAck(reply.ack!.code));
   }
 
   /**
@@ -234,21 +252,32 @@ export class IgnisSerialConnection implements IPoiConnection {
     options: { maxBright?: number } = {}
   ): Promise<void> {
     if (!this.deviceInfo.supported) {
-      throw new IgnisError(`${this.deviceInfo.model} is not supported for uploads yet`);
+      throw new IgnisError(
+        `${this.deviceInfo.model} is not supported for uploads yet`
+      );
     }
     if (!Number.isInteger(slot) || slot < 0 || slot >= IGNIS_IMAGE_SLOTS) {
       throw new IgnisError(`Slot must be 1 to ${IGNIS_IMAGE_SLOTS}`);
     }
-    const image = encodeImage(pattern, { ledCount: this.deviceInfo.ledCount, maxBright: options.maxBright });
+    const image = encodeImage(pattern, {
+      ledCount: this.deviceInfo.ledCount,
+      maxBright: options.maxBright,
+    });
     const total = image.chunks.length + 1;
     onProgress?.(0);
 
-    await this.modeRequest(toWire(eraseRequest({ type: MODE_TYPE.IMAGE, index: slot })), MODE_ACTION.ERASE, ERASE_TIMEOUT_MS);
+    await this.modeRequest(
+      toWire(eraseRequest({ type: MODE_TYPE.IMAGE, index: slot })),
+      MODE_ACTION.ERASE,
+      ERASE_TIMEOUT_MS
+    );
     onProgress?.((1 / total) * 100);
 
     for (let n = 0; n < image.chunks.length; n++) {
       const chunk = image.chunks[n]!;
-      const wire = toWire(writeImageChunkRequest(slot, chunk, n, image.header, crc32(chunk)));
+      const wire = toWire(
+        writeImageChunkRequest(slot, chunk, n, image.header, crc32(chunk))
+      );
       for (let attempt = 0; ; attempt++) {
         try {
           await this.modeRequest(wire, MODE_ACTION.WRITE, CHUNK_TIMEOUT_MS);
@@ -263,7 +292,9 @@ export class IgnisSerialConnection implements IPoiConnection {
   }
 
   async setBrightness(): Promise<void> {
-    throw new IgnisError("Brightness is set per pattern when uploading to Ignis poi");
+    throw new IgnisError(
+      "Brightness is set per pattern when uploading to Ignis poi"
+    );
   }
 
   async setSpeed(): Promise<void> {
@@ -309,7 +340,10 @@ export class IgnisSerialAdapter implements IPoiAdapter {
   /** Show the browser's port chooser, filtered to poi. Needs a click. */
   async requestPort(): Promise<WebSerialPort> {
     const serial = webSerial();
-    if (!serial) throw new IgnisError("This browser cannot talk to USB devices. Use Chrome or Edge.");
+    if (!serial)
+      throw new IgnisError(
+        "This browser cannot talk to USB devices. Use Chrome or Edge."
+      );
     return serial.requestPort({ filters: [{ usbVendorId: STM32_VENDOR_ID }] });
   }
 
@@ -321,7 +355,9 @@ export class IgnisSerialAdapter implements IPoiAdapter {
       await connection.start();
     } catch (err) {
       connection.disconnect();
-      throw err instanceof IgnisError ? err : new IgnisError(`Could not open the poi: ${String(err)}`);
+      throw err instanceof IgnisError
+        ? err
+        : new IgnisError(`Could not open the poi: ${String(err)}`);
     }
     this.byPort.set(port, connection);
     connection.onClose(() => this.byPort.delete(port));
@@ -333,7 +369,8 @@ export class IgnisSerialAdapter implements IPoiAdapter {
     const serial = webSerial();
     if (!serial) return () => {};
     const handler = (event: Event) => {
-      const port = (event.target ?? (event as unknown as { port?: WebSerialPort }).port) as WebSerialPort;
+      const port = (event.target ??
+        (event as unknown as { port?: WebSerialPort }).port) as WebSerialPort;
       if (port?.getInfo?.().usbVendorId === STM32_VENDOR_ID) listener(port);
     };
     serial.addEventListener("connect", handler);

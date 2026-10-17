@@ -8,7 +8,10 @@
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
   import { getPoiContext } from "../context/poi-context";
-  import { PoiDeviceState, type UploadStatus } from "../state/poi-device-state.svelte";
+  import {
+    PoiDeviceState,
+    type UploadStatus,
+  } from "../state/poi-device-state.svelte";
   import type { PoiDeviceInfo } from "../domain/device-types";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import ValueSlider from "#lib/shared/ui/components/ValueSlider.svelte";
@@ -27,21 +30,30 @@
         ? "Send to both poi"
         : count > 2
           ? `Send to all ${count} poi`
-          : "Send to poi",
+          : "Send to poi"
   );
 
   function details(device: PoiDeviceInfo): string {
     const parts = [`${device.ledCount} LEDs`];
-    if (device.firmware) parts.push(`firmware ${device.firmware.split(".").slice(0, 3).join(".")}`);
+    if (device.firmware)
+      parts.push(
+        `firmware ${device.firmware.split(".").slice(0, 3).join(".")}`
+      );
     if (device.batteryLevel !== undefined && device.batteryLevel <= 100) {
       parts.push(`battery ${device.batteryLevel}%`);
     }
     return parts.join(" · ");
   }
 
-  function statusText(device: PoiDeviceInfo, status: UploadStatus | undefined): string {
+  function statusText(
+    device: PoiDeviceInfo,
+    status: UploadStatus | undefined
+  ): string {
     if (device.supported === false) return "This model can't take uploads yet";
-    if (!status) return device.connectionType === "usb-serial" ? "Ready over USB" : "Ready over Bluetooth";
+    if (!status)
+      return device.connectionType === "usb-serial"
+        ? "Ready over USB"
+        : "Ready over Bluetooth";
     if (status.phase === "sending") return `Sending ${Math.round(status.pct)}%`;
     if (status.phase === "done") return `In slot ${devices.slot}`;
     return status.message;
@@ -64,30 +76,51 @@
     <div class="empty">
       {#if devices.usbSupported}
         <p class="hint">
-          Plug a poi in with its USB cable, then choose it from the list. After that it connects by
-          itself.
+          Plug a poi in with its USB cable, then choose it from the list. After
+          that it connects by itself.
         </p>
-        <PanelButton variant="primary" fullWidth onclick={() => devices.addUsbPoi()} disabled={devices.connecting}>
+        <PanelButton
+          variant="primary"
+          fullWidth
+          onclick={() => devices.addUsbPoi()}
+          disabled={devices.connecting}
+        >
           <i class="fab fa-usb" aria-hidden="true"></i>
           {devices.connecting ? "Connecting…" : "Connect poi over USB"}
         </PanelButton>
       {:else}
-        <p class="hint">Sending to poi over USB needs Chrome or Edge on a computer.</p>
+        <p class="hint">
+          Sending to poi over USB needs Chrome or Edge on a computer.
+        </p>
       {/if}
     </div>
   {:else}
     <ul class="device-list">
       {#each devices.devices as device (device.id)}
         {@const status = devices.uploads[device.id]}
-        <li class="device" class:failed={status?.phase === "error" || device.supported === false}>
+        <li
+          class="device"
+          class:failed={status?.phase === "error" || device.supported === false}
+        >
           <div class="device-text">
             <span class="device-name">{device.model}</span>
             <span class="device-meta">{details(device)}</span>
-            <span class="device-status" class:done={status?.phase === "done"} aria-live="polite">
-              {#if status?.phase === "done"}<i class="fas fa-check" aria-hidden="true"></i>{/if}
+            <span
+              class="device-status"
+              class:done={status?.phase === "done"}
+              aria-live="polite"
+            >
+              {#if status?.phase === "done"}<i
+                  class="fas fa-check"
+                  aria-hidden="true"
+                ></i>{/if}
               {statusText(device, status)}
             </span>
-            <div class="progress" class:shown={status !== undefined} aria-hidden="true">
+            <div
+              class="progress"
+              class:shown={status !== undefined}
+              aria-hidden="true"
+            >
               <div
                 class="progress-fill"
                 style:transform="scaleX({status?.phase === 'sending'
@@ -145,7 +178,11 @@
     </PanelButton>
 
     {#if devices.usbSupported}
-      <PanelButton variant="quiet" onclick={() => devices.addUsbPoi()} disabled={devices.connecting}>
+      <PanelButton
+        variant="quiet"
+        onclick={() => devices.addUsbPoi()}
+        disabled={devices.connecting}
+      >
         <i class="fas fa-plus" aria-hidden="true"></i>
         {devices.connecting ? "Connecting…" : "Add another poi"}
       </PanelButton>
@@ -157,7 +194,11 @@
   {/if}
 
   {#if devices.bluetoothSupported}
-    <PanelButton variant="quiet" onclick={() => devices.addBluetoothPoi()} disabled={devices.connecting}>
+    <PanelButton
+      variant="quiet"
+      onclick={() => devices.addBluetoothPoi()}
+      disabled={devices.connecting}
+    >
       <i class="fab fa-bluetooth-b" aria-hidden="true"></i>
       Open Pixel Poi over Bluetooth
     </PanelButton>
@@ -227,7 +268,11 @@
   }
 
   .device.failed {
-    border-color: color-mix(in srgb, var(--semantic-error, #ef4444) 55%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 55%,
+      transparent
+    );
   }
 
   .device-text {
@@ -311,7 +356,11 @@
     margin: 0;
     padding: 0.5rem 0.75rem;
     border-radius: 6px;
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 15%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 15%,
+      transparent
+    );
     color: color-mix(in srgb, var(--semantic-error, #ef4444) 70%, white);
     font-size: var(--font-size-compact, 12px);
   }
