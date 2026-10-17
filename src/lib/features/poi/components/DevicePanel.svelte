@@ -85,7 +85,7 @@
           onclick={() => devices.addUsbPoi()}
           disabled={devices.connecting}
         >
-          <i class="fab fa-usb" aria-hidden="true"></i>
+          <i class="fas fa-plug" aria-hidden="true"></i>
           {devices.connecting ? "Connecting…" : "Connect poi over USB"}
         </PanelButton>
       {:else}
@@ -199,7 +199,7 @@
       onclick={() => devices.addBluetoothPoi()}
       disabled={devices.connecting}
     >
-      <i class="fab fa-bluetooth-b" aria-hidden="true"></i>
+      <i class="fas fa-tower-broadcast" aria-hidden="true"></i>
       Open Pixel Poi over Bluetooth
     </PanelButton>
   {/if}
