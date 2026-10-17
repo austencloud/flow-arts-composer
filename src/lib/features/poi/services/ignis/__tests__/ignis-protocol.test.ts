@@ -82,7 +82,7 @@ describe("message and frame", () => {
 
   it("rejects a corrupted message", () => {
     const msg = encodeMessage(bytes("41 02 4a 00"));
-    msg[4] ^= 1;
+    msg[4] = msg[4]! ^ 1;
     expect(() => decodeMessage(msg)).toThrow(/CRC/);
   });
 

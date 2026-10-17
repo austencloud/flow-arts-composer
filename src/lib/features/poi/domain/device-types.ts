@@ -9,6 +9,17 @@ export interface PoiDeviceInfo {
   connectionType: "ble" | "usb-serial";
   ledCount: number;
   ledType: "ws2812b" | "sk9822";
+  /** Firmware version, when the device reports it. */
+  firmware?: string;
+  /** Battery level as the device reports it. */
+  batteryLevel?: number;
+  /** Hardware serial / UID, when known. */
+  serial?: string;
+  /**
+   * False when we can talk to the device but have not verified its image
+   * format, so uploads are refused. Undefined means no such check applies.
+   */
+  supported?: boolean;
 }
 
 export interface DeviceDetailedInfo extends PoiDeviceInfo {
