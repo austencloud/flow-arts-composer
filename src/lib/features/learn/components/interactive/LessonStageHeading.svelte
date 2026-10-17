@@ -21,20 +21,33 @@
   } = $props();
 </script>
 
+<!-- The title and the lead line swap on their own. A new round keeps its
+     title and changes only the lead, so the title holds still. Each line fades
+     out before its replacement fades in, so two sentences never sit on top of
+     each other, and the box eases to the new line's height. -->
 <div class="lesson-stage-heading">
-  <Crossfade {key} duration={DURATION.normal}>
-    <div class="heading-copy">
-      {#if eyebrow}<span class="eyebrow">{eyebrow}</span>{/if}
-      <!-- The course-map card's name becomes this title, and Review carries
-           the title and lead line into its first section (lesson-open-morph). -->
-      <h1
-        use:claimedViewTransitionName={{
-          name: "learn-lesson-title",
-          enabled: isLessonMorphRunning() || isLessonHeadingSplit(),
-        }}
-      >
-        {title}
-      </h1>
+  <div class="heading-copy">
+    <Crossfade
+      key={`${eyebrow ?? ""}|${title}`}
+      duration={DURATION.normal}
+      mode="swap"
+      animateHeight
+    >
+      <div class="title-copy">
+        {#if eyebrow}<span class="eyebrow">{eyebrow}</span>{/if}
+        <!-- The course-map card's name becomes this title, and Review carries
+             the title and lead line into its first section (lesson-open-morph). -->
+        <h1
+          use:claimedViewTransitionName={{
+            name: "learn-lesson-title",
+            enabled: isLessonMorphRunning() || isLessonHeadingSplit(),
+          }}
+        >
+          {title}
+        </h1>
+      </div>
+    </Crossfade>
+    <Crossfade {key} duration={DURATION.normal} mode="swap" animateHeight>
       <div
         class="description"
         use:claimedViewTransitionName={{
@@ -44,8 +57,8 @@
       >
         {@render children()}
       </div>
-    </div>
-  </Crossfade>
+    </Crossfade>
+  </div>
 </div>
 
 <style>
@@ -54,10 +67,14 @@
     text-align: center;
   }
 
-  .heading-copy {
+  .heading-copy,
+  .title-copy {
     display: grid;
-    justify-items: center;
     gap: 0.35rem;
+  }
+
+  .title-copy {
+    justify-items: center;
   }
 
   .eyebrow {
@@ -95,7 +112,8 @@
   }
 
   @media (max-height: 760px) {
-    .heading-copy {
+    .heading-copy,
+    .title-copy {
       gap: 0.2rem;
     }
 
