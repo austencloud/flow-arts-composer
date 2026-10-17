@@ -2,7 +2,13 @@
   import { t, tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import { onDestroy, onMount, tick, untrack } from "svelte";
   import { createLayoutMotion } from "#lib/shared/transitions/layout-flip.js";
-  import { motionDuration } from "#lib/shared/transitions/motion.js";
+  import {
+    arrive,
+    createIntrinsicSizeMotion,
+    growFade,
+    motionDuration,
+    type IntrinsicSizeMotion,
+  } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { Crossfade } from "#lib/shared/transitions/motion.js";
   import UndoButton from "#lib/features/create/shared/workspace-panel/shared/components/buttons/UndoButton.svelte";
@@ -150,6 +156,27 @@
     getDuration: () => motionDuration(DURATION.emphasis),
     resize: "layout",
   });
+  // Free play adds taller tools to the hand-controls row; its height eases
+  // so the stage around it glides instead of hopping a few pixels.
+  let handControls = $state<HTMLDivElement>();
+  let rowMotion: IntrinsicSizeMotion | undefined;
+  let rowResizing = $state(false);
+  $effect(() => {
+    if (!handControls) return;
+    const motion = createIntrinsicSizeMotion(handControls, { release: true });
+    rowMotion = motion;
+    return () => motion.cancel();
+  });
+  function resizeRow(from: number | undefined) {
+    if (from === undefined || !handControls || !rowMotion) return;
+    rowMotion.cancel();
+    const animation = rowMotion.resize(from, handControls.offsetHeight);
+    if (!animation) return;
+    rowResizing = true;
+    const settle = () => (rowResizing = false);
+    animation.addEventListener("finish", settle, { once: true });
+    animation.addEventListener("cancel", settle, { once: true });
+  }
   let hasRendered = false;
   $effect.pre(() => {
     // Only learning-state changes recompose the stage. Pointer aiming stays
@@ -157,7 +184,15 @@
     [workshop.phase];
     if (hasRendered) {
       untrack(() => stageMotion.capture());
-      void tick().then(() => stageMotion.play());
+      const rowBefore = untrack(
+        () => rowMotion?.currentSize() ?? handControls?.offsetHeight
+      );
+      void tick().then(() => {
+        // The row holds its old height first, so the stage glide measures
+        // the layout the row then eases out of.
+        resizeRow(rowBefore);
+        stageMotion.play();
+      });
     }
     hasRendered = true;
   });
@@ -449,24 +484,33 @@
         <div
           class="hand-controls"
           data-placement-stage="editing"
+          data-resizing={rowResizing || undefined}
+          bind:this={handControls}
           role="group"
           aria-label={t("learn_ui_move_hands")}
         >
-          <UndoButton CreateModuleState={handHistory} />
-          <ClearSequenceButton
-            disabled={!placement.leftLocation && !placement.rightLocation}
-            label={t("learn_ui_clear_both_hands")}
-            onclick={() => replacePair(null, null)}
-          />
-          {#if freePlay}
-            <GridModeToggle
-              currentGridMode={gridMode}
-              onGridModeChange={changeGrid}
+          <!-- Undo and Clear glide over on the stage motion while the
+               free-play tools arrive beside them. -->
+          <div class="history-controls" data-placement-layout="history">
+            <UndoButton CreateModuleState={handHistory} />
+            <ClearSequenceButton
+              disabled={!placement.leftLocation && !placement.rightLocation}
+              label={t("learn_ui_clear_both_hands")}
+              onclick={() => replacePair(null, null)}
             />
+          </div>
+          {#if freePlay}
+            <div class="free-play-tool" in:arrive={{ index: 0 }}>
+              <GridModeToggle
+                currentGridMode={gridMode}
+                onGridModeChange={changeGrid}
+              />
+            </div>
             <div
               class="transform-controls"
               role="group"
               aria-label={t("learn_ui_transform_both_hands")}
+              in:arrive={{ index: 1 }}
             >
               <SequenceTransformActions
                 toolbar
@@ -494,14 +538,16 @@
         aria-label={t("learn_ui_lesson_navigation")}
       >
         {#if freePlay}
-          <LessonStageControls
-            label={t("learn_ui_continue_hand_motions")}
-            currentStep={1}
-            totalSteps={1}
-            showProgress={false}
-            bind:actionRef={forwardButton}
-            onAction={finish}
-          />
+          <div class="continue-arrival" in:growFade>
+            <LessonStageControls
+              label={t("learn_ui_continue_hand_motions")}
+              currentStep={1}
+              totalSteps={1}
+              showProgress={false}
+              bind:actionRef={forwardButton}
+              onAction={finish}
+            />
+          </div>
         {/if}
       </nav>
     {/snippet}
@@ -587,8 +633,19 @@
     --workspace-action-radius: 999px;
     --workspace-action-label-display: inline;
   }
+  .hand-controls[data-resizing] {
+    overflow: clip;
+  }
+  .history-controls,
   .transform-controls {
-    display: contents;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: inherit;
+  }
+  .continue-arrival {
+    width: 100%;
   }
   p {
     margin: 0;
