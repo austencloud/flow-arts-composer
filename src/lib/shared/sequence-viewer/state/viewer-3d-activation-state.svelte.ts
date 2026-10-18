@@ -25,6 +25,13 @@ export function createViewer3DActivationState(
 ) {
   let openedSequence: SequenceData | null = null;
   let openedContent = "";
+  // A link's `render=3d` asks for 3D on the surface it opened, read once. The
+  // effect below writes `render` back into the URL whenever 3D is on, so
+  // reading the live param would keep 3D on forever: leaving 3D for 2D left
+  // the renderer running, and the 2D view took the 3D recording layout with
+  // no Effects panel. Choosing another surface ends the link's request.
+  let linkAsks3D = untrack(() => inputs.getInitialRenderMode() === "3d");
+  const openedMode = untrack(() => inputs.viewerState.viewerMode);
   $effect(() => {
     inputs.onUrlParamChange?.(
       "render",
@@ -36,8 +43,9 @@ export function createViewer3DActivationState(
     const sequence = inputs.getSequence();
     if (!sequence || !inputs.viewer3DState.webgl2Available) return;
 
+    if (inputs.viewerState.viewerMode !== openedMode) linkAsks3D = false;
     const shouldBe3D =
-      (inputs.viewerState.wants3D || inputs.getInitialRenderMode() === "3d") &&
+      (inputs.viewerState.wants3D || linkAsks3D) &&
       dependencies.viewportFits3D();
     const is3D = inputs.viewer3DState.renderMode === "3d";
     const performersReady =
