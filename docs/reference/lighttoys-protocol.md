@@ -6,9 +6,11 @@ logs and from its machine code with Ghidra (`LtComposer.exe`, C++ on Cinder;
 the source paths in the binary name `Ft2Device.cpp` and `VpoiGenerator.cpp`).
 Nothing here has been sent to a staff by our code yet.
 
-Not yet confirmed: the exact bytes of a Composer-built show next to our
-reading of them (see "Checking this without a staff" below), the meaning of
-the brightness summary in the trailer, and what bank 5 holds.
+The show layout below is confirmed by size: compiling a Composer show script
+with it gives exactly the 120,445 bytes Composer logged when it uploaded that
+show (see "How the layout was checked"). Not yet confirmed: the byte-for-byte
+contents, the meaning of the brightness summary in the trailer, and what bank
+5 holds.
 
 ## Transport
 
@@ -109,16 +111,32 @@ The payload is a run of segments, each
 | Bytes      | Value                               |
 | ---------- | ----------------------------------- |
 | 2          | count of literal pixels that follow |
-| 3 × count  | literal pixels, R G B               |
+| 3 × count  | literal pixels, H S V               |
 | 1          | repeat count (0 ends the column)    |
-| 3 if not 0 | the repeated pixel, R G B           |
+| 3 if not 0 | the repeated pixel, H S V           |
 
-Composer uses a repeat only for three or more equal pixels in a row and
-splits repeats longer than 255. When the compressed form would be larger than
-the plain one, it writes the plain form instead: one segment with every pixel
-as a literal and a repeat count of 0. Both decode the same way, so an encoder
-may always write the plain form. A column holds exactly as many pixels as the
-image's LED count.
+Pixels are stored as hue, saturation and value, not RGB. Composer converts
+each script colour with integer arithmetic (`max`, `min` of R, G, B;
+`d = max - min`):
+
+- `V = max`. If `max` or `d` is 0, the pixel is `0, 0, V`.
+- `S = (255 × d + max / 2) / max`, rounded down.
+- Hue runs 0 to 179 (two degrees per step). With `q(x) = (30 × x + d / 2) / d`
+  rounded down: red largest gives `q(G - B)` when `G ≥ B`, else
+  `180 - q(B - G)`; green largest gives `60 + q(B - R)`; blue largest gives
+  `120 + q(R - G)`, negative differences subtracting. A result of 180 becomes 0.
+
+Ties go to red before green before blue. Runs are found on the converted
+values, so two script colours that convert alike merge into one run.
+
+Composer writes a repeat for three or more equal pixels in a row, and also
+for a run of two or more that reaches the end of the column. Repeats longer
+than 255 are split. A column that ends in a repeat has no closing segment; one
+that ends in literals closes with a repeat count of 0. When the compressed
+form is longer than the plain one (`(LEDs + 1) × 3` bytes), Composer writes
+the plain form instead: one segment with every pixel as a literal and a repeat
+count of 0. Both decode the same way, so an encoder may always write the plain
+form. A column holds exactly as many pixels as the image's LED count.
 
 ### Image table entry (32 bytes)
 
@@ -167,20 +185,31 @@ Composer's generator writes one command per line. The compiler understands:
 | `*S n`         | spacing for the current image                           |
 | `*J n`         | loop setting                                            |
 | `*G n`, `*L n` | stored by the compiler but not written to the file      |
+| `*Y n`         | image width in columns, seen in per-image exports       |
 | `*E`           | end of show; writes tables and trailer                  |
 
 Pixel lines outside an image open an unnamed one. Composer's image encoder
 emits each column top to bottom as runs of equal colours, at most 240 (or 136) pixels
 per run, and starts a new column after LED-count pixels.
 
-## Checking this without a staff
+## How the layout was checked
 
 Composer reads an optional `developer.cfg` (JSON) from its data folder,
-`%LOCALAPPDATA%\LtComposer3`. With `"debugVpoiOutput": true`, it saves every
-show it generates to a `debugVpoi` folder there; `"debugExport": true` adds
-"Export vpoi…" and "Export vpoi2…" menu items. Comparing one saved show with a
-decoder written from this page confirms the layout before the first upload.
-Composer reads the file at start-up, so it must be restarted afterwards.
+`%LOCALAPPDATA%\LtComposer3`, at start-up. `"debugExport": true` adds
+"Export vpoi…" (the whole show) and "Export vpoi2…" (one file per image) to
+File → Export, and `"debugVpoiOutput": true` writes the same exports to a
+`debugVpoi` folder while generating. All of these save the text script, not
+the compiled binary; Composer only builds the binary in memory during an
+upload.
+
+The check therefore compiled an exported script with this page's layout and
+compared the size with Composer's own log. On 2026-10-18, Austen's August
+project (seven logo images and a black tail on one 85-LED track) exported to
+a script whose images, widths and timings match the log of its 2026-08-24
+upload. Compiled as described here it comes to 120,445 bytes, exactly the
+`Data.ftv size` and bank size Composer logged. Storing RGB instead of HSV gives
+120,844, and always writing a closing segment gives 122,257, so both rules
+above are load-bearing.
 
 ## Where this came from
 
@@ -189,3 +218,5 @@ Composer reads the file at start-up, so it must be restarted afterwards.
 - Ghidra 12.1.4 headless analysis of `LtComposer.exe`. The functions logged as
   `lt::Ft2Device::tImportVpoiSequenceBin` and `writeBlocksOfData` give the
   upload; `lt::VpoiCache::getFtvData` and the "iVPOI" compiler give the file.
+  The colour conversion is the pixel-add routine at `0x140250050`, the column
+  encoder is at `0x140250590`, and the column writer at `0x1402507d0`.
