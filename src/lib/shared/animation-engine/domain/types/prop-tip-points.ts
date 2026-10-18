@@ -184,10 +184,12 @@ export const TRIAD_TIP_POINTS: PropTipConfig = radialTipConfig(
   3
 );
 
+// The same arm order as the triad, so a per-tip effect keeps its arm when the
+// prop changes size. The saved effect points and the 3D anchors already use it.
 const BIGTRIAD_TIP_POINTS: PropTipConfig = {
   points: [
-    { dx: 260, dy: 0 },
     { dx: -130, dy: -226 },
+    { dx: 260, dy: 0 },
     { dx: -130, dy: 226 },
   ],
 };
