@@ -484,11 +484,12 @@
       browseDestinationForLocation(location) !== navTab &&
       !browseNavigationState.isNavigating
     ) {
-      // The coordinator writes the browser-history entry for the sidebar
-      // choice; Browse fills it with the matching inner location.
+      // The coordinator pushes the sidebar choice after its View Transition.
+      // Updating the URL here would replace the previous history entry first,
+      // so Back would return to the same destination instead of the prior one.
       browseNavigationState.navigateTo(
         browseLocationForDestination(navTab as BrowseDestination),
-        { replace: true }
+        { replace: true, syncUrl: false }
       );
     }
   });

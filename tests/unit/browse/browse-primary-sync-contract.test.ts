@@ -70,4 +70,10 @@ describe("BrowseModule primary-sync contract", () => {
     expect(effect).toContain("navTab === observedNavTab");
     expect(effect).toContain("browseLocationForDestination(navTab");
   });
+
+  it("leaves browser history writes to the sidebar coordinator", () => {
+    // The coordinator pushes the new destination after its View Transition.
+    // An earlier Browse replace would overwrite the entry Back must restore.
+    expect(effect).toContain("{ replace: true, syncUrl: false }");
+  });
 });
