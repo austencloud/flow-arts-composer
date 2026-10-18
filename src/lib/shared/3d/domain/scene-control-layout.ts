@@ -36,6 +36,8 @@ const PANEL_MIN_WIDTH = 520;
 const PANEL_MAX_WIDTH = 1100;
 const PANEL_WIDTH_FRACTION = 0.32;
 const RAIL_AND_SEAM_WIDTH = 92;
+/** What a short window's second rail column adds (one button and its gap). */
+export const RAIL_SECOND_COLUMN_WIDTH = 56;
 const MIN_DOCKED_STAGE_WIDTH = 960;
 
 function clamp(value: number, minimum: number, maximum: number): number {
@@ -60,8 +62,10 @@ export function resolveSceneControlLayout(
   workspaceWidth: number,
   workspaceHeight: number,
   inspectorOpen: boolean,
-  inspectorUsesDock = inspectorOpen
+  inspectorUsesDock = inspectorOpen,
+  railExtraWidth = 0
 ): SceneControlLayout {
+  const railAndSeam = RAIL_AND_SEAM_WIDTH + railExtraWidth;
   const panelWidth = sceneInspectorPanelWidth(workspaceWidth);
 
   if (
@@ -77,7 +81,7 @@ export function resolveSceneControlLayout(
 
   const dockFits =
     workspaceWidth >= DOCK_MIN_WIDTH &&
-    workspaceWidth - panelWidth - RAIL_AND_SEAM_WIDTH >= MIN_DOCKED_STAGE_WIDTH;
+    workspaceWidth - panelWidth - railAndSeam >= MIN_DOCKED_STAGE_WIDTH;
 
   if (!dockFits) {
     return { presentation: "overlay", panelWidth, reservedWidth: 0 };
@@ -92,6 +96,6 @@ export function resolveSceneControlLayout(
   return {
     presentation: "docked",
     panelWidth,
-    reservedWidth: inspectorOpen ? panelWidth + RAIL_AND_SEAM_WIDTH : 0,
+    reservedWidth: inspectorOpen ? panelWidth + railAndSeam : 0,
   };
 }

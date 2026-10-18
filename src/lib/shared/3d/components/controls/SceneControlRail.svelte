@@ -8,6 +8,10 @@
   } from "#lib/shared/3d/domain/scene-control-layout.js";
   import SceneChromeButton from "./SceneChromeButton.svelte";
   import {
+    PERFORMER_TOOLS,
+    type PerformerHubTab,
+  } from "./performer-hub-types";
+  import {
     reportViewerControlChange,
     type ViewerControlSink,
   } from "#lib/shared/sequence-viewer/domain/viewer-control-analytics.js";
@@ -17,6 +21,10 @@
     activeTool?: SceneControlTool | null;
     onSettingChange?: ViewerControlSink;
     onToolSelect?: (tool: SceneControlTool | null) => void;
+    /** The performer tool the panel shows while the performer tool is open. */
+    performerTab?: PerformerHubTab;
+    /** Opens the performer panel on one tool, or closes it if already there. */
+    onPerformerToolSelect?: (tab: PerformerHubTab) => void;
     /** Omit to leave Save scene off the rail — see SceneControlWorkspace's
      *  allowSaveScene. */
     onOpenSaveScene?: () => void;
@@ -28,6 +36,11 @@
     topOffset?: string;
     /** Leaves room for host-owned chrome below the rail, such as a transport. */
     bottomOffset?: string;
+    /**
+     * Fires when the rail switches between one and two columns, so the host
+     * can move the panel and the performer bar clear of it.
+     */
+    onColumnsChange?: (columns: 1 | 2) => void;
   }
 
   let {
@@ -35,12 +48,15 @@
     activeTool = null,
     onSettingChange,
     onToolSelect,
+    performerTab = "prop",
+    onPerformerToolSelect,
     onOpenSaveScene,
     hostTool = null,
     hostToolActive = false,
     onHostToolSelect,
     topOffset = "12px",
     bottomOffset = "max(5rem, calc(5rem + env(safe-area-inset-bottom)))",
+    onColumnsChange,
   }: Props = $props();
 
   const viewer = getViewer3DContext();
@@ -51,16 +67,12 @@
     icon: string;
   };
 
-  const subjectTools: RailTool[] = [
-    { id: "performer", label: "Performers", icon: "fa-user-group" },
+  const shotTools: RailTool[] = [
     {
       id: "formation",
       label: "Formation",
       icon: "fa-people-arrows-left-right",
     },
-  ];
-
-  const shotTools: RailTool[] = [
     { id: "camera", label: "Camera", icon: "fa-video" },
     { id: "scene", label: "Scene", icon: "fa-mountain-sun" },
   ];
@@ -75,6 +87,66 @@
       activeTool === tool,
       next === tool,
       { count: next === tool }
+    );
+  }
+
+  // A short window cannot stack every button in one column, so the rail
+  // folds into two. The one-column height is measured while the rail is one
+  // column and remembered, so the switch cannot flicker back and forth.
+  let railEl = $state<HTMLElement | null>(null);
+  let railHeight = $state(0);
+  let singleColumnHeight = $state(0);
+  let columns = $state<1 | 2>(1);
+
+  $effect(() => {
+    const height = railHeight;
+    if (!railEl || height <= 0) return;
+    if (columns === 1) {
+      const needed = measureColumn(railEl);
+      singleColumnHeight = needed;
+      if (needed > height) columns = 2;
+    } else if (singleColumnHeight <= height) {
+      columns = 1;
+    }
+  });
+
+  $effect(() => {
+    onColumnsChange?.(columns);
+  });
+
+  function measureColumn(rail: HTMLElement): number {
+    // The undo and redo shortcut targets sit out of flow; only the stacked
+    // groups take up the column.
+    const parts = [...rail.children].filter((child) => {
+      const element = child as HTMLElement;
+      const position = getComputedStyle(element).position;
+      return (
+        element.offsetHeight > 0 &&
+        position !== "absolute" &&
+        position !== "fixed"
+      );
+    }) as HTMLElement[];
+    const gap = parseFloat(getComputedStyle(rail).rowGap) || 0;
+    return (
+      parts.reduce((sum, part) => sum + part.offsetHeight, 0) +
+      Math.max(0, parts.length - 1) * gap
+    );
+  }
+
+  function performerToolOpen(tab: PerformerHubTab): boolean {
+    return activeTool === "performer" && performerTab === tab;
+  }
+
+  function choosePerformerTool(tab: PerformerHubTab): void {
+    const wasOpen = performerToolOpen(tab);
+    onPerformerToolSelect?.(tab);
+    reportViewerControlChange(
+      onSettingChange,
+      "viewer_3d_rail",
+      `performer_${tab}_open`,
+      wasOpen,
+      !wasOpen,
+      { count: !wasOpen }
     );
   }
 
@@ -94,6 +166,10 @@
 {#if renderMode === "3d"}
   <div
     class="scene-control-rail"
+    class:two-column={columns === 2}
+    bind:this={railEl}
+    bind:clientHeight={railHeight}
+    data-rail-columns={columns}
     style:--scene-control-rail-top={topOffset}
     style:--scene-control-rail-bottom={bottomOffset}
     role="toolbar"
@@ -112,22 +188,25 @@
       redoLabel="3D scene change"
     />
 
-    <div class="rail-group" role="group" aria-label="Performers and formation">
-      {#each subjectTools as tool}
+    <!-- Each performer tool opens the panel straight onto itself; who it
+         edits is chosen in the performer bar at the stage's top-left. -->
+    <div class="rail-group" role="group" aria-label="Performer tools">
+      {#each PERFORMER_TOOLS as tool (tool.id)}
         <SceneChromeButton
           icon={tool.icon}
           label={tool.label}
-          active={activeTool === tool.id}
-          aria-pressed={activeTool === tool.id}
-          data-scene-tool={tool.id}
-          onclick={() => chooseTool(tool.id)}
+          active={performerToolOpen(tool.id)}
+          aria-pressed={performerToolOpen(tool.id)}
+          data-scene-tool="performer"
+          data-performer-tool={tool.id}
+          onclick={() => choosePerformerTool(tool.id)}
         />
       {/each}
     </div>
 
     <div class="rail-separator" aria-hidden="true"></div>
 
-    <div class="rail-group" role="group" aria-label="Camera and scene">
+    <div class="rail-group" role="group" aria-label="Formation, camera and scene">
       <SceneChromeButton
         icon="fa-crosshairs"
         label="Focus avatar"
@@ -229,5 +308,14 @@
 
   .utility-group {
     margin-top: auto;
+  }
+
+  .two-column .rail-group,
+  .two-column .utility-group {
+    grid-template-columns: repeat(2, auto);
+  }
+
+  .two-column .utility-group > .rail-separator {
+    grid-column: 1 / -1;
   }
 </style>

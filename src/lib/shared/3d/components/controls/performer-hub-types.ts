@@ -15,6 +15,25 @@ export type PerformerHubTab =
   | "sequence";
 
 /**
+ * The seven performer tools, in the order the scene rail shows them. Each one
+ * opens the performer panel on that tool; the phone sheet shows the same list
+ * as tabs along its bottom edge.
+ */
+export const PERFORMER_TOOLS: readonly {
+  id: PerformerHubTab;
+  label: string;
+  icon: string;
+}[] = [
+  { id: "character", label: "Character", icon: "fa-user" },
+  { id: "sequence", label: "Sequence", icon: "fa-film" },
+  { id: "prop", label: "Prop", icon: "fa-shapes" },
+  { id: "grid", label: "Grid", icon: "fa-braille" },
+  { id: "planes", label: "Planes", icon: "fa-layer-group" },
+  { id: "effort", label: "Effort", icon: "fa-gauge-high" },
+  { id: "effects", label: "Effects", icon: "fa-wand-sparkles" },
+];
+
+/**
  * One parameter change the hub would otherwise have written straight onto a
  * performer.
  *

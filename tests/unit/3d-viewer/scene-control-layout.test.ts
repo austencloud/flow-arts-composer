@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  RAIL_SECOND_COLUMN_WIDTH,
   resolveSceneControlLayout,
   sceneInspectorPanelWidth,
 } from "#lib/shared/3d/domain/scene-control-layout.js";
@@ -54,6 +55,17 @@ describe("scene control workspace layout", () => {
       panelWidth: 819,
       reservedWidth: 911,
     });
+  });
+
+  it("reserves the second rail column when a short window folds the rail", () => {
+    const folded = resolveSceneControlLayout(
+      2560,
+      1440,
+      true,
+      true,
+      RAIL_SECOND_COLUMN_WIDTH
+    );
+    expect(folded.reservedWidth).toBe(911 + RAIL_SECOND_COLUMN_WIDTH);
   });
 
   it("keeps shallow inspectors over the canvas on wide workspaces", () => {
