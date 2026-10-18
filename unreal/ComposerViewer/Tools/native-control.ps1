@@ -2,7 +2,7 @@ param(
     [ValidateSet('Start', 'Stop', 'Status')]
     [string]$Action = 'Status',
     [string]$EngineRoot = 'C:\Program Files\Epic Games\UE_5.8',
-    [string]$RuntimeRoot = (Join-Path $env:LOCALAPPDATA 'FlowArtsComposer\ComposerViewer\Host'),
+    [string]$RuntimeRoot,
     [switch]$Stage,
     [switch]$NoSetup,
     [switch]$PassThru
@@ -10,8 +10,10 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $toolDir = Split-Path -Parent $PSCommandPath
+. (Join-Path $toolDir 'runtime-path.ps1')
+$expectedBase = [IO.Path]::GetFullPath((Get-ComposerViewerRuntimeDirectory)).TrimEnd('\')
+if (-not $RuntimeRoot) { $RuntimeRoot = Join-Path $expectedBase 'Host' }
 $runtimeFull = [IO.Path]::GetFullPath($RuntimeRoot).TrimEnd('\')
-$expectedBase = [IO.Path]::GetFullPath((Join-Path $env:LOCALAPPDATA 'FlowArtsComposer\ComposerViewer')).TrimEnd('\')
 if (-not $runtimeFull.StartsWith($expectedBase + '\', [StringComparison]::OrdinalIgnoreCase)) {
     throw "RuntimeRoot must be inside $expectedBase"
 }

@@ -1,18 +1,20 @@
 param(
     [string]$AssetProject = 'E:\FlowFestEmbodiment58\Project',
-    [string]$RuntimeRoot = (Join-Path $env:LOCALAPPDATA 'FlowArtsComposer\ComposerViewer\Host'),
+    [string]$RuntimeRoot,
     [switch]$SkipAssets
 )
 
 $ErrorActionPreference = 'Stop'
 $toolDir = Split-Path -Parent $PSCommandPath
+. (Join-Path $toolDir 'runtime-path.ps1')
+$expectedBase = [IO.Path]::GetFullPath((Get-ComposerViewerRuntimeDirectory)).TrimEnd('\')
+if (-not $RuntimeRoot) { $RuntimeRoot = Join-Path $expectedBase 'Host' }
 $viewerSource = (Resolve-Path -LiteralPath (Join-Path $toolDir '..')).Path
 $sharedSource = (Resolve-Path -LiteralPath (Join-Path $toolDir '..\..\Shared\FlowArtsRuntime')).Path
 $uproject = Join-Path $viewerSource 'ComposerViewer.uproject'
 if (-not (Test-Path -LiteralPath $uproject)) { throw "Missing native project: $uproject" }
 
 $runtimeFull = [IO.Path]::GetFullPath($RuntimeRoot).TrimEnd('\')
-$expectedBase = [IO.Path]::GetFullPath((Join-Path $env:LOCALAPPDATA 'FlowArtsComposer\ComposerViewer')).TrimEnd('\')
 if (-not $runtimeFull.StartsWith($expectedBase + '\', [StringComparison]::OrdinalIgnoreCase)) {
     throw "RuntimeRoot must be inside $expectedBase"
 }
