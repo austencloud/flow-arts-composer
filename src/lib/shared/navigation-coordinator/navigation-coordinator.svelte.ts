@@ -64,9 +64,13 @@ import { writeUrl } from "../navigation/services/url-state";
 import { buildNavigationDestinationId } from "../navigation/domain/navigation-visit";
 import { getNavigationVisitPersister } from "../navigation/get-navigation-visit-persister";
 import {
-  normalizeBrowsePrimary,
+  browseDestinationForLocation,
+  browseLocationForDestination,
+  buildBrowsePath,
+  type BrowseDestination,
   resolveBrowsePathname,
 } from "../browse/navigation/browse-route-resolver";
+import { browseDestinationPromoted } from "../browse/navigation/visuals-promotion";
 import { captureEvent } from "../analytics/services/posthog";
 import { canAccessPostStudio } from "../sequence-viewer/services/post-studio-access";
 
@@ -229,6 +233,7 @@ export function getAccessibleSectionsForModule(module: ModuleId) {
   if (module === "browse") {
     return baseSections.filter((section: { id: string }) => {
       return (
+        browseDestinationPromoted(section.id) &&
         featureFlagService.canAccessTab("browse", section.id) &&
         isTabAccessible("browse", section.id, accessTier)
       );
@@ -296,10 +301,10 @@ export async function handleModuleChange(
 ) {
   markNavigationIntent();
 
-  // No tab means "open Browse" and lands on its home screen; a named tab
-  // (including legacy names like "gallery" or "library") maps to Explore or You.
+  // No tab opens Browse's home; legacy section names normalize at the
+  // navigation-state boundary.
   if (moduleId === "browse" && targetTab !== undefined) {
-    targetTab = normalizeBrowsePrimary(targetTab);
+    targetTab = normalizeSectionId("browse", targetTab);
   }
 
   const currentMod = currentModule();
@@ -444,7 +449,7 @@ const TAB_ORDERS: Record<string, string[]> = {
     "editor",
     "export",
   ],
-  browse: ["explore", "you"],
+  browse: ["sequences", "collections", "visuals", "you"],
   social: ["community", "connect"],
   learn: ["concepts", "play"],
   compose: ["arrange", "browse"],
@@ -482,7 +487,7 @@ export function handleSectionChange(
 ) {
   const module = currentModule();
   if (module === "browse") {
-    sectionId = normalizeBrowsePrimary(sectionId);
+    sectionId = normalizeSectionId("browse", sectionId) ?? "sequences";
   }
   const currentSectionId = currentSection();
   const shouldSkipHistory = options?.skipHistory === true;
@@ -705,16 +710,12 @@ const RETIRED_DEFAULT_SECTIONS: ReadonlyMap<string, string> = new Map([
 function buildPath(moduleId: ModuleId, sectionId?: string) {
   const normalizedSectionId = normalizeSectionId(moduleId, sectionId);
 
-  // Browse's outer navigation only knows Explore and You, but those buttons
-  // still need to land on a complete inner route. Writing the alias here races
-  // Browse's own resolver at the end of the View Transition and used to leave
-  // the address bar at /browse/you after the content had already changed.
+  // Browse sections keep the existing inner route vocabulary in the URL.
   if (moduleId === "browse") {
-    // No section is Browse's home screen.
     if (!normalizedSectionId) return "/browse";
-    return normalizeBrowsePrimary(normalizedSectionId) === "you"
-      ? "/browse/you/sequences"
-      : "/browse/explore/sequences";
+    return buildBrowsePath(
+      browseLocationForDestination(normalizedSectionId as BrowseDestination)
+    );
   }
 
   // For clean-URL modules, omit the default section from the path
@@ -751,12 +752,12 @@ function replaceHistoryState(moduleId: ModuleId, sectionId?: string) {
   // module reads the URL, so flattening to the canonical path here would
   // eat those segments and strand the deep link on the tab's list view.
   // Keep the longer pathname whenever it sits under the canonical path.
-  const browsePrimary =
-    moduleId === "browse" ? normalizeBrowsePrimary(normalizedSectionId) : null;
+  const browseRoute =
+    moduleId === "browse" ? resolveBrowsePathname(url.pathname) : null;
   const preservesBrowseInnerRoute =
-    browsePrimary !== null &&
-    (url.pathname === `/browse/${browsePrimary}` ||
-      url.pathname.startsWith(`/browse/${browsePrimary}/`));
+    browseRoute !== null &&
+    !browseRoute.externalRedirect &&
+    browseDestinationForLocation(browseRoute.location) === normalizedSectionId;
   if (!preservesBrowseInnerRoute && !url.pathname.startsWith(`${canonical}/`)) {
     url.pathname = canonical;
   }
@@ -835,7 +836,7 @@ function parsePathNavigation(): {
       }
 
       moduleId = "browse" as ModuleId;
-      sectionId = browseRoute.location.primary;
+      sectionId = browseDestinationForLocation(browseRoute.location);
       if (browseRoute.isLegacy) {
         const url = new URL(window.location.href);
         url.pathname = browseRoute.canonicalPath;
@@ -996,7 +997,7 @@ export function initializeNavigationHistory() {
         return;
       }
       targetModule = "browse" as ModuleId;
-      targetSection = browseHistoryRoute.location.primary;
+      targetSection = browseDestinationForLocation(browseHistoryRoute.location);
       if (browseHistoryRoute.isLegacy) {
         const url = new URL(window.location.href);
         url.pathname = browseHistoryRoute.canonicalPath;

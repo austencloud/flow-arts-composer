@@ -32,7 +32,12 @@
     type BrowseLocation,
   } from "#lib/shared/browse/state/browse-navigation-state.svelte.js";
   import { setBrowseNavigationContext } from "#lib/shared/browse/context/browse-navigation-context.js";
-  import type { BrowsePrimary } from "#lib/shared/browse/navigation/browse-route-resolver.js";
+  import {
+    browseDestinationForLocation,
+    browseLocationForDestination,
+    type BrowseDestination,
+    type BrowsePrimary,
+  } from "#lib/shared/browse/navigation/browse-route-resolver.js";
   import { setPendingScanIntent } from "#lib/features/browse/state/pending-scan-intent.svelte.js";
   import { removeCurrentUrlParams } from "#lib/shared/navigation/services/url-state.js";
   import { BrowseScrollBehavior } from "../services/browse-scroll-behavior";
@@ -62,6 +67,7 @@
   import { trackBrowseDestinationEntered } from "#lib/shared/analytics/browse-events.js";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import { exploreVisualsVisible } from "#lib/shared/browse/navigation/visuals-promotion.js";
+  import { getAccessibleSectionsForModule } from "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js";
   import ExploreVisualsPanel from "#lib/features/browse/visuals/components/ExploreVisualsPanel.svelte";
   import BrowseHome, {
     type BrowseHomeDestination,
@@ -210,7 +216,7 @@
     // Push the inner route first so the address names the destination, then
     // close the home: setActiveTab clears it and the two agree on the primary.
     browseNavigationState.navigateTo(location, { forceUrl: true });
-    navigationState.setActiveTab(location.primary);
+    navigationState.setActiveTab(browseDestinationForLocation(location));
   }
 
   // Leaving the home through a sidebar tab writes the generic
@@ -231,7 +237,17 @@
         navigationState.currentModule === "browse" &&
         !navigationState.isModuleHomeOpen("browse")
       ) {
-        browseNavigationState.replace(location);
+        const selected = navigationState.activeTab as BrowseDestination;
+        if (browseDestinationForLocation(location) !== selected) {
+          browseNavigationState.navigateTo(
+            browseLocationForDestination(selected),
+            {
+              replace: true,
+            }
+          );
+        } else {
+          browseNavigationState.replace(location);
+        }
       }
     });
   });
@@ -455,46 +471,37 @@
       : "min(600px, 90vw)"
   );
 
-  // The global navigation owns only Browse's two primary jobs. The Browse
-  // route state owns every inner destination and its complete URL.
+  // Only an outer section change selects a new inner destination. Reading the
+  // location here also lets the effect wait for Browse's cold-route restore.
+  let observedNavTab = navigationState.activeTab;
   $effect(() => {
     const navTab = navigationState.activeTab;
-    // Wait for Browse's own route state to resolve the URL. This effect is
-    // registered before onMount, so on a cold load it runs while
-    // currentLocation is still null and activePrimary is only its "explore"
-    // default. Acting on that default answered "the outer tab says you, the
-    // inner route says explore" with selectPrimary("you"), which resets the
-    // section to sequences and rewrites the address bar — turning a reload of
-    // /browse/you/visuals/tunnels into /browse/you/sequences before
-    // initialize() ever read the real path.
     const location = browseNavigationState.currentLocation;
     if (!location) return;
-    // The home screen's backing tab is only a memory; acting on it would
-    // rewrite the address under the home.
-    if (homeOpen) return;
-
-    const newPrimary: BrowsePrimary =
-      navTab === "you" || navTab === "library" ? "you" : "explore";
-
+    if (homeOpen || navTab === observedNavTab) return;
+    observedNavTab = navTab;
     if (
-      newPrimary !== location.primary &&
+      browseDestinationForLocation(location) !== navTab &&
       !browseNavigationState.isNavigating
     ) {
-      // The outer tab click already pushed /browse/{primary}; replace that
-      // entry with the explicit inner route instead of adding a second click.
-      browseNavigationState.selectPrimary(newPrimary, true);
+      // The coordinator pushes the sidebar choice after its View Transition.
+      // Updating the URL here would replace the previous history entry first,
+      // so Back would return to the same destination instead of the prior one.
+      browseNavigationState.navigateTo(
+        browseLocationForDestination(navTab as BrowseDestination),
+        { replace: true, syncUrl: false }
+      );
     }
   });
 
-  // Browser back/forward and direct deep links update the global primary tab
-  // without asking the global coordinator to parse Browse's inner vocabulary.
+  // Back/forward and inner Browse actions select the matching outer section.
   $effect(() => {
     const location = browseNavigationState.currentLocation;
     if (!location) return;
-    // setActiveTab closes the home screen, so leave it alone while open.
     if (homeOpen) return;
-    if (navigationState.activeTab !== location.primary) {
-      navigationState.setActiveTab(location.primary);
+    const destination = browseDestinationForLocation(location);
+    if (navigationState.activeTab !== destination) {
+      navigationState.setActiveTab(destination);
     }
   });
 
@@ -502,8 +509,9 @@
    * Handle navigation from history back/forward buttons
    */
   function handleHistoryNavigation(location: BrowseLocation) {
-    if (location.primary !== activePrimary) {
-      navigationState.setActiveTab(location.primary);
+    const destination = browseDestinationForLocation(location);
+    if (destination !== navigationState.activeTab) {
+      navigationState.setActiveTab(destination);
     }
 
     if (
@@ -752,7 +760,7 @@
       <div class="tab-panel">
         {#if homeOpen}
           <BrowseHome
-            visualsVisible={exploreVisualsVisible()}
+            destinations={getAccessibleSectionsForModule("browse")}
             onSelect={openFromHome}
           />
         {:else if activePrimary === "explore"}
@@ -768,30 +776,30 @@
                       : t("browse_ui_community_visuals")}
                 </h1>
               </div>
-              <div class="explore-switcher">
-                <SegmentedControl
-                  options={EXPLORE_OPTIONS}
-                  value={exploreSection}
-                  onchange={(section) => {
-                    if (section === "collections") {
-                      browseNavigationState.viewExploreCollections();
-                    } else if (section === "visuals") {
-                      // No visualType: Explore > Visuals shows every type on
-                      // one wall. A type in the URL is a deep-link filter.
-                      browseNavigationState.navigateTo({
-                        primary: "explore",
-                        section: "visuals",
-                        view: "list",
-                      });
-                    } else {
-                      browseNavigationState.viewExploreSequences();
-                    }
-                  }}
-                  color="accent"
-                  semantics="tabs"
-                  ariaLabel={t("browse_ui_explore_content_type")}
-                />
-              </div>
+              {#if isMobile}<div class="explore-switcher">
+                  <SegmentedControl
+                    options={EXPLORE_OPTIONS}
+                    value={exploreSection}
+                    onchange={(section) => {
+                      if (section === "collections") {
+                        browseNavigationState.viewExploreCollections();
+                      } else if (section === "visuals") {
+                        // No visualType: Explore > Visuals shows every type on
+                        // one wall. A type in the URL is a deep-link filter.
+                        browseNavigationState.navigateTo({
+                          primary: "explore",
+                          section: "visuals",
+                          view: "list",
+                        });
+                      } else {
+                        browseNavigationState.viewExploreSequences();
+                      }
+                    }}
+                    color="accent"
+                    semantics="tabs"
+                    ariaLabel={t("browse_ui_explore_content_type")}
+                  />
+                </div>{/if}
             </header>
 
             <div class="explore-body">

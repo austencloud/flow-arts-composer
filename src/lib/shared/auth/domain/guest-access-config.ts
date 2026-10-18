@@ -19,7 +19,7 @@ const GUEST_MODULE_ACCESS: Record<string, string[]> = {
   // Assemble, Fuse and Tunnel need a free account; the front door shows them
   // to guests with a Free account label that opens sign-up.
   create: ["construct", "generate", "shape-engine"],
-  browse: ["explore", "you"],
+  browse: ["sequences", "collections", "visuals", "you"],
   post: [],
   creators: [],
   // Device preferences and appearance belong to the visitor's browser.

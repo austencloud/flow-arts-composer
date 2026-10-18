@@ -124,18 +124,32 @@ export const LEARN_TABS: Section[] = [
   },
 ];
 
-// Browse has two stable jobs. Its inner route owner handles content types,
-// details, and all compatibility vocabulary beneath these primary tabs.
+// Browse's destinations are shared by its home and navigation chrome. The
+// inner route owner retains the explore/you URL vocabulary and detail paths.
 export const BROWSE_TABS: Section[] = [
   {
-    id: "explore",
-    labelKey: "tab_browse_explore",
-    descKey: "tab_desc_browse_explore",
-    label: "Explore",
-    icon: '<i class="fas fa-compass" aria-hidden="true"></i>',
-    description: "Discover sequences and public collections",
+    id: "sequences",
+    labelKey: "browse_home_sequences",
+    descKey: "browse_home_sequences_desc",
+    label: "Sequences",
+    icon: '<i class="fas fa-table-cells-large" aria-hidden="true"></i>',
     color: "#a855f7",
-    gradient: "linear-gradient(135deg, #c084fc 0%, #a855f7 100%)",
+  },
+  {
+    id: "collections",
+    labelKey: "browse_home_collections",
+    descKey: "browse_home_collections_desc",
+    label: "Collections",
+    icon: '<i class="fas fa-folder-open" aria-hidden="true"></i>',
+    color: "#6366f1",
+  },
+  {
+    id: "visuals",
+    labelKey: "browse_home_visuals",
+    descKey: "browse_home_visuals_desc",
+    label: "Visuals",
+    icon: '<i class="fas fa-palette" aria-hidden="true"></i>',
+    color: "#ec4899",
   },
   {
     id: "you",
@@ -144,8 +158,7 @@ export const BROWSE_TABS: Section[] = [
     label: "You",
     icon: '<i class="fas fa-user" aria-hidden="true"></i>',
     description: "Your sequences, visuals, videos, and collections",
-    color: "#c084fc",
-    gradient: "linear-gradient(135deg, #d8b4fe 0%, #c084fc 100%)",
+    color: "#14b8a6",
   },
 ];
 

@@ -33,6 +33,7 @@
   import { authState } from "../../auth/state/auth-state.svelte";
   import { resolveAccessTier } from "../../auth/domain/access-tier";
   import { isTabAccessible } from "../../auth/domain/guest-access-config";
+  import { browseDestinationPromoted } from "#lib/shared/browse/navigation/visuals-promotion.js";
   import { isPremiumOrAbove } from "../../auth/domain/models/user-role";
   import { inboxState } from "../../inbox/state/inbox-state.svelte";
   import { prefetchOnIntent } from "../utils/module-prefetch";
@@ -112,6 +113,7 @@
   // Role-based access + guest-tier gating (mirrors the old getFilteredSections).
   function filterSection(moduleId: string, sectionId: string): boolean {
     return (
+      (moduleId !== "browse" || browseDestinationPromoted(sectionId)) &&
       featureFlagService.canAccessTab(moduleId as ModuleId, sectionId) &&
       isTabAccessible(moduleId as ModuleId, sectionId, accessTier)
     );
