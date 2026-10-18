@@ -4,13 +4,13 @@ How Lighttoys Composer 4.5 builds a show and uploads it to a Lumi Staff
 (Lighttoys "FT2" hardware) over USB. Decoded in October 2026 from Composer's
 logs and from its machine code with Ghidra (`LtComposer.exe`, C++ on Cinder;
 the source paths in the binary name `Ft2Device.cpp` and `VpoiGenerator.cpp`).
-Nothing here has been sent to a staff by our code yet.
+The Flow Arts uploader (`src/lib/features/poi/services/lighttoys/`) follows
+this page, but it has not been tried on a staff yet.
 
 The show layout below is confirmed by size: compiling a Composer show script
 with it gives exactly the 120,445 bytes Composer logged when it uploaded that
 show (see "How the layout was checked"). Not yet confirmed: the byte-for-byte
-contents, the meaning of the brightness summary in the trailer, and what bank
-5 holds.
+contents, the exact `sd` reply format, and what bank 5 holds.
 
 ## Transport
 
@@ -29,8 +29,16 @@ for example `Bank sizes: 546122 -1 -1 -1 2742` (`-1` is empty). Shows go to
 banks 1 to 4. Bank 5 always holds a small file Composer does not upload
 through this path; leave it alone.
 
+Composer's bank list comes from `sd`, which answers one line per used bank
+starting with the bank number and a colon (`N:` then three fields and the
+track name; parsed at `0x1401e02e0`). `fsem` and `fse` report flash totals;
+the staff has 16,777,216 bytes.
+
 Before an upload into an occupied bank, Composer deletes that bank's show with
-an `fd` command for that bank.
+an `fd` command for that bank. The Flow Arts uploader never sends `fd`: it
+reads `sd`, refuses a bank that any `N:` line marks as used, and asks for an
+empty one, so an existing show is never replaced. It rereads `sd` after the
+upload and reports a failure unless the bank is now listed.
 
 ## Uploading a show
 
@@ -68,9 +76,10 @@ uses the binary path above (Composer logs `TRUE BIN UPLOAD`).
 
 The same serial link carries firmware and bootloader updates (Composer's
 "bouper" and `*-app-*.lbc` files in `%LOCALAPPDATA%\LtComposer3\firmware`).
-Any uploader must allow only `v`, `fse`, `fd <1-4>` and `fW e ... b<1-4> ...`
-plus data blocks, and refuse every other command, as the Ignis uploader's
-`assertSafeRequest` does. Unexplained commands seen in the binary (`pp`,
+Any uploader must allow only the commands it needs and refuse every other
+one, as the Ignis uploader's `assertSafeRequest` does. The Flow Arts uploader's
+`assertSafeCommand` passes only `v`, `sd` and `fW e <uid> b<1-4> <size> <name>`,
+plus data blocks built by `frameBlock`. Unexplained commands seen in the binary (`pp`,
 `sm `, `tsn `, `si e `, ` o`) stay blocked.
 
 ## Show file (`Data.ftv`)
@@ -152,7 +161,11 @@ form. A column holds exactly as many pixels as the image's LED count.
 | 0x14   | `u32` | spacing (blank columns, `*S`)                              |
 | 0x18   | `u32` | displayed length in columns (columns + spacing if not set) |
 
-The image's play time is its displayed length times its column time.
+The image's play time is its displayed length times its column time. The staff
+repeats an image's columns across its displayed length, so Composer stores each
+logo image once (about 99 columns) and gives it a displayed length of 8147.
+The Flow Arts uploader does the same: one image holding the pattern's columns,
+displayed for the chosen play time.
 
 ### Trailer (128 bytes)
 
@@ -161,7 +174,7 @@ The image's play time is its displayed length times its column time.
 | 0x00   | `u32`    | file offset of the trailer (bytes before it)             |
 | 0x04   | `u32`    | total show time, whole ms                                |
 | 0x08   | `u32`    | total displayed columns                                  |
-| 0x0C   | `u32`    | brightness summary (averaged channel levels; unclear)    |
+| 0x0C   | `u32`    | colour summary, see below                                |
 | 0x10   | `u16`    | loop setting from `*J` (`0xFFFF` when `*J0`)             |
 | 0x12   | `u16`    | flags; bit 1 set when the overflow table is present      |
 | 0x14   | `u16`    | fractional part of the total show time                   |
@@ -169,6 +182,11 @@ The image's play time is its displayed length times its column time.
 | 0x78   | `u16`    | `0x8008`                                                 |
 | 0x7A   | `u16`    | image count                                              |
 | 0x7C   | 4 bytes  | `sIOP`                                                   |
+
+The colour summary averages every stored pixel's H, S and V (32-bit sums,
+rounded down) and packs them as
+`((((Vavg × 255 / 100) | 0x4000) << 8 | Savg × 255 / 100) << 8) | (Havg >> 1)`,
+each division rounded down.
 
 ### The text script
 
