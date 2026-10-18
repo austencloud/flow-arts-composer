@@ -2,12 +2,34 @@ import { describe, expect, it } from "vitest";
 import {
   BROWSE_NAV_SCHEMA_VERSION,
   buildBrowsePath,
+  browseDestinationForLocation,
+  browseLocationForDestination,
   migratePersistedBrowseNavigation,
   normalizeBrowsePrimary,
   resolveBrowsePathname,
 } from "#lib/shared/browse/navigation/browse-route-resolver.js";
 
 describe("Browse route resolver", () => {
+  it.each([
+    ["/browse/explore/sequences", "sequences"],
+    ["/browse/explore/collections/owner/id", "collections"],
+    ["/browse/explore/visuals/mandalas", "visuals"],
+    ["/browse/you/collections/id", "you"],
+    ["/browse/you/visuals/tunnels", "you"],
+  ])("maps %s to the visible destination", (path, destination) => {
+    const location = resolveBrowsePathname(path)!.location;
+    expect(browseDestinationForLocation(location)).toBe(destination);
+  });
+
+  it.each(["sequences", "collections", "visuals", "you"] as const)(
+    "keeps the established URL for %s",
+    (destination) => {
+      const location = browseLocationForDestination(destination);
+      expect(
+        resolveBrowsePathname(buildBrowsePath(location))?.location
+      ).toMatchObject(location);
+    }
+  );
   it.each([
     ["/browse", "/browse/explore/sequences", "explore", "sequences"],
     ["/browse/gallery", "/browse/explore/sequences", "explore", "sequences"],
@@ -118,7 +140,9 @@ describe("Browse route resolver", () => {
     });
 
     it("keeps a named type as a filter", () => {
-      const resolved = resolveBrowsePathname("/browse/explore/visuals/mandalas");
+      const resolved = resolveBrowsePathname(
+        "/browse/explore/visuals/mandalas"
+      );
       expect(resolved.location).toMatchObject({
         primary: "explore",
         section: "visuals",
@@ -152,7 +176,11 @@ describe("Browse route resolver", () => {
 
     it("round-trips every visuals shape through buildBrowsePath", () => {
       expect(
-        buildBrowsePath({ primary: "explore", section: "visuals", view: "list" })
+        buildBrowsePath({
+          primary: "explore",
+          section: "visuals",
+          view: "list",
+        })
       ).toBe("/browse/explore/visuals");
       expect(
         buildBrowsePath({

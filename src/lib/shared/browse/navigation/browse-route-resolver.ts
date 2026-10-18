@@ -1,3 +1,5 @@
+import { exploreVisualsVisible } from "./visuals-promotion.js";
+
 export const BROWSE_NAV_SCHEMA_VERSION = 2;
 
 export type BrowsePrimary = "explore" | "you";
@@ -456,4 +458,25 @@ export function normalizeBrowsePrimary(
   sectionId: string | undefined
 ): BrowsePrimary {
   return sectionId === "you" || sectionId === "library" ? "you" : "explore";
+}
+
+export type BrowseDestination = "sequences" | "collections" | "visuals" | "you";
+
+/** The outer section selected for a resolved inner Browse route. */
+export function browseDestinationForLocation(
+  location: BrowseLocation
+): BrowseDestination {
+  if (location.primary === "you") return "you";
+  if (location.section === "collections") return "collections";
+  if (location.section === "visuals" && exploreVisualsVisible())
+    return "visuals";
+  return "sequences";
+}
+
+export function browseLocationForDestination(
+  destination: BrowseDestination
+): BrowseLocation {
+  return destination === "you"
+    ? { primary: "you", section: "sequences", view: "list" }
+    : { primary: "explore", section: destination, view: "list" };
 }

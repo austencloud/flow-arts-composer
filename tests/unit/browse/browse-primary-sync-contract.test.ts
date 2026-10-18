@@ -2,7 +2,7 @@
  * Static contract test for BrowseModule's outer-tab -> inner-route sync.
  *
  * BrowseModule declares a `$effect` that pushes the global navigation's active
- * tab (Explore / You) into Browse's own route state. Svelte 5 flushes user
+ * tab into Browse's own route state. Svelte 5 flushes user
  * effects in source order, and that effect is declared above `onMount`, so on a
  * cold load it runs BEFORE `browseNavigationState.initialize()` has read the
  * URL. While `currentLocation` is still null the `activePrimary` derived falls
@@ -14,7 +14,7 @@
  * /browse/you/collections all threw the user back to Sequences.
  *
  * The effect must therefore bail until the route state has a location, and
- * compare against that location's primary rather than the derived default.
+ * compare against the resolved destination rather than the derived default.
  *
  * If this test fails, keep the guard — do not loosen the assertions.
  */
@@ -57,14 +57,17 @@ describe("BrowseModule primary-sync contract", () => {
   });
 
   it("compares the nav tab against the resolved location, not the derived default", () => {
-    expect(effect).toContain("newPrimary !== location.primary");
+    expect(effect).toContain(
+      "browseDestinationForLocation(location) !== navTab"
+    );
     expect(
       effect,
       "activePrimary defaults to 'explore' before initialize() runs, so it cannot gate selectPrimary"
-    ).not.toContain("newPrimary !== activePrimary");
+    ).not.toContain("activePrimary");
   });
 
-  it("still calls selectPrimary when the outer tab genuinely changes", () => {
-    expect(effect).toContain("browseNavigationState.selectPrimary(newPrimary");
+  it("selects a destination only when the outer tab genuinely changes", () => {
+    expect(effect).toContain("navTab === observedNavTab");
+    expect(effect).toContain("browseLocationForDestination(navTab");
   });
 });

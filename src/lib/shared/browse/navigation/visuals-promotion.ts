@@ -13,3 +13,7 @@
 export function exploreVisualsVisible(): boolean {
   return import.meta.env.DEV === true;
 }
+
+export function browseDestinationPromoted(sectionId: string): boolean {
+  return sectionId !== "visuals" || exploreVisualsVisible();
+}

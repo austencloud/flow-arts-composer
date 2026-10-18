@@ -27,6 +27,7 @@
   import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
+  import type { Section } from "#lib/shared/navigation/domain/types.js";
   import {
     bootScreenCovers,
     holdBootScreen,
@@ -44,52 +45,12 @@
   import { BROWSE_HOME_SCENES } from "./previews/browse-home-scenes";
 
   let {
-    visualsVisible,
+    destinations,
     onSelect,
   }: {
-    /** Explore > Visuals is promotion-gated; its tile follows the gate. */
-    visualsVisible: boolean;
+    destinations: Section[];
     onSelect: (destination: BrowseHomeDestination) => void;
   } = $props();
-
-  interface Tile {
-    id: "sequences" | "collections" | "visuals" | "you";
-    labelKey: TranslationKey;
-    descKey: TranslationKey;
-    icon: string;
-    color: string;
-  }
-
-  const ALL_TILES: readonly Tile[] = [
-    {
-      id: "sequences",
-      labelKey: "browse_home_sequences",
-      descKey: "browse_home_sequences_desc",
-      icon: "fa-table-cells-large",
-      color: "#a855f7",
-    },
-    {
-      id: "collections",
-      labelKey: "browse_home_collections",
-      descKey: "browse_home_collections_desc",
-      icon: "fa-folder-open",
-      color: "#6366f1",
-    },
-    {
-      id: "visuals",
-      labelKey: "browse_home_visuals",
-      descKey: "browse_home_visuals_desc",
-      icon: "fa-palette",
-      color: "#ec4899",
-    },
-    {
-      id: "you",
-      labelKey: "tab_browse_you",
-      descKey: "tab_desc_browse_you",
-      icon: "fa-user",
-      color: "#14b8a6",
-    },
-  ];
 
   /** The published visual types, in the order the visuals wall lists them. */
   const VISUAL_TYPES: ReadonlyArray<{
@@ -106,7 +67,9 @@
   ];
 
   const tiles = $derived(
-    ALL_TILES.filter((tile) => tile.id !== "visuals" || visualsVisible)
+    destinations as Array<
+      Section & { id: BrowseHomeDestination["kind"]; color: string }
+    >
   );
 
   const sceneOrder = (): string[] => tiles.map((tile) => tile.id);
@@ -259,8 +222,9 @@
             </span>
             <span class="tile-copy">
               <span class="tile-name"
-                ><i class="fas {tile.icon} tile-glyph" aria-hidden="true"
-                ></i>{t(tile.labelKey)}</span
+                ><span class="tile-glyph" aria-hidden="true"
+                  >{@html tile.icon}</span
+                >{t(tile.labelKey)}</span
               >
               <span class="tile-description">{t(tile.descKey)}</span>
             </span>
