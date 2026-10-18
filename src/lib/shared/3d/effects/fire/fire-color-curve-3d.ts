@@ -12,6 +12,7 @@
  */
 
 import { Color } from "three";
+import type { FireColorCurve } from "#lib/shared/animation-engine/domain/types/fire-types.js";
 
 export type FireColorPreset = "classic" | "blue" | "spirit" | "custom";
 
@@ -62,4 +63,25 @@ export function getFireColors(preset: FireColorPreset, customColors?: Partial<Fi
 
   const key = preset === "custom" ? "classic" : preset;
   return { ...PRESETS[key] };
+}
+
+const mixRgb = (
+  a: readonly [number, number, number],
+  b: readonly [number, number, number],
+  t: number
+) => new Color(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t);
+
+/**
+ * The 3D particle ramp for a Fire look's color curve, the same curve the 2D
+ * fluid fire draws with, so Blue Flame and Spirit burn the same color in both
+ * views. The particle core stops short of the curve's near-white core: dense
+ * additive overlap supplies that brightest white where the flame is thickest.
+ */
+export function fireColorsFromCurve(curve: FireColorCurve): FireColorSet {
+  return {
+    hot: mixRgb(curve.hotColor, curve.coreColor, 0.25),
+    warm: mixRgb(curve.midColor, curve.hotColor, 0.35),
+    cool: mixRgb(curve.coldColor, curve.midColor, 0.75),
+    smoke: mixRgb([0, 0, 0], curve.coldColor, 0.5),
+  };
 }

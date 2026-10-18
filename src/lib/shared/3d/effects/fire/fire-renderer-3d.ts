@@ -3,9 +3,11 @@
  *
  * Real fire on a moving prop is not a shape that chases the tip - it is a
  * medium that is *born at the wick and left behind*. Each particle spawns at
- * the tip's current position, inherits a fraction of the tip's velocity, then
- * rises under buoyancy, slows under drag, and swirls through a curl-noise field
- * while it ages. Because particles stay where they were born as the tip travels
+ * the tip's current position carrying a little of the tip's velocity in its
+ * wake, sheds that within a few hundredths of a second, rises, widens as it
+ * mixes with air and glows until it has burned through. The numbers are the
+ * shared wick flame in effects/domain/fire-physics.ts, which the 2D fluid fire
+ * also uses. Because particles stay where they were born as the tip travels
  * on, the flame automatically streaks and curls along the path - motion
  * awareness is intrinsic to the model, not bolted on with a rotation. A hard
  * direction reversal leaves a dense knot of particles at the turnaround, so the
@@ -32,7 +34,12 @@ import {
   PointLight,
   type ShaderMaterial,
 } from "three";
-import { getFireColors, type FireColorPreset } from "./fire-color-curve-3d";
+import {
+  fireColorsFromCurve,
+  getFireColors,
+  type FireColorPreset,
+  type FireColorSet,
+} from "./fire-color-curve-3d";
 import {
   createFireParticleMaterial,
   applyFireParticleColors,
@@ -40,6 +47,13 @@ import {
   setFireColorBlend,
 } from "./fire-particle-material-3d";
 import { SampledCurlGrid2D } from "../smoke/smoke-curl-field";
+import {
+  FIRE_PHYSICS,
+  flameBurnTime,
+  flameParcelRadius,
+  flamePuffShare,
+  stepFlameParcelVelocity,
+} from "#lib/shared/effects/domain/fire-physics.js";
 import { QualityTier } from "../types";
 import type { Fire3DParams } from "#lib/shared/effects/translators/webgl3d-types.js";
 
@@ -58,9 +72,9 @@ const POOL_SIZE: Record<QualityTier, number> = {
  *  density (overlapping particles) is what reads as a continuous flame instead
  *  of a few sparse blobs floating in a bloom halo. */
 const EMIT_RATE: Record<QualityTier, number> = {
-  [QualityTier.HIGH]: 1300,
-  [QualityTier.MEDIUM]: 800,
-  [QualityTier.LOW]: 320,
+  [QualityTier.HIGH]: 900,
+  [QualityTier.MEDIUM]: 520,
+  [QualityTier.LOW]: 220,
 };
 
 /**
@@ -77,42 +91,23 @@ const PATH_SPACING: Record<QualityTier, number> = {
 /** Hard cap on spawns per tip per frame so a huge dt can't flood the pool. */
 const MAX_SPAWN_PER_TIP = 90;
 
-/** Fraction of tip velocity a new particle inherits (streaks along motion). */
-const VELOCITY_INHERIT = 0.4;
-
-/** Upward acceleration (world units/s^2). Fire rises. */
-const BUOYANCY = 2.7;
-
-/** Initial upward kick at birth so even the idle flame lifts off the wick. */
-const BUOYANCY_SEED = 0.65;
-
-/**
- * Air-drag multiplier applied per second. Aggressive: the inherited tangential
- * velocity bleeds off within a couple hundred ms, so buoyancy curls the trail
- * upward instead of letting it fly straight - the signature flame whip.
- */
-const DRAG = 0.1;
-
-/** Curl-noise turbulence strength (world units/s of swirl velocity). */
-const CURL_STRENGTH = 1.5;
+/** Air swirl speed at full turbulence (m/s); the gas follows the air. */
+const SWIRL_SPEED = 0.55;
 
 /** Spatial frequency multiplier feeding the curl field (higher = finer licks). */
 const CURL_SCALE = 1.7;
 
-/** Random isotropic velocity spread at birth. */
-const SPREAD = 0.45;
+/** Random velocity spread at birth (m/s): the wick's ragged surface. */
+const SPREAD = 0.18;
 
 /** Random positional jitter around the spawn point (tight core at the wick). */
-const CORE_JITTER = 0.025;
+const CORE_JITTER = 0.02;
 
-// Short lifetimes keep the flame a tight hot core instead of a long-lived
-// haze. The cool tail particles are what drift up and read as smoke/fog, so we
-// cap max life low and let the shader fade + cool them out well before death.
-const LIFE_MIN = 0.32;
-const LIFE_MAX = 0.7;
-// Smaller, more numerous particles = finer flame grain (less "big soft blob").
-const SIZE_MIN = 0.045;
-const SIZE_MAX = 0.12;
+/** Glow times vary this much either side of the wick's burn time. */
+const LIFE_SPREAD = 0.3;
+
+/** Puffing lengthens or shortens a still flame's tongues by up to this share. */
+const PUFF_DEPTH = 0.45;
 
 interface Particle {
   x: number;
@@ -123,6 +118,7 @@ interface Particle {
   vz: number;
   age: number;
   maxLife: number;
+  /** Width multiplier on the shared parcel radius (intensity and jitter). */
   size: number;
   seed: number;
   // Prop color this particle inherits at birth (0-1). Drives the Color-slider
@@ -157,6 +153,8 @@ export interface FireRendererOptions {
 
 interface FireSourceState {
   accumulator: number;
+  /** Puffing phase, so neighbouring flames don't pulse in step. */
+  phase: number;
   previousPosition: Vector3;
   valid: boolean;
   lastSeenFrame: number;
@@ -168,12 +166,14 @@ export class FireRenderer3D {
   private poolSize: number;
   private qualityTier: QualityTier;
   private preset: FireColorPreset;
+  /** Colors from the chosen look's curve; null until a config arrives. */
+  private curveColors: FireColorSet | null = null;
 
   // Tunable params (seeded from the per-tier constants; overwritten by
   // updateConfig as the user drags the curated sliders). Mutated in place so a
   // live tune never reallocates the particle pool.
   private emitRate: number;
-  private curlStrength = CURL_STRENGTH;
+  private swirlSpeed = SWIRL_SPEED;
   private emissiveHot = 0.53;
   private lightIntensity = 0.302;
   // Intensity also scales particle SIZE so the slider visibly changes the
@@ -283,7 +283,7 @@ export class FireRenderer3D {
     );
 
     this.material = createFireParticleMaterial({
-      colors: getFireColors(this.preset),
+      colors: this.curveColors ?? getFireColors(this.preset),
       emissiveHot: this.emissiveHot,
     });
     this.mesh = new InstancedMesh(geometry, this.material, this.poolSize);
@@ -294,7 +294,12 @@ export class FireRenderer3D {
 
     if (this.lightEnabled) {
       for (let i = 0; i < this.maxDynamicLights; i++) {
-        const light = new PointLight(0xff7a22, 0, 3.2, 2.0);
+        const light = new PointLight(
+          (this.curveColors ?? getFireColors(this.preset)).warm,
+          0,
+          3.2,
+          2.0
+        );
         // Keep the lights in Three's program signature from startup onward.
         // Toggling visibility changes NUM_POINT_LIGHTS and recompiles every lit
         // material in the scene on the first Fire click; zero intensity is the
@@ -346,6 +351,7 @@ export class FireRenderer3D {
       if (!sourceState) {
         sourceState = {
           accumulator: 0,
+          phase: Math.random() * Math.PI * 2,
           previousPosition: new Vector3(),
           valid: false,
           lastSeenFrame: this.sourceFrame,
@@ -376,22 +382,20 @@ export class FireRenderer3D {
         continue;
       }
 
-      // Buoyancy lifts; drag bleeds the inherited horizontal velocity so the
-      // tongue curls upward.
-      p.vy += BUOYANCY * safeDt;
-      const dragFactor = Math.pow(DRAG, safeDt);
-      p.vx *= dragFactor;
-      p.vy *= dragFactor;
-      p.vz *= dragFactor;
-
-      // Curl-noise swirl in the XY plane (divergence-free => no clumping).
+      // The air swirls (a divergence-free curl field in XY); the gas sheds its
+      // wake speed and follows that air, rising as it goes.
       const swirl = this.curl.sample(
         p.x * CURL_SCALE,
         p.y * CURL_SCALE,
         this.time
       );
-      p.vx += swirl.vx * this.curlStrength * safeDt;
-      p.vy += swirl.vy * this.curlStrength * safeDt;
+      stepFlameParcelVelocity(
+        p,
+        swirl.vx * this.swirlSpeed,
+        swirl.vy * this.swirlSpeed,
+        0,
+        safeDt
+      );
 
       p.x += p.vx * safeDt;
       p.y += p.vy * safeDt;
@@ -406,7 +410,7 @@ export class FireRenderer3D {
       this.vels[i3 + 2] = p.vz;
       this.lives[visibleCount] = p.age / p.maxLife;
       this.seeds[visibleCount] = p.seed;
-      this.instSizes[visibleCount] = p.size;
+      this.instSizes[visibleCount] = flameParcelRadius(p.age) * p.size;
       this.propColors[i3] = p.pr;
       this.propColors[i3 + 1] = p.pg;
       this.propColors[i3 + 2] = p.pb;
@@ -477,6 +481,14 @@ export class FireRenderer3D {
     if (count > MAX_SPAWN_PER_TIP) count = MAX_SPAWN_PER_TIP;
     sourceState.accumulator -= count;
 
+    // Faster wicks burn their gas sooner; a still flame's tongues puff.
+    const burnTime = flameBurnTime(tip.speed);
+    const puff =
+      1 +
+      PUFF_DEPTH *
+        flamePuffShare(tip.speed) *
+        Math.sin(this.time * Math.PI * 2 * FIRE_PHYSICS.puffHz + sourceState.phase);
+
     for (let k = 0; k < count; k++) {
       const particle = this.nextSlot();
 
@@ -490,22 +502,17 @@ export class FireRenderer3D {
       particle.y = py + (Math.random() - 0.5) * CORE_JITTER;
       particle.z = pz + (Math.random() - 0.5) * CORE_JITTER;
 
-      particle.vx =
-        tip.velocityX * VELOCITY_INHERIT + (Math.random() - 0.5) * SPREAD;
-      particle.vy =
-        tip.velocityY * VELOCITY_INHERIT +
-        BUOYANCY_SEED +
-        (Math.random() - 0.5) * SPREAD;
-      particle.vz =
-        tip.velocityZ * VELOCITY_INHERIT + (Math.random() - 0.5) * SPREAD;
+      const carry = FIRE_PHYSICS.wakeCarry;
+      particle.vx = tip.velocityX * carry + (Math.random() - 0.5) * SPREAD;
+      particle.vy = tip.velocityY * carry + (Math.random() - 0.5) * SPREAD;
+      particle.vz = tip.velocityZ * carry + (Math.random() - 0.5) * SPREAD;
 
-      // Bias toward short-lived hot core particles; a tail rides longer into smoke.
-      const r = Math.random();
-      particle.maxLife = LIFE_MIN + r * r * (LIFE_MAX - LIFE_MIN);
-      particle.age = 0;
+      particle.maxLife =
+        burnTime * puff * (1 + (Math.random() * 2 - 1) * LIFE_SPREAD);
+      // Gas born earlier in this frame's sweep has already been burning.
+      particle.age = (1 - t) * safeDt;
       // sizeScale (from intensity) sets the flame VOLUME; brightness is separate.
-      particle.size =
-        (SIZE_MIN + Math.random() * (SIZE_MAX - SIZE_MIN)) * this.sizeScale;
+      particle.size = (0.75 + Math.random() * 0.5) * this.sizeScale;
       particle.seed = Math.random();
       const pc = tip.propColor;
       particle.pr = pc ? pc.r : 1;
@@ -552,9 +559,21 @@ export class FireRenderer3D {
     this.emitRate =
       EMIT_RATE[this.qualityTier] * (0.4 + params.intensity * 1.0);
     this.sizeScale = 0.55 + params.intensity * 0.9;
-    this.curlStrength = CURL_STRENGTH * (0.4 + params.turbulence * 1.6);
+    this.swirlSpeed = SWIRL_SPEED * (0.4 + params.turbulence * 1.6);
     this.emissiveHot = params.emissiveHot;
     this.lightIntensity = params.lightIntensity;
+    this.curveColors = params.colorCurve
+      ? fireColorsFromCurve(params.colorCurve)
+      : null;
+    if (this.material) {
+      applyFireParticleColors(
+        this.material,
+        this.curveColors ?? getFireColors(this.preset)
+      );
+    }
+    // The light the flame throws on skin and props takes the flame's body color.
+    const lightColor = (this.curveColors ?? getFireColors(this.preset)).warm;
+    for (const light of this.lights) light.color.copy(lightColor);
     if (this.material) {
       setFireEmissive(this.material, this.emissiveHot);
       setFireColorBlend(this.material, params.colorBlend);
