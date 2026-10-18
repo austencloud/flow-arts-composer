@@ -52,7 +52,7 @@
   import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import { setSideBySideLayout } from "#lib/shared/application/state/animation-visibility-state.svelte.js";
   import { onMount, setContext, tick, untrack } from "svelte";
-  import { replaceState } from "$app/navigation";
+  import { goto, replaceState } from "$app/navigation";
   import ErrorBanner from "./ErrorBanner.svelte";
   import DraftRecovery from "./DraftRecovery.svelte";
   import { getSequencePersister } from "../get-sequence-persister";
@@ -607,6 +607,7 @@
           onRestored: (mode) => {
             if (mode === "construct") syncConstructWorkspaceUi();
           },
+          openDrafts: () => void goto("/browse/you/drafts"),
         });
 
         // Extract UI coordination services from result (no manual resolution needed)

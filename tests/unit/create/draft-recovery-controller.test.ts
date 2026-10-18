@@ -5,6 +5,10 @@ import type {
   SequencePersister,
 } from "#lib/features/create/shared/services/sequence-persister.js";
 import type { SequenceState } from "#lib/features/create/shared/state/sequence-state-orchestrator.svelte.js";
+import {
+  clearToasts,
+  toastQueue,
+} from "#lib/shared/toast/state/toast-state.svelte.js";
 
 function setup(initial: DraftStatus["status"] = "recovery") {
   let status: DraftStatus = {
@@ -37,23 +41,79 @@ function setup(initial: DraftStatus["status"] = "recovery") {
     startFreshDraft: vi.fn().mockResolvedValue(null),
   };
   const onRestored = vi.fn();
+  const openDrafts = vi.fn();
   const controller = createDraftRecoveryController({
     persister: persister as unknown as SequencePersister,
     getActiveMode: () => "construct",
     getSequenceState: () => state as unknown as SequenceState,
     onRestored,
+    openDrafts,
   });
   return {
     controller,
     persister,
     state,
     onRestored,
+    openDrafts,
     update(next: DraftStatus["status"]) {
       status = { ...status, status: next };
       listeners.forEach((listener) => listener(status));
     },
   };
 }
+
+describe("draft offers never interrupt", () => {
+  const draft = (id: string) => ({
+    id,
+    sessionId: id,
+    mode: "construct",
+    savedAt: 1,
+    workspace: {
+      currentSequence: { steps: [{ letter: "A" }] },
+      selectedStartPlacement: null,
+      hasStartPlacement: true,
+      activeBuildSection: "construct",
+    },
+  });
+
+  it("offers a waiting draft once as a toast, not a dialog", async () => {
+    clearToasts();
+    const { controller, persister, update, state } = setup();
+    persister.getDraftStatus.mockReturnValue({
+      status: "recovery",
+      sessionId: "draft",
+      savedAt: null,
+      error: null,
+      candidates: [draft("waiting")] as never,
+    });
+    persister.subscribeDraftStatus.mock.calls[0][1](persister.getDraftStatus());
+    controller.observeActiveMode();
+    controller.observeActiveMode();
+    expect(controller.open).toBe(false);
+    expect(toastQueue).toHaveLength(1);
+    expect(toastQueue[0].action?.label).toBe("Resume");
+
+    persister.recoverDraft.mockResolvedValue(draft("waiting").workspace);
+    toastQueue[0].action?.onClick();
+    await vi.waitFor(() => expect(state.restoreDraftState).toHaveBeenCalled());
+    expect(persister.recoverDraft).toHaveBeenCalledWith("construct", "waiting");
+
+    // Building on resolves the offer, so its toast goes away.
+    update("saved");
+    expect(toastQueue).toHaveLength(0);
+  });
+
+  it("points a busy editor at Drafts instead of offering to replace its work", () => {
+    clearToasts();
+    const { controller, state, openDrafts } = setup("conflict");
+    state.hasStartPlacement = true;
+    controller.observeActiveMode();
+    expect(controller.open).toBe(false);
+    expect(toastQueue[0].action?.label).toBe("Drafts");
+    toastQueue[0].action?.onClick();
+    expect(openDrafts).toHaveBeenCalled();
+  });
+});
 
 describe("draft recovery choices", () => {
   it("shows a sequence once when saves differ only in undo history", async () => {
