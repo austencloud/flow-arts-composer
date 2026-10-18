@@ -32,6 +32,7 @@ instead of showing an empty shell.
   import { followedCollectionsState } from "#lib/features/library/state/followed-collections-state.svelte.js";
   import { getBrowseNavigationContext } from "#lib/shared/browse/context/browse-navigation-context.js";
   import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
+  import { desktopSidebarState } from "#lib/shared/layout/desktop-sidebar-state.svelte.js";
   import { responsiveLayoutManager } from "#lib/shared/create/services/responsive-layout-manager.js";
   import { PLAYGROUND_TABS } from "#lib/shared/navigation/config/tab-definitions.js";
   import { tunnelCollectionState } from "#lib/features/tunnel-collection/state/tunnel-collection-state.svelte.js";
@@ -894,6 +895,10 @@ instead of showing an empty shell.
     <div class="rail-cards">
       {@render ownShelves(railSelection)}
     </div>
+    <h4 class="shelf-subheading">{t("browse_verified_tka_core")}</h4>
+    <div class="rail-cards">
+      {@render tkaOriginalsShelf(railSelection)}
+    </div>
   {:else if shelfId === "performances"}
     <div class="rail-cards">
       {@render performancesShelfCard(railSelection)}
@@ -934,12 +939,14 @@ instead of showing an empty shell.
 
 {#if isSideBySide && hasLibrarySession}
   <div class="you-workspace">
-    <WorkShelfRail
-      region="tabs"
-      value={activeShelf}
-      onchange={selectShelf}
-      content={shelfContent}
-    />
+    {#if !desktopSidebarState.isVisible}
+      <WorkShelfRail
+        region="tabs"
+        value={activeShelf}
+        onchange={selectShelf}
+        content={shelfContent}
+      />
+    {/if}
     {#if isYouDrafts}
       <div class="drafts-workspace">
         <WorkShelfRail

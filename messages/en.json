@@ -2010,6 +2010,7 @@
   "nav_drag_module": "Drag to reorder {module}",
   "nav_disable_module": "Disable {module} globally",
   "nav_choose_method": "Choose creation method",
+  "nav_choose_browse_destination": "Choose Browse destination",
   "nav_select_tab": "Select tab",
   "nav_select": "Select",
   "nav_email_signin": "or sign in with email",
