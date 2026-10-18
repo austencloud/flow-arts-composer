@@ -6,6 +6,10 @@ import type {
   SequencePersister,
 } from "../../services/sequence-persister";
 import { distinctVisibleVersions } from "../../services/draft-visible-versions.js";
+import {
+  removeToast,
+  showToast,
+} from "#lib/shared/toast/state/toast-state.svelte.js";
 
 export const draftModes = ["construct", "generate", "assemble"] as const;
 export type DraftMode = (typeof draftModes)[number];
@@ -20,6 +24,7 @@ export function createDraftRecoveryController(deps: {
   getActiveMode: () => BuildModeId;
   getSequenceState: (mode: DraftMode) => SequenceState;
   onRestored: (mode: DraftMode) => void;
+  openDrafts: () => void;
 }) {
   const statuses = $state<Partial<Record<DraftMode, DraftStatus>>>({});
   let open = $state(false);
@@ -29,9 +34,16 @@ export function createDraftRecoveryController(deps: {
   let message = $state<string | null>(null);
   let dialogKind = $state<"recovery" | "conflict" | "history">("history");
   const offered = new Map<DraftMode, string>();
+  const offerToasts = new Map<DraftMode, string>();
   const unsubscribe = draftModes.map((mode) =>
     deps.persister.subscribeDraftStatus(mode, (status) => {
       statuses[mode] = status;
+      const toastId = offerToasts.get(mode);
+      if (toastId && !["recovery", "conflict"].includes(status.status)) {
+        // Resolved, usually by editing on: the offer no longer applies.
+        removeToast(toastId, "programmatic");
+        offerToasts.delete(mode);
+      }
       if (open && dialogMode === mode && status.candidates.length) {
         versions = distinctVisibleVersions(status.candidates);
       }
@@ -94,12 +106,42 @@ export function createDraftRecoveryController(deps: {
     if (!mode) return;
     const status = statuses[mode];
     if (!status || !["recovery", "conflict"].includes(status.status)) return;
-    // Dismissing a warning does not resolve it, but it should not trap someone
-    // in a dialog every time their in-memory sequence changes.
+    // Offer once per state, never as a dialog: editing on makes this
+    // editor's work the draft and every other version stays in Drafts.
     const key = `${status.sessionId}:${status.status}`;
     if (offered.get(mode) === key) return;
     offered.set(mode, key);
-    void showDrafts(mode);
+    offerDraft(mode, status);
+  }
+
+  function offerDraft(mode: DraftMode, status: DraftStatus) {
+    const latest = distinctVisibleVersions(status.candidates)[0];
+    const state = deps.getSequenceState(mode);
+    const editorEmpty =
+      !state.hasStartPlacement && !state.currentSequence?.steps?.length;
+    const previous = offerToasts.get(mode);
+    if (previous) removeToast(previous, "programmatic");
+    const toastId =
+      editorEmpty && latest
+        ? showToast({
+            message: "You have an unfinished draft.",
+            duration: 10000,
+            announcement: "polite",
+            action: {
+              label: "Resume",
+              onClick: () => void resume(mode, latest.id),
+            },
+          })
+        : showToast({
+            message:
+              status.status === "conflict"
+                ? "This draft also changed in another tab. Both versions are in Drafts."
+                : "An earlier version of this draft is in Drafts.",
+            duration: 8000,
+            announcement: "polite",
+            action: { label: "Drafts", onClick: deps.openDrafts },
+          });
+    offerToasts.set(mode, toastId);
   }
 
   async function recover(id: string): Promise<boolean> {
@@ -247,6 +289,7 @@ export function createDraftRecoveryController(deps: {
     flushPending,
     dispose() {
       unsubscribe.forEach((stop) => stop());
+      offerToasts.forEach((id) => removeToast(id, "programmatic"));
     },
   };
 }

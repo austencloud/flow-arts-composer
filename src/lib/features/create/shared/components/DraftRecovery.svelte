@@ -13,7 +13,6 @@
     surface: "status" | "dialog";
   } = $props();
   const status = $derived(controller.status?.status ?? "idle");
-  const needsReview = $derived(status === "recovery" || status === "conflict");
   const labels = {
     idle: "Drafts save on this device",
     saving: "Saving…",
@@ -49,26 +48,22 @@
   <span class="sr-only" role="status" aria-live="polite">{labels[status]}</span>
 {/if}
 
-{#if surface === "status" && controller.mode && (status === "error" || needsReview)}
-  <div
-    class="draft-status"
-    class:attention={status === "error" || needsReview}
-    data-testid="draft-save-status"
-  >
+<!-- Only a failed save takes space here. A waiting draft is offered by a
+     toast and kept in Drafts, so it never interrupts building. -->
+{#if surface === "status" && controller.mode && status === "error"}
+  <div class="draft-status attention" data-testid="draft-save-status">
     <span class="status-label" role="status" aria-live="polite"
       >{labels[status]}</span
     >
     <div class="status-actions">
-      {#if status === "error"}
-        <button disabled={controller.busy} onclick={() => controller.retry()}
-          >Retry save</button
-        >
-      {/if}
+      <button disabled={controller.busy} onclick={() => controller.retry()}
+        >Retry save</button
+      >
       <button
         disabled={controller.busy}
         onclick={() => controller.showDrafts()}
       >
-        {needsReview ? "Review draft" : "Saved drafts"}
+        Saved drafts
       </button>
     </div>
   </div>

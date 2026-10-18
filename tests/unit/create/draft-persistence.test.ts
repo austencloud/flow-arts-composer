@@ -106,7 +106,7 @@ describe("durable Create drafts", () => {
     ).toBe(2);
   });
 
-  it("keeps the losing tab’s latest work and refuses a silent overwrite", async () => {
+  it("keeps the losing tab’s latest work, then lets its next edit take over", async () => {
     const first = new SequencePersister();
     await first.saveCurrentState(workspace("initial"));
     const second = new SequencePersister();
@@ -129,14 +129,37 @@ describe("durable Create drafts", () => {
         ?.currentSequence?.name
     ).toBe("first edit");
 
-    await expect(
-      second.saveCurrentState(workspace("latest second edit"))
-    ).rejects.toThrow("Choose a draft version");
+    // Editing on is the choice: this tab's work becomes the draft and the
+    // other tab's version stays listed.
+    await second.saveCurrentState(workspace("latest second edit"));
+    expect(second.getDraftStatus("construct").status).toBe("saved");
     expect(
-      (await second.listDrafts("construct")).map(
-        (draft) => draft.workspace.currentSequence?.name
-      )
-    ).toContain("latest second edit");
+      (await new SequencePersister().loadCurrentState("construct"))
+        ?.currentSequence?.name
+    ).toBe("latest second edit");
+    const names = (await second.listDrafts("construct")).map(
+      (draft) => draft.workspace.currentSequence?.name
+    );
+    expect(names).toContain("first edit");
+    expect(names).toContain("second edit");
+  });
+
+  it("lets a recovery editor build without choosing and keeps the old draft", async () => {
+    const first = new SequencePersister();
+    await first.saveCurrentState(workspace("old draft"));
+    localStorage.clear();
+    const reopened = new SequencePersister();
+    expect(await reopened.loadCurrentState("construct")).toBeNull();
+    expect(reopened.getDraftStatus("construct").status).toBe("recovery");
+
+    await reopened.saveCurrentState(workspace("new work"));
+    expect(reopened.getDraftStatus("construct").status).toBe("saved");
+    await reopened.saveCurrentState(workspace("more new work"));
+    const names = (await reopened.listDrafts("construct")).map(
+      (draft) => draft.workspace.currentSequence?.name
+    );
+    expect(names).toContain("old draft");
+    expect(names).toContain("more new work");
   });
 
   it("accepts exactly one of two simultaneous writes from the same revision", async () => {
@@ -339,12 +362,11 @@ describe("durable Create drafts", () => {
     });
   });
 
-  it("lets a conflicted editor choose its latest version and keep its history across reload", async () => {
+  it("lets a conflicted editor edit on and keep its history across reload", async () => {
     const first = new SequencePersister();
     await first.saveCurrentState(workspace("seed"));
     const second = new SequencePersister();
     await second.loadCurrentState("construct");
-    const sharedSession = second.getSessionId("construct");
     second.setHistoryAdapter({
       capture: () => ({ undo: [{ id: "second-undo" }] as never, redo: [] }),
       restore: vi.fn(),
@@ -353,18 +375,8 @@ describe("durable Create drafts", () => {
     await expect(
       second.saveCurrentState(workspace("second edit"))
     ).rejects.toThrow();
-    await expect(
-      second.saveCurrentState(workspace("latest second edit"))
-    ).rejects.toThrow();
-    const chosen = (await second.listDrafts("construct")).find(
-      (draft) => draft.workspace.currentSequence?.name === "latest second edit"
-    );
-    expect(chosen).toBeDefined();
-    expect(
-      (await second.recoverDraft("construct", chosen!.id))?.currentSequence
-        ?.name
-    ).toBe("latest second edit");
-    expect(second.getSessionId("construct")).toBe(sharedSession);
+    await second.saveCurrentState(workspace("latest second edit"));
+    const ownSession = second.getSessionId("construct");
     const restore = vi.fn();
     const reloaded = new SequencePersister();
     reloaded.setHistoryAdapter({
@@ -374,11 +386,16 @@ describe("durable Create drafts", () => {
     expect(
       (await reloaded.loadCurrentState("construct"))?.currentSequence?.name
     ).toBe("latest second edit");
-    expect(reloaded.getSessionId("construct")).toBe(sharedSession);
-    expect(restore).toHaveBeenCalledWith("construct", sharedSession, {
+    expect(reloaded.getSessionId("construct")).toBe(ownSession);
+    expect(restore).toHaveBeenCalledWith("construct", ownSession, {
       undo: [{ id: "second-undo" }],
       redo: [],
     });
+    // The other tab's work moved aside into Drafts, under its own session.
+    const firstEdit = (await reloaded.listDrafts("construct")).find(
+      (draft) => draft.workspace.currentSequence?.name === "first edit"
+    );
+    expect(firstEdit?.sessionId).not.toBe(ownSession);
   });
 
   it("keeps a failed recovery choice retryable until the primary copy accepts it", async () => {

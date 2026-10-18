@@ -157,9 +157,13 @@ export function createSequenceState(services: SequenceStateServices) {
   function restoreDraftState(workspace: WorkspaceDraftState): void {
     cancelPendingSave();
     setCurrentSequence(workspace.currentSequence, { restore: true });
-    setSelectedStartPlacement(workspace.selectedStartPlacement, {
-      restore: true,
-    });
+    // Some drafts were saved with steps but no start placement. Keep the one
+    // setCurrentSequence derived from step 1 instead of clearing it, or the
+    // editor asks for a start placement beside a finished sequence.
+    setSelectedStartPlacement(
+      workspace.selectedStartPlacement ?? selectionState.selectedStartPlacement,
+      { restore: true }
+    );
     persistenceCoordinator.updateCachedActiveTab(workspace.activeBuildSection);
     onDraftRestored?.();
   }
