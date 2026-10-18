@@ -3,8 +3,6 @@ import type { CharcoalEmissionStyle } from "#lib/shared/effects/domain/effects-c
 export interface Charcoal3DMotionProfile {
   idleEmissionScale: number;
   motionEmissionScale: number;
-  packetMin: number;
-  packetRange: number;
   ambientFragmentStride: number;
   burstSparkScale: number;
   burstFragmentScale: number;
@@ -24,8 +22,6 @@ const CHARCOAL_3D_MOTION_PROFILES: Readonly<
   "steel-wool": {
     idleEmissionScale: 0.05,
     motionEmissionScale: 1.55,
-    packetMin: 4,
-    packetRange: 6,
     // Burning wool throws droplets, not chunks: the odd strand drops off.
     ambientFragmentStride: 30,
     burstSparkScale: 0.6,
@@ -42,8 +38,6 @@ const CHARCOAL_3D_MOTION_PROFILES: Readonly<
   "forge-burst": {
     idleEmissionScale: 0.12,
     motionEmissionScale: 0.42,
-    packetMin: 5,
-    packetRange: 7,
     ambientFragmentStride: 8,
     burstSparkScale: 1.35,
     burstFragmentScale: 1.85,
@@ -59,8 +53,6 @@ const CHARCOAL_3D_MOTION_PROFILES: Readonly<
   "cinder-fan": {
     idleEmissionScale: 0.08,
     motionEmissionScale: 1,
-    packetMin: 10,
-    packetRange: 12,
     ambientFragmentStride: 3,
     burstSparkScale: 0.85,
     burstFragmentScale: 0.65,
@@ -76,8 +68,6 @@ const CHARCOAL_3D_MOTION_PROFILES: Readonly<
   "banked-ember": {
     idleEmissionScale: 0.85,
     motionEmissionScale: 0.16,
-    packetMin: 2,
-    packetRange: 3,
     ambientFragmentStride: 1,
     burstSparkScale: 0.25,
     burstFragmentScale: 0.45,
