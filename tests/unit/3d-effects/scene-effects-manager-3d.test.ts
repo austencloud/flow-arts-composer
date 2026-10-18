@@ -18,11 +18,12 @@ describe("SceneEffectsManager3D", () => {
     const manager = new SceneEffectsManager3D();
     manager.initialize(scene);
 
-    // Existing pooled visuals, Goo's strand, drop and puddle meshes, Coal (two
-    // draws), Sparkle's glint layer, Petals' grounded layer, Ink's one stroke
-    // mesh, Fire's four stable lights, and the four-light scene pool shared by
-    // Bloom, Trails, and Zap.
-    expect(scene.children).toHaveLength(33);
+    // Existing pooled visuals, Goo's strand, drop and puddle meshes, Coal
+    // (three draws: heads and glows, spark streaks, ember chips), Sparkle's
+    // glint layer, Petals' grounded layer, Ink's one stroke mesh, Fire's four
+    // stable lights, and the four-light scene pool shared by Bloom, Trails,
+    // and Zap.
+    expect(scene.children).toHaveLength(34);
     manager.update(1 / 60);
     manager.dispose();
     expect(scene.children).toHaveLength(0);
