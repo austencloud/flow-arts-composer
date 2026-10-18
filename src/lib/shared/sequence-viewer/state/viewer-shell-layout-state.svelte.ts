@@ -77,9 +77,14 @@ export function createViewerShellLayoutState(
     inputs.getContext().editingPane === "video-upload"
   );
   const isAnyExportActive = $derived(inputs.getContext().editingPane !== null);
+  // The 3D renderer can stay warm under a 2D surface (a `render=3d` link that
+  // opens on the 2D animation), so the recording layout also needs the 3D
+  // scene to be what is on screen. Without that the 2D view lost its Effects
+  // panel and the toggle that brings it back.
   const isRecordSceneActive = $derived(
     isVideoExportActive &&
       inputs.getContext().renderMode === "3d" &&
+      inputs.getContext().viewerState.wants3D &&
       !inputs.getContext().previewBlobUrl
   );
   // Uploading a performance no longer occupies the sidebar - SequenceVideos
