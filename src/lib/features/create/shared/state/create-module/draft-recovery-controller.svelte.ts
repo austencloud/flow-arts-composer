@@ -125,7 +125,9 @@ export function createDraftRecoveryController(deps: {
       editorEmpty && latest
         ? showToast({
             message: "You have an unfinished draft.",
-            duration: 10000,
+            // Stays until closed or until building on resolves it, so a slow
+            // load cannot time the offer out before anyone sees it.
+            duration: 0,
             announcement: "polite",
             action: {
               label: "Resume",
