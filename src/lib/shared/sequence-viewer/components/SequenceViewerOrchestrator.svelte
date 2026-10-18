@@ -199,6 +199,9 @@
     pathPolicyOverride?: AnimationPathPolicy;
     /** Hold animation/LAN services until the host promotes away from card. */
     deferInteractiveStartup?: boolean;
+    /** Built hidden before anyone opened it. Until it wakes it leaves the
+     *  shared playback engine, keys, address bar and view analytics alone. */
+    dormant?: boolean;
     /** Fires once the card has settled all of its cells. Progressive hosts use
      *  this to reveal the full viewer without exposing placeholder frames. */
     onCardReady?: () => void;
@@ -242,6 +245,7 @@
     passivePreview = false,
     pathPolicyOverride,
     deferInteractiveStartup = false,
+    dormant = false,
     onCardReady,
     onReadyForReveal,
     initialLeftVisible,
@@ -346,6 +350,8 @@
   // One-shot tempo seed from "open saved 3D scene" (consumed at init so the
   // initialBpm effect below can't overwrite it afterwards).
   const _sceneBpmIntent: number | null = (() => {
+    // The intent belongs to the open that set it, never a prebuilt viewer.
+    if (dormant) return null;
     try {
       const raw = sessionStorage.getItem(SCENE_BPM_INTENT_KEY);
       sessionStorage.removeItem(SCENE_BPM_INTENT_KEY);
@@ -1037,8 +1043,6 @@
   let imageCompositionCleanup: (() => void) | null = null;
 
   onMount(() => {
-    authQueue.bootstrapFromUrl();
-
     window.addEventListener("keydown", handleKeydown, { capture: true });
     keydownCleanup = () =>
       window.removeEventListener("keydown", handleKeydown, { capture: true });
@@ -1046,15 +1050,26 @@
     imageCompositionCleanup = imgComp.registerObserver();
 
     playback.registerVisibilityObserver();
+  });
 
-    if (!deferInteractiveStartup) interactive.ensureInteractiveServices();
+  // The playback engine is one shared instance, and claiming it stops
+  // whatever else was playing, so a prebuilt viewer takes it (and acts on the
+  // link's pending sign-in action) only once it is opened.
+  let woken = false;
+  $effect(() => {
+    if (dormant || woken) return;
+    woken = true;
+    untrack(() => {
+      authQueue.bootstrapFromUrl();
+      if (!deferInteractiveStartup) interactive.ensureInteractiveServices();
+    });
   });
 
   // Live sync. `captureNow()` reads every registered slice's reactive state, so
   // this effect re-runs whenever any of them changes; the session owns the
   // debounce, and `mutateCurrentUrl` no-ops when nothing actually moved.
   $effect(() => {
-    if (passivePreview) return;
+    if (passivePreview || dormant) return;
     void urlSession.captureNow();
     urlSession.scheduleUrlWrite();
   });
@@ -1116,6 +1131,7 @@
   });
 
   function handleKeydown(event: KeyboardEvent) {
+    if (dormant) return;
     if (event.key === "Escape") {
       // A focused menu, popover, input, or browser-fullscreen surface owns the
       // first Escape press. Closing the viewer here would skip that local
@@ -1311,6 +1327,7 @@
     getExportType: () => exportType,
     getSinglePlayDuration: () => singlePlayDuration,
     getCardReady: () => cardReady,
+    getDormant: () => dormant,
     getResolvedCardAutoLayout: () => resolvedCardAutoLayout,
     getIsHandPath: () => propVisibility.isHandPath,
     getCollectionPropType: () => collectionPropType,

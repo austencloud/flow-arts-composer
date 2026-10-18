@@ -50,6 +50,8 @@ export interface OrchestratorContext {
   highlightedStepIndex: number | null;
   animationLoading: boolean;
   cardReady: boolean;
+  /** Built hidden ahead of an open; see the orchestrator's `dormant` prop. */
+  dormant: boolean;
   ensureInteractiveServices: () => void;
 
   playbackSource: PlaybackSource;
