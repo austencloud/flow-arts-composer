@@ -1,8 +1,12 @@
 """Unreal Editor Python: import all catalog variants and validate native meshes."""
 import json
 import re
+import sys
 from pathlib import Path
 import unreal as u
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from repair_right_prop_materials import repair_right_prop_materials
 
 PROJECT = Path(u.Paths.project_dir()).resolve()
 CATALOG = json.loads((PROJECT/'Content/Data/props.json').read_text())
@@ -118,6 +122,12 @@ for prop in CATALOG['props']:
             try: import_mesh(name, variant if prop['id'] in ('fan','bigfan') else None, field == 'rightMesh')
             except Exception as exc:
                 report['errors'].append(f'{name}: {exc}')
+
+if not report['errors']:
+    try:
+        repair_right_prop_materials(CATALOG)
+    except Exception as exc:
+        report['errors'].append(f'right prop materials: {exc}')
 
 ED.save_directory('/Game/FlowFest/Props',only_if_is_dirty=True,recursive=True)
 (PROJECT/'Saved').mkdir(exist_ok=True)
