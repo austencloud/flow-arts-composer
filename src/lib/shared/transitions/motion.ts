@@ -51,6 +51,42 @@ export const EASE_SPRING = "cubic-bezier(0.34, 1.56, 0.64, 1)";
  *  with a CSS transition on that curve. */
 export const easeOut = cssCubicBezier(0.16, 1, 0.3, 1);
 
+export interface ReleaseSettle {
+  durationMs: number;
+  /** A `cubic-bezier()` whose opening speed is the release speed. */
+  easing: string;
+}
+
+/**
+ * The settle after a drag lets go: a CSS timing that leaves the release point
+ * at the hand's own speed and eases into the destination, so the surface
+ * neither pauses nor lurches when the pointer lifts.
+ *
+ * `velocity` is px/ms toward the destination and `distance` the px still to
+ * travel. The duration aims for the hand's average pace and stays within
+ * `DURATION.normal`..`DURATION.dramatic`, so a drawer's own close timer still
+ * covers it. Null under reduced motion or with nothing left to travel.
+ */
+export function releaseSettle(
+  velocity: number,
+  distance: number
+): ReleaseSettle | null {
+  const maxMs = motionDuration(DURATION.dramatic);
+  if (maxMs === 0 || !(distance > 0)) return null;
+  const speed = Number.isFinite(velocity) ? Math.max(0, velocity) : 0;
+  const minMs = Math.min(DURATION.normal, maxMs);
+  const durationMs = Math.round(
+    speed > 0 ? Math.min(maxMs, Math.max(minMs, (2 * distance) / speed)) : maxMs
+  );
+  // cubic-bezier(1/3, y1, 2/3, 1) opens with slope 3·y1 (progress per unit
+  // time), so y1 = speed·duration / (3·distance) starts at the hand's speed.
+  const y1 = Math.min(1, (speed * durationMs) / (3 * distance));
+  return {
+    durationMs,
+    easing: `cubic-bezier(0.333, ${y1.toFixed(3)}, 0.667, 1)`,
+  };
+}
+
 /**
  * motion — reduced-motion-aware Svelte transitions on the DURATION tokens.
  *
