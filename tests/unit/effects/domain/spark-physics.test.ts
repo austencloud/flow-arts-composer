@@ -3,11 +3,13 @@ import {
   SPARK_GRAVITY,
   SPARK_MATERIALS,
   SPARK_VISIBLE_HEAT,
+  createSparkSnapState,
   sampleSparkFork,
   sparkBurnTime,
   sparkCoolTime,
   sparkHeat,
   sparkLifetime,
+  stepSparkSnap,
   stepSparkVelocity,
   type SparkMaterial,
 } from "#lib/shared/effects/domain/spark-physics.js";
@@ -99,5 +101,77 @@ describe("spark physics", () => {
     expect(forge).toBeGreaterThan(400);
     expect(steel).toBeLessThan(100);
     expect(sampleSparkFork(SPARK_MATERIALS["forge-burst"], 0.4, 0, 1)).toBeLessThan(0.4);
+  });
+});
+
+/**
+ * Feeds the snap test a head moving round a circle. `speedAt` gives the
+ * speed at each moment and `dtAt` the length of each frame, so a test can
+ * drop frames or change speed. Returns the severity of every snap.
+ */
+function spin(
+  seconds: number,
+  speedAt: (t: number) => number,
+  dtAt: (frame: number) => number = () => 1 / 60,
+  thresholdScale = 1,
+  radius = 0.6
+): number[] {
+  const state = createSparkSnapState();
+  const snaps: number[] = [];
+  let angle = 0;
+  let t = 0;
+  for (let frame = 0; t < seconds; frame++) {
+    const dt = dtAt(frame);
+    t += dt;
+    const speed = speedAt(t);
+    angle += (speed / radius) * dt;
+    const severity = stepSparkSnap(
+      state,
+      -Math.sin(angle) * speed,
+      Math.cos(angle) * speed,
+      0,
+      dt,
+      thresholdScale
+    );
+    if (severity > 0) snaps.push(severity);
+  }
+  return snaps;
+}
+
+describe("spark snap test", () => {
+  it("never snaps on a steady spin", () => {
+    expect(spin(5, () => 4)).toEqual([]);
+  });
+
+  it("never snaps when frames drop but the motion stays steady", () => {
+    expect(spin(5, () => 4, (frame) => (frame % 5 === 4 ? 3 / 60 : 1 / 60))).toEqual([]);
+  });
+
+  it("never snaps on a spin that speeds up and slows down smoothly", () => {
+    expect(spin(5, (t) => 2.7 + 0.8 * Math.sin(2 * Math.PI * t))).toEqual([]);
+  });
+
+  it("snaps once when the head stops dead, sized by the whole stop", () => {
+    const hard = spin(3, (t) => (t < 2 ? 4 : Math.max(0, 4 - (t - 2) * 60)));
+    const soft = spin(3, (t) => (t < 2 ? 2 : Math.max(0, 2 - (t - 2) * 30)));
+    expect(hard).toHaveLength(1);
+    expect(soft).toHaveLength(1);
+    expect(hard[0]).toBeGreaterThan(soft[0] * 1.5);
+  });
+
+  it("snaps on a reversal", () => {
+    const state = createSparkSnapState();
+    let snaps = 0;
+    for (let frame = 0; frame < 180; frame++) {
+      const vx = frame < 120 ? 3 : -3;
+      if (stepSparkSnap(state, vx, 0, 0, 1 / 60) > 0) snaps++;
+    }
+    expect(snaps).toBeGreaterThanOrEqual(1);
+  });
+
+  it("lets a look ask for a harder snap before it bursts", () => {
+    const gentleStop = (t: number) => (t < 2 ? 1.5 : Math.max(0, 1.5 - (t - 2) * 25));
+    expect(spin(3, gentleStop).length).toBeGreaterThan(0);
+    expect(spin(3, gentleStop, undefined, 3)).toEqual([]);
   });
 });

@@ -29,8 +29,11 @@ import {
   type CharcoalStreakBuffers,
 } from "./charcoal-streak-material-3d";
 import {
+  createSparkSnapState,
   EMBER_CHIP_MATERIAL,
   releaseSparkVelocity,
+  resetSparkSnap,
+  snapBurstSparks,
   resolveSparkMaterial,
   sampleSparkDiameter,
   sampleSparkFork,
@@ -40,8 +43,10 @@ import {
   sparkLifetime,
   SPARK_GRAVITY,
   SPARK_SHUTTER_SECONDS,
+  stepSparkSnap,
   stepSparkVelocity,
   type SparkMaterial,
+  type SparkSnapState,
 } from "#lib/shared/effects/domain/spark-physics.js";
 import {
   createCharcoalMaterial,
@@ -72,10 +77,8 @@ const FRAGMENT_POOL_SIZE: Record<QualityTier, number> = {
 const DEFAULT_MAX_TIPS = 4;
 const MAX_SEGMENT_DISTANCE = 0.18;
 const MAX_STEP_ADVANCE = 0.5;
-const BURST_IMPULSE_THRESHOLD = 0.85;
-const BURST_REARM_IMPULSE = 0.4;
-const BURST_IMPULSE_RANGE = 4.5;
-const BURST_COOLDOWN_SECONDS = 0.12;
+/** Most sparks one head throws in a frame, so a stall cannot flood the pool. */
+const MAX_AMBIENT_PER_FRAME = 64;
 /** Radius of a spark's visible glow (m), for a 0.3 mm droplet. */
 const SPARK_GLOW_RADIUS = 0.0032;
 /** How far from the head's centre sparks leave the wool (m). */
@@ -152,10 +155,9 @@ interface TipRuntime {
   sourceId: number | null;
   hasPrevious: boolean;
   ambientAccumulator: number;
-  ambientClusterTarget: number;
   ambientEmissionIndex: number;
-  burstArmed: boolean;
-  burstCooldown: number;
+  /** Watches the head for a stop or a snap; see stepSparkSnap. */
+  readonly snap: SparkSnapState;
   present: boolean;
   seed: number;
 }
@@ -347,11 +349,13 @@ function shouldResetMotionHistory(
   return advance < -0.001 || advance > MAX_STEP_ADVANCE;
 }
 
-function resolveMomentumShift(
-  previousVelocity: ThreeVector3,
-  tip: CharcoalTipInput
-): MomentumShift {
-  const incomingSpeed = previousVelocity.length();
+/** A burst leaves along the way the head was going before the change. */
+function incomingShift(snap: SparkSnapState, severity: number): MomentumShift {
+  const incomingSpeed = Math.hypot(
+    snap.incomingVx,
+    snap.incomingVy,
+    snap.incomingVz
+  );
   if (incomingSpeed <= 0.0001) {
     return {
       directionX: 0,
@@ -359,29 +363,16 @@ function resolveMomentumShift(
       directionZ: 0,
       incomingSpeed: 0,
       impulse: 0,
-      severity: 0,
+      severity,
     };
   }
-
-  const deltaX = tip.velocityX - previousVelocity.x;
-  const deltaY = tip.velocityY - previousVelocity.y;
-  const deltaZ = tip.velocityZ - previousVelocity.z;
-  const velocityChange = Math.sqrt(
-    deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ
-  );
-  const speedWeight = Math.min(1, incomingSpeed / 3);
-  const impulse = velocityChange * speedWeight;
-
   return {
-    directionX: previousVelocity.x / incomingSpeed,
-    directionY: previousVelocity.y / incomingSpeed,
-    directionZ: previousVelocity.z / incomingSpeed,
+    directionX: snap.incomingVx / incomingSpeed,
+    directionY: snap.incomingVy / incomingSpeed,
+    directionZ: snap.incomingVz / incomingSpeed,
     incomingSpeed,
-    impulse,
-    severity: Math.max(
-      0,
-      Math.min(1, (impulse - BURST_IMPULSE_THRESHOLD) / BURST_IMPULSE_RANGE)
-    ),
+    impulse: 0,
+    severity,
   };
 }
 
@@ -492,10 +483,8 @@ export class CharcoalRenderer3D {
         sourceId: null,
         hasPrevious: false,
         ambientAccumulator: 0,
-        ambientClusterTarget: this.motionProfile.packetMin,
         ambientEmissionIndex: 0,
-        burstArmed: true,
-        burstCooldown: 0,
+        snap: createSparkSnapState(),
         present: false,
         seed: (index + 1) * 0.173,
       })
@@ -611,10 +600,9 @@ export class CharcoalRenderer3D {
       if (!state) continue;
       state.present = true;
       state.currentPosition.copy(tip.position);
-      state.burstCooldown = Math.max(0, state.burstCooldown - safeDt);
       const discontinuous = this.updateTipPath(state, tip, resetMotionHistory);
       if (!discontinuous) {
-        this.updateTipBurst(state, tip);
+        this.updateTipBurst(state, tip, safeDt);
         this.updateTipAmbient(state, tip, safeDt);
       }
       state.previousPosition.copy(tip.position);
@@ -689,40 +677,39 @@ export class CharcoalRenderer3D {
     const distance = state.previousPosition.distanceTo(tip.position);
     if (resetMotionHistory || distance > MAX_SEGMENT_DISTANCE) {
       state.ambientAccumulator = 0;
-      state.ambientClusterTarget = this.motionProfile.packetMin;
-      state.burstArmed = true;
-      state.burstCooldown = 0;
+      resetSparkSnap(state.snap);
       this.suppressedDiscontinuityCount++;
       return true;
     }
     return false;
   }
 
-  private updateTipBurst(state: TipRuntime, tip: CharcoalTipInput): void {
-    const shift = resolveMomentumShift(state.previousVelocity, tip);
-    if (shift.impulse < BURST_REARM_IMPULSE) state.burstArmed = true;
-    const burstThreshold =
-      BURST_IMPULSE_THRESHOLD * this.motionProfile.burstThresholdScale;
-    if (
-      shift.impulse < burstThreshold ||
-      !state.burstArmed ||
-      state.burstCooldown > 0
-    ) {
-      return;
-    }
-
-    const burstShift: MomentumShift = {
-      ...shift,
-      severity: Math.max(
-        0,
-        Math.min(1, (shift.impulse - burstThreshold) / BURST_IMPULSE_RANGE)
-      ),
-    };
+  /**
+   * A stop, reversal or snap throws a clump on top of the stream. What
+   * counts as one is the shared snap test (stepSparkSnap): the load on the
+   * head rising above what it has been carrying, so a steady spin never
+   * bursts and a long frame cannot fake one.
+   */
+  private updateTipBurst(
+    state: TipRuntime,
+    tip: CharcoalTipInput,
+    dt: number
+  ): void {
+    const severity = stepSparkSnap(
+      state.snap,
+      tip.velocityX,
+      tip.velocityY,
+      tip.velocityZ,
+      dt,
+      this.motionProfile.burstThresholdScale
+    );
+    if (severity <= 0) return;
+    const burstShift = incomingShift(state.snap, severity);
 
     const requestedSparkCount = Math.max(
       1,
       Math.round(
-        (8 + burstShift.severity * 112) *
+        snapBurstSparks(burstShift.severity) *
           (0.65 + this.intensity * 0.95) *
           this.motionProfile.burstSparkScale
       )
@@ -745,7 +732,9 @@ export class CharcoalRenderer3D {
         tip.position,
         burstShift,
         "burst",
-        tip.sourceId
+        tip.sourceId,
+        state.previousPosition,
+        dt
       );
       if (!spark) continue;
       sparkCount++;
@@ -760,19 +749,21 @@ export class CharcoalRenderer3D {
     }
     const velocityDivisor = Math.max(1, sparkCount);
     this.lastBurst = {
-      impulse: shift.impulse,
+      impulse: state.snap.load - state.snap.usualLoad,
       severity: burstShift.severity,
       sparkCount,
       fragmentCount,
-      sourceDirection: [shift.directionX, shift.directionY, shift.directionZ],
+      sourceDirection: [
+        burstShift.directionX,
+        burstShift.directionY,
+        burstShift.directionZ,
+      ],
       averageSparkVelocity: [
         velocityX / velocityDivisor,
         velocityY / velocityDivisor,
         velocityZ / velocityDivisor,
       ],
     };
-    state.burstArmed = false;
-    state.burstCooldown = BURST_COOLDOWN_SECONDS;
     this.burstCount++;
   }
 
@@ -781,12 +772,9 @@ export class CharcoalRenderer3D {
     tip: CharcoalTipInput,
     dt: number
   ): void {
-    // The accumulator collects a packet's worth of sparks over a frame or
-    // two; spreading each packet along the tip's path (see emitSpark) keeps
-    // the stream continuous while it still thins and thickens irregularly.
-    // Match the dense 2D steel-wool envelope without interpolating between
-    // sampled positions. Real charcoal sheds in irregular packets rather than
-    // drawing every sample of the prop path as a continuous luminous stroke.
+    // Sparks leave every frame, spread along the stretch the head covered,
+    // so a steady spin draws an unbroken arc. Clumps come only from
+    // updateTipBurst, when the motion actually changes.
     const baseRate = 56 + this.intensity * 174;
     const motionFactor =
       0.22 * this.motionProfile.idleEmissionScale +
@@ -794,10 +782,16 @@ export class CharcoalRenderer3D {
     const heatFactor = 0.8 + this.glow * 0.35;
     const rate = baseRate * motionFactor * heatFactor;
     state.ambientAccumulator += rate * dt;
-    if (state.ambientAccumulator < state.ambientClusterTarget) return;
-
-    const emissionCount = Math.min(24, Math.floor(state.ambientAccumulator));
-    state.ambientAccumulator -= emissionCount;
+    const emissionCount = Math.min(
+      MAX_AMBIENT_PER_FRAME,
+      Math.floor(state.ambientAccumulator)
+    );
+    if (emissionCount === 0) return;
+    // A capped frame drops the excess rather than paying it back later.
+    state.ambientAccumulator = Math.min(
+      1,
+      state.ambientAccumulator - emissionCount
+    );
     const fragmentStride = this.motionProfile.ambientFragmentStride;
     for (let emission = 0; emission < emissionCount; emission++) {
       const shift = this.resolveAmbientMomentum(tip);
@@ -814,10 +808,6 @@ export class CharcoalRenderer3D {
         this.emitFragment(tip, tip.position, "ambient");
       }
     }
-    state.ambientClusterTarget =
-      this.motionProfile.packetMin +
-      ((state.ambientEmissionIndex * 7 + Math.round(state.seed * 1000)) %
-        Math.max(1, this.motionProfile.packetRange));
   }
 
   private resolveAmbientMomentum(tip: CharcoalTipInput): MomentumShift {
@@ -1610,10 +1600,8 @@ export class CharcoalRenderer3D {
     state.sourceId = null;
     state.hasPrevious = false;
     state.ambientAccumulator = 0;
-    state.ambientClusterTarget = this.motionProfile.packetMin;
     state.ambientEmissionIndex = 0;
-    state.burstArmed = true;
-    state.burstCooldown = 0;
+    resetSparkSnap(state.snap);
     state.present = false;
     state.previousVelocity.set(0, 0, 0);
   }

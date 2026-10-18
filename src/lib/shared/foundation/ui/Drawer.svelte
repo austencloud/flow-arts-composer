@@ -8,6 +8,7 @@
   import { DEFAULT_INERT_EXCLUSIONS } from "./drawer/focus-trap";
   import { holdBackgroundFor } from "#lib/shared/background/shared/state/background-hold.svelte.js";
   import { Z } from "#lib/shared/ui/z-index.js";
+  import { releaseSettle } from "#lib/shared/transitions/motion.js";
 
   configureDrawerStack({ baseZIndex: Z.DRAWER });
 
@@ -31,6 +32,7 @@
   let sharedDrawer: { requestClose: (reason?: CloseReason) => boolean } | undefined;
   let isSideBySideLayout = $state(false);
   const drawerId = generateDrawerId();
+  const settleClass = `app-${drawerId}`;
   const layoutService = responsiveLayoutManager;
 
   const effectivePlacement = $derived(
@@ -67,9 +69,75 @@
     requestClose("escape");
   }
 
+  // A swipe close continues at the hand's speed instead of restarting the
+  // stock slide from rest. Drag samples give the release velocity, and the
+  // settle is set as the sheet's own inline transition until the next open.
+  // It is not routed through --sheet-transition: a custom property inherits,
+  // so changing it restyled the whole sheet content at release (about 300 ms
+  // under the sequence viewer).
+  const RELEASE_WINDOW_MS = 100;
+  let dragSamples: { t: number; offset: number }[] = [];
+  let releaseSamples: { t: number; offset: number }[] = [];
+  let dragSize = 0;
+
+  function sheetElement(): HTMLElement | null {
+    return document.querySelector<HTMLElement>(`.${settleClass}`);
+  }
+
+  function isHorizontal() {
+    return effectivePlacement === "left" || effectivePlacement === "right";
+  }
+
+  function handleDragChange(offset: number, progress: number, dragging: boolean) {
+    if (dragging) {
+      // Measured as the drag starts, while nothing is moving; a layout read
+      // at release would start the sheet sliding back toward open.
+      if (dragSamples.length === 0) {
+        const sheet = sheetElement();
+        dragSize = sheet ? (isHorizontal() ? sheet.offsetWidth : sheet.offsetHeight) : 0;
+      }
+      const t = performance.now();
+      dragSamples.push({ t, offset });
+      while (dragSamples.length > 2 && t - dragSamples[0]!.t > RELEASE_WINDOW_MS) {
+        dragSamples.shift();
+      }
+    } else if (dragSamples.length > 0) {
+      releaseSamples = dragSamples;
+      dragSamples = [];
+    }
+    onDragChange?.(offset, progress, dragging);
+  }
+
+  function settleFromRelease() {
+    const samples = releaseSamples;
+    releaseSamples = [];
+    const sheet = sheetElement();
+    const first = samples[0];
+    const last = samples[samples.length - 1];
+    if (!sheet || !first || !last) return;
+    // A hand that stopped before letting go releases from rest.
+    const elapsed = last.t - first.t;
+    const moving = performance.now() - last.t < RELEASE_WINDOW_MS && elapsed > 0;
+    const velocity = moving ? Math.abs(last.offset - first.offset) / elapsed : 0;
+    const settle = releaseSettle(velocity, dragSize - Math.abs(last.offset));
+    if (!settle) return;
+    const timing = `${settle.durationMs}ms ${settle.easing}`;
+    sheet.style.transition = `transform ${timing}, opacity ${timing}`;
+  }
+
+  function handleClose(event: CustomEvent<{ reason: CloseReason }>) {
+    const reason = event.detail?.reason;
+    if (reason === "swipe" || reason === "snap") settleFromRelease();
+    onclose?.(event);
+  }
+
   function handleOpenChange(open: boolean) {
-    if (open) registerAppDrawer();
-    else unregisterDrawer(drawerId);
+    if (open) {
+      dragSamples = [];
+      releaseSamples = [];
+      sheetElement()?.style.removeProperty("transition");
+      registerAppDrawer();
+    } else unregisterDrawer(drawerId);
     holdBackgroundFor(`drawer-slide:${drawerId}`, 460);
     onOpenChange?.(open);
   }
@@ -97,7 +165,7 @@
   {closeOnBackdrop} closeOnEscape={false} {dismissible} {modal}
   {dragHandleOnly} {labelledBy} {ariaLabel} {title} {describedBy}
   {role} showHandle={showHandle ?? (dismissible && effectivePlacement === "bottom")}
-  class={`${drawerClass} ${layoutClass}`.trim()}
+  class={`${drawerClass} ${layoutClass} ${settleClass}`.trim()}
   backdropClass={`${backdropClass} ${layoutClass}`.trim()}
   placement={effectivePlacement} {responsivePlacement} {mobileBreakpoint}
   {trapFocus} {initialFocusElement}
@@ -106,9 +174,9 @@
   {snapPoints} {closeOnSnapToZero} {resizeWithSnapPoints}
   {springAnimation} {scaleBackground} {preventScroll}
   {keepMounted} {holdOpen} {autoFocus} {keyboardShortcutsPassthrough}
-  {onclose} onBeforeClose={handleBeforeClose}
+  onclose={handleClose} onBeforeClose={handleBeforeClose}
   onOpenChange={handleOpenChange} {onbackdropclick}
-  {onDragChange} {onSnapPointChange}
+  onDragChange={handleDragChange} {onSnapPointChange}
 >
   {@render children?.()}
 </SharedDrawer>

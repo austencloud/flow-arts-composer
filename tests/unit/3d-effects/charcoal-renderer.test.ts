@@ -27,6 +27,30 @@ function createTip(
   };
 }
 
+/**
+ * Half a second of steady travel, so the snap test knows the load the head
+ * is used to before anything changes. A burst is a change from that.
+ */
+function cruise(
+  target: CharcoalRenderer3D,
+  speed: number,
+  frames = 30
+): void {
+  for (let frame = 0; frame < frames; frame++) {
+    target.update([createTip({ velocityX: speed, speed })], 1 / 60);
+  }
+}
+
+/**
+ * Stops the head dead and holds it for a few frames. The burst leaves when
+ * the load peaks, a frame after the stop.
+ */
+function halt(target: CharcoalRenderer3D, frames = 3): void {
+  for (let frame = 0; frame < frames; frame++) {
+    target.update([createTip({ velocityX: 0, speed: 0 })], 1 / 60);
+  }
+}
+
 function createParams(overrides: Record<string, unknown> = {}) {
   return resolveCharcoal3D({
     intensity: 0.65,
@@ -150,8 +174,8 @@ describe("CharcoalRenderer3D", () => {
       const styled = new CharcoalRenderer3D(QualityTier.HIGH);
       styled.initialize(createMockScene());
       styled.updateConfig(createParams({ emissionStyle }));
-      styled.update([createTip({ velocityX: 4, speed: 4 })], 1 / 60);
-      styled.update([createTip({ velocityX: 0, speed: 0 })], 1 / 60);
+      cruise(styled, 4);
+      halt(styled);
       return styled.getDebugSnapshot().lastBurst;
     };
 
@@ -168,29 +192,72 @@ describe("CharcoalRenderer3D", () => {
   it("fires once for a momentum shift and rearms after motion settles", () => {
     renderer.initialize(createMockScene());
     renderer.updateConfig(createParams());
-    const moving = createTip({ velocityX: 3, speed: 3 });
-    const stopped = createTip({ velocityX: 0, speed: 0, jerk: 180 });
+    const stopped = createTip({ velocityX: 0, speed: 0 });
 
-    renderer.update([moving], 1 / 60);
+    cruise(renderer, 3);
     for (let frame = 0; frame < 20; frame++) {
       renderer.update([stopped], 1 / 60);
     }
     expect(renderer.getDebugSnapshot().burstCount).toBe(1);
     expect(renderer.getDebugSnapshot().emittedFragmentCount).toBeGreaterThan(0);
 
-    renderer.update([moving], 1 / 60);
-    renderer.update([stopped], 1 / 60);
+    // Ease back up to speed (no snap), cruise, then stop dead again.
+    for (let frame = 1; frame <= 30; frame++) {
+      const speed = (3 * frame) / 30;
+      renderer.update([createTip({ velocityX: speed, speed })], 1 / 60);
+    }
+    cruise(renderer, 3);
+    expect(renderer.getDebugSnapshot().burstCount).toBe(1);
+    halt(renderer);
     expect(renderer.getDebugSnapshot().burstCount).toBe(2);
+  });
+
+  it("never bursts on a steady spin, even through dropped frames", () => {
+    renderer.initialize(createMockScene());
+    renderer.updateConfig(createParams());
+    // 4 m/s round a 0.6 m circle: a hard, constant pull toward the centre.
+    const radius = 0.6;
+    const speed = 4;
+    let angle = 0;
+    let sparksBefore = 0;
+    let framesWithoutSparks = 0;
+    for (let frame = 0; frame < 300; frame++) {
+      // Every seventh frame runs long, as a dropped frame does.
+      const dt = frame % 7 === 6 ? 2 / 60 : 1 / 60;
+      angle += (speed / radius) * dt;
+      renderer.update(
+        [
+          createTip({
+            position: new Vector3(
+              Math.cos(angle) * radius,
+              1 + Math.sin(angle) * radius,
+              0
+            ),
+            velocityX: -Math.sin(angle) * speed,
+            velocityY: Math.cos(angle) * speed,
+            speed,
+          }),
+        ],
+        dt
+      );
+      const emitted = renderer.getDebugSnapshot().emittedSparkCount;
+      if (frame > 0 && emitted === sparksBefore) framesWithoutSparks++;
+      sparksBefore = emitted;
+    }
+    expect(renderer.getDebugSnapshot().burstCount).toBe(0);
+    // An unbroken arc: sparks leave on every frame, not in packets.
+    expect(framesWithoutSparks).toBe(0);
   });
 
   it("does not confuse a slow endpoint with a hard momentum shift", () => {
     renderer.initialize(createMockScene());
     renderer.updateConfig(createParams());
-    renderer.update(
-      [createTip({ velocityX: 0.8, speed: 0.8, jerk: 0 })],
-      1 / 60
-    );
-    renderer.update([createTip({ velocityX: 0, speed: 0, jerk: 500 })], 1 / 60);
+    cruise(renderer, 0.8);
+    // A slow head easing into its endpoint over a quarter second.
+    for (let frame = 1; frame <= 15; frame++) {
+      const speed = 0.8 * (1 - frame / 15);
+      renderer.update([createTip({ velocityX: speed, speed })], 1 / 60);
+    }
 
     expect(renderer.getDebugSnapshot()).toMatchObject({
       burstCount: 0,
@@ -206,10 +273,10 @@ describe("CharcoalRenderer3D", () => {
     moderate.updateConfig(createParams());
     severe.updateConfig(createParams());
 
-    moderate.update([createTip({ velocityX: 2, speed: 2 })], 1 / 60);
-    moderate.update([createTip({ velocityX: 0, speed: 0 })], 1 / 60);
-    severe.update([createTip({ velocityX: 6, speed: 6 })], 1 / 60);
-    severe.update([createTip({ velocityX: 0, speed: 0 })], 1 / 60);
+    cruise(moderate, 2);
+    halt(moderate);
+    cruise(severe, 6);
+    halt(severe);
 
     const moderateBurst = moderate.getDebugSnapshot().lastBurst;
     const severeBurst = severe.getDebugSnapshot().lastBurst;
@@ -225,8 +292,8 @@ describe("CharcoalRenderer3D", () => {
   it("throws a halt burst along the tip's incoming momentum", () => {
     renderer.initialize(createMockScene());
     renderer.updateConfig(createParams({ spread: 0 }));
-    renderer.update([createTip({ velocityX: 4, speed: 4 })], 1 / 60);
-    renderer.update([createTip({ velocityX: 0, speed: 0, jerk: 240 })], 1 / 60);
+    cruise(renderer, 4);
+    halt(renderer);
 
     const burst = renderer.getDebugSnapshot().lastBurst;
     expect(burst).not.toBeNull();

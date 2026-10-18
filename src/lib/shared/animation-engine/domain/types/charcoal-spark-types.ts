@@ -63,12 +63,13 @@ export interface CharcoalTipData extends PropTipData {
 
 /** All tunable parameters for the charcoal spark system. */
 export interface CharcoalSparkParams {
-	/** Jerk magnitude above which a burst fires (viewbox units/s^2) */
-	burstThreshold: number;
-	/** Spark count multiplier when jerk exceeds threshold */
-	burstMultiplier: number;
-	/** Maximum sparks per single burst event */
-	burstMax: number;
+	/**
+	 * How hard a stop or snap has to be to throw a burst, as a multiple of
+	 * the shared snap test (stepSparkSnap in spark-physics.ts).
+	 */
+	burstThresholdScale: number;
+	/** Burst size, as a multiple of the shared snapBurstSparks count. */
+	burstScale: number;
 	/** Base sparks emitted per second during movement */
 	ambientRate: number;
 	/** Speed below which ambient emission stops (viewbox units/s) */
@@ -157,9 +158,8 @@ export const CHARCOAL_SLIDER_GROUPS: CharcoalSliderGroup[] = [
 	{
 		label: "Emission",
 		sliders: [
-			{ key: "burstThreshold", label: "Burst threshold", min: 20, max: 300, step: 5 },
-			{ key: "burstMultiplier", label: "Burst multiplier", min: 1, max: 60, step: 1 },
-			{ key: "burstMax", label: "Burst max", min: 10, max: 300, step: 5 },
+			{ key: "burstThresholdScale", label: "Snap needed", min: 0.5, max: 3, step: 0.05, format: fmtDec },
+			{ key: "burstScale", label: "Burst size", min: 0, max: 3, step: 0.05, format: fmtDec },
 			{ key: "ambientRate", label: "Ambient rate", min: 0, max: 120, step: 1 },
 			{ key: "ambientSpeedThreshold", label: "Speed threshold", min: 1, max: 50, step: 1 },
 			{ key: "idleRate", label: "Idle rate", min: 0, max: 20, step: 1 },
@@ -182,9 +182,8 @@ export const CHARCOAL_SLIDER_GROUPS: CharcoalSliderGroup[] = [
 
 /** Default charcoal spark parameters - moderate steel-wool look (40/40/50). */
 export const DEFAULT_CHARCOAL_PARAMS: CharcoalSparkParams = {
-	burstThreshold: 114,
-	burstMultiplier: 57,
-	burstMax: 284,
+	burstThresholdScale: 1.15,
+	burstScale: 0.62,
 	ambientRate: 107,
 	ambientSpeedThreshold: 10,
 	idleRate: 10,
@@ -331,9 +330,10 @@ export function semanticToCharcoalParams(
 	return {
 		// Intensity controls emission volume
 		ambientRate: Math.round(lerp(5, 260, intensity) * emission),
-		burstMultiplier: Math.round(lerp(8, 130, intensity) * burstSpark),
-		burstMax: Math.round(lerp(40, 650, intensity) * burstSpark),
-		burstThreshold: Math.round(lerp(180, 15, intensity) * burstThresh),
+		// A stop or snap throws a clump; a steady spin throws none. Same test
+		// and same size as the 3D view.
+		burstThresholdScale: burstThresh,
+		burstScale: Number(((0.65 + intensity * 0.95) * burstSpark).toFixed(3)),
 		ambientSpeedThreshold: lerp(15, 3, intensity),
 		// Sized for real spark lifetimes (a tenth of a second to a second and
 		// a half), which puts about as many sparks in the air as the 3D view.
