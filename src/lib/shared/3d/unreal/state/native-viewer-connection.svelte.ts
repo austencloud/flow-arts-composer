@@ -20,6 +20,7 @@ export function createNativeViewerConnection() {
   let mountedParent: HTMLElement | null = null;
   let connectTimer: ReturnType<typeof setTimeout> | null = null;
   let retryTimer: ReturnType<typeof setTimeout> | null = null;
+  let livenessTimer: ReturnType<typeof setInterval> | null = null;
   let hostTimeout: ReturnType<typeof setTimeout> | null = null;
   let hostAbort: AbortController | null = null;
   let activeAttempt = 0;
@@ -57,12 +58,16 @@ export function createNativeViewerConnection() {
       );
     }
     const id = `${session}:${++revision}`;
+    const current = generation;
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         pending.delete(id);
         error =
-          "Unreal did not confirm the change. Reconnect to reconcile the scene.";
+          "The Unreal scene stopped responding. Reconnecting automatically.";
         reject(new Error(error));
+        if (current === generation && ready && mountedParent) {
+          scheduleRecovery(error);
+        }
       }, 8000);
       pending.set(id, { resolve, reject, timer });
       try {
@@ -74,14 +79,15 @@ export function createNativeViewerConnection() {
           type,
           payload,
         });
-      } catch (cause) {
+      } catch {
         clearTimeout(timer);
         pending.delete(id);
-        reject(
-          cause instanceof Error
-            ? cause
-            : new Error("Unable to send the viewer command.")
-        );
+        const message =
+          "The Unreal command connection failed. Reconnecting automatically.";
+        reject(new Error(message));
+        if (current === generation && ready && mountedParent) {
+          scheduleRecovery(message);
+        }
       }
     });
   }
@@ -301,7 +307,7 @@ export function createNativeViewerConnection() {
       if (!activeAttempt) reconnect();
       return;
     }
-    if (livenessProbe) return;
+    if (livenessProbe || pending.size) return;
     const current = generation;
     livenessProbe = current;
     void command("hello")
@@ -330,6 +336,9 @@ export function createNativeViewerConnection() {
     window.addEventListener("online", onReturn);
     window.addEventListener("pageshow", onReturn);
     document.addEventListener("visibilitychange", onVisibilityChange);
+    livenessTimer = setInterval(() => {
+      if (ready && document.visibilityState === "visible") onReturn();
+    }, 20000);
     void attemptConnection();
   }
 
@@ -337,6 +346,8 @@ export function createNativeViewerConnection() {
     mountedParent = null;
     clearConnection();
     activeAttempt = 0;
+    if (livenessTimer) clearInterval(livenessTimer);
+    livenessTimer = null;
     window.removeEventListener("online", onReturn);
     window.removeEventListener("pageshow", onReturn);
     document.removeEventListener("visibilitychange", onVisibilityChange);
