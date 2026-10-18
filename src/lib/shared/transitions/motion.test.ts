@@ -12,6 +12,7 @@ import {
   opaqueFade,
   popIn,
   reducedMotion,
+  releaseSettle,
   STEP_DRIFT_PX,
 } from "./motion";
 
@@ -38,5 +39,38 @@ describe("the Composer's motion surface is the shared package", () => {
 
   it("keeps the Composer-only helpers", () => {
     expect(typeof opaqueFade).toBe("function");
+  });
+});
+
+describe("releaseSettle", () => {
+  const openingSpeed = (velocity: number, distance: number) => {
+    const settle = releaseSettle(velocity, distance)!;
+    const y1 = Number(
+      settle.easing.match(/cubic-bezier\(0\.333, ([\d.]+),/)![1]
+    );
+    // Opening slope 3·y1 is progress per unit time; scale it to px/ms.
+    return { settle, speed: (3 * y1 * distance) / settle.durationMs };
+  };
+
+  it("leaves the release point at the hand's speed", () => {
+    for (const velocity of [0.4, 1.2, 3]) {
+      expect(openingSpeed(velocity, 660).speed).toBeCloseTo(velocity, 2);
+    }
+  });
+
+  it("stays inside the drawer's slide time", () => {
+    expect(releaseSettle(0.1, 660)!.durationMs).toBe(DURATION.dramatic);
+    expect(releaseSettle(20, 660)!.durationMs).toBe(DURATION.normal);
+    expect(releaseSettle(6, 660)!.durationMs).toBe(220);
+  });
+
+  it("starts from rest when the hand had stopped", () => {
+    expect(releaseSettle(0, 400)!.easing).toBe(
+      "cubic-bezier(0.333, 0.000, 0.667, 1)"
+    );
+  });
+
+  it("has nothing to settle with no distance left", () => {
+    expect(releaseSettle(1, 0)).toBeNull();
   });
 });
