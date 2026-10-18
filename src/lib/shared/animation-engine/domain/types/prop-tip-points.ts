@@ -357,23 +357,26 @@ const UKULELE_TIP_POINTS: PropTipConfig = {
   points: [{ dx: 170, dy: 0 }],
 };
 
-// The two star apexes only. The old third and fourth points sat at the waist
-// between the stars, where there is no artwork at all, and contradicted the
-// TWO_ENDED_PROPS entry in prop-tip-ends.ts. Indices 0 and 1 are unchanged, so
-// saved per-tip effects stay on the end they were assigned to.
-const DOUBLESTAR_TIP_POINTS: PropTipConfig = {
-  points: [
-    { dx: 150, dy: 0 },
-    { dx: -150, dy: 0 },
-  ],
-};
+// The two end apexes first, so the trail ends and saved per-tip effects keep
+// indices 0 and 1, then the four outer star points: upper right, upper left,
+// lower right, lower left. These are the points the saved effect points used
+// and they sit on the artwork's star tips. The old third and fourth points sat
+// at the waist between the stars, where there is no artwork at all.
+function doubleStarTips(scale: number): PropTipConfig {
+  return {
+    points: [
+      [150, 0],
+      [-150, 0],
+      [75, -75],
+      [-75, -75],
+      [75, 75],
+      [-75, 75],
+    ].map(([dx, dy]) => ({ dx: dx! * scale, dy: dy! * scale })),
+  };
+}
 
-const BIGDOUBLESTAR_TIP_POINTS: PropTipConfig = {
-  points: [
-    { dx: 300, dy: 0 },
-    { dx: -300, dy: 0 },
-  ],
-};
+const DOUBLESTAR_TIP_POINTS: PropTipConfig = doubleStarTips(1);
+const BIGDOUBLESTAR_TIP_POINTS: PropTipConfig = doubleStarTips(2);
 
 // Both entries used to sit on the top of a ring at roughly half the real
 // reach, so the mandala came out ~34% short. These are the artwork's own outer

@@ -326,16 +326,40 @@ describe("render keys count as the prop they draw", () => {
 });
 
 describe("tip table and tip-end classification agree", () => {
-  it("gives every two-ended prop exactly two tips on opposite sides of the hand", () => {
+  it("lists a two-ended prop's two ends first, on opposite sides of the hand", () => {
+    // The double stars also carry their four outer star points after the ends.
+    const extraTips: Record<string, number> = {
+      doublestar: 4,
+      bigdoublestar: 4,
+    };
     for (const propType of Object.values(PropType)) {
       if (propTipEnds(propType) !== 2) continue;
       const points = getTipPointsBaseline(propType).points;
-      expect(points, propType).toHaveLength(2);
+      expect(points, propType).toHaveLength(2 + (extraTips[propType] ?? 0));
       expect(
         Math.sign(points[0]!.dx) * Math.sign(points[1]!.dx),
         propType
       ).toBe(-1);
     }
+  });
+
+  it("puts a double star's tips on its two ends, then its four star points", () => {
+    closeTo(getTipPointsBaseline("doublestar").points, [
+      [150, 0],
+      [-150, 0],
+      [75, -75],
+      [-75, -75],
+      [75, 75],
+      [-75, 75],
+    ]);
+    closeTo(getTipPointsBaseline("bigdoublestar").points, [
+      [300, 0],
+      [-300, 0],
+      [150, -150],
+      [-150, -150],
+      [150, 150],
+      [-150, 150],
+    ]);
   });
 
   it("tracks the two ball centres of a double contact ball", () => {
