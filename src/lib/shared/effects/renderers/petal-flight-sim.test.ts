@@ -5,6 +5,7 @@ import { DEFAULT_EFFECTS_CONFIG } from "../domain/defaults";
 import type { PetalsIntent } from "../domain/effects-config";
 import type { Petals2DParams } from "../translators/canvas2d-types";
 import type { EmitterTip } from "./emitter-tip";
+import { petalBodyToWorld } from "../domain/petal-aero";
 
 function seeded(seed: number): () => number {
   let state = seed;
@@ -88,7 +89,7 @@ describe("PetalFlightSim", () => {
     expect(quantile(offsets, 0.9)).toBeLessThan(80);
   });
 
-  it("drops a still prop's petals in a side-to-side glide, each out of step", () => {
+  it("drops a still prop's petals in a side-to-side flutter, each out of step", () => {
     const p = params({ ambientEmission: 1, motionEmission: 0 });
     const sim = new PetalFlightSim(seeded(5));
     const history = new Map<FlyingPetal, number[]>();
@@ -101,36 +102,37 @@ describe("PetalFlightSim", () => {
         history.set(petal, vx);
       }
     }
-    const gliders = [...history].filter(
-      ([petal, vx]) => petal.tumble === 0 && vx.length > 90
-    );
-    expect(gliders.length).toBeGreaterThan(4);
-    for (const [petal, vx] of gliders) {
+    const longLived = [...history].filter(([, vx]) => vx.length > 90);
+    expect(longLived.length).toBeGreaterThan(4);
+    let swinging = 0;
+    for (const [petal, vx] of longLived) {
       let turns = 0;
       for (let i = 1; i < vx.length; i++)
         if (Math.sign(vx[i]!) !== Math.sign(vx[i - 1]!)) turns++;
-      expect(turns).toBeGreaterThan(0);
+      if (turns > 0) swinging++;
       expect(petal.y).toBeGreaterThan(CENTER);
     }
-    // Out of step: at the same moment some glide left and some right.
-    const aloft = sim.petals.filter((petal) => petal.tumble === 0);
-    const directions = new Set(aloft.map((petal) => Math.sign(petal.vx)));
+    // Nothing tells them to swing: the air on their tilted faces does.
+    expect(swinging / longLived.length).toBeGreaterThan(0.6);
+    // Out of step: at the same moment some move left and some right.
+    const directions = new Set(sim.petals.map((petal) => Math.sign(petal.vx)));
     expect(directions.size).toBe(2);
   });
 
-  it("points a thrown petal along its flight", () => {
+  it("throws a petal edge-on along its flight", () => {
     const p = params({ ambientEmission: 0 });
     const sim = new PetalFlightSim(seeded(9));
     for (let frame = 0; frame < 20; frame++)
       sim.step(p, tip(100 + frame * 15, 200), 1 / 60, 1);
-    const fresh = sim.petals.filter((petal) => petal.age < 0.05);
+    const fresh = sim.petals.filter((petal) => petal.age < 0.02);
     expect(fresh.length).toBeGreaterThan(0);
+    const axis = { x: 0, y: 0, z: 0 };
     for (const petal of fresh) {
-      const along = Math.atan2(petal.vy, petal.vx) - Math.PI / 2;
-      const off = Math.abs(
-        ((petal.rot - along + Math.PI * 3) % (Math.PI * 2)) - Math.PI
-      );
-      expect(off).toBeLessThan(0.6);
+      // Its long axis lies along the throw, base or tip first.
+      petalBodyToWorld(petal.body, 0, 1, 0, axis);
+      const speed = Math.hypot(petal.vx, petal.vy);
+      const along = Math.abs(axis.x * petal.vx - axis.y * petal.vy) / speed;
+      expect(along).toBeGreaterThan(0.8);
     }
   });
 

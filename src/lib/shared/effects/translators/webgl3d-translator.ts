@@ -266,8 +266,6 @@ export function resolvePetals3D(
     motionReferenceSpeed: 3.0,
     // 3D uses +y = up, so falling is negative velocity.
     fallBaseSpeed: 0.95,
-    swayBaseSpeed: 0.45,
-    swayFrequency: 0.85,
     lifetime: 3.0 + intent.intensity * 2.5,
   };
   return { ...intent, ...defaults, ...override };

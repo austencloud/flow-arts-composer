@@ -215,7 +215,8 @@ export function resolvePetals2D(
     baseSize: 14,
     ambientSpawnRate: 8,
     motionDensity: 9,
-    fallBaseSpeed: 100,
+    // The 3D fall speed at 140 px per metre, so both views drop alike.
+    fallBaseSpeed: 133,
     blendMode: "source-over",
   };
   return { ...intent, ...defaults, ...override };
