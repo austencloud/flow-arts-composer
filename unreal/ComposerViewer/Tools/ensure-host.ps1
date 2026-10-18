@@ -1,7 +1,8 @@
 # Called only by the local dev viewer. Reuses the installed, staged runtime.
 $ErrorActionPreference = 'Stop'
 $toolDir = Split-Path -Parent $PSCommandPath
-$runtimeDir = Join-Path $env:LOCALAPPDATA 'FlowArtsComposer\ComposerViewer'
+. (Join-Path $toolDir 'runtime-path.ps1')
+$runtimeDir = Get-ComposerViewerRuntimeDirectory
 $stateFile = Join-Path $runtimeDir 'recovery-state.json'
 $mutex = [Threading.Mutex]::new($false, 'Local\FlowArtsComposer.ComposerViewer.Recovery')
 $acquired = $false
