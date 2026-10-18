@@ -9,6 +9,8 @@
 #include "GameFramework/Actor.h"
 #include "GameFramework/PlayerController.h"
 #include "NiagaraComponent.h"
+#include "NiagaraEmitter.h"
+#include "NiagaraEmitterHandle.h"
 #include "NiagaraSystem.h"
 #include <limits>
 
@@ -23,6 +25,15 @@ bool FFlowArtsNiagaraPlaybackTest::RunTest(const FString& Parameters)
     if (!TestNotNull(TEXT("Shipped prop fire system exists"), System)) return false;
     TestTrue(TEXT("Shipped system is compiled and runnable"), System->IsReadyToRun());
     TestEqual(TEXT("Flame, ember and trail emitters ship together"), System->GetEmitterHandles().Num(), 3);
+    if (System->GetEmitterHandles().Num() != 3) return false;
+    const bool ExpectedLocalSpace[] = {true, false, false};
+    for (int32 Index = 0; Index < 3; ++Index)
+    {
+        const FVersionedNiagaraEmitterData* Data = System->GetEmitterHandles()[Index].GetEmitterData();
+        if (!TestNotNull(TEXT("Shipped emitter data exists"), Data)) return false;
+        TestEqual(TEXT("Flame follows wick; embers and trails preserve world motion"),
+            Data->bLocalSpace, ExpectedLocalSpace[Index]);
+    }
 
     const UWorld::InitializationValues Values = UWorld::InitializationValues()
         .AllowAudioPlayback(false).RequiresHitProxies(false).CreatePhysicsScene(false)
@@ -56,11 +67,25 @@ bool FFlowArtsNiagaraPlaybackTest::RunTest(const FString& Parameters)
     Effects->MaxWicksPerHand = 2;
     Effects->Initialize(Left, Right);
     Effects->SyncPlayback(0.f, false, 0.5f);
-    Effects->Configure({FVector(0, 0, 1), FVector(0, 0, 2), FVector(0, 0, 3)}, TEXT("test"));
+    Effects->Configure({FVector(3, 5, 1), FVector(-7, 11, 2), FVector(0, 0, 3)}, TEXT("test"));
     TestTrue(TEXT("Shared component loads the shipped effect"), Effects->IsAvailable());
     TArray<UNiagaraComponent*> Wicks;
     Prop->GetComponents(Wicks);
     TestEqual(TEXT("Per hand wick cap applies to both hands"), Wicks.Num(), 4);
+    // VFX live under the same animated visual roots as the reflected meshes.
+    // A root rotation must carry the wick positions with the prop, on each hand.
+    Left->SetRelativeLocation(FVector(-12.f, 8.f, 3.f));
+    Left->SetRelativeRotation(FRotator(0.f, -35.f, 0.f));
+    Right->SetRelativeLocation(FVector(40.f, 0.f, 0.f));
+    Right->SetRelativeRotation(FRotator(0.f, 90.f, 0.f));
+    const FVector Offsets[] = {FVector(3, 5, 1), FVector(-7, 11, 2)};
+    for (int32 Index = 0; Index < Wicks.Num(); ++Index)
+    {
+        const USceneComponent* Root = Index < 2 ? Left : Right;
+        const FVector Expected = Root->GetComponentTransform().TransformPosition(Offsets[Index % 2]);
+        TestTrue(TEXT("Each effect follows its own animated visual root"),
+            Wicks[Index]->GetComponentLocation().Equals(Expected, .01f));
+    }
     for (UNiagaraComponent* Wick : Wicks)
     {
         TestTrue(TEXT("Every wick uses the shipped system"), Wick->GetAsset() == System);
