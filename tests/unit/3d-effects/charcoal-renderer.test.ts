@@ -47,7 +47,7 @@ describe("CharcoalRenderer3D", () => {
     const scene = createMockScene();
     renderer.initialize(scene);
 
-    expect(scene.add).toHaveBeenCalledTimes(2);
+    expect(scene.add).toHaveBeenCalledTimes(3);
   });
 
   it("keeps a readable coal head on every stationary tip", () => {
@@ -83,8 +83,15 @@ describe("CharcoalRenderer3D", () => {
 
     const snapshot = renderer.getDebugSnapshot();
     expect(snapshot.emittedSparkCount).toBeGreaterThan(180);
-    expect(snapshot.emittedFragmentCount).toBeGreaterThan(50);
-    expect(snapshot.activeSparkCount).toBeGreaterThan(150);
+    // Steel wool sheds the odd glowing chip, not a shower of them: the
+    // shower is the sparks.
+    expect(snapshot.emittedFragmentCount).toBeGreaterThan(3);
+    expect(snapshot.emittedFragmentCount).toBeLessThan(
+      snapshot.emittedSparkCount / 10
+    );
+    // Most sparks are small and burn out in a tenth of a second, so the
+    // shower in the air is a fraction of what was thrown.
+    expect(snapshot.activeSparkCount).toBeGreaterThan(60);
     expect(snapshot.activeTipCount).toBe(1);
   });
 
@@ -429,7 +436,7 @@ describe("CharcoalRenderer3D", () => {
     renderer.initialize(scene);
     renderer.dispose();
 
-    expect(scene.remove).toHaveBeenCalledTimes(2);
+    expect(scene.remove).toHaveBeenCalledTimes(3);
     expect(() => new CharcoalRenderer3D().dispose()).not.toThrow();
   });
 });
