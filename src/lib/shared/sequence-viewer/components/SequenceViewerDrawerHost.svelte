@@ -23,6 +23,12 @@
     closeSequenceOverlay,
     openSequenceOverlay,
   } from "../state/sequence-viewer-overlay-state.svelte";
+  import {
+    canAdoptPrewarm,
+    isPrewarmedContent,
+    getSequenceViewerPrewarm,
+    type SequenceViewerPrewarm,
+  } from "../state/viewer-prewarm.svelte";
   import { getShortCodeManager } from "#lib/shared/qr/get-short-code-manager.js";
   import { resolveScanPropConfig } from "#lib/shared/qr/services/scan-prop-resolver.js";
   import {
@@ -124,6 +130,82 @@
     };
   });
 
+  // A surface that knows what its View button opens (Create) names it, and
+  // the viewer for it is built here, hidden and paused, once the page has
+  // been quiet for a moment. The tap then slides up a viewer that is already
+  // drawn. Only the shared playback engine waits for the tap: claiming it
+  // stops whatever else is playing. An edit to the same sequence reaches the
+  // hidden viewer as an ordinary update; another sequence rebuilds it.
+  const PREWARM_QUIET_MS = 1000;
+  const prewarm = $derived(getSequenceViewerPrewarm());
+  let dormantPrewarm = $state.raw<SequenceViewerPrewarm | null>(null);
+  let dormantKey = $state(-1);
+  let cardReadyKey: number | null = null;
+
+  function whenIdle(run: () => void): () => void {
+    let idleId: number | null = null;
+    const timer = setTimeout(() => {
+      if (typeof requestIdleCallback === "function") {
+        idleId = requestIdleCallback(run, { timeout: 2000 });
+      } else {
+        run();
+      }
+    }, PREWARM_QUIET_MS);
+    return () => {
+      clearTimeout(timer);
+      if (idleId !== null) cancelIdleCallback(idleId);
+    };
+  }
+
+  $effect(() => {
+    const next = prewarm;
+    if (
+      drawerOpen ||
+      overlay.isOpen ||
+      next === untrack(() => dormantPrewarm)
+    ) {
+      return;
+    }
+    if (!next) {
+      dormantPrewarm = null;
+      return;
+    }
+    return whenIdle(() => {
+      const built = dormantPrewarm;
+      if (
+        !built ||
+        !next.sequence.id ||
+        built.sequence.id !== next.sequence.id
+      ) {
+        dormantKey -= 1;
+      }
+      dormantPrewarm = next;
+    });
+  });
+
+  // Decided once per open: the hidden viewer becomes the open one when the
+  // open asks for what it was built with.
+  const adopted = $derived.by(() => {
+    void overlay.sessionKey;
+    if (!overlay.isOpen) return false;
+    return untrack(
+      () =>
+        dormantPrewarm !== null &&
+        nativeLoadingCode === null &&
+        canAdoptPrewarm(dormantPrewarm, overlay)
+    );
+  });
+  const viewerDormant = $derived(
+    overlay.sequence === null && dormantPrewarm !== null
+  );
+  const viewerKey = $derived(
+    adopted || overlay.sequence === null ? dormantKey : overlay.sessionKey
+  );
+
+  function handleCardReady() {
+    cardReadyKey = viewerKey;
+  }
+
   function allowViewerMount() {
     if (viewerMountAllowed) return;
     viewerMountAllowed = true;
@@ -143,6 +225,15 @@
           const covered = nativeLoadingCode !== null;
           viewerMountAllowed = covered;
           viewerRevealed = covered;
+          if (adopted) {
+            // Shown at once when its card had drawn for this very sequence;
+            // otherwise it fades in when ready, as a fresh viewer would.
+            viewerRevealed =
+              cardReadyKey === dormantKey &&
+              dormantPrewarm !== null &&
+              isPrewarmedContent(dormantPrewarm, overlay.sequence);
+            allowViewerMount();
+          }
         }
       }
       if (open) openedSession = session;
@@ -507,6 +598,13 @@
 
     clearNativeScanViewerReady();
     clearNativeLoader();
+    if (dormantPrewarm) {
+      // The open replaced or became the hidden viewer, and the opened one
+      // holds the playback engine and this session's state. The next hidden
+      // one is built fresh once the page is idle, not as the sheet leaves.
+      dormantPrewarm = null;
+      dormantKey -= 1;
+    }
     closeSequenceOverlay();
 
     // Remix and Compose choose their own destination. A queued Back would
@@ -544,6 +642,7 @@
   }
 
   async function handleViewerReady() {
+    if (viewerDormant) return;
     revealViewer();
     const code = overlay.activeShortCode;
     if (code) {
@@ -590,6 +689,7 @@
 
 <Drawer
   bind:isOpen={drawerOpen}
+  keepMounted
   placement="bottom"
   snapPoints={["100%"]}
   onclose={handleDrawerClose}
@@ -609,36 +709,65 @@
     >
       <LazyMount
         loader={loadSequenceViewerContent}
-        active={overlay.sequence !== null && viewerMountAllowed}
+        active={(overlay.sequence !== null && viewerMountAllowed) ||
+          viewerDormant}
         placeholder={overlay.sequence && viewerMountAllowed
           ? viewerContentPlaceholder
           : undefined}
         error={overlay.sequence ? viewerContentError : undefined}
         debugName="sequence viewer"
         onStatusChange={handleViewerContentStatus}
-        props={{
-          sequence: overlay.sequence,
-          sessionKey: overlay.sessionKey,
-          isMobile: isMobileWidth,
-          collectionPropType: overlay.collectionPropType,
-          initialBpm: overlay.initialBpm,
-          initialPlaybackMode: overlay.initialPlaybackMode,
-          initialStep: overlay.initialStep,
-          initialViewMode: overlay.initialViewMode,
-          initialViewerMode: overlay.initialViewerMode,
-          handPathMode: overlay.handPathMode,
-          playOnOpen: overlay.playOnOpen,
-          playbackReleased,
-          onReadyForReveal: handleViewerReady,
-          onClose: handleDismiss,
-          shortCode: overlay.activeShortCode,
-          analyticsSource: overlay.analyticsSource,
-          shareOnOpen: overlay.shareOnOpen,
-          saveOnOpen: overlay.saveOnOpen,
-          tunnelComposition: overlay.tunnelComposition,
-          tunnelSaveTarget: overlay.tunnelSaveTarget,
-          onTunnelSaved: overlay.onTunnelSaved,
-        } satisfies ComponentProps<typeof SequenceViewerDrawerContent>}
+        props={viewerDormant && dormantPrewarm
+          ? ({
+              sequence: dormantPrewarm.sequence,
+              sessionKey: viewerKey,
+              isMobile: isMobileWidth,
+              collectionPropType: null,
+              initialBpm: 60,
+              initialPlaybackMode: "continuous",
+              initialStep: 0,
+              initialViewMode: dormantPrewarm.initialViewMode,
+              initialViewerMode: undefined,
+              handPathMode: false,
+              playOnOpen: dormantPrewarm.playOnOpen,
+              playbackReleased: false,
+              dormant: true,
+              onCardReady: handleCardReady,
+              onReadyForReveal: handleViewerReady,
+              onClose: handleDismiss,
+              shortCode: null,
+              analyticsSource: dormantPrewarm.analyticsSource,
+              shareOnOpen: false,
+              saveOnOpen: false,
+              tunnelComposition: null,
+              tunnelSaveTarget: null,
+              onTunnelSaved: null,
+            } satisfies ComponentProps<typeof SequenceViewerDrawerContent>)
+          : ({
+              sequence: overlay.sequence,
+              sessionKey: viewerKey,
+              isMobile: isMobileWidth,
+              collectionPropType: overlay.collectionPropType,
+              initialBpm: overlay.initialBpm,
+              initialPlaybackMode: overlay.initialPlaybackMode,
+              initialStep: overlay.initialStep,
+              initialViewMode: overlay.initialViewMode,
+              initialViewerMode: overlay.initialViewerMode,
+              handPathMode: overlay.handPathMode,
+              playOnOpen: overlay.playOnOpen,
+              playbackReleased,
+              dormant: false,
+              onCardReady: handleCardReady,
+              onReadyForReveal: handleViewerReady,
+              onClose: handleDismiss,
+              shortCode: overlay.activeShortCode,
+              analyticsSource: overlay.analyticsSource,
+              shareOnOpen: overlay.shareOnOpen,
+              saveOnOpen: overlay.saveOnOpen,
+              tunnelComposition: overlay.tunnelComposition,
+              tunnelSaveTarget: overlay.tunnelSaveTarget,
+              onTunnelSaved: overlay.onTunnelSaved,
+            } satisfies ComponentProps<typeof SequenceViewerDrawerContent>)}
       />
     </div>
 
@@ -668,6 +797,14 @@
     --sheet-filter: none;
     --sheet-border-radius-top-left: 0px;
     --sheet-border-radius-top-right: 0px;
+  }
+
+  /* The drawer stays mounted so a viewer can be built in it before it opens.
+     Closed, it keeps its full layout below the screen, invisible and out of
+     the tab order, so that viewer measures and draws at its real size. */
+  :global(dialog.sequence-viewer-drawer:not([open])) {
+    display: flex;
+    visibility: hidden;
   }
 
   .viewer-stage {
