@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createSequenceState } from "#lib/features/create/shared/state/sequence-state-orchestrator.svelte.js";
 import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { createStartPlacementData } from "#lib/shared/foundation/domain/factories/create-start-placement-data.js";
 import type { SequencePersister } from "#lib/features/create/shared/services/sequence-persister.js";
 
 function makeState() {
@@ -40,6 +41,25 @@ describe("Create draft workspace state", () => {
     await vi.advanceTimersByTimeAsync(500);
     expect(markDirty).not.toHaveBeenCalled();
     expect(saveCurrentState).not.toHaveBeenCalled();
+  });
+
+  it("keeps the sequence's start placement when the draft saved none", () => {
+    const { state } = makeState();
+    const start = createStartPlacementData({ id: "sequence-start" });
+    state.restoreDraftState({
+      currentSequence: createSequenceData({
+        id: "draft-without-start",
+        startPlacement: start,
+      }),
+      selectedStartPlacement: null,
+      hasStartPlacement: false,
+      activeBuildSection: "construct",
+    });
+
+    // A null here sends the editor back to the start-placement picker beside
+    // a sequence that already has steps.
+    expect(state.selectedStartPlacement?.id).toBe("sequence-start");
+    expect(state.hasStartPlacement).toBe(true);
   });
 
   it("marks edits dirty immediately and flushes only the latest pending edit", async () => {
