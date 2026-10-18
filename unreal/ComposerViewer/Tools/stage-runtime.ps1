@@ -45,6 +45,23 @@ if (-not $SkipAssets) {
     }
 }
 
+$propsCatalog = Join-Path $projectTarget 'Content\Data\props.json'
+if (Test-Path -LiteralPath $propsCatalog -PathType Leaf) {
+    $repoRoot = (Resolve-Path -LiteralPath (Join-Path $toolDir '..\..\..')).Path
+    $fanSource = Join-Path $repoRoot 'static\models\props\fan.glb'
+    $refreshTool = Join-Path $repoRoot 'unreal\FlowFest\Tools\refresh-prop-wick-attachments.mjs'
+    if (-not (Test-Path -LiteralPath $fanSource -PathType Leaf)) { throw "Missing authored fan source: $fanSource" }
+    $temporaryCatalog = Join-Path (Split-Path -Parent $propsCatalog) "props.wick-$([guid]::NewGuid().ToString('N')).json"
+    try {
+        & node $refreshTool $propsCatalog $temporaryCatalog $fanSource
+        if ($LASTEXITCODE -ne 0) { throw "Prop wick metadata refresh failed ($LASTEXITCODE): $propsCatalog" }
+        Move-Item -LiteralPath $temporaryCatalog -Destination $propsCatalog -Force
+    }
+    finally {
+        if (Test-Path -LiteralPath $temporaryCatalog) { Remove-Item -LiteralPath $temporaryCatalog -Force }
+    }
+}
+
 Write-Output "Staged native host: $(Join-Path $projectTarget 'ComposerViewer.uproject')"
 Write-Output "Shared plugin: $pluginTarget"
 if ($SkipAssets) { Write-Output 'Assets skipped; this staging is not render-ready.' }
