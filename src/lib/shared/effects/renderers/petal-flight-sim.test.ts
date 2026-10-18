@@ -119,6 +119,27 @@ describe("PetalFlightSim", () => {
     expect(directions.size).toBe(2);
   });
 
+  it("lets a still prop's petals turn gently, not spin", () => {
+    const p = params({ ambientEmission: 1, motionEmission: 0 });
+    const sim = new PetalFlightSim(seeded(9));
+    const dt = 1 / 60;
+    const spins: number[] = [];
+    for (let frame = 0; frame < 300; frame++) {
+      sim.step(p, tip(CENTER, CENTER), dt, 1);
+      if (frame < 60) continue;
+      for (const petal of sim.petals) {
+        if (petal.age < 0.5) continue;
+        const { wx, wy, wz } = petal.body;
+        spins.push(Math.hypot(wx, wy, wz));
+      }
+    }
+    expect(spins.length).toBeGreaterThan(100);
+    // At small-petal fall speed a petal drawn this large spins over two turns
+    // a second (about 14 rad/s) and reads as frantic.
+    const average = spins.reduce((sum, w) => sum + w, 0) / spins.length;
+    expect(average).toBeLessThan(6);
+  });
+
   it("throws a petal edge-on along its flight", () => {
     const p = params({ ambientEmission: 0 });
     const sim = new PetalFlightSim(seeded(9));

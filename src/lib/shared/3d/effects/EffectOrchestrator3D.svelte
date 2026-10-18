@@ -634,6 +634,9 @@
   // lights the two tracked shaft ends through the ribbon renderer; a pixel
   // staff spans the shaft through the POV renderer.
   const _ledPattern = new LedPatternMaterializer();
+  // The moon fan's strip has its own LED count, so it keeps its own cache;
+  // sharing one rebuilt both patterns from scratch every frame.
+  const _moonPattern = new LedPatternMaterializer();
 
   // Which device the live renderers were built for. A change disposes both
   // renderer families so only the device's own meshes exist afterwards.
@@ -789,7 +792,7 @@
       const c = getPixel(ledStrip, ledFrame, ledIndex % ledStrip.ledCount);
       return { r: c.r / 255, g: c.g / 255, b: c.b / 255 };
     };
-    const moonStrip = _ledPattern.resolve(
+    const moonStrip = _moonPattern.resolve(
       resolvedLed.pattern,
       MOON_FAN_LED_COUNT
     );
