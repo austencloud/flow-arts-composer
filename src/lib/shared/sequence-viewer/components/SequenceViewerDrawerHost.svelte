@@ -87,11 +87,11 @@
 
   // Mounting the viewer and drawing its first frame is a quarter second to a
   // second of main-thread work. Holding the slide for it made every open
-  // wait, and mounting while the sheet moved dropped the slide's frames on a
-  // busy machine. The drawer now slides at once with the main thread free;
-  // the viewer mounts when the slide ends and fades in once it has drawn,
-  // capped so a slow first draw still shows. The native scan loader covers
-  // its own wait, so its viewer mounts and shows straight away.
+  // wait, and waiting for the slide to end left the sheet black for about a
+  // second. The drawer now slides at once and the viewer builds while the
+  // compositor runs the slide, then fades in once it has drawn, capped so a
+  // slow first draw still shows. The native scan loader covers its own wait,
+  // so its viewer mounts and shows straight away.
   const VIEWER_REVEAL_CAP_MS = 600;
   let viewerStage = $state<HTMLDivElement | null>(null);
   let viewerLayer = $state<HTMLDivElement | null>(null);
@@ -150,11 +150,13 @@
     });
   });
 
-  // The mount runs when the slide ends, timed from its transitionstart.
-  // Chrome can hold back main-thread frames for up to a second while the
-  // compositor runs the slide, which delays transitionend by the same amount
-  // and left the sheet empty; a timer still fires on time. The fallback
-  // covers a slide that never starts (hidden tab); reduced motion has none.
+  // The mount runs once the slide has started: by its transitionstart the
+  // slide belongs to the compositor, so building the viewer cannot hold it
+  // back. Measured in one trace, the slide dropped one frame while the viewer
+  // built against three when it waited, and the viewer showed about half a
+  // second sooner. Mounting before the slide starts would delay the start.
+  // The fallback covers a slide that never starts (hidden tab); reduced
+  // motion has none.
   $effect(() => {
     if (!drawerOpen || viewerMountAllowed || !viewerStage) return;
     const dialog = viewerStage.closest("dialog");
@@ -163,11 +165,10 @@
       queueMicrotask(allowViewerMount);
       return;
     }
-    let slideEnd: ReturnType<typeof setTimeout> | undefined;
     const onStart = (event: TransitionEvent) => {
-      if (event.target !== dialog || event.propertyName !== "transform") return;
-      clearTimeout(slideEnd);
-      slideEnd = setTimeout(allowViewerMount, slideMs);
+      if (event.target === dialog && event.propertyName === "transform") {
+        allowViewerMount();
+      }
     };
     dialog.addEventListener("transitionstart", onStart);
     const fallback = setTimeout(
@@ -176,7 +177,6 @@
     );
     return () => {
       dialog.removeEventListener("transitionstart", onStart);
-      clearTimeout(slideEnd);
       clearTimeout(fallback);
     };
   });
