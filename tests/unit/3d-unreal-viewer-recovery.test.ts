@@ -7,6 +7,7 @@ const fake = vi.hoisted(() => ({
     response: ((text: string) => void) | null;
     commands: Array<Record<string, unknown>>;
     disconnected: boolean;
+    emitUIInteraction(command: Record<string, unknown>): void;
     emit(event: string): void;
     reply(state: object): void;
   }>,
@@ -106,6 +107,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
   vi.useRealTimers();
 });
 
@@ -249,6 +251,105 @@ test("disposal ignores a pending ready-stream liveness probe", async () => {
   connection.dispose();
   first.reply(confirmedState);
   await vi.advanceTimersByTimeAsync(30000);
+  expect(fetchHost).toHaveBeenCalledTimes(1);
+  expect(fake.streams).toHaveLength(1);
+});
+
+test("a silent command timeout leaves ready and retries without discarding confirmed state", async () => {
+  const fetchHost = vi.fn(async () => ({
+    ok: true,
+    json: async () => ({ status: "ready", message: "Ready" }),
+  }));
+  vi.stubGlobal("fetch", fetchHost);
+  const connection = createNativeViewerConnection();
+  const parent = document.createElement("div");
+  parent.replaceChildren = vi.fn();
+  connection.mount(parent);
+  await flush();
+  await vi.dynamicImportSettled();
+  await flush();
+  const first = fake.streams[0]!;
+  first.emit("dataChannelOpen");
+  first.reply(confirmedState);
+  await flush();
+
+  const failure = expect(
+    connection.command("playback", { action: "pause" })
+  ).rejects.toThrow(/Reconnecting automatically/);
+  window.dispatchEvent(new Event("online"));
+  expect(first.commands).toHaveLength(2);
+  await vi.advanceTimersByTimeAsync(8000);
+  await failure;
+  expect(connection.status).toBe("connecting");
+  expect(connection.state).toEqual(confirmedState);
+  expect(first.disconnected).toBe(true);
+  first.reply(confirmedState);
+  await vi.advanceTimersByTimeAsync(1000);
+  await vi.dynamicImportSettled();
+  await flush();
+  expect(fake.streams).toHaveLength(2);
+  expect(fetchHost).toHaveBeenCalledTimes(2);
+  connection.dispose();
+});
+
+test("a failed command send recovers immediately", async () => {
+  vi.stubGlobal("fetch", async () => ({
+    ok: true,
+    json: async () => ({ status: "ready", message: "Ready" }),
+  }));
+  const connection = createNativeViewerConnection();
+  const parent = document.createElement("div");
+  parent.replaceChildren = vi.fn();
+  connection.mount(parent);
+  await flush();
+  await vi.dynamicImportSettled();
+  await flush();
+  const first = fake.streams[0]!;
+  first.emit("dataChannelOpen");
+  first.reply(confirmedState);
+  await flush();
+
+  first.emitUIInteraction = () => {
+    throw new Error("Data channel closed");
+  };
+  await expect(
+    connection.command("playback", { action: "pause" })
+  ).rejects.toThrow(/Reconnecting automatically/);
+  expect(connection.status).toBe("connecting");
+  expect(first.disconnected).toBe(true);
+  connection.dispose();
+});
+
+test("a visible idle viewer probes periodically and disposal cancels later probes", async () => {
+  vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
+  const fetchHost = vi.fn(async () => ({
+    ok: true,
+    json: async () => ({ status: "ready", message: "Ready" }),
+  }));
+  vi.stubGlobal("fetch", fetchHost);
+  const connection = createNativeViewerConnection();
+  const parent = document.createElement("div");
+  parent.replaceChildren = vi.fn();
+  connection.mount(parent);
+  await flush();
+  await vi.dynamicImportSettled();
+  await flush();
+  const first = fake.streams[0]!;
+  first.emit("dataChannelOpen");
+  first.reply(confirmedState);
+  await flush();
+
+  await vi.advanceTimersByTimeAsync(20000);
+  expect(first.commands).toHaveLength(2);
+  expect(first.commands[1]?.type).toBe("hello");
+  window.dispatchEvent(new Event("online"));
+  expect(first.commands).toHaveLength(2);
+  first.reply(confirmedState);
+  await flush();
+  await vi.advanceTimersByTimeAsync(20000);
+  expect(first.commands).toHaveLength(3);
+  connection.dispose();
+  await vi.advanceTimersByTimeAsync(60000);
   expect(fetchHost).toHaveBeenCalledTimes(1);
   expect(fake.streams).toHaveLength(1);
 });

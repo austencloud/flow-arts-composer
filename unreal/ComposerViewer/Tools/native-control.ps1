@@ -79,6 +79,8 @@ $process = Start-Process -FilePath $engineExe -WorkingDirectory (Split-Path -Par
     '"' + $projectFile + '"',
     '-game',
     '-RenderOffScreen',
+    # Offscreen error dialogs otherwise keep a crashed engine alive indefinitely.
+    '-Unattended',
     '-PixelStreamingConnectionURL=ws://127.0.0.1:18888',
     '-PixelStreamingID=ComposerViewer'
 ) -RedirectStandardOutput (Join-Path $runtimeFull 'native-out.log') -RedirectStandardError (Join-Path $runtimeFull 'native-error.log') -WindowStyle Hidden -PassThru
