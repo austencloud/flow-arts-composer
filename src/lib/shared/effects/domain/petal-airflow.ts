@@ -3,7 +3,6 @@ import { curl2D } from "#lib/shared/3d/effects/smoke/smoke-curl-field.js";
 export interface PetalAirflow2D {
   x: number;
   y: number;
-  turn: number;
 }
 
 export interface PetalAirflow3D extends PetalAirflow2D {
@@ -23,12 +22,14 @@ export interface PetalWakeSource3D extends PetalWakeSource2D {
 }
 
 const AIRFLOW_NORMALIZATION = 0.22;
+/** How far from a moving prop the air it drags along reaches (m). */
+const WAKE_RADIUS = 0.5;
+/** Air beside a moving prop moves at this share of the prop's speed. */
+const WAKE_SHARE = 0.3;
+/** Screen pixels per metre in the 2D views at scale 1. */
+const PIXELS_PER_METRE = 140;
 const TWO_DIMENSIONAL_SPAN = 220;
 const THREE_DIMENSIONAL_SCALE = 0.52;
-
-function saturate(value: number): number {
-  return Math.min(1, Math.max(0, value));
-}
 
 function normalizedCurl(value: number): number {
   return Math.tanh(value * AIRFLOW_NORMALIZATION);
@@ -60,7 +61,6 @@ export function samplePetalAirflow2D(
   const phrase = resolvePetalAirflowPhrase(time);
   out.x = flowX * 17 * safeScale * phrase;
   out.y = flowY * 5.5 * safeScale * phrase;
-  out.turn = (flowX * 0.52 + flowY * 0.18) * phrase;
   return out;
 }
 
@@ -92,11 +92,20 @@ export function samplePetalAirflow3D(
   out.x = xFlow * 0.19 * phrase;
   out.y = lift * 0.065 * phrase;
   out.z = zFlow * 0.13 * phrase;
-  out.turn = (xFlow * 0.62 + zFlow * 0.38) * phrase;
   return out;
 }
 
-/** A passing prop lends nearby petals a small part of its direction. */
+/**
+ * A moving prop drags the air beside it along: close to the prop the air
+ * moves at WAKE_SHARE of its speed, fading to still WAKE_RADIUS away.
+ */
+function wakeShare(distance: number, radius: number): number {
+  if (distance >= radius) return 0;
+  const envelope = 1 - distance / radius;
+  return WAKE_SHARE * envelope * envelope;
+}
+
+/** The air a passing prop drags along, in screen pixels per second. */
 export function addPetalWake2D(
   out: PetalAirflow2D,
   particleX: number,
@@ -104,27 +113,16 @@ export function addPetalWake2D(
   source: PetalWakeSource2D,
   scale: number
 ): void {
-  const safeScale = Math.max(scale, 0.01);
-  const dx = particleX - source.x;
-  const dy = particleY - source.y;
-  const radius = 126 * safeScale;
-  const distance = Math.hypot(dx, dy);
-  if (distance >= radius) return;
-  const speed = Math.hypot(source.velocityX, source.velocityY);
-  if (speed <= 1e-4) return;
-  const distanceEnvelope = 1 - saturate(distance / radius);
-  const influence =
-    distanceEnvelope * distanceEnvelope * saturate(speed / (260 * safeScale));
-  const wakeSpeed = 24 * safeScale * influence;
-  out.x += (source.velocityX / speed) * wakeSpeed;
-  out.y += (source.velocityY / speed) * wakeSpeed * 0.62;
-  out.turn +=
-    ((dx * source.velocityY - dy * source.velocityX) / (radius * speed)) *
-    influence *
-    1.4;
+  const radius = WAKE_RADIUS * PIXELS_PER_METRE * Math.max(scale, 0.01);
+  const share = wakeShare(
+    Math.hypot(particleX - source.x, particleY - source.y),
+    radius
+  );
+  out.x += source.velocityX * share;
+  out.y += source.velocityY * share;
 }
 
-/** The 3D wake uses the same falloff and directional transfer in world units. */
+/** The air a passing prop drags along, in metres per second. */
 export function addPetalWake3D(
   out: PetalAirflow3D,
   particleX: number,
@@ -132,26 +130,15 @@ export function addPetalWake3D(
   particleZ: number,
   source: PetalWakeSource3D
 ): void {
-  const dx = particleX - source.x;
-  const dy = particleY - source.y;
-  const dz = particleZ - source.z;
-  const radius = 0.92;
-  const distance = Math.hypot(dx, dy, dz);
-  if (distance >= radius) return;
-  const speed = Math.hypot(
-    source.velocityX,
-    source.velocityY,
-    source.velocityZ
+  const share = wakeShare(
+    Math.hypot(
+      particleX - source.x,
+      particleY - source.y,
+      particleZ - source.z
+    ),
+    WAKE_RADIUS
   );
-  if (speed <= 1e-4) return;
-  const distanceEnvelope = 1 - saturate(distance / radius);
-  const influence = distanceEnvelope * distanceEnvelope * saturate(speed / 2.2);
-  const wakeSpeed = 0.24 * influence;
-  out.x += (source.velocityX / speed) * wakeSpeed;
-  out.y += (source.velocityY / speed) * wakeSpeed * 0.62;
-  out.z += (source.velocityZ / speed) * wakeSpeed;
-  out.turn +=
-    ((dx * source.velocityY - dy * source.velocityX) / (radius * speed)) *
-    influence *
-    1.4;
+  out.x += source.velocityX * share;
+  out.y += source.velocityY * share;
+  out.z += source.velocityZ * share;
 }
