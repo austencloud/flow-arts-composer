@@ -123,8 +123,8 @@
           </h1>
           <p>
             {connection.status === "connecting"
-              ? "Waiting for the local performer stream."
-              : "Start the local viewer host, then reconnect."}
+              ? "Starting the local viewer and waiting for its stream."
+              : "The local viewer is unavailable. Retrying automatically."}
           </p>
           {#if connection.error}
             <p class="connection-error" role="alert">{connection.error}</p>

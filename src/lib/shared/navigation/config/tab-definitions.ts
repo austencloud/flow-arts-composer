@@ -124,28 +124,95 @@ export const LEARN_TABS: Section[] = [
   },
 ];
 
-// Browse has two stable jobs. Its inner route owner handles content types,
-// details, and all compatibility vocabulary beneath these primary tabs.
+// Browse's destinations are shared by its home and navigation chrome. The
+// inner route owner retains the explore/you URL vocabulary and detail paths.
 export const BROWSE_TABS: Section[] = [
   {
-    id: "explore",
-    labelKey: "tab_browse_explore",
-    descKey: "tab_desc_browse_explore",
-    label: "Explore",
-    icon: '<i class="fas fa-compass" aria-hidden="true"></i>',
-    description: "Discover sequences and public collections",
+    id: "sequences",
+    labelKey: "browse_home_sequences",
+    descKey: "browse_home_sequences_desc",
+    label: "Sequences",
+    icon: '<i class="fas fa-table-cells-large" aria-hidden="true"></i>',
     color: "#a855f7",
-    gradient: "linear-gradient(135deg, #c084fc 0%, #a855f7 100%)",
+    groupId: "community",
   },
   {
-    id: "you",
-    labelKey: "tab_browse_you",
-    descKey: "tab_desc_browse_you",
-    label: "You",
-    icon: '<i class="fas fa-user" aria-hidden="true"></i>',
-    description: "Your sequences, visuals, videos, and collections",
-    color: "#c084fc",
-    gradient: "linear-gradient(135deg, #d8b4fe 0%, #c084fc 100%)",
+    id: "collections",
+    labelKey: "browse_home_collections",
+    descKey: "browse_home_collections_desc",
+    label: "Collections",
+    icon: '<i class="fas fa-folder-open" aria-hidden="true"></i>',
+    color: "#6366f1",
+    groupId: "community",
+  },
+  {
+    id: "visuals",
+    labelKey: "browse_home_visuals",
+    descKey: "browse_home_visuals_desc",
+    label: "Visuals",
+    icon: '<i class="fas fa-palette" aria-hidden="true"></i>',
+    color: "#ec4899",
+    groupId: "community",
+  },
+  {
+    id: "drafts",
+    labelKey: "browse_home_drafts",
+    descKey: "browse_home_drafts_desc",
+    label: "Drafts",
+    icon: '<i class="fas fa-pen-to-square" aria-hidden="true"></i>',
+    color: "#14b8a6",
+    groupId: "library",
+  },
+  {
+    id: "saved",
+    labelKey: "browse_ui_your_saved_work",
+    descKey: "browse_home_saved_desc",
+    label: "Saved work",
+    icon: '<i class="fas fa-bookmark" aria-hidden="true"></i>',
+    color: "#14b8a6",
+    groupId: "library",
+  },
+  {
+    id: "your-visuals",
+    labelKey: "browse_home_your_visuals",
+    descKey: "browse_home_your_visuals_desc",
+    label: "Your visuals",
+    icon: '<i class="fas fa-palette" aria-hidden="true"></i>',
+    color: "#14b8a6",
+    groupId: "library",
+  },
+  {
+    id: "your-videos",
+    labelKey: "browse_home_your_videos",
+    descKey: "browse_home_your_videos_desc",
+    label: "Your videos",
+    icon: '<i class="fas fa-video" aria-hidden="true"></i>',
+    color: "#14b8a6",
+    groupId: "library",
+  },
+  {
+    id: "following",
+    labelKey: "browse_following",
+    descKey: "browse_home_following_desc",
+    label: "Following",
+    icon: '<i class="fas fa-user-group" aria-hidden="true"></i>',
+    color: "#14b8a6",
+    groupId: "library",
+  },
+];
+
+export const BROWSE_GROUPS: SectionGroup[] = [
+  {
+    id: "community",
+    labelKey: "browse_home_community",
+    label: "Community",
+    icon: '<i class="fas fa-globe" aria-hidden="true"></i>',
+  },
+  {
+    id: "library",
+    labelKey: "browse_home_your_library",
+    label: "Your library",
+    icon: '<i class="fas fa-book-open" aria-hidden="true"></i>',
   },
 ];
 

@@ -5,7 +5,10 @@ How a phone or browser controls Flowtoys props (Capsule, Vision and other
 from a read-only look at the official Android app, `com.flowtoys.app` 1.5.1,
 pulled from Austen's phone, checked against the community protocol notes in
 [flowtoys.py](https://github.com/willemolding/flowtoys.py) (MIT), which were
-tested on hardware. Nothing here has been sent to a prop by our code yet.
+tested on hardware. The Flow Arts cue panel
+(`src/lib/features/poi/services/flowtoys/`) follows this page but has not been
+tried with a bridge yet. How the app builds shows, presets and parameter
+values is in [flowtoys-app-shows.md](flowtoys-app-shows.md).
 
 ## What the props can and cannot take
 
@@ -94,10 +97,10 @@ A prop uses a value only when its bit is set in the override mask: `0x01` the
 LFO values, `0x02` hue, `0x04` saturation, `0x08` brightness, `0x10` speed,
 `0x20` density. Unset values should be sent as 0.
 
-Flags: `0x08` restarts the pattern and is set when the mode changes; `0x02`
-wakes the group and `0x04` turns it off (both reported, not confirmed). Other
-bits (`0x01`, `0x10`, `0x20`, `0x40`) have guessed names such as save and
-delete and should never be sent.
+Flags: `0x08` restarts the pattern and is set when the mode changes. The
+app's own names are `start_adjust` `0x01`, `wakeup` `0x02`, `sleep` `0x04` and
+`save` `0x10` (read from its code, not tried on a prop). Never send save,
+`0x20` or `0x40`.
 
 ## Sending
 

@@ -362,3 +362,35 @@ describe("tip table and tip-end classification agree", () => {
     }
   });
 });
+
+describe("big variants keep their standard prop's tip order", () => {
+  // A per-tip effect is saved by index ("0-1"), so a big prop must number its
+  // tips the way its standard size does or the effect jumps to another arm.
+  it.each([
+    ["staff", "bigstaff"],
+    ["fan", "bigfan"],
+    ["triad", "bigtriad"],
+    ["minihoop", "bighoop"],
+    ["buugeng", "bigbuugeng"],
+    ["doublestar", "bigdoublestar"],
+    ["eightrings", "bigeightrings"],
+    ["doublecontactball", "bigdoublecontactball"],
+    ["torch", "bigtorch"],
+  ])("numbers %s and %s tips in the same directions", (standard, big) => {
+    const small = getTipPointsBaseline(standard).points;
+    const large = getTipPointsBaseline(big).points;
+    expect(large).toHaveLength(small.length);
+    small.forEach((point, index) => {
+      const other = large[index]!;
+      const bearing = Math.atan2(point.dy, point.dx);
+      const otherBearing = Math.atan2(other.dy, other.dx);
+      const turn = Math.abs(
+        Math.atan2(
+          Math.sin(bearing - otherBearing),
+          Math.cos(bearing - otherBearing)
+        )
+      );
+      expect(turn * (180 / Math.PI), `${big} tip ${index}`).toBeLessThan(10);
+    });
+  });
+});
