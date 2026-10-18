@@ -56,6 +56,33 @@ function setup(initial: DraftStatus["status"] = "recovery") {
 }
 
 describe("draft recovery choices", () => {
+  it("shows a sequence once when saves differ only in undo history", async () => {
+    const { controller, persister } = setup();
+    const version = (id: string, savedAt: number, steps: unknown[]) => ({
+      id,
+      sessionId: id,
+      mode: "construct",
+      savedAt,
+      workspace: {
+        currentSequence: { steps, startPlacement: null },
+        selectedStartPlacement: null,
+        hasStartPlacement: true,
+        activeBuildSection: "construct",
+      },
+      history: { undo: [{ id }], redo: [] },
+    });
+    persister.listDrafts.mockResolvedValue([
+      version("older", 1, [{ letter: "A" }]),
+      version("newer", 2, [{ letter: "A" }]),
+      version("different", 3, [{ letter: "B" }]),
+    ]);
+    await controller.showDrafts();
+    expect(controller.versions.map((v) => v.id)).toEqual([
+      "different",
+      "newer",
+    ]);
+  });
+
   it("resumes a You draft in its own mode and preserves current edits first", async () => {
     const { controller, state, persister, onRestored } = setup("saved");
     const workspace = {

@@ -5,6 +5,7 @@ import type {
   DraftVersion,
   SequencePersister,
 } from "../../services/sequence-persister";
+import { distinctVisibleVersions } from "../../services/draft-visible-versions.js";
 
 export const draftModes = ["construct", "generate", "assemble"] as const;
 export type DraftMode = (typeof draftModes)[number];
@@ -32,7 +33,7 @@ export function createDraftRecoveryController(deps: {
     deps.persister.subscribeDraftStatus(mode, (status) => {
       statuses[mode] = status;
       if (open && dialogMode === mode && status.candidates.length) {
-        versions = status.candidates;
+        versions = distinctVisibleVersions(status.candidates);
       }
     })
   );
@@ -59,7 +60,7 @@ export function createDraftRecoveryController(deps: {
     if (preserved) return true;
     message =
       "Your latest edits are still changing. Try again before choosing a draft.";
-    versions = await deps.persister.listDrafts(mode);
+    versions = distinctVisibleVersions(await deps.persister.listDrafts(mode));
     return false;
   }
 
@@ -79,7 +80,7 @@ export function createDraftRecoveryController(deps: {
         await deps.getSequenceState(mode).saveCurrentState(mode);
       }
       if (!(await preserveCurrentEditor(mode))) return;
-      versions = await deps.persister.listDrafts(mode);
+      versions = distinctVisibleVersions(await deps.persister.listDrafts(mode));
     } catch {
       message =
         "Your latest edits could not be saved. Try again before choosing a draft.";
@@ -112,7 +113,9 @@ export function createDraftRecoveryController(deps: {
       if (!workspace) {
         message =
           "This version could not be opened. Review the saved versions and try again.";
-        versions = await deps.persister.listDrafts(dialogMode);
+        versions = distinctVisibleVersions(
+          await deps.persister.listDrafts(dialogMode)
+        );
         return false;
       }
       deps.getSequenceState(dialogMode).restoreDraftState(workspace);
