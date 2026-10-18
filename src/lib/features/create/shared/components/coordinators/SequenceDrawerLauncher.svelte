@@ -16,16 +16,50 @@
    * Static imports here are deliberately light (context + auth + url-manager).
    * The heavy navigator + handoff are dynamic-imported inside the effect.
    */
-  import { onMount } from "svelte";
+  import { onDestroy, onMount, untrack } from "svelte";
   import { getCreateModuleContext } from "../../context/create-module-context";
   import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
   import { ExportUrlManager } from "#lib/shared/export-panel/services/export-url-manager.js";
+  import {
+    clearSequenceViewerPrewarm,
+    prewarmSequenceViewer,
+  } from "#lib/shared/sequence-viewer/state/viewer-prewarm.svelte.js";
 
   const { CreateModuleState, panelState } = getCreateModuleContext();
 
   const currentSequence = $derived(
     CreateModuleState.sequenceState.currentSequence
   );
+
+  // Stamp ownership so the viewer shows Save/Edit/Delete for create-built
+  // sequences that haven't been persisted to Firestore yet. Derived, so the
+  // sequence the viewer is prebuilt for is the very object the tap opens.
+  const viewerSequence = $derived.by(() => {
+    const seq = currentSequence;
+    if (!seq || seq.ownerId) return seq;
+    return {
+      ...seq,
+      ownerId: authState.user?.uid ?? undefined,
+      ownerDisplayName: authState.user?.displayName ?? undefined,
+    };
+  });
+
+  // The View button always opens this sequence the same way, so the drawer
+  // host can build that viewer while the page is idle.
+  $effect(() => {
+    const sequence = viewerSequence;
+    if (!sequence?.steps?.length) {
+      clearSequenceViewerPrewarm();
+      return;
+    }
+    prewarmSequenceViewer({
+      sequence,
+      analyticsSource: "create_workspace",
+      initialViewMode: "animation",
+      playOnOpen: true,
+    });
+  });
+  onDestroy(() => clearSequenceViewerPrewarm());
 
   // --- 1. Deep-link / back-forward → open export panel -----------------------
   // Reuse the existing ExportUrlManager primitive (light deps: sheet-router +
@@ -60,16 +94,17 @@
     // Clear the flag immediately so this fires once per request.
     panelState.closeSequenceViewer();
 
-    // Stamp ownership so the viewer shows Save/Edit/Delete for create-built
-    // sequences that haven't been persisted to Firestore yet.
     const seq = sequence;
-    const sequenceWithOwner = seq.ownerId
-      ? seq
-      : {
-          ...seq,
-          ownerId: authState.user?.uid ?? undefined,
-          ownerDisplayName: authState.user?.displayName ?? undefined,
-        };
+    const sequenceWithOwner =
+      seq === currentSequence
+        ? (untrack(() => viewerSequence) ?? seq)
+        : seq.ownerId
+          ? seq
+          : {
+              ...seq,
+              ownerId: authState.user?.uid ?? undefined,
+              ownerDisplayName: authState.user?.displayName ?? undefined,
+            };
 
     void (async () => {
       const [{ openSequenceViewer }, { getReturnContext }] = await Promise.all([

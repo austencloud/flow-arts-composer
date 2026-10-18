@@ -841,8 +841,15 @@
     };
   });
 
+  // A viewer built ahead of the tap counts as viewed when it is opened.
+  let viewTracked = false;
+  $effect(() => {
+    if (embedded || ctx.dormant || viewTracked) return;
+    viewTracked = true;
+    untrack(() => trackSequenceViewed(analyticsContext()));
+  });
+
   onMount(() => {
-    if (!embedded) trackSequenceViewed(analyticsContext());
     const cleanupLayout = layout.mount();
     const cleanupInteractions = interactions.mount();
     return () => {

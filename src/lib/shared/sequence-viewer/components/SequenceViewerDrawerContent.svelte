@@ -34,6 +34,9 @@
     handPathMode: boolean;
     playOnOpen: boolean;
     playbackReleased: boolean;
+    /** Built hidden ahead of the tap; see the orchestrator's prop. */
+    dormant: boolean;
+    onCardReady: () => void;
     onReadyForReveal: () => void;
     onClose: (reason?: "navigate") => void;
     shortCode: string | null;
@@ -58,6 +61,8 @@
     handPathMode,
     playOnOpen,
     playbackReleased,
+    dormant,
+    onCardReady,
     onReadyForReveal,
     onClose,
     shortCode,
@@ -84,6 +89,8 @@
       {handPathMode}
       {playOnOpen}
       {playbackReleased}
+      {dormant}
+      {onCardReady}
       {onReadyForReveal}
       {onClose}
       {shortCode}
