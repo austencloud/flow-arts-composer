@@ -18,7 +18,6 @@
   import PatternTimeline from "#lib/features/poi/components/PatternTimeline.svelte";
   import StripPatternExporter from "#lib/features/poi/components/StripPatternExporter.svelte";
   import DevicePanel from "#lib/features/poi/components/DevicePanel.svelte";
-  import FlowtoysPanel from "#lib/features/poi/components/FlowtoysPanel.svelte";
   import ScrubValue from "#lib/shared/ui/components/ScrubbableNumber.svelte";
   import SequencePickerModal from "#lib/shared/components/sequence-picker/SequencePickerModal.svelte";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
@@ -141,7 +140,6 @@
       <PovAnimatorPreview />
       <LedStaffPreview />
       <DevicePanel />
-      <FlowtoysPanel />
     </div>
   </div>
 
