@@ -44,6 +44,11 @@
   import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
   import { getSequenceMotionProfile } from "#lib/shared/foundation/services/sequence-motion-profile.js";
   import { getScanLoaderBaseLetters } from "../services/scan-sequence-loader";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import {
+    createDestinationFade,
+    motionDuration,
+  } from "#lib/shared/transitions/motion.js";
   import {
     clearNativeScanViewerReady,
     isNativeScanViewerTransitionPending,
@@ -80,38 +85,139 @@
   let nativeLoadingProgress = $state(0);
   let nativeLoaderSurface = $state<HTMLDivElement | null>(null);
 
-  // Opening the viewer mounts its content and draws its first frame, about a
-  // third of a second of work that used to land in the middle of the slide.
-  // The drawer lays the viewer out off-screen and slides once it reports
-  // ready, capped so a slow first draw can't leave a tap waiting. The native
-  // scan loader covers its own wait and is never held.
-  const VIEWER_HOLD_CAP_MS = 600;
-  let holdViewerSlide = $state(false);
-  let viewerHoldTimer: ReturnType<typeof setTimeout> | null = null;
+  // Mounting the viewer and drawing its first frame is a quarter second to a
+  // second of main-thread work. Holding the slide for it made every open
+  // wait, and mounting while the sheet moved dropped the slide's frames on a
+  // busy machine. The drawer now slides at once with the main thread free;
+  // the viewer mounts when the slide ends and fades in once it has drawn,
+  // capped so a slow first draw still shows. The native scan loader covers
+  // its own wait, so its viewer mounts and shows straight away.
+  const VIEWER_REVEAL_CAP_MS = 600;
+  let viewerStage = $state<HTMLDivElement | null>(null);
+  let viewerLayer = $state<HTMLDivElement | null>(null);
+  let viewerMountAllowed = $state(false);
+  let viewerRevealed = $state(true);
+  let revealCapTimer: ReturnType<typeof setTimeout> | null = null;
+  let openedSession = -1;
 
-  function releaseViewerHold() {
-    holdViewerSlide = false;
-    if (viewerHoldTimer !== null) {
-      clearTimeout(viewerHoldTimer);
-      viewerHoldTimer = null;
+  function revealViewer() {
+    if (revealCapTimer !== null) {
+      clearTimeout(revealCapTimer);
+      revealCapTimer = null;
+    }
+    if (viewerRevealed) return;
+    viewerRevealed = true;
+    layerFade?.play();
+  }
+
+  let layerFade: ReturnType<typeof createDestinationFade> | null = null;
+  $effect(() => {
+    if (!viewerLayer) return;
+    const fade = createDestinationFade(viewerLayer, {
+      from: 0,
+      duration: DURATION.normal,
+    });
+    layerFade = fade;
+    return () => {
+      fade.destroy();
+      if (layerFade === fade) layerFade = null;
+    };
+  });
+
+  function allowViewerMount() {
+    if (viewerMountAllowed) return;
+    viewerMountAllowed = true;
+    if (!viewerRevealed) {
+      revealCapTimer = setTimeout(revealViewer, VIEWER_REVEAL_CAP_MS);
     }
   }
 
   $effect(() => {
     const open = overlay.isOpen || nativeLoadingCode !== null;
+    const session = overlay.sessionKey;
     untrack(() => {
-      if (open && !drawerOpen && nativeLoadingCode === null) {
-        releaseViewerHold();
-        holdViewerSlide = true;
-        viewerHoldTimer = setTimeout(releaseViewerHold, VIEWER_HOLD_CAP_MS);
-      } else if (!open) {
-        releaseViewerHold();
+      if (open && !drawerOpen) {
+        // A new open, or the same viewer reopened while it slid away.
+        cancelPendingDismiss();
+        if (session !== openedSession) {
+          const covered = nativeLoadingCode !== null;
+          viewerMountAllowed = covered;
+          viewerRevealed = covered;
+        }
       }
+      if (open) openedSession = session;
       drawerOpen = open;
     });
   });
 
-  onMount(() => releaseViewerHold);
+  // The mount runs when the slide ends, timed from its transitionstart.
+  // Chrome can hold back main-thread frames for up to a second while the
+  // compositor runs the slide, which delays transitionend by the same amount
+  // and left the sheet empty; a timer still fires on time. The fallback
+  // covers a slide that never starts (hidden tab); reduced motion has none.
+  $effect(() => {
+    if (!drawerOpen || viewerMountAllowed || !viewerStage) return;
+    const dialog = viewerStage.closest("dialog");
+    const slideMs = motionDuration(DURATION.dramatic);
+    if (!dialog || slideMs === 0) {
+      queueMicrotask(allowViewerMount);
+      return;
+    }
+    let slideEnd: ReturnType<typeof setTimeout> | undefined;
+    const onStart = (event: TransitionEvent) => {
+      if (event.target !== dialog || event.propertyName !== "transform") return;
+      clearTimeout(slideEnd);
+      slideEnd = setTimeout(allowViewerMount, slideMs);
+    };
+    dialog.addEventListener("transitionstart", onStart);
+    const fallback = setTimeout(
+      allowViewerMount,
+      slideMs + motionDuration(DURATION.emphasis)
+    );
+    return () => {
+      dialog.removeEventListener("transitionstart", onStart);
+      clearTimeout(slideEnd);
+      clearTimeout(fallback);
+    };
+  });
+
+  // Closing unmounts the whole viewer and rewrites the address bar. Run inside
+  // the drawer's close, that froze the release for about 700 ms and the sheet
+  // vanished without sliding. The sheet now slides away first and the viewer
+  // tears down once it is off-screen.
+  let cancelPendingDismiss: () => void = () => {};
+
+  function dismissAfterSlide() {
+    cancelPendingDismiss();
+    const dialog = viewerStage?.closest("dialog") ?? null;
+    const session = overlay.sessionKey;
+    const finish = () => {
+      cancelPendingDismiss();
+      if (drawerOpen || overlay.sessionKey !== session) return;
+      finishDismiss();
+    };
+    const onEnd = (event: TransitionEvent) => {
+      if (event.target === dialog && event.propertyName === "transform") {
+        finish();
+      }
+    };
+    dialog?.addEventListener("transitionend", onEnd);
+    // Fallback for a slide that never runs (reduced motion, hidden tab).
+    const timer = setTimeout(
+      finish,
+      motionDuration(DURATION.dramatic + DURATION.instant)
+    );
+    cancelPendingDismiss = () => {
+      dialog?.removeEventListener("transitionend", onEnd);
+      clearTimeout(timer);
+      cancelPendingDismiss = () => {};
+    };
+  }
+
+  onMount(() => () => {
+    cancelPendingDismiss();
+    if (revealCapTimer !== null) clearTimeout(revealCapTimer);
+  });
 
   async function afterNextPaint(): Promise<void> {
     await tick();
@@ -385,6 +491,16 @@
   }
 
   function handleDismiss(reason?: "navigate") {
+    // A plain close slides the drawer away; its close callback finishes the
+    // dismissal once the viewer is off-screen.
+    if (reason !== "navigate" && drawerOpen) {
+      drawerOpen = false;
+      return;
+    }
+    finishDismiss(reason);
+  }
+
+  function finishDismiss(reason?: "navigate") {
     const path = overlay.dismissPath;
     const wasOpen = overlay.isOpen;
     const wasFromUrl = overlay.openedFromUrl;
@@ -405,7 +521,8 @@
   }
 
   function handleDrawerClose() {
-    handleDismiss();
+    if (overlay.isOpen) dismissAfterSlide();
+    else finishDismiss();
   }
 
   function handleViewerContentStatus(
@@ -427,7 +544,7 @@
   }
 
   async function handleViewerReady() {
-    releaseViewerHold();
+    revealViewer();
     const code = overlay.activeShortCode;
     if (code) {
       if (nativeLoadingCode === code) {
@@ -473,7 +590,6 @@
 
 <Drawer
   bind:isOpen={drawerOpen}
-  holdOpen={holdViewerSlide}
   placement="bottom"
   snapPoints={["100%"]}
   onclose={handleDrawerClose}
@@ -485,38 +601,46 @@
   ariaLabel={t("viewer_detail_sequence_viewer")}
   class="sequence-viewer-drawer"
 >
-  <div class="viewer-stage">
-    <LazyMount
-      loader={loadSequenceViewerContent}
-      active={overlay.sequence !== null}
-      placeholder={overlay.sequence ? viewerContentPlaceholder : undefined}
-      error={overlay.sequence ? viewerContentError : undefined}
-      debugName="sequence viewer"
-      onStatusChange={handleViewerContentStatus}
-      props={{
-        sequence: overlay.sequence,
-        sessionKey: overlay.sessionKey,
-        isMobile: isMobileWidth,
-        collectionPropType: overlay.collectionPropType,
-        initialBpm: overlay.initialBpm,
-        initialPlaybackMode: overlay.initialPlaybackMode,
-        initialStep: overlay.initialStep,
-        initialViewMode: overlay.initialViewMode,
-        initialViewerMode: overlay.initialViewerMode,
-        handPathMode: overlay.handPathMode,
-        playOnOpen: overlay.playOnOpen,
-        playbackReleased,
-        onReadyForReveal: handleViewerReady,
-        onClose: handleDismiss,
-        shortCode: overlay.activeShortCode,
-        analyticsSource: overlay.analyticsSource,
-        shareOnOpen: overlay.shareOnOpen,
-        saveOnOpen: overlay.saveOnOpen,
-        tunnelComposition: overlay.tunnelComposition,
-        tunnelSaveTarget: overlay.tunnelSaveTarget,
-        onTunnelSaved: overlay.onTunnelSaved,
-      } satisfies ComponentProps<typeof SequenceViewerDrawerContent>}
-    />
+  <div class="viewer-stage" bind:this={viewerStage}>
+    <div
+      class="viewer-layer"
+      class:awaiting-reveal={!viewerRevealed}
+      bind:this={viewerLayer}
+    >
+      <LazyMount
+        loader={loadSequenceViewerContent}
+        active={overlay.sequence !== null && viewerMountAllowed}
+        placeholder={overlay.sequence && viewerMountAllowed
+          ? viewerContentPlaceholder
+          : undefined}
+        error={overlay.sequence ? viewerContentError : undefined}
+        debugName="sequence viewer"
+        onStatusChange={handleViewerContentStatus}
+        props={{
+          sequence: overlay.sequence,
+          sessionKey: overlay.sessionKey,
+          isMobile: isMobileWidth,
+          collectionPropType: overlay.collectionPropType,
+          initialBpm: overlay.initialBpm,
+          initialPlaybackMode: overlay.initialPlaybackMode,
+          initialStep: overlay.initialStep,
+          initialViewMode: overlay.initialViewMode,
+          initialViewerMode: overlay.initialViewerMode,
+          handPathMode: overlay.handPathMode,
+          playOnOpen: overlay.playOnOpen,
+          playbackReleased,
+          onReadyForReveal: handleViewerReady,
+          onClose: handleDismiss,
+          shortCode: overlay.activeShortCode,
+          analyticsSource: overlay.analyticsSource,
+          shareOnOpen: overlay.shareOnOpen,
+          saveOnOpen: overlay.saveOnOpen,
+          tunnelComposition: overlay.tunnelComposition,
+          tunnelSaveTarget: overlay.tunnelSaveTarget,
+          onTunnelSaved: overlay.onTunnelSaved,
+        } satisfies ComponentProps<typeof SequenceViewerDrawerContent>}
+      />
+    </div>
 
     {#if nativeLoadingCode}
       <div class="native-loader-surface" bind:this={nativeLoaderSurface}>
@@ -553,6 +677,15 @@
     height: 100%;
     min-height: 0;
     overflow: hidden;
+  }
+
+  .viewer-layer {
+    width: 100%;
+    height: 100%;
+  }
+
+  .viewer-layer.awaiting-reveal {
+    opacity: 0;
   }
 
   .viewer-content-state {
