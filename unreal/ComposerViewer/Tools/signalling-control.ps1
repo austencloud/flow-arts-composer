@@ -7,7 +7,8 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $toolDir = Split-Path -Parent $PSCommandPath
-$runtimeDir = Join-Path $env:LOCALAPPDATA 'FlowArtsComposer\ComposerViewer'
+. (Join-Path $toolDir 'runtime-path.ps1')
+$runtimeDir = Get-ComposerViewerRuntimeDirectory
 $signallingRuntime = Join-Path $runtimeDir 'Signalling'
 $scriptPath = Join-Path $signallingRuntime 'signalling.mjs'
 $pidFile = Join-Path $runtimeDir 'signalling-process.json'
