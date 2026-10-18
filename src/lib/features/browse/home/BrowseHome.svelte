@@ -551,12 +551,9 @@
     .library-links {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
-    /* Tiles side by side share two rows, words then chips, so a tile with
-       chips keeps its preview and title level with its neighbours. */
     .tile {
-      grid-row: span 2;
-      grid-template-rows: subgrid;
-      row-gap: 0;
+      grid-template-rows: auto auto;
+      align-self: start;
     }
     .tile-main {
       grid-row: 1;
@@ -572,8 +569,27 @@
     }
     .tile-description {
       font-size: clamp(14px, 1.8cqi, 1rem);
-      /* Two lines reserved so a short description keeps titles level. */
-      min-height: 2lh;
+    }
+  }
+
+  /* The third choice fills the second row instead of leaving an empty slot. */
+  @container browse-home (min-width: 600px) and (max-width: 1099px) {
+    .tile.has-chips {
+      --visual-preview-width: clamp(120px, 22cqi, 200px);
+      grid-column: 1 / -1;
+    }
+    .has-chips .tile-main {
+      grid-template-columns: var(--visual-preview-width) minmax(0, 1fr);
+      grid-template-rows: auto;
+      align-items: center;
+    }
+    .has-chips .tile-stage {
+      width: var(--visual-preview-width);
+      height: var(--stage-height);
+      min-height: 0;
+    }
+    .has-chips .tile-chips {
+      padding-inline-start: calc(18px + var(--visual-preview-width) + 14px);
     }
   }
 
@@ -633,7 +649,7 @@
       font-size: clamp(1rem, 0.5cqi, 1.25rem);
     }
     .tile-index {
-      --stage-height: clamp(100px, 13cqh, 150px);
+      --stage-height: clamp(100px, 11cqh, 128px);
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 16px;
     }
@@ -643,9 +659,9 @@
     .tile-main {
       min-height: 0;
       grid-template-columns: minmax(0, 1fr);
-      grid-template-rows: minmax(0, 1fr) auto;
-      gap: 18px;
-      padding: 20px 22px 22px;
+      grid-template-rows: auto auto;
+      gap: 14px;
+      padding: 16px 18px 18px;
     }
     .tile-stage {
       width: auto;
@@ -654,7 +670,7 @@
       min-height: var(--stage-height);
     }
     .tile-chips {
-      padding: 0 22px 22px;
+      padding: 0 18px 18px;
     }
   }
 </style>

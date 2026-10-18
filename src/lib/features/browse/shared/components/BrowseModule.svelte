@@ -738,9 +738,8 @@
 
 <!-- Main layout - shows immediately with skeletons while data loads -->
 <div class="browse-content">
-  <!-- Explore and You are two answers to the same question, so they replace
-       one another in place. The shared primitive overlaps the old and new
-       surfaces without either one pushing the other around. -->
+  <!-- Community and personal work replace one another without moving the
+       surrounding navigation. -->
   <div class="browse-tab-content">
     <Crossfade
       key={homeOpen ? "home" : activePrimary}
@@ -757,7 +756,7 @@
           <div class="explore-shell">
             <header class="explore-header">
               <div class="explore-heading">
-                <span class="explore-eyebrow">{t("browse_ui_explore")}</span>
+                <span class="explore-eyebrow">{t("browse_home_community")}</span>
                 <h1>
                   {exploreSection === "sequences"
                     ? t("browse_ui_find_a_sequence")

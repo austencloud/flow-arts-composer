@@ -38,6 +38,8 @@
   import { inboxState } from "../../inbox/state/inbox-state.svelte";
   import { prefetchOnIntent } from "../utils/module-prefetch";
   import { t } from "../../i18n/i18n.svelte";
+  import { mergeBrowseGroupExpansion } from "../utils/browse-group-expansion.js";
+  import { BROWSE_GROUPS } from "../config/tab-definitions.js";
   import { getReactiveLocale } from "../../i18n/locale-state.svelte";
 
   let {
@@ -77,16 +79,16 @@
 
   const isInSettings = $derived(navigationState.currentModule === "settings");
 
-  // First-time Browse visitors see both destinations and their direct links.
-  // The sidebar package persists later collapse choices under this key.
+  // Fill new group defaults even when an older installation stored an empty
+  // Browse preference. The sidebar package persists later collapse choices.
   if (typeof localStorage !== "undefined") {
     try {
-      if (localStorage.getItem("nav-expanded-browse") === null) {
-        localStorage.setItem(
-          "nav-expanded-browse",
-          JSON.stringify({ community: true, library: true })
-        );
-      }
+      const key = "nav-expanded-browse";
+      const merged = mergeBrowseGroupExpansion(
+        localStorage.getItem(key),
+        BROWSE_GROUPS
+      );
+      if (merged !== null) localStorage.setItem(key, merged);
     } catch {
       // Storage is optional; the sidebar still works with its default state.
     }
@@ -322,7 +324,7 @@
   {filterSection}
   {getBadgeCount}
   holdOpen={heldOpen}
-  class={`${isEntryAnimating ? "tka-sidebar-entry " : ""}ghost-hover-boundary`}
+  class={`${isEntryAnimating ? "tka-sidebar-entry " : ""}ghost-hover-boundary${currentModule === "browse" ? " browse-destinations" : ""}`}
 >
   <!-- Wordmark in the brand hero face (Fraunces italic 700), matching the
        landing SiteHeader wordmark so both read as one brand. Both words share
@@ -373,6 +375,14 @@
 />
 
 <style>
+  :global(.browse-destinations .section-button:not(.disabled)) {
+    color: var(--theme-text);
+  }
+
+  :global(.browse-destinations .section-button .section-label) {
+    font-size: max(14px, var(--font-size-compact));
+  }
+
   /* Ghost uses the package's real pointer-enter controller to open the rail,
      then `.ghost-hover` mirrors the visual half of a desktop mouseover while
      it pauses over each option. The package's scoped :hover rules cannot see a
