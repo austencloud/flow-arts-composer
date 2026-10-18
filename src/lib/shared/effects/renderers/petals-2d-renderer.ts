@@ -25,12 +25,26 @@ const EDGE_ON_WIDTH = 0.14;
 const LIGHT_X = -0.45;
 const LIGHT_Y = -0.6;
 const LIGHT_Z = 0.66;
+/**
+ * The stage is seen from a little above, the way the 3D camera sees it, so a
+ * petal falling level shows its face instead of a flickering edge.
+ */
+const VIEW_TILT = 0.45;
+const VIEW_COS = Math.cos(VIEW_TILT);
+const VIEW_SIN = Math.sin(VIEW_TILT);
 const axis = { x: 0, y: 0, z: 0 };
+
+/** Turns a world axis into the viewer's axes (x right, y up, z toward). */
+function toView(v: { x: number; y: number; z: number }): void {
+  const y = v.y;
+  v.y = VIEW_COS * y - VIEW_SIN * v.z;
+  v.z = VIEW_SIN * y + VIEW_COS * v.z;
+}
 
 /**
  * Canvas2D petals. `PetalFlightSim` sheds the petals along the props' path and
  * flies them; this draws each one as its face looks from the front of the
- * stage: the petal's across and tip axes, seen from the front, become the
+ * stage, a little above it: the petal's across and tip axes, seen from the front, become the
  * drawing's axes, so a tilted petal foreshortens and a turned one shows its
  * back mirrored and paler. The light it catches blends a lit and a shaded
  * painting of it.
@@ -85,15 +99,18 @@ export class Petals2DRenderer {
     // the dark rather than turning grey where it hangs.
     const size = p.size * (0.7 + 0.3 * fadeOut);
 
-    // The petal's axes seen from the front, in canvas axes (y down): across
-    // draws along the sprite's x, and the tip along the sprite's -y.
+    // The petal's axes as the viewer sees them, in canvas axes (y down):
+    // across draws along the sprite's x, and the tip along the sprite's -y.
     petalBodyToWorld(p.body, 1, 0, 0, axis);
+    toView(axis);
     let acrossX = axis.x;
     let acrossY = -axis.y;
     petalBodyToWorld(p.body, 0, 1, 0, axis);
+    toView(axis);
     const downX = -axis.x;
     const downY = axis.y;
     petalBodyToWorld(p.body, 0, 0, 1, axis);
+    toView(axis);
     const front = axis.z >= 0;
     // Edge-on it stays a visible sliver instead of vanishing mid-turn.
     const length = Math.hypot(downX, downY);
