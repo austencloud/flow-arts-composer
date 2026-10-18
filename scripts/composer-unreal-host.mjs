@@ -11,10 +11,12 @@ export function isLocalHostRequest(request) {
   if (!loopbackAddresses.has(request.socket.remoteAddress)) return false;
   try {
     const origin = new URL(request.headers.origin);
+    const authority = request.headers[":authority"] ?? request.headers.host;
+    if (request.headers.host && request.headers.host !== authority) return false;
     return (
       loopbackHosts.has(origin.hostname) &&
       origin.protocol === (request.socket.encrypted ? "https:" : "http:") &&
-      origin.host === request.headers.host &&
+      origin.host === authority &&
       request.headers.origin === origin.origin
     );
   } catch {
