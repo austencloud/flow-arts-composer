@@ -538,8 +538,7 @@
     );
   }
 
-  /* Two columns once a tile has room for a strip and a readable line. An
-     odd count lets the last tile (You) take the full row. */
+  /* Two columns once a Community tile has room for its preview and copy. */
   @container browse-home (min-width: 600px) {
     .browse-home-inner {
       width: calc(100% - 28px);
@@ -578,8 +577,7 @@
     }
   }
 
-  /* A short wide board (a phone on its side) keeps every tile in view: the
-     preview square sits beside the words, as on Create's short board. */
+  /* On short wide screens, put each preview beside its copy. */
   @container browse-home (min-width: 760px) and (max-height: 640px) {
     .tile-index {
       --stage-side: clamp(56px, 22cqh, 104px);
@@ -600,9 +598,7 @@
     }
   }
 
-  /* A tall two-column board (a portrait tablet) fills its height the way
-     Create's board does: tall tiles whose preview takes the room above the
-     words. */
+  /* On tall two-column screens, let previews grow above their copy. */
   @container browse-home (min-width: 600px) and (min-height: 760px) {
     .tile-main {
       grid-template-rows: auto auto;
@@ -616,8 +612,7 @@
     }
   }
 
-  /* A wide board puts every tile in one row, preview above words, centred
-     in the height like Create's board. */
+  /* A wide layout puts all three Community tiles in one row. */
   @container browse-home (min-width: 1100px) {
     .browse-home-inner {
       width: calc(100% - clamp(48px, 6cqi, 160px));
