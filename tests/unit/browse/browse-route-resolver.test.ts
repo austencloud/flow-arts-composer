@@ -14,22 +14,28 @@ describe("Browse route resolver", () => {
     ["/browse/explore/sequences", "sequences"],
     ["/browse/explore/collections/owner/id", "collections"],
     ["/browse/explore/visuals/mandalas", "visuals"],
-    ["/browse/you/collections/id", "you"],
-    ["/browse/you/visuals/tunnels", "you"],
+    ["/browse/you/collections/id", "saved"],
+    ["/browse/you/visuals/tunnels", "your-visuals"],
   ])("maps %s to the visible destination", (path, destination) => {
     const location = resolveBrowsePathname(path)!.location;
     expect(browseDestinationForLocation(location)).toBe(destination);
   });
 
-  it.each(["sequences", "collections", "visuals", "you"] as const)(
-    "keeps the established URL for %s",
-    (destination) => {
-      const location = browseLocationForDestination(destination);
-      expect(
-        resolveBrowsePathname(buildBrowsePath(location))?.location
-      ).toMatchObject(location);
-    }
-  );
+  it.each([
+    "sequences",
+    "collections",
+    "visuals",
+    "drafts",
+    "saved",
+    "your-visuals",
+    "your-videos",
+    "following",
+  ] as const)("keeps the established URL for %s", (destination) => {
+    const location = browseLocationForDestination(destination);
+    expect(
+      resolveBrowsePathname(buildBrowsePath(location))?.location
+    ).toMatchObject(location);
+  });
   it.each([
     ["/browse", "/browse/explore/sequences", "explore", "sequences"],
     ["/browse/gallery", "/browse/explore/sequences", "explore", "sequences"],
@@ -95,6 +101,11 @@ describe("Browse route resolver", () => {
 
   it("keeps old in-app navigation intents working during the migration", () => {
     expect(normalizeBrowsePrimary("library")).toBe("you");
+    expect(normalizeBrowsePrimary("drafts")).toBe("you");
+    expect(normalizeBrowsePrimary("saved")).toBe("you");
+    expect(normalizeBrowsePrimary("your-visuals")).toBe("you");
+    expect(normalizeBrowsePrimary("your-videos")).toBe("you");
+    expect(normalizeBrowsePrimary("following")).toBe("you");
     expect(normalizeBrowsePrimary("gallery")).toBe("explore");
     expect(normalizeBrowsePrimary("collections")).toBe("explore");
   });

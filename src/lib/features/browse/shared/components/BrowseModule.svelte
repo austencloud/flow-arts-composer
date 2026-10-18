@@ -193,28 +193,18 @@
 
   function openFromHome(destination: BrowseHomeDestination): void {
     const location: BrowseLocation =
-      destination.kind === "you"
-        ? (browseNavigationState.lastLocationFor("you") ?? {
-            primary: "you",
-            section: "sequences",
+      destination.kind === "visuals"
+        ? {
+            primary: "explore",
+            section: "visuals",
             view: "list",
-          })
-        : destination.kind === "visuals"
-          ? {
-              primary: "explore",
-              section: "visuals",
-              view: "list",
-              ...(destination.visualType
-                ? { visualType: destination.visualType }
-                : {}),
-            }
-          : {
-              primary: "explore",
-              section: destination.kind,
-              view: "list",
-            };
+            ...(destination.visualType
+              ? { visualType: destination.visualType }
+              : {}),
+          }
+        : browseLocationForDestination(destination.kind);
     // Push the inner route first so the address names the destination, then
-    // close the home: setActiveTab clears it and the two agree on the primary.
+    // close the home: setActiveTab clears it and the two agree on the shelf.
     browseNavigationState.navigateTo(location, { forceUrl: true });
     navigationState.setActiveTab(browseDestinationForLocation(location));
   }
@@ -748,9 +738,8 @@
 
 <!-- Main layout - shows immediately with skeletons while data loads -->
 <div class="browse-content">
-  <!-- Explore and You are two answers to the same question, so they replace
-       one another in place. The shared primitive overlaps the old and new
-       surfaces without either one pushing the other around. -->
+  <!-- Community and personal work replace one another without moving the
+       surrounding navigation. -->
   <div class="browse-tab-content">
     <Crossfade
       key={homeOpen ? "home" : activePrimary}
@@ -767,7 +756,7 @@
           <div class="explore-shell">
             <header class="explore-header">
               <div class="explore-heading">
-                <span class="explore-eyebrow">{t("browse_ui_explore")}</span>
+                <span class="explore-eyebrow">{t("browse_home_community")}</span>
                 <h1>
                   {exploreSection === "sequences"
                     ? t("browse_ui_find_a_sequence")

@@ -7,26 +7,44 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $toolDir = Split-Path -Parent $PSCommandPath
-$runtimeDir = Join-Path $env:LOCALAPPDATA 'FlowArtsComposer\ComposerViewer'
+. (Join-Path $toolDir 'runtime-path.ps1')
+$runtimeDir = Get-ComposerViewerRuntimeDirectory
 $signallingRuntime = Join-Path $runtimeDir 'Signalling'
 $scriptPath = Join-Path $signallingRuntime 'signalling.mjs'
 $pidFile = Join-Path $runtimeDir 'signalling-process.json'
 $outLog = Join-Path $runtimeDir 'signalling-out.log'
 $errLog = Join-Path $runtimeDir 'signalling-error.log'
 $lockMarker = Join-Path $signallingRuntime 'installed-lock.sha256'
+$ownershipReason = 'not checked'
 
 function Get-OwnedProcess {
-    if (-not (Test-Path -LiteralPath $pidFile)) { return $null }
+    if (-not (Test-Path -LiteralPath $pidFile)) {
+        $script:ownershipReason = "PID record missing at $pidFile"
+        return $null
+    }
     $record = Get-Content -LiteralPath $pidFile -Raw | ConvertFrom-Json
     if ($record.script -ne $scriptPath) {
         throw "Signalling PID record belongs to another script: $($record.script)"
     }
     $process = Get-CimInstance Win32_Process -Filter "ProcessId=$($record.pid)"
-    if (-not $process) { return $null }
-    if ($process.Name -ne 'node.exe' -or $process.CommandLine -notlike "*$scriptPath*") {
+    if (-not $process) {
+        $script:ownershipReason = "recorded PID $($record.pid) absent"
+        return $null
+    }
+    if ($process.Name -ne 'node.exe') {
+        $script:ownershipReason = "recorded PID $($record.pid) is $($process.Name), not node.exe"
+        return $null
+    }
+    if (-not $process.CommandLine) {
+        $script:ownershipReason = "recorded PID $($record.pid) has no visible command line"
+        return $null
+    }
+    if ($process.CommandLine -notlike "*$scriptPath*") {
+        $script:ownershipReason = "recorded PID $($record.pid) command line does not contain expected script $scriptPath"
         # A stale PID after reboot must not block recovery or target another app.
         return $null
     }
+    $script:ownershipReason = "recorded PID $($record.pid) matches expected script"
     return $process
 }
 
@@ -81,7 +99,7 @@ if ($owned) {
     return
 }
 if ((Test-ListeningPort 18888) -or (Test-ListeningPort 18889)) {
-    throw 'Port 18888 or 18889 is already in use; refusing to start another signalling server.'
+    throw "Port 18888 or 18889 is already in use; refusing to start another signalling server. Ownership: $ownershipReason"
 }
 New-Item -ItemType Directory -Path $signallingRuntime -Force | Out-Null
 foreach ($file in @('signalling.mjs', 'package.json', 'package-lock.json')) {

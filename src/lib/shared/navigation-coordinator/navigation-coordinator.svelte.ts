@@ -37,6 +37,7 @@ import {
   normalizeNavigationTarget,
   normalizeSectionId,
 } from "../navigation/config/module-definitions";
+import { BROWSE_TABS } from "../navigation/config/tab-definitions";
 import {
   MODULE_DEFINITIONS,
   ENABLED_MODULE_DEFINITIONS,
@@ -449,7 +450,7 @@ const TAB_ORDERS: Record<string, string[]> = {
     "editor",
     "export",
   ],
-  browse: ["sequences", "collections", "visuals", "you"],
+  browse: BROWSE_TABS.map((tab) => tab.id),
   social: ["community", "connect"],
   learn: ["concepts", "play"],
   compose: ["arrange", "browse"],

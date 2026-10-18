@@ -1,5 +1,6 @@
 <script lang="ts">
   import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
+  import { normalizeBrowsePrimary } from "#lib/shared/browse/navigation/browse-route-resolver.js";
   import {
     listDeviceDrafts,
     draftResumePath,
@@ -16,9 +17,7 @@
 
   let wasActive = false;
   $effect(() => {
-    const active =
-      navigationState.activeTab === "you" ||
-      navigationState.activeTab === "library";
+    const active = normalizeBrowsePrimary(navigationState.activeTab) === "you";
     if (active && !wasActive) void draftsState.refresh();
     wasActive = active;
   });

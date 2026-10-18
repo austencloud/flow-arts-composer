@@ -93,6 +93,12 @@
     );
     return module ? t(module.labelKey) : "";
   });
+  const browseGroups = $derived(
+    navigationState.currentModule === "browse"
+      ? (MODULE_DEFINITIONS.find((module) => module.id === "browse")?.groups ??
+          [])
+      : []
+  );
 
   // Handle tap on peek indicator to reveal navigation
   function handlePeekTap() {
@@ -215,13 +221,16 @@
     >
       <TabOverflowSelector
         {sections}
+        groups={browseGroups}
         {currentSection}
         {onSectionChange}
         {sectionHome}
         {onSectionHomeSelect}
-        selectorLabel={sectionHome
-          ? t("nav_choose_method")
-          : t("nav_select_tab")}
+        selectorLabel={navigationState.currentModule === "browse"
+          ? t("nav_choose_browse_destination")
+          : sectionHome
+            ? t("nav_choose_method")
+            : t("nav_select_tab")}
         moduleLabel={currentModuleLabel}
       />
     </div>
