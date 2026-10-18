@@ -5,7 +5,9 @@ How a phone or browser controls Flowtoys props (Capsule, Vision and other
 from a read-only look at the official Android app, `com.flowtoys.app` 1.5.1,
 pulled from Austen's phone, checked against the community protocol notes in
 [flowtoys.py](https://github.com/willemolding/flowtoys.py) (MIT), which were
-tested on hardware. Nothing here has been sent to a prop by our code yet.
+tested on hardware. The Flow Arts cue panel
+(`src/lib/features/poi/services/flowtoys/`) follows this page but has not been
+tried with a bridge yet.
 
 ## What the props can and cannot take
 
