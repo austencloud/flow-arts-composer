@@ -193,28 +193,18 @@
 
   function openFromHome(destination: BrowseHomeDestination): void {
     const location: BrowseLocation =
-      destination.kind === "you"
-        ? (browseNavigationState.lastLocationFor("you") ?? {
-            primary: "you",
-            section: "sequences",
+      destination.kind === "visuals"
+        ? {
+            primary: "explore",
+            section: "visuals",
             view: "list",
-          })
-        : destination.kind === "visuals"
-          ? {
-              primary: "explore",
-              section: "visuals",
-              view: "list",
-              ...(destination.visualType
-                ? { visualType: destination.visualType }
-                : {}),
-            }
-          : {
-              primary: "explore",
-              section: destination.kind,
-              view: "list",
-            };
+            ...(destination.visualType
+              ? { visualType: destination.visualType }
+              : {}),
+          }
+        : browseLocationForDestination(destination.kind);
     // Push the inner route first so the address names the destination, then
-    // close the home: setActiveTab clears it and the two agree on the primary.
+    // close the home: setActiveTab clears it and the two agree on the shelf.
     browseNavigationState.navigateTo(location, { forceUrl: true });
     navigationState.setActiveTab(browseDestinationForLocation(location));
   }

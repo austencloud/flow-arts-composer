@@ -457,16 +457,38 @@ export function defaultBrowseLocation(): BrowseLocation {
 export function normalizeBrowsePrimary(
   sectionId: string | undefined
 ): BrowsePrimary {
-  return sectionId === "you" || sectionId === "library" ? "you" : "explore";
+  return sectionId === "you" ||
+    sectionId === "library" ||
+    sectionId === "drafts" ||
+    sectionId === "saved" ||
+    sectionId === "your-visuals" ||
+    sectionId === "your-videos" ||
+    sectionId === "following"
+    ? "you"
+    : "explore";
 }
 
-export type BrowseDestination = "sequences" | "collections" | "visuals" | "you";
+export type BrowseDestination =
+  | "sequences"
+  | "collections"
+  | "visuals"
+  | "drafts"
+  | "saved"
+  | "your-visuals"
+  | "your-videos"
+  | "following";
 
 /** The outer section selected for a resolved inner Browse route. */
 export function browseDestinationForLocation(
   location: BrowseLocation
 ): BrowseDestination {
-  if (location.primary === "you") return "you";
+  if (location.primary === "you") {
+    if (location.section === "drafts") return "drafts";
+    if (location.section === "following") return "following";
+    if (location.section === "visuals") return "your-visuals";
+    if (location.section === "videos") return "your-videos";
+    return "saved";
+  }
   if (location.section === "collections") return "collections";
   if (location.section === "visuals" && exploreVisualsVisible())
     return "visuals";
@@ -476,7 +498,23 @@ export function browseDestinationForLocation(
 export function browseLocationForDestination(
   destination: BrowseDestination
 ): BrowseLocation {
-  return destination === "you"
-    ? { primary: "you", section: "sequences", view: "list" }
-    : { primary: "explore", section: destination, view: "list" };
+  const librarySections = {
+    drafts: "drafts",
+    saved: "sequences",
+    "your-visuals": "visuals",
+    "your-videos": "videos",
+    following: "following",
+  } as const;
+  if (destination in librarySections) {
+    return {
+      primary: "you",
+      section: librarySections[destination as keyof typeof librarySections],
+      view: "list",
+    };
+  }
+  return {
+    primary: "explore",
+    section: destination as BrowseExploreSection,
+    view: "list",
+  };
 }
