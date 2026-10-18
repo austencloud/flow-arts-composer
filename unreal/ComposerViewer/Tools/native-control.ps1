@@ -3,7 +3,9 @@ param(
     [string]$Action = 'Status',
     [string]$EngineRoot = 'C:\Program Files\Epic Games\UE_5.8',
     [string]$RuntimeRoot = (Join-Path $env:LOCALAPPDATA 'FlowArtsComposer\ComposerViewer\Host'),
-    [switch]$Stage
+    [switch]$Stage,
+    [switch]$NoSetup,
+    [switch]$PassThru
 )
 
 $ErrorActionPreference = 'Stop'
@@ -22,14 +24,17 @@ function Get-OwnedProcess {
     if ($record.project -ne $projectFile) { throw 'Native PID record refers to another project.' }
     $process = Get-CimInstance Win32_Process -Filter "ProcessId=$($record.pid)"
     if (-not $process) { return $null }
-    if ($process.CommandLine -notlike "*$projectFile*") {
-        throw "PID $($record.pid) no longer belongs to ComposerViewer; refusing to stop it."
+    if ($process.Name -ne 'UnrealEditor.exe' -or $process.ExecutablePath -ne $record.engine -or $process.CommandLine -notlike "*$projectFile*") {
+        # Windows can reuse a recorded PID after a crash or reboot.
+        # Treat that record as stale; never stop the unrelated process.
+        return $null
     }
     return $process
 }
 
 if ($Action -eq 'Status') {
     $owned = Get-OwnedProcess
+    if ($PassThru) { return $owned }
     if ($owned) { Write-Output "ComposerViewer native process running: PID $($owned.ProcessId), project $projectFile" }
     else { Write-Output 'ComposerViewer native process is stopped.' }
     return
@@ -56,15 +61,17 @@ $assetFiles = @(
 )
 $needsAssets = @($assetFiles | Where-Object { -not (Test-Path -LiteralPath $_ -PathType Leaf) }).Count -gt 0
 if ($Stage -or -not (Test-Path -LiteralPath $projectFile) -or $needsAssets) {
+    if ($NoSetup) { throw 'ComposerViewer runtime needs initial staging. Automatic recovery never stages or builds assets.' }
     & (Join-Path $toolDir 'stage-runtime.ps1') -RuntimeRoot $runtimeFull
     if ($LASTEXITCODE -ge 8) { throw 'Runtime staging failed.' }
 }
 $engineExe = Join-Path $EngineRoot 'Engine\Binaries\Win64\UnrealEditor.exe'
 if (-not (Test-Path -LiteralPath $engineExe)) { throw "UE 5.8 editor not found: $engineExe" }
 if (-not (Test-Path -LiteralPath $projectFile)) { throw "Staged project not found: $projectFile" }
-if (-not (Get-NetTCPConnection -State Listen -LocalAddress '127.0.0.1' -LocalPort 18888 -ErrorAction SilentlyContinue)) {
-    throw 'Composer signalling streamer port 18888 is not listening. Start signalling-control.ps1 first.'
-}
+$availableMB = (Get-CimInstance Win32_OperatingSystem).FreePhysicalMemory / 1024
+if ($availableMB -lt 4096) { throw 'Waiting for at least 4 GB of available memory before starting Unreal.' }
+$signallingHealth = Invoke-RestMethod 'http://127.0.0.1:18889/health' -TimeoutSec 2
+if ($signallingHealth.service -ne 'composer-viewer') { throw 'Composer signalling is not ready. Start signalling-control.ps1 first.' }
 
 $process = Start-Process -FilePath $engineExe -WorkingDirectory (Split-Path -Parent $projectFile) -ArgumentList @(
     '"' + $projectFile + '"',
@@ -72,7 +79,7 @@ $process = Start-Process -FilePath $engineExe -WorkingDirectory (Split-Path -Par
     '-RenderOffScreen',
     '-PixelStreamingConnectionURL=ws://127.0.0.1:18888',
     '-PixelStreamingID=ComposerViewer'
-) -WindowStyle Hidden -PassThru
+) -RedirectStandardOutput (Join-Path $runtimeFull 'native-out.log') -RedirectStandardError (Join-Path $runtimeFull 'native-error.log') -WindowStyle Hidden -PassThru
 @{
     pid = $process.Id
     project = $projectFile

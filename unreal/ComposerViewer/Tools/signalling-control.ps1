@@ -1,6 +1,8 @@
 param(
     [ValidateSet('Start', 'Stop', 'Status')]
-    [string]$Action = 'Status'
+    [string]$Action = 'Status',
+    [switch]$NoSetup,
+    [switch]$Recover
 )
 
 $ErrorActionPreference = 'Stop'
@@ -21,14 +23,20 @@ function Get-OwnedProcess {
     }
     $process = Get-CimInstance Win32_Process -Filter "ProcessId=$($record.pid)"
     if (-not $process) { return $null }
-    if ($process.CommandLine -notlike "*$scriptPath*") {
-        throw "PID $($record.pid) no longer belongs to Composer signalling; refusing to stop it."
+    if ($process.Name -ne 'node.exe' -or $process.CommandLine -notlike "*$scriptPath*") {
+        # A stale PID after reboot must not block recovery or target another app.
+        return $null
     }
     return $process
 }
 
 function Test-ListeningPort([int]$port) {
-    return [bool](Get-NetTCPConnection -State Listen -LocalAddress '127.0.0.1' -LocalPort $port -ErrorAction SilentlyContinue)
+    $client = [Net.Sockets.TcpClient]::new()
+    try {
+        $connect = $client.ConnectAsync('127.0.0.1', $port)
+        return $connect.Wait(500) -and $client.Connected
+    } catch { return $false }
+    finally { $client.Dispose() }
 }
 
 if ($Action -eq 'Status') {
@@ -56,6 +64,18 @@ if ($Action -eq 'Stop') {
 }
 
 $owned = Get-OwnedProcess
+if ($owned -and $Recover) {
+    $healthy = $false
+    try {
+        $health = Invoke-RestMethod 'http://127.0.0.1:18889/health' -TimeoutSec 2
+        $healthy = $health.service -eq 'composer-viewer'
+    } catch { $healthy = $false }
+    if (-not $healthy) {
+        Stop-Process -Id $owned.ProcessId
+        Wait-Process -Id $owned.ProcessId -Timeout 5 -ErrorAction SilentlyContinue
+        $owned = $null
+    }
+}
 if ($owned) {
     Write-Output "Composer signalling already running as PID $($owned.ProcessId)."
     return
@@ -70,6 +90,7 @@ foreach ($file in @('signalling.mjs', 'package.json', 'package-lock.json')) {
 $lockHash = (Get-FileHash -LiteralPath (Join-Path $signallingRuntime 'package-lock.json') -Algorithm SHA256).Hash
 $installedHash = if (Test-Path -LiteralPath $lockMarker) { (Get-Content -LiteralPath $lockMarker -Raw).Trim() } else { '' }
 if ($installedHash -ne $lockHash -or -not (Test-Path -LiteralPath (Join-Path $signallingRuntime 'node_modules\@epicgames-ps\lib-pixelstreamingsignalling-ue5.8'))) {
+    if ($NoSetup) { throw 'ComposerViewer signalling needs initial dependency setup. Automatic recovery never installs packages.' }
     Push-Location $signallingRuntime
     try {
         & npm ci --ignore-scripts --no-audit --no-fund
