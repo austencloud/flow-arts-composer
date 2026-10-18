@@ -1,9 +1,8 @@
 <!--
   Browse's home screen, the sibling of Create's "How do you want to create?"
-  board. Opening the Browse module lands here; each tile opens one place:
-  Explore by content type, or your own library. The visuals tile carries
-  chips for its types so a named type is one tap away without becoming a
-  peer tile of its own.
+  board. Opening Browse lands on direct Community destinations and compact
+  links to the corresponding shelves in Your library. The visuals tile carries
+  chips for its types so a named type is one tap away.
 
   Each tile shows its place at work, the way Create's method cards do, and
   through Create's own machinery: the preview box (CreateMethodPreview), the
@@ -13,13 +12,15 @@
   pauses turns off screen. The scenes are Browse's own (previews/).
 -->
 <script module lang="ts">
-  import type { BrowseVisualType } from "#lib/shared/browse/navigation/browse-route-resolver.js";
+  import type {
+    BrowseVisualType,
+    BrowseDestination,
+  } from "#lib/shared/browse/navigation/browse-route-resolver.js";
 
-  export type BrowseHomeDestination =
-    | { kind: "sequences" }
-    | { kind: "collections" }
-    | { kind: "visuals"; visualType?: BrowseVisualType }
-    | { kind: "you" };
+  export type BrowseHomeDestination = {
+    kind: BrowseDestination;
+    visualType?: BrowseVisualType;
+  };
 </script>
 
 <script lang="ts">
@@ -28,6 +29,7 @@
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
   import type { Section } from "#lib/shared/navigation/domain/types.js";
+  import { BROWSE_GROUPS } from "#lib/shared/navigation/config/tab-definitions.js";
   import {
     bootScreenCovers,
     holdBootScreen,
@@ -66,10 +68,15 @@
     },
   ];
 
+  const community = BROWSE_GROUPS[0]!;
+  const library = BROWSE_GROUPS[1]!;
   const tiles = $derived(
-    destinations as Array<
-      Section & { id: BrowseHomeDestination["kind"]; color: string }
+    destinations.filter((section) => section.groupId === community.id) as Array<
+      Section & { id: "sequences" | "collections" | "visuals"; color: string }
     >
+  );
+  const libraryLinks = $derived(
+    destinations.filter((section) => section.groupId === library.id)
   );
 
   const sceneOrder = (): string[] => tiles.map((tile) => tile.id);
@@ -184,78 +191,119 @@
       <h1 id="browse-home-title">{t("browse_home_title")}</h1>
     </header>
 
-    <div
-      class="tile-index"
-      role="list"
-      aria-label={t("browse_home_destinations")}
-      data-tile-count={tiles.length}
-      data-playing-tile={turns.playingId}
-      use:renderGateTarget={previewGate}
-    >
-      {#each tiles as tile (tile.id)}
-        <div
-          class="tile"
-          class:has-chips={tile.id === "visuals"}
-          data-tile-id={tile.id}
-          role="listitem"
-          style:--tile-color={tile.color}
-        >
-          <button
-            type="button"
-            class="tile-main"
-            data-browse-home-tile={tile.id}
-            onclick={(event) => choose({ kind: tile.id }, event.currentTarget)}
-            use:methodPreviewHold={{ turns, id: tile.id }}
+    <section class="destination-group" aria-labelledby="community-title">
+      <div class="group-heading">
+        <h2 id="community-title">{t(community.labelKey)}</h2>
+        <p>{t("browse_home_community_desc")}</p>
+      </div>
+      <div
+        class="tile-index"
+        role="list"
+        aria-label={t("browse_home_destinations")}
+        data-tile-count={tiles.length}
+        data-playing-tile={turns.playingId}
+        use:renderGateTarget={previewGate}
+      >
+        {#each tiles as tile (tile.id)}
+          <div
+            class="tile"
+            class:has-chips={tile.id === "visuals"}
+            data-tile-id={tile.id}
+            role="listitem"
+            style:--tile-color={tile.color}
           >
-            <span class="tile-stage" aria-hidden="true">
-              <CreateMethodPreview
-                methodId={tile.id}
-                loader={BROWSE_HOME_SCENES[tile.id]}
-                color={tile.color}
-                revealed={reveal.isRevealed(tile.id)}
-                instant={reveal.isInstant(tile.id)}
-                playing={turns.playingId === tile.id}
-                turn={turns.turn}
-                onready={handleReady}
-                onfailed={handleFailed}
-              />
-            </span>
-            <span class="tile-copy">
-              <span class="tile-name"
-                ><span class="tile-glyph" aria-hidden="true"
-                  >{@html tile.icon}</span
-                >{t(tile.labelKey)}</span
-              >
-              <span class="tile-description">{t(tile.descKey)}</span>
-            </span>
-          </button>
-
-          {#if tile.id === "visuals"}
-            <div
-              class="tile-chips"
-              role="group"
-              aria-label={t("browse_home_visual_types")}
+            <button
+              type="button"
+              class="tile-main"
+              data-browse-home-tile={tile.id}
+              onclick={(event) =>
+                choose({ kind: tile.id }, event.currentTarget)}
+              use:methodPreviewHold={{ turns, id: tile.id }}
             >
-              {#each VISUAL_TYPES as visual (visual.type)}
-                <button
-                  type="button"
-                  class="tile-chip"
-                  data-browse-home-chip={visual.type}
-                  onclick={(event) =>
-                    choose(
-                      { kind: "visuals", visualType: visual.type },
-                      event.currentTarget
-                    )}
+              <span class="tile-stage" aria-hidden="true">
+                <CreateMethodPreview
+                  methodId={tile.id}
+                  loader={BROWSE_HOME_SCENES[tile.id]}
+                  color={tile.color}
+                  revealed={reveal.isRevealed(tile.id)}
+                  instant={reveal.isInstant(tile.id)}
+                  playing={turns.playingId === tile.id}
+                  turn={turns.turn}
+                  onready={handleReady}
+                  onfailed={handleFailed}
+                />
+              </span>
+              <span class="tile-copy">
+                <span class="tile-name"
+                  ><span class="tile-glyph" aria-hidden="true"
+                    >{@html tile.icon}</span
+                  >{t(tile.labelKey)}</span
                 >
-                  <i class="fas {visual.icon}" aria-hidden="true"></i>
-                  {t(visual.labelKey)}
-                </button>
-              {/each}
-            </div>
-          {/if}
+                <span class="tile-description">{t(tile.descKey)}</span>
+              </span>
+            </button>
+
+            {#if tile.id === "visuals"}
+              <div
+                class="tile-chips"
+                role="group"
+                aria-label={t("browse_home_visual_types")}
+              >
+                {#each VISUAL_TYPES as visual (visual.type)}
+                  <button
+                    type="button"
+                    class="tile-chip"
+                    data-browse-home-chip={visual.type}
+                    onclick={(event) =>
+                      choose(
+                        { kind: "visuals", visualType: visual.type },
+                        event.currentTarget
+                      )}
+                  >
+                    <i class="fas {visual.icon}" aria-hidden="true"></i>
+                    {t(visual.labelKey)}
+                  </button>
+                {/each}
+              </div>
+            {/if}
+          </div>
+        {/each}
+      </div>
+    </section>
+
+    {#if libraryLinks.length > 0}
+      <section class="destination-group" aria-labelledby="library-title">
+        <div class="group-heading">
+          <h2 id="library-title">{t(library.labelKey)}</h2>
+          <p>{t("browse_home_your_library_desc")}</p>
         </div>
-      {/each}
-    </div>
+        <div class="library-links">
+          {#each libraryLinks as link (link.id)}
+            <button
+              type="button"
+              class="library-link"
+              data-browse-library-link={link.id}
+              onclick={(event) =>
+                choose(
+                  { kind: link.id as BrowseDestination },
+                  event.currentTarget
+                )}
+            >
+              <span class="library-icon" aria-hidden="true"
+                >{@html link.icon}</span
+              >
+              <span class="library-copy"
+                ><strong>{t(link.labelKey)}</strong><small
+                  >{t(link.descKey)}</small
+                ></span
+              >
+              <i class="fas fa-arrow-right library-arrow" aria-hidden="true"
+              ></i>
+            </button>
+          {/each}
+        </div>
+      </section>
+    {/if}
   </div>
 </section>
 
@@ -274,7 +322,7 @@
     padding-block: clamp(20px, 4cqh, 52px);
     box-sizing: border-box;
     display: grid;
-    grid-template-rows: auto auto;
+    grid-template-rows: auto auto auto;
     align-content: start;
     gap: clamp(16px, 2.5cqh, 24px);
   }
@@ -287,6 +335,77 @@
     line-height: 1.08;
     letter-spacing: -0.025em;
     text-wrap: balance;
+  }
+
+  .destination-group {
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+  }
+  .group-heading h2 {
+    margin: 0;
+    color: var(--theme-text);
+    font-size: clamp(1.25rem, 2.2cqi, 1.6rem);
+    line-height: 1.2;
+  }
+  .group-heading p {
+    margin: 4px 0 0;
+    color: var(--theme-text-dim);
+    font-size: var(--font-size-min, 14px);
+  }
+
+  .library-links {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+  .library-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 64px;
+    padding: 10px 14px;
+    border: 1px solid var(--theme-stroke);
+    border-radius: var(--radius-2026-sm, 10px);
+    background: var(--theme-card-bg);
+    color: var(--theme-text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+  .library-link:hover {
+    background: var(--theme-card-hover-bg);
+    border-color: var(--theme-stroke-strong);
+  }
+  .library-link:focus-visible {
+    outline: 3px solid var(--theme-text);
+    outline-offset: 2px;
+  }
+  .library-icon {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    flex: 0 0 auto;
+    border-radius: 10px;
+    background: color-mix(in srgb, #14b8a6 16%, var(--theme-card-bg));
+    color: #14b8a6;
+  }
+  .library-copy {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+  }
+  .library-copy strong {
+    font-size: var(--font-size-min, 14px);
+  }
+  .library-copy small {
+    color: var(--theme-text-dim);
+    font-size: var(--font-size-compact, 12px);
+  }
+  .library-arrow {
+    margin-inline-start: auto;
+    color: var(--theme-text-dim);
   }
 
   /* One column on a phone: each tile's preview strip sits above its words,
@@ -430,8 +549,8 @@
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 12px;
     }
-    .tile-index[data-tile-count="3"] .tile:last-child {
-      grid-column: 1 / -1;
+    .library-links {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
     /* Tiles side by side share two rows, words then chips, so a tile with
        chips keeps its preview and title level with its neighbours. */
@@ -486,10 +605,7 @@
      words. */
   @container browse-home (min-width: 600px) and (min-height: 760px) {
     .tile-main {
-      min-height: clamp(240px, 32cqh, 380px);
-      grid-template-rows: minmax(0, 1fr) auto;
-      gap: 18px;
-      padding: 20px 22px 22px;
+      grid-template-rows: auto auto;
     }
     .tile-stage {
       height: auto;
@@ -506,7 +622,7 @@
     .browse-home-inner {
       width: calc(100% - clamp(48px, 6cqi, 160px));
       max-width: 1600px;
-      align-content: center;
+      align-content: start;
       gap: 28px;
       padding-block: 40px;
     }
@@ -522,18 +638,15 @@
       font-size: clamp(1rem, 0.5cqi, 1.25rem);
     }
     .tile-index {
-      --stage-height: clamp(110px, 16cqh, 280px);
-      grid-template-columns: repeat(var(--tile-columns, 4), minmax(0, 1fr));
+      --stage-height: clamp(100px, 13cqh, 150px);
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 16px;
     }
-    .tile-index[data-tile-count="3"] {
-      --tile-columns: 3;
-    }
-    .tile-index[data-tile-count="3"] .tile:last-child {
-      grid-column: auto;
+    .library-links {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
     .tile-main {
-      min-height: clamp(240px, 36cqh, 560px);
+      min-height: 0;
       grid-template-columns: minmax(0, 1fr);
       grid-template-rows: minmax(0, 1fr) auto;
       gap: 18px;
