@@ -28,35 +28,16 @@ import {
   type IgnisReply,
 } from "./ignis-messages";
 
-// ---------------------------------------------------------------- minimal Web Serial types
+import {
+  isWebSerialSupported,
+  webSerial,
+  type WebSerialPort,
+} from "../web-serial";
 
-export interface WebSerialPort extends EventTarget {
-  readonly readable: ReadableStream<Uint8Array> | null;
-  readonly writable: WritableStream<Uint8Array> | null;
-  open(options: { baudRate: number }): Promise<void>;
-  close(): Promise<void>;
-  getInfo(): { usbVendorId?: number; usbProductId?: number };
-}
-
-interface WebSerial extends EventTarget {
-  getPorts(): Promise<WebSerialPort[]>;
-  requestPort(options?: {
-    filters?: { usbVendorId?: number; usbProductId?: number }[];
-  }): Promise<WebSerialPort>;
-}
+export { isWebSerialSupported, type WebSerialPort };
 
 /** STMicroelectronics: the poi's USB virtual COM port. */
-const STM32_VENDOR_ID = 0x0483;
-
-function webSerial(): WebSerial | null {
-  return typeof navigator !== "undefined" && "serial" in navigator
-    ? (navigator as unknown as { serial: WebSerial }).serial
-    : null;
-}
-
-export function isWebSerialSupported(): boolean {
-  return webSerial() !== null;
-}
+export const STM32_VENDOR_ID = 0x0483;
 
 // ---------------------------------------------------------------- timings (from LoadModeProc, 0x1400368f0)
 
