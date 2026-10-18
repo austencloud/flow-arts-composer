@@ -887,6 +887,11 @@
     // physics explosions after tab-switch or debugger pause (same safeguard
     // as CharcoalRenderer and FireRenderer use internally).
     const dt = Math.min(delta, 1 / 15);
+    // Tip velocity is distance over the time the props actually moved. The
+    // render delta is a frame out of step with the pose on a dropped frame
+    // (see EffectMotionClock), which read as the tip halving and then
+    // doubling its speed, a fake jolt for anything that watches for one.
+    const motionDt = Math.min(pooledFrame.motionDelta, 1 / 15);
     if (effectsParentRef) {
       effectsParentRef.updateWorldMatrix(true, false);
       pooledLinearTransform.setFromMatrix4(effectsParentRef.matrixWorld);
@@ -931,7 +936,7 @@
         visualLeftProp,
         leftRigCenter,
         staffHalfLength,
-        dt,
+        motionDt,
         leftPropType,
         propBuild,
         propScale
@@ -1034,7 +1039,7 @@
         visualRightProp,
         rightRigCenter,
         staffHalfLength,
-        dt,
+        motionDt,
         rightPropType,
         propBuild,
         propScale
@@ -1281,7 +1286,7 @@
           charcoalRenderer.initialize(imperativeParent);
         }
         charcoalRenderer.updateConfig(resolveCharcoal3D(effectsState.charcoal));
-        charcoalRenderer.update(charcoalTips, dt, {
+        charcoalRenderer.update(charcoalTips, motionDt, {
           currentStep,
           totalSteps,
           // Effects live in PerformerRig-local space. In that space y=0 is

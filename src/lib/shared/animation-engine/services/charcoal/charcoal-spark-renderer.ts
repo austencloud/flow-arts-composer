@@ -11,8 +11,8 @@
  *   - Pre-allocated particle pool (zero allocation in the hot path)
  *   - Two shader programs: instanced spark streaks + ember glow halos
  *   - Additive blending (SRC_ALPHA, ONE) for bright-on-dark compositing
- *   - Burst emission on high jerk (direction reversals)
- *   - Ambient emission during sustained movement
+ *   - A steady stream along the tip's path, plus a burst when the tip
+ *     stops or snaps (the shared stepSparkSnap test)
  *   - Each spark is a streak from where it is to where it was one camera
  *     shutter ago, so fast sparks paint lines and slow ones dots
  *
@@ -31,19 +31,24 @@ import type {
 } from "../../domain/types/charcoal-spark-types";
 import { DEFAULT_CHARCOAL_PARAMS } from "../../domain/types/charcoal-spark-types";
 import {
-  SPARK_2D_PIXELS_PER_METRE,
-  SPARK_GRAVITY,
-  SPARK_SHUTTER_SECONDS,
+  createSparkSnapState,
   releaseSparkVelocity2D,
+  resetSparkSnap,
   resolveSparkMaterial,
   sampleSparkDiameter,
   sampleSparkFork,
+  snapBurstSparks,
+  SPARK_2D_PIXELS_PER_METRE,
+  SPARK_GRAVITY,
+  SPARK_SHUTTER_SECONDS,
   sparkBurnTime,
   sparkCoolTime,
   sparkHeat,
   sparkLifetime,
-  stepSparkVelocity,
   type SparkMaterial,
+  type SparkSnapState,
+  stepSparkSnap,
+  stepSparkVelocity,
 } from "#lib/shared/effects/domain/spark-physics.js";
 
 // Constants
@@ -234,10 +239,10 @@ export class CharcoalSparkRenderer {
 
   // Ambient emission accumulator per tip (fractional spark carry)
   private ambientAccumulators: Map<string, number> = new Map();
-  // Burst count comes from jerk, not from elapsed time, so it would fire at
-  // full strength in every sub-step. Each step takes its share and carries the
-  // fractional remainder here, keeping a frame's burst total step-independent.
-  private burstAccumulators: Map<string, number> = new Map();
+  // Per-tip watch for a stop or snap (stepSparkSnap).
+  private snapStates: Map<string, SparkSnapState> = new Map();
+  // Bursts thrown since creation, for diagnostics.
+  private burstCount = 0;
 
   // Current params (updated externally via setParams)
   private currentParams: CharcoalSparkParams = { ...DEFAULT_CHARCOAL_PARAMS };
@@ -250,7 +255,7 @@ export class CharcoalSparkRenderer {
   // so the halo stays the same fraction of the frame.
   private sizeScale = 1.0;
   // Linear scale for everything measured in canvas units per unit TIME:
-  // spawn speeds, gravity, and the tip speed/jerk thresholds that gate
+  // spawn speeds, gravity, and the tip speed threshold that gates
   // emission. Tip positions arrive in canvas-pixel space (see the note at the
   // top of this file), so a tip tracing the same choreography on a 250px
   // canvas moves at roughly a quarter the pixels-per-second it does at 950.
@@ -500,7 +505,7 @@ export class CharcoalSparkRenderer {
       p.active = false;
     }
     this.ambientAccumulators.clear();
-    this.burstAccumulators.clear();
+    this.snapStates.clear();
     this.emissionScale = 1;
     // Blank the visible default framebuffer too. preserveDrawingBuffer:true
     // retains the last spark frame in the drawing buffer; when this renderer is
@@ -725,38 +730,48 @@ export class CharcoalSparkRenderer {
     const scale = this.canvasScale;
     const stepShare = this.segU1 - this.segU0;
     const tipKey = `${tip.propIndex}_${tip.tipIndex}`;
-    // tip.jerk and tip.speed are derivatives of a canvas-pixel position, so
-    // they shrink with the container. Thresholds authored against the
+    // tip.speed is a derivative of a canvas-pixel position, so it
+    // shrinks with the container. Thresholds authored against the
     // reference canvas have to shrink with them or a small preview never
     // clears the gate and emits nothing.
     const motion = this.motionScale;
 
-    // Burst emission on high jerk (direction reversals). Note that for a tip
-    // on a spinning prop this gate is effectively always open - a 1.5 rev/s
-    // spin reports a jerk around 33,000 against a threshold of 23 at high
-    // intensity - so the burst behaves as a second, saturated ambient
-    // channel rather than an occasional reversal pop. It is spread along the
-    // travel segment for that reason: at max rate it IS the stream.
-    if (tip.jerk > params.burstThreshold * motion) {
-      const excess = tip.jerk - params.burstThreshold * motion;
-      const frameCount = Math.min(
-        (excess / motion) * params.burstMultiplier * scale,
-        params.burstMax * scale
-      );
-      const accumulated =
-        (this.burstAccumulators.get(tipKey) ?? 0) +
-        frameCount * stepShare * this.emissionScale;
-      const count = Math.floor(accumulated);
-      this.burstAccumulators.set(tipKey, accumulated - count);
-
-      for (let i = 0; i < count; i++) {
-        this.spawnParticle(
-          tip,
-          params,
-          this.resolveSpawnOrigin(tip, i, count) * stepDt
-        );
+    // A stop, reversal or snap throws a clump on top of the stream, judged
+    // by the same test as the 3D view (stepSparkSnap) on the tip's velocity
+    // in metres, so a steady spin never bursts. It runs once a frame.
+    if (this.segU0 === 0) {
+      let snap = this.snapStates.get(tipKey);
+      if (!snap) {
+        snap = createSparkSnapState();
+        this.snapStates.set(tipKey, snap);
       }
-      this.spawnsThisFrame += count;
+      if (this.segmentIsTeleport) {
+        resetSparkSnap(snap);
+      } else {
+        const metres = 1 / this.pixelsPerMetre;
+        const severity = stepSparkSnap(
+          snap,
+          tip.velocityX * metres,
+          tip.velocityY * metres,
+          0,
+          stepDt / stepShare,
+          params.burstThresholdScale ?? 1
+        );
+        if (severity > 0) {
+          const count = Math.round(
+            snapBurstSparks(severity) * (params.burstScale ?? 0.62) * scale
+          );
+          for (let i = 0; i < count; i++) {
+            this.spawnParticle(
+              tip,
+              params,
+              this.resolveSpawnOrigin(tip, i, count) * stepDt
+            );
+          }
+          this.spawnsThisFrame += count;
+          this.burstCount++;
+        }
+      }
     }
 
     // Ambient emission during sustained movement - proportional to speed.
@@ -1451,7 +1466,7 @@ export class CharcoalSparkRenderer {
     this.emberProgram = null;
     this.particles = [];
     this.ambientAccumulators.clear();
-    this.burstAccumulators.clear();
+    this.snapStates.clear();
 
     if (this.canvas) {
       if (typeof (this.canvas as any).remove === "function") {

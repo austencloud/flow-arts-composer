@@ -322,3 +322,170 @@ export function releaseSparkVelocity2D(
   out.vy = vy * carry + Math.sin(azimuth) * kick;
   out.vz = 0;
 }
+
+/**
+ * Tells a sudden change in the head's motion (a stop, a reversal, a snap of
+ * the wrist) from a steady spin, for both views.
+ *
+ * Burning wool or charcoal holds its loose embers until the load on them
+ * rises. A steady spin loads the head hard but evenly (v^2/r toward the
+ * centre), so it sheds the loose bits at a steady rate: that is the stream.
+ * Only a load above what the head has been carrying frees a clump at once.
+ * So the detector follows the acceleration's size two ways, a quick reading
+ * of the load now and a slow running level of what the head is used to, and
+ * reports how far the quick one rises above the slow one.
+ *
+ * Acceleration is taken per second from velocities a known time apart, so a
+ * long frame reads the same as two short ones and a dropped frame cannot
+ * pass for a snap.
+ */
+export interface SparkSnapState {
+  previousVx: number;
+  previousVy: number;
+  previousVz: number;
+  /** Acceleration size now, lightly smoothed (m/s2). */
+  load: number;
+  /** Running level the head is used to (m/s2). */
+  usualLoad: number;
+  /**
+   * Rise at its highest so far while a snap builds, or 0. A stop takes a
+   * few frames; the clump leaves when the load peaks, so the burst is sized
+   * by the whole stop rather than its first frame.
+   */
+  peakRise: number;
+  /** Seconds the snap has been building. */
+  building: number;
+  /** Velocity just before the snap began (m/s): the way a clump leaves. */
+  incomingVx: number;
+  incomingVy: number;
+  incomingVz: number;
+  /** True after a snap until the load settles back. */
+  spent: boolean;
+  /** Seconds since the last snap. */
+  sinceSnap: number;
+  /** Has a velocity to difference against. */
+  primed: boolean;
+  /** Has a first acceleration to start both levels from. */
+  warm: boolean;
+}
+
+/** Smoothing of the load now (s): two or three frames. */
+const SNAP_LOAD_TIME = 0.035;
+/** How long the head takes to get used to a new load (s). */
+const SNAP_USUAL_TIME = 0.35;
+/** Rise above the usual load that counts as a snap, as a share of it... */
+const SNAP_RISE_SHARE = 0.4;
+/** ...plus this much outright (m/s2), so a nearly still head is not jumpy. */
+const SNAP_RISE_FLOOR = 8;
+/**
+ * Sparks one head throws for a snap of this severity, before the look's own
+ * scale: a small flick sheds a few, a hard stop a hundred or more.
+ */
+export function snapBurstSparks(severity: number): number {
+  return 8 + severity * 112;
+}
+
+/** Extra load, past the floor, that gives a full-size burst (m/s2). */
+export const SNAP_FULL_RISE = 45;
+/** Shortest gap between two snaps from one head (s). */
+const SNAP_MIN_GAP = 0.12;
+/** Longest a snap may build before it lets go anyway (s). */
+const SNAP_MAX_BUILD = 0.1;
+
+export function createSparkSnapState(): SparkSnapState {
+  return {
+    previousVx: 0,
+    previousVy: 0,
+    previousVz: 0,
+    load: 0,
+    usualLoad: 0,
+    peakRise: 0,
+    building: 0,
+    incomingVx: 0,
+    incomingVy: 0,
+    incomingVz: 0,
+    spent: false,
+    sinceSnap: SNAP_MIN_GAP,
+    primed: false,
+    warm: false,
+  };
+}
+
+/** Forget the head's motion, after a jump or a pause. */
+export function resetSparkSnap(state: SparkSnapState): void {
+  Object.assign(state, createSparkSnapState());
+}
+
+/**
+ * Feeds one frame's head velocity (m/s) and returns the snap's severity in
+ * [0, 1], or 0 when there is none. `thresholdScale` raises or lowers how
+ * hard a snap has to be for the look.
+ */
+export function stepSparkSnap(
+  state: SparkSnapState,
+  vx: number,
+  vy: number,
+  vz: number,
+  dt: number,
+  thresholdScale = 1
+): number {
+  if (!(dt > 0)) return 0;
+  if (!state.primed) {
+    state.previousVx = vx;
+    state.previousVy = vy;
+    state.previousVz = vz;
+    state.primed = true;
+    return 0;
+  }
+  const fromVx = state.previousVx;
+  const fromVy = state.previousVy;
+  const fromVz = state.previousVz;
+  const ax = (vx - fromVx) / dt;
+  const ay = (vy - fromVy) / dt;
+  const az = (vz - fromVz) / dt;
+  state.previousVx = vx;
+  state.previousVy = vy;
+  state.previousVz = vz;
+  const load = Math.sqrt(ax * ax + ay * ay + az * az);
+  if (!state.warm) {
+    state.load = load;
+    state.usualLoad = load;
+    state.warm = true;
+    return 0;
+  }
+  state.load += (load - state.load) * (1 - Math.exp(-dt / SNAP_LOAD_TIME));
+  state.usualLoad +=
+    (state.load - state.usualLoad) * (1 - Math.exp(-dt / SNAP_USUAL_TIME));
+  state.sinceSnap += dt;
+
+  const threshold =
+    (state.usualLoad * SNAP_RISE_SHARE + SNAP_RISE_FLOOR) * thresholdScale;
+  const rise = state.load - state.usualLoad;
+  if (state.spent) {
+    if (rise < threshold * 0.5) state.spent = false;
+    return 0;
+  }
+  if (state.peakRise > 0) {
+    state.building += dt;
+    if (rise > state.peakRise && state.building < SNAP_MAX_BUILD) {
+      state.peakRise = rise;
+      return 0;
+    }
+    // The load has peaked: the clump lets go now, sized by how much extra
+    // load the head took. Only the outright floor comes off, so a stop from
+    // a fast spin is not undersized for the load the spin already carried.
+    const severity =
+      (state.peakRise - SNAP_RISE_FLOOR * thresholdScale) / SNAP_FULL_RISE;
+    state.peakRise = 0;
+    state.building = 0;
+    state.spent = true;
+    state.sinceSnap = 0;
+    return Math.min(1, Math.max(0.05, severity));
+  }
+  if (rise < threshold || state.sinceSnap < SNAP_MIN_GAP) return 0;
+  state.peakRise = rise;
+  state.incomingVx = fromVx;
+  state.incomingVy = fromVy;
+  state.incomingVz = fromVz;
+  return 0;
+}
