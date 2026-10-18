@@ -31,6 +31,10 @@ import {
 } from "../config/storage-keys";
 
 import { panelPersistenceState } from "./panel-persistence-state.svelte";
+import {
+  browseDestinationForLocation,
+  resolveBrowsePathname,
+} from "../../browse/navigation/browse-route-resolver.js";
 
 import { hasMimeErrorOccurred, verifyTabSwitch } from "../../hmr-helper";
 
@@ -219,6 +223,12 @@ export function createNavigationState() {
           const target = normalizeNavigationTarget(normalizedModule, urlTab);
           normalizedModule = target.moduleId;
           urlTab = target.sectionId;
+          if (normalizedModule === "browse" && pathParts.length > 1) {
+            const browseRoute = resolveBrowsePathname(pathname);
+            if (browseRoute && !browseRoute.externalRedirect) {
+              urlTab = browseDestinationForLocation(browseRoute.location);
+            }
+          }
         }
 
         // Moderation folded into Admin as a tab (2026-06-30): a bare /moderation

@@ -39,8 +39,10 @@ describe("isTabAccessible", () => {
     expect(isTabAccessible("create", "construct", "guest")).toBe(true);
   });
 
-  it("allows Explore in Browse for guests", () => {
-    expect(isTabAccessible("browse", "explore", "guest")).toBe(true);
+  it("allows the public Browse destinations for guests", () => {
+    for (const section of ["sequences", "collections", "visuals"]) {
+      expect(isTabAccessible("browse", section, "guest")).toBe(true);
+    }
   });
 
   it("allows You so guests can reach on-device saved work", () => {

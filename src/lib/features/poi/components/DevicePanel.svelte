@@ -1,19 +1,23 @@
 <!--
-  DevicePanel.svelte - Send the lab's pattern to real poi.
+  DevicePanel.svelte - Send the lab's pattern to real poi and staffs.
 
-  USB first: Ignis poi pair once through the browser's port chooser, then
-  reconnect by themselves whenever they are plugged in. One button sends the
-  pattern to every connected poi at once.
+  Over USB, Ignis poi and Lighttoys staffs pair once through the browser's
+  port chooser, then reconnect by themselves whenever they are plugged in.
+  One button sends the pattern to every connected prop at once. A staff only
+  ever takes an empty bank, so its existing shows are never replaced.
 -->
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
   import { getPoiContext } from "../context/poi-context";
   import {
+    MAX_PLAY_MINUTES,
     PoiDeviceState,
+    isStaff,
     type UploadStatus,
   } from "../state/poi-device-state.svelte";
   import type { PoiDeviceInfo } from "../domain/device-types";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import ValueSlider from "#lib/shared/ui/components/ValueSlider.svelte";
 
   const poi = getPoiContext();
@@ -26,11 +30,26 @@
   const sendLabel = $derived(
     devices.sending
       ? "Sending…"
-      : count === 2
-        ? "Send to both poi"
-        : count > 2
-          ? `Send to all ${count} poi`
-          : "Send to poi"
+      : count === 1
+        ? `Send to ${devices.uploadable[0]!.model}`
+        : count === 2
+          ? "Send to both"
+          : count > 2
+            ? `Send to all ${count}`
+            : "Send"
+  );
+  const bankOptions = $derived(
+    Array.from({ length: devices.bankCount }, (_, i) => {
+      const bank = i + 1;
+      const used = devices.devices.some((d) =>
+        devices.banksInUse[d.id]?.includes(bank)
+      );
+      return {
+        value: String(bank),
+        label: String(bank),
+        ariaLabel: used ? `Bank ${bank}, holds a show` : `Bank ${bank}, empty`,
+      };
+    })
   );
 
   function details(device: PoiDeviceInfo): string {
@@ -42,6 +61,13 @@
     if (device.batteryLevel !== undefined && device.batteryLevel <= 100) {
       parts.push(`battery ${device.batteryLevel}%`);
     }
+    const banks = devices.banksInUse[device.id];
+    if (banks)
+      parts.push(
+        banks.length === 0
+          ? "all banks empty"
+          : `${banks.length === 1 ? "bank" : "banks"} ${banks.join(", ")} in use`
+      );
     return parts.join(" · ");
   }
 
@@ -49,13 +75,19 @@
     device: PoiDeviceInfo,
     status: UploadStatus | undefined
   ): string {
-    if (device.supported === false) return "This model can't take uploads yet";
+    if (device.supported === false)
+      return device.model === "Lighttoys remote"
+        ? "Plug in the staff itself, not the remote"
+        : "This model can't take uploads yet";
     if (!status)
       return device.connectionType === "usb-serial"
         ? "Ready over USB"
         : "Ready over Bluetooth";
     if (status.phase === "sending") return `Sending ${Math.round(status.pct)}%`;
-    if (status.phase === "done") return `In slot ${devices.slot}`;
+    if (status.phase === "done")
+      return isStaff(device)
+        ? `In bank ${devices.bank}`
+        : `In slot ${devices.slot}`;
     return status.message;
   }
 
@@ -66,7 +98,7 @@
 
 <section class="device-panel" aria-labelledby="device-panel-title">
   <header class="panel-header">
-    <h3 id="device-panel-title" class="section-title">Poi</h3>
+    <h3 id="device-panel-title" class="section-title">Poi and staffs</h3>
     {#if devices.devices.length > 0}
       <span class="header-meta">{devices.devices.length} connected</span>
     {/if}
@@ -76,22 +108,20 @@
     <div class="empty">
       {#if devices.usbSupported}
         <p class="hint">
-          Plug a poi in with its USB cable, then choose it from the list. After
-          that it connects by itself.
+          Plug an Ignis poi or a Lighttoys staff in with its USB cable, then
+          choose it from the list. After that it connects by itself.
         </p>
         <PanelButton
           variant="primary"
           fullWidth
-          onclick={() => devices.addUsbPoi()}
+          onclick={() => devices.addUsbProp()}
           disabled={devices.connecting}
         >
           <i class="fas fa-plug" aria-hidden="true"></i>
-          {devices.connecting ? "Connecting…" : "Connect poi over USB"}
+          {devices.connecting ? "Connecting…" : "Connect over USB"}
         </PanelButton>
       {:else}
-        <p class="hint">
-          Sending to poi over USB needs Chrome or Edge on a computer.
-        </p>
+        <p class="hint">Sending over USB needs Chrome or Edge on a computer.</p>
       {/if}
     </div>
   {:else}
@@ -144,27 +174,60 @@
       {/each}
     </ul>
 
-    <div class="settings">
-      <ValueSlider
-        label="Slot"
-        value={devices.slot}
-        min={1}
-        max={devices.slotCount}
-        step={1}
-        onchange={(v) => devices.setSlot(v)}
-        disabled={devices.sending}
-      />
-      <ValueSlider
-        label="Brightness"
-        value={devices.brightness}
-        min={1}
-        max={devices.maxBrightness}
-        step={1}
-        format={(v) => `${Math.round((v / devices.maxBrightness) * 100)}%`}
-        onchange={(v) => devices.setBrightness(v)}
-        disabled={devices.sending}
-      />
-    </div>
+    {#if devices.hasPoi}
+      <div class="settings">
+        <ValueSlider
+          label="Slot"
+          value={devices.slot}
+          min={1}
+          max={devices.slotCount}
+          step={1}
+          onchange={(v) => devices.setSlot(v)}
+          disabled={devices.sending}
+        />
+        <ValueSlider
+          label="Brightness"
+          value={devices.brightness}
+          min={1}
+          max={devices.maxBrightness}
+          step={1}
+          format={(v) => `${Math.round((v / devices.maxBrightness) * 100)}%`}
+          onchange={(v) => devices.setBrightness(v)}
+          disabled={devices.sending}
+        />
+      </div>
+    {/if}
+
+    {#if devices.hasStaff}
+      <div class="settings">
+        <span class="setting-label" id="bank-label">Staff bank</span>
+        <SegmentedControl
+          options={bankOptions}
+          value={String(devices.bank)}
+          onchange={(v) => devices.setBank(Number(v))}
+          color="accent"
+          size="sm"
+          semantics="radiogroup"
+          ariaLabelledby="bank-label"
+        />
+        {#if devices.bankTaken.length > 0}
+          <p class="hint">
+            Bank {devices.bank} already holds a show, and uploads never replace one.
+            Pick an empty bank, or clear it in Lighttoys Composer.
+          </p>
+        {/if}
+        <ValueSlider
+          label="Plays for"
+          value={devices.playMinutes}
+          min={1}
+          max={MAX_PLAY_MINUTES}
+          step={1}
+          format={(v) => `${v} min`}
+          onchange={(v) => devices.setPlayMinutes(v)}
+          disabled={devices.sending}
+        />
+      </div>
+    {/if}
 
     <PanelButton
       variant="primary"
@@ -180,11 +243,11 @@
     {#if devices.usbSupported}
       <PanelButton
         variant="quiet"
-        onclick={() => devices.addUsbPoi()}
+        onclick={() => devices.addUsbProp()}
         disabled={devices.connecting}
       >
         <i class="fas fa-plus" aria-hidden="true"></i>
-        {devices.connecting ? "Connecting…" : "Add another poi"}
+        {devices.connecting ? "Connecting…" : "Add another over USB"}
       </PanelButton>
     {/if}
   {/if}
@@ -350,6 +413,11 @@
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+  }
+
+  .setting-label {
+    font-size: var(--font-size-compact, 12px);
+    color: var(--theme-text-secondary, #94a3b8);
   }
 
   .error {

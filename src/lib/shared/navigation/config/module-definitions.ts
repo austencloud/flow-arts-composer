@@ -96,6 +96,11 @@ export function normalizeModuleId(rawModuleId: string): ModuleId | undefined {
 const SECTION_ID_MIGRATIONS: Readonly<
   Record<string, Readonly<Record<string, string>>>
 > = {
+  browse: {
+    explore: "sequences",
+    gallery: "sequences",
+    library: "you",
+  },
   settings: {
     language: "preferences",
   },
