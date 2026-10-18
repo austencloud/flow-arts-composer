@@ -278,6 +278,8 @@ bool UFlowFestPropComponent::Equip(FName PropId, float LengthCm)
     const float LongScale = bAdjustable && LengthCm > 0.f && AuthoredLength > 0 ? FMath::Clamp(LengthCm / static_cast<float>(AuthoredLength), .1f, 5.f) : 1.f;
     // Avatar import maps source X to UE -Y. Mirror the baked prop's numeric
     // X axis once so the sampled root rotation remains a proper quaternion.
+    // The FBX prop import also reverses source Y in the static mesh vertices;
+    // attachment positions below must use that same mesh-local axis.
     LeftMesh->SetRelativeScale3D(FVector(-1.f, LongScale, 1.f));
     RightMesh->SetRelativeScale3D(FVector(-1.f, LongScale, 1.f));
     for (UPointLightComponent* Light : LeftEffectLights) if (Light) Light->DestroyComponent();
@@ -301,7 +303,7 @@ bool UFlowFestPropComponent::Equip(FName PropId, float LengthCm)
             const TSharedPtr<FJsonObject> Effect = (*Effects)[Index]->AsObject();
             const TArray<TSharedPtr<FJsonValue>>* Offset = nullptr;
             if (!Effect.IsValid() || !Effect->TryGetArrayField(TEXT("offsetCm"), Offset) || !Offset || Offset->Num() != 3) continue;
-            const FVector Location(-(*Offset)[0]->AsNumber(), (*Offset)[1]->AsNumber() * LongScale, (*Offset)[2]->AsNumber());
+            const FVector Location(-(*Offset)[0]->AsNumber(), -(*Offset)[1]->AsNumber() * LongScale, (*Offset)[2]->AsNumber());
             WickOffsets.Add(Location);
             auto AddLight = [this, Location](USceneComponent* Root)
             {
