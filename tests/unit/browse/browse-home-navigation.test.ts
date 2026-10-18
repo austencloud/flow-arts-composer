@@ -73,8 +73,8 @@ describe("Browse home screen", () => {
     ["/browse/explore/sequences", "sequences"],
     ["/browse/explore/collections/owner/collection", "collections"],
     ["/browse/explore/visuals/mandalas", "visuals"],
-    ["/browse/you/collections/collection", "you"],
-    ["/browse/you/visuals/tunnels", "you"],
+    ["/browse/you/collections/collection", "saved"],
+    ["/browse/you/visuals/tunnels", "your-visuals"],
   ])("selects %s in the outer navigation", async (pathname, destination) => {
     const { nav } = await freshModules(pathname);
     expect(nav.createNavigationState().activeTab).toBe(destination);
@@ -105,7 +105,7 @@ describe("Browse home screen", () => {
 
     state.setCurrentModule("browse", "you");
     expect(state.isModuleHomeOpen("browse")).toBe(false);
-    expect(state.activeTab).toBe("you");
+    expect(state.activeTab).toBe("saved");
   });
 
   it("leaves the /browse address alone while keeping a location underneath", async () => {

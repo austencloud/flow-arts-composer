@@ -11,6 +11,7 @@ import {
   CREATE_TABS,
   LEARN_TABS,
   BROWSE_TABS,
+  BROWSE_GROUPS,
   COMPOSE_TABS,
   TRAIN_TABS,
   FEEDBACK_TABS,
@@ -99,7 +100,8 @@ const SECTION_ID_MIGRATIONS: Readonly<
   browse: {
     explore: "sequences",
     gallery: "sequences",
-    library: "you",
+    library: "saved",
+    you: "saved",
   },
   settings: {
     language: "preferences",
@@ -185,6 +187,7 @@ export const MODULE_DEFINITIONS: ModuleDefinition[] = [
     description: "Browse sequences and collections",
     isMain: true,
     sections: BROWSE_TABS,
+    groups: BROWSE_GROUPS,
     home: {
       get label() {
         return t("module_browse");

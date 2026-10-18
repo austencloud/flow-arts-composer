@@ -77,6 +77,21 @@
 
   const isInSettings = $derived(navigationState.currentModule === "settings");
 
+  // First-time Browse visitors see both destinations and their direct links.
+  // The sidebar package persists later collapse choices under this key.
+  if (typeof localStorage !== "undefined") {
+    try {
+      if (localStorage.getItem("nav-expanded-browse") === null) {
+        localStorage.setItem(
+          "nav-expanded-browse",
+          JSON.stringify({ community: true, library: true })
+        );
+      }
+    } catch {
+      // Storage is optional; the sidebar still works with its default state.
+    }
+  }
+
   const accessTier = $derived(
     resolveAccessTier(
       authState.isAuthenticated,
@@ -252,6 +267,10 @@
         }))
       : modules.map((module: ModuleDefinition) => ({
           ...module,
+          groups: module.groups?.map((group) => ({
+            ...group,
+            label: t(group.labelKey),
+          })),
           opensOnTap: module.home !== undefined,
         }))
   );
