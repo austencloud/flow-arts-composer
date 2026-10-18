@@ -9,6 +9,8 @@
 #include "GameFramework/Actor.h"
 #include "GameFramework/PlayerController.h"
 #include "NiagaraComponent.h"
+#include "NiagaraEmitter.h"
+#include "NiagaraEmitterHandle.h"
 #include "NiagaraSystem.h"
 #include <limits>
 
@@ -23,6 +25,15 @@ bool FFlowArtsNiagaraPlaybackTest::RunTest(const FString& Parameters)
     if (!TestNotNull(TEXT("Shipped prop fire system exists"), System)) return false;
     TestTrue(TEXT("Shipped system is compiled and runnable"), System->IsReadyToRun());
     TestEqual(TEXT("Flame, ember and trail emitters ship together"), System->GetEmitterHandles().Num(), 3);
+    if (System->GetEmitterHandles().Num() != 3) return false;
+    const bool ExpectedLocalSpace[] = {true, false, false};
+    for (int32 Index = 0; Index < 3; ++Index)
+    {
+        const FVersionedNiagaraEmitterData* Data = System->GetEmitterHandles()[Index].GetEmitterData();
+        if (!TestNotNull(TEXT("Shipped emitter data exists"), Data)) return false;
+        TestEqual(TEXT("Flame follows wick; embers and trails preserve world motion"),
+            Data->bLocalSpace, ExpectedLocalSpace[Index]);
+    }
 
     const UWorld::InitializationValues Values = UWorld::InitializationValues()
         .AllowAudioPlayback(false).RequiresHitProxies(false).CreatePhysicsScene(false)

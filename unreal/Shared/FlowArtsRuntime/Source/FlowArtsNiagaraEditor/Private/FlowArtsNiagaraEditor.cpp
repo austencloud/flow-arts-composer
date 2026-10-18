@@ -108,8 +108,9 @@ bool TuneEmitter(FNiagaraEmitterHandle& Handle, int32 Kind, UMaterialInterface* 
 {
     FVersionedNiagaraEmitterData* Data = Handle.GetEmitterData();
     if (!Data || !Material) return false;
-    // World space preserves trails at their previous locations as a wick moves.
-    Data->bLocalSpace = false;
+    // Keep the flame core on its wick through pause and pose changes. Embers
+    // and ribbons remain in world space to preserve their movement history.
+    Data->bLocalSpace = Kind == 0;
     if (Kind == 2)
     {
         const FVersionedNiagaraEmitter Instance = Handle.GetInstance();
