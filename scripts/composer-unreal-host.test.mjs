@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import http2 from "node:http2";
+import { once } from "node:events";
 import { setImmediate } from "node:timers/promises";
 import test from "node:test";
 import {
@@ -38,6 +40,38 @@ test("host startup requires a same-origin loopback request", () => {
     isLocalHostRequest({ socket: { remoteAddress: "::1" }, headers: {} }),
     false
   );
+});
+
+test("HTTP/2 uses authority and still rejects foreign or conflicting origins", async () => {
+  const server = http2.createServer((request, response) => {
+    response.writeHead(isLocalHostRequest(request) ? 200 : 403).end();
+  });
+  server.listen(0, "127.0.0.1");
+  await once(server, "listening");
+  const authority = `127.0.0.1:${server.address().port}`;
+  const client = http2.connect(`http://${authority}`);
+  async function status(headers = {}) {
+    const request = client.request({
+      ":method": "POST",
+      ":path": "/unreal-host",
+      origin: `http://${authority}`,
+      ...headers,
+    });
+    request.resume();
+    const result = once(request, "response");
+    request.end("{}");
+    return (await result)[0][":status"];
+  }
+  try {
+    assert.equal(await status(), 200);
+    assert.equal(await status({ origin: "http://attacker.example" }), 403);
+    assert.equal(await status({ host: "localhost:9999" }), 403);
+    assert.equal(await status({ ":authority": "localhost:9999" }), 403);
+  } finally {
+    client.close();
+    await once(client, "close");
+    await new Promise((resolve) => server.close(resolve));
+  }
 });
 
 test("concurrent page retries start only one host and wait for streamer readiness", async () => {
