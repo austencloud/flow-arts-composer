@@ -2103,9 +2103,12 @@ function buildViewer3DState(
         const savedPrimary = selectionSeeded
           ? (seed?.selectedPerformerIndex ?? null)
           : loadPersistedSelectedIndex();
+        // A saved empty selection starts on everyone: the performer tools
+        // open onto real performers instead of a locked panel.
         if (
-          savedPrimary === null &&
-          savedSelection.length === performerManager.performers.length
+          savedSelection.length === 0 ||
+          (savedPrimary === null &&
+            savedSelection.length === performerManager.performers.length)
         ) {
           localSelectedPerformerIndices = null;
           localPrimaryPerformerIndex = null;

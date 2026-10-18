@@ -2240,6 +2240,17 @@
     --scene-controls-bottom: calc(80px + 45px + 12px);
   }
 
+  /* A short window folds the rail into two columns (SceneControlRail); the
+     pill moves over by the second column's button and gap. */
+  :global(
+    .viewer-and-export.record-scene-active:has(
+        [data-scene-control-workspace]:not([data-presentation="compact"])
+          [data-rail-columns="2"]
+      )
+  ) {
+    --record-scene-right: calc(1.5rem + 104px);
+  }
+
   /* Compact workspaces center the Performer/Scene action bar along the same
      bottom band the pill anchors to. Lift the pill above the bar (57px bar
      + 12px gap) instead of shifting it sideways — the bar is centered, so
