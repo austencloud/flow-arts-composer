@@ -934,7 +934,7 @@ packages:
       three: '>=0.170.0'
 
   '@austencloud/sidebar@file:vendor/austencloud-sidebar-1.2.0.tgz':
-    resolution: {integrity: sha512-uJVjwoSkoLXMfilXu1jsdsEJRisyYp2jgiJZs/Ci3I1UD+KCmW+Kab/LoKnZBMgXyBwRRZ5HfQYa4quRRTyRsg==, tarball: file:vendor/austencloud-sidebar-1.2.0.tgz}
+    resolution: {integrity: sha512-hkBaYRUiwmF6kejOdcyq8CrM93XqSEL3c670k1r4L30hyB0QOHl2m95pVYhWWbq4pPIL77mU1KjzpDWS3ngX7w==, tarball: file:vendor/austencloud-sidebar-1.2.0.tgz}
     version: 1.2.0
     peerDependencies:
       svelte: ^5.0.0
