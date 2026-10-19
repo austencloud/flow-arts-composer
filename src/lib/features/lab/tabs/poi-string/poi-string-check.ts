@@ -18,8 +18,8 @@ import { lerpAngle } from "#lib/shared/animation-engine/services/angle-calculato
 export interface PoiStringOptions {
   /** Poi length, hand to head, in metres. */
   stringLength: number;
-  /** The hand's circle, as a share of the string length. */
-  handCircle: number;
+  /** Radius of the hand's circle, in metres. */
+  handRadius: number;
   bpm: number;
   gravity: boolean;
   /** How long a hand takes to round off a sharp change, in beats. */
@@ -28,7 +28,7 @@ export interface PoiStringOptions {
 
 export const DEFAULT_POI_STRING_OPTIONS: PoiStringOptions = {
   stringLength: 0.6,
-  handCircle: 1,
+  handRadius: 0.6,
   bpm: 180,
   gravity: true,
   turnaroundBeats: 0.06,
@@ -89,7 +89,7 @@ export function checkPoiString(
   options: PoiStringOptions = DEFAULT_POI_STRING_OPTIONS
 ): PoiStringResult {
   const L = options.stringLength;
-  const R = options.handCircle * L;
+  const R = options.handRadius;
   const beatSeconds = 60 / options.bpm;
   const dt = beatSeconds / SAMPLES_PER_BEAT;
 

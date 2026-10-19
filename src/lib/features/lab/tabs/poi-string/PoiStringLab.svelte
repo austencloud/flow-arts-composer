@@ -48,21 +48,34 @@
   let rightTurn = $state<TurnValue>(1);
   let labelMode = $state<MatrixLabelMode>("turns");
   let bpm = $state(DEFAULT_POI_STRING_OPTIONS.bpm);
-  let handCircle = $state(DEFAULT_POI_STRING_OPTIONS.handCircle);
+  let handRadius = $state(DEFAULT_POI_STRING_OPTIONS.handRadius);
   let stringLength = $state(DEFAULT_POI_STRING_OPTIONS.stringLength);
   let turnaroundBeats = $state(DEFAULT_POI_STRING_OPTIONS.turnaroundBeats);
   let gravity = $state<"on" | "off">("on");
   let playing = $state(true);
 
   const TURN_VALUES = turnValuesForLevel(4);
+  // On Gage's chart the right hand's prospin settles to Pro 0 every third
+  // beat; the arrow marks what that third beat does.
   const CHART_SPINS: { value: CapSpin; label: string }[] = [
     { value: "antispin", label: "Anti 1" },
     { value: "extension", label: "Pro 0" },
-    { value: "prospin", label: "Pro 1" },
+    { value: "prospin", label: "Pro 1 → Pro 0" },
   ];
   const MOTIONS: { value: Motion; label: string }[] = [
     { value: "anti", label: "Anti" },
     { value: "pro", label: "Pro" },
+  ];
+  // The left hand switches motion on its beat back, so its choices read
+  // forward, then back. On Gage's chart the turns change on the way back too.
+  const LEFT_CHART_SPINS: { value: CapSpin; label: string }[] = [
+    { value: "antispin", label: "Anti 1 → Pro 0" },
+    { value: "extension", label: "Pro 0 → Anti 1" },
+    { value: "prospin", label: "Pro 1 → Anti 1" },
+  ];
+  const LEFT_MOTIONS: { value: Motion; label: string }[] = [
+    { value: "anti", label: "Anti → Pro" },
+    { value: "pro", label: "Pro → Anti" },
   ];
   const tone = (
     options: { value: string; label: string }[],
@@ -87,7 +100,7 @@
     const beats = capStrip(cap).slice(1);
     const options = {
       bpm,
-      handCircle,
+      handRadius,
       stringLength,
       turnaroundBeats,
       gravity: gravity === "on",
@@ -100,8 +113,9 @@
     return { left: run("left"), right: run("right") };
   });
 
-  const extent = $derived((handCircle + 1) * stringLength * 1.15);
-  const handRadius = $derived(handCircle * stringLength);
+  // One scale for every setting, so a longer string draws longer. It only
+  // grows when the poi would leave the frame.
+  const extent = $derived(Math.max(1.4, (handRadius + stringLength) * 1.1));
   const beatCount = $derived(results.left.beats.length);
 
   // The head's path, cut into runs that share a verdict.
@@ -267,7 +281,7 @@
         <div class="row hands">
           <span class="hand-label" id="poi-left-chart">Left hand</span>
           <SegmentedControl
-            options={tone(CHART_SPINS, "blue")}
+            options={tone(LEFT_CHART_SPINS, "blue")}
             value={leftChart}
             onchange={(v) => (leftChart = v)}
             ariaLabelledby="poi-left-chart"
@@ -288,7 +302,7 @@
         <div class="row hands">
           <span class="hand-label" id="poi-left-motion">Left hand</span>
           <SegmentedControl
-            options={tone(MOTIONS, "blue")}
+            options={tone(LEFT_MOTIONS, "blue")}
             value={leftMotion}
             onchange={(v) => (leftMotion = v)}
             ariaLabelledby="poi-left-motion"
@@ -319,8 +333,9 @@
         </div>
       {/if}
       <p class="note">
-        The left hand caps: two beats on, one back, switching pro and anti on
-        its way back.
+        Each hand repeats three beats. The left hand caps: two beats on, one
+        back, switching between pro and anti on the way back. An arrow shows
+        what the third beat does differently.
       </p>
 
       <ValueSlider
@@ -333,13 +348,13 @@
         onchange={(v) => (bpm = v)}
       />
       <ValueSlider
-        label="Hand circle"
-        value={handCircle}
-        min={0.2}
-        max={2}
+        label="Hand circle radius"
+        value={handRadius}
+        min={0.1}
+        max={1.2}
         step={0.05}
-        format={(v) => `${v.toFixed(2)} × string`}
-        onchange={(v) => (handCircle = v)}
+        format={(v) => `${v.toFixed(2)} m`}
+        onchange={(v) => (handRadius = v)}
       />
       <ValueSlider
         label="String length"

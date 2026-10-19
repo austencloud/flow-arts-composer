@@ -121,18 +121,31 @@
     anti: "guide_eightstep_motion_anti",
     pro: "guide_eightstep_motion_pro",
   };
-  const motionOptions = (tone: "blue" | "red") =>
+  // The left hand switches motion on its beat back, so one word can't name
+  // it: its label reads forward, then back.
+  const BACK_LABEL: Record<Motion, Parameters<typeof t>[0]> = {
+    anti: "guide_eightstep_motion_anti_back",
+    pro: "guide_eightstep_motion_pro_back",
+  };
+  const BACK_SPOKEN: Record<Motion, Parameters<typeof t>[0]> = {
+    anti: "guide_eightstep_motion_anti_back_spoken",
+    pro: "guide_eightstep_motion_pro_back_spoken",
+  };
+  const motionName = (motion: Motion, side: "left" | "right") =>
+    t(side === "left" ? BACK_LABEL[motion] : MOTION_LABEL[motion]);
+  const motionOptions = (side: "left" | "right") =>
     (["anti", "pro"] as const).map((motion) => ({
       value: motion,
-      label: t(MOTION_LABEL[motion]),
-      tone,
+      label: motionName(motion, side),
+      ariaLabel: side === "left" ? t(BACK_SPOKEN[motion]) : undefined,
+      tone: side === "left" ? ("blue" as const) : ("red" as const),
     }));
   // Named as the turn picker names its values: turns, or VTG ratios.
-  const spinLabel = (spin: CapHandSpin) =>
+  const spinLabel = (spin: CapHandSpin, side: "left" | "right") =>
     spin.turns === "fl"
       ? t("shape_engine_float")
       : t("guide_eightstep_spin_label", {
-          motion: t(MOTION_LABEL[spin.motion]),
+          motion: motionName(spin.motion, side),
           value:
             labelMode === "ratios"
               ? ratioLabel(spin.turns)
@@ -205,7 +218,10 @@
     left: CapHandSpin,
     right: CapHandSpin
   ) => {
-    const spins = { left: spinLabel(left), right: spinLabel(right) };
+    const spins = {
+      left: spinLabel(left, "left"),
+      right: spinLabel(right, "right"),
+    };
     const variant = QUARTER_PATH[path.column];
     const line = variant
       ? t("guide_eightstep_example_variant", { variant: t(variant), ...spins })
@@ -367,7 +383,7 @@
                       >{t("guide_eightstep_spin_left")}</span
                     >
                     <SegmentedControl
-                      options={motionOptions("blue")}
+                      options={motionOptions("left")}
                       value={leftMotion}
                       onchange={(motion) => (leftMotion = motion)}
                       ariaLabelledby="motion-left-label"
@@ -380,7 +396,7 @@
                       >{t("guide_eightstep_spin_right")}</span
                     >
                     <SegmentedControl
-                      options={motionOptions("red")}
+                      options={motionOptions("right")}
                       value={rightMotion}
                       onchange={(motion) => (rightMotion = motion)}
                       ariaLabelledby="motion-right-label"
