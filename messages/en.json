@@ -7920,7 +7920,7 @@
   "guide_eightstep_poi_anti_zero": "Poi can't do this one. At 0 turns at least one beat spins anti, and a poi can't antispin with 0 turns. Every other prop can.",
   "guide_eightstep_link_prospin": "Prospin and Inspin",
   "guide_eightstep_paths_title": "Timing and direction",
-  "guide_eightstep_paths_body": "Every path starts with a timing and a direction. Each box steps through its spins.",
+  "guide_eightstep_paths_body": "Every path starts with a timing and a direction, named by its element. The element on each step shows the hands on that step, so you can watch the direction flip each time the left hand turns back. Each box steps through its spins.",
   "guide_eightstep_example": "Left hand {left}, right hand {right}.",
   "guide_eightstep_example_variant": "{variant}. Left hand {left}, right hand {right}.",
   "guide_eightstep_timing_split_title": "Split",

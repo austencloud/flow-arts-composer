@@ -47,6 +47,7 @@
     CAP_DIRECTIONS,
     CAP_HAND_PATHS,
     CAP_TIMINGS,
+    capMode,
     capOnPath,
     capPoiProblem,
     capStrip,
@@ -56,6 +57,8 @@
     type CapHandSpin,
     type CapTiming,
   } from "#lib/shared/guide-topics/caps-topic.js";
+  import { TND_TO_ELEMENTAL } from "#lib/shared/pictograph/shared/domain/utils/tnd-calculator.js";
+  import { getElementImagePath } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import TurnNotationControls from "#lib/shared/shape-matrix/app/components/TurnNotationControls.svelte";
   import type { MatrixLabelMode } from "#lib/shared/shape-matrix/domain/matrix-turn-band.js";
   import { ratioLabel } from "#lib/shared/shape-matrix/domain/flower-signature.js";
@@ -110,11 +113,13 @@
     turns: rightTurn,
   });
 
-  // Hand paths carry no letters; each cell shows the app's step label.
+  // Hand paths carry no letters; each cell shows the app's step label and
+  // the hands' element, which changes on the left hand's beat back.
   const PROP_RENDER: PictographRender = $derived({
     propType,
     showTKA: false,
     showStepNumbers: true,
+    showElemental: true,
   });
 
   const MOTION_LABEL: Record<Motion, Parameters<typeof t>[0]> = {
@@ -252,6 +257,7 @@
         return {
           direction,
           title: DIRECTION_TITLE[direction],
+          element: TND_TO_ELEMENTAL[capMode(timing, direction)],
           first: showcase(entries[0]!.cap),
           pool: entries.map(({ path, cap, left, right }) => ({
             word: cap.id,
@@ -461,7 +467,14 @@
                   {picTheme}
                 >
                   {#snippet text()}
-                    <h4 class="box-title">{t(box.title)}</h4>
+                    <h4 class="box-title">
+                      <img
+                        class="element"
+                        src={getElementImagePath(box.element)}
+                        alt=""
+                      />
+                      {t(box.title)}
+                    </h4>
                   {/snippet}
                 </SequenceShowcase>
               {/each}
@@ -683,14 +696,23 @@
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
+  /* The element names the mode the box's paths open in. */
   .box-title {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm, 8px);
     font-size: 1.125rem;
     color: var(--theme-text);
+  }
+  .box-title .element {
+    width: 2.25rem;
+    height: 2.25rem;
+    flex: none;
   }
   /* Stacked, the showcase centres its example line; the title follows. */
   @container (max-width: 600px) {
     .box-title {
-      text-align: center;
+      justify-content: center;
     }
   }
 

@@ -30,6 +30,7 @@ import {
   MotionType,
   Orientation,
   RotationDirection,
+  type TnDMode,
 } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   GridMode,
@@ -920,6 +921,25 @@ export const CAP_HAND_PATHS: readonly CapHandPath[] = [
     caps,
   };
 });
+
+const TIMING_LETTER: Record<CapTiming, string> = {
+  split: "S",
+  together: "T",
+  quarter: "Q",
+};
+
+/**
+ * The VTG mode a timing and direction name, as their element glyph shows it.
+ * A path opens in its box's mode; the capping hand's beat back changes it.
+ */
+export function capMode(timing: CapTiming, direction: CapDirection): TnDMode {
+  return `${TIMING_LETTER[timing]}${direction === "same" ? "S" : "O"}` as TnDMode;
+}
+
+/** The mode a hand path opens in. */
+export function capPathMode(path: CapHandPath): TnDMode {
+  return capMode(path.timing, path.direction);
+}
 
 /**
  * The chart row for a CAP: the capping (left) hand's spin against the circling

@@ -7250,7 +7250,7 @@
   "guide_eightstep_poi_anti_zero": "Mit Poi geht das nicht. Bei 0 Drehungen spinnt mindestens ein Schlag anti, und Poi können nicht mit 0 Drehungen antispinnen. Mit jedem anderen Requisit geht es.",
   "guide_eightstep_link_prospin": "Prospin und Inspin",
   "guide_eightstep_paths_title": "Timing und Richtung",
-  "guide_eightstep_paths_body": "Jeder Weg beginnt mit einem Timing und einer Richtung. Jede Box zeigt ihre Spins nacheinander.",
+  "guide_eightstep_paths_body": "Jeder Weg beginnt mit einem Timing und einer Richtung, benannt durch sein Element. Das Element auf jedem Schritt zeigt die Hände in diesem Schritt, so sieht man die Richtung jedes Mal kippen, wenn die linke Hand umkehrt. Jede Box zeigt ihre Spins nacheinander.",
   "guide_eightstep_example": "Linke Hand {left}, rechte Hand {right}.",
   "guide_eightstep_example_variant": "{variant}. Linke Hand {left}, rechte Hand {right}.",
   "guide_eightstep_timing_split_title": "Versetzt",
