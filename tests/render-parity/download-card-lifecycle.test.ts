@@ -310,8 +310,10 @@ describe("Download card with real live pictographs", () => {
           "dialog.share-sheet-modal"
         )!;
         await settledDialogHeight(dialog);
-        const stage = document.querySelector(".stage.video-placeholder")!;
-        const message = stage.querySelector(".stage-refused")!;
+        const message = dialog.querySelector<HTMLElement>(
+          '.stage .stage-refused[role="status"]'
+        )!;
+        const stage = message.closest<HTMLElement>(".stage")!;
         const frame = stage.getBoundingClientRect();
         const content = message.getBoundingClientRect();
         expect(content.height).toBeGreaterThan(20);
@@ -627,6 +629,7 @@ describe("Download card with real live pictographs", () => {
     await expect
       .poll(() => renderCard.mock.calls.length, { timeout: 15000 })
       .toBeGreaterThan(0);
+    await page.getByRole("button", { name: /^Layout\b/ }).click();
     await page
       .getByRole("button", {
         name: "Auto columns and start placement",

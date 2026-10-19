@@ -1009,7 +1009,7 @@
       {@render groupHead("look", t("post_editor_tool_look"), lookSummary)}
       {#if openGroups.look}
         <div class="group-body" transition:growFade={{ axis: "y" }}>
-          <div class="share-field">
+          <div class="share-field theme-field">
             <span class="share-field-label" id="share-theme-label"
               >{t("tab_settings_theme")}</span
             >
@@ -1019,13 +1019,23 @@
               onchange={(value) => setTheme(value === "dark")}
               color="accent"
               ariaLabelledby="share-theme-label"
-            />
+            >
+              {#snippet optionContent(mode)}
+                <i
+                  class={mode === "dark" ? "fas fa-moon" : "fas fa-sun"}
+                  aria-hidden="true"
+                ></i>
+                {mode === "dark"
+                  ? t("viewer_detail_dark")
+                  : t("viewer_detail_light")}
+              {/snippet}
+            </SegmentedControl>
           </div>
           <div class="footer-editor-field">
             <CardFooterEditor
               value={effectiveCardPresentation}
               onchange={changeCardPresentation}
-              description={t("viewer_ui_appears_inside_the_card_image")}
+              layout="inline"
               onSave={onSaveCardPresentation}
               dirty={cardPresentationDirty}
               saving={cardPresentationSaving}
@@ -1885,6 +1895,16 @@
     gap: 0.5rem;
     min-width: 0;
   }
+  /* Two short words: the switch sizes to them instead of spanning the column. */
+  .theme-field :global(.segmented-control) {
+    align-self: flex-start;
+    width: fit-content;
+  }
+  .theme-field :global(.segment) {
+    gap: 0.5rem;
+    padding-inline: 1rem;
+    white-space: nowrap;
+  }
   .share-field-label {
     font-size: 0.875rem;
     font-weight: 600;
@@ -1898,6 +1918,13 @@
   }
   .start-layout {
     min-width: 0;
+  }
+  /* One outline per group: the footer editor sits on the group body without a
+     box of its own. */
+  .share-groups .footer-editor-field {
+    padding: 0;
+    border: 0;
+    background: none;
   }
   .share-groups .qr-scope-note {
     font-size: 0.875rem;

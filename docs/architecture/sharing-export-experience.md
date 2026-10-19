@@ -846,6 +846,10 @@ in `fill`, `animateHeight` or an absolutely positioned layer.
 engines, capability APIs, QR, media editing, native share, phone transfer,
 publishing gates and the fullscreen Instagram review.
 
+**Superseded by the October 18 correction pass below:** the phone-Home note under
+"Refinement", the `--stage-cap` values and dialog widths under "Sizing", the
+short-landscape two-column choices, the stage padding, and the Download toolbar.
+
 **Verification owed (not performed in this change).** Run
 `tests/render-parity/download-card-lifecycle.test.ts`, `ShareButton.svelte.test.ts`,
 `card-preview-state.svelte.test.ts`, `post-share-draft-state.test.ts` and the
@@ -855,3 +859,47 @@ no horizontal overflow, the dock reachable at 960×412 and 375×667, the Home to
 Download and Card to Video transitions observed mid-flight and reversed, reduced
 motion instant, outgoing branches inert, and focus landing sensibly after each
 route change. Run Prettier on the three changed Svelte files.
+
+### October 18 correction pass 1
+
+An independent review of the rendered frames found seven material defects. Each
+decision below answers one; none adds a description or data panel.
+
+- **One preview tile.** The stage has no padding of its own on any route and the
+  animation fills it edge to edge, so the Share and Video animation sit at the
+  same pixels and the change between them is a pure crossfade. The live card keeps
+  its breathing room inside `.card-host` (0.75rem each side) instead of in the
+  stage, so the stage box never changes when the key does. The earlier 0.5rem
+  Video inset (`live-video-stage`) is gone.
+- **Download top.** "Back to sharing" is a 44px arrow button in the header, left
+  of the title, with the same accessible name (`share_back`). The title for video
+  is `share_download_video`. The File type label is removed; the Card/Video switch
+  is a full-width two-part control named by `aria-label` (`share_file_type`).
+  The "Card settings" and "Video settings" headings on roomy sheets are removed;
+  the Look/Header/Pictograph/Layout titles and the video control labels are the
+  headings. Narrow sheets keep their disclosure buttons.
+- **Fewer outlines.** At 900px and wider the rail has no outline; the stage and the
+  choices are the outlined surfaces. The footer editor uses `layout="inline"` (its
+  label and switch on one row, no subtitle) and loses its own box inside the Look
+  group, so a group has at most one outline of its own.
+- **No dead space.** The rail body is content-sized and the Download dock follows
+  the last control, so the primary button sits near the settings and the column
+  reads top-aligned like Home. Nothing was added to fill the space.
+- **Theme switch.** Light and Dark carry icon and word and size to their content.
+- **Short landscape (900px+ wide, under 560px high).** One column of compact rows
+  (44px, 2rem icon, one-line hint with ellipsis). `--stage-h` is derived from the
+  viewport so the stage, rail and dock fit without clipping. No grid.
+- **Phone.** Home shows the live animation as a 7.5rem strip above 4.5rem choices
+  (two-line hints). Download grows the same stage to its working height with a
+  `height` transition on `--transition-normal`; reduced motion is instant. The
+  strip appears only when there is an animation or a still to show.
+- **Wide canvases.** Caps and widths move together so the preview does not outrun
+  the controls: dialog 63 / 69 / 79rem, stage cap 34 / 38 / 46rem, rail
+  20–24 / 22–26 / 24–28rem at the base, 1680×1000 and 2600×1600 tiers. Controls
+  keep their logical size.
+
+**Verification owed.** Everything in the previous section, plus: the Home to
+Video overlay (corner labels must not move), Card to Video crossfade box fixed,
+the phone Home to Download height transition mid-flight and reversed, the header
+back button focus order, and 3840×2160 stage-to-rail balance. No browser or test
+run accompanied this change.

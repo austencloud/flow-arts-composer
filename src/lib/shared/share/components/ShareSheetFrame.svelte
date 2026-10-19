@@ -107,12 +107,12 @@
      keep their size (4k-native-layout.md). */
   @media (min-width: 1680px) and (min-height: 1000px) {
     :global(dialog.base-modal.share-sheet-modal[data-size]) {
-      width: min(71rem, calc(100vw - 3rem));
+      width: min(69rem, calc(100vw - 3rem));
     }
   }
   @media (min-width: 2600px) and (min-height: 1600px) {
     :global(dialog.base-modal.share-sheet-modal[data-size]) {
-      width: min(83rem, calc(100vw - 3rem));
+      width: min(79rem, calc(100vw - 3rem));
     }
   }
   @media (max-width: 899px) {

@@ -515,12 +515,17 @@
     return url.replace(/^https?:\/\//, "");
   }
 
-  // A wide screen gives the sequence its own stage beside the share actions.
-  // Phones keep the compact list, so no second player mounts there.
-  const homeLivePreview = $derived(!!liveVideoPreview && splitLayout.current);
-  // Phones show the stage only for a file task; the split layout always has it.
+  // The sequence animation is the first thing on every Share screen. A wide
+  // screen gives it a stage beside the actions; a phone gets a compact strip
+  // above them that grows into the Download preview.
+  const homeLivePreview = $derived(!!liveVideoPreview);
+  // Without a live animation or a still, a phone strip would only show a
+  // glyph, so the split layout alone keeps the empty stage.
   const stageVisible = $derived(
-    splitLayout.current || shareRoute === "download"
+    splitLayout.current ||
+      shareRoute === "download" ||
+      homeLivePreview ||
+      !!animationPreviewUrl
   );
   // One key per stage subject, so only a real change of subject crossfades.
   const stageKey = $derived(
@@ -1921,6 +1926,16 @@
           use:focusOnMount
         >
           <header class="panel-header">
+            {#if shareRoute === "download" && initialEntry === "chooser" && !qrDataUrl}
+              <button
+                type="button"
+                class="header-icon"
+                onclick={returnToChooser}
+                aria-label={t("share_back")}
+              >
+                <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+              </button>
+            {/if}
             <div class="title-group">
               <h2 class="panel-title">
                 {shareRoute === "publish"
@@ -1928,7 +1943,7 @@
                   : shareRoute === "download"
                     ? artifact === "video"
                       ? videoSettingsAvailable
-                        ? t("share_download_animation")
+                        ? t("share_download_video")
                         : t("share_download_post")
                       : t("share_download_card")
                     : t("share_sequence")}
@@ -1939,7 +1954,7 @@
             </div>
             <button
               type="button"
-              class="header-close"
+              class="header-icon"
               onclick={onClose}
               aria-label={t("share_close_sheet")}
             >
@@ -1962,9 +1977,6 @@
                   <div class="stage-frame" transition:growFade={{ axis: "y" }}>
                     <div
                       class="stage"
-                      class:bleed={shareRoute === "home" && homeLivePreview}
-                      class:live-video-stage={shareRoute === "download" &&
-                        showingLiveVideoPreview}
                       class:live-card-stage={shareRoute === "download" &&
                         artifact === "card" &&
                         !!cardPreview.request}
@@ -2246,38 +2258,17 @@
                       {:else}
                         <div class="rail-stack">
                           {#if !qrDataUrl}
-                            <div class="preparation-toolbar">
-                              {#if initialEntry === "chooser"}
-                                <button
-                                  type="button"
-                                  class="back-to-chooser"
-                                  onclick={returnToChooser}
-                                >
-                                  <i
-                                    class="fa-solid fa-arrow-left"
-                                    aria-hidden="true"
-                                  ></i>
-                                  {t("share_back")}
-                                </button>
-                              {/if}
-                              {#if availableArtifacts.length > 1}
-                                <fieldset
-                                  class="file-type"
-                                  disabled={videoBusy}
-                                >
-                                  <span id="share-file-type"
-                                    >{t("share_file_type")}</span
-                                  >
-                                  <SegmentedControl
-                                    options={artifactOptions}
-                                    value={artifact}
-                                    onchange={(value) => chooseArtifact(value)}
-                                    color="accent"
-                                    ariaLabelledby="share-file-type"
-                                  />
-                                </fieldset>
-                              {/if}
-                            </div>
+                            {#if availableArtifacts.length > 1}
+                              <fieldset class="file-type" disabled={videoBusy}>
+                                <SegmentedControl
+                                  options={artifactOptions}
+                                  value={artifact}
+                                  onchange={(value) => chooseArtifact(value)}
+                                  color="accent"
+                                  ariaLabel={t("share_file_type")}
+                                />
+                              </fieldset>
+                            {/if}
                           {/if}
 
                           {#if !qrDataUrl}
@@ -2316,12 +2307,9 @@
                                   class="card-settings"
                                   aria-label={t("share_card_settings")}
                                 >
-                                  {#if roomyCardSheet}
-                                    <!-- The groups below carry their own summaries. -->
-                                    <div class="settings-heading">
-                                      {t("share_card_settings")}
-                                    </div>
-                                  {:else}
+                                  {#if !roomyCardSheet}
+                                    <!-- Roomy sheets open the groups directly; each group
+                                         carries its own summary, so no extra heading. -->
                                     <PanelButton
                                       fullWidth
                                       ariaExpanded={cardSettingsOpen}
@@ -2384,11 +2372,7 @@
                                   aria-label={t("share_video_settings")}
                                   disabled={videoBusy}
                                 >
-                                  {#if roomyVideoSheet}
-                                    <div class="settings-heading">
-                                      {t("share_video_settings")}
-                                    </div>
-                                  {:else}
+                                  {#if !roomyVideoSheet}
                                     <PanelButton
                                       fullWidth
                                       ariaExpanded={videoSettingsOpen}
@@ -2797,14 +2781,16 @@
   /* The live card measures this box, its parent, and caps itself to the
      explicit max-height. Auto layout then sees a stable capacity before the
      PNG exists, and a tall card scales down whole instead of being cropped or
-     choosing against the entire viewport. The cap is the stage minus its
-     padding and border. */
+     choosing against the entire viewport. The stage has no padding of its own
+     (the animation fills it edge to edge on every route), so the card keeps
+     its breathing room here: 0.75rem on each side, and the cap is the stage
+     minus that inset and the border. */
   .card-host {
     display: grid;
     place-items: center;
     box-sizing: border-box;
-    width: 100%;
-    height: 100%;
+    width: calc(100% - 1.5rem);
+    height: calc(100% - 1.5rem);
     min-width: 0;
     min-height: 0;
     max-height: calc(var(--stage-h) - 1.5rem - 2px);
@@ -2907,16 +2893,6 @@
   }
   .opener-row:disabled {
     opacity: 0.6;
-  }
-  .settings-heading {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    min-height: var(--min-touch-target, 44px);
-    padding-inline: 0.25rem;
-    font-size: var(--font-size-min, 0.875rem);
-    font-weight: 600;
   }
   /* Each setting is a label over its control; the groups share one row when
      the sheet is wide enough and wrap into a column when it is not. */
@@ -3366,6 +3342,7 @@
     border-bottom: 1px solid var(--theme-stroke);
   }
   .title-group {
+    flex: 1 1 auto;
     min-width: 0;
     display: flex;
     flex-direction: column;
@@ -3382,7 +3359,7 @@
     opacity: 0.7;
     overflow: hidden;
   }
-  .header-close {
+  .header-icon {
     flex: 0 0 auto;
     display: grid;
     place-items: center;
@@ -3435,14 +3412,11 @@
     height: var(--stage-h);
     min-width: 0;
     min-height: 0;
-    padding: 0.75rem;
+    padding: 0;
     border: 1px solid var(--theme-stroke);
     border-radius: 0.875rem;
     background: var(--theme-card-bg);
     overflow: hidden;
-  }
-  .stage.bleed {
-    padding: 0;
   }
   /* The stage Crossfade is a plain stack: no fill and no animateHeight, so the
      live card measures a real box instead of one that is waiting on it. */
@@ -3597,23 +3571,15 @@
     color: var(--theme-text-secondary, rgba(255, 255, 255, 0.75));
     font-size: var(--font-size-min, 0.875rem);
   }
-  .preparation-toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-  }
+  /* Card / Video: one full-width two-part switch at the top of the column. */
   .file-type {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    min-height: var(--min-touch-target, 44px);
-    margin: 0 0 0 auto;
+    min-width: 0;
+    margin: 0;
     padding: 0;
     border: 0;
-    color: var(--theme-text-secondary);
-    font-size: var(--font-size-min, 0.875rem);
+  }
+  .file-type :global(.segmented-control) {
+    width: 100%;
   }
   .file-type:disabled {
     opacity: 0.55;
@@ -3639,9 +3605,6 @@
     min-height: 0;
     object-fit: contain;
     border-radius: 0.25rem;
-  }
-  .stage.live-video-stage {
-    padding: 0.5rem;
   }
   /* The supplied stage lives in the host's style scope, so this boundary owns
      the dimensions that keep the canvas useful across share-sheet layouts. */
@@ -3767,7 +3730,7 @@
     font-size: 1rem;
     font-weight: 600;
   }
-  .header-close:focus-visible,
+  .header-icon:focus-visible,
   .tile:focus-visible,
   .network:focus-visible {
     outline: 2px solid var(--theme-accent);
@@ -3783,9 +3746,9 @@
       gap: 1rem;
     }
     .panel-title {
-      /* Download animation is the widest route label. Reserve it so changing
+      /* Download video is the widest route label. Reserve it so changing
          Card to Video cannot push the word mark on desktop. */
-      min-inline-size: 12rem;
+      min-inline-size: 10rem;
       font-size: 1.25rem;
     }
     .sheet-scroll {
@@ -3821,21 +3784,24 @@
       padding: 0;
     }
     .rail {
-      /* The stage sets the row height; the rail never stretches the dialog. */
+      /* The stage sets the row height; the rail never stretches the dialog.
+         It sits on the dialog itself: the stage and the choices are the only
+         outlined surfaces, so the column reads as content, not an empty box. */
       contain: size;
       height: var(--stage-h);
-      border: 1px solid var(--theme-stroke);
-      border-radius: 0.875rem;
       overflow: hidden;
     }
+    /* Content-sized: the dock follows the last control instead of sitting at
+       the far end of a void. A long column still scrolls inside the rail. */
     .rail-body {
-      padding: 1rem;
+      flex: 0 1 auto;
+      padding: 0 0.25rem 0.25rem 0;
     }
     .share-split[data-route="home"]:not(:has(.stage-frame)) {
       grid-template-columns: minmax(0, 1fr);
     }
     .share-dock {
-      padding: 0.75rem 1rem;
+      padding: 0.75rem 0 0;
     }
     .qr-step .share-split {
       grid-template-columns: minmax(0, 1fr);
@@ -3843,29 +3809,57 @@
     .qr-step .rail {
       height: auto;
       contain: none;
-      border: 0;
     }
   }
+  /* Wide canvases recompose rather than magnify: the dialog widens (see
+     ShareSheetFrame), the stage cap and the rail grow together, and the
+     controls keep their size. The stage-to-rail ratio stays near 1.4 instead
+     of the preview racing ahead of a fixed-size column. */
   @media (min-width: 1680px) and (min-height: 1000px) {
     .share-split {
-      --stage-cap: 42rem;
+      --stage-cap: 38rem;
+      grid-template-columns: minmax(0, 1fr) minmax(22rem, 26rem);
     }
   }
   @media (min-width: 2600px) and (min-height: 1600px) {
     .share-split {
-      --stage-cap: 54rem;
+      --stage-cap: 46rem;
+      grid-template-columns: minmax(0, 1fr) minmax(24rem, 28rem);
     }
   }
-  /* Short landscape: the rail takes two columns of choices so all three fit
-     without scrolling the dock away. */
+  /* Short landscape: one column of compact rows, so every choice fits beside
+     the stage without scrolling. Never a grid of narrow cards. */
   @media (min-width: 900px) and (max-height: 560px) {
     .share-split {
-      grid-template-columns: minmax(0, 1fr) minmax(26rem, 30rem);
+      --stage-h: clamp(
+        8rem,
+        calc(var(--viewport-height, 100dvh) - 9.5rem),
+        14rem
+      );
+      grid-template-columns: minmax(0, 1fr) minmax(20rem, 24rem);
       padding-block: 0.75rem;
     }
     .intent-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      grid-auto-rows: minmax(5.5rem, auto);
+      gap: 0.5rem;
+      grid-auto-rows: minmax(var(--min-touch-target, 44px), auto);
+    }
+    .intent {
+      min-height: var(--min-touch-target, 44px);
+      padding: 0.5rem 0.75rem;
+    }
+    .intent-body {
+      grid-template-columns: 2rem minmax(0, 1fr);
+      column-gap: 0.75rem;
+    }
+    .intent-body > i {
+      width: 2rem;
+      height: 2rem;
+      font-size: 1rem;
+    }
+    .intent-hint {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
   }
   @media (max-height: 500px) {
@@ -3882,6 +3876,33 @@
   @media (max-width: 899px) {
     .share-dock {
       padding-inline: 1.25rem;
+    }
+    /* Phone: Home carries the animation as a compact strip above the choices;
+       Download grows the same stage to its working height. Only the stage's
+       height moves, through the shared transition token. */
+    .share-split[data-route="home"] {
+      --stage-h: 7.5rem;
+    }
+    .stage {
+      transition: height var(--transition-normal);
+    }
+    .intent-grid {
+      grid-auto-rows: minmax(4.5rem, auto);
+      gap: 0.5rem;
+    }
+    .intent {
+      min-height: 4.5rem;
+      padding: 0.75rem 1rem;
+    }
+    .intent-hint {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+      overflow: hidden;
+    }
+    .intent-hint.link-value {
+      display: block;
     }
   }
   @media (prefers-reduced-motion: reduce) {
