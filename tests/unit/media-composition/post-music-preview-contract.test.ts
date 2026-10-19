@@ -26,8 +26,10 @@ const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "../../.."
 );
+// The packed build can carry Windows line endings; the contract is about the
+// code, so line endings are normalized before matching.
 const read = (relative: string) =>
-  readFileSync(path.resolve(repoRoot, relative), "utf8");
+  readFileSync(path.resolve(repoRoot, relative), "utf8").replace(/\r\n/g, "\n");
 
 // The canvas, workspace and timeline moved into @austencloud/video-editor
 // (Task 20). The installed package's .svelte files are its source verbatim.

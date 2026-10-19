@@ -535,9 +535,17 @@ describe("Shape Matrix app boundary", () => {
     expect(theorySource).toContain('hand="both"');
     expect(ratioEntrySource).toContain('onclick={() => nudge("hand", -1)}');
     expect(ratioEntrySource).toContain('onclick={() => nudge("prop", 1)}');
-    // The indicator tracks the chosen cell on both axes.
-    expect(segmentedSource).toContain(".grid .indicator {");
-    expect(segmentedSource).toContain("--row: {selectedRow}");
+    // Composer's control wraps the shared one (7501cd9475), which marks the
+    // chosen segment itself and wraps the segments over the tray's columns.
+    expect(segmentedSource).toContain("<SharedSegmentedControl");
+    expect(segmentedSource).toContain("{columns}");
+    const sharedSegmentedSource = readFileSync(
+      resolve("node_modules/@austencloud/ui/dist/SegmentedControl.svelte"),
+      "utf8"
+    );
+    expect(sharedSegmentedSource).toContain(
+      "grid-template-columns: repeat(var(--ui-segment-columns), minmax(0, 1fr));"
+    );
   });
 
   it("plays a header on its own, with one prop and no hand pickers", () => {

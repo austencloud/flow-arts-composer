@@ -59,6 +59,14 @@ const performerStanceOwner = readFileSync(
   "utf8"
 );
 
+const contactOwner = readFileSync(
+  resolve(
+    process.cwd(),
+    "src/lib/shared/3d/domain/performer-contact-displacement.ts"
+  ),
+  "utf8"
+);
+
 const viewerScene = readFileSync(
   resolve(process.cwd(), "src/lib/shared/3d/components/Viewer3DScene.svelte"),
   "utf8"
@@ -178,25 +186,29 @@ describe("staff grip contact contract", () => {
     // consumers resolve them through the one shared owner rather than either
     // of them re-planning. The viewer is checked here too, because a lab that
     // agreed only with itself is what this contract exists to prevent.
-    // The viewer now reaches the same two functions through
-    // `performer-upper-body-stance`, which caches one track per performer for
-    // both render backends. That is still the one owner: the module must call
-    // them, and the viewer must not re-plan the stance itself.
-    expect(liveSequencePerformer).toContain("resolveTrackedUpperBodyStance");
-    expect(liveSequencePerformer).toContain("buildStanceYawTrackForSource");
-    expect(performerStanceOwner).toContain("resolveTrackedUpperBodyStance");
-    expect(performerStanceOwner).toContain("buildStanceYawTrackForSource");
-    expect(viewerScene).toContain(
-      'import { resolvePerformerUpperBodyStance } from "../domain/performer-upper-body-stance"'
+    // Since 62d2469e6b both reach those two functions through
+    // `resolvePerformerContact`, the one owner of the props and stance they
+    // hand the rig each frame. Neither consumer may re-plan the stance itself.
+    expect(contactOwner).toContain("resolveTrackedUpperBodyStance(");
+    expect(contactOwner).toContain("buildStanceYawTrackForSource(");
+    expect(liveSequencePerformer).toContain(
+      "resolvePerformerContact(performerState, {"
     );
-    expect(viewerScene).toContain("resolvePerformerUpperBodyStance(performer)");
+    expect(liveSequencePerformer).not.toContain("buildStanceYawTrackForSource");
+    expect(viewerScene).toContain(
+      'import { resolvePerformerContact } from "../domain/performer-contact-displacement"'
+    );
+    expect(viewerScene).toContain("resolvePerformerContact(performer, {");
+    expect(viewerScene).not.toContain("buildStanceYawTrackForSource");
+    expect(performerStanceOwner).toContain(
+      "return resolvePerformerContact(performer).stance;"
+    );
     // The contact owner reads the score clock, which holds at beat 1 while the
     // start pose plays; a torso on the raw score time would turn ahead of the
     // props it hands over.
-    expect(liveSequencePerformer).toContain(
-      "performerScoreClock(performerState),"
+    expect(contactOwner).toContain(
+      "const scoreTime = performerScoreClock(performer);"
     );
-    expect(performerStanceOwner).toContain("performerScoreClock(performer),");
     // An authored stance (the isolation study) may override the planned one,
     // so the render props read the resolved `renderedUpperBodyStance`, which
     // falls back to the shared owner's result.
