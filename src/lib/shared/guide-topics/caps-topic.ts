@@ -37,6 +37,7 @@ import {
 } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import { getGridPlacementFromLocations } from "#lib/shared/pictograph/grid/services/grid-placement-deriver.js";
 import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { TurnValue } from "#lib/shared/create/services/level-turn-values.js";
 import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
 import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
@@ -83,10 +84,10 @@ export interface CapHand {
   path: readonly GridLocation[];
   spins: readonly CapSpin[];
   /**
-   * Turns on each antispin beat. The chart's CAPs use 1; every CAP also
-   * spins with 0, on any prop but poi.
+   * One turn value for every beat, in place of each spin's own turns. The
+   * spins then give only each beat's motion, pro or anti.
    */
-  antiTurns?: 0 | 1;
+  turns?: TurnValue;
 }
 
 export interface Cap {
@@ -928,24 +929,24 @@ export function capPairing(cap: Cap): { capping: CapSpin; circling: CapSpin } {
   return { capping: cap.left.spins[0]!, circling: cap.right.spins[0]! };
 }
 
+/** Why a poi can't spin a CAP, or null when it can. */
+export type CapPoiProblem = "anti-zero" | "momentum";
+
 /**
- * Whether a CAP spins on poi. A poi may point in partway through, but it
- * keeps its momentum only while it carries on the same way: the hand keeps
- * travelling and the poi keeps turning in the same direction until it
- * points out again. So every change of direction has to fall on a beat that
- * ends pointing out, and the loop has to end pointing out to repeat. A staff
- * can change direction pointing any way.
+ * What stops a CAP on poi. Gravity keeps a poi from antispinning with no
+ * turns. Otherwise a poi may point in partway through, but it keeps its
+ * momentum only while it carries on the same way: the hand keeps travelling
+ * and the poi keeps turning in the same direction until it points out again.
+ * So every change of direction has to fall on a beat that ends pointing out,
+ * and the loop has to end pointing out to repeat. A staff does either.
  */
-export function capWorksOnPoi(cap: Cap): boolean {
-  return [cap.left, cap.right].every((hand) => {
-    const steps = capHandSteps(hand);
-    // Gravity keeps a poi from antispinning with no turns.
-    if (
-      steps.some((step) => step.motionType === MotionType.ANTI && !step.turns)
-    ) {
-      return false;
-    }
-    return steps.every((step, i) => {
+export function capPoiProblem(cap: Cap): CapPoiProblem | null {
+  const hands = [cap.left, cap.right].map(capHandSteps);
+  const antiZero = (step: SoloPropStepData) =>
+    step.motionType === MotionType.ANTI && step.turns === 0;
+  if (hands.some((steps) => steps.some(antiZero))) return "anti-zero";
+  const carriesOn = (steps: SoloPropStepData[]) =>
+    steps.every((step, i) => {
       if (step.endOrientation === Orientation.OUT) return true;
       const next = steps[(i + 1) % steps.length]!;
       return (
@@ -955,7 +956,58 @@ export function capWorksOnPoi(cap: Cap): boolean {
           travel(step.startLocation, step.endLocation)
       );
     });
+  return hands.every(carriesOn) ? null : "momentum";
+}
+
+export function capWorksOnPoi(cap: Cap): boolean {
+  return capPoiProblem(cap) === null;
+}
+
+/** How one hand spins on a hand path: its motion and its turns. */
+export interface CapHandSpin {
+  motion: "pro" | "anti";
+  turns: TurnValue;
+}
+
+/**
+ * A hand path with each hand spun one way at one turn value on every beat.
+ * The capping hand flips its motion on the beat back, as the chart's CAPs
+ * do, so its prop keeps turning the same way. The chart CAP with the same
+ * motions supplies the positions and the word, which turns never change.
+ */
+export function capOnPath(
+  path: CapHandPath,
+  left: CapHandSpin,
+  right: CapHandSpin
+): Cap {
+  const spin = (hand: CapHandSpin): CapSpin =>
+    hand.motion === "anti" ? "antispin" : "extension";
+  const chart = path.caps.find((cap) => {
+    const pairing = capPairing(cap);
+    return pairing.capping === spin(left) && pairing.circling === spin(right);
+  })!;
+  const cap: Cap = {
+    ...chart,
+    id: `${chart.id}:${left.turns}:${right.turns}`,
+    left: { ...chart.left, turns: left.turns },
+    right: { ...chart.right, turns: right.turns },
+  };
+  // An odd number of quarter turns leaves the prop pointing in after twelve
+  // beats, so the loop goes round twice to bring it home.
+  const comesHome = (hand: CapHand) =>
+    capHandSteps(hand).at(-1)!.endOrientation === Orientation.OUT;
+  if (comesHome(cap.left) && comesHome(cap.right)) return cap;
+  const twice = (hand: CapHand): CapHand => ({
+    ...hand,
+    path: [...hand.path, ...hand.path],
+    spins: [...hand.spins, ...hand.spins],
   });
+  return {
+    ...cap,
+    word: cap.word.repeat(2),
+    left: twice(cap.left),
+    right: twice(cap.right),
+  };
 }
 
 /** The shortest run of letters the word repeats, e.g. "KEC". */
@@ -985,41 +1037,32 @@ function opposite(direction: RotationDirection): RotationDirection {
     : RotationDirection.CLOCKWISE;
 }
 
-/**
- * One hand's twelve beats. Pro spins the prop the way the hand travels and
- * anti spins it against the hand; every prop starts pointing out.
- */
-/** A spin's motion on this hand, with the hand's antispin turns. */
+/** A spin's motion on this hand, at the hand's own turns if it has them. */
 function spinMotion(hand: CapHand, spin: CapSpin) {
   const motion = CAP_SPIN_MOTION[spin];
-  return spin === "antispin"
-    ? { ...motion, turns: hand.antiTurns ?? motion.turns }
-    : motion;
+  return { motionType: motion.motionType, turns: hand.turns ?? motion.turns };
 }
 
 /**
- * The CAP with every antispin at the given turns. At 1 it is the chart's own
- * CAP; at 0 it is its twin, with its own id so a player reloads for it.
+ * One hand's twelve beats. Pro spins the prop the way the hand travels and
+ * anti spins it against the hand; every prop starts pointing out. A float
+ * keeps the pro or anti it collapsed from, which names its letter.
  */
-export function capWithAntiTurns(cap: Cap, turns: 0 | 1): Cap {
-  if (turns === 1) return cap;
-  return {
-    ...cap,
-    id: `${cap.id}-anti0`,
-    left: { ...cap.left, antiTurns: 0 },
-    right: { ...cap.right, antiTurns: 0 },
-  };
-}
-
 export function capHandSteps(hand: CapHand): SoloPropStepData[] {
   const steps: SoloPropStepData[] = [];
   let at = hand.start;
   let orientation: Orientation = Orientation.OUT;
   hand.path.forEach((to, i) => {
-    const { motionType, turns } = spinMotion(hand, hand.spins[i]!);
+    const spun = spinMotion(hand, hand.spins[i]!);
+    const turns = spun.turns;
+    const floats = turns === "fl";
+    const motionType = floats ? MotionType.FLOAT : spun.motionType;
     const way = travel(at, to);
-    const rotationDirection =
-      motionType === MotionType.PRO ? way : opposite(way);
+    const rotationDirection = floats
+      ? RotationDirection.NO_ROTATION
+      : spun.motionType === MotionType.PRO
+        ? way
+        : opposite(way);
     const endOrientation = calculateEndOrientation({
       motionType,
       turns,
@@ -1037,6 +1080,7 @@ export function capHandSteps(hand: CapHand): SoloPropStepData[] {
       motionType,
       rotationDirection,
       turns,
+      ...(floats && { prefloatMotionType: spun.motionType }),
     });
     at = to;
     orientation = endOrientation;
@@ -1063,7 +1107,7 @@ export interface CapBeat {
 }
 
 function handBeat(hand: CapHand, spin: CapSpin): CapHandBeat {
-  return { spin, ratio: ratioLabel(spinMotion(hand, spin).turns as 0 | 1) };
+  return { spin, ratio: ratioLabel(spinMotion(hand, spin).turns) };
 }
 
 /** The VTG reading of every beat: the hands' element and each hand's spin. */
@@ -1090,6 +1134,7 @@ function motion(hand: HandSide, step: SoloPropStepData, propType: PropType) {
     turns: step.turns,
     startOrientation: step.startOrientation,
     endOrientation: step.endOrientation,
+    prefloatMotionType: step.prefloatMotionType,
     hand,
     propType,
     gridMode: GridMode.DIAMOND,
