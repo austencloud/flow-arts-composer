@@ -408,6 +408,9 @@
     padding: var(--spacing-lg, 24px);
     max-width: 1200px;
     margin: 0 auto;
+    /* A size container takes no width from its content, so claim the row. */
+    width: 100%;
+    box-sizing: border-box;
     container-type: inline-size;
     color: var(--theme-text);
   }
