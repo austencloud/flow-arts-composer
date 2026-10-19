@@ -22,14 +22,15 @@ import { tkaEditorOf } from "./tka-editor-context";
  * (the package's ui/editor/post-editor-labels.ts, `toolLabel` and
  * `TOOL_ICON`). Beats and Clear act at once; the rest open a panel. Grid is
  * an arrangement's; Layers, Grids, Offset, Effort and Clear belong to its
- * cell in hand. Look is an arrangement's own look there, else
- * the post's animation defaults.
+ * cell in hand. Look is an arrangement's or a mandala's own look there, else
+ * the post's animation defaults. Sequence is a mandala's ordered list.
  */
 export const TKA_TOOLS: readonly PluginTool[] = [
   {
     id: "look",
     type: "panel",
-    label: (_t, kind) => (kind === "arrangement" ? "Look" : "Animation defaults"),
+    label: (_t, kind) =>
+      kind === "arrangement" || kind === "mandala" ? "Look" : "Animation defaults",
     icon: faPalette,
   },
   {
@@ -65,7 +66,7 @@ export const TKA_TOOLS: readonly PluginTool[] = [
   {
     id: "sequence",
     type: "panel",
-    label: () => "Sequence",
+    label: (_t, kind) => (kind === "mandala" ? "Sequences" : "Sequence"),
     icon: faShuffle,
   },
   {

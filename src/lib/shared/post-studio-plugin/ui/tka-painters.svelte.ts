@@ -12,6 +12,7 @@ import {
 } from "@austencloud/video-editor/core";
 import {
   itemIdFromArrangementRole,
+  itemIdFromMandalaRole,
   itemIdFromMovesAnimationRole,
   itemIdFromStaffEffectRole,
   staffEffectRole,
@@ -224,6 +225,17 @@ export function createTkaBindings(env: {
         label: "Arrangement",
         previewUrl: null,
         renderMode: "arrangement",
+        status: "ready",
+      };
+    }
+    // A mandala clip draws itself from the post's clock, like an arrangement.
+    if (itemIdFromMandalaRole(role)) {
+      return {
+        roleKey: role,
+        kind: "arrangement",
+        label: t("post_editor_kind_mandala"),
+        previewUrl: null,
+        renderMode: "mandala",
         status: "ready",
       };
     }

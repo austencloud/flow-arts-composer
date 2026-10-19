@@ -33,7 +33,9 @@ import {
 // Types only: item-kinds imports this module by value for each kind's compile.
 import type {
   PostAnimationItem,
+  PostArrangementItem,
   PostCarouselItem,
+  PostMandalaItem,
   PostMovesItem,
 } from "./item-kinds";
 
@@ -73,6 +75,16 @@ export function arrangementRole(itemId: string): string {
 
 export function itemIdFromArrangementRole(role: string): string | null {
   const prefix = "arrangement:";
+  return role.startsWith(prefix) ? role.slice(prefix.length) : null;
+}
+
+/** A shifting mandala clip, which tka's media layer draws on the beat. */
+export function mandalaRole(itemId: string): string {
+  return `mandala:${itemId}`;
+}
+
+export function itemIdFromMandalaRole(role: string): string | null {
+  const prefix = "mandala:";
   return role.startsWith(prefix) ? role.slice(prefix.length) : null;
 }
 
@@ -508,10 +520,30 @@ export function compileArrangementItem(
   env: CompileItemEnv
 ): boolean {
   if (item.kind !== "arrangement") return false;
+  return compileSelfDrawnClip(item, env, arrangementRole(item.id));
+}
+
+/**
+ * A mandala clip is drawn by tka's media layer from the post's clock; the
+ * compiled clip only places it and hands the layer its source time.
+ */
+export function compileMandalaItem(
+  item: PostItem,
+  env: CompileItemEnv
+): boolean {
+  if (item.kind !== "mandala") return false;
+  return compileSelfDrawnClip(item, env, mandalaRole(item.id));
+}
+
+/** One clip over a manual role the media layer draws itself, playing its span of source. */
+function compileSelfDrawnClip(
+  item: PostArrangementItem | PostMandalaItem,
+  env: CompileItemEnv,
+  roleKey: string
+): boolean {
   const { output, box, zIndex, label } = env;
   const { useRole, region, presetRole } = env;
   const { regionKeyframesFor, motionFor, seconds } = env;
-  const roleKey = arrangementRole(item.id);
   useRole(presetRole(roleKey, label, "manual", ["arrangement"]));
   env.addRegion(region(item.id, label, box, "fill", zIndex));
   const regionKeyframes = regionKeyframesFor(item, output);

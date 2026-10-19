@@ -46,6 +46,8 @@ import {
   arrangementDurationSeconds,
   createArrangementItem,
 } from "#lib/shared/media-composition/domain/post-arrangement-item.js";
+import { createMandalaItem } from "#lib/shared/media-composition/domain/post-mandala-item.js";
+import type { MandalaSequenceSnapshot } from "#lib/shared/post-studio-plugin/index.js";
 import {
   validateArrangementSnapshot,
   type ArrangementSnapshot,
@@ -602,6 +604,47 @@ export function addArrangementItem(
   const itemId = nextId("arrangement");
   const item = createArrangementItem(
     valid,
+    itemId,
+    onMain ? 0 : Math.max(0, at),
+    onMain
+  );
+  if (onMain)
+    return { project: finish(appendToMain(project, item), ctx), itemId };
+  const under = mainItemAt(project, item.start);
+  const overlay = {
+    ...item,
+    anchor: under
+      ? { itemId: under.id, offset: item.start - under.start }
+      : null,
+  };
+  const top = project.tracks.length - 1;
+  const track = project.tracks[top]!;
+  const next =
+    top > MAIN_TRACK_INDEX &&
+    !track.hidden &&
+    !track.locked &&
+    trackHasRoom(track, overlay.start, itemEnd(overlay))
+      ? withTrackItems(project, top, [...track.items, overlay])
+      : withNewTrackOnTop(project, overlay, nextId);
+  return { project: finish(next, ctx), itemId };
+}
+
+/**
+ * A new mandala clip, placed as an arrangement is: on the main track when it
+ * is empty, else over the playhead on the top track with room.
+ */
+export function addMandalaItem(
+  project: PostProject,
+  sequences: readonly MandalaSequenceSnapshot[],
+  at: number,
+  ctx: EditContext
+): { project: PostProject; itemId: string } {
+  const nextId = createIdAllocator(project);
+  const main = project.tracks[MAIN_TRACK_INDEX]!;
+  const onMain = main.items.length === 0;
+  const itemId = nextId("mandala");
+  const item = createMandalaItem(
+    sequences,
     itemId,
     onMain ? 0 : Math.max(0, at),
     onMain

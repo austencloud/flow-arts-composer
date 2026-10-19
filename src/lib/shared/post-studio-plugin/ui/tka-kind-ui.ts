@@ -3,6 +3,7 @@ import {
   faArrowsUpDownLeftRight,
   faHeading,
   faImages,
+  faSun,
   faTableCellsLarge,
   faWandMagicSparkles,
 } from "@austencloud/video-editor/icons";
@@ -20,7 +21,7 @@ import TkaKindTools from "./TkaKindTools.svelte";
  * and the panel names the cell in hand.
  */
 export const TKA_KIND_UI: Record<
-  "animation" | "moves" | "carousel" | "titles" | "arrangement",
+  "animation" | "moves" | "carousel" | "titles" | "arrangement" | "mandala",
   ItemKindUi
 > = {
   animation: {
@@ -60,5 +61,10 @@ export const TKA_KIND_UI: Record<
     selectionLayer: TkaArrangementSelection as unknown as NonNullable<
       ItemKindUi["selectionLayer"]
     >,
+  },
+  mandala: {
+    icon: faSun,
+    label: (t) => t("post_editor_kind_mandala"),
+    toolPanel: TkaKindTools,
   },
 };

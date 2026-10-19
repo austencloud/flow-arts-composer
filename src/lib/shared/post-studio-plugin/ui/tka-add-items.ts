@@ -58,12 +58,18 @@ export const TKA_ADD_ITEMS: Readonly<Record<string, PluginAddItem>> = {
     available: always,
     add: (e) => overlay(e, { kind: "moves", mode: "arrows" }),
   },
+  // A shifting mandala clip; the picture-in-picture mandala stays under Moves.
   mandala: {
     id: "mandala",
     icon: faSun,
     label: (t) => t("post_editor_kind_mandala"),
     available: always,
-    add: (e) => overlay(e, { kind: "moves", mode: "mandala" }),
+    add: (e) =>
+      tkaEditorOf(e)?.wrapper.addMandala(
+        newItemStart(e.durationSeconds, e.previewSeconds)
+      )
+        ? "mandala"
+        : null,
   },
   carousel: {
     id: "carousel",
@@ -105,7 +111,7 @@ export const TKA_ADD_ITEMS: Readonly<Record<string, PluginAddItem>> = {
 
 /**
  * Today's order around the core entries (`text`, `card`). A post with no
- * sequence offers only what needs none: an arrangement and text.
+ * sequence offers only what needs none: an arrangement, a mandala and text.
  */
 export function tkaAddItems(
   core: readonly string[],
@@ -114,7 +120,7 @@ export function tkaAddItems(
   const has = (id: string) => (core.includes(id) ? [id] : []);
   const a = TKA_ADD_ITEMS;
   if (editor && tkaEditorOf(editor)?.sequence === null)
-    return [a.arrangement!, ...has("text")];
+    return [a.arrangement!, a.mandala!, ...has("text")];
   return [
     a.arrangement!,
     a.animation!,
