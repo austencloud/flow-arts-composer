@@ -58,8 +58,11 @@ instead of showing an empty shell.
   import { getSharedCollectionsContext } from "../context/shared-collections-context";
   import UserVideoLibraryView from "#lib/shared/video-collaboration/components/UserVideoLibraryView.svelte";
   import WorkShelfRail from "./WorkShelfRail.svelte";
+  import BackToBrowseButton from "#lib/features/browse/shared/components/BackToBrowseButton.svelte";
+  import { handleModuleHome } from "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js";
   import {
     locationForShelf,
+    parentListForCollection,
     shelfForLocation,
     type WorkShelfId,
   } from "../services/work-shelf-navigation.js";
@@ -432,7 +435,13 @@ instead of showing an empty shell.
   }
 
   function backToList() {
-    browseNavigationState.viewCollections();
+    browseNavigationState.navigateTo(
+      parentListForCollection(browseNavigationState.currentLocation)
+    );
+  }
+
+  function backToBrowse() {
+    handleModuleHome("browse", "workspace");
   }
 
   // The three Art collections (tunnels, 3D scenes, mandalas) as category
@@ -814,14 +823,13 @@ instead of showing an empty shell.
 
 {#snippet artDetail(artId: string, showBack: boolean)}
   <!-- The former Playground gallery, lazy-mounted inside the Library the same
-	     way the other detail views fill this space. Phone (stacked) flow gets a
-	     back bar; the desktop split has the rail right there. -->
+	     way the other detail views fill this space. -->
   <div class="art-detail">
     {#if showBack}
       <header class="art-detail-bar">
-        <button type="button" class="art-back" onclick={backToList}>
+        <button type="button" class="art-back" onclick={backToBrowse}>
           <i class="fas fa-arrow-left" aria-hidden="true"></i>
-          <span>{t("browse_ui_you")}</span>
+          <span>{t("module_browse")}</span>
         </button>
         <span class="art-detail-title">{ART_DETAIL[artId]?.label}</span>
       </header>
@@ -847,9 +855,9 @@ instead of showing an empty shell.
   <div class="art-detail">
     {#if showBack}
       <header class="art-detail-bar">
-        <button type="button" class="art-back" onclick={backToList}>
+        <button type="button" class="art-back" onclick={backToBrowse}>
           <i class="fas fa-arrow-left" aria-hidden="true"></i>
-          <span>{t("browse_ui_you")}</span>
+          <span>{t("module_browse")}</span>
         </button>
         <span class="art-detail-title">{t("browse_ui_performances")}</span>
       </header>
@@ -890,7 +898,7 @@ instead of showing an empty shell.
 
 {#snippet shelfContent(shelfId: WorkShelfId)}
   {#if shelfId === "drafts"}
-    <DraftsShelf />
+    <DraftsShelf showBrowseBack={false} />
   {:else if shelfId === "collections"}
     <div class="rail-cards">
       {@render ownShelves(railSelection)}
@@ -995,7 +1003,6 @@ instead of showing an empty shell.
               <SmartCollectionDetailView
                 collectionId={railSelection.id}
                 onBack={backToList}
-                showBack={false}
               />
             {/key}
           {:else}
@@ -1007,7 +1014,9 @@ instead of showing an empty shell.
                 ? railSelection.accessRole
                 : undefined}
               onBack={backToList}
-              showBack={false}
+              backLabel={railSelection.ownerId
+                ? t("browse_following")
+                : t("browse_ui_collections_tab")}
             />
           {/if}
         </section>
@@ -1050,12 +1059,13 @@ instead of showing an empty shell.
       >
     </div>
     <div class="mobile-library">
-      <AllLibraryView onBack={backToList} />
+      <AllLibraryView onBack={backToBrowse} />
     </div>
   </div>
 {:else if isYouFollowing}
   <div class="collections-list">
     <header class="list-header">
+      <BackToBrowseButton />
       <h2 class="list-title">{t("browse_following")}</h2>
     </header>
     {#if sharedCollections.length > 0 || sharedCollectionsState.loading || sharedCollectionsState.error}
@@ -1096,11 +1106,15 @@ instead of showing an empty shell.
       ownerName={detail.ownerName}
       accessRole={detail.accessRole}
       onBack={backToList}
+      backLabel={detail.ownerId
+        ? t("browse_following")
+        : t("browse_ui_collections_tab")}
     />
   {/if}
 {:else}
   <div class="collections-list">
     <header class="list-header">
+      <BackToBrowseButton />
       <h2 class="list-title">{t("browse_ui_your_work")}</h2>
     </header>
 
@@ -1375,7 +1389,7 @@ instead of showing an empty shell.
   .list-header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
     gap: 12px;
     flex-wrap: wrap;
   }

@@ -5,6 +5,7 @@ import {
 } from "#lib/shared/browse/navigation/browse-route-resolver.js";
 import {
   locationForShelf,
+  parentListForCollection,
   shelfForLocation,
 } from "../work-shelf-navigation.js";
 
@@ -57,5 +58,16 @@ describe("You shelf navigation", () => {
     expect(buildBrowsePath(locationForShelf("shared", undefined, shared))).toBe(
       "/browse/you/collections/shared/two"
     );
+  });
+
+  it("returns direct collection links to their fixed parent list", () => {
+    for (const [detailPath, parentPath] of [
+      ["/browse/you/collections/owned", "/browse/you/collections"],
+      ["/browse/you/collections/founding_tka-1", "/browse/you/collections"],
+      ["/browse/you/collections/other/shared", "/browse/you/following"],
+    ] as const) {
+      const detail = resolveBrowsePathname(detailPath)!.location;
+      expect(buildBrowsePath(parentListForCollection(detail))).toBe(parentPath);
+    }
   });
 });

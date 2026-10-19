@@ -66,15 +66,13 @@ becomes private while open, we bail back to the list instead of showing a ghost.
     ownerName,
     accessRole,
     showBack = true,
+    backLabel = t("browse_ui_collections_tab"),
   }: {
     collectionId: string;
     onBack: () => void;
-    /**
-     * The desktop split view keeps the collection rail on screen, so a back
-     * arrow would be a second way to do what the rail already does — hide it.
-     * (onBack stays wired: a deleted collection still needs somewhere to go.)
-     */
+    /** Test and embedding surfaces can omit the navigation control. */
     showBack?: boolean;
+    backLabel?: string;
     /**
      * Set when viewing someone ELSE's public collection (Community view).
      * Read-only: no rename/delete/remove, but still live across devices.
@@ -719,10 +717,11 @@ becomes private while open, we bail back to the list instead of showing a ghost.
         <button
           type="button"
           class="back-btn"
-          aria-label={t("browse_ui_back_to_collections")}
+          aria-label={t("browse_verified_back_to", { destination: backLabel })}
           onclick={onBack}
         >
           <i class="fas fa-arrow-left" aria-hidden="true"></i>
+          <span>{backLabel}</span>
         </button>
       {/if}
 
@@ -865,7 +864,8 @@ becomes private while open, we bail back to the list instead of showing a ghost.
         </p>
         <button type="button" class="empty-cta" onclick={onBack}>
           <i class="fas fa-arrow-left" aria-hidden="true"></i>
-          <span>{t("browse_ui_back_to_collections")}</span>
+          <span>{t("browse_verified_back_to", { destination: backLabel })}</span
+          >
         </button>
       </div>
     {:else if loadingMembers}
@@ -1039,6 +1039,16 @@ becomes private while open, we bail back to the list instead of showing a ghost.
   .options-btn:hover {
     border-color: color-mix(in srgb, var(--tile-color) 45%, transparent);
     background: color-mix(in srgb, var(--tile-color) 10%, var(--theme-card-bg));
+  }
+
+  .back-btn {
+    width: auto;
+    min-width: 44px;
+    gap: 7px;
+    padding: 0 12px;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
   }
 
   .back-btn:focus-visible,

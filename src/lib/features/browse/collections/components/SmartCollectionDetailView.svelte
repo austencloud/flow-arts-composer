@@ -300,7 +300,7 @@ rule here; TKA's founding decks use the surrounding library hierarchy instead.
   {spec}
   matchCount={liveMatchCount}
   {contentFirst}
-  backLabel={contentFirst ? "TKA Core" : undefined}
+  backLabel={t("browse_ui_collections_tab")}
   loading={resultsLoading}
   error={hasLoadError}
   readOnly={isFounding || previewReadOnly}
@@ -357,7 +357,9 @@ rule here; TKA's founding decks use the surrounding library hierarchy instead.
 
 <ConfirmDialog
   bind:isOpen={deleteConfirmOpen}
-  title={t("browse_audit_delete_named_collection", { name: collection?.name ?? t("browse_audit_collection") })}
+  title={t("browse_audit_delete_named_collection", {
+    name: collection?.name ?? t("browse_audit_collection"),
+  })}
   message={t("browse_verified_delete_smart_community_message")}
   confirmText={t("action_delete")}
   cancelText={t("browse_verified_keep")}

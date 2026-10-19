@@ -12,6 +12,7 @@
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { Snippet } from "svelte";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import BackToBrowseButton from "#lib/features/browse/shared/components/BackToBrowseButton.svelte";
   import type { WorkShelfId } from "../services/work-shelf-navigation.js";
 
   interface ShelfDefinition {
@@ -96,6 +97,7 @@
 
 {#if region === "tabs"}
   <header class="rail-header">
+    <BackToBrowseButton />
     <div class="tab-width">
       <SegmentedControl
         {options}
@@ -133,14 +135,16 @@
   .rail-header {
     flex: 0 0 auto;
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    gap: 12px;
     padding: clamp(8px, 1.2cqi, 12px) clamp(10px, 1.6cqi, 16px);
     border-bottom: 1px solid var(--theme-stroke);
     background: transparent;
   }
 
   .tab-width {
-    width: 100%;
+    flex: 1 1 auto;
+    min-width: 0;
   }
 
   .shelf-tab-content {
