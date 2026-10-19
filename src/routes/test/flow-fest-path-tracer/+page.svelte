@@ -116,7 +116,9 @@
   let draftLayoutFeature = $state<FlowFestLowerLayoutFeatureId | null>(null);
   let svgElement = $state<SVGSVGElement | null>(null);
   let mapInteractionElement = $state<HTMLButtonElement | null>(null);
-  let view = $state({ ...LOWER_LAYOUT_VIEW });
+  let view = $state<{ x: number; y: number; width: number; height: number }>({
+    ...LOWER_LAYOUT_VIEW,
+  });
 
   const history: Record<FlowFestPathId, ImagePoint[][]> = {
     "upper-to-middle": [],
@@ -674,9 +676,7 @@
 
   function clampView(): void {
     const bounds =
-      workspaceMode === "layout"
-        ? LOWER_LAYOUT_BOUNDS
-        : FLOW_FEST_TRACE_VIEW;
+      workspaceMode === "layout" ? LOWER_LAYOUT_BOUNDS : FLOW_FEST_TRACE_VIEW;
     view.width = Math.max(216, Math.min(bounds.width, view.width));
     view.height = view.width * (bounds.height / bounds.width);
     view.x = Math.max(

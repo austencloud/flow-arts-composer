@@ -14,11 +14,32 @@
    * lab prototype: what renders here is what renders in the viewer.
    */
   import { onMount, onDestroy } from "svelte";
-  import { T, useTask, useThrelte } from "@threlte/core";
+  import {
+    T,
+    useTask,
+    useThrelte,
+    useRenderer,
+    useScene,
+    useScheduler,
+  } from "@threlte/core";
   import { OrbitControls } from "@threlte/extras";
-  import { Vector3, Group, HalfFloatType, Vector2 } from "three";
-  import { EffectComposer, RenderPass, EffectPass, BloomEffect } from "postprocessing";
-  import { FireRenderer3D, type FireTipInput } from "#lib/shared/3d/effects/fire/fire-renderer-3d.js";
+  import {
+    Vector3,
+    Group,
+    HalfFloatType,
+    Vector2,
+    type WebGLRenderer,
+  } from "three";
+  import {
+    EffectComposer,
+    RenderPass,
+    EffectPass,
+    BloomEffect,
+  } from "postprocessing";
+  import {
+    FireRenderer3D,
+    type FireTipInput,
+  } from "#lib/shared/3d/effects/fire/fire-renderer-3d.js";
   import { QualityTier } from "#lib/shared/3d/effects/types.js";
 
   interface Props {
@@ -36,12 +57,10 @@
   const BASE_Y = 1.0;
   const REVERSAL_PERIOD = 1.4;
 
-  const _ctx = useThrelte() as any;
-  const renderer: import("three").WebGLRenderer = _ctx.renderer;
-  const camera: { current: import("three").Camera } = _ctx.camera;
-  const scene: import("three").Scene = (_ctx.scene as any).current ?? _ctx.scene;
-  const autoRender: { current: boolean; set: (v: boolean) => void } = _ctx.autoRender;
-  const renderStage = _ctx.renderStage;
+  const { camera } = useThrelte();
+  const { renderer } = useRenderer<WebGLRenderer>();
+  const { scene } = useScene();
+  const { autoRender, renderStage } = useScheduler();
 
   let fireRenderer: FireRenderer3D | null = null;
   let fireParent: Group | null = null;
@@ -52,14 +71,14 @@
   // Per-column previous raw velocity, to synthesize jerk for the poof exactly
   // as the orchestrator does from the tip bridge.
   const prevVel = COLUMN_X.map(() => new Vector3());
-  const tips: FireTipInput[] = COLUMN_X.map(() => ({
+  const tips = COLUMN_X.map(() => ({
     position: new Vector3(),
     velocityX: 0,
     velocityY: 0,
     velocityZ: 0,
     speed: 0,
     jerk: 0,
-  }));
+  })) satisfies FireTipInput[];
 
   onMount(() => {
     fireParent = new Group();
@@ -91,7 +110,9 @@
 
     for (let i = 0; i < COLUMN_X.length; i++) {
       const cx = COLUMN_X[i]!;
-      const omega = moving ? speed * SPEED_MULT[i]! * Math.PI * 2 * spinSign : 0;
+      const omega = moving
+        ? speed * SPEED_MULT[i]! * Math.PI * 2 * spinSign
+        : 0;
       const a = theta * SPEED_MULT[i]!;
 
       let tipX = cx;
@@ -137,7 +158,9 @@
     const cam = camera.current;
     if (bloomOn && cam) {
       disposeComposer();
-      composer = new EffectComposer(renderer, { frameBufferType: HalfFloatType });
+      composer = new EffectComposer(renderer, {
+        frameBufferType: HalfFloatType,
+      });
       composer.addPass(new RenderPass(scene, cam));
       composer.addPass(
         new EffectPass(
@@ -149,8 +172,8 @@
             mipmapBlur: true,
             radius: 0.5,
             levels: 8,
-          }),
-        ),
+          })
+        )
       );
       autoRender.set(false);
     } else {
@@ -179,7 +202,7 @@
       }
       composer.render(delta);
     },
-    { stage: renderStage, autoInvalidate: false },
+    { stage: renderStage, autoInvalidate: false }
   );
 </script>
 

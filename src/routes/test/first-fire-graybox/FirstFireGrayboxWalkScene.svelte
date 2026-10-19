@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
-  import { T, useTask, useThrelte } from "@threlte/core";
+  import { T, useTask, useDOM } from "@threlte/core";
   import { Box3, Color, Mesh, PointLight, type Object3D } from "three";
   import { CameraMode, UnifiedCameraController } from "@austencloud/camera-3d";
   import type { AvatarState, PhysicsProvider } from "@austencloud/camera-3d";
@@ -94,7 +94,7 @@
   }
 
   const props: Props = $props();
-  const threlte = useThrelte();
+  const { canvas } = useDOM();
   const contract = buildFirstFireBlenderContract();
   /** ?camera=<id> stands the player at a Gate 3 locked camera for capture. */
   const lockedCameraId =
@@ -157,7 +157,7 @@
   let padSurfaceHeights = $state<Record<string, number>>({});
   let reviewState = $state(createFirstFireGrayboxReviewState());
 
-  let playerPosition = $state({
+  let playerPosition = $state<{ x: number; y: number; z: number }>({
     x: FIRST_FIRE_GRAYBOX_SPAWN.x,
     y: FIRST_FIRE_GRAYBOX_SPAWN.y,
     z: FIRST_FIRE_GRAYBOX_SPAWN.z,
@@ -323,7 +323,7 @@
         yaw: playerYaw,
         pitch: playerPitch,
       }),
-      canvas: () => threlte.renderer?.domElement ?? null,
+      canvas: () => canvas,
       state: () => ({
         phase: reviewState.procession.phase,
         shell: bareShell ? "bare" : "dressed",
@@ -389,10 +389,13 @@
             }
           : phase === "growth-complete"
             ? {
-                x: contract.pathSections.at(-1)?.blenderPoints[1]?.x ?? fallback.x,
+                x:
+                  contract.pathSections.at(-1)?.blenderPoints[1]?.x ??
+                  fallback.x,
                 y: FIRST_FIRE_GRAYBOX_SPAWN.y,
                 z: -(
-                  contract.pathSections.at(-1)?.blenderPoints[1]?.y ?? fallback.y
+                  contract.pathSections.at(-1)?.blenderPoints[1]?.y ??
+                  fallback.y
                 ),
               }
             : {
@@ -403,14 +406,14 @@
     const target = shrine
       ? { x: shrine.blenderCentre.x, z: -shrine.blenderCentre.y }
       : targetShrine
-      ? {
-          x: targetShrine.blenderEntry.x,
-          z: -targetShrine.blenderEntry.y,
-        }
-      : {
-          x: contract.doors.earth.blender.x,
-          z: -contract.doors.earth.blender.y,
-        };
+        ? {
+            x: targetShrine.blenderEntry.x,
+            z: -targetShrine.blenderEntry.y,
+          }
+        : {
+            x: contract.doors.earth.blender.x,
+            z: -contract.doors.earth.blender.y,
+          };
     physicsProvider?.teleport?.(destination);
     playerPosition = destination;
     avatarState.snapFacingAngle?.(yawToward(destination, target));
@@ -425,7 +428,8 @@
    * measured from, which is the whole failure this replaces.
    */
   function attachShellCollider(): void {
-    if (isShellColliderAttached || !physicsState?.world || !shellTrimesh) return;
+    if (isShellColliderAttached || !physicsState?.world || !shellTrimesh)
+      return;
     createRigidBody(
       physicsState,
       { type: "static", position: { x: 0, y: 0, z: 0 } },
@@ -490,8 +494,9 @@
     scene.traverse((object) => {
       const match = /^FF_PerformerPad_(dj|ek|fl)\b/i.exec(object.name);
       if (!match || !(object instanceof Mesh)) return;
-      measuredPads[match[1]!.toLowerCase()] = new Box3().setFromObject(object)
-        .max.y;
+      measuredPads[match[1]!.toLowerCase()] = new Box3().setFromObject(
+        object
+      ).max.y;
     });
     padSurfaceHeights = measuredPads;
 
@@ -799,7 +804,11 @@
   {#if activeShrine}
     <FirstFireShrineVolumes
       shrineId={activeShrine.id}
-      position={[activeShrine.blenderCentre.x, 0, -activeShrine.blenderCentre.y]}
+      position={[
+        activeShrine.blenderCentre.x,
+        0,
+        -activeShrine.blenderCentre.y,
+      ]}
     />
   {/if}
 {/if}

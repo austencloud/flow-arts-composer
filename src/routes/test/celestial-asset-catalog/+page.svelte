@@ -136,7 +136,7 @@
     </header>
 
     <SegmentedControl
-      options={CLOUDBREAK_CATALOG_VIEWS}
+      options={[...CLOUDBREAK_CATALOG_VIEWS]}
       value={view}
       onchange={(next) => (view = next)}
       color="accent"

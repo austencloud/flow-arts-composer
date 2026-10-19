@@ -238,7 +238,7 @@
                     <PictographContainer
                       pictographData={option}
                       disableTransitions
-                      showStepNumber={false}
+                      stepNumberOverride={false}
                       leftColorOverride="#3b82f6"
                       rightColorOverride="#ef233c"
                     />

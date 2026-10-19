@@ -110,8 +110,20 @@
     ...ember.obsidianPillars,
     clearingRadius: 7.4,
     rings: [
-      { radius: 8.3, count: 9, scaleBase: 1.05, scaleVariation: 0.2, radiusJitter: 0.6 },
-      { radius: 10.6, count: 12, scaleBase: 0.95, scaleVariation: 0.2, radiusJitter: 0.9 },
+      {
+        radius: 8.3,
+        count: 9,
+        scaleBase: 1.05,
+        scaleVariation: 0.2,
+        radiusJitter: 0.6,
+      },
+      {
+        radius: 10.6,
+        count: 12,
+        scaleBase: 0.95,
+        scaleVariation: 0.2,
+        radiusJitter: 0.9,
+      },
     ],
     heightRange: [2.4, 3.4] as [number, number],
     veinColor: "#ff4a12",
@@ -145,6 +157,7 @@
     flowSpeed: 0.16,
     width: 1.5,
     warpIntensity: 0.5,
+    crustCoverage: ember.lavaRivers?.crustCoverage ?? 0,
   };
 
   const djFountains = {
