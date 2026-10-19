@@ -1874,6 +1874,7 @@
     flex: 1 1 0;
     min-width: 0;
     margin-left: auto;
+    padding-inline-start: 0.75rem;
     overflow: hidden;
     text-align: right;
     text-overflow: ellipsis;
@@ -1882,12 +1883,17 @@
     font-weight: 400;
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
   }
+  /* An open group's controls sit indented on a whole-surface tint under their
+     header, so they read as that group's children, not as siblings of it. */
   .group-body {
     display: flex;
     flex-direction: column;
     gap: 0.875rem;
     min-width: 0;
-    padding: 0.25rem 0.25rem 0.5rem;
+    margin-inline: 0.5rem;
+    padding: 0.75rem;
+    border-radius: 0.625rem;
+    background: color-mix(in srgb, var(--theme-text) 5%, transparent);
   }
   .share-field {
     display: flex;

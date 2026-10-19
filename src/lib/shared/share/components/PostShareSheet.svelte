@@ -283,22 +283,31 @@
   const splitLayout = new MediaQuery("(min-width: 900px)");
   // A tall sheet has room to show the settings without a disclosure.
   const roomySheet = new MediaQuery("(min-height: 760px)");
-  // The split rail scrolls, so card and video settings are always open there.
-  // Phone downloads keep the artifact first and fold the settings.
-  const roomyCardSheet = $derived(splitLayout.current);
-  const roomyVideoSheet = $derived(splitLayout.current || roomySheet.current);
+  // Short landscape is split but has only a few hundred pixels of rail.
+  const splitHasHeight = new MediaQuery("(min-height: 561px)");
+  // A split rail with height always shows card and video settings open.
+  // Phone downloads and short landscape keep the artifact and the download
+  // action first and fold the settings into one disclosure row with a summary.
+  const roomyCardSheet = $derived(
+    splitLayout.current && splitHasHeight.current
+  );
+  const roomyVideoSheet = $derived(
+    (splitLayout.current && splitHasHeight.current) || roomySheet.current
+  );
   const cardSettingsExpanded = $derived(cardSettingsOpen || roomyCardSheet);
   const videoSettingsExpanded = $derived(videoSettingsOpen || roomyVideoSheet);
-  const videoResolutionOptions: { value: VideoResolution; label: string }[] = [
-    { value: 720, label: "720p" },
-    { value: 1080, label: "1080p" },
-    { value: 2160, label: "4K" },
-    { value: 4320, label: "8K" },
+  // SegmentedControl values are strings; the numeric setting is converted at
+  // the exportOptions boundary below.
+  const videoResolutionOptions: { value: string; label: string }[] = [
+    { value: "720", label: "720p" },
+    { value: "1080", label: "1080p" },
+    { value: "2160", label: "4K" },
+    { value: "4320", label: "8K" },
   ];
-  const videoFpsOptions: { value: VideoFps; label: string }[] = [
-    { value: 30, label: "30 fps" },
-    { value: 60, label: "60 fps" },
-    { value: 120, label: "120 fps" },
+  const videoFpsOptions: { value: string; label: string }[] = [
+    { value: "30", label: "30 fps" },
+    { value: "60", label: "60 fps" },
+    { value: "120", label: "120 fps" },
   ];
   const videoQualityOptions: { value: VideoQuality; label: string }[] =
     $derived([
@@ -527,23 +536,6 @@
       homeLivePreview ||
       !!animationPreviewUrl
   );
-  // One key per stage subject, so only a real change of subject crossfades.
-  const stageKey = $derived(
-    shareRoute === "home"
-      ? homeLivePreview
-        ? "home-live"
-        : animationPreviewUrl
-          ? "home-img"
-          : "home-empty"
-      : qrDataUrl
-        ? "phone"
-        : artifact === "card"
-          ? displayedCardRequest
-            ? "card"
-            : "card-pending"
-          : `video:${activeVideoUrl ? "ready" : showingLiveVideoPreview ? "live" : openerPreviewUrl ? "opener" : videoStatus}`
-  );
-
   const presets = $derived(
     captions.buildPresets({
       word: alphabetWord || sequence?.displayName || "",
@@ -605,6 +597,16 @@
   const postingAvailable = $derived(
     META_POSTING_ENABLED || metaStatusOverride !== undefined
   );
+
+  // A guest (or a build without posting) has nothing to publish with yet. That
+  // state is a task for the Home shell's rail, so it keeps the preview and the
+  // dialog size; only the real posting flow gets its own single column.
+  const publishGate = $derived(
+    shareRoute === "publish" && (!postingAvailable || needsAccountForFiles)
+  );
+  const publishFlow = $derived(shareRoute === "publish" && !publishGate);
+  // Which half of the split shell the stage and rail show.
+  const splitRoute = $derived(shareRoute === "download" ? "download" : "home");
 
   const metaStatus = $derived(metaStatusOverride ?? liveMetaStatus);
 
@@ -757,6 +759,23 @@
       ? (openerPreviews[opener] ?? animationPreviewUrl)
       : animationPreviewUrl
   );
+  // One key per stage subject, so only a real change of subject crossfades.
+  // Declared after every value it reads.
+  const stageKey = $derived(
+    splitRoute === "home"
+      ? homeLivePreview
+        ? "home-live"
+        : animationPreviewUrl
+          ? "home-img"
+          : "home-empty"
+      : qrDataUrl
+        ? "phone"
+        : artifact === "card"
+          ? displayedCardRequest
+            ? "card"
+            : "card-pending"
+          : `video:${activeVideoUrl ? "ready" : showingLiveVideoPreview ? "live" : openerPreviewUrl ? "opener" : videoStatus}`
+  );
 
   async function ensureOpenerPreview(kind: VideoOpener): Promise<void> {
     if (!captureVideoOpener || kind === "this-frame") return;
@@ -772,7 +791,7 @@
   }
 
   $effect(() => {
-    if (!openerEnabled || shareRoute === "home") return;
+    if (!openerEnabled || shareRoute === "home" || publishGate) return;
     const kind = opener;
     // Reading the cache here re-runs the capture after a session reset clears it.
     if (kind === "this-frame" || openerPreviews[kind]) return;
@@ -903,6 +922,7 @@
     copiedLinkUrl = null;
     shortUrl = seededShortUrl || null;
     shareRoute = initialEntry === "chooser" ? "home" : initialEntry;
+    returnFocusIntent = null;
     filePreparationOpen = shareRoute === "download";
     animationPreviewUrl = captureAnimationPreview() || null;
     openerPreviews = {};
@@ -1166,7 +1186,24 @@
     if (postingAvailable && !needsAccountForFiles) preparePostLink();
   }
 
+  /** Which Home intent the user left from. Home mounts its intents fresh, so
+   * the matching one claims focus when it mounts (see `claimReturnFocus`);
+   * the leaving layer is inert and can never take it. Not reactive. */
+  let returnFocusIntent: "download" | "publish" | null = null;
+
+  function claimReturnFocus(node: HTMLElement, intent: "download" | "publish") {
+    if (returnFocusIntent !== intent) return;
+    returnFocusIntent = null;
+    node.focus({ preventScroll: true });
+  }
+
   function returnToChooser(): void {
+    returnFocusIntent =
+      shareRoute === "download"
+        ? "download"
+        : shareRoute === "publish"
+          ? "publish"
+          : null;
     if (videoBusy || isExportingVideo) cancelVideo();
     filePreparationOpen = false;
     shareRoute = "home";
@@ -1883,7 +1920,7 @@
     : shareRoute === "download"
       ? artifact === "video"
         ? videoSettingsAvailable
-          ? t("share_download_animation")
+          ? t("share_download_video")
           : t("share_download_post")
         : t("share_download_card")
       : t("share_sequence")}
@@ -1926,7 +1963,7 @@
           use:focusOnMount
         >
           <header class="panel-header">
-            {#if shareRoute === "download" && initialEntry === "chooser" && !qrDataUrl}
+            {#if (shareRoute === "download" && initialEntry === "chooser" && !qrDataUrl) || (shareRoute === "publish" && initialEntry !== "publish")}
               <button
                 type="button"
                 class="header-icon"
@@ -1966,13 +2003,13 @@
                across both, and a rail whose task swaps. Publish keeps its own
                single column inside the same dialog width. -->
           <Crossfade
-            key={shareRoute === "publish" ? "publish" : "split"}
+            key={publishFlow ? "publish" : "split"}
             duration={DURATION.normal}
             mode="swap"
             motion="step"
           >
-            {#if shareRoute !== "publish"}
-              <div class="share-split" data-route={shareRoute}>
+            {#if !publishFlow}
+              <div class="share-split" data-route={splitRoute}>
                 {#if stageVisible}
                   <div class="stage-frame" transition:growFade={{ axis: "y" }}>
                     <div
@@ -1985,7 +2022,7 @@
                            live card keeps the real measured space the stage
                            gives it and its onReady lifecycle. -->
                       <Crossfade key={stageKey} duration={DURATION.normal}>
-                        {#if shareRoute === "home"}
+                        {#if splitRoute === "home"}
                           {#if homeLivePreview}
                             <div class="home-live">
                               {@render liveVideoPreview?.()}
@@ -2195,6 +2232,7 @@
                             <button
                               type="button"
                               class="intent"
+                              use:claimReturnFocus={"download"}
                               onclick={() => beginDownload(artifact)}
                             >
                               <span class="intent-body">
@@ -2213,6 +2251,7 @@
                             <button
                               type="button"
                               class="intent"
+                              use:claimReturnFocus={"publish"}
                               onclick={openPublish}
                             >
                               <span class="intent-body">
@@ -2253,6 +2292,40 @@
                                   event.currentTarget.select()}
                               />
                             </label>
+                          {/if}
+                        </div>
+                      {:else if publishGate}
+                        <!-- The guest gate keeps the Home shell and its preview;
+                             only the rail's task changes. -->
+                        <div class="publish-gate">
+                          {#if !postingAvailable}
+                            <p class="account-note">
+                              {t("share_social_unavailable")}
+                            </p>
+                            <PanelButton
+                              variant="primary"
+                              fullWidth
+                              onclick={() => beginDownload(artifact)}
+                            >
+                              <i class="fa-solid fa-download" aria-hidden="true"
+                              ></i>
+                              {t("share_download_file")}
+                            </PanelButton>
+                          {:else}
+                            <p class="account-note">
+                              {t("share_publish_needs_account")}
+                            </p>
+                            <PanelButton
+                              variant="primary"
+                              fullWidth
+                              onclick={requestAccountForFile}
+                            >
+                              <i
+                                class="fa-solid fa-user-plus"
+                                aria-hidden="true"
+                              ></i>
+                              {t("share_create_free_account")}
+                            </PanelButton>
                           {/if}
                         </div>
                       {:else}
@@ -2405,10 +2478,12 @@
                                         >
                                         <SegmentedControl
                                           options={videoResolutionOptions}
-                                          value={exportOptions.videoResolution}
+                                          value={String(
+                                            exportOptions.videoResolution
+                                          )}
                                           onchange={(value) =>
                                             exportOptions.setVideoResolution(
-                                              value
+                                              Number(value) as VideoResolution
                                             )}
                                           color="accent"
                                           ariaLabelledby="share-video-resolution"
@@ -2420,9 +2495,11 @@
                                         >
                                         <SegmentedControl
                                           options={videoFpsOptions}
-                                          value={exportOptions.videoFps}
+                                          value={String(exportOptions.videoFps)}
                                           onchange={(value) =>
-                                            exportOptions.setVideoFps(value)}
+                                            exportOptions.setVideoFps(
+                                              Number(value) as VideoFps
+                                            )}
                                           color="accent"
                                           ariaLabelledby="share-video-fps"
                                         />
@@ -2609,44 +2686,13 @@
                 </div>
               </div>
             {:else}
-              <div class="sheet-scroll publish-route">
-                {#if initialEntry !== "publish"}
-                  <button
-                    type="button"
-                    class="back-to-chooser"
-                    onclick={() => (shareRoute = "home")}
-                    >{t("share_back")}</button
-                  >
-                {/if}
+              <div class="sheet-scroll publish-body">
                 <Crossfade
                   key={publishPreparationKey}
                   duration={DURATION.normal}
                   animateHeight
                 >
-                  {#if !postingAvailable}
-                    <p class="account-note">
-                      {t("share_social_unavailable")}
-                    </p>
-                    <PanelButton
-                      variant="primary"
-                      onclick={() => beginDownload(artifact)}
-                    >
-                      <i class="fa-solid fa-download" aria-hidden="true"></i>
-                      {t("share_download_file")}
-                    </PanelButton>
-                  {:else if needsAccountForFiles}
-                    <p class="account-note">
-                      {t("share_publish_needs_account")}
-                    </p>
-                    <PanelButton
-                      variant="primary"
-                      fullWidth
-                      onclick={requestAccountForFile}
-                    >
-                      <i class="fa-solid fa-user-plus" aria-hidden="true"></i>
-                      {t("share_create_free_account")}
-                    </PanelButton>
-                  {:else if artifact === "video" && videoBusy}
+                  {#if artifact === "video" && videoBusy}
                     {#if activeVideoUrl || openerPreviewUrl}
                       {#if activeVideoUrl}
                         <!-- svelte-ignore a11y_media_has_caption -->
@@ -2970,8 +3016,19 @@
     color: var(--theme-text-secondary);
     font-size: 0.875rem;
   }
+  /* The guest gate is the rail's whole task: the note, then one full-width
+     action at the dock's size. */
+  .publish-gate {
+    min-width: 0;
+  }
+  .publish-gate :global(.panel-btn) {
+    min-height: 48px;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+  /* The note sits above its action, never against it. */
   .account-note {
-    margin: 0;
+    margin: 0 0 0.75rem;
     color: var(--theme-text-secondary);
     font-size: 0.875rem;
     line-height: 1.4;
@@ -3502,8 +3559,7 @@
     height: auto;
     min-height: var(--stage-h);
   }
-  .intent,
-  .publish-route {
+  .intent {
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.12));
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.06));
     color: var(--theme-text, #fff);
@@ -3553,23 +3609,13 @@
     color: var(--theme-text, #fff);
     overflow-wrap: anywhere;
   }
-  .intent:hover:not(:disabled),
-  .publish-route:hover {
+  .intent:hover:not(:disabled) {
     border-color: var(--theme-accent, #8b7cff);
     background: var(--theme-surface-hover, rgba(255, 255, 255, 0.1));
   }
   .intent:disabled {
     opacity: 0.45;
     cursor: not-allowed;
-  }
-  .publish-route {
-    width: fit-content;
-    min-height: var(--min-touch-target, 44px);
-    margin-top: 1rem;
-    padding-inline: 0.875rem;
-    border-radius: 0.625rem;
-    color: var(--theme-text-secondary, rgba(255, 255, 255, 0.75));
-    font-size: var(--font-size-min, 0.875rem);
   }
   /* Card / Video: one full-width two-part switch at the top of the column. */
   .file-type {
@@ -3583,18 +3629,6 @@
   }
   .file-type:disabled {
     opacity: 0.55;
-  }
-  .back-to-chooser {
-    align-self: flex-start;
-    min-height: var(--min-touch-target, 44px);
-    padding: 0.5rem 0.75rem;
-    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.12));
-    border-radius: 0.625rem;
-    background: var(--theme-card-bg, rgba(255, 255, 255, 0.06));
-    color: var(--theme-text-secondary, rgba(255, 255, 255, 0.78));
-    font: inherit;
-    font-size: var(--font-size-min, 0.875rem);
-    cursor: pointer;
   }
   .preview {
     display: block;
@@ -3754,10 +3788,13 @@
     .sheet-scroll {
       padding: 1.125rem 1.5rem;
     }
-    .sheet-scroll.publish-route {
+    /* Publish is a plain container: a centred column with room around it. It
+       carries no button styling of its own. */
+    .sheet-scroll.publish-body {
       display: flex;
       flex-direction: column;
       gap: 0.875rem;
+      padding: 1.5rem 1.75rem;
       max-width: 42rem;
       width: 100%;
       box-sizing: border-box;
@@ -3827,8 +3864,47 @@
       grid-template-columns: minmax(0, 1fr) minmax(24rem, 28rem);
     }
   }
+  /* Desktop with height to spare: on Home the three choices share the stage's
+     full height, so the column ends where the preview ends instead of leaving
+     the lower right empty. Content scales modestly and sits centred in each
+     card. Download keeps its content-hugging column. */
+  @media (min-width: 900px) and (min-height: 561px) {
+    .share-split[data-route="home"] .rail-body {
+      flex: 1 1 auto;
+    }
+    .share-split[data-route="home"] .rail-body :global(.crossfade),
+    .share-split[data-route="home"] .rail-body :global(.crossfade > .layer),
+    .share-split[data-route="home"] .intent-list {
+      height: 100%;
+    }
+    .share-split[data-route="home"] .intent-grid {
+      height: 100%;
+      grid-auto-rows: minmax(6rem, 1fr);
+      align-content: stretch;
+    }
+    .share-split[data-route="home"] .intent {
+      align-content: center;
+    }
+    .share-split[data-route="home"] .intent-body {
+      grid-template-columns: 3.25rem minmax(0, 1fr);
+      column-gap: 1rem;
+    }
+    .share-split[data-route="home"] .intent-body > i {
+      width: 3.25rem;
+      height: 3.25rem;
+      font-size: 1.5rem;
+    }
+    .share-split[data-route="home"] .intent-label {
+      font-size: 1.125rem;
+    }
+    .share-split[data-route="home"] .intent-hint {
+      font-size: 0.9375rem;
+    }
+  }
   /* Short landscape: one column of compact rows, so every choice fits beside
-     the stage without scrolling. Never a grid of narrow cards. */
+     the stage without scrolling. Never a grid of narrow cards. The stage is a
+     square about as tall as the row stack, and the width it frees goes to the
+     rows so their hints fit on a line (and wrap, never clip, when they do not). */
   @media (min-width: 900px) and (max-height: 560px) {
     .share-split {
       --stage-h: clamp(
@@ -3836,7 +3912,7 @@
         calc(var(--viewport-height, 100dvh) - 9.5rem),
         14rem
       );
-      grid-template-columns: minmax(0, 1fr) minmax(20rem, 24rem);
+      grid-template-columns: var(--stage-h) minmax(0, 1fr);
       padding-block: 0.75rem;
     }
     .intent-grid {
@@ -3855,11 +3931,6 @@
       width: 2rem;
       height: 2rem;
       font-size: 1rem;
-    }
-    .intent-hint {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
     }
   }
   @media (max-height: 500px) {
@@ -3881,7 +3952,7 @@
        Download grows the same stage to its working height. Only the stage's
        height moves, through the shared transition token. */
     .share-split[data-route="home"] {
-      --stage-h: 7.5rem;
+      --stage-h: 11.5rem;
     }
     .stage {
       transition: height var(--transition-normal);

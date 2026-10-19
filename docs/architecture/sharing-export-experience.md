@@ -887,10 +887,11 @@ decision below answers one; none adds a description or data panel.
   reads top-aligned like Home. Nothing was added to fill the space.
 - **Theme switch.** Light and Dark carry icon and word and size to their content.
 - **Short landscape (900px+ wide, under 560px high).** One column of compact rows
-  (44px, 2rem icon, one-line hint with ellipsis). `--stage-h` is derived from the
-  viewport so the stage, rail and dock fit without clipping. No grid.
-- **Phone.** Home shows the live animation as a 7.5rem strip above 4.5rem choices
-  (two-line hints). Download grows the same stage to its working height with a
+  (44px, 2rem icon). `--stage-h` is derived from the viewport so the stage, rail
+  and dock fit without clipping. No grid. _Superseded in part by round 2: the
+  hint wraps instead of ending in an ellipsis, and the stage is square._
+- **Phone.** Home shows the live animation as a strip (7.5rem here; 11.5rem since
+  round 2) above 4.5rem choices (two-line hints). Download grows the same stage to its working height with a
   `height` transition on `--transition-normal`; reduced motion is instant. The
   strip appears only when there is an animation or a still to show.
 - **Wide canvases.** Caps and widths move together so the preview does not outrun
@@ -903,3 +904,74 @@ Video overlay (corner labels must not move), Card to Video crossfade box fixed,
 the phone Home to Download height transition mid-flight and reversed, the header
 back button focus order, and 3840×2160 stage-to-rail balance. No browser or test
 run accompanied this change.
+
+### October 18 correction pass 2
+
+Root inspected the real guest Create flow. Each decision answers one finding.
+
+- **Focus after Back.** The split shell no longer remounts the route, so leaving
+  Download or Publish removed the focused arrow and left `document.body`
+  focused. `returnToChooser` records the originating intent in a plain
+  (non-reactive) variable; the Home intent button with that name claims focus
+  from a `use:` action when it mounts, then clears it. Only the entering layer
+  mounts it, so an outgoing (inert) layer cannot take focus later. Accessible
+  names are unchanged ("Download a file", "Publish socially"). The value is
+  reset when the sheet opens.
+- **Frame widths.** `ShareSheetFrame`'s 1680 and 2600 width rules are scoped to
+  the regular mode (`:not(--narrow):not(--expanded)`), so the QR and expanded
+  widths win at every viewport. The phone bottom sheet is untouched.
+- **Publish.** The container class is `publish-body`; the legacy `publish-route`
+  button look (pointer, hover surface, fit-content) and the inline
+  `back-to-chooser` button are gone. Back is the same header arrow as Download,
+  shown when the sheet did not open straight into Publish. The container gets
+  1.5rem/1.75rem padding at 900px and wider.
+- **Account note.** `.account-note` carries a 0.75rem bottom margin in both the
+  Download dock and Publish, so the note never sits against its action. No new
+  wording.
+- **Labels.** The frame's accessible dialog name for video is `share_download_video`,
+  matching the visible title.
+- **Types.** `stageKey` is declared after the values it reads. The resolution
+  and frame-rate switches use string option values and convert to the numeric
+  settings at the `exportOptions` boundary; the numeric settings and the shared
+  `SegmentedControl` contract are unchanged.
+- **Desktop Home (900px+, over 560px high).** The three choices share the stage's
+  full height (equal rows), with a 1.125rem title, 0.9375rem hint and a 3.25rem
+  icon tile, content centred in each card. Chosen over shrinking the preview,
+  which would have changed the stage box between Home and Download. Download
+  keeps its content-hugging rail. The viewer toolbar strip inside the live
+  preview belongs to the viewer renderer and was left alone; no clean local
+  mechanism exists to hide it.
+- **Phone.** The Home strip is 11.5rem (184px), inside the 180–200px target.
+  The live preview already fills its stage, so it follows the strip height.
+- **Short landscape.** The stage column is `var(--stage-h)` wide, so the stage is
+  square and the rail takes the rest of the width. Hints wrap instead of
+  clipping. The stage box is the same on Home and Download, so Card and Video
+  do not change it.
+
+**Verification owed.** Focus on Home after Back from Download and from Publish
+(keyboard and pointer); the equal-height cards at 1440×900, 1920×1080 and
+3840×2160 (the percentage-height chain through the rail Crossfade layer has not
+been observed); 375×667 with all three choices reachable without scrolling;
+960×412 for the square stage and unclipped Copy link hint; guest Publish layout;
+QR step width at 1920 and wider. No browser or test run accompanied this change.
+
+#### Late review follow-up (same pass)
+
+- **Guest Publish keeps the shell.** `publishGate` (publish route with posting
+  unavailable or `needsAccountForFiles`) renders inside the Home/Download split:
+  same dialog size, same stage and preview (the stage treats it as `home`
+  through `splitRoute`), same header Back arrow. Only the rail's task changes to
+  the note plus one full-width action. The real posting flow (`publishFlow`) is
+  unchanged and keeps its own column, as do the QR step, services and auth
+  gates. The unreachable gate branches were removed from that column. Back from
+  the gate returns focus to "Publish socially".
+- **Short landscape settings.** The measured state was scrollable, not
+  unreachable: about 139px of rail for 459–532px of settings. Below 561px high
+  the split now folds card and video settings into the same one-row disclosure
+  (with its value summary) the phone uses, so file type, the disclosure and the
+  download dock fit together; opening it scrolls the rail by choice.
+- **Look children.** An open group's controls are indented on a whole-surface
+  tint (no edge strip) so Theme and Card footer read as Look's children. The
+  group summary has a 0.75rem lead so it no longer touches the title.
+- **Not touched.** The faint circle in the phone card still is unconfirmed; the
+  renderer was left alone.

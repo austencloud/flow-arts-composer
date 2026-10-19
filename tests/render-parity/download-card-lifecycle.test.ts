@@ -293,6 +293,34 @@ describe("Download card with real live pictographs", () => {
     }
   );
 
+  it("returns focus to the originating intent after Download or guest Publish", async () => {
+    renderCard.mockReturnValue(new Promise<Blob>(() => {}));
+    const screen = await openCard(realSequence(8), 2, {
+      initialEntry: "chooser",
+    });
+    try {
+      const focusedHomeIntent = () =>
+        [
+          ...document.querySelectorAll<HTMLButtonElement>(
+            '.share-split[data-route="home"] button.intent'
+          ),
+        ]
+          .find((button) => document.activeElement === button)
+          ?.querySelector(".intent-label")
+          ?.textContent?.trim();
+
+      await page.getByRole("button", { name: /Download a file/ }).click();
+      await page.getByRole("button", { name: "Back to sharing" }).click();
+      await expect.poll(focusedHomeIntent).toBe("Download a file");
+
+      await page.getByRole("button", { name: /Publish socially/ }).click();
+      await page.getByRole("button", { name: "Back to sharing" }).click();
+      await expect.poll(focusedHomeIntent).toBe("Publish socially");
+    } finally {
+      await screen.unmount();
+    }
+  });
+
   it("contains the video status when the workspace has no live animation capture", async () => {
     renderCard.mockReturnValue(new Promise<Blob>(() => {}));
     const screen = await openCard(realSequence(8), 2, {

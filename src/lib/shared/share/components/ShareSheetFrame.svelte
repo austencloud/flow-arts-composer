@@ -105,13 +105,23 @@
   }
   /* Wider canvases recompose the same split with a larger stage; controls
      keep their size (4k-native-layout.md). */
+  /* Scoped to the regular mode: the explicit narrow and expanded widths above
+     have equal specificity, so an unscoped wide rule would override them. */
   @media (min-width: 1680px) and (min-height: 1000px) {
-    :global(dialog.base-modal.share-sheet-modal[data-size]) {
+    :global(
+      dialog.base-modal.share-sheet-modal:not(.share-sheet-modal--narrow):not(
+          .share-sheet-modal--expanded
+        )[data-size]
+    ) {
       width: min(69rem, calc(100vw - 3rem));
     }
   }
   @media (min-width: 2600px) and (min-height: 1600px) {
-    :global(dialog.base-modal.share-sheet-modal[data-size]) {
+    :global(
+      dialog.base-modal.share-sheet-modal:not(.share-sheet-modal--narrow):not(
+          .share-sheet-modal--expanded
+        )[data-size]
+    ) {
       width: min(79rem, calc(100vw - 3rem));
     }
   }
