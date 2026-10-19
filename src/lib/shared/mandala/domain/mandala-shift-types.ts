@@ -44,7 +44,7 @@ export const MandalaLookSchema = z
     lineWeight: z.union([z.literal(1.5), z.literal(2.5), z.literal(4)]),
     colorMode: z.enum(["solid", "flow"]),
     preset: MandalaLookPresetSchema,
-    /** Tip reach as a share of the viewer's range: reach = depth x 2.5. */
+    /** How far the tips breathe out past the still picture, 0 (still) to 100 (the viewer's full reach). */
     depth: z.number().finite().min(0).max(100),
     /** Beats per breath (one in and out of the tip reach). */
     breathBeats: z.union([z.literal(1), z.literal(2), z.literal(4), z.literal(8)]),

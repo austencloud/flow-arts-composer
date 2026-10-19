@@ -48,10 +48,10 @@ describe("shiftFrameAt", () => {
 });
 
 describe("breath, spin and colour", () => {
-  it("breathes in over half the breath and out over the other half", () => {
-    expect(breathAt(0, 4)).toBe(0);
-    expect(breathAt(2, 4)).toBeCloseTo(1);
-    expect(breathAt(4, 4)).toBe(0);
+  it("is open on the downbeat, at rest half a breath later, open again at the end", () => {
+    expect(breathAt(0, 4)).toBeCloseTo(1);
+    expect(breathAt(2, 4)).toBe(0);
+    expect(breathAt(4, 4)).toBeCloseTo(1);
     expect(breathAt(1, 4)).toBeCloseTo(breathAt(3, 4));
     expect(breathAt(-1, 4)).toBeCloseTo(breathAt(3, 4));
   });

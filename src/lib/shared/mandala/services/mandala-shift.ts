@@ -66,10 +66,14 @@ export function shiftFrameAt(
   return { from, to, morphT: bloomEase(linear), hold };
 }
 
-/** How far the tips reach at `beats`, 0 at rest to 1 at full breath. */
+/**
+ * How far the tips reach at `beats`: 1 (full breath) on the downbeat and at
+ * every whole breath after it, 0 (at rest) half a breath later. A shift that
+ * lands on a bar lands with the figure open.
+ */
 export function breathAt(beats: number, breathBeats: number): number {
   const phase = wrap(beats, breathBeats) / breathBeats;
-  const triangle = phase < 0.5 ? phase * 2 : 2 - phase * 2;
+  const triangle = phase < 0.5 ? 1 - phase * 2 : phase * 2 - 1;
   return breatheEase(triangle);
 }
 
