@@ -51,7 +51,7 @@
   import {
     createContactInspectionState,
     type InspectionView,
-  } from "./contact-inspection-state.svelte";
+  } from "./contact-inspection-state.svelte.js";
 
   const inspection = createContactInspectionState();
   const positions = [
@@ -618,13 +618,13 @@
         />
       </div>
       <SegmentedControl
-        options={hands}
+        options={[...hands]}
         value={inspection.hand}
         onchange={(value) => inspection.setHand(value)}
         ariaLabel="Active hand"
         color="red"
       /><SegmentedControl
-        options={views}
+        options={[...views]}
         value={inspection.view}
         onchange={(value) => {
           cameraAdjusted = false;

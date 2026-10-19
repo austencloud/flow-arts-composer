@@ -11,8 +11,9 @@
   import {
     TRANSITION_REVIEW_GATES,
     type TransitionReviewGateId,
+    type TransitionReviewGate,
   } from "./transition-review-gates";
-  import { createTransitionReviewState } from "./transition-review-state.svelte";
+  import { createTransitionReviewState } from "./transition-review-state.svelte.js";
   import {
     WORKSPACE_GATE_REVIEWS,
     isWorkspaceReplayCommand,
@@ -237,11 +238,15 @@
   let frameVersion = $state(0);
   let pendingReplay = $state<ReplayCommand | null>(null);
 
+  function isPendingGate(gate: TransitionReviewGate | undefined): boolean {
+    return gate?.availability === "pending";
+  }
+
   function statusLabel(gateId: TransitionReviewGateId): string {
     const gate = TRANSITION_REVIEW_GATES.find(
       (candidate) => candidate.id === gateId
     );
-    if (gate?.availability === "pending") return "Queued";
+    if (isPendingGate(gate)) return "Queued";
 
     const status = review.decisions[gateId].status;
     if (status === "approved") return "Approved";
@@ -521,8 +526,8 @@
               type="button"
               class="gate-button"
               class:active={gate.id === review.activeGateId}
-              class:pending={gate.availability === "pending"}
-              disabled={gate.availability === "pending"}
+              class:pending={isPendingGate(gate)}
+              disabled={isPendingGate(gate)}
               onclick={() => selectGate(gate.id)}
             >
               <span class="gate-number">{index + 1}</span>

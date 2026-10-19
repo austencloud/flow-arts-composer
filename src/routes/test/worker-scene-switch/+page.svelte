@@ -1,6 +1,4 @@
-<script lang="ts">
-  import { onDestroy, onMount } from "svelte";
-  import WorkerEnvironmentRenderer from "#lib/shared/3d/worker-renderer/components/WorkerEnvironmentRenderer.svelte";
+<script module lang="ts">
   import type {
     WorkerEnvironmentKey,
     WorkerPerformerSnapshot,
@@ -21,6 +19,11 @@
       __workerSceneSwitchBenchmark?: WorkerSceneSwitchBenchmarkApi;
     }
   }
+</script>
+
+<script lang="ts">
+  import { onDestroy, onMount } from "svelte";
+  import WorkerEnvironmentRenderer from "#lib/shared/3d/worker-renderer/components/WorkerEnvironmentRenderer.svelte";
 
   let environment = $state<WorkerEnvironmentKey>("rainbow");
   let snapshot = $state<WorkerSceneSwitchSnapshot | null>(null);
@@ -70,6 +73,7 @@
         fanBuild: "pictograph",
         fanFrameColor: "black",
         fanCover: "bare",
+        triangleGrip: "corner",
       },
       leftPropType: "staff",
       rightPropType: "staff",

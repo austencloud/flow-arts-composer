@@ -63,8 +63,18 @@
   ];
 
   const handColors = [
-    { id: "blue" as const, label: "Left prop (blue)", color: HandSide.LEFT },
-    { id: "red" as const, label: "Right prop (red)", color: HandSide.RIGHT },
+    {
+      id: "blue" as const,
+      side: "left" as const,
+      label: "Left prop (blue)",
+      color: HandSide.LEFT,
+    },
+    {
+      id: "red" as const,
+      side: "right" as const,
+      label: "Right prop (red)",
+      color: HandSide.RIGHT,
+    },
   ];
 
   let rendered = $state<Record<string, RenderedPreview>>({});
@@ -214,7 +224,7 @@
                   {#each handColors as hand (hand.id)}
                     <div class="hand-preview">
                       <div class="prop-artwork">
-                        {@html surfacePreview[hand.id]}
+                        {@html surfacePreview[hand.side]}
                       </div>
                       <span class="hand-label {hand.id}">{hand.label}</span>
                     </div>

@@ -45,7 +45,11 @@
    */
   const stations = LED_PRESETS.map((preset) => {
     const config = createEffectsConfigState(undefined, { persist: false });
-    config.applyPreset("led", preset.id, preset.patch);
+    config.applyPreset(
+      "led",
+      preset.id,
+      preset.patch ?? preset.resolvePatch?.() ?? {}
+    );
     config.setActiveEffect("led");
 
     const patch = preset.patch;
@@ -68,7 +72,13 @@
               ? "Capsule"
               : `Staff ${patch?.device?.ledCount ?? "?"}`,
         },
-        { label: "Pattern", value: patch?.pattern?.generatorId ?? "—" },
+        {
+          label: "Pattern",
+          value:
+            patch?.pattern?.source === "generator"
+              ? patch.pattern.generatorId
+              : "—",
+        },
         { label: "Loop", value: `${patch?.cycleDuration ?? "?"}s` },
         {
           label: "Shutter",
@@ -106,11 +116,11 @@
   );
 
   const boolOptions = [
-    { value: true, label: "On" },
-    { value: false, label: "Off" },
+    { value: "true", label: "On" },
+    { value: "false", label: "Off" },
   ];
   const bpmOptions = [40, 60, 90, 120].map((value) => ({
-    value,
+    value: String(value),
     label: String(value),
   }));
 
@@ -140,7 +150,9 @@
       controller.setSpeed(bpm / DEFAULT_BPM);
       // A generated LOOP repeats its word by construction, so the raw value is
       // the expanded string. Display is always the smallest form.
-      sequenceWord = simplifyRepeatedWord(next.sequence.word ?? next.sequence.name ?? "");
+      sequenceWord = simplifyRepeatedWord(
+        next.sequence.word ?? next.sequence.name ?? ""
+      );
       stepCount = next.sequence.steps.length;
       if (!animationState.isPlaying) controller.togglePlayback();
     } catch (cause: unknown) {
@@ -211,7 +223,7 @@
       <span class="control-label">Playback</span>
       <SegmentedControl
         options={boolOptions}
-        value={isPlaying}
+        value={String(isPlaying)}
         onchange={() => togglePlayback()}
         size="sm"
         ariaLabel="Play all four stations"
@@ -221,8 +233,8 @@
       <span class="control-label">BPM</span>
       <SegmentedControl
         options={bpmOptions}
-        value={bpm}
-        onchange={handleBpmChange}
+        value={String(bpm)}
+        onchange={(value) => handleBpmChange(Number(value))}
         size="sm"
         ariaLabel="Playback tempo"
       />
@@ -231,13 +243,17 @@
       <span class="control-label">Grid</span>
       <SegmentedControl
         options={boolOptions}
-        value={gridVisible}
-        onchange={(value) => (gridVisible = value)}
+        value={String(gridVisible)}
+        onchange={(value) => (gridVisible = value === "true")}
         size="sm"
         ariaLabel="Show the grid behind every station"
       />
     </div>
-    <button class="regen" onclick={() => void generateLoop()} disabled={loading}>
+    <button
+      class="regen"
+      onclick={() => void generateLoop()}
+      disabled={loading}
+    >
       <i class="fas fa-rotate" aria-hidden="true"></i>
       New LOOP
     </button>
@@ -255,7 +271,9 @@
   {#if error && !loading}
     <section class="failure" role="alert">
       <p>{error}</p>
-      <button class="regen" onclick={() => void generateLoop()}>Try again</button>
+      <button class="regen" onclick={() => void generateLoop()}
+        >Try again</button
+      >
     </section>
   {:else}
     <div class="stations-frame">
@@ -323,7 +341,11 @@
     padding: 1.1em 1.4em 1.4em;
     overflow: hidden;
     background:
-      radial-gradient(circle at 50% -18%, rgba(46, 128, 190, 0.16), transparent 38%),
+      radial-gradient(
+        circle at 50% -18%,
+        rgba(46, 128, 190, 0.16),
+        transparent 38%
+      ),
       #05070c;
     color: var(--theme-text, #e8ecf6);
     /* Ramps with the viewport so the page composes the same way at 1440 and
@@ -536,7 +558,8 @@
     align-self: center;
     border-radius: 50%;
     background: var(--station-accent);
-    box-shadow: 0 0 0.8em color-mix(in srgb, var(--station-accent) 55%, transparent);
+    box-shadow: 0 0 0.8em
+      color-mix(in srgb, var(--station-accent) 55%, transparent);
   }
 
   .station-copy {
@@ -709,5 +732,4 @@
       display: none;
     }
   }
-
 </style>

@@ -39,7 +39,9 @@
   // cell id ("Σ--0") ↔ letter ("Σ-"), across both sheets.
   const LETTER_BY_CELL = new Map<string, string>(
     SHEETS.flatMap(({ def }) =>
-      def.types.flatMap((t) => t.boxes.flatMap((b) => b.cells.map((c) => [c.id, c.label] as const)))
+      def.types.flatMap((t) =>
+        t.boxes.flatMap((b) => b.cells.map((c) => [c.id, c.label] as const))
+      )
     )
   );
 
@@ -57,13 +59,17 @@
   let isLoading = $state(true);
   let loadError = $state(false);
 
-  const variations = $derived(allPictographs.filter((p) => p.letter === selectedLetter));
+  const variations = $derived(
+    allPictographs.filter((p) => p.letter === selectedLetter)
+  );
 
   async function load(): Promise<void> {
     isLoading = true;
     loadError = false;
     try {
-      allPictographs = await letterQueryHandler.getAllPictographVariations(GridMode.DIAMOND);
+      allPictographs = await letterQueryHandler.getAllPictographVariations(
+        GridMode.DIAMOND
+      );
     } catch (e) {
       console.error("glossary-codex harness: variations failed to load", e);
       loadError = true;
@@ -146,9 +152,9 @@
   <div class="toolbar">
     <div class="toolbar-switch">
       <SegmentedControl
-        options={SHEETS.map((s, i) => ({ value: i, label: s.label }))}
-        value={sheetIndex}
-        onchange={(v) => (sheetIndex = v as number)}
+        options={SHEETS.map((s, i) => ({ value: String(i), label: s.label }))}
+        value={String(sheetIndex)}
+        onchange={(v) => (sheetIndex = Number(v))}
         color="accent"
         size="sm"
       />
@@ -159,8 +165,14 @@
     {#if !stacked || mobileView === "sheet"}
       <div class="sheet-pane" bind:this={sheetPaneEl}>
         <div class="sheet-wrap" style="height: {1056 * scale}px">
-          <div class="sheet-scale" style="transform: translateX({shiftPx}px) scale({scale})">
-            <CodexSheet sheet={SHEETS[sheetIndex]!.def} onCellSelect={selectCell} />
+          <div
+            class="sheet-scale"
+            style="transform: translateX({shiftPx}px) scale({scale})"
+          >
+            <CodexSheet
+              sheet={SHEETS[sheetIndex]!.def}
+              onCellSelect={selectCell}
+            />
           </div>
         </div>
       </div>
@@ -174,61 +186,67 @@
             style="transform: translateX({varShiftPx}px) scale({varScale})"
           >
             <section class="var-paper" bind:this={varPaperEl}>
-          <header class="var-head">
-            {#if stacked}
-              <button type="button" class="back-btn" onclick={backToSheet}>
-                <i class="fas fa-arrow-left" aria-hidden="true"></i>
-                Codex
-              </button>
-            {/if}
-            <span class="var-letter tka-font">{selectedLetter}</span>
-            <h2 class="var-title">
-              {#if !isLoading && !loadError}
-                {variations.length} variation{variations.length === 1 ? "" : "s"}
-              {:else}
-                Variations
-              {/if}
-            </h2>
-          </header>
+              <header class="var-head">
+                {#if stacked}
+                  <button type="button" class="back-btn" onclick={backToSheet}>
+                    <i class="fas fa-arrow-left" aria-hidden="true"></i>
+                    Codex
+                  </button>
+                {/if}
+                <span class="var-letter tka-font">{selectedLetter}</span>
+                <h2 class="var-title">
+                  {#if !isLoading && !loadError}
+                    {variations.length} variation{variations.length === 1
+                      ? ""
+                      : "s"}
+                  {:else}
+                    Variations
+                  {/if}
+                </h2>
+              </header>
 
-          {#if isLoading}
-            <div class="state-message">
-              <i class="fas fa-circle-notch fa-spin" aria-hidden="true"></i>
-              Loading variations…
-            </div>
-          {:else if loadError}
-            <div class="state-message">
-              <span>The variations did not load.</span>
-              <button type="button" class="retry-btn" onclick={load}>Try again</button>
-            </div>
-          {:else if variations.length === 0}
-            <div class="state-message">No variations for “{selectedLetter}”.</div>
-          {:else}
-            <div class="var-grid">
-              {#each variations as pictograph, index (pictograph.id ?? index)}
-                <figure class="var-cell">
-                  <GuidePictograph
-                    data={pictograph}
-                    size="sm"
-                    showGrid={true}
-                    showArrows={true}
-                    showTKA={true}
-                    showTnD={false}
-                    showElemental={false}
-                    showPlacements={false}
-                    showReversals={false}
-                    showNonRadialPoints={false}
-                    printMode={true}
-                    darkMode={false}
-                    eager={true}
-                  />
-                  <figcaption class="visually-hidden">
-                    {selectedLetter} variation {index + 1}
-                  </figcaption>
-                </figure>
-              {/each}
-            </div>
-          {/if}
+              {#if isLoading}
+                <div class="state-message">
+                  <i class="fas fa-circle-notch fa-spin" aria-hidden="true"></i>
+                  Loading variations…
+                </div>
+              {:else if loadError}
+                <div class="state-message">
+                  <span>The variations did not load.</span>
+                  <button type="button" class="retry-btn" onclick={load}
+                    >Try again</button
+                  >
+                </div>
+              {:else if variations.length === 0}
+                <div class="state-message">
+                  No variations for “{selectedLetter}”.
+                </div>
+              {:else}
+                <div class="var-grid">
+                  {#each variations as pictograph, index (pictograph.id ?? index)}
+                    <figure class="var-cell">
+                      <GuidePictograph
+                        data={pictograph}
+                        size="sm"
+                        showGrid={true}
+                        showArrows={true}
+                        showTKA={true}
+                        showTnD={false}
+                        showElemental={false}
+                        showPlacements={false}
+                        showReversals={false}
+                        showNonRadialPoints={false}
+                        printMode={true}
+                        darkMode={false}
+                        eager={true}
+                      />
+                      <figcaption class="visually-hidden">
+                        {selectedLetter} variation {index + 1}
+                      </figcaption>
+                    </figure>
+                  {/each}
+                </div>
+              {/if}
             </section>
           </div>
         </div>
@@ -355,7 +373,9 @@
     border-radius: 999px;
     background: #111;
     color: #fff;
-    font: 600 0.85rem/1 system-ui, sans-serif;
+    font:
+      600 0.85rem/1 system-ui,
+      sans-serif;
     cursor: pointer;
   }
   .back-btn:hover {
@@ -418,7 +438,9 @@
     border-radius: 999px;
     background: #111;
     color: #fff;
-    font: 600 0.85rem/1 system-ui, sans-serif;
+    font:
+      600 0.85rem/1 system-ui,
+      sans-serif;
     cursor: pointer;
   }
   .retry-btn:hover {

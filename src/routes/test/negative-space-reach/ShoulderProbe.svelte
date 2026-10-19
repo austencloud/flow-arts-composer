@@ -19,7 +19,7 @@
    * It renders nothing and writes nothing back into the scene.
    */
 
-  import { useTask, useThrelte } from "@threlte/core";
+  import { useScene, useScheduler, useTask } from "@threlte/core";
   import { Vector3, type Object3D } from "three";
 
   interface Props {
@@ -31,9 +31,8 @@
 
   let { onShoulder, rescanInterval = 1.5 }: Props = $props();
 
-  // In Threlte 8 `scene` is the Scene object itself — only camera, dpr and
-  // size are `.current` stores — so it is usable inside a task callback.
-  const { scene, renderStage } = useThrelte();
+  const { scene } = useScene();
+  const { renderStage } = useScheduler();
 
   /**
    * The package's own aliases for this joint, restated rather than re-derived:

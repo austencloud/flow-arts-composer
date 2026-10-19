@@ -49,7 +49,12 @@
 
   // A placement = the angular offset (in 45° steps) between the two hands.
   type PlacementKind = "alpha" | "beta" | "gamma";
-  type PlacementStep = { name: string; vtg: string; kind: PlacementKind; caption: string };
+  type PlacementStep = {
+    name: string;
+    vtg: string;
+    kind: PlacementKind;
+    caption: string;
+  };
   // vtg = old-school VTG timing word (split/together/quarter), subtle nod.
   const steps: PlacementStep[] = [
     {
@@ -92,7 +97,7 @@
   // `cell` = geometric state id (right's point index before hand swap), for the discovery tray.
   // Hands from explicit current point indices. Transforms mutate these directly
   // (one-shot algebra), so rotation stays clockwise no matter what came before.
-  function handsFor(kind: PlacementKind, rightIdx, leftIdx) {
+  function handsFor(kind: PlacementKind, rightIdx: number, leftIdx: number) {
     const rp = PTS[rightIdx]!;
     let right = rp;
     let left = PTS[leftIdx]!;

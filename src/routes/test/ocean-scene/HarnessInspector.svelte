@@ -13,10 +13,19 @@
    * Harness-only, and only in dev. It attaches nothing to the scene graph and
    * renders nothing.
    */
-  import { useThrelte } from "@threlte/core";
-  import { Box3, Matrix4, Vector3, type Mesh, type Object3D } from "three";
+  import { useRenderer, useScene, useThrelte } from "@threlte/core";
+  import {
+    Box3,
+    Matrix4,
+    Vector3,
+    type Mesh,
+    type Object3D,
+    type WebGLRenderer,
+  } from "three";
 
-  const { scene, camera, renderer } = useThrelte();
+  const { camera } = useThrelte();
+  const { scene } = useScene();
+  const { renderer } = useRenderer<WebGLRenderer>();
 
   $effect(() => {
     if (!import.meta.env.DEV) return;
@@ -32,9 +41,16 @@
       box.getSize(size);
       box.getCenter(centre);
       return {
-        name: index === null ? name || "(unnamed)" : `${name || "(unnamed)"}#${index}`,
+        name:
+          index === null
+            ? name || "(unnamed)"
+            : `${name || "(unnamed)"}#${index}`,
         size: [+size.x.toFixed(2), +size.y.toFixed(2), +size.z.toFixed(2)],
-        centre: [+centre.x.toFixed(2), +centre.y.toFixed(2), +centre.z.toFixed(2)],
+        centre: [
+          +centre.x.toFixed(2),
+          +centre.y.toFixed(2),
+          +centre.z.toFixed(2),
+        ],
         bottom: +box.min.y.toFixed(2),
       };
     };
