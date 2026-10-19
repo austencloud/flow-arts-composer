@@ -247,7 +247,6 @@
       label: value === "card" ? t("share_card") : resolvedVideoLabel,
     }))
   );
-  let cardSettingsOpen = $state(false);
   let presetsOpen = $state(false);
   /** Opening Share must not spend a render on a link or sequence handoff. */
   let filePreparationOpen = $state(false);
@@ -277,25 +276,11 @@
         return "Mandala";
     }
   }
-  let videoSettingsOpen = $state(false);
   // Wide screens recompose Share as a persistent stage beside a rail; below
   // this the sheet is a bottom sheet with the stage as a band above the task.
+  // Card and video settings are always on screen at every size; a short or
+  // narrow sheet scrolls its one rail body instead of folding them away.
   const splitLayout = new MediaQuery("(min-width: 900px)");
-  // A tall sheet has room to show the settings without a disclosure.
-  const roomySheet = new MediaQuery("(min-height: 760px)");
-  // Short landscape is split but has only a few hundred pixels of rail.
-  const splitHasHeight = new MediaQuery("(min-height: 561px)");
-  // A split rail with height always shows card and video settings open.
-  // Phone downloads and short landscape keep the artifact and the download
-  // action first and fold the settings into one disclosure row with a summary.
-  const roomyCardSheet = $derived(
-    splitLayout.current && splitHasHeight.current
-  );
-  const roomyVideoSheet = $derived(
-    (splitLayout.current && splitHasHeight.current) || roomySheet.current
-  );
-  const cardSettingsExpanded = $derived(cardSettingsOpen || roomyCardSheet);
-  const videoSettingsExpanded = $derived(videoSettingsOpen || roomyVideoSheet);
   // SegmentedControl values are strings; the numeric setting is converted at
   // the exportOptions boundary below.
   const videoResolutionOptions: { value: string; label: string }[] = [
@@ -903,7 +888,6 @@
           imageComposition.customNotesText
         ),
     });
-    cardSettingsOpen = false;
     presetsOpen = false;
     filePreparationOpen = false;
     captionOpen = false;
@@ -2372,73 +2356,30 @@
                                 </fieldset>
                               {/if}
                               {#if artifact === "card" && sequence}
-                                <!-- The same editor as the viewer's Card tab, folded the way
-                       Video settings is: the card is being chosen as it is
-                       downloaded, so every setting that shapes it is here, not
-                       only the footer. Composition and pictograph toggles are
-                       the account defaults the Card tab writes too; the footer
-                       stays a one-share override until saved to the card. -->
+                                <!-- The same editor as the viewer's Card tab, open at every
+                                     size: the card is being chosen as it is downloaded, so
+                                     every setting that shapes it is on screen, not only the
+                                     footer. Composition and pictograph toggles are the
+                                     account defaults the Card tab writes too; the footer
+                                     stays a one-share override until saved to the card. -->
                                 <fieldset
                                   class="card-settings"
                                   aria-label={t("share_card_settings")}
                                 >
-                                  {#if !roomyCardSheet}
-                                    <!-- Roomy sheets open the groups directly; each group
-                                         carries its own summary, so no extra heading. -->
-                                    <PanelButton
-                                      fullWidth
-                                      ariaExpanded={cardSettingsOpen}
-                                      onclick={() =>
-                                        (cardSettingsOpen = !cardSettingsOpen)}
-                                    >
-                                      <i
-                                        class="fa-solid fa-sliders"
-                                        aria-hidden="true"
-                                      ></i>
-                                      {t("share_card_settings")}
-                                      <span class="setting-value"
-                                        >{exportOptions.imageDarkMode
-                                          ? t("share_theme_dark")
-                                          : t("share_theme_light")} · {t(
-                                          "share_theme_footer"
-                                        )}
-                                        {shareDraft.cardPresentation.footer
-                                          .mode === "off"
-                                          ? t("share_footer_off")
-                                          : shareDraft.cardPresentation.footer
-                                                .mode === "credit"
-                                            ? t("share_footer_credit")
-                                            : t("share_footer_custom")}</span
-                                      >
-                                      <i
-                                        class={cardSettingsOpen
-                                          ? "fa-solid fa-chevron-up"
-                                          : "fa-solid fa-chevron-down"}
-                                        aria-hidden="true"
-                                      ></i>
-                                    </PanelButton>
-                                  {/if}
-                                  {#if cardSettingsExpanded}
-                                    <div
-                                      class="disclosure-body"
-                                      transition:growFade={{ axis: "y" }}
-                                    >
-                                      <ExportImagePanel
-                                        {exportOptions}
-                                        layout="inline"
-                                        grouping="share"
-                                        stepCount={sequence.steps?.length ?? 0}
-                                        resolvedAutoLayout={resolvedCardAutoLayout}
-                                        cardPresentation={shareDraft.cardPresentation}
-                                        onCardPresentationChange={changeShareCardPresentation}
-                                        onSaveCardPresentation={onSaveCardPresentation
-                                          ? saveCardPresentation
-                                          : undefined}
-                                        cardPresentationDirty={shareDraft.cardPresentationDirty}
-                                        cardPresentationSaving={savingCardPresentation}
-                                      />
-                                    </div>
-                                  {/if}
+                                  <ExportImagePanel
+                                    {exportOptions}
+                                    layout="inline"
+                                    grouping="share"
+                                    stepCount={sequence.steps?.length ?? 0}
+                                    resolvedAutoLayout={resolvedCardAutoLayout}
+                                    cardPresentation={shareDraft.cardPresentation}
+                                    onCardPresentationChange={changeShareCardPresentation}
+                                    onSaveCardPresentation={onSaveCardPresentation
+                                      ? saveCardPresentation
+                                      : undefined}
+                                    cardPresentationDirty={shareDraft.cardPresentationDirty}
+                                    cardPresentationSaving={savingCardPresentation}
+                                  />
                                 </fieldset>
                               {/if}
                               {#if artifact === "video" && sequence && videoSettingsAvailable}
@@ -2447,84 +2388,66 @@
                                   aria-label={t("share_video_settings")}
                                   disabled={videoBusy}
                                 >
-                                  {#if !roomyVideoSheet}
-                                    <PanelButton
-                                      fullWidth
-                                      ariaExpanded={videoSettingsOpen}
-                                      onclick={() =>
-                                        (videoSettingsOpen =
-                                          !videoSettingsOpen)}
-                                    >
-                                      {t("share_video_settings")}
-                                      <span class="setting-value"
-                                        >{exportOptions.videoResolution}p · {exportOptions.videoFps}
-                                        fps · {exportOptions.videoLoopCount}×{is3DExport
-                                          ? ` · ${exportOptions.videoQuality}`
-                                          : ""}</span
+                                  <div class="video-rows">
+                                    <div class="video-row">
+                                      <span id="share-video-resolution"
+                                        >{t("share_resolution")}</span
                                       >
-                                      <i
-                                        class={videoSettingsOpen
-                                          ? "fa-solid fa-chevron-up"
-                                          : "fa-solid fa-chevron-down"}
-                                        aria-hidden="true"
-                                      ></i>
-                                    </PanelButton>
-                                  {/if}
-                                  {#if videoSettingsExpanded}<div
-                                      class="compact-settings"
-                                      transition:growFade={{ axis: "y" }}
-                                    >
-                                      <div class="video-setting">
-                                        <span id="share-video-resolution"
-                                          >{t("share_resolution")}</span
-                                        >
-                                        <SegmentedControl
-                                          options={videoResolutionOptions}
-                                          value={String(
-                                            exportOptions.videoResolution
+                                      <SegmentedControl
+                                        options={videoResolutionOptions}
+                                        value={String(
+                                          exportOptions.videoResolution
+                                        )}
+                                        onchange={(value) =>
+                                          exportOptions.setVideoResolution(
+                                            Number(value) as VideoResolution
                                           )}
-                                          onchange={(value) =>
-                                            exportOptions.setVideoResolution(
-                                              Number(value) as VideoResolution
-                                            )}
-                                          color="accent"
-                                          ariaLabelledby="share-video-resolution"
-                                        />
-                                      </div>
-                                      <div class="video-setting">
-                                        <span id="share-video-fps"
-                                          >{t("share_frame_rate")}</span
+                                        color="accent"
+                                        ariaLabelledby="share-video-resolution"
+                                      />
+                                    </div>
+                                    <div class="video-row">
+                                      <span id="share-video-fps"
+                                        >{t("share_frame_rate")}</span
+                                      >
+                                      <SegmentedControl
+                                        options={videoFpsOptions}
+                                        value={String(exportOptions.videoFps)}
+                                        onchange={(value) =>
+                                          exportOptions.setVideoFps(
+                                            Number(value) as VideoFps
+                                          )}
+                                        color="accent"
+                                        ariaLabelledby="share-video-fps"
+                                      />
+                                    </div>
+                                    {#if is3DExport}
+                                      <div class="video-row">
+                                        <span id="share-video-quality"
+                                          >{t("share_quality")}</span
                                         >
                                         <SegmentedControl
-                                          options={videoFpsOptions}
-                                          value={String(exportOptions.videoFps)}
+                                          options={videoQualityOptions}
+                                          value={exportOptions.videoQuality}
                                           onchange={(value) =>
-                                            exportOptions.setVideoFps(
-                                              Number(value) as VideoFps
+                                            exportOptions.setVideoQuality(
+                                              value
                                             )}
                                           color="accent"
-                                          ariaLabelledby="share-video-fps"
+                                          ariaLabelledby="share-video-quality"
                                         />
                                       </div>
-                                      {#if is3DExport}
-                                        <div class="video-setting">
-                                          <span id="share-video-quality"
-                                            >{t("share_quality")}</span
-                                          >
-                                          <SegmentedControl
-                                            options={videoQualityOptions}
-                                            value={exportOptions.videoQuality}
-                                            onchange={(value) =>
-                                              exportOptions.setVideoQuality(
-                                                value
-                                              )}
-                                            color="accent"
-                                            ariaLabelledby="share-video-quality"
-                                          />
-                                        </div>
-                                      {/if}
-                                      <div class="repeat-stepper">
-                                        <span>{t("share_repeats")}</span><button
+                                    {/if}
+                                    <div
+                                      class="video-row repeat-stepper"
+                                      role="group"
+                                      aria-labelledby="share-video-repeats"
+                                    >
+                                      <span id="share-video-repeats"
+                                        >{t("share_repeats")}</span
+                                      >
+                                      <div class="stepper-keys">
+                                        <button
                                           type="button"
                                           aria-label={t(
                                             "share_decrease_repeats"
@@ -2550,7 +2473,8 @@
                                             10}>+</button
                                         >
                                       </div>
-                                    </div>{/if}
+                                    </div>
+                                  </div>
                                   {#if videoSettingsStale}
                                     <p
                                       class="settings-note"
@@ -2942,54 +2866,51 @@
   .opener-row:disabled {
     opacity: 0.6;
   }
-  /* Each setting is a label over its control; the groups share one row when
-     the sheet is wide enough and wrap into a column when it is not. */
-  .compact-settings {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: start;
-    gap: 0.75rem 1.25rem;
-    padding: 0.5rem 0.25rem 0;
-  }
-  .video-setting,
-  .repeat-stepper {
+  /* Video settings follow the card's hierarchy: always on screen, each a
+     label beside its control, dropping the label above only when the rail is
+     too narrow for both. The rail's own width decides, never the viewport. */
+  .video-rows {
+    --share-label-w: 6rem;
+    container-type: inline-size;
     display: grid;
-    gap: 0.375rem;
-    justify-items: start;
-    color: var(--theme-text-secondary);
-    font-size: var(--font-size-min, 0.875rem);
-  }
-  /* Segmented groups grow to fill the row; the stepper keeps its fixed keys. */
-  .video-setting {
-    flex: 1 1 auto;
+    gap: 0.5rem;
     min-width: 0;
-    justify-items: stretch;
   }
-  .video-setting > span {
-    justify-self: start;
+  .video-row {
+    display: grid;
+    grid-template-columns: var(--share-label-w) minmax(0, 1fr);
+    align-items: center;
+    gap: 0.25rem 0.75rem;
+    min-width: 0;
+    color: var(--theme-text);
+    font-size: var(--font-size-min, 0.875rem);
+    font-weight: 600;
+    line-height: 1.25;
   }
-  .repeat-stepper {
-    flex: 0 0 auto;
+  .video-row :global(.segmented-control) {
+    width: 100%;
   }
-  /* Short labels like "120 fps" stay on one line inside the compact row. */
-  .compact-settings :global(.segment) {
+  /* Short labels like "120 fps" stay on one line inside the row. */
+  .video-row :global(.segment) {
     white-space: nowrap;
   }
-  .repeat-stepper {
-    grid-template-columns: repeat(3, auto);
+  @container (max-width: 21.99rem) {
+    .video-row {
+      grid-template-columns: minmax(0, 1fr);
+      align-items: start;
+    }
+  }
+  .stepper-keys {
+    display: flex;
     align-items: center;
     gap: 0.25rem;
   }
-  .repeat-stepper > span {
-    grid-column: 1 / -1;
-    margin-bottom: 0.125rem;
-  }
-  .repeat-stepper strong {
-    min-width: 1.5rem;
+  .stepper-keys strong {
+    min-width: 2rem;
     text-align: center;
     font-variant-numeric: tabular-nums;
   }
-  .repeat-stepper button {
+  .stepper-keys button {
     width: var(--min-touch-target, 44px);
     height: var(--min-touch-target, 44px);
     border: 1px solid var(--theme-stroke);
@@ -3663,17 +3584,6 @@
     padding: 0;
     border: 0;
   }
-  .card-settings :global(.export-panel.inline) {
-    background: transparent;
-  }
-  .setting-value {
-    margin-left: auto;
-    color: var(--theme-text-dim);
-    font-size: 0.875rem;
-  }
-  .disclosure-body {
-    padding: 0.75rem 0.25rem 0.25rem;
-  }
   .content-heading {
     display: flex;
     align-items: baseline;
@@ -3804,8 +3714,11 @@
       margin-inline: auto;
     }
     /* Side by side: the stage takes the open canvas, the rail keeps a fixed
-       reading column. The stage height is the only thing the viewport sets,
-       so the rail's content scrolls inside it instead of growing the dialog. */
+       reading column. The viewport sets the stage height. Home's rail is held
+       to that height; Download's rail takes the height its settings need,
+       up to the sheet, so the card settings and the action fit without an
+       inner scrollbar. Only a sheet too short for them scrolls the rail body,
+       with the dock pinned beneath it. */
     .share-split {
       --stage-cap: 34rem;
       --stage-h: clamp(
@@ -3815,6 +3728,7 @@
       );
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(20rem, 24rem);
+      grid-template-rows: minmax(0, 1fr);
       align-items: start;
       column-gap: 1.5rem;
       padding: 1.25rem 1.75rem;
@@ -3822,19 +3736,23 @@
     .stage-frame {
       padding: 0;
     }
+    /* It sits on the dialog itself: the stage and the choices are the only
+       outlined surfaces, so the column reads as content, not an empty box. */
     .rail {
-      /* The stage sets the row height; the rail never stretches the dialog.
-         It sits on the dialog itself: the stage and the choices are the only
-         outlined surfaces, so the column reads as content, not an empty box. */
-      contain: size;
-      height: var(--stage-h);
+      align-self: stretch;
+      min-height: 0;
       overflow: hidden;
     }
+    .share-split[data-route="home"] .rail {
+      align-self: start;
+      contain: size;
+      height: var(--stage-h);
+    }
     /* Content-sized: the dock follows the last control instead of sitting at
-       the far end of a void. A long column still scrolls inside the rail. */
+       the far end of a void. */
     .rail-body {
       flex: 0 1 auto;
-      padding: 0 0.25rem 0.25rem 0;
+      padding: 0.25rem 0.25rem 0.25rem 0.25rem;
     }
     .share-split[data-route="home"]:not(:has(.stage-frame)) {
       grid-template-columns: minmax(0, 1fr);

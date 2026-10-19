@@ -280,12 +280,16 @@ describe("Download card with real live pictographs", () => {
         );
 
         if (shouldScroll) {
-          await page
-            .getByRole("button", { name: /^Card settings\b/ })
-            .click({ timeout: 5000 });
-          await page
-            .getByRole("button", { name: /^Layout\b/ })
-            .click({ timeout: 5000 });
+          // Card controls are available directly in the rail, even when its
+          // height requires scrolling to reach the lower rows.
+          await expect
+            .element(
+              page.getByRole("button", {
+                name: "Auto columns and start placement",
+                exact: true,
+              })
+            )
+            .toBeVisible();
           await expect
             .poll(() => scrollArea.scrollHeight - scrollArea.clientHeight, {
               timeout: 5000,
@@ -668,7 +672,14 @@ describe("Download card with real live pictographs", () => {
     await expect
       .poll(() => renderCard.mock.calls.length, { timeout: 15000 })
       .toBeGreaterThan(0);
-    await page.getByRole("button", { name: /^Layout\b/ }).click();
+    await expect
+      .element(
+        page.getByRole("button", {
+          name: "Auto columns and start placement",
+          exact: true,
+        })
+      )
+      .toBeVisible();
     await page
       .getByRole("button", {
         name: "Auto columns and start placement",
