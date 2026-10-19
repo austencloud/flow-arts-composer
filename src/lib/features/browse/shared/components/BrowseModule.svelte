@@ -956,4 +956,14 @@
       min-width: 0;
     }
   }
+
+  @media (max-width: 560px) {
+    .explore-heading {
+      display: block;
+    }
+
+    .explore-switcher {
+      display: none;
+    }
+  }
 </style>
