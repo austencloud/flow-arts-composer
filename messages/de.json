@@ -7235,6 +7235,8 @@
   "guide_eightstep_hand_right": "Rechte Hand: immer im Kreis",
   "guide_eightstep_spins_title": "Wähle ein Requisit und einen Spin",
   "guide_eightstep_spins_body": "Jede Hand spinnt pro oder anti, mit beliebig vielen Drehungen. Auf dem Rückweg wechselt die linke Hand zwischen pro und anti, damit ihr Requisit gleich weiterdreht.",
+  "guide_eightstep_path": "Handweg",
+  "guide_eightstep_path_option": "Weg {n}: {first}; dann {second}",
   "guide_eightstep_prop": "Requisit",
   "guide_eightstep_spin_left": "Linke Hand",
   "guide_eightstep_spin_right": "Rechte Hand",

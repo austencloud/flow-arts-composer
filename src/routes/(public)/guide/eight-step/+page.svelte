@@ -49,6 +49,7 @@
     CAP_TIMINGS,
     capMode,
     capOnPath,
+    capPathRhythm,
     capPoiProblem,
     capStrip,
     type Cap,
@@ -59,6 +60,7 @@
   } from "#lib/shared/guide-topics/caps-topic.js";
   import { TND_TO_ELEMENTAL } from "#lib/shared/pictograph/shared/domain/utils/tnd-calculator.js";
   import { getElementImagePath } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import { elementalDisplayLabel } from "#lib/shared/pictograph/shared/components/elemental-display-label.js";
   import TurnNotationControls from "#lib/shared/shape-matrix/app/components/TurnNotationControls.svelte";
   import type { MatrixLabelMode } from "#lib/shared/shape-matrix/domain/matrix-turn-band.js";
   import { ratioLabel } from "#lib/shared/shape-matrix/domain/flower-signature.js";
@@ -169,7 +171,28 @@
 
   const firstPath = CAP_HAND_PATHS[0]!;
   const hands = showcase(firstPath.caps[0]!).sequence;
-  const spinCap = $derived(capOnPath(firstPath, leftSpin, rightSpin));
+  // The spin player can walk any of the eight paths. Each choice shows the
+  // path's rhythm in its two halves, the way the pattern falls.
+  let pathColumn = $state(1);
+  const PATH_OPTIONS = $derived(
+    CAP_HAND_PATHS.map((path) => {
+      const [first, second] = capPathRhythm(path).map((half) =>
+        half.map(elementalDisplayLabel).join(", ")
+      );
+      return {
+        value: String(path.column),
+        label: String(path.column),
+        ariaLabel: t("guide_eightstep_path_option", {
+          n: path.column,
+          first: first!,
+          second: second!,
+        }),
+      };
+    })
+  );
+  const spinCap = $derived(
+    capOnPath(CAP_HAND_PATHS[pathColumn - 1]!, leftSpin, rightSpin)
+  );
   const spinExample = $derived(showcase(spinCap));
   const poiProblem = (cap: Cap) =>
     propType === PropType.POI ? capPoiProblem(cap) : null;
@@ -372,6 +395,40 @@
             <h2>{t("guide_eightstep_spins_title")}</h2>
             <p>{t("guide_eightstep_spins_body")}</p>
             <div class="pickers">
+              <div class="picker">
+                <span class="picker-label" id="path-picker-label"
+                  >{t("guide_eightstep_path")}</span
+                >
+                <SegmentedControl
+                  options={PATH_OPTIONS}
+                  value={String(pathColumn)}
+                  onchange={(v) => (pathColumn = Number(v))}
+                  ariaLabelledby="path-picker-label"
+                  semantics="radiogroup"
+                  density="compact"
+                  columns={4}
+                >
+                  {#snippet optionContent(value)}
+                    {@const path = CAP_HAND_PATHS[Number(value) - 1]!}
+                    <span class="path-option">
+                      <span class="path-number">{value}</span>
+                      <span class="rhythm">
+                        {#each capPathRhythm(path) as half, h (h)}
+                          <span class="half">
+                            {#each half as el, i (i)}
+                              <img
+                                class="element"
+                                src={getElementImagePath(el)}
+                                alt=""
+                              />
+                            {/each}
+                          </span>
+                        {/each}
+                      </span>
+                    </span>
+                  {/snippet}
+                </SegmentedControl>
+              </div>
               <div class="picker">
                 <span class="picker-label">{t("guide_eightstep_prop")}</span>
                 <PropChoiceRow
@@ -615,6 +672,29 @@
   }
   .picker :global(.prop-option) {
     max-width: none;
+  }
+  /* Each path option: its number, then its rhythm as two lines of three. */
+  .path-option {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-sm, 8px);
+  }
+  .path-number {
+    min-width: 1ch;
+    font-variant-numeric: tabular-nums;
+  }
+  .rhythm {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .rhythm .half {
+    display: flex;
+    gap: 2px;
+  }
+  .rhythm .element {
+    width: 1.25rem;
+    height: 1.25rem;
   }
   /* Each hand's two motions sit side by side, labelled by hand. */
   .hand-motions {
