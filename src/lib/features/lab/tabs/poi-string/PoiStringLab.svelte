@@ -20,11 +20,19 @@
     CAP_HAND_PATHS,
     capOnPath,
     capPairing,
+    capPathMode,
     capStrip,
     type Cap,
     type CapHandSpin,
     type CapSpin,
   } from "#lib/shared/guide-topics/caps-topic.js";
+  import { deriveTnDFromPictograph } from "#lib/shared/pictograph/shared/domain/utils/tnd-deriver.js";
+  import { TND_TO_ELEMENTAL } from "#lib/shared/pictograph/shared/domain/utils/tnd-calculator.js";
+  import {
+    getElementImagePath,
+    type ElementalType,
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import { elementalDisplayLabel } from "#lib/shared/pictograph/shared/components/elemental-display-label.js";
   import {
     checkPoiString,
     DEFAULT_POI_STRING_OPTIONS,
@@ -96,8 +104,17 @@
         )
   );
 
+  const beatSteps = $derived(capStrip(cap).slice(1));
+  // The hands' timing and direction on each beat, as the pictograph glyph
+  // reads it. The capping hand's beat back flips the direction.
+  const beatElements = $derived(
+    beatSteps.map((step) => deriveTnDFromPictograph(step).elementalType)
+  );
+  const pathElement = (p: (typeof CAP_HAND_PATHS)[number]): ElementalType =>
+    TND_TO_ELEMENTAL[capPathMode(p)];
+
   const results = $derived.by(() => {
-    const beats = capStrip(cap).slice(1);
+    const beats = beatSteps;
     const options = {
       bpm,
       handRadius,
@@ -255,6 +272,7 @@
           options={CAP_HAND_PATHS.map((p) => ({
             value: String(p.column),
             label: String(p.column),
+            ariaLabel: `${p.column}, opens in ${elementalDisplayLabel(pathElement(p))}`,
           }))}
           value={String(column)}
           onchange={(v) => (column = Number(v))}
@@ -262,7 +280,19 @@
           semantics="radiogroup"
           density="compact"
           columns={4}
-        />
+        >
+          {#snippet optionContent(value)}
+            {@const p = CAP_HAND_PATHS[Number(value) - 1]!}
+            <span class="path-option">
+              <img
+                class="element"
+                src={getElementImagePath(pathElement(p))}
+                alt=""
+              />
+              {p.column}
+            </span>
+          {/snippet}
+        </SegmentedControl>
       </div>
       <div class="row">
         <span class="label" id="poi-mode-label">Spins</span>
@@ -392,6 +422,22 @@
   </div>
 
   <section class="beats" aria-label="Beat by beat">
+    <div class="beat-row">
+      <p class="verdict"><strong>Hands</strong> timing and direction</p>
+      <ol class="modes" style="--beats: {Math.min(beatElements.length, 12)}">
+        {#each beatElements as element, i (i)}
+          <li class:current={i === currentBeat}>
+            {#if element}
+              <img
+                class="element"
+                src={getElementImagePath(element)}
+                alt={elementalDisplayLabel(element)}
+              />
+            {/if}
+          </li>
+        {/each}
+      </ol>
+    </div>
     {#each SIDES as side (side)}
       {@const result = results[side]}
       <div class="beat-row">
@@ -638,5 +684,23 @@
   .n {
     opacity: 0.65;
     font-size: 0.75rem;
+  }
+  .path-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .path-option .element {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+  ol.modes li {
+    --cell: var(--theme-text);
+    background: color-mix(in srgb, var(--cell) 6%, transparent);
+    padding: 4px 2px;
+  }
+  ol.modes .element {
+    width: min(2rem, 100%);
+    aspect-ratio: 1;
   }
 </style>
