@@ -676,12 +676,13 @@
     max-width: none;
   }
   /* Eight paths in whole rows: two of four with room, four of two on a
-     phone, where four across would push the rhythms into each other. */
-  .path-picker :global(.ui-segments) {
+     phone, where four across would push the rhythms into each other. The
+     data-grid match outranks the control's own column rule. */
+  .path-picker :global(.ui-segments[data-grid]) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   @container (min-width: 520px) {
-    .path-picker :global(.ui-segments) {
+    .path-picker :global(.ui-segments[data-grid]) {
       grid-template-columns: repeat(4, minmax(0, 1fr));
     }
   }
