@@ -2,6 +2,7 @@ import { page } from "vitest/browser";
 import { render } from "vitest-browser-svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import demo from "#lib/shared/landing/data/demo-sequence.json";
+import { decodeSequenceWithCompression } from "#lib/shared/navigation/services/sequence-encoder.js";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import ShareButton from "./ShareButton.svelte";
 import WorkspaceShareSheet from "./WorkspaceShareSheet.svelte";
@@ -387,6 +388,55 @@ describe("ShareButton", () => {
 });
 
 describe("WorkspaceShareSheet", () => {
+  it("copies a guest's current unsaved sequence and tempo in one click", async () => {
+    shareButtonMocks.fullAccount = false;
+    const currentSequence = {
+      ...structuredClone(sequence),
+      id: "",
+      steps: structuredClone(sequence.steps).slice(0, 3),
+    };
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
+    render(WorkspaceShareSheet, {
+      sequence: currentSequence,
+      isOpen: true,
+      onClose: vi.fn(),
+      bpm: 90,
+    });
+
+    await page.getByRole("button", { name: /Copy link/ }).click();
+
+    await vi.waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
+    const copiedUrl = new URL(writeText.mock.calls[0]![0]);
+    expect(copiedUrl.origin).toBe(window.location.origin);
+    expect(copiedUrl.searchParams.get("bpm")).toBe("90");
+    const encoded = decodeURIComponent(copiedUrl.pathname.slice("/sequence/".length));
+    expect(copiedUrl.pathname).toMatch(/^\/sequence\//);
+    const decodedSteps = decodeSequenceWithCompression(encoded).steps;
+    expect(decodedSteps).toHaveLength(3);
+    for (const [index, step] of decodedSteps.entries()) {
+      const currentStep = currentSequence.steps[index]!;
+      for (const hand of ["left", "right"] as const) {
+        expect(step.motions[hand]).toMatchObject({
+          motionType: currentStep.motions[hand].motionType,
+          startLocation: currentStep.motions[hand].startLocation,
+          endLocation: currentStep.motions[hand].endLocation,
+          rotationDirection: currentStep.motions[hand].rotationDirection,
+        });
+      }
+    }
+    expect(shareButtonMocks.createShortCode).not.toHaveBeenCalled();
+    await expect
+      .element(page.getByRole("button", { name: /Link copied/ }))
+      .toBeInTheDocument();
+    await expect
+      .element(page.getByText("Save this sequence to create a shareable link"))
+      .not.toBeInTheDocument();
+  });
+
   it("renders the video at the host's tempo, not the 60 BPM default", async () => {
     render(WorkspaceShareSheet, {
       sequence,
