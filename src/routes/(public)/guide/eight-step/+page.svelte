@@ -49,6 +49,7 @@
     CAP_TIMINGS,
     capPairing,
     capStrip,
+    capWithAntiTurns,
     capWorksOnPoi,
     type Cap,
     type CapDirection,
@@ -87,6 +88,12 @@
   ];
   let leftSpin = $state<CapSpin>("antispin");
   let rightSpin = $state<CapSpin>("antispin");
+  // Every CAP also spins with each antispin at 0 turns, on any prop but poi.
+  let antiTurns = $state<"1" | "0">("1");
+  const ANTI_TURN_OPTIONS = $derived([
+    { value: "1" as const, label: t("guide_eightstep_turns_one") },
+    { value: "0" as const, label: t("guide_eightstep_turns_zero") },
+  ]);
 
   // Hand paths carry no letters; each cell shows the app's step label.
   const PROP_RENDER: PictographRender = $derived({
@@ -101,15 +108,22 @@
     extension: "guide_eightstep_spin_extension",
     prospin: "guide_eightstep_spin_prospin",
   };
+  const spinLabel = (spin: CapSpin) =>
+    spin === "antispin" && antiTurns === "0"
+      ? t("guide_eightstep_spin_antispin_zero")
+      : t(SPIN_LABEL[spin]);
   const spinOptions = (tone: "blue" | "red") =>
-    SPINS.map((spin) => ({ value: spin, label: t(SPIN_LABEL[spin]), tone }));
+    SPINS.map((spin) => ({ value: spin, label: spinLabel(spin), tone }));
 
   // The chart's left hand always caps, so the left pick is the capping spin.
   const capOf = (path: CapHandPath, capping: CapSpin, circling: CapSpin) =>
-    path.caps.find((cap) => {
-      const pairing = capPairing(cap);
-      return pairing.capping === capping && pairing.circling === circling;
-    })!;
+    capWithAntiTurns(
+      path.caps.find((cap) => {
+        const pairing = capPairing(cap);
+        return pairing.capping === capping && pairing.circling === circling;
+      })!,
+      antiTurns === "0" ? 0 : 1
+    );
   // The CAP id names the sequence, so the player reloads on every new pick
   // even where two pairings spell the same word.
   const showcase = (cap: Cap) => {
@@ -173,10 +187,7 @@
   ];
   const exampleProse = (path: CapHandPath, cap: Cap) => {
     const { capping, circling } = capPairing(cap);
-    const spins = {
-      left: t(SPIN_LABEL[capping]),
-      right: t(SPIN_LABEL[circling]),
-    };
+    const spins = { left: spinLabel(capping), right: spinLabel(circling) };
     const variant = QUARTER_PATH[path.column];
     const line = variant
       ? t("guide_eightstep_example_variant", { variant: t(variant), ...spins })
@@ -324,6 +335,18 @@
                 />
               </div>
               <div class="picker">
+                <span class="picker-label" id="anti-turns-label"
+                  >{t("guide_eightstep_anti_turns")}</span
+                >
+                <SegmentedControl
+                  options={ANTI_TURN_OPTIONS}
+                  value={antiTurns}
+                  onchange={(turns) => (antiTurns = turns)}
+                  ariaLabelledby="anti-turns-label"
+                  semantics="radiogroup"
+                />
+              </div>
+              <div class="picker">
                 <span class="picker-label" id="spin-left-label"
                   >{t("guide_eightstep_spin_left")}</span
                 >
@@ -351,7 +374,13 @@
               </div>
             </div>
             {#if notForPoi(spinCap)}
-              <p class="poi-note">{t("guide_eightstep_poi_note")}</p>
+              <p class="poi-note">
+                {t(
+                  antiTurns === "0"
+                    ? "guide_eightstep_poi_anti_zero"
+                    : "guide_eightstep_poi_note"
+                )}
+              </p>
             {/if}
             <div class="chip">
               <LinkChip href={localHref("/guide/prospin-and-inspin")}

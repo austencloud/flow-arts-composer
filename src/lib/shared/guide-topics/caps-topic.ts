@@ -82,6 +82,11 @@ export interface CapHand {
   /** The point the hand reaches on each beat. */
   path: readonly GridLocation[];
   spins: readonly CapSpin[];
+  /**
+   * Turns on each antispin beat. The chart's CAPs use 1; every CAP also
+   * spins with 0, on any prop but poi.
+   */
+  antiTurns?: 0 | 1;
 }
 
 export interface Cap {
@@ -934,6 +939,12 @@ export function capPairing(cap: Cap): { capping: CapSpin; circling: CapSpin } {
 export function capWorksOnPoi(cap: Cap): boolean {
   return [cap.left, cap.right].every((hand) => {
     const steps = capHandSteps(hand);
+    // Gravity keeps a poi from antispinning with no turns.
+    if (
+      steps.some((step) => step.motionType === MotionType.ANTI && !step.turns)
+    ) {
+      return false;
+    }
     return steps.every((step, i) => {
       if (step.endOrientation === Orientation.OUT) return true;
       const next = steps[(i + 1) % steps.length]!;
@@ -978,12 +989,34 @@ function opposite(direction: RotationDirection): RotationDirection {
  * One hand's twelve beats. Pro spins the prop the way the hand travels and
  * anti spins it against the hand; every prop starts pointing out.
  */
+/** A spin's motion on this hand, with the hand's antispin turns. */
+function spinMotion(hand: CapHand, spin: CapSpin) {
+  const motion = CAP_SPIN_MOTION[spin];
+  return spin === "antispin"
+    ? { ...motion, turns: hand.antiTurns ?? motion.turns }
+    : motion;
+}
+
+/**
+ * The CAP with every antispin at the given turns. At 1 it is the chart's own
+ * CAP; at 0 it is its twin, with its own id so a player reloads for it.
+ */
+export function capWithAntiTurns(cap: Cap, turns: 0 | 1): Cap {
+  if (turns === 1) return cap;
+  return {
+    ...cap,
+    id: `${cap.id}-anti0`,
+    left: { ...cap.left, antiTurns: 0 },
+    right: { ...cap.right, antiTurns: 0 },
+  };
+}
+
 export function capHandSteps(hand: CapHand): SoloPropStepData[] {
   const steps: SoloPropStepData[] = [];
   let at = hand.start;
   let orientation: Orientation = Orientation.OUT;
   hand.path.forEach((to, i) => {
-    const { motionType, turns } = CAP_SPIN_MOTION[hand.spins[i]!];
+    const { motionType, turns } = spinMotion(hand, hand.spins[i]!);
     const way = travel(at, to);
     const rotationDirection =
       motionType === MotionType.PRO ? way : opposite(way);
@@ -1029,8 +1062,8 @@ export interface CapBeat {
   right: CapHandBeat;
 }
 
-function handBeat(spin: CapSpin): CapHandBeat {
-  return { spin, ratio: ratioLabel(CAP_SPIN_MOTION[spin].turns as 0 | 1) };
+function handBeat(hand: CapHand, spin: CapSpin): CapHandBeat {
+  return { spin, ratio: ratioLabel(spinMotion(hand, spin).turns as 0 | 1) };
 }
 
 /** The VTG reading of every beat: the hands' element and each hand's spin. */
@@ -1042,8 +1075,8 @@ export function capBeats(cap: Cap): CapBeat[] {
       beat: i + 1,
       letter,
       element: TND_ELEMENTS.find((e) => e.element === elementalType) ?? null,
-      left: handBeat(cap.left.spins[i]!),
-      right: handBeat(cap.right.spins[i]!),
+      left: handBeat(cap.left, cap.left.spins[i]!),
+      right: handBeat(cap.right, cap.right.spins[i]!),
     };
   });
 }
