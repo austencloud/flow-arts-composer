@@ -717,7 +717,6 @@
   bind:isOpen={drawerOpen}
   keepMounted
   placement="bottom"
-  snapPoints={["100%"]}
   onclose={handleDrawerClose}
   showHandle={false}
   focusContainerOnOpen
