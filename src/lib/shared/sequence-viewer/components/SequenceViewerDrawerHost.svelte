@@ -828,6 +828,10 @@
     --sheet-filter: none;
     --sheet-border-radius-top-left: 0px;
     --sheet-border-radius-top-right: 0px;
+    /* Full screen through the drawer's own height API. A single "100%" snap
+       point used to give this height, but the drawer reads its only snap
+       point as closed, so every tap inside the viewer shut it. */
+    --sheet-min-height: 100dvh;
   }
 
   /* The drawer stays mounted so a viewer can be built in it before it opens.
