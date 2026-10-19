@@ -281,9 +281,10 @@ describe("Download card with real live pictographs", () => {
 
         if (shouldScroll) {
           await page.getByRole("button", { name: /^Card settings\b/ }).click();
-          expect(scrollArea.scrollHeight).toBeGreaterThan(
-            scrollArea.clientHeight
-          );
+          await page.getByRole("button", { name: /^Layout\b/ }).click();
+          await expect
+            .poll(() => scrollArea.scrollHeight - scrollArea.clientHeight)
+            .toBeGreaterThan(0);
           scrollArea.scrollTop = scrollArea.scrollHeight;
           await nextFrame();
           expect(footer.getBoundingClientRect().bottom).toBeLessThanOrEqual(
