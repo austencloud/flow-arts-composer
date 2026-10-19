@@ -98,7 +98,7 @@
     type GripMetric,
     type PoseMetric,
   } from "./lab-metrics";
-  import { StaffLabState } from "./lab-state.svelte";
+  import { StaffLabState } from "./lab-state.svelte.js";
   import ReferencePanel from "./reference/ReferencePanel.svelte";
   import ReferenceStage from "./reference/ReferenceStage.svelte";
   import ReferenceTransport from "./reference/ReferenceTransport.svelte";
@@ -106,7 +106,7 @@
   import {
     ReferenceSession,
     type ReferenceVideo,
-  } from "./reference/reference-session.svelte";
+  } from "./reference/reference-session.svelte.js";
 
   /** Motion steps per second. Slow enough to read a 0.16-step stagger. */
   const PLAYBACK_STEPS_PER_SECOND = 1.2;
@@ -539,7 +539,7 @@
   primary: boolean,
   onCameraEnd?: (shot: InspectionShot) => void
 )}
-  <Canvas shadows rendererParameters={{ alpha: true }}>
+  <Canvas shadows>
     <T.PerspectiveCamera
       makeDefault
       position={shot.position}
