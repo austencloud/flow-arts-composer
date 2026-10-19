@@ -7905,6 +7905,8 @@
   "guide_eightstep_hand_right": "Right hand: round and round",
   "guide_eightstep_spins_title": "Pick a prop and a spin",
   "guide_eightstep_spins_body": "Each hand spins pro or anti, at any number of turns. On its way back the left hand switches between pro and anti, so its prop keeps turning the same way.",
+  "guide_eightstep_path": "Hand path",
+  "guide_eightstep_path_option": "Path {n}: {first}; then {second}",
   "guide_eightstep_prop": "Prop",
   "guide_eightstep_spin_left": "Left hand",
   "guide_eightstep_spin_right": "Right hand",

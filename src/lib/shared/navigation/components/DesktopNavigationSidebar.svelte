@@ -128,8 +128,13 @@
   }
 
   // Role-based access + guest-tier gating (mirrors the old getFilteredSections).
+  // A navigationHidden tab stays routable by its address but is left out here.
   function filterSection(moduleId: string, sectionId: string): boolean {
+    const section = modules
+      .find((x: ModuleDefinition) => x.id === moduleId)
+      ?.sections.find((x: Section) => x.id === sectionId);
     return (
+      !section?.navigationHidden &&
       (moduleId !== "browse" || browseDestinationPromoted(sectionId)) &&
       featureFlagService.canAccessTab(moduleId as ModuleId, sectionId) &&
       isTabAccessible(moduleId as ModuleId, sectionId, accessTier)
