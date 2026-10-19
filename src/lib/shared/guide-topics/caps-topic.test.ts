@@ -16,6 +16,7 @@ import { getGridPlacementFromLocations } from "#lib/shared/pictograph/grid/servi
 import {
   MotionType,
   Orientation,
+  type TnDMode,
 } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   turnValuesForLevel,
@@ -35,6 +36,7 @@ import {
   capCell,
   capHandSteps,
   capPathMode,
+  capPathRhythm,
   capStrip,
   capOnPath,
   capPoiProblem,
@@ -43,6 +45,7 @@ import {
   type CapHand,
   type CapHandSpin,
 } from "./caps-topic";
+import { TND_TO_ELEMENTAL } from "#lib/shared/pictograph/shared/domain/utils/tnd-calculator.js";
 
 const read = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8");
@@ -421,6 +424,19 @@ describe("hand modes along each path", () => {
       expect(modes, cap.id).toEqual(
         modes.map((_, i) => rhythm[i % rhythm.length])
       );
+    }
+  });
+  // The path pickers show this rhythm as two lines of three.
+  it("splits each path's six-step rhythm into its two halves", () => {
+    for (const path of CAP_HAND_PATHS) {
+      const rhythm = EXPECTED[path.column]!.split(" ");
+      const six = [0, 1, 2, 3, 4, 5].map(
+        (i) => TND_TO_ELEMENTAL[rhythm[i % rhythm.length] as TnDMode]
+      );
+      expect(capPathRhythm(path), `path ${path.column}`).toEqual([
+        six.slice(0, 3),
+        six.slice(3),
+      ]);
     }
   });
   it("opens on the mode of the box the page puts it in", () => {

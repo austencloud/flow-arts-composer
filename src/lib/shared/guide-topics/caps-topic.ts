@@ -30,6 +30,7 @@ import {
   MotionType,
   Orientation,
   RotationDirection,
+  type ElementalType,
   type TnDMode,
 } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
@@ -939,6 +940,20 @@ export function capMode(timing: CapTiming, direction: CapDirection): TnDMode {
 /** The mode a hand path opens in. */
 export function capPathMode(path: CapHandPath): TnDMode {
   return capMode(path.timing, path.direction);
+}
+
+/**
+ * A hand path's six-step rhythm of timing and direction, as the element on
+ * each step reads it, in its two halves of three. Every spin on a path
+ * shares it, and the twelve steps play it twice.
+ */
+export function capPathRhythm(
+  path: CapHandPath
+): readonly [readonly ElementalType[], readonly ElementalType[]] {
+  const rhythm = capStrip(path.caps[0]!)
+    .slice(1, 7)
+    .map((step) => deriveTnDFromPictograph(step).elementalType!);
+  return [rhythm.slice(0, 3), rhythm.slice(3)];
 }
 
 /**
