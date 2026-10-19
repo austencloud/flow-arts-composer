@@ -12,9 +12,23 @@
    * 2026-10-19 and retargeted by E:/mocap-metahuman/retarget/retarget_to_mixamo.py.
    * The source video is a local-only file (excluded from git), so this page
    * only shows it on Austen's machine.
+   *
+   * Staffs: tracked in the video with SAM 2 and lifted to 3D against the solve's
+   * hands by E:/mocap-metahuman/prop/lift.py. Each frame stores both staff ends
+   * as offsets from the source palm, so here they hang off X Bot's palm, scaled
+   * by torso length.
    */
   import { Canvas, T } from "@threlte/core";
-  import type { Object3D } from "three";
+  import {
+    CylinderGeometry,
+    Group,
+    Mesh,
+    MeshStandardMaterial,
+    Quaternion,
+    SphereGeometry,
+    Vector3,
+    type Object3D,
+  } from "three";
   import OrbitControls from "#lib/shared/3d/components/OrbitControls.svelte";
   import { createSelfLoadedRigBinding } from "#lib/features/stage/locomotion/motion-matching/self-loaded-rig-binding.js";
   import type { RigBinding } from "#lib/features/stage/locomotion/motion-matching/rig-binding.js";
@@ -23,6 +37,52 @@
   const CLIP_ID = "woods-staffs";
   const VIDEO_URL = "/word-videos/inshot-recovery/woods-full.mp4";
   const VIDEO_START_SEC = 15;
+  const PROPS_URL = "/animations/mocap/woods-staffs-props.json";
+
+  type Vec3 = [number, number, number];
+  interface StaffTrack {
+    fps: number;
+    lengthM: number;
+    sourceTorsoM: number;
+    frames: { L: [Vec3, Vec3] | null; R: [Vec3, Vec3] | null }[];
+  }
+
+  function makeStaff(tipA: string, tipB: string) {
+    const group = new Group();
+    const shaft = new Mesh(
+      new CylinderGeometry(0.012, 0.012, 1, 10),
+      new MeshStandardMaterial({ color: "#e8e4dc", roughness: 0.6 })
+    );
+    const tips = [tipA, tipB].map((color) => {
+      const tip = new Mesh(
+        new SphereGeometry(0.03, 12, 8),
+        new MeshStandardMaterial({
+          color,
+          emissive: color,
+          emissiveIntensity: 0.6,
+        })
+      );
+      group.add(tip);
+      return tip;
+    });
+    group.add(shaft);
+    group.visible = false;
+    return { group, shaft, tips };
+  }
+
+  const staffs = new Group();
+  const staffBySide = {
+    L: makeStaff("#ff8a3d", "#9b5cff"),
+    R: makeStaff("#ff6fae", "#f4f0ff"),
+  };
+  staffs.add(staffBySide.L.group, staffBySide.R.group);
+  let track: StaffTrack | null = null;
+  let bodyScale = 1;
+  const UP = new Vector3(0, 1, 0);
+  const tmpA = new Vector3();
+  const tmpB = new Vector3();
+  const tmpPalm = new Vector3();
+  const tmpQ = new Quaternion();
 
   let rigRoot = $state<Object3D | null>(null);
   let rig: RigBinding | null = null;
@@ -40,6 +100,11 @@
       );
       clipSec = binding.clipSpecs()[0]?.durationSec ?? 0;
       binding.applyClip(CLIP_ID, 0);
+      track = (await (await fetch(PROPS_URL)).json()) as StaffTrack;
+      binding.root.updateMatrixWorld(true);
+      const hips = binding.getBone("Hips")?.getWorldPosition(new Vector3());
+      const head = binding.getBone("Head")?.getWorldPosition(new Vector3());
+      if (hips && head) bodyScale = hips.distanceTo(head) / track.sourceTorsoM;
       rig = binding;
       rigRoot = binding.root;
       status = `Ready: ${clipSec.toFixed(1)} s clip`;
@@ -72,6 +137,42 @@
       return;
     }
     rig.applyClip(CLIP_ID, t);
+    placeStaffs(t);
+  }
+
+  function placeStaffs(t: number) {
+    if (!rig || !track) return;
+    const frame =
+      track.frames[
+        Math.min(track.frames.length - 1, Math.round(t * track.fps))
+      ];
+    rig.root.updateMatrixWorld(true);
+    for (const side of ["L", "R"] as const) {
+      const staff = staffBySide[side];
+      const ends = frame?.[side];
+      const hand = rig.getBone(side === "L" ? "LeftHand" : "RightHand");
+      const middle = rig.getBone(
+        side === "L" ? "LeftHandMiddle1" : "RightHandMiddle1"
+      );
+      if (!ends || !hand || !middle) {
+        staff.group.visible = false;
+        continue;
+      }
+      hand
+        .getWorldPosition(tmpPalm)
+        .add(middle.getWorldPosition(tmpA))
+        .multiplyScalar(0.5);
+      tmpA.fromArray(ends[0]).multiplyScalar(bodyScale).add(tmpPalm);
+      tmpB.fromArray(ends[1]).multiplyScalar(bodyScale).add(tmpPalm);
+      staff.tips[0].position.copy(tmpA);
+      staff.tips[1].position.copy(tmpB);
+      staff.shaft.position.copy(tmpA).add(tmpB).multiplyScalar(0.5);
+      const length = tmpA.distanceTo(tmpB);
+      staff.shaft.scale.set(1, length, 1);
+      tmpQ.setFromUnitVectors(UP, tmpB.sub(tmpA).divideScalar(length));
+      staff.shaft.quaternion.copy(tmpQ);
+      staff.group.visible = true;
+    }
   }
 </script>
 
@@ -115,6 +216,7 @@
 
       {#if rigRoot}
         <T is={rigRoot} />
+        <T is={staffs} />
       {/if}
 
       <MocapDriver {tick} />
