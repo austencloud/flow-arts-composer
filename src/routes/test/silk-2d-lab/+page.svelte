@@ -5,12 +5,12 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import { Silk2DRenderer } from "#lib/shared/effects/renderers/silk-2d-renderer";
-  import type { EmitterTip } from "#lib/shared/effects/renderers/emitter-tip";
-  import { resolveSilk2D } from "#lib/shared/effects/translators/canvas2d-translator";
-  import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults";
-  import { SILK_PRESETS } from "#lib/shared/animation-engine/components/effects-panel/presets/silk-presets";
-  import type { SilkIntent } from "#lib/shared/effects/domain/effects-config";
+  import { Silk2DRenderer } from "#lib/shared/effects/renderers/silk-2d-renderer.js";
+  import type { EmitterTip } from "#lib/shared/effects/renderers/emitter-tip.js";
+  import { resolveSilk2D } from "#lib/shared/effects/translators/canvas2d-translator.js";
+  import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
+  import { SILK_PRESETS } from "#lib/shared/animation-engine/components/effects-panel/presets/silk-presets.js";
+  import type { SilkIntent } from "#lib/shared/effects/domain/effects-config.js";
 
   type Speed = 1 | 0.25 | 0;
 
@@ -45,7 +45,12 @@
       const size = Math.min(width, height);
       const half = size * 0.13;
       if (i === 0) {
-        return { x: width * 0.28, y: height * 0.34, angle: t * 2 * Math.PI * 0.9, half };
+        return {
+          x: width * 0.28,
+          y: height * 0.34,
+          angle: t * 2 * Math.PI * 0.9,
+          half,
+        };
       }
       if (i === 1) {
         const wobble = 0.04 * size * Math.sin(t * 2.1);
@@ -208,14 +213,19 @@
   <div class="bar">
     <div class="group" aria-label="Preset">
       {#each SILK_PRESETS as preset (preset.id)}
-        <button aria-pressed={presetId === preset.id} onclick={() => (presetId = preset.id)}>
+        <button
+          aria-pressed={presetId === preset.id}
+          onclick={() => (presetId = preset.id)}
+        >
           {preset.name}
         </button>
       {/each}
     </div>
     <div class="group" aria-label="Speed">
       {#each [[1, "1x"], [0.25, "Slow"], [0, "Pause"]] as const as [value, label] (label)}
-        <button aria-pressed={speed === value} onclick={() => (speed = value)}>{label}</button>
+        <button aria-pressed={speed === value} onclick={() => (speed = value)}
+          >{label}</button
+        >
       {/each}
     </div>
     <div class="group">
@@ -235,7 +245,9 @@
     grid-template-rows: 1fr auto;
     background: #05070d;
     color: #e6e9f2;
-    font: 14px system-ui, sans-serif;
+    font:
+      14px system-ui,
+      sans-serif;
   }
   .stage {
     min-height: 0;
