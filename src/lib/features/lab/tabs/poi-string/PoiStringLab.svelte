@@ -111,16 +111,23 @@
     beatSteps.map((step) => deriveTnDFromPictograph(step).elementalType)
   );
   // Each path's hands repeat a six-beat rhythm of timing and direction,
-  // the same for every spin on that path.
+  // the same for every spin on that path. It falls in two halves of three,
+  // as the pattern does.
   const PATH_RHYTHMS: (ElementalType | null)[][] = CAP_HAND_PATHS.map((p) =>
     capStrip(p.caps[0]!)
       .slice(1, 7)
       .map((step) => deriveTnDFromPictograph(step).elementalType)
   );
+  const rhythmHalves = (column: number) => {
+    const rhythm = PATH_RHYTHMS[column - 1]!;
+    return [rhythm.slice(0, 3), rhythm.slice(3)];
+  };
   const rhythmLabel = (column: number) =>
-    PATH_RHYTHMS[column - 1]!.map((el) =>
-      el ? elementalDisplayLabel(el) : ""
-    ).join(", ");
+    rhythmHalves(column)
+      .map((half) =>
+        half.map((el) => (el ? elementalDisplayLabel(el) : "")).join(", ")
+      )
+      .join("; then ");
 
   const results = $derived.by(() => {
     const beats = beatSteps;
@@ -324,10 +331,18 @@
             <span class="path-option">
               <span class="path-number">{n}</span>
               <span class="rhythm">
-                {#each PATH_RHYTHMS[n - 1]! as el, i (i)}
-                  {#if el}
-                    <img class="element" src={getElementImagePath(el)} alt="" />
-                  {/if}
+                {#each rhythmHalves(n) as half, h (h)}
+                  <span class="half">
+                    {#each half as el, i (i)}
+                      {#if el}
+                        <img
+                          class="element"
+                          src={getElementImagePath(el)}
+                          alt=""
+                        />
+                      {/if}
+                    {/each}
+                  </span>
                 {/each}
               </span>
             </span>
@@ -769,6 +784,11 @@
   }
   .rhythm {
     display: inline-flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .rhythm .half {
+    display: flex;
     gap: 2px;
   }
   .rhythm .element {
