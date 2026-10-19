@@ -64,6 +64,14 @@
       fileSize: 4_200_000 + index * 900_000,
       mimeType: "video/mp4",
       sequenceId: SEQUENCE_ID,
+      associations: [
+        {
+          subjectType: "sequence",
+          subjectId: SEQUENCE_ID,
+          relationship: "performance",
+        },
+      ],
+      performers: [],
       creatorId: ownerId,
       collaborators: [
         {
@@ -149,8 +157,10 @@
       class:on={uploadRequested}
       onclick={() => (uploadRequested = true)}>Upload</button
     >
-    <button type="button" class:on={isOwned} onclick={() => (isOwned = !isOwned)}
-      >owned: {isOwned}</button
+    <button
+      type="button"
+      class:on={isOwned}
+      onclick={() => (isOwned = !isOwned)}>owned: {isOwned}</button
     >
     <button
       type="button"

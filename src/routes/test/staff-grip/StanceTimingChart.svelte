@@ -67,10 +67,8 @@
         // The lateral signal in the planner's own units: full assist maps to a
         // full turn, so the two lanes share one horizontal and one vertical.
         lateralDeg:
-          Math.max(
-            -1,
-            Math.min(1, sample.lateralM / FULL_ASSIST_LATERAL_M)
-          ) * MAX_YAW_DEG,
+          Math.max(-1, Math.min(1, sample.lateralM / FULL_ASSIST_LATERAL_M)) *
+          MAX_YAW_DEG,
       });
     }
     return out;
@@ -98,10 +96,12 @@
   }
 
   const lateralArea = $derived.by(() => {
-    if (frames.length === 0) return "";
+    const firstFrame = frames[0];
+    const lastFrame = frames.at(-1);
+    if (!firstFrame || !lastFrame) return "";
     const body = pathOf((frame) => yawY(frame.lateralDeg));
-    const first = xAt(frames[0].t).toFixed(2);
-    const last = xAt(frames[frames.length - 1].t).toFixed(2);
+    const first = xAt(firstFrame.t).toFixed(2);
+    const last = xAt(lastFrame.t).toFixed(2);
     return `${body}L${last} ${yawY(0).toFixed(2)}L${first} ${yawY(0).toFixed(2)}Z`;
   });
 
@@ -114,8 +114,12 @@
   const spine2Unit = $derived(
     pathOf((frame) => unitY(frame.spine2Deg / (SPINE2_SHARE * MAX_YAW_DEG)))
   );
-  const chestUnit = $derived(pathOf((frame) => unitY(frame.chestDeg / MAX_YAW_DEG)));
-  const headUnit = $derived(pathOf((frame) => unitY(frame.headDeg / MAX_YAW_DEG)));
+  const chestUnit = $derived(
+    pathOf((frame) => unitY(frame.chestDeg / MAX_YAW_DEG))
+  );
+  const headUnit = $derived(
+    pathOf((frame) => unitY(frame.headDeg / MAX_YAW_DEG))
+  );
 
   const boundaries = $derived(
     stepCount > 0
@@ -124,9 +128,7 @@
   );
 
   const playheadX = $derived(
-    stepCount > 0
-      ? xAt(((scoreTime % stepCount) + stepCount) % stepCount)
-      : 0
+    stepCount > 0 ? xAt(((scoreTime % stepCount) + stepCount) % stepCount) : 0
   );
 
   // The numbers come from the curve's own owner rather than from these drawn
@@ -221,7 +223,13 @@
           />
         {/each}
         <line class="zero" x1="0" x2="1000" y1={yawY(0)} y2={yawY(0)} />
-        <line class="limit" x1="0" x2="1000" y1={yawY(MAX_YAW_DEG)} y2={yawY(MAX_YAW_DEG)} />
+        <line
+          class="limit"
+          x1="0"
+          x2="1000"
+          y1={yawY(MAX_YAW_DEG)}
+          y2={yawY(MAX_YAW_DEG)}
+        />
         <line
           class="limit"
           x1="0"
