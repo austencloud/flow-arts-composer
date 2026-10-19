@@ -15,8 +15,8 @@
    *
    * Staffs: tracked in the video with SAM 2 and lifted to 3D against the solve's
    * hands by E:/mocap-metahuman/prop/lift.py. Each frame stores both staff ends
-   * as offsets from the source palm, so here they hang off X Bot's palm, scaled
-   * by torso length.
+   * as offsets from the grip (the solve's palm slid onto the tracked staff), so
+   * here the staff passes through X Bot's palm at real size.
    */
   import { Canvas, T } from "@threlte/core";
   import {
@@ -43,7 +43,6 @@
   interface StaffTrack {
     fps: number;
     lengthM: number;
-    sourceTorsoM: number;
     frames: { L: [Vec3, Vec3] | null; R: [Vec3, Vec3] | null }[];
   }
 
@@ -77,7 +76,6 @@
   };
   staffs.add(staffBySide.L.group, staffBySide.R.group);
   let track: StaffTrack | null = null;
-  let bodyScale = 1;
   const UP = new Vector3(0, 1, 0);
   const tmpA = new Vector3();
   const tmpB = new Vector3();
@@ -101,10 +99,6 @@
       clipSec = binding.clipSpecs()[0]?.durationSec ?? 0;
       binding.applyClip(CLIP_ID, 0);
       track = (await (await fetch(PROPS_URL)).json()) as StaffTrack;
-      binding.root.updateMatrixWorld(true);
-      const hips = binding.getBone("Hips")?.getWorldPosition(new Vector3());
-      const head = binding.getBone("Head")?.getWorldPosition(new Vector3());
-      if (hips && head) bodyScale = hips.distanceTo(head) / track.sourceTorsoM;
       rig = binding;
       rigRoot = binding.root;
       status = `Ready: ${clipSec.toFixed(1)} s clip`;
@@ -162,8 +156,8 @@
         .getWorldPosition(tmpPalm)
         .add(middle.getWorldPosition(tmpA))
         .multiplyScalar(0.5);
-      tmpA.fromArray(ends[0]).multiplyScalar(bodyScale).add(tmpPalm);
-      tmpB.fromArray(ends[1]).multiplyScalar(bodyScale).add(tmpPalm);
+      tmpA.fromArray(ends[0]).add(tmpPalm);
+      tmpB.fromArray(ends[1]).add(tmpPalm);
       staff.tips[0].position.copy(tmpA);
       staff.tips[1].position.copy(tmpB);
       staff.shaft.position.copy(tmpA).add(tmpB).multiplyScalar(0.5);
