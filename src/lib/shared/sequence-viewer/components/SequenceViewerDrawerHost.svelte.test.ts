@@ -86,7 +86,10 @@ import {
   prewarmSequenceViewer,
 } from "../state/viewer-prewarm.svelte";
 import { contentStubCallbacks } from "./__test-stubs__/SequenceViewerDrawerContentStub.svelte";
-import { overlayStateStub } from "./__test-stubs__/sequence-overlay-state-stub.svelte";
+import {
+  closeOverlayStateStub,
+  overlayStateStub,
+} from "./__test-stubs__/sequence-overlay-state-stub.svelte";
 import SequenceViewerDrawerHost from "./SequenceViewerDrawerHost.svelte";
 
 describe("SequenceViewerDrawerHost URL bootstrap", () => {
@@ -293,6 +296,70 @@ describe("SequenceViewerDrawerHost hidden viewer", () => {
       timeout: 5000,
     });
     expect(mounted()).toBe(1);
+    contentStubCallbacks.onClose?.();
+    clearSequenceViewerPrewarm(sequence);
+  });
+
+  it("hands a reopen the viewer that was rebuilt hidden after a close", async () => {
+    // The test before unmounts its host mid-close, leaving the stub open.
+    closeOverlayStateStub();
+    const sequence = {
+      id: "workspace-reopen",
+      word: "AB",
+      beats: [],
+    } as unknown as SequenceData;
+    prewarmSequenceViewer({
+      sequence,
+      analyticsSource: "create_workspace",
+      initialViewMode: "animation",
+      playOnOpen: true,
+    });
+    render(SequenceViewerDrawerHost);
+    const stub = () =>
+      document.querySelector<HTMLElement>(
+        "[data-testid='sequence-viewer-drawer-content-stub']"
+      );
+    const open = () =>
+      Object.assign(overlayStateStub, {
+        isOpen: true,
+        sequence,
+        playOnOpen: true,
+        openedFromUrl: true,
+        sessionKey: overlayStateStub.sessionKey + 1,
+      });
+    await vi.waitFor(() => expect(stub()?.dataset.dormant).toBe("true"), {
+      timeout: 5000,
+    });
+
+    open();
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    contentStubCallbacks.onClose?.();
+    await vi.waitFor(() => expect(mounted()).toBe(0), { timeout: 5000 });
+    await vi.waitFor(() => expect(stub()?.dataset.dormant).toBe("true"), {
+      timeout: 5000,
+    });
+
+    // The viewer remounts whenever its key changes, so a reopen that keys it
+    // differently from the hidden build throws that build away at the tap.
+    const hiddenKey = stub()?.dataset.sessionKey;
+    // It must stay asleep until the slide starts: waking builds its playback
+    // engine and canvases, which held the slide back by half a second.
+    const dormantValues: string[] = [];
+    const watcher = new MutationObserver((records) => {
+      for (const record of records) dormantValues.push(record.oldValue ?? "");
+    });
+    watcher.observe(stub()!, {
+      attributes: true,
+      attributeFilter: ["data-dormant"],
+      attributeOldValue: true,
+    });
+    open();
+    await vi.waitFor(() => expect(stub()?.dataset.dormant).toBe("false"), {
+      timeout: 5000,
+    });
+    watcher.disconnect();
+    expect(dormantValues).toEqual(["true"]);
+    expect(stub()?.dataset.sessionKey).toBe(hiddenKey);
     contentStubCallbacks.onClose?.();
     clearSequenceViewerPrewarm(sequence);
   });

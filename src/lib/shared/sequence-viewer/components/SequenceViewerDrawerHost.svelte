@@ -195,9 +195,14 @@
   const viewerDormant = $derived(
     dormantPrewarm !== null && overlay.sequence === null
   );
-  const viewerKey = $derived(
-    adopted || overlay.sequence === null ? dormantKey : overlay.sessionKey
-  );
+  // dormantKey is read first for the same reason. Read only inside the
+  // branch, it kept its old value after a close (Svelte 5.57): the hidden
+  // viewer was rebuilt under the old key, and the next tap's new key threw
+  // that build away and built the whole viewer again before the slide.
+  const viewerKey = $derived.by(() => {
+    const key = dormantKey;
+    return adopted || overlay.sequence === null ? key : overlay.sessionKey;
+  });
 
   function handleCardReady() {
     cardReadyKey = viewerKey;
@@ -239,9 +244,8 @@
     });
   });
 
-  // The mount runs once the slide has started: by its transitionstart the
-  // slide belongs to the compositor, so building the viewer cannot hold it
-  // back. Measured in one trace, the slide dropped one frame while the viewer
+  // The mount runs once the slide has started: by then the slide belongs to
+  // the compositor, so building the viewer cannot hold it back. Measured in one trace, the slide dropped one frame while the viewer
   // built against three when it waited, and the viewer showed about half a
   // second sooner. Mounting before the slide starts would delay the start.
   // The fallback covers a slide that never starts (hidden tab); reduced
@@ -254,10 +258,29 @@
       queueMicrotask(allowViewerMount);
       return;
     }
+    // transitionstart can fire before the slide's first frame is committed;
+    // work run straight from it held that frame back about 300 ms in two of
+    // five reopens. The transition's ready promise settles once it has started.
+    let cancelled = false;
     const onStart = (event: TransitionEvent) => {
-      if (event.target === dialog && event.propertyName === "transform") {
+      if (event.target !== dialog || event.propertyName !== "transform") return;
+      const slide = dialog
+        .getAnimations()
+        .find(
+          (animation) =>
+            animation instanceof CSSTransition &&
+            animation.transitionProperty === "transform"
+        );
+      if (!slide) {
         allowViewerMount();
+        return;
       }
+      void slide.ready.then(
+        () => {
+          if (!cancelled) allowViewerMount();
+        },
+        () => {}
+      );
     };
     dialog.addEventListener("transitionstart", onStart);
     const fallback = setTimeout(
@@ -265,6 +288,7 @@
       slideMs + motionDuration(DURATION.emphasis)
     );
     return () => {
+      cancelled = true;
       dialog.removeEventListener("transitionstart", onStart);
       clearTimeout(fallback);
     };
@@ -604,6 +628,10 @@
       dormantKey -= 1;
     }
     closeSequenceOverlay();
+    // The next open's viewer starts asleep. Left set, the next tap handed the
+    // hidden viewer a wake before the open effect could clear it, and it built
+    // its playback engine and canvases before the slide could start.
+    viewerMountAllowed = false;
 
     // Remix and Compose choose their own destination. A queued Back would
     // otherwise undo that navigation after the workspace has opened.
