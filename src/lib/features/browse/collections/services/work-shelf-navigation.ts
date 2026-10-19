@@ -16,6 +16,15 @@ export interface ForeignShelfItem {
   ownerName?: string;
 }
 
+/** A collection always returns to its shelf, including from a direct link. */
+export function parentListForCollection(
+  location: BrowseLocation | null
+): BrowseLocation {
+  return location?.ownerId
+    ? { primary: "you", section: "following", view: "list" }
+    : { primary: "you", section: "collections", view: "list" };
+}
+
 /** The address owns the selected shelf, including browser back and direct links. */
 export function shelfForLocation(location: BrowseLocation | null): WorkShelfId {
   if (location?.primary !== "you") return "collections";

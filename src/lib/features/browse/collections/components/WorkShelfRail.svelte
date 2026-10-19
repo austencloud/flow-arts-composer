@@ -12,6 +12,7 @@
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { Snippet } from "svelte";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import BackToBrowseButton from "#lib/features/browse/shared/components/BackToBrowseButton.svelte";
   import type { WorkShelfId } from "../services/work-shelf-navigation.js";
 
   interface ShelfDefinition {
@@ -26,9 +27,10 @@
     onchange: (shelfId: WorkShelfId) => void;
     content: Snippet<[WorkShelfId]>;
     region: "tabs" | "panel";
+    showBrowseBack?: boolean;
   }
 
-  let { value, onchange, content, region }: Props = $props();
+  let { value, onchange, content, region, showBrowseBack = false }: Props = $props();
 
   const shelves = $derived<Record<WorkShelfId, ShelfDefinition>>({
     drafts: {
@@ -96,6 +98,7 @@
 
 {#if region === "tabs"}
   <header class="rail-header">
+    <BackToBrowseButton />
     <div class="tab-width">
       <SegmentedControl
         {options}
@@ -120,8 +123,11 @@
   >
     {#if value !== "collections" && value !== "drafts"}
       <header class="shelf-panel-header">
-        <h3>{shelves[value].label}</h3>
-        <p>{shelves[value].description}</p>
+        {#if showBrowseBack}<BackToBrowseButton />{/if}
+        <div class="shelf-panel-heading">
+          <h3>{shelves[value].label}</h3>
+          <p>{shelves[value].description}</p>
+        </div>
       </header>
     {/if}
 
@@ -133,14 +139,16 @@
   .rail-header {
     flex: 0 0 auto;
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    gap: 12px;
     padding: clamp(8px, 1.2cqi, 12px) clamp(10px, 1.6cqi, 16px);
     border-bottom: 1px solid var(--theme-stroke);
     background: transparent;
   }
 
   .tab-width {
-    width: 100%;
+    flex: 1 1 auto;
+    min-width: 0;
   }
 
   .shelf-tab-content {
@@ -171,8 +179,15 @@
 
   .shelf-panel-header {
     display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .shelf-panel-heading {
+    display: flex;
     flex-direction: column;
     gap: 4px;
+    min-width: 0;
   }
 
   .shelf-panel-header h3 {
