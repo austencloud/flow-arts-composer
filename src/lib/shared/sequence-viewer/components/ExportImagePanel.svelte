@@ -1030,29 +1030,32 @@
         />
       </div>
 
-      <div class="share-row" role="group" aria-labelledby="share-start-label">
+      <div
+        class="share-row share-start"
+        role="group"
+        aria-labelledby="share-start-label"
+      >
         <span class="share-label" id="share-start-label"
           >{t("viewer_ui_start")}</span
         >
-        <div class="share-control">
-          <div class="chip-wrap">
-            <FilterChipBase
-              mode="toggle"
-              labelScale="readable"
-              label={t("viewer_ui_show")}
-              active={showStartPos}
-              onclick={() =>
-                toggleCompositionSetting(
-                  "start_position",
-                  showStartPos,
-                  imageComposition.setIncludeStartPlacement.bind(
-                    imageComposition
-                  )
-                )}
-            />
-          </div>
+        <!-- The Show chip and the layout choice share one line beside the
+             label, so the label reads as naming both. They stack under each
+             other only when the rail is too narrow for the two. -->
+        <div class="share-inline">
+          <FilterChipBase
+            mode="toggle"
+            labelScale="readable"
+            label={t("viewer_ui_show")}
+            active={showStartPos}
+            onclick={() =>
+              toggleCompositionSetting(
+                "start_position",
+                showStartPos,
+                imageComposition.setIncludeStartPlacement.bind(imageComposition)
+              )}
+          />
           {#if showStartPos}
-            <div class="start-layout" transition:growFade={{ axis: "y" }}>
+            <div class="start-layout" transition:growFade={{ axis: "x" }}>
               <SegmentedControl
                 options={startLayoutOptions}
                 value={startPosLayout}
@@ -1070,55 +1073,53 @@
           <span class="share-label" id="share-info-label"
             >{t("viewer_ui_info")}</span
           >
-          <div class="share-control">
-            {#if isOneSpot}
-              <SegmentedControl
-                options={infoCellOptions}
-                value={infoCellDisplayChoice}
-                onchange={setInfoCellChoice}
-                color="accent"
-                ariaLabelledby="share-info-label"
-              />
-            {:else}
-              <div class="chip-wrap">
-                {#if canQRCode}
-                  <FilterChipBase
-                    mode="toggle"
-                    labelScale="readable"
-                    label="QR"
-                    icon="fas fa-qrcode"
-                    active={showQRCode}
-                    onclick={() =>
-                      toggleCompositionSetting(
-                        "qr_code",
-                        showQRCode,
-                        imageComposition.setShowQRCode.bind(imageComposition)
-                      )}
-                  />
-                {/if}
+          {#if isOneSpot}
+            <SegmentedControl
+              options={infoCellOptions}
+              value={infoCellDisplayChoice}
+              onchange={setInfoCellChoice}
+              color="accent"
+              ariaLabelledby="share-info-label"
+            />
+          {:else}
+            <div class="chip-wrap">
+              {#if canQRCode}
                 <FilterChipBase
                   mode="toggle"
                   labelScale="readable"
-                  label="Mandala"
-                  icon="fas fa-asterisk"
-                  active={showMandala}
+                  label="QR"
+                  icon="fas fa-qrcode"
+                  active={showQRCode}
                   onclick={() =>
                     toggleCompositionSetting(
-                      "mandala",
-                      showMandala,
-                      imageComposition.setShowMandala.bind(imageComposition)
+                      "qr_code",
+                      showQRCode,
+                      imageComposition.setShowQRCode.bind(imageComposition)
                     )}
                 />
-              </div>
-            {/if}
-            {#if canQRCode}
-              <p class="qr-scope-note">
-                {t(
-                  "viewer_detail_qr_codes_appear_on_opened_cards_and_exports_gallery_thumbnails_stay_qr_free"
-                )}
-              </p>
-            {/if}
-          </div>
+              {/if}
+              <FilterChipBase
+                mode="toggle"
+                labelScale="readable"
+                label="Mandala"
+                icon="fas fa-asterisk"
+                active={showMandala}
+                onclick={() =>
+                  toggleCompositionSetting(
+                    "mandala",
+                    showMandala,
+                    imageComposition.setShowMandala.bind(imageComposition)
+                  )}
+              />
+            </div>
+          {/if}
+          {#if canQRCode}
+            <p class="qr-scope-note">
+              {t(
+                "viewer_detail_qr_codes_appear_on_opened_cards_and_exports_gallery_thumbnails_stay_qr_free"
+              )}
+            </p>
+          {/if}
         </div>
       {/if}
     </div>
@@ -1807,11 +1808,23 @@
     line-height: 1.25;
     color: var(--theme-text);
   }
-  .share-control {
+  /* Start: the Show chip and its layout choice sit on one line beside the
+     label. The choice takes the rest of the line and drops under the chip only
+     when the rail cannot hold both. The label lines up with the first line. */
+  .share-inline {
     display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
+    align-items: center;
     gap: 0.5rem;
     min-width: 0;
+  }
+  .share-start {
+    align-items: start;
+  }
+  .share-start .share-label {
+    display: flex;
+    align-items: center;
+    min-height: var(--min-touch-target);
   }
   .share-row :global(.segmented-control) {
     width: 100%;
@@ -1827,6 +1840,7 @@
     min-width: 0;
   }
   .start-layout {
+    flex: 1 1 12rem;
     min-width: 0;
   }
   /* The footer editor brings its own label and saved state. Put them in the
@@ -1854,14 +1868,20 @@
     line-height: 1.25;
     text-align: start;
   }
+  /* The QR note runs the full width of its row, under both columns. */
   .share-row .qr-scope-note {
+    grid-column: 1 / -1;
     font-size: var(--font-size-min);
+    line-height: 1.4;
   }
   /* A narrow rail has no room for a label column beside the control. */
   @container (max-width: 21.99rem) {
     .share-row {
       grid-template-columns: minmax(0, 1fr);
       align-items: start;
+    }
+    .share-start .share-label {
+      min-height: 0;
     }
     .share-footer :global(.card-footer-editor.inline) {
       grid-template-columns: minmax(0, 1fr);

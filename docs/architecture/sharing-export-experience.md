@@ -1000,10 +1000,11 @@ buttons). Ordinary settings are never collapsed by default again.
   the preview or widens the rail past it. A keeps the preview dominant and
   adds no new chrome.
 - **Rail height.** On Download at 900px and wider the rail is no longer held to
-  the stage height. It takes the height its settings need, up to the sheet. Home
-  keeps the stage-height rail. When a sheet is too short, the rail body is the
-  one scroll owner and the dock stays pinned beneath it. Nothing is hidden,
-  clipped or shrunk to avoid the scrollbar.
+  the stage height. Home keeps the stage-height rail. When a sheet is too short,
+  the rail body is the one scroll owner and the dock stays pinned beneath it.
+  Nothing is hidden, clipped or shrunk to avoid the scrollbar. (The first
+  version let the rail take whatever height its content needed; the browser
+  showed that moved the shell, see Correction round 1 below.)
 - **Label placement is the rail's call.** A container query on the settings
   moves a label above its control under 22rem of rail, and pairs rows in two
   columns at 36rem and wider (short landscape). Neither depends on the
@@ -1017,10 +1018,48 @@ buttons). Ordinary settings are never collapsed by default again.
   `roomy*` disclosure state in `PostShareSheet`. The flat `inline`, `sidebar`
   and `bottom` layouts are untouched.
 
-**Verification owed.** No browser, test or build run accompanied this change.
-The default card must show Theme through Info and the dock with no rail
-scrollbar at 1440×900 and larger; the 1440×900 fit is the tightest and must be
-measured with a custom footer and the Save to card button present. Also check
-375×667, 960×412 and 820×1180 for one scroll owner with a reachable dock, 200%
-reflow, the Card to Video crossfade (both keys, interrupted, reduced motion),
-focus order, and the video rows with a 3D export (Quality row).
+**Correction round 1 (same day, after the first browser look).** The browser
+measured three defects in the first version, all now corrected in code:
+
+- **The rail still scrolled at 1440×900.** Default Card rail body: client 635,
+  scroll 656. Fix: on Download the rail is wider, `clamp(24rem, 31vw, 28rem)`
+  (448px at 1440), so Header and Pictograph chips wrap into fewer rows. The QR
+  note runs the full row width instead of the narrow control column, and Start
+  no longer adds a second line. Stage and rail still compose without magnifying
+  controls (4K rule); the wide tiers need no extra Download rule because 28rem
+  is the cap.
+- **Card and Video moved the whole shell about 91px.** Card's dialog was 852px
+  tall at y24 and Video's 670px at y115, because the dialog is `fit-content` and
+  the rail set its height. Fix: at 900px and wider the Download split has one
+  height shared by both modes, `max(stage height, 46rem)` plus its padding.
+  The dialog's own max-height trims it on a short window, so on any screen the
+  dialog, the stage and the dock sit in the same place in both modes. The rail
+  body takes the slack, so the action stays at the bottom of the rail and Video's
+  shorter settings leave quiet space above it, not a moved shell. `Crossfade`
+  with `animateHeight` still handles the rail contents; it cannot move the
+  shell now. The QR step keeps its single content-sized column.
+- **Start read as two things.** The Show chip sat on its own line above the
+  Start label's selector. Fix: the label, the Show chip and the layout choice are
+  one row. The choice takes the rest of the line (`growFade` on the x axis) and
+  drops under the chip only when the rail cannot hold both; the label stays
+  aligned with the first line.
+
+Short landscape (900px wide, 560px tall or less) keeps its stage-width column
+and now also holds the shared footprint, with the rail body as the one scroll
+owner. Below 900px nothing changed: the sheet is a single column that scrolls
+once, with the dock pinned.
+
+**Verification so far.** The full type check and the changed Svelte compile
+reported 0 errors and 0 warnings on the first version. The browser then exposed
+the sizing bugs above, which are now being corrected. No browser, test or build
+run has covered the correction itself.
+
+**Verification owed.** The default card must show Theme through Info and the
+dock with no rail scrollbar at 1440×900 and larger; the 1440×900 fit is the
+tightest and must be measured with the dock showing an account note (the tallest
+dock), and again with a custom footer and the Save to card button. The Card and
+Video dialogs, stage and action must report identical rectangles at 1440×900,
+1920×1080 and 2560×1440. Also check 375×667, 960×412 and 820×1180 for one
+scroll owner with a reachable dock, 200% reflow, the Card to Video crossfade
+(both keys, interrupted, reduced motion), the Start row with the layout choice
+on and off, focus order, and the video rows with a 3D export (Quality row).
