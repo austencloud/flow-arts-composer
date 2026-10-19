@@ -12,6 +12,7 @@
  * `localStorage["tka-loading-profile:<key>"]`, last completed load wins, the
  * same rule the boot screen's "tka-boot-profile" follows.
  */
+import { getContext, onDestroy, setContext } from "svelte";
 import { reducedMotion } from "#lib/shared/transitions/motion.js";
 import {
   createSelfTimingBar,
@@ -174,4 +175,62 @@ export function createLoadingSession(spec: LoadingSessionSpec): LoadingSession {
       end("abandoned");
     },
   };
+}
+
+/**
+ * A place one kind of load lives while surfaces come and go: the first
+ * surface opens the session, later ones show the same one, and a finished
+ * load makes way for the next (a view that mounts again is a new load).
+ */
+export interface LoadingSlot {
+  /** The current load's session, opened on first use and again after one
+   * completes. Browser only. */
+  open(): LoadingSession;
+  /** The open session, if any (reactive). */
+  readonly current: LoadingSession | null;
+}
+
+function createLoadingSlot(
+  spec: LoadingSessionSpec
+): LoadingSlot & { abandon(): void } {
+  let session = $state<LoadingSession | null>(null);
+  return {
+    open() {
+      if (!session || session.done) session = createLoadingSession(spec);
+      return session;
+    },
+    get current() {
+      return session;
+    },
+    abandon() {
+      if (session && !session.done) session.abandon();
+    },
+  };
+}
+
+/**
+ * For the outermost component that shows a load, so the components inside
+ * it carry on the same bar. The load is abandoned (nothing stored) if the
+ * provider leaves before it completes. Call during component init.
+ */
+export function provideLoadingSlot(
+  key: symbol,
+  spec: LoadingSessionSpec
+): LoadingSlot {
+  const slot = createLoadingSlot(spec);
+  setContext(key, slot);
+  onDestroy(() => slot.abandon());
+  return slot;
+}
+
+/** The provider's slot, or one owned by the calling component. */
+export function useLoadingSlot(
+  key: symbol,
+  spec: LoadingSessionSpec
+): LoadingSlot {
+  const provided = getContext<LoadingSlot | undefined>(key);
+  if (provided) return provided;
+  const slot = createLoadingSlot(spec);
+  onDestroy(() => slot.abandon());
+  return slot;
 }

@@ -47,6 +47,7 @@
     tryGetSceneFeatureContext,
   } from "../scene-features/context/scene-feature-context";
   import SceneLoadingCurtain from "../scene-features/components/SceneLoadingCurtain.svelte";
+  import { getSequenceDisplayName } from "#lib/shared/foundation/services/word-deriver.js";
   import { createViewerCameraPlayerState } from "@austencloud/camera-3d";
   import { getInputCapabilities } from "#lib/shared/input/InputCapabilities.svelte.js";
   import {
@@ -125,6 +126,10 @@
     /** Fires when the scene load gate opens/closes (first-load latched). The
         parent withholds the 3D rail chrome until the stage is ready. */
     onSceneReadyChange?: (ready: boolean) => void;
+    /** Fires when the scene is showing: under the gated curtain, partway
+        through its reveal; otherwise with `onSceneReadyChange`. The parent
+        brings the 3D rail in on this, so it arrives onto the scene. */
+    onSceneRevealedChange?: (revealed: boolean) => void;
     /** Decorative async features that may finish after the studio is usable. */
     initialRevealDeferredFeatures?: readonly string[];
     /**
@@ -199,6 +204,7 @@
     playbackMode,
     onPlaybackModeChange,
     onSceneReadyChange,
+    onSceneRevealedChange,
     initialRevealDeferredFeatures = [],
     initialRevealMode = "gated",
     enableEffects = true,
@@ -655,6 +661,13 @@
     onSceneReadyChange?.(sceneReady);
   });
 
+  let curtainRevealed = $state(false);
+  $effect(() => {
+    onSceneRevealedChange?.(
+      sceneReady && (initialRevealMode !== "gated" || curtainRevealed)
+    );
+  });
+
   // The 2D animated backdrop keeps repainting a viewport-sized canvas behind
   // the opaque loading curtain, where nobody can see it, while GLB parsing,
   // geometry upload and shader compile need every millisecond of the main
@@ -875,11 +888,14 @@
     </div>
     {#if sequenceData && initialRevealMode === "gated"}
       <SceneLoadingCurtain
+        environmentId={viewer3DState.environmentId}
+        title={getSequenceDisplayName(sequenceData)}
         additionalRevealReady={performersReady}
         additionalRevealProgress={waitForPerformersOnInitialReveal
           ? performerRevealProgress
           : null}
         additionalRevealLabel="Dressing the cast"
+        onRevealed={() => (curtainRevealed = true)}
       />
     {/if}
     {#if sequenceData && !hideOverlays}
