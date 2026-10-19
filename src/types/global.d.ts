@@ -54,7 +54,27 @@ declare global {
       class Map {
         constructor(element: HTMLElement, options?: MapOptions);
         panTo(latLng: LatLngLiteral): void;
+        setCenter(latLng: LatLngLiteral): void;
         setZoom(zoom: number): void;
+        getZoom(): number | undefined;
+        fitBounds(bounds: LatLngBounds, padding?: number): void;
+      }
+
+      class LatLngBounds {
+        constructor();
+        extend(point: LatLngLiteral): LatLngBounds;
+      }
+
+      interface MapsEventListener {
+        remove(): void;
+      }
+
+      namespace event {
+        function addListenerOnce(
+          instance: Map,
+          eventName: string,
+          handler: () => void
+        ): MapsEventListener;
       }
 
       interface MapOptions {
@@ -68,6 +88,8 @@ declare global {
         mapTypeControl?: boolean;
         streetViewControl?: boolean;
         fullscreenControl?: boolean;
+        cameraControl?: boolean;
+        keyboardShortcuts?: boolean;
       }
 
       interface LatLngLiteral {
@@ -213,7 +235,6 @@ declare global {
     }): Promise<void>;
   }
 
-   
   var scheduler: Scheduler | undefined;
 
   // Custom events

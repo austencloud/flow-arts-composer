@@ -232,7 +232,6 @@
       ? null
       : (options.startPlacementLayout ?? null)}
     {autoLayoutOverride}
-    {revision}
     layoutAvailableWidth={layoutAvailableWidth || undefined}
     layoutAvailableHeight={automaticLayout ? layoutAvailableHeight : undefined}
     forceContain

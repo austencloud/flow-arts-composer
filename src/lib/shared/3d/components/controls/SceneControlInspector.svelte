@@ -44,6 +44,15 @@
     dev: "Developer tools",
   };
 
+  const icons: Record<SceneControlTool, string> = {
+    performer: "fa-user-group",
+    formation: "fa-people-arrows-left-right",
+    camera: "fa-video",
+    scene: "fa-mountain-sun",
+    presets: "fa-swatchbook",
+    dev: "fa-terminal",
+  };
+
   // Each performer tool has its own rail button, so the panel is titled after
   // the tool rather than "Performers".
   const performerTool = $derived(
@@ -64,15 +73,6 @@
    * inner pane unreachable.
    */
   const fillsPanel = $derived(tool === "performer");
-
-  const icons: Record<SceneControlTool, string> = {
-    performer: "fa-user-group",
-    formation: "fa-people-arrows-left-right",
-    camera: "fa-video",
-    scene: "fa-mountain-sun",
-    presets: "fa-swatchbook",
-    dev: "fa-terminal",
-  };
 </script>
 
 <section

@@ -55,7 +55,7 @@
 
     for (const group of groups) {
       const members = sections.filter(
-        (section) => section.groupId === group.id
+        (section: Section) => section.groupId === group.id
       );
       if (members.length === 0) continue;
       entries.push({ kind: "group", group });
