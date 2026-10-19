@@ -977,3 +977,50 @@ QR step width at 1920 and wider. No browser or test run accompanied this change.
   group summary has a 0.75rem lead so it no longer touches the title.
 - **Not touched.** The faint circle in the phone card still is unconfirmed; the
   renderer was left alone.
+
+### October 18 correction pass 3: direct settings, no accordions
+
+Austen rejected the Download rail: "for some reason you felt it necessary to
+create a scroll bar and put everything in the scroll bar section as expandable
+collapsible items." The defect was structural. The rail was height-locked to
+the stage, so the file switch, four group headers, an open Look group and the
+dock overflowed it, and every ordinary setting sat behind a disclosure.
+
+**Supersedes** the Look / Header / Pictograph / Layout groups with summaries
+(one split shell section, "Card settings"), the "Look children" tint above,
+and the phone and short-landscape settings disclosure (correction pass 2,
+"Short landscape settings"; correction pass 1, narrow-sheet disclosure
+buttons). Ordinary settings are never collapsed by default again.
+
+- **Composition chosen.** Two were compared with the same controls. A:
+  compact labeled rows in the existing rail, short controls beside their label
+  (Theme, Card footer, Columns, Start, Info; Resolution, Frame rate, Quality,
+  Repeats) and chip sets (Header, Pictograph) under theirs. B: a taller
+  settings area beside or under the stage. B was rejected because it shrinks
+  the preview or widens the rail past it. A keeps the preview dominant and
+  adds no new chrome.
+- **Rail height.** On Download at 900px and wider the rail is no longer held to
+  the stage height. It takes the height its settings need, up to the sheet. Home
+  keeps the stage-height rail. When a sheet is too short, the rail body is the
+  one scroll owner and the dock stays pinned beneath it. Nothing is hidden,
+  clipped or shrunk to avoid the scrollbar.
+- **Label placement is the rail's call.** A container query on the settings
+  moves a label above its control under 22rem of rail, and pairs rows in two
+  columns at 36rem and wider (short landscape). Neither depends on the
+  viewport, so the 1680 and 2600 seams still only recompose.
+- **Same primitives, same owners.** `SegmentedControl`, `FilterChipBase` toggles
+  and `CardFooterEditor` are unchanged; every setter and state owner is the one
+  the Card tab already uses. The Card / Video switch and its `Crossfade` stay.
+  Video settings follow the same row hierarchy, with 44px stepper keys.
+- **Removed.** The `grouping="share"` disclosure groups and summaries in
+  `ExportImagePanel`, and the `cardSettingsOpen`, `videoSettingsOpen` and
+  `roomy*` disclosure state in `PostShareSheet`. The flat `inline`, `sidebar`
+  and `bottom` layouts are untouched.
+
+**Verification owed.** No browser, test or build run accompanied this change.
+The default card must show Theme through Info and the dock with no rail
+scrollbar at 1440×900 and larger; the 1440×900 fit is the tightest and must be
+measured with a custom footer and the Save to card button present. Also check
+375×667, 960×412 and 820×1180 for one scroll owner with a reachable dock, 200%
+reflow, the Card to Video crossfade (both keys, interrupted, reduced motion),
+focus order, and the video rows with a 3D export (Quality row).

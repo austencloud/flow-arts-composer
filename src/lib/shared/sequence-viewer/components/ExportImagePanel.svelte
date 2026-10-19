@@ -36,7 +36,6 @@
   import ControlDock, { type ControlDockTab } from "./ControlDock.svelte";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
-  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import {
     getInfoCellCount,
     type InfoCellChoice,
@@ -65,10 +64,10 @@
     onPictographAllChange?: (value: boolean) => void;
     layout?: PanelLayout;
     /**
-     * "share" (inline layout only) folds the settings into Look, Header,
-     * Pictograph and Layout groups with readable summaries, built from the
-     * shared chip, segmented and panel-button primitives. Every setting stays
-     * reachable. Default "flat" keeps the viewer's rows untouched.
+     * "share" (inline layout only) lays the settings out as direct, always
+     * visible labeled rows built from the shared chip and segmented
+     * primitives: nothing is folded behind a disclosure. Default "flat" keeps
+     * the viewer's rows untouched.
      */
     grouping?: "flat" | "share";
     stepCount: number;
@@ -455,20 +454,9 @@
     );
   }
 
-  // ---- Share grouping -------------------------------------------------------
-  // Same state owners as the flat rows; only the arrangement differs. Look is
-  // open because Theme and Footer are the settings people reach for first.
-  type ShareGroup = "look" | "header" | "pictograph" | "layout";
-  let openGroups = $state<Record<ShareGroup, boolean>>({
-    look: true,
-    header: false,
-    pictograph: false,
-    layout: false,
-  });
-  function toggleGroup(group: ShareGroup): void {
-    openGroups[group] = !openGroups[group];
-  }
-
+  // ---- Share rows -----------------------------------------------------------
+  // Same state owners as the flat rows; only the arrangement differs. Every
+  // setting is a labeled row that is always on screen.
   interface ShareToggle {
     id: string;
     label: string;
@@ -631,44 +619,6 @@
   const columnChoice = $derived(
     currentColumnCount === null ? "auto" : String(currentColumnCount)
   );
-
-  const footerModeLabel = $derived(
-    effectiveCardPresentation.footer.mode === "off"
-      ? t("share_footer_off")
-      : effectiveCardPresentation.footer.mode === "credit"
-        ? t("share_footer_credit")
-        : t("share_footer_custom")
-  );
-  const joinOn = (items: ShareToggle[]): string => {
-    const on = items.filter((item) => item.active).map((item) => item.label);
-    return on.length > 0 ? on.join(" · ") : t("viewer_ui_none");
-  };
-  const lookSummary = $derived(
-    `${exportOptions.imageDarkMode ? t("share_theme_dark") : t("share_theme_light")} · ${t("share_theme_footer")} ${footerModeLabel}`
-  );
-  const headerSummary = $derived(joinOn(headerToggles));
-  const pictographSummary = $derived(joinOn(pictographToggles));
-  const layoutSummary = $derived.by(() => {
-    const parts = [
-      `${t("viewer_ui_columns")} ${columnOptions.find((option) => option.value === currentColumnCount)?.label ?? t("viewer_ui_auto")}`,
-      showStartPos
-        ? `${t("viewer_ui_start")} ${startPosLayout === "row" ? t("viewer_ui_top_row") : t("viewer_ui_left_column")}`
-        : `${t("viewer_ui_start")} ${t("share_footer_off")}`,
-    ];
-    if (hasInfoCell) {
-      if (isOneSpot) {
-        parts.push(
-          infoCellOptions.find(
-            (option) => option.value === infoCellDisplayChoice
-          )?.label ?? ""
-        );
-      } else {
-        if (canQRCode && showQRCode) parts.push("QR");
-        if (showMandala) parts.push(t("viewer_ui_mandala"));
-      }
-    }
-    return parts.join(" · ");
-  });
 </script>
 
 {#if layout === "bottom"}
@@ -979,223 +929,199 @@
   </ControlDock>
 {:else if layout === "inline" && grouping === "share"}
   <!-- ============================================================
-       SHARE GROUPING: Look / Header / Pictograph / Layout. A closed group
-       keeps its current values readable in its header, so nothing is hidden
-       from the person choosing what the card shows.
+       SHARE ROWS: the same settings as the viewer, as direct labeled rows.
+       Short controls sit beside their label; chip sets (Header, Pictograph)
+       take the full row under theirs. Nothing is folded away.
        ============================================================ -->
   <div
-    class="share-groups"
-    role="region"
+    class="share-settings"
+    role="group"
     aria-label={t("viewer_ui_card_settings")}
   >
-    {#snippet groupHead(group: ShareGroup, title: string, summary: string)}
-      <PanelButton
-        fullWidth
-        ariaExpanded={openGroups[group]}
-        onclick={() => toggleGroup(group)}
+    <div class="share-rows">
+      <div class="share-row">
+        <span class="share-label" id="share-theme-label"
+          >{t("tab_settings_theme")}</span
+        >
+        <SegmentedControl
+          options={themeOptions}
+          value={exportOptions.imageDarkMode ? "dark" : "light"}
+          onchange={(value) => setTheme(value === "dark")}
+          color="accent"
+          ariaLabelledby="share-theme-label"
+        >
+          {#snippet optionContent(mode)}
+            <i
+              class={mode === "dark" ? "fas fa-moon" : "fas fa-sun"}
+              aria-hidden="true"
+            ></i>
+            {mode === "dark"
+              ? t("viewer_detail_dark")
+              : t("viewer_detail_light")}
+          {/snippet}
+        </SegmentedControl>
+      </div>
+
+      <div class="share-row share-footer">
+        <CardFooterEditor
+          value={effectiveCardPresentation}
+          onchange={changeCardPresentation}
+          layout="inline"
+          onSave={onSaveCardPresentation}
+          dirty={cardPresentationDirty}
+          saving={cardPresentationSaving}
+          idBase="share-card-footer"
+        />
+      </div>
+
+      <div
+        class="share-row share-set"
+        role="group"
+        aria-labelledby="share-header-label"
       >
-        <span class="group-title">{title}</span>
-        <span class="group-summary">{summary}</span>
-        <i
-          class={openGroups[group]
-            ? "fa-solid fa-chevron-up"
-            : "fa-solid fa-chevron-down"}
-          aria-hidden="true"
-        ></i>
-      </PanelButton>
-    {/snippet}
+        <span class="share-label" id="share-header-label"
+          >{t("viewer_ui_header")}</span
+        >
+        <div class="chip-wrap">
+          {#each headerToggles as item (item.id)}
+            <FilterChipBase
+              mode="toggle"
+              labelScale="readable"
+              label={item.label}
+              active={item.active}
+              onclick={item.toggle}
+            />
+          {/each}
+        </div>
+      </div>
 
-    <section class="share-group">
-      {@render groupHead("look", t("post_editor_tool_look"), lookSummary)}
-      {#if openGroups.look}
-        <div class="group-body" transition:growFade={{ axis: "y" }}>
-          <div class="share-field theme-field">
-            <span class="share-field-label" id="share-theme-label"
-              >{t("tab_settings_theme")}</span
-            >
-            <SegmentedControl
-              options={themeOptions}
-              value={exportOptions.imageDarkMode ? "dark" : "light"}
-              onchange={(value) => setTheme(value === "dark")}
-              color="accent"
-              ariaLabelledby="share-theme-label"
-            >
-              {#snippet optionContent(mode)}
-                <i
-                  class={mode === "dark" ? "fas fa-moon" : "fas fa-sun"}
-                  aria-hidden="true"
-                ></i>
-                {mode === "dark"
-                  ? t("viewer_detail_dark")
-                  : t("viewer_detail_light")}
-              {/snippet}
-            </SegmentedControl>
-          </div>
-          <div class="footer-editor-field">
-            <CardFooterEditor
-              value={effectiveCardPresentation}
-              onchange={changeCardPresentation}
-              layout="inline"
-              onSave={onSaveCardPresentation}
-              dirty={cardPresentationDirty}
-              saving={cardPresentationSaving}
-              idBase="share-card-footer"
+      <div
+        class="share-row share-set"
+        role="group"
+        aria-labelledby="share-pictograph-label"
+      >
+        <span class="share-label" id="share-pictograph-label"
+          >{t("viewer_ui_pictograph")}</span
+        >
+        <div class="chip-wrap">
+          {#each pictographToggles as item (item.id)}
+            <FilterChipBase
+              mode="toggle"
+              labelScale="readable"
+              label={item.label}
+              active={item.active}
+              onclick={item.toggle}
+            />
+          {/each}
+        </div>
+      </div>
+
+      <div class="share-row">
+        <span class="share-label" id="share-columns-label"
+          >{t("viewer_ui_columns")}</span
+        >
+        <SegmentedControl
+          options={columnChoices}
+          value={columnChoice}
+          onchange={(value) =>
+            setColumns(value === "auto" ? null : Number(value))}
+          color="accent"
+          ariaLabelledby="share-columns-label"
+        />
+      </div>
+
+      <div class="share-row" role="group" aria-labelledby="share-start-label">
+        <span class="share-label" id="share-start-label"
+          >{t("viewer_ui_start")}</span
+        >
+        <div class="share-control">
+          <div class="chip-wrap">
+            <FilterChipBase
+              mode="toggle"
+              labelScale="readable"
+              label={t("viewer_ui_show")}
+              active={showStartPos}
+              onclick={() =>
+                toggleCompositionSetting(
+                  "start_position",
+                  showStartPos,
+                  imageComposition.setIncludeStartPlacement.bind(
+                    imageComposition
+                  )
+                )}
             />
           </div>
-        </div>
-      {/if}
-    </section>
-
-    <section class="share-group">
-      {@render groupHead("header", t("viewer_ui_header"), headerSummary)}
-      {#if openGroups.header}
-        <div class="group-body" transition:growFade={{ axis: "y" }}>
-          <div class="chip-wrap">
-            {#each headerToggles as item (item.id)}
-              <FilterChipBase
-                mode="toggle"
-                labelScale="readable"
-                label={item.label}
-                active={item.active}
-                onclick={item.toggle}
+          {#if showStartPos}
+            <div class="start-layout" transition:growFade={{ axis: "y" }}>
+              <SegmentedControl
+                options={startLayoutOptions}
+                value={startPosLayout}
+                onchange={setStartPlacementLayout}
+                color="accent"
+                ariaLabel={t("viewer_ui_start")}
               />
-            {/each}
-          </div>
-        </div>
-      {/if}
-    </section>
-
-    <section class="share-group">
-      {@render groupHead(
-        "pictograph",
-        t("viewer_ui_pictograph"),
-        pictographSummary
-      )}
-      {#if openGroups.pictograph}
-        <div class="group-body" transition:growFade={{ axis: "y" }}>
-          <div class="chip-wrap">
-            {#each pictographToggles as item (item.id)}
-              <FilterChipBase
-                mode="toggle"
-                labelScale="readable"
-                label={item.label}
-                active={item.active}
-                onclick={item.toggle}
-              />
-            {/each}
-          </div>
-        </div>
-      {/if}
-    </section>
-
-    <section class="share-group">
-      {@render groupHead(
-        "layout",
-        t("browse_audit_chip_group_layout"),
-        layoutSummary
-      )}
-      {#if openGroups.layout}
-        <div class="group-body" transition:growFade={{ axis: "y" }}>
-          <div class="share-field">
-            <span class="share-field-label" id="share-columns-label"
-              >{t("viewer_ui_columns")}</span
-            >
-            <SegmentedControl
-              options={columnChoices}
-              value={columnChoice}
-              onchange={(value) =>
-                setColumns(value === "auto" ? null : Number(value))}
-              color="accent"
-              ariaLabelledby="share-columns-label"
-            />
-          </div>
-          <div class="share-field">
-            <span class="share-field-label">{t("viewer_ui_start")}</span>
-            <div class="chip-wrap">
-              <FilterChipBase
-                mode="toggle"
-                labelScale="readable"
-                label={t("viewer_ui_show")}
-                active={showStartPos}
-                onclick={() =>
-                  toggleCompositionSetting(
-                    "start_position",
-                    showStartPos,
-                    imageComposition.setIncludeStartPlacement.bind(
-                      imageComposition
-                    )
-                  )}
-              />
-            </div>
-            {#if showStartPos}
-              <div class="start-layout" transition:growFade={{ axis: "y" }}>
-                <SegmentedControl
-                  options={startLayoutOptions}
-                  value={startPosLayout}
-                  onchange={setStartPlacementLayout}
-                  color="accent"
-                  ariaLabel={t("viewer_ui_start")}
-                />
-              </div>
-            {/if}
-          </div>
-          {#if hasInfoCell}
-            <div class="share-field">
-              <span class="share-field-label" id="share-info-label"
-                >{t("viewer_ui_info")}</span
-              >
-              {#if isOneSpot}
-                <SegmentedControl
-                  options={infoCellOptions}
-                  value={infoCellDisplayChoice}
-                  onchange={setInfoCellChoice}
-                  color="accent"
-                  ariaLabelledby="share-info-label"
-                />
-              {:else}
-                <div class="chip-wrap">
-                  {#if canQRCode}
-                    <FilterChipBase
-                      mode="toggle"
-                      labelScale="readable"
-                      label="QR"
-                      icon="fas fa-qrcode"
-                      active={showQRCode}
-                      onclick={() =>
-                        toggleCompositionSetting(
-                          "qr_code",
-                          showQRCode,
-                          imageComposition.setShowQRCode.bind(imageComposition)
-                        )}
-                    />
-                  {/if}
-                  <FilterChipBase
-                    mode="toggle"
-                    labelScale="readable"
-                    label="Mandala"
-                    icon="fas fa-asterisk"
-                    active={showMandala}
-                    onclick={() =>
-                      toggleCompositionSetting(
-                        "mandala",
-                        showMandala,
-                        imageComposition.setShowMandala.bind(imageComposition)
-                      )}
-                  />
-                </div>
-              {/if}
-              {#if canQRCode}
-                <p class="qr-scope-note">
-                  {t(
-                    "viewer_detail_qr_codes_appear_on_opened_cards_and_exports_gallery_thumbnails_stay_qr_free"
-                  )}
-                </p>
-              {/if}
             </div>
           {/if}
         </div>
+      </div>
+
+      {#if hasInfoCell}
+        <div class="share-row" role="group" aria-labelledby="share-info-label">
+          <span class="share-label" id="share-info-label"
+            >{t("viewer_ui_info")}</span
+          >
+          <div class="share-control">
+            {#if isOneSpot}
+              <SegmentedControl
+                options={infoCellOptions}
+                value={infoCellDisplayChoice}
+                onchange={setInfoCellChoice}
+                color="accent"
+                ariaLabelledby="share-info-label"
+              />
+            {:else}
+              <div class="chip-wrap">
+                {#if canQRCode}
+                  <FilterChipBase
+                    mode="toggle"
+                    labelScale="readable"
+                    label="QR"
+                    icon="fas fa-qrcode"
+                    active={showQRCode}
+                    onclick={() =>
+                      toggleCompositionSetting(
+                        "qr_code",
+                        showQRCode,
+                        imageComposition.setShowQRCode.bind(imageComposition)
+                      )}
+                  />
+                {/if}
+                <FilterChipBase
+                  mode="toggle"
+                  labelScale="readable"
+                  label="Mandala"
+                  icon="fas fa-asterisk"
+                  active={showMandala}
+                  onclick={() =>
+                    toggleCompositionSetting(
+                      "mandala",
+                      showMandala,
+                      imageComposition.setShowMandala.bind(imageComposition)
+                    )}
+                />
+              </div>
+            {/if}
+            {#if canQRCode}
+              <p class="qr-scope-note">
+                {t(
+                  "viewer_detail_qr_codes_appear_on_opened_cards_and_exports_gallery_thumbnails_stay_qr_free"
+                )}
+              </p>
+            {/if}
+          </div>
+        </div>
       {/if}
-    </section>
+    </div>
   </div>
 {:else}
   <!-- ============================================================
@@ -1848,73 +1774,51 @@
     background: var(--theme-card-bg);
   }
 
-  /* Share grouping: four disclosure groups with readable 14px+ text. */
-  .share-groups {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+  /* Share rows: every setting is a labeled row that is always on screen, with
+     14px+ text and no outlined boxes. Short controls sit beside their label;
+     chip sets take the full row under theirs. The rail's own width picks the
+     composition (container query), never the viewport. */
+  .share-settings {
+    --share-label-w: 6rem;
+    container-type: inline-size;
     min-width: 0;
   }
-  .share-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+  .share-rows {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.5rem 1.5rem;
     min-width: 0;
   }
-  .share-group :global(.panel-btn) {
-    gap: 0.75rem;
-    min-height: 2.75rem;
+  .share-row {
+    display: grid;
+    grid-template-columns: var(--share-label-w) minmax(0, 1fr);
+    align-items: center;
+    gap: 0.25rem 0.75rem;
+    min-width: 0;
   }
-  .group-title {
-    flex-shrink: 0;
-    font-size: 1rem;
+  .share-row.share-set,
+  .share-row.share-footer {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+  }
+  .share-label {
+    font-size: var(--font-size-min);
     font-weight: 600;
+    line-height: 1.25;
+    color: var(--theme-text);
   }
-  .group-summary {
-    flex: 1 1 0;
-    min-width: 0;
-    margin-left: auto;
-    padding-inline-start: 0.75rem;
-    overflow: hidden;
-    text-align: right;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-size: 0.875rem;
-    font-weight: 400;
-    color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
-  }
-  /* An open group's controls sit indented on a whole-surface tint under their
-     header, so they read as that group's children, not as siblings of it. */
-  .group-body {
-    display: flex;
-    flex-direction: column;
-    gap: 0.875rem;
-    min-width: 0;
-    margin-inline: 0.5rem;
-    padding: 0.75rem;
-    border-radius: 0.625rem;
-    background: color-mix(in srgb, var(--theme-text) 5%, transparent);
-  }
-  .share-field {
+  .share-control {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
     min-width: 0;
   }
-  /* Two short words: the switch sizes to them instead of spanning the column. */
-  .theme-field :global(.segmented-control) {
-    align-self: flex-start;
-    width: fit-content;
+  .share-row :global(.segmented-control) {
+    width: 100%;
   }
-  .theme-field :global(.segment) {
+  .share-row :global(.segment) {
     gap: 0.5rem;
-    padding-inline: 1rem;
     white-space: nowrap;
-  }
-  .share-field-label {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
   }
   .chip-wrap {
     display: flex;
@@ -1925,15 +1829,51 @@
   .start-layout {
     min-width: 0;
   }
-  /* One outline per group: the footer editor sits on the group body without a
-     box of its own. */
-  .share-groups .footer-editor-field {
-    padding: 0;
-    border: 0;
-    background: none;
+  /* The footer editor brings its own label and saved state. Put them in the
+     same label column as every other row, with the saved state under the label,
+     so the three modes line up with the controls above and below. */
+  .share-footer :global(.card-footer-editor.inline) {
+    grid-template-columns: var(--share-label-w) minmax(0, 1fr);
+    column-gap: 0.75rem;
+    row-gap: 0.5rem;
   }
-  .share-groups .qr-scope-note {
-    font-size: 0.875rem;
+  .share-footer :global(.card-footer-editor.inline > .segmented-control) {
+    width: 100%;
+  }
+  .share-footer :global(.editor-heading) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+  }
+  .share-footer :global(.editor-label) {
+    font-weight: 600;
+  }
+  .share-footer :global(.save-status) {
+    min-width: 0;
+    font-size: var(--font-size-min);
+    line-height: 1.25;
+    text-align: start;
+  }
+  .share-row .qr-scope-note {
+    font-size: var(--font-size-min);
+  }
+  /* A narrow rail has no room for a label column beside the control. */
+  @container (max-width: 21.99rem) {
+    .share-row {
+      grid-template-columns: minmax(0, 1fr);
+      align-items: start;
+    }
+    .share-footer :global(.card-footer-editor.inline) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  /* A wide settings area (short landscape, where the rail takes the width the
+     stage gave up) pairs the rows in two columns so fewer of them stack. */
+  @container (min-width: 36rem) {
+    .share-rows {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      align-items: start;
+    }
   }
 
   .qr-scope-note {
