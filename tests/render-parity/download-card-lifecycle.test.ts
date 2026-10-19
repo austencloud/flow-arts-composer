@@ -280,7 +280,7 @@ describe("Download card with real live pictographs", () => {
         );
 
         if (shouldScroll) {
-          await page.getByRole("button", { name: /^Layout\b/ }).click();
+          await page.getByRole("button", { name: /^Card settings\b/ }).click();
           expect(scrollArea.scrollHeight).toBeGreaterThan(
             scrollArea.clientHeight
           );
