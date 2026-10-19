@@ -22,6 +22,7 @@
   import CommunityCollectionsPanel from "../../collections/components/CommunityCollectionsPanel.svelte";
   import { createBrowseEngine } from "#lib/shared/browse/engine/create-browse-engine.svelte.js";
   import GalleryTab from "./GalleryTab.svelte";
+  import BackToBrowseButton from "./BackToBrowseButton.svelte";
   import SmartCollectionSaveDialog from "#lib/features/library/components/SmartCollectionSaveDialog.svelte";
   import FilterWorkspace from "#lib/features/browse/gallery-home/FilterWorkspace.svelte";
   import { loadCanonicalTnDSequences } from "#lib/features/browse/gallery-home/canonical-tnd-pool.js";
@@ -755,8 +756,10 @@
         {:else if activePrimary === "explore"}
           <div class="explore-shell">
             <header class="explore-header">
+              <BackToBrowseButton />
               <div class="explore-heading">
-                <span class="explore-eyebrow">{t("browse_home_community")}</span>
+                <span class="explore-eyebrow">{t("browse_home_community")}</span
+                >
                 <h1>
                   {exploreSection === "sequences"
                     ? t("browse_ui_find_a_sequence")
@@ -892,6 +895,7 @@
 
   .explore-heading {
     min-width: 0;
+    flex: 1 1 auto;
   }
 
   .explore-eyebrow {
@@ -933,10 +937,10 @@
     overflow: hidden;
   }
 
-  @media (max-width: 560px) {
+  @media (max-width: 760px) {
     .explore-header {
-      align-items: stretch;
-      flex-direction: column;
+      align-items: center;
+      flex-direction: row;
       gap: 8px;
       min-height: auto;
       padding-block: 8px;
@@ -947,7 +951,8 @@
     }
 
     .explore-switcher {
-      width: 100%;
+      flex: 1 1 auto;
+      width: auto;
       min-width: 0;
     }
   }

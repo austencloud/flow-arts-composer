@@ -48,7 +48,13 @@ the gallery's, and the source is pinned to my-library with no toggle.
 
   // The desktop split view keeps the collection rail visible, so it passes no
   // onBack — BrowsePanel then omits the back pill entirely.
-  let { onBack }: { onBack?: () => void } = $props();
+  let {
+    onBack,
+    backLabel = t("browse_ui_collections_tab"),
+  }: {
+    onBack?: () => void;
+    backLabel?: string;
+  } = $props();
   const previewReadOnly = $derived(userPreviewState.isActive);
 
   const engine = createBrowseEngine({
@@ -281,6 +287,7 @@ the gallery's, and the source is pinned to my-library with no toggle.
     <div class="empty-library-frame" transition:flyFade>
       <LibraryEmptyState
         {onBack}
+        {backLabel}
         onBrowse={emptyAction.onClick}
         onCreateAccount={!authState.isFullAccount
           ? () => authDrawerState.show("signup", "sync-library")
@@ -302,7 +309,7 @@ the gallery's, and the source is pinned to my-library with no toggle.
       layout="fullpage"
       onSelect={handleSelect}
       {onBack}
-      backLabel={t("browse_ui_collections_tab")}
+      {backLabel}
       hideToolbarSearch
       warming={gridWarming || (!engine.sectionsReady && !engine.error)}
       showToolbar={true}

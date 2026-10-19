@@ -8,9 +8,12 @@
   import type { DraftVersion } from "#lib/features/create/shared/services/draft-types.js";
   import PropAwareThumbnail from "#lib/shared/browse/components/PropAwareThumbnail.svelte";
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
+  import BackToBrowseButton from "#lib/features/browse/shared/components/BackToBrowseButton.svelte";
   import { createDraftsShelfState } from "../state/drafts-shelf-state.svelte.js";
   import { growFade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
+
+  const { showBrowseBack = true }: { showBrowseBack?: boolean } = $props();
 
   const draftsState = createDraftsShelfState(listDeviceDrafts);
   let expanded = $state<string[]>([]);
@@ -58,6 +61,7 @@
 
 <section class="drafts" aria-label="Drafts">
   <header class="drafts-header">
+    {#if showBrowseBack}<BackToBrowseButton />{/if}
     <div>
       <h2>Drafts</h2>
       <p>On this device</p>
@@ -157,7 +161,8 @@
   }
   .drafts-header {
     display: flex;
-    align-items: baseline;
+    align-items: center;
+    gap: 12px;
     width: fit-content;
     margin-bottom: 14px;
     padding: 10px 14px;
