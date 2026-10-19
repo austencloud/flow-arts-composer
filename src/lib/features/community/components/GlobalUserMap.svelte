@@ -181,8 +181,9 @@
 
     const minZoom = noRepeatMinZoom();
 
-    if (points.length === 1) {
-      map.setCenter(points[0]);
+    const [onlyPoint] = points;
+    if (points.length === 1 && onlyPoint) {
+      map.setCenter(onlyPoint);
       map.setZoom(Math.max(minZoom, SINGLE_MARKER_ZOOM));
       return;
     }
