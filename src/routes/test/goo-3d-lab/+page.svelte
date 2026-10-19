@@ -33,12 +33,12 @@
     EffectPass,
     RenderPass,
   } from "postprocessing";
-  import { GooRenderer3D } from "#lib/shared/3d/effects/water/goo-renderer-3d";
-  import type { GooTipSource3D } from "#lib/shared/3d/effects/scene-effects/scene-effect-source-3d";
-  import { resolveGoo3D } from "#lib/shared/effects/translators/webgl3d-translator";
-  import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults";
-  import { GOO_PRESETS } from "#lib/shared/animation-engine/components/effects-panel/presets/goo-presets";
-  import type { GooIntent } from "#lib/shared/effects/domain/effects-config";
+  import { GooRenderer3D } from "#lib/shared/3d/effects/water/goo-renderer-3d.js";
+  import type { GooTipSource3D } from "#lib/shared/3d/effects/scene-effects/scene-effect-source-3d.js";
+  import { resolveGoo3D } from "#lib/shared/effects/translators/webgl3d-translator.js";
+  import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
+  import { GOO_PRESETS } from "#lib/shared/animation-engine/components/effects-panel/presets/goo-presets.js";
+  import type { GooIntent } from "#lib/shared/effects/domain/effects-config.js";
 
   type Style = GooIntent["spewStyle"];
   type Speed = 1 | 0.25 | 0;
@@ -86,7 +86,10 @@
   }
 
   onMount(() => {
-    const renderer = new WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
+    const renderer = new WebGLRenderer({
+      antialias: false,
+      powerPreference: "high-performance",
+    });
     renderer.setPixelRatio(Math.min(2, window.devicePixelRatio));
     renderer.toneMapping = ACESFilmicToneMapping;
     host.appendChild(renderer.domElement);
@@ -102,7 +105,11 @@
 
     const floor = new Mesh(
       new PlaneGeometry(14, 14),
-      new MeshStandardMaterial({ map: floorTexture(), roughness: 0.82, metalness: 0 })
+      new MeshStandardMaterial({
+        map: floorTexture(),
+        roughness: 0.82,
+        metalness: 0,
+      })
     );
     floor.rotation.x = -Math.PI / 2;
     scene.add(floor);
@@ -111,7 +118,9 @@
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
 
-    const composer = new EffectComposer(renderer, { frameBufferType: HalfFloatType });
+    const composer = new EffectComposer(renderer, {
+      frameBufferType: HalfFloatType,
+    });
     composer.addPass(new RenderPass(scene, camera));
     const bloomPass = new EffectPass(
       camera,
@@ -130,10 +139,20 @@
 
     // Each performer spins two props in the wall plane; each prop has a far
     // tip on a 0.6 m arc and a near handle end.
-    const propMaterial = new MeshStandardMaterial({ color: "#c8ccd6", roughness: 0.4 });
+    const propMaterial = new MeshStandardMaterial({
+      color: "#c8ccd6",
+      roughness: 0.4,
+    });
     const tipGeometry = new SphereGeometry(0.03, 12, 8);
     const rodGeometry = new CylinderGeometry(0.008, 0.008, 1, 6);
-    const tips: { mesh: Mesh; prev: Vector3; pos: Vector3; id: number; prop: 0 | 1; tip: 0 | 1 }[] = [];
+    const tips: {
+      mesh: Mesh;
+      prev: Vector3;
+      pos: Vector3;
+      id: number;
+      prop: 0 | 1;
+      tip: 0 | 1;
+    }[] = [];
     const rods: Mesh[] = [];
     let id = 0;
     for (let p = 0; p < PERFORMERS.length; p++) {
@@ -144,7 +163,14 @@
         for (const tip of [0, 1] as const) {
           const mesh = new Mesh(tipGeometry, propMaterial);
           scene.add(mesh);
-          tips.push({ mesh, prev: new Vector3(), pos: new Vector3(), id: id++, prop, tip });
+          tips.push({
+            mesh,
+            prev: new Vector3(),
+            pos: new Vector3(),
+            id: id++,
+            prop,
+            tip,
+          });
         }
       }
     }
@@ -155,13 +181,18 @@
         for (const prop of [0, 1] as const) {
           const side = prop === 0 ? -1 : 1;
           const rate = 2 * Math.PI * (1.05 + 0.12 * p);
-          const angle = rate * t * (prop === 0 ? 1 : -1) + p * 1.3 + prop * Math.PI;
+          const angle =
+            rate * t * (prop === 0 ? 1 : -1) + p * 1.3 + prop * Math.PI;
           const hand = new Vector3(
             PERFORMERS[p]! + side * 0.22 + 0.08 * Math.cos(rate * t * 0.5),
             1.25 + 0.06 * Math.sin(rate * t * 0.5),
             0.1 * Math.sin(p + prop)
           );
-          const dir = new Vector3(Math.cos(angle), Math.sin(angle), 0.18 * Math.sin(angle * 0.5));
+          const dir = new Vector3(
+            Math.cos(angle),
+            Math.sin(angle),
+            0.18 * Math.sin(angle * 0.5)
+          );
           dir.normalize();
           const far = hand.clone().addScaledVector(dir, 0.62);
           const near = hand.clone().addScaledVector(dir, -0.12);
@@ -179,7 +210,10 @@
     function sources(dt: number): GooTipSource3D[] {
       const params = resolveGoo3D(intent());
       return tips.map((tip) => {
-        const velocity = tip.pos.clone().sub(tip.prev).divideScalar(Math.max(dt, 1e-6));
+        const velocity = tip.pos
+          .clone()
+          .sub(tip.prev)
+          .divideScalar(Math.max(dt, 1e-6));
         return {
           effect: "goo",
           sourceId: tip.id,
@@ -288,31 +322,48 @@
   <div class="bar">
     <div class="group" aria-label="Preset">
       {#each GOO_PRESETS as preset (preset.id)}
-        <button aria-pressed={presetId === preset.id} onclick={() => (presetId = preset.id)}>
+        <button
+          aria-pressed={presetId === preset.id}
+          onclick={() => (presetId = preset.id)}
+        >
           {preset.name}
         </button>
       {/each}
     </div>
     <div class="group" aria-label="Style">
       {#each ["flow", "splash", "mist"] as const as item (item)}
-        <button aria-pressed={style === item} onclick={() => (style = item)}>{item}</button>
+        <button aria-pressed={style === item} onclick={() => (style = item)}
+          >{item}</button
+        >
       {/each}
     </div>
     <div class="group" aria-label="Speed">
       {#each [[1, "1x"], [0.25, "Slow"], [0, "Pause"]] as const as [value, label] (label)}
-        <button aria-pressed={speed === value} onclick={() => (speed = value)}>{label}</button>
+        <button aria-pressed={speed === value} onclick={() => (speed = value)}
+          >{label}</button
+        >
       {/each}
     </div>
     <div class="group" aria-label="View">
       {#each ["front", "low", "top"] as const as item (item)}
-        <button aria-pressed={view === item} onclick={() => { view = item; setView(item); }}>{item}</button>
+        <button
+          aria-pressed={view === item}
+          onclick={() => {
+            view = item;
+            setView(item);
+          }}>{item}</button
+        >
       {/each}
     </div>
     <div class="group">
-      <button aria-pressed={bloom} onclick={() => (bloom = !bloom)}>Bloom</button>
+      <button aria-pressed={bloom} onclick={() => (bloom = !bloom)}
+        >Bloom</button
+      >
       <button onclick={() => clearLab()}>Clear</button>
     </div>
-    <span class="stats">{stats.strands} strands, {stats.drops} drops, {stats.puddles} puddles</span>
+    <span class="stats"
+      >{stats.strands} strands, {stats.drops} drops, {stats.puddles} puddles</span
+    >
   </div>
 </div>
 
@@ -324,7 +375,9 @@
     grid-template-rows: 1fr auto;
     background: #05070d;
     color: #e6e9f2;
-    font: 14px system-ui, sans-serif;
+    font:
+      14px system-ui,
+      sans-serif;
   }
   .stage {
     min-height: 0;
