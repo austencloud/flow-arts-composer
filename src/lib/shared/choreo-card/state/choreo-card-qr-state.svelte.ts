@@ -15,6 +15,11 @@ export interface ChoreoCardQrDeps {
   readonly qrUrl?: string;
   readonly darkMode: boolean;
   readonly isAuthenticated: boolean;
+  /**
+   * Hold a new code until the card is shown. A viewer built hidden ahead of
+   * an open would otherwise save a short code for a sequence nobody opened.
+   */
+  readonly mintPaused?: boolean;
   readonly leftPropType: PropType | undefined;
   readonly rightPropType: PropType | undefined;
   readonly browseViewMode: BrowseViewMode | undefined;
@@ -121,6 +126,16 @@ export function createChoreoCardQrState(
     }
 
     if (key === activeKey) return;
+
+    const deps = getDeps();
+    if (deps.mintPaused && !cache.has(key)) {
+      // Settled without a code, so the card still reports ready. The key is
+      // not taken, so the code is made once the pause ends.
+      dataUrl = null;
+      generating = false;
+      settledKey = key;
+      return;
+    }
     activeKey = key;
 
     const cached = cache.get(key);
@@ -131,7 +146,6 @@ export function createChoreoCardQrState(
       return;
     }
 
-    const deps = getDeps();
     if (!deps.isAuthenticated && !deps.qrUrl) {
       dataUrl = null;
       generating = false;

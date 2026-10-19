@@ -81,6 +81,7 @@
   import { composeMenu } from "#lib/shared/components/context-menu/compose-menu.js";
   import { buildCardMenuSection } from "#lib/shared/choreo-card/services/card-menu-section.js";
   import { buildPictographContextMenuItems } from "#lib/shared/pictograph/shared/components/context-menu/pictograph-context-menu-builder.js";
+  import { isViewerDormant } from "../context/viewer-dormant-context";
 
   // Eagerly initialize the singleton so its constructor (which mutates $state)
   // runs in the script block, not inside a $derived expression.
@@ -614,9 +615,11 @@
       : displayState.showFooter || handLegend !== null
   );
 
+  const viewerDormant = isViewerDormant();
   const qrState = createChoreoCardQrState(
     () => ({
       sequence: qrSequence ?? sequence,
+      mintPaused: viewerDormant(),
       showQRCode: effShowQRCode,
       qrUrl,
       darkMode,

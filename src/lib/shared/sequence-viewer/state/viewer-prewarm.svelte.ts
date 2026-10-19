@@ -54,14 +54,14 @@ export function getSequenceViewerPrewarm(): SequenceViewerPrewarm | null {
 
 /**
  * Whether `sequence` draws what the viewer built for `prewarm` drew. Overlay
- * state hands the open sequence back as a proxy, so identity alone misses.
+ * state hands the open sequence back as a proxy, so it is compared by content;
+ * an identity check would never match and makes Svelte warn in development.
  */
 export function isPrewarmedContent(
   prewarm: SequenceViewerPrewarm,
   sequence: SequenceData | null
 ): boolean {
   if (!sequence) return false;
-  if (sequence === prewarm.sequence) return true;
   if ((sequence.id ?? "") !== (prewarm.sequence.id ?? "")) return false;
   return (
     hashSequenceContent(sequence) === hashSequenceContent(prewarm.sequence)
