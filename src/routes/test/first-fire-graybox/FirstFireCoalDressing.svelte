@@ -118,8 +118,11 @@
     let travelled = 0;
 
     for (let i = 0; i < points.length - 1; i += 1) {
-      const [ax, az] = points[i];
-      const [bx, bz] = points[i + 1];
+      const start = points[i];
+      const end = points[i + 1];
+      if (!start || !end) return null;
+      const [ax, az] = start;
+      const [bx, bz] = end;
       const dx = bx - ax;
       const dz = bz - az;
       const segment = Math.hypot(dx, dz);
