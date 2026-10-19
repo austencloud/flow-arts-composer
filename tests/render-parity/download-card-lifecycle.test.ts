@@ -280,10 +280,16 @@ describe("Download card with real live pictographs", () => {
         );
 
         if (shouldScroll) {
-          await page.getByRole("button", { name: /^Card settings\b/ }).click();
-          await page.getByRole("button", { name: /^Layout\b/ }).click();
+          await page
+            .getByRole("button", { name: /^Card settings\b/ })
+            .click({ timeout: 5000 });
+          await page
+            .getByRole("button", { name: /^Layout\b/ })
+            .click({ timeout: 5000 });
           await expect
-            .poll(() => scrollArea.scrollHeight - scrollArea.clientHeight)
+            .poll(() => scrollArea.scrollHeight - scrollArea.clientHeight, {
+              timeout: 5000,
+            })
             .toBeGreaterThan(0);
           scrollArea.scrollTop = scrollArea.scrollHeight;
           await nextFrame();
