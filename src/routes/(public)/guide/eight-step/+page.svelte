@@ -399,35 +399,37 @@
                 <span class="picker-label" id="path-picker-label"
                   >{t("guide_eightstep_path")}</span
                 >
-                <SegmentedControl
-                  options={PATH_OPTIONS}
-                  value={String(pathColumn)}
-                  onchange={(v) => (pathColumn = Number(v))}
-                  ariaLabelledby="path-picker-label"
-                  semantics="radiogroup"
-                  density="compact"
-                  columns={4}
-                >
-                  {#snippet optionContent(value)}
-                    {@const path = CAP_HAND_PATHS[Number(value) - 1]!}
-                    <span class="path-option">
-                      <span class="path-number">{value}</span>
-                      <span class="rhythm">
-                        {#each capPathRhythm(path) as half, h (h)}
-                          <span class="half">
-                            {#each half as el, i (i)}
-                              <img
-                                class="element"
-                                src={getElementImagePath(el)}
-                                alt=""
-                              />
-                            {/each}
-                          </span>
-                        {/each}
+                <div class="path-picker">
+                  <SegmentedControl
+                    options={PATH_OPTIONS}
+                    value={String(pathColumn)}
+                    onchange={(v) => (pathColumn = Number(v))}
+                    ariaLabelledby="path-picker-label"
+                    semantics="radiogroup"
+                    density="compact"
+                    columns={4}
+                  >
+                    {#snippet optionContent(value)}
+                      {@const path = CAP_HAND_PATHS[Number(value) - 1]!}
+                      <span class="path-option">
+                        <span class="path-number">{value}</span>
+                        <span class="rhythm">
+                          {#each capPathRhythm(path) as half, h (h)}
+                            <span class="half">
+                              {#each half as el, i (i)}
+                                <img
+                                  class="element"
+                                  src={getElementImagePath(el)}
+                                  alt=""
+                                />
+                              {/each}
+                            </span>
+                          {/each}
+                        </span>
                       </span>
-                    </span>
-                  {/snippet}
-                </SegmentedControl>
+                    {/snippet}
+                  </SegmentedControl>
+                </div>
               </div>
               <div class="picker">
                 <span class="picker-label">{t("guide_eightstep_prop")}</span>
@@ -672,6 +674,16 @@
   }
   .picker :global(.prop-option) {
     max-width: none;
+  }
+  /* Eight paths in whole rows: two of four with room, four of two on a
+     phone, where four across would push the rhythms into each other. */
+  .path-picker :global(.ui-segments) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  @container (min-width: 520px) {
+    .path-picker :global(.ui-segments) {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
   }
   /* Each path option: its number, then its rhythm as two lines of three. */
   .path-option {
