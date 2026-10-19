@@ -8,6 +8,7 @@
 
 import {
   collection,
+  deleteDoc,
   doc,
   getDoc,
   getDocs,
@@ -25,6 +26,7 @@ import {
   type Unsubscribe,
 } from "firebase/firestore";
 import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+import { COLLECTION_LINKS_COLLECTION } from "#lib/shared/library/domain/collection-share-code.js";
 import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 import { captureEvent } from "#lib/shared/analytics/services/posthog.js";
 import type {
@@ -178,7 +180,6 @@ async function verifyPublicMemberInTransaction(
   return ownSnapshot;
 }
 
-
 export async function ensureSystemCollections(): Promise<void> {
   const firestore = await getFirestoreInstance();
   const userId = getAuthenticatedUserId();
@@ -228,7 +229,6 @@ export async function getSystemCollection(
 export async function getFavoritesCollection(): Promise<LibraryCollection> {
   return getSystemCollection("favorites");
 }
-
 
 export async function createUserCollection(
   name: string,
@@ -622,7 +622,10 @@ export async function deleteCollection(collectionId: string): Promise<void> {
       offset < cleanupIds.length;
       offset += DELETE_CLEANUP_CHUNK_SIZE
     ) {
-      const chunk = cleanupIds.slice(offset, offset + DELETE_CLEANUP_CHUNK_SIZE);
+      const chunk = cleanupIds.slice(
+        offset,
+        offset + DELETE_CLEANUP_CHUNK_SIZE
+      );
       const cleanupBatch = writeBatch(firestore);
       for (const sequenceId of chunk) {
         cleanupBatch.update(
@@ -651,6 +654,24 @@ export async function deleteCollection(collectionId: string): Promise<void> {
       "NETWORK",
       collectionId
     );
+  }
+
+  // Remove the short link as well. Once the collection is gone the rules
+  // let its owner remove `collectionLinks/{code}`, so a handed-out /c/ link
+  // stops resolving instead of opening an empty page. Best effort — the
+  // collection is already deleted, and a leftover link only lands on the
+  // "isn't available" screen.
+  if (existing.shareCode) {
+    try {
+      await deleteDoc(
+        doc(firestore, `${COLLECTION_LINKS_COLLECTION}/${existing.shareCode}`)
+      );
+    } catch (error) {
+      console.warn(
+        "[CollectionManager] Could not remove the collection's short link:",
+        error
+      );
+    }
   }
 }
 
@@ -1320,7 +1341,6 @@ export async function removeSequencesFromCollection(
   }
 }
 
-
 export function subscribeToCollections(
   callback: (collections: LibraryCollection[]) => void
 ): () => void {
@@ -1467,7 +1487,6 @@ export function subscribeToCollection(
   };
 }
 
-
 export async function reorderCollections(
   collectionIds: string[]
 ): Promise<void> {
@@ -1491,7 +1510,6 @@ export async function reorderCollections(
     throw new CollectionError("Failed to reorder collections", "NETWORK");
   }
 }
-
 
 export async function toggleFavorite(sequenceId: string): Promise<boolean> {
   const favoritesCollection = await getFavoritesCollection();

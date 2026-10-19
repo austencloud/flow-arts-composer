@@ -395,12 +395,23 @@ describe("Sequence Viewer transition orchestration contract", () => {
       /<ScenePreparationSurface\s+statusText="Opening 3D"\s+session=\{sceneLoading\.current\}/
     );
     expect(sceneLoadingCurtain).toContain("useSceneLoadingSession().open()");
-    expect(sceneLoadingCurtain).toContain(
-      "<ScenePreparationSurface {statusText} {session} {labels} />"
+    expect(sceneLoadingCurtain).toMatch(
+      /<ScenePreparationSurface\s+statusText=\{shownStatus\}\s+\{session\}\s+\{labels\}/
     );
+    // The reveal plays in order: the bar finishes, the stage leaves, and the
+    // 3D rail waits until the scene is showing rather than popping in over
+    // the curtain.
+    expect(sceneLoadingCurtain).toContain('leaving={phase === "leaving"}');
+    expect(sceneLoadingCurtain).toContain("after(motion.hold,");
+    expect(motionSurface).toContain(
+      "is3DActive && scene3DReady && scene3DRevealed"
+    );
+    expect(motionSurface).toContain("onSceneRevealedChange:");
     expect(scenePreparationSurface).toContain("data-scene-preparation");
     expect(scenePreparationSurface).toContain("3D viewer");
     expect(scenePreparationSurface).toContain("<LoadingCapsule");
+    // The stage paints the environment about to appear, not a generic card.
+    expect(scenePreparationSurface).toContain("SCENE_ENVIRONMENT_LOADING_SKY");
     expect(motionSurface).not.toContain("viewer-3d-handoff-status");
     expect(motionSurface).toMatch(
       /!inStudio\s*&&\s*preparationCanvasWidth !== null/

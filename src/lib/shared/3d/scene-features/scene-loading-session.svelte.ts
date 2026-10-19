@@ -11,10 +11,11 @@
  * A host that has a placeholder calls `provideSceneLoadingSession()`; the
  * curtain uses that session or, mounted on its own, opens one itself.
  */
-import { getContext, onDestroy, setContext } from "svelte";
 import {
-  createLoadingSession,
-  type LoadingSession,
+  provideLoadingSlot,
+  useLoadingSlot,
+  type LoadingSessionSpec,
+  type LoadingSlot,
 } from "#lib/shared/loading/loading-session.svelte.js";
 
 /**
@@ -56,41 +57,13 @@ export const SCENE_LOADING_DEFAULT_PROFILE: Record<string, number> = {
   smooth: 14400,
 };
 
-const SCENE_LOADING_KEY = "3d-stage";
-
-export interface SceneLoadingSlot {
-  /** The current load's session, opened on first use (and again after one
-   * completes). Browser only. */
-  open(): LoadingSession;
-  /** The open session, if any (reactive). */
-  readonly current: LoadingSession | null;
-}
+const SCENE_LOADING: LoadingSessionSpec = {
+  key: "3d-stage",
+  ranks: SCENE_LOADING_RANKS,
+  defaultProfile: SCENE_LOADING_DEFAULT_PROFILE,
+};
 
 const CONTEXT_KEY = Symbol("scene-loading-session");
-
-function createSceneLoadingSlot(): SceneLoadingSlot & { abandon(): void } {
-  let session = $state<LoadingSession | null>(null);
-  return {
-    open() {
-      // A finished load stays finished: a canvas that mounts again (the
-      // viewer was closed and reopened) is a new load.
-      if (!session || session.done) {
-        session = createLoadingSession({
-          key: SCENE_LOADING_KEY,
-          ranks: SCENE_LOADING_RANKS,
-          defaultProfile: SCENE_LOADING_DEFAULT_PROFILE,
-        });
-      }
-      return session;
-    },
-    get current() {
-      return session;
-    },
-    abandon() {
-      if (session && !session.done) session.abandon();
-    },
-  };
-}
 
 /**
  * For a viewer host that shows a placeholder before the 3D canvas mounts.
@@ -98,18 +71,11 @@ function createSceneLoadingSlot(): SceneLoadingSlot & { abandon(): void } {
  * `current`. The load is abandoned (nothing stored) if the host leaves before
  * it completes.
  */
-export function provideSceneLoadingSession(): SceneLoadingSlot {
-  const slot = createSceneLoadingSlot();
-  setContext(CONTEXT_KEY, slot);
-  onDestroy(() => slot.abandon());
-  return slot;
+export function provideSceneLoadingSession(): LoadingSlot {
+  return provideLoadingSlot(CONTEXT_KEY, SCENE_LOADING);
 }
 
 /** The host's slot, or one owned by the calling component. */
-export function useSceneLoadingSession(): SceneLoadingSlot {
-  const provided = getContext<SceneLoadingSlot | undefined>(CONTEXT_KEY);
-  if (provided) return provided;
-  const slot = createSceneLoadingSlot();
-  onDestroy(() => slot.abandon());
-  return slot;
+export function useSceneLoadingSession(): LoadingSlot {
+  return useLoadingSlot(CONTEXT_KEY, SCENE_LOADING);
 }

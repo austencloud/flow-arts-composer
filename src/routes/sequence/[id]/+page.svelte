@@ -3,7 +3,8 @@
   import { browser } from "$app/env";
   import { page } from "$app/state";
   import Seo from "#lib/shared/components/Seo.svelte";
-  import LoadingGate from "#lib/shared/components/loading/LoadingGate.svelte";
+  import SequencePageLoading from "./SequencePageLoading.svelte";
+  import { provideSequencePageLoading } from "./sequence-page-loading.svelte.js";
   import { markScan } from "#lib/shared/analytics/scan-perf.js";
   import { loadSequenceViewerPage } from "./load-sequence-viewer-page.js";
   import {
@@ -26,6 +27,10 @@
    * still renders the head shell alone and the module is imported once.
    */
   const routeId = $derived(page.params.id);
+
+  // One bar from here until the sequence shows; the viewer page carries it on.
+  const loading = provideSequencePageLoading();
+  const loadingSession = browser ? loading.open() : null;
 
   const seo = $derived(data.seo);
   const sequenceJsonLd = $derived(
@@ -74,14 +79,16 @@
 
 {#if browser}
   <!--
-    The pending branch is the same card the viewer shows while it resolves the
-    sequence, so the swap is invisible. Without it the layout's animated
-    background was the only thing on screen for the whole chunk download —
-    about five seconds on a cold phone visit.
+    The pending branch shows the same bar the viewer page shows while it
+    resolves the sequence, on the same session, so the swap is invisible.
+    Without it the layout's animated background was the only thing on screen
+    for the whole chunk download — about five seconds on a cold phone visit.
   -->
   {#await loadSequenceViewerPage()}
     <div class="sequence-route-loading">
-      <LoadingGate variant="card" message="Loading sequence..." />
+      {#if loadingSession}
+        <SequencePageLoading session={loadingSession} />
+      {/if}
     </div>
   {:then { default: SequenceViewerPage }}
     {#key routeId}
@@ -194,4 +201,3 @@
     margin: 0;
   }
 </style>
-

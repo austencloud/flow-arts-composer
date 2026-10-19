@@ -81,8 +81,10 @@ unless a higher-priority platform or safety instruction conflicts.
   workflow and do not claim an uncalibrated reviewer detects AI authorship.
 - Localhost verification in the dedicated agent browser is approved UI work;
   external mutation and Austen's personal session still require authorization.
-- Port 5173 is Austen's IPv6 HTTPS/2 dev server. Never start, restart, replace,
-  or kill it. Probe it with `curl.exe -k -g "https://[::1]:5173/"`. A task-owned
+- Port 5173 is the IPv6 HTTPS/2 dev server, supervised by pm2 as `tka-dev`.
+  When it is down or stuck, restart it with `pm2 restart tka-dev` without
+  asking; never start a second server on 5173. Probe it with
+  `curl.exe -k -g "https://[::1]:5173/"`. A task-owned
   server must use a free port; preserve a handed-off delivery preview as
   described in Repository Lifecycle.
 

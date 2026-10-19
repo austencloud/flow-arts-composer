@@ -1,10 +1,10 @@
 <!--
-  PoiStringLab.svelte - Could a poi follow this CAP?
+  PoiStringLab.svelte - Where does the hand go to spin this CAP on poi?
 
-  Plays one of Gage DeMello's CAPs (from Mentive's SpiroAnim) at tempo with
-  each poi drawn on its string, and colours the head's path by what the string
-  would have to do there: pull cleanly, lean hard while the hand steers, or go
-  slack. The physics lives in poi-string-check.ts.
+  Plays one of Gage DeMello's CAPs (from Mentive's SpiroAnim) at tempo. Each
+  poi head follows the drawing, and the hand sits where its string has to be
+  to carry it there. The head's path is coloured by how far that hand strays
+  from the drawn one. The physics lives in poi-string-check.ts.
 -->
 <script lang="ts">
   import { onDestroy } from "svelte";
@@ -20,26 +20,25 @@
     CAP_HAND_PATHS,
     capOnPath,
     capPairing,
-    capPathMode,
     capStrip,
     type Cap,
     type CapHandSpin,
     type CapSpin,
   } from "#lib/shared/guide-topics/caps-topic.js";
   import { deriveTnDFromPictograph } from "#lib/shared/pictograph/shared/domain/utils/tnd-deriver.js";
-  import { TND_TO_ELEMENTAL } from "#lib/shared/pictograph/shared/domain/utils/tnd-calculator.js";
   import {
     getElementImagePath,
     type ElementalType,
   } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import { elementalDisplayLabel } from "#lib/shared/pictograph/shared/components/elemental-display-label.js";
   import {
-    checkPoiString,
     DEFAULT_POI_STRING_OPTIONS,
-    STRAIN_LEAN_DEGREES,
-    type PoiStringResult,
-    type PoiStringSample,
-    type PoiStringVerdict,
+    HARD_STRAY_METRES,
+    STEER_STRAY_METRES,
+    solvePoiHand,
+    type PoiHandEffort,
+    type PoiHandResult,
+    type PoiHandSample,
   } from "./poi-string-check.js";
 
   type Side = "left" | "right";
@@ -59,6 +58,7 @@
   let handRadius = $state(DEFAULT_POI_STRING_OPTIONS.handRadius);
   let stringLength = $state(DEFAULT_POI_STRING_OPTIONS.stringLength);
   let turnaroundBeats = $state(DEFAULT_POI_STRING_OPTIONS.turnaroundBeats);
+  let speedBlendBeats = $state(DEFAULT_POI_STRING_OPTIONS.speedBlendBeats);
   let gravity = $state<"on" | "off">("on");
   let playing = $state(true);
 
@@ -110,8 +110,17 @@
   const beatElements = $derived(
     beatSteps.map((step) => deriveTnDFromPictograph(step).elementalType)
   );
-  const pathElement = (p: (typeof CAP_HAND_PATHS)[number]): ElementalType =>
-    TND_TO_ELEMENTAL[capPathMode(p)];
+  // Each path's hands repeat a six-beat rhythm of timing and direction,
+  // the same for every spin on that path.
+  const PATH_RHYTHMS: (ElementalType | null)[][] = CAP_HAND_PATHS.map((p) =>
+    capStrip(p.caps[0]!)
+      .slice(1, 7)
+      .map((step) => deriveTnDFromPictograph(step).elementalType)
+  );
+  const rhythmLabel = (column: number) =>
+    PATH_RHYTHMS[column - 1]!.map((el) =>
+      el ? elementalDisplayLabel(el) : ""
+    ).join(", ");
 
   const results = $derived.by(() => {
     const beats = beatSteps;
@@ -120,10 +129,11 @@
       handRadius,
       stringLength,
       turnaroundBeats,
+      speedBlendBeats,
       gravity: gravity === "on",
     };
     const run = (side: Side) =>
-      checkPoiString(
+      solvePoiHand(
         beats.map((step) => step.motions[side]!),
         options
       );
@@ -135,26 +145,35 @@
   const extent = $derived(Math.max(1.4, (handRadius + stringLength) * 1.1));
   const beatCount = $derived(results.left.beats.length);
 
-  // The head's path, cut into runs that share a verdict.
-  function trail(samples: PoiStringSample[]) {
-    const runs: { verdict: PoiStringVerdict; d: string }[] = [];
+  // The head's path, cut into runs that share an effort band.
+  function trail(samples: PoiHandSample[]) {
+    const runs: { effort: PoiHandEffort; d: string }[] = [];
     samples.forEach((s, i) => {
       const point = `${s.head.x.toFixed(4)},${s.head.y.toFixed(4)}`;
       const last = runs.at(-1);
-      if (last && last.verdict === s.verdict) last.d += ` L${point}`;
+      if (last && last.effort === s.effort) last.d += ` L${point}`;
       else {
         const prev = samples[i - 1];
         const from = prev
           ? `M${prev.head.x.toFixed(4)},${prev.head.y.toFixed(4)} L`
           : "M";
-        runs.push({ verdict: s.verdict, d: `${from}${point}` });
+        runs.push({ effort: s.effort, d: `${from}${point}` });
       }
     });
     return runs;
   }
+  // The path the hand has to take, closed round the loop.
+  const handPath = (samples: PoiHandSample[]) =>
+    `M${samples
+      .map((s) => `${s.hand.x.toFixed(4)},${s.hand.y.toFixed(4)}`)
+      .join(" L")} Z`;
   const trails = $derived({
     left: trail(results.left.samples),
     right: trail(results.right.samples),
+  });
+  const handPaths = $derived({
+    left: handPath(results.left.samples),
+    right: handPath(results.right.samples),
   });
 
   // Plays at the chosen tempo, so a beat on screen lasts a real beat.
@@ -170,7 +189,7 @@
   frame = requestAnimationFrame(tick);
   onDestroy(() => cancelAnimationFrame(frame));
 
-  const at = (result: PoiStringResult) =>
+  const at = (result: PoiHandResult) =>
     result.samples[
       Math.floor((beatPos / beatCount) * result.samples.length) %
         result.samples.length
@@ -178,36 +197,30 @@
   const now = $derived({ left: at(results.left), right: at(results.right) });
   const currentBeat = $derived(Math.floor(beatPos));
 
+  const cm = (metres: number) => `${Math.round(metres * 100)} cm`;
   // Each follows "Left hand" or "Right hand".
-  const VERDICT_TEXT: Record<PoiStringVerdict, string> = {
-    clean: "pulls cleanly",
-    strain: "has to steer hard",
-    slack: "lets the string go slack",
-  };
-  function summary(result: PoiStringResult) {
-    if (result.verdict === "clean") return "pulls cleanly the whole way round";
-    const hit = result.beats
-      .map((b, i) => (b.verdict === result.verdict ? i + 1 : 0))
+  function summary(result: PoiHandResult) {
+    const peak = result.beats.findIndex((b) => b.maxStray === result.maxStray);
+    const loose = result.beats
+      .map((b, i) => (b.effort === "loose" ? i + 1 : 0))
       .filter(Boolean);
-    const where =
-      hit.length === result.beats.length
-        ? "on every beat"
-        : `on beat${hit.length > 1 ? "s" : ""} ${hit.join(", ")}`;
-    return `${VERDICT_TEXT[result.verdict]} ${where}`;
+    const floats = loose.length
+      ? `; the poi nearly floats on beat${loose.length > 1 ? "s" : ""} ${loose.join(", ")}`
+      : "";
+    return `strays up to ${cm(result.maxStray)} from the drawn path, most on beat ${peak + 1}${floats}`;
   }
-  const cellText = (b: PoiStringResult["beats"][number]) =>
-    b.verdict === "slack" ? "slack" : `${Math.round(b.maxLean)}°`;
 </script>
 
 <div class="poi-string-lab">
   <header>
     <h2>Poi String Check</h2>
     <p>
-      A poi string can only pull. This plays a CAP at tempo and works out what
-      each string would have to do. Where it would have to push, the string goes
-      slack and the poi falls out of the pattern. Where the pull has to lean
-      more than {STRAIN_LEAN_DEGREES}° off the string, the hand is steering
-      hard. CAPs are Gage DeMello's, from Mentive's SpiroAnim.
+      A poi string can only pull along itself, so wherever the poi head goes,
+      the hand has to be one string length away in the direction of the pull.
+      This plays a CAP at tempo with each poi head on its drawn path and works
+      out where the hand has to be. Every pattern can be spun; what changes is
+      how far the hand strays from the drawn circle. CAPs are Gage DeMello's,
+      from Mentive's SpiroAnim.
     </p>
   </header>
 
@@ -216,13 +229,18 @@
       <svg
         viewBox="{-extent} {-extent} {extent * 2} {extent * 2}"
         role="img"
-        aria-label="Both poi playing the CAP, each head's path coloured by its string"
+        aria-label="Both poi playing the CAP, each head's path coloured by how far its hand strays"
       >
         <circle class="hand-circle" r={handRadius} />
         {#each SIDES as side (side)}
+          <path
+            class="hand-path {side}"
+            d={handPaths[side]}
+            stroke-width={extent * 0.006}
+          />
           {#each trails[side] as run, i (i)}
             <path
-              class="trail {side} {run.verdict}"
+              class="trail {side} {run.effort}"
               d={run.d}
               stroke-width={extent * 0.012}
             />
@@ -230,8 +248,15 @@
         {/each}
         {#each SIDES as side (side)}
           {@const s = now[side]}
+          <circle
+            class="drawn-hand"
+            cx={s.drawn.x}
+            cy={s.drawn.y}
+            r={extent * 0.025}
+            stroke-width={extent * 0.006}
+          />
           <line
-            class="string {s.verdict}"
+            class="string {s.effort}"
             x1={s.hand.x}
             y1={s.hand.y}
             x2={s.head.x}
@@ -259,10 +284,23 @@
         <span>Beat {currentBeat + 1} of {beatCount} · {cap.word}</span>
       </div>
       <ul class="legend">
-        <li><span class="swatch clean"></span>Pulls cleanly</li>
-        <li><span class="swatch strain"></span>Hand steers hard</li>
-        <li><span class="swatch slack"></span>String goes slack</li>
+        <li>
+          <span class="swatch close"></span>Hand within {cm(STEER_STRAY_METRES)}
+        </li>
+        <li>
+          <span class="swatch steer"></span>{cm(STEER_STRAY_METRES)} to {cm(
+            HARD_STRAY_METRES
+          )}
+        </li>
+        <li>
+          <span class="swatch hard"></span>Over {cm(HARD_STRAY_METRES)}
+        </li>
+        <li><span class="swatch loose"></span>Poi nearly floats</li>
       </ul>
+      <p class="note">
+        Solid dot: where the hand has to be. Ring: where the drawing puts it.
+        The thin line traces the hand's needed path.
+      </p>
     </div>
 
     <div class="controls">
@@ -272,24 +310,26 @@
           options={CAP_HAND_PATHS.map((p) => ({
             value: String(p.column),
             label: String(p.column),
-            ariaLabel: `${p.column}, opens in ${elementalDisplayLabel(pathElement(p))}`,
+            ariaLabel: `${p.column}: ${rhythmLabel(p.column)}`,
           }))}
           value={String(column)}
           onchange={(v) => (column = Number(v))}
           ariaLabelledby="poi-path-label"
           semantics="radiogroup"
           density="compact"
-          columns={4}
+          columns={2}
         >
           {#snippet optionContent(value)}
-            {@const p = CAP_HAND_PATHS[Number(value) - 1]!}
+            {@const n = Number(value)}
             <span class="path-option">
-              <img
-                class="element"
-                src={getElementImagePath(pathElement(p))}
-                alt=""
-              />
-              {p.column}
+              <span class="path-number">{n}</span>
+              <span class="rhythm">
+                {#each PATH_RHYTHMS[n - 1]! as el, i (i)}
+                  {#if el}
+                    <img class="element" src={getElementImagePath(el)} alt="" />
+                  {/if}
+                {/each}
+              </span>
             </span>
           {/snippet}
         </SegmentedControl>
@@ -404,6 +444,15 @@
         format={(v) => `${v.toFixed(2)} beat`}
         onchange={(v) => (turnaroundBeats = v)}
       />
+      <ValueSlider
+        label="Speed change"
+        value={speedBlendBeats}
+        min={0.02}
+        max={0.5}
+        step={0.01}
+        format={(v) => `${v.toFixed(2)} beat`}
+        onchange={(v) => (speedBlendBeats = v)}
+      />
       <div class="row">
         <span class="label" id="poi-gravity-label">Gravity</span>
         <SegmentedControl
@@ -447,18 +496,19 @@
         </p>
         <ol style="--beats: {Math.min(result.beats.length, 12)}">
           {#each result.beats as b, i (i)}
-            <li class={b.verdict} class:current={i === currentBeat}>
+            <li class={b.effort} class:current={i === currentBeat}>
               <span class="n">{i + 1}</span>
-              <span class="v">{cellText(b)}</span>
+              <span class="v">{cm(b.maxStray)}</span>
             </li>
           {/each}
         </ol>
       </div>
     {/each}
     <p class="note">
-      Each cell shows the beat's hardest lean, how far the needed pull tilts off
-      the string. Beats run at an even tempo, as the animation does; a spinner
-      who stretches a beat can ease a spike.
+      Each cell shows the furthest the hand strays from the drawn path on that
+      beat. Gravity alone moves it some: a plain wall-plane circle strays about
+      20 cm at 180 bpm. Speed change is how long the poi takes to settle into a
+      new spin speed. Beats run at an even tempo, as the animation does.
     </p>
   </section>
 </div>
@@ -467,8 +517,9 @@
   .poi-string-lab {
     --clean-left: #60a5fa;
     --clean-right: #f87171;
-    --strain: #f59e0b;
-    --slack: #e879f9;
+    --steer: #facc15;
+    --hard: #f97316;
+    --loose: #e879f9;
     display: flex;
     flex-direction: column;
     gap: var(--spacing-lg, 24px);
@@ -532,27 +583,43 @@
     stroke-linejoin: round;
     opacity: 0.75;
   }
-  .trail.left.clean {
+  .trail.left.close {
     stroke: var(--clean-left);
   }
-  .trail.right.clean {
+  .trail.right.close {
     stroke: var(--clean-right);
   }
-  .trail.strain {
-    stroke: var(--strain);
+  .trail.steer {
+    stroke: var(--steer);
   }
-  .trail.slack {
-    stroke: var(--slack);
+  .trail.hard {
+    stroke: var(--hard);
+  }
+  .trail.loose {
+    stroke: var(--loose);
+  }
+  .hand-path {
+    fill: none;
+    opacity: 0.45;
+    stroke-linejoin: round;
+  }
+  .hand-path.left {
+    stroke: var(--clean-left);
+  }
+  .hand-path.right {
+    stroke: var(--clean-right);
+  }
+  .drawn-hand {
+    fill: none;
+    stroke: var(--theme-text);
+    opacity: 0.6;
   }
   .string {
     stroke: var(--theme-text);
     opacity: 0.8;
   }
-  .string.strain {
-    stroke: var(--strain);
-  }
-  .string.slack {
-    stroke: var(--slack);
+  .string.loose {
+    stroke: var(--loose);
     stroke-dasharray: 0.02 0.02;
   }
   .hand {
@@ -600,14 +667,17 @@
     height: 0.35rem;
     border-radius: 999px;
   }
-  .swatch.clean {
+  .swatch.close {
     background: linear-gradient(90deg, var(--clean-left), var(--clean-right));
   }
-  .swatch.strain {
-    background: var(--strain);
+  .swatch.steer {
+    background: var(--steer);
   }
-  .swatch.slack {
-    background: var(--slack);
+  .swatch.hard {
+    background: var(--hard);
+  }
+  .swatch.loose {
+    background: var(--loose);
   }
   .controls {
     min-width: 0;
@@ -669,14 +739,17 @@
     font-size: 0.8125rem;
     font-variant-numeric: tabular-nums;
   }
-  ol li.clean {
+  ol li.close {
     --cell: #22c55e;
   }
-  ol li.strain {
-    --cell: var(--strain);
+  ol li.steer {
+    --cell: var(--steer);
   }
-  ol li.slack {
-    --cell: var(--slack);
+  ol li.hard {
+    --cell: var(--hard);
+  }
+  ol li.loose {
+    --cell: var(--loose);
   }
   ol li.current {
     border-color: var(--theme-text);
@@ -688,9 +761,17 @@
   .path-option {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
   }
-  .path-option .element {
+  .path-number {
+    min-width: 1ch;
+    font-variant-numeric: tabular-nums;
+  }
+  .rhythm {
+    display: inline-flex;
+    gap: 2px;
+  }
+  .rhythm .element {
     width: 1.25rem;
     height: 1.25rem;
   }

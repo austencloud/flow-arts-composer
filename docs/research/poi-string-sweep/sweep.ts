@@ -1,10 +1,7 @@
 import { it } from "vitest";
 import { writeFileSync } from "node:fs";
 import { CAP_HAND_PATHS } from "#lib/shared/guide-topics/caps-topic.js";
-import {
-  turnValuesForLevel,
-  type TurnValue,
-} from "#lib/shared/create/services/level-turn-values.js";
+import { turnValuesForLevel } from "#lib/shared/create/services/level-turn-values.js";
 import { calculateEndOrientation } from "#lib/shared/render/core/calculations/orientation.js";
 import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
@@ -18,7 +15,7 @@ import {
   RotationDirection,
 } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
-import { checkPoiString } from "./poi-string-check.js";
+import { solvePoiHand } from "./poi-string-check.js";
 
 const OUT = process.env.SWEEP_OUT!;
 const num = (k: string, d: string) =>
@@ -27,6 +24,7 @@ const BPMS = num("BPMS", "60,90,120,150,180,210,240");
 const RADII = num("RADII", "0.3,0.45,0.6,0.75,0.9");
 const LENGTHS = num("LENGTHS", "0.6");
 const TURNAROUNDS = num("TURNAROUNDS", "0.06");
+const BLENDS = num("BLENDS", "0.25");
 const PATHS = num("PATHS", "1,2,3,4,5,6,7,8");
 const TURNS = turnValuesForLevel(4).filter((t) => t !== "fl");
 const RING: GridLocation[] = ["n", "e", "s", "w"] as GridLocation[];
@@ -87,19 +85,24 @@ function handMotions(
 }
 
 // Run as a Vitest test; see README.md.
-it("sweep2", () => {
+it("sweep3", () => {
   const params: object[] = [];
-  for (const bpm of BPMS)
-    for (const handRadius of RADII)
-      for (const stringLength of LENGTHS)
-        for (const turnaroundBeats of TURNAROUNDS)
-          params.push({
-            bpm,
-            handRadius,
-            stringLength,
-            turnaroundBeats,
-            gravity: true,
-          });
+  // Without gravity the hand's path doesn't depend on tempo, so one tempo per
+  // hand circle gives the spin's shape alone; then every tempo with gravity.
+  for (const gravity of [false, true])
+    for (const bpm of gravity ? BPMS : [180])
+      for (const handRadius of RADII)
+        for (const stringLength of LENGTHS)
+          for (const turnaroundBeats of TURNAROUNDS)
+            for (const speedBlendBeats of BLENDS)
+              params.push({
+                bpm,
+                handRadius,
+                stringLength,
+                turnaroundBeats,
+                speedBlendBeats,
+                gravity,
+              });
   const rows: unknown[] = [];
   for (const column of PATHS) {
     const cap = CAP_HAND_PATHS[column - 1]!.caps[0]!;
@@ -119,11 +122,8 @@ it("sweep2", () => {
             );
             const res = params.map((p) => {
               try {
-                const r = checkPoiString(motions, p as never);
-                return [
-                  +Math.max(...r.beats.map((b) => b.maxLean)).toFixed(1),
-                  +Math.min(...r.beats.map((b) => b.minTension)).toFixed(2),
-                ];
+                const r = solvePoiHand(motions, p as never);
+                return [+r.maxStray.toFixed(3), +r.minTension.toFixed(2)];
               } catch {
                 return null;
               }
