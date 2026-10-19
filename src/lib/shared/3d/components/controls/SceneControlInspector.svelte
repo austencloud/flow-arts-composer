@@ -7,7 +7,11 @@
   import PresetsPanel from "./PresetsPanel.svelte";
   import type { SceneControlTool } from "../../domain/scene-control-layout";
   import type { ViewerControlSink } from "#lib/shared/sequence-viewer/domain/viewer-control-analytics.js";
-  import type { PerformerEditSink } from "./performer-hub-types";
+  import {
+    PERFORMER_TOOLS,
+    type PerformerEditSink,
+    type PerformerHubTab,
+  } from "./performer-hub-types";
 
   interface Props {
     tool: SceneControlTool;
@@ -16,6 +20,8 @@
     onOpenSaveScene?: () => void;
     /** Forwarded to the performer tool — see PerformerHubDetail's Props. */
     onPerformerEdit?: PerformerEditSink;
+    /** Which performer tool the rail opened; the panel shows only that one. */
+    performerTab?: PerformerHubTab;
   }
 
   let {
@@ -24,6 +30,7 @@
     onSettingChange,
     onOpenSaveScene,
     onPerformerEdit,
+    performerTab = "prop",
   }: Props = $props();
 
   const loadDevTools = () => import("./DevToolsPopover.svelte");
@@ -37,15 +44,6 @@
     dev: "Developer tools",
   };
 
-  /**
-   * The performer hub is a full editor with its own bottom-anchored tab bar and
-   * its own scrolling pane. It fills the panel and owns the scroll; every other
-   * tool is a short stack of controls the panel scrolls for it. Letting both
-   * scroll nests two scrollers on one axis, which leaves the bottom of the
-   * inner pane unreachable.
-   */
-  const fillsPanel = $derived(tool === "performer");
-
   const icons: Record<SceneControlTool, string> = {
     performer: "fa-user-group",
     formation: "fa-people-arrows-left-right",
@@ -54,6 +52,27 @@
     presets: "fa-swatchbook",
     dev: "fa-terminal",
   };
+
+  // Each performer tool has its own rail button, so the panel is titled after
+  // the tool rather than "Performers".
+  const performerTool = $derived(
+    PERFORMER_TOOLS.find((item) => item.id === performerTab) ??
+      PERFORMER_TOOLS[0]
+  );
+  const title = $derived(
+    tool === "performer" && performerTool ? performerTool.label : titles[tool]
+  );
+  const icon = $derived(
+    tool === "performer" && performerTool ? performerTool.icon : icons[tool]
+  );
+
+  /**
+   * The performer hub is a full editor with its own scrolling pane. It fills the panel and owns the scroll; every other
+   * tool is a short stack of controls the panel scrolls for it. Letting both
+   * scroll nests two scrollers on one axis, which leaves the bottom of the
+   * inner pane unreachable.
+   */
+  const fillsPanel = $derived(tool === "performer");
 </script>
 
 <section
@@ -64,13 +83,13 @@
 >
   <header class="inspector-header">
     <span class="inspector-icon" aria-hidden="true">
-      <i class="fas {icons[tool]}"></i>
+      <i class="fas {icon}"></i>
     </span>
-    <h2 id="scene-control-inspector-title">{titles[tool]}</h2>
+    <h2 id="scene-control-inspector-title">{title}</h2>
     <button
       type="button"
       class="inspector-close"
-      aria-label="Close {titles[tool]} controls"
+      aria-label="Close {title} controls"
       onclick={onClose}
     >
       <i class="fas fa-xmark" aria-hidden="true"></i>
@@ -79,7 +98,12 @@
 
   <div class="inspector-body" class:fills={fillsPanel}>
     {#if tool === "performer"}
-      <PerformerHubDetail {onSettingChange} {onPerformerEdit} />
+      <PerformerHubDetail
+        {onSettingChange}
+        {onPerformerEdit}
+        activeTab={performerTab}
+        showTabBar={false}
+      />
     {:else if tool === "formation"}
       <FormationPopover {onSettingChange} />
     {:else if tool === "camera"}

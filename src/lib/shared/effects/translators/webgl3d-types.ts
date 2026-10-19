@@ -200,12 +200,8 @@ export interface Petals3DParams extends PetalsIntent {
   motionTipRate: number;
   /** World units/s mapping to full motion scalar. */
   motionReferenceSpeed: number;
-  /** World-space downward speed scalar at `fallSpeed=1`. */
+  /** Average fall speed (m/s) at `fallSpeed=1`. */
   fallBaseSpeed: number;
-  /** World-space sinusoidal sway amplitude at `swayAmplitude=1`. */
-  swayBaseSpeed: number;
-  /** Hz - sinusoidal sway frequency. */
-  swayFrequency: number;
   /** Petal lifetime in seconds. */
   lifetime: number;
 }
@@ -244,8 +240,6 @@ export interface SmokeVolumeProfile3D {
   density: number;
   /** Fraction of density lost per second. */
   dissipation: number;
-  /** Heat added with density, which becomes upward motion. */
-  temperature: number;
   /** Strength of rotational detail restored after advection. */
   vorticity: number;
   /** Sideways impulse applied at injection. */

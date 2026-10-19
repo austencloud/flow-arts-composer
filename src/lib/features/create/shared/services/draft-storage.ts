@@ -184,6 +184,11 @@ async function retainSessionVersion(version: DraftVersion): Promise<void> {
   await putRecord(key, { kind: "version", version });
 }
 
+/** Keeps a version listed in Drafts in its own session slot. */
+export async function keepDraftVersion(version: DraftVersion): Promise<void> {
+  await db.transaction("rw", db.userWork, () => retainSessionVersion(version));
+}
+
 export async function storeDivergentDraft(
   version: DraftVersion,
   writerId: string,

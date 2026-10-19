@@ -13,6 +13,9 @@ const SEVERITY_RANK: Record<CollisionSeverity, number> = {
   penetrate: 2,
 };
 const MAX_DESCRIPTIONS_PER_CLUSTER = 12;
+/** The browser snapshot is written every few frames, so it carries only the
+ *  deepest spans. An 11 MB snapshot froze playback for 230 ms each write. */
+const MAX_PUBLISHED_CLUSTERS = 40;
 
 export const AVATAR_COLLISION_AUDIT_STORAGE_KEY =
   "__avatarCollisionAuditReport";
@@ -42,12 +45,26 @@ export interface CollisionAuditReport {
   clusters: CollisionCluster[];
 }
 
+/** The browser snapshot: the deepest clusters and how many exist in all. */
+export interface CollisionAuditSnapshot extends CollisionAuditReport {
+  totalClusters: number;
+}
+
 interface MutableCluster extends CollisionCluster {
   descriptionSet: Set<string>;
 }
 
 function clusterKey(performerId: string, zone: CollisionZone): string {
   return `${performerId}:${zone}`;
+}
+
+/**
+ * Where a span starts, to a tenth of a beat. Every loop of a playing sequence
+ * repeats the same spans with slightly different frame timing; folding them
+ * by start keeps the audit the size of one loop however long playback runs.
+ */
+function spanKey(cluster: CollisionCluster): string {
+  return `${cluster.performerId}:${cluster.zone}:${cluster.firstStep}:${Math.round(cluster.firstProgress * 10)}`;
 }
 
 function copyCluster(cluster: MutableCluster): CollisionCluster {
@@ -64,7 +81,7 @@ function descriptionCategory(description: string): string {
 /** Groups per-render-frame collision events into reviewable motion spans. */
 export class AvatarSequenceCollisionAudit {
   private readonly open = new Map<string, MutableCluster>();
-  private readonly completed: CollisionCluster[] = [];
+  private readonly completed = new Map<string, CollisionCluster>();
   private readonly currentPoseByPerformer = new Map<
     string,
     AvatarPoseDiagnostics
@@ -105,7 +122,7 @@ export class AvatarSequenceCollisionAudit {
     for (const [key, cluster] of this.open) {
       if (cluster.performerId !== performerId) continue;
       if (!worstByZone.has(cluster.zone)) {
-        this.completed.push(copyCluster(cluster));
+        this.complete(copyCluster(cluster));
         this.open.delete(key);
       }
     }
@@ -161,6 +178,37 @@ export class AvatarSequenceCollisionAudit {
   }
 
   report(): CollisionAuditReport {
+    return this.buildReport(this.deepestFirst());
+  }
+
+  clear(): void {
+    this.open.clear();
+    this.completed.clear();
+    this.currentPoseByPerformer.clear();
+    this.sampledFrames = 0;
+    this.publishBrowserSnapshot();
+  }
+
+  private complete(cluster: CollisionCluster): void {
+    const key = spanKey(cluster);
+    const previous = this.completed.get(key);
+    if (
+      !previous ||
+      cluster.worstPenetrationDepth > previous.worstPenetrationDepth
+    ) {
+      this.completed.set(key, cluster);
+    }
+  }
+
+  private deepestFirst(): (CollisionCluster | MutableCluster)[] {
+    return [...this.completed.values(), ...this.open.values()].sort(
+      (a, b) => b.worstPenetrationDepth - a.worstPenetrationDepth
+    );
+  }
+
+  private buildReport(
+    clusters: (CollisionCluster | MutableCluster)[]
+  ): CollisionAuditReport {
     return {
       sampledFrames: this.sampledFrames,
       currentPoseByPerformer: Object.fromEntries(
@@ -169,26 +217,21 @@ export class AvatarSequenceCollisionAudit {
           { ...diagnostics },
         ])
       ),
-      clusters: [
-        ...this.completed.map((cluster) => ({
-          ...cluster,
-          descriptions: [...cluster.descriptions],
-        })),
-        ...[...this.open.values()].map(copyCluster),
-      ].sort((a, b) => b.worstPenetrationDepth - a.worstPenetrationDepth),
+      clusters: clusters.map((cluster) =>
+        "descriptionSet" in cluster
+          ? copyCluster(cluster)
+          : { ...cluster, descriptions: [...cluster.descriptions] }
+      ),
     };
   }
 
-  clear(): void {
-    this.open.clear();
-    this.completed.length = 0;
-    this.currentPoseByPerformer.clear();
-    this.sampledFrames = 0;
-    this.publishBrowserSnapshot();
-  }
-
   private publishBrowserSnapshot(): void {
-    const serializedReport = JSON.stringify(this.report());
+    const clusters = this.deepestFirst();
+    const snapshot: CollisionAuditSnapshot = {
+      ...this.buildReport(clusters.slice(0, MAX_PUBLISHED_CLUSTERS)),
+      totalClusters: clusters.length,
+    };
+    const serializedReport = JSON.stringify(snapshot);
     if (typeof sessionStorage !== "undefined") {
       sessionStorage.setItem(
         AVATAR_COLLISION_AUDIT_STORAGE_KEY,

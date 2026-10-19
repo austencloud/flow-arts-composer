@@ -10,16 +10,46 @@
   import LessonGridDisplay from "#lib/shared/pictograph/grid/components/LessonGridDisplay.svelte";
   import GridMergeAnimation from "../grid-merge/GridMergeAnimation.svelte";
   import PageDivider from "../PageDivider.svelte";
+  import { claimedViewTransitionName } from "#lib/shared/transitions/claimed-view-transition-name.js";
+  import { isLessonHeadingSplit } from "../../../services/lesson-open-morph.svelte";
+
+  // Names exist only while Review or Steps swaps the views (lesson-open-morph).
+  const switching = $derived(isLessonHeadingSplit());
 </script>
 
-<div class="grid-experience scroll-mode">
+<div
+  class="grid-experience scroll-mode"
+  use:claimedViewTransitionName={{ name: "learn-review", enabled: switching }}
+>
   <!-- Section 1: Introduction -->
+  <!-- The lesson's title, lead line and board carry into this first section
+       when Review opens, and back on Steps. -->
   <div class="scroll-section">
-    <h1 class="title">{t("learn_ui_grid_title")}</h1>
-    <p class="description">
+    <h1
+      class="title"
+      use:claimedViewTransitionName={{
+        name: "learn-lesson-title",
+        enabled: switching,
+      }}
+    >
+      {t("learn_ui_grid_title")}
+    </h1>
+    <p
+      class="description"
+      use:claimedViewTransitionName={{
+        name: "learn-lesson-lead",
+        enabled: switching,
+      }}
+    >
       <MessageMarkup text={gridTopicText("intro")} />
     </p>
-    <div class="grid-container">
+    <div
+      class="grid-container"
+      use:claimedViewTransitionName={{
+        name: "learn-grid-stage",
+        enabled: switching,
+      }}
+    >
       <LessonGridDisplay type="diamond" size="large" />
     </div>
   </div>

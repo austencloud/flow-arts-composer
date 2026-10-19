@@ -10,6 +10,7 @@ import {
 } from "#lib/shared/effects/translators/webgl3d-translator.js";
 import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
 import { QualityTier } from "#lib/shared/3d/effects/types.js";
+import { TIP_EFFECT_SLOTS_PER_RIG } from "#lib/shared/3d/effects/prop-tip-geometry-3d.js";
 
 describe("SceneEffectsManager3D", () => {
   it("owns one scene-level mesh per material variant and releases them together", () => {
@@ -17,11 +18,12 @@ describe("SceneEffectsManager3D", () => {
     const manager = new SceneEffectsManager3D();
     manager.initialize(scene);
 
-    // Existing pooled visuals, Goo's strand, drop and puddle meshes, Coal (two
-    // draws), Sparkle's glint layer, Petals' grounded layer, Ink's one stroke
-    // mesh, Fire's four stable lights, and the four-light scene pool shared by
-    // Bloom, Trails, and Zap.
-    expect(scene.children).toHaveLength(33);
+    // Existing pooled visuals, Goo's strand, drop and puddle meshes, Coal
+    // (three draws: heads and glows, spark streaks, ember chips), Sparkle's
+    // glint layer, Petals' grounded layer, Ink's one stroke mesh, Fire's four
+    // stable lights, and the four-light scene pool shared by Bloom, Trails,
+    // and Zap.
+    expect(scene.children).toHaveLength(34);
     manager.update(1 / 60);
     manager.dispose();
     expect(scene.children).toHaveLength(0);
@@ -31,7 +33,9 @@ describe("SceneEffectsManager3D", () => {
     const manager = new SceneEffectsManager3D();
     const first = manager.registerRig({ playing: false, sources: [] });
     const second = manager.registerRig({ playing: false, sources: [] });
-    expect(second.sourceIdBase - first.sourceIdBase).toBe(4);
+    expect(second.sourceIdBase - first.sourceIdBase).toBe(
+      TIP_EFFECT_SLOTS_PER_RIG
+    );
     first.dispose();
     second.dispose();
   });

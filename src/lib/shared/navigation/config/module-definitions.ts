@@ -11,6 +11,7 @@ import {
   CREATE_TABS,
   LEARN_TABS,
   BROWSE_TABS,
+  BROWSE_GROUPS,
   COMPOSE_TABS,
   TRAIN_TABS,
   FEEDBACK_TABS,
@@ -96,6 +97,12 @@ export function normalizeModuleId(rawModuleId: string): ModuleId | undefined {
 const SECTION_ID_MIGRATIONS: Readonly<
   Record<string, Readonly<Record<string, string>>>
 > = {
+  browse: {
+    explore: "sequences",
+    gallery: "sequences",
+    library: "saved",
+    you: "saved",
+  },
   settings: {
     language: "preferences",
   },
@@ -180,6 +187,7 @@ export const MODULE_DEFINITIONS: ModuleDefinition[] = [
     description: "Browse sequences and collections",
     isMain: true,
     sections: BROWSE_TABS,
+    groups: BROWSE_GROUPS,
     home: {
       get label() {
         return t("module_browse");

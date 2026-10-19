@@ -1,17 +1,20 @@
 /**
- * CharcoalSparkRenderer - WebGL2 Point-Sprite Particle System
+ * CharcoalSparkRenderer - WebGL2 spark streaks for the 2D Coal stage
  *
- * Discrete spark particles that burst on direction changes and fall
- * under gravity, producing steel-wool / charcoal ember aesthetics.
+ * Sparks fly by the shared spark physics (effects/domain/spark-physics.ts),
+ * the same model as the 3D view: each leaves at the tip's velocity, slows
+ * under air drag, bends down under gravity, burns for a time set by its size,
+ * then cools from white through orange to dark. The stage is drawn at
+ * SPARK_2D_PIXELS_PER_METRE, so a spark flies as far here as in 3D.
  *
  * Architecture:
  *   - Pre-allocated particle pool (zero allocation in the hot path)
- *   - Two shader programs: spark point sprites + ember glow halos
+ *   - Two shader programs: instanced spark streaks + ember glow halos
  *   - Additive blending (SRC_ALPHA, ONE) for bright-on-dark compositing
- *   - Burst emission on high jerk (direction reversals)
- *   - Ambient emission during sustained movement
- *   - Gravity + drag physics per particle
- *   - Temperature-based color (core -> mid -> cool over lifetime)
+ *   - A steady stream along the tip's path, plus a burst when the tip
+ *     stops or snaps (the shared stepSparkSnap test)
+ *   - Each spark is a streak from where it is to where it was one camera
+ *     shutter ago, so fast sparks paint lines and slow ones dots
  *
  * Implements ICharcoalRenderer - architecturally independent from
  * the fire overlay renderer (different physics, shaders, visual output).
@@ -27,10 +30,40 @@ import type {
   CharcoalSparkParams,
 } from "../../domain/types/charcoal-spark-types";
 import { DEFAULT_CHARCOAL_PARAMS } from "../../domain/types/charcoal-spark-types";
+import {
+  createSparkSnapState,
+  releaseSparkVelocity2D,
+  resetSparkSnap,
+  resolveSparkMaterial,
+  sampleSparkDiameter,
+  sampleSparkFork,
+  snapBurstSparks,
+  SPARK_2D_PIXELS_PER_METRE,
+  SPARK_GRAVITY,
+  SPARK_SHUTTER_SECONDS,
+  sparkBurnTime,
+  sparkCoolTime,
+  sparkHeat,
+  sparkLifetime,
+  type SparkMaterial,
+  type SparkSnapState,
+  stepSparkSnap,
+  stepSparkVelocity,
+} from "#lib/shared/effects/domain/spark-physics.js";
 
 // Constants
 
 const MAX_DPR = 2;
+
+/** Floats per spark in the streak instance buffer. */
+const STREAK_STRIDE = 10;
+/** Half-width of a 0.3 mm spark's streak at mid glow (CSS px). */
+const STREAK_HALF_WIDTH = 1.6;
+/** Narrowest and widest a streak's half-width may be (CSS px). */
+const STREAK_MIN_HALF_WIDTH = 0.7;
+const STREAK_MAX_HALF_WIDTH = 3.2;
+/** Share of the scatter an ember dropping off a still prop gets. */
+const IDLE_SCATTER = 0.4;
 
 /**
  * Tip positions from FireTipTracker are in canvas-pixel space
@@ -43,46 +76,83 @@ const MAX_DPR = 2;
 const SPARK_VERTEX = /* glsl */ `#version 300 es
 precision highp float;
 
-in vec2 a_position;
-in float a_size;
-in vec4 a_color;
+// corner.x: 0 at the head, 1 at the tail. corner.y: -1 and 1 across.
+in vec2 a_corner;
+in vec2 a_head;
+in vec2 a_velocity;
+in float a_width;
+in vec3 a_color;
+in vec2 a_heatAlpha;
 
 uniform vec2 u_resolution;
 uniform vec2 u_viewbox;
+uniform float u_shutter;
 
-out vec4 v_color;
+out vec2 v_local;
+out float v_length;
+out float v_width;
+out vec3 v_color;
+out vec2 v_heatAlpha;
 
 void main() {
-  // Map viewbox coordinates to NDC [-1, 1]
-  vec2 ndc = (a_position / u_viewbox) * 2.0 - 1.0;
-  ndc.y = -ndc.y; // Flip Y: viewbox Y-down -> GL Y-up
+  float pixelsPerUnit = u_resolution.x / u_viewbox.x;
+  vec2 headPx = a_head * pixelsPerUnit;
+  vec2 span = a_velocity * u_shutter * pixelsPerUnit;
+  float spanLength = length(span);
+  vec2 along = spanLength > 0.001 ? span / spanLength : vec2(1.0, 0.0);
+  vec2 side = vec2(-along.y, along.x);
+  float width = a_width * pixelsPerUnit;
 
+  // Both ends grow past the segment so the streak has round caps and a
+  // still spark is a dot. alongPx runs from the head toward the tail.
+  float extent = width * 1.4;
+  float alongPx = a_corner.x < 0.5 ? -extent : spanLength + extent;
+  vec2 px = headPx - along * alongPx + side * a_corner.y * extent;
+  vec2 ndc = px / u_resolution * 2.0 - 1.0;
+  ndc.y = -ndc.y; // viewbox Y-down -> GL Y-up
   gl_Position = vec4(ndc, 0.0, 1.0);
 
-  // Scale point size from viewbox units to device pixels
-  float pixelsPerUnit = u_resolution.x / u_viewbox.x;
-  gl_PointSize = a_size * pixelsPerUnit;
-
+  v_local = vec2(alongPx, a_corner.y * extent);
+  v_length = spanLength;
+  v_width = width;
   v_color = a_color;
+  v_heatAlpha = a_heatAlpha;
 }
 `;
 
 const SPARK_FRAGMENT = /* glsl */ `#version 300 es
 precision highp float;
 
-in vec4 v_color;
+uniform vec3 u_coreColor;
+
+in vec2 v_local;
+in float v_length;
+in float v_width;
+in vec3 v_color;
+in vec2 v_heatAlpha;
 out vec4 fragColor;
 
 void main() {
-  // Distance from point center (gl_PointCoord is [0,1] within the point sprite)
-  vec2 coord = gl_PointCoord - 0.5;
-  float dist = length(coord) * 2.0; // Normalize to [0, 1] at edge
+  float onSegment = clamp(v_local.x, 0.0, v_length);
+  float dist = length(vec2(v_local.x - onSegment, v_local.y)) /
+    max(0.001, v_width);
+  float core = exp(-dist * dist * 2.6);
+  if (core < 0.01) discard;
 
-  // Soft circular falloff: bright core, soft edges
-  float alpha = pow(1.0 - smoothstep(0.0, 1.0, dist), 1.8);
+  // Brightest at the spark itself, fading toward where it was.
+  float trail = 1.0 - 0.6 * (onSegment / max(1.0, v_length));
+  // A long streak spreads the same light over more pixels.
+  float exposure = mix(1.0, (2.0 * v_width) / (v_length + 2.0 * v_width), 0.45);
 
-  // v_color is already premultiplied; scale by the radial falloff
-  fragColor = v_color * alpha;
+  float heat = v_heatAlpha.x;
+  float whiteHeat =
+    smoothstep(0.86, 1.0, heat) * (1.0 - smoothstep(0.0, 0.3, dist));
+  vec3 color = mix(v_color, mix(u_coreColor, vec3(1.0), 0.85), whiteHeat);
+
+  // Hotter sparks are brighter. The boost goes on the alpha, not the
+  // colour, so an orange spark stays orange instead of clamping to white.
+  float alpha = core * trail * exposure * v_heatAlpha.y * (0.75 + heat * 0.6);
+  fragColor = vec4(color, min(1.0, alpha));
 }
 `;
 
@@ -152,18 +222,15 @@ export class CharcoalSparkRenderer {
 
   // GPU buffers for spark rendering
   private sparkVAO: WebGLVertexArrayObject | null = null;
-  private positionBuffer: WebGLBuffer | null = null;
-  private sizeBuffer: WebGLBuffer | null = null;
-  private colorBuffer: WebGLBuffer | null = null;
+  private cornerBuffer: WebGLBuffer | null = null;
+  private instanceBuffer: WebGLBuffer | null = null;
 
   // GPU buffers for ember glow rendering
   private emberVAO: WebGLVertexArrayObject | null = null;
   private emberPositionBuffer: WebGLBuffer | null = null;
 
   // CPU-side typed arrays (reused each frame, no allocation)
-  private positionData: Float32Array = new Float32Array(0);
-  private sizeData: Float32Array = new Float32Array(0);
-  private colorData: Float32Array = new Float32Array(0);
+  private instanceData: Float32Array = new Float32Array(0);
   private emberPositionData: Float32Array = new Float32Array(0);
 
   // Timing
@@ -172,10 +239,10 @@ export class CharcoalSparkRenderer {
 
   // Ambient emission accumulator per tip (fractional spark carry)
   private ambientAccumulators: Map<string, number> = new Map();
-  // Burst count comes from jerk, not from elapsed time, so it would fire at
-  // full strength in every sub-step. Each step takes its share and carries the
-  // fractional remainder here, keeping a frame's burst total step-independent.
-  private burstAccumulators: Map<string, number> = new Map();
+  // Per-tip watch for a stop or snap (stepSparkSnap).
+  private snapStates: Map<string, SparkSnapState> = new Map();
+  // Bursts thrown since creation, for diagnostics.
+  private burstCount = 0;
 
   // Current params (updated externally via setParams)
   private currentParams: CharcoalSparkParams = { ...DEFAULT_CHARCOAL_PARAMS };
@@ -188,7 +255,7 @@ export class CharcoalSparkRenderer {
   // so the halo stays the same fraction of the frame.
   private sizeScale = 1.0;
   // Linear scale for everything measured in canvas units per unit TIME:
-  // spawn speeds, gravity, and the tip speed/jerk thresholds that gate
+  // spawn speeds, gravity, and the tip speed threshold that gates
   // emission. Tip positions arrive in canvas-pixel space (see the note at the
   // top of this file), so a tip tracing the same choreography on a 250px
   // canvas moves at roughly a quarter the pixels-per-second it does at 950.
@@ -208,6 +275,11 @@ export class CharcoalSparkRenderer {
   // a 950px canvas, so the linear size-scale is referenced to 950 - not
   // the project-wide 500 - to preserve the look at full size.
   private static readonly REFERENCE_SIZE = 950;
+  // Canvas pixels per metre of stage, for the shared spark physics. The
+  // physics runs in metres and seconds; at the 500 px reference canvas one
+  // metre is SPARK_2D_PIXELS_PER_METRE pixels, the scale the 2D fire uses.
+  private pixelsPerMetre = SPARK_2D_PIXELS_PER_METRE;
+  private sparkMaterial: SparkMaterial = resolveSparkMaterial("steel-wool");
 
   /**
    * Recompute every canvas-size-derived scale. Called from both context
@@ -226,6 +298,7 @@ export class CharcoalSparkRenderer {
       0.1,
       minDim / CharcoalSparkRenderer.REFERENCE_SIZE
     );
+    this.pixelsPerMetre = (SPARK_2D_PIXELS_PER_METRE * minDim) / 500;
     this.teleportDistance = minDim * 0.5;
     this.cullMargin = Math.max(48, minDim * 0.06);
   }
@@ -259,10 +332,17 @@ export class CharcoalSparkRenderer {
   // steps at most, each no longer than one 60fps tick.
   private static readonly MAX_STEP_SECONDS = 1 / 60;
   private static readonly MAX_SUB_STEPS = 6;
+  // How far past the cursor findInactiveSlot looks for a free slot.
+  private static readonly SLOT_LOOKAHEAD = 32;
 
   // Emission throttle, 0..1. See applyEmissionBudget.
   private emissionScale = 1;
   private spawnsThisFrame = 0;
+  // Lifetimes handed out this frame, for the emission budget.
+  private spawnLifeSum = 0;
+  private spawnLifeCount = 0;
+  // Running mean of a new spark's lifetime (s).
+  private meanSpawnLife = 0.4;
 
   // IFireOverlayRenderer implementation
 
@@ -401,6 +481,8 @@ export class CharcoalSparkRenderer {
     );
     const stepDt = simDt / steps;
     this.spawnsThisFrame = 0;
+    this.spawnLifeSum = 0;
+    this.spawnLifeCount = 0;
 
     for (let step = 0; step < steps; step++) {
       this.segU0 = step / steps;
@@ -423,7 +505,7 @@ export class CharcoalSparkRenderer {
       p.active = false;
     }
     this.ambientAccumulators.clear();
-    this.burstAccumulators.clear();
+    this.snapStates.clear();
     this.emissionScale = 1;
     // Blank the visible default framebuffer too. preserveDrawingBuffer:true
     // retains the last spark frame in the drawing buffer; when this renderer is
@@ -478,7 +560,15 @@ export class CharcoalSparkRenderer {
   /** Update spark params from external sliders. Only reallocates pool when maxParticles changes. */
   setParams(params: CharcoalSparkParams): void {
     const poolChanged = params.maxParticles !== this.maxParticles;
+    const styleChanged =
+      (params.emissionStyle ?? "steel-wool") !==
+      (this.currentParams.emissionStyle ?? "steel-wool");
     this.currentParams = params;
+    this.sparkMaterial = resolveSparkMaterial(params.emissionStyle);
+    // Sparks in the air were sized for the old material.
+    if (styleChanged && !poolChanged) {
+      for (const p of this.particles) p.active = false;
+    }
 
     if (poolChanged) {
       this.allocateParticlePool(params.maxParticles);
@@ -498,18 +588,21 @@ export class CharcoalSparkRenderer {
         y: 0,
         vx: 0,
         vy: 0,
+        vz: 0,
         life: 0,
         maxLife: 0,
         size: 0,
         temperature: 0,
+        diameter: 0,
+        burnTime: 0,
+        coolTime: 0,
+        age: 0,
+        forkAt: -1,
         active: false,
       });
     }
 
-    // CPU-side typed arrays
-    this.positionData = new Float32Array(count * 2);
-    this.sizeData = new Float32Array(count);
-    this.colorData = new Float32Array(count * 4);
+    this.instanceData = new Float32Array(count * STREAK_STRIDE);
   }
 
   // Emission
@@ -575,37 +668,25 @@ export class CharcoalSparkRenderer {
    * rather than applied outright so a speed change does not step the density.
    */
   private applyEmissionBudget(
-    params: CharcoalSparkParams,
+    _params: CharcoalSparkParams,
     simDt: number
   ): void {
     if (simDt <= 0 || this.maxParticles <= 0) return;
 
-    const avgLifetime = Math.max(
-      0.05,
-      (params.lifetimeMin + params.lifetimeMax) / 2
-    );
-
-    // The authored lifetime is only an UPPER bound on how long a spark lasts:
-    // most of them leave the frame and get culled well before it. Budgeting
-    // against the authored figure therefore reserves the pool for sparks that
-    // no longer exist, and the visible shower pays for it - which is how a
-    // correct throttle still produced a thin scatter.
-    //
-    // Little's law gives the real number from what the pool is holding:
-    // mean survival = live sparks / spawn rate. It is only trusted while the
-    // pool has headroom. A saturated pool shortens survival by recycling, and
-    // feeding THAT back would raise the budget, saturate harder, and run away.
-    let liveCount = 0;
-    for (const p of this.particles) if (p.active) liveCount++;
-    const spawnRate = this.spawnsThisFrame / simDt;
-    const saturated = liveCount >= this.maxParticles * 0.95;
-    const observedLifetime =
-      !saturated && spawnRate > 0 ? liveCount / spawnRate : avgLifetime;
-    const effectiveLifetime = Math.max(
-      0.05,
-      Math.min(avgLifetime, observedLifetime)
-    );
-    const sustainableRate = this.maxParticles / effectiveLifetime;
+    // Every spark's lifetime is known when it is thrown, so the budget uses
+    // the mean of what the physics actually handed out. An estimate read
+    // back off the live pool (Little's law) is circular here: a pool that
+    // recycles early reports short lives, which raises the budget, which
+    // recycles earlier still. That loop is what packed the whole pool into
+    // the first tenth of a second behind the tip.
+    if (this.spawnLifeCount > 0) {
+      const frameMean = this.spawnLifeSum / this.spawnLifeCount;
+      this.meanSpawnLife += (frameMean - this.meanSpawnLife) * 0.1;
+    }
+    const effectiveLifetime = Math.max(0.05, this.meanSpawnLife);
+    // A little headroom so the longest-lived sparks are not the ones
+    // recycled.
+    const sustainableRate = (this.maxParticles * 0.85) / effectiveLifetime;
     const unthrottledRate =
       this.spawnsThisFrame / simDt / Math.max(0.01, this.emissionScale);
 
@@ -649,38 +730,48 @@ export class CharcoalSparkRenderer {
     const scale = this.canvasScale;
     const stepShare = this.segU1 - this.segU0;
     const tipKey = `${tip.propIndex}_${tip.tipIndex}`;
-    // tip.jerk and tip.speed are derivatives of a canvas-pixel position, so
-    // they shrink with the container. Thresholds authored against the
+    // tip.speed is a derivative of a canvas-pixel position, so it
+    // shrinks with the container. Thresholds authored against the
     // reference canvas have to shrink with them or a small preview never
     // clears the gate and emits nothing.
     const motion = this.motionScale;
 
-    // Burst emission on high jerk (direction reversals). Note that for a tip
-    // on a spinning prop this gate is effectively always open - a 1.5 rev/s
-    // spin reports a jerk around 33,000 against a threshold of 23 at high
-    // intensity - so the burst behaves as a second, saturated ambient
-    // channel rather than an occasional reversal pop. It is spread along the
-    // travel segment for that reason: at max rate it IS the stream.
-    if (tip.jerk > params.burstThreshold * motion) {
-      const excess = tip.jerk - params.burstThreshold * motion;
-      const frameCount = Math.min(
-        (excess / motion) * params.burstMultiplier * scale,
-        params.burstMax * scale
-      );
-      const accumulated =
-        (this.burstAccumulators.get(tipKey) ?? 0) +
-        frameCount * stepShare * this.emissionScale;
-      const count = Math.floor(accumulated);
-      this.burstAccumulators.set(tipKey, accumulated - count);
-
-      for (let i = 0; i < count; i++) {
-        this.spawnParticle(
-          tip,
-          params,
-          this.resolveSpawnOrigin(tip, i, count) * stepDt
-        );
+    // A stop, reversal or snap throws a clump on top of the stream, judged
+    // by the same test as the 3D view (stepSparkSnap) on the tip's velocity
+    // in metres, so a steady spin never bursts. It runs once a frame.
+    if (this.segU0 === 0) {
+      let snap = this.snapStates.get(tipKey);
+      if (!snap) {
+        snap = createSparkSnapState();
+        this.snapStates.set(tipKey, snap);
       }
-      this.spawnsThisFrame += count;
+      if (this.segmentIsTeleport) {
+        resetSparkSnap(snap);
+      } else {
+        const metres = 1 / this.pixelsPerMetre;
+        const severity = stepSparkSnap(
+          snap,
+          tip.velocityX * metres,
+          tip.velocityY * metres,
+          0,
+          stepDt / stepShare,
+          params.burstThresholdScale ?? 1
+        );
+        if (severity > 0) {
+          const count = Math.round(
+            snapBurstSparks(severity) * (params.burstScale ?? 0.62) * scale
+          );
+          for (let i = 0; i < count; i++) {
+            this.spawnParticle(
+              tip,
+              params,
+              this.resolveSpawnOrigin(tip, i, count) * stepDt
+            );
+          }
+          this.spawnsThisFrame += count;
+          this.burstCount++;
+        }
+      }
     }
 
     // Ambient emission during sustained movement - proportional to speed.
@@ -722,6 +813,10 @@ export class CharcoalSparkRenderer {
   }
 
   /**
+   * Throws one spark from the tip. It leaves at the tip's velocity times the
+   * material's carry, so it flies off along the tangent of the spin, plus a
+   * random kick sized by the material and the look's spread.
+   *
    * @param age Seconds elapsed since this spark was conceptually emitted, from
    *   0 (end of frame) up to dt. Catching each spark up by its own age keeps a
    *   batch from being born as one synchronised cohort that then dies as one.
@@ -731,66 +826,31 @@ export class CharcoalSparkRenderer {
     params: CharcoalSparkParams,
     age: number
   ): void {
-    // Find an inactive slot (oldest first)
     const slot = this.findInactiveSlot();
     if (!slot) return;
 
-    // Inherit a fraction of the tip's velocity vector.
-    // Sparks carry the tip's momentum - they fly where the tip was going
-    // but slower, so the tip leaves them behind. On direction reversals,
-    // the burst system (jerk detection) creates the dramatic spark pops.
-    //
-    // Jittered per spark, and that jitter is load-bearing rather than
-    // decoration. A frame's batch is spawned spread along the segment the
-    // tip swept, but every spark then flies at the SAME fraction of the tip's
-    // speed, so the batch translates as a rigid body and closes back up to
-    // (1 - inheritance) of the segment it was spread across. Consecutive
-    // frames therefore land as separate packets with clear air between them:
-    // the shower breaks into discrete slices instead of reading as a stream.
-    // Varying the fraction makes each batch shear out and overlap its
-    // neighbours, which is also the truer behaviour - embers do not all
-    // leave the prop with the same grip. The mean is left on the authored
-    // parameter so preset tuning still means what it meant.
-    const inherit = params.velocityInheritance * (0.55 + Math.random() * 0.9);
-    const inheritedVx = tip.velocityX * inherit;
-    const inheritedVy = tip.velocityY * inherit;
-
-    // Add random perturbation centered on the tip's velocity direction.
-    // If the tip is nearly stationary, use a fully random direction.
-    const perturbAngle =
-      tip.speed > this.motionScale
-        ? Math.atan2(tip.velocityY, tip.velocityX) +
-          (Math.random() - 0.5) * 2.0 * params.spreadAngle
-        : Math.random() * Math.PI * 2;
-
-    // Inherited velocity already scales - it comes from a tip moving in
-    // canvas pixels. The perturbation does not, so it gets motionScale or
-    // it would fling sparks clean off a small frame while the inherited
-    // component barely moved them.
-    const perturbSpeed =
-      (params.perturbSpeedMin +
-        Math.random() * (params.perturbSpeedMax - params.perturbSpeedMin)) *
-      this.motionScale;
-
-    slot.vx = inheritedVx + Math.cos(perturbAngle) * perturbSpeed;
-    slot.vy = inheritedVy + Math.sin(perturbAngle) * perturbSpeed;
-    slot.x = this.spawnOriginX + slot.vx * age;
-    slot.y = this.spawnOriginY + slot.vy * age;
-    slot.maxLife =
-      params.lifetimeMin +
-      Math.random() * (params.lifetimeMax - params.lifetimeMin);
-    slot.life = Math.max(0.001, slot.maxLife - age);
-    slot.size =
-      (params.sizeMin + Math.random() * (params.sizeMax - params.sizeMin)) *
-      this.sizeScale;
-    slot.temperature = 1.0;
-    slot.active = true;
+    const material = this.sparkMaterial;
+    const spread = params.spread ?? 0.4;
+    releaseSparkVelocity2D(
+      slot,
+      tip.velocityX,
+      tip.velocityY,
+      material.carry,
+      material.scatter * (0.55 + spread * 0.9) * this.pixelsPerMetre
+    );
+    slot.x = this.spawnOriginX;
+    slot.y = this.spawnOriginY;
+    this.initSparkBody(
+      slot,
+      params,
+      sampleSparkDiameter(material, Math.random()),
+      age
+    );
   }
 
   /**
-   * Spawn a low-energy particle for idle/stationary tips.
-   * Minimal horizontal velocity - gravity pulls them straight down
-   * like embers falling off a still-burning prop.
+   * An ember dropping off a tip that is standing still: no thrown speed, a
+   * small kick, then gravity and drag take it.
    */
   private spawnIdleParticle(
     _tip: PropTipData,
@@ -800,24 +860,111 @@ export class CharcoalSparkRenderer {
     const slot = this.findInactiveSlot();
     if (!slot) return;
 
-    // Random direction, very low speed (just enough to spread slightly)
-    const angle = Math.random() * Math.PI * 2;
-    const speed = params.perturbSpeedMin * 0.3 * this.motionScale;
+    const material = this.sparkMaterial;
+    releaseSparkVelocity2D(
+      slot,
+      0,
+      0,
+      0,
+      material.scatter * IDLE_SCATTER * this.pixelsPerMetre
+    );
+    slot.x = this.spawnOriginX;
+    slot.y = this.spawnOriginY;
+    this.initSparkBody(
+      slot,
+      params,
+      sampleSparkDiameter(material, Math.random()),
+      age
+    );
+  }
 
-    slot.vx = Math.cos(angle) * speed;
-    slot.vy = Math.sin(angle) * speed;
-    slot.x = this.spawnOriginX + slot.vx * age;
-    slot.y = this.spawnOriginY + slot.vy * age;
-    slot.maxLife =
-      params.lifetimeMin +
-      Math.random() * (params.lifetimeMax - params.lifetimeMin) * 0.6;
-    slot.life = Math.max(0.001, slot.maxLife - age);
+  /** Size, burn, lifetime and fork time for a spark of `diameter`. */
+  private initSparkBody(
+    slot: CharcoalSpark,
+    params: CharcoalSparkParams,
+    diameter: number,
+    age: number
+  ): void {
+    const material = this.sparkMaterial;
+    slot.diameter = diameter;
+    slot.burnTime = sparkBurnTime(material, diameter);
+    slot.coolTime = sparkCoolTime(material, diameter);
+    slot.maxLife = sparkLifetime(slot.burnTime, slot.coolTime);
+    this.spawnLifeSum += slot.maxLife;
+    this.spawnLifeCount++;
+    slot.life = slot.maxLife;
+    slot.age = 0;
+    slot.temperature = 1;
+    slot.forkAt = sampleSparkFork(
+      material,
+      slot.burnTime,
+      Math.random(),
+      Math.random()
+    );
+    const glow = params.glow ?? 0.5;
     slot.size =
-      (params.sizeMin +
-        Math.random() * (params.sizeMax - params.sizeMin) * 0.5) *
-      this.sizeScale;
-    slot.temperature = 0.7 + Math.random() * 0.3; // Cooler starting temp
+      STREAK_HALF_WIDTH *
+      (0.75 + glow * 0.5) *
+      Math.sqrt(diameter / 0.0003) *
+      (0.8 + Math.random() * 0.4);
     slot.active = true;
+    if (age > 0) this.advanceSpark(slot, age);
+  }
+
+  /** Gravity and drag for `dt` seconds, in canvas pixels. */
+  private advanceSpark(p: CharcoalSpark, dt: number): void {
+    const ppm = this.pixelsPerMetre;
+    stepSparkVelocity(
+      p,
+      dt,
+      p.diameter,
+      this.sparkMaterial,
+      0,
+      SPARK_GRAVITY * ppm,
+      0,
+      1 / ppm
+    );
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.age += dt;
+    p.life = p.maxLife - p.age;
+  }
+
+  /** Bursts a carbon-steel spark into a star of smaller ones. */
+  private forkSpark(parent: CharcoalSpark, params: CharcoalSparkParams): void {
+    const material = this.sparkMaterial;
+    const children =
+      material.forkChildrenMin +
+      Math.floor(
+        Math.random() *
+          (material.forkChildrenMax - material.forkChildrenMin + 1)
+      );
+    const x = parent.x;
+    const y = parent.y;
+    const vx = parent.vx;
+    const vy = parent.vy;
+    const diameter = parent.diameter;
+    parent.active = false;
+    for (let index = 0; index < children; index++) {
+      const child = this.findInactiveSlot();
+      if (!child) break;
+      releaseSparkVelocity2D(
+        child,
+        vx,
+        vy,
+        1,
+        material.forkSpeed * this.pixelsPerMetre
+      );
+      child.x = x;
+      child.y = y;
+      this.initSparkBody(
+        child,
+        params,
+        diameter * (0.4 + Math.random() * 0.2),
+        0
+      );
+      child.forkAt = -1;
+    }
   }
 
   private findInactiveSlot(): CharcoalSpark | null {
@@ -842,8 +989,23 @@ export class CharcoalSparkRenderer {
     // which measured at 10.9ms - two thirds of the entire 16.7ms frame
     // budget, for the whole app, spent finding array indices. That is what
     // was making playback stutter in the first place.
+    //
+    // Physical lifetimes vary tenfold between the smallest and largest spark,
+    // so the slot under the cursor is often still flying while the ones after
+    // it have long gone out. A short look ahead takes a free slot when there
+    // is one and falls back to the oldest when there is not; it is bounded,
+    // so it costs a few comparisons a spawn, not a pool scan.
+    const count = this.particles.length;
+    for (let step = 0; step < CharcoalSparkRenderer.SLOT_LOOKAHEAD; step++) {
+      const index = (this.spawnCursor + step) % count;
+      const candidate = this.particles[index]!;
+      if (!candidate.active) {
+        this.spawnCursor = (index + 1) % count;
+        return candidate;
+      }
+    }
     const slot = this.particles[this.spawnCursor]!;
-    this.spawnCursor = (this.spawnCursor + 1) % this.particles.length;
+    this.spawnCursor = (this.spawnCursor + 1) % count;
     return slot;
   }
 
@@ -878,24 +1040,10 @@ export class CharcoalSparkRenderer {
   }
 
   private updateParticles(params: CharcoalSparkParams, dt: number): void {
-    const dragPerFrame = Math.pow(params.drag, dt);
-
     for (const p of this.particles) {
       if (!p.active) continue;
 
-      // Apply gravity (positive = downward in viewbox Y-down space).
-      // Scaled so an ember falls the same fraction of the frame per
-      // second at any container size - unscaled, 480 px/s^2 dropped a
-      // spark clean out of a 250px preview in well under a second.
-      p.vy += params.gravity * this.motionScale * dt;
-
-      // Apply drag
-      p.vx *= dragPerFrame;
-      p.vy *= dragPerFrame;
-
-      // Integrate position
-      p.x += p.vx * dt;
-      p.y += p.vy * dt;
+      this.advanceSpark(p, dt);
 
       // Retire sparks that have left the frame for good. Without this they
       // stayed in the pool for the whole of their lifetime: measured at Hot
@@ -908,28 +1056,16 @@ export class CharcoalSparkRenderer {
         continue;
       }
 
-      // Decay lifetime and temperature
-      p.life -= dt;
-      p.temperature = Math.max(0, p.life / p.maxLife);
-
-      // Shrink over life
-      if (params.shrinkOverLife) {
-        // Keep original spawn size encoded in maxLife ratio
-        // size stays constant first 50%, then shrinks
-        const lifeRatio = p.life / p.maxLife;
-        if (lifeRatio < 0.5) {
-          // sizeMin is the floor; original size is in p.size
-          // We don't want to keep overwriting, so just scale
-          // Actually we need original size. Use temperature as proxy:
-          // at t=0.5, size = full. at t=0, size = sizeMin
-          // Avoid storing extra data by using a smooth ramp
-        }
+      if (p.forkAt >= 0 && p.age >= p.forkAt) {
+        this.forkSpark(p, params);
+        continue;
       }
 
-      // Deactivate dead particles
-      if (p.life <= 0) {
+      if (p.age >= p.maxLife) {
         p.active = false;
+        continue;
       }
+      p.temperature = sparkHeat(p.age, p.burnTime, p.coolTime);
     }
   }
 
@@ -959,67 +1095,40 @@ export class CharcoalSparkRenderer {
   ): void {
     if (!this.sparkProgram || !this.sparkVAO) return;
 
-    // Build CPU arrays from active particles
+    const data = this.instanceData;
     let activeCount = 0;
     for (const p of this.particles) {
       if (!p.active) continue;
-      const i = activeCount;
-
-      // Position
-      this.positionData[i * 2] = p.x;
-      this.positionData[i * 2 + 1] = p.y;
-
-      // Size (shrink in last half of life if enabled)
-      let size = p.size;
-      if (params.shrinkOverLife) {
-        const lifeRatio = p.life / p.maxLife;
-        if (lifeRatio < 0.5) {
-          size *= lifeRatio * 2.0; // linear ramp from full to 0
-        }
-      }
-      this.sizeData[i] = size;
-
-      // Color from temperature
-      const t = p.temperature;
-      const [r, g, b] = this.temperatureToColor(t, params);
-
-      // Opacity: fade in first 5%, full until 70%, fade out last 30%
-      const lifeRatio = p.life / p.maxLife;
-      let opacity: number;
-      if (lifeRatio > 0.95) {
-        // Fade in: first 5% of life
-        opacity = (1.0 - lifeRatio) / 0.05;
-      } else if (lifeRatio > 0.3) {
-        // Full opacity
-        opacity = 1.0;
-      } else {
-        // Fade out: last 30%
-        opacity = lifeRatio / 0.3;
-      }
-
-      // Premultiply alpha for additive blending
-      const a = opacity;
-      this.colorData[i * 4] = r * a;
-      this.colorData[i * 4 + 1] = g * a;
-      this.colorData[i * 4 + 2] = b * a;
-      this.colorData[i * 4 + 3] = a;
-
+      const heat = p.temperature;
+      const [r, g, b] = this.temperatureToColor(heat, params);
+      const o = activeCount * STREAK_STRIDE;
+      data[o] = p.x;
+      data[o + 1] = p.y;
+      data[o + 2] = p.vx;
+      data[o + 3] = p.vy;
+      data[o + 4] = Math.max(
+        STREAK_MIN_HALF_WIDTH,
+        Math.min(STREAK_MAX_HALF_WIDTH, p.size * (0.55 + heat * 0.45))
+      );
+      data[o + 5] = r;
+      data[o + 6] = g;
+      data[o + 7] = b;
+      data[o + 8] = heat;
+      data[o + 9] = Math.min(1, heat / 0.35);
       activeCount++;
     }
 
     if (activeCount === 0) return;
 
-    // Upload to GPU
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
-    gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.positionData, 0, activeCount * 2);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.instanceBuffer);
+    gl.bufferSubData(
+      gl.ARRAY_BUFFER,
+      0,
+      data,
+      0,
+      activeCount * STREAK_STRIDE
+    );
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.sizeBuffer);
-    gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.sizeData, 0, activeCount);
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.colorBuffer);
-    gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.colorData, 0, activeCount * 4);
-
-    // Draw
     const prog = this.sparkProgram;
     gl.useProgram(prog.program);
     gl.uniform2f(
@@ -1028,9 +1137,17 @@ export class CharcoalSparkRenderer {
       resolution[1]
     );
     gl.uniform2f(prog.uniforms.get("u_viewbox")!, viewbox[0], viewbox[1]);
+    gl.uniform1f(prog.uniforms.get("u_shutter")!, SPARK_SHUTTER_SECONDS);
+    const [cr, cg, cb] = params.coreColor;
+    gl.uniform3f(
+      prog.uniforms.get("u_coreColor")!,
+      cr / 255,
+      cg / 255,
+      cb / 255
+    );
 
     gl.bindVertexArray(this.sparkVAO);
-    gl.drawArrays(gl.POINTS, 0, activeCount);
+    gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, activeCount);
     gl.bindVertexArray(null);
   }
 
@@ -1138,8 +1255,8 @@ export class CharcoalSparkRenderer {
       gl,
       SPARK_VERTEX,
       SPARK_FRAGMENT,
-      ["u_resolution", "u_viewbox"],
-      ["a_position", "a_size", "a_color"]
+      ["u_resolution", "u_viewbox", "u_shutter", "u_coreColor"],
+      ["a_corner", "a_head", "a_velocity", "a_width", "a_color", "a_heatAlpha"]
     );
     if (!this.sparkProgram) return false;
 
@@ -1238,38 +1355,46 @@ export class CharcoalSparkRenderer {
     const gl = this.gl!;
 
     // === Spark VAO ===
+    // One quad (a 4-vertex strip) drawn once per spark, with the spark's
+    // head, velocity, width, colour, heat and alpha as per-instance data.
     this.sparkVAO = gl.createVertexArray();
     gl.bindVertexArray(this.sparkVAO);
 
     const sparkProg = this.sparkProgram!;
 
-    // Position buffer (vec2)
-    this.positionBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
+    this.cornerBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.cornerBuffer);
     gl.bufferData(
       gl.ARRAY_BUFFER,
-      this.positionData.byteLength,
+      new Float32Array([0, -1, 0, 1, 1, -1, 1, 1]),
+      gl.STATIC_DRAW
+    );
+    const cornerLoc = sparkProg.attributes.get("a_corner")!;
+    gl.enableVertexAttribArray(cornerLoc);
+    gl.vertexAttribPointer(cornerLoc, 2, gl.FLOAT, false, 0, 0);
+
+    this.instanceBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.instanceBuffer);
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      this.instanceData.byteLength,
       gl.DYNAMIC_DRAW
     );
-    const posLoc = sparkProg.attributes.get("a_position")!;
-    gl.enableVertexAttribArray(posLoc);
-    gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
-
-    // Size buffer (float)
-    this.sizeBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.sizeBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, this.sizeData.byteLength, gl.DYNAMIC_DRAW);
-    const sizeLoc = sparkProg.attributes.get("a_size")!;
-    gl.enableVertexAttribArray(sizeLoc);
-    gl.vertexAttribPointer(sizeLoc, 1, gl.FLOAT, false, 0, 0);
-
-    // Color buffer (vec4)
-    this.colorBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.colorBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, this.colorData.byteLength, gl.DYNAMIC_DRAW);
-    const colorLoc = sparkProg.attributes.get("a_color")!;
-    gl.enableVertexAttribArray(colorLoc);
-    gl.vertexAttribPointer(colorLoc, 4, gl.FLOAT, false, 0, 0);
+    const stride = STREAK_STRIDE * 4;
+    const instanced: Array<[string, number, number]> = [
+      ["a_head", 2, 0],
+      ["a_velocity", 2, 2],
+      ["a_width", 1, 4],
+      ["a_color", 3, 5],
+      ["a_heatAlpha", 2, 8],
+    ];
+    for (const [name, size, offset] of instanced) {
+      const loc = sparkProg.attributes.get(name);
+      if (loc === undefined) continue;
+      gl.enableVertexAttribArray(loc);
+      gl.vertexAttribPointer(loc, size, gl.FLOAT, false, stride, offset * 4);
+      gl.vertexAttribDivisor(loc, 1);
+    }
 
     gl.bindVertexArray(null);
 
@@ -1300,18 +1425,12 @@ export class CharcoalSparkRenderer {
     const gl = this.gl;
     if (!gl) return;
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.instanceBuffer);
     gl.bufferData(
       gl.ARRAY_BUFFER,
-      this.positionData.byteLength,
+      this.instanceData.byteLength,
       gl.DYNAMIC_DRAW
     );
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.sizeBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, this.sizeData.byteLength, gl.DYNAMIC_DRAW);
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.colorBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, this.colorData.byteLength, gl.DYNAMIC_DRAW);
   }
 
   // ======================================================================
@@ -1327,9 +1446,8 @@ export class CharcoalSparkRenderer {
       if (this.emberVAO) gl.deleteVertexArray(this.emberVAO);
 
       // Delete buffers
-      if (this.positionBuffer) gl.deleteBuffer(this.positionBuffer);
-      if (this.sizeBuffer) gl.deleteBuffer(this.sizeBuffer);
-      if (this.colorBuffer) gl.deleteBuffer(this.colorBuffer);
+      if (this.cornerBuffer) gl.deleteBuffer(this.cornerBuffer);
+      if (this.instanceBuffer) gl.deleteBuffer(this.instanceBuffer);
       if (this.emberPositionBuffer) gl.deleteBuffer(this.emberPositionBuffer);
 
       // Delete programs
@@ -1341,15 +1459,14 @@ export class CharcoalSparkRenderer {
 
     this.sparkVAO = null;
     this.emberVAO = null;
-    this.positionBuffer = null;
-    this.sizeBuffer = null;
-    this.colorBuffer = null;
+    this.cornerBuffer = null;
+    this.instanceBuffer = null;
     this.emberPositionBuffer = null;
     this.sparkProgram = null;
     this.emberProgram = null;
     this.particles = [];
     this.ambientAccumulators.clear();
-    this.burstAccumulators.clear();
+    this.snapStates.clear();
 
     if (this.canvas) {
       if (typeof (this.canvas as any).remove === "function") {

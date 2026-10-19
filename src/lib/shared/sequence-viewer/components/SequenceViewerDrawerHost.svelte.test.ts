@@ -53,20 +53,19 @@ vi.mock(
   })
 );
 
-vi.mock("../state/sequence-viewer-overlay-state.svelte", () => ({
-  getSequenceOverlayState: () => ({
-    isOpen: false,
-    sequence: null,
-    initialBpm: 60,
-    initialStep: 0,
-    handPathMode: false,
-    playOnOpen: false,
-    sessionKey: 0,
-    dismissPath: null,
-    openedFromUrl: false,
-  }),
-  closeSequenceOverlay: vi.fn(),
-  openSequenceOverlay: mocks.openSequenceOverlay,
+vi.mock("../state/sequence-viewer-overlay-state.svelte", async () => {
+  const { closeOverlayStateStub, overlayStateStub } =
+    await import("./__test-stubs__/sequence-overlay-state-stub.svelte");
+  return {
+    getSequenceOverlayState: () => overlayStateStub,
+    closeSequenceOverlay: vi.fn(closeOverlayStateStub),
+    openSequenceOverlay: mocks.openSequenceOverlay,
+  };
+});
+
+vi.mock("../services/prefetch-sequence-viewer", () => ({
+  loadSequenceViewerContent: () =>
+    import("./__test-stubs__/SequenceViewerDrawerContentStub.svelte"),
 }));
 
 vi.mock("./SequenceViewerOrchestrator.svelte", async () => ({
@@ -81,6 +80,16 @@ vi.mock("./SequenceViewerShell.svelte", async () => ({
   ).default,
 }));
 
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import {
+  clearSequenceViewerPrewarm,
+  prewarmSequenceViewer,
+} from "../state/viewer-prewarm.svelte";
+import { contentStubCallbacks } from "./__test-stubs__/SequenceViewerDrawerContentStub.svelte";
+import {
+  closeOverlayStateStub,
+  overlayStateStub,
+} from "./__test-stubs__/sequence-overlay-state-stub.svelte";
 import SequenceViewerDrawerHost from "./SequenceViewerDrawerHost.svelte";
 
 describe("SequenceViewerDrawerHost URL bootstrap", () => {
@@ -212,5 +221,146 @@ describe("SequenceViewerDrawerHost URL bootstrap", () => {
     expect(
       mocks.resolveShortCodeWithRecord.mock.calls.map(([code]) => code)
     ).toEqual(["FIRST", "SECOND"]);
+  });
+});
+
+describe("SequenceViewerDrawerHost hidden viewer", () => {
+  const mounted = () =>
+    document.querySelectorAll(
+      "[data-testid='sequence-viewer-drawer-content-stub']"
+    ).length;
+
+  it("builds the hidden viewer again after the one it became is closed", async () => {
+    const sequence = {
+      id: "workspace",
+      word: "AB",
+      beats: [],
+    } as unknown as SequenceData;
+    prewarmSequenceViewer({
+      sequence,
+      analyticsSource: "create_workspace",
+      initialViewMode: "animation",
+      playOnOpen: true,
+    });
+    render(SequenceViewerDrawerHost);
+    await vi.waitFor(() => expect(mounted()).toBe(1), { timeout: 5000 });
+
+    // The tap opens the hidden viewer; openedFromUrl keeps the close from
+    // calling history.back() inside the test frame.
+    Object.assign(overlayStateStub, {
+      isOpen: true,
+      sequence,
+      playOnOpen: true,
+      openedFromUrl: true,
+      sessionKey: overlayStateStub.sessionKey + 1,
+    });
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    contentStubCallbacks.onClose?.();
+
+    await vi.waitFor(() => expect(mounted()).toBe(0), { timeout: 5000 });
+    await vi.waitFor(() => expect(mounted()).toBe(1), { timeout: 5000 });
+    clearSequenceViewerPrewarm(sequence);
+  });
+
+  it("wakes the hidden viewer once it is opened", async () => {
+    const sequence = {
+      id: "workspace-wake",
+      word: "AB",
+      beats: [],
+    } as unknown as SequenceData;
+    prewarmSequenceViewer({
+      sequence,
+      analyticsSource: "create_workspace",
+      initialViewMode: "animation",
+      playOnOpen: true,
+    });
+    render(SequenceViewerDrawerHost);
+    const stub = () =>
+      document.querySelector<HTMLElement>(
+        "[data-testid='sequence-viewer-drawer-content-stub']"
+      );
+    await vi.waitFor(() => expect(stub()?.dataset.dormant).toBe("true"), {
+      timeout: 5000,
+    });
+
+    Object.assign(overlayStateStub, {
+      isOpen: true,
+      sequence,
+      playOnOpen: true,
+      openedFromUrl: true,
+      sessionKey: overlayStateStub.sessionKey + 1,
+    });
+
+    // It wakes at the slide's start, or the fallback after it.
+    await vi.waitFor(() => expect(stub()?.dataset.dormant).toBe("false"), {
+      timeout: 5000,
+    });
+    expect(mounted()).toBe(1);
+    contentStubCallbacks.onClose?.();
+    clearSequenceViewerPrewarm(sequence);
+  });
+
+  it("hands a reopen the viewer that was rebuilt hidden after a close", async () => {
+    // The test before unmounts its host mid-close, leaving the stub open.
+    closeOverlayStateStub();
+    const sequence = {
+      id: "workspace-reopen",
+      word: "AB",
+      beats: [],
+    } as unknown as SequenceData;
+    prewarmSequenceViewer({
+      sequence,
+      analyticsSource: "create_workspace",
+      initialViewMode: "animation",
+      playOnOpen: true,
+    });
+    render(SequenceViewerDrawerHost);
+    const stub = () =>
+      document.querySelector<HTMLElement>(
+        "[data-testid='sequence-viewer-drawer-content-stub']"
+      );
+    const open = () =>
+      Object.assign(overlayStateStub, {
+        isOpen: true,
+        sequence,
+        playOnOpen: true,
+        openedFromUrl: true,
+        sessionKey: overlayStateStub.sessionKey + 1,
+      });
+    await vi.waitFor(() => expect(stub()?.dataset.dormant).toBe("true"), {
+      timeout: 5000,
+    });
+
+    open();
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    contentStubCallbacks.onClose?.();
+    await vi.waitFor(() => expect(mounted()).toBe(0), { timeout: 5000 });
+    await vi.waitFor(() => expect(stub()?.dataset.dormant).toBe("true"), {
+      timeout: 5000,
+    });
+
+    // The viewer remounts whenever its key changes, so a reopen that keys it
+    // differently from the hidden build throws that build away at the tap.
+    const hiddenKey = stub()?.dataset.sessionKey;
+    // It must stay asleep until the slide starts: waking builds its playback
+    // engine and canvases, which held the slide back by half a second.
+    const dormantValues: string[] = [];
+    const watcher = new MutationObserver((records) => {
+      for (const record of records) dormantValues.push(record.oldValue ?? "");
+    });
+    watcher.observe(stub()!, {
+      attributes: true,
+      attributeFilter: ["data-dormant"],
+      attributeOldValue: true,
+    });
+    open();
+    await vi.waitFor(() => expect(stub()?.dataset.dormant).toBe("false"), {
+      timeout: 5000,
+    });
+    watcher.disconnect();
+    expect(dormantValues).toEqual(["true"]);
+    expect(stub()?.dataset.sessionKey).toBe(hiddenKey);
+    contentStubCallbacks.onClose?.();
+    clearSequenceViewerPrewarm(sequence);
   });
 });

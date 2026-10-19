@@ -52,6 +52,14 @@ browser verification can clear a run, play one loop, read a JSON report, scrub
 to the worst samples, and capture screenshots. Empty callback frames matter:
 they are how clusters are closed instead of growing across unrelated beats.
 
+Repeated loops fold into one cluster per span start (performer, zone, step and
+tenth of a beat), keeping the deepest, so the audit stays the size of one loop
+however long playback runs. The snapshot mirrored to `sessionStorage` and the
+root element carries only the 40 deepest clusters plus `totalClusters`; the
+full list comes from `window.__avatarCollisionAudit.report()`. Before this
+(2026-10-18) the mirror reached 11 MB after ten minutes of playback and froze
+the viewer for 230 ms every fifth frame.
+
 ### 3. Plan a same-side upper-body stance
 
 Add one pure posture planner beside the shared 3D performer code. It receives

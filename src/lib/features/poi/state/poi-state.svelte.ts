@@ -1,8 +1,6 @@
 import type { StripPatternEngine } from "../services/strip-pattern-engine";
-import type { PoiDeviceManager } from "../services/poi-device-manager";
 import * as poiImageLibrary from "#lib/shared/poi/services/poi-image-library.js";
 import type { StripPattern, PatternParams, RGBColor } from "#lib/shared/poi/domain/strip-pattern.js";
-import type { PoiDeviceInfo } from "../domain/device-types";
 import type { IPatternPreset } from "#lib/shared/poi/domain/pattern-presets.js";
 import type { PatternTimeline, PatternClip } from "../domain/pattern-timeline-types";
 import type { PoiImageLibraryEntry } from "#lib/shared/poi/domain/poi-image-library-entry.js";
@@ -244,10 +242,7 @@ async function dataUrlToImageData(dataUrl: string): Promise<ImageData> {
   return ctx.getImageData(0, 0, img.width, img.height);
 }
 
-export function createPoiState(
-  patternEngine: StripPatternEngine,
-  deviceManager: PoiDeviceManager,
-) {
+export function createPoiState(patternEngine: StripPatternEngine) {
   const saved = loadSettings();
 
   // Pattern state
@@ -258,10 +253,6 @@ export function createPoiState(
   let activePresetId = $state<string>(saved.activePresetId ?? "solid");
   let ledCount = $state(saved.ledCount ?? 200);
   let frameCount = $state(saved.frameCount ?? 180);
-
-  // Device state
-  let connectedDevices = $state<PoiDeviceInfo[]>([]);
-  let uploadProgress = $state<number | null>(null);
 
   // 3D rendering state
   let persistenceDuration = $state(saved.persistenceDuration ?? 0.12);
@@ -529,42 +520,6 @@ export function createPoiState(
     if (!activePattern) return null;
     return patternEngine.toImageData(activePattern);
   }
-
-  async function scanDevices(): Promise<void> {
-    const devices = await deviceManager.scanAll();
-    connectedDevices = devices;
-  }
-
-  async function connectDevice(device: PoiDeviceInfo): Promise<void> {
-    await deviceManager.connect(device);
-    // Refresh device list
-    connectedDevices = deviceManager.connections.map((c) => c.deviceInfo);
-  }
-
-  async function uploadToDevice(deviceId: string, slot: number = 0): Promise<void> {
-    if (!activePattern) return;
-    uploadProgress = 0;
-    try {
-      await deviceManager.uploadPattern(deviceId, activePattern, slot, (pct) => {
-        uploadProgress = pct;
-      });
-    } finally {
-      uploadProgress = null;
-    }
-  }
-
-  async function uploadToAll(slot: number = 0): Promise<void> {
-    if (!activePattern) return;
-    uploadProgress = 0;
-    try {
-      await deviceManager.uploadToAll(activePattern, slot, (pct) => {
-        uploadProgress = pct;
-      });
-    } finally {
-      uploadProgress = null;
-    }
-  }
-
 
   /**
    * Paint a new clip covering [startStep..endStep], snapshotting the
@@ -897,8 +852,6 @@ export function createPoiState(
     get activePresetId() { return activePresetId; },
     get ledCount() { return ledCount; },
     get frameCount() { return frameCount; },
-    get connectedDevices() { return connectedDevices; },
-    get uploadProgress() { return uploadProgress; },
     get persistenceDuration() { return persistenceDuration; },
     get rpm() { return rpm; },
     get showFullDisc() { return showFullDisc; },
@@ -942,10 +895,6 @@ export function createPoiState(
     loadFromImage,
     loadFromFile,
     toImageData,
-    scanDevices,
-    connectDevice,
-    uploadToDevice,
-    uploadToAll,
 
     // Timeline actions
     paintClip,

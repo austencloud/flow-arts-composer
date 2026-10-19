@@ -54,7 +54,7 @@
 
   // Quarter-step rings. Cardinal floats land on cardinals, intercardinal on
   // intercardinals — matching what the guide/hand-path builders author.
-  const CARDINALS = [NORTH, EAST, SOUTH, WEST];
+  const CARDINALS: GridLocation[] = [NORTH, EAST, SOUTH, WEST];
   const INTERCARDINALS = [NORTHEAST, SOUTHEAST, SOUTHWEST, NORTHWEST];
 
   const nextOnRing = (ring: GridLocation[], loc: GridLocation, cw: boolean) => {

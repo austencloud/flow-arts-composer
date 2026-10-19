@@ -1,6 +1,7 @@
 import { routePathFor, SEO_LOCALES } from "./src/lib/shared/i18n/seo-locales";
 import { getEnabledFeaturesDefineMap } from "./src/config/feature-flags";
 import { postStudioDraftStoragePlugin } from "./scripts/post-studio-draft-storage.mjs";
+import { composerUnrealHostPlugin } from "./scripts/composer-unreal-host.mjs";
 import {
   ARROW_SPRITE_WATCH_PATH,
   createViteDevWatchIgnoredMatcher,
@@ -1202,6 +1203,7 @@ export default defineConfig(({ command, mode }) => ({
     ...getEnabledFeaturesDefineMap(),
   },
   plugins: [
+    composerUnrealHostPlugin(),
     unrealStreamUpgradePlugin(),
     postStudioDraftStoragePlugin(),
     createViteDependencyRefreshPlugin({ projectRoot: dirname }),

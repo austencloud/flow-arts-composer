@@ -47,11 +47,9 @@ describe("render-key effect geometry", () => {
       leftPropRenderKey: BUILD,
     };
     const sampler = new LedSampler();
-    const ledConfig = {
-      ...structuredClone(DEFAULT_LED_CONFIG),
-      enabled: true,
-      device: { ...DEFAULT_LED_CONFIG.device, ledCount: points.length },
-    };
+    // The default capsule device, whose two-LED count once capped a
+    // five-wick fan at two lit wicks.
+    const ledConfig = { ...structuredClone(DEFAULT_LED_CONFIG), enabled: true };
     let leds = sampler.update(centred(), null, config, 0, ledConfig);
     for (let t = 16; leds.length === 0 && t < 200; t += 16) {
       leds = sampler.update(centred(), null, config, t, ledConfig);
@@ -62,6 +60,31 @@ describe("render-key effect geometry", () => {
       expect(led.x - CENTRE).toBeCloseTo(points[index]!.dx, 3);
       expect(led.y - CENTRE).toBeCloseTo(points[index]!.dy, 3);
     });
+  });
+
+  it("lights all five Lotus wicks on a capsule", () => {
+    const lotus = "fan__lotus";
+    const points = getTipPoints(lotus).points;
+    expect(points).toHaveLength(5);
+    const config: LedSamplerConfig = {
+      canvasSize: CANVAS,
+      leftPropDimensions: BIGFAN,
+      rightPropDimensions: BIGFAN,
+      leftPropType: "fan",
+      rightPropType: "fan",
+      leftPropRenderKey: lotus,
+      rightPropRenderKey: lotus,
+    };
+    const sampler = new LedSampler();
+    const ledConfig = { ...structuredClone(DEFAULT_LED_CONFIG), enabled: true };
+    let leds = sampler.update(centred(), centred(), config, 0, ledConfig);
+    for (let t = 16; leds.length === 0 && t < 200; t += 16) {
+      leds = sampler.update(centred(), centred(), config, t, ledConfig);
+    }
+    for (const propIndex of [0, 1]) {
+      const prop = leds.filter((led) => led.propIndex === propIndex);
+      expect(prop.map((led) => led.endpointIndex)).toEqual([0, 1, 2, 3, 4]);
+    }
   });
 
   it("captures trails from the loaded build's primary tip", () => {

@@ -11,6 +11,7 @@ import { navigationState } from "#lib/shared/navigation/state/navigation-state.s
 import {
   commitDraft,
   getDraftHead,
+  keepDraftVersion,
   listStoredDraftVersions,
   storeDivergentDraft,
 } from "./draft-storage.js";
@@ -236,7 +237,6 @@ export class SequencePersister {
     this.markDirty(mode);
     const generation = this.dirtyGeneration.get(mode) ?? 0;
     return this.enqueue(mode, async () => {
-      const version = this.makeVersion(mode, snapshot, history);
       try {
         const current = this.getDraftStatus(mode).status;
         if (
@@ -244,15 +244,9 @@ export class SequencePersister {
           current === "conflict" ||
           this.pendingRecovery.has(mode)
         ) {
-          await storeDivergentDraft(version, this.writerId);
-          this.durableGeneration.set(mode, generation);
-          this.setStatus(mode, {
-            status: "conflict",
-            error: "Choose a draft version before continuing.",
-            candidates: await this.listDrafts(mode),
-          });
-          throw new Error("Choose a draft version before continuing.");
+          await this.takeOverDraft(mode);
         }
+        const version = this.makeVersion(mode, snapshot, history);
         // An ordinary reread never grants this editor permission to replace another tab's changes.
         const result = await commitDraft(
           mode,
@@ -269,9 +263,9 @@ export class SequencePersister {
             error: "Another tab changed this draft.",
             candidates: await this.listDrafts(mode),
           });
-          throw new Error(
-            "Another tab changed this draft. Choose a version to continue."
-          );
+          // This editor's work is kept in its conflict slot; its next save
+          // takes the draft over.
+          throw new Error("Another tab changed this draft.");
         }
         this.revisions.set(mode, result.revision);
         await this.writePrimary(version);
@@ -288,6 +282,11 @@ export class SequencePersister {
             error: null,
             candidates: [],
           });
+        } else if (
+          ["recovery", "conflict"].includes(this.getDraftStatus(mode).status)
+        ) {
+          // Newer edits are queued; this editor already owns the draft.
+          this.setStatus(mode, { status: "saving", error: null });
         }
       } catch (error) {
         if (this.getDraftStatus(mode).status !== "conflict") {
@@ -296,6 +295,28 @@ export class SequencePersister {
         throw error;
       }
     });
+  }
+  /**
+   * Editing while another version is waiting makes this editor's work the
+   * draft. Nobody has to choose first: the waiting versions stay listed in
+   * Drafts, because commitDraft keeps the replaced head in its session slot.
+   */
+  private async takeOverDraft(mode: ActiveCreateModule): Promise<void> {
+    const head = await getDraftHead(mode);
+    const retry = this.pendingRecovery.get(mode);
+    if (retry) await keepDraftVersion(retry);
+    if (!head) {
+      // A legacy backup is only listed while no head exists.
+      const backup = await this.legacyBackup(mode);
+      if (backup) await keepDraftVersion(backup);
+    }
+    // Sharing the head's session would push its version out of the slot.
+    if (head?.version?.sessionId === this.session(mode)) {
+      this.sessions.set(mode, newId());
+    }
+    this.revisions.set(mode, head?.revision ?? null);
+    this.pendingRecovery.delete(mode);
+    this.preparedResumes.delete(mode);
   }
   async retrySave(mode: ActiveCreateModule): Promise<void> {
     const pending = this.pending.get(mode);

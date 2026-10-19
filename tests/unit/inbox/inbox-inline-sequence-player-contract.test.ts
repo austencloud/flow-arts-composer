@@ -58,7 +58,7 @@ describe("inbox inline sequence player contract", () => {
     expect(showcase).toContain('class="card-layer"');
     expect(showcase).toContain('class="strip-zone"');
     expect(showcase).toContain("currentStep: playbackStep");
-    expect(showcase).toContain("playbackStep = step;");
+    expect(showcase).toContain("if (whole !== playbackStep) playbackStep = whole;");
     expect(showcase).toContain("onStepChange?.(step, sequenceId);");
     expect(showcase).toContain("initialStep?: number | null;");
     expect(showcase).toContain(

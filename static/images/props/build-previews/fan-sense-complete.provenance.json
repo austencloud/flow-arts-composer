@@ -1,0 +1,15 @@
+{
+  "referenceVersion": 1,
+  "source": "Flow DNA Sense Fan",
+  "output": {
+    "path": "static/images/props/build-previews/fan-sense-complete.webp",
+    "width": 640,
+    "height": 440
+  },
+  "sourceSha256": {
+    "scripts/assets/sense-fan-reference.json": "7c684356d29fe129d94fdc757f2e9abb60a0405b9da82384b3f4748e5217fb9b",
+    "scripts/build-sense-fan.py": "ae8ccd0507ee7e3f36cdeeb05f20c5215086c232ea1bb13dd8be2e58035b0677",
+    "static/models/props/fan-sense.glb": "f8dec33ef4ffb8e50250f1b953d1188304279a5810dcdf55b96b28f4aa27de5a",
+    "static/images/props/appearances/fan-sense.svg": "9b6be3f92b2479959c99131c2fe379f2dae1e8fe4d4394da4844275015304ead"
+  }
+}

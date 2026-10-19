@@ -53,10 +53,9 @@ const vertexShader = /* glsl */ `
     vSeed = aSeed;
     vPropColor = aPropColor;
 
-    // Size over life: born small at the wick, swells, frays + shrinks at death.
-    float grow = smoothstep(0.0, 0.18, aLife);
-    float taper = 1.0 - smoothstep(0.5, 1.0, aLife) * 0.6;
-    float sizeMul = (0.5 + 0.85 * grow) * taper;
+    // aSize already widens with age as the gas mixes with air (fire-physics);
+    // the last of the gas thins as it burns out.
+    float sizeMul = 1.0 - smoothstep(0.6, 1.0, aLife) * 0.45;
 
     // View-space billboard: stretch axis = velocity projected to the screen.
     vec3 centerView = (modelViewMatrix * vec4(aCenter, 1.0)).xyz;
@@ -131,17 +130,20 @@ const fragmentShader = /* glsl */ `
     float xc = vUv.x - 0.5; // -0.5 .. 0.5 across
     float yc = vUv.y - 0.5; // -0.5 .. 0.5 along (velocity)
 
-    // Smooth elongated Gaussian. Tighter across than along so the velocity-
-    // stretched quad reads as a soft tongue, with zero hard edges anywhere.
+    // Elongated Gaussian, tighter across than along so the velocity-stretched
+    // quad reads as a tongue. The edge window takes it to zero before the quad
+    // ends; a Gaussian alone still shows the quad's straight sides.
     float across = abs(xc) * 2.0;
     float along = abs(yc) * 2.0;
-    float g = exp(-(across * across * 3.0 + along * along * 1.5));
+    float g = exp(-(across * across * 3.0 + along * along * 2.0));
+    g *= (1.0 - smoothstep(0.7, 1.0, across)) * (1.0 - smoothstep(0.7, 1.0, along));
 
-    // Scrolling fBm tears the blob into filaments and wispy edges. Low floor so
-    // thin areas vanish to nothing instead of holding a defined boundary.
-    float fray = fbm(vec2(xc * 4.5 + vSeed * 19.0,
-                          vUv.y * 4.5 - uTime * 2.2 + vSeed * 8.0));
-    float shape = clamp(g * (0.3 + 0.85 * fray), 0.0, 1.0);
+    // Scrolling fBm tears the blob into tongues. The luminous zone of a real
+    // flame has a fairly defined edge, so the noise cuts it rather than only
+    // dimming it, and thin areas vanish.
+    float fray = fbm(vec2(xc * 5.0 + vSeed * 19.0,
+                          vUv.y * 5.0 - uTime * 2.6 + vSeed * 8.0));
+    float shape = smoothstep(0.12, 0.6, g * (0.25 + 1.0 * fray));
     if (shape < 0.004) discard;
 
     // Blackbody ramp across normalized age.
@@ -173,14 +175,14 @@ const fragmentShader = /* glsl */ `
     //   wick: ~2.3x at birth, gone by 15% of life -> a hot, quickly-damping core
     //   body: full -> 12%, cooling over the first 45% of life
     float wick = (1.0 - smoothstep(0.0, 0.15, vLife)) * 1.3;
-    float body = mix(1.0, 0.12, smoothstep(0.0, 0.45, vLife));
+    float body = mix(1.0, 0.2, smoothstep(0.15, 0.9, vLife));
     float emis = uEmissiveHot * (body + wick);
     color *= emis * (0.7 + 0.55 * fray);
 
-    // Lifetime alpha: quick flash-in, then fade out EARLY (gone by ~70% of
-    // life) so the small cool particles disappear instead of lingering as haze.
+    // Lifetime alpha: quick flash-in, then a fade across the back half. Life
+    // is the gas's real burn time (fire-physics), so the glow lasts all of it.
     float fadeIn = smoothstep(0.0, 0.05, vLife);
-    float fadeOut = 1.0 - smoothstep(0.3, 0.7, vLife);
+    float fadeOut = 1.0 - smoothstep(0.45, 1.0, vLife);
     float alpha = shape * fadeIn * fadeOut;
     if (alpha < 0.004) discard;
 

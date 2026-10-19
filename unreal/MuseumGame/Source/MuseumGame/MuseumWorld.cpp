@@ -204,9 +204,9 @@ bool AMuseumWorld::LoadMuseum()
             RoomCollision.Add(FloorCollision);
         }
 
-        // The imported Water, Fire and Earth shells carry their own lightmaps
-        // and the source scene supplies a small set of point-light fixtures.
-        if (bCaveShell) continue;
+        // Isolation is lit by editable, named actors in the Museum level.
+        // Runtime room lights here would double the authored rig in play.
+        if (bCaveShell || Room.Id == TEXT("isolation")) continue;
         const bool bCave = Room.Theme == TEXT("cave");
         const FLinearColor LightColor = Room.Id.Contains(TEXT("water")) ? FLinearColor(.45f, .7f, 1.f)
             : Room.Id.Contains(TEXT("fire")) ? FLinearColor(1.f, .48f, .2f)
@@ -379,12 +379,14 @@ bool AMuseumWorld::LoadMuseum()
         const float Yaw = Facing == TEXT("north") ? -90.f : Facing == TEXT("south") ? 90.f : Facing == TEXT("west") ? 180.f : 0.f;
         if (!SequenceId.IsEmpty())
         {
+            // Isolation's two rows present toward the visitor aisle.
+            const float ExhibitYaw = StringField(Json, TEXT("id")).StartsWith(TEXT("iso-")) ? Yaw + 180.f : Yaw;
             FActorSpawnParameters StationSpawn;
             StationSpawn.Owner = this;
             StationSpawn.Name = FName(*FString::Printf(TEXT("MuseumPerformer_%02d"), Index));
             StationSpawn.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
             AMuseumPerformerStation* Station = GetWorld()->SpawnActor<AMuseumPerformerStation>(
-                AMuseumPerformerStation::StaticClass(), Feet, FRotator(0, Yaw, 0), StationSpawn);
+                AMuseumPerformerStation::StaticClass(), Feet, FRotator(0, ExhibitYaw, 0), StationSpawn);
             if (!Station)
             {
                 UE_LOG(LogTemp, Error, TEXT("Museum performer %s could not spawn"), *StringField(Json, TEXT("id")));
@@ -409,6 +411,9 @@ bool AMuseumWorld::LoadMuseum()
                     NumberField(Playback, TEXT("rate"), 1.0));
             }
             AnimatedStations.Add(Station);
+            if (Station->IsReady() && Station->GetStationId() == TEXT("iso-1") &&
+                FParse::Param(FCommandLine::Get(), TEXT("MuseumReviewFire")))
+                Station->GetProp()->SetFinish(TEXT("fire"));
             continue;
         }
         UStaticMesh* Mesh = AvatarMeshes[Index % UE_ARRAY_COUNT(AvatarIds)];
@@ -859,6 +864,8 @@ void AMuseumWorld::RefreshFireVisuals()
                 if (I >= 3) continue;
                 const bool bShow = I == Displayed;
                 const bool bPlay = I == Lit && FVector2D::Distance(FireVisitorPosition, FireCourts[I].Centre) < 3000.f;
+                if (UFlowFestPropComponent* Prop = Station->GetProp())
+                    Prop->SetFinish(bShow && I == Lit && !bFlamesOut ? FName(TEXT("fire")) : NAME_None);
                 if (Station->IsHidden() != !bShow) Station->SetActorHiddenInGame(!bShow);
                 if (Station->IsPlaying() != bPlay) Station->TogglePlayback();
             }

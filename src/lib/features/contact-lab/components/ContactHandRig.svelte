@@ -10,6 +10,7 @@
     Group,
     Mesh,
     MeshStandardMaterial,
+    type Material,
   } from "three";
   import { clone as cloneSkeleton } from "three/examples/jsm/utils/SkeletonUtils.js";
   import type {
@@ -51,7 +52,7 @@
         child.castShadow = false;
         child.receiveShadow = false;
         const usesMaterialArray = Array.isArray(child.material);
-        const sourceMaterials = usesMaterialArray
+        const sourceMaterials: Material[] = usesMaterialArray
           ? child.material
           : [child.material];
         const nextMaterials = sourceMaterials.map((source) => {

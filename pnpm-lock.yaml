@@ -9,7 +9,7 @@ patchedDependencies:
     hash: c3af8573dd6280639488ac6ca0725551a64d91575fbdfb9d86ff2bc3a2af7e06
     path: patches/@austencloud__backgrounds@0.7.12.patch
   '@austencloud/scene-3d@0.1.6':
-    hash: 2a56f00239d9837aea228e5f8014e245a943a4513fda28b3bd654d547c16449d
+    hash: a89b6358c66fe225f2c325c6bf7530ca240db16bb7d9f5cda35d05c8d566340d
     path: patches/@austencloud__scene-3d@0.1.6.patch
   rollup@4.57.1:
     hash: 6b60c20b3aab385a92f1669e15227e7bc9ad56e476a3847cadafd55aacf41847
@@ -49,6 +49,9 @@ importers:
       '@austencloud/chip-toggle':
         specifier: ^0.1.0
         version: 0.1.0(svelte@5.57.2(@typescript-eslint/types@8.59.4))
+      '@austencloud/drawer':
+        specifier: file:vendor/austencloud-drawer-0.2.0.tgz
+        version: file:vendor/austencloud-drawer-0.2.0.tgz(svelte@5.57.2(@typescript-eslint/types@8.59.4))
       '@austencloud/media-spotlight':
         specifier: ^1.0.2
         version: 1.0.2(svelte@5.57.2(@typescript-eslint/types@8.59.4))
@@ -69,16 +72,19 @@ importers:
         version: file:vendor/austencloud-phone-sign-in-0.1.0.tgz(svelte@5.57.2(@typescript-eslint/types@8.59.4))
       '@austencloud/scene-3d':
         specifier: ^0.1.6
-        version: 0.1.6(patch_hash=2a56f00239d9837aea228e5f8014e245a943a4513fda28b3bd654d547c16449d)(@threlte/core@8.3.1(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0))(@threlte/extras@9.7.1(@types/three@0.182.0)(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0))(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0)
+        version: 0.1.6(patch_hash=a89b6358c66fe225f2c325c6bf7530ca240db16bb7d9f5cda35d05c8d566340d)(@threlte/core@8.3.1(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0))(@threlte/extras@9.7.1(@types/three@0.182.0)(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0))(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0)
       '@austencloud/sidebar':
         specifier: file:vendor/austencloud-sidebar-1.2.0.tgz
         version: file:vendor/austencloud-sidebar-1.2.0.tgz(svelte@5.57.2(@typescript-eslint/types@8.59.4))
       '@austencloud/theme':
         specifier: ^0.1.0
         version: 0.1.0(svelte@5.57.2(@typescript-eslint/types@8.59.4))
+      '@austencloud/ui':
+        specifier: file:vendor/austencloud-ui-0.1.0.tgz
+        version: file:vendor/austencloud-ui-0.1.0.tgz(svelte@5.57.2(@typescript-eslint/types@8.59.4))
       '@austencloud/video-editor':
-        specifier: ^0.1.2
-        version: 0.1.2(mediabunny@1.44.2)(svelte@5.57.2(@typescript-eslint/types@8.59.4))
+        specifier: file:vendor/austencloud-video-editor-0.1.3.tgz
+        version: file:vendor/austencloud-video-editor-0.1.3.tgz(mediabunny@1.44.2)(svelte@5.57.2(@typescript-eslint/types@8.59.4))
       '@capacitor-firebase/authentication':
         specifier: 8.3.0
         version: 8.3.0(@capacitor/core@8.4.2)(firebase@12.13.0)
@@ -727,6 +733,21 @@ importers:
         specifier: ^5.0.0
         version: 5.9.3
 
+  packages/tka-pictograph:
+    devDependencies:
+      '@types/node':
+        specifier: ^25.0.3
+        version: 25.2.0
+      esbuild:
+        specifier: ^0.28.1
+        version: 0.28.1
+      typescript:
+        specifier: ^5.0.0
+        version: 5.9.3
+      vitest:
+        specifier: ^4.1.11
+        version: 4.1.11(@opentelemetry/api@1.9.0)(@types/node@25.2.0)(@vitest/browser-playwright@4.1.11)(jsdom@28.1.0(canvas@3.2.1))(vite@8.3.4(@types/node@25.2.0)(esbuild@0.28.1)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.0))
+
   packages/tka-types:
     devDependencies:
       rimraf:
@@ -857,6 +878,12 @@ packages:
     peerDependencies:
       svelte: ^5.0.0
 
+  '@austencloud/drawer@file:vendor/austencloud-drawer-0.2.0.tgz':
+    resolution: {integrity: sha512-gOjYU2GmJO741M8HHyUcVw4syXEZn9Sg2jInhCBZlKZAuFGwSf7dZ2UdjpUvF92FxUiX1IAinEwxTOo+wHWRPw==, tarball: file:vendor/austencloud-drawer-0.2.0.tgz}
+    version: 0.2.0
+    peerDependencies:
+      svelte: ^5.0.0
+
   '@austencloud/media-spotlight@1.0.2':
     resolution: {integrity: sha512-7xUoMUd23tgWv2qSEwrYPjZKRkwQ8A2X6wuins/0MNpDz0iVBjrBLF9mRfqaQZlLOkhnkNbJcr2uYLGOmNsVuQ==}
     peerDependencies:
@@ -875,6 +902,11 @@ packages:
 
   '@austencloud/media-tagging-ui@0.1.0':
     resolution: {integrity: sha512-XOhRlb3aGA67Cgiju2A5uvGU8zAB9N+nMWOKBnjaeNPtCipUNKTOdizYhWdchSodrYVRaT3Mj0cdmE3cZI/sog==}
+    peerDependencies:
+      svelte: ^5.0.0
+
+  '@austencloud/motion@0.1.3':
+    resolution: {integrity: sha512-wIktnWvD6oLWzCKHOxjDSnqQP+z/GQkQ6KFSS+cp1KFA9dYeCqJV8vbaopsrnaXh1td2kuqLMDeznwUVDeMcag==}
     peerDependencies:
       svelte: ^5.0.0
 
@@ -902,7 +934,7 @@ packages:
       three: '>=0.170.0'
 
   '@austencloud/sidebar@file:vendor/austencloud-sidebar-1.2.0.tgz':
-    resolution: {integrity: sha512-KJ0Rot6VgtWzrs7OZCLzH67aGvpJ4S7z5IvF5WrFElFC+yaZ1EAyQTuwWB+A87dVT/Mct1LR0xFZeD9IQ5HV+w==, tarball: file:vendor/austencloud-sidebar-1.2.0.tgz}
+    resolution: {integrity: sha512-hkBaYRUiwmF6kejOdcyq8CrM93XqSEL3c670k1r4L30hyB0QOHl2m95pVYhWWbq4pPIL77mU1KjzpDWS3ngX7w==, tarball: file:vendor/austencloud-sidebar-1.2.0.tgz}
     version: 1.2.0
     peerDependencies:
       svelte: ^5.0.0
@@ -912,8 +944,15 @@ packages:
     peerDependencies:
       svelte: ^5.0.0
 
-  '@austencloud/video-editor@0.1.2':
-    resolution: {integrity: sha512-CS0Q9rvvjT3jojThq8avmxWhi4Th6dUNOr/dv0UexvY9NuDHlTTHlfab9nCktQQkp2iQ/IrdJvwOpIORVe+YUg==}
+  '@austencloud/ui@file:vendor/austencloud-ui-0.1.0.tgz':
+    resolution: {integrity: sha512-QkVKLEGr2IQC74dyn3t5o3wO+nscMJiXjdr5SfJLzj/no6g2uV/5YhS+Bdpssj8n/nhLzleKq1zXwdaqmMI3Gw==, tarball: file:vendor/austencloud-ui-0.1.0.tgz}
+    version: 0.1.0
+    peerDependencies:
+      svelte: ^5.0.0
+
+  '@austencloud/video-editor@file:vendor/austencloud-video-editor-0.1.3.tgz':
+    resolution: {integrity: sha512-yu7tDL0IY2kik+SzeepPxcenXbffzqVpt5BZdGdsdViNOpvYtOyqdNCnaG0wPhj1sr4CPdM6/uOqBKN+DLEHlA==, tarball: file:vendor/austencloud-video-editor-0.1.3.tgz}
+    version: 0.1.3
     peerDependencies:
       mediabunny: ^1.44.0
       svelte: ^5.0.0
@@ -9671,6 +9710,10 @@ snapshots:
     dependencies:
       svelte: 5.57.2(@typescript-eslint/types@8.59.4)
 
+  '@austencloud/drawer@file:vendor/austencloud-drawer-0.2.0.tgz(svelte@5.57.2(@typescript-eslint/types@8.59.4))':
+    dependencies:
+      svelte: 5.57.2(@typescript-eslint/types@8.59.4)
+
   '@austencloud/media-spotlight@1.0.2(svelte@5.57.2(@typescript-eslint/types@8.59.4))':
     dependencies:
       svelte: 5.57.2(@typescript-eslint/types@8.59.4)
@@ -9692,6 +9735,10 @@ snapshots:
       '@austencloud/media-tagging-types': 0.1.0
       svelte: 5.57.2(@typescript-eslint/types@8.59.4)
 
+  '@austencloud/motion@0.1.3(svelte@5.57.2(@typescript-eslint/types@8.59.4))':
+    dependencies:
+      svelte: 5.57.2(@typescript-eslint/types@8.59.4)
+
   '@austencloud/motion@file:vendor/austencloud-motion-0.2.1.tgz(svelte@5.57.2(@typescript-eslint/types@8.59.4))':
     dependencies:
       svelte: 5.57.2(@typescript-eslint/types@8.59.4)
@@ -9702,7 +9749,7 @@ snapshots:
     optionalDependencies:
       svelte: 5.57.2(@typescript-eslint/types@8.59.4)
 
-  '@austencloud/scene-3d@0.1.6(patch_hash=2a56f00239d9837aea228e5f8014e245a943a4513fda28b3bd654d547c16449d)(@threlte/core@8.3.1(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0))(@threlte/extras@9.7.1(@types/three@0.182.0)(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0))(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0)':
+  '@austencloud/scene-3d@0.1.6(patch_hash=a89b6358c66fe225f2c325c6bf7530ca240db16bb7d9f5cda35d05c8d566340d)(@threlte/core@8.3.1(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0))(@threlte/extras@9.7.1(@types/three@0.182.0)(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0))(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0)':
     dependencies:
       '@threlte/core': 8.3.1(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0)
       '@threlte/extras': 9.7.1(@types/three@0.182.0)(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0)
@@ -9717,7 +9764,12 @@ snapshots:
     dependencies:
       svelte: 5.57.2(@typescript-eslint/types@8.59.4)
 
-  '@austencloud/video-editor@0.1.2(mediabunny@1.44.2)(svelte@5.57.2(@typescript-eslint/types@8.59.4))':
+  '@austencloud/ui@file:vendor/austencloud-ui-0.1.0.tgz(svelte@5.57.2(@typescript-eslint/types@8.59.4))':
+    dependencies:
+      '@austencloud/motion': 0.1.3(svelte@5.57.2(@typescript-eslint/types@8.59.4))
+      svelte: 5.57.2(@typescript-eslint/types@8.59.4)
+
+  '@austencloud/video-editor@file:vendor/austencloud-video-editor-0.1.3.tgz(mediabunny@1.44.2)(svelte@5.57.2(@typescript-eslint/types@8.59.4))':
     dependencies:
       '@fortawesome/free-solid-svg-icons': 7.3.1
       dexie: 4.3.0
@@ -11941,7 +11993,7 @@ snapshots:
     dependencies:
       '@types/estree': 1.0.8
       estree-walker: 2.0.2
-      picomatch: 4.0.5
+      picomatch: 4.0.7
     optionalDependencies:
       rollup: 4.57.1(patch_hash=6b60c20b3aab385a92f1669e15227e7bc9ad56e476a3847cadafd55aacf41847)
 
@@ -12802,7 +12854,7 @@ snapshots:
       '@vitest/mocker': 4.1.11(vite@8.3.4(@types/node@25.2.0)(esbuild@0.28.1)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.0))
       playwright: 1.61.1
       tinyrainbow: 3.1.0
-      vitest: 4.1.11(@opentelemetry/api@1.9.0)(@types/node@25.2.0)(@vitest/browser-playwright@4.1.11)(jsdom@27.4.0(canvas@3.2.1))(vite@8.3.4(@types/node@25.2.0)(esbuild@0.28.1)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.0))
+      vitest: 4.1.11(@opentelemetry/api@1.9.0)(@types/node@25.2.0)(@vitest/browser-playwright@4.1.11)(jsdom@28.1.0(canvas@3.2.1))(vite@8.3.4(@types/node@25.2.0)(esbuild@0.28.1)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.0))
     transitivePeerDependencies:
       - bufferutil
       - msw
@@ -18607,7 +18659,7 @@ snapshots:
       magic-string: 0.30.21
       obug: 2.1.1
       pathe: 2.0.3
-      picomatch: 4.0.5
+      picomatch: 4.0.7
       std-env: 4.3.0
       tinybench: 2.9.0
       tinyexec: 1.0.2
@@ -18620,6 +18672,36 @@ snapshots:
       '@types/node': 25.2.0
       '@vitest/browser-playwright': 4.1.11(playwright@1.61.1)(vite@8.3.4(@types/node@25.2.0)(esbuild@0.28.1)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.0))(vitest@4.1.11)
       jsdom: 27.4.0(canvas@3.2.1)
+    transitivePeerDependencies:
+      - msw
+
+  vitest@4.1.11(@opentelemetry/api@1.9.0)(@types/node@25.2.0)(@vitest/browser-playwright@4.1.11)(jsdom@28.1.0(canvas@3.2.1))(vite@8.3.4(@types/node@25.2.0)(esbuild@0.28.1)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.0)):
+    dependencies:
+      '@vitest/expect': 4.1.11
+      '@vitest/mocker': 4.1.11(vite@8.3.4(@types/node@25.2.0)(esbuild@0.28.1)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.0))
+      '@vitest/pretty-format': 4.1.11
+      '@vitest/runner': 4.1.11
+      '@vitest/snapshot': 4.1.11
+      '@vitest/spy': 4.1.11
+      '@vitest/utils': 4.1.11
+      es-module-lexer: 2.3.2
+      expect-type: 1.3.0
+      magic-string: 0.30.21
+      obug: 2.1.1
+      pathe: 2.0.3
+      picomatch: 4.0.7
+      std-env: 4.3.0
+      tinybench: 2.9.0
+      tinyexec: 1.0.2
+      tinyglobby: 0.2.17
+      tinyrainbow: 3.1.0
+      vite: 8.3.4(@types/node@25.2.0)(esbuild@0.28.1)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.0)
+      why-is-node-running: 2.3.0
+    optionalDependencies:
+      '@opentelemetry/api': 1.9.0
+      '@types/node': 25.2.0
+      '@vitest/browser-playwright': 4.1.11(playwright@1.61.1)(vite@8.3.4(@types/node@25.2.0)(esbuild@0.28.1)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.0))(vitest@4.1.11)
+      jsdom: 28.1.0(canvas@3.2.1)
     transitivePeerDependencies:
       - msw
 

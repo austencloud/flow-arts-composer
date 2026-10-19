@@ -21,15 +21,32 @@ import {
   resolveTrails3D,
 } from "#lib/shared/effects/translators/webgl3d-translator.js";
 
-vi.mock("#lib/shared/3d/domain/performer-upper-body-stance.js", () => ({
-  resolvePerformerUpperBodyStance: () => ({
-    yawRad: 0.25,
-    pitchRad: -0.1,
-    segments: { spine1Rad: 0.1, spine2Rad: 0.2, headLagRad: 0.3 },
-    leftDepthOffsetM: 0.07,
-    rightDepthOffsetM: -0.04,
-  }),
-}));
+// The snapshot reads its stance from the contact owner (62d2469e6b). Only the
+// stance is pinned; the props still come from the real owner.
+vi.mock(
+  "#lib/shared/3d/domain/performer-contact-displacement.js",
+  async (importOriginal) => {
+    const actual =
+      await importOriginal<
+        typeof import("#lib/shared/3d/domain/performer-contact-displacement.js")
+      >();
+    return {
+      ...actual,
+      resolvePerformerContact: (
+        ...args: Parameters<typeof actual.resolvePerformerContact>
+      ) => ({
+        ...actual.resolvePerformerContact(...args),
+        stance: {
+          yawRad: 0.25,
+          pitchRad: -0.1,
+          segments: { spine1Rad: 0.1, spine2Rad: 0.2, headLagRad: 0.3 },
+          leftDepthOffsetM: 0.07,
+          rightDepthOffsetM: -0.04,
+        },
+      }),
+    };
+  }
+);
 
 const PROP_BUILD = {
   finish: "fire",

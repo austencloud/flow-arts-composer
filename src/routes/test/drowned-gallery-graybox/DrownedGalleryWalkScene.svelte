@@ -317,27 +317,27 @@
         fixture.kind !== "case-showcase"
     )
     .map((fixture) => ({
-    id: fixture.id,
-    kind: fixture.kind,
-    position: [
-      fixture.centre.x - origin.x,
-      fixture.baseY + fixture.height / 2,
-      fixture.centre.z - origin.z,
-    ] as [number, number, number],
-    scale: [fixture.size.x, fixture.height, fixture.size.z] as [
-      number,
-      number,
-      number,
-    ],
-    rotation: [0, fixture.facing, 0] as [number, number, number],
-    color:
-      fixture.kind === "case-screen"
-        ? "#123742"
-        : fixture.kind === "case-showcase"
-          ? "#6b7f86"
-          : "#2b3a41",
-    emissive: fixture.kind === "case-screen" ? "#1d6d84" : "#000000",
-  }));
+      id: fixture.id,
+      kind: fixture.kind,
+      position: [
+        fixture.centre.x - origin.x,
+        fixture.baseY + fixture.height / 2,
+        fixture.centre.z - origin.z,
+      ] as [number, number, number],
+      scale: [fixture.size.x, fixture.height, fixture.size.z] as [
+        number,
+        number,
+        number,
+      ],
+      rotation: [0, fixture.facing, 0] as [number, number, number],
+      color:
+        fixture.kind === "case-screen"
+          ? "#123742"
+          : fixture.kind === "case-showcase"
+            ? "#6b7f86"
+            : "#2b3a41",
+      emissive: fixture.kind === "case-screen" ? "#1d6d84" : "#000000",
+    }));
 
   /**
    * One console per performer.
@@ -402,7 +402,10 @@
       // room changes as the visitor arrives, and nothing dims.
       const awake = Math.min(
         1,
-        Math.max(0, (CONSOLE_WAKE_M - distance) / (CONSOLE_WAKE_M - CONSOLE_FULL_M))
+        Math.max(
+          0,
+          (CONSOLE_WAKE_M - distance) / (CONSOLE_WAKE_M - CONSOLE_FULL_M)
+        )
       );
       const engaged: Record<string, boolean> = settings
         ? {
@@ -677,7 +680,11 @@
   const resumePoint = readResumePoint();
   const bootPoint = resumePoint ?? { ...spawn };
 
-  let playerPosition = $state({ x: bootPoint.x, y: bootPoint.y, z: bootPoint.z });
+  let playerPosition = $state({
+    x: bootPoint.x,
+    y: bootPoint.y,
+    z: bootPoint.z,
+  });
   let playerYaw = $state(bootPoint.yaw);
   let targetPlayerYaw = $state(bootPoint.yaw);
   /** Non-null only for the tick the review bridge is aiming the camera. */
@@ -745,7 +752,9 @@
       if (!raw) return null;
       const point = JSON.parse(raw) as Partial<ResumePoint>;
       const values = [point.x, point.y, point.z, point.yaw];
-      if (!values.every((value) => typeof value === "number" && isFinite(value))) {
+      if (
+        !values.every((value) => typeof value === "number" && isFinite(value))
+      ) {
         return null;
       }
       return point as ResumePoint;
@@ -1158,7 +1167,7 @@
     position={pedestal.position}
     height={pedestal.height}
     diameter={pedestal.diameter}
-    faceUri={pedestal.faceUri}
+    faceUri={pedestal.faceUri ?? null}
     tint={WATER_TINT}
     animated={pedestal.animated}
   />
@@ -1196,11 +1205,7 @@
        to make room for it, which is the whole difference between a light in a
        room and an interface overlay. -->
   <T.PointLight
-    position={[
-      station.keyLight[0],
-      station.keyLight[1],
-      station.keyLight[2],
-    ]}
+    position={[station.keyLight[0], station.keyLight[1], station.keyLight[2]]}
     color="#cfeff8"
     intensity={22 * station.awake}
     distance={6}

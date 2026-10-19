@@ -3,6 +3,7 @@
 #include "Async/Async.h"
 #include "Camera/CameraActor.h"
 #include "Camera/CameraComponent.h"
+#include "Camera/PlayerCameraManager.h"
 #include "Components/DirectionalLightComponent.h"
 #include "Components/PointLightComponent.h"
 #include "Components/SceneComponent.h"
@@ -15,6 +16,8 @@
 #include "IPixelStreaming2Streamer.h"
 #include "Json.h"
 #include "Materials/MaterialInterface.h"
+#include "Misc/FileHelper.h"
+#include "Misc/Paths.h"
 
 namespace
 {
@@ -144,6 +147,45 @@ void AComposerViewerStage::BeginPlay()
     bFanReady = FanProbe && FanProbe->Configure(TEXT("asset-probe"), TEXT("ch01"), TEXT("fan"), 1.f);
     if (FanProbe) FanProbe->Destroy();
     if (!bFanReady) UE_LOG(LogTemp, Warning, TEXT("ComposerViewer: prepared ch01/fan/A assets are unavailable"));
+    LoadSupportedPropIds();
+}
+
+void AComposerViewerStage::LoadSupportedPropIds()
+{
+    SupportedPropIds.Empty();
+    if (bStaffReady) SupportedPropIds.Add(TEXT("staff"));
+    if (bFanReady) SupportedPropIds.Add(TEXT("fan"));
+
+    FString CatalogText;
+    TSharedPtr<FJsonObject> Catalog;
+    const FString CatalogPath = FPaths::ProjectContentDir() / TEXT("Data/props.json");
+    if (!FFileHelper::LoadFileToString(CatalogText, *CatalogPath) ||
+        !FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(CatalogText), Catalog) || !Catalog.IsValid())
+    {
+        UE_LOG(LogTemp, Warning, TEXT("ComposerViewer: prop variants unavailable from %s"), *CatalogPath);
+        return;
+    }
+    const TArray<TSharedPtr<FJsonValue>>* Props = nullptr;
+    if (!Catalog->TryGetArrayField(TEXT("props"), Props) || !Props) return;
+    for (const TSharedPtr<FJsonValue>& Entry : *Props)
+    {
+        const TSharedPtr<FJsonObject> Prop = Entry->AsObject();
+        FString Family;
+        if (!Prop.IsValid() || !Prop->TryGetStringField(TEXT("id"), Family) ||
+            (Family != TEXT("staff") && Family != TEXT("fan"))) continue;
+        if ((Family == TEXT("staff") && !bStaffReady) || (Family == TEXT("fan") && !bFanReady)) continue;
+        const TArray<TSharedPtr<FJsonValue>>* Variants = nullptr;
+        if (!Prop->TryGetArrayField(TEXT("variants"), Variants) || !Variants) continue;
+        for (const TSharedPtr<FJsonValue>& EntryVariant : *Variants)
+        {
+            const TSharedPtr<FJsonObject> Variant = EntryVariant->AsObject();
+            FString VariantId;
+            if (!Variant.IsValid() || !Variant->TryGetStringField(TEXT("id"), VariantId) || VariantId.IsEmpty() ||
+                VariantId.Contains(TEXT(":"))) continue;
+            const FString FullId = Family + TEXT(":") + VariantId;
+            SupportedPropIds.AddUnique(FullId);
+        }
+    }
 }
 
 void AComposerViewerStage::Tick(float DeltaSeconds)
@@ -202,8 +244,7 @@ TSharedPtr<FJsonObject> AComposerViewerStage::MakeState() const
     Capabilities->SetArrayField(TEXT("characterIds"), bStaffReady || bFanReady
         ? Strings({TEXT("ch01")}) : TArray<TSharedPtr<FJsonValue>>());
     TArray<TSharedPtr<FJsonValue>> PropIds;
-    if (bStaffReady) PropIds.Add(MakeShared<FJsonValueString>(TEXT("staff")));
-    if (bFanReady) PropIds.Add(MakeShared<FJsonValueString>(TEXT("fan")));
+    for (const FString& Id : SupportedPropIds) PropIds.Add(MakeShared<FJsonValueString>(Id));
     Capabilities->SetArrayField(TEXT("propIds"), PropIds);
     Capabilities->SetArrayField(TEXT("cameraModes"), Strings({TEXT("snap"), TEXT("orbit"), TEXT("pan"), TEXT("zoom"), TEXT("preset"), TEXT("focus")}));
     Capabilities->SetArrayField(TEXT("playbackActions"), Strings({TEXT("pause"), TEXT("resume"), TEXT("restart"), TEXT("rate")}));
@@ -234,10 +275,12 @@ TSharedPtr<FJsonObject> AComposerViewerStage::MakeState() const
     if (Performer)
     {
         auto Clip = MakeShared<FJsonObject>();
-        const FString Prop = Performer->GetPropId().ToString();
-        Clip->SetStringField(TEXT("id"), FString::Printf(TEXT("ch01/%s/A"), *Prop));
-        Clip->SetStringField(TEXT("title"), Prop == TEXT("staff") ? TEXT("Staff practice loop") : TEXT("Fan practice loop"));
-        Clip->SetStringField(TEXT("provenance"), Prop == TEXT("staff")
+        FString Family = Performer->GetPropId().ToString();
+        int32 VariantSeparator = INDEX_NONE;
+        if (Family.FindChar(TEXT(':'), VariantSeparator)) Family.LeftInline(VariantSeparator);
+        Clip->SetStringField(TEXT("id"), FString::Printf(TEXT("ch01/%s/A"), *Family));
+        Clip->SetStringField(TEXT("title"), Family == TEXT("staff") ? TEXT("Staff practice loop") : TEXT("Fan practice loop"));
+        Clip->SetStringField(TEXT("provenance"), Family == TEXT("staff")
             ? TEXT("sealed family capture; not an exact Composer score")
             : TEXT("legacy prepared family capture; not an exact Composer score"));
         Playback->SetObjectField(TEXT("preparedClip"), Clip);
@@ -295,6 +338,23 @@ void AComposerViewerStage::HandleCommand(const FString& PlayerId, const FString&
     if (Version != 1) { SendResult(PlayerId, Id, false, TEXT("unsupported_version"), TEXT("Bridge version must be 1")); return; }
     if (Type == TEXT("hello"))
     {
+        APlayerController* Player = GetWorld()->GetFirstPlayerController();
+        APlayerCameraManager* Manager = Player ? Player->PlayerCameraManager.Get() : nullptr;
+        UCameraComponent* View = Camera ? Camera->GetCameraComponent() : nullptr;
+        const FMinimalViewInfo* CachedView = Manager ? &Manager->GetCameraCacheView() : nullptr;
+        int32 ViewportWidth = 0, ViewportHeight = 0;
+        if (Player) Player->GetViewportSize(ViewportWidth, ViewportHeight);
+        UE_LOG(LogTemp, Display,
+            TEXT("ComposerViewer camera diagnostic: viewTarget=%s targetMatches=%d cameraManager=%d cameraComponent=%d componentConstrained=%d componentAspect=%.6f cachedConstrained=%d cachedAspect=%.6f viewport=%dx%d"),
+            *GetNameSafe(Player ? Player->GetViewTarget() : nullptr),
+            Player && Player->GetViewTarget() == Camera.Get() ? 1 : 0,
+            Manager ? 1 : 0,
+            View ? 1 : 0,
+            View && View->bConstrainAspectRatio ? 1 : 0,
+            View ? View->AspectRatio : 0.f,
+            CachedView && CachedView->bConstrainAspectRatio ? 1 : 0,
+            CachedView ? CachedView->AspectRatio : 0.f,
+            ViewportWidth, ViewportHeight);
         Session = IncomingSession;
         Revision = IncomingRevision;
         SendResult(PlayerId, Id, true);
@@ -348,8 +408,7 @@ bool AComposerViewerStage::SetPerformer(const TSharedPtr<FJsonObject>& Payload, 
     }
     if (Performer && Performer->GetPerformerId() != Id)
         { ErrorCode = TEXT("cast_limit"); ErrorMessage = TEXT("This native preview supports one performer"); return false; }
-    if (Character != TEXT("ch01") || (Prop == TEXT("staff") && !bStaffReady) ||
-        (Prop == TEXT("fan") && !bFanReady) || (Prop != TEXT("staff") && Prop != TEXT("fan")))
+    if (Character != TEXT("ch01") || !SupportedPropIds.Contains(Prop))
         { ErrorCode = TEXT("unsupported_asset"); ErrorMessage = TEXT("This character and prop are not prepared for native playback"); return false; }
     const FVector Location(Z * 100, -X * 100, 0);
     const FRotator Rotation(0, -FMath::RadiansToDegrees(Facing), 0);
@@ -367,6 +426,12 @@ bool AComposerViewerStage::SetPerformer(const TSharedPtr<FJsonObject>& Payload, 
     }
     if (Performer)
     {
+        FString PreviousFamily = Performer->GetPropId().ToString();
+        FString NewFamily = Prop;
+        int32 Separator = INDEX_NONE;
+        if (PreviousFamily.FindChar(TEXT(':'), Separator)) PreviousFamily.LeftInline(Separator);
+        if (NewFamily.FindChar(TEXT(':'), Separator)) NewFamily.LeftInline(Separator);
+        if (PreviousFamily == NewFamily) Replacement->SeekPerformance(Performer->GetPerformanceTime());
         Replacement->SetPlaying(Performer->IsPlaying());
         Performer->Destroy();
     }

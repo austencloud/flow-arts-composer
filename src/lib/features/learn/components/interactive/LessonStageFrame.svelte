@@ -13,6 +13,11 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
   import { claimedViewTransitionName } from "#lib/shared/transitions/claimed-view-transition-name.js";
+  import {
+    isLessonContinueRunning,
+    isLessonMorphRunning,
+    isLessonHeadingSplit,
+  } from "../../services/lesson-open-morph.svelte";
 
   let {
     heading,
@@ -30,12 +35,26 @@
      */
     artifactLayout?: "square" | "wide" | "workshop";
   } = $props();
+
+  // While a course-map card grows into this lesson, the heading and controls
+  // ride inside the growing lesson surface instead of fading in at their final
+  // places over the map (lesson-open-morph).
+  const ownRegions = $derived(!isLessonMorphRunning());
+  // Continue and Previous fly the live board themselves, so the board region
+  // sits that morph out instead of moving twice.
+  const ownBoard = $derived(!isLessonContinueRunning());
+  // Review and Steps, and the Hand Motions quiz and board, carry the heading's
+  // parts on their own, so the heading block sits those swaps out.
+  const ownHeading = $derived(ownRegions && !isLessonHeadingSplit());
 </script>
 
 <div class="lesson-stage-frame" class:workshop={artifactLayout === "workshop"}>
   <div
     class="stage-heading"
-    use:claimedViewTransitionName={{ name: "learn-lesson-heading" }}
+    use:claimedViewTransitionName={{
+      name: "learn-lesson-heading",
+      enabled: ownHeading,
+    }}
   >
     {@render heading()}
   </div>
@@ -44,7 +63,10 @@
     <div
       class="artifact-inner"
       class:wide={artifactLayout !== "square"}
-      use:claimedViewTransitionName={{ name: "learn-grid-stage" }}
+      use:claimedViewTransitionName={{
+        name: "learn-grid-stage",
+        enabled: ownBoard,
+      }}
     >
       {@render artifact()}
     </div>
@@ -52,7 +74,10 @@
 
   {#if controls}<div
       class="stage-controls"
-      use:claimedViewTransitionName={{ name: "learn-lesson-controls" }}
+      use:claimedViewTransitionName={{
+        name: "learn-lesson-controls",
+        enabled: ownRegions,
+      }}
     >
       {@render controls()}
     </div>{/if}

@@ -13,14 +13,14 @@
    */
   import {
     ratioLabel,
-    type Flower,
+    type RotatingFlower,
   } from "#lib/shared/shape-matrix/domain/flower-signature.js";
   import { flowerToKnobs } from "#lib/shared/notation/qft/qft-flower-bridge.js";
   import { tracePath } from "#lib/shared/notation/qft/qft-model.js";
 
   interface Props {
     label: string;
-    flowers: Flower[];
+    flowers: RotatingFlower[];
     /** Null when a canonical preset, rather than a flower, owns the hand. */
     value: number | null;
     onchange: (index: number) => void;

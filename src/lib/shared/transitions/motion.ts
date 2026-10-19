@@ -51,6 +51,42 @@ export const EASE_SPRING = "cubic-bezier(0.34, 1.56, 0.64, 1)";
  *  with a CSS transition on that curve. */
 export const easeOut = cssCubicBezier(0.16, 1, 0.3, 1);
 
+export interface ReleaseSettle {
+  durationMs: number;
+  /** A `cubic-bezier()` whose opening speed is the release speed. */
+  easing: string;
+}
+
+/**
+ * The settle after a drag lets go: a CSS timing that leaves the release point
+ * at the hand's own speed and eases into the destination, so the surface
+ * neither pauses nor lurches when the pointer lifts.
+ *
+ * `velocity` is px/ms toward the destination and `distance` the px still to
+ * travel. The duration aims for the hand's average pace and stays within
+ * `DURATION.normal`..`DURATION.dramatic`, so a drawer's own close timer still
+ * covers it. Null under reduced motion or with nothing left to travel.
+ */
+export function releaseSettle(
+  velocity: number,
+  distance: number
+): ReleaseSettle | null {
+  const maxMs = motionDuration(DURATION.dramatic);
+  if (maxMs === 0 || !(distance > 0)) return null;
+  const speed = Number.isFinite(velocity) ? Math.max(0, velocity) : 0;
+  const minMs = Math.min(DURATION.normal, maxMs);
+  const durationMs = Math.round(
+    speed > 0 ? Math.min(maxMs, Math.max(minMs, (2 * distance) / speed)) : maxMs
+  );
+  // cubic-bezier(1/3, y1, 2/3, 1) opens with slope 3·y1 (progress per unit
+  // time), so y1 = speed·duration / (3·distance) starts at the hand's speed.
+  const y1 = Math.min(1, (speed * durationMs) / (3 * distance));
+  return {
+    durationMs,
+    easing: `cubic-bezier(0.333, ${y1.toFixed(3)}, 0.667, 1)`,
+  };
+}
+
 /**
  * motion — reduced-motion-aware Svelte transitions on the DURATION tokens.
  *
@@ -60,8 +96,23 @@ export const easeOut = cssCubicBezier(0.16, 1, 0.3, 1);
  * raw `svelte/transition` imports in feature code.
  */
 
+export interface DestinationFadeOptions {
+  /** Starting opacity of a fresh fade. The default is a quiet dip. */
+  from?: number;
+  /** Hold the start for this long, e.g. until a resizing box has room. */
+  delay?: number;
+  duration?: number;
+}
+
 /** A quiet arrival cue for an instant jump within a mounted content surface. */
-export function createDestinationFade(element: HTMLElement) {
+export function createDestinationFade(
+  element: HTMLElement,
+  {
+    from = 0.55,
+    delay = 0,
+    duration = DURATION.fast,
+  }: DestinationFadeOptions = {}
+) {
   let animation: Animation | null = null;
   const cancel = () => {
     animation?.cancel();
@@ -82,12 +133,17 @@ export function createDestinationFade(element: HTMLElement) {
     play() {
       // Repeated navigation continues from the visible frame instead of
       // flashing back to the beginning or queuing another animation.
-      const opacity = animation ? getComputedStyle(element).opacity : "0.55";
+      const opacity = animation
+        ? getComputedStyle(element).opacity
+        : String(from);
       cancel();
       if (reducedMotion()) return;
       const next = element.animate([{ opacity }, { opacity: 1 }], {
-        duration: DURATION.fast,
+        duration,
+        delay,
         easing: STANDARD_MOTION_EASING,
+        // Hold the starting opacity through the delay.
+        fill: "backwards",
       });
       animation = next;
       next.onfinish = () => {
@@ -113,16 +169,39 @@ export interface IntrinsicHeightMotion {
   cancel(): void;
 }
 
+/** The same motion on either axis: a control whose label changes eases its
+ * width the way a dialog eases its height. */
+export interface IntrinsicSizeMotion {
+  resize(from: number, target: number): Animation | null;
+  currentSize(): number | null;
+  cancel(): void;
+}
+
+export interface IntrinsicSizeMotionOptions {
+  dimension?: "width" | "height";
+  duration?: number;
+  /**
+   * Hand the size back to content sizing once the ease lands. A dialog keeps
+   * owning its frame between observations; a button whose layout can still
+   * change (a container query making it full width) must not stay pinned.
+   */
+  release?: boolean;
+}
+
 /**
- * Animate an overlay's own height without scaling the content inside it.
- * `target` must come from layout metrics such as `offsetHeight`, rather than a
- * transformed screen rectangle, so opening transforms cannot freeze a card at
- * the wrong size.
+ * Animate an element's own width or height without scaling the content inside
+ * it. `target` must come from layout metrics such as `offsetHeight`, rather
+ * than a transformed screen rectangle, so opening transforms cannot freeze a
+ * card at the wrong size.
  */
-export function createIntrinsicHeightMotion(
+export function createIntrinsicSizeMotion(
   element: HTMLElement,
-  duration = DURATION.normal
-): IntrinsicHeightMotion {
+  {
+    dimension = "height",
+    duration = DURATION.normal,
+    release = false,
+  }: IntrinsicSizeMotionOptions = {}
+): IntrinsicSizeMotion {
   let animation: Animation | null = null;
   let animationStart = 0;
   let animationTarget = 0;
@@ -133,17 +212,18 @@ export function createIntrinsicHeightMotion(
       animation = null;
 
       // The live style is the destination. `backwards` holds the visible
-      // starting height until the first animation frame, so the box cannot
+      // starting size until the first animation frame, so the box cannot
       // flash at its new size before moving there.
-      element.style.height = `${target}px`;
+      element.style[dimension] = `${target}px`;
       const effectiveDuration =
         element.dataset.dragging === "true" ? 0 : motionDuration(duration);
       if (effectiveDuration === 0 || Math.abs(from - target) < 0.5) {
+        if (release) element.style[dimension] = "";
         return null;
       }
 
       const nextAnimation = element.animate(
-        [{ height: `${from}px` }, { height: `${target}px` }],
+        [{ [dimension]: `${from}px` }, { [dimension]: `${target}px` }],
         {
           duration: effectiveDuration,
           easing: STANDARD_MOTION_EASING,
@@ -158,16 +238,18 @@ export function createIntrinsicHeightMotion(
         () => {
           if (animation !== nextAnimation) return;
           animation = null;
-          // Keep owning the frame between observations. Releasing it to auto
-          // lets a child's first reflow briefly move the frame before RO runs.
-          // The independently sized content wrapper supplies the next target.
+          // Without `release` this keeps owning the frame between
+          // observations. Releasing it to auto would let a child's first
+          // reflow briefly move the frame before RO runs; the independently
+          // sized content wrapper supplies the next target.
+          if (release) element.style[dimension] = "";
         },
         { once: true }
       );
       return nextAnimation;
     },
 
-    currentHeight(): number | null {
+    currentSize(): number | null {
       if (!animation) return null;
       const progress = animation.effect?.getComputedTiming().progress;
       if (typeof progress !== "number") return animationStart;
@@ -177,8 +259,26 @@ export function createIntrinsicHeightMotion(
     cancel(): void {
       animation?.cancel();
       animation = null;
-      element.style.height = "";
+      element.style[dimension] = "";
     },
+  };
+}
+
+/**
+ * Animate an overlay's own height without scaling the content inside it.
+ * `target` must come from layout metrics such as `offsetHeight`, rather than a
+ * transformed screen rectangle, so opening transforms cannot freeze a card at
+ * the wrong size.
+ */
+export function createIntrinsicHeightMotion(
+  element: HTMLElement,
+  duration = DURATION.normal
+): IntrinsicHeightMotion {
+  const motion = createIntrinsicSizeMotion(element, { duration });
+  return {
+    resize: motion.resize,
+    currentHeight: motion.currentSize,
+    cancel: motion.cancel,
   };
 }
 

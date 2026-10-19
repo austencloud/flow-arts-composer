@@ -226,13 +226,12 @@
     leftPropType={resolvedLeftPropType}
     rightPropType={resolvedRightPropType}
     catDogModeEnabled={hasMixedPropTypes}
-    primaryPropColors={visibility?.primaryPropColors}
+    primaryPropColors={visibility?.primaryPropColors ?? undefined}
     columnCount={liveColumnCount}
     startPlacementLayoutOverride={automaticLayout
       ? null
       : (options.startPlacementLayout ?? null)}
     {autoLayoutOverride}
-    {revision}
     layoutAvailableWidth={layoutAvailableWidth || undefined}
     layoutAvailableHeight={automaticLayout ? layoutAvailableHeight : undefined}
     forceContain

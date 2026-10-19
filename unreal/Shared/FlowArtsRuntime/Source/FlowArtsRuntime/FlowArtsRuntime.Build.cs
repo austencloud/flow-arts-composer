@@ -8,7 +8,7 @@ public class FlowArtsRuntime : ModuleRules
 
         PublicDependencyModuleNames.AddRange(new[]
         {
-            "Core", "CoreUObject", "Engine", "ProceduralMeshComponent"
+            "Core", "CoreUObject", "Engine", "ProceduralMeshComponent", "UMG", "Niagara"
         });
 
         PrivateDependencyModuleNames.AddRange(new[]

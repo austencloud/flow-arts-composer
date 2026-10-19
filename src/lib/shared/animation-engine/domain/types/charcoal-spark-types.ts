@@ -9,6 +9,12 @@
 import type { PropTipData } from "./fire-types";
 import type { CharcoalEmissionStyle } from "#lib/shared/effects/domain/effects-config.js";
 import { resolveCharcoal3DMotionProfile } from "#lib/shared/effects/translators/charcoal-3d-motion-profiles.js";
+import {
+	resolveSparkMaterial,
+	sparkBurnTime,
+	sparkCoolTime,
+	sparkLifetime,
+} from "#lib/shared/effects/domain/spark-physics.js";
 
 // Core Particle
 
@@ -22,14 +28,25 @@ export interface CharcoalSpark {
 	vx: number;
 	/** Vertical velocity (viewbox units/second) */
 	vy: number;
+	/** Always 0; lets the shared spark physics step a 2D spark. */
+	vz: number;
 	/** Remaining lifetime in seconds */
 	life: number;
 	/** Total lifetime at spawn (seconds) */
 	maxLife: number;
 	/** Current radius in viewbox units */
 	size: number;
-	/** Normalized temperature [0-1], decays over lifetime */
+	/** Heat [0-1] from the shared spark physics: 1 white-hot, 0 dark */
 	temperature: number;
+	/** Droplet or ember diameter (m) */
+	diameter: number;
+	/** Seconds it burns, then its cooling time constant (s) */
+	burnTime: number;
+	coolTime: number;
+	/** Seconds since release */
+	age: number;
+	/** Seconds after release when it bursts into smaller sparks, or -1 */
+	forkAt: number;
 	/** Whether this slot is in use */
 	active: boolean;
 }
@@ -46,12 +63,13 @@ export interface CharcoalTipData extends PropTipData {
 
 /** All tunable parameters for the charcoal spark system. */
 export interface CharcoalSparkParams {
-	/** Jerk magnitude above which a burst fires (viewbox units/s^2) */
-	burstThreshold: number;
-	/** Spark count multiplier when jerk exceeds threshold */
-	burstMultiplier: number;
-	/** Maximum sparks per single burst event */
-	burstMax: number;
+	/**
+	 * How hard a stop or snap has to be to throw a burst, as a multiple of
+	 * the shared snap test (stepSparkSnap in spark-physics.ts).
+	 */
+	burstThresholdScale: number;
+	/** Burst size, as a multiple of the shared snapBurstSparks count. */
+	burstScale: number;
 	/** Base sparks emitted per second during movement */
 	ambientRate: number;
 	/** Speed below which ambient emission stops (viewbox units/s) */
@@ -98,6 +116,18 @@ export interface CharcoalSparkParams {
 
 	/** Maximum particles alive at once. Oldest are recycled when full. */
 	maxParticles: number;
+
+	/**
+	 * The spark material, spread and glow the 2D stage flies its sparks with.
+	 * The renderer takes gravity, drag, release speed, lifetime and heat from
+	 * the shared spark physics, the same as 3D; left out, they fall back to
+	 * steel wool at the default spread and glow. The gravity, drag,
+	 * inheritance and perturbation fields above only feed the slider
+	 * read-back.
+	 */
+	emissionStyle?: CharcoalEmissionStyle;
+	spread?: number;
+	glow?: number;
 }
 
 // Default Parameters (steel-wool baseline)
@@ -119,44 +149,25 @@ export interface CharcoalSliderGroup {
 }
 
 const fmtDec = (v: number) => v.toFixed(2);
-const fmtAngle = (v: number) => `${((v / Math.PI) * 180).toFixed(0)}°`;
-const fmtSettle = (v: number) => `${settleSecondsOf(v).toFixed(2)}s`;
 
-/** Slider groups for the CharcoalControlsPanel UI. */
+/**
+ * Slider groups for the CharcoalControlsPanel UI. Flight, lifetime and spark
+ * size come from the shared spark physics, so they have no sliders here.
+ */
 export const CHARCOAL_SLIDER_GROUPS: CharcoalSliderGroup[] = [
 	{
 		label: "Emission",
 		sliders: [
-			{ key: "burstThreshold", label: "Burst threshold", min: 20, max: 300, step: 5 },
-			{ key: "burstMultiplier", label: "Burst multiplier", min: 1, max: 60, step: 1 },
-			{ key: "burstMax", label: "Burst max", min: 10, max: 300, step: 5 },
+			{ key: "burstThresholdScale", label: "Snap needed", min: 0.5, max: 3, step: 0.05, format: fmtDec },
+			{ key: "burstScale", label: "Burst size", min: 0, max: 3, step: 0.05, format: fmtDec },
 			{ key: "ambientRate", label: "Ambient rate", min: 0, max: 120, step: 1 },
 			{ key: "ambientSpeedThreshold", label: "Speed threshold", min: 1, max: 50, step: 1 },
 			{ key: "idleRate", label: "Idle rate", min: 0, max: 20, step: 1 },
 		],
 	},
 	{
-		label: "Physics",
-		sliders: [
-			{ key: "gravity", label: "Gravity", min: 50, max: 2200, step: 25 },
-			// Shown as its time constant, which is the number that means
-			// something: how long a spark coasts before gravity takes the
-			// trajectory. The raw retention figure is unreadable down here -
-			// 0.03 and 0.30 look adjacent and are 0.28s vs 0.83s apart.
-			{ key: "drag", label: "Settle time", min: 0.01, max: 0.99, step: 0.01, format: fmtSettle },
-			{ key: "velocityInheritance", label: "Vel. inheritance", min: 0, max: 1, step: 0.05, format: fmtDec },
-			{ key: "perturbSpeedMin", label: "Perturb min", min: 0, max: 40, step: 1 },
-			{ key: "perturbSpeedMax", label: "Perturb max", min: 5, max: 100, step: 1 },
-			{ key: "spreadAngle", label: "Spread angle", min: 0, max: Math.PI, step: 0.05, format: fmtAngle },
-		],
-	},
-	{
 		label: "Appearance",
 		sliders: [
-			{ key: "lifetimeMin", label: "Life min", min: 0.1, max: 3, step: 0.05, format: fmtDec },
-			{ key: "lifetimeMax", label: "Life max", min: 0.3, max: 5, step: 0.05, format: fmtDec },
-			{ key: "sizeMin", label: "Size min", min: 1, max: 15, step: 1 },
-			{ key: "sizeMax", label: "Size max", min: 3, max: 30, step: 1 },
 			{ key: "emberGlowRadius", label: "Glow radius", min: 0, max: 60, step: 1 },
 			{ key: "emberGlowIntensity", label: "Glow intensity", min: 0, max: 4, step: 0.1, format: fmtDec },
 		],
@@ -171,9 +182,8 @@ export const CHARCOAL_SLIDER_GROUPS: CharcoalSliderGroup[] = [
 
 /** Default charcoal spark parameters - moderate steel-wool look (40/40/50). */
 export const DEFAULT_CHARCOAL_PARAMS: CharcoalSparkParams = {
-	burstThreshold: 114,
-	burstMultiplier: 57,
-	burstMax: 284,
+	burstThresholdScale: 1.15,
+	burstScale: 0.62,
 	ambientRate: 107,
 	ambientSpeedThreshold: 10,
 	idleRate: 10,
@@ -198,6 +208,9 @@ export const DEFAULT_CHARCOAL_PARAMS: CharcoalSparkParams = {
 	emberGlowRadius: 25,
 	emberGlowIntensity: 1.70,
 	maxParticles: 2120,
+	emissionStyle: "steel-wool",
+	spread: 0.4,
+	glow: 0.5,
 };
 
 // ============================================================================
@@ -247,6 +260,17 @@ function settleSecondsOf(drag: number): number {
 	return -1 / Math.log(drag);
 }
 
+/** How long a spark of this diameter stays visible (s). */
+function physicalLifetime(
+	material: ReturnType<typeof resolveSparkMaterial>,
+	diameter: number,
+): number {
+	return sparkLifetime(
+		sparkBurnTime(material, diameter),
+		sparkCoolTime(material, diameter),
+	);
+}
+
 /** Inverse lerp: map value in [a, b] back to [0-1]. */
 function invLerp(a: number, b: number, v: number): number {
 	if (a === b) return 0;
@@ -278,9 +302,9 @@ export function semanticToCharcoalParams(
 	const burstThresh = p?.burstThresholdScale ?? 1;
 	const cone = p?.coneScale ?? 1;
 	const velocity = p?.velocityScale ?? 1;
-	const sparkLife = p?.sparkLifetimeScale ?? 1;
 	const sparkSize = p?.sparkSizeScale ?? 1;
 	const gravityScale = p?.gravityScale ?? 1;
+	const material = resolveSparkMaterial(emissionStyle);
 
 	// Drag, gravity and lifetime are one system, not three sliders.
 	//
@@ -306,11 +330,14 @@ export function semanticToCharcoalParams(
 	return {
 		// Intensity controls emission volume
 		ambientRate: Math.round(lerp(5, 260, intensity) * emission),
-		burstMultiplier: Math.round(lerp(8, 130, intensity) * burstSpark),
-		burstMax: Math.round(lerp(40, 650, intensity) * burstSpark),
-		burstThreshold: Math.round(lerp(180, 15, intensity) * burstThresh),
+		// A stop or snap throws a clump; a steady spin throws none. Same test
+		// and same size as the 3D view.
+		burstThresholdScale: burstThresh,
+		burstScale: Number(((0.65 + intensity * 0.95) * burstSpark).toFixed(3)),
 		ambientSpeedThreshold: lerp(15, 3, intensity),
-		maxParticles: Math.round(lerp(200, 5000, intensity)),
+		// Sized for real spark lifetimes (a tenth of a second to a second and
+		// a half), which puts about as many sparks in the air as the 3D view.
+		maxParticles: Math.round(lerp(150, 1500, intensity)),
 		// idleEmissionScale is the one profile field that can raise a value from
 		// zero-ish to dominant: banked-ember idles at 0.85 while moving at 0.16,
 		// which is the whole character of a fire damped down.
@@ -333,8 +360,11 @@ export function semanticToCharcoalParams(
 		// ember. A spark now settles within `settleSeconds` and then falls, and
 		// these leave it roughly 0.3-1.7s of falling to be an ember rather than
 		// a streak that outlives the step that threw it.
-		lifetimeMin: Number((lerp(0.35, 1.0, spread) * sparkLife).toFixed(2)),
-		lifetimeMax: Number((lerp(0.9, 2.5, spread) * sparkLife).toFixed(2)),
+		// The span the physics gives the smallest and largest spark. The
+		// renderer's emission budget reads these, so they must be the real
+		// lifetimes and not authored ones.
+		lifetimeMin: Number(physicalLifetime(material, material.diameterMin).toFixed(2)),
+		lifetimeMax: Number(physicalLifetime(material, material.diameterMax).toFixed(2)),
 
 		// Glow controls visual brightness
 		sizeMin: Math.round(lerp(3, 8, glow) * sparkSize),
@@ -342,6 +372,11 @@ export function semanticToCharcoalParams(
 		shrinkOverLife: true,
 		emberGlowRadius: Math.round(lerp(10, 40, glow)),
 		emberGlowIntensity: Number(lerp(0.4, 3.0, glow).toFixed(2)),
+
+		// Flight, lifetime and heat come from the shared spark physics.
+		emissionStyle: emissionStyle ?? "steel-wool",
+		spread,
+		glow,
 
 		// Colors: use overrides if supplied, otherwise default steel-wool palette
 		coreColor: colorOverrides?.coreColor ?? [255, 242, 210],

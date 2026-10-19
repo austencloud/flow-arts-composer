@@ -19,7 +19,6 @@
 </script>
 
 <script lang="ts">
-  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { getPropTypeDisplayInfo } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
   import { localizedPropName } from "#lib/shared/settings/components/tabs/prop-type/localized-prop-name.js";
 

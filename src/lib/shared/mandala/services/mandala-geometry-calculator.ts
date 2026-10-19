@@ -388,11 +388,19 @@ function lerpPointSet(
 	return out;
 }
 
-function pointSetsToPaths(sets: MandalaPoint[][]): SVGPathData[] {
+/** One tip's points, one list per beat (see `SVGPathData.beats`). */
+type TipTrace = MandalaPoint[][];
+
+function lerpTrace(a: TipTrace, b: TipTrace | undefined, t: number): TipTrace {
+	return a.map((beat, index) => lerpPointSet(beat, b?.[index] ?? beat, t));
+}
+
+function tracesToPaths(traces: TipTrace[]): SVGPathData[] {
 	const out: SVGPathData[] = [];
-	for (let i = 0; i < sets.length; i++) {
-		const d = pointsToSVGPath(sets[i]!);
-		if (d) out.push({ d, tipIndex: i });
+	for (let i = 0; i < traces.length; i++) {
+		const beats = traces[i]!;
+		const d = pointsToSVGPath(beats.flat());
+		if (d) out.push({ d, tipIndex: i, beats });
 	}
 	return out;
 }
@@ -458,15 +466,15 @@ function extractMotion(
 
 // ─── Path generation for one hand + one tip ─────────────────────────────────
 
-function generatePathPoints(
+function generateTipTrace(
 	steps: readonly StepLike[],
 	hand: HandSideValue,
 	tipOffset: TipOffset,
 	gridRadius: number,
 	samplesPerBeat: number,
 	options?: MandalaPathOptions
-): MandalaPoint[] {
-	const points: MandalaPoint[] = [];
+): TipTrace {
+	const trace: TipTrace = [];
 
 	// Chain staff angles across beats to prevent junction gaps.
 	// Each beat's start staff angle = previous beat's end staff angle.
@@ -529,15 +537,17 @@ function generatePathPoints(
 
 		const pathShape = resolvePathShape(motion.motionType, rawMotion?.pathShape, options);
 
+		const points: MandalaPoint[] = [];
 		for (let i = 0; i <= samples; i++) {
 			const t = i / samples;
 			const handPos = interpolate(endpoints, t, pathShape);
 			const tip = computeTipPosition(handPos, tipOffset, gridRadius);
 			points.push(tip);
 		}
+		trace.push(points);
 	}
 
-	return points;
+	return trace;
 }
 
 // ─── Public module functions ────────────────────────────────────────────────
@@ -591,7 +601,7 @@ function computePointSets(
 	stepsWithMotions: readonly StepLike[],
 	options: MandalaPathOptions | undefined,
 	tipOverrides?: MandalaTipOverrides | MandalaTipOffset,
-): { left: MandalaPoint[][]; right: MandalaPoint[][] } {
+): { left: TipTrace[]; right: TipTrace[] } {
 	const defaultDx =
 		tipOverrides && "dx" in tipOverrides
 			? tipOverrides.dx
@@ -621,14 +631,14 @@ function computePointSets(
 	const gridRadius = MANDALA_GRID_RADIUS;
 	const samplesPerBeat = BASE_SAMPLES_PER_BEAT;
 
-	const left: MandalaPoint[][] = [];
-	const right: MandalaPoint[][] = [];
+	const left: TipTrace[] = [];
+	const right: TipTrace[] = [];
 
 	for (const tip of leftTips) {
-		left.push(generatePathPoints(stepsWithMotions, HandSide.LEFT, tip, gridRadius, samplesPerBeat, options));
+		left.push(generateTipTrace(stepsWithMotions, HandSide.LEFT, tip, gridRadius, samplesPerBeat, options));
 	}
 	for (const tip of rightTips) {
-		right.push(generatePathPoints(stepsWithMotions, HandSide.RIGHT, tip, gridRadius, samplesPerBeat, options));
+		right.push(generateTipTrace(stepsWithMotions, HandSide.RIGHT, tip, gridRadius, samplesPerBeat, options));
 	}
 
 	return { left, right };
@@ -657,12 +667,12 @@ export function calculateMorphed(
 	const from = computePointSets(stepsWithMotions, optionsFrom, tipOverride);
 	const to = computePointSets(stepsWithMotions, optionsTo, tipOverride);
 
-	const leftSets = from.left.map((set, i) => lerpPointSet(set, to.left[i] ?? set, t));
-	const rightSets = from.right.map((set, i) => lerpPointSet(set, to.right[i] ?? set, t));
+	const leftSets = from.left.map((trace, i) => lerpTrace(trace, to.left[i], t));
+	const rightSets = from.right.map((trace, i) => lerpTrace(trace, to.right[i], t));
 
 	return {
-		left: pointSetsToPaths(leftSets),
-		right: pointSetsToPaths(rightSets),
+		left: tracesToPaths(leftSets),
+		right: tracesToPaths(rightSets),
 		purple: [],
 	};
 }
@@ -698,8 +708,8 @@ export function calculate(
 
 	const sets = computePointSets(stepsWithMotions, options, tipOverride);
 	const result: MandalaPaths = {
-		left: pointSetsToPaths(sets.left),
-		right: pointSetsToPaths(sets.right),
+		left: tracesToPaths(sets.left),
+		right: tracesToPaths(sets.right),
 		purple: [],
 	};
 

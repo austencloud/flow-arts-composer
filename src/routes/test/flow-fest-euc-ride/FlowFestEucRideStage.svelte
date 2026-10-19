@@ -21,7 +21,10 @@
     type DirectionalLight,
     type PerspectiveCamera,
   } from "three";
-  import type { PhysicsProvider, Vector3 as ProviderVector3 } from "@austencloud/camera-3d";
+  import type {
+    PhysicsProvider,
+    Vector3 as ProviderVector3,
+  } from "@austencloud/camera-3d";
   import {
     FLOW_FEST_EUC_CONFIG,
     wrapFlowFestEucAngle,
@@ -141,8 +144,8 @@
   let wheelPosition = $state({ x: 0, y: 0, z: 0 });
   let poseDiagnostic: FlowFestEucMountedPoseDiagnostic | null = null;
 
-  let cameraRef = $state<PerspectiveCamera | null>(null);
-  let sunRef = $state<DirectionalLight | null>(null);
+  let cameraRef = $state<PerspectiveCamera>();
+  let sunRef = $state<DirectionalLight>();
   let chaseYawRadians = 0;
   const cameraTarget = new Vector3();
 
@@ -166,7 +169,10 @@
     }
     const snappedPostX = snap(position.x, POST_CELL_METERS);
     const snappedPostZ = snap(position.z, POST_CELL_METERS);
-    if (snappedPostX !== postFieldOrigin.x || snappedPostZ !== postFieldOrigin.z) {
+    if (
+      snappedPostX !== postFieldOrigin.x ||
+      snappedPostZ !== postFieldOrigin.z
+    ) {
       postFieldOrigin = { x: snappedPostX, z: snappedPostZ };
     }
     const sun = sunRef;
@@ -207,11 +213,7 @@
           1.35,
         wheelPosition.z - Math.cos(chaseYawRadians) * distance
       );
-      cameraTarget.set(
-        wheelPosition.x,
-        wheelPosition.y + 1.1,
-        wheelPosition.z
-      );
+      cameraTarget.set(wheelPosition.x, wheelPosition.y + 1.1, wheelPosition.z);
     } else {
       // Rigid side follow, perpendicular to travel: the frame moves exactly
       // with the wheel, so any residual rider motion IS rider motion.
@@ -256,9 +258,22 @@
 
   const posts = $derived.by(() => {
     const origin = postFieldOrigin;
-    const field: Array<{ key: string; x: number; z: number; heightMeters: number }> = [];
-    for (let dx = -POST_FIELD_HALF_CELLS; dx <= POST_FIELD_HALF_CELLS; dx += 1) {
-      for (let dz = -POST_FIELD_HALF_CELLS; dz <= POST_FIELD_HALF_CELLS; dz += 1) {
+    const field: Array<{
+      key: string;
+      x: number;
+      z: number;
+      heightMeters: number;
+    }> = [];
+    for (
+      let dx = -POST_FIELD_HALF_CELLS;
+      dx <= POST_FIELD_HALF_CELLS;
+      dx += 1
+    ) {
+      for (
+        let dz = -POST_FIELD_HALF_CELLS;
+        dz <= POST_FIELD_HALF_CELLS;
+        dz += 1
+      ) {
         const x = origin.x + dx * POST_CELL_METERS;
         const z = origin.z + dz * POST_CELL_METERS;
         // Keep the immediate riding lane clear of the spawn cell's post.

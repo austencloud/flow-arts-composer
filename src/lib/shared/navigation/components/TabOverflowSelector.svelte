@@ -4,6 +4,7 @@
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import type {
     Section,
+    SectionGroup,
     SectionHomeDestination,
   } from "#lib/shared/navigation/domain/types.js";
   import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
@@ -11,6 +12,7 @@
 
   let {
     sections = [],
+    groups = [],
     currentSection = "",
     onSectionChange = () => {},
     sectionHome = null,
@@ -19,6 +21,7 @@
     moduleLabel = "",
   } = $props<{
     sections: Section[];
+    groups?: SectionGroup[];
     currentSection: string;
     onSectionChange?: (sectionId: string) => void;
     sectionHome?: SectionHomeDestination | null;
@@ -42,6 +45,31 @@
       : sections.find((section: Section) => section.id === currentSection) ||
           sections[0]
   );
+
+  const sectionEntries = $derived.by(() => {
+    const entries: Array<
+      | { kind: "group"; group: SectionGroup }
+      | { kind: "section"; section: Section }
+    > = [];
+    const groupedIds = new Set<string>();
+
+    for (const group of groups) {
+      const members = sections.filter(
+        (section: Section) => section.groupId === group.id
+      );
+      if (members.length === 0) continue;
+      entries.push({ kind: "group", group });
+      for (const section of members) {
+        entries.push({ kind: "section", section });
+        groupedIds.add(section.id);
+      }
+    }
+    for (const section of sections) {
+      if (!groupedIds.has(section.id))
+        entries.push({ kind: "section", section });
+    }
+    return entries;
+  });
 
   function handleTriggerClick() {
     hapticService?.trigger("selection");
@@ -154,29 +182,34 @@
       </button>
     {/if}
 
-    {#each sections as section}
-      <button
-        class="tab-option"
-        class:active={sectionHome?.active !== true &&
-          currentSection === section.id}
-        class:disabled={section.disabled}
-        disabled={section.disabled}
-        aria-current={sectionHome?.active !== true &&
-        currentSection === section.id
-          ? "page"
-          : undefined}
-        onclick={() => handleSectionClick(section)}
-        style="--section-color: {section.color ||
-          'var(--theme-accent)'}; --section-gradient: {section.gradient ||
-          section.color ||
-          'var(--theme-accent)'}"
-      >
-        <span class="tab-icon">{@html section.icon}</span>
-        <span class="tab-label">{section.label}</span>
-        {#if sectionHome?.active !== true && currentSection === section.id}
-          <i class="fas fa-check check-mark" aria-hidden="true"></i>
-        {/if}
-      </button>
+    {#each sectionEntries as entry}
+      {#if entry.kind === "group"}
+        <h3 class="tab-group-heading">{t(entry.group.labelKey)}</h3>
+      {:else}
+        {@const section = entry.section}
+        <button
+          class="tab-option"
+          class:active={sectionHome?.active !== true &&
+            currentSection === section.id}
+          class:disabled={section.disabled}
+          disabled={section.disabled}
+          aria-current={sectionHome?.active !== true &&
+          currentSection === section.id
+            ? "page"
+            : undefined}
+          onclick={() => handleSectionClick(section)}
+          style="--section-color: {section.color ||
+            'var(--theme-accent)'}; --section-gradient: {section.gradient ||
+            section.color ||
+            'var(--theme-accent)'}"
+        >
+          <span class="tab-icon">{@html section.icon}</span>
+          <span class="tab-label">{section.label}</span>
+          {#if sectionHome?.active !== true && currentSection === section.id}
+            <i class="fas fa-check check-mark" aria-hidden="true"></i>
+          {/if}
+        </button>
+      {/if}
     {/each}
   </div>
 </div>
@@ -345,6 +378,15 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
     gap: 8px;
+  }
+
+  .tab-group-heading {
+    grid-column: 1 / -1;
+    margin: 8px 4px 0;
+    color: var(--theme-text);
+    font-size: var(--font-size-min, 14px);
+    font-weight: 700;
+    line-height: 1.3;
   }
 
   /* Single column for narrow popovers */

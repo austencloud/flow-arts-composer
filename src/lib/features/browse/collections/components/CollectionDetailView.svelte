@@ -66,15 +66,13 @@ becomes private while open, we bail back to the list instead of showing a ghost.
     ownerName,
     accessRole,
     showBack = true,
+    backLabel = t("browse_ui_collections_tab"),
   }: {
     collectionId: string;
     onBack: () => void;
-    /**
-     * The desktop split view keeps the collection rail on screen, so a back
-     * arrow would be a second way to do what the rail already does — hide it.
-     * (onBack stays wired: a deleted collection still needs somewhere to go.)
-     */
+    /** Test and embedding surfaces can omit the navigation control. */
     showBack?: boolean;
+    backLabel?: string;
     /**
      * Set when viewing someone ELSE's public collection (Community view).
      * Read-only: no rename/delete/remove, but still live across devices.
@@ -93,6 +91,10 @@ becomes private while open, we bail back to the list instead of showing a ghost.
   // The subscription's first answer decides "exists" vs "deleted"; until it
   // lands we can't tell the difference, so we hold off on the bail-out.
   let firstSnapshotSeen = $state(false);
+  // A foreign collection that was deleted or made private answers with a
+  // permission error, not an empty snapshot. A shared link can still land
+  // here, so say so instead of showing a nameless, empty collection.
+  let loadFailed = $state(false);
   let memberLoadEpoch = 0;
 
   const selectionState = createMultiSelectionState({
@@ -155,6 +157,7 @@ becomes private while open, we bail back to the list instead of showing a ghost.
     const isCurrentIdentity = () =>
       authState.effectiveUserId === effectiveUserId;
     firstSnapshotSeen = false;
+    loadFailed = false;
     collection = null;
     members = [];
     loadingMembers = true;
@@ -189,6 +192,8 @@ becomes private while open, we bail back to the list instead of showing a ghost.
           "[CollectionDetail] Collection subscription failed:",
           err
         );
+        memberLoadEpoch++;
+        if (!collection) loadFailed = true;
         loadingMembers = false;
       };
       const unsubscribe = accessRole
@@ -712,10 +717,11 @@ becomes private while open, we bail back to the list instead of showing a ghost.
         <button
           type="button"
           class="back-btn"
-          aria-label={t("browse_ui_back_to_collections")}
+          aria-label={t("browse_verified_back_to", { destination: backLabel })}
           onclick={onBack}
         >
           <i class="fas fa-arrow-left" aria-hidden="true"></i>
+          <span>{backLabel}</span>
         </button>
       {/if}
 
@@ -739,7 +745,7 @@ becomes private while open, we bail back to the list instead of showing a ghost.
       {:else}
         <div class="header-text">
           <h2 class="header-name">{collection?.name ?? ""}</h2>
-          <span class="header-count">
+          <span class="header-count" class:hidden-count={loadFailed}>
             {#if ownerName}{t("browse_audit_by_owner", { owner: ownerName })} ·
             {/if}{visibleCount !== null ? countLabel(visibleCount) : ""}
             {#if accessRole}
@@ -766,6 +772,9 @@ becomes private while open, we bail back to the list instead of showing a ghost.
           type="button"
           class="header-action-btn follow-btn"
           class:following
+          aria-label={following
+            ? t("browse_audit_following")
+            : t("browse_audit_follow")}
           aria-pressed={following}
           onclick={() => {
             if (following) {
@@ -845,7 +854,24 @@ becomes private while open, we bail back to the list instead of showing a ghost.
   {/if}
 
   <div class="detail-body">
-    {#if loadingMembers}
+    {#if loadFailed}
+      <div class="empty-state" role="status">
+        <span class="empty-icon">
+          <i class="fas fa-lock" aria-hidden="true"></i>
+        </span>
+        <p class="empty-title">
+          {t("browse_audit_collection_unavailable_title")}
+        </p>
+        <p class="empty-hint">
+          {t("browse_audit_collection_unavailable_hint")}
+        </p>
+        <button type="button" class="empty-cta" onclick={onBack}>
+          <i class="fas fa-arrow-left" aria-hidden="true"></i>
+          <span>{t("browse_verified_back_to", { destination: backLabel })}</span
+          >
+        </button>
+      </div>
+    {:else if loadingMembers}
       <div class="skeleton-grid" aria-hidden="true">
         {#each Array(6) as _}
           <span class="card-skeleton"></span>
@@ -1018,6 +1044,16 @@ becomes private while open, we bail back to the list instead of showing a ghost.
     background: color-mix(in srgb, var(--tile-color) 10%, var(--theme-card-bg));
   }
 
+  .back-btn {
+    width: auto;
+    min-width: 44px;
+    gap: 7px;
+    padding: 0 12px;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
   .back-btn:focus-visible,
   .options-btn:focus-visible {
     outline: 2px solid var(--tile-color);
@@ -1149,14 +1185,35 @@ becomes private while open, we bail back to the list instead of showing a ghost.
       padding-inline: 8px;
     }
 
+    .back-btn {
+      width: 44px;
+      padding: 0;
+    }
+
+    .back-btn span,
+    .header-icon {
+      display: none;
+    }
+
     .header-actions {
       gap: 8px;
     }
 
     .header-actions .header-action-btn {
       width: 44px;
+      min-width: 44px;
       padding: 0;
       justify-content: center;
+    }
+
+    .follow-btn {
+      width: 44px;
+      min-width: 44px;
+      padding: 0;
+    }
+
+    .follow-btn span {
+      display: none;
     }
 
     .header-actions .header-action-btn span {
@@ -1215,6 +1272,10 @@ becomes private while open, we bail back to the list instead of showing a ghost.
     50% {
       opacity: 0.85;
     }
+  }
+
+  .header-count.hidden-count {
+    visibility: hidden;
   }
 
   .empty-state {

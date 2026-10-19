@@ -14,8 +14,11 @@
   import { Plane, PlaneMode } from "@austencloud/scene-3d";
   import { computeGroupBounds } from "#lib/shared/sequence-viewer/camera-choreography/presets/shots.js";
 
-  const NATIVE_PERFORMER_CENTER_Y = 0.9;
-  const FRAMING_PADDING = 1.5;
+  import { frameNativeCamera } from "../domain/native-camera-framing";
+  import {
+    nativePropId,
+    nativePropSelection,
+  } from "../domain/native-prop-selection";
 
   let { connection }: { connection: NativeViewerConnection } = $props();
   const viewer = getViewer3DContext();
@@ -74,58 +77,32 @@
     );
   }
 
-  function frameNativeCamera(
+  function frameCamera(
     position: { x: number; y: number; z: number },
     target: { x: number; y: number; z: number }
   ) {
-    const aspect = Math.max(0.1, streamView().aspect);
-    const horizontalHalfFov =
-      ((connection.state?.camera.fov ?? 50) * Math.PI) / 360;
-    const verticalHalfFov = Math.atan(Math.tan(horizontalHalfFov) / aspect);
     const radius = computeGroupBounds(
       viewer.performerManager.performers.map((performer) => ({
         position: performer.position,
       }))
     ).radius;
-    const minimumDistance =
-      (radius * FRAMING_PADDING) /
-      Math.sin(Math.min(horizontalHalfFov, verticalHalfFov));
-    const requestedDirection = {
-      x: position.x - target.x,
-      y: position.y - target.y,
-      z: position.z - target.z,
-    };
-    const distance = Math.hypot(
-      requestedDirection.x,
-      requestedDirection.y,
-      requestedDirection.z
+    return frameNativeCamera(
+      position,
+      target,
+      radius,
+      streamView().aspect,
+      connection.state?.camera.fov ?? 50
     );
-    const direction =
-      distance > 0.001 ? requestedDirection : { x: 0, y: 0, z: 1 };
-    const scale =
-      distance > 0.001
-        ? Math.max(1, minimumDistance / distance)
-        : minimumDistance;
-    const framedTarget = {
-      ...target,
-      y: target.y === 0 ? NATIVE_PERFORMER_CENTER_Y : target.y,
-    };
-    return {
-      position: {
-        x: framedTarget.x + direction.x * scale,
-        y: framedTarget.y + direction.y * scale,
-        z: framedTarget.z + direction.z * scale,
-      },
-      target: framedTarget,
-    };
   }
-
   function desiredScene() {
     return {
       performers: viewer.performerManager.performers.map((performer) => ({
         performerId: "performer-0",
         characterId: performer.characterId,
-        propId: performer.effectiveProp,
+        propId: nativePropId(
+          performer.effectiveProp,
+          performer.effectivePropBuild
+        ),
         position: { x: performer.position.x, z: performer.position.z },
         facingAngle: performer.facingAngle,
       })),
@@ -202,13 +179,22 @@
         customLeftPlane: Plane.WALL,
         customRightPlane: Plane.WALL,
         settings: {
-          prop: performer.propId,
+          prop: nativePropSelection(performer.propId).prop,
           effortId: null,
           effect: null,
           staffLengthCm: null,
         },
       })),
       selectedPerformerIndices: state.selectedPerformerId ? [0] : [],
+    });
+    viewer.sceneUndo.withoutUndo(() => {
+      state.performers.forEach((performer, index) => {
+        const local = viewer.performerManager.performers[index];
+        if (!local) return;
+        const { build } = nativePropSelection(performer.propId);
+        if (build) local.setPropBuild(build);
+        else local.resetPropBuild();
+      });
     });
     restoreUnsupported();
     confirmedScene = sceneSignature(state);
@@ -293,7 +279,10 @@
           const state = await connection.command("select", {
             performerId: scene.selected && performer ? "performer-0" : null,
           });
-          if (edit === editRevision) reconcile(state);
+          if (edit === editRevision) {
+            reconcile(state);
+            connection.report("");
+          }
         } catch (cause) {
           if (edit !== editRevision || connection.status !== "ready") return;
           connection.report(
@@ -472,7 +461,7 @@
     // Native feet rest at floor zero; shared shots add their own target height.
     viewer.setStageGroundOffset(0);
     const removeCamera = viewer.registerSnapTo((position, target) =>
-      sendCamera(frameNativeCamera(position, target))
+      sendCamera(frameCamera(position, target))
     );
     void connection.mount(host);
     const removePlacement = viewer.registerPerformerPlacement(() => {

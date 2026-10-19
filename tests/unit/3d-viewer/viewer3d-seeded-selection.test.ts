@@ -78,12 +78,15 @@ describe("viewer-3d seeded performer selection", () => {
     }
   });
 
-  it("still restores the stored selection when nothing is seeded", () => {
+  // The performer tools live on the rail and open straight onto their
+  // panel, so a stored "No performers" would open every one of them locked.
+  it("starts on every performer when the stored selection is empty", () => {
     leaveEmptySelectionInStorage();
     const { state, dispose } = createViewer3DStateForTest({ persistent: true });
     try {
       state.enter3D();
-      expect(state.selectedPerformerIndices).toEqual([]);
+      expect(state.selectedPerformerIndices).toEqual([0]);
+      expect(state.selectedPerformerIndex).toBeNull();
     } finally {
       dispose();
     }

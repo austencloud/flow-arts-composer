@@ -19,14 +19,15 @@
   // point — this is a pointer, not a summary.
   const railTools = [
     {
+      icon: "fa-user",
+      label: "Performer tools",
+      detail:
+        "Character down to Effects. They change whoever is picked at the top left.",
+    },
+    {
       icon: "fa-mountain-sun",
       label: "Scene",
       detail: "Swap the world you are performing in.",
-    },
-    {
-      icon: "fa-user-group",
-      label: "Performers",
-      detail: "Add bodies. Everyone performs this sequence.",
     },
     {
       icon: "fa-swatchbook",
@@ -121,6 +122,11 @@
     box-shadow: var(--theme-panel-shadow, 0 1.25rem 4rem rgba(0, 0, 0, 0.62));
     color: var(--theme-text, rgba(255, 255, 255, 0.94));
     pointer-events: auto;
+  }
+
+  /* A short window folds the rail into two columns; stay clear of both. */
+  :global(body:has(.scene-control-rail[data-rail-columns="2"])) .hint-card {
+    right: calc(0.75rem + 104px + 0.75rem);
   }
 
   /* The caret is what turns a floating card into a pointer. */

@@ -27,6 +27,8 @@
   import { mutateCurrentUrl } from "#lib/shared/navigation/services/url-state.js";
   import { t, tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import { localizedConcept } from "../domain/localized-concept";
+  import { claimedViewTransitionName } from "#lib/shared/transitions/claimed-view-transition-name.js";
+  import { isLessonMorphRunning } from "../services/lesson-open-morph.svelte";
 
   let {
     onConceptClick,
@@ -238,7 +240,14 @@
   });
 </script>
 
-<div class="concept-path">
+<!-- While a card grows into its lesson the rest of the map fades under it. -->
+<div
+  class="concept-path"
+  use:claimedViewTransitionName={{
+    name: "learn-course-map",
+    enabled: isLessonMorphRunning(),
+  }}
+>
   <section class="launch-zone" aria-labelledby="course-title">
     <header class="course-intro" style:view-transition-name="launchpad-guide">
       <div>

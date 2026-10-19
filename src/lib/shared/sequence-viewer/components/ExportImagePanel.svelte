@@ -35,6 +35,7 @@
   import { columnOptionsFor } from "./bento/columns-stepper";
   import ControlDock, { type ControlDockTab } from "./ControlDock.svelte";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import {
     getInfoCellCount,
     type InfoCellChoice,
@@ -62,6 +63,13 @@
     onHeaderAllChange?: (value: boolean) => void;
     onPictographAllChange?: (value: boolean) => void;
     layout?: PanelLayout;
+    /**
+     * "share" (inline layout only) lays the settings out as direct, always
+     * visible labeled rows built from the shared chip and segmented
+     * primitives: nothing is folded behind a disclosure. Default "flat" keeps
+     * the viewer's rows untouched.
+     */
+    grouping?: "flat" | "share";
     stepCount: number;
     /** Measured winner from the live card preview. */
     resolvedAutoLayout?: ResolvedAutoLayout | null;
@@ -88,6 +96,7 @@
     onHeaderAllChange,
     onPictographAllChange,
     layout = "bottom",
+    grouping = "flat",
     stepCount,
     resolvedAutoLayout = null,
     onClose,
@@ -444,6 +453,172 @@
       activeTab ?? "closed"
     );
   }
+
+  // ---- Share rows -----------------------------------------------------------
+  // Same state owners as the flat rows; only the arrangement differs. Every
+  // setting is a labeled row that is always on screen.
+  interface ShareToggle {
+    id: string;
+    label: string;
+    active: boolean;
+    toggle: () => void;
+  }
+
+  const headerToggles = $derived<ShareToggle[]>([
+    {
+      id: "word",
+      label: t("viewer_ui_word"),
+      active: showWord,
+      toggle: () =>
+        toggleCompositionSetting(
+          "word",
+          showWord,
+          imageComposition.setAddWord.bind(imageComposition)
+        ),
+    },
+    {
+      id: "step_numbers",
+      label: "Steps",
+      active: showStepNumbers,
+      toggle: () =>
+        toggleCompositionSetting(
+          "step_numbers",
+          showStepNumbers,
+          imageComposition.setAddBeatNumbers.bind(imageComposition)
+        ),
+    },
+    {
+      id: "difficulty",
+      label: t("generator_level"),
+      active: showDifficulty,
+      toggle: () =>
+        toggleCompositionSetting(
+          "difficulty",
+          showDifficulty,
+          imageComposition.setAddDifficultyLevel.bind(imageComposition)
+        ),
+    },
+    {
+      id: "loop_glyph",
+      label: "LOOP",
+      active: showLoopGlyph,
+      toggle: () =>
+        toggleCompositionSetting(
+          "loop_glyph",
+          showLoopGlyph,
+          imageComposition.setShowLoopGlyph.bind(imageComposition)
+        ),
+    },
+  ]);
+
+  const pictographToggles = $derived<ShareToggle[]>([
+    {
+      id: "grid",
+      label: t("generator_grid"),
+      active: showGrid,
+      toggle: () =>
+        togglePictographSetting(
+          "grid",
+          showGrid,
+          vm.setGridVisibility.bind(vm)
+        ),
+    },
+    {
+      id: "tka_glyph",
+      label: "TKA",
+      active: tkaGlyph,
+      toggle: () =>
+        togglePictographSetting("tka_glyph", tkaGlyph, (value) =>
+          vm.setGlyphVisibility("tkaGlyph", value)
+        ),
+    },
+    {
+      id: "tnd_glyph",
+      label: "TnD",
+      active: tndGlyph,
+      toggle: toggleTnD,
+    },
+    {
+      id: "prop_tnd_glyph",
+      label: t("viewer_detail_prop_tnd"),
+      active: propTndGlyph,
+      toggle: () =>
+        togglePictographSetting("prop_tnd_glyph", propTndGlyph, (value) =>
+          vm.setGlyphVisibility("propTndGlyph", value)
+        ),
+    },
+    {
+      id: "positions_glyph",
+      label: t("browse_chip_placements"),
+      active: placementsGlyph,
+      toggle: () =>
+        togglePictographSetting("positions_glyph", placementsGlyph, (value) =>
+          vm.setGlyphVisibility("placementsGlyph", value)
+        ),
+    },
+    {
+      id: "hand_color_key",
+      label: t("viewer_ui_hand_key"),
+      active: handColorKey,
+      toggle: () =>
+        togglePictographSetting("hand_color_key", handColorKey, (value) =>
+          vm.setGlyphVisibility("handColorKey", value)
+        ),
+    },
+    {
+      id: "non_radial",
+      label: t("viewer_ui_non_radial"),
+      active: nonRadial,
+      toggle: () =>
+        togglePictographSetting(
+          "non_radial",
+          nonRadial,
+          vm.setNonRadialVisibility.bind(vm)
+        ),
+    },
+    {
+      id: "reversals",
+      label: "Reversals",
+      active: reversalIndicators,
+      toggle: () =>
+        togglePictographSetting("reversals", reversalIndicators, (value) =>
+          vm.setGlyphVisibility("reversalIndicators", value)
+        ),
+    },
+  ]);
+
+  const themeOptions = $derived([
+    {
+      value: "light",
+      label: t("viewer_detail_light"),
+      icon: "fas fa-sun",
+    },
+    {
+      value: "dark",
+      label: t("viewer_detail_dark"),
+      icon: "fas fa-moon",
+    },
+  ]);
+  const startLayoutOptions = $derived<
+    { value: "row" | "column"; label: string }[]
+  >([
+    { value: "row", label: t("viewer_ui_top_row") },
+    { value: "column", label: t("viewer_ui_left_column") },
+  ]);
+  // SegmentedControl values are strings; Auto is the null column count.
+  const columnChoices = $derived(
+    columnOptions.map((option) => ({
+      value: option.value === null ? "auto" : String(option.value),
+      label: option.label,
+      ariaLabel:
+        option.value === null
+          ? t("viewer_ui_auto_columns_and_start_placement")
+          : t("viewer_ui_columns_count", { count: option.label }),
+    }))
+  );
+  const columnChoice = $derived(
+    currentColumnCount === null ? "auto" : String(currentColumnCount)
+  );
 </script>
 
 {#if layout === "bottom"}
@@ -752,6 +927,203 @@
       </Crossfade>
     {/snippet}
   </ControlDock>
+{:else if layout === "inline" && grouping === "share"}
+  <!-- ============================================================
+       SHARE ROWS: the same settings as the viewer, as direct labeled rows.
+       Short controls sit beside their label; chip sets (Header, Pictograph)
+       take the full row under theirs. Nothing is folded away.
+       ============================================================ -->
+  <div
+    class="share-settings"
+    role="group"
+    aria-label={t("viewer_ui_card_settings")}
+  >
+    <div class="share-rows">
+      <div class="share-row">
+        <span class="share-label" id="share-theme-label"
+          >{t("tab_settings_theme")}</span
+        >
+        <SegmentedControl
+          options={themeOptions}
+          value={exportOptions.imageDarkMode ? "dark" : "light"}
+          onchange={(value) => setTheme(value === "dark")}
+          color="accent"
+          ariaLabelledby="share-theme-label"
+        >
+          {#snippet optionContent(mode)}
+            <i
+              class={mode === "dark" ? "fas fa-moon" : "fas fa-sun"}
+              aria-hidden="true"
+            ></i>
+            {mode === "dark"
+              ? t("viewer_detail_dark")
+              : t("viewer_detail_light")}
+          {/snippet}
+        </SegmentedControl>
+      </div>
+
+      <div class="share-row share-footer">
+        <CardFooterEditor
+          value={effectiveCardPresentation}
+          onchange={changeCardPresentation}
+          layout="inline"
+          onSave={onSaveCardPresentation}
+          dirty={cardPresentationDirty}
+          saving={cardPresentationSaving}
+          idBase="share-card-footer"
+        />
+      </div>
+
+      <div
+        class="share-row share-set"
+        role="group"
+        aria-labelledby="share-header-label"
+      >
+        <span class="share-label" id="share-header-label"
+          >{t("viewer_ui_header")}</span
+        >
+        <div class="chip-wrap">
+          {#each headerToggles as item (item.id)}
+            <FilterChipBase
+              mode="toggle"
+              labelScale="readable"
+              label={item.label}
+              active={item.active}
+              onclick={item.toggle}
+            />
+          {/each}
+        </div>
+      </div>
+
+      <div
+        class="share-row share-set"
+        role="group"
+        aria-labelledby="share-pictograph-label"
+      >
+        <span class="share-label" id="share-pictograph-label"
+          >{t("viewer_ui_pictograph")}</span
+        >
+        <div class="chip-wrap">
+          {#each pictographToggles as item (item.id)}
+            <FilterChipBase
+              mode="toggle"
+              labelScale="readable"
+              label={item.label}
+              active={item.active}
+              onclick={item.toggle}
+            />
+          {/each}
+        </div>
+      </div>
+
+      <div class="share-row">
+        <span class="share-label" id="share-columns-label"
+          >{t("viewer_ui_columns")}</span
+        >
+        <SegmentedControl
+          options={columnChoices}
+          value={columnChoice}
+          onchange={(value) =>
+            setColumns(value === "auto" ? null : Number(value))}
+          color="accent"
+          ariaLabelledby="share-columns-label"
+        />
+      </div>
+
+      <div
+        class="share-row share-start"
+        role="group"
+        aria-labelledby="share-start-label"
+      >
+        <span class="share-label" id="share-start-label"
+          >{t("viewer_ui_start")}</span
+        >
+        <!-- The Show chip and the layout choice share one line beside the
+             label, so the label reads as naming both. They stack under each
+             other only when the rail is too narrow for the two. -->
+        <div class="share-inline">
+          <FilterChipBase
+            mode="toggle"
+            labelScale="readable"
+            label={t("viewer_ui_show")}
+            active={showStartPos}
+            onclick={() =>
+              toggleCompositionSetting(
+                "start_position",
+                showStartPos,
+                imageComposition.setIncludeStartPlacement.bind(imageComposition)
+              )}
+          />
+          {#if showStartPos}
+            <div class="start-layout" transition:growFade={{ axis: "x" }}>
+              <SegmentedControl
+                options={startLayoutOptions}
+                value={startPosLayout}
+                onchange={setStartPlacementLayout}
+                color="accent"
+                ariaLabel={t("viewer_ui_start")}
+              />
+            </div>
+          {/if}
+        </div>
+      </div>
+
+      {#if hasInfoCell}
+        <div class="share-row" role="group" aria-labelledby="share-info-label">
+          <span class="share-label" id="share-info-label"
+            >{t("viewer_ui_info")}</span
+          >
+          {#if isOneSpot}
+            <SegmentedControl
+              options={infoCellOptions}
+              value={infoCellDisplayChoice}
+              onchange={setInfoCellChoice}
+              color="accent"
+              ariaLabelledby="share-info-label"
+            />
+          {:else}
+            <div class="chip-wrap">
+              {#if canQRCode}
+                <FilterChipBase
+                  mode="toggle"
+                  labelScale="readable"
+                  label="QR"
+                  icon="fas fa-qrcode"
+                  active={showQRCode}
+                  onclick={() =>
+                    toggleCompositionSetting(
+                      "qr_code",
+                      showQRCode,
+                      imageComposition.setShowQRCode.bind(imageComposition)
+                    )}
+                />
+              {/if}
+              <FilterChipBase
+                mode="toggle"
+                labelScale="readable"
+                label="Mandala"
+                icon="fas fa-asterisk"
+                active={showMandala}
+                onclick={() =>
+                  toggleCompositionSetting(
+                    "mandala",
+                    showMandala,
+                    imageComposition.setShowMandala.bind(imageComposition)
+                  )}
+              />
+            </div>
+          {/if}
+          {#if canQRCode}
+            <p class="qr-scope-note">
+              {t(
+                "viewer_detail_qr_codes_appear_on_opened_cards_and_exports_gallery_thumbnails_stay_qr_free"
+              )}
+            </p>
+          {/if}
+        </div>
+      {/if}
+    </div>
+  </div>
 {:else}
   <!-- ============================================================
        DESKTOP SIDEBAR: All settings visible.
@@ -1140,8 +1512,8 @@
     flex-direction: column;
     gap: 6px;
     container-type: inline-size;
-    /* One accent for the whole tray: retint the Info SegmentedControl's
-       indicator (it reads var(--theme-accent), the dynamic cyan) to the same
+    /* One accent for the whole tray: retint the selected Info segment
+       (it reads var(--theme-accent), the dynamic cyan) to the same
        fixed blue the rt-chips use for their active state (--rail-accent in
        rail-tile.css). Chips read --rail-accent directly, so this override only
        touches the segmented — no other tray control uses --theme-accent. */
@@ -1151,7 +1523,7 @@
      height matches the 44px chips instead of towering ~7px over them (44px
      touch target + 3px track pad + 1px border was ~51px). */
   /* Info segmented matches the compact-pill chips: a 34px visible track +
-     indicator (drawn inset 5px, same frame as .rt-chip::before) over 44px-tap
+     selected fill (drawn inset 5px, same frame as .rt-chip::before) over 44px-tap
      segments, so it sits at the chips' visual height on the Pictograph tab
      instead of towering over them. */
   .dock-dense :global(.segmented-control.sm) {
@@ -1170,14 +1542,21 @@
     z-index: 0;
     pointer-events: none;
   }
-  .dock-dense :global(.segmented-control.sm .indicator) {
-    top: 5px;
-    bottom: 5px;
-    border-radius: 9px;
-    z-index: 1;
-  }
   .dock-dense :global(.segmented-control.sm .segment) {
+    position: relative;
     z-index: 2;
+  }
+  .dock-dense :global(.segmented-control.sm .segment.selected) {
+    background: transparent;
+  }
+  .dock-dense :global(.segmented-control.sm .segment.selected)::before {
+    content: "";
+    position: absolute;
+    inset: 5px 0;
+    border-radius: 9px;
+    background: var(--theme-accent);
+    z-index: -1;
+    pointer-events: none;
   }
   /* Inline label-left rows: each section is one row, not a label line + chips line. */
   .dock-dense .field {
@@ -1394,6 +1773,127 @@
     border: 1px solid var(--theme-stroke);
     border-radius: 10px;
     background: var(--theme-card-bg);
+  }
+
+  /* Share rows: every setting is a labeled row that is always on screen, with
+     14px+ text and no outlined boxes. Short controls sit beside their label;
+     chip sets take the full row under theirs. The rail's own width picks the
+     composition (container query), never the viewport. */
+  .share-settings {
+    --share-label-w: 6rem;
+    container-type: inline-size;
+    min-width: 0;
+  }
+  .share-rows {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.5rem 1.5rem;
+    min-width: 0;
+  }
+  .share-row {
+    display: grid;
+    grid-template-columns: var(--share-label-w) minmax(0, 1fr);
+    align-items: center;
+    gap: 0.25rem 0.75rem;
+    min-width: 0;
+  }
+  .share-row.share-set,
+  .share-row.share-footer {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+  }
+  .share-label {
+    font-size: var(--font-size-min);
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--theme-text);
+  }
+  /* Start: the Show chip and its layout choice sit on one line beside the
+     label. The choice takes the rest of the line and drops under the chip only
+     when the rail cannot hold both. The label lines up with the first line. */
+  .share-inline {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+  .share-start {
+    align-items: start;
+  }
+  .share-start .share-label {
+    display: flex;
+    align-items: center;
+    min-height: var(--min-touch-target);
+  }
+  .share-row :global(.segmented-control) {
+    width: 100%;
+  }
+  .share-row :global(.segment) {
+    gap: 0.5rem;
+    white-space: nowrap;
+  }
+  .chip-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+  .start-layout {
+    flex: 1 1 12rem;
+    min-width: 0;
+  }
+  /* The footer editor brings its own label and saved state. Put them in the
+     same label column as every other row, with the saved state under the label,
+     so the three modes line up with the controls above and below. */
+  .share-footer :global(.card-footer-editor.inline) {
+    grid-template-columns: var(--share-label-w) minmax(0, 1fr);
+    column-gap: 0.75rem;
+    row-gap: 0.5rem;
+  }
+  .share-footer :global(.card-footer-editor.inline > .segmented-control) {
+    width: 100%;
+  }
+  .share-footer :global(.editor-heading) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+  }
+  .share-footer :global(.editor-label) {
+    font-weight: 600;
+  }
+  .share-footer :global(.save-status) {
+    min-width: 0;
+    font-size: var(--font-size-min);
+    line-height: 1.25;
+    text-align: start;
+  }
+  /* The QR note runs the full width of its row, under both columns. */
+  .share-row .qr-scope-note {
+    grid-column: 1 / -1;
+    font-size: var(--font-size-min);
+    line-height: 1.4;
+  }
+  /* A narrow rail has no room for a label column beside the control. */
+  @container (max-width: 21.99rem) {
+    .share-row {
+      grid-template-columns: minmax(0, 1fr);
+      align-items: start;
+    }
+    .share-start .share-label {
+      min-height: 0;
+    }
+    .share-footer :global(.card-footer-editor.inline) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  /* A wide settings area (short landscape, where the rail takes the width the
+     stage gave up) pairs the rows in two columns so fewer of them stack. */
+  @container (min-width: 36rem) {
+    .share-rows {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      align-items: start;
+    }
   }
 
   .qr-scope-note {

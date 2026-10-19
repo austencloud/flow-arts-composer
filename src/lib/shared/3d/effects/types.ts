@@ -77,6 +77,12 @@ export interface TipPositionData3D {
    * club's one tip is slot 1 but key 0.
    */
   effectKeyIndex: number;
+  /**
+   * This emitter's place in its prop's anchor list. Several emitters can share
+   * a `tipIndex` (a fan's five wicks all sit on slot 1), so anything that keeps
+   * per-source state keys on this instead — `tipEffectSlot3D`.
+   */
+  emitterIndex: number;
   position: { x: number; y: number; z: number };
   velocity: { x: number; y: number; z: number };
   jerk: { x: number; y: number; z: number };

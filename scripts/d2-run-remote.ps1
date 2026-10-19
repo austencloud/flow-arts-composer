@@ -15,6 +15,15 @@ function Test-Link([string]$path) {
   (Test-Path $path) -and ((Get-Item $path -Force).Attributes -band [IO.FileAttributes]::ReparsePoint)
 }
 
+# A job that hits ENOSPC dies half-installed, so below 25 GB free this clears old
+# scratch worktrees first (d2-prune.ps1 skips any a job or process is using).
+$freeGB = (Get-Volume E).SizeRemaining / 1GB
+$prune = 'C:/Users/Austen/d2-tools/d2-prune.ps1'
+if ($freeGB -lt 25 -and (Test-Path $prune)) {
+  "[d2-run] E: has {0:N1} GB free; pruning old scratch worktrees first" -f $freeGB
+  pwsh -NoProfile -File $prune -MinFreeGB 40
+}
+
 # Reuse a clean worktree for this commit (its node_modules is already installed).
 $base = Join-Path $root "run-$($Sha.Substring(0, 10))"
 $wt = $base
@@ -23,6 +32,8 @@ if (-not (Test-Path $wt)) {
   git -C $primary worktree add --detach --quiet $wt $Sha
   if ($LASTEXITCODE -ne 0) { throw "git worktree add failed for $Sha" }
 }
+# Marks the worktree as just used, so the prune leaves it alone until meta.txt exists.
+(Get-Item $wt).LastWriteTime = Get-Date
 if ((git -C $wt rev-parse HEAD).Trim() -ne $Sha) { throw "$wt is not at $Sha" }
 # A node_modules link into the primary would let pnpm rewrite the primary's links.
 if (Test-Link (Join-Path $wt 'node_modules')) { throw "$wt\node_modules is a link; refusing to install through it" }
@@ -57,7 +68,8 @@ if ($r.ReturnValue -ne 0) { throw "Win32_Process Create failed ($($r.ReturnValue
 Set-Content (Join-Path $JobDir 'meta.txt') "sha=$Sha`nworktree=$wt`npid=$($r.ProcessId)`nstarted=$(Get-Date -Format o)"
 "[d2-run] started pid $($r.ProcessId) in $wt"
 
-# This helper deletes nothing. Old run-* worktrees are mostly hard links into the
-# pnpm store; report the count so cleanup can be a separate, deliberate step.
+# Apart from the low-space call above, this helper deletes nothing. The d2
+# scheduled task "d2 scratch prune" (scripts/d2-prune.ps1) clears old run-*
+# worktrees every hour.
 $runs = @(Get-ChildItem $root -Directory -Filter 'run-*').Count
 if ($runs -gt $keep) { "[d2-run] note: $runs scratch worktrees in $root" }

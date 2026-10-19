@@ -4,7 +4,8 @@
     resolveThrelteRenderer,
   } from "../scene-boot/threlte-handles";
   import { T, useTask, useThrelte, useScheduler } from "@threlte/core";
-  import { HTML, layers, type ThrelteLayers } from "@threlte/extras";
+  import { HTML, layers } from "@threlte/extras";
+  import PerformerLayerGroup from "./PerformerLayerGroup.svelte";
   import { flushSync, onMount, onDestroy, tick, type Snippet } from "svelte";
   import {
     PerformerRig,
@@ -75,7 +76,6 @@
     createPerformerPointerInteraction,
     type PerformerPointerInteraction,
   } from "./performer-interaction/performer-pointer-interaction.svelte.js";
-  import { resolvePerformerUpperBodyStance } from "../domain/performer-upper-body-stance";
   import { resolvePerformerContact } from "../domain/performer-contact-displacement";
   import { resolveGridJoin3D } from "../services/grid-join-3d";
   import { getAvatarSequenceCollisionAudit } from "../collision/avatar-sequence-collision-audit";
@@ -88,10 +88,6 @@
 
   // Performer layer membership inherits through the nested PerformerRig tree.
   layers();
-  const PERFORMER_LAYERS: ThrelteLayers = [
-    BASE_SCENE_LAYER,
-    PROTECTED_PERFORMER_LAYER,
-  ];
   const collisionAudit = import.meta.env.DEV
     ? getAvatarSequenceCollisionAudit()
     : null;
@@ -673,7 +669,7 @@
   });
 </script>
 
-<T.Group bind:ref={sceneEffectsLayerRoot} layers={PERFORMER_LAYERS} />
+<PerformerLayerGroup bind:ref={sceneEffectsLayerRoot} />
 {#if sceneEffectsManager && sceneEffectsCoordinatorModule}
   {#await sceneEffectsCoordinatorModule then { default: SceneEffectsCoordinator3D }}
     <SceneEffectsCoordinator3D
@@ -734,11 +730,7 @@
 {/if}
 
 <!-- Performer group shifts with stage expansion to stay centered -->
-<T.Group
-  bind:ref={performerLayerRoot}
-  position.z={stageZOffset}
-  layers={PERFORMER_LAYERS}
->
+<PerformerLayerGroup bind:ref={performerLayerRoot} z={stageZOffset}>
   {@render worldChildren?.()}
 
   <T.PointLight
@@ -856,13 +848,13 @@
         performerStepOffsets[i] ?? 0,
         performer.totalSteps
       )}
-      {@const upperBodyStance = resolvePerformerUpperBodyStance(performer)}
       <!-- Staffs the hands cannot hold from the planned stance move toward
          them, radially and in depth; a seek clears the animator's contact
          history. -->
       {@const contact = resolvePerformerContact(performer, {
         staffLengthM: propLength,
       })}
+      {@const upperBodyStance = contact.stance}
       <PerformerVisualPickTarget
         performerIndex={i}
         register={performerInteraction?.registerVisualPickTarget}
@@ -1065,4 +1057,4 @@
       />
     </HTML>
   {/if}
-</T.Group>
+</PerformerLayerGroup>

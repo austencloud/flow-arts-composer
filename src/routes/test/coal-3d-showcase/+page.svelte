@@ -138,8 +138,10 @@
       (candidate) => candidate.id === presetId
     );
     if (!preset) return;
+    const patch = preset.resolvePatch?.() ?? preset.patch;
+    if (!patch) return;
     activePresetId = preset.id;
-    effectsConfig.applyPreset("charcoal", preset.id, preset.patch);
+    effectsConfig.applyPreset("charcoal", preset.id, patch);
     effectsConfig.setActiveEffect("charcoal");
     for (const performer of viewer.performerManager.performers) {
       performer.setEffect("charcoal");

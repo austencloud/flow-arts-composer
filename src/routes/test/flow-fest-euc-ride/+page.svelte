@@ -12,8 +12,11 @@
    */
   import { onMount } from "svelte";
   import { Canvas } from "@threlte/core";
-  import { AgXToneMapping, PCFSoftShadowMap } from "three";
-  import { FLOW_FEST_EUC_CONTACT_THRESHOLDS, type FlowFestEucMountedPoseDiagnostic } from "#lib/features/flow-fest-sim/domain/flow-fest-euc-mounted-pose.js";
+  import { AgXToneMapping, WebGLRenderer, PCFSoftShadowMap } from "three";
+  import {
+    FLOW_FEST_EUC_CONTACT_THRESHOLDS,
+    type FlowFestEucMountedPoseDiagnostic,
+  } from "#lib/features/flow-fest-sim/domain/flow-fest-euc-mounted-pose.js";
   import FlowFestEucRideStage from "./FlowFestEucRideStage.svelte";
   import {
     EUC_RIDE_CAMERA_IDS,
@@ -86,7 +89,16 @@
     dpr={1}
     shadows={PCFSoftShadowMap}
     toneMapping={AgXToneMapping}
-    toneMappingExposure={1.15}
+    createRenderer={(canvas) => {
+      const renderer = new WebGLRenderer({
+        canvas,
+        powerPreference: "high-performance",
+        antialias: true,
+        alpha: true,
+      });
+      renderer.toneMappingExposure = 1.15;
+      return renderer;
+    }}
   >
     <FlowFestEucRideStage
       bind:this={stage}
@@ -98,73 +110,88 @@
   </Canvas>
 
   <div class="controls">
-      <div class="row">
-        {#each EUC_RIDE_CAMERA_IDS as id (id)}
-          <button
-            class="chip"
-            class:active={id === cameraId}
-            onclick={() => (cameraId = id)}
-          >
-            {CAMERA_LABELS[id]}
-          </button>
-        {/each}
-        <button class="chip" class:active={rough} onclick={() => (rough = !rough)}>
-          Rough ground
+    <div class="row">
+      {#each EUC_RIDE_CAMERA_IDS as id (id)}
+        <button
+          class="chip"
+          class:active={id === cameraId}
+          onclick={() => (cameraId = id)}
+        >
+          {CAMERA_LABELS[id]}
         </button>
-        <button class="chip" onclick={() => stage?.reset()}>Reset to center</button>
-      </div>
-      <p class="hint">
-        W/S throttle & brake · A/D steer · Shift performance · Ctrl regen brake
-      </p>
+      {/each}
+      <button
+        class="chip"
+        class:active={rough}
+        onclick={() => (rough = !rough)}
+      >
+        Rough ground
+      </button>
+      <button class="chip" onclick={() => stage?.reset()}
+        >Reset to center</button
+      >
     </div>
+    <p class="hint">
+      W/S throttle & brake · A/D steer · Shift performance · Ctrl regen brake
+    </p>
+  </div>
 
-    <div class="readout">
-      {#if hudTelemetry === null}
-        <p class="headline neutral">Waiting for the first frame</p>
-      {:else}
-        {@const t = hudTelemetry}
-        <p class="headline">
-          {mph(t.dynamics.speedMetersPerSecond)}
-          · accel {t.longitudinalAccelerationMetersPerSecondSquared.toFixed(1)} m/s²
-          {#if t.collisionLimited}· <span class="fail">collision-limited</span>{/if}
-        </p>
-        <dl>
-          <div>
-            <dt>Input</dt>
-            <dd>
-              throttle {t.input.throttle.toFixed(2)} · brake {t.input.brake.toFixed(2)}
-              · steer {t.input.steer.toFixed(2)}
-              {t.input.performanceMode ? "· PERF" : ""}
-            </dd>
+  <div class="readout">
+    {#if hudTelemetry === null}
+      <p class="headline neutral">Waiting for the first frame</p>
+    {:else}
+      {@const t = hudTelemetry}
+      <p class="headline">
+        {mph(t.dynamics.speedMetersPerSecond)}
+        · accel {t.longitudinalAccelerationMetersPerSecondSquared.toFixed(1)} m/s²
+        {#if t.collisionLimited}· <span class="fail">collision-limited</span
+          >{/if}
+      </p>
+      <dl>
+        <div>
+          <dt>Input</dt>
+          <dd>
+            throttle {t.input.throttle.toFixed(2)} · brake {t.input.brake.toFixed(
+              2
+            )}
+            · steer {t.input.steer.toFixed(2)}
+            {t.input.performanceMode ? "· PERF" : ""}
+          </dd>
+        </div>
+        <div>
+          <dt>Body</dt>
+          <dd>
+            lean {deg(t.dynamics.leanRadians)} · pitch {deg(
+              t.dynamics.pitchRadians
+            )}
+          </dd>
+        </div>
+        <div>
+          <dt>Twitch</dt>
+          <dd>
+            lean {t.twitch.maxLeanRateDegreesPerSecond.toFixed(0)}°/s · pitch {t.twitch.maxPitchRateDegreesPerSecond.toFixed(
+              0
+            )}°/s · pelvis {t.twitch.maxPelvisRateMillimetersPerSecond.toFixed(
+              0
+            )} mm/s
+          </dd>
+        </div>
+        <div>
+          <dt>Reversals</dt>
+          <dd>
+            {t.twitch.pitchReversalsPerSecond.toFixed(1)} /s over
+            {t.twitch.windowSeconds.toFixed(1)} s
+          </dd>
+        </div>
+        {#if pose}
+          <div class:fail={!pose.pass}>
+            <dt>Pose</dt>
+            <dd>{pose.pass ? "PASS" : "FAIL"} · {pose.status}</dd>
           </div>
-          <div>
-            <dt>Body</dt>
-            <dd>lean {deg(t.dynamics.leanRadians)} · pitch {deg(t.dynamics.pitchRadians)}</dd>
-          </div>
-          <div>
-            <dt>Twitch</dt>
-            <dd>
-              lean {t.twitch.maxLeanRateDegreesPerSecond.toFixed(0)}°/s ·
-              pitch {t.twitch.maxPitchRateDegreesPerSecond.toFixed(0)}°/s ·
-              pelvis {t.twitch.maxPelvisRateMillimetersPerSecond.toFixed(0)} mm/s
-            </dd>
-          </div>
-          <div>
-            <dt>Reversals</dt>
-            <dd>
-              {t.twitch.pitchReversalsPerSecond.toFixed(1)} /s over
-              {t.twitch.windowSeconds.toFixed(1)} s
-            </dd>
-          </div>
-          {#if pose}
-            <div class:fail={!pose.pass}>
-              <dt>Pose</dt>
-              <dd>{pose.pass ? "PASS" : "FAIL"} · {pose.status}</dd>
-            </div>
-          {/if}
-        </dl>
-      {/if}
-    </div>
+        {/if}
+      </dl>
+    {/if}
+  </div>
 </div>
 
 <style>

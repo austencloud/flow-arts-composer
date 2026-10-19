@@ -8,7 +8,7 @@
    */
   import { browser } from "$app/env";
   import { Canvas } from "@threlte/core";
-  import { AgXToneMapping } from "three";
+  import { AgXToneMapping, WebGLRenderer } from "three";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import FirstFireCoalLookdev from "./FirstFireCoalLookdev.svelte";
   import { LOOKDEV_STATIONS, type LookdevStationId } from "./lookdev-stations";
@@ -16,7 +16,8 @@
   type View = LookdevStationId | "lineup";
 
   const initialView = browser
-    ? ((new URLSearchParams(window.location.search).get("view") ?? "lineup") as View)
+    ? ((new URLSearchParams(window.location.search).get("view") ??
+        "lineup") as View)
     : "lineup";
 
   let view = $state<View>(initialView);
@@ -47,8 +48,25 @@
 </svelte:head>
 
 <div class="stage">
-  <Canvas toneMapping={AgXToneMapping} toneMappingExposure={1}>
-    <FirstFireCoalLookdev station={view} {showScaleFigure} {wallTreatment} {bounce} />
+  <Canvas
+    toneMapping={AgXToneMapping}
+    createRenderer={(canvas) => {
+      const renderer = new WebGLRenderer({
+        canvas,
+        powerPreference: "high-performance",
+        antialias: true,
+        alpha: true,
+      });
+      renderer.toneMappingExposure = 1;
+      return renderer;
+    }}
+  >
+    <FirstFireCoalLookdev
+      station={view}
+      {showScaleFigure}
+      {wallTreatment}
+      {bounce}
+    />
   </Canvas>
 
   <div class="hud hud--top">

@@ -15,7 +15,7 @@ import { parseDeepLink } from "#lib/shared/navigation/services/sequence-encoder.
 const letters = new Set(["A", "B", "W-"]);
 
 describe("letter explorer URL state", () => {
-  it("adds the Atlas category hash only on the Atlas", () => {
+  it("never adds an Atlas category hash", () => {
     const url = new URL("https://tkaflowarts.com/codex");
     writeLetterExplorerRoute(url, {
       letter: "B",
@@ -44,7 +44,8 @@ describe("letter explorer URL state", () => {
       rightRotation: RotationDirection.CLOCKWISE,
     });
 
-    expect(url.hash).toBe("#cat-letter");
+    // The explorer left the Atlas for /codex (0a66ee9fc4), so no #cat-letter.
+    expect(url.hash).toBe("");
     expect(url.searchParams.get("board")).toBe("atlas");
     expect(url.searchParams.get("leftTurns")).toBe("1.5");
     expect(url.searchParams.get("rightTurns")).toBe("fl");

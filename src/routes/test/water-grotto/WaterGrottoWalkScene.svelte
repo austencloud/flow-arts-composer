@@ -21,9 +21,10 @@
    *      only tell you the lighting is pretty.
    */
   import { onDestroy, onMount } from "svelte";
-  import { T, useTask, useThrelte } from "@threlte/core";
+  import { T, useTask, useThrelte, useScene, useRenderer } from "@threlte/core";
   import {
     Color,
+    type WebGLRenderer,
     DirectionalLight,
     DoubleSide,
     FogExp2,
@@ -70,9 +71,10 @@
 
   const props: Props = $props();
   const threlte = useThrelte();
+  const sceneContext = useScene();
+  const { renderer } = useRenderer<WebGLRenderer>();
 
   const { layout, colliders, spawn } = buildWaterGrottoSetup();
-
 
   /**
    * Three greys, separated by VALUE only, in the order a visitor reads a room:
@@ -119,7 +121,11 @@
 
   function materialFor(id: string): MeshStandardMaterial {
     if (id.includes("-ceiling")) return GRAY.ceiling;
-    if (id.startsWith("hall-") || id.startsWith("sump-wall") || id.startsWith("pool-edge-"))
+    if (
+      id.startsWith("hall-") ||
+      id.startsWith("sump-wall") ||
+      id.startsWith("pool-edge-")
+    )
       return GRAY.wall;
     return GRAY.floor;
   }
@@ -285,16 +291,21 @@
        */
       debug() {
         const cam = threlte.camera.current;
-        const scene = threlte.scene;
+        const { scene } = sceneContext;
         let meshes = 0;
         scene?.traverse((object) => {
           if ((object as { isMesh?: boolean }).isMesh) meshes += 1;
         });
-        const info = threlte.renderer?.info.render;
+        const info = renderer.info.render;
         return {
           body: { ...playerPosition },
           camera: cam
-            ? { type: cam.type, x: cam.position.x, y: cam.position.y, z: cam.position.z }
+            ? {
+                type: cam.type,
+                x: cam.position.x,
+                y: cam.position.y,
+                z: cam.position.z,
+              }
             : null,
           meshes,
           sceneChildren: scene?.children.length ?? 0,
@@ -437,10 +448,7 @@
 
 <!-- Where each performer stands. A post, at human height, on the local floor. -->
 {#each layout.performers as performer (performer.id)}
-  <T.Mesh
-    position={[performer.x, performer.y + 0.9, performer.z]}
-    castShadow
-  >
+  <T.Mesh position={[performer.x, performer.y + 0.9, performer.z]} castShadow>
     <T.BoxGeometry args={[0.5, 1.8, 0.3]} />
     <T is={MARK} />
   </T.Mesh>

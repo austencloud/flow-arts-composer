@@ -104,18 +104,19 @@ const GROW_CLASS = "hand-grid-grow";
  * be the main one on the left with the hand staying in the same place"). The
  * two share one view-transition name while `html.hand-grid-grow` is set
  * (view-transitions.css); both show the blue hand on West of a diamond grid,
- * so the group's box carries one picture between the two sizes.
+ * so the group's box carries one picture between the two sizes. Resolves once
+ * the morph has finished.
  */
-export function runHandGridGrow(mutate: () => void): void {
+export function runHandGridGrow(mutate: () => void): Promise<void> {
   const html = document.documentElement;
   html.classList.add(GROW_CLASS);
   const release = () => html.classList.remove(GROW_CLASS);
   const transition = startMorph(mutate);
   if (!transition) {
     release();
-    return;
+    return Promise.resolve();
   }
-  void transition.finished.then(release, release);
+  return transition.finished.then(release, release);
 }
 
 const SETTLE_PARTS = ["cell", "picture", "label"] as const;
@@ -151,13 +152,17 @@ function unnameBoardParts(root: HTMLElement): void {
  * motions neatly and nicely so the same component could be reused into its
  * new slot"). The quiz's own picture and prompt fade with the page.
  */
-export function runBoardSettle(root: HTMLElement, mutate: () => void): void {
+export function runBoardSettle(
+  root: HTMLElement,
+  mutate: () => void
+): ViewTransition | null {
   nameBoardParts(root);
   const transition = startMorph(mutate, async () => nameBoardParts(root));
   if (!transition) {
     unnameBoardParts(root);
-    return;
+    return null;
   }
   const release = () => unnameBoardParts(root);
   void transition.finished.then(release, release);
+  return transition;
 }

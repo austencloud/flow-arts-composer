@@ -36,11 +36,7 @@
 
   const stageSections = $derived<Record<ReviewStage, string[]>>({
     overview: plan.pathSections.map((section) => section.id),
-    threshold: [
-      "water-steam-threshold",
-      "ember-bridge",
-      "torch-lane-to-dj",
-    ],
+    threshold: ["water-steam-threshold", "ember-bridge", "torch-lane-to-dj"],
     dj: ["torch-lane-to-dj", "dj-mouth-in", "dj-orbit", "dj-mouth-out"],
     ek: ["dj-to-ek", "ek-mouth-in", "ek-orbit", "ek-mouth-out"],
     fl: ["ek-to-fl", "fl-mouth-in", "fl-orbit", "fl-mouth-out"],
@@ -224,14 +220,9 @@
             METRES_TO_PLAN_UNITS}
           height={(occluder.rect.maxZ - occluder.rect.minZ) *
             METRES_TO_PLAN_UNITS}
-          rx={occluder.kind === "torch-curtain" ? 6 : 12}
-          class:torch-curtain={occluder.kind === "torch-curtain"}
+          rx={12}
         />
-        <title>
-          {occluder.kind === "rock-rib"
-            ? "Rock sightline blocker"
-            : "Entry torch curtain"}
-        </title>
+        <title> Rock sightline blocker </title>
       </g>
     {/each}
 

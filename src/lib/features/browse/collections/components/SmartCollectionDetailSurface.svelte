@@ -51,7 +51,9 @@
   }: Props = $props();
 
   const sourceLabel = $derived(
-    spec?.source === "my-library" ? t("browse_verified_my_library") : t("browse_audit_community")
+    spec?.source === "my-library"
+      ? t("browse_verified_my_library")
+      : t("browse_audit_community")
   );
   const empty = $derived(!loading && !error && matchCount === 0);
 </script>
@@ -86,6 +88,7 @@
           onclick={onBack}
         >
           <i class="fas fa-arrow-left" aria-hidden="true"></i>
+          <span>{backLabel}</span>
         </button>
       {/if}
 
@@ -167,7 +170,9 @@
       <PanelState
         type="loading"
         title={t("browse_ui_checking_the_saved_rule")}
-        message={t("browse_verified_looking_for_matches", { source: sourceLabel })}
+        message={t("browse_verified_looking_for_matches", {
+          source: sourceLabel,
+        })}
       />
     {:else if empty}
       {#if !readOnly && onEdit}
@@ -357,6 +362,14 @@
     font-weight: 650;
   }
 
+  .detail-head .back-button {
+    width: auto;
+    gap: 7px;
+    padding: 0 12px;
+    font-size: var(--font-size-sm, 14px);
+    font-weight: 650;
+  }
+
   @container smart-detail (max-width: 560px) {
     .detail-head {
       gap: 8px;
@@ -396,6 +409,17 @@
 
     .rule-wrap {
       padding: 0 10px 10px;
+    }
+  }
+
+  @container smart-detail (max-width: 520px) {
+    .detail-head .back-button {
+      width: 44px;
+      padding: 0;
+    }
+
+    .detail-head .back-button span {
+      display: none;
     }
   }
 

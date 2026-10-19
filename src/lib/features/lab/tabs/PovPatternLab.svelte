@@ -2,10 +2,9 @@
   PovPatternLab.svelte - Toybox for the LED strip pattern engine.
 
   Generate algorithmic patterns or upload POV images, preview them flat,
-  adjust persistence duration, and upload to physical poi hardware via BLE.
+  adjust persistence duration, and upload to Ignis poi over USB.
 -->
 <script lang="ts">
-  import { getPoiDeviceManager } from "#lib/features/poi/get-poi-device-manager.js";
   import { getStripPatternEngine } from "#lib/features/poi/get-strip-pattern-engine.js";
   import { onDestroy } from "svelte";
   import { createPoiState } from "#lib/features/poi/state/poi-state.svelte.js";
@@ -23,7 +22,7 @@
   import SequencePickerModal from "#lib/shared/components/sequence-picker/SequencePickerModal.svelte";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
-  const poi = createPoiState(getStripPatternEngine(), getPoiDeviceManager());
+  const poi = createPoiState(getStripPatternEngine());
   setPoiContext(poi);
 
   // Tear down the Firestore library subscription when the lab unmounts

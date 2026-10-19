@@ -19,6 +19,15 @@ if ($LASTEXITCODE -ne 0) { throw 'Native runtime data failed validation before p
 $bundleTool = Join-Path $PSScriptRoot '..\..\Shared\Tools\performance-bundle.mjs'
 & node $bundleTool verify --project $projectRoot
 if ($LASTEXITCODE -ne 0) { throw "Performance bundle verification failed ($LASTEXITCODE)" }
+$libraryTool = Join-Path $PSScriptRoot '..\..\Shared\Tools\performance-library.mjs'
+& node $libraryTool build --project $projectRoot
+if ($LASTEXITCODE -ne 0) { throw "Performance library export failed ($LASTEXITCODE)" }
+$pictographTool = Join-Path $PSScriptRoot '..\..\Shared\Tools\performance-pictographs.mjs'
+$hasPictographs = Test-Path -LiteralPath (Join-Path $projectRoot 'Content\Data\performance-pictographs.json')
+if ($hasPictographs) {
+    & node $pictographTool verify --project $projectRoot
+    if ($LASTEXITCODE -ne 0) { throw "Performance pictograph verification failed ($LASTEXITCODE)" }
+}
 if (-not (Test-Path -LiteralPath $ArchiveDirectory)) { New-Item -ItemType Directory -Path $ArchiveDirectory -Force | Out-Null }
 $archivePath = (Resolve-Path -LiteralPath $ArchiveDirectory).Path
 
@@ -44,6 +53,12 @@ if (-not (Test-Path -LiteralPath $gameExe) -or -not (Test-Path -LiteralPath $pak
 $dataDir = Join-Path $packageRoot 'FlowFest\Content\Data'
 & node $bundleTool verify --project $projectRoot --packaged-data $dataDir
 if ($LASTEXITCODE -ne 0) { throw "Packaged performance bundle verification failed ($LASTEXITCODE)" }
+& node $libraryTool verify --project $projectRoot --packaged-data $dataDir
+if ($LASTEXITCODE -ne 0) { throw "Packaged performance library verification failed ($LASTEXITCODE)" }
+if ($hasPictographs) {
+    & node $pictographTool verify --project $projectRoot --packaged-data $dataDir
+    if ($LASTEXITCODE -ne 0) { throw "Packaged pictograph verification failed ($LASTEXITCODE)" }
+}
 $stagedSite = Join-Path $dataDir 'site.json'
 if (-not (Test-Path -LiteralPath $stagedSite -PathType Leaf)) {
     throw "UAT completed, but staged site JSON is missing: $stagedSite"

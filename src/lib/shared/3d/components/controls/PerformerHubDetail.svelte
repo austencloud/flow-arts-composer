@@ -32,10 +32,11 @@
     reportViewerControlChange,
     type ViewerControlSink,
   } from "#lib/shared/sequence-viewer/domain/viewer-control-analytics.js";
-  import type {
-    PerformerEditSink,
-    PerformerHubEdit,
-    PerformerHubTab,
+  import {
+    PERFORMER_TOOLS,
+    type PerformerEditSink,
+    type PerformerHubEdit,
+    type PerformerHubTab,
   } from "./performer-hub-types";
   import { resolvePerformerHubEmptyScope } from "./performer-hub-empty-scope";
 
@@ -217,17 +218,7 @@
   });
 
   // ─── Tabs ───
-  const ALL_TABS: { id: PerformerHubTab; label: string; icon: string }[] = [
-    { id: "character", label: "Character", icon: "fa-user" },
-    { id: "sequence", label: "Sequence", icon: "fa-film" },
-    { id: "prop", label: "Prop", icon: "fa-shapes" },
-    { id: "grid", label: "Grid", icon: "fa-braille" },
-    { id: "planes", label: "Planes", icon: "fa-layer-group" },
-    { id: "effort", label: "Effort", icon: "fa-gauge-high" },
-    { id: "effects", label: "Effects", icon: "fa-wand-sparkles" },
-  ];
-
-  const TABS = ALL_TABS;
+  const TABS = PERFORMER_TOOLS;
   const tabIndex = $derived(TABS.findIndex((t) => t.id === activeTab));
 
   // None is a real selection state. Scoped writes drop every edit then, so the
@@ -481,8 +472,8 @@
         <div
           id="hub-panel-character"
           class="tab-pane active"
-          role="tabpanel"
-          aria-labelledby="hub-tab-character"
+          role={showTabBar ? "tabpanel" : undefined}
+          aria-labelledby={showTabBar ? "hub-tab-character" : undefined}
         >
           <div class="character-section">
             <CharacterSelectWorkspace
@@ -503,8 +494,8 @@
         <div
           id="hub-panel-sequence"
           class="tab-pane active"
-          role="tabpanel"
-          aria-labelledby="hub-tab-sequence"
+          role={showTabBar ? "tabpanel" : undefined}
+          aria-labelledby={showTabBar ? "hub-tab-sequence" : undefined}
         >
           <PerformerSequencePanel
             {performerName}
@@ -521,8 +512,8 @@
         <div
           id="hub-panel-prop"
           class="tab-pane active"
-          role="tabpanel"
-          aria-labelledby="hub-tab-prop"
+          role={showTabBar ? "tabpanel" : undefined}
+          aria-labelledby={showTabBar ? "hub-tab-prop" : undefined}
         >
           <div class="prop-section">
             <ScenePropPicker
@@ -553,8 +544,8 @@
         <div
           id="hub-panel-grid"
           class="tab-pane active"
-          role="tabpanel"
-          aria-labelledby="hub-tab-grid"
+          role={showTabBar ? "tabpanel" : undefined}
+          aria-labelledby={showTabBar ? "hub-tab-grid" : undefined}
         >
           <PerformerGridPanel
             fill
@@ -571,8 +562,8 @@
         <div
           id="hub-panel-planes"
           class="tab-pane active"
-          role="tabpanel"
-          aria-labelledby="hub-tab-planes"
+          role={showTabBar ? "tabpanel" : undefined}
+          aria-labelledby={showTabBar ? "hub-tab-planes" : undefined}
         >
           <div class="planes-section">
             <PlanesPopover {onSettingChange} />
@@ -584,8 +575,8 @@
         <div
           id="hub-panel-effort"
           class="tab-pane active"
-          role="tabpanel"
-          aria-labelledby="hub-tab-effort"
+          role={showTabBar ? "tabpanel" : undefined}
+          aria-labelledby={showTabBar ? "hub-tab-effort" : undefined}
         >
           <div class="effort-section">
             <EffortPalette
@@ -600,8 +591,8 @@
         <div
           id="hub-panel-effects"
           class="tab-pane active"
-          role="tabpanel"
-          aria-labelledby="hub-tab-effects"
+          role={showTabBar ? "tabpanel" : undefined}
+          aria-labelledby={showTabBar ? "hub-tab-effects" : undefined}
         >
           <div class="effects-section">
             <EffectsSettingsPanel

@@ -1,12 +1,52 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { PlaneMode } from "@austencloud/scene-3d";
+import { createCharacterInstanceState, makeStandaloneDeps } from "#lib/shared/3d/state/character-instance-state.svelte.js";
+import { buildStanceYawTrackForSource, resolveTrackedUpperBodyStance } from "#lib/shared/3d/collision/stance-yaw-track.js";
 import {
   MAX_STANCE_YAW_RAD,
+  planUpperBodyStanceDepth,
+  planUpperBodyStanceYawTarget,
   planUpperBodyStance,
   planUpperBodyStanceYaw,
+  stanceTargetsForPropStates,
 } from "#lib/shared/3d/collision/upper-body-stance-planner.js";
 
 const GRID_DEPTH = 0.3;
 const LANE = 0.16;
+
+it("spreads the captured staff A depth jump while preserving adjacent lanes and loop timing", () => {
+  const sequence = JSON.parse(readFileSync("tests/fixtures/3d/family-staff-A.sequence.json", "utf8"));
+  const state = createCharacterInstanceState({ id: "staff-a-corridor", persistent: false }, makeStandaloneDeps());
+  state.setPlaneMode(PlaneMode.WALL);
+  state.loadSequence(sequence);
+  const track = buildStanceYawTrackForSource(state, PlaneMode.WALL);
+  expect(track).not.toBeNull();
+  const sample = (score: number) => {
+    const props = state.propStatesAtScoreTime(score);
+    const stance = resolveTrackedUpperBodyStance(track, score, PlaneMode.WALL, props.left, props.right, null);
+    const targets = stanceTargetsForPropStates(PlaneMode.WALL, props.left, props.right);
+    const baseline = planUpperBodyStanceDepth(
+      stance.segments.chestRad,
+      targets,
+      null,
+      planUpperBodyStanceYawTarget(targets)
+    );
+    return { stance, baseline };
+  };
+  for (const frame of [130, 370]) {
+    const prior = sample((frame - 1) / 30);
+    const next = sample(frame / 30);
+    expect(Math.abs(next.baseline.leftDepthOffsetM - prior.baseline.leftDepthOffsetM)).toBeGreaterThan(0.3);
+    expect(Math.abs(next.stance.leftDepthOffsetM - prior.stance.leftDepthOffsetM)).toBeLessThan(0.12);
+    expect(Math.abs(next.stance.rightDepthOffsetM - prior.stance.rightDepthOffsetM)).toBeLessThan(0.12);
+  }
+  for (const score of [0, 2, 4, 4.75, 8, 12, 12.75, 16]) {
+    const { stance, baseline } = sample(score);
+    expect(stance.leftDepthOffsetM).toBeCloseTo(baseline.leftDepthOffsetM, 8);
+    expect(stance.rightDepthOffsetM).toBeCloseTo(baseline.rightDepthOffsetM, 8);
+  }
+});
 
 describe("planUpperBodyStanceYaw", () => {
   it("faces east when both grips move east", () => {

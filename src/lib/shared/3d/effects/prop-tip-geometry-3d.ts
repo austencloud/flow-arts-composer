@@ -51,6 +51,28 @@ export interface PropTipAnchor3D {
     readonly z: number;
   };
 }
+/**
+ * Most tracked emitters any one prop presents: a fan's five wicks or rim
+ * points. Every emitter needs its own effect source, so the effect pools size
+ * their per-rig slots from this rather than from the two logical ends.
+ */
+export const MAX_TIP_EMITTERS_PER_PROP = 5;
+
+/** Effect source slots one rig holds: both hands, every emitter on each. */
+export const TIP_EFFECT_SLOTS_PER_RIG = 2 * MAX_TIP_EMITTERS_PER_PROP;
+
+/**
+ * The effect source slot for one emitter. Keying a source by its logical end
+ * instead put all five fan wicks on one slot, so each frame overwrote the
+ * last and the effect burned at a single wick.
+ */
+export function tipEffectSlot3D(
+  propIndex: number,
+  emitterIndex: number
+): number {
+  return propIndex * MAX_TIP_EMITTERS_PER_PROP + emitterIndex;
+}
+
 /** `Prop3D.svelte` renders every "big" procedural variant at this scale. */
 const BIG_SCALE = 1.4;
 

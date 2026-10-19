@@ -1,9 +1,10 @@
 /**
- * Two-draw 3D Coal renderer.
+ * Three-draw 3D Coal renderer.
  *
- * Every tracked tip owns a persistent irregular coal head. Travel sheds
- * discrete ember bodies and brief directional sparks; it never draws a
- * continuous ribbon. Fixed pools keep the frame loop allocation-free.
+ * Every tracked tip owns a persistent irregular coal head. Travel throws
+ * sparks that fly, burn and cool by the shared spark physics
+ * (effects/domain/spark-physics.ts), drawn as motion streaks, plus discrete
+ * ember bodies. Fixed pools keep the frame loop allocation-free.
  */
 
 import type { Object3D, ShaderMaterial, Vector3 } from "three";
@@ -13,11 +14,40 @@ import {
   Color,
   DodecahedronGeometry,
   Euler,
+  Mesh,
   Points,
   Quaternion,
   SRGBColorSpace,
+  Vector2,
   Vector3 as ThreeVector3,
 } from "three";
+import {
+  createCharcoalStreakGeometry,
+  createCharcoalStreakMaterial,
+  STREAK_ATTRIBUTE_NAMES,
+  updateCharcoalStreakMaterial,
+  type CharcoalStreakBuffers,
+} from "./charcoal-streak-material-3d";
+import {
+  createSparkSnapState,
+  EMBER_CHIP_MATERIAL,
+  releaseSparkVelocity,
+  resetSparkSnap,
+  snapBurstSparks,
+  resolveSparkMaterial,
+  sampleSparkDiameter,
+  sampleSparkFork,
+  sparkBurnTime,
+  sparkCoolTime,
+  sparkHeat,
+  sparkLifetime,
+  SPARK_GRAVITY,
+  SPARK_SHUTTER_SECONDS,
+  stepSparkSnap,
+  stepSparkVelocity,
+  type SparkMaterial,
+  type SparkSnapState,
+} from "#lib/shared/effects/domain/spark-physics.js";
 import {
   createCharcoalMaterial,
   type CharcoalMaterialOptions,
@@ -47,12 +77,16 @@ const FRAGMENT_POOL_SIZE: Record<QualityTier, number> = {
 const DEFAULT_MAX_TIPS = 4;
 const MAX_SEGMENT_DISTANCE = 0.18;
 const MAX_STEP_ADVANCE = 0.5;
-const BURST_IMPULSE_THRESHOLD = 0.85;
-const BURST_REARM_IMPULSE = 0.4;
-const BURST_IMPULSE_RANGE = 4.5;
-const BURST_COOLDOWN_SECONDS = 0.12;
-const SPARK_DRAG = 0.76;
-const FRAGMENT_DRAG = 0.68;
+/** Most sparks one head throws in a frame, so a stall cannot flood the pool. */
+const MAX_AMBIENT_PER_FRAME = 64;
+/** Radius of a spark's visible glow (m), for a 0.3 mm droplet. */
+const SPARK_GLOW_RADIUS = 0.0032;
+/** How far from the head's centre sparks leave the wool (m). */
+const SPARK_ORIGIN_SCATTER = 0.05;
+/** Size of a 1 mm ember chip's body (m); its glow is a few times this. */
+const FRAGMENT_GLOW_RADIUS = 0.0055;
+/** Longest an ember chip stays lit (s), so the floor does not fill up. */
+const FRAGMENT_MAX_LIFE = 3;
 
 const DEFAULT_CORE: [number, number, number] = [255, 242, 210];
 const DEFAULT_MID: [number, number, number] = [255, 150, 35];
@@ -67,7 +101,6 @@ const POINT_ATTRIBUTE_NAMES = [
   "particleSeed",
 ] as const;
 
-const POINT_KIND_SPARK = 0;
 const POINT_KIND_EMBER = 1;
 const POINT_KIND_HEAD = 2;
 const HEAD_POINTS_PER_TIP = 4;
@@ -92,6 +125,13 @@ interface SparkParticle {
   groundClamped: boolean;
   seed: number;
   active: boolean;
+  /** Physical diameter (m), burn and cooling times (s), age (s). */
+  diameter: number;
+  burnTime: number;
+  coolTime: number;
+  age: number;
+  /** Age at which the spark bursts into smaller ones, or -1. */
+  forkAt: number;
 }
 
 interface FragmentParticle extends SparkParticle {
@@ -115,10 +155,9 @@ interface TipRuntime {
   sourceId: number | null;
   hasPrevious: boolean;
   ambientAccumulator: number;
-  ambientClusterTarget: number;
   ambientEmissionIndex: number;
-  burstArmed: boolean;
-  burstCooldown: number;
+  /** Watches the head for a stop or a snap; see stepSparkSnap. */
+  readonly snap: SparkSnapState;
   present: boolean;
   seed: number;
 }
@@ -267,6 +306,11 @@ function createSparkParticle(): SparkParticle {
     groundClamped: false,
     seed: 0,
     active: false,
+    diameter: 0.0003,
+    burnTime: 0,
+    coolTime: 0,
+    age: 0,
+    forkAt: -1,
   };
 }
 
@@ -305,11 +349,13 @@ function shouldResetMotionHistory(
   return advance < -0.001 || advance > MAX_STEP_ADVANCE;
 }
 
-function resolveMomentumShift(
-  previousVelocity: ThreeVector3,
-  tip: CharcoalTipInput
-): MomentumShift {
-  const incomingSpeed = previousVelocity.length();
+/** A burst leaves along the way the head was going before the change. */
+function incomingShift(snap: SparkSnapState, severity: number): MomentumShift {
+  const incomingSpeed = Math.hypot(
+    snap.incomingVx,
+    snap.incomingVy,
+    snap.incomingVz
+  );
   if (incomingSpeed <= 0.0001) {
     return {
       directionX: 0,
@@ -317,29 +363,16 @@ function resolveMomentumShift(
       directionZ: 0,
       incomingSpeed: 0,
       impulse: 0,
-      severity: 0,
+      severity,
     };
   }
-
-  const deltaX = tip.velocityX - previousVelocity.x;
-  const deltaY = tip.velocityY - previousVelocity.y;
-  const deltaZ = tip.velocityZ - previousVelocity.z;
-  const velocityChange = Math.sqrt(
-    deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ
-  );
-  const speedWeight = Math.min(1, incomingSpeed / 3);
-  const impulse = velocityChange * speedWeight;
-
   return {
-    directionX: previousVelocity.x / incomingSpeed,
-    directionY: previousVelocity.y / incomingSpeed,
-    directionZ: previousVelocity.z / incomingSpeed,
+    directionX: snap.incomingVx / incomingSpeed,
+    directionY: snap.incomingVy / incomingSpeed,
+    directionZ: snap.incomingVz / incomingSpeed,
     incomingSpeed,
-    impulse,
-    severity: Math.max(
-      0,
-      Math.min(1, (impulse - BURST_IMPULSE_THRESHOLD) / BURST_IMPULSE_RANGE)
-    ),
+    impulse: 0,
+    severity,
   };
 }
 
@@ -376,6 +409,12 @@ export class CharcoalRenderer3D {
   private readonly fragmentColor = new Color();
 
   private points: Points | null = null;
+  private streaks: Mesh | null = null;
+  private streakBuffers: CharcoalStreakBuffers | null = null;
+  private streakMaterial: ShaderMaterial | null = null;
+  private readonly viewport = new Vector2();
+  private sparkMaterial: SparkMaterial = resolveSparkMaterial("steel-wool");
+  private collisionFloorY: number | null = null;
   private geometry: BufferGeometry | null = null;
   private material: ShaderMaterial | null = null;
   private fragmentPool: ParticleInstancePool3D | null = null;
@@ -444,10 +483,8 @@ export class CharcoalRenderer3D {
         sourceId: null,
         hasPrevious: false,
         ambientAccumulator: 0,
-        ambientClusterTarget: this.motionProfile.packetMin,
         ambientEmissionIndex: 0,
-        burstArmed: true,
-        burstCooldown: 0,
+        snap: createSparkSnapState(),
         present: false,
         seed: (index + 1) * 0.173,
       })
@@ -502,6 +539,28 @@ export class CharcoalRenderer3D {
     this.points.renderOrder = 102;
     parent.add(this.points);
 
+    this.streakBuffers = createCharcoalStreakGeometry(this.sparkCapacity);
+    this.streakMaterial = createCharcoalStreakMaterial({
+      coreColor: materialOptions.coreColor ?? this.coreColor,
+      midColor: materialOptions.midColor ?? this.midColor,
+      coolColor: materialOptions.coolColor ?? this.coolColor,
+      emissiveStrength: materialOptions.emissiveStrength ?? 1.7,
+      shutterSeconds: SPARK_SHUTTER_SECONDS,
+    });
+    const streakMaterial = this.streakMaterial;
+    const viewport = this.viewport;
+    this.streaks = new Mesh(this.streakBuffers.geometry, streakMaterial);
+    this.streaks.frustumCulled = false;
+    this.streaks.renderOrder = 102;
+    this.streaks.onBeforeRender = (renderer) => {
+      renderer.getDrawingBufferSize(viewport);
+      (streakMaterial.uniforms.uViewport!.value as Vector2).copy(viewport);
+      const pixelRatio = renderer.getPixelRatio();
+      streakMaterial.uniforms.uMinWidth!.value = 1.1 * pixelRatio;
+      streakMaterial.uniforms.uMaxWidth!.value = 4.5 * pixelRatio;
+    };
+    parent.add(this.streaks);
+
     this.fragmentPool = new ParticleInstancePool3D({
       capacity: this.fragmentCapacity,
       geometry: new DodecahedronGeometry(1, 0),
@@ -519,7 +578,7 @@ export class CharcoalRenderer3D {
     dt: number,
     frame?: CharcoalFrameContinuity
   ): void {
-    if (!this.geometry || !this.fragmentPool) return;
+    if (!this.geometry || !this.fragmentPool || !this.streakBuffers) return;
     const safeDt = Math.min(Math.max(dt, 0), 1 / 15);
     this.clock += safeDt;
     const collisionFloorY =
@@ -541,10 +600,9 @@ export class CharcoalRenderer3D {
       if (!state) continue;
       state.present = true;
       state.currentPosition.copy(tip.position);
-      state.burstCooldown = Math.max(0, state.burstCooldown - safeDt);
       const discontinuous = this.updateTipPath(state, tip, resetMotionHistory);
       if (!discontinuous) {
-        this.updateTipBurst(state, tip);
+        this.updateTipBurst(state, tip, safeDt);
         this.updateTipAmbient(state, tip, safeDt);
       }
       state.previousPosition.copy(tip.position);
@@ -555,8 +613,10 @@ export class CharcoalRenderer3D {
       if (!state.present && state.hasPrevious) this.clearTipState(state);
     }
 
+    this.collisionFloorY = collisionFloorY;
     this.updateFragments(safeDt, collisionFloorY);
-    this.updatePoints(safeDt);
+    this.updateSparks(safeDt);
+    this.updatePoints();
     if (CharcoalRenderer3D.diagnosticObservers.size > 0) {
       this.diagnosticAccumulator += safeDt;
       if (this.diagnosticAccumulator >= 1 / 15) {
@@ -617,40 +677,39 @@ export class CharcoalRenderer3D {
     const distance = state.previousPosition.distanceTo(tip.position);
     if (resetMotionHistory || distance > MAX_SEGMENT_DISTANCE) {
       state.ambientAccumulator = 0;
-      state.ambientClusterTarget = this.motionProfile.packetMin;
-      state.burstArmed = true;
-      state.burstCooldown = 0;
+      resetSparkSnap(state.snap);
       this.suppressedDiscontinuityCount++;
       return true;
     }
     return false;
   }
 
-  private updateTipBurst(state: TipRuntime, tip: CharcoalTipInput): void {
-    const shift = resolveMomentumShift(state.previousVelocity, tip);
-    if (shift.impulse < BURST_REARM_IMPULSE) state.burstArmed = true;
-    const burstThreshold =
-      BURST_IMPULSE_THRESHOLD * this.motionProfile.burstThresholdScale;
-    if (
-      shift.impulse < burstThreshold ||
-      !state.burstArmed ||
-      state.burstCooldown > 0
-    ) {
-      return;
-    }
-
-    const burstShift: MomentumShift = {
-      ...shift,
-      severity: Math.max(
-        0,
-        Math.min(1, (shift.impulse - burstThreshold) / BURST_IMPULSE_RANGE)
-      ),
-    };
+  /**
+   * A stop, reversal or snap throws a clump on top of the stream. What
+   * counts as one is the shared snap test (stepSparkSnap): the load on the
+   * head rising above what it has been carrying, so a steady spin never
+   * bursts and a long frame cannot fake one.
+   */
+  private updateTipBurst(
+    state: TipRuntime,
+    tip: CharcoalTipInput,
+    dt: number
+  ): void {
+    const severity = stepSparkSnap(
+      state.snap,
+      tip.velocityX,
+      tip.velocityY,
+      tip.velocityZ,
+      dt,
+      this.motionProfile.burstThresholdScale
+    );
+    if (severity <= 0) return;
+    const burstShift = incomingShift(state.snap, severity);
 
     const requestedSparkCount = Math.max(
       1,
       Math.round(
-        (8 + burstShift.severity * 112) *
+        snapBurstSparks(burstShift.severity) *
           (0.65 + this.intensity * 0.95) *
           this.motionProfile.burstSparkScale
       )
@@ -673,7 +732,9 @@ export class CharcoalRenderer3D {
         tip.position,
         burstShift,
         "burst",
-        tip.sourceId
+        tip.sourceId,
+        state.previousPosition,
+        dt
       );
       if (!spark) continue;
       sparkCount++;
@@ -688,19 +749,21 @@ export class CharcoalRenderer3D {
     }
     const velocityDivisor = Math.max(1, sparkCount);
     this.lastBurst = {
-      impulse: shift.impulse,
+      impulse: state.snap.load - state.snap.usualLoad,
       severity: burstShift.severity,
       sparkCount,
       fragmentCount,
-      sourceDirection: [shift.directionX, shift.directionY, shift.directionZ],
+      sourceDirection: [
+        burstShift.directionX,
+        burstShift.directionY,
+        burstShift.directionZ,
+      ],
       averageSparkVelocity: [
         velocityX / velocityDivisor,
         velocityY / velocityDivisor,
         velocityZ / velocityDivisor,
       ],
     };
-    state.burstArmed = false;
-    state.burstCooldown = BURST_COOLDOWN_SECONDS;
     this.burstCount++;
   }
 
@@ -709,9 +772,9 @@ export class CharcoalRenderer3D {
     tip: CharcoalTipInput,
     dt: number
   ): void {
-    // Match the dense 2D steel-wool envelope without interpolating between
-    // sampled positions. Real charcoal sheds in irregular packets rather than
-    // drawing every sample of the prop path as a continuous luminous stroke.
+    // Sparks leave every frame, spread along the stretch the head covered,
+    // so a steady spin draws an unbroken arc. Clumps come only from
+    // updateTipBurst, when the motion actually changes.
     const baseRate = 56 + this.intensity * 174;
     const motionFactor =
       0.22 * this.motionProfile.idleEmissionScale +
@@ -719,23 +782,32 @@ export class CharcoalRenderer3D {
     const heatFactor = 0.8 + this.glow * 0.35;
     const rate = baseRate * motionFactor * heatFactor;
     state.ambientAccumulator += rate * dt;
-    if (state.ambientAccumulator < state.ambientClusterTarget) return;
-
-    const emissionCount = Math.min(24, Math.floor(state.ambientAccumulator));
-    state.ambientAccumulator -= emissionCount;
+    const emissionCount = Math.min(
+      MAX_AMBIENT_PER_FRAME,
+      Math.floor(state.ambientAccumulator)
+    );
+    if (emissionCount === 0) return;
+    // A capped frame drops the excess rather than paying it back later.
+    state.ambientAccumulator = Math.min(
+      1,
+      state.ambientAccumulator - emissionCount
+    );
     const fragmentStride = this.motionProfile.ambientFragmentStride;
     for (let emission = 0; emission < emissionCount; emission++) {
       const shift = this.resolveAmbientMomentum(tip);
-      this.emitSpark(tip.position, shift, "ambient", tip.sourceId);
+      this.emitSpark(
+        tip.position,
+        shift,
+        "ambient",
+        tip.sourceId,
+        state.previousPosition,
+        dt
+      );
       state.ambientEmissionIndex++;
       if (state.ambientEmissionIndex % fragmentStride === 0) {
         this.emitFragment(tip, tip.position, "ambient");
       }
     }
-    state.ambientClusterTarget =
-      this.motionProfile.packetMin +
-      ((state.ambientEmissionIndex * 7 + Math.round(state.seed * 1000)) %
-        Math.max(1, this.motionProfile.packetRange));
   }
 
   private resolveAmbientMomentum(tip: CharcoalTipInput): MomentumShift {
@@ -764,22 +836,33 @@ export class CharcoalRenderer3D {
     };
   }
 
+  /**
+   * Throws one spark. It leaves at the head's velocity times the material's
+   * carry, so it flies off along the spin's tangent, plus a small random
+   * kick. With `from` and `dt`, it is placed at a random point of this
+   * frame's travel and caught up by the time since the head passed there, so
+   * a frame's sparks string out along the path instead of leaving as a clump.
+   */
   private emitSpark(
     position: Vector3,
     shift: MomentumShift,
     mode: SparkEmissionMode,
-    sourceId: number
+    sourceId: number,
+    from: Vector3 | null = null,
+    dt = 0
   ): SparkParticle | null {
     const particle = this.claimSpark();
     if (!particle) return null;
 
     const burst = mode === "burst";
-    const originScatter =
-      (burst ? 0.085 : 0.115) *
-      Math.max(0.45, Math.min(1.7, this.motionProfile.coneScale));
-    particle.x = position.x + (Math.random() - 0.5) * originScatter;
-    particle.y = position.y + (Math.random() - 0.5) * originScatter;
-    particle.z = position.z + (Math.random() - 0.5) * originScatter;
+    const material = this.sparkMaterial;
+    const u = from ? Math.random() : 1;
+    const baseX = from ? from.x + (position.x - from.x) * u : position.x;
+    const baseY = from ? from.y + (position.y - from.y) * u : position.y;
+    const baseZ = from ? from.z + (position.z - from.z) * u : position.z;
+    particle.x = baseX + (Math.random() - 0.5) * SPARK_ORIGIN_SCATTER;
+    particle.y = baseY + (Math.random() - 0.5) * SPARK_ORIGIN_SCATTER;
+    particle.z = baseZ + (Math.random() - 0.5) * SPARK_ORIGIN_SCATTER;
     particle.spawnX = particle.x;
     particle.spawnY = particle.y;
     particle.spawnZ = particle.z;
@@ -787,38 +870,116 @@ export class CharcoalRenderer3D {
     particle.emissionMode = mode;
     particle.emittedAt = this.clock;
     particle.groundClamped = false;
-    if (!burst && shift.incomingSpeed <= 0.08) {
-      const drift =
-        (0.18 + Math.random() * 0.52) * this.motionProfile.velocityScale;
-      particle.vx = shift.directionX * drift;
-      particle.vy = shift.directionY * drift;
-      particle.vz = shift.directionZ * drift;
-    } else if (burst) {
-      this.setMomentumVelocity(particle, shift, 0.4, 1.25, 0.28, 2.2);
-    } else {
-      this.setMomentumVelocity(particle, shift, 0.35, 1.4, 0.15, 2.05);
-    }
-    particle.maxLife =
-      this.particleLifetime *
-      (burst
-        ? (0.38 + Math.random() * 0.3) * (0.82 + shift.severity * 0.18)
-        : 0.72 + Math.random() * 0.58) *
-      this.motionProfile.sparkLifetimeScale;
-    particle.life = particle.maxLife;
-    const jitter = 1 + (Math.random() - 0.5) * this.sparkSizeJitter;
-    particle.size =
-      (burst
-        ? 0.045 + shift.severity * 0.035 + Math.random() * 0.02
-        : 0.035 + this.glow * 0.025 + Math.random() * 0.02) *
-      jitter *
-      this.motionProfile.sparkSizeScale;
-    particle.heatScale = burst
-      ? 0.9 + Math.random() * 0.1
-      : 0.42 + Math.random() * 0.28;
-    particle.seed = Math.random();
-    particle.active = true;
+
+    const scatter =
+      material.scatter *
+      (0.55 + this.spread * 0.9) *
+      (burst ? 1 + shift.severity : 1);
+    releaseSparkVelocity(
+      particle,
+      shift.directionX * shift.incomingSpeed,
+      shift.directionY * shift.incomingSpeed,
+      shift.directionZ * shift.incomingSpeed,
+      material.carry,
+      scatter
+    );
+    this.initSparkBody(particle, sampleSparkDiameter(material, Math.random()));
+
+    const catchUp = (1 - u) * dt;
+    if (catchUp > 0) this.advanceSpark(particle, catchUp);
     this.emittedSparkCount++;
     return particle;
+  }
+
+  private initSparkBody(particle: SparkParticle, diameter: number): void {
+    const material = this.sparkMaterial;
+    particle.diameter = diameter;
+    particle.burnTime = sparkBurnTime(material, diameter);
+    particle.coolTime = sparkCoolTime(material, diameter);
+    particle.maxLife = sparkLifetime(particle.burnTime, particle.coolTime);
+    particle.life = particle.maxLife;
+    particle.age = 0;
+    particle.forkAt = sampleSparkFork(
+      material,
+      particle.burnTime,
+      Math.random(),
+      Math.random()
+    );
+    const jitter = 1 + (Math.random() - 0.5) * this.sparkSizeJitter;
+    particle.size =
+      SPARK_GLOW_RADIUS *
+      (0.75 + this.glow * 0.5) *
+      Math.sqrt(diameter / 0.0003) *
+      jitter;
+    particle.heatScale = 1;
+    particle.seed = Math.random();
+    particle.active = true;
+  }
+
+  /** Gravity, drag and the floor for `dt` seconds. */
+  private advanceSpark(particle: SparkParticle, dt: number): void {
+    stepSparkVelocity(
+      particle,
+      dt,
+      particle.diameter,
+      this.sparkMaterial,
+      0,
+      -SPARK_GRAVITY,
+      0
+    );
+    particle.x += particle.vx * dt;
+    particle.y += particle.vy * dt;
+    particle.z += particle.vz * dt;
+    particle.age += dt;
+    particle.life = particle.maxLife - particle.age;
+    const floor = this.collisionFloorY;
+    if (floor !== null && particle.y < floor) {
+      // Sparks skitter on the floor: a low bounce and a scrape of speed.
+      particle.y = floor;
+      if (particle.vy < 0) {
+        particle.vy = -particle.vy * this.sparkMaterial.restitution;
+        particle.vx *= 0.6;
+        particle.vz *= 0.6;
+      }
+      particle.groundClamped = true;
+    }
+  }
+
+  /** Bursts a carbon-steel spark into a star of smaller ones. */
+  private forkSpark(parent: SparkParticle): void {
+    const material = this.sparkMaterial;
+    const children =
+      material.forkChildrenMin +
+      Math.floor(
+        Math.random() *
+          (material.forkChildrenMax - material.forkChildrenMin + 1)
+      );
+    for (let index = 0; index < children; index++) {
+      const child = this.claimSpark();
+      if (!child) break;
+      child.x = parent.x;
+      child.y = parent.y;
+      child.z = parent.z;
+      child.spawnX = parent.x;
+      child.spawnY = parent.y;
+      child.spawnZ = parent.z;
+      child.sourceId = parent.sourceId;
+      child.emissionMode = parent.emissionMode;
+      child.emittedAt = this.clock;
+      child.groundClamped = false;
+      releaseSparkVelocity(
+        child,
+        parent.vx,
+        parent.vy,
+        parent.vz,
+        1,
+        material.forkSpeed
+      );
+      this.initSparkBody(child, parent.diameter * (0.4 + Math.random() * 0.2));
+      child.forkAt = -1;
+      this.emittedSparkCount++;
+    }
+    parent.active = false;
   }
 
   private emitFragment(
@@ -831,7 +992,6 @@ export class CharcoalRenderer3D {
     if (!particle) return null;
 
     const burst = mode === "burst";
-    const speed = Math.max(0.001, tip.speed);
     const originScatter =
       (burst ? 0.075 : 0.09) *
       Math.max(0.45, Math.min(1.7, this.motionProfile.coneScale));
@@ -845,34 +1005,46 @@ export class CharcoalRenderer3D {
     particle.emissionMode = mode;
     particle.emittedAt = this.clock;
     particle.groundClamped = false;
+    // Chips break off at the head's speed like the sparks; their drag, not
+    // a small carry, is what stops them short.
+    const body = this.fragmentBodyMaterial();
+    const scatter = body.scatter * (0.55 + this.spread * 0.9);
     if (burst && shift) {
-      this.setMomentumVelocity(particle, shift, 0.28, 0.95, 0.38, 1.45);
+      releaseSparkVelocity(
+        particle,
+        shift.directionX * shift.incomingSpeed,
+        shift.directionY * shift.incomingSpeed,
+        shift.directionZ * shift.incomingSpeed,
+        body.carry,
+        scatter * (1 + shift.severity)
+      );
     } else {
-      const scatter =
-        0.5 *
-        (0.45 + this.spread) *
-        this.motionProfile.coneScale *
-        this.motionProfile.velocityScale;
-      const inheritance = Math.min(0.2, 0.12 + 0.1 / speed);
-      particle.vx =
-        tip.velocityX * inheritance * this.motionProfile.velocityScale +
-        (Math.random() - 0.5) * scatter;
-      particle.vy =
-        tip.velocityY * inheritance * this.motionProfile.velocityScale +
-        Math.random() * scatter * 0.48;
-      particle.vz =
-        tip.velocityZ * inheritance * this.motionProfile.velocityScale +
-        (Math.random() - 0.5) * scatter;
+      releaseSparkVelocity(
+        particle,
+        tip.velocityX,
+        tip.velocityY,
+        tip.velocityZ,
+        body.carry,
+        scatter
+      );
     }
-    particle.maxLife =
-      this.particleLifetime *
-      (burst ? 1.35 + Math.random() * 0.8 : 0.62 + Math.random() * 0.55) *
-      this.motionProfile.fragmentLifetimeScale;
+    // A chip a millimetre or two across glows for as long as it burns and
+    // cools, and its glow is centimetres wide, not a ball.
+    particle.diameter = sampleSparkDiameter(body, Math.random());
+    particle.maxLife = Math.min(
+      FRAGMENT_MAX_LIFE,
+      sparkLifetime(
+        sparkBurnTime(body, particle.diameter),
+        sparkCoolTime(body, particle.diameter)
+      ) * this.motionProfile.fragmentLifetimeScale
+    );
     particle.life = particle.maxLife;
     particle.size =
-      (burst ? 0.025 + Math.random() * 0.03 : 0.018 + Math.random() * 0.018) *
+      FRAGMENT_GLOW_RADIUS *
+      Math.sqrt(particle.diameter / 0.001) *
+      (burst ? 1.25 : 1) *
       (1 + (Math.random() - 0.5) * this.sparkSizeJitter) *
-      this.motionProfile.fragmentSizeScale;
+      Math.min(1.3, this.motionProfile.fragmentSizeScale);
     particle.heatScale = burst
       ? 0.84 + Math.random() * 0.16
       : 0.32 + Math.random() * 0.28;
@@ -890,67 +1062,11 @@ export class CharcoalRenderer3D {
     return particle;
   }
 
-  private setMomentumVelocity(
-    particle: SparkParticle,
-    shift: MomentumShift,
-    scatterMin: number,
-    scatterMax: number,
-    inheritance: number,
-    coneScale: number
-  ): void {
-    let tangentX: number;
-    let tangentY: number;
-    let tangentZ: number;
-    if (Math.abs(shift.directionY) < 0.9) {
-      const inverseLength =
-        1 / Math.max(0.0001, Math.hypot(shift.directionX, shift.directionZ));
-      tangentX = -shift.directionZ * inverseLength;
-      tangentY = 0;
-      tangentZ = shift.directionX * inverseLength;
-    } else {
-      const inverseLength =
-        1 / Math.max(0.0001, Math.hypot(shift.directionY, shift.directionZ));
-      tangentX = 0;
-      tangentY = shift.directionZ * inverseLength;
-      tangentZ = -shift.directionY * inverseLength;
-    }
-
-    const bitangentX =
-      shift.directionY * tangentZ - shift.directionZ * tangentY;
-    const bitangentY =
-      shift.directionZ * tangentX - shift.directionX * tangentZ;
-    const bitangentZ =
-      shift.directionX * tangentY - shift.directionY * tangentX;
-    const azimuth = Math.random() * Math.PI * 2;
-    const maxAngle =
-      (0.12 + this.spread * 0.62) *
-      (0.78 + shift.severity * 0.42) *
-      coneScale *
-      this.motionProfile.coneScale;
-    const cosTheta = 1 - Math.random() * (1 - Math.cos(maxAngle));
-    const sinTheta = Math.sqrt(Math.max(0, 1 - cosTheta * cosTheta));
-    const radialX =
-      tangentX * Math.cos(azimuth) + bitangentX * Math.sin(azimuth);
-    const radialY =
-      tangentY * Math.cos(azimuth) + bitangentY * Math.sin(azimuth);
-    const radialZ =
-      tangentZ * Math.cos(azimuth) + bitangentZ * Math.sin(azimuth);
-    const coneX = shift.directionX * cosTheta + radialX * sinTheta;
-    const coneY = shift.directionY * cosTheta + radialY * sinTheta;
-    const coneZ = shift.directionZ * cosTheta + radialZ * sinTheta;
-    const scatterSpeed =
-      (scatterMin + Math.random() * (scatterMax - scatterMin)) *
-      (0.72 + this.spread * 0.5) *
-      (0.48 + shift.severity * 0.92) *
-      this.motionProfile.velocityScale;
-    const inheritedSpeed = Math.min(
-      shift.incomingSpeed * inheritance,
-      scatterSpeed * (0.72 + shift.severity * 0.38)
-    );
-
-    particle.vx = shift.directionX * inheritedSpeed + coneX * scatterSpeed;
-    particle.vy = shift.directionY * inheritedSpeed + coneY * scatterSpeed;
-    particle.vz = shift.directionZ * inheritedSpeed + coneZ * scatterSpeed;
+  /** Banked embers shed charcoal flakes; the wool looks shed chips. */
+  private fragmentBodyMaterial(): SparkMaterial {
+    return this.emissionStyle === "banked-ember"
+      ? this.sparkMaterial
+      : EMBER_CHIP_MATERIAL;
   }
 
   private claimSpark(): SparkParticle | null {
@@ -977,7 +1093,7 @@ export class CharcoalRenderer3D {
 
   private updateFragments(dt: number, collisionFloorY: number | null): void {
     this.fragmentPool!.beginFrame();
-    const drag = Math.pow(FRAGMENT_DRAG, dt);
+    const bodyMaterial = this.fragmentBodyMaterial();
     let visibleCount = 0;
 
     for (const particle of this.fragments) {
@@ -988,10 +1104,15 @@ export class CharcoalRenderer3D {
         continue;
       }
 
-      particle.vy -= this.gravity * 0.82 * dt;
-      particle.vx *= drag;
-      particle.vy *= drag;
-      particle.vz *= drag;
+      stepSparkVelocity(
+        particle,
+        dt,
+        particle.diameter,
+        bodyMaterial,
+        0,
+        -SPARK_GRAVITY,
+        0
+      );
       particle.x += particle.vx * dt;
       particle.y += particle.vy * dt;
       particle.z += particle.vz * dt;
@@ -1058,50 +1179,46 @@ export class CharcoalRenderer3D {
     );
   }
 
-  private updatePoints(dt: number): void {
+  private updateSparks(dt: number): void {
+    const buffers = this.streakBuffers!;
     let visibleCount = 0;
-    const drag = Math.pow(SPARK_DRAG, dt);
 
     for (const particle of this.sparks) {
       if (!particle.active) continue;
-      particle.life -= dt;
-      if (particle.life <= 0) {
+      this.advanceSpark(particle, dt);
+      if (particle.forkAt >= 0 && particle.age >= particle.forkAt) {
+        this.forkSpark(particle);
+        continue;
+      }
+      if (particle.age >= particle.maxLife) {
         particle.active = false;
         continue;
       }
 
-      particle.vy -= this.gravity * dt;
-      particle.vx *= drag;
-      particle.vy *= drag;
-      particle.vz *= drag;
-      particle.x += particle.vx * dt;
-      particle.y += particle.vy * dt;
-      particle.z += particle.vz * dt;
-
-      const lifeRatio = particle.life / particle.maxLife;
-      const velocity = Math.sqrt(
-        particle.vx * particle.vx +
-          particle.vy * particle.vy +
-          particle.vz * particle.vz
-      );
-      this.writePoint(
-        visibleCount++,
-        particle.x,
-        particle.y,
-        particle.z,
-        particle.vx,
-        particle.vy,
-        particle.vz,
-        particle.size *
-          (0.6 + Math.min(0.95, velocity * 0.13)) *
-          (0.62 + lifeRatio * 0.38),
-        Math.min(1, lifeRatio * 3),
-        Math.pow(lifeRatio, 0.7) * particle.heatScale,
-        POINT_KIND_SPARK,
-        particle.seed
-      );
+      const heat = sparkHeat(particle.age, particle.burnTime, particle.coolTime);
+      const i3 = visibleCount * 3;
+      buffers.heads[i3] = particle.x;
+      buffers.heads[i3 + 1] = particle.y;
+      buffers.heads[i3 + 2] = particle.z;
+      buffers.velocities[i3] = particle.vx;
+      buffers.velocities[i3 + 1] = particle.vy;
+      buffers.velocities[i3 + 2] = particle.vz;
+      buffers.widths[visibleCount] = particle.size * (0.55 + heat * 0.45);
+      buffers.heats[visibleCount] = heat;
+      buffers.alphas[visibleCount] = Math.min(1, heat / 0.35);
+      visibleCount++;
     }
+
+    for (const name of STREAK_ATTRIBUTE_NAMES) {
+      (buffers.geometry.getAttribute(name) as BufferAttribute).needsUpdate =
+        true;
+    }
+    buffers.geometry.instanceCount = visibleCount;
     this.activeSparkCount = visibleCount;
+  }
+
+  private updatePoints(): void {
+    let visibleCount = 0;
 
     for (const particle of this.fragments) {
       if (
@@ -1246,6 +1363,7 @@ export class CharcoalRenderer3D {
     this.gravity = Math.max(0, params.gravity);
     this.sparkSizeJitter = Math.max(0, Math.min(1, params.sparkSizeJitter));
     this.emissionStyle = params.emissionStyle;
+    this.sparkMaterial = resolveSparkMaterial(params.emissionStyle);
     this.motionProfile = params.motionProfile;
     this.coreColor[0] = nextCore[0];
     this.coreColor[1] = nextCore[1];
@@ -1262,6 +1380,14 @@ export class CharcoalRenderer3D {
 
     if (this.material) {
       updateCharcoalMaterial(this.material, {
+        coreColor: this.coreColor,
+        midColor: this.midColor,
+        coolColor: this.coolColor,
+        emissiveStrength: 1.75 + this.intensity * 0.75 + this.glow * 0.65,
+      });
+    }
+    if (this.streakMaterial) {
+      updateCharcoalStreakMaterial(this.streakMaterial, {
         coreColor: this.coreColor,
         midColor: this.midColor,
         coolColor: this.coolColor,
@@ -1466,6 +1592,7 @@ export class CharcoalRenderer3D {
     this.activePointCount = 0;
     this.lastBurst = null;
     this.geometry?.setDrawRange(0, 0);
+    if (this.streakBuffers) this.streakBuffers.geometry.instanceCount = 0;
     this.fragmentPool?.clear();
   }
 
@@ -1473,10 +1600,8 @@ export class CharcoalRenderer3D {
     state.sourceId = null;
     state.hasPrevious = false;
     state.ambientAccumulator = 0;
-    state.ambientClusterTarget = this.motionProfile.packetMin;
     state.ambientEmissionIndex = 0;
-    state.burstArmed = true;
-    state.burstCooldown = 0;
+    resetSparkSnap(state.snap);
     state.present = false;
     state.previousVelocity.set(0, 0, 0);
   }
@@ -1489,6 +1614,14 @@ export class CharcoalRenderer3D {
       this.points = null;
       this.geometry = null;
       this.material = null;
+    }
+    if (this.streaks) {
+      this.parent?.remove(this.streaks);
+      this.streakBuffers?.geometry.dispose();
+      this.streakMaterial?.dispose();
+      this.streaks = null;
+      this.streakBuffers = null;
+      this.streakMaterial = null;
     }
     this.fragmentPool?.dispose();
     this.fragmentPool = null;

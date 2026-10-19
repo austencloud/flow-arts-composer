@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { T, useThrelte } from "@threlte/core";
+  import { T, useScene } from "@threlte/core";
   import { Color, FogExp2 } from "three";
 
   import OrbitControls from "#lib/shared/3d/components/OrbitControls.svelte";
@@ -23,7 +23,7 @@
   let { view, onAssetReady }: Props = $props();
 
   const config = createDefaultCelestialConfig();
-  const { scene } = useThrelte();
+  const { scene } = useScene();
   const camera = $derived.by(() => {
     if (view === "front") {
       return {

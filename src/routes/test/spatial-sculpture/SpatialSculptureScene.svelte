@@ -6,7 +6,7 @@
   import Scene3D from "#lib/shared/3d/components/Scene3D.svelte";
   import Grid3D from "#lib/shared/3d/components/Grid3D.svelte";
   import {
-    getAllGridPlacements,
+    getAllGridPositions,
     gridLocationToPosition3D,
   } from "#lib/shared/3d/services/plane-coordinate-mapper.js";
   import type { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
@@ -123,7 +123,7 @@
     (): { location: GridLocation; position: Vector3 }[] => {
       if (!activeBeat) return [];
       return Array.from(
-        getAllGridPlacements(activeBeat.plane, PATH_RADIUS),
+        getAllGridPositions(activeBeat.plane, PATH_RADIUS),
         ([location, position]) => ({ location, position })
       );
     }

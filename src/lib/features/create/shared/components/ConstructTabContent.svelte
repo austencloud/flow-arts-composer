@@ -11,6 +11,7 @@
 <script lang="ts">
   import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import type { OptionSelectedHandler } from "../types/create-module-types";
   import type { GridJoin } from "@tka/tka-types";
   import OptionPicker from "#lib/features/create/construct/option-picker/components/OptionPicker.svelte";
   import StartPlacementPicker from "#lib/features/create/construct/start-placement-picker/components/StartPlacementPicker.svelte";
@@ -46,7 +47,7 @@
   } = $props<{
     shouldShowStartPlacementPicker: boolean;
     startPlacementState?: SimplifiedStartPlacementState | null;
-    onOptionSelected: (option: PictographData) => Promise<void>;
+    onOptionSelected: OptionSelectedHandler;
     currentSequence?: PictographData[];
     currentGridMode?: GridMode;
     /** The sequence's grid join; both pickers draw their tiles on it. */

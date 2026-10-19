@@ -19,6 +19,7 @@
    */
 
   import { useThrelte, useTask } from "@threlte/core";
+  import { EffectMotionClock } from "./scene-effects/effect-motion-clock";
   import { onDestroy } from "svelte";
   import { tryGetViewer3DContext } from "../context/viewer-3d-context";
   import { Vector3, Object3D, Matrix3, type Camera } from "three";
@@ -40,7 +41,11 @@
     TipPositionBridge3D,
     type TrailSourceId3D,
   } from "./tip-position-bridge-3d";
-  import { resolveScaledPropTipAnchors3D } from "./prop-tip-geometry-3d";
+  import {
+    resolveScaledPropTipAnchors3D,
+    TIP_EFFECT_SLOTS_PER_RIG,
+    tipEffectSlot3D,
+  } from "./prop-tip-geometry-3d";
   import {
     PovStripRenderer3D,
     shutterToPovPersistence,
@@ -258,12 +263,12 @@
   const resolvedCharcoal = $derived(resolveCharcoal3D(effectsState.charcoal));
 
   const pooledFrame: SceneEffectRigFrame3D = { playing: false, sources: [] };
-  const pooledSources: Array<SceneEffectTipSource3D | null> = [
-    null,
-    null,
-    null,
-    null,
-  ];
+  const motionClock = new EffectMotionClock();
+  // One slot per emitter, so a fan's five wicks are five sources.
+  const pooledSources: Array<SceneEffectTipSource3D | null> = Array.from(
+    { length: TIP_EFFECT_SLOTS_PER_RIG },
+    () => null
+  );
   const pooledRegistration =
     sceneEffectsManager?.registerRig(pooledFrame) ?? null;
   const pooledPosition = new Vector3();
@@ -274,7 +279,6 @@
 
   function publishPooledTip(
     propIndex: 0 | 1,
-    tipIndex: 0 | 1,
     tip: TipPositionData3D,
     effect: EffectType
   ): void {
@@ -295,7 +299,8 @@
     )
       return;
 
-    const slot = propIndex * 2 + tipIndex;
+    const slot = tipEffectSlot3D(propIndex, tip.emitterIndex);
+    const tipIndex = tip.tipIndex;
     let source = pooledSources[slot];
     if (!source || source.effect !== effect) {
       const base = {
@@ -345,10 +350,16 @@
             effect,
             params: resolvedSmoke,
             qualityTier,
+            collisionFloorY: userProportionsState.groundY,
           };
           break;
         case "ink":
-          source = { ...base, effect, params: resolvedInk };
+          source = {
+            ...base,
+            effect,
+            params: resolvedInk,
+            collisionFloorY: userProportionsState.groundY,
+          };
           break;
         case "silk":
           source = {
@@ -419,9 +430,15 @@
       case "smoke":
         source.params = resolvedSmoke;
         source.qualityTier = qualityTier;
+        pooledPosition.set(0, userProportionsState.groundY, 0);
+        if (effectsParentRef) effectsParentRef.localToWorld(pooledPosition);
+        source.collisionFloorY = pooledPosition.y;
         break;
       case "ink":
         source.params = resolvedInk;
+        pooledPosition.set(0, userProportionsState.groundY, 0);
+        if (effectsParentRef) effectsParentRef.localToWorld(pooledPosition);
+        source.collisionFloorY = pooledPosition.y;
         break;
       case "silk":
         source.params = resolvedSilk;
@@ -455,6 +472,9 @@
         break;
     }
 
+    // A slot outlives a prop swap, so a staff's left end can become a fan's
+    // first wick; refresh the end it reports along with its position.
+    source.tipIndex = tipIndex;
     pooledPosition.set(tip.position.x, tip.position.y, tip.position.z);
     pooledVelocity.set(tip.velocity.x, tip.velocity.y, tip.velocity.z);
     if (effectsParentRef) {
@@ -511,7 +531,10 @@
 
     if (charcoalRenderer) {
       charcoalRenderer.dispose();
-      charcoalRenderer = new CharcoalRenderer3D(nextTier);
+      charcoalRenderer = new CharcoalRenderer3D(
+        nextTier,
+        TIP_EFFECT_SLOTS_PER_RIG
+      );
       charcoalRenderer.initialize(parent);
     }
     if (fireRenderer) {
@@ -611,6 +634,9 @@
   // lights the two tracked shaft ends through the ribbon renderer; a pixel
   // staff spans the shaft through the POV renderer.
   const _ledPattern = new LedPatternMaterializer();
+  // The moon fan's strip has its own LED count, so it keeps its own cache;
+  // sharing one rebuilt both patterns from scratch every frame.
+  const _moonPattern = new LedPatternMaterializer();
 
   // Which device the live renderers were built for. A change disposes both
   // renderer families so only the device's own meshes exist afterwards.
@@ -622,7 +648,7 @@
   // between prev→current gives an effective 60·N Hz sample rate that
   // reads as a continuous glowing arc, matching how real LEDs look to
   // the human eye (persistence of vision integrates continuous emission).
-  // Keyed by `${propIndex}-${tipIndex}`. Cleared on playback reset.
+  // Keyed by `${propIndex}-${emitterIndex}`. Cleared on playback reset.
   const _ledPrevPositions = new Map<string, Vector3>();
 
   // Supersample count per quality tier. Higher = smoother fast motion at
@@ -713,6 +739,7 @@
    */
   function updateEffectsFrame(delta: number): void {
     pooledFrame.playing = isPlaying;
+    pooledFrame.motionDelta = motionClock.advance(delta, currentStep, isPlaying);
     pooledFrame.sources.length = 0;
     if (!isPlaying) {
       tipBridge.reset();
@@ -765,7 +792,7 @@
       const c = getPixel(ledStrip, ledFrame, ledIndex % ledStrip.ledCount);
       return { r: c.r / 255, g: c.g / 255, b: c.b / 255 };
     };
-    const moonStrip = _ledPattern.resolve(
+    const moonStrip = _moonPattern.resolve(
       resolvedLed.pattern,
       MOON_FAN_LED_COUNT
     );
@@ -860,6 +887,11 @@
     // physics explosions after tab-switch or debugger pause (same safeguard
     // as CharcoalRenderer and FireRenderer use internally).
     const dt = Math.min(delta, 1 / 15);
+    // Tip velocity is distance over the time the props actually moved. The
+    // render delta is a frame out of step with the pose on a dropped frame
+    // (see EffectMotionClock), which read as the tip halving and then
+    // doubling its speed, a fake jolt for anything that watches for one.
+    const motionDt = Math.min(pooledFrame.motionDelta, 1 / 15);
     if (effectsParentRef) {
       effectsParentRef.updateWorldMatrix(true, false);
       pooledLinearTransform.setFromMatrix4(effectsParentRef.matrixWorld);
@@ -904,7 +936,7 @@
         visualLeftProp,
         leftRigCenter,
         staffHalfLength,
-        dt,
+        motionDt,
         leftPropType,
         propBuild,
         propScale
@@ -924,7 +956,7 @@
         // "none" renders nothing - no silent fallback to trails. The default
         // effect comes from the resolved tip map, not an invented value here.
         const effect = resolved;
-        publishPooledTip(0, tipIndex, tip, effect);
+        publishPooledTip(0, tip, effect);
 
         if (effect === "led") {
           // Both props run the same pattern on the same clock, exactly as
@@ -941,7 +973,7 @@
               : ledColorAt(tipIndex);
             pushSupersampledLed(
               leftLedTips,
-              leftIsMoonFan ? `0-moon-${emitterIndex}` : `0-${tipIndex}`,
+              leftIsMoonFan ? `0-moon-${emitterIndex}` : `0-${emitterIndex}`,
               tip.position,
               tip.velocity,
               tip.speed,
@@ -953,7 +985,7 @@
           }
         } else if (effect === "charcoal" && sceneEffectsManager === null) {
           charcoalTips.push({
-            sourceId: tipIndex,
+            sourceId: tipEffectSlot3D(0, emitterIndex),
             position: new Vector3(
               tip.position.x,
               tip.position.y,
@@ -1007,7 +1039,7 @@
         visualRightProp,
         rightRigCenter,
         staffHalfLength,
-        dt,
+        motionDt,
         rightPropType,
         propBuild,
         propScale
@@ -1027,7 +1059,7 @@
         // "none" renders nothing - no silent fallback to trails. The default
         // effect comes from the resolved tip map, not an invented value here.
         const effect = resolved;
-        publishPooledTip(1, tipIndex, tip, effect);
+        publishPooledTip(1, tip, effect);
 
         if (effect === "led") {
           rightLedAssigned = true;
@@ -1042,7 +1074,7 @@
               : ledColorAt(tipIndex);
             pushSupersampledLed(
               rightLedTips,
-              rightIsMoonFan ? `1-moon-${emitterIndex}` : `1-${tipIndex}`,
+              rightIsMoonFan ? `1-moon-${emitterIndex}` : `1-${emitterIndex}`,
               tip.position,
               tip.velocity,
               tip.speed,
@@ -1054,7 +1086,7 @@
           }
         } else if (effect === "charcoal" && sceneEffectsManager === null) {
           charcoalTips.push({
-            sourceId: 2 + tipIndex,
+            sourceId: tipEffectSlot3D(1, emitterIndex),
             position: new Vector3(
               tip.position.x,
               tip.position.y,
@@ -1247,11 +1279,14 @@
       // Charcoal renderer (single pool for all tips)
       if (charcoalTips.length > 0) {
         if (!charcoalRenderer) {
-          charcoalRenderer = new CharcoalRenderer3D(qualityTier);
+          charcoalRenderer = new CharcoalRenderer3D(
+            qualityTier,
+            TIP_EFFECT_SLOTS_PER_RIG
+          );
           charcoalRenderer.initialize(imperativeParent);
         }
         charcoalRenderer.updateConfig(resolveCharcoal3D(effectsState.charcoal));
-        charcoalRenderer.update(charcoalTips, dt, {
+        charcoalRenderer.update(charcoalTips, motionDt, {
           currentStep,
           totalSteps,
           // Effects live in PerformerRig-local space. In that space y=0 is

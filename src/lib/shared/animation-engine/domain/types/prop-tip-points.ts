@@ -184,10 +184,12 @@ export const TRIAD_TIP_POINTS: PropTipConfig = radialTipConfig(
   3
 );
 
+// The same arm order as the triad, so a per-tip effect keeps its arm when the
+// prop changes size. The saved effect points and the 3D anchors already use it.
 const BIGTRIAD_TIP_POINTS: PropTipConfig = {
   points: [
-    { dx: 260, dy: 0 },
     { dx: -130, dy: -226 },
+    { dx: 260, dy: 0 },
     { dx: -130, dy: 226 },
   ],
 };
@@ -355,23 +357,26 @@ const UKULELE_TIP_POINTS: PropTipConfig = {
   points: [{ dx: 170, dy: 0 }],
 };
 
-// The two star apexes only. The old third and fourth points sat at the waist
-// between the stars, where there is no artwork at all, and contradicted the
-// TWO_ENDED_PROPS entry in prop-tip-ends.ts. Indices 0 and 1 are unchanged, so
-// saved per-tip effects stay on the end they were assigned to.
-const DOUBLESTAR_TIP_POINTS: PropTipConfig = {
-  points: [
-    { dx: 150, dy: 0 },
-    { dx: -150, dy: 0 },
-  ],
-};
+// The two end apexes first, so the trail ends and saved per-tip effects keep
+// indices 0 and 1, then the four outer star points: upper right, upper left,
+// lower right, lower left. These are the points the saved effect points used
+// and they sit on the artwork's star tips. The old third and fourth points sat
+// at the waist between the stars, where there is no artwork at all.
+function doubleStarTips(scale: number): PropTipConfig {
+  return {
+    points: [
+      [150, 0],
+      [-150, 0],
+      [75, -75],
+      [-75, -75],
+      [75, 75],
+      [-75, 75],
+    ].map(([dx, dy]) => ({ dx: dx! * scale, dy: dy! * scale })),
+  };
+}
 
-const BIGDOUBLESTAR_TIP_POINTS: PropTipConfig = {
-  points: [
-    { dx: 300, dy: 0 },
-    { dx: -300, dy: 0 },
-  ],
-};
+const DOUBLESTAR_TIP_POINTS: PropTipConfig = doubleStarTips(1);
+const BIGDOUBLESTAR_TIP_POINTS: PropTipConfig = doubleStarTips(2);
 
 // Both entries used to sit on the top of a ring at roughly half the real
 // reach, so the mandala came out ~34% short. These are the artwork's own outer
@@ -506,6 +511,19 @@ export const FAN_STAR_TIP_POINTS: PropTipConfig = {
   ],
 };
 
+// Flow DNA Sense Fan: the shell rim points from scripts/assets/sense-fan-reference.json
+// at the DoodleGrip's 417.3 px/m. The outline is slightly asymmetric, so the
+// points are listed as converted rather than mirrored.
+export const FAN_SENSE_TIP_POINTS: PropTipConfig = {
+  points: [
+    { dx: 33.87, dy: -94.08 },
+    { dx: 81.57, dy: -73.97 },
+    { dx: 110.12, dy: 0.0 },
+    { dx: 81.69, dy: 74.07 },
+    { dx: 33.93, dy: 94.26 },
+  ],
+};
+
 // DoodleGrip Day: the plate rim points shared with the 3D build, through the
 // same box mapping as the fire fan at the day build's 0.97 fit. The frame
 // colour only changes paint, not geometry, so all four keys share it.
@@ -554,6 +572,7 @@ function fanBuildTables(
     [`${propType}__lotus`]: scaledTips(FAN_LOTUS_TIP_POINTS, scale),
     [`${propType}__flat-grip`]: scaledTips(FAN_FLAT_GRIP_TIP_POINTS, scale),
     [`${propType}__star`]: scaledTips(FAN_STAR_TIP_POINTS, scale),
+    [`${propType}__sense`]: scaledTips(FAN_SENSE_TIP_POINTS, scale),
     [`${propType}__moon`]: scaledTips(FAN_MOON_TIP_POINTS, scale),
     [`${propType}__day_black_bare`]: day,
     [`${propType}__day_black_covered`]: day,

@@ -9,8 +9,7 @@
    *      this component handles.
    *
    * Unlike bubbles (which rise) petals fall (+y is up, so vy is negative).
-   * Sinusoidal sway adds horizontal flutter. Rotation tumbles on all 3
-   * axes for per-petal randomness.
+   * Flight uses the same falling-plate physics as the pooled renderer.
    *
    * Ash palette: ember flag rolls at spawn; when true, the petal gets a
    * brief additive orange glow in its first 400ms of life (rendered as a
@@ -33,6 +32,12 @@
     resolvePetalWorldSize,
   } from "./petal-world-art-direction";
 
+  import type { PetalBody } from "#lib/shared/effects/domain/petal-aero.js";
+  import {
+    createFallbackPetalBody,
+    advanceFallbackPetalBody,
+  } from "./petal-fallback-flight.js";
+
   interface Props {
     /** World-space position of this tip. null = hidden. */
     position: Vector3 | null;
@@ -48,29 +53,12 @@
 
   interface Petal3D {
     id: number;
-    x: number;
-    y: number;
-    z: number;
-    vx: number;
-    vy: number;
-    vz: number;
+    body: PetalBody;
     age: number;
     maxAge: number;
     size: number;
     shape: PetalSpriteShape;
     tint: string;
-    /** Tumble angular velocities on each axis. */
-    rx: number;
-    ry: number;
-    rz: number;
-    /** Current rotation angles. */
-    angX: number;
-    angY: number;
-    angZ: number;
-    /** Per-petal phase offset for sway. */
-    phase: number;
-    fallVelocity: number;
-    dragBase: number;
     opacity: number;
     /** Ember flag for ash palette. */
     ember: boolean;
@@ -142,34 +130,31 @@
       const oz = (Math.random() - 0.5) * 0.08;
       const drift = 0.22;
       const shape = pickPetalSprite(palette);
-      const fallVelocity = -fall * (0.82 + Math.random() * 0.32);
+      const size = resolvePetalWorldSize(
+        params.baseSize,
+        params.intensity,
+        shape,
+        false
+      );
+      const body = createFallbackPetalBody(
+        params,
+        shape,
+        size,
+        { x: px + ox, y: py + oy, z: pz + oz },
+        {
+          x: propVelocity.x * params.carry + (Math.random() - 0.5) * drift,
+          y: propVelocity.y * params.carry - fall * 0.12,
+          z: propVelocity.z * params.carry + (Math.random() - 0.5) * drift,
+        }
+      );
       petals.push({
         id: nextId++,
-        x: px + ox,
-        y: py + oy,
-        z: pz + oz,
-        vx: propVelocity.x * params.carry + (Math.random() - 0.5) * drift,
-        vy: propVelocity.y * params.carry - fall * 0.12,
-        vz: propVelocity.z * params.carry + (Math.random() - 0.5) * drift,
+        body,
         age: 0,
         maxAge: params.lifetime * (0.52 + Math.random() * 0.24),
-        size: resolvePetalWorldSize(
-          params.baseSize,
-          params.intensity,
-          shape,
-          false
-        ),
+        size,
         shape,
         tint: pickPetalTint(palette),
-        rx: (Math.random() - 0.5) * 2.0,
-        ry: (Math.random() - 0.5) * 2.5,
-        rz: (Math.random() - 0.5) * 2.0,
-        angX: Math.random() * Math.PI * 2,
-        angY: Math.random() * Math.PI * 2,
-        angZ: Math.random() * Math.PI * 2,
-        phase: Math.random() * Math.PI * 2,
-        fallVelocity,
-        dragBase: 0.03 + params.streakLength * 0.5,
         opacity: resolvePetalOpacity(shape, false),
         ember: rollEmberFlag(palette),
       });
@@ -177,29 +162,11 @@
     }
 
     // Integrate + age + cull.
-    const swayFreq = params.swayFrequency;
-    const swayBase = params.swayBaseSpeed * params.swayAmplitude;
     const surviving: Petal3D[] = [];
     for (const p of petals) {
       p.age += delta;
       if (p.age >= p.maxAge) continue;
-      const swayX =
-        Math.sin(p.phase + clock * swayFreq * Math.PI * 2) * swayBase;
-      const swayZ =
-        Math.cos(p.phase * 1.3 + clock * swayFreq * Math.PI * 2) *
-        swayBase *
-        0.5;
-      const drag = Math.pow(p.dragBase, delta);
-      const fallEase = 1 - Math.pow(0.2, delta);
-      p.vx *= drag;
-      p.vz *= drag;
-      p.vy += (p.fallVelocity - p.vy) * fallEase;
-      p.x += (p.vx + swayX) * delta;
-      p.y += p.vy * delta;
-      p.z += (p.vz + swayZ) * delta;
-      p.angX += p.rx * delta;
-      p.angY += p.ry * delta;
-      p.angZ += p.rz * delta;
+      advanceFallbackPetalBody(p.body, clock, delta);
       surviving.push(p);
     }
     petals = surviving;
@@ -228,12 +195,10 @@
   {@const tex = getOrBakeTexture(p.shape, p.tint)}
   {#if op > 0.02 && tex}
     <T.Mesh
-      position.x={p.x}
-      position.y={p.y}
-      position.z={p.z}
-      rotation.x={p.angX}
-      rotation.y={p.angY}
-      rotation.z={p.angZ}
+      position.x={p.body.x}
+      position.y={p.body.y}
+      position.z={p.body.z}
+      quaternion={[p.body.qx, p.body.qy, p.body.qz, p.body.qw]}
     >
       <T.PlaneGeometry args={[p.size * 2, p.size * 2]} />
       <T.MeshLambertMaterial
@@ -248,12 +213,10 @@
     </T.Mesh>
     {#if p.ember && emberOpacity(p) > 0.02}
       <T.Mesh
-        position.x={p.x}
-        position.y={p.y}
-        position.z={p.z}
-        rotation.x={p.angX}
-        rotation.y={p.angY}
-        rotation.z={p.angZ}
+        position.x={p.body.x}
+        position.y={p.body.y}
+        position.z={p.body.z}
+        quaternion={[p.body.qx, p.body.qy, p.body.qz, p.body.qw]}
       >
         <T.PlaneGeometry
           args={[resolveEmberWorldSpan(p.size), resolveEmberWorldSpan(p.size)]}

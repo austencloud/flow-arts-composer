@@ -145,6 +145,7 @@
     type CardPresentation,
   } from "#lib/shared/share/domain/models/card-presentation.js";
   import { getImageCompositionManager } from "#lib/shared/share/state/image-composition-state.svelte.js";
+  import { setViewerDormantContext } from "../context/viewer-dormant-context";
   import {
     trackSequenceRemixStarted,
     trackSequenceViewed,
@@ -260,6 +261,8 @@
     tunnelSaveTarget = null,
     onTunnelSaved,
   }: Props = $props();
+
+  setViewerDormantContext(() => ctx.dormant);
 
   let viewerWorkspaceElement = $state<HTMLElement | null>(null);
   let artInspectorTarget = $state<HTMLElement | null>(null);
@@ -841,8 +844,15 @@
     };
   });
 
+  // A viewer built ahead of the tap counts as viewed when it is opened.
+  let viewTracked = false;
+  $effect(() => {
+    if (embedded || ctx.dormant || viewTracked) return;
+    viewTracked = true;
+    untrack(() => trackSequenceViewed(analyticsContext()));
+  });
+
   onMount(() => {
-    if (!embedded) trackSequenceViewed(analyticsContext());
     const cleanupLayout = layout.mount();
     const cleanupInteractions = interactions.mount();
     return () => {
@@ -2238,6 +2248,17 @@
        12px gap) so the panel ends where the pill begins. Only the inspector
        reads this var; the rail keeps its own bottom and its own z-index. */
     --scene-controls-bottom: calc(80px + 45px + 12px);
+  }
+
+  /* A short window folds the rail into two columns (SceneControlRail); the
+     pill moves over by the second column's button and gap. */
+  :global(
+    .viewer-and-export.record-scene-active:has(
+        [data-scene-control-workspace]:not([data-presentation="compact"])
+          [data-rail-columns="2"]
+      )
+  ) {
+    --record-scene-right: calc(1.5rem + 104px);
   }
 
   /* Compact workspaces center the Performer/Scene action bar along the same

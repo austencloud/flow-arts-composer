@@ -19,6 +19,7 @@ Supports two navigation modes:
     getConceptExperience,
     getLoadedConceptExperience,
     getNextConceptExperience,
+    getPreviousConceptExperience,
     isConceptExperienceAvailable,
     loadConceptExperience,
     type ConceptExperienceComponent,
@@ -30,6 +31,13 @@ Supports two navigation modes:
     trackLessonStarted,
   } from "../services/learn-events";
   import ConceptTopicReading from "./ConceptTopicReading.svelte";
+  import { claimedViewTransitionName } from "#lib/shared/transitions/claimed-view-transition-name.js";
+  import {
+    continueLessonWithMorph,
+    isLessonMorphRunning,
+    switchLessonViewWithMorph,
+  } from "../services/lesson-open-morph.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
   import GridMergeAnimation from "./interactive/grid-merge/GridMergeAnimation.svelte";
   import {
     createLiveLessonBoard,
@@ -94,8 +102,14 @@ Supports two navigation modes:
       .then((component) => {
         if (!current) return;
         if (component) loadedExperience = { conceptId, component };
-        const next = getNextConceptExperience(conceptId);
-        return next ? loadConceptExperience(next.conceptId) : undefined;
+        // Warm both neighbours, so Continue and Previous morph right away.
+        const neighbours = [
+          getNextConceptExperience(conceptId),
+          getPreviousConceptExperience(conceptId),
+        ].filter((entry) => entry !== undefined);
+        return Promise.all(
+          neighbours.map((entry) => loadConceptExperience(entry.conceptId))
+        );
       })
       .catch(() => undefined);
     return () => {
@@ -126,7 +140,9 @@ Supports two navigation modes:
 
   function toggleViewMode() {
     hapticService?.trigger("selection");
-    viewMode = viewMode === "step" ? "scroll" : "step";
+    const next = viewMode === "step" ? "scroll" : "step";
+    // The lesson's heading and board carry into the review and back.
+    switchLessonViewWithMorph(() => (viewMode = next));
   }
 
   onMount(() => {
@@ -176,9 +192,13 @@ Supports two navigation modes:
     // Continue sits below the board, so keeping the scroll would land the
     // board off screen. The flight starts from the captured spot on screen.
     if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: "instant" });
-    // Set before the lesson changes, so the next one mounts knowing it.
-    arrivedFrom = concept.id;
-    onContinue?.(next, getConceptPlaceIdForLesson(next.id));
+    const from = concept.id;
+    // The heading and controls turn into the next lesson's (lesson-open-morph).
+    continueLessonWithMorph(next.id, () => {
+      // Set before the lesson changes, so the next one mounts knowing it.
+      arrivedFrom = from;
+      onContinue?.(next, getConceptPlaceIdForLesson(next.id));
+    });
   }
 
   function handlePrevious(conceptId: string) {
@@ -192,7 +212,14 @@ Supports two navigation modes:
   }
 </script>
 
-<div class="concept-detail">
+<!-- The course-map card grows into this surface, and back (lesson-open-morph). -->
+<div
+  class="concept-detail"
+  use:claimedViewTransitionName={{
+    name: "learn-lesson-surface",
+    enabled: isLessonMorphRunning(),
+  }}
+>
   <!-- Header bar with back button and mode toggle -->
   <div class="header-bar">
     <button
@@ -250,13 +277,27 @@ Supports two navigation modes:
             ? t("learn_switch_to_scroll")
             : t("learn_switch_to_step")}
         >
-          {#if viewMode === "step"}
-            <i class="fa-solid fa-scroll" aria-hidden="true"></i>
-            <span class="mode-label">{t("learn_review")}</span>
-          {:else}
-            <i class="fa-solid fa-stairs" aria-hidden="true"></i>
-            <span class="mode-label">{t("learn_steps")}</span>
-          {/if}
+          {#snippet face(mode: ExperienceViewMode)}
+            {#if mode === "step"}
+              <i class="fa-solid fa-scroll" aria-hidden="true"></i>
+              <span class="mode-label">{t("learn_review")}</span>
+            {:else}
+              <i class="fa-solid fa-stairs" aria-hidden="true"></i>
+              <span class="mode-label">{t("learn_steps")}</span>
+            {/if}
+          {/snippet}
+          <!-- Both faces size the button, so swapping them moves nothing. -->
+          <span class="mode-face">
+            <span class="mode-sizer" aria-hidden="true"
+              >{@render face("step")}</span
+            >
+            <span class="mode-sizer" aria-hidden="true"
+              >{@render face("scroll")}</span
+            >
+            <Crossfade key={viewMode}>
+              <span class="mode-current">{@render face(viewMode)}</span>
+            </Crossfade>
+          </span>
         </button>
       {/if}
     </div>
@@ -411,6 +452,26 @@ Supports two navigation modes:
 
   .mode-label {
     font-size: 0.8125rem;
+  }
+
+  .mode-face {
+    display: grid;
+    justify-items: center;
+  }
+
+  .mode-face > :global(*) {
+    grid-area: 1 / 1;
+  }
+
+  .mode-sizer {
+    visibility: hidden;
+  }
+
+  .mode-sizer,
+  .mode-current {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
 
   .concept-detail-content {

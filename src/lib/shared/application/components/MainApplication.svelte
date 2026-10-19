@@ -710,11 +710,18 @@
          requested later, after an intentional action in Construct. -->
     <AccountSetupReminder />
 
-    <!-- AuthModal for guest sign-up / anonymous-upgrade flow -->
+    <!-- AuthModal for guest sign-up / anonymous-upgrade flow. If its code
+         fails to load, the ask closes: left open with nothing on screen, every
+         later ask (a guest's ninth step) would be ignored as a repeat. The
+         next ask retries the load. -->
     {#if isGuest}
       <LazyMount
         loader={() => import("../../auth/components/AuthModal.svelte")}
         active={authDrawerState.open}
+        retryKey={authDrawerState.open}
+        onStatusChange={(status) => {
+          if (status === "error") authDrawerState.hide();
+        }}
         debugName="account dialog"
         props={{
           open: authDrawerState.open,

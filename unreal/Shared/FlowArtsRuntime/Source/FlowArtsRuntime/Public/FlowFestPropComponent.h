@@ -10,6 +10,7 @@ class USceneComponent;
 class USkeletalMeshComponent;
 class UStaticMeshComponent;
 class UFlowFestAnimInstance;
+class UFlowArtsNiagaraEffectComponent;
 
 /** Two real, hand-attached instances of one catalog prop. */
 UCLASS(ClassGroup=(FlowFest), meta=(BlueprintSpawnableComponent))
@@ -32,6 +33,7 @@ public:
 
     UFUNCTION(BlueprintPure, Category="Flow Fest|Props")
     bool IsReady() const;
+    bool HasVisibleGrip() const { return bVisible && IsReady() && BoundBodyMesh != nullptr; }
 
     UFUNCTION(BlueprintCallable, Category="Flow Fest|Props")
     void SetHandTransforms(FTransform Left, FTransform Right);
@@ -76,6 +78,11 @@ public:
     UFUNCTION(BlueprintCallable, Category="Flow Fest|Props")
     void ResetFinish();
 
+    /** Drive wick effects from the same clock as the performance, including pause. */
+    void SyncEffectPlayback(float Seconds, bool bPaused, float PlaybackRate = 1.f);
+    /** Clear particle trails after a seek or playback restart. */
+    void ResetEffectHistory();
+
     UFUNCTION(BlueprintPure, Category="Flow Fest|Props")
     FName GetPropId() const { return EquippedPropId; }
 
@@ -112,6 +119,7 @@ private:
     UPROPERTY(Transient) TArray<TObjectPtr<UProceduralMeshComponent>> RightFlames;
     UPROPERTY(Transient) TArray<TObjectPtr<UStaticMeshComponent>> LeftLEDs;
     UPROPERTY(Transient) TArray<TObjectPtr<UStaticMeshComponent>> RightLEDs;
+    UPROPERTY(Transient) TObjectPtr<UFlowArtsNiagaraEffectComponent> NiagaraEffects;
     UPROPERTY(Transient) FName EquippedPropId = NAME_None;
     FName PerformanceProfile = NAME_None;
     bool bVisible = true;

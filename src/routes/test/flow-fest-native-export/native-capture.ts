@@ -4,7 +4,7 @@ import {
   type Bone,
   type Object3D,
   type Scene,
-  type SkinnedMesh,
+  SkinnedMesh,
 } from "three";
 
 export interface TransformSample {
@@ -115,6 +115,20 @@ export function productionRigReady(scene: Scene, id: string): boolean {
   return skinned;
 }
 
+function largestSkinnedMesh(root: Object3D): SkinnedMesh | undefined {
+  const meshes: SkinnedMesh[] = [];
+  root.traverse((object) => {
+    if (object instanceof SkinnedMesh) meshes.push(object);
+  });
+  return meshes.reduce<SkinnedMesh | undefined>(
+    (largest, mesh) =>
+      !largest || mesh.skeleton.bones.length > largest.skeleton.bones.length
+        ? mesh
+        : largest,
+    undefined
+  );
+}
+
 export function captureNativeFrame(
   scene: Scene,
   id: string,
@@ -132,15 +146,7 @@ export function captureNativeFrame(
       `Production rig ${id} is not rendered; found ${names.join(", ") || "none"}`
     );
   }
-  let skinned: SkinnedMesh | null = null;
-  performer.traverse((object) => {
-    const mesh = object as SkinnedMesh;
-    if (
-      mesh.isSkinnedMesh &&
-      (!skinned || mesh.skeleton.bones.length > skinned.skeleton.bones.length)
-    )
-      skinned = mesh;
-  });
+  const skinned = largestSkinnedMesh(performer);
   if (!skinned || skinned.skeleton.bones.length === 0)
     throw new Error(`Production rig ${id} has no skinned bones`);
 
@@ -210,20 +216,13 @@ export function captureMountedFrame(scene: Scene, id: string, frame: number) {
   scene.updateMatrixWorld(true);
   const performer = scene.getObjectByName(`PERFORMER_${id}`);
   if (!performer) throw new Error(`Mounted rig ${id} is not rendered`);
-  let mesh: SkinnedMesh | null = null;
-  performer.traverse((object) => {
-    const candidate = object as SkinnedMesh;
-    if (
-      candidate.isSkinnedMesh &&
-      (!mesh || candidate.skeleton.bones.length > mesh.skeleton.bones.length)
-    )
-      mesh = candidate;
-  });
+  const mesh = largestSkinnedMesh(performer);
   if (!mesh) throw new Error(`Mounted rig ${id} has no skinned mesh`);
   const rootBones = posedBones(mesh).filter(
     (bone) => !(bone.parent as Bone | null)?.isBone
   );
-  if (rootBones.length !== 1 || !rootBones[0].parent)
+  const [rootBone] = rootBones;
+  if (rootBones.length !== 1 || !rootBone?.parent)
     throw new Error(`Mounted rig ${id} needs one parented root bone`);
   const left = scene.getObjectByName("FFS_EUC_LeftPedalCapture");
   const right = scene.getObjectByName("FFS_EUC_RightPedalCapture");
@@ -235,8 +234,8 @@ export function captureMountedFrame(scene: Scene, id: string, frame: number) {
     skinnedMeshLocal: localTransform(mesh),
     // Avatar3D normalizes height on a non-bone ancestor. Mesh-local TRS does
     // not include that scale or the ancestor offset needed to reproduce IK.
-    boneRootParentWorld: worldTransform(rootBones[0].parent),
-    rootBone: rootBones[0].name,
+    boneRootParentWorld: worldTransform(rootBone.parent),
+    rootBone: rootBone.name,
     bones: boneSamples(mesh),
     leftPedalWorld: worldTransform(left),
     rightPedalWorld: worldTransform(right),

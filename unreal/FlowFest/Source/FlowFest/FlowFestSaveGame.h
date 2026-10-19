@@ -18,13 +18,16 @@ enum class EFlowFestCamp : uint8 { None, LowerTent, UpperTent, CarCamp };
 UENUM(BlueprintType)
 enum class EFlowFestJam : uint8 { NotStarted, Active, Completed };
 
+UENUM()
+enum class EFlowFestVisitorAction : uint8 { None, Eat, Rest };
+
 UCLASS()
 class FLOWFEST_API UFlowFestSaveGame : public USaveGame
 {
     GENERATED_BODY()
 public:
     // A native slot intentionally separate from the browser simulation's storage.
-    static constexpr int32 CurrentVersion = 2;
+    static constexpr int32 CurrentVersion = 3;
     static constexpr const TCHAR* SlotName = TEXT("FlowFestNative58");
 
     UPROPERTY(SaveGame) int32 Version = CurrentVersion;
@@ -34,6 +37,11 @@ public:
     UPROPERTY(SaveGame) int32 LoadoutChoice = 0;
     UPROPERTY(SaveGame) int32 DepartureChoice = 0;
     UPROPERTY(SaveGame) float Energy = 100.f;
+    UPROPERTY(SaveGame) float Hunger = 15.f;
+    UPROPERTY(SaveGame) EFlowFestVisitorAction VisitorAction = EFlowFestVisitorAction::None;
+    UPROPERTY(SaveGame) float VisitorActionRemaining = 0.f;
+    UPROPERTY(SaveGame) FString CrowdState;
+    UPROPERTY(SaveGame) bool bExplorationOnly = false;
     UPROPERTY(SaveGame) FVector Position = FVector::ZeroVector;
     UPROPERTY(SaveGame) FRotator Rotation = FRotator::ZeroRotator;
     UPROPERTY(SaveGame) float Hour = 15.f;

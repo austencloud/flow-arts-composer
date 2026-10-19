@@ -167,8 +167,10 @@
   let initializedPlayback = false;
   const sequence = $derived(viewer.currentSequenceData ?? initialSequence);
   const selected = $derived(
-    viewer.performerManager.performers[viewer.primaryPerformerIndex]
-      ?.characterId ?? ""
+    viewer.primaryPerformerIndex === null
+      ? ""
+      : (viewer.performerManager.performers[viewer.primaryPerformerIndex]
+          ?.characterId ?? "")
   );
 
   async function refreshCharacters() {

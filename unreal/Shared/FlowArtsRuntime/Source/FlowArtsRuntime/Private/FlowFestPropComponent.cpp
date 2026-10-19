@@ -1,5 +1,6 @@
 #include "FlowFestPropComponent.h"
 #include "FlowFestAnimInstance.h"
+#include "FlowArtsNiagaraEffectComponent.h"
 #include "Components/PointLightComponent.h"
 #include "Components/SceneComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -14,6 +15,7 @@
 #include "Serialization/JsonSerializer.h"
 #include "Dom/JsonObject.h"
 #include "Engine/World.h"
+#include "NiagaraSystem.h"
 
 namespace
 {
@@ -160,6 +162,14 @@ void UFlowFestPropComponent::Initialize(USceneComponent* Parent)
     RightRoot->SetAbsolute(false, false, true);
     LeftMesh = CreateMesh(TEXT("FlowFestLeftPropMesh"), LeftVisualRoot);
     RightMesh = CreateMesh(TEXT("FlowFestRightPropMesh"), RightVisualRoot);
+    // Keep the catalog flame meshes as a fallback when the plugin particle
+    // system has not been installed in this project.
+    if (LoadObject<UNiagaraSystem>(nullptr, TEXT("/FlowArtsRuntime/Effects/NS_PropFire.NS_PropFire")))
+    {
+        NiagaraEffects = NewObject<UFlowArtsNiagaraEffectComponent>(GetOwner(), TEXT("FlowFestNiagaraEffects"));
+        NiagaraEffects->RegisterComponent();
+        NiagaraEffects->Initialize(LeftVisualRoot, RightVisualRoot);
+    }
     SetVisible(bVisible);
 }
 
@@ -169,23 +179,33 @@ bool UFlowFestPropComponent::BindHands(USkeletalMeshComponent* BodyMesh)
     if (BodyMesh->GetBoneIndex(TEXT("LeftHand")) == INDEX_NONE ||
         BodyMesh->GetBoneIndex(TEXT("RightHand")) == INDEX_NONE ||
         BodyMesh->GetBoneIndex(TEXT("LeftHandMiddle1")) == INDEX_NONE ||
-        BodyMesh->GetBoneIndex(TEXT("RightHandMiddle1")) == INDEX_NONE) return false;
-    auto Grip = [BodyMesh](FName HandName, FName FingerName, FQuat& Basis, FVector& Offset)
+        BodyMesh->GetBoneIndex(TEXT("RightHandMiddle1")) == INDEX_NONE ||
+        BodyMesh->GetBoneIndex(TEXT("LeftHandIndex1")) == INDEX_NONE ||
+        BodyMesh->GetBoneIndex(TEXT("RightHandIndex1")) == INDEX_NONE ||
+        BodyMesh->GetBoneIndex(TEXT("LeftHandPinky1")) == INDEX_NONE ||
+        BodyMesh->GetBoneIndex(TEXT("RightHandPinky1")) == INDEX_NONE) return false;
+    auto Grip = [BodyMesh](FName HandName, FName MiddleName, FName IndexName, FName PinkyName,
+                           FQuat& Basis, FVector& Offset)
     {
         const FTransform Hand = BodyMesh->GetSocketTransform(HandName, RTS_World);
-        const FVector FingerWorld = BodyMesh->GetSocketLocation(FingerName);
-        const FVector FingerLocal = Hand.InverseTransformPosition(FingerWorld);
-        if (FingerLocal.IsNearlyZero()) return false;
-        // The authored prop axis is +Y. Aim it along the actual palm/finger
-        // direction, using this rig's hand basis rather than the wrist quaternion.
-        Basis = FQuat::FindBetweenNormals(FVector::YAxisVector, FingerLocal.GetSafeNormal());
-        Offset = FingerLocal * .4f; // hold within the palm, past the wrist joint
+        const FVector Middle = Hand.InverseTransformPosition(BodyMesh->GetSocketLocation(MiddleName));
+        const FVector Index = Hand.InverseTransformPosition(BodyMesh->GetSocketLocation(IndexName));
+        const FVector Pinky = Hand.InverseTransformPosition(BodyMesh->GetSocketLocation(PinkyName));
+        if (Middle.IsNearlyZero()) return false;
+        const FVector Longitudinal = Middle.GetSafeNormal();
+        FVector Transverse = Pinky - Index;
+        Transverse -= Longitudinal * FVector::DotProduct(Transverse, Longitudinal);
+        if (!Transverse.Normalize()) return false;
+        // Match the web grip calibration: Index1 -> Pinky1 points toward the
+        // staff's -Y end. The grip center lies 65% along wrist -> Middle1.
+        Basis = FQuat::FindBetweenNormals(FVector::YAxisVector, -Transverse);
+        Offset = Middle * .65f;
         return true;
     };
     FQuat NewLeftBasis, NewRightBasis;
     FVector NewLeftOffset, NewRightOffset;
-    if (!Grip(TEXT("LeftHand"), TEXT("LeftHandMiddle1"), NewLeftBasis, NewLeftOffset) ||
-        !Grip(TEXT("RightHand"), TEXT("RightHandMiddle1"), NewRightBasis, NewRightOffset)) return false;
+    if (!Grip(TEXT("LeftHand"), TEXT("LeftHandMiddle1"), TEXT("LeftHandIndex1"), TEXT("LeftHandPinky1"), NewLeftBasis, NewLeftOffset) ||
+        !Grip(TEXT("RightHand"), TEXT("RightHandMiddle1"), TEXT("RightHandIndex1"), TEXT("RightHandPinky1"), NewRightBasis, NewRightOffset)) return false;
     LeftRoot->AttachToComponent(BodyMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, TEXT("LeftHand"));
     RightRoot->AttachToComponent(BodyMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, TEXT("RightHand"));
     BoundBodyMesh = BodyMesh;
@@ -258,6 +278,8 @@ bool UFlowFestPropComponent::Equip(FName PropId, float LengthCm)
     const float LongScale = bAdjustable && LengthCm > 0.f && AuthoredLength > 0 ? FMath::Clamp(LengthCm / static_cast<float>(AuthoredLength), .1f, 5.f) : 1.f;
     // Avatar import maps source X to UE -Y. Mirror the baked prop's numeric
     // X axis once so the sampled root rotation remains a proper quaternion.
+    // The FBX prop import also reverses source Y in the static mesh vertices;
+    // attachment positions below must use that same mesh-local axis.
     LeftMesh->SetRelativeScale3D(FVector(-1.f, LongScale, 1.f));
     RightMesh->SetRelativeScale3D(FVector(-1.f, LongScale, 1.f));
     for (UPointLightComponent* Light : LeftEffectLights) if (Light) Light->DestroyComponent();
@@ -272,6 +294,7 @@ bool UFlowFestPropComponent::Equip(FName PropId, float LengthCm)
     RightFlames.Empty();
     LeftLEDs.Empty();
     RightLEDs.Empty();
+    TArray<FVector> WickOffsets;
     const TArray<TSharedPtr<FJsonValue>>* Effects = nullptr;
     if (Build->TryGetArrayField(TEXT("effectAttachments"), Effects) && Effects)
     {
@@ -280,13 +303,15 @@ bool UFlowFestPropComponent::Equip(FName PropId, float LengthCm)
             const TSharedPtr<FJsonObject> Effect = (*Effects)[Index]->AsObject();
             const TArray<TSharedPtr<FJsonValue>>* Offset = nullptr;
             if (!Effect.IsValid() || !Effect->TryGetArrayField(TEXT("offsetCm"), Offset) || !Offset || Offset->Num() != 3) continue;
-            const FVector Location(-(*Offset)[0]->AsNumber(), (*Offset)[1]->AsNumber() * LongScale, (*Offset)[2]->AsNumber());
+            const FVector Location(-(*Offset)[0]->AsNumber(), -(*Offset)[1]->AsNumber() * LongScale, (*Offset)[2]->AsNumber());
+            WickOffsets.Add(Location);
             auto AddLight = [this, Location](USceneComponent* Root)
             {
                 UPointLightComponent* Light = NewObject<UPointLightComponent>(GetOwner());
                 Light->SetupAttachment(Root);
                 Light->SetRelativeLocation(Location);
                 Light->SetAttenuationRadius(150.f);
+                Light->SetIntensityUnits(ELightUnits::Lumens);
                 Light->SetIntensity(0.f);
                 Light->RegisterComponent();
                 return Light;
@@ -307,6 +332,11 @@ bool UFlowFestPropComponent::Equip(FName PropId, float LengthCm)
     }
     else DefaultFinish = NAME_None;
     EffectFinish = DefaultFinish;
+    if (NiagaraEffects)
+    {
+        NiagaraEffects->Configure(WickOffsets, PropId);
+        NiagaraEffects->ResetHistory();
+    }
     UpdateEffects();
     SetVisible(bVisible);
     UpdatePose();
@@ -804,22 +834,35 @@ void UFlowFestPropComponent::ResetFinish()
     UpdateEffects();
 }
 
+void UFlowFestPropComponent::SyncEffectPlayback(float Seconds, bool bPaused, float PlaybackRate)
+{
+    if (NiagaraEffects && FMath::IsFinite(Seconds) && FMath::IsFinite(PlaybackRate))
+        NiagaraEffects->SyncPlayback(Seconds, bPaused, PlaybackRate);
+}
+
+void UFlowFestPropComponent::ResetEffectHistory()
+{
+    if (NiagaraEffects) NiagaraEffects->ResetHistory();
+}
+
 void UFlowFestPropComponent::UpdateEffects()
 {
     const bool bFire = EffectFinish == TEXT("fire");
     const bool bLed = EffectFinish == TEXT("led");
+    if (NiagaraEffects) NiagaraEffects->SetPresentation(EffectFinish, bVisible);
     for (const TArray<TObjectPtr<UPointLightComponent>>* Group : { &LeftEffectLights, &RightEffectLights })
     {
         for (UPointLightComponent* Light : *Group)
         {
             if (!Light) continue;
             Light->SetLightColor(bFire ? FLinearColor(1.f,.19f,.03f) : FLinearColor(.05f,.45f,1.f));
-            Light->SetIntensity(bVisible ? (bFire ? 650.f : bLed ? 200.f : 0.f) : 0.f);
+            Light->SetIntensity(bVisible ? (bFire ? 25.f : bLed ? 3.f : 0.f) : 0.f);
         }
     }
     for (const TArray<TObjectPtr<UProceduralMeshComponent>>* Group : { &LeftFlames, &RightFlames })
         for (UProceduralMeshComponent* Flame : *Group)
-            if (Flame) Flame->SetVisibility(bVisible && bFire);
+            if (Flame) Flame->SetVisibility(bVisible && bFire &&
+                (!NiagaraEffects || !NiagaraEffects->IsAvailable()));
     for (const TArray<TObjectPtr<UStaticMeshComponent>>* Group : { &LeftLEDs, &RightLEDs })
         for (UStaticMeshComponent* LED : *Group)
             if (LED) LED->SetVisibility(bVisible && bLed);

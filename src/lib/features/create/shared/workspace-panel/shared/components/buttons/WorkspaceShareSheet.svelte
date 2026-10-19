@@ -12,6 +12,7 @@
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import { hashString } from "#lib/shared/foundation/services/content-hasher.js";
   import { deriveWord } from "#lib/shared/foundation/services/word-deriver.js";
+  import { generateViewerURL } from "#lib/shared/navigation/services/sequence-encoder.js";
   import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
   import { authDrawerState } from "#lib/shared/auth/state/auth-drawer-state.svelte.js";
   import {
@@ -55,6 +56,11 @@
   let videoRenderGeneration = 0;
 
   const hasFullAccount = $derived(authState.isFullAccount);
+  const guestShareUrl = $derived(
+    isOpen && !hasFullAccount && sequence
+      ? generateViewerURL(sequence, { compress: true, metadata: { bpm } }).url
+      : ""
+  );
   const workspaceVideoSourceKey = $derived.by(() =>
     hashString(
       JSON.stringify({
@@ -274,12 +280,12 @@
   {/if}
 {/snippet}
 
-<!-- No `shareUrl`: the workspace sequence has no canonical viewer URL yet, and
-     the sheet mints (or re-resolves) the short code itself. -->
+<!-- Guests can copy the current workspace sequence without saving it. An
+     account still gets the short link only when a share action needs it. -->
 <PostShareSheet
   {isOpen}
   {sequence}
-  shareUrl=""
+  shareUrl={guestShareUrl}
   videoBlobUrl={workspaceVideoUrl}
   isExportingVideo={workspaceVideoExporting}
   exportProgress={workspaceVideoProgress}

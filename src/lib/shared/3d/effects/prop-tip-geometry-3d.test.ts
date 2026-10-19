@@ -15,9 +15,12 @@ import {
   FAN_FIRE_WICK_CENTERS_M,
   FAN_LOTUS_WICK_CENTERS_M,
 } from "./prop-build-tip-geometry-3d";
+import { INTERNAL_FAN_BUILDS } from "#lib/shared/3d/domain/fan-appearance.js";
 import {
+  MAX_TIP_EMITTERS_PER_PROP,
   resolvePropTipAnchors3D,
   resolveScaledPropTipAnchors3D,
+  tipEffectSlot3D,
 } from "./prop-tip-geometry-3d";
 
 const PICTOGRAPH = { fanBuild: "pictograph", finish: "day" } as const;
@@ -206,5 +209,30 @@ describe("resolvePropTipAnchors3D", () => {
       expect(offset.x).toBeCloseTo(0, 12);
       expect(Math.hypot(offset.x, offset.y)).toBeCloseTo(reach, 10);
     });
+  });
+});
+
+describe("tipEffectSlot3D", () => {
+  it("fits every prop and fan build inside its prop's emitter slots", () => {
+    for (const propType of Object.values(PropType)) {
+      for (const fanBuild of INTERNAL_FAN_BUILDS) {
+        const anchors = resolvePropTipAnchors3D(propType, 0.6, {
+          fanBuild,
+          finish: "fire",
+        });
+        expect(anchors.length, `${propType} / ${fanBuild}`).toBeLessThanOrEqual(
+          MAX_TIP_EMITTERS_PER_PROP
+        );
+      }
+    }
+  });
+
+  it("never lets two emitters of a rig share a slot", () => {
+    const slots = [0, 1].flatMap((propIndex) =>
+      Array.from({ length: MAX_TIP_EMITTERS_PER_PROP }, (_, emitter) =>
+        tipEffectSlot3D(propIndex, emitter)
+      )
+    );
+    expect(new Set(slots).size).toBe(slots.length);
   });
 });

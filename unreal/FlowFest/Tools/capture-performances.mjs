@@ -203,6 +203,18 @@ try {
   }
 
   if (familyMode) {
+    async function reloadFamily(role, snapshot) {
+      // Inspecting an existing capture also mounts the rig. Start the next
+      // capture with a fresh page, even when that existing capture is reused.
+      await loadPage();
+      await page.evaluate(
+        ([key, sequence]) =>
+          window.flowFestNativeCapture.setFamilySequenceSnapshots({
+            [key]: sequence,
+          }),
+        [role, snapshot]
+      );
+    }
     for (const family of families)
       for (const variant of selectedVariants) {
         const role = `family-${family}-${variant}`;
@@ -277,19 +289,34 @@ try {
                 frames: 480,
                 motion,
               });
+              await reloadFamily(role, snapshot);
               continue;
             } catch (error) {
               process.stdout.write(
                 `Recapturing ${filename}: ${error.message}\n`
               );
+              await reloadFamily(role, snapshot);
             }
           }
           process.stdout.write(`${character} / ${role}\n`);
-          const result = await page.evaluate(
-            ([id, prop, nextVariant]) =>
-              window.flowFestNativeCapture.captureFamily(id, prop, nextVariant),
-            [character, family, variant]
-          );
+          let result;
+          for (let attempt = 1; attempt <= 3; attempt += 1) {
+            try {
+              result = await page.evaluate(
+                ([id, prop, nextVariant]) =>
+                  window.flowFestNativeCapture.captureFamily(id, prop, nextVariant),
+                [character, family, variant]
+              );
+              break;
+            } catch (error) {
+              if (attempt === 3 || !String(error).includes("Failed to fetch"))
+                throw error;
+              process.stderr.write(
+                `Retrying ${filename} after transient asset fetch (${attempt}/2)\n`
+              );
+              await reloadFamily(role, snapshot);
+            }
+          }
           const motion = validatePerformance(result, character, role, family);
           await validateCaptureProvenance(result, {
             expectedBuildId: buildReceipt.id,
@@ -310,14 +337,7 @@ try {
           // same rig on this page can leave its first frames in a stale rest pose.
           // Capture each performance in an isolated page lifetime, then restore
           // the exact preserved LOOP before the next character is inspected.
-          await loadPage();
-          await page.evaluate(
-            ([key, sequence]) =>
-              window.flowFestNativeCapture.setFamilySequenceSnapshots({
-                [key]: sequence,
-              }),
-            [role, snapshot]
-          );
+          await reloadFamily(role, snapshot);
         }
       }
   } else {

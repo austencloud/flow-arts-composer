@@ -114,7 +114,10 @@
       hand: HandSide | null
     ) => void;
     onChange?: (change: PropPlacementChange) => void;
-    onPlacementComplete?: (leftLocation, rightLocation) => void;
+    onPlacementComplete?: (
+      leftLocation: GridLocation,
+      rightLocation: GridLocation
+    ) => void;
     onOrientationChange?: (color: HandSide, orientation: Orientation) => void;
   }
 

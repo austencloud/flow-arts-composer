@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import { Quaternion, Vector3 } from "three";
 import { Plane, PlaneMode } from "@austencloud/scene-3d";
 import {
@@ -33,6 +34,7 @@ import {
 } from "#lib/shared/3d/collision/body-clearance.js";
 import { propStateToStaffTarget } from "#lib/shared/3d/services/swept-volume/swept-volume-builder.js";
 import { fixedHandDistance } from "#lib/shared/3d/domain/performer-hand-distance.js";
+import { planUpperBodyStanceDepth, planUpperBodyStanceYawTarget, stanceTargetsForPropStates } from "#lib/shared/3d/collision/upper-body-stance-planner.js";
 import { propContinuityCorpus } from "../../tools/prop-continuity-corpus";
 
 /**
@@ -56,6 +58,64 @@ const CHEST_FRONT_M = 0.5 * 0.2 + R;
 const CHEST_BACK_M = -0.66 * 0.2 - R;
 /** The module tests staff points this far apart. */
 const STAFF_STEP_M = 0.01;
+
+it("keeps the captured staff A torso contacts unchanged while spreading its lane jumps", () => {
+  const sequence = JSON.parse(readFileSync("tests/fixtures/3d/family-staff-A.sequence.json", "utf8"));
+  const source = createCharacterInstanceState({ id: "staff-a-torso", persistent: false }, makeStandaloneDeps());
+  source.setPlaneMode(PlaneMode.WALL);
+  source.loadSequence(sequence);
+  const stanceTrack = buildStanceYawTrackForSource(source, PlaneMode.WALL);
+  const hardBeatTrack = buildHardBeatTrack({ source, stanceTrack, heightM: 1.905 });
+  const staffHalfLengthM = 0.654028 / 2;
+  const captureModel = defaultBodyClearanceModel({ heightM: 1.905 });
+  const contacts = { baseline: 0, smoothed: 0 };
+  const introduced: number[] = [];
+  const removed: number[] = [];
+  let baselinePeak = 0;
+  let smoothedPeak = 0;
+  for (let frame = 0; frame < 480; frame++) {
+    const score = frame / 30;
+    const props = source.propStatesAtScoreTime(score);
+    const stance = resolveTrackedUpperBodyStance(stanceTrack, score, PlaneMode.WALL, props.left, props.right);
+    const targets = stanceTargetsForPropStates(PlaneMode.WALL, props.left, props.right);
+    const baseline = planUpperBodyStanceDepth(
+      stance.segments.chestRad,
+      targets,
+      null,
+      planUpperBodyStanceYawTarget(targets)
+    );
+    const hardBeat = sampleHardBeatTrack(hardBeatTrack, score);
+    const staffLines = (leftDepth: number, rightDepth: number): (StaffLine | null)[] =>
+      ([
+        [displaceProp(props.left, hardBeat.left), leftDepth],
+        [displaceProp(props.right, hardBeat.right), rightDepth],
+      ] as const).map(([prop, depth]) => {
+        if (!prop) return null;
+        const line = propStateToStaffTarget(prop, staffHalfLengthM);
+        return {
+          a: { ...line.tipAWorld, z: line.tipAWorld.z + depth },
+          b: { ...line.tipBWorld, z: line.tipBWorld.z + depth },
+        };
+      });
+    const pose = { chestRad: stance.segments.chestRad, spine1Rad: stance.segments.spine1Rad };
+    const baselineInside = insideAfter(staffLines(baseline.leftDepthOffsetM, baseline.rightDepthOffsetM), pose, captureModel, 0, 0);
+    const smoothedInside = insideAfter(staffLines(stance.leftDepthOffsetM, stance.rightDepthOffsetM), pose, captureModel, 0, 0);
+    if (baselineInside > 0) contacts.baseline++;
+    if (smoothedInside > 0) contacts.smoothed++;
+    if (baselineInside === 0 && smoothedInside > 0) introduced.push(frame);
+    if (baselineInside > 0 && smoothedInside === 0) removed.push(frame);
+    baselinePeak = Math.max(baselinePeak, baselineInside);
+    smoothedPeak = Math.max(smoothedPeak, smoothedInside);
+    if ((frame >= 128 && frame <= 132) || (frame >= 368 && frame <= 372)) {
+      expect(baselineInside).toBe(0);
+      expect(smoothedInside).toBe(0);
+    }
+  }
+  expect(contacts).toEqual({ baseline: 90, smoothed: 90 });
+  expect(introduced).toEqual([]);
+  expect(removed).toEqual([]);
+  expect(smoothedPeak).toBeLessThanOrEqual(baselinePeak);
+});
 
 /** Straight back from the chest. */
 function back(pose: BodyClearancePose): BodyMove {
@@ -554,6 +614,11 @@ describe("body clearance over the isolation corpus", () => {
     let insideBefore = 0;
     let insideRendered = 0;
     let short = 0;
+    let maxInsidePoints = 0;
+    let longestRun = 0;
+    let framesInsideAfter = 0;
+    let introducedRendered = 0;
+    let totalSamples = 0;
     for (const entry of propContinuityCorpus()) {
       const source = createCharacterInstanceState(
         { id: `clearance-${entry.id}`, positionX: 0, persistent: false },
@@ -577,8 +642,10 @@ describe("body clearance over the isolation corpus", () => {
         staffLengthM: STAFF_M,
       });
       if (!track) continue;
+      let currentRun = 0;
       beatsMoving += track.report.length;
       for (let i = 0; i < track.clearance.length; i++) {
+        totalSamples++;
         largest = Math.max(largest, track.clearance[i]!);
         expect(track.clearance[i]!).toBeLessThanOrEqual(
           DEFAULT_BODY_CLEARANCE_MAX_M + 1e-12
@@ -595,10 +662,21 @@ describe("body clearance over the isolation corpus", () => {
         for (const reach of reachAfter(staffs, pose, track.model, dx, dz)) {
           expect(reach.after).toBeLessThanOrEqual(reach.limit + 1e-9);
         }
-        if (insideAfter(staffs, pose, track.model, 0, 0) === 0) continue;
-        insideBefore++;
-        if (insideAfter(staffs, pose, track.model, dx, dz) > 0) {
+        const before = insideAfter(staffs, pose, track.model, 0, 0);
+        const renderedPoints = insideAfter(staffs, pose, track.model, dx, dz);
+        if (before > 0) insideBefore++;
+        if (renderedPoints > 0) {
           insideRendered++;
+          framesInsideAfter++;
+          currentRun++;
+          longestRun = Math.max(longestRun, currentRun);
+          maxInsidePoints = Math.max(maxInsidePoints, renderedPoints);
+        } else {
+          currentRun = 0;
+        }
+        if (before === 0) {
+          if (renderedPoints > 0) introducedRendered++;
+          continue;
         }
         if (track.capped[i]) {
           short++;
@@ -615,6 +693,11 @@ describe("body clearance over the isolation corpus", () => {
     expect(checked).toBeGreaterThan(500);
     expect(beatsMoving).toBeGreaterThan(20);
     expect(largest).toBeGreaterThan(0.1);
+    expect(totalSamples).toBeGreaterThan(5000);
+    expect(introducedRendered).toBe(0);
+    expect(framesInsideAfter).toBe(insideRendered);
+    expect(maxInsidePoints).toBeLessThanOrEqual(30);
+    expect(longestRun).toBeLessThanOrEqual(15);
     // Planned 2026-09-28: 966 samples start inside, 85 moves are cut short,
     // and 346 samples keep some point inside as rendered, where the reach cut
     // and the ramp shorten or turn the chosen move (a median of 2 cm short).

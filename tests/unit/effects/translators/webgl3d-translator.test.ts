@@ -115,12 +115,14 @@ describe("resolveCharcoal3D", () => {
     ).toBeCloseTo(1.65, 5);
   });
 
-  it("uses downward gravity and lets broad sprays hang longer", () => {
+  it("uses real gravity whatever the spread", () => {
+    // How far sparks fly comes from drag on each droplet, not from a weaker
+    // gravity: a broad spray throws harder, it does not fall slower.
     const tight = resolveCharcoal3D({ ...intent, spread: 0 });
     const broad = resolveCharcoal3D({ ...intent, spread: 1 });
 
-    expect(tight.gravity).toBeCloseTo(7.4 * 0.82, 5);
-    expect(broad.gravity).toBeCloseTo(5.6 * 0.82, 5);
+    expect(tight.gravity).toBeCloseTo(9.81, 5);
+    expect(broad.gravity).toBeCloseTo(9.81, 5);
   });
 
   it("resolves four distinct physical emission signatures", () => {

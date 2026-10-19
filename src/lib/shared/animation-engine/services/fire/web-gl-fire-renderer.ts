@@ -26,6 +26,7 @@
  */
 
 import { FireFrameCache } from "./fire-frame-cache";
+import { flameBurnTime } from "#lib/shared/effects/domain/fire-physics.js";
 import { sweepPolyline, type SweepPoint } from "./fire-sweep";
 import {
   computeResidualHeatFloor,
@@ -102,13 +103,52 @@ export function computeFireEmissionMultiplier(brightness = 0.5): number {
   return 0.35 + Math.min(1, Math.max(0, brightness)) * 1.3;
 }
 
+/** Screen pixels per metre in the 2D views at the 500 px reference canvas. */
+const FLAME_PIXELS_PER_METRE = 140;
+/** Heat falls this many e-folds over a flame's burn time, from the hot core
+ *  down to where the display stops drawing it. */
+const FLAME_VISIBLE_EFOLDS = 1.8;
+/** The faster fade leaves less time for heat to build where splats overlap,
+ *  so the natural flame starts hotter to keep its yellow core. */
+const FLAME_HEAT_BOOST = 2.6;
+
+/**
+ * Heat and fuel retention per 60 Hz step for the natural flame. Gas glows for
+ * the shared wick flame's burn time (effects/domain/fire-physics.ts), which
+ * shortens as the wicks speed up, so the 2D trail is as long as the 3D one.
+ */
+export function computeFlameRetention(
+  tips: readonly Pick<PropTipData, "speed">[],
+  canvasWidth: number,
+  canvasHeight: number
+): number {
+  const minDim = Math.min(canvasWidth, canvasHeight);
+  if (tips.length === 0 || minDim <= 0) {
+    return Math.exp(-FLAME_VISIBLE_EFOLDS / flameBurnTime(0) * REFERENCE_STEP_SECONDS);
+  }
+  const metresPerUnit = 500 / (FLAME_PIXELS_PER_METRE * minDim);
+  let speed = 0;
+  for (const tip of tips) speed += tip.speed * metresPerUnit;
+  speed /= tips.length;
+  const rate = FLAME_VISIBLE_EFOLDS / flameBurnTime(speed);
+  return Math.exp(-rate * REFERENCE_STEP_SECONDS);
+}
+
 export function computeFireTemperatureDissipation(
   baseDissipation: number,
-  renderingProfile: FireOverlayConfig["renderingProfile"]
+  renderingProfile: FireOverlayConfig["renderingProfile"],
+  flameRetention: number
 ): number {
-  return renderingProfile === "legacy"
-    ? baseDissipation
-    : Math.max(baseDissipation, 0.972);
+  return renderingProfile === "legacy" ? baseDissipation : flameRetention;
+}
+
+/** Fuel left unburned fades with the flame; Liquid Fire keeps its own rate. */
+export function computeFireFuelDissipation(
+  baseDissipation: number,
+  renderingProfile: FireOverlayConfig["renderingProfile"],
+  flameRetention: number
+): number {
+  return renderingProfile === "legacy" ? baseDissipation : flameRetention;
 }
 
 export function computeFireCoolingRate(
@@ -1178,7 +1218,11 @@ export class WebGLFireRenderer {
 
       const fuelPerSplat = (p.fuelAmount * config.intensity * fs) / splatCount;
       const baseTempPerSplat =
-        (p.temperatureInjection * config.intensity * fs) / splatCount;
+        (p.temperatureInjection *
+          (useReaction ? FLAME_HEAT_BOOST : 1) *
+          config.intensity *
+          fs) /
+        splatCount;
 
       const tc = this.turbulenceClock;
       const tipPhase = tip.propIndex * 3.7 + tip.tipIndex * 2.3;
@@ -1225,9 +1269,20 @@ export class WebGLFireRenderer {
       config.renderingProfile,
       activeFireInstanceCount
     );
+    const flameRetention = computeFlameRetention(
+      tips,
+      input.canvasWidth,
+      input.canvasHeight
+    );
     const temperatureDissipation = computeFireTemperatureDissipation(
       p.temperatureDissipation,
-      config.renderingProfile
+      config.renderingProfile,
+      flameRetention
+    );
+    const fuelDissipation = computeFireFuelDissipation(
+      p.fuelDissipation,
+      config.renderingProfile,
+      flameRetention
     );
 
     // With no tips there were no splats above, so this frame only cools what is
@@ -1284,7 +1339,7 @@ export class WebGLFireRenderer {
         this.advectMacCormack(
           this.fuel!,
           this.fuel!.read,
-          p.fuelDissipation,
+          fuelDissipation,
           subDt,
           texelSize
         );
@@ -1292,7 +1347,7 @@ export class WebGLFireRenderer {
           this.advectMacCormack(
             this.colorField,
             this.colorField.read,
-            p.fuelDissipation,
+            fuelDissipation,
             subDt,
             texelSize
           );
@@ -1308,7 +1363,7 @@ export class WebGLFireRenderer {
         this.advect(
           this.fuel!,
           this.fuel!.read,
-          p.fuelDissipation,
+          fuelDissipation,
           subDt,
           texelSize
         );
@@ -1316,7 +1371,7 @@ export class WebGLFireRenderer {
           this.advect(
             this.colorField,
             this.colorField.read,
-            p.fuelDissipation,
+            fuelDissipation,
             subDt,
             texelSize
           );

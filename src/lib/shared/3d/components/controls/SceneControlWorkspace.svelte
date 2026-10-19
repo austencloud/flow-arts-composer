@@ -3,6 +3,7 @@
   import BottomSheet from "./BottomSheet.svelte";
   import { getViewer3DContext } from "../../context/viewer-3d-context";
   import {
+    RAIL_SECOND_COLUMN_WIDTH,
     resolveSceneControlLayout,
     type SceneControlHostTool,
     type SceneControlLayout,
@@ -20,7 +21,10 @@
   import SelectionToolbar from "#lib/shared/components/selection/SelectionToolbar.svelte";
   import SceneControlInspector from "./SceneControlInspector.svelte";
   import SceneControlRail from "./SceneControlRail.svelte";
-  import type { PerformerEditSink } from "./performer-hub-types";
+  import type {
+    PerformerEditSink,
+    PerformerHubTab,
+  } from "./performer-hub-types";
   import { onMount, type Snippet } from "svelte";
   import { flyFade, growFade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
@@ -123,6 +127,13 @@
   let workspaceHeight = $state(0);
   let workspaceEl = $state<HTMLElement | null>(null);
   let activeTool = $state<SceneControlTool | null>(null);
+  // The performer tool the panel shows. Clicking a performer on the stage
+  // reopens the last one used.
+  let performerTab = $state<PerformerHubTab>("prop");
+  // The rail folds into two columns on a short window; everything that keeps
+  // clear of it moves over by one button.
+  let railColumns = $state<1 | 2>(1);
+  const railWidth = $derived(railColumns === 2 ? "8.25rem" : "4.75rem");
   let panelEl = $state<HTMLElement | null>(null);
   let saveSceneOpen = $state(false);
   let showInteractionHint = $state(false);
@@ -206,6 +217,15 @@
     if (tool !== null) hostPanelOpen = false;
   }
 
+  function choosePerformerTool(tab: PerformerHubTab): void {
+    if (activeTool === "performer" && performerTab === tab) {
+      chooseTool(null);
+      return;
+    }
+    performerTab = tab;
+    chooseTool("performer");
+  }
+
   function toggleHostPanel(): void {
     hostPanelOpen = !hostPanelOpen;
     if (hostPanelOpen) activeTool = null;
@@ -225,7 +245,8 @@
       workspaceWidth,
       workspaceHeight,
       rightColumnOpen,
-      inspectorUsesDock
+      inspectorUsesDock,
+      railColumns === 2 ? RAIL_SECOND_COLUMN_WIDTH : 0
     )
   );
 
@@ -392,9 +413,10 @@
   style:--scene-controls-bottom={bottomOffset}
   style:--scene-controls-left={leftOffset}
   style:--scene-inspector-width="{layout.panelWidth}px"
+  style:--scene-rail-width={railWidth}
   style:--scene-right-occupied={rightColumnOpen
-    ? `calc(4.75rem + ${layout.panelWidth}px)`
-    : "4.75rem"}
+    ? `calc(${railWidth} + ${layout.panelWidth}px)`
+    : railWidth}
 >
   {#if layout.presentation === "compact"}
     <div class="compact-controls">
@@ -449,6 +471,9 @@
       {topOffset}
       {bottomOffset}
       onToolSelect={chooseTool}
+      onColumnsChange={(columns) => (railColumns = columns)}
+      {performerTab}
+      onPerformerToolSelect={choosePerformerTool}
       onOpenSaveScene={allowSaveScene ? openSaveScene : undefined}
       hostTool={hostPanel ? hostTool : null}
       hostToolActive={hostPanelOpen}
@@ -464,6 +489,7 @@
       >
         <SceneControlInspector
           tool={activeTool}
+          {performerTab}
           onClose={closeInspector}
           {onSettingChange}
           {onPerformerEdit}
@@ -592,9 +618,10 @@
   .inspector-anchor {
     position: absolute;
     top: var(--scene-controls-top, 0.75rem);
-    right: 4.75rem;
+    right: var(--scene-rail-width, 4.75rem);
     bottom: var(--scene-controls-bottom, 5.5rem);
     z-index: 29;
+    transition: right var(--duration-normal) var(--ease-standard);
     width: var(--scene-inspector-width);
     min-width: 0;
     overflow: visible;

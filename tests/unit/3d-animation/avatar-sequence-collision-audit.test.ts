@@ -152,6 +152,51 @@ describe("AvatarSequenceCollisionAudit", () => {
     ).toEqual(["austen", "remy"]);
   });
 
+  it("folds the same span from repeated loops into one cluster", () => {
+    const audit = new AvatarSequenceCollisionAudit();
+    for (let loop = 0; loop < 50; loop += 1) {
+      // Frame timing shifts a little each loop, so the span starts at a
+      // slightly different beat progress every time.
+      const jitter = (loop % 3) * 0.01;
+      audit.record("austen", [event(2, 0.2 + jitter, 0.03)]);
+      audit.record("austen", [
+        event(2, 0.3 + jitter, loop === 7 ? 0.09 : 0.05),
+      ]);
+      audit.record("austen", []);
+      audit.record("austen", [
+        event(5, 0.6 + jitter, 0.04, "prop-through-head"),
+      ]);
+      audit.record("austen", []);
+    }
+
+    const { clusters } = audit.report();
+    expect(clusters).toHaveLength(2);
+    expect(clusters[0]).toMatchObject({
+      firstStep: 2,
+      worstPenetrationDepth: 0.09,
+    });
+  });
+
+  it("keeps the browser snapshot small however long playback runs", () => {
+    const audit = new AvatarSequenceCollisionAudit();
+    sessionStorage.removeItem(AVATAR_COLLISION_AUDIT_STORAGE_KEY);
+    for (let step = 1; step <= 600; step += 1) {
+      audit.record("austen", [event(step, 0.5, (step % 97) / 1000)]);
+      audit.record("austen", []);
+    }
+    audit.record("austen", [event(601, 0.5, 0.2)]);
+    for (let frame = 0; frame < 15; frame += 1) audit.record("austen", []);
+
+    const stored = sessionStorage.getItem(AVATAR_COLLISION_AUDIT_STORAGE_KEY)!;
+    const snapshot = JSON.parse(stored);
+    expect(snapshot.totalClusters).toBe(601);
+    expect(snapshot.clusters.length).toBeLessThanOrEqual(40);
+    expect(snapshot.clusters[0]).toMatchObject({ firstStep: 601 });
+    expect(stored.length).toBeLessThan(100_000);
+    // The full report stays available to code that asks for it.
+    expect(audit.report().clusters).toHaveLength(601);
+  });
+
   it("publishes a browser-readable snapshot without serializing every frame", () => {
     const audit = new AvatarSequenceCollisionAudit();
     sessionStorage.removeItem(AVATAR_COLLISION_AUDIT_STORAGE_KEY);

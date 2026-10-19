@@ -11,8 +11,8 @@ import {
 
 describe("petal airflow", () => {
   it("keeps nearby petals in the same coherent current", () => {
-    const a: PetalAirflow2D = { x: 0, y: 0, turn: 0 };
-    const b: PetalAirflow2D = { x: 0, y: 0, turn: 0 };
+    const a: PetalAirflow2D = { x: 0, y: 0 };
+    const b: PetalAirflow2D = { x: 0, y: 0 };
     samplePetalAirflow2D(240, 180, 3.2, 1, a);
     samplePetalAirflow2D(244, 183, 3.2, 1, b);
     expect(Math.hypot(a.x - b.x, a.y - b.y)).toBeLessThan(3);
@@ -31,17 +31,17 @@ describe("petal airflow", () => {
   });
 
   it("lets a close moving prop push a petal and ignores a distant one", () => {
-    const close: PetalAirflow2D = { x: 0, y: 0, turn: 0 };
-    const far: PetalAirflow2D = { x: 0, y: 0, turn: 0 };
+    const close: PetalAirflow2D = { x: 0, y: 0 };
+    const far: PetalAirflow2D = { x: 0, y: 0 };
     const source = { x: 100, y: 100, velocityX: 300, velocityY: 0 };
     addPetalWake2D(close, 112, 100, source, 1);
     addPetalWake2D(far, 400, 100, source, 1);
     expect(close.x).toBeGreaterThan(10);
-    expect(far).toEqual({ x: 0, y: 0, turn: 0 });
+    expect(far).toEqual({ x: 0, y: 0 });
   });
 
-  it("returns finite restrained airflow and wakes in Three.js world units", () => {
-    const flow: PetalAirflow3D = { x: 0, y: 0, z: 0, turn: 0 };
+  it("drags nearby air along slower than the prop, in Three.js world units", () => {
+    const flow: PetalAirflow3D = { x: 0, y: 0, z: 0 };
     samplePetalAirflow3D(0.4, 1.2, -0.6, 2.5, flow);
     addPetalWake3D(flow, 0.4, 1.2, -0.6, {
       x: 0.5,
@@ -52,6 +52,7 @@ describe("petal airflow", () => {
       velocityZ: 0.2,
     });
     expect(Object.values(flow).every(Number.isFinite)).toBe(true);
-    expect(Math.hypot(flow.x, flow.y, flow.z)).toBeLessThan(0.55);
+    expect(flow.x).toBeGreaterThan(0.2);
+    expect(Math.hypot(flow.x, flow.y, flow.z)).toBeLessThan(Math.hypot(2, 0.4, 0.2));
   });
 });

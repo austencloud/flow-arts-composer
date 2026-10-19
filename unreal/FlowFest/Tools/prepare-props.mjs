@@ -3,6 +3,7 @@ import { createRequire } from 'node:module';
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { propTipOffsets } from './prop-wick-geometry.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, '../../..');
@@ -68,32 +69,6 @@ const variantsFor = id => {
 };
 const modelScale = { chicken: .52 / .7779893, bigchicken: .8636 / .7779893,
   bigdoublestar: 1.4, bigdoublecontactball: 1.4, bigbuugeng: 1.4 };
-function tipOffsets(id, variant, scale) {
-  if (id === 'fan' || id === 'bigfan') {
-    return Array.from({ length: 5 }, (_, i) => {
-      const angle = -.77 + i * .385;
-      return [Math.sin(angle) * 45 * scale, Math.cos(angle) * 50 * scale, 0];
-    });
-  }
-  if (['triad', 'bigtriad', 'quiad'].includes(id)) {
-    const arms = id === 'quiad' ? 4 : 3;
-    const reach = 90 * (id === 'quiad' ? .43202 : .44707) * 1.104 * scale;
-    return Array.from({ length: arms }, (_, i) => [Math.sin(i * 2 * Math.PI / arms) * reach,
-      Math.cos(i * 2 * Math.PI / arms) * reach, 0]);
-  }
-  if (id === 'minihoop' || id === 'bighoop') {
-    const radius = (46.99 / 2 - 1.5875 / 2) * scale;
-    return [[0, 0, 0], [radius, radius, 0], [0, 2 * radius, 0], [-radius, radius, 0]];
-  }
-  if (['staff','simple_staff','staff_v2','bigstaff','fire_double_staff','stick','capsule_baton'].includes(id)) {
-    const end = id === 'capsule_baton' ? 43.18 : 45 * scale;
-    return [[0, end, 0], [0, -end, 0]];
-  }
-  if (id === 'club' || id === 'bigclub') return [[0, 43 * scale, 0]];
-  if (id === 'poi') return [[0, 48, 0]];
-  if (id === 'torch' || id === 'bigtorch') return [[0, 59.335 * .9 * scale, 0]];
-  return [];
-}
 const catalog = types.map(id => {
   const base = bigBases[id] || id;
   const sourceModel = glbs[id] || glbs[base];
@@ -107,7 +82,7 @@ const catalog = types.map(id => {
       ['fire_double_staff', 'torch', 'bigtorch'].includes(id) ? 'fire' :
       id === 'capsule_baton' || (['triad', 'bigtriad', 'quiad'].includes(id) && variant.finish === 'day') ? 'led' : null;
     return { ...variant, mesh: `/Game/FlowFest/Props/${key}.${key}`, rightMesh: `/Game/FlowFest/Props/${key}_right.${key}_right`,
-      effectAttachments: tipOffsets(id, variant, scale).map(offsetCm => ({ type: effect || 'none', offsetCm })) };
+      effectAttachments: propTipOffsets(id, variant, scale, source).map(offsetCm => ({ type: effect || 'none', offsetCm })) };
   });
   return {
     id, displayName: labels[id] || id.replaceAll('_', ' ').replace(/\b\w/g, letter => letter.toUpperCase()),

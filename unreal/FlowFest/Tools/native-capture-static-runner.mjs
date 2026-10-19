@@ -127,9 +127,14 @@ const server = createServer(async (request, response) => {
   }
 });
 
+const configuredPort = process.env.FLOW_FEST_CAPTURE_PORT;
+const port = configuredPort === undefined ? 0 : Number(configuredPort);
+if (!Number.isSafeInteger(port) || port < 0 || port > 65535 ||
+    (configuredPort !== undefined && port === 0))
+  throw new Error("FLOW_FEST_CAPTURE_PORT must be an available TCP port from 1 to 65535");
 await new Promise((ok, fail) => {
   server.once("error", fail);
-  server.listen(0, "127.0.0.1", ok);
+  server.listen(port, "127.0.0.1", ok);
 });
 const address = server.address();
 if (!address || typeof address === "string")

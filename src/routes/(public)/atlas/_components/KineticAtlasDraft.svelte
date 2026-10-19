@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { insertCodexGroup } from "./codex-navigation";
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import "#lib/shared/landing/styles/public-editorial.css";
   import { onMount, tick } from "svelte";
@@ -8,19 +9,16 @@
   import GlossaryNav from "./GlossaryNav.svelte";
   import GlossaryTermDetail from "./GlossaryTermDetail.svelte";
   import KineticAtlasOverview from "./KineticAtlasOverview.svelte";
-  import LetterCodex from "./LetterCodex.svelte";
+  import { goto } from "$app/navigation";
+  import { page } from "$app/state";
   import { mutateCurrentUrl } from "#lib/shared/navigation/services/url-state.js";
+  import { localizeHref } from "#lib/shared/i18n/seo-locales.js";
   import {
     matchesGlossaryTerm,
     normalizeGlossarySearchText,
   } from "../glossary-search";
   import { resolveCodexLetterQuery } from "../codex-letter-search";
-  import {
-    writeLetterExplorerRoute,
-    type LetterExplorerRouteState,
-  } from "./codex-boards/letter-explorer-url";
-  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
-  import { RotationDirection } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import { buildCanonicalLetterExplorerHref } from "./codex-boards/letter-explorer-url";
   import type { PageData } from "../$types";
 
   let { data }: { data: PageData } = $props();
@@ -123,20 +121,28 @@
   let query = $state("");
   let view = $state("landing");
   let selected = $state("");
-  let codexInitialLetter = $state<string>(data.codex.letters[0] ?? "A");
   let drawerOpen = $state(false);
   let showBackTop = $state(false);
   let drawerCloseBtn: HTMLButtonElement | undefined = $state();
 
   type GlossaryTerm = (typeof data.groups)[number]["terms"][number];
-  type GlossaryGroup = (typeof data.groups)[number];
   type NavigationGroup = {
     key: string;
     label: string;
     sectionSlug: string;
     terms: GlossaryTerm[];
     countLabel?: string;
+    href?: string;
   };
+
+  // The Letter Codex lives on its own page. The Atlas keeps it in the
+  // category rail and in search, as links there, so the board is drawn once.
+  function codexHref(letter?: string): string {
+    return localizeHref(
+      letter ? buildCanonicalLetterExplorerHref(letter) : "/codex",
+      page.url
+    );
+  }
 
   const codexGroup: NavigationGroup = {
     key: data.codex.key,
@@ -144,23 +150,13 @@
     sectionSlug: data.codex.sectionSlug,
     terms: [],
     countLabel: `${data.codex.letters.length}`,
+    href: codexHref(),
   };
 
-  function insertCodexGroup(groups: GlossaryGroup[]): NavigationGroup[] {
-    // "position" is the external @tka/domain GlossaryCategory key (see
-    // +page.server.ts) for what this UI displays as "Placements".
-    const placementIndex = groups.findIndex(
-      (group) => group.key === "position"
-    );
-    const insertionIndex = placementIndex >= 0 ? placementIndex + 1 : 0;
-    return [
-      ...groups.slice(0, insertionIndex),
-      codexGroup,
-      ...groups.slice(insertionIndex),
-    ];
-  }
-
-  const landingGroups = insertCodexGroup(data.groups);
+  const landingGroups = insertCodexGroup<NavigationGroup>(
+    data.groups,
+    codexGroup
+  );
   const atlasRegionViewKey = (regionKey: string) => `atlas-${regionKey}`;
   const activeAtlasRegion = $derived(
     data.atlasRegions.find(
@@ -226,11 +222,6 @@
   );
 
   const landingShown = $derived(!filtering && view === "landing");
-  // The Codex replaces the master-detail split with two letter-paper pages.
-  // Two 8.5x11 pages need real width, so this view also releases the 18rem
-  // category rail (the view header's back button is the way out) — the same
-  // trade the landing hub already makes when its content wants the full band.
-  const codexView = $derived(view === data.codex.key && !filtering);
   // The category rail (left sidebar) only earns its column once a drill-down
   // destination is chosen. On the landing view — even while filtering — the
   // page is a centered hub with its own search, so the empty rail is gone and
@@ -241,24 +232,20 @@
     selected ? (slugToEntry.get(selected) ?? null) : null
   );
   const viewTitle = $derived(
-    view === data.codex.key
-      ? data.codex.label
-      : view === "all"
-        ? "All terms"
-        : activeAtlasRegion
-          ? `${activeAtlasRegion.label} Atlas`
-          : (data.groups.find((g) => g.key === view)?.label ?? "")
+    view === "all"
+      ? "All terms"
+      : activeAtlasRegion
+        ? `${activeAtlasRegion.label} Atlas`
+        : (data.groups.find((g) => g.key === view)?.label ?? "")
   );
   const viewCountLabel = $derived(
-    view === data.codex.key
-      ? `${data.codex.letters.length} pictographs`
-      : activeAtlasRegion
-        ? activeAtlasRegion.countLabel
-        : `${
-            view === "all"
-              ? data.total
-              : (data.groups.find((g) => g.key === view)?.terms.length ?? 0)
-          } terms`
+    activeAtlasRegion
+      ? activeAtlasRegion.countLabel
+      : `${
+          view === "all"
+            ? data.total
+            : (data.groups.find((g) => g.key === view)?.terms.length ?? 0)
+        } terms`
   );
 
   function sectionShown(key: string): boolean {
@@ -275,7 +262,7 @@
   const sidebarGroups = $derived(
     filtering
       ? codexSearchLetter
-        ? insertCodexGroup(searchGroups)
+        ? insertCodexGroup<NavigationGroup>(searchGroups, codexGroup)
         : searchGroups
       : activeAtlasRegion
         ? data.groups.filter((group) =>
@@ -290,31 +277,8 @@
     return data.groups.find((g) => g.key === key)?.terms[0]?.slug ?? "";
   }
 
-  function enterCodex(letter?: string, writeUrl = true): void {
-    codexInitialLetter = letter ?? data.codex.letters[0] ?? "A";
-    query = "";
-    view = data.codex.key;
-    selected = "";
-
-    if (!writeUrl) return;
-    mutateCurrentUrl(
-      (url) => {
-        const state: LetterExplorerRouteState | null = letter
-          ? {
-              letter,
-              gridMode: GridMode.DIAMOND,
-              variation: 0,
-              leftTurns: 0,
-              rightTurns: 0,
-              leftRotation: RotationDirection.CLOCKWISE,
-              rightRotation: RotationDirection.CLOCKWISE,
-            }
-          : null;
-        writeLetterExplorerRoute(url, state);
-        url.hash = data.codex.sectionSlug;
-      },
-      { mode: "push" }
-    );
+  function enterCodex(): void {
+    void goto(codexHref());
   }
 
   function returnToAtlas(): void {
@@ -322,7 +286,6 @@
     selected = "";
     mutateCurrentUrl(
       (url) => {
-        writeLetterExplorerRoute(url, null);
         url.hash = "";
       },
       { mode: "push" }
@@ -335,7 +298,7 @@
     );
     if (!region) return;
     if (region.includesCodex) {
-      enterCodex(undefined, writeUrl);
+      enterCodex();
       return;
     }
 
@@ -349,7 +312,6 @@
     if (!writeUrl) return;
     mutateCurrentUrl(
       (url) => {
-        writeLetterExplorerRoute(url, null);
         url.hash = region.sectionSlug;
       },
       { mode: "push" }
@@ -360,7 +322,7 @@
    *  the detail panel is never empty; mobile waits for a tap. */
   function enterView(v: string, writeUrl = true) {
     if (v === data.codex.key) {
-      enterCodex(undefined, writeUrl);
+      enterCodex();
       return;
     }
     view = v;
@@ -373,7 +335,6 @@
     if (!writeUrl) return;
     mutateCurrentUrl(
       (url) => {
-        writeLetterExplorerRoute(url, null);
         url.hash =
           v === "all"
             ? "all-terms"
@@ -423,6 +384,8 @@
   async function handleNav(slug: string, e: MouseEvent) {
     drawerOpen = false;
     const catKey = sectionSlugToKey.get(slug);
+    // The Codex row is a real link to /codex; let it navigate.
+    if (catKey === data.codex.key) return;
     if (catKey) {
       e.preventDefault();
       if (filtering) query = "";
@@ -452,30 +415,28 @@
   // A category slug (#cat-letter) drills into that category. The sidebar has
   // always linked categories that way, so the href was already a promise this
   // handler did not keep: pasting one landed on the category grid instead of
-  // the category. It matters most for the codex, whose whole surface lives
-  // inside one category and was otherwise unreachable by URL.
+  // the category.
+  //
+  // The Codex used to live here too, at #cat-letter with the explorer's
+  // state in the query (?letter=A&grid=diamond…). The page is prerendered,
+  // so no server redirect can keep that query; links that old go on to
+  // /codex with it here instead.
   onMount(() => {
     const syncNavigationFromUrl = (): void => {
       // URLSearchParams, not new URL(): this module shadows the global URL with
       // the page's canonical href constant.
       const searchParams = new URLSearchParams(window.location.search);
       const slug = window.location.hash.slice(1);
+      const catKey = sectionSlugToKey.get(slug);
+      if (catKey === data.codex.key || searchParams.has("letter")) {
+        void goto(`${codexHref()}${window.location.search}`, {
+          replace: true,
+        });
+        return;
+      }
       if (!slug) {
         view = "landing";
         selected = "";
-        return;
-      }
-      const catKey = sectionSlugToKey.get(slug);
-      if (catKey === data.codex.key) {
-        const requestedLetter = searchParams.get("letter");
-        const letter =
-          requestedLetter !== null &&
-          data.codex.letters.some(
-            (candidateLetter) => candidateLetter === requestedLetter
-          )
-            ? requestedLetter
-            : undefined;
-        enterCodex(letter, false);
         return;
       }
       const atlasRegion = data.atlasRegions.find(
@@ -577,7 +538,6 @@
 <div
   class="glossary-shell"
   class:landing-hub={landingView}
-  class:codex-view={codexView}
 >
   <!-- ── desktop sidebar: search + category nav (terms render once, in the
        master list — the rail never repeats them). Hidden on the Atlas overview,
@@ -649,8 +609,7 @@
         class="view-head"
         id={view === "all"
           ? "all-terms"
-          : (activeAtlasRegion?.sectionSlug ??
-            (codexView ? data.codex.sectionSlug : undefined))}
+          : activeAtlasRegion?.sectionSlug}
       >
         <button type="button" class="back-btn" onclick={returnToAtlas}>
           <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
@@ -661,33 +620,21 @@
       </div>
     {/if}
 
-    {#if codexView}
-      <div class="codex-host">
-        {#key codexInitialLetter}
-          <LetterCodex initialLetter={codexInitialLetter} />
-        {/key}
-      </div>
-    {/if}
-
     <!-- master-detail: always in the DOM (SEO); hidden on the landing view -->
     {#key view}
       <div
         class="split"
         class:single-column={codexOnlySearch}
-        class:sec-hidden={landingShown || codexView}
+        class:sec-hidden={landingShown}
       >
         <div class="term-index">
           {#if filtering && codexSearchLetter}
-            <button
-              type="button"
-              class="codex-search-result"
-              onclick={() => enterCodex(codexSearchLetter)}
-            >
+            <a class="codex-search-result" href={codexHref(codexSearchLetter)}>
               <span class="codex-result-kicker">Letter Codex</span>
               <strong>{codexSearchLetter}</strong>
               <span>Open its pictographs and variations</span>
               <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
-            </button>
+            </a>
           {/if}
 
           {#each data.groups as g (g.key)}
@@ -777,18 +724,16 @@
       </div>
     {/key}
 
-    {#if !codexView}
-      <div class="cta-card">
-        <h3>See the notation in motion</h3>
-        <p>
-          These terms come alive in the composer. Build a sequence and watch it
-          animate.
-        </p>
-        <a class="cta-button" href="/create"
-          >Open the Composer <i class="fa-solid fa-arrow-right"></i></a
-        >
-      </div>
-    {/if}
+    <div class="cta-card">
+      <h3>See the notation in motion</h3>
+      <p>
+        These terms come alive in the composer. Build a sequence and watch it
+        animate.
+      </p>
+      <a class="cta-button" href="/create"
+        >Open the Composer <i class="fa-solid fa-arrow-right"></i></a
+      >
+    </div>
 
     <p class="creator-credit">
       A reference beside the <LinkChip size="inline" href="/guide"
@@ -901,16 +846,6 @@
     .glossary-shell.landing-hub .editorial {
       margin-left: auto;
       margin-right: auto;
-    }
-    /* Codex view: same one-column release as the hub. Two letter-paper pages
-       side by side need ~1700px; with the 22rem rail in the way a 1920 screen
-       leaves 1279px and both pages render at ~0.8x. Releasing the rail puts
-       them at native size or better from 1920 up. */
-    .glossary-shell.codex-view {
-      grid-template-columns: minmax(0, 1fr);
-    }
-    .glossary-shell.codex-view .glossary-sidebar {
-      display: none;
     }
   }
   /* ── big-screen tier ──
@@ -1110,28 +1045,6 @@
     color: oklch(0.72 0.015 270);
   }
 
-  /* The Codex is a reference tool, not a term-detail card: it gets the full
-     article column and lays out its own board and detail panel inside. No
-     frame and no fixed height — it is page content like every other section,
-     so it reflows with the band and the PAGE scrolls, rather than a scroller
-     nested inside a scroller. */
-  .codex-host {
-    min-width: 0;
-    margin: 0 0 3rem;
-  }
-
-  .codex-view .codex-host {
-    margin-bottom: 0.75rem;
-  }
-
-  /* Let the Codex claim the whole first viewport so the SiteFooter begins at
-     the fold: it is either fully below the page content or deliberately
-     reached by scrolling, never stranded as a partial footer under a
-     compressed board. */
-  .codex-view .editorial {
-    min-height: 100dvh;
-  }
-
   .codex-search-result {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
@@ -1146,6 +1059,7 @@
     padding: 1rem 1.1rem;
     color: oklch(0.94 0.015 270);
     text-align: left;
+    text-decoration: none;
     background: oklch(0.2 0.035 274 / 0.62);
     border: 1px solid oklch(0.58 0.11 275 / 0.45);
     border-radius: 0.9rem;

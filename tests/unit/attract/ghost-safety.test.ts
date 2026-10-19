@@ -215,8 +215,11 @@ describe("annotation integrity", () => {
     const offenders = svelteFiles.filter((path) => {
       const source = readFileSync(path, "utf8");
       if (!source.includes("data-ghost-kind")) return false;
+      // Spread attribute objects ("data-ghost": ...) count as annotations too.
       return (
-        !source.includes('data-ghost="safe"') && !source.includes("data-ghost=")
+        !source.includes('data-ghost="safe"') &&
+        !source.includes("data-ghost=") &&
+        !source.includes('"data-ghost":')
       );
     });
     expect(offenders).toEqual([]);

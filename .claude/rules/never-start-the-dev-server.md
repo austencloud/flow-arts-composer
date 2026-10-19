@@ -1,14 +1,17 @@
-# Port 5173 Ownership
+# Port 5173 Dev Server
 
-Port 5173 and the `tka-dev` process belong to Austen's Agent Hub workflow.
+Port 5173 is the project dev server. pm2 supervises it as `tka-dev`, which runs
+`scripts/start-dev.ps1` (Vite plus the `tka-dev` Cloudflare tunnel).
 
-- Never start, restart, stop, replace, or kill port 5173, `tka-dev`, or
-  `scripts/start-dev.ps1`, even when the server appears broken.
-- Diagnose with read-only process, port, and log checks. Ask Austen to use the
-  Agent Hub control if a restart is required.
-- The server binds IPv6 and uses HTTPS/2. Probe it with
-  `curl.exe -k -g "https://[::1]:5173/"`; an IPv4 localhost failure is not proof
-  that it is down.
+- When 5173 is down or stuck, restart it yourself with `pm2 restart tka-dev`.
+  Do not ask first; say in one line what you found and that you restarted it.
+  Stuck means the port is listening but requests hang or the page never loads.
+- Restart only through pm2. Do not run `npm run dev`, a bare `vite`, or
+  `scripts/start-dev.ps1` on 5173, and do not kill the port holder. A
+  hand-started server lacks the tunnel and fights pm2 for the port.
+- Diagnose before restarting. The server binds IPv6 and uses HTTPS/2. Probe it
+  with `curl.exe -k -g "https://[::1]:5173/"`; an IPv4 localhost failure is not
+  proof that it is down. After a restart, probe again until it answers.
 - A task that needs an independent server may use a free non-5173 port after the
   `resource-budget.md` gate. For a delivery preview, the server's working
   directory must be the task worktree; verify the changed route and worktree

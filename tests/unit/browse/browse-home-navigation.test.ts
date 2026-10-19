@@ -66,6 +66,34 @@ describe("Browse home screen", () => {
 
     expect(state.currentModule).toBe("browse");
     expect(state.isModuleHomeOpen("browse")).toBe(false);
+    expect(state.activeTab).toBe("collections");
+  });
+
+  it.each([
+    ["/browse/explore/sequences", "sequences"],
+    ["/browse/explore/collections/owner/collection", "collections"],
+    ["/browse/explore/visuals/mandalas", "visuals"],
+    ["/browse/you/collections/collection", "saved"],
+    ["/browse/you/visuals/tunnels", "your-visuals"],
+  ])("selects %s in the outer navigation", async (pathname, destination) => {
+    const { nav } = await freshModules(pathname);
+    expect(nav.createNavigationState().activeTab).toBe(destination);
+  });
+
+  it("migrates a remembered Explore tab to Sequences", async () => {
+    const { nav } = await freshModules("/browse");
+    localStorage.setItem(
+      "tka-module-last-tabs",
+      JSON.stringify({ browse: "explore" })
+    );
+    const state = nav.createNavigationState();
+    state.setCurrentModule("browse");
+    expect(state.activeTab).toBe("sequences");
+    expect(
+      JSON.parse(localStorage.getItem("tka-module-last-tabs")!)
+    ).toMatchObject({
+      browse: "sequences",
+    });
   });
 
   it("opens the home for a tab-less module switch, not for a named tab", async () => {
@@ -77,7 +105,7 @@ describe("Browse home screen", () => {
 
     state.setCurrentModule("browse", "you");
     expect(state.isModuleHomeOpen("browse")).toBe(false);
-    expect(state.activeTab).toBe("you");
+    expect(state.activeTab).toBe("saved");
   });
 
   it("leaves the /browse address alone while keeping a location underneath", async () => {

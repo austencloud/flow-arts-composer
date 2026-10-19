@@ -93,7 +93,10 @@
       colors !== undefined ? colors : getSettings?.().primaryPropColors,
       {
         left: getMotionColor(HandSide.LEFT, darkBackground ? "dark" : "light"),
-        right: getMotionColor(HandSide.RIGHT, darkBackground ? "dark" : "light"),
+        right: getMotionColor(
+          HandSide.RIGHT,
+          darkBackground ? "dark" : "light"
+        ),
       }
     )
   );
@@ -195,7 +198,7 @@
   const smallRightFan = $derived(size <= 40 && isFanPropType(rightPropType));
   // Different families need separate slots; a crossed staff recipe can hide a fan.
   const mixedPair = $derived(propType !== rightPropType);
-  const plainArt = $derived({
+  const plainArt = $derived<PropTileArtwork>({
     href: displayInfo.image,
     styled: false,
     prelit: false,
@@ -222,9 +225,7 @@
       ? rightArt
       : coloredArtwork(rightArt, propType, palette.right)
   );
-  const tileRecolored = $derived(
-    tileLeft !== leftArt || leftArt.prelit
-  );
+  const tileRecolored = $derived(tileLeft !== leftArt || leftArt.prelit);
 
   // Check for persisted overrides from the Prop Button Lab
   const savedOverrides = $derived(
@@ -454,7 +455,10 @@
         transform={rightTransform}
         filter={rightArt.prelit ? `url(#${id}-right)` : undefined}
       >
-        {@render propImage(tileRight, tileRight === rightArt && !rightArt.prelit)}
+        {@render propImage(
+          tileRight,
+          tileRight === rightArt && !rightArt.prelit
+        )}
       </g>
     {/if}
   </svg>

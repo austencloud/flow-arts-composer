@@ -10,6 +10,8 @@
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { Crossfade, growFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import {
     PLACEMENT_TYPE_INFO,
     type PlacementType,
@@ -55,8 +57,14 @@
       class:filled={!!slot.picture}
     >
       <div class="art" aria-hidden="true">
-        {#if slot.picture}
-          {#key slot.pictureKey}
+        <!-- A new round empties the slots: each picture fades back into its
+             symbol instead of cutting out. -->
+        <Crossfade
+          key={slot.picture ? slot.pictureKey : "symbol"}
+          duration={DURATION.normal}
+          fill
+        >
+          {#if slot.picture}
             <div class="picture">
               <PictographContainer
                 pictographData={slot.picture}
@@ -69,10 +77,10 @@
                 rightPropTypeOverride={PropType.HAND}
               />
             </div>
-          {/key}
-        {:else}
-          <span class="symbol">{info.symbol}</span>
-        {/if}
+          {:else}
+            <span class="symbol">{info.symbol}</span>
+          {/if}
+        </Crossfade>
         {#if lit === slot.kind}
           {#key builds}
             <span class="ping"></span>
@@ -81,7 +89,7 @@
       </div>
       <span class="name">{info.label}</span>
       {#if slot.caption}
-        <span class="caption">{slot.caption}</span>
+        <span class="caption" transition:growFade>{slot.caption}</span>
       {/if}
       <i class="fa-solid fa-check check" aria-hidden="true"></i>
       {#if onStudy}
@@ -236,14 +244,18 @@
     animation: fill-slot var(--duration-emphasis) var(--ease-standard-out) both;
   }
 
+  /* The crossfade owns the fade; the picture only grows into its slot. */
   @keyframes fill-slot {
     from {
-      opacity: 0;
       transform: scale(0.85);
     }
   }
 
   .symbol {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
     font-size: calc(var(--slot-art) * 0.5);
     line-height: 1;
     font-weight: 600;

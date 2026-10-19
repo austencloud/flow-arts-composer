@@ -50,7 +50,11 @@ describe("Placements topic record", () => {
   });
 
   it("keeps each brief definition as Austen's sentence minus its lead-in", () => {
+    // Gamma's brief says "neighboring points" on purpose (83afb1d83c,
+    // 2026-10-15); the verified sentence keeps "a right angle".
+    const reworded = new Set(["gamma"]);
     for (const family of PLACEMENT_FAMILIES) {
+      if (reworded.has(family.kind)) continue;
       const name = english[family.name]!;
       const full = english[`verified_level1_${family.kind}_definition`]!;
       const brief = english[family.brief]!;

@@ -86,6 +86,7 @@ interface ViewerOrchestratorContextInputs {
   getExportType: () => ExportType | null;
   getSinglePlayDuration: () => number;
   getCardReady: () => boolean;
+  getDormant: () => boolean;
   getResolvedCardAutoLayout: () => ResolvedAutoLayout | null;
   getIsHandPath: () => boolean;
   getCollectionPropType?: () => PropType | null | undefined;
@@ -122,6 +123,7 @@ export function createViewerOrchestratorContextState(
       highlightedStepIndex: inputs.presentation.highlightedStepIndex,
       animationLoading: inputs.interactive.animationLoading,
       cardReady: inputs.getCardReady(),
+      dormant: inputs.getDormant(),
       ensureInteractiveServices: inputs.interactive.ensureInteractiveServices,
       modalAnimationState: inputs.modalAnimationState,
 

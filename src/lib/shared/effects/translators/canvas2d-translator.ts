@@ -215,7 +215,10 @@ export function resolvePetals2D(
     baseSize: 14,
     ambientSpawnRate: 8,
     motionDensity: 9,
-    fallBaseSpeed: 100,
+    // 2D petals are drawn far larger than real ones (14 px is 10 cm at 140 px
+    // per metre), so they fall like large light petals, about 0.5 m/s. At
+    // small-petal speed a petal that size spins several turns a second.
+    fallBaseSpeed: 70,
     blendMode: "source-over",
   };
   return { ...intent, ...defaults, ...override };

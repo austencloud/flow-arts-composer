@@ -815,7 +815,7 @@
     }
 
     .pse.fit-available-height .seg-wrap :global(.segment) {
-      min-width: 42px;
+      min-width: 44px;
       padding-inline: 8px;
       font-size: var(--font-size-sm, 14px);
     }

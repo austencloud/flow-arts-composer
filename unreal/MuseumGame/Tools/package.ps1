@@ -3,7 +3,8 @@ param(
     [string]$EngineRoot = 'C:\Program Files\Epic Games\UE_5.8',
     [string]$CompilerVersion = '',
     [string]$CaptureDirectory = '',
-    [ValidateRange(1, 16)][int]$MaxParallelActions = 4
+    [ValidateRange(1, 16)][int]$MaxParallelActions = 4,
+    [ValidateRange(1, 16)][int]$MaxShaderWorkers = 2
 )
 $ErrorActionPreference = 'Stop'
 $project = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
@@ -15,6 +16,19 @@ $uat = Join-Path $EngineRoot 'Engine\Build\BatchFiles\RunUAT.bat'
 foreach ($path in @($file, $map, $data, $uat)) {
     if (-not (Test-Path -LiteralPath $path)) { throw "Missing prerequisite: $path" }
 }
+$sharedEffects = Join-Path $project '..\Shared\FlowArtsRuntime\Content\Effects'
+foreach ($relativePath in @(
+    'Materials\M_WorldScore.uasset',
+    'Materials\M_NiagaraFlame.uasset',
+    'Materials\M_NiagaraEmber.uasset',
+    'Materials\M_NiagaraTrail.uasset',
+    'NS_PropFire.uasset'
+)) {
+    $asset = Join-Path $sharedEffects $relativePath
+    if (-not (Test-Path -LiteralPath $asset -PathType Leaf)) {
+        throw "Missing required shared effect/score asset: $asset"
+    }
+}
 if (-not $ArchiveDirectory) { $ArchiveDirectory = Join-Path $project 'Builds' }
 & node (Join-Path $PSScriptRoot 'verify-playback-data.mjs') --project $project --captures $CaptureDirectory --stage imported
 if ($LASTEXITCODE -ne 0) { throw "Museum imported playback verification failed ($LASTEXITCODE)" }
@@ -24,9 +38,18 @@ if ($LASTEXITCODE -ne 0) { throw "Museum performance bundle verification failed 
 $libraryTool = Join-Path $PSScriptRoot '..\..\Shared\Tools\performance-library.mjs'
 & node $libraryTool build --project $project
 if ($LASTEXITCODE -ne 0) { throw "Museum performance library export failed ($LASTEXITCODE)" }
+$pictographTool = Join-Path $PSScriptRoot '..\..\Shared\Tools\performance-pictographs.mjs'
+$hasPictographs = Test-Path -LiteralPath (Join-Path $project 'Content\Data\performance-pictographs.json')
+if ($hasPictographs) {
+    & node $pictographTool verify --project $project
+    if ($LASTEXITCODE -ne 0) { throw "Museum performance pictograph verification failed ($LASTEXITCODE)" }
+}
 $ubt = "-WaitMutex -MaxParallelActions=$MaxParallelActions -NoUBA"
 if ($CompilerVersion) { $ubt += " -CompilerVersion=$CompilerVersion" }
-& $uat BuildCookRun "-project=$file" -noP4 -platform=Win64 -clientconfig=Development -build -skipbuildeditor -cook -stage -package -archive -pak "-archivedirectory=$ArchiveDirectory" "-ubtargs=$ubt"
+# Cook commandlets use the absolute unused-thread setting, independently of UBT.
+$unusedShaderThreads = [Math]::Max(0, [Environment]::ProcessorCount - $MaxShaderWorkers)
+$cookerOptions = "-ini:Engine:[DevOptions.Shaders]:NumUnusedShaderCompilingThreads=$unusedShaderThreads"
+& $uat BuildCookRun "-project=$file" -noP4 -platform=Win64 -clientconfig=Development -build -skipbuildeditor -cook -stage -package -archive -pak "-archivedirectory=$ArchiveDirectory" "-ubtargs=$ubt" "-AdditionalCookerOptions=$cookerOptions"
 if ($LASTEXITCODE -ne 0) { throw "Museum package failed ($LASTEXITCODE)" }
 $exe = Join-Path $ArchiveDirectory 'Windows\MuseumGame.exe'
 $staged = Join-Path $ArchiveDirectory 'Windows\MuseumGame\Content\Data\museum.json'
@@ -43,4 +66,8 @@ if ($LASTEXITCODE -ne 0) { throw "Museum packaged playback verification failed (
 if ($LASTEXITCODE -ne 0) { throw "Museum packaged performance bundle verification failed ($LASTEXITCODE)" }
 & node $libraryTool verify --project $project --packaged-data (Split-Path -Parent $staged)
 if ($LASTEXITCODE -ne 0) { throw "Museum packaged performance library verification failed ($LASTEXITCODE)" }
+if ($hasPictographs) {
+    & node $pictographTool verify --project $project --packaged-data (Split-Path -Parent $staged)
+    if ($LASTEXITCODE -ne 0) { throw "Museum packaged pictograph verification failed ($LASTEXITCODE)" }
+}
 Write-Host "MUSEUM_PACKAGE_OK $exe"

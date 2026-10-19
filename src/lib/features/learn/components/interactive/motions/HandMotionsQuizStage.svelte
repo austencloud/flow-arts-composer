@@ -14,7 +14,11 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  import { Crossfade, reducedMotion } from "#lib/shared/transitions/motion.js";
+  import {
+    Crossfade,
+    flyFade,
+    reducedMotion,
+  } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import HandCombinationBoard from "#lib/shared/guide-topics/HandCombinationBoard.svelte";
   import {
@@ -161,24 +165,36 @@
       </div>
     {/key}
     {#if verdict?.right}
-      <i class="fa-solid fa-check mystery-check" aria-hidden="true"></i>
+      <i
+        class="fa-solid fa-check mystery-check"
+        aria-hidden="true"
+        out:flyFade={{ duration: DURATION.normal, y: 0 }}
+      ></i>
     {/if}
   </div>
   <p class="verdict" aria-live="polite">
+    <!-- A tap's verdict replaces the last one at once, so feedback never
+         waits; when the hold ends the line fades out with the picture
+         instead of vanishing. -->
     {#if verdict}
-      {#key verdict.tap}
-        <span class="verdict-line" class:right={verdict.right}>
-          <i
-            class="fa-solid"
-            class:fa-circle-check={verdict.right}
-            class:fa-circle-xmark={!verdict.right}
-            aria-hidden="true"
-          ></i>
-          {verdict.right
-            ? t("learn_motion_quiz_hit", { name: verdict.name })
-            : t("learn_motion_quiz_miss", { name: verdict.name })}
-        </span>
-      {/key}
+      <span
+        class="verdict-slot"
+        out:flyFade={{ duration: DURATION.normal, y: 0 }}
+      >
+        {#key verdict.tap}
+          <span class="verdict-line" class:right={verdict.right}>
+            <i
+              class="fa-solid"
+              class:fa-circle-check={verdict.right}
+              class:fa-circle-xmark={!verdict.right}
+              aria-hidden="true"
+            ></i>
+            {verdict.right
+              ? t("learn_motion_quiz_hit", { name: verdict.name })
+              : t("learn_motion_quiz_miss", { name: verdict.name })}
+          </span>
+        {/key}
+      </span>
     {/if}
   </p>
   <HandCombinationBoard
@@ -220,7 +236,7 @@
   }
 
   .mystery.wrong .shake {
-    animation: shake var(--duration-dramatic, 350ms) var(--ease-standard, ease);
+    animation: shake var(--duration-dramatic) var(--ease-standard);
   }
 
   .mystery-picture {
@@ -245,8 +261,7 @@
     color: white;
     font-size: 1.05rem;
     box-shadow: 0 0.25rem 0.75rem rgb(0 0 0 / 0.35);
-    animation: check-pop var(--duration-dramatic, 350ms)
-      cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: check-pop var(--duration-dramatic) var(--ease-spring);
   }
 
   /* One line under the picture, reserved so an answer moves nothing. */
@@ -260,12 +275,16 @@
     text-align: center;
   }
 
+  /* A slot still fading out shares the cell with the next verdict. */
+  .verdict > .verdict-slot {
+    grid-area: 1 / 1;
+  }
+
   .verdict-line {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    animation: verdict-in var(--duration-normal, 200ms)
-      var(--ease-standard, ease);
+    animation: verdict-in var(--duration-normal) var(--ease-standard);
   }
 
   .verdict-line i {

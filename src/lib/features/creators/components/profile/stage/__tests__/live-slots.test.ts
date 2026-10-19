@@ -177,7 +177,8 @@ describe("LiveSlots", () => {
     expect(states).toEqual([true, false, false]);
 
     // The two tiles that lost out on the engine budget learn they have a
-    // clip: the clip budget has room for both.
+    // clip: the clip budget has room for both, and two live clips use up the
+    // single engine token, so the engine tile goes back to its poster.
     for (const index of [1, 2]) {
       actions[index]?.update({
         medium: "clip",
@@ -186,8 +187,8 @@ describe("LiveSlots", () => {
       });
     }
     flushFrames();
-    expect(states).toEqual([true, true, true]);
-    expect(slots.liveCount).toMatchObject({ sequence: 1, clip: 2 });
+    expect(states).toEqual([false, true, true]);
+    expect(slots.liveCount).toMatchObject({ sequence: 0, clip: 2 });
 
     // The incumbent switches medium: its engine token is dropped at once and
     // it competes again under the clip budget, where it ranks first and the
@@ -201,6 +202,29 @@ describe("LiveSlots", () => {
     flushFrames();
     expect(states).toEqual([true, true, false]);
     expect(slots.liveCount).toMatchObject({ sequence: 0, clip: 2 });
+    slots.destroy();
+  });
+
+  it("a live clip takes an engine's place instead of adding to it", () => {
+    const slots = new LiveSlots();
+    slots.budgets.sequence = 2;
+    slots.budgets.clip = 12;
+    const nodes = [makeTile(450), makeTile(100), makeTile(800), makeTile(300)];
+    const states = nodes.map(() => false);
+    const media = ["clip", "sequence", "sequence", "sequence"] as const;
+    nodes.forEach((node, index) =>
+      slots.tile(node, {
+        medium: media[index]!,
+        hover: false,
+        onChange: (live) => (states[index] = live),
+      })
+    );
+    intersect(nodes);
+    flushFrames();
+    // One clip plays, so only one of the two engine tokens is left; it goes
+    // to the engine tile nearest the centre (top 300, centre 350).
+    expect(states).toEqual([true, false, false, true]);
+    expect(slots.liveCount).toMatchObject({ clip: 1, sequence: 1 });
     slots.destroy();
   });
 

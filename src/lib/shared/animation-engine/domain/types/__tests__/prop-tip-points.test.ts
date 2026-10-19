@@ -326,16 +326,40 @@ describe("render keys count as the prop they draw", () => {
 });
 
 describe("tip table and tip-end classification agree", () => {
-  it("gives every two-ended prop exactly two tips on opposite sides of the hand", () => {
+  it("lists a two-ended prop's two ends first, on opposite sides of the hand", () => {
+    // The double stars also carry their four outer star points after the ends.
+    const extraTips: Record<string, number> = {
+      doublestar: 4,
+      bigdoublestar: 4,
+    };
     for (const propType of Object.values(PropType)) {
       if (propTipEnds(propType) !== 2) continue;
       const points = getTipPointsBaseline(propType).points;
-      expect(points, propType).toHaveLength(2);
+      expect(points, propType).toHaveLength(2 + (extraTips[propType] ?? 0));
       expect(
         Math.sign(points[0]!.dx) * Math.sign(points[1]!.dx),
         propType
       ).toBe(-1);
     }
+  });
+
+  it("puts a double star's tips on its two ends, then its four star points", () => {
+    closeTo(getTipPointsBaseline("doublestar").points, [
+      [150, 0],
+      [-150, 0],
+      [75, -75],
+      [-75, -75],
+      [75, 75],
+      [-75, 75],
+    ]);
+    closeTo(getTipPointsBaseline("bigdoublestar").points, [
+      [300, 0],
+      [-300, 0],
+      [150, -150],
+      [-150, -150],
+      [150, 150],
+      [-150, 150],
+    ]);
   });
 
   it("tracks the two ball centres of a double contact ball", () => {
@@ -360,5 +384,37 @@ describe("tip table and tip-end classification agree", () => {
       if (!axialMirrorPair) continue;
       expect(propTipEnds(propType), propType).toBe(2);
     }
+  });
+});
+
+describe("big variants keep their standard prop's tip order", () => {
+  // A per-tip effect is saved by index ("0-1"), so a big prop must number its
+  // tips the way its standard size does or the effect jumps to another arm.
+  it.each([
+    ["staff", "bigstaff"],
+    ["fan", "bigfan"],
+    ["triad", "bigtriad"],
+    ["minihoop", "bighoop"],
+    ["buugeng", "bigbuugeng"],
+    ["doublestar", "bigdoublestar"],
+    ["eightrings", "bigeightrings"],
+    ["doublecontactball", "bigdoublecontactball"],
+    ["torch", "bigtorch"],
+  ])("numbers %s and %s tips in the same directions", (standard, big) => {
+    const small = getTipPointsBaseline(standard).points;
+    const large = getTipPointsBaseline(big).points;
+    expect(large).toHaveLength(small.length);
+    small.forEach((point, index) => {
+      const other = large[index]!;
+      const bearing = Math.atan2(point.dy, point.dx);
+      const otherBearing = Math.atan2(other.dy, other.dx);
+      const turn = Math.abs(
+        Math.atan2(
+          Math.sin(bearing - otherBearing),
+          Math.cos(bearing - otherBearing)
+        )
+      );
+      expect(turn * (180 / Math.PI), `${big} tip ${index}`).toBeLessThan(10);
+    });
   });
 });

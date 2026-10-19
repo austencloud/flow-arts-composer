@@ -1,3 +1,4 @@
+import { SPARK_GRAVITY } from "#lib/shared/effects/domain/spark-physics.js";
 import type {
   TrailsIntent,
   FireIntent,
@@ -126,7 +127,8 @@ export function resolveCharcoal3D(
     override.motionProfile ?? resolveCharcoal3DMotionProfile(emissionStyle);
   const defaults: Omit<Charcoal3DParams, keyof CharcoalIntent> = {
     particleLifetime: 0.55 + intent.spread * 0.65 + intent.glow * 0.45,
-    gravity: (7.4 - intent.spread * 1.8) * motionProfile.gravityScale,
+    // Sparks fall under real gravity; see effects/domain/spark-physics.ts.
+    gravity: SPARK_GRAVITY,
     sparkSizeJitter: 0.2 + intent.spread * 0.55,
     motionProfile,
   };
@@ -266,8 +268,6 @@ export function resolvePetals3D(
     motionReferenceSpeed: 3.0,
     // 3D uses +y = up, so falling is negative velocity.
     fallBaseSpeed: 0.95,
-    swayBaseSpeed: 0.45,
-    swayFrequency: 0.85,
     lifetime: 3.0 + intent.intensity * 2.5,
   };
   return { ...intent, ...defaults, ...override };

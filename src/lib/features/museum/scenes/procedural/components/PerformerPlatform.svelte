@@ -1,6 +1,5 @@
 <script lang="ts">
-
-// propInterpolator and sequenceConverter are now module-level functions
+  // propInterpolator and sequenceConverter are now module-level functions
   /**
    * PerformerPlatform - Museum exhibit slot with animated performer.
    *
@@ -14,7 +13,10 @@
   import { PerformerRig } from "@austencloud/scene-3d";
   import { Plane } from "@austencloud/scene-3d";
   import { PlaneMode } from "@austencloud/scene-3d";
-  import { createCharacterInstanceState, makeStandaloneDeps } from "#lib/shared/3d/state/character-instance-state.svelte.js";
+  import {
+    createCharacterInstanceState,
+    makeStandaloneDeps,
+  } from "#lib/shared/3d/state/character-instance-state.svelte.js";
   import { userProportionsState } from "@austencloud/scene-3d";
   import { toScenePropType } from "#lib/shared/3d/domain/scene-prop-type.js";
   import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
@@ -31,12 +33,14 @@
   const propPair = $derived(museumPropPair(sequence, settingsService.settings));
 
   const ACTIVATION_DISTANCE = 15; // meters
-  const PLATFORM_HEIGHT = 0.3;    // matches cylinder geometry
+  const PLATFORM_HEIGHT = 0.3; // matches cylinder geometry
   const platformColor = new Color(0x6b5b4f);
 
   // Avatar3D positions feet at groundY (below rig origin). Offset by -groundY
   // to bring feet to floor level, then add platform height to stand on top.
-  const groundOffset = $derived(-userProportionsState.groundY + PLATFORM_HEIGHT + slot.position.y);
+  const groundOffset = $derived(
+    -userProportionsState.groundY + PLATFORM_HEIGHT + slot.position.y
+  );
 
   const isActive = $derived.by(() => {
     const dx = playerPosition.x - slot.position.x;
@@ -75,10 +79,7 @@
   <!-- Station group - positioned at world coords -->
   <T.Group position.x={slot.position.x} position.z={slot.position.z}>
     <!-- Circular platform at floor level (outside rig - independent of groundOffset) -->
-    <T.Mesh
-      position.y={slot.position.y + 0.15}
-      receiveShadow
-    >
+    <T.Mesh position.y={slot.position.y + 0.15} receiveShadow>
       <T.CylinderGeometry args={[1.0, 1.1, 0.3, 32]} />
       <T.MeshStandardMaterial color={platformColor} roughness={0.85} />
     </T.Mesh>
@@ -92,8 +93,8 @@
         avatarState={performerState}
         showGrid={false}
         visiblePlanes={new Set([Plane.WALL])}
-        leftPropType={toScenePropType(propPair.leftPropType)}
-        rightPropType={toScenePropType(propPair.rightPropType)}
+        bluePropType={toScenePropType(propPair.leftPropType)}
+        redPropType={toScenePropType(propPair.rightPropType)}
         {groundOffset}
       />
     {:else if isPopulated && isActive}

@@ -2,6 +2,8 @@ param(
     [string]$EngineRoot = 'C:\Program Files\Epic Games\UE_5.8',
     [string]$PackageRoot = '',
     [ValidateSet('', 'gate', 'camp', 'fire', 'overview')][string]$Review = '',
+    [switch]$Explore,
+    [switch]$Library,
     [string]$Capture = '',
     [ValidateRange(1, 300)][int]$CaptureFrames = 1,
     [ValidateRange(0, 300)][double]$CaptureStart = 25,
@@ -9,7 +11,14 @@ param(
     [string]$LogPath = '',
     [string]$Character = '',
     [string]$Prop = '',
-    [ValidateSet('', 'flow', 'ride', 'walk', 'jump')][string]$Showcase = '',
+    [ValidateSet('', 'flow', 'idle', 'ride', 'walk', 'jump')][string]$Showcase = '',
+    [ValidateRange(80, 1000)][double]$CameraDistance = 350,
+    [double]$CameraYaw = 145,
+    [ValidateRange(-80, 80)][double]$CameraPitch = -6,
+    [ValidateRange(-100, 100)][double]$CameraHeight = 0,
+    [ValidateRange(-50, 50)][double]$ShowcaseEast = 0,
+    [ValidateRange(-50, 50)][double]$ShowcaseSouth = 0,
+    [ValidateRange(0, 300)][double]$FlowStopAt = 0,
     [ValidateRange(0, 24)][double]$Hour = 17,
     [switch]$Wardrobe,
     [switch]$Offscreen,
@@ -18,6 +27,12 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+if ($Library -and -not $Explore) { throw '-Library requires -Explore to open the performance library on foot.' }
+if ($Explore) {
+    if ($Showcase -or $Wardrobe -or $Smoke) { throw '-Explore cannot combine with showcase, wardrobe, or smoke runs.' }
+    if (-not $Review) { $Review = 'fire' }
+    if ($Review -eq 'overview') { throw '-Explore requires a ground location: gate, camp, or fire.' }
+}
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $projectFile = Join-Path $projectRoot 'FlowFest.uproject'
 $editor = Join-Path $EngineRoot 'Engine\Binaries\Win64\UnrealEditor.exe'
@@ -51,9 +66,18 @@ if ($PackageRoot) {
     $arguments = @($projectFile, '-game', '-windowed', '-ResX=1600', '-ResY=900', '-NoSplash')
 }
 if ($Review) { $arguments += "-FlowFestReview=$Review" }
+if ($Explore) { $arguments += '-FlowFestExplore' }
+if ($Library) { $arguments += '-FlowFestLibrary' }
 if ($Character) { $arguments += "-FlowFestCharacter=$Character" }
 if ($Prop) { $arguments += "-FlowFestProp=$Prop" }
 if ($Showcase) { $arguments += "-FlowFestShowcase=$Showcase" }
+foreach ($cameraOption in @('CameraDistance', 'CameraYaw', 'CameraPitch', 'CameraHeight', 'ShowcaseEast', 'ShowcaseSouth', 'FlowStopAt')) {
+    if ($PSBoundParameters.ContainsKey($cameraOption)) {
+        if (-not $Showcase) { throw "-$cameraOption requires -Showcase." }
+        $optionValue = Get-Variable -Name $cameraOption -ValueOnly
+        $arguments += '-FlowFest' + $cameraOption + '=' + $optionValue.ToString([Globalization.CultureInfo]::InvariantCulture)
+    }
+}
 if ($PSBoundParameters.ContainsKey('Hour')) {
     if (-not $Review -and -not $Showcase) { throw '-Hour requires a review location or character showcase.' }
     $arguments += '-FlowFestHour=' + $Hour.ToString([Globalization.CultureInfo]::InvariantCulture)

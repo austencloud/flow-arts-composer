@@ -7,8 +7,10 @@ import {
 } from "../petals/petal-world-art-direction";
 import { SparkleRenderer3D } from "../particles/sparkle-renderer-3d";
 import { SmokePoolRenderer3D } from "../smoke/smoke-pool-renderer-3d";
-import { SmokeVolumeRenderer3D } from "../smoke/smoke-volume-renderer-3d";
-import type { SmokeVolumeDebugSnapshot3D } from "../smoke/smoke-volume-solver-3d";
+import {
+  SmokeFluidRenderer3D,
+  type SmokeFluidDiagnostic3D,
+} from "../smoke/smoke-fluid-renderer-3d";
 import { QualityTier, TIER_CONFIGS } from "../types";
 import { FireRenderer3D, type FireTipInput } from "../fire/fire-renderer-3d";
 import { GooRenderer3D } from "../water/goo-renderer-3d";
@@ -37,8 +39,10 @@ import type {
   FireTipSource3D,
   CharcoalTipSource3D,
 } from "./scene-effect-source-3d";
+import { TIP_EFFECT_SLOTS_PER_RIG } from "../prop-tip-geometry-3d";
 
-const MAX_SCENE_EFFECT_TIPS = 8 * 2 * 2;
+// Eight performers, each with every emitter on both props.
+const MAX_SCENE_EFFECT_TIPS = 8 * TIP_EFFECT_SLOTS_PER_RIG;
 
 function hexToRgb(hex: string): { r: number; g: number; b: number } {
   const value = Number.parseInt(hex.replace("#", ""), 16);
@@ -89,7 +93,7 @@ export class SceneEffectsManager3D {
   private bubbleRenderer: BubbleRenderer3D | null = null;
   private petalRenderer: PetalPoolRenderer3D | null = null;
   private smokeFallbackRenderer: SmokePoolRenderer3D | null = null;
-  private smokeVolumeRenderer: SmokeVolumeRenderer3D | null = null;
+  private smokeVolumeRenderer: SmokeFluidRenderer3D | null = null;
   private inkRenderer: InkRenderer3D | null = null;
   private silkRenderer: SilkRenderer3D | null = null;
   private animalRenderer: AnimalRenderer3D | null = null;
@@ -106,7 +110,7 @@ export class SceneEffectsManager3D {
   registerRig(frame: SceneEffectRigFrame3D): SceneEffectsRigRegistration3D {
     this.rigs.add(frame);
     const sourceIdBase = this.nextSourceId;
-    this.nextSourceId += 4;
+    this.nextSourceId += TIP_EFFECT_SLOTS_PER_RIG;
     let registered = true;
     return {
       sourceIdBase,
@@ -134,7 +138,7 @@ export class SceneEffectsManager3D {
     this.petalRenderer.setEnvironmentProfile(this.petalEnvironmentProfile);
     this.smokeFallbackRenderer = new SmokePoolRenderer3D();
     if (renderer?.capabilities.isWebGL2 === true)
-      this.smokeVolumeRenderer = new SmokeVolumeRenderer3D();
+      this.smokeVolumeRenderer = new SmokeFluidRenderer3D(renderer);
     this.inkRenderer = new InkRenderer3D();
     this.silkRenderer = new SilkRenderer3D();
     this.animalRenderer = new AnimalRenderer3D();
@@ -145,7 +149,7 @@ export class SceneEffectsManager3D {
       MAX_SCENE_EFFECT_TIPS
     );
     this.fireRenderer = new FireRenderer3D(QualityTier.HIGH, {
-      // Eight performers × two props × two live ends. One scene pool keeps the
+      // Eight performers × two props × every live emitter. One scene pool keeps the
       // shipped high-tier density without constructing eight renderers when
       // the Fire control is pressed.
       poolSize: TIER_CONFIGS[QualityTier.HIGH].maxParticles,
@@ -190,9 +194,13 @@ export class SceneEffectsManager3D {
     this.fire.length = 0;
     this.charcoal.length = 0;
     let anyPlaying = false;
+    let motionDelta: number | undefined;
 
     for (const rig of this.rigs) {
-      if (rig.playing) anyPlaying = true;
+      if (rig.playing) {
+        anyPlaying = true;
+        motionDelta ??= rig.motionDelta;
+      }
       for (const source of rig.sources) {
         if (source.effect === "bloom") {
           this.bloom.push(source);
@@ -241,6 +249,9 @@ export class SceneEffectsManager3D {
     // Emission-based effects still freeze with the animation.
     this.bloomRenderer?.update(this.bloom, delta);
     if (!anyPlaying) return;
+    // Emission effects step by the time the props moved, so velocities read
+    // from tip displacement stay true across uneven frames.
+    const step = motionDelta ?? delta;
     if (this.fire.length > 0 && this.fireRenderer) {
       this.fireRenderer.updateConfig(this.fire[0]!.params);
       for (let index = 0; index < this.fire.length; index++) {
@@ -272,7 +283,7 @@ export class SceneEffectsManager3D {
         input.propColor = color;
       }
       this.fireInputs.length = this.fire.length;
-      this.fireRenderer.update(this.fireInputs, delta);
+      this.fireRenderer.update(this.fireInputs, step);
       this.fireWasActive = true;
     } else if (this.fireWasActive) {
       this.fireRenderer?.reset();
@@ -311,7 +322,7 @@ export class SceneEffectsManager3D {
       }
       this.charcoalInputs.length = this.charcoal.length;
       const continuity = this.charcoal[0]!;
-      this.charcoalRenderer.update(this.charcoalInputs, delta, {
+      this.charcoalRenderer.update(this.charcoalInputs, step, {
         currentStep: continuity.currentStep,
         totalSteps: continuity.totalSteps,
         collisionFloorY: continuity.collisionFloorY,
@@ -320,25 +331,30 @@ export class SceneEffectsManager3D {
       this.charcoalInputs.length = 0;
       this.charcoalRenderer?.reset();
     }
-    this.sparkleRenderer?.update(this.sparkles, delta);
-    this.gooRenderer?.update(this.goo, delta);
-    this.bubbleRenderer?.update(this.bubbles, delta);
-    this.petalRenderer?.update(this.petals, delta);
+    this.sparkleRenderer?.update(this.sparkles, step);
+    this.gooRenderer?.update(this.goo, step);
+    this.bubbleRenderer?.update(this.bubbles, step);
+    this.petalRenderer?.update(this.petals, step);
     if (this.smokeVolumeRenderer) {
       for (const source of this.smoke) {
         if (source.qualityTier === QualityTier.LOW)
           this.fallbackSmoke.push(source);
         else this.volumeSmoke.push(source);
       }
-      this.smokeVolumeRenderer.update(this.volumeSmoke, delta);
-      this.smokeFallbackRenderer?.update(this.fallbackSmoke, delta);
+      // Performers past the fluid's budget fall back to sprites.
+      for (const source of this.smokeVolumeRenderer.update(
+        this.volumeSmoke,
+        step
+      ))
+        this.fallbackSmoke.push(source);
+      this.smokeFallbackRenderer?.update(this.fallbackSmoke, step);
     } else {
-      this.smokeFallbackRenderer?.update(this.smoke, delta);
+      this.smokeFallbackRenderer?.update(this.smoke, step);
     }
-    this.inkRenderer?.update(this.ink, delta);
-    this.silkRenderer?.update(this.silk, delta);
-    this.animalRenderer?.update(this.animal, delta);
-    this.pulseRenderer?.update(this.pulse, delta);
+    this.inkRenderer?.update(this.ink, step);
+    this.silkRenderer?.update(this.silk, step);
+    this.animalRenderer?.update(this.animal, step);
+    this.pulseRenderer?.update(this.pulse, step);
   }
 
   clear(): void {
@@ -398,7 +414,7 @@ export class SceneEffectsManager3D {
     this.fireWasActive = false;
   }
 
-  getSmokeDebugSnapshot(): SmokeVolumeDebugSnapshot3D | null {
+  getSmokeDebugSnapshot(): SmokeFluidDiagnostic3D | null {
     return this.smokeVolumeRenderer?.getDebugSnapshot() ?? null;
   }
 

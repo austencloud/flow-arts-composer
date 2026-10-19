@@ -11,7 +11,7 @@
    * performer, collision and procession state. Here there is nothing but the
    * material and the light it throws.
    */
-  import { T, useTask, useThrelte } from "@threlte/core";
+  import { T, useTask, useDOM } from "@threlte/core";
   import { MeshStandardMaterial } from "three";
   import { userProportionsState } from "@austencloud/scene-3d";
   import OrbitControls from "#lib/shared/3d/components/OrbitControls.svelte";
@@ -89,7 +89,7 @@
    * aspect instead. Clamped, because past about 80 degrees the perspective
    * stretch at the edges is worse than losing the outer station.
    */
-  const { size } = useThrelte();
+  const { size } = useDOM();
   const LINEUP_Z = 20;
   const LINEUP_TARGET_Z = -1;
   const lineupHalfSpan = STATION_SPAN + STATION_PITCH * 0.46;
@@ -125,7 +125,8 @@
     };
   });
 
-  const x = (id: LookdevStationId) => LOOKDEV_STATIONS.find((s) => s.id === id)!.x;
+  const x = (id: LookdevStationId) =>
+    LOOKDEV_STATIONS.find((s) => s.id === id)!.x;
 
   // Station A - a bed of coals sunk into the floor behind an iron kerb.
   const bedCoals: LavaCracksConfig = {
@@ -201,12 +202,20 @@
 
 <T.PerspectiveCamera
   makeDefault
-  position={[activeCamera.position[0], activeCamera.position[1], activeCamera.position[2]]}
+  position={[
+    activeCamera.position[0],
+    activeCamera.position[1],
+    activeCamera.position[2],
+  ]}
   fov={activeCamera.fov}
 >
   <OrbitControls
     enableDamping
-    target={[activeCamera.target[0], activeCamera.target[1], activeCamera.target[2]]}
+    target={[
+      activeCamera.target[0],
+      activeCamera.target[1],
+      activeCamera.target[2],
+    ]}
     minDistance={1.2}
     maxDistance={40}
     maxPolarAngle={Math.PI / 2 + 0.05}
@@ -285,7 +294,12 @@
 
   <T.Group position.y={floorLift}>
     <EmberFountains config={bedEmbers} />
-    <HeatDistortion position={{ x: 0, z: 0 }} radius={BED_SIZE * 0.6} height={3.2} intensity={0.12} />
+    <HeatDistortion
+      position={{ x: 0, z: 0 }}
+      radius={BED_SIZE * 0.6}
+      height={3.2}
+      intensity={0.12}
+    />
   </T.Group>
 </T.Group>
 
@@ -388,10 +402,16 @@
   <T.Mesh position={[0, FURNACE_SILL + FURNACE_H + 0.12, 0.14]} material={iron}>
     <T.BoxGeometry args={[FURNACE_W + 0.5, 0.24, 0.3]} />
   </T.Mesh>
-  <T.Mesh position={[-(FURNACE_W / 2 + 0.13), FURNACE_SILL + FURNACE_H / 2, 0.14]} material={iron}>
+  <T.Mesh
+    position={[-(FURNACE_W / 2 + 0.13), FURNACE_SILL + FURNACE_H / 2, 0.14]}
+    material={iron}
+  >
     <T.BoxGeometry args={[0.26, FURNACE_H + 0.5, 0.3]} />
   </T.Mesh>
-  <T.Mesh position={[FURNACE_W / 2 + 0.13, FURNACE_SILL + FURNACE_H / 2, 0.14]} material={iron}>
+  <T.Mesh
+    position={[FURNACE_W / 2 + 0.13, FURNACE_SILL + FURNACE_H / 2, 0.14]}
+    material={iron}
+  >
     <T.BoxGeometry args={[0.26, FURNACE_H + 0.5, 0.3]} />
   </T.Mesh>
 
@@ -416,7 +436,12 @@
     />
   </T.Group>
   <T.Group position={[0, FURNACE_SILL + FURNACE_H / 2, 0.7]}>
-    <HeatDistortion position={{ x: 0, z: 0 }} radius={1.1} height={3} intensity={0.16} />
+    <HeatDistortion
+      position={{ x: 0, z: 0 }}
+      radius={1.1}
+      height={3}
+      intensity={0.16}
+    />
   </T.Group>
 </T.Group>
 

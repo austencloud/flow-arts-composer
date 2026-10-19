@@ -4,7 +4,7 @@
   import type { PostEditorState } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
   import PostStudioSequenceAnimationLayer from "#lib/shared/post-studio-plugin/ui/PostStudioSequenceAnimationLayer.svelte";
   import { mappingPreviewAppearance } from "./post-timing-animation";
-  import type { PostTimingSession } from "./post-timing-session.svelte";
+  import type { PostTimingSession } from "./post-timing-session.svelte.js";
 
   let {
     editor,

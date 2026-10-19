@@ -191,7 +191,7 @@ measures it to decide when it returns.
     allPlacements.filter((placement) => !blockedSet.has(placement)).length
   );
   const matchingPreset = $derived(
-    presets.find((preset) =>
+    presets.find((preset: PlacementSelectionPreset) =>
       hasSameBlockedPlacements(blockedPlacements, preset.blockedPlacements)
     )
   );

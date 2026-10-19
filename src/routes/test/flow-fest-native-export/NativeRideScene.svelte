@@ -112,8 +112,8 @@
     <Avatar3D
       {id}
       avatarId={props.character}
-      leftPropState={null}
-      rightPropState={null}
+      bluePropState={null}
+      redPropState={null}
       visible={true}
       isActive={false}
       position={{ x: 0, y: 0, z: 0 }}
