@@ -127,6 +127,7 @@
    */
   function seedPerformance(stepMap: StepMap): void {
     const now = new Date();
+    const sequenceId = sequence?.id ?? SEQUENCE_ID;
     const record: CollaborativeVideo = {
       id: "slice-omlam-xj",
       videoUrl: VIDEO_URL,
@@ -134,7 +135,15 @@
       duration: VIDEO_DURATION,
       fileSize: 0,
       mimeType: "video/mp4",
-      sequenceId: sequence?.id ?? SEQUENCE_ID,
+      sequenceId,
+      associations: [
+        {
+          subjectType: "sequence",
+          subjectId: sequenceId,
+          relationship: "performance",
+        },
+      ],
+      performers: [],
       sequenceName: SEQUENCE_ID,
       creatorId: authState.user?.uid ?? "slice-performer",
       collaborators: [],
@@ -146,7 +155,7 @@
       updatedAt: now,
     };
     resetSequenceVideoStores();
-    const store = getSequenceVideosStore(record.sequenceId);
+    const store = getSequenceVideosStore(sequenceId);
     store.add(record);
     // The real method writes to Firestore. The harness keeps the choice in
     // memory, the same way the step map above never leaves the browser.
