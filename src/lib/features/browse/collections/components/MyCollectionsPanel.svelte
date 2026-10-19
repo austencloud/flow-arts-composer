@@ -686,16 +686,23 @@ instead of showing an empty shell.
 <!-- My Collections: the All shelf (everything you saved) + your own manual/smart
      collections + the create tiles. -->
 {#snippet ownShelves(sel: { id: string; ownerId: string | null } | null)}
-  {#if collections.length > 1}
-    <!-- align="end": the chip sits at the shelf's right edge, so the list
-         opens leftward over the cards instead of off the rail. -->
-    <div class="collections-sort-row">
-      <SortPopover
-        options={collectionSortOptions}
-        currentMethod={sortMethod}
-        onSortChange={changeSort}
-        align="end"
-      />
+  {#if collections.length > 1 || (isSideBySide && desktopSidebarState.isVisible)}
+    <!-- The sort chip stays at the right edge so its menu opens over the cards. -->
+    <div
+      class="collections-sort-row"
+      class:with-browse-back={isSideBySide && desktopSidebarState.isVisible}
+    >
+      {#if isSideBySide && desktopSidebarState.isVisible}
+        <BackToBrowseButton />
+      {/if}
+      {#if collections.length > 1}
+        <SortPopover
+          options={collectionSortOptions}
+          currentMethod={sortMethod}
+          onSortChange={changeSort}
+          align="end"
+        />
+      {/if}
     </div>
   {/if}
 
@@ -1410,11 +1417,17 @@ instead of showing an empty shell.
     align-content: start;
   }
 
-  /* The sort chip hugs the right edge of the shelf, above the All card, in
-     both the phone grid (spanning every column) and the desktop rail. */
+  /* This row holds the sort chip at the right edge and, on desktop with the
+     sidebar visible, the Browse action at the left. */
   .collections-sort-row {
     display: flex;
     justify-content: flex-end;
+  }
+
+  .collections-sort-row.with-browse-back {
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
   }
 
   .card-grid > .collections-sort-row {

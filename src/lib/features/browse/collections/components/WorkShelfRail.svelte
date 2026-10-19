@@ -121,7 +121,7 @@
     role="tabpanel"
     aria-labelledby="work-shelf-tab-{value}"
   >
-    {#if value !== "drafts" && (value !== "collections" || showBrowseBack)}
+    {#if value !== "collections" && value !== "drafts"}
       <header class="shelf-panel-header">
         {#if showBrowseBack}<BackToBrowseButton />{/if}
         <div class="shelf-panel-heading">
