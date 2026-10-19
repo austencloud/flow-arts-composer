@@ -132,7 +132,10 @@
   const requestedView = $derived(page.url.searchParams.get("view"));
   const replayPose = $derived(parseViewParam(page.url.search));
   const cameraUrlPose = $derived(
-    readCameraUrlPose(page.url.searchParams, VIEW_PRESETS.walk.fov)
+    readCameraUrlPose(
+      new URLSearchParams(page.url.search),
+      VIEW_PRESETS.walk.fov
+    )
   );
   const view = $derived(
     requestedView && requestedView in VIEW_PRESETS
