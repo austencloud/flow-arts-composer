@@ -898,7 +898,7 @@ instead of showing an empty shell.
 
 {#snippet shelfContent(shelfId: WorkShelfId)}
   {#if shelfId === "drafts"}
-    <DraftsShelf showBrowseBack={false} />
+    <DraftsShelf showBrowseBack={desktopSidebarState.isVisible} />
   {:else if shelfId === "collections"}
     <div class="rail-cards">
       {@render ownShelves(railSelection)}
@@ -962,6 +962,7 @@ instead of showing an empty shell.
           value={activeShelf}
           onchange={selectShelf}
           content={shelfContent}
+          showBrowseBack={desktopSidebarState.isVisible}
         />
       </div>
     {:else}
@@ -972,6 +973,7 @@ instead of showing an empty shell.
             value={activeShelf}
             onchange={selectShelf}
             content={shelfContent}
+            showBrowseBack={desktopSidebarState.isVisible}
           />
         </aside>
 
@@ -1059,7 +1061,7 @@ instead of showing an empty shell.
       >
     </div>
     <div class="mobile-library">
-      <AllLibraryView onBack={backToBrowse} />
+      <AllLibraryView onBack={backToBrowse} backLabel={t("module_browse")} />
     </div>
   </div>
 {:else if isYouFollowing}

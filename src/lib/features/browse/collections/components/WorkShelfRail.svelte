@@ -27,9 +27,10 @@
     onchange: (shelfId: WorkShelfId) => void;
     content: Snippet<[WorkShelfId]>;
     region: "tabs" | "panel";
+    showBrowseBack?: boolean;
   }
 
-  let { value, onchange, content, region }: Props = $props();
+  let { value, onchange, content, region, showBrowseBack = false }: Props = $props();
 
   const shelves = $derived<Record<WorkShelfId, ShelfDefinition>>({
     drafts: {
@@ -120,10 +121,13 @@
     role="tabpanel"
     aria-labelledby="work-shelf-tab-{value}"
   >
-    {#if value !== "collections" && value !== "drafts"}
+    {#if value !== "drafts" && (value !== "collections" || showBrowseBack)}
       <header class="shelf-panel-header">
-        <h3>{shelves[value].label}</h3>
-        <p>{shelves[value].description}</p>
+        {#if showBrowseBack}<BackToBrowseButton />{/if}
+        <div class="shelf-panel-heading">
+          <h3>{shelves[value].label}</h3>
+          <p>{shelves[value].description}</p>
+        </div>
       </header>
     {/if}
 
@@ -175,8 +179,15 @@
 
   .shelf-panel-header {
     display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .shelf-panel-heading {
+    display: flex;
     flex-direction: column;
     gap: 4px;
+    min-width: 0;
   }
 
   .shelf-panel-header h3 {

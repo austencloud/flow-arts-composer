@@ -6,10 +6,12 @@
     onBrowse,
     onCreateAccount,
     onBack,
+    backLabel = t("browse_ui_collections_tab"),
   }: {
     onBrowse: () => void;
     onCreateAccount?: () => void;
     onBack?: () => void;
+    backLabel?: string;
   } = $props();
 </script>
 
@@ -18,7 +20,7 @@
     <header class="empty-navigation">
       <PanelButton onclick={onBack}>
         <i class="fas fa-arrow-left" aria-hidden="true"></i>
-        {t("browse_ui_collections_tab")}
+        {backLabel}
       </PanelButton>
     </header>
   {/if}
