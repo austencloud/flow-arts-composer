@@ -17,6 +17,7 @@
   import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
   import { setEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
   import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+  import { ledCapturePattern } from "./led-capture-pattern.js";
   import {
     Box3,
     Color,
@@ -52,14 +53,10 @@
       ...DEFAULT_EFFECTS_CONFIG,
       led: {
         ...DEFAULT_EFFECTS_CONFIG.led,
-        pattern: {
-          source: "generator",
-          generatorId: ledPattern,
-          params:
-            DEFAULT_EFFECTS_CONFIG.led.pattern.source === "generator"
-              ? DEFAULT_EFFECTS_CONFIG.led.pattern.params
-              : {},
-        },
+        pattern: ledCapturePattern(
+          DEFAULT_EFFECTS_CONFIG.led.pattern,
+          ledPattern
+        ),
         look: { ...DEFAULT_EFFECTS_CONFIG.led.look, brightness: 5 },
       },
       tipEffectMap: { "*": { effect: "led" } },

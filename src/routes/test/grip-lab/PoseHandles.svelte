@@ -1,10 +1,22 @@
 <script lang="ts">
   import { onMount, untrack } from "svelte";
-  import { T, useTask, useThrelte } from "@threlte/core";
+  import {
+    T,
+    useDOM,
+    useScheduler,
+    useScene,
+    useTask,
+    useThrelte,
+  } from "@threlte/core";
   import { TransformControls } from "three/examples/jsm/controls/TransformControls.js";
   import { Group, Vector3, type Bone, type Object3D } from "three";
 
-  import { channelLimit, type PoseHandle, type TeachingPose, type PoseChannel } from "./isolation-teaching";
+  import {
+    channelLimit,
+    type PoseHandle,
+    type TeachingPose,
+    type PoseChannel,
+  } from "./isolation-teaching";
 
   interface Props {
     root: Object3D | null;
@@ -48,7 +60,10 @@
   let arm: Bone | null = null;
   let cachedHand: "left" | "right" = hand;
   let dragging = false;
-  const { camera, dom, scene, invalidate } = useThrelte();
+  const { camera } = useThrelte();
+  const { dom } = useDOM();
+  const { scene } = useScene();
+  const { invalidate } = useScheduler();
   let controls = $state.raw<TransformControls>();
 
   onMount(() => {
@@ -78,7 +93,8 @@
   $effect(() => {
     const current = controls;
     const target = selectedProxy();
-    const enabled = visible && !!root && selected !== "grip" && selected !== "fingers";
+    const enabled =
+      visible && !!root && selected !== "grip" && selected !== "fingers";
     const mode = selected === "chest" ? "rotate" : "translate";
     const activeCamera = camera.current;
     if (!current) return;
@@ -148,7 +164,10 @@
     if (arm) arm.getWorldPosition(shoulderWorld);
     elbowProxy.position
       .copy(shoulderWorld)
-      .addScaledVector(new Vector3(pose.elbowX, pose.elbowY, pose.elbowZ), 0.25);
+      .addScaledVector(
+        new Vector3(pose.elbowX, pose.elbowY, pose.elbowZ),
+        0.25
+      );
 
     tipWorld.set(tipPosition[0], tipPosition[1], tipPosition[2]);
     tipProxy.position.copy(tipWorld);
@@ -174,7 +193,11 @@
 
   function changeElbow(): void {
     const offset = elbowProxy.position.clone().sub(shoulderWorld);
-    commitChanges({ elbowX: offset.x / 0.25, elbowY: offset.y / 0.25, elbowZ: offset.z / 0.25 });
+    commitChanges({
+      elbowX: offset.x / 0.25,
+      elbowY: offset.y / 0.25,
+      elbowZ: offset.z / 0.25,
+    });
   }
 
   function changeTip(): void {
@@ -185,8 +208,14 @@
   function commitChanges(changes: Partial<TeachingPose>): void {
     const changed = (Object.keys(changes) as PoseChannel[]).some((channel) => {
       const value = changes[channel]!;
-      const bounded = Math.max(-channelLimit(channel), Math.min(channelLimit(channel), value));
-      return Number.isFinite(value) && Math.abs(Math.round(bounded * 10000) / 10000 - pose[channel]) > 0.00005;
+      const bounded = Math.max(
+        -channelLimit(channel),
+        Math.min(channelLimit(channel), value)
+      );
+      return (
+        Number.isFinite(value) &&
+        Math.abs(Math.round(bounded * 10000) / 10000 - pose[channel]) > 0.00005
+      );
     });
     if (changed) onChange(changes);
   }
@@ -216,15 +245,35 @@
 
 {#if visible && root}
   <T is={chestProxy}>
-    {#if selected === "chest"}<T.Mesh renderOrder={10}><T.SphereGeometry args={[0.035, 16, 12]} /><T.MeshBasicMaterial color="#f3c46e" depthTest={false} /></T.Mesh>{/if}
+    {#if selected === "chest"}<T.Mesh renderOrder={10}
+        ><T.SphereGeometry args={[0.035, 16, 12]} /><T.MeshBasicMaterial
+          color="#f3c46e"
+          depthTest={false}
+        /></T.Mesh
+      >{/if}
   </T>
   <T is={pelvisProxy}>
-    {#if selected === "pelvis"}<T.Mesh renderOrder={10}><T.SphereGeometry args={[0.035, 16, 12]} /><T.MeshBasicMaterial color="#f3c46e" depthTest={false} /></T.Mesh>{/if}
+    {#if selected === "pelvis"}<T.Mesh renderOrder={10}
+        ><T.SphereGeometry args={[0.035, 16, 12]} /><T.MeshBasicMaterial
+          color="#f3c46e"
+          depthTest={false}
+        /></T.Mesh
+      >{/if}
   </T>
   <T is={elbowProxy}>
-    {#if selected === "elbow"}<T.Mesh renderOrder={10}><T.SphereGeometry args={[0.035, 16, 12]} /><T.MeshBasicMaterial color="#f3c46e" depthTest={false} /></T.Mesh>{/if}
+    {#if selected === "elbow"}<T.Mesh renderOrder={10}
+        ><T.SphereGeometry args={[0.035, 16, 12]} /><T.MeshBasicMaterial
+          color="#f3c46e"
+          depthTest={false}
+        /></T.Mesh
+      >{/if}
   </T>
   <T is={tipProxy}>
-    {#if selected === "tip"}<T.Mesh renderOrder={10}><T.SphereGeometry args={[0.035, 16, 12]} /><T.MeshBasicMaterial color="#f3c46e" depthTest={false} /></T.Mesh>{/if}
+    {#if selected === "tip"}<T.Mesh renderOrder={10}
+        ><T.SphereGeometry args={[0.035, 16, 12]} /><T.MeshBasicMaterial
+          color="#f3c46e"
+          depthTest={false}
+        /></T.Mesh
+      >{/if}
   </T>
 {/if}
