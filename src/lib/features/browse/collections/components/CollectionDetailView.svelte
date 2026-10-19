@@ -772,6 +772,9 @@ becomes private while open, we bail back to the list instead of showing a ghost.
           type="button"
           class="header-action-btn follow-btn"
           class:following
+          aria-label={following
+            ? t("browse_audit_following")
+            : t("browse_audit_follow")}
           aria-pressed={following}
           onclick={() => {
             if (following) {
@@ -1182,14 +1185,35 @@ becomes private while open, we bail back to the list instead of showing a ghost.
       padding-inline: 8px;
     }
 
+    .back-btn {
+      width: 44px;
+      padding: 0;
+    }
+
+    .back-btn span,
+    .header-icon {
+      display: none;
+    }
+
     .header-actions {
       gap: 8px;
     }
 
     .header-actions .header-action-btn {
       width: 44px;
+      min-width: 44px;
       padding: 0;
       justify-content: center;
+    }
+
+    .follow-btn {
+      width: 44px;
+      min-width: 44px;
+      padding: 0;
+    }
+
+    .follow-btn span {
+      display: none;
     }
 
     .header-actions .header-action-btn span {

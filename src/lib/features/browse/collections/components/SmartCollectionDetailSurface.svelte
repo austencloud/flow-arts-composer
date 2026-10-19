@@ -412,6 +412,17 @@
     }
   }
 
+  @container smart-detail (max-width: 520px) {
+    .detail-head .back-button {
+      width: 44px;
+      padding: 0;
+    }
+
+    .detail-head .back-button span {
+      display: none;
+    }
+  }
+
   @container smart-detail (max-width: 410px) {
     .collection-icon {
       display: none;
