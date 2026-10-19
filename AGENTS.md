@@ -24,7 +24,8 @@ unless a higher-priority platform or safety instruction conflicts.
   edits there.
 - Production releases use direct pushes to `main`, without pull requests or
   manual review gates. When Austen authorizes a release, fetch remote `main`,
-  integrate completed commits, verify them, and push. Keep Web App CI and
+  integrate completed commits, verify them, and push with
+  `node scripts/push-public.mjs`, never a plain push of `main`. Keep Web App CI and
   Deploy Pages (gated) so production waits for passing checks. Do not restore
   branch protection, required pull requests, or owner approval gates unless
   Austen explicitly requests them.
@@ -55,6 +56,14 @@ unless a higher-priority platform or safety instruction conflicts.
   artifact or diff and report it accurately. If neither delivery path works,
   report the blocker and attempted alternatives without claiming completion.
   Never delete another task's branch or dirty worktree.
+
+## Private Prop Bridges
+
+- Decoded vendor protocols live in the private `austencloud/prop-bridges`
+  repo, cloned into the ignored `src/lib/private/`. Nothing from it is pushed,
+  published, shared or described in public files without Austen's yes in chat
+  for that item. Follow `.claude/rules/private-prop-bridges.md`; a refused
+  push means stop and ask him.
 
 ## Verification
 
