@@ -32,13 +32,13 @@
   setEffectsConfigContext(effectsConfig);
 
   const toggleOptions = [
-    { value: true, label: "On" },
-    { value: false, label: "Off" },
+    { value: "on", label: "On" },
+    { value: "off", label: "Off" },
   ];
   const copyOptions = [
-    { value: 1, label: "1" },
-    { value: 2, label: "2" },
-    { value: 6, label: "6" },
+    { value: "1", label: "1" },
+    { value: "2", label: "2" },
+    { value: "6", label: "6" },
   ];
 
   let selectedPresetId = $state(initialPreset.id);
@@ -56,19 +56,15 @@
 
   const compactCamera = $derived(viewportWidth <= 640);
   const narrowCamera = $derived(viewportWidth > 640 && viewportWidth <= 900);
-  const cameraPosition = $derived(
+  const cameraPosition = $derived<[number, number, number]>(
     compactCamera
-      ? ([0, 2.4, 5.2] as const)
+      ? [0, 2.4, 5.2]
       : narrowCamera
-        ? ([0, 2.15, 3.5] as const)
-        : ([0, 2.1, 2.9] as const)
+        ? [0, 2.15, 3.5]
+        : [0, 2.1, 2.9]
   );
-  const cameraTarget = $derived(
-    compactCamera
-      ? ([0, 1.5, 0] as const)
-      : narrowCamera
-        ? ([0, 1.45, 0] as const)
-        : ([0, 1.35, 0] as const)
+  const cameraTarget = $derived<[number, number, number]>(
+    compactCamera ? [0, 1.5, 0] : narrowCamera ? [0, 1.45, 0] : [0, 1.35, 0]
   );
   const cameraFov = $derived(compactCamera ? 48 : narrowCamera ? 35 : 32);
 
@@ -308,8 +304,8 @@
             <span>Motion</span>
             <SegmentedControl
               options={toggleOptions}
-              value={playing}
-              onchange={(value) => (playing = value)}
+              value={playing ? "on" : "off"}
+              onchange={(value) => (playing = value === "on")}
               size="sm"
               ariaLabel="Motion"
             />
@@ -318,8 +314,8 @@
             <span>Props</span>
             <SegmentedControl
               options={toggleOptions}
-              value={showProps}
-              onchange={(value) => (showProps = value)}
+              value={showProps ? "on" : "off"}
+              onchange={(value) => (showProps = value === "on")}
               size="sm"
               ariaLabel="Show props"
             />
@@ -328,8 +324,8 @@
             <span>Copies</span>
             <SegmentedControl
               options={copyOptions}
-              value={centerPlanes}
-              onchange={(value) => (centerPlanes = value)}
+              value={String(centerPlanes)}
+              onchange={(value) => (centerPlanes = Number(value))}
               size="sm"
               ariaLabel="Overlaid rigs"
             />
@@ -353,8 +349,7 @@
           </button>
         </div>
         <p class="tuning-note">
-          Intensity, persistence, and density update the preview
-          immediately.
+          Intensity, persistence, and density update the preview immediately.
         </p>
         <EffectControlStack effect="ghost" config={effectsConfig} view="3d" />
       </section>
