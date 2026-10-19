@@ -18,6 +18,7 @@ interface HarnessOptions {
   isAuthenticated?: boolean;
   qrUrl?: string;
   exportPresentation?: boolean;
+  mintPaused?: boolean;
 }
 
 export function createChoreoCardQrStateHarness(options: HarnessOptions) {
@@ -31,6 +32,7 @@ export function createChoreoCardQrStateHarness(options: HarnessOptions) {
     rightPropType: options.rightPropType,
     browseViewMode: undefined,
     exportPresentation: options.exportPresentation,
+    mintPaused: options.mintPaused,
   });
 
   const generator = {
@@ -74,6 +76,9 @@ export function createChoreoCardQrStateHarness(options: HarnessOptions) {
     },
     setSequence(sequence: SequenceData) {
       deps = { ...deps, sequence };
+    },
+    setMintPaused(mintPaused: boolean) {
+      deps = { ...deps, mintPaused };
     },
     dispose,
   } as const;

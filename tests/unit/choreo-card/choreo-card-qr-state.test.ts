@@ -43,6 +43,32 @@ function qrResult(label: string): QRCodeResult {
 }
 
 describe("choreo card QR state", () => {
+  it("makes no code while paused, settles, and makes it once the pause ends", async () => {
+    const generateForSequence = vi.fn().mockResolvedValue(qrResult("first"));
+    const harness = createChoreoCardQrStateHarness({
+      sequence: TRANSITION_REVIEW_SEQUENCE,
+      leftPropType: PropType.STAFF,
+      rightPropType: PropType.STAFF,
+      generateForSequence,
+      mintPaused: true,
+    });
+    try {
+      flushSync();
+      expect(generateForSequence).not.toHaveBeenCalled();
+      expect(harness.qrState.dataUrl).toBeNull();
+      expect(harness.qrState.pending).toBe(false);
+      expect(harness.settled).toBe(true);
+
+      harness.setMintPaused(false);
+      flushSync();
+      await Promise.resolve();
+      expect(generateForSequence).toHaveBeenCalledTimes(1);
+      expect(harness.qrState.dataUrl).toBe(qrResult("first").dataUrl);
+    } finally {
+      harness.dispose();
+    }
+  });
+
   it("drops the old scan target when motions change without changing the sequence ID", async () => {
     const generateForSequence = vi
       .fn()

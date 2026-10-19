@@ -145,6 +145,7 @@
     type CardPresentation,
   } from "#lib/shared/share/domain/models/card-presentation.js";
   import { getImageCompositionManager } from "#lib/shared/share/state/image-composition-state.svelte.js";
+  import { setViewerDormantContext } from "../context/viewer-dormant-context";
   import {
     trackSequenceRemixStarted,
     trackSequenceViewed,
@@ -260,6 +261,8 @@
     tunnelSaveTarget = null,
     onTunnelSaved,
   }: Props = $props();
+
+  setViewerDormantContext(() => ctx.dormant);
 
   let viewerWorkspaceElement = $state<HTMLElement | null>(null);
   let artInspectorTarget = $state<HTMLElement | null>(null);

@@ -159,13 +159,8 @@
 
   $effect(() => {
     const next = prewarm;
-    if (
-      drawerOpen ||
-      overlay.isOpen ||
-      next === untrack(() => dormantPrewarm)
-    ) {
-      return;
-    }
+    // Tracked, so dropping the hidden viewer at a close schedules the next.
+    if (drawerOpen || overlay.isOpen || next === dormantPrewarm) return;
     if (!next) {
       dormantPrewarm = null;
       return;
@@ -195,8 +190,10 @@
         canAdoptPrewarm(dormantPrewarm, overlay)
     );
   });
+  // dormantPrewarm is read first on purpose. With overlay.sequence first, the
+  // value stayed false after a close (Svelte 5.57), so no viewer was rebuilt.
   const viewerDormant = $derived(
-    overlay.sequence === null && dormantPrewarm !== null
+    dormantPrewarm !== null && overlay.sequence === null
   );
   const viewerKey = $derived(
     adopted || overlay.sequence === null ? dormantKey : overlay.sessionKey
@@ -227,12 +224,13 @@
           viewerRevealed = covered;
           if (adopted) {
             // Shown at once when its card had drawn for this very sequence;
-            // otherwise it fades in when ready, as a fresh viewer would.
+            // otherwise it fades in when ready, as a fresh viewer would. It
+            // still wakes at the slide's start, below, so claiming playback
+            // cannot hold the slide back.
             viewerRevealed =
               cardReadyKey === dormantKey &&
               dormantPrewarm !== null &&
               isPrewarmedContent(dormantPrewarm, overlay.sequence);
-            allowViewerMount();
           }
         }
       }
@@ -709,7 +707,8 @@
     >
       <LazyMount
         loader={loadSequenceViewerContent}
-        active={(overlay.sequence !== null && viewerMountAllowed) ||
+        active={(overlay.sequence !== null &&
+          (viewerMountAllowed || adopted)) ||
           viewerDormant}
         placeholder={overlay.sequence && viewerMountAllowed
           ? viewerContentPlaceholder
@@ -756,7 +755,12 @@
               handPathMode: overlay.handPathMode,
               playOnOpen: overlay.playOnOpen,
               playbackReleased,
-              dormant: false,
+              // A getter, so the viewer reads the wake at the slide's start
+              // itself. As a plain value it kept the open's first value (Svelte
+              // 5.57), and the woken viewer stayed asleep.
+              get dormant() {
+                return adopted && !viewerMountAllowed;
+              },
               onCardReady: handleCardReady,
               onReadyForReveal: handleViewerReady,
               onClose: handleDismiss,
