@@ -1,14 +1,10 @@
 <script lang="ts">
-  import { useThrelte } from "@threlte/core";
-  import { ACESFilmicToneMapping } from "three";
+  import { useRenderer } from "@threlte/core";
+  import { ACESFilmicToneMapping, type WebGLRenderer } from "three";
 
-  const { renderer } = useThrelte();
+  const { renderer } = useRenderer<WebGLRenderer>();
 
   $effect(() => {
-    // `useThrelte().renderer` is the WebGLRenderer itself, not a store. Reading
-    // `.current` gave undefined, so this component has been bailing out on
-    // every run and setting nothing -- the harness was silently rendering under
-    // Threlte's Canvas default (AgX) while claiming to control the grade.
     const gl = renderer;
     if (!gl) return;
     const previousMapping = gl.toneMapping;
