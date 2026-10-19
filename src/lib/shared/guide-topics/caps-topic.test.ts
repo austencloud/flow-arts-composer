@@ -23,6 +23,7 @@ import {
   capHandSteps,
   capStrip,
   capWorksOnPoi,
+  type Cap,
   type CapHand,
 } from "./caps-topic";
 
@@ -272,17 +273,24 @@ describe("what the Eight Step page says about them", () => {
     }
   });
 
-  it("puts on poi only the CAPs whose every beat runs out to out", () => {
-    // Anti with one turn and pro with none keep the poi pointing out; pro
-    // with one turn ends each beat pointing in.
-    const outToOut = new Set(["antispin", "extension"]);
-    for (const cap of CAPS) {
-      const { capping, circling } = capPairing(cap);
-      expect(capWorksOnPoi(cap), cap.id).toBe(
-        outToOut.has(capping) && outToOut.has(circling)
-      );
-    }
-    expect(CAPS.filter(capWorksOnPoi)).toHaveLength(32);
+  it("puts every CAP on poi, since each points in only mid-run", () => {
+    // Pro with one turn ends a beat pointing in, but every one comes in a
+    // pair that carries on the same way and ends pointing out, and the
+    // capping hand doubles back only on a beat that ends pointing out.
+    expect(CAPS.filter(capWorksOnPoi)).toHaveLength(72);
+  });
+
+  it("keeps poi off a hand that changes direction while pointing in", () => {
+    const withLeft = (path: string, spins: CapHand["spins"]): Cap => ({
+      ...CAPS[0]!,
+      left: { start: "n", path: [...path], spins } as CapHand,
+    });
+    // On through e to s: the poi points in at e but carries on, so it works.
+    expect(capWorksOnPoi(withLeft("es", ["prospin", "prospin"]))).toBe(true);
+    // Back from e to n while pointing in: the momentum breaks.
+    expect(capWorksOnPoi(withLeft("en", ["prospin", "prospin"]))).toBe(false);
+    // A loop that ends pointing in cannot repeat.
+    expect(capWorksOnPoi(withLeft("e", ["prospin"]))).toBe(false);
   });
 });
 

@@ -7255,7 +7255,7 @@
   "guide_eightstep_direction_same": "Gleiche Richtung",
   "guide_eightstep_direction_opposite": "Entgegengesetzte Richtung",
   "guide_eightstep_not_poi": "Nicht für Poi.",
-  "guide_eightstep_poi_note": "Mit Poi geht das nicht. Poi behalten ihren Schwung nur, wenn sie am Anfang und Ende jedes Schlags nach außen zeigen, und Pro · 1 Drehung endet nach innen. Ein Stab darf in jede Richtung zeigen.",
+  "guide_eightstep_poi_note": "Mit Poi geht das nicht. Poi dürfen zwischendurch nach innen zeigen, aber nur, wenn sie gleich weiterlaufen, bis sie wieder nach außen zeigen, und hier wechselt die Richtung, während sie nach innen zeigen. Ein Stab darf die Richtung wechseln, egal wohin er zeigt.",
   "guide_eightstep_path_ahead_title": "Linke Hand vorn",
   "guide_eightstep_path_behind_title": "Linke Hand hinten",
   "guide_eightstep_path_swap_title": "Zuerst tauschen",

@@ -924,18 +924,27 @@ export function capPairing(cap: Cap): { capping: CapSpin; circling: CapSpin } {
 }
 
 /**
- * Whether a CAP spins on poi: every beat of both hands starts and ends with
- * the prop pointing out, so the poi keep their momentum. A staff can end a
- * beat pointing any way.
+ * Whether a CAP spins on poi. A poi may point in partway through, but it
+ * keeps its momentum only while it carries on the same way: the hand keeps
+ * travelling and the poi keeps turning in the same direction until it
+ * points out again. So every change of direction has to fall on a beat that
+ * ends pointing out, and the loop has to end pointing out to repeat. A staff
+ * can change direction pointing any way.
  */
 export function capWorksOnPoi(cap: Cap): boolean {
-  return [cap.left, cap.right].every((hand) =>
-    capHandSteps(hand).every(
-      (step) =>
-        step.startOrientation === Orientation.OUT &&
-        step.endOrientation === Orientation.OUT
-    )
-  );
+  return [cap.left, cap.right].every((hand) => {
+    const steps = capHandSteps(hand);
+    return steps.every((step, i) => {
+      if (step.endOrientation === Orientation.OUT) return true;
+      const next = steps[(i + 1) % steps.length]!;
+      return (
+        i < steps.length - 1 &&
+        next.rotationDirection === step.rotationDirection &&
+        travel(next.startLocation, next.endLocation) ===
+          travel(step.startLocation, step.endLocation)
+      );
+    });
+  });
 }
 
 /** The shortest run of letters the word repeats, e.g. "KEC". */

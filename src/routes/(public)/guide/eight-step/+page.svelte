@@ -158,8 +158,8 @@
     opposite: "guide_eightstep_direction_opposite",
   };
 
-  // Poi-friendly pairings first, so a box's opening examples suit every
-  // prop; in a quarter box each pairing then shows both of its paths.
+  // Pairings without Pro · 1 turn first, so a box opens on its plainest
+  // spins; in a quarter box each pairing then shows both of its paths.
   const PAIRINGS: readonly [CapSpin, CapSpin][] = [
     ["antispin", "antispin"],
     ["antispin", "extension"],

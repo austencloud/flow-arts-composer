@@ -7923,7 +7923,7 @@
   "guide_eightstep_direction_same": "Same direction",
   "guide_eightstep_direction_opposite": "Opposite direction",
   "guide_eightstep_not_poi": "Not for poi.",
-  "guide_eightstep_poi_note": "Poi can't do this one. A poi keeps its momentum only if it points out at the start and end of every beat, and Pro · 1 turn ends pointing in. A staff can end pointing any way.",
+  "guide_eightstep_poi_note": "Poi can't do this one. A poi can point in partway through, but only if it carries on the same way until it points out again, and this one changes direction while pointing in. A staff can change direction pointing any way.",
   "guide_eightstep_path_ahead_title": "Left hand ahead",
   "guide_eightstep_path_behind_title": "Left hand behind",
   "guide_eightstep_path_swap_title": "Swapping first",
