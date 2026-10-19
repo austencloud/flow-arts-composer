@@ -20,14 +20,12 @@
     CAP_HAND_PATHS,
     capOnPath,
     capPairing,
-    capPathMode,
     capStrip,
     type Cap,
     type CapHandSpin,
     type CapSpin,
   } from "#lib/shared/guide-topics/caps-topic.js";
   import { deriveTnDFromPictograph } from "#lib/shared/pictograph/shared/domain/utils/tnd-deriver.js";
-  import { TND_TO_ELEMENTAL } from "#lib/shared/pictograph/shared/domain/utils/tnd-calculator.js";
   import {
     getElementImagePath,
     type ElementalType,
@@ -112,8 +110,17 @@
   const beatElements = $derived(
     beatSteps.map((step) => deriveTnDFromPictograph(step).elementalType)
   );
-  const pathElement = (p: (typeof CAP_HAND_PATHS)[number]): ElementalType =>
-    TND_TO_ELEMENTAL[capPathMode(p)];
+  // Each path's hands repeat a six-beat rhythm of timing and direction,
+  // the same for every spin on that path.
+  const PATH_RHYTHMS: (ElementalType | null)[][] = CAP_HAND_PATHS.map((p) =>
+    capStrip(p.caps[0]!)
+      .slice(1, 7)
+      .map((step) => deriveTnDFromPictograph(step).elementalType)
+  );
+  const rhythmLabel = (column: number) =>
+    PATH_RHYTHMS[column - 1]!.map((el) =>
+      el ? elementalDisplayLabel(el) : ""
+    ).join(", ");
 
   const results = $derived.by(() => {
     const beats = beatSteps;
@@ -303,24 +310,26 @@
           options={CAP_HAND_PATHS.map((p) => ({
             value: String(p.column),
             label: String(p.column),
-            ariaLabel: `${p.column}, opens in ${elementalDisplayLabel(pathElement(p))}`,
+            ariaLabel: `${p.column}: ${rhythmLabel(p.column)}`,
           }))}
           value={String(column)}
           onchange={(v) => (column = Number(v))}
           ariaLabelledby="poi-path-label"
           semantics="radiogroup"
           density="compact"
-          columns={4}
+          columns={2}
         >
           {#snippet optionContent(value)}
-            {@const p = CAP_HAND_PATHS[Number(value) - 1]!}
+            {@const n = Number(value)}
             <span class="path-option">
-              <img
-                class="element"
-                src={getElementImagePath(pathElement(p))}
-                alt=""
-              />
-              {p.column}
+              <span class="path-number">{n}</span>
+              <span class="rhythm">
+                {#each PATH_RHYTHMS[n - 1]! as el, i (i)}
+                  {#if el}
+                    <img class="element" src={getElementImagePath(el)} alt="" />
+                  {/if}
+                {/each}
+              </span>
             </span>
           {/snippet}
         </SegmentedControl>
@@ -752,9 +761,17 @@
   .path-option {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
   }
-  .path-option .element {
+  .path-number {
+    min-width: 1ch;
+    font-variant-numeric: tabular-nums;
+  }
+  .rhythm {
+    display: inline-flex;
+    gap: 2px;
+  }
+  .rhythm .element {
     width: 1.25rem;
     height: 1.25rem;
   }
