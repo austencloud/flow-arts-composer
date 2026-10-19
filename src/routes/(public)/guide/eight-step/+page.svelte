@@ -47,16 +47,23 @@
     CAP_DIRECTIONS,
     CAP_HAND_PATHS,
     CAP_TIMINGS,
-    capPairing,
+    capOnPath,
+    capPoiProblem,
     capStrip,
-    capWithAntiTurns,
-    capWorksOnPoi,
     type Cap,
     type CapDirection,
     type CapHandPath,
-    type CapSpin,
+    type CapHandSpin,
     type CapTiming,
   } from "#lib/shared/guide-topics/caps-topic.js";
+  import TurnNotationControls from "#lib/shared/shape-matrix/app/components/TurnNotationControls.svelte";
+  import type { MatrixLabelMode } from "#lib/shared/shape-matrix/domain/matrix-turn-band.js";
+  import { ratioLabel } from "#lib/shared/shape-matrix/domain/flower-signature.js";
+  import { localizedMatrixTurnSpokenLabel } from "#lib/shared/shape-matrix/domain/shape-matrix-display.js";
+  import {
+    turnValuesForLevel,
+    type TurnValue,
+  } from "#lib/shared/create/services/level-turn-values.js";
 
   // The bare hands draw their path as they travel: the left hand closes the
   // ring once in twelve beats, the right in four. The drawing stays until the
@@ -86,14 +93,22 @@
     PropType.BIGHOOP,
     PropType.TRIAD,
   ];
-  let leftSpin = $state<CapSpin>("antispin");
-  let rightSpin = $state<CapSpin>("antispin");
-  // Every CAP also spins with each antispin at 0 turns, on any prop but poi.
-  let antiTurns = $state<"1" | "0">("1");
-  const ANTI_TURN_OPTIONS = $derived([
-    { value: "1" as const, label: t("guide_eightstep_turns_one") },
-    { value: "0" as const, label: t("guide_eightstep_turns_zero") },
-  ]);
+  // Each hand spins pro or anti at one turn value, any up to Level 4.
+  type Motion = CapHandSpin["motion"];
+  let leftMotion = $state<Motion>("anti");
+  let rightMotion = $state<Motion>("anti");
+  let leftTurn = $state<TurnValue>(1);
+  let rightTurn = $state<TurnValue>(1);
+  let labelMode = $state<MatrixLabelMode>("turns");
+  const TURN_VALUES = turnValuesForLevel(4);
+  const leftSpin = $derived<CapHandSpin>({
+    motion: leftMotion,
+    turns: leftTurn,
+  });
+  const rightSpin = $derived<CapHandSpin>({
+    motion: rightMotion,
+    turns: rightTurn,
+  });
 
   // Hand paths carry no letters; each cell shows the app's step label.
   const PROP_RENDER: PictographRender = $derived({
@@ -102,28 +117,28 @@
     showStepNumbers: true,
   });
 
-  const SPINS: readonly CapSpin[] = ["antispin", "extension", "prospin"];
-  const SPIN_LABEL: Record<CapSpin, Parameters<typeof t>[0]> = {
-    antispin: "guide_eightstep_spin_antispin",
-    extension: "guide_eightstep_spin_extension",
-    prospin: "guide_eightstep_spin_prospin",
+  const MOTION_LABEL: Record<Motion, Parameters<typeof t>[0]> = {
+    anti: "guide_eightstep_motion_anti",
+    pro: "guide_eightstep_motion_pro",
   };
-  const spinLabel = (spin: CapSpin) =>
-    spin === "antispin" && antiTurns === "0"
-      ? t("guide_eightstep_spin_antispin_zero")
-      : t(SPIN_LABEL[spin]);
-  const spinOptions = (tone: "blue" | "red") =>
-    SPINS.map((spin) => ({ value: spin, label: spinLabel(spin), tone }));
+  const motionOptions = (tone: "blue" | "red") =>
+    (["anti", "pro"] as const).map((motion) => ({
+      value: motion,
+      label: t(MOTION_LABEL[motion]),
+      tone,
+    }));
+  // Named as the turn picker names its values: turns, or VTG ratios.
+  const spinLabel = (spin: CapHandSpin) =>
+    spin.turns === "fl"
+      ? t("shape_engine_float")
+      : t("guide_eightstep_spin_label", {
+          motion: t(MOTION_LABEL[spin.motion]),
+          value:
+            labelMode === "ratios"
+              ? ratioLabel(spin.turns)
+              : localizedMatrixTurnSpokenLabel(spin.turns, "turns"),
+        });
 
-  // The chart's left hand always caps, so the left pick is the capping spin.
-  const capOf = (path: CapHandPath, capping: CapSpin, circling: CapSpin) =>
-    capWithAntiTurns(
-      path.caps.find((cap) => {
-        const pairing = capPairing(cap);
-        return pairing.capping === capping && pairing.circling === circling;
-      })!,
-      antiTurns === "0" ? 0 : 1
-    );
   // The CAP id names the sequence, so the player reloads on every new pick
   // even where two pairings spell the same word.
   const showcase = (cap: Cap) => {
@@ -136,10 +151,10 @@
 
   const firstPath = CAP_HAND_PATHS[0]!;
   const hands = showcase(firstPath.caps[0]!).sequence;
-  const spinCap = $derived(capOf(firstPath, leftSpin, rightSpin));
+  const spinCap = $derived(capOnPath(firstPath, leftSpin, rightSpin));
   const spinExample = $derived(showcase(spinCap));
-  const notForPoi = (cap: Cap) =>
-    propType === PropType.POI && !capWorksOnPoi(cap);
+  const poiProblem = (cap: Cap) =>
+    propType === PropType.POI ? capPoiProblem(cap) : null;
 
   // A quarter box holds two paths; this tells them apart. Split and
   // together boxes hold one path each and need no name for it.
@@ -172,27 +187,30 @@
     opposite: "guide_eightstep_direction_opposite",
   };
 
-  // Pairings without Pro · 1 turn first, so a box opens on its plainest
-  // spins; in a quarter box each pairing then shows both of its paths.
-  const PAIRINGS: readonly [CapSpin, CapSpin][] = [
-    ["antispin", "antispin"],
-    ["antispin", "extension"],
-    ["extension", "antispin"],
-    ["extension", "extension"],
-    ["antispin", "prospin"],
-    ["prospin", "antispin"],
-    ["extension", "prospin"],
-    ["prospin", "extension"],
-    ["prospin", "prospin"],
+  // A box opens on the picked motions, then steps through the others at the
+  // same turns; in a quarter box each pairing shows both of its paths.
+  const MOTION_PAIRS: readonly [Motion, Motion][] = [
+    ["anti", "anti"],
+    ["anti", "pro"],
+    ["pro", "anti"],
+    ["pro", "pro"],
   ];
-  const exampleProse = (path: CapHandPath, cap: Cap) => {
-    const { capping, circling } = capPairing(cap);
-    const spins = { left: spinLabel(capping), right: spinLabel(circling) };
+  const pairsFromPick = $derived([
+    [leftMotion, rightMotion] as const,
+    ...MOTION_PAIRS.filter(([l, r]) => l !== leftMotion || r !== rightMotion),
+  ]);
+  const exampleProse = (
+    path: CapHandPath,
+    cap: Cap,
+    left: CapHandSpin,
+    right: CapHandSpin
+  ) => {
+    const spins = { left: spinLabel(left), right: spinLabel(right) };
     const variant = QUARTER_PATH[path.column];
     const line = variant
       ? t("guide_eightstep_example_variant", { variant: t(variant), ...spins })
       : t("guide_eightstep_example", spins);
-    return notForPoi(cap) ? `${line} ${t("guide_eightstep_not_poi")}` : line;
+    return poiProblem(cap) ? `${line} ${t("guide_eightstep_not_poi")}` : line;
   };
 
   // A row per timing, a box per direction; each box's examples cycle with
@@ -205,17 +223,24 @@
         const paths = CAP_HAND_PATHS.filter(
           (p) => p.timing === timing && p.direction === direction
         );
-        const entries = PAIRINGS.flatMap(([capping, circling]) =>
-          paths.map((path) => ({ path, cap: capOf(path, capping, circling) }))
-        );
+        const entries = pairsFromPick.flatMap(([lm, rm]) => {
+          const left = { motion: lm, turns: leftTurn };
+          const right = { motion: rm, turns: rightTurn };
+          return paths.map((path) => ({
+            path,
+            left,
+            right,
+            cap: capOnPath(path, left, right),
+          }));
+        });
         return {
           direction,
           title: DIRECTION_TITLE[direction],
           first: showcase(entries[0]!.cap),
-          pool: entries.map(({ path, cap }) => ({
+          pool: entries.map(({ path, cap, left, right }) => ({
             word: cap.id,
             loopLabel: "",
-            proseHtml: exampleProse(path, cap),
+            proseHtml: exampleProse(path, cap, left, right),
             items: capStrip(cap),
           })),
         };
@@ -335,48 +360,53 @@
                 />
               </div>
               <div class="picker">
-                <span class="picker-label" id="anti-turns-label"
-                  >{t("guide_eightstep_anti_turns")}</span
-                >
-                <SegmentedControl
-                  options={ANTI_TURN_OPTIONS}
-                  value={antiTurns}
-                  onchange={(turns) => (antiTurns = turns)}
-                  ariaLabelledby="anti-turns-label"
-                  semantics="radiogroup"
-                />
+                <span class="picker-label">{t("guide_eightstep_motion")}</span>
+                <div class="hand-motions">
+                  <div class="hand-motion">
+                    <span class="hand-label" id="motion-left-label"
+                      >{t("guide_eightstep_spin_left")}</span
+                    >
+                    <SegmentedControl
+                      options={motionOptions("blue")}
+                      value={leftMotion}
+                      onchange={(motion) => (leftMotion = motion)}
+                      ariaLabelledby="motion-left-label"
+                      semantics="radiogroup"
+                      color="blue"
+                    />
+                  </div>
+                  <div class="hand-motion">
+                    <span class="hand-label" id="motion-right-label"
+                      >{t("guide_eightstep_spin_right")}</span
+                    >
+                    <SegmentedControl
+                      options={motionOptions("red")}
+                      value={rightMotion}
+                      onchange={(motion) => (rightMotion = motion)}
+                      ariaLabelledby="motion-right-label"
+                      semantics="radiogroup"
+                      color="red"
+                    />
+                  </div>
+                </div>
               </div>
               <div class="picker">
-                <span class="picker-label" id="spin-left-label"
-                  >{t("guide_eightstep_spin_left")}</span
-                >
-                <SegmentedControl
-                  options={spinOptions("blue")}
-                  value={leftSpin}
-                  onchange={(spin) => (leftSpin = spin)}
-                  ariaLabelledby="spin-left-label"
-                  semantics="radiogroup"
-                  color="blue"
-                />
-              </div>
-              <div class="picker">
-                <span class="picker-label" id="spin-right-label"
-                  >{t("guide_eightstep_spin_right")}</span
-                >
-                <SegmentedControl
-                  options={spinOptions("red")}
-                  value={rightSpin}
-                  onchange={(spin) => (rightSpin = spin)}
-                  ariaLabelledby="spin-right-label"
-                  semantics="radiogroup"
-                  color="red"
+                <span class="picker-label">{t("guide_eightstep_turns")}</span>
+                <TurnNotationControls
+                  {leftTurn}
+                  {rightTurn}
+                  {labelMode}
+                  turnValues={TURN_VALUES}
+                  onturn={(hand, turn) =>
+                    hand === "left" ? (leftTurn = turn) : (rightTurn = turn)}
+                  onlabelmodechange={(mode) => (labelMode = mode)}
                 />
               </div>
             </div>
-            {#if notForPoi(spinCap)}
+            {#if poiProblem(spinCap)}
               <p class="poi-note">
                 {t(
-                  antiTurns === "0"
+                  poiProblem(spinCap) === "anti-zero"
                     ? "guide_eightstep_poi_anti_zero"
                     : "guide_eightstep_poi_note"
                 )}
@@ -557,9 +587,26 @@
   .picker :global(.prop-option) {
     max-width: none;
   }
-  /* Three short words don't need the whole column. */
-  .picker :global(.segmented-control) {
-    max-width: 28rem;
+  /* Each hand's two motions sit side by side, labelled by hand. */
+  .hand-motions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm, 8px) var(--spacing-lg, 24px);
+  }
+  .hand-motion {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm, 8px);
+  }
+  .hand-motion :global(.segmented-control) {
+    width: 12rem;
+  }
+  /* One width for both labels, so the two toggles line up when stacked. */
+  .hand-label {
+    flex: none;
+    width: 5.5rem;
+    font-size: 0.875rem;
+    color: var(--theme-text-dim, var(--theme-text));
   }
   .chip {
     margin-top: var(--spacing-sm, 8px);

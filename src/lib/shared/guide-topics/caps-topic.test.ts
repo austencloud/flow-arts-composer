@@ -13,7 +13,18 @@ import {
   parseCsvEdges,
 } from "#lib/features/choreo-card/services/pictograph-letter-lookup.js";
 import { getGridPlacementFromLocations } from "#lib/shared/pictograph/grid/services/grid-placement-deriver.js";
-import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import {
+  MotionType,
+  Orientation,
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import {
+  turnValuesForLevel,
+  type TurnValue,
+} from "#lib/shared/create/services/level-turn-values.js";
+import type { SoloPropStepData } from "#lib/shared/foundation/domain/models/solo-prop-step-data.js";
+
+const travelOf = (step: SoloPropStepData) =>
+  (RING.indexOf(step.endLocation) - RING.indexOf(step.startLocation) + 4) % 4;
 import {
   CAPS,
   CAP_HAND_PATHS,
@@ -23,10 +34,12 @@ import {
   capCell,
   capHandSteps,
   capStrip,
-  capWithAntiTurns,
+  capOnPath,
+  capPoiProblem,
   capWorksOnPoi,
   type Cap,
   type CapHand,
+  type CapHandSpin,
 } from "./caps-topic";
 
 const read = (path: string) =>
@@ -295,11 +308,24 @@ describe("what the Eight Step page says about them", () => {
     expect(capWorksOnPoi(withLeft("e", ["prospin"]))).toBe(false);
   });
 
-  it("keeps poi off every CAP's twin with antispins at no turns", () => {
-    for (const cap of CAPS) {
-      const twin = capWithAntiTurns(cap, 0);
-      expect(capWorksOnPoi(twin), twin.id).toBe(false);
-      expect(capWithAntiTurns(cap, 1)).toBe(cap);
+  it("keeps poi off antispin with no turns and off a turnaround not out", () => {
+    const spin = (motion: "pro" | "anti", turns: TurnValue): CapHandSpin => ({
+      motion,
+      turns,
+    });
+    for (const path of CAP_HAND_PATHS) {
+      const at = (left: CapHandSpin, right: CapHandSpin) =>
+        capPoiProblem(capOnPath(path, left, right));
+      // The beat back of a pro capping hand is an antispin, so 0 turns
+      // there stops a poi too.
+      expect(at(spin("pro", 0), spin("pro", 0))).toBe("anti-zero");
+      // Pro, pro, anti at 1 turn: out, in, out, out, so the turnaround
+      // falls on out.
+      expect(at(spin("pro", 1), spin("anti", 1))).toBeNull();
+      // Anti, anti, pro at 1 turn ends the beat back pointing in, and the
+      // hand turns round there.
+      expect(at(spin("anti", 1), spin("anti", 1))).toBe("momentum");
+      expect(at(spin("anti", 2), spin("pro", 2))).toBeNull();
     }
   });
 });
@@ -321,25 +347,50 @@ describe("strips", () => {
     }
   });
 
-  it("chains every twin's beats and brings each hand back pointing out", () => {
-    for (const cap of CAPS) {
-      const twin = capWithAntiTurns(cap, 0);
-      expect(twin.id).not.toBe(cap.id);
-      for (const hand of [twin.left, twin.right]) {
-        const steps = capHandSteps(hand);
-        steps.forEach((step, i) => {
-          if (i > 0) {
-            expect(step.startOrientation).toBe(steps[i - 1]!.endOrientation);
+  it("spins every hand path at one turn value on every beat", () => {
+    const motions = ["pro", "anti"] as const;
+    const flip = { pro: MotionType.ANTI, anti: MotionType.PRO } as const;
+    const same = { pro: MotionType.PRO, anti: MotionType.ANTI } as const;
+    for (const path of CAP_HAND_PATHS) {
+      for (const turns of turnValuesForLevel(4)) {
+        for (const lm of motions) {
+          for (const rm of motions) {
+            const left = { motion: lm, turns };
+            const right = { motion: rm, turns };
+            const cap = capOnPath(path, left, right);
+            const chart = path.caps.find((c) => cap.id.startsWith(`${c.id}:`))!;
+            // An odd number of quarter turns takes two times round.
+            const rounds =
+              typeof turns === "number" && (turns * 4) % 2 === 1 ? 2 : 1;
+            expect(cap.word).toBe(chart.word.repeat(rounds));
+            expect(capStrip(cap)).toHaveLength(12 * rounds + 1);
+            for (const [hand, spin] of [
+              [cap.left, left],
+              [cap.right, right],
+            ] as const) {
+              const steps = capHandSteps(hand);
+              const forward = travelOf(steps[0]!);
+              expect(steps.at(-1)!.endOrientation).toBe(Orientation.OUT);
+              steps.forEach((step, i) => {
+                expect(step.turns).toBe(turns);
+                if (i > 0) {
+                  expect(step.startOrientation).toBe(
+                    steps[i - 1]!.endOrientation
+                  );
+                }
+                // The capping hand flips its motion only on the beat back.
+                const motion =
+                  turns === "fl" ? step.prefloatMotionType : step.motionType;
+                expect(motion).toBe(
+                  travelOf(step) === forward
+                    ? same[spin.motion]
+                    : flip[spin.motion]
+                );
+              });
+            }
           }
-          if (hand.spins[i] === "antispin") expect(step.turns).toBe(0);
-        });
-        expect(steps.at(-1)!.endOrientation, twin.id).toBe(Orientation.OUT);
+        }
       }
-      expect(
-        capBeats(twin)
-          .map((b) => b.letter)
-          .join("")
-      ).toBe(cap.word);
     }
   });
 });
