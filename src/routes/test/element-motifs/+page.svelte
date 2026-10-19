@@ -25,7 +25,7 @@
   let playing = $state(true);
 
   let effects = $state<Record<string, string>>(
-    Object.fromEntries(ELEMENT_MOTIFS.map((m) => [m.roomId, m.defaultEffect])),
+    Object.fromEntries(ELEMENT_MOTIFS.map((m) => [m.roomId, m.defaultEffect]))
   );
 
   /**
@@ -36,22 +36,26 @@
    */
   const soloEffect = $derived(page.url.searchParams.get("e"));
   const soloRoomId = $derived(
-    soloEffect ? page.url.searchParams.get("room") ?? ELEMENT_MOTIFS[0].roomId : null,
+    soloEffect
+      ? (page.url.searchParams.get("room") ?? ELEMENT_MOTIFS[0]?.roomId ?? null)
+      : null
   );
   const resolvedEffects = $derived(
-    soloEffect && soloRoomId ? { ...effects, [soloRoomId]: soloEffect } : effects,
+    soloEffect && soloRoomId
+      ? { ...effects, [soloRoomId]: soloEffect }
+      : effects
   );
   const cameraPosition = $derived<[number, number, number]>(
-    soloEffect ? [0, 2.6, 8] : [0, 3.4, 17],
+    soloEffect ? [0, 2.6, 8] : [0, 3.4, 17]
   );
 
   function effectLabel(id: string): string {
-    return getRegistration(id)?.label ?? id;
+    return getRegistration(id)?.meta.label ?? id;
   }
 
   const boolOptions = [
-    { value: true, label: "On" },
-    { value: false, label: "Off" },
+    { value: "on", label: "On" },
+    { value: "off", label: "Off" },
   ];
 </script>
 
@@ -61,18 +65,28 @@
   <header>
     <h1>Elemental motifs</h1>
     <p>
-      Six rooms, six VTG modalities, avatar hidden. With the props off, the only thing
-      in the air is the effect drawing the motion. Orbit to look along the line.
+      Six rooms, six VTG modalities, avatar hidden. With the props off, the only
+      thing in the air is the effect drawing the motion. Orbit to look along the
+      line.
     </p>
   </header>
 
   <section class="stage">
     <Canvas
       createRenderer={(canvas) =>
-        new WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: "high-performance" })}
+        new WebGLRenderer({
+          canvas,
+          antialias: true,
+          alpha: false,
+          powerPreference: "high-performance",
+        })}
     >
       <T.PerspectiveCamera makeDefault position={cameraPosition} fov={52}>
-        <OrbitControls enableDamping target={[0, 1.5, 0]} maxPolarAngle={Math.PI / 2} />
+        <OrbitControls
+          enableDamping
+          target={[0, 1.5, 0]}
+          maxPolarAngle={Math.PI / 2}
+        />
       </T.PerspectiveCamera>
       <ElementMotifScene
         effects={resolvedEffects}
@@ -90,8 +104,8 @@
         <span>Props</span>
         <SegmentedControl
           options={boolOptions}
-          value={showProps}
-          onchange={(v) => (showProps = v)}
+          value={showProps ? "on" : "off"}
+          onchange={(v) => (showProps = v === "on")}
           size="sm"
           ariaLabel="Show props"
         />
@@ -100,8 +114,8 @@
         <span>Playing</span>
         <SegmentedControl
           options={boolOptions}
-          value={playing}
-          onchange={(v) => (playing = v)}
+          value={playing ? "on" : "off"}
+          onchange={(v) => (playing = v === "on")}
           size="sm"
           ariaLabel="Playing"
         />
@@ -110,8 +124,8 @@
         <span>Rings</span>
         <SegmentedControl
           options={boolOptions}
-          value={showRings}
-          onchange={(v) => (showRings = v)}
+          value={showRings ? "on" : "off"}
+          onchange={(v) => (showRings = v === "on")}
           size="sm"
           ariaLabel="Show floor rings"
         />
@@ -129,7 +143,10 @@
           <p class="mode">{motif.technicalMode} · {motif.letters}</p>
           <p class="intent">{motif.intent}</p>
           <SegmentedControl
-            options={motif.candidates.map((id) => ({ value: id, label: effectLabel(id) }))}
+            options={motif.candidates.map((id) => ({
+              value: id,
+              label: effectLabel(id),
+            }))}
             value={resolvedEffects[motif.roomId] ?? motif.defaultEffect}
             onchange={(v) => (effects = { ...effects, [motif.roomId]: v })}
             size="sm"
