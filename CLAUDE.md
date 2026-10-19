@@ -29,8 +29,9 @@ coding agents.
 - Use the dedicated agent browser profile for application testing. Austen
   completes password, passkey, CAPTCHA, and consent interactions. Do not use his
   personal browser session without explicit authorization.
-- Never start, restart, replace, or kill the dev server on port 5173. Use the
-  IPv6 HTTPS probe and a task-owned free port when a separate server is needed.
+- When the dev server on port 5173 is down or stuck, restart it with
+  `pm2 restart tka-dev`; never start a second server on 5173. Use the IPv6
+  HTTPS probe and a task-owned free port when a separate server is needed.
 - In a Git repository, follow the worktree and scoped-commit lifecycle in
   `AGENTS.md`. Guarded local integration needs no extra permission question
   unless the user explicitly forbids merging. If it is blocked or the user

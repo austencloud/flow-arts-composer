@@ -55,6 +55,12 @@ let rerunRequested = false;
  * Coalesced entry point. The host's mount, signal and auth effects can all
  * fire in one flush; the guard means an intake arriving mid-run gets one extra
  * pass instead of a second concurrent run over the same rows.
+ *
+ * Never rejects. The host fires this and forgets, so a store failure here -
+ * most often openDb's 5s timeout on a slow cold boot - would otherwise surface
+ * as an unhandled rejection. Nothing is lost by swallowing it: the records stay
+ * in IndexedDB, openDb never caches a rejection, and the next share or sign-in
+ * schedules a fresh run.
  */
 export function scheduleIntakeRun(): Promise<void> {
   if (running) {
@@ -68,6 +74,11 @@ export function scheduleIntakeRun(): Promise<void> {
         rerunRequested = false;
         await runPendingIntakes();
       } while (rerunRequested);
+    } catch (caught) {
+      console.warn(
+        "[ShareIntake] Run failed; the next share or sign-in retries:",
+        caught
+      );
     } finally {
       running = null;
     }
