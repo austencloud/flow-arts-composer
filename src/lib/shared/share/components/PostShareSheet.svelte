@@ -3,7 +3,7 @@
      prevents state changes from moving the sheet. -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  import { onDestroy, untrack, type Snippet } from "svelte";
+  import { onDestroy, tick, untrack, type Snippet } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
   import { growFade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
@@ -922,7 +922,6 @@
     copiedLinkUrl = null;
     shortUrl = seededShortUrl || null;
     shareRoute = initialEntry === "chooser" ? "home" : initialEntry;
-    returnFocusIntent = null;
     filePreparationOpen = shareRoute === "download";
     animationPreviewUrl = captureAnimationPreview() || null;
     openerPreviews = {};
@@ -1186,19 +1185,10 @@
     if (postingAvailable && !needsAccountForFiles) preparePostLink();
   }
 
-  /** Which Home intent the user left from. Home mounts its intents fresh, so
-   * the matching one claims focus when it mounts (see `claimReturnFocus`);
-   * the leaving layer is inert and can never take it. Not reactive. */
-  let returnFocusIntent: "download" | "publish" | null = null;
+  let sharingRail = $state<HTMLDivElement>();
 
-  function claimReturnFocus(node: HTMLElement, intent: "download" | "publish") {
-    if (returnFocusIntent !== intent) return;
-    returnFocusIntent = null;
-    node.focus({ preventScroll: true });
-  }
-
-  function returnToChooser(): void {
-    returnFocusIntent =
+  async function returnToChooser(): Promise<void> {
+    const returnFocusIntent =
       shareRoute === "download"
         ? "download"
         : shareRoute === "publish"
@@ -1212,6 +1202,18 @@
     qrDataUrl = null;
     qrError = "";
     statusMessage = "";
+
+    // Crossfade can resume a leaving Home layer without remounting it. Wait
+    // for the route to activate, then find its interactive intent in the rail.
+    await tick();
+    if (!isOpen || shareRoute !== "home" || !returnFocusIntent) return;
+    const intents = sharingRail?.querySelectorAll<HTMLButtonElement>(
+      `button[data-share-intent="${returnFocusIntent}"]`
+    );
+    const activeIntent = [...(intents ?? [])].find(
+      (button) => !button.closest("[inert]")
+    );
+    activeIntent?.focus({ preventScroll: true });
   }
 
   /** Close before switching viewer surfaces so Back never returns to the modal. */
@@ -2158,7 +2160,7 @@
                   </div>
                 {/if}
 
-                <div class="rail">
+                <div class="rail" bind:this={sharingRail}>
                   <div class="rail-body">
                     <Crossfade
                       key={shareRoute}
@@ -2232,7 +2234,7 @@
                             <button
                               type="button"
                               class="intent"
-                              use:claimReturnFocus={"download"}
+                              data-share-intent="download"
                               onclick={() => beginDownload(artifact)}
                             >
                               <span class="intent-body">
@@ -2251,7 +2253,7 @@
                             <button
                               type="button"
                               class="intent"
-                              use:claimReturnFocus={"publish"}
+                              data-share-intent="publish"
                               onclick={openPublish}
                             >
                               <span class="intent-body">

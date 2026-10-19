@@ -169,6 +169,7 @@ async function openCard(
     videoBlobUrl?: string | null;
     initialEntry?: "chooser" | "download";
     metaStatusOverride?: MetaPublishStatus;
+    needsAccountForFiles?: boolean;
   } = {}
 ) {
   await page.viewport(1920, 1080);
@@ -191,6 +192,7 @@ async function openCard(
     initialEntry: options.initialEntry ?? "download",
     canCreateLink: false,
     metaStatusOverride: options.metaStatusOverride ?? EMPTY_META_PUBLISH_STATUS,
+    needsAccountForFiles: options.needsAccountForFiles ?? false,
   });
 }
 
@@ -278,6 +280,7 @@ describe("Download card with real live pictographs", () => {
         );
 
         if (shouldScroll) {
+          await page.getByRole("button", { name: /^Layout\b/ }).click();
           expect(scrollArea.scrollHeight).toBeGreaterThan(
             scrollArea.clientHeight
           );
@@ -297,6 +300,7 @@ describe("Download card with real live pictographs", () => {
     renderCard.mockReturnValue(new Promise<Blob>(() => {}));
     const screen = await openCard(realSequence(8), 2, {
       initialEntry: "chooser",
+      needsAccountForFiles: true,
     });
     try {
       const focusedHomeIntent = () =>
@@ -538,10 +542,10 @@ describe("Download card with real live pictographs", () => {
     );
 
     const route = document.querySelector<HTMLElement>(
-      ".sheet-scroll.publish-route"
+      ".sheet-scroll.publish-body"
     );
     const review = document.querySelector<HTMLElement>(
-      ".publish-route button.network"
+      ".publish-body button.network"
     );
     expect(route).not.toBeNull();
     expect(review).not.toBeNull();
