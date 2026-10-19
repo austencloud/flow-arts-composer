@@ -782,3 +782,76 @@ Download a file and switch Card/Video in both directions. Check the footer and
 complete preview against the dialog bounds, including small landscape and a
 large desktop viewport. A smooth height animation alone does not establish
 that its destination contains the content.
+
+### October 18 one split shell for Home and Download
+
+Austen kept the animated preview and the three choices (Copy link, Download a
+file, Publish socially) and rejected the layout around them: large blank areas
+beside the actions, 12px text, dense Download settings, no transition from Share
+to Download, and an unpolished Card to Video change. This record covers the
+implementation. It was written without a browser pass; verification is owed by
+the integrating task and is listed below.
+
+**Shell.** Home and Download are one split layout (`.share-split` in
+`PostShareSheet`). The stage holds the artwork and persists across both routes;
+only the rail beside it swaps (`Crossfade` keyed on the route, swap/step). The
+dock exists on Download only and enters with `growFade`. Publish stays a single
+column inside the same dialog. Below 900 CSS pixels the split stacks: the stage
+appears on Download only, entering with `growFade`, and the rail scrolls under
+it with the dock pinned.
+
+**Refinement of the persistent-stage plan.** The stage persists across Home and
+Download at 900px and wider. On narrow screens Home shows the choices only and
+the stage appears when Download opens, because a 36dvh stage above three 6rem
+choices would push the choices below the fold on 375×667. The stage Crossfade (key = media kind) is a
+plain stack with no `fill` and no `animateHeight`: the stage height is a CSS
+variable, so nothing waits on its own measurement.
+
+**Sizing.** `--stage-h` is `clamp(11rem, 36dvh, 20rem)` below 900px. At 900px and
+wider it is the viewport height minus 11rem, capped by `--stage-cap` (34rem;
+42rem at 1680×1000 and up; 54rem at 2600×1600 and up). The cap is composition:
+a larger canvas shows a larger artifact, while buttons, labels and settings keep
+their logical size. The rail is a 20–24rem column whose height equals the stage
+(`contain: size`), so its content scrolls inside it and never grows the dialog.
+Short landscape (900px+ wide, under 560px high) widens the rail to 26–30rem and
+lays the choices in two columns. Dialog width is one value for Home, Download and
+Publish (63rem; 71rem and 83rem at the two large tiers), so moving between them
+never resizes the dialog sideways. The phone-transfer QR keeps its narrow dialog.
+
+**Type and targets.** Choice labels are 16px, hints and settings labels 14px,
+icon tiles and every control 44px or more. The 12px hint, status and link-reveal
+text was raised to 14px. No edge strips, text links, checkboxes, raw durations or
+`transition: all`.
+
+**Card settings.** `ExportImagePanel` gained `grouping: "flat" | "share"`
+(default `"flat"`). `"share"` renders four disclosure groups — Look, Header,
+Pictograph, Layout — built from `SegmentedControl`, `FilterChipBase` and
+`PanelButton`. Look is open by default and holds the theme control and the footer
+editor. Collapsed groups show their current values as a one-line summary. Every
+capability of the flat panel is reachable; none is hidden. Only
+`PostShareSheet` passes `"share"`; `SequenceViewerShell`, `PostCardAppearanceTool`
+and the test harness keep the flat panel. The flat panel's master section toggles
+(`toggleHeader`, `togglePictograph`) are not carried into the grouped panel;
+each option is reachable individually. Video settings use the same grammar: a 14px
+label over its control, 44px stepper keys.
+
+**Live card contract (unchanged).** `LiveExportCard` measures `host.parentElement`.
+That parent is now `.card-host`, a grid box with an explicit `max-height` equal to
+the stage minus its padding and border, so the card measures a real, capped box
+before the PNG exists. Its `onReady` lifecycle, the source-key remount, and the
+card and video download-intent handlers were not modified. Do not wrap the card
+in `fill`, `animateHeight` or an absolutely positioned layer.
+
+**Not changed.** The `WorkspaceShareSheet` runtime-motion renderer, export
+engines, capability APIs, QR, media editing, native share, phone transfer,
+publishing gates and the fullscreen Instagram review.
+
+**Verification owed (not performed in this change).** Run
+`tests/render-parity/download-card-lifecycle.test.ts`, `ShareButton.svelte.test.ts`,
+`card-preview-state.svelte.test.ts`, `post-share-draft-state.test.ts` and the
+card/video download-intent tests. Inspect `/test/post-share-sheet?real-video&artifact=video&open`
+and the viewer and workspace entries at the seven viewport tiers plus 200% zoom:
+no horizontal overflow, the dock reachable at 960×412 and 375×667, the Home to
+Download and Card to Video transitions observed mid-flight and reversed, reduced
+motion instant, outgoing branches inert, and focus landing sensibly after each
+route change. Run Prettier on the three changed Svelte files.

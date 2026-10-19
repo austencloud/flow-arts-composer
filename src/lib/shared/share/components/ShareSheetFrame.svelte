@@ -7,13 +7,9 @@
     onClose: () => void;
     /** After the native dialog has left the top layer; see BaseModal.onclosed. */
     onClosed?: () => void;
+    /** The phone-transfer QR view: one centred column instead of the split shell. */
     narrow?: boolean;
-    compact?: boolean;
     expanded?: boolean;
-    focused?: boolean;
-    wide?: boolean;
-    /** Home with a preview stage: the sheet sizes to the stage beside the actions on wide screens. */
-    showcase?: boolean;
     children: Snippet<[surface: "modal" | "drawer"]>;
   }
   let {
@@ -22,21 +18,19 @@
     onClose,
     onClosed,
     narrow = false,
-    compact = false,
     expanded = false,
-    focused = false,
-    wide = false,
-    showcase = false,
     children,
   }: Props = $props();
   const headingId = $props.id();
 </script>
 
 <!-- The native modal layer keeps editor toolbars behind sharing on phones too. -->
+<!-- One width for Home, Download and Publish, so moving between them never
+     resizes the dialog; only the content inside it changes. -->
 <BaseModal
   open={isOpen}
-  class={`share-sheet-modal${narrow ? " share-sheet-modal--narrow" : ""}${compact ? " share-sheet-modal--compact" : ""}${expanded ? " share-sheet-modal--expanded" : ""}${focused ? " share-sheet-modal--focused" : ""}${wide ? " share-sheet-modal--wide" : ""}${showcase ? " share-sheet-modal--showcase" : ""}`}
-  size={compact ? "fit" : "full"}
+  class={`share-sheet-modal${narrow ? " share-sheet-modal--narrow" : ""}${expanded ? " share-sheet-modal--expanded" : ""}`}
+  size="full"
   position="center"
   animation="pop"
   animateSize
@@ -58,7 +52,7 @@
     white-space: nowrap;
   }
   :global(dialog.base-modal.share-sheet-modal[data-size]) {
-    width: min(72rem, calc(100vw - 3rem));
+    width: min(63rem, calc(100vw - 3rem));
     max-width: none;
     height: fit-content;
     max-height: calc(var(--viewport-height, 100dvh) - 3rem);
@@ -99,30 +93,26 @@
     max-height: inherit;
     min-height: 0;
   }
+  /* The phone-transfer QR is a single column; the split shell steps aside. */
   :global(dialog.base-modal.share-sheet-modal--narrow[data-size]) {
     width: min(30rem, calc(100vw - 2rem));
     height: fit-content;
-  }
-  :global(dialog.base-modal.share-sheet-modal--compact[data-size]) {
-    width: min(32rem, calc(100vw - 2rem));
-    height: fit-content;
-    max-height: calc(var(--viewport-height, 100dvh) - 2rem);
-  }
-  :global(dialog.base-modal.share-sheet-modal--focused[data-size]) {
-    width: min(42rem, calc(100vw - 2rem));
-  }
-  :global(dialog.base-modal.share-sheet-modal--wide[data-size]) {
-    width: min(72rem, calc(100vw - 3rem));
   }
   :global(dialog.base-modal.share-sheet-modal--expanded[data-size]) {
     width: calc(100vw - 1rem);
     height: calc(var(--viewport-height, 100dvh) - 1rem);
     max-height: calc(var(--viewport-height, 100dvh) - 1rem);
   }
-  @media (min-width: 900px) {
-    :global(dialog.base-modal.share-sheet-modal--showcase[data-size]) {
-      width: fit-content;
-      max-width: calc(100vw - 3rem);
+  /* Wider canvases recompose the same split with a larger stage; controls
+     keep their size (4k-native-layout.md). */
+  @media (min-width: 1680px) and (min-height: 1000px) {
+    :global(dialog.base-modal.share-sheet-modal[data-size]) {
+      width: min(71rem, calc(100vw - 3rem));
+    }
+  }
+  @media (min-width: 2600px) and (min-height: 1600px) {
+    :global(dialog.base-modal.share-sheet-modal[data-size]) {
+      width: min(83rem, calc(100vw - 3rem));
     }
   }
   @media (max-width: 899px) {
@@ -134,23 +124,8 @@
       border-radius: 1.25rem 1.25rem 0 0;
       border-bottom: 0;
     }
-    :global(dialog.base-modal.share-sheet-modal--compact[data-size]) {
-      width: min(32rem, calc(100vw - 1rem));
-      height: fit-content;
-      max-height: calc(var(--viewport-height, 100dvh) - 0.75rem);
-      margin: auto auto 0;
-      border: 1px solid var(--theme-stroke);
-      border-radius: 1.25rem 1.25rem 0 0;
-    }
-  }
-  @media (min-width: 600px) and (max-width: 899px) {
-    :global(dialog.base-modal.share-sheet-modal--compact[data-size]) {
-      width: min(32rem, calc(100vw - 3rem));
-      height: fit-content;
-      max-height: calc(var(--viewport-height, 100dvh) - 3rem);
-      margin: auto;
-      border: 1px solid var(--theme-stroke);
-      border-radius: 1.25rem;
+    :global(dialog.base-modal.share-sheet-modal--narrow[data-size]) {
+      width: min(30rem, calc(100vw - 1rem));
     }
   }
   @media (prefers-reduced-motion: reduce) {

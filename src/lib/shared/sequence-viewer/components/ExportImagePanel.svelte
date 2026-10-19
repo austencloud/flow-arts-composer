@@ -35,6 +35,8 @@
   import { columnOptionsFor } from "./bento/columns-stepper";
   import ControlDock, { type ControlDockTab } from "./ControlDock.svelte";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import {
     getInfoCellCount,
     type InfoCellChoice,
@@ -62,6 +64,13 @@
     onHeaderAllChange?: (value: boolean) => void;
     onPictographAllChange?: (value: boolean) => void;
     layout?: PanelLayout;
+    /**
+     * "share" (inline layout only) folds the settings into Look, Header,
+     * Pictograph and Layout groups with readable summaries, built from the
+     * shared chip, segmented and panel-button primitives. Every setting stays
+     * reachable. Default "flat" keeps the viewer's rows untouched.
+     */
+    grouping?: "flat" | "share";
     stepCount: number;
     /** Measured winner from the live card preview. */
     resolvedAutoLayout?: ResolvedAutoLayout | null;
@@ -88,6 +97,7 @@
     onHeaderAllChange,
     onPictographAllChange,
     layout = "bottom",
+    grouping = "flat",
     stepCount,
     resolvedAutoLayout = null,
     onClose,
@@ -444,6 +454,221 @@
       activeTab ?? "closed"
     );
   }
+
+  // ---- Share grouping -------------------------------------------------------
+  // Same state owners as the flat rows; only the arrangement differs. Look is
+  // open because Theme and Footer are the settings people reach for first.
+  type ShareGroup = "look" | "header" | "pictograph" | "layout";
+  let openGroups = $state<Record<ShareGroup, boolean>>({
+    look: true,
+    header: false,
+    pictograph: false,
+    layout: false,
+  });
+  function toggleGroup(group: ShareGroup): void {
+    openGroups[group] = !openGroups[group];
+  }
+
+  interface ShareToggle {
+    id: string;
+    label: string;
+    active: boolean;
+    toggle: () => void;
+  }
+
+  const headerToggles = $derived<ShareToggle[]>([
+    {
+      id: "word",
+      label: t("viewer_ui_word"),
+      active: showWord,
+      toggle: () =>
+        toggleCompositionSetting(
+          "word",
+          showWord,
+          imageComposition.setAddWord.bind(imageComposition)
+        ),
+    },
+    {
+      id: "step_numbers",
+      label: "Steps",
+      active: showStepNumbers,
+      toggle: () =>
+        toggleCompositionSetting(
+          "step_numbers",
+          showStepNumbers,
+          imageComposition.setAddBeatNumbers.bind(imageComposition)
+        ),
+    },
+    {
+      id: "difficulty",
+      label: t("generator_level"),
+      active: showDifficulty,
+      toggle: () =>
+        toggleCompositionSetting(
+          "difficulty",
+          showDifficulty,
+          imageComposition.setAddDifficultyLevel.bind(imageComposition)
+        ),
+    },
+    {
+      id: "loop_glyph",
+      label: "LOOP",
+      active: showLoopGlyph,
+      toggle: () =>
+        toggleCompositionSetting(
+          "loop_glyph",
+          showLoopGlyph,
+          imageComposition.setShowLoopGlyph.bind(imageComposition)
+        ),
+    },
+  ]);
+
+  const pictographToggles = $derived<ShareToggle[]>([
+    {
+      id: "grid",
+      label: t("generator_grid"),
+      active: showGrid,
+      toggle: () =>
+        togglePictographSetting(
+          "grid",
+          showGrid,
+          vm.setGridVisibility.bind(vm)
+        ),
+    },
+    {
+      id: "tka_glyph",
+      label: "TKA",
+      active: tkaGlyph,
+      toggle: () =>
+        togglePictographSetting("tka_glyph", tkaGlyph, (value) =>
+          vm.setGlyphVisibility("tkaGlyph", value)
+        ),
+    },
+    {
+      id: "tnd_glyph",
+      label: "TnD",
+      active: tndGlyph,
+      toggle: toggleTnD,
+    },
+    {
+      id: "prop_tnd_glyph",
+      label: t("viewer_detail_prop_tnd"),
+      active: propTndGlyph,
+      toggle: () =>
+        togglePictographSetting("prop_tnd_glyph", propTndGlyph, (value) =>
+          vm.setGlyphVisibility("propTndGlyph", value)
+        ),
+    },
+    {
+      id: "positions_glyph",
+      label: t("browse_chip_placements"),
+      active: placementsGlyph,
+      toggle: () =>
+        togglePictographSetting("positions_glyph", placementsGlyph, (value) =>
+          vm.setGlyphVisibility("placementsGlyph", value)
+        ),
+    },
+    {
+      id: "hand_color_key",
+      label: t("viewer_ui_hand_key"),
+      active: handColorKey,
+      toggle: () =>
+        togglePictographSetting("hand_color_key", handColorKey, (value) =>
+          vm.setGlyphVisibility("handColorKey", value)
+        ),
+    },
+    {
+      id: "non_radial",
+      label: t("viewer_ui_non_radial"),
+      active: nonRadial,
+      toggle: () =>
+        togglePictographSetting(
+          "non_radial",
+          nonRadial,
+          vm.setNonRadialVisibility.bind(vm)
+        ),
+    },
+    {
+      id: "reversals",
+      label: "Reversals",
+      active: reversalIndicators,
+      toggle: () =>
+        togglePictographSetting("reversals", reversalIndicators, (value) =>
+          vm.setGlyphVisibility("reversalIndicators", value)
+        ),
+    },
+  ]);
+
+  const themeOptions = $derived([
+    {
+      value: "light",
+      label: t("viewer_detail_light"),
+      icon: "fas fa-sun",
+    },
+    {
+      value: "dark",
+      label: t("viewer_detail_dark"),
+      icon: "fas fa-moon",
+    },
+  ]);
+  const startLayoutOptions = $derived<
+    { value: "row" | "column"; label: string }[]
+  >([
+    { value: "row", label: t("viewer_ui_top_row") },
+    { value: "column", label: t("viewer_ui_left_column") },
+  ]);
+  // SegmentedControl values are strings; Auto is the null column count.
+  const columnChoices = $derived(
+    columnOptions.map((option) => ({
+      value: option.value === null ? "auto" : String(option.value),
+      label: option.label,
+      ariaLabel:
+        option.value === null
+          ? t("viewer_ui_auto_columns_and_start_placement")
+          : t("viewer_ui_columns_count", { count: option.label }),
+    }))
+  );
+  const columnChoice = $derived(
+    currentColumnCount === null ? "auto" : String(currentColumnCount)
+  );
+
+  const footerModeLabel = $derived(
+    effectiveCardPresentation.footer.mode === "off"
+      ? t("share_footer_off")
+      : effectiveCardPresentation.footer.mode === "credit"
+        ? t("share_footer_credit")
+        : t("share_footer_custom")
+  );
+  const joinOn = (items: ShareToggle[]): string => {
+    const on = items.filter((item) => item.active).map((item) => item.label);
+    return on.length > 0 ? on.join(" · ") : t("viewer_ui_none");
+  };
+  const lookSummary = $derived(
+    `${exportOptions.imageDarkMode ? t("share_theme_dark") : t("share_theme_light")} · ${t("share_theme_footer")} ${footerModeLabel}`
+  );
+  const headerSummary = $derived(joinOn(headerToggles));
+  const pictographSummary = $derived(joinOn(pictographToggles));
+  const layoutSummary = $derived.by(() => {
+    const parts = [
+      `${t("viewer_ui_columns")} ${columnOptions.find((option) => option.value === currentColumnCount)?.label ?? t("viewer_ui_auto")}`,
+      showStartPos
+        ? `${t("viewer_ui_start")} ${startPosLayout === "row" ? t("viewer_ui_top_row") : t("viewer_ui_left_column")}`
+        : `${t("viewer_ui_start")} ${t("share_footer_off")}`,
+    ];
+    if (hasInfoCell) {
+      if (isOneSpot) {
+        parts.push(
+          infoCellOptions.find(
+            (option) => option.value === infoCellDisplayChoice
+          )?.label ?? ""
+        );
+      } else {
+        if (canQRCode && showQRCode) parts.push("QR");
+        if (showMandala) parts.push(t("viewer_ui_mandala"));
+      }
+    }
+    return parts.join(" · ");
+  });
 </script>
 
 {#if layout === "bottom"}
@@ -752,6 +977,216 @@
       </Crossfade>
     {/snippet}
   </ControlDock>
+{:else if layout === "inline" && grouping === "share"}
+  <!-- ============================================================
+       SHARE GROUPING: Look / Header / Pictograph / Layout. A closed group
+       keeps its current values readable in its header, so nothing is hidden
+       from the person choosing what the card shows.
+       ============================================================ -->
+  <div
+    class="share-groups"
+    role="region"
+    aria-label={t("viewer_ui_card_settings")}
+  >
+    {#snippet groupHead(group: ShareGroup, title: string, summary: string)}
+      <PanelButton
+        fullWidth
+        ariaExpanded={openGroups[group]}
+        onclick={() => toggleGroup(group)}
+      >
+        <span class="group-title">{title}</span>
+        <span class="group-summary">{summary}</span>
+        <i
+          class={openGroups[group]
+            ? "fa-solid fa-chevron-up"
+            : "fa-solid fa-chevron-down"}
+          aria-hidden="true"
+        ></i>
+      </PanelButton>
+    {/snippet}
+
+    <section class="share-group">
+      {@render groupHead("look", t("post_editor_tool_look"), lookSummary)}
+      {#if openGroups.look}
+        <div class="group-body" transition:growFade={{ axis: "y" }}>
+          <div class="share-field">
+            <span class="share-field-label" id="share-theme-label"
+              >{t("tab_settings_theme")}</span
+            >
+            <SegmentedControl
+              options={themeOptions}
+              value={exportOptions.imageDarkMode ? "dark" : "light"}
+              onchange={(value) => setTheme(value === "dark")}
+              color="accent"
+              ariaLabelledby="share-theme-label"
+            />
+          </div>
+          <div class="footer-editor-field">
+            <CardFooterEditor
+              value={effectiveCardPresentation}
+              onchange={changeCardPresentation}
+              description={t("viewer_ui_appears_inside_the_card_image")}
+              onSave={onSaveCardPresentation}
+              dirty={cardPresentationDirty}
+              saving={cardPresentationSaving}
+              idBase="share-card-footer"
+            />
+          </div>
+        </div>
+      {/if}
+    </section>
+
+    <section class="share-group">
+      {@render groupHead("header", t("viewer_ui_header"), headerSummary)}
+      {#if openGroups.header}
+        <div class="group-body" transition:growFade={{ axis: "y" }}>
+          <div class="chip-wrap">
+            {#each headerToggles as item (item.id)}
+              <FilterChipBase
+                mode="toggle"
+                labelScale="readable"
+                label={item.label}
+                active={item.active}
+                onclick={item.toggle}
+              />
+            {/each}
+          </div>
+        </div>
+      {/if}
+    </section>
+
+    <section class="share-group">
+      {@render groupHead(
+        "pictograph",
+        t("viewer_ui_pictograph"),
+        pictographSummary
+      )}
+      {#if openGroups.pictograph}
+        <div class="group-body" transition:growFade={{ axis: "y" }}>
+          <div class="chip-wrap">
+            {#each pictographToggles as item (item.id)}
+              <FilterChipBase
+                mode="toggle"
+                labelScale="readable"
+                label={item.label}
+                active={item.active}
+                onclick={item.toggle}
+              />
+            {/each}
+          </div>
+        </div>
+      {/if}
+    </section>
+
+    <section class="share-group">
+      {@render groupHead(
+        "layout",
+        t("browse_audit_chip_group_layout"),
+        layoutSummary
+      )}
+      {#if openGroups.layout}
+        <div class="group-body" transition:growFade={{ axis: "y" }}>
+          <div class="share-field">
+            <span class="share-field-label" id="share-columns-label"
+              >{t("viewer_ui_columns")}</span
+            >
+            <SegmentedControl
+              options={columnChoices}
+              value={columnChoice}
+              onchange={(value) =>
+                setColumns(value === "auto" ? null : Number(value))}
+              color="accent"
+              ariaLabelledby="share-columns-label"
+            />
+          </div>
+          <div class="share-field">
+            <span class="share-field-label">{t("viewer_ui_start")}</span>
+            <div class="chip-wrap">
+              <FilterChipBase
+                mode="toggle"
+                labelScale="readable"
+                label={t("viewer_ui_show")}
+                active={showStartPos}
+                onclick={() =>
+                  toggleCompositionSetting(
+                    "start_position",
+                    showStartPos,
+                    imageComposition.setIncludeStartPlacement.bind(
+                      imageComposition
+                    )
+                  )}
+              />
+            </div>
+            {#if showStartPos}
+              <div class="start-layout" transition:growFade={{ axis: "y" }}>
+                <SegmentedControl
+                  options={startLayoutOptions}
+                  value={startPosLayout}
+                  onchange={setStartPlacementLayout}
+                  color="accent"
+                  ariaLabel={t("viewer_ui_start")}
+                />
+              </div>
+            {/if}
+          </div>
+          {#if hasInfoCell}
+            <div class="share-field">
+              <span class="share-field-label" id="share-info-label"
+                >{t("viewer_ui_info")}</span
+              >
+              {#if isOneSpot}
+                <SegmentedControl
+                  options={infoCellOptions}
+                  value={infoCellDisplayChoice}
+                  onchange={setInfoCellChoice}
+                  color="accent"
+                  ariaLabelledby="share-info-label"
+                />
+              {:else}
+                <div class="chip-wrap">
+                  {#if canQRCode}
+                    <FilterChipBase
+                      mode="toggle"
+                      labelScale="readable"
+                      label="QR"
+                      icon="fas fa-qrcode"
+                      active={showQRCode}
+                      onclick={() =>
+                        toggleCompositionSetting(
+                          "qr_code",
+                          showQRCode,
+                          imageComposition.setShowQRCode.bind(imageComposition)
+                        )}
+                    />
+                  {/if}
+                  <FilterChipBase
+                    mode="toggle"
+                    labelScale="readable"
+                    label="Mandala"
+                    icon="fas fa-asterisk"
+                    active={showMandala}
+                    onclick={() =>
+                      toggleCompositionSetting(
+                        "mandala",
+                        showMandala,
+                        imageComposition.setShowMandala.bind(imageComposition)
+                      )}
+                  />
+                </div>
+              {/if}
+              {#if canQRCode}
+                <p class="qr-scope-note">
+                  {t(
+                    "viewer_detail_qr_codes_appear_on_opened_cards_and_exports_gallery_thumbnails_stay_qr_free"
+                  )}
+                </p>
+              {/if}
+            </div>
+          {/if}
+        </div>
+      {/if}
+    </section>
+  </div>
 {:else}
   <!-- ============================================================
        DESKTOP SIDEBAR: All settings visible.
@@ -1401,6 +1836,71 @@
     border: 1px solid var(--theme-stroke);
     border-radius: 10px;
     background: var(--theme-card-bg);
+  }
+
+  /* Share grouping: four disclosure groups with readable 14px+ text. */
+  .share-groups {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+  .share-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+  .share-group :global(.panel-btn) {
+    gap: 0.75rem;
+    min-height: 2.75rem;
+  }
+  .group-title {
+    flex-shrink: 0;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+  .group-summary {
+    flex: 1 1 0;
+    min-width: 0;
+    margin-left: auto;
+    overflow: hidden;
+    text-align: right;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.875rem;
+    font-weight: 400;
+    color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
+  }
+  .group-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+    min-width: 0;
+    padding: 0.25rem 0.25rem 0.5rem;
+  }
+  .share-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+  .share-field-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
+  }
+  .chip-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+  .start-layout {
+    min-width: 0;
+  }
+  .share-groups .qr-scope-note {
+    font-size: 0.875rem;
   }
 
   .qr-scope-note {
