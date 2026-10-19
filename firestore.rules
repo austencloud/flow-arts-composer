@@ -1506,7 +1506,9 @@ service cloud.firestore {
     // client-side by the collection owner inside one transaction that also
     // writes the same code to the collection's `shareCode`, so a link can only
     // ever name a public collection that claims it. Immutable after create:
-    // a handed-out link stays good for the life of the collection.
+    // a handed-out link stays good for the life of the collection. When the
+    // collection is deleted its owner may remove the link too, so a dead code
+    // stops resolving; a live collection's link can only be removed by admin.
     match /collectionLinks/{code} {
       // Public read: the resolver runs unauthenticated and the mapping holds
       // only ids, no PII.
@@ -1522,7 +1524,10 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/users/$(request.resource.data.ownerId)/collections/$(request.resource.data.collectionId)).data.isPublic == true
         && getAfter(/databases/$(database)/documents/users/$(request.resource.data.ownerId)/collections/$(request.resource.data.collectionId)).data.get('shareCode', '') == code;
 
-      allow update, delete: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin()
+        || (isOwner(resource.data.ownerId)
+          && !existsAfter(/databases/$(database)/documents/users/$(resource.data.ownerId)/collections/$(resource.data.collectionId)));
     }
 
     // Scan event log — collectionGroup read-only for admin live feed.
