@@ -3,7 +3,7 @@
    * PetalAmbientShower3D - scene-wide ambient petal shower.
    *
    * Spawns petals from a horizontal rectangle above the scene at rate
-   * `ambientEmission * ambientAboveRate`. Petals fall with the same sway
+   * `ambientEmission * ambientAboveRate`. Petals fall with the same flight
    * model as PetalEmitter3D. Mounted ONCE per scene (not per tip).
    *
    * Spawn zone defaults: y = ceilingY (default +3), XZ span = ±zoneHalf
@@ -26,6 +26,12 @@
     resolvePetalWorldSize,
   } from "./petal-world-art-direction";
 
+  import type { PetalBody } from "#lib/shared/effects/domain/petal-aero.js";
+  import {
+    createFallbackPetalBody,
+    advanceFallbackPetalBody,
+  } from "./petal-fallback-flight.js";
+
   interface Props {
     /** Resolved petal params. */
     params: Petals3DParams;
@@ -41,24 +47,12 @@
 
   interface Petal3D {
     id: number;
-    x: number;
-    y: number;
-    z: number;
-    vx: number;
-    vy: number;
-    vz: number;
+    body: PetalBody;
     age: number;
     maxAge: number;
     size: number;
     shape: PetalSpriteShape;
     tint: string;
-    rx: number;
-    ry: number;
-    rz: number;
-    angX: number;
-    angY: number;
-    angZ: number;
-    phase: number;
     opacity: number;
     ember: boolean;
   }
@@ -114,55 +108,42 @@
       const z = (Math.random() - 0.5) * 2 * zoneHalf;
       const drift = 0.14;
       const shape = pickPetalSprite(palette);
+      const size = resolvePetalWorldSize(
+        params.baseSize,
+        params.intensity,
+        shape,
+        true
+      );
+      const body = createFallbackPetalBody(
+        params,
+        shape,
+        size,
+        { x, y: ceilingY + Math.random() * 0.5, z },
+        {
+          x: (Math.random() - 0.5) * drift,
+          y: -fall * (0.8 + Math.random() * 0.4),
+          z: (Math.random() - 0.5) * drift,
+        }
+      );
       petals.push({
         id: nextId++,
-        x,
-        y: ceilingY + Math.random() * 0.5,
-        z,
-        vx: (Math.random() - 0.5) * drift,
-        vy: -fall * (0.8 + Math.random() * 0.4),
-        vz: (Math.random() - 0.5) * drift,
+        body,
         age: 0,
         maxAge: params.lifetime * (0.75 + Math.random() * 0.2),
-        size: resolvePetalWorldSize(
-          params.baseSize,
-          params.intensity,
-          shape,
-          true
-        ),
+        size,
         shape,
         tint: pickPetalTint(palette),
-        rx: (Math.random() - 0.5) * 2.0,
-        ry: (Math.random() - 0.5) * 2.5,
-        rz: (Math.random() - 0.5) * 2.0,
-        angX: Math.random() * Math.PI * 2,
-        angY: Math.random() * Math.PI * 2,
-        angZ: Math.random() * Math.PI * 2,
-        phase: Math.random() * Math.PI * 2,
         opacity: resolvePetalOpacity(shape, true),
         ember: rollEmberFlag(palette),
       });
       spawnAccumulator -= 1;
     }
 
-    const swayFreq = params.swayFrequency;
-    const swayBase = params.swayBaseSpeed * params.swayAmplitude;
     const surviving: Petal3D[] = [];
     for (const p of petals) {
       p.age += delta;
       if (p.age >= p.maxAge) continue;
-      const swayX =
-        Math.sin(p.phase + clock * swayFreq * Math.PI * 2) * swayBase;
-      const swayZ =
-        Math.cos(p.phase * 1.3 + clock * swayFreq * Math.PI * 2) *
-        swayBase *
-        0.5;
-      p.x += (p.vx + swayX) * delta;
-      p.y += p.vy * delta;
-      p.z += (p.vz + swayZ) * delta;
-      p.angX += p.rx * delta;
-      p.angY += p.ry * delta;
-      p.angZ += p.rz * delta;
+      advanceFallbackPetalBody(p.body, clock, delta);
       surviving.push(p);
     }
     petals = surviving;
@@ -191,12 +172,10 @@
   {@const tex = getOrBakeTexture(p.shape, p.tint)}
   {#if op > 0.02 && tex}
     <T.Mesh
-      position.x={p.x}
-      position.y={p.y}
-      position.z={p.z}
-      rotation.x={p.angX}
-      rotation.y={p.angY}
-      rotation.z={p.angZ}
+      position.x={p.body.x}
+      position.y={p.body.y}
+      position.z={p.body.z}
+      quaternion={[p.body.qx, p.body.qy, p.body.qz, p.body.qw]}
     >
       <T.PlaneGeometry args={[p.size * 2, p.size * 2]} />
       <T.MeshLambertMaterial
@@ -211,12 +190,10 @@
     </T.Mesh>
     {#if p.ember && emberOpacity(p) > 0.02}
       <T.Mesh
-        position.x={p.x}
-        position.y={p.y}
-        position.z={p.z}
-        rotation.x={p.angX}
-        rotation.y={p.angY}
-        rotation.z={p.angZ}
+        position.x={p.body.x}
+        position.y={p.body.y}
+        position.z={p.body.z}
+        quaternion={[p.body.qx, p.body.qy, p.body.qz, p.body.qw]}
       >
         <T.PlaneGeometry
           args={[resolveEmberWorldSpan(p.size), resolveEmberWorldSpan(p.size)]}

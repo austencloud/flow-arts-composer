@@ -199,7 +199,7 @@ export async function encodePerformanceTransfer(
   const currentJson = stableStringify(normalized);
   let sequenceJson = currentJson;
   let reusedOrigin = false;
-  if (origin?.baselineJson === currentJson) {
+  if (origin && origin.baselineJson === currentJson) {
     // The source is untrusted metadata: recheck its canonical snapshot and hash.
     const verified = await decodePerformanceTransfer(
       JSON.stringify(origin.source)
