@@ -1180,6 +1180,17 @@ export const LAB_TABS: Section[] = [
     gradient: "linear-gradient(135deg, #22d3ee 0%, #06b6d4 100%)",
   },
   {
+    id: "poi-string",
+    groupId: "physical",
+    labelKey: "tab_lab_poi_string",
+    descKey: "tab_desc_lab_poi_string",
+    label: "Poi String",
+    icon: '<i class="fas fa-wave-square" style="color: #e879f9;" aria-hidden="true"></i>',
+    description: "Could a poi follow this CAP? Checks the string's pull",
+    color: "#e879f9",
+    gradient: "linear-gradient(135deg, #f0abfc 0%, #e879f9 100%)",
+  },
+  {
     id: "combinator",
     groupId: "choreography",
     labelKey: "tab_lab_combinator",
