@@ -19,6 +19,7 @@
   } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
   import type { InkIntent } from "#lib/shared/effects/domain/effects-config.js";
   import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
   import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
@@ -122,7 +123,7 @@
     };
   });
 
-  function stepForPlayback(): StepData | null {
+  function stepForPlayback(): StepData | StartPlacementData | null {
     if (!sequence?.steps.length) return null;
     if (animationState.currentStep < 1) {
       return (
