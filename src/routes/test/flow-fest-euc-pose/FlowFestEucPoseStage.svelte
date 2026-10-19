@@ -69,7 +69,8 @@
     () => {
       const slope = Math.tan((props.slopeDegrees * Math.PI) / 180);
       const bearing = (props.slopeBearingDegrees * Math.PI) / 180;
-      const longitudinal = (slope * Math.cos(bearing) * LONGITUDINAL_SPAN_METERS) / 2;
+      const longitudinal =
+        (slope * Math.cos(bearing) * LONGITUDINAL_SPAN_METERS) / 2;
       const lateral = (slope * Math.sin(bearing) * LATERAL_SPAN_METERS) / 2;
       // A bump under the wheel registers as roughness, which is what drives
       // suspension travel. Zero on a clean plane, so idle captures do not bob.
@@ -99,7 +100,8 @@
       leanRadians: motion.leanRadians,
       pitchRadians: motion.pitchRadians,
       wheelRotationRadians:
-        dynamics.wheelRotationRadians + (speed / WHEEL_RADIUS_METERS) * stepSeconds,
+        dynamics.wheelRotationRadians +
+        (speed / WHEEL_RADIUS_METERS) * stepSeconds,
       odometerMeters: dynamics.odometerMeters + Math.abs(speed) * stepSeconds,
     };
     props.onDynamics(dynamics);
@@ -129,7 +131,7 @@
 
   let markerPoints = $state<ContactMarker[] | null>(null);
 
-  let cameraRef = $state<PerspectiveCamera | null>(null);
+  let cameraRef = $state<PerspectiveCamera>();
   const worldTarget = new Vector3();
 
   /**

@@ -18,7 +18,7 @@
   import { goto } from "$app/navigation";
   import { onMount } from "svelte";
   import { Canvas } from "@threlte/core";
-  import { AgXToneMapping, PCFSoftShadowMap } from "three";
+  import { AgXToneMapping, WebGLRenderer, PCFSoftShadowMap } from "three";
   import type { FlowFestElectricUnicycleDynamics } from "#lib/features/flow-fest-sim/domain/flow-fest-electric-unicycle.js";
   import {
     FLOW_FEST_EUC_CONTACT_THRESHOLDS,
@@ -37,7 +37,9 @@
   } from "./euc-pose-harness-views";
 
   const view = $derived(parseEucPoseView(page.url.searchParams.get("view")));
-  const motion = $derived(parseEucPoseMotion(page.url.searchParams.get("motion")));
+  const motion = $derived(
+    parseEucPoseMotion(page.url.searchParams.get("motion"))
+  );
   const slopeDegrees = $derived(
     parseEucPoseSlope(page.url.searchParams.get("slope"))
   );
@@ -80,7 +82,7 @@
   }>;
 
   function href(overrides: HarnessOverrides): string {
-    const params = new URLSearchParams(page.url.searchParams);
+    const params = new URLSearchParams(page.url.search);
     for (const [key, value] of Object.entries(overrides)) {
       params.set(key, value);
     }
@@ -139,7 +141,16 @@
     dpr={1}
     shadows={PCFSoftShadowMap}
     toneMapping={AgXToneMapping}
-    toneMappingExposure={1.15}
+    createRenderer={(canvas) => {
+      const renderer = new WebGLRenderer({
+        canvas,
+        powerPreference: "high-performance",
+        antialias: true,
+        alpha: true,
+      });
+      renderer.toneMappingExposure = 1.15;
+      return renderer;
+    }}
   >
     <FlowFestEucPoseStage
       {view}
@@ -177,7 +188,11 @@
       </div>
       <div class="row">
         {#each EUC_POSE_MOTION_IDS as id (id)}
-          <a class="chip" class:active={id === motion} href={href({ motion: id })}>
+          <a
+            class="chip"
+            class:active={id === motion}
+            href={href({ motion: id })}
+          >
             {EUC_POSE_MOTIONS[id].label}
           </a>
         {/each}
@@ -217,7 +232,11 @@
       {:else if diagnostic === null}
         <p class="headline neutral">Waiting for the first frame</p>
       {:else}
-        <p class="headline" class:pass={diagnostic.pass} class:fail={!diagnostic.pass}>
+        <p
+          class="headline"
+          class:pass={diagnostic.pass}
+          class:fail={!diagnostic.pass}
+        >
           {verdict(diagnostic.pass)} · {diagnostic.status}
         </p>
         {#if diagnostic.unsupportedReason}
@@ -237,14 +256,22 @@
               <td class:fail={!diagnostic.rightVerdict.soleWithinTolerance}>
                 {mm(diagnostic.right.errorMeters)}
               </td>
-              <td>{mm(FLOW_FEST_EUC_CONTACT_THRESHOLDS.maximumSoleErrorMeters)}</td>
+              <td
+                >{mm(
+                  FLOW_FEST_EUC_CONTACT_THRESHOLDS.maximumSoleErrorMeters
+                )}</td
+              >
             </tr>
             <tr>
               <td>Penetration</td>
-              <td class:fail={!diagnostic.leftVerdict.penetrationWithinTolerance}>
+              <td
+                class:fail={!diagnostic.leftVerdict.penetrationWithinTolerance}
+              >
                 {mm(diagnostic.left.penetrationMeters)}
               </td>
-              <td class:fail={!diagnostic.rightVerdict.penetrationWithinTolerance}>
+              <td
+                class:fail={!diagnostic.rightVerdict.penetrationWithinTolerance}
+              >
                 {mm(diagnostic.right.penetrationMeters)}
               </td>
               <td>
@@ -253,14 +280,20 @@
             </tr>
             <tr>
               <td>Foot forward</td>
-              <td class:fail={!diagnostic.leftVerdict.footForwardWithinTolerance}>
+              <td
+                class:fail={!diagnostic.leftVerdict.footForwardWithinTolerance}
+              >
                 {deg(diagnostic.left.forwardErrorDegrees)}
               </td>
-              <td class:fail={!diagnostic.rightVerdict.footForwardWithinTolerance}>
+              <td
+                class:fail={!diagnostic.rightVerdict.footForwardWithinTolerance}
+              >
                 {deg(diagnostic.right.forwardErrorDegrees)}
               </td>
               <td>
-                {deg(FLOW_FEST_EUC_CONTACT_THRESHOLDS.maximumFootForwardDegrees)}
+                {deg(
+                  FLOW_FEST_EUC_CONTACT_THRESHOLDS.maximumFootForwardDegrees
+                )}
               </td>
             </tr>
             <tr>
@@ -272,7 +305,9 @@
                 {deg(diagnostic.right.kneeFlexDegrees)}
               </td>
               <td>
-                {deg(FLOW_FEST_EUC_CONTACT_THRESHOLDS.minimumKneeFlexDegrees)}–{deg(
+                {deg(
+                  FLOW_FEST_EUC_CONTACT_THRESHOLDS.minimumKneeFlexDegrees
+                )}–{deg(
                   FLOW_FEST_EUC_CONTACT_THRESHOLDS.maximumKneeFlexDegrees
                 )}
               </td>
