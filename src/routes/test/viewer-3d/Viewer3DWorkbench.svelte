@@ -241,16 +241,28 @@
       // environment. null lets the shared opening-camera policy frame it.
       if (requestedScene() !== BackgroundType.EMBER) return null;
       const camera = midflank.reviewCameras[0];
+      if (!camera) return null;
+      const [x, y, z] = camera.positionWorldXYZ;
+      const [targetX, targetY, targetZ] = camera.targetWorldXYZ;
+      if (
+        x === undefined ||
+        y === undefined ||
+        z === undefined ||
+        targetX === undefined ||
+        targetY === undefined ||
+        targetZ === undefined
+      )
+        return null;
       return {
         position: {
-          x: camera.positionWorldXYZ[0],
-          y: camera.positionWorldXYZ[1] + userProportionsState.groundY,
-          z: camera.positionWorldXYZ[2],
+          x,
+          y: y + userProportionsState.groundY,
+          z,
         },
         target: {
-          x: camera.targetWorldXYZ[0],
-          y: camera.targetWorldXYZ[1] + userProportionsState.groundY,
-          z: camera.targetWorldXYZ[2],
+          x: targetX,
+          y: targetY + userProportionsState.groundY,
+          z: targetZ,
         },
         rotation: { x: 0, y: 0, z: 0 },
         fov: 50,
