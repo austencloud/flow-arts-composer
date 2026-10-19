@@ -3715,10 +3715,9 @@
     }
     /* Side by side: the stage takes the open canvas, the rail keeps a fixed
        reading column. The viewport sets the stage height. Home's rail is held
-       to that height; Download's rail takes the height its settings need,
-       up to the sheet, so the card settings and the action fit without an
-       inner scrollbar. Only a sheet too short for them scrolls the rail body,
-       with the dock pinned beneath it. */
+       to that height. Download holds one footprint for Card and Video (see
+       the download rules below), so the shell, the stage and the action sit
+       in the same place whichever file type is chosen. */
     .share-split {
       --stage-cap: 34rem;
       --stage-h: clamp(
@@ -3748,11 +3747,26 @@
       contain: size;
       height: var(--stage-h);
     }
-    /* Content-sized: the dock follows the last control instead of sitting at
-       the far end of a void. */
     .rail-body {
       flex: 0 1 auto;
       padding: 0.25rem 0.25rem 0.25rem 0.25rem;
+    }
+    /* Download: one footprint for Card and Video. The split asks for the taller
+       of the stage and 46rem of height and the dialog's own max-height trims
+       it on a short window, so the dialog is the same box in both modes and
+       Card's default settings fit with room to spare at 1440x900 and up. The
+       rail body takes the slack so the dock stays at the bottom of the rail
+       and the action never moves; only a window too short for the settings
+       scrolls the rail body, once, with the dock pinned beneath. The rail is
+       wider than Home's so the chip sets wrap into fewer rows. */
+    .share-split[data-route="download"] {
+      --download-h: max(var(--stage-h), 46rem);
+      box-sizing: border-box;
+      height: calc(var(--download-h) + 2.5rem);
+      grid-template-columns: minmax(0, 1fr) clamp(24rem, 31vw, 28rem);
+    }
+    .share-split[data-route="download"] .rail-body {
+      flex: 1 1 auto;
     }
     .share-split[data-route="home"]:not(:has(.stage-frame)) {
       grid-template-columns: minmax(0, 1fr);
@@ -3760,8 +3774,10 @@
     .share-dock {
       padding: 0.75rem 0 0;
     }
-    .qr-step .share-split {
+    .qr-step .share-split,
+    .qr-step .share-split[data-route="download"] {
       grid-template-columns: minmax(0, 1fr);
+      height: auto;
     }
     .qr-step .rail {
       height: auto;
@@ -3834,6 +3850,9 @@
       );
       grid-template-columns: var(--stage-h) minmax(0, 1fr);
       padding-block: 0.75rem;
+    }
+    .share-split[data-route="download"] {
+      grid-template-columns: var(--stage-h) minmax(0, 1fr);
     }
     .intent-grid {
       gap: 0.5rem;
