@@ -23,7 +23,7 @@
   const roles = Object.keys(
     FLOW_FEST_PERFORMER_PROFILES
   ) as FlowFestPerformerRole[];
-  const families = Object.values(PropType).filter(
+  const families: PropType[] = Object.values(PropType).filter(
     (prop) => prop !== PropType.HAND
   );
   type Variant = "A" | "B";

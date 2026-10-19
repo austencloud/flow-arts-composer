@@ -1,7 +1,7 @@
 <script lang="ts">
   import { tick } from "svelte";
-  import { useScheduler, useThrelte } from "@threlte/core";
-  import type { Scene } from "three";
+  import { useRenderer, useScheduler, useThrelte } from "@threlte/core";
+  import type { Scene, WebGLRenderer } from "three";
   import {
     resolveThrelteRenderer,
     resolveThrelteScene,
@@ -36,11 +36,8 @@
     phaseOffsetSteps: 0,
     showEffects: false,
   } as const;
-  const {
-    renderer: rendererValue,
-    scene: sceneValue,
-    autoRenderTask,
-  } = useThrelte();
+  const { renderer: rendererValue, scene: sceneValue } = useThrelte();
+  const { autoRenderTask } = useRenderer<WebGLRenderer>();
   const renderer = resolveThrelteRenderer(rendererValue);
   const scene = resolveThrelteScene(sceneValue) as Scene;
   const { scheduler, resetFrameInvalidation } = useScheduler();
