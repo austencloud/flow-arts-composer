@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { useThrelte } from "@threlte/core";
-  import { AgXToneMapping } from "three";
+  import { useRenderer } from "@threlte/core";
+  import { AgXToneMapping, type WebGLRenderer } from "three";
 
-  const { renderer } = useThrelte();
+  const { renderer } = useRenderer<WebGLRenderer>();
 
   $effect(() => {
     const gl = renderer;
