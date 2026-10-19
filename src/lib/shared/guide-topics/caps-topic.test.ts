@@ -13,6 +13,7 @@ import {
   parseCsvEdges,
 } from "#lib/features/choreo-card/services/pictograph-letter-lookup.js";
 import { getGridPlacementFromLocations } from "#lib/shared/pictograph/grid/services/grid-placement-deriver.js";
+import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   CAPS,
   CAP_HAND_PATHS,
@@ -22,6 +23,7 @@ import {
   capCell,
   capHandSteps,
   capStrip,
+  capWithAntiTurns,
   capWorksOnPoi,
   type Cap,
   type CapHand,
@@ -292,6 +294,14 @@ describe("what the Eight Step page says about them", () => {
     // A loop that ends pointing in cannot repeat.
     expect(capWorksOnPoi(withLeft("e", ["prospin"]))).toBe(false);
   });
+
+  it("keeps poi off every CAP's twin with antispins at no turns", () => {
+    for (const cap of CAPS) {
+      const twin = capWithAntiTurns(cap, 0);
+      expect(capWorksOnPoi(twin), twin.id).toBe(false);
+      expect(capWithAntiTurns(cap, 1)).toBe(cap);
+    }
+  });
 });
 
 describe("strips", () => {
@@ -306,6 +316,28 @@ describe("strips", () => {
         strip
           .slice(1)
           .map((s) => s.letter)
+          .join("")
+      ).toBe(cap.word);
+    }
+  });
+
+  it("chains every twin's beats and brings each hand back pointing out", () => {
+    for (const cap of CAPS) {
+      const twin = capWithAntiTurns(cap, 0);
+      expect(twin.id).not.toBe(cap.id);
+      for (const hand of [twin.left, twin.right]) {
+        const steps = capHandSteps(hand);
+        steps.forEach((step, i) => {
+          if (i > 0) {
+            expect(step.startOrientation).toBe(steps[i - 1]!.endOrientation);
+          }
+          if (hand.spins[i] === "antispin") expect(step.turns).toBe(0);
+        });
+        expect(steps.at(-1)!.endOrientation, twin.id).toBe(Orientation.OUT);
+      }
+      expect(
+        capBeats(twin)
+          .map((b) => b.letter)
           .join("")
       ).toBe(cap.word);
     }
