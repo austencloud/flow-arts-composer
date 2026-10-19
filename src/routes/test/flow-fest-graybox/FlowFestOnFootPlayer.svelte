@@ -51,8 +51,6 @@
 <Character3D
   id="flow-fest-on-foot-player"
   avatarId={props.characterId}
-  leftPropState={null}
-  rightPropState={null}
   bluePropState={null}
   redPropState={null}
   visible={true}

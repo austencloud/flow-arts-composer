@@ -24,7 +24,10 @@
     FLOW_FEST_EUC_PEDAL_SURFACE_HEIGHT_METERS,
     type FlowFestEucMountedPoseDiagnostic,
   } from "#lib/features/flow-fest-sim/domain/flow-fest-euc-mounted-pose.js";
-  import { FlowFestElectricUnicycleDrive } from "#lib/features/flow-fest-sim/services/flow-fest-electric-unicycle-drive.js";
+  import {
+    FlowFestElectricUnicycleDrive,
+    type FlowFestElectricUnicycleDriveFrame,
+  } from "#lib/features/flow-fest-sim/services/flow-fest-electric-unicycle-drive.js";
   import {
     FLOW_FEST_CAR_EDGE_MESSAGE,
     FlowFestCarDrive,
@@ -1514,17 +1517,9 @@
     toggleElectricUnicycleMount();
   }
 
-  function handleElectricUnicycleDriveFrame(frame: {
-    mounted: boolean;
-    dynamics: FlowFestElectricUnicycleDynamics;
-    input: FlowFestElectricUnicycleInput;
-    collisionLimited: boolean;
-    traversal: {
-      grounded: boolean;
-      actualVelocity: { x: number; y: number; z: number };
-      requestedVelocity: { x: number; y: number; z: number };
-    } | null;
-  }): void {
+  function handleElectricUnicycleDriveFrame(
+    frame: FlowFestElectricUnicycleDriveFrame
+  ): void {
     electricUnicycleMounted = frame.mounted;
     electricUnicycleDynamics = frame.dynamics;
     if (frame.mounted) {
@@ -1870,19 +1865,19 @@
         offset: PLAYER_OFFSET,
         position: playerPosition,
         maxSlopeClimbAngle: flowFestEucTraversalEnvelope(
-          props.electricUnicycleEnabled
+          props.electricUnicycleEnabled ?? false
         ).maxSlopeClimbAngleRadians,
         minSlopeSlideAngle: flowFestEucTraversalEnvelope(
-          props.electricUnicycleEnabled
+          props.electricUnicycleEnabled ?? false
         ).minSlopeSlideAngleRadians,
         autoStepMaxHeight: flowFestEucTraversalEnvelope(
-          props.electricUnicycleEnabled
+          props.electricUnicycleEnabled ?? false
         ).autoStepMaxHeightMeters,
         autoStepMinWidth: flowFestEucTraversalEnvelope(
-          props.electricUnicycleEnabled
+          props.electricUnicycleEnabled ?? false
         ).autoStepMinWidthMeters,
         snapToGroundDistance: flowFestEucTraversalEnvelope(
-          props.electricUnicycleEnabled
+          props.electricUnicycleEnabled ?? false
         ).snapToGroundDistanceMeters,
       });
       const basePhysicsProvider = createRapierPhysicsProvider(
