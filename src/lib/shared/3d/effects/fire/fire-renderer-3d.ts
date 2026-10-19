@@ -16,7 +16,7 @@
  * Pipeline reuse:
  *   - Zero-GC pre-allocated pool pattern from CharcoalRenderer3D.
  *   - Velocity-stretched instanced-billboard idiom from LedRenderer3D.
- *   - Divergence-free curl field from smoke/smoke-curl-field (SampledCurlGrid2D).
+ *   - Divergence-free curl field from smoke/smoke-curl-field (BlendedCurlGrid2D).
  *   - Blackbody presets from fire-color-curve-3d (getFireColors).
  *   - Point-sprite blackbody shader in fire-particle-material-3d.
  *
@@ -46,7 +46,7 @@ import {
   setFireEmissive,
   setFireColorBlend,
 } from "./fire-particle-material-3d";
-import { SampledCurlGrid2D } from "../smoke/smoke-curl-field";
+import { BlendedCurlGrid2D } from "../smoke/smoke-curl-field";
 import {
   FIRE_PHYSICS,
   flameBurnTime,
@@ -91,11 +91,35 @@ const PATH_SPACING: Record<QualityTier, number> = {
 /** Hard cap on spawns per tip per frame so a huge dt can't flood the pool. */
 const MAX_SPAWN_PER_TIP = 90;
 
-/** Air swirl speed at full turbulence (m/s); the gas follows the air. */
-const SWIRL_SPEED = 0.55;
+/**
+ * The air around the performer. Burning gas matches the air within a few
+ * hundredths of a second, so every change in the air shows at once in the
+ * flame: the air has to be a gentle draft, not a gusty wind.
+ */
+const AIR = {
+  /** Typical draft at Turbulence 0 (m/s): still indoor air. */
+  stillDraft: 0.04,
+  /** Draft Turbulence adds, on a square curve so the default stays gentle
+   *  (0.24 m/s at the default 0.5, 0.84 m/s at full). */
+  turbulenceDraft: 0.8,
+  /** Typical speed of the raw curl field, which the draft is scaled from. */
+  rawCurlSpeed: 3.75,
+  /** Field units per metre. One eddy is about two metres across, larger than
+   *  a whole flame, so a flame leans as one instead of being torn apart. */
+  eddyScale: 0.55,
+  /** Field drift per second: the draft takes a few seconds to change. */
+  drift: 0.35,
+  /** Field time between the bakes the air blends across. */
+  keyframeEvery: 0.3,
+  /** Sampling offset that keeps the performer far from the field's tile seam. */
+  centre: 4,
+} as const;
 
-/** Spatial frequency multiplier feeding the curl field (higher = finer licks). */
-const CURL_SCALE = 1.7;
+/** Typical draft speed (m/s) at this Turbulence setting (0 to 1). */
+export function fireAirDraft(turbulence: number): number {
+  const t = Math.min(1, Math.max(0, turbulence));
+  return AIR.stillDraft + AIR.turbulenceDraft * t * t;
+}
 
 /** Random velocity spread at birth (m/s): the wick's ragged surface. */
 const SPREAD = 0.18;
@@ -173,7 +197,7 @@ export class FireRenderer3D {
   // updateConfig as the user drags the curated sliders). Mutated in place so a
   // live tune never reallocates the particle pool.
   private emitRate: number;
-  private swirlSpeed = SWIRL_SPEED;
+  private airScale = fireAirDraft(0.5) / AIR.rawCurlSpeed;
   private emissiveHot = 0.53;
   private lightIntensity = 0.302;
   // Intensity also scales particle SIZE so the slider visibly changes the
@@ -193,8 +217,9 @@ export class FireRenderer3D {
   private instSizes: Float32Array;
   private propColors: Float32Array;
 
-  // Divergence-free turbulence field, baked + bilinear-sampled.
-  private curl = new SampledCurlGrid2D(64, 8, 1 / 4);
+  // Divergence-free air, baked + bilinear-sampled, blended between bakes.
+  private air = new BlendedCurlGrid2D(64, 8, AIR.keyframeEvery);
+  private airSample = { vx: 0, vy: 0 };
 
   private lights: PointLight[] = [];
   private lightEnabled: boolean;
@@ -382,17 +407,18 @@ export class FireRenderer3D {
         continue;
       }
 
-      // The air swirls (a divergence-free curl field in XY); the gas sheds its
-      // wake speed and follows that air, rising as it goes.
-      const swirl = this.curl.sample(
-        p.x * CURL_SCALE,
-        p.y * CURL_SCALE,
-        this.time
+      // The air drifts (a divergence-free curl field in XY); the gas sheds
+      // its wake speed and follows that air, rising as it goes.
+      const air = this.air.sampleInto(
+        AIR.centre + p.x * AIR.eddyScale,
+        AIR.centre + p.y * AIR.eddyScale,
+        this.time * AIR.drift,
+        this.airSample
       );
       stepFlameParcelVelocity(
         p,
-        swirl.vx * this.swirlSpeed,
-        swirl.vy * this.swirlSpeed,
+        air.vx * this.airScale,
+        air.vy * this.airScale,
         0,
         safeDt
       );
@@ -487,7 +513,9 @@ export class FireRenderer3D {
       1 +
       PUFF_DEPTH *
         flamePuffShare(tip.speed) *
-        Math.sin(this.time * Math.PI * 2 * FIRE_PHYSICS.puffHz + sourceState.phase);
+        Math.sin(
+          this.time * Math.PI * 2 * FIRE_PHYSICS.puffHz + sourceState.phase
+        );
 
     for (let k = 0; k < count; k++) {
       const particle = this.nextSlot();
@@ -551,7 +579,7 @@ export class FireRenderer3D {
    *                much / how big the fire is). Distinct from brightness.
    *   brightness → emissiveHot, the per-particle HDR glow / bloom lever (how
    *                HOT each particle reads). Set on the material.
-   *   turbulence → curl swirl strength.
+   *   turbulence → draft strength (fireAirDraft).
    *   colorBlend → Color slider; tints the natural fire hue toward the prop
    *                color in the shader (0 = pure fire, 1 = strongly prop-colored).
    */
@@ -559,7 +587,7 @@ export class FireRenderer3D {
     this.emitRate =
       EMIT_RATE[this.qualityTier] * (0.4 + params.intensity * 1.0);
     this.sizeScale = 0.55 + params.intensity * 0.9;
-    this.swirlSpeed = SWIRL_SPEED * (0.4 + params.turbulence * 1.6);
+    this.airScale = fireAirDraft(params.turbulence) / AIR.rawCurlSpeed;
     this.emissiveHot = params.emissiveHot;
     this.lightIntensity = params.lightIntensity;
     this.curveColors = params.colorCurve
