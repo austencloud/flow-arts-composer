@@ -135,3 +135,7 @@ ecfa9f28d1 fix(types): w5-testb ink-presets (1 error)
 4427995be2 fix(types): w5-testb rainbow-scene (5 errors)
 a89940f7a4 fix(types): w5-testb sequence-actions (1 error)
 ```
+
+## Coordinator follow-up (2026-10-18)
+
+The lane-specific config was removed and the two tests moved to `tests/unit/test-pages/`. They pass under the normal config: `npx vitest run --config tests/config/vitest.config.ts tests/unit/test-pages/ tests/unit/negative-space-reach/contact-inspection-keyframes.test.ts` → `Test Files 3 passed (3)`, `Tests 18 passed (18)`.
