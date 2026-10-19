@@ -1046,20 +1046,79 @@ measured three defects in the first version, all now corrected in code:
 
 Short landscape (900px wide, 560px tall or less) keeps its stage-width column
 and now also holds the shared footprint, with the rail body as the one scroll
-owner. Below 900px nothing changed: the sheet is a single column that scrolls
-once, with the dock pinned.
+owner. Below 900px nothing changed in this round: the sheet is a single column
+that scrolls once, with the dock pinned (round 2 below changes one band of it).
 
-**Verification so far.** The full type check and the changed Svelte compile
-reported 0 errors and 0 warnings on the first version. The browser then exposed
-the sizing bugs above, which are now being corrected. No browser, test or build
-run has covered the correction itself.
+**Observed after round 1 (coordinator browser).** At 1440×900 every loaded Card
+control, Card Share and the phone helper fit, rail client 635 and scroll 635
+(no scrollbar), and the Card and Video dialog, stage and dock rectangles were
+identical. 820×1180 fit with no scroll. 375×667 had one rail scroller (194px
+tall) with the options reachable and the footer always visible. 1920×1080,
+2560×1440 and 3840×2160 had no rail overflow. The Video header's Back button and
+gap were confirmed normal (44px) in a settled screenshot; no header change.
+Two things were not good enough: 960×412 was usable but cramped (one rail
+scroller, 179px tall, about two rows visible), and 720×450 failed.
 
-**Verification owed.** The default card must show Theme through Info and the
-dock with no rail scrollbar at 1440×900 and larger; the 1440×900 fit is the
-tightest and must be measured with the dock showing an account note (the tallest
-dock), and again with a custom footer and the Save to card button. The Card and
-Video dialogs, stage and action must report identical rectangles at 1440×900,
-1920×1080 and 2560×1440. Also check 375×667, 960×412 and 820×1180 for one
-scroll owner with a reachable dock, 200% reflow, the Card to Video crossfade
-(both keys, interrupted, reduced motion), the Start row with the layout choice
-on and off, focus order, and the video rows with a 3D export (Quality row).
+### October 18 correction round 2: short landscape and 200% reflow
+
+**The failure.** The 720×450 viewport check exercises the reflow size of a
+1440×900 window at 200% zoom; it did not change actual browser zoom. It is under 900px
+wide, so it used the stacked phone layout: a 176px preview, the header and the
+dock took the sheet, and the rail got 78px, enough for only the Card / Video
+switch. Screenshot: `final-reflow-200.png` in the coordinator's temp folder.
+
+**Choice.** Two options were compared: A, a compact landscape split that starts
+below 900px; B, letting the preview scroll with the settings in one area. A was
+chosen. The split shell already exists and already handles a 900px-wide short
+window (960×412), so A reuses it instead of adding a second layout, keeps the
+preview visible while the settings change, and keeps one scroll owner (the rail
+body) with the dock pinned. B would scroll the preview off screen, which loses
+the thing the settings change, and would need new markup and a second scroll
+rule.
+
+**Breakpoints.** The split shell now applies at `min-width: 900px`, or at
+`min-width: 560px` and `max-height: 560px`. The stacked layout is
+`max-width: 559px`, or `max-width: 899px` and `min-height: 561px`. The two
+conditions cover the integer viewport sizes checked here. 560px is
+chosen so a phone on its side (667×375 for an iPhone SE) joins the split while
+a portrait phone never does; 561px tall is the existing short-landscape seam. So 375×667, 820×1180 and every
+portrait tablet keep their stacked geometry, as does anything under 560px wide.
+
+**Band rules (560-899px wide, 560px tall or less).** Compact row cards on Home,
+the Download footprint and a rail that fills the height all come from the
+existing short-landscape rules, now shared with this band. Band-specific: the
+stage is a square capped at 11rem (the 900px+ cap is 14rem), the gutters are
+1.25rem and the gap 1rem. At 720×450 the dialog is 608px wide, so the rail is
+376px, wider than the 22rem container-query threshold, and the settings keep
+their label beside the control instead of dropping it above. Header, labels,
+controls stay at 14px text and 44px; the header title row uses the desktop
+one-line layout, which saves a line of height. Nothing is hidden or turned into
+an accordion.
+
+**960×412.** Same short-landscape rules, plus: the split's block padding drops
+to 0.5rem and the account note's gap to 0.5rem when the window is 500px tall or
+less. That returns about 12px to the rail body. It is a small gain; the larger
+cost at this size is the dock, the header and the dialog's own 3rem margin,
+which this file does not own.
+
+**Scope.** The stage visibility media query follows the CSS split breakpoint.
+No markup, handler, auth, export or copy logic changed. The portrait phone and
+tablet layouts and desktop are untouched. Publish still
+uses its own column.
+
+**Verification so far.** Round 1: the full type check and the changed Svelte
+compile reported 0 errors and 0 warnings; the coordinator's browser results are
+listed above. Round 2: no browser, test or build has run on this change.
+
+**Verification owed.** Round 2, awaiting the coordinator: 720×450 (Download
+Card with the rail scrolling once and the dock pinned; Download Video; Home,
+whose three compact rows may scroll inside the 176px rail if hints wrap), 667×375
+and 560×400 at the seam, 959×561 and 561 px tall at 700px wide to confirm the
+stacked layout still holds just above the seam, 375×667 and 820×1180 unchanged,
+960×412 for the added rail height, and the phone-transfer QR step in the band.
+Check also that the sheet keeps the same box when switching Card and Video in
+the band, that the Start row and Save to card button stay reachable by scroll,
+and the earlier owed items: 1440×900 with the dock showing an account note, a
+custom footer and Save to card, the Card to Video crossfade (both keys,
+interrupted, reduced motion), focus order, and the video rows with a 3D export
+(Quality row).

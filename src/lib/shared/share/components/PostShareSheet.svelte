@@ -280,7 +280,9 @@
   // this the sheet is a bottom sheet with the stage as a band above the task.
   // Card and video settings are always on screen at every size; a short or
   // narrow sheet scrolls its one rail body instead of folding them away.
-  const splitLayout = new MediaQuery("(min-width: 900px)");
+  const splitLayout = new MediaQuery(
+    "(min-width: 900px), (min-width: 560px) and (max-height: 560px)"
+  );
   // SegmentedControl values are strings; the numeric setting is converted at
   // the exportOptions boundary below.
   const videoResolutionOptions: { value: string; label: string }[] = [
@@ -3686,17 +3688,6 @@
     .panel-header {
       padding: 1.25rem 1.75rem;
     }
-    .title-group {
-      flex-direction: row;
-      align-items: center;
-      gap: 1rem;
-    }
-    .panel-title {
-      /* Download video is the widest route label. Reserve it so changing
-         Card to Video cannot push the word mark on desktop. */
-      min-inline-size: 10rem;
-      font-size: 1.25rem;
-    }
     .sheet-scroll {
       padding: 1.125rem 1.5rem;
     }
@@ -3712,6 +3703,24 @@
       box-sizing: border-box;
       align-items: stretch;
       margin-inline: auto;
+    }
+  }
+  /* The split shell starts at 900px, and also on a short landscape window from
+     560px up (a phone on its side, or a desktop at 200% zoom: 720x450). Below
+     900px and under 561px tall the stacked layout leaves the rail a sliver
+     between the stage, the header and the dock, so the stage steps beside the
+     rail instead. Portrait phones and tablets stay stacked. */
+  @media (min-width: 900px), (min-width: 560px) and (max-height: 560px) {
+    .title-group {
+      flex-direction: row;
+      align-items: center;
+      gap: 1rem;
+    }
+    .panel-title {
+      /* Download video is the widest route label. Reserve it so changing
+         Card to Video cannot push the word mark on desktop. */
+      min-inline-size: 10rem;
+      font-size: 1.25rem;
     }
     /* Side by side: the stage takes the open canvas, the rail keeps a fixed
        reading column. The viewport sets the stage height. Home's rail is held
@@ -3840,8 +3849,10 @@
   /* Short landscape: one column of compact rows, so every choice fits beside
      the stage without scrolling. Never a grid of narrow cards. The stage is a
      square about as tall as the row stack, and the width it frees goes to the
-     rows so their hints fit on a line (and wrap, never clip, when they do not). */
-  @media (min-width: 900px) and (max-height: 560px) {
+     rows so their hints fit on a line (and wrap, never clip, when they do not).
+     It also owns the 560-899px short landscape band (see the split shell
+     above). */
+  @media (min-width: 560px) and (max-height: 560px) {
     .share-split {
       --stage-h: clamp(
         8rem,
@@ -3872,6 +3883,33 @@
       font-size: 1rem;
     }
   }
+  /* The 560-899px band is narrower than the desktop split, so its stage is a
+     smaller square and the gutters shrink. At 720x450 the dialog is 608px
+     wide: 40px of padding, a 16px gap and the 11rem stage leave the rail
+     376px, which is wider than the 22rem container-query threshold, so the
+     settings keep their label beside the control instead of dropping it
+     above. The 44px rows and 14px text are unchanged. */
+  @media (min-width: 560px) and (max-width: 899px) and (max-height: 560px) {
+    .share-split {
+      --stage-h: clamp(
+        8rem,
+        calc(var(--viewport-height, 100dvh) - 9.5rem),
+        11rem
+      );
+      column-gap: 1rem;
+      padding-inline: 1.25rem;
+    }
+  }
+  /* Under 501px tall every pixel of height is the rail's: the split's own
+     padding and the account note's gap shrink. Nothing is hidden. */
+  @media (min-width: 560px) and (max-height: 500px) {
+    .share-split {
+      padding-block: 0.5rem;
+    }
+    .share-dock .account-note {
+      margin-bottom: 0.5rem;
+    }
+  }
   @media (max-height: 500px) {
     .panel-header {
       padding-block: 0.5rem;
@@ -3883,7 +3921,9 @@
       padding-block: 0.5rem;
     }
   }
-  @media (max-width: 899px) {
+  /* Stacked layout: phones and tablets in portrait, and anything narrower than
+     560px. The 560-899px short landscape band uses the split shell instead. */
+  @media (max-width: 559px), (max-width: 899px) and (min-height: 561px) {
     .share-dock {
       padding-inline: 1.25rem;
     }
