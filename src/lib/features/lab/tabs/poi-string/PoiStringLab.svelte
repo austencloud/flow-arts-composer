@@ -249,7 +249,7 @@
         <SegmentedControl
           options={[
             { value: "chart", label: "Gage's chart" },
-            { value: "same", label: "Same turns every beat" },
+            { value: "same", label: "Same turns" },
           ]}
           value={mode}
           onchange={(v) => (mode = v)}
@@ -408,6 +408,7 @@
     padding: var(--spacing-lg, 24px);
     max-width: 1200px;
     margin: 0 auto;
+    container-type: inline-size;
     color: var(--theme-text);
   }
   header h2 {
@@ -428,9 +429,14 @@
     gap: var(--spacing-lg, 24px);
     align-items: start;
   }
-  @media (max-width: 760px) {
+  /* Side by side only when both the stage and the pickers get room. */
+  @container (max-width: 880px) {
     .layout {
       grid-template-columns: minmax(0, 1fr);
+    }
+    .stage {
+      width: 100%;
+      max-width: 34rem;
     }
   }
   .stage {
@@ -534,6 +540,7 @@
     background: var(--slack);
   }
   .controls {
+    min-width: 0;
     display: flex;
     flex-direction: column;
     gap: var(--spacing-md, 16px);
