@@ -9,7 +9,6 @@ import { getVisibilityStateManager } from "#lib/shared/pictograph/shared/state/v
 import { EMPTY_META_PUBLISH_STATUS } from "#lib/shared/share/services/meta-publish.js";
 import type { MetaPublishStatus } from "#lib/shared/share/services/meta-publish.js";
 import PostShareSheet from "#lib/shared/share/components/PostShareSheet.svelte";
-import { DURATION } from "#lib/shared/transitions/transitions.js";
 import "../../src/app.css";
 
 const { renderCard, deliverCard } = vi.hoisted(() => ({
@@ -39,9 +38,11 @@ function deferred<T>() {
   return { promise, resolve, reject };
 }
 
-interface HeightSample {
-  timestamp: number;
-  height: number;
+interface StageSample {
+  shell: DOMRect;
+  stage: DOMRect;
+  cardOpacity: number;
+  videoOpacity: number;
 }
 
 function nextFrame(): Promise<number> {
@@ -76,62 +77,65 @@ async function settledDialogHeight(dialog: HTMLDialogElement): Promise<number> {
   throw new Error("Share dialog did not settle within 2 seconds");
 }
 
-async function sampleDialogHeights(
+function stageSample(dialog: HTMLDialogElement): StageSample {
+  const stage = dialog.querySelector<HTMLElement>(".stage");
+  expect(stage).not.toBeNull();
+  const layers = [
+    ...stage!.querySelectorAll<HTMLElement>(":scope > .crossfade > .layer"),
+  ];
+  const opacityOf = (selector: string) => {
+    const layer = layers.find((candidate) => candidate.querySelector(selector));
+    return layer ? Number(getComputedStyle(layer).opacity) : 0;
+  };
+  return {
+    shell: dialog.getBoundingClientRect(),
+    stage: stage!.getBoundingClientRect(),
+    cardOpacity: opacityOf(".live-export-card"),
+    videoOpacity: opacityOf("video.preview"),
+  };
+}
+
+function hasRunningStageTransition(dialog: HTMLDialogElement): boolean {
+  return [
+    ...dialog.querySelectorAll<HTMLElement>(".stage > .crossfade > .layer"),
+  ].some((layer) =>
+    layer.getAnimations().some((animation) => animation.playState === "running")
+  );
+}
+
+async function sampleStageTransition(
   dialog: HTMLDialogElement,
-  count: number,
-  initialHeight: number
-): Promise<HeightSample[]> {
-  const samples = [{ timestamp: performance.now(), height: initialHeight }];
+  count = 14
+): Promise<StageSample[]> {
+  const samples: StageSample[] = [];
   for (let frame = 0; frame < count; frame += 1) {
-    const timestamp = await nextFrame();
-    samples.push({
-      timestamp,
-      height: dialog.getBoundingClientRect().height,
-    });
+    await nextFrame();
+    samples.push(stageSample(dialog));
   }
   return samples;
 }
 
-function assertContinuousHeightMotion(
-  samples: HeightSample[],
-  direction: "shrinking" | "growing",
-  label: string
-): void {
-  const start = samples[0]!.height;
-  const end = samples.at(-1)!.height;
-  expect(Math.abs(start - end)).toBeGreaterThan(20);
+function expectStableStage(samples: StageSample[], initial: StageSample): void {
+  for (const sample of samples) {
+    for (const box of ["shell", "stage"] as const) {
+      for (const edge of ["left", "top", "width", "height"] as const) {
+        expect(
+          Math.abs(sample[box][edge] - initial[box][edge])
+        ).toBeLessThanOrEqual(2);
+      }
+    }
+    // The outgoing and incoming layers must cover the stage on every frame.
+    expect(Math.max(sample.cardOpacity, sample.videoOpacity)).toBeGreaterThan(
+      0.1
+    );
+  }
   expect(
     samples.some(
-      ({ height }) =>
-        height > Math.min(start, end) + 2 && height < Math.max(start, end) - 2
+      ({ cardOpacity, videoOpacity }) =>
+        (cardOpacity > 0.1 && cardOpacity < 0.9) ||
+        (videoOpacity > 0.1 && videoOpacity < 0.9)
     )
   ).toBe(true);
-
-  for (let index = 1; index < samples.length; index += 1) {
-    const previous = samples[index - 1]!;
-    const current = samples[index]!;
-    const elapsed = current.timestamp - previous.timestamp;
-    const delta = current.height - previous.height;
-    // Bound motion relative to the distance and shared clock. The standard
-    // cubic easing peaks below 3x its average speed; 3.5 allows frame rounding.
-    // A fixed px/frame limit rejects valid motion when rendering drops a frame.
-    const maximumDelta =
-      (Math.abs(start - end) * Math.max(0, elapsed) * 3.5) / DURATION.normal +
-      2;
-    if (Math.abs(delta) > maximumDelta) {
-      throw new Error(
-        `${label} jumped ${delta.toFixed(1)}px after ${elapsed.toFixed(1)}ms: ${samples.map(({ timestamp, height }) => `${timestamp.toFixed(1)}:${height.toFixed(1)}`).join(", ")}`
-      );
-    }
-    if (direction === "shrinking" && delta > 2) {
-      throw new Error(`${label} grew during its shrink: ${delta.toFixed(1)}px`);
-    }
-    if (direction === "growing" && delta < -2) {
-      throw new Error(
-        `${label} shrank during its growth: ${delta.toFixed(1)}px`
-      );
-    }
-  }
 }
 
 function realSequence(steps = 16): SequenceData {
@@ -165,6 +169,7 @@ async function openCard(
     videoBlobUrl?: string | null;
     initialEntry?: "chooser" | "download";
     metaStatusOverride?: MetaPublishStatus;
+    needsAccountForFiles?: boolean;
   } = {}
 ) {
   await page.viewport(1920, 1080);
@@ -187,6 +192,7 @@ async function openCard(
     initialEntry: options.initialEntry ?? "download",
     canCreateLink: false,
     metaStatusOverride: options.metaStatusOverride ?? EMPTY_META_PUBLISH_STATUS,
+    needsAccountForFiles: options.needsAccountForFiles ?? false,
   });
 }
 
@@ -209,23 +215,23 @@ describe("Download card with real live pictographs", () => {
       width: 1562,
       height: 1540,
       initialArtifact: "card" as const,
-      shouldGrow: true,
+      shouldScroll: false,
     },
     {
       width: 1562,
       height: 1540,
       initialArtifact: "video" as const,
-      shouldGrow: true,
+      shouldScroll: false,
     },
     {
       width: 960,
       height: 412,
       initialArtifact: "card" as const,
-      shouldGrow: false,
+      shouldScroll: true,
     },
   ])(
     "keeps a $initialArtifact to Card download reachable from the chooser at $width × $height",
-    async ({ width, height, initialArtifact, shouldGrow }) => {
+    async ({ width, height, initialArtifact, shouldScroll }) => {
       renderCard.mockReturnValue(new Promise<Blob>(() => {}));
       const screen = await openCard(realSequence(8), 4, {
         initialEntry: "chooser",
@@ -237,7 +243,8 @@ describe("Download card with real live pictographs", () => {
         const dialog = document.querySelector<HTMLDialogElement>(
           "dialog.share-sheet-modal"
         )!;
-        const chooserHeight = await settledDialogHeight(dialog);
+        await settledDialogHeight(dialog);
+        const chooserWidth = dialog.getBoundingClientRect().width;
         await page.getByRole("button", { name: /Download a file/ }).click();
         if (initialArtifact === "video") {
           const fileType = document.querySelector(".file-type")!;
@@ -247,12 +254,15 @@ describe("Download card with real live pictographs", () => {
         await expect
           .poll(() => renderCard.mock.calls.length)
           .toBeGreaterThan(0);
-        const cardHeight = await settledDialogHeight(dialog);
-
-        if (shouldGrow) expect(cardHeight).toBeGreaterThan(chooserHeight + 100);
+        await settledDialogHeight(dialog);
+        // Home and Download share one frame; changing the task must not make
+        // the modal jump to a different width.
+        expect(
+          Math.abs(dialog.getBoundingClientRect().width - chooserWidth)
+        ).toBeLessThanOrEqual(1);
 
         const scrollArea = document.querySelector<HTMLElement>(
-          ".sheet-scroll.download-route"
+          '.share-split[data-route="download"] .rail-body'
         )!;
         const footer = document.querySelector<HTMLElement>(".share-dock")!;
         const download = [
@@ -260,10 +270,6 @@ describe("Download card with real live pictographs", () => {
         ].find((button) => button.textContent?.trim() === "Download card");
         const frame = dialog.getBoundingClientRect();
         const dock = footer.getBoundingClientRect();
-        const wrapper = dialog.querySelector<HTMLElement>(
-          ".modal-content-wrapper"
-        )!;
-        expect(getComputedStyle(wrapper).flex).toBe("0 0 auto");
         expect(download).toBeDefined();
         expect(download!.disabled).toBe(false);
         expect(dock.height).toBeGreaterThan(40);
@@ -273,10 +279,18 @@ describe("Download card with real live pictographs", () => {
           dock.top + 1
         );
 
-        if (!shouldGrow) {
-          expect(scrollArea.scrollHeight).toBeGreaterThan(
-            scrollArea.clientHeight
-          );
+        if (shouldScroll) {
+          await page
+            .getByRole("button", { name: /^Card settings\b/ })
+            .click({ timeout: 5000 });
+          await page
+            .getByRole("button", { name: /^Layout\b/ })
+            .click({ timeout: 5000 });
+          await expect
+            .poll(() => scrollArea.scrollHeight - scrollArea.clientHeight, {
+              timeout: 5000,
+            })
+            .toBeGreaterThan(0);
           scrollArea.scrollTop = scrollArea.scrollHeight;
           await nextFrame();
           expect(footer.getBoundingClientRect().bottom).toBeLessThanOrEqual(
@@ -288,6 +302,35 @@ describe("Download card with real live pictographs", () => {
       }
     }
   );
+
+  it("returns focus to the originating intent after Download or guest Publish", async () => {
+    renderCard.mockReturnValue(new Promise<Blob>(() => {}));
+    const screen = await openCard(realSequence(8), 2, {
+      initialEntry: "chooser",
+      needsAccountForFiles: true,
+    });
+    try {
+      const focusedHomeIntent = () =>
+        [
+          ...document.querySelectorAll<HTMLButtonElement>(
+            '.share-split[data-route="home"] button.intent'
+          ),
+        ]
+          .find((button) => document.activeElement === button)
+          ?.querySelector(".intent-label")
+          ?.textContent?.trim();
+
+      await page.getByRole("button", { name: /Download a file/ }).click();
+      await page.getByRole("button", { name: "Back to sharing" }).click();
+      await expect.poll(focusedHomeIntent).toBe("Download a file");
+
+      await page.getByRole("button", { name: /Publish socially/ }).click();
+      await page.getByRole("button", { name: "Back to sharing" }).click();
+      await expect.poll(focusedHomeIntent).toBe("Publish socially");
+    } finally {
+      await screen.unmount();
+    }
+  });
 
   it("contains the video status when the workspace has no live animation capture", async () => {
     renderCard.mockReturnValue(new Promise<Blob>(() => {}));
@@ -306,8 +349,10 @@ describe("Download card with real live pictographs", () => {
           "dialog.share-sheet-modal"
         )!;
         await settledDialogHeight(dialog);
-        const stage = document.querySelector(".stage.video-placeholder")!;
-        const message = stage.querySelector(".stage-refused")!;
+        const message = dialog.querySelector<HTMLElement>(
+          '.stage .stage-refused[role="status"]'
+        )!;
+        const stage = message.closest<HTMLElement>(".stage")!;
         const frame = stage.getBoundingClientRect();
         const content = message.getBoundingClientRect();
         expect(content.height).toBeGreaterThan(20);
@@ -320,7 +365,7 @@ describe("Download card with real live pictographs", () => {
     }
   });
 
-  it("moves the actual sheet height through Card and Video instead of snapping", async () => {
+  it("crossfades the Card and Video stage inside a stable sheet", async () => {
     renderCard.mockReturnValue(new Promise<Blob>(() => {}));
     const screen = await openCard(realSequence(), 2, {
       availableArtifacts: ["card", "video"],
@@ -335,55 +380,84 @@ describe("Download card with real live pictographs", () => {
       const fileType = document.querySelector(".file-type");
       expect(dialog).not.toBeNull();
       expect(fileType).not.toBeNull();
-      const cardHeight = await settledDialogHeight(dialog!);
+      await settledDialogHeight(dialog!);
+      await expect
+        .poll(() => stageSample(dialog!).cardOpacity)
+        .toBeGreaterThan(0.99);
+      const cardFrame = stageSample(dialog!);
 
       chooseFileType(fileType!, "Video");
-      const cardToVideo = await sampleDialogHeights(dialog!, 14, cardHeight);
-      assertContinuousHeightMotion(cardToVideo, "shrinking", "Card → Video");
+      const cardToVideo = await sampleStageTransition(dialog!);
+      expectStableStage(cardToVideo, cardFrame);
+      await settledDialogHeight(dialog!);
+      expect(stageSample(dialog!).videoOpacity).toBeGreaterThan(0.99);
+      expect(stageSample(dialog!).cardOpacity).toBe(0);
 
-      // Reverse while the return transition is still in flight: the dialog must
-      // continue from its displayed height instead of flashing to either end.
+      const videoFrame = stageSample(dialog!);
       chooseFileType(fileType!, "Card");
-      const videoToCard = await sampleDialogHeights(
-        dialog!,
-        14,
-        dialog!.getBoundingClientRect().height
-      );
-      assertContinuousHeightMotion(videoToCard, "growing", "Video → Card");
+      const videoToCard = await sampleStageTransition(dialog!);
+      expectStableStage(videoToCard, videoFrame);
+      await settledDialogHeight(dialog!);
+      expect(stageSample(dialog!).cardOpacity).toBeGreaterThan(0.99);
+      expect(stageSample(dialog!).videoOpacity).toBe(0);
     } finally {
       await screen.unmount();
     }
 
     const matchMedia = window.matchMedia;
     window.matchMedia = ((query: string) =>
-      ({
-        matches: query === "(prefers-reduced-motion: reduce)",
-        media: query,
-        addEventListener() {},
-        removeEventListener() {},
-        addListener() {},
-        removeListener() {},
-        dispatchEvent: () => true,
-      }) as MediaQueryList) as typeof window.matchMedia;
+      query === "(prefers-reduced-motion: reduce)"
+        ? ({
+            matches: true,
+            media: query,
+            addEventListener() {},
+            removeEventListener() {},
+            addListener() {},
+            removeListener() {},
+            dispatchEvent: () => true,
+          } as MediaQueryList)
+        : matchMedia.call(window, query)) as typeof window.matchMedia;
     try {
       const reducedScreen = await openCard(realSequence(), 2, {
         availableArtifacts: ["card", "video"],
         videoBlobUrl: "data:video/mp4;base64,AAAA",
       });
-      await expect.poll(() => renderCard.mock.calls.length).toBeGreaterThan(0);
       const reducedDialog = document.querySelector<HTMLDialogElement>(
         "dialog.share-sheet-modal"
       );
       const reducedFileType = document.querySelector(".file-type");
+      expect(reducedDialog).not.toBeNull();
+      expect(reducedFileType).not.toBeNull();
+      await settledDialogHeight(reducedDialog!);
       await expect
-        .poll(() => reducedDialog?.getBoundingClientRect().height ?? 0)
-        .toBeGreaterThan(0);
-      const reducedCardHeight = await settledDialogHeight(reducedDialog!);
+        .poll(() => stageSample(reducedDialog!).cardOpacity)
+        .toBeGreaterThan(0.99);
+      const reducedFrame = stageSample(reducedDialog!);
       chooseFileType(reducedFileType!, "Video");
+      await tick();
       await nextFrame();
-      expect(reducedDialog!.getBoundingClientRect().height).toBeLessThan(
-        reducedCardHeight - 20
-      );
+      const reducedVideo = stageSample(reducedDialog!);
+      expect(reducedVideo.videoOpacity).toBeGreaterThan(0.99);
+      expect(reducedVideo.cardOpacity).toBe(0);
+      expect(hasRunningStageTransition(reducedDialog!)).toBe(false);
+      for (const box of ["shell", "stage"] as const) {
+        expect(
+          Math.abs(reducedVideo[box].height - reducedFrame[box].height)
+        ).toBeLessThanOrEqual(2);
+      }
+
+      chooseFileType(reducedFileType!, "Card");
+      await tick();
+      await nextFrame();
+      const reducedCard = stageSample(reducedDialog!);
+      expect(reducedCard.cardOpacity).toBeGreaterThan(0.99);
+      expect(reducedCard.videoOpacity).toBe(0);
+      expect(hasRunningStageTransition(reducedDialog!)).toBe(false);
+      for (const box of ["shell", "stage"] as const) {
+        expect(
+          Math.abs(reducedCard[box].height - reducedFrame[box].height)
+        ).toBeLessThanOrEqual(2);
+      }
       await reducedScreen.unmount();
     } finally {
       window.matchMedia = matchMedia;
@@ -407,8 +481,9 @@ describe("Download card with real live pictographs", () => {
       .poll(() => document.querySelector(".video-settings"))
       .not.toBeNull();
     expect(
-      document.querySelectorAll(".editing-column .crossfade > .layer[inert]")
-        .length
+      document.querySelectorAll(
+        '.share-split[data-route="download"] .rail-body .crossfade > .layer[inert]'
+      ).length
     ).toBeGreaterThan(0);
 
     chooseFileType(fileType!, "Card");
@@ -416,8 +491,9 @@ describe("Download card with real live pictographs", () => {
       .poll(() => document.querySelector(".card-settings"))
       .not.toBeNull();
     expect(
-      document.querySelectorAll(".editing-column .crossfade > .layer[inert]")
-        .length
+      document.querySelectorAll(
+        '.share-split[data-route="download"] .rail-body .crossfade > .layer[inert]'
+      ).length
     ).toBeGreaterThan(0);
     await screen.unmount();
   });
@@ -473,10 +549,10 @@ describe("Download card with real live pictographs", () => {
     );
 
     const route = document.querySelector<HTMLElement>(
-      ".sheet-scroll.publish-route"
+      ".sheet-scroll.publish-body"
     );
     const review = document.querySelector<HTMLElement>(
-      ".publish-route button.network"
+      ".publish-body button.network"
     );
     expect(route).not.toBeNull();
     expect(review).not.toBeNull();
@@ -592,6 +668,7 @@ describe("Download card with real live pictographs", () => {
     await expect
       .poll(() => renderCard.mock.calls.length, { timeout: 15000 })
       .toBeGreaterThan(0);
+    await page.getByRole("button", { name: /^Layout\b/ }).click();
     await page
       .getByRole("button", {
         name: "Auto columns and start placement",
