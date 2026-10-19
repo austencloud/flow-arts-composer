@@ -5,11 +5,15 @@
   Renders based on display mode:
   - animation: AnimatorCanvas with tunnel layers
   - choreo-card: ChoreoCard with beat highlighting
+  - mandala: ShiftingMandala over the cell's layers, on the grid's beat
   Can be selected to edit its contents.
 -->
 <script lang="ts">
   import AnimatorCanvas from "#lib/shared/animation-engine/components/AnimatorCanvas.svelte";
   import ChoreoCard from "#lib/shared/sequence-viewer/components/ChoreoCard.svelte";
+  import ShiftingMandala from "#lib/shared/mandala/components/ShiftingMandala.svelte";
+  import type { ShiftingMandalaSource } from "#lib/shared/mandala/services/mandala-shift-render.js";
+  import { arrangementCellMandala } from "../domain/arrangement-edits.js";
   import { onMount, onDestroy, untrack } from "svelte";
   import type { ArrangementCell } from "../domain/arrangement.js";
   import { migrateArrangementCell } from "../domain/arrangement-migration.js";
@@ -99,6 +103,7 @@
   const extraLayers = $derived(cell.layers.slice(1));
   const hasLayers = $derived(cell.layers.length > 0);
   const isAnimationType = $derived(cell.mediaType === "animation");
+  const isMandalaType = $derived(cell.mediaType === "mandala");
   // The join the cell draws: its own, else its first sequence's. The engine
   // reads it off the sequence handed to the canvas and puts every layer on
   // the same pair, so the orchestrators keep the stored sequences and only
@@ -162,6 +167,24 @@
       : getViewerAnimationPropConfig();
   }
 
+  // A mandala cell: its layers' sequences, drawn with the look's prop (else
+  // the viewer's pair), counted in beats from the cell's own start. The grid
+  // beat already runs at the arrangement's tempo; the cell's offset delays
+  // it and its speed scales it, as the animation cells' steps are.
+  const mandalaSources = $derived.by((): ShiftingMandalaSource[] => {
+    if (!isMandalaType) return [];
+    const props = cellPropConfig();
+    return cell.layers.map((layer) => ({
+      steps: layer.sequence.steps,
+      leftPropType: props.leftPropType,
+      rightPropType: props.rightPropType,
+    }));
+  });
+  const mandala = $derived(arrangementCellMandala(cell));
+  const mandalaBeats = $derived(
+    (currentStep - cell.beatOffset) * (cell.speedMultiplier ?? 1)
+  );
+
   // Media type display info
   const mediaTypeInfo = $derived.by(() => {
     switch (cell.mediaType) {
@@ -171,6 +194,8 @@
         return { icon: "fa-image", label: "Image preview unavailable" };
       case "choreo-card":
         return { icon: "fa-id-card", label: "Card" };
+      case "mandala":
+        return { icon: "fa-sun", label: "Mandala" };
       default:
         return null;
     }
@@ -398,8 +423,8 @@
 <div
   class="cell-canvas"
   class:selected={isSelected}
-  class:empty={!hasLayers && isAnimationType}
-  class:other-media={!isAnimationType}
+  class:empty={!hasLayers && (isAnimationType || isMandalaType)}
+  class:other-media={!isAnimationType && !isMandalaType}
   data-arrangement-cell-ready={!isAnimationType || !hasLayers || canvasReady}
   data-arrangement-cell-error={initError ? "true" : undefined}
   data-grid-join={animationGridJoinKey(cellJoin)}
@@ -449,6 +474,15 @@
         <i class="fas fa-plus" aria-hidden="true"></i>
       </div>
     {/if}
+  {:else if isMandalaType && hasLayers}
+    <div class="mandala-container">
+      <ShiftingMandala
+        sources={mandalaSources}
+        shift={mandala.shift}
+        look={mandala.look}
+        beats={mandalaBeats}
+      />
+    </div>
   {:else if cell.mediaType === "choreo-card" && cellSequence}
     <!-- Choreo Card mode: Beat-synced sequence preview -->
     <div class="choreo-card-container">
@@ -712,6 +746,11 @@
   .choreo-card-container :global(.layered-preview) {
     max-width: 100%;
     max-height: 100%;
+  }
+
+  .mandala-container {
+    position: absolute;
+    inset: 0;
   }
 
   /* Media type placeholder for non-animation cells */

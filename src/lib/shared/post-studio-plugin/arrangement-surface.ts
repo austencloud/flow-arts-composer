@@ -10,8 +10,8 @@ import { PostStudioPictographCapture } from "#lib/shared/media-composition/servi
 
 /**
  * An arrangement's grid in the exported file. The preview mounts the grid's
- * cells as live canvases; a grid of animation cells is drawn from those
- * canvases' pixels, and any other grid is captured from the DOM.
+ * cells as live canvases; a grid of animation and mandala cells is drawn from
+ * those canvases' pixels, and any other grid is captured from the DOM.
  *
  * This module must never import the plugin index by value: the index
  * re-exports surfaces.ts, which imports this.
@@ -108,8 +108,20 @@ function waitForArrangementSurface(
   });
 }
 
+/** A cell whose picture is a canvas the export can copy. */
+function cellCanvasSelector(cell: HTMLElement): string | null {
+  switch (cell.dataset.mediaType) {
+    case "animation":
+      return ".canvas-wrapper canvas";
+    case "mandala":
+      return "canvas[data-shifting-mandala]";
+    default:
+      return null;
+  }
+}
+
 /**
- * The animation cells already contain their finished canvas frames. Drawing
+ * The animation and mandala cells already contain their finished canvas frames. Drawing
  * those pixels directly avoids cloning a whole grid into a large SVG/image on
  * every video frame. Other media types still use the DOM capture.
  */
@@ -121,10 +133,7 @@ function drawArrangementCanvases(
   const cells = Array.from(
     surface.querySelectorAll<HTMLElement>(".arrangement-cell")
   );
-  if (
-    !cells.length ||
-    cells.some((cell) => cell.dataset.mediaType !== "animation")
-  )
+  if (!cells.length || cells.some((cell) => cellCanvasSelector(cell) === null))
     return false;
 
   const bounds = surface.getBoundingClientRect();
@@ -150,7 +159,7 @@ function drawArrangementCanvases(
   // surface should fail visibly instead of silently exporting a blank slot.
   const cellCanvases = cells.map((cell) => {
     const canvases = Array.from(
-      cell.querySelectorAll<HTMLCanvasElement>(".canvas-wrapper canvas")
+      cell.querySelectorAll<HTMLCanvasElement>(cellCanvasSelector(cell)!)
     );
     if (
       !canvases.length ||

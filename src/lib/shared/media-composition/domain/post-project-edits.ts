@@ -60,6 +60,9 @@ import {
   setCellAppearance,
   setCellGridJoin,
   setCellLayers,
+  setCellMandala,
+  setCellMediaType,
+  type ArrangementCellMandalaPatch,
   setCellMotionVisibility,
   setCellOffset,
   setCellTipEffects,
@@ -69,7 +72,10 @@ import {
   staggerCells,
   type ArrangementCellOffset,
 } from "#lib/shared/media-composition/domain/arrangement-edits.js";
-import type { TunnelLayerConfig } from "#lib/shared/animation-engine/domain/compose-types.js";
+import type {
+  CellMediaType,
+  TunnelLayerConfig,
+} from "#lib/shared/animation-engine/domain/compose-types.js";
 import type {
   TipEffectMap,
   TipEffortMap,
@@ -823,6 +829,30 @@ export function setArrangementCellLayers(
 ): PostProject {
   return editArrangement(project, itemId, ctx, (snapshot) =>
     setCellLayers(snapshot, cellId, layers)
+  );
+}
+
+export function setArrangementCellMediaType(
+  project: PostProject,
+  itemId: string,
+  cellId: string,
+  mediaType: CellMediaType,
+  ctx: EditContext
+): PostProject {
+  return editArrangement(project, itemId, ctx, (snapshot) =>
+    setCellMediaType(snapshot, cellId, mediaType)
+  );
+}
+
+export function setArrangementCellMandala(
+  project: PostProject,
+  itemId: string,
+  cellId: string,
+  patch: ArrangementCellMandalaPatch,
+  ctx: EditContext
+): PostProject {
+  return editArrangement(project, itemId, ctx, (snapshot) =>
+    setCellMandala(snapshot, cellId, patch)
   );
 }
 

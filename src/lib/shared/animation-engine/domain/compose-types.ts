@@ -55,6 +55,7 @@ export type CellMediaType =
   | "image" // Static image or composite
   | "choreo-card" // Sequence choreo card
   | "viewer-3d" // 3D animation viewer
+  | "mandala" // A mandala shifting between the cell's sequences on the beat
   | "empty"; // Placeholder/empty cell
 
 // Transform Types

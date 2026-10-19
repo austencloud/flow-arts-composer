@@ -24,7 +24,8 @@ export function mandalaSequenceSnapshot(
 }
 
 /**
- * A new mandala clip: 16 seconds of an endless source, on the beat from the
+ * A new mandala clip: the first 16 seconds of an hour-long source, so its end
+ * drags out to an hour; on the beat from the
  * post's grid, with the default shift and look.
  */
 export function createMandalaItem(
@@ -42,7 +43,7 @@ export function createMandalaItem(
     start,
     duration: MANDALA_ITEM_SECONDS,
     sourceIn: 0,
-    sourceOut: MANDALA_SOURCE_SECONDS,
+    sourceOut: MANDALA_ITEM_SECONDS,
     speed: 1,
     box: { ...POST_BOX.full },
     opacity: 1,

@@ -37,10 +37,11 @@
   // them to fill 540-pixel cells, so every arrangement exported soft. While
   // exporting, the grid lays out at the file's size and is shrunk to the box,
   // which looks the same on screen and gives the export full-size rasters.
-  // Other cell types are captured from the DOM at the file's scale already.
+  // Mandala cells draw their canvas at the box's size the same way. Other
+  // cell types are captured from the DOM at the file's scale already.
   const exportScale = $derived.by(() => {
     if (!exporting || !exportSize || boxWidth <= 0 || boxHeight <= 0) return 1;
-    if (cells.some((cell) => cell.mediaType !== "animation")) return 1;
+    if (cells.some((cell) => !drawsOwnCanvas(cell))) return 1;
     const pixelRatio =
       typeof window === "undefined" ? 1 : window.devicePixelRatio || 1;
     return Math.max(
@@ -50,6 +51,8 @@
     );
   });
 
+  const drawsOwnCanvas = (cell: ArrangementSnapshot["cells"][number]) =>
+    cell.mediaType === "animation" || cell.mediaType === "mandala";
   const beat = $derived(arrangementBeatAt(snapshot, sourceTimeSeconds));
   const cells = $derived(
     snapshot.cells.filter(

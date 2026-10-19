@@ -4,6 +4,10 @@ import { arrangementDurationSeconds } from "#lib/shared/media-composition/domain
 import { validateArrangementSnapshot } from "#lib/shared/media-composition/domain/arrangement.js";
 import { arrangementCellGridJoin } from "#lib/shared/media-composition/domain/arrangement-grid-join.js";
 import { createStudioArrangementFixture } from "./fixture";
+import {
+  DEFAULT_MANDALA_LOOK,
+  DEFAULT_MANDALA_SHIFT,
+} from "#lib/shared/mandala/domain/mandala-shift-types.js";
 
 describe("offline Studio arrangement harness", () => {
   it("uses real generated LOOP motions in a short editable arrangement", () => {
@@ -43,5 +47,33 @@ describe("offline Studio arrangement harness", () => {
     expect(validateArrangementSnapshot(snapshot)).toEqual(snapshot);
     expect(arrangementDurationSeconds(snapshot)).toBe(2);
     expect(project.tracks[0]!.items[0]!.kind).toBe("arrangement");
+  });
+
+  it("stores a mandala cell with its shift and look", () => {
+    const { snapshot } = createStudioArrangementFixture();
+    const cells = snapshot.cells.map((cell, index) =>
+      index === 9
+        ? {
+            ...cell,
+            mediaType: "mandala" as const,
+            mandala: {
+              shift: { ...DEFAULT_MANDALA_SHIFT, every: 2 as const },
+              look: { ...DEFAULT_MANDALA_LOOK, preset: "ember" as const },
+            },
+          }
+        : cell
+    );
+    const withMandala = { ...snapshot, cells };
+    expect(validateArrangementSnapshot(withMandala)).toEqual(withMandala);
+    expect(() =>
+      validateArrangementSnapshot({
+        ...snapshot,
+        cells: cells.map((cell, index) =>
+          index === 9
+            ? { ...cell, mandala: { shift: { every: 3 }, look: {} } }
+            : cell
+        ),
+      })
+    ).toThrow();
   });
 });
