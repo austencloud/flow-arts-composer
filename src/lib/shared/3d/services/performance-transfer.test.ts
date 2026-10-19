@@ -16,6 +16,7 @@ import { loopDetector } from "#lib/shared/create/services/loop-detector.js";
 import { DeepLinkSequenceHandler } from "#lib/features/create/shared/services/deep-link-sequence-handler.js";
 import type { DeepLinker } from "#lib/shared/navigation/services/deep-linker.js";
 import nativeTransfer from "./performance-transfer.native-fixture.json";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 const richSequence = {
   id: "sequence-42",
@@ -242,7 +243,7 @@ describe("performance transfer", () => {
     expect(unchanged.selection).toEqual(nativeTransfer.selection);
     expect(unchanged.playback).toEqual(nativeTransfer.playback);
 
-    for (const changed of [
+    const changedSequences: SequenceData[] = [
       { ...ready, name: "Edited title" },
       {
         ...ready,
@@ -258,13 +259,14 @@ describe("performance transfer", () => {
                 ...step,
                 motions: {
                   ...step.motions,
-                  left: { ...step.motions.left, propType: "clubs" },
+                  left: { ...step.motions.left, propType: PropType.CLUB },
                 },
               }
             : step
         ),
       },
-    ]) {
+    ];
+    for (const changed of changedSequences) {
       const editedViewer = await hydrateSequence(changed, { loopDetector });
       const edited = JSON.parse(await encodePerformanceTransfer(editedViewer));
       expect(edited.sequenceSHA256).not.toBe(nativeTransfer.sequenceSHA256);

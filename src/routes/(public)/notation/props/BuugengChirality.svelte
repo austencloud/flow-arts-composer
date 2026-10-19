@@ -18,7 +18,7 @@
     chiralityLetter,
     type BuugengPair,
     type BuugengPairId,
-  } from "#lib/shared/settings/components/tabs/prop-type/buugeng-pair";
+  } from "#lib/shared/settings/components/tabs/prop-type/buugeng-pair.js";
 
   let {
     leftFlipped,
@@ -59,10 +59,11 @@
     A buugeng is an S, and an S has a handedness: its mirror is a different
     shape. The notation calls the drawn shape A and its mirror B, and each hand
     holds one or the other. When both hands meet at the same point, the pair
-    decides what you see. A mirrored pair, one A and one B, stacks into a
-    single figure eight. A matching pair, both A or both B, cannot stack, so
-    the notation sets the props side by side. In Flow Arts Composer you set this under
-    Buugeng pair when you change props. Pick a pair to play it in the demo.
+    decides what you see. A mirrored pair, one A and one B, stacks into a single
+    figure eight. A matching pair, both A or both B, cannot stack, so the
+    notation sets the props side by side. In Flow Arts Composer you set this
+    under Buugeng pair when you change props. Pick a pair to play it in the
+    demo.
   </p>
   <SegmentedControl
     {options}

@@ -45,10 +45,10 @@
 
   function sectionPoints(): string {
     return plan.verticalSection.samples
-      .map(
-        ([routeDistance, elevation]) =>
-          `${routeDistance},${48 - elevation * 13}`
-      )
+      .map((sample) => {
+        const [routeDistance, elevation] = point(sample);
+        return `${routeDistance},${48 - elevation * 13}`;
+      })
       .join(" ");
   }
 
@@ -294,8 +294,8 @@
 
         <g class="current-ghosts" aria-label="Current positions">
           <rect
-            x={current.lodgeCenter[0] - 3.9}
-            y={current.lodgeCenter[1] - 3.2}
+            x={point(current.lodgeCenter)[0] - 3.9}
+            y={point(current.lodgeCenter)[1] - 3.2}
             width="7.8"
             height="6.4"
           />
@@ -333,10 +333,12 @@
         />
         <circle cx="0" cy="0" r={proposed.stage.radius} class="stage-mark" />
         <rect
-          x={proposed.lodge.center[0] - proposed.lodge.footprint[0] / 2}
-          y={proposed.lodge.center[1] - proposed.lodge.footprint[1] / 2}
-          width={proposed.lodge.footprint[0]}
-          height={proposed.lodge.footprint[1]}
+          x={point(proposed.lodge.center)[0] -
+            point(proposed.lodge.footprint)[0] / 2}
+          y={point(proposed.lodge.center)[1] -
+            point(proposed.lodge.footprint)[1] / 2}
+          width={point(proposed.lodge.footprint)[0]}
+          height={point(proposed.lodge.footprint)[1]}
           class="lodge-mark"
         />
         <circle

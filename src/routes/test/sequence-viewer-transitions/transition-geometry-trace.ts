@@ -208,7 +208,7 @@ export interface TransitionGeometryTrace {
   samples: TransitionGeometrySample[];
   tunnelPaintSamples?: TunnelPaintSample[];
   modeCommits: Array<{
-    mode: "split" | "animation" | "animation-3d" | "card" | "tunnel" | "videos";
+    mode: NonNullable<TransitionGeometrySample["selectedMode"]>;
     latency: number;
   }>;
 }

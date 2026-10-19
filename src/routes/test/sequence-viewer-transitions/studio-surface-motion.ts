@@ -6,7 +6,7 @@ export interface SurfaceBox {
 }
 
 interface Sample {
-  selectedMode: string;
+  selectedMode: string | null;
   workspace?: { sharedSurfaces?: Record<string, SurfaceBox> };
 }
 

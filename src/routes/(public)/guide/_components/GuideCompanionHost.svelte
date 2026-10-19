@@ -21,7 +21,10 @@
     setGuideSequenceClick,
     type GuideSequenceClick,
   } from "../level-1/_data/guide-data-context";
-  import { GuideActiveStep, setGuideActiveStep } from "../level-1/_data/guide-active-step.svelte";
+  import {
+    GuideActiveStep,
+    setGuideActiveStep,
+  } from "../level-1/_data/guide-active-step.svelte.js";
   import {
     SequenceSelection,
     setSequenceSelection,
@@ -78,7 +81,11 @@
 
 {#if browser && companionOpen}
   {#await import("../level-1/_components/GuideCompanion.svelte") then Comp}
-    <div class="companion-drawer" role="dialog" aria-label={t("guide_companion_dialog")}>
+    <div
+      class="companion-drawer"
+      role="dialog"
+      aria-label={t("guide_companion_dialog")}
+    >
       <Comp.default
         sequence={clicked}
         propType={clickedPropType}
@@ -86,7 +93,6 @@
         {pageTitle}
         {levelLabel}
         showPlacementGlyph={clickedShowPlacementGlyph}
-        isCodexMode={false}
         isMobile={true}
         onStep={(s: number) => activeStep.report(s)}
         onClose={closeCompanion}

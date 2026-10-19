@@ -90,11 +90,7 @@
 
   interface Props {
     resetToken: number;
-    onPositionChange?: (position: {
-      x: number;
-      y: number;
-      z: number;
-    }) => void;
+    onPositionChange?: (position: { x: number; y: number; z: number }) => void;
   }
 
   const props: Props = $props();
@@ -106,7 +102,6 @@
 
   /** How fast the walk actually moves, in m/s. Pacing is measured against it. */
   const WALK_SPEED = 4.2;
-
 
   /**
    * Five greys and two instruments.
@@ -210,11 +205,7 @@
     side: DoubleSide,
   });
 
-  const ALL_MATERIALS = [
-    ...Object.values(GRAY),
-    ...Object.values(MARK),
-    WATER,
-  ];
+  const ALL_MATERIALS = [...Object.values(GRAY), ...Object.values(MARK), WATER];
 
   /**
    * Role, not mood. A grey says what a surface DOES — hold you up, stop you,
@@ -263,7 +254,6 @@
       : new Quaternion(),
   }));
 
-
   /** Floor elevation on the centreline at a given Z, from the route samples. */
   function routeYAt(z: number): number {
     const sample = layout.route.reduce((best, point) =>
@@ -286,8 +276,9 @@
    * a ramp that is actually one smooth slab. A path that lies about the floor
    * underneath it is worse than no path at all.
    */
-  const channelSlabs = layout.route.slice(0, -1).map((from, index) => {
+  const channelSlabs = layout.route.flatMap((from, index) => {
     const to = layout.route[index + 1];
+    if (!to) return [];
     const run = to.z - from.z;
     const rise = to.y - from.y;
     const length = Math.hypot(run, rise);
@@ -945,7 +936,9 @@
     <T is={MARK.vent} />
   </T.Mesh>
   <T.Mesh position={[v.x, v.baseY + v.height / 2, v.z]}>
-    <T.CylinderGeometry args={[v.radius, v.radius * 0.32, v.height, 14, 1, true]} />
+    <T.CylinderGeometry
+      args={[v.radius, v.radius * 0.32, v.height, 14, 1, true]}
+    />
     <T is={MARK.beacon} />
   </T.Mesh>
 {/each}

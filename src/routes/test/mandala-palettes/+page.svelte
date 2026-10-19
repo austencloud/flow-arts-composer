@@ -31,10 +31,10 @@
   }
 
   function withFills(
-    leftStroke,
-    rightStroke,
+    leftStroke: string,
+    rightStroke: string,
     purpleStroke: string,
-    fillAlpha: number,
+    fillAlpha: number
   ): MandalaPalette {
     return {
       leftStroke,
@@ -126,7 +126,9 @@
 
     // Pick 3 glyphs of varied visual complexity — sort by step count and
     // spread across simple / medium / dense, preferring recognizable words.
-    const withWord = data.glyphs.filter((g) => g.word && g.word.trim().length > 0);
+    const withWord = data.glyphs.filter(
+      (g) => g.word && g.word.trim().length > 0
+    );
     const pool = withWord.length >= 3 ? withWord : data.glyphs;
     const sorted = [...pool].sort((a, b) => a.steps.length - b.steps.length);
     if (sorted.length >= 3) {
@@ -146,8 +148,8 @@
     <h1>Mandala Palette Comparison</h1>
     {#if data}
       <p class="lede">
-        {samples.map((g) => g.word).join(" · ")} rendered across 9 candidate
-        art directions. Real geometry, real overlap — pick by eye.
+        {samples.map((g) => g.word).join(" · ")} rendered across 9 candidate art directions.
+        Real geometry, real overlap — pick by eye.
       </p>
     {:else}
       <p class="lede">{status}</p>

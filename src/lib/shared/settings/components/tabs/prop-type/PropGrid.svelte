@@ -997,7 +997,7 @@
               aria-hidden="true">{railCredit.short}</span
             ></span
           >
-        {:else if railCredit}
+        {:else if railCredit?.sourceUrl}
           <LinkChip
             class="rail-credit"
             href={railCredit.sourceUrl}
@@ -1253,7 +1253,7 @@
                     <PropChiralityRow
                       propType={familyMember}
                       hands={chirality.hands}
-                  partner={chirality.partner}
+                      partner={chirality.partner}
                       {colors}
                       {propLook}
                       onChange={chirality.onChange}

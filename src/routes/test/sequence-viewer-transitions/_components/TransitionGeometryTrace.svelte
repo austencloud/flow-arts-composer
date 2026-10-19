@@ -160,17 +160,19 @@
     const samples = trace.samples.filter(
       (sample) => sample.phase === phase && value(sample) > 0
     );
-    if (samples.length < 2) return null;
+    const firstSample = samples[0];
+    const lastSample = samples.at(-1);
+    if (samples.length < 2 || !firstSample || !lastSample) return null;
 
-    const start = value(samples[0]);
-    const end = value(samples.at(-1)!);
+    const start = value(firstSample);
+    const end = value(lastSample);
     if (Math.abs(end - start) <= 0.75) return null;
     const timingTolerance = Math.max(0.75, Math.abs(end - start) * 0.02);
 
     const onset =
       samples.find(
         (sample) => Math.abs(value(sample) - start) > timingTolerance
-      )?.time ?? samples[0].time;
+      )?.time ?? firstSample.time;
     const settle =
       samples.find((sample, index) =>
         samples
@@ -178,7 +180,7 @@
           .every(
             (candidate) => Math.abs(value(candidate) - end) <= timingTolerance
           )
-      )?.time ?? samples.at(-1)!.time;
+      )?.time ?? lastSample.time;
 
     return { start, end, onset, settle };
   }

@@ -31,7 +31,7 @@
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  import { onMount, onDestroy, tick, type Snippet } from "svelte";
+  import { onMount, onDestroy, tick, untrack, type Snippet } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
   import { createSimplifiedStartPlacementState } from "#lib/shared/create/state/start-placement-state.svelte.js";
   import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
@@ -154,8 +154,29 @@
   // The player's playback controller (via onControllerReady) — powers the
   // viewer-parity seek affordances: click a workspace cell to snap the
   // animation to that step, click the start cell to restart.
-  let playerController: AnimationPlaybackController | null = null;
+  let playerController = $state.raw<AnimationPlaybackController | null>(null);
   let playerIsPlaying = $state(false);
+
+  let gatedController: AnimationPlaybackController | null = null;
+  let resumeAfterInactive = false;
+
+  // AnimationPlayer exposes its controller; host visibility belongs to this section.
+  $effect(() => {
+    const controller = playerController;
+    const isPlaying = playerIsPlaying;
+    if (controller !== gatedController) {
+      gatedController = controller;
+      resumeAfterInactive = false;
+    }
+    if (!controller) return;
+    if (!active && isPlaying) {
+      resumeAfterInactive = true;
+      untrack(() => controller.togglePlayback());
+    } else if (active && resumeAfterInactive && !isPlaying) {
+      resumeAfterInactive = false;
+      untrack(() => controller.togglePlayback());
+    }
+  });
 
   let startHoldTimer: ReturnType<typeof setTimeout> | null = null;
   let compactPane = $state<CompactPane>("build");
@@ -678,8 +699,6 @@
         <mod.default
           {sequence}
           autoPlay={active && !isContinuous}
-          playbackAllowed={active}
-          resumeWhenPlaybackAllowed
           showControls={false}
           hideWordHeader={!isCompactDemo}
           tapToToggle

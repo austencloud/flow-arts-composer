@@ -246,7 +246,7 @@
     if (!fill || fill === "transparent") return 0;
     const channels = fill.match(/[\d.]+/g);
     if (!channels) return 0;
-    return channels.length > 3 ? Number.parseFloat(channels[3]) || 0 : 1;
+    return channels.length > 3 ? Number.parseFloat(channels[3] ?? "0") || 0 : 1;
   }
 
   function revealBounds(
@@ -503,7 +503,10 @@
       // Flying surfaces ignore pointer input. Temporarily include them in the
       // paint-order hit test, restoring before the browser paints or handles input.
       const targets = [surface, bar];
-      const pointers = targets.map((node) => node.style.pointerEvents);
+      const pointers = targets.map((node) => ({
+        node,
+        value: node.style.pointerEvents,
+      }));
       try {
         targets.forEach((node) => (node.style.pointerEvents = "auto"));
         const top = document.elementFromPoint(
@@ -512,8 +515,8 @@
         );
         covered = !!top && surface.contains(top) && !bar.contains(top);
       } finally {
-        targets.forEach(
-          (node, index) => (node.style.pointerEvents = pointers[index])
+        pointers.forEach(
+          ({ node, value }) => (node.style.pointerEvents = value)
         );
       }
     }

@@ -1,10 +1,13 @@
 <script lang="ts">
-  import { useTask, useThrelte } from "@threlte/core";
+  import { useRenderer, useScene, useTask, useThrelte } from "@threlte/core";
+  import type { WebGLRenderer } from "three";
   let { onSample, worldName = "rainbow-environment-world" } = $props<{
     onSample: (value: string) => void;
     worldName?: string;
   }>();
-  const { scene, renderer, camera } = useThrelte();
+  const { camera } = useThrelte();
+  const { scene } = useScene();
+  const { renderer } = useRenderer<WebGLRenderer>();
   let elapsed = 0;
   useTask((delta) => {
     elapsed += delta;
