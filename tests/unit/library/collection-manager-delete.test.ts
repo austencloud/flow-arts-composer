@@ -89,6 +89,9 @@ vi.mock("firebase/firestore", () => ({
     data: () => mocks.store.get(ref.path) ?? {},
   })),
   getDocs: vi.fn(),
+  deleteDoc: vi.fn(async (ref: { path: string }) => {
+    mocks.store.delete(ref.path);
+  }),
   setDoc: vi.fn(),
   updateDoc: vi.fn(),
   query: vi.fn((value: unknown) => value),
@@ -138,6 +141,7 @@ vi.mock("#lib/shared/library/services/collection-firestore-mapper.js", () => {
       isPublic: false,
       sortOrder: 0,
       systemType: data["systemType"],
+      shareCode: data["shareCode"],
       createdAt: new Date(),
       updatedAt: new Date(),
     }),
@@ -172,6 +176,47 @@ function seedCollection(sequenceIds: string[], ownedIds: string[]): void {
     });
   }
 }
+
+describe("deleteCollection short link", () => {
+  beforeEach(() => {
+    mocks.store.clear();
+    mocks.uids.splice(0, mocks.uids.length, "user-1");
+    mocks.store.set("users/user-1", {});
+  });
+
+  it("removes the collection's /c/ link so the code stops resolving", async () => {
+    seedCollection([], []);
+    mocks.store.set(COLLECTION_PATH, {
+      ...mocks.store.get(COLLECTION_PATH),
+      shareCode: "5YMQ",
+    });
+    mocks.store.set("collectionLinks/5YMQ", {
+      ownerId: "user-1",
+      collectionId: "collection-1",
+    });
+
+    await deleteCollection("collection-1");
+
+    expect(mocks.store.has(COLLECTION_PATH)).toBe(false);
+    expect(mocks.store.has("collectionLinks/5YMQ")).toBe(false);
+  });
+
+  it("still deletes the collection when the link removal is refused", async () => {
+    const { deleteDoc } = await import("firebase/firestore");
+    vi.mocked(deleteDoc).mockRejectedValueOnce(new Error("permission-denied"));
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    seedCollection([], []);
+    mocks.store.set(COLLECTION_PATH, {
+      ...mocks.store.get(COLLECTION_PATH),
+      shareCode: "5YMQ",
+    });
+
+    await expect(deleteCollection("collection-1")).resolves.toBeUndefined();
+
+    expect(mocks.store.has(COLLECTION_PATH)).toBe(false);
+    warn.mockRestore();
+  });
+});
 
 describe("deleteCollection", () => {
   beforeEach(async () => {
