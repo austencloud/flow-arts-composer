@@ -147,17 +147,22 @@
   const now = $derived({ left: at(results.left), right: at(results.right) });
   const currentBeat = $derived(Math.floor(beatPos));
 
+  // Each follows "Left hand" or "Right hand".
   const VERDICT_TEXT: Record<PoiStringVerdict, string> = {
     clean: "pulls cleanly",
-    strain: "hand steers hard",
-    slack: "string goes slack",
+    strain: "has to steer hard",
+    slack: "lets the string go slack",
   };
   function summary(result: PoiStringResult) {
     if (result.verdict === "clean") return "pulls cleanly the whole way round";
     const hit = result.beats
       .map((b, i) => (b.verdict === result.verdict ? i + 1 : 0))
       .filter(Boolean);
-    return `${VERDICT_TEXT[result.verdict]} on beat${hit.length > 1 ? "s" : ""} ${hit.join(", ")}`;
+    const where =
+      hit.length === result.beats.length
+        ? "on every beat"
+        : `on beat${hit.length > 1 ? "s" : ""} ${hit.join(", ")}`;
+    return `${VERDICT_TEXT[result.verdict]} ${where}`;
   }
   const cellText = (b: PoiStringResult["beats"][number]) =>
     b.verdict === "slack" ? "slack" : `${Math.round(b.maxLean)}°`;
@@ -242,6 +247,7 @@
           ariaLabelledby="poi-path-label"
           semantics="radiogroup"
           density="compact"
+          columns={4}
         />
       </div>
       <div class="row">
