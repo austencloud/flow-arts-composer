@@ -87,6 +87,7 @@
 
   function sectionPoints(): string {
     return compositionPlan.verticalSection.samples
+      .map(point)
       .map(
         ([distance, elevation]) =>
           `${distance},${-elevation * SECTION_VERTICAL_SCALE}`
@@ -100,12 +101,14 @@
   );
   const campTranslation = point(compositionPlan.campRelocation.translation);
   const proposedFire = point(campsiteLayout.fire.position);
+  const shelfCenter = point(compositionPlan.campRelocation.shelf.center);
   const currentDistance = Math.hypot(...currentFire);
   const proposedDistance = Math.hypot(...proposedFire);
   const stageOutline = stageLayout.deckOutline.map(runtimePoint);
   const contactOutline = stageLayout.contactApronOutline.map(runtimePoint);
   const currentTents = campsiteLayout.tents.map((tent) => ({
     ...tent,
+    footprint: point(tent.footprint),
     currentPosition: translate(tent.position, [
       -campTranslation[0],
       -campTranslation[1],
@@ -113,6 +116,7 @@
   }));
   const proposedTents = campsiteLayout.tents.map((tent) => ({
     ...tent,
+    footprint: point(tent.footprint),
     proposedPosition: point(tent.position),
   }));
 </script>
@@ -251,11 +255,11 @@
         {/each}
 
         <ellipse
-          cx={compositionPlan.campRelocation.shelf.center[0]}
-          cy={compositionPlan.campRelocation.shelf.center[1]}
+          cx={shelfCenter[0]}
+          cy={shelfCenter[1]}
           rx={compositionPlan.campRelocation.shelf.radii[0]}
           ry={compositionPlan.campRelocation.shelf.radii[1]}
-          transform={`rotate(${compositionPlan.campRelocation.shelf.rotationDegrees} ${compositionPlan.campRelocation.shelf.center[0]} ${compositionPlan.campRelocation.shelf.center[1]})`}
+          transform={`rotate(${compositionPlan.campRelocation.shelf.rotationDegrees} ${shelfCenter[0]} ${shelfCenter[1]})`}
           class="camp-shelf"
         />
 
@@ -374,11 +378,7 @@
           </text>
         {/each}
 
-        <text
-          x={compositionPlan.campRelocation.shelf.center[0]}
-          y={compositionPlan.campRelocation.shelf.center[1] - 7.3}
-          class="camp-label"
-        >
+        <text x={shelfCenter[0]} y={shelfCenter[1] - 7.3} class="camp-label">
           CAMP POCKET
         </text>
 
