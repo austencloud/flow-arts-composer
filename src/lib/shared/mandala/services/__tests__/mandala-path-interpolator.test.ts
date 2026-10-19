@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { MandalaPaths, MandalaPoint } from "../../domain/mandala-types";
 import { calculate } from "../mandala-geometry-calculator";
 import { parsePoints } from "../mandala-fingerprint";
-import { createMandalaMorph } from "../mandala-path-interpolator";
+import { createMandalaMorph, planMandalaMorph } from "../mandala-path-interpolator";
 import type { MotionLike, StepLike } from "../types";
 
 const CLOCKWISE = ["n", "e", "s", "w"] as const;
@@ -140,5 +140,48 @@ describe("mandala change morph", () => {
     expect(morph.still).toBe(false);
     const middle = parsePoints(morph(0.5).left[0]!.d);
     expect(middle[0]!.y).toBeCloseTo(5);
+  });
+});
+
+describe("mandala morph plan", () => {
+  const wide = { dx: 120, dy: 0 };
+  const narrow = { dx: 40, dy: 0 };
+
+  function samePaths(a: MandalaPaths, b: MandalaPaths): void {
+    for (const group of ["left", "right", "purple"] as const) {
+      expect(a[group].map((p) => p.tipIndex)).toEqual(b[group].map((p) => p.tipIndex));
+      a[group].forEach((path, i) => {
+        const x = parsePoints(path.d);
+        const y = parsePoints(b[group][i]!.d);
+        expect(x).toHaveLength(y.length);
+        x.forEach((point, k) => {
+          expect(Math.hypot(point.x - y[k]!.x, point.y - y[k]!.y)).toBeLessThan(1e-6);
+        });
+      });
+    }
+  }
+
+  it("applies a beat pairing decided at one tip offset to geometry at another", () => {
+    const plan = planMandalaMorph(
+      calculate(circle(0), undefined, undefined, undefined, wide),
+      calculate(circle(1), undefined, undefined, undefined, wide)
+    );
+    const from = calculate(circle(0), undefined, undefined, undefined, narrow);
+    const to = calculate(circle(1), undefined, undefined, undefined, narrow);
+    const direct = createMandalaMorph(from, to);
+    expect(plan.at(from, to, 0)).toBe(from);
+    expect(plan.at(from, to, 1)).toBe(to);
+    samePaths(plan.at(from, to, 0.5), direct(0.5));
+  });
+
+  it("pairs sequences of different lengths by tip, at any offset", () => {
+    const short = circle(0).slice(0, 4);
+    const plan = planMandalaMorph(
+      calculate(short, undefined, undefined, undefined, wide),
+      calculate(circle(1), undefined, undefined, undefined, wide)
+    );
+    const from = calculate(short, undefined, undefined, undefined, narrow);
+    const to = calculate(circle(1), undefined, undefined, undefined, narrow);
+    samePaths(plan.at(from, to, 0.3), createMandalaMorph(from, to)(0.3));
   });
 });
