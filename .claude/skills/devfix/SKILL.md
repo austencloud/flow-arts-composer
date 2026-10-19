@@ -12,11 +12,11 @@ cloudflared runs the locally-managed `tka-dev` tunnel exposing it as
 `https://dev.tkaflowarts.com`. `scripts/start-dev.ps1` orchestrates both and
 its header comments are the canonical doc — read it before theorizing.
 
-**`:5173` is Austen's server.** Never start/kill/restart it yourself — not by
-`npm run dev`, not by running `scripts/start-dev.ps1`, not via pm2, not by
-killing the port holder. **He restarts it from a button in Agent Hub**, which
-carries the tunnel and pm2 supervision a hand-run vite does not. Diagnose
-freely, then ask him to press it. See
+**Restart `:5173` with `pm2 restart tka-dev`.** pm2 supervises the server as
+`tka-dev` and restarts the tunnel with it. When the server is down or stuck,
+diagnose, then restart it yourself without asking. Never start it by
+`npm run dev`, a bare `vite`, or a hand-run `scripts/start-dev.ps1`, and never
+kill the port holder: those lack the tunnel and fight pm2 for the port. See
 `.claude/rules/never-start-the-dev-server.md`.
 
 Diagnose with `curl -k -g 'https://[::1]:5173/'` — `dev` is `vite --host ::`
@@ -32,8 +32,8 @@ curl -s -o /dev/null -w "%{http_code}" --max-time 10 https://dev.tkaflowarts.com
 
 | local | tunnel | Meaning                                                                                                                                                                                                                  |
 | ----- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 000   | 502    | Vite isn't serving — ask Austen to start/restart it                                                                                                                                                                      |
-| 200   | 502    | Tunnel connected before Vite finished cold boot (the race `start-dev.ps1` now gates against), or cloudflared died — ask him to restart from Agent Hub                                                                    |
+| 000   | 502    | Vite isn't serving — run `pm2 restart tka-dev`                                                                                                                                                                           |
+| 200   | 502    | Tunnel connected before Vite finished cold boot (the race `start-dev.ps1` now gates against), or cloudflared died — run `pm2 restart tka-dev`                                                                            |
 | 200   | 503    | Token-based tunnel run missing `--url` — locally-managed tunnels get **no ingress rules** with a token; every request 503s. `start-dev.ps1` passes `--url https://localhost:5173`; a hand-started tunnel probably didn't |
 | 200   | 200    | Nothing wrong with the stack — the bug is elsewhere                                                                                                                                                                      |
 
@@ -53,7 +53,7 @@ curl -s -o /dev/null -w "%{http_code}" --max-time 10 https://dev.tkaflowarts.com
 - **`Cannot find module` during initialization:** run
   `pnpm run verify:workspace-install` as a read-only diagnosis. A package
   directory can exist while its files are missing, and a normal `pnpm install`
-  may still report "Already up to date." The Agent Hub launcher now checks all
+  may still report "Already up to date." `scripts/start-dev.ps1` now checks all
   declared package manifests plus the boot-critical imports before Vite starts.
   When the check fails it force-rebuilds from the frozen lockfile, rebuilds the
   workspace packages, verifies again, and gives Vite one clean optimizer pass.

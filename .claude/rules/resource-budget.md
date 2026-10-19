@@ -3,8 +3,9 @@
 Apply this before starting a Vite server, `svelte-check`, `npm run check`, or a
 full build.
 
-1. Reuse an existing task-appropriate server when possible. Never touch the
-   project server on port 5173.
+1. Reuse an existing task-appropriate server when possible. The project server
+   on port 5173 is not a task server; restart it only with
+   `pm2 restart tka-dev` (see `never-start-the-dev-server.md`).
 2. Check available memory. Do not start a heavy process below 4096 MB available.
 3. Check for an existing `svelte-check`; only one may run machine-wide. Wait for
    it instead of starting another.

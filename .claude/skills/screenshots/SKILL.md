@@ -44,24 +44,24 @@ npx tsx scripts/take-screenshots.ts --update-baselines
 
 ## Flags
 
-| Flag | Effect |
-|------|--------|
-| `--devices phone` | Phone devices only (SE, 16 Pro, 16 Pro Max, S24, S24 Ultra) |
-| `--devices tablet` | Tablets only (iPad Mini, iPad Air) |
-| `--devices desktop` | Desktops only (HD 1366x768, FHD 1920x1080) |
-| `--devices ipad-air` | Single specific device |
-| `--public` | Public routes only, skip auth |
-| `--compare` | Pixel-diff against baselines |
-| `--update-baselines` | Save current as reference screenshots |
-| `--light` | Light mode (default: dark) |
-| `--landscape` | Include landscape captures |
+| Flag                 | Effect                                                      |
+| -------------------- | ----------------------------------------------------------- |
+| `--devices phone`    | Phone devices only (SE, 16 Pro, 16 Pro Max, S24, S24 Ultra) |
+| `--devices tablet`   | Tablets only (iPad Mini, iPad Air)                          |
+| `--devices desktop`  | Desktops only (HD 1366x768, FHD 1920x1080)                  |
+| `--devices ipad-air` | Single specific device                                      |
+| `--public`           | Public routes only, skip auth                               |
+| `--compare`          | Pixel-diff against baselines                                |
+| `--update-baselines` | Save current as reference screenshots                       |
+| `--light`            | Light mode (default: dark)                                  |
+| `--landscape`        | Include landscape captures                                  |
 
 Route arguments match against module name, tab name, or label:
 `compose`, `arrange`, `compose--arrange`, `browse--gallery` all work.
 
 ## Prerequisites
 
-1. Dev server on port 5173 (user's VS Code server — NEVER run `npm run dev`)
+1. Dev server on port 5173 (pm2 `tka-dev`; if it is down, `pm2 restart tka-dev`, never `npm run dev`)
 2. Playwright: `npx playwright install chromium` (one-time)
 3. Auth credentials at `tests/screenshots/credentials.local.json`:
    ```json
@@ -79,10 +79,10 @@ Edit `tests/screenshots/devices.ts`. The `waitSelector` is optional — if it do
 
 ## Key Files
 
-| File | Purpose |
-|------|---------|
-| `scripts/take-screenshots.ts` | CLI entry point, arg parsing |
-| `tests/screenshots/capture.spec.ts` | Playwright spec: auth, navigation, stabilization, capture |
-| `tests/screenshots/devices.ts` | Device presets, route definitions, storage key validation |
-| `tests/screenshots/generate-gallery.ts` | HTML gallery generator |
-| `tests/screenshots/credentials.local.json` | Auth credentials (gitignored) |
+| File                                       | Purpose                                                   |
+| ------------------------------------------ | --------------------------------------------------------- |
+| `scripts/take-screenshots.ts`              | CLI entry point, arg parsing                              |
+| `tests/screenshots/capture.spec.ts`        | Playwright spec: auth, navigation, stabilization, capture |
+| `tests/screenshots/devices.ts`             | Device presets, route definitions, storage key validation |
+| `tests/screenshots/generate-gallery.ts`    | HTML gallery generator                                    |
+| `tests/screenshots/credentials.local.json` | Auth credentials (gitignored)                             |

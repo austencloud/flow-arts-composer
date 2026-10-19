@@ -37,8 +37,8 @@ standalone Playwright screenshot pipeline.
 ## Workflow
 
 1. Load and follow the available browser-control skill before browser work.
-2. Reuse the user's server at \`https://localhost:5173\`; never start, stop, or
-   restart it.
+2. Reuse the server at \`https://localhost:5173\`. If it is down or stuck,
+   restart it with \`pm2 restart tka-dev\`; never start a second one on 5173.
 3. Read the selected browser's complete runtime documentation before invoking
    its viewport, navigation, inspection, or screenshot APIs.
 4. Capture only the requested routes and viewport families. Prefer the smallest
