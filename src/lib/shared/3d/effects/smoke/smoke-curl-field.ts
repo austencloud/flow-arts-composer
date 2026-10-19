@@ -241,3 +241,56 @@ export class SampledCurlGrid2D {
     return target;
   }
 }
+
+/**
+ * Curl field that changes smoothly over time. SampledCurlGrid2D swaps in a
+ * new bake at once, so anything that follows the air closely (fire gas
+ * matches it within a few hundredths of a second) jerks to a new direction
+ * at every bake. This keeps two bakes, one at the start of a window and one
+ * at its end, and blends between them, so the air never jumps.
+ */
+export class BlendedCurlGrid2D {
+  private from: SampledCurlGrid2D;
+  private to: SampledCurlGrid2D;
+  private fromTime = Infinity;
+
+  constructor(
+    size = 64,
+    domainSize = 8,
+    private readonly keyframeEvery = 1 / 3
+  ) {
+    // Baked only here, never by their own clock.
+    this.from = new SampledCurlGrid2D(size, domainSize, Infinity);
+    this.to = new SampledCurlGrid2D(size, domainSize, Infinity);
+  }
+
+  sampleInto<T extends { vx: number; vy: number }>(
+    x: number,
+    y: number,
+    time: number,
+    target: T
+  ): T {
+    const span = this.keyframeEvery;
+    if (time >= this.fromTime + span && time < this.fromTime + 2 * span) {
+      // The next window: the old end bake becomes the start.
+      const previous = this.from;
+      this.from = this.to;
+      this.to = previous;
+      this.fromTime += span;
+      this.to.bake(this.fromTime + span);
+    } else if (!(time >= this.fromTime && time < this.fromTime + span)) {
+      // First sample, a reset or a long gap: start a window here.
+      this.fromTime = time;
+      this.from.bake(time);
+      this.to.bake(time + span);
+    }
+    const w = (time - this.fromTime) / span;
+    const a = this.from.sampleInto(x, y, time, target);
+    const ax = a.vx;
+    const ay = a.vy;
+    const b = this.to.sampleInto(x, y, time, target);
+    target.vx = ax + (b.vx - ax) * w;
+    target.vy = ay + (b.vy - ay) * w;
+    return target;
+  }
+}
