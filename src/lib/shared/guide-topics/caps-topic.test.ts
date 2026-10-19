@@ -21,6 +21,7 @@ import {
   turnValuesForLevel,
   type TurnValue,
 } from "#lib/shared/create/services/level-turn-values.js";
+import { deriveTnDFromPictograph } from "#lib/shared/pictograph/shared/domain/utils/tnd-deriver.js";
 import type { SoloPropStepData } from "#lib/shared/foundation/domain/models/solo-prop-step-data.js";
 
 const travelOf = (step: SoloPropStepData) =>
@@ -33,6 +34,7 @@ import {
   capPairing,
   capCell,
   capHandSteps,
+  capPathMode,
   capStrip,
   capOnPath,
   capPoiProblem,
@@ -391,6 +393,41 @@ describe("strips", () => {
           }
         }
       }
+    }
+  });
+});
+
+describe("hand modes along each path", () => {
+  // The page shows each beat's hand mode as its element. Two beats run in the
+  // path's opening mode, then the capping hand's beat back flips the
+  // direction; split and together paths also trade timing every three beats.
+  // Read by the same deriver that draws the strips' element glyphs.
+  const EXPECTED: Record<number, string> = {
+    1: "SO SO SS TO TO SS",
+    2: "TO TO TS SO SO TS",
+    3: "TS TS TO SS SS TO",
+    4: "SS SS SO TS TS SO",
+    5: "QS QS QO",
+    6: "QS QS QO",
+    7: "QO QO QS",
+    8: "QO QO QS",
+  };
+  it("matches the rhythm for every path", () => {
+    for (const cap of CAPS) {
+      const path = CAP_HAND_PATHS.find((p) => p.caps.includes(cap))!;
+      const beats = capStrip(cap).slice(1);
+      const modes = beats.map((step) => deriveTnDFromPictograph(step).tndMode);
+      const rhythm = EXPECTED[path.column]!.split(" ");
+      expect(modes, cap.id).toEqual(
+        modes.map((_, i) => rhythm[i % rhythm.length])
+      );
+    }
+  });
+  it("opens on the mode of the box the page puts it in", () => {
+    for (const path of CAP_HAND_PATHS) {
+      expect(capPathMode(path), `path ${path.column}`).toBe(
+        EXPECTED[path.column]!.slice(0, 2)
+      );
     }
   });
 });
