@@ -156,12 +156,17 @@
         .getWorldPosition(tmpPalm)
         .add(middle.getWorldPosition(tmpA))
         .multiplyScalar(0.5);
-      tmpA.fromArray(ends[0]).add(tmpPalm);
-      tmpB.fromArray(ends[1]).add(tmpPalm);
+      // A staff never changes length: scale the stored ends about the grip so
+      // the drawn staff is always the track's measured length.
+      tmpA.fromArray(ends[0]);
+      tmpB.fromArray(ends[1]);
+      const fit = track.lengthM / tmpA.distanceTo(tmpB);
+      tmpA.multiplyScalar(fit).add(tmpPalm);
+      tmpB.multiplyScalar(fit).add(tmpPalm);
       staff.tips[0].position.copy(tmpA);
       staff.tips[1].position.copy(tmpB);
       staff.shaft.position.copy(tmpA).add(tmpB).multiplyScalar(0.5);
-      const length = tmpA.distanceTo(tmpB);
+      const length = track.lengthM;
       staff.shaft.scale.set(1, length, 1);
       tmpQ.setFromUnitVectors(UP, tmpB.sub(tmpA).divideScalar(length));
       staff.shaft.quaternion.copy(tmpQ);
