@@ -11,36 +11,7 @@ Ace '11 - Low Poly model by Daniel Zhabotinsky.
 
 ## Trees
 
-Generated using @dgreenheck/ez-tree, https://github.com/dgreenheck/ez-tree. Meshes and textures were converted from the browser simulator's GLBs to native Unreal assets. Tree instance placements come from Flow Fest's measured and authored site data.
-
-MIT License
-
-Copyright (c) 2024 Daniel Greenheck
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
-The library identifies these bark texture sources:
-
-- Birch: https://www.texturecan.com/details/221/
-- Pine: https://www.texturecan.com/details/588/
-- Oak: https://polyhaven.com/a/bark_brown_02
-- Willow: https://polyhaven.com/a/bark_willow_02
+The forest is grown in Unreal Engine 5.8's Procedural Vegetation Editor from Quixel Megaplants packs claimed on Fab under the Fab Standard License: English Oak, Norway Maple Forest, European Beech Saplings, European Hornbeam, Elder, Japanese Cypress, Dead Pine and Black Alder (listing ids in `Tools/tree-sources.json`). Species are matched on leaf shape and bark character, not on the pack names. Any bark surface from outside those packs is listed with its license in the same file. Tree placements come from Flow Fest's measured and authored site data. The browser simulator keeps its ez-tree meshes; none are used in the native build.
 
 ## Characters, motion, and flow props
 

@@ -6,7 +6,8 @@ param(
     [string]$CaptureDirectory = '',
     [switch]$SkipAssetGeneration,
     [switch]$SkipBuild,
-    [switch]$SkipImport
+    [switch]$SkipImport,
+    [switch]$SkipTrees
 )
 
 $ErrorActionPreference = 'Stop'
@@ -81,6 +82,23 @@ if (-not $SkipImport) {
     }
     & node (Join-Path $PSScriptRoot '..\..\Shared\Tools\performance-bundle.mjs') seal --project $projectRoot
     if ($LASTEXITCODE -ne 0) { throw "Performance bundle sealing failed ($LASTEXITCODE)" }
+}
+
+if (-not $SkipTrees) {
+    # The forest is grown in the editor from Megaplants (README "Trees"); this stage only proves the packs and the exports are present.
+    $sources = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'tree-sources.json') -Raw | ConvertFrom-Json
+    foreach ($pack in $sources.packs) {
+        $packPath = Join-Path $projectRoot (Join-Path $sources.contentFolder $pack.folder)
+        if (-not (Test-Path -LiteralPath $packPath)) {
+            throw "Megaplants pack missing: $($pack.name) expected at $packPath. Claim it on Fab (listing $($pack.id)) and add it to the project from the editor's Fab window, then rerun."
+        }
+    }
+    $growScript = Join-Path $PSScriptRoot 'grow-trees.py'
+    $measureLog = Join-Path $projectRoot 'Saved\grow-measure.log'
+    & $editorCmd $projectFile '-run=pythonscript' "-script=$growScript measure" -unattended -nop4 -nosplash -RenderOffscreen "-abslog=$measureLog"
+    if ($LASTEXITCODE -ne 0) { throw "Tree measurement failed ($LASTEXITCODE)" }
+    $missing = @(Select-String -LiteralPath $measureLog -Pattern 'FLOWFEST_TREE .* MISSING')
+    if ($missing.Count -gt 0) { throw "Grown tree assets missing ($($missing.Count)); export them from the graphs under /Game/FlowFest/Vegetation (README 'Trees')" }
 }
 
 Write-Host "Flow Fest native bootstrap completed: $projectFile"
