@@ -11,6 +11,8 @@
   import { MANDALA_MAX_SEQUENCES } from "#lib/shared/mandala/domain/mandala-shift-types.js";
   import { mandalaSequenceSnapshot } from "#lib/shared/media-composition/domain/post-mandala-item.js";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import TkaLabel from "#lib/shared/components/TkaLabel.svelte";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
   import SequencePickerModal from "#lib/shared/components/sequence-picker/SequencePickerModal.svelte";
   import type { MandalaSequenceSnapshot, PostMandalaItem } from "../item-kinds";
   import { useTkaEditor } from "./tka-editor-context";
@@ -89,8 +91,13 @@
     return `${count} ${count === 1 ? "beat" : "beats"}`;
   }
 
+  /**
+   * The row's name with a repeated word shown once ("W-ΔW-ΔW-ΔW-Δ" is W-Δ).
+   * TkaLabel draws a word in the alphabet's glyphs and leaves a typed name as
+   * text; the buttons' labels say the same words.
+   */
   function nameOf(entry: MandalaSequenceSnapshot, index: number): string {
-    return entry.name || `Sequence ${index + 1}`;
+    return entry.name ? simplifyRepeatedWord(entry.name) : `Sequence ${index + 1}`;
   }
 </script>
 
@@ -102,7 +109,7 @@
       {#each item.sequences as entry, index (index)}
         <li class="row">
           <span class="place">{index + 1}</span>
-          <span class="name">{nameOf(entry, index)}</span>
+          <span class="name"><TkaLabel text={nameOf(entry, index)} darkMode /></span>
           <span class="meta">{beatsOf(entry)}</span>
           <PanelButton
             disabled={locked || index === 0}

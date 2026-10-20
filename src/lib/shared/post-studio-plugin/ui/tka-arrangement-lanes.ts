@@ -5,6 +5,7 @@ import { arrangementCellCycleBeats } from "#lib/shared/media-composition/domain/
 import { setArrangementCellOffset } from "#lib/shared/media-composition/domain/post-project-edits.js";
 import { itemEnd, type PostItem } from "@austencloud/video-editor/core";
 import type { VideoEditorState } from "@austencloud/video-editor";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
 import { shiftHoldBeats } from "#lib/shared/mandala/services/mandala-shift.js";
 import { mandalaItemClock } from "../mandala-item-clock";
 import { arrangementCellLabel } from "./arrangement-labels";
@@ -132,7 +133,8 @@ function mandalaLanes(
     const pinned = startSeconds >= clipEnd;
     return {
       id: `sequence:${index}`,
-      label: entry.name || `Sequence ${index + 1}`,
+      // A repeated word shown once, as the clip's own list shows it.
+      label: entry.name ? simplifyRepeatedWord(entry.name) : `Sequence ${index + 1}`,
       description: mandalaHoldsText(item.shift, hold, count),
       startSeconds: pinned ? clipEnd : Math.max(item.start, startSeconds),
       endSeconds: pinned ? clipEnd : Math.min(clipEnd, startSeconds + holdSeconds),

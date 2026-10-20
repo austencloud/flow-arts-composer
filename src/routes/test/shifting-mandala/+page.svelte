@@ -3,6 +3,8 @@
   // you can play, scrub and reshape. window.__shiftingMandala exposes the
   // clock so a browser check can read beats and pause at a given one.
   import ShiftingMandala from "#lib/shared/mandala/components/ShiftingMandala.svelte";
+  import TkaLabel from "#lib/shared/components/TkaLabel.svelte";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
   import {
     DEFAULT_MANDALA_LOOK,
     DEFAULT_MANDALA_SHIFT,
@@ -106,8 +108,14 @@
     <h2>Sequences ({sources.length})</h2>
     <div class="chips">
       {#each SHOWCASE_MANDALAS as m, i (m.id)}
-        <button type="button" class="chip" aria-pressed={picked.includes(i)} onclick={() => togglePick(i)}>
-          {m.name}
+        <button
+          type="button"
+          class="chip"
+          aria-pressed={picked.includes(i)}
+          aria-label={simplifyRepeatedWord(m.name)}
+          onclick={() => togglePick(i)}
+        >
+          <TkaLabel text={simplifyRepeatedWord(m.name)} darkMode />
         </button>
       {/each}
     </div>
