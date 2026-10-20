@@ -243,6 +243,7 @@ def purge_eztree():
                     u.log('FLOWFEST_PURGED ' + path)
                 else:
                     u.log_error('FLOWFEST_PURGE_FAILED ' + path)
+    u.FlowFestTreeTools.finish_mesh_compilation()
 
 
 if __name__ == '__main__':

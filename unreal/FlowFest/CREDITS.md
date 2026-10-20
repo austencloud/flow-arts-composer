@@ -11,7 +11,7 @@ Ace '11 - Low Poly model by Daniel Zhabotinsky.
 
 ## Trees
 
-The forest is grown in Unreal Engine 5.8's Procedural Vegetation Editor from Quixel Megaplants packs claimed on Fab under the Fab Standard License: English Oak, Norway Maple Forest, European Beech Saplings, European Hornbeam, Elder, Japanese Cypress, Dead Pine and Black Alder (listing ids in `Tools/tree-sources.json`). Species are matched on leaf shape and bark character, not on the pack names. Any bark surface from outside those packs is listed with its license in the same file. Tree placements come from Flow Fest's measured and authored site data. The browser simulator keeps its ez-tree meshes; none are used in the native build.
+The forest uses the trees shipped in Quixel Megaplants packs claimed on Fab under the Fab Standard License, copied into the project's tree families by `Tools/grow-trees.py adopt`: English Oak, Norway Maple Forest, European Beech Saplings, European Hornbeam, Elder, Japanese Cypress, Dead Pine and Black Alder (listing ids in `Tools/tree-sources.json`). Species are matched on leaf shape and bark character, not on the pack names; sycamore, walnut and boxelder stand in with alder, hornbeam and elder trees until their own atlases are added. Any bark surface from outside those packs is listed with its license in the same file. Tree placements come from Flow Fest's measured and authored site data. The browser simulator keeps its ez-tree meshes; none are used in the native build.
 
 ## Characters, motion, and flow props
 
