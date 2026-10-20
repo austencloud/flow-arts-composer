@@ -111,6 +111,7 @@ const SURFACE = [
   "setAudio",
   "seedAudio",
   "addLocalVideo",
+  "addMandala",
   "addLibraryVideo",
   "appendTakeClip",
   "relinkLocalTake",
