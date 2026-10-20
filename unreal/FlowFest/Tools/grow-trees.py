@@ -4,6 +4,7 @@ Run through UnrealEditor-Cmd.exe <project> -run=pythonscript -script="<this file
 
 Modes:
   inspect                       list every asset in each Megaplants pack with its class
+  graphs                        copy each pack's vegetation graph to /Game/FlowFest/Vegetation/PV_<form> (skips existing)
   export <form> <letters> [live|far|both]   export variants of one form through its graph (Attempt A)
   measure                       print height and crown ratio of every exported tree
   purge-eztree                  delete the old ez-tree assets from the family folders
@@ -38,6 +39,37 @@ FORMS = {
     'eastern-redcedar-open':  ('abc',  12, 0.17, 0.06, 'Tree_Japanese_Cypress'),
     'standing-snag':          ('ab',   16, 0.30, 0.00, 'Tree_Dead_Pine'),
 }
+
+# pack folder -> the ProceduralVegetation graph asset the pack ships (grow-trees.py inspect, 2026-10-20)
+PACK_GRAPHS = {
+    'Tree_English_Oak':      'Tree_English_Oak_Forest_01/PVE_English_Oak_Forest_01',
+    'Tree_Norway_Maple':     'Tree_Norway_Maple_Forest_01/PVE_Norway_Maple_Forest_01',
+    'Tree_European_Beech':   'Tree_European_Beech_Saplings_01/PVE_Tree_European_Beech_Saplings_01',
+    'Tree_Hornbeam':         'Tree_Hornbeam_01/PVE_Tree_Hornbeam_01',
+    'Tree_Elder':            'Tree_Elder_01/Tree_Elder_01',
+    'Tree_Japanese_Cypress': 'Tree_Japanese_Cypress_01/PVE_Tree_Japanese_Cypress_01',
+    'Tree_Dead_Pine':        'Tree_Dead_Pine_01/PVE_Tree_Dead_Pine_01',
+    'Tree_Black_Alder':      'Tree_Black_Alder_01/PVE_Black_Alder_01',
+}
+
+
+def graph_path(form):
+    """The project's graph for one growth form."""
+    return f"{VEGETATION}/PV_{form.replace('-', '_')}"
+
+
+def graphs():
+    """Copy each pack's graph to the project's form graph. Existing graphs are kept: they hold hand tuning."""
+    for form, (_letters, _h, _c, _b, pack) in FORMS.items():
+        dst = graph_path(form)
+        if ED.does_asset_exist(dst):
+            u.log('FLOWFEST_GRAPH kept ' + dst)
+            continue
+        src = PACK_ROOT + pack + '/' + PACK_GRAPHS[pack]
+        if ED.duplicate_asset(src, dst) and ED.save_asset(dst):
+            u.log(f'FLOWFEST_GRAPH copied {src} -> {dst}')
+        else:
+            u.log_error(f'FLOWFEST_GRAPH failed {src} -> {dst}')
 
 
 def family(form, letter):
@@ -110,6 +142,8 @@ if __name__ == '__main__':
     mode = sys.argv[1] if len(sys.argv) > 1 else 'inspect'
     if mode == 'inspect':
         inspect()
+    elif mode == 'graphs':
+        graphs()
     elif mode == 'measure':
         measure()
     elif mode == 'purge-eztree':
