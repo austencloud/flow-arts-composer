@@ -2,11 +2,11 @@ import type { PoiDeviceInfo } from "../domain/device-types";
 import type { StripPattern } from "#lib/shared/poi/domain/strip-pattern.js";
 
 export interface UploadOptions {
-  /** Brightness ceiling on devices that take one (Ignis: 1-21). */
+  /** Brightness ceiling on devices that take one, in the device's own steps. */
   maxBright?: number;
-  /** Lighttoys show bank, 1-4. Only an empty bank is written. */
+  /** Show bank on props that store several. Only an empty bank is written. */
   bank?: number;
-  /** How long a Lighttoys staff plays the pattern, in seconds. */
+  /** How long the prop plays the pattern, in seconds. */
   playSeconds?: number;
 }
 

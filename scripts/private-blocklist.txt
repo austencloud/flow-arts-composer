@@ -1,0 +1,32 @@
+# What marks private prop-bridge material, for scripts/private-check.mjs.
+# See .claude/rules/private-prop-bridges.md. Patterns are case-insensitive
+# regular expressions (JavaScript and git grep -P).
+#
+#   word <regex>   refused in an added line or in a file path
+#   path <regex>   refused as a file path
+#   known <path>   a public file that already names a protocol in passing;
+#                  --tree skips it, pushes still check every line it gains
+#
+# Editing this file needs Austen's yes in chat.
+
+# Brand credits ("Lighttoys Moon fan", a flowtoys.com link) are fine; the
+# protocol work is what stays private.
+word \bignis\b
+word \bpixel ?utility\b
+word \b(lighttoys|flowtoys)[\s_-]*(protocol|packet|serial|usb|bridge|shows?\b|bank|firmware|upload|adapter|codec|cue|wire)
+word \b(lighttoys|flowtoys)_[a-z]
+path ^src/lib/private/
+path (^|/)poi-recon(/|$)
+path (^|/)(ignis|lighttoys|flowtoys)([-_./]|$)
+
+# Already public before 2026-10-19.
+known docs/museum/devlog/2026-01-27-creation-session.md
+known docs/reports/swarm-2026-10-14/docs-review.md
+known docs/superpowers/plans/backlog/someday/2026-04-10-led-strip-pattern-engine.md
+known docs/superpowers/specs/2026-08-16-led-simulator-design.md
+known docs/superpowers/specs/active/2026-04-24-native-mobile-integration-design.md
+known docs/superpowers/specs/backlog/someday/2026-04-08-led-strip-pattern-engine-design.md
+known scripts/inject-spec-frontmatter.cjs
+known src/lib/features/poi/services/image-pattern-loader.ts
+known src/lib/features/poi/services/strip-pattern-engine.ts
+known src/lib/shared/animation-engine/domain/types/led-types.ts
