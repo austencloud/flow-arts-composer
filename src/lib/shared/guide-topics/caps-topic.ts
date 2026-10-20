@@ -38,6 +38,10 @@ import {
   type GridLocation,
 } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import { getGridPlacementFromLocations } from "#lib/shared/pictograph/grid/services/grid-placement-deriver.js";
+import {
+  derivePropRelationshipForStep,
+  type PropRelationship,
+} from "#lib/shared/shape-matrix/domain/prop-relationship.js";
 import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import type { TurnValue } from "#lib/shared/create/services/level-turn-values.js";
 import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
@@ -1143,6 +1147,18 @@ export interface CapBeat {
 
 function handBeat(hand: CapHand, spin: CapSpin): CapHandBeat {
   return { spin, ratio: ratioLabel(spinMotion(hand, spin).turns) };
+}
+
+/**
+ * The props' timing and direction. The hands change element from beat to
+ * beat, but the props keep one relationship the whole way round: the capping
+ * hand switches motion on its beat back, so its prop never changes direction.
+ * With equal turns that is a full element, which names the CAP alongside its
+ * path. With unequal turns the props drift apart in timing, so only their
+ * direction holds. caps-topic.test.ts checks every beat agrees.
+ */
+export function capPropRelationship(cap: Cap): PropRelationship {
+  return derivePropRelationshipForStep(capStrip(cap)[1]);
 }
 
 /** The VTG reading of every beat: the hands' element and each hand's spin. */
