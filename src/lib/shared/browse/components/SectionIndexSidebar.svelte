@@ -111,6 +111,10 @@
     const beatMatch = core.match(/^(\d+)\s*(?:steps?|beats?)$/i);
     if (beatMatch?.[1]) return beatMatch[1];
 
+    // Mandala-sorted sections read "Sparse mandala" → show the adjective.
+    const bandMatch = core.match(/^(Sparse|Medium|Dense) mandala$/i);
+    if (bandMatch?.[1]) return bandMatch[1];
+
     // Difficulty sections render as "Level N" → show just the number.
     const levelMatch = core.match(/^Level\s+(\d+)$/i);
     if (levelMatch?.[1]) return levelMatch[1];

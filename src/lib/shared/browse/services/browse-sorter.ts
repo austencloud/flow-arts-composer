@@ -11,6 +11,10 @@ import { sortSequencesByKineticAlphabet } from "#lib/shared/browse/utils/kinetic
 import { calculateDifficultyLevel } from "#lib/shared/browse/services/sequence-difficulty-calculator.js";
 import { resolveBrowseDate } from "#lib/shared/browse/services/browse-date.js";
 import { stripWordNotation } from "#lib/shared/foundation/utils/word-notation.js";
+import {
+  densityBandOf,
+  resolveMandalaDensity,
+} from "#lib/shared/browse/services/sequence-density.js";
 
 /** Numeric difficulty (1–3). Prefers stored `level`, else computes from steps. */
 export function resolveDifficultyLevel(sequence: SequenceData): number {
@@ -44,6 +48,8 @@ export function sortSequences(
       return sortByDifficulty(sorted);
     case BrowseSortMethod.SEQUENCE_LENGTH:
       return sortByLength(sorted);
+    case BrowseSortMethod.DENSITY:
+      return sortByDensity(sorted);
     case BrowseSortMethod.AUTHOR:
       return sortByAuthor(sorted);
     case BrowseSortMethod.POPULARITY:
@@ -95,6 +101,11 @@ function sortByLength(sequences: SequenceData[]): SequenceData[] {
   return sequences.sort((a, b) => resolveStepCount(a) - resolveStepCount(b));
 }
 
+/** Sparse mandala first. */
+function sortByDensity(sequences: SequenceData[]): SequenceData[] {
+  return sequences.sort((a, b) => resolveMandalaDensity(a) - resolveMandalaDensity(b));
+}
+
 function sortByAuthor(sequences: SequenceData[]): SequenceData[] {
   return sequences.sort((a, b) =>
     (a.author ?? "").localeCompare(b.author ?? "")
@@ -122,6 +133,8 @@ function getSectionKey(
       return sequence.author ?? "Unknown";
     case BrowseSortMethod.SEQUENCE_LENGTH:
       return getLengthSection(sequence);
+    case BrowseSortMethod.DENSITY:
+      return densityBandOf(resolveMandalaDensity(sequence)).label;
     default:
       return "All";
   }
