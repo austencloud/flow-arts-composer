@@ -3,6 +3,11 @@ import { faTableCells } from "@austencloud/video-editor/icons";
 import { visibleCells } from "#lib/shared/media-composition/domain/arrangement-edits.js";
 import { arrangementCellCycleBeats } from "#lib/shared/media-composition/domain/arrangement-timing.js";
 import { setArrangementCellOffset } from "#lib/shared/media-composition/domain/post-project-edits.js";
+import { itemEnd, type PostItem } from "@austencloud/video-editor/core";
+import type { VideoEditorState } from "@austencloud/video-editor";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+import { shiftHoldBeats } from "#lib/shared/mandala/services/mandala-shift.js";
+import { mandalaItemClock } from "../mandala-item-clock";
 import { arrangementCellLabel } from "./arrangement-labels";
 import { tkaEditorOf } from "./tka-editor-context";
 
@@ -94,13 +99,60 @@ function offsetText(beatOffset: number): string {
     : `starts ${beatOffset} ${beatOffset === 1 ? "beat" : "beats"} after the grid`;
 }
 
+/** "bars 1, 4, 7": the first holds a sequence gets, in the shift's own unit. */
+function mandalaHoldsText(
+  shift: { every: number; unit: "bars" | "beats" },
+  firstHold: number,
+  count: number
+): string {
+  const holds = [0, 1, 2].map((n) => firstHold + 1 + n * count).join(", ");
+  const unit = shift.every === 1 ? shift.unit : "holds";
+  return `${unit} ${holds}`;
+}
+
+/**
+ * One lane per sequence of a mandala clip, its bar on the sequence's first
+ * hold inside the clip, pinned at the end when none of its holds fall there.
+ * The lanes only show the order; there is nothing to drag.
+ */
+function mandalaLanes(
+  item: Extract<PostItem, { kind: "mandala" }>,
+  editor: VideoEditorState
+): ItemLane[] {
+  const count = item.sequences.length;
+  if (count === 0) return [];
+  const clock = mandalaItemClock(editor.project, item);
+  const holdSeconds =
+    (shiftHoldBeats(item.shift, clock.beatsPerBar) * 60) / clock.bpm;
+  const clipEnd = itemEnd(item);
+  return item.sequences.map((entry, index): ItemLane => {
+    let hold = index;
+    while (clock.anchorSeconds + (hold + 1) * holdSeconds <= item.start)
+      hold += count;
+    const startSeconds = clock.anchorSeconds + hold * holdSeconds;
+    const pinned = startSeconds >= clipEnd;
+    return {
+      id: `sequence:${index}`,
+      // A repeated word shown once, as the clip's own list shows it.
+      label: entry.name ? simplifyRepeatedWord(entry.name) : `Sequence ${index + 1}`,
+      description: mandalaHoldsText(item.shift, hold, count),
+      startSeconds: pinned ? clipEnd : Math.max(item.start, startSeconds),
+      endSeconds: pinned ? clipEnd : Math.min(clipEnd, startSeconds + holdSeconds),
+      pinned,
+      selected: false,
+    };
+  });
+}
+
 /**
  * One lane per cell with layers under the selected arrangement, its bar where
  * the cell's first cycle plays. Dragging a bar moves the cell's beat offset.
+ * A mandala clip gets one lane per sequence instead.
  */
 export const TKA_ARRANGEMENT_LANES: ItemLanesUi = {
   icon: faTableCells,
   lanes(item, editor, drag) {
+    if (item.kind === "mandala") return mandalaLanes(item, editor);
     if (item.kind !== "arrangement") return [];
     const { bpm, skipStartPlacement } = item.snapshot;
     const selectedCellId =
@@ -140,7 +192,8 @@ export const TKA_ARRANGEMENT_LANES: ItemLanesUi = {
         };
       });
   },
-  select(_item, laneId, editor) {
+  select(item, laneId, editor) {
+    if (item.kind !== "arrangement") return;
     tkaEditorOf(editor)?.wrapper.selectCell(laneId);
   },
   move(item, drag, editor) {

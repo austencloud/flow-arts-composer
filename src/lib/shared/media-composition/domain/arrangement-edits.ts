@@ -1,5 +1,14 @@
 import type { GridJoin } from "@tka/tka-types";
-import type { TunnelLayerConfig } from "#lib/shared/animation-engine/domain/compose-types.js";
+import type {
+  CellMediaType,
+  TunnelLayerConfig,
+} from "#lib/shared/animation-engine/domain/compose-types.js";
+import {
+  DEFAULT_MANDALA_LOOK,
+  DEFAULT_MANDALA_SHIFT,
+  type MandalaLook,
+  type MandalaShift,
+} from "#lib/shared/mandala/domain/mandala-shift-types.js";
 import { gridJoinsEqual } from "#lib/shared/grid-join/grid-join-controller.js";
 import type {
   TipEffectMap,
@@ -8,6 +17,7 @@ import type {
 import {
   ARRANGEMENT_MAX_GRID_SIZE,
   type ArrangementCell,
+  type ArrangementCellMandala,
   type ArrangementSnapshot,
 } from "./arrangement.js";
 import type { PostAnimationAppearance } from "./post-animation-appearance.js";
@@ -31,6 +41,12 @@ export const ARRANGEMENT_MAX_CELL_SPEED = 4;
 /** The tempo range of an arrangement, the same as a music take's. */
 export const ARRANGEMENT_MIN_BPM = 20;
 export const ARRANGEMENT_MAX_BPM = 300;
+
+/** A change to a mandala cell's shift or look; a field left out keeps its value. */
+export interface ArrangementCellMandalaPatch {
+  shift?: Partial<MandalaShift>;
+  look?: Partial<MandalaLook>;
+}
 
 export interface ArrangementCellOffset {
   /** Beats before this cell starts; floored at 0. */
@@ -361,6 +377,60 @@ export function setCellLayers(
   if (!cell || layers.length > ARRANGEMENT_MAX_LAYERS) return snapshot;
   if (cell.layers === layers) return snapshot;
   return replaceCell(snapshot, cellId, { ...cell, layers: [...layers] });
+}
+
+/** The media a cell shows: its layers animated, or a mandala shifting between them. */
+export function setCellMediaType(
+  snapshot: ArrangementSnapshot,
+  cellId: string,
+  mediaType: CellMediaType
+): ArrangementSnapshot {
+  const cell = findCell(snapshot, cellId);
+  if (!cell || cell.mediaType === mediaType) return snapshot;
+  return replaceCell(snapshot, cellId, { ...cell, mediaType });
+}
+
+/** A mandala cell's shift and look, with the defaults where it has none. */
+export function arrangementCellMandala(
+  cell: Pick<ArrangementCell, "mandala">
+): ArrangementCellMandala {
+  return {
+    shift: { ...DEFAULT_MANDALA_SHIFT, ...cell.mandala?.shift },
+    look: { ...DEFAULT_MANDALA_LOOK, ...cell.mandala?.look },
+  };
+}
+
+function sameFlat(
+  a: Record<string, unknown>,
+  b: Record<string, unknown>
+): boolean {
+  const keys = Object.keys(a);
+  return (
+    keys.length === Object.keys(b).length &&
+    keys.every((key) => a[key] === b[key])
+  );
+}
+
+/** The shift and look a mandala cell draws with; the whole record is stored. */
+export function setCellMandala(
+  snapshot: ArrangementSnapshot,
+  cellId: string,
+  patch: ArrangementCellMandalaPatch
+): ArrangementSnapshot {
+  const cell = findCell(snapshot, cellId);
+  if (!cell) return snapshot;
+  const current = arrangementCellMandala(cell);
+  const next: ArrangementCellMandala = {
+    shift: { ...current.shift, ...patch.shift },
+    look: { ...current.look, ...patch.look },
+  };
+  if (
+    cell.mandala &&
+    sameFlat(cell.mandala.shift, next.shift) &&
+    sameFlat(cell.mandala.look, next.look)
+  )
+    return snapshot;
+  return replaceCell(snapshot, cellId, { ...cell, mandala: next });
 }
 
 /** Beat offset floored at 0 and speed clamped to 0.25..4; a field left out keeps its value. */

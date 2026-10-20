@@ -49,7 +49,9 @@
     CAP_TIMINGS,
     capMode,
     capOnPath,
+    capPathRhythm,
     capPoiProblem,
+    capPropRelationship,
     capStrip,
     type Cap,
     type CapDirection,
@@ -58,7 +60,16 @@
     type CapTiming,
   } from "#lib/shared/guide-topics/caps-topic.js";
   import { TND_TO_ELEMENTAL } from "#lib/shared/pictograph/shared/domain/utils/tnd-calculator.js";
-  import { getElementImagePath } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import {
+    getElementImagePath,
+    type ElementalType,
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import { elementalDisplayLabel } from "#lib/shared/pictograph/shared/components/elemental-display-label.js";
+  import {
+    AnimationVisibilityStateManager,
+    getAnimationVisibilityManager,
+  } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import type { PropRelationship } from "#lib/shared/shape-matrix/domain/prop-relationship.js";
   import TurnNotationControls from "#lib/shared/shape-matrix/app/components/TurnNotationControls.svelte";
   import type { MatrixLabelMode } from "#lib/shared/shape-matrix/domain/matrix-turn-band.js";
   import { ratioLabel } from "#lib/shared/shape-matrix/domain/flower-signature.js";
@@ -169,8 +180,85 @@
 
   const firstPath = CAP_HAND_PATHS[0]!;
   const hands = showcase(firstPath.caps[0]!).sequence;
-  const spinCap = $derived(capOnPath(firstPath, leftSpin, rightSpin));
+  // The spin player can walk any of the eight paths. Each choice shows the
+  // path's rhythm in its two halves, the way the pattern falls.
+  let pathColumn = $state(1);
+  const PATH_OPTIONS = $derived(
+    CAP_HAND_PATHS.map((path) => {
+      const [first, second] = capPathRhythm(path).map((half) =>
+        half.map(elementalDisplayLabel).join(", ")
+      );
+      return {
+        value: String(path.column),
+        label: String(path.column),
+        ariaLabel: t("guide_eightstep_path_option", {
+          n: path.column,
+          first: first!,
+          second: second!,
+        }),
+      };
+    })
+  );
+  const spinCap = $derived(
+    capOnPath(CAP_HAND_PATHS[pathColumn - 1]!, leftSpin, rightSpin)
+  );
   const spinExample = $derived(showcase(spinCap));
+
+  // The spin player shows both element glyphs where the app always puts
+  // them: the hands' at the bottom right, changing with the path's rhythm,
+  // and the props' at the top right, which holds one element the whole way.
+  const sharedVisibility = getAnimationVisibilityManager();
+  const spinVisibility = new AnimationVisibilityStateManager({
+    ephemeral: true,
+  });
+  spinVisibility.replaceAll({
+    ...sharedVisibility.snapshot(),
+    elementalGlyph: true,
+    propElementalGlyph: true,
+  });
+  spinVisibility.setMotionPolicySource(sharedVisibility);
+
+  // The props' one timing and direction names the CAP alongside its path.
+  const PROP_TIMING: Record<
+    NonNullable<PropRelationship["timing"]>,
+    Parameters<typeof t>[0]
+  > = {
+    split: "guide_eightstep_props_timing_split",
+    tog: "guide_eightstep_props_timing_together",
+    quarter: "guide_eightstep_props_timing_quarter",
+  };
+  const PROP_DIRECTION: Record<
+    NonNullable<PropRelationship["direction"]>,
+    Parameters<typeof t>[0]
+  > = {
+    same: "guide_eightstep_props_direction_same",
+    opp: "guide_eightstep_props_direction_opposite",
+  };
+  const propReading = $derived.by(() => {
+    const props = capPropRelationship(spinCap);
+    if (props.kind === "full") {
+      const element = props.element.element as ElementalType;
+      return {
+        element,
+        text: t("guide_eightstep_props_full", {
+          n: pathColumn,
+          element: elementalDisplayLabel(element),
+          timing: t(PROP_TIMING[props.timing]),
+          direction: t(PROP_DIRECTION[props.direction]),
+        }),
+      };
+    }
+    if (props.kind === "direction-only") {
+      return {
+        element: null,
+        text: t("guide_eightstep_props_drift", {
+          n: pathColumn,
+          direction: t(PROP_DIRECTION[props.direction]),
+        }),
+      };
+    }
+    return null;
+  });
   const poiProblem = (cap: Cap) =>
     propType === PropType.POI ? capPoiProblem(cap) : null;
 
@@ -365,6 +453,7 @@
           trail={TIP_TRAIL}
           render={PROP_RENDER}
           canvasLetter={false}
+          visibility={spinVisibility}
           loop
           {picTheme}
         >
@@ -372,6 +461,42 @@
             <h2>{t("guide_eightstep_spins_title")}</h2>
             <p>{t("guide_eightstep_spins_body")}</p>
             <div class="pickers">
+              <div class="picker">
+                <span class="picker-label" id="path-picker-label"
+                  >{t("guide_eightstep_path")}</span
+                >
+                <div class="path-picker">
+                  <SegmentedControl
+                    options={PATH_OPTIONS}
+                    value={String(pathColumn)}
+                    onchange={(v) => (pathColumn = Number(v))}
+                    ariaLabelledby="path-picker-label"
+                    semantics="radiogroup"
+                    density="compact"
+                    columns={4}
+                  >
+                    {#snippet optionContent(value)}
+                      {@const path = CAP_HAND_PATHS[Number(value) - 1]!}
+                      <span class="path-option">
+                        <span class="path-number">{value}</span>
+                        <span class="rhythm">
+                          {#each capPathRhythm(path) as half, h (h)}
+                            <span class="half">
+                              {#each half as el, i (i)}
+                                <img
+                                  class="element"
+                                  src={getElementImagePath(el)}
+                                  alt=""
+                                />
+                              {/each}
+                            </span>
+                          {/each}
+                        </span>
+                      </span>
+                    {/snippet}
+                  </SegmentedControl>
+                </div>
+              </div>
               <div class="picker">
                 <span class="picker-label">{t("guide_eightstep_prop")}</span>
                 <PropChoiceRow
@@ -425,6 +550,18 @@
                 />
               </div>
             </div>
+            {#if propReading}
+              <p class="prop-reading" aria-live="polite">
+                {#if propReading.element}
+                  <img
+                    class="prop-element"
+                    src={getElementImagePath(propReading.element)}
+                    alt=""
+                  />
+                {/if}
+                <span>{propReading.text}</span>
+              </p>
+            {/if}
             {#if poiProblem(spinCap)}
               <p class="poi-note">
                 {t(
@@ -615,6 +752,52 @@
   }
   .picker :global(.prop-option) {
     max-width: none;
+  }
+  /* Eight paths in whole rows: two of four with room, four of two on a
+     phone, where four across would push the rhythms into each other. The
+     data-grid match outranks the control's own column rule. */
+  .path-picker :global(.ui-segments[data-grid]) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  @container (min-width: 520px) {
+    .path-picker :global(.ui-segments[data-grid]) {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+  /* The props' element and what it means, under the pickers. */
+  .prop-reading {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm, 8px);
+    margin: 0;
+  }
+  .prop-element {
+    flex: none;
+    width: 2rem;
+    height: 2rem;
+  }
+  /* Each path option: its number, then its rhythm as two lines of three. */
+  .path-option {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-sm, 8px);
+  }
+  .path-number {
+    min-width: 1ch;
+    font-variant-numeric: tabular-nums;
+  }
+  .rhythm {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .rhythm .half {
+    display: flex;
+    gap: 2px;
+  }
+  .rhythm .element {
+    width: 1.25rem;
+    height: 1.25rem;
   }
   /* Each hand's two motions sit side by side, labelled by hand. */
   .hand-motions {

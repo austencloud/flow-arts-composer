@@ -12,10 +12,11 @@ import {
 import { POST_STUDIO_DOM_CAPTURE_OPTIONS } from "#lib/shared/media-composition/services/post-studio-dom-capture.js";
 import { PostStudioPictographCapture } from "#lib/shared/media-composition/services/post-studio-pictograph-capture.js";
 import { createArrangementSurface } from "./arrangement-surface";
+import { createShiftingMandalaSurface } from "./shifting-mandala-surface";
 
 /**
  * The DOM surfaces tka's preview mounts for a post: the sequence animation,
- * the choreo card and an arrangement's grid. Each call returns fresh surfaces
+ * the choreo card, an arrangement's grid and a shifting mandala. Each call returns fresh surfaces
  * for one render; the sequence animation keeps its screenshot setup across
  * that render's frames and frees it in `release()`.
  *
@@ -28,6 +29,7 @@ export function createTkaSurfaces(): SurfaceCapture[] {
     createSequenceAnimationSurface(),
     createChoreoCardSurface(),
     createArrangementSurface(),
+    createShiftingMandalaSurface(),
   ];
 }
 

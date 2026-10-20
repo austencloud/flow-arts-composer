@@ -156,16 +156,19 @@ export function derivePropElementalType(
 export function derivePropElementalTypeForStep(
   step: Pick<PictographData, "motions"> | null | undefined
 ): ElementalType | null {
-  const left = step?.motions?.left;
-  const right = step?.motions?.right;
-  if (!isVisibleMotion(left) || !isVisibleMotion(right)) return null;
-  const relationship = relationshipFromMotions(
-    left,
-    right,
-    left.turns,
-    right.turns
-  );
+  const relationship = derivePropRelationshipForStep(step);
   return relationship.kind === "full"
     ? (relationship.element.element as ElementalType)
     : null;
+}
+
+/** The whole prop relationship of one step, direction included when timing
+ *  can't be read because the two props turn at different rates. */
+export function derivePropRelationshipForStep(
+  step: Pick<PictographData, "motions"> | null | undefined
+): PropRelationship {
+  const left = step?.motions?.left;
+  const right = step?.motions?.right;
+  if (!isVisibleMotion(left) || !isVisibleMotion(right)) return FLOAT;
+  return relationshipFromMotions(left, right, left.turns, right.turns);
 }

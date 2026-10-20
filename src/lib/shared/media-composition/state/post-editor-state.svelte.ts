@@ -20,6 +20,7 @@ import {
 } from "#lib/shared/post-studio-plugin/index.js";
 import {
   addArrangementItem,
+  addMandalaItem,
   addTitlesItem,
   addTunnelHook as addProjectTunnelHook,
   clearArrangementCell,
@@ -32,6 +33,7 @@ import {
   type TutorialLabels,
 } from "#lib/shared/media-composition/domain/post-project-looks.js";
 import { bridgeLockedChange } from "#lib/shared/media-composition/domain/post-project-bridge-guard.js";
+import { mandalaSequenceSnapshot } from "#lib/shared/media-composition/domain/post-mandala-item.js";
 import type { PostTimingEffect } from "#lib/shared/media-composition/services/post-editor-history-store.js";
 import {
   devicePostEditorStore,
@@ -172,6 +174,22 @@ export function createPostEditorState(deps: PostEditorDeps) {
     const result = addArrangementItem(
       core.project,
       snapshot,
+      at,
+      editContext(now())
+    );
+    if (!core.commit(result.project)) return null;
+    core.selectedItemId = result.itemId;
+    cellSelection = null;
+    return result.itemId;
+  }
+
+  /** A new mandala clip, selected, starting with the post's sequence when it has one. */
+  function addMandala(at: number): string | null {
+    if (core.inGesture) return null;
+    const seed = timing.sequence;
+    const result = addMandalaItem(
+      core.project,
+      seed && seed.steps.length > 0 ? [mandalaSequenceSnapshot(seed)] : [],
       at,
       editContext(now())
     );
@@ -527,6 +545,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
     duplicateSelected: core.duplicateSelected,
     addOverlay: core.addOverlay,
     addArrangement,
+    addMandala,
     addTitles,
     addCard: core.addCard,
     addTunnelHook,

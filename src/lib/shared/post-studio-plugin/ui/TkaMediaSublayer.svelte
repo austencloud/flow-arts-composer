@@ -4,6 +4,7 @@
   import PostStudioChoreoLayer from "#lib/shared/post-studio-plugin/ui/PostStudioChoreoLayer.svelte";
   import PostStudioTunnelLayer from "#lib/shared/post-studio-plugin/ui/PostStudioTunnelLayer.svelte";
   import PostStudioMandalaLayer from "#lib/shared/post-studio-plugin/ui/PostStudioMandalaLayer.svelte";
+  import PostStudioShiftingMandalaLayer from "./PostStudioShiftingMandalaLayer.svelte";
   import type PostStudioArrangementLayerType from "./PostStudioArrangementLayer.svelte";
   import { useTkaEditor } from "./tka-editor-context";
   import {
@@ -75,6 +76,10 @@
   const arrangement = $derived(
     sourceItem?.kind === "arrangement" ? sourceItem : null
   );
+  /** A shifting mandala clip; the "mandala" render mode is otherwise the PiP square. */
+  const mandalaItem = $derived(
+    sourceItem?.kind === "mandala" ? sourceItem : null
+  );
   /** The selected arrangement's marks; any other arrangement draws none. */
   const arrangementMarks = $derived(
     arrangement && arrangement.id === editor.selectedItemId
@@ -109,6 +114,14 @@
       editing={arrangementMarks}
     />
   {/if}
+{:else if binding.renderMode === "mandala" && mandalaItem}
+  <PostStudioShiftingMandalaLayer
+    {editor}
+    item={mandalaItem}
+    sourceTimeSeconds={layer.sourceTimeSeconds}
+    {exporting}
+    {exportSize}
+  />
 {:else if binding.renderMode === "sequence-animation" && sequence && sequencePosition !== undefined}
   <PostStudioSequenceAnimationLayer
     {sequence}

@@ -19,6 +19,7 @@
   import {
     CAP_HAND_PATHS,
     capOnPath,
+    capPathRhythm,
     capPairing,
     capStrip,
     type Cap,
@@ -26,10 +27,7 @@
     type CapSpin,
   } from "#lib/shared/guide-topics/caps-topic.js";
   import { deriveTnDFromPictograph } from "#lib/shared/pictograph/shared/domain/utils/tnd-deriver.js";
-  import {
-    getElementImagePath,
-    type ElementalType,
-  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import { getElementImagePath } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import { elementalDisplayLabel } from "#lib/shared/pictograph/shared/components/elemental-display-label.js";
   import {
     DEFAULT_POI_STRING_OPTIONS,
@@ -110,17 +108,14 @@
   const beatElements = $derived(
     beatSteps.map((step) => deriveTnDFromPictograph(step).elementalType)
   );
-  // Each path's hands repeat a six-beat rhythm of timing and direction,
-  // the same for every spin on that path.
-  const PATH_RHYTHMS: (ElementalType | null)[][] = CAP_HAND_PATHS.map((p) =>
-    capStrip(p.caps[0]!)
-      .slice(1, 7)
-      .map((step) => deriveTnDFromPictograph(step).elementalType)
-  );
+  const rhythmHalves = (column: number) =>
+    capPathRhythm(CAP_HAND_PATHS[column - 1]!);
   const rhythmLabel = (column: number) =>
-    PATH_RHYTHMS[column - 1]!.map((el) =>
-      el ? elementalDisplayLabel(el) : ""
-    ).join(", ");
+    rhythmHalves(column)
+      .map((half) =>
+        half.map((el) => (el ? elementalDisplayLabel(el) : "")).join(", ")
+      )
+      .join("; then ");
 
   const results = $derived.by(() => {
     const beats = beatSteps;
@@ -324,10 +319,18 @@
             <span class="path-option">
               <span class="path-number">{n}</span>
               <span class="rhythm">
-                {#each PATH_RHYTHMS[n - 1]! as el, i (i)}
-                  {#if el}
-                    <img class="element" src={getElementImagePath(el)} alt="" />
-                  {/if}
+                {#each rhythmHalves(n) as half, h (h)}
+                  <span class="half">
+                    {#each half as el, i (i)}
+                      {#if el}
+                        <img
+                          class="element"
+                          src={getElementImagePath(el)}
+                          alt=""
+                        />
+                      {/if}
+                    {/each}
+                  </span>
                 {/each}
               </span>
             </span>
@@ -769,6 +772,11 @@
   }
   .rhythm {
     display: inline-flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .rhythm .half {
+    display: flex;
     gap: 2px;
   }
   .rhythm .element {

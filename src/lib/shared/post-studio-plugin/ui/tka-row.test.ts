@@ -106,6 +106,14 @@ describe("tka tool rows are today's rows", () => {
     ]);
     expect(row("text")).toEqual(["back", "split", "text", "timing", ...TAIL]);
     expect(row("titles")).toEqual(["back", "titles", "timing", ...TAIL]);
+    expect(row("mandala")).toEqual([
+      "back",
+      "sequence",
+      "split",
+      "look",
+      "timing",
+      ...TAIL,
+    ]);
     expect(row("carousel")).toEqual(["back", "split", "timing", ...TAIL]);
     expect(row("image")).toEqual(["back", "split", "timing", ...TAIL]);
     expect(row("image", { isQrImage: true })).toEqual([

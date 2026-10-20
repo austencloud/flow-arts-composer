@@ -360,6 +360,7 @@ export function createBrowseEngine(config: BrowseEngineConfig): BrowseEngine {
     [BrowseSortMethod.DATE_ADDED]: "date",
     [BrowseSortMethod.DIFFICULTY_LEVEL]: "difficulty",
     [BrowseSortMethod.SEQUENCE_LENGTH]: "length",
+    [BrowseSortMethod.DENSITY]: "density",
     [BrowseSortMethod.AUTHOR]: "author",
     [BrowseSortMethod.POPULARITY]: "letter",
     // Curated has no natural section; letter sections keep the index useful,

@@ -16,12 +16,14 @@ import { getGridPlacementFromLocations } from "#lib/shared/pictograph/grid/servi
 import {
   MotionType,
   Orientation,
+  type TnDMode,
 } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   turnValuesForLevel,
   type TurnValue,
 } from "#lib/shared/create/services/level-turn-values.js";
 import { deriveTnDFromPictograph } from "#lib/shared/pictograph/shared/domain/utils/tnd-deriver.js";
+import { derivePropRelationshipForStep } from "#lib/shared/shape-matrix/domain/prop-relationship.js";
 import type { SoloPropStepData } from "#lib/shared/foundation/domain/models/solo-prop-step-data.js";
 
 const travelOf = (step: SoloPropStepData) =>
@@ -35,6 +37,8 @@ import {
   capCell,
   capHandSteps,
   capPathMode,
+  capPathRhythm,
+  capPropRelationship,
   capStrip,
   capOnPath,
   capPoiProblem,
@@ -43,6 +47,7 @@ import {
   type CapHand,
   type CapHandSpin,
 } from "./caps-topic";
+import { TND_TO_ELEMENTAL } from "#lib/shared/pictograph/shared/domain/utils/tnd-calculator.js";
 
 const read = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8");
@@ -423,11 +428,83 @@ describe("hand modes along each path", () => {
       );
     }
   });
+  // The path pickers show this rhythm as two lines of three.
+  it("splits each path's six-step rhythm into its two halves", () => {
+    for (const path of CAP_HAND_PATHS) {
+      const rhythm = EXPECTED[path.column]!.split(" ");
+      const six = [0, 1, 2, 3, 4, 5].map(
+        (i) => TND_TO_ELEMENTAL[rhythm[i % rhythm.length] as TnDMode]
+      );
+      expect(capPathRhythm(path), `path ${path.column}`).toEqual([
+        six.slice(0, 3),
+        six.slice(3),
+      ]);
+    }
+  });
   it("opens on the mode of the box the page puts it in", () => {
     for (const path of CAP_HAND_PATHS) {
       expect(capPathMode(path), `path ${path.column}`).toBe(
         EXPECTED[path.column]!.slice(0, 2)
       );
     }
+  });
+});
+
+describe("the props on a hand path", () => {
+  const TURNS = [0, 0.5, 1, 1.5, 2, 3] as const;
+  const MOTIONS = ["anti", "pro"] as const;
+  const reading = (r: ReturnType<typeof capPropRelationship>) =>
+    `${r.kind} ${r.timing} ${r.direction}`;
+
+  it("keep one timing and direction on every beat", () => {
+    for (const path of CAP_HAND_PATHS)
+      for (const lm of MOTIONS)
+        for (const rm of MOTIONS)
+          for (const lt of TURNS)
+            for (const rt of TURNS) {
+              const cap = capOnPath(
+                path,
+                { motion: lm, turns: lt },
+                { motion: rm, turns: rt }
+              );
+              const whole = reading(capPropRelationship(cap));
+              capStrip(cap)
+                .slice(1)
+                .forEach((step, i) =>
+                  expect(
+                    reading(derivePropRelationshipForStep(step)),
+                    `path ${path.column} ${lm} ${lt} / ${rm} ${rt}, beat ${i + 1}`
+                  ).toBe(whole)
+                );
+            }
+  });
+
+  it("take the path's timing, and its direction when the motions match", () => {
+    for (const path of CAP_HAND_PATHS)
+      for (const lm of MOTIONS)
+        for (const rm of MOTIONS)
+          for (const [lt, rt] of [
+            [1, 1],
+            [0, 2],
+          ] as const) {
+            const props = capPropRelationship(
+              capOnPath(
+                path,
+                { motion: lm, turns: lt },
+                { motion: rm, turns: rt }
+              )
+            );
+            const label = `path ${path.column} ${lm} ${lt} / ${rm} ${rt}`;
+            const flips = (path.direction === "same") !== (lm === rm);
+            expect(props.direction, label).toBe(flips ? "opp" : "same");
+            if (lt === rt) {
+              expect(props.kind, label).toBe("full");
+              expect(props.timing, label).toBe(
+                path.timing === "together" ? "tog" : path.timing
+              );
+            } else {
+              expect(props.kind, label).toBe("direction-only");
+            }
+          }
   });
 });

@@ -54,6 +54,7 @@ export type SectionGroupBy =
   | "letter"
   | "length"
   | "difficulty"
+  | "density"
   | "date"
   | "tnd-family"
   | "none";

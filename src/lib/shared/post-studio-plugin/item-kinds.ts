@@ -20,10 +20,19 @@ import {
   type ArrangementSnapshot,
 } from "#lib/shared/media-composition/domain/arrangement.js";
 import { arrangementDurationSeconds } from "#lib/shared/media-composition/domain/arrangement-timing.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import {
+  MANDALA_MAX_SEQUENCES,
+  MandalaLookSchema,
+  MandalaShiftSchema,
+  type MandalaLook,
+  type MandalaShift,
+} from "#lib/shared/mandala/domain/mandala-shift-types.js";
 import type { TunnelTitlesPlan } from "#lib/shared/media-composition/domain/tunnel-titles.js";
 import type { tkaProjectShape } from "./project-extension";
 import {
   compileArrangementItem,
+  compileMandalaItem,
   compileSequenceItem,
   compileTitlesItem,
 } from "./compile-hooks";
@@ -50,6 +59,7 @@ declare module "@austencloud/video-editor/core" {
     carousel: PostCarouselItem;
     titles: PostTitlesItem;
     arrangement: PostArrangementItem;
+    mandala: PostMandalaItem;
   }
   interface PluginVideoFields extends TkaVideoFields {}
   interface PluginCardFields extends TkaCardFields {}
@@ -76,6 +86,10 @@ declare module "@austencloud/video-editor/core" {
     cardAppearance?: PostCardItem["cardAppearance"] | null;
     /** A card's scan link; null removes it. A link that breaks the rule is passed over. */
     qrUrl?: string | null;
+    /** A mandala clip's ordered sequences, and how it shifts and looks. */
+    sequences?: MandalaSequenceSnapshot[];
+    shift?: MandalaShift;
+    look?: MandalaLook;
   }
 }
 /* eslint-enable @typescript-eslint/no-empty-object-type */
@@ -225,6 +239,48 @@ export const PostArrangementItemSchema = z
   .strict();
 
 export type PostArrangementItem = z.infer<typeof PostArrangementItemSchema>;
+
+/** One sequence a mandala clip shifts through: the full record, as an arrangement layer carries it. */
+export interface MandalaSequenceSnapshot {
+  id: string;
+  name: string;
+  sequence: SequenceData;
+}
+
+// The schema checks the entry's JSON shape; the record itself is the editor's
+// SequenceData, which a string-keyed record cannot express.
+const MandalaSequenceSnapshotSchema = z
+  .object({
+    id: z.string(),
+    name: z.string(),
+    sequence: z.record(z.string(), z.unknown()),
+  })
+  .passthrough() as unknown as z.ZodType<MandalaSequenceSnapshot>;
+
+/** A mandala clip's take never runs out: an hour of source, trimmed like any clip. */
+export const MANDALA_SOURCE_SECONDS = 3600;
+/** How long a new mandala clip is. */
+export const MANDALA_ITEM_SECONDS = 16;
+
+/**
+ * A mandala that shifts between its sequences on the post's beat. The
+ * picture is a pure function of post time, so the preview and the exported
+ * file agree; see `mandala-item-clock.ts` for how beats are counted.
+ */
+export const PostMandalaItemSchema = z
+  .object({
+    ...itemBase,
+    kind: z.literal("mandala"),
+    sequences: z.array(MandalaSequenceSnapshotSchema).max(MANDALA_MAX_SEQUENCES),
+    shift: MandalaShiftSchema,
+    look: MandalaLookSchema,
+    sourceIn: z.number().finite().nonnegative(),
+    sourceOut: z.number().finite().positive(),
+    speed: z.number().finite().min(POST_MIN_SPEED).max(POST_MAX_SPEED),
+  })
+  .strict();
+
+export type PostMandalaItem = z.infer<typeof PostMandalaItemSchema>;
 
 /** Kinds drawn from the sequence, which read the move of the footage under them. */
 export const SEQUENCE_ITEM_KINDS: readonly PostItemKind[] = [
@@ -407,5 +463,15 @@ export const TKA_ITEM_KINDS: readonly ItemKindDefinition[] = [
       const spoken = spec.spoken?.slice(0, POST_MAX_SPOKEN_LENGTH);
       return { ...base, kind: "titles", ...(spoken?.trim() ? { spoken } : {}) };
     },
+  },
+  {
+    kind: "mandala",
+    schema: PostMandalaItemSchema,
+    label: "Mandala",
+    defaultBox: () => ({ ...POST_BOX.full }),
+    transitionVisual: true,
+    mainTrack: true,
+    sourceLength: () => MANDALA_SOURCE_SECONDS,
+    compile: compileMandalaItem,
   },
 ];

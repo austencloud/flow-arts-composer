@@ -198,17 +198,43 @@ function pairBeats(from: Beats[], to: Beats[]): number[][] {
   return chosen;
 }
 
-function prepareBeatGroup(
+/** Per beat, which new line each old line's segment becomes. */
+type BeatPairing = readonly (readonly number[])[];
+
+/** Both sides' beats, when the beat pairing can take them. */
+function pairableBeats(
   fromPaths: readonly SVGPathData[],
   toPaths: readonly SVGPathData[]
-): LineMorph[] | null {
+): { from: Beats[]; to: Beats[] } | null {
   if (fromPaths.length !== toPaths.length) return null;
   if (fromPaths.length === 0 || fromPaths.length > MAX_PAIRED_LINES) return null;
   const from = pathBeats(fromPaths);
   const to = pathBeats(toPaths);
   if (!from || !to || from[0]!.length !== to[0]!.length) return null;
+  return { from, to };
+}
 
-  const pairing = pairBeats(from, to);
+/** The beat pairing of two geometries, or null when they pair by tip. */
+function decideBeatPairing(
+  fromPaths: readonly SVGPathData[],
+  toPaths: readonly SVGPathData[]
+): BeatPairing | null {
+  const beats = pairableBeats(fromPaths, toPaths);
+  return beats ? pairBeats(beats.from, beats.to) : null;
+}
+
+/**
+ * The lines of a beat morph, blending these geometries with a pairing
+ * decided earlier. Null when the geometries no longer fit the pairing.
+ */
+function buildLineMorphs(
+  fromPaths: readonly SVGPathData[],
+  toPaths: readonly SVGPathData[],
+  pairing: BeatPairing
+): LineMorph[] | null {
+  const beats = pairableBeats(fromPaths, toPaths);
+  if (!beats || beats.from[0]!.length !== pairing.length) return null;
+  const { from, to } = beats;
   return from.map((line, index) => ({
     tipIndex: fromPaths[index]!.tipIndex,
     beats: line.map((segment, beat): BeatPair => {
@@ -341,14 +367,30 @@ type GroupMorph =
   | { kind: "beats"; lines: LineMorph[] }
   | { kind: "tips"; morphs: TipMorph[] };
 
-function prepareGroup(
+/** A group's morph for these geometries, by the pairing decided for the pair. */
+function buildGroup(
+  pairing: BeatPairing | null,
   fromPaths: readonly SVGPathData[],
   toPaths: readonly SVGPathData[]
 ): GroupMorph {
-  const lines = prepareBeatGroup(fromPaths, toPaths);
+  const lines = pairing ? buildLineMorphs(fromPaths, toPaths, pairing) : null;
   return lines
     ? { kind: "beats", lines }
     : { kind: "tips", morphs: prepareTipGroup(fromPaths, toPaths) };
+}
+
+type GroupPairings = Record<(typeof PATH_GROUPS)[number], BeatPairing | null>;
+
+function buildGroups(
+  pairings: GroupPairings,
+  from: MandalaPaths,
+  to: MandalaPaths
+): Record<(typeof PATH_GROUPS)[number], GroupMorph> {
+  return {
+    left: buildGroup(pairings.left, from.left, to.left),
+    right: buildGroup(pairings.right, from.right, to.right),
+    purple: buildGroup(pairings.purple, from.purple, to.purple),
+  };
 }
 
 function groupIsStill(group: GroupMorph): boolean {
@@ -403,23 +445,60 @@ export function createMandalaMorph(
   from: MandalaPaths,
   to: MandalaPaths
 ): MandalaMorph {
-  const groups = {
-    left: prepareGroup(from.left, to.left),
-    right: prepareGroup(from.right, to.right),
-    purple: prepareGroup(from.purple, to.purple),
-  };
-  const morph = (t: number): MandalaPaths => {
-    if (t <= 0) return from;
-    if (t >= 1) return to;
-    return {
-      left: blendGroup(groups.left, t),
-      right: blendGroup(groups.right, t),
-      purple: blendGroup(groups.purple, t),
-    };
-  };
-  return Object.assign(morph, {
-    still: PATH_GROUPS.every((group) => groupIsStill(groups[group])),
+  const plan = planMandalaMorph(from, to);
+  return Object.assign((t: number) => plan.at(from, to, t), {
+    still: plan.still,
   });
+}
+
+/**
+ * A morph whose pairing was decided once and is applied to fresh geometry
+ * each frame. The shifting mandala breathes while it morphs: the tip offset
+ * changes every frame, so the two geometries are recalculated per frame, but
+ * which line turns into which must not change mid-morph.
+ */
+export interface MandalaMorphPlan {
+  /** True when the two geometries the plan was made from draw the same picture. */
+  readonly still: boolean;
+  /**
+   * One frame: `from` and `to` are the pair's geometries as they stand now
+   * (same sequences and shape as the plan was made from, any tip offset).
+   */
+  at(from: MandalaPaths, to: MandalaPaths, t: number): MandalaPaths;
+}
+
+/**
+ * Decide the pairing between two geometries. Point counts do not change with
+ * the tip offset (samples per beat are fixed), so a plan made at one offset
+ * holds at every other. Calling `at` with the geometries the plan was made
+ * from reuses their prepared lines.
+ */
+export function planMandalaMorph(
+  from: MandalaPaths,
+  to: MandalaPaths
+): MandalaMorphPlan {
+  const pairings: GroupPairings = {
+    left: decideBeatPairing(from.left, to.left),
+    right: decideBeatPairing(from.right, to.right),
+    purple: decideBeatPairing(from.purple, to.purple),
+  };
+  const own = buildGroups(pairings, from, to);
+  return {
+    still: PATH_GROUPS.every((group) => groupIsStill(own[group])),
+    at(fromNow, toNow, t) {
+      if (t <= 0) return fromNow;
+      if (t >= 1) return toNow;
+      const groups =
+        fromNow === from && toNow === to
+          ? own
+          : buildGroups(pairings, fromNow, toNow);
+      return {
+        left: blendGroup(groups.left, t),
+        right: blendGroup(groups.right, t),
+        purple: blendGroup(groups.purple, t),
+      };
+    },
+  };
 }
 
 /** One frame of the morph from `from` to `to`. */

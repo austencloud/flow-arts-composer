@@ -65,6 +65,12 @@
         chipLabel: "Length",
         icon: "fa-ruler",
       },
+      {
+        id: BrowseSortMethod.DENSITY,
+        label: t("browse_sort_mandala"),
+        chipLabel: "Mandala",
+        icon: "fa-dharmachakra",
+      },
     ];
     return gallery as unknown as SortPopoverOption<T>[];
   }

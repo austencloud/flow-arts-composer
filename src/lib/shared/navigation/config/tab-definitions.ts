@@ -1182,6 +1182,10 @@ export const LAB_TABS: Section[] = [
   {
     id: "poi-string",
     groupId: "physical",
+    // A research tool: what the hand does for a poi to follow a CAP. Kept
+    // reachable by its address; the CAPs themselves are taught on
+    // /guide/eight-step.
+    navigationHidden: true,
     labelKey: "tab_lab_poi_string",
     descKey: "tab_desc_lab_poi_string",
     label: "Poi String",

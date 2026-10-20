@@ -30,6 +30,7 @@ import {
   MotionType,
   Orientation,
   RotationDirection,
+  type ElementalType,
   type TnDMode,
 } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
@@ -37,6 +38,10 @@ import {
   type GridLocation,
 } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import { getGridPlacementFromLocations } from "#lib/shared/pictograph/grid/services/grid-placement-deriver.js";
+import {
+  derivePropRelationshipForStep,
+  type PropRelationship,
+} from "#lib/shared/shape-matrix/domain/prop-relationship.js";
 import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import type { TurnValue } from "#lib/shared/create/services/level-turn-values.js";
 import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
@@ -942,6 +947,20 @@ export function capPathMode(path: CapHandPath): TnDMode {
 }
 
 /**
+ * A hand path's six-step rhythm of timing and direction, as the element on
+ * each step reads it, in its two halves of three. Every spin on a path
+ * shares it, and the twelve steps play it twice.
+ */
+export function capPathRhythm(
+  path: CapHandPath
+): readonly [readonly ElementalType[], readonly ElementalType[]] {
+  const rhythm = capStrip(path.caps[0]!)
+    .slice(1, 7)
+    .map((step) => deriveTnDFromPictograph(step).elementalType!);
+  return [rhythm.slice(0, 3), rhythm.slice(3)];
+}
+
+/**
  * The chart row for a CAP: the capping (left) hand's spin against the circling
  * (right) hand's, each read from its first beat.
  */
@@ -1128,6 +1147,18 @@ export interface CapBeat {
 
 function handBeat(hand: CapHand, spin: CapSpin): CapHandBeat {
   return { spin, ratio: ratioLabel(spinMotion(hand, spin).turns) };
+}
+
+/**
+ * The props' timing and direction. The hands change element from beat to
+ * beat, but the props keep one relationship the whole way round: the capping
+ * hand switches motion on its beat back, so its prop never changes direction.
+ * With equal turns that is a full element, which names the CAP alongside its
+ * path. With unequal turns the props drift apart in timing, so only their
+ * direction holds. caps-topic.test.ts checks every beat agrees.
+ */
+export function capPropRelationship(cap: Cap): PropRelationship {
+  return derivePropRelationshipForStep(capStrip(cap)[1]);
 }
 
 /** The VTG reading of every beat: the hands' element and each hand's spin. */
