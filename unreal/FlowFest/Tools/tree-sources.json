@@ -1,0 +1,84 @@
+{
+  "license": "Fab Standard License (free Quixel Megaplants, for use inside this Unreal project)",
+  "claimedBy": "Austen Cloud, Fab library, 2026-10-20",
+  "contentFolder": "Content/Fab",
+  "packs": [
+    {
+      "id": "83642c38-7661-4df1-8629-0422e1898d26",
+      "name": "Megaplants: English Oak",
+      "folder": "Megaplants_English_Oak",
+      "feeds": [
+        "white-oak-stand",
+        "white-oak-open"
+      ]
+    },
+    {
+      "id": "e789ad04-cf79-4973-adb0-85c794d77144",
+      "name": "Megaplants: Norway Maple Forest",
+      "folder": "Megaplants_Norway_Maple_Forest",
+      "feeds": [
+        "sugar-maple-stand",
+        "silver-maple-damp",
+        "american-sycamore-damp"
+      ]
+    },
+    {
+      "id": "6867d008-fc3a-404e-9e53-087eccdcd722",
+      "name": "Megaplants: European Beech Saplings",
+      "folder": "Megaplants_European_Beech_Saplings",
+      "feeds": [
+        "american-beech-stand"
+      ]
+    },
+    {
+      "id": "43679e75-6ed0-4b03-9288-9e2bc49376d2",
+      "name": "Megaplants: European Hornbeam",
+      "folder": "Megaplants_European_Hornbeam",
+      "feeds": [
+        "hophornbeam-understory"
+      ]
+    },
+    {
+      "id": "fe7a58b3-19fe-4249-b496-2214b32650b3",
+      "name": "Megaplants: Elder",
+      "folder": "Megaplants_Elder",
+      "feeds": [
+        "black-walnut-stand",
+        "black-walnut-open",
+        "shagbark-hickory-stand",
+        "boxelder-understory"
+      ]
+    },
+    {
+      "id": "0843f3cf-41c1-4980-b46a-3df5742ddaef",
+      "name": "Megaplants: Japanese Cypress",
+      "folder": "Megaplants_Japanese_Cypress",
+      "feeds": [
+        "eastern-redcedar-open"
+      ]
+    },
+    {
+      "id": "bc9e4e89-fcf4-4be6-b0f0-8b37395a72de",
+      "name": "Megaplants: Dead Pine",
+      "folder": "Megaplants_Dead_Pine",
+      "feeds": [
+        "standing-snag"
+      ]
+    },
+    {
+      "id": "9257b627-e37a-4112-82c7-4a99c1a8aec6",
+      "name": "Megaplants: Black Alder",
+      "folder": "Megaplants_Black_Alder",
+      "feeds": [
+        "black-walnut-stand",
+        "black-walnut-open",
+        "shagbark-hickory-stand"
+      ]
+    }
+  ],
+  "barkSurfaces": [],
+  "notes": [
+    "folder is the name Fab's Add to Project gives the pack under Content/Fab; corrected to the real name once downloaded.",
+    "barkSurfaces gains an entry {form, source, url, license} for every bark texture that does not come from a pack above."
+  ]
+}
