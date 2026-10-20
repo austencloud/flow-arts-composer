@@ -2,8 +2,9 @@
   /**
    * How a shifting mandala moves and looks: when it shifts and whether the
    * morph runs steadily or lands on the beat, then the line shape, colours,
-   * weight, breath (its own switch, with Off) and spin. Every choice is a
-   * visible button; the parent applies each patch.
+   * weight, breath (its own switch, with Off), spin and the strip of stills
+   * along the bottom. Every choice is a visible button; the parent applies
+   * each patch.
    */
   import {
     MANDALA_BREATH_BEATS,
@@ -16,6 +17,7 @@
     type MandalaShift,
   } from "#lib/shared/mandala/domain/mandala-shift-types.js";
   import { shiftPace } from "#lib/shared/mandala/services/mandala-shift.js";
+  import { lookStrip } from "#lib/shared/mandala/services/mandala-shift-render.js";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import ValueSlider from "#lib/shared/ui/components/ValueSlider.svelte";
 
@@ -86,6 +88,11 @@
     value: num(spin),
     label: spin === 0 ? "None" : `${spin}°`,
   }));
+  const STRIPS = [
+    { value: "off", label: "Off" },
+    { value: "bottom", label: "Along the bottom" },
+  ] as const;
+  const strip = $derived(lookStrip(look));
 
   const percent = (value: number) => `${Math.round(value)}%`;
 </script>
@@ -217,6 +224,19 @@
         onLook({ spinPerBar: Number(value) as MandalaLook["spinPerBar"] })}
       ariaLabel="Spin per bar"
     />
+  </section>
+
+  <section class="group" aria-label="Strip">
+    <span class="group-name">Strip of the sequences</span>
+    <SegmentedControl
+      color="accent"
+      size="sm"
+      options={[...STRIPS]}
+      value={strip}
+      onchange={(value) => onLook({ strip: value })}
+      ariaLabel="Strip of the sequences"
+    />
+    <p class="hint">Each sequence as a still along the bottom, the current one lit.</p>
   </section>
 </div>
 
