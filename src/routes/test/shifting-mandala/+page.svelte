@@ -14,6 +14,7 @@
     MANDALA_SHIFT_MORPH,
     MANDALA_SHIFT_PACES,
     MANDALA_SPINS,
+    MANDALA_STRIPS,
     MandalaLookPresetSchema,
     type MandalaLook,
     type MandalaShift,
@@ -33,7 +34,7 @@
     })
   );
   let shift = $state<MandalaShift>({ ...DEFAULT_MANDALA_SHIFT });
-  let look = $state<MandalaLook>({ ...DEFAULT_MANDALA_LOOK });
+  let look = $state<MandalaLook>({ ...DEFAULT_MANDALA_LOOK, strip: "bottom" });
   let beats = $state(0);
   let playing = $state(false);
   let reducedMotion = $state(false);
@@ -186,6 +187,12 @@
     <div class="chips">
       {#each MANDALA_SPINS as spinPerBar (spinPerBar)}
         <button type="button" class="chip" aria-pressed={look.spinPerBar === spinPerBar} onclick={() => (look = { ...look, spinPerBar })}>{spinPerBar}°</button>
+      {/each}
+    </div>
+    <h2>Strip</h2>
+    <div class="chips">
+      {#each MANDALA_STRIPS as strip (strip)}
+        <button type="button" class="chip" aria-pressed={(look.strip ?? "off") === strip} onclick={() => (look = { ...look, strip })}>{strip}</button>
       {/each}
     </div>
   </aside>

@@ -31,6 +31,8 @@ export const MANDALA_LINE_WEIGHTS = [1.5, 2.5, 4] as const;
 /** Beats per breath; 0 is no breath, the tips held at the depth's reach. */
 export const MANDALA_BREATH_BEATS = [0, 1, 2, 4, 8] as const;
 export const MANDALA_SPINS = [0, 15, 30, 60, 90] as const;
+/** Where the strip of the sequences' stills sits; off is no strip. */
+export const MANDALA_STRIPS = ["off", "bottom"] as const;
 
 export const MandalaLookPresetSchema = z.enum([
   "aurora",
@@ -71,6 +73,12 @@ export const MandalaLookSchema = z
       z.literal(60),
       z.literal(90),
     ]),
+    /**
+     * A row of the sequences' stills along the bottom, the current one lit,
+     * so the shifts can be followed. Missing means off, so saved clips keep
+     * their picture.
+     */
+    strip: z.enum(["off", "bottom"]).optional(),
   })
   .strict();
 export type MandalaLook = z.infer<typeof MandalaLookSchema> & {
