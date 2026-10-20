@@ -79,6 +79,7 @@
   "barkSurfaces": [],
   "notes": [
     "folder is the name Fab's Add to Project gives the pack under Content/Megaplant_Library (checked 2026-10-20).",
+    "grow-trees.py adopt copies the packs' shipped trees (A-G) into the family folders; the FORMS table there maps each family to a tree of about the right height, so beech, hickory, walnut and sycamore stands borrow hornbeam and black alder until a matching pack is added.",
     "barkSurfaces gains an entry {form, source, url, license} for every bark texture that does not come from a pack above."
   ]
 }

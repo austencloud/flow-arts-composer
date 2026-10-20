@@ -14,6 +14,7 @@
     {"Name": "PCG", "Enabled": true},
     {"Name": "DynamicWind", "Enabled": true},
     {"Name": "ProceduralVegetationEditor", "Enabled": true},
-    {"Name": "AndroidFileServer", "Enabled": false}
+    {"Name": "AndroidFileServer", "Enabled": false},
+    {"Name": "GeometryScripting", "Enabled": true}
   ]
 }
