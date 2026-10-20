@@ -133,3 +133,14 @@ Austen watched the first build and asked for shifts that run "consistently, but 
 - `MandalaShift` gains `pace: "steady" | "land"` (optional; missing means steady). Steady morphs at one rate across the whole interval between shifts, with no easing and no hold, so the picture is always moving and each sequence is whole exactly on its beat. Land is the first build's behaviour (hold, then `bloomEase` over the last `morph` beats). The default is steady; the Morph over control shows only for Land.
 - `breathBeats` gains 0, shown as Off, which holds the tips at the depth's full reach (`breathAt` returns 1). The default is Off. Depth shows only while breathing; flow colours keep cycling as if the breath were 4 beats.
 - The Look panel groups are Shift, Lines, Colours, Breath and Spin, so breath and spin are set apart from the shift.
+
+## Revision 2026-10-20: the strip
+
+Austen asked for the chosen mandalas in a row along the bottom, "sort of like pictographs", lit as the mandala shifts through them. Decisions: the strip is part of the mandala (a look choice, not a timeline item of its own), and each cell is a still of its sequence with the current one lit.
+
+- `MandalaLook` gains `strip: "off" | "bottom"` (optional; missing means off, so saved clips do not change). The Look panel shows it as a Strip control with two visible choices; the test page starts with it on.
+- With the strip on, the figure keeps the largest square above a band along the bottom of the box. The band is one seventh of the box height, at least 40 logical pixels, and holds one square cell per sequence, in list order, centred, with a gap of a quarter cell. Cells never exceed the band's height, and with more cells than fit across the width they shrink to fit.
+- A cell is its sequence at the standard tip reach, the look's line shape, no spin, no breath, drawn in the frame's palette: the solid pair, or the flow colours at the frame's phase. The lit cell draws at full strength with a ring in the frame's left stroke colour; the rest draw at 35% alpha.
+- The light follows `shiftFrameAt`: cell `from` is lit by `1 - morphT`, cell `to` by `morphT`, so on the steady pace the light slides and on land it crosses over the morph beats. Reduced motion lights `from` until the boundary and jumps.
+- `shiftingMandalaFrameAt` adds `strip: { cells: { paths: MandalaPaths; lit: number }[] } | null` to the frame, so preview and export cannot differ. `drawShiftingMandalaFrame` takes the figure's square from the area above the band and paints each cell through `renderMandalaToCanvas` at the cell's size with no glow, which keeps export cost flat.
+- Tests (`mandala-shift-render.test.ts`): the frame carries no strip when off; at beat 0 cell 0 is lit 1 and the rest 0; at the midpoint of a steady 4-beat hold the two cells read 0.5; with one sequence the one cell stays lit; the band geometry (`stripLayout`) gives the figure square and cell boxes for a given width, height and count.
