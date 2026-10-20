@@ -121,6 +121,12 @@
       shortLabel: t("browse_ui_length"),
       icon: "fa-ruler",
     },
+    {
+      id: BrowseSortMethod.DENSITY,
+      label: t("browse_ui_mandala"),
+      shortLabel: t("browse_ui_mandala"),
+      icon: "fa-dharmachakra",
+    },
   ]);
 
   let sortOpen = $state(false);

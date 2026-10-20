@@ -21,10 +21,20 @@
   } from "#lib/shared/mandala/domain/mandala-shift-types.js";
   import type { ShiftingMandalaSource } from "#lib/shared/mandala/services/mandala-shift-render.js";
   import { SHOWCASE_MANDALAS } from "../../(public)/composer/_sections/showcase-mandalas";
+  import { calculate } from "#lib/shared/mandala/services/mandala-geometry-calculator.js";
+  import { mandalaCoverage } from "#lib/shared/mandala/services/mandala-density.js";
+  import { formatDensity } from "#lib/shared/browse/services/sequence-density.js";
 
   const BPM = 120;
   const PICKS = [0, 5, 11, 18];
   const SHAPES = ["arc", "linear", "concave", "hybrid"] as const;
+
+  /** The showcase sparse to dense: the word says nothing about the picture. */
+  const RANKED = SHOWCASE_MANDALAS.map((m, i) => ({
+    m,
+    i,
+    coverage: mandalaCoverage(calculate(m.steps)),
+  })).sort((a, b) => a.coverage - b.coverage);
 
   let picked = $state<number[]>(PICKS);
   const sources = $derived<ShiftingMandalaSource[]>(
@@ -106,14 +116,15 @@
       <input type="range" min="0" max="64" step="0.05" bind:value={beats} />
     </label>
 
-    <h2>Sequences ({sources.length})</h2>
+    <h2>Sequences ({sources.length}) <small>sparse to dense</small></h2>
     <div class="chips">
-      {#each SHOWCASE_MANDALAS as m, i (m.id)}
+      {#each RANKED as { m, i, coverage } (m.id)}
         <button
           type="button"
           class="chip"
           aria-pressed={picked.includes(i)}
-          aria-label={simplifyRepeatedWord(m.name)}
+          aria-label={`${simplifyRepeatedWord(m.name)}, ${formatDensity(coverage)} covered`}
+          title={`${formatDensity(coverage)} covered`}
           onclick={() => togglePick(i)}
         >
           <TkaLabel text={simplifyRepeatedWord(m.name)} darkMode />

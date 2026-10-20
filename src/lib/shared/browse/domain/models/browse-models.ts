@@ -24,6 +24,7 @@ export interface SectionConfig {
     | "letter"
     | "length"
     | "difficulty"
+    | "density"
     | "date"
     | "tnd-family"
     | "none";

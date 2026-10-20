@@ -19,6 +19,13 @@ import { stripWordNotation } from "#lib/shared/foundation/utils/word-notation.js
 import { calculateDifficultyLevel } from "#lib/shared/browse/services/sequence-difficulty-calculator.js";
 
 /** Numeric difficulty (1–3). Prefers the stored `level`, else computes from steps. */
+import {
+  DENSITY_BANDS,
+  densityBandById,
+  densityBandOf,
+  resolveMandalaDensity,
+} from "#lib/shared/browse/services/sequence-density.js";
+
 function resolveLevel(sequence: SequenceData): number {
   if (typeof sequence.level === "number") return sequence.level;
   if (sequence.steps?.length) return calculateDifficultyLevel([...sequence.steps]);
@@ -192,6 +199,10 @@ function getGroupKey(
       // level banner with letter subsections beneath. Key: "1|A|4".
       return `${resolveLevel(sequence)}|${deriveLetter(sequence)}|${stepCountOf(sequence)}`;
 
+    case "density":
+      // The band of the mandala the sequence draws: sparse, medium, dense.
+      return densityBandOf(resolveMandalaDensity(sequence)).id;
+
     case "author":
       return sequence.author ?? "Unknown Author";
 
@@ -281,6 +292,9 @@ function createSectionTitle(
       return `Level ${lvl} · ${letter} (${steps} steps) (${countText})`;
     }
 
+    case "density":
+      return `${densityBandById(key)?.label ?? key} (${countText})`;
+
     case "author":
       return `👤 ${key} (${countText})`;
 
@@ -351,6 +365,14 @@ function sortSequencesInSection(
           return lengthCompare;
         }
         return dateB - dateA; // Most recent first as secondary
+      });
+
+    case BrowseSortMethod.DENSITY:
+      // Sparse mandala first; same coverage falls back to length.
+      return sorted.sort((a, b) => {
+        const densityCompare = resolveMandalaDensity(a) - resolveMandalaDensity(b);
+        if (densityCompare !== 0) return densityCompare;
+        return getLength(a) - getLength(b);
       });
 
     case "author":
@@ -480,6 +502,11 @@ function getSectionSortOrder(
       const letterIndex = KINETIC_ALPHABET_ORDER.indexOf(letter);
       const beatOrder = parseInt(stepStr, 10) || 0;
       return level * 1_000_000 + (letterIndex + 1) * 1000 + beatOrder;
+    }
+
+    case "density": {
+      const index = DENSITY_BANDS.findIndex((band) => band.id === key);
+      return index === -1 ? 999 : index;
     }
 
     case "author":

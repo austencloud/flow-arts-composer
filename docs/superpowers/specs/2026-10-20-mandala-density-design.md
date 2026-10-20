@@ -18,7 +18,7 @@ and identity, and puts a Mandala sort everywhere Browse sorts today.
 
 - `mandalaSignature(paths: MandalaPaths): { coverage: number; key: string }`,
   with `mandalaCoverage` and `mandalaKey` as the two halves.
-- The geometry is dropped onto a 48 by 48 grid spanning the square the still
+- The geometry is dropped onto a 64 by 64 grid spanning the square the still
   is drawn in (`resolveMandalaRenderExtent` at the standard tip reach, both
   hands). Each hand's traced points (`SVGPathData.beats`, or the end points of
   the path's curve commands when a path carries no beats) are walked in
@@ -42,7 +42,8 @@ and identity, and puts a Mandala sort everywhere Browse sorts today.
 - Cached by sequence id, word and step count, bounded at 4000 entries, so a
   sort pass measures each sequence once and a later pass pays nothing.
 - Bands for sections: `DENSITY_BANDS`, three thresholds set from the showcase
-  distribution and kept as constants; `densityBandOf(coverage)` picks one.
+  distribution (coverage under 31% is sparse, 38% and over is dense; the 36
+  showcase mandalas run 16% to 64%) and kept as constants; `densityBandOf(coverage)` picks one.
   The adjective sits on the mandala, never on the sequence: a sequence is not
   sparse, its mandala is. So the bands read "Sparse mandala", "Medium
   mandala" and "Dense mandala", the sort is called Mandala, and there is no
