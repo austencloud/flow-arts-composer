@@ -51,6 +51,7 @@
     capOnPath,
     capPathRhythm,
     capPoiProblem,
+    capPropRelationship,
     capStrip,
     type Cap,
     type CapDirection,
@@ -59,8 +60,16 @@
     type CapTiming,
   } from "#lib/shared/guide-topics/caps-topic.js";
   import { TND_TO_ELEMENTAL } from "#lib/shared/pictograph/shared/domain/utils/tnd-calculator.js";
-  import { getElementImagePath } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import {
+    getElementImagePath,
+    type ElementalType,
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import { elementalDisplayLabel } from "#lib/shared/pictograph/shared/components/elemental-display-label.js";
+  import {
+    AnimationVisibilityStateManager,
+    getAnimationVisibilityManager,
+  } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import type { PropRelationship } from "#lib/shared/shape-matrix/domain/prop-relationship.js";
   import TurnNotationControls from "#lib/shared/shape-matrix/app/components/TurnNotationControls.svelte";
   import type { MatrixLabelMode } from "#lib/shared/shape-matrix/domain/matrix-turn-band.js";
   import { ratioLabel } from "#lib/shared/shape-matrix/domain/flower-signature.js";
@@ -194,6 +203,62 @@
     capOnPath(CAP_HAND_PATHS[pathColumn - 1]!, leftSpin, rightSpin)
   );
   const spinExample = $derived(showcase(spinCap));
+
+  // The spin player shows both element glyphs where the app always puts
+  // them: the hands' at the bottom right, changing with the path's rhythm,
+  // and the props' at the top right, which holds one element the whole way.
+  const sharedVisibility = getAnimationVisibilityManager();
+  const spinVisibility = new AnimationVisibilityStateManager({
+    ephemeral: true,
+  });
+  spinVisibility.replaceAll({
+    ...sharedVisibility.snapshot(),
+    elementalGlyph: true,
+    propElementalGlyph: true,
+  });
+  spinVisibility.setMotionPolicySource(sharedVisibility);
+
+  // The props' one timing and direction names the CAP alongside its path.
+  const PROP_TIMING: Record<
+    NonNullable<PropRelationship["timing"]>,
+    Parameters<typeof t>[0]
+  > = {
+    split: "guide_eightstep_props_timing_split",
+    tog: "guide_eightstep_props_timing_together",
+    quarter: "guide_eightstep_props_timing_quarter",
+  };
+  const PROP_DIRECTION: Record<
+    NonNullable<PropRelationship["direction"]>,
+    Parameters<typeof t>[0]
+  > = {
+    same: "guide_eightstep_props_direction_same",
+    opp: "guide_eightstep_props_direction_opposite",
+  };
+  const propReading = $derived.by(() => {
+    const props = capPropRelationship(spinCap);
+    if (props.kind === "full") {
+      const element = props.element.element as ElementalType;
+      return {
+        element,
+        text: t("guide_eightstep_props_full", {
+          n: pathColumn,
+          element: elementalDisplayLabel(element),
+          timing: t(PROP_TIMING[props.timing]),
+          direction: t(PROP_DIRECTION[props.direction]),
+        }),
+      };
+    }
+    if (props.kind === "direction-only") {
+      return {
+        element: null,
+        text: t("guide_eightstep_props_drift", {
+          n: pathColumn,
+          direction: t(PROP_DIRECTION[props.direction]),
+        }),
+      };
+    }
+    return null;
+  });
   const poiProblem = (cap: Cap) =>
     propType === PropType.POI ? capPoiProblem(cap) : null;
 
@@ -388,6 +453,7 @@
           trail={TIP_TRAIL}
           render={PROP_RENDER}
           canvasLetter={false}
+          visibility={spinVisibility}
           loop
           {picTheme}
         >
@@ -484,6 +550,18 @@
                 />
               </div>
             </div>
+            {#if propReading}
+              <p class="prop-reading" aria-live="polite">
+                {#if propReading.element}
+                  <img
+                    class="prop-element"
+                    src={getElementImagePath(propReading.element)}
+                    alt=""
+                  />
+                {/if}
+                <span>{propReading.text}</span>
+              </p>
+            {/if}
             {#if poiProblem(spinCap)}
               <p class="poi-note">
                 {t(
@@ -685,6 +763,18 @@
     .path-picker :global(.ui-segments[data-grid]) {
       grid-template-columns: repeat(4, minmax(0, 1fr));
     }
+  }
+  /* The props' element and what it means, under the pickers. */
+  .prop-reading {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm, 8px);
+    margin: 0;
+  }
+  .prop-element {
+    flex: none;
+    width: 2rem;
+    height: 2rem;
   }
   /* Each path option: its number, then its rhythm as two lines of three. */
   .path-option {
