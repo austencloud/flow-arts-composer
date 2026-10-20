@@ -15,7 +15,7 @@ Use **W A S D** and the mouse to move and look. Press **C** to choose a characte
 
 ## Rebuild from source
 
-Prerequisites for full asset regeneration: Unreal Engine 5.8.3 for Windows, the eight Megaplants packs under `Content/Fab` (`Tools/tree-sources.json`), a UE 5.8 compatible Visual Studio C++ toolchain, Node.js and the source repository dependencies, and Blender 5.0. The editor target for this upgrade has compiled with Visual Studio 2026 MSVC 14.50.35717. Generated Unreal assets are excluded from Git. Full regeneration must run from `unreal/FlowFest` inside the source repository because its tools import files from the repository's `src` and `static` trees. Do not run `bootstrap.ps1` from a detached delivery copy.
+Prerequisites for full asset regeneration: Unreal Engine 5.8.3 for Windows, the eight Megaplants packs under `Content/Megaplant_Library` (`Tools/tree-sources.json`), a UE 5.8 compatible Visual Studio C++ toolchain, Node.js and the source repository dependencies, and Blender 5.0. The editor target for this upgrade has compiled with Visual Studio 2026 MSVC 14.50.35717. Generated Unreal assets are excluded from Git. Full regeneration must run from `unreal/FlowFest` inside the source repository because its tools import files from the repository's `src` and `static` trees. Do not run `bootstrap.ps1` from a detached delivery copy.
 
 Capture the production performances from the repository root on d2. The default run records the 80 legacy clips. Run family mode as well for the 41 prop families and A/B routines:
 

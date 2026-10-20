@@ -19,22 +19,24 @@ SOURCES = json.loads((PROJECT / 'Tools' / 'tree-sources.json').read_text())
 ED = u.EditorAssetLibrary
 TREES = '/Game/FlowFest/Assets/Trees'
 VEGETATION = '/Game/FlowFest/Vegetation'
+# Content/Megaplant_Library -> /Game/Megaplant_Library/
+PACK_ROOT = '/Game/' + SOURCES['contentFolder'].split('/', 1)[1] + '/'
 
 # form -> (variant letters, height m, crown radius / height, clear bole / height, pack folder)
 FORMS = {
-    'sugar-maple-stand':      ('abcd', 22, 0.28, 0.34, 'Megaplants_Norway_Maple_Forest'),
-    'silver-maple-damp':      ('abc',  22, 0.38, 0.24, 'Megaplants_Norway_Maple_Forest'),
-    'american-sycamore-damp': ('abc',  25, 0.33, 0.28, 'Megaplants_Norway_Maple_Forest'),
-    'american-beech-stand':   ('abc',  20, 0.30, 0.30, 'Megaplants_European_Beech_Saplings'),
-    'white-oak-stand':        ('abc',  24, 0.27, 0.32, 'Megaplants_English_Oak'),
-    'white-oak-open':         ('ab',   20, 0.40, 0.22, 'Megaplants_English_Oak'),
-    'black-walnut-stand':     ('abc',  21, 0.26, 0.38, 'Megaplants_Elder'),
-    'black-walnut-open':      ('ab',   18, 0.36, 0.26, 'Megaplants_Elder'),
-    'shagbark-hickory-stand': ('abc',  20, 0.23, 0.38, 'Megaplants_Elder'),
-    'hophornbeam-understory': ('abcd', 11, 0.29, 0.22, 'Megaplants_European_Hornbeam'),
-    'boxelder-understory':    ('abcd', 11, 0.46, 0.14, 'Megaplants_Elder'),
-    'eastern-redcedar-open':  ('abc',  12, 0.17, 0.06, 'Megaplants_Japanese_Cypress'),
-    'standing-snag':          ('ab',   16, 0.30, 0.00, 'Megaplants_Dead_Pine'),
+    'sugar-maple-stand':      ('abcd', 22, 0.28, 0.34, 'Tree_Norway_Maple'),
+    'silver-maple-damp':      ('abc',  22, 0.38, 0.24, 'Tree_Norway_Maple'),
+    'american-sycamore-damp': ('abc',  25, 0.33, 0.28, 'Tree_Norway_Maple'),
+    'american-beech-stand':   ('abc',  20, 0.30, 0.30, 'Tree_European_Beech'),
+    'white-oak-stand':        ('abc',  24, 0.27, 0.32, 'Tree_English_Oak'),
+    'white-oak-open':         ('ab',   20, 0.40, 0.22, 'Tree_English_Oak'),
+    'black-walnut-stand':     ('abc',  21, 0.26, 0.38, 'Tree_Elder'),
+    'black-walnut-open':      ('ab',   18, 0.36, 0.26, 'Tree_Elder'),
+    'shagbark-hickory-stand': ('abc',  20, 0.23, 0.38, 'Tree_Elder'),
+    'hophornbeam-understory': ('abcd', 11, 0.29, 0.22, 'Tree_Hornbeam'),
+    'boxelder-understory':    ('abcd', 11, 0.46, 0.14, 'Tree_Elder'),
+    'eastern-redcedar-open':  ('abc',  12, 0.17, 0.06, 'Tree_Japanese_Cypress'),
+    'standing-snag':          ('ab',   16, 0.30, 0.00, 'Tree_Dead_Pine'),
 }
 
 
@@ -50,7 +52,7 @@ def seed(form, letter):
 
 def inspect():
     for pack in SOURCES['packs']:
-        folder = '/Game/Fab/' + pack['folder']
+        folder = PACK_ROOT + pack['folder']
         if not ED.does_directory_exist(folder):
             u.log_error('FLOWFEST_PACK missing ' + folder)
             continue
