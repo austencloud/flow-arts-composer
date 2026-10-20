@@ -10,6 +10,7 @@
     MANDALA_LINE_WEIGHTS,
     MANDALA_SHIFT_EVERY,
     MANDALA_SHIFT_MORPH,
+    MANDALA_SHIFT_PACES,
     MANDALA_SPINS,
     MandalaLookPresetSchema,
     type MandalaLook,
@@ -126,7 +127,13 @@
         {/each}
       {/each}
     </div>
-    <h2>Morph over</h2>
+    <h2>Pace</h2>
+    <div class="chips">
+      {#each MANDALA_SHIFT_PACES as pace (pace)}
+        <button type="button" class="chip" aria-pressed={(shift.pace ?? "steady") === pace} onclick={() => (shift = { ...shift, pace })}>{pace}</button>
+      {/each}
+    </div>
+    <h2>Morph over (landing)</h2>
     <div class="chips">
       {#each MANDALA_SHIFT_MORPH as morph (morph)}
         <button type="button" class="chip" aria-pressed={shift.morph === morph} onclick={() => (shift = { ...shift, morph })}>
@@ -164,7 +171,7 @@
     <h2>Breath</h2>
     <div class="chips">
       {#each MANDALA_BREATH_BEATS as breathBeats (breathBeats)}
-        <button type="button" class="chip" aria-pressed={look.breathBeats === breathBeats} onclick={() => (look = { ...look, breathBeats })}>{breathBeats} {breathBeats === 1 ? "beat" : "beats"}</button>
+        <button type="button" class="chip" aria-pressed={look.breathBeats === breathBeats} onclick={() => (look = { ...look, breathBeats })}>{breathBeats === 0 ? "off" : `${breathBeats} ${breathBeats === 1 ? "beat" : "beats"}`}</button>
       {/each}
     </div>
     <h2>Spin per bar</h2>
