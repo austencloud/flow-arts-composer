@@ -8,6 +8,7 @@ import {
   shiftTakeTiming,
 } from "#lib/shared/media-composition/domain/take-timing.js";
 import { isPostCardQrUrl } from "./card-qr";
+import { MANDALA_MAX_SEQUENCES } from "#lib/shared/mandala/domain/mandala-shift-types.js";
 import { POST_MAX_SPOKEN_LENGTH } from "./item-kinds";
 
 /** tka's edits inside the engine: a take's timing follows its media, and tka's item fields patch. */
@@ -70,6 +71,12 @@ export const TKA_EDIT_HOOKS: EditHooks = {
       else if (isPostCardQrUrl(patch.qrUrl)) next.qrUrl = patch.qrUrl;
     }
     if (item.kind === "moves" && patch.mode) next.mode = patch.mode;
+    if (item.kind === "mandala") {
+      if (patch.sequences)
+        next.sequences = patch.sequences.slice(0, MANDALA_MAX_SEQUENCES);
+      if (patch.shift) next.shift = { ...item.shift, ...patch.shift };
+      if (patch.look) next.look = { ...item.look, ...patch.look };
+    }
     if (item.kind === "titles" && patch.spoken !== undefined) {
       // Kept as typed, spaces and all, so the field never fights the cursor.
       const spoken = patch.spoken.slice(0, POST_MAX_SPOKEN_LENGTH);

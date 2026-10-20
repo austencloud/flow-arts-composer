@@ -16,6 +16,8 @@ import {
   setBpm,
   setCellAppearance,
   setCellLayers,
+  setCellMandala,
+  setCellMediaType,
   setCellMotionVisibility,
   setCellOffset,
   setCellTipEffects,
@@ -33,6 +35,10 @@ import {
   staggerArrangement,
 } from "#lib/shared/media-composition/domain/post-project-edits.js";
 import { editContext } from "#lib/shared/post-studio-plugin/index.js";
+import {
+  DEFAULT_MANDALA_LOOK,
+  DEFAULT_MANDALA_SHIFT,
+} from "#lib/shared/mandala/domain/mandala-shift-types.js";
 
 const NOW = 1_700_000_000_000;
 
@@ -186,6 +192,26 @@ describe("cell content edits", () => {
     expect(cellAt(next, 0, 0)?.layers).not.toBe(four);
     expect(setCellLayers(start, "cell-0-0", [...four, layer("e")])).toBe(start);
     expect(setCellLayers(start, "missing", four)).toBe(start);
+  });
+
+  it("shows a cell as a mandala and keeps its shift and look over the defaults", () => {
+    const start = grid(1, 1, [filled(0, 0)]);
+    const shown = setCellMediaType(start, "cell-0-0", "mandala");
+    expect(cellAt(shown, 0, 0)?.mediaType).toBe("mandala");
+    expect(cellAt(shown, 0, 0)?.layers).toBe(cellAt(start, 0, 0)?.layers);
+    expect(setCellMediaType(shown, "cell-0-0", "mandala")).toBe(shown);
+    expect(setCellMediaType(start, "missing", "mandala")).toBe(start);
+    const tuned = setCellMandala(shown, "cell-0-0", {
+      shift: { every: 2 },
+      look: { preset: "ember" },
+    });
+    expect(cellAt(tuned, 0, 0)?.mandala).toEqual({
+      shift: { ...DEFAULT_MANDALA_SHIFT, every: 2 },
+      look: { ...DEFAULT_MANDALA_LOOK, preset: "ember" },
+    });
+    expect(setCellMandala(tuned, "cell-0-0", { shift: { every: 2 } })).toBe(tuned);
+    expect(cellAt(setCellMandala(tuned, "cell-0-0", { look: { spinPerBar: 0 } }), 0, 0)?.mandala?.look.spinPerBar).toBe(0);
+    expect(setCellMandala(start, "missing", { shift: { every: 2 } })).toBe(start);
   });
 
   it("floors the beat offset at 0 and clamps the speed", () => {

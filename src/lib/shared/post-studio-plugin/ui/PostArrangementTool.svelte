@@ -19,7 +19,9 @@
     ARRANGEMENT_MAX_LAYERS,
     ARRANGEMENT_MIN_BPM,
     ARRANGEMENT_MIN_CELL_SPEED,
+    arrangementCellMandala,
     visibleCells,
+    type ArrangementCellMandalaPatch,
     type ArrangementCellOffset,
   } from "#lib/shared/media-composition/domain/arrangement-edits.js";
   import { calculateArrangementCellBeats } from "#lib/shared/media-composition/domain/arrangement-timing.js";
@@ -38,6 +40,8 @@
     setArrangementCellAppearance,
     setArrangementCellGridJoin,
     setArrangementCellLayers,
+    setArrangementCellMandala,
+    setArrangementCellMediaType,
     setArrangementCellMotionVisibility,
     setArrangementCellOffset,
     setArrangementCellTipEffects,
@@ -81,6 +85,7 @@
   import { formatPostSpeed } from "@austencloud/video-editor/ui";
   import { arrangementLayerName } from "./arrangement-labels";
   import PostAnimationAppearanceTool from "./PostAnimationAppearanceTool.svelte";
+  import MandalaShiftLookPanel from "./MandalaShiftLookPanel.svelte";
 
   /**
    * The panels of a selected arrangement. Grid and Speed are the item's own:
@@ -167,6 +172,32 @@
   };
   const SPEED_STEP = 0.05;
   const SPEED_MARKS = [-1, 0, 1];
+
+  // ---- Shows as ------------------------------------------------------------
+
+  /** A cell shows its sequences animated, or as a mandala shifting between them. */
+  const SHOWS_AS = [
+    { value: "animation", label: "Animation" },
+    { value: "mandala", label: "Mandala" },
+  ] as const;
+  const isMandalaCell = $derived(cell?.mediaType === "mandala");
+  const cellMandala = $derived(cell ? arrangementCellMandala(cell) : null);
+
+  function setMediaType(mediaType: "animation" | "mandala"): void {
+    if (!cell || locked) return;
+    const id = cell.id;
+    editor.edit((project, ctx) =>
+      setArrangementCellMediaType(project, item.id, id, mediaType, ctx)
+    );
+  }
+
+  function patchMandala(patch: ArrangementCellMandalaPatch): void {
+    if (!cell || locked) return;
+    const id = cell.id;
+    editor.edit((project, ctx) =>
+      setArrangementCellMandala(project, item.id, id, patch, ctx)
+    );
+  }
 
   // ---- Grid ----------------------------------------------------------------
 
@@ -730,6 +761,14 @@
       Speed plays the whole grid faster or slower. Each cell keeps its own
       speed inside it.
     </p>
+  {:else if tool === "look" && cell && isMandalaCell && cellMandala}
+    <MandalaShiftLookPanel
+      shift={cellMandala.shift}
+      look={cellMandala.look}
+      onShift={(shift) => patchMandala({ shift })}
+      onLook={(look) => patchMandala({ look })}
+      {locked}
+    />
   {:else if tool === "look" || tool === "effects" || (tool === "effort" && cell)}
     {#if tool === "look" && cell}
       <div class="group" role="group" aria-label="Hands shown">
@@ -843,6 +882,19 @@
   {:else if !cell}
     <p class="hint">Tap a cell in the preview first.</p>
   {:else if tool === "sequence"}
+    {#if cell.mediaType === "animation" || isMandalaCell}
+      <div class="group" role="group" aria-label="Shows as">
+        <span class="group-name">Shows as</span>
+        <SegmentedControl
+          color="accent"
+          size="sm"
+          options={[...SHOWS_AS]}
+          value={isMandalaCell ? "mandala" : "animation"}
+          onchange={(value) => setMediaType(value)}
+          ariaLabel="Shows as"
+        />
+      </div>
+    {/if}
     {#if layers.length === 0}
       <p class="hint">This cell has no sequence yet.</p>
     {:else}
@@ -888,7 +940,9 @@
       </PanelButton>
     </div>
     <p class="hint">
-      {#if full}
+      {#if isMandalaCell && layers.length === 1}
+        One sequence holds still; add another to shift between them.
+      {:else if full}
         A cell holds up to {ARRANGEMENT_MAX_LAYERS} sequences.
       {:else if sequence && !postSequenceFits && requiredBeats !== null}
         Every sequence in the grid runs {requiredBeats}

@@ -207,6 +207,107 @@ describe("arrangement frame export", () => {
     ).toBe(true);
   });
 
+  it("draws a mandala cell's canvas beside the animation cells", async () => {
+    vi.stubGlobal("CSS", { escape: (value: string) => value });
+    const mixed: ArrangementSnapshot = {
+      ...snapshot,
+      gridCols: 2,
+      cells: [
+        snapshot.cells[0]!,
+        {
+          ...snapshot.cells[0]!,
+          id: "cell-2",
+          col: 1,
+          mediaType: "mandala",
+        },
+      ],
+    };
+    const project = createArrangementProject(
+      mixed,
+      "studio-arrangement:export-mandala",
+      123
+    );
+    const compiled = compilePostProject(project, { now: 123 })!;
+    const layers = evaluatePresetFrame(
+      compiled.preset,
+      compiled.durationSeconds,
+      0.25
+    );
+    const root = create("div");
+    const mounted = create("div");
+    mounted.className = "media-layer";
+    mounted.dataset.clipId = "arrangement-1";
+    mounted.dataset.renderMode = "arrangement";
+    const surface = create("div");
+    surface.dataset.arrangementSurface = "";
+    surface.dataset.arrangementCellCount = "2";
+    surface.style.backgroundColor = "#101018";
+    const sized: HTMLElement[] = [surface];
+    const animationCell = create("div");
+    animationCell.className = "arrangement-cell";
+    animationCell.dataset.mediaType = "animation";
+    const animationBox = create("div");
+    animationBox.className = "cell-canvas";
+    animationBox.dataset.arrangementCellReady = "true";
+    const wrapper = create("div");
+    wrapper.className = "canvas-wrapper";
+    const engineCanvas = create("canvas");
+    engineCanvas.width = 300;
+    engineCanvas.height = 300;
+    wrapper.append(engineCanvas);
+    animationBox.append(wrapper);
+    animationCell.append(animationBox);
+    sized.push(animationBox, wrapper, engineCanvas);
+    const mandalaCell = create("div");
+    mandalaCell.className = "arrangement-cell";
+    mandalaCell.dataset.mediaType = "mandala";
+    const mandalaBox = create("div");
+    mandalaBox.className = "cell-canvas";
+    mandalaBox.dataset.arrangementCellReady = "true";
+    const mandalaCanvas = create("canvas");
+    mandalaCanvas.dataset.shiftingMandala = "";
+    mandalaCanvas.width = 300;
+    mandalaCanvas.height = 300;
+    mandalaBox.append(mandalaCanvas);
+    mandalaCell.append(mandalaBox);
+    sized.push(mandalaBox, mandalaCanvas);
+    surface.append(animationCell, mandalaCell);
+    mounted.append(surface);
+    root.append(mounted);
+    const bounds = { left: 0, top: 0, width: 300, height: 300 } as DOMRect;
+    for (const element of sized)
+      vi.spyOn(element, "getBoundingClientRect").mockReturnValue(bounds);
+
+    const drawImage = vi.fn();
+    const context = new Proxy(
+      { drawImage },
+      {
+        get(target, key) {
+          return Reflect.get(target, key) ?? vi.fn();
+        },
+      }
+    );
+    const canvas = create("canvas");
+    canvas.width = 600;
+    canvas.height = 600;
+    vi.spyOn(canvas, "getContext").mockReturnValue(
+      context as unknown as CanvasRenderingContext2D
+    );
+    capture.mockReset();
+    await renderPostStudioFrame({
+      canvas,
+      root,
+      preset: compiled.preset,
+      layers,
+      surfaceCache: new Map(),
+      surfaces: createTkaSurfaces(),
+    });
+    expect(capture).not.toHaveBeenCalled();
+    const drawn = drawImage.mock.calls.map(([source]) => source);
+    expect(drawn).toContain(engineCanvas);
+    expect(drawn).toContain(mandalaCanvas);
+  });
+
   it("waits for cell canvases rebuilt at the export layout size", async () => {
     vi.stubGlobal("CSS", { escape: (value: string) => value });
     const project = createArrangementProject(

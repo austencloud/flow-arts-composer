@@ -110,6 +110,8 @@ export function tkaRow(
       ];
     case "titles":
       return ["back", "titles", "timing", ...TAIL];
+    case "mandala":
+      return ["back", "sequence", "split", "look", "timing", ...TAIL];
     case "arrangement":
       if (facts.cell)
         return [

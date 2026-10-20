@@ -33,9 +33,10 @@ function subjectName(editor: VideoEditorState): string | null {
 
 /**
  * Tools that need the post's sequence: its look and beat tapping. An
- * arrangement's Look is its own, so it stays without one.
+ * arrangement's or a mandala's Look is its own, so it stays without one.
  */
 const SEQUENCE_TOOLS = new Set(["look", "beats"]);
+const OWN_LOOK_KINDS = new Set(["arrangement", "mandala"]);
 
 /** tka's editor UI: its tools and panels, the timing mode and its backup. */
 export function createTkaPluginUi(): PluginUi {
@@ -45,7 +46,7 @@ export function createTkaPluginUi(): PluginUi {
     toolRow: (item, core, editor) => {
       const row = tkaRow(item, core, item ? tkaRowFacts(item, editor) : NO_FACTS);
       return tkaEditorOf(editor)?.sequence === null &&
-        item?.kind !== "arrangement"
+        !(item && OWN_LOOK_KINDS.has(item.kind))
         ? row.filter((id) => !SEQUENCE_TOOLS.has(id))
         : row;
     },

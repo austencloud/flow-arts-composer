@@ -32,13 +32,15 @@
   import { tkaEditorTranslate } from "#lib/shared/media-composition/state/editor-strings.js";
   import ChipPopoverOption from "#lib/shared/browse/components/filter-chips/ChipPopoverOption.svelte";
   import PostAnimationAppearanceTool from "#lib/shared/post-studio-plugin/ui/PostAnimationAppearanceTool.svelte";
+  import PostMandalaSequencesTool from "./PostMandalaSequencesTool.svelte";
   import { DEFAULT_MANDALA_OVERLAY_CONFIG } from "#lib/shared/mandala/domain/mandala-overlay-types.js";
   import { useTkaEditor } from "./tka-editor-context";
 
   /**
    * The item tool's panels for tka's own kinds: an animation's backdrop
    * framing, tunnel speed, tunnel and animation appearance and labels; a
-   * moves strip's appearance and what it shows; the titles' spoken line.
+   * moves strip's appearance and what it shows; the titles' spoken line; a
+   * mandala clip's ordered sequences (its Look is the shared Look panel's).
    * Renders nothing for a tool none of them owns.
    */
   let {
@@ -302,6 +304,10 @@
       onchange={(mode) => patchItem({ mode })}
       ariaLabel={t("post_editor_moves_show")}
     />
+  {/if}
+{:else if item?.kind === "mandala"}
+  {#if tool === "sequence" && item.kind === "mandala"}
+    <PostMandalaSequencesTool {editor} {item} {locked} />
   {/if}
 {:else if item?.kind === "titles"}
   {#if tool === "titles" && item.kind === "titles"}

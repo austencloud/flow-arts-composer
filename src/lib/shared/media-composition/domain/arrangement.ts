@@ -13,10 +13,28 @@ import {
   PostAnimationAppearanceSchema,
   type PostAnimationAppearance,
 } from "./post-animation-appearance.js";
+import {
+  MandalaLookSchema,
+  MandalaShiftSchema,
+  type MandalaLook,
+  type MandalaShift,
+} from "#lib/shared/mandala/domain/mandala-shift-types.js";
 
 export const ARRANGEMENT_SCHEMA_VERSION = 2;
 /** The backing grid is always this many rows and columns; `gridRows × gridCols` of it show. */
 export const ARRANGEMENT_MAX_GRID_SIZE = 8;
+
+/** How a `mandala` cell shifts between its layers' sequences, and how it looks. */
+export interface ArrangementCellMandala {
+  shift: MandalaShift;
+  look: MandalaLook;
+}
+
+/** How a `mandala` cell shifts between its layers' sequences, and how it looks. */
+export interface ArrangementCellMandala {
+  shift: MandalaShift;
+  look: MandalaLook;
+}
 
 export interface ArrangementCell {
   id: string;
@@ -40,6 +58,8 @@ export interface ArrangementCell {
    * performer's; `arrangement-grid-join.ts` resolves it.
    */
   gridJoin?: GridJoin | null;
+  /** A `mandala` cell's shift and look; the defaults apply while unset. */
+  mandala?: ArrangementCellMandala;
 }
 
 export interface ArrangementSnapshot {
@@ -99,6 +119,7 @@ export const arrangementCellSchema = z
       "image",
       "choreo-card",
       "viewer-3d",
+      "mandala",
       "empty",
     ]),
     speedMultiplier: z.number().finite().positive().optional(),
@@ -111,6 +132,9 @@ export const arrangementCellSchema = z
     // malformed value from an older build follows the sequence instead of
     // making the whole arrangement unreadable.
     gridJoin: z.unknown().optional(),
+    mandala: z
+      .object({ shift: MandalaShiftSchema, look: MandalaLookSchema })
+      .optional(),
   })
   .passthrough();
 

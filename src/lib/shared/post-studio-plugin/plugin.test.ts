@@ -46,6 +46,7 @@ describe("tka plugin", () => {
     expectTypeOf<"carousel">().toMatchTypeOf<PostItemKind>();
     expectTypeOf<"titles">().toMatchTypeOf<PostItemKind>();
     expectTypeOf<"arrangement">().toMatchTypeOf<PostItemKind>();
+    expectTypeOf<"mandala">().toMatchTypeOf<PostItemKind>();
     expectTypeOf<Extract<PostItem, { kind: "animation" }>>().not.toBeNever();
     // The checks above also pass if a kind type decays to any; these name the exact unions.
     expectTypeOf<PostItemKind>().toEqualTypeOf<
@@ -58,9 +59,10 @@ describe("tka plugin", () => {
       | "carousel"
       | "titles"
       | "arrangement"
+      | "mandala"
     >();
     expectTypeOf<keyof PluginItemKinds>().toEqualTypeOf<
-      "animation" | "moves" | "carousel" | "titles" | "arrangement"
+      "animation" | "moves" | "carousel" | "titles" | "arrangement" | "mandala"
     >();
     expect(TKA_ITEM_KINDS.map((definition) => definition.kind)).toEqual([
       "animation",
@@ -68,6 +70,7 @@ describe("tka plugin", () => {
       "carousel",
       "arrangement",
       "titles",
+      "mandala",
     ]);
   });
 
@@ -134,12 +137,13 @@ describe("tka plugin", () => {
 });
 
 describe("tka surfaces", () => {
-  it("gives every render its own surfaces for the sequence animation, the choreo card and arrangements", () => {
+  it("gives every render its own surfaces for the sequence animation, the choreo card, arrangements and mandalas", () => {
     const one = createTkaSurfaces();
     const two = createTkaSurfaces();
     expect(one.map((surface) => surface.renderMode).sort()).toEqual([
       "arrangement",
       "choreo-card",
+      "mandala",
       "sequence-animation",
     ]);
     for (const surface of one) expect(two).not.toContain(surface);
