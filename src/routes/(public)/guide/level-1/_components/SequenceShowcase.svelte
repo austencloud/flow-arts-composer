@@ -27,6 +27,7 @@
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { guideTurnDisplayWord } from "../_data/guide-turn-display-word";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { AnimationVisibilityStateManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
   import type { TrailSettings } from "#lib/shared/animation-engine/domain/types/trail-types.js";
   import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
   import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
@@ -51,6 +52,7 @@
     loop = false,
     onStepChange,
     canvasLetter = true,
+    visibility,
   }: {
     /** Playable sequence for the animation canvas (the DEFAULT / entry-0 example). */
     sequence: SequenceData;
@@ -115,6 +117,11 @@
      * matches; hand renders never draw one. Omitted → the letter shows.
      */
     canvasLetter?: boolean;
+    /**
+     * The player's own display settings, e.g. to show the element glyphs.
+     * Omitted → the visitor's shared settings.
+     */
+    visibility?: AnimationVisibilityStateManager;
   } = $props();
 
   const propType = $derived(render?.propType ?? PropType.HAND);
@@ -260,6 +267,7 @@
       beatIndicators={false}
       trailSettingsOverride={trail}
       hideTkaGlyph={!canvasLetter}
+      visibilityManagerOverride={visibility}
       onStepChange={handleStepChange}
     />
   {/if}
