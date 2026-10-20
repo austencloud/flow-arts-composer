@@ -7,20 +7,29 @@ import type { MandalaColorMode, MandalaPathShape, MandalaPresetId } from "./mand
  * the song: a slower song breathes, spins and shifts slower.
  */
 
-/** How often the mandala shifts to the next sequence, and how long the morph takes (beats). */
+/**
+ * How often the mandala shifts to the next sequence and how the morph runs:
+ * `steady` morphs the whole way between shifts at one rate, so the picture
+ * never holds still; `land` holds each sequence and morphs over the last
+ * `morph` beats so the next one lands on the beat. Older settings with no
+ * pace are steady.
+ */
 export const MandalaShiftSchema = z
   .object({
     every: z.union([z.literal(1), z.literal(2), z.literal(4)]),
     unit: z.enum(["bars", "beats"]),
+    pace: z.enum(["steady", "land"]).optional(),
     morph: z.union([z.literal(1), z.literal(2), z.literal(4)]),
   })
   .strict();
 export type MandalaShift = z.infer<typeof MandalaShiftSchema>;
 
 export const MANDALA_SHIFT_EVERY = [1, 2, 4] as const;
+export const MANDALA_SHIFT_PACES = ["steady", "land"] as const;
 export const MANDALA_SHIFT_MORPH = [1, 2, 4] as const;
 export const MANDALA_LINE_WEIGHTS = [1.5, 2.5, 4] as const;
-export const MANDALA_BREATH_BEATS = [1, 2, 4, 8] as const;
+/** Beats per breath; 0 is no breath, the tips held at the depth's reach. */
+export const MANDALA_BREATH_BEATS = [0, 1, 2, 4, 8] as const;
 export const MANDALA_SPINS = [0, 15, 30, 60, 90] as const;
 
 export const MandalaLookPresetSchema = z.enum([
@@ -46,8 +55,14 @@ export const MandalaLookSchema = z
     preset: MandalaLookPresetSchema,
     /** How far the tips breathe out past the still picture, 0 (still) to 100 (the viewer's full reach). */
     depth: z.number().finite().min(0).max(100),
-    /** Beats per breath (one in and out of the tip reach). */
-    breathBeats: z.union([z.literal(1), z.literal(2), z.literal(4), z.literal(8)]),
+    /** Beats per breath (one in and out of the tip reach); 0 holds the tips at the reach. */
+    breathBeats: z.union([
+      z.literal(0),
+      z.literal(1),
+      z.literal(2),
+      z.literal(4),
+      z.literal(8),
+    ]),
     /** Degrees the figure turns per bar. */
     spinPerBar: z.union([
       z.literal(0),
@@ -66,6 +81,7 @@ export type MandalaLook = z.infer<typeof MandalaLookSchema> & {
 export const DEFAULT_MANDALA_SHIFT: MandalaShift = {
   every: 1,
   unit: "bars",
+  pace: "steady",
   morph: 2,
 };
 
@@ -75,7 +91,7 @@ export const DEFAULT_MANDALA_LOOK: MandalaLook = {
   colorMode: "flow",
   preset: "aurora",
   depth: 100,
-  breathBeats: 4,
+  breathBeats: 0,
   spinPerBar: 30,
 };
 

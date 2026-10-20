@@ -125,3 +125,11 @@ In the cell's **Sequence** panel a `SegmentedControl` "Animation | Mandala" at t
 ### Out of scope
 
 Joined grids (hand offsets) in the shifting mandala; per-sequence colours; drag-reordering on the lane; a BPM picker of its own (the music tool owns the grid).
+
+## Revision 2026-10-20: steady shifts, breath as its own switch
+
+Austen watched the first build and asked for shifts that run "consistently, but gradually", and for breathing to be separate ("it does not have to breathe"). Changes:
+
+- `MandalaShift` gains `pace: "steady" | "land"` (optional; missing means steady). Steady morphs at one rate across the whole interval between shifts, with no easing and no hold, so the picture is always moving and each sequence is whole exactly on its beat. Land is the first build's behaviour (hold, then `bloomEase` over the last `morph` beats). The default is steady; the Morph over control shows only for Land.
+- `breathBeats` gains 0, shown as Off, which holds the tips at the depth's full reach (`breathAt` returns 1). The default is Off. Depth shows only while breathing; flow colours keep cycling as if the breath were 4 beats.
+- The Look panel groups are Shift, Lines, Colours, Breath and Spin, so breath and spin are set apart from the shift.

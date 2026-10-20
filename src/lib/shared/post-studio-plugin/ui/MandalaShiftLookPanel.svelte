@@ -1,8 +1,9 @@
 <script lang="ts">
   /**
-   * How a shifting mandala moves and looks: when it shifts and how long the
-   * morph takes, then the line shape, colours, weight, breath and spin. Every
-   * choice is a visible button; the parent applies each patch.
+   * How a shifting mandala moves and looks: when it shifts and whether the
+   * morph runs steadily or lands on the beat, then the line shape, colours,
+   * weight, breath (its own switch, with Off) and spin. Every choice is a
+   * visible button; the parent applies each patch.
    */
   import {
     MANDALA_BREATH_BEATS,
@@ -14,6 +15,7 @@
     type MandalaLook,
     type MandalaShift,
   } from "#lib/shared/mandala/domain/mandala-shift-types.js";
+  import { shiftPace } from "#lib/shared/mandala/services/mandala-shift.js";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import ValueSlider from "#lib/shared/ui/components/ValueSlider.svelte";
 
@@ -42,6 +44,10 @@
   const UNITS = [
     { value: "bars", label: "Bars" },
     { value: "beats", label: "Beats" },
+  ] as const;
+  const PACES = [
+    { value: "steady", label: "Steady" },
+    { value: "land", label: "Land on the beat" },
   ] as const;
   const MORPH = MANDALA_SHIFT_MORPH.map((morph) => ({
     value: num(morph),
@@ -72,8 +78,10 @@
   }));
   const BREATHS = MANDALA_BREATH_BEATS.map((beats) => ({
     value: num(beats),
-    label: `${beats} ${beats === 1 ? "beat" : "beats"}`,
+    label: beats === 0 ? "Off" : `${beats} ${beats === 1 ? "beat" : "beats"}`,
   }));
+  const pace = $derived(shiftPace(shift));
+  const breathing = $derived(look.breathBeats > 0);
   const SPINS = MANDALA_SPINS.map((spin) => ({
     value: num(spin),
     label: spin === 0 ? "None" : `${spin}°`,
@@ -104,16 +112,27 @@
         ariaLabel="Bars or beats"
       />
     </div>
-    <span class="group-name">Morph over</span>
+    <span class="group-name">Pace</span>
     <SegmentedControl
       color="accent"
       size="sm"
-      options={MORPH}
-      value={num(shift.morph)}
-      onchange={(value) =>
-        onShift({ morph: Number(value) as MandalaShift["morph"] })}
-      ariaLabel="Morph over"
+      options={[...PACES]}
+      value={pace}
+      onchange={(value) => onShift({ pace: value })}
+      ariaLabel="Pace"
     />
+    {#if pace === "land"}
+      <span class="group-name">Morph over</span>
+      <SegmentedControl
+        color="accent"
+        size="sm"
+        options={MORPH}
+        value={num(shift.morph)}
+        onchange={(value) =>
+          onShift({ morph: Number(value) as MandalaShift["morph"] })}
+        ariaLabel="Morph over"
+      />
+    {/if}
     {#if gridNote}
       <p class="hint">{gridNote}</p>
     {/if}
@@ -162,17 +181,7 @@
     />
   </section>
 
-  <section class="group" aria-label="Motion">
-    <ValueSlider
-      label="Depth"
-      value={look.depth}
-      min={0}
-      max={100}
-      step={5}
-      format={percent}
-      disabled={locked}
-      onchange={(depth) => onLook({ depth })}
-    />
+  <section class="group" aria-label="Breath">
     <span class="group-name">Breath</span>
     <SegmentedControl
       color="accent"
@@ -183,6 +192,21 @@
         onLook({ breathBeats: Number(value) as MandalaLook["breathBeats"] })}
       ariaLabel="Breath length"
     />
+    {#if breathing}
+      <ValueSlider
+        label="Depth"
+        value={look.depth}
+        min={0}
+        max={100}
+        step={5}
+        format={percent}
+        disabled={locked}
+        onchange={(depth) => onLook({ depth })}
+      />
+    {/if}
+  </section>
+
+  <section class="group" aria-label="Spin">
     <span class="group-name">Spin per bar</span>
     <SegmentedControl
       color="accent"
