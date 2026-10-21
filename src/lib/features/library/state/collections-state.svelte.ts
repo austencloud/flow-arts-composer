@@ -13,7 +13,10 @@ import { LIBRARY_LIMITS } from "#lib/shared/library/data/firestore-paths.js";
 import { claimCollectionShareCode } from "#lib/shared/library/services/collection-share-link.js";
 import type { LibraryCollection } from "#lib/shared/library/domain/models/collection.js";
 import type { SmartFilterSpec } from "#lib/shared/library/domain/models/collection.js";
-import { isSmartCollection } from "#lib/shared/library/domain/models/collection.js";
+import {
+  isFavoritesCollection,
+  isSmartCollection,
+} from "#lib/shared/library/domain/models/collection.js";
 import { deriveSpecMembers } from "#lib/shared/browse/services/smart-filter-spec.js";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
@@ -31,7 +34,10 @@ import {
   updateCollection,
   deleteCollection,
 } from "#lib/shared/library/services/collection-manager.js";
-import { setCollectionMembershipResolver } from "#lib/shared/browse/services/browse-filter.js";
+import {
+  setCollectionMembershipResolver,
+  setFavoriteIdsResolver,
+} from "#lib/shared/browse/services/browse-filter.js";
 import { followedCollectionsState } from "#lib/features/library/state/followed-collections-state.svelte.js";
 import { communityCollectionsState } from "#lib/features/browse/collections/state/community-collections-state.svelte.js";
 
@@ -567,6 +573,13 @@ setCollectionMembershipResolver((collectionId, candidates) => {
     (i) => i.collection.id === collectionId
   );
   return followed ? membersOf(followed.collection, candidates) : undefined;
+});
+
+// The Favorites browse filter reads your Favorites collection, so a heart set
+// in the viewer shows up under the filter on every surface at once.
+setFavoriteIdsResolver(() => {
+  const favorites = collectionsState.collections.find(isFavoritesCollection);
+  return favorites ? new Set(favorites.sequenceIds) : undefined;
 });
 
 /**
