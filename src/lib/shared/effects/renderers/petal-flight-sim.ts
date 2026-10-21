@@ -76,7 +76,7 @@ export const MAX_PETALS = 2048;
 /** Canvas pixels per metre at the reference canvas and the middle depth. */
 export const PETAL_PIXELS_PER_METRE = 140;
 const TAU = Math.PI * 2;
-/** Share of `carry × tip velocity` a petal actually leaves with. */
+/** Share of `carry Ã— tip velocity` a petal actually leaves with. */
 const RELEASE = 0.55;
 /** A tip that moves further than this in one frame jumped (a loop restart or
  *  a seek), so nothing is shed along the jump. */
