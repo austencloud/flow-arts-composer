@@ -25,4 +25,8 @@ public:
     /** Waits for every pending static mesh build, so a commandlet can exit without tripping the compiler's shutdown assert. */
     UFUNCTION(BlueprintCallable, Category = "Flow Fest|Trees")
     static void FinishMeshCompilation();
+
+    /** One line describing a mesh's built Nanite resource: triangles, clusters, hierarchy nodes, assembly transforms. */
+    UFUNCTION(BlueprintCallable, Category = "Flow Fest|Trees")
+    static FString DescribeNanite(UObject* Mesh);
 };

@@ -7,7 +7,7 @@ Modes:
   graphs                        copy each pack's vegetation graph to /Game/FlowFest/Vegetation/PV_<form> (skips existing)
   configure <form> live|far     point the form graph's Export nodes at the variant assets (run inside the open editor: py <this file> configure ...)
   packs                         print the height of every tree the packs ship (which trees to adopt)
-  adopt                         copy the packs' trees into the family folders as <family>_Live and <family>_Far
+  adopt [family ...]            copy the packs' trees into the family folders as <family>_Live and <family>_Far
   measure                       print height and crown ratio of every exported tree
   purge-eztree                  delete the old ez-tree assets from the family folders
 """
@@ -147,14 +147,16 @@ def packs():
             u.log(f'FLOWFEST_PACKTREE {pack} {path.rsplit("/", 1)[-1]} height_cm={ext.z * 2:.0f} crown={max(ext.x, ext.y) / max(ext.z * 2, 1):.2f}')
 
 
-def adopt():
+def adopt(only=()):
     """Each family takes one of its pack's shipped trees: the skeletal mesh as _Live, a Nanite static mesh with the
-    same leaf assembly as _Far."""
+    same leaf assembly as _Far. `only` limits the run to the named families."""
     u.AssetRegistryHelpers.get_asset_registry().scan_paths_synchronous([TREES], force_rescan=True)
     for form, (letters, _h, _c, _b, _pack, sources) in FORMS.items():
         for letter, spec in zip(letters, sources):
             src = source_tree(spec)
             name = family(form, letter)
+            if only and name not in only:
+                continue
             live = f'{TREES}/{name}/{name}_Live'
             far = f'{TREES}/{name}/{name}_Far'
             stale = [path.split('.')[0] for path in ED.list_assets(f'{TREES}/{name}', recursive=False, include_folder=False)
@@ -226,6 +228,43 @@ def measure():
     u.FlowFestTreeTools.finish_mesh_compilation()  # pack parts build on load; let them finish before the commandlet exits
 
 
+def describe():
+    """Print what each family's built Nanite resources hold (FLOWFEST_NANITE lines), to compare editor and game."""
+    for form, (letters, *_rest) in FORMS.items():
+        for letter in letters[:1]:
+            name = family(form, letter)
+            for suffix in ('_Live', '_Far'):
+                path = f'{TREES}/{name}/{name}{suffix}'
+                asset = ED.load_asset(path) if ED.does_asset_exist(path) else None
+                u.log('FLOWFEST_NANITE ' + (u.FlowFestTreeTools.describe_nanite(asset) if asset else path + ' MISSING'))
+                if asset is not None:
+                    u.log(f'FLOWFEST_SETTINGS {name}{suffix} {asset.get_editor_property("nanite_settings")}')
+    u.FlowFestTreeTools.finish_mesh_compilation()
+
+
+def twins():
+    """Compare every pack's skeletal part (SKM_*) with the static twin the far mesh substitutes for it: bounds and
+    material slots (FLOWFEST_TWIN lines)."""
+    for pack in SOURCES['packs']:
+        folder = PACK_ROOT + pack['folder'] + '/Instances'
+        for path in ED.list_assets(folder, recursive=False, include_folder=False):
+            asset_path = path.split('.')[0]
+            leaf = asset_path.rsplit('/', 1)[-1]
+            if not leaf.startswith('SKM_'):
+                continue
+            twin_path = asset_path.rsplit('/', 1)[0] + '/' + leaf[4:]
+            skm = ED.load_asset(asset_path)
+            twin = ED.load_asset(twin_path) if ED.does_asset_exist(twin_path) else None
+            if twin is None:
+                u.log(f'FLOWFEST_TWIN {leaf} twin MISSING')
+                continue
+            sb, tb = skm.get_bounds(), twin.get_bounds()
+            u.log(f'FLOWFEST_TWIN {leaf} skm_extent={sb.box_extent} skm_origin={sb.origin} '
+                  f'twin_extent={tb.box_extent} twin_origin={tb.origin} '
+                  f'skm_slots={len(skm.get_editor_property("materials"))} twin_slots={len(twin.get_editor_property("static_materials"))}')
+    u.FlowFestTreeTools.finish_mesh_compilation()
+
+
 def purge_eztree():
     """Delete the old ez-tree static mesh, its materials and textures from each family folder."""
     for form, (letters, *_rest) in FORMS.items():
@@ -257,9 +296,13 @@ if __name__ == '__main__':
     elif mode == 'packs':
         packs()
     elif mode == 'adopt':
-        adopt()
+        adopt(tuple(sys.argv[2:]))
     elif mode == 'measure':
         measure()
+    elif mode == 'describe':
+        describe()
+    elif mode == 'twins':
+        twins()
     elif mode == 'purge-eztree':
         purge_eztree()
     else:

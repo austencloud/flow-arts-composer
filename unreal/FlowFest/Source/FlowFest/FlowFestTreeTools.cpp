@@ -2,6 +2,10 @@
 #include "Engine/SkeletalMesh.h"
 #include "Engine/StaticMesh.h"
 #include "StaticMeshCompiler.h"
+#include "RenderUtils.h"
+#include "Rendering/NaniteResources.h"
+#include "Rendering/SkeletalMeshRenderData.h"
+#include "StaticMeshResources.h"
 
 bool UFlowFestTreeTools::CopyNaniteAssembly(USkeletalMesh* From, UStaticMesh* To)
 {
@@ -39,7 +43,11 @@ bool UFlowFestTreeTools::CopyNaniteAssembly(USkeletalMesh* From, UStaticMesh* To
     }
     Parts.Add(To);
     FStaticMeshCompilingManager::Get().FinishCompilation(Parts);
+    // The pack tree's Nanite settings are what keep its leaves through simplification: shape preservation is
+    // Voxelize (the Nanite Foliage mode) where a static mesh with only Nanite switched on has None, which
+    // simplified the leaves away to sparse specks at every distance.
     FMeshNaniteSettings& Settings = To->GetNaniteSettings();
+    Settings = From->GetNaniteSettings();
     Settings.bEnabled = true;
     Settings.NaniteAssemblyData = MoveTemp(Assembly);
     // The distance field and Nanite builders assert on an assembly whose part meshes are not cached.
@@ -58,4 +66,22 @@ void UFlowFestTreeTools::FinishMeshCompilation()
 #if WITH_EDITOR
     FStaticMeshCompilingManager::Get().FinishAllCompilation();
 #endif
+}
+
+FString UFlowFestTreeTools::DescribeNanite(UObject* Mesh)
+{
+    const Nanite::FResources* Resources = nullptr;
+    if (const UStaticMesh* Static = Cast<UStaticMesh>(Mesh))
+    {
+        if (Static->GetRenderData()) Resources = Static->GetRenderData()->NaniteResourcesPtr.Get();
+    }
+    else if (const USkeletalMesh* Skeletal = Cast<USkeletalMesh>(Mesh))
+    {
+        if (Skeletal->GetResourceForRendering()) Resources = Skeletal->GetResourceForRendering()->NaniteResourcesPtr.Get();
+    }
+    if (!Resources) return FString::Printf(TEXT("%s: no Nanite resources"), Mesh ? *Mesh->GetName() : TEXT("null"));
+    return FString::Printf(TEXT("%s tris=%u clusters=%u nodes=%d/%u transforms=%d/%u boneData=%d root=%d pages=%d flags=%u offset=%u supported=%d"),
+        *Mesh->GetName(), Resources->NumInputTriangles, Resources->NumClusters, Resources->HierarchyNodes.Num(), Resources->NumHierarchyNodes,
+        Resources->AssemblyTransforms.Num(), Resources->NumAssemblyTransforms, Resources->AssemblyBoneAttachmentData.Num(), Resources->RootData.Num(),
+        Resources->PageStreamingStates.Num(), Resources->ResourceFlags, Resources->AssemblyTransformOffset, NaniteAssembliesSupported() ? 1 : 0);
 }
