@@ -181,12 +181,24 @@ const FeedbackSummarySchema = z
 
 const ChangelogCategorySchema = z.enum(["fixed", "added", "improved"]);
 
+// An entry's example picture or clip. A bad one is dropped rather than
+// failing the whole version, so the note still shows without it.
+const ChangelogMediaSchema = z.object({
+  image: z.url({ protocol: /^https$/ }),
+  video: z.url({ protocol: /^https$/ }).optional().catch(undefined),
+  poster: z.url({ protocol: /^https$/ }).optional().catch(undefined),
+  alt: z.string().min(1),
+  width: z.number().int().positive(),
+  height: z.number().int().positive(),
+});
+
 const ChangelogEntrySchema = z
   .object({
     category: ChangelogCategorySchema,
     text: z.string(),
     feedbackId: z.string().optional(),
     contributorIds: z.array(z.string()).optional(),
+    media: ChangelogMediaSchema.optional().catch(undefined),
   })
   .passthrough();
 

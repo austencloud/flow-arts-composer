@@ -229,12 +229,21 @@ export interface EmailImage {
  * Non-https sources render nothing.
  */
 export function heroImage(image: EmailImage): string {
+  return stagedImage(image, "0 0 26px");
+}
+
+/** A change's example picture, under its line in a change list. */
+export function exampleImage(image: EmailImage): string {
+  return stagedImage(image, "12px 0 6px");
+}
+
+function stagedImage(image: EmailImage, margin: string): string {
   if (!/^https:\/\//i.test(image.src)) return "";
   const img = `<img src="${escapeHtml(image.src)}" width="${image.width}" height="${image.height}" alt="${escapeHtml(image.alt)}" style="display:block;width:100%;max-width:${image.width}px;height:auto;border:0;border-radius:14px;font-family:${SANS};font-size:15px;line-height:22px;color:${emailPalette.muted}">`;
   const linked = image.href
     ? `<a href="${escapeHtml(image.href)}" target="_blank" style="text-decoration:none">${img}</a>`
     : img;
-  return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 26px"><tr><td align="center" bgcolor="${emailPalette.stage}" style="background-color:${emailPalette.stage};border-radius:14px">${linked}</td></tr></table>`;
+  return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:${margin}"><tr><td align="center" bgcolor="${emailPalette.stage}" style="background-color:${emailPalette.stage};border-radius:14px">${linked}</td></tr></table>`;
 }
 
 /** A one-time code, large and spaced for reading off one screen into another. */

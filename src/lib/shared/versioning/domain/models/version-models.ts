@@ -28,6 +28,22 @@ export interface ChangelogEntry {
   text: string; // User-friendly description of what changed
   feedbackId?: string; // Original feedback ID for linking to details
   contributorIds?: string[]; // References to contributor doc IDs
+  media?: ChangelogMedia; // An example of the change: a picture, or a clip with its poster
+}
+
+/**
+ * A picture or short clip showing a changelog entry. `image` is the still
+ * (or GIF, for email); `video` is the clip the app plays instead when present,
+ * over `poster` while it loads (the `image` when there is no poster).
+ * The size is the file's own, so the frame can be reserved before it loads.
+ */
+export interface ChangelogMedia {
+  image: string;
+  video?: string;
+  poster?: string;
+  alt: string;
+  width: number;
+  height: number;
 }
 
 /**

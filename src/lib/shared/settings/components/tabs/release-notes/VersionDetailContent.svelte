@@ -190,11 +190,8 @@
 
     const absIdx = entries.indexOf(entry);
     const oldText = entry.text;
-    const updated: ChangelogEntry = {
-      category: cat,
-      text,
-      ...(entry.feedbackId && { feedbackId: entry.feedbackId }),
-    };
+    // Only the words change; the entry keeps its link, people and example.
+    const updated: ChangelogEntry = { ...entry, category: cat, text };
 
     await versionService.updateChangelogEntry(version.version, absIdx, updated);
     version.changelogEntries![absIdx] = updated;

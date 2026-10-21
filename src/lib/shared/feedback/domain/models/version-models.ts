@@ -5,6 +5,7 @@
  */
 
 import type { FeedbackType } from "#lib/shared/feedback/domain/models/feedback-models.js";
+import type { ChangelogMedia } from "#lib/shared/versioning/domain/models/version-models.js";
 
 /**
  * Summary counts by feedback type
@@ -28,6 +29,7 @@ export interface ChangelogEntry {
   text: string; // User-friendly description of what changed
   feedbackId?: string; // Original feedback ID for linking to details
   contributorIds?: string[]; // References to contributor doc IDs
+  media?: ChangelogMedia; // An example of the change: a picture, or a clip with its poster
 }
 
 /**

@@ -3,6 +3,7 @@ import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import {
   createPlatformUpdateEmail,
   queueUserNotificationEmail,
+  readEntryMedia,
 } from "./notificationEmailQueue";
 
 const RECIPIENT_BATCH_SIZE = 50;
@@ -47,11 +48,18 @@ export const onNewVersionEmail = onDocumentCreated(
         )
       : undefined;
     const changelogEntries = Array.isArray(data.changelogEntries)
-      ? data.changelogEntries.filter(
-          (entry): entry is { category: string; text: string } =>
-            typeof entry?.category === "string" &&
-            typeof entry?.text === "string"
-        )
+      ? data.changelogEntries
+          .filter(
+            (entry): entry is { category: string; text: string } =>
+              typeof entry?.category === "string" &&
+              typeof entry?.text === "string"
+          )
+          .map((entry) => {
+            const media = readEntryMedia((entry as { media?: unknown }).media);
+            return media
+              ? { category: entry.category, text: entry.text, media }
+              : { category: entry.category, text: entry.text };
+          })
       : undefined;
     const hero = data.heroImage;
     const heroImage =

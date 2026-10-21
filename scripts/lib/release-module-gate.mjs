@@ -500,6 +500,10 @@ export function auditChangelogEntries(
         message: `${label} needs non-empty user-facing text`,
       });
     }
+    if (entry?.media !== undefined) {
+      const problem = changelogMediaProblem(entry.media);
+      if (problem) errors.push({ index, message: `${label} ${problem}` });
+    }
     if (!CHANGELOG_AUDIENCES.has(entry?.audience)) {
       errors.push({
         index,
@@ -601,14 +605,63 @@ export function auditChangelogEntries(
   return { errors, guestCount, accountCount };
 }
 
+const HTTPS_URL = /^https:\/\/\S+$/i;
+
 /**
- * Remove release-audit metadata before notes are shown or published.
+ * What is wrong with an entry's example media, or null when it is usable.
+ *
+ * `image` is what the email shows (an animated GIF plays in Gmail and Apple
+ * Mail) and the app's poster frame; `video` is the app's MP4. Both live on
+ * the public assets CDN, so only https URLs pass.
+ *
+ * @param {unknown} media
+ * @returns {string | null}
+ */
+export function changelogMediaProblem(media) {
+  if (typeof media !== "object" || media === null) {
+    return "has media that is not an object";
+  }
+  if (typeof media.image !== "string" || !HTTPS_URL.test(media.image)) {
+    return "needs media.image as an https URL";
+  }
+  for (const field of ["video", "poster"]) {
+    const value = media[field];
+    if (
+      value !== undefined &&
+      (typeof value !== "string" || !HTTPS_URL.test(value))
+    ) {
+      return `has a media.${field} that is not an https URL`;
+    }
+  }
+  if (typeof media.alt !== "string" || media.alt.trim() === "") {
+    return "needs media.alt describing what the example shows";
+  }
+  for (const side of ["width", "height"]) {
+    const value = media[side];
+    if (!Number.isInteger(value) || value <= 0) {
+      return `needs media.${side} as a positive whole number of pixels`;
+    }
+  }
+  return null;
+}
+
+/**
+ * Remove release-audit metadata before notes are shown or published. An
+ * entry's example media is public and stays.
  *
  * @param {Array} entries
- * @returns {Array<{ category: string, text: string }>}
+ * @returns {Array<{ category: string, text: string, media?: object }>}
  */
 export function toPublicChangelog(entries) {
-  return entries.map(({ category, text }) => ({ category, text }));
+  return entries.map(({ category, text, media }) => {
+    if (!media) return { category, text };
+    const { image, video, alt, width, height } = media;
+    return {
+      category,
+      text,
+      media: { image, ...(video ? { video } : {}), alt, width, height },
+    };
+  });
 }
 
 // ── Thin I/O wrappers (not unit-tested; exercised by release.js) ────────────

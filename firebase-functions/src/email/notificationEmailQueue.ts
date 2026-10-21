@@ -6,6 +6,7 @@ import {
   changeSection,
   divider,
   escapeHtml,
+  exampleImage,
   footerLink,
   footerSignature,
   footerText,
@@ -210,6 +211,38 @@ export function createFeedbackEmail(input: {
 export interface ReleaseChangelogEntry {
   category: string;
   text: string;
+  media?: ReleaseEntryMedia;
+}
+
+/**
+ * An example of one change. The email shows `image` (an animated GIF plays
+ * in Gmail and Apple Mail); the app plays `video` when there is one.
+ */
+export interface ReleaseEntryMedia {
+  image: string;
+  video?: string;
+  alt: string;
+  width: number;
+  height: number;
+}
+
+/** A version record's entry media, or undefined when any part is unusable. */
+export function readEntryMedia(raw: unknown): ReleaseEntryMedia | undefined {
+  if (typeof raw !== "object" || raw === null) return undefined;
+  const media = raw as Record<string, unknown>;
+  const https = (value: unknown): value is string =>
+    typeof value === "string" && /^https:\/\//i.test(value);
+  const pixels = (value: unknown): value is number =>
+    typeof value === "number" && Number.isInteger(value) && value > 0;
+  if (!https(media.image) || typeof media.alt !== "string") return undefined;
+  if (!pixels(media.width) || !pixels(media.height)) return undefined;
+  return {
+    image: media.image,
+    ...(https(media.video) ? { video: media.video } : {}),
+    alt: media.alt,
+    width: media.width,
+    height: media.height,
+  };
 }
 
 /** A picture of the lead feature, usually an animated GIF on the assets CDN. */
@@ -222,6 +255,21 @@ export interface ReleaseHeroImage {
 
 // The panel's content column; a square clip fills it.
 const HERO_SIZE = 520;
+// A change line's column: the panel less the list's dash column.
+const EXAMPLE_WIDTH = 500;
+
+/**
+ * Display size for a picture in a column. Media is often made at twice the
+ * display size for sharp phones, and Outlook sizes an image by its width
+ * attribute, so the attributes carry the column size, not the file's.
+ */
+function fitWidth(
+  media: { width: number; height: number },
+  column: number
+): { width: number; height: number } {
+  const width = Math.min(media.width, column);
+  return { width, height: Math.round((media.height * width) / media.width) };
+}
 
 const RELEASE_SECTIONS = [
   { category: "added", heading: "New" },
@@ -261,19 +309,39 @@ export function createPlatformUpdateEmail(input: {
     .filter(Boolean)
     .join(" · ");
 
-  const sections: { heading: string; items: string[] }[] = RELEASE_SECTIONS.map(
-    (section) => ({
-      heading: section.heading,
-      items: entries
-        .filter((entry) => entry.category === section.category)
-        .map((entry) => entry.text)
-        .filter((text) => text !== lead),
-    })
-  ).filter((section) => section.items.length > 0);
+  // The lead's own example becomes the hero when no hero was made for it.
+  const leadMedia = entries.find((entry) => entry.text === lead)?.media;
+  const hero: ReleaseHeroImage | undefined =
+    input.heroImage ??
+    (leadMedia
+      ? {
+          url: leadMedia.image,
+          alt: leadMedia.alt,
+          ...fitWidth(leadMedia, HERO_SIZE),
+        }
+      : undefined);
+
+  // Only a few changes per section fit the email, so the ones with an
+  // example come first: a picture is what someone can't get from the line.
+  const sections: { heading: string; items: ReleaseChangelogEntry[] }[] =
+    RELEASE_SECTIONS.map((section) => {
+      const items = entries.filter(
+        (entry) => entry.category === section.category && entry.text !== lead
+      );
+      return {
+        heading: section.heading,
+        items: [
+          ...items.filter((entry) => entry.media),
+          ...items.filter((entry) => !entry.media),
+        ],
+      };
+    }).filter((section) => section.items.length > 0);
   if (sections.length === 0 && highlights.length > 1) {
     sections.push({
       heading: "Also in this release",
-      items: highlights.slice(1),
+      items: highlights
+        .slice(1)
+        .map((text) => ({ category: "highlight", text })),
     });
   }
   const changeCount = Math.max(entries.length, highlights.length);
@@ -299,7 +367,7 @@ export function createPlatformUpdateEmail(input: {
             heading: section.heading,
             items: section.items
               .slice(0, RELEASE_ITEMS_PER_SECTION)
-              .map((item) => richTextToHtml(item)),
+              .map((item) => changeItemHtml(item, releaseUrl)),
           })
         )
         .join("\n") +
@@ -311,7 +379,7 @@ export function createPlatformUpdateEmail(input: {
   const textSections = sections.flatMap((section) => [
     "",
     section.heading,
-    ...section.items.map((item) => `- ${richTextToPlain(item)}`),
+    ...section.items.map((item) => `- ${richTextToPlain(item.text)}`),
   ]);
 
   return {
@@ -335,12 +403,12 @@ export function createPlatformUpdateEmail(input: {
         ? richTextToPlain(ledeSource, { withUrls: false })
         : `Flow Arts Composer ${version} is available.`,
       body: [
-        input.heroImage
+        hero
           ? heroImage({
-              src: input.heroImage.url,
-              alt: input.heroImage.alt?.trim() || headlineText,
-              width: input.heroImage.width ?? HERO_SIZE,
-              height: input.heroImage.height ?? HERO_SIZE,
+              src: hero.url,
+              alt: hero.alt?.trim() || headlineText,
+              width: hero.width ?? HERO_SIZE,
+              height: hero.height ?? HERO_SIZE,
               href: button.href,
             })
           : "",
@@ -355,6 +423,24 @@ export function createPlatformUpdateEmail(input: {
       footer: settingsFooter("release emails"),
     }),
   };
+}
+
+/** One change line, with its example underneath, linked where the line links. */
+function changeItemHtml(
+  item: ReleaseChangelogEntry,
+  fallbackHref: string
+): string {
+  const line = richTextToHtml(item.text);
+  if (!item.media) return line;
+  return (
+    line +
+    exampleImage({
+      src: item.media.image,
+      alt: item.media.alt,
+      ...fitWidth(item.media, EXAMPLE_WIDTH),
+      href: richTextLinks(item.text)[0]?.href ?? fallbackHref,
+    })
+  );
 }
 
 /**
