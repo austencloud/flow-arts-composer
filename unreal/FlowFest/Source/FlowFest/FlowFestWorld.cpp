@@ -10,6 +10,12 @@
 #include "Components/DirectionalLightComponent.h"
 #include "Components/ExponentialHeightFogComponent.h"
 #include "Components/HierarchicalInstancedStaticMeshComponent.h"
+#include "Components/InstancedSkinnedMeshComponent.h"
+#include "DynamicWindData.h"
+#include "DynamicWindParameters.h"
+#include "DynamicWindSubsystem.h"
+#include "Engine/SkeletalMesh.h"
+#include "Misc/ConfigCacheIni.h"
 #include "Components/PointLightComponent.h"
 #include "Components/PostProcessComponent.h"
 #include "Components/SkyAtmosphereComponent.h"
@@ -153,6 +159,11 @@ void AFlowFestWorld::BeginPlay()
 void AFlowFestWorld::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
+    if (!TreeLiveGroups.IsEmpty())
+    {
+        if (const APawn* Player = UGameplayStatics::GetPlayerPawn(this, 0))
+            if (FVector::DistSquared(Player->GetActorLocation(), BreezeCenter) > FMath::Square(1000.f)) UpdateBreeze();
+    }
     if (FireLight)
     {
         const float Seconds = GetWorld()->GetTimeSeconds();
@@ -512,7 +523,12 @@ UHierarchicalInstancedStaticMeshComponent* AFlowFestWorld::AddInstanceGroup(USta
 
 void AFlowFestWorld::BuildTrees()
 {
-    TMap<FString, UHierarchicalInstancedStaticMeshComponent*> Groups;
+    // [FlowFest.Trees] NearLayer=Live|Far in DefaultGame.ini, or -ini:Game:[FlowFest.Trees]:NearLayer=Far on the command line.
+    FString NearLayer = TEXT("Live");
+    GConfig->GetString(TEXT("FlowFest.Trees"), TEXT("NearLayer"), NearLayer, GGameIni);
+    bLiveNearTrees = !NearLayer.Equals(TEXT("Far"), ESearchCase::IgnoreCase);
+    TreeWindData = NewObject<UDynamicWindData>(this, TEXT("TreeWind"));
+
     // The near trees use simple invisible trunks for walking collision. HiddenInGame
     // only affects rendering; the instances retain their BlockAll collision bodies.
     UHierarchicalInstancedStaticMeshComponent* Trunks = AddInstanceGroup(BasicMesh(TEXT("/Engine/BasicShapes/Cylinder.Cylinder")), TEXT("TreeTrunkCollision"));
@@ -523,58 +539,121 @@ void AFlowFestWorld::BuildTrees()
         Trunks->SetHiddenInGame(true);
         Trunks->SetCastShadow(false);
     }
+
+    struct FTreeBatch
+    {
+        UStaticMesh* Far = nullptr;
+        USkeletalMesh* Live = nullptr;
+        float MeshCm = 0.f;
+        bool bBackdrop = false;
+        TArray<FTransform> Transforms;
+        FBox Bounds = FBox(ForceInit);
+    };
+    TMap<FString, FTreeBatch> Batches;
+    TSet<FString> Missing;
+    NearTreeCount = 0;
+    BackdropTreeCount = 0;
+
     for (int32 Layer = 0; Layer < 2; ++Layer)
     {
-      const bool bBackdrop = Layer == 1;
-      const TArray<FSiteTree>& LayerTrees = bBackdrop ? BackdropTrees : Trees;
-      for (const FSiteTree& Tree : LayerTrees)
-      {
-        if (Tree.Family.IsEmpty() || Tree.Height <= 0.f) continue;
-        const FString GroupKey = Tree.Family + (bBackdrop ? TEXT("_backdrop") : TEXT("_near"));
-        UHierarchicalInstancedStaticMeshComponent** Existing = Groups.Find(GroupKey);
-        if (Existing && !*Existing) continue;
-        UHierarchicalInstancedStaticMeshComponent* Group = Existing ? *Existing : nullptr;
-        if (!Group)
+        const bool bBackdrop = Layer == 1;
+        const bool bLive = !bBackdrop && bLiveNearTrees;
+        for (const FSiteTree& Tree : bBackdrop ? BackdropTrees : Trees)
         {
-            FString Normalized = Tree.Family;
-            Normalized.ReplaceInline(TEXT("-"), TEXT("_"));
-            const FString AssetPath = FString::Printf(TEXT("/Game/FlowFest/Assets/Trees/%s/%s.%s"), *Normalized, *Normalized, *Normalized);
-            UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, *AssetPath);
-            if (!Mesh)
+            if (Tree.Family.IsEmpty() || Tree.Height <= 0.f) continue;
+            const FString GroupKey = Tree.Family + (bBackdrop ? TEXT("_backdrop") : TEXT("_near"));
+            if (Missing.Contains(GroupKey)) continue;
+            FTreeBatch* Batch = Batches.Find(GroupKey);
+            if (!Batch)
             {
-                // Importers can rename the generated static mesh within its family package.
+                FString Normalized = Tree.Family;
+                Normalized.ReplaceInline(TEXT("-"), TEXT("_"));
                 const FString Folder = FString::Printf(TEXT("/Game/FlowFest/Assets/Trees/%s"), *Normalized);
-                FAssetRegistryModule& Registry = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
-                TArray<FAssetData> Found;
-                Registry.Get().GetAssetsByPath(FName(*Folder), Found, true);
-                for (const FAssetData& Asset : Found)
+                FTreeBatch New;
+                New.bBackdrop = bBackdrop;
+                if (bLive)
                 {
-                    Mesh = Cast<UStaticMesh>(Asset.GetAsset());
-                    if (Mesh) break;
+                    New.Live = LoadObject<USkeletalMesh>(nullptr, *FString::Printf(TEXT("%s/%s_Live.%s_Live"), *Folder, *Normalized, *Normalized));
+                    if (New.Live) New.MeshCm = New.Live->GetBounds().BoxExtent.Z * 2.f;
                 }
+                else
+                {
+                    New.Far = LoadObject<UStaticMesh>(nullptr, *FString::Printf(TEXT("%s/%s_Far.%s_Far"), *Folder, *Normalized, *Normalized));
+                    if (New.Far) New.MeshCm = New.Far->GetBounds().BoxExtent.Z * 2.f;
+                }
+                if (!New.Live && !New.Far)
+                {
+                    UE_LOG(LogTemp, Warning, TEXT("Flow Fest tree asset missing: %s/%s_%s"), *Folder, *Normalized, bLive ? TEXT("Live") : TEXT("Far"));
+                    Missing.Add(GroupKey);
+                    continue;
+                }
+                Batch = &Batches.Add(GroupKey, MoveTemp(New));
             }
-            if (!Mesh)
+            const float Scale = Tree.Height * MetresToCm / FMath::Max(1.f, Batch->MeshCm);
+            const FVector Location = ToWorld(Tree.Position.X, Tree.Position.Y);
+            // Three.js +Y rotations reverse when source (x,y,z) maps to UE (x,z,y).
+            Batch->Transforms.Add(FTransform(FRotator(0.f, -FMath::RadiansToDegrees(Tree.Rotation), 0.f), Location, FVector(Scale)));
+            const float Reach = Tree.Height * MetresToCm;
+            Batch->Bounds += FBox(Location - FVector(Reach, Reach, 0.f), Location + FVector(Reach, Reach, Reach * 1.2f));
+            if (!bBackdrop && Trunks)
             {
-                UE_LOG(LogTemp, Warning, TEXT("Flow Fest tree asset missing: %s"), *AssetPath);
-                Groups.Add(GroupKey, nullptr);
-                continue;
+                const float TrunkHeightCm = FMath::Min(300.f, Tree.Height * MetresToCm * 0.45f);
+                Trunks->AddInstance(FTransform(FRotator::ZeroRotator, ToWorld(Tree.Position.X, Tree.Position.Y, TrunkHeightCm * 0.5f), FVector(0.5f, 0.5f, TrunkHeightCm / 100.f)));
             }
-            Group = AddInstanceGroup(Mesh, TEXT("Trees_") + GroupKey);
-            if (bBackdrop) Group->SetCullDistances(18000, 110000);
-            Groups.Add(GroupKey, Group);
         }
-        if (!Group) continue;
-        const float MeshCm = Group->GetStaticMesh()->GetBounds().BoxExtent.Z * 2.f;
-        const float Scale = Tree.Height * MetresToCm / FMath::Max(1.f, MeshCm);
-        // Three.js +Y rotations reverse when source (x,y,z) maps to UE (x,z,y).
-        Group->AddInstance(FTransform(FRotator(0.f, -FMath::RadiansToDegrees(Tree.Rotation), 0.f), ToWorld(Tree.Position.X, Tree.Position.Y), FVector(Scale)));
-        if (!bBackdrop && Trunks)
-        {
-            const float TrunkHeightCm = FMath::Min(300.f, Tree.Height * MetresToCm * 0.45f);
-            Trunks->AddInstance(FTransform(FRotator::ZeroRotator, ToWorld(Tree.Position.X, Tree.Position.Y, TrunkHeightCm * 0.5f), FVector(0.5f, 0.5f, TrunkHeightCm / 100.f)));
-        }
-      }
     }
+
+    for (TPair<FString, FTreeBatch>& Pair : Batches)
+    {
+        FTreeBatch& Batch = Pair.Value;
+        const FString Name = TEXT("Trees_") + Pair.Key;
+        if (Batch.Live)
+        {
+            // One skinned component per family. Instances arrive in one batch, the bounds are
+            // set before registration, and the component never ticks: the wind lives on the GPU.
+            UInstancedSkinnedMeshComponent* Group = NewObject<UInstancedSkinnedMeshComponent>(this, FName(*Name));
+            Group->SetupAttachment(SiteRoot);
+            Group->SetSkinnedAsset(Batch.Live);
+            Group->SetTransformProvider(TreeWindData);
+            Group->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+            Group->PrimaryComponentTick.bCanEverTick = false;
+            Group->SetPrimitiveBoundsOverride(Batch.Bounds);
+            Group->RegisterComponent();
+            TArray<int32> Animations;
+            Animations.Init(0, Batch.Transforms.Num());
+            Group->AddInstances(Batch.Transforms, Animations, false, true);
+            TreeLiveGroups.Add(Group);
+            NearTreeCount += Batch.Transforms.Num();
+        }
+        else
+        {
+            UHierarchicalInstancedStaticMeshComponent* Group = AddInstanceGroup(Batch.Far, Name);
+            if (Batch.bBackdrop) Group->SetCullDistances(18000, 110000);
+            Group->AddInstances(Batch.Transforms, false, true);
+            if (Batch.bBackdrop) BackdropTreeCount += Batch.Transforms.Num();
+            else NearTreeCount += Batch.Transforms.Num();
+        }
+    }
+    UE_LOG(LogTemp, Display, TEXT("Flow Fest trees: %d near (%s), %d backdrop, %d families missing"),
+           NearTreeCount, bLiveNearTrees ? TEXT("Nanite Foliage") : TEXT("Nanite static"), BackdropTreeCount, Missing.Num());
+    UpdateBreeze();
+}
+
+void AFlowFestWorld::UpdateBreeze()
+{
+    UDynamicWindSubsystem* Wind = GetWorld() ? GetWorld()->GetSubsystem<UDynamicWindSubsystem>() : nullptr;
+    if (!Wind || TreeLiveGroups.IsEmpty()) return;
+    if (const APawn* Player = UGameplayStatics::GetPlayerPawn(this, 0)) BreezeCenter = Player->GetActorLocation();
+    // Calm at night, gusty through the afternoon: the same sun altitude the sky uses.
+    const float Daylight = FMath::Clamp(FMath::Sin((TimeOfDay - 6.f) * PI / 12.f), 0.f, 1.f);
+    FDynamicWindParameters Params;
+    Params.SimulationCenter = BreezeCenter;
+    Params.SimulationExtents = 60000.f;
+    // Prevailing south-westerly, in UE axes (site east is +X, site south is +Y).
+    Params.WindDirection = FVector(0.77f, -0.64f, 0.f);
+    Params.WindSpeed = FMath::Lerp(4.f, 14.f, Daylight);
+    Params.WindAmplitude = FMath::Lerp(0.25f, 1.f, Daylight);
+    Wind->UpdateWindParameters(Params);
 }
 
 UStaticMesh* AFlowFestWorld::LoadSetMesh(const FString& Name) const
@@ -910,7 +989,7 @@ void AFlowFestWorld::BuildPeople()
     }
     UE_LOG(LogTemp, Display, TEXT("Flow Fest living crowd: %d persistent identities, %d road lines"),
            People.Num(), RoadLines.Num());
-    SetActorTickEnabled(People.Num() > 0 || FireLight != nullptr);
+    SetActorTickEnabled(People.Num() > 0 || FireLight != nullptr || !TreeLiveGroups.IsEmpty());
 }
 
 void AFlowFestWorld::SetSoundEnabled(bool bEnabled)
@@ -956,6 +1035,7 @@ void AFlowFestWorld::SetTimeOfDay(float Hour)
         FMath::Log2(FMath::Max(1.f, SunLux) / 2.5f) - 4.5f);
     PostProcess->Settings.AutoExposureBias = -0.8f * Daylight;
     PostProcess->Settings.BloomIntensity = FMath::Lerp(0.85f, 0.32f, Daylight);
+    UpdateBreeze();
 }
 
 void AFlowFestWorld::SetPlayerCrowdPresence(FVector WorldPosition, bool bAtFire, bool bJoining)

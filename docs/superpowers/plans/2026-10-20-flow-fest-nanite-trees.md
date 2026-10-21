@@ -61,7 +61,11 @@ Season: mid-May full leaf-out, fresh green. The snag has no foliage.
 
 ---
 
-### Task 1: Worktree, Content junction, baseline build
+### Execution note (2026-10-20)
+
+Tasks 4 and 7 changed route. The Procedural Vegetation exporter writes assets only from its toolbar button (`FPVEditor::OnExport` -> `SPVExportSelectionDialog` -> `FPVExporter::Export`, editor-private, no Python entry), so growing 39 families meant driving 26 export dialogs by hand. Austen chose the scripted route instead: `grow-trees.py adopt` copies each pack's shipped tree (already Nanite Foliage with Dynamic Wind data) as `_Live`, and builds `_Far` from it with Geometry Script plus `UFlowFestTreeTools::CopyNaniteAssembly`, which carries the Nanite leaf assembly (its node list is protected from Python) onto the static mesh. The per-form crown tuning in Task 7 is replaced by picking a shipped tree of about the right height per family (`FORMS` in `grow-trees.py`); Beech saplings and Elder are under 3 m, so beech and hickory borrow Hornbeam and walnut and sycamore borrow Black Alder. The white oak pilot was exported from its graph before the change and is overwritten by adopt; `graphs` and `configure` stay for custom trees.
+
+## Task 1: Worktree, Content junction, baseline build
 
 **Files:**
 - Create: `E:/worktrees/tka-platform/nanite-trees` (worktree), junction `E:/worktrees/tka-platform/nanite-trees/unreal/FlowFest/Content`

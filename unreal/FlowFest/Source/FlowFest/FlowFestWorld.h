@@ -8,6 +8,8 @@
 class UDirectionalLightComponent;
 class UExponentialHeightFogComponent;
 class UHierarchicalInstancedStaticMeshComponent;
+class UInstancedSkinnedMeshComponent;
+class UDynamicWindData;
 class UMaterialInterface;
 class UPostProcessComponent;
 class UPointLightComponent;
@@ -48,6 +50,12 @@ public:
 
     UFUNCTION(BlueprintPure, Category="Flow Fest|Sky")
     float GetTimeOfDay() const { return TimeOfDay; }
+
+    UFUNCTION(BlueprintPure, Category="Flow Fest|Site")
+    int32 GetNearTreeCount() const { return NearTreeCount; }
+
+    UFUNCTION(BlueprintPure, Category="Flow Fest|Site")
+    int32 GetBackdropTreeCount() const { return BackdropTreeCount; }
 
     UFUNCTION(BlueprintCallable, Category="Flow Fest|Camp")
     void SetPlayerCamp(FString CampLandmark, bool bBuilt);
@@ -127,6 +135,12 @@ private:
 
     UPROPERTY(Transient) TArray<TObjectPtr<UProceduralMeshComponent>> TerrainChunks;
     UPROPERTY(Transient) TArray<TObjectPtr<UHierarchicalInstancedStaticMeshComponent>> InstanceGroups;
+    UPROPERTY(Transient) TArray<TObjectPtr<UInstancedSkinnedMeshComponent>> TreeLiveGroups;
+    UPROPERTY(Transient) TObjectPtr<UDynamicWindData> TreeWindData;
+    int32 NearTreeCount = 0;
+    int32 BackdropTreeCount = 0;
+    bool bLiveNearTrees = true;
+    FVector BreezeCenter = FVector::ZeroVector;
     UPROPERTY(Transient) TObjectPtr<UStaticMeshComponent> PlayerTent;
     UPROPERTY(Transient) TObjectPtr<UPointLightComponent> FireLight;
 
@@ -155,6 +169,7 @@ private:
     void BuildTerrain();
     void BuildRoads();
     void BuildTrees();
+    void UpdateBreeze();
     void BuildCamps();
     void BuildVehicles();
     void BuildFestivalLandmarks();
