@@ -13,8 +13,10 @@ ME = u.MaterialEditingLibrary
 u.SystemLibrary.execute_console_command(None, 'Interchange.FeatureFlags.Import.FBX 0')
 report = {'meshes': [], 'materials': [], 'errors': []}
 # `--only=Car` imports just the jobs whose kind starts with that prefix and leaves
-# set pieces, palette materials and ground textures alone.
+# set pieces, palette materials and ground textures alone. `--only=Set/` instead
+# replaces the set pieces, which an ordinary run imports only when missing.
 ONLY = next((a.split('=', 1)[1] for a in sys.argv[1:] if a.startswith('--only=')), None)
+SET_ONLY = ONLY is not None and ONLY.startswith('Set/')
 
 def import_file(path, folder, name, mesh=False):
     target = folder + '/' + name
@@ -249,20 +251,25 @@ def material(name, color, roughness=.8, metallic=0, emissive=0):
     report['materials'].append(path)
     return m
 
-def paint_from_instance(material):
+def paint_from_instance(material, default=u.LinearColor(.5, .5, .5, 1)):
     """Recolour a parked car's body panels per instance, as the web lot's recolor
     mode does: the panel albedo gives way to the instance's paint, and the
     normal, roughness and metal inputs stay as imported."""
     current = ME.get_material_property_input_node(material, u.MaterialProperty.MP_BASE_COLOR)
     if isinstance(current, u.MaterialExpressionPerInstanceCustomData3Vector):
+        if current.get_editor_property('const_default_value') == default:
+            return
+        current.set_editor_property('const_default_value', default)
+        ME.recompile_material(material)
+        ED.save_loaded_asset(material)
         return
     paint = expression(material, u.MaterialExpressionPerInstanceCustomData3Vector,
-                       data_index=0, const_default_value=u.LinearColor(.5, .5, .5, 1))
+                       data_index=0, const_default_value=default)
     connect_property(paint, '', u.MaterialProperty.MP_BASE_COLOR)
     ME.recompile_material(material)
     ED.save_loaded_asset(material)
 
-for job in json.loads((STAGED / 'imports.json').read_text()):
+for job in ([] if SET_ONLY else json.loads((STAGED / 'imports.json').read_text())):
     if ONLY and not job['kind'].startswith(ONLY):
         continue
     folder = '/Game/FlowFest/Assets/' + job['kind']
@@ -285,8 +292,21 @@ for job in json.loads((STAGED / 'imports.json').read_text()):
     ED.save_directory(folder, only_if_is_dirty=True, recursive=True)
     if job.get('car'):
         u.log(f"FLOWFEST_CAR {job['id']} slots={len(mesh.static_materials)} painted={sorted(found)}")
-for name in ([] if ONLY else ['Tent', 'DomeTent', 'Canopy', 'Gatehouse', 'Firepit', 'Bench', 'Signpost']):
-    import_file(STAGED / (name + '.fbx'), '/Game/FlowFest/Assets/Set', name, True)
+SET_PIECES = ['Tent', 'DomeTent', 'Canopy', 'CampCanopy', 'Gatehouse', 'Firepit', 'Bench', 'Signpost']
+# Tent fly and canopy fabric take each instance's colour (BuildCamps); a lone piece
+# shows the default: the web camp's first tent colour and a white canopy top.
+SET_PAINT = {'Tent_fly_nylon': u.LinearColor(.78, .15, .07, 1), 'Canopy_fabric': u.LinearColor(.81, .79, .74, 1)}
+for name in ([n for n in SET_PIECES if ('Set/' + n).startswith(ONLY)] if SET_ONLY else [] if ONLY else SET_PIECES):
+    if SET_ONLY and ED.does_asset_exist('/Game/FlowFest/Assets/Set/' + name):
+        ED.delete_asset('/Game/FlowFest/Assets/Set/' + name)
+    mesh = import_file(STAGED / (name + '.fbx'), '/Game/FlowFest/Assets/Set', name, True)
+    for slot in mesh.static_materials:
+        material = slot.material_interface
+        if isinstance(material, u.Material) and material.get_name() in SET_PAINT:
+            paint_from_instance(material, SET_PAINT[material.get_name()])
+            ensure_instancing(material)
+    ED.save_directory('/Game/FlowFest/Assets/Set', only_if_is_dirty=True, recursive=True)
+    u.log(f"FLOWFEST_SET {name} slots={[s.material_interface.get_name() for s in mesh.static_materials if s.material_interface]}")
 
 palette = {
     'M_Ground': ((.12,.17,.055),.95,0,0), 'M_Dirt': ((.19,.13,.07),.96,0,0),

@@ -678,11 +678,28 @@ void AFlowFestWorld::AddSetPiece(const FString& AssetName, const FVector& Positi
     Component->RegisterComponent();
 }
 
+namespace
+{
+// The web camp's fabric colours (TENT_COLORS and CANOPY_COLORS in
+// flow-fest-production-geometry.ts). The tent fly and canopy fabric read them per instance.
+const TCHAR* const TentColours[] = {TEXT("e56c4c"), TEXT("e6b859"), TEXT("6fa68c"), TEXT("6f7fc2"), TEXT("bd77a0")};
+const TCHAR* const CanopyColours[] = {TEXT("e8e6df"), TEXT("2f3f66"), TEXT("c9b68a"), TEXT("3f6b4b")};
+
+// Neighbouring camps in the site list sit side by side, so mix the index before picking.
+FLinearColor CampColour(int32 CampIndex, bool bCanopy)
+{
+    const uint32 Mixed = static_cast<uint32>(CampIndex) * 2654435761u >> 16;
+    return bCanopy ? FLinearColor(FColor::FromHex(CanopyColours[Mixed % UE_ARRAY_COUNT(CanopyColours)]))
+                   : FLinearColor(FColor::FromHex(TentColours[Mixed % UE_ARRAY_COUNT(TentColours)]));
+}
+}
+
 void AFlowFestWorld::BuildCamps()
 {
     TMap<FString, UHierarchicalInstancedStaticMeshComponent*> Groups;
-    for (const FSiteCamp& Camp : Camps)
+    for (int32 CampIndex = 0; CampIndex < Camps.Num(); ++CampIndex)
     {
+        const FSiteCamp& Camp = Camps[CampIndex];
         if (Camp.Type == TEXT("player-tent"))
         {
             PlayerTentPlacement = Camp;
@@ -691,14 +708,16 @@ void AFlowFestWorld::BuildCamps()
         }
         const bool IsCanopy = Camp.Type.Contains(TEXT("canopy"), ESearchCase::IgnoreCase);
         const bool IsDome = Camp.Type.Contains(TEXT("dome"), ESearchCase::IgnoreCase);
-        FString AssetName = IsCanopy ? TEXT("Canopy") : IsDome ? TEXT("DomeTent") : TEXT("Tent");
+        // Camp canopies carry the table, cooler and chairs; the bare Canopy is the
+        // stall shade, and an older content store may have only that.
+        FString AssetName = IsCanopy ? TEXT("CampCanopy") : IsDome ? TEXT("DomeTent") : TEXT("Tent");
         UHierarchicalInstancedStaticMeshComponent* Group = Groups.FindRef(AssetName);
         if (!Group)
         {
             UStaticMesh* Mesh = LoadSetMesh(AssetName);
-            if (!Mesh && IsDome)
+            if (!Mesh && (IsDome || IsCanopy))
             {
-                AssetName = TEXT("Tent");
+                AssetName = IsCanopy ? TEXT("Canopy") : TEXT("Tent");
                 Mesh = LoadSetMesh(AssetName);
                 Group = Groups.FindRef(AssetName);
             }
@@ -706,10 +725,13 @@ void AFlowFestWorld::BuildCamps()
             if (!Group)
             {
                 Group = AddInstanceGroup(Mesh, AssetName + TEXT("Instances"));
+                Group->SetNumCustomDataFloats(3);
                 Groups.Add(AssetName, Group);
             }
         }
-        Group->AddInstance(FTransform(FRotator(0.f, -FMath::RadiansToDegrees(Camp.Rotation), 0.f), ToWorld(Camp.Position.X, Camp.Position.Y), FVector(Camp.Scale)));
+        const int32 Instance = Group->AddInstance(FTransform(FRotator(0.f, -FMath::RadiansToDegrees(Camp.Rotation), 0.f), ToWorld(Camp.Position.X, Camp.Position.Y), FVector(Camp.Scale)));
+        const FLinearColor Fabric = CampColour(CampIndex, IsCanopy);
+        Group->SetCustomData(Instance, {Fabric.R, Fabric.G, Fabric.B});
     }
     if (bHasPlayerTentPlacement)
     {
