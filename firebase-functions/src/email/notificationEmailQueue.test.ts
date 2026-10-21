@@ -5,6 +5,7 @@ import {
   createPlatformUpdateEmail,
   getEmailPreferenceForNotificationType,
   queueUserNotificationEmail,
+  readEntryMedia,
   wantsNotificationEmail,
   type NotificationEmailDependencies,
 } from "./notificationEmailQueue";
@@ -229,6 +230,79 @@ describe("notification email content", () => {
     expect(email.text).toContain(
       "Create (https://tkaflowarts.com/create/construct)"
     );
+  });
+
+  it("shows a change's example under its line, ahead of changes without one", () => {
+    const gif =
+      "https://assets.tkaflowarts.com/email/releases/0.49.0/effects.gif";
+    const email = createPlatformUpdateEmail({
+      version: "0.49.0",
+      highlights: ["**Browse has a home screen.** Tiles play."],
+      changelogEntries: [
+        { category: "improved", text: "One." },
+        { category: "improved", text: "Two." },
+        { category: "improved", text: "Three." },
+        {
+          category: "improved",
+          text: "Four effects were rebuilt.",
+          media: { image: gif, alt: "Four effects", width: 1040, height: 1040 },
+        },
+      ],
+    });
+
+    // Only three changes fit a section; the one with a picture is kept.
+    expect(email.html).toContain("Four effects were rebuilt.");
+    expect(email.html).not.toContain("Three.");
+    // Drawn at the list column's width, not the file's.
+    expect(email.html).toContain(
+      `<img src="${gif}" width="500" height="500" alt="Four effects"`
+    );
+    expect(email.html.indexOf("Four effects were rebuilt.")).toBeLessThan(
+      email.html.indexOf(gif)
+    );
+  });
+
+  it("uses the lead change's example as the hero when none was made", () => {
+    const lead = "**Browse has a home screen.** Tiles play.";
+    const gif =
+      "https://assets.tkaflowarts.com/email/releases/0.49.0/browse.gif";
+    const email = createPlatformUpdateEmail({
+      version: "0.49.0",
+      highlights: [lead],
+      changelogEntries: [
+        {
+          category: "added",
+          text: lead,
+          media: { image: gif, alt: "Browse home", width: 520, height: 520 },
+        },
+      ],
+    });
+    expect(email.html.split(gif).length).toBe(2);
+    expect(email.html.indexOf(gif)).toBeLessThan(
+      email.html.indexOf("Browse has a home screen</h1>")
+    );
+  });
+
+  it("reads only complete https entry media from a version record", () => {
+    const media = {
+      image: "https://assets.tkaflowarts.com/a.gif",
+      video: "https://assets.tkaflowarts.com/a.mp4",
+      alt: "A",
+      width: 520,
+      height: 520,
+    };
+    expect(readEntryMedia(media)).toEqual(media);
+    expect(readEntryMedia({ ...media, video: "http://x/a.mp4" })).toEqual({
+      image: media.image,
+      alt: "A",
+      width: 520,
+      height: 520,
+    });
+    expect(
+      readEntryMedia({ ...media, image: "http://x/a.gif" })
+    ).toBeUndefined();
+    expect(readEntryMedia({ ...media, width: 0 })).toBeUndefined();
+    expect(readEntryMedia("a.gif")).toBeUndefined();
   });
 
   it("links each notification to its canonical app route", () => {

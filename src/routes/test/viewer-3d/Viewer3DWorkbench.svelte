@@ -26,6 +26,9 @@
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { EMBER_VIEWER_FRONT_STAGE_FACING_ANGLE } from "#lib/shared/3d/domain/viewer-formation-facing.js";
   import { parseGridJoinToken } from "#lib/shared/foundation/domain/models/grid-join-token.js";
+  import { getOffline3DExporter } from "#lib/shared/3d/get-offline-3d-exporter.js";
+  import { CameraKeyframeBuffer } from "#lib/shared/video-export/domain/camera-keyframe.js";
+  import type { PerspectiveCamera } from "three";
 
   const WORKBENCH_SCENES = new Set<string>([
     BackgroundType.FOREST,
@@ -55,6 +58,16 @@
     import.meta.env.DEV &&
     typeof window !== "undefined" &&
     new URLSearchParams(window.location.search).get("pasteProbe") === "1";
+
+  // `?take=<name>` frames the scene square and adds a button that renders one
+  // pass of the sequence, frame-exact, to /api/dev/release-media. Release
+  // examples pair each take with the same sequence baked in 2D.
+  const takeName = (() => {
+    if (!import.meta.env.DEV || typeof window === "undefined") return null;
+    const name = new URLSearchParams(window.location.search).get("take");
+    return name && /^[a-z0-9-]{1,64}$/.test(name) ? name : null;
+  })();
+  let takeStatus = $state("");
 
   type ProbeHandles = { scene: Scene; renderer: WebGLRenderer };
   type ProbeWindow = Window & { __sceneHandles?: ProbeHandles };
@@ -387,6 +400,67 @@
     goto(url, { shallow: true, replace: true });
   });
 
+  async function recordTake() {
+    const canvas = viewer.webglCanvas;
+    const camera = viewer.threlteCamera as PerspectiveCamera | null;
+    const renderer = viewer.threlteRenderer as WebGLRenderer | null;
+    const runFrame = viewer.threlteRunFrame;
+    const pause = viewer.threltePauseAutoLoop;
+    const resume = viewer.threlteResumeAutoLoop;
+    if (
+      !takeName ||
+      !canvas ||
+      !camera ||
+      !renderer ||
+      !runFrame ||
+      !pause ||
+      !resume
+    ) {
+      takeStatus = "Scene not ready";
+      return;
+    }
+    const keyframes = new CameraKeyframeBuffer();
+    keyframes.captureStatic(camera);
+    const beatsPerSecond = bpm / 60;
+    try {
+      const blob = await getOffline3DExporter().exportOffline(
+        {
+          webglCanvas: canvas,
+          camera,
+          beatsPerSecond,
+          totalDurationSeconds: sequence.steps.length / beatsPerSecond,
+          cameraKeyframes: keyframes,
+          renderer,
+          runFrame,
+          pauseAutoLoop: pause,
+          resumeAutoLoop: resume,
+          setExporting: (value) => (viewer.isExporting = value),
+          setExportCurrentStep: (step) => (viewer.exportCurrentStep = step),
+        },
+        (progress) => {
+          takeStatus = `${progress.stage} ${Math.round(progress.progress * 100)}%`;
+        },
+        {
+          fps: 30,
+          resolution: 720,
+          loopCount: 1,
+          includeStartPlacement: false,
+          includeEndHold: false,
+          quality: "standard",
+        }
+      );
+      const response = await fetch(`/api/dev/release-media?name=${takeName}`, {
+        method: "POST",
+        body: blob,
+      });
+      takeStatus = response.ok
+        ? `saved ${((await response.json()) as { path: string }).path}`
+        : `save failed ${response.status}`;
+    } catch (cause) {
+      takeStatus = `failed: ${cause instanceof Error ? cause.message : cause}`;
+    }
+  }
+
   onDestroy(() => {
     stopProbe();
     playback.destroy();
@@ -394,7 +468,12 @@
   });
 </script>
 
-<div class="workbench" data-viewer-3d-workbench bind:this={probeRoot}>
+<div
+  class="workbench"
+  class:take={takeName !== null}
+  data-viewer-3d-workbench
+  bind:this={probeRoot}
+>
   <Viewer3DFullscreen
     effectsConfig={reviewEffects}
     sequenceData={sequence}
@@ -418,6 +497,12 @@
       playback.setProgress(0);
     }}
   />
+  {#if takeName}
+    <div class="take-bar">
+      <button onclick={recordTake} data-record-take>Record take</button>
+      <output data-take-status>{takeStatus}</output>
+    </div>
+  {/if}
   {#if pasteProbeEnabled}
     <div class="paste-probe" data-paste-probe>
       <div class="paste-probe-actions">
@@ -447,6 +532,22 @@
     min-height: 0;
     overflow: hidden;
     background: var(--theme-panel-bg, #0a0a14);
+  }
+  .workbench.take {
+    inset: 0 auto auto 0;
+    width: min(100vw, 100vh);
+    height: min(100vw, 100vh);
+  }
+  .take-bar {
+    position: fixed;
+    z-index: 1000;
+    right: 0.5rem;
+    bottom: 0.5rem;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    color: white;
+    font-size: var(--font-size-min, 0.875rem);
   }
   .paste-probe {
     position: absolute;

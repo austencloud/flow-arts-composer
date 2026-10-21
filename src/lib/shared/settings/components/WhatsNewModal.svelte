@@ -18,6 +18,7 @@
   import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
   import ContributorBadge from "./tabs/release-notes/ContributorBadge.svelte";
   import ChangelogRichText from "./tabs/release-notes/ChangelogRichText.svelte";
+  import ChangelogEntryMedia from "./tabs/release-notes/ChangelogEntryMedia.svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   // Category display order and colors
@@ -157,6 +158,9 @@
                     text={entry.text}
                     onNavigate={handleClose}
                   />
+                  {#if entry.media}
+                    <ChangelogEntryMedia media={entry.media} />
+                  {/if}
                   {#if entry.contributorIds?.length}
                     <span class="entry-contributors">
                       {#each entry.contributorIds as cid}

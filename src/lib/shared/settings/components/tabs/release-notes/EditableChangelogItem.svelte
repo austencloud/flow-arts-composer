@@ -8,6 +8,7 @@
   import ContributorBadge from "./ContributorBadge.svelte";
   import ContributorPicker from "./ContributorPicker.svelte";
   import ChangelogRichText from "./ChangelogRichText.svelte";
+  import ChangelogEntryMedia from "./ChangelogEntryMedia.svelte";
 
   let {
     entry,
@@ -293,6 +294,9 @@
       <span class="bullet"></span>
       <div class="change-item-content">
         <span class="change-text"><ChangelogRichText text={entry.text} /></span>
+        {#if entry.media}
+          <ChangelogEntryMedia media={entry.media} />
+        {/if}
         {#if contributors && contributors.length > 0}
           <div class="entry-contributors">
             {#each contributors as c (c.id)}

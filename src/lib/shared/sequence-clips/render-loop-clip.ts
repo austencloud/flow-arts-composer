@@ -25,6 +25,7 @@ import {
 } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
 import { animationSettings } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
 import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+import type { EffectType } from "#lib/shared/effects/domain/effects-config.js";
 import { resolveViewingPresentation } from "#lib/shared/sequence-preview/services/viewing-presentation.js";
 import { resolveRecordedPropConfig } from "#lib/shared/foundation/services/recorded-prop-intent.js";
 import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
@@ -36,6 +37,9 @@ import {
 
 export interface RenderLoopClipOptions {
   onProgress?: (progress: VideoExportProgress) => void;
+  /** Bake with this effect instead of the creator's recorded one (release
+   *  examples show one sequence under several effects). */
+  effect?: EffectType;
 }
 
 export interface RenderedLoopClip {
@@ -83,11 +87,12 @@ function liveTileOverlays() {
   };
 }
 
-function installLook(sequence: SequenceData) {
+function installLook(sequence: SequenceData, effect?: EffectType) {
   const look = resolveViewingPresentation(sequence);
   const vm = getAnimationVisibilityManager();
   const effects = createEffectsConfigState(undefined, { persist: false });
   effects.replace(look.effects);
+  if (effect) effects.setActiveEffect(effect);
   vm.effectsConfigState = effects;
   vm.setDarkMode(true);
   vm.setEffortPreset("linear");
@@ -104,7 +109,7 @@ export async function renderLoopClip(
   // first, so load it explicitly (idempotent, module-cached).
   await import("#lib/shared/composition-root/deferred-registrations.js");
 
-  const look = installLook(sequence);
+  const look = installLook(sequence, options.effect);
   const { leftPropType, rightPropType } = loopClipPropPair(sequence);
 
   const panelState = createAnimationPanelState();

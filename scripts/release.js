@@ -809,12 +809,18 @@ function formatGitHubReleaseNotes(changelog) {
   const added = changelog.filter((e) => e.category === "added");
   const improved = changelog.filter((e) => e.category === "improved");
 
+  // An entry's example shows under its line; GitHub plays an animated GIF.
+  const line = (e) =>
+    e.media
+      ? `- ${e.text}\n\n  ![${e.media.alt}](${e.media.image})\n`
+      : `- ${e.text}\n`;
+
   let releaseNotes = "";
 
   if (fixed.length > 0) {
     releaseNotes += "## 🐛 Bug Fixes\n\n";
     fixed.forEach((e) => {
-      releaseNotes += `- ${e.text}\n`;
+      releaseNotes += line(e);
     });
     releaseNotes += "\n";
   }
@@ -822,7 +828,7 @@ function formatGitHubReleaseNotes(changelog) {
   if (added.length > 0) {
     releaseNotes += "## ✨ New Features\n\n";
     added.forEach((e) => {
-      releaseNotes += `- ${e.text}\n`;
+      releaseNotes += line(e);
     });
     releaseNotes += "\n";
   }
@@ -830,7 +836,7 @@ function formatGitHubReleaseNotes(changelog) {
   if (improved.length > 0) {
     releaseNotes += "## 🔧 Improvements\n\n";
     improved.forEach((e) => {
-      releaseNotes += `- ${e.text}\n`;
+      releaseNotes += line(e);
     });
     releaseNotes += "\n";
   }

@@ -517,6 +517,45 @@ describe("auditChangelogEntries", () => {
       'Entry 1 must name a tab because "create" mixes guest and account-only tabs'
     );
   });
+
+  it("checks an entry's example media", () => {
+    const entry = (media: unknown) => ({
+      category: "improved",
+      text: "Silk moves like real cloth.",
+      audience: "guest",
+      surface: "global",
+      media,
+    });
+    const good = {
+      image: "https://assets.tkaflowarts.com/email/releases/0.49.0/fx.gif",
+      video: "https://assets.tkaflowarts.com/email/releases/0.49.0/fx.mp4",
+      alt: "Silk, Goo, Ink and Smoke",
+      width: 1040,
+      height: 1040,
+    };
+    const messages = (media: unknown) =>
+      auditChangelogEntries([entry(media)], ctx).errors.map(
+        (issue: { message: string }) => issue.message
+      );
+
+    expect(messages(good)).toEqual([]);
+    expect(messages({ ...good, video: undefined })).toEqual([]);
+    expect(messages({ ...good, image: "http://example.com/fx.gif" })).toEqual([
+      "Entry 1 needs media.image as an https URL",
+    ]);
+    expect(messages({ ...good, video: "/fx.mp4" })).toEqual([
+      "Entry 1 has a media.video that is not an https URL",
+    ]);
+    expect(messages({ ...good, poster: "/fx.jpg" })).toEqual([
+      "Entry 1 has a media.poster that is not an https URL",
+    ]);
+    expect(messages({ ...good, alt: " " })).toEqual([
+      "Entry 1 needs media.alt describing what the example shows",
+    ]);
+    expect(messages({ ...good, height: 10.5 })).toEqual([
+      "Entry 1 needs media.height as a positive whole number of pixels",
+    ]);
+  });
 });
 
 describe("toPublicChangelog", () => {
@@ -534,6 +573,33 @@ describe("toPublicChangelog", () => {
       {
         category: "fixed",
         text: "Saved sequences open from your Library.",
+      },
+    ]);
+  });
+
+  it("keeps an entry's example media and nothing else on it", () => {
+    const media = {
+      image: "https://assets.tkaflowarts.com/a.gif",
+      alt: "A",
+      width: 520,
+      height: 520,
+      note: "private",
+    };
+    expect(
+      toPublicChangelog([
+        {
+          category: "added",
+          text: "A.",
+          audience: "guest",
+          surface: "global",
+          media,
+        },
+      ])
+    ).toEqual([
+      {
+        category: "added",
+        text: "A.",
+        media: { image: media.image, alt: "A", width: 520, height: 520 },
       },
     ]);
   });
