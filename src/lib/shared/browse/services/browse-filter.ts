@@ -24,6 +24,8 @@ import { deriveTnDFromPictograph } from "#lib/shared/pictograph/shared/domain/ut
 import { TnDMode } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import { filterSequencesByExactLetter } from "#lib/shared/browse/services/sequence-letter-occurrence.js";
 import { stripWordNotation } from "#lib/shared/foundation/utils/word-notation.js";
+import { peekMandalaKey } from "#lib/shared/browse/services/sequence-density.js";
+import { mandalaIndex } from "#lib/shared/browse/services/mandala-index.svelte.js";
 
 // Collection membership
 // COLLECTION filters need a collection's member ids — feature data this pure
@@ -125,9 +127,26 @@ export function applyFilter(
       return filterByMaxTurnIntensity(sequences, filterValue);
     case BrowseFilterType.REVERSAL_PATTERN:
       return filterByReversalPattern(sequences, filterValue);
+    case BrowseFilterType.MANDALA:
+      return filterByMandala(sequences, filterValue);
     default:
       return sequences;
   }
+}
+
+/**
+ * The sequences that draw one mandala. Reads only measured answers, so a pass
+ * is a map lookup per sequence and never freezes the page; reading the
+ * index's version makes a filtered grid fill in as the measuring runs.
+ */
+function filterByMandala(
+  sequences: SequenceData[],
+  filterValue: BrowseFilterValue
+): SequenceData[] {
+  void mandalaIndex.version;
+  const key = String(filterValue);
+  if (!key) return [];
+  return sequences.filter((seq) => peekMandalaKey(seq) === key);
 }
 
 export function getFilterOptions(

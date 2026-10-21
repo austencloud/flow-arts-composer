@@ -1,7 +1,8 @@
 <!--
   GalleryLanding — the editorial front door.
 
-  Screen 1 of the gallery: two hero doors (By level / By length), "Show all",
+  Screen 1 of the gallery: three hero doors (By level / By length / By
+  mandala), "Show all",
   and the "More ways to browse" grid of CategoryTiles. Every visual carries
   data — the hero fans preview REAL sequences from their bucket (deterministic
   picks, fixed tilts), and the mini tiles preview real glyphs, real faces, real
@@ -16,6 +17,7 @@
   import SequencePeek from "#lib/shared/browse/components/SequencePeek.svelte";
   import DifficultyBadge from "#lib/shared/components/DifficultyBadge.svelte";
   import CategoryTile from "./CategoryTile.svelte";
+  import MandalaStill from "#lib/shared/mandala/components/MandalaStill.svelte";
   import { claimedViewTransitionName } from "#lib/shared/transitions/claimed-view-transition-name.js";
   import {
     FAN_TILTS,
@@ -38,7 +40,7 @@
     glyphHeight: number;
     /** The landing owns the category morph names while it is the live screen. */
     morph?: boolean;
-    onOpenSection: (section: "level" | "length") => void;
+    onOpenSection: (section: "level" | "length" | "mandala") => void;
     onShowAll?: () => void;
     onSelectCategory: (entry: CategoryEntry) => void;
   }
@@ -59,6 +61,10 @@
     onShowAll,
     onSelectCategory,
   }: Props = $props();
+
+  /** The door's fan always holds three slots, so nothing moves as keys arrive. */
+  const FAN_SLOTS = [0, 1, 2] as const;
+  const fanSize = $derived(Math.round(catalog.PEEK.fanH * 0.78));
 </script>
 
 <div class="drill-screen screen-chooser" class:sheet aria-busy={loading}>
@@ -155,6 +161,44 @@
           height={catalog.PEEK.longH}
           tilt={3}
         />
+      </span>
+      <i class="fas fa-chevron-right drill-chev" aria-hidden="true"></i>
+    </button>
+
+    <!-- By mandala: the pool's distinct mandalas, sparse to dense. Its fan is
+         three real mandalas from the pool, one from each band. -->
+    <button
+      class="choice-tile"
+      type="button"
+      disabled={(loading || loadFailed) && poolSize === 0}
+      use:claimedViewTransitionName={{
+        name: "gallery-cat-mandala",
+        enabled: morph,
+      }}
+      onclick={() => onOpenSection("mandala")}
+    >
+      <span class="choice-main">
+        <span class="choice-title">{t("browse_ui_by_mandala")}</span>
+        <span class="choice-sub">{t("browse_ui_sparse_to_dense")}</span>
+      </span>
+      <span class="secondary-door-art compact-door-art" aria-hidden="true">
+        <i class="fas fa-dharmachakra"></i>
+      </span>
+      <span class="mandala-fan" aria-hidden="true">
+        {#each FAN_SLOTS as slot (slot)}
+          {@const group = catalog.mandalaFan[slot]}
+          <span
+            class="mandala-slot"
+            class:filled={group !== undefined}
+            style:width="{fanSize}px"
+            style:height="{fanSize}px"
+            style:transform="rotate({FAN_TILTS[slot]}deg)"
+          >
+            {#if group}
+              <MandalaStill key={group.key} paths={group.paths} size={fanSize} />
+            {/if}
+          </span>
+        {/each}
       </span>
       <i class="fas fa-chevron-right drill-chev" aria-hidden="true"></i>
     </button>
@@ -352,6 +396,26 @@
   .peek-fan.pair > :global(.peek + .peek) {
     margin-left: -0.6rem;
   }
+  /* The mandala door's fan: three square slots, tilted and overlapping like
+     the sequence fans, sized up front so a slot filling in moves nothing. */
+  .mandala-fan {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin-right: -0.9rem;
+    flex: 0 0 auto;
+  }
+  .mandala-slot {
+    display: block;
+    flex: 0 0 auto;
+    padding: 0.2rem;
+    border-radius: 12px;
+    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
+    background: var(--theme-panel-bg, #11131a);
+  }
+  .mandala-slot + .mandala-slot {
+    margin-left: -1rem;
+  }
   .peek-collage {
     display: grid;
     grid-template-columns: repeat(2, auto);
@@ -398,7 +462,8 @@
     .hero-grid {
       grid-template-columns: 1fr 1fr;
     }
-    .choice-tile.compact {
+    .choice-tile.compact,
+    .choice-tile:nth-child(3) {
       grid-column: 1 / -1;
     }
     .mini-grid {
@@ -448,9 +513,9 @@
     .drill-head p {
       font-size: 0.95rem;
     }
-    /* Chooser: the two big doors side by side, taller and roomier. */
+    /* Chooser: the three big doors side by side, taller and roomier. */
     .hero-grid {
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 1rem;
     }
     .choice-tile {
@@ -486,12 +551,12 @@
       font-size: 1.05rem;
     }
     .hero-grid {
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 1.1rem;
     }
     .hero-grid.without-show-all {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      max-width: 1160px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      max-width: 1740px;
       justify-self: center;
     }
     .choice-tile,

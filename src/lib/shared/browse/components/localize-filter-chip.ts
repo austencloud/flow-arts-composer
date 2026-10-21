@@ -1,5 +1,7 @@
 import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
 import { t } from "#lib/shared/i18n/i18n.svelte.js";
+import { mandalaIndex } from "#lib/shared/browse/services/mandala-index.svelte.js";
+import { formatMandalaLabel } from "#lib/shared/browse/services/sequence-density.js";
 import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
 import { localizedModeName } from "#lib/shared/shape-matrix/domain/shape-matrix-display.js";
 import {
@@ -28,6 +30,12 @@ export function localizeFilterChip(filter: {
       return filter.value != null
         ? t("browse_audit_chip_at_most_turns", { turns: String(filter.value) })
         : filter.label.replace(/ turns$/, ` ${t("browse_audit_chip_turns")}`);
+    case BrowseFilterType.MANDALA: {
+      // The band and coverage from the live index when it knows the key; a
+      // chip restored before the index has measured keeps its saved label.
+      const group = mandalaIndex.groupOf(String(filter.value));
+      return group ? formatMandalaLabel(group.coverage) : filter.label;
+    }
     case BrowseFilterType.PERFORMANCE_AVAILABILITY:
       if (
         filter.value === "has-public-performance" ||

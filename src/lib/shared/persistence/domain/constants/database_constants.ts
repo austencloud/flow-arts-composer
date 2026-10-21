@@ -25,8 +25,10 @@ export const DATABASE_NAME = "TKADatabase";
  * Version 9: Added role-bound media composition presets for Post Studio and
  *            Compose.
  * Version 10: Added user-scoped message drafts and the durable message outbox.
+ * Version 11: Added mandalaSignatures, each sequence's measured mandala key and
+ *             coverage, so Browse's mandala grid loads instead of re-measuring.
  */
-export const DATABASE_VERSION = 10;
+export const DATABASE_VERSION = 11;
 
 
 export const TABLE_NAMES = {
@@ -48,6 +50,7 @@ export const TABLE_NAMES = {
   MEDIA_COMPOSITION_PRESETS: "mediaCompositionPresets",
   MESSAGE_DRAFTS: "messageDrafts",
   MESSAGE_OUTBOX: "messageOutbox",
+  MANDALA_SIGNATURES: "mandalaSignatures",
 } as const;
 
 
@@ -82,6 +85,9 @@ export const TABLE_INDEXES = {
     "id, userId, conversationId, [userId+conversationId], updatedAt",
   [TABLE_NAMES.MESSAGE_OUTBOX]:
     "id, userId, conversationId, [userId+conversationId], status, createdAt, updatedAt",
+  // Mandala signatures (v11): id is the stage 1 cache key (sequence id, word,
+  // step count); rows from an older measure are skipped by their `measure`.
+  [TABLE_NAMES.MANDALA_SIGNATURES]: "id, key, measure",
 } as const;
 
 

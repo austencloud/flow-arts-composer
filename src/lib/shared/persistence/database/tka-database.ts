@@ -20,6 +20,7 @@ import type {
   GalleryCacheMeta,
 } from "#lib/shared/offline/domain/offline-cache-types.js";
 import type { GeneratedMandalaEntry } from "#lib/shared/mandala/domain/mandala-pool-types.js";
+import type { MandalaSignatureRow } from "#lib/shared/browse/services/mandala-index.svelte.js";
 import {
   DATABASE_NAME,
   DATABASE_VERSION,
@@ -68,6 +69,9 @@ export class TKADatabase extends Dexie {
   // Inbox reliability (v10)
   messageDrafts!: EntityTable<MessageDraftRecord, "id">;
   messageOutbox!: EntityTable<MessageOutboxRecord, "id">;
+
+  // Measured mandala keys for Browse's mandala grid (v11)
+  mandalaSignatures!: EntityTable<MandalaSignatureRow, "id">;
 
   constructor() {
     super(DATABASE_NAME);

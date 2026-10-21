@@ -56,6 +56,7 @@ const CATEGORY_LABELS: Partial<Record<string, string>> = {
   [BrowseFilterType.LOOP_TYPE]: "LOOPs",
   [BrowseFilterType.TND_FAMILY]: "Families",
   [BrowseFilterType.MAX_TURN_INTENSITY]: "Max turns",
+  [BrowseFilterType.MANDALA]: "Mandala",
   // Reads as the sentence it is: "In: Bella Sequences · Level: 2".
   [BrowseFilterType.COLLECTION]: "In",
   [BrowseFilterType.REVERSAL_PATTERN]: "Reversals",
