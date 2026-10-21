@@ -118,6 +118,24 @@ describe("browse home preview layouts", () => {
     }
   );
 
+  it("stacks the visuals pair in a tall box and sets it side by side in a wide one", () => {
+    const tall = visualsPair(340, 575)!;
+    expect(tall.tunnel.x).toBe(tall.mandala.x);
+    expect(tall.mandala.y).toBeGreaterThan(tall.tunnel.y + tall.tunnel.height);
+    expect(tall.tunnel.width).toBeGreaterThan(Math.floor((340 - 4) / 2));
+
+    const wide = visualsPair(575, 340)!;
+    expect(wide.tunnel.y).toBe(wide.mandala.y);
+    expect(wide.mandala.x).toBeGreaterThan(wide.tunnel.x + wide.tunnel.width);
+
+    for (const [w, h] of [[340, 575], [575, 340], [100, 1000]] as const) {
+      const pair = visualsPair(w, h)!;
+      expect(inside(pair.tunnel, w, h)).toBe(true);
+      expect(inside(pair.mandala, w, h)).toBe(true);
+      expect(overlaps(pair.tunnel, pair.mandala)).toBe(false);
+    }
+  });
+
   it.each(BOXES)("keep your shelf inside a %s %ix%i box", (shape, w, h) => {
     const shelf = youShelf(shape, w, h)!;
     expect(shelf).not.toBeNull();

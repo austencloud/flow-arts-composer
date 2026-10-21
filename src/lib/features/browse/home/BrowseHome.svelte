@@ -191,7 +191,10 @@
       <h1 id="browse-home-title">{t("browse_home_title")}</h1>
     </header>
 
-    <section class="destination-group" aria-labelledby="community-title">
+    <section
+      class="destination-group community-group"
+      aria-labelledby="community-title"
+    >
       <div class="group-heading">
         <h2 id="community-title">{t(community.labelKey)}</h2>
         <p>{t("browse_home_community_desc")}</p>
@@ -538,30 +541,50 @@
     );
   }
 
-  /* Two columns once a Community tile has room for its preview and copy. */
+  /* Two columns once a Community tile has room for its preview and copy.
+     From here the board fills the screen: Community takes the height the
+     header and Your library leave, and the tiles share one set of rows
+     (preview, words, chips) through subgrid, so every tile in a row is the
+     same size, the previews grow together and the names line up. */
   @container browse-home (min-width: 600px) {
     .browse-home-inner {
       width: calc(100% - 28px);
+      grid-template-rows: auto minmax(min-content, 1fr) auto;
+    }
+    .community-group {
+      grid-template-rows: auto minmax(0, 1fr);
     }
     .tile-index {
       --stage-height: clamp(76px, 13cqh, 128px);
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px;
+      grid-template-rows: minmax(var(--stage-height), 1fr) auto auto;
+      column-gap: 12px;
+      row-gap: 0;
     }
     .library-links {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
     .tile {
-      grid-template-rows: auto auto;
-      align-self: start;
+      grid-row: span 3;
+      grid-template-rows: subgrid;
+      row-gap: 0;
     }
     .tile-main {
-      grid-row: 1;
-      gap: 14px;
+      grid-row: 1 / span 2;
+      grid-template-rows: subgrid;
+      row-gap: 14px;
       padding: 16px 18px 18px;
     }
-    .tile-chips {
+    .tile-stage {
+      grid-row: 1;
+      height: auto;
+      min-height: var(--stage-height);
+    }
+    .tile-copy {
       grid-row: 2;
+    }
+    .tile-chips {
+      grid-row: 3;
       padding: 0 18px 18px;
     }
     .tile-name {
@@ -572,23 +595,37 @@
     }
   }
 
-  /* The third choice fills the second row instead of leaving an empty slot. */
+  /* Two across: the third choice takes its own full-width row under the
+     first two, its preview beside its words. */
   @container browse-home (min-width: 600px) and (max-width: 1099px) {
+    .tile-index {
+      grid-template-rows: minmax(var(--stage-height), 1fr) auto auto auto;
+    }
     .tile.has-chips {
       --visual-preview-width: clamp(120px, 22cqi, 200px);
       grid-column: 1 / -1;
+      grid-row: 4;
+      grid-template-rows: auto auto;
+      margin-top: 12px;
     }
     .has-chips .tile-main {
+      grid-row: 1;
       grid-template-columns: var(--visual-preview-width) minmax(0, 1fr);
       grid-template-rows: auto;
       align-items: center;
+      column-gap: 14px;
     }
     .has-chips .tile-stage {
+      grid-row: 1;
       width: var(--visual-preview-width);
       height: var(--stage-height);
       min-height: 0;
     }
+    .has-chips .tile-copy {
+      grid-row: 1;
+    }
     .has-chips .tile-chips {
+      grid-row: 2;
       padding-inline-start: calc(18px + var(--visual-preview-width) + 14px);
     }
   }
@@ -600,31 +637,22 @@
     }
     .tile-main {
       grid-template-columns: var(--stage-side) minmax(0, 1fr);
-      grid-template-rows: auto;
       align-items: center;
+      column-gap: 14px;
       padding: 12px 14px;
     }
     .tile-stage {
+      grid-row: 1 / span 2;
       width: var(--stage-side);
       height: auto;
+      min-height: 0;
       aspect-ratio: 1;
+    }
+    .tile-copy {
+      grid-row: 1 / span 2;
     }
     .tile-chips {
       padding: 0 14px 12px calc(14px + var(--stage-side) + 14px);
-    }
-  }
-
-  /* On tall two-column screens, let previews grow above their copy. */
-  @container browse-home (min-width: 600px) and (min-height: 760px) {
-    .tile-main {
-      grid-template-rows: auto auto;
-    }
-    .tile-stage {
-      height: auto;
-      min-height: var(--stage-height);
-    }
-    .tile-chips {
-      padding: 0 22px 22px;
     }
   }
 
@@ -632,8 +660,7 @@
   @container browse-home (min-width: 1100px) {
     .browse-home-inner {
       width: calc(100% - clamp(48px, 6cqi, 160px));
-      max-width: 1600px;
-      align-content: start;
+      max-width: 2400px;
       gap: 28px;
       padding-block: 40px;
     }
@@ -651,23 +678,23 @@
     .tile-index {
       --stage-height: clamp(100px, 11cqh, 128px);
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 16px;
+      column-gap: 16px;
     }
     .library-links {
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
     .tile-main {
-      min-height: 0;
       grid-template-columns: minmax(0, 1fr);
-      grid-template-rows: auto auto;
-      gap: 14px;
       padding: 16px 18px 18px;
     }
     .tile-stage {
+      grid-row: 1;
       width: auto;
-      height: auto;
       aspect-ratio: auto;
       min-height: var(--stage-height);
+    }
+    .tile-copy {
+      grid-row: 2;
     }
     .tile-chips {
       padding: 0 18px 18px;

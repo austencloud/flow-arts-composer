@@ -177,12 +177,26 @@ export interface VisualsPair {
   mandala: PreviewRect;
 }
 
+/**
+ * Visuals: a tunnel and a mandala, side by side in a wide box and stacked in
+ * a tall one, whichever lets the two squares be larger.
+ */
 export function visualsPair(width: number, height: number): VisualsPair | null {
   if (!(width > 0) || !(height > 0)) return null;
   const gap = Math.max(4, Math.round(Math.min(width, height) * 0.06));
-  const side = Math.floor(Math.min(height, (width - gap) / 2));
-  const span = side * 2 + gap;
-  const x0 = Math.floor((width - span) / 2);
+  const besideSide = Math.floor(Math.min(height, (width - gap) / 2));
+  const stackedSide = Math.floor(Math.min(width, (height - gap) / 2));
+  if (stackedSide > besideSide) {
+    const side = stackedSide;
+    const x = Math.floor((width - side) / 2);
+    const y0 = Math.floor((height - (side * 2 + gap)) / 2);
+    return {
+      tunnel: { x, y: y0, width: side, height: side },
+      mandala: { x, y: y0 + side + gap, width: side, height: side },
+    };
+  }
+  const side = besideSide;
+  const x0 = Math.floor((width - (side * 2 + gap)) / 2);
   const y = Math.floor((height - side) / 2);
   return {
     tunnel: { x: x0, y, width: side, height: side },
