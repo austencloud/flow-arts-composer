@@ -1,6 +1,8 @@
 """Unreal 5.8 editor Python: import reproducible assets, create materials and save the map."""
 import unreal as u
 import json
+import re
+import sys
 from pathlib import Path
 
 PROJECT = Path(u.Paths.project_dir()).resolve()
@@ -10,6 +12,9 @@ ED = u.EditorAssetLibrary
 ME = u.MaterialEditingLibrary
 u.SystemLibrary.execute_console_command(None, 'Interchange.FeatureFlags.Import.FBX 0')
 report = {'meshes': [], 'materials': [], 'errors': []}
+# `--only=Car` imports just the jobs whose kind starts with that prefix and leaves
+# set pieces, palette materials and ground textures alone.
+ONLY = next((a.split('=', 1)[1] for a in sys.argv[1:] if a.startswith('--only=')), None)
 
 def import_file(path, folder, name, mesh=False):
     target = folder + '/' + name
@@ -37,7 +42,8 @@ def import_file(path, folder, name, mesh=False):
             options.import_textures = True
             options.static_mesh_import_data.combine_meshes = True
             options.static_mesh_import_data.generate_lightmap_u_vs = False
-            options.static_mesh_import_data.auto_generate_collision = name == 'SM_Car'
+            options.static_mesh_import_data.auto_generate_collision = (
+                name == 'SM_Car' or folder.startswith('/Game/FlowFest/Assets/Car/'))
             task.options = options
         TOOLS.import_asset_tasks([task])
     asset = ED.load_asset(target)
@@ -243,10 +249,43 @@ def material(name, color, roughness=.8, metallic=0, emissive=0):
     report['materials'].append(path)
     return m
 
+def paint_from_instance(material):
+    """Recolour a parked car's body panels per instance, as the web lot's recolor
+    mode does: the panel albedo gives way to the instance's paint, and the
+    normal, roughness and metal inputs stay as imported."""
+    current = ME.get_material_property_input_node(material, u.MaterialProperty.MP_BASE_COLOR)
+    if isinstance(current, u.MaterialExpressionPerInstanceCustomData3Vector):
+        return
+    paint = expression(material, u.MaterialExpressionPerInstanceCustomData3Vector,
+                       data_index=0, const_default_value=u.LinearColor(.5, .5, .5, 1))
+    connect_property(paint, '', u.MaterialProperty.MP_BASE_COLOR)
+    ME.recompile_material(material)
+    ED.save_loaded_asset(material)
+
 for job in json.loads((STAGED / 'imports.json').read_text()):
+    if ONLY and not job['kind'].startswith(ONLY):
+        continue
     folder = '/Game/FlowFest/Assets/' + job['kind']
-    import_file(STAGED / (job['id'] + '.fbx'), folder, job['id'], True)
-for name in ['Tent', 'DomeTent', 'Canopy', 'Gatehouse', 'Firepit', 'Bench', 'Signpost']:
+    mesh = import_file(STAGED / (job['id'] + '.fbx'), folder, job['id'], True)
+    painted = job.get('car', {}).get('paintMaterials', [])
+    found = set()
+    for slot in mesh.static_materials if painted else []:
+        material = slot.material_interface
+        # Unreal numbers repeat names across folders (Fairheaven_LT80_Bodymat_001).
+        base = re.sub(r'_\d{3}$', '', material.get_name()) if material else None
+        if base in painted:
+            if not isinstance(material, u.Material):
+                raise RuntimeError('Car paint needs an editable material: ' + material.get_path_name())
+            paint_from_instance(material)
+            found.add(base)
+    if set(painted) - found:
+        raise RuntimeError(f"{job['id']}: paint materials not found: {sorted(set(painted) - found)}")
+    # Save the textures the FBX brought in now, so a later failure cannot leave
+    # saved materials pointing at textures that only existed in memory.
+    ED.save_directory(folder, only_if_is_dirty=True, recursive=True)
+    if job.get('car'):
+        u.log(f"FLOWFEST_CAR {job['id']} slots={len(mesh.static_materials)} painted={sorted(found)}")
+for name in ([] if ONLY else ['Tent', 'DomeTent', 'Canopy', 'Gatehouse', 'Firepit', 'Bench', 'Signpost']):
     import_file(STAGED / (name + '.fbx'), '/Game/FlowFest/Assets/Set', name, True)
 
 palette = {
@@ -255,6 +294,8 @@ palette = {
     'M_Canvas': ((.43,.25,.10),.92,0,0), 'M_Metal': ((.18,.22,.23),.38,.8,0),
     'M_Ember': ((1,.17,.012),.7,0,9), 'M_Grass': ((.10,.18,.035),.96,0,0),
 }
+if ONLY:
+    palette = {}
 site = json.loads((PROJECT / 'Content' / 'Data' / 'site.json').read_text())
 ground_bounds = site['groundSurface']
 if ground_bounds['file'] != 'ground-family-mask.rgba':
