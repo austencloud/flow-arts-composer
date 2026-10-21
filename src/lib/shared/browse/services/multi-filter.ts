@@ -32,6 +32,8 @@ export const OR_STACKING_TYPES: ReadonlySet<BrowseFilterType> = new Set([
   BrowseFilterType.GRID_JOIN,
   BrowseFilterType.OWNER,
   BrowseFilterType.PERFORMANCE_AVAILABILITY,
+  // Two mandalas picked in a builder read "draws this one OR that one".
+  BrowseFilterType.MANDALA,
   // Collection membership: "in Bella Sequences OR in Fire Drills" is the
   // reading a user means when they tap two collections, and stacking it per
   // value (collection:<id>) is what lets it AND with a level or a LOOP rule.

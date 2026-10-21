@@ -25,6 +25,7 @@ import {
   getSequenceMaxTurn,
 } from "#lib/shared/browse/services/browse-filter.js";
 import { startPlacementManager } from "#lib/shared/create/services/start-placement-manager.js";
+import { mandalaIndex } from "#lib/shared/browse/services/mandala-index.svelte.js";
 import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 import { browser } from "$app/env";
@@ -45,6 +46,7 @@ export type Section =
   | "chooser"
   | "level"
   | "length"
+  | "mandala"
   | "letter"
   | "placement"
   | "gridmode"
@@ -60,6 +62,7 @@ export const SECTIONS: readonly Section[] = [
   "chooser",
   "level",
   "length",
+  "mandala",
   "letter",
   "placement",
   "gridmode",
@@ -77,6 +80,7 @@ export const SCREEN_CLASS: Record<Section, string> = {
   chooser: "screen-chooser",
   level: "screen-level",
   length: "screen-length",
+  mandala: "screen-mandala",
   letter: "screen-letter",
   placement: "screen-placements",
   gridmode: "screen-gridmode",
@@ -642,7 +646,7 @@ export function createGalleryCatalog(deps: GalleryCatalogDeps) {
             : PEEK_TIERS.base
   );
 
-  /** The two privileged doors — Level and Length. */
+  /** The three privileged doors — Level, Length and Mandala. */
   const primaryCategories = $derived<CategoryEntry[]>([
     {
       key: "level",
@@ -658,6 +662,14 @@ export function createGalleryCatalog(deps: GalleryCatalogDeps) {
       sub: lengthSub,
       art: { kind: "icon", icon: "fa-ruler-horizontal" },
       section: "length",
+      narrowedOut: false,
+    },
+    {
+      key: "mandala",
+      title: t("browse_ui_mandala_category"),
+      sub: t("browse_ui_sparse_to_dense"),
+      art: { kind: "icon", icon: "fa-dharmachakra" },
+      section: "mandala",
       narrowedOut: false,
     },
   ]);
@@ -941,6 +953,20 @@ export function createGalleryCatalog(deps: GalleryCatalogDeps) {
     },
     get primaryCategories() {
       return primaryCategories;
+    },
+    /** The pool's distinct mandalas, sparse to dense (the drill feeds the index). */
+    get mandalaGroups() {
+      return mandalaIndex.groups;
+    },
+    /** One sparse, one medium, one dense: the By mandala door's fan. */
+    get mandalaFan() {
+      return mandalaIndex.fan;
+    },
+    get mandalaProgress() {
+      return mandalaIndex.progress;
+    },
+    get mandalaDone() {
+      return mandalaIndex.done;
     },
     get secondaryCategories() {
       return secondaryCategories;

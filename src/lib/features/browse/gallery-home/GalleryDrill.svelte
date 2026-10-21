@@ -31,6 +31,7 @@
   } from "#lib/features/browse/shared/services/gallery-view-persister.js";
   import { tryGetBrowseNavigationContext } from "#lib/shared/browse/context/browse-navigation-context.js";
   import type { FilterConnective } from "#lib/shared/browse/services/multi-filter.js";
+  import { mandalaIndex } from "#lib/shared/browse/services/mandala-index.svelte.js";
   import GalleryLanding from "./GalleryLanding.svelte";
   import GalleryWorkspace from "./GalleryWorkspace.svelte";
   import CategoryRail from "./CategoryRail.svelte";
@@ -223,6 +224,11 @@
   let section = $state<Section>(restoreSection());
   $effect(() => {
     if (shouldPersistSection) setDrillSection(section);
+  });
+  // The mandala index measures this pool in idle slices; the By mandala door,
+  // the mandala screen and the Mandala filter all read it.
+  $effect(() => {
+    mandalaIndex.setPool(pool);
   });
   $effect(() => {
     onSectionChange?.(section);

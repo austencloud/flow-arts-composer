@@ -4,7 +4,9 @@
  * Runs the mandala geometry on the sequence's steps and measures it (see
  * `mandala-density.ts`). A sort pass asks for every sequence in the pool, so
  * each answer is kept by sequence id, word and step count; a later pass pays
- * nothing.
+ * nothing. The mandala index (`mandala-index.svelte.ts`) fills the same cache
+ * in idle slices and from IndexedDB, and the Mandala filter reads it with
+ * `peekMandalaKey`, which never measures.
  */
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import { calculate } from "#lib/shared/mandala/services/mandala-geometry-calculator.js";
@@ -14,14 +16,34 @@ import {
   type MandalaSignature,
 } from "#lib/shared/mandala/services/mandala-density.js";
 
+/**
+ * Bumped whenever the measure changes (grid size, marking rule, key hash), so
+ * signatures saved by an older measure are ignored and rewritten.
+ */
+export const MANDALA_MEASURE_VERSION = 1;
+
 const MAX_CACHE = 4000;
 const cache = new Map<string, MandalaSignature>();
 
-export function resolveMandalaSignature(sequence: SequenceData): MandalaSignature {
+/** The cache key of a sequence, or undefined when it has no steps to measure. */
+export function mandalaCacheKey(sequence: SequenceData): string | undefined {
   const steps = sequence.steps ?? [];
-  if (steps.length === 0) return EMPTY_MANDALA_SIGNATURE;
+  if (steps.length === 0) return undefined;
+  return `${sequence.id}|${sequence.word ?? ""}|${steps.length}`;
+}
 
-  const key = `${sequence.id}|${sequence.word ?? ""}|${steps.length}`;
+function remember(key: string, signature: MandalaSignature): void {
+  if (cache.size >= MAX_CACHE && !cache.has(key)) {
+    const oldest = cache.keys().next().value;
+    if (oldest !== undefined) cache.delete(oldest);
+  }
+  cache.set(key, signature);
+}
+
+export function resolveMandalaSignature(sequence: SequenceData): MandalaSignature {
+  const key = mandalaCacheKey(sequence);
+  if (!key) return EMPTY_MANDALA_SIGNATURE;
+
   const cached = cache.get(key);
   if (cached) {
     cache.delete(key);
@@ -29,13 +51,26 @@ export function resolveMandalaSignature(sequence: SequenceData): MandalaSignatur
     return cached;
   }
 
-  const signature = mandalaSignature(calculate(steps));
-  if (cache.size >= MAX_CACHE) {
-    const oldest = cache.keys().next().value;
-    if (oldest !== undefined) cache.delete(oldest);
-  }
-  cache.set(key, signature);
+  const signature = mandalaSignature(calculate(sequence.steps ?? []));
+  remember(key, signature);
   return signature;
+}
+
+/** The remembered signature, or undefined; never measures. */
+export function peekMandalaSignature(sequence: SequenceData): MandalaSignature | undefined {
+  const key = mandalaCacheKey(sequence);
+  return key ? cache.get(key) : undefined;
+}
+
+/** The remembered key, or undefined; never measures. */
+export function peekMandalaKey(sequence: SequenceData): string | undefined {
+  return peekMandalaSignature(sequence)?.key;
+}
+
+/** Remember a signature measured elsewhere (a saved row, another tab's work). */
+export function seedMandalaSignature(sequence: SequenceData, signature: MandalaSignature): void {
+  const key = mandalaCacheKey(sequence);
+  if (key) remember(key, signature);
 }
 
 /** Share of the mandala's square its lines cover, 0 to 1. */
@@ -75,4 +110,9 @@ export function densityBandById(id: string): DensityBand | undefined {
 /** Coverage as "14%" for titles and accessible names. */
 export function formatDensity(coverage: number): string {
   return `${Math.round(coverage * 100)}%`;
+}
+
+/** The applied Mandala chip and a box's name: "Sparse mandala, 24%". */
+export function formatMandalaLabel(coverage: number): string {
+  return `${densityBandOf(coverage).label}, ${formatDensity(coverage)}`;
 }

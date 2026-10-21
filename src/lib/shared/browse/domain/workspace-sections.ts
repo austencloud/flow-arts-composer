@@ -21,7 +21,8 @@ export type WorkspaceSection =
   | "collections"
   | "loop"
   | "family"
-  | "max_turn_intensity";
+  | "max_turn_intensity"
+  | "mandala";
 
 export const SECTION_FOR_FILTER_TYPE: Partial<
   Record<string, WorkspaceSection>
@@ -38,5 +39,6 @@ export const SECTION_FOR_FILTER_TYPE: Partial<
   [BrowseFilterType.LOOP_TYPE]: "loop",
   [BrowseFilterType.TND_FAMILY]: "family",
   [BrowseFilterType.MAX_TURN_INTENSITY]: "max_turn_intensity",
+  [BrowseFilterType.MANDALA]: "mandala",
   [BrowseFilterType.COLLECTION]: "collection",
 };
