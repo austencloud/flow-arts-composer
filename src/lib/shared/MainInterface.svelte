@@ -430,6 +430,9 @@
        is the web/PWA fallback; both resolve to 0 on desktop and on pre-15
        Android (where StatusBar already reserves the strip), so no double pad. */
     padding-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
+    /* Landscape phones also have an inset on the right (notch or rounded
+       corner). The left one belongs to the side rail, which grows by it. */
+    padding-right: env(safe-area-inset-right, 0px);
     transition:
       padding-left var(--duration-emphasis) var(--ease-standard),
       padding-top var(--duration-normal) var(--ease-standard);
