@@ -1,7 +1,7 @@
 """Run in background Blender. Preserve existing authored assets and create festival set pieces."""
-import bpy, json, math, os
+import bpy, json, math, os, re
 from pathlib import Path
-from mathutils import Vector
+from mathutils import Matrix, Vector
 HERE = Path(__file__).resolve().parent
 STAGED = HERE / 'staged'
 def clear():
@@ -35,10 +35,35 @@ def export(name):
     path=STAGED/(name+'.fbx')
     bpy.ops.export_scene.fbx(filepath=str(path),use_selection=True,object_types={'MESH'},apply_unit_scale=True,
         axis_forward='-Y',axis_up='Z',use_mesh_modifiers=True,path_mode='COPY',embed_textures=True,add_leaf_bones=False)
+WHEEL_NAME=re.compile(r'wheel|tire|tyre',re.I)
+def world_box(objects):
+    points=[o.matrix_world@v.co for o in objects for v in o.data.vertices]
+    return (Vector((min(p.x for p in points),min(p.y for p in points),min(p.z for p in points))),
+            Vector((max(p.x for p in points),max(p.y for p in points),max(p.z for p in points))))
+def normalize_car(job):
+    """Bake the web lot's computeFlowFestCarNormalization into the mesh: footprint
+    centred, tyres on z = 0, nose on +X, one unit per metre at the catalogue length."""
+    car=job['car'];bpy.context.view_layer.update()
+    meshes=[o for o in bpy.context.scene.objects if o.type=='MESH' and len(o.data.vertices)]
+    low,high=world_box(meshes)
+    # Underbody pans hang below the contact patch; named wheels own the road datum.
+    wheels=[o for o in meshes if WHEEL_NAME.search(o.name) or WHEEL_NAME.search(o.data.name)]
+    road=world_box(wheels)[0].z if wheels else low.z
+    yaw=car['sourceYawRadians'];size=high-low
+    # glTF +Y up becomes Blender +Z, so the web's yaw about Y is the same angle about Z.
+    length=size.x if round(yaw/(math.pi/2))%2==0 else size.y
+    scale=car['lengthMeters']/max(length,1e-3);centre=(low+high)/2
+    matrix=(Matrix.Translation((0,0,-road*scale))@Matrix.Rotation(yaw,4,'Z')
+            @Matrix.Scale(scale,4)@Matrix.Translation((-centre.x,-centre.y,0)))
+    for o in bpy.context.scene.objects:
+        if o.parent is None: o.matrix_world=matrix@o.matrix_world
+    bpy.context.view_layer.update();low,high=world_box(meshes)
+    print('FLOWFEST_CAR',job['id'],'wheels',len(wheels),'size',tuple(round(v,3) for v in high-low),'bottom',round(low.z,3))
 for job in json.loads((STAGED/'imports.json').read_text()):
     out=STAGED/(job['id']+'.fbx')
     if out.exists(): continue
     clear();bpy.ops.import_scene.gltf(filepath=job['decoded'])
+    if job.get('car'): normalize_car(job)
     # Textures become ordinary PNGs; the FBX importer does not depend on browser compression extensions.
     texture_dir=STAGED/'textures'/job['id'];texture_dir.mkdir(parents=True,exist_ok=True)
     for image in bpy.data.images:

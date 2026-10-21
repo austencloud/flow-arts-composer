@@ -1,13 +1,19 @@
 # Flow Fest native asset credits
 
-## Ace hatchback
+## Cars
 
-Ace '11 - Low Poly model by Daniel Zhabotinsky.
+The driven car and the parked lot use the same six bodies as the browser simulator's parked-car catalogue. All are licensed under Creative Commons Attribution 4.0, https://creativecommons.org/licenses/by/4.0/.
 
-- Author: https://sketchfab.com/DanielZhabotinsky
-- Source: https://sketchfab.com/3d-models/055ff8a21b8d4d279debca089e2fafcd
-- License: Creative Commons Attribution 4.0, https://creativecommons.org/licenses/by/4.0/
-- Changes: the browser simulator's optimized GLB was decoded, its textures converted to PNG, and its mesh converted to FBX for Unreal import.
+| Body | Title | Author | Source |
+| --- | --- | --- | --- |
+| '80 sedan | Fairheaven LT '80 - Low poly model | [Daniel Zhabotinsky](https://sketchfab.com/DanielZhabotinsky) | https://sketchfab.com/3d-models/e2678da920cc4be68dbc193727919ffb |
+| '84 wagon | Fairheaven SW '84 - Low poly model | [Daniel Zhabotinsky](https://sketchfab.com/DanielZhabotinsky) | https://sketchfab.com/3d-models/aa0becb6e854422596cac6b21bf79787 |
+| lifted '85 pickup | Lightbody Lifted '85 - Low poly model | [Daniel Zhabotinsky](https://sketchfab.com/DanielZhabotinsky) | https://sketchfab.com/3d-models/67beae18c3d24be68f9c8f0ec382d8e3 |
+| '67 SUV | Bokaroo '67 - Low poly model | [Daniel Zhabotinsky](https://sketchfab.com/DanielZhabotinsky) | https://sketchfab.com/3d-models/22015d1863d6455aa31cfd738b972c50 |
+| '11 hatchback (also the driven car) | Ace '11 - Low Poly model | [Daniel Zhabotinsky](https://sketchfab.com/DanielZhabotinsky) | https://sketchfab.com/3d-models/055ff8a21b8d4d279debca089e2fafcd |
+| classic campervan | Volkswagen T2 Campervan | [TheoClarke](https://sketchfab.com/TheoClarke) | https://sketchfab.com/3d-models/96ec638bcdbd44a08be3197d9dece5d5 |
+
+Changes: the browser simulator's optimized GLBs were decoded, their textures converted to PNG, and their meshes converted to FBX for Unreal import. Parked bodies are rescaled to their measured length and re-centred on their wheels, and the Zhabotinsky body paint is recoloured per car.
 
 ## Trees
 

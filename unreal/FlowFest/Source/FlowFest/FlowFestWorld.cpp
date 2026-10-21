@@ -749,29 +749,101 @@ void AFlowFestWorld::SetPlayerCamp(FString CampLandmark, bool bBuilt)
     PlayerTent->SetCollisionEnabled(bVisible ? ECollisionEnabled::QueryAndPhysics : ECollisionEnabled::NoCollision);
 }
 
+namespace
+{
+// The parked lot's bodies, mirroring FLOW_FEST_PARKED_CAR_MODELS in the web's
+// src/routes/test/flow-fest-sim/flow-fest-parked-car-catalog.ts. Tools/author-assets.py
+// bakes each mesh to its catalogue length with the nose on +X, the footprint centred and
+// the tyres on z = 0, so instances need no scale. Wheel contacts are in body metres.
+struct FParkedCarModel
+{
+    const TCHAR* Id;
+    const TCHAR* Asset;
+    float FrontAlong;
+    float RearAlong;
+    float HalfTrack;
+    TArray<const TCHAR*> Paint;
+};
+
+const TArray<FParkedCarModel>& ParkedCarModels()
+{
+    static const TArray<FParkedCarModel> Models = {
+        {TEXT("fairheaven-sedan"), TEXT("FairheavenSedan"), 1.433f, -1.218f, .749f, {TEXT("641c26"), TEXT("c9c5bb"), TEXT("2c3d5e"), TEXT("8a8f93")}},
+        {TEXT("fairheaven-wagon"), TEXT("FairheavenWagon"), 1.443f, -1.21f, .749f, {TEXT("33505a"), TEXT("d8d3c4"), TEXT("4a5a2f"), TEXT("1f2530")}},
+        {TEXT("lightbody-pickup"), TEXT("LightbodyPickup"), 1.587f, -1.316f, .781f, {TEXT("14121f"), TEXT("b7b2a8"), TEXT("7a1e1e"), TEXT("3b4a3a")}},
+        {TEXT("bokaroo-suv"), TEXT("BokarooSuv"), 1.425f, -1.189f, .794f, {TEXT("348bb0"), TEXT("e6e1d3"), TEXT("b8482c"), TEXT("6f7a52")}},
+        {TEXT("ace-hatchback"), TEXT("AceHatchback"), 1.101f, -1.302f, .721f, {TEXT("cf9a24"), TEXT("e8e6e1"), TEXT("1e2a44"), TEXT("a13a3a")}},
+        {TEXT("t2-camper"), TEXT("T2Camper"), 1.132f, -1.247f, .706f, {}},
+    };
+    return Models;
+}
+
+// How far the tyres press into the field, so no car floats on a grass tip.
+constexpr float TyreSinkMetres = .03f;
+}
+
 void AFlowFestWorld::BuildVehicles()
 {
-    UStaticMesh* Car = LoadObject<UStaticMesh>(nullptr, TEXT("/Game/FlowFest/Assets/Car/SM_Car.SM_Car"));
-    if (!Car)
+    TMap<FString, UHierarchicalInstancedStaticMeshComponent*> Groups;
+    for (const FParkedCarModel& Model : ParkedCarModels())
     {
-        UE_LOG(LogTemp, Warning, TEXT("Flow Fest parked car mesh is missing"));
-        return;
+        const FString Path = FString::Printf(TEXT("/Game/FlowFest/Assets/Car/%s/SM_%s.SM_%s"), Model.Asset, Model.Asset, Model.Asset);
+        UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, *Path);
+        if (!Mesh)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Flow Fest parked car mesh is missing: %s"), *Path);
+            continue;
+        }
+        UHierarchicalInstancedStaticMeshComponent* Group = AddInstanceGroup(Mesh, FString::Printf(TEXT("ParkedVehicles_%s"), Model.Asset));
+        Group->SetCollisionProfileName(TEXT("BlockAll"));
+        Group->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+        // The body material reads its paint from these three floats (linear RGB).
+        if (Model.Paint.Num() > 0) Group->SetNumCustomDataFloats(3);
+        Groups.Add(Model.Id, Group);
     }
-    UHierarchicalInstancedStaticMeshComponent* Parked = AddInstanceGroup(Car, TEXT("ParkedVehicles"));
-    Parked->SetCollisionProfileName(TEXT("BlockAll"));
-    Parked->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-    const FBoxSphereBounds Bounds = Car->GetBounds();
+
+    int32 Placed = 0;
     for (const FSiteVehicle& Vehicle : Vehicles)
     {
-        FVector Scale(1.f);
-        if (Vehicle.Model.Contains(TEXT("hatchback"))) Scale = FVector(.86f, .93f, .92f);
-        else if (Vehicle.Model.Contains(TEXT("wagon"))) Scale = FVector(1.1f, .97f, .98f);
-        else if (Vehicle.Model.Contains(TEXT("pickup"))) Scale = FVector(1.2f, 1.06f, 1.08f);
-        else if (Vehicle.Model.Contains(TEXT("suv"))) Scale = FVector(1.06f, 1.03f, 1.16f);
-        else if (Vehicle.Model.Contains(TEXT("camper"))) Scale = FVector(1.24f, 1.12f, 1.32f);
-        const float BottomOffset = -(Bounds.Origin.Z - Bounds.BoxExtent.Z) * Scale.Z;
-        Parked->AddInstance(FTransform(FRotator(0.f, -FMath::RadiansToDegrees(Vehicle.Rotation), 0.f), ToWorld(Vehicle.Position.X, Vehicle.Position.Y, BottomOffset), Scale));
+        const FParkedCarModel* Model = ParkedCarModels().FindByPredicate([&](const FParkedCarModel& Entry) { return Vehicle.Model == Entry.Id; });
+        UHierarchicalInstancedStaticMeshComponent* const* Group = Groups.Find(Vehicle.Model);
+        if (!Model || !Group)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Flow Fest parked car has no body: %s"), *Vehicle.Model);
+            continue;
+        }
+        // Settle on all four tyres as the web lot does (settleFlowFestParkedCarOnGround):
+        // the web's yaw turns the nose to (cos, -sin) in east/south, so the native yaw is
+        // its negative, and the right-hand side is native +Y at zero yaw.
+        const float Yaw = -Vehicle.Rotation;
+        const FVector2D Nose(FMath::Cos(Yaw), FMath::Sin(Yaw));
+        const FVector2D Right(-FMath::Sin(Yaw), FMath::Cos(Yaw));
+        const auto Wheel = [&](float Along, float Side)
+        {
+            const FVector2D At = Vehicle.Position + Nose * Along + Right * (Side * Model->HalfTrack);
+            return SampleGround(At.X, At.Y);
+        };
+        const float FrontLeft = Wheel(Model->FrontAlong, -1.f), FrontRight = Wheel(Model->FrontAlong, 1.f);
+        const float RearLeft = Wheel(Model->RearAlong, -1.f), RearRight = Wheel(Model->RearAlong, 1.f);
+        const float Front = (FrontLeft + FrontRight) * .5f, Rear = (RearLeft + RearRight) * .5f;
+        const float Left = (FrontLeft + RearLeft) * .5f, RightSide = (FrontRight + RearRight) * .5f;
+        const float HalfWheelbaseCm = (Model->FrontAlong - Model->RearAlong) * .5f * MetresToCm;
+        const float AlongOffsetCm = (Model->FrontAlong + Model->RearAlong) * .5f * MetresToCm;
+        const float Pitch = FMath::Atan2(Front - Rear, 2.f * HalfWheelbaseCm);
+        // Positive roll lowers the right side, so a higher right-hand pair rolls it back.
+        const float Roll = -FMath::Atan2(RightSide - Left, 2.f * Model->HalfTrack * MetresToCm);
+        const float Height = (Front + Rear) * .5f - AlongOffsetCm * FMath::Sin(Pitch) - TyreSinkMetres * MetresToCm;
+        const FVector Location(Vehicle.Position.X * MetresToCm, Vehicle.Position.Y * MetresToCm, Height);
+        const FRotator Rotation(FMath::RadiansToDegrees(Pitch), FMath::RadiansToDegrees(Yaw), FMath::RadiansToDegrees(Roll));
+        const int32 Index = (*Group)->AddInstance(FTransform(Rotation, Location));
+        if (Model->Paint.Num() > 0)
+        {
+            const FLinearColor Paint(FColor::FromHex(Model->Paint[FMath::Abs(Vehicle.PaintIndex) % Model->Paint.Num()]));
+            (*Group)->SetCustomData(Index, {Paint.R, Paint.G, Paint.B});
+        }
+        ++Placed;
     }
+    UE_LOG(LogTemp, Display, TEXT("Flow Fest parked cars: %d of %d placed across %d bodies"), Placed, Vehicles.Num(), Groups.Num());
 }
 
 void AFlowFestWorld::AddSign(const FString& Label, const FVector2D& At, float Yaw)

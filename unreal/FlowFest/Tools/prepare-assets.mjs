@@ -27,6 +27,26 @@ mkdirSync(staged, { recursive: true });
 // Trees are grown in the editor from Megaplants (Tools/grow-trees.py); nothing is converted from the browser's ez-tree GLBs.
 const jobs = [];
 jobs.push({ id: 'SM_Car', source: join(source,'static/models/flow-fest/cars/ace-hatchback.glb'), kind: 'Car' });
+// The parked lot uses every body in the web catalogue, each in its own folder because
+// the Zhabotinsky cars share material names. Tools/author-assets.py normalises each one
+// the way the web does: catalogue length, nose on +X, tyres on z = 0, footprint centred.
+// SM_Car stays the driven car's body.
+const catalog = join(source, 'src/routes/test/flow-fest-sim/flow-fest-parked-car-catalog.ts');
+const { FLOW_FEST_PARKED_CAR_MODELS } = await import(pathToFileURL(catalog).href);
+for (const model of FLOW_FEST_PARKED_CAR_MODELS) {
+  const name = model.id.split('-').map(part => part[0].toUpperCase() + part.slice(1)).join('');
+  jobs.push({
+    id: 'SM_' + name,
+    source: join(source, 'static', model.url),
+    kind: 'Car/' + name,
+    car: {
+      model: model.id,
+      lengthMeters: model.lengthMeters,
+      sourceYawRadians: model.sourceYawRadians,
+      paintMaterials: model.paint?.mode === 'recolor' ? [...model.paint.materialNames] : [],
+    },
+  });
+}
 jobs.push(
   { id: 'ForestGrass', source: join(source, 'static/models/flow-fest-sim/ecology/forest-grass-prototypes.glb'), kind: 'Ecology' },
   { id: 'DampSedge', source: join(source, 'static/models/forest/ground-life/damp-sedge-tussock.glb'), kind: 'Ecology' },
