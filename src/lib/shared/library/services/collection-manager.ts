@@ -21,6 +21,7 @@ import {
   serverTimestamp,
   writeBatch,
   arrayRemove,
+  type DocumentSnapshot,
   type Firestore,
   type Transaction,
   type Unsubscribe,
@@ -39,6 +40,7 @@ import {
   createSmartCollectionModel,
   createSystemCollection,
   isSystemCollection,
+  nextGalleryOwnerIds,
   SYSTEM_COLLECTION_IDS,
 } from "#lib/shared/library/domain/models/collection.js";
 import type { SmartFilterSpec } from "#lib/shared/library/domain/models/collection.js";
@@ -108,13 +110,14 @@ function assertStillSignedInAs(userId: string, subjectId?: string): void {
  * Make one member readable through the public index before a public collection
  * points at it. Own-library sequences are published through the repository so
  * moderation, minimum length, composition, and mirror shape stay canonical.
- * A foreign member is valid only when its public mirror already exists.
+ * A foreign member is valid only when its public mirror already exists, and
+ * resolves to the uid of the person whose mirror it is.
  */
 async function ensurePublicMember(
   firestore: Firestore,
   userId: string,
   sequenceId: string
-): Promise<void> {
+): Promise<string | undefined> {
   const ownRef = doc(firestore, getUserSequencePath(userId, sequenceId));
   const ownSnapshot = await getDoc(ownRef);
 
@@ -144,7 +147,7 @@ async function ensurePublicMember(
       throw error;
     }
     assertStillSignedInAs(userId, sequenceId);
-    return;
+    return undefined;
   }
 
   const publicSnapshot = await getDoc(
@@ -157,32 +160,66 @@ async function ensurePublicMember(
       sequenceId
     );
   }
+  return mirrorOwnerId(publicSnapshot);
 }
 
+/** Gallery owner of each foreign member, keyed by sequence id. */
 async function ensurePublicMembers(
   firestore: Firestore,
   userId: string,
   sequenceIds: readonly string[]
-): Promise<void> {
+): Promise<Record<string, string>> {
   const uniqueIds = [...new Set(sequenceIds)];
+  const galleryOwners: Record<string, string> = {};
   const CONCURRENCY = 6;
   for (let i = 0; i < uniqueIds.length; i += CONCURRENCY) {
     await Promise.all(
-      uniqueIds
-        .slice(i, i + CONCURRENCY)
-        .map((sequenceId) => ensurePublicMember(firestore, userId, sequenceId))
+      uniqueIds.slice(i, i + CONCURRENCY).map(async (sequenceId) => {
+        const owner = await ensurePublicMember(firestore, userId, sequenceId);
+        if (owner) galleryOwners[sequenceId] = owner;
+      })
     );
   }
+  return galleryOwners;
 }
 
-async function verifyPublicMemberInTransaction(
+function mirrorOwnerId(snapshot: DocumentSnapshot): string | undefined {
+  const owner = snapshot.exists() ? snapshot.data()["ownerId"] : undefined;
+  return typeof owner === "string" && owner ? owner : undefined;
+}
+
+interface MemberRead {
+  /** The collection owner's own copy, for reverse membership. */
+  own: DocumentSnapshot;
+  /** Set when the member is someone else's gallery sequence. */
+  galleryOwnerId?: string;
+}
+
+/**
+ * Read one member inside a membership transaction. A public collection also
+ * requires the member to be ready in the public index. A private collection
+ * reads the public mirror only for a sequence the owner doesn't have, which
+ * is the one case that needs its gallery owner recorded.
+ */
+async function readMemberInTransaction(
   transaction: Transaction,
   firestore: Firestore,
   userId: string,
-  sequenceId: string
-) {
+  sequenceId: string,
+  requirePublic: boolean
+): Promise<MemberRead> {
   const ownRef = doc(firestore, getUserSequencePath(userId, sequenceId));
   const publicRef = doc(firestore, getPublicSequencePath(sequenceId));
+
+  if (!requirePublic) {
+    const own = await transaction.get(ownRef);
+    if (own.exists()) return { own };
+    return {
+      own,
+      galleryOwnerId: mirrorOwnerId(await transaction.get(publicRef)),
+    };
+  }
+
   const [ownSnapshot, publicSnapshot] = await Promise.all([
     transaction.get(ownRef),
     transaction.get(publicRef),
@@ -194,7 +231,12 @@ async function verifyPublicMemberInTransaction(
     throw new PublicMemberNotReadyError(sequenceId);
   }
 
-  return ownSnapshot;
+  return {
+    own: ownSnapshot,
+    galleryOwnerId: ownSnapshot.exists()
+      ? undefined
+      : mirrorOwnerId(publicSnapshot),
+  };
 }
 
 export async function ensureSystemCollections(): Promise<void> {
@@ -532,7 +574,11 @@ export async function updateCollection(
 
         const latest = mapDocToCollection(latestSnapshot.data(), collectionId);
         const preparedIds = [...new Set(latest.sequenceIds)];
-        await ensurePublicMembers(firestore, userId, preparedIds);
+        const galleryOwners = await ensurePublicMembers(
+          firestore,
+          userId,
+          preparedIds
+        );
 
         try {
           await runTransaction(firestore, async (transaction) => {
@@ -554,10 +600,18 @@ export async function updateCollection(
               throw new PublicMemberNotReadyError();
             }
 
+            // Collections from before the gallery-owner map learn it here,
+            // so visitors see every gallery member from the first public view.
+            const galleryOwnerIds = nextGalleryOwnerIds(
+              current.galleryOwnerIds,
+              userId,
+              galleryOwners
+            );
             transaction.update(docRef, {
               ...updates,
               sequenceIds: currentIds,
               sequenceCount: currentIds.length,
+              ...(galleryOwnerIds && { galleryOwnerIds }),
               updatedAt: serverTimestamp(),
             });
           });
@@ -780,21 +834,27 @@ export async function addSequenceToCollection(
             );
           }
 
-          const ownSequenceSnapshot = current.isPublic
-            ? await verifyPublicMemberInTransaction(
-                transaction,
-                firestore,
-                userId,
-                sequenceId
-              )
-            : await transaction.get(sequenceRef);
+          const { own: ownSequenceSnapshot, galleryOwnerId } =
+            await readMemberInTransaction(
+              transaction,
+              firestore,
+              userId,
+              sequenceId,
+              current.isPublic
+            );
 
           const sequenceIds = current.sequenceIds.includes(sequenceId)
             ? [...current.sequenceIds]
             : [...current.sequenceIds, sequenceId];
+          const galleryOwnerIds = galleryOwnerId
+            ? nextGalleryOwnerIds(current.galleryOwnerIds, userId, {
+                [sequenceId]: galleryOwnerId,
+              })
+            : null;
           transaction.update(collectionRef, {
             sequenceIds,
             sequenceCount: sequenceIds.length,
+            ...(galleryOwnerIds && { galleryOwnerIds }),
             updatedAt: serverTimestamp(),
           });
 
@@ -877,9 +937,16 @@ export async function removeSequenceFromCollection(
       }
 
       const sequenceIds = current.sequenceIds.filter((id) => id !== sequenceId);
+      const galleryOwnerIds = nextGalleryOwnerIds(
+        current.galleryOwnerIds,
+        userId,
+        {},
+        [sequenceId]
+      );
       transaction.update(collectionRef, {
         sequenceIds,
         sequenceCount: sequenceIds.length,
+        ...(galleryOwnerIds && { galleryOwnerIds }),
         updatedAt: serverTimestamp(),
       });
 
@@ -948,7 +1015,44 @@ export async function getCollectionSequences(
     missingIds
   );
 
+  await recordGalleryOwners(firestore, userId, collectionData, publicSequences);
   return [...ownSequences, ...publicSequences];
+}
+
+/**
+ * Collections saved before the gallery-owner map existed learn it the next
+ * time their owner opens them: every member found only in the public index
+ * is someone else's gallery sequence. Best effort, and skipped while an admin
+ * previews another user's library, which is read-only.
+ */
+async function recordGalleryOwners(
+  firestore: Firestore,
+  userId: string,
+  collectionData: LibraryCollection,
+  publicSequences: readonly LibrarySequence[]
+): Promise<void> {
+  const found = Object.fromEntries(
+    publicSequences
+      .filter((sequence) => sequence.ownerId)
+      .map((sequence) => [sequence.id, sequence.ownerId])
+  );
+  const galleryOwnerIds = nextGalleryOwnerIds(
+    collectionData.galleryOwnerIds,
+    userId,
+    found
+  );
+  if (!galleryOwnerIds) return;
+
+  try {
+    // Throws while previewing another user, which is read-only.
+    getAuthenticatedUserId("write");
+    await updateDoc(
+      doc(firestore, getUserCollectionPath(userId, collectionData.id)),
+      { galleryOwnerIds }
+    );
+  } catch (error) {
+    console.warn("[CollectionManager] Could not record gallery owners:", error);
+  }
 }
 
 export async function reorderSequences(
@@ -1092,35 +1196,40 @@ export async function addSequencesToCollection(
               // Every read happens before the first write. Private collections
               // accept a public foreign sequence id, so a missing owner doc is
               // valid and simply has no reverse membership field to update.
-              const ownerSnapshots = current.isPublic
-                ? await Promise.all(
-                    missingIds.map((sequenceId) =>
-                      verifyPublicMemberInTransaction(
-                        transaction,
-                        firestore,
-                        userId,
-                        sequenceId
-                      )
-                    )
+              const memberReads = await Promise.all(
+                missingIds.map((sequenceId) =>
+                  readMemberInTransaction(
+                    transaction,
+                    firestore,
+                    userId,
+                    sequenceId,
+                    current.isPublic
                   )
-                : await Promise.all(
-                    missingIds.map((sequenceId) =>
-                      transaction.get(
-                        doc(firestore, getUserSequencePath(userId, sequenceId))
-                      )
-                    )
-                  );
+                )
+              );
 
               const nextIds = [
                 ...new Set([...current.sequenceIds, ...missingIds]),
               ];
+              const galleryOwnerIds = nextGalleryOwnerIds(
+                current.galleryOwnerIds,
+                userId,
+                Object.fromEntries(
+                  memberReads.flatMap((read, index) =>
+                    read.galleryOwnerId
+                      ? [[missingIds[index]!, read.galleryOwnerId]]
+                      : []
+                  )
+                )
+              );
               transaction.update(collectionRef, {
                 sequenceIds: nextIds,
                 sequenceCount: nextIds.length,
+                ...(galleryOwnerIds && { galleryOwnerIds }),
                 updatedAt: serverTimestamp(),
               });
 
-              ownerSnapshots.forEach((snapshot, index) => {
+              memberReads.forEach(({ own: snapshot }, index) => {
                 if (!snapshot.exists()) return;
                 const sequenceId = missingIds[index]!;
                 const existingCollectionIds = Array.isArray(
@@ -1283,10 +1392,17 @@ export async function removeSequencesFromCollection(
           const nextIds = current.sequenceIds.filter(
             (sequenceId) => !removedIds.has(sequenceId)
           );
+          const galleryOwnerIds = nextGalleryOwnerIds(
+            current.galleryOwnerIds,
+            userId,
+            {},
+            presentIds
+          );
 
           transaction.update(collectionRef, {
             sequenceIds: nextIds,
             sequenceCount: nextIds.length,
+            ...(galleryOwnerIds && { galleryOwnerIds }),
             updatedAt: serverTimestamp(),
           });
 
