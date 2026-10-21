@@ -6,6 +6,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Dom/JsonObject.h"
 #include "Engine/StaticMesh.h"
+#include "StaticMeshResources.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
 #include "KismetProceduralMeshLibrary.h"
@@ -43,9 +44,14 @@ TArray<FVector> ReadWickVertices(UStaticMesh* Mesh)
 {
     TArray<FVector> Result;
     if (!Mesh) return Result;
-    for (int32 SectionIndex = 0; SectionIndex < Mesh->GetNumSections(0); ++SectionIndex)
+    // The section info map is editor-only; the render data's sections carry the material index in cooked
+    // builds too, where this test also compiles (Development targets build automation tests).
+    const FStaticMeshRenderData* RenderData = Mesh->GetRenderData();
+    if (!RenderData || RenderData->LODResources.Num() == 0) return Result;
+    const FStaticMeshLODResources& Lod = RenderData->LODResources[0];
+    for (int32 SectionIndex = 0; SectionIndex < Lod.Sections.Num(); ++SectionIndex)
     {
-        const int32 MaterialIndex = Mesh->GetSectionInfoMap().Get(0, SectionIndex).MaterialIndex;
+        const int32 MaterialIndex = Lod.Sections[SectionIndex].MaterialIndex;
         const TArray<FStaticMaterial>& Materials = Mesh->GetStaticMaterials();
         if (!Materials.IsValidIndex(MaterialIndex)) continue;
         const FString MaterialName = Materials[MaterialIndex].MaterialInterface

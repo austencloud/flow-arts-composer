@@ -24,7 +24,8 @@ const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies(
 const site = JSON.parse(readFileSync(join(project, 'Content/Data/site.json'), 'utf8'));
 const staged = join(here, 'staged');
 mkdirSync(staged, { recursive: true });
-const jobs = site.assets.map(a => ({ id: a.family.replaceAll('-', '_'), family: a.family, source: resolve(source, a.source.startsWith('/models/') ? 'static'+a.source : a.source.replace(/^\//, '')), kind: 'Trees' }));
+// Trees are grown in the editor from Megaplants (Tools/grow-trees.py); nothing is converted from the browser's ez-tree GLBs.
+const jobs = [];
 jobs.push({ id: 'SM_Car', source: join(source,'static/models/flow-fest/cars/ace-hatchback.glb'), kind: 'Car' });
 jobs.push(
   { id: 'ForestGrass', source: join(source, 'static/models/flow-fest-sim/ecology/forest-grass-prototypes.glb'), kind: 'Ecology' },

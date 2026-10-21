@@ -2,11 +2,12 @@
   PovPatternLab.svelte - Toybox for the LED strip pattern engine.
 
   Generate algorithmic patterns or upload POV images, preview them flat,
-  adjust persistence duration, and upload to Ignis poi over USB.
+  adjust persistence duration, and send them to connected props when a
+  private device bridge is present (private-device-panels.ts).
 -->
 <script lang="ts">
   import { getStripPatternEngine } from "#lib/features/poi/get-strip-pattern-engine.js";
-  import { onDestroy } from "svelte";
+  import { onDestroy, type Component } from "svelte";
   import { createPoiState } from "#lib/features/poi/state/poi-state.svelte.js";
   import { setPoiContext } from "#lib/features/poi/context/poi-context.js";
   import PatternPicker from "#lib/features/poi/components/PatternPicker.svelte";
@@ -17,13 +18,16 @@
   import LedStaffPreview from "#lib/features/poi/components/LedStaffPreview.svelte";
   import PatternTimeline from "#lib/features/poi/components/PatternTimeline.svelte";
   import StripPatternExporter from "#lib/features/poi/components/StripPatternExporter.svelte";
-  import DevicePanel from "#lib/features/poi/components/DevicePanel.svelte";
+  import { loadPrivateDevicePanels } from "#lib/features/poi/private-device-panels.js";
   import ScrubValue from "#lib/shared/ui/components/ScrubbableNumber.svelte";
   import SequencePickerModal from "#lib/shared/components/sequence-picker/SequencePickerModal.svelte";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
   const poi = createPoiState(getStripPatternEngine());
   setPoiContext(poi);
+
+  let devicePanels = $state<Component[]>([]);
+  void loadPrivateDevicePanels().then((panels) => (devicePanels = panels));
 
   // Tear down the Firestore library subscription when the lab unmounts
   // so we don't leak onSnapshot listeners across module switches.
@@ -139,7 +143,9 @@
     <div class="side-column">
       <PovAnimatorPreview />
       <LedStaffPreview />
-      <DevicePanel />
+      {#each devicePanels as Panel, i (i)}
+        <Panel />
+      {/each}
     </div>
   </div>
 
