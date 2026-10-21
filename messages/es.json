@@ -3507,6 +3507,8 @@
   "settings_no_detailed_changelog": "No hay un registro de cambios detallado para esta versión.",
   "settings_all_releases": "Todas las versiones",
   "settings_got_it": "Entendido",
+  "settings_more_count": "+{count} más",
+  "settings_see_all_changes": "Ver los {count} cambios",
   "settings_no_releases_yet": "Aún no hay versiones",
   "settings_check_back_for_updates": "¡Vuelve pronto para ver novedades!",
   "settings_version_list": "Lista de versiones",
