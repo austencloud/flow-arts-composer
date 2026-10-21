@@ -114,8 +114,8 @@ bool UFlowFestEcologyComponent::BuildFromSite(AFlowFestWorld* SiteWorld)
         return Group;
     };
 
-    // Field grass. The source places one tuft per 4 m cell; each becomes a ragged
-    // metre-wide meadow patch with stubble grown into the gaps around it, so the
+    // Field grass. Each source tuft becomes a ragged metre-wide meadow patch with
+    // stubble around it, and fill patches cover the open ground between them, so the
     // field reads as continuous growth that thins out instead of stamped blobs.
     const TCHAR* GrassMeshes[GrassGroupCount] = { TEXT("MeadowPatch"), TEXT("StubbleTuft"), TEXT("SeedStalks") };
     float GrassSourceHeight[GrassGroupCount];
@@ -197,36 +197,56 @@ bool UFlowFestEcologyComponent::BuildFromSite(AFlowFestWorld* SiteWorld)
         return FMath::Clamp((Count - 1) / 7.f, 0.f, 1.f);
     };
 
+    // The nearest source placement within Reach metres, or INDEX_NONE.
+    const auto Nearest = [&](const FVector2D& At, float Reach, float& Distance)
+    {
+        const FIntPoint Cell = CellOf(At);
+        int32 Found = INDEX_NONE;
+        float Best = Reach * Reach;
+        for (int32 Y = -2; Y <= 2; ++Y)
+            for (int32 X = -2; X <= 2; ++X)
+                if (const TArray<int32>* Members = Cells.Find(Cell + FIntPoint(X, Y)))
+                    for (int32 Member : *Members)
+                    {
+                        const float Squared = FVector2D::DistSquared(Grass[Member].At, At);
+                        if (Squared < Best) { Best = Squared; Found = Member; }
+                    }
+        Distance = FMath::Sqrt(Best);
+        return Found;
+    };
+
     static const float ColorDryness[4] = { -.16f, -.05f, .07f, .18f };
     static const float TierScale[3] = { .85f, 1.1f, 1.4f };
-    int32 Cleared = 0, Trampled = 0, Stubble = 0, Stalks = 0;
+    int32 Cleared = 0, Trampled = 0, Filled = 0, Stubble = 0, Stalks = 0;
     const auto Add = [&](int32 Group, const FVector2D& At, float Ground, float Yaw, const FVector& Scale, float Dryness, float Brightness, FRandomStream& Random)
     {
         const FRotator Lean(Random.FRandRange(-6.f, 6.f), Yaw, Random.FRandRange(-6.f, 6.f));
         const int32 Instance = Groups[Group]->AddInstance(FTransform(Lean, FVector(At.X * 100.f, At.Y * 100.f, Ground), Scale));
         Groups[Group]->SetCustomData(Instance, { FMath::Clamp(Dryness, 0.f, 1.f), Brightness });
     };
-    for (int32 Index = 0; Index < Grass.Num(); ++Index)
+    // One meadow patch with its seed stalks and the stubble around it. Edge is how far
+    // toward the growth's outer limit the patch sits: 0 inside it, 1 at the last fill.
+    const auto Grow = [&](const FGrassPlacement& Tuft, float Edge, FRandomStream& Random)
     {
-        const FGrassPlacement& Tuft = Grass[Index];
-        FRandomStream Random(Index * 7919 + 17);
         const float Car = CarClearance(Cars, Tuft.At);
-        if (Car < -.2f) { ++Cleared; continue; }
+        if (Car < -.2f) { ++Cleared; return; }
         // Within a metre and a half of a car the grass is walked flat and browned.
         const float Trodden = Car < 1.5f ? 1.f - FMath::Clamp((Car + .2f) / 1.7f, 0.f, 1.f) : 0.f;
         Trampled += Trodden > 0.f;
-        const float Full = Fullness(Tuft.At);
+        const float Full = Fullness(Tuft.At) * (1.f - Edge);
         const float Patchiness = FMath::PerlinNoise2D(Tuft.At / 26.f) * .3f;
         const float Dryness = (Tuft.bShade ? .08f : .42f) + ColorDryness[Tuft.ColorIndex] + Patchiness
             + (1.f - Full) * .25f + Trodden * .3f;
         const float Brightness = (Tuft.bShade ? .74f : .96f) * Random.FRandRange(.88f, 1.12f);
-        const float Stature = TierScale[Tuft.Tier] * FMath::Lerp(.6f, 1.f, Full) * (1.f - .6f * Trodden);
+        // Broad hollows where the sward grows short and thin, so a full field still varies.
+        const float Thin = FMath::Clamp(-FMath::PerlinNoise2D(Tuft.At / 17.f + FVector2D(31.f, 7.f)) * 2.2f, 0.f, 1.f);
+        const float Stature = TierScale[Tuft.Tier] * FMath::Lerp(.6f, 1.f, Full) * (1.f - .6f * Trodden) * (1.f - .45f * Thin);
         const float PatchHeight = Tuft.Height * 100.f * Stature / GrassSourceHeight[0] * 1.15f;
         const float Spread = Tuft.Width / .285f * FMath::Lerp(1.05f, 1.7f, Full) * (1.f - .3f * Trodden);
-        Add(0, Tuft.At, Tuft.Ground, Tuft.Rotation, FVector(Spread, Spread, PatchHeight), Dryness, Brightness, Random);
+        Add(0, Tuft.At, Tuft.Ground, Tuft.Rotation, FVector(Spread, Spread, PatchHeight), Dryness + Thin * .15f, Brightness, Random);
 
         // Tall sunny placements and the driest clumps send up seed stalks.
-        if (!Tuft.bShade && Trodden == 0.f && (Tuft.Tier == 2 || (Dryness > .55f && Random.FRand() < .3f)))
+        if (!Tuft.bShade && Trodden == 0.f && Thin < .5f && (Tuft.Tier == 2 || (Dryness > .55f && Random.FRand() < .3f)))
         {
             const FVector2D At = Tuft.At + FVector2D(Random.FRandRange(-.35f, .35f), Random.FRandRange(-.35f, .35f));
             const float Size = Random.FRandRange(.8f, 1.2f) * FMath::Lerp(.7f, 1.f, Full);
@@ -236,10 +256,11 @@ bool UFlowFestEcologyComponent::BuildFromSite(AFlowFestWorld* SiteWorld)
         }
         // Stubble fills between this patch and its neighbours and runs a little past the
         // growth's edge, but never onto a road or under a car.
-        for (int32 Sprig = 0; Sprig < 3; ++Sprig)
+        const int32 Sprigs = Edge > 0.f ? 2 : 3;
+        for (int32 Sprig = 0; Sprig < Sprigs; ++Sprig)
         {
             const float Angle = Random.FRandRange(0.f, UE_TWO_PI);
-            const FVector2D At = Tuft.At + FVector2D(FMath::Cos(Angle), FMath::Sin(Angle)) * Random.FRandRange(1.f, 2.8f);
+            const FVector2D At = Tuft.At + FVector2D(FMath::Cos(Angle), FMath::Sin(Angle)) * Random.FRandRange(.7f, 2.f);
             if (CarClearance(Cars, At) < .3f || RoadClearance(Roads, At) < .4f) continue;
             const float Ground = SiteWorld ? SiteWorld->SampleGround(At.X, At.Y) - 2.f : Tuft.Ground;
             const float Size = Random.FRandRange(.8f, 1.5f);
@@ -247,6 +268,48 @@ bool UFlowFestEcologyComponent::BuildFromSite(AFlowFestWorld* SiteWorld)
                 Dryness + .12f, Brightness * .97f, Random);
             ++Stubble;
         }
+    };
+    for (int32 Index = 0; Index < Grass.Num(); ++Index)
+    {
+        FRandomStream Random(Index * 7919 + 17);
+        Grow(Grass[Index], 0.f, Random);
+    }
+
+    // The source keeps two of three cells on a 4 m grid, with dense lawns only around
+    // the camps, so its patches alone leave bare dirt between them. Fill the field on a
+    // jittered 1.6 m grid, each fill patch borrowing the nearest source placement's
+    // shade, tint and stature, and thin out between 3.5 and 6 m from the last one so
+    // the field ends softly. Woodland floors fill at under half the meadow's density.
+    if (SiteWorld && Grass.Num())
+    {
+        FBox2D Field(ForceInit);
+        for (const FGrassPlacement& Tuft : Grass) Field += Tuft.At;
+        constexpr float Spacing = 1.6f;
+        const int32 Columns = FMath::CeilToInt(Field.GetSize().X / Spacing), Rows = FMath::CeilToInt(Field.GetSize().Y / Spacing);
+        for (int32 Row = 0; Row <= Rows; ++Row)
+            for (int32 Column = 0; Column <= Columns; ++Column)
+            {
+                FRandomStream Random(Row * 104729 + Column * 7919 + 3);
+                const FVector2D At = Field.Min + FVector2D(Column + Random.FRandRange(-.4f, .4f), Row + Random.FRandRange(-.4f, .4f)) * Spacing;
+                float Distance = 0.f;
+                const int32 NearIndex = Nearest(At, 6.f, Distance);
+                // Inside a source patch already, or past the growth's edge.
+                if (NearIndex == INDEX_NONE || Distance < .9f) continue;
+                const FGrassPlacement& Near = Grass[NearIndex];
+                const float Edge = FMath::SmoothStep(3.5f, 6.f, Distance);
+                if (Random.FRand() < Edge || (Near.bShade && Random.FRand() < .55f)) continue;
+                if (RoadClearance(Roads, At) < .5f) continue;
+                FGrassPlacement Fill = Near;
+                Fill.At = At;
+                Fill.Ground = SiteWorld->SampleGround(At.X, At.Y) - 2.f;
+                Fill.Rotation = Random.FRandRange(0.f, 360.f);
+                Fill.Width *= Random.FRandRange(.85f, 1.15f);
+                Fill.Height *= Random.FRandRange(.8f, 1.1f);
+                // Tall tiers stay where the source put them; the fill between grows medium at most.
+                Fill.Tier = FMath::Min(Near.Tier, Random.FRand() < .3f ? 1 : 0);
+                ++Filled;
+                Grow(Fill, Edge, Random);
+            }
     }
 
     // Understory: damp sedge and hazel keep their source meshes and placements.
@@ -278,8 +341,8 @@ bool UFlowFestEcologyComponent::BuildFromSite(AFlowFestWorld* SiteWorld)
             ++GroundLife;
         }
     }
-    UE_LOG(LogTemp, Display, TEXT("Flow Fest native ecology: %d grass placements (%d cleared under cars, %d trampled), %d stubble, %d seed stalks; %d of %d understory in %d groups"),
-        Grass.Num(), Cleared, Trampled, Stubble, Stalks, GroundLife, ExpectedGroundLife, Groups.Num());
+    UE_LOG(LogTemp, Display, TEXT("Flow Fest native ecology: %d grass placements and %d fill patches (%d cleared under cars, %d trampled), %d stubble, %d seed stalks; %d of %d understory in %d groups"),
+        Grass.Num(), Filled, Cleared, Trampled, Stubble, Stalks, GroundLife, ExpectedGroundLife, Groups.Num());
     return Groups.Num() == GrassGroupCount + 2 && Grass.Num() == ExpectedGrass && ExpectedGrass > 0 && GroundLife == ExpectedGroundLife;
 }
 
