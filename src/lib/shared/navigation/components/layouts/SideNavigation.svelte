@@ -137,7 +137,10 @@
         var(--module-color, #667eea) 30%,
         rgba(255, 255, 255, 0.15)
       );
-    width: 72px;
+    /* The left safe-area inset is padding inside the box (border-box), so the
+       rail grows by the inset to keep a full 72px for the icons. MainInterface
+       reserves the same total for the content beside it. */
+    width: calc(72px + env(safe-area-inset-left, 0px));
     min-height: 100vh;
     z-index: var(--z-sticky);
 

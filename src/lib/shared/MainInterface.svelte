@@ -487,8 +487,7 @@
      Browse and other keep-alive modules use absolutely positioned hosts,
      which can occupy a parent's padding box and end up underneath the nav. */
   .content-area.nav-landscape {
-    margin-left: 72px !important;
-    margin-left: max(72px, env(safe-area-inset-left)) !important;
+    margin-left: calc(72px + env(safe-area-inset-left, 0px)) !important;
   }
 
   /* Reset the mobile rail reservation when the desktop sidebar is visible */
