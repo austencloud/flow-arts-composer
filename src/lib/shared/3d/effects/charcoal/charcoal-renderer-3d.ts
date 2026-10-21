@@ -268,6 +268,8 @@ export interface CharcoalRenderer3DDebugSnapshot {
   activePointCount: number;
   burstCount: number;
   emittedSparkCount: number;
+  /** Of emittedSparkCount, the children of sparks that burst mid-flight. */
+  forkedSparkCount: number;
   emittedFragmentCount: number;
   suppressedDiscontinuityCount: number;
   lastBurst: BurstDebugSnapshot | null;
@@ -444,6 +446,7 @@ export class CharcoalRenderer3D {
   private activePointCount = 0;
   private burstCount = 0;
   private emittedSparkCount = 0;
+  private forkedSparkCount = 0;
   private emittedFragmentCount = 0;
   private suppressedDiscontinuityCount = 0;
   private lastBurst: BurstDebugSnapshot | null = null;
@@ -978,6 +981,7 @@ export class CharcoalRenderer3D {
       this.initSparkBody(child, parent.diameter * (0.4 + Math.random() * 0.2));
       child.forkAt = -1;
       this.emittedSparkCount++;
+      this.forkedSparkCount++;
     }
     parent.active = false;
   }
@@ -1195,7 +1199,11 @@ export class CharcoalRenderer3D {
         continue;
       }
 
-      const heat = sparkHeat(particle.age, particle.burnTime, particle.coolTime);
+      const heat = sparkHeat(
+        particle.age,
+        particle.burnTime,
+        particle.coolTime
+      );
       const i3 = visibleCount * 3;
       buffers.heads[i3] = particle.x;
       buffers.heads[i3 + 1] = particle.y;
@@ -1553,6 +1561,7 @@ export class CharcoalRenderer3D {
       activePointCount: this.activePointCount,
       burstCount: this.burstCount,
       emittedSparkCount: this.emittedSparkCount,
+      forkedSparkCount: this.forkedSparkCount,
       emittedFragmentCount: this.emittedFragmentCount,
       suppressedDiscontinuityCount: this.suppressedDiscontinuityCount,
       lastBurst: this.lastBurst

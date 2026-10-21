@@ -11,6 +11,10 @@ import {
   showToast,
 } from "#lib/shared/toast/state/toast-state.svelte.js";
 
+// How long the recovered-draft notice stays up: long enough to read and reach
+// its Drafts action.
+const DRAFT_NOTICE_MS = 8000;
+
 export const draftModes = ["construct", "generate", "assemble"] as const;
 export type DraftMode = (typeof draftModes)[number];
 
@@ -139,7 +143,7 @@ export function createDraftRecoveryController(deps: {
               status.status === "conflict"
                 ? "This draft also changed in another tab. Both versions are in Drafts."
                 : "An earlier version of this draft is in Drafts.",
-            duration: 8000,
+            duration: DRAFT_NOTICE_MS,
             announcement: "polite",
             action: { label: "Drafts", onClick: deps.openDrafts },
           });

@@ -138,8 +138,8 @@
   .leaving .status {
     opacity: 0;
     transition:
-      opacity var(--leave-chrome, 200ms) cubic-bezier(0.7, 0, 0.84, 0),
-      transform var(--leave-chrome, 200ms) cubic-bezier(0.7, 0, 0.84, 0);
+      opacity var(--leave-chrome, var(--duration-fast)) var(--ease-in),
+      transform var(--leave-chrome, var(--duration-fast)) var(--ease-in);
   }
 
   .leaving .title {
@@ -147,8 +147,8 @@
   }
 
   .leaving .stage {
-    animation: stage-push-through var(--leave-stage, 800ms)
-      cubic-bezier(0.4, 0, 0.2, 1) var(--leave-delay, 0ms) both;
+    animation: stage-push-through var(--leave-stage, var(--duration-dramatic))
+      var(--ease-in-out) var(--leave-delay, 0ms) both;
   }
 
   @keyframes stage-push-through {
@@ -166,14 +166,14 @@
     :global(:root)
       .scene-preparation-surface[data-scene-preparation].leaving
       .stage {
-      animation-duration: var(--leave-stage, 200ms) !important;
+      animation-duration: var(--leave-stage, var(--duration-fast)) !important;
     }
   }
 
   :global(:root[data-motion-preference="reduce"])
     .scene-preparation-surface[data-scene-preparation].leaving
     .stage {
-    animation-duration: var(--leave-stage, 200ms) !important;
+    animation-duration: var(--leave-stage, var(--duration-fast)) !important;
   }
 
   .sky {

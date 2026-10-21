@@ -59,9 +59,10 @@ describe("2D fire quality controls", () => {
   });
 
   it("lets cinematic heat form a wake without changing Liquid Fire's decay", () => {
-    expect(computeFireTemperatureDissipation(0.93, "legacy")).toBe(0.93);
-    expect(computeFireTemperatureDissipation(0.93, "cinematic")).toBe(0.972);
-    expect(computeFireTemperatureDissipation(0.99, "cinematic")).toBe(0.99);
+    // Liquid Fire keeps its own decay; the cinematic look fades heat with the
+    // flame's burn time, the retention fire-physics.ts gives it.
+    expect(computeFireTemperatureDissipation(0.93, "legacy", 0.8)).toBe(0.93);
+    expect(computeFireTemperatureDissipation(0.93, "cinematic", 0.8)).toBe(0.8);
     expect(computeFireCoolingRate(4, false)).toBe(4);
     expect(computeFireCoolingRate(4, true)).toBe(1.6);
   });
@@ -126,7 +127,9 @@ describe("2D fire quality controls", () => {
   });
 
   it("keeps Natural Fire's bright center inside transported heat", () => {
-    const coreIndex = DISPLAY_FRAG.indexOf("float whiteCore = transportedCore;");
+    const coreIndex = DISPLAY_FRAG.indexOf(
+      "float whiteCore = transportedCore;"
+    );
     const liquidIndex = DISPLAY_FRAG.indexOf(
       "// --- Layer 2: Liquid Fire wick cores ---"
     );
@@ -206,9 +209,7 @@ describe("2D fire frame-cache budget", () => {
     expect(canPromoteFireFrameRecording([0, 0.0167, 3.9833], 4)).toBe(true);
     // The observed gap-created fragment has no early phase sample, so it
     // cannot become playback even if a later real boundary occurs.
-    expect(
-      canPromoteFireFrameRecording([2.816, 3, 3.983], 4)
-    ).toBe(false);
+    expect(canPromoteFireFrameRecording([2.816, 3, 3.983], 4)).toBe(false);
     expect(canPromoteFireFrameRecording([0, 16.7], 16.7)).toBe(false);
     expect(canPromoteFireFrameRecording([0, 2, 1], 4)).toBe(false);
   });
