@@ -158,6 +158,16 @@ export interface LibraryCollection {
    */
   readonly sequenceOwnerIds?: Readonly<Record<string, string>>;
 
+  /**
+   * Members the owner saved from someone else's gallery entry: sequence id ->
+   * that person's uid. Visitors load these from the public index scoped to
+   * that person, since word-derived ids collide across users. Kept apart from
+   * `sequenceOwnerIds` because the collaboration callable reads that map as
+   * "fetch from this person's library", which would serve a gallery sequence
+   * even after its owner made it private again.
+   */
+  readonly galleryOwnerIds?: Readonly<Record<string, string>>;
+
   /** Sequence count (denormalized for display without loading sequences) */
   readonly sequenceCount: number;
 
@@ -392,4 +402,66 @@ export function createSystemCollection(
     createdAt: now,
     updatedAt: now,
   };
+}
+
+/**
+ * Whose public mirror a visitor should load for one member. A collaborator's
+ * contribution wins, then a saved gallery entry, then the collection owner.
+ * `ownerId` comes from the caller's authoritative source (the doc's path),
+ * never from doc data.
+ */
+export function memberOwnerId(
+  collection: Pick<LibraryCollection, "sequenceOwnerIds" | "galleryOwnerIds">,
+  ownerId: string,
+  sequenceId: string
+): string {
+  return (
+    collection.sequenceOwnerIds?.[sequenceId] ??
+    collection.galleryOwnerIds?.[sequenceId] ??
+    ownerId
+  );
+}
+
+/** Member ids grouped by the owner whose public mirror holds them. */
+export function groupMembersByOwner(
+  collection: Pick<
+    LibraryCollection,
+    "sequenceIds" | "sequenceOwnerIds" | "galleryOwnerIds"
+  >,
+  ownerId: string
+): Map<string, string[]> {
+  const groups = new Map<string, string[]>();
+  for (const sequenceId of collection.sequenceIds) {
+    const owner = memberOwnerId(collection, ownerId, sequenceId);
+    const group = groups.get(owner);
+    if (group) group.push(sequenceId);
+    else groups.set(owner, [sequenceId]);
+  }
+  return groups;
+}
+
+/**
+ * The gallery-owner map after a membership change, or null when nothing in it
+ * changes (so the caller skips the field). Entries naming the collection
+ * owner are dropped: their own sequences need no entry.
+ */
+export function nextGalleryOwnerIds(
+  current: Readonly<Record<string, string>> | undefined,
+  collectionOwnerId: string,
+  added: Readonly<Record<string, string>>,
+  removedIds: Iterable<string> = []
+): Record<string, string> | null {
+  const next = { ...current };
+  let changed = false;
+  for (const [sequenceId, owner] of Object.entries(added)) {
+    if (owner === collectionOwnerId || next[sequenceId] === owner) continue;
+    next[sequenceId] = owner;
+    changed = true;
+  }
+  for (const sequenceId of removedIds) {
+    if (!(sequenceId in next)) continue;
+    delete next[sequenceId];
+    changed = true;
+  }
+  return changed ? next : null;
 }

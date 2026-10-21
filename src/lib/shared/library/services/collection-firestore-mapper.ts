@@ -95,6 +95,7 @@ export function mapDocToCollection(
     ownerId: data["ownerId"] ?? "",
     sequenceIds: data["sequenceIds"] ?? [],
     sequenceOwnerIds: data["sequenceOwnerIds"],
+    galleryOwnerIds: data["galleryOwnerIds"],
     sequenceCount: data["sequenceCount"] ?? 0,
     coverImageUrl: data["coverImageUrl"],
     color: data["color"],

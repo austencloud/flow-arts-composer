@@ -34,6 +34,7 @@ import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
 import type { LibraryCollection } from "#lib/shared/library/domain/models/collection.js";
 import {
   SYSTEM_COLLECTION_IDS,
+  groupMembersByOwner,
   isSmartCollection,
 } from "#lib/shared/library/domain/models/collection.js";
 import type { LibrarySequence } from "#lib/shared/library/domain/models/library-sequence.js";
@@ -82,7 +83,7 @@ async function toPublicView(
   ownerId: string
 ): Promise<LibraryCollection> {
   if (isSmartCollection(col)) return col;
-  const publicCount = await countPublicMembers(ownerId, col.sequenceIds).catch(
+  const publicCount = await countPublicMembers(ownerId, col).catch(
     () => col.sequenceCount
   );
   return publicCount === col.sequenceCount
@@ -91,38 +92,41 @@ async function toPublicView(
 }
 
 /**
- * Count how many of the given member ids THIS OWNER has in the public index.
+ * Count how many members a visitor will see in the public index.
  *
  * `publicSequences` doc ids equal sequence ids, so public visibility = doc
  * existence — but ids are word-derived and COLLIDE ACROSS USERS (two users
  * saving the word "BΨΦ" produce the same id). An existence-only count matched
  * other users' public copies and inflated the count ("3 sequences" over a
- * 1-sequence grid), so the query also filters on the mirror's ownerId.
- * Aggregate count queries answer it without downloading documents (one count
- * per 30-id `in` chunk). Module-private on purpose — consumers get
- * already-normalized collections and must not re-derive counts (see the
- * module invariant above).
+ * 1-sequence grid), so each query also filters on the mirror's ownerId: the
+ * collection owner for their own members, and the recorded person for a
+ * gallery sequence saved from someone else. Aggregate count queries answer it
+ * without downloading documents (one count per owner per 30-id `in` chunk).
+ * Module-private on purpose — consumers get already-normalized collections
+ * and must not re-derive counts (see the module invariant above).
  */
 async function countPublicMembers(
   ownerId: string,
-  sequenceIds: readonly string[]
+  col: LibraryCollection
 ): Promise<number> {
-  if (sequenceIds.length === 0) return 0;
+  if (col.sequenceIds.length === 0) return 0;
   const firestore = await getFirestoreInstance();
   const publicRef = collection(firestore, "publicSequences");
 
   const IN_LIMIT = 30;
-  const chunks: string[][] = [];
-  for (let i = 0; i < sequenceIds.length; i += IN_LIMIT) {
-    chunks.push([...sequenceIds.slice(i, i + IN_LIMIT)]);
+  const scopedChunks: Array<{ owner: string; chunk: string[] }> = [];
+  for (const [owner, ids] of groupMembersByOwner(col, ownerId)) {
+    for (let i = 0; i < ids.length; i += IN_LIMIT) {
+      scopedChunks.push({ owner, chunk: ids.slice(i, i + IN_LIMIT) });
+    }
   }
 
   const counts = await Promise.all(
-    chunks.map(async (chunk) => {
+    scopedChunks.map(async ({ owner, chunk }) => {
       const snap = await getCountFromServer(
         query(
           publicRef,
-          where("ownerId", "==", ownerId),
+          where("ownerId", "==", owner),
           where(documentId(), "in", chunk)
         )
       );
@@ -414,11 +418,14 @@ export async function getUserCollectionSequences(
     return [];
   }
 
-  return batchFetchPublicSequences(
-    firestore,
-    collectionData.sequenceIds,
-    userId
+  // Each member loads from its own owner's public mirror (see
+  // countPublicMembers for why the owner scope matters).
+  const groups = await Promise.all(
+    [...groupMembersByOwner(collectionData, userId)].map(([owner, ids]) =>
+      batchFetchPublicSequences(firestore, ids, owner)
+    )
   );
+  return groups.flat();
 }
 
 export async function getUserPublicFavoriteIds(
