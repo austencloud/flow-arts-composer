@@ -178,8 +178,7 @@
     height: 38px;
     border-radius: 8px;
     border: 1px solid color-mix(in oklab, var(--theme-text) 12%, transparent);
-    transition: box-shadow var(--duration-fast, 120ms)
-      var(--ease-standard, ease);
+    transition: box-shadow var(--transition-fast);
   }
   .letters li.active {
     box-shadow: 0 0 0 2px

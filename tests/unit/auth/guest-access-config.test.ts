@@ -45,8 +45,10 @@ describe("isTabAccessible", () => {
     }
   });
 
-  it("allows You so guests can reach on-device saved work", () => {
-    expect(isTabAccessible("browse", "you", "guest")).toBe(true);
+  it("allows Your library so guests can reach on-device saved work", () => {
+    for (const section of ["drafts", "saved", "your-visuals", "your-videos"]) {
+      expect(isTabAccessible("browse", section, "guest")).toBe(true);
+    }
   });
 
   it("does not invent sub-tabs for the Creators module", () => {

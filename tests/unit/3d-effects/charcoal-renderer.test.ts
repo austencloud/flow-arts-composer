@@ -31,11 +31,7 @@ function createTip(
  * Half a second of steady travel, so the snap test knows the load the head
  * is used to before anything changes. A burst is a change from that.
  */
-function cruise(
-  target: CharcoalRenderer3D,
-  speed: number,
-  frames = 30
-): void {
+function cruise(target: CharcoalRenderer3D, speed: number, frames = 30): void {
   for (let frame = 0; frame < frames; frame++) {
     target.update([createTip({ velocityX: speed, speed })], 1 / 60);
   }
@@ -348,7 +344,11 @@ describe("CharcoalRenderer3D", () => {
     expect(afterJump).toMatchObject({
       suppressedDiscontinuityCount: 1,
     });
-    expect(afterJump.emittedSparkCount).toBe(beforeJump.emittedSparkCount);
+    // Sparks already in the air may burst into children during this frame;
+    // only sparks the tip itself spawns would draw the streak.
+    expect(afterJump.emittedSparkCount - afterJump.forkedSparkCount).toBe(
+      beforeJump.emittedSparkCount - beforeJump.forkedSparkCount
+    );
     expect(afterJump.emittedFragmentCount).toBe(
       beforeJump.emittedFragmentCount
     );
