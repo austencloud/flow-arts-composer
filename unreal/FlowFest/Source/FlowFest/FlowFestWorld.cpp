@@ -1127,6 +1127,20 @@ void AFlowFestWorld::SetJamSoundActive(bool bActive)
     Soundscape->SetJamActive(bActive);
 }
 
+FRotator AFlowFestWorld::SunRotationAt(float Hour)
+{
+    const float Altitude = FMath::Sin((Hour - 6.f) * PI / 12.f) * 68.f;
+    // Compass bearing of the sun for a late-summer day at the site's 43 degrees north:
+    // about 80 at six, 180 at noon and 280 at six in the evening.
+    const float HourAngle = FMath::DegreesToRadians((Hour - 12.f) * 15.f);
+    const float Latitude = FMath::DegreesToRadians(43.f), Declination = FMath::DegreesToRadians(14.f);
+    const float Bearing = PI + FMath::Atan2(FMath::Sin(HourAngle),
+        FMath::Cos(HourAngle) * FMath::Sin(Latitude) - FMath::Tan(Declination) * FMath::Cos(Latitude));
+    // The site runs +X east and +Y south; the light travels away from the sun.
+    const FVector2D Away(-FMath::Sin(Bearing), FMath::Cos(Bearing));
+    return FRotator(-Altitude, FMath::RadiansToDegrees(FMath::Atan2(Away.Y, Away.X)), 0.f);
+}
+
 void AFlowFestWorld::SetTimeOfDay(float Hour)
 {
     TimeOfDay = FMath::Fmod(FMath::Fmod(Hour, 24.f) + 24.f, 24.f);
@@ -1134,8 +1148,9 @@ void AFlowFestWorld::SetTimeOfDay(float Hour)
     Soundscape->SetTimeOfDay(TimeOfDay);
     // Two atmosphere lights retain a cool terrain silhouette after the sun leaves the horizon.
     // The moon stays high enough for paths to catch grazing light; the fire stays much brighter locally.
-    const float Altitude = FMath::Sin((TimeOfDay - 6.f) * PI / 12.f) * 68.f;
-    Sun->SetWorldRotation(FRotator(-Altitude, 205.f, 0.f));
+    const FRotator SunRotation = SunRotationAt(TimeOfDay);
+    const float Altitude = -SunRotation.Pitch;
+    Sun->SetWorldRotation(SunRotation);
     const float Daylight = FMath::Clamp((Altitude + 8.f) / 24.f, 0.f, 1.f);
     // Low sun loses energy through the atmosphere before its warm light reaches the valley.
     const float SunLux = 85000.f * Daylight * Daylight;
