@@ -168,6 +168,13 @@
   > | null = null;
   const showDesktopSidebar = $derived(desktopSidebarState.isVisible);
 
+  // The mobile nav (bottom bar, or the side rail in landscape) is mounted only
+  // for modules that want it. Without it nothing reserves the left safe-area
+  // inset, so the shell does (.no-rail).
+  const hasMobileNav = $derived(
+    moduleHasPrimaryNav(currentModule()) && !showDesktopSidebar
+  );
+
   // Primary navigation visibility - hide during Browse module scroll
   const isPrimaryNavVisible = $derived(() => {
     const module = currentModule();
@@ -283,6 +290,7 @@
   class="main-interface"
   class:nav-landscape={layoutState.isPrimaryNavLandscape}
   class:has-desktop-sidebar={showDesktopSidebar}
+  class:no-rail={!hasMobileNav && !showDesktopSidebar}
   class:has-preview-banner={isPreviewMode}
   class:is-impersonating={isImpersonating}
   style="--primary-nav-height: {layoutState.primaryNavHeight}px; --desktop-sidebar-width: {desktopSidebarState.width}px;"
@@ -316,7 +324,7 @@
       id="main-content"
       class="content-area"
       class:nav-hidden={!isPrimaryNavVisible()}
-      class:nav-landscape={layoutState.isPrimaryNavLandscape}
+      class:nav-landscape={layoutState.isPrimaryNavLandscape && hasMobileNav}
       class:entry-animating={isEntryAnimating}
     >
       <ModuleRenderer
@@ -329,7 +337,7 @@
     </main>
 
     <!-- Mobile Navigation (conditionally rendered) -->
-    {#if moduleHasPrimaryNav(currentModule()) && !showDesktopSidebar}
+    {#if hasMobileNav}
       <MobileNavigation
         sections={moduleSections()}
         currentSection={currentSection()}
@@ -441,6 +449,11 @@
   /* Desktop sidebar support */
   .main-interface.has-desktop-sidebar {
     padding-left: var(--desktop-sidebar-width, 280px);
+  }
+
+  /* Modules with no mobile nav (Museum): keep content out of the landscape notch */
+  .main-interface.no-rail {
+    padding-left: env(safe-area-inset-left, 0px);
   }
 
   /* Impersonation border - 3px blue outline around entire viewport */
