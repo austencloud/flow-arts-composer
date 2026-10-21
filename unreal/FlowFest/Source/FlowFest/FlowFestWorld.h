@@ -17,6 +17,7 @@ class UProceduralMeshComponent;
 class USkeletalMeshComponent;
 class USkyAtmosphereComponent;
 class USkyLightComponent;
+class UVolumetricCloudComponent;
 class UStaticMesh;
 class UStaticMeshComponent;
 class UFlowFestAvatarComponent;
@@ -130,6 +131,7 @@ private:
     UPROPERTY(VisibleAnywhere) TObjectPtr<UDirectionalLightComponent> Moon;
     UPROPERTY(VisibleAnywhere) TObjectPtr<USkyLightComponent> SkyLight;
     UPROPERTY(VisibleAnywhere) TObjectPtr<USkyAtmosphereComponent> Atmosphere;
+    UPROPERTY(VisibleAnywhere) TObjectPtr<UVolumetricCloudComponent> Clouds;
     UPROPERTY(VisibleAnywhere) TObjectPtr<UExponentialHeightFogComponent> Fog;
     UPROPERTY(VisibleAnywhere) TObjectPtr<UPostProcessComponent> PostProcess;
 

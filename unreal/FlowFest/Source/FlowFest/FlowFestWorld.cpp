@@ -22,6 +22,7 @@
 #include "Components/SkyLightComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/TextRenderComponent.h"
+#include "Components/VolumetricCloudComponent.h"
 #include "Dom/JsonObject.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
@@ -81,6 +82,8 @@ AFlowFestWorld::AFlowFestWorld()
     Sun->bAtmosphereSunLight = true;
     Sun->AtmosphereSunLightIndex = 0;
     Sun->CastShadows = true;
+    // Clouds drift their shadows across the field.
+    Sun->bCastCloudShadows = true;
 
     Moon = CreateDefaultSubobject<UDirectionalLightComponent>(TEXT("Moon"));
     Moon->SetupAttachment(SiteRoot);
@@ -94,6 +97,19 @@ AFlowFestWorld::AFlowFestWorld()
     Atmosphere = CreateDefaultSubobject<USkyAtmosphereComponent>(TEXT("Atmosphere"));
     Atmosphere->SetupAttachment(SiteRoot);
     Atmosphere->SetMobility(EComponentMobility::Movable);
+    // A late-summer valley is hazy: more Mie scattering, and aerial perspective
+    // stretched so the tree lines a few hundred metres out sit back in the haze.
+    // (Height fog can't do this: its dark inscatter greys the sky once it reaches treetops.)
+    Atmosphere->SetMieScatteringScale(0.0065f);
+    Atmosphere->SetAerialPespectiveViewDistanceScale(18.f);
+
+    // Fair-weather cumulus on the engine's cloud material, low enough to read as
+    // separate clouds over a site this size.
+    Clouds = CreateDefaultSubobject<UVolumetricCloudComponent>(TEXT("Clouds"));
+    Clouds->SetupAttachment(SiteRoot);
+    Clouds->SetMobility(EComponentMobility::Movable);
+    Clouds->SetLayerBottomAltitude(1.6f);
+    Clouds->SetLayerHeight(3.5f);
 
     SkyLight = CreateDefaultSubobject<USkyLightComponent>(TEXT("SkyLight"));
     SkyLight->SetupAttachment(SiteRoot);
@@ -107,6 +123,10 @@ AFlowFestWorld::AFlowFestWorld()
     Fog->FogDensity = 0.012f;
     Fog->FogHeightFalloff = 0.2f;
     Fog->SetRelativeLocation(FVector(0, 0, -1000.f));
+    // Keep the camp crisp; haze starts past the nearest tents and glows toward the sun.
+    Fog->SetStartDistance(4000.f);
+    Fog->SetDirectionalInscatteringExponent(6.f);
+    Fog->SetDirectionalInscatteringStartDistance(8000.f);
 
     PostProcess = CreateDefaultSubobject<UPostProcessComponent>(TEXT("FestivalColor"));
     PostProcess->SetupAttachment(SiteRoot);
@@ -130,6 +150,11 @@ AFlowFestWorld::AFlowFestWorld()
     PostProcess->Settings.LocalExposureShadowContrastScale = 0.9f;
     PostProcess->Settings.bOverride_BloomIntensity = true;
     PostProcess->Settings.BloomIntensity = 0.45f;
+    PostProcess->Settings.bOverride_ColorGainHighlights = true;
+    PostProcess->Settings.bOverride_ColorGainShadows = true;
+    PostProcess->Settings.bOverride_ColorSaturation = true;
+    PostProcess->Settings.bOverride_ColorContrast = true;
+    PostProcess->Settings.ColorContrast = FVector4(1.f, 1.f, 1.f, 1.03f);
     PostProcess->Settings.bOverride_VignetteIntensity = true;
     PostProcess->Settings.VignetteIntensity = 0.14f;
 }
@@ -1115,13 +1140,16 @@ void AFlowFestWorld::SetTimeOfDay(float Hour)
     // Low sun loses energy through the atmosphere before its warm light reaches the valley.
     const float SunLux = 85000.f * Daylight * Daylight;
     Sun->SetIntensity(SunLux);
-    Sun->SetLightColor(FLinearColor::LerpUsingHSV(FLinearColor(1.f, 0.47f, 0.24f), FLinearColor(1.f, 0.94f, 0.82f), FMath::Clamp(Altitude / 35.f, 0.f, 1.f)));
+    // The light warms through the whole afternoon, not only in the last half hour.
+    const float SunHeight = FMath::Clamp(Altitude / 55.f, 0.f, 1.f);
+    Sun->SetLightColor(FLinearColor::LerpUsingHSV(FLinearColor(1.f, 0.47f, 0.24f), FLinearColor(1.f, 0.9f, 0.76f), SunHeight));
     const float Night = 1.f - FMath::Clamp((Altitude + 3.f) / 9.f, 0.f, 1.f);
     const float MoonAltitude = 31.f + 10.f * FMath::Sin((TimeOfDay - 23.f) * PI / 12.f);
     Moon->SetWorldRotation(FRotator(-MoonAltitude, 48.f, 0.f));
     Moon->SetIntensity(1.2f * Night);
     SkyLight->SetIntensity(FMath::Lerp(0.8f, 1.8f, Daylight));
-    Fog->SetFogDensity(FMath::Lerp(0.013f, 0.008f, Daylight));
+    Fog->SetFogDensity(FMath::Lerp(0.013f, 0.02f, Daylight));
+    Fog->SetDirectionalInscatteringColor(FLinearColor(0.55f, 0.4f, 0.25f) * Daylight * (1.f - 0.6f * SunHeight));
     // Allow canopy shade while bounding dark adaptation against the incident sunlight.
     // A histogram dominated by shaded ground otherwise overexposes the sunlit canopy.
     // The zero EV100 floor still limits dark adaptation around the nighttime fire.
@@ -1129,6 +1157,11 @@ void AFlowFestWorld::SetTimeOfDay(float Hour)
         FMath::Log2(FMath::Max(1.f, SunLux) / 2.5f) - 4.5f);
     PostProcess->Settings.AutoExposureBias = -0.8f * Daylight;
     PostProcess->Settings.BloomIntensity = FMath::Lerp(0.85f, 0.32f, Daylight);
+    // Warm highlights against slightly cool shade, strongest as the sun drops.
+    const float Warmth = Daylight * (0.3f + 0.7f * (1.f - SunHeight));
+    PostProcess->Settings.ColorGainHighlights = FVector4(1.f + 0.06f * Warmth, 1.f + 0.01f * Warmth, 1.f - 0.08f * Warmth, 1.f);
+    PostProcess->Settings.ColorGainShadows = FVector4(1.f - 0.03f * Warmth, 1.f, 1.f + 0.04f * Warmth, 1.f);
+    PostProcess->Settings.ColorSaturation = FVector4(1.f, 1.f, 1.f, 1.f + 0.06f * Daylight);
     UpdateBreeze();
 }
 
