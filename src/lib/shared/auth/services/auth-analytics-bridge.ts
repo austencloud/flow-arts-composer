@@ -141,6 +141,24 @@ export function restorePendingAuthMethod(): void {
 }
 
 /**
+ * Put back the submission context a full-page Google redirect stashed before
+ * leaving (google-redirect-sign-in.ts). Same tab, so PostHog's own session
+ * registration usually survived; this restores the in-memory half that the
+ * guest-upgrade lifecycle event reads.
+ */
+export function restoreAuthSubmissionContext(
+  properties: Record<string, string>
+): void {
+  if (Object.keys(properties).length === 0) return;
+  submissionContext = properties;
+  try {
+    getPostHogInstance()?.register_for_session(properties);
+  } catch (error) {
+    console.warn("[auth-analytics] register_for_session failed", error);
+  }
+}
+
+/**
  * Drops the bridge properties and ends the tracked flow. Call on modal close,
  * whether the close is a completed sign-in or a genuine abandonment.
  *

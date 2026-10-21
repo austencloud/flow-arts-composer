@@ -4769,6 +4769,7 @@
   "auth_error_unauthorized_domain": "Diese Domain ist nicht für die Anmeldung zugelassen. Bitte wende dich an den Support.",
   "auth_error_network": "Netzwerkfehler. Prüfe deine Verbindung und versuche es erneut.",
   "auth_error_signin_failed": "Die Anmeldung ist fehlgeschlagen. Bitte versuche es erneut.",
+  "auth_google_no_result": "Die Google-Anmeldung wurde nicht abgeschlossen. Versuche es erneut oder melde dich mit E-Mail an.",
   "feedback_close_panel": "Fenster schließen",
   "feedback_details": "Feedback-Details",
   "feedback_view_screenshot": "Screenshot {n} ansehen",

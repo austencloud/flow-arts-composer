@@ -27,6 +27,10 @@ import { reportPostHogLifecycleEvent } from "#lib/shared/analytics/services/post
 import { getAuthSubmissionContext } from "#lib/shared/auth/services/auth-analytics-bridge.js";
 import * as dexiePersistence from "#lib/shared/persistence/services/dexie-persistence-service.js";
 import { getSavedSequenceIds } from "#lib/shared/library/services/saved-sequence-ledger.js";
+import {
+  shouldUseGoogleRedirect,
+  startGoogleRedirect,
+} from "#lib/shared/auth/services/google-redirect-sign-in.js";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 export type UpgradeStatus = "linked" | "collision-signed-in";
@@ -277,6 +281,11 @@ export async function upgradeAnonymousWithGoogle(): Promise<UpgradeResult> {
     );
   }
 
+  // iPhone/iPad: the popup tab never reports back, so leave for Google in
+  // this tab instead. completePendingGoogleRedirect() finishes the link (and
+  // any collision) when the page comes back.
+  if (shouldUseGoogleRedirect()) return startGoogleRedirect(auth);
+
   const provider = new GoogleAuthProvider();
   provider.addScope("email");
   provider.addScope("profile");
@@ -286,20 +295,41 @@ export async function upgradeAnonymousWithGoogle(): Promise<UpgradeResult> {
     recordLastAuthMethod("google");
     return { status: "linked" };
   } catch (error) {
-    if (isCollision(error)) {
-      const cred = GoogleAuthProvider.credentialFromError(error as AuthError);
-      if (!cred) throw error;
-      const signedIn = await signInWithCredential(auth, cred);
-      await reportGuestUpgradeLifecycle("collision-signed-in");
-      recordLastAuthMethod("google");
-      return {
-        status: "collision-signed-in",
-        importable: drafts,
-        destinationUid: signedIn.user.uid,
-      };
-    }
+    const collision = await signInAfterGoogleLinkCollision(
+      auth,
+      anon.uid,
+      error,
+      drafts
+    );
+    if (collision) return collision;
     throw error;
   }
+}
+
+/**
+ * The Google account a guest tried to link already exists: sign into it and
+ * hand back the guest's drafts for the import offer. Returns null when the
+ * error is not a collision, so the caller rethrows it. Shared by the popup link
+ * above and the redirect return in google-redirect-sign-in.ts.
+ */
+export async function signInAfterGoogleLinkCollision(
+  auth: Awaited<ReturnType<typeof getAuthInstance>>,
+  anonUid: string,
+  error: unknown,
+  drafts?: AnonymousDraft[]
+): Promise<UpgradeResult | null> {
+  if (!isCollision(error)) return null;
+  const cred = GoogleAuthProvider.credentialFromError(error);
+  if (!cred) return null;
+  const importable = drafts ?? (await captureAnonymousDrafts(anonUid));
+  const signedIn = await signInWithCredential(auth, cred);
+  await reportGuestUpgradeLifecycle("collision-signed-in");
+  recordLastAuthMethod("google");
+  return {
+    status: "collision-signed-in",
+    importable,
+    destinationUid: signedIn.user.uid,
+  };
 }
 
 export async function upgradeAnonymousWithFacebook(): Promise<UpgradeResult> {

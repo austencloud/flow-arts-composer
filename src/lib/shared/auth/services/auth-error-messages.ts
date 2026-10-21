@@ -7,6 +7,7 @@
 // `null` means "don't toast" — the user cancelled/dismissed the flow
 // themselves, which is not an error worth surfacing.
 import { t } from "#lib/shared/i18n/i18n.svelte.js";
+import { POPUP_NO_RESULT } from "./popup-return-watch";
 
 export function getAuthErrorCode(error: unknown): string | undefined {
   return (error as { code?: string } | null | undefined)?.code;
@@ -24,7 +25,8 @@ export function isExpectedAuthInterruption(error: unknown): boolean {
     errorCode === "auth/popup-blocked" ||
     errorCode === "auth/popup-closed-by-user" ||
     errorCode === "auth/cancelled-popup-request" ||
-    errorCode === "auth/user-cancelled"
+    errorCode === "auth/user-cancelled" ||
+    errorCode === POPUP_NO_RESULT
   );
 }
 
@@ -43,6 +45,8 @@ export function mapAuthError(error: unknown): string | null {
     case "auth/user-cancelled":
       // Silent: the user dismissed/denied the flow, or another popup replaced it.
       return null;
+    case POPUP_NO_RESULT:
+      return t("auth_google_no_result");
     case "auth/account-exists-with-different-credential":
       return t("auth_error_different_signin_method");
     case "auth/unauthorized-domain":

@@ -54,6 +54,15 @@ export function disarmAuthFunnel(): void {
   encounter = null;
 }
 
+/**
+ * Re-arm an encounter that a full-page sign-in redirect carried across the
+ * reload, without logging a second auth_modal_opened.
+ */
+export function resumeAuthEncounter(saved: Record<string, string>): void {
+  if (!saved.surface || !saved.origin) return;
+  encounter = saved as unknown as AuthEncounter;
+}
+
 export function trackAuthSurfaceOpened(next: AuthEncounter): void {
   encounter = next;
   captureWhenReady("auth_modal_opened", { ...next });

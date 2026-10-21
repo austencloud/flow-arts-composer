@@ -5445,6 +5445,7 @@
   "auth_error_unauthorized_domain": "This domain isn't authorized for sign-in. Please contact support.",
   "auth_error_network": "Network error. Check your connection and try again.",
   "auth_error_signin_failed": "Sign-in failed. Please try again.",
+  "auth_google_no_result": "Google sign-in didn't finish. Try again, or sign in with email.",
   "feedback_close_panel": "Close panel",
   "feedback_details": "Feedback details",
   "feedback_view_screenshot": "View screenshot {n}",

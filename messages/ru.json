@@ -3650,6 +3650,7 @@
   "auth_error_unauthorized_domain": "Этот домен не разрешён для входа. Обратитесь в поддержку.",
   "auth_error_network": "Ошибка сети. Проверьте подключение и попробуйте ещё раз.",
   "auth_error_signin_failed": "Не удалось войти. Попробуйте ещё раз.",
+  "auth_google_no_result": "Вход через Google не завершился. Попробуйте ещё раз или войдите по электронной почте.",
   "shared_fan_build_fire": "DoodleGrip Огонь",
   "shared_fan_build_lotus": "Lotus Огонь",
   "shared_fan_build_flat_grip": "Flat Grip Огонь",

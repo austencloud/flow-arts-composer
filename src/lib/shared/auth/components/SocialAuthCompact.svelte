@@ -5,8 +5,10 @@
 
   Auth Flow Priority:
   1. Google One Tap (FedCM-native, no redirects) - via GoogleOneTap.svelte
-  2. Popup-based auth (fallback for all providers)
-  3. Error message (no redirect fallback - it never worked)
+  2. Popup-based auth (fallback for all providers), except Google on iPhone
+     and iPad, which redirects through the first-party /__/auth handler
+     because the iOS popup never reports back (google-redirect-sign-in.ts)
+  3. Error message
 -->
 <script lang="ts">
   import FacebookIcon from "./icons/FacebookIcon.svelte";
@@ -14,6 +16,7 @@
   import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
   import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { growFade } from "#lib/shared/transitions/motion.js";
+  import { onMount } from "svelte";
   import { browser } from "$app/env";
   import { configureAuthPersistence, getAuthInstance } from "../firebase";
   import {
@@ -22,6 +25,11 @@
   } from "#lib/shared/auth/services/authenticator.js";
   import { isNative } from "#lib/shared/platform/services/platform-detector.js";
   import { upgradeAnonymousWithGoogle } from "#lib/shared/auth/services/anonymous-upgrade.js";
+  import {
+    abandonPendingGoogleRedirect,
+    shouldUseGoogleRedirect,
+  } from "#lib/shared/auth/services/google-redirect-sign-in.js";
+  import { settleOnAbandonedPopup } from "#lib/shared/auth/services/popup-return-watch.js";
   import { promptAnonymousImport } from "#lib/shared/auth/state/anonymous-import-prompt.svelte.js";
   import {
     FACEBOOK_LOGIN_ENABLED,
@@ -130,6 +138,19 @@
   // "account exists with a different credential" dead end.
   const lastMethod = $derived(getLastAuthMethod());
 
+  // iPhone Google sign-in leaves this page for Google's. Backing out restores
+  // the page from Safari's back/forward cache with no reload, so the button
+  // would still read "Signing in..." with nothing on the way.
+  onMount(() => {
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (!event.persisted || loadingProvider !== "google") return;
+      loadingProvider = null;
+      abandonPendingGoogleRedirect();
+    };
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
+  });
+
   async function handleGoogleClick() {
     if (isLoading) return;
 
@@ -167,15 +188,22 @@
       // the user stays on whatever app page they opened the sheet from.
       // Navigating to "/" used to send them back to the marketing landing.
       // signInWithGoogle() routes per platform (native SDK / desktop OAuth /
-      // web popup) — never call signInWithPopup directly here.
-      if (auth.currentUser?.isAnonymous) {
-        const result = await upgradeAnonymousWithGoogle();
-        if (result.status === "collision-signed-in") {
-          promptAnonymousImport(result.importable ?? [], result.destinationUid);
-        }
-      } else {
-        await signInWithGoogle();
-      }
+      // iPhone redirect / web popup) — never call signInWithPopup directly here.
+      const attempt = auth.currentUser?.isAnonymous
+        ? upgradeAnonymousWithGoogle().then((result) => {
+            if (result.status === "collision-signed-in") {
+              promptAnonymousImport(
+                result.importable ?? [],
+                result.destinationUid
+              );
+            }
+          })
+        : signInWithGoogle();
+      // A redirect never settles here (the page navigates away), so only a
+      // popup gets the watch that ends an attempt the popup never answers.
+      await (shouldUseGoogleRedirect()
+        ? attempt
+        : settleOnAbandonedPopup(attempt));
       trackAuthProviderResult("google", "completed");
     } catch (error: unknown) {
       const errorCode = getAuthErrorCode(error);

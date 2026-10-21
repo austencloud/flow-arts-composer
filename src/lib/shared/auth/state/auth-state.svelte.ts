@@ -428,6 +428,14 @@ async function doInitializeAuthListener(): Promise<void> {
 
   await authReady;
 
+  // An iPhone Google sign-in leaves the page and returns here. Firebase has
+  // already applied the result; this reads it for the guest-upgrade collision
+  // import, the toast on failure, and the outcome event. Inert without a
+  // pending redirect from this tab.
+  void import("#lib/shared/auth/services/google-redirect-sign-in.js").then(
+    ({ completePendingGoogleRedirect }) => completePendingGoogleRedirect()
+  );
+
   // A pending magic-link sign-in is NOT auto-completed here anymore. Consuming
   // the single-use oobCode on page load let a corporate link-prescanner burn
   // it before the human ever clicked, silently breaking sign-in (2026-07-18

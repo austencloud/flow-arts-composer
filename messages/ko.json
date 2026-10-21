@@ -3591,6 +3591,7 @@
   "auth_error_unauthorized_domain": "이 도메인은 로그인이 허용되지 않았어요. 지원팀에 문의해 주세요.",
   "auth_error_network": "네트워크 오류예요. 연결 상태를 확인하고 다시 시도해 주세요.",
   "auth_error_signin_failed": "로그인하지 못했어요. 다시 시도해 주세요.",
+  "auth_google_no_result": "Google 로그인이 완료되지 않았어요. 다시 시도하거나 이메일로 로그인해 주세요.",
   "shared_fan_build_fire": "DoodleGrip Fire",
   "shared_fan_build_lotus": "Lotus Fire",
   "shared_fan_build_flat_grip": "Flat Grip Fire",

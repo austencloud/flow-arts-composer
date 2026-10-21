@@ -4731,6 +4731,7 @@
   "auth_error_unauthorized_domain": "Este domínio não está autorizado para entrada. Entre em contato com o suporte.",
   "auth_error_network": "Erro de rede. Confira sua conexão e tente novamente.",
   "auth_error_signin_failed": "Não foi possível entrar. Tente novamente.",
+  "auth_google_no_result": "O login com o Google não foi concluído. Tente novamente ou entre com seu e-mail.",
   "feedback_close_panel": "Fechar painel",
   "feedback_details": "Detalhes do feedback",
   "feedback_view_screenshot": "Ver captura de tela {n}",
