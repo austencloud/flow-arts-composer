@@ -514,8 +514,24 @@ function filterByGridJoin(
   return sequences;
 }
 
+// Favorites live in the signed-in user's Favorites collection, not on the
+// sequence: a gallery or collection member loaded from someone else's doc
+// carries that doc's stale `isFavorite`, or none. collections-state registers
+// the live Favorites ids here (reactive inside the engine's $derived, like
+// collection membership). Before it resolves, the per-sequence flag is all
+// there is.
+let favoriteIdsResolver: (() => ReadonlySet<string> | undefined) | null = null;
+
+export function setFavoriteIdsResolver(
+  resolver: () => ReadonlySet<string> | undefined
+): void {
+  favoriteIdsResolver = resolver;
+}
+
 function filterByFavorites(sequences: SequenceData[]): SequenceData[] {
-  return sequences.filter((seq) => seq.isFavorite);
+  const favoriteIds = favoriteIdsResolver?.();
+  if (!favoriteIds) return sequences.filter((seq) => seq.isFavorite);
+  return sequences.filter((seq) => favoriteIds.has(seq.id));
 }
 
 function filterByRecent(sequences: SequenceData[]): SequenceData[] {
