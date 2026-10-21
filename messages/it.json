@@ -4728,6 +4728,7 @@
   "auth_error_unauthorized_domain": "Questo dominio non è autorizzato per l'accesso. Contatta l'assistenza.",
   "auth_error_network": "Errore di rete. Controlla la connessione e riprova.",
   "auth_error_signin_failed": "Accesso non riuscito. Riprova.",
+  "auth_google_no_result": "L'accesso con Google non è stato completato. Riprova oppure accedi con l'email.",
   "feedback_close_panel": "Chiudi pannello",
   "feedback_details": "Dettagli del feedback",
   "feedback_view_screenshot": "Visualizza screenshot {n}",

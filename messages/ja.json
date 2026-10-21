@@ -3650,6 +3650,7 @@
   "auth_error_unauthorized_domain": "このドメインでのログインは許可されていません。サポートにお問い合わせください。",
   "auth_error_network": "ネットワークエラーです。接続を確認して再度お試しください。",
   "auth_error_signin_failed": "ログインできませんでした。再度お試しください。",
+  "auth_google_no_result": "Googleでのログインが完了しませんでした。もう一度試すか、メールでログインしてください。",
   "shared_fan_build_fire": "DoodleGrip Fire",
   "shared_fan_build_lotus": "Lotus Fire",
   "shared_fan_build_flat_grip": "Flat Grip Fire",

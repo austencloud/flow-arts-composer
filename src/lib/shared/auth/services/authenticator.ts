@@ -37,6 +37,10 @@ import {
 } from "./anonymous-upgrade";
 import { promptAnonymousImport } from "#lib/shared/auth/state/anonymous-import-prompt.svelte.js";
 import { clearPendingLink, stashPendingLink } from "./pending-credential-link";
+import {
+  shouldUseGoogleRedirect,
+  startGoogleRedirect,
+} from "./google-redirect-sign-in";
 import { recordLastAuthMethod } from "./last-auth-method.svelte";
 import {
   authenticateWithInstagram,
@@ -141,6 +145,11 @@ export async function signInWithGoogle(): Promise<void> {
   // static export can be bound to a terminated app, which signInWithPopup
   // rejects deep inside with auth/argument-error.
   const authInstance = await getAuthInstance();
+
+  // iPhone/iPad: the popup opens as a tab that never reports back, so sign in
+  // by redirect in this tab. See google-redirect-sign-in.ts.
+  if (shouldUseGoogleRedirect()) await startGoogleRedirect(authInstance);
+
   const provider = new GoogleAuthProvider();
   provider.addScope("email");
   provider.addScope("profile");

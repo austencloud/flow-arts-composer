@@ -4747,6 +4747,7 @@
   "auth_error_unauthorized_domain": "Ce domaine n'est pas autorisé pour la connexion. Contacte l'assistance.",
   "auth_error_network": "Erreur réseau. Vérifie ta connexion et réessaie.",
   "auth_error_signin_failed": "La connexion a échoué. Réessaie.",
+  "auth_google_no_result": "La connexion Google n'a pas abouti. Réessaie, ou connecte-toi avec ton e-mail.",
   "feedback_close_panel": "Fermer le panneau",
   "feedback_details": "Détails du retour",
   "feedback_view_screenshot": "Voir la capture d’écran {n}",
