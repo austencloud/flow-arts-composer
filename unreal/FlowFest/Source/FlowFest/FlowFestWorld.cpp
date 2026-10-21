@@ -146,7 +146,7 @@ void AFlowFestWorld::BeginPlay()
     BuildTerrain();
     BuildRoads();
     BuildTrees();
-    if (!Ecology->BuildFromSite()) UE_LOG(LogTemp, Error, TEXT("Flow Fest ecology could not load; run the environment asset import."));
+    if (!Ecology->BuildFromSite(this)) UE_LOG(LogTemp, Error, TEXT("Flow Fest ecology could not load; run the environment asset import."));
     BuildCamps();
     BuildVehicles();
     BuildFestivalLandmarks();

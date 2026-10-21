@@ -221,4 +221,80 @@ for x in [-.8,.8]:cube('Bench leg',(x,0,.25),(.12,.9,.5),wood)
 export('Bench')
 clear();cube('Sign pole',(0,0,1.1),(.12,.12,2.2),wood)
 cube('Signboard',(0,0,1.8),(1.65,.09,.48),wood);export('Signpost')
+
+# Field grass replaces the web's two flat carpet tufts in the open meadow. Every blade
+# is a thin tapered ribbon that leans out of its clump and bends under its own weight.
+# Unreal colours it root to tip from UV V and dries it per instance, so the meshes
+# carry only shape. Blender V runs bottom-up and Unreal flips it, so V = 1 - height.
+import random
+SMOOTHING='OFF'
+blade_cloth=material('Meadow blade',(.2,.24,.08),.8)
+class Tuft:
+    def __init__(self): self.verts=[];self.faces=[];self.uvs=[]
+    def blade(self,root,height,width,yaw,lean,bend,segments,twist=0.):
+        out=Vector((math.cos(yaw),math.sin(yaw),0));across=Vector((-math.sin(yaw),math.cos(yaw),0))
+        base=len(self.verts)
+        for k in range(segments+1):
+            t=k/segments;reach=height*(lean*t+bend*t*t);rise=height*t*(1-.45*bend*t*t)
+            centre=Vector(root)+out*reach+Vector((0,0,rise))
+            half=.5*width*(1-t)**.65+.0006
+            side=(across*math.cos(twist*t)+out*math.sin(twist*t))*half
+            for edge,u in ((-1,0),(1,1)):
+                self.verts.append(tuple(centre+side*edge));self.uvs.append((u,1-t))
+        for k in range(segments):
+            a=base+2*k;self.faces.append((a,a+1,a+3,a+2))
+    def spike(self,top,direction,length,width):
+        """A narrow seed head: two crossed ribbons along the stalk's last direction."""
+        d=Vector(direction).normalized()
+        for across in (d.orthogonal().normalized(),d.cross(d.orthogonal()).normalized()):
+            base=len(self.verts)
+            for t in (0,.35,.7,1):
+                half=.5*width*math.sin(math.pi*min(t*1.1,1))+.0005
+                c=Vector(top)+d*length*t
+                for edge,u in ((-1,0),(1,1)):
+                    self.verts.append(tuple(c+across*half*edge));self.uvs.append((u,0))
+            for k in range(3):
+                a=base+2*k;self.faces.append((a,a+1,a+3,a+2))
+    def export(self,name):
+        clear()
+        mesh=bpy.data.meshes.new(name);mesh.from_pydata(self.verts,[],self.faces);mesh.update()
+        layer=mesh.uv_layers.new(name='UVMap')
+        for loop in mesh.loops: layer.data[loop.index].uv=self.uvs[loop.vertex_index]
+        mesh.materials.append(blade_cloth)
+        o=bpy.data.objects.new(name,mesh);bpy.context.collection.objects.link(o)
+        print('FLOWFEST_GRASS',name,'blades faces',len(self.faces))
+        export(name)
+
+def meadow_patch(seed,blades,radius,height,width):
+    rng=random.Random(seed);tuft=Tuft()
+    for _ in range(blades):
+        r=radius*math.sqrt(rng.random());a=rng.random()*math.tau
+        root=(r*math.cos(a),r*math.sin(a),0)
+        # Blades lean away from their clump's centre and droop more the taller they grow.
+        h=height*(.45+.55*rng.random()**.6)
+        tuft.blade(root,h,width*(.75+.5*rng.random()),a+rng.uniform(-.9,.9),
+                   rng.uniform(.06,.32),rng.uniform(.1,.55)*h/height,4,rng.uniform(-.8,.8))
+    return tuft
+# A 1 m meadow patch, built from a few dozen sub-clumps so its edge is ragged, not round.
+patch=Tuft();rng=random.Random(11)
+for c in range(9):
+    a=rng.random()*math.tau;r=.42*math.sqrt(rng.random())
+    sub=meadow_patch(100+c,18,.11,.5,.016)
+    base=len(patch.verts);patch.verts+=[(x+r*math.cos(a),y+r*math.sin(a),z) for x,y,z in sub.verts]
+    patch.uvs+=sub.uvs;patch.faces+=[tuple(i+base for i in f) for f in sub.faces]
+patch.export('MeadowPatch')
+meadow_patch(7,22,.16,.16,.012).export('StubbleTuft')
+# Seed stalks: stiff stems with oat-like heads over a few dry basal blades.
+rng=random.Random(5);stalks=Tuft()
+for _ in range(7):
+    a=rng.random()*math.tau;r=.05*rng.random();root=(r*math.cos(a),r*math.sin(a),0)
+    h=rng.uniform(.62,.9);lean=rng.uniform(.04,.14);bend=rng.uniform(.05,.18)
+    stalks.blade(root,h,.006,a,lean,bend,5)
+    t=1;out=Vector((math.cos(a),math.sin(a),0))
+    top=Vector(root)+out*h*(lean+bend)+Vector((0,0,h*(1-.45*bend)))
+    stalks.spike(top-Vector((0,0,.015)),out*(lean+2*bend)+Vector((0,0,1)),rng.uniform(.08,.13),.022)
+basal=meadow_patch(9,14,.07,.26,.011)
+base=len(stalks.verts);stalks.verts+=basal.verts;stalks.uvs+=basal.uvs
+stalks.faces+=[tuple(i+base for i in f) for f in basal.faces]
+stalks.export('SeedStalks')
 print('FLOWFEST_ASSETS_AUTHORED')
