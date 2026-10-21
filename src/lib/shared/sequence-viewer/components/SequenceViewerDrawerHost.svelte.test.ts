@@ -85,12 +85,18 @@ import {
   clearSequenceViewerPrewarm,
   prewarmSequenceViewer,
 } from "../state/viewer-prewarm.svelte";
-import { contentStubCallbacks } from "./__test-stubs__/SequenceViewerDrawerContentStub.svelte";
+import * as contentStub from "./__test-stubs__/SequenceViewerDrawerContentStub.svelte";
 import {
   closeOverlayStateStub,
   overlayStateStub,
 } from "./__test-stubs__/sequence-overlay-state-stub.svelte";
 import SequenceViewerDrawerHost from "./SequenceViewerDrawerHost.svelte";
+
+// A named export from the stub's module script. Plain `tsc` types every
+// .svelte import as a default export only, so name its shape here.
+const { contentStubCallbacks } = contentStub as unknown as {
+  contentStubCallbacks: { onClose: (() => void) | null };
+};
 
 describe("SequenceViewerDrawerHost URL bootstrap", () => {
   beforeEach(() => {
