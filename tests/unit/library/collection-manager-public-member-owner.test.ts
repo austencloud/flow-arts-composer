@@ -101,6 +101,8 @@ vi.mock("#lib/shared/library/services/collection-firestore-mapper.js", () => {
 });
 
 import { addSequenceToCollection } from "#lib/shared/library/services/collection-manager.js";
+import { PublicDuplicateError } from "#lib/shared/library/services/public-sequence-persister.js";
+import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 
 /** Several awaits stand between the call and the publish; wait for the state. */
 async function waitFor(predicate: () => boolean): Promise<void> {
@@ -162,5 +164,29 @@ describe("public collection membership across an owner switch", () => {
 
     expect(mocks.publishedIds).toEqual(["seq-1"]);
     expect(mocks.runTransaction).toHaveBeenCalledTimes(1);
+  });
+
+  it("names the sequence when someone else already published the same one", async () => {
+    mocks.publish.mockRejectedValueOnce(
+      new PublicDuplicateError("their-seq", "user-9", "AABB")
+    );
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+
+    const outcome = await addSequenceToCollection("public-1", "seq-1").then(
+      () => "resolved",
+      (error: Error & { code?: string }) => error
+    );
+    consoleError.mockRestore();
+
+    expect((outcome as { code?: string }).code).toBe("INVALID_OPERATION");
+    expect(toast.error).toHaveBeenCalledWith(
+      expect.stringMatching(/"AABB" is already in the gallery/)
+    );
+    expect(toast.error).not.toHaveBeenCalledWith(
+      expect.stringMatching(/try again/i)
+    );
+    expect(mocks.runTransaction).not.toHaveBeenCalled();
   });
 });

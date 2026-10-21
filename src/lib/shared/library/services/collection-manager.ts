@@ -27,6 +27,7 @@ import {
 } from "firebase/firestore";
 import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
 import { COLLECTION_LINKS_COLLECTION } from "#lib/shared/library/domain/collection-share-code.js";
+import { PublicDuplicateError } from "#lib/shared/library/services/public-sequence-persister.js";
 import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 import { captureEvent } from "#lib/shared/analytics/services/posthog.js";
 import type {
@@ -125,7 +126,23 @@ async function ensurePublicMember(
     // it rather than moving a sequence between libraries. The check afterwards
     // covers the remaining gap before the membership write itself.
     assertStillSignedInAs(userId, sequenceId);
-    await getLibraryRepository().publishSequence(sequenceId, userId);
+    try {
+      await getLibraryRepository().publishSequence(sequenceId, userId);
+    } catch (error) {
+      // Someone else already published this exact sequence. Trying again
+      // can't help, so say which one is in the way instead of "try again".
+      if (error instanceof PublicDuplicateError) {
+        const name = error.claimedWord
+          ? `"${error.claimedWord}"`
+          : "One sequence";
+        throw new CollectionError(
+          `${name} is already in the gallery as someone else's sequence, so this collection can't go public with your copy. Remove it from the collection, or add the gallery one instead.`,
+          "INVALID_OPERATION",
+          sequenceId
+        );
+      }
+      throw error;
+    }
     assertStillSignedInAs(userId, sequenceId);
     return;
   }
@@ -564,6 +581,13 @@ export async function updateCollection(
     }
   } catch (error) {
     console.error("[CollectionManager] Failed to update collection:", error);
+    if (
+      error instanceof CollectionError &&
+      error.code === "INVALID_OPERATION"
+    ) {
+      toast.error(error.message);
+      throw error;
+    }
     toast.error("Failed to update collection. Please try again.");
     throw new CollectionError(
       "Failed to update collection",
@@ -803,7 +827,14 @@ export async function addSequenceToCollection(
       "[CollectionManager] Failed to add sequence to collection:",
       error
     );
-    toast.error("Failed to add to collection. Please try again.");
+    if (
+      error instanceof CollectionError &&
+      error.code === "INVALID_OPERATION"
+    ) {
+      toast.error(error.message);
+    } else {
+      toast.error("Failed to add to collection. Please try again.");
+    }
     if (error instanceof CollectionError) throw error;
     throw new CollectionError(
       "Failed to add sequence to collection",
