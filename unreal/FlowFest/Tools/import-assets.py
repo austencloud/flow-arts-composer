@@ -18,12 +18,14 @@ report = {'meshes': [], 'materials': [], 'errors': []}
 ONLY = next((a.split('=', 1)[1] for a in sys.argv[1:] if a.startswith('--only=')), None)
 SET_ONLY = ONLY is not None and ONLY.startswith('Set/')
 
+MEADOW = '/Game/FlowFest/Assets/Meadow'
+
 def import_file(path, folder, name, mesh=False):
     target = folder + '/' + name
     # These three small source meshes may change during site art passes. Reimport
     # them on every run so an existing project never keeps an older silhouette.
     if (not ED.does_asset_exist(target)
-            or folder in ('/Game/FlowFest/Assets/Ecology', '/Game/FlowFest/Textures/Ecology')
+            or folder in ('/Game/FlowFest/Assets/Ecology', '/Game/FlowFest/Textures/Ecology', MEADOW)
             or (folder == '/Game/FlowFest/Textures' and name in (
                 'TerrainOrtho', 'GroundFamilyMask', 'GroundDetail', 'GroundMeadow',
                 'GroundLitter', 'GroundDamp', 'GroundNormal', 'GroundRoughness'))):
@@ -44,6 +46,7 @@ def import_file(path, folder, name, mesh=False):
             options.import_textures = True
             options.static_mesh_import_data.combine_meshes = True
             options.static_mesh_import_data.generate_lightmap_u_vs = False
+            options.static_mesh_import_data.build_nanite = folder == MEADOW
             options.static_mesh_import_data.auto_generate_collision = (
                 name == 'SM_Car' or folder.startswith('/Game/FlowFest/Assets/Car/'))
             task.options = options
@@ -172,10 +175,10 @@ def author_ecology_material(material, asset_name):
         if isinstance(node, u.MaterialExpressionTextureSample) and not node.get_editor_property('texture'):
             raise RuntimeError('Unbound ecology texture sampler: ' + material.get_path_name())
 
-def add_foliage_wind(material, tree):
+def add_foliage_wind(material, tree, grade=True):
     """Small height-weighted WPO motion, so stems stay planted in the soil."""
     base = ME.get_material_property_input_node(material, u.MaterialProperty.MP_BASE_COLOR)
-    if base:
+    if base and grade:
         if not tree:
             # The source meadow blades are vivid in UE's midday sunlight.
             # Shift their existing painted texture toward dry olive while
@@ -277,13 +280,13 @@ for job in ([] if SET_ONLY else json.loads((STAGED / 'imports.json').read_text()
     painted = job.get('car', {}).get('paintMaterials', [])
     found = set()
     for slot in mesh.static_materials if painted else []:
-        material = slot.material_interface
+        slot_material = slot.material_interface
         # Unreal numbers repeat names across folders (Fairheaven_LT80_Bodymat_001).
-        base = re.sub(r'_\d{3}$', '', material.get_name()) if material else None
+        base = re.sub(r'_\d{3}$', '', slot_material.get_name()) if slot_material else None
         if base in painted:
-            if not isinstance(material, u.Material):
-                raise RuntimeError('Car paint needs an editable material: ' + material.get_path_name())
-            paint_from_instance(material)
+            if not isinstance(slot_material, u.Material):
+                raise RuntimeError('Car paint needs an editable material: ' + slot_material.get_path_name())
+            paint_from_instance(slot_material)
             found.add(base)
     if set(painted) - found:
         raise RuntimeError(f"{job['id']}: paint materials not found: {sorted(set(painted) - found)}")
@@ -301,12 +304,87 @@ for name in ([n for n in SET_PIECES if ('Set/' + n).startswith(ONLY)] if SET_ONL
         ED.delete_asset('/Game/FlowFest/Assets/Set/' + name)
     mesh = import_file(STAGED / (name + '.fbx'), '/Game/FlowFest/Assets/Set', name, True)
     for slot in mesh.static_materials:
-        material = slot.material_interface
-        if isinstance(material, u.Material) and material.get_name() in SET_PAINT:
-            paint_from_instance(material, SET_PAINT[material.get_name()])
-            ensure_instancing(material)
+        slot_material = slot.material_interface
+        if isinstance(slot_material, u.Material) and slot_material.get_name() in SET_PAINT:
+            paint_from_instance(slot_material, SET_PAINT[slot_material.get_name()])
+            ensure_instancing(slot_material)
     ED.save_directory('/Game/FlowFest/Assets/Set', only_if_is_dirty=True, recursive=True)
     u.log(f"FLOWFEST_SET {name} slots={[s.material_interface.get_name() for s in mesh.static_materials if s.material_interface]}")
+
+def author_meadow_material():
+    """One material for the field grass meshes. UV V runs root (0) to tip (1); each
+    instance's custom data 0 is how dry the clump is and 1 its brightness, so a
+    field mixes green, olive and straw clumps instead of one cloned colour."""
+    m = material('M_MeadowGrass', (.2, .24, .08), .78)
+    for old in list(ME.get_material_expressions(m)):
+        ME.delete_material_expression(m, old)
+    m.set_editor_property('two_sided', True)
+    m.set_editor_property('shading_model', u.MaterialShadingModel.MSM_TWO_SIDED_FOLIAGE)
+    uv = expression(m, u.MaterialExpressionTextureCoordinate)
+    t = expression(m, u.MaterialExpressionComponentMask, r=False, g=True, b=False, a=False)
+    connect(uv, '', t, '')
+
+    def gradient(root, tip):
+        g = expression(m, u.MaterialExpressionLinearInterpolate)
+        connect(expression(m, u.MaterialExpressionConstant3Vector, constant=u.LinearColor(*root, 1)), '', g, 'A')
+        connect(expression(m, u.MaterialExpressionConstant3Vector, constant=u.LinearColor(*tip, 1)), '', g, 'B')
+        connect(t, '', g, 'Alpha')
+        return g
+    green = gradient((.06, .075, .025), (.19, .22, .075))
+    straw = gradient((.14, .11, .05), (.46, .37, .18))
+    dryness = expression(m, u.MaterialExpressionPerInstanceCustomData, data_index=0, const_default_value=.35)
+    brightness = expression(m, u.MaterialExpressionPerInstanceCustomData, data_index=1, const_default_value=1)
+    blend = expression(m, u.MaterialExpressionLinearInterpolate)
+    connect(green, '', blend, 'A'); connect(straw, '', blend, 'B'); connect(dryness, '', blend, 'Alpha')
+    base = expression(m, u.MaterialExpressionMultiply)
+    connect(blend, '', base, 'A'); connect(brightness, '', base, 'B')
+    connect_property(base, '', u.MaterialProperty.MP_BASE_COLOR)
+    # Light passing through a blade picks up its colour; the roots sit in the clump's shade.
+    transmission = expression(m, u.MaterialExpressionMultiply)
+    connect(base, '', transmission, 'A')
+    connect(expression(m, u.MaterialExpressionConstant3Vector, constant=u.LinearColor(.9, .85, .55, 1)), '', transmission, 'B')
+    connect_property(transmission, '', u.MaterialProperty.MP_SUBSURFACE_COLOR)
+    occlusion = expression(m, u.MaterialExpressionLinearInterpolate, const_a=.55, const_b=1)
+    connect(t, '', occlusion, 'Alpha')
+    connect_property(occlusion, '', u.MaterialProperty.MP_AMBIENT_OCCLUSION)
+    connect_property(scalar(m, .8), '', u.MaterialProperty.MP_ROUGHNESS)
+    connect_property(scalar(m, .25), '', u.MaterialProperty.MP_SPECULAR)
+    # A thin blade seen from above is edge-on to a high sun and shades nearly black.
+    # Light it mostly as the ground it covers: its normal leans 60 percent to world up.
+    m.set_editor_property('tangent_space_normal', False)
+    lit = expression(m, u.MaterialExpressionLinearInterpolate, const_alpha=.6)
+    connect(expression(m, u.MaterialExpressionVertexNormalWS), '', lit, 'A')
+    connect(expression(m, u.MaterialExpressionConstant3Vector, constant=u.LinearColor(0, 0, 1, 1)), '', lit, 'B')
+    up = expression(m, u.MaterialExpressionNormalize)
+    connect(lit, '', up, '')
+    connect_property(up, '', u.MaterialProperty.MP_NORMAL)
+    add_foliage_wind(m, False, grade=False)
+    ensure_instancing(m)
+    ME.set_base_material_usage(m, u.MaterialUsage.MATUSAGE_NANITE, True)
+    # Voxelized Nanite foliage draws the default material unless the voxel usage is set.
+    ME.set_base_material_usage(m, u.MaterialUsage.MATUSAGE_VOXELS, True)
+    ME.layout_material_expressions(m)
+    ME.recompile_material(m)
+    ED.save_loaded_asset(m)
+    return m
+
+MEADOW_PIECES = ['MeadowPatch', 'StubbleTuft', 'SeedStalks']
+if not ONLY or ONLY.startswith('Meadow') or SET_ONLY:
+    meadow = author_meadow_material()
+    for name in MEADOW_PIECES:
+        mesh = import_file(STAGED / (name + '.fbx'), MEADOW, name, True)
+        for slot in range(len(mesh.static_materials)):
+            mesh.set_material(slot, meadow)
+        nanite = mesh.get_editor_property('nanite_settings')
+        nanite.set_editor_property('enabled', True)
+        # Thin blades vanish under ordinary Nanite simplification; voxelizing keeps a field's mass at range.
+        if hasattr(u, 'NaniteShapePreservation'):
+            nanite.set_editor_property('shape_preservation', u.NaniteShapePreservation.VOXELIZE)
+        # set_editor_property runs PostEditChange, which rebuilds the mesh (the subsystem is absent in commandlets).
+        mesh.set_editor_property('nanite_settings', nanite)
+        ED.save_loaded_asset(mesh)
+        u.log(f"FLOWFEST_MEADOW {name} nanite={mesh.get_editor_property('nanite_settings').enabled}")
+    ED.save_directory(MEADOW, only_if_is_dirty=True, recursive=True)
 
 palette = {
     'M_Ground': ((.12,.17,.055),.95,0,0), 'M_Dirt': ((.19,.13,.07),.96,0,0),
@@ -387,13 +465,31 @@ for name, args in palette.items():
         xy = expression(m, u.MaterialExpressionComponentMask, r=True, g=True, b=False, a=False)
         connect(world, '', xy, '')
         connect(xy, '', detail_uv, 'A'); connect(scalar(m, 245), '', detail_uv, 'B')
-        terms = []
-        for source_name, weight in zip(('GroundDetail', 'GroundMeadow', 'GroundLitter', 'GroundDamp'), (*weights, damp)):
+        details = {}
+        for source_name in ('GroundDetail', 'GroundMeadow', 'GroundLitter', 'GroundDamp'):
             detail_tex = import_file(STAGED / (source_name + '.png'), '/Game/FlowFest/Textures', source_name)
-            detail = expression(m, u.MaterialExpressionTextureSample, texture=detail_tex)
-            connect(detail_uv, '', detail, 'UVs')
+            details[source_name] = expression(m, u.MaterialExpressionTextureSample, texture=detail_tex)
+            connect(detail_uv, '', details[source_name], 'UVs')
+        # The meadow texture is a watered lawn; the hills around it are late-summer
+        # tan. Olive it down and let broad 20-40 m patches dry toward straw.
+        def tinted(sample, rgb):
+            out = expression(m, u.MaterialExpressionMultiply)
+            connect(sample, 'RGB', out, 'A')
+            connect(expression(m, u.MaterialExpressionConstant3Vector, constant=u.LinearColor(*rgb, 1)), '', out, 'B')
+            return out
+        # Noise samples absolute world position when its Position input is left empty.
+        patches = expression(m, u.MaterialExpressionNoise, scale=.0004, levels=3, output_min=0, output_max=1, quality=1)
+        dryness = expression(m, u.MaterialExpressionLinearInterpolate, const_a=.25, const_b=.85)
+        connect(patches, '', dryness, 'Alpha')
+        field = expression(m, u.MaterialExpressionLinearInterpolate)
+        connect(tinted(details['GroundMeadow'], (1, .86, .6)), '', field, 'A')
+        connect(tinted(details['GroundDetail'], (1.05, .95, .78)), '', field, 'B')
+        connect(dryness, '', field, 'Alpha')
+        colours = ((details['GroundDetail'], 'RGB'), (field, ''), (details['GroundLitter'], 'RGB'), (details['GroundDamp'], 'RGB'))
+        terms = []
+        for (colour, output), weight in zip(colours, (*weights, damp)):
             term = expression(m, u.MaterialExpressionMultiply)
-            connect(detail, 'RGB', term, 'A'); connect(weight, '', term, 'B')
+            connect(colour, output, term, 'A'); connect(weight, '', term, 'B')
             terms.append(term)
         first = expression(m, u.MaterialExpressionAdd)
         second = expression(m, u.MaterialExpressionAdd)
