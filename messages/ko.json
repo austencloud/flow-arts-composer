@@ -2741,6 +2741,8 @@
   "settings_no_detailed_changelog": "이 버전의 자세한 변경 기록이 없어요.",
   "settings_all_releases": "전체 출시 버전",
   "settings_got_it": "확인",
+  "settings_more_count": "외 {count}개",
+  "settings_see_all_changes": "변경 사항 {count}개 모두 보기",
   "settings_no_releases_yet": "아직 출시된 버전이 없어요",
   "settings_check_back_for_updates": "곧 업데이트를 확인하러 다시 와 주세요!",
   "settings_version_list": "버전 목록",

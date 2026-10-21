@@ -761,9 +761,11 @@ void AFlowFestCharacter::PlaceReviewCamera()
     if (!FestivalWorld) return;
     const FString Landmark = ReviewSite == TEXT("gate") ? TEXT("gate") : ReviewSite == TEXT("camp") ? TEXT("camp-lower") : TEXT("fire");
     const FVector Target = FestivalWorld->GetLandmark(Landmark) + FVector(0, 0, 160);
+    // The camp view looks into the 5:30 PM sun, a little to its left so the sun sits in frame.
+    const FVector IntoSun = -AFlowFestWorld::SunRotationAt(17.5f).Vector().GetSafeNormal2D();
     const FVector Offset = ReviewSite == TEXT("overview") ? FVector(-8500, -8500, 10500) :
         ReviewSite == TEXT("fire") ? FVector(-1100, -900, 0) :
-        ReviewSite == TEXT("camp") ? FVector(-1400, -1000, 0) : FVector(-2200, -1900, 600);
+        ReviewSite == TEXT("camp") ? -IntoSun.RotateAngleAxis(-10.f, FVector::UpVector) * 1720.f : FVector(-2200, -1900, 600);
     FVector Position = Target + Offset;
     if (ReviewSite == TEXT("fire") || ReviewSite == TEXT("camp"))
         Position.Z = FestivalWorld->SampleGround(Position.X * .01f, Position.Y * .01f) + (ReviewSite == TEXT("camp") ? 230.f : 100.f);

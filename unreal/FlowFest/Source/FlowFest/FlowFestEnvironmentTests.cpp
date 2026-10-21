@@ -12,6 +12,7 @@
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
 #include "Sound/SoundWave.h"
+#include "FlowFestWorld.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FFlowFestEnvironmentAssetsTest, "FlowFest.Environment.EcologyAndSoundAssets",
     EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
@@ -121,6 +122,23 @@ bool FFlowFestEnvironmentAssetsTest::RunTest(const FString& Parameters)
         if (TestNotNull(*FString::Printf(TEXT("Imported sound wave %s"), Name), Wave))
             TestTrue(*FString::Printf(TEXT("Sound wave %s loops"), Name), Wave->bLooping);
     }
+    return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FFlowFestSunPathTest, "FlowFest.Environment.SunPath",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FFlowFestSunPathTest::RunTest(const FString& Parameters)
+{
+    // Toward the sun, in site axes: +X east, +Y south, +Z up.
+    const auto TowardSun = [](float Hour) { return -AFlowFestWorld::SunRotationAt(Hour).Vector(); };
+    TestTrue(TEXT("Morning sun is in the east"), TowardSun(9.f).X > .5f);
+    TestTrue(TEXT("Noon sun is due south and high"), TowardSun(12.f).Y > .3f && FMath::Abs(TowardSun(12.f).X) < .01f && TowardSun(12.f).Z > .9f);
+    TestTrue(TEXT("Evening sun is in the west"), TowardSun(17.5f).X < -.9f);
+    TestTrue(TEXT("Dawn sun is north of east"), TowardSun(6.f).X > .9f && TowardSun(6.f).Y < 0.f);
+    TestTrue(TEXT("Shadows swing through the afternoon"),
+        FMath::Abs(FRotator::NormalizeAxis(AFlowFestWorld::SunRotationAt(17.5f).Yaw - AFlowFestWorld::SunRotationAt(13.f).Yaw)) > 60.f);
+    TestTrue(TEXT("Sun is below the horizon at night"), TowardSun(23.f).Z < 0.f);
     return true;
 }
 #endif

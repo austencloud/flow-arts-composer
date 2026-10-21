@@ -2800,6 +2800,8 @@
   "settings_no_detailed_changelog": "Для этой версии нет подробного списка изменений.",
   "settings_all_releases": "Все выпуски",
   "settings_got_it": "Понятно",
+  "settings_more_count": "Ещё {count}",
+  "settings_see_all_changes": "Все изменения: {count}",
   "settings_no_releases_yet": "Выпусков пока нет",
   "settings_check_back_for_updates": "Загляните позже за обновлениями!",
   "settings_version_list": "Список версий",

@@ -4222,6 +4222,8 @@
   "settings_no_detailed_changelog": "No detailed changelog for this version.",
   "settings_all_releases": "All Releases",
   "settings_got_it": "Got it",
+  "settings_more_count": "+{count} more",
+  "settings_see_all_changes": "See all {count} changes",
   "settings_no_releases_yet": "No Releases Yet",
   "settings_check_back_for_updates": "Check back soon for updates!",
   "settings_version_list": "Version list",

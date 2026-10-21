@@ -2800,6 +2800,8 @@
   "settings_no_detailed_changelog": "このバージョンの詳しい変更履歴はありません。",
   "settings_all_releases": "すべてのリリース",
   "settings_got_it": "了解",
+  "settings_more_count": "ほか{count}件",
+  "settings_see_all_changes": "{count}件の変更をすべて見る",
   "settings_no_releases_yet": "リリースはまだありません",
   "settings_check_back_for_updates": "更新情報をまたご確認ください！",
   "settings_version_list": "バージョン一覧",

@@ -17,6 +17,7 @@ class UProceduralMeshComponent;
 class USkeletalMeshComponent;
 class USkyAtmosphereComponent;
 class USkyLightComponent;
+class UVolumetricCloudComponent;
 class UStaticMesh;
 class UStaticMeshComponent;
 class UFlowFestAvatarComponent;
@@ -50,6 +51,10 @@ public:
 
     UFUNCTION(BlueprintPure, Category="Flow Fest|Sky")
     float GetTimeOfDay() const { return TimeOfDay; }
+
+    // The sun's light direction at a clock hour: up 68 degrees at noon, and
+    // swinging from east-northeast at dawn through south to west-northwest at dusk.
+    static FRotator SunRotationAt(float Hour);
 
     UFUNCTION(BlueprintPure, Category="Flow Fest|Site")
     int32 GetNearTreeCount() const { return NearTreeCount; }
@@ -130,6 +135,7 @@ private:
     UPROPERTY(VisibleAnywhere) TObjectPtr<UDirectionalLightComponent> Moon;
     UPROPERTY(VisibleAnywhere) TObjectPtr<USkyLightComponent> SkyLight;
     UPROPERTY(VisibleAnywhere) TObjectPtr<USkyAtmosphereComponent> Atmosphere;
+    UPROPERTY(VisibleAnywhere) TObjectPtr<UVolumetricCloudComponent> Clouds;
     UPROPERTY(VisibleAnywhere) TObjectPtr<UExponentialHeightFogComponent> Fog;
     UPROPERTY(VisibleAnywhere) TObjectPtr<UPostProcessComponent> PostProcess;
 

@@ -60,7 +60,17 @@
     });
   });
 
-  // Group changelog entries by category
+  // What's New is a glance, not the record: each column shows its first few
+  // lines and Release Notes holds the rest, like the update email does.
+  const COLUMN_PREVIEW = 4;
+
+  // Notes with an example clip or picture lead the sheet across its full
+  // width, where the example has room, instead of stretching one column.
+  const featured = $derived(
+    version?.changelogEntries?.filter((entry) => entry.media) ?? []
+  );
+
+  // Group the remaining entries by category
   const groupedChangelog = $derived.by(() => {
     if (!version?.changelogEntries) return [];
 
@@ -73,16 +83,25 @@
     }
 
     return Array.from(groups.entries())
-      .map(([category, entries]) => ({
-        category,
-        entries,
-        ...CATEGORY_CONFIG[category],
-      }))
+      .map(([category, entries]) => {
+        const listed = entries.filter((entry) => !entry.media);
+        return {
+          category,
+          total: entries.length,
+          entries: listed.slice(0, COLUMN_PREVIEW),
+          hidden: Math.max(0, listed.length - COLUMN_PREVIEW),
+          ...CATEGORY_CONFIG[category],
+        };
+      })
+      .filter((group) => group.entries.length > 0)
       .sort((a, b) => a.order - b.order);
   });
 
   // Total count for summary
   const totalChanges = $derived(version?.changelogEntries?.length ?? 0);
+  const isTrimmed = $derived(
+    groupedChangelog.some((group) => group.hidden > 0)
+  );
   const categoryCount = $derived(Math.min(groupedChangelog.length, 3));
   const layoutWidth = $derived(
     totalChanges >= 8 || categoryCount === 3
@@ -135,6 +154,24 @@
     {/snippet}
 
     <div class="release-body">
+      {#if featured.length}
+        <div class="featured">
+          {#each featured as entry}
+            <div class="featured-item">
+              <div
+                class="featured-media"
+                style="--media-width: {entry.media!.width}px;"
+              >
+                <ChangelogEntryMedia media={entry.media!} />
+              </div>
+              <p class="featured-text">
+                <ChangelogRichText text={entry.text} onNavigate={handleClose} />
+              </p>
+            </div>
+          {/each}
+        </div>
+      {/if}
+
       <div class="category-grid" data-category-count={categoryCount}>
         {#each groupedChangelog as group}
           <div
@@ -149,7 +186,7 @@
                 ></i>
               </div>
               <h3>{t(`settings_changelog_${group.category}`)}</h3>
-              <span class="category-count">{group.entries.length}</span>
+              <span class="category-count">{group.total}</span>
             </div>
             <ul class="category-list">
               {#each group.entries as entry}
@@ -158,9 +195,6 @@
                     text={entry.text}
                     onNavigate={handleClose}
                   />
-                  {#if entry.media}
-                    <ChangelogEntryMedia media={entry.media} />
-                  {/if}
                   {#if entry.contributorIds?.length}
                     <span class="entry-contributors">
                       {#each entry.contributorIds as cid}
@@ -174,6 +208,11 @@
                 </li>
               {/each}
             </ul>
+            {#if group.hidden > 0}
+              <p class="category-more">
+                {t("settings_more_count", { count: group.hidden })}
+              </p>
+            {/if}
           </div>
         {/each}
       </div>
@@ -208,7 +247,9 @@
           type="button"
         >
           <i class="fas fa-history" aria-hidden="true"></i>
-          {t("settings_all_releases")}
+          {isTrimmed
+            ? t("settings_see_all_changes", { count: totalChanges })
+            : t("settings_all_releases")}
         </button>
         <button class="footer-btn primary" onclick={handleClose} type="button">
           <i class="fas fa-check" aria-hidden="true"></i>
@@ -366,6 +407,69 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
+  }
+
+  /* Featured examples: the clip is square, so its width is capped by the
+     viewport height too, keeping the columns below on screen. */
+  .featured {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 16px 32px;
+  }
+
+  .featured-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    max-inline-size: min(100%, 40rem);
+  }
+
+  .featured-media {
+    inline-size: min(100%, 32dvh, var(--media-width));
+    min-inline-size: min(100%, 16rem);
+  }
+
+  .featured-media :global(.entry-media) {
+    margin: 0 auto;
+  }
+
+  .featured-text {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    line-height: 1.5;
+    color: var(--theme-text);
+    text-align: center;
+  }
+
+  /* With room beside the clip, its caption sits next to it, so the columns
+     below stay on screen on a laptop too. */
+  @container release-notes (min-width: 50rem) {
+    .featured-item {
+      flex-direction: row;
+      gap: 28px;
+      max-inline-size: min(100%, 60rem);
+    }
+
+    /* A percentage width can't resolve while the row sizes itself, so the
+       row would stretch to its cap and sit off centre. */
+    .featured-media {
+      flex: none;
+      inline-size: min(32dvh, var(--media-width));
+    }
+
+    .featured-text {
+      max-inline-size: 28rem;
+      text-align: start;
+    }
+  }
+
+  .category-more {
+    margin: 4px 0 0;
+    padding-inline-start: 16px;
+    font-size: var(--font-size-compact);
+    color: var(--theme-text-dim);
   }
 
   /* Category Grid */

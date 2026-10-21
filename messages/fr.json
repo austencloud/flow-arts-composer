@@ -3606,6 +3606,8 @@
   "settings_no_detailed_changelog": "Aucun journal détaillé pour cette version.",
   "settings_all_releases": "Toutes les versions",
   "settings_got_it": "Compris",
+  "settings_more_count": "+{count} de plus",
+  "settings_see_all_changes": "Voir les {count} changements",
   "settings_no_releases_yet": "Aucune version pour l'instant",
   "settings_check_back_for_updates": "Reviens bientôt pour découvrir les mises à jour !",
   "settings_version_list": "Liste des versions",
