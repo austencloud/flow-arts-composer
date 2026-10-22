@@ -8,7 +8,12 @@ import { GenerationOrchestrator } from "#lib/shared/create/services/generation-o
 import { BuildResultTransformer } from "#lib/shared/create/services/build-result-transformer.js";
 import { sequenceMetadataManager } from "#lib/shared/create/services/sequence-metadata-manager.js";
 import { reversalDetector } from "#lib/shared/create/services/reversal-detector.js";
-import { resolveLoopConfig } from "#lib/shared/create/services/loop-type-utils.js";
+import {
+  parseLoopComponents,
+  quarterInversionSupported,
+  resolveLoopConfig,
+} from "#lib/shared/create/services/loop-type-utils.js";
+import { GenerationRequestError } from "#lib/shared/create/domain/generation-request-error.js";
 import { validateSequence } from "#lib/features/create/shared/services/sequence-validator.js";
 import { isEffectPreviewLoop } from "#lib/shared/effects/domain/effect-preview-loop-policy.js";
 import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
@@ -73,6 +78,22 @@ function orchestrator(): GenerationOrchestrator {
   );
 }
 
+/**
+ * Every quarter over a combo that only halves the sequence has no related
+ * quarters to flip; it is refused with a notice (inverted-loop-invariants).
+ */
+function refusesQuarter(
+  type: LOOPType,
+  inversionMode: "expand" | "overlay",
+  inversionInterval: 2 | 4
+): boolean {
+  return (
+    inversionMode === "overlay" &&
+    inversionInterval === 4 &&
+    !quarterInversionSupported(parseLoopComponents(type))
+  );
+}
+
 function seedRandom(): void {
   let seed = 123456789;
   vi.spyOn(Math, "random").mockImplementation(() => {
@@ -117,7 +138,7 @@ describe("inverted Generate combinations", () => {
             for (const propType of [PropType.FAN, PropType.POI]) {
               it(`${type}/${gridMode}/${length}/${propType}/${inversionMode}/${inversionInterval}`, async () => {
                 seedRandom();
-                const result = await orchestrator().generateSequence(
+                const request = orchestrator().generateSequence(
                   optionsFor(
                     type,
                     gridMode,
@@ -127,6 +148,13 @@ describe("inverted Generate combinations", () => {
                     inversionInterval
                   )
                 );
+                if (refusesQuarter(type, inversionMode, inversionInterval)) {
+                  await expect(request).rejects.toBeInstanceOf(
+                    GenerationRequestError
+                  );
+                  return;
+                }
+                const result = await request;
                 expect(result.steps).toHaveLength(length);
                 expect(validateSequence(result).isValid).toBe(true);
                 expect(isEffectPreviewLoop(result)).toBe(true);
@@ -157,15 +185,20 @@ describe("inverted Generate combinations", () => {
 
   const counterpartCases = types.flatMap((type, index) =>
     (["expand", "overlay"] as const).flatMap((inversionMode) =>
-      ([2, 4] as const).map(
-        (inversionInterval) =>
-          [
-            type,
-            nonInvertedTypes[index],
-            inversionMode,
-            inversionInterval,
-          ] as const
-      )
+      ([2, 4] as const)
+        .filter(
+          (inversionInterval) =>
+            !refusesQuarter(type, inversionMode, inversionInterval)
+        )
+        .map(
+          (inversionInterval) =>
+            [
+              type,
+              nonInvertedTypes[index],
+              inversionMode,
+              inversionInterval,
+            ] as const
+        )
     )
   );
 

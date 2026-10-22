@@ -20,6 +20,8 @@
     reflectionAxisOptions?: ReflectionAxisOption[];
     /** False closes Quartered (reflection hand modes only survive halved). */
     quarteredAvailable?: boolean;
+    /** False closes Every quarter (the combo only halves the sequence). */
+    quarterInversionAvailable?: boolean;
     onChange: (updates: Partial<LoopRhythmValue>) => void;
   }
 
@@ -75,7 +77,8 @@
   // rather than letting the control promise a quarter rhythm it never gets.
   const inversionInterval = $derived(effectiveInversionInterval(props.rhythm));
   const quarterInversionAvailable = $derived(
-    props.rhythm.inversionMode === "overlay"
+    props.rhythm.inversionMode === "overlay" &&
+      (props.quarterInversionAvailable ?? true)
   );
 </script>
 

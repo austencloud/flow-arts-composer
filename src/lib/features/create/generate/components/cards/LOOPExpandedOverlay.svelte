@@ -165,6 +165,9 @@ Animates forward in z-axis and expands to fill the container space
   });
   const reflectionAxisOptions = $derived(overlayModel.reflectionAxisOptions);
   const quarteredAvailable = $derived(overlayModel.quarteredAvailable);
+  const quarterInversionAvailable = $derived(
+    overlayModel.quarterInversionAvailable
+  );
   const selectionCount = $derived(overlayModel.selectionCount);
   const configurableComponents = $derived(overlayModel.configurableComponents);
   const specWire = $derived(overlayModel.specWire);
@@ -521,6 +524,7 @@ Animates forward in z-axis and expands to fill the container space
                 idPrefix={`loop-${component.toLowerCase()}`}
                 {reflectionAxisOptions}
                 {quarteredAvailable}
+                {quarterInversionAvailable}
                 onChange={updateRhythm}
               />
             </section>

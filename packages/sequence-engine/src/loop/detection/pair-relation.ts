@@ -336,16 +336,38 @@ export function detectRewoundPattern(steps: readonly PairMotions[]): boolean {
  * relation alone only shows the outer reflection.
  */
 export function detectsInnerRotation(steps: readonly PairMotions[]): boolean {
-  const n = steps.length;
-  if (n < 8 || n % 4 !== 0) return false;
-  const quarter = n / 4;
-  const firstHalf = steps.slice(0, n / 2);
-  const rel = uniformRelationAtInterval(firstHalf, quarter);
+  const rel = innerQuarterRelation(steps);
   return (
     rel !== null &&
     rel.components.length === 1 &&
     rel.components[0] === "rotated"
   );
+}
+
+/**
+ * Same scan, also accepting the inner rotation with a spin flip: the nested
+ * form of "invert every quarter" over a mirrored_rotated-family loop, where
+ * each odd quarter is the inverted, rotated copy of the quarter before it.
+ */
+export function detectsInnerRotationInversion(
+  steps: readonly PairMotions[]
+): boolean {
+  const rel = innerQuarterRelation(steps);
+  return (
+    rel !== null &&
+    rel.components.length === 2 &&
+    rel.components.includes("rotated") &&
+    rel.components.includes("inverted")
+  );
+}
+
+function innerQuarterRelation(
+  steps: readonly PairMotions[]
+): UniformRelation | null {
+  const n = steps.length;
+  if (n < 8 || n % 4 !== 0) return null;
+  const quarter = n / 4;
+  return uniformRelationAtInterval(steps.slice(0, n / 2), quarter);
 }
 
 // The location tables that are not reflections, exported for the per-step

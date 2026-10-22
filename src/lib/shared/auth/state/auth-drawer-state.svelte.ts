@@ -1,4 +1,5 @@
 import type { AuthNudgeTrigger } from "../domain/auth-nudge-trigger";
+import { AUTH_NUDGE_TEXTS } from "../domain/auth-nudge-trigger";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import { trackAuthSurfaceOpened } from "#lib/shared/analytics/auth-events.js";
 import { createGuestEncoreState } from "./guest-encore-state.svelte";
@@ -50,6 +51,61 @@ let _stepCapSequenceId = $state<string | null>(null);
 // sheet plays it on its art; without one it plays a showcase sequence.
 let _artifact = $state.raw<SequenceData | null>(null);
 
+/**
+ * The sheet's code arrives through a lazy import, so an ask shows nothing
+ * until that chunk has loaded. A first open on a page, a slow or stalled
+ * fetch, or (in dev) Vite discovering an unbundled dependency all leave the
+ * ask open with nothing on screen, and the sheet is modal, so a later tap on
+ * the same thing is only possible while that is the case. Past this grace
+ * the ask names what it refused in a toast; the sheet still follows when its
+ * code lands. (Austen's silent ninth step on a phone, 2026-10-22.)
+ */
+export const AUTH_SHEET_FEEDBACK_GRACE_MS = 400;
+const AUTH_SHEET_FEEDBACK_TOAST_DURATION_MS = 5_000;
+
+/** What the host that mounts the sheet has reported about its code. */
+export type AuthSheetHostStatus = "idle" | "loading" | "loaded" | "error";
+
+let _hostStatus: AuthSheetHostStatus = "idle";
+let feedbackTimer: ReturnType<typeof setTimeout> | null = null;
+let feedbackToastId: string | null = null;
+
+function clearFeedbackTimer() {
+  if (feedbackTimer === null) return;
+  clearTimeout(feedbackTimer);
+  feedbackTimer = null;
+}
+
+function removeFeedbackToast() {
+  if (feedbackToastId) removeToast(feedbackToastId, "programmatic");
+  feedbackToastId = null;
+}
+
+/** Say in words what the ask refused, since the sheet is not on screen. */
+function showFeedbackToast() {
+  const reason = _reason;
+  if (!reason) return;
+  clearFeedbackTimer();
+  removeFeedbackToast();
+  feedbackToastId = showToast({
+    message: AUTH_NUDGE_TEXTS[reason],
+    type: "info",
+    duration: AUTH_SHEET_FEEDBACK_TOAST_DURATION_MS,
+    announcement: "polite",
+  });
+}
+
+function scheduleFeedback() {
+  clearFeedbackTimer();
+  if (!_reason) return;
+  feedbackTimer = setTimeout(() => {
+    feedbackTimer = null;
+    // "idle" means no host has reported; a page with its own mount shows the
+    // sheet on its own terms. Only a host still fetching the code is silent.
+    if (_open && _hostStatus === "loading") showFeedbackToast();
+  }, AUTH_SHEET_FEEDBACK_GRACE_MS);
+}
+
 export const authDrawerState = {
   guestEncore,
   get encorePrompt() {
@@ -60,6 +116,7 @@ export const authDrawerState = {
   claimEncore() {
     if (!_open || _reason !== "step-cap-guest") return false;
     if (!guestEncore.claim(_stepCapSequenceId, _stepCapAttempts)) return false;
+    clearFeedbackTimer();
     _open = false;
     return true;
   },
@@ -102,6 +159,27 @@ export const authDrawerState = {
   get artifact() {
     return _artifact;
   },
+  get hostStatus() {
+    return _hostStatus;
+  },
+  /**
+   * The sheet's host (MainApplication's lazy mount) reports its load here.
+   * A failed load closes the ask: left open with nothing on screen, every
+   * later ask (a guest's ninth step) would be ignored as a repeat, and the
+   * next ask retries the load. The refusal is still named in a toast.
+   */
+  reportHostStatus(status: Exclude<AuthSheetHostStatus, "idle">) {
+    _hostStatus = status;
+    if (status === "loaded") {
+      clearFeedbackTimer();
+      if (_open) removeFeedbackToast();
+      return;
+    }
+    if (status === "error" && _open) {
+      showFeedbackToast();
+      this.hide();
+    }
+  },
   show(
     mode: "signin" | "signup" = "signup",
     reason?: AuthNudgeTrigger,
@@ -116,8 +194,12 @@ export const authDrawerState = {
       _reason === (reason ?? null) &&
       _stepCapSequenceId ===
         (reason === "step-cap-guest" ? (sequenceId ?? null) : null)
-    )
+    ) {
+      // The sheet is modal, so the same ask can only repeat while its code
+      // has not put it on screen. Answer in words instead of swallowing it.
+      if (_hostStatus === "loading") showFeedbackToast();
       return;
+    }
     // Count encounters, not duplicate calls while the same dialog is open.
     if (reason === "step-cap-guest" && (!_open || _reason !== reason)) {
       _stepCapAttempts += 1;
@@ -128,6 +210,8 @@ export const authDrawerState = {
     _stepCapSequenceId =
       reason === "step-cap-guest" ? (sequenceId ?? null) : null;
     _open = true;
+    removeFeedbackToast();
+    scheduleFeedback();
     trackAuthSurfaceOpened({
       surface: "guest_nudge_modal",
       origin: reason ?? "generic_account_action",
@@ -135,6 +219,7 @@ export const authDrawerState = {
     });
   },
   hide() {
+    clearFeedbackTimer();
     _open = false;
     _artifact = null;
   },
@@ -143,10 +228,14 @@ export const authDrawerState = {
    * changes. Forces the drawer back to closed so it doesn't auto-re-open the
    * next time the user signs out (MainApplication re-mounts AuthDrawer with
    * `open={authDrawerState.open}`, so stale truth here becomes a ghost sheet).
+   * The host unmounts with a sign-in, so its status starts over too.
    */
   reset() {
     if (guestSaveToastId) removeToast(guestSaveToastId, "programmatic");
     guestSaveToastId = null;
+    clearFeedbackTimer();
+    removeFeedbackToast();
+    _hostStatus = "idle";
     _open = false;
     _artifact = null;
     _initialMode = "signup";

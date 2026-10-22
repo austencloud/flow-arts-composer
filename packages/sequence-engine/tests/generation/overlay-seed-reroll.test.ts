@@ -29,9 +29,20 @@
  * all 700. The residual len-12 failures are the ordinary
  * "orientation closure requires a 3x seed expansion" feasibility limit, not
  * this defect.
+ *
+ * Update 2026-10-22 (feedback n3H02keo8KuXX5mJng4E): those five specs built,
+ * but none of them was an inverted LOOP. A quarter overlay over a 1x or 2x
+ * expansion flips quarters that are not copies of each other, so the result
+ * was the companion LOOP (or no LOOP) under an inverted label. The builder
+ * now refuses such a spec up front with GenerationInfeasibleError, and the
+ * Generate panel no longer offers it. Every overlay it admits has a period
+ * dividing the expansion multiplier, so the expanded length is always
+ * divisible by the period and this re-roll guard cannot starve it; the
+ * structured case below keeps that pinned.
  */
 import { describe, expect, it } from "vitest";
 import { SequenceBuilder } from "../../src/generation/builder/SequenceBuilder.js";
+import { GenerationInfeasibleError } from "../../src/generation/builder/generation-infeasible-error.js";
 import { LOOPType, Period } from "../../src/loop/loop-types.js";
 import { loopSpecFromWire } from "../../src/loop/loop-spec.js";
 import {
@@ -54,7 +65,7 @@ const BUILDS = 12;
  */
 const MAX_INFEASIBLE = 3;
 
-const CASES = [
+const UNSTRUCTURED_CASES = [
   {
     type: LOOPType.INVERTED,
     prop: { inverted: { period: 4, mode: "overlay" as const } },
@@ -82,12 +93,55 @@ const CASES = [
   },
 ];
 
+/** A reflection around a halved rotation lays down four related quarters. */
+const STRUCTURED_CASES = [
+  {
+    type: LOOPType.MIRRORED_INVERTED_ROTATED,
+    prop: {
+      rotated: { period: 2 },
+      mirrored: { period: 2, reflectionAxis: "north-south" as const },
+      inverted: { period: 4, mode: "overlay" as const },
+    },
+    totalLength: 16,
+    expandMultiplier: 4,
+  },
+];
+
 describe("overlay inversion survives the requested-length re-roll", () => {
   const builder = new SequenceBuilder(
     new CsvVariationProvider(loadDiamondVariations())
   );
 
-  it.each(CASES)(
+  it.each(UNSTRUCTURED_CASES)(
+    "refuses $type at every-quarter overlay over a $expandMultiplier x expansion",
+    ({ type, prop, totalLength, expandMultiplier }) => {
+      const spec = loopSpecFromWire({ left: prop, right: prop });
+      let caught: unknown;
+      try {
+        builder.build({
+          length: totalLength / expandMultiplier,
+          gridMode: "diamond",
+          level: LEVEL,
+          constraintPreset: "smooth",
+          loop: {
+            type,
+            period: Period.HALVED,
+            useTargetedGeneration: true,
+            loopSpec: spec,
+            requestedTotalLength: totalLength,
+          },
+        });
+      } catch (error) {
+        caught = error;
+      }
+      expect(caught).toBeInstanceOf(GenerationInfeasibleError);
+      expect((caught as GenerationInfeasibleError).relaxations).toEqual([
+        expandMultiplier % 2 === 0 ? "inversionHalfway" : "inversionAddsLength",
+      ]);
+    }
+  );
+
+  it.each(STRUCTURED_CASES)(
     "builds $type at every-quarter overlay without an overlay-divisibility throw",
     ({ type, prop, totalLength, expandMultiplier }) => {
       const spec = loopSpecFromWire({ left: prop, right: prop });

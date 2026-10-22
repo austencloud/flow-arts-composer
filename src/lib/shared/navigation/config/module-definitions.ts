@@ -182,7 +182,7 @@ export const MODULE_DEFINITIONS: ModuleDefinition[] = [
     labelKey: "module_browse",
     descKey: "module_desc_browse",
     label: "Browse",
-    icon: '<i class="fas fa-compass" style="color: #a855f7;" aria-hidden="true"></i>',
+    icon: '<i class="fas fa-binoculars" style="color: #a855f7;" aria-hidden="true"></i>',
     color: "#a855f7", // Purple - browsing
     description: "Browse sequences and collections",
     isMain: true,

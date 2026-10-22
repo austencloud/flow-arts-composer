@@ -19,6 +19,7 @@
   import type { GeneratorTunnelSourceProvenance } from "#lib/shared/sequence-viewer/tunnel/tunnel-composition.js";
   import { FOLD_OPTIONS } from "#lib/shared/sequence-viewer/tunnel/tunnel-config.js";
   import { TunnelViewController } from "#lib/shared/sequence-viewer/tunnel/tunnel-view-controller.svelte.js";
+  import type { BuiltTunnelLayer } from "#lib/shared/sequence-viewer/tunnel/tunnel-layer-builder.js";
   import TkaLabel from "#lib/shared/components/TkaLabel.svelte";
   import { getTunnelCreatorContext } from "../context/tunnel-creator-context";
   import TunnelPerformerRoster from "./TunnelPerformerRoster.svelte";
@@ -85,19 +86,27 @@
       );
     },
   });
-  let performerDisplays = $state<Record<string, TunnelPerformerDisplay>>({});
+  let performerLayers = $state.raw<readonly BuiltTunnelLayer[]>([]);
   let activePerformerStepIndices = $state<Record<string, number>>({});
   const controller = new TunnelViewController({
     getSequence: () => creator.leadSequence,
     getComposition: () =>
       creator.previewCompositionWithFormation(creator.initialFormation),
     onLayersChange: (layers) => {
-      performerDisplays = resolveTunnelPerformerDisplays(layers);
+      performerLayers = layers;
     },
     visibilityManager: creator.presentation.visibility,
     persistViewState: false,
   });
   creator.presentation.attachController(controller);
+  // Stagger changes never rebuild the layers, so the cards re-derive from the
+  // live sampling offset instead of waiting for onLayersChange.
+  const performerDisplays: Record<string, TunnelPerformerDisplay> = $derived(
+    resolveTunnelPerformerDisplays(
+      performerLayers,
+      (layer) => controller.samplingTimingForLayer(layer).offset
+    )
+  );
 
   let rootWidth = $state(1200);
   let rootHeight = $state(800);

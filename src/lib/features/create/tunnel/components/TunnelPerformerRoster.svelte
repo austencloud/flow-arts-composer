@@ -18,13 +18,10 @@
   import type { TunnelWorkflowMode } from "../domain/tunnel-creator-draft";
   import { MAX_INTERACTIVE_TUNNEL_PERFORMERS } from "../state/tunnel-creator-state.svelte";
   import TunnelPerformerCard from "./TunnelPerformerCard.svelte";
-
-  interface TunnelPerformerDisplay {
-    sequence: SequenceData | null;
-    stageTransformLabel: string | null;
-    generatedInstanceCount: number;
-    stageArms: number[];
-  }
+  import {
+    tunnelCardStepIndex,
+    type TunnelPerformerDisplay,
+  } from "../domain/tunnel-performer-displays";
 
   interface CardRef {
     prepareGenerationAnimation: (stepCount: number) => void;
@@ -350,7 +347,12 @@
         bind:this={cardRef}
         performer={selectedSlot.performer}
         displaySequence={display?.sequence ?? null}
-        activeStepIndex={activeStepIndices[selectedSlot.id] ?? null}
+        activeStepIndex={activeStepIndices[selectedSlot.id] === undefined
+          ? null
+          : tunnelCardStepIndex(
+              activeStepIndices[selectedSlot.id]!,
+              display ?? null
+            )}
         stageTransformLabel={display?.stageTransformLabel ?? null}
         generatedInstanceCount={display?.generatedInstanceCount ?? 0}
         formationCopy={selectedIndex === 1 && creator.partnerIsFormationCopy}
@@ -686,5 +688,4 @@
       overflow: hidden;
     }
   }
-
 </style>

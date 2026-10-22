@@ -1,6 +1,7 @@
 import type { OrchestratorContext } from "../domain/viewer-orchestrator-context";
 import { VIDEO_UPLOAD_ENABLED } from "../config/viewer-feature-flags";
 import { openCollectionPicker } from "#lib/features/library/state/collection-picker-state.svelte.js";
+import { ensureGuestIdentity } from "#lib/shared/auth/services/guest-identity.js";
 
 // One profile since every viewer destination adopted SequenceViewerShell (the
 // same chrome verbatim) — the hand-rolled "scan" funnel profile is gone. The param
@@ -44,8 +45,10 @@ export interface ViewerHeaderActions {
  *   - Engagement (favorite/save/remix/practice): always offered — a guest tap
  *     prompts login via invokeGatedAction.
  *   - Management (video/publish/unpublish/delete): gated by ctx eligibility.
- *     Collections need the exact owned library record, but do not depend on
- *     whether the current content hash matches the saved version.
+ *   - Collections: any sequence a collection can resolve later, which is the
+ *     viewer's own library record or someone else's gallery sequence (members
+ *     missing from the owner's library are read from the public index). A
+ *     guest gets an anonymous identity first, like save.
  */
 export function buildHeaderActions(
   ctx: OrchestratorContext,
@@ -72,14 +75,16 @@ export function buildHeaderActions(
 
   if (ctx.isLoggedIn && VIDEO_UPLOAD_ENABLED)
     a.onVideoUpload = () => ctx.handleVideoUpload();
-  if (ctx.isLoggedIn && ctx.isOwned && ctx.isOwnedLibraryRecord) {
+  if (canFileInCollection(ctx)) {
     a.onAddToCollection = () => {
       const sequence = ctx.sequence;
       if (!sequence) return;
-      openCollectionPicker({
-        sequenceId: sequence.id,
-        sequenceLabel: sequence.name || sequence.word || undefined,
-      });
+      void ensureGuestIdentity().then(() =>
+        openCollectionPicker({
+          sequenceId: sequence.id,
+          sequenceLabel: sequence.name || sequence.word || undefined,
+        })
+      );
     };
   }
   if (ownerCanManage) {
@@ -90,4 +95,18 @@ export function buildHeaderActions(
   }
 
   return a;
+}
+
+/**
+ * Whether a collection could hold this sequence and find it again. Unsaved
+ * work of your own and sequences with no owner have ids nothing resolves, so
+ * filing them would leave an empty slot in the collection.
+ */
+export function canFileInCollection(
+  ctx: Pick<OrchestratorContext, "sequence" | "isOwned" | "isOwnedLibraryRecord">
+): boolean {
+  const sequence = ctx.sequence;
+  if (!sequence?.id) return false;
+  if (ctx.isOwnedLibraryRecord) return true;
+  return !!sequence.ownerId && !ctx.isOwned;
 }

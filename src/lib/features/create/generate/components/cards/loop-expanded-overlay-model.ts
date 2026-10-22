@@ -23,6 +23,7 @@ import {
   canExtendCombo,
   effectiveInversionInterval,
   generateLOOPType,
+  quarterInversionSupported,
   tndLoopCompatibility,
   type TndLoopCompatibility,
 } from "#lib/shared/create/services/loop-type-utils.js";
@@ -124,6 +125,8 @@ export interface LoopOverlayModel {
   reflectionAxisOptions: ReflectionAxisOption[];
   /** Whether a rotated LOOP may run quartered under the hand mode. */
   quarteredAvailable: boolean;
+  /** Whether the combo can flip spin every quarter (see quarterInversionSupported). */
+  quarterInversionAvailable: boolean;
   selectionCount: number;
   configurableComponents: Set<LOOPComponent>;
   detailInfo: LOOPComponentInfo | null;
@@ -311,6 +314,10 @@ export function buildLoopOverlayModel(
     disabledReasons: deriveDisabledReasons(handRelationship, compatibility),
     reflectionAxisOptions: deriveReflectionAxisOptions(compatibility),
     quarteredAvailable: compatibility.allowsQuartered,
+    quarterInversionAvailable: quarterInversionSupported(
+      selectedComponents,
+      rhythm
+    ),
     selectionCount: selectedComponents.size,
     configurableComponents,
     detailInfo,

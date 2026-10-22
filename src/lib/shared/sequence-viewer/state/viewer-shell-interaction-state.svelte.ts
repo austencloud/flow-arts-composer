@@ -226,7 +226,9 @@ export function createViewerShellInteractionState(
   }
 
   function handleAddToCollection(): void {
-    dependencies.captureScanAction("add_to_collection");
+    dependencies.captureScanAction("add_to_collection", {
+      gated: !inputs.getContext().isLoggedIn,
+    });
     headerActions.onAddToCollection?.();
   }
 

@@ -769,7 +769,18 @@ export class TunnelViewController {
     return indices;
   }
 
-  #samplingTimingForLayer(layer: BuiltTunnelLayer): {
+  /** The step offset and rate this layer is sampled with on stage, so a
+   *  performer card can begin on the beat that performer dances first. Reads
+   *  the live Stagger setting, so a reactive caller follows it. */
+  samplingTimingForLayer(
+    layer: Pick<BuiltTunnelLayer, "arm" | "stepOffset" | "speed">
+  ): { offset: number; speed: number } {
+    return this.#samplingTimingForLayer(layer);
+  }
+
+  #samplingTimingForLayer(
+    layer: Pick<BuiltTunnelLayer, "arm" | "stepOffset" | "speed">
+  ): {
     offset: number;
     speed: number;
   } {

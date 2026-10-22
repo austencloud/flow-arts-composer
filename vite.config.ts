@@ -1649,6 +1649,10 @@ export default defineConfig(({ command, mode }) => ({
       "qr-code-styling",
       "posthog-js",
       "mediabunny",
+      // The account sheet's first open pulls these in; discovered late they
+      // cost a re-optimization and a full reload under a guest's ninth step.
+      "@austencloud/phone-sign-in",
+      "@austencloud/phone-sign-in/client",
 
       // 3D scene deps: discovered mid-session → browserHash changes → 504 on refresh
       "three",

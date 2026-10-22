@@ -244,6 +244,66 @@ export function effectiveInversionInterval(rhythm: LoopRhythm): 2 | 4 {
 }
 
 /**
+ * Length multiplier of every component except the inversion: how many copies
+ * of the seed the rest of the combo lays down before anything is flipped.
+ */
+function companionMultiplier(
+  components: ReadonlySet<LOOPComponent>,
+  rhythm: LoopRhythm
+): number {
+  const companions = new Set(components);
+  companions.delete(LOOPComponent.INVERTED);
+  if (companions.size === 0) return 1;
+  const wire = buildLoopSpec(companions, rhythm);
+  return wire ? expanderMultiplier(wire) : 1;
+}
+
+/**
+ * Whether "Every quarter" can keep its promise for this combo.
+ *
+ * An inverted quarter only reads as an inversion when it is the spin flip of
+ * the quarter before it. Inverted alone gets that by repeating its seed
+ * ([B, inv B, B, inv B]). A combo whose other components already lay down
+ * four related quarters (a mirror or flip around a halved rotation) gets it
+ * by flipping alternate quarters in place. A combo whose other components only
+ * halve the sequence leaves the two quarters of each half unrelated, so
+ * flipping one of them produces no inversion anyone can see: the result is
+ * just the companion LOOP. Those combos invert at halfway only.
+ */
+export function quarterInversionSupported(
+  components: ReadonlySet<LOOPComponent>,
+  rhythm: LoopRhythm = {}
+): boolean {
+  if (!components.has(LOOPComponent.INVERTED)) return false;
+  const multiplier = companionMultiplier(components, rhythm);
+  return multiplier === 1 || multiplier % 4 === 0;
+}
+
+/**
+ * The inversion stage the engine should run for the requested rhythm.
+ *
+ * "On top" flips blocks of the sequence the other components built, so it only
+ * inverts something when those blocks are copies of one another. At halfway
+ * that is exactly the inverted pass "Adds length" builds (the companion's
+ * second half, flipped), and inverted alone has no second half until the seed
+ * is repeated, so halfway always runs as an expand stage. Every quarter stays
+ * an in-place overlay when the companions lay down four related quarters,
+ * and inverted alone repeats its seed four times with alternate passes
+ * flipped. Any other quarter request is passed through as an overlay the
+ * engine refuses with a notice (quarterInversionSupported gates it in the UI).
+ */
+function inversionComponentSpec(
+  components: ReadonlySet<LOOPComponent>,
+  rhythm: LoopRhythm
+): { period: number; mode?: "overlay" } {
+  const period = effectiveInversionInterval(rhythm);
+  if (period === 2) return { period: 2 };
+  const multiplier = companionMultiplier(components, rhythm);
+  if (multiplier === 1) return { period: 4 };
+  return { period: 4, mode: "overlay" };
+}
+
+/**
  * Build a symmetric wire-form LOOPSpec from the UI component set + rhythm.
  * Returns null for combos with no implemented mapping (same gate as
  * generateLOOPType — the combo overlay's gating stays the single source
@@ -261,12 +321,7 @@ export function buildLoopSpec(
     if (comp === LOOPComponent.ROTATED) {
       prop.rotated = { period: rhythm.rotationInterval ?? 2 };
     } else if (comp === LOOPComponent.INVERTED) {
-      prop.inverted = {
-        period: effectiveInversionInterval(rhythm),
-        ...(rhythm.inversionMode === "overlay"
-          ? { mode: "overlay" as const }
-          : {}),
-      };
+      prop.inverted = inversionComponentSpec(components, rhythm);
     } else if (
       comp === LOOPComponent.MIRRORED ||
       comp === LOOPComponent.FLIPPED

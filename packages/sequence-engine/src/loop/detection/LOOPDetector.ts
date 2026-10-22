@@ -33,6 +33,7 @@ import {
   uniformRelationAtInterval,
   detectRewoundPattern,
   detectsInnerRotation,
+  detectsInnerRotationInversion,
   type PairMotions,
   type PairComponentId,
   type RotationAngle,
@@ -678,6 +679,25 @@ export class LOOPDetectorClass {
         halvedTransformations: [LOOPComponent.SWAPPED, LOOPComponent.INVERTED],
         description: `${rotDesc} (quartered) + Swapped + Inverted (halved)`,
       };
+    }
+
+    // Compound: inner rotation flipping spin every quarter + outer
+    // mirrored/swapped (an "every quarter" inversion over that nesting).
+    if (!hasQuarteredRotation && detectsInnerRotationInversion(pairMotions)) {
+      const outerTransformations = halvedComponents.filter(
+        (c) => c !== LOOPComponent.ROTATED && c !== LOOPComponent.INVERTED
+      );
+      if (outerTransformations.length > 0) {
+        return {
+          isCompound: true,
+          quarteredTransformations: [
+            LOOPComponent.ROTATED,
+            LOOPComponent.INVERTED,
+          ],
+          halvedTransformations: outerTransformations,
+          description: `180° Inner Rotated + Inverted (every quarter) + ${outerTransformations.join(" + ")} (outer halved)`,
+        };
+      }
     }
 
     // Compound: inner halved rotation + outer mirrored/swapped

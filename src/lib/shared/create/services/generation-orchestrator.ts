@@ -205,12 +205,18 @@ export function describeInfeasibleRequest(
             : "choose level 2 or higher with turns"
         );
         break;
+      case "inversionHalfway":
+        changes.push("invert at halfway instead of every quarter");
+        break;
+      case "inversionAddsLength":
+        changes.push("let the inversion add length");
+        break;
     }
   }
 
   const subject =
     options.mode === GenerationMode.CIRCULAR && options.loopType
-      ? `${options.length}-step ${String(options.loopType).replace("_", " ")} LOOP`
+      ? `${options.length}-step ${String(options.loopType).replaceAll("_", " ")} LOOP`
       : `${options.length}-step sequence`;
   if (changes.length === 0) {
     return `No ${subject} fits these settings together. Try another length, start or motion setting.`;

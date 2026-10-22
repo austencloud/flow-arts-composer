@@ -173,6 +173,32 @@ function seedSupportsOverlayStages(
 }
 
 /**
+ * The overlay period that cannot produce a visible inversion, if any.
+ *
+ * An overlay stage flips the odd blocks of the expanded sequence in place.
+ * A flipped block reads as an inversion only when it is a copy of the block
+ * before it, which holds when the expand stages laid the sequence down in
+ * `period` related blocks: the overlay period has to divide the expansion
+ * multiplier. Otherwise (an overlay with nothing expanded, or quarter flips
+ * over a sequence that is only halved) the flipped blocks are unrelated
+ * content and the result is the companion LOOP, or no LOOP at all, wearing an
+ * inverted label. No seed can change that, so it is infeasible up front.
+ */
+function overlayPeriodWithoutStructure(
+  loopSpec: LOOPSpec | undefined
+): { period: number; multiplier: number } | null {
+  if (!loopSpec) return null;
+  const multiplier = getLOOPSpecExpansionMultiplier(loopSpec);
+  for (const componentSpec of allActiveComponents(loopSpec).values()) {
+    if (componentSpec.mode !== "overlay") continue;
+    if (multiplier % componentSpec.period !== 0) {
+      return { period: componentSpec.period, multiplier };
+    }
+  }
+  return null;
+}
+
+/**
  * What the request wants done to the layers, if anything.
  *
  * A named pattern takes precedence: the caller has said exactly which layers
@@ -637,6 +663,23 @@ export class SequenceBuilder {
     // an open prop orientation. Those are not valid results for a LOOP request.
     // Validate the complete generated sequence at the public boundary and
     // reroll the seed instead of returning a weaker or non-closing pattern.
+    const unstructuredOverlay = overlayPeriodWithoutStructure(
+      options.loop.loopSpec
+    );
+    if (unstructuredOverlay) {
+      throw new GenerationInfeasibleError(
+        `An overlay inversion every 1/${unstructuredOverlay.period} of the ` +
+          `sequence has no related blocks to flip (the other components ` +
+          `repeat the seed ${unstructuredOverlay.multiplier}x).`,
+        options.length ?? 0,
+        [
+          unstructuredOverlay.multiplier % 2 === 0
+            ? "inversionHalfway"
+            : "inversionAddsLength",
+        ]
+      );
+    }
+
     const maxAttempts = 40;
     let workingOptions = options;
     let lastFailure = "no result";
@@ -737,21 +780,14 @@ export class SequenceBuilder {
       return `orientation did not close (${openOrientations.join(", ")})`;
     }
 
-    // Overlay transforms intentionally create a blockwise relationship rather
-    // than one uniform pair relation across the full sequence. The current
-    // detector describes only uniform/compound expand stages, so it cannot
-    // validate overlay identity without misclassifying a valid result.
+    // Overlay inversions are validated like expand stages. buildOnce admits
+    // only an overlay whose period divides the expansion multiplier, so the
+    // flipped blocks are copies of their neighbours and the detector reads
+    // the result as a uniform or nested compound relation. Skipping this
+    // check is how unrelated blocks used to ship under an inverted label.
     const activeComponents = loop.loopSpec
       ? allActiveComponents(loop.loopSpec)
       : undefined;
-    if (
-      activeComponents &&
-      [...activeComponents.values()].some(
-        (componentSpec) => componentSpec.mode === "overlay"
-      )
-    ) {
-      return undefined;
-    }
 
     const expectedRaw = loop.loopSpec
       ? new Set([...activeComponents!.keys()].map(String))

@@ -10,6 +10,7 @@ import type { LOOPComponent } from "#lib/shared/foundation/domain/models/generat
 import {
   buildLoopSpec,
   expanderMultiplier,
+  quarterInversionSupported,
   specHasExpandInversion,
   type LoopRhythm,
 } from "./loop-type-utils";
@@ -32,6 +33,17 @@ export function gateRhythm(
   const wire = buildLoopSpec(components, rhythm);
   if (!wire)
     return { ok: false, reason: "No LOOP type matches this exact combination" };
+  if (
+    rhythm.inversionMode === "overlay" &&
+    rhythm.inversionInterval === 4 &&
+    !quarterInversionSupported(components, rhythm)
+  ) {
+    return {
+      ok: false,
+      reason:
+        "Every quarter needs Inverted alone or a mirror around a rotation. This combo inverts at halfway",
+    };
+  }
   const multiplier = expanderMultiplier(wire);
   if (sequenceLength % multiplier !== 0) {
     return {

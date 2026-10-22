@@ -157,7 +157,25 @@ describe("expand inversion interval", () => {
         inversionMode: "overlay",
       });
       expect(wire?.left?.inverted?.period).toBe(4);
-      expect(wire?.left?.inverted?.mode).toBe("overlay");
+      // Inverted alone has nothing laid down to flip in place, so its
+      // quarters come from repeating the seed with alternate passes flipped.
+      expect(wire?.left?.inverted?.mode).toBe(
+        loopType === LOOPType.INVERTED ? undefined : "overlay"
+      );
+    }
+  );
+
+  it.each(INVERTED_COMBOS)(
+    "runs an On top inversion at halfway as the %s inverted pass",
+    (loopType) => {
+      // Flipping the second half in place is the inverted pass Adds length
+      // builds; as an expand stage the builder also validates it.
+      const wire = buildLoopSpec(parseLoopComponents(loopType), {
+        rotationInterval: 2,
+        inversionInterval: 2,
+        inversionMode: "overlay",
+      });
+      expect(wire?.left?.inverted).toEqual({ period: 2 });
     }
   );
 

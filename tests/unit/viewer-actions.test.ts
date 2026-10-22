@@ -1,7 +1,11 @@
 import { describe, it, expect, vi } from "vitest";
 
-const { openCollectionPicker } = vi.hoisted(() => ({
+const { openCollectionPicker, ensureGuestIdentity } = vi.hoisted(() => ({
   openCollectionPicker: vi.fn(),
+  ensureGuestIdentity: vi.fn(() => Promise.resolve()),
+}));
+vi.mock("#lib/shared/auth/services/guest-identity.js", () => ({
+  ensureGuestIdentity,
 }));
 vi.mock(
   "#lib/features/library/state/collection-picker-state.svelte.js",
@@ -10,7 +14,10 @@ vi.mock(
   })
 );
 
-import { buildHeaderActions } from "#lib/shared/sequence-viewer/services/viewer-actions.js";
+import {
+  buildHeaderActions,
+  canFileInCollection,
+} from "#lib/shared/sequence-viewer/services/viewer-actions.js";
 import { VIDEO_UPLOAD_ENABLED } from "#lib/shared/sequence-viewer/config/viewer-feature-flags.js";
 
 function makeCtx(over: Partial<Record<string, unknown>> = {}) {
@@ -54,6 +61,7 @@ describe("buildHeaderActions", () => {
     expect(a.onUnpublish).toBeUndefined();
     expect(a.onDeleteRequest).toBeUndefined();
     expect(a.onVideoUpload).toBeUndefined();
+    // The default sequence has no owner, so no collection could resolve it.
     expect(a.onAddToCollection).toBeUndefined();
   });
 
@@ -107,7 +115,7 @@ describe("buildHeaderActions", () => {
     expect(a.onSave).toBeTypeOf("function");
   });
 
-  it("exact owned library record: add-to-collection opens the picker for that record", () => {
+  it("exact owned library record: add-to-collection opens the picker for that record", async () => {
     openCollectionPicker.mockClear();
     const a = buildHeaderActions(
       makeCtx({ isOwned: true, isOwnedLibraryRecord: true, isLoggedIn: true }),
@@ -117,6 +125,7 @@ describe("buildHeaderActions", () => {
     expect(a.onAddToCollection).toBeTypeOf("function");
 
     a.onAddToCollection?.();
+    await vi.waitFor(() => expect(openCollectionPicker).toHaveBeenCalled());
 
     expect(openCollectionPicker).toHaveBeenCalledWith({
       sequenceId: "seq-1",
@@ -152,5 +161,54 @@ describe("buildHeaderActions", () => {
     );
     expect(matchingContent.onAddToCollection).toBeUndefined();
     expect(unsavedOwner.onAddToCollection).toBeUndefined();
+  });
+
+  it("a guest viewing someone else's gallery sequence can file it, after a guest identity exists", async () => {
+    openCollectionPicker.mockClear();
+    ensureGuestIdentity.mockClear();
+    const order: string[] = [];
+    ensureGuestIdentity.mockImplementationOnce(async () => {
+      order.push("identity");
+    });
+    openCollectionPicker.mockImplementationOnce(() => {
+      order.push("picker");
+    });
+    const a = buildHeaderActions(
+      makeCtx({
+        isLoggedIn: false,
+        sequence: { id: "pub-9", name: "", word: "BETA", ownerId: "someone" },
+      }),
+      "full",
+      wiring
+    );
+    expect(a.onAddToCollection).toBeTypeOf("function");
+
+    a.onAddToCollection?.();
+    await vi.waitFor(() => expect(openCollectionPicker).toHaveBeenCalled());
+
+    expect(order).toEqual(["identity", "picker"]);
+    expect(openCollectionPicker).toHaveBeenCalledWith({
+      sequenceId: "pub-9",
+      sequenceLabel: "BETA",
+    });
+  });
+});
+
+describe("canFileInCollection", () => {
+  const seq = (ownerId?: string) => ({
+    id: "s",
+    name: "S",
+    word: "S",
+    ...(ownerId ? { ownerId } : {}),
+  });
+
+  it.each([
+    ["own library record", { sequence: seq("me"), isOwned: true, isOwnedLibraryRecord: true }, true],
+    ["own unsaved work", { sequence: seq("me"), isOwned: true, isOwnedLibraryRecord: false }, false],
+    ["someone else's gallery sequence", { sequence: seq("them"), isOwned: false, isOwnedLibraryRecord: false }, true],
+    ["a sequence with no owner", { sequence: seq(), isOwned: false, isOwnedLibraryRecord: false }, false],
+    ["no sequence loaded", { sequence: null, isOwned: false, isOwnedLibraryRecord: false }, false],
+  ])("%s -> %s", (_label, ctx, expected) => {
+    expect(canFileInCollection(ctx as never)).toBe(expected);
   });
 });
