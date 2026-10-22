@@ -144,6 +144,7 @@
 
 <style>
   .mobile-controls {
+    container: fuse-controls / inline-size;
     display: grid;
     flex: 0 0 auto;
     gap: var(--settings-spacing-sm, 8px);
@@ -316,6 +317,15 @@
     .shuffle-control :global(.panel-btn),
     .compact-error {
       border: 1px solid ButtonText;
+    }
+  }
+
+  /* The controls' own width decides, not the tab's: in a short landscape slot
+     they sit in a side column that can be narrower than a phone, and at 200%
+     zoom "New Right" overflowed its button there. */
+  @container fuse-controls (max-width: 300px) {
+    .shuffle-verb {
+      display: none;
     }
   }
 

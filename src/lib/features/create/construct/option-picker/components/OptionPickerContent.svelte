@@ -52,6 +52,10 @@ Uses organizer and sizer services for section grouping and sizing.
   import { selectOptionInteractionHintPresentation } from "../services/option-interaction-hint-presentation";
   import { selectOptionControlsPresentation } from "../services/option-controls-presentation";
   import {
+    CONSTRUCT_PHONE_MAX_WIDTH,
+    isConstructPhoneTier,
+  } from "../../services/construct-phone-split";
+  import {
     hasPendingAncestorLayoutTransition,
     shouldCommitContainerSize,
     type TransitionLike,
@@ -175,7 +179,7 @@ Uses organizer and sizer services for section grouping and sizing.
   // Layout thresholds
   // Wide layout (>= 750px): 8-column grouped vertical layout
   // Narrow layout (< 750px): Horizontal swipe layout between type sections
-  const WIDE_LAYOUT_THRESHOLD = 750;
+  const WIDE_LAYOUT_THRESHOLD = CONSTRUCT_PHONE_MAX_WIDTH;
   // Above this width both hand palettes fit on one row, so the header remains
   // economical even in a short pane. Narrower panes need enough height to
   // stack those same surfaces before controls stay inline.
@@ -312,6 +316,15 @@ Uses organizer and sizer services for section grouping and sizing.
 
   // Mobile stacked layout (workspace on top, tool panel on bottom) vs side-by-side desktop
   const isMobileStackedLayout = $derived(() => !isSideBySideLayout());
+
+  // A stacked phone-width picker navigates letter types with its tabs and a
+  // swipe, so the carousel's arrow gutters go back to the grid.
+  const isPhoneTier = $derived(
+    isConstructPhoneTier({
+      width: containerWidth,
+      stacked: isMobileStackedLayout(),
+    })
+  );
 
   // These are evaluated when container is narrow (< 750px) OR in mobile stacked layout
 
@@ -703,13 +716,13 @@ Uses organizer and sizer services for section grouping and sizing.
         <!-- ==================== COMPACT 4x4 LAYOUT ==================== -->
         <!-- Single continuous grid rendered inside the SAME swipe container the
              sectioned (All) layout uses. One panel: arrows reserve their gutter
-             (so the content width matches the All-mode panels exactly) but never
-             render. The section measures the real embla viewport for height, so
+             wherever the All-mode panels do (so the content width matches them
+             exactly) but never render. The section measures the real embla viewport for height, so
              the continuous tiles come out the same size as the All-mode Type-1
              grid instead of from a parallel fudge-factor formula. -->
         <div class="swipe-container">
           <HorizontalSwipeContainer
-            showArrows={true}
+            showArrows={!isPhoneTier}
             showIndicators={false}
             height="100%"
             width="100%"
@@ -742,6 +755,7 @@ Uses organizer and sizer services for section grouping and sizing.
             settingsEnabled={useDisclosedCompactControls}
             settingsHasTurnRows={turnControlsEditable && level > 1}
             openIntoWorkspace={isMobileStackedLayout()}
+            phoneTier={isPhoneTier}
           >
             {#snippet settingsContent()}
               {@render compactControls()}

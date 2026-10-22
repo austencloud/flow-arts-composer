@@ -5,7 +5,10 @@
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import type { FuseSide } from "../state/fuse-shuffle-pool.svelte.js";
-  import { FUSE_LIVE_GRID_GAP } from "../services/fuse-workspace-split";
+  import {
+    FUSE_LIVE_GRID_GAP,
+    type FuseContextPlacement,
+  } from "../services/fuse-workspace-split";
 
   let {
     sequence,
@@ -14,6 +17,7 @@
     cellSize,
     includeStart = false,
     showMandala = false,
+    contextPlacement = "column",
     highlightedStepIndex = null,
     onStepClick,
     posePicker = false,
@@ -26,6 +30,9 @@
     cellSize: number;
     includeStart?: boolean;
     showMandala?: boolean;
+    /** Start and the mandala in a column beside the steps, or in a row above
+     * two step columns (tall side cards). */
+    contextPlacement?: FuseContextPlacement;
     highlightedStepIndex?: number | null;
     onStepClick?: (stepIndex: number) => void;
     /** Choose Start picker: step tiles render as the pose after their beat. */
@@ -35,13 +42,23 @@
   } = $props();
 
   const safeColumns = $derived(Math.max(1, columns));
-  const gridColumns = $derived(safeColumns + (includeStart ? 1 : 0));
+  const contextRow = $derived(
+    includeStart && showMandala && contextPlacement === "row" && safeColumns >= 2
+  );
+  const contextColumn = $derived(includeStart && !contextRow);
+  const gridColumns = $derived(safeColumns + (contextColumn ? 1 : 0));
   const stepRows = $derived(
     Math.max(1, Math.ceil(sequence.steps.length / safeColumns))
   );
   const gridRows = $derived(
-    includeStart && showMandala ? Math.max(2, stepRows) : stepRows
+    contextRow
+      ? stepRows + 1
+      : includeStart && showMandala
+        ? Math.max(2, stepRows)
+        : stepRows
   );
+  const mandalaColumn = $derived(contextRow ? gridColumns : 1);
+  const mandalaRow = $derived(contextRow ? 1 : gridRows);
   // Match the canonical Choreo Card's mandala-to-cell ratio. A full-cell
   // mandala pushes its outer glow into the cell edge and reads as cropped,
   // especially in the large Fuse cards.
@@ -56,11 +73,11 @@
   );
 
   function stepColumn(index: number): number {
-    return (includeStart ? 2 : 1) + (index % safeColumns);
+    return (contextColumn ? 2 : 1) + (index % safeColumns);
   }
 
   function stepRow(index: number): number {
-    return 1 + Math.floor(index / safeColumns);
+    return (contextRow ? 2 : 1) + Math.floor(index / safeColumns);
   }
 </script>
 
@@ -124,7 +141,7 @@
   {#if includeStart && showMandala}
     <div
       class="live-cell mandala-cell"
-      style="grid-column:1;grid-row:{gridRows};"
+      style="grid-column:{mandalaColumn};grid-row:{mandalaRow};"
       role="img"
       aria-label="{side === 'left' ? 'Left' : 'Right'} path mandala"
     >

@@ -50,6 +50,7 @@ Features:
     settingsContent,
     settingsHasTurnRows = true,
     openIntoWorkspace = false,
+    phoneTier = false,
   } = $props<{
     organizedPictographs?: OrganizedSection[];
     onPictographSelected?: (pictograph: PictographData) => void;
@@ -74,6 +75,10 @@ Features:
     settingsContent?: Snippet;
     settingsHasTurnRows?: boolean;
     openIntoWorkspace?: boolean;
+    /** A stacked phone-width picker. Its letter-type tabs name the selected
+     *  group and, with the swipe, move between groups, so the arrows' gutters
+     *  and the repeated type heading give their room back to the grid. */
+    phoneTier?: boolean;
   }>();
 
   type UtilityPanel = "settings" | "info";
@@ -508,6 +513,7 @@ Features:
 
   <div class="carousel-area">
     <HorizontalSwipeContainer
+      showArrows={!phoneTier}
       showIndicators={false}
       {initialPanelIndex}
       onPanelChange={handlePanelChange}
@@ -574,7 +580,7 @@ Features:
                   {layoutConfig}
                   {currentSequence}
                   {contentAreaBounds}
-                  showHeader={true}
+                  showHeader={!phoneTier}
                   {onSlotClicked}
                   continuationIndex={getContinuationIndex?.(section.title) ??
                     null}
@@ -810,6 +816,14 @@ Features:
   .letter-type-group-palette-color {
     flex: 1;
     min-width: 0;
+  }
+
+  /* The shared SegmentedControl hard-codes a 44px button in its package
+     CSS, so the tabs follow the layout's touch target from here: 44px as
+     usual, 40px on Construct's phone tier. */
+  .type-navigation :global(.ui-segments button) {
+    min-width: var(--min-touch-target, 44px);
+    min-height: var(--min-touch-target, 44px);
   }
 
   .type-navigation :global(.segmented-control.accent .segment.selected) {

@@ -54,6 +54,7 @@ describe("boot import boundary", () => {
     "h264-mp4-encoder",
     "gifenc",
     "modern-screenshot",
+    "@austencloud/video-editor",
     "onnxruntime-web",
     "@ricky0123/vad-web",
   ];

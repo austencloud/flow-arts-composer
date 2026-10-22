@@ -1,7 +1,12 @@
 # Three Ways to Name a Pattern: Guide Page Design
 
 **Date:** 2026-10-14
-**Status:** Approved design, not built
+**Status:** Superseded. Built 2026-10-14 (`119c739f76`), withdrawn 2026-10-15
+(`33943ba6a3`), then rewritten at the same route as a CAPs essay
+(`34c3086a32`, `f797e00c91`, `93ef2aa039`) that production gates behind a
+"being written" note until Austen approves it. The essay's data owner is
+`src/lib/shared/guide-topics/caps-topic.ts`. Do not rebuild the design below;
+see "Superseded (2026-10-22)" at the end.
 **Route:** `/guide/three-levels` (working slug; final slug settles with the page title)
 
 ## Why this page exists
@@ -133,3 +138,23 @@ Built at `/guide/three-levels`. Departures from the plan above:
   Diamond.
 - The timing note is recorded in `docs/research/spiroanim/README.md`: 108 of
   864 beats conflict with the canon.
+
+## Superseded (2026-10-22)
+
+The status line read "not built" after the build notes above, so the page was
+queued for a rebuild on 2026-10-22. That rebuild was stopped: the route's
+history after 2026-10-14 is Austen's own direction.
+
+- 2026-10-15 `33943ba6a3` withdrew the page: production prerenders a noindex
+  "being written" note, and the page left the Guide hub, the Guide contents
+  and the sitemap.
+- 2026-10-15 `34c3086a32` and `f797e00c91` rewrote it as a short essay on
+  Gage DeMello's 72 twelve-beat CAPs. Its tests in `caps-topic.test.ts` check
+  the claims this spec asked for: 72 CAPs make 32 words, and CAPs that share a
+  word differ only in turns.
+- 2026-10-15 `93ef2aa039` gave each level its own `SequenceShowcase`, and
+  `89936ddef0` added the companion `/guide/eight-step` page, also gated.
+
+What remains is Austen's call, not a build task: whether the essay is ready to
+leave the gate, its final slug and title, and whether it returns to the Guide
+hub.

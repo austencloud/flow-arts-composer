@@ -1,6 +1,6 @@
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  import { flushSync, onDestroy, onMount } from "svelte";
+  import { flushSync, onDestroy, onMount, untrack } from "svelte";
   import { opaqueFade } from "#lib/shared/transitions/motion.js";
   import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
@@ -21,9 +21,14 @@
     PICTOGRAPH_ARRIVAL_LANDING_MS,
     PICTOGRAPH_ARRIVAL_PROP_MOTION_MIN_MS,
   } from "../domain/pictograph-arrival-motion";
+  import {
+    shouldInterruptArrivalOnTap,
+    type PictographArrivalPresentation,
+  } from "../domain/pictograph-arrival-presentation";
   import type { PictographStageRequest } from "../state/step-grid-display-state.svelte";
   import type { GridJoin } from "@tka/tka-types";
   import { gridJoinCellResolver } from "@tka/render-core";
+  import { portal } from "#lib/features/create/generate/components/modals/portal.js";
 
   type ArrivalPhase =
     | "preparing"
@@ -58,6 +63,7 @@
     leftColorOverride = undefined,
     rightColorOverride = undefined,
     gridJoin = null,
+    presentation = "workspace",
   }: {
     request: PictographStageRequest;
     sequence: SequenceData;
@@ -73,7 +79,14 @@
     rightColorOverride?: string;
     /** The workspace sequence's join, so the arriving step lands as drawn. */
     gridJoin?: GridJoin | null;
+    /** Play inside the step grid, or over the whole screen (phone Construct). */
+    presentation?: PictographArrivalPresentation;
   } = $props();
+
+  // The stage is remounted for every request, so one request keeps the
+  // presentation it started with even if the screen is rotated mid-flight.
+  const stagePresentation = untrack(() => presentation);
+  const playsOnScreen = stagePresentation === "screen";
 
   const withGridJoin = $derived(gridJoinCellResolver({ conjoined: gridJoin }));
   const rawStep = $derived(sequence.steps[request.stepIndex] ?? null);
@@ -255,7 +268,12 @@
       entranceAnimations.push(
         card.animate(
           reducedMotionEnabled
-            ? [{ opacity: 0 }, { opacity: 1 }]
+            ? // Fade only, at the settled size, so nothing jumps when the
+              // entered style takes over.
+              [
+                { opacity: 0, transform: "translate3d(0, 0, 0) scale(1)" },
+                { opacity: 1, transform: "translate3d(0, 0, 0) scale(1)" },
+              ]
             : [
                 {
                   opacity: 0,
@@ -449,6 +467,39 @@
     animationFrame = requestAnimationFrame(animateProps);
   }
 
+  function interruptOnTap() {
+    const requestId = request.requestId;
+    if (
+      requestId !== activeRequestId ||
+      request.owner !== "stage" ||
+      !shouldInterruptArrivalOnTap({
+        presentation: stagePresentation,
+        intent: request.intent,
+        phase,
+      })
+    ) {
+      return;
+    }
+
+    const preparing = phase === "preparing";
+    clearActiveWork();
+    if (preparing) {
+      handOffToCell(requestId);
+      return;
+    }
+
+    // A cancelled entrance falls back to the card's hidden resting style, so
+    // settle it at full size first; the landing starts from what was on screen.
+    flushSync(() => {
+      entranceComplete = true;
+    });
+    void landInGrid(requestId);
+  }
+
+  function attachToScreen(node: HTMLElement) {
+    return portal(node).destroy;
+  }
+
   function handleStageReady() {
     const requestId = request.requestId;
     if (requestId !== activeRequestId || request.owner !== "stage") return;
@@ -527,7 +578,16 @@
     };
     systemPrefersReducedMotion = query.matches;
     query.addEventListener("change", handleChange);
-    return () => query.removeEventListener("change", handleChange);
+    // Capture phase: the tap still reaches the option or cell under it.
+    if (playsOnScreen) {
+      window.addEventListener("pointerdown", interruptOnTap, { capture: true });
+    }
+    return () => {
+      query.removeEventListener("change", handleChange);
+      window.removeEventListener("pointerdown", interruptOnTap, {
+        capture: true,
+      });
+    };
   });
 
   onDestroy(() => {
@@ -539,6 +599,9 @@
 {#if step}
   <div
     class="arrival-overlay"
+    class:on-screen={playsOnScreen}
+    {@attach playsOnScreen && attachToScreen}
+    data-arrival-presentation={stagePresentation}
     data-arrival-request-id={request.requestId}
     data-arrival-intent={request.intent}
     data-arrival-phase={phase}
@@ -650,6 +713,18 @@
     height: 100%;
     max-width: none;
     max-height: none;
+  }
+
+  /* Phone Construct: the step plays over the whole screen, not the short
+     workspace band, then lands in its cell. The overlay lives under <body>,
+     so the viewport sizes the card. */
+  .arrival-overlay.on-screen {
+    position: fixed;
+    z-index: var(--z-overlay, 500);
+  }
+
+  .arrival-overlay.on-screen .arrival-card {
+    width: min(88vw, 62dvh, 30rem);
   }
 
   @container (min-width: 1200px) and (min-height: 800px) {

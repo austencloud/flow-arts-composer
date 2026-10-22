@@ -889,6 +889,7 @@
       onChooseFirstStep={openFirstStep}
       onBuildPath={openPathBuilder}
       {compact}
+      sideControls={shortLandscape}
     />
   </div>
 
@@ -1041,10 +1042,13 @@
   }
 
   /* Unfolded foldables and landscape tablets: reuse the desktop source column,
-     but keep the lean source cards so the notation remains the hero. The
-     preview now owns the full content-row height instead of a shallow row. */
+     but keep the lean source cards. The preview owns the full content-row
+     height. Two stacked lean cards are height-bound, so a wider source column
+     only adds dead width beside their grids while the result, one column over,
+     wraps its heading and controls into extra rows; at 1104x884 the old
+     0.95 : 1.15 split did exactly that. */
   .fuse-workspace.landscape-workspace {
-    grid-template-columns: minmax(300px, 0.95fr) minmax(0, 1.15fr);
+    grid-template-columns: minmax(300px, 0.55fr) minmax(0, 1fr);
     grid-template-rows: max-content minmax(0, 1fr);
     grid-template-areas:
       "header header"
@@ -1221,7 +1225,6 @@
      while the result keeps the larger share of the canvas. */
   @container fuse (min-width: 2600px) and (min-height: 1400px) {
     .fuse-workspace {
-      --min-touch-target: 64px;
       --fuse-col-gap: 24px;
       gap: var(--fuse-col-gap);
       padding: 32px;

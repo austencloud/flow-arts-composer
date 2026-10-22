@@ -2,7 +2,7 @@
 status: active
 value: 5
 effort: L
-remaining: "Complete the browser viewport sweep when the Chrome DevTools transport is available"
+remaining: "Emulated prefers-reduced-motion run of the Disassemble transition; the 2026-10-22 sweep checked the reduced-motion rules in CSS only"
 depends_on: ""
 plan_path: ""
 tags:
@@ -10,7 +10,7 @@ tags:
   - loops
   - solo-prop
   - vtg
-last_triaged: 2026-10-07
+last_triaged: 2026-10-22
 work_state: verification
 ---
 
@@ -18,7 +18,7 @@ work_state: verification
 
 **Date:** 2026-08-11
 
-**Status:** Implementation recorded; browser viewport verification remains (reviewed 2026-10-07).
+**Status:** Implementation recorded; the browser viewport sweep ran on 2026-10-22. An emulated reduced-motion run remains.
 
 **Original approval:** Austen approved the design on 2026-08-11.
 
@@ -270,3 +270,54 @@ orientation calculator, or two-hand matrix transaction belongs in this path.
    in a responsive Fuse source panel.
 6. Run focused tests, typecheck the changed paths, and complete visual
    verification.
+
+## Verification evidence (2026-10-22)
+
+The browser viewport sweep ran against a task worktree server with the Fuse
+layout pass applied (branch `codex/fuse-layout-pass`). Every tier was measured
+with `getBoundingClientRect` and screenshotted before and after. The root font
+size was 16px everywhere, and `document.documentElement.scrollWidth` never
+exceeded `clientWidth`. No Fuse element extended past the Fuse container.
+
+| CSS viewport | Composition after the pass | Combined result (hero) | Solos when disassembled |
+| ------------ | -------------------------- | ---------------------- | ----------------------- |
+| 375x667 | compact, solos flank the hero | 202px (was 177px under the solos) | 61px each side |
+| 960x412 | compact, controls in a side column | 236px (was a 114px strip) | 118px each side |
+| 707x823 | compact | 409px (was 276px) | 123px each side |
+| 820x1180 | two lean cards over the result | 412px assembled, 412px disassembled | 153px each side |
+| 884x1104 | two lean cards over the result | 367px assembled and disassembled | 183px each side |
+| 1104x884 | lean cards beside the result | 543px (was 443px) | not measured |
+| 1440x900 | stacked full cards, seam | 598px assembled, 390px disassembled | 117px each side |
+| 1920x1080 | stacked full cards, seam | 694px assembled, 553px disassembled | 166px each side |
+| 2560x1440 | wing workbench | 769px disassembled | 231px each side |
+| 3840x2160 | wing workbench | 1714px assembled, 1229px disassembled | 369px each side |
+
+- Wing side cards at 2560x1440 and 3840x2160 now seat Start and the mandala in
+  a row above two step columns. Cells grew from 171px to 222px and from about
+  258px to 356px, and the empty context cells between Start and the mandala
+  are gone.
+- Disassemble at 1920x1080, sampled each frame in a foreground page: the frame
+  widened 696px to 902px and the hero shrank 694px to 553px, both monotonic,
+  with the solos fading in from 0 to 1 opacity between about 375ms and 675ms.
+  Reassemble reversed both monotonically.
+- Crossing the wing seam (1920x1080 to 2560x1440) moved the Right card from
+  (88, 625) through (1355, 294) to (1970, 180) under the shared layout-motion
+  owner rather than snapping.
+- 200% zoom: 960x540 and 720x450 at device pixel ratio 2 kept every Fuse
+  button inside the container with no horizontal overflow. At 720x450 the
+  side controls column first overflowed "New Right"; the controls now drop the
+  verb when their own box is under 300px, and the recheck showed no overflow.
+- Reduced motion: the frame, hero and unit transitions exist only during a
+  Disassemble or Reassemble request, their `prefers-reduced-motion` overrides
+  match the transition selectors, and the request timer uses
+  `motionDuration`. The browser tools in this session could not emulate the
+  media feature, so this is a CSS and code check, not an observed run.
+- `tests/unit/fuse/fuse-workspace-split.test.ts` passes (23 tests, including
+  four for the side-card grid resolver). `npm run check:fast` reported no
+  errors in Fuse files; its 134 errors are in unrelated files.
+- Seen in the sweep and left as is: at 820x1180 and 884x1104 each lean source
+  card keeps about 40px of dead height above and below its two-row grid,
+  because the card row is a fraction of the height and cannot follow the
+  grid's width-bound height without a measurement loop. At 375x667 the recipe
+  summary truncates to "Separ...". The shell's bottom tool switcher reads
+  "Construct" while Fuse is open; that control is outside Fuse.

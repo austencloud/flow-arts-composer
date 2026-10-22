@@ -74,11 +74,42 @@ const lazyChunks = [
   "vendor-backgrounds",
   "vendor-media-export",
   "vendor-audio-inference",
+  "vendor-video-editor",
 ];
+// A name alone proves nothing: on 2026-10-22 the bundler had moved Three and
+// the backgrounds into a chunk with another name, left `vendor-backgrounds`
+// at 11 KB, and this check passed while startup loaded 4.4 MB. Each lazy
+// chunk must still hold its packages, and the whole startup graph has a
+// ceiling. docs/performance/2026-10-22-boot-measurements.md
+const MIN_LAZY_CHUNK_BYTES = 100_000;
+const MAX_STARTUP_RAW_BYTES = 3_000_000;
+const clientDir = values.manifest
+  ? path.join(path.dirname(values.manifest), "..")
+  : path.join(root, ".svelte-kit/output/client");
+const bytesOf = (key) => {
+  try {
+    return fs.statSync(path.join(clientDir, manifest[key].file)).size;
+  } catch {
+    return 0;
+  }
+};
 const failures = [];
 const closure = staticClosure(manifest, entries);
 for (const key of closure) {
   if (!manifest[key]) failures.push(`missing startup manifest entry: ${key}`);
+}
+const startupBytes = [...closure]
+  .filter((key) => manifest[key]?.file?.endsWith(".js"))
+  .reduce((sum, key) => sum + bytesOf(key), 0);
+if (startupBytes > MAX_STARTUP_RAW_BYTES) {
+  const largest = [...closure]
+    .filter((key) => manifest[key]?.file?.endsWith(".js"))
+    .sort((a, b) => bytesOf(b) - bytesOf(a))
+    .slice(0, 5)
+    .map((key) => `${manifest[key].name ?? key} ${bytesOf(key)}`);
+  failures.push(
+    `startup graph is ${startupBytes} raw bytes, over ${MAX_STARTUP_RAW_BYTES}; largest: ${largest.join(", ")}`
+  );
 }
 for (const name of lazyChunks) {
   const keys = Object.keys(manifest).filter(
@@ -87,6 +118,12 @@ for (const name of lazyChunks) {
   if (keys.length === 0) {
     failures.push(
       `missing ${name}; update this contract if the chunk was renamed`
+    );
+  }
+  const size = keys.reduce((sum, key) => sum + bytesOf(key), 0);
+  if (keys.length > 0 && size < MIN_LAZY_CHUNK_BYTES) {
+    failures.push(
+      `${name} is only ${size} bytes; its packages were bundled elsewhere`
     );
   }
   for (const key of keys) {
@@ -104,6 +141,6 @@ if (failures.length) {
   process.exitCode = 1;
 } else {
   console.log(
-    `Startup graph (common, home and app shell): ${closure.size} chunks; Three, backgrounds, media export and audio inference stay lazy.`
+    `Startup graph (common, home and app shell): ${closure.size} chunks, ${startupBytes} raw bytes; Three, backgrounds, media export, audio inference and the video editor stay lazy.`
   );
 }

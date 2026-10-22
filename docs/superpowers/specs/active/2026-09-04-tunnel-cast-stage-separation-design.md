@@ -163,3 +163,53 @@ both to their final states through the shared motion helpers.
 Verify Stage settings, its list transitions, and the main workspace at
 375x667, 960x412, 820x1180, 1440x900, 1920x1080, 2560x1440, 3840x2160, and
 200% browser zoom.
+
+## Layout evidence (2026-10-22)
+
+The phone pass ran against a task worktree server (branch
+`codex/tunnel-layout-pass`) in the desktop app's browser pane, measured with
+`getBoundingClientRect`. The root font size was 16px at every tier and the
+document never scrolled horizontally.
+
+Before the pass a 375x667 phone stacked header, cast and stage into 892px of
+content in a 622px slot: the stage sat below the fold, the empty card had no
+button, the stage controls stacked into a 96px column and the card's menu
+wrapped to three lines. The workspace now resolves a fitted portrait stack
+whenever the slot is at least 560px tall at phone width (700px at tablet
+width); shorter slots keep the scrolling stack. Every stacked mode puts the
+stage first and the cast under it.
+
+| CSS viewport | Mode | Stage frame | Card grid cells | Scroll |
+| ------------ | ---- | ----------- | --------------- | ------ |
+| 375x667 | fitted stack, phone chrome | 357x210 | 48px, two rows of an 8-step sequence | none (622 of 622) |
+| 360x740 | fitted stack, phone chrome | 342x247 | 49px | none |
+| 412x915 | fitted stack, phone chrome | 394x334 | 68px | none |
+| 720x450 (1440x900 at 200% zoom) | scrolling stack | 702x358 | 72px | 974 in 405 |
+| 960x412 | short landscape | 446x227 | 76px | none |
+| 820x1180 | fitted stack, tablet chrome | 768x389 | 89px | none |
+| 1440x900 | split | 808x640 | 126px | none |
+| 1920x1080 | split | 1106x820 | 174px | none |
+| 2560x1440 | split | 1503x1180 | 266px | none |
+| 3840x2160 | split | 2688x1900 | 324px | none |
+
+- Phone chrome: a 52px header, no stage heading (its cast count joins the
+  tempo in the controls row), a 57px single-row controls footer with an
+  icon-only Stage settings button, and a 65px one-row cast heading (mode
+  switch, performer tabs, add button). Four performers fit the tab row at
+  375px; the add button leaves once the cast is full.
+- The empty card shows a Browse sequences button under its message at every
+  width; the picker opened from it at 375x667.
+- The card's More menu opens upward over the stage on phones; the card,
+  roster and column stop clipping it. At 375x667 it listed three items
+  without wrapping.
+- Stage settings on a phone is a full-height sheet with the inspector rail
+  (the same layout the tablet sheet and desktop inspector use) instead of the
+  viewer dock inside a sheet, which had left half the sheet empty.
+- At 960x412 with three performers the cast heading no longer runs 18px past
+  the roster; the tab strip shrinks and scrolls.
+- The 1680px and 2600px type ramps are gone: at 1920x1080 and above the
+  header is 70px, the title 21.6px, the meta 14px and the buttons 44px.
+- `tests/unit/tunnel-workspace-layout.test.ts` passes (11 tests) with the
+  other tunnel suites (74 tests). `npm run check:fast` reports nothing in the
+  changed files; its 134 errors are elsewhere.
+- Not observed: an emulated reduced-motion run. The pass adds no transitions.

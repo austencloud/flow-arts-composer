@@ -515,10 +515,12 @@
 
   /* Play stays at the true center while the two action groups hug their
      corners. Keeping each side at its natural width prevents spare room from
-     turning into gaps between Actions and Save. */
+     turning into gaps between Actions and Save. The rail sets its own
+     control size here, so a layout that sizes its tier's controls (Construct
+     on phones, 40px) passes it through --workspace-rail-touch-target. */
   @container button-panel (max-width: 480px) {
     .button-panel {
-      --min-touch-target: 48px;
+      --min-touch-target: var(--workspace-rail-touch-target, 48px);
       --settings-workspace-action-gap: 8px;
       display: grid;
       grid-template-columns:
@@ -577,7 +579,7 @@
      controls step down to 44px while Play stays prominent. */
   @container button-panel (max-width: 390px) {
     .button-panel {
-      --min-touch-target: 44px;
+      --min-touch-target: var(--workspace-rail-touch-target, 44px);
     }
   }
 

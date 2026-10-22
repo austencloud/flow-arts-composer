@@ -7,6 +7,7 @@ import {
   getBestFuseStepColumns,
   getFittedFuseCellSize,
   resolveBalancedFuseWorkspaceSplit,
+  resolveFuseSideCardGrid,
   resolveFuseWingWorkspace,
 } from "#lib/features/fuse/services/fuse-workspace-split.js";
 
@@ -267,5 +268,49 @@ describe("Fuse wide workbench", () => {
         availableHeight: 820,
       }).fits
     ).toBe(false);
+  });
+});
+
+describe("Fuse wide-workbench side card grid", () => {
+  it("seats Start and the mandala in a row over two step columns on a tall 2560x1440 side card", () => {
+    // Stage measured in the wing card at 2560x1440 (inside the grid gutters).
+    const grid = resolveFuseSideCardGrid(518, 1118, 8);
+
+    expect(grid).toMatchObject({ stepColumns: 2, contextPlacement: "row" });
+    // The context column it replaces gave 2 step columns plus Start and the
+    // mandala 4 rows apart, about 172px cells and two empty context cells.
+    expect(grid.cellSize).toBeGreaterThan(215);
+    // Two columns by five rows must fit the stage it was solved for.
+    expect(2 * grid.cellSize + FUSE_LIVE_GRID_GAP).toBeLessThanOrEqual(518);
+    expect(5 * grid.cellSize + 4 * FUSE_LIVE_GRID_GAP).toBeLessThanOrEqual(
+      1118
+    );
+  });
+
+  it("keeps the context column when the stage is wide enough for it", () => {
+    expect(resolveFuseSideCardGrid(820, 420, 8)).toMatchObject({
+      contextPlacement: "column",
+      stepColumns: 4,
+    });
+  });
+
+  it("never uses the row for paths too short to fill two step columns twice", () => {
+    expect(resolveFuseSideCardGrid(400, 1600, 2).contextPlacement).toBe(
+      "column"
+    );
+  });
+
+  it("matches the cell the grid actually renders for its chosen arrangement", () => {
+    const grid = resolveFuseSideCardGrid(780, 1790, 16);
+    const rows =
+      grid.contextPlacement === "row"
+        ? Math.ceil(16 / grid.stepColumns) + 1
+        : Math.max(Math.ceil(16 / grid.stepColumns), 2);
+    const columns =
+      grid.stepColumns + (grid.contextPlacement === "row" ? 0 : 1);
+
+    expect(grid.cellSize).toBe(
+      getFittedFuseCellSize(780, 1790, columns, rows)
+    );
   });
 });

@@ -42,6 +42,7 @@
     renderedArms = [],
     renderedInstanceCount,
     short = false,
+    compact = false,
     onCastChange,
     onChoose,
     onChooseShapeMatrix,
@@ -60,6 +61,9 @@
     renderedArms?: readonly number[];
     renderedInstanceCount: number;
     short?: boolean;
+    /** A phone-width workspace: the roster sits under the stage, so the
+     * card's action menu opens upward instead of into the card body. */
+    compact?: boolean;
     onCastChange: (count: number) => void;
     onChoose: (performerId: string) => void;
     onChooseShapeMatrix: (performerId: string) => void;
@@ -354,6 +358,7 @@
         {linked}
         sourcePerformerLabel={sourceLabel(selectedSlot.id)}
         {short}
+        menuPlacement={compact ? "top" : "bottom"}
         sourceOrigin={selectedSlot.origin}
         previousCount={selectedSlot.previousCount}
         {leftPropType}
@@ -404,9 +409,13 @@
     background: var(--theme-card-bg);
   }
 
+  /* min-width 0: as a grid item the heading would otherwise size its track to
+     the tab strip's full content width and run past the roster's edge once a
+     third performer joins; with it the strip shrinks and scrolls instead. */
   .roster-heading {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
+    min-width: 0;
     border-bottom: 1px solid var(--theme-stroke);
   }
 
@@ -547,89 +556,53 @@
     min-height: 0;
   }
 
+  /* Phone tier: the whole heading is one 56px row. The mode switch leads, the
+     performer tabs and the add button finish the row, and the section name and
+     summary go: the tabs and the card name say "Performer 1" already, and the
+     height they used now belongs to the pictographs and the stage above. The
+     layout owns the cast's floor, so the roster no longer forces one. */
   @container tunnel (max-width: 719px) {
     .performer-roster {
-      min-height: min(26rem, 64dvh);
-      max-height: none;
-    }
-
-    .roster-heading {
-      grid-template-columns: minmax(0, 1fr);
-    }
-
-    .roster-heading-actions {
-      width: 100%;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .workflow-control {
-      flex: 1;
-      width: auto;
-      max-width: 15rem;
-    }
-  }
-
-  @container tunnel (min-width: 600px) and (max-height: 540px) {
-    .performer-roster.short {
       min-height: 0;
+      max-height: none;
+      overflow: visible;
     }
 
     .roster-heading {
-      padding-block: 5px;
+      display: flex;
+      align-items: center;
+      gap: var(--settings-spacing-sm, 8px);
+      min-height: 3.5rem;
+      padding: 6px 8px;
+      border-radius: inherit;
+      border-bottom-right-radius: 0;
+      border-bottom-left-radius: 0;
     }
 
-    .performer-roster.short .roster-identity {
+    .roster-identity {
       display: none;
     }
 
-    .performer-roster.short .roster-heading {
-      display: flex;
-      justify-content: stretch;
-      min-height: var(--min-touch-target, 48px);
-      padding-block: 0;
+    .roster-heading-actions {
+      display: contents;
     }
 
-    .performer-roster.short .roster-heading-actions {
-      flex: 1;
+    .workflow-control {
+      flex: 0 0 auto;
+      width: auto;
+      min-width: 0;
+      max-width: none;
     }
 
-    .performer-roster.short .roster-scroll {
-      overflow: hidden;
-    }
-  }
-
-  @container tunnel (max-width: 430px) {
-    .roster-heading {
-      gap: 6px;
-      padding: 6px 8px;
-    }
-
-    .roster-identity > span,
-    .roster-summary,
     .workflow-control > span {
       display: none;
     }
 
-    .workflow-control {
-      width: 100%;
-      min-width: 9rem;
-      max-width: none;
-    }
-
-    .roster-heading-actions {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr);
-      align-items: stretch;
-    }
-
     .roster-toolbar {
-      width: 100%;
+      flex: 1 1 auto;
+      justify-content: flex-end;
+      min-width: 0;
       margin-left: 0;
-    }
-
-    .performer-switcher {
-      flex: 1;
     }
 
     .performer-switcher button {
@@ -654,5 +627,64 @@
       white-space: nowrap;
       clip-path: inset(50%);
     }
+
+    /* The card's action menu opens upward over the stage; see the card. */
+    .roster-scroll {
+      overflow: visible;
+    }
   }
+
+  @container tunnel (min-width: 600px) and (max-height: 540px) {
+    .performer-roster.short {
+      min-height: 0;
+    }
+
+    .roster-heading {
+      padding-block: 5px;
+    }
+
+    .performer-roster.short .roster-identity {
+      display: none;
+    }
+
+    .performer-roster.short .roster-heading {
+      display: flex;
+      justify-content: stretch;
+      min-height: var(--min-touch-target, 48px);
+      padding-block: 0;
+    }
+
+    /* Three or four performers plus the add button must shrink into the lean
+       column instead of pushing the heading past the roster's edge; the tab
+       strip already scrolls, and the add count is spoken, not shown. */
+    .performer-roster.short .roster-heading-actions {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .performer-roster.short .roster-toolbar {
+      flex: 1 1 auto;
+      justify-content: flex-end;
+      min-width: 0;
+    }
+
+    .performer-roster.short .performer-switcher {
+      flex: 0 1 auto;
+    }
+
+    .performer-roster.short .compact-add-count {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+      clip-path: inset(50%);
+    }
+
+    .performer-roster.short .roster-scroll {
+      overflow: hidden;
+    }
+  }
+
 </style>

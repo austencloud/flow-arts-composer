@@ -38,6 +38,7 @@
   import type { LetterSource } from "#lib/shared/create/domain/spell-models.js";
   import { logConstructImmediateUndo } from "../../construct/services/construct-analytics";
   import { isStartPlacementMorphCapturing } from "../../construct/start-placement-picker/services/start-placement-morph";
+  import { constructPhoneSplit } from "../../construct/services/construct-phone-split";
 
   type CreateModuleState = ReturnType<typeof CreateModuleStateType>;
 
@@ -242,6 +243,17 @@
   // of the height. The grid keeps a smaller share, still showing the steps to
   // pick from. Side by side the usual split already gives it a full column.
   const stepEditorStack = $derived(isStepEditorView && !useSideBySidePanels);
+  // On a phone, Construct's job is picking the next option, so the picker
+  // takes the height its grid can use and the sequence keeps the rest.
+  const constructPhoneSizes = $derived(
+    navigationState.activeTab === "construct"
+      ? constructPhoneSplit({
+          width: layoutWidth,
+          height: layoutHeight,
+          stacked: !useSideBySidePanels,
+        })
+      : null
+  );
   const defaultPanelSizes = $derived(
     useSideBySidePanels
       ? wideSaveSplit
@@ -255,11 +267,11 @@
             ? [2, 3]
             : isAssembleTab
               ? [3, 7]
-              : [5, 4]
+              : (constructPhoneSizes ?? [5, 4])
   );
 
   $effect(() => {
-    const layoutKey = `${useSideBySidePanels}:${isAssembleTab}:${useCompactToolbar}:${wideSaveSplit}:${shortSaveStack}:${stepEditorStack}`;
+    const layoutKey = `${useSideBySidePanels}:${isAssembleTab}:${useCompactToolbar}:${wideSaveSplit}:${shortSaveStack}:${stepEditorStack}:${constructPhoneSizes?.join("/") ?? ""}`;
     if (layoutKey === appliedPanelLayout) return;
 
     appliedPanelLayout = layoutKey;
@@ -595,7 +607,11 @@
   </div>
 {/snippet}
 
-<div bind:this={layoutWrapperRef} class="layout-wrapper">
+<div
+  bind:this={layoutWrapperRef}
+  class="layout-wrapper"
+  class:construct-phone-tier={constructPhoneSizes !== null}
+>
   <PanelGroup
     direction={useSideBySidePanels ? "horizontal" : "vertical"}
     bind:sizes={panelSizes}
@@ -639,6 +655,18 @@
 
     /* View Transitions API - use unique name to avoid duplicates */
     view-transition-name: create-workspace-layout;
+  }
+
+  /* On Construct's phone tier every control around the work (Undo, Redo,
+     Save, the rail, the letter-type tabs and the picker's icon buttons) reads
+     this token, so one value here drops them from 44px to 40px. Austen chose
+     40 on 2026-10-22 so the rows give their height to the pictographs; it
+     stays above the 24px WCAG 2.2 floor and Material's 40dp dense minimum.
+     The app's mobile nav sits outside this wrapper and keeps 44px. */
+  .layout-wrapper.construct-phone-tier {
+    --min-touch-target: 40px;
+    /* The rail's narrow container queries set their own control size. */
+    --workspace-rail-touch-target: 40px;
   }
 
   /* The start placement morph flies one card over a live workspace slide.

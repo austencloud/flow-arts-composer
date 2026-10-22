@@ -27,6 +27,7 @@
     currentStep = 0,
     isPlaying = false,
     decomposed = false,
+    resizing = false,
     onError,
     onToggle,
     onToggleDecomposed,
@@ -37,6 +38,9 @@
     /** Mobile Fuse presents both editable ingredients and their result as one
      * synchronized animation object. */
     decomposed?: boolean;
+    /** True only while Disassemble or Reassemble is in flight: the hero and
+     * its solos travel to their new size instead of jumping. */
+    resizing?: boolean;
     onError?: (error: Error) => void;
     onToggle?: () => void;
     /** Keeps the dedicated Fuse control and the canvas context action on the
@@ -223,7 +227,12 @@
   });
 </script>
 
-<div class="fuse-animation-preview" class:decomposed aria-hidden="true">
+<div
+  class="fuse-animation-preview"
+  class:decomposed
+  class:resizing
+  aria-hidden="true"
+>
   {#if loading}
     <div class="state-message">
       <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
@@ -301,60 +310,107 @@
     min-height: 0;
   }
 
+  /* Every box below is an explicit length derived from the stage's frame
+     track (the `fuse-frame` size container on FusePreviewStage's frame-wrap),
+     so Disassemble and Reassemble resize the result instead of swapping one
+     arrangement for another. The track, not the frame inside it: the frame
+     itself widens during Disassemble, and a hero sized from that moving box
+     shrank past its destination and grew back. The frame's 1px border comes
+     off both axes. */
   .fuse-animation-preview {
-    container: fuse-decomposed-preview / size;
+    --solo-gap: var(--settings-spacing-sm, 8px);
+    --frame-w: calc(100cqw - 2px);
+    --frame-h: calc(100cqh - 2px);
   }
 
   .preview-unit {
-    flex-direction: column;
-  }
-
-  .decomposed .preview-unit {
-    flex: 0 1 auto;
-    width: min(100cqw, calc(100cqh * 2 / 3));
-    height: auto;
-  }
-
-  .decomposed .canvas-wrap {
+    --hero: min(var(--frame-w), var(--frame-h));
     flex: 0 0 auto;
-    height: auto;
-    aspect-ratio: 1;
+    width: var(--hero);
+    height: var(--hero);
   }
 
-  /* Short landscape screens have room beside the result instead of above it.
-     Keep the same synchronized canvases, but arrange Blue, Combined, and Red
-     as one balanced triptych so the animation uses the available width. */
-  @container fuse-decomposed-preview (min-aspect-ratio: 2 / 1) {
+  .canvas-wrap {
+    z-index: 1;
+    flex: 0 0 auto;
+    width: var(--hero);
+    height: var(--hero);
+  }
+
+  .resizing .preview-unit,
+  .resizing .canvas-wrap {
+    transition:
+      width var(--duration-emphasis) var(--ease-out),
+      height var(--duration-emphasis) var(--ease-out);
+  }
+
+  /* Disassembled, the combined result stays the hero in the middle and the
+     Blue and Red solos flank it, each between 0.3 and 0.5 of its size. The
+     hero takes the height when the width allows the smallest solo on each
+     side; otherwise the width decides (1 / 1.6 of it) and the solos keep
+     that smallest share. */
+  .decomposed .preview-unit {
+    --hero: min(
+      var(--frame-h),
+      calc((var(--frame-w) - 2 * var(--solo-gap)) * 0.625)
+    );
+    --solo: max(
+      0px,
+      min(
+        calc(var(--hero) / 2),
+        calc((var(--frame-w) - var(--hero)) / 2 - var(--solo-gap))
+      )
+    );
+    width: calc(var(--hero) + 2 * var(--solo) + 2 * var(--solo-gap));
+    height: var(--hero);
+  }
+
+  .decomposed .preview-unit :global(.split-canvases) {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    height: 100%;
+    max-height: none;
+  }
+
+  .decomposed .preview-unit :global(.split-canvas) {
+    flex: 0 0 auto;
+    width: var(--solo);
+    height: var(--solo);
+  }
+
+  /* A frame taller than it is wide (a phone held upright) cannot afford a
+     solo on each side, so the pair sits beneath the hero instead: Blue under
+     its left half, Red under its right. */
+  @container fuse-frame (max-aspect-ratio: 999 / 1000) {
     .decomposed .preview-unit {
-      flex-direction: row;
-      width: min(100cqw, 320cqh);
-      height: auto;
-      aspect-ratio: 3.2 / 1;
-    }
-
-    .decomposed .preview-unit :global(.split-canvases) {
-      position: absolute;
-      inset: 0;
-      z-index: 0;
-      justify-content: space-between;
-      width: 100%;
-      height: 100%;
-      max-height: none;
-      overflow: visible;
-      opacity: 1;
-    }
-
-    .decomposed .preview-unit :global(.split-canvas) {
-      flex: 0 0 auto;
-      width: auto;
-      height: 100%;
-      aspect-ratio: 1;
+      --hero: min(
+        var(--frame-w),
+        calc((var(--frame-h) - var(--solo-gap)) * 0.75)
+      );
+      --solo: max(
+        0px,
+        min(
+          calc(var(--hero) / 2),
+          calc(var(--frame-h) - var(--hero) - var(--solo-gap)),
+          calc((var(--frame-w) - var(--solo-gap)) / 2)
+        )
+      );
+      width: var(--hero);
+      height: calc(var(--hero) + var(--solo-gap) + var(--solo));
     }
 
     .decomposed .canvas-wrap {
-      z-index: 1;
-      width: auto;
-      height: 100%;
+      align-self: flex-start;
+    }
+
+    .decomposed .preview-unit :global(.split-canvases) {
+      align-items: flex-end;
+      justify-content: center;
+      gap: var(--solo-gap);
     }
   }
 
@@ -375,6 +431,11 @@
   @media (prefers-reduced-motion: reduce) {
     .fa-spin {
       animation: none;
+    }
+
+    .resizing .preview-unit,
+    .resizing .canvas-wrap {
+      transition: none;
     }
   }
 </style>

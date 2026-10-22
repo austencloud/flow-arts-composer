@@ -170,6 +170,98 @@ describe("PictographArrivalStage commit", () => {
   });
 });
 
+describe("PictographArrivalStage screen presentation", () => {
+  const commitRequest = (requestId: number) =>
+    ({
+      intent: "commit",
+      stepIndex: 1,
+      requestId,
+      owner: "stage",
+      phase: "preview",
+    }) as const;
+
+  it("plays over the whole screen, outside the step grid", async () => {
+    const host = document.createElement("div");
+    document.body.appendChild(host);
+    render(
+      PictographArrivalStage,
+      {
+        request: commitRequest(11),
+        sequence,
+        presentation: "screen",
+        getDestinationRect: () => null,
+        onBeginLanding: vi.fn(),
+        onBeginHandoff: vi.fn(),
+        onComplete: vi.fn(),
+      },
+      { container: host }
+    );
+
+    const overlay = page
+      .getByTestId("arrival-pictograph")
+      .element()
+      .closest<HTMLElement>(".arrival-overlay");
+    expect(overlay?.parentElement).toBe(document.body);
+    expect(host.contains(overlay)).toBe(false);
+    expect(getComputedStyle(overlay!).position).toBe("fixed");
+    host.remove();
+  });
+
+  it("lands as soon as the screen is tapped mid-preview", async () => {
+    const onBeginLanding = vi.fn();
+    render(PictographArrivalStage, {
+      request: commitRequest(12),
+      sequence,
+      presentation: "screen",
+      getDestinationRect: () => ({ left: 24, top: 24, width: 64, height: 64 }),
+      onBeginLanding,
+      onBeginHandoff: vi.fn(),
+      onComplete: vi.fn(),
+    });
+
+    const overlay = page
+      .getByTestId("arrival-pictograph")
+      .element()
+      .closest<HTMLElement>(".arrival-overlay")!;
+    await vi.waitFor(() => {
+      expect(overlay.dataset.arrivalPhase).toBe("moving");
+    });
+
+    window.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+
+    expect(onBeginLanding).toHaveBeenCalledWith(12);
+    expect(overlay.dataset.arrivalPhase).toBe("landing");
+    // The card was cut off mid-entrance; it lands visible, not from 0 opacity.
+    const card = overlay.querySelector<HTMLElement>("[data-arrival-card]")!;
+    expect(card.classList.contains("entered")).toBe(true);
+  });
+
+  it("does not let a tap cut the workspace stage short", async () => {
+    const onBeginLanding = vi.fn();
+    render(PictographArrivalStage, {
+      request: commitRequest(13),
+      sequence,
+      getDestinationRect: () => ({ left: 24, top: 24, width: 64, height: 64 }),
+      onBeginLanding,
+      onBeginHandoff: vi.fn(),
+      onComplete: vi.fn(),
+    });
+
+    const overlay = page
+      .getByTestId("arrival-pictograph")
+      .element()
+      .closest<HTMLElement>(".arrival-overlay")!;
+    await vi.waitFor(() => {
+      expect(overlay.dataset.arrivalPhase).toBe("moving");
+    });
+
+    window.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+
+    expect(onBeginLanding).not.toHaveBeenCalled();
+    expect(overlay.dataset.arrivalPhase).toBe("moving");
+  });
+});
+
 describe("PictographArrivalStage grid join", () => {
   it("draws the arriving step and its starting beat on the joined grids", async () => {
     render(PictographArrivalStage, {

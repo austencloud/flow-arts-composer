@@ -451,6 +451,7 @@
         renderedArms={controller.colorStage.map((row) => row.arm)}
         renderedInstanceCount={controller.performerCount}
         short={shortLandscape}
+        {compact}
         onCastChange={changeCastCount}
         onChoose={(performerId) => creator.openPicker(performerId)}
         onChooseShapeMatrix={(performerId) => (shapeMatrixTarget = performerId)}
@@ -502,9 +503,11 @@
               <i class="fas fa-person-circle-plus" aria-hidden="true"></i>
               <span>
                 <strong>{t("create_ui_previewing_the_completed_cards")}</strong>
-                {t(
-                  "create_review_finish_every_empty_performer_card_before_opening_the_viewer"
-                )}
+                <span class="guidance-detail">
+                  {t(
+                    "create_review_finish_every_empty_performer_card_before_opening_the_viewer"
+                  )}
+                </span>
               </span>
             </div>
           {/if}
@@ -522,15 +525,31 @@
 
       <footer class="stage-controls">
         <div class="result-meta">
-          <strong>{creator.presentation.bpm} BPM</strong>
-          <span>
-            · {t("tunnel_loop_steps", { count: controller.loopSteps })}
+          <span class="result-tempo">
+            <strong>{creator.presentation.bpm} BPM</strong>
+            <span class="result-loop">
+              · {t("tunnel_loop_steps", { count: controller.loopSteps })}
+            </span>
+          </span>
+          <!-- A phone drops the stage heading, so the cast count moves down
+               here beside the tempo instead of disappearing with it. -->
+          <span class="result-cast">
+            {t("tunnel_preview_counts", {
+              people: controller.performerCount,
+              props: controller.propCount,
+            })}
           </span>
         </div>
         <div class="result-actions">
-          <PanelButton variant="secondary" onclick={openSettings}>
+          <PanelButton
+            variant="secondary"
+            onclick={openSettings}
+            ariaLabel={t("create_review_stage_settings")}
+          >
             <i class="fas fa-sliders" aria-hidden="true"></i>
-            {t("create_review_stage_settings")}
+            <span class="settings-label"
+              >{t("create_review_stage_settings")}</span
+            >
           </PanelButton>
           <PanelButton
             variant="primary"
@@ -590,7 +609,7 @@
     ariaLabel={t("create_review_stage_settings")}
     onClose={creator.closeWorkspacePanel}
   >
-    {@render settingsPanel(compact, compact ? "bottom" : "sidebar")}
+    {@render settingsPanel(compact, "sidebar")}
   </CreatePanelDrawer>
 
   <CreatePanelDrawer
@@ -650,6 +669,9 @@
     background: var(--theme-page-bg, transparent);
   }
 
+  /* The scrolling stack is the fallback for slots too short to fit both jobs.
+     The stage leads here as in every stacked mode, so a phone that has to
+     scroll still opens on the tunnel rather than on a tall column of chrome. */
   .tunnel-workspace {
     --tunnel-gap: var(--settings-spacing-md, 12px);
     display: grid;
@@ -657,8 +679,8 @@
     grid-template-rows: repeat(3, max-content);
     grid-template-areas:
       "header"
-      "sources"
-      "preview";
+      "preview"
+      "sources";
     align-content: start;
     gap: var(--tunnel-gap);
     width: 100%;
@@ -785,10 +807,13 @@
     font-weight: 750;
   }
 
+  /* In the scrolling stack the cast needs a floor of its own, or the card's
+     grid measures a zero-height box and draws nothing. Every fitted mode
+     resets it, because there the row allocation owns the height. */
   .source-column {
     grid-area: sources;
     min-width: 0;
-    min-height: 0;
+    min-height: 24rem;
     overflow: hidden;
   }
 
@@ -813,6 +838,20 @@
   .result-actions {
     display: flex;
     align-items: center;
+  }
+
+  /* Pinned to their tracks: when the phone tier hides the heading, the frame
+     must still take the flexible row rather than slide up into the first. */
+  .preview-heading {
+    grid-row: 1;
+  }
+
+  .frame-wrap {
+    grid-row: 2;
+  }
+
+  .stage-controls {
+    grid-row: 3;
   }
 
   .preview-heading {
@@ -921,14 +960,28 @@
 
   .result-meta {
     display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 5rem;
+  }
+
+  .result-tempo {
+    display: inline-flex;
     align-items: baseline;
     gap: 5px;
-    min-width: 5rem;
+    white-space: nowrap;
   }
 
   .result-meta strong {
     color: var(--theme-text);
     font-size: var(--font-size-min, 14px);
+  }
+
+  /* Only the phone shows this line; everywhere else the stage heading already
+     carries the cast count. */
+  .result-cast {
+    display: none;
+    white-space: nowrap;
   }
 
   .result-actions {
@@ -1047,16 +1100,19 @@
     border-radius: 0;
   }
 
-  /* Portrait tablets keep the complete two-part story on one screen. Giving
-     each half the full container width protects the choreography instead of
-     crushing it into the 349px desktop rail seen at 820px. */
+  /* Portrait slots, phone or tablet, keep the complete two-part story on one
+     screen, each half at the full container width instead of the 349px desktop
+     rail seen at 820px. The stage leads: it is the artifact, it is what a
+     bottom sheet should leave visible while settings change it, and the cast
+     controls land under the thumbs. The phone tier below gives the cast a
+     floor so its tabs and card chrome never collapse into the stage. */
   .tunnel-workspace.portrait-workspace {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: max-content minmax(0, 0.95fr) minmax(0, 1.05fr);
+    grid-template-rows: max-content minmax(0, 1.05fr) minmax(0, 0.95fr);
     grid-template-areas:
       "header"
-      "sources"
-      "preview";
+      "preview"
+      "sources";
     align-content: stretch;
     overflow: hidden;
   }
@@ -1078,50 +1134,120 @@
     overflow: hidden;
   }
 
-  .split-workspace .preview-stage {
+  .split-workspace .preview-stage,
+  .split-workspace .source-column {
     min-height: 0;
   }
 
+  /* Phone tier. Every pixel of height is spent on the stage and the cast card:
+     the header becomes one 48px row, the stage heading goes (the frame names
+     itself and its cast count moves into the controls row), and the controls
+     stay on one row. */
   @container tunnel (max-width: 719px) {
     .tunnel-workspace {
-      grid-template-rows: max-content minmax(26rem, auto) minmax(24rem, auto);
-      padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
+      --tunnel-gap: var(--settings-spacing-sm, 8px);
+      padding: var(--settings-spacing-sm, 8px);
+      padding-bottom: calc(
+        var(--settings-spacing-sm, 8px) + env(safe-area-inset-bottom)
+      );
     }
 
-    .tunnel-workspace .source-column {
-      min-height: 26rem;
+    /* The fitted stack: the stage takes what the cast leaves. The cast floor
+       holds its two heading rows, the card header and a one-row grid; on a
+       taller phone both rows grow together. */
+    .tunnel-workspace.portrait-workspace {
+      grid-template-rows: max-content minmax(9rem, 1fr) minmax(14rem, 1fr);
+    }
+
+    /* The scrolling stack keeps honest floors for each half instead. */
+    .tunnel-workspace:not(.portrait-workspace) {
+      grid-template-rows: max-content minmax(22rem, auto) minmax(24rem, auto);
+    }
+
+    .tunnel-workspace:not(.portrait-workspace) .preview-stage {
+      min-height: 22rem;
+    }
+
+    /* The card's action menu opens upward over the stage here, so nothing
+       between the card and the workspace may clip it. */
+    .source-column {
       overflow: visible;
     }
 
-    .tunnel-workspace .preview-stage {
-      min-height: 24rem;
-    }
-
     .workspace-header {
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
+      gap: var(--settings-spacing-sm, 8px);
+      min-height: var(--min-touch-target, 48px);
+      padding: 3px 6px 3px 12px;
     }
 
     .workspace-actions {
       margin-left: auto;
     }
+
+    .title-block p {
+      display: none;
+    }
+
+    .preview-heading {
+      display: none;
+    }
+
+    .result-cast {
+      display: inline;
+    }
+
+    /* One line over a small frame: the title says what the preview shows, and
+       the disabled Open viewer button below already says what is missing. */
+    .preview-guidance {
+      top: var(--settings-spacing-sm, 8px);
+      left: var(--settings-spacing-sm, 8px);
+      max-width: calc(100% - 2 * var(--settings-spacing-sm, 8px));
+      padding: 6px 10px;
+    }
+
+    .preview-guidance .guidance-detail {
+      display: none;
+    }
+
+    .stage-controls {
+      gap: var(--settings-spacing-sm, 8px);
+      min-height: 3.5rem;
+      padding: 6px 8px;
+    }
+
+    /* The meta yields and truncates; the two buttons keep their size and
+       their single line. */
+    .result-meta {
+      flex: 1 1 auto;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .result-tempo,
+    .result-cast {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .result-actions {
+      flex: 0 0 auto;
+    }
+
+    .result-actions :global(.panel-btn) {
+      white-space: nowrap;
+    }
   }
 
   @container tunnel (max-width: 460px) {
-    .tunnel-workspace {
-      --tunnel-gap: var(--settings-spacing-sm, 8px);
-      padding: var(--settings-spacing-sm, 8px);
-    }
-
-    .workspace-header {
-      padding: 7px 8px;
-    }
-
     .workspace-actions {
       gap: 4px;
     }
 
-    .title-block p,
-    .library-label {
+    .library-label,
+    .settings-label,
+    .result-loop {
       display: none;
     }
 
@@ -1130,7 +1256,8 @@
       height: 32px;
     }
 
-    .library-trigger :global(.panel-btn) {
+    .library-trigger :global(.panel-btn),
+    .result-actions :global(.panel-btn:first-child) {
       width: var(--min-touch-target, 48px);
       min-width: var(--min-touch-target, 48px);
       padding: 0;
@@ -1149,28 +1276,6 @@
       padding-inline: 3px;
       border: 1px solid var(--theme-panel-bg);
       font-size: 10px;
-    }
-
-    .stage-controls {
-      align-items: stretch;
-      flex-direction: column;
-    }
-
-    .preview-heading {
-      align-items: flex-start;
-    }
-
-    .preview-summary p {
-      display: none;
-    }
-
-    .result-actions,
-    .result-actions :global(.panel-btn) {
-      width: 100%;
-    }
-
-    .result-actions :global(.panel-btn) {
-      flex: 1;
     }
   }
 
@@ -1277,45 +1382,7 @@
     padding-inline: 10px;
   }
 
-  @container tunnel (min-width: 1680px) and (min-height: 900px) {
-    .tunnel-workspace {
-      --font-size-min: 16px;
-      --font-size-compact: 14px;
-      --font-size-sm: 17px;
-      --min-touch-target: 48px;
-      --tunnel-gap: var(--settings-spacing-lg, 18px);
-      padding: 24px;
-    }
-
-    .workspace-header {
-      min-height: 5.25rem;
-      padding-inline: 18px;
-    }
-  }
-
-  @container tunnel (min-width: 2600px) and (min-height: 1400px) {
-    .tunnel-workspace {
-      --font-size-min: 18px;
-      --font-size-compact: 16px;
-      --font-size-sm: 19px;
-      --min-touch-target: 64px;
-      --tunnel-gap: 24px;
-      padding: 32px;
-    }
-
-    .workspace-header {
-      min-height: 6.5rem;
-      padding-inline: 24px;
-    }
-
-    h2 {
-      font-size: 1.65rem;
-    }
-
-    .preview-heading,
-    .stage-controls {
-      min-height: 5.5rem;
-      padding-inline: 1.25rem;
-    }
-  }
+  /* Wide canvases recompose through the split's column allocation above. The
+     type roles, touch targets and header stay at their logical size; a 4K
+     panel is not a reason to magnify a button. */
 </style>

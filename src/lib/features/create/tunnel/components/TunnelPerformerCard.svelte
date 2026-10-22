@@ -24,6 +24,7 @@
     label,
     linked = false,
     short = false,
+    menuPlacement = "bottom",
     generatedInstanceCount = 0,
     sourcePerformerLabel = null,
     leftPropType,
@@ -55,6 +56,10 @@
     label: string;
     linked?: boolean;
     short?: boolean;
+    /** Where the More menu opens. A phone keeps the card under the stage, so
+     * the menu opens upward over the stage instead of into a short card body
+     * that would clip it. */
+    menuPlacement?: "top" | "bottom";
     generatedInstanceCount?: number;
     sourcePerformerLabel?: string | null;
     leftPropType?: PropType;
@@ -296,7 +301,7 @@
       {/if}
       <OverflowMenu
         items={compactActions}
-        placement="bottom"
+        placement={menuPlacement}
         ariaLabel={t("tunnel_more_label", { name: label })}
         triggerPresentation="labelled"
       >
@@ -365,6 +370,16 @@
               : "Pick from your library or the community."}
           </span>
         </div>
+        <!-- The message names the library, so the library is one tap away
+             here too. Generate keeps its place in the header, and the menu
+             keeps the rest; this only lifts the browse path out of it for the
+             moment the card is empty. -->
+        {#if !linked}
+          <PanelButton variant="secondary" onclick={onChoose}>
+            <i class="fas fa-folder-open" aria-hidden="true"></i>
+            {t("tunnel_browse_sequences")}
+          </PanelButton>
+        {/if}
       </div>
     {/if}
   </div>
@@ -592,7 +607,7 @@
     line-height: 1.4;
   }
 
-  @container (max-width: 22rem) {
+  @container (max-width: 28rem) {
     .source-heading {
       align-items: flex-start;
     }
@@ -652,7 +667,43 @@
     }
   }
 
-  @container (max-width: 22rem) {
+  /* Phone tier of the Tunnel workspace: the card sits under the stage at the
+     bottom of the screen with a short body, so the More menu opens upward
+     over the stage. The card and the roster stop clipping so it can, and the
+     empty state spends its small height on the words and the button. */
+  @container tunnel (max-width: 719px) {
+    .source-card {
+      overflow: visible;
+    }
+
+    .workbench-stage {
+      border-radius: inherit;
+      border-top-left-radius: 0;
+      border-top-right-radius: 0;
+    }
+
+    .compact-source-actions :global(.overflow-dropdown) {
+      min-width: min(17rem, calc(100cqw - 1rem));
+      max-height: min(22rem, 60dvh);
+    }
+
+    .source-empty {
+      gap: var(--settings-spacing-sm, 8px);
+      min-height: 0;
+      padding: var(--settings-spacing-sm, 8px) var(--settings-spacing-md, 14px);
+      overflow: hidden;
+    }
+
+    .source-empty > i {
+      display: none;
+    }
+
+    .source-empty > div {
+      gap: 2px;
+    }
+  }
+
+  @container (max-width: 28rem) {
     .identity-row h3 {
       white-space: nowrap;
     }
@@ -664,7 +715,9 @@
       display: none;
     }
 
-    .source-meta span:not(:first-child) {
+    /* Keep the step count and the one fact that explains the card (Linked to,
+       Generated, Yours); drop the stage count that the preview already shows. */
+    .source-meta span:nth-child(n + 3) {
       display: none;
     }
 

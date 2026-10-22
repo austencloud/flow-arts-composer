@@ -10,12 +10,25 @@ export interface TunnelWorkspaceSize {
 }
 
 /**
+ * The shortest slot that can hold the stage and the cast on one screen without
+ * scrolling. A phone-width slot runs compact chrome (no stage heading, a
+ * two-row cast heading, icon buttons), so it fits sooner than a tablet-width
+ * slot, whose full headings and larger cards need the extra room. 375x667
+ * with the shell's bottom bar leaves 622px, which fits; the same phone with a
+ * browser toolbar open, or a 1440x900 desktop at 200% zoom, does not.
+ */
+export function fittedStackMinHeight(width: number): number {
+  return width < 720 ? 560 : 700;
+}
+
+/**
  * Resolve the Tunnel workspace from the room the Create slot actually owns.
  *
  * The thresholds describe capabilities, not devices:
  * - a short landscape slot can sustain two lean columns but not desktop chrome;
- * - a portrait tablet can sustain both jobs only when they use the full width;
  * - the ordinary split waits until both columns remain useful;
+ * - a portrait slot, phone or tablet, keeps both jobs on one screen when it is
+ *   tall enough for the stage and the cast at their compact sizes;
  * - everything else scrolls as one honest column.
  *
  * Keeping this decision in one owner prevents markup and CSS from landing on
@@ -34,7 +47,7 @@ export function resolveTunnelWorkspaceMode({
     return "short-landscape";
   }
   if (width >= 1000) return "split";
-  if (width >= 720 && height >= 700) return "portrait";
+  if (height >= fittedStackMinHeight(width)) return "portrait";
   return "stack";
 }
 

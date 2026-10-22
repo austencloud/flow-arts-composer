@@ -215,6 +215,70 @@ export function getBestFuseStepColumns(
   return best;
 }
 
+export type FuseContextPlacement = "column" | "row";
+
+export interface FuseSideCardGrid {
+  stepColumns: number;
+  /**
+   * Where Start and the mandala sit. A column beside the steps suits a short,
+   * wide card; a row above two step columns suits a tall side card, where a
+   * context column would strand empty cells between Start and the mandala.
+   */
+  contextPlacement: FuseContextPlacement;
+  cellSize: number;
+}
+
+/**
+ * Fits a full source card that sizes itself from its own stage (the wide
+ * workbench's side cards). The ordinary context column is scored against a
+ * context row over exactly two step columns, where Start and the mandala fill
+ * that row with nothing left over, and the larger cell wins.
+ */
+export function resolveFuseSideCardGrid(
+  stageWidth: number,
+  stageHeight: number,
+  stepCount: number,
+  gap = FUSE_LIVE_GRID_GAP
+): FuseSideCardGrid {
+  const columnSteps = getBestFuseStepColumns(
+    stageWidth,
+    stageHeight,
+    stepCount,
+    0
+  );
+  const columnCell = getFittedFuseCellSize(
+    stageWidth,
+    stageHeight,
+    columnSteps + 1,
+    Math.max(Math.ceil(stepCount / columnSteps), 2),
+    gap
+  );
+
+  if (stepCount < 4) {
+    return {
+      stepColumns: columnSteps,
+      contextPlacement: "column",
+      cellSize: columnCell,
+    };
+  }
+
+  const rowCell = getFittedFuseCellSize(
+    stageWidth,
+    stageHeight,
+    2,
+    Math.ceil(stepCount / 2) + 1,
+    gap
+  );
+
+  return rowCell > columnCell + 0.5
+    ? { stepColumns: 2, contextPlacement: "row", cellSize: rowCell }
+    : {
+        stepColumns: columnSteps,
+        contextPlacement: "column",
+        cellSize: columnCell,
+      };
+}
+
 export interface FuseRecipeColumnFitInput {
   /** Recipe column's narrowest usable width. */
   recipeMinWidth: number;

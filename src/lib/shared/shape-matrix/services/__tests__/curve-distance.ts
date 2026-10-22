@@ -12,8 +12,12 @@ const curveSampleCache = new Map<string, Pt[] | null>();
 /** Whole-curve tolerance used by the slower regression oracle. */
 export const CURVE_MATCH_EPS = 12.0;
 
-function sampleClosedCurve(path: SVGPathData): Pt[] | null {
-  if (curveSampleCache.has(path.d)) return curveSampleCache.get(path.d)!;
+function sampleClosedCurve(
+  path: SVGPathData,
+  sampleCount: number
+): Pt[] | null {
+  const cacheKey = `${sampleCount}|${path.d}`;
+  if (curveSampleCache.has(cacheKey)) return curveSampleCache.get(cacheKey)!;
 
   const commander = new SVGPathCommander(path.d);
   const length = commander.getTotalLength();
@@ -23,11 +27,11 @@ function sampleClosedCurve(path: SVGPathData): Pt[] | null {
   if (Math.hypot(first.x - last.x, first.y - last.y) > CURVE_MATCH_EPS) {
     return null;
   }
-  const points = Array.from({ length: CURVE_SAMPLE_COUNT }, (_, index) =>
-    commander.getPointAtLength((length * index) / CURVE_SAMPLE_COUNT)
+  const points = Array.from({ length: sampleCount }, (_, index) =>
+    commander.getPointAtLength((length * index) / sampleCount)
   );
   const closedPoints = [...points, points[0]!];
-  curveSampleCache.set(path.d, closedPoints);
+  curveSampleCache.set(cacheKey, closedPoints);
   return closedPoints;
 }
 
@@ -74,8 +78,17 @@ function sampledCurveDistance(a: Pt[], b: Pt[]): number {
   );
 }
 
-/** Complete-curve oracle for tests; too expensive for pointer-time solving. */
-export function curveDistance(a: SVGPathData[], b: SVGPathData[]): number {
+/**
+ * Complete-curve oracle for tests; too expensive for pointer-time solving.
+ * 64 samples suit the short loci the focused suites check. A long, high-turn
+ * flower needs more: its chords cut corners by up to 18 units at 64, which
+ * reads as a mismatch that a finer sample shows is not there.
+ */
+export function curveDistance(
+  a: SVGPathData[],
+  b: SVGPathData[],
+  sampleCount = CURVE_SAMPLE_COUNT
+): number {
   if (!a.length || a.length !== b.length) return Infinity;
   const left = [...a].sort((x, y) => x.tipIndex - y.tipIndex);
   const right = [...b].sort((x, y) => x.tipIndex - y.tipIndex);
@@ -83,8 +96,8 @@ export function curveDistance(a: SVGPathData[], b: SVGPathData[]): number {
 
   for (let index = 0; index < left.length; index++) {
     if (left[index]!.tipIndex !== right[index]!.tipIndex) return Infinity;
-    const leftPoints = sampleClosedCurve(left[index]!);
-    const rightPoints = sampleClosedCurve(right[index]!);
+    const leftPoints = sampleClosedCurve(left[index]!, sampleCount);
+    const rightPoints = sampleClosedCurve(right[index]!, sampleCount);
     if (!leftPoints || !rightPoints) return Infinity;
     distance = Math.max(
       distance,

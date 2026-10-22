@@ -1,5 +1,8 @@
 <script lang="ts">
   import { Popover } from "bits-ui";
+  import { onDestroy } from "svelte";
+  import { motionDuration } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import BpmChips from "#lib/shared/animation-engine/components/controls/BpmChips.svelte";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import ActionButton from "#lib/shared/components/selection/ActionButton.svelte";
@@ -19,6 +22,7 @@
     onBuildPath,
     onEditPairing,
     compact = false,
+    sideControls = false,
     isSaving = false,
   }: {
     onOpenViewer: () => Promise<void>;
@@ -29,6 +33,9 @@
     /** Opens the Pairing editor from the derived follower's badge. */
     onEditPairing?: () => void;
     compact?: boolean;
+    /** Short landscape: the compact controls sit beside the result instead of
+     * below it, so the result is not squeezed into a strip. */
+    sideControls?: boolean;
     isSaving?: boolean;
   } = $props();
   const { state: fuseState } = getFuseContext();
@@ -36,9 +43,23 @@
   let decompositionOverride = $state<boolean | null>(null);
   const previewDecomposed = $derived(decompositionOverride ?? compact);
 
+  // Disassemble and Reassemble resize the frame and the hero through CSS
+  // transitions, but only for the length of that request. Left on, the same
+  // transitions would trail every window resize and every drag of the desktop
+  // seam behind the pointer.
+  let assemblyMoving = $state(false);
+  let assemblyTimer: ReturnType<typeof setTimeout> | undefined;
+
   function toggleDecomposition(): void {
+    clearTimeout(assemblyTimer);
+    assemblyMoving = true;
     decompositionOverride = !previewDecomposed;
+    assemblyTimer = setTimeout(() => {
+      assemblyMoving = false;
+    }, motionDuration(DURATION.emphasis));
   }
+
+  onDestroy(() => clearTimeout(assemblyTimer));
 
   const leftName = $derived.by(() =>
     fuseState.left.sequence
@@ -63,6 +84,9 @@
 <section
   class="preview-stage"
   class:compact
+  class:side-controls={compact && sideControls}
+  class:decomposed={previewDecomposed}
+  class:assembly-moving={assemblyMoving}
   data-fuse-layout-region="preview"
   aria-labelledby="fuse-preview-heading"
 >
@@ -127,6 +151,7 @@
           currentStep={fuseState.currentStep}
           isPlaying={fuseState.clockRunning}
           decomposed={previewDecomposed}
+          resizing={assemblyMoving}
           onToggle={() => fuseState.toggleClock()}
           onToggleDecomposed={toggleDecomposition}
           onError={(failure) => fuseState.reportPreviewFailure(failure)}
@@ -335,6 +360,32 @@
     min-height: 0;
   }
 
+  /* A short landscape slot has width to spare and no height. Stacking the two
+     control rows under the result left it a strip about 116px tall at 960x412;
+     beside it, the result keeps the full height under the source toolbar. */
+  .preview-stage.side-controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(240px, 32cqw, 340px);
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas:
+      "toolbar toolbar"
+      "frame controls";
+  }
+
+  .side-controls .mobile-source-toolbar {
+    grid-area: toolbar;
+  }
+
+  .side-controls .frame-wrap {
+    grid-area: frame;
+    min-height: 0;
+  }
+
+  .side-controls :global(.mobile-controls) {
+    grid-area: controls;
+    align-content: center;
+  }
+
   .mobile-source-toolbar {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -418,7 +469,10 @@
     font-variant-numeric: tabular-nums;
   }
 
+  /* The frame track is the size container FuseAnimationPreview measures, in
+     every layout: it holds still while the frame inside it changes shape. */
   .frame-wrap {
+    container: fuse-frame / size;
     position: relative;
     display: flex;
     flex: 1 1 300px;
@@ -440,29 +494,11 @@
     background: color-mix(in srgb, var(--theme-card-bg, #161821) 76%, black);
   }
 
+  /* Wide tiers recompose Fuse; they do not enlarge its type or controls
+     (4k-native-layout). Only the stage's breathing room grows here. */
   @container fuse (min-width: 1680px) and (min-height: 900px) {
     .preview-stage {
       padding: 20px;
-    }
-
-    .preview-heading h3 {
-      font-size: 1.25rem;
-    }
-
-    .preview-meta {
-      font-size: 14px;
-    }
-
-    .frame-wrap {
-      justify-content: center;
-    }
-
-    .preview-frame {
-      flex: 0 1 auto;
-      width: min(100%, calc(100cqh - 190px));
-      max-width: 100%;
-      aspect-ratio: 1;
-      align-self: center;
     }
   }
 
@@ -472,31 +508,8 @@
       padding: 28px;
     }
 
-    .preview-heading h3 {
-      font-size: 1.5rem;
-    }
-
-    .preview-meta {
-      font-size: var(--font-size-compact, 16px);
-    }
-
     .stage-controls {
       gap: var(--settings-spacing-md, 14px);
-    }
-
-    .viewer-slot :global(.action-button),
-    .result-actions :global(.panel-btn) {
-      min-height: var(--min-touch-target, 64px);
-      font-size: var(--font-size-min, 18px);
-    }
-
-    .tempo-value {
-      font-size: 1.35rem;
-    }
-
-    .tempo-unit,
-    .tempo-trigger i {
-      font-size: var(--font-size-compact, 16px);
     }
   }
 
@@ -760,21 +773,33 @@
       min-height: 0;
     }
 
-    /* The animation renders square. Rather than fill the wide frame and
-       letterbox onto black canvas bars, hold the frame square and center it
-       in the track — the leftover becomes the stage's tinted background as
+    /* The assembled animation renders square. Rather than fill the wide frame
+       and letterbox onto black canvas bars, hold the frame square and center
+       it in the track — the leftover becomes the stage's tinted background as
        symmetric breathing room, with the full-width control bar anchoring
-       the bottom. */
+       the bottom. Disassembled, the frame widens to seat a solo on each side
+       of the result. Both are explicit lengths of the frame track, so the
+       frame travels between them rather than jumping. */
     .preview-stage:not(.compact) .frame-wrap {
+      align-items: center;
       justify-content: center;
     }
 
     .preview-stage:not(.compact) .preview-frame {
-      flex: 0 1 auto;
-      aspect-ratio: 1;
-      height: 100%;
-      width: auto;
-      max-width: 100%;
+      flex: 0 0 auto;
+      width: min(100cqw, 100cqh);
+      height: min(100cqw, 100cqh);
+    }
+
+    .preview-stage.assembly-moving:not(.compact) .preview-frame {
+      transition:
+        width var(--duration-emphasis) var(--ease-out),
+        height var(--duration-emphasis) var(--ease-out);
+    }
+
+    .preview-stage.decomposed:not(.compact) .preview-frame {
+      width: 100cqw;
+      height: 100cqh;
     }
   }
 
@@ -787,6 +812,10 @@
   @media (prefers-reduced-motion: reduce) {
     .preview-flash {
       animation: none;
+    }
+
+    .preview-stage.assembly-moving:not(.compact) .preview-frame {
+      transition: none;
     }
 
     .tempo-trigger {

@@ -43,8 +43,10 @@
   import { formatDurationCompact } from "../../../domain/models/duration-pattern-data";
   import type { ArrivalRect } from "../domain/pictograph-arrival-geometry";
   import { getArrivalPresentedStepCount } from "../domain/pictograph-arrival-layout";
+  import { getPictographArrivalPresentation } from "../domain/pictograph-arrival-presentation";
   import PictographArrivalStage from "./PictographArrivalStage.svelte";
   import WorkspaceGrid from "./WorkspaceGrid.svelte";
+  import { isConstructPhoneTier } from "#lib/features/create/construct/services/construct-phone-split.js";
   import type { GridJoin } from "@tka/tka-types";
   import { gridJoinCellResolver } from "@tka/render-core";
   import {
@@ -269,6 +271,19 @@
   const rootFontRamp = createRootFontRamp();
   const rampedMaxCellSize = $derived(rootFontRamp.scaled(BASE_MAX_CELL_SIZE));
 
+  // On Construct's phone tier the workspace is a short band above the option
+  // grid. Its usual column table ignores height, so a second row could need
+  // less than the 40px floor and slide under the rail; there the grid picks
+  // whichever column count shows every step largest instead. The timeline
+  // rows take their beats per row from the same column count.
+  const fitsConstructPhoneBand = $derived(
+    activeMode === "construct" &&
+      isConstructPhoneTier({
+        width: containerWidth,
+        stacked: !isSideBySideLayout,
+      })
+  );
+
   function calculateResponsiveGridLayout(stepCount: number) {
     const isNarrowAssemble =
       activeMode === "assemble" && containerWidth > 0 && containerWidth < 650;
@@ -299,7 +314,7 @@
         preferWidthSizingOnNarrow:
           isNarrowAssemble || preferWidthSizingOnNarrow,
         allowFewStepOverflowOnNarrow,
-        fitAllSteps,
+        fitAllSteps: fitAllSteps || fitsConstructPhoneBand,
         widthPaddingRatio: sizingProfile === "preview" ? 1 : undefined,
         heightPaddingRatio: sizingProfile === "preview" ? 1 : undefined,
       }
@@ -870,6 +885,9 @@
           request={activeStageRequest}
           sequence={activeStageSequence}
           {gridJoin}
+          presentation={getPictographArrivalPresentation({
+            constructPhoneTier: fitsConstructPhoneBand,
+          })}
           getDestinationRect={getArrivalDestinationRect}
           onBeginLanding={handleBeginArrivalLanding}
           onBeginHandoff={displayState.beginArrivalHandoff}

@@ -324,9 +324,5 @@
     .title-block {
       flex-basis: 20rem;
     }
-
-    h2 {
-      font-size: 1.65rem;
-    }
   }
 </style>

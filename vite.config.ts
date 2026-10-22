@@ -844,6 +844,16 @@ const classifyChunk = (id: string): string | undefined => {
       // based on dynamic import boundaries). Never lands in vendor.
       return undefined;
     }
+    // MainApplication sets the prop hand colors at startup. This scene-3d
+    // module has no imports so the shell can do that without Three; inside
+    // `vendor-three` it made every app start download the renderer.
+    if (
+      normalizedId.endsWith(
+        "/@austencloud/scene-3d/src/lib/components/props/prop-hand-palette.ts"
+      )
+    ) {
+      return "scene-prop-hand-palette";
+    }
     // Three.js ecosystem → its own `vendor-three` chunk, OFF the boot
     // path. Returning undefined here is NOT enough: Rollup then merges
     // three into the universal runtime chunk. A named chunk is required.
@@ -900,6 +910,27 @@ const classifyChunk = (id: string): string | undefined => {
     ) {
       return "vendor-media-export";
     }
+    // The Post editor's package. Its editor UI, renderer and encoder import
+    // mediabunny, so in `vendor` they put the media export chunk on every
+    // page's startup. Shared chips use its Icon and the strings are tiny, so
+    // those stay in `vendor`; the project model in `core` is plain data code
+    // that many lazy features read, so it gets its own small chunk.
+    const videoEditor = normalizedId.match(
+      /node_modules\/@austencloud\/video-editor\/dist\/(.*)$/
+    );
+    if (videoEditor) {
+      const file = videoEditor[1];
+      if (
+        file.startsWith("icons/") ||
+        file.startsWith("strings/") ||
+        file === "ui/kit/Icon.svelte" ||
+        file === "ui/kit/icons.js"
+      ) {
+        return "vendor";
+      }
+      if (file.startsWith("core/")) return "vendor-video-core";
+      return "vendor-video-editor";
+    }
     if (
       id.includes("node_modules/onnxruntime-web/") ||
       id.includes("node_modules/@ricky0123/vad-web/")
@@ -914,6 +945,61 @@ const classifyChunk = (id: string): string | undefined => {
   }
   return undefined;
 };
+
+// ONE GROUP PER CHUNK, LEAVES FIRST.
+//
+// A Rolldown group captures its modules' dependencies too
+// (includeDependenciesRecursively). With every name in one group, a module
+// went to whichever name reached it first, not the name classifyChunk gave it.
+// Measured 2026-10-22 on the production build of ac74d2c241: the
+// `scene-stage-coordinate-frame` boundary took in three, backgrounds, scene-3d
+// and Vite's preload helper (1.44 MB), `vendor` took in the Svelte runtime,
+// Capacitor core, mediabunny and the video editor (2.2 MB), and because every
+// module with a dynamic import loads the preload helper, the root layout's
+// static graph grew to 4.4 MB. verify:boot-chunks looks for chunks by name, so
+// it passed. Ranking the names gives each module to its own chunk: a group with
+// a higher priority captures first, and Rolldown removes its modules from the
+// groups below. Leaves rank first so their dependents cannot absorb them.
+// See docs/performance/2026-10-22-boot-measurements.md.
+const CHUNK_PRIORITY = [
+  "vendor-sveltekit",
+  "vendor-svelte",
+  "vendor-capacitor-core",
+  "vendor-posthog",
+  "scene-prop-hand-palette",
+  "vendor-three",
+  "vendor-backgrounds",
+  "vendor-media-export",
+  "vendor-audio-inference",
+  "vendor-firebase",
+  "vendor-dexie",
+  "vendor-pixi",
+  "vendor-fabric",
+  "vendor-pdf",
+  "scene-stage-coordinate-frame",
+  "vendor",
+  // Below `vendor` on purpose. The video editor depends on zod, Font Awesome
+  // and other packages that startup code imports too; ranked above `vendor`
+  // it would capture them and startup would load the editor. Rolldown cannot
+  // exclude a group's dependencies while SvelteKit keeps strict entry
+  // signatures, so the order does it: `vendor` takes them first.
+  "vendor-video-core",
+  "vendor-video-editor",
+] as const;
+
+function classifiedChunkGroups() {
+  return CHUNK_PRIORITY.map((chunk, index) => ({
+    name: chunk,
+    priority: CHUNK_PRIORITY.length - index,
+    test: (id: string) => {
+      const name = classifyChunk(id);
+      if (name !== undefined && !CHUNK_PRIORITY.includes(name as never)) {
+        throw new Error(`classifyChunk returned unranked chunk "${name}"`);
+      }
+      return name === chunk;
+    },
+  }));
+}
 
 // NO SMALL-CHUNK MERGE UNDER ROLLDOWN.
 //
@@ -1417,7 +1503,7 @@ export default defineConfig(({ command, mode }) => ({
         // One group whose name() is classifyChunk is exactly what Rolldown
         // turns a deprecated `manualChunks` function into.
         codeSplitting: {
-          groups: [{ name: (id) => classifyChunk(id) ?? null }],
+          groups: classifiedChunkGroups(),
         },
         // classifyChunk names node_modules chunks and the measured scene-only
         // leaves above. Other src/lib modules use the bundler's automatic

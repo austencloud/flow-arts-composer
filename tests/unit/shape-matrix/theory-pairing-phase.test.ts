@@ -165,6 +165,9 @@ describe("a Theory pairing's right hand", () => {
       ...buildTheoryAxis(makeSpinRatio(4, 1)),
       ...buildTheoryAxis(makeSpinRatio(0, 1)),
       ...buildTheoryAxis(makeSpinRatio(4, 3)),
+      // Austen's three-against-four report (2026-09-15) names both orders,
+      // so the 4:3 axis rides beside the 3:4 one.
+      ...buildTheoryAxis(makeSpinRatio(3, 4)),
     ];
 
     for (const flower of flowers) {

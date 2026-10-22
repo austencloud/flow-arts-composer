@@ -31,8 +31,9 @@
   import { createCircularFuseSoloSequence } from "../services/fuse-solo-sequence";
   import {
     FUSE_LIVE_GRID_GAP,
-    getBestFuseStepColumns,
     getFittedFuseCellSize,
+    resolveFuseSideCardGrid,
+    type FuseContextPlacement,
   } from "../services/fuse-workspace-split";
 
   let {
@@ -175,16 +176,32 @@
   const fitH = $derived(
     hostsGrid ? Math.max(0, stageH - 2 * LIVE_GRID_GUTTER) : stageH
   );
+  // A full card with no seam-aware count is a wide-workbench side card: it is
+  // tall, and may seat Start and the mandala in a row above two step columns
+  // rather than strand empty cells in a context column between them.
+  const sideCardGrid = $derived(
+    full && stepCols === null
+      ? resolveFuseSideCardGrid(fitW, fitH, stepCount)
+      : null
+  );
+  const contextPlacement = $derived<FuseContextPlacement>(
+    sideCardGrid?.contextPlacement ?? "column"
+  );
+  const contextRow = $derived(full && contextPlacement === "row");
   const stepColumns = $derived(
     full
-      ? (stepCols ?? getBestFuseStepColumns(fitW, fitH, stepCount, 0))
+      ? (stepCols ?? sideCardGrid?.stepColumns ?? 1)
       : bestStageCols(fitW, fitH, stepCount)
   );
   const liveGridColumns = $derived(Math.max(1, stepColumns ?? 1));
   const liveGridRows = $derived(
-    Math.max(1, Math.ceil(stepCount / liveGridColumns), full ? 2 : 1)
+    contextRow
+      ? Math.ceil(stepCount / liveGridColumns) + 1
+      : Math.max(1, Math.ceil(stepCount / liveGridColumns), full ? 2 : 1)
   );
-  const liveGridTotalColumns = $derived(liveGridColumns + (full ? 1 : 0));
+  const liveGridTotalColumns = $derived(
+    liveGridColumns + (full && !contextRow ? 1 : 0)
+  );
   const liveCellSize = $derived(
     Math.max(
       1,
@@ -472,6 +489,7 @@
           cellSize={liveCellSize}
           includeStart={full}
           showMandala={full}
+          {contextPlacement}
           highlightedStepIndex={highlightIndex}
           leftPropType={settings.leftPropType}
           rightPropType={settings.rightPropType}
