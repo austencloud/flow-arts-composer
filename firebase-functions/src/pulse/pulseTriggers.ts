@@ -22,8 +22,10 @@ import * as admin from "firebase-admin";
 import {
   notifyAdmins,
   notifyAdminsScanDigest,
+  notifyAdminsVisitDigest,
   isAdminData,
 } from "./notifyAdmins";
+import { summarizeVisit } from "./visitMessages";
 import type { AuthIdentity } from "./pulseIdentity";
 import {
   isGuestSession,
@@ -49,6 +51,10 @@ function toFinite(v: unknown): number | null {
 function strOrNull(v: unknown): string | null {
   return typeof v === "string" && v.length > 0 ? v : null;
 }
+
+/** Coalescing window for site-visit digests — same rhythm as QR scans. */
+const VISIT_DIGEST_WINDOW_MINUTES = 10;
+const VISIT_DIGEST_WINDOW_MS = VISIT_DIGEST_WINDOW_MINUTES * 60 * 1000;
 
 /** Minimum gap between "user is back" pings for the same user. */
 const RETURN_THROTTLE_MS = 6 * 60 * 60 * 1000;
@@ -378,6 +384,44 @@ export const pulseSoftwareSubmission = onDocumentCreated(
         toolName: name,
         toolUrl: url,
       },
+    });
+  }
+);
+
+/**
+ * A visitor without an account opened the site. The /api/visit endpoint
+ * already dropped bots, local and preview copies, Austen's own devices, and
+ * signed-in members (who get "is back" pings instead); this only words it.
+ */
+export const pulseSiteVisit = onDocumentCreated(
+  "siteVisits/{visitId}",
+  async (event) => {
+    const snap = event.data;
+    if (!snap) return;
+    const v = snap.data();
+    const visitNumber = toFinite(v.visitNumber);
+
+    const visit = summarizeVisit(
+      {
+        city: strOrNull(v.city),
+        region: strOrNull(v.region),
+        country: strOrNull(v.country),
+        referrerHost: strOrNull(v.referrerHost),
+        utmSource: strOrNull(v.utmSource),
+        utmMedium: strOrNull(v.utmMedium),
+        utmCampaign: strOrNull(v.utmCampaign),
+        userAgent: strOrNull(v.userAgent) ?? "",
+        landingPath: strOrNull(v.landingPath) ?? "/",
+        visitNumber: visitNumber && visitNumber > 0 ? visitNumber : 1,
+      },
+      strOrNull(v.postHogSessionId)
+    );
+
+    await notifyAdminsVisitDigest({
+      visit,
+      windowMs: VISIT_DIGEST_WINDOW_MS,
+      windowMinutes: VISIT_DIGEST_WINDOW_MINUTES,
+      now: Date.now(),
     });
   }
 );

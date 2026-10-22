@@ -72,6 +72,9 @@ declare global {
       RL_CARD_SCAN?: {
         limit(o: { key: string }): Promise<{ success: boolean }>;
       };
+      RL_SITE_VISIT?: {
+        limit(o: { key: string }): Promise<{ success: boolean }>;
+      };
     }
   }
 

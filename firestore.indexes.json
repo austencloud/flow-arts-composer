@@ -1109,6 +1109,12 @@
       "indexes": []
     },
     {
+      "collectionGroup": "siteVisits",
+      "fieldPath": "expiresAt",
+      "ttl": true,
+      "indexes": []
+    },
+    {
       "collectionGroup": "shortcodes",
       "fieldPath": "sequenceData",
       "indexes": []

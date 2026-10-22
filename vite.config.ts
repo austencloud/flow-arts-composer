@@ -1154,6 +1154,9 @@ const svelteKitOptions: Parameters<typeof sveltekit>[0] = {
       // browser jump inside the full-viewport workspace before Atlas can
       // restore the requested view.
       if (path === "/atlas") return;
+      // The props page reads its hash to pick a prop tab (#staves, #poi), so
+      // those are also URL state with no matching element.
+      if (routePathFor(path) === "/notation/props") return;
       throw new Error(`Missing id "#${id}" on ${path}`);
     },
   },

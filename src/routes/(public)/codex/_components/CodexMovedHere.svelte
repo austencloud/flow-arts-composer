@@ -8,6 +8,7 @@
   import { onMount } from "svelte";
   import { page } from "$app/state";
   import {
+    isLocalizedPublicPath,
     localizePath,
     splitLocalePath,
   } from "#lib/shared/i18n/seo-locales.js";
@@ -15,8 +16,12 @@
 
   let { to }: { to: string } = $props();
 
+  // The print sheets have no translated copies, so /de/guide/codex/print
+  // lands on the English /codex/print instead of a page that does not exist.
   const target = $derived(
-    localizePath(to, splitLocalePath(page.url.pathname).locale)
+    isLocalizedPublicPath(to)
+      ? localizePath(to, splitLocalePath(page.url.pathname).locale)
+      : to
   );
 
   onMount(() => {

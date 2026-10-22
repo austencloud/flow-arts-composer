@@ -23,6 +23,7 @@ const EVENT_ALERT_KEYS = [
   "adminUserReturned",
   "adminQrScan",
   "adminContentCreated",
+  "adminSiteVisit",
 ] as const satisfies readonly (keyof NotificationPreferences)[];
 
 /**
@@ -142,6 +143,7 @@ export async function enableAll(userId: string): Promise<void> {
     adminUserReturned: true,
     adminQrScan: true,
     adminContentCreated: true,
+    adminSiteVisit: true,
   };
   await savePreferences(userId, allEnabled);
 }
@@ -171,6 +173,7 @@ export async function disableAll(userId: string): Promise<void> {
     adminUserReturned: false,
     adminQrScan: false,
     adminContentCreated: false,
+    adminSiteVisit: false,
   };
   await savePreferences(userId, allDisabled);
 }

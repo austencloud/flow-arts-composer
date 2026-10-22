@@ -428,6 +428,22 @@
   }
 
   /**
+   * Tell Austen a visitor without an account arrived (visit-report.ts). Idle
+   * time so it never competes with the first paint; once per page load.
+   */
+  function scheduleVisitReport(): void {
+    const run = () =>
+      void import("#lib/shared/analytics/services/visit-report.js")
+        .then(({ reportVisit }) => reportVisit())
+        .catch(() => {});
+    if (typeof requestIdleCallback !== "undefined") {
+      requestIdleCallback(run, { timeout: 3000 });
+    } else {
+      setTimeout(run, 0);
+    }
+  }
+
+  /**
    * Landing mode init: minimal work, no Firebase, no DI, no auth.
    * Just CSS + viewport height + i18n.
    */
@@ -460,6 +476,8 @@
             )
             .catch((error) => console.warn("Landing analytics failed:", error));
         });
+
+    if (!isDevelopmentHarness) scheduleVisitReport();
 
     // i18n is lightweight - safe for landing
     const { initI18n } = await import("#lib/shared/i18n/i18n.svelte.js");
@@ -721,10 +739,19 @@
         console.warn("Arrow placement data initialization failed:", error)
       );
 
+    scheduleVisitReport();
+
     bootProfiler.mark("auth-init");
-    const { authState } = await imports.authState;
+    const { authState, awaitAuthSettled } = await imports.authState;
     await authState.initialize();
     bootProfiler.end("auth-init");
+    // An admin's browser never reports its own visits, even signed out later.
+    void awaitAuthSettled()
+      .then(() => import("#lib/shared/analytics/services/visit-report.js"))
+      .then(({ rememberAdminBrowser }) =>
+        rememberAdminBrowser(authState.isAdmin)
+      )
+      .catch(() => {});
     (window as any).__tkaBootMilestone?.("session");
 
     bootProfiler.end("total-init");

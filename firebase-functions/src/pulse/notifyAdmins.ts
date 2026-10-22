@@ -14,6 +14,11 @@
 
 import * as admin from "firebase-admin";
 import { singleScanMessage, digestMessage } from "./scanDigestMessages";
+import {
+  singleVisitMessage,
+  visitDigestMessage,
+  type VisitSummary,
+} from "./visitMessages";
 import { isAgentUserId } from "./pulseIdentity";
 
 const db = admin.firestore();
@@ -40,6 +45,7 @@ const PULSE_PREF_KEYS: Record<string, string> = {
   "admin-qr-scan": "adminQrScan",
   "admin-content-created": "adminContentCreated",
   "admin-software-submission": "adminSoftwareSubmission",
+  "admin-site-visit": "adminSiteVisit",
 };
 
 export interface AdminNotificationInput {
@@ -226,6 +232,83 @@ export async function notifyAdminsScanDigest(
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
           // Re-surface the single running digest as unread; no push (updates
           // don't trigger onNewNotification), so still just one "red".
+          read: false,
+        });
+      });
+    })
+  );
+}
+
+export interface VisitDigestInput {
+  visit: VisitSummary;
+  /** Coalescing window length in ms and its minute label. */
+  windowMs: number;
+  windowMinutes: number;
+  /** Injected Date.now() (deterministic in tests). */
+  now: number;
+}
+
+/** How many visitors a digest doc keeps for the inbox click-through. */
+const DIGEST_KEPT_VISITS = 20;
+
+/**
+ * Coalesce site visits into one rolling digest per admin — the same
+ * create-pushes, update-is-silent topology as notifyAdminsScanDigest. The
+ * first visitor in a window buzzes with full detail; later ones in the same
+ * window rewrite the message into a per-visitor list without another push.
+ */
+export async function notifyAdminsVisitDigest(
+  input: VisitDigestInput
+): Promise<void> {
+  const admins = await loadAdmins();
+  const bucket = Math.floor(input.now / input.windowMs);
+  const docId = `site-visit-digest-${bucket}`;
+
+  await Promise.all(
+    [...admins.keys()].map(async (adminId) => {
+      const preferencesDoc = await db
+        .doc(`users/${adminId}/settings/notificationPreferences`)
+        .get();
+      const prefs = preferencesDoc.data()?.notificationPreferences as
+        | Record<string, boolean>
+        | undefined;
+      if (prefs && prefs.adminSiteVisit === false) return;
+
+      const ref = db
+        .collection("users")
+        .doc(adminId)
+        .collection("notifications")
+        .doc(docId);
+
+      await db.runTransaction(async (tx) => {
+        const cur = await tx.get(ref);
+        if (!cur.exists) {
+          tx.set(ref, {
+            userId: adminId,
+            type: "admin-site-visit",
+            message: singleVisitMessage(input.visit),
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            read: false,
+            visitCount: 1,
+            visits: [input.visit],
+            postHogSessionId: input.visit.postHogSessionId,
+          });
+          return;
+        }
+
+        const d = cur.data() ?? {};
+        const visitCount =
+          (typeof d.visitCount === "number" ? d.visitCount : 1) + 1;
+        const kept: VisitSummary[] = Array.isArray(d.visits) ? d.visits : [];
+        const visits = [...kept, input.visit].slice(0, DIGEST_KEPT_VISITS);
+
+        tx.update(ref, {
+          message: visitDigestMessage(visits, visitCount, input.windowMinutes),
+          visitCount,
+          visits,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          // Re-surface as unread; updates never trigger onNewNotification, so
+          // the burst stays one buzz.
           read: false,
         });
       });

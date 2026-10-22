@@ -192,6 +192,12 @@ export const RATE_LIMITS = {
     windowMs: 60 * 1000,
     binding: "RL_SOFTWARE_SUBMISSION",
   },
+  /** Anonymous site-visit reports: one per visit, so a low per-IP ceiling. */
+  SITE_VISIT: {
+    maxRequests: 10,
+    windowMs: 60 * 1000,
+    binding: "RL_SITE_VISIT",
+  },
   /** Agent feedback ingest: 20 requests per 15 minutes */
   FEEDBACK_INGEST: {
     maxRequests: 20,

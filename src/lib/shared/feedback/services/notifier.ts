@@ -101,7 +101,8 @@ export function mapNotificationDocument(
   if (
     type === "admin-user-returned" ||
     type === "admin-qr-scan" ||
-    type === "admin-content-created"
+    type === "admin-content-created" ||
+    type === "admin-site-visit"
   ) {
     return {
       ...baseNotification,
@@ -119,6 +120,7 @@ export function mapNotificationDocument(
       collectionId: data["collectionId"] as string | undefined,
       word: data["word"] as string | undefined,
       collectionName: data["collectionName"] as string | undefined,
+      visitCount: data["visitCount"] as number | undefined,
     };
   }
   if (type === "admin-parity-audit") {

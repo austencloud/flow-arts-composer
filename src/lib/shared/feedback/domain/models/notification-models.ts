@@ -28,6 +28,7 @@ export const NOTIFICATION_TYPES = [
   "admin-user-returned", // A known user opened the app again
   "admin-qr-scan", // Someone scanned a shared QR code
   "admin-content-created", // A user saved a sequence or created a collection
+  "admin-site-visit", // A visitor without an account opened the site
   "admin-parity-audit", // The scheduled data-integrity audit found drift or failed
   // System notifications
   "system-announcement", // Important system announcements
@@ -134,7 +135,11 @@ export interface AdminNotification extends BaseNotification {
  * by event source so they are all optional.
  */
 export interface PulseNotification extends BaseNotification {
-  type: "admin-user-returned" | "admin-qr-scan" | "admin-content-created";
+  type:
+    | "admin-user-returned"
+    | "admin-qr-scan"
+    | "admin-content-created"
+    | "admin-site-visit";
   returnedUserId?: string;
   /** Exact PostHog browser session that produced a returning-user alert. */
   postHogSessionId?: string;
@@ -153,6 +158,8 @@ export interface PulseNotification extends BaseNotification {
   collectionId?: string;
   word?: string;
   collectionName?: string;
+  /** How many visitors this rolling site-visit digest has coalesced. */
+  visitCount?: number;
 }
 
 export interface ParityAuditViolation {
@@ -252,6 +259,7 @@ export interface NotificationPreferences {
   adminUserReturned: boolean;
   adminQrScan: boolean;
   adminContentCreated: boolean;
+  adminSiteVisit: boolean;
 
   // System notifications (cannot be disabled)
   // systemAnnouncement is always enabled
@@ -281,6 +289,7 @@ export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   adminUserReturned: true,
   adminQrScan: true,
   adminContentCreated: true,
+  adminSiteVisit: true,
 };
 
 export function getPreferenceKeyForType(
@@ -299,6 +308,7 @@ export function getPreferenceKeyForType(
     "admin-user-returned": "adminUserReturned",
     "admin-qr-scan": "adminQrScan",
     "admin-content-created": "adminContentCreated",
+    "admin-site-visit": "adminSiteVisit",
   };
 
   return typeToKey[type] || null;
@@ -387,6 +397,12 @@ export const NOTIFICATION_TYPE_CONFIG: Record<
     color: "#f59e0b",
     icon: "fa-wand-magic-sparkles",
     actionLabel: "View Activity",
+  },
+  "admin-site-visit": {
+    label: "Site Visitor",
+    color: "#14b8a6",
+    icon: "fa-earth-americas",
+    actionLabel: "Watch Visit",
   },
   "admin-parity-audit": {
     label: "Parity Audit",

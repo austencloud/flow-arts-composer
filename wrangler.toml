@@ -89,3 +89,11 @@ namespace_id = "1007"
   [ratelimits.simple]
   limit = 4
   period = 60
+
+[[ratelimits]]
+name = "RL_SITE_VISIT"
+namespace_id = "1008"
+
+  [ratelimits.simple]
+  limit = 10
+  period = 60

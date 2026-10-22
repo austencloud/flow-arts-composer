@@ -234,6 +234,12 @@
       label: "Content created",
       description: "A user saves a sequence or creates a collection",
     },
+    {
+      key: "adminSiteVisit",
+      label: "Site visitors",
+      description:
+        "Someone without an account opens the site: where from and how they found it",
+    },
   ];
 
   async function onToggle(key: keyof NotificationPreferences): Promise<void> {

@@ -613,11 +613,20 @@ export async function getCurrentPostHogSessionId(): Promise<string | null> {
 export async function getSessionReplayUrl(): Promise<string | null> {
   const sessionId = await getCurrentPostHogSessionId();
   if (!sessionId) return null;
+  return postHogReplayUrl(sessionId);
+}
 
-  const env = publicEnv;
-  if (!env.PUBLIC_POSTHOG_PROJECT_ID) return null;
-
-  return `https://us.posthog.com/project/${env.PUBLIC_POSTHOG_PROJECT_ID}/replay/${sessionId}`;
+/**
+ * PostHog's replay page for one session, or its recent-replays list when no
+ * session is named. Null when the project id is not configured.
+ */
+export function postHogReplayUrl(sessionId: string | null): string | null {
+  const projectId = publicEnv.PUBLIC_POSTHOG_PROJECT_ID;
+  if (!projectId) return null;
+  const base = `https://us.posthog.com/project/${projectId}/replay`;
+  return sessionId
+    ? `${base}/${encodeURIComponent(sessionId)}`
+    : `${base}/recent`;
 }
 
 /**

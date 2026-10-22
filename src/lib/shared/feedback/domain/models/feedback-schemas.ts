@@ -338,6 +338,7 @@ export const NotificationPreferencesDocSchema = z
         adminUserReturned: z.boolean().optional(),
         adminQrScan: z.boolean().optional(),
         adminContentCreated: z.boolean().optional(),
+        adminSiteVisit: z.boolean().optional(),
       })
       .passthrough()
       .optional(),

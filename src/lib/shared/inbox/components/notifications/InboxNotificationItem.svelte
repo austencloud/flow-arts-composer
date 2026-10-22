@@ -84,6 +84,8 @@
         return "fa-qrcode";
       case "admin-content-created":
         return "fa-wand-magic-sparkles";
+      case "admin-site-visit":
+        return "fa-earth-americas";
       case "admin-parity-audit":
         return "fa-shield-halved";
       case "system-announcement":
@@ -448,6 +450,21 @@
           );
         }
         break;
+
+      case "admin-site-visit": {
+        // Anonymous visitors have no user record, so there is no in-app
+        // Activity view to open. PostHog recorded the visit itself: one
+        // visitor opens their replay, a burst opens the recent-replays list.
+        const single = (notification.visitCount ?? 1) <= 1;
+        const sessionId = single
+          ? (notification.postHogSessionId ?? null)
+          : null;
+        const { postHogReplayUrl } =
+          await import("#lib/shared/analytics/services/posthog.js");
+        const url = postHogReplayUrl(sessionId);
+        if (url) window.open(url, "_blank", "noopener,noreferrer");
+        break;
+      }
 
       case "admin-parity-audit":
         inboxState.close();
