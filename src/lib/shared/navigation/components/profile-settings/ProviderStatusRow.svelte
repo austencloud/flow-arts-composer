@@ -88,7 +88,9 @@
 <style>
   .provider-row {
     display: grid;
-    grid-template-columns: 2.5em minmax(0, 1fr) 9.25em;
+    /* The action track grows to fit provider-named labels such as
+       "Connect Instagram" instead of letting them spill past the row. */
+    grid-template-columns: 2.5em minmax(0, 1fr) minmax(9.25em, max-content);
     align-items: center;
     gap: 0.75em;
     min-height: 4.25em;

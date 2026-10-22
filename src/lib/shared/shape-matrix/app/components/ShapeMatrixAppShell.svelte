@@ -54,18 +54,6 @@
     groups: [{ selector: "[data-focus-layout]", datasetKey: "focusLayout" }],
     getDuration: () => motionDuration(DURATION.emphasis),
   });
-  let previousFocusMode: boolean | undefined;
-  $effect.pre(() => {
-    const next = focusMode;
-    if (previousFocusMode === undefined) {
-      previousFocusMode = next;
-      return;
-    }
-    if (previousFocusMode === next) return;
-    previousFocusMode = next;
-    untrack(() => focusMotion.capture());
-    void tick().then(() => focusMotion.play());
-  });
   $effect(() => () => focusMotion.cancel());
   let turnPopover: ShapeMatrixTurnPopover | undefined;
 
@@ -162,6 +150,21 @@
     appState.compact &&
       (appState.propPickerOpen || animationState.activeSection !== null)
   );
+  // This pre-effect must stay below focusMode. Mounted during a client-side
+  // navigation, Svelte runs it during component setup, so reading focusMode
+  // above its declaration throws "Cannot access before initialization".
+  let previousFocusMode: boolean | undefined;
+  $effect.pre(() => {
+    const next = focusMode;
+    if (previousFocusMode === undefined) {
+      previousFocusMode = next;
+      return;
+    }
+    if (previousFocusMode === next) return;
+    previousFocusMode = next;
+    untrack(() => focusMotion.capture());
+    void tick().then(() => focusMotion.play());
+  });
   setAnimationScopeContext(animationState.scope);
   setAnimationVisibilityContext(animationState.scope.visibility);
 

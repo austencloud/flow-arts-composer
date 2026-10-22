@@ -1,5 +1,6 @@
 import { downloadBlob } from "#lib/shared/foundation/services/file-downloader.js";
 import { createRenderCanvas } from "./create-render-canvas";
+import { describeImageSource } from "../utils/describe-image-source";
 import type { RenderCanvas } from "./types";
 
 interface ImageFormatOptions {
@@ -17,7 +18,8 @@ interface OptimizationSettings {
 export async function svgStringToImage(svgString: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.onerror = () => reject(new Error("Failed to load SVG as image"));
+    img.onerror = () =>
+      reject(new Error(`Failed to load SVG as image: ${describeImageSource(svgString)}`));
     const blob = new Blob([svgString], { type: "image/svg+xml" });
     const url = URL.createObjectURL(blob);
     img.src = url;
@@ -55,7 +57,8 @@ export async function svgToImage(svgString: string, size: number): Promise<HTMLI
     const img = new Image();
     img.width = size;
     img.height = size;
-    img.onerror = () => reject(new Error("Failed to load SVG as image"));
+    img.onerror = () =>
+      reject(new Error(`Failed to load SVG as image: ${describeImageSource(svgString)}`));
     const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     img.src = url;

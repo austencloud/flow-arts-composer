@@ -6,6 +6,7 @@ import {
 } from "#lib/shared/animation-engine/services/svg-generator.js";
 import { hashString } from "#lib/shared/foundation/services/content-hasher.js";
 import type { GridJoin } from "@tka/tka-types";
+import { describeImageSource } from "#lib/shared/render/utils/describe-image-source.js";
 import {
   animationGridJoinKey,
   buildHandGridCopySvg,
@@ -165,8 +166,10 @@ async function svgToImage(
       // Clean up handlers
       img.onload = null;
       img.onerror = null;
-      console.error("[Canvas2DImageLoader] Image load error");
-      reject(new Error("Failed to load SVG image"));
+      // The caller decides whether this is recoverable; no console.error here.
+      reject(
+        new Error(`Failed to load SVG image: ${describeImageSource(svgString)}`)
+      );
     };
 
     img.src = dataUrl;

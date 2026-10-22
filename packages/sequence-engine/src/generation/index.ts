@@ -170,6 +170,10 @@ export {
   type BuildResult,
   type LoopOptions,
 } from "./builder/SequenceBuilder.js";
+export {
+  GenerationInfeasibleError,
+  type InfeasibleRelaxation,
+} from "./builder/generation-infeasible-error.js";
 
 // Minimum length calculator — UI length-chip feasibility gate
 export {

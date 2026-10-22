@@ -25,6 +25,7 @@ canvas rendering. This ensures the entire glyph fades as a unified unit.
 </script>
 
 <script lang="ts">
+  import { measureSvgBox } from "#lib/shared/render/utils/measure-svg-box.js";
   import TKAGlyph, {
     getLetterDimensions,
     preloadLetterDimensions,
@@ -222,7 +223,13 @@ canvas rendering. This ensures the entire glyph fades as a unified unit.
         return;
       }
 
-      const bbox = (glyphGroup as SVGGraphicsElement).getBBox();
+      // Renderers without SVG layout (headless crawlers) have no getBBox, and
+      // Firefox throws inside display:none subtrees. Skip this frame quietly;
+      // the canvas simply has no glyph texture, as before the letter loads.
+      const bbox = measureSvgBox(glyphGroup);
+      if (!bbox) {
+        return;
+      }
 
       // TKAGlyph has transform="translate(50, 800)", so bbox is relative to that transform
       // We need to get the actual position in the 952px viewBox coordinate system

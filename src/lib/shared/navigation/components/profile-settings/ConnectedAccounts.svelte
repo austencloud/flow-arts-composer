@@ -309,8 +309,7 @@
         accent={config.color}
         status={managing ? undefined : t("train_filter_available")}
         statusTone="neutral"
-        actionLabel={managing ? t("module_connect") : undefined}
-        actionAriaLabel={managing
+        actionLabel={managing
           ? t("nav_provider_connect", { provider: config.name })
           : undefined}
         busyLabel={t("connect_connecting")}

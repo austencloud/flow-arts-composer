@@ -71,6 +71,10 @@ import {
   type LayerPattern,
 } from "../../core/orientation/layer-signature.js";
 import { BeamSearch, type BeamSearchResult } from "./BeamSearch.js";
+import {
+  GenerationInfeasibleError,
+  type InfeasibleRelaxation,
+} from "./generation-infeasible-error.js";
 import { Type6Constraint } from "../constraints/domain/Type6Constraint.js";
 import { PlacementContinuityConstraint } from "../constraints/domain/PlacementContinuityConstraint.js";
 import { ContinuityConstraint } from "../constraints/style/continuity-constraint.js";
@@ -693,6 +697,9 @@ export class SequenceBuilder {
         if (!validationFailure) return result;
         lastFailure = validationFailure;
       } catch (error) {
+        // The placement graph already proved these options cannot close, so
+        // another seed would fail the same way.
+        if (error instanceof GenerationInfeasibleError) throw error;
         lastFailure = error instanceof Error ? error.message : String(error);
       }
     }
@@ -1211,7 +1218,7 @@ export class SequenceBuilder {
     const allVariationsForReach = this.variationProvider.getAllVariations(
       options.gridMode
     );
-    let reachabilityPool = this.resolveAllowStaticSteps(options)
+    let staticPool = this.resolveAllowStaticSteps(options)
       ? allVariationsForReach
       : allVariationsForReach.filter(
           (p) => !this.letterClassifier.isType6(p.letter)
@@ -1221,10 +1228,15 @@ export class SequenceBuilder {
       options.mustNotContainLetters.length > 0
     ) {
       const excluded = new Set(options.mustNotContainLetters);
-      reachabilityPool = reachabilityPool.filter(
-        (p) => !excluded.has(p.letter)
-      );
+      staticPool = staticPool.filter((p) => !excluded.has(p.letter));
     }
+    // Type6Constraint refuses every static beat at level 1 whatever its
+    // turns, so a path through one is not a path. Leaving them in let the
+    // graph promise closures the beam could never take.
+    const staticsBannedByLevel = (options.level ?? 1) === 1;
+    const reachabilityPool = staticsBannedByLevel
+      ? staticPool.filter((p) => !this.letterClassifier.isType6(p.letter))
+      : staticPool;
     const hardConstraintFiltered = this.filterByHardConstraints(
       reachabilityPool,
       constraintSet.hard
@@ -1252,6 +1264,32 @@ export class SequenceBuilder {
             }))
             .sort(() => Math.random() - 0.5)
         : undefined;
+
+    // Commit only to starts the graph can close from. When none can, the
+    // request itself is impossible: say which setting stands in the way
+    // instead of letting the LOOP reroll fail the same search forty times.
+    if (lengthLoopTargets && lengthLoopTargets.length > 0) {
+      const closable = lengthLoopTargets.filter((target) =>
+        this.canReachAnyTarget(
+          length,
+          [target],
+          hardConstraintFiltered,
+          searchOptions.blockedStartPlacements
+        )
+      );
+      if (closable.length === 0) {
+        throw this.infeasibleLoopSeedError(
+          options.loop!.type,
+          length,
+          lengthLoopTargets,
+          reachabilityPool,
+          staticsBannedByLevel ? staticPool : undefined,
+          constraintSet.hard,
+          searchOptions.blockedStartPlacements
+        );
+      }
+      lengthLoopTargets.splice(0, lengthLoopTargets.length, ...closable);
+    }
 
     // For freeform generation, a random start is part of the search space,
     // not a commitment. Skewed in particular has starts whose outgoing
@@ -1309,9 +1347,10 @@ export class SequenceBuilder {
         );
 
         if (!reachability.feasible) {
-          throw new Error(
+          throw new GenerationInfeasibleError(
             `No valid ${length}-step path exists: step ${reachability.emptyStepIndex! + 1} ` +
-              `has no reachable placements given the current constraints`
+              `has no reachable placements given the current constraints`,
+            length
           );
         }
       }
@@ -1434,9 +1473,10 @@ export class SequenceBuilder {
           );
 
           if (!reachabilityRetry.feasible) {
-            throw new Error(
+            throw new GenerationInfeasibleError(
               `No valid ${length}-step path exists: step ${reachabilityRetry.emptyStepIndex! + 1} ` +
-                `has no reachable placements given the current constraints`
+                `has no reachable placements given the current constraints`,
+              length
             );
           }
         }
@@ -2105,6 +2145,83 @@ export class SequenceBuilder {
    * Returns only variations that pass all hard constraint checks — the set of
    * transitions the beam search could actually use.
    */
+  private canReachAnyTarget(
+    length: number,
+    targets: ReadonlyArray<{ requiredEnds: Set<string> }>,
+    variations: PictographData[],
+    blockedStartPlacements: Set<string> | undefined
+  ): boolean {
+    const analyzer = new PlacementReachabilityAnalyzer();
+    return targets.some(
+      (target) =>
+        analyzer.analyze(
+          length,
+          target.requiredEnds,
+          variations,
+          blockedStartPlacements
+        ).feasible
+    );
+  }
+
+  /**
+   * Build the error for a LOOP seed no allowed start can close, naming what
+   * would open a path: each hard style constraint that blocks it on its own,
+   * and level 1's static ban when a static beat would close it. Domain rules (placement continuity,
+   * floats, prop type) are not the user's to drop, so they are not offered.
+   */
+  private infeasibleLoopSeedError(
+    loopType: LOOPType,
+    length: number,
+    targets: ReadonlyArray<{ requiredEnds: Set<string> }>,
+    pool: PictographData[],
+    poolWithStatics: PictographData[] | undefined,
+    hard: IConstraint[],
+    blockedStartPlacements: Set<string> | undefined
+  ): GenerationInfeasibleError {
+    const reaches = (
+      variations: PictographData[],
+      constraints: IConstraint[],
+      seedLength: number
+    ) =>
+      this.canReachAnyTarget(
+        seedLength,
+        targets,
+        this.filterByHardConstraints(variations, constraints),
+        blockedStartPlacements
+      );
+
+    const domainTypes = new Set<ConstraintType>([
+      ConstraintType.TYPE_6,
+      ConstraintType.PLACEMENT_CONTINUITY,
+      ConstraintType.FLOAT,
+      ConstraintType.PROP_TYPE,
+    ]);
+    const relaxations: InfeasibleRelaxation[] = [];
+    const styleTypes = new Set(
+      hard
+        .filter(
+          (c) =>
+            !domainTypes.has(c.type) &&
+            typeof (c as IVariationConstraint).couldSatisfy === "function"
+        )
+        .map((c) => c.type)
+    );
+    for (const type of styleTypes) {
+      if (reaches(pool, hard.filter((c) => c.type !== type), length)) {
+        relaxations.push(type);
+      }
+    }
+    if (poolWithStatics && reaches(poolWithStatics, hard, length)) {
+      relaxations.push("staticSteps");
+    }
+    return new GenerationInfeasibleError(
+      `No ${length}-step seed can close a ${loopType} LOOP from any allowed ` +
+        `start under the current constraints`,
+      length,
+      relaxations
+    );
+  }
+
   private filterByHardConstraints(
     variations: PictographData[],
     hardConstraints: IConstraint[]

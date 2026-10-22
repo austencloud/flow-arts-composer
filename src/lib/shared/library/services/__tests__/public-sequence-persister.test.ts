@@ -50,6 +50,9 @@ import {
   softDeleteSequenceEverywhere,
   readExistingPublicOwnedFields,
   refreshPublicSequenceOwnerProfile,
+  publishPublicSequence,
+  PublicDuplicateError,
+  PublicSequenceOwnedElsewhereError,
 } from "../public-sequence-persister";
 import { computeStoredProjectionDigest } from "../public-sequence-projection";
 
@@ -652,5 +655,86 @@ describe("softDeleteSequenceEverywhere", () => {
     expect(result).toEqual({ status: "owner-missing" });
     expect(mocks.updateDoc).not.toHaveBeenCalled();
     expect(mocks.deleteDoc).not.toHaveBeenCalled();
+  });
+});
+
+describe("publishPublicSequence: another owner's gallery sequence", () => {
+  // A library copy of someone else's gallery sequence keeps the original id.
+  // Its mirror, claim and retained revision all belong to the publisher, and
+  // the rules deny this caller's commit. Both 2026-10 reports had this shape
+  // (seq_1791923102683_sysj46042, 3b7882d6-...): the transaction attempted
+  // only the mirror set and the owner stamp, then failed as a permission error.
+  const hash = "a".repeat(64);
+  const normalized = {
+    ownerData: { id: "seq-1" },
+    contentHash: hash,
+    contentHashVersion: 3,
+  } as never;
+
+  function primeForeignPublication() {
+    primeDocs({
+      "publicSequences/seq-1": {
+        exists: true,
+        data: { ownerId: "publisher", word: "IΨ-IΨ-", contentHash: hash },
+      },
+      [`publicSequenceHashes/${publicSequenceClaimId(3, hash)}`]: {
+        exists: true,
+        data: { sequenceId: "seq-1", ownerId: "publisher" },
+      },
+      "users/copier/sequences/seq-1": {
+        exists: true,
+        data: { visibility: "public" },
+      },
+    });
+  }
+
+  it("refuses with a typed duplicate and writes nothing", async () => {
+    primeForeignPublication();
+
+    const attempt = publishPublicSequence(
+      FIRESTORE,
+      normalized,
+      {} as never,
+      "copier"
+    );
+
+    await expect(attempt).rejects.toBeInstanceOf(
+      PublicSequenceOwnedElsewhereError
+    );
+    await expect(attempt).rejects.toBeInstanceOf(PublicDuplicateError);
+    expect(mocks.setDoc).not.toHaveBeenCalled();
+    expect(mocks.updateDoc).not.toHaveBeenCalled();
+    expect(mocks.deleteDoc).not.toHaveBeenCalled();
+  });
+
+  it("names the publisher, not the caller", async () => {
+    primeForeignPublication();
+
+    const error = await publishPublicSequence(
+      FIRESTORE,
+      normalized,
+      {} as never,
+      "copier"
+    ).catch((e: unknown) => e);
+
+    expect(error).toMatchObject({
+      code: "PUBLIC_DUPLICATE",
+      claimedByOwnerId: "publisher",
+      claimedBySequenceId: "seq-1",
+    });
+  });
+
+  it("refuses when only the claim is held by another owner", async () => {
+    primeDocs({
+      [`publicSequenceHashes/${publicSequenceClaimId(3, hash)}`]: {
+        exists: true,
+        data: { sequenceId: "seq-1", ownerId: "publisher" },
+      },
+    });
+
+    await expect(
+      publishPublicSequence(FIRESTORE, normalized, {} as never, "copier")
+    ).rejects.toBeInstanceOf(PublicSequenceOwnedElsewhereError);
+    expect(mocks.setDoc).not.toHaveBeenCalled();
   });
 });

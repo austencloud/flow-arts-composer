@@ -12,6 +12,10 @@
  *   tab_{moduleId}_{tabId}      — tab label
  *   tab_desc_{moduleId}_{tabId} — tab description
  *
+ * A tab that declares an explicit labelKey or descKey in tab-definitions.ts
+ * is checked against those keys instead of the derived names (the Browse
+ * home tabs reuse browse_home_* keys, for example).
+ *
  * Usage:
  *   node scripts/validate-i18n-structure.cjs          Check only
  *   node scripts/validate-i18n-structure.cjs --fix    Add missing keys with fallback values
@@ -143,12 +147,21 @@ function parseTabDefinitions() {
 
     const arrayContent = src.slice(startIdx, i - 1);
 
-    // Extract tab objects from this array
+    // Extract tab objects from this array. Each object is read on its own so
+    // an explicit labelKey/descKey cannot be attributed to a neighbouring tab.
     const tabs = [];
-    const tabRegex = /id:\s*"([^"]+)"[\s\S]*?label:\s*"([^"]+)"/g;
-    let tabMatch;
-    while ((tabMatch = tabRegex.exec(arrayContent)) !== null) {
-      tabs.push({ id: tabMatch[1], label: tabMatch[2] });
+    for (const obj of extractTopLevelObjects("[" + arrayContent + "]")) {
+      const idMatch = obj.match(/\bid:\s*"([^"]+)"/);
+      const labelMatch = obj.match(/\blabel:\s*"([^"]+)"/);
+      if (!idMatch || !labelMatch) continue;
+      const labelKeyMatch = obj.match(/\blabelKey:\s*"([^"]+)"/);
+      const descKeyMatch = obj.match(/\bdescKey:\s*"([^"]+)"/);
+      tabs.push({
+        id: idMatch[1],
+        label: labelMatch[1],
+        labelKey: labelKeyMatch ? labelKeyMatch[1] : null,
+        descKey: descKeyMatch ? descKeyMatch[1] : null,
+      });
     }
 
     tabGroups[varName] = tabs;
@@ -197,14 +210,15 @@ function main() {
     for (const tab of tabs) {
       const normTabId = normalize(tab.id);
 
-      // tab_{moduleId}_{tabId}
-      const tabKey = `tab_${normId}_${normTabId}`;
+      // tab_{moduleId}_{tabId}, unless the tab names its own label key
+      const tabKey = tab.labelKey || `tab_${normId}_${normTabId}`;
       if (!messages[tabKey]) {
         missing.push({ key: tabKey, value: tab.label, category: "tab" });
       }
 
-      // tab_desc_{moduleId}_{tabId} — extract description from source
-      const tabDescKey = `tab_desc_${normId}_${normTabId}`;
+      // tab_desc_{moduleId}_{tabId}, unless the tab names its own desc key;
+      // the description text itself is read from the source
+      const tabDescKey = tab.descKey || `tab_desc_${normId}_${normTabId}`;
       if (!messages[tabDescKey]) {
         // Try to find description in source for this tab
         const tabSrc = findTabDescription(mod.sectionsVar, tab.id);

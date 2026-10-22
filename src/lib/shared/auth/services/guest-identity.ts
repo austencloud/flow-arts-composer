@@ -54,6 +54,13 @@ export async function ensureGuestIdentity(
   source: GuestIdentitySource = "first_persistable_action"
 ): Promise<void> {
   const auth = await getAuthInstance();
+  // currentUser reads null until Auth has restored its persisted session.
+  // signInAnonymously only steps aside for an existing ANONYMOUS user, so
+  // asking it to run before the restore replaces a returning full account
+  // with a fresh guest: Browse's mount and the thumbnail uploader did exactly
+  // that on a fresh page load (2026-10-22), signing a real account out in
+  // every tab and leaving its listeners denied.
+  await auth.authStateReady();
   if (auth.currentUser) {
     if (auth.currentUser.isAnonymous) {
       // A RESTORED anonymous session is the same guest continuing, so it may

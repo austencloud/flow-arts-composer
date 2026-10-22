@@ -117,6 +117,22 @@ export class PublicDuplicateError extends Error {
   }
 }
 
+/**
+ * The public id space is shared by every owner, and a library copy of someone
+ * else's gallery sequence keeps that sequence's id. Its public mirror and claim
+ * therefore belong to the original publisher, which the rules (rightly) refuse
+ * to let this caller overwrite. A duplicate subtype, so every caller that
+ * already treats a duplicate as a user-action state handles it unchanged.
+ */
+export class PublicSequenceOwnedElsewhereError extends PublicDuplicateError {
+  constructor(claimedByOwnerId: string, sequenceId: string, word?: string) {
+    super(sequenceId, claimedByOwnerId, word);
+    this.message =
+      "This sequence came from another creator's gallery post, so your copy can't be published as its own entry";
+    this.name = "PublicSequenceOwnedElsewhereError";
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Prior-state extraction
 // ---------------------------------------------------------------------------
@@ -279,6 +295,27 @@ export async function publishPublicSequence(
     const publicData = publicSnap.exists()
       ? (publicSnap.data() as Record<string, unknown>)
       : undefined;
+
+    // Another owner already holds this id's mirror or this content's claim.
+    // The commit would be denied (2026-10 publish reports: copies of a gallery
+    // sequence saved under its original id), so stop here with nothing written.
+    const publicOwnerId = publicData?.["ownerId"];
+    const claimOwnerId = claimSnap.exists()
+      ? (claimSnap.data() as PublicSequenceHashClaim).ownerId
+      : undefined;
+    const foreignOwnerId = [publicOwnerId, claimOwnerId].find(
+      (ownerId): ownerId is string =>
+        typeof ownerId === "string" && ownerId.length > 0 && ownerId !== userId
+    );
+    if (foreignOwnerId) {
+      const word = publicData?.["word"];
+      throw new PublicSequenceOwnedElsewhereError(
+        foreignOwnerId,
+        sequenceId,
+        typeof word === "string" ? word : undefined
+      );
+    }
+
     const prior: PublicProjectionPriorState = publicData
       ? { kind: "existing", fields: readExistingPublicOwnedFields(publicData) }
       : { kind: "first-publication" };

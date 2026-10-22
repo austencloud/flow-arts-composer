@@ -208,6 +208,11 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
     );
   });
 
+  // Declared above the pre-effect below, which closes it: a pre-effect first
+  // runs during setup, when a binding declared after it is still in its
+  // temporal dead zone.
+  let resetConfirmOpen = $state(false);
+
   // A kept overlay is not remounted per open, so each open reloads what a
   // mount would have: the settings from the props, and the root list.
   let wasActive = untrack(() => active);
@@ -385,8 +390,8 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
   // Reset every persisted generation setting. Confirmed first because there's
   // no undo: this overlay's props are a snapshot frozen at open time, so a
   // restore could reach the config but not the local mirrors below, and the
-  // panel would sit there reading "Default" over restored values.
-  let resetConfirmOpen = $state(false);
+  // panel would sit there reading "Default" over restored values. The confirm
+  // flag, `resetConfirmOpen`, is declared above the open/close pre-effect.
 
   function performResetAll() {
     resetConfirmOpen = false;

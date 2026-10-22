@@ -17,8 +17,14 @@ import type { GenerationOptions } from "#lib/shared/foundation/domain/models/gen
 import { GenerationMode } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 import type { sequenceMetadataManager as SequenceMetadataManagerSingleton } from "#lib/shared/create/services/sequence-metadata-manager.js";
 type SequenceMetadataManager = typeof SequenceMetadataManagerSingleton;
-import { SequenceBuilder } from "@tka/sequence-engine/generation";
+import {
+  ConstraintType,
+  GenerationInfeasibleError,
+  SequenceBuilder,
+} from "@tka/sequence-engine/generation";
 import type {
+  BuildOptions,
+  BuildResult,
   ConstraintOptions,
   ConstraintReport,
   HandRelationshipOptions,
@@ -154,6 +160,66 @@ function loopReflectionAxis(options: GenerationOptions): ReflectionAxis | null {
   return options.loopRhythm?.reflectionAxis ?? null;
 }
 
+function joinAlternatives(items: string[]): string {
+  if (items.length <= 2) return items.join(" or ");
+  return `${items.slice(0, -1).join(", ")}, or ${items.at(-1)}`;
+}
+
+/**
+ * Turn the engine's proof that no path exists into a notice naming the
+ * settings that block it. Each change listed opens a path on its own, so the
+ * user can pick whichever matters least to them.
+ */
+export function describeInfeasibleRequest(
+  error: GenerationInfeasibleError,
+  options: GenerationOptions
+): string {
+  const changes: string[] = [];
+  for (const relaxation of error.relaxations) {
+    switch (relaxation) {
+      case ConstraintType.MOTION_TYPE:
+        changes.push(
+          options.motionTypeFilter === "no-dash"
+            ? "allow dashes"
+            : "loosen the motion type filter"
+        );
+        break;
+      case ConstraintType.PROP_RELATIONSHIP:
+        changes.push(
+          options.propRelationship && options.propRelationship !== "free"
+            ? `choose a prop relationship other than ${options.propRelationship}`
+            : "change the prop relationship"
+        );
+        break;
+      case ConstraintType.HAND_RELATIONSHIP:
+        changes.push(
+          options.handRelationship && options.handRelationship !== "free"
+            ? `choose a hand relationship other than ${options.handRelationship}`
+            : "change the hand relationship"
+        );
+        break;
+      case "staticSteps":
+        changes.push(
+          (options.turnIntensity ?? 0) > 0
+            ? "choose level 2 or higher"
+            : "choose level 2 or higher with turns"
+        );
+        break;
+    }
+  }
+
+  const subject =
+    options.mode === GenerationMode.CIRCULAR && options.loopType
+      ? `${options.length}-step ${String(options.loopType).replace("_", " ")} LOOP`
+      : `${options.length}-step sequence`;
+  if (changes.length === 0) {
+    return `No ${subject} fits these settings together. Try another length, start or motion setting.`;
+  }
+  const lead =
+    changes.length === 1 ? "To open a path" : "To open a path, try one of these";
+  return `No ${subject} fits these settings together. ${lead}: ${joinAlternatives(changes)}.`;
+}
+
 /**
  * Observers a caller can attach to one generation. The engine always returns
  * its best sequence; the report says how well it met the soft constraints, and
@@ -221,7 +287,7 @@ export class GenerationOrchestrator {
     const builder = new SequenceBuilder(this.variationProvider);
     const level = this.metadataManager.mapDifficultyToLevel(options.difficulty);
 
-    const result = builder.build({
+    const result = this.buildOrExplain(builder, options, {
       // Word wins over length: spell mode passes an expanded word string;
       // freeform passes length. The engine handles both paths identically
       // after parsing letters.
@@ -311,7 +377,7 @@ export class GenerationOrchestrator {
       );
     }
 
-    const result = builder.build({
+    const result = this.buildOrExplain(builder, options, {
       ...(options.word ? { word: options.word } : { length: seedLength }),
       gridMode: String(options.gridMode),
       level,
@@ -414,6 +480,27 @@ export class GenerationOrchestrator {
     }
 
     return result;
+  }
+
+  /**
+   * An infeasible request is a settings conflict, not a bug: hand it to the
+   * Generate panel as a notice that says what to change.
+   */
+  private buildOrExplain(
+    builder: SequenceBuilder,
+    options: GenerationOptions,
+    buildOptions: BuildOptions
+  ): BuildResult {
+    try {
+      return builder.build(buildOptions);
+    } catch (error) {
+      if (error instanceof GenerationInfeasibleError) {
+        throw new GenerationRequestError(
+          describeInfeasibleRequest(error, options)
+        );
+      }
+      throw error;
+    }
   }
 
   private throwIfStartImpossible(result: StartFeasibilityResult): void {

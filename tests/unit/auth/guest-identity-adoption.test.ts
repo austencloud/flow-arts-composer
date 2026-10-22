@@ -23,8 +23,21 @@ const currentUser = {
 vi.mock("firebase/auth", () => ({
   signInAnonymously: (...a: unknown[]) => signInAnonymouslyMock(...a),
 }));
+// The persisted session lands only when authStateReady resolves, the way the
+// real SDK leaves currentUser null until its restore finishes.
+const restoredUser = {
+  value: null as { uid: string; isAnonymous?: boolean } | null,
+};
 vi.mock("#lib/shared/auth/firebase.js", () => ({
-  getAuthInstance: async () => ({ currentUser: currentUser.value }),
+  getAuthInstance: async () => {
+    const auth = {
+      currentUser: currentUser.value,
+      authStateReady: async () => {
+        if (restoredUser.value) auth.currentUser = restoredUser.value;
+      },
+    };
+    return auth;
+  },
 }));
 vi.mock("#lib/shared/analytics/services/posthog.js", () => ({
   captureWhenReady: vi.fn(),
@@ -45,6 +58,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   localStorage.clear();
   currentUser.value = null;
+  restoredUser.value = null;
   signInAnonymouslyMock.mockResolvedValue({ user: { uid: "anon-new" } });
 });
 
@@ -92,6 +106,17 @@ describe("ensureGuestIdentity — adoption of unowned saves", () => {
     expect(getOwnedSequenceIdSet("already-signed-in").size).toBe(0);
     // Still parked — a later anonymous session can still claim it.
     expect(getUnownedSequenceIds()).toEqual(["seq-1"]);
+  });
+
+  it("waits for a persisted full account instead of replacing it", async () => {
+    // Browse mounts before Auth restores the returning account. Checking
+    // currentUser that early saw null, and signInAnonymously then swapped the
+    // real account for a new guest in every open tab.
+    restoredUser.value = { uid: "returning-account", isAnonymous: false };
+
+    await ensureGuestIdentity("gallery_mount");
+
+    expect(signInAnonymouslyMock).not.toHaveBeenCalled();
   });
 
   it("leaves parked saves alone when anonymous sign-in fails", async () => {

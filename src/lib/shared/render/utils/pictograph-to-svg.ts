@@ -18,6 +18,7 @@ import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js
 import type { PropType } from "../../pictograph/prop/domain/enums/prop-type";
 import PictographContainer from "../../pictograph/shared/components/PictographContainer.svelte";
 import { mount, tick, unmount } from "svelte";
+import { measureSvgBox } from "./measure-svg-box";
 
 /**
  * Visibility settings for pictograph rendering
@@ -212,7 +213,13 @@ export async function renderPictographToSVG(
 
     // CRITICAL FIX: Calculate actual bounding box of SVG content
     // The viewBox is "0 0 950 950" but content may extend beyond these bounds
-    const bbox = svgElement.getBBox();
+    // No SVG layout (headless renderer): the 950 viewBox floor below applies.
+    const bbox = measureSvgBox(svgElement) ?? {
+      x: 0,
+      y: 0,
+      width: 0,
+      height: 0,
+    };
 
     // Use the larger of the viewBox or actual content bounds
     const viewBoxWidth = Math.max(950, Math.ceil(bbox.x + bbox.width));

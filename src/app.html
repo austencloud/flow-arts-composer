@@ -818,6 +818,45 @@
           sendToServer("INFO", args);
         };
 
+        // BEGIN formatErrorReason (tested by src/lib/shared/foundation/utils/app-html-global-error.test.ts)
+        // Error trackers stringify console.error arguments, so an object
+        // argument arrives as "[object Object]". Hand them one readable string.
+        function formatErrorReason(reason) {
+          try {
+            if (reason && typeof reason === "object") {
+              if (reason.message || reason.stack) {
+                var name = reason.name || "Error";
+                var text = name + ": " + (reason.message || "");
+                return reason.stack ? text + "\nStack: " + reason.stack : text;
+              }
+              var json = JSON.stringify(reason);
+              if (json && json !== "{}") {
+                return json.length > 500 ? json.slice(0, 500) + "..." : json;
+              }
+            }
+          } catch (e) {
+            // fall through to String()
+          }
+          try {
+            return String(reason);
+          } catch (e) {
+            return "[unprintable error reason]";
+          }
+        }
+
+        function formatGlobalError(event) {
+          var where = event.filename
+            ? " at " + event.filename + ":" + event.lineno + ":" + event.colno
+            : "";
+          var text =
+            "🚨 GLOBAL ERROR: " +
+            (event.message || formatErrorReason(event.error)) +
+            where;
+          var stack = event.error && event.error.stack;
+          return stack ? text + "\nStack: " + stack : text;
+        }
+        // END formatErrorReason
+
         // Capture global errors (always forward these)
         window.addEventListener("error", function (event) {
           // Suppress benign ResizeObserver errors (common with container queries)
@@ -830,18 +869,14 @@
             return false; // Silently ignore this benign error
           }
 
-          console.error("🚨 GLOBAL ERROR:", {
-            message: event.message,
-            filename: event.filename,
-            line: event.lineno,
-            column: event.colno,
-            stack: event.error?.stack,
-          });
+          console.error(formatGlobalError(event));
         });
 
         // Capture unhandled promise rejections (always forward these)
         window.addEventListener("unhandledrejection", function (event) {
-          console.error("🚨 UNHANDLED PROMISE REJECTION:", event.reason);
+          console.error(
+            "🚨 UNHANDLED PROMISE REJECTION: " + formatErrorReason(event.reason)
+          );
         });
       })();
     </script>

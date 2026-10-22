@@ -399,6 +399,66 @@ describe("publicSequences: phase-4 strict writes", () => {
     );
   });
 
+  it("denies publishing a saved copy of another owner's gallery sequence, and allows the owner's identical republish", async () => {
+    // The 2026-10 publish reports (seq_1791923102683_sysj46042 and
+    // 3b7882d6-...): a gallery sequence saved into another library keeps its
+    // id, so the copy's publish finds the publisher's mirror, claim and
+    // revision already present and commits only the mirror set plus its own
+    // owner stamp. The rules must keep refusing that (it would hand the
+    // publisher's public entry to the copier); the client now stops first
+    // with PublicSequenceOwnedElsewhereError.
+    const { seqId, hash, claimId } = ids("savedcopy");
+    await seedPublishedSequence(seqId, hash, claimId);
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(
+        doc(ctx.firestore(), `users/${OTHER_UID}/sequences/${seqId}`),
+        { visibility: "public", word: "ABCD", sequenceLength: 4 }
+      );
+    });
+
+    const stamps = {
+      publicProjectionRevision: 2,
+      publicProjectionSchemaVersion: 2,
+      publicProjectionDigest: "e".repeat(64),
+      word: "ABCD",
+      sequenceLength: 4,
+      contentHash: hash,
+      contentHashVersion: 2,
+    };
+
+    const copierDb = otherDb();
+    const copier = writeBatch(copierDb);
+    copier.set(
+      doc(copierDb, `publicSequences/${seqId}`),
+      schemaTwoDoc(seqId, hash, {
+        ownerId: OTHER_UID,
+        sourceRef: `users/${OTHER_UID}/sequences/${seqId}`,
+        publicProjectionRevision: 2,
+        publicProjectionDigest: "e".repeat(64),
+      })
+    );
+    copier.update(
+      doc(copierDb, `users/${OTHER_UID}/sequences/${seqId}`),
+      stamps
+    );
+    await assertFails(copier.commit());
+
+    const ownerDatabase = ownerDb();
+    const owner = writeBatch(ownerDatabase);
+    owner.set(
+      doc(ownerDatabase, `publicSequences/${seqId}`),
+      schemaTwoDoc(seqId, hash, {
+        publicProjectionRevision: 2,
+        publicProjectionDigest: "e".repeat(64),
+      })
+    );
+    owner.update(
+      doc(ownerDatabase, `users/${OWNER_UID}/sequences/${seqId}`),
+      stamps
+    );
+    await assertSucceeds(owner.commit());
+  });
+
   it("allows the unpublish shape and denies its unpaired fragments", async () => {
     const { seqId, hash, claimId } = ids("unpub");
     await seedPublishedSequence(seqId, hash, claimId);

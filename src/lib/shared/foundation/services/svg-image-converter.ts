@@ -1,3 +1,5 @@
+import { describeImageSource } from "#lib/shared/render/utils/describe-image-source.js";
+
 /**
  * Gives the root `<svg>` the requested size so the HTMLImageElement is
  * created at it. Only the root tag changes: an inner element's width and
@@ -38,7 +40,11 @@ export class SvgImageConverter {
 
       img.onerror = (error) => {
         this.cleanupBlobUrl(blobUrl);
-        reject(new Error(`Failed to load SVG image: ${error}`));
+        reject(
+          new Error(
+            `Failed to load SVG image: ${describeImageSource(svgString)} (${String(error)})`
+          )
+        );
       };
 
       img.onload = () => {

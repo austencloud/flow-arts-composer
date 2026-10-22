@@ -354,6 +354,7 @@
 
   .front-door-header {
     width: 100%;
+    text-align: center;
   }
 
   h1 {

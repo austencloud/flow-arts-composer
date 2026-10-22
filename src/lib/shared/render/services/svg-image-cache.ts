@@ -17,6 +17,7 @@
 
 import { sanitizeSvgForBitmap } from "./svg-bitmap-sanitize";
 import { assetFetch } from "../../net/asset-fetch";
+import { describeImageSource } from "../utils/describe-image-source";
 
 /** Union type for drawable images (works with canvas drawImage) */
 export type DrawableImage = ImageBitmap | HTMLImageElement;
@@ -157,7 +158,7 @@ export class SvgImageCache {
       };
       img.onerror = () => {
         URL.revokeObjectURL(url);
-        reject(new Error("Failed to load SVG as image"));
+        reject(new Error(`Failed to load SVG as image: ${describeImageSource(svgString)}`));
       };
 
       img.src = url;
@@ -194,7 +195,7 @@ export class SvgImageCache {
 
       img.onerror = () => {
         URL.revokeObjectURL(url);
-        reject(new Error("Failed to load SVG as image"));
+        reject(new Error(`Failed to load SVG as image: ${describeImageSource(svgString)}`));
       };
 
       img.src = url;
@@ -229,7 +230,7 @@ export class SvgImageCache {
 
     return new Promise((resolve, reject) => {
       img.onload = () => resolve(img);
-      img.onerror = (err: Error) => reject(new Error(`Failed to load SVG as image: ${err.message}`));
+      img.onerror = (err: Error) => reject(new Error(`Failed to load SVG as image: ${err.message} (${describeImageSource(svgString)})`));
       img.src = `data:image/svg+xml;base64,${base64}`;
     });
   }

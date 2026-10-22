@@ -47,6 +47,14 @@ import type {
 import type { LayerRenderOptions, LayerVisibility } from "./types";
 import { composeCardImage as composeCardImageFn } from "./card-composer";
 import { ensureCardFonts } from "./gelasio-fonts";
+import { getSvgAssetLoader } from "./svg-asset-loader";
+import { getLetterImagePath } from "../../pictograph/tka-glyph/utils/letter-image-getter";
+import {
+  getTurnNumberImagePath,
+  parseTurnsTuple,
+  type TurnValue,
+} from "../../pictograph/tka-glyph/utils/turn-tuple-parser";
+import { turnsTupleGenerator } from "../../pictograph/arrow/positioning/placement/services/turns-tuple-generator";
 // mandala geometry calculate() loaded dynamically to keep its dependency graph out of the worker bundle until needed
 import { renderMandalaToCanvas } from "../../mandala/services/mandala-renderer";
 import { applyMandalaHandColors } from "../../mandala/domain/mandala-palette";
@@ -76,6 +84,30 @@ const yieldToEventLoop: () => Promise<void> =
   ).scheduler?.yield?.bind(
     (globalThis as unknown as Record<string, unknown>).scheduler
   ) ?? (() => new Promise<void>((r) => setTimeout(r, 0)));
+
+// While a card's asset prefetch is in flight, report activity this often so a
+// slow origin cannot look like a wedged render. Bounded so a genuinely stuck
+// asset chain still lets the render queue reclaim its slot; each individual
+// request is already capped by assetFetch's own timeout.
+const PREFETCH_HEARTBEAT_MS = 3_000;
+const PREFETCH_HEARTBEAT_MAX_MS = 60_000;
+
+/**
+ * The visibility one cell is rasterized with. Shared by the serial raster loop
+ * and the parallel asset prefetch so both derive the same preparer cache key.
+ * If the two ever drifted, the prefetch would silently warm nothing.
+ */
+function resolveCellVisibility(
+  base: PictographVisibilityOptions | undefined,
+  leftPropType?: PropType,
+  rightPropType?: PropType
+): PictographVisibilityOptions {
+  return {
+    ...base,
+    leftPropType: leftPropType ?? base?.leftPropType,
+    rightPropType: rightPropType ?? base?.rightPropType,
+  };
+}
 
 export class ImageComposer {
   private layer1Hits = 0;
@@ -410,8 +442,6 @@ export class ImageComposer {
     const totalItems = sequence.steps.length + (hasStartPlacement ? 1 : 0);
     let renderedCount = 0;
 
-    onProgress?.({ current: 0, total: totalItems, stage: "rendering" });
-
     const hasPropOverride =
       options.propTypeOverride ||
       options.leftPropTypeOverride ||
@@ -422,23 +452,63 @@ export class ImageComposer {
     const effectiveRightPropType =
       options.rightPropTypeOverride ?? options.propTypeOverride;
 
-    // Joined grids: every cell, the start placement included, carries the
-    // sequence's one join. Cells are untouched when nothing is joined.
+    // Prefetch and rasterize the same joined cells so their cache keys agree.
     const withJoin = gridJoinCellResolver({
       conjoined: sequence.conjoined,
     });
-
     const endCells = trace?.start("pictograph-cells");
-    if (hasStartPlacement && effectiveStartPlacement) {
-      const startStepNumber = options.addStepNumbers ? 0 : undefined;
-      const startPlacementData = hasPropOverride
+    const startPlacementData =
+      hasStartPlacement && effectiveStartPlacement
+        ? hasPropOverride
+          ? this.applyPropTypeOverride(
+              effectiveStartPlacement,
+              options.propTypeOverride,
+              options.leftPropTypeOverride,
+              options.rightPropTypeOverride
+            )
+          : effectiveStartPlacement
+        : null;
+    const stepCells = sequence.steps.map((beat) =>
+      beat && hasPropOverride
         ? this.applyPropTypeOverride(
-            effectiveStartPlacement,
+            beat,
             options.propTypeOverride,
             options.leftPropTypeOverride,
             options.rightPropTypeOverride
           )
-        : effectiveStartPlacement;
+        : beat
+    );
+
+    // Load every asset the card needs in one parallel round trip before the
+    // serial raster loop below. Each cell used to fetch its props, arrows,
+    // letter glyph and turn numbers on demand, one cell after the other, so a
+    // cold card paid a dozen dependent round trips. On a starved dev server
+    // (about 2 s per tiny SVG) that turned a 1.5 s card into 20 s and wedged
+    // the gallery queue behind three such cards.
+    // Every settled asset re-emits the "preparing" progress event. The render
+    // queue treats each progress event as a sign of life and reclaims the slot
+    // after 15 s of silence; a burst that stays silent until it fully resolves
+    // would trip that deadline on a slow origin even while it is making steady
+    // progress.
+    const reportPreparing = () =>
+      onProgress?.({ current: 0, total: totalItems, stage: "preparing" });
+    reportPreparing();
+    await this.prefetchCellAssets(
+      [
+        ...(startPlacementData ? [startPlacementData] : []),
+        ...stepCells.filter((cell): cell is StepData => !!cell),
+      ].map((cell) => withJoin(cell)),
+      visibilitySettings,
+      effectiveLeftPropType,
+      effectiveRightPropType,
+      signal,
+      reportPreparing
+    );
+
+    onProgress?.({ current: 0, total: totalItems, stage: "rendering" });
+
+    if (startPlacementData) {
+      const startStepNumber = options.addStepNumbers ? 0 : undefined;
       await this.renderPictographAt(
         ctx,
         withJoin(startPlacementData),
@@ -467,18 +537,11 @@ export class ImageComposer {
         throw new DOMException("Render aborted", "AbortError");
       if (i > 0) await yieldToEventLoop();
       const beat = sequence.steps[i];
-      if (!beat) continue;
+      const stepData = stepCells[i];
+      if (!beat || !stepData) continue;
       const col = startColumn + (i % stepsPerRow);
       const row = startRow + Math.floor(i / stepsPerRow);
       const stepNumber = options.addStepNumbers ? i + 1 : undefined;
-      const stepData = hasPropOverride
-        ? this.applyPropTypeOverride(
-            beat,
-            options.propTypeOverride,
-            options.leftPropTypeOverride,
-            options.rightPropTypeOverride
-          )
-        : beat;
       await this.renderPictographAt(
         ctx,
         withJoin(stepData),
@@ -668,11 +731,11 @@ export class ImageComposer {
     horizontalOffset: number = 0
   ): Promise<void> {
     try {
-      const finalVisibilitySettings: PictographVisibilityOptions = {
-        ...visibilitySettings,
-        leftPropType: leftPropType ?? visibilitySettings?.leftPropType,
-        rightPropType: rightPropType ?? visibilitySettings?.rightPropType,
-      };
+      const finalVisibilitySettings = resolveCellVisibility(
+        visibilitySettings,
+        leftPropType,
+        rightPropType
+      );
 
       if (
         this.useCompositionalCaching &&
@@ -1082,6 +1145,95 @@ export class ImageComposer {
       rightBuugengFlipped: visibilitySettings.rightBuugengFlipped,
     });
     return prepared as unknown as PreparedPictographData;
+  }
+
+  /**
+   * Warm every asset the card's cells will need in ONE parallel round trip:
+   * canvas and grid init, each cell's prepared props and arrows, its letter
+   * glyph, and its turn-number glyphs. The serial raster loop that follows then
+   * only hits caches. Failures are swallowed on purpose: the loop re-requests
+   * the same asset and reports the error exactly as before.
+   *
+   * `onSettled` fires as each asset lands, and on a bounded heartbeat while the
+   * burst is in flight, so the caller can keep reporting activity while a slow
+   * origin drags the burst out. The heartbeat matters because every cell's
+   * placement-data chain tends to finish at about the same time, so settled
+   * events alone leave a silent stretch longer than the render queue's 15 s
+   * inactivity deadline; the serial path never had that gap because each cell
+   * reported progress as it finished. The heartbeat stops after
+   * PREFETCH_HEARTBEAT_MAX_MS so a wedged asset still lets the queue reclaim
+   * the slot. On a warm page every call here is a cache hit and costs nothing
+   * measurable.
+   */
+  private async prefetchCellAssets(
+    cells: ReadonlyArray<StepData | PictographData>,
+    visibilitySettings: PictographVisibilityOptions,
+    leftPropType: PropType | undefined,
+    rightPropType: PropType | undefined,
+    signal?: AbortSignal,
+    onSettled?: () => void
+  ): Promise<void> {
+    if (cells.length === 0 || signal?.aborted) return;
+
+    const cellVisibility = resolveCellVisibility(
+      visibilitySettings,
+      leftPropType,
+      rightPropType
+    );
+    const loader = getSvgAssetLoader();
+
+    const letterPaths = new Set<string>();
+    const turnValues = new Set<TurnValue>();
+    let needsHalfMark = false;
+    for (const cell of cells) {
+      if (cell.letter) letterPaths.add(getLetterImagePath(cell.letter));
+      // Same generator and parser the TKA overlay uses, so the prefetched turn
+      // glyphs are exactly the ones it will ask for.
+      const parsed = parseTurnsTuple(
+        turnsTupleGenerator.generateTurnsTuple(cell)
+      );
+      for (const value of [parsed.top, parsed.bottom]) {
+        if (getTurnNumberImagePath(value)) turnValues.add(value);
+      }
+      if (parsed.topHalved || parsed.bottomHalved) needsHalfMark = true;
+    }
+
+    // The compositor path prepares every cell. The custom-palette path serves
+    // most cells from its blob cache, so preparing there would be wasted work;
+    // it still gets the shared grids, letters and turn glyphs.
+    const preparesCells =
+      this.useCompositionalCaching &&
+      !!this.layerCompositor &&
+      !cellVisibility.primaryPropColors;
+
+    const quietly = (work: Promise<unknown>) =>
+      work.then(
+        () => onSettled?.(),
+        () => onSettled?.()
+      );
+    const startedAt = Date.now();
+    const heartbeat = onSettled
+      ? setInterval(() => {
+          if (Date.now() - startedAt < PREFETCH_HEARTBEAT_MAX_MS) onSettled();
+        }, PREFETCH_HEARTBEAT_MS)
+      : undefined;
+    try {
+      await Promise.all([
+        quietly(this.ensureCanvas2DInitialized()),
+        ...(preparesCells
+          ? cells.map((cell) =>
+              quietly(this.prepareForRaster(cell, cellVisibility))
+            )
+          : []),
+        ...[...letterPaths].map((path) => quietly(loader.getLetterAsset(path))),
+        ...[...turnValues].map((value) =>
+          quietly(loader.getTurnNumberImage(value))
+        ),
+        ...(needsHalfMark ? [quietly(loader.getHalfMarkImage())] : []),
+      ]);
+    } finally {
+      if (heartbeat !== undefined) clearInterval(heartbeat);
+    }
   }
 
   private async renderPictographWithLayerCompositor(

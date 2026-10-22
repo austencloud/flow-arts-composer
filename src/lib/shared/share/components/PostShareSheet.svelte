@@ -356,6 +356,13 @@
       statusMessage = t("share_render_card_failed");
     },
   });
+  // Declared above the pre-effect below, which reads `qrDataUrl`: a pre-effect
+  // first runs during setup, when a binding declared after it is still in its
+  // temporal dead zone.
+  let qrDataUrl = $state<string | null>(null);
+  let qrPending = $state(false);
+  let qrError = $state("");
+
   // Crossfade keeps the old stage mounted during its outro. Hold that card's
   // request separately so an artifact switch cannot make its live SVG read the
   // new (or cleared) preview state while it fades away.
@@ -447,10 +454,6 @@
   let revealedLinkUrl = $state<string | null>(null);
   /** The link the last copy put on the clipboard, shown on the Copy link tile. */
   let copiedLinkUrl = $state<string | null>(null);
-
-  let qrDataUrl = $state<string | null>(null);
-  let qrPending = $state(false);
-  let qrError = $state("");
 
   let liveMetaStatus = $state<MetaPublishStatus>(EMPTY_META_PUBLISH_STATUS);
   let postingTarget = $state<MetaPublishTarget | null>(null);

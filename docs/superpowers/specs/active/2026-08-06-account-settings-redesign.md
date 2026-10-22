@@ -2,17 +2,37 @@
 status: active
 value: 2
 effort: XS
-remaining: "Shipped in 6a818f9f2 except the Sign-in methods requirement for a visible provider-named action (Connect Google / Connect Facebook / Connect Instagram): ConnectedAccounts.svelte:312 renders a bare 'Connect' and puts the provider name only in actionAriaLabel:313. Unrecorded beyond it: criteria 12-16 are geometry claims (no nested ProfileTab scroller at 1440x900 through 3840x2160, no horizontal overflow at 375x667 and 960x412, DOM/focus order, contrast and 44x44 targets, no clipping at 1280x800 with the sidebar pinned) plus the second-pass measurements, all browser-only. The spec's Automated list also names four tests not located: editor read/edit transitions with focus return, provider state matrix, Advanced disclosure, and relocated storage actions."
+remaining: "Visible provider-named Connect action shipped in 20a1a7a468 (Connect Google / Connect Facebook / Connect Instagram, accessible name equals visible text) with the provider state matrix test ConnectedAccounts.svelte.test.ts. Still unrecorded: criteria 12-16 on the signed-in page (no nested ProfileTab scroller at 1440x900, 1920x1080, 2560x1440 and 3840x2160; no horizontal overflow at 375x667 and 960x412; DOM/focus order; contrast and 44x44 targets across the page; no clipping at 1280x800 with the sidebar pinned). The 2026-10-22 pass could not reach Account because the task server at a new origin was signed out and agents may not enter the shared test password without Austen. Three Automated tests remain unwritten: editor read/edit transitions with focus return, Advanced disclosure, relocated storage actions."
 depends_on: ""
 plan_path: ""
 tags: [settings, account, accessibility, verification-gap]
-last_triaged: 2026-10-07
+last_triaged: 2026-10-22
 work_state: in-progress
 ---
 
 # Account Settings Redesign
 
-**Queue evidence (2026-10-07):** Account destination shipped; the visible provider Connect label and browser acceptance remain open. See frontmatter for the remaining work.
+**Queue evidence (2026-10-22):** The visible provider Connect label is fixed; browser acceptance on the signed-in page remains open. See frontmatter for the remaining work.
+
+**2026-10-22 pass:** `ConnectedAccounts.svelte` now passes
+`nav_provider_connect` ("Connect {provider}") as the visible label, and
+`ProviderStatusRow` uses it as the accessible name, so text and name agree. The
+row's action track changed from a fixed `9.25em` to
+`minmax(9.25em, max-content)`: under the old track "Connect Instagram" was
+squeezed from its natural 150px to 148px, and longer translations would clip.
+`ConnectedAccounts.svelte.test.ts` (browser component suite, 10 tests) covers
+the provider state matrix: each of Google, Facebook and Instagram shows
+"Connect X" with matching text and accessible name when not connected, and
+"Disconnect X" with no connect action when connected; a sole provider shows
+Required and no Disconnect; read mode shows no actions. It also measures the
+connect actions in 343px (stacked) and 640px (row) `profile-tab` containers:
+129 x 44, 145 x 44 and 150 x 44 CSS px, no label overflow, inside the column.
+Criteria 12 to 16 were not measured: `/settings/profile` on the task server
+showed the sign-in screen, and entering the shared agent password needs
+Austen's approval in the session. Contrast of the connect action against the
+real theme surface is also unmeasured.
+
+**Previous queue evidence (2026-10-07):** Account destination shipped; the visible provider Connect label and browser acceptance remain open.
 
 **Original status (historical):** Implemented; one acceptance item is genuinely unmet and the
 geometry gates are unrecorded. Header corrected 2026-09-13 during spec
@@ -33,10 +53,10 @@ stays `profile`. Two named files were deleted **by** the implementing commit, as
 this document intended. `connected-account-providers.test.ts` and
 `account-setup-navigation-contract.test.ts` pass.
 
-**Unmet:** The Sign-in methods requirement asks for an explicit provider action
-such as **Connect Google**. The visible label is only "Connect"
-(`ConnectedAccounts.svelte:312`); the provider name appears solely in
-`actionAriaLabel` at `:313`. Sighted users get no provider-named affordance.
+**Unmet (resolved 2026-10-22 in 20a1a7a468):** The Sign-in methods requirement
+asks for an explicit provider action such as **Connect Google**. The visible
+label was only "Connect" and the provider name appeared solely in
+`actionAriaLabel`.
 
 **Date:** 2026-08-06
 
