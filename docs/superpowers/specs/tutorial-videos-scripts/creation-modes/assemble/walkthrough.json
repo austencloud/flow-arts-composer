@@ -1,0 +1,115 @@
+{
+  "wideAfter": [
+    "Move Right prop to West",
+    "Move Right prop to East",
+    "Open sequence viewer"
+  ],
+  "lines": [
+    {
+      "click": "Grid: Diamond",
+      "after": 0.2,
+      "chapter": "Grid",
+      "text": "Assemble builds on the grid. Diamond uses four points."
+    },
+    {
+      "click": "Grid: Diamond",
+      "after": 3.6,
+      "sameClick": true,
+      "text": "Box and Merged add the corners. Center adds the middle."
+    },
+    {
+      "click": "button #0",
+      "after": 0.1,
+      "text": ""
+    },
+    {
+      "click": "Set Left start at North",
+      "after": 0.2,
+      "chapter": "Left hand",
+      "text": "Tap a point to place the left hand."
+    },
+    {
+      "click": "Set Left start at North",
+      "after": 3.8,
+      "sameClick": true,
+      "text": "The chips above set its orientation and turns."
+    },
+    {
+      "click": "Move Left prop to East",
+      "after": 0.2,
+      "text": "Each tap moves the hand to the next point."
+    },
+    {
+      "click": "Move Left prop to East",
+      "after": 3.8,
+      "sameClick": true,
+      "text": "The app writes the motion for you."
+    },
+    {
+      "click": "Move Left prop to West",
+      "after": 0.2,
+      "text": "Three steps for the left hand so far."
+    },
+    {
+      "click": "Right hand",
+      "after": 0.2,
+      "chapter": "Right hand",
+      "text": "Switch hands. The left hand's path stays as a ghost."
+    },
+    {
+      "click": "Set Right start at South",
+      "after": 0.2,
+      "text": "The right hand gets its own start point."
+    },
+    {
+      "click": "Move Right prop to West",
+      "after": 0.6,
+      "shot": "wide",
+      "text": "Steps pair up. Each pair is one pictograph in the workspace."
+    },
+    {
+      "click": "Turn settings: CW 0",
+      "after": 0.2,
+      "chapter": "Turns",
+      "text": "Turns and direction apply to the next step."
+    },
+    {
+      "click": "Turn count and rotation direction\"] button #4",
+      "after": 0.2,
+      "text": "One turn on the way to the next point."
+    },
+    {
+      "click": "Turn count and rotation direction\"] button #1",
+      "after": 0.2,
+      "text": "CCW spins it the other way."
+    },
+    {
+      "click": "Move Right prop to East",
+      "after": 0.6,
+      "shot": "wide",
+      "text": "The step shows the turn in its notation."
+    },
+    {
+      "click": "Complete",
+      "after": 0.2,
+      "chapter": "Complete",
+      "text": "Complete locks the sequence and shows the end poses."
+    },
+    {
+      "click": "Open sequence viewer",
+      "after": 0.6,
+      "shot": "wide",
+      "text": "Play opens the viewer with the animation."
+    },
+    {
+      "click": "Close",
+      "after": 0.1,
+      "text": ""
+    },
+    {
+      "click": "Save to Library",
+      "after": 0.2,
+      "text": "Save keeps it in your library."
+    }
+  ]
+}

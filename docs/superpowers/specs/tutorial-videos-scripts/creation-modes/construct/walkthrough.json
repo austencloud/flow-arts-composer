@@ -1,0 +1,144 @@
+{
+  "wideAfter": ["data-letter=\"C\"", "Play sequence", "Mirror Sequence"],
+  "lines": [
+    {
+      "click": "data-ghost-label=\"α\"",
+      "after": 0.2,
+      "chapter": "Start",
+      "text": "Pick where the hands start. Alpha puts them on opposite points."
+    },
+    {
+      "click": "data-ghost-label=\"α\"",
+      "after": 3.8,
+      "sameClick": true,
+      "text": "The grid and the orientation can change here, before the first step."
+    },
+    {
+      "click": "data-letter=\"A\"",
+      "after": 0.2,
+      "chapter": "Options",
+      "text": "Tap an option to add it. Hold it to preview the move."
+    },
+    {
+      "click": "data-letter=\"A\"",
+      "after": 3.8,
+      "sameClick": true,
+      "text": "Options are grouped by letter type. Type 1 moves both hands."
+    },
+    {
+      "click": "data-letter=\"B\"",
+      "after": 0.2,
+      "text": "Every option starts where the last step ended."
+    },
+    {
+      "click": "Level 1: Base Motions",
+      "after": 0.2,
+      "chapter": "Levels",
+      "text": "Level 1 keeps the options turn-free."
+    },
+    {
+      "click": "Level 2: Whole Turns",
+      "after": 0.2,
+      "text": "Level 2 brings whole turns back."
+    },
+    {
+      "click": "Level 2: Whole Turns",
+      "after": 3.6,
+      "sameClick": true,
+      "text": "Set each hand's turns here before you add the step."
+    },
+    {
+      "click": "Left turns",
+      "after": 0.2,
+      "text": "The left hand makes one turn on the next step."
+    },
+    {
+      "click": "data-letter=\"C\"",
+      "after": 0.6,
+      "shot": "wide",
+      "text": "The step carries the turns you chose."
+    },
+    {
+      "click": "Level 3: Half Turns, Floats",
+      "after": 0.2,
+      "text": "Level 3 adds half turns and floats."
+    },
+    {
+      "click": "Step 2 Pictograph",
+      "after": 0.2,
+      "chapter": "Edit",
+      "text": "Tap a step to open the editor."
+    },
+    {
+      "click": "Add half a turn: Left",
+      "after": 0.2,
+      "text": "Add or remove turns for either hand."
+    },
+    {
+      "click": "Toggle Left rotation",
+      "after": 0.2,
+      "text": "This flips the spin direction."
+    },
+    {
+      "click": "Close step editor",
+      "after": 0.1,
+      "text": ""
+    },
+    {
+      "click": "Undo",
+      "after": 0.2,
+      "text": "Undo takes back the last change. Redo puts it back."
+    },
+    {
+      "click": "Play sequence",
+      "after": 0.6,
+      "chapter": "Play",
+      "shot": "wide",
+      "text": "Play runs the sequence in the workspace."
+    },
+    {
+      "click": "Stop playback",
+      "after": 0.1,
+      "text": ""
+    },
+    {
+      "click": "Sequence Actions",
+      "after": 0.2,
+      "chapter": "Actions",
+      "text": "Actions holds the tools that change the whole sequence."
+    },
+    {
+      "click": "Mirror Sequence",
+      "after": 0.6,
+      "shot": "wide",
+      "text": "Mirror flips the sequence left to right."
+    },
+    {
+      "click": "Back to workspace",
+      "after": 0.1,
+      "text": ""
+    },
+    {
+      "click": "Save to Library",
+      "after": 0.2,
+      "chapter": "Save",
+      "text": "Save keeps the sequence in your library."
+    },
+    {
+      "click": "Save to Library",
+      "after": 3.6,
+      "sameClick": true,
+      "text": "Public needs four steps. Collections keep your library in order."
+    },
+    {
+      "click": "Cancel",
+      "after": 0.1,
+      "text": ""
+    },
+    {
+      "click": "Share sequence",
+      "after": 0.2,
+      "text": "Share copies a link anyone can open."
+    }
+  ]
+}
