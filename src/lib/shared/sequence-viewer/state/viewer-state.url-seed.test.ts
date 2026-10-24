@@ -35,6 +35,20 @@ describe("createViewerState URL seeding", () => {
     expect(state.viewerMode).toBe("post-studio");
   });
 
+  it("opens a shared 3D view without recording, then arms recording explicitly", () => {
+    const state = createViewerState({ initialMode: "animation-3d", persist: false });
+    expect(state.viewerMode).toBe("animation-3d");
+    expect(state.exportContext).toBeNull();
+
+    state.enterExport("animation-export", "animation-3d");
+    expect(state.exportContext).toBe("animation-export");
+  });
+
+  it("preserves initial 2D and Card export contexts", () => {
+    expect(createViewerState({ initialMode: "animation", persist: false }).exportContext).toBe("animation-export");
+    expect(createViewerState({ initialMode: "card", persist: false }).exportContext).toBe("image-export");
+  });
+
   it("raw getters keep the 3D preference a small viewport coerces away", () => {
     // The URL session captures the raw pair: a 3D link opened on a folded
     // phone must not be rewritten to 2D in the address bar.

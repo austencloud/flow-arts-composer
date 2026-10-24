@@ -40,6 +40,7 @@ export async function generatePerVisitDemo(
       ...(options?.startPlacement
         ? { startPlacement: options.startPlacement }
         : {}),
+      ...(options?.continuity ? { continuity: options.continuity } : {}),
     });
     if (viaWorker.status === "ok") return viaWorker.sequence;
     // "failed" means the roll genuinely produced nothing — the same outcome the

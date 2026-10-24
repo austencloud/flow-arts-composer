@@ -15,6 +15,12 @@ describe("hasExactWorkerSceneFeatures", () => {
     expect(hasExactWorkerSceneFeatures(reader())).toBe(true);
   });
 
+  it("keeps prop-authoritative contact on the main-thread rig", () => {
+    expect(hasExactWorkerSceneFeatures(reader(), "prop-authoritative")).toBe(
+      false
+    );
+  });
+
   it.each(SCENE_FEATURES)(
     "fails closed when $key differs from its default",
     (feature) => {

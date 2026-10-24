@@ -66,9 +66,7 @@ export type PublicCollectionDetailIntent = {
 };
 
 /** One published visual in Explore > Visuals — e.g. a creator-profile tile
- *  opening the public detail view. Callers gate on `exploreVisualsVisible()`;
- *  Browse resolves the location either way (unpromoted deep links fall back
- *  per the route resolver). */
+ *  opening the public detail view. */
 export type ExploreVisualDetailIntent = {
   kind: "explore-visual-detail";
   visualType: "tunnels" | "mandalas" | "scenes";

@@ -5,7 +5,9 @@ import type { CompositionProgressCallback, RenderCanvas } from "./types";
 import type { ImageComposer } from "./image-composer";
 import type { TextRenderer } from "./text-renderer";
 import { convertGlyphCacheToBitmaps } from "./glyph-bitmap-loader";
+import type { GlyphBitmapEntry } from "./glyph-bitmap-loader";
 import { bundleTransferables } from "./card-asset-bundle";
+import { captureException } from "#lib/shared/analytics/services/posthog.js";
 
 type CompositionProgress = Parameters<CompositionProgressCallback>[0];
 
@@ -55,8 +57,14 @@ export type CompositionWorkerInMessage =
     }
   | { type: "probe" };
 
+/** Init stages a worker reports in order, ending with init-done. */
+export type WorkerInitStage = "imports" | "renderer" | "seed" | "fonts";
+
 export type CompositionWorkerOutMessage =
+  | { type: "booted" }
+  | { type: "init-stage"; stage: WorkerInitStage; ms: number }
   | { type: "init-done" }
+  | { type: "init-error"; stage: WorkerInitStage; message: string }
   | { type: "result"; id: number; bitmap: ImageBitmap }
   | {
       type: "progress";
@@ -68,6 +76,23 @@ export type CompositionWorkerOutMessage =
   | { type: "error"; id: number; message: string }
   | { type: "probe-result"; ok: boolean; error?: string };
 
+/**
+ * How one pool worker's start went, in milliseconds. `prepMs` is main-thread
+ * cloning before the init message was posted; `bootMs` is `new Worker` to the
+ * worker module running (null: it never ran); `stages` are the worker's own
+ * init stage durations; `waitMs` is post to settle. A timeout's `stage` is the
+ * stage it was still in, or null when it never started init.
+ */
+export interface WorkerInitReport {
+  worker: number;
+  outcome: "ready" | "error" | "timeout" | "terminated";
+  prepMs: number;
+  bootMs: number | null;
+  waitMs: number;
+  stages: Partial<Record<WorkerInitStage, number>>;
+  stage: WorkerInitStage | null;
+  error?: string;
+}
 
 interface WorkerEntry {
   worker: Worker;
@@ -127,6 +152,13 @@ export class CompositionDispatcher {
   // Open while a pre-warm builds its asset bundle. ensureInitialized awaits it so
   // a composeFrontBitmap that races in during the build can't seed the pool empty.
   private seedGate: Promise<void> | null = null;
+  // Signature of the bundle an in-flight initPool is seeding with.
+  private initializingSignature: string | null = null;
+  // Bumped by terminate() so an initPool that outlives its pool leaves the
+  // replacement's state alone.
+  private poolGeneration = 0;
+  // Settles each still-starting worker as "terminated" and clears its timer.
+  private pendingInitAborts = new Set<() => void>();
 
   private static workerSupport: boolean | null = null;
   private static probing: Promise<boolean> | null = null;
@@ -188,7 +220,11 @@ export class CompositionDispatcher {
    */
   beginSeed(signature: string): () => void {
     this.pendingSignature = signature;
-    if (this.seededSignature !== null && this.seededSignature !== signature) {
+    // A pool still starting with another deck's bundle counts too. Letting it
+    // finish marked it seeded with THIS signature while it held the old assets
+    // (/shop prewarms one cover set, then /shop/starter-pack asks for another).
+    const live = this.seededSignature ?? this.initializingSignature;
+    if (live !== null && live !== signature) {
       this.terminate();
     }
     let resolve!: () => void;
@@ -450,9 +486,16 @@ export class CompositionDispatcher {
   }
 
   private handleWorkerMessage(data: CompositionWorkerOutMessage): void {
-    // init-done is handled during init; probe-result is only seen by the
-    // throwaway probe worker, never the pool — both lack a request id.
-    if (data.type === "init-done" || data.type === "probe-result") return;
+    // Init messages are handled during init; probe-result is only seen by the
+    // throwaway probe worker, never the pool — none carry a request id.
+    if (
+      data.type === "booted" ||
+      data.type === "init-stage" ||
+      data.type === "init-done" ||
+      data.type === "init-error" ||
+      data.type === "probe-result"
+    )
+      return;
 
     const pending = this.pendingRequests.get(data.id);
     if (!pending) return;
@@ -566,19 +609,36 @@ export class CompositionDispatcher {
   }
 
   private async initPool(): Promise<void> {
+    const generation = this.poolGeneration;
+    // Captured before the first await, together with the bundle it names: a
+    // beginSeed during this init changes the pending values, and the pool must
+    // be marked with the bundle it was actually given.
+    const signature = this.pendingSignature;
+    const bundle = this.pendingBundle;
+    const overrideBundle: import("./override-placement-bundle").OverridePlacementBundle =
+      this.pendingOverrideBundle ?? {
+        default: [],
+        special: [],
+        global: [],
+        propGeometry: [],
+      };
+    this.initializingSignature = signature;
+
     await this.textRenderer.preloadGlyphImages();
     const glyphEntries = await convertGlyphCacheToBitmaps(
       this.textRenderer.getGlyphCache()
     );
+    if (generation !== this.poolGeneration) {
+      for (const entry of glyphEntries) entry.bitmap.close();
+      return;
+    }
     console.log(
       "[CompositionDispatcher] initPool glyphEntries:",
       glyphEntries.length,
       "bundle keys:",
-      this.pendingBundle?.keys.length ?? 0,
+      bundle?.keys.length ?? 0,
       "grids:",
-      this.pendingBundle
-        ? Object.values(this.pendingBundle.grids).filter(Boolean).length
-        : 0
+      bundle ? Object.values(bundle.grids).filter(Boolean).length : 0
     );
 
     const glyphMeta: GlyphTransferEntry[] = glyphEntries.map((e) => ({
@@ -592,135 +652,173 @@ export class CompositionDispatcher {
     // bitmaps, so each worker needs its own clone; running the N clone-sets in
     // parallel (instead of awaiting each inside a serial loop) is what turns the
     // ~3.7s seed into a sub-second one.
-    const spawnWorker = async (i: number): Promise<void> => {
-      try {
-        const worker = new Worker(
-          new URL("../workers/composition.worker.ts", import.meta.url),
-          { type: "module" }
-        );
+    const starts = Array.from({ length: POOL_SIZE }, (_, i) =>
+      this.startWorker(i, glyphEntries, glyphMeta, bundle, overrideBundle)
+    );
 
-        const entry: WorkerEntry = { worker, ready: false, pendingCount: 0 };
-        worker.onerror = (err) => {
-          console.error(`[CompositionDispatcher] Worker ${i} error:`, err);
-        };
-        this.workers.push(entry);
+    // Every worker holds its own clones once its init message is posted.
+    await Promise.all(starts.map((s) => s.posted));
+    for (const entry of glyphEntries) {
+      entry.bitmap.close();
+    }
 
-        // The clock must not start until the init message is actually on the
-        // wire. Arming it here would charge the worker for the main-thread prep
-        // that happens below — cloning every glyph bitmap and the whole asset
-        // bundle, N times over, on a contended thread. That prep alone burned
-        // the full budget in production and reported all N workers as timing
-        // out within the same 40ms, before any of them had been asked to do
-        // anything (2026-08-09).
-        let armTimeout = (): void => {};
-        const ready = new Promise<void>((resolve, reject) => {
-          let timeout: ReturnType<typeof setTimeout> | undefined;
-          armTimeout = () => {
-            timeout = setTimeout(
-              () => reject(new Error(`Worker ${i} init timeout`)),
-              INIT_TIMEOUT_MS
-            );
-          };
-          worker.onmessage = (
-            event: MessageEvent<CompositionWorkerOutMessage>
-          ) => {
-            if (event.data.type === "init-done") {
-              clearTimeout(timeout);
-              entry.ready = true;
-              worker.onmessage = (
-                ev: MessageEvent<CompositionWorkerOutMessage>
-              ) => this.handleWorkerMessage(ev.data);
-              resolve();
-            }
-          };
+    // Open the pool as soon as one worker is ready; the rest join as they
+    // finish. Waiting for all of them held every card for the slowest worker.
+    // When none answer, the timeout still ends the wait and cards fall back to
+    // the main thread.
+    const settled = starts.map((s) => s.settled);
+    await firstReady(settled);
+    if (generation !== this.poolGeneration) return;
+
+    this.initialized = true;
+    this.initializing = null;
+    this.initializingSignature = null;
+    this.seededSignature = signature;
+
+    void Promise.all(settled).then(reportPoolStart);
+  }
+
+  /**
+   * Spawn pool worker `i`, post its init, and time each step. `posted`
+   * resolves once the init message is on the wire (or the start failed);
+   * `settled` never rejects and says how the start went.
+   */
+  private startWorker(
+    i: number,
+    glyphEntries: GlyphBitmapEntry[],
+    glyphMeta: GlyphTransferEntry[],
+    bundle: import("./card-asset-bundle").AssetBundle | null,
+    overrideBundle: import("./override-placement-bundle").OverridePlacementBundle
+  ): { posted: Promise<void>; settled: Promise<WorkerInitReport> } {
+    const spawnedAt = performance.now();
+    let postedAt: number | null = null;
+    let bootMs: number | null = null;
+    const stages: WorkerInitReport["stages"] = {};
+    let failedStage: WorkerInitStage | null = null;
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    let finished = false;
+    let settle!: (outcome: WorkerInitReport["outcome"], error?: string) => void;
+    const abort = (): void => settle("terminated");
+
+    const settled = new Promise<WorkerInitReport>((resolve) => {
+      settle = (outcome, error) => {
+        if (finished) return;
+        finished = true;
+        clearTimeout(timeout);
+        this.pendingInitAborts.delete(abort);
+        const now = performance.now();
+        resolve({
+          worker: i,
+          outcome,
+          prepMs: Math.round((postedAt ?? now) - spawnedAt),
+          bootMs,
+          waitMs: postedAt === null ? 0 : Math.round(now - postedAt),
+          stages: { ...stages },
+          stage:
+            outcome === "ready"
+              ? null
+              : (failedStage ?? stageInProgress(bootMs !== null, stages)),
+          ...(error !== undefined && { error }),
         });
+      };
+    });
+    this.pendingInitAborts.add(abort);
 
+    let worker: Worker;
+    try {
+      worker = new Worker(
+        new URL("../workers/composition.worker.ts", import.meta.url),
+        { type: "module" }
+      );
+    } catch (err) {
+      settle("error", errorText(err));
+      return { posted: Promise.resolve(), settled };
+    }
+
+    const entry: WorkerEntry = { worker, ready: false, pendingCount: 0 };
+    this.workers.push(entry);
+
+    // A worker that failed init is never handed work, so free its thread.
+    const fail = (error: string): void => {
+      worker.terminate();
+      settle("error", error);
+    };
+
+    worker.onerror = (event) => {
+      if (entry.ready) {
+        console.error(`[CompositionDispatcher] Worker ${i} error:`, event);
+        return;
+      }
+      // Before init-done this is the module failing to load or evaluate. It
+      // used to be logged and then waited out for the full timeout.
+      fail(event.message || "worker script failed to load");
+    };
+
+    worker.onmessage = (event: MessageEvent<CompositionWorkerOutMessage>) => {
+      const data = event.data;
+      switch (data.type) {
+        case "booted":
+          bootMs = Math.round(performance.now() - spawnedAt);
+          break;
+        case "init-stage":
+          stages[data.stage] = data.ms;
+          break;
+        case "init-done":
+          // terminate() already dropped this worker; it must not rejoin.
+          if (!this.workers.includes(entry)) return;
+          if (finished) {
+            console.info(
+              `[CompositionDispatcher] Worker ${i} finished init after its timeout and joined the pool`
+            );
+          }
+          entry.ready = true;
+          worker.onmessage = (ev: MessageEvent<CompositionWorkerOutMessage>) =>
+            this.handleWorkerMessage(ev.data);
+          settle("ready");
+          break;
+        case "init-error":
+          failedStage = data.stage;
+          fail(data.message);
+          break;
+      }
+    };
+
+    const posted = (async () => {
+      try {
         // Clone glyph bitmaps for this worker (transfer consumes the original).
         const clonedBitmaps = await Promise.all(
           glyphEntries.map((e) => createImageBitmap(e.bitmap))
         );
-
-        // Clone the AssetBundle per worker. Empty bundle when none was set —
-        // the worker simply seeds nothing.
-        const bundle = this.pendingBundle;
-        let bundleClone: import("./card-asset-bundle").AssetBundle = {
-          keys: [],
-          bitmaps: [],
-          grids: {
-            diamond: null,
-            box: null,
-            diamondNonRadial: null,
-            boxNonRadial: null,
-          },
-          icons: [],
-        };
-        if (bundle) {
-          const clonedBmps = await Promise.all(
-            bundle.bitmaps.map((b) => createImageBitmap(b))
-          );
-          type GridSlot =
-            import("./card-asset-bundle").AssetBundle["grids"]["diamond"];
-          const cloneGrid = async (g: GridSlot): Promise<ImageBitmap | null> =>
-            g ? await createImageBitmap(g as ImageBitmapSource) : null;
-          // Clone footer icons per worker (transfer detaches the source).
-          const clonedIcons = await Promise.all(
-            bundle.icons.map(async (icon) => ({
-              path: icon.path,
-              bitmap: await createImageBitmap(icon.bitmap),
-            }))
-          );
-          bundleClone = {
-            keys: [...bundle.keys],
-            bitmaps: clonedBmps,
-            grids: {
-              diamond: await cloneGrid(bundle.grids.diamond),
-              box: await cloneGrid(bundle.grids.box),
-              diamondNonRadial: await cloneGrid(bundle.grids.diamondNonRadial),
-              boxNonRadial: await cloneGrid(bundle.grids.boxNonRadial),
-            },
-            icons: clonedIcons,
-          };
-        }
+        const bundleClone = await cloneAssetBundle(bundle);
+        if (finished) return;
 
         const initMessage: CompositionWorkerInMessage = {
           type: "init",
           glyphs: clonedBitmaps,
           glyphMeta,
           bundle: bundleClone,
-          overrideBundle: this.pendingOverrideBundle ?? {
-            default: [],
-            special: [],
-            global: [],
-            propGeometry: [],
-          },
+          overrideBundle,
         };
         worker.postMessage(initMessage, [
           ...clonedBitmaps,
           ...bundleTransferables(bundleClone),
         ]);
-        armTimeout();
+        postedAt = performance.now();
 
-        await ready;
+        // The clock must not start until the init message is actually on the
+        // wire. Arming it at spawn would charge the worker for the main-thread
+        // prep above — cloning every glyph bitmap and the whole asset bundle, N
+        // times over, on a contended thread. That prep alone burned the full
+        // budget in production and reported all N workers as timing out within
+        // the same 40ms, before any of them had been asked to do anything
+        // (2026-08-09).
+        timeout = setTimeout(() => settle("timeout"), INIT_TIMEOUT_MS);
       } catch (err) {
-        console.error(
-          `[CompositionDispatcher] Failed to create worker ${i}:`,
-          err
-        );
+        fail(errorText(err));
       }
-    };
+    })();
 
-    await Promise.all(
-      Array.from({ length: POOL_SIZE }, (_, i) => spawnWorker(i))
-    );
-
-    // Close the source glyph bitmaps — workers have their own clones
-    for (const entry of glyphEntries) {
-      entry.bitmap.close();
-    }
-
-    this.initialized = true;
-    this.initializing = null;
-    this.seededSignature = this.pendingSignature;
+    return { posted, settled };
   }
 
   /**
@@ -744,12 +842,17 @@ export class CompositionDispatcher {
   }
 
   terminate(): void {
+    this.poolGeneration++;
+    // Settle workers still starting so their init timers can't fire later as
+    // a burst of "init timeout" reports about a pool that no longer exists.
+    for (const abort of [...this.pendingInitAborts]) abort();
     for (const entry of this.workers) {
       entry.worker.terminate();
     }
     this.workers = [];
     this.initialized = false;
     this.initializing = null;
+    this.initializingSignature = null;
     this.seededSignature = null;
 
     for (const [, pending] of this.pendingRequests) {
@@ -757,4 +860,122 @@ export class CompositionDispatcher {
     }
     this.pendingRequests.clear();
   }
+}
+
+// ---- Pool start helpers ----
+
+const INIT_STAGE_ORDER: readonly WorkerInitStage[] = [
+  "imports",
+  "renderer",
+  "seed",
+  "fonts",
+];
+
+/** The stage a worker was in when it stopped answering, or null if it never booted. */
+function stageInProgress(
+  booted: boolean,
+  finished: WorkerInitReport["stages"]
+): WorkerInitStage | null {
+  if (!booted) return null;
+  return INIT_STAGE_ORDER.find((s) => finished[s] === undefined) ?? "fonts";
+}
+
+function errorText(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
+/** Resolves when the first report is "ready", or when every report is in. */
+function firstReady(reports: Promise<WorkerInitReport>[]): Promise<void> {
+  return new Promise((resolve) => {
+    let remaining = reports.length;
+    if (remaining === 0) resolve();
+    for (const report of reports) {
+      void report.then((r) => {
+        remaining--;
+        if (r.outcome === "ready" || remaining === 0) resolve();
+      });
+    }
+  });
+}
+
+/**
+ * One report per pool start. Every worker used to console.error its own
+ * timeout, which PostHog turned into six or seven identical exceptions with no
+ * timings. Workers dropped by terminate() are not failures.
+ */
+function reportPoolStart(reports: WorkerInitReport[]): void {
+  const count = (outcome: WorkerInitReport["outcome"]) =>
+    reports.filter((r) => r.outcome === outcome).length;
+  const ready = count("ready");
+  const timeouts = count("timeout");
+  const errors = count("error");
+  if (timeouts + errors === 0) {
+    if (ready > 0) {
+      console.info("[CompositionDispatcher] worker pool started:", reports);
+    }
+    return;
+  }
+  console.warn(
+    `[CompositionDispatcher] ${timeouts + errors} of ${reports.length} workers failed to start` +
+      (ready === 0 ? "; cards render on the main thread" : ""),
+    reports
+  );
+  const nav =
+    typeof navigator !== "undefined"
+      ? (navigator as Navigator & { deviceMemory?: number })
+      : undefined;
+  captureException(new Error("Composition workers failed to start"), {
+    worker_pool_size: reports.length,
+    worker_ready: ready,
+    worker_timeouts: timeouts,
+    worker_errors: errors,
+    worker_first_error: reports.find((r) => r.error)?.error ?? null,
+    worker_init_reports: reports,
+    worker_init_timeout_ms: INIT_TIMEOUT_MS,
+    hardware_concurrency: nav?.hardwareConcurrency ?? null,
+    device_memory: nav?.deviceMemory ?? null,
+  });
+}
+
+/** Per-worker copy of the asset bundle (transfer detaches the source bitmaps). */
+async function cloneAssetBundle(
+  bundle: import("./card-asset-bundle").AssetBundle | null
+): Promise<import("./card-asset-bundle").AssetBundle> {
+  // Empty bundle when none was set — the worker simply seeds nothing.
+  if (!bundle) {
+    return {
+      keys: [],
+      bitmaps: [],
+      grids: {
+        diamond: null,
+        box: null,
+        diamondNonRadial: null,
+        boxNonRadial: null,
+      },
+      icons: [],
+    };
+  }
+  type GridSlot = import("./card-asset-bundle").AssetBundle["grids"]["diamond"];
+  const cloneGrid = async (g: GridSlot): Promise<ImageBitmap | null> =>
+    g ? await createImageBitmap(g as ImageBitmapSource) : null;
+  const [bitmaps, icons, diamond, box, diamondNonRadial, boxNonRadial] =
+    await Promise.all([
+      Promise.all(bundle.bitmaps.map((b) => createImageBitmap(b))),
+      Promise.all(
+        bundle.icons.map(async (icon) => ({
+          path: icon.path,
+          bitmap: await createImageBitmap(icon.bitmap),
+        }))
+      ),
+      cloneGrid(bundle.grids.diamond),
+      cloneGrid(bundle.grids.box),
+      cloneGrid(bundle.grids.diamondNonRadial),
+      cloneGrid(bundle.grids.boxNonRadial),
+    ]);
+  return {
+    keys: [...bundle.keys],
+    bitmaps,
+    grids: { diamond, box, diamondNonRadial, boxNonRadial },
+    icons,
+  };
 }

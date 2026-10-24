@@ -71,7 +71,7 @@
         </p>
       {/if}
       {#if user.email}
-        <p class="profile-email">{user.email}</p>
+        <p class="profile-email ph-no-capture">{user.email}</p>
       {/if}
     </div>
   </div>

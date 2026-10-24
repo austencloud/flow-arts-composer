@@ -55,6 +55,8 @@ export function mapLocation(location: string): GridLocation {
       return GridLocation.SOUTHWEST;
     case "nw":
       return GridLocation.NORTHWEST;
+    case "c":
+      return GridLocation.CENTER;
     default:
       console.warn(
         `⚠️ mapLocation: unknown location "${location}", defaulting to NORTH`
@@ -75,6 +77,24 @@ export function mapOrientation(orientation: string): Orientation {
       return Orientation.CLOCK;
     case "counter":
       return Orientation.COUNTER;
+    // Compass orientations of a prop at the center point (centerN ... centerNW).
+    // Matched in lower case, since the switch lower-cases its input.
+    case "centern":
+      return Orientation.CENTER_N;
+    case "centerne":
+      return Orientation.CENTER_NE;
+    case "centere":
+      return Orientation.CENTER_E;
+    case "centerse":
+      return Orientation.CENTER_SE;
+    case "centers":
+      return Orientation.CENTER_S;
+    case "centersw":
+      return Orientation.CENTER_SW;
+    case "centerw":
+      return Orientation.CENTER_W;
+    case "centernw":
+      return Orientation.CENTER_NW;
     default:
       console.warn(
         `⚠️ mapOrientation: unknown orientation "${orientation}", defaulting to IN`

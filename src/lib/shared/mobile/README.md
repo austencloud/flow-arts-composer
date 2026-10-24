@@ -25,6 +25,5 @@ screenshots yet; set `image` on an ios-safari step to add one.
 ## Other pieces
 
 - `services/platform-detector.ts`: platform, browser, and in-app browser detection.
-- `services/pwa-engagement-tracker.ts`, `services/pwa-install-dismissal-manager.ts`:
-  install-nudge timing and dismissal memory.
-- `services/gesture-handler.ts`, `share-action.svelte.ts`, `utils/keyboard-inset.svelte.ts`.
+- `services/pwa-engagement-tracker.ts`: install-nudge timing.
+- `share-action.svelte.ts`, `utils/keyboard-inset.svelte.ts`.

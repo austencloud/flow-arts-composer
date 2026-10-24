@@ -41,7 +41,7 @@ import type { StartPlacementData } from "#lib/shared/foundation/domain/models/st
 import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import type { TrailSettings } from "../../domain/types/trail-types";
-import { DEFAULT_CANVAS_SIZE } from "../canvas-resizer.svelte";
+import { DEFAULT_CANVAS_SIZE } from "../canvas-defaults";
 import {
   animationGridJoinKey,
   resolveAnimationGridJoin,

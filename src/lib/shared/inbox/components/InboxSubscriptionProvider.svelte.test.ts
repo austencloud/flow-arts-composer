@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   authState: { user: { uid: "user-1" } as { uid: string } | null },
   inboxState: {
     totalUnreadCount: 1,
+    markConversationsPending: vi.fn(),
     setConversations: vi.fn(),
     setNotifications: vi.fn(),
   },

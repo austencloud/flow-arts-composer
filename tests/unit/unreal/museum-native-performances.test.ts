@@ -9,7 +9,8 @@ describe("Museum native authored playback", () => {
   it("preserves every bound sequence and reuses captures only for identical sequence IDs", () => {
     const { grid } = buildMuseumGrid(MUSEUM_WALK_ROOMS, MUSEUM_WALK_EDGES, GRID_CONFIG);
     const { performers, manifest } = buildMuseumNativePerformances(grid.performers);
-    expect(performers).toHaveLength(33);
+    // 32: the wax docent is withheld until it has a pose.
+    expect(performers).toHaveLength(32);
     expect(manifest.performances).toHaveLength(25);
     for (const station of performers) {
       if (!station.sequenceId) {

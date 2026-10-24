@@ -8,7 +8,8 @@ import { probeMedia, toolPath } from "./media-import.mjs";
  * Stills and contact sheets of a render, to look at without playing it. Both
  * go to a stills/ folder beside the render, named after it:
  * `<render>-<t>s.jpg` for a still at t seconds and `<render>-contact.jpg` for
- * a sheet of one frame a second.
+ * a sheet of one frame a second. A release clip's GIF and poster sit beside
+ * the render itself, as `<render>.gif` and `<render>.jpg`.
  */
 
 const execFileAsync = promisify(execFile);
@@ -161,4 +162,70 @@ export async function writeContactSheet(file, columns = 10) {
   if (!made)
     throw new Error(`ffmpeg made no contact sheet of ${path.basename(file)}.`);
   return { file: output, ...layout };
+}
+
+/**
+ * The release scripts' GIF recipe: 440 px, 10 fps and 64 colours hold a
+ * trail clip near the email's 4 MB.
+ */
+export const RELEASE_GIF = { size: 440, fps: 10, colors: 64 };
+export const RELEASE_GIF_BUDGET_BYTES = 4 * 1024 * 1024;
+
+/**
+ * Writes the release email's looping GIF and the clip's JPG poster beside the
+ * render. The poster defaults to the middle of the clip.
+ */
+export async function writeReleaseMedia(file, { posterAt, gif = {} } = {}) {
+  const seconds = await videoSeconds(file);
+  const at = posterAt ?? Number((seconds / 2).toFixed(3));
+  if (!(at >= 0 && at < seconds))
+    throw new Error(
+      `${path.basename(file)} is ${seconds.toFixed(2)} s long; --poster ${at} is outside it.`
+    );
+  const { size, fps, colors } = { ...RELEASE_GIF, ...gif };
+  const gifFile = path.join(path.dirname(file), `${stem(file)}.gif`);
+  const posterFile = path.join(path.dirname(file), `${stem(file)}.jpg`);
+  await fs.rm(gifFile, { force: true });
+  await fs.rm(posterFile, { force: true });
+  await ffmpeg(
+    [
+      "-i",
+      file,
+      "-filter_complex",
+      [
+        `fps=${fps},scale=${size}:-2:flags=lanczos,split[a][b]`,
+        `[a]palettegen=max_colors=${colors}:stats_mode=full[p]`,
+        `[b][p]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle`,
+      ].join(";"),
+      "-loop",
+      "0",
+      gifFile,
+    ],
+    "the GIF"
+  );
+  await ffmpeg(
+    ["-ss", String(at), "-i", file, "-frames:v", "1", "-q:v", "3", posterFile],
+    `the poster at ${at} s`
+  );
+  const gifBytes = (await fs.stat(gifFile)).size;
+  const posterBytes = await fs.stat(posterFile).then(
+    (stat) => stat.size,
+    () => 0
+  );
+  if (!posterBytes)
+    throw new Error(
+      `ffmpeg found no frame at ${at} s in ${path.basename(file)}.`
+    );
+  const megabytes = (bytes) => Number((bytes / 1024 / 1024).toFixed(2));
+  return {
+    gif: gifFile,
+    gifMB: megabytes(gifBytes),
+    poster: posterFile,
+    posterAt: at,
+    ...(gifBytes > RELEASE_GIF_BUDGET_BYTES
+      ? {
+          warning: `The GIF is ${megabytes(gifBytes)} MB, over the email's 4 MB; lower --gif-size, --gif-colors or --gif-fps (now ${size} px, ${colors} colours, ${fps} fps).`,
+        }
+      : {}),
+  };
 }

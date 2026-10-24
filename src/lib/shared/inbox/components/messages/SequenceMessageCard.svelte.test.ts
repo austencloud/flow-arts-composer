@@ -86,6 +86,7 @@ describe("SequenceMessageCard", () => {
 
     await vi.waitFor(() => {
       expect(mocks.openSequenceViewer).toHaveBeenCalledWith(hydrated, {
+        source: "inbox_message",
         returnPath: window.location.pathname,
         returnLabel: "Messages",
       });

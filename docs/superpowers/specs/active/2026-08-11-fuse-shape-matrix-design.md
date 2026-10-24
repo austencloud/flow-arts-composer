@@ -50,8 +50,8 @@ picker also selects a full sequence and extracts one side. The existing VTG
 picker avoids Firestore, but applies variation data to a two-hand archetype
 before hiding one hand.
 
-An unused `hand-path-loop-detector.ts` checks only that a path visits the four
-points of its grid and returns home. That is neither wired into Fuse nor a
+The `hand-path-loop-detector.ts` (unused, removed 2026-10-22) checked only that a path visits the four
+points of its grid and returns home. That was neither wired into Fuse nor a
 structured LOOP classifier.
 
 The replacement generator must not use public sequence metadata, public

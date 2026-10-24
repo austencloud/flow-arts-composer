@@ -183,9 +183,9 @@ describe("PictographArrivalStage screen presentation", () => {
   it("plays over the whole screen, outside the step grid", async () => {
     const host = document.createElement("div");
     document.body.appendChild(host);
-    render(
-      PictographArrivalStage,
-      {
+    render(PictographArrivalStage, {
+      target: host,
+      props: {
         request: commitRequest(11),
         sequence,
         presentation: "screen",
@@ -194,8 +194,7 @@ describe("PictographArrivalStage screen presentation", () => {
         onBeginHandoff: vi.fn(),
         onComplete: vi.fn(),
       },
-      { container: host }
-    );
+    });
 
     const overlay = page
       .getByTestId("arrival-pictograph")

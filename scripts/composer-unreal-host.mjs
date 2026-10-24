@@ -40,6 +40,61 @@ async function probeHost() {
   }
 }
 
+export function createLocalHostRecovery({ root, log = console.error }) {
+  return createHostRecovery({
+    probe: probeHost,
+    async start() {
+      const script = path.join(root, "unreal/ComposerViewer/Tools/ensure-host.ps1");
+      const powershell = path.join(
+        process.env.SystemRoot ?? "C:\\Windows",
+        "System32/WindowsPowerShell/v1.0/powershell.exe"
+      );
+      const { stdout, stderr } = await execFileAsync(
+        powershell,
+        ["-NoProfile", "-NonInteractive", "-File", script],
+        { windowsHide: true, timeout: 45000, maxBuffer: 65536 }
+      );
+      if (stderr.trim()) log(`[unreal-host] ${stderr.trim()}`);
+      const result = JSON.parse(stdout.trim());
+      if (
+        !["ready", "starting", "unavailable"].includes(result.status) ||
+        typeof result.message !== "string"
+      ) throw new Error("Unexpected local host status response.");
+      return result;
+    },
+    log,
+  });
+}
+
+export function createLocalHostHandler(ensure, log = console.error) {
+  return (request, response, next = () => {}) => {
+    if (request.url?.split("?")[0] !== "/unreal-host") return next();
+    if (!isLocalHostRequest(request)) {
+      response.writeHead(403).end();
+      return;
+    }
+    if (request.method !== "POST") {
+      response.writeHead(405, { Allow: "POST" }).end();
+      return;
+    }
+    if (request.headers["content-type"]?.split(";")[0] !== "application/json") {
+      response.writeHead(415).end();
+      return;
+    }
+    request.resume();
+    void ensure().then((state) => {
+      response.writeHead(200, {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+      });
+      response.end(JSON.stringify(state));
+    }).catch((error) => {
+      log(`[unreal-host] ${error}`);
+      response.writeHead(500).end();
+    });
+  };
+}
+
 /** Single flight per Vite process; ensure-host.ps1 also locks across worktrees. */
 export function createHostRecovery({
   probe,
@@ -114,67 +169,9 @@ export function composerUnrealHostPlugin() {
     name: "composer-unreal-host",
     apply: "serve",
     configureServer(server) {
-      const ensure = createHostRecovery({
-        probe: probeHost,
-        async start() {
-          const script = path.join(
-            server.config.root,
-            "unreal/ComposerViewer/Tools/ensure-host.ps1"
-          );
-          const powershell = path.join(
-            process.env.SystemRoot ?? "C:\\Windows",
-            "System32/WindowsPowerShell/v1.0/powershell.exe"
-          );
-          const { stdout, stderr } = await execFileAsync(
-            powershell,
-            ["-NoProfile", "-NonInteractive", "-File", script],
-            { windowsHide: true, timeout: 45000, maxBuffer: 65536 }
-          );
-          if (stderr.trim())
-            server.config.logger.warn(`[unreal-host] ${stderr.trim()}`);
-          const result = JSON.parse(stdout.trim());
-          if (
-            !["ready", "starting", "unavailable"].includes(result.status) ||
-            typeof result.message !== "string"
-          ) {
-            throw new Error("Unexpected local host status response.");
-          }
-          return result;
-        },
-        log: (...args) =>
-          server.config.logger.error(args.map(String).join(" ")),
-      });
-      server.middlewares.use((request, response, next) => {
-        if (request.url?.split("?")[0] !== "/unreal-host") return next();
-        if (!isLocalHostRequest(request)) {
-          response.writeHead(403).end();
-          return;
-        }
-        if (request.method !== "POST") {
-          response.writeHead(405, { Allow: "POST" }).end();
-          return;
-        }
-        if (
-          request.headers["content-type"]?.split(";")[0] !== "application/json"
-        ) {
-          response.writeHead(415).end();
-          return;
-        }
-        // The request accepts no paths, commands, or launch options.
-        request.resume();
-        void ensure()
-          .then((state) => {
-            response.writeHead(200, {
-              "Content-Type": "application/json",
-              "Cache-Control": "no-store",
-            });
-            response.end(JSON.stringify(state));
-          })
-          .catch((error) => {
-            server.config.logger.error(`[unreal-host] ${error}`);
-            response.writeHead(500).end();
-          });
-      });
+      const log = (...args) => server.config.logger.error(args.map(String).join(" "));
+      const ensure = createLocalHostRecovery({ root: server.config.root, log });
+      server.middlewares.use(createLocalHostHandler(ensure, log));
     },
   };
 }

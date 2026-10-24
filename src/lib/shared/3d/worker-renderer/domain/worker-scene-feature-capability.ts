@@ -1,4 +1,5 @@
 import { SCENE_FEATURES } from "../../scene-features/domain/scene-feature-registry";
+import type { ContactMode } from "@austencloud/scene-3d";
 
 export interface WorkerSceneFeatureReader {
   isEnabled(key: string): boolean;
@@ -12,10 +13,13 @@ export interface WorkerSceneFeatureReader {
  * second handwritten list also makes a newly-added feature fail closed.
  */
 export function hasExactWorkerSceneFeatures(
-  features: WorkerSceneFeatureReader
+  features: WorkerSceneFeatureReader,
+  contactMode: ContactMode = "legacy"
 ): boolean {
-  return SCENE_FEATURES.every(
-    (feature) => features.isEnabled(feature.key) === feature.defaultEnabled
+  return (
+    contactMode === "legacy" &&
+    SCENE_FEATURES.every(
+      (feature) => features.isEnabled(feature.key) === feature.defaultEnabled
+    )
   );
 }
-

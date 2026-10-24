@@ -122,6 +122,9 @@ with pre-prepared data for better performance.
     onToggleNonRadial = undefined,
     // Dark Mode override for export (when set, overrides CSS-based detection)
     darkMode = undefined,
+    // Live theme override: draws dark or light whatever the global toggle says,
+    // and unlike darkMode keeps the live fades and travel (a dark dialog).
+    themeOverride = undefined,
     // Editor grids can opt in without changing saved or exported pictographs.
     // Print Mode: pure white background for professional print output
     printMode = false,
@@ -211,6 +214,8 @@ with pre-prepared data for better performance.
     onToggleNonRadial?: () => void;
     /** Dark Mode override for export. When set, overrides CSS-based detection. */
     darkMode?: boolean;
+    /** Live theme override; keeps live animation, unlike darkMode. */
+    themeOverride?: "dark" | "light";
     /** Editor grids opt in to context-scoped prop contrast. */
     /** Print Mode: pure white background for professional print output (Choreo Cards). */
     printMode?: boolean;
@@ -343,7 +348,11 @@ with pre-prepared data for better performance.
 
   // Effective dark mode: use prop if set, otherwise use synced state
   const effectiveDarkMode = $derived(
-    darkMode !== undefined ? darkMode : syncedVisibility.darkMode
+    darkMode !== undefined
+      ? darkMode
+      : themeOverride !== undefined
+        ? themeOverride === "dark"
+        : syncedVisibility.darkMode
   );
 
   // Keep overlays mounted while hidden (so opacity fades can play) ONLY in the

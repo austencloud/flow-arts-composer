@@ -962,6 +962,7 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
           opener: openerImage
             ? { image: openerImage, holdBeats: VIDEO_OPENER_HOLD_BEATS }
             : undefined,
+          carousel: opts.carousel,
         },
         {
           canvas: animationCanvas,

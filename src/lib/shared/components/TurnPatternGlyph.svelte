@@ -18,9 +18,14 @@
     entries: readonly TurnGlyphEntry[];
     /** Width of the containing glyph box, cqi. CardBack's box is 10cqi. */
     maxWidthCqi?: number;
+    /**
+     * Column of the beat playing now. Null leaves every column full, which is
+     * how card backs and a header that is not playing should look.
+     */
+    activeIndex?: number | null;
   }
 
-  const { entries, maxWidthCqi = 10 }: Props = $props();
+  const { entries, maxWidthCqi = 10, activeIndex = null }: Props = $props();
 
   const layout = $derived(layoutTurnGlyph(entries.length, maxWidthCqi));
 </script>
@@ -31,8 +36,12 @@
     style="gap: calc(var(--glyph-unit, 1cqi) * {layout.groupGap}); --bar-w: calc(var(--glyph-unit, 1cqi) * {layout.barW}); --intra-gap: calc(var(--glyph-unit, 1cqi) * {layout.intraGap}); --bar-radius: calc(var(--glyph-unit, 1cqi) * {layout.radius}); --hatch-step: calc(var(--glyph-unit, 1cqi) * {0.4 *
       layout.scale});"
   >
-    {#each entries as entry}
-      <div class="bar-group">
+    {#each entries as entry, index}
+      <div
+        class="bar-group"
+        class:rest={activeIndex !== null && index !== activeIndex}
+        class:active={activeIndex !== null && index === activeIndex}
+      >
         <div
           class="bar blue"
           class:float={entry.leftFloat}
@@ -69,6 +78,21 @@
     display: flex;
     gap: var(--intra-gap);
     align-items: flex-end;
+    /* Opacity only, like the word's letters: the header restyles this column
+       on every beat, and a tweened drop-shadow would be a blur convolution per
+       frame. The glow snaps in with the opacity ramp instead. */
+    transition: opacity var(--duration-fast) var(--ease-standard);
+  }
+
+  /* Column opacity multiplies the float bars' own 0.7, so a hatched bar still
+     reads as float while it rests. */
+  .bar-group.rest {
+    opacity: var(--glyph-rest-opacity, 0.2);
+  }
+
+  .bar-group.active {
+    opacity: 1;
+    filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.3));
   }
 
   .bar {

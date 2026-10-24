@@ -10,6 +10,7 @@
   import { createNativeViewerConnection } from "../state/native-viewer-connection.svelte";
   import { attachSceneUndoKeyboard } from "../../undo/scene-undo-keyboard";
   import UnrealViewerSurface from "./UnrealViewerSurface.svelte";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
 
   const connection = createNativeViewerConnection();
   const viewer = createViewer3DState(
@@ -116,6 +117,11 @@
     {#snippet overlayChildren()}
       {#if !ready}
         <div class="connection-panel" role="status">
+          {#if connection.status === "connecting" && !connection.error}
+            <div class="loading-indicator" aria-hidden="true">
+              <ProgressRing percent={-1} size={32} strokeWidth={3} />
+            </div>
+          {/if}
           <h1>
             {connection.status === "connecting"
               ? "Connecting to Unreal"
@@ -123,7 +129,7 @@
           </h1>
           <p>
             {connection.status === "connecting"
-              ? "Starting the local viewer and waiting for its stream."
+              ? connection.message
               : "The local viewer is unavailable. Retrying automatically."}
           </p>
           {#if connection.error}
@@ -177,6 +183,11 @@
 <span class="sr-only" aria-live="polite">{announcement}</span>
 
 <style>
+  .loading-indicator {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 0.75rem;
+  }
   .scene-caption {
     position: absolute;
     bottom: max(1rem, env(safe-area-inset-bottom));

@@ -1,11 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import { CAPS, capStrip } from "#lib/shared/guide-topics/caps-topic.js";
-import {
-  DEFAULT_POI_STRING_OPTIONS,
-  LOOSE_TENSION,
-  solvePoiHand,
-} from "./poi-string-check.js";
+import { DEFAULT_POI_STRING_OPTIONS } from "#lib/shared/poi/poi-hand-track.js";
+import { LOOSE_TENSION } from "#lib/shared/poi/poi-tether.js";
+import { solvePoiHand } from "./poi-string-check.js";
 
 const noGravity = { ...DEFAULT_POI_STRING_OPTIONS, gravity: false };
 const hand = (steps: StepData[], side: "left" | "right") =>

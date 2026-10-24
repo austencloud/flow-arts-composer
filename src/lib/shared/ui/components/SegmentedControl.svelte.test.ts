@@ -177,7 +177,8 @@ describe("SegmentedControl", () => {
       .element(page.getByRole("button", { name: "Left" }))
       .toHaveAttribute("data-tone", "blue");
     expect(
-      document.querySelector<HTMLElement>(".indicator")?.dataset.tone
+      document.querySelector<HTMLElement>('button[data-selected="true"]')
+        ?.dataset.tone
     ).toBe("blue");
 
     await screen.rerender({
@@ -187,7 +188,8 @@ describe("SegmentedControl", () => {
       color: "accent",
     });
     expect(
-      document.querySelector<HTMLElement>(".indicator")?.dataset.tone
+      document.querySelector<HTMLElement>('button[data-selected="true"]')
+        ?.dataset.tone
     ).toBe("both");
 
     await screen.rerender({
@@ -197,7 +199,8 @@ describe("SegmentedControl", () => {
       color: "accent",
     });
     expect(
-      document.querySelector<HTMLElement>(".indicator")?.dataset.tone
+      document.querySelector<HTMLElement>('button[data-selected="true"]')
+        ?.dataset.tone
     ).toBe("red");
   });
 
@@ -234,7 +237,9 @@ describe("SegmentedControl", () => {
       control.style.setProperty("--theme-text", "#0f172a");
 
       // The fill is a wash over the control's surface: composite it there.
-      const indicator = document.querySelector<HTMLElement>(".indicator")!;
+      const indicator = document.querySelector<HTMLElement>(
+        'button[data-selected="true"]'
+      )!;
       const fill = getComputedStyle(indicator).backgroundColor;
       const [r, g, b, a = 1] = fill.startsWith("color(")
         ? fill

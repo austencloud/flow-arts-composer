@@ -40,6 +40,9 @@
     turns: number | "fl";
     rotationDirection: RotationDirection;
     showRotation: boolean;
+    /** False drops the rotation slot entirely while it is hidden, instead of
+     *  keeping its width so the stepper never moves. */
+    reserveRotation?: boolean;
     /** Compact mode: single row layout for mobile */
     compact?: boolean;
     pathShape?: PathShapeValue | undefined;
@@ -66,6 +69,7 @@
     turns,
     rotationDirection,
     showRotation,
+    reserveRotation = true,
     compact = false,
     pathShape,
     isShift = true,
@@ -173,9 +177,10 @@
 
   // Compact first row: only the slots this card actually has, so an absent
   // control never leaves an empty gap.
+  const hasRotationSlot = $derived(showRotation || reserveRotation);
   const compactSlots = $derived([
     "turns",
-    "rotation",
+    ...(hasRotationSlot ? ["rotation"] : []),
     ...(pathAvailable ? ["pathtoggle"] : []),
     ...(trailingControl ? ["trailing"] : []),
   ]);
@@ -267,27 +272,29 @@
   <div class="action-row" class:compact>
     <!-- The rotation slot is always laid out so the turns stepper never moves
          when a dash/static motion gains or loses turns; at 0 turns the toggle
-         is reserved (invisible and disabled). -->
-    <button
-      class="invert-btn"
-      class:compact
-      class:reserved={!showRotation}
-      disabled={!showRotation}
-      aria-hidden={!showRotation}
-      aria-label={t("create_controls_toggle_rotation", {
-        hand: handLabel(hand),
-        direction: directionLabel,
-      })}
-      onclick={handleInvert}
-    >
-      <i class="fas {directionIcon}" aria-hidden="true"></i>
-      <span class="invert-label-stack">
-        <span class="invert-label ghost" aria-hidden="true"
-          >{longestDirectionLabel}</span
-        >
-        <span class="invert-label">{directionLabel}</span>
-      </span>
-    </button>
+         is reserved (invisible and disabled) unless reserveRotation is off. -->
+    {#if hasRotationSlot}
+      <button
+        class="invert-btn"
+        class:compact
+        class:reserved={!showRotation}
+        disabled={!showRotation}
+        aria-hidden={!showRotation}
+        aria-label={t("create_controls_toggle_rotation", {
+          hand: handLabel(hand),
+          direction: directionLabel,
+        })}
+        onclick={handleInvert}
+      >
+        <i class="fas {directionIcon}" aria-hidden="true"></i>
+        <span class="invert-label-stack">
+          <span class="invert-label ghost" aria-hidden="true"
+            >{longestDirectionLabel}</span
+          >
+          <span class="invert-label">{directionLabel}</span>
+        </span>
+      </button>
+    {/if}
 
     {#if pathAvailable}
       <button

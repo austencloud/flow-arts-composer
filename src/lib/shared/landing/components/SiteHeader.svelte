@@ -479,7 +479,7 @@
               <div class="account-menu" role="menu">
                 <div class="acct-identity">
                   <span class="acct-name">{displayName}</span>
-                  {#if email}<span class="acct-email">{email}</span>{/if}
+                  {#if email}<span class="acct-email ph-no-capture">{email}</span>{/if}
                 </div>
                 <button
                   class="acct-signout"
@@ -639,7 +639,7 @@
         <RobustAvatar src={photoURL} name={displayName} customSize={32} />
         <div class="m-id-info">
           <span class="m-id-name">{displayName}</span>
-          {#if email}<span class="m-id-email">{email}</span>{/if}
+          {#if email}<span class="m-id-email ph-no-capture">{email}</span>{/if}
         </div>
       </div>
       <button class="m-signin m-signout" onclick={handleSignOut}>

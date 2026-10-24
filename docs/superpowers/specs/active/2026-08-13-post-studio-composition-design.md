@@ -2,13 +2,14 @@
 status: active
 value: null
 effort: null
-remaining: "Verify Post Studio Composition and Time Mapping against src/lib/shared/animation-engine/timeline/services/step-grid-calculator.ts before resuming implementation. Prior recorded remainder: Resolve the unused preset repository, rights-cleared audio, and whole-Compose persistence; verify current export gates."
+remaining: "Verify Post Studio Composition and Time Mapping against the animation-engine timeline step-grid calculator (removed as dead code 2026-10-22) before resuming implementation. Prior recorded remainder: Resolve the unused preset repository, rights-cleared audio, and whole-Compose persistence; verify current export gates."
 depends_on: ""
 plan_path: ""
 tags: []
 last_triaged: 2026-10-07
 work_state: unverified
 ---
+
 # Post Studio Composition and Time Mapping
 
 **Date:** 2026-08-13
@@ -84,7 +85,7 @@ This is not a blank slate. The repository already contains useful pieces, but th
 | Existing capability                | Evidence                                                                                                                                                                                                       | Decision                              | Reason                                                                                                                                                                                        |
 | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Audio BPM analysis                 | `src/lib/features/compose/compose/phases/audio/bpm-analyzer.ts`                                                                                                                                                | Extend                                | It performs real Web Audio decoding and confidence-based BPM analysis. It finds tempo, not beat phase or downbeats, and currently has no production caller or tests.                          |
-| Constant-tempo beat grid           | `src/lib/shared/animation-engine/timeline/services/step-grid-calculator.ts`                                                                                                                                    | Extend                                | Its pure conversion and snap math are useful. Time-signature behavior and boundary cases need tests before it becomes shared canon.                                                           |
+| Constant-tempo beat grid           | `step-grid-calculator.ts` (removed 2026-10-22)                                                                                                                                                                 | Extend                                | Its pure conversion and snap math are useful. Time-signature behavior and boundary cases need tests before it becomes shared canon.                                                           |
 | Video beat map                     | `src/lib/shared/video-collaboration/domain/collaborative-video.ts`                                                                                                                                             | Migrate and extend                    | `StepMap` already persists timestamps on uploaded videos. It needs versioning, validation, fractional interpolation, inverse mapping, and explicit boundary rules.                            |
 | Manual video beat editor           | `src/lib/shared/sequence-viewer/components/step-mapping/StepMapEditor.svelte` and `StepMapTimeline.svelte`                                                                                                     | Reuse interaction patterns            | Tap placement, drag adjustment, and even-spacing reset are proven. The UI stays feature-specific until the shared time-map contract exists.                                                   |
 | Video-driven card highlighting     | `src/lib/shared/sequence-viewer/state/viewer-playback-presentation-state.svelte.ts` and `src/lib/features/video/video-lab/views/SyncedPlaybackView.svelte`                                                     | Extend                                | This proves the user value. It currently resolves only an integer highlighted beat and does not drive full animation interpolation.                                                           |

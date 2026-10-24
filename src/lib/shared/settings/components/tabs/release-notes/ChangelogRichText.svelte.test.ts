@@ -47,10 +47,10 @@ describe("ChangelogRichText navigation", () => {
       tabId: "construct",
     },
     {
-      label: "Explore",
-      href: "/browse/explore",
+      label: "Sequences",
+      href: "/browse/sequences",
       moduleId: "browse",
-      tabId: "explore",
+      tabId: "sequences",
     },
     {
       label: "Creators",

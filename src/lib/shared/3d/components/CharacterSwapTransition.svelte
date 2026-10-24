@@ -39,7 +39,10 @@
   import type { CharacterInstanceState } from "../state/character-instance-state.svelte";
   import { getPerformerColor } from "../constants/performer-colors";
   import { getSceneUndoManager } from "../undo/get-scene-undo-manager";
-  import { motionDuration } from "#lib/shared/transitions/motion.js";
+  import {
+    motionDuration,
+    reducedMotion,
+  } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   interface Props {
@@ -47,6 +50,14 @@
     performerIndex: number;
     groundOffset: number;
     presenceProgress?: number;
+    /**
+     * Opening a scene that builds itself: the performer stays out of sight
+     * until its body is ready, then fades in on its mark with the same burst
+     * a character swap uses, instead of popping in when the model lands. It
+     * keeps its full size throughout: a paused rig poses once, so a pose
+     * solved while the performer was scaled down would stay broken.
+     */
+    arrive?: boolean;
     children: Snippet<
       [{ onCharacterSwapped: (id: string) => void; characterOpacity: number }]
     >;
@@ -57,20 +68,29 @@
     performerIndex,
     groundOffset,
     presenceProgress = 1,
+    arrive = false,
     children,
   }: Props = $props();
 
   const N = 36;
   const FADE_OUT_S = motionDuration(DURATION.fast) / 1_000;
   const FADE_IN_S = motionDuration(DURATION.normal) / 1_000;
+  const ARRIVE_S = motionDuration(DURATION.dramatic) / 1_000;
   const MAX_HOLD_S = 4;
+  // A first load fetches the body over the network; give it as long as the
+  // environments get before showing whatever has arrived.
+  const MAX_ARRIVAL_HOLD_S = 15;
 
   type Phase = "idle" | "out" | "hold" | "in";
-  let phase = $state<Phase>("idle");
+  // Read once: arriving is how this performer enters the scene, not a mode.
+  // svelte-ignore state_referenced_locally
+  const arrivingOnMount = arrive;
+  let phase = $state<Phase>(arrivingOnMount ? "hold" : "idle");
+  let arriving = $state(arrivingOnMount);
   let elapsed = $state(0);
   let previousCharacterId = $state(performer.characterId);
   let modelReady = $state(false);
-  let swapOpacity = $state(1);
+  let swapOpacity = $state(arrivingOnMount ? 0 : 1);
   const visiblePresence = $derived(Math.min(1, Math.max(0, presenceProgress)));
   const characterOpacity = $derived(swapOpacity * visiblePresence);
   // The fourth-root curve preserves a nearly full-size silhouette through most
@@ -241,17 +261,24 @@
       swapOpacity = 0;
       if (g) g.visible = false;
       tickParticles(delta, 2.5, 3);
-      if (modelReady || elapsed >= MAX_HOLD_S) {
+      const maxHold = arriving ? MAX_ARRIVAL_HOLD_S : MAX_HOLD_S;
+      if (modelReady || elapsed >= maxHold) {
         if (g) g.visible = true;
         phase = "in";
         elapsed = 0;
+        if (arriving && !reducedMotion()) {
+          spawnParticles();
+          if (instMesh) instMesh.visible = true;
+        }
       }
     } else if (phase === "in") {
-      const t = FADE_IN_S === 0 ? 1 : Math.min(elapsed / FADE_IN_S, 1);
+      const duration = arriving ? ARRIVE_S : FADE_IN_S;
+      const t = duration === 0 ? 1 : Math.min(elapsed / duration, 1);
       swapOpacity = t;
       tickParticles(delta, 1.5, 2);
       if (t >= 1) {
         swapOpacity = 1;
+        arriving = false;
         phase = "idle";
       }
     }

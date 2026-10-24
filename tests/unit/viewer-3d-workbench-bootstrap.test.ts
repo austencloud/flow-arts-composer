@@ -108,11 +108,17 @@ describe("Viewer 3D scene workbench bootstrap", () => {
       "initialRevealDeferredFeatures={STREAMED_SCENE_FEATURES}"
     );
     expect(canvasSource).toContain('initialRevealMode?: "gated" | "streaming"');
-    expect(canvasSource).toContain(
-      '{#if sequenceData && initialRevealMode === "gated"}'
+    // 5eaea04cbc added a "build" opening, so the canvas now reads a derived
+    // revealMode. Streaming passes through it unchanged: no curtain, no
+    // one-frame mount delay.
+    expect(canvasSource).toMatch(
+      /const revealMode = \$derived\(\s*initialRevealMode !== "build"\s*\? initialRevealMode/
     );
     expect(canvasSource).toContain(
-      'canvasMountReady || initialRevealMode === "streaming"'
+      '{#if !useUnreal && sequenceData && revealMode === "gated"}'
+    );
+    expect(canvasSource).toContain(
+      'canvasMountReady || revealMode === "streaming"'
     );
   });
 
@@ -138,8 +144,10 @@ describe("Viewer 3D scene workbench bootstrap", () => {
   });
 
   it("does not overlap whole-scene and streamed environment shader compiles", () => {
+    // Every curtain-free opening (streaming, and build since 5eaea04cbc)
+    // warms shaders for the whole scene once, not per streamed environment.
     expect(canvasSource).toContain(
-      'waitForAllFeatures={initialRevealMode === "streaming"}'
+      'waitForAllFeatures={revealMode !== "gated"}'
     );
     expect(shaderWarmupSource).toContain("sceneFeatures.allEnabledReady");
     expect(shaderWarmupSource).toContain(

@@ -5,11 +5,6 @@ import {
 	createAvatarEntity,
 } from "#lib/features/village/engine/village-world.js";
 import * as personalityGenerator from "#lib/features/village/services/personality-generator.js";
-import {
-	DECAY_GRACE_PERIOD,
-	FORGET_THRESHOLD,
-	DECAY_PER_TICK,
-} from "#lib/features/village/domain/village-constants.js";
 import type {
 	VillageEventMap,
 	VillageEventKey,
@@ -48,7 +43,10 @@ function makeEntity(
 	});
 }
 
-describe("DecaySystem", () => {
+// Skipped: written for the pre-rebuild village API. 1ec794d3fb (2026-10-22) moved every
+// system to a VillageRules table and seeded rng streams and removed the module(s) this
+// file imported. The rebuilt sim is covered by src/lib/features/village/**/*.test.ts.
+describe.skip("DecaySystem", () => {
 	it("does not decay during grace period", () => {
 		const world = createVillageWorld();
 		const entity = makeEntity(world);

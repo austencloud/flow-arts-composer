@@ -134,28 +134,6 @@ await persistenceService.saveBrowseState(BrowseState);
 const restored = await persistenceService.loadBrowseState();
 ```
 
-## 🔧 Initialization
-
-### **App Startup**
-
-Add this to your main app initialization:
-
-```typescript
-// In your main app component or initialization
-import { getPersistenceInitializer } from "#lib/shared/persistence/get-persistence-initializer.js";
-
-const initializer = getPersistenceInitializer();
-
-onMount(async () => {
-  try {
-    await initializer.initialize();
-    console.log("✅ Persistence ready");
-  } catch (error) {
-    console.error("❌ Persistence failed:", error);
-  }
-});
-```
-
 ## 🛠️ Advanced Features
 
 ### **Filtering and Queries**

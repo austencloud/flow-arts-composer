@@ -6,7 +6,9 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const here = dirname(fileURLToPath(import.meta.url));
 const project = resolve(here, '..');
 const repo = resolve(project, '../..');
-const source = process.argv[2] || repo;
+// `--ground-only` restages just the ground textures and mask, for a ground material pass.
+const groundOnly = process.argv.includes('--ground-only');
+const source = process.argv.slice(2).find(arg => !arg.startsWith('--')) || repo;
 const dependencyRoot = existsSync(join(repo, 'node_modules/.pnpm')) ? repo : source;
 const pnpm = join(dependencyRoot, 'node_modules/.pnpm');
 const cli = readdirSync(pnpm).find(x => x.startsWith('@gltf-transform+cli@'));
@@ -52,7 +54,7 @@ jobs.push(
   { id: 'DampSedge', source: join(source, 'static/models/forest/ground-life/damp-sedge-tussock.glb'), kind: 'Ecology' },
   { id: 'HazelShrub', source: join(source, 'static/models/forest/ground-life/woodland-hazel-shrub.glb'), kind: 'Ecology' },
 );
-for (const job of jobs) {
+for (const job of groundOnly ? [] : jobs) {
   if (!existsSync(job.source) && job.source.includes('/models/')) job.source = join(source, 'static', job.source.substring(job.source.indexOf('/models/')+1));
   const output = join(staged, job.id + '.glb');
   const doc = await io.read(job.source);
@@ -93,6 +95,17 @@ const maskBytes = readFileSync(join(project, 'Content/Data', ground.file));
 if (maskBytes.length !== ground.width * ground.height * 4) throw new Error('Site ground-family mask bytes invalid');
 await sharp(maskBytes, { raw: { width: ground.width, height: ground.height, channels: 4 } })
   .png().toFile(join(staged, 'GroundFamilyMask.png'));
+// Farm fields in the open land the mask calls litter (Tools/classify-fields.mjs).
+const { classifyFields } = await import(pathToFileURL(join(here, 'classify-fields.mjs')).href);
+const fields = await classifyFields(join(project, 'Content/Data'), sharp);
+const fieldPixels = Buffer.alloc(fields.size * fields.size * 3);
+for (let cell = 0; cell < fields.size * fields.size; cell++) {
+  fieldPixels[cell * 3] = fields.bytes[cell * 2];
+  fieldPixels[cell * 3 + 1] = fields.bytes[cell * 2 + 1];
+}
+await sharp(fieldPixels, { raw: { width: fields.size, height: fields.size, channels: 3 } })
+  .png().toFile(join(staged, 'GroundFields.png'));
+console.log(`Fields: ${(fields.fieldShare * 100).toFixed(0)}% of the site, ${(fields.dryShare * 100).toFixed(0)}% of them dry`);
 for (const [file, output] of [
   ['forest-ground-detail-neutral.jpg','GroundDetail.png'],
   ['forest-ground-detail-meadow.jpg','GroundMeadow.png'],
@@ -101,7 +114,31 @@ for (const [file, output] of [
   ['normal.jpg','GroundNormal.png'],['roughness.jpg','GroundRoughness.png']]) {
   const input = join(source,'static/textures/forest-floor',file);
   if (!existsSync(input)) throw new Error(`Missing source forest-floor texture: ${input}`);
-  await sharp(input).png().toFile(join(staged,output));
+  if (output.startsWith('GroundNormal') || output.startsWith('GroundRoughness')) await sharp(input).png().toFile(join(staged,output));
+  else await writeFlattened(input, join(staged,output));
 }
-writeFileSync(join(staged, 'imports.json'), JSON.stringify(jobs, null, 2));
-console.log(`Prepared ${jobs.length} assets`);
+if (!groundOnly) writeFileSync(join(staged, 'imports.json'), JSON.stringify(jobs, null, 2));
+console.log(groundOnly ? 'Prepared ground textures' : `Prepared ${jobs.length} assets`);
+
+/** The detail photos are lit unevenly: the litter tile is a fifth darker across one
+ * quarter, which repeats as stripes every 2.45 m on the ground. Divide each pixel by a
+ * wide blur of the tile, wrapped the way the tile repeats, so only the fine detail stays. */
+async function writeFlattened(input, output) {
+  const { data, info } = await sharp(input).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+  const { width, height, channels } = info;
+  const tiles = [];
+  for (let y = 0; y < 3; y++) for (let x = 0; x < 3; x++)
+    tiles.push({ input: data, raw: { width, height, channels }, left: x * width, top: y * height });
+  const tiled = await sharp({ create: { width: width * 3, height: height * 3, channels, background: '#000' } })
+    .composite(tiles).removeAlpha().raw().toBuffer();
+  // Sharp crops before it blurs within one pipeline, so blur first and crop the centre tile after.
+  const blurred = await sharp(tiled, { raw: { width: width * 3, height: height * 3, channels } }).blur(width / 10).raw().toBuffer();
+  const blur = await sharp(blurred, { raw: { width: width * 3, height: height * 3, channels } })
+    .extract({ left: width, top: height, width, height }).raw().toBuffer();
+  const mean = new Array(channels).fill(0);
+  for (let i = 0; i < data.length; i++) mean[i % channels] += data[i];
+  for (let c = 0; c < channels; c++) mean[c] /= data.length / channels;
+  const flat = Buffer.alloc(data.length);
+  for (let i = 0; i < data.length; i++) flat[i] = Math.min(255, Math.round(data[i] * mean[i % channels] / Math.max(blur[i], 1)));
+  await sharp(flat, { raw: { width, height, channels } }).png().toFile(output);
+}

@@ -168,7 +168,8 @@
       </div>
       <div
         class="notation-rail"
-        class:under-picker={effectPickerArrangement === "below"}
+        class:under-picker={effectPickerArrangement === "below" ||
+          effectPickerArrangement === "dock"}
         bind:this={notationRail}
         role="group"
         aria-label={t("create_ui_sequence_pictographs")}
@@ -289,8 +290,10 @@
     outline: 2px solid var(--theme-accent);
     outline-offset: 2px;
   }
+  /* Always laid out, closed until there is height for it, so its cells are
+     built with the player rather than in the middle of Play's growth. Phones
+     get the rail too: it sits under the canvas at every width. */
   .notation-rail {
-    display: none;
     min-height: 0;
     overflow: hidden;
     visibility: hidden;
@@ -302,18 +305,10 @@
   .rail-content {
     height: var(--rail-size);
   }
-  /* Wide enough for a rail: lay it out closed, so its cells are built with
-     the player rather than in the middle of Play's growth. Narrower players
-     never show it, so it stays out of layout there. */
-  @container (min-width: 520px) {
-    .notation-rail {
-      display: block;
-    }
-  }
-  /* Tall enough as well: the rail eases open while the canvas keeps growing.
-     The canvas and the rail read the same container, so the canvas can never
-     give up room before the rail is there to fill it. */
-  @container (min-width: 520px) and (min-height: 360px) {
+  /* Tall enough: the rail eases open while the canvas keeps growing. The
+     canvas and the rail read the same container, so the canvas can never give
+     up room before the rail is there to fill it. */
+  @container (min-height: 360px) {
     .playback-media {
       --rail-open: 1;
     }
@@ -322,8 +317,9 @@
       opacity: 1;
     }
   }
-  /* The effect picker's row floats over the rail: the rail fades out behind
-     it, so pictographs do not show through the gap around the row. */
+  /* The effect picker's row floats over the rail, or docks over the toolbar
+     across the rail's lower edge on a short phone: the rail fades out behind
+     it, so pictographs do not show through or get cut off by the row. */
   .notation-rail.under-picker {
     opacity: 0;
     pointer-events: none;

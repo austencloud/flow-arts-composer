@@ -436,6 +436,18 @@ async function doInitializeAuthListener(): Promise<void> {
     ({ completePendingGoogleRedirect }) => completePendingGoogleRedirect()
   );
 
+  // A visitor who tapped Google inside Instagram or another in-app browser was
+  // sent here with ?signin=google. Carry on to Google's account picker. Inert
+  // without the flag.
+  void import("#lib/shared/auth/services/google-browser-handoff.js").then(
+    ({ resumeGoogleHandoff }) =>
+      resumeGoogleHandoff(auth, () => {
+        void import("../state/auth-drawer-state.svelte").then(
+          ({ authDrawerState }) => authDrawerState.show("signin")
+        );
+      })
+  );
+
   // A pending magic-link sign-in is NOT auto-completed here anymore. Consuming
   // the single-use oobCode on page load let a corporate link-prescanner burn
   // it before the human ever clicked, silently breaking sign-in (2026-07-18

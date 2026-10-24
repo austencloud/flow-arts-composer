@@ -11,9 +11,14 @@
   and EffectPresetThumbnail (the same pictures as the Effects panel, from
   effectCatalogLooks). effect-quick-picker-fit decides where it goes: beside
   the player where its bounds have room (two across, scrolling, where that
-  room is narrow), otherwise as one scrolling row floating under the player's
-  controls or docked along the bottom of its bounds. The row fades, and with a
-  mouse offers an arrow, at whichever end has more effects past it.
+  room is narrow). Where the player fills the width (a phone or tablet held
+  upright) the pictures wrap four or more across under the same title row,
+  floating under the player's controls or docked along the bottom of its
+  bounds, and scroll down where that room holds fewer rows than there are.
+  Where even that shows fewer effects than one row would (a short phone), it
+  is one scrolling row instead, which fades, and with a mouse offers an
+  arrow, at whichever end has more effects past it. The grid fades at
+  whichever of its top and bottom has more effects past it.
 -->
 <script lang="ts">
   import { Popover } from "bits-ui";
@@ -91,7 +96,8 @@
   /** The player's distance from each side of the bounds, so a docked strip
    *  lines its tiles up under the player. */
   let dockInset = $state({ left: 0, right: 0 });
-  /** Which ends of the row have effects scrolled past them. */
+  /** Which ends of the row, or of the grid's scroll, have effects scrolled
+   *  past them. */
   let edges = $state<ScrollEdges>({ start: false, end: false });
 
   const activeEffect = $derived(effectsConfigState.activeEffect);
@@ -207,8 +213,8 @@
     if (isEffectId(effectId)) effectsConfigState.requestPrewarm(effectId);
   }
 
-  /** Bring the selected effect into the middle of the strip, or of a narrow
-   *  side panel's scrolling grid. */
+  /** Bring the selected effect into the middle of the strip, or of a
+   *  scrolling grid. */
   function centerSelected() {
     const tile = scrollerEl?.querySelector<HTMLElement>(
       '[role="radio"][aria-checked="true"]'
@@ -268,7 +274,7 @@
 
   /** What the picker is placed against, and on which side of it. */
   const anchor = $derived(
-    fit?.arrangement !== "strip"
+    !fit || fit.arrangement === "side"
       ? (player ?? null)
       : fit.side === "dock"
         ? boundsFloor
@@ -422,33 +428,40 @@
               {...props}
               class="fx-quick-panel"
               class:side={fit.arrangement === "side"}
+              class:grid={fit.arrangement === "grid"}
               class:strip={fit.arrangement === "strip"}
-              class:above={fit.arrangement === "strip" && fit.side === "above"}
-              class:below={fit.arrangement === "strip" && fit.side === "below"}
-              class:dock={fit.arrangement === "strip" && fit.side === "dock"}
+              class:above={fit.arrangement !== "side" && fit.side === "above"}
+              class:below={fit.arrangement !== "side" && fit.side === "below"}
+              class:dock={fit.arrangement !== "side" && fit.side === "dock"}
               role="dialog"
               aria-label={t("effect_deep_effects")}
               style:width={fit.arrangement === "side"
                 ? `${fit.width}px`
                 : "var(--bits-popover-anchor-width)"}
-              style:height={fit.arrangement === "side" && fit.height
+              style:height={fit.arrangement === "grid" ||
+              (fit.arrangement === "side" && fit.height)
                 ? `${fit.height}px`
                 : undefined}
               style:min-height={fit.arrangement === "strip"
                 ? `${fit.height}px`
                 : undefined}
-              style:--dock-left={fit.arrangement === "strip" &&
+              style:--dock-left={fit.arrangement !== "side" &&
               fit.side === "dock"
                 ? `${dockInset.left}px`
                 : undefined}
-              style:--dock-right={fit.arrangement === "strip" &&
+              style:--dock-right={fit.arrangement !== "side" &&
               fit.side === "dock"
                 ? `${dockInset.right}px`
                 : undefined}
               in:flyFade={{ ...motion, duration: DURATION.normal }}
               out:flyFade={{ ...motion, duration: DURATION.fast }}
             >
-              {#if fit.arrangement === "side"}
+              {#if fit.arrangement !== "strip"}
+                {@const narrow = fit.arrangement === "side" && !!fit.height}
+                {@const scrolls =
+                  fit.arrangement === "grid"
+                    ? fit.scrolls
+                    : fit.height !== null}
                 <div class="fx-quick-head">
                   <span class="fx-quick-title">{t("effect_deep_effects")}</span>
                   <div class="fx-quick-head-end">
@@ -460,21 +473,26 @@
                       class="fx-quick-off"
                       class:active={!effectOn}
                       aria-pressed={!effectOn}
-                      aria-label={fit.height ? offLabel : undefined}
+                      aria-label={narrow ? offLabel : undefined}
                       data-quick-off
                       onclick={turnOff}
                     >
                       <i class="fas fa-power-off" aria-hidden="true"></i>
-                      <span>{fit.height ? t("effect_deep_off") : offLabel}</span
-                      >
+                      <span>{narrow ? t("effect_deep_off") : offLabel}</span>
                     </button>
                     {@render closeButton()}
                   </div>
                 </div>
                 <div
                   class="fx-quick-grid"
-                  class:scrolls={fit.height !== null}
+                  class:scrolls
+                  class:fade-start={fit.arrangement === "grid" && edges.start}
+                  class:fade-end={fit.arrangement === "grid" && edges.end}
                   bind:this={scrollerEl}
+                  use:scrollEdges={{
+                    onChange: (next) => (edges = next),
+                    axis: "y",
+                  }}
                 >
                   <EffectSelector
                     {activeEffect}
@@ -798,6 +816,31 @@
     scrollbar-width: thin;
   }
 
+  /* The grid fades at an end with effects past it, as the row does. */
+  .fx-quick-grid.fade-end {
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 24px), transparent);
+  }
+  .fx-quick-grid.fade-start {
+    mask-image: linear-gradient(to bottom, transparent, #000 24px);
+  }
+  .fx-quick-grid.fade-start.fade-end {
+    mask-image: linear-gradient(
+      to bottom,
+      transparent,
+      #000 24px,
+      #000 calc(100% - 24px),
+      transparent
+    );
+  }
+
+  /* ── Grid: the pictures wrapping across under the player ── */
+  .fx-quick-panel.grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px;
+  }
+
   /* ── Strip: one row resting on the scrubber ── */
   .fx-quick-panel.strip {
     display: flex;
@@ -806,17 +849,17 @@
     padding: 8px;
   }
   /* A tray floating just under the controls, drawn like the side panel. */
-  .fx-quick-panel.strip.below {
+  .fx-quick-panel.below {
     border: 1px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.14));
     border-radius: 14px;
     box-shadow: var(--theme-panel-shadow, 0 12px 28px rgba(0, 0, 0, 0.35));
   }
-  .fx-quick-panel.strip.above {
+  .fx-quick-panel.above {
     border-top: 1px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.14));
     border-radius: 12px 12px 0 0;
   }
   /* A sheet across the bounds, its tiles lined up under the player. */
-  .fx-quick-panel.strip.dock {
+  .fx-quick-panel.dock {
     padding-inline: calc(var(--dock-left) + 8px) calc(var(--dock-right) + 8px);
     border-top: 1px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.14));
     border-radius: 16px 16px 0 0;

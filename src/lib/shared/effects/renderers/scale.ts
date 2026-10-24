@@ -1,4 +1,4 @@
-import { DEFAULT_CANVAS_SIZE } from "#lib/shared/animation-engine/services/canvas-resizer.svelte.js";
+import { DEFAULT_CANVAS_SIZE } from "#lib/shared/animation-engine/services/canvas-defaults.js";
 
 /**
  * Compute the scale factor applied to pixel-space quantities in 2D effect

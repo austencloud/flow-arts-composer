@@ -167,7 +167,11 @@ void FFlowFestCrowd::SetTimeOfDay(float Hour)
             Agents[I].Route.Reset();
             Agents[I].RouteIndex = 0;
             Agents[I].Activity = Agents[I].DesiredActivity;
+            Agents[I].bPropInHands = Agents[I].HasEquipment() &&
+                Agents[I].Activity != EFlowFestCrowdActivity::Food &&
+                Agents[I].Activity != EFlowFestCrowdActivity::Rest;
             Agents[I].bActionStarted = true;
+            Agents[I].ActionStartedAt = ElapsedSeconds;
             Agents[I].ActionUntil = ElapsedSeconds + Agents[I].ActionDuration;
         }
     }
@@ -235,6 +239,7 @@ FVector2D FFlowFestCrowd::ActivityPosition(const FFlowFestCrowdAgent& Agent, con
             return *Anchor + FVector2D(FMath::Cos(SlotAngle), FMath::Sin(SlotAngle)) * 2.f;
         }
         Radius = 8.2f + (Index % 3) * 1.4f;
+        if (!FireWatchSpots.IsEmpty()) return FireWatchSpots[Index % FireWatchSpots.Num()];
     }
     if (Activity == EFlowFestCrowdActivity::Social)
     {
@@ -413,12 +418,15 @@ bool FFlowFestCrowd::SetGoal(FFlowFestCrowdAgent& Agent, const FString& Anchor,
         Agent.DesiredActivity = EFlowFestCrowdActivity::Idle;
         Agent.Activity = EFlowFestCrowdActivity::Idle;
         Agent.ReservedPerformanceSlot = INDEX_NONE;
-        Agent.bPropInHands = false;
+        Agent.bPropInHands = Agent.HasEquipment();
         Agent.bActionStarted = false;
         Agent.ActionUntil = ElapsedSeconds + 5.f;
         return false;
     }
     Agent.GoalAnchorId = Anchor;
+    if (Agent.Activity == EFlowFestCrowdActivity::Rest && Agent.bActionStarted &&
+        Activity != EFlowFestCrowdActivity::Rest)
+        Agent.StandUntil = ElapsedSeconds + 1.1f;
     Agent.GoalReason = Reason;
     Agent.DestinationId = Key;
     Agent.Destination = Destination;
@@ -534,6 +542,13 @@ void FFlowFestCrowd::Tick(float DeltaSeconds)
     {
         FFlowFestCrowdAgent& Agent = Agents[I];
         Agent.Velocity = FVector2D::ZeroVector;
+        if (Agent.StandUntil > ElapsedSeconds)
+        {
+            Agent.Activity = EFlowFestCrowdActivity::Rest;
+            Agent.bPropInHands = false;
+            continue;
+        }
+        Agent.StandUntil = 0.f;
         if (Agent.RouteIndex < Agent.Route.Num())
         {
             const FVector2D Delta = Agent.Route[Agent.RouteIndex] - Agent.Position;
@@ -575,6 +590,7 @@ void FFlowFestCrowd::Tick(float DeltaSeconds)
                 Agent.DesiredActivity != EFlowFestCrowdActivity::Social)
             {
                 Agent.bActionStarted = true;
+                Agent.ActionStartedAt = ElapsedSeconds;
                 Agent.ActionUntil = ElapsedSeconds + Agent.ActionDuration;
             }
             const FVector2D* Look = Landmarks.Find(Agent.GoalAnchorId);
@@ -611,9 +627,11 @@ void FFlowFestCrowd::Tick(float DeltaSeconds)
                 Agent.Facing = FMath::FixedTurn(Agent.Facing, Goal, Dt * 150.f);
             }
         }
+        // Equipment stays with its owner across ordinary travel and fire turns.
+        // Only a settled meal or floor rest stows it; the route to either still carries it.
         Agent.bPropInHands = Agent.HasEquipment() &&
-            (Agent.DesiredActivity == EFlowFestCrowdActivity::Practice ||
-             Agent.DesiredActivity == EFlowFestCrowdActivity::Perform);
+            Agent.Activity != EFlowFestCrowdActivity::Food &&
+            Agent.Activity != EFlowFestCrowdActivity::Rest;
     }
     for (int32 I = 0; I < Agents.Num(); ++I)
     {
@@ -628,6 +646,7 @@ void FFlowFestCrowd::Tick(float DeltaSeconds)
             (A.bActionStarted && B.bActionStarted)) continue;
         A.bActionStarted = true;
         B.bActionStarted = true;
+        A.ActionStartedAt = B.ActionStartedAt = ElapsedSeconds;
         const float SharedEnd = ElapsedSeconds + FMath::Max(A.ActionDuration, B.ActionDuration);
         A.ActionUntil = SharedEnd;
         B.ActionUntil = SharedEnd;
@@ -664,6 +683,7 @@ bool FFlowFestCrowd::RestoreSnapshot(const FFlowFestCrowdSnapshot& Snapshot)
             Saved.PropId != Agents[I].PropId || Saved.RouteIndex < 0 || Saved.RouteIndex > Saved.Route.Num() ||
             !FMath::IsFinite(Saved.Position.X) || !FMath::IsFinite(Saved.Position.Y) ||
             !FMath::IsFinite(Saved.ActionUntil) || !FMath::IsFinite(Saved.GreetUntil) ||
+            !FMath::IsFinite(Saved.ActionStartedAt) || !FMath::IsFinite(Saved.StandUntil) ||
             !FMath::IsFinite(Saved.NextGreetAt) || !FMath::IsFinite(Saved.NextPerformanceEligibleAt) ||
             Saved.ReservedPerformanceSlot < INDEX_NONE || Saved.ReservedPerformanceSlot > 1) return false;
         if (!Saved.PartnerId.IsEmpty())
@@ -720,6 +740,8 @@ FString FFlowFestCrowd::SerializeState() const
         Entry->SetNumberField(TEXT("nextGreet"), Agent.NextGreetAt);
         Entry->SetNumberField(TEXT("actionUntil"), Agent.ActionUntil);
         Entry->SetNumberField(TEXT("actionDuration"), Agent.ActionDuration);
+        Entry->SetNumberField(TEXT("actionStartedAt"), Agent.ActionStartedAt);
+        Entry->SetNumberField(TEXT("standUntil"), Agent.StandUntil);
         Entry->SetNumberField(TEXT("nextTurn"), Agent.NextPerformanceEligibleAt);
         Entry->SetBoolField(TEXT("actionStarted"), Agent.bActionStarted);
         Entry->SetNumberField(TEXT("completed"), Agent.CompletedActions);
@@ -792,6 +814,11 @@ bool FFlowFestCrowd::RestoreState(const FString& Json)
             !ReadNumber(Entry, TEXT("actionUntil"), Agent.ActionUntil) ||
             !ReadNumber(Entry, TEXT("actionDuration"), Agent.ActionDuration) ||
             !Entry->TryGetBoolField(TEXT("actionStarted"), Agent.bActionStarted)) return false;
+        // Saves predating body actions can continue with their original schedule.
+        if (Entry->HasField(TEXT("actionStartedAt")) &&
+            !ReadNumber(Entry, TEXT("actionStartedAt"), Agent.ActionStartedAt)) return false;
+        if (Entry->HasField(TEXT("standUntil")) &&
+            !ReadNumber(Entry, TEXT("standUntil"), Agent.StandUntil)) return false;
         // Older crowd snapshots predate turn cooldowns; zero means immediately eligible.
         if (Entry->HasField(TEXT("nextTurn")) && !ReadNumber(Entry, TEXT("nextTurn"), Agent.NextPerformanceEligibleAt)) return false;
         if (!ReadNumber(Entry, TEXT("completed"), Number)) return false; Agent.CompletedActions = FMath::RoundToInt(Number);

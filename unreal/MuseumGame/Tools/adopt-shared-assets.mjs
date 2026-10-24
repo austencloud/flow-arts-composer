@@ -39,12 +39,18 @@ const character = catalog.characters.find((item) => item.id === manifest.charact
 if (character?.folder !== "/Game/FlowFest/Characters/x_bot") throw new Error("Shared x-bot rig is missing");
 const props = JSON.parse(await readFile(resolve(source, "Content/Data/props.json"), "utf8"));
 if (!props.props.some((item) => item.id === manifest.propId)) throw new Error("Shared Museum prop is missing");
+if (!props.props.some((item) => item.id === "fire_double_staff" && item.variants?.some((variant) => variant.id === "default")))
+  throw new Error("Shared physical Fire Staff for Composer preview is missing");
+const rigs = JSON.parse(await readFile(resolve(source, "Content/Data/runtime-rigs.json"), "utf8"));
+if (rigs.schema !== "flow-arts-runtime-rigs-v1" || !/^[a-f0-9]{64}$/i.test(rigs.rigs?.[manifest.characterId] ?? ""))
+  throw new Error("Producer runtime rig identity is missing; regenerate its catalog from its source rigs");
 
-for (const folder of ["Characters/x_bot", "Props", "Materials", "Audio"]) {
+for (const folder of ["Characters/x_bot", "Props", "Materials", "Textures", "Assets", "Audio"]) {
   await copyDirectory(`Content/FlowFest/${folder}`);
 }
 await copy("Content/Data/characters.json");
 await copy("Content/Data/props.json");
+await copy("Content/Data/runtime-rigs.json");
 const receipt = {
   schema: "museum-shared-assets-v1",
   characterId: manifest.characterId,

@@ -10,6 +10,11 @@ import { MotionType } from "#lib/shared/pictograph/shared/domain/enums/pictograp
 import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import type { MotionEndpoints } from "#lib/shared/pictograph/shared/domain/models/motion-endpoints.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import {
+  locationUnitPoint,
+  touchesCenter,
+} from "#lib/shared/foundation/domain/math-constants.js";
 import type { InterpolationResult } from "./animation-state-manager";
 import { lerpAngle, normalizeAnglePositive } from "./angle-calculator";
 import { calculateMotionEndpoints } from "./endpoint-calculator";
@@ -75,13 +80,7 @@ export function interpolatePropAngles(
   let leftAngles: InterpolationResult["leftAngles"] = null;
   if (leftMotion) {
     const leftEndpoints = calculateMotionEndpoints(leftMotion);
-    leftAngles = interpolateMotion(
-      leftEndpoints,
-      leftMotion.motionType,
-      stepProgress,
-      leftMotion.pathShape,
-      vm
-    );
+    leftAngles = interpolateMotion(leftEndpoints, leftMotion, stepProgress, vm);
   }
 
   // Interpolate the right prop (null if not present)
@@ -90,9 +89,8 @@ export function interpolatePropAngles(
     const rightEndpoints = calculateMotionEndpoints(rightMotion);
     rightAngles = interpolateMotion(
       rightEndpoints,
-      rightMotion.motionType,
+      rightMotion,
       stepProgress,
-      rightMotion.pathShape,
       vm
     );
   }
@@ -106,9 +104,8 @@ export function interpolatePropAngles(
 
 function interpolateMotion(
   endpoints: MotionEndpoints,
-  motionType: MotionType,
+  motion: MotionData,
   progress: number,
-  motionPathShape?: "arc" | "linear" | "concave",
   vm?: AnimationVisibilityStateManager
 ): {
   centerPathAngle: number;
@@ -116,7 +113,11 @@ function interpolateMotion(
   x?: number;
   y?: number;
 } {
-  const pathType = resolvePathType(motionType, motionPathShape, vm);
+  if (touchesCenter(motion.startLocation, motion.endLocation)) {
+    return interpolateHashMotion(endpoints, motion, progress);
+  }
+
+  const pathType = resolvePathType(motion.motionType, motion.pathShape, vm);
 
   if (pathType === "linear") {
     return interpolateLinearMotion(endpoints, progress);
@@ -174,6 +175,40 @@ function interpolateLinearMotion(
 
   // Return x,y coordinates so renderer can use them directly
   return { centerPathAngle, staffRotationAngle, x: currentX, y: currentY };
+}
+
+/**
+ * A motion with a center end (a hash) runs the straight line between the
+ * center point (radius 0) and its rim end, whatever its path shape, as
+ * Assemble's animator does (`builder-motion-geometry.ts`). Returning x,y makes
+ * renderers place the hand there instead of on the rim at the angle.
+ */
+function interpolateHashMotion(
+  endpoints: MotionEndpoints,
+  motion: MotionData,
+  progress: number
+): {
+  centerPathAngle: number;
+  staffRotationAngle: number;
+  x: number;
+  y: number;
+} {
+  const start = locationUnitPoint(motion.startLocation);
+  const end = locationUnitPoint(motion.endLocation);
+  const x = start.x + (end.x - start.x) * progress;
+  const y = start.y + (end.y - start.y) * progress;
+
+  // The hand stays on its rim end's ray, so that end's angle is its direction
+  // all the way in, including at the center itself, where atan2 has none.
+  const centerPathAngle =
+    motion.startLocation === GridLocation.CENTER
+      ? endpoints.targetCenterAngle
+      : endpoints.startCenterAngle;
+  const staffRotationAngle = normalizeAnglePositive(
+    endpoints.startStaffAngle + endpoints.staffRotationDelta * progress
+  );
+
+  return { centerPathAngle, staffRotationAngle, x, y };
 }
 
 /**
@@ -244,19 +279,29 @@ export function calculateInitialAngles(firstStep: StepData): InterpolationResult
   let leftAngles: InterpolationResult["leftAngles"] = null;
   if (leftStartMotion) {
     const leftStartEndpoints = calculateMotionEndpoints(leftStartMotion);
-    leftAngles = {
-      centerPathAngle: leftStartEndpoints.startCenterAngle,
-      staffRotationAngle: leftStartEndpoints.startStaffAngle,
-    };
+    leftAngles = touchesCenter(
+      leftStartMotion.startLocation,
+      leftStartMotion.endLocation
+    )
+      ? interpolateHashMotion(leftStartEndpoints, leftStartMotion, 0)
+      : {
+          centerPathAngle: leftStartEndpoints.startCenterAngle,
+          staffRotationAngle: leftStartEndpoints.startStaffAngle,
+        };
   }
 
   let rightAngles: InterpolationResult["rightAngles"] = null;
   if (rightStartMotion) {
     const rightStartEndpoints = calculateMotionEndpoints(rightStartMotion);
-    rightAngles = {
-      centerPathAngle: rightStartEndpoints.startCenterAngle,
-      staffRotationAngle: rightStartEndpoints.startStaffAngle,
-    };
+    rightAngles = touchesCenter(
+      rightStartMotion.startLocation,
+      rightStartMotion.endLocation
+    )
+      ? interpolateHashMotion(rightStartEndpoints, rightStartMotion, 0)
+      : {
+          centerPathAngle: rightStartEndpoints.startCenterAngle,
+          staffRotationAngle: rightStartEndpoints.startStaffAngle,
+        };
   }
 
   return {

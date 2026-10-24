@@ -267,6 +267,7 @@
     groundY={campsiteGroundY}
     showTents={tentFeatureEnabled}
     showCampfire={campfireFeatureEnabled}
+    firePosition={activeConfig.campfire?.position}
     materialResponse={activeConfig.materialResponse}
     onReady={handleForestCampsiteReady}
     onError={handleForestCampsiteError}

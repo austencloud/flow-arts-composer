@@ -370,6 +370,7 @@ export class ExportOrchestrator {
         includeAnimationStartPlacement: exportOpts.includeStartPlacement,
         includeEndHold: exportOpts.includeEndHold,
         effectOverrides: exportOpts.effectOverrides ?? undefined,
+        carousel: exportOpts.carousel,
         format: "mp4",
         // App mode: thread the user's chosen prop so the offscreen export engine
         // loads the matching textures instead of falling back to default "staff".

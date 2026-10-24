@@ -3,6 +3,7 @@ import { svelteOptions } from "../../src/config/svelte-options.js";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { defineConfig } from "vitest/config";
+import { workspaceResolvePlugins } from "../../scripts/lib/workspace-resolution.mjs";
 
 const projectRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -10,7 +11,8 @@ const projectRoot = path.resolve(
 );
 
 export default defineConfig({
-  plugins: [sveltekit(svelteOptions)],
+  // This checkout's packages/*, not the primary's, in a task worktree.
+  plugins: [sveltekit(svelteOptions), ...workspaceResolvePlugins(projectRoot)],
 
   test: {
     environment: "jsdom",

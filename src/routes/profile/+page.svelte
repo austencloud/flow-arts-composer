@@ -80,7 +80,7 @@
         {/if}
 
         <h1 class="profile-name">{displayName}</h1>
-        <p class="profile-email">{authState.user.email}</p>
+        <p class="profile-email ph-no-capture">{authState.user.email}</p>
 
         <div class="profile-badge">
           <svg

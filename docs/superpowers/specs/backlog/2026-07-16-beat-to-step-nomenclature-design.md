@@ -124,8 +124,8 @@ Types, functions, props, variables, CSS classes, file names. The core type
   **`static/gallery/*/*.meta.json`** (hundreds of shipped sidecars) and inside
   embedded PNG `tEXt` metadata of user-imported images. Read (only) by
   `foundation/domain/schemas.ts` (`PngStepSchema.beat`),
-  `browse-metadata-extractor.ts`, `sequence-importer.ts`,
-  `universal-metadata-extractor.ts`, `png-metadata-extractor.ts`. **The app's own
+  `sequence-importer.ts`,
+  `png-metadata-extractor.ts` (the browse and universal extractors were removed 2026-10-22). **The app's own
   exporters already write `stepNumber`/`step`/`steps`, never `beat`.**
 - **Boundary 2 — Firestore legacy field `beats`:** superseded by `steps`; survives
   only as a **read fallback** (`data.steps ?? data.beats ?? []`) in
@@ -174,7 +174,7 @@ vocabulary is genuinely musical and stays:
   sense. KEEP.
 - **VTG / CAP "downbeat":** glossary + `caps-domain/mathematics.ts`. KEEP.
 - **Not-a-beat false positives (exclude from any regex sweep):**
-  `adaptive-heartbeat.ts`, `heartbeatInterval` in device-sync; the verb "rules
+  `heartbeatInterval` in device-sync (`adaptive-heartbeat.ts` removed 2026-10-22); the verb "rules
   that **beat** inheritance" (FlowFrame CSS comment); "a /learn/… deep link
   **beats** the saved scroll" (GuideReader).
 
@@ -182,11 +182,11 @@ vocabulary is genuinely musical and stays:
 
 Same symbol carries both meanings; needs a human call. Do not auto-rename:
 
-- `sync/services/playback-position-calculator.ts` + `sync-types.ts` — MIXED in
+- `sync-types.ts` (with `playback-position-calculator.ts`, removed 2026-10-22) — MIXED in
   one file: `beatDurationMs`/`DEFAULT_BEAT_DURATION_MS`/`beatsElapsed` are
   tempo-mapping (KEEP-leaning) but `PositionResult.beat`/`beatProgress` are the
   integer step + fraction (step-sense).
-- `animation-engine/timeline/services/step-grid-calculator.ts` — musical
+- `step-grid-calculator.ts` (removed 2026-10-22; was animation-engine/timeline) — musical
   bar/measure/time-signature vocabulary (`beatsPerMeasure`, `beatInMeasure`,
   `subdivisionsPerBeat`) implemented directly on steps. Strongest ambiguous
   cluster.

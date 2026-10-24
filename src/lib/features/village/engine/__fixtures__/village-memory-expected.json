@@ -1,0 +1,22 @@
+{
+	"kept": {
+		"memory": {
+			"sequenceId": "codex-ooga-seq",
+			"taughtTick": 4746,
+			"carrierCount": 7,
+			"generations": 4,
+			"lost": false
+		},
+		"hash": "5c953b767422caaa58c939b6707ec86a"
+	},
+	"lost": {
+		"memory": {
+			"sequenceId": "codex-ooga-seq",
+			"taughtTick": 6646,
+			"carrierCount": 0,
+			"generations": 1,
+			"lost": true
+		},
+		"hash": "da742a87bbe19e051109367f709c82fd"
+	}
+}

@@ -44,6 +44,7 @@ import {
   maxTurnIntensitiesForLevel,
   type TurnLevel,
 } from "#lib/shared/create/services/level-turn-values.js";
+import { clampToAvailableLevel } from "#lib/shared/create/utils/config-mapper.js";
 import { startOrientationsForLevel } from "#lib/features/create/generate/domain/level-orientation-policy.js";
 import {
   flipSequence,
@@ -378,7 +379,9 @@ function readPersistedState(): PersistedFuseState {
       typeof record.generationLevel === "number" &&
       Number.isFinite(record.generationLevel)
     ) {
-      result.generationLevel = asTurnLevel(record.generationLevel);
+      result.generationLevel = asTurnLevel(
+        clampToAvailableLevel(record.generationLevel)
+      );
     }
     if (
       typeof record.maxTurnIntensity === "number" &&

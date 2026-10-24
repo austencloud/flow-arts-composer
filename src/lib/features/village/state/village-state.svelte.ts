@@ -1,294 +1,482 @@
 /**
- * Village State - Reactive bridge between headless ECS engine and Svelte/Threlte renderer.
+ * Village State - the bridge between the headless village sim and the
+ * Threlte renderer.
  *
- * The engine writes to plain ECS components. This state factory reads those components
- * each frame and pushes values into AvatarInstanceState wrappers that drive Avatar3D.
+ * The sim hands out one plain snapshot per tick (engine/village-snapshot.ts).
+ * This layer keeps the latest one, turns each avatar's entry into a render
+ * record with its own rig state, and starts or stops sequence playback when
+ * the sim says an avatar's active sequence changed. Nothing here holds a live
+ * sim object, so every change in the sim reaches the screen.
  */
 
 import {
 	createCharacterInstanceState as createAvatarInstanceState,
 	makeStandaloneDeps,
 } from "#lib/shared/3d/state/character-instance-state.svelte.js";
-// propInterpolator / sequenceConverter are now module-level functions
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { HUMAN_CHARACTER_IDS } from "#lib/shared/3d/performers/human-character-roster.js";
+import { mirrorSequence } from "#lib/shared/create/services/sequence-transformer.js";
+import { restFacing, turnToward } from "./village-rest-facing";
 import { VillageOrchestrator } from "../engine/village-orchestrator";
-import * as sequenceMutator from "../services/sequence-mutator";
-import type { VillageConfig } from "../engine/village-config";
-import { createDefaultConfig } from "../engine/village-config";
+import { createVillageDriver, type VillageDriver } from "../engine/village-driver";
+import type { VisitorLessonRequest } from "../engine/village-visitor";
+import type { VillageRules } from "../domain/village-rules";
+import type { VillageInputLog } from "../domain/village-input-log";
+import type { VillageEvent } from "../domain/village-types";
 import type {
-	VillageEntity,
-	PopulationStats,
-} from "../domain/village-types";
-
-export type RendererDeps = Record<string, unknown>;
+	VillageAvatarSnapshot,
+	VillageSnapshot,
+	VillageVisitorSnapshot,
+} from "../engine/village-snapshot";
 
 export interface AvatarRenderState {
-	entityId: string;
-	instanceState: ReturnType<typeof createAvatarInstanceState>;
-	entity: VillageEntity;
-	// Smooth interpolation targets (set by engine, lerped each frame)
-	targetX: number;
-	targetZ: number;
-	targetFacingAngle: number;
-	// Renderer-computed movement state (updated each lerp frame)
-	isMoving: boolean;
-	moveSpeed: number; // 0-1
+	readonly entityId: string;
+	readonly instanceState: ReturnType<typeof createAvatarInstanceState>;
+	// Replaced whole every tick, never mutated in place, so a component that
+	// reads any field of it updates when the sim changes that avatar.
+	avatar: VillageAvatarSnapshot;
+	// Which playback this rig is showing, so a restart is only issued when the
+	// sim starts a new one. A mirrored lesson copy is keyed apart from the
+	// sequence itself.
+	loadedSequenceId: string | null;
+	loadedStartTick: number | null;
+	// Sat down before passing, so they pass where they sat.
+	wasSeated: boolean;
+}
+
+const MIRRORED_KEY = ":facing-mirror";
+
+// What sequence playback reads from a snapshot entry: an avatar's, or the
+// visitor's teacher pose.
+type PlaybackFields = Pick<
+	VillageAvatarSnapshot,
+	| "activeSequenceId"
+	| "playbackStartTick"
+	| "lessonPhase"
+	| "lessonStep"
+	| "lessonStepTick"
+	| "lessonMirrored"
+>;
+
+interface PlaybackRecord {
+	readonly instanceState: ReturnType<typeof createAvatarInstanceState>;
+	loadedSequenceId: string | null;
+	loadedStartTick: number | null;
+}
+
+/**
+ * A rig for the visitor's side of a lesson: where the sim stands them and
+ * the teacher's pose, step for step. The museum may draw it in place of the
+ * player's own body (VillageVisitorFigure). Null when no lesson runs.
+ */
+export interface VisitorRenderState extends PlaybackRecord {
+	visitor: VillageVisitorSnapshot;
+}
+
+function createVisitorRenderState(initial: VillageVisitorSnapshot): VisitorRenderState {
+	let visitor = $state.raw(initial);
+	return {
+		instanceState: createAvatarInstanceState(
+			{ id: "visitor", positionX: initial.x, positionZ: initial.z },
+			makeStandaloneDeps(),
+		),
+		get visitor() {
+			return visitor;
+		},
+		set visitor(next) {
+			visitor = next;
+		},
+		loadedSequenceId: null,
+		loadedStartTick: null,
+	};
+}
+
+// The visitor's pose as playback fields. Before the lesson's first step
+// they hold still.
+function visitorPlayback(visitor: VillageVisitorSnapshot): PlaybackFields {
+	return {
+		activeSequenceId: visitor.lessonPhase === null ? null : visitor.sequenceId,
+		playbackStartTick: null,
+		lessonPhase: visitor.lessonPhase,
+		lessonStep: visitor.lessonStep,
+		lessonStepTick: visitor.lessonStepTick,
+		lessonMirrored: visitor.lessonMirrored,
+	};
+}
+
+function createAvatarRenderState(initial: VillageAvatarSnapshot): AvatarRenderState {
+	let avatar = $state.raw(initial);
+	return {
+		entityId: initial.id,
+		instanceState: createAvatarInstanceState(
+			{ id: initial.id, positionX: initial.x, positionZ: initial.z },
+			makeStandaloneDeps(),
+		),
+		get avatar() {
+			return avatar;
+		},
+		set avatar(next) {
+			avatar = next;
+		},
+		loadedSequenceId: null,
+		loadedStartTick: null,
+		wasSeated: false,
+	};
 }
 
 export interface VillageState {
-	readonly orchestrator: VillageOrchestrator;
+	readonly snapshot: VillageSnapshot;
 	readonly avatarList: AvatarRenderState[];
-	readonly stats: PopulationStats;
 	readonly isRunning: boolean;
 	readonly selectedAvatarId: string | null;
 	readonly speed: number;
+	readonly seed: string;
+	readonly rules: VillageRules;
+	// Whether a new village starts with the staged opening.
+	readonly openingEnabled: boolean;
+	/** The visitor's rig while they teach, else null. */
+	readonly visitorRenderState: VisitorRenderState | null;
 
-	syncFromEngine(): void;
-	lerpAvatars(): void;
+	/** Feed real elapsed seconds from the render loop; runs due ticks. */
+	advance(elapsedSeconds: number): void;
+	/** Ease each rig toward the sim; the frame's seconds, or measured here. */
+	lerpAvatars(deltaSeconds?: number): void;
+	onEvents(listener: (events: VillageEvent[], snapshot: VillageSnapshot) => void): () => void;
+	/** Like onEvents, but also on frames where ticks ran without events, for
+	 * readers that watch state change (village-moments.ts). */
+	onAdvance(listener: (events: VillageEvent[], snapshot: VillageSnapshot) => void): () => void;
 	start(): void;
 	pause(): void;
 	togglePlay(): void;
 	setSpeed(speed: number): void;
 	selectAvatar(id: string | null): void;
-	reset(): void;
+	/** Swap in sequence motion once it is built; playing avatars restart on it. */
+	setSequenceCatalogue(catalogue: ReadonlyMap<string, SequenceData>): void;
+	/**
+	 * The museum visitor starts teaching a villager (engine/village-visitor.ts).
+	 * Applies between ticks; false when the sim refuses the lesson.
+	 */
+	teachFromVisitor(request: VisitorLessonRequest): boolean;
+	/** Stops the visitor's lesson, if one is under way. */
+	cancelVisitorLesson(): void;
+	/** Everything the visitor has done here, to keep and replay on a return. */
+	readonly inputLog: VillageInputLog;
+	/** Restart the village; a new seed gives a different village. */
+	reset(seed?: string): void;
+	/** Turn the staged opening on or off; restarts the village on the same seed. */
+	setOpeningEnabled(enabled: boolean): void;
 	destroy(): void;
 }
 
-export function createVillageState(
-	deps: RendererDeps,
-	seedSequences: SequenceData[],
-	configOverrides?: Partial<VillageConfig>,
-): VillageState {
-	const config = createDefaultConfig(configOverrides);
-	const orchestrator = new VillageOrchestrator(config, sequenceMutator);
+export interface CreateVillageStateOptions {
+	rules: VillageRules;
+	seed: string;
+	// Motion for each sequence id the sim may name. Building it is async, so
+	// it may start empty and arrive through setSequenceCatalogue; ids without
+	// an entry simply do not play until then.
+	sequenceCatalogue?: ReadonlyMap<string, SequenceData>;
+	// Start with the staged opening (engine/village-opening.ts). Default on.
+	opening?: boolean;
+	// The rules preset the rules came from, kept in the input log; null (the
+	// default) for the base table.
+	preset?: string | null;
+	// Come back to a remembered village: rebuild it from this log
+	// (domain/village-input-log.ts). Its seed, preset and opening must match
+	// these options, or the orchestrator throws. Only the first village
+	// replays; a reset starts a fresh one.
+	replay?: VillageInputLog;
+}
 
-	// Internal map for O(1) lookups during sync; exposed as $state array for reactivity
-	const avatarStateMap = new Map<string, AvatarRenderState>();
-	let avatarList = $state<AvatarRenderState[]>([]);
-	let stats = $state<PopulationStats>({
-		alive: 0,
-		averageAge: 0,
-		totalKnowledge: 0,
-		uniqueSequences: 0,
-		extinctionCount: 0,
-		currentGeneration: 1,
-	});
+// Sim facing is atan2(dz, dx) (0 faces +x); the rig's yaw is atan2(dx, dz)
+// (0 faces +z).
+function toRigYaw(simFacing: number): number {
+	return Math.PI / 2 - simFacing;
+}
+
+// The longest the opening lesson waits for its motion to be built before it
+// plays anyway, so a failed load cannot freeze the village.
+const MOTION_WAIT_LIMIT_SECONDS = 10;
+// How far the rig may drift from the sim's place in a step before it is put
+// back, as a share of the step.
+const LESSON_DRIFT = 0.3;
+// How fast a body turns: brisk into a walk's heading, unhurried when settling
+// to look at someone. A long frame (a hidden tab) still turns at most this far.
+const WALK_TURN_RADIANS_PER_SECOND = 4;
+const REST_TURN_RADIANS_PER_SECOND = 2;
+const MAX_TURN_FRAME_SECONDS = 0.1;
+
+export function createVillageState(options: CreateVillageStateOptions): VillageState {
+	const { rules } = options;
+	let sequenceCatalogue: ReadonlyMap<string, SequenceData> = options.sequenceCatalogue ?? new Map();
+	// The learner's copy during a lesson: the sequence through the app's own
+	// mirror transform, built on first need and kept.
+	const mirrored = new Map<string, SequenceData>();
+	const mirroring = new Set<string>();
+
+	let openingEnabled = $state(options.opening ?? true);
+	const preset = options.preset ?? null;
+	let orchestrator = createOrchestrator(options.seed, options.replay);
+	let seed = $state(options.seed);
+	let snapshot = $state.raw<VillageSnapshot>(orchestrator.snapshot);
+	let avatarList = $state.raw<AvatarRenderState[]>([]);
 	let isRunning = $state(false);
-	let selectedAvatarId = $state<string | null>(null);
 	let speed = $state(1);
-	let tickIntervalId: ReturnType<typeof setInterval> | null = null;
+	let selectedAvatarId = $state<string | null>(null);
+	let visitorRenderState = $state.raw<VisitorRenderState | null>(null);
 
-	// Initialize population
-	orchestrator.initialize();
+	const records = new Map<string, AvatarRenderState>();
+	const listeners = new Set<(events: VillageEvent[], snapshot: VillageSnapshot) => void>();
+	const advanceListeners = new Set<(events: VillageEvent[], snapshot: VillageSnapshot) => void>();
+	// The entry snapshot's own events (the opening's "started") were made
+	// before anyone could listen; they wait here for the first advance.
+	let eventsThisFrame: VillageEvent[] = [];
+	let motionWaited = 0;
 
-	// Seed initial sequences into the first N avatars
-	const entities = orchestrator.entities;
-	for (let i = 0; i < Math.min(seedSequences.length, entities.length); i++) {
-		const seq = seedSequences[i];
-		const entity = entities[i];
-		if (!seq || !entity) continue;
-		entity.knowledge.knownSequences.set(seq.id ?? `seed-${i}`, {
-			sequenceId: seq.id ?? `seed-${i}`,
-			sequenceData: seq,
-			proficiency: 1,
-			source: "seed",
-			learnedAt: 0,
-			learnedFrom: null,
-			lineage: [],
-			lastUsedTick: 0,
-			style: { amplitudeScale: 1.0, tempoOffset: 0 },
+	const driver: VillageDriver = createVillageDriver({
+		ticksPerSecond: rules.ticksPerSecond,
+		step: () => {
+			const next = orchestrator.tick();
+			eventsThisFrame.push(...next.events);
+		},
+	});
+
+	function createOrchestrator(runSeed: string, replay?: VillageInputLog): VillageOrchestrator {
+		return new VillageOrchestrator({
+			rules,
+			seed: runSeed,
+			avatarModels: HUMAN_CHARACTER_IDS,
+			opening: openingEnabled,
+			preset,
+			...(replay ? { replay } : {}),
 		});
 	}
 
-	// Place avatars near center for Phase 2 (small village, encourage interaction)
-	for (const entity of entities) {
-		entity.transform.x = (Math.random() - 0.5) * 4;
-		entity.transform.z = (Math.random() - 0.5) * 4;
+	function applySnapshot(next: VillageSnapshot): void {
+		snapshot = next;
+		const seen = new Set<string>();
+		let listChanged = false;
+
+		for (const avatar of next.avatars) {
+			seen.add(avatar.id);
+			let record = records.get(avatar.id);
+			if (!record) {
+				record = createAvatarRenderState(avatar);
+				records.set(avatar.id, record);
+				listChanged = true;
+			} else {
+				record.avatar = avatar;
+			}
+			record.wasSeated =
+				avatar.state === "seated" || (avatar.state === "passing" && record.wasSeated);
+			syncSequencePlayback(record, avatar);
+		}
+
+		for (const id of records.keys()) {
+			if (!seen.has(id)) {
+				records.delete(id);
+				listChanged = true;
+			}
+		}
+		if (listChanged) avatarList = [...records.values()];
+		applyVisitor(next.world.visitor ?? null);
 	}
 
-	function syncFromEngine(): void {
-		const currentEntities = orchestrator.entities;
-		stats = orchestrator.populationStats;
-
-		const seenIds = new Set<string>();
-		let mapChanged = false;
-
-		for (const entity of currentEntities) {
-			seenIds.add(entity.id);
-
-			let renderState = avatarStateMap.get(entity.id);
-
-			if (!renderState) {
-				// New entity - create AvatarInstanceState wrapper
-				const instanceState = createAvatarInstanceState(
-					{
-						id: entity.id,
-						positionX: entity.transform.x,
-						positionZ: entity.transform.z,
-					},
-					makeStandaloneDeps(),
-				);
-
-				renderState = {
-					entityId: entity.id,
-					instanceState,
-					entity,
-					targetX: entity.transform.x,
-					targetZ: entity.transform.z,
-					targetFacingAngle: entity.transform.facingAngle,
-					isMoving: false,
-					moveSpeed: 0,
-				};
-				avatarStateMap.set(entity.id, renderState);
-				mapChanged = true;
+	function applyVisitor(visitor: VillageVisitorSnapshot | null): void {
+		if (!visitor) {
+			if (visitorRenderState) {
+				visitorRenderState.instanceState.pause();
+				visitorRenderState = null;
 			}
+			return;
+		}
+		if (!visitorRenderState) {
+			visitorRenderState = createVisitorRenderState(visitor);
+		} else {
+			visitorRenderState.visitor = visitor;
+		}
+		// The visitor stands where the sim put them; nothing to ease toward.
+		const inst = visitorRenderState.instanceState;
+		inst.position.x = visitor.x;
+		inst.position.z = visitor.z;
+		inst.snapFacingAngle(toRigYaw(visitor.facing));
+		syncSequencePlayback(visitorRenderState, visitorPlayback(visitor));
+	}
 
-			// Set interpolation targets from engine (don't snap - lerp happens in lerpAvatars)
-			renderState.targetX = entity.transform.x;
-			renderState.targetZ = entity.transform.z;
-			renderState.targetFacingAngle = entity.transform.facingAngle;
+	function mirroredSequence(sequenceId: string): SequenceData | undefined {
+		const ready = mirrored.get(sequenceId);
+		if (ready) return ready;
+		const source = sequenceCatalogue.get(sequenceId);
+		if (!source || mirroring.has(sequenceId)) return undefined;
+		mirroring.add(sequenceId);
+		const catalogue = sequenceCatalogue;
+		void mirrorSequence(source).then((copy) => {
+			mirroring.delete(sequenceId);
+			if (catalogue !== sequenceCatalogue) return;
+			mirrored.set(sequenceId, copy);
+		});
+		return undefined;
+	}
 
-			// Sync sequence playback for teaching/performing states
-			syncSequencePlayback(entity, renderState);
+	function syncSequencePlayback(record: PlaybackRecord, avatar: PlaybackFields): void {
+		const inst = record.instanceState;
+		const id = avatar.activeSequenceId;
+		// While the mirrored copy is still being built the learner plays the
+		// sequence as it is; the next tick swaps it in.
+		const mirroredCopy = id && avatar.lessonMirrored ? mirroredSequence(id) : undefined;
+		const sequence = mirroredCopy ?? (id ? sequenceCatalogue.get(id) : undefined);
+		const key = mirroredCopy ? `${id}${MIRRORED_KEY}` : id;
 
-			// Update entity reference
-			renderState.entity = entity;
+		// Nothing to play: unload it, not just pause it. A paused rig keeps the
+		// sequence's start pose and props in hand, which is the arms-out stance
+		// idle people used to hold; an empty rig falls back to the body's own
+		// idle, hands empty.
+		if (!sequence) {
+			if (inst.isPlaying) inst.pause();
+			if (inst.hasSequence) inst.clearSequence();
+			record.loadedSequenceId = null;
+			record.loadedStartTick = null;
+			return;
 		}
 
-		// Remove render states for dead entities
-		for (const [id] of avatarStateMap) {
-			if (!seenIds.has(id)) {
-				avatarStateMap.delete(id);
-				mapChanged = true;
+		const fresh =
+			record.loadedSequenceId !== key || record.loadedStartTick !== avatar.playbackStartTick;
+		if (fresh) {
+			inst.loadSequence(sequence);
+			inst.loop = true;
+			record.loadedSequenceId = key;
+			record.loadedStartTick = avatar.playbackStartTick;
+		}
+
+		if (avatar.lessonPhase === null) {
+			if (fresh) {
+				inst.speed = 1;
+				inst.play();
 			}
+			return;
 		}
-
-		// Rebuild reactive array from map (new reference triggers Svelte re-render)
-		if (mapChanged) {
-			avatarList = Array.from(avatarStateMap.values());
-		}
+		followLesson(inst, avatar);
 	}
 
 	/**
-	 * Smoothly interpolate avatar positions toward engine targets.
-	 * Called every render frame (60fps) for smooth movement between
-	 * engine ticks (10fps).
+	 * A lesson plays exactly the step the sim names, at the sim's tempo: one
+	 * step every teaching.ticksPerStep ticks. Holding still pauses the rig
+	 * where it is; a fumble plays the missed step at a stumbling tempo.
 	 */
-	function lerpAvatars(): void {
+	function followLesson(inst: PlaybackRecord["instanceState"], avatar: PlaybackFields): void {
+		if (avatar.lessonStep === null) {
+			if (inst.isPlaying) inst.pause();
+			return;
+		}
+		const ticksPerStep = rules.teaching.ticksPerStep;
+		const stepsPerSecond = (rules.ticksPerSecond * speed) / ticksPerStep;
+		const fumbling = avatar.lessonPhase === "fumble";
+		const tempo = fumbling ? rules.lesson.fumbleTempo : 1;
+		const expected = Math.min(0.999, (avatar.lessonStepTick / ticksPerStep) * tempo);
+		const rigStep = avatar.lessonStep + inst.motionStepOffset;
+
+		if (inst.currentStepIndex !== rigStep) {
+			inst.goToStep(rigStep);
+			inst.setProgress(expected);
+		} else if (Math.abs(inst.progress - expected) > LESSON_DRIFT) {
+			inst.setProgress(expected);
+		}
+		inst.speed = stepsPerSecond * tempo;
+		if (!inst.isPlaying) inst.play();
+	}
+
+	/**
+	 * Smoothly move each rig toward where the sim last put the avatar.
+	 * Called every render frame; the sim only ticks a few times a second.
+	 * Bodies turn at a steady rate toward where they are going or, standing
+	 * still, toward where they rest their gaze (village-rest-facing.ts):
+	 * never a snap.
+	 */
+	let lastLerpAt: number | null = null;
+	function lerpAvatars(deltaSeconds?: number): void {
 		const POSITION_LERP = 0.15;
 		const MOVE_THRESHOLD = 0.02;
+		const now = performance.now();
+		const measured = lastLerpAt === null ? 1 / 60 : (now - lastLerpAt) / 1000;
+		const delta = Math.min(MAX_TURN_FRAME_SECONDS, deltaSeconds ?? measured);
+		lastLerpAt = now;
+		const watchRadius = rules.performance.attractionRadius;
 
-		for (const renderState of avatarStateMap.values()) {
-			const inst = renderState.instanceState;
-
-			const dx = renderState.targetX - inst.position.x;
-			const dz = renderState.targetZ - inst.position.z;
+		for (const record of records.values()) {
+			const inst = record.instanceState;
+			const { avatar } = record;
+			const dx = avatar.x - inst.position.x;
+			const dz = avatar.z - inst.position.z;
 			const dist = Math.sqrt(dx * dx + dz * dz);
 
-			renderState.isMoving = dist > MOVE_THRESHOLD;
-			renderState.moveSpeed = renderState.isMoving
-				? Math.min(1, dist * 2)
-				: 0;
+			// A capped snapFacingAngle, not setFacingAngle: the village never
+			// calls updateLocomotion(), which is what eases toward a set target.
+			const walking = dist > MOVE_THRESHOLD;
+			const target = walking
+				? Math.atan2(dx, dz)
+				: toRigYaw(restFacing(avatar, snapshot, watchRadius));
+			const rate = walking ? WALK_TURN_RADIANS_PER_SECOND : REST_TURN_RADIANS_PER_SECOND;
+			const next = turnToward(inst.facingAngle, target, rate * delta);
+			if (next !== inst.facingAngle) inst.snapFacingAngle(next);
 
-			if (dist > MOVE_THRESHOLD) {
-				// Face movement direction. atan2(X, Z) = yaw from +Z axis,
-				// matching UnifiedCameraController convention. facingAngle=0 = face +Z.
-				// Must use snapFacingAngle (not setFacingAngle) because the village
-				// doesn't call updateLocomotion() which lerps toward the target.
-				inst.snapFacingAngle(Math.atan2(dx, dz));
-			} else {
-				// Idle - snap toward engine's facing (e.g. facing partner during teaching)
-				const currentAngle = inst.facingAngle;
-				let angleDiff =
-					renderState.targetFacingAngle - currentAngle;
-				while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
-				while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
-				if (Math.abs(angleDiff) > 0.01) {
-					inst.snapFacingAngle(currentAngle + angleDiff * 0.1);
-				}
-			}
-
-			// Move position AFTER facing is set
 			inst.position.x += dx * POSITION_LERP;
 			inst.position.z += dz * POSITION_LERP;
 		}
 	}
 
-	function syncSequencePlayback(
-		entity: VillageEntity,
-		renderState: AvatarRenderState,
-	): void {
-		const { instanceState } = renderState;
-		const state = entity.social.state;
-
-		if (
-			state === "teaching" ||
-			state === "learning" ||
-			state === "performing" ||
-			state === "practicing"
-		) {
-			// Find the sequence being played
-			const seqId =
-				entity.social.sequenceBeingTransferred ??
-				getRandomKnownSequenceId(entity);
-
-			if (seqId) {
-				const learned = entity.knowledge.knownSequences.get(seqId);
-				const seqData = learned?.sequenceData as SequenceData | null;
-
-				if (seqData && !instanceState.isPlaying) {
-					instanceState.loadSequence(seqData);
-					instanceState.speed =
-						state === "teaching" || state === "learning"
-							? 0.5
-							: 1;
-					instanceState.loop = true;
-					instanceState.play();
-				}
-			}
-		} else {
-			// Not performing - stop playback
-			if (instanceState.isPlaying) {
-				instanceState.pause();
-				instanceState.reset();
-			}
-		}
+	function restart(runSeed: string): void {
+		const wasRunning = driver.isRunning;
+		driver.pause();
+		records.clear();
+		avatarList = [];
+		selectedAvatarId = null;
+		visitorRenderState = null;
+		seed = runSeed;
+		orchestrator = createOrchestrator(runSeed);
+		eventsThisFrame = [...orchestrator.snapshot.events];
+		motionWaited = 0;
+		applySnapshot(orchestrator.snapshot);
+		if (wasRunning) driver.play();
 	}
 
-	function getRandomKnownSequenceId(
-		entity: VillageEntity,
-	): string | null {
-		const ids = Array.from(entity.knowledge.knownSequences.keys());
-		if (ids.length === 0) return null;
-		return ids[Math.floor(Math.random() * ids.length)] ?? null;
+	/**
+	 * True while the opening lesson's motion (and the learner's mirrored copy)
+	 * is still being built. The clock holds instead of the sim, so the lesson
+	 * plays from its first step once it can be seen, and the run stays the
+	 * same tick for tick.
+	 */
+	function openingMotionPending(): boolean {
+		const opening = snapshot.world.opening;
+		// The visitor's lesson waits the same way, so the learner's first
+		// steps are not lost to a motion still being built. Read from the rig,
+		// which a cancel clears at once, not the snapshot, which only a tick
+		// would refresh.
+		const visitor = visitorRenderState?.visitor;
+		const sequenceId =
+			opening?.phase === "lesson" ? opening.sequenceId : (visitor?.sequenceId ?? null);
+		if (!sequenceId) return false;
+		if (!sequenceCatalogue.has(sequenceId)) return true;
+		return mirroredSequence(sequenceId) === undefined;
 	}
 
-	function startTickLoop(): void {
-		stopTickLoop();
-		const interval = Math.round(1000 / (config.ticksPerSecond * speed));
-		tickIntervalId = setInterval(() => {
-			orchestrator.tick();
-		}, interval);
+	function start(): void {
+		driver.play();
 		isRunning = true;
 	}
 
-	function stopTickLoop(): void {
-		if (tickIntervalId !== null) {
-			clearInterval(tickIntervalId);
-			tickIntervalId = null;
-		}
+	function pause(): void {
+		driver.pause();
 		isRunning = false;
 	}
 
+	eventsThisFrame = [...orchestrator.snapshot.events];
+	applySnapshot(orchestrator.snapshot);
+
 	return {
-		get orchestrator() {
-			return orchestrator;
+		get snapshot() {
+			return snapshot;
 		},
 		get avatarList() {
 			return avatarList;
-		},
-		get stats() {
-			return stats;
 		},
 		get isRunning() {
 			return isRunning;
@@ -299,70 +487,93 @@ export function createVillageState(
 		get speed() {
 			return speed;
 		},
-
-		syncFromEngine,
-		lerpAvatars,
-
-		start() {
-			startTickLoop();
+		get seed() {
+			return seed;
 		},
-		pause() {
-			stopTickLoop();
+		get openingEnabled() {
+			return openingEnabled;
 		},
-		togglePlay() {
-			if (isRunning) {
-				stopTickLoop();
+		get visitorRenderState() {
+			return visitorRenderState;
+		},
+		rules,
+
+		advance(elapsedSeconds) {
+			let ran = 0;
+			if (driver.isRunning && motionWaited < MOTION_WAIT_LIMIT_SECONDS && openingMotionPending()) {
+				motionWaited += elapsedSeconds;
 			} else {
-				startTickLoop();
+				ran = driver.advance(elapsedSeconds);
 			}
-		},
-		setSpeed(newSpeed: number) {
-			speed = newSpeed;
-			if (isRunning) {
-				startTickLoop(); // restart with new interval
+			if (ran === 0 && eventsThisFrame.length === 0) return;
+			const events = eventsThisFrame;
+			eventsThisFrame = [];
+			if (ran > 0) applySnapshot(orchestrator.snapshot);
+			if (events.length > 0) {
+				for (const listener of listeners) listener(events, snapshot);
 			}
+			for (const listener of advanceListeners) listener(events, snapshot);
 		},
-		selectAvatar(id: string | null) {
+		lerpAvatars,
+		onEvents(listener) {
+			listeners.add(listener);
+			return () => listeners.delete(listener);
+		},
+		onAdvance(listener) {
+			advanceListeners.add(listener);
+			return () => advanceListeners.delete(listener);
+		},
+		start,
+		pause,
+		togglePlay() {
+			if (driver.isRunning) pause();
+			else start();
+		},
+		setSpeed(next) {
+			driver.setSpeed(next);
+			speed = next;
+		},
+		selectAvatar(id) {
 			selectedAvatarId = id;
 		},
-		reset() {
-			stopTickLoop();
-			avatarStateMap.clear();
-			avatarList = [];
-			orchestrator.reset();
-			// Re-seed
-			const newEntities = orchestrator.entities;
-			for (
-				let i = 0;
-				i < Math.min(seedSequences.length, newEntities.length);
-				i++
-			) {
-				const seq = seedSequences[i];
-				const ent = newEntities[i];
-				if (!seq || !ent) continue;
-				ent.knowledge.knownSequences.set(
-					seq.id ?? `seed-${i}`,
-					{
-						sequenceId: seq.id ?? `seed-${i}`,
-						sequenceData: seq,
-						proficiency: 1,
-						source: "seed",
-						learnedAt: 0,
-						learnedFrom: null,
-						lineage: [],
-						lastUsedTick: 0,
-						style: { amplitudeScale: 1.0, tempoOffset: 0 },
-					},
-				);
+		setSequenceCatalogue(next) {
+			sequenceCatalogue = next;
+			mirrored.clear();
+			for (const record of records.values()) {
+				record.loadedSequenceId = null;
+				record.loadedStartTick = null;
+				syncSequencePlayback(record, record.avatar);
+			}
+			if (visitorRenderState) {
+				visitorRenderState.loadedSequenceId = null;
+				visitorRenderState.loadedStartTick = null;
+				syncSequencePlayback(visitorRenderState, visitorPlayback(visitorRenderState.visitor));
 			}
 		},
+		teachFromVisitor(request) {
+			return orchestrator.teachFromVisitor(request);
+		},
+		cancelVisitorLesson() {
+			orchestrator.cancelVisitorLesson();
+			applyVisitor(null);
+		},
+		get inputLog() {
+			return orchestrator.inputLog;
+		},
+		reset(nextSeed) {
+			restart(nextSeed ?? seed);
+		},
+		setOpeningEnabled(enabled) {
+			if (enabled === openingEnabled) return;
+			openingEnabled = enabled;
+			restart(seed);
+		},
 		destroy() {
-			stopTickLoop();
-			orchestrator.destroy();
-			avatarStateMap.clear();
+			driver.pause();
+			isRunning = false;
+			listeners.clear();
+			records.clear();
 			avatarList = [];
 		},
 	};
 }
-
-export type { VillageState as VillageStateType };

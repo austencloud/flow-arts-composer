@@ -24,15 +24,66 @@ import type { StartPlacementData } from "#lib/shared/foundation/domain/models/st
 import type { TnDElement } from "#lib/features/choreo-card/domain/tnd-element.js";
 import type { PreparedSequenceHandoff } from "#lib/shared/animation-engine/domain/chaining-types.js";
 import { generatePerVisitDemo } from "#lib/shared/landing/data/per-visit-demo.js";
+import type { PerVisitContinuity } from "#lib/shared/landing/data/per-visit-demo-core.js";
 import { runAtBackgroundPriority } from "#lib/shared/foundation/utils/background-scheduling.js";
 
-/** Fraction of hero draws that come from the shape matrix (rest are generated). */
-const DEFAULT_MATRIX_FRACTION = 2 / 3;
+/**
+ * Where hero draws come from. Before 2026-10-23 two in three were shape-matrix
+ * flowers and the rest smooth generated rolls, and neither can reverse a prop,
+ * so the reversal-dot slot beside every glyph stayed empty forever. The table
+ * now also plays the Guide's authored CAPs and Zan's Diamond variations, and
+ * half the generated rolls let the engine reverse.
+ *
+ * - flowers: a shape-matrix realization (shape-matrix-hero-pool.ts)
+ * - generated: the per-visit LOOP roll (per-visit-demo.ts)
+ * - caps: Gage DeMello's CAPs and the hand paths spun at a turn
+ * - zans: Zan's Diamond and its variations (both in hero-authored-pool.ts)
+ *
+ * The authored CAPs and Zan's variations never flip a prop's spin, so they
+ * show no dots either; the dots come from the mixed generated half. See
+ * hero-authored-pool.ts for why.
+ *
+ * Spec: docs/superpowers/specs/2026-10-23-hero-roll-sources-design.md
+ */
+export type HeroSource = "flowers" | "generated" | "caps" | "zans";
+
+export type HeroSourceWeights = Partial<Record<HeroSource, number>>;
+
+export const HERO_SOURCE_WEIGHTS: Readonly<Record<HeroSource, number>> = {
+  flowers: 1 / 3,
+  generated: 1 / 3,
+  caps: 1 / 6,
+  zans: 1 / 6,
+};
+
+/**
+ * The one order sources are listed in, used both to map the source roll onto
+ * the weights and to fall through when a source comes back empty (a pool that
+ * cannot reach the chain target, failed to load, or threw). Generated is last
+ * because it never comes back empty: it falls back to the baked fixture, so
+ * every draw lands.
+ */
+const SOURCE_ORDER: readonly HeroSource[] = [
+  "flowers",
+  "caps",
+  "zans",
+  "generated",
+];
+
 /** Fraction of GENERATED draws rendered in box mode (45° hand-path rotation). */
 const DEFAULT_BOX_FRACTION = 1 / 3;
 
-/** One hero draw: the sequence plus its TnD element (present only for shape-matrix
- *  draws — generated draws carry no element and show no indicator). */
+/**
+ * Fraction of GENERATED draws rolled with "mixed" continuity, where the engine
+ * may reverse a prop. The other half stays smooth so the hero still shows the
+ * unbroken flow it always has. Measured 2026-10-23 against the real generator:
+ * eight of ten mixed rolls carried reversals (8 to 12 of 16 steps), so "mixed"
+ * is enough and the harsher "choppy" (every roll reverses) is not needed.
+ */
+const DEFAULT_MIXED_FRACTION = 1 / 2;
+
+/** One hero draw: the sequence plus its TnD element (present for flowers and
+ *  CAPs — generated and Zan's draws carry no element and show no indicator). */
 interface HeroDraw {
   sequence: SequenceData;
   element: TnDElement | null;
@@ -77,19 +128,31 @@ export function createHeroAct(options?: {
   /** Injectable so the opening prop stays deterministic in tests. The real
    *  homepage uses Math.random, sampled once inside the client-only start(). */
   random?: () => number;
-  /** Fraction of draws sourced from the shape matrix (default 2/3). Set 0 to
-   *  disable — then no source roll is drawn (random call order is preserved). */
-  matrixFraction?: number;
+  /** Relative weight of each draw source (default HERO_SOURCE_WEIGHTS). A
+   *  source left out or set to 0 is never picked and is skipped on fall-through
+   *  (generated stays the last resort regardless). When only one source has
+   *  weight, no source roll is drawn, so tests can force one source without
+   *  shifting the random call order. */
+  sourceWeights?: HeroSourceWeights;
   /** Fraction of GENERATED draws shown in box mode (default 1/3). Set 0 to
    *  disable — then no box roll is drawn. */
   boxFraction?: number;
+  /** Fraction of GENERATED draws rolled with "mixed" continuity (default 1/2).
+   *  Set 0 to disable — then no continuity roll is drawn and the roll keeps
+   *  the generator's smooth default. */
+  mixedFraction?: number;
   /** A baked SSR-safe opening sequence. The homepage uses this to make the
    *  preview immediately meaningful without running the generator at boot. */
   initialSequence?: SequenceData | null;
 }) {
   const random = options?.random ?? Math.random;
-  const matrixFraction = options?.matrixFraction ?? DEFAULT_MATRIX_FRACTION;
+  const weights = options?.sourceWeights ?? HERO_SOURCE_WEIGHTS;
+  const weightOf = (source: HeroSource): number =>
+    Math.max(0, weights[source] ?? 0);
+  const weightedSources = SOURCE_ORDER.filter((s) => weightOf(s) > 0);
+  const totalWeight = weightedSources.reduce((sum, s) => sum + weightOf(s), 0);
   const boxFraction = options?.boxFraction ?? DEFAULT_BOX_FRACTION;
+  const mixedFraction = options?.mixedFraction ?? DEFAULT_MIXED_FRACTION;
   let current = $state<SequenceData | null>(options?.initialSequence ?? null);
   let currentElement = $state<TnDElement | null>(null);
   let currentProp = $state<PropType>(PropType.STAFF);
@@ -120,40 +183,91 @@ export function createHeroAct(options?: {
     return PROP_CYCLE[index] ?? PropType.STAFF;
   }
 
+  /** Roll which source this draw starts from. With a single weighted source
+   *  there is nothing to choose, so no random is spent. */
+  function pickSource(): HeroSource {
+    if (weightedSources.length === 0) return "generated";
+    if (weightedSources.length === 1) return weightedSources[0]!;
+    let roll = random() * totalWeight;
+    for (const source of weightedSources) {
+      roll -= weightOf(source);
+      if (roll < 0) return source;
+    }
+    // Float rounding can leave a hair of roll past the last bucket.
+    return weightedSources[weightedSources.length - 1]!;
+  }
+
+  /** One constructed (non-generated) source's draw, or null when it has none
+   *  for this chain target. Every pool is dynamic-imported so the initial
+   *  landing bundle stays lean and Firebase-free; a pool that fails to load or
+   *  throws counts as empty. */
+  async function drawConstructed(
+    source: Exclude<HeroSource, "generated">,
+    chainStartPlacement: StartPlacementData | null
+  ): Promise<HeroDraw | null> {
+    try {
+      if (source === "flowers") {
+        const { drawMatrixRealization } =
+          await import("#lib/shared/landing/data/shape-matrix-hero-pool.js");
+        const draw = await drawMatrixRealization({
+          chainStartPlacement,
+          random,
+        });
+        return draw ? { sequence: draw.sequence, element: draw.element } : null;
+      }
+      const { drawAuthoredRealization } =
+        await import("#lib/shared/landing/data/hero-authored-pool.js");
+      const draw = drawAuthoredRealization({
+        pool: source,
+        chainStartPlacement,
+        random,
+      });
+      return draw ? { sequence: draw.sequence, element: draw.element } : null;
+    } catch {
+      return null;
+    }
+  }
+
   /**
-   * Produce one hero draw. Two in three come from the shape matrix (a
-   * constructed cell+mode realization with a re-derived TnD element); the rest
-   * are the generated per-visit LOOP, a third of which render in box mode. Both
-   * heavy paths (matrix pool, box transform) are dynamic-imported so the initial
-   * landing bundle stays lean and Firebase-free.
+   * Produce one hero draw. The source roll picks a starting source by weight;
+   * an empty source hands on to the next weighted one in SOURCE_ORDER, ending
+   * at the generated roll, which always lands.
    */
   async function drawHeroSequence(opts: {
     propType: PropType;
     chainStartPlacement?: StartPlacementData | null;
   }): Promise<HeroDraw> {
-    // Short-circuit so a disabled fraction (0) draws no random — keeps the
-    // random call order identical to the pre-matrix act for callers that opt out.
-    if (matrixFraction > 0 && random() < matrixFraction) {
-      try {
-        const { drawMatrixRealization } =
-          await import("#lib/shared/landing/data/shape-matrix-hero-pool.js");
-        const draw = await drawMatrixRealization({
-          chainStartPlacement: opts.chainStartPlacement ?? null,
-          random,
-        });
-        if (draw) return { sequence: draw.sequence, element: draw.element };
-      } catch {
-        // fall through to the generated draw
-      }
+    const chainStartPlacement = opts.chainStartPlacement ?? null;
+    const first = pickSource();
+    for (const source of SOURCE_ORDER.slice(SOURCE_ORDER.indexOf(first))) {
+      if (source === "generated") break;
+      if (weightOf(source) <= 0) continue;
+      const draw = await drawConstructed(source, chainStartPlacement);
+      if (draw) return draw;
     }
+    return drawGenerated(opts.propType, chainStartPlacement);
+  }
 
+  /** The generated per-visit LOOP: half rolled smooth and half mixed, a third
+   *  of them shown in box mode. */
+  async function drawGenerated(
+    propType: PropType,
+    chainStartPlacement: StartPlacementData | null
+  ): Promise<HeroDraw> {
+    // Short-circuit so a disabled fraction (0) draws no random and passes no
+    // continuity, keeping the call shape the act had before the mixed half.
+    const continuity: PerVisitContinuity | null =
+      mixedFraction > 0
+        ? random() < mixedFraction
+          ? "mixed"
+          : "smooth"
+        : null;
     let sequence = await generatePerVisitDemo({
-      propType: opts.propType,
+      propType,
       // Only constrain the start when chaining — an unconstrained first draw
       // omits it entirely (matches the pre-matrix call shape).
-      ...(opts.chainStartPlacement
-        ? { startPlacement: opts.chainStartPlacement }
-        : {}),
+      ...(chainStartPlacement ? { startPlacement: chainStartPlacement } : {}),
+      ...(continuity ? { continuity } : {}),
     });
     if (boxFraction > 0 && random() < boxFraction) {
       try {
@@ -198,9 +312,9 @@ export function createHeroAct(options?: {
           preparedNext = draw;
         }
       });
-      // drawHeroSequence never rejects (matrix failures fall back to the
-      // generated draw, which itself falls back to FALLBACK_DEMO), so there's
-      // no separate failure branch to handle here.
+      // drawHeroSequence never rejects (an empty or failed source falls
+      // through to the generated draw, which itself falls back to
+      // FALLBACK_DEMO), so there's no separate failure branch to handle here.
     });
   }
 

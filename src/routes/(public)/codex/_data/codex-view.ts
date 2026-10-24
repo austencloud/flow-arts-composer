@@ -1,7 +1,7 @@
 /**
  * The Codex board's reader controls, as plain data: which layers each
- * pictograph draws, and the whole-board transforms (rotate, mirror, swap
- * hands). Layers are a reading preference and persist in localStorage;
+ * pictograph draws, and the whole-board transforms (rotate either way,
+ * mirror, flip, swap hands). Layers are a reading preference and persist in localStorage;
  * transforms ride in the URL (?tf=) so a transformed board is a shareable
  * link, and they reset with the link.
  */
@@ -52,11 +52,18 @@ export function restoreCodexVisibility(raw: string | null): CodexVisibility {
   return visibility;
 }
 
-export type CodexTransformOp = "rotate" | "mirror" | "swap";
+export type CodexTransformOp =
+  | "rotate"
+  | "rotate-ccw"
+  | "mirror"
+  | "flip"
+  | "swap";
 
 const OP_CODES: Record<CodexTransformOp, string> = {
   rotate: "r",
+  "rotate-ccw": "l",
   mirror: "m",
+  flip: "f",
   swap: "s",
 };
 
@@ -64,9 +71,7 @@ const OP_CODES: Record<CodexTransformOp, string> = {
  *  more is cut rather than letting it cost the board a slow render. */
 const MAX_TRANSFORMS = 16;
 
-export function parseCodexTransforms(
-  value: string | null
-): CodexTransformOp[] {
+export function parseCodexTransforms(value: string | null): CodexTransformOp[] {
   if (!value) return [];
   const ops: CodexTransformOp[] = [];
   for (const code of value.slice(0, MAX_TRANSFORMS)) {
@@ -90,20 +95,42 @@ export function formatCodexTransforms(
         .join("");
 }
 
+function rotateTimes(
+  pictographs: PictographData[],
+  eighths: number
+): PictographData[] {
+  let result = pictographs;
+  for (let i = 0; i < eighths; i++) result = rotateAllPictographs(result);
+  return result;
+}
+
 /** Apply the transforms in the order they were pressed. Rotation turns the
- *  pictograph an eighth clockwise, so it also switches Diamond and Box. */
+ *  pictograph an eighth, so it also switches Diamond and Box; a left turn is
+ *  seven right ones. Flip (top to bottom) is the side-to-side mirror turned
+ *  half round. */
 export function transformCodexPictograph(
   pictograph: PictographData,
   ops: readonly CodexTransformOp[]
 ): PictographData {
   let result = [pictograph];
   for (const op of ops) {
-    result =
-      op === "rotate"
-        ? rotateAllPictographs(result)
-        : op === "mirror"
-          ? mirrorAllPictographs(result)
-          : handSwapAllPictographs(result);
+    switch (op) {
+      case "rotate":
+        result = rotateAllPictographs(result);
+        break;
+      case "rotate-ccw":
+        result = rotateTimes(result, 7);
+        break;
+      case "mirror":
+        result = mirrorAllPictographs(result);
+        break;
+      case "flip":
+        result = rotateTimes(mirrorAllPictographs(result), 4);
+        break;
+      case "swap":
+        result = handSwapAllPictographs(result);
+        break;
+    }
   }
   return result[0]!;
 }

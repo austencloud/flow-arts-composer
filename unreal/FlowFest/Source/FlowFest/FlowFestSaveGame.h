@@ -27,7 +27,7 @@ class FLOWFEST_API UFlowFestSaveGame : public USaveGame
     GENERATED_BODY()
 public:
     // A native slot intentionally separate from the browser simulation's storage.
-    static constexpr int32 CurrentVersion = 3;
+    static constexpr int32 CurrentVersion = 4;
     static constexpr const TCHAR* SlotName = TEXT("FlowFestNative58");
 
     UPROPERTY(SaveGame) int32 Version = CurrentVersion;
@@ -40,6 +40,8 @@ public:
     UPROPERTY(SaveGame) float Hunger = 15.f;
     UPROPERTY(SaveGame) EFlowFestVisitorAction VisitorAction = EFlowFestVisitorAction::None;
     UPROPERTY(SaveGame) float VisitorActionRemaining = 0.f;
+    UPROPERTY(SaveGame) float VisitorStandRemaining = 0.f;
+    UPROPERTY(SaveGame) float VisitorRestElapsed = 0.f;
     UPROPERTY(SaveGame) FString CrowdState;
     UPROPERTY(SaveGame) bool bExplorationOnly = false;
     UPROPERTY(SaveGame) FVector Position = FVector::ZeroVector;

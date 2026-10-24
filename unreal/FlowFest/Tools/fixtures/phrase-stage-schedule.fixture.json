@@ -1,0 +1,631 @@
+{
+  "version": "flow-fest-phrase-schedule-v1",
+  "fixture": true,
+  "note": "Hand-made fixture with the contract of static/data/flow-fest/phrase-stage-schedule.json. Sequence ids and names are placeholders. Replace it with the brain's file when that lands (export-phrase-stage.ts prefers it).",
+  "tempoBpm": 120,
+  "lengthBeats": 128,
+  "performers": [
+    {
+      "id": "stage-left",
+      "seed": 11,
+      "characterId": "ch07",
+      "propFamily": "staff",
+      "personality": {
+        "skill": 0.9,
+        "style": 0.15,
+        "energy": 0.6
+      },
+      "home": {
+        "x": -1.5,
+        "z": 0
+      },
+      "areaRadius": 1.2,
+      "phrases": [
+        {
+          "startBeat": 0,
+          "beats": 16,
+          "sequenceId": "fixture-weave",
+          "sequenceName": "Fixture: Weave",
+          "repeats": 2,
+          "plane": "wall",
+          "mode": "planted",
+          "facingStart": 1.5708,
+          "facingEnd": 1.5708,
+          "path": null,
+          "timing": {
+            "jitterBeats": 0.03,
+            "tempoDrift": 0.01
+          }
+        },
+        {
+          "startBeat": 16,
+          "beats": 4,
+          "sequenceId": "fixture-butterfly",
+          "sequenceName": "Fixture: Butterfly",
+          "repeats": 1,
+          "plane": "wall",
+          "mode": "travelling",
+          "facingStart": 1.5708,
+          "facingEnd": 1.5708,
+          "path": {
+            "from": {
+              "x": -1.5,
+              "z": 0
+            },
+            "to": {
+              "x": -1.5,
+              "z": 1.1
+            },
+            "steps": 3
+          },
+          "timing": {
+            "jitterBeats": 0.03,
+            "tempoDrift": 0.01
+          }
+        },
+        {
+          "startBeat": 20,
+          "beats": 8,
+          "sequenceId": "fixture-figure-eight",
+          "sequenceName": "Fixture: Figure Eight",
+          "repeats": 1,
+          "plane": "wall",
+          "mode": "planted",
+          "facingStart": 1.5708,
+          "facingEnd": 1.5708,
+          "path": null,
+          "timing": {
+            "jitterBeats": 0.03,
+            "tempoDrift": 0.01
+          }
+        },
+        {
+          "startBeat": 28,
+          "beats": 8,
+          "sequenceId": "fixture-helicopter",
+          "sequenceName": "Fixture: Helicopter",
+          "repeats": 1,
+          "plane": "wheel",
+          "mode": "turning",
+          "facingStart": 1.5708,
+          "facingEnd": -1.5707,
+          "path": null,
+          "timing": {
+            "jitterBeats": 0.03,
+            "tempoDrift": 0.01
+          }
+        },
+        {
+          "startBeat": 36,
+          "beats": 4,
+          "sequenceId": "fixture-windmill",
+          "sequenceName": "Fixture: Windmill",
+          "repeats": 1,
+          "plane": "wheel",
+          "mode": "travelling",
+          "facingStart": -1.5708,
+          "facingEnd": -1.5708,
+          "path": {
+            "from": {
+              "x": -1.5,
+              "z": 1.1
+            },
+            "to": {
+              "x": -1.5,
+              "z": 0
+            },
+            "steps": 3
+          },
+          "timing": {
+            "jitterBeats": 0.03,
+            "tempoDrift": 0.01
+          }
+        },
+        {
+          "startBeat": 40,
+          "beats": 8,
+          "sequenceId": "fixture-steal",
+          "sequenceName": "Fixture: Steal",
+          "repeats": 1,
+          "plane": "wall",
+          "mode": "turning",
+          "facingStart": -1.5707,
+          "facingEnd": 1.5708,
+          "path": null,
+          "timing": {
+            "jitterBeats": 0.03,
+            "tempoDrift": 0.01
+          }
+        },
+        {
+          "startBeat": 48,
+          "beats": 16,
+          "sequenceId": "fixture-weave",
+          "sequenceName": "Fixture: Weave",
+          "repeats": 2,
+          "plane": "wall",
+          "mode": "planted",
+          "facingStart": 1.5708,
+          "facingEnd": 1.5708,
+          "path": null,
+          "timing": {
+            "jitterBeats": 0.03,
+            "tempoDrift": 0.01
+          }
+        },
+        {
+          "startBeat": 64,
+          "beats": 4,
+          "sequenceId": "fixture-butterfly",
+          "sequenceName": "Fixture: Butterfly",
+          "repeats": 1,
+          "plane": "floor",
+          "mode": "turning",
+          "facingStart": 1.5708,
+          "facingEnd": 0,
+          "path": null,
+          "timing": {
+            "jitterBeats": 0.03,
+            "tempoDrift": 0.01
+          }
+        },
+        {
+          "startBeat": 68,
+          "beats": 12,
+          "sequenceId": "fixture-figure-eight",
+          "sequenceName": "Fixture: Figure Eight",
+          "repeats": 2,
+          "plane": "floor",
+          "mode": "planted",
+          "facingStart": 0,
+          "facingEnd": 0,
+          "path": null,
+          "timing": {
+            "jitterBeats": 0.03,
+            "tempoDrift": 0.01
+          }
+        },
+        {
+          "startBeat": 80,
+          "beats": 4,
+          "sequenceId": "fixture-helicopter",
+          "sequenceName": "Fixture: Helicopter",
+          "repeats": 1,
+          "plane": "wall",
+          "mode": "turning",
+          "facingStart": 0,
+          "facingEnd": 1.5708,
+          "path": null,
+          "timing": {
+            "jitterBeats": 0.03,
+            "tempoDrift": 0.01
+          }
+        },
+        {
+          "startBeat": 84,
+          "beats": 44,
+          "sequenceId": "fixture-windmill",
+          "sequenceName": "Fixture: Windmill",
+          "repeats": 6,
+          "plane": "wall",
+          "mode": "planted",
+          "facingStart": 1.5708,
+          "facingEnd": 1.5708,
+          "path": null,
+          "timing": {
+            "jitterBeats": 0.03,
+            "tempoDrift": 0.01
+          }
+        }
+      ]
+    },
+    {
+      "id": "stage-right",
+      "seed": 23,
+      "characterId": "ch21",
+      "propFamily": "staff",
+      "personality": {
+        "skill": 0.55,
+        "style": 0.85,
+        "energy": 0.8
+      },
+      "home": {
+        "x": 1.5,
+        "z": 0
+      },
+      "areaRadius": 2,
+      "phrases": [
+        {
+          "startBeat": 0,
+          "beats": 8,
+          "sequenceId": "fixture-figure-eight",
+          "sequenceName": "Fixture: Figure Eight",
+          "repeats": 1,
+          "plane": "wall",
+          "mode": "planted",
+          "facingStart": 1.5708,
+          "facingEnd": 1.5708,
+          "path": null,
+          "timing": {
+            "jitterBeats": 0.06,
+            "tempoDrift": 0.03
+          }
+        },
+        {
+          "startBeat": 8,
+          "beats": 4,
+          "sequenceId": "fixture-helicopter",
+          "sequenceName": "Fixture: Helicopter",
+          "repeats": 1,
+          "plane": "wheel",
+          "mode": "turning",
+          "facingStart": 1.5708,
+          "facingEnd": 0,
+          "path": null,
+          "timing": {
+            "jitterBeats": 0.06,
+            "tempoDrift": 0.03
+          }
+        },
+        {
+          "startBeat": 12,
+          "beats": 4,
+          "sequenceId": "fixture-windmill",
+          "sequenceName": "Fixture: Windmill",
+          "repeats": 1,
+          "plane": "wheel",
+          "mode": "travelling",
+          "facingStart": 0,
+          "facingEnd": 0,
+          "path": {
+            "from": {
+              "x": 1.5,
+              "z": 0
+            },
+            "to": {
+              "x": 2.9,
+              "z": 0
+            },
+            "steps": 3
+          },
+          "timing": {
+            "jitterBeats": 0.06,
+            "tempoDrift": 0.03
+          }
+        },
+        {
+          "startBeat": 16,
+          "beats": 4,
+          "sequenceId": "fixture-steal",
+          "sequenceName": "Fixture: Steal",
+          "repeats": 1,
+          "plane": "wall",
+          "mode": "turning",
+          "facingStart": 0,
+          "facingEnd": 1.5708,
+          "path": null,
+          "timing": {
+            "jitterBeats": 0.06,
+            "tempoDrift": 0.03
+          }
+        },
+        {
+          "startBeat": 20,
+          "beats": 4,
+          "sequenceId": "fixture-weave",
+          "sequenceName": "Fixture: Weave",
+          "repeats": 1,
+          "plane": "wall",
+          "mode": "travelling",
+          "facingStart": 1.5708,
+          "facingEnd": 1.5708,
+          "path": {
+            "from": {
+              "x": 2.9,
+              "z": 0
+            },
+            "to": {
+              "x": 2.9,
+              "z": 1.2
+            },
+            "steps": 3
+          },
+          "timing": {
+            "jitterBeats": 0.06,
+            "tempoDrift": 0.03
+          }
+        },
+        {
+          "startBeat": 24,
+          "beats": 8,
+          "sequenceId": "fixture-butterfly",
+          "sequenceName": "Fixture: Butterfly",
+          "repeats": 1,
+          "plane": "wall",
+          "mode": "planted",
+          "facingStart": 1.5708,
+          "facingEnd": 1.5708,
+          "path": null,
+          "timing": {
+            "jitterBeats": 0.06,
+            "tempoDrift": 0.03
+          }
+        },
+        {
+          "startBeat": 32,
+          "beats": 4,
+          "sequenceId": "fixture-figure-eight",
+          "sequenceName": "Fixture: Figure Eight",
+          "repeats": 1,
+          "plane": "wheel",
+          "mode": "turning",
+          "facingStart": 1.5708,
+          "facingEnd": 3.1416,
+          "path": null,
+          "timing": {
+            "jitterBeats": 0.06,
+            "tempoDrift": 0.03
+          }
+        },
+        {
+          "startBeat": 36,
+          "beats": 4,
+          "sequenceId": "fixture-helicopter",
+          "sequenceName": "Fixture: Helicopter",
+          "repeats": 1,
+          "plane": "wheel",
+          "mode": "travelling",
+          "facingStart": 3.1416,
+          "facingEnd": 3.1416,
+          "path": {
+            "from": {
+              "x": 2.9,
+              "z": 1.2
+            },
+            "to": {
+              "x": 1.5,
+              "z": 1.2
+            },
+            "steps": 3
+          },
+          "timing": {
+            "jitterBeats": 0.06,
+            "tempoDrift": 0.03
+          }
+        },
+        {
+          "startBeat": 40,
+          "beats": 4,
+          "sequenceId": "fixture-windmill",
+          "sequenceName": "Fixture: Windmill",
+          "repeats": 1,
+          "plane": "wall",
+          "mode": "turning",
+          "facingStart": 3.1416,
+          "facingEnd": 4.7124,
+          "path": null,
+          "timing": {
+            "jitterBeats": 0.06,
+            "tempoDrift": 0.03
+          }
+        },
+        {
+          "startBeat": 44,
+          "beats": 4,
+          "sequenceId": "fixture-steal",
+          "sequenceName": "Fixture: Steal",
+          "repeats": 1,
+          "plane": "wall",
+          "mode": "travelling",
+          "facingStart": -1.5708,
+          "facingEnd": -1.5708,
+          "path": {
+            "from": {
+              "x": 1.5,
+              "z": 1.2
+            },
+            "to": {
+              "x": 1.5,
+              "z": 0
+            },
+            "steps": 3
+          },
+          "timing": {
+            "jitterBeats": 0.06,
+            "tempoDrift": 0.03
+          }
+        },
+        {
+          "startBeat": 48,
+          "beats": 8,
+          "sequenceId": "fixture-weave",
+          "sequenceName": "Fixture: Weave",
+          "repeats": 1,
+          "plane": "wall",
+          "mode": "turning",
+          "facingStart": -1.5708,
+          "facingEnd": 1.5708,
+          "path": null,
+          "timing": {
+            "jitterBeats": 0.06,
+            "tempoDrift": 0.03
+          }
+        },
+        {
+          "startBeat": 56,
+          "beats": 8,
+          "sequenceId": "fixture-butterfly",
+          "sequenceName": "Fixture: Butterfly",
+          "repeats": 1,
+          "plane": "wall",
+          "mode": "planted",
+          "facingStart": 1.5708,
+          "facingEnd": 1.5708,
+          "path": null,
+          "timing": {
+            "jitterBeats": 0.06,
+            "tempoDrift": 0.03
+          }
+        },
+        {
+          "startBeat": 64,
+          "beats": 8,
+          "sequenceId": "fixture-figure-eight",
+          "sequenceName": "Fixture: Figure Eight",
+          "repeats": 1,
+          "plane": "floor",
+          "mode": "turning",
+          "facingStart": 1.5708,
+          "facingEnd": 4.7124,
+          "path": null,
+          "timing": {
+            "jitterBeats": 0.06,
+            "tempoDrift": 0.03
+          }
+        },
+        {
+          "startBeat": 72,
+          "beats": 4,
+          "sequenceId": "fixture-helicopter",
+          "sequenceName": "Fixture: Helicopter",
+          "repeats": 1,
+          "plane": "floor",
+          "mode": "travelling",
+          "facingStart": -1.5708,
+          "facingEnd": -1.5708,
+          "path": {
+            "from": {
+              "x": 1.5,
+              "z": 0
+            },
+            "to": {
+              "x": 1.5,
+              "z": -1.2
+            },
+            "steps": 3
+          },
+          "timing": {
+            "jitterBeats": 0.06,
+            "tempoDrift": 0.03
+          }
+        },
+        {
+          "startBeat": 76,
+          "beats": 6,
+          "sequenceId": "fixture-windmill",
+          "sequenceName": "Fixture: Windmill",
+          "repeats": 1,
+          "plane": "wheel",
+          "mode": "turning",
+          "facingStart": -1.5708,
+          "facingEnd": 0.588,
+          "path": null,
+          "timing": {
+            "jitterBeats": 0.06,
+            "tempoDrift": 0.03
+          }
+        },
+        {
+          "startBeat": 82,
+          "beats": 4,
+          "sequenceId": "fixture-steal",
+          "sequenceName": "Fixture: Steal",
+          "repeats": 1,
+          "plane": "wheel",
+          "mode": "travelling",
+          "facingStart": 0.588,
+          "facingEnd": 0.588,
+          "path": {
+            "from": {
+              "x": 1.5,
+              "z": -1.2
+            },
+            "to": {
+              "x": 2.7,
+              "z": -0.4
+            },
+            "steps": 3
+          },
+          "timing": {
+            "jitterBeats": 0.06,
+            "tempoDrift": 0.03
+          }
+        },
+        {
+          "startBeat": 86,
+          "beats": 6,
+          "sequenceId": "fixture-weave",
+          "sequenceName": "Fixture: Weave",
+          "repeats": 1,
+          "plane": "wall",
+          "mode": "turning",
+          "facingStart": 0.588,
+          "facingEnd": 2.8198,
+          "path": null,
+          "timing": {
+            "jitterBeats": 0.06,
+            "tempoDrift": 0.03
+          }
+        },
+        {
+          "startBeat": 92,
+          "beats": 4,
+          "sequenceId": "fixture-butterfly",
+          "sequenceName": "Fixture: Butterfly",
+          "repeats": 1,
+          "plane": "wall",
+          "mode": "travelling",
+          "facingStart": 2.8198,
+          "facingEnd": 2.8198,
+          "path": {
+            "from": {
+              "x": 2.7,
+              "z": -0.4
+            },
+            "to": {
+              "x": 1.5,
+              "z": 0
+            },
+            "steps": 3
+          },
+          "timing": {
+            "jitterBeats": 0.06,
+            "tempoDrift": 0.03
+          }
+        },
+        {
+          "startBeat": 96,
+          "beats": 4,
+          "sequenceId": "fixture-figure-eight",
+          "sequenceName": "Fixture: Figure Eight",
+          "repeats": 1,
+          "plane": "wall",
+          "mode": "turning",
+          "facingStart": 2.8198,
+          "facingEnd": 1.5708,
+          "path": null,
+          "timing": {
+            "jitterBeats": 0.06,
+            "tempoDrift": 0.03
+          }
+        },
+        {
+          "startBeat": 100,
+          "beats": 28,
+          "sequenceId": "fixture-helicopter",
+          "sequenceName": "Fixture: Helicopter",
+          "repeats": 4,
+          "plane": "wall",
+          "mode": "planted",
+          "facingStart": 1.5708,
+          "facingEnd": 1.5708,
+          "path": null,
+          "timing": {
+            "jitterBeats": 0.06,
+            "tempoDrift": 0.03
+          }
+        }
+      ]
+    }
+  ]
+}

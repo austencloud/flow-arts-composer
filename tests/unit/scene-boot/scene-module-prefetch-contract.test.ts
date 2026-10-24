@@ -65,7 +65,7 @@ function backgroundScenes(source: string): Map<string, string> {
 
 /** The module each scene name mounts, taken from the non-retained branch. */
 function sceneModules(source: string): Map<string, string> {
-  const start = source.indexOf("!mountedEnvironmentIsRetained");
+  const start = source.indexOf("!retainedEnvironments.has(worldType)");
   expect(start, "the non-retained environment branch").toBeGreaterThan(-1);
   const block = source.slice(start);
   const consts = moduleConsts(source);

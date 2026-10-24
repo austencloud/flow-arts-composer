@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   fitEffectQuickPicker,
+  gridPanelHeight,
+  pictureTileHeight,
   QUICK_PICKER_CLOSE_WIDTH,
   QUICK_PICKER_EDGE,
+  QUICK_PICKER_HEAD,
+  QUICK_PICKER_HEAD_GAP,
   QUICK_PICKER_MAX_SIDE_WIDTH,
   QUICK_PICKER_MAX_STRIP_PORTRAIT,
   QUICK_PICKER_MIN_NARROW_SIDE_WIDTH,
@@ -22,6 +26,7 @@ import {
   CATALOG_TILE_PAD,
   MIN_CATALOG_PORTRAIT,
 } from "./effect-catalog-fit";
+import { EFFECTS } from "../../effects/domain/effect-meta";
 
 const COUNT = 20;
 const INSET = CATALOG_TILE_PAD + CATALOG_TILE_BORDER;
@@ -138,10 +143,17 @@ describe("fitEffectQuickPicker", () => {
     // or nearly so, and the row read as complete.
     ["wide window", 1180, 1100],
   ])(
-    "lays one scrolling row over a %s player that fills the width",
+    "lays one scrolling row over a %s player with too little room under it for a grid",
     (_, viewportWidth, playerWidth) => {
+      // 110px under the player: the row docks there, the grid's title row
+      // and a row and a half of pictures do not fit.
       const fit = fitEffectQuickPicker({
-        bounds: { left: 0, top: 0, width: viewportWidth, height: 1000 },
+        bounds: {
+          left: 0,
+          top: 0,
+          width: viewportWidth,
+          height: 120 + playerWidth + 44 + 110,
+        },
         player: {
           left: (viewportWidth - playerWidth) / 2,
           top: 120,
@@ -178,12 +190,6 @@ describe("fitEffectQuickPicker", () => {
     roomBelow: 47,
     count: COUNT,
   };
-  const tallPhone = {
-    bounds: { left: 0, top: 0, width: 412, height: 871 },
-    player: { left: 13, top: 225, width: 387, height: 431 },
-    roomBelow: 152,
-    count: COUNT,
-  };
   const tablet = {
     bounds: { left: 0, top: 0, width: 810, height: 1135 },
     player: { left: 13, top: 112, width: 785, height: 829 },
@@ -197,18 +203,12 @@ describe("fitEffectQuickPicker", () => {
     return fit;
   }
 
-  it("floats the row under the controls where the room there holds it", () => {
-    const fit = strip(tallPhone);
-    expect(fit.side).toBe("below");
-    expect(fit.height).toBe(stripHeight(fit.catalog.portrait));
-    expect(fit.height + QUICK_PICKER_STRIP_GAP).toBeLessThanOrEqual(
-      tallPhone.roomBelow
-    );
-  });
-
   it("floats the row over the notation rail it hides", () => {
+    // The room under the tablet's player holds no row and a half of its
+    // grid, so it keeps the row, sized to the rail.
     const fit = strip(tablet);
     expect(fit.side).toBe("below");
+    expect(fit.height).toBe(stripHeight(fit.catalog.portrait));
     expect(fit.height + QUICK_PICKER_STRIP_GAP).toBeLessThanOrEqual(
       tablet.roomBelow
     );
@@ -246,6 +246,138 @@ describe("fitEffectQuickPicker", () => {
       bounds: { ...phone.bounds, height: 540 },
     });
     expect(fit.side).toBe("above");
+  });
+});
+
+describe("fitEffectQuickPicker on a phone held upright", () => {
+  const count = EFFECTS.length;
+  // Measured on /create/generate at 412x915 while playing.
+  // The others follow that layout: the content area above the 44px bottom
+  // navigation, the player (its square animation and 44px of controls)
+  // centred in it, and the 63px toolbar under it.
+  const phones = [
+    {
+      name: "375x812",
+      bounds: { left: 0, top: 0, width: 375, height: 768 },
+      player: { left: 13, top: 192, width: 350, height: 394 },
+      roomBelow: 119,
+    },
+    {
+      name: "390x844",
+      bounds: { left: 0, top: 0, width: 390, height: 800 },
+      player: { left: 13, top: 200, width: 365, height: 409 },
+      roomBelow: 128,
+    },
+    {
+      name: "412x915",
+      bounds: { left: 0, top: 0, width: 412, height: 871 },
+      player: { left: 13, top: 225, width: 387, height: 431 },
+      roomBelow: 152,
+    },
+    {
+      name: "430x932",
+      bounds: { left: 0, top: 0, width: 430, height: 888 },
+      player: { left: 13, top: 225, width: 405, height: 449 },
+      roomBelow: 151,
+    },
+  ];
+
+  /** Whole tiles the old one-row strip showed at this width. */
+  function wholeInStrip(playerWidth: number, portrait: number) {
+    const room =
+      playerWidth -
+      2 * QUICK_PICKER_STRIP_PAD -
+      QUICK_PICKER_OFF_WIDTH -
+      QUICK_PICKER_CLOSE_WIDTH -
+      2 * CATALOG_GAP;
+    return Math.floor((room + CATALOG_GAP) / stripTilePitch(portrait));
+  }
+
+  it.each(phones)(
+    "wraps the pictures four across under the $name player",
+    ({ bounds, player, roomBelow }) => {
+      const fit = fitEffectQuickPicker({ bounds, player, roomBelow, count });
+      expect(fit.arrangement).toBe("grid");
+      if (fit.arrangement !== "grid") return;
+      expect(fit.catalog.cols).toBe(4);
+      expect(fit.catalog.rows * fit.catalog.cols).toBeGreaterThanOrEqual(count);
+      expect(fit.catalog.portrait).toBeGreaterThanOrEqual(MIN_CATALOG_PORTRAIT);
+      // Docked under the player: the whole animation stays in view and the
+      // grid stays inside the bounds.
+      expect(fit.side).toBe("dock");
+      expect(player.top + player.height + fit.height).toBeLessThanOrEqual(
+        bounds.top + bounds.height
+      );
+      // The room under the player holds about two rows, not all four: the
+      // grid scrolls down, showing at least twice the old row's whole tiles.
+      expect(fit.scrolls).toBe(true);
+      const tile = pictureTileHeight(fit.catalog.portrait);
+      const head =
+        2 * QUICK_PICKER_STRIP_PAD + QUICK_PICKER_HEAD + QUICK_PICKER_HEAD_GAP;
+      const rowsInView =
+        (fit.height - head + fit.catalog.gap) / (tile + fit.catalog.gap);
+      expect(rowsInView).toBeGreaterThanOrEqual(1.5);
+      const oldRow = fitEffectQuickPicker({
+        bounds: { ...bounds, height: player.top + player.height + 110 },
+        player,
+        count,
+      });
+      if (oldRow.arrangement !== "strip") throw new Error("expected a strip");
+      expect(rowsInView * fit.catalog.cols).toBeGreaterThanOrEqual(
+        2 * wholeInStrip(player.width, oldRow.catalog.portrait)
+      );
+    }
+  );
+
+  it("shows every effect without scrolling where the room under it holds them", () => {
+    const player = { left: 13, top: 60, width: 350, height: 394 };
+    const bounds = { left: 0, top: 0, width: 375, height: 900 };
+    const fit = fitEffectQuickPicker({ bounds, player, count });
+    expect(fit.arrangement).toBe("grid");
+    if (fit.arrangement !== "grid") return;
+    expect(fit.scrolls).toBe(false);
+    expect(fit.height).toBeGreaterThanOrEqual(gridPanelHeight(fit.catalog));
+    expect(player.top + player.height + fit.height).toBeLessThanOrEqual(
+      bounds.height
+    );
+  });
+
+  it("floats the grid under the controls where the room there holds it all", () => {
+    const player = { left: 13, top: 60, width: 350, height: 394 };
+    const bounds = { left: 0, top: 0, width: 375, height: 900 };
+    const fit = fitEffectQuickPicker({ bounds, player, roomBelow: 420, count });
+    expect(fit.arrangement === "grid" && fit.side).toBe("below");
+    expect(
+      fit.arrangement === "grid" && fit.height + QUICK_PICKER_STRIP_GAP
+    ).toBeLessThanOrEqual(420);
+  });
+
+  it("keeps the row on a short phone, where the grid would show fewer", () => {
+    const fit = fitEffectQuickPicker({
+      bounds: { left: 0, top: 0, width: 375, height: 623 },
+      player: { left: 13, top: 119, width: 350, height: 394 },
+      roomBelow: 47,
+      count,
+    });
+    expect(fit.arrangement).toBe("strip");
+  });
+
+  it("leaves the laptop and landscape phone panels beside the player", () => {
+    expect(
+      fitEffectQuickPicker({
+        bounds: { left: 64, top: 0, width: 1366, height: 900 },
+        player: { left: 440, top: 81, width: 614, height: 658 },
+        count,
+      }).arrangement
+    ).toBe("side");
+    const landscape = fitEffectQuickPicker({
+      bounds: { left: 72, top: 0, width: 762, height: 390 },
+      player: { left: 351, top: 81, width: 205, height: 249 },
+      roomBelow: 8,
+      count,
+    });
+    expect(landscape.arrangement).toBe("side");
+    expect(landscape.arrangement === "side" && landscape.catalog?.cols).toBe(2);
   });
 });
 

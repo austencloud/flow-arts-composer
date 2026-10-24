@@ -51,8 +51,7 @@ bool FFlowArtsNiagaraPlaybackTest::RunTest(const FString& Parameters)
     // The isolated world has no gameplay initialization pass to register controllers.
     World->AddController(Player);
     Player->PlayerCameraManager = Camera;
-    // Match SpawnPlayerCameraManager: ownership and InitializeFor are both required.
-    // Assigning the controller's pointer alone leaves the camera's PCOwner null.
+    // Match SpawnPlayerCameraManager so the isolated camera has its controller.
     Camera->SetOwner(Player);
     Camera->InitializeFor(Player);
     USceneComponent* Left = NewObject<USceneComponent>(Prop);
@@ -107,6 +106,14 @@ bool FFlowArtsNiagaraPlaybackTest::RunTest(const FString& Parameters)
         TestFalse(TEXT("Resume unpauses each wick"), Wick->IsPaused());
         TestEqual(TEXT("Nonfinite rate cannot poison particle simulation"), Wick->GetCustomTimeDilation(), 1.f);
     }
+    Left->SetVisibility(false, false);
+    Effects->SetPresentation(TEXT("fire"), true);
+    for (UNiagaraComponent* Wick : Wicks)
+        TestEqual(TEXT("Only the visible hand emits fire"), Wick->IsActive(), Wick->GetAttachParent() == Right);
+    Left->SetVisibility(true, false);
+    Effects->SetPresentation(TEXT("fire"), true);
+    for (UNiagaraComponent* Wick : Wicks)
+        TestTrue(TEXT("Showing the hand restores its fire"), Wick->IsActive());
     Effects->SyncPlayback(0.2f, false, -1.f);
     for (UNiagaraComponent* Wick : Wicks)
         TestEqual(TEXT("Unsupported reverse rate clamps to minimum"), Wick->GetCustomTimeDilation(), 0.5f);

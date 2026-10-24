@@ -52,7 +52,17 @@ export interface PerVisitDemoOptions {
    * `PictographData` — no mapping needed, pass it straight through.
    */
   startPlacement?: PictographData | null;
+  /**
+   * Whether the props may change spin direction mid-sequence. "smooth" (the
+   * default) asks the engine to avoid every prop reversal, which is why the
+   * hero never showed a reversal dot. "mixed" lets the engine reverse where it
+   * scores well, so some rolls carry dots and some do not. A plain string, so
+   * it crosses the worker boundary with the rest of the options.
+   */
+  continuity?: PerVisitContinuity;
 }
+
+export type PerVisitContinuity = "smooth" | "mixed";
 
 /**
  * Run the quality-gated roll. Returns null when generation could not produce
@@ -118,7 +128,7 @@ export async function rollPerVisitDemo(
         gridMode: grid.GridMode.DIAMOND,
         propType: options?.propType ?? prop.PropType.STAFF,
         difficulty,
-        constraintPreset: "smooth",
+        constraintPreset: options?.continuity ?? "smooth",
         ...(startPlacement ? { startPlacement } : {}),
       });
       // Plain-ify reactive proxies before handing to players/canvases.

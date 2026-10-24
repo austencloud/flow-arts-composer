@@ -104,6 +104,8 @@ export class AvatarSequenceCollisionAudit {
       leftForearmLength: 0,
       rightUpperArmLength: 0,
       rightForearmLength: 0,
+      leftPalmReachBoundM: 0,
+      rightPalmReachBoundM: 0,
       leftElbowWorld: new Vector3(),
       rightElbowWorld: new Vector3(),
     }

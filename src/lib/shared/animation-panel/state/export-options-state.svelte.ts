@@ -10,6 +10,11 @@ import {
   isVideoOpener,
   type VideoOpener,
 } from "#lib/shared/share/domain/video-opener.js";
+import {
+  DEFAULT_VIDEO_CAROUSEL,
+  isVideoCarouselPlacement,
+  type VideoCarouselPlacement,
+} from "#lib/shared/video-export/domain/video-carousel.js";
 
 // Video FPS options
 export type VideoFps = 30 | 60 | 120;
@@ -49,6 +54,8 @@ export interface VideoExportOptions {
   quality: VideoQuality;
   /** The image a shared clip opens with (see share/domain/video-opener). */
   opener: VideoOpener;
+  /** Which side of the video carries the beat carousel, or "off". */
+  carousel: VideoCarouselPlacement;
 }
 
 export interface SplitExportOptions extends VideoExportOptions {
@@ -87,6 +94,7 @@ export const DEFAULT_VIDEO_OPTIONS: VideoExportOptions = {
   includeEndHold: true, // Overridden to false for loopable sequences at runtime
   quality: "standard",
   opener: DEFAULT_VIDEO_OPENER,
+  carousel: DEFAULT_VIDEO_CAROUSEL,
 };
 
 export const DEFAULT_SPLIT_OPTIONS: SplitExportOptions = {
@@ -101,6 +109,7 @@ export const DEFAULT_SPLIT_OPTIONS: SplitExportOptions = {
   showStepNumbers: true,
   quality: "standard",
   opener: DEFAULT_VIDEO_OPENER,
+  carousel: DEFAULT_VIDEO_CAROUSEL,
 };
 
 export const DEFAULT_IMAGE_OPTIONS: ImageExportOptions = {
@@ -205,6 +214,7 @@ export interface ExportOptionsStateManager {
   readonly videoIncludeEndHold: boolean;
   readonly videoQuality: VideoQuality;
   readonly videoOpener: VideoOpener;
+  readonly videoCarousel: VideoCarouselPlacement;
 
   // Split options (reactive getters)
   readonly splitFps: VideoFps;
@@ -232,6 +242,7 @@ export interface ExportOptionsStateManager {
   setVideoIncludeEndHold(include: boolean): void;
   setVideoQuality(q: VideoQuality): void;
   setVideoOpener(opener: VideoOpener): void;
+  setVideoCarousel(placement: VideoCarouselPlacement): void;
 
   // Split setters
   setSplitFps(fps: VideoFps): void;
@@ -287,6 +298,11 @@ export function createExportOptionsState(): ExportOptionsStateManager {
   let videoOpener = $state<VideoOpener>(
     isVideoOpener(stored.video.opener) ? stored.video.opener : DEFAULT_VIDEO_OPENER
   );
+  let videoCarousel = $state<VideoCarouselPlacement>(
+    isVideoCarouselPlacement(stored.video.carousel)
+      ? stored.video.carousel
+      : DEFAULT_VIDEO_CAROUSEL
+  );
 
   // Split export options (animation + grid composite)
   let splitFps = $state<VideoFps>(stored.split.fps);
@@ -325,6 +341,7 @@ export function createExportOptionsState(): ExportOptionsStateManager {
         includeEndHold: videoIncludeEndHold,
         quality: videoQuality,
         opener: videoOpener,
+        carousel: videoCarousel,
       },
       split: {
         fps: splitFps,
@@ -338,6 +355,7 @@ export function createExportOptionsState(): ExportOptionsStateManager {
         includeEndHold: splitIncludeEndHold,
         quality: "standard",
         opener: DEFAULT_VIDEO_OPENER,
+        carousel: DEFAULT_VIDEO_CAROUSEL,
       },
       image: {
         includeStartPlacement: imageIncludeStartPlacement,
@@ -367,6 +385,7 @@ export function createExportOptionsState(): ExportOptionsStateManager {
     get videoIncludeEndHold() { return videoIncludeEndHold; },
     get videoQuality() { return videoQuality; },
     get videoOpener() { return videoOpener; },
+    get videoCarousel() { return videoCarousel; },
 
     // Split options (getters)
     get splitFps() { return splitFps; },
@@ -416,6 +435,12 @@ export function createExportOptionsState(): ExportOptionsStateManager {
     },
     setVideoQuality(q: VideoQuality) {
       videoQuality = q;
+      persist();
+    },
+    setVideoCarousel(placement: VideoCarouselPlacement) {
+      videoCarousel = isVideoCarouselPlacement(placement)
+        ? placement
+        : DEFAULT_VIDEO_CAROUSEL;
       persist();
     },
 
@@ -486,6 +511,7 @@ export function createExportOptionsState(): ExportOptionsStateManager {
         includeEndHold: videoIncludeEndHold,
         quality: videoQuality,
         opener: videoOpener,
+        carousel: videoCarousel,
       };
     },
 
@@ -502,6 +528,7 @@ export function createExportOptionsState(): ExportOptionsStateManager {
         showStepNumbers: splitShowStepNumbers,
         quality: "standard",
         opener: DEFAULT_VIDEO_OPENER,
+        carousel: DEFAULT_VIDEO_CAROUSEL,
       };
     },
 
@@ -525,6 +552,7 @@ export function createExportOptionsState(): ExportOptionsStateManager {
       videoIncludeStartPlacement = DEFAULT_VIDEO_OPTIONS.includeStartPlacement;
       videoIncludeEndHold = DEFAULT_VIDEO_OPTIONS.includeEndHold;
       videoQuality = DEFAULT_VIDEO_OPTIONS.quality;
+      videoCarousel = DEFAULT_VIDEO_OPTIONS.carousel;
       splitFps = DEFAULT_SPLIT_OPTIONS.fps;
       splitLoopCount = DEFAULT_SPLIT_OPTIONS.loopCount;
       splitResolution = DEFAULT_SPLIT_OPTIONS.resolution;
@@ -563,6 +591,9 @@ export function createExportOptionsState(): ExportOptionsStateManager {
       videoOpener = isVideoOpener(next.video.opener)
         ? next.video.opener
         : DEFAULT_VIDEO_OPENER;
+      videoCarousel = isVideoCarouselPlacement(next.video.carousel)
+        ? next.video.carousel
+        : DEFAULT_VIDEO_CAROUSEL;
       splitFps = next.split.fps;
       splitLoopCount = next.split.loopCount;
       splitResolution = next.split.resolution;

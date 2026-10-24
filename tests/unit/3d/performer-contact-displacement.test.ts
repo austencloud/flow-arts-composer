@@ -245,4 +245,47 @@ describe("performer contact", () => {
     expect(shorter.bodyTrack).not.toBe(track);
     expect(shorter.resetKey).toBe(deepest.resetKey + 1);
   });
+
+  it("hands the body response's turn to the hips and leaves the chest the rest", () => {
+    const performer = performerFor("tnd-tog-same-hhhh");
+    const STAFF_M = 0.67;
+    const hand = fixedHandDistance(STAFF_M / 2);
+    performer.setHandDistance({ left: hand, right: hand });
+    seek(performer, 0.5);
+    const off = resolvePerformerContact(performer, { heightCm: 190.5, staffLengthM: STAFF_M });
+    expect(off.bodyResponseTrack).toBeNull();
+    expect(off.bodyFeet).toBeNull();
+
+    const respond = (facingHint: ((t: number) => number | null) | null = null) =>
+      resolvePerformerContact(performer, {
+        heightCm: 190.5,
+        staffLengthM: STAFF_M,
+        clearBody: true,
+        bodyResponse: true,
+        facingHint,
+      });
+    const track = respond().bodyResponseTrack!;
+    expect(track).not.toBeNull();
+    // It takes over the clearance's move rather than stacking on it.
+    expect(respond().bodyTrack).toBeNull();
+    let turned = 0;
+    for (let i = 1; i < track.yaw.length; i++) {
+      if (Math.abs(track.yaw[i]!) > Math.abs(track.yaw[turned]!)) turned = i;
+    }
+    expect(Math.abs(track.yaw[turned]!)).toBeGreaterThan(0.2);
+    seek(performer, turned / track.samplesPerStep);
+    const at = respond();
+    expect(at.bodyResponseTrack).toBe(track);
+    expect(at.bodyOffset.yaw).toBeCloseTo(track.yaw[turned]!, 9);
+    expect(at.stance.yawRad).toBeCloseTo(track.chestYaw[turned]!, 9);
+    expect(at.stance.segments.chestRad).toBe(at.stance.yawRad);
+    expect(at.bodyFeet).not.toBeNull();
+
+    // A new facing hint replans and resets the contact history.
+    const hint = () => 0.5;
+    const hinted = respond(hint);
+    expect(hinted.bodyResponseTrack).not.toBe(track);
+    expect(hinted.resetKey).toBe(at.resetKey + 1);
+    expect(respond(hint).bodyResponseTrack).toBe(hinted.bodyResponseTrack);
+  });
 });

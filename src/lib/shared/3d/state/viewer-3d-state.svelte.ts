@@ -27,11 +27,7 @@ import type {
   ViewerDomainSnapshot,
   VisibilityDomainSnapshot,
 } from "../undo/scene-undo-types";
-import {
-  Plane,
-  PlaneMode,
-  type PropBuild,
-} from "@austencloud/scene-3d";
+import { Plane, PlaneMode, type PropBuild } from "@austencloud/scene-3d";
 import type { CharacterInstanceState } from "./character-instance-state.svelte";
 import { derivePlaneModeFromHands } from "./character-instance-state.svelte";
 import type {
@@ -78,6 +74,13 @@ import {
   type SceneEnvironmentId,
 } from "../environments/domain/scene-environment";
 import {
+  createEnvironmentLoadState,
+  displayedEnvironment,
+  observeEnvironmentLoad,
+  pendingEnvironment,
+  type EnvironmentLoadObservation,
+} from "../environments/domain/environment-load";
+import {
   resolveInitialDefaultProp,
   resolvePlainOpenPerformerSettings,
 } from "../domain/plain-open-policy";
@@ -112,6 +115,7 @@ const STORAGE_KEY_OCEAN_VARIANT = "tka-viewer3d-oceanVariant";
 const STORAGE_KEY_ENVIRONMENT = VIEWER_3D_ENVIRONMENT_STORAGE_KEY;
 
 export type ViewerNavMode = "orbit" | "fly" | "walk";
+export type SceneRenderer = "web" | "unreal";
 
 export interface ViewerPerformerAppearanceAssignment {
   index: number;
@@ -640,6 +644,9 @@ function buildViewer3DState(
           options.firstUseEnvironment ?? DEFAULT_SCENE_ENVIRONMENT_ID
         )
   );
+  // Which scene the renderer actually shows, so the scene picker can mark a
+  // tapped tile as loading instead of finished while the scene builds.
+  let environmentLoad = $state.raw(createEnvironmentLoadState(environmentId));
   const noop = () => {};
   const persistNavMode = persistent ? WRITERS.navMode : noop;
   const persistDefaultProp = persistent ? WRITERS.defaultProp : noop;
@@ -676,6 +683,7 @@ function buildViewer3DState(
   // where they were. The orchestrator still fires enter3D() once the sequence
   // is available so the primary performer gets its sequence data loaded.
   let renderMode = $state<"2d" | "3d">(_persistedMode);
+  let sceneRenderer = $state<SceneRenderer>("web");
   let showPerf = $state(false);
 
   const _persistedOceanVariant = seeded(
@@ -867,7 +875,7 @@ function buildViewer3DState(
         handDistance: performer.handDistance,
         staffHalfLength: performer.staffLength / 2,
       })),
-      stageGroundOffset,
+      stageGroundOffset + userProportionsState.groundY,
       viewportAspect
     );
     shot.eye.z = getViewerFrontStageCameraZ(
@@ -1251,7 +1259,11 @@ function buildViewer3DState(
   function setGridJoinScoped(join: GridJoin | null | undefined): boolean {
     return applyScopedPerformerEdit(
       "change-grid-join",
-      join === undefined ? "Follow sequence grids" : join === null ? "One grid" : "Join grids",
+      join === undefined
+        ? "Follow sequence grids"
+        : join === null
+          ? "One grid"
+          : "Join grids",
       (performer) => performer.setGridJoin(join)
     );
   }
@@ -2168,8 +2180,29 @@ function buildViewer3DState(
   function applyEnvironmentId(value: SceneEnvironmentId | string): void {
     const next = normalizeSceneEnvironmentId(value, environmentId);
     if (next === environmentId) return;
+    if (environmentLoad.failed !== null) {
+      environmentLoad = { ...environmentLoad, failed: null };
+    }
     environmentId = next;
     persistSceneEnvironment(next);
+  }
+
+  /**
+   * The renderer reports each transition here. A replacement that settles
+   * with the old scene still up failed; the viewer goes back to that scene so
+   * the picker, the saved choice and the screen agree again.
+   */
+  function reportEnvironmentLoad(observation: EnvironmentLoadObservation) {
+    const result = observeEnvironmentLoad(
+      environmentLoad,
+      environmentId,
+      observation
+    );
+    environmentLoad = result.state;
+    if (result.revertTo !== null && result.revertTo !== environmentId) {
+      environmentId = result.revertTo;
+      persistSceneEnvironment(result.revertTo);
+    }
   }
 
   /**
@@ -2466,6 +2499,12 @@ function buildViewer3DState(
     get renderMode() {
       return renderMode;
     },
+    get sceneRenderer(): SceneRenderer {
+      return sceneRenderer;
+    },
+    setSceneRenderer(value: SceneRenderer) {
+      sceneRenderer = value;
+    },
     /** False until `dispose()`; a disposed viewer must not be written to. */
     get disposed() {
       return _disposed;
@@ -2478,6 +2517,23 @@ function buildViewer3DState(
       return environmentId;
     },
     setEnvironmentId: applyEnvironmentId,
+    /** The scene still building after a switch, or null once it is on screen. */
+    get pendingEnvironmentId(): SceneEnvironmentId | null {
+      return pendingEnvironment(environmentLoad, environmentId);
+    },
+    /** The scene on screen: the outgoing one until a switch finishes. */
+    get displayedEnvironmentId(): SceneEnvironmentId {
+      return displayedEnvironment(environmentLoad, environmentId);
+    },
+    /** The scene whose last load failed, until the next scene is chosen. */
+    get failedEnvironmentId(): SceneEnvironmentId | null {
+      return environmentLoad.failed;
+    },
+    reportEnvironmentLoad,
+    /** A renderer that stops reporting (unmount, Unreal) ends load tracking. */
+    stopEnvironmentLoadTracking() {
+      environmentLoad = createEnvironmentLoadState(environmentId);
+    },
     prepareEnvironment(environment: SceneEnvironmentId): boolean {
       if (!prepareEnvironment) return false;
       prepareEnvironment(environment);

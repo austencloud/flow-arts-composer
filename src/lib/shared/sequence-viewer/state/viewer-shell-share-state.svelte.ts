@@ -93,6 +93,12 @@ export function createViewerShellShareState(
    * Null for a guest (the panel offers sign-up in its place) and while closed.
    */
   let sendSession = $state.raw<SequenceSendSession | null>(null);
+  /**
+   * Whether the panel shows the people list instead of the share choices.
+   * Send to a friend is one choice among the others; the list (and the
+   * conversations it loads) waits until that button asks for it.
+   */
+  let sendOpen = $state(false);
 
   const actions = $derived(buildViewerShareActions(shareLinkCopied));
   const statusMessage = $derived(shareLinkCopied ? "Link copied." : "");
@@ -130,7 +136,12 @@ export function createViewerShellShareState(
 
   function closePanel(): void {
     panelOpen = false;
+    sendOpen = false;
     sendSession = null;
+  }
+
+  function showSend(open: boolean): void {
+    sendOpen = open && panelOpen;
   }
 
   function togglePanel(): void {
@@ -367,6 +378,9 @@ export function createViewerShellShareState(
     get sendSession() {
       return sendSession;
     },
+    get sendOpen() {
+      return sendOpen;
+    },
     get linkCopied() {
       return shareLinkCopied;
     },
@@ -383,6 +397,7 @@ export function createViewerShellShareState(
     },
     openPanel,
     closePanel,
+    showSend,
     togglePanel,
     ensureSendSession,
     resetSendSession,

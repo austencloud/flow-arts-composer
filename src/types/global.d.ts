@@ -333,6 +333,7 @@ declare module "*.svelte" {
 // Threlte type augmentation - useThrelte returns stores with .current property
 declare module "@threlte/core" {
   import type { Camera, Scene, WebGLRenderer } from "three";
+  import type { Scheduler, Stage, Task } from "@threlte/core";
 
   export interface ThrelteContext {
     camera: {
@@ -344,6 +345,11 @@ declare module "@threlte/core" {
     renderer: {
       current: WebGLRenderer;
     };
+    autoRenderTask: Task;
+    /** Threlte 8: the stage every default task runs in. */
+    mainStage: Stage;
+    /** Threlte 8: the app's frame scheduler. */
+    scheduler: Scheduler;
   }
 
   export function useThrelte(): ThrelteContext;

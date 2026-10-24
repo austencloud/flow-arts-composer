@@ -8,25 +8,31 @@
   panel only offers where: a link, a file, the OS share sheet, or a friend.
 
   Download leads: a file is the share most people want, so it is the one
-  primary action. Link, the system share sheet, and Publish sit in a row
-  under it, and sending to a friend follows below the divider.
+  primary action. Link, the system share sheet, Publish and Send to a friend
+  sit in a row under it, the same choices Create's share sheet offers.
+
+  Send to a friend swaps the panel to the people list, with Back to return.
+  Austen, 2026-10-21: the list was always open, boxed with its own scrollbar,
+  and "we don't know if people want to do that." So nobody's conversations
+  load until that button asks for them.
 
   On the 2D animation Download renders right here: the line under it says
   what it will make, Settings opens the Export page that decides that, and
   the button carries the render's progress. In 3D it hands over the film
   already recorded on the stage, or reads "Record a take" when there is none.
-  Other views still prepare their file in the share sheet.
+  On the card it hands over the card file at once. Other views still
+  prepare their file in the share sheet.
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import type { SequenceSendSession } from "#lib/shared/inbox/state/send-sequence-state.svelte.js";
   import SendSequenceWorkspace from "./SendSequenceWorkspace.svelte";
-  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
-  import PerformanceTransferActions from "#lib/shared/3d/components/PerformanceTransferActions.svelte";
+  import { flyFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import { tick } from "svelte";
 
   interface Props {
-    sequence: SequenceData;
     /** The view on stage, as the rail names it. */
     subject: { label: string; icon: string };
     /** What Download produces from that view, e.g. "Card image" or "Video". */
@@ -63,10 +69,12 @@
     onSent: (conversationIds: string[]) => void;
     onRequestAccount: () => void;
     onClose: () => void;
+    /** Whether the people list replaces the share choices. */
+    sending: boolean;
+    onShowSend: (open: boolean) => void;
   }
 
   let {
-    sequence,
     subject,
     downloadLabel,
     downloadText: downloadTextOverride,
@@ -87,6 +95,8 @@
     onSent,
     onRequestAccount,
     onClose,
+    sending,
+    onShowSend,
   }: Props = $props();
 
   const headingId = $props.id();
@@ -99,12 +109,37 @@
   const renderPercent = $derived(
     Math.round(Math.max(0, Math.min(1, downloadProgress ?? 0)) * 100)
   );
+
+  let sendButton = $state<HTMLElement | null>(null);
+  let backButton = $state<HTMLButtonElement | null>(null);
+
+  // Focus follows the swap, so a keyboard or screen reader lands on the
+  // control that undoes it.
+  async function showSend(open: boolean) {
+    onShowSend(open);
+    await tick();
+    (open ? backButton : sendButton?.querySelector("button"))?.focus();
+  }
 </script>
 
 <section class="share-panel" aria-labelledby={headingId}>
   <header class="panel-head">
+    {#if sending}
+      <button
+        type="button"
+        class="back"
+        bind:this={backButton}
+        onclick={() => showSend(false)}
+        aria-label={t("share_back")}
+        title={t("share_back")}
+      >
+        <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+      </button>
+    {/if}
     <div class="title-group">
-      <h2 id={headingId}>{t("viewer_share")}</h2>
+      <h2 id={headingId}>
+        {sending ? t("viewer_ui_send_friend") : t("viewer_share")}
+      </h2>
       <p class="subject" aria-live="polite">
         <i class="fa-solid {subject.icon}" aria-hidden="true"></i>
         <span>{subject.label}</span>
@@ -123,128 +158,142 @@
     </button>
   </header>
 
-  <div class="primary-action">
-    <PanelButton
-      variant="primary"
-      fullWidth
-      onclick={onDownload}
-      disabled={rendering || downloadDisabled}
-      ariaBusy={rendering}
+  {#if !sending}
+    <div
+      class="main-view"
+      in:flyFade={{ x: -12, y: 0, duration: DURATION.fast }}
     >
-      <!-- One cell for both labels, so the button keeps its width while the
+      <div class="primary-action">
+        <PanelButton
+          variant="primary"
+          fullWidth
+          onclick={onDownload}
+          disabled={rendering || downloadDisabled}
+          ariaBusy={rendering}
+        >
+          <!-- One cell for both labels, so the button keeps its width while the
            percentage counts up. -->
-      <span class="download-label">
-        <span
-          class="label-state"
-          class:shown={!rendering}
-          aria-hidden={rendering}
-        >
-          <i class="fa-solid {downloadIcon}" aria-hidden="true"></i>
-          {downloadText}
-        </span>
-        <span
-          class="label-state"
-          class:shown={rendering}
-          aria-hidden={!rendering}
-        >
-          <i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>
-          {t("viewer_ui_rendering")}
-          <span class="percent">{renderPercent}%</span>
-        </span>
-      </span>
-    </PanelButton>
-    {#if downloadDetail}
-      <div class="download-detail">
-        <span>{downloadDetail}</span>
-        {#if detailAction}
-          <button
-            type="button"
-            class="settings"
-            onclick={detailAction.onClick}
-            aria-label={detailAction.ariaLabel}
-          >
-            <i class="fa-solid {detailAction.icon}" aria-hidden="true"></i>
-            {detailAction.label}
-          </button>
+          <span class="download-label">
+            <span
+              class="label-state"
+              class:shown={!rendering}
+              aria-hidden={rendering}
+            >
+              <i class="fa-solid {downloadIcon}" aria-hidden="true"></i>
+              {downloadText}
+            </span>
+            <span
+              class="label-state"
+              class:shown={rendering}
+              aria-hidden={!rendering}
+            >
+              <i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>
+              {t("viewer_ui_rendering")}
+              <span class="percent">{renderPercent}%</span>
+            </span>
+          </span>
+        </PanelButton>
+        {#if downloadDetail}
+          <div class="download-detail">
+            <span>{downloadDetail}</span>
+            {#if detailAction}
+              <button
+                type="button"
+                class="settings"
+                onclick={detailAction.onClick}
+                aria-label={detailAction.ariaLabel}
+              >
+                <i class="fa-solid {detailAction.icon}" aria-hidden="true"></i>
+                {detailAction.label}
+              </button>
+            {/if}
+          </div>
         {/if}
       </div>
-    {/if}
-  </div>
 
-  <div
-    class="actions"
-    role="group"
-    aria-label={t("viewer_ui_other_share_ways")}
-  >
-    <PanelButton onclick={onCopyLink}>
-      <i
-        class="fa-solid {linkCopied ? 'fa-check' : 'fa-link'}"
-        aria-hidden="true"
-      ></i>
-      {linkCopied ? t("viewer_ui_link_copied") : t("viewer_ui_copy_link")}
-    </PanelButton>
-    <PanelButton
-      onclick={onCopyEmbed}
-      ariaLabel={t("viewer_ui_copy_embed_code")}
-    >
-      <i
-        class="fa-solid {embedCopied ? 'fa-check' : 'fa-code'}"
-        aria-hidden="true"
-      ></i>
-      {embedCopied ? t("viewer_ui_code_copied") : t("viewer_ui_embed")}
-    </PanelButton>
-    {#if onNativeShare}
-      <PanelButton
-        onclick={onNativeShare}
-        ariaLabel={t("viewer_ui_share_other_apps")}
+      <div
+        class="actions"
+        role="group"
+        aria-label={t("viewer_ui_other_share_ways")}
       >
-        <i class="fa-solid fa-arrow-up-from-bracket" aria-hidden="true"></i>
-        {t("viewer_ui_other_apps")}
-      </PanelButton>
-    {/if}
-    {#if onPublish}
-      <PanelButton onclick={onPublish}>
-        <i class="fa-solid fa-bullhorn" aria-hidden="true"></i>
-        {t("viewer_ui_publish")}
-      </PanelButton>
-    {/if}
-  </div>
-
-  <PerformanceTransferActions {sequence} />
-
-  <div class="recipients">
-    {#if session}
-      <!-- Keyed: a finished send hands over a fresh session, which clears the
-           picked people and the note without closing the panel. -->
-      {#key session}
-        <SendSequenceWorkspace
-          {session}
-          {onSent}
-          onCancel={onClose}
-          {getViewParams}
-        />
-      {/key}
-    {:else}
-      <div class="guest-send">
-        <h3>{t("viewer_ui_send_friend")}</h3>
-        <p>{t("viewer_ui_friend_view_explanation")}</p>
-        <PanelButton onclick={onRequestAccount}>
-          <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
-          {t("viewer_ui_sign_up_send")}
+        <PanelButton onclick={onCopyLink}>
+          <i
+            class="fa-solid {linkCopied ? 'fa-check' : 'fa-link'}"
+            aria-hidden="true"
+          ></i>
+          {linkCopied ? t("viewer_ui_link_copied") : t("viewer_ui_copy_link")}
         </PanelButton>
+        <PanelButton
+          onclick={onCopyEmbed}
+          ariaLabel={t("viewer_ui_copy_embed_code")}
+        >
+          <i
+            class="fa-solid {embedCopied ? 'fa-check' : 'fa-code'}"
+            aria-hidden="true"
+          ></i>
+          {embedCopied ? t("viewer_ui_code_copied") : t("viewer_ui_embed")}
+        </PanelButton>
+        {#if onNativeShare}
+          <PanelButton
+            onclick={onNativeShare}
+            ariaLabel={t("viewer_ui_share_other_apps")}
+          >
+            <i class="fa-solid fa-arrow-up-from-bracket" aria-hidden="true"></i>
+            {t("viewer_ui_other_apps")}
+          </PanelButton>
+        {/if}
+        {#if onPublish}
+          <PanelButton onclick={onPublish}>
+            <i class="fa-solid fa-bullhorn" aria-hidden="true"></i>
+            {t("viewer_ui_publish")}
+          </PanelButton>
+        {/if}
+        <span class="send-trigger" bind:this={sendButton}>
+          <PanelButton fullWidth onclick={() => showSend(true)}>
+            <i class="fa-solid fa-user-group" aria-hidden="true"></i>
+            {t("viewer_ui_send_friend")}
+          </PanelButton>
+        </span>
       </div>
-    {/if}
-  </div>
+    </div>
+  {:else}
+    <div
+      class="recipients"
+      in:flyFade={{ x: 12, y: 0, duration: DURATION.fast }}
+    >
+      {#if session}
+        <!-- Keyed: a finished send hands over a fresh session, which clears the
+           picked people and the note without closing the panel. -->
+        {#key session}
+          <SendSequenceWorkspace
+            {session}
+            {onSent}
+            onCancel={onClose}
+            {getViewParams}
+          />
+        {/key}
+      {:else}
+        <div class="guest-send">
+          <p>{t("viewer_ui_friend_view_explanation")}</p>
+          <PanelButton onclick={onRequestAccount}>
+            <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
+            {t("viewer_ui_sign_up_send")}
+          </PanelButton>
+        </div>
+      {/if}
+    </div>
+  {/if}
 </section>
 
 <style>
-  /* Header and actions take what they need; the recipients take the rest and
-     scroll inside it, so the note and Send stay docked at the foot. */
+  /* The header, then one view: the share choices, or the people list, which
+     scrolls as the panel's only scroller with the note and Send docked at
+     its foot. */
   .share-panel {
     container-type: inline-size;
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: max-content max-content max-content minmax(0, 1fr);
+    grid-template-rows: max-content minmax(0, 1fr);
     width: 100%;
     height: 100%;
     min-width: 0;
@@ -260,10 +309,14 @@
     padding: 0.75rem 0.75rem 0 1rem;
   }
 
+  /* In a narrow side panel "Send to a friend" leaves no room for the subject;
+     it drops to its own line under the title rather than breaking it. */
   .title-group {
     display: flex;
+    flex-wrap: wrap;
     align-items: baseline;
-    gap: 0.75rem;
+    flex: 1;
+    gap: 0.25rem 0.75rem;
     min-width: 0;
   }
 
@@ -272,6 +325,7 @@
     color: var(--theme-text);
     font-size: var(--font-size-lg, 1.125rem);
     font-weight: 800;
+    white-space: nowrap;
   }
 
   /* Follows the rail live: switching views while the panel is open changes
@@ -293,6 +347,17 @@
     white-space: nowrap;
   }
 
+  .main-view {
+    min-height: 0;
+    padding-bottom: 1rem;
+    overflow-y: auto;
+  }
+
+  .send-trigger {
+    display: grid;
+  }
+
+  .back,
   .close {
     display: grid;
     place-items: center;
@@ -311,11 +376,18 @@
       color var(--duration-fast) var(--ease-standard);
   }
 
+  .back {
+    align-self: center;
+    margin-left: -0.5rem;
+  }
+
+  .back:hover,
   .close:hover {
     background: var(--theme-card-bg);
     color: var(--theme-text);
   }
 
+  .back:focus-visible,
   .close:focus-visible {
     outline: 2px solid var(--theme-accent, var(--semantic-info));
     outline-offset: 2px;
@@ -404,18 +476,19 @@
   /* Three labels need about 28rem of panel. Narrower, they pair up, and an
      odd one out takes the whole row instead of sitting at half width. */
   @container (max-width: 27.999rem) {
+    .actions {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     .actions > :global(:last-child:nth-child(odd)) {
       grid-column: 1 / -1;
     }
   }
 
-  /* A neutral divider: sending is its own task, after the file and link. */
   .recipients {
     display: flex;
     min-width: 0;
     min-height: 0;
-    margin-top: 1rem;
-    border-top: 1px solid var(--theme-stroke);
   }
 
   .guest-send {
@@ -427,13 +500,6 @@
     padding: 1.25rem 1rem 1rem;
   }
 
-  .guest-send h3 {
-    margin: 0;
-    color: var(--theme-text);
-    font-size: var(--font-size-base, 1rem);
-    font-weight: 800;
-  }
-
   .guest-send p {
     margin: 0 0 0.25rem;
     color: var(--theme-text-dim);
@@ -441,6 +507,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
+    .back,
     .close,
     .settings {
       transition: none;

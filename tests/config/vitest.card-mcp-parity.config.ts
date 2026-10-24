@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { playwright } from "@vitest/browser-playwright";
 import { defineConfig } from "vitest/config";
+import { workspaceResolvePlugins } from "../../scripts/lib/workspace-resolution.mjs";
 import { renderMcpCard } from "../helpers/browser-commands/render-mcp-card";
 import { writeCardParityArtifacts } from "../helpers/browser-commands/write-card-parity-artifacts";
 
@@ -18,7 +19,8 @@ export default defineConfig({
     // this single release-runner flag into the browser bundle instead.
     __MCP_PACKED_ROOT__: JSON.stringify(Boolean(process.env.MCP_PACKED_ROOT)),
   },
-  plugins: [svelte(svelteOptions)],
+  // This checkout's packages/*, not the primary's, in a task worktree.
+  plugins: [svelte(svelteOptions), ...workspaceResolvePlugins(projectRoot)],
   publicDir: path.resolve(projectRoot, "static"),
   optimizeDeps: {
     include: [

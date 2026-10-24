@@ -28,6 +28,12 @@ import {
   type BodyClearanceModel,
   type StaffLine,
 } from "../collision/body-clearance";
+import {
+  buildBodyResponseTrack,
+  sampleBodyResponseTrack,
+  type BodyResponseSample,
+  type BodyResponseTrack,
+} from "../collision/body-response";
 import { propStateToStaffTarget } from "../services/swept-volume/swept-volume-builder";
 import { MAX_STANCE_YAW_RAD } from "../collision/upper-body-stance-planner";
 import type { PerformerReachMeasurements } from "./performer-reach-measurements";
@@ -138,6 +144,20 @@ interface CachedBodyClearanceTrack {
 const bodyClearanceTracks = new WeakMap<
   CharacterInstanceState,
   CachedBodyClearanceTrack
+>();
+/** The response's key: the clearance key plus the facing the host wants. */
+interface BodyResponseTrackKey extends BodyClearanceTrackKey {
+  facingHint: BodyFacingHint | null;
+}
+
+interface CachedBodyResponseTrack {
+  key: BodyResponseTrackKey;
+  track: BodyResponseTrack | null;
+}
+
+const bodyResponseTracks = new WeakMap<
+  CharacterInstanceState,
+  CachedBodyResponseTrack
 >();
 const seekDetectors = new WeakMap<CharacterInstanceState, ScoreSeekDetector>();
 
@@ -558,6 +578,80 @@ function resolveBodyClearanceTrack(
   return track;
 }
 
+/**
+ * The body response's move, turn and feet (docs/superpowers/specs/active/
+ * 2026-10-23-body-response.md). Planned against the displaced staffs and the
+ * same stance as the clearance, so it replans with them, and when the staff,
+ * the measurements or the host's facing hint change. Unlike the clearance it
+ * plans without a hard-beat track too, against the authored props.
+ */
+function resolveBodyResponseTrack(
+  performer: CharacterInstanceState,
+  hardBeat: CachedHardBeatTrack,
+  staffLengthM: number,
+  measurements: PerformerReachMeasurements | null,
+  facingHint: BodyFacingHint | null
+): BodyResponseTrack | null {
+  const cached = bodyResponseTracks.get(performer);
+  if (
+    cached?.key.hardBeat === hardBeat &&
+    cached.key.staffLengthM === staffLengthM &&
+    cached.key.measurements === measurements &&
+    cached.key.facingHint === facingHint
+  ) {
+    return cached.track;
+  }
+  const track =
+    hardBeat.key.stepCount > 0
+      ? buildBodyResponseTrack({
+          source: performer,
+          stanceTrack: hardBeat.stanceTrack,
+          hardBeatTrack: hardBeat.track,
+          heightM: hardBeat.key.heightCm / 100,
+          staffLengthM,
+          measurements,
+          planeMode: hardBeat.key.planeMode,
+          facingHint,
+        })
+      : null;
+  // Contact history belongs to where the body stood.
+  if (cached?.key.hardBeat === hardBeat) seekDetectorFor(performer).bump();
+  bodyResponseTracks.set(performer, {
+    key: { hardBeat, staffLengthM, measurements, facingHint },
+    track,
+  });
+  return track;
+}
+
+/** A body yaw the host wants at a score time, radians; null for none. Pass
+ *  a stable function: a new one each frame replans every frame. */
+export type BodyFacingHint = (scoreTime: number) => number | null;
+
+/**
+ * The stance with its twist handed to the body: the chest yaw becomes the
+ * residual the body response left on top of its turn, and the spine's
+ * shares shrink with it, so body plus chest still makes the planned turn.
+ */
+function withResidualTwist(
+  stance: ReturnType<typeof resolveTrackedUpperBodyStance>,
+  chestYawRad: number
+): ReturnType<typeof resolveTrackedUpperBodyStance> {
+  const stanceChest = stance.segments.chestRad;
+  const share = Math.abs(stanceChest) > 1e-9 ? chestYawRad / stanceChest : 0;
+  return {
+    ...stance,
+    yawRad: chestYawRad,
+    segments: {
+      ...stance.segments,
+      planRad: stance.segments.planRad * share,
+      spine1Rad: stance.segments.spine1Rad * share,
+      spine2Rad: stance.segments.spine2Rad * share,
+      chestRad: chestYawRad,
+      headRad: stance.segments.headRad * share,
+    },
+  };
+}
+
 export interface PerformerContactOptions {
   /** Performer height; the body model scales from it. */
   heightCm?: number;
@@ -571,6 +665,14 @@ export interface PerformerContactOptions {
    * displaced staffs, so it needs `displace` too.
    */
   clearBody?: boolean;
+  /**
+   * Plan the whole body's answer to its staffs: a turn, a floor move, a duck
+   * and the steps that carry the feet (body-response.ts). Off unless a host
+   * asks; when on it replaces `clearBody`'s move.
+   */
+  bodyResponse?: boolean;
+  /** The facing the body response leans toward; null faces the audience. */
+  facingHint?: BodyFacingHint | null;
   /** The staff on screen, tip to tip; the body clears that staff. */
   staffLengthM?: number;
   /** The rig's measurements, as the live stance plans with them; null plans
@@ -599,6 +701,10 @@ export interface PerformerContact {
   /** Where the body stands this frame, in the performer frame: its move
    *  off the staffs, or zero. */
   bodyOffset: BodyClearanceSample;
+  /** The body response's plan, when a host asked for it. */
+  bodyResponseTrack: BodyResponseTrack | null;
+  /** Where each foot stands under the body response, or null. */
+  bodyFeet: BodyResponseSample["feet"] | null;
 }
 
 /**
@@ -618,8 +724,21 @@ export function resolvePerformerContact(
     options.measurements ?? null
   );
   const { track } = hardBeat;
+  const bodyResponseTrack =
+    options.displace !== false && options.bodyResponse === true
+      ? resolveBodyResponseTrack(
+          performer,
+          hardBeat,
+          staffLengthM,
+          options.measurements ?? null,
+          options.facingHint ?? null
+        )
+      : null;
   const bodyTrack =
-    track && options.displace !== false && options.clearBody === true
+    track &&
+    !bodyResponseTrack &&
+    options.displace !== false &&
+    options.clearBody === true
       ? resolveBodyClearanceTrack(
           performer,
           hardBeat,
@@ -636,36 +755,48 @@ export function resolvePerformerContact(
     performer.rightPropState,
     options.measurements ?? null
   );
+  const response = bodyResponseTrack
+    ? sampleBodyResponseTrack(bodyResponseTrack, scoreTime)
+    : null;
   const resetKey = seekDetectorFor(performer).observe(
     scoreTime,
     performer.motionStepCount,
     performer.loop
   );
+  const responseFields = {
+    bodyResponseTrack,
+    bodyFeet: response?.feet ?? null,
+  };
+  const renderedStance = response
+    ? withResidualTwist(stance, response.chestYawRad)
+    : stance;
   if (!track || options.displace === false) {
     return {
       track,
       stanceTrack: hardBeat.stanceTrack,
-      stance,
+      stance: renderedStance,
       sample: NO_HARD_BEAT_DISPLACEMENT,
       leftProp: performer.leftPropState,
       rightProp: performer.rightPropState,
       planned: false,
       resetKey,
       bodyTrack: null,
-      bodyOffset: NO_BODY_CLEARANCE,
+      bodyOffset: response?.offset ?? NO_BODY_CLEARANCE,
+      ...responseFields,
     };
   }
   const sample = sampleHardBeatTrack(track, scoreTime);
   return {
     track,
     stanceTrack: hardBeat.stanceTrack,
-    stance,
+    stance: renderedStance,
     sample,
     leftProp: displaceProp(performer.leftPropState, sample.left),
     rightProp: displaceProp(performer.rightPropState, sample.right),
     planned: true,
     resetKey,
     bodyTrack,
-    bodyOffset: sampleBodyClearanceTrack(bodyTrack, scoreTime),
+    bodyOffset: response?.offset ?? sampleBodyClearanceTrack(bodyTrack, scoreTime),
+    ...responseFields,
   };
 }

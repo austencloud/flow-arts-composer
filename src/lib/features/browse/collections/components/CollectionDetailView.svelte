@@ -12,7 +12,7 @@ becomes private while open, we bail back to the list instead of showing a ghost.
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  import { untrack, onDestroy } from "svelte";
+  import { untrack, onDestroy, onMount } from "svelte";
   import {
     peekPendingLibraryReveal,
     clearPendingLibraryReveal,
@@ -37,6 +37,12 @@ becomes private while open, we bail back to the list instead of showing a ghost.
   import { communityCollectionsState } from "../state/community-collections-state.svelte";
   import { openSequenceViewer } from "#lib/shared/sequence-viewer/services/sequence-viewer-navigator.js";
   import BrowsePanel from "#lib/shared/browse/components/BrowsePanel.svelte";
+  import GalleryFilterSheet from "#lib/features/browse/gallery-home/GalleryFilterSheet.svelte";
+  import {
+    bindBrowseQuery,
+    tryGetBrowseQueryContext,
+  } from "#lib/shared/browse/state/browse-query-state.svelte.js";
+  import { responsiveLayoutManager } from "#lib/shared/create/services/responsive-layout-manager.js";
   import { createBrowseEngine } from "#lib/shared/browse/engine/create-browse-engine.svelte.js";
   import { BrowseSortMethod } from "#lib/shared/browse/domain/enums/browse-enums.js";
   import ContextMenu from "#lib/shared/components/context-menu/ContextMenu.svelte";
@@ -58,6 +64,8 @@ becomes private while open, we bail back to the list instead of showing a ghost.
   import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import { getCollectionCollaborationManager } from "#lib/shared/library/get-collection-collaboration-manager.js";
   import { openShareCollectionSheet } from "#lib/shared/inbox/state/send-sequence-state.svelte.js";
+  import BrowseHeaderSlot from "#lib/features/browse/shared/components/BrowseHeaderSlot.svelte";
+  import { tryGetBrowseHeaderContext } from "#lib/shared/browse/context/browse-header-context.js";
 
   let {
     collectionId,
@@ -65,13 +73,16 @@ becomes private while open, we bail back to the list instead of showing a ghost.
     foreignOwnerId = null,
     ownerName,
     accessRole,
-    showBack = true,
+    embedded = false,
     backLabel = t("browse_ui_collections_tab"),
   }: {
     collectionId: string;
     onBack: () => void;
-    /** Test and embedding surfaces can omit the navigation control. */
-    showBack?: boolean;
+    /**
+     * A side-by-side layout shows this view beside its list, so it keeps its
+     * own header instead of handing the name and actions to the Browse bar.
+     */
+    embedded?: boolean;
     backLabel?: string;
     /**
      * Set when viewing someone ELSE's public collection (Community view).
@@ -84,6 +95,10 @@ becomes private while open, we bail back to the list instead of showing a ghost.
     accessRole?: CollectionAccessRole;
   } = $props();
   const collaborationManager = getCollectionCollaborationManager();
+  // Inside Browse the bar owns the name, the actions and the selection
+  // toolbar; this view keeps only the owner / count line above its grid.
+  const header = tryGetBrowseHeaderContext();
+  const inBar = $derived(!!header && !embedded);
 
   let collection = $state<LibraryCollection | null>(null);
   let members = $state<LibrarySequence[]>([]);
@@ -123,6 +138,22 @@ becomes private while open, we bail back to the list instead of showing a ghost.
   });
 
   onDestroy(() => engine.destroy());
+
+  // Browse's one query: what you searched and filtered for elsewhere carries
+  // into the collection, and back out again.
+  const browseQuery = tryGetBrowseQueryContext();
+  bindBrowseQuery(browseQuery, () => engine);
+
+  // Filters open the same sheet as every other Browse grid: from the bottom
+  // on phones and tablets, from the side on desktop.
+  let filterSheetOpen = $state(false);
+  let isSideBySide = $state(false);
+  onMount(() => {
+    isSideBySide = responsiveLayoutManager.shouldUseSideBySideLayout();
+    return responsiveLayoutManager.onLayoutChange(() => {
+      isSideBySide = responsiveLayoutManager.shouldUseSideBySideLayout();
+    });
+  });
 
   // "Show me what I just filed here." The save toast parks the sequence id
   // before routing to this collection; the panel scrolls to its card once
@@ -687,61 +718,187 @@ becomes private while open, we bail back to the list instead of showing a ghost.
   );
 </script>
 
-<div class="collection-detail" style="--tile-color: {tileColor};">
-  {#if selectionState.active}
-    <SelectionToolbar
-      selectedCount={selectionState.selectedCount}
-      totalCount={members.length}
-      primaryLabel={t("browse_audit_remove_from_collection")}
-      primaryIcon="fa-folder-minus"
-      onPrimaryAction={removeSelectedFromCollection}
-      primaryTone="danger"
-      primaryBusy={removingSelected}
-      secondaryLabel={t("browse_audit_add_to_collection")}
-      secondaryIcon="fa-folder-plus"
-      onSecondaryAction={openAddSelectedToCollection}
-      dangerLabel={foreignOwnerId
-        ? undefined
-        : t("browse_audit_delete_permanently")}
-      dangerIcon={foreignOwnerId ? undefined : "fa-trash"}
-      onDangerAction={foreignOwnerId ? undefined : openSequenceDelete}
-      onSelectAll={selectAllMembers}
-      onClearSelection={clearSelection}
-      showClearAction={false}
-      actionsDisabled={removingSelected}
-      onExitSelection={selectionState.exit}
-    />
-  {:else}
-    <header class="detail-header" oncontextmenu={handleHeaderContextMenu}>
-      {#if showBack}
+{#snippet selectionToolbar()}
+  <SelectionToolbar
+    selectedCount={selectionState.selectedCount}
+    totalCount={members.length}
+    primaryLabel={t("browse_audit_remove_from_collection")}
+    primaryIcon="fa-folder-minus"
+    onPrimaryAction={removeSelectedFromCollection}
+    primaryTone="danger"
+    primaryBusy={removingSelected}
+    secondaryLabel={t("browse_audit_add_to_collection")}
+    secondaryIcon="fa-folder-plus"
+    onSecondaryAction={openAddSelectedToCollection}
+    dangerLabel={foreignOwnerId
+      ? undefined
+      : t("browse_audit_delete_permanently")}
+    dangerIcon={foreignOwnerId ? undefined : "fa-trash"}
+    onDangerAction={foreignOwnerId ? undefined : openSequenceDelete}
+    onSelectAll={selectAllMembers}
+    onClearSelection={clearSelection}
+    showClearAction={false}
+    actionsDisabled={removingSelected}
+    onExitSelection={selectionState.exit}
+  />
+{/snippet}
+
+{#snippet renameLeaf()}
+  <!-- svelte-ignore a11y_autofocus -->
+  <input
+    type="text"
+    class="rename-field"
+    aria-label={t("browse_ui_collection_name")}
+    bind:value={renameValue}
+    onkeydown={handleRenameKeydown}
+    onblur={() => void commitRename()}
+    maxlength="60"
+    autofocus
+  />
+{/snippet}
+
+{#snippet headerActions()}
+  <div class="header-tools" style="--tile-color: {tileColor};">
+    {#if collection && foreignOwnerId && !accessRole && !previewReadOnly}
+      {@const following = followedCollectionsState.isFollowed(
+        foreignOwnerId,
+        collectionId
+      )}
+      <button
+        type="button"
+        class="header-action-btn follow-btn"
+        class:following
+        aria-label={following
+          ? t("browse_audit_following")
+          : t("browse_audit_follow")}
+        aria-pressed={following}
+        onclick={() => {
+          if (following) {
+            void followedCollectionsState.unfollow(
+              foreignOwnerId,
+              collectionId,
+              "community_collection"
+            );
+          } else {
+            void followedCollectionsState.follow(
+              foreignOwnerId,
+              collectionId,
+              "community_collection"
+            );
+          }
+        }}
+      >
+        <i
+          class={`fas ${following ? "fa-check" : "fa-plus"}`}
+          aria-hidden="true"
+        ></i>
+        <span
+          >{following
+            ? t("browse_audit_following")
+            : t("browse_audit_follow")}</span
+        >
+      </button>
+    {/if}
+
+    {#if collection && !renaming && canEdit}
+      <div class="header-actions">
         <button
           type="button"
-          class="back-btn"
-          aria-label={t("browse_verified_back_to", { destination: backLabel })}
-          onclick={onBack}
+          class="header-action-btn select-btn"
+          aria-label={t("browse_ui_select_sequences")}
+          disabled={loadingMembers || members.length === 0}
+          onclick={() => selectionState.enter()}
         >
-          <i class="fas fa-arrow-left" aria-hidden="true"></i>
-          <span>{backLabel}</span>
+          <i class="fas fa-circle-check" aria-hidden="true"></i>
+          <span>{t("browse_ui_select")}</span>
         </button>
-      {/if}
 
+        {#if !foreignOwnerId}
+          <button
+            type="button"
+            class="header-action-btn"
+            aria-label={t("browse_ui_add")}
+            onclick={() => (addSheetOpen = true)}
+          >
+            <i class="fas fa-plus" aria-hidden="true"></i>
+            <span>{t("browse_ui_add")}</span>
+          </button>
+          <button
+            type="button"
+            class="header-action-btn"
+            aria-label={t("browse_ui_scan")}
+            onclick={() => (scanSheetOpen = true)}
+          >
+            <i class="fas fa-qrcode" aria-hidden="true"></i>
+            <span>{t("browse_ui_scan")}</span>
+          </button>
+        {/if}
+      </div>
+    {/if}
+
+    {#if collection && !renaming && (!isSystem || canEdit)}
+      <button
+        type="button"
+        class="options-btn"
+        aria-label={t("browse_ui_collection_options")}
+        onclick={handleOptions}
+      >
+        <i class="fas fa-ellipsis-vertical" aria-hidden="true"></i>
+      </button>
+    {/if}
+  </div>
+{/snippet}
+
+{#if inBar}
+  <BrowseHeaderSlot
+    leaf={collection?.name ?? null}
+    leafContent={renaming ? renameLeaf : null}
+    actions={headerActions}
+    toolbar={selectionState.active ? selectionToolbar : null}
+    accent={tileColor}
+  />
+{/if}
+
+<div
+  class="collection-detail"
+  class:in-bar={inBar}
+  style="--tile-color: {tileColor};"
+>
+  {#if inBar}
+    {#if !selectionState.active}
+      <header class="detail-meta" oncontextmenu={handleHeaderContextMenu}>
+        <span class="header-icon">
+          <i class={`fas ${collection?.icon ?? "fa-folder"}`} aria-hidden="true"
+          ></i>
+        </span>
+        <span class="header-count" class:hidden-count={loadFailed}>
+          {#if ownerName}{t("browse_audit_by_owner", { owner: ownerName })} ·
+          {/if}{visibleCount !== null ? countLabel(visibleCount) : ""}
+          {#if accessRole}
+            <span class="permission-badge">
+              <i
+                class={`fas ${accessRole === "editor" ? "fa-pen" : "fa-eye"}`}
+                aria-hidden="true"
+              ></i>
+              {accessRole === "editor"
+                ? t("browse_audit_can_edit")
+                : t("browse_audit_can_view")}
+            </span>
+          {/if}
+        </span>
+      </header>
+    {/if}
+  {:else if selectionState.active}
+    {@render selectionToolbar()}
+  {:else}
+    <header class="detail-header" oncontextmenu={handleHeaderContextMenu}>
       <span class="header-icon">
         <i class={`fas ${collection?.icon ?? "fa-folder"}`} aria-hidden="true"
         ></i>
       </span>
 
       {#if renaming}
-        <!-- svelte-ignore a11y_autofocus -->
-        <input
-          type="text"
-          class="rename-field"
-          aria-label={t("browse_ui_collection_name")}
-          bind:value={renameValue}
-          onkeydown={handleRenameKeydown}
-          onblur={() => void commitRename()}
-          maxlength="60"
-          autofocus
-        />
+        {@render renameLeaf()}
       {:else}
         <div class="header-text">
           <h2 class="header-name">{collection?.name ?? ""}</h2>
@@ -763,93 +920,7 @@ becomes private while open, we bail back to the list instead of showing a ghost.
         </div>
       {/if}
 
-      {#if collection && foreignOwnerId && !accessRole && !previewReadOnly}
-        {@const following = followedCollectionsState.isFollowed(
-          foreignOwnerId,
-          collectionId
-        )}
-        <button
-          type="button"
-          class="header-action-btn follow-btn"
-          class:following
-          aria-label={following
-            ? t("browse_audit_following")
-            : t("browse_audit_follow")}
-          aria-pressed={following}
-          onclick={() => {
-            if (following) {
-              void followedCollectionsState.unfollow(
-                foreignOwnerId,
-                collectionId,
-                "community_collection"
-              );
-            } else {
-              void followedCollectionsState.follow(
-                foreignOwnerId,
-                collectionId,
-                "community_collection"
-              );
-            }
-          }}
-        >
-          <i
-            class={`fas ${following ? "fa-check" : "fa-plus"}`}
-            aria-hidden="true"
-          ></i>
-          <span
-            >{following
-              ? t("browse_audit_following")
-              : t("browse_audit_follow")}</span
-          >
-        </button>
-      {/if}
-
-      {#if collection && !renaming && canEdit}
-        <div class="header-actions">
-          <button
-            type="button"
-            class="header-action-btn select-btn"
-            aria-label={t("browse_ui_select_sequences")}
-            disabled={loadingMembers || members.length === 0}
-            onclick={() => selectionState.enter()}
-          >
-            <i class="fas fa-circle-check" aria-hidden="true"></i>
-            <span>{t("browse_ui_select")}</span>
-          </button>
-
-          {#if !foreignOwnerId}
-            <button
-              type="button"
-              class="header-action-btn"
-              aria-label={t("browse_ui_add")}
-              onclick={() => (addSheetOpen = true)}
-            >
-              <i class="fas fa-plus" aria-hidden="true"></i>
-              <span>{t("browse_ui_add")}</span>
-            </button>
-            <button
-              type="button"
-              class="header-action-btn"
-              aria-label={t("browse_ui_scan")}
-              onclick={() => (scanSheetOpen = true)}
-            >
-              <i class="fas fa-qrcode" aria-hidden="true"></i>
-              <span>{t("browse_ui_scan")}</span>
-            </button>
-          {/if}
-        </div>
-      {/if}
-
-      {#if collection && !renaming && (!isSystem || canEdit)}
-        <button
-          type="button"
-          class="options-btn"
-          aria-label={t("browse_ui_collection_options")}
-          onclick={handleOptions}
-        >
-          <i class="fas fa-ellipsis-vertical" aria-hidden="true"></i>
-        </button>
-      {/if}
+      {@render headerActions()}
     </header>
   {/if}
 
@@ -922,6 +993,8 @@ becomes private while open, we bail back to the list instead of showing a ghost.
         eager={false}
         curatedSortLabel={t("browse_audit_collection_order")}
         toolbarVariant="embedded"
+        hideToolbarSearch={!!browseQuery}
+        onOpenFilters={() => (filterSheetOpen = true)}
         resultTotal={visibleCount ?? members.length}
         onSelect={(sequence, variations) =>
           handleSequenceAction("view-detail", sequence, variations)}
@@ -941,6 +1014,13 @@ becomes private while open, we bail back to the list instead of showing a ghost.
     {/if}
   </div>
 </div>
+
+<GalleryFilterSheet
+  {engine}
+  bind:isOpen={filterSheetOpen}
+  isMobile={!isSideBySide}
+  allowSearch={!browseQuery}
+/>
 
 <ContextMenu
   {menuState}
@@ -1020,7 +1100,6 @@ becomes private while open, we bail back to the list instead of showing a ghost.
     flex-shrink: 0;
   }
 
-  .back-btn,
   .options-btn {
     display: flex;
     align-items: center;
@@ -1038,34 +1117,43 @@ becomes private while open, we bail back to the list instead of showing a ghost.
       border-color var(--duration-fast) var(--ease-standard);
   }
 
-  .back-btn:hover,
   .options-btn:hover {
     border-color: color-mix(in srgb, var(--tile-color) 45%, transparent);
     background: color-mix(in srgb, var(--tile-color) 10%, var(--theme-card-bg));
   }
 
-  .back-btn {
-    width: auto;
-    min-width: 44px;
-    gap: 7px;
-    padding: 0 12px;
-    font: inherit;
-    font-size: 14px;
-    font-weight: 700;
-  }
-
-  .back-btn:focus-visible,
   .options-btn:focus-visible {
     outline: 2px solid var(--tile-color);
     outline-offset: 2px;
+  }
+
+  .header-tools {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-left: auto;
+    flex-shrink: 0;
   }
 
   .header-actions {
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-left: auto;
     flex-shrink: 0;
+  }
+
+  /* With the Browse bar carrying the name and actions, the first row of the
+     content keeps the icon and the owner / count / permission line. */
+  .detail-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px 0;
+    flex-shrink: 0;
+  }
+
+  .detail-meta .header-count {
+    flex: 1 1 auto;
   }
 
   .header-action-btn {
@@ -1106,6 +1194,12 @@ becomes private while open, we bail back to the list instead of showing a ghost.
   }
 
   @container gallery (min-width: 680px) {
+    .select-btn {
+      display: flex;
+    }
+  }
+
+  @container browse-header (min-width: 680px) {
     .select-btn {
       display: flex;
     }
@@ -1185,12 +1279,6 @@ becomes private while open, we bail back to the list instead of showing a ghost.
       padding-inline: 8px;
     }
 
-    .back-btn {
-      width: 44px;
-      padding: 0;
-    }
-
-    .back-btn span,
     .header-icon {
       display: none;
     }
@@ -1217,6 +1305,29 @@ becomes private while open, we bail back to the list instead of showing a ghost.
     }
 
     .header-actions .header-action-btn span {
+      display: none;
+    }
+  }
+
+  @container browse-header (max-width: 520px) {
+    .header-tools {
+      gap: 8px;
+    }
+
+    .header-actions {
+      gap: 8px;
+    }
+
+    .header-actions .header-action-btn,
+    .follow-btn {
+      width: 44px;
+      min-width: 44px;
+      padding: 0;
+      justify-content: center;
+    }
+
+    .header-actions .header-action-btn span,
+    .follow-btn span {
       display: none;
     }
   }

@@ -372,6 +372,47 @@ export class BeamSearch {
     // Get transition graph for bridge finding
     const transitionGraph = getLetterTransitionGraph();
 
+    // A one-letter LOOP seed: its only letter is also its last, so it closes
+    // directly or on a closing bridge, like the last letter of a longer word.
+    if (
+      letters.length === 1 &&
+      requiredEndPlacements &&
+      requiredEndPlacements.size > 0
+    ) {
+      const closed = beam.filter((s) =>
+        requiredEndPlacements.has(s.currentEndPlacement)
+      );
+      if (closed.length > 0) {
+        beam = closed;
+      } else {
+        const counter = { statesExplored: 0 };
+        beam = pruneBeam(
+          beam.flatMap((s) =>
+            this.appendClosingBridge(
+              s,
+              firstLetter,
+              firstLetter,
+              letters.length,
+              requiredEndPlacements,
+              constraintSet,
+              transitionGraph,
+              counter,
+              propContinuity
+            )
+          ),
+          config.beamWidth
+        );
+        statesExplored += counter.statesExplored;
+        if (beam.length === 0) {
+          return this.failResult(
+            `No closing placement reachable after letter "${firstLetter}"`,
+            statesExplored,
+            beamPrunings
+          );
+        }
+      }
+    }
+
     // Step 3: Beam search through remaining letters
     for (let i = 1; i < letters.length; i++) {
       const letter = letters[i]!;
@@ -385,19 +426,24 @@ export class BeamSearch {
           this.gridMode
         );
 
-        // On the final letter, if LOOP requires specific end placements,
-        // only keep variations that land there.
+        // On the final letter of a LOOP seed, the closing placements bind the
+        // last BUILT step: the letter itself, a bridge before it, or a bridge
+        // after it. Direct variations that land there come first.
         const isFinalLetter = i === letters.length - 1;
-        if (
+        const closingEnds =
           isFinalLetter &&
           requiredEndPlacements &&
           requiredEndPlacements.size > 0
-        ) {
+            ? requiredEndPlacements
+            : undefined;
+        const openVariations = validVariations;
+        if (closingEnds) {
           validVariations = validVariations.filter((p) =>
-            requiredEndPlacements.has(p.endPlacement)
+            closingEnds.has(p.endPlacement)
           );
         }
 
+        const counter = { statesExplored: 0 };
         if (validVariations.length === 0) {
           // No direct path — try bridge letters
           const previousLetter = state.steps[state.steps.length - 1]?.letter;
@@ -407,44 +453,75 @@ export class BeamSearch {
             state,
             previousLetter,
             letter,
-            i,
             letters.length,
             constraintSet,
             config,
-            transitionGraph
+            transitionGraph,
+            propContinuity,
+            closingEnds
           );
 
           statesExplored += bridgeResult.statesExplored;
           nextBeam.push(...bridgeResult.newStates);
-        } else {
-          // Direct path — score and extend
-          const scores = scoreAndRankVariations(
-            validVariations,
-            this.scoringContext({
-              stepIndex: i,
-              totalSteps: letters.length,
-              previousSteps: state.steps,
-              letter,
-            }),
-            constraintSet
-          );
 
-          for (const scored of scores.slice(0, config.beamWidth)) {
-            if (!scored.hardConstraintsSatisfied) continue;
-            // Enrich static/dash motions with their allocated turns so
-            // subsequent steps see real rotation directions, not noRotation.
-            const enriched = enrichWithTurns(
-              scored.variation,
-              i,
-              turnSource,
-              state.steps,
-              propContinuity,
-              this.options.leftSpinRule
-            );
-            nextBeam.push(extendState(state, enriched, scored));
-            statesExplored++;
+          // Neither the letter nor a bridge before it can land on a closing
+          // placement. Place the letter where it can go, then bridge on from
+          // it toward the first letter's next pass.
+          if (closingEnds && bridgeResult.newStates.length === 0) {
+            const open =
+              openVariations.length > 0
+                ? this.extendDirect(
+                    state,
+                    letter,
+                    openVariations,
+                    letters.length,
+                    constraintSet,
+                    config,
+                    propContinuity,
+                    counter
+                  )
+                : this.tryBridges(
+                    state,
+                    previousLetter,
+                    letter,
+                    letters.length,
+                    constraintSet,
+                    config,
+                    transitionGraph,
+                    propContinuity
+                  ).newStates;
+            for (const openState of open) {
+              nextBeam.push(
+                ...this.appendClosingBridge(
+                  openState,
+                  letter,
+                  letters[0]!,
+                  letters.length,
+                  closingEnds,
+                  constraintSet,
+                  transitionGraph,
+                  counter,
+                  propContinuity
+                )
+              );
+            }
           }
+        } else {
+          // Direct path — score and extend.
+          nextBeam.push(
+            ...this.extendDirect(
+              state,
+              letter,
+              validVariations,
+              letters.length,
+              constraintSet,
+              config,
+              propContinuity,
+              counter
+            )
+          );
         }
+        statesExplored += counter.statesExplored;
       }
 
       // Prune beam
@@ -814,21 +891,63 @@ export class BeamSearch {
     );
   }
 
+  /**
+   * Place `toLetter` after one or more bridge steps, for a state where it has
+   * no direct variation.
+   *
+   * With `requiredEnds` (the final letter of a LOOP seed) the letter must land
+   * on one of those placements, and every ranked bridge variation is tried in
+   * turn, since the bridge's own end decides where the letter can land. The
+   * best-scoring bridge alone used to be taken and the letter placed wherever
+   * it fell, so a bridged word ended off its closing placement. Without
+   * `requiredEnds` only the best-scoring bridge variation is tried, as before.
+   */
   private tryBridges(
     state: SearchState,
     fromLetter: string,
     toLetter: string,
-    stepIndex: number,
     totalLetters: number,
     constraintSet: ConstraintSet,
     config: BeamSearchConfig,
-    transitionGraph: ReturnType<typeof getLetterTransitionGraph>
+    transitionGraph: ReturnType<typeof getLetterTransitionGraph>,
+    propContinuity?: PropContinuityMode,
+    requiredEnds?: ReadonlySet<string>
   ): { newStates: SearchState[]; statesExplored: number } {
-    const newStates: SearchState[] = [];
-    let statesExplored = 0;
+    const counter = { statesExplored: 0 };
+    const exhaustive = requiredEnds !== undefined;
+
+    // Place the target letter once the chain has run. Every step here, bridge
+    // or target letter, takes the turns at its own place in the built path
+    // (state.steps holds the start placement at 0), the same index
+    // post-processing materializes it at.
+    const placeTarget =
+      (totalSteps: number) =>
+      (bridged: SearchState): SearchState[] => {
+        let targetVariations = this.variationProvider.getVariations(
+          toLetter,
+          bridged.currentEndPlacement,
+          this.gridMode
+        );
+        if (requiredEnds) {
+          targetVariations = targetVariations.filter((p) =>
+            requiredEnds.has(p.endPlacement)
+          );
+        }
+        if (targetVariations.length === 0) return [];
+        return this.extendDirect(
+          bridged,
+          toLetter,
+          targetVariations,
+          totalSteps,
+          constraintSet,
+          config,
+          propContinuity,
+          counter
+        );
+      };
 
     // Try single-letter bridges first (can be scored for constraint optimization)
-    let bridgeOptions = transitionGraph.findAllBridgeOptions(
+    const bridgeOptions = transitionGraph.findAllBridgeOptions(
       fromLetter,
       toLetter
     );
@@ -846,152 +965,220 @@ export class BeamSearch {
 
       for (const bridgeOption of scoredBridges) {
         if (!bridgeOption) continue;
-
-        const bridgeVariations = this.variationProvider.getVariations(
-          bridgeOption.letter,
-          state.currentEndPlacement,
-          this.gridMode
-        );
-        if (bridgeVariations.length === 0) continue;
-
-        const bridgeScores = scoreAndRankVariations(
-          bridgeVariations,
-          this.scoringContext({
-            stepIndex,
-            totalSteps: totalLetters + 1,
-            previousSteps: state.steps,
-            letter: bridgeOption.letter,
-          }),
-          constraintSet
-        );
-
-        const bestBridgeScore = bridgeScores[0];
-        if (!bestBridgeScore || !bestBridgeScore.hardConstraintsSatisfied)
-          continue;
-
-        const stateWithBridge = extendState(
+        const states = this.walkBridgeChain(
           state,
-          bestBridgeScore.variation,
-          bestBridgeScore,
-          true
+          [bridgeOption.letter],
+          totalLetters + 1,
+          constraintSet,
+          exhaustive,
+          placeTarget(totalLetters + 1),
+          counter,
+          propContinuity
         );
-        statesExplored++;
-
-        // Find target letter from bridge's end placement
-        const targetVariations = this.variationProvider.getVariations(
-          toLetter,
-          stateWithBridge.currentEndPlacement,
-          this.gridMode
-        );
-        if (targetVariations.length === 0) continue;
-
-        const scores = scoreAndRankVariations(
-          targetVariations,
-          this.scoringContext({
-            stepIndex: stepIndex + 1,
-            totalSteps: totalLetters + 1,
-            previousSteps: stateWithBridge.steps,
-            letter: toLetter,
-          }),
-          constraintSet
-        );
-
-        let bridgeSucceeded = false;
-        for (const scored of scores.slice(0, config.beamWidth)) {
-          if (!scored.hardConstraintsSatisfied) continue;
-          newStates.push(
-            extendState(stateWithBridge, scored.variation, scored)
-          );
-          statesExplored++;
-          bridgeSucceeded = true;
-        }
-
         // First working bridge is likely best (sorted by score)
-        if (bridgeSucceeded) break;
+        if (states.length > 0) {
+          return { newStates: states, statesExplored: counter.statesExplored };
+        }
       }
-    } else {
-      // No single-letter bridge — fall back to BFS multi-letter path
-      const multiBridgePath = transitionGraph.findBridgeLetters(
-        fromLetter,
-        toLetter
+      return { newStates: [], statesExplored: counter.statesExplored };
+    }
+
+    // No single-letter bridge — fall back to BFS multi-letter path
+    const multiBridgePath = transitionGraph.findBridgeLetters(
+      fromLetter,
+      toLetter
+    );
+    if (multiBridgePath.length === 0) {
+      return { newStates: [], statesExplored: counter.statesExplored };
+    }
+    const totalSteps = totalLetters + multiBridgePath.length;
+    const newStates = this.walkBridgeChain(
+      state,
+      multiBridgePath,
+      totalSteps,
+      constraintSet,
+      exhaustive,
+      placeTarget(totalSteps),
+      counter,
+      propContinuity
+    );
+    return { newStates, statesExplored: counter.statesExplored };
+  }
+
+  /**
+   * Close a LOOP seed whose last letter cannot land on a closing placement,
+   * bridged or not, by bridging on from it toward the first letter.
+   *
+   * The seam of a LOOP is a letter transition like any other: after the last
+   * letter comes the transformed copy of the first, which begins at the
+   * closing placement. When the last letter ends in a different placement
+   * group from the one the first letter starts in (WXYZ ends in beta and
+   * starts in gamma), no seed of those letters alone can close, and the
+   * bridge that would sit before the next pass's first letter is the one
+   * that closes it. Returns at most one closed state.
+   */
+  private appendClosingBridge(
+    open: SearchState,
+    lastLetter: string,
+    firstLetter: string,
+    totalLetters: number,
+    requiredEnds: ReadonlySet<string>,
+    constraintSet: ConstraintSet,
+    transitionGraph: ReturnType<typeof getLetterTransitionGraph>,
+    counter: { statesExplored: number },
+    propContinuity?: PropContinuityMode
+  ): SearchState[] {
+    const closes = (bridged: SearchState): SearchState[] =>
+      requiredEnds.has(bridged.currentEndPlacement) &&
+      this.variationProvider.getVariations(
+        firstLetter,
+        bridged.currentEndPlacement,
+        this.gridMode
+      ).length > 0
+        ? [bridged]
+        : [];
+
+    const options = transitionGraph.findAllBridgeOptions(
+      lastLetter,
+      firstLetter
+    );
+    const chains =
+      options.length > 0
+        ? scoreBridgeOptions(
+            options,
+            constraintSet,
+            this.variationProvider.getAllVariations(this.gridMode)
+          ).map((option) => [option.letter])
+        : [transitionGraph.findBridgeLetters(lastLetter, firstLetter)];
+
+    for (const chain of chains) {
+      if (chain.length === 0) continue;
+      const closed = this.walkBridgeChain(
+        open,
+        chain,
+        totalLetters + chain.length,
+        constraintSet,
+        true,
+        closes,
+        counter,
+        propContinuity
       );
-      if (multiBridgePath.length === 0) {
-        return { newStates, statesExplored };
-      }
+      if (closed.length > 0) return closed;
+    }
+    return [];
+  }
 
-      let currentState = state;
-      let bridgeSuccess = true;
-
-      for (const bridgeLetter of multiBridgePath) {
-        const bridgeVariations = this.variationProvider.getVariations(
-          bridgeLetter,
-          currentState.currentEndPlacement,
-          this.gridMode
-        );
-        if (bridgeVariations.length === 0) {
-          bridgeSuccess = false;
-          break;
-        }
-
-        const bridgeScores = scoreAndRankVariations(
-          bridgeVariations,
-          this.scoringContext({
-            stepIndex,
-            totalSteps: totalLetters + multiBridgePath.length,
-            previousSteps: currentState.steps,
-            letter: bridgeLetter,
-          }),
-          constraintSet
-        );
-
-        const bestBridgeScore = bridgeScores[0];
-        if (!bestBridgeScore || !bestBridgeScore.hardConstraintsSatisfied) {
-          bridgeSuccess = false;
-          break;
-        }
-
-        currentState = extendState(
-          currentState,
-          bestBridgeScore.variation,
-          bestBridgeScore,
-          true
-        );
-        statesExplored++;
-      }
-
-      if (!bridgeSuccess) {
-        return { newStates, statesExplored };
-      }
-
-      // Find target letter from final bridge's end placement
-      const targetVariations = this.variationProvider.getVariations(
-        toLetter,
-        currentState.currentEndPlacement,
+  /**
+   * Lay the bridge letters of `chain` one by one from `state`, then hand the
+   * bridged state to `finish`. Greedy mode takes each bridge letter's
+   * best-scoring variation only; exhaustive mode backtracks through every
+   * variation that satisfies the hard constraints, in rank order, until
+   * `finish` accepts one. Returns what `finish` returned, or nothing.
+   */
+  private walkBridgeChain(
+    state: SearchState,
+    chain: readonly string[],
+    totalSteps: number,
+    constraintSet: ConstraintSet,
+    exhaustive: boolean,
+    finish: (bridged: SearchState) => SearchState[],
+    counter: { statesExplored: number },
+    propContinuity?: PropContinuityMode
+  ): SearchState[] {
+    const walk = (current: SearchState, index: number): SearchState[] => {
+      if (index === chain.length) return finish(current);
+      const bridgeLetter = chain[index]!;
+      const bridgeVariations = this.variationProvider.getVariations(
+        bridgeLetter,
+        current.currentEndPlacement,
         this.gridMode
       );
-      if (targetVariations.length === 0) {
-        return { newStates, statesExplored };
-      }
+      if (bridgeVariations.length === 0) return [];
 
-      const scores = scoreAndRankVariations(
-        targetVariations,
+      const ranked = scoreAndRankVariations(
+        bridgeVariations,
         this.scoringContext({
-          stepIndex: stepIndex + multiBridgePath.length,
-          totalSteps: totalLetters + multiBridgePath.length,
-          previousSteps: currentState.steps,
-          letter: toLetter,
+          stepIndex: current.steps.length - 1,
+          totalSteps,
+          previousSteps: current.steps,
+          letter: bridgeLetter,
         }),
         constraintSet
       );
+      const candidates = (exhaustive ? ranked : ranked.slice(0, 1)).filter(
+        (scored) => scored.hardConstraintsSatisfied
+      );
 
-      for (const scored of scores.slice(0, config.beamWidth)) {
-        if (!scored.hardConstraintsSatisfied) continue;
-        newStates.push(extendState(currentState, scored.variation, scored));
-        statesExplored++;
+      for (const scored of candidates) {
+        const bridged = extendState(
+          current,
+          enrichWithTurns(
+            scored.variation,
+            current.steps.length - 1,
+            this.activeTurnSource,
+            current.steps,
+            propContinuity,
+            this.options.leftSpinRule
+          ),
+          scored,
+          true
+        );
+        counter.statesExplored++;
+        const finished = walk(bridged, index + 1);
+        if (finished.length > 0) return finished;
       }
-    }
+      return [];
+    };
+    return walk(state, 0);
+  }
 
-    return { newStates, statesExplored };
+  /**
+   * Score `variations` of `letter` as the next step after `state` and extend
+   * the state with the best of them that satisfy the hard constraints.
+   */
+  private extendDirect(
+    state: SearchState,
+    letter: string,
+    variations: PictographData[],
+    totalSteps: number,
+    constraintSet: ConstraintSet,
+    config: BeamSearchConfig,
+    propContinuity: PropContinuityMode | undefined,
+    counter: { statesExplored: number }
+  ): SearchState[] {
+    // Turns are looked up by the step's place in the built path, not the
+    // letter's place in the word: once an earlier bridge has pushed this
+    // letter along, the two differ, and post-processing materializes turns by
+    // path position.
+    const pathIndex = state.steps.length - 1;
+    const scores = scoreAndRankVariations(
+      variations,
+      this.scoringContext({
+        stepIndex: pathIndex,
+        totalSteps,
+        previousSteps: state.steps,
+        letter,
+      }),
+      constraintSet
+    );
+
+    const extended: SearchState[] = [];
+    for (const scored of scores.slice(0, config.beamWidth)) {
+      if (!scored.hardConstraintsSatisfied) continue;
+      // Enrich static/dash motions with their allocated turns so subsequent
+      // steps see real rotation directions, not noRotation.
+      const enriched = enrichWithTurns(
+        scored.variation,
+        pathIndex,
+        this.activeTurnSource,
+        state.steps,
+        propContinuity,
+        this.options.leftSpinRule
+      );
+      extended.push(extendState(state, enriched, scored));
+      counter.statesExplored++;
+    }
+    return extended;
   }
 
   private getAllVariationsForLetter(letter: string): PictographData[] {

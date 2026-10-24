@@ -40,6 +40,35 @@ export function allocationSource(lanes: TurnLanes): TurnSource {
   };
 }
 
+/**
+ * Random allocation that keeps going. The up-front lanes answer their own
+ * indices exactly as `allocationSource` would; past their end each new step is
+ * rolled once, in index order, and remembered, so a bridge step the search
+ * inserted gets a turn from the same pool and every later look at that index
+ * sees the same value.
+ */
+export function growingAllocationSource(
+  lanes: TurnLanes,
+  rollStep: () => { left: TurnValue; right: TurnValue }
+): TurnSource {
+  const normalizedLanes = normalizeLegacyHandPair(lanes);
+  const left = [...normalizedLanes.left];
+  const right = [...normalizedLanes.right];
+  return {
+    at(stepIndex, hand) {
+      if (stepIndex < 0) return undefined;
+      // An allocation's lanes are the same length; if they ever are not, the
+      // shorter one is filled from the front of the roll rather than skipped.
+      while (left.length <= stepIndex || right.length <= stepIndex) {
+        const step = rollStep();
+        if (left.length <= stepIndex) left.push(step.left);
+        if (right.length <= stepIndex) right.push(step.right);
+      }
+      return (hand === "left" ? left : right)[stepIndex];
+    },
+  };
+}
+
 /** Repeating period. Never runs out. */
 export function patternSource(lanes: TurnLanes): TurnSource {
   const normalizedLanes = normalizeLegacyHandPair(lanes);

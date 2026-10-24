@@ -46,6 +46,12 @@ export interface WingSoundscape {
 	candidates: AudioCandidate[];
 	/** Which candidate plays by default. Falls back to candidates[0] if unset or missing. */
 	defaultCandidateId?: string;
+	/**
+	 * The room makes its own sound (built live, e.g. audio/village-ambience.ts)
+	 * and plays no music: fetched candidates are ignored and the last wing's
+	 * track fades out on entry.
+	 */
+	ambienceOnly?: boolean;
 }
 
 // Each wing's first candidate is the original hand-picked track.
@@ -118,7 +124,8 @@ export const CURATED_WING_SOUNDSCAPES: WingSoundscape[] = [
 		],
 	},
 	{ wingId: "isolation", wingName: "Room of Isolation", candidates: [] },
-	{ wingId: "collaboration", wingName: "Room of Collaboration", candidates: [] },
+	// Fire and night air from the village itself; no music here.
+	{ wingId: "collaboration", wingName: "Room of Collaboration", candidates: [], ambienceOnly: true },
 	{ wingId: "gift-shop", wingName: "Gift Shop", candidates: [] },
 	{ wingId: "vtg-wing", wingName: "The Vulcan Wing", candidates: [] },
 	{ wingId: "construction-zone", wingName: "Construction Zone", candidates: [] },

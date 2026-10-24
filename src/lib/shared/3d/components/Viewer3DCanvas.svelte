@@ -30,12 +30,16 @@
   import { WebGLRenderer } from "three";
 
   import Viewer3DScene from "./Viewer3DScene.svelte";
+  import WebComposerMotionPreparation from "./WebComposerMotionPreparation.svelte";
+  import type { composerCaptureRequest } from "../unreal/domain/composer-capture-request";
+  import { getComposerMotionCache } from "../unreal/domain/composer-motion-cache";
   import Viewer3DCamera from "./Viewer3DCamera.svelte";
   import Viewer3DCanvasRef from "./Viewer3DCanvasRef.svelte";
   import PerfMonitor from "./PerfMonitor.svelte";
   import type { RendererPerformanceSample } from "./renderer-performance-window";
   import InteractiveCanvasFrameBridge from "./InteractiveCanvasFrameBridge.svelte";
   import WorkerViewer3DScene from "./WorkerViewer3DScene.svelte";
+  import UnrealComposerScene from "../unreal/components/UnrealComposerScene.svelte";
   import GaitProbe from "../diagnostics/gait/GaitProbe.svelte";
   import GaitOverlay from "../diagnostics/gait/GaitOverlay.svelte";
   import { gaitProbeState } from "../diagnostics/gait/gait-probe-state.svelte";
@@ -47,6 +51,7 @@
     tryGetSceneFeatureContext,
   } from "../scene-features/context/scene-feature-context";
   import SceneLoadingCurtain from "../scene-features/components/SceneLoadingCurtain.svelte";
+  import ScenePreparationSurface from "../scene-features/components/ScenePreparationSurface.svelte";
   import { getSequenceDisplayName } from "#lib/shared/foundation/services/word-deriver.js";
   import { createViewerCameraPlayerState } from "@austencloud/camera-3d";
   import { getInputCapabilities } from "#lib/shared/input/InputCapabilities.svelte.js";
@@ -55,6 +60,7 @@
     releaseBackground,
   } from "#lib/shared/background/shared/state/background-hold.svelte.js";
   import SceneShaderWarmup from "./SceneShaderWarmup.svelte";
+  import SceneBuildIn from "./SceneBuildIn.svelte";
   import InteractivePropAssetWarmup from "./InteractivePropAssetWarmup.svelte";
   import { createCharacterPlaybackAdapter } from "#lib/shared/timeline/adapters/character-playback-adapter.svelte.js";
   import type { PlaybackMode } from "#lib/shared/timeline/unified-playback-context.js";
@@ -71,10 +77,11 @@
   import { captureT3Slice } from "#lib/shared/sequence-viewer/services/viewer-url-slices/t3-slice.js";
 
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
-  import type { CameraStateSnapshot } from "@austencloud/scene-3d";
+  import type { CameraStateSnapshot, ContactMode } from "@austencloud/scene-3d";
   import { BackgroundType } from "@austencloud/backgrounds";
   import type { EnvironmentTransitionObservation } from "../environments/domain/environment-transition";
   import { getSceneEnvironmentRendererKey } from "../environments/domain/scene-environment";
+  import { sceneEnvironmentIdForRendererKey } from "../environments/domain/environment-load";
   import { hasExactWorkerSceneFeatures } from "../worker-renderer/domain/worker-scene-feature-capability";
   import {
     getBackgroundTypeForWorkerEnvironment,
@@ -135,9 +142,12 @@
     /**
      * `gated` preserves the production scene-change curtain. `streaming` puts
      * the canvas on screen immediately and lets environment assets arrive in
-     * place, which is what focused scene-authoring surfaces need.
+     * place, which is what focused scene-authoring surfaces need. `build` opens
+     * onto a plain stage in soft haze that you can orbit at once; the world
+     * arrives around it as the haze lifts (SceneBuildIn). A viewer the worker
+     * renderer can take keeps the gated curtain until the worker learns it.
      */
-    initialRevealMode?: "gated" | "streaming";
+    initialRevealMode?: "gated" | "streaming" | "build";
     /** Model inspection can omit the full visual-effects runtime. */
     enableEffects?: boolean;
     /** Stationary review casts do not need the game locomotion pack. */
@@ -254,6 +264,44 @@
       import("#lib/shared/timeline/UnifiedTimeline.svelte"));
 
   const viewer3DState = getViewer3DContext();
+  const performerContactMode: ContactMode = "prop-authoritative";
+  type CaptureRequest = ReturnType<typeof composerCaptureRequest>;
+  let webCaptureRequests = $state<CaptureRequest[] | null>(null);
+  let motionCacheRevision = $state(0);
+  const prepareWebMotion = $derived(
+    !rendererHandleRequired && !weldPerformerGrip && !viewer3DState.isExporting
+  );
+  const webMotionReady = $derived.by(() => {
+    if (!prepareWebMotion || !canRenderScene) return true;
+    void motionCacheRevision;
+    return (
+      webCaptureRequests !== null &&
+      webCaptureRequests.every(
+        (request) => !!getComposerMotionCache().getPose(request.signature)
+      )
+    );
+  });
+  function handleCaptureRequestsChange(requests: CaptureRequest[]): void {
+    const previous = webCaptureRequests;
+    if (
+      previous?.length === requests.length &&
+      previous.every(
+        (request, index) => request.signature === requests[index]?.signature
+      )
+    )
+      return;
+    webCaptureRequests = requests;
+  }
+  const useUnreal = $derived(
+    viewer3DState.sceneRenderer === "unreal" && !rendererHandleRequired
+  );
+  $effect(() => {
+    // Recording uses the Web canvas. Keep the selected renderer truthful when
+    // opening a recording or export workflow while Unreal is active.
+    if (rendererHandleRequired && viewer3DState.sceneRenderer === "unreal") {
+      viewer3DState.setSceneRenderer("web");
+    }
+  });
   // Provide one stable, hardware-detected visual tier plus adaptive DPR to the
   // scene subtree. Frame pressure may reduce resolution, but it must not swap
   // effects, lighting, or environment detail for a cheaper look mid-session.
@@ -391,7 +439,8 @@
         (rendererHandleRequired || weldPerformerGrip ? 1 : 0),
     })
   );
-  const workerHostExact = $derived(
+  // Whether the worker renderer could take this viewer, apart from how it opens.
+  const workerEligible = $derived(
     workerEnvironment !== null &&
       workerRuntimeFailedFor !==
         getSceneEnvironmentRendererKey(viewer3DState.environmentId) &&
@@ -403,8 +452,7 @@
       workerConditions.cameraMode === "orbit" &&
       !workerConditions.captureInProgress &&
       workerConditions.rendererHandleConsumerCount === 0 &&
-      hasExactWorkerSceneFeatures(sceneFeatureState) &&
-      initialRevealMode === "gated" &&
+      hasExactWorkerSceneFeatures(sceneFeatureState, performerContactMode) &&
       environmentTransitionVisualMode === "internal" &&
       !renderEmptyScene &&
       !stageBoundsPositions &&
@@ -415,6 +463,32 @@
         ({ presencePhase }) => presencePhase === "present"
       )
   );
+
+  // A `build` opening is decided once, when the scene can first render: the
+  // main-thread renderer builds the scene in around the viewer, while a viewer
+  // the worker renderer can take keeps the gated curtain for now. Latched so a
+  // later marker or camera toggle cannot swap openings halfway through one.
+  let buildOpening = $state<boolean | null>(null);
+  const revealMode = $derived(
+    initialRevealMode !== "build"
+      ? initialRevealMode
+      : buildOpening === false
+        ? "gated"
+        : "build"
+  );
+  let buildInDone = $state(false);
+  // The host's painted stand-in stays over the canvas until the 3D stage it
+  // imitates has drawn, then crossfades into it.
+  let buildStageShown = $state(false);
+  let buildCoverGone = $state(false);
+  const buildingIn = $derived(buildOpening === true && !buildInDone);
+  const workerHostExact = $derived(workerEligible && revealMode === "gated");
+
+  $effect(() => {
+    if (initialRevealMode !== "build" || buildOpening !== null) return;
+    if (!characterState || !sequenceData) return;
+    buildOpening = !workerEligible;
+  });
 
   // Production viewers give their curtain one frame to paint before WebGL
   // starts. A focused scene workbench has no curtain, so delaying the canvas
@@ -430,7 +504,7 @@
 
   $effect(() => {
     if (
-      initialRevealMode === "gated" &&
+      revealMode === "gated" &&
       characterState &&
       sequenceData &&
       !canvasMountReady
@@ -470,7 +544,7 @@
   // not use canvasMountReady, but their scene components still need the same
   // protection against an async feature that never reports completion.
   $effect(() => {
-    if (!renderEmptyScene && !canvasMountReady && initialRevealMode === "gated")
+    if (!renderEmptyScene && !canvasMountReady && revealMode === "gated")
       return;
     const features = sceneFeatureState.features.filter(
       (f) => f.requiresAsyncLoad && sceneFeatureState.isEnabled(f.key)
@@ -503,6 +577,9 @@
   let sceneReady = $state(false);
   let environmentSettled = $state(true);
   let workerHasLiveScene = $state(false);
+  // The main-thread renderer keeps the shown world up while the next one
+  // loads, so a switch need not stop the performers either.
+  let legacyHasLiveScene = $state(true);
   let readyPerformerCount = $state(0);
   let totalPerformerCount = $state(0);
   const performersReady = $derived(
@@ -545,9 +622,37 @@
     observation: EnvironmentTransitionObservation<BackgroundType>
   ): void {
     environmentSettled = observation.settled;
+    legacyHasLiveScene =
+      environmentTransitionVisualMode === "internal" &&
+      observation.mountedKey !== null;
     if (!observation.settled) adaptiveQuality.armSettleWindow();
+    publishEnvironmentTransition(observation);
+  }
+
+  // Both renderer paths report scene switches through here, so the scene
+  // picker learns when the scene it asked for is actually on screen.
+  function publishEnvironmentTransition(
+    observation: EnvironmentTransitionObservation<BackgroundType>
+  ): void {
+    const requested = sceneEnvironmentIdForRendererKey(
+      observation.requestedKey
+    );
+    if (requested !== null) {
+      viewer3DState.reportEnvironmentLoad({
+        requested,
+        mounted: sceneEnvironmentIdForRendererKey(observation.mountedKey),
+        settled: observation.settled,
+      });
+    }
     onEnvironmentTransitionChange?.(observation);
   }
+
+  // Unreal draws its own scene and never reports; an unmounted canvas reports
+  // nothing either. Neither may leave a tile stuck loading.
+  $effect(() => {
+    if (useUnreal) viewer3DState.stopEnvironmentLoadTracking();
+  });
+  onDestroy(() => viewer3DState.stopEnvironmentLoadTracking());
 
   let lastWorkerPhase: WorkerSceneSwitchSnapshot["phase"] | null = null;
 
@@ -599,7 +704,7 @@
       lastWorkerPhase = "error";
       handleRendererReadyChange(true);
       environmentSettled = true;
-      onEnvironmentTransitionChange?.({
+      publishEnvironmentTransition({
         requestedKey: requested,
         mountedKey: mounted,
         phase: "idle",
@@ -623,7 +728,7 @@
         preparation.assetProgress
       );
       sceneFeatureState.reportWarmupProgress(preparation.warmupProgress);
-      onEnvironmentTransitionChange?.({
+      publishEnvironmentTransition({
         requestedKey: requested,
         mountedKey: mounted,
         phase: "waiting",
@@ -647,7 +752,7 @@
       effectsRuntimeReady = true;
       handleRendererReadyChange(true);
       environmentSettled = true;
-      onEnvironmentTransitionChange?.({
+      publishEnvironmentTransition({
         requestedKey: requested,
         mountedKey: requested,
         phase: "idle",
@@ -658,13 +763,13 @@
 
   // Tell the parent so it can withhold the 3D rail chrome until the stage is set.
   $effect(() => {
-    onSceneReadyChange?.(sceneReady);
+    onSceneReadyChange?.(useUnreal || sceneReady);
   });
 
   let curtainRevealed = $state(false);
   $effect(() => {
     onSceneRevealedChange?.(
-      sceneReady && (initialRevealMode !== "gated" || curtainRevealed)
+      sceneReady && (revealMode !== "gated" || curtainRevealed)
     );
   });
 
@@ -712,14 +817,18 @@
   }
 
   $effect(() => {
-    if (initialRevealMode === "streaming") {
+    if (useUnreal || (revealMode !== "gated" && webMotionReady)) {
       if (heldForSceneLoad) synchronizeSceneLoadingPlayback(true);
       heldForSceneLoad = false;
       return;
     }
     const transition = sceneLoadingPlaybackTransition({
-      sceneReady: sceneReady && environmentSettled,
-      hasLiveScene: workerHostExact && sceneReady && workerHasLiveScene,
+      sceneReady:
+        (revealMode !== "gated" || (sceneReady && environmentSettled)) &&
+        webMotionReady,
+      hasLiveScene:
+        sceneReady &&
+        (workerHostExact ? workerHasLiveScene : legacyHasLiveScene),
       isPlaying,
       held: heldForSceneLoad,
     });
@@ -745,7 +854,11 @@
 <div
   class="viewer-3d-canvas"
   data-swipe-block
-  data-renderer-backend={workerHostExact ? "worker" : "legacy"}
+  data-renderer-backend={useUnreal
+    ? "unreal"
+    : workerHostExact
+      ? "worker"
+      : "legacy"}
   onpointerdown={() => (activeCopyPasteViewerId = copyPasteViewerId)}
 >
   {#if canRenderScene}
@@ -754,8 +867,20 @@
          bar never covers the scene. The loading curtain stays parented to the
          root so it still covers the transport during the scene-load hold. -->
     <div class="stage-area">
-      {#if renderEmptyScene || canvasMountReady || initialRevealMode === "streaming"}
-        {#if workerHostExact && workerEnvironment && sequenceData}
+      {#if useUnreal || renderEmptyScene || canvasMountReady || revealMode === "streaming" || buildOpening === true}
+        {#if useUnreal}
+          <UnrealComposerScene
+            {sequenceData}
+            {currentStep}
+            {isPlaying}
+            {bpm}
+            {performerSteps}
+            {performerStepOffsets}
+            {visiblePerformerCount}
+            {leftPropType}
+            {rightPropType}
+          />
+        {:else if workerHostExact && workerEnvironment && sequenceData}
           <WorkerViewer3DScene
             environment={workerEnvironment}
             {sequenceData}
@@ -804,6 +929,15 @@
               onSample={onPerformanceSample}
             />
             <Viewer3DCanvasRef {onRendererReady} />
+            {#if buildingIn}
+              <SceneBuildIn
+                environmentId={viewer3DState.environmentId}
+                onStageShown={() => (buildStageShown = true)}
+                onPhaseChange={(phase) => {
+                  if (phase === "done") buildInDone = true;
+                }}
+              />
+            {/if}
             <!-- Reads the legs every host in the app puts on screen. Renders
                nothing, and does not run at all unless the instrument was
                asked for with `?gait=1` or window.__gaitProbeEnabled. -->
@@ -816,7 +950,7 @@
               />
               <SceneShaderWarmup
                 onReadyChange={handleRendererReadyChange}
-                waitForAllFeatures={initialRevealMode === "streaming"}
+                waitForAllFeatures={revealMode !== "gated"}
                 cacheKey={shaderWarmupCacheKey}
                 additionalReady={performersReady &&
                   interactivePropsReady &&
@@ -831,6 +965,10 @@
                   fov={cameraFov}
                 />
                 <Viewer3DScene
+                  {performerContactMode}
+                  {prepareWebMotion}
+                  {motionCacheRevision}
+                  onCaptureRequestsChange={handleCaptureRequestsChange}
                   {sequenceData}
                   {currentStep}
                   {isPlaying}
@@ -856,6 +994,7 @@
                   onEnvironmentTransitionChange={handleEnvironmentTransitionChange}
                   onEffectsRuntimeReadyChange={(ready) =>
                     (effectsRuntimeReady = ready)}
+                  arrivePerformers={buildingIn}
                 />
               {/snippet}
               {@render sceneContent()}
@@ -866,7 +1005,30 @@
               {/if}
             {/if}
           </Canvas>
+          {#if prepareWebMotion && webCaptureRequests}
+            <WebComposerMotionPreparation
+              requests={webCaptureRequests}
+              cacheRevision={motionCacheRevision}
+              onCacheChange={() => {
+                motionCacheRevision += 1;
+              }}
+            />
+          {/if}
         {/if}
+      {/if}
+      <!-- The Unreal stream brings its own picture; the stand-in only bridges
+           to the web scene's first frame. -->
+      {#if buildOpening === true && !buildCoverGone && !useUnreal}
+        <ScenePreparationSurface
+          --leave-scale="1"
+          --leave-stage="var(--duration-normal)"
+          statusText="Opening 3D"
+          session={null}
+          environmentId={viewer3DState.environmentId}
+          bare
+          leaving={buildStageShown || buildInDone}
+          onLeft={() => (buildCoverGone = true)}
+        />
       {/if}
       {#if sequenceData && !hideOverlays}
         {#await loadSceneAudioPlayer() then { default: SceneAudioPlayer }}
@@ -886,7 +1048,7 @@
         {/if}
       {/if}
     </div>
-    {#if sequenceData && initialRevealMode === "gated"}
+    {#if !useUnreal && sequenceData && revealMode === "gated"}
       <SceneLoadingCurtain
         environmentId={viewer3DState.environmentId}
         title={getSequenceDisplayName(sequenceData)}
@@ -901,11 +1063,23 @@
     {#if sequenceData && !hideOverlays}
       <div class="timeline-anchor">
         {#await loadUnifiedTimeline() then { default: UnifiedTimeline }}
-          <UnifiedTimeline playback={playbackAdapter} />
+          <!-- The tempo panel takes the viewer's one popover slot, so opening
+               it closes the scene rail's panel and the rail closes it. -->
+          <UnifiedTimeline
+            playback={playbackAdapter}
+            bind:popoverOpen={
+              () => viewer3DState.activePopover === "tempo",
+              (open) => {
+                if (open) viewer3DState.openPopover("tempo");
+                else if (viewer3DState.activePopover === "tempo")
+                  viewer3DState.closePopover();
+              }
+            }
+          />
         {/await}
       </div>
     {/if}
-  {:else if initialRevealMode === "gated"}
+  {:else if revealMode === "gated"}
     <div class="viewer-3d-loading">Loading 3D viewer...</div>
   {/if}
 

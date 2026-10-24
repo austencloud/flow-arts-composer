@@ -11,7 +11,13 @@
 
   import { T, useTask } from "@threlte/core";
   import { onDestroy, onMount } from "svelte";
-  import { AnimationMixer, LoopRepeat, type Object3D } from "three";
+  import {
+    AnimationMixer,
+    LoopRepeat,
+    type Material,
+    type Mesh,
+    type Object3D,
+  } from "three";
   import { seatedAudienceLoader } from "@austencloud/scene-3d";
 
   interface Props {
@@ -20,9 +26,53 @@
     timeOffset?: number;
     /** Reports when the detailed model and sitting clip are both visible. */
     onReady?: () => void;
+    /**
+     * Fades the figure (0 to 1). The loader's clones share materials with
+     * every other seat, so a figure given an opacity takes its own copies.
+     */
+    opacity?: number;
   }
 
-  const { modelUrl, animationUrl, timeOffset = 0, onReady }: Props = $props();
+  const {
+    modelUrl,
+    animationUrl,
+    timeOffset = 0,
+    onReady,
+    opacity,
+  }: Props = $props();
+
+  let ownMaterials: Material[] | null = null;
+
+  function takeOwnMaterials(root: Object3D): Material[] {
+    const owned: Material[] = [];
+    root.traverse((child) => {
+      const mesh = child as Mesh;
+      if (!mesh.isMesh) return;
+      const copy = (material: Material) => {
+        const own = material.clone();
+        owned.push(own);
+        return own;
+      };
+      mesh.material = Array.isArray(mesh.material)
+        ? mesh.material.map(copy)
+        : copy(mesh.material);
+    });
+    return owned;
+  }
+
+  $effect(() => {
+    if (!scene || opacity === undefined) return;
+    ownMaterials ??= takeOwnMaterials(scene);
+    const fading = opacity < 1;
+    for (const material of ownMaterials) {
+      if (material.transparent !== fading) {
+        material.transparent = fading;
+        material.needsUpdate = true;
+      }
+      material.opacity = opacity;
+    }
+    scene.visible = opacity > 0;
+  });
 
   let scene = $state<Object3D | null>(null);
   let mixer = $state<AnimationMixer | null>(null);
@@ -62,6 +112,7 @@
 
   onDestroy(() => {
     mixer?.stopAllAction();
+    for (const material of ownMaterials ?? []) material.dispose();
   });
 </script>
 

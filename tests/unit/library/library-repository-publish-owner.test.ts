@@ -327,3 +327,63 @@ describe("publish source and collection permission diagnostics", () => {
     ).toContain("refresh-sequence-collection");
   });
 });
+
+describe("refused publish warning (session triage E3/F2)", () => {
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    localStorage.clear();
+    const { resetBlockedPublishWarningsForTest } =
+      await import("#lib/shared/library/services/blocked-publish-policy.js");
+    resetBlockedPublishWarningsForTest();
+    mocks.currentUserId.value = "user-A";
+    mocks.previewReadOnly.value = false;
+    mocks.holdRead.value = false;
+    mocks.sequences.clear();
+    mocks.sequences.set("user-A/seq-1", ownerSequence());
+    mocks.updateDoc.mockResolvedValue(undefined);
+  });
+
+  async function refusedPublish() {
+    const { PublishPermissionError } =
+      await import("#lib/shared/library/services/publish-permission-error.js");
+    return new PublishPermissionError(
+      Object.assign(new Error("denied"), { code: "permission-denied" }),
+      [
+        {
+          step: "write-public-projection",
+          path: "publicSequences/{sequenceId}",
+          operation: "set",
+        },
+      ],
+      "transaction-commit"
+    );
+  }
+
+  function publishWarnings() {
+    return mocks.showUserError.mock.calls.filter(
+      (call) => call[0].context?.action === "public-index-sync"
+    );
+  }
+
+  it("warns once per device when the rules keep refusing the same sequence", async () => {
+    mocks.syncToPublicIndex.mockRejectedValue(await refusedPublish());
+    const repository = makeRepository();
+
+    await expect(repository.publishSequence("seq-1")).rejects.toThrow();
+    await expect(repository.publishSequence("seq-1")).rejects.toThrow();
+
+    expect(publishWarnings()).toHaveLength(1);
+  });
+
+  it("still warns on every transient failure", async () => {
+    mocks.syncToPublicIndex.mockRejectedValue(
+      Object.assign(new Error("offline"), { code: "unavailable" })
+    );
+    const repository = makeRepository();
+
+    await expect(repository.publishSequence("seq-1")).rejects.toThrow();
+    await expect(repository.publishSequence("seq-1")).rejects.toThrow();
+
+    expect(publishWarnings()).toHaveLength(2);
+  });
+});

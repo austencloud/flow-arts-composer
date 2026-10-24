@@ -192,7 +192,7 @@
         <div class="identity-info">
           <span class="identity-name">{displayName}</span>
           {#if email}
-            <span class="identity-email">{email}</span>
+            <span class="identity-email ph-no-capture">{email}</span>
           {/if}
         </div>
         <i class="fas fa-chevron-right identity-chevron" aria-hidden="true"></i>
@@ -205,7 +205,7 @@
         <div class="identity-info">
           <span class="identity-name">{displayName}</span>
           {#if email}
-            <span class="identity-email">{email}</span>
+            <span class="identity-email ph-no-capture">{email}</span>
           {/if}
         </div>
       </div>

@@ -29,6 +29,12 @@ export interface PerformerContent {
   label?: string;
   description?: string;
   handout?: MuseumDocument;
+  /**
+   * Not placed at all (no figure, collider or examine prompt) until the
+   * figure has a pose of its own. A station with no sequence stands in its
+   * bind pose, a pink T: worse than an empty corner.
+   */
+  withheld?: boolean;
 }
 
 export interface RoomContentMap {
@@ -898,6 +904,9 @@ export const ROOM_CONTENT: Record<string, RoomContentMap> = {
       // DRAFT (2026-09-04, pending Austen's pass). The wax docent by the exit,
       // holding the pamphlet out. It has held it out since 1989.
       "wax-docent": {
+        // Withheld until it can hold the pamphlet out: with no pose it stood
+        // in the Room of Collaboration as a pink T-posed mannequin.
+        withheld: true,
         autoPlay: false,
         label: "Wax Figure · Archive Docent (1989)",
         description:
@@ -921,7 +930,9 @@ export const ROOM_CONTENT: Record<string, RoomContentMap> = {
             "HOW TO VISIT. Walk the wings in order. Read what you like. The " +
               "figures in the cases are performing real sequences; every one of " +
               "them can be read from the card beside it and done by you.\n\n" +
-              "There are three rooms at the end. You may leave from any of them.",
+              "There are three rooms at the end. You may leave from any of them.\n\n" +
+              "If you learn something on the way, bring it to the fire. " +
+              "If you made something of your own, bring that too.",
             "AFTER YOUR VISIT. The gift shop is past the grass. The practice " +
               "staffs on the west shelf are free. The door past the register " +
               "opens onto the Composer with a sequence from this building already " +
@@ -983,8 +994,8 @@ export const ROOM_CONTENT: Record<string, RoomContentMap> = {
           subtitle: "Through the gift shop, into the jam",
           body:
             "THE EXHIBITS ARE CLOSING.\n\n" +
-            "The door ahead opens into the Composer with a sequence from the " +
-            "Archive already loaded.\n\n" +
+            "The door ahead opens into the Composer with what you carry, or a " +
+            "sequence from the Archive, already loaded.\n\n" +
             "PRESS E TO LEAVE",
         },
         sequenceId: "gallery-spiral-seq",

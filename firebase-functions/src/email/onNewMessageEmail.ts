@@ -4,6 +4,7 @@ import {
   createMessageEmail,
   queueUserNotificationEmail,
 } from "./notificationEmailQueue";
+import { unsubscribeSecret } from "./unsubscribeToken";
 
 const db = admin.firestore();
 
@@ -13,6 +14,7 @@ export const onNewMessageEmail = onDocumentCreated(
     retry: true,
     timeoutSeconds: 120,
     memory: "256MiB",
+    secrets: [unsubscribeSecret],
   },
   async (event) => {
     const snapshot = event.data;

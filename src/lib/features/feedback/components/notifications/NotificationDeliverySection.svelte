@@ -45,26 +45,22 @@
     onTogglePreference,
   }: Props = $props();
 
-  const pushReady = $derived(
-    preferences.pushEnabled && pushDeviceState === "ready"
-  );
+  // Push state is this device's own: on, off, or something only this
+  // browser or phone can fix (permission blocked, push unsupported).
+  const pushReady = $derived(pushDeviceState === "ready");
   const pushUnavailable = $derived(
     pushDeviceState === "checking" ||
-      (!preferences.pushEnabled &&
-        (pushDeviceState === "blocked" || pushDeviceState === "unsupported"))
+      pushDeviceState === "blocked" ||
+      pushDeviceState === "unsupported"
   );
   const pushStatusTone = $derived<"on" | "off" | "action" | "warning">(
     pushDeviceState === "blocked" || pushDeviceState === "unsupported"
       ? "warning"
-      : pushDeviceState === "failed"
+      : pushDeviceState === "failed" || pushDeviceState === "setup-required"
         ? "action"
-        : !preferences.pushEnabled
-          ? "off"
-          : pushReady
-            ? "on"
-            : pushDeviceState === "setup-required"
-              ? "action"
-              : "off"
+        : pushReady
+          ? "on"
+          : "off"
   );
   const pushStatusIcon = $derived(
     pushDeviceState === "blocked"
@@ -73,13 +69,11 @@
         ? "fa-ban"
         : pushDeviceState === "failed"
           ? "fa-rotate-right"
-          : !preferences.pushEnabled
-            ? "fa-circle"
-            : pushReady
-              ? "fa-circle-check"
-              : pushDeviceState === "setup-required"
-                ? "fa-arrow-right"
-                : "fa-circle"
+          : pushReady
+            ? "fa-circle-check"
+            : pushDeviceState === "setup-required"
+              ? "fa-arrow-right"
+              : "fa-circle"
   );
 </script>
 

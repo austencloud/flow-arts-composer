@@ -2,6 +2,11 @@ import { describe, expect, it } from "vitest";
 import { PerspectiveCamera, Vector3 } from "three";
 import { frameNativeCamera } from "../../../src/lib/shared/3d/unreal/domain/native-camera-framing";
 
+// 2d926cff16 made the web feet height an explicit argument. Standalone
+// viewers keep the historical origin, feet at web Y = -1.2
+// (UnrealViewerSurface.webFeetY), so native Y = web Y + 1.2.
+const STANDALONE_WEB_FEET_Y = -1.2;
+
 describe("native viewer camera framing", () => {
   it.each([366 / 668, 1, 1430 / 900, 3840 / 1080])(
     "keeps performer and prop bounds inside aspect %s",
@@ -11,7 +16,8 @@ describe("native viewer camera framing", () => {
         { x: 0.1, y: 0.55, z: 0 },
         1.2,
         aspect,
-        50
+        50,
+        STANDALONE_WEB_FEET_Y
       );
       const verticalFov =
         (Math.atan(Math.tan((25 * Math.PI) / 180) / aspect) * 360) / Math.PI;
@@ -38,7 +44,9 @@ describe("native viewer camera framing", () => {
           expect(point.z).toBeLessThan(1);
         }
       }
-      expect(shot.target).toEqual({ x: 0.1, y: 1.2, z: 0 });
+      expect(shot.target.x).toBe(0.1);
+      expect(shot.target.y).toBeCloseTo(0.55 - STANDALONE_WEB_FEET_Y);
+      expect(shot.target.z).toBe(0);
     }
   );
 
@@ -49,14 +57,16 @@ describe("native viewer camera framing", () => {
       target,
       1.2,
       0.55,
-      50
+      50,
+      STANDALONE_WEB_FEET_Y
     );
     const distant = frameNativeCamera(
       { x: 60, y: 0.55, z: 0 },
       target,
       1.2,
       0.55,
-      50
+      50,
+      STANDALONE_WEB_FEET_Y
     );
     expect(distant.position.x).toBeCloseTo(close.position.x);
     expect(distant.position.x - distant.target.x).toBeLessThan(5);
@@ -66,7 +76,8 @@ describe("native viewer camera framing", () => {
 
   it("provides a usable direction for coincident eye and target", () => {
     const point = { x: 3, y: 2, z: -4 };
-    const shot = frameNativeCamera(point, point, 1.2, 1, 50);
+    // Feet at web Y = 0 leaves the target where it was.
+    const shot = frameNativeCamera(point, point, 1.2, 1, 50, 0);
     expect(shot.target).toEqual(point);
     expect(shot.position.x).toBe(point.x);
     expect(shot.position.y).toBe(point.y);

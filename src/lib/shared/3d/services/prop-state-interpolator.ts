@@ -5,7 +5,12 @@
 
 import type { Vector3 } from "three";
 import { MotionType } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
-import { LOCATION_ANGLES } from "#lib/shared/foundation/domain/math-constants.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import {
+  LOCATION_ANGLES,
+  locationRadius,
+  touchesCenter,
+} from "#lib/shared/foundation/domain/math-constants.js";
 import type { PropState3D } from "@austencloud/scene-3d";
 import type { MotionConfig3D } from "../domain/models/motion-data-3d";
 import {
@@ -69,6 +74,35 @@ function interpolateDashPosition(
 
   const radius = Math.sqrt(currentX * currentX + currentY * currentY);
   const centerPathAngle = Math.atan2(currentY, currentX);
+
+  const worldPosition = planeAngleToWorldPosition(
+    config.plane,
+    centerPathAngle,
+    radius * handDistance.toward(config.plane, centerPathAngle)
+  );
+
+  return { worldPosition, centerPathAngle };
+}
+
+/**
+ * A motion with a center end (a hash) runs the straight line between the
+ * center point (radius 0) and its rim end, whatever its path shape. The hand
+ * stays on the rim end's ray, so that end's angle is its direction all the way.
+ */
+function interpolateHashPosition(
+  config: MotionConfig3D,
+  startAngle: number,
+  endAngle: number,
+  progress: number,
+  handDistance: HandDistance
+): { worldPosition: Vector3; centerPathAngle: number } {
+  const centerPathAngle =
+    config.startLocation === GridLocation.CENTER ? endAngle : startAngle;
+  const radius = lerp(
+    locationRadius(config.startLocation),
+    locationRadius(config.endLocation),
+    progress
+  );
 
   const worldPosition = planeAngleToWorldPosition(
     config.plane,
@@ -179,6 +213,25 @@ export function calculatePropState(
     config.rotationPlane ?? config.plane,
     staffRotationAngle
   );
+
+  if (touchesCenter(config.startLocation, config.endLocation)) {
+    const { worldPosition, centerPathAngle } = interpolateHashPosition(
+      config,
+      startCenterAngle,
+      endCenterAngle,
+      progress,
+      handDistance
+    );
+
+    return {
+      plane: config.plane,
+      centerPathAngle,
+      staffRotationAngle,
+      worldPosition: joinedPosition(worldPosition),
+      ...(gridCenter && { gridCenter }),
+      worldRotation,
+    };
+  }
 
   const pathType = resolvePathType(config.motionType, config.pathShape);
 

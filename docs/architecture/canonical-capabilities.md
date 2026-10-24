@@ -547,8 +547,8 @@ its body (seen 2026-10-10: a remounted Studio stuck on "Opening project…").
 `releaseMediaDownload` in `media-composition/services/media-download-release.ts`
 pauses the element, removes its source and calls `load()`. Post Studio's media
 layer, music preview and timing session call it when their element goes. The
-older inline copies in `post-video-color-grade.ts`, `video-source-provider.ts`
-and `SeamlessLoopVideo.svelte` move to it when next touched. Searches: release
+older inline copies in `post-video-color-grade.ts` and
+`SeamlessLoopVideo.svelte` move to it when next touched. Searches: release
 download, stop video download, video teardown, removeAttribute src, HTTP/2
 receive window, stalled fetch, pending request, Opening project.
 

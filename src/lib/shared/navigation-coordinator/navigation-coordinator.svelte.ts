@@ -71,7 +71,6 @@ import {
   type BrowseDestination,
   resolveBrowsePathname,
 } from "../browse/navigation/browse-route-resolver";
-import { browseDestinationPromoted } from "../browse/navigation/visuals-promotion";
 import { captureEvent } from "../analytics/services/posthog";
 import { canAccessPostStudio } from "../sequence-viewer/services/post-studio-access";
 
@@ -234,7 +233,6 @@ export function getAccessibleSectionsForModule(module: ModuleId) {
   if (module === "browse") {
     return baseSections.filter((section: { id: string }) => {
       return (
-        browseDestinationPromoted(section.id) &&
         featureFlagService.canAccessTab("browse", section.id) &&
         isTabAccessible("browse", section.id, accessTier)
       );

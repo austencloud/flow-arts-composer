@@ -110,10 +110,13 @@ describe("WorkspacePlayback layout", () => {
     expect(heightOf(rail)).toBe(0);
   });
 
-  it("leaves the rail out of layout on a player too narrow to ever show it", async () => {
-    const { media, rail, strip } = mount(520 + INSET_X - 1, 636);
-    await expect.poll(() => widthOf(media)).toBeGreaterThan(0);
-    expect(getComputedStyle(rail).display).toBe("none");
-    expect(widthOf(strip)).toBe(0);
+  it("opens the rail under a phone-width player", async () => {
+    // A folded Galaxy Z Fold (368 x 602) gives the player 343 x 406. The rail
+    // was once kept off every player under 520px wide, so no phone had it.
+    const { media, rail, strip } = mount(343 + INSET_X, 406 + INSET_Y);
+    await expect.poll(() => heightOf(rail)).toBeCloseTo(72, 0);
+    expect(getComputedStyle(rail).visibility).toBe("visible");
+    expect(widthOf(strip)).toBeCloseTo(widthOf(media), 0);
+    expect(widthOf(media)).toBeCloseTo(406 - 72 - SEEK, 0);
   });
 });

@@ -37,7 +37,9 @@ requireValue(site.grass?.length >= 20000 && site.groundLife?.length >= 20, 'Miss
 const legacy = ['FirePoi', 'FireHoop', 'Juggler', 'LedFlow'];
 const locomotion = ['Idle', 'Walk', 'Run', 'Jump', 'Fall', 'Land', 'Backward', 'StrafeLeft',
   'StrafeRight', 'RunStrafeLeft', 'RunStrafeRight', 'Ride'];
+const turns = ['TurnLeft', 'TurnRight'];
 const profiles = [...legacy, ...props.flatMap(p => [`P_${p.id}_A`, `P_${p.id}_B`])];
+const requiredAnimations = [...locomotion, ...profiles.map(p => `Flow_${p}`), ...turns];
 const manifest = read('PropMotion/manifest.json');
 requireValue(manifest.schema === 'flow-fest-prop-motion-manifest-v1' && Array.isArray(manifest.clips),
   'Invalid compact motion manifest');
@@ -45,12 +47,17 @@ const manifestMap = indexMotionManifest(manifest);
 requireValue(manifestMap.size === 1376 && manifest.clips.length === 1376,
   `Expected exactly 1376 unique compact clips, found ${manifest.clips.length}`);
 let frameCount = 0;
+let animationReferences = 0;
 for (const character of characters) {
   requireValue(/^[a-z0-9_-]+$/.test(character.id), `Invalid character ID: ${character.id}`);
   const key = character.id.replaceAll('-', '_');
-  for (const motion of [...locomotion, ...profiles.map(p => `Flow_${p}`)])
+  const animationEntries = Object.entries(character.animations ?? {});
+  for (const motion of requiredAnimations)
     requireValue(character.animations?.[motion]?.startsWith(`/Game/FlowFest/Characters/${key}/`),
       `${character.id}: missing native animation ${motion}`);
+  requireValue(animationEntries.length === requiredAnimations.length,
+    `${character.id}: expected ${requiredAnimations.length} native animations, found ${animationEntries.length}`);
+  animationReferences += animationEntries.length;
   for (const profile of profiles) {
     const name = `${key}_${profile}.json`;
     const clip = read(`PropMotion/${name}`);
@@ -83,5 +90,5 @@ for (const character of characters) {
   }
 }
 console.log(JSON.stringify({ status: 'PASS', characters: 16, propFamilies: 41, variants: 71,
-  animationReferences: 1568, familyClips: 1312, compactClips: 1376, checkedFrames: frameCount,
+  animationReferences, familyClips: 1312, compactClips: 1376, checkedFrames: frameCount,
   captureRevision: 'clock-isolated-body-v3', data }, null, 2));

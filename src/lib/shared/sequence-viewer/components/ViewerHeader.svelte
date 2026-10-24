@@ -14,8 +14,9 @@
   import { deriveHeaderPatternGlyphs } from "#lib/shared/foundation/domain/sequence-patterns/header-pattern-glyphs.js";
   import { deriveTurnLabel } from "#lib/shared/foundation/domain/sequence-patterns/turn-pattern.js";
   import TkaLabel from "#lib/shared/components/TkaLabel.svelte";
-  import type { ComponentProps } from "svelte";
-  import WordActionMenu from "#lib/shared/choreo-card/components/WordActionMenu.svelte";
+  import WordActionMenu, {
+    type WordActionTrigger,
+  } from "#lib/shared/choreo-card/components/WordActionMenu.svelte";
   import ShareActionMenu from "#lib/shared/share/components/ShareActionMenu.svelte";
   import { resolveSequenceIdentityTitle } from "../services/viewer-title";
   import MotionVisibilityToggle from "./MotionVisibilityToggle.svelte";
@@ -106,10 +107,6 @@
     shareStatusMessage?: string;
     onShareActionSelect: (actionId: string) => void;
   }
-
-  type WordActionTrigger = Parameters<
-    ComponentProps<typeof WordActionMenu>["trigger"]
-  >[0];
 
   let {
     ctx,

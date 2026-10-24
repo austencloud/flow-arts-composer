@@ -325,7 +325,7 @@ The component remains the sole markup and CSS owner. See the shipped Sequence Ac
 
 | Extracted module | Lines | Contents |
 |---|---|---|
-| `services/animation-visibility-migrations.ts` | ~100 | migrateStoredSettings(parsed) pure function. |
+| `services/animation-visibility-migrations.ts` (not built; removed as dead code 2026-10-22) | ~100 | migrateStoredSettings(parsed) pure function. |
 | `services/led-settings-section.ts` | ~140 | 12 LED-specific methods as a helper class. |
 
 ## Guidelines

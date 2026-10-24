@@ -42,7 +42,9 @@ export interface CharacterPlaybackHandle {
 // ── Orchestrator bridge (optional) ────────────────────────────────────
 // When provided, seek/play/pause route through the parent orchestrator
 // so the useTask frame loop in Viewer3DScene reads the correct
-// currentStep prop instead of fighting the adapter.
+// currentStep prop instead of fighting the adapter. The orchestrator also
+// owns the displayed playhead: a native scene does not advance the Web
+// character's local frame state.
 
 export interface OrchestratorCallbacks {
   onPlaybackToggle: () => void;
@@ -68,30 +70,25 @@ export function createCharacterPlaybackAdapter(
   tempo?: TempoCallbacks
 ): UnifiedPlaybackContext {
   function totalSteps(): number {
+    const sequenceSteps = orchestrator?.getTotalSteps?.() ?? 0;
+    if (sequenceSteps > 0) return sequenceSteps;
     const characterSteps = getCharacter()?.totalSteps ?? 0;
-    return characterSteps > 0
-      ? characterSteps
-      : (orchestrator?.getTotalSteps?.() ?? 0);
+    return characterSteps;
   }
 
   function currentStep(): number {
+    if (orchestrator?.getCurrentStep) return orchestrator.getCurrentStep();
     const character = getCharacter();
     return character && character.totalSteps > 0
       ? character.currentStepIndex + character.progress
-      : (orchestrator?.getCurrentStep?.() ?? 0);
+      : 0;
   }
 
   return {
     get overallProgress() {
-      const av = getCharacter();
       const steps = totalSteps();
       if (steps <= 0) return 0;
-      if (!av || av.totalSteps <= 0) return currentStep() / steps;
-      return computeOverallProgress3D(
-        av.currentStepIndex,
-        av.progress,
-        av.totalSteps
-      );
+      return currentStep() / steps;
     },
     get currentStep() {
       return totalSteps() > 0 ? Math.floor(currentStep()) + 1 : 0;

@@ -228,7 +228,7 @@ describe("UserActivityAnalytics transitions", () => {
 
     await expect.element(page.getByText("31 steps")).toBeVisible();
     await expect
-      .element(page.getByText("Composer autosave record"))
+      .element(page.getByText("Composer autosave record", { exact: true }))
       .toBeVisible();
     await page.getByRole("button", { name: /Inspect session from/ }).click();
     await expect

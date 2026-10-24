@@ -4,6 +4,7 @@ import {
   getEmailPreferenceForNotificationType,
   queueUserNotificationEmail,
 } from "./notificationEmailQueue";
+import { unsubscribeSecret } from "./unsubscribeToken";
 
 export const onNewNotificationEmail = onDocumentCreated(
   {
@@ -11,6 +12,7 @@ export const onNewNotificationEmail = onDocumentCreated(
     retry: true,
     timeoutSeconds: 60,
     memory: "256MiB",
+    secrets: [unsubscribeSecret],
   },
   async (event) => {
     const snapshot = event.data;

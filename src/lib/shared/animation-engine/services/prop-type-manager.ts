@@ -643,6 +643,16 @@ export class PropTypeManager {
   }
 
   /**
+   * Pin the fan build before an export loads its textures. The per-frame
+   * props.fanAppearance arrives after the one texture load an export does,
+   * so without this the clip draws the viewer's own fan instead.
+   */
+  pinFanAppearance(appearance: FanAppearance | null): void {
+    this.fanAppearanceOverride = appearance;
+    if (appearance) this.fanAppearance = normalizeFanAppearance(appearance);
+  }
+
+  /**
    * Load prop textures (used by both override and settings paths).
    */
   async loadPropTextures(

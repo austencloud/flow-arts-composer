@@ -1,25 +1,33 @@
-import type { World } from "miniplex";
-import type { VillageEntity, LifecyclePhase } from "../../domain/village-types";
-import type { VillageConfig } from "../village-config";
-import {
-	WALK_SPEED_YOUTH,
-	WALK_SPEED_ADULT,
-	WALK_SPEED_ELDER,
-	ARRIVAL_THRESHOLD,
-	COLLISION_AVOIDANCE_RADIUS,
-	COLLISION_REPULSION_STRENGTH,
-} from "../../domain/village-constants";
+import type {
+	AvatarBehaviorState,
+	LifecyclePhase,
+	VillageWorld,
+} from "../../domain/village-types";
+import type { VillageRules } from "../../domain/village-rules";
+import { keepToClearing } from "../../domain/village-campfire";
 
-const PHASE_SPEED: Record<LifecyclePhase, number> = {
-	youth: WALK_SPEED_YOUTH,
-	adult: WALK_SPEED_ADULT,
-	elder: WALK_SPEED_ELDER,
-};
+// Heading in to the seats by the fire, or to stand beside one, rather than
+// keeping to the performers' ring.
+const FIRESIDE_STATES: ReadonlySet<AvatarBehaviorState> = new Set([
+	"retiring",
+	"seated",
+	"attending",
+]);
 
 export class MovementSystem {
-	constructor(private config: VillageConfig) {}
+	private phaseSpeed: Record<LifecyclePhase, number>;
 
-	tick(world: World<VillageEntity>): void {
+	constructor(private rules: VillageRules) {
+		this.phaseSpeed = {
+			youth: rules.movement.speedYouth,
+			adult: rules.movement.speedAdult,
+			elder: rules.movement.speedElder,
+		};
+	}
+
+	tick(world: VillageWorld): void {
+		const movement = this.rules.movement;
+
 		for (const entity of world.entities) {
 			if (entity.social.state === "passing") continue;
 			if (entity.transform.speed === 0) continue;
@@ -28,7 +36,7 @@ export class MovementSystem {
 			const dz = entity.transform.targetZ - entity.transform.z;
 			const dist = Math.sqrt(dx * dx + dz * dz);
 
-			if (dist < ARRIVAL_THRESHOLD) {
+			if (dist < movement.arrivalThreshold) {
 				entity.transform.speed = 0;
 				continue;
 			}
@@ -36,10 +44,7 @@ export class MovementSystem {
 			const nx = dx / dist;
 			const nz = dz / dist;
 
-			// Collision avoidance - steer away from nearby avatars
-			// PERF NOTE: O(N²) per tick (sqrt per pair). Benign at the design
-			// targetPopulation (~6); a spatial-partition broad-phase is the fix if
-			// population grows. Out of audit scope.
+			// Steer away from nearby avatars. O(N²), harmless at village size.
 			let steerX = 0;
 			let steerZ = 0;
 			for (const other of world.entities) {
@@ -47,12 +52,10 @@ export class MovementSystem {
 				const ox = entity.transform.x - other.transform.x;
 				const oz = entity.transform.z - other.transform.z;
 				const oDist = Math.sqrt(ox * ox + oz * oz);
-				if (oDist < COLLISION_AVOIDANCE_RADIUS && oDist > 0.01) {
+				if (oDist < movement.avoidanceRadius && oDist > 0.01) {
 					// Repulsion increases sharply as distance decreases
-					const overlap =
-						(COLLISION_AVOIDANCE_RADIUS - oDist) /
-						COLLISION_AVOIDANCE_RADIUS;
-					const force = overlap * overlap * COLLISION_REPULSION_STRENGTH;
+					const overlap = (movement.avoidanceRadius - oDist) / movement.avoidanceRadius;
+					const force = overlap * overlap * movement.repulsionStrength;
 					steerX += (ox / oDist) * force;
 					steerZ += (oz / oDist) * force;
 				}
@@ -62,22 +65,25 @@ export class MovementSystem {
 			const moveZ = nz + steerZ;
 			const moveMag = Math.sqrt(moveX * moveX + moveZ * moveZ) || 1;
 
-			const phaseSpeed = PHASE_SPEED[entity.lifecycle.phase];
-			// 0.3 per tick base step (3x previous 0.1) for natural walking pace
-			const step = entity.transform.speed * phaseSpeed * 0.3;
+			const step =
+				entity.transform.speed *
+				this.phaseSpeed[entity.lifecycle.phase] *
+				movement.stepPerTick;
 
-			entity.transform.x += (moveX / moveMag) * step;
-			entity.transform.z += (moveZ / moveMag) * step;
-
-			// Arena bounds clamping
-			const currentDist = Math.sqrt(
-				entity.transform.x ** 2 + entity.transform.z ** 2,
+			const kept = keepToClearing(
+				{
+					x: entity.transform.x + (moveX / moveMag) * step,
+					z: entity.transform.z + (moveZ / moveMag) * step,
+				},
+				{ x: entity.transform.targetX, z: entity.transform.targetZ },
+				step,
+				this.rules,
+				FIRESIDE_STATES.has(entity.social.state)
+					? this.rules.campfire.clearRadius
+					: this.rules.campfire.ringInnerRadius,
 			);
-			if (currentDist > this.config.arenaRadius) {
-				const scale = this.config.arenaRadius / currentDist;
-				entity.transform.x *= scale;
-				entity.transform.z *= scale;
-			}
+			entity.transform.x = kept.x;
+			entity.transform.z = kept.z;
 		}
 	}
 }

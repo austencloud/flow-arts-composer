@@ -14,6 +14,7 @@ export function createNativeViewerConnection() {
   let status = $state<"connecting" | "ready" | "disconnected">("connecting");
   let state = $state<NativeViewerState | null>(null);
   let nativeUpdate = $state<NativeViewerState | null>(null);
+  let message = $state("");
   let error = $state("");
   let needsPlay = $state(false);
   let stream: PixelStreaming | null = null;
@@ -112,11 +113,16 @@ export function createNativeViewerConnection() {
     needsPlay = false;
   }
 
-  function scheduleRecovery(message: string, unavailable = false) {
+  function scheduleRecovery(
+    reason: string,
+    unavailable = false,
+    progress = false
+  ) {
     if (!mountedParent) return;
     clearConnection();
     status = unavailable ? "disconnected" : "connecting";
-    error = message;
+    message = progress ? reason : "";
+    error = progress ? "" : reason;
     const delay = Math.min(15000, 1000 * 2 ** Math.min(retryCount++, 4));
     retryTimer = setTimeout(() => {
       retryTimer = null;
@@ -173,13 +179,20 @@ export function createNativeViewerConnection() {
     const current = ++generation;
     activeAttempt = current;
     status = "connecting";
+    message = "Connecting to the Unreal host.";
+    error = "";
     try {
       const host = await ensureHost(current);
       if (current !== generation || !mountedParent) return;
       if (host.status !== "ready") {
-        scheduleRecovery(host.message, host.status === "unavailable");
+        scheduleRecovery(
+          host.message,
+          host.status === "unavailable",
+          host.status === "starting"
+        );
         return;
       }
+      message = "Connecting to the Unreal video and scene.";
       const { Config, PixelStreaming, Flags, TextParameters } =
         await import("@epicgames-ps/lib-pixelstreamingfrontend-ue5.8");
       if (current !== generation || !mountedParent) return;
@@ -238,6 +251,7 @@ export function createNativeViewerConnection() {
             ready = true;
             retryCount = 0;
             status = "ready";
+            message = "";
             error = "";
           })
           .catch((cause: Error) => {
@@ -267,7 +281,9 @@ export function createNativeViewerConnection() {
       connectTimer = setTimeout(() => {
         if (current === generation && !ready) {
           scheduleRecovery(
-            "Waiting for the Unreal video and scene. Reconnecting automatically."
+            "Waiting for the Unreal video and scene. Reconnecting automatically.",
+            false,
+            true
           );
         }
       }, 15000);
@@ -297,6 +313,7 @@ export function createNativeViewerConnection() {
     activeAttempt = 0;
     retryCount = 0;
     status = "connecting";
+    message = "Connecting to the Unreal host.";
     error = "";
     void attemptConnection();
   }
@@ -332,6 +349,7 @@ export function createNativeViewerConnection() {
     nativeUpdate = null;
     retryCount = 0;
     status = "connecting";
+    message = "Connecting to the Unreal host.";
     error = "";
     window.addEventListener("online", onReturn);
     window.addEventListener("pageshow", onReturn);
@@ -345,6 +363,7 @@ export function createNativeViewerConnection() {
   function dispose() {
     mountedParent = null;
     clearConnection();
+    message = "";
     activeAttempt = 0;
     if (livenessTimer) clearInterval(livenessTimer);
     livenessTimer = null;
@@ -365,6 +384,9 @@ export function createNativeViewerConnection() {
     },
     get error() {
       return error;
+    },
+    get message() {
+      return message;
     },
     get needsPlay() {
       return needsPlay;

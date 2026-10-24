@@ -1,9 +1,13 @@
 """Unreal 5.8 editor Python: import every deployed rig and its own motion clips.
 
-Run after prepare-characters.mjs and convert-characters.py. Existing assets are
-left untouched by default; pass --force to replace imports from staged FBX.
+Run after prepare-characters.mjs and convert-characters.py. Existing imports are
+reused with CPU mesh access enabled; pass --force to replace from staged FBX.
+Set FLOW_FEST_CPU_ACCESS_ONLY=1 to update the 16 existing catalog meshes without
+staged files, animation imports, or appearance changes.
 """
 import json
+import hashlib
+import math
 import os
 import subprocess
 import sys
@@ -23,36 +27,66 @@ def performance_contract(command, **paths):
 
 
 STAGED = Path(os.environ.get('FLOWFEST_STAGED', PROJECT / 'Tools' / 'staged' / 'Characters')).resolve()
-MANIFEST = json.loads((STAGED / 'imports.json').read_text(encoding='utf-8'))
+CPU_ACCESS_ONLY = os.environ.get('FLOW_FEST_CPU_ACCESS_ONLY') == '1'
 PERFORMANCE_MANIFEST_FILE = os.environ.get('MUSEUM_PERFORMANCE_MANIFEST')
 PROFILES_ONLY = bool(PERFORMANCE_MANIFEST_FILE)
-PERFORMANCE_MANIFEST = json.loads(Path(PERFORMANCE_MANIFEST_FILE).read_text(encoding='utf-8')) if PROFILES_ONLY else None
-CATALOG = None if PROFILES_ONLY else json.loads((PROJECT / 'Content' / 'Data' / 'characters.json').read_text(encoding='utf-8'))
 FORCE = '--force' in sys.argv or os.environ.get('FLOWFEST_FORCE') == '1'
 CAPTURE_ONLY = os.environ.get('FLOWFEST_CAPTURE_ONLY') == '1'
 LOCOMOTION_ONLY = os.environ.get('FLOWFEST_LOCOMOTION_ONLY') == '1'
+TURNS_ONLY = os.environ.get('FLOWFEST_TURNS_ONLY') == '1'
 FAMILY_ONLY = os.environ.get('FLOWFEST_FAMILY_ONLY') == '1'
 CAPTURE_ID = os.environ.get('FLOWFEST_CAPTURE_ID')
 ALLOW_PARTIAL = os.environ.get('FLOWFEST_ALLOW_PARTIAL') == '1'
-if sum((CAPTURE_ONLY, LOCOMOTION_ONLY, FAMILY_ONLY)) > 1:
-    raise RuntimeError('Choose one import subset: capture-only, locomotion-only, or family-only')
+if CPU_ACCESS_ONLY and any((FORCE, CAPTURE_ONLY, LOCOMOTION_ONLY, TURNS_ONLY, FAMILY_ONLY,
+                            CAPTURE_ID, ALLOW_PARTIAL, PROFILES_ONLY)):
+    raise RuntimeError('CPU access only mode updates all 16 existing meshes and cannot combine with import modes')
+CATALOG = None if PROFILES_ONLY else json.loads((PROJECT / 'Content' / 'Data' / 'characters.json').read_text(encoding='utf-8'))
+MANIFEST = CATALOG if CPU_ACCESS_ONLY else json.loads((STAGED / 'imports.json').read_text(encoding='utf-8'))
+PERFORMANCE_MANIFEST = json.loads(Path(PERFORMANCE_MANIFEST_FILE).read_text(encoding='utf-8')) if PROFILES_ONLY else None
+if sum((CAPTURE_ONLY, LOCOMOTION_ONLY, TURNS_ONLY, FAMILY_ONLY)) > 1:
+    raise RuntimeError('Choose one import subset: capture-only, locomotion-only, turns-only, or family-only')
 if ALLOW_PARTIAL and (not FAMILY_ONLY or not CAPTURE_ID):
     raise RuntimeError('FLOWFEST_ALLOW_PARTIAL requires FLOWFEST_FAMILY_ONLY=1 and FLOWFEST_CAPTURE_ID')
 if PROFILES_ONLY:
-    if any((CAPTURE_ONLY, LOCOMOTION_ONLY, FAMILY_ONLY, ALLOW_PARTIAL, CAPTURE_ID)):
+    if any((CAPTURE_ONLY, LOCOMOTION_ONLY, TURNS_ONLY, FAMILY_ONLY, ALLOW_PARTIAL, CAPTURE_ID)):
         raise RuntimeError('Museum profiles cannot combine with FlowFest import subsets')
     if PERFORMANCE_MANIFEST.get('schema') != 'museum-native-performances-v1' or PERFORMANCE_MANIFEST.get('characterId') != 'x-bot' or PERFORMANCE_MANIFEST.get('propId') != 'staff':
         raise RuntimeError('Invalid Museum performance manifest')
     if len(MANIFEST['characters']) != 1 or MANIFEST['characters'][0]['id'] != 'x-bot':
         raise RuntimeError('Museum stage must contain only x-bot')
-TOOLS = u.AssetToolsHelpers.get_asset_tools()
+TOOLS = None if CPU_ACCESS_ONLY else u.AssetToolsHelpers.get_asset_tools()
 ED = u.EditorAssetLibrary
-u.SystemLibrary.execute_console_command(None, 'Interchange.FeatureFlags.Import.FBX 0')
+if not CPU_ACCESS_ONLY:
+    u.SystemLibrary.execute_console_command(None, 'Interchange.FeatureFlags.Import.FBX 0')
 
 if not PROFILES_ONLY and (len(MANIFEST['characters']) != 16 or len(CATALOG['characters']) != 16):
     raise RuntimeError('Character catalog must contain exactly 16 deployed rigs')
 if not PROFILES_ONLY and [x['id'] for x in MANIFEST['characters']] != [x['id'] for x in CATALOG['characters']]:
     raise RuntimeError('Staged and packaged character catalogs disagree')
+if CPU_ACCESS_ONLY and len({x['id'] for x in CATALOG['characters']}) != 16:
+    raise RuntimeError('CPU access only mode requires 16 distinct catalog rigs')
+if TURNS_ONLY and (set(MANIFEST['animations']) & {'TurnLeft', 'TurnRight'} != {'TurnLeft', 'TurnRight'} or CAPTURE_ID):
+    raise RuntimeError('Turn import requires both staged clips and the complete 16-rig catalog')
+
+
+def sha256(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def turn_receipt(character, clip):
+    receipt_file = STAGED / character['key'] / f'A_{clip}.turn.json'
+    fbx_file = STAGED / character['key'] / f'A_{clip}.fbx'
+    receipt = json.loads(receipt_file.read_text(encoding='utf-8'))
+    if (receipt.get('schema') != 'flowfest-native-turn-retarget-v1' or
+            receipt.get('characterId') != character['id'] or receipt.get('clip') != clip or
+            receipt.get('fbxSha256') != sha256(fbx_file) or
+            receipt.get('decodedRigSha256') != sha256(STAGED / f'{character["key"]}.glb') or
+            receipt.get('sourceSha256') != sha256(Path(MANIFEST['animationSource']) / MANIFEST['animations'][clip]) or
+            receipt.get('converterSha256') != sha256(HERE / 'convert-characters.py') or
+            receipt.get('source') != character['turns'][clip] or
+            receipt.get('frameCount') != character['turns'][clip]['frameCount']):
+        raise RuntimeError(f'{character["id"]}/{clip}: stale or mismatched turn conversion receipt')
+    return receipt
 
 
 def import_task(filename, folder, name, options, force=False):
@@ -279,15 +313,27 @@ def bind_appearance(character, mesh):
 
 imported_count = 0
 imported_family_profiles = 0
+imported_turns = 0
 for character in MANIFEST['characters']:
     if CAPTURE_ID and character['id'] != CAPTURE_ID:
         continue
     key, folder = character['key'], character['folder']
     if character['id'] == 'personal-metaperson':
         raise RuntimeError('Evaluation-only MetaPerson must never enter the native catalog')
-    mesh = ED.load_asset(character['mesh']) if CAPTURE_ONLY or LOCOMOTION_ONLY or FAMILY_ONLY or PROFILES_ONLY else import_task(STAGED / key / f'SK_{key}.fbx', folder, f'SK_{key}', mesh_options())
+    mesh = ED.load_asset(character['mesh']) if CPU_ACCESS_ONLY or CAPTURE_ONLY or LOCOMOTION_ONLY or TURNS_ONLY or FAMILY_ONLY or PROFILES_ONLY else import_task(STAGED / key / f'SK_{key}.fbx', folder, f'SK_{key}', mesh_options())
     if not isinstance(mesh, u.SkeletalMesh):
         raise RuntimeError(f'{character["id"]}: imported asset is not a SkeletalMesh')
+    # The runtime clearance envelope samples bind positions and skin weights.
+    # UE 5.8 stores this flag per LOD; the editor subsystem updates the source
+    # LOD settings and rebuilds render data, including on reused imports.
+    if not TURNS_ONLY:
+        u.get_editor_subsystem(u.SkeletalMeshEditorSubsystem).set_allow_cpu_access(mesh, True)
+        if not ED.save_loaded_asset(mesh):
+            raise RuntimeError(f'{character["id"]}: cannot persist CPU-accessible mesh data')
+    if CPU_ACCESS_ONLY:
+        imported_count += 1
+        u.log(f'FLOWFEST_CPU_ACCESS_ENABLED {character["id"]} {mesh.get_path_name()}')
+        continue
     skeleton = mesh.get_editor_property('skeleton')
     if not skeleton:
         raise RuntimeError(f'{character["id"]}: skeletal mesh has no skeleton')
@@ -303,16 +349,86 @@ for character in MANIFEST['characters']:
             reference_roots[str(bone_name)] = reference_transform
     if len(reference_roots) != 1:
         raise RuntimeError(f'{character["id"]}: expected one metre-to-centimetre reference bone, found {list(reference_roots)}')
-    if not CAPTURE_ONLY and not LOCOMOTION_ONLY and not FAMILY_ONLY and not PROFILES_ONLY:
+    if not CAPTURE_ONLY and not LOCOMOTION_ONLY and not TURNS_ONLY and not FAMILY_ONLY and not PROFILES_ONLY:
         bind_appearance(character, mesh)
     if not CAPTURE_ONLY and not FAMILY_ONLY and not PROFILES_ONLY:
-        for clip in MANIFEST['animations']:
-            animation = import_task(STAGED / key / f'A_{clip}.fbx', folder, f'A_{clip}', animation_options(skeleton))
+        for clip in (('TurnLeft', 'TurnRight') if TURNS_ONLY else MANIFEST['animations']):
+            receipt = turn_receipt(character, clip) if clip in ('TurnLeft', 'TurnRight') else None
+            animation = import_task(STAGED / key / f'A_{clip}.fbx', folder, f'A_{clip}',
+                                    animation_options(skeleton), force=TURNS_ONLY)
             if not isinstance(animation, u.AnimSequence):
                 raise RuntimeError(f'{character["id"]}: A_{clip} is not an AnimSequence')
             if animation.get_editor_property('skeleton') != skeleton:
                 raise RuntimeError(f'{character["id"]}: A_{clip} targets another skeleton')
             restore_reference_scale(animation, reference_roots, character['id'])
+            if receipt:
+                expected_seconds = receipt['durationSeconds']
+                if abs(animation.get_play_length() - expected_seconds) > .05:
+                    raise RuntimeError(f'{character["id"]}/{clip}: native duration {animation.get_play_length()} '
+                                       f'disagrees with measured source {expected_seconds}')
+                model = animation.get_editor_property('data_model_interface')
+                # UE's data model reports sampled frame intervals. The FBX
+                # contains frameCount keyed poses, including both endpoints.
+                native_intervals = model.get_number_of_frames()
+                if native_intervals != receipt['frameCount'] - 1:
+                    raise RuntimeError(f'{character["id"]}/{clip}: native frame intervals {native_intervals} '
+                                       f'disagree with {receipt["frameCount"]} retargeted poses')
+                first_pose = u.AnimationLibrary.get_bone_pose_for_frame(animation, 'Hips', 0, False)
+                last_pose = u.AnimationLibrary.get_bone_pose_for_frame(animation, 'Hips', native_intervals - 1, False)
+                first = first_pose.rotation
+                last = last_pose.rotation
+                native_dot = abs(first.x * last.x + first.y * last.y + first.z * last.z + first.w * last.w)
+                native_angle = math.degrees(2 * math.acos(min(1.0, native_dot)))
+                source_first = receipt['neutralStart']['hipsLocalRotation']
+                source_last = receipt['neutralEnd']['hipsLocalRotation']
+                source_dot = abs(sum(a * b for a, b in zip(source_first, source_last)))
+                source_angle = math.degrees(2 * math.acos(min(1.0, source_dot)))
+                if abs(native_angle - source_angle) > .5:
+                    raise RuntimeError(f'{character["id"]}/{clip}: native hip angle {native_angle:.3f} '
+                                       f'disagrees with retarget {source_angle:.3f} degrees')
+                for label, native_rotation, endpoint in (('start', first, receipt['neutralStart']),
+                                                         ('end', last, receipt['neutralEnd'])):
+                    w, x, y, z = endpoint['rotationsWxyz']['Hips']
+                    # Blender FBX world axes become UE (X, -Y, Z), with the
+                    # corresponding quaternion (-X, Y, -Z, W).
+                    expected_rotation = (-x, y, -z, w)
+                    actual_rotation = (native_rotation.x, native_rotation.y,
+                                       native_rotation.z, native_rotation.w)
+                    orientation_error = math.degrees(2 * math.acos(min(1.0, abs(sum(
+                        actual * expected for actual, expected in zip(actual_rotation, expected_rotation))))))
+                    if orientation_error > .5:
+                        raise RuntimeError(f'{character["id"]}/{clip}: native {label} Hips orientation differs '
+                                           f'from retarget by {orientation_error:.3f} degrees')
+                start_position = receipt['neutralStart']['positionsM']['Hips']
+                end_position = receipt['neutralEnd']['positionsM']['Hips']
+                expected_delta_m = (end_position[0] - start_position[0],
+                                    -(end_position[1] - start_position[1]),
+                                    end_position[2] - start_position[2])
+                native_delta = (last_pose.translation.x - first_pose.translation.x,
+                                last_pose.translation.y - first_pose.translation.y,
+                                last_pose.translation.z - first_pose.translation.z)
+                # FBX stores Hips local translation in centimetres for x-bot
+                # and metres beneath a 100x reference root on Mixamo rigs.
+                # Both produce centimetres at the skeletal component; test
+                # the signed vector in whichever source-local unit was kept.
+                scale, travel_error = min(((scale, math.dist(native_delta,
+                    tuple(value * scale for value in expected_delta_m)) * 100 / scale)
+                    for scale in (1, 100)), key=lambda pair: pair[1])
+                if travel_error > .2:
+                    raise RuntimeError(f'{character["id"]}/{clip}: native Hips travel differs from retarget '
+                                       f'by {travel_error:.3f} cm')
+                if not ED.save_loaded_asset(animation):
+                    raise RuntimeError(f'{character["id"]}/{clip}: native turn could not be saved')
+                turn_details = {
+                    'asset': character['animations'][clip], 'durationSeconds': expected_seconds,
+                    'headingDegrees': receipt['source']['headingDegrees'],
+                    'frameCount': receipt['frameCount'], 'supportWindows': receipt['supportWindows'],
+                    'nativeHipsTranslationUnitsPerMeter': scale,
+                    'neutralStart': receipt['neutralStart'], 'neutralEnd': receipt['neutralEnd'],
+                    'sourceSha256': receipt['sourceSha256'], 'fbxSha256': receipt['fbxSha256']}
+                CATALOG['characters'][imported_count].setdefault('turnRetarget', {})[clip] = turn_details
+                character.setdefault('turnRetarget', {})[clip] = turn_details
+                imported_turns += 1
     if (CAPTURE_ONLY or FAMILY_ONLY) and not character.get('captures'):
         raise RuntimeError(f'{character["id"]}: no staged captures for performance import')
     family_profiles = [profile for profile in character.get('captures', {})
@@ -340,7 +456,7 @@ for character in MANIFEST['characters']:
             expected_museum[profile] = float(duration)
         if set(character.get('captures', {})) != set(expected_museum):
             raise RuntimeError('Museum staged captures disagree with performance manifest')
-    for profile in (() if LOCOMOTION_ONLY else (expected_museum if PROFILES_ONLY else family_profiles if FAMILY_ONLY else character.get('captures', {}))):
+    for profile in (() if LOCOMOTION_ONLY or TURNS_ONLY else (expected_museum if PROFILES_ONLY else family_profiles if FAMILY_ONLY else character.get('captures', {}))):
         if FAMILY_ONLY and not (profile.startswith('P_') and profile.endswith(('_A', '_B'))):
             continue
         name = 'Ride' if profile == 'Ride' else f'Flow_{profile}'
@@ -370,7 +486,7 @@ for character in MANIFEST['characters']:
                                  converter=HERE / 'convert-characters.py')
         if FAMILY_ONLY:
             imported_family_profiles += 1
-    if not PROFILES_ONLY:
+    if not PROFILES_ONLY and not TURNS_ONLY:
         ED.save_loaded_asset(mesh)
         ED.save_loaded_asset(skeleton)
     imported_count += 1
@@ -379,5 +495,11 @@ for character in MANIFEST['characters']:
 if CAPTURE_ID and imported_count != 1 or not CAPTURE_ID and imported_count != (1 if PROFILES_ONLY else 16):
     raise RuntimeError(f'Character import count mismatch: {imported_count}')
 u.log(f'FLOWFEST_CHARACTERS_IMPORTED {imported_count}')
+if CPU_ACCESS_ONLY:
+    u.log(f'FLOWFEST_CPU_ACCESS_SAVED {imported_count}')
 if FAMILY_ONLY:
     u.log(f'FLOWFEST_FAMILY_PROFILES_IMPORTED {imported_family_profiles}')
+if imported_turns:
+    (PROJECT / 'Content' / 'Data' / 'characters.json').write_text(json.dumps(CATALOG, indent=2) + '\n', encoding='utf-8')
+    (STAGED / 'imports.json').write_text(json.dumps(MANIFEST, indent=2) + '\n', encoding='utf-8')
+    u.log(f'FLOWFEST_TURNS_IMPORTED {imported_turns}')

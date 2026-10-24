@@ -9,6 +9,7 @@
   import { flushSync, onMount, onDestroy, tick, type Snippet } from "svelte";
   import {
     PerformerRig,
+    type ContactMode,
     type AvatarGripDiagnostics,
     type AvatarPoseDiagnostics,
     type CollisionEvent,
@@ -77,6 +78,13 @@
     type PerformerPointerInteraction,
   } from "./performer-interaction/performer-pointer-interaction.svelte.js";
   import { resolvePerformerContact } from "../domain/performer-contact-displacement";
+  import CapturedComposerPose from "./CapturedComposerPose.svelte";
+  import {
+    createComposerCaptureRequestMemo,
+    type composerCaptureRequest,
+  } from "../unreal/domain/composer-capture-request";
+  import { getComposerMotionCache } from "../unreal/domain/composer-motion-cache";
+  import { scoreStepToSeconds } from "../unreal/domain/motion-transfer";
   import { resolveGridJoin3D } from "../services/grid-join-3d";
   import { getAvatarSequenceCollisionAudit } from "../collision/avatar-sequence-collision-audit";
   import { getAvatarGripMotionAudit } from "../diagnostics/avatar-grip-motion-audit";
@@ -119,6 +127,8 @@
     /** Stationary stage casts can skip walk, jump, and foot-planting setup. */
     enablePerformerLocomotion?: boolean;
     weldPerformerGrip?: boolean;
+    /** Match the contact solver used by captured native performance. */
+    performerContactMode?: ContactMode;
     /** Explicit ensemble budget for the existing effect renderers. */
     effectQualityTier?: QualityTier;
     /** Per-performer count offsets, sampled against the same shared clock. */
@@ -170,6 +180,13 @@
     ) => void;
     /** Holds shader warmup until the full interactive effects tree is mounted. */
     onEffectsRuntimeReadyChange?: (ready: boolean) => void;
+    prepareWebMotion?: boolean;
+    motionCacheRevision?: number;
+    onCaptureRequestsChange?: (
+      requests: ReturnType<typeof composerCaptureRequest>[]
+    ) => void;
+    /** Performers mounted now fade in once their bodies load (scene build-in). */
+    arrivePerformers?: boolean;
   }
 
   let {
@@ -185,6 +202,7 @@
     enableEffects = true,
     enablePerformerLocomotion = true,
     weldPerformerGrip = false,
+    performerContactMode = "legacy",
     effectQualityTier,
     performerStepOffsets = [],
     performerSteps = null,
@@ -197,6 +215,10 @@
     onPerformerReadinessChange,
     onEnvironmentTransitionChange,
     onEffectsRuntimeReadyChange,
+    prepareWebMotion = false,
+    motionCacheRevision = 0,
+    onCaptureRequestsChange,
+    arrivePerformers = false,
   }: Props = $props();
   // The scene now iterates viewer3DState.performerManager. This compatibility
   // prop can be empty while 3D Studio shows the environment before choreography.
@@ -234,7 +256,9 @@
       if (token === effectsReadyToken) onEffectsRuntimeReadyChange?.(true);
     })();
   }
-  let readyCharacterKeys = $state<Record<string, true>>({});
+  let readyCharactersByPerformer = $state<Record<string, string>>({});
+  const motionCache = getComposerMotionCache();
+  const memoizedCaptureRequest = createComposerCaptureRequestMemo();
   const sceneEffectsCoordinatorModule = enableEffects
     ? import("../effects/scene-effects/SceneEffectsCoordinator3D.svelte")
     : null;
@@ -263,9 +287,9 @@
     performerId: string,
     characterId: string
   ): void {
-    readyCharacterKeys = {
-      ...readyCharacterKeys,
-      [`${performerId}:${characterId}`]: true,
+    readyCharactersByPerformer = {
+      ...readyCharactersByPerformer,
+      [performerId]: characterId,
     };
   }
 
@@ -277,7 +301,7 @@
     return {
       readyCount: performers.filter(
         (performer) =>
-          readyCharacterKeys[`${performer.id}:${performer.characterId}`]
+          readyCharactersByPerformer[performer.id] === performer.characterId
       ).length,
       totalCount: performers.length,
     };
@@ -537,6 +561,60 @@
   const rightBuugengFlipped = $derived(
     viewerSettings?.settings?.rightBuugengFlipped ?? false
   );
+
+  const captureEntries = $derived(
+    performerManager.renderablePerformers.map(({ performer, presencePhase, castIndex }) => {
+      const resolvedLeftProp = resolvePerformerProp(
+        performer,
+        leftPropType,
+        leftPropTypeOverride as PropType | null
+      );
+      const resolvedRightProp = resolvePerformerProp(
+        performer,
+        rightPropType,
+        rightPropTypeOverride as PropType | null
+      );
+      const perfEffect =
+        performer.rawEffect ?? globalTipEffectMap["*"]?.effect ?? "none";
+      const leftEffect = performer.rawHandEffects?.left ?? perfEffect;
+      const rightEffect = performer.rawHandEffects?.right ?? perfEffect;
+      const compatible =
+        presencePhase !== "exiting" &&
+        resolvedLeftProp === resolvedRightProp &&
+        leftEffect === rightEffect;
+      const request = compatible
+        ? memoizedCaptureRequest(
+            performer,
+            sequenceData,
+            resolvedLeftProp,
+            leftEffect,
+            isBuugengFamilyProp(resolvedLeftProp) && leftBuugengFlipped,
+            isBuugengFamilyProp(resolvedRightProp) && rightBuugengFlipped
+          )
+        : null;
+      const supported =
+        performerContactMode === "prop-authoritative" && !!request?.sequence;
+      return {
+        id: performer.id,
+        castIndex,
+        resolvedLeftProp,
+        resolvedRightProp,
+        perfEffect,
+        supported,
+        request,
+      };
+    })
+  );
+  $effect(() => {
+    if (!prepareWebMotion) return;
+    onCaptureRequestsChange?.(
+      captureEntries
+        .filter((entry) => entry.castIndex < performerCount)
+        .flatMap((entry) =>
+          entry.supported && entry.request ? [entry.request] : []
+        )
+    );
+  });
 
   const explicitPlanes = $derived(viewer3DState.visiblePlanes as Set<Plane>);
 
@@ -823,25 +901,26 @@
       {@const performerGridOffset = GRID_OFFSETS[performer.planeMode]}
       {@const propLength = performer.staffLength}
       {@const propBuild = performer.effectivePropBuild}
-      {@const resolvedLeftProp = resolvePerformerProp(
-        performer,
-        leftPropType,
-        leftPropTypeOverride as PropType | null
+      {@const captureEntry = captureEntries.find(
+        (entry) => entry.id === performer.id
       )}
-      {@const resolvedRightProp = resolvePerformerProp(
-        performer,
-        rightPropType,
-        rightPropTypeOverride as PropType | null
-      )}
+      {@const resolvedLeftProp = captureEntry!.resolvedLeftProp}
+      {@const resolvedRightProp = captureEntry!.resolvedRightProp}
       <!-- Per-performer effect cascade: this performer's override, else the
          global default (effects-config wildcard). This is what makes the
          Performer Hub effect selection actually reach the renderer. -->
-      {@const perfEffect =
-        performer.rawEffect ?? globalTipEffectMap["*"]?.effect ?? "none"}
+      {@const perfEffect = captureEntry!.perfEffect}
       <!-- When the two hands run different effects, key the map per prop
          instead of the wildcard. resolveEffect already reads propIndex, so
          prop 0 (blue, left) and prop 1 (red, right) each take their own. -->
       {@const perfTipMap = resolvePerformerTipMap(performer, perfEffect)}
+      {@const captureRequest = captureEntry!.request}
+      {@const capturedPose = (() => {
+        void motionCacheRevision;
+        return captureEntry!.supported && captureRequest
+          ? motionCache.getPose(captureRequest.signature)
+          : undefined;
+      })()}
       {@const performerCurrentStep = resolvePerformerStepSource(
         performerSteps?.[i],
         currentStep,
@@ -855,6 +934,8 @@
         staffLengthM: propLength,
       })}
       {@const upperBodyStance = contact.stance}
+      {@const rigPlaying = renderEntry.presencePhase !== "exiting" &&
+        isPlaying && i < performerCount}
       <PerformerVisualPickTarget
         performerIndex={i}
         register={performerInteraction?.registerVisualPickTarget}
@@ -864,9 +945,20 @@
           performerIndex={i}
           groundOffset={stageGroundOffset}
           presenceProgress={performer.presenceProgress}
+          arrive={arrivePerformers}
         >
           {#snippet children({ onCharacterSwapped, characterOpacity })}
             <PerformerRig
+              retainHiddenProps={!!capturedPose}
+              posePlayback={capturedPose &&
+              readyCharactersByPerformer[performer.id] === performer.characterId
+                ? "captured"
+                : prepareWebMotion && captureEntry!.supported
+                  ? "paused"
+                  : rigPlaying
+                    ? "live"
+                    : "paused"}
+              contactMode={performerContactMode}
               position={performer.position}
               groundOffset={stageGroundOffset}
               facingAngle={performer.facingAngle}
@@ -889,13 +981,15 @@
               {propLength}
               propScale={performer.gridScale}
               {propBuild}
-              isPlaying={renderEntry.presencePhase !== "exiting" &&
-                isPlaying &&
-                i < performerCount}
+              isPlaying={rigPlaying}
               enableLocomotion={enablePerformerLocomotion}
               enableFootPlanting={enablePerformerLocomotion}
               weldGrip={weldPerformerGrip}
-              isMoving={performer.isMoving}
+              isMoving={prepareWebMotion &&
+              captureEntry!.supported &&
+              !capturedPose
+                ? false
+                : performer.isMoving}
               moveSpeed={performer.moveSpeed}
               moveDirection={performer.moveDirection}
               gaitTimingSample={performer.gaitTimingSample}
@@ -996,6 +1090,25 @@
           {/snippet}
         </CharacterSwapTransition>
       </PerformerVisualPickTarget>
+
+      {#if capturedPose && captureRequest?.sequence && readyCharactersByPerformer[performer.id] === performer.characterId}
+        {#key captureRequest.signature}
+          <CapturedComposerPose
+            performerId={performer.id}
+            clip={capturedPose}
+            sampleTime={() => scoreStepToSeconds(
+              captureRequest.sequence!.steps,
+              resolvePerformerStepSource(
+                performerSteps?.[i],
+                viewer3DState.isExporting ? (viewer3DState.exportCurrentStep ?? currentStep) : currentStep,
+                performerStepOffsets[i] ?? 0,
+                performer.totalSteps
+              ),
+              performer.motionStepOffset
+            )}
+          />
+        {/key}
+      {/if}
 
       {#if renderEntry.presencePhase !== "exiting" && viewer3DState.isAllPerformersSelected}
         <T.Mesh

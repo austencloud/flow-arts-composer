@@ -13,6 +13,7 @@ vi.mock("../services/viewer-modes", () => ({
   viewerModeOptions: () => [
     { id: "animation", icon: "fa-play", label: "Animation" },
   ],
+  viewerModeLabel: () => "Animation",
   PRACTICE_OPTION: { label: "Practice", icon: "fa-camera" },
 }));
 

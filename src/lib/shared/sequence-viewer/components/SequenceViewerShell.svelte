@@ -83,6 +83,15 @@
   import DeleteConfirmDialog from "./DeleteConfirmDialog.svelte";
   import PostShareSheet from "#lib/shared/share/components/PostShareSheet.svelte";
   import type { VideoRenderRequest } from "#lib/shared/share/domain/video-opener.js";
+  import { createCardPreviewState } from "#lib/shared/share/state/card-preview-state.svelte.js";
+  import { getSharer } from "#lib/shared/share/get-sharer.js";
+  import { buildArtifactFilename } from "#lib/shared/share/services/post-handoff.js";
+  import {
+    shareBlobNatively,
+    shareOrDownloadBlob,
+    supportsNativeFileShare,
+  } from "#lib/shared/foundation/services/file-downloader.js";
+  import { detectPlatform } from "#lib/shared/mobile/services/platform-detector.js";
   import {
     listRenderedFilms,
     onRenderedFilmsChanged,
@@ -437,6 +446,114 @@
   });
   const canShareNatively =
     typeof navigator !== "undefined" && typeof navigator.share === "function";
+
+  /**
+   * On a phone, Share on the Card view IS the card: one tap opens the system
+   * share sheet with the card file, ready for Instagram or a message. Austen
+   * (2026-10-21): "When I click the share button, shouldn't it just share that
+   * card that I'm looking at right now, open up a native share sheet with the
+   * card ready, go?" Desktop keeps the panel, where a link, an embed and
+   * sending to a friend are the usual reasons to press Share.
+   */
+  let phoneFileShare = $state(false);
+  onMount(() => {
+    phoneFileShare =
+      detectPlatform() !== "desktop" && supportsNativeFileShare();
+  });
+  const sharesCardDirectly = $derived(
+    phoneFileShare && ctx.viewerState.viewerMode === "card"
+  );
+  /**
+   * The card file, drawn ahead while a phone sits on the Card view. A browser
+   * share sheet only opens inside the tap that asked for it, so the file has
+   * to be in hand when Share is pressed rather than rendered after.
+   */
+  const viewerCardFile = createCardPreviewState({
+    getSequence: () => ctx.effectiveSequence ?? sequence,
+    getEnabled: () => sharesCardDirectly,
+    getDarkMode: () => ctx.exportOptions.imageDarkMode,
+    getResolvedAutoLayout: () => ctx.resolvedCardAutoLayout,
+    getCardPresentation: () => cardPresentation.value,
+  });
+  let deliveringCard = $state(false);
+
+  /** The card on screen as a PNG: the drawn-ahead one, or drawn now. */
+  async function currentCardFile(): Promise<Blob | null> {
+    if (viewerCardFile.blob) return viewerCardFile.blob;
+    const current = ctx.effectiveSequence ?? sequence;
+    if (!current) return null;
+    return getSharer().getCardImageBlob(
+      $state.snapshot(current) as SequenceData,
+      {
+        darkMode: ctx.exportOptions.imageDarkMode,
+        resolvedAutoLayout: ctx.resolvedCardAutoLayout,
+        cardPresentation: cardPresentation.value,
+      }
+    );
+  }
+
+  function cardFilename(): string {
+    const current = ctx.effectiveSequence ?? sequence;
+    return buildArtifactFilename(current?.word ?? "", "card");
+  }
+
+  /** Header Share on a phone's Card view: straight to the system sheet. */
+  async function shareCardFromHeader(): Promise<void> {
+    if (deliveringCard) return;
+    captureViewerAndScanAction("share", { source: "card_direct" });
+    deliveringCard = true;
+    try {
+      const blob = await currentCardFile();
+      if (!blob) return;
+      const result = await shareBlobNatively(blob, cardFilename(), {
+        title: simplifyRepeatedWord(
+          (ctx.effectiveSequence ?? sequence)?.word ?? ""
+        ),
+      });
+      // The sheet could not open (a browser that lost the tap while the card
+      // was still drawing): fall back to the panel rather than doing nothing.
+      if (result.status === "unavailable" || result.status === "failed") {
+        share.openPanel();
+      }
+    } catch (error) {
+      console.error("[SequenceViewer] Card share failed", error);
+      toast.error(t("share_failed"));
+    } finally {
+      deliveringCard = false;
+    }
+  }
+
+  function selectHeaderShareAction(actionId: string): void {
+    if (
+      actionId === "share-sequence" &&
+      sharesCardDirectly &&
+      !share.panelOpen
+    ) {
+      void shareCardFromHeader();
+      return;
+    }
+    share.selectAction(actionId);
+  }
+
+  /**
+   * Download on the Card view hands over the card itself: share sheet on a
+   * phone, straight to disk on a desktop. The card's settings live on the Card
+   * view already, so a second screen asking for file type and card settings
+   * only repeated what was on screen.
+   */
+  async function downloadCard(): Promise<void> {
+    if (deliveringCard) return;
+    deliveringCard = true;
+    try {
+      const blob = await currentCardFile();
+      if (blob) await shareOrDownloadBlob(blob, cardFilename());
+    } catch (error) {
+      console.error("[SequenceViewer] Card download failed", error);
+      toast.error(t("share_download_failed"));
+    } finally {
+      deliveringCard = false;
+    }
+  }
   // One playhead for the performance video and the notation beside it. The
   // videos pane picks this up through context rather than three layers of
   // props, and reaches it from the full Videos surface and the split-pane
@@ -690,8 +807,9 @@
    * It used to open the share sheet, which then opened the Export page, whose
    * own button finally rendered: two routes to one file, one of them three
    * steps long. Share is now the only way to the file; the Export page keeps
-   * the settings. 3D hands over its film (below); other views (card, tunnel,
-   * Post Studio) still prepare their file in the share sheet.
+   * the settings. 3D hands over its film (below) and Card hands over the card
+   * (downloadCard); Tunnel and Post Studio still prepare theirs in the share
+   * sheet.
    */
   const shareRendersDirectly = $derived(
     ctx.viewerState.viewerMode === "animation" && ctx.renderMode !== "3d"
@@ -754,6 +872,10 @@
       if (!(await ctx.saveRetainedFilm(film.id))) {
         keptFilms = keptFilms.filter((entry) => entry.id !== film.id);
       }
+      return;
+    }
+    if (ctx.viewerState.viewerMode === "card") {
+      await downloadCard();
       return;
     }
     if (!shareRendersDirectly) {
@@ -1190,7 +1312,7 @@
       sharePanelOpen={share.panelOpen}
       shareActions={share.actions}
       shareStatusMessage={share.statusMessage}
-      onShareActionSelect={share.selectAction}
+      onShareActionSelect={selectHeaderShareAction}
       onOverflowOpenChange={(open, reason) =>
         captureScanAction(
           open ? "overflow_open" : "overflow_close",
@@ -1337,7 +1459,9 @@
               ? "motion"
               : layout.inspectorProfile}
             stackedInspectorSize={share.panelOpen
-              ? "var(--share-inspector-height)"
+              ? share.sendOpen && share.sendSession
+                ? "var(--share-inspector-height)"
+                : "auto"
               : layout.showVideoGallery
                 ? "var(--performance-inspector-height)"
                 : "auto"}
@@ -1698,10 +1822,11 @@
                   {#if share.panelOpen}
                     <div
                       class="share-layer-content"
+                      class:sending={share.sendOpen &&
+                        share.sendSession !== null}
                       out:flyFade={{ y: 0, duration: DURATION.fast }}
                     >
                       <ViewerSharePanel
-                        sequence={ctx.effectiveSequence ?? sequence}
                         subject={shareSubject}
                         downloadLabel={shareDownloadLabel}
                         downloadText={shareDownload.text}
@@ -1716,10 +1841,11 @@
                         interactions.videoBusy
                           ? (interactions.videoProgress?.progress ?? 0)
                           : null}
-                        downloadDisabled={shareRendersDirectly
-                          ? !ctx.canvasReady
-                          : sharesFilm &&
-                            (ctx.sceneTakeActive || ctx.isExporting)}
+                        downloadDisabled={deliveringCard ||
+                          (shareRendersDirectly
+                            ? !ctx.canvasReady
+                            : sharesFilm &&
+                              (ctx.sceneTakeActive || ctx.isExporting))}
                         detailAction={shareDownload.action}
                         onNativeShare={canShareNatively
                           ? share.shareLinkNatively
@@ -1734,6 +1860,8 @@
                           authDrawerState.show("signup", "share-sequence");
                         }}
                         onClose={share.closePanel}
+                        sending={share.sendOpen}
+                        onShowSend={share.showSend}
                       />
                     </div>
                   {/if}
@@ -2548,9 +2676,10 @@
     min-height: 16rem;
   }
 
-  /* Stacked share: the panel docks under the live stage at a height the
-     actions, the list, the note, and Send can share. */
-  .viewer-and-export:not(.desktop) .share-layer > .share-layer-content {
+  /* Stacked share: the choices, and a guest's sign-up prompt, take their own
+     height; the people list docks under the live stage at a height the list,
+     the note, and Send can share. */
+  .viewer-and-export:not(.desktop) .share-layer > .share-layer-content.sending {
     height: var(--share-inspector-height);
     min-height: 18rem;
   }
@@ -2571,7 +2700,7 @@
   @media (min-height: 34.0625rem) {
     .viewer-and-export.studio-stage:not(.desktop)
       .share-layer
-      > .share-layer-content {
+      > .share-layer-content.sending {
       min-height: 12rem;
     }
   }
@@ -2584,7 +2713,9 @@
       min-height: 10rem;
     }
 
-    .viewer-and-export:not(.desktop) .share-layer > .share-layer-content {
+    .viewer-and-export:not(.desktop)
+      .share-layer
+      > .share-layer-content.sending {
       min-height: 10rem;
     }
 

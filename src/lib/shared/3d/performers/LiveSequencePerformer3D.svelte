@@ -12,12 +12,19 @@
     userProportionsState,
   } from "@austencloud/scene-3d";
   import type {
+    PropBuild,
+    PropState3D,
     AvatarGripDiagnostics,
     AvatarPoseDiagnostics,
     CollisionEvent,
+    ScheduledGaitTimingSample,
+    TerminalStepPlan,
+    TurnRequest,
   } from "@austencloud/scene-3d";
   import type { CharacterId } from "#lib/shared/3d/domain/character-model.js";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { EffortId } from "#lib/shared/effort/domain/effort-types.js";
+  import { getSceneUndoManager } from "#lib/shared/3d/undo/get-scene-undo-manager.js";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {
     createCharacterInstanceState,
@@ -27,7 +34,12 @@
   import { type StanceYawTrack } from "#lib/shared/3d/collision/stance-yaw-track.js";
   import type { HardBeatTrack } from "#lib/shared/3d/collision/hard-beat-displacement.js";
   import type { BodyClearanceTrack } from "#lib/shared/3d/collision/body-clearance.js";
-  import { resolvePerformerContact } from "#lib/shared/3d/domain/performer-contact-displacement.js";
+  import type { BodyResponseTrack } from "#lib/shared/3d/collision/body-response.js";
+  import {
+    resolvePerformerContact,
+    type BodyFacingHint,
+  } from "#lib/shared/3d/domain/performer-contact-displacement.js";
+  import { performerScoreClock } from "#lib/shared/3d/domain/performer-score-clock.js";
   import {
     fitStaffLengthForHug,
     measurePerformerReach,
@@ -37,6 +49,11 @@
     DEFAULT_PERFORMER_HAND_DISTANCE,
     type PerformerHandDistance,
   } from "#lib/shared/3d/domain/performer-hand-distance.js";
+  import {
+    captureReachInputs,
+    handDistanceBaseForRig,
+    type CaptureReachInputPolicy,
+  } from "#lib/shared/3d/domain/performer-orbit-fit.js";
   import { QualityTier } from "../effects/types";
   import { buildTipEffectMap } from "#lib/shared/animation-engine/domain/tip-effect-map.js";
   import EffectOrchestrator3D from "#lib/shared/3d/effects/EffectOrchestrator3D.svelte";
@@ -56,7 +73,15 @@
     position: { x: number; y: number; z: number };
     facingAngle: number;
     characterId: CharacterId;
+    capturePlane?: "wall" | "wheel" | "floor";
+    leftPlane?: Plane;
+    rightPlane?: Plane;
+    beatPlaneOverrides?: ReadonlyMap<number, { left?: Plane; right?: Plane }>;
+    effortId?: EffortId;
     propType: PropType;
+    propBuild?: PropBuild;
+    leftPropFlipped?: boolean;
+    rightPropFlipped?: boolean;
     sequence: SequenceData;
     effectId: string;
     effectQualityTier?: "low" | "medium" | "high";
@@ -68,6 +93,33 @@
     enableLocomotion?: boolean;
     enableFootPlanting?: boolean;
     /**
+     * Travel, passed straight to PerformerRig. A host that walks the
+     * performer (an exact-step plan from `beat-travel-plan.ts`) moves
+     * `position` itself and says here how the feet should step. Omit them,
+     * as every standing host does, and the performer stands.
+     */
+    isMoving?: boolean;
+    /** Ground speed in m/s; scales the walk clip so the feet do not skate. */
+    moveSpeed?: number;
+    /** Travel direction in the performer's own frame: +z ahead, +x to their right. */
+    moveDirection?: { x: number; z: number };
+    gaitTimingSample?: ScheduledGaitTimingSample | null;
+    terminalStepPlan?: TerminalStepPlan | null;
+    /**
+     * A host-scheduled stepping turn. Omit it and the rig derives its own
+     * turns from per-beat plane changes; pass null to hold the facing.
+     */
+    turnRequest?: TurnRequest | null;
+    /**
+     * Drive the props from a score instead of the performer's own clock:
+     * one unit is one beat of the sequence, from the start of beat 1, and
+     * wraps round the sequence. The performer plays at `playbackSpeed`
+     * (beats per second; match it to the score) and seeks only when it has
+     * drifted a fifth of a beat from the score. Omit it and the performer
+     * plays on its own.
+     */
+    scoreBeat?: number | null;
+    /**
      * Pin the prop to an explicit length in centimetres instead of the length
      * this body can hold inside its own hug. Omit it — every production host
      * does — and the body-derived fit stands. A comparison surface passes it
@@ -75,12 +127,12 @@
      */
     propLengthCm?: number | null;
     /**
-     * How far each hand sits from its grid center. Omit it, as every
-     * production host does, and the performer keeps its fixed distance. A
-     * comparison surface passes it to show a grid style before a setting can
-     * switch one on (docs/architecture/performer-grid-styles.md).
+     * Effective hand orbit from a live performer. Omit it to use the fixed
+     * base distance, which the rig scales for a joined grid.
      */
     handDistance?: PerformerHandDistance | null;
+    /** Composer capture follows the live viewer's fixed orbit and stance inputs. */
+    captureReachInputPolicy?: CaptureReachInputPolicy;
     /**
      * Scene markers drawn inside the rig's own root group, so they inherit the
      * performer's world position, ground offset, and facing instead of sitting
@@ -88,7 +140,21 @@
      * uses: a group at GRID_OFFSETS[planeMode] around Grid3D.
      */
     gridSlot?: Snippet;
+    /**
+     * "prop-authoritative" (the default) closes every finger onto the prop each
+     * frame. A crowd host can pass "legacy" for performers seen from a
+     * distance: the stock grip, at a small fraction of the cost.
+     */
+    contactMode?: "prop-authoritative" | "legacy";
+    /**
+     * "captured" holds the body exactly where it is and skips its per-frame
+     * pose work; a crowd host passes it for performers who are hidden or are
+     * between their staggered updates. Omit it and the body poses every frame.
+     */
+    posePlayback?: "live" | "paused" | "captured";
     onReady?: () => void;
+    onMotionReady?: () => void;
+    onMotionError?: (message: string) => void;
     /**
      * The planned turn for the loaded sequence, handed out once it exists.
      * Only a lab that draws the curve needs this; the pose itself is already
@@ -109,9 +175,34 @@
     bodyClearance?: "shift" | "step" | null;
     /** The body's planned move for the loaded sequence, once it exists. */
     onBodyClearanceTrack?: (track: BodyClearanceTrack | null) => void;
+    /**
+     * Let the whole body answer its staffs: turn, shift, duck and step
+     * (body-response.ts). Stage-only tonight: no production host sets it, and
+     * it takes over `bodyClearance` where both are set.
+     */
+    bodyResponse?: boolean;
+    /** The facing the body response leans toward; pass a stable function. */
+    facingHint?: BodyFacingHint | null;
+    /** The body response's plan for the loaded sequence, once it exists. */
+    onBodyResponseTrack?: (track: BodyResponseTrack | null) => void;
     /** A study can author one pose directly while retaining this component's
      * production character, hand, grip, and IK ownership. */
     authoredUpperBodyStance?: AuthoredUpperBodyStance | null;
+    /**
+     * Replaces a hand's prop state after contact is resolved, with the
+     * score time it was resolved for (one unit a beat). The hand reaches for
+     * the returned state's position. The real poi page puts the hand where
+     * its string sim says. Omit it, as every production host does, and the
+     * props stay where the score puts them.
+     */
+    propStateOverride?: (
+      side: "left" | "right",
+      prop: PropState3D,
+      scoreTime: number
+    ) => PropState3D;
+    /** False draws no prop meshes; the hands still hold where the props
+     *  are. Defaults to true. */
+    showProps?: boolean;
     onCollisionEvents?: (
       events: CollisionEvent[],
       diagnostics: AvatarPoseDiagnostics,
@@ -147,6 +238,13 @@
   // real lengths. Held rather than re-derived per frame so the prop length and
   // the hug lane stay stable while the arms move.
   let reachMeasurements = $state<PerformerReachMeasurements | null>(null);
+  const captureInputs = $derived(
+    captureReachInputs(
+      props.captureReachInputPolicy ?? "measured",
+      props.handDistance ?? DEFAULT_PERFORMER_HAND_DISTANCE,
+      reachMeasurements
+    )
+  );
   const staffFit = $derived(
     reachMeasurements ? fitStaffLengthForHug(reachMeasurements) : null
   );
@@ -162,6 +260,14 @@
           : userProportionsState.staffLength;
     return baseLength * performerState.gridScale;
   });
+  export function capturePropVisibility(): [boolean, boolean] {
+    return [performerState.showLeft, performerState.showRight];
+  }
+
+  export function captureEffectivePropLengthCm(): number {
+    return propLength * 100;
+  }
+
   const authoredStanceActive = $derived(props.authoredUpperBodyStance != null);
   // Staffs the hands cannot hold from this stance move toward them, radially
   // and in depth, and a seek clears the animator's contact history. A pose
@@ -170,9 +276,29 @@
     resolvePerformerContact(performerState, {
       displace: !authoredStanceActive,
       clearBody: props.bodyClearance != null,
+      bodyResponse: props.bodyResponse === true,
+      facingHint: props.facingHint ?? null,
       staffLengthM: propLength,
-      measurements: reachMeasurements,
+      measurements: captureInputs.measurements,
     })
+  );
+  const leftProp = $derived(
+    props.propStateOverride && contact.leftProp
+      ? props.propStateOverride(
+          "left",
+          contact.leftProp,
+          performerScoreClock(performerState)
+        )
+      : contact.leftProp
+  );
+  const rightProp = $derived(
+    props.propStateOverride && contact.rightProp
+      ? props.propStateOverride(
+          "right",
+          contact.rightProp,
+          performerScoreClock(performerState)
+        )
+      : contact.rightProp
   );
   const stanceTrack = $derived(contact.stanceTrack);
   const upperBodyStance = $derived(contact.stance);
@@ -186,6 +312,7 @@
   const hardBeatTrack = $derived(contact.track);
   const bodyClearanceTrack = $derived(contact.bodyTrack);
   let readyReported = false;
+  let motionReadyReported = false;
 
   /** Deterministic capture seam: one score unit is one production beat. */
   export function seekScore(score: number): void {
@@ -215,11 +342,66 @@
 
   $effect(() => {
     const sequence = props.sequence;
+    const capturePlane = props.capturePlane ?? "wall";
+    const leftPlane = props.leftPlane;
+    const rightPlane = props.rightPlane;
+    const beatPlaneOverrides = props.beatPlaneOverrides;
+    const effortId = props.effortId;
     untrack(() => {
+      getSceneUndoManager().withoutUndo(() => {
+        if (capturePlane === "wheel") {
+          performerState.setPlaneMode(PlaneMode.DUAL_WHEEL);
+        } else if (capturePlane === "floor") {
+          performerState.setHandPlane("left", Plane.FLOOR);
+          performerState.setHandPlane("right", Plane.FLOOR);
+        } else {
+          performerState.setPlaneMode(PlaneMode.WALL);
+        }
+        if (leftPlane) performerState.setHandPlane("left", leftPlane);
+        if (rightPlane) performerState.setHandPlane("right", rightPlane);
+      });
       performerState.loadSequence(sequence);
+      performerState.clearStepPlaneOverrides();
+      getSceneUndoManager().withoutUndo(() => {
+        for (const [step, planes] of beatPlaneOverrides ?? []) {
+          if (planes.left)
+            performerState.setStepHandPlane(step, "left", planes.left);
+          if (planes.right)
+            performerState.setStepHandPlane(step, "right", planes.right);
+        }
+      });
+      if (effortId) performerState.setEffort(effortId, { recordUndo: false });
       performerState.loop = true;
       performerState.speed = props.playbackSpeed ?? 1;
+      if (props.active !== false && props.scoreBeat == null)
+        performerState.play();
+    });
+  });
+
+  $effect(() => {
+    const score = props.scoreBeat;
+    const sequence = props.sequence;
+    if (score == null || !sequence.steps.length) return;
+    untrack(() => {
+      // The performer runs on its own clock at `playbackSpeed` (beats per
+      // second) and is only put back on the score when the two part by more
+      // than a fifth of a beat: a new phrase, a pause, a tempo change. A seek
+      // every frame would rebuild the contact track every frame.
+      const steps = sequence.steps.length;
+      const wrapped = ((score % steps) + steps) % steps;
+      const here =
+        performerState.currentStepIndex -
+        performerState.motionStepOffset +
+        performerState.progress;
+      const apart = Math.abs(here - wrapped);
+      if (Math.min(apart, steps - apart) > 0.2) {
+        performerState.goToStep(
+          performerState.motionStepOffset + Math.floor(wrapped)
+        );
+        performerState.setProgress(wrapped - Math.floor(wrapped));
+      }
       if (props.active !== false) performerState.play();
+      else if (performerState.isPlaying) performerState.pause();
     });
   });
 
@@ -227,6 +409,8 @@
     const phase = props.phaseOffsetSteps;
     const sequence = props.sequence;
     untrack(() => {
+      // A scored performer is placed by the score, not by a start phase.
+      if (props.scoreBeat != null) return;
       if (phase == null) {
         performerState.goToStep(0);
       } else if (sequence.steps.length > 0) {
@@ -245,15 +429,23 @@
   });
 
   $effect(() => {
-    const next = props.handDistance ?? DEFAULT_PERFORMER_HAND_DISTANCE;
-    untrack(() => performerState.setHandDistance(next));
+    const next = captureInputs.hands;
+    const base = handDistanceBaseForRig(
+      next,
+      performerState.gridScale,
+      props.handDistance != null
+    );
+    untrack(() => performerState.setHandDistance(base));
   });
 
   $effect(() => {
     const active = props.active !== false;
     const speed = props.playbackSpeed ?? 1;
+    const scored = props.scoreBeat != null;
     untrack(() => {
       performerState.speed = speed;
+      // A scored performer starts and stops with its score (above).
+      if (scored) return;
       if (active) performerState.play();
       else performerState.pause();
     });
@@ -274,26 +466,45 @@
     props.onBodyClearanceTrack?.(track);
   });
 
+  $effect(() => {
+    const track = contact.bodyResponseTrack;
+    props.onBodyResponseTrack?.(track);
+  });
+
   onDestroy(() => performerState.destroy());
 </script>
 
 <PerformerRig
+  contactMode={props.contactMode ?? "prop-authoritative"}
+  posePlayback={props.posePlayback ?? "live"}
   position={{ x: props.position.x, z: props.position.z }}
   facingAngle={props.facingAngle}
-  planeMode={PlaneMode.WALL}
+  planeMode={performerState.planeMode}
   avatarState={performerState}
   avatarId={props.characterId}
   showGrid={props.gridSlot != null}
-  visiblePlanes={new Set([Plane.WALL])}
+  visiblePlanes={new Set([
+    performerState.effectiveLeftPlane,
+    performerState.effectiveRightPlane,
+  ])}
   bluePropType={toScenePropType(props.propType)}
   redPropType={toScenePropType(props.propType)}
-  bluePropState={contact.leftProp}
-  redPropState={contact.rightProp}
+  propBuild={props.propBuild}
+  bluePropFlipped={props.leftPropFlipped ?? false}
+  redPropFlipped={props.rightPropFlipped ?? false}
+  bluePropState={leftProp}
+  redPropState={rightProp}
   pairSeparation={!contact.planned}
   contactResetKey={contact.resetKey}
   groundOffset={rigGroundOffset}
   enableLocomotion={props.enableLocomotion ?? true}
   enableFootPlanting={props.enableFootPlanting ?? true}
+  isMoving={props.isMoving ?? false}
+  moveSpeed={props.moveSpeed ?? 0}
+  moveDirection={props.moveDirection}
+  gaitTimingSample={props.gaitTimingSample ?? null}
+  terminalStepPlan={props.terminalStepPlan ?? null}
+  turnRequestOverride={props.turnRequest}
   weldGrip={props.weldGrip ?? false}
   {propLength}
   propScale={performerState.gridScale}
@@ -307,11 +518,25 @@
   redHandDepthOffset={authoredStanceActive
     ? 0
     : upperBodyStance.rightDepthOffsetM}
-  bodyOffset={props.bodyClearance ? contact.bodyOffset : null}
-  bodyOffsetPlantFeet={props.bodyClearance !== "step"}
+  bodyOffset={props.bodyResponse || props.bodyClearance
+    ? contact.bodyOffset
+    : null}
+  bodyOffsetPlantFeet={props.bodyResponse || props.bodyClearance !== "step"}
+  {...{
+    // `bodyFeet` arrives with the pending scene-3d patch
+    // (patches/@austencloud__scene-3d@0.1.6.patch); spread so this compiles
+    // against the committed patch until then.
+    bodyFeet: contact.bodyFeet,
+  } as object}
+  retainHiddenProps={true}
+  bluePropVisible={performerState.showLeft}
+  redPropVisible={performerState.showRight}
   showEffects={props.showEffects ?? true}
+  showProps={props.showProps ?? true}
   {tipEffectMap}
-  isPlaying={performerState.isPlaying}
+  isPlaying={props.scoreBeat != null
+    ? props.active !== false
+    : performerState.isPlaying}
   onCollisionEvents={(events, diagnostics, gripDiagnostics) => {
     captureReach(diagnostics);
     props.onCollisionEvents?.(events, diagnostics, gripDiagnostics);
@@ -322,9 +547,19 @@
     // skeleton, so the held measurement — and the prop length derived from
     // it — has to be taken again against the rig that just loaded.
     reachMeasurements = null;
-    if (readyReported) return;
-    readyReported = true;
-    props.onReady?.();
+    if (!readyReported) {
+      readyReported = true;
+      props.onReady?.();
+    }
+  }}
+  onAvatarMotionReady={(_avatarId, error) => {
+    if (motionReadyReported) return;
+    if (error) {
+      props.onMotionError?.(error);
+      return;
+    }
+    motionReadyReported = true;
+    props.onMotionReady?.();
   }}
 >
   {#snippet effectsSlot({
@@ -338,8 +573,8 @@
   })}
     {#if props.showEffects !== false}
       <EffectOrchestrator3D
-        leftPropState={bluePropState}
-        rightPropState={redPropState}
+        leftPropState={performerState.showLeft ? bluePropState : null}
+        rightPropState={performerState.showRight ? redPropState : null}
         leftPropType={toScenePropType(props.propType)}
         rightPropType={toScenePropType(props.propType)}
         {isPlaying}

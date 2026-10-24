@@ -60,7 +60,9 @@ describe("OptionPickerContent desktop layout", () => {
     const tabsBounds = tabs.element().getBoundingClientRect();
     const infoBounds = info.element().getBoundingClientRect();
     expect(headerBounds.height).toBeGreaterThanOrEqual(44);
-    expect(headerBounds.height).toBeLessThanOrEqual(48);
+    // Full 44px letter-type tabs inside the control's 3px padding and border,
+    // plus the header's own padding and border: 44 + 8 + 4.
+    expect(headerBounds.height).toBeLessThanOrEqual(56);
     expect(settingsBounds.right).toBeLessThanOrEqual(tabsBounds.left);
     expect(tabsBounds.right).toBeLessThanOrEqual(infoBounds.left);
     expect(

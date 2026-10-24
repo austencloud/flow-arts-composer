@@ -1,0 +1,22 @@
+[
+	{
+		"type": "teaching:started",
+		"teacherId": "avatar-7",
+		"learnerId": "avatar-11",
+		"sequenceId": "gallery-spiral-seq",
+		"tick": 4400
+	},
+	{
+		"type": "teaching:fumble",
+		"learnerId": "avatar-11",
+		"step": 1,
+		"tick": 4520
+	},
+	{
+		"type": "teaching:completed",
+		"teacherId": "avatar-7",
+		"learnerId": "avatar-11",
+		"sequenceId": "gallery-spiral-seq",
+		"tick": 4586
+	}
+]

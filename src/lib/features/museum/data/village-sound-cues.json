@@ -1,0 +1,21 @@
+{
+	"about": "Sound cues for the Room of Collaboration, keyed to village moments (village/state/village-moments.ts). Levels are relative to the room's ambience bed; times in seconds. Unreal reads this file as-is.",
+	"cues": [
+		{ "moment": "opening:started", "effect": "fire-flare", "level": 0.35, "attack": 0.4, "hold": 0.6, "release": 2.5 },
+		{ "moment": "opening:recognition", "effect": "air-swell", "level": 0.4, "attack": 1.2, "hold": 1.5, "release": 3.5 },
+		{ "moment": "opening:recognition", "effect": "fire-flare", "level": 0.3, "attack": 0.5, "hold": 1, "release": 3 },
+		{ "moment": "opening:passing", "effect": "air-swell", "level": 0.3, "attack": 2, "hold": 2, "release": 5 },
+		{ "moment": "opening:passing", "effect": "fire-gutter", "level": 0.45, "attack": 1.5, "hold": 2, "release": 4 },
+		{ "moment": "passing", "effect": "fire-gutter", "level": 0.25, "attack": 1, "hold": 1, "release": 3 },
+		{ "moment": "seed:lost", "effect": "fire-gutter", "level": 0.6, "attack": 1, "hold": 3, "release": 6 },
+		{ "moment": "seed:lost", "effect": "air-swell", "level": 0.2, "attack": 3, "hold": 1, "release": 5 },
+		{ "moment": "visitor:taught", "effect": "ember-rise", "level": 0.5, "attack": 0.4, "hold": 1.6, "release": 2.5 },
+		{ "moment": "visitor:taught", "effect": "fire-flare", "level": 0.2, "attack": 0.8, "hold": 1.5, "release": 3 },
+		{ "moment": "visitor:passed-on", "effect": "ember-rise", "level": 0.3, "attack": 0.4, "hold": 1, "release": 2 },
+		{ "moment": "visitor:lost", "effect": "ember-fade", "level": 0.5, "attack": 0.5, "hold": 1.5, "release": 4 },
+		{ "moment": "visitor:lost", "effect": "fire-gutter", "level": 0.4, "attack": 1.5, "hold": 2, "release": 4 },
+		{ "moment": "memory:found", "effect": "hearth-breath", "level": 0.4, "attack": 2, "hold": 1.5, "release": 3.5 },
+		{ "moment": "memory:lost", "effect": "ember-fade", "level": 0.4, "attack": 0.5, "hold": 1.5, "release": 4 },
+		{ "moment": "memory:lost", "effect": "fire-gutter", "level": 0.3, "attack": 2, "hold": 2, "release": 5 }
+	]
+}

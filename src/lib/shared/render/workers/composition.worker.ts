@@ -11,6 +11,7 @@ import type {
   CompositionWorkerInMessage,
   CompositionWorkerOutMessage,
   GlyphTransferEntry,
+  WorkerInitStage,
 } from "../services/composition-dispatcher";
 import type { CompositionProgressCallback, RenderCanvas } from "../services/types";
 import type { ImageComposer } from '../services/image-composer';
@@ -82,12 +83,31 @@ function postResult(
 // Init — build the render pipeline inside the worker
 // ---------------------------------------------------------------------------
 
+// Each init stage reports its duration as it finishes, so a worker that never
+// answers still tells the dispatcher how far it got. Two shop visits lost every
+// worker to "init timeout" with nothing recorded about why (2026-10-20/21).
+let initStage: WorkerInitStage = "imports";
+let initStageStart = 0;
+
+function finishInitStage(next: WorkerInitStage | null): void {
+  const now = performance.now();
+  postResult({
+    type: "init-stage",
+    stage: initStage,
+    ms: Math.round(now - initStageStart),
+  });
+  initStageStart = now;
+  if (next) initStage = next;
+}
+
 async function handleInit(
   glyphs: ImageBitmap[],
   glyphMeta: GlyphTransferEntry[],
   bundle: import("../services/card-asset-bundle").AssetBundle,
   overrideBundle: import("../services/override-placement-bundle").OverridePlacementBundle,
 ): Promise<void> {
+  initStage = "imports";
+  initStageStart = performance.now();
   // Dynamic-import the pipeline classes.  If any import fails (e.g. because a
   // transitive dep references `document` or Svelte stores), the error
   // propagates to the dispatcher which falls back to the main thread.
@@ -106,6 +126,7 @@ async function handleInit(
     import("../services/pictograph-key-hasher"),
     import("#lib/shared/composition-root/worker-loop-display-resolver.js"),
   ]);
+  finishInitStage("renderer");
 
   registerWorkerLoopDisplayResolver();
 
@@ -138,6 +159,7 @@ async function handleInit(
     canvas2DRenderer,
     layerCompositor,
   );
+  finishInitStage("seed");
 
   // Seed the singleton SVG caches from the transferred bundle so the worker
   // NEVER calls createImageBitmap(svgBlob) (which fails on the app's SVGs in
@@ -147,12 +169,14 @@ async function handleInit(
   const { seedOverrideResolvers } = await import("../services/seed-override-resolvers");
   seedOverrideResolvers(overrideBundle);
   console.log("[composition.worker] seeded glyphs:", glyphMeta.length, "bundle keys:", bundle.keys.length, "grids:", Object.values(bundle.grids).filter(Boolean).length);
+  finishInitStage("fonts");
 
   // Load Gelasio (metric-compatible Georgia) into the worker FontFaceSet so step
   // labels + footer text match the main thread. local('Georgia') is blocked in
   // workers, so we load the bundled woff2 by URL.
   const { loadGelasioInto } = await import("../services/gelasio-fonts");
   await loadGelasioInto((self as unknown as WorkerGlobalScope & { fonts: FontFaceSet }).fonts);
+  finishInitStage(null);
 
   postResult({ type: "init-done" });
 }
@@ -274,12 +298,14 @@ self.onmessage = (event: MessageEvent<CompositionWorkerInMessage>) => {
 
   switch (msg.type) {
     case "init":
+      // The dispatcher used to ignore an `error` with id -1, so a fast init
+      // failure sat silent until the 15 s timeout fired. It has its own type now.
       handleInit(msg.glyphs, msg.glyphMeta, msg.bundle, msg.overrideBundle).catch((err) => {
-        console.error("[composition.worker] Init failed:", err);
+        console.error(`[composition.worker] Init failed during ${initStage}:`, err);
         postResult({
-          type: "error",
-          id: -1,
-          message: `Init failed: ${err instanceof Error ? err.message : String(err)}`,
+          type: "init-error",
+          stage: initStage,
+          message: err instanceof Error ? err.message : String(err),
         });
       });
       break;
@@ -364,3 +390,8 @@ self.onmessage = (event: MessageEvent<CompositionWorkerInMessage>) => {
     }
   }
 };
+
+// The module has loaded and the router is listening. The dispatcher times init
+// from here as well as from `new Worker`, which separates a slow download of
+// this module from slow init work.
+postResult({ type: "booted" });

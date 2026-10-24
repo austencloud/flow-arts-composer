@@ -1,3 +1,19 @@
+<script lang="ts" module>
+  /** What the trigger snippet receives: the menu's handlers and open state. */
+  export interface WordActionTrigger {
+    copyableWord: string;
+    copied: boolean;
+    isOpen: boolean;
+    onclick: (event: MouseEvent) => void;
+    oncontextmenu: (event: MouseEvent) => void;
+    onpointerdown: (event: PointerEvent) => void;
+    onpointermove: (event: PointerEvent) => void;
+    onpointerup: () => void;
+    onpointercancel: () => void;
+    onpointerleave: () => void;
+  }
+</script>
+
 <script lang="ts">
   import { onDestroy, type Snippet } from "svelte";
   import ContextMenu from "#lib/shared/components/context-menu/ContextMenu.svelte";
@@ -14,19 +30,6 @@
     compressWord,
     simplifyRepeatedWord,
   } from "#lib/shared/foundation/utils/word-simplifier.js";
-
-  interface WordActionTrigger {
-    copyableWord: string;
-    copied: boolean;
-    isOpen: boolean;
-    onclick: (event: MouseEvent) => void;
-    oncontextmenu: (event: MouseEvent) => void;
-    onpointerdown: (event: PointerEvent) => void;
-    onpointermove: (event: PointerEvent) => void;
-    onpointerup: () => void;
-    onpointercancel: () => void;
-    onpointerleave: () => void;
-  }
 
   interface Props {
     word: string;

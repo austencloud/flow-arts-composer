@@ -46,7 +46,11 @@ export function createViewerState(options?: ViewerStateOptions) {
 	const seededSplit = isValidSplitConfig(options?.initialSplit) ? options.initialSplit : undefined;
 
 	let viewerMode = $state<ViewerMode>(initialMode);
-	let exportContext = $state<ExportContext>(deriveInitialExportContext(initialMode));
+	// A shared 3D view opens on the stage. Recording starts only when the viewer
+	// chooses Record a take; otherwise a reloaded link hides the Unreal switch.
+	let exportContext = $state<ExportContext>(
+		seededMode === 'animation-3d' ? null : deriveInitialExportContext(initialMode)
+	);
 	let splitConfig = $state<SplitConfig>(seededSplit ?? loadSplitConfig({ persist }));
 	let videoUploadOpen = $state(false);
 

@@ -18,6 +18,7 @@ export { onNotificationSync } from "./push/onNotificationSync";
 export { onNewMessageEmail } from "./email/onNewMessageEmail";
 export { onNewNotificationEmail } from "./email/onNewNotificationEmail";
 export { onNewVersionEmail } from "./email/onNewVersionEmail";
+export { emailUnsubscribe } from "./email/emailUnsubscribe";
 export {
   pulseUserActivity,
   pulseScanActivity,

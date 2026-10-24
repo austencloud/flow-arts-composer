@@ -13,6 +13,10 @@
  * continuous multi-pass take is wrapped by the evaluator so `(N, N+1]` reads
  * as move 1 of the next pass (index N+1 folds to beat 1, N+2 to beat 2, …).
  *
+ * A vertical carousel (a downloaded video's band beside its animation) is the
+ * same row turned on its side: beats run top to bottom with the tick column
+ * along the band's right edge.
+ *
  * Spotlight sizing/opacity is NOT reimplemented here — `sizeAtDistance` and
  * `opacityAtDistance` call the continuous curves extracted from StepStrip
  * (`strip-window.ts`), so the carousel's neighbor treatment matches the
@@ -57,12 +61,16 @@ export interface BeatCarouselTick {
   state: BeatCarouselTickState;
 }
 
+export type BeatCarouselOrientation = "horizontal" | "vertical";
+
 export interface BeatCarouselLayoutInput {
   rect: BeatCarouselRect;
+  /** Which way the row runs; horizontal unless set. */
+  orientation?: BeatCarouselOrientation;
   /** Arrival-counted carousel position (see file header). Clamped to ≥ 0. */
   position: number;
   beatCount: number;
-  /** Fraction of rect width where the focus cell's center sits. */
+  /** Fraction of the rect's length where the focus cell's center sits. */
   anchor?: number;
   /** Fraction of each `[k, k+1)` interval, at its tail, during which the
    *  track eases toward the next cell so it reaches focus exactly at the
@@ -108,19 +116,41 @@ export function beatCarouselTickRowHeight(rectHeight: number): number {
 }
 
 /**
+ * Swaps a rect's axes. A vertical carousel is laid out and painted in this
+ * swapped space, where its row runs along x like the horizontal one.
+ */
+export function transposeBeatCarouselRect<
+  T extends { width: number; height: number; x?: number; y?: number },
+>(rect: T): T {
+  return {
+    ...rect,
+    x: rect.y,
+    y: rect.x,
+    width: rect.height,
+    height: rect.width,
+  };
+}
+
+/**
  * Focus cell edge length for a `{width, height}` box: `min(0.80 × usable
  * height, 0.62 × width)`, where usable height already excludes the reserved
- * tick row so the hero cell's own cushion never collides with it.
+ * tick row so the hero cell's own cushion never collides with it. A vertical
+ * box measures the same way with its axes swapped.
  */
-export function beatCarouselFocusSize(target: {
-  width: number;
-  height: number;
-}): number {
+export function beatCarouselFocusSize(
+  target: {
+    width: number;
+    height: number;
+  },
+  orientation: BeatCarouselOrientation = "horizontal"
+): number {
+  const box =
+    orientation === "vertical" ? transposeBeatCarouselRect(target) : target;
   const usableHeight = Math.max(
     0,
-    target.height - beatCarouselTickRowHeight(target.height)
+    box.height - beatCarouselTickRowHeight(box.height)
   );
-  return Math.max(0, Math.min(0.8 * usableHeight, 0.62 * target.width));
+  return Math.max(0, Math.min(0.8 * usableHeight, 0.62 * box.width));
 }
 
 /** Wraps any integer beat number into 1..beatCount (e.g. N+1 → 1, 0 → N). */
@@ -197,6 +227,19 @@ function beatTicks(beatCount: number, position: number): BeatCarouselTick[] {
 export function layoutBeatCarousel(
   input: BeatCarouselLayoutInput
 ): BeatCarouselLayout {
+  if (input.orientation !== "vertical") return layoutRow(input);
+  const layout = layoutRow({
+    ...input,
+    rect: transposeBeatCarouselRect(input.rect),
+  });
+  return {
+    ...layout,
+    cells: layout.cells.map((cell) => ({ ...cell, x: cell.y, y: cell.x })),
+  };
+}
+
+/** The horizontal layout; a vertical one runs this in swapped axes. */
+function layoutRow(input: BeatCarouselLayoutInput): BeatCarouselLayout {
   const { rect, beatCount } = input;
   const anchor = clamp01(input.anchor ?? 0.4);
   const slideWindow = clamp01(input.slideWindow ?? 0.18);

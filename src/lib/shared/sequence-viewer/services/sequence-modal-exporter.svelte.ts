@@ -3,6 +3,7 @@ import type {
   VideoExportProgress,
 } from "#lib/shared/compose/domain/video-export-types.js";
 import type { VideoOpenerImage } from "#lib/shared/compose/domain/video-opener-frame.js";
+import type { VideoCarouselPlacement } from "#lib/shared/video-export/domain/video-carousel.js";
 import type { Offline3DExporter } from "#lib/shared/3d/services/offline-3d-exporter.js";
 import type { SequenceRenderer } from "#lib/shared/render/services/sequence-renderer.js";
 import { getSequenceRenderer } from "#lib/shared/render/get-sequence-renderer.js";
@@ -45,6 +46,8 @@ export interface VideoExportOptions {
   rightMotionVisible?: boolean;
   /** An image held at time zero before the animation (2D sequence export). */
   opener?: { image: VideoOpenerImage; holdBeats: number };
+  /** The side of the video that carries the beat carousel (2D sequence export). */
+  carousel?: VideoCarouselPlacement;
   /**
    * "standard" (default): one render per output frame, native resolution.
    * "cinema": 2× supersampling + 4× temporal motion blur. Roughly 4-8×
@@ -264,6 +267,7 @@ export class SequenceModalExporter {
           rightMotionVisible: options.rightMotionVisible,
           openerImage: options.opener?.image,
           openerHoldBeats: options.opener?.holdBeats,
+          carousel: options.carousel,
           // App mode: the offscreen export engine has no settings wiring, so pass
           // the user's chosen prop explicitly. Without it the export renders the
           // default "staff" instead of the live prop.

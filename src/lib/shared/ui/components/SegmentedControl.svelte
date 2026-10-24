@@ -51,7 +51,7 @@
       ...option,
       tone: option.tone ?? color,
       count: null,
-    })),
+    }))
   );
   const tokens = [
     "--ui-surface: var(--theme-card-bg, rgba(255,255,255,.05))",
@@ -61,7 +61,9 @@
     "--ui-focus: var(--theme-accent, #8b6cff)",
     "--ui-accent: var(--theme-accent, #8b6cff)",
     "--ui-segment-selected-bg: var(--theme-accent, #8b6cff)",
-    "--ui-segment-selected-text: var(--theme-text-on-accent, white)",
+    // Every tone selects with a wash over the surface, so the name stays in the
+    // theme's text colour (dark on the light theme), as before the shared control.
+    "--ui-segment-selected-text: var(--segmented-selected-ink, var(--theme-text, white))",
     "--ui-tone-blue-wash: var(--dm-motion-blue-wash, color-mix(in srgb, var(--dm-motion-blue, #3575e2) 25%, var(--theme-card-bg)))",
     "--ui-tone-red-wash: var(--dm-motion-red-wash, color-mix(in srgb, var(--dm-motion-red, #ed1c24) 25%, var(--theme-card-bg)))",
     "--ui-tone-both-wash: var(--dm-motion-both-wash, color-mix(in srgb, var(--dm-motion-blue, #3575e2) 20%, var(--theme-card-bg)))",

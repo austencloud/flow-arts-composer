@@ -21,6 +21,8 @@ vi.mock("#lib/shared/render/get-glyph-cache.js", () => ({
   getGlyphCache: () => ({
     getGlyphDataUrl: (letter: string) =>
       glyphCacheState.loaded.has(letter) ? "/test-glyph.svg" : null,
+    // The test SVG carries no size, so the header falls back to its default.
+    getGlyphAspect: () => null,
     loadGlyphsByLetter: (letters: string[]) => {
       glyphCacheState.loadCalls.push([...letters]);
       glyphCacheState.pendingLetters = [...letters];

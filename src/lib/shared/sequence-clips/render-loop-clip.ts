@@ -29,6 +29,9 @@ import type { EffectType } from "#lib/shared/effects/domain/effects-config.js";
 import { resolveViewingPresentation } from "#lib/shared/sequence-preview/services/viewing-presentation.js";
 import { resolveRecordedPropConfig } from "#lib/shared/foundation/services/recorded-prop-intent.js";
 import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
+import type { TrailSettings } from "#lib/shared/animation-engine/domain/types/trail-types.js";
+import type { AdditionalLayerProps } from "#lib/shared/animation-engine/domain/types/trail-capture-types.js";
 import {
   LOOP_CLIP_FPS,
   LOOP_CLIP_RESOLUTION,
@@ -40,6 +43,18 @@ export interface RenderLoopClipOptions {
   /** Bake with this effect instead of the creator's recorded one (release
    *  examples show one sequence under several effects). */
   effect?: EffectType;
+  /** Settings laid over that effect, such as one of its presets. */
+  effectPatch?: Record<string, unknown>;
+  /** Release scenes: both hands carry this prop instead of the recorded pair. */
+  propType?: PropType;
+  /** Release scenes: the fan build to draw, whatever Settings say. */
+  fanAppearance?: FanAppearance;
+  /** Release scenes: this trail instead of the creator's. */
+  trail?: TrailSettings;
+  /** Release scenes: the tunnel's extra performers at each beat. */
+  layersForBeat?: (beat: number) => AdditionalLayerProps[];
+  /** Release scenes: the bare motion, with no letter, path lines or grid. */
+  bare?: boolean;
 }
 
 export interface RenderedLoopClip {
@@ -87,16 +102,35 @@ function liveTileOverlays() {
   };
 }
 
-function installLook(sequence: SequenceData, effect?: EffectType) {
+const BARE_OVERLAYS = {
+  tkaGlyph: false,
+  elementalGlyph: false,
+  leftPathLines: false,
+  rightPathLines: false,
+  stepNumbers: false,
+  wordHeader: false,
+  progressBar: false,
+};
+
+function installLook(
+  sequence: SequenceData,
+  effect?: EffectType,
+  effectPatch?: Record<string, unknown>,
+  trail?: TrailSettings
+) {
   const look = resolveViewingPresentation(sequence);
   const vm = getAnimationVisibilityManager();
   const effects = createEffectsConfigState(undefined, { persist: false });
   effects.replace(look.effects);
   if (effect) effects.setActiveEffect(effect);
+  // The patch is checked where it is written (a preset's own type); here
+  // it only has to land on the effect it was written for.
+  if (effect && effectPatch)
+    effects.updateEffect(effect as never, effectPatch as never);
   vm.effectsConfigState = effects;
   vm.setDarkMode(true);
   vm.setEffortPreset("linear");
-  animationSettings.updateSettings({ trail: look.trail });
+  animationSettings.updateSettings({ trail: trail ?? look.trail });
   return look;
 }
 
@@ -109,8 +143,15 @@ export async function renderLoopClip(
   // first, so load it explicitly (idempotent, module-cached).
   await import("#lib/shared/composition-root/deferred-registrations.js");
 
-  const look = installLook(sequence, options.effect);
-  const { leftPropType, rightPropType } = loopClipPropPair(sequence);
+  const look = installLook(
+    sequence,
+    options.effect,
+    options.effectPatch,
+    options.trail
+  );
+  const recorded = loopClipPropPair(sequence);
+  const leftPropType = options.propType ?? recorded.leftPropType;
+  const rightPropType = options.propType ?? recorded.rightPropType;
 
   const panelState = createAnimationPanelState();
   const controller = createAnimationPlaybackController();
@@ -147,7 +188,10 @@ export async function renderLoopClip(
         seamlessTrailLoop: true,
         // Progressive MP4: a plain <video loop> plays it; MSE is not needed.
         fragmented: false,
-        overlayOverrides: liveTileOverlays(),
+        overlayOverrides: options.bare ? BARE_OVERLAYS : liveTileOverlays(),
+        gridVisible: !options.bare,
+        additionalLayersForBeat: options.layersForBeat,
+        fanAppearance: options.fanAppearance,
         // The creator's recorded prop colors. The export names this field
         // for the tunnel, but the engine reads it as the exact base pair for
         // props and trails alike (frame-parameter-builder), which is the

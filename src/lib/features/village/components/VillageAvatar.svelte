@@ -1,13 +1,24 @@
 <!--
-  VillageAvatar - Renders one village entity via PerformerRig with props, effects + name label.
+  VillageAvatar - Renders one village entity via PerformerRig with props and effects.
 
-  Hides avatar for a brief loading period, then fades in.
+  The body stays invisible until its model and walk clips are ready
+  (PerformerRig's onAvatarMotionReady), then fades in. A small name label
+  shows only for the selected person or someone close to the camera. A
+  passing avatar fades out over its last moments, after its glow
+  (VillageLineageThreads) has gone out.
+
+  An elder in a chair sits in it (VillageSeatedFigure: the same character
+  playing sitting-idle-b, re-bent to the seat): it takes over from the
+  standing rig once it is ready, and the rig fades out. Its loading starts
+  as they walk to the chair, and if it never loads they stand by the chair
+  as before.
   PerformerRig manages Avatar3D + Prop3D + EffectOrchestrator3D as a
-  coordinated hierarchy. Effect rendering is driven by the entity's effect affinity.
+  coordinated hierarchy. Every field comes from the avatar's latest snapshot
+  entry; prop type and effect look are fixed identity picked at birth.
 -->
 <script lang="ts">
-  import { T, useTask } from "@threlte/core";
-  import { untrack } from "svelte";
+  import { T, useTask, useThrelte } from "@threlte/core";
+  import { Vector3, type Group } from "three";
   import { HTML } from "@threlte/extras";
   import { PerformerRig } from "@austencloud/scene-3d";
   import { userProportionsState } from "@austencloud/scene-3d";
@@ -18,48 +29,101 @@
     EffectType,
   } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
   import type { AvatarRenderState } from "../state/village-state.svelte.js";
-  import type { EffectAffinity } from "../domain/village-types";
+  import { VISITOR_ID } from "../domain/village-types";
   import type { AvatarId } from "@austencloud/scene-3d";
   import { toScenePropType } from "#lib/shared/3d/domain/scene-prop-type.js";
+  import { getVillageContext } from "../state/village-context";
+  import { passingFade, passingWindowSeconds } from "../state/village-passing-fade";
+  import VillageSeatedFigure from "./VillageSeatedFigure.svelte";
+  import { planCampLayout } from "../domain/village-campfire";
+  import { SEATED_AUDIENCE_ANIMATION_URLS } from "#lib/shared/3d/config/seated-audience-assets.js";
+  import { getAvatarModelPath } from "@austencloud/scene-3d/worker";
+  import { repairFadeLeftoverMaterials } from "#lib/shared/3d/performers/avatar-material-repair.js";
 
   interface Props {
     renderState: AvatarRenderState;
     isSelected?: boolean;
-    schoolColor?: string | null;
-    /** Frames to wait for GLTF load before showing avatar. Default 180. */
-    loadFrames?: number;
-    /** Whether to show the floating name label. Default true. Set to false
-     *  when the avatar is far from the camera (e.g. in museum context where
-     *  CSS2D labels would render through walls). */
+    /** Whether a name label may show at all. False where HTML labels would
+     *  render through walls (the museum, from outside the room). */
     showLabel?: boolean;
+    /** Called once, when the body has fully faded in (or a passing person's
+     *  model is ready): the museum holds its loading view until then. */
+    onShown?: () => void;
+    /** The ground the chairs and the people stand on (VillageClearing's
+     *  floorLift). */
+    floorY?: number;
   }
 
   const {
     renderState,
     isSelected = false,
-    schoolColor = null,
-    loadFrames = 180,
     showLabel = true,
+    onShown,
+    floorY = 0,
   }: Props = $props();
 
   const STAGE_LIFT = $derived(-userProportionsState.groundY);
-  const avatarModelId = $derived(
-    renderState.entity.identity.avatarModelId as AvatarId
+  const avatar = $derived(renderState.avatar);
+  const avatarModelId = $derived(avatar.modelId as AvatarId);
+  const avatarName = $derived(avatar.name);
+  const lifecyclePhase = $derived(avatar.phase);
+  const socialState = $derived(avatar.state);
+  // Taking a lesson from the museum visitor: the label says so, and shows
+  // for the whole lesson so the visitor can see whom they are teaching.
+  const learningFromVisitor = $derived(
+    socialState === "learning" && avatar.partnerId === VISITOR_ID
   );
-  const avatarName = $derived(renderState.entity.identity.name);
-  const lifecyclePhase = $derived(renderState.entity.lifecycle.phase);
-  const socialState = $derived(renderState.entity.social.state);
-  const knowledgeGlow = $derived(renderState.entity.lifecycle.knowledgeGlow);
 
   // Visual aging: height scale varies by lifecycle phase
   const heightScale = $derived(
     lifecyclePhase === "youth" ? 0.7 : lifecyclePhase === "elder" ? 0.95 : 1.0
   );
 
-  // Death fade: passing entities lerp opacity to 0
   const isPassing = $derived(socialState === "passing");
-  let deathOpacity = $state(1);
-  const DEATH_FADE_RATE = 0.02; // per frame, ~50 frames to fully fade
+  // In the chair, including passing there.
+  const isSeated = $derived(
+    socialState === "seated" || (isPassing && renderState.wasSeated)
+  );
+  // Load the seated figure while they walk to the chair, so it is ready.
+  const mountSeated = $derived(isSeated || socialState === "retiring");
+  const seatedModelUrl = $derived(getAvatarModelPath(avatarModelId));
+  const SEATED_CLIP_URL = SEATED_AUDIENCE_ANIMATION_URLS[0]!;
+  // The forest campsite's chair (scripts/forest_prop_assets.py,
+  // create_modern_camp_chair): its seat slopes from 0.443 m at the front to
+  // 0.483 m at the back, top of the fabric; where the hips rest it is 0.46 m.
+  const CHAIR_SEAT_TOP = 0.46;
+  // How near a chair's spot the sim must sit them for them to be in it. With
+  // every chair taken it sits them where they stand, on the ground.
+  const CHAIR_MATCH_METERS = 0.6;
+  // Seconds for the rig and the seated figure to cross over.
+  const SEAT_BLEND_SECONDS = 0.4;
+  let seatedReady = $state(false);
+  let seatBlend = $state(0);
+  $effect(() => {
+    if (!mountSeated) seatedReady = false;
+  });
+
+  const villageState = getVillageContext();
+  const chairs = planCampLayout(villageState.rules).seats;
+  // How long the sim keeps a passing avatar at the current speed; the glow
+  // and then the body fade inside it (state/village-passing-fade).
+  const passingWindow = $derived(
+    passingWindowSeconds(
+      villageState.rules.population.passingTicks,
+      villageState.rules.ticksPerSecond,
+      villageState.speed
+    )
+  );
+  let passingSeconds = 0;
+
+  // Seconds to fade the body in once ready.
+  const REVEAL_SECONDS = 0.6;
+
+  // Set by the rig once the model and its locomotion clips are ready (or
+  // failed to load, so a broken asset never leaves a ghost).
+  let motionReady = $state(false);
+  let bodyOpacity = $state(0);
+  let shownReported = false;
 
   let avatarPosition = $state({ x: 0, y: 0, z: 0 });
   let facingAngle = $state(0);
@@ -68,16 +132,32 @@
   let prevX = 0;
   let prevZ = 0;
 
-  // Hide during initial GLTF load to prevent procedural fallback flash.
-  // PerformerRig showAvatar=false prevents rendering while GLTF fetches.
-  // After enough frames for the model to load, switch to visible.
-  let frameCount = 0;
-  let showAvatar = $state(false);
-  let labelOpacity = $state(0);
-  const LOAD_FRAMES = untrack(() => loadFrames);
+  // Once the body is fully in, the scene package can leave some of its
+  // materials in their fade state (avatar-material-repair.ts): the hips and
+  // thighs then vanish behind the shirt. Repaired once the reveal ends, then
+  // on a slow beat, since the package refades whenever the model changes.
+  const REPAIR_EVERY_SECONDS = 2;
+  let bodyRoot = $state.raw<Group | undefined>(undefined);
+  let repairWait = 0;
 
-  useTask(() => {
+  // The body counts as visible once it is mostly faded in; props, effects
+  // and the label wait for it.
+  const bodyVisible = $derived(bodyOpacity > 0.5);
+
+  // Close enough to read a name without asking for it.
+  const NEAR_LABEL_METERS = 4;
+  const { camera } = useThrelte();
+  const labelWorld = new Vector3();
+  let labelAnchor = $state.raw<Group | undefined>(undefined);
+  let isNear = $state(false);
+
+  useTask((delta) => {
     const inst = renderState.instanceState;
+    if (labelAnchor) {
+      labelAnchor.getWorldPosition(labelWorld);
+      const near = labelWorld.distanceTo(camera.current.position) < NEAR_LABEL_METERS;
+      if (near !== isNear) isNear = near;
+    }
     const posX = inst.position.x;
     const posZ = inst.position.z;
 
@@ -90,80 +170,73 @@
     prevX = posX;
     prevZ = posZ;
 
-    avatarPosition = { x: posX, y: STAGE_LIFT, z: posZ };
+    avatarPosition = { x: posX, y: STAGE_LIFT + floorY, z: posZ };
     facingAngle = inst.facingAngle;
 
     // Youth wobble: slight facing angle oscillation for youthful energy
-    if (renderState.entity.lifecycle.phase === "youth") {
+    if (lifecyclePhase === "youth") {
       const wobbleAngle = Math.sin(performance.now() * 0.001 * Math.PI) * 0.05; // ~2.8 degrees
       facingAngle += wobbleAngle;
     }
 
-    // Count frames until we reveal the avatar (GLTF should be loaded by then)
-    if (!showAvatar) {
-      frameCount++;
-      if (frameCount >= LOAD_FRAMES) {
-        showAvatar = true;
-      }
-    } else if (labelOpacity < 1) {
-      labelOpacity = Math.min(1, labelOpacity + 0.04);
+    const seatTarget = isSeated && seatedReady ? 1 : 0;
+    if (seatBlend !== seatTarget) {
+      const step = delta / SEAT_BLEND_SECONDS;
+      seatBlend =
+        seatTarget > seatBlend
+          ? Math.min(1, seatBlend + step)
+          : Math.max(0, seatBlend - step);
     }
 
-    // Death fade
     if (isPassing) {
-      deathOpacity = Math.max(0, deathOpacity - DEATH_FADE_RATE);
+      passingSeconds += delta;
+      bodyOpacity = Math.min(bodyOpacity, passingFade(passingSeconds, passingWindow).body);
+    } else if (motionReady && bodyOpacity < 1) {
+      bodyOpacity = Math.min(1, bodyOpacity + delta / REVEAL_SECONDS);
+    }
+
+    if (!shownReported && motionReady && (bodyOpacity >= 1 || isPassing)) {
+      shownReported = true;
+      onShown?.();
+    }
+
+    if (bodyRoot && bodyOpacity >= 1 && seatBlend === 0) {
+      repairWait -= delta;
+      if (repairWait <= 0) {
+        repairWait = REPAIR_EVERY_SECONDS;
+        repairFadeLeftoverMaterials(bodyRoot);
+      }
     }
   });
 
-  const labelColor = $derived(
-    socialState === "teaching"
-      ? "#4ade80"
-      : socialState === "learning"
-        ? "#60a5fa"
-        : socialState === "performing"
-          ? "#e8a87c"
-          : socialState === "jamming"
-            ? "#e8a87c"
-            : socialState === "seeking"
-              ? "#fbbf24"
-              : socialState === "watching"
-                ? "#fbbf24"
-                : socialState === "mourning"
-                  ? "#ef4444"
-                  : socialState === "passing"
-                    ? "#ef4444"
-                    : "#ffffff"
-  );
-
-  // Phase indicator appended to name
-  const phaseIndicator = $derived(
-    lifecyclePhase === "youth"
-      ? " (y)"
-      : lifecyclePhase === "elder"
-        ? " (e)"
-        : ""
-  );
-
-  // Youth names tinted sage green
-  const nameTint = $derived(
-    lifecyclePhase === "youth" ? "#86efac" : labelColor
-  );
-
-  const propIndicator = $derived(
-    renderState.entity.prop.heldProp
-      ? ` [${renderState.entity.prop.heldProp.propType.charAt(0).toUpperCase()}]`
-      : " [-]"
+  // The chair they sit in, or the ground where they are.
+  const seat = $derived.by(() => {
+    const at = avatarPosition;
+    let nearest: (typeof chairs)[number] | null = null;
+    let best = CHAIR_MATCH_METERS;
+    for (const chair of chairs) {
+      const d = Math.hypot(chair.x - at.x, chair.z - at.z);
+      if (d < best) {
+        best = d;
+        nearest = chair;
+      }
+    }
+    return nearest
+      ? { x: nearest.x, z: nearest.z, facing: nearest.facing, chair: true }
+      : { x: at.x, z: at.z, facing: avatar.facing, chair: false };
+  });
+  // Elders sharing a fire should not breathe in step.
+  const seatedTimeOffset = $derived(
+    [...renderState.entityId].reduce((sum, c) => sum + c.charCodeAt(0), 0) % 7
   );
 
   // Effect rendering: only show during active performance states
   const isActiveForEffects = $derived(
-    socialState === "performing" ||
-      socialState === "practicing" ||
-      socialState === "jamming"
+    socialState === "performing" || socialState === "practicing"
   );
 
-  // Map entity's effect affinity to TipEffectMap
-  const affinityToEffect: Record<EffectAffinity, EffectType> = {
+  // Map the avatar's effect look to TipEffectMap
+  const lookToEffect: Record<string, EffectType> = {
     fire: "fire",
     led: "led",
     charcoal: "charcoal",
@@ -176,13 +249,13 @@
       ? {
           "*": {
             effect:
-              affinityToEffect[renderState.entity.effect.affinity] ?? "none",
+              lookToEffect[avatar.effectLook] ?? "none",
           },
         }
       : {}
   );
 
-  // Map entity's held prop to PropType enum
+  // Map the avatar's prop type to PropType enum
   const propTypeMap: Record<string, PropType> = {
     staff: PropType.STAFF,
     fan: PropType.FAN,
@@ -191,27 +264,23 @@
     torch: PropType.TORCH,
   };
 
-  const propType = $derived(
-    renderState.entity.prop.heldProp
-      ? (propTypeMap[renderState.entity.prop.heldProp.propType] ??
-          PropType.STAFF)
-      : PropType.STAFF
-  );
+  const propType = $derived(propTypeMap[avatar.propType] ?? PropType.STAFF);
 </script>
 
 <!-- Height scaling group. PerformerRig handles Y positioning internally. -->
-<T.Group scale.y={heightScale}>
+<T.Group bind:ref={bodyRoot} scale.y={heightScale}>
   <PerformerRig
     position={{ x: avatarPosition.x, z: avatarPosition.z }}
     {facingAngle}
     planeMode={PlaneMode.WALL}
     avatarState={renderState.instanceState}
     avatarId={avatarModelId}
-    groundOffset={STAGE_LIFT}
-    showAvatar={showAvatar && deathOpacity > 0.01}
+    groundOffset={avatarPosition.y}
+    avatarOpacity={bodyOpacity * (1 - seatBlend)}
+    onAvatarMotionReady={() => (motionReady = true)}
     showGrid={false}
-    showProps={true}
-    showEffects={isActiveForEffects}
+    showProps={bodyVisible && seatBlend < 0.5}
+    showEffects={bodyVisible && isActiveForEffects}
     enableLocomotion={true}
     {isMoving}
     {moveSpeed}
@@ -220,70 +289,55 @@
     redPropType={toScenePropType(propType)}
   />
 
-  <!-- Elder knowledge glow: soft emissive sphere -->
-  {#if lifecyclePhase === "elder" && knowledgeGlow > 0 && showAvatar}
-    <T.Mesh
-      position.x={avatarPosition.x}
-      position.y={avatarPosition.y + 0.3}
-      position.z={avatarPosition.z}
-    >
-      <T.IcosahedronGeometry args={[0.4, 1]} />
-      <T.MeshBasicMaterial
-        color="#f8fafc"
-        transparent
-        opacity={knowledgeGlow * 0.3 * deathOpacity}
-        depthWrite={false}
-      />
-    </T.Mesh>
-  {/if}
-
-  <!-- Name label floating above head -->
-  {#if showLabel && showAvatar && deathOpacity > 0.1}
-    <T.Group
-      position.x={avatarPosition.x}
-      position.y={avatarPosition.y + 0.6}
-      position.z={avatarPosition.z}
-    >
+  <T.Group
+    bind:ref={labelAnchor}
+    position.x={avatarPosition.x}
+    position.y={avatarPosition.y + 0.6}
+    position.z={avatarPosition.z}
+  >
+    {#if showLabel && motionReady && bodyOpacity > 0 && (isSelected || isNear || learningFromVisitor)}
       <HTML center sprite>
-        <div
-          class="name-label"
-          style="color: {nameTint}; opacity: {labelOpacity *
-            deathOpacity}{schoolColor
-            ? `; border-bottom: 2px solid ${schoolColor}; padding-bottom: 1px`
-            : ''}"
-        >
+        <div class="name-label" style:opacity={bodyOpacity}>
           {avatarName}
-          <span class="phase-indicator">{phaseIndicator}</span>
-          {#if lifecyclePhase === "elder"}
-            <span class="state-indicator">🔥</span>
+          {#if learningFromVisitor}
+            <span class="label-note">learning from you</span>
           {/if}
-          <span class="prop-indicator">{propIndicator}</span>
         </div>
       </HTML>
-    </T.Group>
-  {/if}
+    {/if}
+  </T.Group>
 </T.Group>
+
+<!-- Outside the height squash: a sitter is scaled evenly, so the seat fit
+     holds. -->
+{#if mountSeated}
+  <VillageSeatedFigure
+    modelUrl={seatedModelUrl}
+    clipUrl={SEATED_CLIP_URL}
+    {seat}
+    {floorY}
+    seatTop={CHAIR_SEAT_TOP}
+    scale={heightScale}
+    timeOffset={seatedTimeOffset}
+    opacity={bodyOpacity * seatBlend}
+    onReady={() => (seatedReady = true)}
+  />
+{/if}
 
 <style>
   .name-label {
     font-size: var(--font-size-compact, 12px);
-    font-family: monospace;
-    text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+    color: var(--theme-text, #f3efe6);
+    text-shadow: 0 0 6px rgba(0, 0, 0, 0.85);
     white-space: nowrap;
     pointer-events: none;
     user-select: none;
+    text-align: center;
   }
 
-  .phase-indicator {
-    opacity: 0.6;
-  }
-
-  .state-indicator {
-    margin-left: 2px;
-  }
-
-  .prop-indicator {
-    opacity: 0.5;
-    font-size: var(--font-size-compact, 12px);
+  .label-note {
+    display: block;
+    font-style: italic;
+    opacity: 0.8;
   }
 </style>

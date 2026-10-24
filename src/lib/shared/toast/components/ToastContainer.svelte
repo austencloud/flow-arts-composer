@@ -71,7 +71,14 @@
         <div class="toast-content">
           <div class="toast-header">
             <i class="fas {config.icon} toast-icon" aria-hidden="true"></i>
-            <span class="toast-message">{toast.message}</span>
+            {#if toast.detail}
+              <span class="toast-text">
+                <span class="toast-message">{toast.message}</span>
+                <span class="toast-detail">{toast.detail}</span>
+              </span>
+            {:else}
+              <span class="toast-message">{toast.message}</span>
+            {/if}
             {#if toast.action}
               <button
                 class="toast-action accessible-touch-target"
@@ -186,6 +193,21 @@
     color: var(--toast-text, var(--theme-text, white));
     line-height: 1.4;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  }
+
+  .toast-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .toast-detail {
+    font-size: var(--font-size-compact);
+    font-weight: 400;
+    color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
+    line-height: 1.4;
   }
 
   .toast-close {

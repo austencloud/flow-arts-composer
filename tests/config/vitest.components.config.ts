@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { playwright } from "@vitest/browser-playwright";
 import { defineConfig } from "vitest/config";
+import { workspaceResolvePlugins } from "../../scripts/lib/workspace-resolution.mjs";
 import { dispatchRealTouchDrag } from "../helpers/browser-commands/real-touch";
 
 const projectRoot = path.resolve(
@@ -12,7 +13,8 @@ const projectRoot = path.resolve(
 );
 
 export default defineConfig({
-  plugins: [svelte(svelteOptions)],
+  // This checkout's packages/*, not the primary's, in a task worktree.
+  plugins: [svelte(svelteOptions), ...workspaceResolvePlugins(projectRoot)],
 
   // The locale loader's template import prevents Vite's dependency scanner
   // from completing in CI. List the browser suite's runtime dependencies so

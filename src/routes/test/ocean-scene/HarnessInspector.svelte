@@ -20,6 +20,7 @@
     Vector3,
     type Mesh,
     type Object3D,
+    type ToneMapping,
     type WebGLRenderer,
   } from "three";
 
@@ -118,7 +119,7 @@
        * problem from a lighting problem is to change one and look. Recompiles
        * every material, because tone mapping is baked into the shader.
        */
-      grade: (toneMapping: number, exposure = 1) => {
+      grade: (toneMapping: ToneMapping, exposure = 1) => {
         renderer.toneMapping = toneMapping;
         renderer.toneMappingExposure = exposure;
         scene.traverse((o: Object3D) => {

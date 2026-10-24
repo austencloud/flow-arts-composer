@@ -1,0 +1,213 @@
+{
+	"version": 1,
+	"seed": "museum-village",
+	"preset": "museum",
+	"opening": true,
+	"entries": [
+		{
+			"tick": 4600,
+			"type": "teach",
+			"learnerId": "avatar-15",
+			"sequenceId": "visitor-made-3",
+			"x": 5.4,
+			"z": 0.94,
+			"facing": -1.421
+		}
+	],
+	"lastTick": 4800,
+	"sequences": {
+		"visitor-made-3": {
+			"word": "OOY",
+			"colour": "#f2a65a",
+			"stepCount": 3,
+			"steps": [
+				{
+					"id": "museum-OOYGDA-1",
+					"letter": "O",
+					"startPlacement": "gamma3",
+					"endPlacement": "gamma13",
+					"gridMode": "diamond",
+					"motions": {
+						"left": {
+							"motionType": "anti",
+							"rotationDirection": "cw",
+							"startLocation": "n",
+							"endLocation": "w",
+							"turns": 0,
+							"startOrientation": "in",
+							"endOrientation": "out",
+							"isVisible": true,
+							"propType": "staff",
+							"arrowLocation": "w",
+							"color": "left",
+							"gridMode": "diamond",
+							"arrowPlacementData": {
+								"x": 0,
+								"y": 0,
+								"rotation": 0
+							},
+							"propPlacementData": {
+								"x": 0,
+								"y": 0,
+								"rotation": 0
+							}
+						},
+						"right": {
+							"motionType": "pro",
+							"rotationDirection": "cw",
+							"startLocation": "e",
+							"endLocation": "s",
+							"turns": 0,
+							"startOrientation": "in",
+							"endOrientation": "in",
+							"isVisible": true,
+							"propType": "staff",
+							"arrowLocation": "s",
+							"color": "right",
+							"gridMode": "diamond",
+							"arrowPlacementData": {
+								"x": 0,
+								"y": 0,
+								"rotation": 0
+							},
+							"propPlacementData": {
+								"x": 0,
+								"y": 0,
+								"rotation": 0
+							}
+						}
+					},
+					"stepNumber": 1,
+					"duration": 1,
+					"leftReversal": false,
+					"rightReversal": false,
+					"isBlank": false
+				},
+				{
+					"id": "museum-OOYGDA-2",
+					"letter": "O",
+					"startPlacement": "gamma13",
+					"endPlacement": "gamma3",
+					"gridMode": "diamond",
+					"motions": {
+						"left": {
+							"motionType": "pro",
+							"rotationDirection": "cw",
+							"startLocation": "w",
+							"endLocation": "n",
+							"turns": 0,
+							"startOrientation": "out",
+							"endOrientation": "out",
+							"isVisible": true,
+							"propType": "staff",
+							"arrowLocation": "n",
+							"color": "left",
+							"gridMode": "diamond",
+							"arrowPlacementData": {
+								"x": 0,
+								"y": 0,
+								"rotation": 0
+							},
+							"propPlacementData": {
+								"x": 0,
+								"y": 0,
+								"rotation": 0
+							}
+						},
+						"right": {
+							"motionType": "anti",
+							"rotationDirection": "cw",
+							"startLocation": "s",
+							"endLocation": "e",
+							"turns": 0,
+							"startOrientation": "in",
+							"endOrientation": "out",
+							"isVisible": true,
+							"propType": "staff",
+							"arrowLocation": "e",
+							"color": "right",
+							"gridMode": "diamond",
+							"arrowPlacementData": {
+								"x": 0,
+								"y": 0,
+								"rotation": 0
+							},
+							"propPlacementData": {
+								"x": 0,
+								"y": 0,
+								"rotation": 0
+							}
+						}
+					},
+					"stepNumber": 2,
+					"duration": 1,
+					"leftReversal": false,
+					"rightReversal": false,
+					"isBlank": false
+				},
+				{
+					"id": "museum-OOYGDA-3",
+					"letter": "Y",
+					"startPlacement": "gamma3",
+					"endPlacement": "beta3",
+					"gridMode": "diamond",
+					"motions": {
+						"left": {
+							"motionType": "pro",
+							"rotationDirection": "cw",
+							"startLocation": "n",
+							"endLocation": "e",
+							"turns": 0,
+							"startOrientation": "out",
+							"endOrientation": "out",
+							"isVisible": true,
+							"propType": "staff",
+							"arrowLocation": "e",
+							"color": "left",
+							"gridMode": "diamond",
+							"arrowPlacementData": {
+								"x": 0,
+								"y": 0,
+								"rotation": 0
+							},
+							"propPlacementData": {
+								"x": 0,
+								"y": 0,
+								"rotation": 0
+							}
+						},
+						"right": {
+							"motionType": "static",
+							"rotationDirection": "noRotation",
+							"startLocation": "e",
+							"endLocation": "e",
+							"turns": 0,
+							"startOrientation": "out",
+							"endOrientation": "out",
+							"isVisible": true,
+							"propType": "staff",
+							"arrowLocation": "e",
+							"color": "right",
+							"gridMode": "diamond",
+							"arrowPlacementData": {
+								"x": 0,
+								"y": 0,
+								"rotation": 0
+							},
+							"propPlacementData": {
+								"x": 0,
+								"y": 0,
+								"rotation": 0
+							}
+						}
+					},
+					"stepNumber": 3,
+					"duration": 1,
+					"leftReversal": false,
+					"rightReversal": false,
+					"isBlank": false
+				}
+			]
+		}
+	}
+}

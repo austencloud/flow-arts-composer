@@ -82,6 +82,10 @@
     type VideoOpener,
   } from "#lib/shared/share/domain/video-opener.js";
   import {
+    VIDEO_CAROUSEL_PLACEMENTS,
+    type VideoCarouselPlacement,
+  } from "#lib/shared/video-export/domain/video-carousel.js";
+  import {
     reportViewerControlChange,
     type ViewerControlSink,
     type ViewerControlValue,
@@ -429,6 +433,21 @@
     exportOptions.setVideoOpener(value);
     reportSetting("video_export", "opener", previous, value);
   }
+
+  function setVideoCarousel(value: VideoCarouselPlacement): void {
+    if (!exportOptions) return;
+    const previous = exportOptions.videoCarousel;
+    exportOptions.setVideoCarousel(value);
+    reportSetting("video_export", "carousel", previous, value);
+  }
+
+  const carouselLabels: Record<VideoCarouselPlacement, string> = $derived({
+    off: t("share_video_carousel_off"),
+    above: t("share_video_carousel_above"),
+    below: t("share_video_carousel_below"),
+    left: t("share_video_carousel_left"),
+    right: t("share_video_carousel_right"),
+  });
 
   /** The row is offered only where the host can bake the image into the render. */
   const openerRowEnabled = $derived(
@@ -1230,6 +1249,23 @@
           >
         </div>
       </div>
+
+      {#if renderMode !== "3d"}
+        <div class="field">
+          <span class="field-label">{t("share_video_carousel")}</span>
+          <div class="rt-chip-row">
+            {#each VIDEO_CAROUSEL_PLACEMENTS as placement (placement)}
+              <button
+                type="button"
+                class="rt-chip"
+                aria-pressed={exportOptions.videoCarousel === placement}
+                onclick={() => setVideoCarousel(placement)}
+                >{carouselLabels[placement]}</button
+              >
+            {/each}
+          </div>
+        </div>
+      {/if}
 
       {#if timeEstimateLabel || totalVideoDuration}
         <div class="export-meta">

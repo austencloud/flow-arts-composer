@@ -34,7 +34,6 @@ import {
 import { createRenderCanvas } from "./create-render-canvas";
 import { drawTintedImage } from "@tka/render-composition";
 import type { RenderCanvas } from "./types";
-import { captureException } from "#lib/shared/analytics/services/posthog.js";
 import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import { applyModelSpriteColor } from "#lib/shared/pictograph/prop/domain/prop-preview-color.js";
 import {
@@ -117,7 +116,14 @@ function reportPropDrawFailure(
     error_message: normalizedError.message,
   };
   console.warn("[Canvas2D] Failed to draw prop", details, normalizedError);
-  captureException(normalizedError, details);
+  // This renderer also runs inside the composition worker, where PostHog
+  // cannot load: posthog.ts imports `$app/env`, which only resolves on the
+  // main thread. A static import here made every worker fail at startup
+  // (production 2026-10-20/21), so report from the page only, lazily.
+  if (typeof document === "undefined") return;
+  void import("#lib/shared/analytics/services/posthog.js")
+    .then(({ captureException }) => captureException(normalizedError, details))
+    .catch(() => {});
 }
 
 export class Canvas2DDirectRenderer implements IDirectRenderer {

@@ -2,6 +2,7 @@ import { routePathFor, SEO_LOCALES } from "./src/lib/shared/i18n/seo-locales";
 import { getEnabledFeaturesDefineMap } from "./src/config/feature-flags";
 import { postStudioDraftStoragePlugin } from "./scripts/post-studio-draft-storage.mjs";
 import { composerUnrealHostPlugin } from "./scripts/composer-unreal-host.mjs";
+import { workspaceResolvePlugins } from "./scripts/lib/workspace-resolution.mjs";
 import {
   ARROW_SPRITE_WATCH_PATH,
   createViteDevWatchIgnoredMatcher,
@@ -18,6 +19,7 @@ import { featureGatePlugin } from "./src/config/vite-plugin-feature-gate";
 import { museumPlacementPlugin } from "./src/lib/features/museum/dev/museum-placement-plugin";
 import { composerPlacementPlugin } from "./src/lib/shared/3d/scene-composer/persistence/composer-placement-plugin";
 import { sveltekit } from "@sveltejs/kit/vite";
+import { svelte } from "@sveltejs/vite-plugin-svelte";
 import adapter from "@sveltejs/adapter-cloudflare";
 import { svelteOptions } from "./src/config/svelte-options.js";
 // Paraglide removed - using lightweight JSON-based i18n in #lib/shared/i18n/
@@ -1187,6 +1189,10 @@ function withoutSplatCoveredPrerenders(base: Adapter): Adapter {
 }
 
 // SvelteKit options. Before SvelteKit 3 these lived in svelte.config.js.
+const localProductPreview = process.env.TKA_LOCAL_PRODUCT_PREVIEW === "1";
+if (localProductPreview)
+  console.warn("[local product preview] skipping public-page prerendering");
+
 const svelteKitOptions: Parameters<typeof sveltekit>[0] = {
   ...svelteOptions,
 
@@ -1201,13 +1207,18 @@ const svelteKitOptions: Parameters<typeof sveltekit>[0] = {
   },
 
   prerender: {
-    crawl: true,
+    crawl: !localProductPreview,
     // Each language edition starts from its guide hub; the crawler follows
     // its links and hreflang alternates to the rest.
-    entries: [
-      "*",
-      ...SEO_LOCALES.flatMap((locale) => [`/${locale}/guide`, `/${locale}/codex`]),
-    ],
+    entries: localProductPreview
+      ? []
+      : [
+          "*",
+          ...SEO_LOCALES.flatMap((locale) => [`/${locale}/guide`, `/${locale}/codex`]),
+        ],
+    // A product preview exercises dynamic app routes; the SEO pages are built
+    // by the normal release command, which still requires every route.
+    handleUnseenRoutes: localProductPreview ? "ignore" : undefined,
     handleHttpError: ({ path, message, status }) => {
       // These generated or synced asset directories can be absent from a
       // clean CI checkout. Ignore only missing assets; a broken page or any
@@ -1292,6 +1303,9 @@ export default defineConfig(({ command, mode }) => ({
     ...getEnabledFeaturesDefineMap(),
   },
   plugins: [
+    // In a task worktree, serve this checkout's packages/* instead of the
+    // primary checkout's that node_modules links to. Nothing in the primary.
+    ...workspaceResolvePlugins(dirname),
     composerUnrealHostPlugin(),
     unrealStreamUpgradePlugin(),
     postStudioDraftStoragePlugin(),
@@ -1577,6 +1591,12 @@ export default defineConfig(({ command, mode }) => ({
   // ============================================================================
   worker: {
     format: "es",
+    // Dev runs the app's plugins on worker modules; the build does not. The
+    // composition worker seeds its arrow-placement resolvers from runes
+    // modules (`*.svelte.ts`, see seed-override-resolvers.ts), so without
+    // the compiler here every production worker threw `$state is not
+    // defined` while dev looked fine. Same options as the app's components.
+    plugins: () => [svelte({ ...svelteOptions, configFile: false })],
     rolldownOptions: {
       // The workers' dynamic imports transitively reach `$app/*` modules
       // (`$app/env`, `$app/state`, `$app/navigation`). The worker bundle runs

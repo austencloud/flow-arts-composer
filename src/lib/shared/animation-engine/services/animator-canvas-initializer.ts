@@ -6,7 +6,7 @@
 
 import type { IAnimationRenderer as AnimationRenderer } from "#lib/shared/animation-engine/services/IAnimationRenderer.js";
 import { loadAnimationRenderer } from "./animator-loader";
-import { DEFAULT_CANVAS_SIZE } from "./canvas-resizer.svelte";
+import { DEFAULT_CANVAS_SIZE } from "./canvas-defaults";
 import type {
   InitializationResult,
   InitializerCallbacks,

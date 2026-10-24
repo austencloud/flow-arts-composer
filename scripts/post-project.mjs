@@ -21,6 +21,7 @@ import { browserOrigin, renderFeature } from "./feature-video/render.mjs";
 import {
   parseStillTimes,
   writeContactSheet,
+  writeReleaseMedia,
   writeStills,
 } from "./feature-video/stills.mjs";
 import { parseTimeArg } from "./feature-video/time-args.mjs";
@@ -704,6 +705,18 @@ try {
       path.resolve(positional(0, "a rendered video")),
       columns
     );
+  } else if (command === "release-media") {
+    result = await writeReleaseMedia(
+      path.resolve(positional(0, "a rendered video")),
+      {
+        posterAt: numberOption("poster"),
+        gif: {
+          ...number("gif-size", "size"),
+          ...number("gif-fps", "fps"),
+          ...number("gif-colors", "colors"),
+        },
+      }
+    );
   } else if (command === "duplicate") {
     result = await request(
       "POST",
@@ -786,6 +799,7 @@ Feature videos, folders on the dev server's computer:
   render --feature SLUG [--name NAME] [--open]   renders in the editor that has it open, into exports/; --open opens one in a private headless Chrome
   stills <render.mp4> --at 0,4,6.5   a still at each time, in stills/ beside the render
   contact-sheet <render.mp4> [--columns 10]   one frame a second on one sheet, in stills/ beside the render
+  release-media <render.mp4> [--poster T] [--gif-size 440] [--gif-fps 10] [--gif-colors 64]   the email's looping GIF and the JPG poster (default: mid-clip) beside the render; warns past 4 MB
   capture-info --feature SLUG   the project's folder, the recordings already in media/captures and its takes
   link-capture --feature SLUG --capture ID --media captures/ID.N.mp4 [--label "Name"]   puts a recording in the project: the take that plays an earlier recording of ID is pointed at it, else it becomes a new take
   walkthrough --feature SLUG --lines walkthrough.json [--capture capture.json] [--take ID] [--chapter NAME]   cuts the recording to the lines: the camera moves in on each click, a bubble beside it; prints YouTube chapters and bubbles under 1.6 s

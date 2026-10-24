@@ -78,12 +78,20 @@
     "Building corridors": { fraction: 0.4, label: "Carving corridors" },
     "Building lobby": { fraction: 0.7, label: "Raising the lobby" },
     "Mounting fixtures": { fraction: 0.9, label: "Hanging the exhibits" },
+    // The visitor's room itself (the Room of Collaboration's forest and
+    // village); handleRoomProgress fills the bar from here to 0.96.
+    "Building the room": { fraction: 0.9, label: "Building the room" },
     "Warming 3D view": { fraction: 0.97, label: "Lighting the entrance" },
     "Drawing 3D preview": { fraction: 0.99, label: "Checking the 3D view" },
   };
 
   function handleLoadProgress(p: number) {
     if (p > textureFraction) textureFraction = p;
+  }
+
+  function handleRoomProgress(progress: number) {
+    const fraction = 0.9 + 0.06 * Math.max(0, Math.min(1, progress));
+    if (fraction > geometryFraction) geometryFraction = fraction;
   }
 
   function handleBuildStage(stage: string) {
@@ -422,6 +430,7 @@
             onAllLoaded={handleAllLoaded}
             onLoadProgress={handleLoadProgress}
             onBuildStage={handleBuildStage}
+            onRoomProgress={handleRoomProgress}
             startInFps={true}
             onWingChange={(id) => soundscapePlayer.setCurrentWing(id)}
             {performanceRecordingEnabled}

@@ -1,35 +1,29 @@
-export interface AvatarVisualTraits {
-	skinTone: number; // 0-1, maps to color palette
-	hairColor: number; // 0-1, maps to color palette
-	heightScale: number; // 0.9-1.1
-}
-
 export interface IdentityComponent {
 	name: string;
-	visualTraits: AvatarVisualTraits;
+	// Founders are 1. A newborn is one more than the oldest generation still
+	// alive when it arrives, so the number rises only when a whole generation
+	// has died out (see PopulationSystem).
 	generation: number;
-	avatarModelId: string; // "x-bot", "y-bot", "remy", "ch26"
-	role: "spinner" | "maker";
-}
-
-export interface StyleSignature {
-	amplitudeScale: number; // 0.8-1.2, how big the movements are
-	tempoOffset: number; // -0.1 to 0.1, slightly faster/slower
+	avatarModelId: string;
+	// What the avatar spins and how it lights up. Plain identity picked at
+	// birth; the renderer draws them, nothing in the sim changes them.
+	propType: string;
+	effectLook: string;
 }
 
 export interface LearnedSequence {
 	sequenceId: string;
-	sequenceData: unknown | null; // SequenceData for rendering (null in headless mode)
 	proficiency: number; // 0-1
-	source: "seed" | "taught" | "invented" | "fragmented" | "gifted" | "echo";
+	source: "seed" | "taught" | "inherited" | "invented" | "fragmented" | "gifted";
 	learnedAt: number; // simulation tick
-	learnedFrom: string | null; // entity id
-	lineage: string[]; // chain of entity ids
-	lastUsedTick: number; // updated on teaching, performing, practicing
-	style: StyleSignature; // teaching lineage drift
+	learnedFrom: string | null; // avatar id
+	lineage: string[]; // chain of avatar ids, oldest first
+	lastUsedTick: number;
 }
 
 export interface KnowledgeComponent {
+	// Insertion order is part of the simulation: several rules take "the first
+	// sequence the teacher knows that the learner does not".
 	knownSequences: Map<string, LearnedSequence>;
 	maxCapacity: number;
 }
@@ -40,7 +34,7 @@ export interface PersonalityComponent {
 	creativity: number; // 0-1
 	patience: number; // 0-1
 	curiosity: number; // 0-1
-	ego: number; // 0-1, grows from teaching/performing, gates teaching willingness
+	ego: number; // 0-1, grows from teaching, gates teaching willingness
 }
 
 export type LifecyclePhase = "youth" | "adult" | "elder";
@@ -66,19 +60,54 @@ export type AvatarBehaviorState =
 	| "inventing"
 	| "passing"
 	| "watching"
-	| "jamming"
 	| "mourning"
-	| "pilgrim"
-	| "commissioning";
+	// Near the end of life: walking slowly to a seat by the fire, then
+	// sitting there until they pass.
+	| "retiring"
+	| "seated"
+	// A student keeping a seated teacher company.
+	| "attending";
+
+/**
+ * Where a lesson is. The teacher shows the whole sequence while the learner
+ * watches; then the learner copies it one step behind, mirrored as a person
+ * facing them would; a fumble stops both for a moment and the teacher leads
+ * again from the step that was missed; once the learner has it, both pause,
+ * and the learner plays it once alone while the teacher watches.
+ */
+export type LessonPhase = "demonstrate" | "mirror" | "fumble" | "recognition" | "solo";
+
+export interface LessonComponent {
+	phase: LessonPhase;
+	// Ticks since the phase began.
+	clock: number;
+	// Steps in the sequence being taught.
+	stepCount: number;
+	// The teacher's step count at the start of this run of the mirror phase.
+	// Starts at 0 and moves to the missed step after each fumble.
+	leadFrom: number;
+	// The learner step that was fumbled; the restart begins here.
+	missedStep: number;
+	// Set only for the staged opening lesson: it fumbles once, on this
+	// learner step, never by chance, and cannot end before that fumble.
+	script: LessonScript | null;
+}
+
+export interface LessonScript {
+	fumbleAtStep: number;
+	fumbled: boolean;
+}
 
 export interface SocialComponent {
 	state: AvatarBehaviorState;
 	partner: string | null;
 	teachingProgress: number;
 	sequenceBeingTransferred: string | null;
-	performingSequenceId: string | null; // which sequence is active during "performing" state
-	inJam: boolean; // suppresses auto-expire timer in SocialSystem
+	// The sequence played while performing or practicing.
+	activeSequenceId: string | null;
 	currentStepIndex: number;
+	// The lesson's choreography, held by the learner; null outside a lesson.
+	lesson: LessonComponent | null;
 	frustrationLevel: number;
 	idleTimer: number;
 	interactionCooldown: number;
@@ -93,57 +122,6 @@ export interface VillageTransformComponent {
 	speed: number;
 }
 
-export interface PropArtifact {
-	id: string;
-	propType: string;
-	createdAtTick: number;
-	createdBy: string;
-	ownershipChain: string[];
-	totalStepsPerformed: number;
-	wear: number;
-	favoriteSequenceId: string | null;
-	customHue: number;
-	broken: boolean;
-}
-
-export interface PropComponent {
-	heldProp: PropArtifact | null;
-	propPreference: string;
-}
-
-export interface WearProfile {
-	wearRate: number;
-	failureMode: string;
-	repairTicks: number;
-}
-
-export interface DroppedProp {
-	artifact: PropArtifact;
-	x: number;
-	z: number;
-	droppedAtTick: number;
-}
-
-export type EffectAffinity = "fire" | "led" | "charcoal" | "trails" | "pure";
-
-export interface EffectComponent {
-	affinity: EffectAffinity;
-	affinityStrength: number;
-	exposureHistory: Map<EffectAffinity, number>;
-}
-
-export interface EffectCircle {
-	id: string;
-	affinity: EffectAffinity;
-	centerX: number;
-	centerZ: number;
-	radius: number;
-	memberIds: Set<string>;
-	formedAtTick: number;
-}
-
-export type Season = "normal" | "festival" | "winter" | "migration";
-
 export interface VillageEntity {
 	id: string;
 	identity: IdentityComponent;
@@ -152,54 +130,71 @@ export interface VillageEntity {
 	lifecycle: LifecycleComponent;
 	social: SocialComponent;
 	transform: VillageTransformComponent;
-	prop: PropComponent;
-	effect: EffectComponent;
 }
 
-export interface VillageEventMap {
-	"entity:born": (entity: VillageEntity) => void;
-	"entity:died": (entity: VillageEntity) => void;
-	"teaching:started": (
-		teacher: VillageEntity,
-		learner: VillageEntity,
-		sequenceId: string,
-	) => void;
-	"teaching:completed": (
-		teacher: VillageEntity,
-		learner: VillageEntity,
-		sequenceId: string,
-	) => void;
-	"teaching:fumble": (learner: VillageEntity, stepNumber: number) => void;
-	"sequence:invented": (inventor: VillageEntity, sequenceId: string) => void;
-	"sequence:extinct": (sequenceId: string) => void;
-	"sequence:forgotten": (entity: VillageEntity, sequenceId: string) => void;
-	"sequence:resurrected": (entity: VillageEntity, sequenceId: string) => void;
-	"generation:changed": (generation: number) => void;
-	"jam:formed": (performers: VillageEntity[], location: { x: number; z: number }) => void;
-	"jam:dissolved": (location: { x: number; z: number }) => void;
-	"funeral:started": (deceased: VillageEntity, mourners: VillageEntity[]) => void;
-	"monument:placed": (sequenceId: string, x: number, z: number) => void;
-	"monument:dimmed": (sequenceId: string) => void;
-	"monument:relit": (sequenceId: string) => void;
-	"reincarnation:detected": (newEntity: VillageEntity, sourceEntityId: string) => void;
-	"school:formed": (school: StyleSchool) => void;
-	"school:dissolved": (schoolId: string) => void;
-	"prop:dropped": (artifact: PropArtifact, x: number, z: number) => void;
-	"prop:pickedUp": (entity: VillageEntity, artifact: PropArtifact) => void;
-	"prop:broken": (entity: VillageEntity, artifact: PropArtifact) => void;
-	"prop:crafted": (maker: VillageEntity, artifact: PropArtifact) => void;
-	"circle:formed": (circle: EffectCircle) => void;
-	"circle:dissolved": (circleId: string) => void;
-	"season:changed": (season: Season) => void;
+/**
+ * The living population. A plain ordered list: removal keeps the order of
+ * the survivors, and every system walks it front to back, so a C++ port that
+ * does the same reproduces the run.
+ */
+export interface VillageWorld {
+	entities: VillageEntity[];
+	// The museum visitor while they teach someone; null otherwise. Not an
+	// entity: they never age, never count toward the population and are never
+	// in `entities`. See engine/village-visitor.ts.
+	visitor: VillageVisitor | null;
 }
 
-export interface StyleSchool {
-	id: string; // hash of founding teacher's entity id
-	color: string; // derived tint color
-	memberIds: Set<string>; // entity ids in this school
+// The partner id, teacher id and lineage entry a visitor lesson uses.
+export const VISITOR_ID = "visitor";
+
+export interface VillageVisitor {
+	x: number;
+	z: number;
+	// Radians, atan2(dz, dx), as an avatar's facing.
+	facing: number;
+	sequenceId: string;
+	learnerId: string;
 }
 
-export type VillageEventKey = keyof VillageEventMap;
+/**
+ * Everything the sim reports happening, as plain records the renderer and the
+ * replay fixture can read. Ids only; no live avatar objects cross over.
+ */
+export type VillageEventInput =
+	| { type: "entity:born"; avatarId: string; generation: number }
+	| { type: "entity:died"; avatarId: string; x: number; z: number }
+	| {
+			type: "teaching:started";
+			teacherId: string;
+			learnerId: string;
+			sequenceId: string;
+	  }
+	| {
+			type: "teaching:completed";
+			teacherId: string;
+			learnerId: string;
+			sequenceId: string;
+	  }
+	| { type: "teaching:fumble"; learnerId: string; step: number }
+	| { type: "sequence:invented"; avatarId: string; sequenceId: string }
+	| {
+			type: "sequence:inherited";
+			avatarId: string;
+			elderId: string;
+			sequenceId: string;
+	  }
+	| { type: "sequence:extinct"; sequenceId: string }
+	| { type: "sequence:forgotten"; avatarId: string; sequenceId: string }
+	| { type: "generation:changed"; generation: number }
+	| { type: "funeral:started"; avatarId: string; mournerIds: string[] }
+	| { type: "monument:placed"; sequenceId: string; x: number; z: number }
+	| { type: "monument:dimmed"; sequenceId: string }
+	| { type: "monument:relit"; sequenceId: string };
+
+export type VillageEvent = VillageEventInput & { tick: number };
+
+export type VillageEventType = VillageEventInput["type"];
 
 export interface PopulationStats {
 	alive: number;

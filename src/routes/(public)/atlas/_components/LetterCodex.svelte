@@ -15,6 +15,20 @@
   import BoardAtlas from "./codex-boards/BoardAtlas.svelte";
   import LetterExplorer from "./codex-boards/LetterExplorer.svelte";
   import CodexBoardControls from "./codex-boards/CodexBoardControls.svelte";
+  import CodexLetterGlyph from "./codex-boards/CodexLetterGlyph.svelte";
+  import {
+    editForTransform,
+    formatExplorerTransforms,
+    invertedLetterOf,
+    invertsLetter,
+    parseExplorerTransforms,
+    transformVariation,
+    type ExplorerTransformOp,
+  } from "./codex-boards/letter-explorer-transforms";
+  import { announcePictographEdit } from "#lib/shared/pictograph/shared/state/pictograph-edit-motion.svelte.js";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
   import type { Box } from "./codex-boards/codex-fan";
   import {
     CODEX_BY_LABEL,
@@ -22,7 +36,6 @@
     type CodexLetterInfo,
   } from "./codex-boards/codex-letters";
   import {
-    hasLetterExplorerEdits,
     parseLetterExplorerEdits,
     parseLetterExplorerRoute,
     writeLetterExplorerEdits,
@@ -156,9 +169,18 @@
     RotationDirection.CLOCKWISE
   );
   let overlayOpen = $state(false);
+  // The explorer's own transforms (with Invert), apart from the board's:
+  // they start empty for each letter opened and ride in the URL as ?xf=.
+  let explorerOps = $state<ExplorerTransformOp[]>([]);
+  // The letter this one becomes inverted, looked up once per letter opened.
+  let inverted = $state<{ from: string; to: string | null } | null>(null);
+  let headerHeight = $state(0);
   // A click on a board cell opens the explorer as a deck dealt from that
   // cell (codex-fan.ts). The dialog skips its own pop so the cards measure
-  // their true slots, and goes back to it once the deck has landed.
+  // their true slots, and takes it back only as it closes, for the exit.
+  // Switching back while open, in the same frame the fan restores the
+  // dialog's clip, makes Chrome play the pop entrance again: the whole
+  // dialog blinks out and fades back in.
   let fan = $state<{ origin: Box; key: number } | null>(null);
   let fanning = $state(false);
   let fanCount = 0;
@@ -197,9 +219,20 @@
       )
     )
   );
+  const shownLabel = $derived(
+    invertsLetter(explorerOps) && inverted?.from === info.label && inverted.to
+      ? inverted.to
+      : info.label
+  );
+  const shownInfo = $derived(CODEX_BY_LABEL.get(shownLabel) ?? info);
+  // Transforms first, then turns, as on the board; turns recompute the ends
+  // from the motion types Invert just changed.
   const editedVariations = $derived(
     applyTurnsToVariations(
-      variations,
+      variations.map((variation) => ({
+        ...transformVariation(variation, explorerOps),
+        letter: shownLabel as Letter,
+      })),
       leftTurns,
       rightTurns,
       leftRotation,
@@ -222,8 +255,25 @@
     }
   });
   const learningMatches = $derived(
-    filterSequencesByExactLetter(learningDeck, info.label)
+    filterSequencesByExactLetter(learningDeck, shownLabel)
   );
+
+  $effect(() => {
+    const base = variations[0];
+    const from = info.label;
+    if (!base || inverted?.from === from) return;
+    let cancelled = false;
+    invertedLetterOf(base)
+      .then((to) => {
+        if (!cancelled) inverted = { from, to };
+      })
+      .catch((error: unknown) => {
+        console.warn("LetterCodex: inverted letter lookup failed", error);
+      });
+    return () => {
+      cancelled = true;
+    };
+  });
   const isLoading = $derived(loadingByGrid[gridMode] ?? false);
   const loadError = $derived(errorByGrid[gridMode] ?? false);
 
@@ -236,6 +286,7 @@
       rightTurns,
       leftRotation,
       rightRotation,
+      transforms: formatExplorerTransforms(explorerOps),
     };
   }
 
@@ -279,6 +330,7 @@
     const state = parseLetterExplorerRoute(params, allowedLetters);
     if (!state) {
       overlayOpen = false;
+      explorerOps = [];
       if (boardControls) setEdits(parseLetterExplorerEdits(params));
       return;
     }
@@ -291,6 +343,7 @@
     selectedVariationIndex = state.variation;
     pendingCell = null;
     setEdits(state);
+    explorerOps = parseExplorerTransforms(state.transforms ?? null);
     overlayOpen = true;
   }
 
@@ -419,7 +472,9 @@
     selectedVariationIndex = 0;
     if (cell) landOn(cell);
     if (!boardControls) resetEdits();
-    const origin = press && performance.now() - press.at < 1500 ? press.origin : null;
+    explorerOps = [];
+    const origin =
+      press && performance.now() - press.at < 1500 ? press.origin : null;
     press = null;
     fan = origin ? { origin, key: ++fanCount } : null;
     fanning = fan !== null;
@@ -432,6 +487,7 @@
     fan = null;
     fanning = false;
     pendingCell = null;
+    explorerOps = [];
     mutateCurrentUrl(
       (url) => {
         writeLetterExplorerRoute(url, null);
@@ -441,19 +497,16 @@
     );
   }
 
-  function selectGrid(next: GridModeValue): void {
-    if (next === gridMode) return;
-    gridMode = next;
-    selectedVariationIndex = 0;
-    pendingCell = null;
-    if (!boardControls) resetEdits();
-    commitRoute("push");
+  function transformExplorer(op: ExplorerTransformOp): void {
+    // The pictures travel to their new drawing on the shared edit clock.
+    announcePictographEdit(editForTransform(op));
+    explorerOps = [...explorerOps, op];
+    commitRoute();
   }
 
-  function selectVariation(index: number): void {
-    if (index < 0 || index >= variations.length) return;
-    selectedVariationIndex = index;
-    commitRoute("push");
+  function resetExplorerTransforms(): void {
+    explorerOps = [];
+    commitRoute();
   }
 
   function turnNumber(value: TurnValue): number {
@@ -540,49 +593,56 @@
 
 <BaseModal
   bind:open={overlayOpen}
-  size="xl"
+  size="fit"
   animation={fanning ? "none" : "pop"}
   labelledBy="codex-overlay-title"
   class="codex-explorer-modal codex-dark"
   onclose={closeExplorer}
 >
   {#snippet header()}
-    <ModalHeader
-      id="codex-overlay-title"
-      title={info.name ? `${info.label} · ${info.name}` : info.label}
-      subtitle={`${gridMode === GridMode.BOX ? "Box" : "Diamond"} pictographs`}
-      iconColor={info.typeColor}
-      onClose={closeExplorer}
-    />
+    <div bind:clientHeight={headerHeight}>
+      <ModalHeader
+        id="codex-overlay-title"
+        title={shownInfo.name
+          ? `${shownLabel} · ${shownInfo.name}`
+          : shownLabel}
+        iconColor={shownInfo.typeColor}
+        onClose={closeExplorer}
+      >
+        {#snippet titleContent()}
+          <Crossfade key={shownLabel} duration={DURATION.normal}>
+            <CodexLetterGlyph letter={shownLabel} />
+          </Crossfade>
+        {/snippet}
+      </ModalHeader>
+    </div>
   {/snippet}
   <LetterExplorer
-    {info}
-    {gridMode}
+    label={shownLabel}
+    tileKey={`${info.id}-${gridMode}`}
     variations={editedVariations}
     selectedIndex={selectedVariationIndex}
-    {draft}
     {leftTurns}
     {rightTurns}
     {leftRotation}
     {rightRotation}
-    edited={hasLetterExplorerEdits(routeState())}
+    transformed={explorerOps.length > 0}
     {isLoading}
     {loadError}
     {learningMatches}
-    {learningLoading}
     {learningError}
     {composerHref}
-    onGridChange={selectGrid}
-    onVariationChange={selectVariation}
+    {headerHeight}
     onTurnsChange={changeTurns}
     onRotationChange={changeRotation}
-    onReset={resetExplorerEdits}
+    onResetTurns={resetExplorerEdits}
+    onTransform={transformExplorer}
+    onResetTransforms={resetExplorerTransforms}
     onRetry={() => loadGrid(gridMode)}
     onLearningRetry={loadLearningDeck}
     onCopyLink={copyExactLink}
     {propType}
     {fan}
-    onFanDone={() => (fanning = false)}
   />
 </BaseModal>
 
@@ -594,45 +654,59 @@
     padding: 0.35rem 0 0;
   }
 
-  :global(dialog.codex-explorer-modal[data-size="xl"]) {
-    width: min(94vw, 2200px);
-    height: min(92dvh, 1200px);
-    max-width: none;
+  /* The dialog wraps its content (LetterExplorer sizes the variations to the
+     screen), up to BaseModal's own height cap. */
+  :global(dialog.base-modal.codex-explorer-modal[data-size="fit"]) {
+    width: fit-content;
+    min-width: min(30rem, calc(100vw - 32px));
+    max-width: 94vw;
   }
 
-  /* Desktop: the explorer fits the dialog without a scroll (LetterExplorer),
-     so the dialog may take the screen instead of stopping at 2200 x 1200. */
-  @media (min-width: 64rem) and (min-height: 700px) {
-    :global(dialog.codex-explorer-modal[data-size="xl"]) {
-      width: 94vw;
-      height: 92dvh;
-    }
+  /* The letter sits in the middle of the dialog: an empty column the close
+     button's width balances it on the left. */
+  :global(.codex-explorer-modal .modal-header) {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+  }
+
+  :global(.codex-explorer-modal .modal-header .header-text) {
+    grid-column: 2;
+  }
+
+  :global(.codex-explorer-modal .header-title) {
+    --letter-glyph-h: 3rem;
+    display: flex;
+    justify-content: center;
   }
 
   /* While the deck is dealt the dialog appears at once (no pop), and the
      words around the cards rise in with them. */
-  :global(dialog.codex-explorer-modal[data-animation="none"] .modal-header-slot),
-  :global(dialog.codex-explorer-modal[data-animation="none"] .preview-column),
-  :global(dialog.codex-explorer-modal[data-animation="none"] .variation-section > .section-heading),
-  :global(dialog.codex-explorer-modal[data-animation="none"] .contexts) {
-    animation: codex-explorer-in var(--duration-emphasis) var(--ease-standard-out)
-      both;
+  :global(
+    dialog.codex-explorer-modal[data-animation="none"] .modal-header-slot
+  ),
+  :global(dialog.codex-explorer-modal[data-animation="none"] .toolbar),
+  :global(dialog.codex-explorer-modal[data-animation="none"] .footer) {
+    animation: codex-explorer-in var(--duration-emphasis)
+      var(--ease-standard-out) both;
   }
 
   /* The backdrop only fades: a blur growing from zero repaints the whole
      screen on the main thread every frame, under the deck. */
   @starting-style {
-    :global(dialog.codex-explorer-modal[data-animation="none"][open]::backdrop) {
+    :global(
+      dialog.codex-explorer-modal[data-animation="none"][open]::backdrop
+    ) {
       backdrop-filter: blur(var(--modal-backdrop-blur));
       -webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    :global(dialog.codex-explorer-modal[data-animation="none"] .modal-header-slot),
-    :global(dialog.codex-explorer-modal[data-animation="none"] .preview-column),
-    :global(dialog.codex-explorer-modal[data-animation="none"] .variation-section > .section-heading),
-    :global(dialog.codex-explorer-modal[data-animation="none"] .contexts) {
+    :global(
+      dialog.codex-explorer-modal[data-animation="none"] .modal-header-slot
+    ),
+    :global(dialog.codex-explorer-modal[data-animation="none"] .toolbar),
+    :global(dialog.codex-explorer-modal[data-animation="none"] .footer) {
       animation: none;
     }
   }
@@ -645,11 +719,9 @@
   }
 
   @media (max-width: 520px) {
-    :global(dialog.codex-explorer-modal[data-size="xl"]) {
-      width: 100vw;
-      height: 100dvh;
-      max-height: none;
-      border-radius: 0;
+    :global(dialog.base-modal.codex-explorer-modal[data-size="fit"]) {
+      width: calc(100vw - 32px);
+      max-width: none;
     }
   }
 </style>

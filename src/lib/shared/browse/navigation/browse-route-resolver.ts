@@ -1,5 +1,3 @@
-import { exploreVisualsVisible } from "./visuals-promotion.js";
-
 export const BROWSE_NAV_SCHEMA_VERSION = 2;
 
 export type BrowsePrimary = "explore" | "you";
@@ -490,8 +488,7 @@ export function browseDestinationForLocation(
     return "saved";
   }
   if (location.section === "collections") return "collections";
-  if (location.section === "visuals" && exploreVisualsVisible())
-    return "visuals";
+  if (location.section === "visuals") return "visuals";
   return "sequences";
 }
 

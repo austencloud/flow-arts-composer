@@ -21,6 +21,14 @@ $sourceModules = Join-Path $sourceRootPath 'node_modules'
 # Shared tools and the project resolve dependencies through their common parent.
 # This also keeps a detached Project/ + Shared/ delivery inside its own folder.
 $localModules = Join-Path (Split-Path -Parent $projectRoot) 'node_modules'
+$bundleTool = Join-Path $PSScriptRoot '..\..\Shared\Tools\performance-bundle.mjs'
+$preserveMeasuredProps = Test-Path -LiteralPath (Join-Path $projectRoot 'Content/Data/prop-clearance-migration.json')
+if ($preserveMeasuredProps) {
+    # A normal rerun preserves exact measured mesh/catalog bytes. Deliberate
+    # prop replacement requires a new geometry export and migration receipt.
+    & node $bundleTool verify-prop-clearance --project $projectRoot
+    if ($LASTEXITCODE -ne 0) { throw 'Existing prop clearance receipt is stale; regenerate explicit geometry proof before bootstrap.' }
+}
 
 foreach ($required in @($projectFile, $engineBuild, $editorCmd, $sourceModules)) {
     if (-not (Test-Path -LiteralPath $required)) { throw "Missing required path: $required" }
@@ -52,14 +60,20 @@ if (-not $SkipAssetGeneration) {
     if ($LASTEXITCODE -ne 0) { throw "Character conversion failed ($LASTEXITCODE)" }
     & node (Join-Path $PSScriptRoot 'prepare-prop-motion.mjs') $CaptureDirectory
     if ($LASTEXITCODE -ne 0) { throw "Prop motion preparation failed ($LASTEXITCODE)" }
-    & node (Join-Path $PSScriptRoot 'prepare-props.mjs') $sourceRootPath
-    if ($LASTEXITCODE -ne 0) { throw "Prop preparation failed ($LASTEXITCODE)" }
-    & $BlenderExe --factory-startup --background --threads 2 --python (Join-Path $PSScriptRoot 'convert-props.py')
-    if ($LASTEXITCODE -ne 0) { throw "Prop conversion failed ($LASTEXITCODE)" }
+    if (-not $preserveMeasuredProps) {
+        & node (Join-Path $PSScriptRoot 'prepare-props.mjs') $sourceRootPath
+        if ($LASTEXITCODE -ne 0) { throw "Prop preparation failed ($LASTEXITCODE)" }
+        & $BlenderExe --factory-startup --background --threads 2 --python (Join-Path $PSScriptRoot 'convert-props.py')
+        if ($LASTEXITCODE -ne 0) { throw "Prop conversion failed ($LASTEXITCODE)" }
+    }
     & $BlenderExe --factory-startup --background --threads 2 --python (Join-Path $PSScriptRoot 'convert-euc.py')
     if ($LASTEXITCODE -ne 0) { throw "EUC conversion failed ($LASTEXITCODE)" }
 
 }
+
+$rigCatalog = Join-Path $projectRoot 'Content\Data\runtime-rigs.json'
+& node (Join-Path $PSScriptRoot '..\..\Shared\Tools\runtime-rig-catalog.mjs') $sourceRootPath $rigCatalog
+if ($LASTEXITCODE -ne 0) { throw 'Runtime rig catalog generation failed.' }
 
 if (-not $SkipBuild) {
     $buildArgs = @('FlowFestEditor', 'Win64', 'Development', "-Project=$projectFile", '-WaitMutex', '-NoHotReloadFromIDE', '-MaxParallelActions=4', '-NoUBA')
@@ -77,8 +91,15 @@ if (-not $SkipImport) {
     & $editorCmd $projectFile '-run=pythonscript' "-script=$fireScript" -unattended -nop4 -nosplash -RenderOffscreen
     if ($LASTEXITCODE -ne 0) { throw "Unreal fire material generation failed ($LASTEXITCODE)" }
     foreach ($script in @('import-characters.py', 'import-props.py', 'import-euc.py', 'import-audio.py')) {
+        if ($preserveMeasuredProps -and $script -eq 'import-props.py') { continue }
         & $editorCmd $projectFile '-run=pythonscript' "-script=$(Join-Path $PSScriptRoot $script)" -unattended -nop4 -nosplash -RenderOffscreen
         if ($LASTEXITCODE -ne 0) { throw "Unreal $script failed ($LASTEXITCODE)" }
+    }
+    if (-not $preserveMeasuredProps) {
+        & $editorCmd $projectFile '-run=pythonscript' "-script=$(Join-Path $PSScriptRoot 'validate-props.py')" '-FlowFestGeneratePropClearance' -unattended -nop4 -nosplash -NullRHI
+        if ($LASTEXITCODE -ne 0) { throw "Prop clearance generation failed ($LASTEXITCODE)" }
+        & node $bundleTool migrate-prop-clearance --project $projectRoot --previous (Join-Path $projectRoot 'Saved/props-before-clearance.json') --coverage (Join-Path $projectRoot 'Saved/validate-props-report.json')
+        if ($LASTEXITCODE -ne 0) { throw "Prop clearance migration recording failed ($LASTEXITCODE)" }
     }
     & node (Join-Path $PSScriptRoot '..\..\Shared\Tools\performance-bundle.mjs') seal --project $projectRoot
     if ($LASTEXITCODE -ne 0) { throw "Performance bundle sealing failed ($LASTEXITCODE)" }

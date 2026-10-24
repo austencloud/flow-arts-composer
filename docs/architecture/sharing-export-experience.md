@@ -102,13 +102,37 @@ by source/settings changes must explicitly invite a retry rather than silently
 discard its promised delivery. Tunnel and 3D previews must come from their live
 source, never from an unrelated 2D animation.
 
+### October 21: the card shares and downloads in one tap
+
+Austen tested Share on his phone with the Card view showing and wanted to send
+the card to Instagram. Share opened the panel (Download, Copy link, Embed, a
+recipients picker with empty space), and Download card then opened a second
+screen asking for file type and card settings. His words: "If I click
+download card, obviously I just want to download the card," and Share
+"should just share that card that I'm looking at right now, open up a native
+share sheet with the card ready, go."
+
+- On a phone (`detectPlatform() !== "desktop"` with native file sharing),
+  header Share on the Card view opens the system share sheet with the card PNG.
+  No panel. The card is drawn ahead while the Card view is up, because a
+  browser share sheet only opens inside the tap that asked for it. If the sheet
+  cannot open, the panel opens as the fallback.
+- Download card, from the panel on any device, hands over the card file at
+  once: share sheet on a phone, straight to disk on a desktop. It never opens
+  the file-type and card-settings sheet; the card's settings are on the Card
+  view itself.
+- Desktop Share keeps the panel. Other views on a phone still open it for now.
+- The Android app's WebView has no `navigator.share`. `shareBlobNatively`
+  falls back to the app's `TkaFileShare` plugin, which writes the file to the
+  app cache and opens Android's chooser through the existing FileProvider.
+
 ### Entry context determines the initial task
 
 | Entry                | Initial presentation                                                           | Primary result                                                               |
 | -------------------- | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
 | Export animation     | Download animation, recognizable current-view preview, current output settings | Prepare if necessary, then download the video                                |
 | Export card          | Download card, card preview and card-specific settings                         | Download the displayed card                                                  |
-| Share (viewer)       | Share panel beside the live stage; the rail picks the subject                  | Copy its link, send a sequence attachment, or enter contextual file download |
+| Share (viewer)       | Share panel beside the live stage; on a phone's Card view, the system sheet    | Copy its link, send a sequence attachment, or enter contextual file download |
 | Design a social post | Existing post composition workspace                                            | Prepare an intentional social post                                           |
 | Direct publishing    | Separate, explicitly entered publishing flow                                   | Review the actual account, media, caption, and publishing action             |
 
@@ -126,9 +150,9 @@ to a card merely because an old sheet default used that artifact.
 - The selected settings remain visible in a compact summary. Editing is available
   through Video settings, with ordinary repeats labelled plainly. Preserve valid
   explicit user choices; do not quietly replace them with a guessed preference.
-- Download card follows the same shape: a Card settings summary (theme and
-  footer) opens the full card editor that the viewer's Card tab uses, so the
-  card is chosen as it is downloaded rather than through a footer-only override.
+- Download card from the viewer does not open this sheet (see October 21).
+  Where the sheet still prepares a card, a Card settings summary (theme and
+  footer) opens the full card editor that the viewer's Card tab uses.
 - Offer only settings consumed by the current renderer. At research time the 2D
   `exportAnimation` method omitted `quality`, while `export3DAnimation` consumed it.
   Standard/Cinema was therefore misleading on the 2D route.
@@ -166,7 +190,11 @@ to a card merely because an old sheet default used that artifact.
   it and follows rail changes while it stays open. Download leads the panel,
   named for that subject (Card image, Video, Post video); under it sit Copy
   link, Other apps for the system share sheet where the browser supports it,
-  and Publish in development builds; Send to a friend follows below a divider.
+  Publish in development builds, and Send to a friend. Send to a friend is a
+  choice like the others, not an open list: pressing it swaps the panel to a
+  flat people list with Back, and the stage stays in view. Recents load only
+  then. On a phone the dock fits the choices and takes its full height only
+  for the people list.
   On the 2D animation Download renders at once (see below). Elsewhere
   Download and Publish open the file sheet directly at that task, not at its
   chooser, and the panel is still there when the sheet closes. Share again,
@@ -176,7 +204,8 @@ to a card merely because an old sheet default used that artifact.
   the share panel, not in the file sheet. Choosing who must not change what, so
   the card settings stay on the Card pane. A guest sees a sign-up prompt in
   place of recipients; after sign-up the recipients appear without reopening.
-  After a send the panel stays open with fresh recipients. The inbox drawer
+  After a send the panel stays on the people list with fresh recipients; Back,
+  closing the panel, or Escape leaves it. The inbox drawer
   keeps its own send sheet for shares that start inside the inbox, and Create's
   share sheet keeps its Send to a friend entry.
 - Native sharing is available when the actual payload is supported. After a long
@@ -245,7 +274,9 @@ to phone, prepared file, viewer source.
   `share` inspector profile: the stage keeps the live view the person chose
   (the rail stays usable) and the panel takes the inspector track, docking
   under the stage where the track stacks. `viewer-shell-share-state` owns the
-  panel's open state and its `SequenceSendSession`. No card is rendered for
+  panel's open state, whether it shows the people list, and its
+  `SequenceSendSession`. The viewer passes `compact` to the picker, which drops
+  its heading, box and inner scroller; the inbox sheet keeps them. No card is rendered for
   the sender; the recipient still receives the sequence and its thumbnail. The outbox is the drawer's; hosts that mount the drawer lazily
   mount it on `inboxState.hostRequested`, and the workspace reads the
   registered outbox from `message-delivery-context.ts`. The sender's view

@@ -25,7 +25,7 @@
     PerformerEditSink,
     PerformerHubTab,
   } from "./performer-hub-types";
-  import { onMount, type Snippet } from "svelte";
+  import { onMount, untrack, type Snippet } from "svelte";
   import { flyFade, growFade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import {
@@ -35,6 +35,7 @@
 
   interface Props {
     bpm?: number;
+    unrealDisabledReason?: string | null;
     onSettingChange?: ViewerControlSink;
     onAction?: ViewerActionSink;
     onLayoutChange?: (layout: SceneControlLayout) => void;
@@ -100,6 +101,7 @@
 
   let {
     bpm,
+    unrealDisabledReason = null,
     onSettingChange,
     onAction,
     onLayoutChange,
@@ -239,6 +241,25 @@
     activeTool === "performer" || activeTool === "dev" || hostPanelOpen
   );
   const rightColumnOpen = $derived(activeTool !== null || hostPanelOpen);
+
+  // The viewer's popover slot (the timeline's tempo panel, the header info
+  // chip) and this column take turns: the panel that opens last closes the
+  // other, so neither is left drawn over the scene tiles.
+  $effect(() => {
+    if (!rightColumnOpen && compactSheet === null) return;
+    untrack(() => {
+      if (viewer.activePopover !== null) viewer.closePopover();
+    });
+  });
+  $effect(() => {
+    if (viewer.activePopover === null) return;
+    untrack(() => {
+      if (!rightColumnOpen && compactSheet === null) return;
+      activeTool = null;
+      hostPanelOpen = false;
+      closeSheetsRequest += 1;
+    });
+  });
 
   const layout = $derived(
     resolveSceneControlLayout(
@@ -465,6 +486,7 @@
     </div>
 
     <SceneControlRail
+      {unrealDisabledReason}
       renderMode="3d"
       {activeTool}
       {onSettingChange}

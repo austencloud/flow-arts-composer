@@ -177,7 +177,7 @@ the playhead adds or updates a keyframe when the property is keyed.
 Searched: timeline, track, clip, trim, split, ripple, magnetic, undo, redo,
 keyframe, easing, ruler, playhead, snap. Closest: Compose
 `features/compose/timeline` (beat-based sequence timeline with its own
-state), Stage `StageTimeline`, `timeline-undo-manager.ts`, Grip Lab
+state), Stage `StageTimeline`, Grip Lab
 `KeyframeTimeline`.
 
 - **Reuse** `evaluatePresetFrame`, the Post Studio exporter, compositor,
@@ -187,8 +187,8 @@ state), Stage `StageTimeline`, `timeline-undo-manager.ts`, Grip Lab
 - **Create** `PostTimeline` and the post-project edit operations. The
   interaction contract differs from Compose: a magnetic main track with
   anchored overlay tracks over source media, not beats on a sequence clock.
-- **Create** a small snapshot history in the editor state;
-  `timeline-undo-manager.ts` is bound to `TimelineProject` and localStorage.
+- **Create** a small snapshot history in the editor state (the old
+  `timeline-undo-manager.ts`, bound to `TimelineProject` and localStorage, was removed 2026-10-22).
 - **Reuse** `motion` (installed 12.42) for bezier easing in drop 2.
 - Packages considered: IMG.LY CE.SDK (commercial editor with its own engine
   and export, found by a 2026-09-26 search), `svelte-gantt` (date

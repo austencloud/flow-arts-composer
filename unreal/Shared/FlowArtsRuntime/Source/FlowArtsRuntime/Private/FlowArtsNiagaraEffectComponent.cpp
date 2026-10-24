@@ -115,7 +115,7 @@ bool UFlowArtsNiagaraEffectComponent::ShouldActivate() const
     const FVector Forward = Player->PlayerCameraManager->GetCameraRotation().Vector();
     auto IsNearAndVisible = [&](const USceneComponent* Root)
     {
-        if (!Root) return false;
+        if (!Root || !Root->IsVisible()) return false;
         const FVector ToWick = Root->GetComponentLocation() - Camera;
         return ToWick.SizeSquared() <= MaxDistanceSq &&
             (ToWick.SizeSquared() < FMath::Square(200.f) || FVector::DotProduct(ToWick.GetSafeNormal(), Forward) > -0.1f);
@@ -126,12 +126,14 @@ bool UFlowArtsNiagaraEffectComponent::ShouldActivate() const
 void UFlowArtsNiagaraEffectComponent::RefreshActivation()
 {
     const bool bShouldActivate = ShouldActivate();
-    if (bActive == bShouldActivate) return;
     bActive = bShouldActivate;
     for (UNiagaraComponent* Wick : Wicks)
     {
         if (!Wick) continue;
-        if (bActive)
+        const USceneComponent* HandRoot = Wick->GetAttachParent();
+        const bool bWickActive = bActive && HandRoot && HandRoot->IsVisible();
+        if (Wick->IsActive() == bWickActive) continue;
+        if (bWickActive)
         {
             Wick->Activate(true);
             Wick->SetPaused(bPaused);

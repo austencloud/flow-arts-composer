@@ -22,6 +22,12 @@
   import PostShareSheet from "#lib/shared/share/components/PostShareSheet.svelte";
   import { getExportOptionsState } from "#lib/shared/animation-panel/state/export-options-state.svelte.js";
   import InlineAnimationPlayer from "#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte";
+  import StepStrip from "#lib/shared/timeline/StepStrip.svelte";
+  import {
+    VIDEO_CAROUSEL_BAND_RATIO,
+    videoCarouselOrientation,
+    videoCarouselSourceFrame,
+  } from "#lib/shared/video-export/domain/video-carousel.js";
   import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
   import { PLAYBACK_BASELINE_BPM } from "#lib/shared/animation-engine/domain/constants/timing.js";
   import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
@@ -81,6 +87,24 @@
   const workspaceVideoPreviewWord = $derived(
     sequence ? deriveWord(sequence) : null
   );
+  // The live preview takes the rendered video's shape: the carousel the file
+  // will carry sits on the same side, following the preview's own playback.
+  const previewCarousel = $derived(exportOptions.videoCarousel);
+  const previewFrame = $derived.by(() => {
+    if (previewCarousel === "off") return null;
+    const frame = videoCarouselSourceFrame({
+      placement: previewCarousel,
+      squareSize: 1,
+      headerHeight: animationVisibility.getVisibility("wordHeader") ? 0.07 : 0,
+    });
+    const vertical = videoCarouselOrientation(previewCarousel) === "vertical";
+    return {
+      aspect: frame.width / frame.height,
+      bandShare:
+        VIDEO_CAROUSEL_BAND_RATIO / (vertical ? frame.width : frame.height),
+    };
+  });
+  let previewStep = $state(0);
   const workspaceVideoUrl = $derived(
     workspaceVideoExporter?.state.previewBlobUrl ?? null
   );
@@ -219,6 +243,7 @@
         includeStartPlacement: options.includeStartPlacement,
         includeEndHold: options.includeEndHold,
         quality: options.quality,
+        carousel: options.carousel,
         // The offscreen exporter calls this tunnel-shaped input for any custom
         // pair. Supplying the workspace pair keeps its downloaded file aligned
         // with the live animation, including non-blue/red prop choices.
@@ -250,32 +275,58 @@
 {#snippet workspaceLiveVideoPreview()}
   {#if sequence}
     <div class="workspace-live-video-preview">
-      <InlineAnimationPlayer
-        {sequence}
-        displayWord={workspaceVideoPreviewWord}
-        sequenceLoadKey={workspaceVideoPreviewKey}
-        chrome="minimal"
-        fill={true}
-        showControls={false}
-        autoPlay={true}
-        autoPlayDelay={0}
-        externalBpm={bpm}
-        interactive={true}
-        cornerToggle={true}
-        hoverHint="none"
-        playbackAllowed={isOpen}
-        ephemeral={true}
-        visibilityManagerOverride={animationVisibility}
-        effectsConfigState={animationVisibility.effectsConfigState ?? undefined}
-        gridVisible={animationVisibility.isGridVisible()}
-        showWordHeader={animationVisibility.getVisibility("wordHeader")}
-        hideTkaGlyph={!animationVisibility.getVisibility("tkaGlyph")}
-        hideStepNumbers={!animationVisibility.getVisibility("stepNumbers")}
-        leftPropType={settingsService.settings.leftPropType}
-        rightPropType={settingsService.settings.rightPropType}
-        primaryPropColors={settingsService.settings.primaryPropColors ??
-          undefined}
-      />
+      <div
+        class="preview-frame"
+        class:framed={previewFrame !== null}
+        data-carousel={previewCarousel}
+        style:--frame-aspect={previewFrame?.aspect}
+        style:--band-share={previewFrame?.bandShare}
+      >
+        <div class="preview-card">
+          <InlineAnimationPlayer
+            {sequence}
+            displayWord={workspaceVideoPreviewWord}
+            sequenceLoadKey={workspaceVideoPreviewKey}
+            chrome="minimal"
+            fill={true}
+            showControls={false}
+            autoPlay={true}
+            autoPlayDelay={0}
+            externalBpm={bpm}
+            interactive={true}
+            cornerToggle={true}
+            hoverHint="none"
+            playbackAllowed={isOpen}
+            ephemeral={true}
+            visibilityManagerOverride={animationVisibility}
+            effectsConfigState={animationVisibility.effectsConfigState ??
+              undefined}
+            gridVisible={animationVisibility.isGridVisible()}
+            showWordHeader={animationVisibility.getVisibility("wordHeader")}
+            hideTkaGlyph={!animationVisibility.getVisibility("tkaGlyph")}
+            hideStepNumbers={!animationVisibility.getVisibility("stepNumbers")}
+            leftPropType={settingsService.settings.leftPropType}
+            rightPropType={settingsService.settings.rightPropType}
+            primaryPropColors={settingsService.settings.primaryPropColors ??
+              undefined}
+            onStepChange={(step) => (previewStep = step)}
+          />
+        </div>
+        {#if previewCarousel !== "off"}
+          <div class="preview-band">
+            <StepStrip
+              {sequence}
+              currentStep={previewStep}
+              {bpm}
+              presentation="spotlight"
+              density="compact"
+              orientation={videoCarouselOrientation(previewCarousel)}
+              fillHeight
+              loop
+            />
+          </div>
+        {/if}
+      </div>
     </div>
   {/if}
 {/snippet}
@@ -314,6 +365,51 @@
   .workspace-live-video-preview {
     width: 100%;
     height: 100%;
+    min-height: 0;
+    display: grid;
+    place-items: center;
+    container-type: size;
+  }
+  .preview-frame {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+  }
+  /* The rendered video's frame, contain-fit in the stage. */
+  .preview-frame.framed {
+    width: min(100cqw, 100cqh * var(--frame-aspect));
+    height: min(100cqh, 100cqw / var(--frame-aspect));
+  }
+  .preview-frame[data-carousel="above"] {
+    flex-direction: column-reverse;
+  }
+  .preview-frame[data-carousel="left"] {
+    flex-direction: row-reverse;
+  }
+  .preview-frame[data-carousel="right"] {
+    flex-direction: row;
+  }
+  .preview-card {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+  }
+  .preview-band {
+    flex-grow: 0;
+    flex-shrink: 0;
+    display: flex;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    /* The band's share of the frame along its stacking axis, as rendered. */
+    flex-basis: calc(var(--band-share) * 100%);
+  }
+  .preview-band > :global(*) {
+    flex: 1 1 auto;
+    min-width: 0;
     min-height: 0;
   }
 </style>

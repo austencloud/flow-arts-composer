@@ -640,15 +640,16 @@
     xmlns="http://www.w3.org/2000/svg"
     preserveAspectRatio="xMidYMid meet"
   >
-    <!-- The builder shell owns the shared surface. This rect keeps the SVG's
-         hit area intact without painting a second, darker layer over it. -->
+    <!-- A half-clear plate the size of one pictograph, so the props and rings
+         stay readable over a busy background scene while the scene still
+         shows around and through it. It also keeps the SVG's hit area. -->
     <rect
       class="grid-bg"
       x="0"
       y="0"
       width="950"
       height="950"
-      fill="transparent"
+      rx="36"
     />
 
     <!-- Layer 1: Grid lines and points -->
@@ -984,6 +985,10 @@
     width: 100%;
     height: 100%;
     display: block;
+  }
+
+  .grid-bg {
+    fill: color-mix(in srgb, var(--theme-panel-bg, #11131a) 68%, transparent);
   }
 
   .motion-preview-path {

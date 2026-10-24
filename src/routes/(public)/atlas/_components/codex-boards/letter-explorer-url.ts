@@ -20,6 +20,8 @@ export interface LetterExplorerRouteState extends LetterExplorerEdits {
   letter: string;
   gridMode: GridModeValue;
   variation: number;
+  /** The explorer's transforms as their URL value (letter-explorer-transforms.ts). */
+  transforms?: string | null;
 }
 
 const CANONICAL_LETTER_EXPLORER_PATH = "/codex";
@@ -32,6 +34,7 @@ export const LETTER_EXPLORER_PARAMS = [
   "rightTurns",
   "leftRotation",
   "rightRotation",
+  "xf",
   // Published links may still carry the legacy palette-keyed names.
   "blueTurns",
   "redTurns",
@@ -96,6 +99,7 @@ export function parseLetterExplorerRoute(
         ? GridMode.BOX
         : GridMode.DIAMOND,
     variation,
+    transforms: searchParams.get("xf"),
     ...parseLetterExplorerEdits(searchParams),
   };
 }
@@ -113,6 +117,7 @@ export function writeLetterExplorerRoute(
   url.searchParams.set("letter", state.letter);
   url.searchParams.set("grid", state.gridMode);
   url.searchParams.set("variation", String(state.variation));
+  if (state.transforms) url.searchParams.set("xf", state.transforms);
   writeLetterExplorerEdits(url, state);
 }
 
@@ -169,8 +174,6 @@ export function buildCanonicalLetterExplorerHref(letter: string): string {
   return `${url.pathname}${url.search}${url.hash}`;
 }
 
-export function hasLetterExplorerEdits(
-  state: LetterExplorerEdits
-): boolean {
+export function hasLetterExplorerEdits(state: LetterExplorerEdits): boolean {
   return state.leftTurns !== 0 || state.rightTurns !== 0;
 }

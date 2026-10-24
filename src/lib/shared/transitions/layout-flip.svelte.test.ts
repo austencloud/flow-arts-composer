@@ -1,4 +1,4 @@
-import { describe, expect, it, afterEach } from "vitest";
+import { describe, expect, it, afterEach, vi } from "vitest";
 import { createLayoutMotion } from "./layout-flip";
 
 /**
@@ -222,11 +222,14 @@ describe("createLayoutMotion", () => {
     ).toBe(true);
     const second = flip.play();
     second.forEach((animation) => animation.finish());
-    await new Promise((resolve) => setTimeout(resolve, 0));
 
-    expect(
-      container.hasAttribute("data-layout-motion-suspend-descendants")
-    ).toBe(false);
+    // The browser sends finish events with its next frame update, which a
+    // zero-length timer only beats when the machine is idle.
+    await vi.waitFor(() => {
+      expect(
+        container.hasAttribute("data-layout-motion-suspend-descendants")
+      ).toBe(false);
+    });
   });
 
   it("moves the keyed element, never an inner wrapper", () => {

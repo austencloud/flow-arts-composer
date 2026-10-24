@@ -5,6 +5,7 @@ import {
   DoubleSide,
   Euler,
   LinearFilter,
+  Matrix4,
   Mesh,
   Object3D,
   Quaternion,
@@ -44,7 +45,8 @@ export interface MoonFanDiffuserPose {
 }
 
 export interface MoonFanDiffuserFrame {
-  readonly propState: MoonFanDiffuserPose;
+  readonly propState?: MoonFanDiffuserPose;
+  readonly bodyToEffects?: Matrix4;
   readonly rigLocalCenter: { x: number; y: number; z: number };
   readonly ledColors: readonly MoonFanDiffuserColor[];
   readonly brightness: number;
@@ -319,29 +321,51 @@ export class MoonFanDiffuserRenderer3D {
   update(frame: MoonFanDiffuserFrame): void {
     if (!this.meshes) return;
     const { propState, rigLocalCenter, ledColors } = frame;
-    this.position.set(rigLocalCenter.x, rigLocalCenter.y, rigLocalCenter.z);
-    this.rotation
-      .set(
-        propState.worldRotation.x,
-        propState.worldRotation.y,
-        propState.worldRotation.z,
-        propState.worldRotation.w
-      )
-      .multiply(HORIZONTAL_QUATERNION);
-
-    // A real diffuser emits from both faces. Two depth-tested skins sit just
-    // outside the GLB shell so the active face remains visible while the fan
-    // still passes correctly behind hands, bodies and other scene geometry.
-    this.surfaceOffset
-      .set(0, 0, SURFACE_OFFSET_M)
-      .applyQuaternion(this.rotation);
     const [front, back] = this.meshes;
-    front.position.copy(this.position).add(this.surfaceOffset);
-    back.position.copy(this.position).sub(this.surfaceOffset);
-    for (const mesh of this.meshes) {
-      mesh.quaternion.copy(this.rotation);
-      mesh.scale.setScalar(frame.scale ?? 1);
-      mesh.visible = frame.brightness > 0;
+    if (frame.bodyToEffects) {
+      for (const [index, mesh] of this.meshes.entries()) {
+        mesh.matrixAutoUpdate = false;
+        mesh.matrix
+          .copy(frame.bodyToEffects)
+          .scale(new Vector3().setScalar(frame.scale ?? 1))
+          .multiply(
+            new Matrix4().makeTranslation(
+              0,
+              0,
+              index === 0 ? SURFACE_OFFSET_M : -SURFACE_OFFSET_M
+            )
+          );
+        mesh.matrixWorldNeedsUpdate = true;
+        mesh.visible = frame.brightness > 0;
+      }
+    } else if (propState) {
+      this.position.set(rigLocalCenter.x, rigLocalCenter.y, rigLocalCenter.z);
+      this.rotation
+        .set(
+          propState.worldRotation.x,
+          propState.worldRotation.y,
+          propState.worldRotation.z,
+          propState.worldRotation.w
+        )
+        .multiply(HORIZONTAL_QUATERNION);
+
+      // A real diffuser emits from both faces. Two depth-tested skins sit just
+      // outside the GLB shell so the active face remains visible while the fan
+      // still passes correctly behind hands, bodies and other scene geometry.
+      this.surfaceOffset
+        .set(0, 0, SURFACE_OFFSET_M)
+        .applyQuaternion(this.rotation);
+      front.position.copy(this.position).add(this.surfaceOffset);
+      back.position.copy(this.position).sub(this.surfaceOffset);
+      for (const mesh of this.meshes) {
+        mesh.matrixAutoUpdate = true;
+        mesh.quaternion.copy(this.rotation);
+        mesh.scale.setScalar(frame.scale ?? 1);
+        mesh.visible = frame.brightness > 0;
+      }
+    } else {
+      this.reset();
+      return;
     }
     if (this.stripPixels && this.stripTexture) {
       for (let index = 0; index < MOON_FAN_LED_COUNT; index++) {

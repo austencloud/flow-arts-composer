@@ -297,4 +297,110 @@ basal=meadow_patch(9,14,.07,.26,.011)
 base=len(stalks.verts);stalks.verts+=basal.verts;stalks.uvs+=basal.uvs
 stalks.faces+=[tuple(i+base for i in f) for f in basal.faces]
 stalks.export('SeedStalks')
+
+# Forest floor. Unreal colours these from UVs as the grass does, so they carry only shape.
+def floor_mesh(name,verts,faces,uvs,slots,face_slots=None,smooth=False):
+    global SMOOTHING
+    clear()
+    mesh=bpy.data.meshes.new(name);mesh.from_pydata(verts,[],faces);mesh.update()
+    layer=mesh.uv_layers.new(name='UVMap')
+    for loop in mesh.loops: layer.data[loop.index].uv=uvs[loop.vertex_index]
+    for slot in slots: mesh.materials.append(slot)
+    if face_slots:
+        for poly,index in zip(mesh.polygons,face_slots): poly.material_index=index
+    # Bark shades round; the broken ends keep their hard rim.
+    for poly in mesh.polygons: poly.use_smooth=smooth and (not face_slots or face_slots[poly.index]==0)
+    o=bpy.data.objects.new(name,mesh);bpy.context.collection.objects.link(o)
+    print('FLOWFEST_FLOOR',name,'faces',len(faces))
+    SMOOTHING='FACE' if smooth else 'OFF'
+    export(name)
+    SMOOTHING='OFF'
+
+# Leaf litter: a 1.6 m drift of fallen leaves and a few twigs, thickest in the middle.
+# UV U picks each leaf's colour from dark wet brown to orange, so one patch mixes them.
+rng=random.Random(23);litter=Tuft()
+for _ in range(240):
+    r=.8*rng.random()**.7;a=rng.random()*math.tau
+    centre=Vector((r*math.cos(a),r*math.sin(a),rng.uniform(.004,.022)))
+    length=rng.uniform(.045,.09);width=length*rng.uniform(.45,.7);cup=rng.uniform(.004,.012)
+    turn=Matrix.Rotation(rng.random()*math.tau,3,'Z')@Matrix.Rotation(rng.uniform(-.35,.35),3,'X')@Matrix.Rotation(rng.uniform(-.25,.25),3,'Y')
+    tone=rng.random();base=len(litter.verts)
+    litter.verts.append(tuple(centre+turn@Vector((0,0,cup*.3))));litter.uvs.append((tone,.5))
+    for k in range(8):
+        t=k/8*math.tau;x=.5*length*math.cos(t);y=.5*width*math.sin(t)*(1-.35*math.cos(t))
+        litter.verts.append(tuple(centre+turn@Vector((x,y,cup*(abs(math.sin(t))+.5*abs(math.cos(t)))))));litter.uvs.append((tone,.5))
+    for k in range(8): litter.faces.append((base,base+1+k,base+1+(k+1)%8))
+for _ in range(9):
+    r=.6*rng.random();a=rng.random()*math.tau;yaw=rng.random()*math.tau;half=rng.uniform(.12,.3)
+    d=Vector((math.cos(yaw),math.sin(yaw),0));side=Vector((-d.y,d.x,0))*.006;c=Vector((r*math.cos(a),r*math.sin(a),.012))
+    base=len(litter.verts)
+    for p in (c-d*half-side,c-d*half+side,c+d*half+side,c+d*half-side): litter.verts.append(tuple(p));litter.uvs.append((.02,.5))
+    litter.faces.append((base,base+1,base+2,base+3))
+floor_mesh('LeafLitter',litter.verts,litter.faces,litter.uvs,[material('Leaf litter',(.2,.11,.05),.85)])
+
+# A woodland fern: arching fronds of paired leaflets around a crown. V runs crown to
+# tip like a grass blade, so the meadow-style material greens it and browns its tips.
+rng=random.Random(31);fern=Tuft()
+def pinna(at,direction,length,width,t):
+    d=direction.normalized();across=d.cross(Vector((0,0,1)));across=across.normalized() if across.length>1e-4 else Vector((1,0,0))
+    base=len(fern.verts)
+    for k in range(4):
+        s=k/3;c=at+d*length*s-Vector((0,0,length*.18*s*s));half=.5*width*math.sin(math.pi*min(.15+s*.85,1))+.0004
+        for edge,u in ((-1,0),(1,1)): fern.verts.append(tuple(c+across*half*edge));fern.uvs.append((u,1-min(1,t+.08*s)))
+    for k in range(3): a=base+2*k;fern.faces.append((a,a+1,a+3,a+2))
+for f in range(10):
+    yaw=f/10*math.tau+rng.uniform(-.25,.25);out=Vector((math.cos(yaw),math.sin(yaw),0));side=Vector((-out.y,out.x,0))
+    length=rng.uniform(.55,.85);arch=rng.uniform(.5,.75);droop=rng.uniform(.25,.45)
+    def at(t): return Vector((0,0,0))+out*length*arch*t+Vector((0,0,length*(t*(1-droop*t*t))*.85))
+    base=len(fern.verts)
+    for k in range(9):
+        t=k/8
+        for edge,u in ((-1,0),(1,1)): fern.verts.append(tuple(at(t)+side*.004*(1-.7*t)*edge));fern.uvs.append((u,1-t))
+    for k in range(8): a=base+2*k;fern.faces.append((a,a+1,a+3,a+2))
+    pairs=13
+    for k in range(pairs):
+        t=.18+.8*k/(pairs-1);root=at(t);ahead=(at(min(t+.05,1))-root).normalized()
+        size=length*.26*(1-t)**.55*(.7+.3*math.sin(math.pi*min(t*1.6,1)))+.012
+        for sign in (1,-1): pinna(root,side*sign*.8+ahead*.55,size,size*.32,t)
+floor_mesh('FernClump',fern.verts,fern.faces,fern.uvs,[material('Fern frond',(.08,.14,.04),.8)])
+
+# A fallen log and a broken stump: bark around, pale broken wood on the ends.
+# Bark U wraps once per 0.8 m of girth and V runs 0.8 m per unit along the log.
+bark=material('Log bark',(.16,.12,.08),.9);heart=material('Log heartwood',(.45,.34,.2),.85)
+def trunk(points,radii,around,jag,rng):
+    verts=[];uvs=[];faces=[];slots=[];rings=len(points);along=0
+    for i,(c,r) in enumerate(zip(points,radii)):
+        if i: along+=(Vector(points[i])-Vector(points[i-1])).length
+        ahead=(Vector(points[min(i+1,rings-1)])-Vector(points[max(i-1,0)])).normalized()
+        x=ahead.orthogonal().normalized();y=ahead.cross(x)
+        for k in range(around+1):
+            t=k/around*math.tau;wobble=1+.07*math.sin(3*t+i)+.04*math.sin(5*t-2*i)
+            reach=jag(i,k%around) if i in (0,rings-1) else 0
+            verts.append(tuple(Vector(c)+ahead*reach+(x*math.cos(t)+y*math.sin(t))*r*wobble))
+            uvs.append((k/around*(math.tau*r/.8),along/.8))
+    for i in range(rings-1):
+        for k in range(around):
+            a=i*(around+1)+k;faces.append((a,a+1,a+around+2,a+around+1));slots.append(0)
+    # Each broken end is its own fan of vertices, mapped flat across the cut.
+    for i,sign in ((0,-1),(rings-1,1)):
+        ring=[i*(around+1)+k for k in range(around)];centre=len(verts)
+        middle=sum((Vector(verts[v]) for v in ring),Vector())/around
+        verts.append(tuple(middle));uvs.append((.5,.5))
+        for k in range(around):
+            t=k/around*math.tau;verts.append(verts[ring[k]]);uvs.append((.5+.5*math.cos(t),.5+.5*math.sin(t)))
+        for k in range(around):
+            a,b=centre+1+k,centre+1+(k+1)%around;faces.append((centre,a,b) if sign<0 else (centre,b,a));slots.append(1)
+    return verts,faces,uvs,slots
+rng=random.Random(41);L=4.2;R=.2;n=17
+points=[(-L/2+L*i/(n-1),.06*math.sin(i*.7),R*.75+.05*math.sin(i*.4)) for i in range(n)]
+radii=[R*(1.12-.38*i/(n-1)) for i in range(n)]
+jag=lambda i,k:(rng.uniform(-.12,.06) if i==0 else rng.uniform(-.06,.22))
+v,f,uv,sl=trunk(points,radii,14,jag,rng)
+floor_mesh('FallenLog',v,f,uv,[bark,heart],sl,True)
+rng=random.Random(43)
+points=[(0,0,z) for z in (-.12,0,.05,.12,.22,.34,.44)]
+radii=[.3*(1+.65*math.exp(-max(z,0)/.07)) for (_,_,z) in points]
+jag=lambda i,k:(0 if i==0 else rng.uniform(-.1,.08))
+v,f,uv,sl=trunk(points,radii,16,jag,rng)
+floor_mesh('Stump',v,f,uv,[bark,heart],sl,True)
 print('FLOWFEST_ASSETS_AUTHORED')

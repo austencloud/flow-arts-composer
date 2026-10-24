@@ -4,6 +4,38 @@ This is a native C++ Unreal project for the Museum Game's authored one-walk layo
 
 ## Build
 
+### Composer motion preview
+
+The first runtime target is X-Bot with the physical Fire Staff
+(`fire_double_staff:default`). In Composer's 3D viewer, open Share and choose
+**Download game motion**. The file contains the current score and sampled motion.
+After editing the score, download again.
+
+Launch a current Museum build with `Tools/preview-motion.ps1`. It starts beside
+Isolation's first performer, configured as **Composer preview**. Press F6, paste
+the downloaded `.motion.json` file's full path into the motion field, and load
+it. Load the next export in the same window after another edit; changing scores
+does not require a new executable. `-MotionFile` can load the first file at
+launch. Flow Fest uses the same F6 loader after equipping X-Bot and Fire Staff.
+
+The shared loader checks the source rig hash and exact prop before replacing
+playback. A rejected import preserves the active performance. Pause, restart,
+seek and speed use the same shared clock as prepared animations. Runtime exports
+do not yet include a pictograph atlas, so this preview has no score board.
+
+`Tools/stage-runtime-preview.ps1` creates a new project directory from an existing
+Museum's scene assets and the current Flow Fest shared assets. It preserves the
+source builds, records their paths, and adopts `runtime-rigs.json` with the rig
+and prop catalogs. Compile that staged project once before using runtime files.
+
+The numerical acceptance test is `FlowArts.Runtime.PortableMotion.CookedParity`.
+It requires a genuine capture/cooked pair and reports full-loop and seam error
+before final stance corrections. `FlowArts.Museum.RuntimeMotion.Replacement` checks
+two distinct Composer exports on the same Museum performer. Test source alone
+does not establish that either check has passed; see the [run evidence](RUNTIME-MOTION-VERIFICATION.md).
+
+### Authored exhibit build
+
 On Windows, install Unreal Engine 5.8, a compatible Visual Studio C++ toolchain, Node.js with this repository's dependencies, and Blender 5.0. The sibling Flow Fest producer project must contain its finalized `/Game/FlowFest` assets and `Tools/staged/Characters` base rig. Set `$PreviewBaseUrl` to a running source preview's base URL. From `unreal/MuseumGame`, export the source manifest and capture the 25 authored routines:
 
 ```powershell

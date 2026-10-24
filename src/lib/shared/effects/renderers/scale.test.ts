@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { computeEffectScale } from "./scale";
-import { DEFAULT_CANVAS_SIZE } from "#lib/shared/animation-engine/services/canvas-resizer.svelte.js";
+import { DEFAULT_CANVAS_SIZE } from "#lib/shared/animation-engine/services/canvas-defaults.js";
 
 describe("computeEffectScale", () => {
   it("returns 1.0 at the reference dimension (square)", () => {

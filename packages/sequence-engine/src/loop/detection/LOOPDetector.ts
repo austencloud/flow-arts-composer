@@ -291,6 +291,20 @@ export function hasRewoundStructure(
 }
 
 /**
+ * The steps the detector classifies, in the pair-relation view: letter steps
+ * only, an orientation-closure repeat reduced to one motion cycle. Callers
+ * that check a label against the algebra themselves (label-equivalence.ts)
+ * read the same steps the detector did.
+ */
+export function loopSignalSteps(steps: readonly SequenceStep[]): PairMotions[] {
+  return toPairMotions(
+    reduceRepeatedMotionSkeleton(
+      steps.filter((step) => (step.stepNumber ?? 0) > 0)
+    )
+  );
+}
+
+/**
  * Project engine steps down to the minimal per-hand view the pair-relation
  * algebra reads (locations + motionType — MCP-grounded LOOP signal space).
  */

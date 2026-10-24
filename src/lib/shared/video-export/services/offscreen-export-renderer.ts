@@ -44,6 +44,7 @@ import type { AnimationPanelState } from "#lib/shared/animation-engine/state/ani
 import type { AnimationPlaybackController } from "#lib/shared/animation-engine/services/animation-playback-controller.js";
 import type { AdditionalLayerProps } from "#lib/shared/animation-engine/domain/types/trail-capture-types.js";
 import type { TunnelPropColorPair } from "#lib/shared/sequence-viewer/tunnel/tunnel-prop-colors.js";
+import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
 
 export interface OffscreenExportInit {
   /** Square canvas size (px) for the offscreen engine. */
@@ -74,6 +75,10 @@ export interface OffscreenExportInit {
    */
   leftMotionVisible?: boolean;
   rightMotionVisible?: boolean;
+  /** Fan build pinned by the caller; omitted → the browser's Settings. */
+  fanAppearance?: FanAppearance;
+  /** Omitted → the grid is drawn. */
+  gridVisible?: boolean;
 }
 
 /** Synchronous render passes to converge the fluid sim before capture starts. */
@@ -197,7 +202,8 @@ export class OffscreenExportRenderer {
       left,
       right,
       darkMode,
-      init.tunnelPropColors ?? null
+      init.tunnelPropColors ?? null,
+      init.fanAppearance ?? null
     );
 
     // Tunnel export: pre-load the kaleidoscope's per-layer prop textures. The
@@ -372,6 +378,8 @@ export class OffscreenExportRenderer {
     props.leftProp = sampled.left;
     props.rightProp = sampled.right;
     props.currentStep = beat;
+    if (this.init.fanAppearance) props.fanAppearance = this.init.fanAppearance;
+    if (this.init.gridVisible === false) props.gridVisible = false;
 
     if (layerProvider) props.additionalLayers = layerProvider(beat);
     // Match the live tunnel's spectrum coloring. frame-parameter-builder defaults

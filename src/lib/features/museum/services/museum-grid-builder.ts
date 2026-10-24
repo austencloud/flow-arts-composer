@@ -275,6 +275,10 @@ function placePerformers(
     const px = centerX + Math.floor(placement.offsetX * interiorW);
     const py = centerY + Math.floor(placement.offsetY * interiorH);
 
+    const content = ROOM_CONTENT[room.id]?.performers?.[placement.refId];
+    // A withheld figure leaves plain floor: no station, collider or prompt.
+    if (content?.withheld) continue;
+
     placeTile(tiles, px, py, {
       type: "performer-station",
       refId: placement.refId,
@@ -282,7 +286,6 @@ function placePerformers(
       material: room.material,
     });
 
-    const content = ROOM_CONTENT[room.id]?.performers?.[placement.refId];
     performers.push({
       id: placement.refId,
       tileX: px,

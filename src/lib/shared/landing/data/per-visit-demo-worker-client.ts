@@ -14,6 +14,7 @@
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { PerVisitContinuity } from "#lib/shared/landing/data/per-visit-demo-core.js";
 import type {
   PerVisitDemoRequest,
   PerVisitDemoResponse,
@@ -126,6 +127,7 @@ function ensureWorker(): Worker | null {
 export function rollInWorker(options?: {
   propType?: PropType;
   startPlacement?: PictographData | null;
+  continuity?: PerVisitContinuity;
 }): Promise<WorkerRollResult> {
   const active = ensureWorker();
   if (!active) return Promise.resolve(UNAVAILABLE);
@@ -142,6 +144,7 @@ export function rollInWorker(options?: {
             ) as PictographData,
           }
         : {}),
+      ...(options?.continuity ? { continuity: options.continuity } : {}),
     };
   } catch (error) {
     console.warn("[per-visit-demo] could not serialize roll options:", error);

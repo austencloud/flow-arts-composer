@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, rmSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import { baseline, verify, inside, resolvedInside, resolvePreparer, recordDecodedRig, recordBody, validateBody, recordFbx, validateFbx, recordImport, validateImport } from '../../../unreal/Shared/Tools/performance-bundle.mjs';
+import { baseline, verify, migratePropClearance, verifyPropClearance, inside, resolvedInside, resolvePreparer, recordDecodedRig, recordBody, validateBody, recordFbx, validateFbx, recordImport, validateImport } from '../../../unreal/Shared/Tools/performance-bundle.mjs';
 import { buildId, sha256, stableStringify } from '../../../unreal/Shared/Tools/capture-provenance.mjs';
 
 const put = (path: string, value: string) => { mkdirSync(dirname(path), { recursive: true }); writeFileSync(path, value); };
@@ -114,5 +114,84 @@ describe('performance stage receipts', () => {
     await expect(validateBody(body, { decodedRig })).rejects.toThrow(/decoded rig/);
     put(decodedRig, 'decoded'); rmSync(`${decodedRig}.performance.json`);
     await expect(validateBody(body, { decodedRig })).rejects.toThrow(/Missing decoded rig receipt/);
+  });
+});
+
+
+describe('geometric prop metadata migration', () => {
+  function migrationFixture() {
+    const { project } = fixture();
+    const catalogPath = join(project, 'Content/Data/props.json');
+    const before = join(project, 'before.json');
+    const original = { props: [{ id: 'staff', variants: [{ id: 'default', mesh: '/Game/FlowFest/Props/L', rightMesh: '/Game/FlowFest/Props/R' }] }] };
+    put(catalogPath, JSON.stringify(original));
+    put(before, JSON.stringify(original));
+    baseline(project);
+    const baselineBytes = readFileSync(join(project, 'Content/Data/performance-legacy-baseline.json'), 'utf8');
+    const capsule = [{ start: [0, 0, 0], end: [0, 10, 0], radiusCm: 1 }];
+    Object.assign(original.props[0].variants[0], { clearanceSpace: 'ue-static-mesh-local-cm-v1', clearanceCapsules: capsule, rightClearanceCapsules: capsule });
+    put(catalogPath, JSON.stringify(original));
+    const covers: Record<string, unknown> = {};
+    for (const side of ['L', 'R']) {
+      put(join(project, `Content/FlowFest/Props/${side}.uasset`), side);
+      covers[`/Game/FlowFest/Props/${side}`] = { vertices: 3, triangles: 1, capsules: 1, maxTriangleExcessCm: -0.001 };
+    }
+    const report = join(project, 'coverage.json');
+    put(report, JSON.stringify({ clearanceGenerated: true, errors: [], clearanceCovers: covers }));
+    return { project, before, report, catalogPath, baselineBytes };
+  }
+  it('preserves exact historical baseline and binds coverage, mesh bytes and packaged metadata', () => {
+    const f = migrationFixture();
+    expect(() => verify(f.project)).toThrow(/legacy catalog/);
+    migratePropClearance(f.project, f.before, f.report);
+    expect(verify(f.project).unchangedLegacy).toBe(1);
+    expect(readFileSync(join(f.project, 'Content/Data/performance-legacy-baseline.json'), 'utf8')).toBe(f.baselineBytes);
+    expect(verifyPropClearance(f.project).assets).toHaveProperty('Content/FlowFest/Props/L.uasset');
+    put(join(f.project, 'Content/FlowFest/Props/L.uasset'), 'changed mesh');
+    expect(() => verify(f.project)).toThrow(/asset inventory/);
+  });
+  it('rejects unrelated identity changes and incomplete coverage without rewriting historical proof', () => {
+    const f = migrationFixture();
+    const catalog = JSON.parse(readFileSync(f.catalogPath, 'utf8'));
+    catalog.props[0].variants[0].id = 'other';
+    put(f.catalogPath, JSON.stringify(catalog));
+    expect(() => migratePropClearance(f.project, f.before, f.report)).toThrow(/catalog identity/);
+    catalog.props[0].variants[0].id = 'default';
+    put(f.catalogPath, JSON.stringify(catalog));
+    put(f.report, JSON.stringify({ clearanceGenerated: true, errors: [], clearanceCovers: {} }));
+    expect(() => migratePropClearance(f.project, f.before, f.report)).toThrow(/complete-triangle/);
+  });
+  it('is idempotent when bootstrap regenerates coverage for the upgraded catalog', () => {
+    const f = migrationFixture();
+    migratePropClearance(f.project, f.before, f.report);
+    const receipt = readFileSync(join(f.project, 'Content/Data/prop-clearance-migration.json'), 'utf8');
+    // A fresh validation report may have unrelated diagnostic fields. The
+    // original geometric receipt and immutable baseline must stay untouched.
+    const report = JSON.parse(readFileSync(f.report, 'utf8'));
+    report.regenerated = true;
+    put(f.report, JSON.stringify(report));
+    migratePropClearance(f.project, f.before, f.report);
+    expect(readFileSync(join(f.project, 'Content/Data/prop-clearance-migration.json'), 'utf8')).toBe(receipt);
+    expect(readFileSync(join(f.project, 'Content/Data/performance-legacy-baseline.json'), 'utf8')).toBe(f.baselineBytes);
+    expect(verify(f.project).unchangedLegacy).toBe(1);
+  });
+  it('rejects changed capsule numbers after the migration receipt', () => {
+    const f = migrationFixture();
+    migratePropClearance(f.project, f.before, f.report);
+    const catalog = JSON.parse(readFileSync(f.catalogPath, 'utf8'));
+    catalog.props[0].variants[0].clearanceCapsules[0].radiusCm += 1;
+    put(f.catalogPath, JSON.stringify(catalog));
+    expect(() => verifyPropClearance(f.project)).toThrow();
+  });
+  it('requires right-hand geometry and rejects a fourth metadata field', () => {
+    const f = migrationFixture();
+    const catalog = JSON.parse(readFileSync(f.catalogPath, 'utf8'));
+    delete catalog.props[0].variants[0].rightClearanceCapsules;
+    put(f.catalogPath, JSON.stringify(catalog));
+    expect(() => migratePropClearance(f.project, f.before, f.report)).toThrow(/capsule count/);
+    catalog.props[0].variants[0].rightClearanceCapsules = catalog.props[0].variants[0].clearanceCapsules;
+    catalog.props[0].variants[0].newMetadata = true;
+    put(f.catalogPath, JSON.stringify(catalog));
+    expect(() => migratePropClearance(f.project, f.before, f.report)).toThrow(/catalog identity/);
   });
 });

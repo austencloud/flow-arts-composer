@@ -54,6 +54,7 @@
   import { analyticsRoute } from "#lib/shared/analytics/analytics-context.js";
   import { getInstagramAuthErrorMessage } from "#lib/shared/auth/services/instagram-auth.js";
   import InAppEscapeControls from "./InAppEscapeControls.svelte";
+  import { withGoogleHandoff } from "#lib/shared/auth/services/google-browser-handoff.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   let { mode = "signin", onFacebookAuth } = $props<{
@@ -122,6 +123,43 @@
     app_launched: escapeAction.isAppTarget,
   });
 
+  // Where the webview can open this page in the real browser, the Google button
+  // does exactly that, carrying ?signin=google so the browser goes on to
+  // Google's account picker by itself (google-browser-handoff.ts). One tap
+  // instead of a refusal plus a second button. Null where the escape is only a
+  // guide (older iOS, desktop webviews) or would route to the native app, which
+  // signs in its own way; those keep the explain-then-escape path below.
+  const googleHandoff = $derived.by(() => {
+    if (!inAppBrowser) return null;
+    const target = detector.getEscapeTarget(
+      page.url.searchParams,
+      withGoogleHandoff
+    );
+    if (!target.url || target.isAppTarget) return null;
+    return {
+      url: target.url,
+      method: target.method,
+      browser: target.method === "ios_scheme" ? "Safari" : "Chrome",
+    };
+  });
+  let handoffPending = $state(false);
+
+  function startGoogleHandoff(handoff: { url: string; method: string }) {
+    handoffPending = true;
+    providerError = null;
+    captureWhenReady("inapp_google_handoff_attempted", {
+      method: handoff.method,
+      route: analyticsRoute(),
+    });
+    window.location.href = handoff.url;
+    // A webview that swallows the intent leaves this page in front. Then the
+    // escape note (copy link, menu guide) is the way out.
+    setTimeout(() => {
+      handoffPending = false;
+      if (document.visibilityState === "visible") revealEscapeNote();
+    }, 1500);
+  }
+
   function revealEscapeNote() {
     if (showEscapeNote) return; // a second provider tap must not re-fire intent
     showEscapeNote = true;
@@ -158,6 +196,10 @@
     // degrade gracefully — Google renders its own 403 disallowed_useragent
     // page inside this same webview, which is a worse dead end than one
     // sentence in our own UI that names the way out.
+    if (googleHandoff) {
+      if (!handoffPending) startGoogleHandoff(googleHandoff);
+      return;
+    }
     if (inAppBrowser) {
       providerError = blockedProviderMessage("Google");
       captureEvent("inapp_auth_social_intercepted", { provider: "google" });
@@ -310,17 +352,25 @@
       disabled={isLoading}
       aria-expanded={showEscapeNote}
       aria-controls="inapp-escape-note"
-      aria-label={lastMethod === "google"
-        ? t("auth_continue_google_last_used")
-        : t("auth_continue_google")}
+      aria-label={googleHandoff
+        ? t("auth_continue_google_in", { browser: googleHandoff.browser })
+        : lastMethod === "google"
+          ? t("auth_continue_google_last_used")
+          : t("auth_continue_google")}
     >
       {#if lastMethod === "google"}
         <LastUsedBadge />
       {/if}
-      <Crossfade key={loadingProvider === "google"}>
+      <Crossfade key={loadingProvider === "google" || handoffPending}>
         {#if loadingProvider === "google"}
           <ProgressRing percent={-1} size={24} strokeWidth={2} />
           {t("auth_signing_in")}
+        {:else if handoffPending}
+          <ProgressRing percent={-1} size={24} strokeWidth={2} />
+          {t("auth_opening")}
+        {:else if googleHandoff}
+          <GoogleIcon />
+          {t("auth_continue_google_in", { browser: googleHandoff.browser })}
         {:else}
           <GoogleIcon />
           {t("auth_continue_google")}

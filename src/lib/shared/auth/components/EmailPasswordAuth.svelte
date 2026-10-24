@@ -30,6 +30,7 @@
     email = $bindable(""),
     showModeSwitch = true,
     onUseCode,
+    onCreateAccount,
   }: {
     mode?: "signin" | "signup";
     email?: string;
@@ -37,6 +38,9 @@
     // Offered under the sign-in form. A code signs in any email account, so it
     // covers a forgotten password and an account that never had one.
     onUseCode?: () => void;
+    // Fired when a failed sign-in turns into "make me an account". The host
+    // can keep this form on screen while the mode changes underneath it.
+    onCreateAccount?: () => void;
   } = $props();
 
   let password = $state("");
@@ -44,6 +48,9 @@
   let showPassword = $state(false);
   let loading = $state(false);
   let error = $state<string | null>(null);
+  // A sign-in that matched nothing is often a first visit, so the error
+  // carries a way into Create account instead of ending on a dead stop.
+  let offerCreateAccount = $state(false);
   let success = $state<string | null>(null);
 
   // Lightweight client-side rate limiting
@@ -104,6 +111,7 @@
 
     loading = true;
     error = null;
+    offerCreateAccount = false;
     success = null;
     recordAuthSubmission("password", mode);
 
@@ -211,12 +219,23 @@
         err?.code === "auth/invalid-credential"
       ) {
         const attemptsLeft = MAX_ATTEMPTS - failedAttempts;
-        error =
-          attemptsLeft > 0
-            ? `${t("auth_error_invalid_credential")} ${attemptsLeft} attempt${
-                attemptsLeft === 1 ? "" : "s"
-              } remaining.`
-            : `${t("auth_error_too_many_attempts")} ${lockoutRemaining}s`;
+        if (attemptsLeft <= 0) {
+          error = `${t("auth_error_too_many_attempts")} ${lockoutRemaining}s`;
+        } else {
+          // The countdown starts on the second miss. On the first it only
+          // scares someone who simply has no account yet.
+          error =
+            failedAttempts >= 2
+              ? `${t("auth_error_invalid_credential")} ${
+                  attemptsLeft === 1
+                    ? t("auth_error_attempts_left_one")
+                    : t("auth_error_attempts_left_other", {
+                        count: attemptsLeft,
+                      })
+                }`
+              : t("auth_error_invalid_credential");
+          offerCreateAccount = true;
+        }
       } else if (err?.code === "auth/too-many-requests") {
         error = t("auth_error_too_many_attempts");
       } else if (err?.code === "auth/multi-factor-auth-required") {
@@ -230,9 +249,17 @@
     }
   }
 
+  function createAccountFromError() {
+    mode = "signup";
+    error = null;
+    offerCreateAccount = false;
+    onCreateAccount?.();
+  }
+
   function toggleMode() {
     mode = mode === "signin" ? "signup" : "signin";
     error = null;
+    offerCreateAccount = false;
     success = null;
     if (mode === "signin") name = "";
   }
@@ -309,6 +336,22 @@
 
     {#if error}
       <p class="message error" role="alert" transition:growFade>{error}</p>
+    {/if}
+
+    {#if offerCreateAccount && mode === "signin"}
+      <button
+        class="switch"
+        transition:growFade
+        onoutrostart={(event) =>
+          ((event.currentTarget as HTMLElement).inert = true)}
+        onintrostart={(event) =>
+          ((event.currentTarget as HTMLElement).inert = false)}
+        type="button"
+        onclick={createAccountFromError}
+        disabled={loading}
+      >
+        {t("auth_error_create_with_email")}
+      </button>
     {/if}
 
     {#if success}

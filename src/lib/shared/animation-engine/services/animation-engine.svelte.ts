@@ -32,7 +32,7 @@ import type { EffortId } from "#lib/shared/effort/domain/effort-types.js";
 import type { TipEffortMap } from "../domain/types/tip-effect-types";
 
 // Services
-import { DEFAULT_CANVAS_SIZE } from "./canvas-resizer.svelte";
+import { DEFAULT_CANVAS_SIZE } from "./canvas-defaults";
 import { FrameBudgetMonitor } from "./frame-budget-monitor";
 import { detectDeviceTier } from "./device-tier-detector";
 import type { QualityTier } from "../domain/types/quality-types";
@@ -530,12 +530,15 @@ export class AnimationEngine {
     left: string,
     right: string,
     darkMode: boolean,
-    colors: TunnelPropColorPair | null = null
+    colors: TunnelPropColorPair | null = null,
+    fanAppearance: FanAppearance | null = null
   ): Promise<void> {
     const ptm = this.propSystem.propTypeManager;
     // Register overrides so loadPropTextures uses these exact types (not settings).
     ptm.propTypeOverrideLeft = left;
     ptm.propTypeOverrideRight = right;
+    // The fan build too, or the clip draws the viewer's own fan.
+    ptm.pinFanAppearance(fanAppearance);
     // Carry the type into engine state so frame-parameter-builder reads it.
     this.state.setLeftPropType(left);
     this.state.setRightPropType(right);

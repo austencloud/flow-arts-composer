@@ -124,6 +124,16 @@ function locationAngle(location: string): number {
   return LOCATION_ANGLES[location.toLowerCase()] ?? 0;
 }
 
+/**
+ * Grid radii from the center: 0 at the center point, 1 on the rim. The app's
+ * `locationRadius` (math-constants.ts) answers the same; this package cannot
+ * import app code, so it keeps its own copy beside its own angle table.
+ */
+function locationRadius(location: string): number {
+  const key = location.toLowerCase();
+  return key === "c" || key === "center" ? 0 : 1;
+}
+
 function orientationAngle(
   orientation: string | undefined,
   centerAngle: number
@@ -277,6 +287,11 @@ function pathPoints(
       SAMPLES_PER_BEAT,
       SAMPLES_PER_BEAT * Math.ceil(Math.max(1, turns))
     );
+    // A center end makes the motion a hash: the straight line between the
+    // center point and its rim end, whatever the motion type.
+    const startRadius = locationRadius(motion.startLocation);
+    const endRadius = locationRadius(motion.endLocation);
+    const isHash = startRadius === 0 || endRadius === 0;
 
     for (let sample = 0; sample <= sampleCount; sample++) {
       const progress = sample / sampleCount;
@@ -286,7 +301,14 @@ function pathPoints(
       let handX: number;
       let handY: number;
 
-      if (motion.motionType === "dash") {
+      if (isHash) {
+        const startX = Math.cos(endpoints.startCenterAngle) * startRadius;
+        const startY = Math.sin(endpoints.startCenterAngle) * startRadius;
+        const endX = Math.cos(endpoints.targetCenterAngle) * endRadius;
+        const endY = Math.sin(endpoints.targetCenterAngle) * endRadius;
+        handX = startX + (endX - startX) * progress;
+        handY = startY + (endY - startY) * progress;
+      } else if (motion.motionType === "dash") {
         const startX = Math.cos(endpoints.startCenterAngle);
         const startY = Math.sin(endpoints.startCenterAngle);
         handX =

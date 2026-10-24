@@ -20,14 +20,23 @@
   import { loadAutumnSceneModule } from "../scenes/autumn/runtime/autumn-scene-module";
   import type { ForestSceneConfig } from "../domain/models/scene-configs/forest-scene-config";
   import {
-    DEFAULT_ENVIRONMENT_TRANSITION_TIMING,
     advanceEnvironmentTransition,
     createEnvironmentTransitionState,
-    getEnvironmentVeilOpacity,
-    requestEnvironment,
     switchEnvironmentBehindHost,
     type EnvironmentTransitionObservation,
   } from "../domain/environment-transition";
+  import {
+    createEnvironmentHandoff,
+    handoffWorlds,
+    observeHandoff,
+    requestHandoff,
+    settleHandoff,
+  } from "../domain/environment-handoff";
+  import { EnvironmentHandoffGuard } from "../rendering/environment-handoff-guard";
+  import { createEnvironmentModuleLoader } from "../domain/environment-module-load";
+
+  // The host owns the visible cut, so its worlds swap in a single update.
+  const HOST_CONTROLLED_TIMING = { coverDurationMs: 0, revealDurationMs: 0 };
 
   interface Props {
     /** Background type from settings */
@@ -83,10 +92,9 @@
   const scene = resolveThrelteScene(sceneValue);
   const renderer = resolveThrelteRenderer(rendererValue);
   const sceneFeatures = getSceneFeatureContext();
-  // Full viewer canvases provide the DOM veil and shader readiness signal.
-  // Smaller embedded canvases can still mount Environment3D safely; they use
-  // the reduced-motion timing instead of waiting for a visual host they do not
-  // own.
+  // Full viewer canvases provide the shader readiness signal. Smaller embedded
+  // canvases can still mount Environment3D safely; their incoming world takes
+  // over as soon as its assets report ready.
   const transitionVisual = tryGetEnvironmentTransitionVisualContext();
 
   type SceneConfig =
@@ -130,33 +138,33 @@
     }
   }
 
+  const hostControlled = $derived(transitionVisualMode === "host-controlled");
+
+  // A film host covers the canvas itself and switches retained worlds behind
+  // that cover in one update.
   let transition = $state(
     createEnvironmentTransitionState(untrack(() => backgroundType))
   );
-  let prefersReducedMotion = $state(false);
+  // Everywhere else the shown world stays up while the next one loads hidden.
+  let handoff = $state(createEnvironmentHandoff(untrack(() => backgroundType)));
+  const handoffGuard = new EnvironmentHandoffGuard();
 
-  const mountedBackgroundType = $derived(transition.mountedKey);
-  const config = $derived(
-    mountedBackgroundType === null
-      ? ({ scene: "none" } as const)
-      : getSceneConfig(mountedBackgroundType)
+  const mountedBackgroundType = $derived(
+    hostControlled ? transition.mountedKey : handoff.shownKey
   );
-  const coordinateFrame = $derived(
-    mountedBackgroundType === null
-      ? null
-      : getStageCoordinateFrame(
-          mountedBackgroundType,
-          sceneFeatures.isEnabled("stage")
-        )
+  const mountedWorlds = $derived(
+    hostControlled
+      ? transition.mountedKey === null
+        ? []
+        : [transition.mountedKey]
+      : handoffWorlds(handoff)
   );
-  const environmentYOffset = $derived(coordinateFrame?.environmentYOffset ?? 0);
-  const transitionTiming = $derived(
-    transitionVisualMode === "host-controlled" ||
-      prefersReducedMotion ||
-      !transitionVisual
-      ? { coverDurationMs: 0, revealDurationMs: 0 }
-      : DEFAULT_ENVIRONMENT_TRANSITION_TIMING
+  const preparingBackgroundType = $derived(
+    hostControlled ? null : handoff.preparingKey
   );
+  const stageFeatureEnabled = $derived(sceneFeatures.isEnabled("stage"));
+  // While a world is preparing, the scene-feature "environment" slot and the
+  // renderer warm-up both describe the incoming world, not the shown one.
   const mountedEnvironmentSettled = $derived(
     mountedBackgroundType !== null &&
       (sceneFeatures.getError("environment") !== null ||
@@ -181,10 +189,10 @@
       )
     )
   );
-  const mountedEnvironmentIsRetained = $derived(
-    mountedBackgroundType !== null &&
-      retainedEnvironments.has(mountedBackgroundType)
-  );
+  // A retained world keeps loading while it is the one being prepared.
+  function isRetainedWorldActive(type: BackgroundType): boolean {
+    return mountedBackgroundType === type || preparingBackgroundType === type;
+  }
   const autumnRetryRequest = $derived(
     sceneFeatures.getRetryRequest("environment")
   );
@@ -198,6 +206,21 @@
       (message) => sceneFeatures.reportFailed("environment", message)
     );
   });
+
+  // A world's chunk can fail to download (offline, stale deploy). Report it so
+  // the handoff drops the newcomer and the picker says so, instead of the
+  // tapped tile spinning forever over the old world.
+  const worldModules = createEnvironmentModuleLoader<BackgroundType>(
+    (message) => sceneFeatures.reportFailed("environment", message)
+  );
+  function loadWorld<T>(
+    type: BackgroundType,
+    importer: () => Promise<T>
+  ): Promise<T> {
+    return worldModules.load(type, importer, () =>
+      untrack(() => mountedWorlds.includes(type))
+    );
+  }
 
   function getScene() {
     return scene;
@@ -218,16 +241,20 @@
     if (r?.clear) r.clear();
   }
 
+  // The shown world is fully loaded, so it takes the "environment" slot back.
+  function restoreShownWorldReady(): void {
+    sceneFeatures.resetReady("environment");
+    sceneFeatures.reportReady("environment");
+  }
+
   $effect(() => {
     const requestedBackground = backgroundType;
-    // This effect belongs to the scene-choice prop, not to the animation
-    // state it updates. Reading transition outside untrack makes every frame
-    // reschedule this effect; during covering that used to become an endless
-    // same-scene write before the renderer could paint another frame.
+    // This effect belongs to the scene-choice prop, not to the state it
+    // updates. Reading that state outside untrack would reschedule it on every
+    // write and can turn a same-scene request into an endless loop.
     untrack(() => {
-      const currentTransition = transition;
-
       if (transitionVisualMode === "host-controlled") {
+        const currentTransition = transition;
         if (
           requestedBackground === currentTransition.mountedKey &&
           requestedBackground === currentTransition.requestedKey
@@ -236,9 +263,8 @@
         }
 
         // The host has already covered the WebGL canvas with a complete frame.
-        // Never pass through the ordinary empty-world gap here: retained film
-        // worlds can switch in one update, report readiness, and render behind
-        // the host before it reveals the incoming shot.
+        // Retained film worlds can switch in one update, report readiness, and
+        // render behind the host before it reveals the incoming shot.
         transitionVisual?.setRendererReady(false);
         sceneFeatures.resetReady("environment");
         transition = switchEnvironmentBehindHost(
@@ -248,35 +274,51 @@
         return;
       }
 
-      const nextTransition = requestEnvironment(
-        currentTransition,
-        requestedBackground
-      );
-      if (nextTransition === currentTransition) return;
+      const current = handoff;
+      const next = requestHandoff(current, requestedBackground);
+      if (next === current) return;
 
-      if (requestedBackground !== currentTransition.mountedKey) {
-        // Capture while the outgoing world is still mounted. The next render
-        // may already be the empty gap, particularly with reduced motion.
-        transitionVisual?.retainFrame();
-        transitionVisual?.setRendererReady(false);
+      if (next.preparingKey !== null) {
+        if (next.preparingKey !== current.preparingKey) {
+          handoffGuard.begin(scene);
+          transitionVisual?.setRendererReady(false);
+          sceneFeatures.resetReady("environment");
+        }
+      } else if (current.preparingKey !== null) {
+        // Back to the world on screen before the other one arrived.
+        handoffGuard.cancel(scene);
+        restoreShownWorldReady();
       }
-      transition = nextTransition;
+      handoff = next;
     });
   });
 
+  // The incoming world takes over once its assets are in and its shaders are
+  // warm. A failure drops it and the shown world carries on.
   $effect(() => {
-    if (typeof window === "undefined") return;
-    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const syncPreference = () => {
-      prefersReducedMotion = media.matches;
-    };
-    syncPreference();
-    media.addEventListener("change", syncPreference);
-    return () => media.removeEventListener("change", syncPreference);
+    if (hostControlled) return;
+    const current = handoff;
+    if (current.preparingKey === null) return;
+    const failed = sceneFeatures.getError("environment") !== null;
+    const ready =
+      sceneFeatures.isReady("environment") &&
+      (transitionVisual?.rendererReady ?? true);
+    const next = settleHandoff(current, { ready, failed });
+    if (next === current) return;
+    untrack(() => {
+      if (next.shownKey !== current.shownKey) {
+        handoffGuard.promote(scene);
+      } else {
+        handoffGuard.cancel(scene);
+        restoreShownWorldReady();
+      }
+      handoff = next;
+    });
   });
 
   let previousMountedBackground = untrack(() => transition.mountedKey);
   $effect(() => {
+    if (!hostControlled) return;
     const mounted = transition.mountedKey;
     if (mounted === null && previousMountedBackground !== null) {
       clearSceneGlobals();
@@ -289,33 +331,39 @@
   });
 
   $effect(() => {
-    if (transitionVisualMode === "host-controlled") {
-      transitionVisual?.setFrame(0, "idle");
-    } else {
-      transitionVisual?.setFrame(
-        getEnvironmentVeilOpacity(transition),
-        transition.phase
-      );
-    }
+    // Nothing covers the canvas any more: the shown world is the cover.
+    transitionVisual?.setFrame(
+      0,
+      hostControlled ? "idle" : handoff.preparingKey ? "preparing" : "idle"
+    );
   });
 
   $effect(() => {
-    const observation: EnvironmentTransitionObservation<BackgroundType> = {
-      requestedKey: transition.requestedKey,
-      mountedKey: transition.mountedKey,
-      phase: transition.phase,
-      settled: transition.phase === "idle" && mountedEnvironmentSettled,
-    };
+    const observation: EnvironmentTransitionObservation<BackgroundType> =
+      hostControlled
+        ? {
+            requestedKey: transition.requestedKey,
+            mountedKey: transition.mountedKey,
+            phase: transition.phase,
+            settled: transition.phase === "idle" && mountedEnvironmentSettled,
+          }
+        : observeHandoff(handoff, mountedEnvironmentSettled);
     untrack(() => onTransitionChange?.(observation));
   });
 
   useTask((delta) => {
-    transition = advanceEnvironmentTransition(
-      transition,
-      delta * 1000,
-      mountedEnvironmentSettled,
-      transitionTiming
-    );
+    if (hostControlled) {
+      transition = advanceEnvironmentTransition(
+        transition,
+        delta * 1000,
+        mountedEnvironmentSettled,
+        HOST_CONTROLLED_TIMING
+      );
+      return;
+    }
+    // Before the render stage: keep the shown world's fog, sky and lighting on
+    // screen and the incoming world's roots out of it.
+    handoffGuard.hold(scene);
   });
 
   onDestroy(() => {
@@ -336,7 +384,7 @@
     {#key autumnRetryRequest}
       {#await autumnSceneModule then { default: AutumnScene }}
         <AutumnScene
-          active={mountedBackgroundType === BackgroundType.AUTUMN}
+          active={isRetainedWorldActive(BackgroundType.AUTUMN)}
           {performerPositions}
           {stageWidth}
           {stageDepth}
@@ -361,7 +409,7 @@
   >
     {#await import("../scenes/ForestScene.svelte") then { default: ForestScene }}
       <ForestScene
-        active={mountedBackgroundType === BackgroundType.FOREST}
+        active={isRetainedWorldActive(BackgroundType.FOREST)}
         variant="firefly"
         config={forestConfig}
         {stageWidth}
@@ -383,7 +431,7 @@
   >
     {#await import("../scenes/ocean/OceanScene.svelte") then { default: OceanScene }}
       <OceanScene
-        active={mountedBackgroundType === BackgroundType.OCEAN}
+        active={isRetainedWorldActive(BackgroundType.OCEAN)}
         {performerCount}
         {stageWidth}
         {stageDepth}
@@ -405,7 +453,7 @@
   >
     {#await import("../scenes/CelestialScene.svelte") then { default: CelestialScene }}
       <CelestialScene
-        active={mountedBackgroundType === BackgroundType.CELESTIAL}
+        active={isRetainedWorldActive(BackgroundType.CELESTIAL)}
         {stageWidth}
         {stageDepth}
         {stageRadius}
@@ -416,98 +464,129 @@
   </T.Group>
 {/if}
 
-{#if coordinateFrame && !mountedEnvironmentIsRetained}
-  <T.Group position.y={environmentYOffset}>
-    {#if config.scene === "forest"}
-      {#await import("../scenes/ForestScene.svelte") then { default: ForestScene }}
-        <ForestScene
-          variant={config.variant}
-          config={forestConfig}
-          {stageWidth}
-          {stageDepth}
-          {stageZOffset}
-        />
-      {/await}
-    {:else if config.scene === "autumn"}
-      {#key autumnRetryRequest}
-        {#await autumnSceneModule then { default: AutumnScene }}
-          <AutumnScene
-            {performerPositions}
+<!-- The shown world, plus the incoming one while it loads hidden beside it.
+     Keyed by world so the incoming scene keeps its loaded state when it is
+     promoted instead of mounting again. -->
+{#each mountedWorlds as worldType (worldType)}
+  {#if !retainedEnvironments.has(worldType)}
+    {@const config = getSceneConfig(worldType)}
+    {@const environmentYOffset = getStageCoordinateFrame(
+      worldType,
+      stageFeatureEnabled
+    ).environmentYOffset}
+    <T.Group
+      position.y={environmentYOffset}
+      visible={worldType === mountedBackgroundType}
+    >
+      {#if config.scene === "forest"}
+        {#await loadWorld(worldType, () => import("../scenes/ForestScene.svelte")) then { default: ForestScene }}
+          <ForestScene
+            variant={config.variant}
+            config={forestConfig}
             {stageWidth}
             {stageDepth}
             {stageZOffset}
           />
         {:catch}
-          <!-- The viewer's scene-feature boundary owns the retry UI. -->
+          <!-- loadWorld reported the failure; the shown world stays. -->
         {/await}
-      {/key}
-    {:else if config.scene === "cosmic"}
-      {#await import("../scenes/CosmicScene.svelte") then { default: CosmicScene }}
-        <CosmicScene
-          variant={config.variant}
-          {performerCount}
-          {stageRadius}
-          {stageRadiusGrowth}
-        />
-      {/await}
-    {:else if config.scene === "winter"}
-      {#await import("../scenes/WinterScene.svelte") then { default: WinterScene }}
-        <WinterScene
-          {stageRadius}
-          {stageRadiusGrowth}
-          {stageZOffset}
-          platformVisible={winterPlatformVisible}
-          worldYOffset={environmentYOffset}
-        />
-      {/await}
-    {:else if config.scene === "ocean"}
-      {#await import("../scenes/ocean/OceanScene.svelte") then { default: OceanScene }}
-        <OceanScene
-          {performerCount}
-          {stageWidth}
-          {stageDepth}
-          {stageZOffset}
-          worldYOffset={environmentYOffset}
-        />
-      {/await}
-    {:else if config.scene === "ember"}
-      {#await import("../scenes/EmberScene.svelte") then { default: EmberScene }}
-        <EmberScene {stageRadius} {stageRadiusGrowth} />
-      {/await}
-    {:else if config.scene === "blossom"}
-      {#await import("../scenes/BlossomScene.svelte") then { default: BlossomScene }}
-        <BlossomScene
-          {stageWidth}
-          {stageDepth}
-          {stageZOffset}
-          showDirectionCues={sceneFeatures.isEnabled("stage")}
-        />
-      {/await}
-    {:else if config.scene === "rainbow"}
-      {#await import("../scenes/RainbowScene.svelte") then { default: RainbowScene }}
-        <RainbowScene
-          {stageRadius}
-          {stageRadiusGrowth}
-          worldYOffset={environmentYOffset}
-        />
-      {/await}
-    {:else if config.scene === "celestial"}
-      {#await import("../scenes/CelestialScene.svelte") then { default: CelestialScene }}
-        <CelestialScene
-          {stageWidth}
-          {stageDepth}
-          {stageRadius}
-          {stageRadiusGrowth}
-          {stageZOffset}
-          worldYOffset={environmentYOffset}
-        />
-      {/await}
-    {:else if config.scene === "void"}
-      {#await import("../scenes/VoidScene.svelte") then { default: VoidScene }}
-        <VoidScene {stageRadius} {stageRadiusGrowth} />
-      {/await}
-    {/if}
-  </T.Group>
-{/if}
+      {:else if config.scene === "autumn"}
+        {#key autumnRetryRequest}
+          {#await autumnSceneModule then { default: AutumnScene }}
+            <AutumnScene
+              {performerPositions}
+              {stageWidth}
+              {stageDepth}
+              {stageZOffset}
+            />
+          {:catch}
+            <!-- The viewer's scene-feature boundary owns the retry UI. -->
+          {/await}
+        {/key}
+      {:else if config.scene === "cosmic"}
+        {#await loadWorld(worldType, () => import("../scenes/CosmicScene.svelte")) then { default: CosmicScene }}
+          <CosmicScene
+            variant={config.variant}
+            {performerCount}
+            {stageRadius}
+            {stageRadiusGrowth}
+          />
+        {:catch}
+          <!-- loadWorld reported the failure; the shown world stays. -->
+        {/await}
+      {:else if config.scene === "winter"}
+        {#await loadWorld(worldType, () => import("../scenes/WinterScene.svelte")) then { default: WinterScene }}
+          <WinterScene
+            {stageRadius}
+            {stageRadiusGrowth}
+            {stageZOffset}
+            platformVisible={winterPlatformVisible}
+            worldYOffset={environmentYOffset}
+          />
+        {:catch}
+          <!-- loadWorld reported the failure; the shown world stays. -->
+        {/await}
+      {:else if config.scene === "ocean"}
+        {#await loadWorld(worldType, () => import("../scenes/ocean/OceanScene.svelte")) then { default: OceanScene }}
+          <OceanScene
+            {performerCount}
+            {stageWidth}
+            {stageDepth}
+            {stageZOffset}
+            worldYOffset={environmentYOffset}
+          />
+        {:catch}
+          <!-- loadWorld reported the failure; the shown world stays. -->
+        {/await}
+      {:else if config.scene === "ember"}
+        {#await loadWorld(worldType, () => import("../scenes/EmberScene.svelte")) then { default: EmberScene }}
+          <EmberScene {stageRadius} {stageRadiusGrowth} />
+        {:catch}
+          <!-- loadWorld reported the failure; the shown world stays. -->
+        {/await}
+      {:else if config.scene === "blossom"}
+        {#await loadWorld(worldType, () => import("../scenes/BlossomScene.svelte")) then { default: BlossomScene }}
+          <BlossomScene
+            {stageWidth}
+            {stageDepth}
+            {stageZOffset}
+            showDirectionCues={sceneFeatures.isEnabled("stage")}
+          />
+        {:catch}
+          <!-- loadWorld reported the failure; the shown world stays. -->
+        {/await}
+      {:else if config.scene === "rainbow"}
+        {#await loadWorld(worldType, () => import("../scenes/RainbowScene.svelte")) then { default: RainbowScene }}
+          <RainbowScene
+            {stageRadius}
+            {stageRadiusGrowth}
+            worldYOffset={environmentYOffset}
+          />
+        {:catch}
+          <!-- loadWorld reported the failure; the shown world stays. -->
+        {/await}
+      {:else if config.scene === "celestial"}
+        {#await loadWorld(worldType, () => import("../scenes/CelestialScene.svelte")) then { default: CelestialScene }}
+          <CelestialScene
+            {stageWidth}
+            {stageDepth}
+            {stageRadius}
+            {stageRadiusGrowth}
+            {stageZOffset}
+            worldYOffset={environmentYOffset}
+          />
+        {:catch}
+          <!-- loadWorld reported the failure; the shown world stays. -->
+        {/await}
+      {:else if config.scene === "void"}
+        {#await loadWorld(worldType, () => import("../scenes/VoidScene.svelte")) then { default: VoidScene }}
+          <VoidScene {stageRadius} {stageRadiusGrowth} />
+        {:catch}
+          <!-- loadWorld reported the failure; the shown world stays. -->
+        {/await}
+      {/if}
+    </T.Group>
+  {/if}
+{/each}
 
 <!-- Unrecognized background types render nothing - just the default grid -->

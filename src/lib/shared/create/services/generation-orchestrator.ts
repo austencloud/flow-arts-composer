@@ -166,6 +166,20 @@ function joinAlternatives(items: string[]): string {
 }
 
 /**
+ * The engine's sentence when it names the exact reason a spelled word cannot
+ * form the LOOP, or undefined. Those checks (a word that cannot close, a swap
+ * that changes nothing) open with the quoted word; the others describe the
+ * search in terms people never see, so the notice keeps its own text.
+ */
+export function infeasibleReasonForPeople(
+  error: GenerationInfeasibleError
+): string | undefined {
+  const message = error.message.trim();
+  if (!message.startsWith('"')) return undefined;
+  return /[.!?]$/.test(message) ? message : `${message}.`;
+}
+
+/**
  * Turn the engine's proof that no path exists into a notice naming the
  * settings that block it. Each change listed opens a path on its own, so the
  * user can pick whichever matters least to them.
@@ -222,7 +236,9 @@ export function describeInfeasibleRequest(
     return `No ${subject} fits these settings together. Try another length, start or motion setting.`;
   }
   const lead =
-    changes.length === 1 ? "To open a path" : "To open a path, try one of these";
+    changes.length === 1
+      ? "To open a path"
+      : "To open a path, try one of these";
   return `No ${subject} fits these settings together. ${lead}: ${joinAlternatives(changes)}.`;
 }
 
@@ -502,7 +518,8 @@ export class GenerationOrchestrator {
     } catch (error) {
       if (error instanceof GenerationInfeasibleError) {
         throw new GenerationRequestError(
-          describeInfeasibleRequest(error, options)
+          describeInfeasibleRequest(error, options),
+          infeasibleReasonForPeople(error)
         );
       }
       throw error;

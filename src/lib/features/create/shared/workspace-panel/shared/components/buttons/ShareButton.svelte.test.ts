@@ -281,7 +281,7 @@ describe("ShareButton", () => {
       .toBeInTheDocument();
     await page.getByRole("button", { name: "Video", exact: true }).click();
     await expect
-      .element(page.getByRole("dialog", { name: "Download animation" }))
+      .element(page.getByRole("dialog", { name: "Download video" }))
       .toBeInTheDocument();
     await expect
       .element(page.getByRole("menuitem", { name: "Send Sequence" }))

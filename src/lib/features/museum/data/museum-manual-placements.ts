@@ -42,29 +42,7 @@ export const MANUAL_PLACEMENTS: Record<string, ManualPlacement[]> = {
     { id: "egyptian-retail-fixture-1775547562707", objectDefId: "retail-fixture", tileX: 11, tileY: 3, wallFacing: "south", yaw: 0.0000 },
     { id: "egyptian-retail-fixture-1775547675077", objectDefId: "retail-fixture", tileX: 32, tileY: 4, wallFacing: "west", yaw: -1.5708 },
   ],
-  "collaboration": [
-    { id: "collaboration-institutional-fixture-1775548758920", objectDefId: "institutional-fixture", tileX: 3, tileY: 19, wallFacing: "east", yaw: 1.5708 },
-    { id: "collaboration-institutional-fixture-1775548761367", objectDefId: "institutional-fixture", tileX: 21, tileY: 32, wallFacing: "north", yaw: 3.1416 },
-    { id: "collaboration-institutional-fixture-1775548766284", objectDefId: "institutional-fixture", tileX: 18, tileY: 3, wallFacing: "south", yaw: 0.0000 },
-    { id: "collaboration-institutional-fixture-1775548771901", objectDefId: "institutional-fixture", tileX: 35, tileY: 18, wallFacing: "west", yaw: -1.5708 },
-    { id: "collaboration-modern-fixture-1775548824903", objectDefId: "modern-fixture", tileX: 14, tileY: 3, wallFacing: "south", yaw: 0.0000 },
-    { id: "collaboration-renaissance-fixture-1775552717128", objectDefId: "renaissance-fixture", tileX: 71, tileY: 85, wallFacing: "north", yaw: 3.1416 },
-    { id: "collaboration-renaissance-fixture-1775553132106", objectDefId: "renaissance-fixture", tileX: 84, tileY: 85, wallFacing: "north", yaw: 3.1416 },
-    { id: "collaboration-renaissance-fixture-1775553148235", objectDefId: "renaissance-fixture", tileX: 80, tileY: 70, wallFacing: "north", yaw: 2.9764 },
-    { id: "collaboration-renaissance-fixture-1775553152387", objectDefId: "renaissance-fixture", tileX: 81, tileY: 71, wallFacing: "north", yaw: 2.5709 },
-    { id: "collaboration-gallery-fixture-1775553274879", objectDefId: "gallery-fixture", tileX: 89, tileY: 85, wallFacing: "north", yaw: 3.1416 },
-    { id: "collaboration-renaissance-fixture-1775553448293", objectDefId: "renaissance-fixture", tileX: 79, tileY: 85, wallFacing: "north", yaw: 3.1416 },
-    { id: "collaboration-renaissance-fixture-1775553451835", objectDefId: "renaissance-fixture", tileX: 73, tileY: 85, wallFacing: "north", yaw: 3.1416 },
-    { id: "collaboration-futuristic-fixture-1775553457700", objectDefId: "futuristic-fixture", tileX: 92, tileY: 81, wallFacing: "west", yaw: -1.5708 },
-    { id: "collaboration-renaissance-fixture-1775553479153", objectDefId: "renaissance-fixture", tileX: 86, tileY: 85, wallFacing: "north", yaw: 3.1416 },
-    { id: "collaboration-digital-fixture-1775553510591", objectDefId: "digital-fixture", tileX: 68, tileY: 85, wallFacing: "north", yaw: 3.1416 },
-    { id: "collaboration-digital-fixture-1775553516939", objectDefId: "digital-fixture", tileX: 58, tileY: 85, wallFacing: "north", yaw: 3.1416 },
-    { id: "collaboration-digital-fixture-1775553530096", objectDefId: "digital-fixture", tileX: 58, tileY: 85, wallFacing: "north", yaw: 3.1416 },
-    { id: "collaboration-gallery-fixture-1775553645581", objectDefId: "gallery-fixture", tileX: 75, tileY: 85, wallFacing: "north", yaw: 3.1416 },
-    { id: "collaboration-modern-fixture-1775553760309", objectDefId: "modern-fixture", tileX: 17, tileY: 85, wallFacing: "north", yaw: 3.1416 },
-    { id: "collaboration-digital-fixture-1775553771723", objectDefId: "digital-fixture", tileX: 29, tileY: 85, wallFacing: "north", yaw: 3.1416 },
-    { id: "collaboration-digital-fixture-1775553803220", objectDefId: "digital-fixture", tileX: 17, tileY: 85, wallFacing: "north", yaw: 3.1416 },
-    { id: "collaboration-digital-fixture-1775553837313", objectDefId: "digital-fixture", tileX: 24, tileY: 85, wallFacing: "north", yaw: 3.1416 },
-    { id: "collaboration-gallery-fixture-1775553841168", objectDefId: "gallery-fixture", tileX: 22, tileY: 85, wallFacing: "north", yaw: 3.1416 },
-  ],
+  // The Room of Collaboration's 23 wall fixtures went with its tile walls:
+  // the forest is its envelope now, and with nothing to hang on they floated
+  // in the dark while the forest loaded.
 };

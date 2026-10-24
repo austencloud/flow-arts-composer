@@ -12,9 +12,8 @@ const mocks = vi.hoisted(() => ({
   disableAll: vi.fn(),
   setAllEventPreferences: vi.fn(),
   getRegistrationState: vi.fn(),
-  getSetupState: vi.fn(),
   enableForCurrentDevice: vi.fn(),
-  unregisterToken: vi.fn(),
+  turnOffForCurrentDevice: vi.fn(),
   showUserError: vi.fn(),
 }));
 
@@ -33,9 +32,8 @@ vi.mock(
 vi.mock("#lib/shared/push/get-fcm-token-manager.js", () => ({
   getFCMTokenManager: () => ({
     getRegistrationState: mocks.getRegistrationState,
-    getSetupState: mocks.getSetupState,
     enableForCurrentDevice: mocks.enableForCurrentDevice,
-    unregisterToken: mocks.unregisterToken,
+    turnOffForCurrentDevice: mocks.turnOffForCurrentDevice,
   }),
 }));
 
@@ -77,6 +75,8 @@ const translations: Record<string, string> = {
   feedback_retry_push: "Retry push notification setup",
   feedback_push_retry: "Retry",
   feedback_push_failed_desc: "Push setup failed. Try again.",
+  feedback_push_ready_desc: "Active on this device",
+  feedback_push_device_off_desc: "Off on this device",
   feedback_email_notifications: "Email notifications",
   feedback_email_off: "Email off",
   feedback_email_off_desc: "Off until you choose to receive email",
@@ -133,8 +133,8 @@ describe("NotificationPreferencesPanel", () => {
       pushEnabled: true,
     });
     mocks.getRegistrationState.mockResolvedValue("setup-required");
-    mocks.getSetupState.mockResolvedValue("setup-required");
     mocks.enableForCurrentDevice.mockResolvedValue("ready");
+    mocks.turnOffForCurrentDevice.mockResolvedValue("off");
     mocks.savePreferences.mockResolvedValue(undefined);
     mocks.togglePreference.mockResolvedValue(undefined);
     mocks.setAllEventPreferences.mockResolvedValue(undefined);
@@ -202,7 +202,7 @@ describe("NotificationPreferencesPanel", () => {
     );
   });
 
-  it("retries failed push setup instead of turning the account preference off", async () => {
+  it("retries failed push setup without touching any account-wide setting", async () => {
     mocks.getRegistrationState.mockResolvedValueOnce("failed");
 
     render(NotificationPreferencesPanel);
@@ -216,10 +216,42 @@ describe("NotificationPreferencesPanel", () => {
     await expect
       .poll(() => mocks.enableForCurrentDevice.mock.calls.length)
       .toBe(1);
-    expect(mocks.savePreferences).toHaveBeenCalledWith(
-      "notification-test-user",
-      expect.objectContaining({ pushEnabled: true })
+    expect(mocks.savePreferences).not.toHaveBeenCalled();
+  });
+
+  it("turns push off on this device only, leaving the account's other devices alone", async () => {
+    // A stale account-wide "off" from before push went per device must not
+    // hide a device that is registered and receiving pushes.
+    mocks.getPreferences.mockResolvedValue({
+      ...DEFAULT_NOTIFICATION_PREFERENCES,
+      pushEnabled: false,
+    });
+    mocks.getRegistrationState.mockResolvedValue("ready");
+
+    render(NotificationPreferencesPanel);
+
+    await expect.element(page.getByText("Active on this device")).toBeVisible();
+    await page
+      .getByRole("button", {
+        name: "Turn off push notifications on this device",
+      })
+      .click();
+
+    await expect
+      .poll(() => mocks.turnOffForCurrentDevice.mock.calls.length)
+      .toBe(1);
+    expect(mocks.turnOffForCurrentDevice).toHaveBeenCalledWith(
+      "notification-test-user"
     );
+    await expect.element(page.getByText("Off on this device")).toBeVisible();
+    await expect
+      .element(
+        page.getByRole("button", {
+          name: "Turn on push notifications on this device",
+        })
+      )
+      .toBeVisible();
+    expect(mocks.savePreferences).not.toHaveBeenCalled();
   });
 
   it("shows a retryable state instead of rendering defaults after load failure", async () => {

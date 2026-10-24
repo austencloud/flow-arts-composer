@@ -1,43 +1,59 @@
-import type { World } from "miniplex";
-import type {
-	VillageEntity,
-	LearnedSequence,
-	Season,
-} from "../../domain/village-types";
-import type { VillageConfig } from "../village-config";
-import type { VillageEventEmitter } from "../village-event-emitter";
 import {
-	IDLE_THRESHOLD_BASE,
-	INTERACTION_COOLDOWN_BASE,
-	INVENTION_BASE_PROBABILITY,
-	MAKER_CRAFT_DURATION,
-	MOURNING_DURATION,
-	PERSONAL_SPACE_RADIUS,
-	STYLE_INCOMPATIBILITY_REFUSE_CHANCE,
-	STYLE_INCOMPATIBILITY_THRESHOLD,
-} from "../../domain/village-constants";
+	VISITOR_ID,
+	type AvatarBehaviorState,
+	type VillageEntity,
+	type VillageWorld,
+	type LearnedSequence,
+} from "../../domain/village-types";
+import type { VillageRules } from "../../domain/village-rules";
+import type { VillageEventEmitter } from "../village-event-emitter";
+import type { VillageRng } from "../village-rng";
+import {
+	isInAudienceGap,
+	lessonSpots,
+	planCampLayout,
+	studentSpot,
+	type VillageCampLayout,
+} from "../../domain/village-campfire";
 
-import type { VillageDecisionEngine } from "../llm/village-decision-engine";
-
-const SEEK_RADIUS = 5;
+// What someone can leave to go and sit by the fire, or to keep a seated
+// teacher company. A lesson, a meeting under way or an invention is finished
+// first.
+const FREE_STATES: ReadonlySet<AvatarBehaviorState> = new Set([
+	"idle",
+	"wandering",
+	"seeking",
+	"performing",
+	"practicing",
+	"watching",
+	"mourning",
+]);
 
 export class SocialSystem {
-	constructor(
-		private config: VillageConfig,
-		private emitter: VillageEventEmitter,
-		private decisionEngine: VillageDecisionEngine,
-		// Read lazily: SeasonSystem owns the canonical season and may tick after
-		// SocialSystem, so we resolve the current value at call time rather than
-		// capturing it at construction.
-		private getCurrentSeason: () => Season,
-	) {}
+	private layout: VillageCampLayout;
 
-	tick(world: World<VillageEntity>, _currentTick: number): void {
+	constructor(
+		private rules: VillageRules,
+		private emitter: VillageEventEmitter,
+		private rng: VillageRng,
+	) {
+		this.layout = planCampLayout(rules);
+	}
+
+	tick(world: VillageWorld, currentTick: number): void {
 		for (const entity of world.entities) {
 			if (entity.social.state === "passing") continue;
 
 			if (entity.social.interactionCooldown > 0) {
 				entity.social.interactionCooldown--;
+			}
+
+			if (
+				entity.lifecycle.currentAge >= this.rules.passing.retireAge &&
+				FREE_STATES.has(entity.social.state)
+			) {
+				this.retire(entity, world);
+				continue;
 			}
 
 			switch (entity.social.state) {
@@ -54,118 +70,80 @@ export class SocialSystem {
 					this.handleApproaching(entity, world);
 					break;
 				case "socializing":
-					this.handleSocializing(entity, world, _currentTick);
+					this.handleSocializing(entity, world, currentTick);
 					break;
 				case "practicing":
+					this.rehearse(entity, currentTick);
 					this.handlePracticing(entity);
 					break;
 				case "performing":
+					this.rehearse(entity, currentTick);
 					this.handlePerforming(entity);
 					break;
 				case "watching":
 					this.handleWatching(entity);
 					break;
-				case "jamming":
-					this.handleJamming(entity);
-					break;
-				case "commissioning":
-					this.handleCommissioning(entity);
-					break;
 				case "mourning":
 					this.handleMourning(entity);
 					break;
-				case "pilgrim":
-					// PilgrimageSystem handles movement; SocialSystem just skips
+				case "retiring":
+					this.handleRetiring(entity);
+					break;
+				case "attending":
+					this.handleAttending(entity, world);
 					break;
 			}
 		}
 	}
 
-	private handleIdle(
-		entity: VillageEntity,
-		world: World<VillageEntity>,
-	): void {
-		if (entity.identity.role === "maker") return;
-
-		// Check for pending LLM decision first
-		const pending = this.decisionEngine.consumeDecision(entity.id);
-		if (pending) {
-			this.applyIdleDecision(entity, pending.action, world);
-			return;
-		}
-
+	private handleIdle(entity: VillageEntity, world: VillageWorld): void {
+		const social = this.rules.social;
 		entity.social.idleTimer++;
 
 		const threshold =
-			IDLE_THRESHOLD_BASE * (1 - entity.personality.sociability * 0.5);
+			social.idleTicksBase *
+			(1 - entity.personality.sociability * social.idleSociabilityDamping);
 		if (entity.social.idleTimer < threshold) return;
 		if (entity.social.interactionCooldown > 0) return;
 
 		entity.social.idleTimer = 0;
 
-		// If LLM enabled, fire async decision and wait
-		if (this.decisionEngine.enabled) {
-			this.decisionEngine.requestIdleDecision(
-				entity,
-				world.entities,
-				this.getCurrentSeason(),
-				world.entities.length,
-				0,
-			);
-			return; // entity stays idle until response arrives
+		// Nobody starts swinging a prop until they stand in a lane of their own.
+		if (!this.isSettled(entity, world)) {
+			this.startWandering(entity, world);
+			return;
 		}
 
-		// Deterministic fallback (original probability rolls)
-		this.rollIdleDecision(entity, world);
-	}
-
-	private rollIdleDecision(entity: VillageEntity, _world: World<VillageEntity>): void {
-		const roll = Math.random();
-		const hasSequences = entity.knowledge.knownSequences.size > 0;
-		const canInvent = entity.knowledge.knownSequences.size >= 2;
+		const roll = this.rng();
+		const known = entity.knowledge.knownSequences.size;
 
 		if (
-			canInvent &&
-			roll < entity.personality.creativity * INVENTION_BASE_PROBABILITY * 10
+			known >= 1 &&
+			roll < entity.personality.creativity * social.inventChancePerCreativity
 		) {
 			entity.social.state = "inventing";
-		} else if (hasSequences && roll < 0.2) {
+		} else if (known > 0 && roll < social.performChance) {
 			this.startPerforming(entity);
-		} else if (roll < 0.6 + entity.personality.sociability * 0.3) {
+		} else if (
+			roll <
+			social.seekChanceBase + entity.personality.sociability * social.seekChancePerSociability
+		) {
 			entity.social.state = "seeking";
+			entity.social.idleTimer = 0;
 		} else {
-			this.startWandering(entity);
+			this.startWandering(entity, world);
 		}
 	}
 
-	private applyIdleDecision(entity: VillageEntity, action: string, _world: World<VillageEntity>): void {
-		switch (action) {
-			case "seek":
-				entity.social.state = "seeking";
-				break;
-			case "perform":
-				this.startPerforming(entity);
-				break;
-			case "invent":
-				if (entity.knowledge.knownSequences.size >= 2) {
-					entity.social.state = "inventing";
-				} else {
-					entity.social.state = "seeking"; // can't invent, seek instead
-				}
-				break;
-			case "wander":
-			default:
-				this.startWandering(entity);
-				break;
-		}
-	}
-
+	// Performers play what they know best; ties go to whatever they learned first.
 	private startPerforming(entity: VillageEntity): void {
 		entity.social.state = "performing";
 		entity.social.idleTimer = 0;
-		const bestSeq = [...entity.knowledge.knownSequences.entries()]
-			.sort((a, b) => b[1].proficiency - a[1].proficiency)[0];
-		entity.social.performingSequenceId = bestSeq?.[0] ?? null;
+		let best: LearnedSequence | null = null;
+		for (const seq of entity.knowledge.knownSequences.values()) {
+			if (!best || seq.proficiency > best.proficiency) best = seq;
+		}
+		entity.social.activeSequenceId = best?.sequenceId ?? null;
 	}
 
 	private handleWandering(entity: VillageEntity): void {
@@ -175,20 +153,41 @@ export class SocialSystem {
 		}
 	}
 
-	private handleSeeking(
-		entity: VillageEntity,
-		world: World<VillageEntity>,
-	): void {
-		const candidates = world.entities.filter(
-			(other) =>
-				other.id !== entity.id &&
-				other.social.state === "seeking" &&
-				other.social.interactionCooldown === 0 &&
-				this.distance(entity, other) < SEEK_RADIUS,
+	// Playing a sequence keeps it fresh: the memory clock restarts and the
+	// avatar gets a little better at it.
+	private rehearse(entity: VillageEntity, currentTick: number): void {
+		const id = entity.social.activeSequenceId;
+		if (!id) return;
+		const learned = entity.knowledge.knownSequences.get(id);
+		if (!learned) return;
+		learned.lastUsedTick = currentTick;
+		learned.proficiency = Math.min(
+			1,
+			learned.proficiency + this.rules.social.rehearsalGainPerTick,
 		);
+	}
+
+	/**
+	 * Looks for a partner for up to seekWindowTicks. Another seeker always
+	 * counts; an idle or wandering neighbour is pulled in when one of the two
+	 * has something to teach the other.
+	 */
+	private handleSeeking(entity: VillageEntity, world: VillageWorld): void {
+		const { seekRadius, seekWindowTicks } = this.rules.social;
+		entity.social.idleTimer++;
+		const candidates = world.entities.filter((other) => {
+			if (other.id === entity.id) return false;
+			if (other.social.interactionCooldown > 0) return false;
+			if (this.distance(entity, other) >= seekRadius) return false;
+			if (other.social.state === "seeking") return true;
+			if (other.social.state !== "idle" && other.social.state !== "wandering") return false;
+			return (
+				this.countNovelSequences(entity, other) + this.countNovelSequences(other, entity) > 0
+			);
+		});
 
 		if (candidates.length === 0) {
-			this.startWandering(entity);
+			if (entity.social.idleTimer > seekWindowTicks) this.startWandering(entity, world);
 			return;
 		}
 
@@ -197,8 +196,7 @@ export class SocialSystem {
 				this.countNovelSequences(entity, candidate) +
 				this.countNovelSequences(candidate, entity);
 			const bestNovelty =
-				this.countNovelSequences(entity, best) +
-				this.countNovelSequences(best, entity);
+				this.countNovelSequences(entity, best) + this.countNovelSequences(best, entity);
 			if (novelty > bestNovelty) return candidate;
 			if (
 				novelty === bestNovelty &&
@@ -208,52 +206,39 @@ export class SocialSystem {
 			return best;
 		});
 
-		// Approach to conversation distance, not exact position.
-		// Each avatar walks to a point PERSONAL_SPACE_RADIUS from the midpoint.
-		const midX = (entity.transform.x + partner.transform.x) / 2;
-		const midZ = (entity.transform.z + partner.transform.z) / 2;
-		const pairDist = this.distance(entity, partner);
-		const halfStop = PERSONAL_SPACE_RADIUS * 0.5;
+		entity.social.state = "approaching";
+		entity.social.partner = partner.id;
+		partner.social.state = "approaching";
+		partner.social.partner = entity.id;
 
-		if (pairDist > PERSONAL_SPACE_RADIUS) {
-			// Walk toward partner but stop at personal space
-			const toPartnerX = partner.transform.x - entity.transform.x;
-			const toPartnerZ = partner.transform.z - entity.transform.z;
-			const norm = Math.sqrt(toPartnerX * toPartnerX + toPartnerZ * toPartnerZ) || 1;
-
-			entity.social.state = "approaching";
-			entity.social.partner = partner.id;
-			entity.transform.targetX = midX - (toPartnerX / norm) * halfStop;
-			entity.transform.targetZ = midZ - (toPartnerZ / norm) * halfStop;
-			entity.transform.speed = 1;
-
-			partner.social.state = "approaching";
-			partner.social.partner = entity.id;
-			partner.transform.targetX = midX + (toPartnerX / norm) * halfStop;
-			partner.transform.targetZ = midZ + (toPartnerZ / norm) * halfStop;
-			partner.transform.speed = 1;
-		} else {
-			// Already close enough - skip to interaction
-			entity.social.state = "approaching";
-			entity.social.partner = partner.id;
-			entity.transform.speed = 0;
-
-			partner.social.state = "approaching";
-			partner.social.partner = entity.id;
-			partner.transform.speed = 0;
-		}
+		// They meet side by side on the ring, a personal space apart, so their
+		// props never cross and neither walks through the fire to get there.
+		// A pair already standing close still walks to its spots.
+		const [spotA, spotB] = lessonSpots(
+			{ x: entity.transform.x, z: entity.transform.z },
+			{ x: partner.transform.x, z: partner.transform.z },
+			this.rules.movement.personalSpaceRadius,
+			this.rules,
+		);
+		entity.transform.targetX = spotA.x;
+		entity.transform.targetZ = spotA.z;
+		entity.transform.speed = 1;
+		partner.transform.targetX = spotB.x;
+		partner.transform.targetZ = spotB.z;
+		partner.transform.speed = 1;
 	}
 
-	private handleApproaching(
-		entity: VillageEntity,
-		world: World<VillageEntity>,
-	): void {
+	private handleApproaching(entity: VillageEntity, world: VillageWorld): void {
 		if (entity.transform.speed > 0) return;
 
-		const partner = world.entities.find(
-			(e) => e.id === entity.social.partner,
-		);
-		if (!partner || partner.social.state === "passing") {
+		// A partner who has since paired off with someone else, or gone, ends
+		// the meeting before it starts.
+		const partner = world.entities.find((e) => e.id === entity.social.partner);
+		if (
+			!partner ||
+			partner.social.state !== "approaching" ||
+			partner.social.partner !== entity.id
+		) {
 			entity.social.state = "idle";
 			entity.social.partner = null;
 			return;
@@ -261,117 +246,127 @@ export class SocialSystem {
 
 		if (partner.transform.speed > 0) return;
 
-		const entityCanTeach =
-			this.countNovelSequences(partner, entity) > 0;
-		const partnerCanTeach =
-			this.countNovelSequences(entity, partner) > 0;
+		const entityCanTeach = this.countNovelSequences(partner, entity) > 0;
+		const partnerCanTeach = this.countNovelSequences(entity, partner) > 0;
 
 		if (entityCanTeach || partnerCanTeach) {
+			// Someone carrying what the visitor brought teaches it before
+			// anything else is decided by who knows more.
+			const entityBrings = this.carriesVisitorNovel(entity, partner);
+			const partnerBrings = this.carriesVisitorNovel(partner, entity);
 			const teacher =
-				entityCanTeach &&
-				(!partnerCanTeach ||
-					entity.knowledge.knownSequences.size >=
-						partner.knowledge.knownSequences.size)
-					? entity
-					: partner;
+				entityBrings !== partnerBrings
+					? entityBrings
+						? entity
+						: partner
+					: entityCanTeach &&
+						  (!partnerCanTeach ||
+								entity.knowledge.knownSequences.size >= partner.knowledge.knownSequences.size)
+						? entity
+						: partner;
 			const learner = teacher === entity ? partner : entity;
 
-			// Ego gates: divas never teach, high-ego demands hierarchy
-			if (teacher.personality.ego > 0.9) {
-				// Diva mode: skip teaching, just socialize
-				entity.social.state = "socializing";
-				partner.social.state = "socializing";
-				entity.social.idleTimer = 0;
-				partner.social.idleTimer = 0;
-				return;
-			}
-			if (
-				teacher.personality.ego > 0.7 &&
-				learner.knowledge.knownSequences.size >= teacher.knowledge.knownSequences.size
-			) {
-				// Ego demands hierarchy: won't teach someone who knows as much
-				entity.social.state = "socializing";
-				partner.social.state = "socializing";
-				entity.social.idleTimer = 0;
-				partner.social.idleTimer = 0;
-				return;
-			}
+			// Ego gates: divas never teach; a proud teacher only teaches someone
+			// who knows less than they do.
+			const social = this.rules.social;
+			const refuses =
+				teacher.personality.ego > social.divaEgo ||
+				(teacher.personality.ego > social.hierarchyEgo &&
+					learner.knowledge.knownSequences.size >=
+						teacher.knowledge.knownSequences.size);
 
-			// Style compatibility gate
-			const styleDist = this.styleDistance(teacher, learner);
-			if (
-				styleDist > STYLE_INCOMPATIBILITY_THRESHOLD &&
-				Math.random() < STYLE_INCOMPATIBILITY_REFUSE_CHANCE
-			) {
-				entity.social.state = "socializing";
-				partner.social.state = "socializing";
-				entity.social.idleTimer = 0;
-				partner.social.idleTimer = 0;
-				return;
-			}
-
-			const novelSequenceId = this.findNovelSequenceId(learner, teacher);
+			const novelSequenceId = refuses ? null : this.findNovelSequenceId(learner, teacher);
 			if (novelSequenceId) {
-				teacher.social.state = "teaching";
-				learner.social.state = "learning";
-				teacher.social.sequenceBeingTransferred = novelSequenceId;
-				learner.social.sequenceBeingTransferred = novelSequenceId;
-				teacher.social.teachingProgress = 0;
-				learner.social.teachingProgress = 0;
-				learner.social.currentStepIndex = 0;
-				learner.social.frustrationLevel = 0;
-
-				teacher.transform.facingAngle = Math.atan2(
-					learner.transform.z - teacher.transform.z,
-					learner.transform.x - teacher.transform.x,
-				);
-				learner.transform.facingAngle = Math.atan2(
-					teacher.transform.z - learner.transform.z,
-					teacher.transform.x - learner.transform.x,
-				);
+				this.startLesson(teacher, learner, novelSequenceId);
 				return;
 			}
 		}
 
-		entity.social.state = "socializing";
-		partner.social.state = "socializing";
-		entity.social.idleTimer = 0;
-		partner.social.idleTimer = 0;
+		this.startSocializing(entity, partner);
+	}
+
+	/** Pairs two people for a lesson where they stand; the opening uses it too. */
+	startLesson(
+		teacher: VillageEntity,
+		learner: VillageEntity,
+		sequenceId: string,
+	): void {
+		teacher.social.state = "teaching";
+		learner.social.state = "learning";
+		teacher.social.sequenceBeingTransferred = sequenceId;
+		learner.social.sequenceBeingTransferred = sequenceId;
+		teacher.social.teachingProgress = 0;
+		learner.social.teachingProgress = 0;
+		learner.social.currentStepIndex = 0;
+		learner.social.frustrationLevel = 0;
+		// TeachingSystem starts the lesson's choreography on its next pass.
+		learner.social.lesson = null;
+
+		teacher.transform.facingAngle = Math.atan2(
+			learner.transform.z - teacher.transform.z,
+			learner.transform.x - teacher.transform.x,
+		);
+		learner.transform.facingAngle = Math.atan2(
+			teacher.transform.z - learner.transform.z,
+			teacher.transform.x - learner.transform.x,
+		);
+
+		this.emitter.emit({
+			type: "teaching:started",
+			teacherId: teacher.id,
+			learnerId: learner.id,
+			sequenceId,
+		});
+	}
+
+	private startSocializing(a: VillageEntity, b: VillageEntity): void {
+		a.social.state = "socializing";
+		b.social.state = "socializing";
+		a.social.idleTimer = 0;
+		b.social.idleTimer = 0;
 	}
 
 	private handleSocializing(
 		entity: VillageEntity,
-		world: World<VillageEntity>,
+		world: VillageWorld,
 		currentTick: number,
 	): void {
+		const social = this.rules.social;
 		entity.social.idleTimer++;
 
-		// Gift check: high-sociability entities can spontaneously gift a sequence
-		if (entity.personality.sociability > 0.8 && entity.social.partner) {
+		// Very sociable avatars sometimes hand over a sequence in passing
+		if (entity.personality.sociability > social.giftSociabilityMin && entity.social.partner) {
 			const partner = world.entities.find((e) => e.id === entity.social.partner);
-			if (partner && Math.random() < entity.personality.sociability * 0.03) {
+			if (
+				partner &&
+				this.rng() < entity.personality.sociability * social.giftChancePerSociability
+			) {
 				const giftable = this.findGiftableSequence(entity, partner);
 				if (giftable) {
 					partner.knowledge.knownSequences.set(giftable.sequenceId, {
 						...giftable,
-						proficiency: giftable.proficiency * 0.4,
+						proficiency: giftable.proficiency * social.giftProficiencyScale,
 						source: "gifted",
 						learnedFrom: entity.id,
 						learnedAt: currentTick,
 						lineage: [...giftable.lineage, entity.id],
 						lastUsedTick: currentTick,
-						style: { amplitudeScale: 1.0, tempoOffset: 0 },
 					});
-					this.emitter.emit("teaching:completed", entity, partner, giftable.sequenceId);
+					this.emitter.emit({
+						type: "teaching:completed",
+						teacherId: entity.id,
+						learnerId: partner.id,
+						sequenceId: giftable.sequenceId,
+					});
 				}
 			}
 		}
 
-		if (entity.social.idleTimer > 15) {
+		if (entity.social.idleTimer > social.socializeTicks) {
 			entity.social.state = "idle";
 			entity.social.partner = null;
 			entity.social.idleTimer = 0;
-			entity.social.interactionCooldown = INTERACTION_COOLDOWN_BASE;
+			entity.social.interactionCooldown = social.interactionCooldownTicks;
 		}
 	}
 
@@ -387,91 +382,193 @@ export class SocialSystem {
 
 	private handlePracticing(entity: VillageEntity): void {
 		entity.social.idleTimer++;
-		if (entity.social.idleTimer > 20) {
+		if (entity.social.idleTimer > this.rules.social.practiceTicks) {
 			entity.social.state = "idle";
+			entity.social.activeSequenceId = null;
 			entity.social.idleTimer = 0;
-			entity.social.interactionCooldown = INTERACTION_COOLDOWN_BASE;
+			entity.social.interactionCooldown = this.rules.social.interactionCooldownTicks;
 		}
 	}
 
 	private handlePerforming(entity: VillageEntity): void {
-		if (entity.social.inJam) return; // jam system manages duration
 		entity.social.idleTimer++;
-		const maxDuration = entity.lifecycle.phase === "elder" ? 40 : 25;
+		const maxDuration =
+			entity.lifecycle.phase === "elder"
+				? this.rules.social.performTicksElder
+				: this.rules.social.performTicksAdult;
 		if (entity.social.idleTimer > maxDuration) {
 			entity.social.state = "idle";
-			entity.social.performingSequenceId = null;
+			entity.social.activeSequenceId = null;
 			entity.social.idleTimer = 0;
 		}
 	}
 
 	private handleWatching(entity: VillageEntity): void {
-		// Watchers stay put until the performer they're watching stops
 		entity.social.idleTimer++;
-		if (entity.social.idleTimer > 50) {
+		if (entity.social.idleTimer > this.rules.social.watchTicks) {
 			entity.social.state = "idle";
 			entity.social.partner = null;
 			entity.social.idleTimer = 0;
 		}
-	}
-
-	private handleJamming(entity: VillageEntity): void {
-		// Jam watchers stay in place; PerformanceSystem manages exit
-		entity.social.idleTimer++;
 	}
 
 	private handleMourning(entity: VillageEntity): void {
 		entity.social.idleTimer++;
-		if (entity.social.idleTimer > MOURNING_DURATION) {
+		if (entity.social.idleTimer > this.rules.social.mourningTicks) {
 			entity.social.state = "idle";
 			entity.social.idleTimer = 0;
-			entity.social.interactionCooldown = INTERACTION_COOLDOWN_BASE;
+			entity.social.interactionCooldown = this.rules.social.interactionCooldownTicks;
 		}
 	}
 
-	private handleCommissioning(entity: VillageEntity): void {
-		entity.social.idleTimer++;
-		if (entity.social.idleTimer > MAKER_CRAFT_DURATION) {
+	/**
+	 * An elder near the end walks slowly to the nearest free seat by the fire
+	 * and sits there until they pass. With every seat taken they sit where
+	 * they are. Their students nearby come and stand close.
+	 */
+	private retire(elder: VillageEntity, world: VillageWorld): void {
+		const seats = this.layout.seats;
+		const slack = this.rules.movement.arrivalThreshold;
+		const taken = (seat: { x: number; z: number }) =>
+			world.entities.some(
+				(other) =>
+					other.id !== elder.id &&
+					(other.social.state === "retiring" || other.social.state === "seated") &&
+					Math.abs(other.transform.targetX - seat.x) < slack &&
+					Math.abs(other.transform.targetZ - seat.z) < slack,
+			);
+		let seat: (typeof seats)[number] | null = null;
+		let nearest = Infinity;
+		for (const candidate of seats) {
+			if (taken(candidate)) continue;
+			const d = Math.hypot(candidate.x - elder.transform.x, candidate.z - elder.transform.z);
+			if (d < nearest) {
+				nearest = d;
+				seat = candidate;
+			}
+		}
+
+		elder.social.partner = null;
+		elder.social.activeSequenceId = null;
+		elder.social.idleTimer = 0;
+		if (seat) {
+			elder.social.state = "retiring";
+			elder.transform.targetX = seat.x;
+			elder.transform.targetZ = seat.z;
+			elder.transform.speed = this.rules.passing.walkSpeed;
+		} else {
+			elder.social.state = "seated";
+			elder.transform.targetX = elder.transform.x;
+			elder.transform.targetZ = elder.transform.z;
+			elder.transform.speed = 0;
+		}
+		elder.transform.facingAngle = this.faceFire(elder.transform.targetX, elder.transform.targetZ);
+
+		const { studentRadius } = this.rules.passing;
+		const students = world.entities.filter(
+			(other) =>
+				other.id !== elder.id &&
+				FREE_STATES.has(other.social.state) &&
+				other.lifecycle.currentAge < this.rules.passing.retireAge &&
+				this.distance(elder, other) <= studentRadius &&
+				[...other.knowledge.knownSequences.values()].some((k) => k.learnedFrom === elder.id),
+		);
+		const place = { x: elder.transform.targetX, z: elder.transform.targetZ };
+		students.forEach((student, index) => {
+			const spot = studentSpot(place, index, students.length, this.rules);
+			student.social.state = "attending";
+			student.social.partner = elder.id;
+			student.social.activeSequenceId = null;
+			student.social.idleTimer = 0;
+			student.transform.targetX = spot.x;
+			student.transform.targetZ = spot.z;
+			student.transform.speed = 1;
+		});
+	}
+
+	private handleRetiring(entity: VillageEntity): void {
+		if (entity.transform.speed > 0) return;
+		entity.social.state = "seated";
+		entity.transform.facingAngle = this.faceFire(entity.transform.x, entity.transform.z);
+	}
+
+	// Stands by the seated teacher, facing them, until the funeral; goes back
+	// to ordinary life if the teacher is somehow gone without one.
+	private handleAttending(entity: VillageEntity, world: VillageWorld): void {
+		const elder = world.entities.find((e) => e.id === entity.social.partner);
+		const state = elder?.social.state;
+		if (!elder || (state !== "retiring" && state !== "seated" && state !== "passing")) {
 			entity.social.state = "idle";
 			entity.social.partner = null;
 			entity.social.idleTimer = 0;
-			entity.social.interactionCooldown = INTERACTION_COOLDOWN_BASE;
+			return;
 		}
+		if (entity.transform.speed > 0) return;
+		entity.transform.facingAngle = Math.atan2(
+			elder.transform.z - entity.transform.z,
+			elder.transform.x - entity.transform.x,
+		);
 	}
 
-	private startWandering(entity: VillageEntity): void {
-		const angle = Math.random() * Math.PI * 2;
-		const dist = Math.random() * this.config.arenaRadius * 0.6;
-		entity.transform.targetX = Math.cos(angle) * dist;
-		entity.transform.targetZ = Math.sin(angle) * dist;
+	private faceFire(x: number, z: number): number {
+		const fire = this.rules.campfire;
+		return Math.atan2(fire.z - z, fire.x - x);
+	}
+
+	/**
+	 * Walks to a lane on the ring nobody else is standing in or heading for,
+	 * so performers stay spread round the fire with room for their props.
+	 * When every lane is taken, any lane will do.
+	 */
+	private startWandering(entity: VillageEntity, world: VillageWorld): void {
+		const { lanes } = this.layout;
+		const fire = this.rules.campfire;
+		const laneWidth =
+			((fire.ringInnerRadius + fire.ringOuterRadius) / 2) *
+			((Math.PI * 2 * (1 - fire.audienceGapDegrees / 360)) / lanes.length);
+		const claimed = (lane: { x: number; z: number }) =>
+			world.entities.some((other) => {
+				if (other.id === entity.id) return false;
+				const dx = other.transform.targetX - lane.x;
+				const dz = other.transform.targetZ - lane.z;
+				return dx * dx + dz * dz < (laneWidth / 2) ** 2;
+			});
+		const free = lanes.filter((lane) => !claimed(lane));
+		const pool = free.length > 0 ? free : lanes;
+		const lane = pool[Math.floor(this.rng() * pool.length)]!;
+
+		// A little give across the ring's depth, so a lane is a place to stand
+		// rather than one exact spot.
+		const depth = (fire.ringOuterRadius - fire.ringInnerRadius) * 0.6;
+		const radius = (fire.ringInnerRadius + fire.ringOuterRadius) / 2 + (this.rng() - 0.5) * depth;
+		entity.transform.targetX = fire.x + Math.cos(lane.angle) * radius;
+		entity.transform.targetZ = fire.z + Math.sin(lane.angle) * radius;
 		entity.transform.speed = 1;
 		entity.social.state = "wandering";
 	}
 
-	private getAverageStyle(entity: VillageEntity): {
-		amplitudeScale: number;
-		tempoOffset: number;
-	} {
-		const sequences = [...entity.knowledge.knownSequences.values()];
-		if (sequences.length === 0) return { amplitudeScale: 1.0, tempoOffset: 0 };
-		let ampSum = 0;
-		let tempoSum = 0;
-		for (const seq of sequences) {
-			ampSum += seq.style.amplitudeScale;
-			tempoSum += seq.style.tempoOffset;
+	/**
+	 * Standing in the ring, outside the audience's wedge, with nobody inside
+	 * personal space: somewhere a performer can play without their prop
+	 * reaching the fire, a seat, a neighbour or the edge of the clearing.
+	 */
+	private isSettled(entity: VillageEntity, world: VillageWorld): boolean {
+		const fire = this.rules.campfire;
+		const dx = entity.transform.x - fire.x;
+		const dz = entity.transform.z - fire.z;
+		const radius = Math.sqrt(dx * dx + dz * dz);
+		const slack = this.rules.movement.arrivalThreshold;
+		if (radius < fire.ringInnerRadius - slack || radius > fire.ringOuterRadius + slack) {
+			return false;
 		}
-		return {
-			amplitudeScale: ampSum / sequences.length,
-			tempoOffset: tempoSum / sequences.length,
-		};
-	}
-
-	private styleDistance(a: VillageEntity, b: VillageEntity): number {
-		const styleA = this.getAverageStyle(a);
-		const styleB = this.getAverageStyle(b);
-		const dAmp = styleA.amplitudeScale - styleB.amplitudeScale;
-		const dTempo = styleA.tempoOffset - styleB.tempoOffset;
-		return Math.sqrt(dAmp * dAmp + dTempo * dTempo);
+		if (isInAudienceGap(Math.atan2(dz, dx), fire)) return false;
+		const personalSpace = this.rules.movement.personalSpaceRadius;
+		return !world.entities.some(
+			(other) =>
+				other.id !== entity.id &&
+				other.social.state !== "passing" &&
+				this.distance(entity, other) < personalSpace - slack,
+		);
 	}
 
 	private distance(a: VillageEntity, b: VillageEntity): number {
@@ -480,10 +577,7 @@ export class SocialSystem {
 		return Math.sqrt(dx * dx + dz * dz);
 	}
 
-	private countNovelSequences(
-		learner: VillageEntity,
-		teacher: VillageEntity,
-	): number {
+	private countNovelSequences(learner: VillageEntity, teacher: VillageEntity): number {
 		let count = 0;
 		for (const id of teacher.knowledge.knownSequences.keys()) {
 			if (!learner.knowledge.knownSequences.has(id)) count++;
@@ -491,13 +585,25 @@ export class SocialSystem {
 		return count;
 	}
 
-	private findNovelSequenceId(
-		learner: VillageEntity,
-		teacher: VillageEntity,
-	): string | null {
-		for (const id of teacher.knowledge.knownSequences.keys()) {
-			if (!learner.knowledge.knownSequences.has(id)) return id;
+	// The teacher passes on what they know best that the learner lacks;
+	// ties go to whatever the teacher learned first.
+	private carriesVisitorNovel(teacher: VillageEntity, learner: VillageEntity): boolean {
+		for (const seq of teacher.knowledge.knownSequences.values()) {
+			if (seq.lineage.includes(VISITOR_ID) && !learner.knowledge.knownSequences.has(seq.sequenceId)) return true;
 		}
-		return null;
+		return false;
+	}
+
+	// What the visitor brought is taught first, so it is likely to reach a
+	// second generation; otherwise the teacher's best sequence the learner
+	// lacks. Nobody carries the visitor's lineage in a run without one.
+	private findNovelSequenceId(learner: VillageEntity, teacher: VillageEntity): string | null {
+		let best: LearnedSequence | null = null;
+		for (const seq of teacher.knowledge.knownSequences.values()) {
+			if (learner.knowledge.knownSequences.has(seq.sequenceId)) continue;
+			if (seq.lineage.includes(VISITOR_ID)) return seq.sequenceId;
+			if (!best || seq.proficiency > best.proficiency) best = seq;
+		}
+		return best?.sequenceId ?? null;
 	}
 }

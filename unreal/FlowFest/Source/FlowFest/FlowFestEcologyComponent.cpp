@@ -1,5 +1,6 @@
 #include "FlowFestEcologyComponent.h"
 #include "FlowFestWorld.h"
+#include "FlowFestCanopy.h"
 #include "Components/HierarchicalInstancedStaticMeshComponent.h"
 #include "Dom/JsonObject.h"
 #include "Materials/MaterialInstanceDynamic.h"
@@ -22,6 +23,15 @@ UStaticMesh* LoadMesh(const TCHAR* Folder, const TCHAR* Name)
 {
     const FString Path = FString::Printf(TEXT("/Game/FlowFest/Assets/%s/%s.%s"), Folder, Name, Name);
     return LoadObject<UStaticMesh>(nullptr, *Path);
+}
+
+/** Tilts an instance so its up axis follows the terrain's slope at a point, then turns it to Yaw. */
+FQuat OnSlope(const AFlowFestWorld& World, const FVector2D& At, float Reach, float Yaw)
+{
+    const float Dx = World.SurfaceAt(At.X + Reach, At.Y) - World.SurfaceAt(At.X - Reach, At.Y);
+    const float Dy = World.SurfaceAt(At.X, At.Y + Reach) - World.SurfaceAt(At.X, At.Y - Reach);
+    const FVector Up = FVector(-Dx, -Dy, Reach * 200.f).GetSafeNormal();
+    return FQuat::FindBetweenNormals(FVector::UpVector, Up) * FQuat(FVector::UpVector, FMath::DegreesToRadians(Yaw));
 }
 
 struct FGrassPlacement
@@ -179,6 +189,18 @@ bool UFlowFestEcologyComponent::BuildFromSite(AFlowFestWorld* SiteWorld)
                     }
             }
 
+    // The source sits on a 4 m grid, which reads as rows where the grass is sparse
+    // under trees. Shift each placement up to 1.4 m, keeping it off the roads.
+    if (SiteWorld)
+        for (int32 Index = 0; Index < Grass.Num(); ++Index)
+        {
+            FRandomStream Random(Index * 6007 + 41);
+            const FVector2D At = Grass[Index].At + FVector2D(Random.FRandRange(-1.4f, 1.4f), Random.FRandRange(-1.4f, 1.4f));
+            if (RoadClearance(Roads, At) < .5f) continue;
+            Grass[Index].At = At;
+            Grass[Index].Ground = SiteWorld->SampleGround(At.X, At.Y) - 2.f;
+        }
+
     // How crowded each placement's neighbourhood is. A patch at the edge of the
     // source's growth is shorter, smaller and drier, so a field fades out softly.
     TMap<FIntPoint, TArray<int32>> Cells;
@@ -312,6 +334,60 @@ bool UFlowFestEcologyComponent::BuildFromSite(AFlowFestWorld* SiteWorld)
             }
     }
 
+    // Hay and stubble in the dry farm fields around the festival (Tools/classify-fields.mjs).
+    // Green crop fields keep the rows M_Ground paints, and past HayReach the ground texture
+    // carries the fields alone, since grass beyond it would be culled before it is seen.
+    int32 Hay = 0;
+    TArray<uint8> FieldBytes;
+    const TSharedPtr<FJsonObject>* Surface = nullptr;
+    if (SiteWorld && Grass.Num() && Site->TryGetObjectField(TEXT("groundSurface"), Surface) && Surface
+        && FFileHelper::LoadFileToArray(FieldBytes, *(FPaths::ProjectContentDir() / TEXT("Data/ground-fields.rg"))))
+    {
+        const int32 Size = FMath::RoundToInt(Num(*Surface, TEXT("width")));
+        const FVector2D Min(Num(*Surface, TEXT("minX")), Num(*Surface, TEXT("minZ")));
+        const float Cell = (Num(*Surface, TEXT("maxX")) - Min.X) / FMath::Max(1, Size);
+        // Rows run south to north, like the ground-family mask.
+        const auto FieldAt = [&](const FVector2D& At, float& Dry)
+        {
+            const int32 X = FMath::FloorToInt((At.X - Min.X) / Cell), North = FMath::FloorToInt((At.Y - Min.Y) / Cell);
+            if (X < 0 || North < 0 || X >= Size || North >= Size) return 0.f;
+            const int32 Index = ((Size - 1 - North) * Size + X) * 2;
+            Dry = FieldBytes[Index + 1] / 255.f;
+            return FieldBytes[Index] / 255.f;
+        };
+        if (FieldBytes.Num() == Size * Size * 2)
+        {
+            FBox2D Growth(ForceInit);
+            for (const FGrassPlacement& Tuft : Grass) Growth += Tuft.At;
+            const FVector2D Centre = Growth.GetCenter();
+            constexpr float HayReach = 260.f, HaySpacing = 2.2f;
+            const int32 Steps = FMath::CeilToInt(HayReach * 2.f / HaySpacing);
+            for (int32 Row = 0; Row <= Steps; ++Row)
+                for (int32 Column = 0; Column <= Steps; ++Column)
+                {
+                    FRandomStream Random(Row * 92821 + Column * 6151 + 11);
+                    const FVector2D At = Centre - FVector2D(HayReach) + FVector2D(Column + Random.FRandRange(-.45f, .45f), Row + Random.FRandRange(-.45f, .45f)) * HaySpacing;
+                    const float Reach = FVector2D::Distance(At, Centre);
+                    float Dry = 0.f, Distance = 0.f;
+                    const float Weight = FieldAt(At, Dry);
+                    if (Reach > HayReach || Dry < .45f || Random.FRand() > Weight * FMath::SmoothStep(.45f, .65f, Dry)) continue;
+                    // The festival's own meadow is already grown; keep hay off it and the roads.
+                    if (Nearest(At, 2.5f, Distance) != INDEX_NONE || RoadClearance(Roads, At) < .8f) continue;
+                    FGrassPlacement Tuft;
+                    Tuft.At = At;
+                    Tuft.Ground = SiteWorld->SampleGround(At.X, At.Y) - 2.f;
+                    Tuft.Rotation = Random.FRandRange(0.f, 360.f);
+                    Tuft.Width = .285f * Random.FRandRange(.9f, 1.3f);
+                    Tuft.Height = .34f * Random.FRandRange(.8f, 1.2f);
+                    Tuft.Tier = Random.FRand() < .15f ? 1 : 0;
+                    Tuft.ColorIndex = Random.FRand() < .5f ? 2 : 3;
+                    Grow(Tuft, FMath::SmoothStep(HayReach * .75f, HayReach, Reach), Random);
+                    ++Hay;
+                }
+        }
+    }
+    UE_LOG(LogTemp, Display, TEXT("Flow Fest hay: %d patches in the dry fields"), Hay);
+
     // Understory: damp sedge and hazel keep their source meshes and placements.
     struct FFamily { const TCHAR* Asset; const TCHAR* Species; };
     const FFamily Families[] = {
@@ -321,6 +397,7 @@ bool UFlowFestEcologyComponent::BuildFromSite(AFlowFestWorld* SiteWorld)
     if (!Site->TryGetArrayField(TEXT("groundLife"), Items) || !Items) return false;
     const int32 ExpectedGroundLife = Items->Num();
     int32 GroundLife = 0;
+    UHierarchicalInstancedStaticMeshComponent* Hazel = nullptr;
     for (const FFamily& Family : Families)
     {
         UStaticMesh* Mesh = LoadMesh(TEXT("Ecology"), Family.Asset);
@@ -331,6 +408,7 @@ bool UFlowFestEcologyComponent::BuildFromSite(AFlowFestWorld* SiteWorld)
         }
         UHierarchicalInstancedStaticMeshComponent* Group = AddGroup(Mesh, true, 9000, 0);
         Group->SetCullDistances(800, 9000);
+        if (Family.Asset == FString(TEXT("HazelShrub"))) Hazel = Group;
         for (const TSharedPtr<FJsonValue>& Value : *Items)
         {
             const TSharedPtr<FJsonObject> Placement = Value->AsObject();
@@ -341,9 +419,167 @@ bool UFlowFestEcologyComponent::BuildFromSite(AFlowFestWorld* SiteWorld)
             ++GroundLife;
         }
     }
-    UE_LOG(LogTemp, Display, TEXT("Flow Fest native ecology: %d grass placements and %d fill patches (%d cleared under cars, %d trampled), %d stubble, %d seed stalks; %d of %d understory in %d groups"),
-        Grass.Num(), Filled, Cleared, Trampled, Stubble, Stalks, GroundLife, ExpectedGroundLife, Groups.Num());
-    return Groups.Num() == GrassGroupCount + 2 && Grass.Num() == ExpectedGrass && ExpectedGrass > 0 && GroundLife == ExpectedGroundLife;
+    const int32 UnderstoryGroups = Groups.Num();
+
+    // Forest floor under the measured trees: leaf litter drifts wherever crowns shade
+    // the ground, ferns in patches through the stands, hazel along their edges, and
+    // dead branches, fallen logs and old stumps around the trunks.
+    FCanopyMap Canopy;
+    if (Site->TryGetArrayField(TEXT("trees"), Items) && Items)
+        for (const TSharedPtr<FJsonValue>& Value : *Items)
+            if (const TSharedPtr<FJsonObject> Tree = Value->AsObject())
+                Canopy.Add(FVector2D(Num(Tree, TEXT("x")), Num(Tree, TEXT("z"))), Num(Tree, TEXT("height"), 12.f));
+    TArray<FVector2D> Keepouts;
+    if (Site->TryGetArrayField(TEXT("camps"), Items) && Items)
+        for (const TSharedPtr<FJsonValue>& Value : *Items)
+            if (const TSharedPtr<FJsonObject> Camp = Value->AsObject()) Keepouts.Add(FVector2D(Num(Camp, TEXT("x")), Num(Camp, TEXT("z"))));
+    if (Site->TryGetArrayField(TEXT("landmarks"), Items) && Items)
+        for (const TSharedPtr<FJsonValue>& Value : *Items)
+            if (const TSharedPtr<FJsonObject> Landmark = Value->AsObject()) Keepouts.Add(FVector2D(Num(Landmark, TEXT("x")), Num(Landmark, TEXT("z"))));
+    // Clear of roads, parked cars, tents and the gate, fire and workshop grounds.
+    const auto Open = [&](const FVector2D& At, float Margin)
+    {
+        if (RoadClearance(Roads, At) < Margin || CarClearance(Cars, At) < Margin) return false;
+        for (const FVector2D& Keepout : Keepouts)
+            if (FVector2D::DistSquared(Keepout, At) < FMath::Square(6.f + Margin)) return false;
+        return true;
+    };
+
+    UStaticMesh* const LitterMesh = LoadMesh(TEXT("Floor"), TEXT("LeafLitter"));
+    UStaticMesh* const FernMesh = LoadMesh(TEXT("Floor"), TEXT("FernClump"));
+    UStaticMesh* const LogMesh = LoadMesh(TEXT("Floor"), TEXT("FallenLog"));
+    UStaticMesh* const StumpMesh = LoadMesh(TEXT("Floor"), TEXT("Stump"));
+    // Dead branches come straight from the Megaplants beech and dead pine.
+    const TCHAR* BranchPaths[] = {
+        TEXT("Tree_European_Beech/Instances/Branch_European_Beech_Dead_01"), TEXT("Tree_European_Beech/Instances/Branch_European_Beech_Dead_02"),
+        TEXT("Tree_European_Beech/Instances/Branch_European_Beech_Dead_03"), TEXT("Tree_European_Beech/Instances/Branch_European_Beech_Dead_04"),
+        TEXT("Tree_Dead_Pine/Instances/Branch_Dead_Pine_00"), TEXT("Tree_Dead_Pine/Instances/Branch_Dead_Pine_02"),
+        TEXT("Tree_Dead_Pine/Instances/Branch_Dead_Pine_04"), TEXT("Tree_Dead_Pine/Instances/Branch_Dead_Pine_07"),
+    };
+    TArray<UHierarchicalInstancedStaticMeshComponent*> Branches;
+    const bool bFloor = SiteWorld && LitterMesh && FernMesh && LogMesh && StumpMesh && Canopy.Trees.Num();
+    int32 Litter = 0, Ferns = 0, Shrubs = 0, Fallen = 0, Logs = 0, Stumps = 0;
+    if (!bFloor) UE_LOG(LogTemp, Warning, TEXT("Flow Fest forest floor unavailable; run import-assets.py --only=Floor/"));
+    if (bFloor)
+    {
+        // Litter is too flat to cast a shadow worth its cost; everything standing does.
+        UHierarchicalInstancedStaticMeshComponent* const LitterGroup = AddGroup(LitterMesh, false, 7000, 2);
+        UHierarchicalInstancedStaticMeshComponent* const FernGroup = AddGroup(FernMesh, true, 9000, 2);
+        UHierarchicalInstancedStaticMeshComponent* const LogGroup = AddGroup(LogMesh, true, 25000, 0);
+        UHierarchicalInstancedStaticMeshComponent* const StumpGroup = AddGroup(StumpMesh, true, 25000, 0);
+        for (const TCHAR* Path : BranchPaths)
+            if (UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, *FString::Printf(TEXT("/Game/Megaplant_Library/%s"), Path)))
+                Branches.Add(AddGroup(Mesh, true, 9000, 0));
+
+        FBox2D Stand(ForceInit);
+        for (const FCanopy& Tree : Canopy.Trees) Stand += Tree.At;
+        Stand = Stand.ExpandBy(7.f);
+        constexpr float Spacing = 1.4f;
+        const int32 Columns = FMath::CeilToInt(Stand.GetSize().X / Spacing), Rows = FMath::CeilToInt(Stand.GetSize().Y / Spacing);
+        for (int32 Row = 0; Row <= Rows; ++Row)
+            for (int32 Column = 0; Column <= Columns; ++Column)
+            {
+                FRandomStream Random(Row * 92821 + Column * 6151 + 29);
+                const FVector2D At = Stand.Min + FVector2D(Column + Random.FRandRange(-.45f, .45f), Row + Random.FRandRange(-.45f, .45f)) * Spacing;
+                float Trunk = 0.f;
+                const float Cover = Canopy.Cover(At, Trunk);
+                if (Cover < .1f || Trunk < .5f || !Open(At, 1.f)) continue;
+                const float Ground = SiteWorld->SurfaceAt(At.X, At.Y);
+                // Litter lies thickest under overlapping crowns and darkens where it stays damp.
+                if (Random.FRand() < FMath::SmoothStep(.1f, .55f, Cover))
+                {
+                    const float Size = Random.FRandRange(.9f, 1.4f);
+                    // A drift spans several terrain triangles; a little lift keeps it out of the creases.
+                    const int32 Instance = LitterGroup->AddInstance(FTransform(OnSlope(*SiteWorld, At, .8f, Random.FRandRange(0.f, 360.f)),
+                        FVector(At.X * 100.f, At.Y * 100.f, Ground + 1.5f), FVector(Size, Size, 1.5f)));
+                    LitterGroup->SetCustomData(Instance, { 0.f, static_cast<float>(Random.FRandRange(.75f, 1.15f) * (1.f - .25f * Cover)) });
+                    ++Litter;
+                }
+                // Ferns grow in drifts 10-20 m across where the crowns let some light through.
+                const float Drift = FMath::PerlinNoise2D(At / 13.f + FVector2D(57.f, 19.f));
+                if (Drift > -.05f && Trunk > .9f && Random.FRand() < FMath::Min((Drift + .05f) * 3.f, .85f) * FMath::SmoothStep(.15f, .45f, Cover))
+                {
+                    const float Size = Random.FRandRange(.75f, 1.3f);
+                    const FVector2D Offset(Random.FRandRange(-.3f, .3f), Random.FRandRange(-.3f, .3f));
+                    const int32 Instance = FernGroup->AddInstance(FTransform(FRotator(Random.FRandRange(-5.f, 5.f), Random.FRandRange(0.f, 360.f), Random.FRandRange(-5.f, 5.f)),
+                        FVector((At.X + Offset.X) * 100.f, (At.Y + Offset.Y) * 100.f, SiteWorld->SurfaceAt(At.X + Offset.X, At.Y + Offset.Y) - 3.f),
+                        FVector(Size, Size, Size * Random.FRandRange(.85f, 1.15f))));
+                    // Late summer: most fronds green, some turning bronze.
+                    const float Bronze = FMath::Clamp(.05f + FMath::PerlinNoise2D(At / 9.f) * .6f + static_cast<float>(Random.FRandRange(0.f, .15f)), 0.f, .85f);
+                    FernGroup->SetCustomData(Instance, { Bronze, static_cast<float>(Random.FRandRange(.8f, 1.05f)) });
+                    ++Ferns;
+                }
+                // Hazel thickets fill the brighter edges of a stand.
+                else if (Hazel && Cover < .5f && Trunk > 1.5f && Drift < -.18f && Random.FRand() < .22f)
+                {
+                    Hazel->AddInstance(FTransform(FRotator(0.f, Random.FRandRange(0.f, 360.f), 0.f), FVector(At.X * 100.f, At.Y * 100.f, Ground - 4.f),
+                        FVector(Random.FRandRange(1.6f, 2.8f))));
+                    ++Shrubs;
+                }
+            }
+
+        // Around each trunk: a few dead branches, now and then a fallen log or an old stump.
+        for (int32 Index = 0; Index < Canopy.Trees.Num(); ++Index)
+        {
+            const FCanopy& Tree = Canopy.Trees[Index];
+            FRandomStream Random(Index * 3571 + 11);
+            const auto Around = [&](float Near, float Far)
+            {
+                const float Angle = Random.FRandRange(0.f, UE_TWO_PI);
+                return Tree.At + FVector2D(FMath::Cos(Angle), FMath::Sin(Angle)) * Random.FRandRange(Tree.Radius * Near, Tree.Radius * Far);
+            };
+            const int32 Count = Branches.Num() ? Random.RandRange(0, 3) : 0;
+            for (int32 Branch = 0; Branch < Count; ++Branch)
+            {
+                const FVector2D At = Around(.2f, 1.1f);
+                if (!Open(At, .8f)) continue;
+                // The branch meshes grow up their Z axis from the base; lay each one down and roll it.
+                const FQuat Lying = FQuat(FVector::UpVector, FMath::DegreesToRadians(Random.FRandRange(0.f, 360.f)))
+                    * FQuat(FVector::RightVector, FMath::DegreesToRadians(Random.FRandRange(80.f, 90.f)))
+                    * FQuat(FVector::UpVector, FMath::DegreesToRadians(Random.FRandRange(0.f, 360.f)));
+                // Scaled up from twig size; the axis sits a little above the soil so the wood rests on it.
+                const float Scale = Random.FRandRange(1.6f, 3.2f);
+                Branches[Random.RandRange(0, Branches.Num() - 1)]->AddInstance(FTransform(Lying,
+                    FVector(At.X * 100.f, At.Y * 100.f, SiteWorld->SurfaceAt(At.X, At.Y) + Scale), FVector(Scale)));
+                ++Fallen;
+            }
+            if (Random.FRand() < .08f)
+            {
+                const FVector2D At = Around(.5f, 1.3f);
+                const float Yaw = Random.FRandRange(0.f, 360.f);
+                const float Length = Random.FRandRange(.75f, 1.3f);
+                const FVector2D Along = FVector2D(FMath::Cos(FMath::DegreesToRadians(Yaw)), FMath::Sin(FMath::DegreesToRadians(Yaw))) * 2.1f * Length;
+                float TrunkA = 0.f, TrunkB = 0.f;
+                Canopy.Cover(At + Along, TrunkA);
+                Canopy.Cover(At - Along, TrunkB);
+                if (Open(At, 1.5f) && Open(At + Along, 1.5f) && Open(At - Along, 1.5f) && TrunkA > .6f && TrunkB > .6f)
+                {
+                    // Rest the log along the slope between its two ends.
+                    const float Rise = SiteWorld->SurfaceAt(At.X + Along.X, At.Y + Along.Y) - SiteWorld->SurfaceAt(At.X - Along.X, At.Y - Along.Y);
+                    const float Pitch = FMath::RadiansToDegrees(FMath::Atan2(Rise, Along.Size() * 200.f));
+                    const float Girth = Random.FRandRange(.8f, 1.25f);
+                    LogGroup->AddInstance(FTransform(FRotator(Pitch, Yaw, Random.FRandRange(-20.f, 20.f)),
+                        FVector(At.X * 100.f, At.Y * 100.f, SiteWorld->SurfaceAt(At.X, At.Y) - 3.f), FVector(Length, Girth, Girth)));
+                    ++Logs;
+                }
+            }
+            if (Random.FRand() < .05f)
+            {
+                const FVector2D At = Around(.4f, 1.f);
+                if (Open(At, 1.f))
+                {
+                    StumpGroup->AddInstance(FTransform(FRotator(0.f, Random.FRandRange(0.f, 360.f), 0.f),
+                        FVector(At.X * 100.f, At.Y * 100.f, SiteWorld->SurfaceAt(At.X, At.Y) - 4.f), FVector(Random.FRandRange(.7f, 1.2f))));
+                    ++Stumps;
+                }
+            }
+        }
+    }
+    UE_LOG(LogTemp, Display, TEXT("Flow Fest native ecology: %d grass placements and %d fill patches (%d cleared under cars, %d trampled), %d stubble, %d seed stalks; %d of %d understory in %d groups; forest floor: %d litter drifts, %d ferns, %d hazel, %d dead branches, %d logs, %d stumps in %d groups"),
+        Grass.Num(), Filled, Cleared, Trampled, Stubble, Stalks, GroundLife, ExpectedGroundLife, UnderstoryGroups,
+        Litter, Ferns, Shrubs, Fallen, Logs, Stumps, Groups.Num() - UnderstoryGroups);
+    return UnderstoryGroups == GrassGroupCount + 2 && bFloor && Branches.Num() && Litter && Ferns && Logs
+        && Grass.Num() == ExpectedGrass && ExpectedGrass > 0 && GroundLife == ExpectedGroundLife;
 }
 
 void UFlowFestEcologyComponent::SetViewDistances(float GrassNearCm, float GrassFarCm, float UnderstoryFarCm)

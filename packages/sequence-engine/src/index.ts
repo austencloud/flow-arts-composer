@@ -50,3 +50,6 @@ export {
   type PropRotation,
   type MotionSignalSource,
 } from "./analysis/motion-signals.js";
+
+// Centric placements (tau1-16, terra1): the one table of their hand locations
+export { CENTRIC_PLACEMENT_LOCATIONS } from "./core/placements/centric-placement-locations.js";

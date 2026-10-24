@@ -7,7 +7,9 @@ export type EnvironmentTransitionPhase =
   | "covering"
   | "gap"
   | "waiting"
-  | "revealing";
+  | "revealing"
+  /** The next world loads hidden while the shown one stays (environment-handoff). */
+  | "preparing";
 
 export interface EnvironmentTransitionState<Key extends string> {
   mountedKey: Key | null;
@@ -112,6 +114,7 @@ export function advanceEnvironmentTransition<Key extends string>(
 
   switch (state.phase) {
     case "idle":
+    case "preparing":
       return state;
 
     case "covering": {

@@ -166,9 +166,13 @@ describe("the way out", () => {
   });
 
   it("gives the wax docent a pamphlet with a QR", () => {
-    const docent = grid.performers.find((p) => p.id === "wax-docent")!;
-    expect(docent.handout?.kind).toBe("pamphlet");
-    expect(docent.handout?.meta.join(" ")).toMatch(/QR/);
+    const docent = ROOM_CONTENT.collaboration?.performers?.["wax-docent"];
+    expect(docent?.handout?.kind).toBe("pamphlet");
+    expect(docent?.handout?.meta.join(" ")).toMatch(/QR/);
+  });
+
+  it("keeps the wax docent out of the room until it has a pose", () => {
+    expect(grid.performers.some((p) => p.id === "wax-docent")).toBe(false);
   });
 });
 

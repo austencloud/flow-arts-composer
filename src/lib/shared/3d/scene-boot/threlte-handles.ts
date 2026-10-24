@@ -1,5 +1,6 @@
 import type { ThrelteContext } from "@threlte/core";
 import type { Camera, Object3D, Scene, WebGLRenderer } from "three";
+import { installGuardedCompileAsync } from "./guarded-compile-async";
 
 /**
  * Threlte returns `camera` wrapped in a CurrentWritable (read `.current`) while
@@ -36,5 +37,8 @@ export function resolveThrelteHandles(
   const scene = resolveThrelteScene(ctx.scene);
   const camera = ctx.camera.current;
   if (!renderer?.domElement || !scene || !camera?.isCamera) return null;
+  // Every warm-up compiles through these handles. three's own compileAsync
+  // throws from a timer when a material is disposed mid-poll (triage E8).
+  installGuardedCompileAsync(renderer);
   return { renderer, scene, camera };
 }

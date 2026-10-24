@@ -24,6 +24,7 @@ class UFlowFestAvatarComponent;
 class UFlowFestPropComponent;
 class UFlowFestEcologyComponent;
 class UFlowFestSoundscapeComponent;
+enum class EFlowFestBodyActivity : uint8;
 
 /** Measured Flow Fest site. East and south are metres; UE X and Y are centimetres. */
 UCLASS()
@@ -42,6 +43,11 @@ public:
     /** World-space ground Z, in centimetres. */
     UFUNCTION(BlueprintCallable, Category="Flow Fest|Site")
     float SampleGround(float EastMeters, float SouthMeters) const;
+
+    /** World-space Z of the rendered terrain mesh, in centimetres. The mesh joins 2 m
+     *  vertices with flat triangles, so it rides above the measured grid in hollows;
+     *  anything only a few centimetres tall rests on this instead. */
+    float SurfaceAt(float EastMeters, float SouthMeters) const;
 
     UFUNCTION(BlueprintCallable, Category="Flow Fest|Site")
     FVector ToWorld(float East, float South, float HeightOffsetCm = 0.f) const;
@@ -74,6 +80,10 @@ public:
 
     UFUNCTION(BlueprintPure, Category="Flow Fest|Crowd")
     int32 GetCrowdSize() const { return People.Num(); }
+
+    /** Deterministic player showcase pose and its attached meal visuals. Call each capture tick. */
+    void SetActivityEvidence(UFlowFestAvatarComponent* Avatar, UFlowFestPropComponent* Prop,
+        EFlowFestBodyActivity Activity, float ElapsedSeconds, float ExitSecondsRemaining = -1.f);
 
     FString GetNearbyAttendeeIntent(FVector WorldPosition) const;
     bool GreetNearbyAttendee(FVector WorldPosition, FString& Reply);
@@ -122,6 +132,9 @@ private:
         AActor* Actor = nullptr;
         UFlowFestAvatarComponent* Avatar = nullptr;
         UFlowFestPropComponent* Prop = nullptr;
+        UStaticMeshComponent* MealBowl = nullptr;
+        UStaticMeshComponent* MealFood = nullptr;
+        UStaticMeshComponent* MealBite = nullptr;
         EFlowFestCrowdActivity LastActivity = EFlowFestCrowdActivity::Rest;
         bool bPerformancePlaying = false;
         bool bNeedsActivityRefresh = true;
@@ -140,25 +153,31 @@ private:
     UPROPERTY(VisibleAnywhere) TObjectPtr<UPostProcessComponent> PostProcess;
 
     UPROPERTY(Transient) TArray<TObjectPtr<UProceduralMeshComponent>> TerrainChunks;
+    UPROPERTY(Transient) TArray<TObjectPtr<UProceduralMeshComponent>> RoadMeshes;
     UPROPERTY(Transient) TArray<TObjectPtr<UHierarchicalInstancedStaticMeshComponent>> InstanceGroups;
     UPROPERTY(Transient) TArray<TObjectPtr<UInstancedSkinnedMeshComponent>> TreeLiveGroups;
     UPROPERTY(Transient) TObjectPtr<UDynamicWindData> TreeWindData;
     int32 NearTreeCount = 0;
     int32 BackdropTreeCount = 0;
+    int32 FillTreeCount = 0;
     bool bLiveNearTrees = true;
     FVector BreezeCenter = FVector::ZeroVector;
     UPROPERTY(Transient) TObjectPtr<UStaticMeshComponent> PlayerTent;
-    UPROPERTY(Transient) TObjectPtr<UPointLightComponent> FireLight;
 
     TArray<float> Elevations;
     TArray<FSiteRoad> Roads;
     TArray<FSiteTree> Trees;
     TArray<FSiteTree> BackdropTrees;
+    /** Trees FillWoods planted where the canopy scan shows woods the source left unplaced. */
+    TArray<FSiteTree> FillTrees;
+    /** Canopy height above the ground in centimetres on the terrain grid; 65535 where the scan has no return. */
+    TArray<uint16> CanopyOffsets;
     TArray<FSiteCamp> Camps;
     FSiteCamp PlayerTentPlacement;
     bool bHasPlayerTentPlacement = false;
     TArray<FSiteVehicle> Vehicles;
     TArray<FFestivalPerson> People;
+    FFestivalPerson ActivityEvidencePerson;
     FFlowFestCrowd Crowd;
     TMap<FString, FVector2D> Landmarks;
     TMap<FString, float> SourceMeshHeights;
@@ -170,8 +189,12 @@ private:
     float GridMinSouth = -512.f;
     float OriginElevation = 270.f;
     float TimeOfDay = 18.5f;
+    float ClearanceStatsElapsed = 0.f;
 
     bool LoadSite();
+    void PlantWoods();
+    float CanopyTopAt(float East, float South) const;
+    void AddCrowns(struct FCanopyMap& Canopy) const;
     void BuildTerrain();
     void BuildRoads();
     void BuildTrees();
@@ -181,10 +204,21 @@ private:
     void BuildFestivalLandmarks();
     void BuildLanterns();
     void BuildPeople();
-    void AddSign(const FString& Label, const FVector2D& At, float Yaw);
+    void CreateMealVisuals(FFestivalPerson& Person);
+    void UpdateMealVisuals(FFestivalPerson& Person, bool bEating, float ElapsedSeconds);
     void AddSetPiece(const FString& AssetName, const FVector& Position, const FRotator& Rotation, const FVector& Scale = FVector::OneVector);
     UHierarchicalInstancedStaticMeshComponent* AddInstanceGroup(UStaticMesh* Mesh, const FString& Name, UMaterialInterface* OverrideMaterial = nullptr);
     UStaticMesh* LoadSetMesh(const FString& Name) const;
     UMaterialInterface* LoadMaterial(const FString& Name) const;
     float ElevationAt(float East, float South) const;
+
+    // Structures polish
+    /** The real buildings and gear from FlowFestStructures.h, built where the landmarks are. */
+    void BuildStructures();
+    void BuildGroundPatches();
+
+    // Jam polish
+    /** The jam at the fire circle, from Assets/Jam/Data/jam-layout.json; see FlowFestJam.h. */
+    void BuildJam();
+    UPROPERTY(Transient) TObjectPtr<class UFlowFestJamComponent> Jam;
 };

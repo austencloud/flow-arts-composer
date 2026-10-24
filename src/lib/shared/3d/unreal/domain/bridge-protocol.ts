@@ -2,6 +2,7 @@ export interface NativePerformer {
   performerId: string;
   characterId: string;
   propId: string;
+  effect?: "none" | "fire" | "led";
   position: { x: number; z: number };
   facingAngle: number;
 }
@@ -41,9 +42,26 @@ interface CommandHeader {
 export type BridgeCommand = CommandHeader &
   (
     | { type: "hello"; payload?: Record<string, never> }
-    | { type: "setPerformer"; payload: NativePerformer }
+    | {
+        type: "setPerformer";
+        payload: NativePerformer & { composerOwned?: boolean };
+      }
     | { type: "removePerformer"; payload: { performerId: string } }
     | { type: "select"; payload: { performerId: string | null } }
+    | {
+        type: "beginMotion";
+        payload: {
+          performerId: string;
+          transferId: string;
+          totalChunks: number;
+          totalBytes: number;
+        };
+      }
+    | {
+        type: "motionChunk";
+        payload: { transferId: string; index: number; data: string };
+      }
+    | { type: "commitMotion"; payload: { transferId: string } }
     | {
         type: "camera";
         payload:
@@ -51,9 +69,11 @@ export type BridgeCommand = CommandHeader &
               mode?: "snap";
               position: { x: number; y: number; z: number };
               target: { x: number; y: number; z: number };
+              verticalFov?: number;
             }
           | { mode: "orbit" | "pan"; deltaX: number; deltaY: number }
-          | { mode: "zoom"; delta: number }
+          | { mode: "zoom"; delta: number; cursorX?: number; cursorY?: number }
+          | { mode: "fov"; verticalFov: number }
           | {
               mode: "preset";
               preset:
@@ -70,7 +90,13 @@ export type BridgeCommand = CommandHeader &
         type: "playback";
         payload:
           | { action: "pause" | "resume" | "restart" }
-          | { action: "rate"; rate: number };
+          | { action: "rate"; rate: number }
+          | {
+              action: "sync";
+              performers: { performerId: string; seconds: number }[];
+              playing: boolean;
+              rate: number;
+            };
       }
   );
 
@@ -123,6 +149,10 @@ function performer(value: unknown): value is NativePerformer {
     nonempty(value.performerId) &&
     nonempty(value.characterId) &&
     nonempty(value.propId) &&
+    (value.effect === undefined ||
+      value.effect === "none" ||
+      value.effect === "fire" ||
+      value.effect === "led") &&
     point2(value.position) &&
     finite(value.facingAngle)
   );
@@ -165,7 +195,7 @@ function viewerState(value: unknown): value is NativeViewerState {
   const clip = playback.preparedClip;
   const validClip =
     clip === null
-      ? playback.status === "unavailable" && performers.length === 0
+      ? playback.status === "unavailable"
       : record(clip) &&
         nonempty(clip.id) &&
         nonempty(clip.title) &&

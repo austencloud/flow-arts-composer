@@ -13,6 +13,11 @@
   control floating over an empty canvas was the thing this replaced. A type
   still survives in the URL for deep links, and there it reads as a filter with
   a way back to everything.
+
+  The list never scrolls (one-screen-per-step.md). The wall is measured and
+  laid out at whichever arrangement shows the artwork largest; once that would
+  shrink the pieces below a judgeable size, each type becomes one door that
+  opens its own screen, and only that screen's wall pans.
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
@@ -32,6 +37,11 @@
   import type { CollectedTunnel } from "#lib/features/tunnel-collection/domain/tunnel-collection-types.js";
   import PanelSpinner from "#lib/shared/components/panel/PanelSpinner.svelte";
   import TkaLabel from "#lib/shared/components/TkaLabel.svelte";
+  import {
+    fitVisualsWall,
+    panColumns,
+    type WallMetrics,
+  } from "../domain/visuals-wall-fit.js";
 
   const browseNavigation = getBrowseNavigationContext();
 
@@ -134,22 +144,107 @@
     )
   );
 
-  /** At low supply the shelves sit SIDE BY SIDE and split the canvas, so three
-   *  pieces fill one screen instead of stacking into a scroll. Track widths are
-   *  weighted by how much work each shelf holds, so the wider column is always
-   *  the fuller one (feedback_width_tracks_reach) and no shelf gets a track it
-   *  cannot fill. Past that the shelves stack full-width and wrap normally. */
-  const spread = $derived(shelves.length > 1 && totalCount <= 6);
+  // ---- wall fit -------------------------------------------------------------
 
-  /** A deep link that narrows to a single piece is a feature view, not a
-   *  grid of one — the artwork takes the canvas instead of sitting in the
-   *  middle of it as a thumbnail. */
-  const solo = $derived(
-    shelves.length === 1 && (shelves[0]?.items.length ?? 0) === 1
-  );
-  const spreadTemplate = $derived(
-    spread ? shelves.map((shelf) => `${shelf.items.length}fr`).join(" ") : ""
-  );
+  /** Below this the artwork is a thumbnail, and the wall drills down instead. */
+  const MIN_PLINTH = 150;
+
+  interface WallLayout {
+    /** `shelves`: every piece on screen. `doors`: one card per type, each
+     *  opening that type's screen. `pan`: one type too full to fit whole, so
+     *  its wall pans inside its own area. */
+    readonly mode: "shelves" | "doors" | "pan";
+    readonly direction: "row" | "column";
+    readonly columns: readonly number[];
+    readonly plinth: number;
+  }
+
+  let galleryBody = $state<HTMLElement | null>(null);
+  let wall = $state<WallLayout | null>(null);
+  /** The shelf heading is absent while doors show, so its last height is kept
+   *  for deciding when the full wall fits again. */
+  let headHeight = 0;
+
+  function gapOf(element: Element | null, axis: "rowGap" | "columnGap") {
+    return element ? parseFloat(getComputedStyle(element)[axis]) || 0 : 0;
+  }
+
+  function measureWall() {
+    const body = galleryBody;
+    const card = body?.querySelector<HTMLElement>(".art-card");
+    const plinth = card?.querySelector<HTMLElement>(".art-plinth");
+    if (!body || !card || !plinth) return;
+    const head = body.querySelector<HTMLElement>(".shelf-head");
+    if (head)
+      headHeight = head.offsetHeight + gapOf(head.parentElement, "rowGap");
+
+    // Read from the card's own box, not from its rendered width: a card
+    // squeezed by the last fit would report less chrome than it has.
+    const cardStyle = getComputedStyle(card);
+    const chromeX = [
+      "paddingLeft",
+      "paddingRight",
+      "borderLeftWidth",
+      "borderRightWidth",
+    ].reduce(
+      (sum, side) =>
+        sum +
+        (parseFloat(cardStyle[side as keyof CSSStyleDeclaration] as string) ||
+          0),
+      0
+    );
+
+    const metrics: WallMetrics = {
+      width: body.clientWidth,
+      height: body.clientHeight,
+      chromeX,
+      chromeY: card.offsetHeight - plinth.offsetHeight,
+      headHeight,
+      wallGap: gapOf(body.querySelector(".art-wall"), "columnGap"),
+      shelfGap: gapOf(body, "columnGap"),
+    };
+
+    const full = fitVisualsWall(
+      shelves.map((shelf) => shelf.items.length),
+      metrics
+    );
+    if (full.plinth >= MIN_PLINTH) {
+      wall = { mode: "shelves", ...full };
+      return;
+    }
+    if (shelves.length > 1) {
+      wall = {
+        mode: "doors",
+        ...fitVisualsWall([shelves.length], { ...metrics, headHeight: 0 }),
+      };
+      return;
+    }
+    const pan = panColumns(metrics, MIN_PLINTH);
+    wall = {
+      mode: "pan",
+      direction: "column",
+      columns: [pan.columns],
+      plinth: pan.plinth,
+    };
+  }
+
+  $effect(() => {
+    const body = galleryBody;
+    if (!body) return;
+    measureWall();
+    const observer = new ResizeObserver(() => measureWall());
+    observer.observe(body);
+    return () => observer.disconnect();
+  });
+
+  function openShelf(route: PublishedVisualType) {
+    browseNavigation.navigateTo({
+      primary: "explore",
+      section: "visuals",
+      view: "list",
+      visualType: route,
+    });
+  }
 
   // ---- detail state ---------------------------------------------------------
 
@@ -342,7 +437,7 @@
       </div>
     </div>
   {:else}
-    <div class="list-shell themed-scrollbar">
+    <div class="list-shell">
       {#if listLoading}
         <div class="panel-status" role="status">
           <PanelSpinner size={10} />
@@ -371,67 +466,104 @@
           </p>
         </div>
       {:else}
+        {#if filterType}
+          <div class="filter-row">
+            <button type="button" class="pill-btn" onclick={showEverything}>
+              <i class="fas fa-arrow-left" aria-hidden="true"></i>
+              <span>{t("browse_ui_all_visuals")}</span>
+            </button>
+          </div>
+        {/if}
+
         <div
           class="gallery-body"
-          class:spread
-          class:solo
-          style:--spread-template={spreadTemplate}
-          style:--total-cols={totalCount}
+          class:fitted={wall !== null}
+          class:pan={wall?.mode === "pan"}
+          class:stacked={wall?.direction === "column"}
+          style:--plinth={wall ? `${wall.plinth}px` : undefined}
+          bind:this={galleryBody}
         >
-          {#if filterType}
-            <div class="filter-row">
-              <button type="button" class="pill-btn" onclick={showEverything}>
-                <i class="fas fa-arrow-left" aria-hidden="true"></i>
-                <span>{t("browse_ui_all_visuals")}</span>
-              </button>
-            </div>
-          {/if}
-
-          {#each shelves as shelf (shelf.meta.route)}
-            <section class="shelf">
-              <header class="shelf-head">
-                <h2>{shelf.meta.label}</h2>
-                <span class="shelf-count">{shelf.items.length}</span>
-              </header>
-
-              {#if shelf.items.length === 0}
-                <p class="shelf-empty">{shelf.meta.blurb}</p>
-              {:else}
-                <div class="art-wall" style:--wall-cols={shelf.items.length}>
-                  {#each shelf.items as envelope (envelope.artifactId)}
-                    <button
-                      type="button"
-                      class="art-card"
-                      onclick={() => openDetail(envelope)}
+          {#if wall?.mode === "doors"}
+            <div class="art-wall" style:--wall-cols={wall.columns[0]}>
+              {#each shelves as shelf (shelf.meta.route)}
+                {@const cover = shelf.items[0]}
+                <button
+                  type="button"
+                  class="art-card"
+                  onclick={() => openShelf(shelf.meta.route)}
+                >
+                  <span class="art-plinth">
+                    {#if cover?.posterUrl}
+                      <img
+                        src={cover.posterUrl}
+                        alt=""
+                        loading="lazy"
+                        draggable="false"
+                      />
+                    {/if}
+                  </span>
+                  <span class="art-meta">
+                    <span class="art-title">{shelf.meta.label}</span>
+                    <span class="art-byline"
+                      >{shelf.items.length === 1
+                        ? "1 piece"
+                        : `${shelf.items.length} pieces`}</span
                     >
-                      <span class="art-plinth">
-                        {#if envelope.posterUrl}
-                          <img
-                            src={envelope.posterUrl}
-                            alt=""
-                            loading="lazy"
-                            draggable="false"
-                          />
-                        {:else}
-                          <span class="art-pending" aria-hidden="true">
-                            <i class="fas fa-circle-notch"></i>
-                          </span>
-                        {/if}
-                      </span>
-                      <span class="art-meta">
-                        <span class="art-title">
-                          <TkaLabel text={envelope.title} darkMode />
+                  </span>
+                </button>
+              {/each}
+            </div>
+          {:else}
+            {#each shelves as shelf, shelfIndex (shelf.meta.route)}
+              <section class="shelf">
+                <header class="shelf-head">
+                  <h2>{shelf.meta.label}</h2>
+                  <span class="shelf-count">{shelf.items.length}</span>
+                </header>
+
+                {#if shelf.items.length === 0}
+                  <p class="shelf-empty">{shelf.meta.blurb}</p>
+                {:else}
+                  <div
+                    class="art-wall themed-scrollbar"
+                    style:--wall-cols={wall?.columns[shelfIndex] ??
+                      shelf.items.length}
+                  >
+                    {#each shelf.items as envelope (envelope.artifactId)}
+                      <button
+                        type="button"
+                        class="art-card"
+                        onclick={() => openDetail(envelope)}
+                      >
+                        <span class="art-plinth">
+                          {#if envelope.posterUrl}
+                            <img
+                              src={envelope.posterUrl}
+                              alt=""
+                              loading="lazy"
+                              draggable="false"
+                            />
+                          {:else}
+                            <span class="art-pending" aria-hidden="true">
+                              <i class="fas fa-circle-notch"></i>
+                            </span>
+                          {/if}
                         </span>
-                        <span class="art-byline"
-                          >By {envelope.ownerDisplayName}</span
-                        >
-                      </span>
-                    </button>
-                  {/each}
-                </div>
-              {/if}
-            </section>
-          {/each}
+                        <span class="art-meta">
+                          <span class="art-title">
+                            <TkaLabel text={envelope.title} darkMode />
+                          </span>
+                          <span class="art-byline"
+                            >By {envelope.ownerDisplayName}</span
+                          >
+                        </span>
+                      </button>
+                    {/each}
+                  </div>
+                {/if}
+              </section>
+            {/each}
+          {/if}
         </div>
       {/if}
     </div>
@@ -480,54 +612,53 @@
   .list-shell {
     flex: 1;
     min-height: 0;
-    overflow-y: auto;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
+    gap: clamp(14px, 1.4cqi, 24px);
     padding: clamp(20px, 2.4cqi, 44px);
   }
 
-  /* `margin-block: auto` centers the wall in a tall viewport without breaking
-     scroll once the shelves outgrow it (justify-content: center clips the top
-     instead). A short gallery therefore sits ON the canvas rather than
-     dead-ending in its first third. */
+  /* The area the wall is fitted to. It never grows with its content, so what
+     measureWall() reads is the space left on screen. The wall stays hidden
+     until its first fit, so it never paints at a guessed size. */
   .gallery-body {
-    /* One continuous ramp for artwork size. A fixed rem cap freezes the wall
-       at 1080p proportions; 25vw keeps the pieces filling the band from 1180
-       through 3840 without a step tier (4k-native-layout.md). */
-    --art-card-max: clamp(22rem, 25vw, 60rem);
-    --art-card-min: clamp(15rem, 18vw, 42rem);
     --art-wall-gap: clamp(16px, 1.8cqi, 32px);
-    width: 100%;
-    margin-block: auto;
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     gap: clamp(28px, 3cqi, 56px);
+    overflow: hidden;
+    visibility: hidden;
   }
 
-  /* One piece alone gets to be the piece. Height bounds it so it still fits
-     the canvas it is filling. */
-  .gallery-body.solo {
-    --art-card-max: min(clamp(22rem, 40vw, 96rem), 62vh);
+  .gallery-body.fitted {
+    visibility: visible;
   }
 
-  /* Side-by-side shelves need real width to be worth it; below this the
-     stacked flow is the better read. */
-  @media (min-width: 1180px) {
-    .gallery-body.spread {
-      display: grid;
-      grid-template-columns: var(--spread-template);
-      align-items: start;
-      gap: clamp(32px, 3.2cqi, 72px);
-      /* Free `fr` tracks would push two shelves to opposite edges of a 4K
-         canvas with a void between them. The band is bound to the artwork it
-         actually holds, then centered, so the shelves stay one composition at
-         every width. */
-      max-width: min(
-        100%,
-        calc(var(--art-card-max) * var(--total-cols, 3) + 6rem)
-      );
-      margin-inline: auto;
-    }
+  .gallery-body.stacked {
+    flex-direction: column;
+  }
+
+  /* One type too full to fit whole: its wall pans, and the heading and the
+     way back stay where they are. */
+  .gallery-body.pan {
+    align-items: stretch;
+    justify-content: flex-start;
+  }
+
+  .gallery-body.pan .shelf {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .gallery-body.pan .art-wall {
+    min-height: 0;
+    overflow-y: auto;
+    align-content: start;
   }
 
   .filter-row {
@@ -538,6 +669,7 @@
   .shelf {
     display: flex;
     flex-direction: column;
+    align-items: center;
     gap: clamp(14px, 1.4cqi, 24px);
   }
 
@@ -576,22 +708,12 @@
     font-size: var(--font-size-min, 14px);
   }
 
-  /* Tracks are capped at a real artwork size and CENTERED, so two pieces read
-     as a hung wall rather than as two thumbnails abandoned in a corner. Empty
-     tracks collapse (auto-fit), so the count never strands an orphan column. */
+  /* Column count and artwork size both come from the fit. */
   .art-wall {
     display: grid;
-    grid-template-columns: repeat(
-      auto-fit,
-      minmax(min(100%, var(--art-card-min)), 1fr)
-    );
+    grid-template-columns: repeat(var(--wall-cols, 1), auto);
+    justify-content: center;
     gap: var(--art-wall-gap);
-    width: 100%;
-    max-width: calc(
-      var(--art-card-max) * var(--wall-cols, 1) + var(--art-wall-gap) *
-        (var(--wall-cols, 1) - 1)
-    );
-    margin-inline: auto;
   }
 
   .art-card {
@@ -639,6 +761,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    /* Capped at its card, so artwork never spills past the frame, even for
+       the frame between a resize and the next fit. */
+    width: var(--plinth, 12rem);
+    max-width: 100%;
     aspect-ratio: 1;
     border-radius: clamp(12px, 0.55vw + 5px, 24px);
     overflow: hidden;
@@ -663,16 +789,6 @@
     mix-blend-mode: screen;
   }
 
-  /* Wide-and-short landscape (a folded Fold, a phone on its side): a square
-     plinth sized off WIDTH is taller than the whole viewport, so a piece can
-     never be seen whole. Capping the plinth's height keeps one entire card on
-     screen; the poster letterboxes inside it rather than cropping. */
-  @media (max-height: 640px) and (min-width: 600px) {
-    .art-plinth {
-      max-height: calc(100vh - 14rem);
-    }
-  }
-
   .art-pending {
     color: var(--theme-text-muted, #9aa6b8);
     font-size: 1.4rem;
@@ -683,6 +799,8 @@
     display: flex;
     flex-direction: column;
     gap: 0.15rem;
+    width: var(--plinth, 12rem);
+    max-width: 100%;
     padding: 0 0.25rem;
     min-width: 0;
   }

@@ -58,8 +58,7 @@
     items: PreferenceItem[];
   };
 
-  const cached =
-    cache && cache.userId === authState.user?.uid ? cache : null;
+  const cached = cache && cache.userId === authState.user?.uid ? cache : null;
   let preferences = $state<NotificationPreferences>(
     cached?.preferences ?? DEFAULT_NOTIFICATION_PREFERENCES
   );
@@ -96,7 +95,9 @@
       preferences,
       pushState:
         pushDeviceState === "checking"
-          ? (cache?.userId === userId ? cache.pushState : null)
+          ? cache?.userId === userId
+            ? cache.pushState
+            : null
           : pushDeviceState,
     };
   });
@@ -184,9 +185,7 @@
     const fcmTokenManager = getFCMTokenManager();
     try {
       if (!cached?.pushState) pushDeviceState = "checking";
-      pushDeviceState = preferences.pushEnabled
-        ? await fcmTokenManager.getRegistrationState(user.uid)
-        : await fcmTokenManager.getSetupState();
+      pushDeviceState = await fcmTokenManager.getRegistrationState(user.uid);
     } catch (error) {
       pushDeviceState = "failed";
       reportSettingsFailure(
@@ -253,43 +252,22 @@
     if (!user || pushToggleBusy) return;
 
     const fcmTokenManager = getFCMTokenManager();
-    const previousPreferences = preferences;
     const previousDeviceState = pushDeviceState;
     try {
       pushToggleBusy = true;
 
-      if (preferences.pushEnabled && pushDeviceState === "ready") {
-        await fcmTokenManager.unregisterToken(user.uid);
-        preferences = { ...preferences, pushEnabled: false };
-        await notificationPreferencesManager.savePreferences(
-          user.uid,
-          preferences
-        );
-        pushDeviceState = await fcmTokenManager.getSetupState();
-        return;
-      }
-
-      if (
-        preferences.pushEnabled &&
-        ["unsupported", "blocked"].includes(pushDeviceState)
-      ) {
-        preferences = { ...preferences, pushEnabled: false };
-        await notificationPreferencesManager.savePreferences(
-          user.uid,
-          preferences
+      // The switch belongs to this device. Turning it off here leaves the
+      // account's other phones and browsers getting their alerts.
+      if (pushDeviceState === "ready") {
+        pushDeviceState = await fcmTokenManager.turnOffForCurrentDevice(
+          user.uid
         );
         return;
       }
 
       pushDeviceState = await fcmTokenManager.enableForCurrentDevice(user.uid);
 
-      if (pushDeviceState === "ready") {
-        preferences = { ...preferences, pushEnabled: true };
-        await notificationPreferencesManager.savePreferences(
-          user.uid,
-          preferences
-        );
-      } else if (pushDeviceState === "blocked") {
+      if (pushDeviceState === "blocked") {
         showToast(t("feedback_push_blocked_desc"), "warning", 5000);
       } else if (pushDeviceState === "unsupported") {
         showToast(t("feedback_push_unsupported_desc"), "warning", 5000);
@@ -297,7 +275,6 @@
         showToast(t("feedback_push_failed_desc"), "error", 5000);
       }
     } catch (error) {
-      preferences = previousPreferences;
       pushDeviceState = previousDeviceState;
       reportSettingsFailure(
         error,
@@ -357,20 +334,11 @@
       unsupported: t("feedback_push_unsupported_desc"),
       blocked: t("feedback_push_blocked_desc"),
       "setup-required": t("feedback_push_setup_desc"),
+      off: t("feedback_push_device_off_desc"),
       ready: t("feedback_push_ready_desc"),
       failed: t("feedback_push_failed_desc"),
     };
 
-    if (
-      pushDeviceState === "checking" ||
-      pushDeviceState === "unsupported" ||
-      pushDeviceState === "blocked" ||
-      pushDeviceState === "failed"
-    ) {
-      return descriptions[pushDeviceState];
-    }
-
-    if (!preferences.pushEnabled) return t("feedback_push_account_off_desc");
     return descriptions[pushDeviceState];
   }
 
@@ -380,30 +348,16 @@
       unsupported: t("feedback_push_unavailable"),
       blocked: t("feedback_push_blocked"),
       "setup-required": t("feedback_push_setup"),
+      off: t("feedback_state_off"),
       ready: t("feedback_state_on"),
       failed: t("feedback_push_retry"),
     };
 
-    if (
-      pushDeviceState === "checking" ||
-      pushDeviceState === "unsupported" ||
-      pushDeviceState === "blocked" ||
-      pushDeviceState === "failed"
-    ) {
-      return statuses[pushDeviceState];
-    }
-
-    if (!preferences.pushEnabled) return t("feedback_state_off");
     return statuses[pushDeviceState];
   }
 
   function getPushAriaLabel(): string {
-    if (
-      preferences.pushEnabled &&
-      ["ready", "blocked", "unsupported"].includes(pushDeviceState)
-    ) {
-      return t("feedback_turn_push_off");
-    }
+    if (pushDeviceState === "ready") return t("feedback_turn_push_off");
 
     if (pushDeviceState === "checking") {
       return t("feedback_push_checking_desc");
@@ -469,6 +423,7 @@
       "admin-user-returned": t("feedback_notif_desc_user_returned"),
       "admin-qr-scan": t("feedback_notif_desc_qr_scan"),
       "admin-content-created": t("feedback_notif_desc_content_created"),
+      "admin-site-visit": t("feedback_notif_desc_site_visit"),
     };
 
     for (const [type, config] of Object.entries(NOTIFICATION_TYPE_CONFIG)) {

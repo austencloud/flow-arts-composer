@@ -28,6 +28,7 @@ const capturesOption = option('--captures');
 const capturesDir = capturesOption === null ? null : resolve(capturesOption);
 const captureId = option('--capture-id');
 const familyOnly = process.argv.includes('--family-only');
+const turnsOnly = process.argv.includes('--turns-only');
 const legacyOnly = process.argv.includes('--legacy-only');
 const allowPartial = process.argv.includes('--allow-partial');
 if (museumMode && (familyOnly || legacyOnly || allowPartial || captureId))
@@ -40,6 +41,8 @@ if (captureId && !capturesDir)
 if (familyOnly && !capturesDir) throw new Error('--family-only requires --captures directory');
 if (legacyOnly && (!capturesDir || familyOnly)) throw new Error('--legacy-only requires --captures and cannot combine with --family-only');
 if (allowPartial && !familyOnly) throw new Error('--allow-partial requires --family-only');
+if (turnsOnly && (museumMode || familyOnly || legacyOnly || allowPartial || captureId || capturesDir))
+  throw new Error('--turns-only cannot combine with capture or Museum options');
 const dependencyRoot = existsSync(join(repo, 'node_modules/.pnpm')) ? repo : source;
 const definitions = await loadDeployedCharacters(source);
 if (definitions.length !== 16 || new Set(definitions.map(x => x.id)).size !== 16)
@@ -58,6 +61,66 @@ function glbJson(file) {
   if (bytes.toString('ascii', 0, 4) !== 'glTF' || bytes.readUInt32LE(16) !== 0x4e4f534a)
     throw new Error(`Invalid binary glTF: ${file}`);
   return JSON.parse(bytes.toString('utf8', 20, 20 + bytes.readUInt32LE(12)));
+}
+function turnMetadata(file, contactFile) {
+  const bytes = readFileSync(file);
+  const doc = glbJson(file);
+  const binaryOffset = 20 + bytes.readUInt32LE(12) + 8;
+  if (bytes.readUInt32LE(binaryOffset - 4) !== 0x004e4942)
+    throw new Error(`Missing GLB binary chunk: ${file}`);
+  const values = index => {
+    const accessor = doc.accessors[index], view = doc.bufferViews[accessor.bufferView];
+    if (accessor.componentType !== 5126 || view.byteStride || accessor.sparse)
+      throw new Error(`Unsupported turn accessor: ${file}`);
+    const width = { SCALAR: 1, VEC3: 3, VEC4: 4 }[accessor.type];
+    if (!width) throw new Error(`Unsupported turn accessor type: ${accessor.type}`);
+    const offset = binaryOffset + (view.byteOffset || 0) + (accessor.byteOffset || 0);
+    return Array.from({ length: accessor.count }, (_, row) =>
+      Array.from({ length: width }, (_, col) => bytes.readFloatLE(offset + 4 * (row * width + col))));
+  };
+  const animation = doc.animations?.[0];
+  const hips = doc.nodes.findIndex(node => /(?:^|:)Hips$/.test(node.name || ''));
+  if (!animation || hips < 0) throw new Error(`Turn lacks Hips animation: ${file}`);
+  const channel = animation.channels.find(entry => entry.target.node === hips && entry.target.path === 'rotation');
+  if (!channel) throw new Error(`Turn lacks Hips rotation: ${file}`);
+  const sampler = animation.samplers[channel.sampler];
+  const times = values(sampler.input).map(row => row[0]);
+  const rotations = values(sampler.output);
+  if (sampler.interpolation !== 'LINEAR' || times.length !== rotations.length || times.length < 2)
+    throw new Error(`Unsupported turn rotation sampling: ${file}`);
+  const rotate = (q, vector) => {
+    const [x, y, z, w] = q, [vx, vy, vz] = vector;
+    const tx = 2 * (y * vz - z * vy), ty = 2 * (z * vx - x * vz), tz = 2 * (x * vy - y * vx);
+    return [vx + w * tx + y * tz - z * ty, vy + w * ty + z * tx - x * tz,
+      vz + w * tz + x * ty - y * tx];
+  };
+  const multiply = ([x, y, z, w], [a, b, c, d]) =>
+    [w * a + x * d + y * c - z * b, w * b - x * c + y * d + z * a,
+      w * c + x * b - y * a + z * d, w * d - x * a - y * b - z * c];
+  const parents = new Map();
+  doc.nodes.forEach((node, parent) => (node.children || []).forEach(child => parents.set(child, parent)));
+  const chain = [];
+  for (let node = hips; node !== undefined; node = parents.get(node)) chain.unshift(node);
+  const worldRotation = index => chain.reduce((acc, node) => {
+    const rotationChannel = animation.channels.find(entry => entry.target.node === node && entry.target.path === 'rotation');
+    const curve = rotationChannel ? values(animation.samplers[rotationChannel.sampler].output) : null;
+    return multiply(acc, curve ? curve[index === 0 ? 0 : curve.length - 1] : (doc.nodes[node].rotation || [0, 0, 0, 1]));
+  }, [0, 0, 0, 1]);
+  const first = rotate(worldRotation(0), [0, 0, 1]);
+  const last = rotate(worldRotation(-1), [0, 0, 1]);
+  const headingDegrees = Math.atan2(first[0] * last[2] - first[2] * last[0],
+    first[0] * last[0] + first[2] * last[2]) * 180 / Math.PI;
+  const contact = JSON.parse(readFileSync(contactFile, 'utf8'));
+  if (contact.frameRate !== 30 || contact.frameCount !== times.length ||
+      !['leftFoot', 'rightFoot'].every(key => contact[key]?.length === times.length) ||
+      Math.abs(times[0] - 1 / 30) > 1e-4 ||
+      times.some((time, index) => Math.abs(time - (index + 1) / 30) > 1e-4))
+    throw new Error(`Turn contacts do not align with source keyframes: ${file}`);
+  return { source: file.split(/[\\/]/).at(-1), sourceFirstKeySeconds: times[0],
+    durationSeconds: times.at(-1), headingDegrees, frameRate: 30,
+    // Native frame zero holds the source first key; subsequent keys retain their source timestamps.
+    frameCount: times.length + 1, leftFoot: [contact.leftFoot[0], ...contact.leftFoot],
+    rightFoot: [contact.rightFoot[0], ...contact.rightFoot] };
 }
 function boneName(name) { return name.replace(/^mixamorig\d*:?/, ''); }
 function safeAssetName(name) { return name.replace(/[^A-Za-z0-9_]+/g, '_').replace(/^_+|_+$/g, '') || 'Unnamed'; }
@@ -118,11 +181,22 @@ const animations = {
   Fall: 'falling-idle-rm.glb', Land: 'falling-to-landing-rm.glb', Backward: 'walk-backward-rm.glb',
   StrafeLeft: 'strafe-left-rm.glb', StrafeRight: 'strafe-right-rm.glb',
   RunStrafeLeft: 'strafe-run-left.glb', RunStrafeRight: 'strafe-run-right.glb',
+  TurnLeft: 'turn-left.glb', TurnRight: 'turn-right.glb',
 };
 const animationSource = join(source, 'static/animations/locomotion-pack');
 if (!museumMode)
   for (const file of Object.values(animations)) if (!existsSync(join(animationSource, file))) throw new Error(`Missing source motion ${file}`);
 const characters = [];
+const turnFiles = { TurnLeft: 'turn-left.glb', TurnRight: 'turn-right.glb' };
+const loadTurns = motionRoot => Object.fromEntries(Object.entries(turnFiles).map(([name, file]) => {
+  const contactFile = join(source, 'static/animations/turns',
+    name === 'TurnLeft' ? 'turn-left-90.contact.json' : 'turn-right-90.contact.json');
+  const motionFile = join(motionRoot, file);
+  if (!existsSync(motionFile) || !existsSync(contactFile))
+    throw new Error(`Missing turn input ${motionFile} or ${contactFile}`);
+  return [name, turnMetadata(motionFile, contactFile)];
+}));
+const defaultTurns = museumMode || turnsOnly ? null : loadTurns(animationSource);
 const legacyProfiles = [['FirePoi', 'fire-poi'], ['FireHoop', 'fire-hoop'], ['Juggler', 'juggler'], ['LedFlow', 'led-flow']];
 const captureManifests = capturesDir && !museumMode
   ? ['manifest.json', 'family-manifest.json']
@@ -238,9 +312,42 @@ async function prepareCapture(character, profile, filename, captureRole = profil
 function writeCatalog(entries) {
   mkdirSync(join(project, 'Content/Data'), { recursive: true });
   writeFileSync(join(project, 'Content/Data/characters.json'), JSON.stringify({ version: 1,
-    characters: entries.map(({ id, name, key, folder, mesh, skeleton, animations, bones, textures, materials }) =>
-      ({ id, name, key, folder, mesh, skeleton, animations, bones,
+    characters: entries.map(({ id, name, key, folder, mesh, skeleton, animations, bones, textures, materials, turns, turnRetarget }) =>
+      ({ id, name, key, folder, mesh, skeleton, animations, bones, ...(turns ? { turns } : {}),
+        ...(turnRetarget ? { turnRetarget } : {}),
         textures: textures.map(({ name, asset }) => ({ name, asset })), materials })) }, null, 2) + '\n');
+}
+if (turnsOnly) {
+  const stagedManifestFile = join(staged, 'imports.json');
+  const catalogFile = join(project, 'Content/Data/characters.json');
+  if (!existsSync(stagedManifestFile) || !existsSync(catalogFile))
+    throw new Error('--turns-only requires existing staged and packaged character catalogs');
+  const stagedManifest = JSON.parse(readFileSync(stagedManifestFile, 'utf8'));
+  const catalog = JSON.parse(readFileSync(catalogFile, 'utf8'));
+  const expected = definitions.map(entry => entry.id);
+  for (const entries of [stagedManifest.characters, catalog.characters])
+    if (entries?.length !== 16 || entries.some((entry, index) => entry.id !== expected[index]))
+      throw new Error('--turns-only requires matching complete 16-character catalogs');
+  const turns = loadTurns(stagedManifest.animationSource);
+  for (const [name, file] of Object.entries(turnFiles)) {
+    const previous = stagedManifest.animations[name];
+    if (previous && previous !== file) throw new Error(`Conflicting staged turn clip ${name}: ${previous}`);
+    stagedManifest.animations[name] = file;
+  }
+  for (const entries of [stagedManifest.characters, catalog.characters])
+    for (const character of entries) {
+      character.turns = turns;
+      for (const name of Object.keys(turnFiles)) {
+        const asset = `${character.folder}/A_${name}.A_${name}`;
+        if (character.animations[name] && character.animations[name] !== asset)
+          throw new Error(`Conflicting ${character.id}/${name} asset`);
+        character.animations[name] = asset;
+      }
+    }
+  writeFileSync(stagedManifestFile, JSON.stringify(stagedManifest, null, 2) + '\n');
+  writeFileSync(catalogFile, JSON.stringify(catalog, null, 2) + '\n');
+  console.log('Prepared existing 16-character catalog for targeted TurnLeft/TurnRight conversion');
+  process.exit(0);
 }
 if (museumMode) {
   const performanceManifest = JSON.parse(readFileSync(resolve(performanceManifestFile), 'utf8'));
@@ -326,7 +433,7 @@ for (const { id, name, sourceRelativePath } of definitions) {
   characters.push({ id, name, key, source: input, decoded, folder,
     mesh: `${folder}/SK_${key}.SK_${key}`, skeleton: `${folder}/SK_${key}_Skeleton.SK_${key}_Skeleton`,
     animations: Object.fromEntries(Object.keys(animations).map(k => [k, `${folder}/A_${k}.A_${k}`])),
-    bones: info, textures: textureInfo, materials });
+    bones: info, textures: textureInfo, materials, turns: defaultTurns });
   console.log(`Prepared ${id}: ${info.sourceBones.length} bones, ${info.morphTargets.length} morph targets`);
 }
 const manifest = { version: 1, animationSource, animations, characters };

@@ -52,7 +52,7 @@ describe("OptionPickerControlsPopover", () => {
   it("keeps every setting reachable from a compact corner button", async () => {
     const handlers = renderControls();
     const trigger = page.getByRole("button", {
-      name: /Option settings\. Showing all\. Level 2/,
+      name: /Option settings\. Showing All\. Level 2/,
     });
     const triggerBounds = trigger.element().getBoundingClientRect();
     expect(triggerBounds.width).toBeGreaterThanOrEqual(44);
@@ -98,7 +98,7 @@ describe("OptionPickerControlsPopover", () => {
 
     await page
       .getByRole("button", {
-        name: "Toggle blue dash/static spin (currently CW)",
+        name: "Toggle left dash/static spin (currently CW)",
       })
       .click();
     expect(handlers.onLeftRotationChange).toHaveBeenCalledWith(
@@ -119,7 +119,7 @@ describe("OptionPickerControlsPopover", () => {
     async ({ level, leftTurns, rightTurns }) => {
       renderControls({ level, leftTurns, rightTurns });
       const trigger = page.getByRole("button", {
-        name: /Option settings\. Showing all/,
+        name: /Option settings\. Showing All/,
       });
       await trigger.click();
 
@@ -153,7 +153,7 @@ describe("OptionPickerControlsPopover", () => {
   it("has no AAA accessibility violations while the controls are open", async () => {
     renderControls();
     await page
-      .getByRole("button", { name: /Option settings\. Showing all/ })
+      .getByRole("button", { name: /Option settings\. Showing All/ })
       .click();
     await expectNoA11yViolations();
   });

@@ -223,6 +223,44 @@ export const dropKnownNoise: BeforeSendFn = (event: CaptureResult | null) => {
   return isNoise ? null : event;
 };
 
+const EMAIL_PATTERN = /[^\s@"'<>()]+@[^\s@"'<>()]+\.[^\s@"'<>()]+/g;
+const EMAIL_PLACEHOLDER = "[email]";
+
+function redactEmails(text: string): string {
+  return text.replace(EMAIL_PATTERN, EMAIL_PLACEHOLDER);
+}
+
+/**
+ * PostHog `before_send` hook: strips email addresses from the element text that
+ * autocapture records for a click. The account chip renders the signed-in
+ * address as its label, and it landed in analytics as "<email> Setup steps
+ * remaining: 3". Elements that show an address carry `ph-no-capture`; this
+ * covers the ones that mention it inside a longer sentence ("Email sent to
+ * ...") and any added later. Same return contract as `dropKnownNoise`.
+ */
+export const redactEmailsFromElements: BeforeSendFn = (
+  event: CaptureResult | null
+) => {
+  if (!event) return event;
+  const props = event.properties;
+  if (!props) return event;
+
+  if (typeof props.$el_text === "string") {
+    props.$el_text = redactEmails(props.$el_text);
+  }
+  if (typeof props.$elements_chain === "string") {
+    props.$elements_chain = redactEmails(props.$elements_chain);
+  }
+  if (Array.isArray(props.$elements)) {
+    for (const element of props.$elements) {
+      if (typeof element?.$el_text === "string") {
+        element.$el_text = redactEmails(element.$el_text);
+      }
+    }
+  }
+  return event;
+};
+
 /**
  * A document rendered as a DEMONSTRATION of a page rather than a visit to it.
  * Read from the live URL, so it covers the iframe's own document regardless of
@@ -358,7 +396,7 @@ async function initializePostHog(): Promise<void> {
     // Registered unconditionally (not gated on captureEnabled): capture_exceptions
     // is already false in dev, so this never sees a $exception there anyway, and
     // the hook must be present the moment prod traffic starts flowing.
-    before_send: dropKnownNoise,
+    before_send: [dropKnownNoise, redactEmailsFromElements],
 
     // Load feature flags immediately
     loaded: (posthog) => {

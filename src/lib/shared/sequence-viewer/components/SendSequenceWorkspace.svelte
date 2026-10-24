@@ -3,8 +3,10 @@
 
   The share panel's recipients. The stage keeps showing the view being
   shared (Card, Motion, side by side, whichever the rail has selected); the
-  recipients fill the rest of the panel, the note and Send sit docked at its
-  foot. Stacked on a phone, the panel docks under the stage.
+  recipients fill the rest of the panel, and once someone is picked the note
+  and Send dock at its foot. Before that Send could do nothing, and on a
+  phone the idle bar took the height the recent conversations needed.
+  Stacked on a phone, the panel docks under the stage.
 
   The selection and delivery rules are SendAttachmentState, shared with the
   inbox drawer's send sheet; this file is only the viewer-sized presentation.
@@ -25,6 +27,7 @@
   } from "#lib/shared/inbox/state/send-attachment-state.svelte.js";
   import type { SequenceSendSession } from "#lib/shared/inbox/state/send-sequence-state.svelte.js";
   import { onMount } from "svelte";
+  import { growFade } from "#lib/shared/transitions/motion.js";
 
   interface Props {
     session: SequenceSendSession;
@@ -88,41 +91,43 @@
   <!-- The recipients own the height between the top of the column and the
        bar; the picker scrolls its own list inside that. -->
   <div class="recipients">
-    <SendDestinationPicker state={send} />
+    <SendDestinationPicker state={send} compact />
   </div>
 
-  <div class="send-bar">
-    <div class="note-field">
-      <textarea
-        class="note-input"
-        bind:value={send.message}
-        aria-label={t("viewer_detail_note_optional")}
-        placeholder={t("viewer_detail_add_a_note")}
-        maxlength={SEND_MESSAGE_MAX}
-        rows={1}
-        disabled={send.sending}
-      ></textarea>
-      <span
-        class="char-count"
-        class:visible={send.message.length > SEND_MESSAGE_MAX * 0.8}
-        aria-hidden={send.message.length <= SEND_MESSAGE_MAX * 0.8}
+  {#if send.hasDestination}
+    <div class="send-bar" transition:growFade>
+      <div class="note-field">
+        <textarea
+          class="note-input"
+          bind:value={send.message}
+          aria-label={t("viewer_detail_note_optional")}
+          placeholder={t("viewer_detail_add_a_note")}
+          maxlength={SEND_MESSAGE_MAX}
+          rows={1}
+          disabled={send.sending}
+        ></textarea>
+        <span
+          class="char-count"
+          class:visible={send.message.length > SEND_MESSAGE_MAX * 0.8}
+          aria-hidden={send.message.length <= SEND_MESSAGE_MAX * 0.8}
+        >
+          {send.message.length}/{SEND_MESSAGE_MAX}
+        </span>
+      </div>
+      <button
+        type="button"
+        class="send-button"
+        onclick={send.send}
+        disabled={!canSend}
       >
-        {send.message.length}/{SEND_MESSAGE_MAX}
-      </span>
+        <i
+          class="fas {send.sending ? 'fa-spinner fa-spin' : 'fa-paper-plane'}"
+          aria-hidden="true"
+        ></i>
+        <span>{send.sending ? "Sending…" : send.sendLabel}</span>
+      </button>
     </div>
-    <button
-      type="button"
-      class="send-button"
-      onclick={send.send}
-      disabled={!canSend}
-    >
-      <i
-        class="fas {send.sending ? 'fa-spinner fa-spin' : 'fa-paper-plane'}"
-        aria-hidden="true"
-      ></i>
-      <span>{send.sending ? "Sending…" : send.sendLabel}</span>
-    </button>
-  </div>
+  {/if}
 </div>
 
 <style>
@@ -140,7 +145,7 @@
     height: 100%;
     min-width: 0;
     min-height: 0;
-    padding: 1rem;
+    padding: 0.75rem 1rem;
     box-sizing: border-box;
     overflow: hidden;
   }

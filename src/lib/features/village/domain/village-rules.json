@@ -1,0 +1,220 @@
+{
+	"version": 1,
+	"ticksPerSecond": 10,
+	"seedSequenceIds": [
+		"performer-cave-seq",
+		"gallery-spiral-seq",
+		"gallery-scribes-seq",
+		"gallery-practice-seq"
+	],
+	"names": [
+		"Ember",
+		"Soot",
+		"Birch",
+		"Flint",
+		"Reed",
+		"Cinder",
+		"Moss",
+		"Basalt",
+		"Sage",
+		"Dune",
+		"Rill",
+		"Briar",
+		"Slate",
+		"Pyre",
+		"Glen",
+		"Thistle",
+		"Ash",
+		"Wren",
+		"Pike",
+		"Fern",
+		"Rust",
+		"Tarn",
+		"Opal",
+		"Quill",
+		"Brine",
+		"Hazel",
+		"Frost",
+		"Lark",
+		"Coral",
+		"Rune",
+		"Cedar",
+		"Storm"
+	],
+	"propTypes": ["staff", "fan", "club", "poi", "torch"],
+	"effectLooks": ["fire", "led", "charcoal", "trails", "pure"],
+	"population": {
+		"target": 6,
+		"lifespanTicks": 4200,
+		"lifespanJitterMin": 0.9,
+		"lifespanJitterMax": 1.1,
+		"traitMean": 0.5,
+		"traitStdDev": 0.15,
+		"capacityBase": 5,
+		"capacityCuriosityBonus": 5,
+		"seedProficiency": 1,
+		"passingTicks": 120,
+		"inheritChance": 0.9,
+		"inheritProficiency": 0.4
+	},
+	"phases": {
+		"youth": 0.2,
+		"adult": 0.6,
+		"elder": 0.2
+	},
+	"arena": {
+		"radius": 8,
+		"newbornRadiusMinRatio": 0.9
+	},
+	"campfire": {
+		"x": 0,
+		"z": 0,
+		"clearRadius": 3.05,
+		"seatRadius": 3.1,
+		"seatAnglesDegrees": [45, 215, 255, 295, 335],
+		"ringInnerRadius": 5,
+		"ringOuterRadius": 6.4,
+		"laneCount": 9,
+		"audienceAngleDegrees": 90,
+		"audienceGapDegrees": 70,
+		"audienceDistance": 11
+	},
+	"stones": [
+		{ "sequenceId": "performer-cave-seq", "colour": "#e9c46a", "steps": 4, "x": 3.75, "z": -8.84 },
+		{ "sequenceId": "gallery-spiral-seq", "colour": "#5cc8b8", "steps": 4, "x": -3.75, "z": -8.84 },
+		{ "sequenceId": "gallery-scribes-seq", "colour": "#9d8cf2", "steps": 4, "x": -1.25, "z": -8.91 },
+		{ "sequenceId": "gallery-practice-seq", "colour": "#ef7f7f", "steps": 3, "x": 1.25, "z": -8.91 }
+	],
+	"movement": {
+		"stepPerTick": 0.3,
+		"speedYouth": 1,
+		"speedAdult": 0.8,
+		"speedElder": 0.5,
+		"arrivalThreshold": 0.3,
+		"avoidanceRadius": 2,
+		"repulsionStrength": 1.5,
+		"personalSpaceRadius": 2.6
+	},
+	"social": {
+		"idleTicksBase": 15,
+		"idleSociabilityDamping": 0.5,
+		"interactionCooldownTicks": 20,
+		"seekRadius": 6,
+		"seekWindowTicks": 60,
+		"inventChancePerCreativity": 0.02,
+		"performChance": 0.2,
+		"seekChanceBase": 0.6,
+		"seekChancePerSociability": 0.3,
+		"socializeTicks": 15,
+		"practiceTicks": 20,
+		"rehearsalGainPerTick": 0.004,
+		"performTicksAdult": 25,
+		"performTicksElder": 40,
+		"watchTicks": 25,
+		"mourningTicks": 20,
+		"giftSociabilityMin": 0.8,
+		"giftChancePerSociability": 0.03,
+		"giftProficiencyScale": 0.4,
+		"divaEgo": 0.9,
+		"hierarchyEgo": 0.85,
+		"egoDecayPerTick": 0.0003
+	},
+	"teaching": {
+		"ticksPerStep": 20,
+		"proficiencyThreshold": 0.7,
+		"fumbleBaseProbability": 0.3,
+		"frustrationPerFumble": 0.15,
+		"frustrationDecay": 0.05,
+		"giveUpFrustration": 0.8,
+		"giveUpImpatience": 0.1,
+		"egoGainPerLesson": 0.05,
+		"teacherQualityFloor": 0.4
+	},
+	"lesson": {
+		"demonstratePasses": 1,
+		"followSteps": 1,
+		"fumbleTicks": 6,
+		"recognitionTicks": 10,
+		"soloPasses": 1,
+		"progressPerStep": 1,
+		"fumbleTempo": 0.35
+	},
+	"passing": {
+		"retireAge": 0.85,
+		"walkSpeed": 0.8,
+		"studentRadius": 8,
+		"studentStandRadius": 4.2,
+		"studentSpacing": 1.2
+	},
+	"decay": {
+		"graceTicks": 1400,
+		"perTick": 0.00015,
+		"forgetThreshold": 0.1,
+		"floor": 0.05,
+		"patienceDamping": 0.5,
+		"structuralBonusPerTransform": 0.15,
+		"structuralBonusMax": 0.5
+	},
+	"performance": {
+		"attractionRadius": 6,
+		"minWatcherCuriosity": 0.3
+	},
+	"funeral": {
+		"radius": 3,
+		"panicCuriosityMin": 0.5,
+		"panicRadiusScale": 2
+	},
+	"monument": {
+		"generationThreshold": 3
+	},
+	"proximityLearning": {
+		"radius": 5,
+		"absorptionRate": 0.02,
+		"absorptionThreshold": 0.3
+	},
+	"invention": {
+		"inventedProficiency": 0.5
+	},
+	"visitor": {
+		"sequences": [{ "sequenceId": "codex-ooga-seq", "steps": 6 }],
+		"proficiency": 1,
+		"patience": 0.8,
+		"fumbleAtStep": 1,
+		"stone": { "colour": "#a8d672", "x": 0, "z": -10.6 }
+	},
+	"memory": {
+		"carryOnTicks": 8400
+	},
+	"prologue": {
+		"founderAgeSpread": 0.9,
+		"preRunTicks": 4400,
+		"teacherMinAge": 0.6,
+		"lessonDistance": 5.2,
+		"fumbleAtStep": 1,
+		"clearTicks": 1200
+	},
+	"catalogue": {
+		"transforms": ["mirror", "flip", "rotate", "swap", "invert", "rewind"],
+		"rotateEighths": 2
+	},
+	"presets": {
+		"museum": {
+			"ticksPerSecond": 7,
+			"population": {
+				"target": 8,
+				"lifespanTicks": 4200,
+				"lifespanJitterMin": 1,
+				"lifespanJitterMax": 1,
+				"passingTicks": 84
+			},
+			"teaching": {
+				"ticksPerStep": 14
+			},
+			"prologue": {
+				"founderAgeSpread": 0.9,
+				"preRunTicks": 4400,
+				"clearTicks": 840
+			}
+		}
+	}
+}

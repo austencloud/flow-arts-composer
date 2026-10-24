@@ -17,16 +17,27 @@ import { Capacitor, type PluginListenerHandle } from "@capacitor/core";
 import { PushNotifications } from "@capacitor/push-notifications";
 import { getFirestoreInstance, app } from "#lib/shared/auth/firebase.js";
 import { getDeviceId } from "#lib/shared/auth/services/device-id-service.js";
+import {
+  removeLocalStorageItem,
+  safeLocalStorageGet,
+  safeLocalStorageSet,
+} from "#lib/shared/foundation/services/storage-manager.js";
 import { ANDROID_NOTIFICATION_CHANNELS } from "../notification-channels";
 import { VAPID_KEY } from "../config/vapid";
 
 const FCM_TOKENS_COLLECTION = "fcmTokens";
+
+// Push is a per-device choice. Turning it off removes only this device's token
+// and remembers the choice here, so the automatic registration on app start
+// leaves this device quiet while the account's other devices keep buzzing.
+const DEVICE_OFF_KEY_PREFIX = "tka-push-off-on-device:";
 
 export type PushDeviceRegistrationState =
   | "checking"
   | "unsupported"
   | "blocked"
   | "setup-required"
+  | "off"
   | "ready"
   | "failed";
 
@@ -38,6 +49,8 @@ export class FCMTokenManager {
   private cancelNativeRegistration: (() => void) | null = null;
 
   async registerToken(userId: string): Promise<string | null> {
+    if (this.isOffOnThisDevice(userId)) return null;
+
     try {
       if (Capacitor.getPlatform() === "android") {
         return await this.registerNativeAndroidToken(userId);
@@ -181,16 +194,9 @@ export class FCMTokenManager {
     const permission = await this.getPermissionState();
     if (permission === "denied") return "blocked";
     if (permission !== "granted") return "setup-required";
+    if (this.isOffOnThisDevice(userId)) return "off";
 
     return (await this.registerToken(userId)) ? "ready" : "failed";
-  }
-
-  async getSetupState(): Promise<PushDeviceRegistrationState> {
-    if (!(await this.isSupported())) return "unsupported";
-
-    const permission = await this.getPermissionState();
-    if (permission === "denied") return "blocked";
-    return "setup-required";
   }
 
   async enableForCurrentDevice(
@@ -205,7 +211,24 @@ export class FCMTokenManager {
     if (permission === "denied") return "blocked";
     if (permission !== "granted") return "setup-required";
 
+    removeLocalStorageItem(deviceOffKey(userId));
     return (await this.registerToken(userId)) ? "ready" : "failed";
+  }
+
+  /**
+   * Stop push on this device only. Signing out also unregisters the token, but
+   * without this marker, so the next sign-in turns push back on as before.
+   */
+  async turnOffForCurrentDevice(
+    userId: string
+  ): Promise<PushDeviceRegistrationState> {
+    safeLocalStorageSet(deviceOffKey(userId), true);
+    await this.unregisterToken(userId);
+    return "off";
+  }
+
+  isOffOnThisDevice(userId: string): boolean {
+    return safeLocalStorageGet<boolean>(deviceOffKey(userId)) === true;
   }
 
   private async registerNativeAndroidToken(
@@ -453,4 +476,8 @@ export class FCMTokenManager {
     if (ua.includes("Linux")) return "Linux";
     return "Unknown";
   }
+}
+
+function deviceOffKey(userId: string): string {
+  return `${DEVICE_OFF_KEY_PREFIX}${userId}`;
 }

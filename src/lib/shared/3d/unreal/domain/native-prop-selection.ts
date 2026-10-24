@@ -1,20 +1,44 @@
 import type { PropBuild } from "@austencloud/scene-3d";
-import {
-  FAN_BUILDS,
-  FAN_COVERS,
-  FAN_FRAME_COLORS,
-} from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
+import { nativePropVariants } from "../../../../../../unreal/Shared/Tools/native-prop-catalog.mjs";
+
+/** One variant row of the native prop catalog. */
+type NativePropVariant = {
+  id: string;
+  fanBuild?: string;
+  fanFrameColor?: string;
+  fanCover?: string;
+  finish?: string;
+  triangleGrip?: string;
+  leftFlipped?: boolean;
+  rightFlipped?: boolean;
+};
 
 /** Adapt the shared rail's build to FlowArtsRuntime's family:variant identity.
  * Meshes and supported variants remain owned by the native prop catalog.
  */
-export function nativePropId(prop: string, build: PropBuild): string {
-  if (prop !== "fan" || build.fanBuild === "pictograph") return prop;
-  const frame = build.fanBuild === "day" ? build.fanFrameColor : "black";
-  const cover = ["fire", "day"].includes(build.fanBuild)
-    ? build.fanCover
-    : "bare";
-  return `fan:${build.fanBuild}_${frame}_${cover}`;
+export function nativePropId(
+  prop: string,
+  build: PropBuild,
+  flips: { leftFlipped?: boolean; rightFlipped?: boolean } = {}
+): string {
+  const variants: NativePropVariant[] = nativePropVariants(prop);
+  const variant = variants.find((candidate) => {
+    if (candidate.fanBuild !== undefined)
+      return candidate.fanBuild === build.fanBuild &&
+        candidate.fanFrameColor === (build.fanBuild === "day" ? build.fanFrameColor : "black") &&
+        candidate.fanCover === (["fire", "day"].includes(build.fanBuild) ? build.fanCover : "bare");
+    if (candidate.id === "pictograph") return build.fanBuild === "pictograph";
+    if (candidate.finish !== undefined) return candidate.finish === build.finish;
+    if (candidate.triangleGrip !== undefined) return candidate.triangleGrip === build.triangleGrip;
+    if (candidate.leftFlipped !== undefined)
+      return candidate.leftFlipped === Boolean(flips.leftFlipped) &&
+        candidate.rightFlipped === Boolean(flips.rightFlipped);
+    return candidate.id === "default";
+  });
+  if (!variant) throw new Error(`Native prop variant unavailable: ${prop}`);
+  return ["default", "pictograph", "fire", "corner", "matching-a"].includes(variant.id)
+    ? prop
+    : `${prop}:${variant.id}`;
 }
 
 export function nativePropSelection(id: string): {
@@ -22,25 +46,22 @@ export function nativePropSelection(id: string): {
   build: Partial<PropBuild> | null;
 } {
   const [prop, variant] = id.split(":");
-  if (prop !== "fan") return { prop: prop!, build: null };
-  const [fanBuild, fanFrameColor, fanCover] =
-    !variant || variant === "pictograph"
-      ? ["pictograph", "black", "bare"]
-      : variant.split("_");
-  // Only decode values the shared rail understands. The native host validates
-  // catalog availability before acknowledging the full variant ID.
-  const valid =
-    FAN_BUILDS.some((value) => value === fanBuild) &&
-    FAN_FRAME_COLORS.some((value) => value === fanFrameColor) &&
-    FAN_COVERS.some((value) => value === fanCover);
+  if (!prop) return { prop: "", build: null };
+  const defaultVariant = prop === "fan" || prop === "bigfan" ? "pictograph"
+    : ["triad", "bigtriad", "quiad"].includes(prop) ? "fire"
+    : prop === "triangle" ? "corner" : "default";
+  const variants: NativePropVariant[] = nativePropVariants(prop);
+  const selected = variants.find(
+    (candidate) => candidate.id === (variant ?? defaultVariant)
+  );
+  if (!selected) return { prop, build: null };
+  const { fanBuild, fanFrameColor, fanCover, finish, triangleGrip } = selected;
+  const build = prop === "fan" || prop === "bigfan"
+    ? { fanBuild: fanBuild ?? "pictograph", fanFrameColor: fanFrameColor ?? "black", fanCover: fanCover ?? "bare" }
+    : finish !== undefined ? { finish }
+    : triangleGrip !== undefined ? { triangleGrip } : null;
   return {
     prop,
-    build: valid
-      ? {
-          fanBuild: fanBuild as PropBuild["fanBuild"],
-          fanFrameColor: fanFrameColor as PropBuild["fanFrameColor"],
-          fanCover: fanCover as PropBuild["fanCover"],
-        }
-      : null,
+    build: build as Partial<PropBuild> | null,
   };
 }

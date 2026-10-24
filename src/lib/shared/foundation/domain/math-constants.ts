@@ -25,3 +25,37 @@ export const LOCATION_ANGLES = {
   [GridLocation.NORTHWEST]: PI + HALF_PI / 2, // 225° (between W 180° and N 270°)
   [GridLocation.CENTER]: 0, // Center has no angle
 } as const;
+
+/**
+ * How far a location sits from the grid center, in grid radii: 0 at the
+ * center point, 1 on the rim. LOCATION_ANGLES only gives a direction, and
+ * center's 0 there is East, so drawing center from its angle alone puts the
+ * hand on the rim at East.
+ */
+export function locationRadius(location: GridLocation): number {
+  return location === GridLocation.CENTER ? 0 : 1;
+}
+
+/** A location's point on the unit grid (canvas Y down), center at the origin. */
+export function locationUnitPoint(location: GridLocation): {
+  x: number;
+  y: number;
+} {
+  const radius = locationRadius(location);
+  const angle = LOCATION_ANGLES[location];
+  return { x: Math.cos(angle) * radius, y: Math.sin(angle) * radius };
+}
+
+/**
+ * True when a motion starts or ends at center. Such a motion is a hash: the
+ * hand travels the straight line between the center point and its rim end,
+ * never an arc of the rim.
+ */
+export function touchesCenter(
+  startLocation: GridLocation,
+  endLocation: GridLocation
+): boolean {
+  return (
+    startLocation === GridLocation.CENTER || endLocation === GridLocation.CENTER
+  );
+}

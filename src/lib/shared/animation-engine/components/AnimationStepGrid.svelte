@@ -3,20 +3,35 @@
 
   Step grid for animation panels (Create and Compose modules).
   Shows sequence steps with playback sync highlighting (golden glow on current beat).
+  A host with a wide, short slot (the Flow Fest phrase stage's dock) passes
+  `columns` and sets `--step-grid-max-width`, and `cell="pictograph"` to draw
+  each step as the Composer's pictograph (in `propType`'s art when given)
+  rather than its letter; everyone else keeps the default layout.
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import TKAGlyph from "#lib/shared/pictograph/tka-glyph/components/TKAGlyph.svelte";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
   let {
     sequenceData = null,
     currentStep = 0,
     isPlaying = false,
+    columns,
+    cell = "glyph",
+    propType,
   }: {
     sequenceData: SequenceData | null;
     currentStep: number;
     isPlaying: boolean;
+    /** Columns for the step count; omit for the default ladder. */
+    columns?: (stepCount: number) => number;
+    /** What each cell draws: the step's letter, or its whole pictograph. */
+    cell?: "glyph" | "pictograph";
+    /** Both hands' prop art for pictograph cells; omit for the step's own. */
+    propType?: PropType;
   } = $props();
 
   // Get steps from sequence (excluding metadata beat at index 0 if present)
@@ -29,6 +44,7 @@
   // Calculate grid columns based on beat count
   const gridColumns = $derived(() => {
     const count = steps().length;
+    if (columns) return Math.max(1, columns(count));
     if (count <= 4) return count || 1;
     if (count <= 8) return 4;
     if (count <= 12) return 4;
@@ -59,10 +75,22 @@
           class:current={isCurrentBeat}
           class:played={wasPlayed}
         >
-          <div class="step-content">
-            <TKAGlyph pictographData={beat} letter={beat?.letter} />
+          <div class="step-content" class:whole={cell === "pictograph"}>
+            {#if cell === "pictograph"}
+              <PictographContainer
+                pictographData={beat}
+                disableTransitions
+                leftPropTypeOverride={propType}
+                rightPropTypeOverride={propType}
+              />
+            {:else}
+              <TKAGlyph pictographData={beat} letter={beat?.letter} />
+            {/if}
           </div>
-          <span class="step-number">{stepNumber}</span>
+          <!-- A pictograph carries its own step number. -->
+          {#if cell !== "pictograph"}
+            <span class="step-number">{stepNumber}</span>
+          {/if}
         </div>
       {/each}
     </div>
@@ -99,7 +127,7 @@
     grid-template-columns: repeat(var(--grid-cols), 1fr);
     gap: 4px;
     width: 100%;
-    max-width: 360px;
+    max-width: var(--step-grid-max-width, 360px);
   }
 
   .step-cell {
@@ -140,6 +168,10 @@
     padding: 4px;
   }
 
+  .step-content.whole {
+    padding: 0;
+  }
+
   .step-number {
     position: absolute;
     bottom: 2px;
@@ -157,7 +189,7 @@
   /* Responsive sizing */
   @media (max-width: 400px) {
     .step-grid {
-      max-width: 300px;
+      max-width: var(--step-grid-max-width, 300px);
       gap: 3px;
     }
   }

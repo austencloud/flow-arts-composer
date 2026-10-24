@@ -16,6 +16,7 @@
     type VideoResolution,
     type VideoQuality,
   } from "#lib/shared/animation-panel/state/export-options-state.svelte.js";
+  import type { VideoCarouselPlacement } from "#lib/shared/video-export/domain/video-carousel.js";
   import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import TKAWordGlyph from "#lib/shared/choreo-card/components/TKAWordGlyph.svelte";
   import InstagramIcon from "#lib/shared/auth/components/icons/InstagramIcon.svelte";
@@ -301,6 +302,16 @@
       { value: "standard", label: t("share_quality_standard") },
       { value: "cinema", label: t("share_quality_cinema") },
     ]);
+  const videoCarouselOptions: {
+    value: VideoCarouselPlacement;
+    label: string;
+  }[] = $derived([
+    { value: "off", label: t("share_video_carousel_off") },
+    { value: "above", label: t("share_video_carousel_above") },
+    { value: "below", label: t("share_video_carousel_below") },
+    { value: "left", label: t("share_video_carousel_left") },
+    { value: "right", label: t("share_video_carousel_right") },
+  ]);
   let captionOpen = $state(false);
   let publishOpen = $state(false);
   let failedPreviewUrl = $state<string | null>(null);
@@ -808,6 +819,7 @@
           quality: exportOptions.videoQuality,
           is3DExport,
           opener: openerEnabled ? opener : undefined,
+          carousel: exportOptions.videoCarousel,
         })
       : "host-video-format"
   );
@@ -2479,6 +2491,23 @@
                                         >
                                       </div>
                                     </div>
+                                    {#if !is3DExport}
+                                      <div class="video-row">
+                                        <span id="share-video-carousel"
+                                          >{t("share_video_carousel")}</span
+                                        >
+                                        <SegmentedControl
+                                          options={videoCarouselOptions}
+                                          value={exportOptions.videoCarousel}
+                                          onchange={(value) =>
+                                            exportOptions.setVideoCarousel(
+                                              value
+                                            )}
+                                          color="accent"
+                                          ariaLabelledby="share-video-carousel"
+                                        />
+                                      </div>
+                                    {/if}
                                   </div>
                                   {#if videoSettingsStale}
                                     <p

@@ -28,6 +28,10 @@ import {
   containElementalGlyph,
   getElementalGlyphBox,
 } from "#lib/shared/pictograph/shared/domain/constants/elemental-glyph-layout.js";
+import type {
+  PaintRect,
+  PostStudioLayerPainter,
+} from "@austencloud/video-editor/render";
 
 export interface FrameCompositorConfig {
   outputWidth: number;
@@ -60,6 +64,14 @@ export interface FrameCompositorConfig {
   sequenceSteps: readonly StepData[];
   /** Optional static overlay baked on top of each frame (e.g. the mandala). */
   frameOverlayDraw?: (ctx: CanvasRenderingContext2D, sizePx: number) => void;
+  /**
+   * Top-left of the card (word header over the animation square) in the
+   * frame. Absent means the frame's origin; a carousel above or to the left
+   * of the card moves it.
+   */
+  cardOffset?: { x: number; y: number };
+  /** The beat carousel band beside the card, painted by `renderCarousel`. */
+  carousel?: { painter: PostStudioLayerPainter; rect: PaintRect };
 }
 
 interface CrossfadeState {
@@ -182,6 +194,15 @@ export class ExportFrameCompositor {
     } = this.config;
 
     const actualCanvasSize = outputCanvasSize;
+    const cardOffset = this.config.cardOffset;
+    const cardShifted =
+      !isCompositeMode &&
+      !!cardOffset &&
+      (cardOffset.x !== 0 || cardOffset.y !== 0);
+    if (cardShifted) {
+      offscreenCtx.save();
+      offscreenCtx.translate(cardOffset.x, cardOffset.y);
+    }
     const clampedStepIndex = Math.max(0, Math.min(stepIndex, steps.length - 1));
     const stepNumber = isInStartPlacement ? null : clampedStepIndex + 1;
     const cacheKey = isInStartPlacement
@@ -363,7 +384,26 @@ export class ExportFrameCompositor {
       );
     }
 
+    if (cardShifted) offscreenCtx.restore();
+
     this.crossfade.framesSinceTransition++;
+  }
+
+  /**
+   * Paints the beat carousel band for one frame. `position` is in the
+   * engine's beat convention (`videoCarouselPosition`). No band, no paint.
+   */
+  renderCarousel(
+    offscreenCtx: CanvasRenderingContext2D,
+    position: number
+  ): void {
+    const carousel = this.config.carousel;
+    if (!carousel) return;
+    carousel.painter.paint(offscreenCtx, carousel.rect, {
+      carouselPosition: position,
+      projectProgress: 0,
+      sourceTimeSeconds: 0,
+    });
   }
 
   renderCanvasLayers(
@@ -396,7 +436,10 @@ export class ExportFrameCompositor {
         offscreenCanvas.width,
         offscreenCanvas.height
       );
-      const canvasY = headerHeight > 0 ? headerHeight : 0;
+      const canvasX = this.config.cardOffset?.x ?? 0;
+      const canvasY =
+        (this.config.cardOffset?.y ?? 0) +
+        (headerHeight > 0 ? headerHeight : 0);
 
       const container = canvas.parentElement;
       const overlayCanvases = container
@@ -418,7 +461,7 @@ export class ExportFrameCompositor {
           0,
           layer.width,
           layer.height,
-          0,
+          canvasX,
           canvasY,
           outputCanvasSize,
           outputCanvasSize

@@ -6,6 +6,7 @@ import {
 import {
   LOCATION_ANGLES,
   PI,
+  locationRadius,
 } from "#lib/shared/foundation/domain/math-constants.js";
 import {
   lerpAngle,
@@ -98,8 +99,8 @@ export function deriveBuilderMotionGeometry(
     staffRotationDelta,
     isSamePoint,
     isStraightPath,
-    startRadius: startLocation === GridLocation.CENTER ? 0 : 1,
-    endRadius: endLocation === GridLocation.CENTER ? 0 : 1,
+    startRadius: locationRadius(startLocation),
+    endRadius: locationRadius(endLocation),
   };
 }
 

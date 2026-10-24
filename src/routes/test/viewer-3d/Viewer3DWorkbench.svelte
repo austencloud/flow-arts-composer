@@ -23,6 +23,7 @@
   import { createPlaybackState } from "#lib/shared/3d/state/playback-state.svelte.js";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import demoSequenceJson from "#lib/shared/landing/data/demo-sequence.json";
+  import { getBrowseLoader } from "#lib/shared/browse/get-browse-loader.js";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { EMBER_VIEWER_FRONT_STAGE_FACING_ANGLE } from "#lib/shared/3d/domain/viewer-formation-facing.js";
   import { parseGridJoinToken } from "#lib/shared/foundation/domain/models/grid-join-token.js";
@@ -309,10 +310,16 @@
           new URLSearchParams(window.location.search).get("join") ?? ""
         )
       : undefined;
-  const sequence = {
+  let sequence = $state.raw({
     ...demoSequenceJson,
     ...(requestedJoin ? { conjoined: requestedJoin } : {}),
-  } as unknown as SequenceData;
+  } as unknown as SequenceData);
+  // `?seq=<id>` plays a public sequence instead of the landing demo, so a
+  // release take can pair with the same sequence baked in 2D.
+  const requestedSequenceId =
+    typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get("seq")
+      : null;
   const viewer = createViewer3DState({
     renderMode: "3d",
     backgroundType: requestedScene(),
@@ -365,6 +372,18 @@
   const currentStep = $derived(currentStepBase + playback.progress);
 
   onMount(() => {
+    if (requestedSequenceId) {
+      void getBrowseLoader()
+        .loadFullSequenceData(requestedSequenceId, requestedSequenceId)
+        .then((loaded) => {
+          if (!loaded) {
+            takeStatus = `${requestedSequenceId} is not public or failed to load`;
+            return;
+          }
+          sequence = loaded;
+          viewer.enter3D(loaded);
+        });
+    }
     if (reviewEffect) {
       // Persisted isPlaying does not itself schedule an animation frame.
       playback.pause();
@@ -428,7 +447,9 @@
           webglCanvas: canvas,
           camera,
           beatsPerSecond,
-          totalDurationSeconds: sequence.steps.length / beatsPerSecond,
+          // The export opens on a one-beat hold, so one more beat keeps the
+          // whole pass in the take and the clip can loop on it.
+          totalDurationSeconds: (sequence.steps.length + 1) / beatsPerSecond,
           cameraKeyframes: keyframes,
           renderer,
           runFrame,

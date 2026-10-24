@@ -9,6 +9,7 @@ import {
   wantsNotificationEmail,
   type NotificationEmailDependencies,
 } from "./notificationEmailQueue";
+import { readUnsubscribeToken } from "./unsubscribeToken";
 
 function dependencies(
   overrides: Partial<NotificationEmailDependencies> = {}
@@ -95,6 +96,56 @@ describe("queueUserNotificationEmail", () => {
         metadata: expect.objectContaining({ sourceId: "message-1" }),
       })
     );
+  });
+
+  it("signs List-Unsubscribe headers for the preference being emailed", async () => {
+    const deps = dependencies({
+      getPreferences: jest.fn(async () => ({
+        emailEnabled: true,
+        emailPlatformUpdates: true,
+      })),
+      getUnsubscribeSecret: () => "test-secret",
+    });
+
+    await queueUserNotificationEmail(
+      {
+        userId: "user-1",
+        preferenceKey: "emailPlatformUpdates",
+        sourceType: "platform-update",
+        sourceId: "version-1",
+        email: createPlatformUpdateEmail({ version: "1.2.3" }),
+      },
+      deps
+    );
+
+    const mail = (deps.createMailIfAbsent as jest.Mock).mock.calls[0][1];
+    expect(mail.headers["List-Unsubscribe-Post"]).toBe(
+      "List-Unsubscribe=One-Click"
+    );
+    const header: string = mail.headers["List-Unsubscribe"];
+    const url = header.slice(1, -1);
+    expect(
+      readUnsubscribeToken(new URL(url).searchParams.get("t"), "test-secret")
+    ).toEqual({ userId: "user-1", preferenceKey: "emailPlatformUpdates" });
+  });
+
+  it("adds no headers when no signing secret is configured", async () => {
+    const deps = dependencies();
+
+    await queueUserNotificationEmail(
+      {
+        userId: "user-1",
+        preferenceKey: "emailMessages",
+        sourceType: "message",
+        sourceId: "message-2",
+        email: createMessageEmail("Austen", "conversation-1"),
+      },
+      deps
+    );
+
+    expect(
+      (deps.createMailIfAbsent as jest.Mock).mock.calls[0][1]
+    ).not.toHaveProperty("headers");
   });
 
   it("does not queue for an unverified email address", async () => {
@@ -260,6 +311,44 @@ describe("notification email content", () => {
     expect(email.html.indexOf("Four effects were rebuilt.")).toBeLessThan(
       email.html.indexOf(gif)
     );
+  });
+
+  it("keeps a clip ahead of still pictures when a section is full", () => {
+    const releases = "https://assets.tkaflowarts.com/email/releases/0.49.0";
+    const still = (name: string) => ({
+      category: "improved" as const,
+      text: `${name} page.`,
+      media: {
+        image: `${releases}/${name}.jpg`,
+        alt: name,
+        width: 1280,
+        height: 800,
+      },
+    });
+    const email = createPlatformUpdateEmail({
+      version: "0.49.0",
+      highlights: ["**Browse has a home screen.** Tiles play."],
+      changelogEntries: [
+        still("props"),
+        still("codex"),
+        still("zans"),
+        {
+          category: "improved",
+          text: "Four effects were rebuilt.",
+          media: {
+            image: `${releases}/effects.gif`,
+            video: `${releases}/effects.mp4`,
+            alt: "Four effects",
+            width: 500,
+            height: 500,
+          },
+        },
+      ],
+    });
+
+    // Three pictures came first in the notes, but the clip is what stays.
+    expect(email.html).toContain(`${releases}/effects.gif`);
+    expect(email.html).not.toContain(`${releases}/zans.jpg`);
   });
 
   it("uses the lead change's example as the hero when none was made", () => {

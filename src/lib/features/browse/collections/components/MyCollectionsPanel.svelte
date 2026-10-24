@@ -58,8 +58,6 @@ instead of showing an empty shell.
   import { getSharedCollectionsContext } from "../context/shared-collections-context";
   import UserVideoLibraryView from "#lib/shared/video-collaboration/components/UserVideoLibraryView.svelte";
   import WorkShelfRail from "./WorkShelfRail.svelte";
-  import BackToBrowseButton from "#lib/features/browse/shared/components/BackToBrowseButton.svelte";
-  import { handleModuleHome } from "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js";
   import {
     locationForShelf,
     parentListForCollection,
@@ -67,7 +65,6 @@ instead of showing an empty shell.
     type WorkShelfId,
   } from "../services/work-shelf-navigation.js";
   import DraftsShelf from "./DraftsShelf.svelte";
-  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import SortPopover, {
     type SortPopoverOption,
   } from "#lib/features/browse/shared/components/SortPopover.svelte";
@@ -344,6 +341,15 @@ instead of showing an empty shell.
     return { id: loc.contextId, ownerId: null, ownerName: undefined };
   });
 
+  // The scope bar can leave a collection for another page in one step, and
+  // the open view's effects may run once more on the way out. Its props keep
+  // the last collection shown rather than reading a closed (null) detail.
+  let lastDetail: NonNullable<typeof detail> | null = null;
+  const shownDetail = $derived.by(() => {
+    if (detail) lastDetail = detail;
+    return detail ?? lastDetail;
+  });
+
   // The general You landing uses All when nothing is selected. Following has
   // its own list route and empty state, handled before this fallback renders.
   const railSelection = $derived(
@@ -382,18 +388,6 @@ instead of showing an empty shell.
         }
       )
     );
-  }
-  function openDrafts(event: MouseEvent): void {
-    if (
-      event.button !== 0 ||
-      event.metaKey ||
-      event.ctrlKey ||
-      event.shiftKey ||
-      event.altKey
-    )
-      return;
-    event.preventDefault();
-    selectShelf("drafts");
   }
   const isYouSequences = $derived(
     browseNavigationState.currentLocation?.primary === "you" &&
@@ -438,10 +432,6 @@ instead of showing an empty shell.
     browseNavigationState.navigateTo(
       parentListForCollection(browseNavigationState.currentLocation)
     );
-  }
-
-  function backToBrowse() {
-    handleModuleHome("browse", "workspace");
   }
 
   // The three Art collections (tunnels, 3D scenes, mandalas) as category
@@ -686,15 +676,9 @@ instead of showing an empty shell.
 <!-- My Collections: the All shelf (everything you saved) + your own manual/smart
      collections + the create tiles. -->
 {#snippet ownShelves(sel: { id: string; ownerId: string | null } | null)}
-  {#if collections.length > 1 || (isSideBySide && desktopSidebarState.isVisible)}
+  {#if collections.length > 1}
     <!-- The sort chip stays at the right edge so its menu opens over the cards. -->
-    <div
-      class="collections-sort-row"
-      class:with-browse-back={isSideBySide && desktopSidebarState.isVisible}
-    >
-      {#if isSideBySide && desktopSidebarState.isVisible}
-        <BackToBrowseButton />
-      {/if}
+    <div class="collections-sort-row">
       {#if collections.length > 1}
         <SortPopover
           options={collectionSortOptions}
@@ -828,19 +812,10 @@ instead of showing an empty shell.
   {/if}
 {/snippet}
 
-{#snippet artDetail(artId: string, showBack: boolean)}
+{#snippet artDetail(artId: string)}
   <!-- The former Playground gallery, lazy-mounted inside the Library the same
 	     way the other detail views fill this space. -->
   <div class="art-detail">
-    {#if showBack}
-      <header class="art-detail-bar">
-        <button type="button" class="art-back" onclick={backToBrowse}>
-          <i class="fas fa-arrow-left" aria-hidden="true"></i>
-          <span>{t("module_browse")}</span>
-        </button>
-        <span class="art-detail-title">{ART_DETAIL[artId]?.label}</span>
-      </header>
-    {/if}
     <div class="art-detail-body">
       {#await artLoad(artId)}
         <div class="art-detail-loading" aria-hidden="true">
@@ -858,17 +833,8 @@ instead of showing an empty shell.
   </div>
 {/snippet}
 
-{#snippet performancesDetail(showBack: boolean)}
+{#snippet performancesDetail()}
   <div class="art-detail">
-    {#if showBack}
-      <header class="art-detail-bar">
-        <button type="button" class="art-back" onclick={backToBrowse}>
-          <i class="fas fa-arrow-left" aria-hidden="true"></i>
-          <span>{t("module_browse")}</span>
-        </button>
-        <span class="art-detail-title">{t("browse_ui_performances")}</span>
-      </header>
-    {/if}
     <div class="art-detail-body">
       <UserVideoLibraryView />
     </div>
@@ -905,7 +871,7 @@ instead of showing an empty shell.
 
 {#snippet shelfContent(shelfId: WorkShelfId)}
   {#if shelfId === "drafts"}
-    <DraftsShelf showBrowseBack={desktopSidebarState.isVisible} />
+    <DraftsShelf />
   {:else if shelfId === "collections"}
     <div class="rail-cards">
       {@render ownShelves(railSelection)}
@@ -969,7 +935,6 @@ instead of showing an empty shell.
           value={activeShelf}
           onchange={selectShelf}
           content={shelfContent}
-          showBrowseBack={desktopSidebarState.isVisible}
         />
       </div>
     {:else}
@@ -980,7 +945,6 @@ instead of showing an empty shell.
             value={activeShelf}
             onchange={selectShelf}
             content={shelfContent}
-            showBrowseBack={desktopSidebarState.isVisible}
           />
         </aside>
 
@@ -1002,16 +966,17 @@ instead of showing an empty shell.
           {:else if railSelection.id === "all" && !railSelection.ownerId}
             <AllLibraryView />
           {:else if !railSelection.ownerId && isPerformancesId(railSelection.id)}
-            {@render performancesDetail(false)}
+            {@render performancesDetail()}
           {:else if !railSelection.ownerId && isArtId(railSelection.id)}
             {#key railSelection.id}
-              {@render artDetail(railSelection.id, false)}
+              {@render artDetail(railSelection.id)}
             {/key}
           {:else if isOwnSmart(railSelection.id, railSelection.ownerId) || isFoundingId(railSelection.id)}
             {#key railSelection.id}
               <SmartCollectionDetailView
                 collectionId={railSelection.id}
                 onBack={backToList}
+                embedded
               />
             {/key}
           {:else}
@@ -1023,6 +988,7 @@ instead of showing an empty shell.
                 ? railSelection.accessRole
                 : undefined}
               onBack={backToList}
+              embedded
               backLabel={railSelection.ownerId
                 ? t("browse_following")
                 : t("browse_ui_collections_tab")}
@@ -1062,21 +1028,12 @@ instead of showing an empty shell.
   </div>
 {:else if isYouSequences && !isSideBySide}
   <div class="mobile-you-overview">
-    <div class="mobile-drafts-entry">
-      <LinkChip href="/browse/you/drafts" onclick={openDrafts}
-        >Drafts · On this device</LinkChip
-      >
-    </div>
     <div class="mobile-library">
-      <AllLibraryView onBack={backToBrowse} backLabel={t("module_browse")} />
+      <AllLibraryView />
     </div>
   </div>
 {:else if isYouFollowing}
   <div class="collections-list">
-    <header class="list-header">
-      <BackToBrowseButton />
-      <h2 class="list-title">{t("browse_following")}</h2>
-    </header>
     {#if sharedCollections.length > 0 || sharedCollectionsState.loading || sharedCollectionsState.error}
       <h3 class="shelf-heading">{t("browse_ui_shared_with_you")}</h3>
       <div class="card-grid">{@render sharedShelfContent(null)}</div>
@@ -1096,43 +1053,33 @@ instead of showing an empty shell.
     {/if}
   </div>
 {:else if detail}
-  {#if detail.id === "all" && !detail.ownerId}
-    <AllLibraryView onBack={backToList} />
-  {:else if !detail.ownerId && isPerformancesId(detail.id)}
-    {@render performancesDetail(true)}
-  {:else if !detail.ownerId && isArtId(detail.id)}
-    {#key detail.id}
-      {@render artDetail(detail.id, true)}
+  {@const shown = shownDetail ?? detail}
+  {#if shown.id === "all" && !shown.ownerId}
+    <AllLibraryView />
+  {:else if !shown.ownerId && isPerformancesId(shown.id)}
+    {@render performancesDetail()}
+  {:else if !shown.ownerId && isArtId(shown.id)}
+    {#key shown.id}
+      {@render artDetail(shown.id)}
     {/key}
-  {:else if isOwnSmart(detail.id, detail.ownerId) || isFoundingId(detail.id)}
-    {#key detail.id}
-      <SmartCollectionDetailView collectionId={detail.id} onBack={backToList} />
+  {:else if isOwnSmart(shown.id, shown.ownerId) || isFoundingId(shown.id)}
+    {#key shown.id}
+      <SmartCollectionDetailView collectionId={shown.id} onBack={backToList} />
     {/key}
   {:else}
     <CollectionDetailView
-      collectionId={detail.id}
-      foreignOwnerId={detail.ownerId}
-      ownerName={detail.ownerName}
-      accessRole={detail.accessRole}
+      collectionId={shown.id}
+      foreignOwnerId={shown.ownerId}
+      ownerName={shown.ownerName}
+      accessRole={shown.accessRole}
       onBack={backToList}
-      backLabel={detail.ownerId
+      backLabel={shown.ownerId
         ? t("browse_following")
         : t("browse_ui_collections_tab")}
     />
   {/if}
 {:else}
   <div class="collections-list">
-    <header class="list-header">
-      <BackToBrowseButton />
-      <h2 class="list-title">{t("browse_ui_your_work")}</h2>
-    </header>
-
-    <div class="mobile-drafts-entry">
-      <LinkChip href="/browse/you/drafts" onclick={openDrafts}
-        >Drafts · On this device</LinkChip
-      >
-    </div>
-
     {#if !hasLibrarySession}
       <div class="signed-out">
         <span class="signed-out-icon">
@@ -1246,17 +1193,9 @@ instead of showing an empty shell.
     height: 100%;
     min-height: 0;
   }
-  .mobile-you-overview > .mobile-drafts-entry {
-    flex: 0 0 auto;
-    padding: 8px 12px;
-    border-bottom: 1px solid var(--theme-stroke);
-  }
   .mobile-library {
     flex: 1 1 auto;
     min-height: 0;
-  }
-  .mobile-drafts-entry {
-    display: flex;
   }
 
   .rail {
@@ -1323,43 +1262,6 @@ instead of showing an empty shell.
     min-height: 0;
   }
 
-  /* Fixed-height bar: content below never shifts as the title changes. */
-  .art-detail-bar {
-    flex: 0 0 auto;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    height: 48px;
-    padding: 0 12px;
-    border-bottom: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
-  }
-
-  .art-back {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    min-height: 44px;
-    padding: 0 14px;
-    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.12));
-    border-radius: 999px;
-    background: var(--theme-card-bg, rgba(255, 255, 255, 0.06));
-    color: var(--theme-text, rgba(255, 255, 255, 0.9));
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background var(--duration-fast) var(--ease-standard);
-  }
-
-  .art-back:hover {
-    background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.12));
-  }
-
-  .art-detail-title {
-    color: var(--theme-text-dim, rgba(255, 255, 255, 0.55));
-    font-size: 14px;
-    font-weight: 600;
-  }
-
   .art-detail-body {
     flex: 1;
     min-height: 0;
@@ -1395,21 +1297,6 @@ instead of showing an empty shell.
     margin-inline: auto;
   }
 
-  .list-header {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-
-  .list-title {
-    margin: 0;
-    font-size: clamp(17px, 2.6cqi, 22px);
-    font-weight: 700;
-    color: var(--theme-text, white);
-  }
-
   .card-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -1417,17 +1304,10 @@ instead of showing an empty shell.
     align-content: start;
   }
 
-  /* This row holds the sort chip at the right edge and, on desktop with the
-     sidebar visible, the Browse action at the left. */
+  /* This row holds the sort chip at the right edge. */
   .collections-sort-row {
     display: flex;
     justify-content: flex-end;
-  }
-
-  .collections-sort-row.with-browse-back {
-    justify-content: space-between;
-    align-items: center;
-    gap: 10px;
   }
 
   .card-grid > .collections-sort-row {

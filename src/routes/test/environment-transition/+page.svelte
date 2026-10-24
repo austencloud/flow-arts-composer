@@ -35,6 +35,7 @@
     gap: "Set cleared",
     waiting: "Preparing set",
     revealing: "Lights up",
+    preparing: "Next set loading",
   };
 
   let transition = $state(

@@ -182,7 +182,10 @@
       </button>
     {/if}
 
-    {#each sectionEntries as entry}
+    <!-- Keyed, so a row never turns from a tab into a heading in place. An
+         unkeyed row did when the list changed shape (opening a collection
+         from the guide) and read the tab it no longer had. -->
+    {#each sectionEntries as entry (entry.kind === "group" ? `group:${entry.group.id}` : `section:${entry.section.id}`)}
       {#if entry.kind === "group"}
         <h3 class="tab-group-heading">{t(entry.group.labelKey)}</h3>
       {:else}

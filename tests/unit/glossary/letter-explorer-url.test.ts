@@ -59,6 +59,8 @@ describe("letter explorer URL state", () => {
       rightTurns: "fl",
       leftRotation: RotationDirection.COUNTER_CLOCKWISE,
       rightRotation: RotationDirection.CLOCKWISE,
+      // No transforms were written (8aacd7331d), so xf reads back as absent.
+      transforms: null,
     });
   });
 

@@ -73,10 +73,23 @@ describe("native prop selection", () => {
   });
 
   it("sends unsupported choices for explicit rejection instead of substituting a different mesh", () => {
-    expect(nativePropId("fan", { ...build, fanBuild: "sense" })).toBe(
-      "fan:sense_black_bare"
+    expect(() => nativePropId("fan", { ...build, fanBuild: "sense" })).toThrow(
+      "Native prop variant unavailable: fan"
     );
     expect(nativePropId("sword", build)).toBe("sword");
     expect(nativePropSelection("fan:unknown_black_bare").build).toBeNull();
+  });
+
+  it("uses catalog variants for finish, triangle grip, and buugeng flips", () => {
+    expect(nativePropId("triad", build)).toBe("triad");
+    expect(nativePropId("triad", { ...build, finish: "day" })).toBe("triad:day");
+    expect(nativePropSelection("triad:day").build).toEqual({ finish: "day" });
+    expect(nativePropId("triangle", { ...build, triangleGrip: "side" })).toBe("triangle:side");
+    expect(nativePropSelection("triangle:side").build).toEqual({ triangleGrip: "side" });
+    expect(nativePropId("buugeng", build)).toBe("buugeng");
+    expect(nativePropId("buugeng", build, { rightFlipped: true })).toBe("buugeng:mirrored-ab");
+    expect(nativePropId("buugeng", build, { leftFlipped: true })).toBe("buugeng:mirrored-ba");
+    expect(nativePropId("bigbuugeng", build, { leftFlipped: true, rightFlipped: true }))
+      .toBe("bigbuugeng:matching-b");
   });
 });

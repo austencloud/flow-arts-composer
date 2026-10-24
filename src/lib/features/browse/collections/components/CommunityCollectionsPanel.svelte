@@ -76,10 +76,6 @@ collections have stable URLs and ordinary browser back/forward behavior.
   />
 {:else}
   <div class="discover-list">
-    <header class="list-header">
-      <h2 class="list-title">{t("tab_library_collections")}</h2>
-    </header>
-
     {#if loading && items.length === 0}
       <div class="card-grid" aria-hidden="true">
         {#each Array(4) as _}
@@ -126,21 +122,6 @@ collections have stable URLs and ordinary browser back/forward behavior.
     max-width: clamp(55rem, 46vw, 120rem);
     margin-inline: auto;
     justify-content: safe center;
-  }
-
-  .list-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-
-  .list-title {
-    margin: 0;
-    font-size: clamp(17px, 0.7vw + 8px, 34px);
-    font-weight: 700;
-    color: var(--theme-text, white);
   }
 
   .card-grid {

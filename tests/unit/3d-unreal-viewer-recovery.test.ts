@@ -128,9 +128,12 @@ test("waits for host readiness, then restores the stream after disconnect withou
   const parent = document.createElement("div");
   parent.replaceChildren = vi.fn();
   connection.mount(parent);
+  expect(connection.message).toBe("Connecting to the Unreal host.");
+  expect(connection.error).toBe("");
   await flush();
   expect(fake.streams).toHaveLength(0);
-  expect(connection.error).toBe("Starting Unreal");
+  expect(connection.message).toBe("Starting Unreal");
+  expect(connection.error).toBe("");
   expect(fetchHost).toHaveBeenCalledWith(
     "/unreal-host",
     expect.objectContaining({
@@ -145,30 +148,98 @@ test("waits for host readiness, then restores the stream after disconnect withou
   await flush();
   expect(fetchHost).toHaveBeenCalledTimes(2);
   expect(fake.streams).toHaveLength(1);
+  expect(connection.message).toBe("Connecting to the Unreal video and scene.");
+  expect(connection.error).toBe("");
   const first = fake.streams[0]!;
   first.emit("dataChannelOpen");
   first.reply(confirmedState);
   await flush();
   expect(connection.status).toBe("ready");
+  expect(connection.message).toBe("");
+  expect(connection.error).toBe("");
   expect(connection.state).toEqual(confirmedState);
 
   first.emit("webRtcDisconnected");
   expect(first.disconnected).toBe(true);
   expect(connection.status).toBe("connecting");
+  expect(connection.message).toBe("");
+  expect(connection.error).toMatch(/stream disconnected/);
   expect(connection.state).toEqual(confirmedState);
   await vi.advanceTimersByTimeAsync(1000);
   await vi.dynamicImportSettled();
   await flush();
   expect(fake.streams).toHaveLength(2);
+  expect(connection.message).toBe("Connecting to the Unreal video and scene.");
+  expect(connection.error).toBe("");
   const second = fake.streams[1]!;
   second.emit("dataChannelOpen");
   second.reply(confirmedState);
   await flush();
   expect(connection.status).toBe("ready");
+  expect(connection.message).toBe("");
+  expect(connection.error).toBe("");
   connection.dispose();
   expect(second.disconnected).toBe(true);
   await vi.advanceTimersByTimeAsync(30000);
   expect(fetchHost).toHaveBeenCalledTimes(3);
+});
+
+test("an unavailable host reports an error until a new host attempt progresses", async () => {
+  let calls = 0;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        status: ++calls === 1 ? "unavailable" : "ready",
+        message: calls === 1 ? "Unreal is unavailable" : "Ready",
+      }),
+    }))
+  );
+  const connection = createNativeViewerConnection();
+  const parent = document.createElement("div");
+  parent.replaceChildren = vi.fn();
+  connection.mount(parent);
+  await flush();
+  expect(connection.status).toBe("disconnected");
+  expect(connection.message).toBe("");
+  expect(connection.error).toBe("Unreal is unavailable");
+
+  await vi.advanceTimersByTimeAsync(1000);
+  await vi.dynamicImportSettled();
+  await flush();
+  expect(connection.status).toBe("connecting");
+  expect(connection.message).toBe("Connecting to the Unreal video and scene.");
+  expect(connection.error).toBe("");
+  connection.dispose();
+});
+
+test("waiting for the stream stays progress while a stream failure reports an error", async () => {
+  vi.stubGlobal("fetch", async () => ({
+    ok: true,
+    json: async () => ({ status: "ready", message: "Ready" }),
+  }));
+  const connection = createNativeViewerConnection();
+  const parent = document.createElement("div");
+  parent.replaceChildren = vi.fn();
+  connection.mount(parent);
+  await flush();
+  await vi.dynamicImportSettled();
+  await flush();
+  const first = fake.streams[0]!;
+  await vi.advanceTimersByTimeAsync(15000);
+  expect(first.disconnected).toBe(true);
+  expect(connection.status).toBe("connecting");
+  expect(connection.message).toMatch(/Waiting for the Unreal video and scene/);
+  expect(connection.error).toBe("");
+
+  await vi.advanceTimersByTimeAsync(1000);
+  await vi.dynamicImportSettled();
+  await flush();
+  fake.streams[1]!.emit("webRtcFailed");
+  expect(connection.message).toBe("");
+  expect(connection.error).toMatch(/video connection failed/);
+  connection.dispose();
 });
 
 test("disposal aborts a pending host check and leaves no retry behind", async () => {

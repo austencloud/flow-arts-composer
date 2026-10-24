@@ -223,6 +223,16 @@ export const FEATURES: FeatureDefinition[] = [
     emptyClientRouteComponents: true,
   },
   {
+    id: "performance-transfer",
+    tier: "dev",
+    // Copying a sequence into Museum or Flow Fest is not release ready, and
+    // neither are those games. Production builds empty the /performance
+    // import page; the share panel no longer offers the copy at all.
+    modulePaths: [],
+    routePatterns: ["src/routes/performance/"],
+    emptyClientRouteComponents: true,
+  },
+  {
     id: "promo-generator",
     tier: "dev",
     modulePaths: ["features/promo-generator/"],

@@ -226,7 +226,8 @@ export type TesterNotification = FeedbackNotification;
  * Controls which notification types the user wants to receive
  */
 export interface NotificationPreferences {
-  // Push notifications master toggle
+  // Legacy account-wide push switch, no longer read. Push is per device now:
+  // each device adds or removes its own token (fcm-token-manager.ts).
   pushEnabled: boolean;
 
   // Email notifications are opt-in and use their own category controls.

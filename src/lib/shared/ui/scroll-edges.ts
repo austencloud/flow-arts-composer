@@ -1,6 +1,7 @@
 /**
- * Which ends of a sideways scroller hide content, so a row can fade, and offer
- * an arrow, only toward what is out of view.
+ * Which ends of a scroller hide content, so a row can fade, and offer an
+ * arrow, only toward what is out of view. Sideways by default; a grid that
+ * scrolls down passes `axis: "y"`.
  */
 export interface ScrollEdges {
   /** Content is scrolled out past the start. */
@@ -13,12 +14,18 @@ export interface ScrollEdges {
  *  edge on and off at the ends. */
 const SLACK = 1;
 
-export function measureScrollEdges(node: HTMLElement): ScrollEdges {
-  const max = node.scrollWidth - node.clientWidth;
-  return {
-    start: node.scrollLeft > SLACK,
-    end: node.scrollLeft < max - SLACK,
-  };
+export type ScrollAxis = "x" | "y";
+
+export function measureScrollEdges(
+  node: HTMLElement,
+  axis: ScrollAxis = "x"
+): ScrollEdges {
+  const max =
+    axis === "x"
+      ? node.scrollWidth - node.clientWidth
+      : node.scrollHeight - node.clientHeight;
+  const at = axis === "x" ? node.scrollLeft : node.scrollTop;
+  return { start: at > SLACK, end: at < max - SLACK };
 }
 
 /**
@@ -27,10 +34,14 @@ export function measureScrollEdges(node: HTMLElement): ScrollEdges {
  */
 export function scrollEdges(
   node: HTMLElement,
-  onChange: (edges: ScrollEdges) => void
+  onChange:
+    | ((edges: ScrollEdges) => void)
+    | { onChange: (edges: ScrollEdges) => void; axis: ScrollAxis }
 ) {
-  let report = onChange;
-  const measure = () => report(measureScrollEdges(node));
+  const read = (next: typeof onChange) =>
+    typeof next === "function" ? { onChange: next, axis: "x" as const } : next;
+  let { onChange: report, axis } = read(onChange);
+  const measure = () => report(measureScrollEdges(node, axis));
   const resize = new ResizeObserver(measure);
   const observeChildren = () => {
     resize.disconnect();
@@ -48,8 +59,8 @@ export function scrollEdges(
   node.addEventListener("scroll", measure, { passive: true });
   measure();
   return {
-    update(next: (edges: ScrollEdges) => void) {
-      report = next;
+    update(next: typeof onChange) {
+      ({ onChange: report, axis } = read(next));
       measure();
     },
     destroy() {

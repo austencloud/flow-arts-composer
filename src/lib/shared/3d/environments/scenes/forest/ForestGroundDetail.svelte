@@ -84,8 +84,14 @@
     return resolved;
   }
 
-  useTask(() => {
+  // Counting target meshes walks the whole scene; four looks a second catch
+  // streamed tiles soon enough without paying for that walk every frame.
+  let sinceSceneGraphCheck = Infinity;
+  useTask((delta) => {
     if (!watchSceneGraph) return;
+    sinceSceneGraphCheck += delta;
+    if (sinceSceneGraphCheck < 0.25) return;
+    sinceSceneGraphCheck = 0;
     const activeScene = resolveSceneScope();
     if (!activeScene) return;
     const targetPrefixes = targetObjectNamePrefixes;

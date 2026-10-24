@@ -58,9 +58,12 @@ const args = process.argv.slice(2);
 let outputArg;
 let runnerArg;
 let manifestArg;
+let serveOnly = false;
 for (let index = 0; index < args.length; index += 1) {
   const value = args[index];
-  if (value === "--runner" || value === "--manifest") {
+  if (value === "--serve") {
+    serveOnly = true;
+  } else if (value === "--runner" || value === "--manifest") {
     const argument = args[++index];
     if (!argument || argument.startsWith("--"))
       throw new Error(`${value} requires a path`);
@@ -74,6 +77,8 @@ for (let index = 0; index < args.length; index += 1) {
 }
 if (Boolean(runnerArg) !== Boolean(manifestArg))
   throw new Error("A custom capture runner requires --runner and --manifest");
+if (serveOnly && (runnerArg || manifestArg))
+  throw new Error("--serve cannot be combined with a capture runner");
 const output = resolve(
   outputArg ?? "unreal/FlowFest/Saved/PerformanceCaptures"
 );
@@ -140,6 +145,14 @@ const address = server.address();
 if (!address || typeof address === "string")
   throw new Error("Static capture server has no port");
 console.log(`Static capture bundle on port ${address.port}`);
+if (serveOnly) {
+  console.log(`PORTABLE_MOTION_EXPORT http://127.0.0.1:${address.port}/test/flow-fest-native-export?custom=1`);
+  await new Promise(resolve => {
+    const stop = () => server.close(resolve);
+    process.once("SIGINT", stop);
+    process.once("SIGTERM", stop);
+  });
+} else {
 try {
   const code = await new Promise((ok, fail) => {
     const child = spawn(
@@ -153,4 +166,5 @@ try {
   if (code !== 0) process.exitCode = code;
 } finally {
   await new Promise((ok) => server.close(ok));
+}
 }

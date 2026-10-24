@@ -163,8 +163,8 @@
       const fit = track.lengthM / tmpA.distanceTo(tmpB);
       tmpA.multiplyScalar(fit).add(tmpPalm);
       tmpB.multiplyScalar(fit).add(tmpPalm);
-      staff.tips[0].position.copy(tmpA);
-      staff.tips[1].position.copy(tmpB);
+      staff.tips[0]!.position.copy(tmpA);
+      staff.tips[1]!.position.copy(tmpB);
       staff.shaft.position.copy(tmpA).add(tmpB).multiplyScalar(0.5);
       const length = track.lengthM;
       staff.shaft.scale.set(1, length, 1);

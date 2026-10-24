@@ -52,7 +52,7 @@ interface ActiveToken {
  * Maps notification types to their preference key in the user's
  * notification preferences document. Types not in this map are
  * either always-on (system-announcement) or handled elsewhere
- * (message-received is checked via pushEnabled + messageReceived).
+ * (message-received is checked via messageReceived in onNewMessage).
  */
 const PREF_KEY_MAP: Record<string, string> = {
   "feedback-resolved": "feedbackResolved",
@@ -185,7 +185,11 @@ export async function sendDataToUser(
  * notification type, based on the user's stored preferences.
  *
  * System announcements and moderation warnings always return true.
- * Messages are handled separately (via pushEnabled + messageReceived).
+ * Messages are handled separately (via messageReceived in onNewMessage).
+ *
+ * There is no account-wide push switch: each device turns push on or off by
+ * adding or removing its own token, so muting one device never silences the
+ * others. The old `pushEnabled` field is ignored.
  *
  * @param userId - User to check preferences for
  * @param notificationType - The notification type string
@@ -231,11 +235,6 @@ export async function shouldPushForType(
   if (!prefs) {
     // No preferences field = all defaults enabled
     return true;
-  }
-
-  // Check the push master toggle first
-  if (prefs.pushEnabled === false) {
-    return false;
   }
 
   // Check the specific preference (default to true if not set)

@@ -45,9 +45,13 @@ if (-not $SkipAssets) {
     }
 }
 
+$repoRoot = (Resolve-Path -LiteralPath (Join-Path $toolDir '..\..\..')).Path
+$rigTool = Join-Path $repoRoot 'unreal\Shared\Tools\runtime-rig-catalog.mjs'
+& node $rigTool $repoRoot (Join-Path $projectTarget 'Content\Data\runtime-rigs.json')
+if ($LASTEXITCODE -ne 0) { throw "Runtime rig catalog generation failed ($LASTEXITCODE)" }
+
 $propsCatalog = Join-Path $projectTarget 'Content\Data\props.json'
 if (Test-Path -LiteralPath $propsCatalog -PathType Leaf) {
-    $repoRoot = (Resolve-Path -LiteralPath (Join-Path $toolDir '..\..\..')).Path
     $fanSource = Join-Path $repoRoot 'static\models\props\fan.glb'
     $refreshTool = Join-Path $repoRoot 'unreal\FlowFest\Tools\refresh-prop-wick-attachments.mjs'
     if (-not (Test-Path -LiteralPath $fanSource -PathType Leaf)) { throw "Missing authored fan source: $fanSource" }

@@ -86,16 +86,16 @@ describe("FuseRelationshipComposer", () => {
     render(FuseRelationshipComposerTestHarness, { state });
 
     await expect
-      .element(page.getByRole("button", { name: "Quarter clockwise" }))
+      .element(page.getByRole("button", { name: "90° clockwise" }))
       .not.toBeInTheDocument();
 
     await page.getByRole("button", { name: /^Quarter Opposite/ }).click();
     await expect
-      .element(page.getByRole("button", { name: "Quarter clockwise" }))
+      .element(page.getByRole("button", { name: "90° clockwise" }))
       .toBeVisible();
 
     await page
-      .getByRole("button", { name: "Quarter counterclockwise" })
+      .getByRole("button", { name: "90° counterclockwise" })
       .click();
     expect(state.previewRelationship).toHaveBeenLastCalledWith(
       "left",

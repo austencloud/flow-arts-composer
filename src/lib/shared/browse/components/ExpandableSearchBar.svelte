@@ -22,6 +22,9 @@
     name?: string;
     /** Edge that stays fixed while the collapsed control expands. */
     expansionAnchor?: "start" | "end";
+    /** Always open and as wide as its parent: the Browse scope bar's search,
+     * which is the page's main way in rather than a toolbar tool. */
+    pinned?: boolean;
   }
 
   let {
@@ -31,12 +34,14 @@
     value = "",
     name = "search",
     expansionAnchor = "start",
+    pinned = false,
   }: Props = $props();
 
   // Local state - initialized empty; the $effect below syncs the prop value
   // on mount (and on subsequent changes) to avoid capturing the initial prop
   // value outside a reactive context (svelte state_referenced_locally).
-  let isExpanded = $state(false);
+  let expandedState = $state(false);
+  const isExpanded = $derived(pinned || expandedState);
   let inputValue = $state("");
   let inputRef: HTMLInputElement | null = $state(null);
   let containerRef: HTMLDivElement | null = $state(null);
@@ -53,7 +58,7 @@
       inputValue = value;
       lastSyncedValue = value;
       if (value.trim() && !isExpanded) {
-        isExpanded = true;
+        expandedState = true;
       }
     }
   });
@@ -64,7 +69,7 @@
   // Expand and focus input
   function handleExpand(event: MouseEvent) {
     event.stopPropagation();
-    isExpanded = true;
+    expandedState = true;
     if (focusTimer) clearTimeout(focusTimer);
     focusTimer = setTimeout(() => inputRef?.focus(), 0);
   }
@@ -73,7 +78,7 @@
     if (collapseTimer) clearTimeout(collapseTimer);
     collapseTimer = setTimeout(() => {
       if (!inputValue.trim()) {
-        isExpanded = false;
+        expandedState = false;
       }
     }, COLLAPSE_DELAY_MS);
   }
@@ -104,7 +109,7 @@
   function handleKeydown(event: KeyboardEvent) {
     if (event.key === "Escape") {
       handleClear();
-      isExpanded = false;
+      expandedState = false;
     } else if (event.key === "Enter") {
       inputRef?.blur();
     }
@@ -116,7 +121,7 @@
       !containerRef.contains(event.target as Node) &&
       !inputValue.trim()
     ) {
-      isExpanded = false;
+      expandedState = false;
     }
   }
 
@@ -139,20 +144,23 @@
   class="search-container"
   class:expanded={isExpanded}
   class:anchor-end={expansionAnchor === "end"}
+  class:pinned
   bind:this={containerRef}
   role="search"
 >
-  <button
-    class="search-button"
-    onclick={handleExpand}
-    type="button"
-    aria-label={t("browse_open_search")}
-    aria-expanded={isExpanded}
-    aria-hidden={isExpanded}
-    tabindex={isExpanded ? -1 : 0}
-  >
-    <i class="fas fa-search" aria-hidden="true"></i>
-  </button>
+  {#if !pinned}
+    <button
+      class="search-button"
+      onclick={handleExpand}
+      type="button"
+      aria-label={t("browse_open_search")}
+      aria-expanded={isExpanded}
+      aria-hidden={isExpanded}
+      tabindex={isExpanded ? -1 : 0}
+    >
+      <i class="fas fa-search" aria-hidden="true"></i>
+    </button>
+  {/if}
 
   <div class="search-input-wrapper" aria-hidden={!isExpanded}>
     <i class="fas fa-search search-icon" aria-hidden="true"></i>
@@ -166,7 +174,7 @@
       onkeydown={handleKeydown}
       onblur={handleCollapse}
       {placeholder}
-      aria-label={t("browse_search_sequences")}
+      aria-label={pinned ? placeholder : t("browse_search_sequences")}
       tabindex={isExpanded ? 0 : -1}
     />
     {#if inputValue}
@@ -198,6 +206,16 @@
 
   .search-container.expanded {
     z-index: var(--z-dropdown);
+  }
+
+  .search-container.pinned {
+    width: 100%;
+    z-index: auto;
+  }
+
+  .search-container.pinned .search-input-wrapper {
+    position: static;
+    width: 100%;
   }
 
   .search-button {
@@ -344,7 +362,7 @@
   }
 
   @media (max-width: 640px) {
-    .search-input-wrapper {
+    .search-container:not(.pinned) .search-input-wrapper {
       width: clamp(160px, 50vw, 300px);
     }
 

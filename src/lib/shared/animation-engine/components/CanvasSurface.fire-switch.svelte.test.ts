@@ -78,12 +78,16 @@ describe("mounted CanvasSurface fire lifecycle", () => {
     const burningState = getFireState()!;
     const burning = readVisiblePixels()!;
 
-    await page.getByRole("button", { name: "Hands" }).click();
-    await expect
-      .element(page.getByTestId("prop-type"))
-      .toHaveTextContent("hand");
+    // Press in the page itself: a driver click plus a text check can take
+    // longer than the whole quarter-second fade on a busy machine.
+    const hands = page.getByRole("button", { name: "Hands" });
+    await expect.element(hands).toBeInTheDocument();
+    (hands.element() as HTMLButtonElement).click();
     await vi.waitFor(
       () => {
+        expect(page.getByTestId("prop-type").element()).toHaveTextContent(
+          "hand"
+        );
         const state = getFireState();
         const pixels = readVisiblePixels();
         expect(state?.activeTips).toBe(0);
@@ -95,9 +99,21 @@ describe("mounted CanvasSurface fire lifecycle", () => {
     const earlyFadeState = getFireState()!;
     const earlyFade = readVisiblePixels()!;
 
-    await new Promise((resolve) => setTimeout(resolve, 250));
-    const laterFadeState = getFireState()!;
-    const laterFade = readVisiblePixels()!;
+    // Fire burns out in about a quarter second since 890b316e26, so read the
+    // first frame the fade has moved on, before a slow machine's frames outlast it.
+    let laterFadeState = getFireState()!;
+    let laterFade = readVisiblePixels()!;
+    for (let frame = 0; frame < 10; frame++) {
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      laterFadeState = getFireState()!;
+      laterFade = readVisiblePixels()!;
+      if (
+        laterFadeState.residualHeat < earlyFadeState.residualHeat &&
+        laterFade.checksum !== earlyFade.checksum
+      ) {
+        break;
+      }
+    }
     expect(laterFadeState.residualHeat).toBeLessThan(
       earlyFadeState.residualHeat
     );

@@ -29,8 +29,9 @@ assert.equal(first.roads.find((road) => road.id === "middle-to-lower")?.points.l
 assert.deepEqual(first.landmarks.map((item) => item.id), [
   "gate", "camp-lower", "camp-upper", "camp-car", "parking", "workshop", "fire", "start",
 ]);
+// The upper camp sits where Austen marked its tents (austen-camping-areas.json).
 assert.deepEqual(first.landmarks.find((item) => item.id === "camp-upper"), {
-  id: "camp-upper", label: "Upper tent camp", x: -62, z: -74,
+  id: "camp-upper", label: "Upper tent camp", x: -50.5, z: -124.4, source: "austen-camping-areas.json",
 });
 assert.deepEqual(first.landmarks.find((item) => item.id === "fire"), {
   id: "fire", label: "Night fire", x: 89, z: -113.5,
@@ -39,9 +40,15 @@ assert.equal(first.landmarks.find((item) => item.id === "workshop")?.provisional
 assert.equal(first.counts.measuredCanopyTrees, 428);
 assert.equal(first.trees.length, 677);
 assert.equal(first.backdropTrees.length, 2162);
-assert.equal(first.camps.filter((item) => item.type === "canopy").length, 8);
+// The plan's 8 canopies and 53 tents, less Austen's 21 removals, plus his 43 tents and 2 group canopies.
+assert.equal(first.camps.filter((item) => item.type === "canopy").length, 10);
 assert.equal(first.camps.filter((item) => item.type === "player-tent").length, 1);
-assert.equal(first.camps.filter((item) => item.type !== "canopy").length, 53);
+assert.equal(first.camps.filter((item) => item.type !== "canopy").length, 75);
+for (const tent of first.camps.filter((item) => item.x < 0 && item.z < -88)) {
+  for (const other of first.camps) {
+    if (other !== tent) assert.ok(Math.hypot(other.x - tent.x, other.z - tent.z) >= 3.2, "upper camp tents must not overlap");
+  }
+}
 assert.equal(first.vehicles.length, 44);
 assert.equal(first.assets.length, 39);
 assert.ok(first.grass.length > 20000, "source woodland and clearing grass must be retained");

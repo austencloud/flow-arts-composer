@@ -8,15 +8,29 @@
   import type { DraftVersion } from "#lib/features/create/shared/services/draft-types.js";
   import PropAwareThumbnail from "#lib/shared/browse/components/PropAwareThumbnail.svelte";
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
-  import BackToBrowseButton from "#lib/features/browse/shared/components/BackToBrowseButton.svelte";
   import { createDraftsShelfState } from "../state/drafts-shelf-state.svelte.js";
-  import { growFade } from "#lib/shared/transitions/motion.js";
+  import { flip } from "svelte/animate";
+  import { flipDuration, growFade } from "#lib/shared/transitions/motion.js";
+  import { tryGetBrowseQueryContext } from "#lib/shared/browse/state/browse-query-state.svelte.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
-
-  const { showBrowseBack = true }: { showBrowseBack?: boolean } = $props();
 
   const draftsState = createDraftsShelfState(listDeviceDrafts);
   let expanded = $state<string[]>([]);
+
+  // Drafts have no engine; the scope bar's search narrows them by name or
+  // word directly.
+  const browseQuery = tryGetBrowseQueryContext();
+  const search = $derived((browseQuery?.search ?? "").trim().toLowerCase());
+  const visibleDrafts = $derived(
+    search
+      ? draftsState.drafts.filter((draft) => {
+          const sequence = draft.latest.workspace.currentSequence;
+          return [title(draft.latest), sequence?.word ?? ""].some((text) =>
+            text.toLowerCase().includes(search)
+          );
+        })
+      : draftsState.drafts
+  );
 
   let wasActive = false;
   $effect(() => {
@@ -61,7 +75,6 @@
 
 <section class="drafts" aria-label="Drafts">
   <header class="drafts-header">
-    {#if showBrowseBack}<BackToBrowseButton />{/if}
     <div>
       <h2>Drafts</h2>
       <p>On this device</p>
@@ -84,11 +97,13 @@
         >Start a sequence</LinkChip
       >
     </div>
+  {:else if visibleDrafts.length === 0}
+    <p class="state" role="status">No drafts match “{browseQuery?.search}”.</p>
   {:else}
     <div class="draft-list">
-      {#each draftsState.drafts as draft (draft.id)}
+      {#each visibleDrafts as draft (draft.id)}
         {@const older = olderVersions(draft)}
-        <article class="draft">
+        <article class="draft" animate:flip={{ duration: flipDuration() }}>
           <div class="draft-preview">
             {#if draft.latest.workspace.currentSequence}
               <PropAwareThumbnail

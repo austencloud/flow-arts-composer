@@ -22,6 +22,9 @@ export type {
 } from "./orientation/IOrientationPropagator.js";
 export { OrientationCalculator, OrientationPropagator } from "./orientation/OrientationPropagator.js";
 
+// Centric placements (tau1-16, terra1): the one table of their hand locations
+export { CENTRIC_PLACEMENT_LOCATIONS } from "./placements/centric-placement-locations.js";
+
 // Layer signature — the radial/non-radial reading of both props, step by step
 export {
   orientationClass,

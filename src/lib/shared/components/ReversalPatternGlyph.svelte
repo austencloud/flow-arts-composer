@@ -9,9 +9,14 @@
     period: number; // Number of columns to show
     /** Optional width in glyph units; the card back keeps its natural size. */
     maxWidthCqi?: number;
+    /**
+     * Column of the beat playing now. Null leaves every column full, which is
+     * how card backs and a header that is not playing should look.
+     */
+    activeIndex?: number | null;
   }
 
-  const { sequence, period, maxWidthCqi }: Props = $props();
+  const { sequence, period, maxWidthCqi, activeIndex = null }: Props = $props();
 
   // Show one period, capped at 8
   const symbols = $derived(sequence.slice(0, Math.min(8, period)).split(""));
@@ -39,9 +44,13 @@
 </script>
 
 <div class="reversal-glyph" style="--glyph-scale: {scale}">
-  {#each symbols as symbol}
+  {#each symbols as symbol, index}
     {@const dots = getDots(symbol)}
-    <div class="dot-col">
+    <div
+      class="dot-col"
+      class:rest={activeIndex !== null && index !== activeIndex}
+      class:active={activeIndex !== null && index === activeIndex}
+    >
       <div class="dot" class:red={dots.right} class:empty={!dots.right}></div>
       <div class="dot" class:blue={dots.left} class:empty={!dots.left}></div>
     </div>
@@ -59,6 +68,21 @@
     display: flex;
     flex-direction: column;
     gap: calc(var(--glyph-unit, 1cqi) * 0.3 * var(--glyph-scale));
+    /* Opacity only, like the word's letters: the header restyles this column
+       on every beat, and a tweened drop-shadow would be a blur convolution per
+       frame. The glow snaps in with the opacity ramp instead. */
+    transition: opacity var(--duration-fast) var(--ease-standard);
+  }
+
+  /* Column opacity multiplies the empty dots' own 0.4, so an empty slot stays
+     fainter than a filled one inside the lit column too. */
+  .dot-col.rest {
+    opacity: var(--glyph-rest-opacity, 0.2);
+  }
+
+  .dot-col.active {
+    opacity: 1;
+    filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.3));
   }
 
   .dot {

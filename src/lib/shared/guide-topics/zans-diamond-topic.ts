@@ -242,7 +242,11 @@ export function zansDiamondVariationLabel(
   return t("guide_zans_label_ahead", { n: variation.offset });
 }
 
-function handMotion(hand: HandSide, step: SoloPropStepData) {
+function handMotion(
+  hand: HandSide,
+  step: SoloPropStepData,
+  propType: PropType
+) {
   return createMotionData({
     motionType: step.motionType,
     rotationDirection: step.rotationDirection,
@@ -252,12 +256,17 @@ function handMotion(hand: HandSide, step: SoloPropStepData) {
     startOrientation: step.startOrientation,
     endOrientation: step.endOrientation,
     hand,
-    propType: PropType.HAND,
+    propType,
     gridMode: GridMode.DIAMOND,
   });
 }
 
-function stillHand(hand: HandSide, at: GridLocation, orientation: Orientation) {
+function stillHand(
+  hand: HandSide,
+  at: GridLocation,
+  orientation: Orientation,
+  propType: PropType
+) {
   return createMotionData({
     motionType: MotionType.STATIC,
     startLocation: at,
@@ -265,7 +274,7 @@ function stillHand(hand: HandSide, at: GridLocation, orientation: Orientation) {
     startOrientation: orientation,
     endOrientation: orientation,
     hand,
-    propType: PropType.HAND,
+    propType,
     gridMode: GridMode.DIAMOND,
   });
 }
@@ -275,8 +284,16 @@ function stillHand(hand: HandSide, at: GridLocation, orientation: Orientation) {
  * beats, ready for stripToSequence and the inline player. Both hands' steps
  * come from the same path through the generator's own arrangement, so the
  * page cannot play something the table does not spell.
+ *
+ * The Guide page draws the hands themselves, so it keeps the HAND default. The
+ * home hero passes STAFF: HAND motions get a straight hand path from
+ * stripToSequence and render as hand pictographs, which is not what a prop
+ * show should look like.
  */
-export function zansDiamondStrip(variation: ZansDiamondVariation): StepData[] {
+export function zansDiamondStrip(
+  variation: ZansDiamondVariation,
+  propType: PropType = PropType.HAND
+): StepData[] {
   const left = arrangeSoloPropSteps(ZANS_DIAMOND_LEFT_STEPS, variation.left);
   const right = arrangeSoloPropSteps(ZANS_DIAMOND_RIGHT_STEPS, variation.right);
   const first = { left: left[0]!, right: right[0]! };
@@ -295,12 +312,14 @@ export function zansDiamondStrip(variation: ZansDiamondVariation): StepData[] {
       left: stillHand(
         HandSide.LEFT,
         first.left.startLocation,
-        first.left.startOrientation
+        first.left.startOrientation,
+        propType
       ),
       right: stillHand(
         HandSide.RIGHT,
         first.right.startLocation,
-        first.right.startOrientation
+        first.right.startOrientation,
+        propType
       ),
     },
   });
@@ -320,8 +339,8 @@ export function zansDiamondStrip(variation: ZansDiamondVariation): StepData[] {
       ),
       gridMode: GridMode.DIAMOND,
       motions: {
-        left: handMotion(HandSide.LEFT, leftStep),
-        right: handMotion(HandSide.RIGHT, rightStep),
+        left: handMotion(HandSide.LEFT, leftStep, propType),
+        right: handMotion(HandSide.RIGHT, rightStep, propType),
       },
     });
   });

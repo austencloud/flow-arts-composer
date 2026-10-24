@@ -35,8 +35,6 @@ import {
   resolveBase,
 } from "#lib/shared/shape-matrix/services/tnd-base-index.js";
 import { applyVariationDescriptor } from "#lib/features/choreo-card/services/deck-variation.js";
-import { rotateSequenceGeometry } from "#lib/shared/create/services/sequence-derived-fields.js";
-import { deriveTnDFromPictograph } from "#lib/shared/pictograph/shared/domain/utils/tnd-deriver.js";
 import {
   buildFlowerAxis,
   type Flower,
@@ -44,14 +42,14 @@ import {
 import { applyFilter } from "#lib/shared/shape-matrix/domain/filter-flower-axis.js";
 import { MODE_ORDER } from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
 import { TURN_VALUES } from "#lib/features/choreo-card/domain/turn-pattern-parser.js";
+import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { TnDElement } from "#lib/features/choreo-card/domain/tnd-element.js";
 import {
-  Orientation,
-  TnDMode,
-} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
-import {
-  TND_BY_FAMILY,
-  type TnDElement,
-} from "#lib/features/choreo-card/domain/tnd-element.js";
+  elementOf,
+  rotateToStartKey,
+  startLocKey,
+  tileClosedLoop,
+} from "#lib/shared/landing/data/hero-draw-utils.js";
 
 const BASE_WORDS_URL = "/data/hero/tnd-base-words.json";
 
@@ -68,17 +66,6 @@ const ALLOWED_TURNS = TURN_VALUES.filter((t) => t <= MAX_TURNS);
  *  pose; tiling it this many times gives an 8-beat play that reads as a full
  *  flower cycle without flashing by. */
 const REPEAT = 2;
-
-/** Derived TnD mode → element family id (pure; the tainted copies in
- *  deck-composer/browse-filter can't be imported on a firebase-free page). */
-const TND_MODE_TO_FAMILY: Readonly<Record<TnDMode, string>> = {
-  [TnDMode.SPLIT_SAME]: "split-same",
-  [TnDMode.TOG_SAME]: "tog-same",
-  [TnDMode.QUARTER_SAME]: "quarter-same",
-  [TnDMode.SPLIT_OPP]: "split-opp",
-  [TnDMode.TOG_OPP]: "tog-opp",
-  [TnDMode.QUARTER_OPP]: "quarter-opp",
-};
 
 interface Cell {
   left: Flower;
@@ -151,63 +138,6 @@ function fmtTurn(v: number): string {
 
 function oriToOrientation(o: "in" | "out"): Orientation {
   return o === "in" ? Orientation.IN : Orientation.OUT;
-}
-
-/** Key identifying a start pose by its two hands' start locations (what rotation
- *  actually moves). Two poses with the same key are the same grid position. */
-function startLocKey(sp: StartPlacementData | undefined | null): string | null {
-  const b = sp?.motions?.left?.startLocation;
-  const r = sp?.motions?.right?.startLocation;
-  return b && r ? `${b}|${r}` : null;
-}
-
-/**
- * Rotate a realization so its start pose matches `targetKey`, using only 90°
- * steps (even 45° counts) so the cell's grid identity (diamond/box) is preserved
- * — an odd 45° step would toggle it. Returns null when no quarter-rotation of
- * this realization lands on the target (e.g. wrong position family).
- */
-function rotateToStartKey(
-  seq: SequenceData,
-  targetKey: string
-): SequenceData | null {
-  for (const steps of [0, 2, 4, 6]) {
-    const rotated = steps === 0 ? seq : rotateSequenceGeometry(seq, steps);
-    if (startLocKey(rotated.startPlacement) === targetKey) return rotated;
-  }
-  return null;
-}
-
-/**
- * Tile a closed loop `times` times into one longer sequence. A realization
- * closes back to its start pose (turnLoopClosed), so copy k+1's first step
- * begins exactly where copy k's last step ended — the tiled play chains
- * seamlessly. Step numbers renumber and ids get a per-copy suffix so nothing
- * downstream keys two steps to the same id.
- */
-function tileClosedLoop(seq: SequenceData, times: number): SequenceData {
-  const steps: (typeof seq.steps)[number][] = [];
-  for (let k = 0; k < times; k++) {
-    for (const s of seq.steps) {
-      steps.push({ ...s, id: `${s.id}-r${k}`, stepNumber: steps.length + 1 });
-    }
-  }
-  return {
-    ...seq,
-    steps,
-    sequenceLength: steps.length,
-    word: (seq.word ?? "").repeat(times),
-  };
-}
-
-/** Re-derive the TnD element from the final played geometry (first visible step). */
-function elementOf(seq: SequenceData): TnDElement | null {
-  const step = seq.steps.find((s) => !s.isBlank) ?? seq.steps[0];
-  if (!step) return null;
-  const { tndMode } = deriveTnDFromPictograph(step as never);
-  if (!tndMode) return null;
-  const family = TND_MODE_TO_FAMILY[tndMode];
-  return family ? (TND_BY_FAMILY[family] ?? null) : null;
 }
 
 export interface MatrixDraw {

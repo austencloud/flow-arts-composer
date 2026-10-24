@@ -105,4 +105,35 @@ describe("EmailPasswordAuth transitions", () => {
       .toBeEnabled();
     await expect.element(password).toHaveValue("secret-password");
   });
+  it("explains a miss with a way into Create account, and counts attempts only from the second miss", async () => {
+    mocks.signIn.mockRejectedValue({ code: "auth/invalid-credential" });
+
+    render(EmailPasswordAuth, { mode: "signin" });
+    await page.getByRole("textbox", { name: "Email" }).fill("new@example.com");
+    await page
+      .getByLabelText("Password", { exact: true })
+      .fill("a-fresh-password");
+
+    await page.getByRole("button", { name: "Sign In" }).click();
+    await expect
+      .element(page.getByText("No account matches that email and password."))
+      .toBeVisible();
+    expect(document.body.textContent).not.toContain("tries left");
+
+    await page.getByRole("button", { name: "Sign In" }).click();
+    await expect
+      .element(page.getByText(/tries left before a short pause/))
+      .toBeVisible();
+
+    await page
+      .getByRole("button", { name: "Create an account with this email" })
+      .click();
+    await expect.element(page.getByLabelText("Name")).toBeVisible();
+    await expect
+      .element(page.getByRole("textbox", { name: "Email" }))
+      .toHaveValue("new@example.com");
+    await expect
+      .element(page.getByLabelText("Password", { exact: true }))
+      .toHaveValue("a-fresh-password");
+  });
 });

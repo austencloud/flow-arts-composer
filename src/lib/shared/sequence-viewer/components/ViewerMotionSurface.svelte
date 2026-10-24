@@ -517,6 +517,7 @@
   <ScenePreparationSurface
     statusText="Opening 3D"
     session={sceneLoading.current}
+    bare
     title={playback.animationState.sequenceData
       ? getSequenceDisplayName(playback.animationState.sequenceData)
       : null}
@@ -619,7 +620,7 @@
               if (side !== "left") return;
               scene3DRevealed = revealed;
             },
-            initialRevealMode: "gated",
+            initialRevealMode: "build",
           }}
         />
       {/if}
@@ -836,6 +837,9 @@
   >
     <SceneControlWorkspace
       {bpm}
+      unrealDisabledReason={rendererHandleRequired
+        ? "Unreal unavailable while recording or exporting. Close that panel to switch."
+        : null}
       onSettingChange={onViewer3DSettingChange}
       onAction={onViewer3DAction}
       onLayoutChange={(next) => (sceneControlLayout = next)}

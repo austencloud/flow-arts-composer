@@ -832,6 +832,10 @@
        point used to give this height, but the drawer reads its only snap
        point as closed, so every tap inside the viewer shut it. */
     --sheet-min-height: 100dvh;
+    /* A minimum alone leaves the sheet's height undefined to its children,
+       so every height: 100% inside the viewer fell back to its content and
+       the 3D stage collapsed to nothing. A real height keeps the chain. */
+    height: 100dvh;
   }
 
   /* The drawer stays mounted so a viewer can be built in it before it opens.

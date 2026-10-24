@@ -14,6 +14,7 @@ import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js"
 const mocks = vi.hoisted(() => ({
   generatePerVisitDemo: vi.fn(),
   drawMatrixRealization: vi.fn(),
+  drawAuthoredRealization: vi.fn(),
 }));
 
 vi.mock("#lib/shared/landing/data/per-visit-demo.js", () => ({
@@ -22,6 +23,10 @@ vi.mock("#lib/shared/landing/data/per-visit-demo.js", () => ({
 
 vi.mock("#lib/shared/landing/data/shape-matrix-hero-pool.js", () => ({
   drawMatrixRealization: mocks.drawMatrixRealization,
+}));
+
+vi.mock("#lib/shared/landing/data/hero-authored-pool.js", () => ({
+  drawAuthoredRealization: mocks.drawAuthoredRealization,
 }));
 
 import {
@@ -67,11 +72,12 @@ async function flushUntil(pred: () => boolean, ticks = 50): Promise<void> {
   }
 }
 
-/** Every draw the act has asked for, from either source. */
+/** Every draw the act has asked for, from any source. */
 function drawCount(): number {
   return (
     mocks.generatePerVisitDemo.mock.calls.length +
-    mocks.drawMatrixRealization.mock.calls.length
+    mocks.drawMatrixRealization.mock.calls.length +
+    mocks.drawAuthoredRealization.mock.calls.length
   );
 }
 
@@ -88,12 +94,16 @@ async function flushPrefetch(draws = 2): Promise<void> {
 
 /**
  * These tests exercise the act's orchestration (cycling, prefetch, chaining)
- * against the generated per-visit draw, which they mock. The shape-matrix source
- * is a separate feature with its own tests, so it is disabled here — fraction 0
- * draws no source/box roll, keeping the random call order identical to the
- * pre-matrix act.
+ * against the generated per-visit draw, which they mock. The other sources have
+ * their own tests below, so only generated is weighted here — a single weighted
+ * source draws no source roll, and zero box and mixed fractions draw no roll
+ * either, keeping the random call order identical to the pre-matrix act.
  */
-const NO_MATRIX = { matrixFraction: 0, boxFraction: 0 } as const;
+const NO_MATRIX = {
+  sourceWeights: { generated: 1 },
+  boxFraction: 0,
+  mixedFraction: 0,
+} as const;
 
 function createStaffFirstAct() {
   return createHeroAct({ random: () => 0, ...NO_MATRIX });
@@ -123,6 +133,8 @@ beforeEach(() => {
   );
   mocks.drawMatrixRealization.mockReset();
   mocks.drawMatrixRealization.mockResolvedValue(null);
+  mocks.drawAuthoredRealization.mockReset();
+  mocks.drawAuthoredRealization.mockReturnValue(null);
 });
 
 /**
@@ -470,11 +482,12 @@ describe("createHeroAct — shape-matrix source", () => {
       sequence: fakeSequence("matrix-1", "pos-m"),
       element: FAKE_ELEMENT,
     });
-    // matrixFraction 1 → source roll always picks the matrix; boxFraction 0.
+    // Only flowers weighted → no source roll, always the matrix; boxFraction 0.
     const act = createHeroAct({
       random: () => 0,
-      matrixFraction: 1,
+      sourceWeights: { flowers: 1 },
       boxFraction: 0,
+      mixedFraction: 0,
     });
     act.start();
     await flushUntil(() => act.sequence != null);
@@ -489,8 +502,9 @@ describe("createHeroAct — shape-matrix source", () => {
     mocks.drawMatrixRealization.mockResolvedValue(null);
     const act = createHeroAct({
       random: () => 0,
-      matrixFraction: 1,
+      sourceWeights: { flowers: 1 },
       boxFraction: 0,
+      mixedFraction: 0,
     });
     act.start();
     await flushUntil(() => act.sequence != null);
@@ -502,15 +516,168 @@ describe("createHeroAct — shape-matrix source", () => {
   });
 
   it("generated draws never carry an element (no indicator)", async () => {
-    const act = createHeroAct({
-      random: () => 0,
-      matrixFraction: 0,
-      boxFraction: 0,
-    });
+    const act = createHeroAct({ random: () => 0, ...NO_MATRIX });
     act.start();
     await flush();
 
     expect(mocks.drawMatrixRealization).not.toHaveBeenCalled();
     expect(act.element).toBeNull();
   });
+});
+
+describe("createHeroAct — weighted sources", () => {
+  /** Every pool answers with a draw named for its source, so the opening
+   *  sequence's id says which source the roll picked. */
+  function everySourceAnswers(): void {
+    mocks.drawMatrixRealization.mockImplementation(async () => ({
+      sequence: fakeSequence("flowers", "pos-f"),
+      element: FAKE_ELEMENT,
+    }));
+    mocks.drawAuthoredRealization.mockImplementation(
+      ({ pool }: { pool: string }) => ({
+        sequence: fakeSequence(pool, `pos-${pool}`),
+        element: pool === "caps" ? FAKE_ELEMENT : null,
+        grid: "diamond",
+      })
+    );
+  }
+
+  // Default weights in SOURCE_ORDER: flowers 1/3, caps 1/6, zans 1/6,
+  // generated 1/3, so the roll's buckets end at 1/3, 1/2, 2/3 and 1.
+  it.each([
+    [0.1, "flowers"],
+    [1 / 3 - 1e-6, "flowers"],
+    [1 / 3 + 1e-6, "caps"],
+    [0.5 - 1e-6, "caps"],
+    [0.5 + 1e-6, "zans"],
+    [2 / 3 - 1e-6, "zans"],
+    [2 / 3 + 1e-6, "generated"],
+    [0.999, "generated"],
+  ] as const)(
+    "maps the source roll %s to %s at the default weights",
+    async (draw, source) => {
+      everySourceAnswers();
+      const act = createHeroAct({ random: () => draw, boxFraction: 0 });
+      act.start();
+      await flushUntil(() => act.sequence != null);
+
+      expect(act.sequence?.id).toBe(source === "generated" ? "gen-1" : source);
+    }
+  );
+
+  it("falls through flowers, caps, zans, then generated when every pool is empty", async () => {
+    const order: string[] = [];
+    mocks.drawMatrixRealization.mockImplementation(async () => {
+      order.push("flowers");
+      return null;
+    });
+    mocks.drawAuthoredRealization.mockImplementation(
+      ({ pool }: { pool: string }) => {
+        order.push(pool);
+        return null;
+      }
+    );
+    mocks.generatePerVisitDemo.mockImplementation(async () => {
+      order.push("generated");
+      return fakeSequence("gen-x", "pos-x");
+    });
+    // 0 lands in the first bucket, flowers, so the whole order is walked.
+    const act = createHeroAct({ random: () => 0, boxFraction: 0 });
+    act.start();
+    await flushUntil(() => act.sequence != null);
+
+    expect(order.slice(0, 4)).toEqual(["flowers", "caps", "zans", "generated"]);
+    expect(act.sequence?.id).toBe("gen-x");
+  });
+
+  it("falls through from caps to zans without going back to flowers", async () => {
+    mocks.drawAuthoredRealization.mockImplementation(
+      ({ pool }: { pool: string }) =>
+        pool === "zans"
+          ? {
+              sequence: fakeSequence("zans", "pos-z"),
+              element: null,
+              grid: "diamond",
+            }
+          : null
+    );
+    const act = createHeroAct({ random: () => 0.4, boxFraction: 0 });
+    act.start();
+    await flushUntil(() => act.sequence != null);
+
+    expect(act.sequence?.id).toBe("zans");
+    expect(act.element).toBeNull();
+    expect(mocks.drawMatrixRealization).not.toHaveBeenCalled();
+    expect(
+      mocks.drawAuthoredRealization.mock.calls
+        .slice(0, 2)
+        .map(([o]) => (o as { pool: string }).pool)
+    ).toEqual(["caps", "zans"]);
+  });
+
+  it("skips an unweighted source on fall-through and still lands a generated draw", async () => {
+    const act = createHeroAct({
+      random: () => 0,
+      sourceWeights: { caps: 1 },
+      boxFraction: 0,
+      mixedFraction: 0,
+    });
+    act.start();
+    await flushUntil(() => act.sequence != null);
+
+    expect(act.sequence?.id).toBe("gen-1");
+    const pools = mocks.drawAuthoredRealization.mock.calls.map(
+      ([o]) => (o as { pool: string }).pool
+    );
+    expect(pools[0]).toBe("caps");
+    expect(pools).not.toContain("zans");
+  });
+
+  it("hands an authored pool the chain target and exposes a CAP's element", async () => {
+    everySourceAnswers();
+    const act = createHeroAct({
+      random: () => 0,
+      sourceWeights: { caps: 1 },
+      boxFraction: 0,
+    });
+    act.start();
+    await flushUntil(
+      () => mocks.drawAuthoredRealization.mock.calls.length >= 2
+    );
+
+    expect(act.sequence?.id).toBe("caps");
+    expect(act.element).toEqual(FAKE_ELEMENT);
+    // The opening draw is unchained; the prefetch must start where it began.
+    expect(mocks.drawAuthoredRealization.mock.calls[0]?.[0]).toMatchObject({
+      pool: "caps",
+      chainStartPlacement: null,
+    });
+    expect(mocks.drawAuthoredRealization.mock.calls[1]?.[0]).toMatchObject({
+      pool: "caps",
+      chainStartPlacement: expect.objectContaining({
+        startPlacement: "pos-caps",
+      }),
+    });
+  });
+
+  it.each([
+    [0.2, "mixed", PropType.STAFF],
+    [0.7, "smooth", PropType.CLUB],
+  ] as const)(
+    "a generated draw with continuity roll %s asks for %s",
+    async (draw, continuity, prop) => {
+      const act = createHeroAct({
+        random: () => draw,
+        sourceWeights: { generated: 1 },
+        boxFraction: 0,
+      });
+      act.start();
+      await flush();
+
+      expect(mocks.generatePerVisitDemo.mock.calls[0]?.[0]).toEqual({
+        propType: prop,
+        continuity,
+      });
+    }
+  );
 });

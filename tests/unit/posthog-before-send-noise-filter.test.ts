@@ -13,7 +13,10 @@ vi.mock("posthog-js", () => ({
   default: { init: vi.fn(), reloadFeatureFlags: vi.fn() },
 }));
 
-import { dropKnownNoise } from "#lib/shared/analytics/services/posthog.js";
+import {
+  dropKnownNoise,
+  redactEmailsFromElements,
+} from "#lib/shared/analytics/services/posthog.js";
 
 /**
  * `dropKnownNoise` is the `before_send` hook wired into `posthog.init(...)`.
@@ -234,5 +237,47 @@ describe("dropKnownNoise (PostHog before_send)", () => {
       },
     };
     expect(dropKnownNoise(event)).toBeNull();
+  });
+});
+
+describe("redactEmailsFromElements (PostHog before_send)", () => {
+  const address = "friend@example.com";
+
+  it("strips an address from every place autocapture stores element text", () => {
+    const event = {
+      uuid: "test-uuid",
+      event: "$autocapture",
+      properties: {
+        $el_text: `${address} Setup steps remaining: 3`,
+        $elements_chain: `button:text="${address} Setup steps remaining: 3"`,
+        $elements: [
+          {
+            tag_name: "button",
+            $el_text: `${address} Setup steps remaining: 3`,
+          },
+          { tag_name: "div" },
+        ],
+      },
+    } as unknown as CaptureResult;
+
+    const result = redactEmailsFromElements(event);
+    expect(result).toBe(event);
+    expect(JSON.stringify(result)).not.toContain(address);
+    expect(result?.properties.$el_text).toBe(
+      "[email] Setup steps remaining: 3"
+    );
+  });
+
+  it("returns every other event untouched, never undefined", () => {
+    expect(redactEmailsFromElements(null)).toBeNull();
+    const bare = { uuid: "u", event: "$pageview" } as unknown as CaptureResult;
+    expect(redactEmailsFromElements(bare)).toBe(bare);
+    const plain = {
+      uuid: "u",
+      event: "$autocapture",
+      properties: { $el_text: "Create sequence" },
+    } as unknown as CaptureResult;
+    expect(redactEmailsFromElements(plain)).toBe(plain);
+    expect(plain.properties.$el_text).toBe("Create sequence");
   });
 });

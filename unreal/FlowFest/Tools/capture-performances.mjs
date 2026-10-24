@@ -16,6 +16,14 @@ if (!baseUrl || !outputArg)
   );
 const outputDir = resolve(outputArg);
 await mkdir(outputDir, { recursive: true });
+// Phrase stage: capture the phrase schedule's routines instead of profiles or families.
+if (process.env.FLOW_FEST_CAPTURE_PHRASE_SCHEDULE) {
+  if (process.env.FLOW_FEST_CAPTURE_FAMILY_MODE === "1" || process.env.FLOW_FEST_CAPTURE_RIDE_ONLY === "1")
+    throw new Error("Phrase mode cannot be combined with family or ride-only mode");
+  const { capturePhrases } = await import("./capture-phrase-motions.mjs");
+  await capturePhrases(baseUrl, outputDir);
+  process.exit(0);
+}
 const list = (name) =>
   process.env[name]
     ?.split(",")
@@ -26,7 +34,7 @@ const selectedFamilies = list("FLOW_FEST_CAPTURE_FAMILIES");
 const selectedVariants = list("FLOW_FEST_CAPTURE_VARIANTS") ?? ["A", "B"];
 const familyMode = process.env.FLOW_FEST_CAPTURE_FAMILY_MODE === "1";
 const rideOnly = process.env.FLOW_FEST_CAPTURE_RIDE_ONLY === "1";
-const familyCaptureRevision = "clock-isolated-body-v3";
+const familyCaptureRevision = "monotonic-dynamic-grip-v5";
 if (familyMode && rideOnly)
   throw new Error("Family and ride-only modes cannot be combined");
 
@@ -46,6 +54,8 @@ async function writeJsonAtomic(path, value) {
 }
 
 function validatePerformance(result, character, role, propType) {
+  const finitePoint = (point) =>
+    Array.isArray(point) && point.length === 3 && point.every(Number.isFinite);
   if (
     (familyMode && result.captureRevision !== familyCaptureRevision) ||
     result.character !== character ||
@@ -61,10 +71,29 @@ function validatePerformance(result, character, role, propType) {
         !frame.rightProp?.renderedMeshes?.length ||
         !frame.leftProp?.rotatedBodyWorld ||
         !frame.rightProp?.rotatedBodyWorld ||
-        !Array.isArray(frame.leftHandWorld) ||
-        frame.leftHandWorld.length !== 3 ||
-        !Array.isArray(frame.rightHandWorld) ||
-        frame.rightHandWorld.length !== 3
+        !finitePoint(frame.leftHandWorld) ||
+        !finitePoint(frame.rightHandWorld) ||
+        !Array.isArray(frame.propVisibility) ||
+        frame.propVisibility.length !== 2 ||
+        frame.propVisibility.some((visible) => typeof visible !== "boolean") ||
+        !["left", "right"].every((side, index) => {
+          const palm = frame.gripAttachment?.[`${side}PalmWorld`];
+          const grip = frame.gripAttachment?.[`${side}RenderedGripWorld`];
+          return finitePoint(palm) &&
+            (!frame.propVisibility[index] ||
+              (finitePoint(grip) &&
+                Math.hypot(...palm.map((value, axis) => value - grip[axis])) <= 0.002));
+        }) ||
+        !Array.isArray(frame.palmLocal) ||
+        frame.palmLocal.length !== 6 ||
+        !frame.palmLocal.every(Number.isFinite) ||
+        [0, 3].some((start) =>
+          Math.hypot(...frame.palmLocal.slice(start, start + 3)) > 0.5
+        ) ||
+        !Number.isFinite(frame.gripRelaxation) ||
+        frame.gripRelaxation < 0 ||
+        frame.gripRelaxation > 1 ||
+        frame.gripRelaxation !== frame.gripAttachment?.gripRelaxation
     )
   )
     throw new Error(`Incomplete production capture: ${character} / ${role}`);

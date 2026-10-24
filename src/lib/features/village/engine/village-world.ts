@@ -1,79 +1,99 @@
-import { World } from "miniplex";
 import type {
 	VillageEntity,
-	AvatarVisualTraits,
+	VillageWorld,
 	LearnedSequence,
 } from "../domain/village-types";
-import type * as PersonalityGeneratorModule from "../services/personality-generator";
-import { VILLAGE_PROP_TYPES, EFFECT_AFFINITIES } from "../domain/village-constants";
-import { DEPLOYED_CHARACTER_IDS } from "#lib/shared/3d/config/deployed-characters.js";
+import type { VillageRules } from "../domain/village-rules";
+import { generatePersonality } from "../services/personality-generator";
+import { pickFrom, type VillageRng } from "./village-rng";
 
-// Only assign avatars whose GLB is actually deployed. The chXX Mixamo models
-// aren't on R2 yet and 404 (see deployed-characters.ts), so picking one floods the
-// console and renders nothing. This list self-expands as chXX land on R2.
-const AVATAR_MODELS: string[] = DEPLOYED_CHARACTER_IDS;
+export function createVillageWorld(): VillageWorld {
+	return { entities: [], visitor: null };
+}
 
-export function createVillageWorld(): World<VillageEntity> {
-	return new World<VillageEntity>();
+/** Removes one avatar and keeps everyone else in their current order. */
+export function removeFromWorld(world: VillageWorld, entity: VillageEntity): void {
+	const index = world.entities.indexOf(entity);
+	if (index >= 0) world.entities.splice(index, 1);
 }
 
 export interface CreateAvatarOptions {
+	id: string;
 	name: string;
 	generation: number;
 	currentTick: number;
-	lifespanTicks: number;
-	arenaRadius: number;
-	personalityGenerator: typeof PersonalityGeneratorModule;
-	traitMean: number;
-	traitStdDev: number;
+	rules: VillageRules;
+	// Newborns appear somewhere on the ring between these two distances from
+	// the fire.
+	spawnRadiusMin: number;
+	spawnRadiusMax: number;
+	// Rig models the renderer can actually load. Changing this list changes
+	// which model an avatar wears, never any other choice in the run.
+	avatarModels: readonly string[];
 	seedSequences?: Map<string, LearnedSequence>;
 }
 
+/**
+ * Creates one newborn and adds it to the world. Draws come from the identity
+ * stream in a fixed order (position, personality, model, prop, look, lifespan)
+ * so the order is part of the replay contract.
+ */
 export function createAvatarEntity(
-	world: World<VillageEntity>,
+	world: VillageWorld,
+	rng: VillageRng,
 	options: CreateAvatarOptions,
 ): VillageEntity {
-	const angle = Math.random() * Math.PI * 2;
-	const radius = options.arenaRadius * (0.8 + Math.random() * 0.2);
+	const { rules } = options;
+	const angle = rng() * Math.PI * 2;
+	// sqrt keeps newborns spread evenly over the ring instead of bunched
+	// toward its inner edge.
+	const { spawnRadiusMin: rMin, spawnRadiusMax: rMax } = options;
+	const radius = Math.sqrt(rMin * rMin + rng() * (rMax * rMax - rMin * rMin));
 
-	const visualTraits: AvatarVisualTraits = {
-		skinTone: Math.random(),
-		hairColor: Math.random(),
-		heightScale: 0.9 + Math.random() * 0.2,
-	};
-
-	const personality = options.personalityGenerator.generatePersonality(
-		options.traitMean,
-		options.traitStdDev,
+	const personality = generatePersonality(
+		rng,
+		rules.population.traitMean,
+		rules.population.traitStdDev,
 	);
 
-	// Pick a model not already used by any living entity
-	const usedModels = new Set(
-		world.entities.map((e) => e.identity.avatarModelId),
-	);
-	const available = AVATAR_MODELS.filter((m) => !usedModels.has(m));
-	const pool = available.length > 0 ? available : AVATAR_MODELS;
+	// Prefer a model nobody alive is wearing, so two avatars rarely look alike.
+	const usedModels = new Set(world.entities.map((e) => e.identity.avatarModelId));
+	const available = options.avatarModels.filter((m) => !usedModels.has(m));
+	const pool = available.length > 0 ? available : options.avatarModels;
+	const modelDraw = rng();
 	const avatarModelId =
-		pool[Math.floor(Math.random() * pool.length)] ?? "x-bot";
+		pool.length > 0 ? pool[Math.floor(modelDraw * pool.length)]! : "x-bot";
+
+	const propType = pickFrom(rng, rules.propTypes);
+	const effectLook = pickFrom(rng, rules.effectLooks);
+	const { lifespanJitterMin, lifespanJitterMax } = rules.population;
+	const lifespan =
+		rules.population.lifespanTicks *
+		(lifespanJitterMin + rng() * (lifespanJitterMax - lifespanJitterMin));
+
+	const x = rules.campfire.x + Math.cos(angle) * radius;
+	const z = rules.campfire.z + Math.sin(angle) * radius;
 
 	const entity: VillageEntity = {
-		id: `avatar-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+		id: options.id,
 		identity: {
 			name: options.name,
-			visualTraits,
 			generation: options.generation,
 			avatarModelId,
-			role: "spinner",
+			propType,
+			effectLook,
 		},
 		knowledge: {
 			knownSequences: options.seedSequences ?? new Map(),
-			maxCapacity: 5 + Math.floor(personality.curiosity * 5),
+			maxCapacity:
+				rules.population.capacityBase +
+				Math.floor(personality.curiosity * rules.population.capacityCuriosityBonus),
 		},
 		personality,
 		lifecycle: {
 			birthTick: options.currentTick,
 			currentAge: 0,
-			lifespan: options.lifespanTicks * (0.8 + Math.random() * 0.4),
+			lifespan,
 			phase: "youth",
 			knowledgeGlow: 0,
 		},
@@ -82,54 +102,23 @@ export function createAvatarEntity(
 			partner: null,
 			teachingProgress: 0,
 			sequenceBeingTransferred: null,
-			performingSequenceId: null,
-			inJam: false,
+			activeSequenceId: null,
 			currentStepIndex: 0,
+			lesson: null,
 			frustrationLevel: 0,
 			idleTimer: 0,
 			interactionCooldown: 0,
 		},
 		transform: {
-			x: Math.cos(angle) * radius,
-			z: Math.sin(angle) * radius,
+			x,
+			z,
 			facingAngle: angle + Math.PI,
-			targetX: 0,
-			targetZ: 0,
+			targetX: x,
+			targetZ: z,
 			speed: 0,
-		},
-		prop: {
-			heldProp: {
-				id: `prop-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-				propType:
-					VILLAGE_PROP_TYPES[
-						Math.floor(Math.random() * VILLAGE_PROP_TYPES.length)
-					]!,
-				createdAtTick: options.currentTick,
-				createdBy: "",
-				ownershipChain: [],
-				totalStepsPerformed: 0,
-				wear: 0,
-				favoriteSequenceId: null,
-				customHue: Math.floor(Math.random() * 360),
-				broken: false,
-			},
-			propPreference:
-				VILLAGE_PROP_TYPES[
-					Math.floor(Math.random() * VILLAGE_PROP_TYPES.length)
-				]!,
-		},
-		effect: {
-			affinity: EFFECT_AFFINITIES[Math.floor(Math.random() * EFFECT_AFFINITIES.length)]!,
-			affinityStrength: 0.5 + Math.random() * 0.5,
-			exposureHistory: new Map(),
 		},
 	};
 
-	// Fix up prop references now that entity.id is known
-	entity.prop.heldProp!.createdBy = entity.id;
-	entity.prop.heldProp!.ownershipChain = [entity.id];
-	entity.prop.heldProp!.propType = entity.prop.propPreference;
-
-	world.add(entity);
+	world.entities.push(entity);
 	return entity;
 }

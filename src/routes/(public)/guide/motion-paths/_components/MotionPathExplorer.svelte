@@ -503,7 +503,7 @@
         fill={fitMode}
         onSettingChange={() => explorer.syncPolicy()}
       >
-        {#snippet preview(path, size)}
+        {#snippet preview(path: MandalaPathShape, size: number)}
           <SequenceMandala
             sequence={explorer.variants[path]}
             pathShape={path}

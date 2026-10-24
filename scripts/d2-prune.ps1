@@ -33,6 +33,11 @@ param(
 
 if ($Install) {
   $ErrorActionPreference = 'Stop'
+  # Windows keeps ssh/scp in System32\OpenSSH, which some shells (agent runs) lack on PATH.
+  if (-not (Get-Command ssh -ErrorAction SilentlyContinue)) {
+    $openSsh = Join-Path $env:SystemRoot 'System32\OpenSSH'
+    if (Test-Path $openSsh) { $env:PATH = "$openSsh;$env:PATH" }
+  }
   $tools = 'C:/Users/Austen/d2-tools'
   & ssh -o BatchMode=yes austen@d2 "pwsh -NoProfile -Command New-Item -ItemType Directory -Force '$tools' | Out-Null"
   & scp -q -o BatchMode=yes $PSCommandPath "austen@d2:$tools/d2-prune.ps1"

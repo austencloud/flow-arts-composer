@@ -3,6 +3,8 @@ import type { AnimationPanelState } from "#lib/shared/animation-engine/state/ani
 import type { AdditionalLayerProps } from "#lib/shared/animation-engine/domain/types/trail-capture-types.js";
 import type { TunnelPropColorPair } from "#lib/shared/sequence-viewer/tunnel/tunnel-prop-colors.js";
 import type { VideoOpenerImage } from "./video-opener-frame";
+import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
+import type { VideoCarouselPlacement } from "#lib/shared/video-export/domain/video-carousel.js";
 
 export type VideoExportFormat = "webm" | "mp4";
 
@@ -63,6 +65,12 @@ export interface VideoExportOrchestratorOptions {
    */
   openerImage?: VideoOpenerImage;
   openerHoldBeats?: number;
+  /**
+   * Attach the beat carousel to this side of the card (word header over the
+   * animation). Its beat dots replace the progress bar. Ignored by composite
+   * and square-override (tunnel/art) exports. Omitted or "off": no carousel.
+   */
+  carousel?: VideoCarouselPlacement;
   /** Prop type strings (e.g. "staff"). Drive the prop BODY textures the offscreen
    *  export engine loads — without them the export falls back to global settings
    *  (default "staff") and on the QR landing page (no DI bootstrap) renders the
@@ -79,6 +87,11 @@ export interface VideoExportOrchestratorOptions {
    */
   leftMotionVisible?: boolean;
   rightMotionVisible?: boolean;
+  /** Pin the fan build instead of following the baking browser's Settings;
+   *  release examples show one fan look whatever that browser has stored. */
+  fanAppearance?: FanAppearance;
+  /** Draw the grid. Omitted → shown, as the live view does. */
+  gridVisible?: boolean;
   /**
    * Optional per-frame overlay drawn on top of the composited animation frame
    * (after the black flatten + canvas layers + path lines), in the output-square

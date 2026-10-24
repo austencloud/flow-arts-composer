@@ -20,7 +20,9 @@
 
   import { useThrelte, useTask } from "@threlte/core";
   import { EffectMotionClock } from "./scene-effects/effect-motion-clock";
-  import { onDestroy } from "svelte";
+  import { flushSync, onDestroy } from "svelte";
+  import { resolveCapturedPropTransforms } from "./captured-prop-transforms";
+  import { usePropEffectStages } from "./prop-effect-stages";
   import { tryGetViewer3DContext } from "../context/viewer-3d-context";
   import { Vector3, Object3D, Matrix3, type Camera } from "three";
   import Trail3D from "./trails/Trail3D.svelte";
@@ -183,6 +185,7 @@
   const propBuild = $derived(propBuildOverride ?? propFinishState.build);
 
   const { scene, camera } = useThrelte();
+  const { sources: effectsSourceStage } = usePropEffectStages();
   const qualityTierDetector = getQualityTierDetector();
   const adaptiveQuality = tryGetAdaptiveQualityContext();
   const qualityTier = $derived(
@@ -232,6 +235,25 @@
       ),
     ]),
   ]);
+
+  // Effects drawn by Svelte children fed from the frame update's props:
+  // trails here and the seven in EffectsLayer. Only they need that data
+  // flushed synchronously each frame. LED, fire and charcoal renderers are fed
+  // imperatively, and a flushSync per performer re-walks the whole effect tree,
+  // which a scene with dozens of performers pays for many times a frame.
+  const PROP_FED_EFFECTS: ReadonlySet<string> = new Set([
+    "trails",
+    "goo",
+    "bubbles",
+    "smoke",
+    "petals",
+    "sparkles",
+    "zap",
+    "ghost",
+  ]);
+  const needsSyncFlush = $derived(
+    layerActiveEffects.some((effect) => PROP_FED_EFFECTS.has(effect))
+  );
 
   // Brighter HDR core on capable tiers so the scene bloom pass makes trails
   // glow (presence). LOW keeps the additive Gaussian halo alone - no bloom
@@ -739,7 +761,11 @@
    */
   function updateEffectsFrame(delta: number): void {
     pooledFrame.playing = isPlaying;
-    pooledFrame.motionDelta = motionClock.advance(delta, currentStep, isPlaying);
+    pooledFrame.motionDelta = motionClock.advance(
+      delta,
+      currentStep,
+      isPlaying
+    );
     pooledFrame.sources.length = 0;
     if (!isPlaying) {
       tipBridge.reset();
@@ -918,29 +944,55 @@
     // PerformerRig's external compatibility API renders the left prop through
     // bluePropState/blueHandPos and the right through redPropState/redHandPos.
     // Effects must preserve that mapping until the scene package migrates too.
-    const visualLeftProp = leftPropState;
-    const visualRightProp = rightPropState;
+    const capturedProps = resolveCapturedPropTransforms(effectsParentRef);
+    const capturedLeft = capturedProps?.[0];
+    const capturedRight = capturedProps?.[1];
+    const visualLeftProp =
+      capturedLeft?.visible === false ? null : leftPropState;
+    const visualRightProp =
+      capturedRight?.visible === false ? null : rightPropState;
 
     // Compute rig-local center for each visual prop.
-    const leftRigCenter = visualLeftProp
-      ? resolveRigLocalPropCenter3D(visualLeftProp.worldPosition, leftHandPos)
-      : null;
+    const leftRigCenter = capturedLeft
+      ? capturedLeft.visible
+        ? new Vector3().setFromMatrixPosition(capturedLeft.bodyToEffects)
+        : null
+      : visualLeftProp
+        ? resolveRigLocalPropCenter3D(visualLeftProp.worldPosition, leftHandPos)
+        : null;
 
-    const rightRigCenter = visualRightProp
-      ? resolveRigLocalPropCenter3D(visualRightProp.worldPosition, rightHandPos)
-      : null;
+    const rightRigCenter = capturedRight
+      ? capturedRight.visible
+        ? new Vector3().setFromMatrixPosition(capturedRight.bodyToEffects)
+        : null
+      : visualRightProp
+        ? resolveRigLocalPropCenter3D(
+            visualRightProp.worldPosition,
+            rightHandPos
+          )
+        : null;
 
-    if (visualLeftProp && leftRigCenter) {
-      const result = tipBridge.update(
-        0,
-        visualLeftProp,
-        leftRigCenter,
-        staffHalfLength,
-        motionDt,
-        leftPropType,
-        propBuild,
-        propScale
-      );
+    if ((visualLeftProp || capturedLeft) && leftRigCenter) {
+      const result = capturedLeft
+        ? tipBridge.updateFromMatrix(
+            0,
+            capturedLeft.bodyToEffects,
+            staffHalfLength,
+            motionDt,
+            leftPropType,
+            propBuild,
+            propScale
+          )
+        : tipBridge.update(
+            0,
+            visualLeftProp!,
+            leftRigCenter,
+            staffHalfLength,
+            motionDt,
+            leftPropType,
+            propBuild,
+            propScale
+          );
       leftEffectTips = result.tips;
       result.tips.forEach((tip, emitterIndex) => {
         // The tip owns its slot and its effect key. A single-ended prop
@@ -1033,17 +1085,27 @@
       leftEffectTips = [];
     }
 
-    if (visualRightProp && rightRigCenter) {
-      const result = tipBridge.update(
-        1,
-        visualRightProp,
-        rightRigCenter,
-        staffHalfLength,
-        motionDt,
-        rightPropType,
-        propBuild,
-        propScale
-      );
+    if ((visualRightProp || capturedRight) && rightRigCenter) {
+      const result = capturedRight
+        ? tipBridge.updateFromMatrix(
+            1,
+            capturedRight.bodyToEffects,
+            staffHalfLength,
+            motionDt,
+            rightPropType,
+            propBuild,
+            propScale
+          )
+        : tipBridge.update(
+            1,
+            visualRightProp!,
+            rightRigCenter,
+            staffHalfLength,
+            motionDt,
+            rightPropType,
+            propBuild,
+            propScale
+          );
       rightEffectTips = result.tips;
       result.tips.forEach((tip, emitterIndex) => {
         // The tip owns its slot and its effect key. A single-ended prop
@@ -1160,14 +1222,17 @@
       leftIsMoonFan &&
       leftLedAssigned &&
       leftRigCenter &&
-      visualLeftProp
+      (visualLeftProp || capturedLeft)
     ) {
       leftMoonDiffuser?.update({
-        propState: visualLeftProp,
+        propState: visualLeftProp ?? undefined,
+        bodyToEffects: capturedLeft?.bodyToEffects,
         rigLocalCenter: leftRigCenter,
         ledColors: moonLedColors,
         brightness: ledBrightness,
-        scale: (leftPropType === PropType.BIGFAN ? 1.4 : 1) * propScale,
+        scale:
+          (leftPropType === PropType.BIGFAN ? 1.4 : 1) *
+          (capturedLeft ? 1 : propScale),
       });
     } else {
       leftMoonDiffuser?.reset();
@@ -1177,14 +1242,17 @@
       rightIsMoonFan &&
       rightLedAssigned &&
       rightRigCenter &&
-      visualRightProp
+      (visualRightProp || capturedRight)
     ) {
       rightMoonDiffuser?.update({
-        propState: visualRightProp,
+        propState: visualRightProp ?? undefined,
+        bodyToEffects: capturedRight?.bodyToEffects,
         rigLocalCenter: rightRigCenter,
         ledColors: moonLedColors,
         brightness: ledBrightness,
-        scale: (rightPropType === PropType.BIGFAN ? 1.4 : 1) * propScale,
+        scale:
+          (rightPropType === PropType.BIGFAN ? 1.4 : 1) *
+          (capturedRight ? 1 : propScale),
       });
     } else {
       rightMoonDiffuser?.reset();
@@ -1332,9 +1400,16 @@
   // Threlte render-loop: call the extracted update function each frame.
   // During offline export, Threlte is in 'manual' render mode so this
   // only fires when advance() is called - no gating needed.
-  useTask((delta) => {
-    updateEffectsFrame(delta);
-  });
+  useTask(
+    (delta) => {
+      // Trail and effects-layer props must reach their consumers before the
+      // particle stage; with none of those effects on, the normal batched
+      // flush is enough.
+      if (needsSyncFlush) flushSync(() => updateEffectsFrame(delta));
+      else updateEffectsFrame(delta);
+    },
+    { stage: effectsSourceStage }
+  );
 
   // Keep the bounded trail renderers mounted for every real prop end. The
   // selected effect only changes their visibility, so choosing Trails never

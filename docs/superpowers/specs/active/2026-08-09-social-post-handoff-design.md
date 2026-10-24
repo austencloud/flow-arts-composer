@@ -259,7 +259,7 @@ that changes that.
 
 - Post history / "already posted" marker on a sequence.
 - Scheduled posting.
-- Multi-image carousel (`media-bundler.ts` already models this).
+- Multi-image carousel (the `media-bundler.ts` that modelled this was removed 2026-10-22).
 
 ### Post Studio hands off through this sheet (added 2026-08-23)
 

@@ -31,8 +31,14 @@
  */
 
 import { spawnSync } from "node:child_process";
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+
+import {
+  hasSharedNodeModules,
+  workspaceTsPaths,
+} from "./lib/workspace-resolution.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const OWNED_PREFIXES = ["src/", "tests/"];
@@ -48,20 +54,79 @@ function ownsFile(rawPath) {
   return OWNED_PREFIXES.some((prefix) => path.startsWith(prefix));
 }
 
-const result = spawnSync(
-  process.execPath,
-  [
-    resolve(ROOT, "node_modules/typescript/bin/tsc"),
-    "--noEmit",
-    "--incremental",
-    "false",
-    "--pretty",
-    "false",
-    "-p",
-    resolve(ROOT, "tsconfig.json"),
-  ],
-  { cwd: ROOT, encoding: "utf8" }
-);
+const posix = (path) => path.replace(/\\/g, "/");
+
+/**
+ * The tsconfig a linked worktree needs, or null in a checkout that owns its
+ * node_modules (the primary, CI, d2), which keeps checking tsconfig.json as is.
+ *
+ * SvelteKit writes the config tsconfig.json extends to
+ * `node_modules/$app/tsconfig.json`, with `rootDirs` relative to that file. In
+ * a worktree that file sits behind the node_modules junction, so tsc reads it
+ * from the primary checkout and looks for every route's `./$types` in the
+ * primary's `.svelte-kit`: 153 false errors in src/routes on 2026-10-22.
+ * Workspace packages resolve to the primary's packages/ the same way. This
+ * config extends tsconfig.json and points both back at this checkout. It lives
+ * in this checkout's `.svelte-kit` for the length of one run.
+ */
+function writeWorktreeTsconfig() {
+  if (!hasSharedNodeModules(ROOT)) return null;
+
+  // Keep any path aliases SvelteKit generated (kit.alias), rebased from
+  // node_modules/$app onto this checkout.
+  const kitDir = resolve(ROOT, "node_modules/$app");
+  const kitPaths = {};
+  try {
+    const kit = JSON.parse(
+      readFileSync(resolve(kitDir, "tsconfig.json"), "utf8")
+    );
+    for (const [key, targets] of Object.entries(
+      kit.compilerOptions?.paths ?? {}
+    )) {
+      kitPaths[key] = targets.map((target) => posix(resolve(kitDir, target)));
+    }
+  } catch {
+    // No generated config yet: tsc reports the missing `extends` itself.
+  }
+
+  const file = resolve(
+    ROOT,
+    ".svelte-kit",
+    `tsc-gate.${process.pid}.tsconfig.json`
+  );
+  const config = {
+    extends: posix(resolve(ROOT, "tsconfig.json")),
+    compilerOptions: {
+      rootDirs: [posix(ROOT), posix(resolve(ROOT, ".svelte-kit/types"))],
+      paths: { ...kitPaths, ...workspaceTsPaths(ROOT) },
+    },
+  };
+  mkdirSync(dirname(file), { recursive: true });
+  writeFileSync(file, `${JSON.stringify(config, null, 2)}\n`);
+  return file;
+}
+
+const worktreeTsconfig = writeWorktreeTsconfig();
+
+let result;
+try {
+  result = spawnSync(
+    process.execPath,
+    [
+      resolve(ROOT, "node_modules/typescript/bin/tsc"),
+      "--noEmit",
+      "--incremental",
+      "false",
+      "--pretty",
+      "false",
+      "-p",
+      worktreeTsconfig ?? resolve(ROOT, "tsconfig.json"),
+    ],
+    { cwd: ROOT, encoding: "utf8" }
+  );
+} finally {
+  if (worktreeTsconfig) rmSync(worktreeTsconfig, { force: true });
+}
 
 if (result.error) {
   console.error(`tsc could not be started: ${result.error.message}`);

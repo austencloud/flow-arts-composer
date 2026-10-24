@@ -47,6 +47,7 @@ const geometryTrace = read(
 const motionSurface = read(
   "src/lib/shared/sequence-viewer/components/ViewerMotionSurface.svelte"
 );
+const viewer3DCanvas = read("src/lib/shared/3d/components/Viewer3DCanvas.svelte");
 const tunnelController = read(
   "src/lib/shared/sequence-viewer/tunnel/tunnel-view-controller.svelte.ts"
 );
@@ -387,7 +388,14 @@ describe("Sequence Viewer transition orchestration contract", () => {
     expect(motionSurface).toContain(
       "is2DActive || (isTunnelActive && !keep3DUntilTunnelPaints)"
     );
-    expect(motionSurface).toContain('initialRevealMode: "gated"');
+    // The viewer opens on a plain stage the world builds in around
+    // (5eaea04cbc); a viewer the worker renderer can take still falls back
+    // to the gated curtain, decided once so the opening cannot swap midway.
+    expect(motionSurface).toContain('initialRevealMode: "build"');
+    expect(viewer3DCanvas).toMatch(
+      /buildOpening === false\s*\? "gated"\s*: "build"/
+    );
+    expect(viewer3DCanvas).toContain("buildOpening = !workerEligible;");
     // One loading bar from "Opening 3D" to the reveal: the host's
     // placeholder and the scene's curtain show the same session.
     expect(motionSurface).toContain("provideSceneLoadingSession()");

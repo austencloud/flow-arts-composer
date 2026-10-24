@@ -30,7 +30,6 @@
   import { getElementImagePath } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import { elementalDisplayLabel } from "#lib/shared/pictograph/shared/components/elemental-display-label.js";
   import {
-    DEFAULT_POI_STRING_OPTIONS,
     HARD_STRAY_METRES,
     STEER_STRAY_METRES,
     solvePoiHand,
@@ -38,6 +37,7 @@
     type PoiHandResult,
     type PoiHandSample,
   } from "./poi-string-check.js";
+  import { DEFAULT_POI_STRING_OPTIONS } from "#lib/shared/poi/poi-hand-track.js";
 
   type Side = "left" | "right";
   const SIDES: readonly Side[] = ["left", "right"];
@@ -83,8 +83,8 @@
     { value: "anti", label: "Anti → Pro" },
     { value: "pro", label: "Pro → Anti" },
   ];
-  const tone = (
-    options: { value: string; label: string }[],
+  const tone = <T extends string>(
+    options: { value: T; label: string }[],
     t: "blue" | "red"
   ) => options.map((o) => ({ ...o, tone: t }));
 

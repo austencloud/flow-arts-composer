@@ -1,5 +1,6 @@
 #include "FlowFestCrowd.h"
 #include "FlowFestAvatarComponent.h"
+#include "FlowFestActivityPose.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 #include "Misc/AutomationTest.h"
@@ -197,7 +198,7 @@ bool FFlowFestCrowdIntentTest::RunTest(const FString& Parameters)
     TestTrue(TEXT("Hunger chooses food"), GoingToFood.DesiredActivity == EFlowFestCrowdActivity::Food);
     TestEqual(TEXT("Food has a real anchor"), GoingToFood.GoalAnchorId, FString(TEXT("food")));
     TestTrue(TEXT("Guest owns equipment"), GoingToFood.HasEquipment());
-    TestFalse(TEXT("Food stows equipment"), GoingToFood.bPropInHands);
+    TestTrue(TEXT("Guest carries equipment until reaching food"), GoingToFood.bPropInHands);
     TestTrue(TEXT("Travel is observable"), GoingToFood.Activity == EFlowFestCrowdActivity::Travel);
 
     const FString Saved = Crowd.SerializeState();
@@ -520,6 +521,95 @@ bool FFlowFestCrowdReinitializeTest::RunTest(const FString& Parameters)
     Fresh.SetTimeOfDay(23.f);
     TestEqual(TEXT("Reused crowd matches fresh selected-time state"),
         Reused.SerializeState(), Fresh.SerializeState());
+    return true;
+}
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FFlowFestActivityPhaseTest, "FlowFest.Crowd.ActivityPosePhases",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FFlowFestActivityPhaseTest::RunTest(const FString& Parameters)
+{
+    FFlowFestActivityPoseRequest Rest;
+    Rest.Activity = EFlowFestBodyActivity::FloorRest;
+    Rest.Weight = 1.f;
+    TestEqual(TEXT("Rest begins standing"), FFlowFestActivityPose::SeatedWeight(Rest), 0.f);
+    Rest.ElapsedSeconds = FFlowFestActivityPose::RestDescentSeconds;
+    TestEqual(TEXT("Rest reaches seated pose"), FFlowFestActivityPose::SeatedWeight(Rest), 1.f);
+    Rest.ExitSecondsRemaining = FFlowFestActivityPose::RestRiseSeconds * .5f;
+    TestTrue(TEXT("Rest rises before walking"), FFlowFestActivityPose::SeatedWeight(Rest) > 0.f &&
+        FFlowFestActivityPose::SeatedWeight(Rest) < 1.f);
+    Rest.ExitSecondsRemaining = 0.f;
+    TestEqual(TEXT("Rest has stood before route resumes"), FFlowFestActivityPose::SeatedWeight(Rest), 0.f);
+    TestEqual(TEXT("Scoop starts at bowl"), FFlowFestActivityPose::BiteWeight(0.f), 0.f);
+    TestEqual(TEXT("Food reaches mouth"), FFlowFestActivityPose::BiteWeight(2.2f), 1.f);
+    TestEqual(TEXT("Food returns to bowl"), FFlowFestActivityPose::BiteWeight(4.f), 0.f);
+    return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FFlowFestRestDepartureTest, "FlowFest.Crowd.RestStandsBeforeTravel",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FFlowFestRestDepartureTest::RunTest(const FString& Parameters)
+{
+    TMap<FString, FVector2D> Landmarks;
+    Landmarks.Add(TEXT("gate"), FVector2D(0.f, 0.f));
+    Landmarks.Add(TEXT("parking"), FVector2D(10.f, 0.f));
+    Landmarks.Add(TEXT("camp-lower"), FVector2D(20.f, 0.f));
+    Landmarks.Add(TEXT("camp-upper"), FVector2D(25.f, 0.f));
+    Landmarks.Add(TEXT("camp-car"), FVector2D(30.f, 0.f));
+    Landmarks.Add(TEXT("workshop"), FVector2D(45.f, 0.f));
+    Landmarks.Add(TEXT("food"), FVector2D(47.f, 0.f));
+    Landmarks.Add(TEXT("fire"), FVector2D(60.f, 0.f));
+    TArray<TArray<FVector2D>> Roads;
+    Roads.Add({FVector2D(0.f, 0.f), FVector2D(60.f, 0.f)});
+    FFlowFestCrowd Crowd;
+    Crowd.Initialize(Landmarks, Roads, 17.f);
+    FFlowFestCrowdSnapshot Saved = Crowd.CaptureSnapshot();
+    FFlowFestCrowdAgent& Resting = Saved.Agents[3];
+    Resting.Position = FVector2D(20.f, 0.f);
+    Resting.Destination = Resting.Position;
+    Resting.Route.Reset();
+    Resting.RouteIndex = 0;
+    Resting.Activity = EFlowFestCrowdActivity::Rest;
+    Resting.DesiredActivity = EFlowFestCrowdActivity::Rest;
+    Resting.GoalAnchorId = Resting.HomeId;
+    Resting.DestinationId = Resting.HomeId + TEXT(":9:-1");
+    Resting.bActionStarted = true;
+    Resting.ActionStartedAt = 0.f;
+    Resting.ActionUntil = 0.f;
+    Resting.Needs.Hunger = 1.f;
+    Resting.Needs.Fatigue = 0.f;
+    Resting.Needs.Social = Resting.Needs.Practice = 0.f;
+    TestTrue(TEXT("Rest fixture restores"), Crowd.RestoreSnapshot(Saved));
+    Crowd.Tick(.1f);
+    const FFlowFestCrowdAgent& Starting = Crowd.GetAgents()[3];
+    TestEqual(TEXT("Next intent becomes food"), Starting.DesiredActivity, EFlowFestCrowdActivity::Food);
+    TestEqual(TEXT("Body remains at rest during rise"), Starting.Activity, EFlowFestCrowdActivity::Rest);
+    TestFalse(TEXT("Equipment stays stowed during the rise"), Starting.bPropInHands);
+    TestTrue(TEXT("Route exists but does not advance"), Starting.Route.Num() > 0 &&
+        Starting.Position.Equals(FVector2D(20.f, 0.f), KINDA_SMALL_NUMBER));
+    TestTrue(TEXT("Stand phase persists through save"), Crowd.SerializeState().Contains(TEXT("standUntil")));
+    for (int32 I = 0; I < 12; ++I) Crowd.Tick(.1f);
+    TestEqual(TEXT("Walk begins after stand"), Crowd.GetAgents()[3].Activity, EFlowFestCrowdActivity::Travel);
+    TestTrue(TEXT("Equipment is carried on the way to food"), Crowd.GetAgents()[3].bPropInHands);
+    FFlowFestCrowdSnapshot Eating = Crowd.CaptureSnapshot();
+    FFlowFestCrowdAgent& AtFood = Eating.Agents[3];
+    AtFood.Position = AtFood.Destination;
+    AtFood.RouteIndex = AtFood.Route.Num();
+    AtFood.Activity = EFlowFestCrowdActivity::Food;
+    AtFood.bActionStarted = true;
+    AtFood.ActionUntil = Eating.ElapsedSeconds + 10.f;
+    TestTrue(TEXT("Food fixture restores"), Crowd.RestoreSnapshot(Eating));
+    Crowd.Tick(.1f);
+    TestFalse(TEXT("Equipment is stowed for the meal"), Crowd.GetAgents()[3].bPropInHands);
+    FFlowFestCrowdSnapshot Queuing = Crowd.CaptureSnapshot();
+    FFlowFestCrowdAgent& AtQueue = Queuing.Agents[3];
+    AtQueue.Activity = AtQueue.DesiredActivity = EFlowFestCrowdActivity::Queue;
+    AtQueue.GoalAnchorId = TEXT("fire");
+    AtQueue.Needs.Hunger = AtQueue.Needs.Fatigue = 0.f;
+    AtQueue.ActionUntil = Queuing.ElapsedSeconds + 10.f;
+    TestTrue(TEXT("Queue fixture restores"), Crowd.RestoreSnapshot(Queuing));
+    Crowd.Tick(.1f);
+    TestTrue(TEXT("Queued performer keeps equipment in hand"), Crowd.GetAgents()[3].bPropInHands);
     return true;
 }
 #endif

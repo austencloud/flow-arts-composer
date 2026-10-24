@@ -908,6 +908,17 @@ export const MUSEUM_ROOMS: RoomNode[] = [
     theme: "outdoor",
     minInteriorWidth: 60,
     minInteriorHeight: 55,
+    // The village fire sits at the room's centre, and the village is turned
+    // so its audience side faces west. Opened on its own
+    // (?room=collaboration), start on the audience spot, 11 m west of the
+    // fire on its line (the village rules' campfire.audienceDistance), so
+    // the opening lesson fills a standing view.
+    spawn: { offsetX: -0.24, offsetY: 0, facing: "east" },
+    // The forest is this room's envelope. Tile walls and a ceiling here
+    // boxed the clearing in at 21 m: the lit ground stopped at a dark wall
+    // band on the horizon, with the wall top and ceiling edge as a grey
+    // seam. Collision still comes from the grid.
+    roomPresentation: { suppressTileGeometry: true },
     description:
       "Birds chirping. Trees. Light. Warmth. Real people spinning together. " +
       "Imperfect technique. Fully alive. The activity that 40,000 years of history " +
@@ -938,6 +949,8 @@ export const MUSEUM_ROOMS: RoomNode[] = [
         minMargin: 2,
       },
       east: EMPTY_WALL,
+      // Centred, so the walk comes in on the fire's line, behind the
+      // audience spot, facing the lesson.
       west: {
         segments: [
           { type: "gap", minTiles: 3 },
@@ -945,6 +958,7 @@ export const MUSEUM_ROOMS: RoomNode[] = [
           { type: "gap", minTiles: 3 },
         ],
         minMargin: 2,
+        alignment: "center",
       },
     },
     performers: [

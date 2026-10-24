@@ -5,6 +5,9 @@
   import PanelState from "#lib/shared/components/panel/PanelState.svelte";
   import SmartCollectionRuleSummary from "#lib/features/library/components/SmartCollectionRuleSummary.svelte";
   import type { SmartFilterSpec } from "#lib/shared/library/domain/models/collection.js";
+  import BrowseHeaderSlot from "#lib/features/browse/shared/components/BrowseHeaderSlot.svelte";
+  import { tryGetBrowseHeaderContext } from "#lib/shared/browse/context/browse-header-context.js";
+  import { tryGetBrowseQueryContext } from "#lib/shared/browse/state/browse-query-state.svelte.js";
 
   interface Props {
     name?: string;
@@ -19,6 +22,11 @@
     error?: boolean;
     readOnly?: boolean;
     showBack?: boolean;
+    /**
+     * A side-by-side layout shows this surface beside its list, so it keeps
+     * its own head instead of handing the name and actions to the Browse bar.
+     */
+    embedded?: boolean;
     editing?: boolean;
     onBack?: () => void;
     onEdit?: () => void;
@@ -41,6 +49,7 @@
     error = false,
     readOnly = false,
     showBack = true,
+    embedded = false,
     editing = false,
     onBack,
     onEdit,
@@ -56,7 +65,50 @@
       : t("browse_audit_community")
   );
   const empty = $derived(!loading && !error && matchCount === 0);
+  // The scope bar's words narrow the matches too; when they empty the list,
+  // say so rather than blaming the rule.
+  const browseQuery = tryGetBrowseQueryContext();
+  const searchText = $derived(browseQuery?.search.trim() ?? "");
+  // Inside Browse the bar owns the name, the title editor and the actions.
+  const header = tryGetBrowseHeaderContext();
+  const inBar = $derived(!!header && !embedded);
 </script>
+
+{#snippet headActions()}
+  {#if !readOnly && !editing}
+    <div class="head-actions" style:--smart-color={color}>
+      {#if onEdit}
+        <PanelButton
+          variant="secondary"
+          ariaLabel={t("browse_verified_edit_smart_rule")}
+          onclick={onEdit}
+        >
+          <i class="fas fa-sliders" aria-hidden="true"></i>
+          <span class="edit-label">{t("browse_ui_edit_rule")}</span>
+        </PanelButton>
+      {/if}
+      {#if onOptions}
+        <button
+          type="button"
+          class="icon-button"
+          aria-label={t("browse_ui_smart_collection_options")}
+          onclick={onOptions}
+        >
+          <i class="fas fa-ellipsis-vertical" aria-hidden="true"></i>
+        </button>
+      {/if}
+    </div>
+  {/if}
+{/snippet}
+
+{#if inBar}
+  <BrowseHeaderSlot
+    leaf={name}
+    leafContent={editing && titleEditor ? titleEditor : null}
+    actions={headActions}
+    accent={color}
+  />
+{/if}
 
 <section
   class="smart-detail"
@@ -65,7 +117,7 @@
   aria-label={name}
 >
   {#if contentFirst}
-    {#if showBack && onBack}
+    {#if !inBar && showBack && onBack}
       <div class="content-first-back">
         <button
           type="button"
@@ -78,6 +130,26 @@
         </button>
       </div>
     {/if}
+  {:else if inBar}
+    <div class="detail-meta">
+      <span class="collection-icon" aria-hidden="true">
+        <i class={`fas ${icon}`}></i>
+      </span>
+      <div class="title-block">
+        {#if readOnly}
+          <span class="built-in-badge">
+            <i class="fas fa-lock" aria-hidden="true"></i>
+            {t("browse_audit_built_in")}
+          </span>
+        {/if}
+        <p>
+          {description ??
+            (readOnly
+              ? t("browse_verified_builtin_smart_description")
+              : t("browse_verified_smart_description"))}
+        </p>
+      </div>
+    </div>
   {:else}
     <header class="detail-head">
       {#if showBack && onBack}
@@ -120,30 +192,7 @@
         </div>
       {/if}
 
-      {#if !readOnly && !editing}
-        <div class="head-actions">
-          {#if onEdit}
-            <PanelButton
-              variant="secondary"
-              ariaLabel={t("browse_verified_edit_smart_rule")}
-              onclick={onEdit}
-            >
-              <i class="fas fa-sliders" aria-hidden="true"></i>
-              <span class="edit-label">{t("browse_ui_edit_rule")}</span>
-            </PanelButton>
-          {/if}
-          {#if onOptions}
-            <button
-              type="button"
-              class="icon-button"
-              aria-label={t("browse_ui_smart_collection_options")}
-              onclick={onOptions}
-            >
-              <i class="fas fa-ellipsis-vertical" aria-hidden="true"></i>
-            </button>
-          {/if}
-        </div>
-      {/if}
+      {@render headActions()}
     </header>
   {/if}
 
@@ -175,7 +224,22 @@
         })}
       />
     {:else if empty}
-      {#if !readOnly && onEdit}
+      {#if searchText}
+        <PanelState
+          type="empty"
+          icon="fa-magnifying-glass"
+          title={t("browse_scope_no_search_matches", { query: searchText })}
+        >
+          {#snippet actions()}
+            <PanelButton
+              variant="secondary"
+              onclick={() => browseQuery?.setSearch("")}
+            >
+              {t("browse_clear_search")}
+            </PanelButton>
+          {/snippet}
+        </PanelState>
+      {:else if !readOnly && onEdit}
         <PanelState
           type="empty"
           icon="fa-wand-magic-sparkles"
@@ -226,6 +290,38 @@
     align-items: center;
     gap: 12px;
     padding: clamp(12px, 2cqi, 20px);
+  }
+
+  /* With the Browse bar carrying the name and actions, the first row of the
+     content keeps the icon, the built-in badge and the description. */
+  .detail-meta {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 12px;
+    padding: clamp(10px, 1.6cqi, 16px) clamp(12px, 2cqi, 20px) 0;
+  }
+
+  .detail-meta .title-block {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .detail-meta .title-block p {
+    margin: 0;
+  }
+
+  @container browse-header (max-width: 560px) {
+    .edit-label {
+      display: none;
+    }
+
+    .head-actions :global(.panel-btn) {
+      width: 44px;
+      padding: 0;
+    }
   }
 
   .icon-button {

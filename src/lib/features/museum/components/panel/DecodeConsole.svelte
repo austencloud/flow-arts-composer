@@ -11,6 +11,7 @@
   import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import { MUSEUM_EXHIBIT_SEQUENCES } from "../../data/museum-exhibit-sequences";
   import { openInComposer } from "../../services/museum-composer-handoff";
+  import { getMuseumPocket } from "../../services/museum-pocket.svelte";
   import StickyNote from "./StickyNote.svelte";
 
   interface Props {
@@ -95,6 +96,13 @@
 
   $effect(() => () => {
     if (timer) clearTimeout(timer);
+  });
+
+  // "Read it with your hands": once the key has run, the visitor carries the
+  // sequence out of the room (the Room of Collaboration lets them teach it).
+  const pocket = getMuseumPocket();
+  $effect(() => {
+    if (done) pocket.carry(sequenceId, reveal);
   });
 
   let opening = $state(false);

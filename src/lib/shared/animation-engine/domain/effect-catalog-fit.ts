@@ -74,13 +74,14 @@ const ROSTER_COLUMNS = 4;
 const LIST_COLUMNS = 2;
 
 /** Four pictures across in the effects studio; narrow inspectors can request
- *  two or three larger pictures. Null where even that arrangement cannot fit. */
+ *  two or three larger pictures, and the quick picker's grid on a wide player
+ *  more than four. Null where even that arrangement cannot fit. */
 export function fitEffectRoster({
   width,
   count,
   columns = ROSTER_COLUMNS,
 }: Pick<EffectCatalogBox, "width" | "count"> & {
-  columns?: 2 | 3 | 4;
+  columns?: number;
 }): EffectCatalogFit | null {
   if (width <= 0 || count <= 0) return null;
   const cols = columns;

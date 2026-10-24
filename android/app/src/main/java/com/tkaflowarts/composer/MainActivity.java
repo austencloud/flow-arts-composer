@@ -10,6 +10,7 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         // Must precede super.onCreate: the bridge registers plugins during it.
         registerPlugin(TkaSharingShortcutsPlugin.class);
+        registerPlugin(TkaFileSharePlugin.class);
         super.onCreate(savedInstanceState);
     }
 

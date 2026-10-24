@@ -25,6 +25,9 @@
   const displayName = $derived(
     user?.displayName || user?.email || t("tab_settings_profile")
   );
+  // With no display name the label is the email address itself. Marking it
+  // keeps the address out of PostHog autocapture and session replay.
+  const labelIsEmail = $derived(!user?.displayName && Boolean(user?.email));
   const photoURL = $derived(user?.photoURL ?? null);
   const accountSetupState = tryGetAccountSetupContext();
   const showSetupStatus = $derived(
@@ -68,7 +71,9 @@
       >
         <RobustAvatar src={photoURL} name={displayName} customSize={32} />
         <span class="account-copy">
-          <span class="account-label">{displayName}</span>
+          <span class="account-label" class:ph-no-capture={labelIsEmail}
+            >{displayName}</span
+          >
           {#if showSetupStatus && accountSetupState}
             <span class="setup-status" transition:growFade>
               {t("nav_setup_remaining", {
@@ -85,7 +90,9 @@
       <div class="account-row drawer">
         <RobustAvatar src={photoURL} name={displayName} customSize={32} />
         <span class="account-copy">
-          <span class="account-label">{displayName}</span>
+          <span class="account-label" class:ph-no-capture={labelIsEmail}
+            >{displayName}</span
+          >
           {#if showSetupStatus && accountSetupState}
             <span class="setup-status" transition:growFade>
               {t("nav_setup_remaining", {
@@ -147,7 +154,9 @@
     </span>
 
     {#if variant !== "collapsed"}
-      <span class="account-label"
+      <span
+        class="account-label"
+        class:ph-no-capture={isFullAccount && labelIsEmail}
         >{isFullAccount ? displayName : t("nav_ui_sign_in")}</span
       >
       {#if isFullAccount}

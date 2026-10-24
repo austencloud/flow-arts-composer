@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   allocateTurns,
   getDefaultMaxTurnIntensity,
+  getTurnPool,
 } from "../../../src/generation/turns/TurnAllocator.js";
 
 describe("TurnAllocator", () => {
@@ -156,6 +157,21 @@ describe("TurnAllocator", () => {
     it("returns 0 for unknown levels", () => {
       expect(getDefaultMaxTurnIntensity(0)).toBe(0);
       expect(getDefaultMaxTurnIntensity(99)).toBe(0);
+    });
+  });
+
+  describe("levels above 3", () => {
+    // Gap 16 of the center point spec: these used to fall back to [0], so a
+    // level 4 request silently built level 1 turns.
+    it.each([4, 5, 6, 99])("refuses level %i instead of falling back to 0 turns", (level) => {
+      expect(() => getTurnPool(level)).toThrow("Level 4 and above are not defined yet");
+      expect(() => allocateTurns(4, level)).toThrow("see the center point spec");
+    });
+
+    it("still serves levels 1 to 3", () => {
+      expect(getTurnPool(1)).toEqual([0]);
+      expect(getTurnPool(2)).toEqual([0, 1, 2, 3]);
+      expect(getTurnPool(3)).toContain("fl");
     });
   });
 });

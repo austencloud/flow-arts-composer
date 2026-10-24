@@ -5,8 +5,9 @@
     parseWordNotation,
     simplifyAndTruncate,
   } from "#lib/shared/foundation/utils/word-simplifier.js";
-  import type { ComponentProps } from "svelte";
-  import WordActionMenu from "#lib/shared/choreo-card/components/WordActionMenu.svelte";
+  import WordActionMenu, {
+    type WordActionTrigger,
+  } from "#lib/shared/choreo-card/components/WordActionMenu.svelte";
   import type { LetterSource } from "#lib/shared/create/domain/spell-models.js";
   import { practiceAnimationStyle } from "../../../state/practice-animation-style.svelte";
   import { getGlyphCache } from "#lib/shared/render/get-glyph-cache.js";
@@ -21,9 +22,6 @@
   const cache = browser ? getGlyphCache() : null;
 
   // Props
-  type WordActionTrigger = Parameters<
-    ComponentProps<typeof WordActionMenu>["trigger"]
-  >[0];
 
   let {
     word = "",

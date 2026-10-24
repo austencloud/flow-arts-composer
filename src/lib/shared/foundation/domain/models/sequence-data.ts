@@ -255,6 +255,13 @@ export interface SequenceData {
      * user action. Cleared by the next explicit user save.
      */
     readonly blockedReason?: string;
+    /**
+     * Epoch ms and content hash of a permission-refused publish. The retry
+     * pass reconsiders such a block at most once a day and only when the
+     * content hash changed (blocked-publish-policy.ts).
+     */
+    readonly blockedAt?: number;
+    readonly blockedContentHash?: string;
   };
 }
 

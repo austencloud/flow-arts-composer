@@ -329,17 +329,16 @@
             </div>
           {/if}
         {:else if inAppBrowser}
-          <div class="email-flow">
+          <!-- Google first: in a webview its button opens this page in the real
+               browser and carries on to Google there, so it is the one-tap
+               path, not a dead end to warn about below the fold. -->
+          <SocialAuthCompact {mode} {onFacebookAuth} />
+          <div class="email-flow in-app-email">
             <div class="email-divider">
               <span>{t("auth_continue_by_email")}</span>
             </div>
             <EmailAuthTabs bind:mode {compact} showModeSwitch={false} />
           </div>
-
-          <p class="provider-warning">
-            {t("auth_social_blocked_browser")}
-          </p>
-          <SocialAuthCompact {mode} {onFacebookAuth} />
         {:else if showPhoneSignIn}
           <div class="email-flow phone-flow">
             <button
@@ -852,16 +851,15 @@
     background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.08));
   }
 
-  .provider-warning,
+  .in-app-email {
+    margin-top: 1rem;
+  }
+
   .provider-error {
     margin: 0.75rem 0 0;
     font-size: var(--font-size-min);
     line-height: 1.45;
     text-align: center;
-  }
-
-  .provider-warning {
-    color: var(--theme-text-dim, rgba(255, 255, 255, 0.72));
   }
 
   .provider-error {

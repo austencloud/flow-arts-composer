@@ -1,9 +1,11 @@
-import { Vector3, Quaternion, Euler } from "three";
+import { Vector3, Quaternion, Euler, Matrix4 } from "three";
 import { TrackingMode } from "#lib/shared/animation-engine/domain/types/trail-types.js";
 import type { PropTipPositions3D, TipPositionData3D } from "./types";
 import {
   propTipAnchorSignature3D,
+  resolvePropTipAnchors3D,
   resolveScaledPropTipAnchors3D,
+  type PropTipAnchor3D,
 } from "./prop-tip-geometry-3d";
 import type { PropBuild } from "@austencloud/scene-3d/worker";
 
@@ -204,7 +206,43 @@ export class TipPositionBridge3D {
       propScale,
       build
     );
+    return this.updateAnchors(
+      propIndex,
+      anchors,
+      (offset) => offset.applyQuaternion(finalQuat).add(center),
+      deltaTime
+    );
+  }
 
+  /** The rendered body already includes geometry scale, rotation and reflection. */
+  updateFromMatrix(
+    propIndex: number,
+    bodyToEffects: Matrix4,
+    staffHalfLength: number,
+    deltaTime: number,
+    propType: string | undefined,
+    build: PropBuild,
+    propScale = 1
+  ): PropTipPositions3D {
+    const anchors = resolvePropTipAnchors3D(
+      propType,
+      staffHalfLength / propScale,
+      build
+    );
+    return this.updateAnchors(
+      propIndex,
+      anchors,
+      (offset) => offset.applyMatrix4(bodyToEffects),
+      deltaTime
+    );
+  }
+
+  private updateAnchors(
+    propIndex: number,
+    anchors: readonly PropTipAnchor3D[],
+    transform: (offset: Vector3) => Vector3,
+    deltaTime: number
+  ): PropTipPositions3D {
     // Swapping the prop mid-playback moves a tip discontinuously. Dropping
     // this prop's history turns that into one zero-velocity frame instead of
     // a jerk spike that fires charcoal and fire bursts out of nowhere.
@@ -221,15 +259,9 @@ export class TipPositionBridge3D {
         propIndex,
         anchor.effectTipIndex,
         anchor.effectKeyIndex,
-        center
-          .clone()
-          .add(
-            new Vector3(
-              anchor.offset.x,
-              anchor.offset.y,
-              anchor.offset.z
-            ).applyQuaternion(finalQuat)
-          ),
+        transform(
+          new Vector3(anchor.offset.x, anchor.offset.y, anchor.offset.z)
+        ),
         emitterOrdinal,
         deltaTime
       )

@@ -1,0 +1,4024 @@
+{
+  "version": "flow-fest-phrase-schedule-v1",
+  "tempoBpm": 60,
+  "lengthBeats": 512,
+  "performers": [
+    {
+      "id": "stage-left",
+      "seed": 11,
+      "characterId": "ch07",
+      "propFamily": "staff",
+      "personality": {
+        "skill": 0.9,
+        "style": 0.15,
+        "energy": 0.6
+      },
+      "home": {
+        "x": -2.25,
+        "z": 0
+      },
+      "areaRadius": 2,
+      "phrases": [
+        {
+          "startBeat": 0,
+          "beats": 32,
+          "sequenceId": "WΩ-W-Ω-",
+          "sequenceName": "WΩ-W-Ω-",
+          "repeats": 2,
+          "plane": "wheel",
+          "beatPlanes": [
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "floor"
+            },
+            {
+              "left": "wheel",
+              "right": "floor"
+            },
+            {
+              "left": "wheel",
+              "right": "floor"
+            },
+            {
+              "left": "wall",
+              "right": "floor"
+            },
+            {
+              "left": "wall",
+              "right": "floor"
+            }
+          ],
+          "mode": "planted",
+          "facingStart": 1.5708,
+          "facingEnd": 1.5708,
+          "facingTarget": 0.5446,
+          "turnBeats": null,
+          "path": null,
+          "rest": false,
+          "timing": {
+            "jitterBeats": -0.002,
+            "tempoDrift": 0.0021
+          }
+        },
+        {
+          "startBeat": 32,
+          "beats": 32,
+          "sequenceId": "RX-LΔ-",
+          "sequenceName": "RX-LΔ-",
+          "repeats": 2,
+          "plane": "wall",
+          "beatPlanes": [
+            {
+              "left": "wheel",
+              "right": "floor"
+            },
+            {
+              "left": "wheel",
+              "right": "floor"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "floor",
+              "right": "wall"
+            },
+            {
+              "left": "floor",
+              "right": "wall"
+            }
+          ],
+          "mode": "planted",
+          "facingStart": 1.5708,
+          "facingEnd": 1.5708,
+          "facingTarget": -0.2319,
+          "turnBeats": null,
+          "path": null,
+          "rest": false,
+          "timing": {
+            "jitterBeats": 0.006,
+            "tempoDrift": -0.0025
+          }
+        },
+        {
+          "startBeat": 64,
+          "beats": 32,
+          "sequenceId": "SΛTO",
+          "sequenceName": "SΛTO",
+          "repeats": 2,
+          "plane": "wall",
+          "beatPlanes": [
+            {
+              "left": "floor",
+              "right": "wall"
+            },
+            {
+              "left": "floor",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            }
+          ],
+          "mode": "planted",
+          "facingStart": 1.5708,
+          "facingEnd": 1.5708,
+          "facingTarget": 0.5009,
+          "turnBeats": null,
+          "path": null,
+          "rest": false,
+          "timing": {
+            "jitterBeats": 0.003,
+            "tempoDrift": -0.0005
+          }
+        },
+        {
+          "startBeat": 96,
+          "beats": 16,
+          "sequenceId": "SZEΘ-",
+          "sequenceName": "SZEΘ-",
+          "repeats": 1,
+          "plane": "wall",
+          "beatPlanes": [
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            }
+          ],
+          "mode": "planted",
+          "facingStart": 1.5708,
+          "facingEnd": 1.5708,
+          "facingTarget": -0.3789,
+          "turnBeats": null,
+          "path": null,
+          "rest": false,
+          "timing": {
+            "jitterBeats": 0,
+            "tempoDrift": -0.0024
+          }
+        },
+        {
+          "startBeat": 112,
+          "beats": 16,
+          "sequenceId": "ΛVΛR",
+          "sequenceName": "ΛVΛR",
+          "repeats": 2,
+          "plane": "wall",
+          "beatPlanes": [
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            }
+          ],
+          "mode": "planted",
+          "facingStart": 1.5708,
+          "facingEnd": 1.5708,
+          "facingTarget": -0.3789,
+          "turnBeats": null,
+          "path": null,
+          "rest": false,
+          "timing": {
+            "jitterBeats": 0.004,
+            "tempoDrift": 0.0028
+          }
+        },
+        {
+          "startBeat": 128,
+          "beats": 24,
+          "sequenceId": "PQV",
+          "sequenceName": "PQV",
+          "repeats": 2,
+          "plane": "wheel",
+          "beatPlanes": [
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            }
+          ],
+          "mode": "travelling",
+          "facingStart": 1.5708,
+          "facingEnd": 1.5708,
+          "facingTarget": 1.7556,
+          "turnBeats": null,
+          "path": {
+            "from": {
+              "x": -2.25,
+              "z": 0
+            },
+            "to": {
+              "x": -2.563,
+              "z": 1.674
+            },
+            "steps": 3,
+            "beatsPerStep": 0.5
+          },
+          "rest": false,
+          "timing": {
+            "jitterBeats": 0.01,
+            "tempoDrift": 0.0015
+          }
+        },
+        {
+          "startBeat": 152,
+          "beats": 4,
+          "sequenceId": "PQV",
+          "sequenceName": "PQV",
+          "repeats": 1,
+          "plane": "wheel",
+          "beatPlanes": [
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            }
+          ],
+          "mode": "planted",
+          "facingStart": 1.5708,
+          "facingEnd": 1.5708,
+          "facingTarget": 1.7556,
+          "turnBeats": null,
+          "path": null,
+          "rest": true,
+          "timing": {
+            "jitterBeats": 0,
+            "tempoDrift": 0
+          }
+        },
+        {
+          "startBeat": 156,
+          "beats": 32,
+          "sequenceId": "WΩ-W-Ω-",
+          "sequenceName": "WΩ-W-Ω-",
+          "repeats": 2,
+          "plane": "wall",
+          "beatPlanes": [
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            }
+          ],
+          "mode": "planted",
+          "facingStart": 1.5708,
+          "facingEnd": 1.5708,
+          "facingTarget": 0.5339,
+          "turnBeats": null,
+          "path": null,
+          "rest": false,
+          "timing": {
+            "jitterBeats": -0.011,
+            "tempoDrift": -0.0026
+          }
+        },
+        {
+          "startBeat": 188,
+          "beats": 32,
+          "sequenceId": "SZEΘ-",
+          "sequenceName": "SZEΘ-",
+          "repeats": 2,
+          "plane": "wall",
+          "beatPlanes": [
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            }
+          ],
+          "mode": "planted",
+          "facingStart": 1.5708,
+          "facingEnd": 1.5708,
+          "facingTarget": 0.4495,
+          "turnBeats": null,
+          "path": null,
+          "rest": false,
+          "timing": {
+            "jitterBeats": 0.008,
+            "tempoDrift": 0.0014
+          }
+        },
+        {
+          "startBeat": 220,
+          "beats": 32,
+          "sequenceId": "6c1da6d4-989a-495d-a556-151f1ec3796d",
+          "sequenceName": "MXCΘ-",
+          "repeats": 2,
+          "plane": "wall",
+          "beatPlanes": [
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "floor"
+            },
+            {
+              "left": "wall",
+              "right": "floor"
+            }
+          ],
+          "mode": "planted",
+          "facingStart": 1.5708,
+          "facingEnd": 1.5708,
+          "facingTarget": -0.16,
+          "turnBeats": null,
+          "path": null,
+          "rest": false,
+          "timing": {
+            "jitterBeats": 0,
+            "tempoDrift": 0.0023
+          }
+        },
+        {
+          "startBeat": 252,
+          "beats": 8,
+          "sequenceId": "6c1da6d4-989a-495d-a556-151f1ec3796d",
+          "sequenceName": "MXCΘ-",
+          "repeats": 1,
+          "plane": "wall",
+          "beatPlanes": [
+            {
+              "left": "wall",
+              "right": "floor"
+            },
+            {
+              "left": "wall",
+              "right": "floor"
+            },
+            {
+              "left": "wall",
+              "right": "floor"
+            },
+            {
+              "left": "wall",
+              "right": "floor"
+            },
+            {
+              "left": "wall",
+              "right": "floor"
+            },
+            {
+              "left": "wall",
+              "right": "floor"
+            },
+            {
+              "left": "wall",
+              "right": "floor"
+            },
+            {
+              "left": "wall",
+              "right": "floor"
+            },
+            {
+              "left": "wall",
+              "right": "floor"
+            },
+            {
+              "left": "wall",
+              "right": "floor"
+            },
+            {
+              "left": "wall",
+              "right": "floor"
+            },
+            {
+              "left": "wall",
+              "right": "floor"
+            },
+            {
+              "left": "wall",
+              "right": "floor"
+            },
+            {
+              "left": "wall",
+              "right": "floor"
+            },
+            {
+              "left": "wall",
+              "right": "floor"
+            },
+            {
+              "left": "wall",
+              "right": "floor"
+            }
+          ],
+          "mode": "planted",
+          "facingStart": 1.5708,
+          "facingEnd": 1.5708,
+          "facingTarget": -0.16,
+          "turnBeats": null,
+          "path": null,
+          "rest": true,
+          "timing": {
+            "jitterBeats": 0,
+            "tempoDrift": 0
+          }
+        },
+        {
+          "startBeat": 260,
+          "beats": 48,
+          "sequenceId": "SZEΘ-",
+          "sequenceName": "SZEΘ-",
+          "repeats": 3,
+          "plane": "wall",
+          "beatPlanes": [
+            {
+              "left": "wall",
+              "right": "floor"
+            },
+            {
+              "left": "wall",
+              "right": "floor"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "floor",
+              "right": "wall"
+            },
+            {
+              "left": "floor",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "floor"
+            },
+            {
+              "left": "wall",
+              "right": "floor"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            }
+          ],
+          "mode": "planted",
+          "facingStart": 1.5708,
+          "facingEnd": 1.5708,
+          "facingTarget": -0.16,
+          "turnBeats": null,
+          "path": null,
+          "rest": false,
+          "timing": {
+            "jitterBeats": -0.01,
+            "tempoDrift": -0.0003
+          }
+        },
+        {
+          "startBeat": 308,
+          "beats": 16,
+          "sequenceId": "SΛTO",
+          "sequenceName": "SΛTO",
+          "repeats": 1,
+          "plane": "wall",
+          "beatPlanes": [
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            }
+          ],
+          "mode": "planted",
+          "facingStart": 1.5708,
+          "facingEnd": 1.5708,
+          "facingTarget": 0.5523,
+          "turnBeats": null,
+          "path": null,
+          "rest": false,
+          "timing": {
+            "jitterBeats": -0.007,
+            "tempoDrift": -0.0004
+          }
+        },
+        {
+          "startBeat": 324,
+          "beats": 32,
+          "sequenceId": "WΩ-W-Ω-",
+          "sequenceName": "WΩ-W-Ω-",
+          "repeats": 2,
+          "plane": "wall",
+          "beatPlanes": [
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "floor"
+            },
+            {
+              "left": "wall",
+              "right": "floor"
+            },
+            {
+              "left": "wall",
+              "right": "floor"
+            },
+            {
+              "left": "wall",
+              "right": "floor"
+            }
+          ],
+          "mode": "planted",
+          "facingStart": 1.5708,
+          "facingEnd": 1.5708,
+          "facingTarget": 1.4875,
+          "turnBeats": null,
+          "path": null,
+          "rest": false,
+          "timing": {
+            "jitterBeats": -0.001,
+            "tempoDrift": -0.0017
+          }
+        },
+        {
+          "startBeat": 356,
+          "beats": 16,
+          "sequenceId": "XCKΩ",
+          "sequenceName": "XCKΩ",
+          "repeats": 1,
+          "plane": "wall",
+          "beatPlanes": [
+            {
+              "left": "wheel",
+              "right": "floor"
+            },
+            {
+              "left": "wheel",
+              "right": "floor"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            }
+          ],
+          "mode": "planted",
+          "facingStart": 1.5708,
+          "facingEnd": 1.5708,
+          "facingTarget": 0.5898,
+          "turnBeats": null,
+          "path": null,
+          "rest": false,
+          "timing": {
+            "jitterBeats": 0.001,
+            "tempoDrift": 0.0018
+          }
+        },
+        {
+          "startBeat": 372,
+          "beats": 8,
+          "sequenceId": "NQ",
+          "sequenceName": "NQ",
+          "repeats": 2,
+          "plane": "wall",
+          "beatPlanes": [
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            }
+          ],
+          "mode": "planted",
+          "facingStart": 1.5708,
+          "facingEnd": 1.5708,
+          "facingTarget": 0.5898,
+          "turnBeats": null,
+          "path": null,
+          "rest": false,
+          "timing": {
+            "jitterBeats": -0.002,
+            "tempoDrift": -0.0024
+          }
+        },
+        {
+          "startBeat": 380,
+          "beats": 16,
+          "sequenceId": "7bf60b11-3491-4a8c-beae-bc160197d8e1",
+          "sequenceName": "W-JFAAΨΔ-O",
+          "repeats": 1,
+          "plane": "wall",
+          "beatPlanes": [
+            {
+              "left": "wall",
+              "right": "floor"
+            },
+            {
+              "left": "wall",
+              "right": "floor"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            }
+          ],
+          "mode": "planted",
+          "facingStart": 1.5708,
+          "facingEnd": 1.5708,
+          "facingTarget": 0.5898,
+          "turnBeats": null,
+          "path": null,
+          "rest": false,
+          "timing": {
+            "jitterBeats": 0.008,
+            "tempoDrift": 0.0015
+          }
+        },
+        {
+          "startBeat": 396,
+          "beats": 4,
+          "sequenceId": "7bf60b11-3491-4a8c-beae-bc160197d8e1",
+          "sequenceName": "W-JFAAΨΔ-O",
+          "repeats": 1,
+          "plane": "wall",
+          "beatPlanes": [
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            }
+          ],
+          "mode": "planted",
+          "facingStart": 1.5708,
+          "facingEnd": 1.5708,
+          "facingTarget": 0.5898,
+          "turnBeats": null,
+          "path": null,
+          "rest": true,
+          "timing": {
+            "jitterBeats": 0,
+            "tempoDrift": 0
+          }
+        },
+        {
+          "startBeat": 400,
+          "beats": 16,
+          "sequenceId": "RT",
+          "sequenceName": "RT",
+          "repeats": 2,
+          "plane": "wall",
+          "beatPlanes": [
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            }
+          ],
+          "mode": "planted",
+          "facingStart": 1.5708,
+          "facingEnd": 1.5708,
+          "facingTarget": -0.3253,
+          "turnBeats": null,
+          "path": null,
+          "rest": false,
+          "timing": {
+            "jitterBeats": -0.011,
+            "tempoDrift": -0.0007
+          }
+        },
+        {
+          "startBeat": 416,
+          "beats": 36,
+          "sequenceId": "ΛVNΛSR",
+          "sequenceName": "ΛVNΛSR",
+          "repeats": 3,
+          "plane": "wall",
+          "beatPlanes": [
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            }
+          ],
+          "mode": "planted",
+          "facingStart": 1.5708,
+          "facingEnd": 1.5708,
+          "facingTarget": 0.3397,
+          "turnBeats": null,
+          "path": null,
+          "rest": false,
+          "timing": {
+            "jitterBeats": -0.008,
+            "tempoDrift": -0.0028
+          }
+        },
+        {
+          "startBeat": 452,
+          "beats": 16,
+          "sequenceId": "XCKΩ",
+          "sequenceName": "XCKΩ",
+          "repeats": 1,
+          "plane": "wall",
+          "beatPlanes": [
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            }
+          ],
+          "mode": "planted",
+          "facingStart": 1.5708,
+          "facingEnd": 1.5708,
+          "facingTarget": 0.6355,
+          "turnBeats": null,
+          "path": null,
+          "rest": false,
+          "timing": {
+            "jitterBeats": 0.006,
+            "tempoDrift": -0.0018
+          }
+        },
+        {
+          "startBeat": 468,
+          "beats": 8,
+          "sequenceId": "seq_1766471163932_0hh8pf3sg",
+          "sequenceName": "QΛ",
+          "repeats": 1,
+          "plane": "wall",
+          "beatPlanes": [
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            }
+          ],
+          "mode": "planted",
+          "facingStart": 1.5708,
+          "facingEnd": 1.5708,
+          "facingTarget": 0.6355,
+          "turnBeats": null,
+          "path": null,
+          "rest": false,
+          "timing": {
+            "jitterBeats": -0.004,
+            "tempoDrift": -0.0009
+          }
+        },
+        {
+          "startBeat": 476,
+          "beats": 4,
+          "sequenceId": "seq_1766471163932_0hh8pf3sg",
+          "sequenceName": "QΛ",
+          "repeats": 1,
+          "plane": "wheel",
+          "beatPlanes": [
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            }
+          ],
+          "mode": "planted",
+          "facingStart": 1.5708,
+          "facingEnd": 1.5708,
+          "facingTarget": 0.6355,
+          "turnBeats": null,
+          "path": null,
+          "rest": true,
+          "timing": {
+            "jitterBeats": 0,
+            "tempoDrift": 0
+          }
+        },
+        {
+          "startBeat": 480,
+          "beats": 16,
+          "sequenceId": "6c1da6d4-989a-495d-a556-151f1ec3796d",
+          "sequenceName": "MXCΘ-",
+          "repeats": 1,
+          "plane": "wall",
+          "beatPlanes": [
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "floor",
+              "right": "wall"
+            },
+            {
+              "left": "floor",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            }
+          ],
+          "mode": "planted",
+          "facingStart": 1.5708,
+          "facingEnd": 1.5708,
+          "facingTarget": 0.8319,
+          "turnBeats": null,
+          "path": null,
+          "rest": false,
+          "timing": {
+            "jitterBeats": 0.011,
+            "tempoDrift": 0.0013
+          }
+        },
+        {
+          "startBeat": 496,
+          "beats": 16,
+          "sequenceId": "XCKΩ",
+          "sequenceName": "XCKΩ",
+          "repeats": 1,
+          "plane": "wall",
+          "beatPlanes": [
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "floor",
+              "right": "wall"
+            },
+            {
+              "left": "floor",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            }
+          ],
+          "mode": "planted",
+          "facingStart": 1.5708,
+          "facingEnd": 1.5708,
+          "facingTarget": 0.7843,
+          "turnBeats": null,
+          "path": null,
+          "rest": false,
+          "timing": {
+            "jitterBeats": 0.011,
+            "tempoDrift": 0.0009
+          }
+        }
+      ]
+    },
+    {
+      "id": "stage-right",
+      "seed": 23,
+      "characterId": "ch21",
+      "propFamily": "staff",
+      "personality": {
+        "skill": 0.55,
+        "style": 0.85,
+        "energy": 0.75
+      },
+      "home": {
+        "x": 3,
+        "z": 0
+      },
+      "areaRadius": 3,
+      "phrases": [
+        {
+          "startBeat": 0,
+          "beats": 8,
+          "sequenceId": "EΔUZ",
+          "sequenceName": "EΔUZ",
+          "repeats": 1,
+          "plane": "wheel",
+          "beatPlanes": [
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            }
+          ],
+          "mode": "travelling",
+          "facingStart": 1.5708,
+          "facingEnd": 1.5708,
+          "facingTarget": 1.2278,
+          "turnBeats": null,
+          "path": {
+            "from": {
+              "x": 3,
+              "z": 0
+            },
+            "to": {
+              "x": 3.58,
+              "z": 1.624
+            },
+            "steps": 3,
+            "beatsPerStep": 0.5
+          },
+          "rest": false,
+          "timing": {
+            "jitterBeats": 0.017,
+            "tempoDrift": 0.0131
+          }
+        },
+        {
+          "startBeat": 8,
+          "beats": 16,
+          "sequenceId": "Δ-ΛRZ",
+          "sequenceName": "Δ-ΛRZ",
+          "repeats": 1,
+          "plane": "wall",
+          "beatPlanes": [
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "floor"
+            },
+            {
+              "left": "wheel",
+              "right": "floor"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            }
+          ],
+          "mode": "planted",
+          "facingStart": 1.5708,
+          "facingEnd": 1.5708,
+          "facingTarget": 1.3729,
+          "turnBeats": null,
+          "path": null,
+          "rest": false,
+          "timing": {
+            "jitterBeats": -0.015,
+            "tempoDrift": -0.0056
+          }
+        },
+        {
+          "startBeat": 24,
+          "beats": 4,
+          "sequenceId": "Δ-ΛRZ",
+          "sequenceName": "Δ-ΛRZ",
+          "repeats": 1,
+          "plane": "wall",
+          "beatPlanes": [
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            }
+          ],
+          "mode": "planted",
+          "facingStart": 1.5708,
+          "facingEnd": 1.5708,
+          "facingTarget": 1.3729,
+          "turnBeats": null,
+          "path": null,
+          "rest": true,
+          "timing": {
+            "jitterBeats": 0,
+            "tempoDrift": 0
+          }
+        },
+        {
+          "startBeat": 28,
+          "beats": 8,
+          "sequenceId": "Δ-W-Θ-Y-",
+          "sequenceName": "Δ-W-Θ-Y-",
+          "repeats": 1,
+          "plane": "wall",
+          "beatPlanes": [
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            }
+          ],
+          "mode": "planted",
+          "facingStart": 1.5708,
+          "facingEnd": 1.5708,
+          "facingTarget": 2.5009,
+          "turnBeats": null,
+          "path": null,
+          "rest": false,
+          "timing": {
+            "jitterBeats": -0.036,
+            "tempoDrift": 0.0044
+          }
+        },
+        {
+          "startBeat": 36,
+          "beats": 16,
+          "sequenceId": "FΩ-OX-LΔ-RZ-",
+          "sequenceName": "FΩ-OX-LΔ-RZ-",
+          "repeats": 1,
+          "plane": "wheel",
+          "beatPlanes": [
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "floor",
+              "right": "wall"
+            },
+            {
+              "left": "floor",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            }
+          ],
+          "mode": "planted",
+          "facingStart": 1.5708,
+          "facingEnd": 1.5708,
+          "facingTarget": 2.3582,
+          "turnBeats": null,
+          "path": null,
+          "rest": false,
+          "timing": {
+            "jitterBeats": 0.011,
+            "tempoDrift": 0.0025
+          }
+        },
+        {
+          "startBeat": 52,
+          "beats": 16,
+          "sequenceId": "DΦ-AΨ",
+          "sequenceName": "DΦ-AΨ",
+          "repeats": 2,
+          "plane": "wall",
+          "beatPlanes": [
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "floor"
+            },
+            {
+              "left": "wheel",
+              "right": "floor"
+            }
+          ],
+          "mode": "planted",
+          "facingStart": 1.5708,
+          "facingEnd": 1.5708,
+          "facingTarget": 1.2589,
+          "turnBeats": null,
+          "path": null,
+          "rest": false,
+          "timing": {
+            "jitterBeats": -0.041,
+            "tempoDrift": 0.0086
+          }
+        },
+        {
+          "startBeat": 68,
+          "beats": 32,
+          "sequenceId": "ΘΛ-X-Ψ",
+          "sequenceName": "ΘΛ-X-Ψ",
+          "repeats": 2,
+          "plane": "wall",
+          "beatPlanes": [
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "floor"
+            },
+            {
+              "left": "wheel",
+              "right": "floor"
+            },
+            {
+              "left": "wall",
+              "right": "floor"
+            },
+            {
+              "left": "wall",
+              "right": "floor"
+            },
+            {
+              "left": "wall",
+              "right": "floor"
+            },
+            {
+              "left": "wall",
+              "right": "floor"
+            }
+          ],
+          "mode": "planted",
+          "facingStart": 1.5708,
+          "facingEnd": 1.5708,
+          "facingTarget": 0.7503,
+          "turnBeats": null,
+          "path": null,
+          "rest": false,
+          "timing": {
+            "jitterBeats": 0.024,
+            "tempoDrift": -0.009
+          }
+        },
+        {
+          "startBeat": 100,
+          "beats": 16,
+          "sequenceId": "Σ-RSZ-",
+          "sequenceName": "Σ-RSZ-",
+          "repeats": 1,
+          "plane": "wall",
+          "beatPlanes": [
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            }
+          ],
+          "mode": "turning",
+          "facingStart": 1.5708,
+          "facingEnd": 3.1416,
+          "facingTarget": 2.8168,
+          "turnBeats": 1,
+          "path": null,
+          "rest": false,
+          "timing": {
+            "jitterBeats": -0.012,
+            "tempoDrift": 0.0088
+          }
+        },
+        {
+          "startBeat": 116,
+          "beats": 16,
+          "sequenceId": "GΘUZ",
+          "sequenceName": "GΘUZ",
+          "repeats": 1,
+          "plane": "wall",
+          "beatPlanes": [
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            }
+          ],
+          "mode": "travelling",
+          "facingStart": 3.1416,
+          "facingEnd": 3.1416,
+          "facingTarget": -2.5977,
+          "turnBeats": null,
+          "path": {
+            "from": {
+              "x": 3.58,
+              "z": 1.624
+            },
+            "to": {
+              "x": 2.123,
+              "z": 0.743
+            },
+            "steps": 3,
+            "beatsPerStep": 0.5
+          },
+          "rest": false,
+          "timing": {
+            "jitterBeats": 0.048,
+            "tempoDrift": -0.0079
+          }
+        },
+        {
+          "startBeat": 132,
+          "beats": 8,
+          "sequenceId": "DΨ",
+          "sequenceName": "DΨ",
+          "repeats": 1,
+          "plane": "wheel",
+          "beatPlanes": [
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            }
+          ],
+          "mode": "travelling",
+          "facingStart": 3.1416,
+          "facingEnd": 3.1416,
+          "facingTarget": -2.6015,
+          "turnBeats": null,
+          "path": {
+            "from": {
+              "x": 2.123,
+              "z": 0.743
+            },
+            "to": {
+              "x": 0.657,
+              "z": -0.136
+            },
+            "steps": 3,
+            "beatsPerStep": 0.5
+          },
+          "rest": false,
+          "timing": {
+            "jitterBeats": 0.025,
+            "tempoDrift": -0.0072
+          }
+        },
+        {
+          "startBeat": 140,
+          "beats": 8,
+          "sequenceId": "ΦAΦ-L",
+          "sequenceName": "ΦAΦ-L",
+          "repeats": 1,
+          "plane": "wheel",
+          "beatPlanes": [
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            }
+          ],
+          "mode": "planted",
+          "facingStart": 3.1416,
+          "facingEnd": 3.1416,
+          "facingTarget": 3.0705,
+          "turnBeats": null,
+          "path": null,
+          "rest": false,
+          "timing": {
+            "jitterBeats": -0.021,
+            "tempoDrift": -0.0025
+          }
+        },
+        {
+          "startBeat": 148,
+          "beats": 8,
+          "sequenceId": "EΦ-JΨ-DΦ-KΨ-",
+          "sequenceName": "EΦ-JΨ-DΦ-KΨ-",
+          "repeats": 1,
+          "plane": "wall",
+          "beatPlanes": [
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "floor",
+              "right": "wheel"
+            },
+            {
+              "left": "floor",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            }
+          ],
+          "mode": "turning",
+          "facingStart": 3.1416,
+          "facingEnd": 0,
+          "facingTarget": -0.2325,
+          "turnBeats": 2,
+          "path": null,
+          "rest": false,
+          "timing": {
+            "jitterBeats": -0.04,
+            "tempoDrift": -0.0079
+          }
+        },
+        {
+          "startBeat": 156,
+          "beats": 16,
+          "sequenceId": "IΩPY-",
+          "sequenceName": "IΩPY-",
+          "repeats": 1,
+          "plane": "wheel",
+          "beatPlanes": [
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            }
+          ],
+          "mode": "travelling",
+          "facingStart": 0,
+          "facingEnd": 0,
+          "facingTarget": 0.2073,
+          "turnBeats": null,
+          "path": {
+            "from": {
+              "x": 0.657,
+              "z": -0.136
+            },
+            "to": {
+              "x": 2.454,
+              "z": 0.242
+            },
+            "steps": 3,
+            "beatsPerStep": 0.5
+          },
+          "rest": false,
+          "timing": {
+            "jitterBeats": -0.046,
+            "tempoDrift": 0.0119
+          }
+        },
+        {
+          "startBeat": 172,
+          "beats": 16,
+          "sequenceId": "GFCΨ",
+          "sequenceName": "GFCΨ",
+          "repeats": 1,
+          "plane": "wall",
+          "beatPlanes": [
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            }
+          ],
+          "mode": "travelling",
+          "facingStart": 0,
+          "facingEnd": 0,
+          "facingTarget": -0.3812,
+          "turnBeats": null,
+          "path": {
+            "from": {
+              "x": 2.454,
+              "z": 0.242
+            },
+            "to": {
+              "x": 4.031,
+              "z": -0.39
+            },
+            "steps": 3,
+            "beatsPerStep": 0.5
+          },
+          "rest": false,
+          "timing": {
+            "jitterBeats": -0.015,
+            "tempoDrift": -0.0074
+          }
+        },
+        {
+          "startBeat": 188,
+          "beats": 48,
+          "sequenceId": "IΩPY-",
+          "sequenceName": "IΩPY-",
+          "repeats": 3,
+          "plane": "wheel",
+          "beatPlanes": [
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            }
+          ],
+          "mode": "travelling",
+          "facingStart": 0,
+          "facingEnd": 0,
+          "facingTarget": 0.3303,
+          "turnBeats": null,
+          "path": {
+            "from": {
+              "x": 4.031,
+              "z": -0.39
+            },
+            "to": {
+              "x": 5.641,
+              "z": 0.162
+            },
+            "steps": 3,
+            "beatsPerStep": 0.5
+          },
+          "rest": false,
+          "timing": {
+            "jitterBeats": 0.011,
+            "tempoDrift": -0.006
+          }
+        },
+        {
+          "startBeat": 236,
+          "beats": 48,
+          "sequenceId": "Δ-VNΛΛVNZ",
+          "sequenceName": "Δ-VNΛΛVNZ",
+          "repeats": 3,
+          "plane": "wall",
+          "beatPlanes": [
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "floor"
+            },
+            {
+              "left": "wall",
+              "right": "floor"
+            },
+            {
+              "left": "wall",
+              "right": "floor"
+            },
+            {
+              "left": "wall",
+              "right": "floor"
+            },
+            {
+              "left": "wall",
+              "right": "floor"
+            },
+            {
+              "left": "wall",
+              "right": "floor"
+            }
+          ],
+          "mode": "planted",
+          "facingStart": 0,
+          "facingEnd": 0,
+          "facingTarget": 1.552,
+          "turnBeats": null,
+          "path": null,
+          "rest": false,
+          "timing": {
+            "jitterBeats": 0.03,
+            "tempoDrift": -0.0083
+          }
+        },
+        {
+          "startBeat": 284,
+          "beats": 32,
+          "sequenceId": "FΦ-BJ",
+          "sequenceName": "FΦ-BJ",
+          "repeats": 2,
+          "plane": "wall",
+          "beatPlanes": [
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            }
+          ],
+          "mode": "planted",
+          "facingStart": 0,
+          "facingEnd": 0,
+          "facingTarget": 1.5649,
+          "turnBeats": null,
+          "path": null,
+          "rest": false,
+          "timing": {
+            "jitterBeats": 0.017,
+            "tempoDrift": 0.0103
+          }
+        },
+        {
+          "startBeat": 316,
+          "beats": 32,
+          "sequenceId": "Σ-RSZ-",
+          "sequenceName": "Σ-RSZ-",
+          "repeats": 2,
+          "plane": "wall",
+          "beatPlanes": [
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "floor",
+              "right": "wall"
+            },
+            {
+              "left": "floor",
+              "right": "wheel"
+            },
+            {
+              "left": "floor",
+              "right": "wheel"
+            },
+            {
+              "left": "floor",
+              "right": "wall"
+            },
+            {
+              "left": "floor",
+              "right": "wall"
+            },
+            {
+              "left": "floor",
+              "right": "wall"
+            }
+          ],
+          "mode": "planted",
+          "facingStart": 0,
+          "facingEnd": 0,
+          "facingTarget": 0.6681,
+          "turnBeats": null,
+          "path": null,
+          "rest": false,
+          "timing": {
+            "jitterBeats": -0.025,
+            "tempoDrift": 0.0127
+          }
+        },
+        {
+          "startBeat": 348,
+          "beats": 16,
+          "sequenceId": "ΩNZΣ-YΨ-IIΘMYΔ-ZΨ-II",
+          "sequenceName": "ΩNZΣ-YΨ-IIΘMYΔ-ZΨ-II",
+          "repeats": 1,
+          "plane": "wall",
+          "beatPlanes": [
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            }
+          ],
+          "mode": "turning",
+          "facingStart": 0,
+          "facingEnd": 3.1416,
+          "facingTarget": 2.8097,
+          "turnBeats": 2,
+          "path": null,
+          "rest": false,
+          "timing": {
+            "jitterBeats": 0.012,
+            "tempoDrift": 0.0066
+          }
+        },
+        {
+          "startBeat": 364,
+          "beats": 8,
+          "sequenceId": "ΦL",
+          "sequenceName": "ΦL",
+          "repeats": 1,
+          "plane": "wall",
+          "beatPlanes": [
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            }
+          ],
+          "mode": "travelling",
+          "facingStart": 3.1416,
+          "facingEnd": 3.1416,
+          "facingTarget": 3.1131,
+          "turnBeats": null,
+          "path": {
+            "from": {
+              "x": 5.641,
+              "z": 0.162
+            },
+            "to": {
+              "x": 3.399,
+              "z": 0.226
+            },
+            "steps": 4,
+            "beatsPerStep": 0.5
+          },
+          "rest": false,
+          "timing": {
+            "jitterBeats": -0.008,
+            "tempoDrift": 0.0052
+          }
+        },
+        {
+          "startBeat": 372,
+          "beats": 32,
+          "sequenceId": "GΩΛ-Y",
+          "sequenceName": "GΩΛ-Y",
+          "repeats": 2,
+          "plane": "wall",
+          "beatPlanes": [
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            }
+          ],
+          "mode": "planted",
+          "facingStart": 3.1416,
+          "facingEnd": 3.1416,
+          "facingTarget": 1.8913,
+          "turnBeats": null,
+          "path": null,
+          "rest": false,
+          "timing": {
+            "jitterBeats": 0.05,
+            "tempoDrift": 0.0037
+          }
+        },
+        {
+          "startBeat": 404,
+          "beats": 16,
+          "sequenceId": "FLII",
+          "sequenceName": "FLII",
+          "repeats": 2,
+          "plane": "wall",
+          "beatPlanes": [
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            }
+          ],
+          "mode": "travelling",
+          "facingStart": 3.1416,
+          "facingEnd": 3.1416,
+          "facingTarget": -2.9179,
+          "turnBeats": null,
+          "path": {
+            "from": {
+              "x": 3.399,
+              "z": 0.226
+            },
+            "to": {
+              "x": 1.72,
+              "z": -0.156
+            },
+            "steps": 3,
+            "beatsPerStep": 0.5
+          },
+          "rest": false,
+          "timing": {
+            "jitterBeats": -0.015,
+            "tempoDrift": -0.0111
+          }
+        },
+        {
+          "startBeat": 420,
+          "beats": 8,
+          "sequenceId": "4866bbd9-b218-46c8-a36c-7563e9019642",
+          "sequenceName": "ΘOW-L",
+          "repeats": 1,
+          "plane": "wheel",
+          "beatPlanes": [
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "floor",
+              "right": "wall"
+            },
+            {
+              "left": "floor",
+              "right": "wall"
+            }
+          ],
+          "mode": "planted",
+          "facingStart": 3.1416,
+          "facingEnd": 3.1416,
+          "facingTarget": 2.1828,
+          "turnBeats": null,
+          "path": null,
+          "rest": false,
+          "timing": {
+            "jitterBeats": -0.053,
+            "tempoDrift": -0.0052
+          }
+        },
+        {
+          "startBeat": 428,
+          "beats": 12,
+          "sequenceId": "ΦLβ",
+          "sequenceName": "ΦLβ",
+          "repeats": 1,
+          "plane": "wheel",
+          "beatPlanes": [
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            }
+          ],
+          "mode": "turning",
+          "facingStart": 3.1416,
+          "facingEnd": 0,
+          "facingTarget": 0.3606,
+          "turnBeats": 2,
+          "path": null,
+          "rest": false,
+          "timing": {
+            "jitterBeats": -0.039,
+            "tempoDrift": 0.0097
+          }
+        },
+        {
+          "startBeat": 440,
+          "beats": 48,
+          "sequenceId": "GFCΨ",
+          "sequenceName": "GFCΨ",
+          "repeats": 3,
+          "plane": "wall",
+          "beatPlanes": [
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            },
+            {
+              "left": "wall",
+              "right": "wall"
+            }
+          ],
+          "mode": "travelling",
+          "facingStart": 0,
+          "facingEnd": 0,
+          "facingTarget": 0.0688,
+          "turnBeats": null,
+          "path": {
+            "from": {
+              "x": 1.72,
+              "z": -0.156
+            },
+            "to": {
+              "x": 3.404,
+              "z": -0.04
+            },
+            "steps": 3,
+            "beatsPerStep": 0.5
+          },
+          "rest": false,
+          "timing": {
+            "jitterBeats": -0.006,
+            "tempoDrift": -0.0014
+          }
+        },
+        {
+          "startBeat": 488,
+          "beats": 16,
+          "sequenceId": "IΦAJ",
+          "sequenceName": "IΦAJ",
+          "repeats": 1,
+          "plane": "wheel",
+          "beatPlanes": [
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wall"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wall",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            }
+          ],
+          "mode": "planted",
+          "facingStart": 0,
+          "facingEnd": 0,
+          "facingTarget": -0.5608,
+          "turnBeats": null,
+          "path": null,
+          "rest": false,
+          "timing": {
+            "jitterBeats": -0.035,
+            "tempoDrift": -0.0065
+          }
+        },
+        {
+          "startBeat": 504,
+          "beats": 8,
+          "sequenceId": "Δ-TQZ-",
+          "sequenceName": "Δ-TQZ-",
+          "repeats": 1,
+          "plane": "wheel",
+          "beatPlanes": [
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            },
+            {
+              "left": "wheel",
+              "right": "wheel"
+            }
+          ],
+          "mode": "travelling",
+          "facingStart": 0,
+          "facingEnd": 0,
+          "facingTarget": 0.5831,
+          "turnBeats": null,
+          "path": {
+            "from": {
+              "x": 3.404,
+              "z": -0.04
+            },
+            "to": {
+              "x": 4.829,
+              "z": 0.9
+            },
+            "steps": 3,
+            "beatsPerStep": 0.5
+          },
+          "rest": false,
+          "timing": {
+            "jitterBeats": -0.05,
+            "tempoDrift": 0.0073
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -76,10 +76,7 @@
   {#if problem}
     <p role="alert">{problem}</p>
   {:else if version}
-    <button
-      onclick={() => version && whatsNewState.open(version)}
-      data-open-whats-new
-    >
+    <button onclick={() => whatsNewState.open(version!)} data-open-whats-new>
       Open What's New
     </button>
     <VersionDetailContent {version} showCloseButton={false} />

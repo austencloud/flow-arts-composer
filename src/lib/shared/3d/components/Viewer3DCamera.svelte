@@ -292,7 +292,14 @@
         y: camera.rotation.y,
         z: camera.rotation.z,
       },
-      fov: camera.fov ?? 50,
+      // camera-controls changes camera.zoom for Ctrl+wheel/trackpad pinch.
+      // Persist the effective angle so Web and Unreal restore the same view.
+      fov:
+        (Math.atan(
+          Math.tan(((camera.fov ?? 50) * Math.PI) / 360) / camera.zoom
+        ) *
+          360) /
+        Math.PI,
       target: { x: _endTgt.x, y: _endTgt.y, z: _endTgt.z },
       timestamp: Date.now(),
     };
@@ -491,6 +498,12 @@
         useTgt.z,
         false
       );
+      if (live && pOk) {
+        const zoom =
+          Math.tan((fov * Math.PI) / 360) /
+          Math.tan((live.fov * Math.PI) / 360);
+        c.zoomTo(zoom, false);
+      }
       if (!pOk) {
         console.warn(
           `[Viewer3DCamera] Persisted camera state was invalid — reset to defaults.`,

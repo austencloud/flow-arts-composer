@@ -81,6 +81,10 @@ Popover uses fixed positioning to escape overflow:hidden containers.
      * something with no judgement to press repeatedly.
      */
     ghostKind?: "browse-filter" | "option-filter";
+    /** A chip that opens a place and marks the one you are in (Browse's scope
+     * row). Sets `aria-current="page"` and the active look; use with
+     * `mode="action"`, since it says where you are, not that something is on. */
+    current?: boolean;
   }
 
   let {
@@ -100,6 +104,7 @@ Popover uses fixed positioning to escape overflow:hidden containers.
     popupRole = "listbox",
     popupLabel,
     ghostKind,
+    current = false,
     children,
     onclick,
     ondismiss,
@@ -310,7 +315,7 @@ Popover uses fixed positioning to escape overflow:hidden containers.
 {:else}
   <button
     class="filter-chip"
-    class:active
+    class:active={active || current}
     class:disabled
     class:expanded
     class:solid={emphasis === "solid"}
@@ -319,6 +324,7 @@ Popover uses fixed positioning to escape overflow:hidden containers.
     style="--chip-color: {chipColor};"
     type="button"
     aria-pressed={mode === "toggle" ? active : undefined}
+    aria-current={current ? "page" : undefined}
     aria-haspopup={mode === "dropdown" ? popupRole : undefined}
     aria-expanded={mode === "dropdown" ? expanded : undefined}
     aria-label={ariaLabel ?? `${label}${count != null ? ` (${count})` : ""}`}

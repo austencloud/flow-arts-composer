@@ -22,6 +22,9 @@ function row(over: Partial<TriageSessionRow> = {}): TriageSessionRow {
     browser: "Chrome",
     operatingSystem: "Windows",
     deviceType: "Desktop",
+    locale: "en-US",
+    identified: false,
+    referringDomain: "",
     ...over,
   };
 }

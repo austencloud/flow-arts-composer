@@ -1,6 +1,7 @@
 param(
     [string]$ProjectFile = (Join-Path $PSScriptRoot '..\MuseumGame.uproject'),
     [string]$Executable = '',
+    [string]$MotionFile = '',
     [string]$EngineRoot = 'C:\Program Files\Epic Games\UE_5.8',
     [ValidateSet('Hero', 'Room', 'Reverse')][string]$View = 'Hero',
     [switch]$FireEffect,
@@ -54,6 +55,13 @@ $arguments += @(
     ('-abslog="' + $logPath + '"')
 )
 if ($FireEffect) { $arguments += '-MuseumReviewFire' }
+$motionPath = ''
+$motionHash = ''
+if ($MotionFile) {
+    $motionPath = (Resolve-Path -LiteralPath $MotionFile).Path
+    $motionHash = (Get-FileHash -LiteralPath $motionPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    $arguments += '-MuseumComposerPreview', ('-MuseumMotionFile="' + $motionPath + '"')
+}
 $process = $null
 try {
     $process = Start-Process -FilePath $binary -ArgumentList $arguments -PassThru -WindowStyle Hidden
@@ -84,6 +92,7 @@ try {
         view=$View; fireEffect=[bool]$FireEffect; executable=$binary; project=$projectPath; camera=$camera
         width=$Width; height=$Height; warmupSeconds=$WarmupSeconds
         screenshot=$capturePath; log=$logPath; processId=$process.Id
+        motionFile=$motionPath; motionSHA256=$motionHash
         status='Captured; visual inspection required'
     }
     $receipt | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath (Join-Path $reviewDir "$View-$runId.json")

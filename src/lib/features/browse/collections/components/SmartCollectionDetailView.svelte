@@ -17,6 +17,10 @@ rule here; TKA's founding decks use the surrounding library hierarchy instead.
   import { createBrowseEngine } from "#lib/shared/browse/engine/create-browse-engine.svelte.js";
   import { applySpecToEngine } from "#lib/shared/browse/services/smart-filter-spec.js";
   import BrowsePanel from "#lib/shared/browse/components/BrowsePanel.svelte";
+  import {
+    bindBrowseQuery,
+    tryGetBrowseQueryContext,
+  } from "#lib/shared/browse/state/browse-query-state.svelte.js";
   import ContextMenu from "#lib/shared/components/context-menu/ContextMenu.svelte";
   import type {
     ContextMenuEntry,
@@ -43,11 +47,12 @@ rule here; TKA's founding decks use the surrounding library hierarchy instead.
   let {
     collectionId,
     onBack,
-    showBack = true,
+    embedded = false,
   }: {
     collectionId: string;
     onBack: () => void;
-    showBack?: boolean;
+    /** Side-by-side layouts keep the surface's own head (no Browse bar). */
+    embedded?: boolean;
   } = $props();
 
   let collection = $state<LibraryCollection | null>(null);
@@ -62,6 +67,10 @@ rule here; TKA's founding decks use the surrounding library hierarchy instead.
   // One ephemeral engine for this view; its source is fixed to the rule's pool.
   // Rebuilt filters live in the engine — a rule edit clears + re-applies them.
   let engine = $state<ReturnType<typeof createBrowseEngine> | null>(null);
+
+  // The scope bar's search narrows the rule's results. Search only: the rule
+  // owns this engine's filters, so the user's filters stay out of it.
+  bindBrowseQuery(tryGetBrowseQueryContext(), () => engine, { filters: false });
 
   // Subscribe to the collection doc so a rule edit / rename / delete elsewhere
   // reflects here. A deleted (or non-smart) doc bails to the list.
@@ -304,7 +313,8 @@ rule here; TKA's founding decks use the surrounding library hierarchy instead.
   loading={resultsLoading}
   error={hasLoadError}
   readOnly={isFounding || previewReadOnly}
-  {showBack}
+  showBack={!embedded}
+  {embedded}
   editing={renaming}
   {onBack}
   onEdit={collection && !isFounding && !previewReadOnly

@@ -246,9 +246,15 @@ describe("staff grip contact contract", () => {
     expect(liveSequencePerformer).toContain(
       "resolvePerformerContact(performerState"
     );
+    // The live performer lets a host override each prop, falling back to the
+    // contact owner's own.
+    expect(viewerScene).toContain("bluePropState={contact.leftProp}");
+    expect(viewerScene).toContain("redPropState={contact.rightProp}");
+    expect(liveSequencePerformer).toContain("bluePropState={leftProp}");
+    expect(liveSequencePerformer).toContain("redPropState={rightProp}");
+    expect(liveSequencePerformer).toContain(": contact.leftProp");
+    expect(liveSequencePerformer).toContain(": contact.rightProp");
     for (const host of [liveSequencePerformer, viewerScene]) {
-      expect(host).toContain("bluePropState={contact.leftProp}");
-      expect(host).toContain("redPropState={contact.rightProp}");
       expect(host).toContain("pairSeparation={!contact.planned}");
       expect(host).toContain("contactResetKey={contact.resetKey}");
     }

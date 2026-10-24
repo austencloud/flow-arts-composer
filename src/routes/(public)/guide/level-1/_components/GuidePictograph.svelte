@@ -6,6 +6,9 @@
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { describePictograph } from "#lib/shared/pictograph/shared/domain/utils/pictograph-description.js";
   import { getGuidePrintMode } from "../_data/guide-data-context";
+  import ShimmerBlock from "#lib/shared/components/loading/ShimmerBlock.svelte";
+  import { opaqueFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   let {
     data,
@@ -38,6 +41,9 @@
      *  ink-on-white that getGuidePrintMode() otherwise forces; "light" keeps the
      *  white print look. Undefined = existing behavior (no other caller passes it). */
     forceTheme,
+    /** Shimmer in the reserved square until the drawing is ready, so a board
+     *  that is still preparing reads as loading rather than empty. */
+    placeholder = false,
   }: {
     data?: PictographData | null;
     pngFallback?: string;
@@ -58,6 +64,7 @@
     showNonRadialPoints?: boolean;
     showStepNumbers?: boolean;
     forceTheme?: "light" | "dark";
+    placeholder?: boolean;
   } = $props();
 
   const stepNumber = $derived(
@@ -77,7 +84,9 @@
   const eagerEffective = eager || guidePrint;
   // forceTheme="dark" wins over the print/guide-print white background so the
   // reflow flow view can render dark pictographs on the dark editorial theme.
-  const printModeEffective = $derived(forceTheme === "dark" ? false : printMode || guidePrint);
+  const printModeEffective = $derived(
+    forceTheme === "dark" ? false : printMode || guidePrint
+  );
   const darkModeEffective = $derived(forceTheme === "dark" ? true : darkMode);
 
   // Machine-readable notation for crawlers/AT - computed synchronously from raw
@@ -91,7 +100,9 @@
       ? describePictograph(showTKA ? data : { ...data, letter: null })
       : (label ?? "")
   );
-  const hasA11yLabel = $derived(!!a11yLabel && a11yLabel !== "Pictograph (empty)");
+  const hasA11yLabel = $derived(
+    !!a11yLabel && a11yLabel !== "Pictograph (empty)"
+  );
 
   $effect(() => {
     // Eager mode (print/poster): skip the IntersectionObserver and render immediately.
@@ -122,14 +133,20 @@
     pictographPreparer
       .prepareSingle(data, {
         themeMode: forceTheme === "dark" ? "dark" : "light",
-        ...(propType ? { leftPropType: propType, rightPropType: propType } : {}),
+        ...(propType
+          ? { leftPropType: propType, rightPropType: propType }
+          : {}),
       })
       .then((result) => {
         if (cancelled) return;
         const prep = result._prepared;
         if (prep) {
           const tweakedArrows = showArrows
-            ? { arrowPositions: prep.arrowPositions, arrowAssets: prep.arrowAssets, arrowMirroring: prep.arrowMirroring }
+            ? {
+                arrowPositions: prep.arrowPositions,
+                arrowAssets: prep.arrowAssets,
+                arrowMirroring: prep.arrowMirroring,
+              }
             : { arrowPositions: {}, arrowAssets: {}, arrowMirroring: {} };
 
           const tweakedPropAssets = { ...prep.propAssets };
@@ -143,7 +160,11 @@
 
           prepared = {
             ...result,
-            _prepared: { ...prep, ...tweakedArrows, propAssets: tweakedPropAssets },
+            _prepared: {
+              ...prep,
+              ...tweakedArrows,
+              propAssets: tweakedPropAssets,
+            },
           };
         } else {
           prepared = result;
@@ -155,6 +176,25 @@
   });
 </script>
 
+{#snippet drawing(pictograph: PreparedPictographData)}
+  <PictographRenderer
+    {pictograph}
+    {showGrid}
+    printMode={printModeEffective}
+    darkMode={darkModeEffective}
+    {showTKA}
+    {showReversals}
+    {showTnD}
+    {showElemental}
+    {showPlacements}
+    {showNonRadialPoints}
+    {stepNumber}
+    showStepNumber={showStepNumbers}
+    leftMotionVisible={true}
+    rightMotionVisible={true}
+  />
+{/snippet}
+
 <div
   bind:this={wrapperEl}
   class="guide-pictograph size-{size}"
@@ -162,29 +202,28 @@
   role={hasA11yLabel ? "img" : undefined}
   aria-label={hasA11yLabel ? a11yLabel : undefined}
 >
-  <div class="pictograph-wrapper">
-    {#if prepared}
-      <PictographRenderer
-        pictograph={prepared}
-        {showGrid}
-        printMode={printModeEffective}
-        darkMode={darkModeEffective}
-        {showTKA}
-        {showReversals}
-        {showTnD}
-        {showElemental}
-        {showPlacements}
-        {showNonRadialPoints}
-        {stepNumber}
-        showStepNumber={showStepNumbers}
-        leftMotionVisible={true}
-        rightMotionVisible={true}
-      />
+  <div class="pictograph-wrapper" class:placeholder-host={placeholder}>
+    {#if prepared && placeholder}
+      <div class="drawing" in:opaqueFade={{ duration: DURATION.fast }}>
+        {@render drawing(prepared)}
+      </div>
+    {:else if prepared}
+      {@render drawing(prepared)}
     {:else if pngFallback}
-      <img class="fallback-img" src={pngFallback} alt={label ?? "pictograph"} loading="lazy" />
+      <img
+        class="fallback-img"
+        src={pngFallback}
+        alt={label ?? "pictograph"}
+        loading="lazy"
+      />
       {#if import.meta.env.DEV}
         <span class="fallback-badge">PNG</span>
       {/if}
+    {/if}
+    {#if placeholder && !prepared && !pngFallback}
+      <div class="placeholder" out:opaqueFade={{ duration: DURATION.fast }}>
+        <ShimmerBlock width="100%" height="100%" borderRadius="inherit" />
+      </div>
     {/if}
   </div>
   {#if label}
@@ -203,6 +242,22 @@
   .pictograph-wrapper {
     width: 100%;
     aspect-ratio: 1;
+  }
+
+  .drawing {
+    width: 100%;
+    height: 100%;
+  }
+
+  .placeholder-host {
+    position: relative;
+  }
+
+  .placeholder {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    border-radius: inherit;
   }
 
   .guide-pictograph.size-sm .pictograph-wrapper {

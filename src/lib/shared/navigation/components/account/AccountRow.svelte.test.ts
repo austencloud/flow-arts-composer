@@ -7,7 +7,10 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("../../../auth/state/auth-state.svelte", () => ({
-  authState: { user: null, isFullAccount: false },
+  authState: {
+    user: null as { displayName?: string; email?: string } | null,
+    isFullAccount: false,
+  },
 }));
 
 vi.mock("../../../auth/state/auth-drawer-state.svelte", () => ({
@@ -29,6 +32,13 @@ vi.mock("#lib/shared/i18n/i18n.svelte.js", async () => {
   return { t: (key: string) => english[key] ?? key };
 });
 
+import { authState as realAuthState } from "../../../auth/state/auth-state.svelte";
+
+// The mock above is a plain object, so the test may set what the real state only reads.
+const authState = realAuthState as unknown as {
+  user: { displayName?: string; email?: string } | null;
+  isFullAccount: boolean;
+};
 import AccountRow from "./AccountRow.svelte";
 
 describe("AccountRow guest sign-in", () => {
@@ -53,5 +63,27 @@ describe("AccountRow guest sign-in", () => {
 
     expect(mocks.show).toHaveBeenCalledOnce();
     expect(mocks.show).toHaveBeenCalledWith("signin");
+  });
+});
+
+describe("AccountRow email privacy", () => {
+  // PostHog autocapture records the label text of whatever is clicked, and
+  // the label falls back to the email address when there is no display name.
+  it("marks the label ph-no-capture only while it shows the email", async () => {
+    authState.isFullAccount = true;
+    authState.user = { email: "friend@example.com" };
+    const { unmount } = render(AccountRow, { variant: "expanded" });
+    const label = page.getByText("friend@example.com");
+    await expect.element(label).toHaveClass("ph-no-capture");
+    unmount();
+
+    authState.user = { displayName: "Friend", email: "friend@example.com" };
+    render(AccountRow, { variant: "expanded" });
+    await expect
+      .element(page.getByText("Friend", { exact: true }))
+      .not.toHaveClass("ph-no-capture");
+
+    authState.isFullAccount = false;
+    authState.user = null;
   });
 });

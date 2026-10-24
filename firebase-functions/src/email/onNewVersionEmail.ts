@@ -5,6 +5,7 @@ import {
   queueUserNotificationEmail,
   readEntryMedia,
 } from "./notificationEmailQueue";
+import { unsubscribeSecret } from "./unsubscribeToken";
 
 const RECIPIENT_BATCH_SIZE = 50;
 
@@ -14,6 +15,7 @@ export const onNewVersionEmail = onDocumentCreated(
     retry: true,
     timeoutSeconds: 540,
     memory: "512MiB",
+    secrets: [unsubscribeSecret],
   },
   async (event) => {
     const snapshot = event.data;

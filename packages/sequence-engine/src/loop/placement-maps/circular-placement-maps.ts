@@ -106,7 +106,8 @@ export function analyzeZoneCoverage(
 
 /**
  * Maps each placement to its opposite placement (4 placements away within each 8-placement group).
- * For tau placements, 180 degree rotation switches which hand is at center.
+ * For tau placements, 180 degree rotation keeps the same hand at center and moves
+ * the perimeter hand to the opposite point (tau1 -> tau5, tau9 -> tau13).
  * Terra (both hands at center) stays the same.
  */
 export const HALF_PLACEMENT_MAP: Record<string, string> = {
@@ -182,23 +183,25 @@ export const HALF_PLACEMENT_MAP: Record<string, string> = {
   eta14: "eta10",
   eta15: "eta11",
   eta16: "eta12",
-  // Tau - 180 degree switches which hand is at center
-  tau1: "tau9",
-  tau2: "tau10",
-  tau3: "tau11",
-  tau4: "tau12",
-  tau5: "tau13",
-  tau6: "tau14",
-  tau7: "tau15",
-  tau8: "tau16",
-  tau9: "tau1",
-  tau10: "tau2",
-  tau11: "tau3",
-  tau12: "tau4",
-  tau13: "tau5",
-  tau14: "tau6",
-  tau15: "tau7",
-  tau16: "tau8",
+  // Tau - 180 degrees keeps the center hand at center and sends the perimeter
+  // hand to the opposite point (+4 within each half). Switching which hand is
+  // at center is the swap map's job, not a rotation's.
+  tau1: "tau5",
+  tau2: "tau6",
+  tau3: "tau7",
+  tau4: "tau8",
+  tau5: "tau1",
+  tau6: "tau2",
+  tau7: "tau3",
+  tau8: "tau4",
+  tau9: "tau13",
+  tau10: "tau14",
+  tau11: "tau15",
+  tau12: "tau16",
+  tau13: "tau9",
+  tau14: "tau10",
+  tau15: "tau11",
+  tau16: "tau12",
   // Terra - both hands at center, stays the same
   terra1: "terra1",
 };

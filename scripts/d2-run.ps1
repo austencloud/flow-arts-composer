@@ -23,6 +23,11 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+# Windows keeps ssh/scp in System32\OpenSSH, which some shells (agent runs) lack on PATH.
+if (-not (Get-Command ssh -ErrorAction SilentlyContinue)) {
+  $openSsh = Join-Path $env:SystemRoot 'System32\OpenSSH'
+  if (Test-Path $openSsh) { $env:PATH = "$openSsh;$env:PATH" }
+}
 $ssh = @('-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', '-l', 'austen', 'd2')
 $jobsRoot = 'C:/Users/Austen/d2-jobs'
 

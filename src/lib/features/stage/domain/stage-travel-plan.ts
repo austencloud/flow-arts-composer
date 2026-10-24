@@ -1,19 +1,9 @@
-import type {
-  ScheduledGaitTimingSample,
-  TerminalStepPlan,
-} from "@austencloud/scene-3d";
-
 import {
-  createDestinationWalkPlan,
-  createTerminalStepPlan,
-  sampleDestinationWalkPlan,
-  type DestinationWalkPlan,
-} from "#lib/shared/3d/locomotion/destination-walk-plan.js";
-import {
-  createGaitTimingPlan,
-  sampleGaitTimingPlan,
-  type GaitTimingPlan,
-} from "#lib/shared/3d/locomotion/gait-timing-plan.js";
+  compileBeatTravel,
+  sampleBeatTravel,
+  type BeatTravel,
+  type BeatTravelSample,
+} from "#lib/shared/3d/locomotion/beat-travel-plan.js";
 import {
   chooseAutomaticExactSteps,
   exactStepRange,
@@ -47,12 +37,7 @@ export interface ResolvedStageTravel {
   exact: boolean;
 }
 
-export interface CompiledStageTravel extends ResolvedStageTravel {
-  destinationPlan: DestinationWalkPlan;
-  timingPlan: GaitTimingPlan;
-  terminalPlan: TerminalStepPlan;
-  departureGaitStep: number;
-}
+export interface CompiledStageTravel extends ResolvedStageTravel, BeatTravel {}
 
 function spotAtOrBefore(
   choreography: StageChoreography,
@@ -166,94 +151,33 @@ export function compileStageTravel(
   );
   if (!resolved?.exact || !resolved.resolvedStepCount) return null;
 
-  const worldFrom = stageToWorld(resolved.from, choreography);
-  const worldTo = stageToWorld(resolved.to, choreography);
-  const cadence = resolved.resolvedStepCount / resolved.durationSeconds;
-  const destinationPlan = createDestinationWalkPlan({
-    from: worldFrom,
-    to: worldTo,
+  const travel = compileBeatTravel({
+    id: `stage:${resolved.performerId}:${resolved.formationId}`,
+    terminalId: `terminal:${resolved.performerId}:${resolved.formationId}`,
+    from: stageToWorld(resolved.from, choreography),
+    to: stageToWorld(resolved.to, choreography),
     steps: resolved.resolvedStepCount,
-    cadence,
-  });
-  const timingPlanId = `stage:${resolved.performerId}:${resolved.formationId}`;
-  const secondsPerBeat = 60 / choreography.bpm;
-  const footfalls = destinationPlan.stepBoundaries
-    .slice(1)
-    .map((distance, index) => {
-      const distanceFraction = distance / destinationPlan.distance;
-      const localProgress = beatAtDistanceFraction(
-        distanceFraction,
-        resolved.to.easing
-      );
-      const plantBeat =
-        resolved.departureBeat + localProgress * resolved.durationBeats;
-      return {
-        step: index + 1,
-        plantBeat,
-        plantTimeSeconds: plantBeat * secondsPerBeat,
-      };
-    });
-  const settleDurationBeats = Math.min(0.5, resolved.durationBeats / 4);
-  const timingPlan = createGaitTimingPlan({
-    id: timingPlanId,
     departureBeat: resolved.departureBeat,
-    departureTimeSeconds: resolved.departureBeat * secondsPerBeat,
-    footfalls,
-    settledBeat: resolved.arrivalBeat + settleDurationBeats,
-    settledTimeSeconds:
-      (resolved.arrivalBeat + settleDurationBeats) * secondsPerBeat,
+    arrivalBeat: resolved.arrivalBeat,
+    bpm: choreography.bpm,
+    arrivalFacing: resolved.to.facingAngle ?? 0,
+    departureGaitStep,
+    // The destination spot's pacing curve says when each footfall lands.
+    footfallBeat: (_step, distanceFraction) =>
+      resolved.departureBeat +
+      beatAtDistanceFraction(distanceFraction, resolved.to.easing) *
+        resolved.durationBeats,
   });
-  const terminalPlan = createTerminalStepPlan(
-    destinationPlan,
-    departureGaitStep,
-    `terminal:${resolved.performerId}:${resolved.formationId}`,
-    resolved.to.facingAngle ?? 0,
-    timingPlanId
-  );
 
-  return {
-    ...resolved,
-    destinationPlan,
-    timingPlan,
-    terminalPlan,
-    departureGaitStep,
-  };
+  return { ...resolved, ...travel };
 }
 
 export function sampleCompiledStageTravel(
   travel: CompiledStageTravel,
   beat: number,
   bpm: number
-): {
-  position: { x: number; z: number };
-  progress: number;
-  speed: number;
-  moving: boolean;
-  gaitTimingSample: ScheduledGaitTimingSample;
-  terminalStepPlan: TerminalStepPlan;
-} {
-  const timing = sampleGaitTimingPlan(travel.timingPlan, (beat * 60) / bpm);
-  const destination = sampleDestinationWalkPlan(
-    travel.destinationPlan,
-    timing.step,
-    timing.step,
-    timing.cadence
-  );
-  return {
-    position: destination.position,
-    progress: destination.progress,
-    speed: destination.speed,
-    moving: destination.moving,
-    gaitTimingSample: {
-      planId: travel.timingPlan.id,
-      gaitStep: travel.departureGaitStep + timing.step,
-      cadence: timing.cadence,
-      arrived: timing.arrived,
-      settled: timing.settled,
-      settleProgress: timing.settleProgress,
-    },
-    terminalStepPlan: travel.terminalPlan,
-  };
+): BeatTravelSample {
+  return sampleBeatTravel(travel, beat, bpm);
 }
 
 export function departureGaitStepFor(

@@ -12,7 +12,6 @@
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { Snippet } from "svelte";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
-  import BackToBrowseButton from "#lib/features/browse/shared/components/BackToBrowseButton.svelte";
   import type { WorkShelfId } from "../services/work-shelf-navigation.js";
 
   interface ShelfDefinition {
@@ -27,10 +26,9 @@
     onchange: (shelfId: WorkShelfId) => void;
     content: Snippet<[WorkShelfId]>;
     region: "tabs" | "panel";
-    showBrowseBack?: boolean;
   }
 
-  let { value, onchange, content, region, showBrowseBack = false }: Props = $props();
+  let { value, onchange, content, region }: Props = $props();
 
   const shelves = $derived<Record<WorkShelfId, ShelfDefinition>>({
     drafts: {
@@ -98,7 +96,6 @@
 
 {#if region === "tabs"}
   <header class="rail-header">
-    <BackToBrowseButton />
     <div class="tab-width">
       <SegmentedControl
         {options}
@@ -123,7 +120,6 @@
   >
     {#if value !== "collections" && value !== "drafts"}
       <header class="shelf-panel-header">
-        {#if showBrowseBack}<BackToBrowseButton />{/if}
         <div class="shelf-panel-heading">
           <h3>{shelves[value].label}</h3>
           <p>{shelves[value].description}</p>

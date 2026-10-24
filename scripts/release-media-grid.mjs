@@ -7,9 +7,12 @@
  *
  * The takes come from the dev bake pages, which save them through
  * /api/dev/release-media into the OS temp folder:
- *   2D: /test/release-media?effects=silk,goo,ink,smoke&autorun=1
- *   3D: /test/viewer-3d?scene=void&effect=<e>&take=<e>-3d
+ *   2D: /test/release-media?seq=DCKΨ-&effects=silk,goo,ink,smoke&autorun=1
+ *   3D: /test/viewer-3d?scene=void&effect=<e>&take=<e>-3d&seq=DCKΨ-
  *         &cam=0,0.45,4.5&look=0,0.45,0&fov=40  (720x720 viewport)
+ *
+ * DCKΨ- is a 16-beat circular sequence, and the clip runs one whole pass
+ * from beat 1, so its last frame flows back into its first.
  *
  * Usage:
  *   node scripts/release-media-grid.mjs --version 0.49.0
@@ -36,16 +39,23 @@ const TAKE_DIR = join(tmpdir(), "tka-release-media");
 
 // Takes are 720px squares at 30 fps, one beat per second.
 const TAKE = 720;
-const SECONDS = 8;
-// The 2D loop clip starts at beat 9 and the 3D export opens on a one-beat
-// hold, so these trims put both on beat 1 of the same pass.
-const START_2D = 8;
+const SECONDS = 16;
+// The 2D loop-clip export begins half a pass in (the video exporter's
+// seamless-loop phase offset), so its take opens on beat 9 of a 16-beat
+// pass. The 3D export opens on a one-beat start-position hold, then beat 1.
+// The 2D is cut at the half and its halves swapped, and the 3D skips the
+// hold, so both cells start on beat 1 and stay on the same beat throughout.
+// Measured on DCKΨ-: the 3D's first frame matched the 2D at 7.0 s in all
+// four effects, and the 3D hold matches the record's start position.
+const SPLIT_2D = SECONDS / 2;
 const START_3D = 1;
 // Measured registration of the 2D grid onto the 3D wall plane at the camera
 // above (staff centroids across a whole pass, after mirroring the 3D, which
 // faces the camera while the 2D grid is drawn from behind the performer).
-const SCALE_2D = 0.962;
-const SHIFT_2D = { x: 29, y: -17 };
+// Mean of the Goo, Ink and Smoke fits on DCKΨ-; Silk's ribbons blur its
+// staff track. What is left over (about 35px) is the staffs moving in depth.
+const SCALE_2D = 0.944;
+const SHIFT_2D = { x: 30, y: -17 };
 
 const CELL = 516;
 const GAP = 8;
@@ -54,17 +64,18 @@ const BACKGROUND = "0x0a0a14";
 
 // Fade timing: hold the 2D, fade the cells in one after another, hold the
 // 3D, then fade every cell back so the loop restarts on the 2D view.
-const FADE_FIRST = 1.6;
+const FADE_FIRST = 4;
 const FADE_STAGGER = 0.7;
 const FADE_SECONDS = 1.2;
 const FADE_BACK = SECONDS - 1.3;
 
 // The email list column is 500px wide. Four cells of moving trails cost far
-// more than one: 12 fps and 96 colours hold an 8-second grid near 3.5 MB,
-// where 20 fps passed 5 MB. Dithering changes the size very little.
-const GIF_SIZE = 500;
-const GIF_FPS = 12;
-const GIF_COLORS = 96;
+// more than one: a 16-second pass at 500px, 12 fps and 96 colours came to
+// 6.3 MB; 440px, 10 fps and 64 colours hold it near 3.9 MB. 8 fps looked
+// choppy on the spinning staffs. Dithering changes the size very little.
+const GIF_SIZE = 440;
+const GIF_FPS = 10;
+const GIF_COLORS = 64;
 
 const LABEL_FONT =
   process.env.RELEASE_MEDIA_FONT ?? "C:/Windows/Fonts/segoeuib.ttf";
@@ -116,7 +127,10 @@ function cellFilter(i, effect) {
   const font = LABEL_FONT.replace(/:/g, "\\:");
   return [
     `color=c=${BACKGROUND}:s=${TAKE}x${TAKE}:r=30:d=${SECONDS}[bg${i}]`,
-    `${flat}trim=start=${START_2D}:duration=${SECONDS},setpts=PTS-STARTPTS,scale=${size}:${size}[f${i}]`,
+    `${flat}split[fa${i}][fb${i}]`,
+    `[fa${i}]trim=start=${SPLIT_2D}:end=${SECONDS},setpts=PTS-STARTPTS[fl${i}]`,
+    `[fb${i}]trim=start=0:end=${SPLIT_2D},setpts=PTS-STARTPTS[fe${i}]`,
+    `[fl${i}][fe${i}]concat=n=2:v=1:a=0,scale=${size}:${size}[f${i}]`,
     `[bg${i}][f${i}]overlay=x=${SHIFT_2D.x}:y=${SHIFT_2D.y}[flat${i}]`,
     `${solid}trim=start=${START_3D}:duration=${SECONDS},setpts=PTS-STARTPTS,` +
       `crop=ih:ih,scale=${TAKE}:${TAKE},hflip,format=yuva420p,` +
@@ -187,7 +201,17 @@ function main() {
 
   // The poster is the moment every cell has turned 3D.
   const allSolid = FADE_FIRST + 3 * FADE_STAGGER + FADE_SECONDS + 0.2;
-  ffmpeg(["-ss", allSolid.toFixed(2), "-i", mp4, "-frames:v", "1", "-q:v", "3", jpg]);
+  ffmpeg([
+    "-ss",
+    allSolid.toFixed(2),
+    "-i",
+    mp4,
+    "-frames:v",
+    "1",
+    "-q:v",
+    "3",
+    jpg,
+  ]);
 
   for (const file of [mp4, gif, jpg]) {
     console.log(`${file}  ${(statSync(file).size / 1024).toFixed(0)} KB`);

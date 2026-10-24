@@ -97,7 +97,8 @@ files + scoped `npm run test:ci -- <touched test glob>` → atomic commit with
 The ~10 `I*.ts` files with zero implementations → move the type into the consuming
 module's `types.ts`, drop the `I` prefix, rewrite imports. Leave the 8 polymorphic
 keepers (`ILOOPExecutor`, `ISubInterpreter`, `ILOOPDetector`, `IAsciiRenderer`,
-`IDirectRenderer`, `IEndpointDetector`, `IInputProvider`, `ITrailOverlayCanvas`) and
+`IDirectRenderer`, `IEndpointDetector`, `ITrailOverlayCanvas`; `IInputProvider` was
+removed as dead code 2026-10-22) and
 the `IFeedbackTesterWorkflow` inversion boundary.
 
 ## Phase C — residual kebab rename (LAST, mechanical)

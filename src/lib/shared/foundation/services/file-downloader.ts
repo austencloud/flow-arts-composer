@@ -3,7 +3,54 @@ import type {
   BatchDownloadOptions,
   DownloadResult,
 } from "./types";
+import { Capacitor, registerPlugin } from "@capacitor/core";
 import { detectPlatform } from "#lib/shared/mobile/services/platform-detector.js";
+
+/**
+ * The Android app's own share sheet (TkaFileSharePlugin.java). Android's
+ * WebView has no navigator.share, so inside the app this is the only way a
+ * file reaches Instagram, Messages and the rest. An app build from before the
+ * plugin existed reports it unavailable and keeps the old fallbacks.
+ */
+interface TkaFileSharePlugin {
+  shareFile(options: {
+    data: string;
+    filename: string;
+    mimeType: string;
+    title?: string;
+    text?: string;
+  }): Promise<{ shown: boolean }>;
+}
+
+const appFileShare = registerPlugin<TkaFileSharePlugin>("TkaFileShare");
+
+function supportsAppFileShare(): boolean {
+  return (
+    Capacitor.getPlatform() === "android" &&
+    Capacitor.isPluginAvailable("TkaFileShare")
+  );
+}
+
+function supportsBrowserFileShare(): boolean {
+  return (
+    typeof navigator !== "undefined" &&
+    typeof navigator.share === "function" &&
+    typeof navigator.canShare === "function" &&
+    typeof File !== "undefined"
+  );
+}
+
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const url = String(reader.result);
+      resolve(url.slice(url.indexOf(",") + 1));
+    };
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+}
 
 export type NativeFileShareResult =
   | { status: "shared"; filename: string }
@@ -82,14 +129,9 @@ function isAbortError(error: unknown): boolean {
         error.name === "AbortError";
 }
 
-/** True when this browser advertises native file sharing. */
+/** True when this browser, or the app around it, offers native file sharing. */
 export function supportsNativeFileShare(): boolean {
-  return (
-    typeof navigator !== "undefined" &&
-    typeof navigator.share === "function" &&
-    typeof navigator.canShare === "function" &&
-    typeof File !== "undefined"
-  );
+  return supportsBrowserFileShare() || supportsAppFileShare();
 }
 
 /**
@@ -99,7 +141,7 @@ export function supportsNativeFileShare(): boolean {
  * while rendering a menu and reserve the later click for `share()`.
  */
 export function canNativeShareFile(blob: Blob, filename: string): boolean {
-  if (!supportsNativeFileShare()) return false;
+  if (!supportsBrowserFileShare()) return supportsAppFileShare();
 
   try {
     return navigator.canShare(createShareData(blob, filename, {}));
@@ -120,8 +162,10 @@ export async function shareBlobNatively(
   filename: string,
   options: NativeFileShareOptions = {}
 ): Promise<NativeFileShareResult> {
-  if (!supportsNativeFileShare()) {
-    return { status: "unavailable", filename };
+  if (!supportsBrowserFileShare()) {
+    return supportsAppFileShare()
+      ? shareThroughApp(blob, filename, options)
+      : { status: "unavailable", filename };
   }
 
   let sharePromise: Promise<void>;
@@ -157,6 +201,30 @@ export async function shareBlobNatively(
       filename,
       error: errorFromUnknown(error),
     };
+  }
+}
+
+/**
+ * The app's sheet needs no click to open, so a render that finished after the
+ * tap can still reach it. It cannot tell a dismissal from a share, so showing
+ * the sheet counts as shared.
+ */
+async function shareThroughApp(
+  blob: Blob,
+  filename: string,
+  options: NativeFileShareOptions
+): Promise<NativeFileShareResult> {
+  try {
+    await appFileShare.shareFile({
+      data: await blobToBase64(blob),
+      filename,
+      mimeType: blob.type || "application/octet-stream",
+      title: options.title,
+      text: options.text,
+    });
+    return { status: "shared", filename };
+  } catch (error) {
+    return { status: "failed", filename, error: errorFromUnknown(error) };
   }
 }
 

@@ -40,6 +40,12 @@ export interface TriageSessionRow {
   browser: string;
   operatingSystem: string;
   deviceType: string;
+  /** Browser language of the session's last event, e.g. "zh-CN". Empty if absent. */
+  locale: string;
+  /** True when the SDK marked any event of the session as coming from an identified user. */
+  identified: boolean;
+  /** Referring domain of the entry pageview. Empty or "$direct" when none. */
+  referringDomain: string;
 }
 
 /** One row of the session events query. */
@@ -89,7 +95,10 @@ export function buildTriageSessionsQuery(sinceIso: string, limit: number): strin
         event = '$pageview' AND properties."$current_url" IS NOT NULL) as exit_path,
       argMax(properties."$browser", timestamp) as browser,
       argMax(properties."$os", timestamp) as operating_system,
-      argMax(properties."$device_type", timestamp) as device_type
+      argMax(properties."$device_type", timestamp) as device_type,
+      argMax(properties."$browser_language", timestamp) as locale,
+      maxIf(1, toString(properties."$is_identified") IN ('true', '1')) as identified,
+      argMinIf(properties."$referring_domain", timestamp, event = '$pageview') as referring_domain
     FROM events
     WHERE timestamp > toDateTime('${since}')
       AND "$session_id" != ''
@@ -98,6 +107,26 @@ export function buildTriageSessionsQuery(sinceIso: string, limit: number): strin
     ORDER BY started_at DESC
     LIMIT ${n}
   `;
+}
+
+/**
+ * Crawler sessions: one page view, never identified, zh-CN browser language,
+ * and no referrer. On 2026-10-22, 30 of the top 40 friction slots were this
+ * shape (zh-CN Chrome from cloud IP ranges reading one localized /guide page).
+ * PostHog data here carries no datacenter-IP flag, so an empty referrer stands
+ * in for it. Triage-side only: PostHog itself is untouched, and
+ * `--include-crawlers` brings these sessions back.
+ */
+export function isLikelyCrawlerSession(
+  row: Pick<TriageSessionRow, "pageviewCount" | "identified" | "locale" | "referringDomain">
+): boolean {
+  const noReferrer = row.referringDomain === "" || row.referringDomain === "$direct";
+  return (
+    row.pageviewCount === 1 &&
+    !row.identified &&
+    row.locale.toLowerCase().replace("_", "-") === "zh-cn" &&
+    noReferrer
+  );
 }
 
 /** Ordered event stream for one session, any user. */
@@ -111,8 +140,10 @@ export function buildTriageSessionEventsQuery(sessionId: string, limit: number):
       event,
       if(properties."$current_url" IS NULL, '', path(properties."$current_url")) as route,
       coalesce(properties."$el_text", properties."$event_type", '') as detail,
-      properties."$exception_type" as exception_type,
-      properties."$exception_message" as exception_message
+      -- The web SDK sends type and message only as lists ($exception_types,
+      -- $exception_values); the singular fields stay empty on its events.
+      coalesce(properties."$exception_type", properties."$exception_types"[1]) as exception_type,
+      coalesce(properties."$exception_message", properties."$exception_values"[1]) as exception_message
     FROM events
     WHERE "$session_id" = '${safe}'
     ORDER BY timestamp ASC
@@ -187,6 +218,9 @@ export function parseTriageSessionRow(row: unknown[]): TriageSessionRow {
     browser: String(row[15] ?? ""),
     operatingSystem: String(row[16] ?? ""),
     deviceType: String(row[17] ?? ""),
+    locale: String(row[18] ?? ""),
+    identified: Number(row[19] ?? 0) === 1 || row[19] === true,
+    referringDomain: String(row[20] ?? ""),
   };
 }
 

@@ -66,7 +66,22 @@ export interface GridSizingConfig {
    * column count is for a workspace the user builds into one step at a time.
    */
   fitAllSteps?: boolean;
+  /**
+   * Lay steps out in rows of up to eight while every cell still gets
+   * LONG_ROW_MIN_CELL_SIZE, instead of wrapping at four for bigger cells.
+   *
+   * For the Create workspace, where the sequence reads left to right like a
+   * line of music: in a desktop window around 2000px wide, eight steps as
+   * two rows of four left a box of 180px cells floating in empty space, and
+   * Austen preferred one row of eight at about 100px (2026-10-23). When eight
+   * columns would drop below the floor, the ordinary policy comes back.
+   */
+  preferLongRows?: boolean;
 }
+
+/** Smallest cell a long row may use; Assemble's readable floor elsewhere too. */
+const LONG_ROW_MIN_CELL_SIZE = 88;
+const LONG_ROW_MAX_COLUMNS = 8;
 
 const DEFAULT_SIZING: Omit<
   Required<GridSizingConfig>,
@@ -89,6 +104,7 @@ const DEFAULT_SIZING: Omit<
   preferWidthSizingOnNarrow: false,
   allowFewStepOverflowOnNarrow: true,
   fitAllSteps: false,
+  preferLongRows: false,
 };
 
 /**
@@ -332,6 +348,11 @@ export function calculateGridLayout(
 
   if (stableWideColumnCount !== null) {
     return calculateCandidate(stableWideColumnCount);
+  }
+
+  if (sizing.preferLongRows && !isNarrowContainer) {
+    const longRowLayout = calculateCandidate(LONG_ROW_MAX_COLUMNS);
+    if (longRowLayout.cellSize >= LONG_ROW_MIN_CELL_SIZE) return longRowLayout;
   }
 
   const wideMaxColumns = Math.min(

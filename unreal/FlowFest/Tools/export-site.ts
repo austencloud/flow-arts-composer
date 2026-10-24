@@ -1,4 +1,5 @@
 /** Export the current Flow Fest site into an engine-neutral, metre-based contract. */
+import { existsSync } from "node:fs";
 import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { dirname, join, resolve } from "node:path";
@@ -7,6 +8,7 @@ import { Euler, InstancedMesh, Matrix4, Mesh, Object3D, Quaternion, Vector3 } fr
 import type { ImportedTerrainDataV2 } from "../../../src/lib/shared/3d/procedural-engine/generation/real-terrain-zone";
 import type { FlowFestRuntimeContract } from "../../../src/routes/test/flow-fest-graybox/flow-fest-runtime-contract";
 import { buildFlowFestProductionDressing } from "../../../src/routes/test/flow-fest-sim/flow-fest-production-geometry";
+import { applyAustenCamps, canopySampler } from "./austen-camps.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const outputDir = resolve(repoRoot, "unreal/FlowFest/Content/Data");
@@ -186,7 +188,7 @@ async function buildSiteBundle(sourceRoot = repoRoot) {
     if (groundSurface.data.length !== groundSurface.width * groundSurface.height * 4) {
       throw new Error("Ground-family mask byte count is invalid");
     }
-    return { mask: groundSurface.data, site: {
+    const site = {
       version: 1,
       coordinateSystem: { units: "meters", x: "east", y: "up above NAVD88 origin", z: "south", rotation: "radians about +Y" },
       terrain: {
@@ -224,7 +226,14 @@ async function buildSiteBundle(sourceRoot = repoRoot) {
         productionSource: "src/routes/test/flow-fest-sim/flow-fest-production-geometry.ts",
         workshopNote: "Middle Earth activity-tier center; no surveyed workshop point in the current plan.",
       },
-    } };
+    };
+    // Austen's camping marks (tents taken off, where tents really stand) override the plan's camps.
+    const campingRecord = join(sourceRoot, "docs/superpowers/specs/flow-fest-sim/austen-camping-areas.json");
+    const record = existsSync(campingRecord) ? JSON.parse(await readFile(campingRecord, "utf8")) : null;
+    const canopyAt = canopySampler(canopyBytes, {
+      width: canopy.width, height: canopy.height, minX: bounds.minX, minZ: bounds.minZ, spacing: 1,
+    });
+    return { mask: groundSurface.data, site: record ? applyAustenCamps(site, record, canopyAt) : site };
   } finally {
     dressing.dispose();
   }

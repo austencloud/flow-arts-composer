@@ -33,7 +33,11 @@ const exactProfileReadFailure = `
   AND properties."telemetry_module" = 'firestore'
   AND properties."telemetry_action" = 'get'
   AND (
-    positionCaseInsensitiveUTF8(coalesce(properties."$exception_message", ''), 'missing or insufficient permissions') > 0
+    -- The web SDK leaves $exception_message empty and sends the text in
+    -- the $exception_values list, so search that list as one string.
+    positionCaseInsensitiveUTF8(toString(properties."$exception_values"), 'missing or insufficient permissions') > 0
+    OR positionCaseInsensitiveUTF8(toString(properties."$exception_values"), 'permission-denied') > 0
+    OR positionCaseInsensitiveUTF8(coalesce(properties."$exception_message", ''), 'missing or insufficient permissions') > 0
     OR positionCaseInsensitiveUTF8(coalesce(properties."$exception_message", ''), 'permission-denied') > 0
   )
 `;

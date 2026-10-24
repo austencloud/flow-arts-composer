@@ -46,6 +46,9 @@ struct FFlowFestCrowdAgent
     float NextGreetAt = 0.f;
     float ActionUntil = 0.f;
     float ActionDuration = 0.f;
+    float ActionStartedAt = 0.f;
+    /** A rest goal has ended, but route motion waits for the body to stand. */
+    float StandUntil = 0.f;
     float NextPerformanceEligibleAt = 0.f;
     bool bActionStarted = false;
     int32 CompletedActions = 0;
@@ -81,6 +84,7 @@ public:
     bool GreetNearby(const FVector2D& Position, FString& Reply);
     void Tick(float DeltaSeconds);
     const TArray<FFlowFestCrowdAgent>& GetAgents() const { return Agents; }
+    float GetElapsedSeconds() const { return ElapsedSeconds; }
     int32 GetCount(EFlowFestCrowdActivity Activity) const;
     FFlowFestCrowdSnapshot CaptureSnapshot() const;
     /** Restore after Initialize with the same geography; rejects mismatched identity sets. */
@@ -89,8 +93,11 @@ public:
     bool RestoreState(const FString& Json);
     static const TCHAR* ActivityLabel(EFlowFestCrowdActivity Activity);
     static FString IntentText(const FFlowFestCrowdAgent& Agent);
+    /** Jam polish: where fire watchers stand, outside the jam rope. Empty keeps the ring around the landmark. */
+    void SetFireWatchSpots(const TArray<FVector2D>& Spots) { FireWatchSpots = Spots; }
 
 private:
+    TArray<FVector2D> FireWatchSpots;
     struct FNode { FVector2D Position; TArray<int32> Neighbors; };
     TArray<FFlowFestCrowdAgent> Agents;
     TArray<FNode> Nodes;

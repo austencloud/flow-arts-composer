@@ -76,9 +76,9 @@ export async function _reconcileFollowCounts(
 
 /**
  * Write the followed user's inbox notification. onNewNotification turns this
- * into a push (respecting the user's `userFollowed` preference and the
- * pushEnabled master toggle — this function must NOT check those itself, or
- * the inbox entry would go missing for someone who only muted push).
+ * into a push (respecting the user's `userFollowed` preference) — this
+ * function must NOT check it itself, or the inbox entry would go missing for
+ * someone who only muted push.
  *
  * The doc id is deterministic (`follow-<followerUserId>`) rather than random,
  * so an unfollow/refollow cycle overwrites one entry instead of stacking a new

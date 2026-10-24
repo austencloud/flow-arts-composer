@@ -288,6 +288,14 @@ export interface BrowseEngine {
   /** Clear all user-set filters. Locked filters remain. */
   clearUserFilters(): void;
 
+  /** Swap every user-set filter and connective for the given set in one
+   * step. Locked filters remain, and an entry whose key a locked filter
+   * holds is skipped. Browse uses this to carry one query across scopes. */
+  replaceUserFilters(
+    entries: ReadonlyArray<readonly [string, ActiveFilter]>,
+    connectives: Readonly<Record<string, FilterConnective>>
+  ): void;
+
   /** Set the Match any / all connective for a connective-bearing category
    * (LOOP_TYPE, TND_FAMILY). No-op for other types. */
   setConnective(type: BrowseFilterType, connective: FilterConnective): void;

@@ -36,6 +36,7 @@ Supports letter highlighting during animation playback.
     TurnGlyphEntry,
   } from "@tka/render-composition";
   import { getGlyphCache } from "#lib/shared/render/get-glyph-cache.js";
+  import { activeGlyphColumn } from "#lib/shared/animation-engine/domain/word-header-highlight.js";
   import {
     isDashLetter,
     getBaseLetter,
@@ -456,6 +457,23 @@ Supports letter highlighting during animation playback.
     // activeStepNumber is 1-indexed, modulo to wrap around
     return (activeStepNumber! - 1) % parsedLetters.length;
   });
+
+  // The glyphs dim and light on the same gate as the letters, so while a new
+  // word is entering all three sit fully lit together. Each glyph wraps the
+  // step by its own period, not by the word's compression.
+  const glyphsHighlight = $derived(
+    hasActiveHighlighting && animationPhase === "idle"
+  );
+  const turnGlyphColumn = $derived(
+    glyphsHighlight && turnGlyphEntries
+      ? activeGlyphColumn(activeStepNumber, turnGlyphEntries.length)
+      : null
+  );
+  const reversalGlyphColumn = $derived(
+    glyphsHighlight && reversalGlyph
+      ? activeGlyphColumn(activeStepNumber, reversalGlyph.period)
+      : null
+  );
 </script>
 
 {#if visible && displayUnits.length > 0}
@@ -488,7 +506,10 @@ Supports letter highlighting during animation playback.
         aria-label="Turn pattern: {deriveTurnLabel(turnGlyphEntries)}"
         title="Turn pattern: {deriveTurnLabel(turnGlyphEntries)}"
       >
-        <TurnPatternGlyph entries={turnGlyphEntries} />
+        <TurnPatternGlyph
+          entries={turnGlyphEntries}
+          activeIndex={turnGlyphColumn}
+        />
       </div>
     {/if}
     {#if showReversalGlyph && reversalGlyph}
@@ -507,7 +528,11 @@ Supports letter highlighting during animation playback.
           reversalGlyph.period
         )}"
       >
-        <ReversalPatternGlyph {...reversalGlyph} maxWidthCqi={10} />
+        <ReversalPatternGlyph
+          {...reversalGlyph}
+          maxWidthCqi={10}
+          activeIndex={reversalGlyphColumn}
+        />
       </div>
     {/if}
 

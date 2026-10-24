@@ -22,7 +22,16 @@
   import CommunityCollectionsPanel from "../../collections/components/CommunityCollectionsPanel.svelte";
   import { createBrowseEngine } from "#lib/shared/browse/engine/create-browse-engine.svelte.js";
   import GalleryTab from "./GalleryTab.svelte";
-  import BackToBrowseButton from "./BackToBrowseButton.svelte";
+  import BrowseHeaderBar from "./BrowseHeaderBar.svelte";
+  import BrowseScopeBar from "./BrowseScopeBar.svelte";
+  import { scopeForLocation } from "#lib/shared/browse/navigation/browse-scope.js";
+  import {
+    bindBrowseQuery,
+    createBrowseQueryState,
+    setBrowseQueryContext,
+  } from "#lib/shared/browse/state/browse-query-state.svelte.js";
+  import { createBrowseHeaderState } from "#lib/shared/browse/state/browse-header-state.svelte.js";
+  import { setBrowseHeaderContext } from "#lib/shared/browse/context/browse-header-context.js";
   import SmartCollectionSaveDialog from "#lib/features/library/components/SmartCollectionSaveDialog.svelte";
   import FilterWorkspace from "#lib/features/browse/gallery-home/FilterWorkspace.svelte";
   import { loadCanonicalTnDSequences } from "#lib/features/browse/gallery-home/canonical-tnd-pool.js";
@@ -67,13 +76,12 @@
   import BrowsePanel from "#lib/shared/browse/components/BrowsePanel.svelte";
   import { trackBrowseDestinationEntered } from "#lib/shared/analytics/browse-events.js";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
-  import { exploreVisualsVisible } from "#lib/shared/browse/navigation/visuals-promotion.js";
   import { getAccessibleSectionsForModule } from "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js";
   import ExploreVisualsPanel from "#lib/features/browse/visuals/components/ExploreVisualsPanel.svelte";
   import BrowseHome, {
     type BrowseHomeDestination,
   } from "#lib/features/browse/home/BrowseHome.svelte";
-  import { Crossfade } from "#lib/shared/transitions/motion.js";
+  import { Crossfade, growFade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { page } from "$app/state";
   import {
@@ -88,12 +96,7 @@
   }> = [
     { value: "sequences", label: t("browse_ui_sequences_tab") },
     { value: "collections", label: t("browse_ui_collections_tab") },
-    // Visuals is promotion-gated (Browse Phase 3): the publication pipeline
-    // ships unconditionally, but the public destination appears only once the
-    // gate opens. Unpromoted deep links fall back to Sequences below.
-    ...(exploreVisualsVisible()
-      ? [{ value: "visuals" as const, label: t("browse_ui_visuals_tab") }]
-      : []),
+    { value: "visuals", label: t("browse_ui_visuals_tab") },
   ];
 
   // STATE MANAGEMENT (Shared Coordination)
@@ -167,6 +170,12 @@
   const browseNavigationState = setBrowseNavigationContext(
     createBrowseNavigationState()
   );
+  setBrowseHeaderContext(createBrowseHeaderState());
+
+  // One query for every grid: seeded from the community engine (after the
+  // restore above) so a returning visitor's filters survive, then carried to
+  // whichever scope is open. Each scope's grid binds its own engine.
+  const browseQuery = setBrowseQueryContext(createBrowseQueryState(engine));
 
   $effect(() => {
     sharedCollectionsState.start(authState.effectiveUserId);
@@ -183,14 +192,33 @@
       browseNavigationState.currentLocation.section === "collections"
       ? "collections"
       : browseNavigationState.currentLocation?.primary === "explore" &&
-          browseNavigationState.currentLocation.section === "visuals" &&
-          exploreVisualsVisible()
+          browseNavigationState.currentLocation.section === "visuals"
         ? "visuals"
         : "sequences"
   );
   // Opening Browse lands on its home screen; the inner location stays
   // underneath so a tile or tab returns to it.
   const homeOpen = $derived(navigationState.isModuleHomeOpen("browse"));
+
+  // Which pile the search bar runs over; null on pages that are not a
+  // sequence grid (collection lists, visuals), which have no scope bar.
+  const browseScope = $derived(
+    homeOpen || !browseNavigationState.currentLocation
+      ? null
+      : scopeForLocation(browseNavigationState.currentLocation)
+  );
+  // Everyone's engine stays bound on every page, not only its own: it is the
+  // one that persists, so a reload anywhere comes back to the last query
+  // rather than to whatever Everyone held when you last stood on it.
+  bindBrowseQuery(browseQuery, () => engine);
+  // Your collections list has no pile of its own, but it keeps the bar: the
+  // search and the scopes are how you leave it for a grid.
+  const onCollectionsList = $derived(
+    !homeOpen &&
+      browseNavigationState.currentLocation?.primary === "you" &&
+      browseNavigationState.currentLocation.section === "collections" &&
+      browseNavigationState.currentLocation.view === "list"
+  );
 
   function openFromHome(destination: BrowseHomeDestination): void {
     const location: BrowseLocation =
@@ -700,15 +728,15 @@
 </script>
 
 {#snippet resultsPane()}
-  <!-- The toolbar keeps its own search: the gallery's page-top search bar is
-       gone (2026-08-05), so THIS is the search, and it narrows the live grid in
-       place instead of ejecting to the full-page tab. -->
+  <!-- The scope bar above owns search for every grid, so this pane narrows
+       live under it instead of carrying a second search field. -->
   <BrowsePanel
     {engine}
     layout="compact"
     eager={false}
     showFilterBar={false}
     hideFilterChips
+    hideToolbarSearch
     onSelect={(sequence, variations) =>
       eventHandlerService?.handleSequenceAction(
         "view-detail",
@@ -739,6 +767,18 @@
 
 <!-- Main layout - shows immediately with skeletons while data loads -->
 <div class="browse-content">
+  <!-- One navigation bar for every Browse screen. It sits above the
+       Crossfade so the trail, back box and screen actions never fade or move
+       with the content under them. -->
+  <BrowseHeaderBar compact={isMobile} />
+  {#if browseScope || onCollectionsList}
+    <div
+      class="scope-bar-slot"
+      transition:growFade={{ duration: DURATION.normal }}
+    >
+      <BrowseScopeBar scope={browseScope} />
+    </div>
+  {/if}
   <!-- Community and personal work replace one another without moving the
        surrounding navigation. -->
   <div class="browse-tab-content">
@@ -755,20 +795,11 @@
           />
         {:else if activePrimary === "explore"}
           <div class="explore-shell">
-            <header class="explore-header">
-              <BackToBrowseButton />
-              <div class="explore-heading">
-                <span class="explore-eyebrow">{t("browse_home_community")}</span
-                >
-                <h1>
-                  {exploreSection === "sequences"
-                    ? t("browse_ui_find_a_sequence")
-                    : exploreSection === "collections"
-                      ? t("browse_ui_community_collections")
-                      : t("browse_ui_community_visuals")}
-                </h1>
-              </div>
-              {#if isMobile}<div class="explore-switcher">
+            {#if isMobile}
+              <!-- Phones and tablets have no sidebar, so the Community
+                   sibling switcher sits in its own row under the bar. -->
+              <div class="explore-switcher-row">
+                <div class="explore-switcher">
                   <SegmentedControl
                     options={EXPLORE_OPTIONS}
                     value={exploreSection}
@@ -791,12 +822,16 @@
                     semantics="tabs"
                     ariaLabel={t("browse_ui_explore_content_type")}
                   />
-                </div>{/if}
-            </header>
+                </div>
+              </div>
+            {/if}
 
             <div class="explore-body">
               {#if exploreSection === "sequences"}
-                {#if galleryView === "start-here"}
+                <!-- Phones and tablets go straight to the grid; their Filters
+                     sheet is the chooser. Desktop keeps the workspace with its
+                     live results beside it. -->
+                {#if galleryView === "start-here" && !isMobile}
                   <FilterWorkspace
                     {engine}
                     collections={collectionOptions}
@@ -821,14 +856,10 @@
                         ) ?? Promise.resolve()
                       );
                     }}
-                    onBackToStart={() => {
-                      engine.setSearch("");
-                      galleryView = "start-here";
-                    }}
-                    onOpenWorkspace={() => {
-                      engine.setSearch("");
-                      galleryView = "start-here";
-                    }}
+                    onBackToStart={isMobile
+                      ? undefined
+                      : () => (galleryView = "start-here")}
+                    onOpenWorkspace={() => (galleryView = "start-here")}
                     onSaveSmart={() => (smartSaveOpen = true)}
                   />
                 {/if}
@@ -855,6 +886,10 @@
     min-height: 0;
   }
 
+  .scope-bar-slot {
+    flex: 0 0 auto;
+  }
+
   .browse-tab-content {
     position: relative;
     flex: 1;
@@ -877,50 +912,19 @@
     flex-direction: column;
   }
 
-  .explore-header {
+  .explore-switcher-row {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-lg, 16px);
-    min-height: 68px;
-    padding: 10px clamp(12px, 2cqi, 28px);
+    flex: 0 0 auto;
+    padding: 8px clamp(12px, 2cqi, 28px);
     border-bottom: 1px solid
       color-mix(in srgb, var(--theme-text, #fff) 10%, transparent);
-    background: color-mix(
-      in srgb,
-      var(--theme-background, #090b16) 88%,
-      transparent
-    );
-  }
-
-  .explore-heading {
-    min-width: 0;
-    flex: 1 1 auto;
-  }
-
-  .explore-eyebrow {
-    display: block;
-    margin-bottom: 2px;
-    color: var(--theme-text-dim, rgba(255, 255, 255, 0.62));
-    font-size: clamp(12px, 0.22vw + 8px, 20px);
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
-  .explore-heading h1 {
-    margin: 0;
-    overflow: hidden;
-    color: var(--theme-text, #fff);
-    font-size: clamp(18px, 0.9vw + 8px, 44px);
-    line-height: 1.15;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 
   /* Reserve room for translated labels while keeping the control bounded. */
   .explore-switcher {
-    width: clamp(450px, 32vw, 560px);
+    flex: 1 1 auto;
+    width: auto;
+    max-width: 560px;
     min-width: 0;
   }
 
@@ -937,32 +941,10 @@
     overflow: hidden;
   }
 
-  @media (max-width: 760px) {
-    .explore-header {
-      align-items: center;
-      flex-direction: row;
-      gap: 8px;
-      min-height: auto;
-      padding-block: 8px;
-    }
-
-    .explore-heading {
-      display: none;
-    }
-
-    .explore-switcher {
-      flex: 1 1 auto;
-      width: auto;
-      min-width: 0;
-    }
-  }
-
+  /* Phones reach the Community sections from the bottom navigation, so the
+     switcher row only serves tablets. */
   @media (max-width: 560px) {
-    .explore-heading {
-      display: block;
-    }
-
-    .explore-switcher {
+    .explore-switcher-row {
       display: none;
     }
   }

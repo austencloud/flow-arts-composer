@@ -5,6 +5,9 @@
  * per-wing preferences in localStorage so the user's chosen track for each
  * room persists across sessions. Respects the browser's autoplay policy by
  * deferring first playback until the user interacts with the page.
+ *
+ * Rooms that build their sound live (procedural ambience) play it through
+ * proceduralOutput(), which shares the same gate, mute and master volume.
  */
 
 import {
@@ -101,6 +104,10 @@ export function createSoundscapePlayer() {
 	let activeEl: HTMLAudioElement | null = null;
 	let fadeTimer: ReturnType<typeof setInterval> | null = null;
 
+	// ── Live (procedural) sound: one context, made after the first gesture ──
+	let audioContext: AudioContext | null = null;
+	let proceduralGain: GainNode | null = null;
+
 	// On mount, load prefs. Deferred so SSR doesn't touch localStorage.
 	function initialize(): () => void {
 		prefs = loadPrefs();
@@ -133,6 +140,9 @@ export function createSoundscapePlayer() {
 			if (fadeTimer !== null) clearInterval(fadeTimer);
 			elA?.pause();
 			elB?.pause();
+			void audioContext?.close();
+			audioContext = null;
+			proceduralGain = null;
 		};
 	}
 
@@ -191,8 +201,49 @@ export function createSoundscapePlayer() {
 		activeEl = nextEl;
 	}
 
+	/**
+	 * Where live room sound plays: null until the visitor's first gesture, the
+	 * same gate the tracks wait on. Its level follows mute and master volume.
+	 */
+	function proceduralOutput(): { context: AudioContext; destination: AudioNode } | null {
+		if (!hasUserInteracted || typeof AudioContext === "undefined") return null;
+		if (!audioContext || !proceduralGain) {
+			audioContext = new AudioContext();
+			proceduralGain = audioContext.createGain();
+			proceduralGain.gain.value = muted ? 0 : masterVolume;
+			proceduralGain.connect(audioContext.destination);
+		}
+		if (audioContext.state === "suspended") void audioContext.resume();
+		return { context: audioContext, destination: proceduralGain };
+	}
+
+	/** Fade the playing track out, for a room that plays no music. */
+	function fadeOutMusic(): void {
+		const el = activeEl;
+		activeCandidateId = null;
+		if (!el) return;
+		if (fadeTimer !== null) clearInterval(fadeTimer);
+		const startVol = el.volume;
+		let step = 0;
+		fadeTimer = setInterval(() => {
+			step++;
+			const t = Math.min(1, step / FADE_STEPS);
+			el.volume = startVol * Math.cos((t * Math.PI) / 2);
+			if (step >= FADE_STEPS) {
+				if (fadeTimer !== null) clearInterval(fadeTimer);
+				fadeTimer = null;
+				el.pause();
+				el.volume = 0;
+				isPlaying = false;
+			}
+		}, CROSSFADE_MS / FADE_STEPS);
+	}
+
 	/** Instantly sync the active element's volume to current settings. */
 	function refreshActiveVolume(): void {
+		if (audioContext && proceduralGain) {
+			proceduralGain.gain.setTargetAtTime(muted ? 0 : masterVolume, audioContext.currentTime, 0.05);
+		}
 		if (!activeEl || !activeCandidateId || !currentWingId) return;
 		const cand = getCandidate(currentWingId, activeCandidateId);
 		if (!cand) return;
@@ -207,6 +258,10 @@ export function createSoundscapePlayer() {
 		if (wingId === null) return;
 		if (wingId === currentWingId) return;
 		currentWingId = wingId;
+		if (getSoundscapeForWing(wingId)?.ambienceOnly) {
+			fadeOutMusic();
+			return;
+		}
 		const cand = resolvePreferredCandidate(wingId, prefs);
 		if (cand) crossfadeTo(cand);
 	}
@@ -284,6 +339,7 @@ export function createSoundscapePlayer() {
 			return prefs[wingId];
 		},
 		initialize,
+		proceduralOutput,
 		setCurrentWing,
 		playCandidate,
 		saveAsPreference,

@@ -18,6 +18,8 @@ export interface ToastAction {
 export interface Toast {
   id: string;
   message: string;
+  /** Optional line of secondary text beneath the message. */
+  detail?: string;
   type: ToastType;
   duration: number;
   timestamp: number;
@@ -41,6 +43,7 @@ const dismissTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
 export interface ShowToastOptions {
   message: string;
+  detail?: string;
   type?: ToastType;
   duration?: number;
   imageUrl?: string;
@@ -68,6 +71,7 @@ export function showToast(
   const toast: Toast = {
     id,
     message: options.message,
+    detail: options.detail,
     type: options.type ?? "info",
     duration: options.duration ?? 3000,
     timestamp: Date.now(),

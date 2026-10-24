@@ -32,6 +32,7 @@ void AFlowFestHUD::DrawHUD()
     AFlowFestCharacter* Traveler = Cast<AFlowFestCharacter>(PlayerOwner->GetPawn());
     if (!Traveler) return;
     if (Traveler->IsWardrobeOpen()) { DrawWardrobe(Traveler); return; }
+    if (Traveler->IsJamSlice()) return; // Jam polish: the jam slice hides the objective and draws its own quiet hint.
 
     const float W = Canvas->SizeX;
     const float H = Canvas->SizeY;

@@ -11,14 +11,24 @@
  *   the player is too narrow for four across (a landscape phone, or a
  *   laptop at 200% zoom), the panel is the player's height and holds two
  *   pictures across that scroll inside it.
- * - `strip`: where the player fills the width (phone and tablet portrait),
- *   one scrolling row of pictures, placed so the whole animation stays in
- *   view: a tray floating just under the player's controls where the room
- *   under them holds it (with smaller pictures if need be), otherwise docked
- *   along the bottom of its bounds over the toolbar there (idle while the
- *   picker is open), and over the animation's bottom edge only when neither
- *   of those nor the narrow side panel fits. The pictures are sized so the
- *   last one in view is cut about in half, which shows the row scrolls.
+ * - `grid`: where the player fills the width (phone and tablet portrait),
+ *   the pictures wrap four or more across under an Effects title row that
+ *   holds Off and close, in the room under the player that the animation does
+ *   not need: a tray floating just under the player's controls where that
+ *   room holds the whole grid, otherwise a sheet docked along the bottom of
+ *   its bounds over the toolbar there (idle while the picker is open). Where
+ *   neither holds every row, the grid takes the larger of the two and scrolls
+ *   down inside it, its last row in view cut to show there is more. The
+ *   pictures are as large as `QUICK_PICKER_MAX_STRIP_PORTRAIT` allows, so a
+ *   tablet gets more columns rather than a phone's tiles stretched.
+ * - `strip`: where the grid would not show more effects at once (too little
+ *   room for its title row and a row and a half of pictures, as on a short
+ *   phone), one scrolling row of pictures, placed so the whole animation
+ *   stays in view: floating under the controls where the room there holds
+ *   it (with smaller pictures if need be), otherwise docked along the bottom
+ *   of its bounds, and over the animation's bottom edge only when neither of
+ *   those nor the narrow side panel fits. The pictures are sized so the last
+ *   one in view is cut about in half, which shows the row scrolls.
  *
  * Pure arithmetic over the picture tiles' own metrics (effect-catalog-fit),
  * so the CSS that draws the tiles and the fit cannot drift apart.
@@ -67,6 +77,19 @@ export type EffectQuickPickerFit =
       height: number | null;
     }
   | {
+      arrangement: "grid";
+      /** Floating under the player's controls, or docked along the bottom
+       *  of the bounds. */
+      side: "below" | "dock";
+      /** The panel's outer height in px. */
+      height: number;
+      /** The picture tiles, several rows of them. */
+      catalog: EffectCatalogFit;
+      /** The tiles scroll down inside the panel: the room holds fewer rows
+       *  than there are. */
+      scrolls: boolean;
+    }
+  | {
       arrangement: "strip";
       /** Floating under the player's controls, docked along the bottom of
        *  the bounds, or over the animation's bottom edge. */
@@ -108,6 +131,11 @@ const SIDE_COLUMNS = 4;
 export const QUICK_PICKER_STRIP_PAD = 8;
 export const QUICK_PICKER_OFF_WIDTH = 64;
 export const QUICK_PICKER_CLOSE_WIDTH = 44;
+/** The tray's and the docked sheet's border. */
+const QUICK_PICKER_BORDER = 1;
+/** The grid wants at least this many columns: fewer and the side panel or
+ *  the strip suits the player better. */
+const GRID_MIN_COLUMNS = 4;
 /** Space between the player's controls and the tray floating under them. */
 export const QUICK_PICKER_STRIP_GAP = 8;
 export const QUICK_PICKER_MIN_STRIP_PORTRAIT = 64;
@@ -141,6 +169,17 @@ export function sidePanelHeight(
     QUICK_PICKER_HEAD_GAP +
     rows * tile +
     (rows - 1) * gap
+  );
+}
+
+/** The grid's outer height for a tile arrangement, with every row in view. */
+export function gridPanelHeight(catalog: EffectCatalogFit): number {
+  return (
+    2 * QUICK_PICKER_STRIP_PAD +
+    QUICK_PICKER_HEAD +
+    QUICK_PICKER_HEAD_GAP +
+    catalog.rows * pictureTileHeight(catalog.portrait) +
+    (catalog.rows - 1) * catalog.gap
   );
 }
 
@@ -250,6 +289,8 @@ export function fitEffectQuickPicker({
   }
 
   const strip = fitStrip(bounds, player, roomBelow, count);
+  const grid = fitGrid(bounds, player, roomBelow, count, strip);
+  if (grid) return grid;
   if (strip.arrangement === "strip" && strip.side === "below") return strip;
   return fitNarrowSide(bounds, player, side, width, count) ?? strip;
 }
@@ -290,6 +331,73 @@ function fitNarrowSide(
     catalog: pictures,
     height: sidePanelHeight(pictures, count) > height ? height : null,
   };
+}
+
+/** The pictures wrapping across the player's width in the room under it, or
+ *  null where that shows no more effects at once than `strip` does. It never
+ *  covers the animation: it floats under the controls or docks below the
+ *  player, so it is only ever as tall as the room there. */
+function fitGrid(
+  bounds: QuickPickerRect,
+  player: QuickPickerRect,
+  roomBelow: number,
+  count: number,
+  strip: EffectQuickPickerFit
+): EffectQuickPickerFit | null {
+  if (strip.arrangement !== "strip") return null;
+  // The panel's padding, and the floating tray's border.
+  const inner =
+    player.width - 2 * QUICK_PICKER_STRIP_PAD - 2 * QUICK_PICKER_BORDER;
+  let catalog: EffectCatalogFit | null = null;
+  // The most pictures across that stay no larger than the strip's largest,
+  // and never fewer than four.
+  for (let cols = GRID_MIN_COLUMNS; ; cols++) {
+    const next = fitEffectRoster({ width: inner, count, columns: cols });
+    if (!next) break;
+    catalog = next;
+    if (next.portrait <= QUICK_PICKER_MAX_STRIP_PORTRAIT) break;
+  }
+  if (!catalog) return null;
+
+  const tile = pictureTileHeight(catalog.portrait);
+  // The floating tray's border runs all round it, the docked sheet's along
+  // its top.
+  const fullBelow = gridPanelHeight(catalog) + 2 * QUICK_PICKER_BORDER;
+  const fullDocked = gridPanelHeight(catalog) + QUICK_PICKER_BORDER;
+  const roomUnder = roomBelow - QUICK_PICKER_STRIP_GAP;
+  const roomDocked = bounds.top + bounds.height - (player.top + player.height);
+  const side =
+    roomUnder >= fullBelow ||
+    (roomDocked < fullDocked && roomUnder >= roomDocked)
+      ? "below"
+      : "dock";
+  const full = side === "below" ? fullBelow : fullDocked;
+  const room = Math.floor(side === "below" ? roomUnder : roomDocked);
+  const height = Math.ceil(Math.min(full, room));
+  const scrolls = height < full;
+  // A scrolling grid shows a row and a half at least: the cut row under the
+  // whole one shows that it scrolls.
+  const head =
+    2 * QUICK_PICKER_STRIP_PAD + QUICK_PICKER_HEAD + QUICK_PICKER_HEAD_GAP;
+  if (scrolls && height < head + 1.5 * tile + catalog.gap) return null;
+
+  // Whole tiles in view, against the strip's.
+  const wholeRows = scrolls
+    ? Math.floor((height - head + catalog.gap) / (tile + catalog.gap))
+    : catalog.rows;
+  const inGrid = Math.min(count, wholeRows * catalog.cols);
+  const stripRoom =
+    player.width -
+    2 * QUICK_PICKER_STRIP_PAD -
+    QUICK_PICKER_OFF_WIDTH -
+    QUICK_PICKER_CLOSE_WIDTH -
+    2 * CATALOG_GAP;
+  const inStrip = Math.floor(
+    (stripRoom + CATALOG_GAP) / stripTilePitch(strip.catalog.portrait)
+  );
+  if (inGrid <= inStrip) return null;
+
+  return { arrangement: "grid", side, height, catalog, scrolls };
 }
 
 function fitStrip(

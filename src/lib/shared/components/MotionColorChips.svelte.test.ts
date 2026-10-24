@@ -79,10 +79,10 @@ describe("MotionColorChips", () => {
     });
 
     await expect
-      .element(page.getByRole("button", { name: "Hide left motion" }))
+      .element(page.getByRole("button", { name: "Hide Blue motion" }))
       .toHaveAttribute("aria-pressed", "true");
     await expect
-      .element(page.getByRole("button", { name: "Show right motion" }))
+      .element(page.getByRole("button", { name: "Show Red motion" }))
       .toHaveAttribute("aria-pressed", "false");
     expect(
       document

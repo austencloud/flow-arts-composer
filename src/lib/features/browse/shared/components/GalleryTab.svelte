@@ -94,7 +94,13 @@
      TODO(phone-sheet-feel): the phone sheet's fate is settled by feel on a
      real phone during unified-workspace verification (spec decision 3). -->
 {#if isMobile || !onOpenWorkspace}
-  <GalleryFilterSheet {engine} bind:isOpen={isFilterSheetOpen} {isMobile} />
+  <!-- Search lives in the Browse scope bar, always on screen. -->
+  <GalleryFilterSheet
+    {engine}
+    bind:isOpen={isFilterSheetOpen}
+    {isMobile}
+    allowSearch={false}
+  />
 {/if}
 
 <!-- Sort & Jump Sheet (Mobile) -->

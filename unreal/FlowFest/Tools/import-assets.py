@@ -1,6 +1,7 @@
 """Unreal 5.8 editor Python: import reproducible assets, create materials and save the map."""
 import unreal as u
 import json
+import math
 import re
 import sys
 from pathlib import Path
@@ -17,15 +18,18 @@ report = {'meshes': [], 'materials': [], 'errors': []}
 # replaces the set pieces, which an ordinary run imports only when missing.
 ONLY = next((a.split('=', 1)[1] for a in sys.argv[1:] if a.startswith('--only=')), None)
 SET_ONLY = ONLY is not None and ONLY.startswith('Set/')
+# `--only=Ground` reauthors just M_Ground, `--only=Roads` just the road materials and
+# `--only=Floor/` just the forest floor pieces.
 
 MEADOW = '/Game/FlowFest/Assets/Meadow'
+FLOOR = '/Game/FlowFest/Assets/Floor'
 
 def import_file(path, folder, name, mesh=False):
     target = folder + '/' + name
     # These three small source meshes may change during site art passes. Reimport
     # them on every run so an existing project never keeps an older silhouette.
     if (not ED.does_asset_exist(target)
-            or folder in ('/Game/FlowFest/Assets/Ecology', '/Game/FlowFest/Textures/Ecology', MEADOW)
+            or folder in ('/Game/FlowFest/Assets/Ecology', '/Game/FlowFest/Textures/Ecology', MEADOW, FLOOR)
             or (folder == '/Game/FlowFest/Textures' and name in (
                 'TerrainOrtho', 'GroundFamilyMask', 'GroundDetail', 'GroundMeadow',
                 'GroundLitter', 'GroundDamp', 'GroundNormal', 'GroundRoughness'))):
@@ -46,7 +50,7 @@ def import_file(path, folder, name, mesh=False):
             options.import_textures = True
             options.static_mesh_import_data.combine_meshes = True
             options.static_mesh_import_data.generate_lightmap_u_vs = False
-            options.static_mesh_import_data.build_nanite = folder == MEADOW
+            options.static_mesh_import_data.build_nanite = folder in (MEADOW, FLOOR)
             options.static_mesh_import_data.auto_generate_collision = (
                 name == 'SM_Car' or folder.startswith('/Game/FlowFest/Assets/Car/'))
             task.options = options
@@ -272,7 +276,9 @@ def paint_from_instance(material, default=u.LinearColor(.5, .5, .5, 1)):
     ME.recompile_material(material)
     ED.save_loaded_asset(material)
 
-for job in ([] if SET_ONLY else json.loads((STAGED / 'imports.json').read_text())):
+# A partial run needs no decoded source jobs when it imports none of them.
+for job in ([] if SET_ONLY or (ONLY and not (STAGED / 'imports.json').exists())
+            else json.loads((STAGED / 'imports.json').read_text())):
     if ONLY and not job['kind'].startswith(ONLY):
         continue
     folder = '/Game/FlowFest/Assets/' + job['kind']
@@ -311,11 +317,13 @@ for name in ([n for n in SET_PIECES if ('Set/' + n).startswith(ONLY)] if SET_ONL
     ED.save_directory('/Game/FlowFest/Assets/Set', only_if_is_dirty=True, recursive=True)
     u.log(f"FLOWFEST_SET {name} slots={[s.material_interface.get_name() for s in mesh.static_materials if s.material_interface]}")
 
-def author_meadow_material():
+def author_meadow_material(name='M_MeadowGrass', green=((.06, .075, .025), (.19, .22, .075)),
+                           straw=((.14, .11, .05), (.46, .37, .18))):
     """One material for the field grass meshes. UV V runs root (0) to tip (1); each
     instance's custom data 0 is how dry the clump is and 1 its brightness, so a
-    field mixes green, olive and straw clumps instead of one cloned colour."""
-    m = material('M_MeadowGrass', (.2, .24, .08), .78)
+    field mixes green, olive and straw clumps instead of one cloned colour. Ferns
+    use the same graph with deeper greens that turn bronze instead of straw."""
+    m = material(name, green[1], .78)
     for old in list(ME.get_material_expressions(m)):
         ME.delete_material_expression(m, old)
     m.set_editor_property('two_sided', True)
@@ -330,8 +338,8 @@ def author_meadow_material():
         connect(expression(m, u.MaterialExpressionConstant3Vector, constant=u.LinearColor(*tip, 1)), '', g, 'B')
         connect(t, '', g, 'Alpha')
         return g
-    green = gradient((.06, .075, .025), (.19, .22, .075))
-    straw = gradient((.14, .11, .05), (.46, .37, .18))
+    green = gradient(*green)
+    straw = gradient(*straw)
     dryness = expression(m, u.MaterialExpressionPerInstanceCustomData, data_index=0, const_default_value=.35)
     brightness = expression(m, u.MaterialExpressionPerInstanceCustomData, data_index=1, const_default_value=1)
     blend = expression(m, u.MaterialExpressionLinearInterpolate)
@@ -386,6 +394,73 @@ if not ONLY or ONLY.startswith('Meadow') or SET_ONLY:
         u.log(f"FLOWFEST_MEADOW {name} nanite={mesh.get_editor_property('nanite_settings').enabled}")
     ED.save_directory(MEADOW, only_if_is_dirty=True, recursive=True)
 
+def author_litter_material():
+    """Fallen leaves: UV U picks each leaf's colour along a ramp from dark wet brown
+    through rust to pale tan; custom data 1 darkens a whole patch where it lies damp."""
+    m = material('M_LeafLitter', (.2, .11, .05), .85)
+    for old in list(ME.get_material_expressions(m)):
+        ME.delete_material_expression(m, old)
+    m.set_editor_property('two_sided', True)
+    uv = expression(m, u.MaterialExpressionTextureCoordinate)
+    tone = expression(m, u.MaterialExpressionComponentMask, r=True, g=False, b=False, a=False)
+    connect(uv, '', tone, '')
+    ramp = None
+    # Wide enough to read against the tan litter ground: near-black wet leaves to pale dry ones.
+    stops = ((.035, .02, .01), (.11, .05, .02), (.27, .1, .03), (.46, .33, .15))
+    for index, rgb in enumerate(stops):
+        colour = expression(m, u.MaterialExpressionConstant3Vector, constant=u.LinearColor(*rgb, 1))
+        if ramp is None:
+            ramp = colour
+            continue
+        # Each stop takes over across its third of the U range.
+        shifted = expression(m, u.MaterialExpressionMultiply)
+        connect(tone, '', shifted, 'A'); connect(scalar(m, len(stops) - 1), '', shifted, 'B')
+        start = expression(m, u.MaterialExpressionSubtract)
+        connect(shifted, '', start, 'A'); connect(scalar(m, index - 1), '', start, 'B')
+        weight = expression(m, u.MaterialExpressionSaturate)
+        connect(start, '', weight, '')
+        step = expression(m, u.MaterialExpressionLinearInterpolate)
+        connect(ramp, '', step, 'A'); connect(colour, '', step, 'B'); connect(weight, '', step, 'Alpha')
+        ramp = step
+    brightness = expression(m, u.MaterialExpressionPerInstanceCustomData, data_index=1, const_default_value=1)
+    base = expression(m, u.MaterialExpressionMultiply)
+    connect(ramp, '', base, 'A'); connect(brightness, '', base, 'B')
+    connect_property(base, '', u.MaterialProperty.MP_BASE_COLOR)
+    connect_property(scalar(m, .82), '', u.MaterialProperty.MP_ROUGHNESS)
+    connect_property(scalar(m, .3), '', u.MaterialProperty.MP_SPECULAR)
+    ensure_instancing(m)
+    ME.set_base_material_usage(m, u.MaterialUsage.MATUSAGE_NANITE, True)
+    ME.layout_material_expressions(m)
+    ME.recompile_material(m)
+    ED.save_loaded_asset(m)
+    return m
+
+# The fallen log and stump wear the Megaplants dead pine bark, with its broken wood on the cut ends.
+FLOOR_BARK = '/Game/Megaplant_Library/Tree_Dead_Pine/Materials/MI_Dead_Pine_Bark_01'
+FLOOR_HEARTWOOD = '/Game/Megaplant_Library/Tree_Dead_Pine/Materials/MI_Dead_Pine_BrokenBranch_01'
+if not ONLY or ONLY.startswith('Floor'):
+    fern = author_meadow_material('M_Fern', green=((.025, .045, .012), (.1, .17, .04)),
+                                  straw=((.09, .05, .02), (.36, .2, .07)))
+    litter = author_litter_material()
+    for name in ('LeafLitter', 'FernClump', 'FallenLog', 'Stump'):
+        mesh = import_file(STAGED / (name + '.fbx'), FLOOR, name, True)
+        for slot, entry in enumerate(mesh.static_materials):
+            slot_name = str(entry.material_slot_name).lower()
+            choice = (fern if name == 'FernClump' else litter if name == 'LeafLitter'
+                      else ED.load_asset(FLOOR_HEARTWOOD if 'heartwood' in slot_name else FLOOR_BARK))
+            if not choice:
+                raise RuntimeError(f'Forest floor material missing for {name} slot {slot_name}')
+            mesh.set_material(slot, choice)
+        nanite = mesh.get_editor_property('nanite_settings')
+        nanite.set_editor_property('enabled', True)
+        if name == 'FernClump' and hasattr(u, 'NaniteShapePreservation'):
+            nanite.set_editor_property('shape_preservation', u.NaniteShapePreservation.VOXELIZE)
+        mesh.set_editor_property('nanite_settings', nanite)
+        ED.save_loaded_asset(mesh)
+        u.log(f"FLOWFEST_FLOOR {name} nanite={mesh.get_editor_property('nanite_settings').enabled} "
+              f"slots={[str(e.material_slot_name) + '=' + (e.material_interface.get_name() if e.material_interface else 'None') for e in mesh.static_materials]}")
+    ED.save_directory(FLOOR, only_if_is_dirty=True, recursive=True)
+
 palette = {
     'M_Ground': ((.12,.17,.055),.95,0,0), 'M_Dirt': ((.19,.13,.07),.96,0,0),
     'M_Asphalt': ((.055,.06,.055),.92,0,0), 'M_Wood': ((.21,.095,.035),.85,0,0),
@@ -393,11 +468,17 @@ palette = {
     'M_Ember': ((1,.17,.012),.7,0,9), 'M_Grass': ((.10,.18,.035),.96,0,0),
 }
 if ONLY:
-    palette = {}
+    palette = ({'M_Ground': palette['M_Ground']} if ONLY == 'Ground' else
+               {k: palette[k] for k in ('M_Dirt', 'M_Asphalt')} if ONLY == 'Roads' else {})
 site = json.loads((PROJECT / 'Content' / 'Data' / 'site.json').read_text())
 ground_bounds = site['groundSurface']
 if ground_bounds['file'] != 'ground-family-mask.rgba':
     raise RuntimeError('Unexpected registered ground-family mask contract')
+
+def unary_one_minus(material, value):
+    e = expression(material, u.MaterialExpressionOneMinus)
+    connect(value, '', e, '')
+    return e
 
 def ground_uv(material, world, bounds, flip_z=False):
     """Map native X/Y centimetres to the source site's X/Z metre mask."""
@@ -427,6 +508,99 @@ def ground_uv(material, world, bounds, flip_z=False):
     connect(x_add, '', uv, 'A'); connect(y_add, '', uv, 'B')
     return uv
 
+def road_material(m, paved):
+    """Road and path surfaces. BuildRoads runs U along the road in metres and V across it
+    in half-widths (the running surface is -1 to 1, the shoulder fades out by 1.35).
+    Vertex red is crown shade, green marks a foot path and blue fades the ends."""
+    m.set_editor_property('blend_mode', u.BlendMode.BLEND_MASKED)
+    m.set_editor_property('opacity_mask_clip_value', .5)
+    m.set_editor_property('dither_opacity_mask', True)
+    def op(cls, a, b):
+        e = expression(m, cls)
+        connect(a, '', e, 'A'); connect(b, '', e, 'B')
+        return e
+    def mul(a, b): return op(u.MaterialExpressionMultiply, a, b)
+    def add(a, b): return op(u.MaterialExpressionAdd, a, b)
+    def sub(a, b): return op(u.MaterialExpressionSubtract, a, b)
+    def lerp(a, b, alpha):
+        e = expression(m, u.MaterialExpressionLinearInterpolate)
+        connect(a, '', e, 'A'); connect(b, '', e, 'B'); connect(alpha, '', e, 'Alpha')
+        return e
+    def unary(cls, x):
+        e = expression(m, cls)
+        connect(x, '', e, '')
+        return e
+    def smooth(lo, hi, value):
+        e = expression(m, u.MaterialExpressionSmoothStep)
+        connect(scalar(m, lo), '', e, 'Min'); connect(scalar(m, hi), '', e, 'Max'); connect(value, '', e, 'Value')
+        return e
+    def color(r, g, b): return expression(m, u.MaterialExpressionConstant3Vector, constant=u.LinearColor(r, g, b, 1))
+    def pick(source, output, ch):
+        e = expression(m, u.MaterialExpressionComponentMask, r=ch == 'r', g=ch == 'g', b=ch == 'b', a=False)
+        connect(source, output, e, '')
+        return e
+    def band(value, centre, inner, outer):
+        """1 within `inner` of `centre`, 0 beyond `outer`."""
+        return unary(u.MaterialExpressionOneMinus, smooth(inner, outer, unary(u.MaterialExpressionAbs, sub(value, scalar(m, centre)))))
+
+    uv = expression(m, u.MaterialExpressionTextureCoordinate, coordinate_index=0)
+    across = unary(u.MaterialExpressionAbs, pick(uv, '', 'g'))
+    paint = expression(m, u.MaterialExpressionVertexColor)
+    world = expression(m, u.MaterialExpressionWorldPosition)
+    xy = expression(m, u.MaterialExpressionComponentMask, r=True, g=True, b=False, a=False)
+    connect(world, '', xy, '')
+    grit_uv = mul(xy, scalar(m, 1 / 160))
+    detail = expression(m, u.MaterialExpressionTextureSample, texture=ED.load_asset('/Game/FlowFest/Textures/GroundDetail'))
+    connect(grit_uv, '', detail, 'UVs')
+    # GroundDetail is a grassy forest-floor photo. Its brightness alone gives the soil or
+    # tar a grain; its colour is the grass the shoulders and a drive's crown wear back to.
+    brightness = expression(m, u.MaterialExpressionDotProduct)
+    connect(detail, 'RGB', brightness, 'A'); connect(color(.3, .59, .11), '', brightness, 'B')
+    grain = lerp(scalar(m, .55), scalar(m, 1.45), unary(u.MaterialExpressionSaturate, mul(brightness, scalar(m, 2.5))))
+    grass = expression(m, u.MaterialExpressionMultiply)
+    connect(detail, 'RGB', grass, 'A'); connect(scalar(m, .8), '', grass, 'B')
+    ragged = expression(m, u.MaterialExpressionNoise, scale=.012, levels=3, output_min=-.5, output_max=.5, quality=1)
+    patches = expression(m, u.MaterialExpressionNoise, scale=.0035, levels=2, output_min=0, output_max=1, quality=1)
+    foot = pick(paint, 'G', 'r')
+    drive = unary(u.MaterialExpressionOneMinus, foot)
+
+    if paved:
+        # County tar: wear lightens it in patches, the middle of each lane carries oil, and
+        # the edges crumble into the gravel shoulder.
+        tar = mul(lerp(color(.045, .047, .046), color(.085, .082, .076), mul(patches, scalar(m, .7))), grain)
+        oil = mul(band(across, .5, .03, .14), scalar(m, .7))
+        oiled = lerp(tar, mul(tar, scalar(m, .78)), oil)
+        crumble = smooth(.84, 1.0, add(across, mul(ragged, scalar(m, .3))))
+        surface = lerp(oiled, mul(color(.15, .13, .1), grain), crumble)
+        verge = smooth(1.08, 1.3, add(across, mul(ragged, scalar(m, .3))))
+        roughness = lerp(scalar(m, .9), scalar(m, .78), oil)
+    else:
+        # Packed soil. Drives keep two wheel ruts and a grassy crown between them; foot
+        # paths wear one smoother, paler line down the middle.
+        soil = mul(lerp(color(.17, .12, .075), color(.23, .17, .11), patches), grain)
+        rut = mul(band(across, .45, .1, .28), drive)
+        rutted = lerp(soil, mul(soil, color(.78, .76, .74)), rut)
+        crown = mul(mul(unary(u.MaterialExpressionOneMinus, smooth(.1, .26, across)), drive), patches)
+        crowned = lerp(rutted, grass, mul(crown, scalar(m, .4)))
+        worn = mul(unary(u.MaterialExpressionOneMinus, smooth(.15, .75, across)), foot)
+        surface = lerp(crowned, mul(crowned, scalar(m, 1.15)), worn)
+        verge = smooth(.88, 1.25, add(across, mul(ragged, scalar(m, .3))))
+        roughness = lerp(lerp(scalar(m, .94), scalar(m, .82), rut), scalar(m, .86), worn)
+    edged = lerp(surface, grass, mul(verge, scalar(m, .85)))
+    shade = lerp(scalar(m, 1), color(.56, .5, .44), unary(u.MaterialExpressionSaturate, pick(paint, 'R', 'r')))
+    connect_property(mul(edged, shade), '', u.MaterialProperty.MP_BASE_COLOR)
+    connect_property(roughness, '', u.MaterialProperty.MP_ROUGHNESS)
+    # The shoulder thins out raggedly and the ends fade; the material's temporal dither
+    # stands in for the soft blend a translucent road would need.
+    edge = unary(u.MaterialExpressionSaturate, add(mul(sub(scalar(m, 1.32), across), scalar(m, 2.6)), mul(ragged, scalar(m, .8))))
+    connect_property(mul(edge, pick(paint, 'B', 'r')), '', u.MaterialProperty.MP_OPACITY_MASK)
+    if ED.does_asset_exist('/Game/FlowFest/Textures/GroundNormal'):
+        relief = expression(m, u.MaterialExpressionTextureSample, texture=ED.load_asset('/Game/FlowFest/Textures/GroundNormal'),
+                            sampler_type=u.MaterialSamplerType.SAMPLERTYPE_NORMAL)
+        connect(grit_uv, '', relief, 'UVs')
+        connect_property(relief, 'RGB', u.MaterialProperty.MP_NORMAL)
+
+
 for name, args in palette.items():
     m = material(name, *args)
     if name == 'M_Ground' and (STAGED / 'TerrainOrtho.png').exists():
@@ -435,7 +609,7 @@ for name, args in palette.items():
         sample = expression(m, u.MaterialExpressionTextureSample, texture=tex)
         connect(ground_uv(m, world, ground_bounds), '', sample, 'UVs')
         connect_property(sample, 'RGB', u.MaterialProperty.MP_BASE_COLOR)
-        required_ground = ('GroundFamilyMask', 'GroundDetail', 'GroundMeadow', 'GroundLitter', 'GroundDamp')
+        required_ground = ('GroundFamilyMask', 'GroundFields', 'GroundDetail', 'GroundMeadow', 'GroundLitter', 'GroundDamp')
         for source_name in required_ground:
             if not (STAGED / (source_name + '.png')).is_file():
                 raise RuntimeError('Missing source ground texture: ' + source_name)
@@ -465,16 +639,39 @@ for name, args in palette.items():
         xy = expression(m, u.MaterialExpressionComponentMask, r=True, g=True, b=False, a=False)
         connect(world, '', xy, '')
         connect(xy, '', detail_uv, 'A'); connect(scalar(m, 245), '', detail_uv, 'B')
+        # A second mapping, 1.53 times larger and turned 37 degrees, takes over in
+        # 5-10 m noise patches, so no tile edge or repeat lines up across the hillside.
+        turned = []
+        for row in ((math.cos(math.radians(37)), -math.sin(math.radians(37))), (math.sin(math.radians(37)), math.cos(math.radians(37)))):
+            dot = expression(m, u.MaterialExpressionDotProduct)
+            connect(xy, '', dot, 'A')
+            connect(expression(m, u.MaterialExpressionConstant2Vector, r=row[0] / 375, g=row[1] / 375), '', dot, 'B')
+            turned.append(dot)
+        turned_uv = expression(m, u.MaterialExpressionAppendVector)
+        connect(turned[0], '', turned_uv, 'A'); connect(turned[1], '', turned_uv, 'B')
+        swap_noise = expression(m, u.MaterialExpressionNoise, scale=.0016, levels=2, output_min=0, output_max=1, quality=1)
+        swap = expression(m, u.MaterialExpressionSmoothStep)
+        connect(swap_noise, '', swap, 'Value')
+        connect(scalar(m, .35), '', swap, 'Min'); connect(scalar(m, .65), '', swap, 'Max')
+        def two_scale(texture, sampler=None):
+            props = {'texture': texture}
+            if sampler is not None:
+                props['sampler_type'] = sampler
+            near = expression(m, u.MaterialExpressionTextureSample, **props)
+            far = expression(m, u.MaterialExpressionTextureSample, **props)
+            connect(detail_uv, '', near, 'UVs'); connect(turned_uv, '', far, 'UVs')
+            mixed = expression(m, u.MaterialExpressionLinearInterpolate)
+            connect(near, 'RGB', mixed, 'A'); connect(far, 'RGB', mixed, 'B'); connect(swap, '', mixed, 'Alpha')
+            return mixed
         details = {}
         for source_name in ('GroundDetail', 'GroundMeadow', 'GroundLitter', 'GroundDamp'):
             detail_tex = import_file(STAGED / (source_name + '.png'), '/Game/FlowFest/Textures', source_name)
-            details[source_name] = expression(m, u.MaterialExpressionTextureSample, texture=detail_tex)
-            connect(detail_uv, '', details[source_name], 'UVs')
+            details[source_name] = two_scale(detail_tex)
         # The meadow texture is a watered lawn; the hills around it are late-summer
         # tan. Olive it down and let broad 20-40 m patches dry toward straw.
         def tinted(sample, rgb):
             out = expression(m, u.MaterialExpressionMultiply)
-            connect(sample, 'RGB', out, 'A')
+            connect(sample, '', out, 'A')
             connect(expression(m, u.MaterialExpressionConstant3Vector, constant=u.LinearColor(*rgb, 1)), '', out, 'B')
             return out
         # Noise samples absolute world position when its Position input is left empty.
@@ -485,7 +682,8 @@ for name, args in palette.items():
         connect(tinted(details['GroundMeadow'], (1, .86, .6)), '', field, 'A')
         connect(tinted(details['GroundDetail'], (1.05, .95, .78)), '', field, 'B')
         connect(dryness, '', field, 'Alpha')
-        colours = ((details['GroundDetail'], 'RGB'), (field, ''), (details['GroundLitter'], 'RGB'), (details['GroundDamp'], 'RGB'))
+        # Litter is most of the site; deepen it toward a shaded woodland brown.
+        colours = ((details['GroundDetail'], ''), (field, ''), (tinted(details['GroundLitter'], (.82, .76, .7)), ''), (details['GroundDamp'], ''))
         terms = []
         for (colour, output), weight in zip(colours, (*weights, damp)):
             term = expression(m, u.MaterialExpressionMultiply)
@@ -497,25 +695,81 @@ for name, args in palette.items():
         connect(terms[0], '', first, 'A'); connect(terms[1], '', first, 'B')
         connect(terms[2], '', second, 'A'); connect(terms[3], '', second, 'B')
         connect(first, '', family_color, 'A'); connect(second, '', family_color, 'B')
+        # Farm fields: open land the mask left as litter (Tools/classify-fields.mjs). Red is
+        # the field weight, green its dryness: 0 for green crop rows, 1 for hay or stubble.
+        fields_tex = import_file(STAGED / 'GroundFields.png', '/Game/FlowFest/Textures', 'GroundFields')
+        fields_tex.set_editor_property('compression_settings', u.TextureCompressionSettings.TC_MASKS)
+        fields_tex.set_editor_property('srgb', False)
+        ED.save_loaded_asset(fields_tex)
+        fields = expression(m, u.MaterialExpressionTextureSample, texture=fields_tex, sampler_type=u.MaterialSamplerType.SAMPLERTYPE_MASKS)
+        connect(ground_uv(m, world, ground_bounds, True), '', fields, 'UVs')
+        def channel(source, output, ch):
+            e = expression(m, u.MaterialExpressionComponentMask, r=ch == 'r', g=ch == 'g', b=ch == 'b', a=False)
+            connect(source, output, e, '')
+            return e
+        def op(cls, a, b):
+            e = expression(m, cls)
+            connect(a, '', e, 'A'); connect(b, '', e, 'B')
+            return e
+        def lerp3(a, b, alpha):
+            e = expression(m, u.MaterialExpressionLinearInterpolate)
+            connect(a, '', e, 'A'); connect(b, '', e, 'B'); connect(alpha, '', e, 'Alpha')
+            return e
+        def smoothstep(lo, hi, value):
+            e = expression(m, u.MaterialExpressionSmoothStep)
+            connect(scalar(m, lo), '', e, 'Min'); connect(scalar(m, hi), '', e, 'Max'); connect(value, '', e, 'Value')
+            return e
+        field_weight = channel(fields, 'RGB', 'r')
+        field_dry = channel(fields, 'RGB', 'g')
+        # Hay and stubble: the straw-coloured detail, with the meadow's green coming
+        # back in the same broad patches that dry the meadows.
+        hay = lerp3(tinted(details['GroundDetail'], (1.2, 1.08, .74)), tinted(details['GroundMeadow'], (1.5, 1.3, 1.1)),
+                    op(u.MaterialExpressionMultiply, unary_one_minus(m, patches), scalar(m, .35)))
+        # Crop rows run east to west about 76 cm apart: green plants over a soil furrow.
+        # Past 25-70 m the rows blend into their average so they never shimmer.
+        y = expression(m, u.MaterialExpressionComponentMask, r=False, g=True, b=False, a=False)
+        connect(world, '', y, '')
+        wave = expression(m, u.MaterialExpressionSine, period=76)
+        connect(y, '', wave, '')
+        plants = smoothstep(-.35, .15, wave)
+        depth = expression(m, u.MaterialExpressionPixelDepth)
+        rows_near = unary_one_minus(m, smoothstep(2500, 7000, depth))
+        cover = lerp3(scalar(m, .68), plants, rows_near)
+        crop = lerp3(tinted(details['GroundLitter'], (.95, .9, .85)), tinted(details['GroundMeadow'], (1.05, 1.3, .9)), cover)
+        field_colour = lerp3(crop, hay, field_dry)
+        # The orthophoto's light and dark keeps each real field's tracks and patchiness.
+        photo = expression(m, u.MaterialExpressionDotProduct)
+        connect(sample, 'RGB', photo, 'A')
+        connect(expression(m, u.MaterialExpressionConstant3Vector, constant=u.LinearColor(.3, .59, .11, 1)), '', photo, 'B')
+        variation = expression(m, u.MaterialExpressionClamp, min_default=.78, max_default=1.25)
+        connect(op(u.MaterialExpressionDivide, photo, lerp3(scalar(m, .13), scalar(m, .21), field_dry)), '', variation, '')
+        family_color = lerp3(family_color, op(u.MaterialExpressionMultiply, field_colour, variation), field_weight)
+        # Broad 15-30 m light and dark washes, the way soil, moisture and leaf fall vary.
+        wash_noise = expression(m, u.MaterialExpressionNoise, scale=.00045, levels=3, output_min=0, output_max=1, quality=1)
+        wash = expression(m, u.MaterialExpressionLinearInterpolate, const_a=.8, const_b=1.12)
+        connect(wash_noise, '', wash, 'Alpha')
+        washed = expression(m, u.MaterialExpressionMultiply)
+        connect(family_color, '', washed, 'A'); connect(wash, '', washed, 'B')
         blend = expression(m, u.MaterialExpressionLinearInterpolate, const_alpha=.90)
-        connect(sample, 'RGB', blend, 'A'); connect(family_color, '', blend, 'B')
-        connect_property(blend, '', u.MaterialProperty.MP_BASE_COLOR)
+        connect(sample, 'RGB', blend, 'A'); connect(washed, '', blend, 'B')
+        # Under the crowns the soil stays damp and dark; the terrain's vertex red is crown shade.
+        crowns = expression(m, u.MaterialExpressionVertexColor)
+        shade = expression(m, u.MaterialExpressionLinearInterpolate)
+        connect(scalar(m, 1), '', shade, 'A')
+        connect(expression(m, u.MaterialExpressionConstant3Vector, constant=u.LinearColor(.56, .5, .44, 1)), '', shade, 'B')
+        connect(crowns, 'R', shade, 'Alpha')
+        shaded = expression(m, u.MaterialExpressionMultiply)
+        connect(blend, '', shaded, 'A'); connect(shade, '', shaded, 'B')
+        connect_property(shaded, '', u.MaterialProperty.MP_BASE_COLOR)
         if (STAGED / 'GroundNormal.png').exists():
             normal_tex = import_file(STAGED / 'GroundNormal.png', '/Game/FlowFest/Textures', 'GroundNormal')
             normal_tex.set_editor_property('compression_settings', u.TextureCompressionSettings.TC_NORMALMAP)
             normal_tex.set_editor_property('srgb', False)
             ED.save_loaded_asset(normal_tex)
-            normal = expression(m, u.MaterialExpressionTextureSample, texture=normal_tex, sampler_type=u.MaterialSamplerType.SAMPLERTYPE_NORMAL)
-            connect(detail_uv, '', normal, 'UVs')
-            connect_property(normal, 'RGB', u.MaterialProperty.MP_NORMAL)
-    if name == 'M_Dirt' and (STAGED / 'GroundDetail.png').exists():
-        detail_tex = import_file(STAGED / 'GroundDetail.png', '/Game/FlowFest/Textures', 'GroundDetail')
-        detail = expression(m, u.MaterialExpressionTextureSample, texture=detail_tex)
-        earth = expression(m, u.MaterialExpressionMultiply)
-        base = ME.get_material_property_input_node(m, u.MaterialProperty.MP_BASE_COLOR)
-        connect(base, '', earth, 'A')
-        connect(detail, 'RGB', earth, 'B')
-        connect_property(earth, '', u.MaterialProperty.MP_BASE_COLOR)
+            normal = two_scale(normal_tex, u.MaterialSamplerType.SAMPLERTYPE_NORMAL)
+            connect_property(normal, '', u.MaterialProperty.MP_NORMAL)
+    if name in ('M_Dirt', 'M_Asphalt'):
+        road_material(m, paved=name == 'M_Asphalt')
     ME.layout_material_expressions(m)
     ME.recompile_material(m)
     ED.save_loaded_asset(m)

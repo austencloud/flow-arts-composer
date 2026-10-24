@@ -263,6 +263,42 @@ describe("calculateGridLayout workspace column selection", () => {
     expect(layout.rows).toBe(2);
   });
 
+  it("puts eight Create steps on one row in a roomy desktop workspace", () => {
+    // Assemble beside the click grid in a ~2000x1020 window: 962x893.
+    const layout = calculateGridLayout(8, 962, 893, null, {
+      isSideBySideLayout: true,
+      preferLongRows: true,
+    });
+    const ordinary = calculateGridLayout(8, 962, 893, null, {
+      isSideBySideLayout: true,
+    });
+
+    expect(ordinary.columns).toBe(4);
+    expect(layout.columns).toBe(8);
+    expect(layout.rows).toBe(1);
+    expect(layout.cellSize).toBeGreaterThanOrEqual(88);
+  });
+
+  it("wraps long Create sequences at eight, not four", () => {
+    const layout = calculateGridLayout(16, 962, 893, null, {
+      isSideBySideLayout: true,
+      preferLongRows: true,
+    });
+
+    expect(layout.columns).toBe(8);
+    expect(layout.rows).toBe(2);
+  });
+
+  it("falls back to rows of four when eight would shrink cells below the floor", () => {
+    const options = { isSideBySideLayout: true, preferLongRows: true };
+    const layout = calculateGridLayout(8, 760, 893, null, options);
+
+    expect(layout).toEqual(
+      calculateGridLayout(8, 760, 893, null, { isSideBySideLayout: true })
+    );
+    expect(layout.columns).toBe(4);
+  });
+
   it("keeps the wide layout for sequences that exceed the fit-all row limit", () => {
     const layout = calculateGridLayout(40, 719, 450, null);
 

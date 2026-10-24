@@ -37,11 +37,12 @@ import { LetterParser } from "../../core/letters/LetterParser.js";
 import { LetterClassifier } from "../../core/letters/LetterClassifier.js";
 import {
   allocateTurns,
+  rollTurnStep,
   type TurnAllocation,
   type TurnAllocationOptions,
 } from "../turns/TurnAllocator.js";
 import {
-  allocationSource,
+  growingAllocationSource,
   patternSource,
   type TurnLanes,
   type TurnSource,
@@ -68,6 +69,7 @@ import {
 } from "../turns/layer-targeting.js";
 import {
   parsePattern,
+  type FlipVector,
   type LayerPattern,
 } from "../../core/orientation/layer-signature.js";
 import { BeamSearch, type BeamSearchResult } from "./BeamSearch.js";
@@ -105,7 +107,10 @@ import { findLetterByMotions } from "../../loop/LetterLookup.js";
 import {
   hasRewoundStructure,
   loopDetectorClass,
+  loopSignalSteps,
 } from "../../loop/detection/LOOPDetector.js";
+import { labelsEquivalentForHalves } from "../../loop/detection/label-equivalence.js";
+import type { PairComponentId } from "../../loop/detection/pair-relation.js";
 import { reduceToMinimalLoop } from "../../loop/reduction/minimal-loop-reducer.js";
 import {
   determineEndPlacementForSpec,
@@ -124,6 +129,8 @@ import {
   PlacementReachabilityAnalyzer,
   type ReachabilityResult,
 } from "../reachability/PlacementReachabilityAnalyzer.js";
+import { reachWordClosure } from "../reachability/word-closure-reachability.js";
+import { getLetterTransitionGraph } from "../../core/transition-graph/LetterTransitionGraph.js";
 
 /**
  * Decide whether this request deliberately needs a four-repetition
@@ -266,6 +273,58 @@ function resolveTurnAllocationOptions(
       constraints.motionType !== "anti",
     matchHands: options.matchHandTurns === true || propTiming !== undefined,
   };
+}
+
+/**
+ * Lay a word's layer pattern over the steps that were actually built.
+ *
+ * The pattern is written against the word, one flip per letter, but the
+ * search may slip bridge steps between letters. Each letter takes its own
+ * flip and each bridge inside the pattern's span holds its layer, so the
+ * letters walk the layers the pattern describes and a closed pattern still
+ * closes however many bridges the word needed. Steps past the last named
+ * letter are left as generated, as they always were.
+ */
+function patternOverBridges(
+  pattern: LayerPattern,
+  bridgeIndices: ReadonlySet<number>,
+  stepCount: number
+): LayerPattern {
+  if (bridgeIndices.size === 0) return pattern;
+  const flips: FlipVector[] = [];
+  let next = 0;
+  // Step 0 is the start placement; flips[k] shapes step k + 1.
+  for (let i = 1; i < stepCount && next < pattern.flips.length; i++) {
+    flips.push(bridgeIndices.has(i) ? "." : pattern.flips[next++]!);
+  }
+  return { ...pattern, flips };
+}
+
+/**
+ * Where every step of a build gets its turns.
+ *
+ * A pattern repeats on its own. A random allocation is rolled for the steps
+ * the caller asked for, then keeps rolling: a word's search inserts bridge
+ * steps between letters with no direct transition, so the built sequence is
+ * longer than the word, and each of those extra steps draws from the same
+ * pool under the same hand rules instead of coming out with no turns.
+ */
+function resolveTurnSource(
+  options: BuildOptions,
+  plannedSteps: number
+): TurnSource {
+  if (options.turnPattern) return patternSource(options.turnPattern);
+  const allocationOptions = resolveTurnAllocationOptions(options);
+  return growingAllocationSource(
+    allocateTurns(
+      plannedSteps,
+      options.level,
+      options.maxTurnIntensity,
+      allocationOptions
+    ),
+    () =>
+      rollTurnStep(options.level, options.maxTurnIntensity, allocationOptions)
+  );
 }
 
 /**
@@ -571,6 +630,13 @@ export interface BuildResult {
     components: string[];
     derivedStepIndices: number[];
     orientationCycleMultiplier: number;
+    /**
+     * Other LOOP labels this sequence equally satisfies, present only when
+     * the seed's hand symmetry makes the requested label coincide with one
+     * the detector prefers (a swapped D–J seed is also a mirrored one). The
+     * requested label stays the sequence's label.
+     */
+    equivalentLabels?: string[];
   };
 }
 
@@ -683,6 +749,8 @@ export class SequenceBuilder {
     const maxAttempts = 40;
     let workingOptions = options;
     let lastFailure = "no result";
+    let symmetricFallback: BuildResult | undefined;
+    let noOpSwapAttempts = 0;
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
         const result = workingOptions.word
@@ -739,12 +807,53 @@ export class SequenceBuilder {
         );
         if (!validationFailure) return result;
         lastFailure = validationFailure;
+
+        // A seed whose hands are symmetric can satisfy the requested label
+        // and the detector's preferred one at once. A spelled word can force
+        // that (every diamond D mirrors its hands), so keep rerolling for a
+        // seed that shows the request plainly but remember the first such
+        // result: when the letters allow no other seed, it is still a correct
+        // build. A random-length seed is never forced, so it keeps rejecting
+        // the weaker identity, as does a constrained hand relationship, which
+        // validates its construction above.
+        const spelled =
+          workingOptions.word !== undefined &&
+          !workingOptions.constraintOptions?.handRelationship;
+        if (spelled && !symmetricFallback) {
+          const equivalentLabels = this.equivalentDetectedLabels(
+            result,
+            workingOptions.loop!
+          );
+          if (equivalentLabels) {
+            symmetricFallback = {
+              ...result,
+              loop: { ...result.loop!, equivalentLabels },
+            };
+          }
+        }
+        if (spelled && this.swapChangesNothing(result, workingOptions.loop!)) {
+          noOpSwapAttempts++;
+        }
       } catch (error) {
         // The placement graph already proved these options cannot close, so
         // another seed would fail the same way.
         if (error instanceof GenerationInfeasibleError) throw error;
         lastFailure = error instanceof Error ? error.message : String(error);
       }
+    }
+
+    if (symmetricFallback) return symmetricFallback;
+
+    // Every seed of the word put both hands on one path at every step (every
+    // diamond G and H does), so the swapped half repeats the seed exactly and
+    // the detector rightly reads only the seed's own structure.
+    if (options.word && noOpSwapAttempts === maxAttempts) {
+      throw new GenerationInfeasibleError(
+        `"${options.word}" cannot form a ${options.loop.type} LOOP: both ` +
+          `hands follow the same path in every step, so swapping them ` +
+          `changes nothing`,
+        this.letterParser.parse(options.word).length
+      );
     }
 
     throw new Error(
@@ -785,14 +894,9 @@ export class SequenceBuilder {
     // flipped blocks are copies of their neighbours and the detector reads
     // the result as a uniform or nested compound relation. Skipping this
     // check is how unrelated blocks used to ship under an inverted label.
-    const activeComponents = loop.loopSpec
-      ? allActiveComponents(loop.loopSpec)
-      : undefined;
-
-    const expectedRaw = loop.loopSpec
-      ? new Set([...activeComponents!.keys()].map(String))
-      : this.componentsFromLegacyType(loop.type);
-    const expected = this.normalizeReflectionComponents(expectedRaw);
+    const expected = this.normalizeReflectionComponents(
+      this.requestedComponents(loop)
+    );
 
     if (expected.has("rewound")) {
       return hasRewoundStructure(result.sequence)
@@ -832,16 +936,7 @@ export class SequenceBuilder {
       );
     }
 
-    const legacyType = String(loop.type);
-    const expectedReflectionAxis = loop.loopSpec
-      ? this.directReflectionAxisFromSpec(loop.loopSpec)
-      : legacyType.includes("rotated")
-        ? null
-        : legacyType.includes("mirrored")
-          ? DEFAULT_MIRRORED_AXIS
-          : legacyType.includes("flipped")
-            ? DEFAULT_FLIPPED_AXIS
-            : null;
+    const expectedReflectionAxis = this.requestedReflectionAxis(loop);
     if (
       expectedReflectionAxis !== null &&
       detected.reflectionAxis !== expectedReflectionAxis
@@ -920,6 +1015,94 @@ export class SequenceBuilder {
     }
     return true;
   }
+
+  private requestedComponents(loop: LoopOptions): Set<string> {
+    return loop.loopSpec
+      ? new Set([...allActiveComponents(loop.loopSpec).keys()].map(String))
+      : this.componentsFromLegacyType(loop.type);
+  }
+
+  private requestedReflectionAxis(loop: LoopOptions) {
+    if (loop.loopSpec) return this.directReflectionAxisFromSpec(loop.loopSpec);
+    const legacyType = String(loop.type);
+    return legacyType.includes("rotated")
+      ? null
+      : legacyType.includes("mirrored")
+        ? DEFAULT_MIRRORED_AXIS
+        : legacyType.includes("flipped")
+          ? DEFAULT_FLIPPED_AXIS
+          : null;
+  }
+
+  /**
+   * The detector's label for a result it read differently from the request,
+   * when the seed's hand symmetry makes both labels true: the canonical
+   * executor rebuilds exactly the requested construction from the seed, and
+   * every half-pair the detector read satisfies both labels in the
+   * pair-relation algebra. Undefined when the result is simply wrong.
+   */
+  private equivalentDetectedLabels(
+    result: BuildResult,
+    loop: LoopOptions
+  ): string[] | undefined {
+    const requested = this.requestedComponents(loop);
+    if (requested.size === 0 || requested.has("rewound")) return undefined;
+
+    const detected = loopDetectorClass.detectLOOPType(result.sequence);
+    if (!detected.isCircular || !detected.spec) return undefined;
+    const detectedComponents = new Set<string>();
+    for (const propSpec of [detected.spec.left, detected.spec.right]) {
+      for (const component of propSpec?.components.keys() ?? []) {
+        detectedComponents.add(String(component));
+      }
+    }
+    if (detectedComponents.size === 0 || detectedComponents.has("rewound")) {
+      return undefined;
+    }
+    if (!this.matchesRequestedLOOP(result, loop)) return undefined;
+
+    const equivalent = labelsEquivalentForHalves(
+      loopSignalSteps(result.sequence),
+      {
+        components: [...requested] as PairComponentId[],
+        reflectionAxis: this.requestedReflectionAxis(loop) ?? undefined,
+      },
+      {
+        components: [...detectedComponents] as PairComponentId[],
+        reflectionAxis: detected.reflectionAxis ?? undefined,
+      }
+    );
+    if (!equivalent) return undefined;
+
+    const label = detected.loopType ?? [...detectedComponents].sort().join("_");
+    return [
+      detected.reflectionAxis
+        ? `${label} (${detected.reflectionAxis} axis)`
+        : label,
+    ];
+  }
+
+  /**
+   * True when the request swaps hands but both hands follow the same path
+   * (locations and motion type) at every step, so the swap is invisible.
+   */
+  private swapChangesNothing(result: BuildResult, loop: LoopOptions): boolean {
+    if (!this.requestedComponents(loop).has("swapped")) return false;
+    const letterSteps = result.sequence.filter(
+      (step) => (step.stepNumber ?? 0) > 0
+    );
+    return (
+      letterSteps.length > 0 &&
+      letterSteps.every(({ motions: { left, right } }) => {
+        return (
+          left.startLocation === right.startLocation &&
+          left.endLocation === right.endLocation &&
+          left.motionType === right.motionType
+        );
+      })
+    );
+  }
+
   /**
    * The detector's axis is directly comparable to the declared axis only when
    * reflection is the location transform for that expansion. A sequential
@@ -976,16 +1159,7 @@ export class SequenceBuilder {
     const constraintSet = this.assembleConstraints(options);
 
     // Stage 3: Allocate turns
-    const turnSource: TurnSource = options.turnPattern
-      ? patternSource(options.turnPattern)
-      : allocationSource(
-          allocateTurns(
-            letters.length,
-            options.level,
-            options.maxTurnIntensity,
-            resolveTurnAllocationOptions(options)
-          )
-        );
+    const turnSource = resolveTurnSource(options, letters.length);
 
     // Stage 4: Beam search
     // When LOOP is requested, the last letter must end at a placement
@@ -1053,6 +1227,16 @@ export class SequenceBuilder {
       ];
     }
 
+    if (needsLoopTargeting && options.loop) {
+      this.assertWordCanClose(
+        options.word,
+        letters,
+        searchTargets,
+        options.loop.type,
+        options.gridMode
+      );
+    }
+
     // Word-based LOOP needs more retries because the word constrains which
     // placements are reachable. Each retry picks different random variations
     // (rotation-direction resolution + turn-driven enrichment) that may take a
@@ -1084,13 +1268,11 @@ export class SequenceBuilder {
         );
 
         if (result.success || result.steps.length > 0) {
-          // Closure guard. search() filters the final letter's DIRECT
-          // variations to requiredEnds, but a bridge inserted before the final
-          // letter (tryBridges) places that letter without re-applying the
-          // filter, so a bridged path can slip through ending off-target. Verify
-          // the real end closes the LOOP; if not, this start can't close it —
-          // move on to the next candidate rather than handing the LOOP executor
-          // a pair it will reject downstream.
+          // Closure guard. search() holds the last built step, letter or
+          // bridge, to requiredEnds from the second letter on; a one-letter
+          // word's only step is chosen by its start alone. Verify the real end closes the LOOP; if not,
+          // this start can't close it — move on to the next candidate rather
+          // than handing the LOOP executor a pair it will reject downstream.
           if (target.requiredEnds && target.requiredEnds.size > 0) {
             const actualEnd =
               result.steps[result.steps.length - 1]?.endPlacement;
@@ -1193,16 +1375,7 @@ export class SequenceBuilder {
     }
 
     // Stage 3: Allocate turns
-    const turnSource: TurnSource = options.turnPattern
-      ? patternSource(options.turnPattern)
-      : allocationSource(
-          allocateTurns(
-            length,
-            options.level,
-            options.maxTurnIntensity,
-            resolveTurnAllocationOptions(options)
-          )
-        );
+    const turnSource = resolveTurnSource(options, length);
 
     // Stage 4: Beam search by length
     // When generating a LOOP seed, the last step must end at a specific
@@ -1874,10 +2047,14 @@ export class SequenceBuilder {
     // so the crossing count is exact.
     let shaped = sequence;
     if (layerShaping?.pattern) {
-      shaped = applyLayerPattern(shaped, layerShaping.pattern, {
-        level: layerShaping.level,
-        maxTurnIntensity: layerShaping.maxTurnIntensity,
-      }).steps;
+      shaped = applyLayerPattern(
+        shaped,
+        patternOverBridges(layerShaping.pattern, bridgeIndices, shaped.length),
+        {
+          level: layerShaping.level,
+          maxTurnIntensity: layerShaping.maxTurnIntensity,
+        }
+      ).steps;
     } else if (layerShaping?.handFlipParity) {
       shaped = enforceHandFlipParity(shaped, layerShaping.handFlipParity, {
         level: layerShaping.level,
@@ -2255,6 +2432,51 @@ export class SequenceBuilder {
         `start under the current constraints`,
       length,
       relaxations
+    );
+  }
+
+  /**
+   * Throw the infeasible error when no start can spell `word` and land on its
+   * closing placement, before the beam search spends its retries on it. The
+   * check runs on placement data alone, so it never rejects a word the search
+   * could close; it only names the gap the search would keep falling into.
+   */
+  private assertWordCanClose(
+    word: string,
+    letters: string[],
+    targets: ReadonlyArray<{
+      start: string | undefined;
+      requiredEnds: Set<string> | undefined;
+    }>,
+    loopType: LOOPType,
+    gridMode: string
+  ): void {
+    const gaps: string[] = [];
+    const graph = getLetterTransitionGraph();
+    for (const { start, requiredEnds } of targets) {
+      if (!start || !requiredEnds || requiredEnds.size === 0) return;
+      const reach = reachWordClosure(
+        letters,
+        start,
+        requiredEnds,
+        this.variationProvider,
+        gridMode,
+        graph
+      );
+      if (reach.closingEnds.size > 0) return;
+      const ends = [...reach.letterEnds].sort().join("/") || "nowhere";
+      gaps.push(
+        `from ${start} it ends at ${ends} but must end at ` +
+          [...requiredEnds].sort().join("/")
+      );
+    }
+    if (gaps.length === 0) return;
+
+    const shown = gaps.slice(0, 3).join("; ");
+    const more = gaps.length > 3 ? `; and ${gaps.length - 3} more starts` : "";
+    throw new GenerationInfeasibleError(
+      `"${word}" cannot close as a ${loopType} LOOP: ${shown}${more}`,
+      letters.length
     );
   }
 

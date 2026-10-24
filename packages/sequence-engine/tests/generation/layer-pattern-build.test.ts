@@ -115,12 +115,18 @@ function builtSignature(sequence: readonly unknown[]): string {
 
 /**
  * The builder inserts bridge steps to get between letters that have no direct
- * transition, so a four-letter word can come back five or six steps long. A
- * pattern covers the steps it names and leaves the rest as generated, so a
- * comparison against the pattern reads only that many steps.
+ * transition, so a four-letter word can come back five or six steps long. The
+ * pattern is written against the word: each letter takes its flip and each
+ * bridge holds its layer, so the comparison reads the letters' layers only,
+ * and only as many as the pattern names.
  */
 function shapedPart(sequence: readonly unknown[], patternLength: number): string {
-  return builtSignature(sequence).slice(0, patternLength);
+  const signature = builtSignature(sequence);
+  const steps = sequence.slice(1) as Array<{ isBridge?: boolean }>;
+  return [...signature]
+    .filter((_, i) => !steps[i]?.isBridge)
+    .slice(0, patternLength)
+    .join("");
 }
 
 describe("SequenceBuilder — targetLayerPattern", () => {

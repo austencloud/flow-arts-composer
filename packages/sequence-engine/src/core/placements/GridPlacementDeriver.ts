@@ -5,7 +5,10 @@
  * A placement represents the combination of (left_hand_location, right_hand_location).
  *
  * Ported from the app's GridPlacementDeriver using string literals instead of enums.
+ * The centric placements (tau1-16, terra1) come from CENTRIC_PLACEMENT_LOCATIONS.
  */
+
+import { CENTRIC_PLACEMENT_LOCATIONS } from "./centric-placement-locations.js";
 
 export class GridPlacementDeriver {
   private readonly placementsMap = new Map<string, string>([
@@ -82,6 +85,11 @@ export class GridPlacementDeriver {
     ["w,sw", "eta14"],
     ["nw,w", "eta15"],
     ["n,nw", "eta16"],
+
+    // Tau and terra placements - one or both hands at center
+    ...Object.entries(CENTRIC_PLACEMENT_LOCATIONS).map(
+      ([placement, [left, right]]): [string, string] => [`${left},${right}`, placement]
+    ),
   ]);
 
   // Reverse mapping from placement to hand locations

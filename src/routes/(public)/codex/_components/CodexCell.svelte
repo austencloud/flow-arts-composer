@@ -73,6 +73,7 @@
   } = $props();
 
   const data = $derived(dataOverride ?? codexData(cell.id));
+  const interactive = $derived(!!(onSelect || href));
   const selection = onSelect || href ? getSequenceSelection() : null;
 </script>
 
@@ -99,6 +100,7 @@
           darkMode={false}
           forceTheme="dark"
           eager={true}
+          placeholder={interactive}
         />
       </PictographTypeFrame>
     {:else}
@@ -135,7 +137,10 @@
     <SelectionHit
       groupId={cell.id}
       isGroupStart
-      label={tDynamic("guide_codex_explore_variations", { letter: cell.label, name: cell.name ? `, ${cell.name}` : "" })}
+      label={tDynamic("guide_codex_explore_variations", {
+        letter: cell.label,
+        name: cell.name ? `, ${cell.name}` : "",
+      })}
       {href}
       onselect={() => onSelect?.(cell.id)}
     />

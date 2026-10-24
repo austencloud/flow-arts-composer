@@ -58,7 +58,7 @@ describe("NewMessageSheet group creation", () => {
 
     await page.getByRole("button", { name: /Alex Rivera @alex/ }).click();
 
-    const groupName = page.getByRole("textbox", { name: /Group name/ });
+    const groupName = page.getByRole("textbox", { name: /Group name/i });
     const startGroup = page.getByRole("button", { name: "Start Group" });
     await groupName.fill("Fire Jam");
     await expect.element(startGroup).toBeDisabled();

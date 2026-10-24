@@ -15,7 +15,10 @@
  * Protocol is one request, one response, correlated by id — see
  * per-visit-demo-worker-client.ts, which owns the main-thread half.
  */
-import { rollPerVisitDemo } from "#lib/shared/landing/data/per-visit-demo-core.js";
+import {
+  rollPerVisitDemo,
+  type PerVisitContinuity,
+} from "#lib/shared/landing/data/per-visit-demo-core.js";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
@@ -27,6 +30,7 @@ export interface PerVisitDemoRequest {
    *  never reaches the worker (the client keeps it on the main thread). */
   propType?: PropType;
   startPlacement?: PictographData | null;
+  continuity?: PerVisitContinuity;
 }
 
 export type PerVisitDemoResponse =
@@ -40,12 +44,15 @@ const scope = self as unknown as DedicatedWorkerGlobalScope;
 scope.addEventListener(
   "message",
   (event: MessageEvent<PerVisitDemoRequest>) => {
-    const { id, propType, startPlacement } = event.data ?? { id: -1 };
+    const { id, propType, startPlacement, continuity } = event.data ?? {
+      id: -1,
+    };
     void (async () => {
       try {
         const sequence = await rollPerVisitDemo({
           ...(propType ? { propType } : {}),
           ...(startPlacement ? { startPlacement } : {}),
+          ...(continuity ? { continuity } : {}),
         });
         if (!sequence) {
           scope.postMessage({

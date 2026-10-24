@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { flipMotion } from "#lib/shared/create/services/motion-transforms.js";
 import { codexData } from "./codex-groups";
 import {
   defaultCodexVisibility,
@@ -37,5 +38,29 @@ describe("codex board view", () => {
       a.motions[HandSide.LEFT]?.startLocation
     );
     expect(full.motions[HandSide.LEFT]?.gridMode).toBe(GridMode.DIAMOND);
+  });
+
+  it("turns left as the undo of turning right", () => {
+    const a = codexData("A-0")!;
+    const back = transformCodexPictograph(a, ["rotate", "rotate-ccw"]);
+    expect(back.motions[HandSide.LEFT]?.startLocation).toBe(
+      a.motions[HandSide.LEFT]?.startLocation
+    );
+    expect(back.motions[HandSide.LEFT]?.gridMode).toBe(GridMode.DIAMOND);
+  });
+
+  it("flips top to bottom the way the Composer's Flip does", () => {
+    for (const id of ["A-0", "C-0", "D-0"]) {
+      const p = codexData(id)!;
+      const flipped = transformCodexPictograph(p, ["flip"]);
+      for (const hand of [HandSide.LEFT, HandSide.RIGHT]) {
+        const expected = flipMotion(p.motions[hand]!);
+        const got = flipped.motions[hand]!;
+        expect(got.startLocation).toBe(expected.startLocation);
+        expect(got.endLocation).toBe(expected.endLocation);
+        expect(got.rotationDirection).toBe(expected.rotationDirection);
+        expect(got.gridMode).toBe(p.motions[hand]?.gridMode);
+      }
+    }
   });
 });

@@ -25,7 +25,7 @@
     <p>{t("auth_linking_can_sign_in")}</p>
     <div class="credential-display">
       <i class="fas fa-envelope" aria-hidden="true"></i>
-      <span>{email}</span>
+      <span class="ph-no-capture">{email}</span>
     </div>
   </div>
 

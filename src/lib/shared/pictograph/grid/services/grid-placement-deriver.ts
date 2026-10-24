@@ -3,9 +3,17 @@
  *
  * Maps between placement names (alpha4, beta2, etc.) and hand location pairs.
  * A placement represents the combination of (blue_hand_location, red_hand_location).
+ * The centric placements (tau1-16, terra1) come from the sequence engine's
+ * CENTRIC_PLACEMENT_LOCATIONS, the one owner of that numbering.
  */
 
+import { CENTRIC_PLACEMENT_LOCATIONS } from "@tka/sequence-engine/core";
 import { GridLocation, GridPlacement } from "../domain/enums/grid-enums";
+
+/** The 17 centric placements with the app's enum types. */
+export const CENTRIC_LOCATION_PAIRS = CENTRIC_PLACEMENT_LOCATIONS as Readonly<
+  Partial<Record<GridPlacement, readonly [GridLocation, GridLocation]>>
+>;
 
 const PLACEMENTS_MAP = new Map<string, GridPlacement>([
   // Alpha placements - hands in opposite/inverted directions
@@ -81,6 +89,14 @@ const PLACEMENTS_MAP = new Map<string, GridPlacement>([
   [`${GridLocation.WEST},${GridLocation.SOUTHWEST}`, GridPlacement.ETA14],
   [`${GridLocation.NORTHWEST},${GridLocation.WEST}`, GridPlacement.ETA15],
   [`${GridLocation.NORTH},${GridLocation.NORTHWEST}`, GridPlacement.ETA16],
+
+  // Tau and terra placements - one or both hands at center
+  ...Object.entries(CENTRIC_PLACEMENT_LOCATIONS).map(
+    ([placement, [left, right]]): [string, GridPlacement] => [
+      `${left},${right}`,
+      placement as GridPlacement,
+    ]
+  ),
 ]);
 
 // Build reverse mapping from the PLACEMENTS_MAP

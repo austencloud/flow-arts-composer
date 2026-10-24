@@ -33,7 +33,6 @@
   import { LiveSlots, type Medium } from "./live-slots.svelte";
   import { handleModuleChange } from "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js";
   import { setPendingBrowseIntent } from "#lib/features/browse/state/pending-browse-intent.svelte.js";
-  import { exploreVisualsVisible } from "#lib/shared/browse/navigation/visuals-promotion.js";
   import { listPublicArtifactsByOwner } from "#lib/shared/artifact-revisions/services/public-artifact-loader.js";
   import type { PublicArtifactEnvelope } from "#lib/shared/artifact-revisions/domain/public-artifact.js";
   import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
@@ -434,16 +433,15 @@
   /**
    * Published visuals — the creator's APPROVED public artifacts (Browse
    * Phase 3). Unlike the private Collections band, this reads the guest
-   * projection, so it works on anyone's profile. Shown only while the Explore
-   * Visuals destination is promoted: the tiles open that destination, and a
-   * band whose doorway leads nowhere would be worse than no band.
+   * projection, so it works on anyone's profile. The tiles open Explore
+   * Visuals.
    */
   let publishedVisuals = $state<PublicArtifactEnvelope[]>([]);
   let publishedToken = 0;
   $effect(() => {
     const id = userId;
     const token = ++publishedToken;
-    if (!id || !exploreVisualsVisible()) {
+    if (!id) {
       publishedVisuals = [];
       return;
     }
@@ -520,7 +518,7 @@
 
     <!-- Approved public artifacts — visible on anyone's profile because the
          data itself is the guest projection. Omitted when empty (same rule as
-         the collection strips) and while Explore Visuals is unpromoted. -->
+         the collection strips). -->
     {#if publishedVisuals.length > 0}
       <section class="band" aria-labelledby="band-published">
         <header class="band-head">

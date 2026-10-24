@@ -9,6 +9,12 @@
     groundY: number;
     showTents: boolean;
     showCampfire: boolean;
+    /**
+     * Where the fire pit sits. The pit and its chairs move together, keeping
+     * the authored arc; tents stay in their camp pocket. Defaults to the
+     * authored spot.
+     */
+    firePosition?: { x: number; z: number };
     materialResponse?: ForestMaterialResponseConfig;
     onReady?: () => void;
     onError?: (error: Error) => void;
@@ -18,6 +24,7 @@
     groundY,
     showTents,
     showCampfire,
+    firePosition,
     materialResponse,
     onReady,
     onError,
@@ -56,6 +63,28 @@
   $effect(() => {
     if (!$campsite) return;
     $campsite.scene.traverse(applyVisibility);
+  });
+
+  // The pit and chairs are top-level nodes, so one shared offset moves the
+  // whole circle. Authored spots stay on each node so the move is idempotent.
+  $effect(() => {
+    if (!$campsite) return;
+    const circle = $campsite.scene.children.filter((child) => {
+      const role = child.userData?.tka_role;
+      return role === "fire-pit" || role === "camp-chair";
+    });
+    for (const node of circle) {
+      node.userData.tkaAuthoredX ??= node.position.x;
+      node.userData.tkaAuthoredZ ??= node.position.z;
+    }
+    const pit = circle.find((node) => node.userData.tka_role === "fire-pit");
+    if (!pit) return;
+    const dx = firePosition ? firePosition.x - pit.userData.tkaAuthoredX : 0;
+    const dz = firePosition ? firePosition.z - pit.userData.tkaAuthoredZ : 0;
+    for (const node of circle) {
+      node.position.x = node.userData.tkaAuthoredX + dx;
+      node.position.z = node.userData.tkaAuthoredZ + dz;
+    }
   });
 
   $effect(() => {

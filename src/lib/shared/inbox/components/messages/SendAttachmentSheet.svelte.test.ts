@@ -68,6 +68,9 @@ vi.mock("#lib/shared/user-search/services/user-searcher.js", () => ({
 vi.mock("../../state/inbox-state.svelte", () => ({
   inboxState: {
     conversations: mocks.conversations,
+    // The first snapshot has arrived, so the picker lists recents instead of
+    // its loading placeholders.
+    conversationsLoaded: true,
     get shareAttachmentConversationId() {
       return mocks.inbox.shareAttachmentConversationId;
     },

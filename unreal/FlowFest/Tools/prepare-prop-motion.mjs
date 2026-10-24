@@ -12,6 +12,7 @@ import { Matrix4, Quaternion, Vector3 } from "three";
 import { museumPerformanceEntries, assertMuseumRawCapture,
   MUSEUM_PROP_COORDINATE_BASIS } from '../../Shared/Tools/museum-performance-contract.mjs';
 import { validateCaptureProvenance } from '../../Shared/Tools/capture-provenance.mjs';
+import { nativePropFrame } from '../../Shared/Tools/native-prop-frame.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const option = name => {
@@ -49,6 +50,41 @@ function profileForRole(role) {
   if (profiles.has(role)) return profiles.get(role);
   const family = /^family-([a-z0-9_]+)-([AB])$/.exec(role);
   return family ? `P_${family[1]}_${family[2].toUpperCase()}` : null;
+}
+
+function assertDynamicFamilyCapture(capture, filename) {
+  const finite = (values, count) => Array.isArray(values) && values.length === count &&
+    values.every(Number.isFinite);
+  const validTransform = sample => sample && finite(sample.position, 3) &&
+    finite(sample.quaternion, 4) && Math.abs(Math.hypot(...sample.quaternion) - 1) <= .005 &&
+    finite(sample.scale, 3);
+  const length = capture.frames[0]?.effectivePropLengthCm;
+  if (!Number.isFinite(length) || length <= 0 || length > 1000 ||
+      capture.provenance.motionOptions.contactMode !== 'prop-authoritative' ||
+      capture.provenance.motionOptions.reachPolicy !== 'paired-body-final-socket-v1')
+    throw new Error(`Invalid dynamic family length or contact policy: ${filename}`);
+  for (const [index, frame] of capture.frames.entries()) {
+    if (frame.effectivePropLengthCm !== length ||
+        !finite(frame.palmLocal, 6) ||
+        [0, 3].some(start => Math.hypot(...frame.palmLocal.slice(start, start + 3)) > .5) ||
+        !Number.isFinite(frame.gripRelaxation) || frame.gripRelaxation < 0 ||
+        frame.gripRelaxation > 1 || frame.gripRelaxation !== frame.gripAttachment?.gripRelaxation ||
+        !Array.isArray(frame.propVisibility) || frame.propVisibility.length !== 2 ||
+        frame.propVisibility.some(value => typeof value !== 'boolean') ||
+        !Array.isArray(frame.bones) || !frame.bones.length ||
+        frame.bones.some(bone => !validTransform(bone.component) ||
+          (!bone.parent && !validTransform(bone.rootParentWorld))))
+      throw new Error(`Incomplete dynamic family capture: ${filename} frame ${index}`);
+    for (const [sideIndex, side] of ['left', 'right'].entries()) {
+      const prop = frame[`${side}Prop`];
+      const palm = frame.gripAttachment?.[`${side}PalmWorld`];
+      const grip = frame.gripAttachment?.[`${side}RenderedGripWorld`];
+      if (!validTransform(prop?.propRootWorld) || !validTransform(prop?.correctionWorld) ||
+          !finite(palm, 3) || (frame.propVisibility[sideIndex] &&
+            (!finite(grip, 3) || Math.hypot(...palm.map((n, axis) => n - grip[axis])) > .002)))
+        throw new Error(`Incomplete dynamic family grip or prop transform: ${filename} frame ${index} ${side}`);
+    }
+  }
 }
 
 const fromSample = ({ position, quaternion, scale }) =>
@@ -216,8 +252,10 @@ for (const entry of artifacts.filter(entry =>
   const family = /^family-([a-z0-9_]+)-[AB]$/.exec(entry.role)?.[1];
   if (family && (capture.propType !== family || capture.frames.length !== 480))
     throw new Error(`Capture family/timing mismatch: ${entry.filename}`);
-  if (family && capture.captureRevision !== 'clock-isolated-body-v3')
+  if (family && !['clock-isolated-body-v3', 'monotonic-dynamic-grip-v5'].includes(capture.captureRevision))
     throw new Error(`Capture revision mismatch: ${entry.filename}`);
+  if (family && capture.captureRevision === 'monotonic-dynamic-grip-v5')
+    assertDynamicFamilyCapture(capture, entry.filename);
   const hasVisualBody = capture.frames.every(frame =>
     frame.leftProp?.rotatedBodyWorld && frame.rightProp?.rotatedBodyWorld);
   if ((family || museumMode) && !hasVisualBody)
@@ -226,15 +264,14 @@ for (const entry of artifacts.filter(entry =>
     if (!frame.performerWorld || !frame.leftProp?.propRootWorld ||
         !frame.rightProp?.propRootWorld || frame.frame !== index)
       throw new Error(`Incomplete prop pose: ${entry.filename} frame ${index}`);
+    if (hasVisualBody) return nativePropFrame(frame);
     const performerInverse = fromSample(frame.performerWorld).invert();
-    const compact = [
+    return [
       ...pose(performerInverse, frame.leftProp.propRootWorld),
       ...pose(performerInverse, frame.rightProp.propRootWorld),
       ...gripPosition(frame, 'Left'),
       ...gripPosition(frame, 'Right'),
     ];
-    if (hasVisualBody) compact.push( ...visualRotation(frame.leftProp), ...visualRotation(frame.rightProp));
-    return compact;
   });
   const character = entry.character.replaceAll("-", "_");
   const filename = `${character}_${profile}.json`;

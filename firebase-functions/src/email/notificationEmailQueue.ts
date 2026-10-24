@@ -27,6 +27,10 @@ import {
   richTextToPlain,
   splitLeadingBold,
 } from "./emailRichText";
+import {
+  UNSUBSCRIBE_SECRET_NAME,
+  listUnsubscribeHeaders,
+} from "./unsubscribeToken";
 
 const APP_ORIGIN = "https://tkaflowarts.com";
 const INBOX_URL = `${APP_ORIGIN}/create?sheet=inbox`;
@@ -52,11 +56,15 @@ interface AuthEmailUser {
 export interface NotificationEmailDependencies {
   getPreferences(userId: string): Promise<Record<string, boolean> | null>;
   getAuthUser(userId: string): Promise<AuthEmailUser | null>;
+  /** Signing secret for List-Unsubscribe links; no secret means no headers. */
+  getUnsubscribeSecret?(): string | undefined;
   createMailIfAbsent(
     mailId: string,
     mail: {
       to: string[];
       message: NotificationEmail;
+      /** Top-level `headers` of the Trigger Email document. */
+      headers?: Record<string, string>;
       metadata: Record<string, string>;
     }
   ): Promise<boolean>;
@@ -122,9 +130,18 @@ export async function queueUserNotificationEmail(
     request.sourceId,
     request.userId
   );
+  const secret = dependencies.getUnsubscribeSecret?.();
   const created = await dependencies.createMailIfAbsent(mailId, {
     to: [user.email],
     message: request.email,
+    ...(secret
+      ? {
+          headers: listUnsubscribeHeaders(
+            { userId: request.userId, preferenceKey: request.preferenceKey },
+            secret
+          ),
+        }
+      : {}),
     metadata: {
       sourceType: request.sourceType,
       sourceId: request.sourceId,
@@ -322,7 +339,8 @@ export function createPlatformUpdateEmail(input: {
       : undefined);
 
   // Only a few changes per section fit the email, so the ones with an
-  // example come first: a picture is what someone can't get from the line.
+  // example come first: a picture is what someone can't get from the line,
+  // and a clip shows the motion a still picture can't.
   const sections: { heading: string; items: ReleaseChangelogEntry[] }[] =
     RELEASE_SECTIONS.map((section) => {
       const items = entries.filter(
@@ -331,7 +349,8 @@ export function createPlatformUpdateEmail(input: {
       return {
         heading: section.heading,
         items: [
-          ...items.filter((entry) => entry.media),
+          ...items.filter((entry) => entry.media?.video),
+          ...items.filter((entry) => entry.media && !entry.media.video),
           ...items.filter((entry) => !entry.media),
         ],
       };
@@ -493,6 +512,10 @@ const defaultDependencies: NotificationEmailDependencies = {
         | Record<string, boolean>
         | undefined) ?? null
     );
+  },
+
+  getUnsubscribeSecret() {
+    return process.env[UNSUBSCRIBE_SECRET_NAME] || undefined;
   },
 
   async getAuthUser(userId) {

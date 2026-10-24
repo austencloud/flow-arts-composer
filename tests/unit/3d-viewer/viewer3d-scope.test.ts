@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, beforeAll, afterEach } from "vitest";
 import { createViewer3DStateForTest } from "./viewer3d-test-helpers.svelte";
 import { __resetWebGL2CapabilityForTests } from "#lib/shared/3d/capabilities/webgl-capabilities.js";
-import { Plane } from "@austencloud/scene-3d";
+import { Plane, userProportionsState } from "@austencloud/scene-3d";
 import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { CANONICAL_PERFORMER_ANCHOR_Y } from "#lib/shared/3d/environments/domain/stage-coordinate-frame.js";
+import { toNativeCameraPose } from "#lib/shared/3d/unreal/domain/native-camera-framing.js";
 import { tick } from "svelte";
 import { FALG } from "#lib/shared/combination/domain/demo-fixtures.js";
 
@@ -228,6 +230,28 @@ describe("viewer-3d-state: selection scope", () => {
     state.frameAllPerformers();
 
     expect(moveCamera).toHaveBeenCalledTimes(1);
+  });
+
+  it("frames the cast from performer feet and keeps the same target in Unreal", () => {
+    const state = makeSeeded3DState();
+    state.performerManager.initialize();
+    state.setStageGroundOffset(CANONICAL_PERFORMER_ANCHOR_Y);
+    const moveCamera = vi.fn(
+      (_position: { x: number; y: number; z: number }, _target: { x: number; y: number; z: number }) => {}
+    );
+    state.registerSnapTo(moveCamera);
+
+    state.frameAllPerformers();
+
+    const [position, target] = moveCamera.mock.calls[0]!;
+    const webFeetY =
+      CANONICAL_PERFORMER_ANCHOR_Y + userProportionsState.groundY;
+    expect(target.y - webFeetY).toBeCloseTo(0.55);
+    const native = toNativeCameraPose(position, target, webFeetY);
+    expect(native.target.y).toBeCloseTo(0.55);
+    expect(native.position.y - native.target.y).toBeCloseTo(
+      position.y - target.y
+    );
   });
 
   it("setHandPlaneScoped updates every performer when All is selected", () => {

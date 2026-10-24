@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { playwright } from "@vitest/browser-playwright";
 import { defineConfig } from "vitest/config";
+import { workspaceResolvePlugins } from "../../scripts/lib/workspace-resolution.mjs";
 
 const projectRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -24,7 +25,8 @@ const projectRoot = path.resolve(
  *   RENDER_PARITY_MODE=compare  diff current renders against the baseline
  */
 export default defineConfig({
-  plugins: [svelte(svelteOptions)],
+  // This checkout's packages/*, not the primary's, in a task worktree.
+  plugins: [svelte(svelteOptions), ...workspaceResolvePlugins(projectRoot)],
 
   // Canvas2DDirectRenderer fetches grid/arrow/prop/glyph SVGs from /images/*.
   publicDir: path.resolve(projectRoot, "static"),

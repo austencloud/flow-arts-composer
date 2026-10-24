@@ -32,6 +32,11 @@ import {
 } from "./export-frame-compositor";
 import { OffscreenExportRenderer } from "#lib/shared/video-export/services/offscreen-export-renderer.js";
 import { drawOpenerFrame } from "#lib/shared/compose/domain/video-opener-frame.js";
+import {
+  layoutVideoCarouselFrame,
+  videoCarouselPosition,
+  videoCarouselSourceFrame,
+} from "#lib/shared/video-export/domain/video-carousel.js";
 import { holdFrameCount } from "#lib/shared/share/domain/video-opener.js";
 
 import type {
@@ -113,14 +118,25 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
     const sourceSizingWidth = hasSourceOverride
       ? sourceSizeOverride
       : canvas.width;
+    // The beat carousel attaches to sequence exports only: a composite grid
+    // draws its own step strip, and tunnel/art exports are bare squares.
+    const carouselPlacement =
+      !hasSourceOverride &&
+      !(options.compositeMode && options.compositeMode !== "none") &&
+      options.carousel &&
+      options.carousel !== "off"
+        ? options.carousel
+        : null;
     const showWordHeader = hasSourceOverride
       ? false
       : (options.overlayOverrides?.wordHeader ??
         visibilityManager.getVisibility("wordHeader"));
-    const showProgressBar = hasSourceOverride
-      ? false
-      : (options.overlayOverrides?.progressBar ??
-        visibilityManager.getVisibility("progressBar"));
+    // The carousel's beat dots stand in for the progress bar.
+    const showProgressBar =
+      hasSourceOverride || carouselPlacement
+        ? false
+        : (options.overlayOverrides?.progressBar ??
+          visibilityManager.getVisibility("progressBar"));
     // Header/progress bar heights at SOURCE resolution - used only for
     // aspect ratio calculation so the output dimensions stay correct.
     const srcHeaderHeight = showWordHeader
@@ -138,7 +154,9 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
           ...(panelState.sequenceData.steps ?? []),
         ])
       : null;
-    const { turnGlyphEntries, reversalGlyph } = deriveHeaderPatternGlyphs(panelState.sequenceData);
+    const { turnGlyphEntries, reversalGlyph } = deriveHeaderPatternGlyphs(
+      panelState.sequenceData
+    );
 
     // Resolve once per export: both the component set (for the icon strip)
     // and the rotation slice size (so quartered LOOPs render with fa-arrows-spin
@@ -175,12 +193,23 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
     // Calculate source dimensions. Normally from the live canvas (square anim
     // area + header + progress bar). With sourceSizeOverride the source is a
     // bare square of that size — the live canvas may be unmounted (tunnel/art).
+    // A carousel adds its band to one side of the header + square card.
+    const carouselSourceFrame = carouselPlacement
+      ? videoCarouselSourceFrame({
+          placement: carouselPlacement,
+          squareSize: canvas.width,
+          headerHeight: srcHeaderHeight,
+        })
+      : null;
     const sourceWidth = hasSourceOverride
       ? Math.round(sourceSizeOverride!)
-      : Math.round(canvas.width);
+      : Math.round(carouselSourceFrame?.width ?? canvas.width);
     const sourceHeight = hasSourceOverride
       ? Math.round(sourceSizeOverride!)
-      : Math.round(canvas.width + srcHeaderHeight + srcProgressBarHeight);
+      : Math.round(
+          carouselSourceFrame?.height ??
+            canvas.width + srcHeaderHeight + srcProgressBarHeight
+        );
 
     // Zero-dimension guard only applies to the live-canvas path — an override
     // supplies its own valid square size, so skip the throw.
@@ -511,14 +540,34 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
       // than the previous approach of compositing at source size then resizing.
       const offscreenCanvas = document.createElement("canvas");
 
+      // Where the card (header + square) and the carousel band sit in the
+      // output frame, when the video carries a carousel.
+      const carouselFrame = carouselPlacement
+        ? layoutVideoCarouselFrame({
+            placement: carouselPlacement,
+            outputWidth,
+            outputHeight,
+            sourceSquareSize: canvas.width,
+            sourceHeaderHeight: srcHeaderHeight,
+          })
+        : null;
+
       // Scale factor from source canvas to output resolution.
-      const scaleFactor = isCompositeMode ? 1 : outputWidth / sourceWidth;
+      const scaleFactor = isCompositeMode
+        ? 1
+        : carouselFrame
+          ? carouselFrame.canvasSize / canvas.width
+          : outputWidth / sourceWidth;
 
       // Header/progress bar heights at OUTPUT resolution
-      const headerHeight = Math.round(srcHeaderHeight * scaleFactor);
+      const headerHeight =
+        carouselFrame?.headerHeight ??
+        Math.round(srcHeaderHeight * scaleFactor);
       const progressBarHeight = Math.round(srcProgressBarHeight * scaleFactor);
       // The square animation area in the output
-      const outputCanvasSize = isCompositeMode ? sourceWidth : outputWidth;
+      const outputCanvasSize = isCompositeMode
+        ? sourceWidth
+        : (carouselFrame?.canvasSize ?? outputWidth);
 
       // Construct + warm a fresh offscreen export engine for the non-composite
       // path. It renders each frame deterministically at output resolution with
@@ -554,6 +603,8 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
           additionalLayerCount,
           tunnelSpectrum: options.tunnelSpectrum,
           tunnelPropColors: options.tunnelPropColors,
+          fanAppearance: options.fanAppearance,
+          gridVisible: options.gridVisible,
         });
       }
 
@@ -577,6 +628,20 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
       // Use Lanczos (high) interpolation when scaling source layers up
       offscreenCtx.imageSmoothingEnabled = true;
       offscreenCtx.imageSmoothingQuality = "high";
+
+      // The carousel's cards follow the animation's own theme. Its pictographs
+      // render once, at the band's focus size, before the first frame.
+      let carouselBand: FrameCompositorConfig["carousel"];
+      if (carouselFrame && panelState.sequenceData) {
+        const { createBeatCarouselPainter } =
+          await import("#lib/shared/media-composition/services/beat-carousel-painter.js");
+        const painter = createBeatCarouselPainter(panelState.sequenceData, {
+          orientation: carouselFrame.orientation,
+          palette: (options.previewDarkMode ?? isDarkMode) ? "dark" : "light",
+        });
+        await painter.prepare(carouselFrame.band);
+        carouselBand = { painter, rect: carouselFrame.band };
+      }
 
       // Build frame compositor for overlay rendering
       const compositorConfig: FrameCompositorConfig = {
@@ -610,6 +675,10 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
         showRightPathLines,
         sequenceSteps: steps,
         frameOverlayDraw: options.frameOverlayDraw,
+        cardOffset: carouselFrame
+          ? { x: carouselFrame.cardX, y: carouselFrame.cardY }
+          : undefined,
+        carousel: carouselBand,
       };
       const frameCompositor = new ExportFrameCompositor(
         compositorConfig,
@@ -707,13 +776,40 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
 
       const encodedFrameTotal = openerFrames + totalFrames;
 
+      // The carousel's timing. A video that does not run straight back into
+      // beat 1 keeps the last pass from sliding toward a pass that never comes.
+      const carouselTiming = {
+        beatCount: steps.length,
+        loopCount,
+        settlesOnLastBeat:
+          endPlacementHoldDuration > 0 || startPlacementDuration > 0,
+      };
+
       if (openerImage && openerFrames > 0) {
-        drawOpenerFrame(
-          offscreenCtx,
-          openerImage,
-          offscreenCanvas.width,
-          offscreenCanvas.height
-        );
+        if (carouselFrame) {
+          // The opener fills the card; the band beside it shows the opening
+          // pose, or beat 1 when the video skips the start placement.
+          offscreenCtx.save();
+          offscreenCtx.translate(carouselFrame.cardX, carouselFrame.cardY);
+          drawOpenerFrame(
+            offscreenCtx,
+            openerImage,
+            carouselFrame.canvasSize,
+            carouselFrame.headerHeight + carouselFrame.canvasSize
+          );
+          offscreenCtx.restore();
+          frameCompositor.renderCarousel(
+            offscreenCtx,
+            startPlacementDuration > 0 ? 0 : 1
+          );
+        } else {
+          drawOpenerFrame(
+            offscreenCtx,
+            openerImage,
+            offscreenCanvas.width,
+            offscreenCanvas.height
+          );
+        }
         for (let o = 0; o < openerFrames; o++) {
           if (this.shouldCancel) {
             throw new Error("Export cancelled");
@@ -769,6 +865,7 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
 
         let playbackPosition: number;
         let stepIndex: number;
+        let carouselPosition: number;
         let isInStartPlacement = false;
         let isInEndHold = false;
 
@@ -780,11 +877,20 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
           playbackPosition = timeProgress / startPlacementDuration;
           stepIndex = -1;
           isInStartPlacement = true;
+          carouselPosition = videoCarouselPosition({
+            ...carouselTiming,
+            phase: "start",
+            startProgress: playbackPosition,
+          });
         } else if (endPlacementHoldDuration > 0 && timeProgress >= motionEnd) {
           // End position hold - freeze on the completed last motion step (once, at the end)
           playbackPosition = steps.length + 1;
           stepIndex = steps.length - 1;
           isInEndHold = true;
+          carouselPosition = videoCarouselPosition({
+            ...carouselTiming,
+            phase: "end",
+          });
         } else {
           // Motion steps phase - wrap time modulo one loop so N iterations play
           // back-to-back with no inter-iteration hold. Offset by +1 for the
@@ -799,6 +905,17 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
           );
           stepIndex = Math.floor(rawStep);
           playbackPosition = rawStep + 1;
+          // The carousel counts on through repeats instead of rewinding.
+          const pass =
+            totalDurationUnits > 0
+              ? Math.floor(motionTime / totalDurationUnits) %
+                Math.max(1, loopCount)
+              : 0;
+          carouselPosition = videoCarouselPosition({
+            ...carouselTiming,
+            phase: "motion",
+            motionBeats: pass * steps.length + rawStep,
+          });
         }
 
         // Render this frame.
@@ -873,6 +990,7 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
             stepDurations,
             i
           );
+          frameCompositor.renderCarousel(offscreenCtx, carouselPosition);
         }
 
         // -----------------------------------------------------------------------

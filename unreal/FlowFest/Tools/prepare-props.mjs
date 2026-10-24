@@ -1,3 +1,4 @@
+import { nativePropVariants as variantsFor } from '../../Shared/Tools/native-prop-catalog.mjs';
 /** Stage every physical Prop3D type for the native Flow Fest importer. */
 import { createRequire } from 'node:module';
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
@@ -45,28 +46,7 @@ const labels = {
   simple_staff: 'Simple Staff', staff_v2: 'Staff V2', minihoop: 'Mini Hoop',
   triquetra2: 'Triquetra 2', capsule_baton: 'LED Baton', fire_double_staff: 'Fire Double Staff',
 };
-const variantsFor = id => {
-  if (id === 'buugeng' || id === 'bigbuugeng') return [
-    { id: 'matching-a', leftFlipped: false, rightFlipped: false },
-    { id: 'mirrored-ab', leftFlipped: false, rightFlipped: true },
-    { id: 'mirrored-ba', leftFlipped: true, rightFlipped: false },
-    { id: 'matching-b', leftFlipped: true, rightFlipped: true },
-  ];
-  if (id === 'fan' || id === 'bigfan') {
-    const result = [{ id: 'pictograph' }];
-    for (const build of ['fire', 'lotus', 'day', 'moon', 'flat-grip', 'star']) {
-      for (const frame of build === 'day' ? ['black', 'white'] : ['black']) {
-        for (const cover of ['fire', 'day'].includes(build) ? ['bare', 'covered'] : ['bare']) {
-          result.push({ id: [build, frame, cover].join('_'), fanBuild: build, fanFrameColor: frame, fanCover: cover });
-        }
-      }
-    }
-    return result;
-  }
-  if (['triad', 'bigtriad', 'quiad'].includes(id)) return [{ id: 'fire', finish: 'fire' }, { id: 'day', finish: 'day' }];
-  if (id === 'triangle') return [{ id: 'corner', triangleGrip: 'corner' }, { id: 'side', triangleGrip: 'side' }];
-  return [{ id: 'default' }];
-};
+
 const modelScale = { chicken: .52 / .7779893, bigchicken: .8636 / .7779893,
   bigdoublestar: 1.4, bigdoublecontactball: 1.4, bigbuugeng: 1.4 };
 const catalog = types.map(id => {

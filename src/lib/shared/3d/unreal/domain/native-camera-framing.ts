@@ -1,7 +1,29 @@
 type Point3 = { x: number; y: number; z: number };
 
-const PERFORMER_CENTER_Y = 1.2;
 const FRAMING_PADDING = 1.5;
+
+/** Move a Web-world camera into the native world where performer feet are Y=0. */
+export function toNativeCameraPose(
+  position: Point3,
+  target: Point3,
+  webFeetY: number
+) {
+  return {
+    position: { ...position, y: position.y - webFeetY },
+    target: { ...target, y: target.y - webFeetY },
+  };
+}
+
+export function toWebCameraPose(
+  position: Point3,
+  target: Point3,
+  webFeetY: number
+) {
+  return {
+    position: { ...position, y: position.y + webFeetY },
+    target: { ...target, y: target.y + webFeetY },
+  };
+}
 
 /** Refit Composer shots for Unreal's horizontal FOV and floor-level origin. */
 export function frameNativeCamera(
@@ -9,7 +31,8 @@ export function frameNativeCamera(
   target: Point3,
   radius: number,
   viewportAspect: number,
-  horizontalFov: number
+  horizontalFov: number,
+  webFeetY: number
 ): { position: Point3; target: Point3 } {
   const aspect = Math.max(0.1, viewportAspect);
   const horizontalHalfFov = (horizontalFov * Math.PI) / 360;
@@ -32,7 +55,7 @@ export function frameNativeCamera(
   // Shared shots assume a vertical FOV. Preserve their direction, but refit
   // distance so a portrait viewport does not push the performer away.
   const scale = distance > 0.001 ? minimumDistance / distance : minimumDistance;
-  const framedTarget = { ...target, y: Math.max(target.y, PERFORMER_CENTER_Y) };
+  const framedTarget = toNativeCameraPose(position, target, webFeetY).target;
   return {
     position: {
       x: framedTarget.x + direction.x * scale,

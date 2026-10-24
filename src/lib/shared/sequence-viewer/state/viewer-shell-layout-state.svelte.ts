@@ -487,7 +487,11 @@ export function createViewerShellLayoutState(
   ): void {
     const ctx = inputs.getContext();
     const previousMode = ctx.viewerState.viewerMode;
-    if (previousMode === mode) return;
+    if (
+      previousMode === mode &&
+      !(mode === "animation-3d" && ctx.viewerState.exportContext)
+    )
+      return;
     if (previousMode !== "card" && mode === "card") {
       // Side-by-Side gives the Card a readable starting box that can grow into
       // focus. A motion mode leaves the mounted Card behind a zero-sized track;
@@ -523,7 +527,8 @@ export function createViewerShellLayoutState(
           ctx.viewerState.enterExport("animation-export", "animation");
         } else if (mode === "animation-3d") {
           if (ctx.editingPane === "image") ctx.exitEditMode();
-          ctx.viewerState.enterExport("animation-export", "animation-3d");
+          else ctx.viewerState.exitExport();
+          ctx.viewerState.setViewerMode("animation-3d");
         } else if (mode === "card") {
           ctx.enterEditMode("image");
         } else if (mode === "videos") {

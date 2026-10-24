@@ -17,7 +17,9 @@ import {
 import {
 	LOCATION_ANGLES,
 	PI,
+	locationRadius,
 } from "#lib/shared/foundation/domain/math-constants.js";
+import type { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   HandSide,
   Orientation,
@@ -55,6 +57,9 @@ interface MotionEndpoints {
 	startStaffAngle: number;
 	staffRotationDelta: number;
 	motionType: string;
+	/** Grid radii from the center: 0 at the center point, 1 on the rim. */
+	startRadius: number;
+	targetRadius: number;
 }
 
 interface InterpolatedPosition {
@@ -90,6 +95,11 @@ function resolveLocationAngle(loc: string): number {
 		return LOCATION_ANGLE_LOOKUP[alias] ?? 0;
 	}
 	return 0;
+}
+
+// 0 at the center point, 1 on the rim (see `locationRadius`).
+function resolveLocationRadius(loc: string): number {
+	return locationRadius((LOWERCASE_ALIASES[loc] ?? loc) as GridLocation);
 }
 
 
@@ -230,6 +240,8 @@ function calculateMotionEndpoints(motion: {
 		startStaffAngle,
 		staffRotationDelta,
 		motionType: motion.motionType,
+		startRadius: resolveLocationRadius(motion.startLoc),
+		targetRadius: resolveLocationRadius(motion.endLoc),
 	};
 }
 
@@ -261,6 +273,24 @@ function interpolateLinear(
 	const startY = Math.sin(startAngle);
 	const endX = Math.cos(endAngle);
 	const endY = Math.sin(endAngle);
+	const x = startX + (endX - startX) * t;
+	const y = startY + (endY - startY) * t;
+	return { x, y, staffAngle };
+}
+
+// A motion with a center end (a hash) runs the straight line between the
+// center point and its rim end, whatever its motion type or path shape.
+function interpolateHash(
+	endpoints: MotionEndpoints,
+	t: number,
+	staffAngle: number
+): InterpolatedPosition {
+	const { startCenterAngle, targetCenterAngle, startRadius, targetRadius } =
+		endpoints;
+	const startX = Math.cos(startCenterAngle) * startRadius;
+	const startY = Math.sin(startCenterAngle) * startRadius;
+	const endX = Math.cos(targetCenterAngle) * targetRadius;
+	const endY = Math.sin(targetCenterAngle) * targetRadius;
 	const x = startX + (endX - startX) * t;
 	const y = startY + (endY - startY) * t;
 	return { x, y, staffAngle };
@@ -308,6 +338,10 @@ function interpolate(
 	const staffAngle = normalizeAnglePositive(
 		startStaffAngle + staffRotationDelta * t
 	);
+
+	if (endpoints.startRadius === 0 || endpoints.targetRadius === 0) {
+		return interpolateHash(endpoints, t, staffAngle);
+	}
 
 	if (motionType === "dash") {
 		return interpolateLinear(startCenterAngle, targetCenterAngle, t, staffAngle);

@@ -39,6 +39,12 @@ npx tsx scripts/triage-sessions.ts analyze --since <reviewedThrough> --limit 20 
 
 Skip any session already in `reviewedSessionIds`.
 
+`analyze` and `stats` drop likely crawlers first: one page view, never
+identified, `zh-CN` browser language, and no referrer (on 2026-10-22, 30 of
+the top 40 friction slots were this shape). Pass `--include-crawlers` to see
+them. Nothing changes in PostHog; the rule is `isLikelyCrawlerSession` in
+`session-triage-queries.ts`.
+
 Each surfaced session carries its score AND the reasons that produced it, so
 you can see whether the ranking is behaving. If the reasons look wrong, say so
 rather than trusting the number.
@@ -131,6 +137,21 @@ node scripts/fetch-feedback.js add \
 ```
 
 Write the returned id back to the issue's `feedbackId`.
+
+---
+
+## Web vitals
+
+```bash
+npx tsx scripts/triage-web-vitals.ts --days 30 [--min 10] [--json]
+```
+
+Read-only. Ranks route patterns by p75 LCP (mobile first), then INP, then CLS,
+from PostHog `$web_vitals` events, with the same crawler rule as `analyze`.
+LCP groups by the hard-load URL, INP and CLS by where they were reported.
+The events carry no LCP element or INP target until the client sets
+`capture_performance.web_vitals_attribution`. First report:
+`docs/reports/web-vitals-2026-10-22.md`.
 
 ---
 

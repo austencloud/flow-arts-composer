@@ -167,6 +167,9 @@ function createHarness(
     layout,
     editMode,
     dispose,
+    enter3DRecording() {
+      viewerState.enterExport("animation-export", "animation-3d");
+    },
     togglePlayback,
     get playing() {
       return playing;
@@ -192,6 +195,34 @@ afterEach(() => {
 });
 
 describe("sequence viewer Card playback", () => {
+  it("closes 3D recording when the selected 3D mode is selected again", () => {
+    const harness = createHarness(false);
+    disposals.push(harness.dispose);
+
+    harness.layout.selectViewerMode("animation-3d");
+    harness.enter3DRecording();
+    expect(harness.viewerMode).toBe("animation-3d");
+    expect(harness.exportContext).toBe("animation-export");
+
+    harness.layout.selectViewerMode("animation-3d");
+
+    expect(harness.viewerMode).toBe("animation-3d");
+    expect(harness.exportContext).toBeNull();
+  });
+
+  it("opens the 3D stage from Side by Side without arming Record Scene", () => {
+    const harness = createHarness(false);
+    disposals.push(harness.dispose);
+
+    harness.layout.selectSplitMode(false);
+    expect(harness.viewerMode).toBe("split");
+    expect(harness.exportContext).toBeNull();
+
+    harness.layout.selectViewerMode("animation-3d");
+    expect(harness.viewerMode).toBe("animation-3d");
+    expect(harness.exportContext).toBeNull();
+  });
+
   it("pauses for Card and resumes when the running animation returns", () => {
     const harness = createHarness(true);
     disposals.push(harness.dispose);

@@ -2,11 +2,16 @@
  * Museum narration player.
  *
  * Plays the Archive's recorded audio guide as captions. A room cue starts when
- * the visitor enters the room; an exhibit cue when they walk up to the exhibit.
+ * the visitor enters the room; an exhibit cue when they walk up to the exhibit;
+ * a village cue when its moment happens in the room's village sim while the
+ * visitor is there.
  * Each cue plays once per visit. Entering a different room cuts the current
  * cue, the way a PA does when you leave its speaker's range.
+ * A cue with carried lines names the word the visitor carries (the pocket's),
+ * read when the cue starts.
  */
-import { NARRATION_CUES, type NarrationCue } from "../data/museum-narration";
+import type { VillageMomentKind } from "#lib/features/village/state/village-moments.js";
+import { NARRATION_CUES, cueLines, type NarrationCue } from "../data/museum-narration";
 
 export interface ActiveCaption {
   cue: NarrationCue;
@@ -28,11 +33,21 @@ export class MuseumNarrationPlayer {
   private timer: ReturnType<typeof setTimeout> | null = null;
   private readonly roomCues = new Map<string, NarrationCue>();
   private readonly exhibitCues = new Map<string, NarrationCue>();
+  private readonly villageCues: NarrationCue[] = [];
+  private room: string | null = null;
+  private lines: string[] = [];
+  private readonly carriedWord: () => string | undefined;
 
-  constructor(cues: NarrationCue[] = NARRATION_CUES) {
+  constructor(
+    cues: NarrationCue[] = NARRATION_CUES,
+    carriedWord: () => string | undefined = () => undefined,
+  ) {
+    this.carriedWord = carriedWord;
     for (const cue of cues) {
       if (cue.trigger.kind === "room") this.roomCues.set(cue.roomId, cue);
-      else this.exhibitCues.set(cue.trigger.refId, cue);
+      else if (cue.trigger.kind === "exhibit")
+        this.exhibitCues.set(cue.trigger.refId, cue);
+      else this.villageCues.push(cue);
     }
   }
 
@@ -47,6 +62,7 @@ export class MuseumNarrationPlayer {
 
   /** The visitor crossed into a room (or into a corridor: null). */
   enterRoom(roomId: string | null): void {
+    this.room = roomId;
     // Leaving the speaker's range cuts the tape mid-line.
     if (this.current && this.current.cue.roomId !== roomId) {
       this.stopCurrent();
@@ -61,6 +77,19 @@ export class MuseumNarrationPlayer {
   nearExhibit(refId: string): void {
     const cue = this.exhibitCues.get(refId);
     if (cue) this.enqueue(cue);
+  }
+
+  /** Something happened in a room's village sim. Heard only from inside the
+   * room; a moment missed while away stays unplayed. */
+  villageMoment(moment: VillageMomentKind): void {
+    for (const cue of this.villageCues) {
+      if (
+        cue.trigger.kind === "village" &&
+        cue.trigger.moment === moment &&
+        cue.roomId === this.room
+      )
+        this.enqueue(cue);
+    }
   }
 
   /** Skip the rest of the current cue. */
@@ -86,7 +115,8 @@ export class MuseumNarrationPlayer {
   }
 
   private play(cue: NarrationCue, lineIndex = 0): void {
-    const line = cue.lines[lineIndex];
+    if (lineIndex === 0) this.lines = cueLines(cue, this.carriedWord());
+    const line = this.lines[lineIndex];
     if (line === undefined) {
       this.current = null;
       this.playNext();

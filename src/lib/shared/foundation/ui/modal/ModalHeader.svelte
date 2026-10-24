@@ -12,6 +12,7 @@
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+  import type { Snippet } from "svelte";
 
   interface Props {
     title: string;
@@ -21,6 +22,9 @@
     showClose?: boolean;
     onClose?: () => void;
     id?: string;
+    /** Drawn inside the heading in place of the title text, for a heading that
+     *  is a picture (a TKA letter glyph). The title stays its accessible name. */
+    titleContent?: Snippet;
   }
 
   let {
@@ -31,6 +35,7 @@
     showClose = true,
     onClose,
     id,
+    titleContent,
   }: Props = $props();
 
   let hapticService: HapticFeedback | null = null;
@@ -54,7 +59,13 @@
   {/if}
 
   <div class="header-text" data-animate="2">
-    <h2 {id} class="header-title">{title}</h2>
+    {#if titleContent}
+      <h2 {id} class="header-title" aria-label={title}>
+        {@render titleContent()}
+      </h2>
+    {:else}
+      <h2 {id} class="header-title">{title}</h2>
+    {/if}
     {#if subtitle}
       <p class="header-subtitle">{subtitle}</p>
     {/if}

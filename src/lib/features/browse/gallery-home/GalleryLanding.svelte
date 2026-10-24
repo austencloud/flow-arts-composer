@@ -65,6 +65,32 @@
   /** The door's fan always holds three slots, so nothing moves as keys arrive. */
   const FAN_SLOTS = [0, 1, 2] as const;
   const fanSize = $derived(Math.round(catalog.PEEK.fanH * 0.78));
+
+  /** Room the tilted cards' corners need past the fan's own box. */
+  const TILT_ROOM = 10;
+
+  // A door's art is sized in px per layout tier, but four doors in one row
+  // left it wider than the tile, and it painted over the words. This shrinks
+  // the art to the width of its slot (never past its own size) and gives the
+  // slot the scaled height, so the art always sits inside the door. Transform
+  // leaves offsetWidth/Height at the natural size, which is what we divide by.
+  function fitArt(node: HTMLElement) {
+    const slot = node.parentElement;
+    if (!slot) return;
+    const fit = () => {
+      const w = node.offsetWidth;
+      const h = node.offsetHeight;
+      if (!w || !h) return;
+      const s = Math.min(1, Math.max(0, slot.clientWidth - TILT_ROOM) / w);
+      node.style.transform = s < 1 ? `scale(${s})` : "";
+      slot.style.height = `${Math.ceil(h * s + TILT_ROOM)}px`;
+    };
+    const observer = new ResizeObserver(fit);
+    observer.observe(slot);
+    observer.observe(node);
+    fit();
+    return { destroy: () => observer.disconnect() };
+  }
 </script>
 
 <div class="drill-screen screen-chooser" class:sheet aria-busy={loading}>
@@ -111,20 +137,22 @@
       <span class="secondary-door-art compact-door-art" aria-hidden="true">
         <i class="fas fa-signal"></i>
       </span>
-      <span class="peek-fan" aria-hidden="true">
-        {#each LEVELS as lvl, i (lvl)}
-          <SequencePeek
-            sequence={catalog.levelReps.get(lvl)}
-            {loading}
-            width={catalog.PEEK.fanW}
-            height={catalog.PEEK.fanH}
-            tilt={FAN_TILTS[i]}
-          >
-            {#snippet overlay()}
-              <DifficultyBadge level={lvl} size={catalog.PEEK.badge} />
-            {/snippet}
-          </SequencePeek>
-        {/each}
+      <span class="door-art" aria-hidden="true">
+        <span class="peek-fan" use:fitArt>
+          {#each LEVELS as lvl, i (lvl)}
+            <SequencePeek
+              sequence={catalog.levelReps.get(lvl)}
+              {loading}
+              width={catalog.PEEK.fanW}
+              height={catalog.PEEK.fanH}
+              tilt={FAN_TILTS[i]}
+            >
+              {#snippet overlay()}
+                <DifficultyBadge level={lvl} size={catalog.PEEK.badge} />
+              {/snippet}
+            </SequencePeek>
+          {/each}
+        </span>
       </span>
       <i class="fas fa-chevron-right drill-chev" aria-hidden="true"></i>
     </button>
@@ -146,21 +174,23 @@
       <span class="secondary-door-art compact-door-art" aria-hidden="true">
         <i class="fas fa-ruler-horizontal"></i>
       </span>
-      <span class="peek-fan pair" aria-hidden="true">
-        <SequencePeek
-          sequence={catalog.lengthPair.short}
-          {loading}
-          width={catalog.PEEK.shortW}
-          height={catalog.PEEK.shortH}
-          tilt={-3}
-        />
-        <SequencePeek
-          sequence={catalog.lengthPair.long}
-          {loading}
-          width={catalog.PEEK.longW}
-          height={catalog.PEEK.longH}
-          tilt={3}
-        />
+      <span class="door-art" aria-hidden="true">
+        <span class="peek-fan pair" use:fitArt>
+          <SequencePeek
+            sequence={catalog.lengthPair.short}
+            {loading}
+            width={catalog.PEEK.shortW}
+            height={catalog.PEEK.shortH}
+            tilt={-3}
+          />
+          <SequencePeek
+            sequence={catalog.lengthPair.long}
+            {loading}
+            width={catalog.PEEK.longW}
+            height={catalog.PEEK.longH}
+            tilt={3}
+          />
+        </span>
       </span>
       <i class="fas fa-chevron-right drill-chev" aria-hidden="true"></i>
     </button>
@@ -184,21 +214,27 @@
       <span class="secondary-door-art compact-door-art" aria-hidden="true">
         <i class="fas fa-dharmachakra"></i>
       </span>
-      <span class="mandala-fan" aria-hidden="true">
-        {#each FAN_SLOTS as slot (slot)}
-          {@const group = catalog.mandalaFan[slot]}
-          <span
-            class="mandala-slot"
-            class:filled={group !== undefined}
-            style:width="{fanSize}px"
-            style:height="{fanSize}px"
-            style:transform="rotate({FAN_TILTS[slot]}deg)"
-          >
-            {#if group}
-              <MandalaStill key={group.key} paths={group.paths} size={fanSize} />
-            {/if}
-          </span>
-        {/each}
+      <span class="door-art" aria-hidden="true">
+        <span class="mandala-fan" use:fitArt>
+          {#each FAN_SLOTS as slot (slot)}
+            {@const group = catalog.mandalaFan[slot]}
+            <span
+              class="mandala-slot"
+              class:filled={group !== undefined}
+              style:width="{fanSize}px"
+              style:height="{fanSize}px"
+              style:transform="rotate({FAN_TILTS[slot]}deg)"
+            >
+              {#if group}
+                <MandalaStill
+                  key={group.key}
+                  paths={group.paths}
+                  size={fanSize}
+                />
+              {/if}
+            </span>
+          {/each}
+        </span>
       </span>
       <i class="fas fa-chevron-right drill-chev" aria-hidden="true"></i>
     </button>
@@ -221,15 +257,17 @@
             >{t("browse_ui_the_whole_gallery_one_grid")}</span
           >
         </span>
-        <span class="peek-collage" aria-hidden="true">
-          {#each catalog.collageSlots as seq, i (i)}
-            <SequencePeek
-              sequence={seq}
-              {loading}
-              width={catalog.PEEK.collW}
-              height={catalog.PEEK.collH}
-            />
-          {/each}
+        <span class="door-art" aria-hidden="true">
+          <span class="peek-collage" use:fitArt>
+            {#each catalog.collageSlots as seq, i (i)}
+              <SequencePeek
+                sequence={seq}
+                {loading}
+                width={catalog.PEEK.collW}
+                height={catalog.PEEK.collH}
+              />
+            {/each}
+          </span>
         </span>
         <i class="fas fa-chevron-right drill-chev" aria-hidden="true"></i>
       </button>
@@ -355,7 +393,9 @@
     display: none;
   }
   .choice-main {
-    flex: 1;
+    /* The words keep their own width; the art slot takes what is left. */
+    flex: 0 1 auto;
+    max-width: 60%;
     min-width: 0;
     display: flex;
     flex-direction: column;
@@ -381,14 +421,25 @@
     font-size: 0.85rem;
   }
 
-  /* Peek fan: fixed tilts, overlapping, bleeding off the tile's right edge
-     (the tile's overflow:hidden does the clipping). */
+  /* The art slot takes the room the words leave. fitArt scales the art
+     inside it down to that width and sets the slot's height, so the art
+     never runs past the door or over its words. */
+  .door-art {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+  }
+  .door-art > * {
+    flex: none;
+    transform-origin: right center;
+  }
+  /* Peek fan: fixed tilts, overlapping. */
   .peek-fan {
     display: flex;
     flex-direction: row;
     align-items: center;
-    margin-right: -1.4rem;
-    flex: 0 0 auto;
   }
   .peek-fan > :global(.peek + .peek) {
     margin-left: -1.4rem;
@@ -402,8 +453,6 @@
     display: flex;
     flex-direction: row;
     align-items: center;
-    margin-right: -0.9rem;
-    flex: 0 0 auto;
   }
   .mandala-slot {
     display: block;
@@ -420,8 +469,6 @@
     display: grid;
     grid-template-columns: repeat(2, auto);
     gap: 3px;
-    margin-right: 0.4rem;
-    flex: 0 0 auto;
   }
 
   /* ── Tier 2: more ways to browse ───────────────────────────────── */
@@ -527,6 +574,23 @@
       min-height: 92px;
       grid-column: 1 / -1;
     }
+    /* Three or four doors share the row here, so a door is too narrow for
+       words and art side by side: the words sit on top and the art fills the
+       door's width beneath them. Show-all spans the row and keeps its strip. */
+    .choice-tile:not(.compact) {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .choice-tile:not(.compact) .choice-main {
+      max-width: none;
+    }
+    .choice-tile:not(.compact) .door-art {
+      flex: 1 0 auto;
+      justify-content: center;
+    }
+    .choice-tile:not(.compact) .door-art > * {
+      transform-origin: center center;
+    }
     .choice-title {
       font-size: 1.3rem;
     }
@@ -551,7 +615,7 @@
       font-size: 1.05rem;
     }
     .hero-grid {
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 1.1rem;
     }
     .hero-grid.without-show-all {
@@ -565,6 +629,21 @@
       grid-column: auto;
       padding: 1.3rem 2.6rem 1.3rem 1.7rem;
       border-radius: 24px;
+    }
+    /* Show-all joins the row as a fourth door, so it stacks like the others. */
+    .choice-tile.compact {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .choice-tile.compact .choice-main {
+      max-width: none;
+    }
+    .choice-tile.compact .door-art {
+      flex: 1 0 auto;
+      justify-content: center;
+    }
+    .choice-tile.compact .door-art > * {
+      transform-origin: center center;
     }
     .choice-title {
       font-size: 1.45rem;

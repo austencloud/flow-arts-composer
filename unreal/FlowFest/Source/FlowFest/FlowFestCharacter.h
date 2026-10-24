@@ -63,6 +63,11 @@ public:
     void ChooseProp(FName Id);
     void ToggleWardrobe();
 
+    // Jam polish: the -Jam slice (FlowFestJamSlice.h) drives this character when it exists.
+    bool IsJamSlice() const { return JamSlice != nullptr; }
+    UPROPERTY(Transient) TObjectPtr<class UFlowFestJamSlice> JamSlice;
+    friend class UFlowFestJamSlice;
+
 private:
     UPROPERTY(VisibleAnywhere) TObjectPtr<USpringArmComponent> CameraBoom;
     UPROPERTY(VisibleAnywhere) TObjectPtr<UCameraComponent> FollowCamera;
@@ -81,6 +86,8 @@ private:
     float JamSpinSeconds = 0.f;
     EFlowFestVisitorAction VisitorAction = EFlowFestVisitorAction::None;
     float VisitorActionRemaining = 0.f;
+    float VisitorStandRemaining = 0.f;
+    float VisitorRestElapsed = 0.f;
     bool bInitialPlacementDone = false;
     bool bWardrobeOpen = false;
     bool bSoundEnabled = true;
@@ -111,6 +118,12 @@ private:
     bool bTimingReported = false;
     FString ReviewSite;
     FString Showcase;
+    FString RuntimeMotionPath;
+    FString ActivityEvidence;
+    float ActivityEvidenceTime = 2.f;
+    float ActivityEvidenceExit = -1.f;
+    bool bActivityEvidencePlayback = false;
+    bool bRuntimeMotionLoaded = false;
     bool bShowcaseStarted = false;
     bool bShowcaseStopped = false;
     float ShowcaseStopAt = 0.f;
@@ -143,6 +156,7 @@ private:
     void GreetNearby();
     void EndVisitorActivity();
     void TickVisitorActivity(float DeltaSeconds);
+    void SyncVisitorActivityPose();
     FString VisitorActivityHint() const;
     void SelectOne();
     void SelectTwo();

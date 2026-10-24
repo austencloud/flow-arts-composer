@@ -168,6 +168,190 @@ const stagedPaths = (staged, clip) => {
 };
 const catalogHashes = project => Object.fromEntries(['characters.json', 'props.json'].map(name => [name, requireFile(join(dataDir(project), name))]));
 const inventory = (project, clip) => ({ propMotionSHA256: requireFile(clipPath(project, clip)), assetSHA256: requireFile(assetPath(project, clip)) });
+const clearanceFile = project => join(dataDir(project), 'prop-clearance-migration.json');
+const turnFile = project => join(dataDir(project), 'character-turn-migration.json');
+const previousCharactersFile = project => join(dataDir(project), 'characters-before-turn.json');
+const turnClips = ['TurnLeft', 'TurnRight'];
+const sameValue = (a, b, what) => same(JSON.stringify(a), JSON.stringify(b), what);
+function turnAssets(project, previous, current) {
+  insist(previous.version === current.version && Array.isArray(previous.characters) &&
+    Array.isArray(current.characters) && previous.characters.length === 16 &&
+    current.characters.length === previous.characters.length, 'Turn migration requires the existing 16-character catalog');
+  const assets = {};
+  for (let i = 0; i < previous.characters.length; i++) {
+    const before = previous.characters[i], after = current.characters[i];
+    insist(before.id === after.id && before.key === after.key &&
+      /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(after.id) && /^[a-z0-9_]+$/.test(after.key) &&
+      after.folder === `/Game/FlowFest/Characters/${after.key}` &&
+      before.animations && after.animations && !before.turns && !before.turnRetarget &&
+      turnClips.every(clip => !(clip in before.animations)), 'Turn migration changed character identity or historical turns');
+    const unchanged = structuredClone(after);
+    for (const clip of turnClips) delete unchanged.animations[clip];
+    delete unchanged.turns;
+    delete unchanged.turnRetarget;
+    sameValue(unchanged, before, `${before.id} pre-turn character fields`);
+    sameValue(Object.keys(after.animations), [...Object.keys(before.animations), ...turnClips], `${before.id} animation references`);
+    sameValue(Object.keys(after.turns ?? {}), turnClips, `${before.id} source turn metadata`);
+    sameValue(Object.keys(after.turnRetarget ?? {}), turnClips, `${before.id} native turn metadata`);
+    for (const clip of turnClips) {
+      const reference = `/Game/FlowFest/Characters/${after.key}/A_${clip}.A_${clip}`;
+      same(after.animations[clip], reference, `${before.id}/${clip} animation reference`);
+      const metadata = after.turnRetarget[clip];
+      same(metadata.asset, reference, `${before.id}/${clip} retarget asset`);
+      insist(Number.isFinite(metadata.headingDegrees) && Number.isFinite(metadata.durationSeconds) &&
+        metadata.durationSeconds > 0 && Number.isInteger(metadata.frameCount) && metadata.frameCount > 1 &&
+        [1, 100].includes(metadata.nativeHipsTranslationUnitsPerMeter), `${before.id}/${clip} invalid turn metadata`);
+      const asset = join(project, 'Content/FlowFest/Characters', after.key, `A_${clip}.uasset`);
+      const fbx = join(project, 'Tools/staged/Characters', after.key, `A_${clip}.fbx`);
+      const sidecar = join(project, 'Tools/staged/Characters', after.key, `A_${clip}.turn.json`);
+      const source = read(sidecar);
+      same(source.schema, 'flowfest-native-turn-retarget-v1', `${before.id}/${clip} sidecar schema`);
+      same(source.characterId, before.id, `${before.id}/${clip} sidecar character`);
+      same(source.clip, clip, `${before.id}/${clip} sidecar clip`);
+      sameValue(source.source, after.turns[clip], `${before.id}/${clip} source metadata`);
+      for (const field of ['durationSeconds', 'frameCount', 'supportWindows', 'neutralStart', 'neutralEnd'])
+        sameValue(metadata[field], source[field], `${before.id}/${clip} ${field}`);
+      same(metadata.headingDegrees, source.source.headingDegrees, `${before.id}/${clip} heading`);
+      same(metadata.sourceSha256, source.sourceSha256, `${before.id}/${clip} source hash`);
+      same(metadata.fbxSha256, source.fbxSha256, `${before.id}/${clip} FBX metadata hash`);
+      same(source.fbxSha256, requireFile(fbx), `${before.id}/${clip} FBX bytes`);
+      assets[`${before.id}/${clip}`] = {
+        asset: inside(project, asset), assetSHA256: requireFile(asset),
+        fbx: inside(project, fbx), fbxSHA256: requireFile(fbx),
+        sidecar: inside(project, sidecar), sidecarSHA256: requireFile(sidecar),
+      };
+    }
+  }
+  same(Object.keys(assets).length, 32, 'Native turn asset inventory');
+  return assets;
+}
+// Additive turn import has its own receipt. Historical performance hashes remain immutable.
+export function migrateCharacterTurns(project, previous) {
+  project = resolve(project);
+  const oldBytes = readFileSync(previous), oldHash = hash(oldBytes);
+  const currentFile = join(dataDir(project), 'characters.json');
+  const currentHash = requireFile(currentFile);
+  const expected = [existsSync(baselineFile(project)) && read(baselineFile(project)).catalog,
+    ...Object.values(existsSync(bundlesFile(project)) ? read(bundlesFile(project)).entries : {}).map(b => b.catalog)].filter(Boolean);
+  insist(expected.some(c => c['characters.json'] === oldHash) &&
+    expected.every(c => [oldHash, currentHash].includes(c['characters.json'])),
+    'Historical characters catalog does not match the pre-turn catalog');
+  const assets = turnAssets(project, JSON.parse(oldBytes.toString('utf8')), read(currentFile));
+  if (existsSync(turnFile(project))) {
+    const existing = verifyCharacterTurns(project);
+    same(existing.previousCharactersSHA256, oldHash, 'Existing turn migration');
+    return existing;
+  }
+  writeFileSync(previousCharactersFile(project), oldBytes);
+  const value = { schema: 'tka-character-turn-migration-v1', previousCharactersSHA256: oldHash,
+    charactersSHA256: currentHash, assets };
+  save(turnFile(project), value);
+  return value;
+}
+export function verifyCharacterTurns(project) {
+  project = resolve(project);
+  const value = read(turnFile(project));
+  same(value.schema, 'tka-character-turn-migration-v1', 'Turn migration schema');
+  same(value.previousCharactersSHA256, requireFile(previousCharactersFile(project)), 'Pre-turn catalog bytes');
+  same(value.charactersSHA256, requireFile(join(dataDir(project), 'characters.json')), 'Turn catalog bytes');
+  const expected = [existsSync(baselineFile(project)) && read(baselineFile(project)).catalog,
+    ...Object.values(existsSync(bundlesFile(project)) ? read(bundlesFile(project)).entries : {}).map(b => b.catalog)].filter(Boolean);
+  insist(expected.some(c => c['characters.json'] === value.previousCharactersSHA256) &&
+    expected.every(c => [value.previousCharactersSHA256, value.charactersSHA256].includes(c['characters.json'])),
+    'Historical characters catalog does not match the turn migration');
+  const assets = turnAssets(project, read(previousCharactersFile(project)), read(join(dataDir(project), 'characters.json')));
+  sameValue(value.assets, assets, 'Turn asset inventory');
+  return value;
+}
+const clearanceFields = ['clearanceSpace', 'clearanceCapsules', 'rightClearanceCapsules'];
+function identityWithoutClearance(catalog) {
+  const copy = structuredClone(catalog);
+  insist(Array.isArray(copy.props) && copy.props.length > 0, 'Invalid prop catalog');
+  for (const prop of copy.props) {
+    insist(Array.isArray(prop.variants), 'Invalid prop variants');
+    for (const variant of prop.variants) for (const field of clearanceFields) delete variant[field];
+  }
+  return JSON.stringify(copy);
+}
+function clearanceAssets(project, catalog, report) {
+  insist(report.clearanceGenerated === true && Array.isArray(report.errors) && !report.errors.length, 'Successful generated clearance coverage required');
+  const assets = {};
+  for (const prop of catalog.props) for (const variant of prop.variants) {
+    same(variant.clearanceSpace, 'ue-static-mesh-local-cm-v1', 'Prop clearance coordinate space');
+    for (const [meshField, coverField] of [['mesh', 'clearanceCapsules'], ['rightMesh', 'rightClearanceCapsules']]) {
+      const mesh = variant[meshField], capsules = variant[coverField];
+      insist(typeof mesh === 'string' && mesh.startsWith('/Game/') && !mesh.includes('..'), 'Invalid clearance mesh path');
+      insist(Array.isArray(capsules) && capsules.length > 0 && capsules.length <= 16, 'Invalid clearance capsule count');
+      for (const c of capsules) insist(['start', 'end'].every(k => Array.isArray(c[k]) && c[k].length === 3 && c[k].every(Number.isFinite)) && Number.isFinite(c.radiusCm) && c.radiusCm > 0, 'Invalid clearance capsule');
+      const proof = report.clearanceCovers?.[mesh];
+      insist(proof && proof.triangles > 0 && proof.vertices > 0 && proof.capsules === capsules.length && proof.maxTriangleExcessCm <= 1e-7, `Missing complete-triangle coverage: ${mesh}`);
+      const asset = join(project, 'Content', `${mesh.slice(6).split('.')[0]}.uasset`);
+      const assetHash = requireFile(asset);
+      if (proof.assetSHA256) same(proof.assetSHA256, assetHash, `Clearance mesh bytes ${mesh}`);
+      if (proof.capsulesSHA256) {
+        const numbers = capsules.flatMap(c => [...c.start, ...c.end, c.radiusCm]);
+        const bytes = Buffer.alloc(numbers.length * 8);
+        numbers.forEach((n, i) => bytes.writeDoubleLE(n, i * 8));
+        same(proof.capsulesSHA256, hash(bytes), `Clearance capsule bytes ${mesh}`);
+      }
+      assets[inside(project, asset)] = assetHash;
+    }
+  }
+  same(Object.keys(report.clearanceCovers).length, Object.keys(assets).length, 'Clearance coverage inventory');
+  return assets;
+}
+// Explicit geometric metadata migration. Never rewrite the immutable legacy
+// baseline or pretend historical captures were regenerated with these bounds.
+export function migratePropClearance(project, previous, reportPath) {
+  project = resolve(project);
+  const oldBytes = readFileSync(previous), oldCatalog = JSON.parse(oldBytes.toString('utf8'));
+  const current = read(join(dataDir(project), 'props.json')), report = read(reportPath);
+  same(identityWithoutClearance(current), identityWithoutClearance(oldCatalog), 'Clearance-only catalog identity');
+  const assets = clearanceAssets(project, current, report);
+  const priorHash = hash(oldBytes);
+  const expected = [existsSync(baselineFile(project)) && read(baselineFile(project)).catalog,
+    ...Object.values(existsSync(bundlesFile(project)) ? read(bundlesFile(project)).entries : {}).map(b => b.catalog)].filter(Boolean);
+  const turnMigration = existsSync(turnFile(project)) ? verifyCharacterTurns(project) : null;
+  for (const catalog of expected) {
+    insist([priorHash, requireFile(join(dataDir(project), 'props.json'))].includes(catalog['props.json']), 'Historical props catalog is missing or stale');
+    insist([requireFile(join(dataDir(project), 'characters.json')), turnMigration?.previousCharactersSHA256]
+      .includes(catalog['characters.json']), 'Historical characters catalog is missing or stale');
+  }
+  const oldFile = join(dataDir(project), 'props-before-clearance.json');
+  const coverageFile = join(dataDir(project), 'prop-clearance-coverage.json');
+  if (existsSync(clearanceFile(project))) {
+    verifyPropClearance(project);
+    same(read(clearanceFile(project)).previousPropsSHA256, priorHash, 'Existing clearance migration');
+    return read(clearanceFile(project));
+  }
+  writeFileSync(oldFile, oldBytes);
+  writeFileSync(coverageFile, readFileSync(reportPath));
+  const value = { schema: 'tka-prop-clearance-migration-v1', previousPropsSHA256: priorHash,
+    propsSHA256: requireFile(join(dataDir(project), 'props.json')), coverageSHA256: requireFile(coverageFile), assets };
+  save(clearanceFile(project), value);
+  return value;
+}
+export function verifyPropClearance(project) {
+  const value = read(clearanceFile(project));
+  same(value.schema, 'tka-prop-clearance-migration-v1', 'Clearance migration schema');
+  same(value.previousPropsSHA256, requireFile(join(dataDir(project), 'props-before-clearance.json')), 'Previous props bytes');
+  same(value.propsSHA256, requireFile(join(dataDir(project), 'props.json')), 'Clearance props bytes');
+  same(value.coverageSHA256, requireFile(join(dataDir(project), 'prop-clearance-coverage.json')), 'Clearance coverage bytes');
+  const oldCatalog = read(join(dataDir(project), 'props-before-clearance.json'));
+  const current = read(join(dataDir(project), 'props.json'));
+  same(identityWithoutClearance(current), identityWithoutClearance(oldCatalog), 'Clearance-only catalog identity');
+  const assets = clearanceAssets(project, current, read(join(dataDir(project), 'prop-clearance-coverage.json')));
+  same(JSON.stringify(value.assets), JSON.stringify(assets), 'Clearance asset inventory');
+  return value;
+}
+function verifyCatalog(project, historical, label, clearanceMigration, turnMigration) {
+  const current = catalogHashes(project);
+  if (JSON.stringify(historical) === JSON.stringify(current)) return;
+  if (historical['characters.json'] !== current['characters.json'])
+    same(historical['characters.json'], turnMigration?.previousCharactersSHA256, `${label} turn migration`);
+  if (historical['props.json'] !== current['props.json'])
+    same(historical['props.json'], clearanceMigration?.previousPropsSHA256, `${label} clearance migration`);
+}
 export function baseline(project) {
   project = resolve(project);
   const entries = Object.fromEntries(listed(project).map(clip => [key(clip.character, clip.profile), inventory(project, clip)]));
@@ -228,6 +412,8 @@ export function verify(project, packagedData) {
   project = resolve(project);
   const clips = listed(project), bundles = existsSync(bundlesFile(project)) ? read(bundlesFile(project)).entries : {};
   const legacy = existsSync(baselineFile(project)) ? read(baselineFile(project)) : null;
+  const clearanceMigration = existsSync(clearanceFile(project)) ? verifyPropClearance(project) : null;
+  const turnMigration = existsSync(turnFile(project)) ? verifyCharacterTurns(project) : null;
   const expected = new Set(clips.map(clip => key(clip.character, clip.profile)));
   for (const k of [...Object.keys(bundles), ...Object.keys(legacy?.entries ?? {})]) insist(expected.has(k), `Unlisted performance ${k}`);
   let bundled = 0, unchangedLegacy = 0;
@@ -244,7 +430,7 @@ export function verify(project, packagedData) {
       same(b.captureSHA256, requireFile(resolvedInside(project, b.paths.capture)), `${k} raw bytes`);
       for (const [part, path] of [['body', b.paths.body], ['fbx', b.paths.fbx], ['asset', b.paths.asset]])
         same(b.receipts[part], requireFile(receipt(resolvedInside(project, path))), `${k} ${part} receipt`);
-      same(JSON.stringify(b.catalog), JSON.stringify(catalogHashes(project)), `${k} catalog`);
+      verifyCatalog(project, b.catalog, `${k} catalog`, clearanceMigration, turnMigration);
       const prop = read(clipPath(project, clip));
       same(prop.sourceSHA256, b.captureSHA256, `${k} prop capture`);
       same(clip.sourceSHA256, b.captureSHA256, `${k} manifest capture`);
@@ -256,12 +442,12 @@ export function verify(project, packagedData) {
       insist(legacy?.schema === 'tka-performance-legacy-baseline-v1' && legacy.provenanceStatus === 'unavailable', `Unverified performance ${k}`);
       same(legacy.entries[k]?.propMotionSHA256, current.propMotionSHA256, `${k} legacy prop`);
       same(legacy.entries[k]?.assetSHA256, current.assetSHA256, `${k} legacy asset`);
-      same(JSON.stringify(legacy.catalog), JSON.stringify(catalogHashes(project)), `${k} legacy catalog`);
+      verifyCatalog(project, legacy.catalog, `${k} legacy catalog`, clearanceMigration, turnMigration);
       unchangedLegacy++;
     }
   }
   if (packagedData) {
-    for (const file of ['PropMotion/manifest.json', 'performance-bundles.json', 'performance-legacy-baseline.json', 'characters.json', 'props.json']) {
+    for (const file of ['PropMotion/manifest.json', 'performance-bundles.json', 'performance-legacy-baseline.json', 'characters.json', 'characters-before-turn.json', 'character-turn-migration.json', 'props.json', 'prop-clearance-migration.json', 'props-before-clearance.json', 'prop-clearance-coverage.json']) {
       const original = join(dataDir(project), file), packaged = join(packagedData, file);
       if (existsSync(original)) same(requireFile(packaged), requireFile(original), `Packaged ${file}`);
     }
@@ -282,6 +468,10 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     else if (command === 'record-import') result = await recordImport(required('body'), required('fbx'), required('asset'), required('importer'), opt('character'), opt('profile'), opt('converter') && required('converter'));
     else if (command === 'validate-import') result = await validateImport(required('body'), required('fbx'), required('asset'), required('importer'), opt('character'), opt('profile'), opt('converter') && required('converter'));
     else if (command === 'seal') result = await seal(required('project'), opt('staged'), opt('character'), opt('profile'), opt('converter'), opt('importer'), opt('captures'));
+    else if (command === 'migrate-prop-clearance') result = migratePropClearance(required('project'), required('previous'), required('coverage'));
+    else if (command === 'verify-prop-clearance') result = verifyPropClearance(required('project'));
+    else if (command === 'migrate-character-turns') result = migrateCharacterTurns(required('project'), required('previous'));
+    else if (command === 'verify-character-turns') result = verifyCharacterTurns(required('project'));
     else if (command === 'baseline') result = baseline(required('project'));
     else if (command === 'verify') result = verify(required('project'), opt('packaged-data'));
     else throw new Error(`Unknown performance bundle command: ${command}`);

@@ -25,6 +25,11 @@ the gallery's, and the source is pinned to my-library with no toggle.
   import { flyFade } from "#lib/shared/transitions/motion.js";
   import SmartCollectionSaveDialog from "#lib/features/library/components/SmartCollectionSaveDialog.svelte";
   import FilterWorkspace from "#lib/features/browse/gallery-home/FilterWorkspace.svelte";
+  import GalleryFilterSheet from "#lib/features/browse/gallery-home/GalleryFilterSheet.svelte";
+  import {
+    bindBrowseQuery,
+    tryGetBrowseQueryContext,
+  } from "#lib/shared/browse/state/browse-query-state.svelte.js";
   import { getCollectionOptions } from "#lib/features/browse/gallery-home/collection-options.svelte.js";
   import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
   import DrawerHeader from "#lib/shared/foundation/ui/DrawerHeader.svelte";
@@ -66,6 +71,11 @@ the gallery's, and the source is pinned to my-library with no toggle.
     sections: true,
     loadSoloLibrarySequences,
   });
+
+  // Browse's one query: the scope bar's search and the user's filters follow
+  // you in from Everyone or a collection.
+  const browseQuery = tryGetBrowseQueryContext();
+  bindBrowseQuery(browseQuery, () => engine);
 
   const selectionState = createMultiSelectionState({
     getAllIds: () => engine.sequences.map((sequence) => sequence.id),
@@ -177,6 +187,8 @@ the gallery's, and the source is pinned to my-library with no toggle.
   // All opens on the collection itself. The filter workspace is a focused
   // supporting task entered from the grid's Filters control.
   let libraryView = $state<"workspace" | "grid">("grid");
+  // Phones and tablets filter in the same bottom sheet as every other scope.
+  let filterSheetOpen = $state(false);
 
   // "Show me what I just saved." A reveal handed in by the save toast means
   // the persisted filters, search and sort from the last visit would hide
@@ -275,6 +287,7 @@ the gallery's, and the source is pinned to my-library with no toggle.
     eager={false}
     showFilterBar={false}
     hideFilterChips
+    hideToolbarSearch={!!browseQuery}
     onSelect={handleSelect}
     emptyAction={previewReadOnly ? undefined : emptyAction}
     emptyState={previewReadOnly ? undefined : emptyState}
@@ -314,7 +327,10 @@ the gallery's, and the source is pinned to my-library with no toggle.
       warming={gridWarming || (!engine.sectionsReady && !engine.error)}
       showToolbar={true}
       showFilterBar={engine.sectionsReady || !!engine.error}
-      onOpenFilters={() => (libraryView = "workspace")}
+      onOpenFilters={() => {
+        if (isMobile) filterSheetOpen = true;
+        else libraryView = "workspace";
+      }}
       onSaveSmart={() => (smartSaveOpen = true)}
       {emptyAction}
       emptyState={previewReadOnly ? undefined : emptyState}
@@ -326,6 +342,15 @@ the gallery's, and the source is pinned to my-library with no toggle.
 </div>
 
 <SmartCollectionSaveDialog {engine} bind:show={smartSaveOpen} />
+
+{#if isMobile}
+  <GalleryFilterSheet
+    {engine}
+    bind:isOpen={filterSheetOpen}
+    {isMobile}
+    allowSearch={!browseQuery}
+  />
+{/if}
 
 {#if isMobile}
   <Drawer

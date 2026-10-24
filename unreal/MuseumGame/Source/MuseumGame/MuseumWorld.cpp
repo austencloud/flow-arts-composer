@@ -396,7 +396,19 @@ bool AMuseumWorld::LoadMuseum()
             if (FMath::IsFinite(Scale) && Scale > 0.f) Station->SetActorScale3D(FVector(Scale));
             else UE_LOG(LogTemp, Error, TEXT("Museum performer %s has invalid scale"), *StringField(Json, TEXT("id")));
             const TSharedPtr<FJsonObject> Playback = ObjectField(Json, TEXT("nativePlayback"));
-            if (!Playback.IsValid())
+            FString MotionFile;
+            const bool bMotionFile = FParse::Value(FCommandLine::Get(), TEXT("MuseumMotionFile="), MotionFile);
+            const bool bComposerPreview = StringField(Json, TEXT("id")) == TEXT("iso-1") &&
+                (bMotionFile || FParse::Param(FCommandLine::Get(), TEXT("MuseumComposerPreview")));
+            if (bComposerPreview)
+            {
+                if (Station->ConfigureComposerPreview(StringField(Json, TEXT("id"))) && bMotionFile)
+                {
+                    FString Error;
+                    Station->LoadMotionFile(MotionFile, Error);
+                }
+            }
+            else if (!Playback.IsValid())
                 Station->Configure(StringField(Json, TEXT("id")), StringField(Json, TEXT("label")), SequenceId,
                     NAME_None, NAME_None, NAME_None, true, false, 1.f);
             else

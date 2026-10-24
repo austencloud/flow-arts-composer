@@ -71,6 +71,14 @@ function dispatchTouch(
   target.dispatchEvent(event);
 }
 
+// The app's global border-box reset (src/app.css), which this harness does not
+// load. Without it the full-width sheet's 1px borders sit outside its 100%
+// width and it measures 2px wider than the viewport it fits in the app.
+const boxSizingReset = document.createElement("style");
+boxSizingReset.textContent =
+  "*, *::before, *::after { box-sizing: border-box; }";
+document.head.append(boxSizingReset);
+
 describe("MessageActions selection boundary", () => {
   beforeEach(() => {
     mockLayoutState.isSideBySideLayout = true;
@@ -93,7 +101,12 @@ describe("MessageActions selection boundary", () => {
     );
     expect(wrapper).not.toBeNull();
     expect(selectable).not.toBeNull();
-    expect(getComputedStyle(selectable!).userSelect).toBe("text");
+    // Touch-first browsers turn copy selection off in favour of the hold menu,
+    // and a headless browser with no attached display can report itself as one.
+    const touchFirst = matchMedia("(hover: none), (pointer: coarse)").matches;
+    expect(getComputedStyle(selectable!).userSelect).toBe(
+      touchFirst ? "none" : "text"
+    );
 
     const textMenu = new MouseEvent("contextmenu", {
       bubbles: true,

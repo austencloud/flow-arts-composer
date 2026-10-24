@@ -1048,17 +1048,54 @@ describe("GridPlacementDeriver", () => {
     });
 
     it("should maintain bidirectional consistency for all placements", () => {
-      // Test that every placement → locations → placement round-trip works
-      // Filter out tau and terra placements which use CENTER location and aren't in the perimeter map
-      const placements = Object.values(GridPlacement).filter(
-        (p) => !p.startsWith("tau") && !p.startsWith("terra")
-      );
+      // Every placement, tau and terra included, round-trips through its locations
+      const placements = Object.values(GridPlacement);
+      expect(placements.length).toBe(81);
 
       placements.forEach((placement) => {
         const [left, right] = service.getGridLocationsFromPlacement(placement);
         const roundTrip = service.getGridPlacementFromLocations(left, right);
         expect(roundTrip).toBe(placement);
       });
+    });
+  });
+
+  describe("Tau and terra placements (hands at center)", () => {
+    const PERIMETER = [
+      GridLocation.NORTH,
+      GridLocation.NORTHEAST,
+      GridLocation.EAST,
+      GridLocation.SOUTHEAST,
+      GridLocation.SOUTH,
+      GridLocation.SOUTHWEST,
+      GridLocation.WEST,
+      GridLocation.NORTHWEST,
+    ];
+
+    it("tau1-8 put blue at center and red at N, NE, E, SE, S, SW, W, NW", () => {
+      PERIMETER.forEach((red, i) => {
+        const tau = `tau${i + 1}` as GridPlacement;
+        expect(service.getGridLocationsFromPlacement(tau)).toEqual([GridLocation.CENTER, red]);
+        expect(service.getGridPlacementFromLocations(GridLocation.CENTER, red)).toBe(tau);
+      });
+    });
+
+    it("tau9-16 put red at center and blue at N, NE, E, SE, S, SW, W, NW", () => {
+      PERIMETER.forEach((blue, i) => {
+        const tau = `tau${i + 9}` as GridPlacement;
+        expect(service.getGridLocationsFromPlacement(tau)).toEqual([blue, GridLocation.CENTER]);
+        expect(service.getGridPlacementFromLocations(blue, GridLocation.CENTER)).toBe(tau);
+      });
+    });
+
+    it("terra1 puts both hands at center", () => {
+      expect(service.getGridLocationsFromPlacement(GridPlacement.TERRA1)).toEqual([
+        GridLocation.CENTER,
+        GridLocation.CENTER,
+      ]);
+      expect(
+        service.getGridPlacementFromLocations(GridLocation.CENTER, GridLocation.CENTER)
+      ).toBe(GridPlacement.TERRA1);
     });
   });
 });

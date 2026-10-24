@@ -8,7 +8,7 @@
  * until a style is switched on, every performer holds the fixed distance.
  */
 
-import type { Plane } from "@austencloud/scene-3d";
+import { Plane } from "@austencloud/scene-3d";
 import { GRID_RADIUS_3D } from "./constants/plane-transforms";
 
 /** One hand's distance from its grid center, in meters. */
@@ -40,6 +40,18 @@ export const DEFAULT_PERFORMER_HAND_DISTANCE: PerformerHandDistance = {
   left: DEFAULT_HAND_DISTANCE,
   right: DEFAULT_HAND_DISTANCE,
 };
+
+/** Stable numeric capture identity for a directional hand orbit. */
+export function captureHandDistanceKey(hands: PerformerHandDistance) {
+  const angles = Array.from({ length: 16 }, (_, index) => index * Math.PI / 8);
+  const sample = (hand: HandDistance) => ({
+    max: hand.max,
+    planes: Object.values(Plane).map((plane) =>
+      angles.map((angle) => hand.toward(plane, angle))
+    ),
+  });
+  return { left: sample(hands.left), right: sample(hands.right) };
+}
 
 /** The farthest either hand sits, for framing the performer's grid. */
 export function largestHandDistance(

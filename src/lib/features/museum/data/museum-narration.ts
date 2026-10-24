@@ -14,6 +14,8 @@
  * Elements are never spoken. The clinical TnD labels are stamped on the
  * threshold line under the room name instead (`roomStamp`).
  */
+import type { VillageMomentKind } from "#lib/features/village/state/village-moments.js";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
 import { CAVE_MODE_ROOMS } from "./vulcan-cave-floor-plan";
 
 export type NarrationVoice = "guide" | "curator" | "tape";
@@ -23,11 +25,18 @@ export interface NarrationCue {
   roomId: string;
   trigger:
     | { kind: "room" }
-    | { kind: "exhibit"; refId: string; radiusTiles?: number };
+    | { kind: "exhibit"; refId: string; radiusTiles?: number }
+    /** A moment in the room's village sim (village/state/village-moments.ts),
+     * heard only while the visitor is in the cue's room. */
+    | { kind: "village"; moment: VillageMomentKind };
   /** Stamp shown on the caption bar, e.g. "RECORDED 1989". */
   recorded: string;
   voice: NarrationVoice;
   lines: string[];
+  /** Lines that name the sequence the visitor carried in, with `{word}` in
+   * place of its word. Spoken instead of `lines` when the word is known; the
+   * visitor may carry anything, so these never assume OOGA. */
+  carriedLines?: string[];
   draft?: boolean;
 }
 
@@ -365,10 +374,67 @@ export const NARRATION_CUES: NarrationCue[] = [
     recorded: "RECORDED 2009 · CURATOR",
     voice: "curator",
     draft: D,
-    lines: [
-      "Go on. Outside.",
-      "The Order had a name for this room too. I threw it out.",
-    ],
+    lines: ["Go on. Outside."],
+  },
+  {
+    // Lands as the opening teacher gets up from the lesson for the last time.
+    id: "nar-collaboration-passing",
+    roomId: "collaboration",
+    trigger: { kind: "village", moment: "opening:passing" },
+    recorded: "RECORDED 2009 · CURATOR",
+    voice: "curator",
+    draft: D,
+    lines: ["The Order had a name for this room too. I threw it out."],
+  },
+  // What the visitor carried in and taught at the fire, and what became of it.
+  {
+    id: "nar-collaboration-taught",
+    roomId: "collaboration",
+    trigger: { kind: "village", moment: "visitor:taught" },
+    recorded: "RECORDED 2009 · CURATOR",
+    voice: "curator",
+    draft: D,
+    lines: ["There. Now it's in two people."],
+    carriedLines: ["There. {word} is in two people now."],
+  },
+  {
+    id: "nar-collaboration-passed-on",
+    roomId: "collaboration",
+    trigger: { kind: "village", moment: "visitor:passed-on" },
+    recorded: "RECORDED 2009 · CURATOR",
+    voice: "curator",
+    draft: D,
+    lines: ["They've shown someone else. It isn't only yours now."],
+  },
+  {
+    id: "nar-collaboration-lost",
+    roomId: "collaboration",
+    trigger: { kind: "village", moment: "visitor:lost" },
+    recorded: "RECORDED 2009 · CURATOR",
+    voice: "curator",
+    draft: D,
+    lines: ["Nobody left was doing it. That's how they go."],
+  },
+  {
+    // Plays on coming back to the room, after the village has lived on.
+    id: "nar-collaboration-memory-found",
+    roomId: "collaboration",
+    trigger: { kind: "village", moment: "memory:found" },
+    recorded: "RECORDED 2009 · CURATOR",
+    voice: "curator",
+    draft: D,
+    lines: ["You came back. It's still here. They kept it going."],
+    carriedLines: ["You came back. They're still doing {word}."],
+  },
+  {
+    id: "nar-collaboration-memory-lost",
+    roomId: "collaboration",
+    trigger: { kind: "village", moment: "memory:lost" },
+    recorded: "RECORDED 2009 · CURATOR",
+    voice: "curator",
+    draft: D,
+    lines: ["You came back. It didn't last. Most don't."],
+    carriedLines: ["You came back. {word} didn't last. Most don't."],
   },
   {
     id: "nar-gift-shop",
@@ -393,6 +459,18 @@ export const NARRATION_CUES: NarrationCue[] = [
     lines: ["Staff only. You're not staff.", "Neither was I, technically, after 1994."],
   },
 ];
+
+/**
+ * The lines a cue speaks. A cue with `carriedLines` names the carried word
+ * when there is one (`descriptor.word` for a sequence brought from outside,
+ * shown simplified like every sequence word); without one it falls back to
+ * its plain lines.
+ */
+export function cueLines(cue: NarrationCue, carriedWord?: string): string[] {
+  const word = carriedWord ? simplifyRepeatedWord(carriedWord.trim()) : "";
+  if (!cue.carriedLines || !word) return cue.lines;
+  return cue.carriedLines.map((line) => line.replaceAll("{word}", word));
+}
 
 /**
  * The Order's catalog line under each room name on the threshold label. The

@@ -81,9 +81,6 @@ export const onNewMessage = onDocumentCreated(
           const prefs = userDoc.data()?.notificationPreferences as
             | Record<string, boolean>
             | undefined;
-          if (prefs?.pushEnabled === false) {
-            return;
-          }
           if (prefs?.messageReceived === false) {
             return;
           }

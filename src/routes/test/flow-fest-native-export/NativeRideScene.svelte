@@ -12,6 +12,7 @@
   import { FlowFestEucMountedPoseRig } from "#lib/features/flow-fest-sim/services/flow-fest-euc-mounted-pose-rig.js";
   import { refreshSkinnedSkeletons } from "#lib/features/flow-fest-sim/services/flow-fest-avatar-skeleton-refresh.js";
   import { captureMountedFrame } from "./native-capture.js";
+  import { captureClockOrigin, runCaptureScheduler } from "./capture-scheduler.js";
 
   interface Props {
     character: CharacterId;
@@ -32,6 +33,9 @@
   let right: Group | undefined = $state();
   let reported = false;
   let attached = false;
+  let captureClockOriginMs = 0;
+
+  renderer.setAnimationLoop(null);
 
   onMount(() => {
     const timer = setInterval(() => {
@@ -52,6 +56,7 @@
 
   export function pauseAutoLoop(): void {
     renderer.setAnimationLoop(null);
+    captureClockOriginMs = captureClockOrigin(scheduler, performance.now());
   }
 
   export async function sampleFrame(frame: number) {
@@ -71,9 +76,9 @@
         );
       attached = true;
     }
-    const ms = frame * (1000 / 30);
+    const ms = captureClockOriginMs + frame * (1000 / 30);
     await tick();
-    scheduler.run(ms);
+    runCaptureScheduler(scheduler, ms);
     resetFrameInvalidation();
     poseRig.update({
       deltaSeconds: 1 / 30,

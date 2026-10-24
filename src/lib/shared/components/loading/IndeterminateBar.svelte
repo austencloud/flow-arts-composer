@@ -50,10 +50,16 @@
     border-radius: 0;
   }
 
+  /* The slide runs on transform, not left. Animating left re-ran layout every
+     frame and Chrome logged each frame as a layout shift: about 4 a second
+     while /create booted, all from this bar. translateX percentages are of the
+     fill's own width (40% of the track), so -100% and 250% are the old
+     left: -40% and left: 100%. */
   .fill {
     position: absolute;
     top: 0;
     bottom: 0;
+    left: 0;
     width: 40%;
     background: var(--bar-color, var(--theme-accent, #6366f1));
     border-radius: inherit;
@@ -62,17 +68,17 @@
 
   @keyframes indeterminate-slide {
     0% {
-      left: -40%;
+      transform: translateX(-100%);
     }
     100% {
-      left: 100%;
+      transform: translateX(250%);
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
     .fill {
       animation: none;
-      left: 0;
+      transform: none;
       width: 100%;
       opacity: 0.6;
     }

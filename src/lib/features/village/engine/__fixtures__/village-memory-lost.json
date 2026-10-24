@@ -1,0 +1,18 @@
+{
+	"version": 1,
+	"seed": "museum-village",
+	"preset": "museum",
+	"opening": true,
+	"entries": [
+		{
+			"tick": 6500,
+			"type": "teach",
+			"learnerId": "avatar-12",
+			"sequenceId": "codex-ooga-seq",
+			"x": 3.88,
+			"z": -3.78,
+			"facing": 0.829
+		}
+	],
+	"lastTick": 6700
+}

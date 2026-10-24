@@ -14,6 +14,9 @@ from mathutils import Vector, Matrix
 HERE = Path(__file__).resolve().parent
 STAGED = HERE / 'staged' / 'Props'
 PROJECT = HERE.parent
+sys.path.insert(0, str(HERE))
+from prop_capsule_cover import build_cover, validate_cover
+SOURCE_COVERS = {}
 CATALOG = json.loads((STAGED / 'catalog.json').read_text())
 EXACT_PLATES = json.loads((STAGED / 'exact-plates.json').read_text())
 
@@ -365,6 +368,23 @@ def export_variant(prop, variant, right=False):
                     obj.data.materials[index]=RED
     if id in ('fan', 'bigfan') and variant.get('fanBuild') in ('fire', 'lotus', 'day', 'moon'):
         finish_fan_materials(variant, right, meshes)
+    # Source-space cover is audit material, not a runtime basis assumption. The
+    # editor validator regenerates authoritative UE-local covers after FBX import.
+    vertices, triangles = [], []
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    for obj in meshes:
+        evaluated = obj.evaluated_get(depsgraph)
+        mesh = evaluated.to_mesh()
+        try:
+            mesh.calc_loop_triangles()
+            offset = len(vertices)
+            vertices.extend(tuple(float(x) * 100 for x in evaluated.matrix_world @ v.co) for v in mesh.vertices)
+            triangles.extend(tuple(offset + i for i in t.vertices) for t in mesh.loop_triangles)
+        finally:
+            evaluated.to_mesh_clear()
+    capsules = build_cover(vertices, triangles)
+    SOURCE_COVERS[key] = {'space': 'blender-world-cm-before-fbx', 'capsules': capsules,
+                          'coverage': validate_cover(vertices, triangles, capsules)}
     coords=[obj.matrix_world @ Vector(corner) for obj in meshes for corner in obj.bound_box]
     lo=[min(v[axis] for v in coords) for axis in range(3)]
     hi=[max(v[axis] for v in coords) for axis in range(3)]
@@ -393,6 +413,7 @@ for prop in CATALOG['props']:
         if abs(measured-90)>2:
             raise RuntimeError(f'Performance pen GLB must preserve its giant 90 cm authored length; measured {measured}')
 
+(STAGED/'capsule-source-covers.json').write_text(json.dumps(SOURCE_COVERS,indent=2))
 (PROJECT/'Content/Data').mkdir(parents=True,exist_ok=True)
 (PROJECT/'Content/Data/props.json').write_text(json.dumps(CATALOG,indent=2))
 print(f"FLOWFEST_PROPS_CONVERTED {len(CATALOG['props'])} physical IDs")

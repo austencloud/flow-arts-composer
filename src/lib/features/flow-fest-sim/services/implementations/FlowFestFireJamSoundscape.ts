@@ -121,7 +121,8 @@ const MIN_UPDATE_INTERVAL_SECONDS = 0.04;
 const WALLA_LOOKAHEAD_SECONDS = 1;
 const WALLA_MAX_WINDOWS_PER_UPDATE = 3;
 
-function createDeterministicNoise(context: AudioContext): AudioBuffer {
+/** Four seconds of seeded brown noise; the museum village's fire reuses it. */
+export function createDeterministicNoise(context: BaseAudioContext): AudioBuffer {
   const frameCount = context.sampleRate * 4;
   const buffer = context.createBuffer(1, frameCount, context.sampleRate);
   const samples = buffer.getChannelData(0);

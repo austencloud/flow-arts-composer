@@ -16,6 +16,8 @@
     warmDecoderRuntimes,
     warmSceneCode,
   } from "../scene-boot/scene-prefetch";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
+  import { growFade } from "#lib/shared/transitions/motion.js";
 
   interface Props {
     value?: SceneEnvironmentId;
@@ -27,6 +29,22 @@
   const viewer = tryGetViewer3DContext();
   const currentEnvironment = $derived(
     value ?? viewer?.environmentId ?? DEFAULT_SCENE_ENVIRONMENT_ID
+  );
+  // A scene can take seconds to build after its tile is tapped. Until it is
+  // on screen the old tile stays active and the tapped one shows it is
+  // loading, so nobody keeps tapping a tile that already looks finished.
+  // A host that owns `value` has no renderer feedback here.
+  const pendingEnvironment = $derived(
+    value === undefined ? (viewer?.pendingEnvironmentId ?? null) : null
+  );
+  const shownEnvironment = $derived(
+    value ?? viewer?.displayedEnvironmentId ?? currentEnvironment
+  );
+  const failedLabel = $derived(
+    value === undefined && viewer?.failedEnvironmentId
+      ? SCENE_ENVIRONMENTS.find(({ id }) => id === viewer.failedEnvironmentId)
+          ?.label
+      : undefined
   );
   const hasSceneFeatures = tryGetSceneFeatureContext() !== undefined;
   let warmTimer: ReturnType<typeof setTimeout> | null = null;
@@ -65,6 +83,9 @@
   function selectScene(e: MouseEvent, environmentId: SceneEnvironmentId) {
     e.stopPropagation();
     cancelWarm();
+    // Repeat taps on the loading tile must not restart its load. Tapping any
+    // other tile retargets the switch; the renderer drops the earlier request.
+    if (environmentId === pendingEnvironment) return;
     const previous = currentEnvironment;
     if (onchange) onchange(environmentId);
     else viewer?.setEnvironmentId(environmentId);
@@ -80,23 +101,41 @@
 
 <div class="scene-grid">
   {#each SCENE_ENVIRONMENTS as environment}
+    {@const loading = pendingEnvironment === environment.id}
     <button
       class="scene-tile"
-      class:active={currentEnvironment === environment.id}
+      class:active={shownEnvironment === environment.id}
+      class:loading
       onclick={(e) => selectScene(e, environment.id)}
       onpointerenter={() => warmTile(environment.id)}
       onpointerleave={cancelWarm}
       onfocus={() => warmTile(environment.id)}
       onblur={cancelWarm}
-      aria-pressed={currentEnvironment === environment.id}
-      aria-label={environment.label}
+      aria-pressed={shownEnvironment === environment.id}
+      aria-busy={loading}
+      aria-label={loading ? `${environment.label}, loading` : environment.label}
       title={environment.label}
     >
       <i class="fas {environment.icon}" aria-hidden="true"></i>
       <span class="tile-label">{environment.label}</span>
+      <!-- The corner slot is always there, so the ring never moves the tile. -->
+      <span class="tile-status" aria-hidden="true">
+        {#if loading}<ProgressRing
+            percent={-1}
+            size={14}
+            strokeWidth={2}
+          />{/if}
+      </span>
     </button>
   {/each}
 </div>
+
+{#if failedLabel}
+  <p class="scene-notice" role="status" transition:growFade>
+    <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+    {failedLabel} didn't load. The scene stayed as it was.
+  </p>
+{/if}
 
 {#if hasSceneFeatures}
   <div class="section-divider"></div>
@@ -117,6 +156,7 @@
   }
 
   .scene-tile {
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -174,6 +214,42 @@
     letter-spacing: 0.03em;
     text-align: center;
     line-height: 1.2;
+  }
+
+  /* Loading reads as "on its way": a ring outline on the whole tile and a
+     spinner in the corner, without claiming the active fill. */
+  .scene-tile.loading {
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #4a9eff) 35%,
+      transparent
+    );
+    color: rgba(255, 255, 255, 0.9);
+    cursor: progress;
+  }
+
+  .tile-status {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    display: inline-flex;
+    width: 14px;
+    height: 14px;
+    pointer-events: none;
+  }
+
+  .scene-notice {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 8px 0 0;
+    font-size: var(--font-size-compact, 12px);
+    line-height: 1.3;
+    color: rgba(255, 255, 255, 0.75);
+  }
+
+  .scene-notice i {
+    color: var(--semantic-warning, #f59e0b);
   }
 
   .section-divider {

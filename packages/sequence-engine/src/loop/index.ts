@@ -122,6 +122,7 @@ export {
   detectLOOPFromSteps,
   hasRewoundStructure,
   isSequenceCircular,
+  loopSignalSteps,
   LOOPDetectorClass,
   loopDetectorClass,
   type LOOPComponentId,
@@ -164,6 +165,12 @@ export {
   type PairRelation,
   type UniformRelation,
 } from "./detection/pair-relation.js";
+export {
+  labelExplainsPair,
+  labelsEquivalentForPair,
+  labelsEquivalentForHalves,
+  type PairLabel,
+} from "./detection/label-equivalence.js";
 
 // Executor
 export {

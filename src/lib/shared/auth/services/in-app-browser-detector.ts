@@ -167,7 +167,11 @@ export class InAppBrowserDetector {
    * signals plus the launch flag. One call so every escape surface stays in
    * lockstep and nothing hardcodes a browser-vs-app decision.
    */
-  getEscapeTarget(searchParams?: Pick<URLSearchParams, "get">): EscapeTarget {
+  getEscapeTarget(
+    searchParams?: Pick<URLSearchParams, "get">,
+    /** Rewrites the page URL before it is fired, e.g. to add a hand-off flag. */
+    decorate: (href: string) => string = (href) => href
+  ): EscapeTarget {
     return resolveEscapeTarget({
       platform: this.getEffectivePlatform(searchParams),
       iosMajorVersion: this.getIosMajorVersion(),
@@ -176,7 +180,7 @@ export class InAppBrowserDetector {
       // real browser and re-trigger forced detection there.
       currentUrl:
         typeof window !== "undefined"
-          ? stripEscapeTestParams(window.location.href)
+          ? decorate(stripEscapeTestParams(window.location.href))
           : "",
       playStoreUrl: playStoreUrl(),
       appStoreUrl: appStoreUrl(),

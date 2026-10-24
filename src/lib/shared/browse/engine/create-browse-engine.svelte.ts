@@ -1104,6 +1104,22 @@ export function createBrowseEngine(config: BrowseEngineConfig): BrowseEngine {
       activeFilters = newMap;
     },
 
+    replaceUserFilters(
+      entries: ReadonlyArray<readonly [string, ActiveFilter]>,
+      nextConnectives: Readonly<Record<string, FilterConnective>>
+    ): void {
+      const newMap = new Map<string, ActiveFilter>();
+      for (const [key, filter] of activeFilters) {
+        if (filter.locked) newMap.set(key, filter);
+      }
+      for (const [key, filter] of entries) {
+        if (newMap.has(key)) continue;
+        newMap.set(key, { ...filter, locked: false });
+      }
+      activeFilters = newMap;
+      connectives = { ...nextConnectives };
+    },
+
     getFilteredCount(
       candidateType: BrowseFilterType,
       candidateValue: BrowseFilterValue

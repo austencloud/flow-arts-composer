@@ -3,6 +3,7 @@
   import { Vector3, Color, type Object3D } from "three";
   import { onDestroy, untrack } from "svelte";
   import { TrailRenderer3D } from "./trail-renderer-3d";
+  import { usePropEffectStages } from "../prop-effect-stages";
   import type { TrailMode } from "./trail-renderer-3d";
   import type {
     DynamicLightManager,
@@ -55,6 +56,7 @@
   }: Props = $props();
 
   const { camera } = useThrelte();
+  const { particles: effectsStage } = usePropEffectStages();
   const visibilityFade = new Canvas2DVisibilityFadeManager(
     TRAIL_FADE_IN_MS,
     TRAIL_FADE_OUT_MS,
@@ -103,46 +105,49 @@
   );
   const lightPosition = new Vector3();
 
-  useTask((delta) => {
-    // Threlte's delta follows both live playback and the synthetic offline
-    // render clock. The trail therefore takes the same 300 ms in and 200 ms
-    // out regardless of frame rate or export speed.
-    fadeClockMs += delta * 1000;
-    const visibility = visibilityFade.updateProgress(fadeClockMs);
-    renderer.setVisibilityAlpha(visibility.alpha);
+  useTask(
+    (delta) => {
+      // Threlte's delta follows both live playback and the synthetic offline
+      // render clock. The trail therefore takes the same 300 ms in and 200 ms
+      // out regardless of frame rate or export speed.
+      fadeClockMs += delta * 1000;
+      const visibility = visibilityFade.updateProgress(fadeClockMs);
+      renderer.setVisibilityAlpha(visibility.alpha);
 
-    if (enabled && tipPosition) {
-      renderer.addPoint(tipPosition);
-    }
-
-    const cam = camera.current;
-    if (cam && (enabled || visibility.alpha > 0)) {
-      renderer.update(cam.position);
-    }
-
-    const resolvedLightManager =
-      lightManager ?? sceneEffectsManager?.getDynamicLightManager() ?? null;
-    if (resolvedLightManager && tipPosition && visibility.alpha > 0) {
-      lightPosition.copy(tipPosition);
-      lightSpaceRoot?.localToWorld(lightPosition);
-      const lightIntensity = 0.5 * visibility.alpha;
-      if (!lightHandle) {
-        lightHandle = resolvedLightManager.requestLight(
-          lightPosition,
-          lightColor,
-          lightIntensity,
-          3.0
-        );
-        if (lightHandle) lightOwner = resolvedLightManager;
-      } else {
-        lightOwner?.updateLight(lightHandle, lightPosition, lightIntensity);
+      if (enabled && tipPosition) {
+        renderer.addPoint(tipPosition);
       }
-    } else if (lightHandle && lightOwner) {
-      lightOwner.releaseLight(lightHandle);
-      lightHandle = null;
-      lightOwner = null;
-    }
-  });
+
+      const cam = camera.current;
+      if (cam && (enabled || visibility.alpha > 0)) {
+        renderer.update(cam.position);
+      }
+
+      const resolvedLightManager =
+        lightManager ?? sceneEffectsManager?.getDynamicLightManager() ?? null;
+      if (resolvedLightManager && tipPosition && visibility.alpha > 0) {
+        lightPosition.copy(tipPosition);
+        lightSpaceRoot?.localToWorld(lightPosition);
+        const lightIntensity = 0.5 * visibility.alpha;
+        if (!lightHandle) {
+          lightHandle = resolvedLightManager.requestLight(
+            lightPosition,
+            lightColor,
+            lightIntensity,
+            3.0
+          );
+          if (lightHandle) lightOwner = resolvedLightManager;
+        } else {
+          lightOwner?.updateLight(lightHandle, lightPosition, lightIntensity);
+        }
+      } else if (lightHandle && lightOwner) {
+        lightOwner.releaseLight(lightHandle);
+        lightHandle = null;
+        lightOwner = null;
+      }
+    },
+    { stage: effectsStage }
+  );
 
   onDestroy(() => {
     if (lightHandle && lightOwner) lightOwner.releaseLight(lightHandle);

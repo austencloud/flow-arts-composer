@@ -39,6 +39,7 @@
   import {
     rememberedSceneEnvironmentId,
     SCENE_ENVIRONMENT_LOADING_SKY,
+    type SceneLoadingSky,
   } from "#lib/shared/3d/environments/domain/scene-environment-loading-sky.js";
 
   interface Props {
@@ -50,10 +51,18 @@
     labels?: readonly string[];
     /** The environment loading; defaults to the one the viewer remembers. */
     environmentId?: SceneEnvironmentId;
+    /** A sky of the host's own, for a scene that is not one of the viewer's
+     * environments (the Flow Fest jam's dusk). Wins over `environmentId`. */
+    sky?: SceneLoadingSky;
     /** The sequence's name, shown above the horizon. */
     title?: string | null;
     /** The scene is ready behind it: play the reveal. */
     leaving?: boolean;
+    /** The stage alone, without title or bar: the first frame of a scene
+     * that builds itself around the viewer (SceneBuildIn). */
+    bare?: boolean;
+    /** The reveal has finished; the host can unmount the surface. */
+    onLeft?: () => void;
   }
 
   let {
@@ -61,20 +70,53 @@
     session,
     labels = SCENE_LOADING_LABELS,
     environmentId,
+    sky: ownSky,
     title = null,
     leaving = false,
+    bare = false,
+    onLeft,
   }: Props = $props();
 
   const sky = $derived(
-    SCENE_ENVIRONMENT_LOADING_SKY[
-      environmentId ??
-        (typeof localStorage === "undefined"
-          ? "cosmic"
-          : rememberedSceneEnvironmentId())
-    ]
+    ownSky ??
+      SCENE_ENVIRONMENT_LOADING_SKY[
+        environmentId ??
+          (typeof localStorage === "undefined"
+            ? "cosmic"
+            : rememberedSceneEnvironmentId())
+      ]
   );
   // A daylight horizon (Celestial) takes dark ink; night skies take white.
   const lightHorizon = $derived(luminance(sky.horizon) > 0.4);
+
+  let stageEl = $state<HTMLDivElement | undefined>(undefined);
+
+  // Waits for the stage's own reveal rather than for any animationend: the
+  // app-wide reduced-motion rule (keyframes.css) swaps every animation name,
+  // so under it the reveal never plays and the surface would never leave.
+  $effect(() => {
+    if (!leaving || !stageEl || !onLeft) return;
+    const left = onLeft;
+    const reveal = stageEl
+      .getAnimations()
+      .filter(
+        (animation) =>
+          animation instanceof CSSAnimation &&
+          animation.animationName === "stage-push-through"
+      );
+    if (reveal.length === 0) {
+      left();
+      return;
+    }
+    let current = true;
+    void Promise.all(reveal.map((animation) => animation.finished)).then(
+      () => current && left(),
+      () => undefined
+    );
+    return () => {
+      current = false;
+    };
+  });
 </script>
 
 <div
@@ -90,7 +132,7 @@
   data-scene-preparation-label={statusText}
   data-scene-preparation-progress={session ? session.percent / 100 : 0}
 >
-  <div class="stage" aria-hidden="true">
+  <div class="stage" aria-hidden="true" bind:this={stageEl}>
     <div class="sky"></div>
     <div class="horizon-glow"></div>
     <div class="ground">
@@ -98,11 +140,11 @@
     </div>
   </div>
 
-  {#if title}
+  {#if title && !bare}
     <p class="title">{title}</p>
   {/if}
   <div class="status">
-    {#if session}
+    {#if session && !bare}
       <LoadingCapsule {session} label={statusText} {labels} variant="line" />
     {/if}
     <span class="visually-hidden" role="status">{statusText}</span>
@@ -120,6 +162,11 @@
     z-index: 30;
     overflow: hidden;
     container-type: size;
+  }
+
+  /* Whatever is behind is live once the reveal starts. */
+  .leaving {
+    pointer-events: none;
   }
 
   .stage {

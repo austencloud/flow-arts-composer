@@ -17,9 +17,10 @@ describe("ConstructTutorialGuide", () => {
     await expectNoA11yViolations();
 
     await page.getByRole("button", { name: "Dismiss Construct guide" }).click();
-    expect(
-      page.getByText("Choose a start placement", { exact: true }).elements()
-    ).toHaveLength(0);
+    // The guide crossfades out, so its copy leaves once the fade ends.
+    await expect
+      .element(page.getByText("Choose a start placement", { exact: true }))
+      .not.toBeInTheDocument();
   });
 
   it("explains both option interactions without inventing another required action", async () => {

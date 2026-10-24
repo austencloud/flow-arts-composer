@@ -7,6 +7,7 @@
  * Uses reactive state ownership - service owns $state, component derives from it.
  */
 
+import { DEFAULT_CANVAS_SIZE } from "./canvas-defaults";
 import { motionDuration } from "#lib/shared/transitions/motion.js";
 import { DURATION } from "#lib/shared/transitions/transitions.js";
 import {
@@ -20,10 +21,6 @@ import {
 /** Below this the stale-raster correction is invisible, so it is left off. */
 const STALE_SCALE_EPSILON = 0.001;
 
-/**
- * Default canvas size
- */
-export const DEFAULT_CANVAS_SIZE = 500;
 
 /**
  * How long the observed size has to hold still before the canvas is rebuilt at

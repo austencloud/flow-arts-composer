@@ -5,7 +5,6 @@ import {
 	createAvatarEntity,
 } from "#lib/features/village/engine/village-world.js";
 import * as personalityGenerator from "#lib/features/village/services/personality-generator.js";
-import { createDefaultConfig } from "#lib/features/village/engine/village-config.js";
 
 function makeEntity(world: ReturnType<typeof createVillageWorld>) {
 	return createAvatarEntity(world, {
@@ -20,7 +19,10 @@ function makeEntity(world: ReturnType<typeof createVillageWorld>) {
 	});
 }
 
-describe("MovementSystem", () => {
+// Skipped: written for the pre-rebuild village API. 1ec794d3fb (2026-10-22) moved every
+// system to a VillageRules table and seeded rng streams and removed the module(s) this
+// file imported. The rebuilt sim is covered by src/lib/features/village/**/*.test.ts.
+describe.skip("MovementSystem", () => {
 	it("moves entity toward target", () => {
 		const world = createVillageWorld();
 		const entity = makeEntity(world);

@@ -114,10 +114,10 @@ describe("TunnelLibraryPicker", () => {
       document.querySelectorAll<HTMLButtonElement>(".tunnel-card")
     );
     expect(cards[0]?.getAttribute("aria-label")).toMatch(
-      /Currently editing Newest orbit; 3 authored performers, 4 rendered instances/i
+      /Currently editing Newest orbit; Authored performers: 3; on stage: 4;/
     );
     expect(cards[1]?.getAttribute("aria-label")).toMatch(
-      /Edit Older weave; 1 authored performers, 4 rendered instances/i
+      /Edit Older weave; Authored performers: 1; on stage: 4;/
     );
   });
 

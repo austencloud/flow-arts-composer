@@ -42,14 +42,12 @@ revisions return `stale_session` or `stale_revision` without changing the scene.
 }
 ```
 
-The first host renders one prepared `ch01/staff/A` performer and can change it
-to the prepared `ch01/fan/A` practice loop. Staff has sealed family proof; fan
-is a legacy prepared output. Neither is an exact rendition of a Composer score.
-Additional cast slots, characters, props, environments, arbitrary sequence
-transfer, and seek are unavailable until a capability update. Unsupported
-choices return `unsupported_asset`, `cast_limit`, or `unsupported_action` and
-leave the current actor visible. Capability IDs describe the assets actually
-loaded by the host, not the complete web catalog.
+The example above shows the legacy practice scene. The current host advertises
+up to eight performers and the character and prop catalogs actually installed.
+Composer sends `composerOwned: true` when binding its cast, so new actors wait for
+their authored motion instead of playing a practice loop. Unsupported choices
+return `unsupported_asset`, `cast_limit`, or `unsupported_action` and preserve the
+previous actor. The native environment remains the studio.
 
 When the performer is removed or its assets are unavailable, `performers` is
 empty, `selectedPerformerId` is `null`, and `playback` is
@@ -63,11 +61,22 @@ Commands:
 | `type` | `payload` | Effect |
 | --- | --- | --- |
 | `hello` | `{}` | Begin/reconcile a session and report readiness and complete state. |
-| `setPerformer` | `{performerId, characterId, propId, position:{x,z}, facingAngle}` | Set the one stable performer. All fields required. |
+| `setPerformer` | `{performerId, characterId, propId, position:{x,z}, facingAngle, composerOwned?, effect?}` | Create or update a stable performer. Asset replacements are validated before replacing the previous actor. `effect` accepts `none`, `fire`, or `led` and survives runtime motion imports. |
 | `removePerformer` | `{performerId}` | Remove the actor, preserving the empty stage. |
 | `select` | `{performerId}` | Select an existing performer, or `null` to clear. |
 | `camera` | `{position:{x,y,z}, target:{x,y,z}}` (or explicit `mode:"snap"`), `{mode:"orbit", deltaX, deltaY}`, `{mode:"pan", deltaX, deltaY}`, `{mode:"zoom", delta}`, `{mode:"preset", preset}`, or `{mode:"focus", performerId}` | Move the one native camera and return its authoritative pose. Presets: `front`, `back`, `left`, `right`, `top`, `threeQuarter`. Delta values are normalized viewport units. |
 | `playback` | `{action:"pause"|"resume"|"restart"}` or `{action:"rate", rate}` | Control only the declared prepared clip. Rate range is 0.5–1.75. |
+| `beginMotion` | `{performerId, transferId, totalChunks, totalBytes}` | Reserve one transfer slot, with a maximum of 64 MiB of UTF-8 JSON. |
+| `motionChunk` | `{transferId, index, data}` | Add a numbered chunk of at most 24,000 UTF-16 code units. Do not split surrogate pairs. |
+| `commitMotion` | `{transferId}` | Validate and install the complete shared runtime motion bundle. Failure preserves the previous motion. |
+| `playback` | `{action:"sync", performers:[{performerId,seconds}], playing,rate}` | Atomically seek named performers and synchronize play state/rate. Composer converts its fractional steps to captured seconds. |
+
+A new `hello` invalidates an incomplete transfer. Transfers are serialized by the
+browser and drained once started, even if the desired score changes. A performer
+waiting for its first import has `preparedClip: null` and `status: "unavailable"`.
+Installed runtime clip metadata identifies the actual sequence. Playback rates
+outside the native range, variable-duration steps, and independent performer
+clocks use paused native sampling driven by Composer's clock.
 
 Composer coordinates are meters, Y up, with the performer facing +Z at angle
 zero. The host maps a point `(x,y,z)` to Unreal centimetres `(100*z,-100*x,100*y)`.

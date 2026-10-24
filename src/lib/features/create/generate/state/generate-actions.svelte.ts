@@ -51,7 +51,10 @@ import {
 } from "#lib/shared/auth/domain/access-tier.js";
 import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
 import { AUTH_NUDGE_TEXTS } from "#lib/shared/auth/domain/auth-nudge-trigger.js";
-import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+import {
+  showToast,
+  toast,
+} from "#lib/shared/toast/state/toast-state.svelte.js";
 import {
   ConstraintType,
   type ConstraintReport,
@@ -114,9 +117,18 @@ function reportPropShortfall(report: ConstraintReport | undefined): void {
  * says what to change, so show it as a notice and keep the bug-report dialog
  * for real failures. Returns false for anything else.
  */
+// How long the impossible-request notice stays up; long enough to read the
+// engine's reason line under the headline.
+const IMPOSSIBLE_REQUEST_NOTICE_MS = 8000;
+
 function noticeForImpossibleRequest(error: unknown): boolean {
   if (!(error instanceof GenerationRequestError)) return false;
-  toast.info(error.message, 8000);
+  showToast({
+    message: error.message,
+    detail: error.detail,
+    type: "info",
+    duration: IMPOSSIBLE_REQUEST_NOTICE_MS,
+  });
   return true;
 }
 

@@ -103,3 +103,24 @@ describe("generatePerVisitDemo level selection", () => {
     ).toEqual(["beginner", "advanced"]);
   });
 });
+
+describe("generatePerVisitDemo continuity", () => {
+  // The hero rolls half its generated draws "mixed" so the engine may reverse
+  // a prop. If the option stopped reaching the orchestrator, every roll would
+  // quietly stay smooth and the reversal dots would never show again.
+  it("passes continuity mixed through as the constraint preset", async () => {
+    await generatePerVisitDemo({ random: () => 0, continuity: "mixed" });
+
+    expect(mocks.generateSequence).toHaveBeenCalledWith(
+      expect.objectContaining({ constraintPreset: "mixed" })
+    );
+  });
+
+  it("stays smooth when no continuity is asked for", async () => {
+    await generatePerVisitDemo({ random: () => 0 });
+
+    expect(mocks.generateSequence).toHaveBeenCalledWith(
+      expect.objectContaining({ constraintPreset: "smooth" })
+    );
+  });
+});

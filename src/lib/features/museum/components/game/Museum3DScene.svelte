@@ -46,7 +46,14 @@
   import MuseumMirror from "./MuseumMirror.svelte";
   import MuseumPortal from "./MuseumPortal.svelte";
   import MuseumVillageEmbed from "./MuseumVillageEmbed.svelte";
+  import { VILLAGE_FOG } from "#lib/features/village/components/village-forest-config.js";
+  import { VISITOR_BODY_SWAP } from "../../services/museum-village-visitor";
   import { preloadVillageAvatarModels } from "../../services/museum-village-manager";
+  import { useVillageRoomGlbs } from "../../services/museum-village-room-assets";
+  import {
+    ROOM_READY,
+    type RoomReadiness,
+  } from "../../services/museum-reveal-gate";
   import MuseumTorch3D from "./MuseumTorch3D.svelte";
   import GltfAsset from "#lib/shared/3d/environments/primitives/GltfAsset.svelte";
   import FallingParticles from "#lib/shared/3d/environments/primitives/FallingParticles.svelte";
@@ -58,9 +65,6 @@
     new SceneEffectsManager3D()
   );
 
-  // Start preloading village avatar models immediately - they'll be cached
-  // by the time the player reaches the Room of Collaboration
-  preloadVillageAvatarModels();
   import {
     createTorchInstance,
     type TorchMaterials,
@@ -196,6 +200,13 @@
     onGeometryReady?: () => void;
     /** True once every tracked GLTF and texture has settled. */
     assetsReady?: boolean;
+    /**
+     * The visitor's starting room reports its own readiness here, and the
+     * loading curtain waits for it. Every room built from tiles is ready with
+     * its geometry; the Room of Collaboration waits for its forest, tree ring
+     * and villagers (MuseumVillageEmbed).
+     */
+    onRoomReadiness?: (readiness: RoomReadiness) => void;
     /** Called after FPS-only objects share the final entrance light program. */
     onShaderWarmupReady?: () => void;
     /** Fires when the camera crosses the terrain waterline (underwater state). */
@@ -236,6 +247,13 @@
 
   // ── Tile scale: each tile = 0.5m in world space ──
   const TILE_SIZE = 0.5;
+
+  // The Room of Collaboration and the two rooms whose doors look into it.
+  const VILLAGE_ROOMS: ReadonlySet<string> = new Set([
+    "isolation",
+    "collaboration",
+    "gift-shop",
+  ]);
 
   // Tile geometry owns walkability and collision. These room-authored GLBs add
   // trim, fixtures, and environmental detail without changing the floor plan.
@@ -705,8 +723,14 @@
       theme,
       fpsActive,
       delta,
-      currentPlayerRoomId === MOON_ROOM_ID
+      currentPlayerRoomId === MOON_ROOM_ID,
+      currentPlayerRoomId === "collaboration" ? VILLAGE_FOG : null
     );
+    // The village's forest sets its own fog on the whole scene when it
+    // mounts, which leaked into every wing. The museum owns the fog; the
+    // village's night arrives through the room override above.
+    const sc = resolveScene(threlteCtx);
+    if (sc && sc.fog !== atmosphere.fog) sc.fog = atmosphere.fog;
   }
 
   /**
@@ -1326,6 +1350,40 @@
     TILE_SIZE
   );
 
+  // The room the visitor starts in: the restored position when there is one,
+  // else the grid's spawn tile.
+  const startRoomId = (() => {
+    const tileX = initialPlayerPos
+      ? Math.round(initialPlayerPos.x / TILE_SIZE)
+      : grid.spawn.x;
+    const tileY = initialPlayerPos
+      ? Math.round(initialPlayerPos.z / TILE_SIZE)
+      : grid.spawn.y;
+    return (
+      grid.wings.find(
+        ({ bounds }) =>
+          tileX >= bounds.x &&
+          tileX < bounds.x + bounds.width &&
+          tileY >= bounds.y &&
+          tileY < bounds.y + bounds.height
+      )?.id ?? geometryStreamer.getSpawnRoomId()
+    );
+  })();
+  const startsInVillage =
+    startRoomId === "collaboration" &&
+    grid.wings.some((wing) => wing.id === "collaboration");
+  // Starting in the village, its big GLBs and people start loading now, under
+  // the loading view and alongside the tile geometry, rather than after it.
+  // Elsewhere they wait for the embed, so no other room's first frame waits
+  // on the forest.
+  if (startsInVillage) {
+    preloadVillageAvatarModels();
+    useVillageRoomGlbs();
+  }
+  props.onRoomReadiness?.(
+    startsInVillage ? { state: "loading", progress: 0 } : ROOM_READY
+  );
+
   // Track which room the player is in (updated by streamer each frame). Seed
   // it before any derived state reads it so distant graybox lights never join
   // the entrance shader signature during the initialization frame.
@@ -1553,6 +1611,10 @@
 
   // ── Room streaming: activate/deactivate rooms as the player moves ──
 
+  // While the visitor teaches in third person, their body hands over to the
+  // village's figure (MuseumVillageEmbed); this is how far it has crossed.
+  let visitorBlend = $state(0);
+
   // Collaboration room center - for positioning the live Village sim
   const collabWing = $derived(grid.wings.find((w) => w.id === "collaboration"));
   const collabCenterX = $derived(
@@ -1612,7 +1674,25 @@
         )
       : [];
   });
-  const villageEmbedMounted = $derived(geometryReady && !!collabWing);
+  // The village lives only in the Room of Collaboration, and only the rooms on
+  // either side of it can see in. It mounts once the visitor reaches one of
+  // them and then stays, so the sim and its loaded people persist.
+  let villageRoomReached = $state(VILLAGE_ROOMS.has(startRoomId ?? ""));
+  $effect(() => {
+    if (!villageRoomReached && VILLAGE_ROOMS.has(currentPlayerRoomId ?? "")) {
+      villageRoomReached = true;
+    }
+  });
+  const villageEmbedMounted = $derived(
+    geometryReady && !!collabWing && villageRoomReached
+  );
+  $effect(() => {
+    if (villageEmbedMounted) preloadVillageAvatarModels();
+  });
+  // Starting in the Room of Collaboration, the curtain waits for the village.
+  function handleVillageReadiness(readiness: RoomReadiness): void {
+    if (startsInVillage) props.onRoomReadiness?.(readiness);
+  }
 
   // K's posted notes: only the current room's, like the performers.
   const placedNotes = placeFreeNotes(grid, TILE_SIZE);
@@ -1915,6 +1995,7 @@
     {isCrouching}
     isJumpRequested={playerJumpRequested}
     visible={true}
+    opacity={1 - visitorBlend}
     onModelSwapped={handlePlayerAvatarReady}
   />
 </T.Group>
@@ -2142,8 +2223,9 @@
 <!-- overrideVersion dependency ensures reactivity when editor moves objects -->
 <!-- Collaboration room performers are replaced by the live village sim -->
 {#each visiblePerformers as performer (performer.id)}
-  {#if villageEmbedMounted && performer.id.startsWith("collab-")}
-    <!-- Skip: replaced by MuseumVillageEmbed -->
+  {#if collabWing && performer.id.startsWith("collab-")}
+    <!-- Skip: replaced by MuseumVillageEmbed. Skipped before it mounts too,
+         so no stand-in figure or pedestal loads under the curtain. -->
   {:else if hasDrownedGallery && performer.id.startsWith("cave-water-")}
     <!-- Skip: the Water wing stands its three cases on pedestals and drives
          them from its consoles (DrownedGalleryAuthored) -->
@@ -2215,8 +2297,8 @@
 {/each}
 
 <!-- Live Village simulation in the Room of Collaboration.
-     Mounted early so avatar GLTF parsing happens in the background.
-     Always visible - sits inside room walls, only seen when looking in. -->
+     Mounted once the visitor reaches it or a room beside it, then kept.
+     Starting inside it, the loading curtain waits for its readiness. -->
 {#if villageEmbedMounted}
   {@const nearCollab = currentPlayerRoomId === "collaboration"}
   <MuseumVillageEmbed
@@ -2224,6 +2306,12 @@
     centerZ={collabCenterZ}
     showLabels={nearCollab}
     visible={props.visible !== false && nearCollab}
+    swapVisitorBody={VISITOR_BODY_SWAP &&
+      fpsActive &&
+      lastCameraMode === CameraMode.THIRD_PERSON}
+    bind:visitorBlend
+    visitorPosition={nearCollab ? playerPosition : null}
+    onReadiness={handleVillageReadiness}
   />
 {/if}
 

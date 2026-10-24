@@ -90,6 +90,21 @@ describe("native viewer bridge messages", () => {
     ).toBeNull();
   });
 
+  it("accepts Composer actors waiting for their first motion transfer", () => {
+    const waiting = {
+      ...state,
+      playback: {
+        preparedClip: null,
+        status: "unavailable",
+        rate: 1,
+        phase: 0,
+      },
+    };
+    expect(
+      parseBridgeMessage(JSON.stringify({ ...result, state: waiting }))
+    ).not.toBeNull();
+  });
+
   it("rejects malformed envelopes and incomplete failures", () => {
     expect(parseBridgeMessage("{")).toBeNull();
     expect(parseBridgeMessage("[]")).toBeNull();

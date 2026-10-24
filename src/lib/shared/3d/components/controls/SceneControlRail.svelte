@@ -7,6 +7,7 @@
     SceneControlTool,
   } from "#lib/shared/3d/domain/scene-control-layout.js";
   import SceneChromeButton from "./SceneChromeButton.svelte";
+  import type { SceneRenderer } from "../../state/viewer-3d-state.svelte";
   import {
     PERFORMER_TOOLS,
     type PerformerHubTab,
@@ -18,6 +19,7 @@
 
   interface Props {
     renderMode: "2d" | "3d";
+    unrealDisabledReason?: string | null;
     activeTool?: SceneControlTool | null;
     onSettingChange?: ViewerControlSink;
     onToolSelect?: (tool: SceneControlTool | null) => void;
@@ -45,6 +47,7 @@
 
   let {
     renderMode,
+    unrealDisabledReason = null,
     activeTool = null,
     onSettingChange,
     onToolSelect,
@@ -161,6 +164,20 @@
     );
     onOpenSaveScene?.();
   }
+
+  function chooseRenderer(renderer: SceneRenderer): void {
+    if (renderer === "unreal" && unrealDisabledReason) return;
+    const previous = viewer.sceneRenderer;
+    if (previous === renderer) return;
+    viewer.setSceneRenderer(renderer);
+    reportViewerControlChange(
+      onSettingChange,
+      "viewer_3d_rail",
+      "scene_renderer",
+      previous,
+      renderer
+    );
+  }
 </script>
 
 {#if renderMode === "3d"}
@@ -239,6 +256,28 @@
         />
       </div>
     {/if}
+
+    <div class="rail-separator" aria-hidden="true"></div>
+
+    <div class="rail-group" role="group" aria-label="Scene renderer">
+      <SceneChromeButton
+        icon="fa-globe"
+        label="Web renderer"
+        active={viewer.sceneRenderer === "web"}
+        aria-pressed={viewer.sceneRenderer === "web"}
+        data-scene-renderer="web"
+        onclick={() => chooseRenderer("web")}
+      />
+      <SceneChromeButton
+        icon="fa-gamepad"
+        label={unrealDisabledReason ?? "Unreal renderer"}
+        disabled={!!unrealDisabledReason}
+        active={viewer.sceneRenderer === "unreal"}
+        aria-pressed={viewer.sceneRenderer === "unreal"}
+        data-scene-renderer="unreal"
+        onclick={() => chooseRenderer("unreal")}
+      />
+    </div>
 
     <div class="utility-group" role="group" aria-label="Scene utilities">
       <SceneChromeButton

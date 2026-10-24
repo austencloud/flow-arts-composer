@@ -6,6 +6,8 @@ import {
   toIsoUtc,
   parseTriageEventRow,
   parseTriageSessionRow,
+  isLikelyCrawlerSession,
+  type TriageSessionRow,
 } from "#lib/server/analytics/session-triage-queries.js";
 
 describe("buildTriageSessionsQuery", () => {
@@ -50,6 +52,16 @@ describe("buildTriageSessionEventsQuery", () => {
     expect(sql).toContain("s_9a1c");
     expect(sql).not.toContain("distinct_id = '");
     expect(sql).toContain("exception_message");
+  });
+
+  // PostHog's web SDK sends the message only inside $exception_values (and the
+  // type inside $exception_types). $exception_message was empty on every one of
+  // ~2,000 production exceptions from July to October 2026, so a query that
+  // reads it alone shows each exception as a blank line.
+  it("reads the exception text from the list fields the SDK actually sends", () => {
+    const sql = buildTriageSessionEventsQuery("s_9a1c", 500);
+    expect(sql).toContain('properties."$exception_values"[1]');
+    expect(sql).toContain('properties."$exception_types"[1]');
   });
 });
 
@@ -151,5 +163,45 @@ describe("parsers normalize timestamps", () => {
       "e_1", "2026-08-01 10:00:00", "$pageview", "/a", "", null, null,
     ]);
     expect(e.occurredAt).toBe("2026-08-01T10:00:00Z");
+  });
+});
+
+describe("isLikelyCrawlerSession", () => {
+  const base: TriageSessionRow = {
+    sessionId: "s_fake",
+    uid: "anon_fake",
+    startedAt: "2026-10-22T10:00:00Z",
+    endedAt: "2026-10-22T10:00:04Z",
+    durationMs: 4000,
+    eventCount: 3,
+    exceptionCount: 1,
+    rageClickCount: 0,
+    deadClickCount: 0,
+    pageviewCount: 1,
+    contentActionCount: 0,
+    topSegments: ["zh"],
+    subSegments: ["guide"],
+    entryPath: "/zh/guide/eight-step",
+    exitPath: "/zh/guide/eight-step",
+    browser: "Chrome",
+    operatingSystem: "Windows",
+    deviceType: "Desktop",
+    locale: "zh-CN",
+    identified: false,
+    referringDomain: "",
+  };
+
+  it("flags one anonymous zh-CN page view with no referrer", () => {
+    expect(isLikelyCrawlerSession(base)).toBe(true);
+    expect(isLikelyCrawlerSession({ ...base, referringDomain: "$direct" })).toBe(true);
+    expect(isLikelyCrawlerSession({ ...base, locale: "zh_cn" })).toBe(true);
+  });
+
+  it("keeps sessions that differ on any one condition", () => {
+    expect(isLikelyCrawlerSession({ ...base, pageviewCount: 2 })).toBe(false);
+    expect(isLikelyCrawlerSession({ ...base, identified: true })).toBe(false);
+    expect(isLikelyCrawlerSession({ ...base, locale: "en-US" })).toBe(false);
+    expect(isLikelyCrawlerSession({ ...base, locale: "zh-TW" })).toBe(false);
+    expect(isLikelyCrawlerSession({ ...base, referringDomain: "www.baidu.com" })).toBe(false);
   });
 });

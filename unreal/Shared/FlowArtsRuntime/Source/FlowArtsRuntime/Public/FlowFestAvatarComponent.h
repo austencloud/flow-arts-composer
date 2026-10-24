@@ -2,6 +2,8 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "FlowFestActivityPose.h"
+#include "FlowFestRuntimePosePolicy.h"
 #include "FlowFestAvatarComponent.generated.h"
 
 class UAnimSequence;
@@ -10,6 +12,7 @@ class UFlowFestFootstepComponent;
 class UFlowFestPropComponent;
 class USceneComponent;
 class USkeletalMeshComponent;
+class FFlowArtsRuntimeMotion;
 
 /** One native, skinned deployed performer. The supplied parent is already at foot height. */
 UCLASS(ClassGroup=(FlowFest), meta=(BlueprintSpawnableComponent))
@@ -35,6 +38,9 @@ public:
     UFUNCTION(BlueprintCallable, Category="Flow Fest|Avatar")
     void SetMotion(FVector WorldVelocity, bool bInAir, bool bMounted);
 
+    /** Intent-driven body action shares the animation owner's blend and evaluation. */
+    void SetActivityPose(EFlowFestBodyActivity Activity, float ElapsedSeconds, float ExitSecondsRemaining = -1.f);
+
     UFUNCTION(BlueprintPure, Category="Flow Fest|Avatar")
     USkeletalMeshComponent* GetBodyMesh() const { return BodyMesh; }
 
@@ -51,6 +57,9 @@ public:
     /** Reserved for native per-character A_Flow_<profile> performance clips. */
     UFUNCTION(BlueprintCallable, Category="Flow Fest|Avatar")
     bool PlayPerformance(FName Profile, bool bLoop = true);
+    bool PlayRuntimePerformance(TSharedPtr<const FFlowArtsRuntimeMotion, ESPMode::ThreadSafe> Motion,
+        EFlowFestRuntimePosePolicy PosePolicy = EFlowFestRuntimePosePolicy::GameClearance);
+    TSharedPtr<const FFlowArtsRuntimeMotion, ESPMode::ThreadSafe> GetRuntimeMotion() const;
 
     /** Exact physical family profile; variant 0/1 selects independent captured routines. */
     UFUNCTION(BlueprintPure, Category="Flow Fest|Avatar")

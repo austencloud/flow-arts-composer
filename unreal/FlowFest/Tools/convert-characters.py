@@ -5,6 +5,8 @@ FBXs contain the same normalized armature as their matching skeletal mesh FBX.
 """
 import argparse
 import json
+import hashlib
+import math
 import re
 import os
 import subprocess
@@ -12,7 +14,7 @@ import sys
 from pathlib import Path
 
 import bpy
-from mathutils import Vector
+from mathutils import Quaternion, Vector
 
 HERE = Path(__file__).resolve().parent
 BUNDLE_TOOL = HERE.parent.parent / 'Shared' / 'Tools' / 'performance-bundle.mjs'
@@ -30,6 +32,7 @@ parser.add_argument('--staged', type=Path, help='Explicit staged Characters dire
 parser.add_argument('--profiles-only', action='store_true', help='Convert only manifest-listed custom performances')
 parser.add_argument('--id', action='append', help='Only convert these character IDs')
 parser.add_argument('--family-only', action='store_true', help='Convert only staged P_<family>_A/B captures')
+parser.add_argument('--turns-only', action='store_true', help='Convert only TurnLeft/TurnRight on existing rigs')
 parser.add_argument('--allow-partial', action='store_true', help='Pilot only: convert available family captures for explicit --id')
 parser.add_argument('--force', action='store_true', help='Re-export assets even when FBX is current')
 args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else [])
@@ -39,6 +42,10 @@ if args.allow_partial and (not args.family_only or not args.id):
     raise RuntimeError('--allow-partial requires --family-only and explicit --id')
 if args.profiles_only and args.family_only:
     raise RuntimeError('--profiles-only cannot combine with --family-only')
+if args.turns_only and (args.profiles_only or args.family_only or args.allow_partial):
+    raise RuntimeError('--turns-only cannot combine with profile or family conversion')
+if args.turns_only and set(MANIFEST['animations']) & {'TurnLeft', 'TurnRight'} != {'TurnLeft', 'TurnRight'}:
+    raise RuntimeError('--turns-only requires prepared TurnLeft/TurnRight manifest entries')
 if args.profiles_only and (len(MANIFEST['characters']) != 1 or MANIFEST['characters'][0]['id'] != 'x-bot' or
                            not MANIFEST['characters'][0].get('captures') or
                            any(not name.startswith('M_') for name in MANIFEST['characters'][0]['captures'])):
@@ -135,12 +142,16 @@ def prepare_rig(character):
         root.location.z -= floor
     armature.animation_data_clear()
     mesh_file = STAGED / character['key'] / f'SK_{character["key"]}.fbx'
-    if not args.family_only and not args.profiles_only and not is_current(mesh_file, decoded):
+    if not args.family_only and not args.profiles_only and not args.turns_only and not is_current(mesh_file, decoded):
         export_fbx(mesh_file, armature, meshes, False)
     return armature, meshes
 
 
-def retarget_clip(character, target, clip_name, source_path, captured=False):
+def file_sha256(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def retarget_clip(character, target, clip_name, source_path, captured=False, turn=False):
     imported = import_glb(source_path)
     source = armature_of(imported, source_path.name)
     if not source.animation_data or not source.animation_data.action:
@@ -154,7 +165,10 @@ def retarget_clip(character, target, clip_name, source_path, captured=False):
     target.animation_data.action = action
     scene = bpy.context.scene
     scene.render.fps = 30
-    start, end = map(int, source.animation_data.action.frame_range)
+    source_start, end = map(int, source.animation_data.action.frame_range)
+    start = 0 if turn else source_start
+    if turn and source_start != 1:
+        raise RuntimeError(f'{source_path}: expected source turn keys to begin at frame 1, got {source_start}')
     if end <= start or end - start > (3600 if captured else 600):
         raise RuntimeError(f'{source_path}: unreasonable animation range {start}-{end}')
     source_hip_bone = source_bones['Hips'].bone
@@ -165,8 +179,15 @@ def retarget_clip(character, target, clip_name, source_path, captured=False):
     source_height = max(.1, source_rest.translation.z)
     source_to_world = source_rest.to_3x3()
     world_to_target = target_rest.to_3x3().inverted()
+    support_bones = {side: f'{side.title()}ToeBase' if f'{side.title()}ToeBase' in target.pose.bones
+                     else f'{side.title()}Foot' for side in ('left', 'right')}
+    turn_samples = []
+    source_hip_rotations = []
     for frame in range(start, end + 1):
-        scene.frame_set(frame)
+        # UE's FBX importer preserves the source duration but evaluates only
+        # keys through end - 1. Repeat the authored final pose on both end - 1
+        # and end so the native clip actually reaches its measured heading.
+        scene.frame_set(end if turn and frame >= end - 1 else frame)
         for bone in target.pose.bones:
             source_bone = source_bones.get(bone.name)
             bone.rotation_mode = 'QUATERNION'
@@ -181,8 +202,8 @@ def retarget_clip(character, target, clip_name, source_path, captured=False):
                     # forward). Strip root travel in world space and retain
                     # only the vertical bob/jump in the target bone's basis.
                     world_motion = source_to_world @ source_bone.location
-                    vertical = world_motion.z * target_height / source_height
-                    bone.location = world_to_target @ Vector((0.0, 0.0, vertical))
+                    motion = world_motion if turn else Vector((0.0, 0.0, world_motion.z))
+                    bone.location = world_to_target @ (motion * (target_height / source_height))
                 else:
                     bone.location = (0.0, 0.0, 0.0)
             else:
@@ -191,11 +212,63 @@ def retarget_clip(character, target, clip_name, source_path, captured=False):
             bone.keyframe_insert(data_path='rotation_quaternion', frame=frame, group=bone.name)
             if captured or bone.name == 'Hips':
                 bone.keyframe_insert(data_path='location', frame=frame, group=bone.name)
+        if turn:
+            bpy.context.view_layer.update()
+            source_hip_rotations.append((source.matrix_world @ source_bones['Hips'].matrix).to_quaternion())
+            transforms = {name: target.matrix_world @ target.pose.bones[name].matrix
+                          for name in dict.fromkeys(('Hips', 'LeftFoot', 'RightFoot', *support_bones.values()))}
+            positions = {name: list(matrix.translation) for name, matrix in transforms.items()}
+            rotations = {name: list(matrix.to_quaternion()) for name, matrix in transforms.items()}
+            turn_samples.append({'frame': frame, 'seconds': frame / 30, 'positionsM': positions,
+                                 'rotationsWxyz': rotations,
+                                 'hipsLocalRotation': list(target.pose.bones['Hips'].rotation_quaternion)})
     scene.frame_set(start)
     # FBX exports the current action only; frame span and pose are explicit.
     scene.frame_start, scene.frame_end = start, end
     destination = STAGED / character['key'] / f'A_{clip_name}.fbx'
     export_fbx(destination, target, [], True)
+    if turn:
+        turn_info = character['turns'][clip_name]
+        if len(turn_samples) != turn_info['frameCount'] or abs(end / 30 - turn_info['durationSeconds']) > 1e-4:
+            raise RuntimeError(f'{character["id"]}/{clip_name}: converted turn timing disagrees with source')
+        source_angle = math.degrees(source_hip_rotations[0].rotation_difference(source_hip_rotations[-1]).angle)
+        target_start_q = Quaternion(turn_samples[0]['rotationsWxyz']['Hips'])
+        target_end_q = Quaternion(turn_samples[-1]['rotationsWxyz']['Hips'])
+        target_angle = math.degrees(target_start_q.rotation_difference(target_end_q).angle)
+        if abs(source_angle - target_angle) > .05:
+            raise RuntimeError(f'{character["id"]}/{clip_name}: retarget changed hip turn angle '
+                               f'{source_angle:.3f} -> {target_angle:.3f} degrees')
+        supports = {}
+        for side in ('left', 'right'):
+            weights = turn_info[f'{side}Foot']
+            bone = support_bones[side]
+            windows = []
+            begin = None
+            for index, weight in enumerate([*weights, 0.0]):
+                if weight >= .5 and begin is None:
+                    begin = index
+                elif weight < .5 and begin is not None:
+                    end_index = index - 1
+                    points = [Vector(turn_samples[i]['positionsM'][bone]) for i in range(begin, index)]
+                    anchor = points[0]
+                    windows.append({'supportBone': bone, 'startFrame': begin, 'endFrame': end_index,
+                                    'startSeconds': begin / 30, 'endSeconds': end_index / 30,
+                                    'supportStartM': list(anchor), 'supportEndM': list(points[-1]),
+                                    'maxSupportHorizontalDriftM': max(((point - anchor).xy.length for point in points), default=0)})
+                    begin = None
+            supports[side] = windows
+        decoded = STAGED / f'{character["key"]}.glb'
+        receipt = {'schema': 'flowfest-native-turn-retarget-v1', 'characterId': character['id'],
+                   'clip': clip_name, 'source': turn_info, 'sourceSha256': file_sha256(source_path),
+                   'decodedRigSha256': file_sha256(decoded), 'fbxSha256': file_sha256(destination),
+                   'converterSha256': file_sha256(Path(__file__)), 'durationSeconds': end / 30,
+                   'frameCount': len(turn_samples), 'supportBones': support_bones, 'supportWindows': supports,
+                   'sourceWorldHipDeltaAngleDegrees': source_angle,
+                   'retargetWorldHipDeltaAngleDegrees': target_angle,
+                   'nativeEndpointHeldFromFrame': end - 1,
+                   'neutralStart': turn_samples[0], 'neutralEnd': turn_samples[-1]}
+        (STAGED / character['key'] / f'A_{clip_name}.turn.json').write_text(
+            json.dumps(receipt, indent=2) + '\n', encoding='utf-8')
     target.animation_data.action = None
     bpy.data.actions.remove(action)
     bpy.ops.object.select_all(action='DESELECT')
@@ -218,12 +291,17 @@ for character in MANIFEST['characters']:
     decoded = STAGED / f'{character["key"]}.glb'
     if not args.family_only and not args.profiles_only:
         for clip_name, filename in MANIFEST['animations'].items():
+            turn = clip_name in ('TurnLeft', 'TurnRight')
+            if args.turns_only and not turn:
+                continue
             source_path = Path(MANIFEST['animationSource']) / filename
             output = STAGED / character['key'] / f'A_{clip_name}.fbx'
-            if is_current(output, source_path, decoded):
+            receipt = STAGED / character['key'] / f'A_{clip_name}.turn.json'
+            if is_current(output, source_path, decoded) and (not turn or
+                    receipt.is_file() and receipt.stat().st_mtime_ns >= output.stat().st_mtime_ns):
                 continue
-            retarget_clip(character, target, clip_name, source_path)
-    for profile in character.get('captures', {}):
+            retarget_clip(character, target, clip_name, source_path, turn=turn)
+    for profile in (() if args.turns_only else character.get('captures', {})):
         if args.profiles_only and not profile.startswith('M_'):
             continue
         if args.family_only and not (profile.startswith('P_') and profile.endswith(('_A', '_B'))):

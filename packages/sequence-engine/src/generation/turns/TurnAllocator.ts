@@ -7,6 +7,8 @@
  * - Level 1: Only 0 turns allowed
  * - Level 2: 0, 1, 2, 3 (whole numbers)
  * - Level 3: 0, 0.5, 1, 1.5, 2, 2.5, 3, "fl" (all values including float)
+ * - Level 4 and above: refused. They used to fall back to [0], so a level 4
+ *   request silently built level 1 turns.
  *
  * For each step, left and right get independently randomized turn values
  * filtered by the maxTurnIntensity cap, unless `matchHands` asks for one roll
@@ -19,6 +21,11 @@ export interface TurnAllocation {
 }
 
 function getPossibleTurnsForLevel(level: number): (number | "fl")[] {
+  if (level >= 4) {
+    throw new Error(
+      `Level 4 and above are not defined yet; see the center point spec (docs/superpowers/specs/2026-10-22-center-point-beyond-level-3.md). Requested level: ${level}.`
+    );
+  }
   switch (level) {
     case 1:
       return [0];
@@ -169,6 +176,35 @@ export function allocateTurns(
     left: turnsLeft,
     right: turnsRight,
   };
+}
+
+/**
+ * Roll one more step's turns, for a step the up-front allocation did not know
+ * about: a bridge the search inserted, or a letter pushed past the word's
+ * length by one.
+ *
+ * Same pool, same required value, same matched hands as `allocateTurns`. The
+ * whole-sequence rules (period-4 parity, the never-all-zeros nudge) are not
+ * repeated here: parity is settled after the search by `enforceHandFlipParity`
+ * on the real step list, and the nudge already gave the opening steps a turn.
+ */
+export function rollTurnStep(
+  level: number,
+  maxTurnIntensity?: number,
+  options?: TurnAllocationOptions
+): { left: number | "fl"; right: number | "fl" } {
+  if (options?.requiredTurns !== undefined) {
+    // Same value, same validation as the allocation it extends.
+    const fixed = allocateTurns(1, level, maxTurnIntensity, options);
+    return { left: fixed.left[0]!, right: fixed.right[0]! };
+  }
+  const pool = getTurnPool(level, maxTurnIntensity, {
+    allowFloat: options?.allowFloat !== false,
+  });
+  const random = options?.random ?? Math.random;
+  const left = randomChoice(pool, random);
+  const right = options?.matchHands ? left : randomChoice(pool, random);
+  return { left, right };
 }
 
 function allocateSingleHand(

@@ -315,6 +315,7 @@
           isNarrowAssemble || preferWidthSizingOnNarrow,
         allowFewStepOverflowOnNarrow,
         fitAllSteps: fitAllSteps || fitsConstructPhoneBand,
+        preferLongRows: activeMode !== null && sizingProfile === "workbench",
         widthPaddingRatio: sizingProfile === "preview" ? 1 : undefined,
         heightPaddingRatio: sizingProfile === "preview" ? 1 : undefined,
       }

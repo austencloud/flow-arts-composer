@@ -1,7 +1,8 @@
 param(
     [string]$ArchiveDirectory = '',
     [string]$EngineRoot = 'C:\Program Files\Epic Games\UE_5.8',
-    [string]$CompilerVersion = ''
+    [string]$CompilerVersion = '',
+    [string]$SourceRoot = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -14,14 +15,27 @@ if (-not $ArchiveDirectory) { $ArchiveDirectory = Join-Path $projectRoot 'Builds
 foreach ($required in @($projectFile, $map, $site, $uat)) {
     if (-not (Test-Path -LiteralPath $required)) { throw "Missing prerequisite: $required. Run bootstrap.ps1 successfully before packaging." }
 }
+$rigCatalog = Join-Path $projectRoot 'Content\Data\runtime-rigs.json'
+if ($SourceRoot) {
+    & node (Join-Path $PSScriptRoot '..\..\Shared\Tools\runtime-rig-catalog.mjs') $SourceRoot $rigCatalog
+    if ($LASTEXITCODE -ne 0) { throw 'Runtime rig catalog generation failed.' }
+}
+if (-not (Test-Path -LiteralPath $rigCatalog)) {
+    throw 'Runtime rig catalog is missing. Pass -SourceRoot with the source checkout used to prepare these characters.'
+}
 & node (Join-Path $PSScriptRoot 'validate-runtime-data.mjs') (Join-Path $projectRoot 'Content\Data')
 if ($LASTEXITCODE -ne 0) { throw 'Native runtime data failed validation before packaging.' }
 $bundleTool = Join-Path $PSScriptRoot '..\..\Shared\Tools\performance-bundle.mjs'
+& node $bundleTool verify-prop-clearance --project $projectRoot
+if ($LASTEXITCODE -ne 0) { throw 'Prop clearance metadata receipt missing or stale. Generate and record complete imported-mesh coverage before packaging.' }
 & node $bundleTool verify --project $projectRoot
 if ($LASTEXITCODE -ne 0) { throw "Performance bundle verification failed ($LASTEXITCODE)" }
 $libraryTool = Join-Path $PSScriptRoot '..\..\Shared\Tools\performance-library.mjs'
 & node $libraryTool build --project $projectRoot
 if ($LASTEXITCODE -ne 0) { throw "Performance library export failed ($LASTEXITCODE)" }
+$familyOverrideTool = Join-Path $PSScriptRoot 'verify-runtime-family-overrides.mjs'
+& node $familyOverrideTool (Join-Path $projectRoot 'Content\Data')
+if ($LASTEXITCODE -ne 0) { throw 'Required runtime family staff overrides are missing or invalid before packaging.' }
 $pictographTool = Join-Path $PSScriptRoot '..\..\Shared\Tools\performance-pictographs.mjs'
 $hasPictographs = Test-Path -LiteralPath (Join-Path $projectRoot 'Content\Data\performance-pictographs.json')
 if ($hasPictographs) {
@@ -33,11 +47,20 @@ $archivePath = (Resolve-Path -LiteralPath $ArchiveDirectory).Path
 
 $ubtArgs = '-MaxParallelActions=4 -NoUBA'
 if ($CompilerVersion) { $ubtArgs += " -CompilerVersion=$CompilerVersion" }
+# UE 5.8 derives shader workers from reported cores minus reserved threads.
+# Five capped cores with one reserved permits at most four workers (fewer on
+# small machines); its memory-pressure heuristic also caps at cores minus one.
+$cookerArgs = @(
+    '-corelimit=5',
+    '-ini:Engine:[DevOptions.Shaders]:NumUnusedShaderCompilingThreads=1',
+    '-ini:Engine:[DevOptions.Shaders]:NumUnusedShaderCompilingThreadsDuringGame=1',
+    '-ini:Engine:[ConsoleVariables]:r.ForceAllCoresForShaderCompiling=0'
+) -join ' '
 $uatArgs = @(
     'BuildCookRun', "-project=$projectFile", '-noP4', '-platform=Win64',
     '-clientconfig=Development', '-build', '-skipbuildeditor', '-cook',
     '-stage', '-package', '-archive', '-pak', "-archivedirectory=$archivePath",
-    "-ubtargs=$ubtArgs"
+    "-ubtargs=$ubtArgs", "-AdditionalCookerOptions=$cookerArgs"
 )
 & $uat @uatArgs
 if ($LASTEXITCODE -ne 0) { throw "Unreal packaging failed ($LASTEXITCODE)" }
@@ -51,10 +74,17 @@ if (-not (Test-Path -LiteralPath $gameExe) -or -not (Test-Path -LiteralPath $pak
 
 # Data is staged as NonUFS; a successful cook does not prove these files made it into the archive.
 $dataDir = Join-Path $packageRoot 'FlowFest\Content\Data'
+$stagedRigs = Join-Path $dataDir 'runtime-rigs.json'
+if (-not (Test-Path -LiteralPath $stagedRigs) -or
+    (Get-FileHash -LiteralPath $stagedRigs).Hash -ne (Get-FileHash -LiteralPath $rigCatalog).Hash) {
+    throw 'Packaged runtime rig catalog is missing or differs from this build.'
+}
 & node $bundleTool verify --project $projectRoot --packaged-data $dataDir
 if ($LASTEXITCODE -ne 0) { throw "Packaged performance bundle verification failed ($LASTEXITCODE)" }
 & node $libraryTool verify --project $projectRoot --packaged-data $dataDir
 if ($LASTEXITCODE -ne 0) { throw "Packaged performance library verification failed ($LASTEXITCODE)" }
+& node $familyOverrideTool $dataDir (Join-Path $projectRoot 'Content\Data')
+if ($LASTEXITCODE -ne 0) { throw 'Packaged runtime family staff overrides are missing or differ from source.' }
 if ($hasPictographs) {
     & node $pictographTool verify --project $projectRoot --packaged-data $dataDir
     if ($LASTEXITCODE -ne 0) { throw "Packaged pictograph verification failed ($LASTEXITCODE)" }
@@ -103,7 +133,7 @@ if ($LASTEXITCODE -ne 0) { throw 'Packaged native runtime data failed validation
 if (@($siteData.grass).Count -lt 20000 -or @($siteData.groundLife).Count -lt 20) {
     throw 'Staged living ecology data is incomplete.'
 }
-foreach ($document in @('README.md', 'CREDITS.md')) {
+foreach ($document in @('README.md', 'CREDITS.md', 'LIVE-MOTION.md')) {
     Copy-Item -LiteralPath (Join-Path $projectRoot $document) -Destination (Join-Path $packageRoot $document) -Force
 }
 Write-Host "Flow Fest packaged files ready: $packageRoot"

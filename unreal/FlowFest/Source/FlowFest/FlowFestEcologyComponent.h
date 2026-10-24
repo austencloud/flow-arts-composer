@@ -8,7 +8,8 @@ class AFlowFestWorld;
 class UHierarchicalInstancedStaticMeshComponent;
 class UMaterialInstanceDynamic;
 
-/** The source site's route-cleared grass and understory, in the site's metre frame. */
+/** The source site's route-cleared grass and understory, and the forest floor grown
+ *  under its measured trees, in the site's metre frame. */
 UCLASS(ClassGroup=(FlowFest), meta=(BlueprintSpawnableComponent))
 class FLOWFEST_API UFlowFestEcologyComponent : public USceneComponent
 {
@@ -33,7 +34,7 @@ public:
     static constexpr int32 GrassGroupCount = 3;
 
 private:
-    /** The grass groups first, then the understory families. */
+    /** The grass groups first, then the understory families, then the forest floor. */
     UPROPERTY(Transient) TArray<TObjectPtr<UHierarchicalInstancedStaticMeshComponent>> Groups;
     UPROPERTY(Transient) TArray<TObjectPtr<UMaterialInstanceDynamic>> WindMaterials;
     float WindStrength = 0.38f;

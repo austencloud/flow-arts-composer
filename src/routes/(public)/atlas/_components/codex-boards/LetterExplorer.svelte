@@ -1,11 +1,21 @@
+<!--
+  The letter explorer: every variation of one letter, with the turns and
+  transforms the board has, plus Invert. One column: the controls, the
+  variations, then where the letter is used. The variations are pictures, not
+  choices; every control changes all of them at once, and they move the way
+  the Composer's step grid moves (the shared pictograph edit clock).
+
+  On a screen with room the variations are laid out to fit the dialog with
+  nothing scrolling, and the dialog shrinks around them (LetterCodex sizes it
+  to its content). A screen too small for that keeps four across and scrolls.
+-->
 <script lang="ts">
   import { onDestroy } from "svelte";
-  import { MediaQuery } from "svelte/reactivity";
-  import GuidePictograph from "../../../guide/level-1/_components/GuidePictograph.svelte";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import PictographTypeFrame from "#lib/shared/pictograph/shared/components/PictographTypeFrame.svelte";
-  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
-  import PropControlPair from "#lib/features/create/shared/components/sequence-actions/PropControlPair.svelte";
-  import PropTurnsControl from "#lib/features/create/shared/components/sequence-actions/PropTurnsControl.svelte";
+  import ShimmerBlock from "#lib/shared/components/loading/ShimmerBlock.svelte";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import {
@@ -13,10 +23,8 @@
     MotionType,
     type RotationDirection,
   } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
-  import {
-    GridMode,
-    type GridMode as GridModeValue,
-  } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import type { TurnValue } from "#lib/shared/create/domain/turn-pattern-data.js";
   import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
   import {
@@ -24,38 +32,37 @@
     UnencodableMotionError,
   } from "#lib/shared/navigation/services/sequence-encoder.js";
   import { buildGalleryLetterHref } from "#lib/shared/browse/navigation/gallery-letter-link.js";
-  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
-  import type { CodexLetterInfo } from "./codex-letters";
+  import { opaqueFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import CodexBoardControls from "./CodexBoardControls.svelte";
   import { fanOutDeck, type Box } from "./codex-fan";
-  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
-
-  const GRID_OPTIONS = [
-    { value: GridMode.DIAMOND, label: "Diamond" },
-    { value: GridMode.BOX, label: "Box" },
-  ];
+  import {
+    fitVariationColumns,
+    scrollVariationColumns,
+  } from "./variation-columns";
+  import { type ExplorerTransformOp } from "./letter-explorer-transforms";
 
   let {
-    info,
-    gridMode,
+    label,
+    tileKey,
     variations,
     selectedIndex,
-    draft,
     leftTurns,
     rightTurns,
     leftRotation,
     rightRotation,
-    edited,
+    transformed,
     isLoading,
     loadError,
     learningMatches,
-    learningLoading,
     learningError,
     composerHref,
-    onGridChange,
-    onVariationChange,
+    headerHeight,
     onTurnsChange,
     onRotationChange,
-    onReset,
+    onResetTurns,
+    onTransform,
+    onResetTransforms,
     onRetry,
     onLearningRetry,
     onCopyLink,
@@ -63,31 +70,35 @@
     fan = null,
     onFanDone,
   }: {
-    info: CodexLetterInfo;
-    gridMode: GridModeValue;
+    /** The letter the variations now draw (Invert changes it). */
+    label: string;
+    /** Stable per letter and grid, so each picture keeps its slot when edited. */
+    tileKey: string;
     variations: PictographData[];
+    /** The variation the clicked board cell draws: the deck's top card and
+     *  the one Continue in Composer opens. */
     selectedIndex: number;
-    draft: PictographData | null;
     leftTurns: TurnValue;
     rightTurns: TurnValue;
     leftRotation: RotationDirection;
     rightRotation: RotationDirection;
-    edited: boolean;
+    transformed: boolean;
     isLoading: boolean;
     loadError: boolean;
     learningMatches: readonly SequenceData[];
-    learningLoading: boolean;
     learningError: boolean;
     composerHref: string | null;
-    onGridChange: (gridMode: GridModeValue) => void;
-    onVariationChange: (index: number) => void;
-    onTurnsChange: (color: HandSide, delta: number) => void;
-    onRotationChange: (color: HandSide, direction: RotationDirection) => void;
-    onReset: () => void;
+    /** The dialog header's height, for the fit below it. */
+    headerHeight: number;
+    onTurnsChange: (hand: HandSide, delta: number) => void;
+    onRotationChange: (hand: HandSide, direction: RotationDirection) => void;
+    onResetTurns: () => void;
+    onTransform: (op: ExplorerTransformOp) => void;
+    onResetTransforms: () => void;
     onRetry: () => void;
     onLearningRetry: () => void;
     onCopyLink: () => void;
-    /** The prop drawn in every picture; omitted keeps the dataset's own. */
+    /** The prop drawn in every picture; omitted draws staffs, as the board does. */
     propType?: PropType;
     /** Fan the variations out from this viewport rect (the clicked board
      *  cell) once they are laid out. A new key plays it again. */
@@ -95,50 +106,69 @@
     onFanDone?: () => void;
   } = $props();
 
-  const leftMotion = $derived(draft?.motions?.left);
-  const rightMotion = $derived(draft?.motions?.right);
-  const leftCanChooseRotation = $derived(
-    leftTurns !== "fl" &&
-      leftTurns > 0 &&
-      (leftMotion?.motionType === MotionType.DASH ||
-        leftMotion?.motionType === MotionType.STATIC)
+  // Every variation of a letter shares its motion types, so the first one
+  // says whether a hand's turns can take a rotation (dash and static only).
+  function canRotate(motion: { motionType?: MotionType } | undefined): boolean {
+    return (
+      motion?.motionType === MotionType.DASH ||
+      motion?.motionType === MotionType.STATIC
+    );
+  }
+  const leftCanRotate = $derived(canRotate(variations[0]?.motions?.left));
+  const rightCanRotate = $derived(canRotate(variations[0]?.motions?.right));
+
+  // ── Fit ────────────────────────────────────────────────────────────────
+  // The dialog may grow to the viewport cap BaseModal gives it (modal-tokens
+  // .css, "fit"); the variations get what the header, controls and links
+  // leave. Rows stay full (variation-columns.ts), and cells stop at maxCell
+  // so a letter with few variations gets a small dialog, not huge pictures.
+  const GAP = 10.4; // 0.65rem, the grid gap below
+  const PAD = 16; // 1rem, .explorer padding and gap
+  const MIN_FIT_CELL = 104;
+  const MIN_SCROLL_CELL = 88;
+  const PHONE = 520; // modal-tokens.css mobile breakpoint
+  let viewportWidth = $state(0);
+  let viewportHeight = $state(0);
+  // 240px, growing with tall screens so a 4K dialog is not a postage stamp.
+  const maxCell = $derived(Math.max(240, Math.round(viewportHeight * 0.18)));
+  let toolbarHeight = $state(0);
+  let footerHeight = $state(0);
+  const measured = $derived(
+    viewportWidth > 0 && toolbarHeight > 0 && footerHeight > 0
   );
-  const rightCanChooseRotation = $derived(
-    rightTurns !== "fl" &&
-      rightTurns > 0 &&
-      (rightMotion?.motionType === MotionType.DASH ||
-        rightMotion?.motionType === MotionType.STATIC)
-  );
-  // On a desktop screen the explorer fills the dialog and nothing in it
-  // scrolls: the variations take the box under their heading, laid out at
-  // whatever column count gives the largest pictures. Keep this query in step
-  // with the stylesheet's and LetterCodex's.
-  const fit = new MediaQuery("(min-width: 64rem) and (min-height: 700px)");
-  const VARIATION_GAP = 10.4; // 0.65rem
-  const SELECTED_RING = 10; // outline and its offset, both sides
-  let stageWidth = $state(0);
-  let stageHeight = $state(0);
-  const fitGrid = $derived.by(() => {
-    const count = variations.length;
-    if (!fit.current || count === 0 || stageWidth <= 0 || stageHeight <= 0) {
-      return null;
-    }
-    const width = stageWidth - SELECTED_RING;
-    const height = stageHeight - SELECTED_RING;
-    let best = { columns: 4, cell: 0 };
-    for (let columns = 1; columns <= count; columns++) {
-      const rows = Math.ceil(count / columns);
-      const cell = Math.min(
-        (width - (columns - 1) * VARIATION_GAP) / columns,
-        (height - (rows - 1) * VARIATION_GAP) / rows
-      );
-      if (cell > best.cell) best = { columns, cell };
-    }
-    return { columns: best.columns, cell: Math.floor(best.cell) };
+
+  const layout = $derived.by(() => {
+    if (!measured || variations.length === 0) return null;
+    const dialogWidth =
+      viewportWidth <= PHONE ? viewportWidth - 32 : viewportWidth * 0.94;
+    const dialogHeight = Math.min(viewportHeight * 0.9, viewportHeight - 32);
+    const width = dialogWidth - 2 * PAD - 2;
+    const height =
+      dialogHeight - headerHeight - toolbarHeight - footerHeight - 4 * PAD - 2;
+    const fit = fitVariationColumns(
+      variations.length,
+      width,
+      height,
+      GAP,
+      maxCell
+    );
+    if (fit && fit.cell >= MIN_FIT_CELL) return { ...fit, fitted: true };
+    // Too little height to fit: the dialog scrolls, through as few rows as
+    // keep the pictures readable.
+    const columns = scrollVariationColumns(
+      variations.length,
+      width,
+      GAP,
+      MIN_SCROLL_CELL
+    );
+    const cell = Math.floor(
+      Math.min(maxCell, (width - (columns - 1) * GAP) / columns)
+    );
+    return { columns, cell, fitted: false };
   });
 
-  // The deck fans out once the cards have their final layout: variations
-  // loaded and, on desktop, the fitted column count applied. Until then the
+  // ── Deck ───────────────────────────────────────────────────────────────
+  // The deck fans out once the cards have their final layout. Until then the
   // cards are hidden so they never flash in their slots first.
   let variationGrid = $state<HTMLElement | null>(null);
   let fannedKey = $state<number | null>(null);
@@ -156,10 +186,10 @@
     // Give up rather than hide the cards if they never lay out.
     const giveUp = setTimeout(() => settleFan(key), 2000);
     const grid = variationGrid;
-    if (!grid || variations.length === 0 || (fit.current && !fitGrid)) {
+    if (!grid || !layout || headerHeight === 0) {
       return () => clearTimeout(giveUp);
     }
-    const unclip = fit.current;
+    const unclip = layout.fitted;
     const frame = requestAnimationFrame(() => {
       clearTimeout(giveUp);
       stopFan?.();
@@ -181,13 +211,16 @@
 
   onDestroy(() => stopFan?.());
 
-  const gridLabel = $derived(
-    gridMode === GridMode.BOX ? "Box grid" : "Diamond grid"
-  );
-  const galleryHref = $derived(buildGalleryLetterHref(info.label));
-  // A card link is optional; the panel is not. A card with a motion the
-  // encoder cannot represent is left out of the list instead of throwing
-  // during render.
+  // A picture shimmers in its slot until its first drawing is ready.
+  let readyTiles = $state<ReadonlySet<string>>(new Set());
+  function markReady(key: string): void {
+    if (readyTiles.has(key)) return;
+    readyTiles = new Set(readyTiles).add(key);
+  }
+
+  const galleryHref = $derived(buildGalleryLetterHref(label));
+  // A card link is optional; the dialog is not. A card with a motion the
+  // encoder cannot represent is left out instead of throwing during render.
   const learningLinks = $derived(
     learningMatches.flatMap((sequence) => {
       try {
@@ -204,546 +237,159 @@
   );
 </script>
 
-<div class="explorer-container">
-  <div class="explorer">
-    <section class="preview-column" aria-label="Selected letter variation">
-      <div class="identity-row">
-        <span class="state-badge" class:edited>
-          {edited ? "Unsaved draft" : "Canonical variation"}
-        </span>
-        <span class="variation-count">
-          {gridLabel} · {variations.length} pictographs
-        </span>
-      </div>
+<svelte:window
+  bind:innerWidth={viewportWidth}
+  bind:innerHeight={viewportHeight}
+/>
 
-      {#if draft}
-        <div class="motion-identity">
-          <strong>{draft.startPlacement} → {draft.endPlacement}</strong>
+<div class="explorer" class:fitted={layout?.fitted}>
+  <div class="toolbar" bind:clientHeight={toolbarHeight}>
+    <CodexBoardControls
+      {leftTurns}
+      {rightTurns}
+      {leftRotation}
+      {rightRotation}
+      {leftCanRotate}
+      {rightCanRotate}
+      {transformed}
+      {onTurnsChange}
+      {onRotationChange}
+      {onTransform}
+      onInvert={() => onTransform("invert")}
+      {onResetTransforms}
+      {onResetTurns}
+    />
+  </div>
+
+  {#if loadError}
+    <div class="load-state" role="alert">
+      <span>The variations did not load.</span>
+      <FilterChipBase
+        mode="action"
+        size="sm"
+        label="Try again"
+        icon="fas fa-rotate-right"
+        onclick={onRetry}
+      />
+    </div>
+  {:else if isLoading}
+    <div class="load-state" role="status" aria-label="Loading variations">
+      <ShimmerBlock width="100%" height="100%" borderRadius="0" />
+    </div>
+  {:else if variations.length === 0}
+    <div class="load-state">No variations recorded.</div>
+  {:else}
+    <div
+      bind:this={variationGrid}
+      class="variation-grid"
+      class:awaiting-fan={awaitingFan || !layout}
+      role="list"
+      aria-label={`${label} variations`}
+      style:grid-template-columns={layout
+        ? `repeat(${layout.columns}, ${layout.cell}px)`
+        : undefined}
+    >
+      {#each variations as pictograph, index (`${tileKey}-${index}`)}
+        {@const key = `${tileKey}-${index}`}
+        <div class="tile" role="listitem" data-variation-index={index}>
+          <div class="variation-picture">
+            <PictographTypeFrame letter={pictograph.letter}>
+              <div class="drawing">
+                <PictographContainer
+                  pictographData={pictograph}
+                  transitionKey={`codex-${key}`}
+                  themeOverride="dark"
+                  showGrid
+                  showTKA
+                  showReversals={false}
+                  showNonRadialPoints={pictograph.motions?.left?.gridMode ===
+                    GridMode.BOX}
+                  showHandPoints={false}
+                  showTnD={false}
+                  showElemental={false}
+                  showPropTnD={false}
+                  showPlacements={false}
+                  showHandColorKey={false}
+                  stepNumberOverride={false}
+                  leftPropTypeOverride={propType ?? PropType.STAFF}
+                  rightPropTypeOverride={propType ?? PropType.STAFF}
+                  onReady={() => markReady(key)}
+                />
+                {#if !readyTiles.has(key)}
+                  <div
+                    class="tile-shimmer"
+                    out:opaqueFade={{ duration: DURATION.fast }}
+                  >
+                    <ShimmerBlock width="100%" height="100%" borderRadius="0" />
+                  </div>
+                {/if}
+              </div>
+            </PictographTypeFrame>
+          </div>
         </div>
+      {/each}
+    </div>
+  {/if}
+
+  <div class="footer" bind:clientHeight={footerHeight}>
+    <div class="links">
+      {#if learningLinks.length > 0}
+        <span class="links-label">In TKA 1</span>
+        {#each learningLinks as { sequence, href } (sequence.id)}
+          <LinkChip {href}>
+            {simplifyRepeatedWord(sequence.word || sequence.name)}
+          </LinkChip>
+        {/each}
+      {:else if learningError}
+        <FilterChipBase
+          mode="action"
+          size="sm"
+          label="Retry TKA 1 cards"
+          icon="fas fa-rotate-right"
+          onclick={onLearningRetry}
+        />
       {/if}
-
-      <div class="editor-card">
-        <div class="section-heading compact-heading">
-          <div>
-            <h3>Pictograph turns</h3>
-            <p class="heading-note">Applied to every variation shown.</p>
-          </div>
-          {#if edited}
-            <button class="reset-button" type="button" onclick={onReset}>
-              Reset
-            </button>
-          {/if}
-        </div>
-
-        {#if draft}
-          <PropControlPair compact>
-            {#snippet leftContent()}
-              <div class="prop-editor">
-                <PropTurnsControl
-                  hand="left"
-                  turns={leftTurns}
-                  rotationDirection={leftRotation}
-                  showRotation={leftCanChooseRotation}
-                  compact
-                  onTurnsChange={(delta) => onTurnsChange(HandSide.LEFT, delta)}
-                  onRotationChange={(direction) =>
-                    onRotationChange(HandSide.LEFT, direction)}
-                />
-              </div>
-            {/snippet}
-            {#snippet rightContent()}
-              <div class="prop-editor">
-                <PropTurnsControl
-                  hand="right"
-                  turns={rightTurns}
-                  rotationDirection={rightRotation}
-                  showRotation={rightCanChooseRotation}
-                  compact
-                  onTurnsChange={(delta) =>
-                    onTurnsChange(HandSide.RIGHT, delta)}
-                  onRotationChange={(direction) =>
-                    onRotationChange(HandSide.RIGHT, direction)}
-                />
-              </div>
-            {/snippet}
-          </PropControlPair>
-        {/if}
-      </div>
-
-      <div class="draft-actions">
-        <button class="action secondary" type="button" onclick={onCopyLink}>
-          <i class="fa-solid fa-link" aria-hidden="true"></i>
-          Copy exact link
-        </button>
-        {#if composerHref}
-          <a class="action primary" href={composerHref}>
-            Continue in Composer
-            <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
-          </a>
-        {/if}
-      </div>
-      <p class="draft-note">
-        {edited
-          ? "The link carries these turn edits. This draft is not saved to your Library."
-          : "Choose a variation or add turns here. Composer is where you add more steps and save."}
-      </p>
-    </section>
-
-    <div class="detail-column">
-      <section class="variation-section" aria-labelledby="variation-heading">
-        <div class="section-heading">
-          <div>
-            <h3 id="variation-heading">{info.label} variations</h3>
-            <p class="heading-note">
-              Every variation is the same letter. Pick one to edit and share.
-            </p>
-          </div>
-          <div class="grid-switcher">
-            <span>View grid</span>
-            <SegmentedControl
-              options={GRID_OPTIONS}
-              value={gridMode}
-              onchange={onGridChange}
-              color="accent"
-              size="sm"
-              semantics="tabs"
-              ariaLabel="Pictograph grid"
-            />
-          </div>
-        </div>
-
-        <div
-          class="variation-stage"
-          bind:clientWidth={stageWidth}
-          bind:clientHeight={stageHeight}
-        >
-          {#if isLoading}
-            <div class="load-state" role="status">
-              <i class="fa-solid fa-circle-notch fa-spin" aria-hidden="true"
-              ></i>
-              Loading {gridLabel.toLowerCase()} variations…
-            </div>
-          {:else if loadError}
-            <div class="load-state" role="alert">
-              <span>The {gridLabel.toLowerCase()} variations did not load.</span
-              >
-              <button type="button" onclick={onRetry}>Try again</button>
-            </div>
-          {:else if variations.length === 0}
-            <div class="load-state">
-              No {gridLabel.toLowerCase()} variations recorded.
-            </div>
-          {:else}
-            <div
-              bind:this={variationGrid}
-              class="variation-grid themed-scrollbar"
-              class:awaiting-fan={awaitingFan}
-              aria-label={`${info.label} ${gridLabel} variations`}
-              style:grid-template-columns={fitGrid
-                ? `repeat(${fitGrid.columns}, ${fitGrid.cell}px)`
-                : undefined}
-            >
-              {#each variations as pictograph, index (pictograph.id ?? index)}
-                <button
-                  class="variation-button"
-                  data-variation-index={index}
-                  class:selected={index === selectedIndex}
-                  type="button"
-                  aria-pressed={index === selectedIndex}
-                  aria-label={`${info.label}, ${gridLabel}, variation ${index + 1}`}
-                  onclick={() => onVariationChange(index)}
-                >
-                  <span class="variation-picture">
-                    <PictographTypeFrame letter={pictograph.letter}>
-                      <GuidePictograph
-                        data={pictograph}
-                        size="sm"
-                        showGrid
-                        showArrows
-                        showTKA
-                        showNonRadialPoints={gridMode === GridMode.BOX}
-                        {propType}
-                        forceTheme="dark"
-                        eager
-                      />
-                    </PictographTypeFrame>
-                  </span>
-                </button>
-              {/each}
-            </div>
-          {/if}
-        </div>
-      </section>
-
-      <section class="contexts" aria-labelledby="contexts-heading">
-        <div class="section-heading">
-          <div>
-            <p class="eyebrow">Learn and use</p>
-            <h3 id="contexts-heading">Where {info.label} appears</h3>
-          </div>
-        </div>
-
-        <div class="context-grid">
-          <article class="context-card">
-            <span class="provenance">Canonical deck membership</span>
-            <h4>TKA 1: Learning Letters</h4>
-            {#if learningLoading}
-              <p class="context-state" role="status">
-                Checking the 19-card deck…
-              </p>
-            {:else if learningError}
-              <div class="context-state error">
-                <span>The deck could not be checked.</span>
-                <button type="button" onclick={onLearningRetry}
-                  >Try again</button
-                >
-              </div>
-            {:else if learningMatches.length > 0}
-              <p>
-                {learningMatches.length === 1
-                  ? "This letter appears in one canonical card."
-                  : `This letter appears in ${learningMatches.length} canonical cards.`}
-              </p>
-              <div
-                class="word-links"
-                aria-label={`${info.label} cards in Learning Letters`}
-              >
-                {#each learningLinks as { sequence, href } (sequence.id)}
-                  <LinkChip {href}>
-                    {simplifyRepeatedWord(sequence.word || sequence.name)}
-                  </LinkChip>
-                {/each}
-              </div>
-            {:else}
-              <p>
-                This letter is not a member of the 19-card Learning Letters
-                deck.
-              </p>
-            {/if}
-            <div class="context-links">
-              <LinkChip href="/browse/you/collections/founding_tka-1"
-                >View all 19 cards</LinkChip
-              >
-            </div>
-          </article>
-
-          <article class="context-card">
-            <span class="provenance">Exact notation query</span>
-            <h4>Gallery sequences</h4>
-            <p>
-              Find public sequences whose notation contains {info.label}. Names
-              and notes are not counted.
-            </p>
-            <a class="gallery-link" href={galleryHref}>
-              Search the Gallery for {info.label}
-              <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
-            </a>
-          </article>
-        </div>
-      </section>
+      <LinkChip href={galleryHref}>Find in Gallery</LinkChip>
+    </div>
+    <div class="actions">
+      <button class="action secondary" type="button" onclick={onCopyLink}>
+        <i class="fa-solid fa-link" aria-hidden="true"></i>
+        Copy link
+      </button>
+      {#if composerHref}
+        <a class="action primary" href={composerHref}>
+          Continue in Composer
+          <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+        </a>
+      {/if}
     </div>
   </div>
 </div>
 
 <style>
-  .explorer-container {
-    container: letter-explorer / inline-size;
-    min-width: 0;
-  }
-
   .explorer {
-    display: grid;
-    grid-template-columns: minmax(16rem, 0.6fr) minmax(0, 2fr);
-    gap: clamp(1rem, 2cqi, 2rem);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
     min-width: 0;
-    padding: clamp(0.9rem, 1.6cqi, 1.6rem);
+    padding: 0 1rem 1rem;
     --pictograph-border: none;
   }
 
-  .preview-column,
-  .detail-column,
-  .variation-section,
-  .contexts {
-    min-width: 0;
-  }
-
-  .preview-column {
-    align-self: start;
-    position: sticky;
-    top: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.85rem;
-  }
-
-  .detail-column {
-    display: flex;
-    flex-direction: column;
-    gap: clamp(1.25rem, 2cqi, 2rem);
-  }
-
-  .identity-row,
-  .section-heading,
-  .draft-actions,
-  .context-links,
-  .word-links {
-    display: flex;
-    align-items: center;
-  }
-
-  .identity-row {
-    justify-content: space-between;
-    gap: 0.75rem;
-    min-height: 2rem;
-  }
-
-  .state-badge,
-  .provenance,
-  .variation-count {
-    font-size: var(--font-size-compact, 0.75rem);
-  }
-
-  .state-badge,
-  .provenance {
-    display: inline-flex;
-    align-items: center;
-    width: fit-content;
-    min-height: 1.75rem;
-    padding: 0.2rem 0.65rem;
-    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.12));
-    border-radius: 999px;
-    color: var(--theme-text-muted, rgba(255, 255, 255, 0.68));
-    background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-  }
-
-  .state-badge.edited {
-    border-color: color-mix(in srgb, var(--semantic-warning) 55%, transparent);
-    color: var(--semantic-warning);
-  }
-
-  .variation-count {
-    color: var(--theme-text-dim, rgba(255, 255, 255, 0.58));
-    text-align: right;
-  }
-
-  .variation-picture :global(.guide-pictograph),
-  .variation-picture :global(.guide-pictograph.size-sm .pictograph-wrapper) {
-    width: 100%;
-    height: 100%;
-    max-width: none;
-    gap: 0;
-  }
-
-  .load-state,
-  .context-state {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.65rem;
-    color: var(--theme-text-dim, rgba(255, 255, 255, 0.64));
-    font-size: var(--font-size-sm, 0.875rem);
-    text-align: center;
-  }
-
-  .motion-identity {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.2rem;
-    color: var(--theme-text, #fff);
-    text-align: center;
-  }
-
-  .motion-identity strong {
-    font-size: clamp(1rem, 0.5cqi + 0.85rem, 1.35rem);
-  }
-
-  .editor-card,
-  .context-card {
-    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
-    border-radius: var(--radius-lg, 16px);
-    background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
-  }
-
-  .editor-card {
-    padding: 0.85rem;
-  }
-
-  .section-heading {
-    justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 0.9rem;
-  }
-
-  .compact-heading {
-    margin-bottom: 0.7rem;
-  }
-
-  .eyebrow {
-    margin: 0 0 0.15rem;
-    color: var(--theme-text-dim, rgba(255, 255, 255, 0.58));
-    font-size: var(--font-size-compact, 0.75rem);
-    font-weight: 750;
-    letter-spacing: 0.09em;
-    text-transform: uppercase;
-  }
-
-  .heading-note {
-    margin-top: 0.2rem;
-    color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
-    font-size: var(--font-size-sm, 0.875rem);
-    line-height: 1.4;
-  }
-
-  h3,
-  h4,
-  p {
-    margin: 0;
-  }
-
-  h3 {
-    color: var(--theme-text, #fff);
-    font-size: clamp(1.05rem, 0.65cqi + 0.85rem, 1.55rem);
-    line-height: 1.2;
-  }
-
-  h4 {
-    color: var(--theme-text, #fff);
-    font-size: clamp(1rem, 0.3cqi + 0.9rem, 1.25rem);
-  }
-
-  .reset-button,
-  .load-state button,
-  .context-state button {
-    min-height: 44px;
-    padding: 0.45rem 0.85rem;
-    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.12));
-    border-radius: 10px;
-    color: var(--theme-text, #fff);
-    background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
-    font-family: inherit;
-    font-size: var(--font-size-sm, 0.875rem);
-    font-weight: 700;
-    line-height: 1;
-    cursor: pointer;
-  }
-
-  .prop-editor {
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-  }
-
-  .draft-actions {
-    gap: 0.65rem;
-  }
-
-  .action,
-  .gallery-link {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.55rem;
-    min-height: 44px;
-    border-radius: 11px;
-    font-size: var(--font-size-sm, 0.875rem);
-    font-weight: 750;
-    text-decoration: none;
-    cursor: pointer;
-  }
-
-  .action {
-    flex: 1 1 0;
-    padding: 0.55rem 0.8rem;
-  }
-
-  .action.secondary {
-    border: 1px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.16));
-    color: var(--theme-text, #fff);
-    background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
-  }
-
-  .action.primary,
-  .gallery-link {
-    border: 1px solid color-mix(in srgb, var(--theme-accent) 70%, transparent);
-    color: #fff;
-    background: color-mix(in srgb, var(--theme-accent) 82%, #111 18%);
-  }
-
-  .draft-note,
-  .context-card p {
-    color: var(--theme-text-muted, rgba(255, 255, 255, 0.72));
-    font-size: var(--font-size-sm, 0.875rem);
-    line-height: 1.55;
-  }
-
-  .draft-note {
-    text-align: center;
-  }
-
-  .grid-switcher {
-    display: flex;
-    align-items: center;
-    gap: 0.7rem;
-    min-width: min(100%, 18rem);
-  }
-
-  .grid-switcher > span {
-    flex: 0 0 auto;
-    color: var(--theme-text-dim, rgba(255, 255, 255, 0.58));
-    font-size: var(--font-size-sm, 0.875rem);
-  }
-
-  .grid-switcher :global(.segmented-control) {
-    flex: 1;
-  }
-
-  .load-state {
-    min-height: 9rem;
-    flex-direction: column;
+  .toolbar :global(.board-controls) {
+    padding: 0;
   }
 
   .variation-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 0.65rem;
+    justify-content: center;
   }
 
-  .variation-button {
-    position: relative;
+  .tile {
     min-width: 0;
-    padding: 0;
-    overflow: hidden;
-    border: 0;
-    border-radius: 0;
-    color: var(--theme-text, #fff);
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
-    cursor: pointer;
-    transition:
-      border-color var(--duration-fast) var(--ease-standard),
-      transform var(--duration-fast) var(--ease-standard),
-      box-shadow var(--duration-fast) var(--ease-standard);
-  }
-
-  .variation-button:hover {
-    transform: translateY(-2px);
-  }
-
-  .variation-button.selected {
-    outline: 3px solid var(--theme-accent);
-    outline-offset: 2px;
-    box-shadow: 0 0 16px
-      color-mix(in srgb, var(--theme-accent) 32%, transparent);
-  }
-
-  .variation-button:focus-visible,
-  .action:focus-visible,
-  .gallery-link:focus-visible {
-    outline: 2px solid var(--theme-accent);
-    outline-offset: 2px;
   }
 
   .variation-picture {
@@ -752,182 +398,110 @@
     aspect-ratio: 1;
   }
 
+  .drawing {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
+  .tile-shimmer {
+    position: absolute;
+    inset: 0;
+    display: grid;
+  }
+
   /* The deck (codex-fan.ts): cards wait unseen for their first frame, then
      each flies on its own compositor layer, made up front rather than on
      the first animated frame. */
-  .variation-grid.awaiting-fan .variation-button {
+  .variation-grid.awaiting-fan .tile {
     opacity: 0;
   }
 
-  .variation-grid:global(.fanning) .variation-button {
+  .variation-grid:global(.fanning) .tile {
     will-change: transform;
   }
 
-  /* Desktop: the explorer is the dialog's whole body and nothing scrolls.
-     Same query as `fit` in the script. The variation stage is the box under
-     its heading, and the script picks the column count and cell size that
-     fill it. */
-  @media (min-width: 64rem) and (min-height: 700px) {
-    .explorer-container {
-      height: 100%;
-    }
-    .explorer {
-      box-sizing: border-box;
-      height: 100%;
-      grid-template-rows: minmax(0, 1fr);
-    }
-    .preview-column {
-      position: static;
-      align-self: stretch;
-      min-height: 0;
-    }
-    .detail-column {
-      min-height: 0;
-    }
-    .variation-section {
-      flex: 1 1 0;
-      min-height: 0;
-      display: flex;
-      flex-direction: column;
-    }
-    .variation-stage {
-      flex: 1 1 0;
-      min-height: 0;
-      display: grid;
-      place-content: center;
-    }
-  }
-
-  .context-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.85rem;
-  }
-
-  .context-card {
+  .load-state {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
-    gap: 0.75rem;
-    padding: clamp(1rem, 1.4cqi, 1.4rem);
+    align-items: center;
+    justify-content: center;
+    gap: 0.65rem;
+    min-height: 12rem;
+    color: var(--theme-text-dim, rgba(255, 255, 255, 0.64));
+    font-size: var(--font-size-sm, 0.875rem);
+    text-align: center;
   }
 
-  .word-links,
-  .context-links {
+  .load-state[role="status"] {
+    display: grid;
+  }
+
+  .footer {
+    display: flex;
     flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem 1.5rem;
+  }
+
+  .links,
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
     gap: 0.5rem;
   }
 
-  .gallery-link {
-    margin-top: auto;
-    padding: 0.55rem 0.9rem;
+  .links-label {
+    color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
+    font-size: var(--font-size-sm, 0.875rem);
   }
 
-  .context-state.error {
-    align-items: flex-start;
-    flex-direction: column;
+  .action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    min-height: 44px;
+    padding: 0.55rem 0.95rem;
+    border-radius: 11px;
+    font-family: inherit;
+    font-size: var(--font-size-sm, 0.875rem);
+    font-weight: 750;
+    text-decoration: none;
+    cursor: pointer;
   }
 
-  /* One column: the variations lead, then the turns and links, then where
-     the letter appears. */
-  @container letter-explorer (max-width: 58rem) {
+  .action.secondary {
+    border: 1px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.16));
+    color: var(--theme-text, #fff);
+    background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
+  }
+
+  .action.primary {
+    border: 1px solid color-mix(in srgb, var(--theme-accent) 70%, transparent);
+    color: #fff;
+    background: color-mix(in srgb, var(--theme-accent) 82%, #111 18%);
+  }
+
+  .action:focus-visible {
+    outline: 2px solid var(--theme-accent);
+    outline-offset: 2px;
+  }
+
+  @media (max-width: 520px) {
     .explorer {
-      grid-template-columns: 1fr;
+      padding: 0 0.75rem 0.75rem;
     }
 
-    .detail-column {
-      display: contents;
-    }
-
-    .variation-section {
-      order: 1;
-    }
-
-    .preview-column {
-      order: 2;
-      position: static;
-    }
-
-    .contexts {
-      order: 3;
-    }
-  }
-
-  @container letter-explorer (max-width: 42rem) {
-    .section-heading {
-      align-items: stretch;
-      flex-direction: column;
-    }
-
-    .grid-switcher {
+    .actions,
+    .action {
       width: 100%;
-    }
-
-    .variation-grid {
-      grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr));
-      padding: 0.3rem;
-    }
-
-    .context-grid {
-      grid-template-columns: 1fr;
-    }
-  }
-
-  @container letter-explorer (max-width: 28rem) {
-    .explorer {
-      padding: 0.75rem;
-    }
-
-    .identity-row,
-    .draft-actions {
-      align-items: stretch;
-      flex-direction: column;
-    }
-
-    .variation-count {
-      text-align: left;
     }
 
     .action {
-      flex-basis: auto;
-      width: 100%;
-    }
-  }
-
-  @media (max-height: 600px) and (min-width: 700px) {
-    .explorer {
-      grid-template-columns: minmax(14rem, 0.8fr) minmax(0, 1.8fr);
-      gap: 1rem;
-    }
-
-    .preview-column {
-      position: sticky;
-    }
-
-    .section-heading {
-      align-items: center;
-      flex-direction: row;
-    }
-
-    .variation-grid {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      overflow: visible;
-      padding: 0;
-    }
-
-    .variation-button {
-      width: auto;
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .variation-button {
-      transition: none;
-    }
-
-    .variation-button:hover {
-      transform: none;
+      flex: 1 1 0;
     }
   }
 </style>

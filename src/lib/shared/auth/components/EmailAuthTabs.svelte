@@ -127,6 +127,7 @@
           bind:email
           showModeSwitch={showModeSwitch && !compact}
           onUseCode={useCodeInstead}
+          onCreateAccount={() => chooseTab("password")}
         />
       {/if}
     </Crossfade>

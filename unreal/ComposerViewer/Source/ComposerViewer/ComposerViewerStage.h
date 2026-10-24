@@ -25,6 +25,9 @@ public:
     virtual void Tick(float DeltaSeconds) override;
 
 private:
+#if WITH_DEV_AUTOMATION_TESTS
+    friend class FComposerViewerBridgeTest;
+#endif
     UPROPERTY() TObjectPtr<USceneComponent> Root;
     UPROPERTY() TObjectPtr<UStaticMeshComponent> Floor;
     UPROPERTY() TObjectPtr<UStaticMeshComponent> Dais;
@@ -32,15 +35,24 @@ private:
     UPROPERTY() TObjectPtr<UPointLightComponent> RimLight;
     UPROPERTY() TObjectPtr<USkyLightComponent> FillLight;
     UPROPERTY() TObjectPtr<ACameraActor> Camera;
-    UPROPERTY() TObjectPtr<AComposerViewerPerformer> Performer;
+    UPROPERTY() TMap<FString, TObjectPtr<AComposerViewerPerformer>> Performers;
     FString Session;
     FString SelectedPerformerId;
     int32 Revision = 0;
     bool bInputBound = false;
     bool bCameraBound = false;
-    bool bStaffReady = false;
-    bool bFanReady = false;
+    bool bComposerCameraFov = false;
+    float ComposerVerticalFov = 50.f;
+    int32 CameraViewportWidth = 0;
+    int32 CameraViewportHeight = 0;
+    TArray<FString> SupportedCharacterIds;
     TArray<FString> SupportedPropIds;
+    TMap<FString, FString> RigHashes;
+    FString MotionTransferId;
+    FString MotionPerformerId;
+    TArray<FString> MotionChunks;
+    int64 MotionTotalBytes = 0;
+    int64 MotionReceivedChars = 0;
     FVector CameraTarget = FVector(0, 0, 110);
     FString CameraMode = TEXT("orbit");
     TWeakPtr<IPixelStreaming2Streamer> Streamer;
@@ -53,6 +65,12 @@ private:
     bool SetPerformer(const TSharedPtr<FJsonObject>& Payload, FString& ErrorCode, FString& ErrorMessage);
     bool SetCamera(const TSharedPtr<FJsonObject>& Payload, FString& ErrorCode, FString& ErrorMessage);
     bool SetPlayback(const TSharedPtr<FJsonObject>& Payload, FString& ErrorCode, FString& ErrorMessage);
+    bool BeginMotion(const TSharedPtr<FJsonObject>& Payload, FString& ErrorCode, FString& ErrorMessage);
+    bool MotionChunk(const TSharedPtr<FJsonObject>& Payload, FString& ErrorCode, FString& ErrorMessage);
+    bool CommitMotion(const TSharedPtr<FJsonObject>& Payload, FString& ErrorCode, FString& ErrorMessage);
+    void ClearMotionTransfer();
     void AimCamera();
-    void LoadSupportedPropIds();
+    void UpdateComposerCameraFov();
+    static float HorizontalFovForVertical(float VerticalFov, float Aspect);
+    void LoadAssetCatalog();
 };

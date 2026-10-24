@@ -77,10 +77,10 @@ const UNMEASURED_SHOULDER_HALF_WIDTH_M = 0.223;
 const GRIP_REACH_M = 0.53;
 /** Staff points are tested this far apart. Between two of them the centre
  *  line can dip into a grown ellipse by well under a millimetre. */
-const STAFF_STEP_M = 0.01;
+export const STAFF_STEP_M = 0.01;
 /** The body may move along this many directions, evenly round the ring (15
  *  degrees apart); straight back and straight sideways are among them. */
-const MOVE_DIRECTIONS = 24;
+export const MOVE_DIRECTIONS = 24;
 /**
  * Planning costs per metre: staff left inside the torso, the move itself, and
  * the change in the move from one sample to the next. Tuned on the rig
@@ -88,9 +88,9 @@ const MOVE_DIRECTIONS = 24;
  * rendered torso contacts rose by 17% and 54% on the two rigs; at double it,
  * more moves were cut short (125 samples against 85) for no further gain.
  */
-const LEFT_INSIDE_COST = 20;
-const MOVE_COST = 1;
-const TURN_COST = 16;
+export const LEFT_INSIDE_COST = 20;
+export const MOVE_COST = 1;
+export const TURN_COST = 16;
 /**
  * Half-width of the ramp that scales a move back to the arms' reach. At 0.1
  * steps the body's top speed nearly doubled on the scoreboard; at 0.3 it held
@@ -249,6 +249,9 @@ export interface BodyClearancePose {
   chestRad: number;
   /** Spine1's yaw; the waist turns with it. */
   spine1Rad: number;
+  /** The hips' yaw; 0 (square to the audience) unless the whole body turns,
+   *  as the body response plans (`body-response.ts`). */
+  pelvisRad?: number;
 }
 
 /** A direction on the floor, in the performer frame. */
@@ -258,7 +261,7 @@ export interface BodyMove {
 }
 
 /** The ring of moves the planner chooses from; index 18 is straight back. */
-const MOVE_RING: readonly BodyMove[] = Array.from(
+export const MOVE_RING: readonly BodyMove[] = Array.from(
   { length: MOVE_DIRECTIONS },
   (_, k) => ({
     x: Math.cos((2 * Math.PI * k) / MOVE_DIRECTIONS),
@@ -295,7 +298,7 @@ function partAt(
  * lies (qc = x0² + y0² - 1), and the four factors that carry a unit move into
  * the unit circle.
  */
-interface StaffPoints {
+export interface StaffPoints {
   count: number;
   /** x0, y0, qc, cos/halfU, sin/halfU, sin/halfV, cos/halfV per record. */
   data: Float64Array;
@@ -303,23 +306,27 @@ interface StaffPoints {
   inside: boolean;
 }
 
-const RECORD_STRIDE = 7;
+export const RECORD_STRIDE = 7;
 
 /**
  * Points that no move within `horizonM` can bring into their part are left
  * out; a need up to the horizon is exact without them, and a longer one stays
- * longer than the horizon.
+ * longer than the horizon. Points sit `stepM` apart along each staff.
  */
-function prepareStaffPoints(
+export function prepareStaffPoints(
   staffs: readonly (StaffLine | null)[],
   pose: BodyClearancePose,
   model: BodyClearanceModel,
-  horizonM: number
+  horizonM: number,
+  stepM: number = STAFF_STEP_M
 ): StaffPoints {
   const turns: Record<TorsoTurn, { c: number; s: number }> = {
     chest: { c: Math.cos(pose.chestRad), s: Math.sin(pose.chestRad) },
     waist: { c: Math.cos(pose.spine1Rad), s: Math.sin(pose.spine1Rad) },
-    pelvis: { c: 1, s: 0 },
+    pelvis: {
+      c: Math.cos(pose.pelvisRad ?? 0),
+      s: Math.sin(pose.pelvisRad ?? 0),
+    },
   };
   const sh = model.shoulderHalfWidthM;
   const r = model.staffRadiusM;
@@ -329,7 +336,7 @@ function prepareStaffPoints(
     if (!staff) continue;
     const { a, b } = staff;
     const length = Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z);
-    const count = Math.max(2, Math.ceil(length / STAFF_STEP_M));
+    const count = Math.max(2, Math.ceil(length / stepM));
     for (let k = 0; k <= count; k++) {
       const s = k / count;
       const px = a.x + (b.x - a.x) * s;
@@ -375,6 +382,21 @@ function chainedNeed(
   scratch: Float64Array
 ): number {
   if (!points.inside) return 0;
+  return chainEnd(scratch, staffIntervals(points, mx, mz, scratch), 0);
+}
+
+/**
+ * The stretches of a move along the unit `(mx, mz)` during which some staff
+ * point is inside its part, as [enter, leave] pairs in `scratch` (two slots a
+ * point); returns how many slots it filled. Stretches that end before the move
+ * starts are left out, and one under way at the start enters at zero.
+ */
+export function staffIntervals(
+  points: StaffPoints,
+  mx: number,
+  mz: number,
+  scratch: Float64Array
+): number {
   // In the body's frame the points move against the body.
   const fx = -mx;
   const fz = -mz;
@@ -398,8 +420,21 @@ function chainedNeed(
     scratch[m++] = Math.max(0, (-qb - root) / (2 * qa));
     scratch[m++] = leave;
   }
-  // Chain from zero through every interval that reaches it.
-  let reach = 0;
+  return m;
+}
+
+/**
+ * Where the chain of stretches that covers `from` ends: `from` itself when no
+ * stretch covers it. Less `from`, it is the further move a body stopped at
+ * `from` needs to leave every staff point behind.
+ */
+function chainEnd(
+  scratch: Float64Array,
+  m: number,
+  from: number
+): number {
+  // Chain from `from` through every interval that reaches it.
+  let reach = from;
   for (let grew = true; grew; ) {
     grew = false;
     for (let k = 0; k < m; k += 2) {
@@ -434,7 +469,7 @@ export function bodyClearanceNeed(
 
 /** One hand for the reach test: its grip less its shoulder, and how far apart
  *  a move may leave them. */
-interface ReachHand {
+export interface ReachHand {
   vx: number;
   vy: number;
   vz: number;
@@ -442,7 +477,7 @@ interface ReachHand {
 }
 
 /** The hands' reach at one score time. A grip is the middle of its staff. */
-function reachHands(
+export function reachHands(
   staffs: readonly (StaffLine | null)[],
   chestRad: number,
   model: BodyClearanceModel
@@ -529,7 +564,7 @@ function moveCandidates(
   return any ? { x, z, cost, short } : null;
 }
 
-interface ChosenMoves {
+export interface ChosenMoves {
   x: Float64Array;
   z: Float64Array;
   short: Uint8Array;
@@ -610,7 +645,7 @@ function chooseMoves(
  * keeps the hull of its neighbours, then scaled back to the arms' reach and
  * the cap.
  */
-function rampMoves(
+export function rampMoves(
   chosen: ChosenMoves,
   hands: readonly (ReachHand[] | null)[],
   maxM: number,
@@ -726,6 +761,11 @@ export interface BodyClearanceSample {
   x: number;
   /** Toward the audience; a move back is negative. */
   z: number;
+  /** Up; a duck is negative. Absent is 0: only the body response ducks. */
+  y?: number;
+  /** The body's turn about the vertical through the hips, radians, the stance
+   *  yaw's sign. Absent is 0: only the body response turns the body. */
+  yaw?: number;
 }
 
 /** What an untracked host applies: nothing. */
@@ -734,7 +774,7 @@ export const NO_BODY_CLEARANCE: Readonly<BodyClearanceSample> = Object.freeze({
   z: 0,
 });
 
-function staffLine(
+export function staffLine(
   prop: BodyClearanceProp | null,
   depthM: number,
   halfLengthM: number

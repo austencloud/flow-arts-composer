@@ -16,6 +16,17 @@ describe("profile read verification queries", () => {
     expect(query).toContain("distinct_id NOT LIKE 'agent-%'");
   });
 
+  // $exception_message is never populated by the web SDK; matching on it alone
+  // reported zero denials while PostHog held three users/{id} get denials.
+  it("matches permission denials in the exception values the SDK sends", () => {
+    for (const query of [
+      buildProfileReadExposureQuery("2026-08-05T00:00:00Z"),
+      buildProfileReadDenialsQuery("2026-08-05T00:00:00Z"),
+    ]) {
+      expect(query).toContain('toString(properties."$exception_values")');
+    }
+  });
+
   it("bounds the recurrence query", () => {
     expect(buildProfileReadDenialsQuery("2026-08-05T00:00:00Z", 999)).toContain(
       "LIMIT 500"

@@ -108,6 +108,10 @@ import {
 } from "#lib/shared/library/services/library-batch-operations.js";
 import { LibraryError } from "#lib/shared/library/domain/library-error.js";
 import {
+  claimBlockedPublishWarning,
+  isPublishPermissionDenied,
+} from "#lib/shared/library/services/blocked-publish-policy.js";
+import {
   isEmptySequence,
   meetsCommunityMinimum,
   MIN_COMMUNITY_STEPS,
@@ -188,6 +192,36 @@ export class LibraryRepository {
       // ErrorHandler itself failed - fall back to toast
       toast.error(message);
     }
+  }
+
+  /**
+   * Warn that a public mirror did not land. A rules refusal repeats on every
+   * attempt with the same content, so it is shown once per device per
+   * sequence (session triage E3/F2); network and other failures warn each
+   * time, as before.
+   */
+  private reportPublishFailure(
+    message: string,
+    error: unknown,
+    sequenceId: string
+  ): void {
+    if (
+      isPublishPermissionDenied(error) &&
+      !claimBlockedPublishWarning(sequenceId)
+    ) {
+      console.warn(
+        "[LibraryRepository] Publish still refused (already warned on this device):",
+        { sequenceId }
+      );
+      return;
+    }
+    this.reportError(
+      message,
+      error,
+      "public-index-sync",
+      { sequenceId },
+      "warning"
+    );
   }
 
   /**
@@ -747,12 +781,10 @@ export class LibraryRepository {
       try {
         await this.publicIndexSyncer.syncToPublicIndex(finalSequence, userId);
       } catch (error) {
-        this.reportError(
+        this.reportPublishFailure(
           "Sequence saved locally, but it is not public on other devices yet.",
           error,
-          "public-index-sync",
-          { sequenceId: finalSequence.id },
-          "warning"
+          finalSequence.id
         );
         throw error;
       }
@@ -1128,12 +1160,10 @@ export class LibraryRepository {
             userId
           );
         } catch (error) {
-          this.reportError(
+          this.reportPublishFailure(
             "Sequence updated, but it is not public on other devices yet.",
             error,
-            "public-index-sync",
-            { sequenceId },
-            "warning"
+            sequenceId
           );
           throw error;
         }

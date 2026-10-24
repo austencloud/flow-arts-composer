@@ -13,27 +13,24 @@ function station(name: string) {
 }
 
 describe("Sundial performer shadows", () => {
-  it("unwraps the Threlte scene and flags only sun station meshes", () => {
-    const current = new Scene();
+  it("flags only sun station meshes", () => {
+    const scene = new Scene();
     const sun = station("performer-station-cave-sun-north");
     const moon = station("performer-station-cave-moon-north");
-    current.add(sun.root, moon.root);
-    expect(castSundialPerformerShadows({ current })).toBe(1);
+    scene.add(sun.root, moon.root);
+    expect(castSundialPerformerShadows(scene)).toBe(1);
     expect(sun.mesh.castShadow).toBe(true);
     expect(moon.mesh.castShadow).toBe(false);
     expect(sun.root.castShadow).toBe(false);
   });
 
-  it("finds late arrivals on later sweeps and reads the current scene", () => {
-    const scene = { current: new Scene() };
+  it("finds late arrivals on later sweeps and handles a fresh scene", () => {
+    const scene = new Scene();
     expect(castSundialPerformerShadows(scene)).toBe(0);
     for (const direction of ["north", "east", "south", "west"]) {
-      scene.current.add(
-        station(`performer-station-cave-sun-${direction}`).root
-      );
+      scene.add(station(`performer-station-cave-sun-${direction}`).root);
     }
     expect(castSundialPerformerShadows(scene)).toBe(4);
-    scene.current = new Scene();
-    expect(castSundialPerformerShadows(scene)).toBe(0);
+    expect(castSundialPerformerShadows(new Scene())).toBe(0);
   });
 });

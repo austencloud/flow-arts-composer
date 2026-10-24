@@ -86,7 +86,6 @@ Provides consistent styling and interaction patterns for all generation setting 
   <div
     bind:this={cardElement}
     class="base-card clickable"
-    class:cap-card={title === "LOOP Type"}
     class:quiet={appearance === "quiet"}
     role="button"
     tabindex="0"
@@ -383,90 +382,9 @@ Provides consistent styling and interaction patterns for all generation setting 
     height: 100%;
   }
 
-  /* ✨ MAGICAL LOOP CARD - Animated Mesh Gradient */
-  .base-card.cap-card {
-    /* Use the gradient passed from LOOPCard component */
-    background: var(--card-color) !important;
-    background-size: 300% 300% !important;
-
-    /* Apply mesh gradient flow animation */
-    animation: meshGradientFlow 15s var(--ease-standard) infinite !important;
-
-    /* Standard shadow matching other cards - no purple glow */
-    box-shadow:
-      0 1px 2px hsl(var(--shadow-color) / 0.15),
-      0 2px 4px hsl(var(--shadow-color) / 0.12),
-      0 4px 8px hsl(var(--shadow-color) / 0.1),
-      inset 0 1px 0 var(--theme-stroke) !important;
-  }
-
-  /* Mesh Gradient Flow Animation - Organic color movement */
-  @keyframes meshGradientFlow {
-    0%,
-    100% {
-      background-position: 0% 50%;
-    }
-    25% {
-      background-position: 50% 100%;
-    }
-    50% {
-      background-position: 100% 50%;
-    }
-    75% {
-      background-position: 50% 0%;
-    }
-  }
-
-  /* Enhanced shadow on hover - matching other cards - only on hover-capable devices */
-  @media (hover: hover) {
-    .base-card.cap-card:hover {
-      animation: meshGradientFlow 15s var(--ease-standard) infinite !important;
-
-      box-shadow:
-        0 2px 4px hsl(var(--shadow-color) / 0.12),
-        0 4px 8px hsl(var(--shadow-color) / 0.1),
-        0 8px 16px hsl(var(--shadow-color) / 0.08),
-        0 16px 24px hsl(var(--shadow-color) / 0.06),
-        inset 0 1px 0 var(--theme-stroke) !important;
-    }
-  }
-
-  /* Desktop optimization removed - container query units handle smooth scaling automatically */
-
-  /* Respect motion preferences - disable animations but keep glow */
-  @media (prefers-reduced-motion: reduce) {
-    .base-card.cap-card {
-      animation: none !important;
-      background-position: 0% 50% !important;
-    }
-  }
-
-  /* 📱 LANDSLOOPE MOBILE: Adjust LOOP card styling for compact mode */
-  @media (min-aspect-ratio: 17/10) and (max-height: 500px) {
-    .base-card.cap-card {
-      /* Let grid control height - no forced constraints */
-      grid-row: span 1;
-    }
-
-    .base-card.cap-card .card-value {
-      font-size: clamp(10px, 1.5vmin, 14px);
-      margin: 0;
-    }
-
-    .base-card.cap-card .click-indicator {
-      width: clamp(14px, 3cqw, 18px);
-      height: clamp(14px, 3cqw, 18px);
-      top: clamp(6px, 1cqh, 10px);
-      right: clamp(6px, 1cqw, 10px);
-    }
-  }
-
   /* Accessibility: Respect user's motion preferences (WCAG AAA) */
   @media (prefers-reduced-motion: reduce) {
     .base-card {
-      animation: none;
-    }
-    .cap-card {
       animation: none;
     }
     .clickable {

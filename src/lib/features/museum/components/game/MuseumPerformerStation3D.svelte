@@ -11,7 +11,8 @@
   import { onDestroy, untrack } from "svelte";
   import { T } from "@threlte/core";
   import { Color } from "three";
-  import { PerformerRig } from "@austencloud/scene-3d";
+  import { PerformerRig, cmToUnits } from "@austencloud/scene-3d";
+  import type { AvatarPoseDiagnostics } from "@austencloud/scene-3d";
   import { Plane } from "@austencloud/scene-3d";
   import { PlaneMode } from "@austencloud/scene-3d";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
@@ -29,6 +30,14 @@
     type MuseumSequenceData,
   } from "../../data/museum-exhibit-sequences";
   import { toScenePropType } from "#lib/shared/3d/domain/scene-prop-type.js";
+  import { resolvePerformerContact } from "#lib/shared/3d/domain/performer-contact-displacement.js";
+  import {
+    fitStaffLengthForHug,
+    measurePerformerReach,
+    type PerformerReachMeasurements,
+  } from "#lib/shared/3d/domain/performer-reach-measurements.js";
+  import { DEFAULT_PERFORMER_HAND_DISTANCE } from "#lib/shared/3d/domain/performer-hand-distance.js";
+  import { captureReachInputs } from "#lib/shared/3d/domain/performer-orbit-fit.js";
   import EffectOrchestrator3D from "#lib/shared/3d/effects/EffectOrchestrator3D.svelte";
   import { buildTipEffectMap } from "#lib/shared/animation-engine/domain/tip-effect-map.js";
   import { museumPropPair } from "#lib/features/museum/services/museum-prop-pair.js";
@@ -226,6 +235,57 @@
   const leftPropType = $derived<PropType>(propPair.leftPropType);
   const rightPropType = $derived<PropType>(propPair.rightPropType);
 
+  // The staff keeps its authored path and the arms reach it, the way every
+  // other live performer holds its props. The rig's default contact is a
+  // clamped pull of at most 6 cm toward the palm, so wherever the arm could
+  // not follow the staff the prop floated free of the hand: 30-45 cm on cave
+  // moon mp's turns. Staffs the hands cannot reach from the planned stance
+  // move toward them, and a seek clears the animator's contact history.
+  // Exact contact also needs the body's measured reach, read once from the
+  // rig's first diagnostics as LiveSequencePerformer3D does: it fits the staff
+  // length and the contact plan to these arms, and without it the arm still
+  // fell 50 cm short on the widest beats. Closing the fingers on the staff is a
+  // per-frame solve, so a station paused out of the visitor's room poses once
+  // and then holds still.
+  let reachMeasurements = $state<PerformerReachMeasurements | null>(null);
+  const captureInputs = $derived(
+    captureReachInputs(
+      "measured",
+      DEFAULT_PERFORMER_HAND_DISTANCE,
+      reachMeasurements
+    )
+  );
+  const staffFit = $derived(
+    reachMeasurements ? fitStaffLengthForHug(reachMeasurements) : null
+  );
+  const propLength = $derived(
+    (staffFit?.fits
+      ? cmToUnits(staffFit.recommendedStaffLengthCm)
+      : userProportionsState.staffLength) * (performerState?.gridScale ?? 1)
+  );
+  const contact = $derived(
+    performerState
+      ? resolvePerformerContact(performerState, {
+          staffLengthM: propLength,
+          measurements: captureInputs.measurements,
+        })
+      : null
+  );
+  $effect(() => {
+    const hands = captureInputs.hands;
+    untrack(() => performerState?.setHandDistance(hands));
+  });
+  function captureReach(diagnostics: AvatarPoseDiagnostics): void {
+    if (reachMeasurements) return;
+    reachMeasurements = measurePerformerReach({
+      leftUpperArmM: diagnostics.leftUpperArmLength,
+      leftForearmM: diagnostics.leftForearmLength,
+      rightUpperArmM: diagnostics.rightUpperArmLength,
+      rightForearmM: diagnostics.rightForearmLength,
+      shoulderWidthM: diagnostics.shoulderWidth,
+    });
+  }
+
   const platformColor = new Color(0x3a3028);
 </script>
 
@@ -244,7 +304,7 @@
     </T.Mesh>
   {/if}
 
-  {#if performerState}
+  {#if performerState && contact}
     <!--
       @austencloud/scene-3d still speaks its colour-named boundary: the rig
       reads `avatarState.bluePropState` and renders the effects slot with
@@ -255,6 +315,8 @@
       hands. That was every museum performer from 2026-08-31 until this.
     -->
     <PerformerRig
+      contactMode="prop-authoritative"
+      posePlayback={performerState.isPlaying ? "live" : "paused"}
       position={{ x: 0, z: 0 }}
       {facingAngle}
       planeMode={PlaneMode.WALL}
@@ -264,8 +326,19 @@
       gridMode={(resolvedSequence?.gridMode ?? "diamond") as GridMode}
       bluePropType={toScenePropType(leftPropType)}
       redPropType={toScenePropType(rightPropType)}
-      bluePropState={performerState.leftPropState}
-      redPropState={performerState.rightPropState}
+      bluePropState={contact.leftProp}
+      redPropState={contact.rightProp}
+      pairSeparation={!contact.planned}
+      contactResetKey={contact.resetKey}
+      {propLength}
+      propScale={performerState.gridScale}
+      stanceYaw={contact.stance.yawRad}
+      stanceSegments={contact.stance.segments}
+      spinePitchOffset={contact.stance.pitchRad}
+      blueHandDepthOffset={contact.stance.leftDepthOffsetM}
+      redHandDepthOffset={contact.stance.rightDepthOffsetM}
+      headDodge={true}
+      onCollisionEvents={(_events, diagnostics) => captureReach(diagnostics)}
       groundOffset={museumGroundOffset}
       enableLocomotion={true}
       enableFootPlanting={true}

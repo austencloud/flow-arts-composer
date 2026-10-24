@@ -1,7 +1,20 @@
 import { page } from "vitest/browser";
 import { render } from "vitest-browser-svelte";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import ViewerOverflowMenuDrawerHarness from "./ViewerOverflowMenu.drawer-regression.test-harness.svelte";
+
+// The menu is a Bits UI popover since 60a67dcb02: a labelled panel of plain
+// buttons, with no menu role to find it by.
+async function openMenuPanel(): Promise<HTMLElement> {
+  return vi.waitFor(() => {
+    const panel = document.querySelector<HTMLElement>(
+      '.viewer-overflow-popover[data-state="open"]'
+    );
+    expect(panel).not.toBeNull();
+    expect(panel!.getAttribute("aria-label")).toBe("More actions");
+    return panel!;
+  });
+}
 
 describe("ViewerOverflowMenu in a sequence-viewer drawer", () => {
   it("keeps the mobile save action inside the open viewer", async () => {
@@ -12,11 +25,11 @@ describe("ViewerOverflowMenu in a sequence-viewer drawer", () => {
 
     await page.getByRole("button", { name: "More actions" }).click();
 
-    const menu = page.getByRole("menu", { name: "More actions" });
-    await expect.element(menu).toBeVisible();
-    expect(viewer.element().contains(menu.element())).toBe(true);
+    const menu = await openMenuPanel();
+    await expect.element(page.elementLocator(menu)).toBeVisible();
+    expect(viewer.element().contains(menu)).toBe(true);
 
-    await page.getByRole("menuitem", { name: "Save" }).click();
+    await page.getByRole("button", { name: "Save" }).click();
 
     await expect.element(viewer).toBeVisible();
     expect(
@@ -34,11 +47,11 @@ describe("ViewerOverflowMenu in a sequence-viewer drawer", () => {
 
     const viewer = page.getByRole("dialog", { name: "Sequence Viewer" });
     const trigger = page.getByRole("button", { name: "More actions" });
-    const menu = page.getByRole("menu", { name: "More actions" });
     await expect.element(viewer).toBeVisible();
 
     await trigger.click();
-    await expect.element(menu).toBeVisible();
+    const menu = await openMenuPanel();
+    await expect.element(page.elementLocator(menu)).toBeVisible();
     expect(getComputedStyle(document.body).pointerEvents).not.toBe("none");
     expect(getComputedStyle(trigger.element()).pointerEvents).not.toBe("none");
 

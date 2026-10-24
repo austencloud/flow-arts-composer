@@ -59,13 +59,20 @@ export function videoDownloadSettingsKey(value: {
   is3DExport: boolean;
   /** The chosen opener image; omitted by hosts whose renders cannot take one. */
   opener?: string;
+  /** The beat carousel's side; 2D only, and "off" leaves the key unchanged. */
+  carousel?: string;
 }): string {
+  const carousel =
+    !value.is3DExport && value.carousel && value.carousel !== "off"
+      ? [value.carousel]
+      : [];
   return [
     value.resolution,
     value.fps,
     value.repeats,
     value.is3DExport ? value.quality : "",
     value.opener ?? "",
+    ...carousel,
   ].join("|");
 }
 

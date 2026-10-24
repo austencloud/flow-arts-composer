@@ -3,6 +3,8 @@
 #include "FlowFestAvatarComponent.h"
 #include "FlowFestPropComponent.h"
 #include "FlowArtsPerformancePanel.h"
+#include "FlowArtsPerformanceSession.h"
+#include "FlowFestAnimInstance.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
@@ -32,6 +34,8 @@
 #include "Serialization/JsonSerializer.h"
 #include "UnrealClient.h"
 #include "HighResScreenshot.h"
+#include "FlowFestJam.h"
+#include "FlowFestJamSlice.h"
 
 namespace
 {
@@ -46,6 +50,233 @@ float OnFootSpeedCmPerSecond(float ForwardInput, float RightInput, bool bSprint)
     const float BackwardFraction = InputMagnitude > SMALL_NUMBER
         ? FMath::Clamp(-ForwardInput / InputMagnitude, 0.f, 1.f) : 0.f;
     return FMath::Lerp(440.f, 280.f, BackwardFraction);
+}
+
+void WriteMotionEvidence(const FString& ImagePath, UFlowFestAvatarComponent* Avatar)
+{
+    if (!FParse::Param(FCommandLine::Get(), TEXT("FlowFestPoseEvidence"))) return;
+    USkeletalMeshComponent* Body = Avatar->GetBodyMesh();
+    if (!Body || !Body->GetAttachParent()) return;
+    const FTransform Performer = Body->GetAttachParent()->GetComponentTransform();
+    const auto Root = MakeShared<FJsonObject>();
+    Root->SetStringField(TEXT("characterId"), Avatar->GetCharacterId().ToString());
+    Root->SetNumberField(TEXT("seconds"), Avatar->GetPerformanceTime());
+    const FName SelectedMotion = Avatar->GetMotionName();
+    const FVector WorldVelocity = Avatar->GetOwner()->GetVelocity();
+    const auto Locomotion = MakeShared<FJsonObject>();
+    Locomotion->SetStringField(TEXT("selectedMotion"), SelectedMotion.ToString());
+    Locomotion->SetNumberField(TEXT("worldTimeSeconds"), Avatar->GetWorld()->GetTimeSeconds());
+    Locomotion->SetNumberField(TEXT("worldDeltaSeconds"), Avatar->GetWorld()->GetDeltaSeconds());
+    Locomotion->SetNumberField(TEXT("appDeltaSeconds"), FApp::GetDeltaTime());
+    Locomotion->SetNumberField(TEXT("speedCmPerSecond"), WorldVelocity.Size2D());
+    TArray<TSharedPtr<FJsonValue>> VelocityValues;
+    for (double Value : {WorldVelocity.X, WorldVelocity.Y, WorldVelocity.Z})
+        VelocityValues.Add(MakeShared<FJsonValueNumber>(Value));
+    Locomotion->SetArrayField(TEXT("worldVelocityCmPerSecond"), VelocityValues);
+    if (const auto* Anim = Cast<UFlowFestAnimInstance>(Body->GetAnimInstance()))
+    {
+        Locomotion->SetNumberField(TEXT("selectedMotionTimeSeconds"), Anim->GetMotionTime(SelectedMotion));
+        Locomotion->SetNumberField(TEXT("selectedMotionRate"), Anim->GetMotionRate(SelectedMotion));
+        Locomotion->SetNumberField(TEXT("walkTimeSeconds"), Anim->GetMotionTime(TEXT("Walk")));
+        Locomotion->SetNumberField(TEXT("walkRate"), Anim->GetMotionRate(TEXT("Walk")));
+        Locomotion->SetNumberField(TEXT("runTimeSeconds"), Anim->GetMotionTime(TEXT("Run")));
+        Locomotion->SetNumberField(TEXT("runRate"), Anim->GetMotionRate(TEXT("Run")));
+    }
+    Root->SetObjectField(TEXT("locomotion"), Locomotion);
+    const auto Bones = MakeShared<FJsonObject>();
+    for (int32 Index = 0; Index < Body->GetNumBones(); ++Index)
+    {
+        const FName Name = Body->GetBoneName(Index);
+        const FTransform Xf = Body->GetSocketTransform(Name).GetRelativeTransform(Performer);
+        const FVector P = Xf.GetLocation(), S = Xf.GetScale3D(); const FQuat Q = Xf.GetRotation();
+        TArray<TSharedPtr<FJsonValue>> Values;
+        for (double Value : {P.X, P.Y, P.Z, Q.X, Q.Y, Q.Z, Q.W, S.X, S.Y, S.Z})
+            Values.Add(MakeShared<FJsonValueNumber>(Value));
+        Bones->SetArrayField(Name.ToString(), Values);
+    }
+    Root->SetObjectField(TEXT("bones"), Bones);
+    const auto Attachments = MakeShared<FJsonObject>();
+    TArray<UStaticMeshComponent*> MeshComponents;
+    Avatar->GetOwner()->GetComponents<UStaticMeshComponent>(MeshComponents);
+    for (const UStaticMeshComponent* Component : MeshComponents)
+    {
+        if (!Component->GetName().StartsWith(TEXT("Meal"))) continue;
+        const auto Attachment = MakeShared<FJsonObject>();
+        const FVector Scale = Component->GetComponentScale();
+        const FVector Extent = Component->Bounds.BoxExtent;
+        const FVector Position = Performer.InverseTransformPosition(Component->GetComponentLocation());
+        Attachment->SetBoolField(TEXT("visible"), Component->IsVisible());
+        Attachment->SetStringField(TEXT("socket"), Component->GetAttachSocketName().ToString());
+        for (const auto& Field : {TPair<FString, FVector>(TEXT("worldScale"), Scale),
+            TPair<FString, FVector>(TEXT("halfExtentCm"), Extent),
+            TPair<FString, FVector>(TEXT("positionCm"), Position)})
+        {
+            TArray<TSharedPtr<FJsonValue>> Values;
+            for (double Value : {Field.Value.X, Field.Value.Y, Field.Value.Z})
+                Values.Add(MakeShared<FJsonValueNumber>(Value));
+            Attachment->SetArrayField(Field.Key, Values);
+        }
+        Attachments->SetObjectField(Component->GetName(), Attachment);
+    }
+    Root->SetObjectField(TEXT("attachments"), Attachments);
+    if (const auto* Anim = Cast<UFlowFestAnimInstance>(Body->GetAnimInstance()))
+    {
+        const auto& Result = Anim->GetArmClearance();
+        const auto Clearance = MakeShared<FJsonObject>();
+        Clearance->SetBoolField(TEXT("preparedSeedApplied"), Anim->WasPreparedSeedApplied());
+        Clearance->SetBoolField(TEXT("groundedStanceActive"), Anim->IsGroundedStanceActive());
+        Clearance->SetBoolField(TEXT("measured"), Result.bMeasuredSurface);
+        Clearance->SetBoolField(TEXT("feasible"), Result.bFeasible);
+        Clearance->SetNumberField(TEXT("worstPenetrationCm"), Result.WorstPenetrationCm);
+        Clearance->SetNumberField(TEXT("wristPositionErrorCm"), Result.WorstWristPositionErrorCm);
+        Clearance->SetNumberField(TEXT("wristAngleErrorDeg"), Result.WorstWristAngleErrorDeg);
+        Clearance->SetNumberField(TEXT("solveMicroseconds"), Result.SolveMicroseconds);
+        Clearance->SetNumberField(TEXT("skinnedUpperTorsoClearMask"), Result.SkinnedUpperTorsoClearMask);
+        Clearance->SetNumberField(TEXT("forearmBodyClearMask"), Result.ForearmBodyClearMask);
+        Clearance->SetNumberField(TEXT("forearmHeadClearMask"), Result.ForearmHeadClearMask);
+        Clearance->SetBoolField(TEXT("skinnedArmPairClear"), Result.bSkinnedArmPairClear);
+        Clearance->SetNumberField(TEXT("skinnedQueryCount"), Result.SkinnedQueryCount);
+        Clearance->SetNumberField(TEXT("handAvoidanceExactQueries"), Result.HandAvoidanceExactQueries);
+        Clearance->SetBoolField(TEXT("skinnedCacheAvailable"), Result.bSkinnedCacheAvailable);
+        Clearance->SetBoolField(TEXT("skinnedCallbackAvailable"), Result.bSkinnedCallbackAvailable);
+        Clearance->SetNumberField(TEXT("skinnedSkipReasons"), Result.SkinnedSkipReasons);
+        Clearance->SetNumberField(TEXT("warmRefinementQueries"), Result.WarmRefinementQueryCount);
+        Clearance->SetNumberField(TEXT("softRefinementQueries"), Result.SoftRefinementQueryCount);
+        Clearance->SetNumberField(TEXT("skinnedBestOtherObstacleCm"), Result.SkinnedBestOtherObstacleCm);
+        Clearance->SetBoolField(TEXT("sharedTranslationAllowed"), Result.bSharedTranslationAllowed);
+        Clearance->SetNumberField(TEXT("sharedCandidateCount"), Result.SharedCandidateCount);
+        Clearance->SetNumberField(TEXT("sharedHeadPropRejectedCount"), Result.SharedHeadPropRejectedCount);
+        Clearance->SetNumberField(TEXT("sharedReachRejectedCount"), Result.SharedReachRejectedCount);
+        Clearance->SetNumberField(TEXT("sharedNoIKCount"), Result.SharedNoIKCount);
+        Clearance->SetNumberField(TEXT("sharedRankedSeedCount"), Result.SharedRankedSeedCount);
+        Clearance->SetNumberField(TEXT("sharedFullSearchCount"), Result.SharedFullSearchCount);
+        Clearance->SetNumberField(TEXT("bestSharedPenetrationCm"), Result.BestSharedPenetrationCm);
+        Clearance->SetNumberField(TEXT("worstObstacleKind"), Result.WorstObstacleKind);
+        Clearance->SetNumberField(TEXT("worstObstacleIndex"), Result.WorstObstacleIndex);
+        Clearance->SetNumberField(TEXT("worstArm"), Result.WorstArm);
+        Clearance->SetNumberField(TEXT("worstSegment"), Result.WorstSegment);
+        Clearance->SetNumberField(TEXT("surfacePaddingCm"), 0.3);
+        const auto VectorJson = [](const FVector& Value)
+        {
+            TArray<TSharedPtr<FJsonValue>> Values;
+            for (double Number : {Value.X, Value.Y, Value.Z}) Values.Add(MakeShared<FJsonValueNumber>(Number));
+            return Values;
+        };
+        const auto TransformJson = [](const FTransform& Value)
+        {
+            const FVector P = Value.GetLocation(), S = Value.GetScale3D(); const FQuat Q = Value.GetRotation();
+            TArray<TSharedPtr<FJsonValue>> Values;
+            for (double Number : {P.X, P.Y, P.Z, Q.X, Q.Y, Q.Z, Q.W, S.X, S.Y, S.Z})
+                Values.Add(MakeShared<FJsonValueNumber>(Number));
+            return Values;
+        };
+        // Compare the socket and visible mesh in world space: composing exported
+        // relative transforms can misreport grip drift for a mirrored prop mesh.
+        if (const UFlowFestPropComponent* Prop = Avatar->GetOwner()->FindComponentByClass<UFlowFestPropComponent>())
+        {
+            const auto GripTiming = MakeShared<FJsonObject>();
+            for (const bool bLeft : {true, false})
+            {
+                const FString Side = bLeft ? TEXT("left") : TEXT("right");
+                const FTransform Socket = Body->GetSocketTransform(bLeft ? TEXT("LeftHand") : TEXT("RightHand"));
+                const FTransform PropRoot = Prop->GetPropRootTransform(bLeft);
+                GripTiming->SetArrayField(Side + TEXT("SocketWorld"), TransformJson(Socket));
+                GripTiming->SetArrayField(Side + TEXT("PropRootWorld"), TransformJson(PropRoot));
+                GripTiming->SetArrayField(Side + TEXT("PropRootToSocket"), TransformJson(PropRoot.GetRelativeTransform(Socket)));
+                const FString MeshName = bLeft ? TEXT("FlowFestLeftPropMesh") : TEXT("FlowFestRightPropMesh");
+                for (const UStaticMeshComponent* Mesh : MeshComponents)
+                {
+                    if (Mesh->GetName() != MeshName) continue;
+                    GripTiming->SetArrayField(Side + TEXT("PropMeshWorld"), TransformJson(Mesh->GetComponentTransform()));
+                    GripTiming->SetArrayField(Side + TEXT("PropMeshToRoot"), TransformJson(
+                        Mesh->GetComponentTransform().GetRelativeTransform(PropRoot)));
+                    break;
+                }
+            }
+            Clearance->SetObjectField(TEXT("gripTiming"), GripTiming);
+        }
+        Clearance->SetArrayField(TEXT("sharedPerformanceTranslationCm"), VectorJson(Result.SharedPerformanceTranslationCm));
+        Clearance->SetArrayField(TEXT("leftHandCorrectionCm"), VectorJson(Result.AppliedHandTranslationCm[0]));
+        Clearance->SetArrayField(TEXT("rightHandCorrectionCm"), VectorJson(Result.AppliedHandTranslationCm[1]));
+        Clearance->SetArrayField(TEXT("leftHandCorrectionWorldCm"), VectorJson(Body->GetComponentTransform().TransformVector(Result.AppliedHandTranslationCm[0])));
+        Clearance->SetArrayField(TEXT("rightHandCorrectionWorldCm"), VectorJson(Body->GetComponentTransform().TransformVector(Result.AppliedHandTranslationCm[1])));
+        Clearance->SetNumberField(TEXT("perHandCorrectionLimitCm"), Result.HandCorrectionLimitCm);
+        TArray<TSharedPtr<FJsonValue>> ClavicleAngles, UpperTwistAngles;
+        for (int32 Side = 0; Side < 2; ++Side)
+        {
+            ClavicleAngles.Add(MakeShared<FJsonValueNumber>(Result.ClavicleProtractionDeg[Side]));
+            UpperTwistAngles.Add(MakeShared<FJsonValueNumber>(Result.UpperAxialTwistDeg[Side]));
+        }
+        Clearance->SetArrayField(TEXT("clavicleProtractionDeg"), ClavicleAngles);
+        Clearance->SetArrayField(TEXT("upperAxialTwistDeg"), UpperTwistAngles);
+        Clearance->SetArrayField(TEXT("meshToPerformer"), TransformJson(Body->GetComponentTransform().GetRelativeTransform(Performer)));
+        TArray<TSharedPtr<FJsonValue>> ArmValues;
+        for (const auto& Arm : Result.Arms)
+        {
+            const auto Value = MakeShared<FJsonObject>();
+            Value->SetBoolField(TEXT("hasClavicle"), Arm.bHasClavicle);
+            Value->SetArrayField(TEXT("clavicle"), TransformJson(Arm.Clavicle));
+            Value->SetArrayField(TEXT("upper"), TransformJson(Arm.Upper));
+            Value->SetArrayField(TEXT("elbow"), TransformJson(Arm.Elbow));
+            Value->SetArrayField(TEXT("wrist"), TransformJson(Arm.Wrist));
+            Value->SetNumberField(TEXT("upperRadiusCm"), Arm.UpperRadiusCm);
+            Value->SetNumberField(TEXT("forearmRadiusCm"), Arm.ForearmRadiusCm);
+            TArray<TSharedPtr<FJsonValue>> Points;
+            for (const FVector& Point : Arm.UpperTorsoPoints)
+                Points.Add(MakeShared<FJsonValueArray>(VectorJson(Point)));
+            Value->SetArrayField(TEXT("upperTorsoPoints"), Points);
+            ArmValues.Add(MakeShared<FJsonValueObject>(Value));
+        }
+        Clearance->SetArrayField(TEXT("arms"), ArmValues);
+        TArray<TSharedPtr<FJsonValue>> HullValues;
+        for (const auto& Hull : Result.TorsoHulls)
+        {
+            TArray<TSharedPtr<FJsonValue>> Planes;
+            for (const auto& Plane : Hull.Planes)
+            {
+                auto Values = VectorJson(Plane.Normal);
+                Values.Add(MakeShared<FJsonValueNumber>(Plane.OffsetCm));
+                Planes.Add(MakeShared<FJsonValueArray>(Values));
+            }
+            HullValues.Add(MakeShared<FJsonValueArray>(Planes));
+        }
+        Clearance->SetArrayField(TEXT("torsoHulls"), HullValues);
+        TArray<TSharedPtr<FJsonValue>> CapsuleValues;
+        for (const auto& Capsule : Result.BodyCapsules)
+        {
+            const auto Value = MakeShared<FJsonObject>();
+            Value->SetArrayField(TEXT("start"), VectorJson(Capsule.Start));
+            Value->SetArrayField(TEXT("end"), VectorJson(Capsule.End));
+            Value->SetNumberField(TEXT("radiusCm"), Capsule.RadiusCm);
+            CapsuleValues.Add(MakeShared<FJsonValueObject>(Value));
+        }
+        Clearance->SetArrayField(TEXT("bodyCapsules"), CapsuleValues);
+        TArray<TSharedPtr<FJsonValue>> PropSides;
+        for (const auto& Side : Result.OriginalHeldPropCapsules)
+        {
+            TArray<TSharedPtr<FJsonValue>> PropCapsules;
+            for (const auto& Capsule : Side)
+            {
+                const auto Value = MakeShared<FJsonObject>();
+                Value->SetArrayField(TEXT("start"), VectorJson(Capsule.Start));
+                Value->SetArrayField(TEXT("end"), VectorJson(Capsule.End));
+                Value->SetNumberField(TEXT("radiusCm"), Capsule.RadiusCm);
+                PropCapsules.Add(MakeShared<FJsonValueObject>(Value));
+            }
+            PropSides.Add(MakeShared<FJsonValueArray>(PropCapsules));
+        }
+        Clearance->SetArrayField(TEXT("originalHeldPropCapsules"), PropSides);
+        const auto PropTransforms = MakeShared<FJsonObject>();
+        for (const UStaticMeshComponent* Component : MeshComponents)
+            if (!Component->GetName().StartsWith(TEXT("Meal")) && Component->GetStaticMesh())
+                PropTransforms->SetArrayField(Component->GetName(), TransformJson(
+                    Component->GetComponentTransform().GetRelativeTransform(Body->GetComponentTransform())));
+        Clearance->SetObjectField(TEXT("staticMeshTransforms"), PropTransforms);
+        Root->SetObjectField(TEXT("clearance"), Clearance);
+    }
+    FString Json;
+    FJsonSerializer::Serialize(Root, TJsonWriterFactory<>::Create(&Json));
+    FFileHelper::SaveStringToFile(Json, *(FPaths::ChangeExtension(ImagePath, TEXT("pose.json"))));
 }
 }
 
@@ -110,9 +341,14 @@ void AFlowFestCharacter::BeginPlay()
     Super::BeginPlay();
     FParse::Value(FCommandLine::Get(), TEXT("FlowFestReview="), ReviewSite);
     FParse::Value(FCommandLine::Get(), TEXT("FlowFestShowcase="), Showcase);
+    FParse::Value(FCommandLine::Get(), TEXT("FlowFestMotion="), RuntimeMotionPath);
+    FParse::Value(FCommandLine::Get(), TEXT("FlowFestActivity="), ActivityEvidence);
+    FParse::Value(FCommandLine::Get(), TEXT("FlowFestActivityTime="), ActivityEvidenceTime);
+    FParse::Value(FCommandLine::Get(), TEXT("FlowFestActivityExit="), ActivityEvidenceExit);
+    bActivityEvidencePlayback = FParse::Param(FCommandLine::Get(), TEXT("FlowFestActivityPlayback"));
     FParse::Value(FCommandLine::Get(), TEXT("FlowFestFlowStopAt="), ShowcaseStopAt);
     ReviewSite = ReviewSite.ToLower();
-    bReviewMode = ReviewSite == TEXT("gate") || ReviewSite == TEXT("camp") || ReviewSite == TEXT("fire") || ReviewSite == TEXT("overview");
+    bReviewMode = ReviewSite == TEXT("gate") || ReviewSite == TEXT("camp") || ReviewSite == TEXT("fire") || ReviewSite == TEXT("overview") || ReviewSite == TEXT("woods") || ReviewSite == TEXT("upper") || ReviewSite.StartsWith(TEXT("jam-"));
     FParse::Value(FCommandLine::Get(), TEXT("FlowFestCapture="), CapturePath);
     bAutoExit = FParse::Param(FCommandLine::Get(), TEXT("FlowFestAutoExit"));
     bSmoke = FParse::Param(FCommandLine::Get(), TEXT("FlowFestSmoke"));
@@ -156,6 +392,12 @@ void AFlowFestCharacter::BeginPlay()
     Avatar->BindPerformanceProp(Props);
     SyncModeVisuals();
     if (FParse::Param(FCommandLine::Get(), TEXT("FlowFestWardrobe"))) ToggleWardrobe();
+    // Jam polish: -FlowFestJam plays the jam slice instead of the journey.
+    if (FParse::Param(FCommandLine::Get(), TEXT("FlowFestJam")))
+    {
+        JamSlice = NewObject<UFlowFestJamSlice>(this, TEXT("JamSlice"));
+        JamSlice->RegisterComponent();
+    }
 }
 
 void AFlowFestCharacter::Tick(float DeltaSeconds)
@@ -169,6 +411,7 @@ void AFlowFestCharacter::Tick(float DeltaSeconds)
             break;
         }
     }
+    if (JamSlice) bInitialPlacementDone = true; // Jam polish: the slice places the player and sets the clock.
     if (FestivalWorld && !bInitialPlacementDone)
     {
         if (bReviewMode) PlaceReviewCamera();
@@ -209,6 +452,25 @@ void AFlowFestCharacter::Tick(float DeltaSeconds)
     }
 
     StartupSeconds += DeltaSeconds;
+    if (!RuntimeMotionPath.IsEmpty() && !bRuntimeMotionLoaded && bInitialPlacementDone &&
+        StartupSeconds >= 2.f && GetCharacterMovement()->IsMovingOnGround())
+    {
+        bRuntimeMotionLoaded = true;
+        FString Error;
+        FFlowArtsPerformanceSession Session(Avatar, Props);
+        if (Session.ImportMotionFile(RuntimeMotionPath, Error))
+        {
+            float MotionTime = -1.f;
+            if (FParse::Value(FCommandLine::Get(), TEXT("FlowFestMotionTime="), MotionTime) && MotionTime >= 0.f)
+            {
+                Avatar->SeekPerformance(MotionTime);
+                Avatar->SetPerformancePaused(true);
+            }
+            UE_LOG(LogTemp, Display, TEXT("FlowFestRuntimeMotion PASS profile=%s duration=%.3f"),
+                *Avatar->GetPerformanceProfile().ToString(), Avatar->GetPerformanceLength());
+        }
+        else UE_LOG(LogTemp, Error, TEXT("FlowFestRuntimeMotion FAIL: %s"), *Error);
+    }
     if (bLibraryReview && !bLibraryReviewOpened && bInitialPlacementDone &&
         StartupSeconds >= 3.f && GetCharacterMovement()->IsMovingOnGround())
     {
@@ -217,7 +479,7 @@ void AFlowFestCharacter::Tick(float DeltaSeconds)
         UE_LOG(LogTemp, Display, TEXT("FlowFestLibrary opened through player adapter"));
     }
     // Wait for CharacterMovement to settle after the showcase teleport.
-    if (Showcase == TEXT("flow") && !bShowcaseStarted && StartupSeconds >= 2.f && !GetCharacterMovement()->IsFalling())
+    if (RuntimeMotionPath.IsEmpty() && Showcase == TEXT("flow") && !bShowcaseStarted && StartupSeconds >= 2.f && !GetCharacterMovement()->IsFalling())
     {
         bShowcaseStarted = true;
         ToggleStaff();
@@ -257,6 +519,7 @@ void AFlowFestCharacter::Tick(float DeltaSeconds)
         {
             ActiveCapturePath = CapturedFrames == 0 ? CapturePath :
                 FPaths::GetPath(CapturePath) / FString::Printf(TEXT("%s-%03d.png"), *FPaths::GetBaseFilename(CapturePath), CapturedFrames);
+            WriteMotionEvidence(ActiveCapturePath, Avatar);
             CapturePreviousTimestamp = IFileManager::Get().GetTimeStamp(*ActiveCapturePath);
             UE_LOG(LogTemp, Display, TEXT("FlowFestVisual character=%s body=%s bounds=%s camera=%s arm=%.1f"),
                 *CharacterId.ToString(), *Avatar->GetBodyMesh()->GetComponentLocation().ToString(),
@@ -294,7 +557,9 @@ void AFlowFestCharacter::Tick(float DeltaSeconds)
         UE_LOG(LogTemp, Display, TEXT("Flow Fest screenshot written (%d/%d): %s"), CapturedFrames, CaptureFrames, *ActiveCapturePath);
     }
     const float ExitSeconds = FMath::Max(40.f, CaptureStart + (CaptureFrames - 1) * CaptureInterval + 15.f);
-    if (bAutoExit && StartupSeconds >= ExitSeconds)
+    // A capture review is complete once every requested image has reached disk.
+    // Smoke journeys retain their full simulation window and failure deadline.
+    if (bAutoExit && ((!bSmoke && bCaptureReady) || StartupSeconds >= ExitSeconds))
     {
         ReportFrameTiming();
         const bool bCaptureFailed = !CapturePath.IsEmpty() && !bCaptureReady;
@@ -306,12 +571,17 @@ void AFlowFestCharacter::Tick(float DeltaSeconds)
 
     SyncPerformanceActivity();
 
-    const float ForwardInput = bWardrobeOpen ? 0.f : (bForward ? 1.f : 0.f) - (bBack ? 1.f : 0.f);
-    const float RightInput = bWardrobeOpen ? 0.f : (bRight ? 1.f : 0.f) - (bLeft ? 1.f : 0.f);
+    float ForwardInput = bWardrobeOpen ? 0.f : (bForward ? 1.f : 0.f) - (bBack ? 1.f : 0.f);
+    float RightInput = bWardrobeOpen ? 0.f : (bRight ? 1.f : 0.f) - (bLeft ? 1.f : 0.f);
     if (VisitorAction != EFlowFestVisitorAction::None &&
         (!FMath::IsNearlyZero(ForwardInput) || !FMath::IsNearlyZero(RightInput) || bPhotoFly || bOnEUC || bWardrobeOpen || GetCharacterMovement()->IsFalling()))
         { EndVisitorActivity(); SaveProgress(); }
     TickVisitorActivity(DeltaSeconds);
+    if (VisitorStandRemaining > 0.f)
+    {
+        ForwardInput = RightInput = 0.f;
+        GetCharacterMovement()->StopMovementImmediately();
+    }
     if (bStaffSpinning && (!FMath::IsNearlyZero(ForwardInput) || !FMath::IsNearlyZero(RightInput) || GetCharacterMovement()->IsFalling())) StopFlow();
     if (bInVehicle && !bPhotoFly)
     {
@@ -333,7 +603,8 @@ void AFlowFestCharacter::Tick(float DeltaSeconds)
     }
     else
     {
-        const FRotator ViewYaw(0.f, GetControlRotation().Yaw, 0.f);
+        // Walk reviews keep a front-facing camera while moving in the body's forward direction.
+        const FRotator ViewYaw(0.f, Showcase == TEXT("walk") ? GetActorRotation().Yaw : GetControlRotation().Yaw, 0.f);
         AddMovementInput(ViewYaw.Vector(), ForwardInput);
         AddMovementInput(FRotationMatrix(ViewYaw).GetUnitAxis(EAxis::Y), RightInput);
     }
@@ -354,6 +625,21 @@ void AFlowFestCharacter::Tick(float DeltaSeconds)
         if (Phase == EFlowFestPhase::NightFreeRoam && Jam == EFlowFestJam::Active) JamSpinSeconds += DeltaSeconds;
     }
     Avatar->SetMotion(GetVelocity(), GetCharacterMovement()->IsFalling(), bOnEUC && !bWardrobeOpen);
+    if (FestivalWorld && !ActivityEvidence.IsEmpty())
+    {
+        const EFlowFestBodyActivity Activity = ActivityEvidence == TEXT("carry") ? EFlowFestBodyActivity::Carry :
+            ActivityEvidence == TEXT("eat") ? EFlowFestBodyActivity::Eat :
+            ActivityEvidence == TEXT("sit") ? EFlowFestBodyActivity::FloorRest : EFlowFestBodyActivity::None;
+        // Let captures warm up before advancing the same activity clock used
+        // by attendees. The default remains an exact, frozen pose review.
+        const float EvidenceAdvance = bActivityEvidencePlayback
+            ? FMath::Max(0.f, StartupSeconds - (CapturePath.IsEmpty() ? 0.f : CaptureStart)) : 0.f;
+        const float ExitRemaining = ActivityEvidenceExit < 0.f ? -1.f
+            : FMath::Max(0.f, ActivityEvidenceExit - EvidenceAdvance);
+        FestivalWorld->SetActivityEvidence(Avatar, Props, Activity,
+            FMath::Max(0.f, ActivityEvidenceTime + EvidenceAdvance), ExitRemaining);
+    }
+    else if (Showcase.IsEmpty()) SyncVisitorActivityPose();
     if (bOnEUC && !bWardrobeOpen) EUCWheel->AddLocalRotation(FRotator(0, 0, FMath::RadiansToDegrees(GetVelocity().Dot(GetActorForwardVector()) * DeltaSeconds / 36.3f)));
     Props->SetHandTransforms(Avatar->GetHandTransform(true), Avatar->GetHandTransform(false));
     if (FestivalWorld)
@@ -406,7 +692,13 @@ void AFlowFestCharacter::SetupPlayerInputComponent(UInputComponent* Input)
 
 void AFlowFestCharacter::LookX(float Value) { if (!bWardrobeOpen) AddControllerYawInput(Value); }
 void AFlowFestCharacter::LookY(float Value) { if (!bWardrobeOpen) AddControllerPitchInput(-Value); }
-void AFlowFestCharacter::JumpOrRise() { if (bWardrobeOpen) return; if (bPhotoFly) bRise = true; else if (!bInVehicle) Jump(); }
+void AFlowFestCharacter::JumpOrRise()
+{
+    if (bWardrobeOpen) return;
+    if (VisitorAction == EFlowFestVisitorAction::Rest) { EndVisitorActivity(); SaveProgress(); }
+    if (VisitorStandRemaining > 0.f) return;
+    if (bPhotoFly) bRise = true; else if (!bInVehicle) Jump();
+}
 void AFlowFestCharacter::StopJumpOrRise() { bRise = false; StopJumping(); }
 void AFlowFestCharacter::QuitGame() { if (bWardrobeOpen) { ToggleWardrobe(); return; } ReportFrameTiming(); FPlatformMisc::RequestExit(false); }
 
@@ -475,6 +767,7 @@ void AFlowFestCharacter::Interact()
     if (bWardrobeOpen) return;
     if (!FestivalWorld) { Notify(TEXT("Festival world is loading")); return; }
     if (bPhotoFly) { Notify(TEXT("Leave photo flight to interact [P]")); return; }
+    if (JamSlice) { JamSlice->Interact(); return; } // Jam polish: E sits at the rope's edge in the slice.
     if (TryVisitorActivity()) return;
     if (bReviewMode) { Notify(TEXT("Explore on foot; F10 starts the Thursday journey.")); return; }
     switch (Phase)
@@ -548,6 +841,7 @@ void AFlowFestCharacter::Interact()
 FString AFlowFestCharacter::VisitorActivityHint() const
 {
     if (!FestivalWorld || bInVehicle || bPhotoFly || bOnEUC || bWardrobeOpen) return FString();
+    if (VisitorStandRemaining > 0.f) return TEXT("STANDING UP");
     if (VisitorAction != EFlowFestVisitorAction::None)
         return FString::Printf(TEXT("%s  %ds  /  E TO FINISH EARLY"),
             VisitorAction == EFlowFestVisitorAction::Eat ? TEXT("EATING") : TEXT("RESTING"), FMath::CeilToInt(VisitorActionRemaining));
@@ -561,6 +855,7 @@ FString AFlowFestCharacter::VisitorActivityHint() const
 
 bool AFlowFestCharacter::TryVisitorActivity()
 {
+    if (VisitorStandRemaining > 0.f) return true;
     const FString Hint = VisitorActivityHint();
     if (!Hint.IsEmpty())
     {
@@ -591,6 +886,11 @@ void AFlowFestCharacter::GreetNearby()
 
 void AFlowFestCharacter::EndVisitorActivity()
 {
+    if (VisitorAction == EFlowFestVisitorAction::Rest)
+    {
+        VisitorRestElapsed = FMath::Max(0.f, 20.f - VisitorActionRemaining);
+        VisitorStandRemaining = FFlowFestActivityPose::RestRiseSeconds;
+    }
     VisitorAction = EFlowFestVisitorAction::None;
     VisitorActionRemaining = 0.f;
     SyncModeVisuals();
@@ -598,6 +898,7 @@ void AFlowFestCharacter::EndVisitorActivity()
 
 void AFlowFestCharacter::TickVisitorActivity(float DeltaSeconds)
 {
+    VisitorStandRemaining = FMath::Max(0.f, VisitorStandRemaining - DeltaSeconds);
     if (!bPhotoFly && !bWardrobeOpen && !bInVehicle)
     {
         Hunger = FMath::Min(100.f, Hunger + DeltaSeconds * .025f);
@@ -609,6 +910,37 @@ void AFlowFestCharacter::TickVisitorActivity(float DeltaSeconds)
     else Energy = FMath::Min(100.f, Energy + ActionStep * 1.5f);
     VisitorActionRemaining = FMath::Max(0.f, VisitorActionRemaining - DeltaSeconds);
     if (VisitorActionRemaining <= 0.f) { EndVisitorActivity(); SaveProgress(); Notify(TEXT("Ready to head back out")); }
+}
+
+void AFlowFestCharacter::SyncVisitorActivityPose()
+{
+    if (!FestivalWorld) return;
+    EFlowFestBodyActivity Activity = EFlowFestBodyActivity::None;
+    float Elapsed = 0.f, ExitRemaining = -1.f;
+    if (VisitorStandRemaining > 0.f)
+    {
+        Activity = EFlowFestBodyActivity::FloorRest;
+        Elapsed = VisitorRestElapsed;
+        ExitRemaining = VisitorStandRemaining;
+    }
+    else if (VisitorAction == EFlowFestVisitorAction::Rest)
+    {
+        Activity = EFlowFestBodyActivity::FloorRest;
+        Elapsed = FMath::Max(0.f, 20.f - VisitorActionRemaining);
+    }
+    else if (VisitorAction == EFlowFestVisitorAction::Eat)
+    {
+        Activity = EFlowFestBodyActivity::Eat;
+        Elapsed = FMath::Max(0.f, 12.f - VisitorActionRemaining);
+    }
+    else if (!bInVehicle && !bPhotoFly && !bOnEUC && !bWardrobeOpen &&
+        !bStaffSpinning && Props && Props->IsReady()) Activity = EFlowFestBodyActivity::Carry;
+    // Jam polish: the slice's sit at the rope's edge, with the prop put away.
+    const bool bJamSeated = JamSlice && JamSlice->OverridePose(Activity, Elapsed, ExitRemaining);
+    // The adapter owns meal visibility; passing no prop preserves performance finishes.
+    FestivalWorld->SetActivityEvidence(Avatar, nullptr, Activity, Elapsed, ExitRemaining);
+    if (Props) Props->SetVisible(bWardrobeOpen || (!bJamSeated && !bInVehicle && !bPhotoFly &&
+        VisitorAction == EFlowFestVisitorAction::None && VisitorStandRemaining <= 0.f));
 }
 
 FString AFlowFestCharacter::GetNearbyIntent() const
@@ -647,6 +979,8 @@ void AFlowFestCharacter::ToggleFirstPerson()
 void AFlowFestCharacter::TogglePhotoFly()
 {
     if (bWardrobeOpen) return;
+    if (VisitorAction == EFlowFestVisitorAction::Rest) { EndVisitorActivity(); SaveProgress(); }
+    if (VisitorStandRemaining > 0.f) { Notify(TEXT("Stand up before leaving")); return; }
     StopFlow();
     bPhotoFly = !bPhotoFly;
     GetCharacterMovement()->SetMovementMode(bPhotoFly ? MOVE_Flying : MOVE_Walking);
@@ -656,6 +990,8 @@ void AFlowFestCharacter::TogglePhotoFly()
 void AFlowFestCharacter::ToggleEUC()
 {
     if (bWardrobeOpen) return;
+    if (VisitorAction == EFlowFestVisitorAction::Rest) { EndVisitorActivity(); SaveProgress(); }
+    if (VisitorStandRemaining > 0.f) { Notify(TEXT("Stand up before mounting the wheel")); return; }
     if (bInVehicle || bPhotoFly || Phase == EFlowFestPhase::Loadout ||
         (!bOnEUC && (Phase == EFlowFestPhase::NightReturn || Phase == EFlowFestPhase::Morning)))
         { Notify(TEXT("Wheel unavailable here")); return; }
@@ -669,9 +1005,12 @@ void AFlowFestCharacter::ToggleStaff()
     if (bWardrobeOpen) return;
     if (bInVehicle || bPhotoFly || bOnEUC) { Notify(TEXT("Step onto the ground to flow")); return; }
     if (VisitorAction != EFlowFestVisitorAction::None) { EndVisitorActivity(); SaveProgress(); }
+    if (VisitorStandRemaining > 0.f) { Notify(TEXT("Stand up before flowing")); return; }
     if (bStaffSpinning) { StopFlow(); return; }
     const FName Profile = UFlowFestAvatarComponent::ResolvePerformanceProfile(EquippedPropId, PerformanceVariant);
-    if (!Props->LoadPerformance(CharacterId, Profile) || !Avatar->PlayPerformance(Profile))
+    FFlowArtsPerformanceSession Session(Avatar, Props);
+    FString PerformanceError;
+    if (!Session.PlayBuiltIn(Profile, PerformanceError))
     {
         StopFlow();
         Notify(TEXT("This performance could not load"));
@@ -694,6 +1033,8 @@ void AFlowFestCharacter::OpenPerformanceLibrary()
 {
     if (bWardrobeOpen) { Notify(TEXT("Close the wardrobe to open the performance library")); return; }
     if (bInVehicle || bPhotoFly || bOnEUC) { Notify(TEXT("Step onto the ground to open the performance library")); return; }
+    if (VisitorAction == EFlowFestVisitorAction::Rest) { EndVisitorActivity(); SaveProgress(); }
+    if (VisitorStandRemaining > 0.f) { Notify(TEXT("Stand up before opening the performance library")); return; }
     bForward = bBack = bLeft = bRight = bSprint = bRise = bDescend = false;
     GetCharacterMovement()->StopMovementImmediately();
     if (APlayerController* Player = Cast<APlayerController>(GetController()))
@@ -760,15 +1101,28 @@ void AFlowFestCharacter::PlaceReviewCamera()
 {
     if (!FestivalWorld) return;
     const FString Landmark = ReviewSite == TEXT("gate") ? TEXT("gate") : ReviewSite == TEXT("camp") ? TEXT("camp-lower") : TEXT("fire");
-    const FVector Target = FestivalWorld->GetLandmark(Landmark) + FVector(0, 0, 160);
+    // The woods view stands at eye height inside the densest stand, south of the gate, looking into it.
+    const bool bWoods = ReviewSite == TEXT("woods");
+    // The upper view stands in the open field south-east of the upper camp, looking north-west
+    // across it to the tents along the tree line.
+    const bool bUpper = ReviewSite == TEXT("upper");
+    FVector Target = bWoods ? FestivalWorld->ToWorld(205.f, -42.f, 120.f) :
+        bUpper ? FestivalWorld->ToWorld(-58.f, -136.f, 160.f) : FestivalWorld->GetLandmark(Landmark) + FVector(0, 0, 160);
     // The camp view looks into the 5:30 PM sun, a little to its left so the sun sits in frame.
     const FVector IntoSun = -AFlowFestWorld::SunRotationAt(17.5f).Vector().GetSafeNormal2D();
     const FVector Offset = ReviewSite == TEXT("overview") ? FVector(-8500, -8500, 10500) :
         ReviewSite == TEXT("fire") ? FVector(-1100, -900, 0) :
         ReviewSite == TEXT("camp") ? -IntoSun.RotateAngleAxis(-10.f, FVector::UpVector) * 1720.f : FVector(-2200, -1900, 600);
-    FVector Position = Target + Offset;
+    FVector Position = bWoods ? FestivalWorld->ToWorld(236.f, -64.f, 100.f) : bUpper ? FestivalWorld->ToWorld(-34.f, -112.f, 230.f) : Target + Offset;
     if (ReviewSite == TEXT("fire") || ReviewSite == TEXT("camp"))
         Position.Z = FestivalWorld->SampleGround(Position.X * .01f, Position.Y * .01f) + (ReviewSite == TEXT("camp") ? 230.f : 100.f);
+    // Jam polish: the fire view and the jam views stand where the jam layout puts them, outside the rope.
+    if (const UFlowFestJamComponent* JamSite = FestivalWorld->FindComponentByClass<UFlowFestJamComponent>())
+        if (FVector Eye, Look; JamSite->ReviewShot(ReviewSite, Eye, Look))
+        {
+            Target = Look + FVector(0, 0, 68);
+            Position = Eye - FVector(0, 0, 68);
+        }
     GetCharacterMovement()->StopMovementImmediately();
     GetCharacterMovement()->SetMovementMode(MOVE_Flying);
     bPhotoFly = true;
@@ -778,7 +1132,7 @@ void AFlowFestCharacter::PlaceReviewCamera()
     Avatar->SetPresentation(false, true);
     SetActorLocation(Position, false);
     if (AController* C = GetController()) C->SetControlRotation((Target - Position - FVector(0, 0, 68)).Rotation());
-    FestivalWorld->SetTimeOfDay(ReviewSite == TEXT("gate") ? 16.f : ReviewSite == TEXT("fire") ? 23.f : ReviewSite == TEXT("camp") ? 17.5f : 17.f);
+    FestivalWorld->SetTimeOfDay(bWoods ? 15.f : bUpper ? 17.5f : ReviewSite == TEXT("gate") ? 16.f : ReviewSite == TEXT("fire") || ReviewSite.StartsWith(TEXT("jam-")) ? 23.f : ReviewSite == TEXT("camp") ? 17.5f : 17.f);
     SyncModeVisuals();
     if (FParse::Param(FCommandLine::Get(), TEXT("FlowFestExplore")))
     {
@@ -812,7 +1166,8 @@ void AFlowFestCharacter::SyncModeVisuals()
     CarMesh->SetVisibility(bInVehicle && !bPhotoFly && !bWardrobeOpen);
     Avatar->SetPresentation(bWardrobeOpen || (!bInVehicle && !bPhotoFly), bFirstPerson && !bWardrobeOpen);
     EUCMesh->SetVisibility(bOnEUC && !bInVehicle && !bPhotoFly && !bWardrobeOpen, true);
-    Props->SetVisible(bWardrobeOpen || (!bInVehicle && !bPhotoFly && VisitorAction == EFlowFestVisitorAction::None));
+    Props->SetVisible(bWardrobeOpen || (!bInVehicle && !bPhotoFly &&
+        VisitorAction == EFlowFestVisitorAction::None && VisitorStandRemaining <= 0.f));
     // A_Ride contains the production pedal-contact pose relative to wheel ground.
     AvatarRoot->SetRelativeLocation(FVector(0, 0, -92.f));
     CameraBoom->bDoCollisionTest = !bWardrobeOpen;
@@ -941,12 +1296,15 @@ FString AFlowFestCharacter::GetNotice() const
 
 void AFlowFestCharacter::SaveProgress()
 {
+    // Jam polish: the -Jam slice never writes over the journey's save.
+    if (JamSlice) return;
     UFlowFestSaveGame* Save = Cast<UFlowFestSaveGame>(UGameplayStatics::CreateSaveGameObject(UFlowFestSaveGame::StaticClass()));
     if (!Save) return;
     Save->Phase = Phase; Save->Camp = Camp; Save->Jam = Jam;
     Save->LoadoutChoice = LoadoutChoice; Save->DepartureChoice = DepartureChoice;
     Save->Energy = Energy; Save->Position = GetActorLocation(); Save->Rotation = GetActorRotation();
     Save->Hunger = Hunger; Save->VisitorAction = VisitorAction; Save->VisitorActionRemaining = VisitorActionRemaining;
+    Save->VisitorStandRemaining = VisitorStandRemaining; Save->VisitorRestElapsed = VisitorRestElapsed;
     Save->CrowdState = FestivalWorld ? FestivalWorld->SaveCrowdState() : FString();
     Save->bExplorationOnly = bReviewMode;
     Save->Hour = FestivalWorld ? FestivalWorld->GetTimeOfDay() : 15.f;
@@ -968,6 +1326,11 @@ bool AFlowFestCharacter::ValidateSave(const UFlowFestSaveGame* S) const
     if (S->Version >= 3 && (!FMath::IsFinite(S->Hunger) || S->Hunger < 0.f || S->Hunger > 100.f
         || static_cast<uint8>(S->VisitorAction) > static_cast<uint8>(EFlowFestVisitorAction::Rest)
         || !FMath::IsFinite(S->VisitorActionRemaining) || S->VisitorActionRemaining < 0.f || S->VisitorActionRemaining > 20.f)) return false;
+    if (S->Version >= 4 && (!FMath::IsFinite(S->VisitorStandRemaining) || S->VisitorStandRemaining < 0.f ||
+        S->VisitorStandRemaining > FFlowFestActivityPose::RestRiseSeconds ||
+        !FMath::IsFinite(S->VisitorRestElapsed) || S->VisitorRestElapsed < 0.f || S->VisitorRestElapsed > 20.f ||
+        (S->VisitorStandRemaining > 0.f && (S->VisitorAction != EFlowFestVisitorAction::None ||
+            S->bInVehicle || S->bOnEUC)))) return false;
     if (!CharacterChoices.ContainsByPredicate([S](const FFlowFestChoice& Choice) { return Choice.Id == S->CharacterId; })
         || !PropChoices.ContainsByPredicate([S](const FFlowFestChoice& Choice) { return Choice.Id == S->PropId; })) return false;
     const bool bNeedsCamp = S->Phase >= EFlowFestPhase::CampArrival;
@@ -992,6 +1355,8 @@ void AFlowFestCharacter::LoadProgress()
     Hunger = Save->Hunger;
     VisitorAction = Save->VisitorAction;
     VisitorActionRemaining = Save->VisitorActionRemaining;
+    VisitorStandRemaining = Save->Version >= 4 ? Save->VisitorStandRemaining : 0.f;
+    VisitorRestElapsed = Save->Version >= 4 ? Save->VisitorRestElapsed : 0.f;
     if (VisitorActionRemaining <= 0.f || bInVehicle || Save->bOnEUC) VisitorAction = EFlowFestVisitorAction::None;
     bOnEUC = Save->bOnEUC && !bInVehicle; bPhotoFly = false; bStaffSpinning = false;
     CharacterId = Save->CharacterId; EquippedPropId = Save->PropId;
@@ -1002,6 +1367,7 @@ void AFlowFestCharacter::LoadProgress()
     Avatar->BindPerformanceProp(Props);
     JamSpinSeconds = 0.f;
     GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+    if (VisitorStandRemaining > 0.f) GetCharacterMovement()->StopMovementImmediately();
     SetActorLocationAndRotation(Save->Position, Save->Rotation, false);
     if (FestivalWorld) FestivalWorld->SetTimeOfDay(Save->Hour);
     if (FestivalWorld) FestivalWorld->SetSoundEnabled(bSoundEnabled);
@@ -1024,6 +1390,7 @@ void AFlowFestCharacter::Restart()
     Phase = EFlowFestPhase::Loadout; Camp = EFlowFestCamp::None; Jam = EFlowFestJam::NotStarted;
     Energy = 100.f; LoadoutChoice = 0; DepartureChoice = 0;
     Hunger = 15.f; VisitorAction = EFlowFestVisitorAction::None; VisitorActionRemaining = 0.f;
+    VisitorStandRemaining = VisitorRestElapsed = 0.f;
     bInVehicle = false; bOnEUC = false; bPhotoFly = false; bCampBuilt = false; bStaffSpinning = false;
     JamSpinSeconds = 0.f;
     GetCharacterMovement()->SetMovementMode(MOVE_Walking);
@@ -1114,7 +1481,77 @@ bool AFlowFestCharacter::RunSmokeDrive()
         bBack = false;
         bRight = false;
         GetCharacterMovement()->StopMovementImmediately();
+        // Continue through real Tick/input handling rather than manually ending rest.
+        bInVehicle = false;
+        Phase = EFlowFestPhase::FestivalNight;
+        // Keep the camp journey coherent for the persistence checks that follow.
+        Camp = EFlowFestCamp::LowerTent;
+        bCampBuilt = true;
+        Jam = EFlowFestJam::NotStarted;
+        SetActorLocation(FestivalWorld->GetLandmark(TEXT("camp-lower")) + FVector(0, 0, 110), false);
+        SyncModeVisuals();
         SmokeDriveStage = 5;
+        SmokeStageStartSeconds = StartupSeconds;
+        return false;
+    }
+    if (SmokeDriveStage == 5)
+    {
+        if (!GetCharacterMovement()->IsMovingOnGround())
+        {
+            if (StageSeconds <= 3.f) return false;
+            CheckDrive(false, TEXT("rest input test settles on camp ground"));
+            return true;
+        }
+        GetCharacterMovement()->StopMovementImmediately();
+        Interact();
+        CheckDrive(VisitorAction == EFlowFestVisitorAction::Rest, TEXT("rest input test enters production camp activity"));
+        SmokeDriveStage = 6;
+        SmokeStageStartSeconds = StartupSeconds;
+        return false;
+    }
+    if (SmokeDriveStage == 6 && StageSeconds >= .6f)
+    {
+        CheckDrive(VisitorAction == EFlowFestVisitorAction::Rest, TEXT("rest remains active before movement input"));
+        SmokeStageStartLocation = GetActorLocation();
+        bForward = true;
+        SmokeDriveStage = 7;
+        SmokeStageStartSeconds = StartupSeconds;
+        return false;
+    }
+    if (SmokeDriveStage == 7)
+    {
+        if (VisitorAction == EFlowFestVisitorAction::Rest)
+        {
+            // Tick consumes the held key below; fail promptly if it never does.
+            if (StageSeconds <= 1.f) return false;
+            CheckDrive(false, TEXT("held forward input reaches production activity cancellation"));
+            bForward = false;
+            return true;
+        }
+        CheckDrive(VisitorAction == EFlowFestVisitorAction::None, TEXT("held forward input ends rest"));
+        if (VisitorStandRemaining > 0.f)
+        {
+            CheckDrive(FVector::DistSquaredXY(GetActorLocation(), SmokeStageStartLocation) <= 1.f,
+                TEXT("held forward input cannot displace player during rise"));
+            if (StageSeconds <= FFlowFestActivityPose::RestRiseSeconds + 1.f) return false;
+            CheckDrive(false, TEXT("rise completes under held movement input"));
+        }
+        CheckDrive(StageSeconds >= FFlowFestActivityPose::RestRiseSeconds - .1f,
+            TEXT("held input preserves the full rise delay"));
+        SmokeStageStartLocation = GetActorLocation();
+        SmokeStageStartSeconds = StartupSeconds;
+        SmokeDriveStage = 8;
+        return false;
+    }
+    if (SmokeDriveStage == 8 && StageSeconds >= .35f)
+    {
+        CheckDrive(bForward && VisitorStandRemaining == 0.f &&
+            FVector::DistSquaredXY(GetActorLocation(), SmokeStageStartLocation) > FMath::Square(10.f),
+            TEXT("held forward input resumes travel after rise"));
+        bForward = false;
+        GetCharacterMovement()->StopMovementImmediately();
+        UE_LOG(LogTemp, Display, TEXT("FlowFestSmoke activity movement: held input blocked through rise then travel resumed"));
+        SmokeDriveStage = 9;
         return true;
     }
     return false;
@@ -1127,6 +1564,30 @@ void AFlowFestCharacter::RunSmoke()
     auto Expect = [&bPassed](bool Condition, const TCHAR* Label)
     {
         if (!Condition) { bPassed = false; UE_LOG(LogTemp, Error, TEXT("FlowFestSmoke FAIL: %s"), Label); }
+    };
+    auto ExpectMealAndProps = [this, &Expect](bool bEating, bool bBite, const TCHAR* Label)
+    {
+        // Observe the production adapter's owned components, without forcing an evidence pose.
+        SyncVisitorActivityPose();
+        TArray<UStaticMeshComponent*> Meshes;
+        GetComponents<UStaticMeshComponent>(Meshes);
+        int32 MealParts = 0;
+        bool bVisibilityMatches = true;
+        for (const UStaticMeshComponent* Mesh : Meshes)
+        {
+            const FName Name = Mesh->GetFName();
+            if (Name == TEXT("MealBowl") || Name == TEXT("MealFood"))
+            {
+                ++MealParts;
+                bVisibilityMatches &= Mesh->IsVisible() == bEating;
+            }
+            else if (Name == TEXT("MealBite"))
+            {
+                ++MealParts;
+                bVisibilityMatches &= Mesh->IsVisible() == bBite;
+            }
+        }
+        Expect(MealParts == 3 && bVisibilityMatches && Props && Props->HasVisibleGrip() == !bEating, Label);
     };
     auto MoveTo = [this](const TCHAR* Id)
     {
@@ -1236,6 +1697,8 @@ void AFlowFestCharacter::RunSmoke()
     bSoundEnabled = false;
     PerformanceVariant = 1;
     SaveProgress();
+    const UFlowFestSaveGame* SelectionSave = Cast<UFlowFestSaveGame>(UGameplayStatics::LoadGameFromSlot(SaveSlot(), 0));
+    Expect(ValidateSave(SelectionSave), TEXT("selection persistence starts from a valid saved journey"));
     Avatar->SetCharacter(PreviousCharacter); CharacterId = PreviousCharacter;
     Props->Equip(PreviousProp); EquippedPropId = PreviousProp;
     bSoundEnabled = true;
@@ -1296,7 +1759,10 @@ void AFlowFestCharacter::RunSmoke()
             MoveTo(TEXT("food")); Interact();
             Expect(VisitorAction == EFlowFestVisitorAction::Eat && Phase == EFlowFestPhase::FestivalNight,
                 TEXT("food stop shares crowd landmark without advancing journey"));
-            TickVisitorActivity(3.f);
+            ExpectMealAndProps(true, false, TEXT("food entry shows meal and hides carried props"));
+            TickVisitorActivity(1.5f);
+            ExpectMealAndProps(true, true, TEXT("production eating phase shows the bite"));
+            TickVisitorActivity(1.5f);
             Expect(Hunger < 69.f && VisitorActionRemaining == 9.f, TEXT("food restores hunger over elapsed action time"));
             SaveProgress();
             const FString CrowdBeforeLoad = FestivalWorld->SaveCrowdState();
@@ -1307,6 +1773,13 @@ void AFlowFestCharacter::RunSmoke()
             Expect(FestivalWorld->SaveCrowdState() == CrowdBeforeLoad, TEXT("journey load restores attendee intentions"));
             Interact();
             Expect(VisitorAction == EFlowFestVisitorAction::None, TEXT("food break can end early"));
+            ExpectMealAndProps(false, false, TEXT("early food exit removes all meal parts and restores carried props"));
+            Interact();
+            Expect(VisitorAction == EFlowFestVisitorAction::Eat, TEXT("natural food completion starts through interaction"));
+            TickVisitorActivity(12.f);
+            Expect(VisitorAction == EFlowFestVisitorAction::None && VisitorActionRemaining == 0.f,
+                TEXT("food break completes naturally"));
+            ExpectMealAndProps(false, false, TEXT("natural food exit removes all meal parts and restores carried props"));
             Interact();
             Expect(VisitorAction == EFlowFestVisitorAction::Eat, TEXT("food break can resume"));
             ToggleStaff();
@@ -1337,6 +1810,27 @@ void AFlowFestCharacter::RunSmoke()
             TickVisitorActivity(20.f);
             Expect(VisitorAction == EFlowFestVisitorAction::None && Energy > 69.f && Energy <= 100.f,
                 TEXT("camp rest finishes and restores bounded energy"));
+            Expect(FMath::IsNearlyEqual(VisitorStandRemaining, FFlowFestActivityPose::RestRiseSeconds),
+                TEXT("completed rest starts the full standing transition"));
+            ToggleStaff();
+            Expect(!bStaffSpinning && VisitorStandRemaining > 0.f,
+                TEXT("rest exit cannot start flow before standing"));
+            TickVisitorActivity(.55f);
+            Expect(VisitorStandRemaining > 0.f && VisitorStandRemaining < FFlowFestActivityPose::RestRiseSeconds,
+                TEXT("standing transition advances before releasing movement"));
+            const float SavedStandRemaining = VisitorStandRemaining;
+            const float SavedRestElapsed = VisitorRestElapsed;
+            SaveProgress();
+            VisitorStandRemaining = VisitorRestElapsed = 0.f;
+            LoadProgress();
+            Expect(FMath::IsNearlyEqual(VisitorStandRemaining, SavedStandRemaining) &&
+                FMath::IsNearlyEqual(VisitorRestElapsed, SavedRestElapsed),
+                TEXT("save/load preserves the standing pose and remaining delay"));
+            ToggleStaff();
+            Expect(!bStaffSpinning && VisitorStandRemaining > 0.f,
+                TEXT("loaded standing transition still blocks flow"));
+            TickVisitorActivity(.6f);
+            Expect(VisitorStandRemaining == 0.f, TEXT("standing transition releases movement when complete"));
         }
         MoveTo(TEXT("fire")); Interact();
         Expect(Phase == EFlowFestPhase::NightFreeRoam, TEXT("fire circle"));

@@ -25,6 +25,13 @@ import { ContentModerationError } from "#lib/features/moderation/errors/content-
 import { isSequenceDeletionIntended } from "#lib/shared/library/services/sequence-persistence-coordinator.js";
 import { getOwnedSequenceIdSet } from "#lib/shared/library/services/saved-sequence-ledger.js";
 import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+import {
+  isPublishPermissionDenied,
+  PUBLISH_PERMISSION_DENIED,
+  shouldRetryBlockedPublish,
+} from "#lib/shared/library/services/blocked-publish-policy.js";
+import { computeHash } from "#lib/shared/library/services/sequence-content-hasher.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 export type SequenceSyncStatus = "synced" | "pending" | "failed";
 
@@ -36,7 +43,7 @@ export type SequenceSyncStatus = "synced" | "pending" | "failed";
  */
 function permanentPublishRejection(
   error: unknown
-): { code: string; message: string } | null {
+): { code: string; message: string | null } | null {
   if (error instanceof IncompleteWordError) {
     return {
       code: error.code,
@@ -64,6 +71,14 @@ function permanentPublishRejection(
       message: "A saved sequence was flagged by moderation and won't publish.",
     };
   }
+  // The publish transaction was refused by the rules: this account cannot
+  // write the public copy or content claim (session triage E3: copies whose
+  // id or hash another owner holds). The same content fails the same way, so
+  // it waits for new content or an explicit save. No toast here: the
+  // repository already warned, once per device.
+  if (isPublishPermissionDenied(error)) {
+    return { code: PUBLISH_PERMISSION_DENIED, message: null };
+  }
   // Phase-4 strict rules reject any publish that does not prove the full
   // transaction shape. The current client always produces that shape, so a
   // rules denial on publish means this BUNDLE predates the contract (an old
@@ -78,6 +93,16 @@ function permanentPublishRejection(
     };
   }
   return null;
+}
+
+async function contentHashOf(
+  sequence: SequenceData
+): Promise<string | undefined> {
+  try {
+    return await computeHash(sequence);
+  } catch {
+    return undefined;
+  }
 }
 
 /**
@@ -151,17 +176,28 @@ export async function retryPendingSyncs(): Promise<void> {
     const ownedIds = getOwnedSequenceIdSet(ownerUid);
     if (!ownerUid || ownedIds.size === 0) return;
 
-    const stale = await db.sequences
+    const candidates = await db.sequences
       .filter(
         (s) =>
           (s.syncStatus === "pending" || s.syncStatus === "failed") &&
-          // A typed permanent rejection needs a user action, not another
-          // attempt — skip until the next explicit save clears the reason.
-          !s.pendingSyncMetadata?.blockedReason &&
           // Only rows THIS account recorded as its own.
           ownedIds.has(s.id)
       )
       .toArray();
+    // A typed permanent rejection needs a user action, not another attempt:
+    // skip until the next explicit save clears the reason. A permission block
+    // comes back at most once a day, and only after its content changed.
+    const now = Date.now();
+    const stale: SequenceData[] = [];
+    for (const row of candidates) {
+      if (
+        await shouldRetryBlockedPublish(row.pendingSyncMetadata, now, () =>
+          contentHashOf(row)
+        )
+      ) {
+        stale.push(row);
+      }
+    }
     if (stale.length === 0) return;
 
     // The account could have changed while Dexie was read. Writing now would
@@ -215,6 +251,7 @@ export async function retryPendingSyncs(): Promise<void> {
           // Record the typed blocked reason so future passes skip this record,
           // and tell the user ONCE what action is needed. The sequence stays
           // safe in Dexie; nothing was published.
+          const blockedHash = await contentHashOf(sequence);
           try {
             await db.sequences.update(sequence.id, {
               syncStatus: "failed",
@@ -225,6 +262,10 @@ export async function retryPendingSyncs(): Promise<void> {
                   sequence.pendingSyncMetadata?.visibility ?? "private",
                 notes: sequence.pendingSyncMetadata?.notes ?? "",
                 blockedReason: permanent.code,
+                // When and on what content, so a permission block can come
+                // back after the content changes (blocked-publish-policy).
+                blockedAt: Date.now(),
+                ...(blockedHash && { blockedContentHash: blockedHash }),
               },
             });
           } catch (dexieError) {
@@ -233,7 +274,7 @@ export async function retryPendingSyncs(): Promise<void> {
               dexieError
             );
           }
-          if (!hasShownFailureToast) {
+          if (permanent.message && !hasShownFailureToast) {
             hasShownFailureToast = true;
             toast.info(permanent.message, 6000);
           }

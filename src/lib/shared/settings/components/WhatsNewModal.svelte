@@ -20,6 +20,7 @@
   import ChangelogRichText from "./tabs/release-notes/ChangelogRichText.svelte";
   import ChangelogEntryMedia from "./tabs/release-notes/ChangelogEntryMedia.svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { reducedMotion } from "#lib/shared/transitions/motion.js";
 
   // Category display order and colors
   const CATEGORY_CONFIG: Record<
@@ -64,11 +65,31 @@
   // lines and Release Notes holds the rest, like the update email does.
   const COLUMN_PREVIEW = 4;
 
-  // Notes with an example clip or picture lead the sheet across its full
-  // width, where the example has room, instead of stretching one column.
+  // Notes with an example clip or picture lead the sheet, one at a time in
+  // a strip to step through, in the order the notes run (new features
+  // first). Every other note is a line of text in the columns below.
   const featured = $derived(
-    version?.changelogEntries?.filter((entry) => entry.media) ?? []
+    (version?.changelogEntries?.filter((entry) => entry.media) ?? []).sort(
+      (a, b) =>
+        CATEGORY_CONFIG[a.category].order - CATEGORY_CONFIG[b.category].order
+    )
   );
+
+  let track = $state<HTMLElement | null>(null);
+  let slide = $state(0);
+  const still = reducedMotion();
+
+  function showSlide(index: number) {
+    if (!track) return;
+    track.scrollTo({
+      left: index * track.clientWidth,
+      behavior: still ? "auto" : "smooth",
+    });
+  }
+
+  function syncSlide() {
+    if (track) slide = Math.round(track.scrollLeft / track.clientWidth);
+  }
 
   // Group the remaining entries by category
   const groupedChangelog = $derived.by(() => {
@@ -154,21 +175,83 @@
     {/snippet}
 
     <div class="release-body">
-      {#if featured.length}
-        <div class="featured">
-          {#each featured as entry}
-            <div class="featured-item">
+      {#snippet featuredItem(entry: ChangelogEntry)}
+        {@const config = CATEGORY_CONFIG[entry.category]}
+        <div
+          class="featured-media"
+          style="--media-width: {entry.media!.width}px; --media-ratio: {entry
+            .media!.width / entry.media!.height};"
+        >
+          <ChangelogEntryMedia media={entry.media!} />
+        </div>
+        <div class="featured-text">
+          <span
+            class="featured-kind"
+            style="--cat-color: {config.color}; --cat-bg: {config.bgColor};"
+          >
+            <i class="fas {CATEGORY_ICONS[entry.category]}" aria-hidden="true"
+            ></i>
+            {t(`settings_changelog_${entry.category}`)}
+          </span>
+          <p>
+            <ChangelogRichText text={entry.text} onNavigate={handleClose} />
+          </p>
+        </div>
+      {/snippet}
+
+      {#if featured.length > 1}
+        <section class="strip" aria-roledescription="carousel">
+          <div class="strip-track" bind:this={track} onscroll={syncSlide}>
+            {#each featured as entry, index}
               <div
-                class="featured-media"
-                style="--media-width: {entry.media!.width}px;"
+                class="featured-item strip-card"
+                aria-roledescription="slide"
+                aria-label="{index + 1} / {featured.length}"
+                inert={index !== slide}
               >
-                <ChangelogEntryMedia media={entry.media!} />
+                {@render featuredItem(entry)}
               </div>
-              <p class="featured-text">
-                <ChangelogRichText text={entry.text} onNavigate={handleClose} />
-              </p>
+            {/each}
+          </div>
+          <div class="strip-nav">
+            <button
+              class="strip-btn"
+              type="button"
+              aria-label={t("action_back")}
+              disabled={slide === 0}
+              onclick={() => showSlide(slide - 1)}
+            >
+              <i class="fas fa-chevron-left" aria-hidden="true"></i>
+            </button>
+            <div class="strip-dots">
+              {#each featured as entry, index}
+                <button
+                  class="strip-dot"
+                  class:current={index === slide}
+                  type="button"
+                  aria-label={entry.media!.alt}
+                  aria-current={index === slide}
+                  onclick={() => showSlide(index)}
+                ></button>
+              {/each}
             </div>
-          {/each}
+            <span class="strip-count" aria-hidden="true">
+              {slide + 1} / {featured.length}
+            </span>
+            <button
+              class="strip-btn"
+              type="button"
+              aria-label={t("action_next")}
+              disabled={slide === featured.length - 1}
+              onclick={() => showSlide(slide + 1)}
+            >
+              <i class="fas fa-chevron-right" aria-hidden="true"></i>
+            </button>
+          </div>
+        </section>
+      {:else if featured.length}
+        <div class="featured-item">
+          {@render featuredItem(featured[0]!)}
         </div>
       {/if}
 
@@ -409,25 +492,25 @@
     gap: 16px;
   }
 
-  /* Featured examples: the clip is square, so its width is capped by the
-     viewport height too, keeping the columns below on screen. */
-  .featured {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 16px 32px;
-  }
-
+  /* A featured example's width is capped by the viewport height too, so
+     the columns below stay on screen. */
   .featured-item {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 8px;
     max-inline-size: min(100%, 40rem);
+    margin-inline: auto;
   }
 
+  /* The example's height is what the viewport limits, so a wide picture
+     gets its width from that height and its own shape. */
   .featured-media {
-    inline-size: min(100%, 32dvh, var(--media-width));
+    inline-size: min(
+      100%,
+      calc(32dvh * var(--media-ratio, 1)),
+      var(--media-width)
+    );
     min-inline-size: min(100%, 16rem);
   }
 
@@ -436,11 +519,30 @@
   }
 
   .featured-text {
-    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
     font-size: var(--font-size-sm);
     line-height: 1.5;
     color: var(--theme-text);
     text-align: center;
+  }
+
+  .featured-text p {
+    margin: 0;
+  }
+
+  .featured-kind {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 10px;
+    border-radius: 10px;
+    background: var(--cat-bg);
+    color: var(--cat-color);
+    font-size: var(--font-size-compact);
+    font-weight: 600;
   }
 
   /* With room beside the clip, its caption sits next to it, so the columns
@@ -456,12 +558,131 @@
        row would stretch to its cap and sit off centre. */
     .featured-media {
       flex: none;
-      inline-size: min(32dvh, var(--media-width));
+      inline-size: min(
+        calc(32dvh * var(--media-ratio, 1)),
+        var(--media-width),
+        34rem
+      );
     }
 
     .featured-text {
+      align-items: flex-start;
       max-inline-size: 28rem;
       text-align: start;
+    }
+  }
+
+  /* The strip: one example at a time, swiped or stepped with the buttons.
+     Every card is a full track wide, so a step is one track width. */
+  .strip {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .strip-track {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+  }
+
+  .strip-track::-webkit-scrollbar {
+    display: none;
+  }
+
+  .strip-card {
+    flex: 0 0 100%;
+    max-inline-size: none;
+    justify-content: center;
+    scroll-snap-align: center;
+  }
+
+  .strip-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .strip-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
+    border: 1.5px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
+    border-radius: 50%;
+    color: var(--theme-text);
+    cursor: pointer;
+    transition:
+      background var(--duration-normal),
+      opacity var(--duration-normal);
+  }
+
+  .strip-btn:hover:not(:disabled) {
+    background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.08));
+  }
+
+  .strip-btn:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+
+  .strip-dots {
+    display: flex;
+  }
+
+  /* The dot is small; its button keeps a full touch target around it. */
+  .strip-dot {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 44px;
+    padding: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+
+  .strip-dot::after {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--theme-text-dim);
+    opacity: 0.5;
+    transition:
+      background var(--duration-normal),
+      opacity var(--duration-normal),
+      transform var(--duration-normal);
+  }
+
+  .strip-dot.current::after {
+    background: var(--theme-accent);
+    opacity: 1;
+    transform: scale(1.3);
+  }
+
+  /* A phone has no room for a full touch target per dot, so it counts. */
+  .strip-count {
+    display: none;
+    min-inline-size: 4ch;
+    font-size: var(--font-size-sm);
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+    color: var(--theme-text-dim);
+  }
+
+  @container release-notes (max-width: 30rem) {
+    .strip-dots {
+      display: none;
+    }
+
+    .strip-count {
+      display: block;
     }
   }
 

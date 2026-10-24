@@ -37,12 +37,15 @@ export class MuseumAtmosphere {
    *   room's mare whole. The wing theme still tracks normally underneath, so
    *   walking back into the Sun restores the wing's fog without a special case
    *   at the door.
+   * @param roomFog A room that brings its own air, as the village's forest
+   *   night does. It overrides the wing's fog while the visitor is inside.
    */
   update(
     theme: WingTheme | null,
     fpsActive: boolean,
     delta: number,
     vacuum = false,
+    roomFog: { color: string; density: number } | null = null,
   ): boolean {
     let wingChanged = false;
 
@@ -57,6 +60,9 @@ export class MuseumAtmosphere {
     if (vacuum) {
       this.colorTarget.set("#000000");
       this.densityTarget = 0;
+    } else if (roomFog) {
+      this.colorTarget.set(roomFog.color);
+      this.densityTarget = roomFog.density;
     } else if (this.currentWingTheme) {
       const fogCfg = WING_FOG[this.currentWingTheme];
       this.colorTarget.set(fogCfg.color);

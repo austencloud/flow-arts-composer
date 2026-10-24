@@ -50,6 +50,7 @@ describe("production release feature gate", () => {
       "src/routes/1998/",
       "src/routes/2003/",
       "src/routes/coven/",
+      "src/routes/performance/",
       "src/routes/test/",
       "src/routes/(dev)/",
       "src/routes/demo/",

@@ -2,7 +2,7 @@
   import { Popover } from "bits-ui";
   import type { UnifiedPlaybackContext } from "./unified-playback-context";
   import { formatTime } from "#lib/shared/sequence-viewer/utils/format-time.js";
-  import { onDestroy, type Snippet } from "svelte";
+  import { onDestroy, untrack, type Snippet } from "svelte";
   import BpmChips from "#lib/shared/animation-engine/components/controls/BpmChips.svelte";
   import PlaybackModeToggle from "#lib/shared/animation-engine/components/controls/PlaybackModeToggle.svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
@@ -15,6 +15,7 @@
     hidePlay = false,
     compact = false,
     trailing,
+    popoverOpen = $bindable(false),
   }: {
     playback: UnifiedPlaybackContext;
     visible?: boolean;
@@ -29,6 +30,12 @@
      * is how the studio ended up with a parallel transport in the first place.
      */
     trailing?: Snippet;
+    /**
+     * Whether one of this bar's popovers (tempo presets, or the compact
+     * "more" panel) is open. A host binds it to share one open-popover slot
+     * with its own panels, so opening either side closes the other.
+     */
+    popoverOpen?: boolean;
   } = $props();
 
   const currentTimeLabel = $derived(formatTime(playback.elapsed));
@@ -110,6 +117,19 @@
   );
   let compactControlsOpen = $state(false);
   let compactTriggerEl: HTMLButtonElement | undefined = $state();
+
+  $effect(() => {
+    const open = compactControlsOpen || showBpmPopover;
+    if (open !== untrack(() => popoverOpen)) popoverOpen = open;
+  });
+  // The host emptied the slot, usually because another panel took it.
+  $effect(() => {
+    if (popoverOpen) return;
+    untrack(() => {
+      compactControlsOpen = false;
+      showBpmPopover = false;
+    });
+  });
 
   function selectPreset(preset: number) {
     playback.onBpmChange?.(preset);

@@ -2,6 +2,7 @@
 #include "FlowFestAnimInstance.h"
 #include "FlowFestFootstepComponent.h"
 #include "FlowFestPropComponent.h"
+#include "FlowArtsRuntimeMotion.h"
 
 #include "Animation/AnimSequence.h"
 #include "Components/SceneComponent.h"
@@ -226,9 +227,10 @@ bool UFlowFestAvatarComponent::PlayMotion(FName Motion)
 
 void UFlowFestAvatarComponent::SetMotion(FVector WorldVelocity, bool bInAir, bool bMounted)
 {
-    if (!BodyMesh || !BodyMesh->GetSkeletalMeshAsset() || PerformanceClip)
+    if (!BodyMesh || !BodyMesh->GetSkeletalMeshAsset())
         return;
     UFlowFestAnimInstance* Animator = Cast<UFlowFestAnimInstance>(BodyMesh->GetAnimInstance());
+    if (Animator && Animator->IsPerforming()) return;
     const float Now = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.f;
     if (bMounted)
     {
@@ -307,6 +309,12 @@ FTransform UFlowFestAvatarComponent::GetHandTransform(bool bLeft) const
     return BodyMesh->GetBoneIndex(Bone) != INDEX_NONE ? BodyMesh->GetSocketTransform(Bone, RTS_World) : FTransform::Identity;
 }
 
+void UFlowFestAvatarComponent::SetActivityPose(EFlowFestBodyActivity Activity, float ElapsedSeconds, float ExitSecondsRemaining)
+{
+    if (UFlowFestAnimInstance* Animator = BodyMesh ? Cast<UFlowFestAnimInstance>(BodyMesh->GetAnimInstance()) : nullptr)
+        Animator->SetActivityPose(Activity, ElapsedSeconds, ExitSecondsRemaining);
+}
+
 FName UFlowFestAvatarComponent::ResolvePerformanceProfile(FName PropId, int32 Variant)
 {
     FString Family = PropId.ToString().ToLower();
@@ -353,21 +361,40 @@ void UFlowFestAvatarComponent::StopPerformance()
     PlayMotion(TEXT("Idle"));
 }
 
+bool UFlowFestAvatarComponent::PlayRuntimePerformance(TSharedPtr<const FFlowArtsRuntimeMotion, ESPMode::ThreadSafe> Motion,
+    EFlowFestRuntimePosePolicy PosePolicy)
+{
+    UFlowFestAnimInstance* Animator = BodyMesh ? Cast<UFlowFestAnimInstance>(BodyMesh->GetAnimInstance()) : nullptr;
+    if (!Motion || !Animator || FName(*Motion->GetCharacterId()) != CharacterId) return false;
+    PerformanceClip = nullptr;
+    BodyMesh->SetRelativeTransform(StandingPresentation);
+    Animator->StartRuntimePerformance(MoveTemp(Motion), PosePolicy);
+    CurrentMotion = NAME_None;
+    return true;
+}
+
+TSharedPtr<const FFlowArtsRuntimeMotion, ESPMode::ThreadSafe> UFlowFestAvatarComponent::GetRuntimeMotion() const
+{
+    const UFlowFestAnimInstance* Animator = BodyMesh ? Cast<UFlowFestAnimInstance>(BodyMesh->GetAnimInstance()) : nullptr;
+    return Animator ? Animator->GetRuntimeMotion() : nullptr;
+}
+
 float UFlowFestAvatarComponent::GetPerformanceTime() const
 {
     const UFlowFestAnimInstance* Animator = BodyMesh ? Cast<UFlowFestAnimInstance>(BodyMesh->GetAnimInstance()) : nullptr;
-    return PerformanceClip && Animator ? Animator->GetPerformanceTime() : 0.f;
+    return Animator && Animator->IsPerforming() ? Animator->GetPerformanceTime() : 0.f;
 }
 
 float UFlowFestAvatarComponent::GetPerformanceLength() const
 {
-    return PerformanceClip ? PerformanceClip->GetPlayLength() : 0.f;
+    const UFlowFestAnimInstance* Animator = BodyMesh ? Cast<UFlowFestAnimInstance>(BodyMesh->GetAnimInstance()) : nullptr;
+    return Animator && Animator->IsPerforming() ? Animator->GetPerformanceLength() : 0.f;
 }
 
 FName UFlowFestAvatarComponent::GetPerformanceProfile() const
 {
     const UFlowFestAnimInstance* Animator = BodyMesh ? Cast<UFlowFestAnimInstance>(BodyMesh->GetAnimInstance()) : nullptr;
-    return PerformanceClip && Animator ? Animator->GetPerformanceProfile() : NAME_None;
+    return Animator ? Animator->GetPerformanceProfile() : NAME_None;
 }
 
 float UFlowFestAvatarComponent::GetPerformancePhase() const
@@ -439,7 +466,7 @@ void UFlowFestAvatarComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
     Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
     if (BodyMesh && GetWorld())
     {
-        const bool bGroundedMotion = !PerformanceClip && !bWasInAir &&
+        const bool bGroundedMotion = GetPerformanceLength() <= 0.f && !bWasInAir &&
             CurrentMotion != TEXT("Ride") && CurrentMotion != TEXT("Jump") && CurrentMotion != TEXT("Fall");
         FCollisionQueryParams Query(SCENE_QUERY_STAT(FlowFestFooting), false, GetOwner());
         FVector FootLocations[2] = {FVector::ZeroVector, FVector::ZeroVector};
@@ -470,11 +497,12 @@ void UFlowFestAvatarComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
         if (Footsteps) Footsteps->Evaluate(DeltaTime, CurrentMotion, bGroundedMotion,
             BodyMesh->IsVisible(), FootLocations, FootGapsCm);
     }
-    if (BoundProp && PerformanceClip)
+    if (BoundProp && GetPerformanceLength() > 0.f)
     {
         if (const UFlowFestAnimInstance* Animator = Cast<UFlowFestAnimInstance>(BodyMesh->GetAnimInstance()))
         {
-            BoundProp->SetPerformanceTime(Animator->GetPerformanceTime(), Animator->GetPerformanceWeight(), Animator);
+            BoundProp->SetPerformanceTime(Animator->GetPerformanceTime(), Animator->GetPerformanceWeight(), Animator,
+                Animator->GetArmClearance().SharedPerformanceTranslationCm);
             BoundProp->SyncEffectPlayback(Animator->GetPerformanceTime(), Animator->IsPerformancePaused(), Animator->GetPerformanceRate());
         }
     }

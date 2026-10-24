@@ -16,6 +16,7 @@ import {
   buildFirstSeenQuery,
   parseTriageSessionRow,
   parseTriageEventRow,
+  isLikelyCrawlerSession,
   type TriageSessionRow,
 } from "../src/lib/server/analytics/session-triage-queries.js";
 import {
@@ -41,6 +42,21 @@ function arg(flag: string): string | undefined {
   return i >= 0 ? process.argv[i + 1] : undefined;
 }
 
+/** Session rows for analysis, minus likely crawlers unless --include-crawlers. */
+async function loadSessions(since: string): Promise<TriageSessionRow[]> {
+  const rows = (
+    await hogql(buildTriageSessionsQuery(toClickhouse(since), 200))
+  ).map(parseTriageSessionRow);
+  if (process.argv.includes("--include-crawlers")) return rows;
+  const kept = rows.filter((r) => !isLikelyCrawlerSession(r));
+  if (kept.length < rows.length) {
+    console.error(
+      `(excluded ${rows.length - kept.length} likely crawler sessions; --include-crawlers to see them)`
+    );
+  }
+  return kept;
+}
+
 function sinceFromArgs(): string {
   const explicit = arg("--since");
   if (explicit) return explicit;
@@ -61,9 +77,7 @@ async function analyze(): Promise<void> {
   const limit = Number(arg("--limit") ?? 20);
   const asJson = process.argv.includes("--json");
 
-  const rows = (
-    await hogql(buildTriageSessionsQuery(toClickhouse(since), 200))
-  ).map(parseTriageSessionRow);
+  const rows = await loadSessions(since);
 
   if (rows.length === 0) {
     if (asJson) console.log(JSON.stringify({ since, sessions: [] }, null, 2));
@@ -135,9 +149,7 @@ async function analyze(): Promise<void> {
 
 async function stats(): Promise<void> {
   const since = sinceFromArgs();
-  const rows = (
-    await hogql(buildTriageSessionsQuery(toClickhouse(since), 200))
-  ).map(parseTriageSessionRow);
+  const rows = await loadSessions(since);
 
   const total = rows.length;
   const withException = rows.filter((r) => r.exceptionCount > 0).length;
@@ -215,8 +227,8 @@ async function main(): Promise<void> {
     console.log(
       "Usage: tsx scripts/triage-sessions.ts <analyze|stats|SESSION_ID> [flags]"
     );
-    console.log("  analyze [--since ISO | --days N] [--limit N] [--json]");
-    console.log("  stats   [--since ISO | --days N]");
+    console.log("  analyze [--since ISO | --days N] [--limit N] [--json] [--include-crawlers]");
+    console.log("  stats   [--since ISO | --days N] [--include-crawlers]");
     console.log("  <sessionId>");
     process.exit(0);
   }

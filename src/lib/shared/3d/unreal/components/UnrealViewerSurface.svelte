@@ -11,16 +11,38 @@
   import type { NativeViewerConnection } from "../state/native-viewer-connection.svelte";
   import type { NativeViewerState } from "../domain/bridge-protocol";
   import type { CharacterId } from "../../domain/character-model";
-  import { Plane, PlaneMode } from "@austencloud/scene-3d";
+  import {
+    Plane,
+    PlaneMode,
+    userProportionsState,
+  } from "@austencloud/scene-3d";
+  import { CANONICAL_PERFORMER_ANCHOR_Y } from "../../environments/domain/stage-coordinate-frame";
   import { computeGroupBounds } from "#lib/shared/sequence-viewer/camera-choreography/presets/shots.js";
 
-  import { frameNativeCamera } from "../domain/native-camera-framing";
+  import {
+    frameNativeCamera,
+    toNativeCameraPose,
+    toWebCameraPose,
+  } from "../domain/native-camera-framing";
   import {
     nativePropId,
     nativePropSelection,
   } from "../domain/native-prop-selection";
+  import {
+    nativeDragDelta,
+    nativeDollyDragDelta,
+    nativePinchZoomDelta,
+    nativeProjectionFov,
+    nativeWheelZoomDelta,
+  } from "../domain/native-camera-input";
 
-  let { connection }: { connection: NativeViewerConnection } = $props();
+  let {
+    connection,
+    sceneOwner = "native",
+  }: {
+    connection: NativeViewerConnection;
+    sceneOwner?: "native" | "composer";
+  } = $props();
   const viewer = getViewer3DContext();
   let host!: HTMLDivElement;
   let initialized = $state(false);
@@ -29,25 +51,43 @@
     id: number;
     x: number;
     y: number;
+    startX: number;
+    startY: number;
     move: boolean;
     pan: boolean;
+    dolly: boolean;
   } | null = null;
+  const touchPointers = new Map<number, { x: number; y: number }>();
+  let touchGesture: { x: number; y: number; distance: number } | null = null;
   let lastSubmitted = "";
   let editRevision = 0;
   let sceneEditPending = $state(false);
   let confirmedScene = "";
   let confirmedUnsupported = "";
   let sceneQueue: Promise<void> = Promise.resolve();
-  let cameraDeltaInFlight = false;
   let cameraGeneration = 0;
-  let queuedCameraDelta: {
-    mode: "orbit" | "pan";
-    deltaX: number;
-    deltaY: number;
-  } | null = null;
+  let cameraPumpRunning = false;
+  type CameraCommand =
+    | { mode: "orbit" | "pan"; deltaX: number; deltaY: number }
+    | { mode: "zoom"; delta: number; cursorX?: number; cursorY?: number }
+    | { mode: "fov"; verticalFov: number }
+    | {
+        mode: "snap";
+        position: { x: number; y: number; z: number };
+        target: { x: number; y: number; z: number };
+        verticalFov?: number;
+      };
+  let cameraQueue: CameraCommand[] = [];
+  let requestedVerticalFov: number | null = null;
   const camera = new PerspectiveCamera();
   const raycaster = new Raycaster();
   const ground = new GroundPlane(new Vector3(0, 1, 0), 0);
+  function webFeetY() {
+    // Standalone viewers retain their historical camera origin.
+    return sceneOwner === "composer"
+      ? CANONICAL_PERFORMER_ANCHOR_Y + userProportionsState.groundY
+      : -1.2;
+  }
 
   function streamView() {
     const rect = host.getBoundingClientRect();
@@ -91,7 +131,8 @@
       target,
       radius,
       streamView().aspect,
-      connection.state?.camera.fov ?? 50
+      connection.state?.camera.fov ?? 50,
+      webFeetY()
     );
   }
   function desiredScene() {
@@ -210,19 +251,31 @@
         initialized = false;
         ++editRevision;
         sceneEditPending = false;
-        queuedCameraDelta = null;
+        cameraQueue = [];
+        requestedVerticalFov = null;
         ++cameraGeneration;
-        cameraDeltaInFlight = false;
+        cameraPumpRunning = false;
         return;
       }
       if (!state) return;
-      viewer.updateCameraSnapshot({
-        position: state.camera.position,
-        target: state.camera.target,
-        fov: verticalFov(state.camera.fov, streamView().aspect),
-        rotation: { x: 0, y: 0, z: 0 },
-        timestamp: performance.now(),
-      });
+      if (!initialized && sceneOwner === "composer") {
+        initialized = true;
+        const savedCamera = viewer.persistedCamera;
+        if (savedCamera)
+          sendCamera({
+            mode: "snap",
+            ...toNativeCameraPose(
+              savedCamera.position,
+              savedCamera.target,
+              webFeetY()
+            ),
+            verticalFov: savedCamera.fov,
+          });
+        else viewer.focusSelectedPerformers();
+        return;
+      }
+      if (!cameraPumpRunning && cameraQueue.length === 0)
+        adoptNativeCamera(state);
       if (!initialized) {
         reconcile(state);
         initialized = true;
@@ -234,6 +287,7 @@
   // A native state event can originate from the host. Adopt scene changes only
   // after local edits settle, so camera events cannot undo a pending rail edit.
   $effect(() => {
+    if (sceneOwner === "composer") return;
     const nativeUpdate = connection.nativeUpdate;
     const pending = sceneEditPending;
     if (!initialized || !nativeUpdate || pending) return;
@@ -245,6 +299,7 @@
   });
 
   $effect(() => {
+    if (sceneOwner === "composer") return;
     const unsupported = unsupportedSignature();
     if (!initialized || connection.status !== "ready") return;
     if (unsupported === confirmedUnsupported) return;
@@ -257,6 +312,7 @@
   });
 
   $effect(() => {
+    if (sceneOwner === "composer") return;
     const scene = desiredScene();
     const encoded = JSON.stringify(scene);
     if (!initialized || connection.status !== "ready") return;
@@ -301,7 +357,11 @@
   // This first host has a fixed stage. Restore the confirmed environment if
   // an existing environment control is used, rather than displaying a false selection.
   $effect(() => {
-    if (initialized && viewer.environmentId !== "void") {
+    if (
+      sceneOwner === "native" &&
+      initialized &&
+      viewer.environmentId !== "void"
+    ) {
       untrack(() => {
         connection.report(
           "This Unreal preview has one studio stage. Web environments are not connected yet."
@@ -311,11 +371,57 @@
     }
   });
 
-  function sendCamera(payload: object) {
-    if (connection.status !== "ready") return;
-    void connection.command("camera", payload).catch((cause: Error) => {
-      if (connection.status === "ready") connection.report(cause.message);
+  function adoptNativeCamera(state: NativeViewerState) {
+    requestedVerticalFov = verticalFov(state.camera.fov, streamView().aspect);
+    viewer.updateCameraSnapshot({
+      ...toWebCameraPose(state.camera.position, state.camera.target, webFeetY()),
+      fov: requestedVerticalFov,
+      rotation: { x: 0, y: 0, z: 0 },
+      timestamp: performance.now(),
     });
+  }
+
+  function sendCamera(payload: CameraCommand) {
+    if (connection.status !== "ready") return;
+    // A rail preset supersedes drags that have not reached the native scene.
+    if (payload.mode === "snap") cameraQueue = [];
+    if (payload.mode === "snap" && payload.verticalFov)
+      requestedVerticalFov = payload.verticalFov;
+    if (payload.mode === "fov") {
+      requestedVerticalFov = payload.verticalFov;
+      if (cameraQueue.at(-1)?.mode === "fov") cameraQueue.pop();
+    }
+    cameraQueue.push(payload);
+    void pumpCamera();
+  }
+
+  async function pumpCamera() {
+    if (cameraPumpRunning) return;
+    cameraPumpRunning = true;
+    const generation = cameraGeneration;
+    while (
+      generation === cameraGeneration &&
+      connection.status === "ready" &&
+      cameraQueue.length > 0
+    ) {
+      const payload = cameraQueue.shift()!;
+      try {
+        const state = await connection.command("camera", payload);
+        if (generation === cameraGeneration && cameraQueue.length === 0)
+          adoptNativeCamera(state);
+      } catch (cause) {
+        if (generation === cameraGeneration) {
+          cameraQueue = [];
+          requestedVerticalFov = null;
+          if (connection.status === "ready")
+            connection.report(
+              cause instanceof Error ? cause.message : "Camera movement failed."
+            );
+        }
+        break;
+      }
+    }
+    if (generation === cameraGeneration) cameraPumpRunning = false;
   }
 
   function sendCameraDelta(
@@ -324,40 +430,30 @@
     deltaY: number
   ) {
     if (connection.status !== "ready") return;
-    if (queuedCameraDelta?.mode === mode) {
-      queuedCameraDelta.deltaX += deltaX;
-      queuedCameraDelta.deltaY += deltaY;
-    } else {
-      queuedCameraDelta = { mode, deltaX, deltaY };
+    if (deltaX === 0 && deltaY === 0) return;
+    const last = cameraQueue.at(-1);
+    if (
+      last?.mode === mode &&
+      Math.abs(last.deltaX + deltaX) <= 1 &&
+      Math.abs(last.deltaY + deltaY) <= 1
+    ) {
+      last.deltaX += deltaX;
+      last.deltaY += deltaY;
+      return;
     }
-    if (cameraDeltaInFlight) return;
-    cameraDeltaInFlight = true;
-    const generation = cameraGeneration;
-    void (async () => {
-      while (
-        generation === cameraGeneration &&
-        queuedCameraDelta &&
-        connection.status === "ready"
-      ) {
-        const payload = queuedCameraDelta;
-        queuedCameraDelta = null;
-        try {
-          await connection.command("camera", payload);
-        } catch (cause) {
-          if (generation === cameraGeneration && connection.status === "ready")
-            connection.report(
-              cause instanceof Error ? cause.message : "Camera movement failed."
-            );
-          break;
-        }
-      }
-      if (generation === cameraGeneration) cameraDeltaInFlight = false;
-    })();
+    while (deltaX !== 0 || deltaY !== 0) {
+      const x = Math.max(-1, Math.min(1, deltaX));
+      const y = Math.max(-1, Math.min(1, deltaY));
+      sendCamera({ mode, deltaX: x, deltaY: y });
+      deltaX -= x;
+      deltaY -= y;
+    }
   }
 
   function placeAt(event: PointerEvent) {
     const state = connection.state;
-    const performer = viewer.performerManager.performers[0];
+    const performer =
+      viewer.performerManager.performers[viewer.primaryPerformerIndex ?? 0];
     if (!state || !performer) return;
     const rect = streamView();
     if (
@@ -401,34 +497,117 @@
     if (connection.status !== "ready") return;
     host.focus();
     host.setPointerCapture(event.pointerId);
+    if (event.pointerType === "touch") {
+      touchPointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      if (touchPointers.size > 1) {
+        if (drag?.move) viewer.endSpatialEdit();
+        drag = null;
+        touchGesture = touchCenter();
+        return;
+      }
+    }
     const move = placing || event.shiftKey;
     if (move) viewer.beginSpatialEdit();
     drag = {
       id: event.pointerId,
       x: event.clientX,
       y: event.clientY,
+      startX: event.clientX,
+      startY: event.clientY,
       move,
-      pan: event.button !== 0 || event.altKey,
+      pan: event.button === 2,
+      dolly: event.button === 1,
     };
     if (move) placeAt(event);
   }
 
   function pointerMove(event: PointerEvent) {
+    if (event.pointerType === "touch" && touchPointers.has(event.pointerId)) {
+      touchPointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      if (touchPointers.size >= 2) {
+        const next = touchCenter();
+        if (next && touchGesture) {
+          const delta = nativeDragDelta(
+            next.x - touchGesture.x,
+            next.y - touchGesture.y,
+            host.clientHeight
+          );
+          const zoom = nativePinchZoomDelta(touchGesture.distance, next.distance);
+          if (zoom) sendZoom(zoom, next.x, next.y);
+          if (delta.deltaX || delta.deltaY)
+            sendCameraDelta("pan", delta.deltaX, delta.deltaY);
+        }
+        touchGesture = next;
+        return;
+      }
+    }
     if (!drag || drag.id !== event.pointerId) return;
     if (drag.move) placeAt(event);
-    else if (host.clientWidth > 0 && host.clientHeight > 0)
-      sendCameraDelta(
-        drag.pan ? "pan" : "orbit",
-        (event.clientX - drag.x) / host.clientWidth,
-        (event.clientY - drag.y) / host.clientHeight
-      );
+    else if (host.clientHeight > 0) {
+      const movementX = event.clientX - drag.x;
+      const movementY = event.clientY - drag.y;
+      if (drag.dolly)
+        sendZoom(nativeDollyDragDelta(movementY), drag.startX, drag.startY);
+      else {
+        const delta = nativeDragDelta(movementX, movementY, host.clientHeight);
+        sendCameraDelta(drag.pan ? "pan" : "orbit", delta.deltaX, delta.deltaY);
+      }
+    }
     drag.x = event.clientX;
     drag.y = event.clientY;
   }
 
-  function pointerUp() {
-    if (drag?.move) viewer.endSpatialEdit();
-    drag = null;
+  function touchCenter() {
+    const points = [...touchPointers.values()];
+    if (points.length < 2) return null;
+    const a = points[0]!;
+    const b = points[1]!;
+    return {
+      x: (a.x + b.x) / 2,
+      y: (a.y + b.y) / 2,
+      distance: Math.hypot(a.x - b.x, a.y - b.y),
+    };
+  }
+
+  function sendZoom(delta: number, clientX: number, clientY: number) {
+    const rect = streamView();
+    if (rect.width <= 0 || rect.height <= 0 || delta === 0) return;
+    const cursorX = Math.max(-1, Math.min(1, ((clientX - rect.left) / rect.width) * 2 - 1));
+    const cursorY = Math.max(-1, Math.min(1, 1 - ((clientY - rect.top) / rect.height) * 2));
+    while (delta !== 0) {
+      const step = Math.max(-2, Math.min(2, delta));
+      sendCamera({ mode: "zoom", delta: step, cursorX, cursorY });
+      delta -= step;
+    }
+  }
+
+  function sendProjectionZoom(delta: number) {
+    if (connection.status !== "ready" || delta === 0) return;
+    const current = requestedVerticalFov ??
+      viewer.persistedCamera?.fov ??
+      (connection.state
+        ? verticalFov(connection.state.camera.fov, streamView().aspect)
+        : 50);
+    const next = nativeProjectionFov(current, delta);
+    sendCamera({ mode: "fov", verticalFov: Math.max(1, Math.min(170, next)) });
+  }
+
+  function pointerUp(event: PointerEvent) {
+    if (event.pointerType === "touch") {
+      touchPointers.delete(event.pointerId);
+      touchGesture = touchCenter();
+      if (touchPointers.size === 1) {
+        const [id, point] = [...touchPointers.entries()][0]!;
+        drag = {
+          id, x: point.x, y: point.y, startX: point.x, startY: point.y,
+          move: false, pan: false, dolly: false,
+        };
+      }
+    }
+    if (drag?.id === event.pointerId) {
+      if (drag.move) viewer.endSpatialEdit();
+      drag = null;
+    }
     placing = false;
   }
 
@@ -447,7 +626,8 @@
     if (!direction) return;
     event.preventDefault();
     if (event.shiftKey) {
-      const performer = viewer.performerManager.performers[0];
+      const performer =
+        viewer.performerManager.performers[viewer.primaryPerformerIndex ?? 0];
       if (!performer) return;
       viewer.beginSpatialEdit();
       performer.position.x += direction[0]! * 0.1;
@@ -458,10 +638,20 @@
   }
 
   onMount(() => {
-    // Native feet rest at floor zero; shared shots add their own target height.
-    viewer.setStageGroundOffset(0);
+    // Composer shots use the Web stage anchor; the camera adapter maps feet to native Y=0.
+    viewer.setStageGroundOffset(
+      sceneOwner === "composer" ? CANONICAL_PERFORMER_ANCHOR_Y : 0
+    );
     const removeCamera = viewer.registerSnapTo((position, target) =>
-      sendCamera(frameCamera(position, target))
+      sendCamera({
+        mode: "snap",
+        ...(sceneOwner === "composer"
+          ? toNativeCameraPose(position, target, webFeetY())
+          : frameCamera(position, target)),
+        ...(sceneOwner === "composer"
+          ? { verticalFov: requestedVerticalFov ?? viewer.persistedCamera?.fov ?? 50 }
+          : {}),
+      })
     );
     void connection.mount(host);
     const removePlacement = viewer.registerPerformerPlacement(() => {
@@ -486,7 +676,7 @@
   bind:this={host}
   role="application"
   tabindex="0"
-  aria-label="Unreal scene. Drag to orbit, Alt-drag to pan, scroll to zoom. Shift-drag or Shift-arrow keys to move the performer."
+  aria-label="Unreal scene. Drag to orbit, right-drag or two-finger drag to pan, scroll or pinch to zoom. Shift-drag or Shift-arrow keys to move the performer."
   onpointerdown={pointerDown}
   onpointermove={pointerMove}
   onpointerup={pointerUp}
@@ -495,10 +685,11 @@
   onkeydown={keyDown}
   onwheel={(event) => {
     event.preventDefault();
-    sendCamera({
-      mode: "zoom",
-      delta: Math.max(-1, Math.min(1, event.deltaY / 500)),
-    });
+    const delta = nativeWheelZoomDelta(
+      event.deltaY, event.deltaMode, /Mac/.test(navigator.platform), event.ctrlKey
+    );
+    if (event.ctrlKey) sendProjectionZoom(delta);
+    else sendZoom(delta, event.clientX, event.clientY);
   }}
 ></div>
 

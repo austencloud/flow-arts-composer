@@ -1,6 +1,7 @@
 <script lang="ts">
   /** Advances all pooled effects once after every rig has published its tips. */
-  import { useStage, useTask, useThrelte, type Stage } from "@threlte/core";
+  import { useTask, useThrelte } from "@threlte/core";
+  import { usePropEffectStages } from "../prop-effect-stages";
   import { onDestroy } from "svelte";
   import type { Object3D, WebGLRenderer } from "three";
   import {
@@ -21,17 +22,11 @@
     petalEnvironmentProfile = NEUTRAL_PETAL_ENVIRONMENT_PROFILE,
     onReadyChange,
   }: Props = $props();
-  const { scene, mainStage, renderStage, renderer } =
-    useThrelte() as unknown as {
-      scene: Object3D;
-      mainStage: Stage;
-      renderStage: Stage;
-      renderer: WebGLRenderer;
-    };
-  const effectsStage = useStage(Symbol("scene-particle-effects"), {
-    after: mainStage,
-    before: renderStage,
-  });
+  const { scene, renderer } = useThrelte() as unknown as {
+    scene: Object3D;
+    renderer: WebGLRenderer;
+  };
+  const { particles: effectsStage } = usePropEffectStages();
   manager.initialize(parent ?? scene, renderer);
   onReadyChange?.(true);
 

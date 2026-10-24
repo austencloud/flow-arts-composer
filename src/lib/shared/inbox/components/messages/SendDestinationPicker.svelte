@@ -7,6 +7,13 @@
   The sheet's narrow layout collapses it (the note and Send need the height);
   every wide layout keeps it, so switching recipient is one tap instead of
   Change-then-repick.
+
+  Compact is the viewer's share panel, which swaps to this list when Send to
+  a friend is pressed and already titles it. Austen, 2026-10-21: "a buttload
+  of empty space", then the boxed list with its own scrollbar was "very
+  awkward". So compact drops the heading, the "Destination" kicker and the
+  "Choose a conversation" card, and the list sits flat in the panel, which
+  is its only scroller.
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
@@ -26,9 +33,11 @@
      * from its own container query; the viewer never does.
      */
     collapseOnSelect?: boolean;
+    /** The viewer's share dock: no kicker, no empty-selection card. */
+    compact?: boolean;
   }
 
-  let { state, collapseOnSelect = false }: Props = $props();
+  let { state, collapseOnSelect = false, compact = false }: Props = $props();
 
   // While recents load, show their rows as placeholders. Rendering the empty
   // list instead read as "you have no conversations" and focused the search,
@@ -46,16 +55,24 @@
   class="destination-section"
   class:destination-selected={state.hasDestination}
   class:collapse-on-select={collapseOnSelect}
-  aria-labelledby="share-destination-title"
+  class:compact
+  aria-labelledby={compact ? undefined : "share-destination-title"}
+  aria-label={compact ? t("inbox_ui_send_to") : undefined}
 >
-  <div class="section-heading">
-    <div>
-      <span class="section-kicker">{t("inbox_ui_destination")}</span>
-      <h3 id="share-destination-title">{t("inbox_ui_send_to")}</h3>
+  {#if !compact}
+    <div class="section-heading">
+      <div>
+        <span class="section-kicker">{t("inbox_ui_destination")}</span>
+        <h3 id="share-destination-title">{t("inbox_ui_send_to")}</h3>
+      </div>
     </div>
-  </div>
+  {/if}
 
-  <div class="selected-slot" aria-live="polite">
+  <div
+    class="selected-slot"
+    class:idle={compact && !state.hasDestination}
+    aria-live="polite"
+  >
     {#if state.destinationCount > 1}
       <!-- Two or more: chips, so every recipient is visible and individually
            removable. A single "3 people" summary hides WHO, which is the one
@@ -137,7 +154,7 @@
           {t("inbox_ui_change")}
         </button>
       </div>
-    {:else}
+    {:else if !compact}
       <div class="destination-placeholder">
         <span class="placeholder-icon" aria-hidden="true">
           <i class="fas fa-paper-plane"></i>
@@ -180,7 +197,9 @@
 
     <div class="destination-group new-conversation">
       <h4>
-        {recentsPhase === "none" ? t("inbox_ui_find_someone") : t("inbox_ui_start_a_new_conversation")}
+        {recentsPhase === "none"
+          ? t("inbox_ui_find_someone")
+          : t("inbox_ui_start_a_new_conversation")}
       </h4>
       {#key state.searchResetKey}
         <UserSearchInput
@@ -403,6 +422,33 @@
     border-radius: 0.875rem;
     scrollbar-width: thin;
     scrollbar-color: var(--theme-stroke) transparent;
+  }
+
+  /* Nothing picked yet: the empty slot takes no room. The list keeps about
+     two conversations of height even when the dock is short; past that the
+     host column scrolls instead of crushing it to its heading. */
+  .selected-slot.idle {
+    min-height: 0;
+  }
+
+  .compact {
+    grid-template-rows: auto auto;
+  }
+
+  .compact .destination-browser {
+    overflow: visible;
+    background: none;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .compact .destination-group {
+    padding-inline: 0;
+  }
+
+  .compact .conversation-options {
+    border: 0;
+    border-radius: 0;
   }
 
   .destination-browser[inert] {

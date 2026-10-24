@@ -313,3 +313,10 @@ staff length.
 - How much chest turn the extension style's full reach may use, set in step 4.
 - What the drawn grid rings show once a hand's distance varies by direction.
   They follow the global staff length today (see Drawn grid above).
+- Body response: `src/lib/shared/3d/collision/body-response.ts` plans a
+  body turn, floor move, duck and foot steps over the score so the hands
+  reach their staffs and the staffs stay out of the torso and head. It is
+  built and tested but no host turns it on yet; `LiveSequencePerformer3D`
+  takes it through its `bodyResponse` prop once the rig's feet patch lands.
+  The design and its open questions are in
+  `docs/superpowers/specs/active/2026-10-23-body-response.md`.

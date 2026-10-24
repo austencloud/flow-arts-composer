@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { layoutBeatCarousel } from "#lib/shared/media-composition/services/beat-carousel-layout.js";
+import {
+  beatCarouselFocusSize,
+  layoutBeatCarousel,
+} from "#lib/shared/media-composition/services/beat-carousel-layout.js";
 
 const rect = { x: 500, y: 1420, width: 580, height: 500 };
 const layout = (position: number) =>
@@ -85,6 +88,40 @@ describe("breakdown beat carousel", () => {
         expect(Math.abs(change)).toBeLessThan(0.05);
       }
       previous = current;
+    }
+  });
+});
+
+describe("vertical beat carousel", () => {
+  const band = { x: 812, y: 0, width: 211, height: 1080 };
+  const vertical = (position: number) =>
+    layoutBeatCarousel({
+      rect: band,
+      position,
+      beatCount: 4,
+      orientation: "vertical",
+    });
+
+  it("runs the row top to bottom with the focus 40 percent down", () => {
+    const result = vertical(1.5);
+    const focus = result.cells.find((cell) => cell.isFocus)!;
+    expect(focus.beat).toBe(1);
+    expect(focus.y).toBeCloseTo(band.y + band.height * 0.4);
+    const next = result.cells.find((cell) => cell.cellIndex === 2)!;
+    expect(next.y).toBeGreaterThan(focus.y);
+    expect(next.x).toBeCloseTo(focus.x);
+  });
+
+  it("sizes the focus cell from the band's thickness", () => {
+    expect(beatCarouselFocusSize(band, "vertical")).toBeCloseTo(
+      beatCarouselFocusSize({ width: band.height, height: band.width })
+    );
+    expect(vertical(1.5).focusSize).toBeCloseTo(
+      beatCarouselFocusSize(band, "vertical")
+    );
+    for (const cell of vertical(2.95).cells) {
+      expect(cell.x - cell.size / 2).toBeGreaterThanOrEqual(band.x);
+      expect(cell.x + cell.size / 2).toBeLessThanOrEqual(band.x + band.width);
     }
   });
 });

@@ -26,17 +26,37 @@
   import StickyNote from "../panel/StickyNote.svelte";
   import MuseumCaptionBar from "./MuseumCaptionBar.svelte";
   import { MuseumNarrationPlayer } from "../../services/museum-narration-player.svelte";
+  import {
+    cancelVisitorLesson,
+    museumVisitorLearnerName,
+    onMuseumVillageMoment,
+    peekMuseumVillageState,
+    teachFromVisitor,
+  } from "../../services/museum-village-manager";
+  import { getMuseumPocket } from "../../services/museum-pocket.svelte";
+  import {
+    findFacingVillager,
+    TEACH_LEASH,
+    worldToVillage,
+  } from "../../services/museum-village-visitor";
   import { roomStamp } from "../../data/museum-narration";
   import {
     placeFreeNotes,
     type PlacedNote,
   } from "../../services/museum-free-notes";
   import { openInComposer } from "../../services/museum-composer-handoff";
+  import { chooseExitHandoff } from "../../services/museum-exit-handoff";
   import { goto } from "$app/navigation";
   import SequenceBrowserOverlay from "#lib/features/museum/scenes/procedural/overlay/SequenceBrowserOverlay.svelte";
   import { getMuseumDocent } from "#lib/features/museum/services/museum-docent.svelte.js";
   import PerfMonitor from "#lib/shared/3d/components/PerfMonitor.svelte";
   import { getMuseumPerformanceRecorder } from "../../get-museum-performance-recorder";
+
+  import {
+    createMuseumRevealGate,
+    type RevealGateSnapshot,
+    type RoomReadiness,
+  } from "../../services/museum-reveal-gate";
 
   import { onMount } from "svelte";
 
@@ -50,6 +70,9 @@
     onAllLoaded?: () => void;
     /** Called during async geometry build with the current phase name */
     onBuildStage?: (stage: string) => void;
+    /** 0-1, how much of the visitor's room has arrived after the halls are
+     *  built (the Room of Collaboration's forest and village). */
+    onRoomProgress?: (progress: number) => void;
     /** Start directly in FPS/3rd-person mode (skip top-down flip) */
     startInFps?: boolean;
     initialCameraMode?: "first-person" | "third-person";
@@ -109,33 +132,48 @@
     props.onLoadProgress?.($progress);
   });
 
-  // The scene is truly ready when BOTH conditions are met:
-  // 1. Geometry build completed (InstancedMeshes populated)
-  // 2. Textures/models finished loading (Three.js DefaultLoadingManager)
-  // Either can finish first depending on cache state.
+  // The curtain lifts only on a finished room (museum-reveal-gate.ts): tile
+  // geometry, the loading manager's first idle, the entrance shader warm-up,
+  // and the room the visitor stands in, which reports its own readiness.
   let sceneReady = $state(false);
-  let texturesReady = $state(false);
-  let meshesReady = $state(false);
-  let shadersReady = $state(false);
+  let gateState = $state<RevealGateSnapshot | null>(null);
+  const texturesReady = $derived(gateState?.texturesReady ?? false);
+  const assetsReady = $derived(gateState?.assetsReady ?? false);
   let settleTimer: ReturnType<typeof setTimeout> | null = null;
 
-  function checkFullyReady(): void {
-    if (sceneReady) return;
-    if (!texturesReady || !meshesReady || !shadersReady) return;
-    sceneReady = true;
-    requestAnimationFrame(() => {
-      props.onAllLoaded?.();
-    });
+  const revealGate = createMuseumRevealGate({
+    onChange: (snapshot) => (gateState = snapshot),
+    onReveal: () => {
+      sceneReady = true;
+      requestAnimationFrame(() => {
+        props.onAllLoaded?.();
+      });
+    },
+  });
+  gateState = revealGate.snapshot;
+
+  // Once the halls are built and the room is still arriving, the loading view
+  // says so and follows the room's progress, instead of sitting on the
+  // geometry's last label.
+  function reportRoomStage(): void {
+    const { meshesReady, room } = revealGate.snapshot;
+    if (!meshesReady || room.state !== "loading") return;
+    props.onBuildStage?.("Building the room");
+    props.onRoomProgress?.(room.progress);
   }
 
   function handleGeometryReady(): void {
-    meshesReady = true;
-    checkFullyReady();
+    revealGate.markMeshes();
+    reportRoomStage();
   }
 
   function handleShaderWarmupReady(): void {
-    shadersReady = true;
-    checkFullyReady();
+    revealGate.markShaders();
+  }
+
+  function handleRoomReadiness(readiness: RoomReadiness): void {
+    revealGate.setRoom(readiness);
+    reportRoomStage();
   }
 
   // Under memory pressure (especially mobile, where the WebGL context cap is as
@@ -153,23 +191,13 @@
   function handleContextRestored(): void {
     console.warn("[DimensionFlipProof] WebGL context restored");
     if (contextRestoreTimer) clearTimeout(contextRestoreTimer);
-    contextRestoreTimer = setTimeout(() => {
-      texturesReady = true;
-      meshesReady = true;
-      shadersReady = true;
-      checkFullyReady();
-    }, 2000);
+    contextRestoreTimer = setTimeout(() => revealGate.forceAll(), 2000);
   }
 
   $effect(() => {
     if ($finishedOnce && !$active && !texturesReady) {
       if (settleTimer) clearTimeout(settleTimer);
-      settleTimer = setTimeout(() => {
-        if (!texturesReady) {
-          texturesReady = true;
-          checkFullyReady();
-        }
-      }, 500);
+      settleTimer = setTimeout(() => revealGate.markTextures(), 500);
     } else if ($active && settleTimer) {
       clearTimeout(settleTimer);
       settleTimer = null;
@@ -404,7 +432,8 @@
   // We can't read playerYaw from Museum3DScene directly, but we can infer it
   // from the facing direction or receive it via the callback. For now we store
   // the yaw from the saved state and update it when mode changes.
-  let lastKnownYaw = savedHmrState?.playerYaw ?? 0;
+  // Reactive so the teach prompt follows where the visitor looks.
+  let lastKnownYaw = $state(savedHmrState?.playerYaw ?? 0);
 
   // ── Interaction state ──
   let focusedExhibit = $state<ExhibitDefinition | null>(null);
@@ -414,8 +443,13 @@
   let focusedNote = $state<PlacedNote | null>(null);
 
   // ── The audio guide ──
-  const narration = new MuseumNarrationPlayer();
+  // K names what the visitor carries (the pocket is declared below; read late).
+  const narration = new MuseumNarrationPlayer(undefined, () => pocket.item?.label);
   $effect(() => () => narration.dispose());
+  // K's later lines in the Room of Collaboration land on the village's moments.
+  $effect(() =>
+    onMuseumVillageMoment((moment) => narration.villageMoment(moment.kind)),
+  );
 
   // Exhibit cues fire on proximity, not on facing: walking up to the case is
   // enough. Positions resolved once from the grid.
@@ -513,8 +547,79 @@
     );
   });
 
+  // ── The pocket: what the visitor carries out of the decode console ──
+  const pocket = getMuseumPocket();
+
+  // The gift-shop exit hands the Composer what the visitor carries, named by
+  // whom they taught it to; the exit's own sequence when the pocket is empty.
+  function leaveThroughExit(exitSequenceId: string): void {
+    const sequenceId = pocket.item?.sequenceId;
+    const handoff = chooseExitHandoff({
+      pocket: pocket.item,
+      exitSequenceId,
+      learnerName: sequenceId ? museumVisitorLearnerName(sequenceId) : null,
+    });
+    void openInComposer(handoff.sequenceId, handoff.name);
+  }
+
+  // In the Room of Collaboration, the villager the visitor faces can be taught
+  // what the pocket holds. Exhibits and notes keep E when they are in reach.
+  let collabCentre = $derived.by(() => {
+    const wing = props.grid.wings.find((w) => w.id === "collaboration");
+    if (!wing) return null;
+    return {
+      x: (wing.bounds.x + wing.bounds.width / 2) * TILE_SIZE,
+      z: (wing.bounds.y + wing.bounds.height / 2) * TILE_SIZE,
+    };
+  });
+  let teachTarget = $derived.by(() => {
+    const carried = pocket.item;
+    if (!carried || !collabCentre || currentWing?.id !== "collaboration") {
+      return null;
+    }
+    const village = peekMuseumVillageState();
+    // One lesson at a time; the prompt comes back when it ends.
+    if (!village || village.visitorRenderState) return null;
+    return findFacingVillager({
+      avatars: village.snapshot.avatars,
+      centre: collabCentre,
+      playerX: playerWorldX,
+      playerZ: playerWorldZ,
+      playerYaw: lastKnownYaw,
+      sequenceId: carried.sequenceId,
+      rules: village.rules,
+    });
+  });
+
+  // Walking off ends the lesson: more than TEACH_LEASH from where the sim
+  // stands the visitor, measured in village space. Leaving the room is the
+  // same walk, so it cancels too.
+  function keepVisitorLeash(): void {
+    const rig = peekMuseumVillageState()?.visitorRenderState;
+    if (!rig || !collabCentre) return;
+    const at = worldToVillage(collabCentre, playerWorldX, playerWorldZ);
+    const dx = at.x - rig.visitor.x;
+    const dz = at.z - rig.visitor.z;
+    if (dx * dx + dz * dz > TEACH_LEASH * TEACH_LEASH) cancelVisitorLesson();
+  }
+
+  function teachFacingVillager(): void {
+    const carried = pocket.item;
+    if (!teachTarget || !carried) return;
+    teachFromVisitor({
+      learnerId: teachTarget.avatar.id,
+      sequenceId: carried.sequenceId,
+      x: teachTarget.visitorX,
+      z: teachTarget.visitorZ,
+      facing: teachTarget.visitorFacing,
+    });
+  }
+
   let hasInteractable = $derived(
-    facingExhibit !== null || facingPerformer !== null || nearNote !== null
+    facingExhibit !== null ||
+      facingPerformer !== null ||
+      nearNote !== null ||
+      teachTarget !== null
   );
   let interactVerb = $derived.by(() => {
     if (facingExhibit?.document) return "Read";
@@ -522,6 +627,9 @@
     if (facingExhibit?.interaction?.kind === "terminal") return "Use terminal";
     if (facingExhibit || facingPerformer) return "Examine";
     if (nearNote) return "Read note";
+    if (teachTarget && pocket.item) {
+      return `Teach ${pocket.item.label} to ${teachTarget.avatar.name}`;
+    }
     return "Examine";
   });
 
@@ -584,10 +692,7 @@
         // says. The decode console handles its own E (see DecodeConsole).
         const kind = focusedExhibit?.interaction?.kind;
         if (kind === "exit" && focusedExhibit?.interaction?.kind === "exit") {
-          void openInComposer(
-            focusedExhibit.interaction.sequenceId,
-            "From the Archive"
-          );
+          leaveThroughExit(focusedExhibit.interaction.sequenceId);
           return;
         }
         if (
@@ -625,6 +730,8 @@
         showPanel = true;
         props.onExhibitFocus?.(null);
         if (document.pointerLockElement) document.exitPointerLock();
+      } else if (teachTarget) {
+        teachFacingVillager();
       }
       return;
     }
@@ -732,6 +839,7 @@
     playerTileY = tileY;
     playerFacing = facing;
     lastKnownYaw = yaw;
+    keepVisitorLeash();
 
     // Walk up to a case with a cue and the tape starts. Once per visit.
     for (const target of exhibitCueTargets) {
@@ -772,20 +880,11 @@
     window.addEventListener("keyup", handleKeyUp);
     window.addEventListener("blur", handleBlur);
 
-    // Watchdog: never strand the loading overlay on black. If neither the
-    // texture nor the geometry track has reported ready within this window
-    // (e.g. a worker crash that even the streamer's own guards missed), force
-    // the reveal - a usable scene beats an indefinite black screen.
-    const watchdog = setTimeout(() => {
-      if (!sceneReady) {
-        console.warn(
-          "[DimensionFlipProof] Ready watchdog fired - forcing scene reveal"
-        );
-        texturesReady = true;
-        meshesReady = true;
-        checkFullyReady();
-      }
-    }, 15_000);
+    // The gate's watchdog forces stalled asset and geometry tracks after 15 s
+    // (e.g. a worker crash the streamer's own guards missed), but never over a
+    // room that says it is still loading: that lifts only on the room's own
+    // failure or the 90 s hard cap (museum-reveal-gate.ts).
+    revealGate.start();
 
     // Attach context-loss listeners to this component's canvas (scoped to
     // canvasAreaEl, not a global querySelector, so keep-alive coexistence with
@@ -809,7 +908,7 @@
       // Clean up debounce timer
       if (hmrSaveTimer !== null) clearTimeout(hmrSaveTimer);
       if (settleTimer !== null) clearTimeout(settleTimer);
-      clearTimeout(watchdog);
+      revealGate.dispose();
       clearTimeout(canvasHookTimer);
       if (contextRestoreTimer) clearTimeout(contextRestoreTimer);
       canvasEl?.removeEventListener("webglcontextlost", handleContextLost);
@@ -850,7 +949,8 @@
         onBuildStage={props.onBuildStage}
         onSubmergedChange={props.onSubmergedChange}
         onGeometryReady={handleGeometryReady}
-        assetsReady={texturesReady}
+        {assetsReady}
+        onRoomReadiness={handleRoomReadiness}
         onShaderWarmupReady={handleShaderWarmupReady}
         initialFpsActive={viewMode !== "top-down"}
         initialCameraMode={props.initialCameraMode}
@@ -950,6 +1050,18 @@
     </div>
   {/if}
 
+  <!-- What the visitor carries (filled by the decode console) -->
+  {#if pocket.item && !showPanel && !museum3dEditorState.editorActive && !docent.active}
+    <div
+      class="pocket-chip"
+      role="status"
+      aria-label="Carrying {pocket.item.label}"
+    >
+      <span class="pocket-kind">Carrying</span>
+      <span class="pocket-label">{pocket.item.label}</span>
+    </div>
+  {/if}
+
   <!-- The audio guide's captions (above the interaction prompt) -->
   {#if !showPanel && !museum3dEditorState.editorActive}
     <MuseumCaptionBar caption={narration.current} />
@@ -1044,7 +1156,7 @@
         {@const exitSeq = focusedExhibit.interaction.sequenceId}
         <button
           class="action-btn exit-action"
-          onclick={() => void openInComposer(exitSeq, "From the Archive")}
+          onclick={() => leaveThroughExit(exitSeq)}
         >
           <i class="fas fa-door-open" aria-hidden="true"></i>
           {focusedExhibit.interaction.label}
@@ -1150,10 +1262,15 @@
   /* Back button - top-left circle, takes you out of the museum */
   /* Sits beside the back button, same visual family. Filled while walking so it
      reads as a live state rather than an action. */
+  /* Its own row under the back button and room name, which share the top
+     row; set beside the name it covered it ("aboration"). */
   .museum-docent-btn {
     position: absolute;
-    top: calc(var(--museum-hud-edge) + var(--museum-hud-top-offset, 0px));
-    left: calc(var(--museum-hud-edge) + var(--museum-hud-button) + 0.5rem);
+    top: calc(
+      var(--museum-hud-edge) + var(--museum-hud-top-offset, 0px) +
+        var(--museum-hud-button) + 0.5rem
+    );
+    left: var(--museum-hud-edge);
     height: var(--museum-hud-button);
     padding: 0 0.85rem;
     gap: 0.45rem;
@@ -1185,9 +1302,9 @@
     position: absolute;
     top: calc(
       var(--museum-hud-edge) + var(--museum-hud-top-offset, 0px) +
-        var(--museum-hud-button) + 0.5rem
+        var(--museum-hud-button) * 2 + 1rem
     );
-    left: calc(var(--museum-hud-edge) + var(--museum-hud-button) + 0.5rem);
+    left: var(--museum-hud-edge);
     padding: 0.35rem 0.7rem;
     border-radius: 0.5rem;
     background: rgba(0, 0, 0, 0.55);
@@ -1287,6 +1404,43 @@
     font-size: 13px;
     font-weight: 600;
     color: var(--museum-gold-90);
+  }
+
+  /* The pocket: a quiet tag, not a control */
+  /* Beside the music bubble (SoundscapeBubble: 52px, fixed 20px from the
+     viewport's bottom-left corner), centred on it, so neither covers the
+     other. Fixed like the bubble, so they share a corner. */
+  .pocket-chip {
+    --pocket-bubble-edge: 20px;
+    --pocket-bubble-size: 52px;
+    position: fixed;
+    bottom: calc(var(--pocket-bubble-edge) + var(--pocket-bubble-size) / 2);
+    left: calc(var(--pocket-bubble-edge) + var(--pocket-bubble-size) + 0.75rem);
+    transform: translateY(50%);
+    display: flex;
+    align-items: baseline;
+    gap: 0.5em;
+    padding: 0.4rem 0.8rem;
+    background: rgba(18, 18, 28, 0.85);
+    border: 1px solid var(--museum-gold-25);
+    border-radius: 999px;
+    color: var(--museum-gold-80);
+    font-size: clamp(0.8rem, 0.6rem + 0.2vw, 1.125rem);
+    pointer-events: none;
+    z-index: 10;
+    animation: fade-in var(--duration-normal) var(--ease-standard);
+  }
+
+  .pocket-kind {
+    font-size: 0.75em;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--museum-gold-45);
+  }
+
+  .pocket-label {
+    font-family: monospace;
+    letter-spacing: 0.12em;
   }
 
   /* Controls hint */
@@ -1514,6 +1668,18 @@
   }
 
   @media (max-width: 40rem) {
+    /* The joystick and the centred hint own the bottom on a phone. */
+    .pocket-chip {
+      position: absolute;
+      bottom: auto;
+      left: var(--museum-hud-edge);
+      transform: none;
+      top: calc(
+        var(--museum-hud-edge) + var(--museum-hud-top-offset, 0px) +
+          var(--museum-hud-button) * 2 + 1rem
+      );
+    }
+
     .wing-label {
       max-width: calc(
         100vw - var(--museum-hud-edge) * 3 - var(--museum-hud-button)

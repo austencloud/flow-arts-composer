@@ -78,6 +78,8 @@ export class MotionQueryHandler implements IMotionQueryHandler {
         [GridMode.DIAMOND]: diamondParseResult.rows,
         [GridMode.BOX]: boxParseResult.rows,
         [GridMode.SKEWED]: skewedParseResult.rows,
+        // No center rows exist yet. Loading them waits on the center dataframe:
+        // gap 6 in docs/superpowers/specs/2026-10-22-center-point-beyond-level-3.md.
         [GridMode.CENTRIC]: [],
         [GridMode.TRIGRID]: [],
         [GridMode.EIGHT_POINT]: [],

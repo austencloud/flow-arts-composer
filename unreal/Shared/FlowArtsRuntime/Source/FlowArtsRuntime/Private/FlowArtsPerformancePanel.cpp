@@ -24,6 +24,7 @@
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Input/SSlider.h"
 #include "Widgets/Input/SSearchBox.h"
+#include "Widgets/Input/SEditableTextBox.h"
 #include "Widgets/Layout/SBorder.h"
 #include "Widgets/Layout/SBox.h"
 #include "Widgets/Layout/SDPIScaler.h"
@@ -254,6 +255,18 @@ public:
                         .OnTextChanged_Lambda([this](const FText& Value) { Filter = Value.ToString(); RebuildEntries(); })]]
                     + SVerticalBox::Slot().AutoHeight()
                     [Entries.ToSharedRef()]]]]]
+            + SVerticalBox::Slot().AutoHeight().Padding(0, 10, 0, 0)
+            [SNew(SHorizontalBox)
+                + SHorizontalBox::Slot().FillWidth(1).Padding(0, 0, 6, 0)
+                [SAssignNew(MotionPath, SEditableTextBox)
+                    .Font(Font(11))
+                    .HintText(FText::FromString(TEXT("Motion file path (.motion.json)")))
+                    .ToolTipText(FText::FromString(TEXT("Paste the path of an exported performance, or its filename in Saved/Performances.")))
+                    .OnTextCommitted_Lambda([this](const FText&, ETextCommit::Type Type) {
+                        if (Type == ETextCommit::OnEnter) ImportMotion();
+                    })]
+                + SHorizontalBox::Slot().AutoWidth()
+                [Action(TEXT("Load motion"), TEXT("Play an exported sequence on this character and prop"), [this] { ImportMotion(); })]]
             + SVerticalBox::Slot().AutoHeight().Padding(0, 12, 0, 10)
             [SNew(SSeparator).ColorAndOpacity(Ink(TEXT("343B47")))]
             + SVerticalBox::Slot().AutoHeight()
@@ -298,9 +311,24 @@ private:
     TSharedPtr<SVerticalBox> Entries;
     TSharedPtr<SHorizontalBox> StepRail;
     TSharedPtr<SSearchBox> Search;
+    TSharedPtr<SEditableTextBox> MotionPath;
     TMap<FString, TSharedPtr<FPanelImage>> Images;
     FString Filter;
     bool bBrowsingLibrary = true;
+
+    void ImportMotion()
+    {
+        FString Error;
+        if (!MotionPath.IsValid() || !State->Session.ImportMotionFile(MotionPath->GetText().ToString(), Error))
+        {
+            State->Notice = Error.IsEmpty() ? TEXT("Choose a motion file first.") : Error;
+            return;
+        }
+        State->PendingTransfer.Reset();
+        State->Notice = TEXT("Imported motion is playing.");
+        bBrowsingLibrary = false;
+        RebuildSteps();
+    }
 
     TSharedRef<SWidget> ViewTab(const TCHAR* Label, bool bLibrary)
     {

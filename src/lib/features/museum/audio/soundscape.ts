@@ -22,12 +22,13 @@ function mergeWings(): WingSoundscape[] {
 			wingName: wing.wingName,
 			candidates: [...wing.candidates],
 			defaultCandidateId: wing.defaultCandidateId,
+			ambienceOnly: wing.ambienceOnly,
 		});
 	}
 
 	for (const gen of GENERATED_WING_CANDIDATES) {
 		const existing = byId.get(gen.wingId);
-		if (!existing) continue;
+		if (!existing || existing.ambienceOnly) continue;
 		const seen = new Set(existing.candidates.map((c) => c.id));
 		for (const cand of gen.candidates) {
 			if (seen.has(cand.id)) continue;

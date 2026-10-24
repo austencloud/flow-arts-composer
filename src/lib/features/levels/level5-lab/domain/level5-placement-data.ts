@@ -3,6 +3,7 @@ import {
   GridMode,
   GridPlacement,
 } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { CENTRIC_LOCATION_PAIRS } from "#lib/shared/pictograph/grid/services/grid-placement-deriver.js";
 import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import type { OrientationOption } from "./level5-lab-types";
 
@@ -12,31 +13,9 @@ import type { OrientationOption } from "./level5-lab-types";
  * TAU1-8:  blue at center, red at perimeter
  * TAU9-16: red at center, blue at perimeter
  * TERRA1:  both at center
+ * The table itself lives in the sequence engine (CENTRIC_PLACEMENT_LOCATIONS).
  */
-export const PLACEMENT_LOCATIONS: Partial<
-  Record<GridPlacement, [GridLocation, GridLocation]>
-> = {
-  // Blue at center, red at perimeter
-  [GridPlacement.TAU1]: [GridLocation.CENTER, GridLocation.NORTH],
-  [GridPlacement.TAU2]: [GridLocation.CENTER, GridLocation.NORTHEAST],
-  [GridPlacement.TAU3]: [GridLocation.CENTER, GridLocation.EAST],
-  [GridPlacement.TAU4]: [GridLocation.CENTER, GridLocation.SOUTHEAST],
-  [GridPlacement.TAU5]: [GridLocation.CENTER, GridLocation.SOUTH],
-  [GridPlacement.TAU6]: [GridLocation.CENTER, GridLocation.SOUTHWEST],
-  [GridPlacement.TAU7]: [GridLocation.CENTER, GridLocation.WEST],
-  [GridPlacement.TAU8]: [GridLocation.CENTER, GridLocation.NORTHWEST],
-  // Red at center, blue at perimeter
-  [GridPlacement.TAU9]: [GridLocation.NORTH, GridLocation.CENTER],
-  [GridPlacement.TAU10]: [GridLocation.NORTHEAST, GridLocation.CENTER],
-  [GridPlacement.TAU11]: [GridLocation.EAST, GridLocation.CENTER],
-  [GridPlacement.TAU12]: [GridLocation.SOUTHEAST, GridLocation.CENTER],
-  [GridPlacement.TAU13]: [GridLocation.SOUTH, GridLocation.CENTER],
-  [GridPlacement.TAU14]: [GridLocation.SOUTHWEST, GridLocation.CENTER],
-  [GridPlacement.TAU15]: [GridLocation.WEST, GridLocation.CENTER],
-  [GridPlacement.TAU16]: [GridLocation.NORTHWEST, GridLocation.CENTER],
-  // Both at center
-  [GridPlacement.TERRA1]: [GridLocation.CENTER, GridLocation.CENTER],
-};
+export const PLACEMENT_LOCATIONS = CENTRIC_LOCATION_PAIRS;
 
 
 /** Tau Diamond: perimeter prop at cardinal point (N/E/S/W) */

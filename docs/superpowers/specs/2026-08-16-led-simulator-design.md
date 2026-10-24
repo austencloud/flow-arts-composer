@@ -186,7 +186,7 @@ and lost).
   buffer grows, the draw-call count does not. Trail accumulation and bloom are
   per-pixel passes, LED-count independent.
 - `src/lib/shared/render-graph/services/web-gpu-led-executor.ts` — `MAX_LEDS`
-  64 → **400**, same reasoning. `led-translator.ts` / `led-pass.ts` carry the
+  64 → **400**, same reasoning. `led-pass.ts` (the `led-translator.ts` was removed 2026-10-22) carries the
   device + sampled colors through the graph.
 - Input contract change: `LedFrameInput` moves from "per-tip colors" to
   "per-LED positions + colors", produced by the slimmed sampler.

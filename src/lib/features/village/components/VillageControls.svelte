@@ -1,562 +1,549 @@
 <!--
-  VillageControls - Sidebar control panel for the village simulation.
-  Time controls, population stats, and avatar inspector.
+  VillageControls - The lab's side panel: the village's story so far, one
+  plain sentence per thing that happened, newest first, and the few controls
+  that matter (pause, speed, a new village). The Visitor section stands in
+  for the museum visitor: pick what they carry and teach it to someone, and
+  the story speaks to "you" about it. In the lab it can also leave and come
+  back: keep the input log, rebuild the village from it, save or load it as
+  a file, or load one of the two museum fixtures. Numbers and the list of people
+  sit behind a disclosure; picking someone there shows their name in the
+  scene.
 -->
+<script lang="ts" module>
+  import type { VillageInputLog } from "../domain/village-input-log";
+
+  /** What VillageLabTab gives the panel for leaving and coming back. */
+  export interface VillageLabReturn {
+    readonly keptLog: VillageInputLog | null;
+    leave(): void;
+    comeBack(): void;
+    load(log: VillageInputLog): void;
+  }
+</script>
+
 <script lang="ts">
+  import { flip } from "svelte/animate";
+  import { growFade, flipDuration } from "#lib/shared/transitions/motion.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import {
     getVillageContext,
     getVillageVisualContext,
   } from "../state/village-context";
-  import VillageTimelineStrip from "./VillageTimelineStrip.svelte";
-  import { DECAY_GRACE_PERIOD } from "../domain/village-constants";
-  import type { VillageEntity } from "../domain/village-types";
+  import { villageSeedWord } from "../services/village-sequence-catalogue";
+  import { villageWord } from "../state/village-visual-state.svelte";
+  import {
+    LAB_FIXTURES,
+    labLogFileName,
+    memoryFacts,
+    readLabLog,
+    teachNearestIdle,
+    type LabFixture,
+  } from "../village-lab-visitor";
 
-  function getAverageStyle(entity: VillageEntity): {
-    amplitudeScale: number;
-    tempoOffset: number;
-  } {
-    const sequences = [...entity.knowledge.knownSequences.values()];
-    if (sequences.length === 0) return { amplitudeScale: 1.0, tempoOffset: 0 };
-    let ampSum = 0;
-    let tempoSum = 0;
-    for (const seq of sequences) {
-      ampSum += seq.style.amplitudeScale;
-      tempoSum += seq.style.tempoOffset;
-    }
-    return {
-      amplitudeScale: ampSum / sequences.length,
-      tempoOffset: tempoSum / sequences.length,
-    };
-  }
+  const { lab }: { lab?: VillageLabReturn } = $props();
 
   const villageState = getVillageContext();
   const visualState = getVillageVisualContext();
 
-  const stats = $derived(villageState.stats);
-  const isRunning = $derived(villageState.isRunning);
-  const speed = $derived(villageState.speed);
-  const selectedId = $derived(villageState.selectedAvatarId);
+  const snapshot = $derived(villageState.snapshot);
+  const stats = $derived(snapshot.world.stats);
+  const living = $derived(
+    snapshot.avatars.filter((a) => a.state !== "passing")
+  );
+  const story = $derived(visualState.story);
 
-  const selectedEntity = $derived(
-    selectedId ? villageState.orchestrator.inspectAvatar(selectedId) : null
+  let showVillage = $state(false);
+
+  // The visitor: what is in their pocket, and their lesson while it runs.
+  const pocketOptions = villageState.rules.visitor.sequences.map(
+    ({ sequenceId }) => ({
+      value: sequenceId,
+      label: villageSeedWord(sequenceId),
+    })
+  );
+  let pocket = $state(pocketOptions[0]?.value ?? "");
+  let teachNote = $state<string | null>(null);
+  const visitor = $derived(snapshot.world.visitor ?? null);
+  const visitorLearner = $derived(
+    visitor
+      ? (snapshot.avatars.find((a) => a.id === visitor.learnerId)?.name ??
+          "someone")
+      : null
+  );
+  const visitorStatus = $derived(
+    visitor
+      ? `Teaching ${villageSeedWord(visitor.sequenceId)} to ${visitorLearner}.`
+      : (teachNote ?? `Carrying ${villageSeedWord(pocket)}.`)
   );
 
-  const monumentCount = $derived(villageState.orchestrator.monuments.length);
-  const activeJamCount = $derived(villageState.orchestrator.activeJams.length);
-  const relitCount = $derived(
-    villageState.orchestrator.monuments.filter(
-      (m) => m.extinctAtTick === null && m.cohortsSurvived.size > 3
-    ).length
-  );
+  function teachNearest(): void {
+    const result = teachNearestIdle(villageState, pocket);
+    teachNote = result.started
+      ? null
+      : result.learner
+        ? `${result.learner.name} could not learn it just now.`
+        : `Nobody is free to learn ${villageSeedWord(pocket)} right now.`;
+  }
 
-  const currentTick = $derived(villageState.orchestrator.currentTick);
+  function stopTeaching(): void {
+    villageState.cancelVisitorLesson();
+    teachNote = null;
+  }
 
-  // Timeline history tracking
-  let knowledgeHistory = $state<number[]>([]);
-  let timelineEvents = $state<
-    { tick: number; type: "extinction" | "invention" | "reincarnation" }[]
-  >([]);
-  let lastHistoryTick = 0;
+  // Leave and come back.
+  let logNote = $state<string | null>(null);
+  let logError = $state<string | null>(null);
+  let fileInput: HTMLInputElement | undefined = $state();
+  // What became of the visitor's sequence, in a village they came back to.
+  const memory = $derived(lab ? (snapshot.world.memory ?? null) : null);
 
-  // Sample knowledge every 10 ticks for the sparkline
-  $effect(() => {
-    const tick = currentTick;
-    if (tick - lastHistoryTick >= 10) {
-      lastHistoryTick = tick;
-      knowledgeHistory = [...knowledgeHistory.slice(-49), stats.totalKnowledge];
+  function describeLog(log: VillageInputLog): string {
+    const lessons = log.entries.filter((e) => e.type === "teach").length;
+    return lessons === 0
+      ? "Log kept. You taught nothing yet."
+      : `Log kept: ${lessons === 1 ? "1 lesson" : `${lessons} lessons`}.`;
+  }
+
+  function leave(): void {
+    if (!lab) return;
+    lab.leave();
+    logError = null;
+    logNote = lab.keptLog ? describeLog(lab.keptLog) : null;
+  }
+
+  function download(): void {
+    const log = lab?.keptLog;
+    if (!log) return;
+    const url = URL.createObjectURL(
+      new Blob([JSON.stringify(log, null, 2)], { type: "application/json" })
+    );
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = labLogFileName(log);
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function loadFile(event: Event): Promise<void> {
+    const input = event.currentTarget as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = "";
+    if (!file || !lab) return;
+    const read = readLabLog(await file.text());
+    if (!read.ok) {
+      logError = read.error;
+      return;
     }
-  });
+    logError = null;
+    lab.load(read.log);
+  }
 
-  const speedOptions = [0.5, 1, 2, 5, 10, 50];
+  function loadFixture(name: LabFixture): void {
+    logError = null;
+    lab?.load(LAB_FIXTURES[name]);
+  }
+
+  const speedOptions = [
+    { value: "0.5", label: "½×", ariaLabel: "Half speed" },
+    { value: "1", label: "1×", ariaLabel: "Normal speed" },
+    { value: "2", label: "2×", ariaLabel: "Double speed" },
+    { value: "5", label: "5×", ariaLabel: "Five times speed" },
+    { value: "10", label: "10×", ariaLabel: "Ten times speed" },
+  ];
+
+  function toggleOpening(): void {
+    visualState.clearStory();
+    villageState.setOpeningEnabled(!villageState.openingEnabled);
+  }
+
+  function newVillage(): void {
+    visualState.clearStory();
+    villageState.reset(
+      `village-${Math.floor(Math.random() * 1e9).toString(36)}`
+    );
+  }
 </script>
 
-<div class="controls">
-  <div class="section">
-    <h3>Time</h3>
-    <div class="row">
-      <button class="control-btn" onclick={() => villageState.togglePlay()}>
-        {isRunning ? "Pause" : "Play"}
-      </button>
-      <button class="control-btn" onclick={() => villageState.reset()}>
-        Reset
-      </button>
-    </div>
-    <span class="label">Speed</span>
-    <div class="speed-buttons">
-      {#each speedOptions as s}
-        <button
-          class="speed-btn"
-          class:active={speed === s}
-          onclick={() => villageState.setSpeed(s)}
-        >
-          {s}x
-        </button>
-      {/each}
-    </div>
-    <div class="stat">
-      Tick: {villageState.orchestrator.currentTick}
-    </div>
-    <div class="stat">
-      Gen: {stats.currentGeneration}
-    </div>
+<aside class="controls" aria-label="Village">
+  <div class="actions">
+    <button
+      type="button"
+      class="control-btn"
+      onclick={() => villageState.togglePlay()}
+    >
+      {villageState.isRunning ? "Pause" : "Play"}
+    </button>
+    <button type="button" class="control-btn" onclick={newVillage}
+      >New village</button
+    >
   </div>
 
-  <div class="section">
-    <h3>Population</h3>
-    <div class="stat">Alive: {stats.alive}</div>
-    <div class="stat">Avg Age: {(stats.averageAge * 100).toFixed(0)}%</div>
-    <div class="stat">Total Knowledge: {stats.totalKnowledge}</div>
-    <div class="stat">Unique Sequences: {stats.uniqueSequences}</div>
-    <div class="stat">Extinct: {stats.extinctionCount}</div>
-    <div class="stat">Monuments: {monumentCount}</div>
-    <div class="stat">Active Jams: {activeJamCount}</div>
-    <div class="stat">
-      Schools: {villageState.orchestrator.schools?.length ?? 0}
-    </div>
-    <div class="stat">
-      Season: {villageState.orchestrator.currentSeason ?? "normal"}
-    </div>
-    <div class="stat">
-      Effect Circles: {villageState.orchestrator.effectCircles?.length ?? 0}
-    </div>
-    <div class="stat">
-      Dropped Props: {villageState.orchestrator.droppedProps.length}
-    </div>
-    <div class="stat">
-      Prop Wall: {villageState.orchestrator.propWall.length}
-    </div>
-    {#if relitCount > 0}
-      <div class="stat">Recovered: {relitCount}</div>
+  <SegmentedControl
+    options={speedOptions}
+    value={String(villageState.speed)}
+    onchange={(value) => villageState.setSpeed(Number(value))}
+    size="sm"
+    density="compact"
+    ariaLabel="Speed"
+  />
+
+  <p class="seed" title="The same seed always grows the same village">
+    Seed <span class="seed-value">{villageState.seed}</span>
+  </p>
+
+  <section class="visitor" aria-labelledby="village-visitor-title">
+    <h3 id="village-visitor-title">Visitor</h3>
+    {#if pocketOptions.length > 1}
+      <SegmentedControl
+        options={pocketOptions}
+        value={pocket}
+        onchange={(value) => {
+          pocket = value;
+          teachNote = null;
+        }}
+        size="sm"
+        density="compact"
+        ariaLabel="In the visitor's pocket"
+      />
     {/if}
-  </div>
-
-  {#if selectedEntity}
-    <div class="section">
-      <h3>{selectedEntity.identity.name}</h3>
-      <div class="stat">Gen {selectedEntity.identity.generation}</div>
-      <div class="stat">
-        Age: {(selectedEntity.lifecycle.currentAge * 100).toFixed(0)}% ({selectedEntity
-          .lifecycle.phase})
+    <p class="visitor-status" aria-live="polite">{visitorStatus}</p>
+    <button
+      type="button"
+      class="control-btn wide"
+      onclick={visitor ? stopTeaching : teachNearest}
+    >
+      {visitor ? "Stop teaching" : "Teach nearest idle"}
+    </button>
+    {#if lab}
+      <div class="actions">
+        <button type="button" class="control-btn" onclick={leave}>Leave</button>
+        <button
+          type="button"
+          class="control-btn"
+          disabled={!lab.keptLog}
+          onclick={() => lab?.comeBack()}>Come back</button
+        >
+        <button
+          type="button"
+          class="control-btn"
+          disabled={!lab.keptLog}
+          onclick={download}>Download log</button
+        >
+        <button
+          type="button"
+          class="control-btn"
+          onclick={() => fileInput?.click()}>Load log file</button
+        >
       </div>
-      <div class="stat">State: {selectedEntity.social.state}</div>
-      <div class="stat">Ego: {selectedEntity.personality.ego.toFixed(2)}</div>
-      {#if selectedEntity.knowledge.knownSequences.size > 0}
-        {@const avgStyle = getAverageStyle(selectedEntity)}
-        <div class="stat">Style Amp: {avgStyle.amplitudeScale.toFixed(2)}</div>
-        <div class="stat">Style Tempo: {avgStyle.tempoOffset.toFixed(3)}</div>
+      <input
+        bind:this={fileInput}
+        class="file-input"
+        type="file"
+        accept="application/json,.json"
+        tabindex="-1"
+        aria-hidden="true"
+        onchange={loadFile}
+      />
+      <div class="fixtures" role="group" aria-label="Load a fixture">
+        <span class="fixtures-label">Load a fixture</span>
+        <button
+          type="button"
+          class="control-btn"
+          onclick={() => loadFixture("kept")}>Kept</button
+        >
+        <button
+          type="button"
+          class="control-btn"
+          onclick={() => loadFixture("lost")}>Lost</button
+        >
+      </div>
+      {#if logError}
+        <p class="log-error" role="alert" transition:growFade>{logError}</p>
+      {:else if logNote}
+        <p class="quiet" transition:growFade>{logNote}</p>
       {/if}
-      <div class="stat">
-        Effect: {selectedEntity.effect.affinity} ({(
-          selectedEntity.effect.affinityStrength * 100
-        ).toFixed(0)}%)
-      </div>
-      {#if selectedEntity.prop.heldProp}
-        <div class="stat">Prop: {selectedEntity.prop.heldProp.propType}</div>
-        <div class="stat">
-          Wear: {(selectedEntity.prop.heldProp.wear * 100).toFixed(0)}%
-        </div>
-        <div class="stat">
-          Steps: {selectedEntity.prop.heldProp.totalStepsPerformed}
-        </div>
-        <div class="stat">
-          Owners: {selectedEntity.prop.heldProp.ownershipChain.length}
-        </div>
-      {:else}
-        <div class="stat">Prop: none (seeking maker)</div>
+      {#if memory}
+        <dl
+          class="memory"
+          aria-label="What you came back to"
+          transition:growFade
+        >
+          {#each memoryFacts(memory, villageWord(memory.sequenceId)) as [label, value] (label)}
+            <dt>{label}</dt>
+            <dd>{value}</dd>
+          {/each}
+        </dl>
       {/if}
-      <div class="stat">
-        Knows: {selectedEntity.knowledge.knownSequences.size} sequences
-      </div>
-      <div class="traits">
-        <div>Learn: {selectedEntity.personality.learnSpeed.toFixed(2)}</div>
-        <div>Social: {selectedEntity.personality.sociability.toFixed(2)}</div>
-        <div>Create: {selectedEntity.personality.creativity.toFixed(2)}</div>
-        <div>Patience: {selectedEntity.personality.patience.toFixed(2)}</div>
-        <div>Curious: {selectedEntity.personality.curiosity.toFixed(2)}</div>
-      </div>
+    {/if}
+  </section>
 
-      <!-- Sequence list with decay bars -->
-      {#if selectedEntity.knowledge.knownSequences.size > 0}
-        <div class="sequence-list">
-          {#each [...selectedEntity.knowledge.knownSequences.entries()] as [seqId, seq]}
-            <div class="sequence-row">
-              <span class="seq-id" title={seqId}>{seqId.slice(0, 12)}</span>
-              <span class="seq-prof">{(seq.proficiency * 100).toFixed(0)}%</span
-              >
-              <span class="seq-source">({seq.source})</span>
-              <div class="decay-bar" title="Time until decay starts">
-                <div
-                  class="decay-fill"
-                  style="width: {Math.max(
-                    0,
-                    Math.min(
-                      100,
-                      ((DECAY_GRACE_PERIOD - (currentTick - seq.lastUsedTick)) /
-                        DECAY_GRACE_PERIOD) *
-                        100
-                    )
-                  )}%"
-                ></div>
-              </div>
-            </div>
+  <section class="story" aria-labelledby="village-story-title">
+    <div class="story-head">
+      <h3 id="village-story-title">What happened</h3>
+      <FilterChipBase
+        label="Start from the opening"
+        mode="toggle"
+        size="sm"
+        active={villageState.openingEnabled}
+        onclick={toggleOpening}
+      />
+    </div>
+    {#if story.length === 0}
+      <p class="quiet">Nothing yet. The village is gathering round the fire.</p>
+    {:else}
+      <ol class="story-lines" aria-live="polite">
+        {#each story as line (line.id)}
+          <li
+            class="story-line"
+            class:loss={line.kind === "loss"}
+            animate:flip={{ duration: flipDuration() }}
+            in:growFade
+          >
+            {line.text}
+          </li>
+        {/each}
+      </ol>
+    {/if}
+  </section>
+
+  <section class="village">
+    <button
+      type="button"
+      class="control-btn disclosure"
+      aria-expanded={showVillage}
+      aria-controls="village-details"
+      onclick={() => (showVillage = !showVillage)}
+    >
+      {showVillage ? "Hide the village" : "Show the village"}
+    </button>
+    {#if showVillage}
+      <div id="village-details" class="details" transition:growFade>
+        <dl class="stats">
+          <dt>Living</dt>
+          <dd>{stats.alive}</dd>
+          <dt>Oldest generation</dt>
+          <dd>{stats.currentGeneration}</dd>
+          <dt>Sequences known</dt>
+          <dd>{stats.uniqueSequences}</dd>
+          <dt>Lost so far</dt>
+          <dd>{stats.extinctionCount}</dd>
+        </dl>
+        <div class="people" role="group" aria-label="People">
+          {#each living as person (person.id)}
+            <FilterChipBase
+              label={person.name}
+              mode="toggle"
+              size="sm"
+              active={villageState.selectedAvatarId === person.id}
+              onclick={() =>
+                villageState.selectAvatar(
+                  villageState.selectedAvatarId === person.id ? null : person.id
+                )}
+            />
           {/each}
         </div>
-      {/if}
-
-      <button
-        class="control-btn"
-        onclick={() => villageState.selectAvatar(null)}
-      >
-        Deselect
-      </button>
-    </div>
-  {/if}
-
-  <!-- Toggles -->
-  <div class="section">
-    <h3>Display</h3>
-    <button
-      type="button"
-      class="toggle"
-      role="switch"
-      aria-checked={visualState.showToasts}
-      onclick={() => visualState.setShowToasts(!visualState.showToasts)}
-    >
-      <span
-        class="toggle-indicator"
-        class:on={visualState.showToasts}
-        aria-hidden="true"
-      ></span>
-      Show toasts
-    </button>
-    <button
-      type="button"
-      class="toggle"
-      role="switch"
-      aria-checked={visualState.showMonuments}
-      onclick={() => visualState.setShowMonuments(!visualState.showMonuments)}
-    >
-      <span
-        class="toggle-indicator"
-        class:on={visualState.showMonuments}
-        aria-hidden="true"
-      ></span>
-      Show monuments
-    </button>
-    <button
-      type="button"
-      class="toggle"
-      role="switch"
-      aria-checked={visualState.showCircleRings}
-      onclick={() =>
-        visualState.setShowCircleRings(!visualState.showCircleRings)}
-    >
-      <span
-        class="toggle-indicator"
-        class:on={visualState.showCircleRings}
-        aria-hidden="true"
-      ></span>
-      Show circle rings
-    </button>
-    <button
-      type="button"
-      class="toggle"
-      role="switch"
-      aria-checked={visualState.showReincarnationGlow}
-      onclick={() =>
-        visualState.setShowReincarnationGlow(
-          !visualState.showReincarnationGlow
-        )}
-    >
-      <span
-        class="toggle-indicator"
-        class:on={visualState.showReincarnationGlow}
-        aria-hidden="true"
-      ></span>
-      Show reincarnation glow
-    </button>
-    <button
-      type="button"
-      class="toggle"
-      role="switch"
-      aria-checked={visualState.showSchoolTints}
-      onclick={() =>
-        visualState.setShowSchoolTints(!visualState.showSchoolTints)}
-    >
-      <span
-        class="toggle-indicator"
-        class:on={visualState.showSchoolTints}
-        aria-hidden="true"
-      ></span>
-      Show school tints
-    </button>
-  </div>
-
-  <!-- LLM Decision Engine -->
-  <div class="section">
-    <h3>AI Decisions</h3>
-    <button
-      type="button"
-      class="toggle"
-      role="switch"
-      aria-checked={villageState.orchestrator.decisionEngine.enabled}
-      onclick={() =>
-        villageState.orchestrator.decisionEngine.setEnabled(
-          !villageState.orchestrator.decisionEngine.enabled
-        )}
-    >
-      <span
-        class="toggle-indicator"
-        class:on={villageState.orchestrator.decisionEngine.enabled}
-        aria-hidden="true"
-      ></span>
-      Enable LLM
-    </button>
-    <div class="stat">
-      Provider: {villageState.orchestrator.decisionEngine.providerName}
-      {#if villageState.orchestrator.decisionEngine.isLLMActive()}
-        <span style="color: var(--semantic-success, #4ade80);">connected</span>
-      {/if}
-    </div>
-    <div class="stat">
-      Pending: {villageState.orchestrator.decisionEngine.pendingDecisions.size}
-    </div>
-    {#if villageState.orchestrator.decisionEngine.debugLog.length > 0}
-      <div class="llm-log">
-        {#each villageState.orchestrator.decisionEngine.debugLog.slice(-8) as line}
-          <div class="log-line">{line}</div>
-        {/each}
       </div>
     {/if}
-  </div>
-
-  <!-- Timeline strip -->
-  <div class="section">
-    <h3>Timeline</h3>
-    <VillageTimelineStrip {knowledgeHistory} events={timelineEvents} />
-  </div>
-</div>
+  </section>
+</aside>
 
 <style>
   .controls {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    padding: 12px;
+    gap: var(--space-2026-sm, 12px);
+    padding: var(--space-2026-sm, 12px);
     background: var(--theme-panel-bg, rgba(18, 18, 28, 0.98));
     border-left: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     overflow-y: auto;
-    width: 250px;
-    min-width: 250px;
-    font-size: var(--font-size-min, 14px);
+    width: 300px;
+    min-width: 300px;
+    font-size: var(--font-size-sm, 14px);
     color: var(--theme-text, #fff);
   }
 
-  .section {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  h3 {
-    margin: 0;
-    font-size: var(--font-size-min, 14px);
-    color: var(--village-accent, #e8a87c);
-    border-bottom: 1px solid
-      color-mix(in srgb, var(--village-accent, #e8a87c) 20%, transparent);
-    padding-bottom: 4px;
-  }
-
-  .row {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-
-  .label {
-    font-size: var(--font-size-compact, 12px);
-    opacity: 0.7;
-  }
-
-  .stat {
-    font-size: var(--font-size-compact, 12px);
-    opacity: 0.8;
-  }
-
-  .traits {
+  .actions {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 2px;
-    font-size: var(--font-size-compact, 12px);
-    opacity: 0.7;
+    gap: var(--space-2026-xs, 6px);
   }
 
   .control-btn {
-    padding: 4px 10px;
+    min-height: 44px;
+    padding: 0 var(--space-2026-sm, 12px);
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.15));
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
     color: var(--theme-text, #fff);
-    border-radius: 4px;
+    border-radius: 8px;
     cursor: pointer;
-    font-size: var(--font-size-compact, 12px);
+    font: inherit;
   }
 
   .control-btn:hover {
-    border-color: var(--village-accent, #e8a87c);
+    background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.1));
   }
 
-  .speed-buttons {
-    display: flex;
-    gap: 3px;
-    flex-wrap: wrap;
+  .control-btn:focus-visible {
+    outline: 2px solid var(--theme-accent, #e8a87c);
+    outline-offset: 2px;
   }
 
-  .speed-btn {
-    padding: 2px 6px;
-    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
-    background: transparent;
-    color: var(--theme-text, #fff);
-    border-radius: 3px;
-    cursor: pointer;
-    font-size: var(--font-size-compact, 12px);
-  }
-
-  .speed-btn.active {
-    background: color-mix(
-      in srgb,
-      var(--village-accent, #e8a87c) 20%,
-      transparent
-    );
-    border-color: var(--village-accent, #e8a87c);
-  }
-
-  .sequence-list {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    margin-top: 4px;
-  }
-
-  .sequence-row {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: var(--font-size-compact, 12px);
-    opacity: 0.8;
-  }
-
-  .seq-id {
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .seq-prof {
-    min-width: 32px;
-    text-align: right;
-  }
-
-  .seq-source {
-    opacity: 0.5;
-    font-size: var(--font-size-compact, 12px);
-  }
-
-  .decay-bar {
-    width: 40px;
-    height: 4px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 2px;
-    overflow: hidden;
-  }
-
-  .decay-fill {
-    height: 100%;
-    background: var(--semantic-success, #4ade80);
-    border-radius: 2px;
-    transition: width var(--duration-emphasis) var(--ease-standard);
-  }
-
-  .toggle {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: var(--font-size-compact, 12px);
-    opacity: 0.8;
-    cursor: pointer;
-    background: none;
-    border: none;
-    padding: 2px 0;
-    color: inherit;
-    text-align: left;
+  .wide {
     width: 100%;
   }
 
-  .toggle:hover {
-    opacity: 1;
+  .visitor {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2026-xs, 6px);
   }
 
-  .toggle:focus-visible {
-    outline: 2px solid var(--village-accent, #e8a87c);
-    outline-offset: 2px;
-    border-radius: 4px;
+  .visitor h3 {
+    margin: 0;
   }
 
-  .toggle-indicator {
-    flex-shrink: 0;
-    width: 28px;
-    height: 16px;
-    border-radius: 999px;
-    background: var(--theme-card-bg, rgba(255, 255, 255, 0.08));
-    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.2));
-    position: relative;
-    transition:
-      background var(--duration-fast) var(--ease-standard),
-      border-color var(--duration-fast) var(--ease-standard);
+  /* Two lines reserved, so a longer status never moves the button. */
+  .visitor-status {
+    margin: 0;
+    min-height: 2.8em;
+    line-height: 1.4;
   }
 
-  .toggle-indicator::after {
-    content: "";
-    position: absolute;
-    top: 1px;
-    left: 1px;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: var(--theme-text, #fff);
-    opacity: 0.6;
-    transition:
-      transform var(--duration-fast) var(--ease-standard),
-      opacity var(--duration-fast) var(--ease-standard);
+  .control-btn:disabled {
+    opacity: 0.45;
+    cursor: default;
   }
 
-  .toggle-indicator.on {
-    background: color-mix(
-      in srgb,
-      var(--village-accent, #e8a87c) 35%,
-      transparent
-    );
-    border-color: var(--village-accent, #e8a87c);
+  .file-input {
+    display: none;
   }
 
-  .toggle-indicator.on::after {
-    transform: translateX(12px);
-    opacity: 1;
+  .fixtures {
+    display: grid;
+    grid-template-columns: auto 1fr 1fr;
+    align-items: center;
+    gap: var(--space-2026-xs, 6px);
   }
 
-  .llm-log {
-    margin-top: 4px;
-    max-height: 120px;
-    overflow-y: auto;
-    scrollbar-width: thin;
+  .fixtures-label {
+    color: var(--theme-text-dim, rgba(255, 255, 255, 0.65));
   }
 
-  .log-line {
+  .log-error {
+    margin: 0;
+    color: var(--semantic-error, #ff8a7a);
+  }
+
+  .memory {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 2px var(--space-2026-sm, 12px);
+    margin: 0;
+  }
+
+  .memory dt {
+    color: var(--theme-text-dim, rgba(255, 255, 255, 0.65));
+  }
+
+  .memory dd {
+    margin: 0;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .seed {
+    margin: 0;
     font-size: var(--font-size-compact, 12px);
-    font-family: monospace;
-    opacity: 0.6;
-    line-height: 1.3;
-    word-break: break-all;
+    color: var(--theme-text-dim, rgba(255, 255, 255, 0.65));
+  }
+
+  .seed-value {
+    font-variant-numeric: tabular-nums;
+  }
+
+  h3 {
+    margin: 0 0 var(--space-2026-xs, 6px);
+    font-size: var(--font-size-sm, 14px);
+    font-weight: 600;
+  }
+
+  .story-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2026-xs, 6px);
+    margin-bottom: var(--space-2026-xs, 6px);
+  }
+
+  .story-head h3 {
+    margin: 0;
+  }
+
+  .story {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    flex: 1;
+  }
+
+  .quiet {
+    margin: 0;
+    color: var(--theme-text-dim, rgba(255, 255, 255, 0.65));
+  }
+
+  .story-lines {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2026-xs, 6px);
+    line-height: 1.4;
+  }
+
+  .story-line {
+    color: var(--theme-text-dim, rgba(255, 255, 255, 0.72));
+  }
+
+  .story-line.loss {
+    color: var(--theme-text, #fff);
+    font-style: italic;
+  }
+
+  .disclosure {
+    width: 100%;
+  }
+
+  .details {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2026-sm, 12px);
+    padding-top: var(--space-2026-sm, 12px);
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 2px var(--space-2026-sm, 12px);
+    margin: 0;
+    font-size: var(--font-size-compact, 12px);
+  }
+
+  .stats dt {
+    color: var(--theme-text-dim, rgba(255, 255, 255, 0.65));
+  }
+
+  .stats dd {
+    margin: 0;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .people {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2026-xs, 6px);
   }
 </style>

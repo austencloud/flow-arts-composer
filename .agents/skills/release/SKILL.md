@@ -36,6 +36,8 @@ Required outcomes:
 - Disabled, tester-only, broken, and unresolved behavior is excluded.
 - Existing capabilities are not announced as new.
 - Every sentence makes sense without repository or app-module knowledge.
+- Headline examples follow `references/release-media.md`: baked motion that
+  tells a short story, never a page screenshot.
 
 Mark completed feedback that is not user-facing:
 `node scripts/fetch-feedback.js <id> internal-only true`
