@@ -93,6 +93,23 @@ function props(
   };
 }
 
+function customizeProps(): CustomizeOverlayProps {
+  return {
+    constraintPreset: "mixed",
+    handPathMode: "mixed",
+    motionTypeFilter: null,
+    startEndOptions: null,
+    level: 3,
+    gridMode: GridMode.DIAMOND,
+    isFreeformMode: true,
+    onConstraintPresetChange: vi.fn(),
+    onHandPathModeChange: vi.fn(),
+    onMotionTypeFilterChange: vi.fn(),
+    onStartEndChange: null,
+    onResetAll: null,
+  };
+}
+
 describe("ExpandedCardStage", () => {
   it("renders nothing while no card is open", () => {
     const state = createPanelCoordinationState();
@@ -693,8 +710,45 @@ describe("ExpandedCardStage on stacked layouts", () => {
     return root!;
   }
 
-  it("opens as a bottom panel over a backdrop on an unfolded foldable", async () => {
+  // The root's own box, centered in the window to within a pixel or two.
+  function expectCentered(box: DOMRect): void {
+    expect(Math.abs(box.top - (innerHeight - box.bottom))).toBeLessThanOrEqual(
+      2
+    );
+    expect(Math.abs(box.left - (innerWidth - box.right))).toBeLessThanOrEqual(
+      2
+    );
+  }
+
+  it("floats centered over a backdrop on an unfolded foldable", async () => {
     await page.viewport(707, 823);
+    const state = createPanelCoordinationState();
+    render(ExpandedCardStage, props(state, false));
+
+    state.openTnDPanel();
+    flushSync();
+    await tick();
+
+    const root = viewportRoot();
+    expect(root.dataset.presentation).toBe("float");
+    const box = root.getBoundingClientRect();
+    expectCentered(box);
+    expect(box.height).toBeLessThan(innerHeight);
+
+    const backdrop = document.body.querySelector<HTMLElement>(
+      ":scope > .expanded-card-backdrop"
+    );
+    expect(backdrop).not.toBeNull();
+    backdrop!.click();
+    // The close runs through the card morph's view transition.
+    await vi.waitFor(() => {
+      flushSync();
+      expect(state.openGenerateCard).toBeNull();
+    });
+  });
+
+  it("rests on the bottom edge of a short window wider than a phone", async () => {
+    await page.viewport(707, 720);
     const state = createPanelCoordinationState();
     render(ExpandedCardStage, props(state, false));
 
@@ -707,17 +761,44 @@ describe("ExpandedCardStage on stacked layouts", () => {
     const box = root.getBoundingClientRect();
     expect(Math.round(box.bottom)).toBe(innerHeight);
     expect(box.height).toBeLessThan(innerHeight * 0.75);
+    expect(
+      document.body.querySelector(":scope > .expanded-card-backdrop")
+    ).not.toBeNull();
+  });
 
-    const backdrop = document.body.querySelector<HTMLElement>(
-      ":scope > .expanded-card-backdrop"
-    );
-    expect(backdrop).not.toBeNull();
-    backdrop!.click();
-    // The close runs through the card morph's view transition.
-    await vi.waitFor(() => {
-      flushSync();
-      expect(state.openGenerateCard).toBeNull();
-    });
+  // The 960x1129 in-app browser pane where Customize sank to the bottom edge
+  // in a 480px box and its placement previews collapsed to rows.
+  it("gives a floating Customize room for its placement previews", async () => {
+    await page.viewport(960, 1129);
+    const state = createPanelCoordinationState();
+    render(ExpandedCardStage, props(state, false));
+
+    state.openCustomizeOverlay(customizeProps());
+    flushSync();
+    await tick();
+
+    const root = viewportRoot();
+    expect(root.dataset.presentation).toBe("float");
+    const box = root.getBoundingClientRect();
+    expect(box.height).toBeGreaterThanOrEqual(700);
+    expectCentered(box);
+  });
+
+  it("floats LOOP centered at its own height on a tall window", async () => {
+    await page.viewport(960, 1129);
+    const state = createPanelCoordinationState();
+    render(ExpandedCardStage, props(state, false));
+
+    state.openLOOPPanel(LOOPType.MIRRORED, new Set(), () => {});
+    flushSync();
+    await tick();
+
+    const root = viewportRoot();
+    expect(root.dataset.presentation).toBe("float");
+    const box = root.getBoundingClientRect();
+    expect(box.height).toBeGreaterThan(0);
+    expect(box.height).toBeLessThan(innerHeight);
+    expectCentered(box);
   });
 
   it("fills a phone screen, but keeps LOOP a bottom panel", async () => {
@@ -741,23 +822,6 @@ describe("ExpandedCardStage on stacked layouts", () => {
 });
 
 describe("ExpandedCardStage keeps Customize built", () => {
-  function customizeProps(): CustomizeOverlayProps {
-    return {
-      constraintPreset: "mixed",
-      handPathMode: "mixed",
-      motionTypeFilter: null,
-      startEndOptions: null,
-      level: 3,
-      gridMode: GridMode.DIAMOND,
-      isFreeformMode: true,
-      onConstraintPresetChange: vi.fn(),
-      onHandPathModeChange: vi.fn(),
-      onMotionTypeFilterChange: vi.fn(),
-      onStartEndChange: null,
-      onResetAll: null,
-    };
-  }
-
   it("builds the panel before the first open and reuses it on every open", () => {
     const state = createPanelCoordinationState();
     const { container } = render(ExpandedCardStage, props(state, true));

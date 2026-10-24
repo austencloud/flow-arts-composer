@@ -580,9 +580,11 @@
     container-type: size;
   }
 
+  /* Swipes that start on the board scroll the page where it can scroll;
+     each pressable point claims its own touch (PropPlacementInteractionOverlay). */
   .grid-wrapper {
     position: relative;
-    touch-action: none;
+    touch-action: pan-y;
     width: min(100%, 100cqh);
     min-width: 8rem;
     aspect-ratio: 1;
@@ -629,7 +631,9 @@
     cursor: not-allowed;
   }
   .can-drag-locations :global(.click-target.occupied) {
+    display: block;
     cursor: grab;
+    touch-action: none;
   }
 
   /* Props are mid-flight: drag aiming reads live DOM transforms and would

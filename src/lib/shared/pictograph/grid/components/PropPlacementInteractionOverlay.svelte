@@ -422,10 +422,16 @@
     transition: opacity var(--duration-fast) var(--ease-standard);
   }
 
+  /* A point that does nothing right now lets a vertical swipe scroll the
+     page (the wrapper allows pan-y). Only a pressable point takes the touch
+     for itself, so its press and drag-to-aim never turn into a scroll.
+     Chromium ignores touch-action on inline SVG children, and SVG shapes are
+     inline by default; display: block changes nothing in how the circle
+     draws but makes the browser honour its touch-action. */
   .click-target {
     cursor: default;
     pointer-events: auto;
-    touch-action: none;
+    touch-action: pan-y;
   }
 
   .aim-halo {
@@ -466,7 +472,9 @@
   }
 
   .click-target.tappable {
+    display: block;
     cursor: pointer;
+    touch-action: none;
   }
 
   .click-target.tappable:hover {
@@ -492,7 +500,7 @@
       stroke var(--duration-fast) var(--ease-standard);
   }
 
-  .click-target.ring:hover {
+  .click-target.ring.tappable:hover {
     fill: color-mix(in srgb, var(--ring) 20%, transparent);
     stroke: var(--ring);
     stroke-width: 2.5;

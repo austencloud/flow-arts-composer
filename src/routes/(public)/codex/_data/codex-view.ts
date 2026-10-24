@@ -134,3 +134,26 @@ export function transformCodexPictograph(
   }
   return result[0]!;
 }
+
+/** Eighths clockwise the transforms turn the board, 0..7. Flip's half turn
+ *  counts too; it never changes the grid on its own. */
+function netEighths(ops: readonly CodexTransformOp[]): number {
+  let eighths = 0;
+  for (const op of ops) {
+    if (op === "rotate") eighths += 1;
+    else if (op === "rotate-ccw") eighths += 7;
+    else if (op === "flip") eighths += 4;
+  }
+  return eighths % 8;
+}
+
+/** The way the grid turns (1 clockwise, -1 counterclockwise) when Reset
+ *  undoes these transforms: back the short way, so the grid moves the way the
+ *  hands go home. Null when the grid mode does not change. */
+export function codexResetTurnDirection(
+  ops: readonly CodexTransformOp[]
+): 1 | -1 | null {
+  const eighths = netEighths(ops);
+  if (eighths % 2 === 0) return null;
+  return eighths < 4 ? -1 : 1;
+}

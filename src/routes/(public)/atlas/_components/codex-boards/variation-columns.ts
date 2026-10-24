@@ -42,6 +42,16 @@ export function scrollVariationColumns(
   return fits.length > 0 ? Math.max(...fits) : defaultVariationColumns(count);
 }
 
+/** The splits a phone-height screen may also use: two across for an even
+ *  count, which on a portrait phone draws eight variations half again as
+ *  large as four across. The dialog keeps variationColumnChoices. */
+export function tallVariationColumnChoices(count: number): number[] {
+  const choices = variationColumnChoices(count);
+  return count % 2 === 0 && count > 2 && !choices.includes(2)
+    ? [2, ...choices]
+    : choices;
+}
+
 /** The allowed column count whose square cells come out largest in a box of
  *  this size, and that cell size. With a maxCell, cells stop growing there;
  *  when several counts reach it, the one nearest four columns wins, so a
@@ -51,9 +61,9 @@ export function fitVariationColumns(
   width: number,
   height: number,
   gap: number,
-  maxCell = Infinity
+  maxCell = Infinity,
+  choices: readonly number[] = variationColumnChoices(count)
 ): { columns: number; cell: number } | null {
-  const choices = variationColumnChoices(count);
   if (choices.length === 0 || width <= 0 || height <= 0) return null;
   let best = { columns: choices[0]!, cell: 0 };
   for (const columns of choices) {

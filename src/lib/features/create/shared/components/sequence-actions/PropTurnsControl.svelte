@@ -45,6 +45,9 @@
     reserveRotation?: boolean;
     /** Compact mode: single row layout for mobile */
     compact?: boolean;
+    /** Compact only: the rotation toggle takes its own row under the
+     *  stepper instead of a slot beside it, for a card too narrow for both. */
+    rotationBelow?: boolean;
     pathShape?: PathShapeValue | undefined;
     isShift?: boolean;
     /** False at the lower turn limit: the "−" button shows pressed flat. */
@@ -71,6 +74,7 @@
     showRotation,
     reserveRotation = true,
     compact = false,
+    rotationBelow = false,
     pathShape,
     isShift = true,
     canDecrease = true,
@@ -178,17 +182,25 @@
   // Compact first row: only the slots this card actually has, so an absent
   // control never leaves an empty gap.
   const hasRotationSlot = $derived(showRotation || reserveRotation);
+  const rotationBeside = $derived(hasRotationSlot && !rotationBelow);
+  const rotationRow = $derived(hasRotationSlot && rotationBelow);
   const compactSlots = $derived([
     "turns",
-    ...(hasRotationSlot ? ["rotation"] : []),
+    ...(rotationBeside ? ["rotation"] : []),
     ...(pathAvailable ? ["pathtoggle"] : []),
     ...(trailingControl ? ["trailing"] : []),
   ]);
   const compactColumns = $derived(
     ["minmax(0, 1fr)", ...compactSlots.slice(1).map(() => "auto")].join(" ")
   );
+  const spanRow = (area: string) =>
+    `"${compactSlots.map(() => area).join(" ")}"`;
   const compactAreas = $derived(
-    `"${compactSlots.join(" ")}" "${compactSlots.map(() => "path").join(" ")}"`
+    [
+      `"${compactSlots.join(" ")}"`,
+      ...(rotationRow ? [spanRow("rotation")] : []),
+      spanRow("path"),
+    ].join(" ")
   );
 
   function handleInvert(e: MouseEvent) {
@@ -277,6 +289,7 @@
       <button
         class="invert-btn"
         class:compact
+        class:below={compact && rotationBelow}
         class:reserved={!showRotation}
         disabled={!showRotation}
         aria-hidden={!showRotation}
@@ -605,6 +618,11 @@
 
   .turns-controls.compact .invert-label {
     display: none;
+  }
+
+  /* Its own row under the stepper: centred, still a square touch target. */
+  .invert-btn.compact.below {
+    justify-self: center;
   }
 
   .invert-btn:active:not(:disabled) {

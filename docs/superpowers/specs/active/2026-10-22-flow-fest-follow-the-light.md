@@ -1,3 +1,15 @@
+---
+status: active
+value: 4
+effort: XL
+work_state: in-progress
+remaining: Austen reviews the overnight design pass and its flagged material choices; then the Thursday slice is rebuilt around them in both engines.
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-23'
+---
+
 # Flow Fest: Follow the Light
 
 Design pass, 2026-10-22, overnight, for Austen's ask: "If you were to rethink

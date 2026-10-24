@@ -13,17 +13,23 @@
   - stacked: portaled to <body> and fixed to the viewport, bottom nav included.
     It cannot stay inside the settings container: `container-type: size`
     applies layout containment, which makes the container the containing
-    block for fixed descendants. On a narrow phone Customize, Setups and
-    Timing fill the screen. Anywhere wider (an unfolded foldable, a tablet
-    held upright), and for LOOP everywhere, the grown card is a panel along
-    the bottom edge over a dimmed backdrop: a full-screen panel there was
-    mostly empty space and hid the sequence it was configuring.
+    block for fixed descendants. Three ways to present there:
+    - fill: on a phone held upright, Customize, Setups and Timing take the
+      whole screen. LOOP stays a bottom panel even there.
+    - float: on a window wider than a phone and at least 760px tall (an
+      unfolded foldable, a tablet held upright, a tall browser pane), the
+      grown card floats centered over a dimmed backdrop. A full-screen panel
+      there was mostly empty space and hid the sequence it was configuring,
+      and a panel on the bottom edge left most of the screen empty above it.
+    - sheet: on a shorter window wider than a phone, the grown card is a
+      panel along the bottom edge over the same backdrop.
 
   No backdrop beside the desktop stage: the workspace beside the grown card
   stays live. On desktop, a click outside closes the card without consuming
   the interaction, so the workspace control underneath still works; the Level
   strip is the exception, since the card follows the level. A tap on
-  the bottom panel's backdrop closes it. X and Escape close everywhere.
+  the backdrop behind a bottom or floating panel closes it. X and Escape
+  close everywhere.
   Focus moves in on open and back to the card that opened it on close. The
   {#key destination} remount on a layout flip (desktop <-> stacked) drops the
   panel's local state and focus along with it; acceptable for a resize or fold
@@ -94,17 +100,27 @@
   // Widths up to this are a phone held upright, where a settings panel needs
   // the whole screen.
   const PHONE_MAX_WIDTH = 600;
-  // How the viewport destination presents on a stacked layout: a bottom panel,
-  // or the whole screen. A desktop window too short for the LOOP stage keeps
+  // From this height a stacked window has more room than a bottom panel uses,
+  // so the panel floats centered instead of resting on the bottom edge with
+  // most of the screen empty above it.
+  const FLOAT_MIN_HEIGHT = 760;
+  // How the viewport destination presents on a stacked layout. A phone fills
+  // the screen, except LOOP, which stays a bottom panel there whatever the
+  // height. Anything wider floats on a tall window and rests on the bottom
+  // edge on a short one. A desktop window too short for the LOOP stage keeps
   // its centered panel.
   const presentation = $derived(
     destination !== "viewport"
       ? "stage"
       : isDesktopLayout
         ? "centered"
-        : openCard === "loop" || viewportWidth > PHONE_MAX_WIDTH
-          ? "sheet"
-          : "fill"
+        : viewportWidth <= PHONE_MAX_WIDTH
+          ? openCard === "loop"
+            ? "sheet"
+            : "fill"
+          : viewportHeight >= FLOAT_MIN_HEIGHT
+            ? "float"
+            : "sheet"
   );
   const customize = $derived(panelState.customizeOverlayProps);
 
@@ -453,7 +469,7 @@
 
 {#key destination}
   {#if destination === "viewport"}
-    {#if openCard && presentation === "sheet"}
+    {#if openCard && (presentation === "sheet" || presentation === "float")}
       <!-- Pointer-only: X and Escape are the keyboard and screen reader
            routes to the same close. -->
       <div
@@ -617,9 +633,9 @@
 
   /* The bottom panel. The stage root is the panel's own box, not a full-screen
      layer around it, so the card morph carries the card into the panel. The
-     height fits every panel without scrolling at an unfolded foldable's 707px
-     width: Timing and direction needs 460px, Customize 380px, Setups and LOOP
-     less. Start placement sizes its grid to whatever height it gets. */
+     height fits Timing and direction (460px), Setups and LOOP without
+     scrolling at an unfolded foldable's 707px width. Customize gets a taller
+     box below, and its overview fits whatever box it gets. */
   .expanded-card-stage[data-presentation="sheet"] {
     position: fixed;
     inset: auto 0 0;
@@ -627,6 +643,13 @@
     width: min(100%, 880px);
     height: min(30rem, calc(100dvh - 16px));
     margin-inline: auto;
+  }
+
+  /* Customize draws its sixteen-cell placement previews as large as its box
+     allows (customize-overview-layout.ts). In a 30rem box they dropped to
+     plain rows, so it takes up to 46rem wherever the window has it. */
+  .expanded-card-stage[data-presentation="sheet"][data-card-id="customize"] {
+    height: min(46rem, calc(100dvh - 16px));
   }
 
   /* LOOP's content has a height of its own (a Combo is taller than a Single),
@@ -654,5 +677,36 @@
     border-end-start-radius: 0;
     border-end-end-radius: 0;
     padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* A stacked window with room to spare: the panel floats centered over the
+     dimmed workspace. The root is still the panel's own box, so the card
+     morph lands in it, and the panel keeps its full rounded border. */
+  .expanded-card-stage[data-presentation="float"] {
+    position: fixed;
+    inset: 0;
+    margin: auto;
+    z-index: calc(var(--z-drawer, 400) + 1);
+    width: min(100% - 32px, 880px);
+    height: min(30rem, calc(100dvh - 32px));
+  }
+
+  /* 46rem fits Customize's two placement previews at their width-capped size
+     beside the Style controls, up to the 880px width. */
+  .expanded-card-stage[data-presentation="float"][data-card-id="customize"] {
+    height: min(46rem, calc(100dvh - 32px));
+  }
+
+  /* LOOP's content sizes its panel (a Combo is taller than a Single). */
+  .expanded-card-stage[data-presentation="float"][data-card-id="loop"] {
+    height: fit-content;
+    max-height: calc(100dvh - 32px);
+  }
+
+  .expanded-card-stage[data-presentation="float"][data-card-id="loop"]
+    > :global(.loop-expanded-overlay) {
+    position: relative;
+    inset: auto;
+    max-height: calc(100dvh - 32px);
   }
 </style>

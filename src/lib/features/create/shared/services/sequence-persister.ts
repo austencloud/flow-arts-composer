@@ -391,16 +391,32 @@ export class SequencePersister {
   }
   async loadCurrentState(mode?: string): Promise<WorkspaceDraftState | null> {
     const target = isMode(mode) ? mode : this.currentMode();
+    // A load reads the head and the primary copy across several awaits. Run
+    // it in the mode's queue so an autosave cannot land between those reads
+    // and make this editor look like another tab.
+    return this.enqueue(target, () => this.loadQueued(target));
+  }
+  private async loadQueued(
+    target: ActiveCreateModule
+  ): Promise<WorkspaceDraftState | null> {
     try {
       const head = await getDraftHead(target);
       const local = await this.readLocal(target);
       const originalRevision = this.revisions.get(target);
       if (!this.revisions.has(target))
         this.revisions.set(target, head?.revision ?? null);
-      if (
+      const revisionMoved =
         originalRevision !== undefined &&
-        originalRevision !== (head?.revision ?? null)
+        originalRevision !== (head?.revision ?? null);
+      if (
+        revisionMoved &&
+        head?.version &&
+        head.version.sessionId === this.sessions.get(target)
       ) {
+        // This editor's own session wrote the newer head (a save from before
+        // a reload, or a remounted editor). It is not another tab: adopt it.
+        this.revisions.set(target, head.revision);
+      } else if (revisionMoved) {
         const pending = this.pending.get(target);
         if (pending)
           await storeDivergentDraft(

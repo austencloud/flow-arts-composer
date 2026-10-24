@@ -403,6 +403,10 @@ export class PictographPreparer {
         triangleGrip: options?.triangleGrip,
       }),
       pictograph.betaSwapped ? "bs" : "",
+      // The grid is drawn from this, so the same hands on another grid must
+      // not reuse its entry (a Codex cell with a stale mode once drew its
+      // diamond grid into the explorer's box tile).
+      this.deriveGridMode(pictograph),
       getPictographGeometryRevision(pictograph) ?? "",
       // Visibility is render-relevant: an invisible placeholder hand must not
       // share a cache entry with a visible static twin.

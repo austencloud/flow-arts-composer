@@ -253,19 +253,35 @@ self.addEventListener("fetch", (event) => {
 async function cacheFirst(request) {
   const cached = await caches.match(request);
   if (cached) return cached;
-  const response = await fetch(request);
-  if (response.ok) {
-    const cache = await caches.open(CACHE_NAME);
-    cache.put(request, response.clone());
-  }
-  return response;
+  const cache = await caches.open(CACHE_NAME);
+  return fetchAndCache(request, cache, (req) => caches.match(req));
 }
 
 async function cacheFirstDedicated(request, cacheName) {
   const cache = await caches.open(cacheName);
   const cached = await cache.match(request);
   if (cached) return cached;
-  const response = await fetch(request);
+  return fetchAndCache(request, cache, (req) => cache.match(req));
+}
+
+// A single rejected fetch used to reject respondWith, and the browser
+// reported ERR_FAILED for a chunk the server had: pressing Generate on a
+// phone failed ~18 chunk and CSS loads at once and forced a reload. A fetch
+// failure now waits briefly, checks the cache again (a parallel request may
+// have filled it) and retries once before giving up. Real server responses,
+// 4xx and 5xx included, pass through untouched; only a rejected fetch retries.
+const FETCH_RETRY_DELAY_MS = 300;
+
+async function fetchAndCache(request, cache, lookup) {
+  let response;
+  try {
+    response = await fetch(request);
+  } catch {
+    await new Promise((resolve) => setTimeout(resolve, FETCH_RETRY_DELAY_MS));
+    const filled = await lookup(request);
+    if (filled) return filled;
+    response = await fetch(request);
+  }
   if (response.ok) cache.put(request, response.clone());
   return response;
 }

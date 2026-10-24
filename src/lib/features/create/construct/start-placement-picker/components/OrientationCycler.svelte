@@ -390,10 +390,17 @@ center label opens an anchored popover with all four orientations.
     transition: background var(--transition-fast);
   }
 
+  /* Taps on the old 12px chevrons registered as dead clicks: the glyph is
+     what people aim at, so it is big enough to see and hit inside the 48px
+     target. */
   .cycle-arrow {
     flex: 3;
-    font-size: 12px;
-    opacity: 0.6;
+    font-size: 20px;
+    opacity: 0.8;
+  }
+
+  .cycle-arrow i {
+    transition: transform var(--duration-fast) var(--ease-standard);
   }
 
   .cycle-center {
@@ -423,6 +430,16 @@ center label opens an anchored popover with all four orientations.
     transition: background var(--transition-micro);
   }
 
+  /* The press shows on the arrow itself, not only in a faint background. */
+  .cycle-arrow:active {
+    background: color-mix(in srgb, var(--theme-text) 18%, transparent);
+    opacity: 1;
+  }
+
+  .cycle-arrow:active i {
+    transform: scale(0.85);
+  }
+
   .cycle-arrow:focus-visible,
   .cycle-center:focus-visible {
     outline: 2px solid var(--theme-accent);
@@ -441,7 +458,8 @@ center label opens an anchored popover with all four orientations.
 
   @media (prefers-reduced-motion: reduce) {
     .cycle-arrow,
-    .cycle-center {
+    .cycle-center,
+    .cycle-arrow i {
       transition: none;
     }
   }

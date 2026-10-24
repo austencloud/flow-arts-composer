@@ -15,6 +15,11 @@
    * the printable white-paper look is preserved.
    */
   import GuidePictograph from "../../guide/level-1/_components/GuidePictograph.svelte";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import ShimmerBlock from "#lib/shared/components/loading/ShimmerBlock.svelte";
+  import { opaqueFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import { describePictograph } from "#lib/shared/pictograph/shared/domain/utils/pictograph-description.js";
   import CodexTransitionGlyph from "./CodexTransitionGlyph.svelte";
   import PictographTypeFrame from "#lib/shared/pictograph/shared/components/PictographTypeFrame.svelte";
   import SelectionHit from "#lib/shared/selection/SelectionHit.svelte";
@@ -75,6 +80,19 @@
   const data = $derived(dataOverride ?? codexData(cell.id));
   const interactive = $derived(!!(onSelect || href));
   const selection = onSelect || href ? getSequenceSelection() : null;
+
+  // A dark cell the reader can select is the live on-screen board (the full
+  // /codex board and its type screen). It draws through PictographContainer
+  // with a live theme and a stable identity, the way the letter screen's tiles
+  // do, so a rotate, mirror, flip, swap or turns edit runs the shared edit
+  // clock: arrows fade, props travel, the grid turns on the same frames. Print
+  // sheets and the glossary keep GuidePictograph's static capture untouched.
+  const live = $derived(theme === "dark" && !!onSelect);
+  let liveReady = $state(false);
+  // Same description GuidePictograph gives: hidden TKA glyph, no letter.
+  const liveLabel = $derived(
+    data ? describePictograph(showTKA ? data : { ...data, letter: null }) : ""
+  );
 </script>
 
 {#snippet cellBody()}
@@ -82,7 +100,40 @@
     <span class="cell-top"><CodexTransitionGlyph text={cell.top} /></span>
   {/if}
   <div class="picto">
-    {#if theme === "dark"}
+    {#if live}
+      <PictographTypeFrame letter={data?.letter}>
+        <div class="live-picto">
+          <PictographContainer
+            pictographData={data}
+            transitionKey={`codex-cell-${cell.id}`}
+            themeOverride="dark"
+            {showGrid}
+            {showTKA}
+            {showReversals}
+            {showNonRadialPoints}
+            {showPlacements}
+            showTnD={showGlyph}
+            showElemental={showGlyph}
+            showHandPoints={true}
+            showPropTnD={false}
+            showHandColorKey={false}
+            stepNumberOverride={false}
+            ariaLabel={liveLabel || undefined}
+            leftPropTypeOverride={propType}
+            rightPropTypeOverride={propType}
+            onReady={() => (liveReady = true)}
+          />
+          {#if !liveReady}
+            <div
+              class="live-shimmer"
+              out:opaqueFade={{ duration: DURATION.fast }}
+            >
+              <ShimmerBlock width="100%" height="100%" borderRadius="inherit" />
+            </div>
+          {/if}
+        </div>
+      </PictographTypeFrame>
+    {:else if theme === "dark"}
       <PictographTypeFrame letter={data?.letter}>
         <GuidePictograph
           {data}
@@ -222,6 +273,20 @@
     width: 100%;
     height: 100%;
     max-width: none !important;
+  }
+
+  /* The live board cell: the container fills the box like the static one. */
+  .live-picto {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
+  .live-shimmer {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    border-radius: inherit;
   }
 
   .cell-name {

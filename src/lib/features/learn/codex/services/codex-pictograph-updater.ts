@@ -85,8 +85,13 @@ function rotatePictograph(pictograph: PictographData): PictographData {
   const leftMotion = pictograph.motions[HandSide.LEFT];
   const rightMotion = pictograph.motions[HandSide.RIGHT];
 
-  // Determine new grid mode (toggle DIAMOND ↔ BOX)
-  const currentGridMode = leftMotion?.gridMode ?? GridMode.DIAMOND;
+  // Determine new grid mode (toggle DIAMOND ↔ BOX). The pictograph's own
+  // gridMode wins: the renderer and the grid's turn read it before the hands'.
+  const currentGridMode =
+    pictograph.gridMode ??
+    leftMotion?.gridMode ??
+    rightMotion?.gridMode ??
+    GridMode.DIAMOND;
   const newGridMode =
     currentGridMode === GridMode.DIAMOND ? GridMode.BOX : GridMode.DIAMOND;
 
@@ -131,6 +136,9 @@ function rotatePictograph(pictograph: PictographData): PictographData {
   return {
     ...pictograph,
     motions: rotatedMotions,
+    // The grid turns with the hands. Leaving the old top-level mode here drew
+    // box-positioned hands on a diamond grid and stopped the grid's turn.
+    gridMode: newGridMode,
     // Keep original placements - they describe the letter's start/end configuration
     startPlacement: pictograph.startPlacement,
     endPlacement: pictograph.endPlacement,

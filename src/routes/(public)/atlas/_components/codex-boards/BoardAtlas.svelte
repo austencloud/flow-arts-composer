@@ -19,6 +19,12 @@
   import CodexFlow from "./CodexFlow.svelte";
   import CodexBandHead from "./CodexBandHead.svelte";
   import { codexTypeLabel } from "../../../codex/_data/codex-groups";
+  import {
+    BAND_CHROME_REM,
+    BOARD_COLUMNS,
+    BOARD_ROWS,
+    BOARD_WIDTH_CHROME_REM,
+  } from "../../../codex/_data/codex-fit";
   import { LETTER_TYPE_COLORS } from "#lib/shared/pictograph/shared/domain/constants/pictograph-constants.js";
   import type { LetterType } from "#lib/shared/foundation/domain/models/letter-type.js";
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
@@ -67,7 +73,13 @@
 </script>
 
 <div class="board-atlas">
-  <div class="bands">
+  <div
+    class="bands"
+    style:--band-rows={BOARD_ROWS}
+    style:--band-columns={BOARD_COLUMNS}
+    style:--board-width-chrome={`${BOARD_WIDTH_CHROME_REM}rem`}
+    style:--atlas-band-chrome={`${BAND_CHROME_REM}rem`}
+  >
     {#each MAJOR_TYPE_BANDS as band (band.type.n)}
       <section
         class="band"
@@ -144,9 +156,8 @@
        this board lands inside the fold from the top of the page instead of
        needing a scroll. The extra 2rem across and 6rem down are the section
        outlines' padding and frames. */
-    --band-rows: 5;
     --codex-picto-size: min(
-      calc((100cqi - 5rem) / 12),
+      calc((100cqi - var(--board-width-chrome)) / var(--band-columns)),
       calc(
         (100dvh - var(--codex-atlas-chrome, 28.5rem) - 6rem) / var(--band-rows)
       )
@@ -271,15 +282,17 @@
       width: auto;
       margin-inline: 0;
     }
+    /* A host that has already decided the cell (the /codex page, from
+       codex-fit.ts, which reads the same constants) hands it over as
+       --codex-picto-size-override, and the board draws it as given. */
     .bands {
       gap: 0.6rem;
       --band-pad-y: 0.4rem;
       --settings-codex-row-caption-gap: 0.45rem;
-      --atlas-band-chrome: 21rem;
-      --codex-picto-size: max(
-        3rem,
+      --codex-picto-size: var(
+        --codex-picto-size-override,
         min(
-          calc((100cqi - 5rem) / 12),
+          calc((100cqi - var(--board-width-chrome)) / var(--band-columns)),
           calc((100cqb - var(--atlas-band-chrome)) / var(--band-rows))
         )
       );

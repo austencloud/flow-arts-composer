@@ -37,6 +37,7 @@
     onResetTransforms,
     onResetTurns,
     onToggleLayer,
+    layout = "row",
   }: {
     leftTurns: TurnValue;
     rightTurns: TurnValue;
@@ -59,6 +60,10 @@
     onResetTransforms: () => void;
     onResetTurns: () => void;
     onToggleLayer?: (key: keyof CodexVisibility) => void;
+    /** "row": the groups side by side, wrapping (the dialog's toolbar).
+     *  "rail": one column beside the full board. "stack": one column on the
+     *  Adjust screen, with phone-sized buttons. */
+    layout?: "row" | "rail" | "stack";
   } = $props();
 
   const LAYERS: { key: keyof CodexVisibility; label: string }[] = [
@@ -77,15 +82,34 @@
   // Two hands side by side take about 19.75rem (two 9.5rem cards and the
   // gap between them), or 27rem once a rotation toggle can join each
   // stepper. A row too narrow for that stacks the hands instead of letting
-  // the buttons spill past their cards.
-  const sideBySideWidth = $derived(
-    (leftCanRotate || rightCanRotate ? 27 : 19.75) * 16
-  );
+  // the buttons spill past their cards. The Adjust screen ("stack") keeps
+  // the hands side by side down to 19.75rem and moves each rotation toggle
+  // under its stepper instead, so the hands never cost two rows of height.
+  const PAIR_REM = 19.75;
+  const PAIR_WITH_ROTATION_REM = 27;
+  const canRotate = $derived(leftCanRotate || rightCanRotate);
   let rowWidth = $state(0);
-  const stackHands = $derived(rowWidth > 0 && rowWidth < sideBySideWidth);
+  const measured = $derived(rowWidth > 0);
+  const roomForRotation = $derived(
+    !measured || rowWidth >= PAIR_WITH_ROTATION_REM * 16
+  );
+  const stackHands = $derived(
+    measured &&
+      (layout === "stack"
+        ? rowWidth < PAIR_REM * 16
+        : rowWidth < (canRotate ? PAIR_WITH_ROTATION_REM : PAIR_REM) * 16)
+  );
+  const rotationBelow = $derived(
+    layout === "stack" && canRotate && !stackHands && !roomForRotation
+  );
 </script>
 
-<div class="board-controls" bind:clientWidth={rowWidth}>
+<div
+  class="board-controls"
+  class:transformed
+  data-layout={layout}
+  bind:clientWidth={rowWidth}
+>
   <div class="group">
     <div class="group-head">
       <span class="group-label">Turns</span>
@@ -111,6 +135,7 @@
             showRotation={leftCanRotate && turning(leftTurns)}
             reserveRotation={false}
             compact
+            {rotationBelow}
             onTurnsChange={(delta) => onTurnsChange(HandSide.LEFT, delta)}
             onRotationChange={(direction) =>
               onRotationChange(HandSide.LEFT, direction)}
@@ -124,6 +149,7 @@
             showRotation={rightCanRotate && turning(rightTurns)}
             reserveRotation={false}
             compact
+            {rotationBelow}
             onTurnsChange={(delta) => onTurnsChange(HandSide.RIGHT, delta)}
             onRotationChange={(direction) =>
               onRotationChange(HandSide.RIGHT, direction)}
@@ -134,7 +160,7 @@
   </div>
 
   <div class="group">
-    <div class="group-head">
+    <div class="group-head" class:quiet={layout !== "row"}>
       <span class="group-label">Transform</span>
     </div>
     <div class="group-body">
@@ -147,7 +173,9 @@
         actionSubject="the pictographs"
         rotationDegrees={45}
         resetPlacement="transform"
-        onReset={transformed ? onResetTransforms : undefined}
+        onReset={transformed || layout === "rail"
+          ? onResetTransforms
+          : undefined}
         onRotateCCW={() => onTransform("rotate-ccw")}
         onRotateCW={() => onTransform("rotate")}
         onMirror={() => onTransform("mirror")}
@@ -160,7 +188,7 @@
 
   {#if visibility}
     <div class="group">
-      <div class="group-head">
+      <div class="group-head" class:quiet={layout !== "row"}>
         <span class="group-label">Show</span>
       </div>
       <div class="group-body chip-row">
@@ -278,40 +306,86 @@
     color: color-mix(in srgb, rgb(var(--btn-color)) 35%, white);
   }
 
-  /* Phones, either way up: smaller transform buttons (still a full touch target), so the
-     controls leave room for the pictographs. */
-  @media (max-width: 600px), (max-height: 500px) {
-    .board-controls {
-      gap: 0.5rem 1rem;
-    }
+  /* A column: the rail beside the full board and the Adjust screen. Every
+     group takes the column's width; the hands stack when it is narrow
+     (stackHands above). */
+  .board-controls[data-layout="rail"],
+  .board-controls[data-layout="stack"] {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
 
-    .board-controls
-      .group-body
-      :global(.actions-container.toolbar .section-grid) {
-      gap: 0.4rem;
-    }
+  /* The rail never scrolls, so Transform's Reset keeps its row while
+     nothing is transformed and pops in when something is; the Print button
+     under the rail stays where it was. */
+  .board-controls[data-layout="rail"]
+    .group-body
+    :global(.actions-container.toolbar .grid-btn.reset) {
+    transition:
+      opacity var(--duration-fast) var(--ease-standard),
+      scale var(--duration-fast) var(--ease-standard),
+      visibility var(--duration-fast);
+  }
 
-    .board-controls
-      .group-body
-      :global(.actions-container.toolbar .grid-btn[class]) {
-      min-height: var(--min-touch-target);
-      padding: 0.3rem 0.6rem;
-      gap: 0.35rem;
-    }
+  .board-controls[data-layout="rail"]:not(.transformed)
+    .group-body
+    :global(.actions-container.toolbar .grid-btn.reset) {
+    opacity: 0;
+    scale: 0.9;
+    visibility: hidden;
+  }
 
-    .board-controls .group-body :global(.actions-container.toolbar .btn-label) {
-      font-size: 0.875rem;
-    }
+  /* The Adjust screen: smaller transform buttons (still a full touch
+     target), so the controls leave room for the preview. */
+  .board-controls[data-layout="stack"] {
+    gap: 0.5rem;
+  }
 
-    .board-controls
-      .group-body
-      :global(.actions-container.toolbar .rotation-pair .grid-btn) {
-      min-width: 2.75rem;
-    }
+  /* The Adjust screen and the rail name only Turns, whose cards need the
+     word and whose heading holds its Reset; the transform buttons and layer
+     chips carry their own names, so their headings stay for screen readers
+     and give their rows to the preview, or to the rail's Print button. */
+  .group-head.quiet {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
 
-    .board-controls .group-body :global(.actions-container.toolbar .btn-icon) {
-      width: 1.5rem;
-      height: 1.5rem;
-    }
+  .board-controls[data-layout="stack"]
+    .group-body
+    :global(.actions-container.toolbar .section-grid) {
+    gap: 0.4rem;
+  }
+
+  .board-controls[data-layout="stack"]
+    .group-body
+    :global(.actions-container.toolbar .grid-btn[class]) {
+    min-height: var(--min-touch-target);
+    padding: 0.3rem 0.6rem;
+    gap: 0.35rem;
+  }
+
+  .board-controls[data-layout="stack"]
+    .group-body
+    :global(.actions-container.toolbar .btn-label) {
+    font-size: 0.875rem;
+  }
+
+  .board-controls[data-layout="stack"]
+    .group-body
+    :global(.actions-container.toolbar .rotation-pair .grid-btn) {
+    min-width: 2.75rem;
+  }
+
+  .board-controls[data-layout="stack"]
+    .group-body
+    :global(.actions-container.toolbar .btn-icon) {
+    width: 1.5rem;
+    height: 1.5rem;
   }
 </style>

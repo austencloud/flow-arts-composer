@@ -3,6 +3,7 @@ import {
   defaultVariationColumns,
   fitVariationColumns,
   scrollVariationColumns,
+  tallVariationColumnChoices,
   variationColumnChoices,
 } from "./variation-columns";
 
@@ -54,5 +55,18 @@ describe("variation columns", () => {
       cell: 288,
     });
     expect(fitVariationColumns(6, 1800, 900, 10, 200)?.columns).toBe(3);
+  });
+});
+
+describe("tall screen columns", () => {
+  it("adds two across for an even count", () => {
+    expect(tallVariationColumnChoices(8)).toEqual([2, 4, 8]);
+    expect(tallVariationColumnChoices(6)).toEqual([2, 3, 6]);
+    expect(tallVariationColumnChoices(5)).toEqual([4]);
+  });
+  it("draws eight variations two across on a portrait phone", () => {
+    expect(
+      fitVariationColumns(8, 336, 460, 10.4, 240, tallVariationColumnChoices(8))
+    ).toEqual({ columns: 2, cell: 107 });
   });
 });

@@ -419,6 +419,75 @@ describe("sw.js lie-fi timeout", () => {
   });
 });
 
+describe("sw.js immutable chunk retry", () => {
+  // Fix: one rejected fetch for a hashed chunk rejected respondWith, so the
+  // browser reported ERR_FAILED for a file the server had and the app forced
+  // a reload. A fetch failure is retried once after a short pause.
+  const chunk = "/_app/immutable/chunks/StepStrip.abc123.js";
+
+  it("retries a rejected chunk fetch once and serves the response", async () => {
+    vi.useFakeTimers();
+    const h = createSwHarness();
+    let calls = 0;
+    h.route(chunk, () => {
+      calls += 1;
+      return calls === 1
+        ? new TypeError("Failed to fetch")
+        : new Response("chunk body", { status: 200 });
+    });
+
+    const pending = h.dispatchFetch(`${ORIGIN}${chunk}`);
+    await vi.advanceTimersByTimeAsync(1_000);
+    const res = await pending;
+
+    expect(calls).toBe(2);
+    expect(res!.status).toBe(200);
+    expect(await res!.text()).toBe("chunk body");
+    vi.useRealTimers();
+    await settleBackgroundWork();
+    expect(await h.cacheBody(h.constants.cacheName, chunk)).toBe("chunk body");
+  });
+
+  it("serves a copy a parallel request cached during the pause", async () => {
+    vi.useFakeTimers();
+    const h = createSwHarness();
+    let calls = 0;
+    h.route(chunk, () => {
+      calls += 1;
+      return new TypeError("Failed to fetch");
+    });
+
+    const pending = h.dispatchFetch(`${ORIGIN}${chunk}`);
+    await vi.advanceTimersByTimeAsync(0);
+    await h.seedCache(h.constants.cacheName, chunk, "filled by a sibling");
+    await vi.advanceTimersByTimeAsync(1_000);
+    const res = await pending;
+
+    expect(calls).toBe(1);
+    expect(await res!.text()).toBe("filled by a sibling");
+  });
+
+  it("passes a server error through without retrying, and rejects after two failures", async () => {
+    vi.useFakeTimers();
+    const h = createSwHarness();
+    let calls = 0;
+    h.route(chunk, () => {
+      calls += 1;
+      return new Response("gone", { status: 404 });
+    });
+    const res = await h.dispatchFetch(`${ORIGIN}${chunk}`);
+    expect(res!.status).toBe(404);
+    expect(calls).toBe(1);
+    expect(await h.cacheHas(h.constants.cacheName, chunk)).toBe(false);
+
+    const offline = createSwHarness();
+    const failing = offline.dispatchFetch(`${ORIGIN}${chunk}`);
+    const settled = expect(failing).rejects.toThrow(TypeError);
+    await vi.advanceTimersByTimeAsync(1_000);
+    await settled;
+  });
+});
+
 describe("sw.js update flow", () => {
   // Fix: silent auto-update — install used to skipWaiting(), so a new deploy
   // took over an open tab and served new immutable chunks to old in-memory

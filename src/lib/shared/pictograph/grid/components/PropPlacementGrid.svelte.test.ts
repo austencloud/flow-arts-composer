@@ -178,9 +178,10 @@ describe("PropPlacementGrid", () => {
 
   it("commits a dragged aim under REAL touch input (regression: gesture-arbitration pointercancel)", async () => {
     // Real CDP touch, not dispatchEvent: the 2026-07-29 bug was Chromium
-    // stealing the drag with a `pointercancel` (touch-action: none on the SVG
-    // circle is not honoured; it must sit on the HTML .grid-wrapper). A
-    // synthetic-event version of this test passes even with the bug present.
+    // stealing the drag with a `pointercancel` (touch-action on an inline SVG
+    // circle is not honoured; a pressable circle is display: block so its
+    // touch-action: none counts). A synthetic-event version of this test
+    // passes even with the bug present.
     const onOrientationChange = vi.fn();
     render(PropPlacementGrid, {
       gridMode: GridMode.DIAMOND,
@@ -201,6 +202,50 @@ describe("PropPlacementGrid", () => {
       HandSide.LEFT,
       Orientation.OUT
     );
+  });
+
+  it("lets a REAL touch swipe that starts on an idle point scroll the page", async () => {
+    // Phones recorded swipes on the board as dead clicks: every point and the
+    // wrapper took the touch, so the page could not scroll from the grid.
+    render(PropPlacementGrid, {
+      gridMode: GridMode.DIAMOND,
+      leftPropType: PropType.STAFF,
+      rightPropType: PropType.STAFF,
+      initialLeftLocation: GridLocation.EAST,
+      initialRightLocation: GridLocation.WEST,
+      editAfterCompletion: true,
+      renderTray: false,
+    });
+    const spacer = document.createElement("div");
+    spacer.style.height = "3000px";
+    document.body.append(spacer);
+    try {
+      // North is empty in a finished position: nothing to press there.
+      const north = page.getByRole("button", { name: "North point" });
+      await expect.element(north).toHaveAttribute("aria-disabled", "true");
+      const east = page.getByRole("button", {
+        name: "East point (left prop)",
+      });
+      expect(getComputedStyle(east.element()).touchAction).toBe("none");
+
+      const rect = (
+        north.element() as SVGCircleElement
+      ).getBoundingClientRect();
+      const from = {
+        x: rect.x + rect.width / 2,
+        y: rect.y + rect.height / 2,
+      };
+      const before = document.scrollingElement!.scrollTop;
+      await commands.dispatchRealTouchDrag(from, {
+        x: from.x,
+        y: from.y - 120,
+      });
+      await expect
+        .poll(() => document.scrollingElement!.scrollTop)
+        .toBeGreaterThan(before);
+    } finally {
+      spacer.remove();
+    }
   });
 
   it("re-aims a prop from an already-complete position", async () => {

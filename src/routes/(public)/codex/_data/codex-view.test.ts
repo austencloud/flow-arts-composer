@@ -4,6 +4,7 @@ import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-
 import { flipMotion } from "#lib/shared/create/services/motion-transforms.js";
 import { codexData } from "./codex-groups";
 import {
+  codexResetTurnDirection,
   defaultCodexVisibility,
   formatCodexTransforms,
   parseCodexTransforms,
@@ -38,6 +39,37 @@ describe("codex board view", () => {
       a.motions[HandSide.LEFT]?.startLocation
     );
     expect(full.motions[HandSide.LEFT]?.gridMode).toBe(GridMode.DIAMOND);
+  });
+
+  it("turns the pictograph's own grid with its hands", () => {
+    const a = codexData("A-0")!;
+    expect(a.gridMode).toBe(GridMode.DIAMOND);
+    expect(transformCodexPictograph(a, ["rotate"]).gridMode).toBe(GridMode.BOX);
+    expect(transformCodexPictograph(a, ["rotate-ccw"]).gridMode).toBe(
+      GridMode.BOX
+    );
+    expect(transformCodexPictograph(a, Array(8).fill("rotate")).gridMode).toBe(
+      GridMode.DIAMOND
+    );
+    expect(transformCodexPictograph(a, ["rotate", "rotate-ccw"]).gridMode).toBe(
+      GridMode.DIAMOND
+    );
+    // Mirror, flip and swap keep whatever grid the pictograph had.
+    for (const op of ["mirror", "flip", "swap"] as const) {
+      expect(transformCodexPictograph(a, [op]).gridMode).toBe(GridMode.DIAMOND);
+      expect(transformCodexPictograph(a, ["rotate", op]).gridMode).toBe(
+        GridMode.BOX
+      );
+    }
+  });
+
+  it("turns the grid home the short way on Reset", () => {
+    expect(codexResetTurnDirection([])).toBeNull();
+    expect(codexResetTurnDirection(["rotate"])).toBe(-1);
+    expect(codexResetTurnDirection(["rotate-ccw"])).toBe(1);
+    expect(codexResetTurnDirection(["rotate", "rotate"])).toBeNull();
+    expect(codexResetTurnDirection(["rotate", "flip"])).toBe(1);
+    expect(codexResetTurnDirection(["mirror", "swap"])).toBeNull();
   });
 
   it("turns left as the undo of turning right", () => {

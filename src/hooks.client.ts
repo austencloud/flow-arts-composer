@@ -234,6 +234,26 @@ if (browser && !dev) {
     window.location.replace(url.toString());
   });
 
+  // Report uncaught errors with their script location, full stack and route.
+  // PostHog auto-captures these too, but minified ones such as
+  // "e is not a function" reached it with no stack frames; this record keeps
+  // file:line:column so a source-mapped build can name the function.
+  window.addEventListener("error", (event) => {
+    // Resource load failures (img, script, link) fire non-bubbling error
+    // events that only reach window in the capture phase; this listener is
+    // bubble-phase, so every event here is a script error.
+    const pathname = window.location.pathname;
+    Promise.all([
+      import("#lib/shared/error/domain/window-error-report.js"),
+      import("#lib/shared/error/services/error-telemetry-reporter.js"),
+    ])
+      .then(([{ buildWindowErrorReport }, { reportErrorTelemetry }]) => {
+        const report = buildWindowErrorReport(event, pathname);
+        if (report) reportErrorTelemetry(report, { skipPostHog: true });
+      })
+      .catch(() => {});
+  });
+
   // Report unhandled promise rejections to error telemetry
   window.addEventListener("unhandledrejection", (event) => {
     const reason = event.reason;

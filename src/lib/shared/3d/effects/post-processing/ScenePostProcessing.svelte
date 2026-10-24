@@ -67,9 +67,9 @@
     adaptiveQuality?.config ?? qualityTierDetector.currentConfig
   );
   const tierBloom = $derived(forceBloom ?? tierConfig.enableBloom);
-  // A device detected LOW at startup keeps the original composer-free budget.
-  // Frame pressure may lower DPR, but it never removes authored post-processing
-  // or rebuilds the composer around a cheaper visual tier mid-session.
+  // A device at LOW keeps the composer-free budget. Frame pressure lowers DPR
+  // first; only when that floor cannot recover the frame rate does the content
+  // tier step down, and this composer follows that one-way step.
   const allowOceanComposer = $derived(
     isOcean &&
       (adaptiveQuality

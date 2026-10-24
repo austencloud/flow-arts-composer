@@ -17,6 +17,9 @@ Pure reactive approach - grid mode determines styling, rotation provides animati
   import { svgPreloader } from "#lib/shared/pictograph/shared/services/svg-preloader.js";
   import { getGridRotationDirection } from "../state/grid-rotation-state.svelte";
   import { bootProfiler } from "#lib/shared/analytics/boot-profiler.js";
+  import { onDestroy, untrack } from "svelte";
+  import { motionDuration } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   let {
     gridMode = GridMode.DIAMOND,
@@ -87,7 +90,34 @@ Pure reactive approach - grid mode determines styling, rotation provides animati
 
   // Track cumulative rotation for beautiful animation (ephemeral UI state)
   // Initialize to 0; $effect below sets correct initial value and handles changes
-  let cumulativeRotation = $state(0);
+  let cumulativeRotation = 0;
+  // The angle on screen. It trails cumulativeRotation while a turn plays, so
+  // the frame that lands a mode change never shows the end angle first.
+  let shownRotation = $state(0);
+  let turnFrame = 0;
+
+  function cancelTurn(): void {
+    if (turnFrame) cancelAnimationFrame(turnFrame);
+    turnFrame = 0;
+  }
+
+  /** Rest at an angle with no turn. */
+  function restAt(angle: number): void {
+    cancelTurn();
+    cumulativeRotation = angle;
+    shownRotation = angle;
+  }
+
+  onDestroy(cancelTurn);
+
+  // True while a caller's rotationOverride drives the grid.
+  let overrideActive = false;
+
+  /** The angle nearest `angle` at which a grid in `mode` rests. */
+  function nearestRestAngle(angle: number, mode: GridMode): number {
+    const offset = mode === GridMode.BOX ? 45 : 0;
+    return Math.round((angle - offset) / 90) * 90 + offset;
+  }
   // Track previous gridMode for change detection (null = first render)
   let previousGridMode: GridMode | null = null;
 
@@ -580,76 +610,78 @@ Pure reactive approach - grid mode determines styling, rotation provides animati
   // Use global rotation direction to determine clockwise (+45) or counterclockwise (-45)
   // SKEWED mode: no rotation needed (shows all 8 positions without rotation)
   $effect(() => {
-    // First render - set initial rotation without animation
-    if (rotationOverride !== null) {
+    const override = rotationOverride;
+    const mode = gridMode;
+    untrack(() => turnGrid(override, mode));
+  });
+
+  function turnGrid(override: number | null, mode: GridMode): void {
+    if (override !== null) {
       // The caller's clock owns the turn. Rest where it leaves the grid so
       // the mode change it drew does not play a second time afterwards.
-      cumulativeRotation = rotationOverride;
-      previousGridMode = gridMode;
+      restAt(override);
+      previousGridMode = mode;
+      overrideActive = true;
       return;
     }
+    if (overrideActive) {
+      // The clock let go. Its last frame can land in the same update that
+      // clears it, so rest on this mode's angle nearest the one on screen
+      // instead of the frame before.
+      overrideActive = false;
+      restAt(nearestRestAngle(shownRotation, mode));
+      previousGridMode = mode;
+      return;
+    }
+    // First render - set initial rotation without animation.
+    // BOX mode: 45° rotation; DIAMOND mode: 0° rotation.
     if (previousGridMode === null) {
-      // SKEWED mode: no rotation (already shows all positions)
-      // BOX mode: 45° rotation
-      // DIAMOND mode: 0° rotation
-      cumulativeRotation = gridMode === GridMode.BOX ? 45 : 0;
-      previousGridMode = gridMode;
+      restAt(mode === GridMode.BOX ? 45 : 0);
+      previousGridMode = mode;
       return;
     }
 
     // No change - do nothing
-    if (gridMode === previousGridMode) return;
+    if (mode === previousGridMode) return;
 
     // SKEWED mode doesn't animate rotation - it uses a different grid entirely
-    if (gridMode === GridMode.SKEWED || previousGridMode === GridMode.SKEWED) {
-      cumulativeRotation = gridMode === GridMode.BOX ? 45 : 0;
-      previousGridMode = gridMode;
+    if (mode === GridMode.SKEWED || previousGridMode === GridMode.SKEWED) {
+      restAt(mode === GridMode.BOX ? 45 : 0);
+      previousGridMode = mode;
       return;
     }
 
-    const previousRotation = cumulativeRotation;
     // Always use the global rotation direction state.
     // Callers set direction before changing gridMode (e.g. setGridRotationDirection(1) for CW).
     // Default is CW (1).
     const direction = getGridRotationDirection();
     const newRotation = cumulativeRotation + 45 * direction;
-
-    // Animate rotation smoothly if element is available
-    if (gridContainerElement) {
-      // Capture element reference for use in animate callback
-      const element = gridContainerElement;
-      // Use requestAnimationFrame for smooth SVG transform animation
-      const startTime = performance.now();
-      const duration = 200; // ms - matches arrow/prop transition duration
-
-      const animate = (currentTime: number) => {
-        const elapsed = currentTime - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-        // Standard CSS "ease" timing function: cubic-bezier(0.25, 0.1, 0.25, 1.0)
-        // Matches the easing used by arrows and props
-        const eased = cubicBezier(progress, 0.25, 0.1, 0.25, 1.0);
-
-        const currentRotation =
-          previousRotation + (newRotation - previousRotation) * eased;
-        element.setAttribute(
-          "transform",
-          `rotate(${currentRotation}, 475, 475)`
-        );
-
-        if (progress < 1) {
-          requestAnimationFrame(animate);
-        } else {
-          // Ensure final value is exact
-          element.setAttribute("transform", `rotate(${newRotation}, 475, 475)`);
-        }
-      };
-
-      requestAnimationFrame(animate);
-    }
-
+    previousGridMode = mode;
     cumulativeRotation = newRotation;
-    previousGridMode = gridMode;
-  });
+
+    // A second change mid-turn continues from the angle on screen.
+    const previousRotation = shownRotation;
+    cancelTurn();
+    const duration = motionDuration(DURATION.normal);
+    if (duration <= 0) {
+      shownRotation = newRotation;
+      return;
+    }
+    const startTime = performance.now();
+    const animate = (currentTime: number) => {
+      const progress = Math.min(
+        Math.max(currentTime - startTime, 0) / duration,
+        1
+      );
+      // Standard CSS "ease" timing function: cubic-bezier(0.25, 0.1, 0.25, 1.0)
+      // Matches the easing used by arrows and props
+      const eased = cubicBezier(progress, 0.25, 0.1, 0.25, 1.0);
+      shownRotation =
+        previousRotation + (newRotation - previousRotation) * eased;
+      turnFrame = progress < 1 ? requestAnimationFrame(animate) : 0;
+    };
+    turnFrame = requestAnimationFrame(animate);
+  }
 </script>
 
 <!-- Grid Container - Rotates cumulatively by 45 deg each time -->
@@ -668,7 +700,7 @@ Pure reactive approach - grid mode determines styling, rotation provides animati
   class:dark-mode-override={darkMode === true}
   class:light-mode-override={darkMode === false}
   data-grid-mode={gridMode}
-  transform="rotate({rotationOverride ?? cumulativeRotation}, 475, 475)"
+  transform="rotate({rotationOverride ?? shownRotation}, 475, 475)"
 >
   {#if !hasError && styledGridSvg}
     <g class="grid-layer">

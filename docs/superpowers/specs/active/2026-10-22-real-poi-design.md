@@ -1,3 +1,15 @@
+---
+status: active
+value: 4
+effort: L
+work_state: in-progress
+remaining: Build steps 1 and 3 started 2026-10-22; the remaining steps, the weave library and the Unreal port follow.
+depends_on: ''
+plan_path: ''
+tags: []
+last_triaged: '2026-10-23'
+---
+
 # Real poi: tether physics and a weave library
 
 Status: APPROVED by Austen, 2026-10-22. Build steps 1 and 3 started the same

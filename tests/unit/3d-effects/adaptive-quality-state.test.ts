@@ -203,6 +203,84 @@ describe("adaptive 3D quality", () => {
     }
   );
 
+  // Frame-pressure ladder arithmetic at a steady 30 fps (HIGH detector, DPR 2):
+  // - a 0.25 s sample needs 8 frames at 30 fps (7 frames = 0.233 s), so one
+  //   4-sample severe window is 32 frames, about 1.07 s;
+  // - at the resolution floor, content waits for a full 8-sample downgrade
+  //   window (64 frames, about 2.13 s) instead of the severe window;
+  // - every change re-arms a 3 s / 30-frame settle window (90 frames at 30 fps)
+  //   that is not judged.
+  // HIGH level 4 -> 2 at ~1.07 s, -> 1 (its floor) at ~5.1 s, then the floor
+  // cannot recover the frame rate, so content steps HIGH -> MEDIUM at ~10.3 s.
+  // MEDIUM keeps level 1 (its own floor), so the next full window steps
+  // MEDIUM -> LOW at ~15.4 s, and LOW reaches the 0.5 DPR emergency level
+  // (one severe window from level 1) at ~19.5 s.
+  it("steps visual fidelity down once the resolution floor cannot recover the frame rate", () => {
+    const state = createAdaptiveQualityState(detectorAt(QualityTier.HIGH), {
+      devicePixelRatio: 2,
+    });
+
+    settleAt(state, 30);
+    // ~10.3 s reaches MEDIUM; the next step is not due until ~15.4 s.
+    feedFps(state, 30, 12);
+
+    expect(state.contentTier).toBe(QualityTier.MEDIUM);
+    expect(state.tier).toBe(QualityTier.MEDIUM);
+    expect(state.config).toBe(TIER_CONFIGS[QualityTier.MEDIUM]);
+    expect(state.resolutionLevel).toBe(1);
+    expect(state.pixelRatio).toBe(1);
+  });
+
+  it("keeps stepping down to LOW and then the emergency floor when pressure never lifts", () => {
+    const state = createAdaptiveQualityState(detectorAt(QualityTier.HIGH), {
+      devicePixelRatio: 2,
+    });
+
+    settleAt(state, 30);
+    // ~19.5 s reaches LOW at level 0; nothing lower exists after that.
+    feedFps(state, 30, 22);
+
+    expect(state.contentTier).toBe(QualityTier.LOW);
+    expect(state.tier).toBe(QualityTier.LOW);
+    expect(state.config).toBe(TIER_CONFIGS[QualityTier.LOW]);
+    expect(state.resolutionLevel).toBe(0);
+    expect(state.pixelRatio).toBe(0.5);
+  });
+
+  it("never raises visual fidelity again within the session", () => {
+    const state = createAdaptiveQualityState(detectorAt(QualityTier.HIGH), {
+      devicePixelRatio: 2,
+    });
+
+    settleAt(state, 30);
+    feedFps(state, 30, 12);
+    expect(state.contentTier).toBe(QualityTier.MEDIUM);
+
+    // The content step keeps the 60 s severe recovery delay, then each
+    // resolution raise needs 6 s of headroom plus a 3 s settle. 90 s at 60 fps
+    // is enough to climb to MEDIUM's resolution ceiling and sit there.
+    feedFps(state, 60, 90);
+
+    expect(state.contentTier).toBe(QualityTier.MEDIUM);
+    expect(state.tier).toBe(QualityTier.MEDIUM);
+    expect(state.config).toBe(TIER_CONFIGS[QualityTier.MEDIUM]);
+    expect(state.resolutionLevel).toBe(3);
+    expect(state.pixelRatio).toBe(1.5);
+  });
+
+  it("does not step visual fidelity down while resolution room remains", () => {
+    const state = createAdaptiveQualityState(detectorAt(QualityTier.HIGH), {
+      devicePixelRatio: 2,
+    });
+
+    settleAt(state, 30);
+    feedFps(state, 30, 2);
+
+    expect(state.resolutionLevel).toBe(2);
+    expect(state.contentTier).toBe(QualityTier.HIGH);
+    expect(state.tier).toBe(QualityTier.HIGH);
+  });
+
   it("does not immediately retry a quality level that caused severe pressure", () => {
     const state = createAdaptiveQualityState(detectorAt(QualityTier.LOW), {
       devicePixelRatio: 3,

@@ -106,6 +106,33 @@ export function createAdaptiveQualityState(
     );
   }
 
+  // Content tier is one-way for the session: shadows and bloom popping back in
+  // and out reads worse than a stable lower look. Resolution can still climb
+  // again inside the lower tier when frame headroom returns.
+  function stepContentTierDown(reason: string): boolean {
+    const nextTier =
+      contentTier === QualityTier.HIGH
+        ? QualityTier.MEDIUM
+        : contentTier === QualityTier.MEDIUM
+          ? QualityTier.LOW
+          : null;
+    if (nextTier === null) return false;
+
+    contentTier = nextTier;
+    if (!detector.hasOverride) {
+      minimumLevel = MINIMUM_LEVEL[nextTier];
+      maximumLevel = MAX_LEVEL[nextTier];
+    }
+    levelIndex = Math.max(minimumLevel, Math.min(maximumLevel, levelIndex));
+    armSettleWindow();
+
+    const level = RESOLUTION_LEVELS[levelIndex]!;
+    console.info(
+      `[AdaptiveQuality] ${reason}: lowered visual fidelity to ${contentTier} at ${Math.min(nativePixelRatio, level.maxPixelRatio).toFixed(2)} DPR (${fps} fps)`
+    );
+    return true;
+  }
+
   function initialize(renderer: WebGLRenderer): void {
     if (initialized) return;
 
@@ -140,7 +167,17 @@ export function createAdaptiveQualityState(
         upgradeDelaySeconds,
         SEVERE_RECOVERY_DELAY_SECONDS
       );
-      setLevel(levelIndex - 2, "severe frame pressure");
+      if (levelIndex > minimumLevel) {
+        setLevel(levelIndex - 2, "severe frame pressure");
+        return;
+      }
+      // Resolution adapts first. At its floor, the content tier gives up
+      // shadows, bloom, and lights only once a full downgrade window of
+      // samples has accumulated at the floor, not after the shorter severe
+      // window alone.
+      if (recentSamples.length >= DOWNGRADE_SAMPLES) {
+        stepContentTierDown("severe frame pressure");
+      }
       return;
     }
 
@@ -154,7 +191,11 @@ export function createAdaptiveQualityState(
         upgradeDelaySeconds,
         SUSTAINED_RECOVERY_DELAY_SECONDS
       );
-      setLevel(levelIndex - 1, "sustained frame pressure");
+      if (levelIndex === minimumLevel) {
+        stepContentTierDown("sustained frame pressure");
+      } else {
+        setLevel(levelIndex - 1, "sustained frame pressure");
+      }
       return;
     }
 
@@ -242,14 +283,15 @@ export function createAdaptiveQualityState(
     get fps(): number {
       return fps;
     },
-    // This is the stable visual-fidelity tier detected from the renderer. It
-    // does not follow resolutionLevel when frame pressure changes DPR.
+    // The visual-fidelity tier. It starts from renderer detection and does not
+    // follow every resolution change.
     get tier(): QualityTier {
       return contentTier;
     },
-    // Renderer detection owns visual fidelity for the whole session. Live
-    // frame pressure may lower pixel density, but it must not silently replace
-    // authored effects, lighting, or environment detail with a cheaper look.
+    // Frame pressure lowers pixel density first. Only after the resolution
+    // floor is reached and pressure persists does the content tier step down
+    // (HIGH -> MEDIUM -> LOW); each step is logged and never reverses within
+    // the session, so authored effects do not pop in and out.
     get contentTier(): QualityTier {
       return contentTier;
     },

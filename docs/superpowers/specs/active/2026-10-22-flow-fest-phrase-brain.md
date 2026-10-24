@@ -1,3 +1,15 @@
+---
+status: active
+value: 4
+effort: L
+work_state: in-progress
+remaining: Build the staff test stage in both engines, then the phrase brain behind it.
+depends_on: '2026-10-22-flow-fest-follow-the-light.md'
+plan_path: ''
+tags: []
+last_triaged: '2026-10-23'
+---
+
 # Flow Fest: the phrase brain (believable jam spinners)
 
 Status: approved direction, 2026-10-22. First build: a staff test stage in both engines.
