@@ -18,7 +18,7 @@ import {
   GridLocation,
   GridMode,
 } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
-import { Letter } from "#lib/shared/foundation/domain/models/Letter.js";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 import {
   resolveTunnelPerformerDisplays,
   tunnelCardStepIndex,
