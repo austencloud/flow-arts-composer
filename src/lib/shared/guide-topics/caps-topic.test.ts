@@ -46,6 +46,7 @@ import {
   type Cap,
   type CapHand,
   type CapHandSpin,
+  type CapSpin,
 } from "./caps-topic";
 import { TND_TO_ELEMENTAL } from "#lib/shared/pictograph/shared/domain/utils/tnd-calculator.js";
 
@@ -323,17 +324,49 @@ describe("what the Eight Step page says about them", () => {
     for (const path of CAP_HAND_PATHS) {
       const at = (left: CapHandSpin, right: CapHandSpin) =>
         capPoiProblem(capOnPath(path, left, right));
-      // The beat back of a pro capping hand is an antispin, so 0 turns
-      // there stops a poi too.
-      expect(at(spin("pro", 0), spin("pro", 0))).toBe("anti-zero");
+      // The beat back keeps the chart's spin, so Gage's EE and AA work:
+      // pro 0, pro 0, anti 1 and anti 1, anti 1, pro 0 end every beat out.
+      expect(at(spin("pro", 0), spin("pro", 0))).toBeNull();
+      expect(at(spin("anti", 1), spin("anti", 1))).toBeNull();
       // Pro, pro, anti at 1 turn: out, in, out, out, so the turnaround
       // falls on out.
       expect(at(spin("pro", 1), spin("anti", 1))).toBeNull();
-      // Anti, anti, pro at 1 turn ends the beat back pointing in, and the
-      // hand turns round there.
-      expect(at(spin("anti", 1), spin("anti", 1))).toBe("momentum");
       expect(at(spin("anti", 2), spin("pro", 2))).toBeNull();
+      // Antispin with no turns is still out of reach.
+      expect(at(spin("anti", 0), spin("pro", 1))).toBe("anti-zero");
+      // Two half turns on leave the poi pointing in, and the hand turns
+      // round there.
+      expect(at(spin("pro", 0.5), spin("pro", 1))).toBe("momentum");
     }
+  });
+
+  it("matches the chart CAP at the chart's own turns", () => {
+    // The picker at a spin's own turns plays the chart's CAP, beat back and
+    // all, on every path: all 72.
+    const SPINS: [CapHandSpin, CapSpin][] = [
+      [{ motion: "pro", turns: 0 }, "extension"],
+      [{ motion: "anti", turns: 1 }, "antispin"],
+      [{ motion: "pro", turns: 1 }, "prospin"],
+    ];
+    let matched = 0;
+    for (const path of CAP_HAND_PATHS)
+      for (const [left, capping] of SPINS)
+        for (const [right, circling] of SPINS) {
+          const cap = capOnPath(path, left, right);
+          const chart = path.caps.find((c) => {
+            const pairing = capPairing(c);
+            return pairing.capping === capping && pairing.circling === circling;
+          })!;
+          const label = `path ${path.column} ${capping} / ${circling}`;
+          expect(capHandSteps(cap.left), label).toEqual(
+            capHandSteps(chart.left)
+          );
+          expect(capHandSteps(cap.right), label).toEqual(
+            capHandSteps(chart.right)
+          );
+          matched++;
+        }
+    expect(matched).toBe(72);
   });
 });
 
@@ -354,7 +387,7 @@ describe("strips", () => {
     }
   });
 
-  it("spins every hand path at one turn value on every beat", () => {
+  it("spins every hand path at one turn value, but the beat back", () => {
     const motions = ["pro", "anti"] as const;
     const flip = { pro: MotionType.ANTI, anti: MotionType.PRO } as const;
     const same = { pro: MotionType.PRO, anti: MotionType.ANTI } as const;
@@ -379,20 +412,31 @@ describe("strips", () => {
               const forward = travelOf(steps[0]!);
               expect(steps.at(-1)!.endOrientation).toBe(Orientation.OUT);
               steps.forEach((step, i) => {
-                expect(step.turns).toBe(turns);
                 if (i > 0) {
                   expect(step.startOrientation).toBe(
                     steps[i - 1]!.endOrientation
                   );
                 }
-                // The capping hand flips its motion only on the beat back.
+                // The capping hand flips its motion only on the beat back,
+                // which keeps the chart's spin at the chart's turns: anti 1
+                // after pro, pro 0 after anti.
+                if (travelOf(step) !== forward) {
+                  expect(step.motionType).toBe(flip[spin.motion]);
+                  expect(step.turns).toBe(spin.motion === "pro" ? 1 : 0);
+                  return;
+                }
+                // Pro at 1 turn is the chart's prospin, whose circling hand
+                // rests on an extension every third beat: pro 1, pro 1, pro 0.
+                if (hand.spins[i] !== hand.spins[0]) {
+                  expect([spin.motion, turns]).toEqual(["pro", 1]);
+                  expect(step.motionType).toBe(MotionType.PRO);
+                  expect(step.turns).toBe(0);
+                  return;
+                }
+                expect(step.turns).toBe(turns);
                 const motion =
                   turns === "fl" ? step.prefloatMotionType : step.motionType;
-                expect(motion).toBe(
-                  travelOf(step) === forward
-                    ? same[spin.motion]
-                    : flip[spin.motion]
-                );
+                expect(motion).toBe(same[spin.motion]);
               });
             }
           }
@@ -456,7 +500,7 @@ describe("the props on a hand path", () => {
   const reading = (r: ReturnType<typeof capPropRelationship>) =>
     `${r.kind} ${r.timing} ${r.direction}`;
 
-  it("keep one timing and direction on every beat", () => {
+  it("keep one direction on every beat", () => {
     for (const path of CAP_HAND_PATHS)
       for (const lm of MOTIONS)
         for (const rm of MOTIONS)
@@ -467,15 +511,20 @@ describe("the props on a hand path", () => {
                 { motion: lm, turns: lt },
                 { motion: rm, turns: rt }
               );
-              const whole = reading(capPropRelationship(cap));
-              capStrip(cap)
-                .slice(1)
-                .forEach((step, i) =>
-                  expect(
-                    reading(derivePropRelationshipForStep(step)),
-                    `path ${path.column} ${lm} ${lt} / ${rm} ${rt}, beat ${i + 1}`
-                  ).toBe(whole)
-                );
+              const whole = capPropRelationship(cap);
+              const beats = capStrip(cap).slice(1);
+              beats.forEach((step, i) =>
+                expect(
+                  derivePropRelationshipForStep(step).direction,
+                  `path ${path.column} ${lm} ${lt} / ${rm} ${rt}, beat ${i + 1}`
+                ).toBe(whole.direction)
+              );
+              // The beat back keeps the chart's turns, so the timing can
+              // change there, as in Gage's own 1-AA (split, then together).
+              // The two beats before it share the first beat's reading.
+              expect(reading(derivePropRelationshipForStep(beats[1]!))).toBe(
+                reading(whole)
+              );
             }
   });
 

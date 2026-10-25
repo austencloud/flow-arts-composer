@@ -281,6 +281,14 @@
       )
     );
   });
+  // Motion preparation runs a second hidden scene on this thread to sample the
+  // sequence. The live scene's frame collapse during those seconds is CPU
+  // contention, not render cost, so the quality governor must not judge the
+  // device by it. Gate on the requests existing too: the worker-renderer path
+  // never sets them, and the governor keeps running there.
+  const motionPreparing = $derived(
+    prepareWebMotion && webCaptureRequests !== null && !webMotionReady
+  );
   function handleCaptureRequestsChange(requests: CaptureRequest[]): void {
     const previous = webCaptureRequests;
     if (
@@ -909,6 +917,7 @@
                 sceneReady &&
                   isPlaying &&
                   !viewer3DState.isExporting &&
+                  !motionPreparing &&
                   (typeof document === "undefined" ||
                     document.visibilityState === "visible")
               )}
@@ -923,7 +932,10 @@
             <InteractiveCanvasFrameBridge />
             <PerfMonitor
               visible={viewer3DState.showPerf}
-              adaptive={sceneReady && isPlaying && !viewer3DState.isExporting}
+              adaptive={sceneReady &&
+                isPlaying &&
+                !viewer3DState.isExporting &&
+                !motionPreparing}
               active={Boolean(onPerformanceSample) && sceneReady}
               warmupMs={performanceWarmupMs}
               onSample={onPerformanceSample}

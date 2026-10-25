@@ -247,25 +247,107 @@ describe("adaptive 3D quality", () => {
     expect(state.pixelRatio).toBe(0.5);
   });
 
-  it("never raises visual fidelity again within the session", () => {
+  // Recovery arithmetic after reaching MEDIUM at level 1 (~10.3 s of 30 fps
+  // after the first settle, so ~2 s before the 60 fps run starts):
+  // - the content step set the 60 s severe recovery delay, so resolution may
+  //   not climb until ~58 s into the 60 fps run;
+  // - each raise needs a full 24-sample (6 s) healthy window after its 3 s
+  //   settle: level 1 -> 2 at ~61.5 s, -> 3 (MEDIUM's max) at ~70.5 s;
+  // - the recovery clock starts after that raise's 3 s settle (~73.5 s) and
+  //   needs 60 s of healthy samples, so HIGH returns at ~133.5 s;
+  // - each restore doubles the requirement, so the second one needs 120 s.
+  function dropHighToMedium(
+    state: ReturnType<typeof createAdaptiveQualityState>
+  ): void {
+    feedFps(state, 30, 12);
+    expect(state.contentTier).toBe(QualityTier.MEDIUM);
+    expect(state.resolutionLevel).toBe(1);
+  }
+
+  it("restores visual fidelity only after a minute of healthy frames at the lowered tier's top resolution", () => {
     const state = createAdaptiveQualityState(detectorAt(QualityTier.HIGH), {
       devicePixelRatio: 2,
     });
 
     settleAt(state, 30);
-    feedFps(state, 30, 12);
-    expect(state.contentTier).toBe(QualityTier.MEDIUM);
+    dropHighToMedium(state);
 
-    // The content step keeps the 60 s severe recovery delay, then each
-    // resolution raise needs 6 s of headroom plus a 3 s settle. 90 s at 60 fps
-    // is enough to climb to MEDIUM's resolution ceiling and sit there.
-    feedFps(state, 60, 90);
+    // ~105 s: level 3 since ~70.5 s, about 31.5 s of the 60 s clock counted.
+    feedFps(state, 60, 105);
+    expect(state.contentTier).toBe(QualityTier.MEDIUM);
+    expect(state.resolutionLevel).toBe(3);
+    expect(state.pixelRatio).toBe(1.5);
+
+    // ~145 s: the restore landed at ~133.5 s.
+    feedFps(state, 60, 40);
+    expect(state.contentTier).toBe(QualityTier.HIGH);
+    expect(state.tier).toBe(QualityTier.HIGH);
+    expect(state.config).toBe(TIER_CONFIGS[QualityTier.HIGH]);
+  });
+
+  it("a slow sample resets the recovery clock", () => {
+    const state = createAdaptiveQualityState(detectorAt(QualityTier.HIGH), {
+      devicePixelRatio: 2,
+    });
+
+    settleAt(state, 30);
+    dropHighToMedium(state);
+    // ~75 s: at MEDIUM's top resolution with its settle window behind it.
+    feedFps(state, 60, 75);
+    expect(state.resolutionLevel).toBe(3);
+
+    feedFps(state, 60, 50);
+    feedFps(state, 30, 0.25);
+    feedFps(state, 60, 30);
+    // 80 s of healthy frames in total, but no more than 30 s since the slow one.
+    expect(state.contentTier).toBe(QualityTier.MEDIUM);
+    expect(state.resolutionLevel).toBe(3);
+
+    feedFps(state, 60, 35);
+    expect(state.contentTier).toBe(QualityTier.HIGH);
+  });
+
+  it("never restores above the detected tier", () => {
+    const state = createAdaptiveQualityState(detectorAt(QualityTier.MEDIUM), {
+      devicePixelRatio: 2,
+    });
+
+    settleAt(state, 30);
+    feedFps(state, 30, 12);
+    expect(state.contentTier).toBe(QualityTier.LOW);
+
+    feedFps(state, 60, 400);
 
     expect(state.contentTier).toBe(QualityTier.MEDIUM);
     expect(state.tier).toBe(QualityTier.MEDIUM);
-    expect(state.config).toBe(TIER_CONFIGS[QualityTier.MEDIUM]);
     expect(state.resolutionLevel).toBe(3);
-    expect(state.pixelRatio).toBe(1.5);
+  });
+
+  it("each restore waits twice as long as the last", () => {
+    const state = createAdaptiveQualityState(detectorAt(QualityTier.HIGH), {
+      devicePixelRatio: 2,
+    });
+
+    settleAt(state, 30);
+    dropHighToMedium(state);
+    feedFps(state, 60, 150);
+    expect(state.contentTier).toBe(QualityTier.HIGH);
+    expect(state.resolutionLevel).toBe(4);
+
+    // The same pressure walks it back down the same ladder.
+    dropHighToMedium(state);
+
+    // ~75 s: at MEDIUM's top resolution again, recovery clock running.
+    feedFps(state, 60, 75);
+    expect(state.resolutionLevel).toBe(3);
+
+    // ~100 s of healthy frames at the top: the first restore needed 60.
+    feedFps(state, 60, 100);
+    expect(state.contentTier).toBe(QualityTier.MEDIUM);
+
+    // ~125 s: past the doubled 120 s requirement.
+    feedFps(state, 60, 25);
+    expect(state.contentTier).toBe(QualityTier.HIGH);
   });
 
   it("does not step visual fidelity down while resolution room remains", () => {

@@ -50,6 +50,16 @@ const UPGRADE_SAMPLES = 24;
 const UPGRADE_VOTES = 21;
 const SEVERE_RECOVERY_DELAY_SECONDS = 60;
 const SUSTAINED_RECOVERY_DELAY_SECONDS = 15;
+// Healthy time at the lowered tier's top resolution before the content tier
+// steps back up. Each restore doubles it, so a machine that keeps tipping over
+// settles on the lower look instead of flapping.
+const TIER_RECOVERY_SECONDS = 60;
+
+const TIER_RANK: Record<QualityTier, number> = {
+  [QualityTier.LOW]: 0,
+  [QualityTier.MEDIUM]: 1,
+  [QualityTier.HIGH]: 2,
+};
 
 export const ADAPTIVE_QUALITY_SETTLE_SECONDS = 3;
 export const ADAPTIVE_QUALITY_SETTLE_FRAMES = 30;
@@ -65,6 +75,8 @@ export function createAdaptiveQualityState(
   );
 
   const initialTier = detector.currentTier;
+  // The capability ceiling. Recovery never raises the content tier above it.
+  let detectedTier = initialTier;
   let contentTier = $state(initialTier);
   let levelIndex = $state(INITIAL_LEVEL[initialTier]);
   let minimumLevel = MINIMUM_LEVEL[initialTier];
@@ -80,6 +92,8 @@ export function createAdaptiveQualityState(
   let settleSecondsRemaining = 0;
   let settleFramesRemaining = 0;
   let wasActive = false;
+  let tierRecoveryProgress = 0;
+  let tierRecoveryRequiredSeconds = TIER_RECOVERY_SECONDS;
 
   function resetSamples(): void {
     sampleElapsed = 0;
@@ -90,7 +104,17 @@ export function createAdaptiveQualityState(
   function armSettleWindow(): void {
     settleSecondsRemaining = ADAPTIVE_QUALITY_SETTLE_SECONDS;
     settleFramesRemaining = ADAPTIVE_QUALITY_SETTLE_FRAMES;
+    // Every level change, tier change, stall, and resume passes through here,
+    // so the recovery clock restarts with each of them.
+    tierRecoveryProgress = 0;
     resetSamples();
+  }
+
+  function currentDpr(): string {
+    return Math.min(
+      nativePixelRatio,
+      RESOLUTION_LEVELS[levelIndex]!.maxPixelRatio
+    ).toFixed(2);
   }
 
   function setLevel(nextLevel: number, reason: string): void {
@@ -106,9 +130,10 @@ export function createAdaptiveQualityState(
     );
   }
 
-  // Content tier is one-way for the session: shadows and bloom popping back in
-  // and out reads worse than a stable lower look. Resolution can still climb
-  // again inside the lower tier when frame headroom returns.
+  // The content tier steps down at the resolution floor and steps back up only
+  // after a long healthy stretch (a minute, doubling each time): shadows and
+  // bloom popping in and out reads worse than a stable lower look. Resolution
+  // still climbs inside the lower tier whenever frame headroom returns.
   function stepContentTierDown(reason: string): boolean {
     const nextTier =
       contentTier === QualityTier.HIGH
@@ -133,10 +158,65 @@ export function createAdaptiveQualityState(
     return true;
   }
 
+  function stepContentTierUp(reason: string): boolean {
+    const nextTier =
+      contentTier === QualityTier.LOW
+        ? QualityTier.MEDIUM
+        : contentTier === QualityTier.MEDIUM
+          ? QualityTier.HIGH
+          : null;
+    if (nextTier === null || TIER_RANK[nextTier] > TIER_RANK[detectedTier]) {
+      return false;
+    }
+
+    contentTier = nextTier;
+    if (!detector.hasOverride) {
+      minimumLevel = MINIMUM_LEVEL[nextTier];
+      maximumLevel = MAX_LEVEL[nextTier];
+    }
+    // Keep the current resolution; it climbs through the normal upgrade votes.
+    levelIndex = Math.max(minimumLevel, Math.min(maximumLevel, levelIndex));
+    tierRecoveryRequiredSeconds *= 2;
+    armSettleWindow();
+
+    console.info(
+      `[AdaptiveQuality] ${reason}: restored visual fidelity to ${contentTier} at ${currentDpr()} DPR (${fps} fps)`
+    );
+    return true;
+  }
+
+  // Healthy samples count only while the tier sits below its detected ceiling
+  // and resolution is already at that tier's top; a slow sample starts over.
+  function trackTierRecovery(sample: number): void {
+    if (
+      TIER_RANK[contentTier] >= TIER_RANK[detectedTier] ||
+      levelIndex !== maximumLevel
+    ) {
+      tierRecoveryProgress = 0;
+      return;
+    }
+    if (sample >= HEALTHY_FPS) {
+      tierRecoveryProgress += SAMPLE_SECONDS;
+    } else if (sample < SLOW_FPS) {
+      tierRecoveryProgress = 0;
+    }
+  }
+
+  function evaluateTierRecovery(): void {
+    if (
+      detector.hasOverride ||
+      upgradeDelaySeconds > 0 ||
+      tierRecoveryProgress + 1e-6 < tierRecoveryRequiredSeconds
+    ) {
+      return;
+    }
+    stepContentTierUp("sustained frame headroom");
+  }
+
   function initialize(renderer: WebGLRenderer): void {
     if (initialized) return;
 
-    const detectedTier = detector.detectFromRenderer(renderer);
+    detectedTier = detector.detectFromRenderer(renderer);
     contentTier = detectedTier;
     levelIndex = INITIAL_LEVEL[detectedTier];
     minimumLevel = MINIMUM_LEVEL[detectedTier];
@@ -226,6 +306,7 @@ export function createAdaptiveQualityState(
   function observeFrame(deltaSeconds: number, active: boolean): void {
     if (!active) {
       resetSamples();
+      tierRecoveryProgress = 0;
       wasActive = false;
       return;
     }
@@ -270,7 +351,16 @@ export function createAdaptiveQualityState(
 
     sampleElapsed = 0;
     sampleFrames = 0;
+    trackTierRecovery(fps);
+
+    // A sample that already moved resolution or the tier does not also get to
+    // restore the tier; the next settled stretch decides that.
+    const levelBefore = levelIndex;
+    const tierBefore = contentTier;
     evaluateSamples();
+    if (levelIndex === levelBefore && contentTier === tierBefore) {
+      evaluateTierRecovery();
+    }
   }
 
   return {
@@ -290,8 +380,10 @@ export function createAdaptiveQualityState(
     },
     // Frame pressure lowers pixel density first. Only after the resolution
     // floor is reached and pressure persists does the content tier step down
-    // (HIGH -> MEDIUM -> LOW); each step is logged and never reverses within
-    // the session, so authored effects do not pop in and out.
+    // (HIGH -> MEDIUM -> LOW). It steps back up, never past the detected tier,
+    // only after a long healthy stretch at the lowered tier's top resolution
+    // (a minute, doubling each time), so authored effects do not pop in and
+    // out. Each step is logged.
     get contentTier(): QualityTier {
       return contentTier;
     },

@@ -69,7 +69,9 @@
   const tierBloom = $derived(forceBloom ?? tierConfig.enableBloom);
   // A device at LOW keeps the composer-free budget. Frame pressure lowers DPR
   // first; only when that floor cannot recover the frame rate does the content
-  // tier step down, and this composer follows that one-way step.
+  // tier step down, and this composer follows it. The tier steps back up only
+  // after a long healthy stretch (a minute, doubling each time), so the
+  // composer does not pop in and out.
   const allowOceanComposer = $derived(
     isOcean &&
       (adaptiveQuality
