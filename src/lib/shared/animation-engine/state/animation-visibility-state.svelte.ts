@@ -4,6 +4,7 @@
  * without that provider.
  */
 
+import { untrack } from "svelte";
 import type { EffortId } from "#lib/shared/effort/domain/effort-types.js";
 import type {
   EffectType,
@@ -230,9 +231,13 @@ export class AnimationVisibilityStateManager {
   }
 
   notifyObservers(): void {
+    // Setters are often called from inside an effect (the mandala viewer sets
+    // its path policy that way). Without untrack, whatever an observer reads
+    // becomes a dependency of that caller's effect, and an observer that reads
+    // and writes its own state re-runs the caller forever.
     this.observers.forEach((callback) => {
       try {
-        callback();
+        untrack(callback);
       } catch (error) {
         console.error("Error in animation visibility observer:", error);
       }
