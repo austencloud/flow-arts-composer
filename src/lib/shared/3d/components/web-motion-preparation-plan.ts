@@ -3,13 +3,21 @@ export interface MotionRequestKey {
   sequence: object | null;
 }
 
+/**
+ * A motion missing from memory may already be saved on this device. While
+ * that lookup is outstanding the motion sits in `lookups` and is never
+ * offered as `next`, so a clip already baked is not baked again just because
+ * reading it back took a moment.
+ */
 export function planWebMotionPreparation<T extends MotionRequestKey>(
   requests: readonly T[],
   hasPose: (signature: string) => boolean,
+  isAwaitingLookup: (signature: string) => boolean = () => false,
   cacheLimit = 8
 ): {
   unique: T[];
   completedCount: number;
+  lookups: T[];
   next: T | undefined;
   overflow: boolean;
 } {
@@ -21,15 +29,17 @@ export function planWebMotionPreparation<T extends MotionRequestKey>(
     return true;
   });
   const overflow = unique.length > cacheLimit;
-  const completedCount = unique.filter((request) =>
-    hasPose(request.signature)
-  ).length;
+  const missing = unique.filter((request) => !hasPose(request.signature));
+  const lookups = overflow
+    ? []
+    : missing.filter((request) => isAwaitingLookup(request.signature));
   return {
     unique,
-    completedCount,
+    completedCount: unique.length - missing.length,
+    lookups,
     next: overflow
       ? undefined
-      : unique.find((request) => !hasPose(request.signature)),
+      : missing.find((request) => !isAwaitingLookup(request.signature)),
     overflow,
   };
 }

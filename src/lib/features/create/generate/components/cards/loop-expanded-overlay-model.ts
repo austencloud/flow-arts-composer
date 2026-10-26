@@ -110,7 +110,8 @@ export interface LoopOverlayModelInput {
   rhythmControlsAvailable: boolean;
   detailComponent: LOOPComponent | null;
   sequenceLength?: number;
-  guestMaxLength?: number;
+  /** True for guests: non-rotated LOOP types need an account. */
+  guestGated?: boolean;
   /** The hand mode from the TnD card. Absent reads as Free. */
   handRelationship?: TnDSelection;
 }
@@ -202,20 +203,15 @@ function deriveConfigurableComponents(
 }
 
 function deriveLockedComponents(
-  rhythm: LoopRhythmValue,
   isMultiSelectMode: boolean,
-  guestMaxLength?: number
+  guestGated: boolean
 ): Set<LOOPComponent> | null {
-  if (guestMaxLength === undefined || isMultiSelectMode) return null;
+  if (!guestGated || isMultiSelectMode) return null;
   const locked = new Set<LOOPComponent>();
   for (const info of LOOP_COMPONENTS) {
     const component = info.component as LOOPComponent;
     const selection = new Set<LOOPComponent>([component]);
-    const gate = guestLoopGate(
-      generateLOOPType(selection),
-      buildLoopSpec(selection, rhythm),
-      guestMaxLength
-    );
+    const gate = guestLoopGate(generateLOOPType(selection));
     if (gate.locked) locked.add(component);
   }
   return locked;
@@ -279,7 +275,7 @@ export function buildLoopOverlayModel(
     rhythmControlsAvailable,
     detailComponent,
     sequenceLength,
-    guestMaxLength,
+    guestGated = false,
     handRelationship = "free",
   } = input;
   const generatedType = generateLOOPType(selectedComponents);
@@ -289,9 +285,9 @@ export function buildLoopOverlayModel(
       ? null
       : gateRhythm(selectedComponents, rhythm, sequenceLength);
   const guestLock =
-    guestMaxLength === undefined || selectedComponents.size === 0
+    !guestGated || selectedComponents.size === 0
       ? ({ locked: false } as const)
-      : guestLoopGate(generatedType, specWire, guestMaxLength);
+      : guestLoopGate(generatedType);
   const detailInfo = detailComponent
     ? (LOOP_COMPONENTS.find((info) => info.component === detailComponent) ??
       null)
@@ -325,11 +321,7 @@ export function buildLoopOverlayModel(
     specWire,
     rhythmGate,
     guestLock,
-    lockedComponents: deriveLockedComponents(
-      rhythm,
-      isMultiSelectMode,
-      guestMaxLength
-    ),
+    lockedComponents: deriveLockedComponents(isMultiSelectMode, guestGated),
     wordMathText: describeWordMath(
       selectedComponents,
       rhythm,

@@ -45,15 +45,18 @@ export function isFullAccountUser(
   return isAuthenticated && !isAnonymous;
 }
 
+/**
+ * Guests and accounts share one 64-step ceiling. It is a hard engine limit,
+ * not an upsell: the eight-step guest cap opened the sign-in sheet for 10
+ * guests over 90 days and earned no accounts (PostHog, 2026-10), so it was
+ * removed. The account ask lives on saving, sync, share, export, publish and
+ * the account-only Create methods. `premium` is kept at 64 as dormant
+ * plumbing for the shelved Scribe tier.
+ */
 export function getMaxSteps(tier: AccessTier): number {
   switch (tier) {
     case "guest":
-      return 8;
-    // The paid Scribe tier is shelved, so a signed-in user gets the full
-    // 64-step ceiling — no middle rung to upsell past. Guests stay at 8 with a
-    // free-account nudge. `premium` is kept at 64 as dormant plumbing.
     case "user":
-      return 64;
     case "premium":
       return 64;
   }

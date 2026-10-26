@@ -69,7 +69,7 @@ describe("LOOP expanded overlay model", () => {
   it("keeps guest category locks ahead of the Apply action", () => {
     const result = model(new Set([LOOPComponent.INVERTED]), {
       isMultiSelectMode: true,
-      guestMaxLength: 8,
+      guestGated: true,
     });
 
     expect(result.guestLock.locked).toBe(true);

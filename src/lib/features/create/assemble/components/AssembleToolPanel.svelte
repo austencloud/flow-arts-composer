@@ -16,7 +16,10 @@
   import type { SettingsState } from "#lib/shared/settings/state/settings-state.svelte.js";
   import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
   import { authDrawerState } from "#lib/shared/auth/state/auth-drawer-state.svelte.js";
-  import { resolveAccessTier } from "#lib/shared/auth/domain/access-tier.js";
+  import {
+    getMaxSteps,
+    resolveAccessTier,
+  } from "#lib/shared/auth/domain/access-tier.js";
   import { isPremiumOrAbove } from "#lib/shared/auth/domain/models/user-role.js";
   import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import { motionDuration } from "#lib/shared/transitions/motion.js";
@@ -72,36 +75,21 @@
    * Called by InteractiveGrid before adding a motion.
    * Returns true to block the action.
    *
-   * Guests go straight to the auth screen, whose contextual step-cap copy
-   * carries the why — no intermediate nudge (Austen, 2026-08-10). Signed-in
-   * users get direct feedback instead of a screen advertising an unavailable
-   * upgrade.
+   * Every tier shares the 64-step ceiling, a hard engine limit, so hitting it
+   * gets one neutral note and no account ask.
    *
    * A completed step = one paired step (one on each hand).
    * We cap when the current paired step count would reach the tier limit.
    */
   function checkStepCap(): boolean {
-    const sequenceId = props.tabState.sequenceState?.currentSequence?.id;
-    const maxSteps = authDrawerState.guestEncore.maxSteps(
-      accessTier,
-      sequenceId
-    );
+    const maxSteps = getMaxSteps(accessTier);
     // Completed steps = min of both hands' step counts (each pair = one step)
     const pairedSteps = Math.min(
       builderState.leftSteps.length,
       builderState.rightSteps.length
     );
     if (pairedSteps >= maxSteps) {
-      if (accessTier === "guest") {
-        authDrawerState.show(
-          "signup",
-          "step-cap-guest",
-          sequenceId,
-          props.tabState.sequenceState?.currentSequence
-        );
-      } else {
-        toast.info(`Assemble supports up to ${maxSteps} steps.`, 4000);
-      }
+      toast.info(`Sequences are capped at ${maxSteps} steps.`, 4000);
       return true;
     }
     return false;

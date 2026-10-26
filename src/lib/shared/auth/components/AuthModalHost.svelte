@@ -26,9 +26,6 @@
       open={authDrawerState.open}
       initialMode={authDrawerState.initialMode}
       reason={authDrawerState.reason}
-      attempt={authDrawerState.stepCapAttempts}
-      encore={authDrawerState.encorePrompt}
-      onAcceptEncore={() => authDrawerState.claimEncore()}
       onClose={() => authDrawerState.hide()}
     />
   {/await}

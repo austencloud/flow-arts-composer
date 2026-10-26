@@ -32,40 +32,58 @@ export function composerMotionSignature(
   });
 }
 
+interface CacheEntry {
+  bundle?: object;
+  pose?: CapturedPoseClip;
+}
+
+/**
+ * A clip restored from this device's saved motion has a pose but no native
+ * bundle: the bundle carries the whole rig and is only rebuilt by a fresh
+ * capture. So the Web performer can play a pose-only entry, while Unreal and
+ * "download native motion" still see nothing until a real capture lands.
+ */
 export class ComposerMotionCache {
-  private readonly bundles = new Map<string, object>();
-  private readonly poses = new Map<string, CapturedPoseClip>();
+  private readonly entries = new Map<string, CacheEntry>();
 
   constructor(private readonly limit = 8) {}
 
-  get(signature: string): object | undefined {
-    const bundle = this.bundles.get(signature);
-    if (bundle) {
-      this.bundles.delete(signature);
-      this.bundles.set(signature, bundle);
+  private touch(signature: string): CacheEntry | undefined {
+    const entry = this.entries.get(signature);
+    if (entry) {
+      this.entries.delete(signature);
+      this.entries.set(signature, entry);
     }
-    return bundle;
+    return entry;
+  }
+
+  private store(signature: string, entry: CacheEntry): void {
+    this.entries.delete(signature);
+    this.entries.set(signature, entry);
+    while (this.entries.size > this.limit) {
+      this.entries.delete(this.entries.keys().next().value!);
+    }
+  }
+
+  get(signature: string): object | undefined {
+    return this.touch(signature)?.bundle;
   }
 
   has(signature: string): boolean {
-    return this.bundles.has(signature);
+    return !!this.entries.get(signature)?.bundle;
   }
 
   getPose(signature: string): CapturedPoseClip | undefined {
-    this.get(signature);
-    return this.poses.get(signature);
+    return this.touch(signature)?.pose;
   }
 
   set(signature: string, bundle: object, pose?: CapturedPoseClip): void {
-    this.bundles.delete(signature);
-    this.bundles.set(signature, bundle);
-    if (pose) this.poses.set(signature, pose);
-    else this.poses.delete(signature);
-    while (this.bundles.size > this.limit) {
-      const oldest = this.bundles.keys().next().value!;
-      this.bundles.delete(oldest);
-      this.poses.delete(oldest);
-    }
+    this.store(signature, { bundle, pose });
+  }
+
+  /** Keeps any native bundle already captured for this signature. */
+  setPose(signature: string, pose: CapturedPoseClip): void {
+    this.store(signature, { ...this.entries.get(signature), pose });
   }
 }
 

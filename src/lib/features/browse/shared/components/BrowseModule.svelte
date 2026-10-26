@@ -771,6 +771,40 @@
        Crossfade so the trail, back box and screen actions never fade or move
        with the content under them. -->
   <BrowseHeaderBar compact={isMobile} />
+  {#if isMobile && !homeOpen && activePrimary === "explore"}
+    <!-- Phones and tablets have no sidebar, so the Community sibling switcher
+         sits in its own row under the bar, above the section's own search and
+         filters: it picks what they filter. -->
+    <div
+      class="explore-switcher-row"
+      transition:growFade={{ duration: DURATION.normal }}
+    >
+      <div class="explore-switcher">
+        <SegmentedControl
+          options={EXPLORE_OPTIONS}
+          value={exploreSection}
+          onchange={(section) => {
+            if (section === "collections") {
+              browseNavigationState.viewExploreCollections();
+            } else if (section === "visuals") {
+              // No visualType: Explore > Visuals shows every type on one
+              // wall. A type in the URL is a deep-link filter.
+              browseNavigationState.navigateTo({
+                primary: "explore",
+                section: "visuals",
+                view: "list",
+              });
+            } else {
+              browseNavigationState.viewExploreSequences();
+            }
+          }}
+          color="accent"
+          semantics="tabs"
+          ariaLabel={t("browse_ui_explore_content_type")}
+        />
+      </div>
+    </div>
+  {/if}
   {#if browseScope || onCollectionsList}
     <div
       class="scope-bar-slot"
@@ -795,37 +829,6 @@
           />
         {:else if activePrimary === "explore"}
           <div class="explore-shell">
-            {#if isMobile}
-              <!-- Phones and tablets have no sidebar, so the Community
-                   sibling switcher sits in its own row under the bar. -->
-              <div class="explore-switcher-row">
-                <div class="explore-switcher">
-                  <SegmentedControl
-                    options={EXPLORE_OPTIONS}
-                    value={exploreSection}
-                    onchange={(section) => {
-                      if (section === "collections") {
-                        browseNavigationState.viewExploreCollections();
-                      } else if (section === "visuals") {
-                        // No visualType: Explore > Visuals shows every type on
-                        // one wall. A type in the URL is a deep-link filter.
-                        browseNavigationState.navigateTo({
-                          primary: "explore",
-                          section: "visuals",
-                          view: "list",
-                        });
-                      } else {
-                        browseNavigationState.viewExploreSequences();
-                      }
-                    }}
-                    color="accent"
-                    semantics="tabs"
-                    ariaLabel={t("browse_ui_explore_content_type")}
-                  />
-                </div>
-              </div>
-            {/if}
-
             <div class="explore-body">
               {#if exploreSection === "sequences"}
                 <!-- Phones and tablets go straight to the grid; their Filters
@@ -920,11 +923,10 @@
       color-mix(in srgb, var(--theme-text, #fff) 10%, transparent);
   }
 
-  /* Reserve room for translated labels while keeping the control bounded. */
+  /* Spans the row, so the segments split the full width instead of leaving
+     a dead band to the right of the last one. */
   .explore-switcher {
     flex: 1 1 auto;
-    width: auto;
-    max-width: 560px;
     min-width: 0;
   }
 

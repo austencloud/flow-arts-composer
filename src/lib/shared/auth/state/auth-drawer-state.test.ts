@@ -14,10 +14,10 @@ import {
   authDrawerState,
 } from "./auth-drawer-state.svelte";
 
-const STEP_CAP_TEXT = AUTH_NUDGE_TEXTS["step-cap-guest"];
+const SAVE_LIMIT_TEXT = AUTH_NUDGE_TEXTS["save-limit"];
 
-function askForNinthStep() {
-  authDrawerState.show("signup", "step-cap-guest", "seq-1");
+function askToSaveMore() {
+  authDrawerState.show("signup", "save-limit");
 }
 
 function messages() {
@@ -25,7 +25,8 @@ function messages() {
 }
 
 /**
- * The sheet is a lazily imported chunk. A guest's refused ninth step used to
+ * The sheet is a lazily imported chunk. An ask (first seen as a guest's
+ * refused ninth step, before the guest step cap was removed) used to
  * flip the drawer open and then wait for that chunk in silence: nothing on
  * screen, and every further tap swallowed as a repeat of an open sheet
  * (reproduced 2026-10-22 at 412x915, where the first open also triggered a
@@ -42,43 +43,42 @@ describe("authDrawerState while the sheet's code is still loading", () => {
     vi.useRealTimers();
   });
 
-  it("names the limit in a toast once the grace passes without the sheet", () => {
-    askForNinthStep();
+  it("names the refusal in a toast once the grace passes without the sheet", () => {
+    askToSaveMore();
     authDrawerState.reportHostStatus("loading");
     expect(messages()).toEqual([]);
 
     vi.advanceTimersByTime(AUTH_SHEET_FEEDBACK_GRACE_MS);
 
     expect(authDrawerState.open).toBe(true);
-    expect(messages()).toEqual([STEP_CAP_TEXT]);
+    expect(messages()).toEqual([SAVE_LIMIT_TEXT]);
   });
 
   it("answers a repeated ask at once instead of swallowing it", () => {
-    askForNinthStep();
+    askToSaveMore();
     authDrawerState.reportHostStatus("loading");
 
-    askForNinthStep();
+    askToSaveMore();
 
-    expect(messages()).toEqual([STEP_CAP_TEXT]);
+    expect(messages()).toEqual([SAVE_LIMIT_TEXT]);
     expect(authDrawerState.open).toBe(true);
-    expect(authDrawerState.stepCapAttempts).toBe(1);
   });
 
   it("replaces, never stacks, the toast on further repeats", () => {
-    askForNinthStep();
+    askToSaveMore();
     authDrawerState.reportHostStatus("loading");
 
-    askForNinthStep();
-    askForNinthStep();
+    askToSaveMore();
+    askToSaveMore();
 
-    expect(messages()).toEqual([STEP_CAP_TEXT]);
+    expect(messages()).toEqual([SAVE_LIMIT_TEXT]);
   });
 
   it("withdraws the toast when the sheet's code lands", () => {
-    askForNinthStep();
+    askToSaveMore();
     authDrawerState.reportHostStatus("loading");
     vi.advanceTimersByTime(AUTH_SHEET_FEEDBACK_GRACE_MS);
-    expect(messages()).toEqual([STEP_CAP_TEXT]);
+    expect(messages()).toEqual([SAVE_LIMIT_TEXT]);
 
     authDrawerState.reportHostStatus("loaded");
 
@@ -87,7 +87,7 @@ describe("authDrawerState while the sheet's code is still loading", () => {
   });
 
   it("stays quiet when the sheet loads within the grace", () => {
-    askForNinthStep();
+    askToSaveMore();
     authDrawerState.reportHostStatus("loading");
     authDrawerState.reportHostStatus("loaded");
 
@@ -96,22 +96,21 @@ describe("authDrawerState while the sheet's code is still loading", () => {
     expect(messages()).toEqual([]);
   });
 
-  it("closes a failed load so the next ask retries, and still names the limit", () => {
-    askForNinthStep();
+  it("closes a failed load so the next ask retries, and still names the refusal", () => {
+    askToSaveMore();
     authDrawerState.reportHostStatus("loading");
 
     authDrawerState.reportHostStatus("error");
 
     expect(authDrawerState.open).toBe(false);
-    expect(messages()).toEqual([STEP_CAP_TEXT]);
+    expect(messages()).toEqual([SAVE_LIMIT_TEXT]);
 
-    askForNinthStep();
+    askToSaveMore();
     expect(authDrawerState.open).toBe(true);
-    expect(authDrawerState.stepCapAttempts).toBe(2);
   });
 
   it("leaves a page that mounts its own sheet alone", () => {
-    askForNinthStep();
+    askToSaveMore();
 
     vi.advanceTimersByTime(AUTH_SHEET_FEEDBACK_GRACE_MS);
 
@@ -120,7 +119,7 @@ describe("authDrawerState while the sheet's code is still loading", () => {
   });
 
   it("does not raise a toast for an ask that was withdrawn in time", () => {
-    askForNinthStep();
+    askToSaveMore();
     authDrawerState.reportHostStatus("loading");
     authDrawerState.hide();
 

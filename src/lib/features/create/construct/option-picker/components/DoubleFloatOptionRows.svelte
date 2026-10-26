@@ -4,6 +4,11 @@
   import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import type { DoubleFloatOptionRow } from "../services/double-float-option-groups";
   import OptionCard from "./OptionCard.svelte";
+  import { emanate } from "#lib/shared/transitions/emanate.js";
+  import {
+    optionCardEmanate,
+    tryGetOptionSheetOpeningContext,
+  } from "../context/option-sheet-opening-context";
 
   interface Props {
     rows: readonly DoubleFloatOptionRow<PictographData>[];
@@ -18,6 +23,8 @@
     continuationIndex = null,
     onSelect,
   }: Props = $props();
+  // Cards arrive from the landed start cell while the sheet opens.
+  const sheet = tryGetOptionSheetOpeningContext();
 
   function elementFor(row: DoubleFloatOptionRow<PictographData>) {
     return TND_ELEMENTS.find(
@@ -77,7 +84,13 @@
           >
             {#each row.options as pathOption (pathOption.id)}
               {@const reversals = reversalState(pathOption.option)}
-              <div class="float-path-slot">
+              <div
+                class="float-path-slot"
+                in:emanate|global={optionCardEmanate(
+                  sheet,
+                  pathOption.originalIndex
+                )}
+              >
                 <OptionCard
                   pictograph={pathOption.option as PreparedPictographData}
                   size={previewSize}

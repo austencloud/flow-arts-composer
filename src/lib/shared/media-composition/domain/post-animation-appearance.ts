@@ -29,6 +29,7 @@ export const PostAnimationAppearanceSchema = z
     stepNumbers: z.boolean().optional(),
     progressBar: z.boolean().optional(),
     wordHeader: z.boolean().optional(),
+    /** Retired: the word always lights the playing move. Older drafts carry it; nothing reads it. */
     wordHeaderHighlight: z.enum(["arrival", "travel"]).optional(),
     mandala: z.boolean().optional(),
     /** Line width of the mandala guide in canvas pixels; 2.5 when absent. */

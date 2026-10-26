@@ -3808,6 +3808,143 @@
     }
     .share-split[data-route="download"] .rail-body {
       flex: 1 1 auto;
+      container: share-rail / size;
+    }
+    /* Video has four settings where Card has a dozen, so they share the
+       rail's height instead of bunching at the top over an empty column. The
+       split sizes the rail body, never its content, so the video pane can
+       measure it: the pane is at least the body's height less the Card/Video
+       switch above it, and the settings take whatever the delivery buttons
+       leave. */
+    .share-split[data-route="download"] .rail-stack {
+      --file-type-h: 3.25rem;
+      --file-type-block: 0px;
+    }
+    .share-split[data-route="download"] .rail-stack:has(> .file-type) {
+      --file-type-block: calc(var(--file-type-h) + 0.75rem);
+    }
+    .share-split[data-route="download"] .file-type {
+      min-block-size: var(--file-type-h);
+    }
+    /* A grid, not a flex column: a stretched grid item has a definite height,
+       and Chrome only stretches a fieldset's contents when it does. */
+    .share-split[data-route="download"]
+      .rail-stack
+      :global(.crossfade > .layer:has(> .video-settings)) {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: auto minmax(min-content, 1fr) auto;
+      min-height: calc(100cqh - var(--file-type-block));
+    }
+    .share-split[data-route="download"] .opener-row {
+      grid-row: 1;
+    }
+    .share-split[data-route="download"] .video-settings {
+      grid-row: 2;
+      display: flex;
+      flex-direction: column;
+    }
+    .share-split[data-route="download"] .ready-delivery {
+      grid-row: 3;
+    }
+    .share-split[data-route="download"] .share-dock {
+      padding-inline: 0.25rem;
+    }
+    /* With room for it, each setting is a label over a full-width control
+       and the groups spread down the rail with the spare height between
+       them. The cap keeps a very tall window from pulling them apart; past it
+       the space falls below the last setting. A rail too short for the
+       stacked groups keeps each label beside its control. */
+    @container share-rail (min-height: 29rem) {
+      .share-split[data-route="download"] .video-rows {
+        --video-control-h: 3.5rem;
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 1rem;
+        max-block-size: 36rem;
+        padding-top: 0.5rem;
+      }
+      /* An empty last item, so the space under the last setting matches the
+         space between settings instead of running into the dock. */
+      .share-split[data-route="download"] .video-rows::after {
+        content: "";
+      }
+      .share-split[data-route="download"] .video-row {
+        grid-template-columns: minmax(0, 1fr);
+        align-items: stretch;
+        gap: 0.5rem;
+      }
+      .share-split[data-route="download"] .video-row > span {
+        color: var(--theme-text-secondary);
+      }
+      .share-split[data-route="download"]
+        .video-row
+        :global(.segmented-control) {
+        display: flex;
+        min-block-size: var(--video-control-h);
+      }
+      .share-split[data-route="download"] .video-row :global(.segment) {
+        flex: 1 1 0;
+        min-width: 0;
+      }
+      /* The stepper is a bar the width of the controls above it: minus at
+         the start, the count in the middle, plus at the end. */
+      .share-split[data-route="download"] .stepper-keys {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        min-block-size: var(--video-control-h);
+        padding: 0.25rem;
+        border: 1px solid var(--theme-stroke);
+        border-radius: 0.75rem;
+        background: var(--theme-card-bg);
+      }
+      .share-split[data-route="download"] .stepper-keys strong {
+        align-self: center;
+        font-size: 1rem;
+      }
+      .share-split[data-route="download"] .stepper-keys button {
+        width: 4rem;
+        height: auto;
+        border: 0;
+        border-radius: 0.5rem;
+        background: transparent;
+        font-size: 1.375rem;
+      }
+      .share-split[data-route="download"]
+        .stepper-keys
+        button:not(:disabled):hover {
+        background: var(--theme-stroke);
+      }
+    }
+    /* A 3D export adds Quality. Five stacked groups need a taller rail, so
+       below it they keep each label beside its control. */
+    @container share-rail (min-height: 29rem) and (max-height: 34.99rem) {
+      .share-split[data-route="download"]
+        .video-rows:has(> .video-row:nth-child(5)) {
+        --video-control-h: var(--min-touch-target, 44px);
+        justify-content: flex-start;
+        gap: 0.5rem;
+        padding-top: 0;
+      }
+      .share-split[data-route="download"]
+        .video-rows:has(> .video-row:nth-child(5))::after {
+        content: none;
+      }
+      .share-split[data-route="download"]
+        .video-rows:has(> .video-row:nth-child(5))
+        .video-row {
+        grid-template-columns: var(--share-label-w) minmax(0, 1fr);
+        align-items: center;
+        gap: 0.25rem 0.75rem;
+      }
+      .share-split[data-route="download"]
+        .video-rows:has(> .video-row:nth-child(5))
+        .video-row
+        > span {
+        color: inherit;
+      }
     }
     .share-split[data-route="home"]:not(:has(.stage-frame)) {
       grid-template-columns: minmax(0, 1fr);

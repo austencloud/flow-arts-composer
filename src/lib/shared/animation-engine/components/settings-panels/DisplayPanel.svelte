@@ -119,7 +119,6 @@
     )
   );
   let wordHeader = $state(vm.getVisibility("wordHeader"));
-  let wordHeaderHighlight = $state(vm.getSettings().wordHeaderHighlight);
   let mandala = $state(vm.getVisibility("mandala"));
   let pathLines = $state(
     vm.getVisibility("leftPathLines") || vm.getVisibility("rightPathLines")
@@ -140,7 +139,6 @@
     progressBar = vm.getVisibility("progressBar");
     propsVisibilityEnabled = vm.getVisibility("props");
     wordHeader = vm.getVisibility("wordHeader");
-    wordHeaderHighlight = vm.getSettings().wordHeaderHighlight;
     mandala = vm.getVisibility("mandala");
     pathLines =
       vm.getVisibility("leftPathLines") || vm.getVisibility("rightPathLines");
@@ -495,19 +493,6 @@
       !previous
     );
   }
-
-  function setWordHeaderHighlight(mode: "arrival" | "travel"): void {
-    const previous = wordHeaderHighlight;
-    if (previous === mode) return;
-    vm.updateSettings({ wordHeaderHighlight: mode });
-    reportViewerControlChange(
-      onSettingChange,
-      "display",
-      "wordHeaderHighlight",
-      previous,
-      mode
-    );
-  }
 </script>
 
 <div
@@ -568,69 +553,21 @@
       </button>
     {/each}
   </div>
-  {#if showSequenceMarks && showWordToggle}
-    <div
-      class="word-highlight-control"
-      role="group"
-      aria-label="Word highlight timing"
-    >
-      <span>Word highlight</span>
-      <button
-        type="button"
-        aria-pressed={wordHeaderHighlight === "arrival"}
-        onclick={() => setWordHeaderHighlight("arrival")}>On arrival</button
-      >
-      <button
-        type="button"
-        aria-pressed={wordHeaderHighlight === "travel"}
-        onclick={() => setWordHeaderHighlight("travel")}>During travel</button
-      >
-    </div>
-  {/if}
 </div>
 
 <style>
-  .word-highlight-control {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 2px;
-    font-size: var(--font-size-sm, 0.875rem);
-  }
-
-  .word-highlight-control button {
-    border: 1px solid var(--theme-border, currentColor);
-    border-radius: 999px;
-    padding: 4px 10px;
-    color: inherit;
-    background: transparent;
-    cursor: pointer;
-  }
-
-  .word-highlight-control button[aria-pressed="true"] {
-    background: var(
-      --theme-surface-active,
-      color-mix(in srgb, currentColor 18%, transparent)
-    );
-  }
   .vis-grid-shell {
     container-type: inline-size;
   }
 
   /* Given a real height, take all of it. The grid's rows are then fractions of
      a box the content does not set, which is what makes measuring the tile and
-     sizing the picture from it settle in one pass. The word highlight switch
-     goes under the grid, not beside it. */
+     sizing the picture from it settle in one pass. */
   .vis-grid-shell.fill {
     flex: 1 1 0;
     min-height: 0;
     display: flex;
     flex-direction: column;
-  }
-
-  .vis-grid-shell.fill > .word-highlight-control {
-    flex: none;
   }
 
   /* A box too small to fit (MIN_FIT_ART in display-grid-fit) keeps the

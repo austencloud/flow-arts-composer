@@ -440,9 +440,12 @@ $systemPrincipal = New-ScheduledTaskPrincipal `
     -UserId 'SYSTEM' `
     -LogonType ServiceAccount `
     -RunLevel Highest
+# Interactive, not S4U: an S4U logon hands an administrator the full token even
+# at RunLevel Limited, so the prep and verification scripts refused to run every
+# night ("must run in Austen's normal unelevated session"). Found 2026-10-25.
 $userPrincipal = New-ScheduledTaskPrincipal `
     -UserId $userAccount `
-    -LogonType S4U `
+    -LogonType Interactive `
     -RunLevel Limited
 
 $mainSettings = New-ScheduledTaskSettingsSet `

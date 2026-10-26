@@ -33,7 +33,33 @@ Good: catches a bug that would otherwise reach production unnoticed. Tests speci
 
 Bad: confirms a component renders without crashing. Mocks so heavily it tests the mocks. Asserts implementation details. Would still pass if core logic was wrong.
 
-Tests live in `tests/unit/`. Run with `npm test`.
+## Where tests live and how to find yours
+
+The main config (`tests/config/vitest.config.ts`) runs tests from three homes:
+
+- `tests/unit/<domain>/`, for example `tests/unit/create/` or `tests/unit/3d/`;
+- loose files in the `tests/unit/` root, an older layout;
+- beside their source in `src/`, as `name.test.ts`.
+
+A domain's tests are usually split across all three, so do not search one
+place. Ask the locator instead:
+
+```sh
+npm run test:changed -- --list   # what your change touches, grouped by reason
+npm run test:changed             # run exactly those
+```
+
+It unions the changed tests, Vitest's import graph (`vitest related`), tests
+whose text names a changed file, the domain's `tests/unit/<domain>/` folder,
+and a changed package's own `test` script. Config, setup and dependency
+changes select the whole suite. `wt:finish` runs it for the branch, so a
+failure here is a failure there.
+
+Going forward, put a new unit test beside its source as `name.test.ts` or in
+`tests/unit/<domain>/`, never loose in the `tests/unit/` root. A contract test
+that reads source as text must name the full repo-relative path of the file it
+reads (`src/lib/shared/3d/state/adaptive-quality-state.svelte.ts`, not a
+directory walk or a bare name), so the locator's mention scan finds it.
 
 ## Always pass the config when running one file
 

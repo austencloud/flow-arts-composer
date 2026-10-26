@@ -50,13 +50,6 @@ Delegates ALL logic to services (SRP compliant)
   import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
   import { getCardColors } from "../shared/domain/card-colors";
   import * as spellServiceLoader from "#lib/features/create/spell/services/spell-service-loader.js";
-  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
-  import {
-    resolveAccessTier,
-    getMaxSteps,
-  } from "#lib/shared/auth/domain/access-tier.js";
-  import { isPremiumOrAbove } from "#lib/shared/auth/domain/models/user-role.js";
-  import { authDrawerState } from "#lib/shared/auth/state/auth-drawer-state.svelte.js";
   import LevelSelector from "#lib/shared/components/LevelSelector.svelte";
   import type { LevelNumber } from "#lib/shared/domain/curriculum/level-metadata.js";
   import { MAX_AVAILABLE_LEVEL } from "#lib/shared/create/utils/config-mapper.js";
@@ -182,23 +175,6 @@ Delegates ALL logic to services (SRP compliant)
     void rightStartOrientation;
     startEndState?.normalizeOrientationsForLevel(level);
   });
-
-  const accessTier = $derived(
-    resolveAccessTier(
-      authState.isAuthenticated,
-      authState.isAnonymous,
-      isPremiumOrAbove(authState.role)
-    )
-  );
-  // Only guests get a step-cap ask — straight to the auth screen, whose
-  // contextual copy carries the why; no intermediate nudge (Austen,
-  // 2026-08-10). Logged-in users are hard-capped at 64 with no upsell, so the
-  // cap applies silently. (The paid Scribe tier is shelved until there's a plan.)
-  function onStepCapExceeded() {
-    if (accessTier === "guest") {
-      authDrawerState.show("signup", "step-cap-guest");
-    }
-  }
 
   // Get card colors based on current background (reactive to background changes)
   let cardColors = $derived(
@@ -802,7 +778,6 @@ Delegates ALL logic to services (SRP compliant)
               {...card.props as ComponentProps<typeof LengthCard>}
               color={cardColors.length.color}
               shadowColor={cardColors.length.shadowColor}
-              {onStepCapExceeded}
             />
           {:else if card.id === "word-input"}
             <WordInputCard

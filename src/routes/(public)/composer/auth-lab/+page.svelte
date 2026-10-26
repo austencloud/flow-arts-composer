@@ -7,9 +7,8 @@
     type AuthNudgeTrigger,
   } from "#lib/shared/auth/domain/auth-nudge-trigger.js";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
-  import type { GuestEncorePrompt } from "#lib/shared/auth/domain/auth-nudge-trigger.js";
 
-  type ScenarioKey = "share" | "library" | "step-cap";
+  type ScenarioKey = "share" | "library" | "save-limit";
 
   type Scenario = {
     key: ScenarioKey;
@@ -28,10 +27,10 @@
       label: "Library",
       reason: "guest-first-save",
     },
-    "step-cap": {
-      key: "step-cap",
-      label: "Longer sequence",
-      reason: "step-cap-guest",
+    "save-limit": {
+      key: "save-limit",
+      label: "Save limit",
+      reason: "save-limit",
     },
   };
 
@@ -50,15 +49,8 @@
   );
   let modalOpen = $state(page.url.searchParams.get("modal") === "1");
   const selected = $derived(scenarios[selectedKey]);
-  const encore = $derived.by((): GuestEncorePrompt => {
-    if (selectedKey !== "step-cap") return null;
-    const value = page.url.searchParams.get("encore");
-    return value === "offer" || value === "spent" || value === "limit"
-      ? value
-      : null;
-  });
   const selectedContent = $derived(
-    getAuthPromptContent(selected.reason, "signup", 1, encore)
+    getAuthPromptContent(selected.reason, "signup")
   );
 </script>
 
@@ -122,8 +114,6 @@
       {#key selected.key}
         <ContextualAuthPrompt
           content={selectedContent}
-          encoreOffer={encore === "offer"}
-          onAcceptEncore={() => (modalOpen = true)}
           idPrefix="inline-contextual-auth"
         />
       {/key}
@@ -135,8 +125,6 @@
   open={modalOpen}
   initialMode="signup"
   reason={selected.reason}
-  {encore}
-  onAcceptEncore={() => (modalOpen = false)}
   onClose={() => (modalOpen = false)}
 />
 

@@ -16,7 +16,7 @@ export type LoopStageProps = Pick<
   | "sequenceLength"
   | "onRhythmChange"
   | "onLoopDisable"
-  | "guestMaxLength"
+  | "guestGated"
   | "onRequestSignup"
   | "handRelationship"
 >;

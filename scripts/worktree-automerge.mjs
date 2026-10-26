@@ -15,8 +15,17 @@
  *     branch is left alone so we never yank it out from under a live session)
  *   - it's ahead of local main (something to merge)
  *   - it merges into local main with no conflicts
- *   - the relevant project gate passes in the worktree; documentation-only
- *     branches skip the Svelte check
+ *   - the project gate passes in the worktree (see projectGate), in order:
+ *       1. `npm run check` and scripts/svelte-compile-gate.mjs <base>
+ *       2. `npm run check:tsc` (plain tsc; svelte-check is blind past its
+ *          20 MB budget, see scripts/tsc-gate.mjs)
+ *       3. `npm run specs:check` and `npm run specs:test`
+ *       4. scripts/test-changed.mjs --base <base> --committed-only, the
+ *          worktree's own copy, which runs the tests the branch touches
+ *     Documentation-only branches run step 3 alone: a spec file without
+ *     frontmatter is a docs-only change and turned CI red on 2026-10-24.
+ *     `--skip-checks` skips the gate; in --finish mode it prints a warning
+ *     and the merge's log entry records `skippedChecks: true`.
  *
  * Local task completion (run from the primary checkout):
  *   node scripts/worktree-automerge.mjs --finish codex/my-task --route /real-route
@@ -125,6 +134,73 @@ function tryGit(args, opts = {}) {
     };
   }
 }
+function elapsed(since) {
+  return `${((Date.now() - since) / 1000).toFixed(1)} s`;
+}
+
+/** npm is a .cmd shim on Windows, so it goes through cmd.exe there. */
+function npmRun(script, opts) {
+  if (process.platform === "win32") {
+    return run(
+      process.env.ComSpec ?? "cmd.exe",
+      ["/d", "/s", "/c", `npm run ${script}`],
+      opts
+    );
+  }
+  return run("npm", ["run", script], opts);
+}
+
+/**
+ * The one gate both the finish path and the diagnostic scan run, so the two
+ * cannot drift. Each step prints a label and its time; the first failing step
+ * throws with its label. `quiet` pipes the steps' output instead of showing it.
+ */
+function projectGate(cwd, baseSha, taskPaths, { quiet = false } = {}) {
+  const opts = { cwd, stdio: quiet ? ["ignore", "pipe", "pipe"] : "inherit" };
+  const step = (label, action) => {
+    console.log(`    gate: ${label} …`);
+    const started = Date.now();
+    try {
+      action();
+    } catch (error) {
+      console.log(`    gate: ${label} FAILED after ${elapsed(started)}`);
+      throw new Error(`gate step failed: ${label}`, { cause: error });
+    }
+    console.log(`    gate: ${label} passed in ${elapsed(started)}`);
+  };
+  const code = requiresProjectCheck(taskPaths);
+
+  if (code) {
+    step("npm run check", () => npmRun("check", opts));
+    // svelte-check no longer reads components; compile the changed ones.
+    const compileGate = fileURLToPath(
+      new URL("svelte-compile-gate.mjs", import.meta.url)
+    );
+    step("svelte-compile-gate", () =>
+      run(process.execPath, [compileGate, baseSha], opts)
+    );
+    step("npm run check:tsc", () => npmRun("check:tsc", opts));
+  } else {
+    console.log("    skipping `npm run check` for documentation-only changes");
+  }
+
+  step("npm run specs:check", () => npmRun("specs:check", opts));
+  step("npm run specs:test", () => npmRun("specs:test", opts));
+
+  if (code) {
+    const locator = join(cwd, "scripts", "test-changed.mjs");
+    if (!existsSync(locator))
+      fail(`the task worktree has no scripts/test-changed.mjs: ${locator}`);
+    step("test-changed", () =>
+      run(
+        process.execPath,
+        [locator, "--base", baseSha, "--committed-only"],
+        opts
+      )
+    );
+  }
+}
+
 function logLine(obj) {
   appendFileSync(LOG, JSON.stringify(obj) + "\n");
 }
@@ -312,32 +388,12 @@ function localFinish() {
       );
     }
 
-    if (!SKIP_CHECKS && requiresProjectCheck([...taskPaths])) {
-      console.log(`    running \`npm run check\` in ${FINISH_BRANCH} …`);
-      if (process.platform === "win32") {
-        run(
-          process.env.ComSpec ?? "cmd.exe",
-          ["/d", "/s", "/c", "npm run check"],
-          {
-            cwd: task.path,
-            stdio: "inherit",
-          }
-        );
-      } else {
-        run("npm", ["run", "check"], { cwd: task.path, stdio: "inherit" });
-      }
-      // svelte-check no longer reads components; compile the changed ones.
-      const compileGate = fileURLToPath(
-        new URL("svelte-compile-gate.mjs", import.meta.url)
-      );
-      run(process.execPath, [compileGate, mainBefore], {
-        cwd: task.path,
-        stdio: "inherit",
-      });
-    } else if (!SKIP_CHECKS) {
+    if (SKIP_CHECKS) {
       console.log(
-        "    skipping `npm run check` for documentation-only changes"
+        "    WARNING: --skip-checks: no check, tsc, spec or test gate ran for this finish"
       );
+    } else {
+      projectGate(task.path, mainBefore, [...taskPaths]);
     }
 
     const mainAfterChecks = git(["-C", primary.path, "rev-parse", "HEAD"]);
@@ -371,6 +427,7 @@ function localFinish() {
       postMergeMain: mainAfterMerge,
       action: "local-finish-merged",
       deliveryUrl: url,
+      ...(SKIP_CHECKS ? { skippedChecks: true } : {}),
     });
     console.log(`    ✔ merged ${FINISH_BRANCH} into local ${MAIN}`);
   }
@@ -476,18 +533,14 @@ function runChecks(wt, localMainSha) {
   const taskPaths = splitNullList(
     git(["diff", "--name-only", "-z", `${localMainSha}..${wt.head}`])
   );
-  if (!requiresProjectCheck(taskPaths)) {
-    console.log(
-      `    skipping \`npm run check\` in ${wt.branch} (documentation-only changes)`
-    );
+  console.log(`    running the project gate in ${wt.branch} …`);
+  try {
+    projectGate(wt.path, localMainSha, taskPaths, { quiet: true });
     return true;
+  } catch (error) {
+    console.log(`    ${error.message}`);
+    return false;
   }
-  console.log(`    running \`npm run check\` in ${wt.branch} …`);
-  const res = trySh("npm run check", {
-    cwd: wt.path,
-    stdio: ["ignore", "pipe", "pipe"],
-  });
-  return res.ok;
 }
 
 function readinessMain() {
@@ -520,7 +573,7 @@ function readinessMain() {
       continue;
     }
     if (!runChecks(wt, localMainSha)) {
-      console.log(`  ✗ ${label.padEnd(32)} \`npm run check\` FAILED`);
+      console.log(`  ✗ ${label.padEnd(32)} project gate FAILED`);
       continue;
     }
     console.log(`  ✔ ${label.padEnd(32)} READY`);

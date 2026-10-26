@@ -1,181 +1,81 @@
-# TKA Web App - Test Suite
+# Tests
 
-## 🎯 Overview
+The suite is Vitest. Most of it runs under one config,
+`tests/config/vitest.config.ts`, in jsdom; the rest has its own config because
+it needs a real browser or a Firebase emulator.
 
-This directory contains all tests for the TKA Web Application, organized in a clean, maintainable structure that separates different types of tests by purpose and scope.
+## Where tests live
 
-## 📁 Directory Structure
+The main config runs tests from three homes, and a domain's tests are usually
+split across all of them:
 
-```
-tests/
-├── unit/                    # Fast, isolated unit tests (12 files, 301 tests)
-│   ├── build/              # Build module tests
-│   ├── device/             # Device detection tests
-│   ├── foundation/         # Foundation service tests
-│   ├── inversify/          # DI container tests
-│   ├── pictograph/         # Pictograph engine tests
-│   ├── render/             # Rendering service tests
-│   ├── state/              # State management tests
-│   └── workbench/          # Workbench utility tests
-├── integration/            # Integration tests
-│   └── services/           # Service integration tests
-├── e2e/                    # End-to-end tests (Playwright)
-│   ├── navigation-*.spec.ts # Navigation tests
-│   ├── background-settings.spec.ts # Settings tests
-│   └── clear-sequence-navigation.spec.ts # Clear sequence navigation
-├── helpers/                # Test helper utilities
-├── mocks/                  # Mock data and services
-├── setup/                  # Test configuration and setup
-└── README.md               # This file
+- `tests/unit/<domain>/`, for example `tests/unit/create/` or `tests/unit/3d/`;
+- loose files in the `tests/unit/` root, an older layout;
+- beside their source in `src/`, as `name.test.ts` (matched by glob, so a new
+  co-located test runs without being registered).
+
+It also runs `tests/migration/`. Browser component tests (`*.svelte.test.ts`)
+sit beside their components in `src/` but run only under the components config.
+
+To find the tests a change touches, use the locator rather than searching:
+
+```sh
+npm run test:changed -- --list   # grouped by reason, runs nothing
+npm run test:changed             # run them
 ```
 
-**Note**: Debug and manual test directories have been removed as they provided no automated testing value.
+It selects the changed tests, the tests whose import graph reaches a changed
+file (`vitest related`), tests whose text names a changed file, the domain's
+`tests/unit/<domain>/` folder, and a changed package's own `test` script. A
+change to `tests/config/`, `tests/setup/`, dependencies or a root config
+selects the whole suite. `npm run wt:finish` runs it for the branch.
 
-## 🚀 Running Tests
+### Where a new test goes
 
-### All Tests
+Beside its source as `name.test.ts`, or in `tests/unit/<domain>/`. Never loose
+in the `tests/unit/` root. A contract test that reads source as text names the
+full repo-relative path of the file it reads, so the locator's mention scan
+finds it.
 
-```bash
-npm run test                # Run all Vitest tests (unit + integration)
-```
+## Configs
 
-### By Category
+| Config                             | Runs                                                       | Command                                                     |
+| ---------------------------------- | ---------------------------------------------------------- | ----------------------------------------------------------- |
+| `vitest.config.ts` (main)          | `tests/unit`, `tests/migration`, `src/**/*.test.ts`, jsdom | `npm test`, `npm run test:ci`, `npm run test:changed`       |
+| `vitest.components.config.ts`      | `src/**/*.svelte.{test,spec}.ts` in Chromium               | `npm run test:components`, `test:components:ci`             |
+| `vitest.rules.config.ts`           | `tests/integration/firestore-rules`, Firestore emulator    | `npm run test:rules` (manual)                               |
+| `vitest.e2e.config.ts`             | `tests/integration/auth-upgrade/*.e2e.test.ts`, emulator   | `npm run test:e2e` (manual)                                 |
+| `vitest.render-parity.config.ts`   | `tests/render-parity/render-parity.test.ts` in a browser   | `npm run test:render-parity` (`:capture`, `:compare`)       |
+| `vitest.card-mcp-parity.config.ts` | card and QR parity tests in `tests/render-parity/`         | `npm run test:card-mcp-parity`, `test:live-card-png-parity` |
+| `vitest.contact-lab.config.ts`     | `tests/experimental/contact-correct/`                      | `npm run test:contact-lab-acceptance`                       |
 
-```bash
-npm run test:unit          # Run only unit tests
-npm run test:integration   # Run only integration tests
-```
+`vitest.diagnostics.config.ts` runs `tests/tools/` by hand.
+`playwright.config.ts` points at `tests/e2e/`, which now holds only snapshots;
+Playwright end-to-end tests were removed in 2026-02.
 
-### End-to-End Tests
+Always pass the config when running a single file
+(`npx vitest run --config tests/config/vitest.config.ts <file>`). The bare form
+uses a node environment that CI does not; see the testing skill.
 
-```bash
-npm run test:seo           # Run SEO integration tests
-npm run test:seo:headed    # Run SEO tests with browser UI
-npm run test:seo:debug     # Run SEO tests in debug mode
-```
+Workspace packages under `packages/*` carry their own Vitest configs; run them
+with `npm run test:packages` (five packages have a `test` script).
 
-## 📋 Test Categories
+## What gates what
 
-### Unit Tests (`tests/unit/`)
+- `npm run wt:finish` runs `check`, the changed-component compile gate,
+  `check:tsc`, `specs:check`, `specs:test` and `test:changed` for the branch.
+  Documentation-only branches run the spec checks alone.
+- GitHub CI (`web-ci.yml`) runs the main suite, the package tests, the
+  components config (failures ignored except four QR files), the card parity
+  job, the type checks and the build.
+- Not run by any gate: the `firebase-functions` Jest suite, the `mcp-server`
+  tests, the emulator configs, and folders outside every include glob
+  (`tests/opus-*`, `tests/parity`, `tests/performance`, `tests/manual`).
 
-- **Purpose**: Fast, isolated tests for individual components and services
-- **Scope**: Single component or service in isolation
-- **Speed**: < 1 second per test (total suite: ~11 seconds)
-- **Dependencies**: Mocked or stubbed
-- **Count**: 13 test files, 309 tests (all passing ✅)
+## Layout
 
-**Key Test Files:**
-
-- `GridPlacementDeriver.test.ts` - Core domain logic (37 tests)
-- `DimensionCalculationService.test.ts` - Rendering calculations (64 tests)
-- `BeatNumberingService.test.ts` - Data integrity (15 tests)
-- `container.test.ts` - DI container (22 tests)
-- `DeviceDetector.test.ts` - Device detection (46 tests)
-
-### Integration Tests (`tests/integration/`)
-
-- **Purpose**: Test interactions between multiple components/services
-- **Scope**: Multiple components working together
-- **Speed**: < 5 seconds per test
-- **Dependencies**: Real services, mocked external APIs
-
-### E2E Tests (`tests/e2e/`)
-
-- **Purpose**: Full user workflow testing
-- **Scope**: Complete user journeys
-- **Speed**: 10+ seconds per test
-- **Dependencies**: Real browser, real services
-
-**Key Test Files:**
-
-- `navigation-layout-visual.spec.ts` - Visual regression tests
-- `navigation-landscape-mobile.spec.ts` - Mobile navigation
-- `navigation-dropdown.spec.ts` - Dropdown interactions
-- `background-settings.spec.ts` - Settings functionality
-
-## 🔧 Config
-
-### Vitest Config
-
-- **Config File**: `vitest.config.ts`
-- **Setup File**: `tests/setup/vitest-setup.ts`
-- **Environment**: jsdom
-- **Aliases**: `#lib` and `$app` for imports
-
-### Playwright Config
-
-- **Config File**: `playwright.config.ts`
-- **Test Directory**: `tests/e2e/`
-- **Browsers**: Chrome, Firefox, Safari
-
-## 📝 Writing Tests
-
-### Import Patterns
-
-Use the configured aliases for clean imports:
-
-```typescript
-// ✅ Good - Use aliases
-import { MyService } from "#lib/services/MyService";
-import { MyComponent } from "$components/MyComponent.svelte";
-
-// ❌ Avoid - Relative paths
-import { MyService } from "../../../src/lib/services/MyService";
-```
-
-### Test File Naming
-
-- Unit tests: `ComponentName.test.ts`
-- Integration tests: `feature-integration.test.ts`
-- Debug tests: `debug-scenario.test.ts`
-- E2E tests: `workflow-name.spec.ts`
-
-## 🧹 Maintenance & Cleanup History
-
-### Recent Cleanup (2025-01-XX)
-
-Removed zero-value tests that provided no automated testing benefit:
-
-**Deleted:**
-
-- `tests/debug/` - Debug scripts (not automated tests)
-- `tests/manual/` - Manual test scripts (not in test suite)
-- Standalone test files (cap-minimal-test.mjs, test-cap-simple.ts, etc.)
-- Investigation E2E tests (investigate-types456-layout.spec.ts, navigation-layout-debug.spec.ts)
-
-**Impact:**
-
-- Removed 8-10 files
-- Zero loss of test coverage
-- Cleaner, more maintainable test suite
-- All 309 tests still passing ✅
-
-### Test Structure Benefits
-
-This test structure provides:
-
-- **Browseability**: Easy to find relevant tests
-- **Maintainability**: Clear separation of concerns
-- **Performance**: Fast test execution (~11 seconds for 309 tests)
-- **CI/CD**: Better pipeline organization
-- **Quality**: High-value tests focused on critical business logic
-
-## 🔍 Migration Notes
-
-Tests were moved from these locations:
-
-- `src/tests/` → `tests/unit/`, `tests/integration/`
-- Component `__tests__/` directories → `tests/unit/components/`
-- Service `__tests__/` directories → `tests/unit/services/`
-- Root-level test files → Appropriate category directories
-- `src/lib/test/setup.ts` → `tests/setup/vitest-setup.ts`
-
-All import paths have been updated to use `#lib` and `$app` aliases for consistency.
-
-## 📊 Test Value Analysis
-
-For detailed analysis of test value and recommendations, see:
-
-- **TEST_SUITE_VALUE_ANALYSIS.md** - Comprehensive analysis of all tests
-- **TEST_SUITE_QUICK_REFERENCE.md** - Quick reference tables and rankings
-- **MEDIUM_VALUE_TESTS_REVIEW.md** - Review of medium-value tests
+- `config/`: the configs above.
+- `setup/`: `vitest-setup.ts` (jsdom shims) and `stubs/` for `$app/*` and
+  `cloudflare:workers`.
+- `helpers/`, `mocks/`, `fixtures/`: shared test support.
+- `unit/`, `migration/`, `integration/`, `render-parity/`: suites as above.

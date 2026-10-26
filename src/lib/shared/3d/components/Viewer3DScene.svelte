@@ -953,11 +953,9 @@
               posePlayback={capturedPose &&
               readyCharactersByPerformer[performer.id] === performer.characterId
                 ? "captured"
-                : prepareWebMotion && captureEntry!.supported
-                  ? "paused"
-                  : rigPlaying
-                    ? "live"
-                    : "paused"}
+                : rigPlaying
+                  ? "live"
+                  : "paused"}
               contactMode={performerContactMode}
               position={performer.position}
               groundOffset={stageGroundOffset}
@@ -985,11 +983,7 @@
               enableLocomotion={enablePerformerLocomotion}
               enableFootPlanting={enablePerformerLocomotion}
               weldGrip={weldPerformerGrip}
-              isMoving={prepareWebMotion &&
-              captureEntry!.supported &&
-              !capturedPose
-                ? false
-                : performer.isMoving}
+              isMoving={performer.isMoving}
               moveSpeed={performer.moveSpeed}
               moveDirection={performer.moveDirection}
               gaitTimingSample={performer.gaitTimingSample}

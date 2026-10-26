@@ -9,6 +9,8 @@ Styling: Uses CSS cascade from parent OptionPickerContent via custom properties:
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { flyFade } from "#lib/shared/transitions/motion.js";
+  import { EMANATE_LEAD_MS } from "#lib/shared/transitions/emanate.js";
   import { formatSectionTitle } from "../../services/section-title-formatter";
 
   const { letterType = "mixed" } = $props<{
@@ -20,7 +22,8 @@ Styling: Uses CSS cascade from parent OptionPickerContent via custom properties:
   );
 </script>
 
-<div class="section-header">
+<!-- Follows the picker bar into the opening sheet, ahead of the cards. -->
+<div class="section-header" in:flyFade|global={{ y: 6, delay: EMANATE_LEAD_MS }}>
   <div class="header-layout">
     <div class="stretch"></div>
     <div class="type-label">

@@ -69,6 +69,39 @@ const OPEN_LAYER_SELECTOR =
 
 const KEY_OWNING_LAYER_SELECTOR = `${OPEN_LAYER_SELECTOR}, [role="radiogroup"]`;
 
+const MODAL_LAYER_CANDIDATE_SELECTOR =
+  'dialog, [role="dialog"], [role="alertdialog"], [aria-modal="true"]';
+
+function isLayerShown(layer: Element): boolean {
+  if (typeof layer.checkVisibility === "function") {
+    return layer.checkVisibility({ visibilityProperty: true });
+  }
+  const view = layer.ownerDocument.defaultView;
+  if (!view) return false;
+  for (let node: Element | null = layer; node; node = node.parentElement) {
+    if (view.getComputedStyle(node).display === "none") return false;
+  }
+  const visibility = view.getComputedStyle(layer).visibility;
+  return visibility !== "hidden" && visibility !== "collapse";
+}
+
+/**
+ * Returns whether a modal layer is actually open on the page right now. A
+ * `<dialog>` counts only with its `open` attribute, whatever role or
+ * aria-modal it carries: a drawer kept mounted while closed stays in the DOM
+ * as `<dialog role="dialog" aria-modal="true">` and would otherwise read as
+ * open forever. Any other element with a dialog role or aria-modal counts
+ * only while it is visible.
+ */
+export function hasOpenModalLayer(root: ParentNode = document): boolean {
+  return Array.from(root.querySelectorAll(MODAL_LAYER_CANDIDATE_SELECTOR)).some(
+    (layer) =>
+      layer.localName === "dialog"
+        ? layer.hasAttribute("open")
+        : isLayerShown(layer)
+  );
+}
+
 const SHORTCUT_PASSTHROUGH_SELECTOR = "[data-keyboard-shortcuts-passthrough]";
 
 const FOCUSABLE_CONTROL_SELECTOR = [

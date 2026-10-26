@@ -41,9 +41,19 @@ export interface AuthEncounter {
 }
 
 let encounter: AuthEncounter | null = null;
+// Whether this encounter's completion has been counted. The host that shows
+// the form can settle a sign-in before the provider's own promise resolves
+// (auth-analytics-bridge.ts `settleAuthSubmissionCompleted`), so either side
+// may report first; the second report is ignored instead of double counting.
+let completionRecorded = false;
 
 export function isAuthFunnelArmed(): boolean {
   return encounter !== null;
+}
+
+/** Whether a `completed` provider result has fired for this encounter. */
+export function isAuthCompletionRecorded(): boolean {
+  return completionRecorded;
 }
 
 export function getAuthEncounterProperties(): Record<string, string> {
@@ -52,6 +62,7 @@ export function getAuthEncounterProperties(): Record<string, string> {
 
 export function disarmAuthFunnel(): void {
   encounter = null;
+  completionRecorded = false;
 }
 
 /**
@@ -61,10 +72,12 @@ export function disarmAuthFunnel(): void {
 export function resumeAuthEncounter(saved: Record<string, string>): void {
   if (!saved.surface || !saved.origin) return;
   encounter = saved as unknown as AuthEncounter;
+  completionRecorded = false;
 }
 
 export function trackAuthSurfaceOpened(next: AuthEncounter): void {
   encounter = next;
+  completionRecorded = false;
   captureWhenReady("auth_modal_opened", { ...next });
 }
 
@@ -97,6 +110,10 @@ export function trackAuthProviderResult(
   failureCode?: string
 ): void {
   if (!encounter) return;
+  if (outcome === "completed") {
+    if (completionRecorded) return;
+    completionRecorded = true;
+  }
   const properties = {
     ...encounter,
     method,

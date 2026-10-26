@@ -29,7 +29,9 @@
  *
  * `clearAuthSubmissionBridge` still runs the moment the modal's outcome is
  * settled (success or abandonment - see SiteHeader.svelte and
- * AuthModal.svelte), so a stale method/auth_mode never rides along later.
+ * AuthModal.svelte), so a stale method/auth_mode never rides along later. A
+ * host that settles on success calls `settleAuthSubmissionCompleted` instead,
+ * which counts the completion first if the provider has not reported it yet.
  *
  * Spec: docs/architecture/landing-analytics-taxonomy.md §4
  */
@@ -38,8 +40,10 @@ import { browser } from "$app/env";
 import { getPostHogInstance } from "#lib/shared/analytics/services/posthog.js";
 import {
   trackAuthModalSubmitted,
+  trackAuthProviderResult,
   getAuthEncounterProperties,
   isAuthFunnelArmed,
+  isAuthCompletionRecorded,
   disarmAuthFunnel,
   type AuthMethod,
   type AuthMode,
@@ -166,6 +170,32 @@ export function restoreAuthSubmissionContext(
  * a different tab long after this modal is gone, and the crumb is consumed (and
  * removed) by `restorePendingAuthMethod` there.
  */
+/**
+ * Ends a tracked flow because the account appeared. A host that reacts to
+ * the account (the navigation drawer, the marketing header) can run before
+ * the provider's own promise resolves, and once the funnel is cleared the
+ * provider's `completed` report is dropped. So count the completion here,
+ * with the method this encounter submitted, unless it is already counted.
+ * Without a method submitted in this encounter there is nothing to
+ * attribute; just clear.
+ */
+export function settleAuthSubmissionCompleted(): void {
+  const encounter = getAuthEncounterProperties();
+  const method = submissionContext.method as AuthMethod | undefined;
+  const submittedHere =
+    submissionContext.surface === encounter.surface &&
+    submissionContext.origin === encounter.origin;
+  if (
+    isAuthFunnelArmed() &&
+    !isAuthCompletionRecorded() &&
+    method &&
+    submittedHere
+  ) {
+    trackAuthProviderResult(method, "completed");
+  }
+  clearAuthSubmissionBridge();
+}
+
 export function clearAuthSubmissionBridge(): void {
   submissionContext = {};
   disarmAuthFunnel();

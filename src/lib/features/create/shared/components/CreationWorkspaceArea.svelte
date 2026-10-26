@@ -24,6 +24,7 @@
   import LazyMount from "#lib/shared/components/LazyMount.svelte";
   import { onDestroy, untrack } from "svelte";
   import { isStartPlacementMorphCapturing } from "../../construct/start-placement-picker/services/start-placement-morph";
+  import { hasOpenModalLayer } from "#lib/shared/keyboard/domain/shortcut-target-resolution.js";
 
   const ctx = getCreateModuleContext();
   const { CreateModuleState, panelState, layout } = ctx;
@@ -113,13 +114,7 @@
     if (event.defaultPrevented) return;
     // A modal on top (save, share, clear confirm) owns Escape; the preview
     // keeps running underneath it.
-    if (
-      document.querySelector(
-        'dialog[open], [role="dialog"], [role="alertdialog"], [aria-modal="true"]'
-      )
-    ) {
-      return;
-    }
+    if (hasOpenModalLayer()) return;
     event.preventDefault();
     panelState.stopWorkspacePlayback();
   }

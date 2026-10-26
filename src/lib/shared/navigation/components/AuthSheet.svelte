@@ -16,6 +16,7 @@
   import {
     clearAuthSubmissionBridge,
     recordAuthSubmission,
+    settleAuthSubmissionCompleted,
   } from "#lib/shared/auth/services/auth-analytics-bridge.js";
   import Drawer from "../../foundation/ui/Drawer.svelte";
   import type { HapticFeedback } from "../../application/services/haptic-feedback";
@@ -68,7 +69,9 @@
   $effect(() => {
     if (!authState.isAuthenticated || !isOpen) return;
     const closeTimer = setTimeout(() => {
-      clearAuthSubmissionBridge();
+      // Settling counts the completion if the provider has not reported it
+      // by the time this sheet closes on the new account.
+      settleAuthSubmissionCompleted();
       onClose();
     }, 300);
     return () => clearTimeout(closeTimer);

@@ -12,14 +12,10 @@ Animates forward in z-axis and expands to fill the container space
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import {
     generateLOOPType,
-    buildLoopSpec,
     effectiveInversionInterval,
   } from "#lib/shared/create/services/loop-type-utils.js";
   import { gateRhythm } from "#lib/shared/create/services/loop-rhythm-gating.js";
-  import {
-    guestLoopGate,
-    type GuestLoopLockKind,
-  } from "#lib/shared/create/services/loop-guest-gate.js";
+  import { guestLoopGate } from "#lib/shared/create/services/loop-guest-gate.js";
   import { LOOPComponent } from "#lib/features/create/generate/shared/domain/constants/loop-components.js";
   import { LOOPType } from "../../circular/domain/models/circular-models";
   import LOOPComponentGrid from "../modals/LOOPComponentGrid.svelte";
@@ -50,7 +46,7 @@ Animates forward in z-axis and expands to fill the container space
     rhythm,
     sequenceLength,
     onRhythmChange,
-    guestMaxLength,
+    guestGated = false,
     onRequestSignup,
     handRelationship,
   } = $props<{
@@ -71,13 +67,13 @@ Animates forward in z-axis and expands to fill the container space
     rhythm?: LoopRhythmValue;
     sequenceLength?: number;
     onRhythmChange?: (updates: Partial<LoopRhythmValue>) => void;
-    /** Guest step cap. Set (by guest-facing hosts) turns on guest LOOP gating;
-        absent = no gating (deck/store/admin hosts unaffected). */
-    guestMaxLength?: number;
-    /** Called with the lock kind when a guest taps a gated LOOP. The host
-        routes straight to the auth screen, whose contextual copy is picked by
-        kind (category → every-LOOP-type, length → step cap). */
-    onRequestSignup?: (kind: GuestLoopLockKind) => void;
+    /** True (set by guest-facing hosts) turns on guest LOOP gating: only
+        rotated LOOP types are free. Absent = no gating (deck/store/admin
+        hosts unaffected). */
+    guestGated?: boolean;
+    /** Called when a guest taps a gated LOOP. The host routes straight to
+        the auth screen with the every-LOOP-type copy. */
+    onRequestSignup?: () => void;
     /** The hand mode from the TnD card; reflection modes narrow the LOOP
         choices here. Absent reads as Free (legacy callers unaffected). */
     handRelationship?: TnDSelection;
@@ -138,7 +134,7 @@ Animates forward in z-axis and expands to fill the container space
       rhythmControlsAvailable: !!rhythm && !!onRhythmChange,
       detailComponent: null,
       sequenceLength,
-      guestMaxLength,
+      guestGated,
       handRelationship,
     })
   );
@@ -254,14 +250,10 @@ Animates forward in z-axis and expands to fill the container space
     // Single changes apply immediately; settings stay below stable choices.
     if (!isMultiSelectMode) {
       // Guest-gated single pick routes to sign-up instead of applying.
-      if (guestMaxLength !== undefined) {
-        const gate = guestLoopGate(
-          generateLOOPType(new Set([component])),
-          buildLoopSpec(new Set([component]), localRhythm),
-          guestMaxLength
-        );
+      if (guestGated) {
+        const gate = guestLoopGate(generateLOOPType(new Set([component])));
         if (gate.locked) {
-          onRequestSignup?.(gate.kind);
+          onRequestSignup?.();
           return;
         }
       }
@@ -356,14 +348,9 @@ Animates forward in z-axis and expands to fill the container space
 
     if (!isMultiSelectMode && selectionCount > 0) {
       const newLoopType = generateLOOPType(localSelectedComponents);
-      if (newLoopType !== null && guestMaxLength !== undefined) {
-        const nextGuestLock = guestLoopGate(
-          newLoopType,
-          buildLoopSpec(localSelectedComponents, nextRhythm),
-          guestMaxLength
-        );
-        if (nextGuestLock.locked) {
-          onRequestSignup?.(nextGuestLock.kind);
+      if (newLoopType !== null && guestGated) {
+        if (guestLoopGate(newLoopType).locked) {
+          onRequestSignup?.();
           return;
         }
       }
@@ -433,7 +420,7 @@ Animates forward in z-axis and expands to fill the container space
     // Guest-gated combo routes to sign-up instead of applying.
     if (guestLock.locked) {
       hapticService?.trigger("selection");
-      onRequestSignup?.(guestLock.kind);
+      onRequestSignup?.();
       return;
     }
     if (rhythmGate && !rhythmGate.ok) return;

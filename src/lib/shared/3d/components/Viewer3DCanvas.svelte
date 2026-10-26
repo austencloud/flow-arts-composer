@@ -32,7 +32,6 @@
   import Viewer3DScene from "./Viewer3DScene.svelte";
   import WebComposerMotionPreparation from "./WebComposerMotionPreparation.svelte";
   import type { composerCaptureRequest } from "../unreal/domain/composer-capture-request";
-  import { getComposerMotionCache } from "../unreal/domain/composer-motion-cache";
   import Viewer3DCamera from "./Viewer3DCamera.svelte";
   import Viewer3DCanvasRef from "./Viewer3DCanvasRef.svelte";
   import PerfMonitor from "./PerfMonitor.svelte";
@@ -271,24 +270,15 @@
   const prepareWebMotion = $derived(
     !rendererHandleRequired && !weldPerformerGrip && !viewer3DState.isExporting
   );
-  const webMotionReady = $derived.by(() => {
-    if (!prepareWebMotion || !canRenderScene) return true;
-    void motionCacheRevision;
-    return (
-      webCaptureRequests !== null &&
-      webCaptureRequests.every(
-        (request) => !!getComposerMotionCache().getPose(request.signature)
-      )
-    );
-  });
-  // Motion preparation runs a second hidden scene on this thread to sample the
+  // Baking motion runs a second hidden scene on this thread to sample the
   // sequence. The live scene's frame collapse during those seconds is CPU
-  // contention, not render cost, so the quality governor must not judge the
-  // device by it. Gate on the requests existing too: the worker-renderer path
-  // never sets them, and the governor keeps running there.
-  const motionPreparing = $derived(
-    prepareWebMotion && webCaptureRequests !== null && !webMotionReady
-  );
+  // contention, not render cost, so the quality governor stays quiet exactly
+  // while that capture scene runs, and resumes as soon as it finishes, fails,
+  // or is skipped (a clip restored from the device, or a cast too large to
+  // bake). The worker-renderer path never mounts a capture, so its governor
+  // never pauses.
+  let webCaptureRunning = $state(false);
+  const motionPreparing = $derived(prepareWebMotion && webCaptureRunning);
   function handleCaptureRequestsChange(requests: CaptureRequest[]): void {
     const previous = webCaptureRequests;
     if (
@@ -825,15 +815,15 @@
   }
 
   $effect(() => {
-    if (useUnreal || (revealMode !== "gated" && webMotionReady)) {
+    // The baked motion clip never holds playback: the live solver plays while
+    // it bakes, and the captured clip takes over in step when it lands.
+    if (useUnreal || revealMode !== "gated") {
       if (heldForSceneLoad) synchronizeSceneLoadingPlayback(true);
       heldForSceneLoad = false;
       return;
     }
     const transition = sceneLoadingPlaybackTransition({
-      sceneReady:
-        (revealMode !== "gated" || (sceneReady && environmentSettled)) &&
-        webMotionReady,
+      sceneReady: sceneReady && environmentSettled,
       hasLiveScene:
         sceneReady &&
         (workerHostExact ? workerHasLiveScene : legacyHasLiveScene),
@@ -1024,6 +1014,7 @@
               onCacheChange={() => {
                 motionCacheRevision += 1;
               }}
+              onCapturingChange={(running) => (webCaptureRunning = running)}
             />
           {/if}
         {/if}

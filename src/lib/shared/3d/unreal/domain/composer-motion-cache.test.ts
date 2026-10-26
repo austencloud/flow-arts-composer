@@ -141,4 +141,26 @@ describe("Composer motion cache", () => {
     cache.set("a", { frames: [4] });
     expect(cache.getPose("a")).toBeUndefined();
   });
+
+  it("plays a clip restored from the device without offering it as native motion", () => {
+    const cache = new ComposerMotionCache(2);
+    const pose = { frames: [], durationSeconds: 4, loop: true };
+    cache.setPose("restored", pose);
+    expect(cache.getPose("restored")).toBe(pose);
+    expect(cache.has("restored")).toBe(false);
+    expect(cache.get("restored")).toBeUndefined();
+
+    // A later real capture fills in the bundle, and restoring the pose again
+    // must not throw that bundle away.
+    const bundle = { frames: [1] };
+    cache.set("restored", bundle, pose);
+    cache.setPose("restored", { ...pose });
+    expect(cache.get("restored")).toBe(bundle);
+
+    // Pose-only entries take an LRU slot like any other.
+    cache.setPose("b", pose);
+    cache.setPose("c", pose);
+    expect(cache.getPose("restored")).toBeUndefined();
+    expect(cache.has("restored")).toBe(false);
+  });
 });

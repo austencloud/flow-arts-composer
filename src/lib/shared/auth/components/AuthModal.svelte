@@ -31,16 +31,12 @@
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { authDrawerState } from "../state/auth-drawer-state.svelte";
   import ContextualAuthPrompt from "./ContextualAuthPrompt.svelte";
-  import type { GuestEncorePrompt } from "../domain/auth-nudge-trigger";
 
   interface Props {
     open: boolean;
     inline?: boolean;
     initialMode?: AuthMode;
     reason?: AuthNudgeTrigger | null;
-    attempt?: number;
-    encore?: GuestEncorePrompt;
-    onAcceptEncore?: () => void;
     onClose: () => void;
   }
 
@@ -49,9 +45,6 @@
     inline = false,
     initialMode = "signup",
     reason = null,
-    attempt = 1,
-    encore = null,
-    onAcceptEncore,
     onClose,
   }: Props = $props();
 
@@ -59,9 +52,7 @@
   let facebookError = $state<string | null>(null);
   let prompt = $state<{ focusFirstField: () => void }>();
 
-  const promptContent = $derived(
-    getAuthPromptContent(reason, authMode, attempt, encore)
-  );
+  const promptContent = $derived(getAuthPromptContent(reason, authMode));
   const inAppBrowser = $derived(
     getInAppBrowserDetector().isInAppBrowserOrForced(page.url.searchParams)
   );
@@ -154,8 +145,6 @@
   <ContextualAuthPrompt
     bind:this={prompt}
     content={promptContent}
-    encoreOffer={encore === "offer"}
-    {onAcceptEncore}
     bind:mode={authMode}
     active={open}
     idPrefix={inline ? "navigation-auth" : "auth-modal"}

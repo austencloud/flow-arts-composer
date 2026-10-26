@@ -146,12 +146,15 @@
   // time isFullAccount flips true, user_signed_up has already fired from
   // auth-state.svelte.ts and picked up the registered method/auth_mode, so
   // it's safe - and necessary - to clear them here before anything else in
-  // this session could pick them up by accident.
+  // this session could pick them up by accident. Settling also counts the
+  // completion when this runs before the provider's own report.
   $effect(() => {
     if (authModalOpen && authApi?.isFullAccount) {
       authModalOpen = false;
       void import("#lib/shared/auth/services/auth-analytics-bridge.js")
-        .then(({ clearAuthSubmissionBridge }) => clearAuthSubmissionBridge())
+        .then(({ settleAuthSubmissionCompleted }) =>
+          settleAuthSubmissionCompleted()
+        )
         .catch((error) =>
           console.warn("[SiteHeader] Auth analytics cleanup failed:", error)
         );

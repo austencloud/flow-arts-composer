@@ -19,7 +19,9 @@ primary checkout.
 1. Run proportionate verification in the task worktree. Documentation-only
    branches do not require the full Svelte check; code branches use the nearest
    tests and relevant type/build gate. Visual work also follows
-   `visual-verification-mandatory.md`.
+   `visual-verification-mandatory.md`. For code, `npm run test:changed` finds
+   and runs the tests the branch touches; `wt:finish` runs it again with
+   `check`, `check:tsc` and the spec checks.
 2. Commit only task-owned paths with explicit pathspecs.
 3. Bring the task branch current with local `main`. Repeat only checks invalidated
    by that update.

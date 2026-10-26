@@ -7,8 +7,6 @@ import { AUTH_NUDGE_TEXTS, type AuthNudgeTrigger } from "./auth-nudge-trigger";
 const keys: Partial<Record<string, TranslationKey>> = {
   "Keep saving sequences": "auth_prompt_keep_saving",
   "Save this sequence": "auth_prompt_save_sequence",
-  "Eight is the guest limit.": "auth_prompt_eight_limit",
-  "A free account gets you up to 64 steps.": "auth_prompt_64_steps",
   "Use pattern tools": "auth_prompt_use_patterns",
   "A free account adds Turn Pattern, Direction, Duration, Choose Start, and Rewind.":
     "auth_prompt_pattern_tools_body",
@@ -18,7 +16,6 @@ const keys: Partial<Record<string, TranslationKey>> = {
   "Set step durations": "auth_prompt_step_durations",
   "Choose a new start": "auth_prompt_choose_start",
   "Rewind this sequence": "auth_prompt_rewind_sequence",
-  "Generate this LOOP": "auth_prompt_generate_loop",
   "Use this setup": "auth_prompt_use_setup",
   "Open your library on any device": "auth_prompt_library_any_device",
   "A free account keeps saved sequences and collections across devices.":
@@ -54,7 +51,7 @@ const keys: Partial<Record<string, TranslationKey>> = {
     "auth_prompt_edit_sequence_body",
   "Try every LOOP type": "auth_prompt_try_every_loop",
   "A free account lets you use every LOOP type.": "auth_prompt_every_loop_body",
-  "A free account lets you use community setups and build sequences up to 64 steps.":
+  "A free account lets you use community setups.":
     "auth_prompt_community_setups_body",
   "Keep your setups": "auth_prompt_keep_setups",
   "Sign in or create an account to keep setups across sessions.":
@@ -92,17 +89,6 @@ const keys: Partial<Record<string, TranslationKey>> = {
     "auth_prompt_save_any_device",
   "Welcome back": "auth_prompt_welcome_back",
   "Sign in to open your saved work.": "auth_prompt_open_saved_work",
-  "Fine. Sixteen.": "auth_prompt_fine_sixteen",
-  "This sequence only.": "auth_prompt_this_sequence_only",
-  "Sixteen was the exception. A free account gets you up to 64 steps.":
-    "auth_prompt_sixteen_exception_body",
-  "Still eight.": "auth_prompt_still_eight",
-  "Nice try.": "auth_prompt_nice_try",
-  "That did not change the limit.": "auth_prompt_limit_unchanged",
-  "You seem committed to this.": "auth_prompt_committed",
-  "All right.": "auth_prompt_all_right",
-  "That was the exception.": "auth_prompt_that_exception",
-  "Seventeen is not sixteen.": "auth_prompt_seventeen",
 };
 
 // Every guest gate needs a real message. Constructing a key from the trigger
@@ -110,7 +96,6 @@ const keys: Partial<Record<string, TranslationKey>> = {
 const nudgeKeys = {
   save: "auth_nudge_save",
   "save-limit": "auth_nudge_save_limit",
-  "step-cap-guest": "auth_nudge_step_cap_guest",
   "patterns-guest": "auth_nudge_patterns_guest",
   "extend-sequence": "auth_nudge_extend_sequence",
   "turn-pattern": "auth_nudge_turn_pattern",
@@ -118,8 +103,6 @@ const nudgeKeys = {
   "duration-pattern": "auth_nudge_duration_pattern",
   "choose-start": "auth_nudge_choose_start",
   "rewind-sequence": "auth_nudge_rewind_sequence",
-  "loop-step-cap-guest": "auth_nudge_loop_step_cap_guest",
-  "setup-step-cap-guest": "auth_nudge_setup_step_cap_guest",
   "sync-library": "auth_nudge_sync_library",
   "community-map": "auth_nudge_community_map",
   export: "auth_nudge_export",

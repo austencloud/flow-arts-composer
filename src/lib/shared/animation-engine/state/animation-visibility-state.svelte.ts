@@ -23,7 +23,6 @@ export interface MotionColorsCache {
 export type TrailVisibility = "off" | "on";
 export type GridMode = "none" | "8point" | "auto";
 export type PlaybackMode = "continuous" | "step";
-export type WordHeaderHighlight = "arrival" | "travel";
 export interface AnimationPathPolicy {
   pathShape: "arc" | "linear" | "concave";
   motionAwarePaths: boolean;
@@ -36,7 +35,6 @@ export interface AnimationVisibilitySettings {
   playbackMode: PlaybackMode;
   speed: number;
   wordHeader: boolean;
-  wordHeaderHighlight: WordHeaderHighlight;
   progressBar: boolean;
   mandala: boolean;
 
@@ -125,7 +123,6 @@ export class AnimationVisibilityStateManager {
       playbackMode: "continuous",
       speed: 1.0,
       wordHeader: true,
-      wordHeaderHighlight: "arrival",
       progressBar: true,
       mandala: true,
 
@@ -191,8 +188,9 @@ export class AnimationVisibilityStateManager {
 
         const defaults = this.getDefaultSettings();
 
-        if (parsed.wordHeaderHighlight !== "travel")
-          parsed.wordHeaderHighlight = "arrival";
+        // Older saves carry the retired word highlight timing; the word now
+        // always lights the move that is playing.
+        delete parsed.wordHeaderHighlight;
         // The joined grid belongs to the sequence now, not to this setting.
         // Older saves carry the retired view switch; drop it.
         delete parsed.gridLayout;
@@ -251,7 +249,6 @@ export class AnimationVisibilityStateManager {
       | "effortPreset"
       | "pathShape"
       | "tipEffortMap"
-      | "wordHeaderHighlight"
     >
   ): boolean {
     return this.settings[key] as boolean;
@@ -277,7 +274,6 @@ export class AnimationVisibilityStateManager {
       | "effortPreset"
       | "pathShape"
       | "tipEffortMap"
-      | "wordHeaderHighlight"
     >,
     visible: boolean
   ): void {
@@ -629,7 +625,6 @@ export class AnimationVisibilityStateManager {
       | "effortPreset"
       | "pathShape"
       | "tipEffortMap"
-      | "wordHeaderHighlight"
     >
   ): void {
     this.setVisibility(key, !(this.settings[key] as boolean));

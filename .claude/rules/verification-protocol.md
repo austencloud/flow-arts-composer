@@ -11,6 +11,9 @@ A completion claim includes evidence matched to the changed risk.
 - Appearance or interaction geometry: direct observation under
   `visual-verification-mandatory.md`; tests alone are insufficient.
 
+A code change runs `npm run test:changed` before `wt:finish`; `wt:finish` then
+runs `check`, `check:tsc`, the spec checks and those related tests itself.
+
 Run broader checks only when the change crosses broad boundaries, a focused
 check fails for a task-related reason, or the final integration gate requires
 them. Once appropriate evidence passes, stop repeating or widening checks

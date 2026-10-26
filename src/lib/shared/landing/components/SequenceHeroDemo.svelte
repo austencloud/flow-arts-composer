@@ -172,7 +172,6 @@
   const heroVisibilityManager = new AnimationVisibilityStateManager({
     ephemeral: true,
   });
-  heroVisibilityManager.updateSettings({ wordHeaderHighlight: "travel" });
   $effect(() => {
     syncHeroElementalGlyphVisibility(heroVisibilityManager, element !== null);
   });

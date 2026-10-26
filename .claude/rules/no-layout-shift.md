@@ -54,6 +54,7 @@ durations or easing curves in feature code. Use `DURATION`, the global
 | Several survivors recomposing across grids, families, or keyed blocks    | `createLayoutMotion()` from `shared/transitions/layout-flip.ts`                                         |
 | Content-driven dialog height changes                                     | `BaseModal` with `animateSize`; `createIntrinsicHeightMotion()` in `shared/transitions/motion.ts`       |
 | Small overlay/control presence that does not reflow siblings             | `flyFade` or `popIn` from `shared/transitions/motion.ts`                                                |
+| A sheet of cards arriving from a landed element                          | `emanate` from `shared/transitions/emanate.ts`; the option sheet after a start placement is the first   |
 | Route/module navigation                                                  | the existing native view-transition/module-transition owner in `src/app.css` and `view-transitions.css` |
 | A sequence edit that changes what a pictograph shows                     | the shared pictograph owner; the join slide (`followJoinSlide` in `shared/grid-join/`) is the first     |
 

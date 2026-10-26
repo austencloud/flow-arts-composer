@@ -1,7 +1,7 @@
 <!--
   A compact presentation of the Shape Matrix turn palette. Callers own the
-  two displayed axes; the Matrix domain remains the source for values, labels,
-  and ratio notation.
+  displayed axes, the two hands and optionally the left hand's beat back; the
+  Matrix domain remains the source for values, labels, and ratio notation.
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
@@ -23,11 +23,15 @@
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import ShapeMatrixValueScroller from "./ShapeMatrixValueScroller.svelte";
 
-  type Hand = "left" | "right";
+  type Hand = "left" | "right" | "left-back";
 
   interface Props {
     leftTurn: TurnValue;
     rightTurn: TurnValue;
+    /** A third axis after the left one, for the turns of the left hand's
+        beat back. It shows only when given, and reports as "left-back". */
+    leftBackTurn?: TurnValue;
+    leftBackLabel?: string;
     labelMode: MatrixLabelMode;
     turnValues?: readonly TurnValue[];
     primaryPropColors?: ViewerCustomColorPair | null;
@@ -44,6 +48,8 @@
   let {
     leftTurn,
     rightTurn,
+    leftBackTurn,
+    leftBackLabel,
     labelMode,
     turnValues = matrixTurnsForLevel(4),
     primaryPropColors = getSettings().primaryPropColors,
@@ -54,33 +60,53 @@
     onlabelmodechange,
   }: Props = $props();
 
-  let leftOpen = $state(false);
-  let rightOpen = $state(false);
+  let openHand = $state<Hand | null>(null);
+  // The beat back belongs to the left hand, so it takes the left prop's
+  // colour and tone.
+  const axes = $derived([
+    {
+      hand: "left" as Hand,
+      side: "left" as const,
+      label: t("shape_engine_left"),
+      turn: leftTurn,
+    },
+    ...(leftBackTurn !== undefined
+      ? [
+          {
+            hand: "left-back" as Hand,
+            side: "left" as const,
+            label: leftBackLabel ?? t("shape_engine_left"),
+            turn: leftBackTurn,
+          },
+        ]
+      : []),
+    {
+      hand: "right" as Hand,
+      side: "right" as const,
+      label: t("shape_engine_right"),
+      turn: rightTurn,
+    },
+  ]);
   const turnKeys = $derived(turnValues.map(turnValueToKey));
   const notationOptions = $derived([
     { value: "turns" as const, label: t("shape_engine_turns"), disabled },
     { value: "ratios" as const, label: t("shape_engine_ratios"), disabled },
   ]);
 
-  function optionsFor(hand: Hand) {
+  function optionsFor(side: "left" | "right") {
     return turnValues.map((turn) => ({
       value: turnValueToKey(turn),
       label: localizedMatrixTurnSpokenLabel(turn, labelMode),
       shortLabel: matrixTurnVisibleLabel(turn, labelMode),
-      tone: hand === "left" ? ("blue" as const) : ("red" as const),
+      tone: side === "left" ? ("blue" as const) : ("red" as const),
       disabled,
     }));
   }
 
   function setOpen(hand: Hand, open: boolean): void {
     if (disabled && open) return;
-    if (hand === "left") {
-      leftOpen = open;
-      if (open) rightOpen = false;
-      return;
-    }
-    rightOpen = open;
-    if (open) leftOpen = false;
+    if (open) openHand = hand;
+    else if (openHand === hand) openHand = null;
   }
 
   function chooseTurn(hand: Hand, value: string): void {
@@ -90,14 +116,14 @@
     );
     if (turn === undefined) return;
     onturn(hand, turn);
-    if (hand === "left") leftOpen = false;
-    else rightOpen = false;
+    if (openHand === hand) openHand = null;
   }
 </script>
 
 <div
   class="turn-controls"
   class:inline={layout === "inline"}
+  class:with-back={leftBackTurn !== undefined}
   aria-label={t("shape_engine_turns_aria")}
 >
   <div class="notation-control">
@@ -113,7 +139,7 @@
     />
   </div>
 
-  {#each [{ hand: "left" as const, label: t("shape_engine_left"), turn: leftTurn }, { hand: "right" as const, label: t("shape_engine_right"), turn: rightTurn }] as axis (axis.hand)}
+  {#each axes as axis (axis.hand)}
     {@const unit =
       labelMode === "ratios" ? t("shape_engine_ratio") : t("shape_engine_turn")}
     {#if layout === "inline"}
@@ -124,7 +150,7 @@
       >
         <span class="hand-label">{axis.label}</span>
         <SegmentedControl
-          options={optionsFor(axis.hand)}
+          options={optionsFor(axis.side)}
           value={turnValueToKey(axis.turn)}
           onchange={(value: string) => chooseTurn(axis.hand, value)}
           columns={inlineColumns}
@@ -140,7 +166,7 @@
       </div>
     {:else}
       <Popover.Root
-        open={axis.hand === "left" ? leftOpen : rightOpen}
+        open={openHand === axis.hand}
         onOpenChange={(open) => setOpen(axis.hand, open)}
       >
         <Popover.Trigger>
@@ -149,8 +175,8 @@
               {...props}
               type="button"
               class="turn-trigger"
-              class:left={axis.hand === "left"}
-              class:right={axis.hand === "right"}
+              class:left={axis.side === "left"}
+              class:right={axis.side === "right"}
               aria-label={t("shape_engine_choose_axis_value", {
                 axis: axis.label,
                 value: localizedMatrixTurnSpokenLabel(axis.turn, labelMode),
@@ -160,7 +186,7 @@
               <span class="hand-label">{axis.label}</span>
               <span
                 class="turn-value"
-                style:color={primaryPropColors?.[axis.hand]}
+                style:color={primaryPropColors?.[axis.side]}
                 >{matrixTurnVisibleLabel(axis.turn, labelMode)}</span
               >
               <i class="fas fa-chevron-down" aria-hidden="true"></i>
@@ -202,7 +228,7 @@
                             ? t("shape_engine_ratio")
                             : t("shape_engine_turn"),
                       })}
-                      options={optionsFor(axis.hand)}
+                      options={optionsFor(axis.side)}
                       keys={turnKeys}
                       value={turnValueToKey(axis.turn)}
                       onchange={(value) => chooseTurn(axis.hand, value)}
@@ -232,6 +258,10 @@
     grid-template-columns: minmax(0, 1.25fr) repeat(2, minmax(6.5rem, 1fr));
     gap: var(--spacing-xs, 4px);
     width: 100%;
+  }
+
+  .turn-controls.with-back:not(.inline) {
+    grid-template-columns: minmax(0, 1.25fr) repeat(3, minmax(6.5rem, 1fr));
   }
 
   .notation-control {
@@ -352,6 +382,10 @@
   @container (max-width: 410px) {
     .turn-controls {
       grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .turn-controls.with-back:not(.inline) {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
     .notation-control {

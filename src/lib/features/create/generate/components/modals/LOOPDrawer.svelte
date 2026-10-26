@@ -11,7 +11,6 @@
   import type { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
   import type { LOOPComponent } from "#lib/features/create/generate/shared/domain/constants/loop-components.js";
   import type { ReflectionAxis } from "@tka/sequence-engine/loop";
-  import type { GuestLoopLockKind } from "#lib/shared/create/services/loop-guest-gate.js";
 
   type RhythmValue = {
     rotationInterval: 2 | 4;
@@ -30,7 +29,7 @@
     rhythm,
     sequenceLength,
     onRhythmChange,
-    guestMaxLength,
+    guestGated,
     onRequestSignup,
   }: {
     isOpen: boolean;
@@ -43,9 +42,9 @@
     rhythm?: RhythmValue;
     sequenceLength?: number;
     onRhythmChange?: (updates: Partial<RhythmValue>) => void;
-    /** Guest gating — step cap + sign-up callback (see LOOPExpandedOverlay). */
-    guestMaxLength?: number;
-    onRequestSignup?: (kind: GuestLoopLockKind) => void;
+    /** Guest gating — LOOP type lock + sign-up callback (see LOOPExpandedOverlay). */
+    guestGated?: boolean;
+    onRequestSignup?: () => void;
   } = $props();
 </script>
 
@@ -71,7 +70,7 @@
           {rhythm}
           {sequenceLength}
           {onRhythmChange}
-          {guestMaxLength}
+          {guestGated}
           {onRequestSignup}
           layout="responsive"
         />

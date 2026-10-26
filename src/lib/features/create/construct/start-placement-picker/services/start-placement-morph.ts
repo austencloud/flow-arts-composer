@@ -65,6 +65,15 @@ function isDrawn(target: HTMLElement): boolean {
   );
 }
 
+/**
+ * The workspace start cell once it exists and has drawn, or null. The option
+ * sheet's `emanate` arrival comes from here: the cell this morph lands on.
+ */
+export function findLandedStartCell(): HTMLElement | null {
+  const target = findTarget();
+  return target && isDrawn(target) ? target : null;
+}
+
 /** Poll interval while waiting: about a frame. */
 const TARGET_POLL_MS = 16;
 

@@ -102,7 +102,10 @@
   } from "#lib/shared/auth/services/post-hog-feature-flag-service.svelte.js";
   import { authDrawerState } from "#lib/shared/auth/state/auth-drawer-state.svelte.js";
   import { appEntryState } from "#lib/shared/onboarding/state/app-entry-state.svelte.js";
-  import { resolveAccessTier } from "#lib/shared/auth/domain/access-tier.js";
+  import {
+    getMaxSteps,
+    resolveAccessTier,
+  } from "#lib/shared/auth/domain/access-tier.js";
   import { isPremiumOrAbove } from "#lib/shared/auth/domain/models/user-role.js";
   import { isTabAccessible } from "#lib/shared/auth/domain/guest-access-config.js";
   import { createMethodNudgeTrigger } from "#lib/shared/auth/domain/auth-nudge-trigger.js";
@@ -277,20 +280,6 @@
       ? navigationState.currentCreateMode
       : null
   );
-  // Only guests get a step-cap ask — straight to the auth screen, whose
-  // contextual copy carries the why; no intermediate nudge (Austen,
-  // 2026-08-10). Logged-in users are hard-capped at 64 with no upsell, so the
-  // cap applies silently. (The paid Scribe tier is shelved until there's a plan.)
-  function showStepCapGate() {
-    if (accessTier === "guest") {
-      authDrawerState.show(
-        "signup",
-        "step-cap-guest",
-        CreateModuleState?.sequenceState.currentSequence?.id,
-        CreateModuleState?.sequenceState.currentSequence
-      );
-    }
-  }
 
   // LOOP completion state
   let showLoopConfirm = $state(false);
@@ -840,15 +829,14 @@
       return false;
     }
 
-    // Enforce tier step cap before adding a new step to the sequence
+    // Enforce the step cap before adding a new step to the sequence. Every
+    // tier shares the 64 ceiling, a hard engine limit, so the refusal is a
+    // neutral note with no account ask.
     const currentSteps =
       CreateModuleState?.sequenceState.getCurrentSteps().length ?? 0;
-    const maxSteps = authDrawerState.guestEncore.maxSteps(
-      accessTier,
-      CreateModuleState?.sequenceState.currentSequence?.id
-    );
+    const maxSteps = getMaxSteps(accessTier);
     if (currentSteps >= maxSteps) {
-      showStepCapGate();
+      toast.info(`Sequences are capped at ${maxSteps} steps.`, 4000);
       return false;
     }
 

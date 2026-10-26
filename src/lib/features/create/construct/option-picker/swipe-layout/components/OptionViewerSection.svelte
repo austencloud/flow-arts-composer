@@ -34,6 +34,11 @@ Renders a section with:
     buildDoubleFloatOptionRows,
     countDoubleFloatPathGroups,
   } from "../../services/double-float-option-groups";
+  import { emanate } from "#lib/shared/transitions/emanate.js";
+  import {
+    optionCardEmanate,
+    tryGetOptionSheetOpeningContext,
+  } from "../../context/option-sheet-opening-context";
 
   // Props - Dark mode is handled via CSS (:root.dark) not prop drilling
   const {
@@ -74,6 +79,8 @@ Renders a section with:
   let hapticService: HapticFeedback | null = null;
   const reversalDetector: ReversalDetector = _reversalDetector;
   const auditionContext = tryGetOptionAuditionContext();
+  // Cards arrive from the landed start cell while the sheet opens.
+  const sheet = tryGetOptionSheetOpeningContext();
 
   onMount(() => {
     hapticService = getHapticFeedback();
@@ -397,6 +404,7 @@ Renders a section with:
           aria-keyshortcuts="Shift+Space"
           title={t("create_ui_tap_to_add_hold_to_preview")}
           {@attach holdToAudition}
+          in:emanate|global={optionCardEmanate(sheet, index)}
         >
           <OptionPictographCell
             pictographData={pictograph as PreparedPictographData}

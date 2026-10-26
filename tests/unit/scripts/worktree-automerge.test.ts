@@ -105,6 +105,15 @@ describe("worktree finish lifecycle", () => {
       }).status
     ).not.toBe(0);
     expect(git(repo, "log", "-1", "--format=%P").split(" ")).toHaveLength(2);
+    // A finish that skipped its gate says so and leaves a trail in the log.
+    expect(result.stdout).toContain("WARNING: --skip-checks");
+    const log = readFileSync(join(repo, ".git", "automerge-log.jsonl"), "utf8")
+      .trim()
+      .split("\n");
+    expect(JSON.parse(log.at(-1)!)).toMatchObject({
+      action: "local-finish-merged",
+      skippedChecks: true,
+    });
   });
 
   function linkPrimaryNodeModules(relativeLinkPath: string) {
@@ -228,63 +237,125 @@ describe("worktree finish lifecycle", () => {
     expect(existsSync(task)).toBe(true);
   });
 
-  it("runs the check command through the platform launcher before merging", () => {
-    commitTaskFile("feature.txt", "checked\n");
+  /**
+   * Put an `npm` on PATH that appends each call's arguments to a log and
+   * exits with `failCodes[script]` (default 0). With `locator`, the task
+   * branch also gets a `scripts/test-changed.mjs` that records its arguments.
+   */
+  function stubGate({
+    failCodes = {},
+    locator = true,
+  }: { failCodes?: Record<string, number>; locator?: boolean } = {}) {
     const bin = join(root, "bin");
-    const marker = join(root, "npm-check-ran.txt");
+    const npmLog = join(root, "npm-calls.txt");
+    const locatorLog = join(root, "locator-args.txt");
     mkdirSync(bin);
     const npmStub = join(bin, process.platform === "win32" ? "npm.cmd" : "npm");
+    const failures = Object.entries(failCodes);
     writeFileSync(
       npmStub,
       process.platform === "win32"
-        ? `@echo off\r\n> "${marker}" echo checked\r\nexit /b 0\r\n`
-        : `#!/bin/sh\nprintf checked > '${marker}'\n`
+        ? [
+            "@echo off",
+            `>> "${npmLog}" echo %*`,
+            ...failures.map(
+              ([name, code]) => `if "%2"=="${name}" exit /b ${code}`
+            ),
+            "exit /b 0",
+            "",
+          ].join("\r\n")
+        : [
+            "#!/bin/sh",
+            `printf '%s\n' "$*" >> '${npmLog}'`,
+            ...failures.map(
+              ([name, code]) => `[ "$2" = "${name}" ] && exit ${code}`
+            ),
+            "exit 0",
+            "",
+          ].join("\n")
     );
     if (process.platform !== "win32") chmodSync(npmStub, 0o755);
+    if (locator) {
+      commitTaskFile(
+        "scripts/test-changed.mjs",
+        `import { writeFileSync } from "node:fs";\n` +
+          `writeFileSync(${JSON.stringify(locatorLog)}, process.argv.slice(2).join(" "));\n`
+      );
+    }
+    return {
+      env: { ...process.env, PATH: `${bin}${delimiter}${process.env.PATH}` },
+      npmCalls: () =>
+        existsSync(npmLog)
+          ? readFileSync(npmLog, "utf8")
+              .trim()
+              .split(/\r?\n/)
+              .map((line) => line.trim())
+          : [],
+      locatorArgs: () =>
+        existsSync(locatorLog) ? readFileSync(locatorLog, "utf8") : null,
+    };
+  }
 
-    const result = spawnSync(
+  function finishWithGate(env: NodeJS.ProcessEnv) {
+    return spawnSync(
       process.execPath,
       [SCRIPT, "--finish", BRANCH, "--nonvisual"],
-      {
-        cwd: repo,
-        encoding: "utf8",
-        env: { ...process.env, PATH: `${bin}${delimiter}${process.env.PATH}` },
-      }
+      { cwd: repo, encoding: "utf8", env }
     );
+  }
+
+  it("runs every gate step through the platform launcher before merging", () => {
+    commitTaskFile("feature.txt", "checked\n");
+    const gate = stubGate();
+    const mainBefore = git(repo, "rev-parse", "HEAD");
+
+    const result = finishWithGate(gate.env);
 
     expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
-    expect(readFileSync(marker, "utf8").trim()).toBe("checked");
+    expect(gate.npmCalls()).toEqual([
+      "run check",
+      "run check:tsc",
+      "run specs:check",
+      "run specs:test",
+    ]);
+    expect(gate.locatorArgs()).toBe(`--base ${mainBefore} --committed-only`);
+    expect(result.stdout).toMatch(/gate: test-changed passed in \d+\.\d s/);
     expect(readFileSync(join(repo, "feature.txt"), "utf8")).toBe("checked\n");
     expect(existsSync(task)).toBe(false);
   });
 
-  it("skips the Svelte check for documentation-only branches", () => {
-    commitTaskFile("docs/agent-contract.md", "documented\n");
-    const bin = join(root, "bin");
-    mkdirSync(bin);
-    const npmStub = join(bin, process.platform === "win32" ? "npm.cmd" : "npm");
-    writeFileSync(
-      npmStub,
-      process.platform === "win32"
-        ? "@echo off\r\nexit /b 23\r\n"
-        : "#!/bin/sh\nexit 23\n"
-    );
-    if (process.platform !== "win32") chmodSync(npmStub, 0o755);
+  it("stops before merging when a gate step fails", () => {
+    commitTaskFile("feature.txt", "unchecked\n");
+    const gate = stubGate({ failCodes: { "check:tsc": 2 } });
+    const mainBefore = git(repo, "rev-parse", "HEAD");
 
-    const result = spawnSync(
-      process.execPath,
-      [SCRIPT, "--finish", BRANCH, "--nonvisual"],
-      {
-        cwd: repo,
-        encoding: "utf8",
-        env: { ...process.env, PATH: `${bin}${delimiter}${process.env.PATH}` },
-      }
-    );
+    const result = finishWithGate(gate.env);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("gate step failed: npm run check:tsc");
+    expect(gate.npmCalls()).toEqual(["run check", "run check:tsc"]);
+    expect(gate.locatorArgs()).toBeNull();
+    expect(git(repo, "rev-parse", "HEAD")).toBe(mainBefore);
+    expect(existsSync(task)).toBe(true);
+  });
+
+  it("runs only the spec checks for documentation-only branches", () => {
+    commitTaskFile("docs/agent-contract.md", "documented\n");
+    // `check` and `check:tsc` would fail, so reaching the merge proves they
+    // were skipped; the spec checks still run, since a spec without
+    // frontmatter is a documentation-only change.
+    const gate = stubGate({
+      failCodes: { check: 23, "check:tsc": 23 },
+      locator: false,
+    });
+
+    const result = finishWithGate(gate.env);
 
     expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
     expect(result.stdout).toContain(
       "skipping `npm run check` for documentation-only changes"
     );
+    expect(gate.npmCalls()).toEqual(["run specs:check", "run specs:test"]);
     expect(readFileSync(join(repo, "docs/agent-contract.md"), "utf8")).toBe(
       "documented\n"
     );

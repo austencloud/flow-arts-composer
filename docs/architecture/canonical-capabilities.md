@@ -359,8 +359,16 @@ start cell inside the update), and the flight is re-keyed as translate plus
 scale so the option picker's mount doesn't stall it mid-air. Layouts that size
 themselves from a ResizeObserver read `isStartPlacementMorphCapturing()` and
 measure synchronously, since no observer fires while the update is pending.
+The second half of that beat is `emanate` (`shared/transitions/emanate.ts`):
+when the option sheet first paints, the bar and section headers `flyFade` in
+and every card fades up while gliding outward from the landed start cell,
+nearest first, finished about 610 ms after the sheet's first paint. The origin
+comes from `findLandedStartCell()` in the morph seam, and
+`OptionPickerContent.svelte` provides the `optionSheetOpening` context
+(`option-picker/context/option-sheet-opening-context.ts`) so cards mounting
+after that window take the plain `arrive`. Opacity and transform only.
 Searches: start placement morph, start card flight, start position into
-workspace.
+workspace, option sheet arrival, emanate, options ripple from start.
 
 Shared-surface stacking extends `reparentToInspector`: control flights use the
 controls layer and may wait for the canvas to dock, using viewer-local

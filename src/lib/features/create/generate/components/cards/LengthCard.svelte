@@ -25,7 +25,6 @@ In spell mode, shows bridge count as subtitle and allows upward adjustment.
     stepOverride,
     clampToMax = true,
     onLengthChange,
-    onStepCapExceeded,
     subtitle = "",
     color = "radial-gradient(ellipse at top left, var(--card-blue, #3b82f6) 0%, var(--card-blue, #3b82f6) 40%, var(--card-blue-end, #1d4ed8) 100%)",
     shadowColor = "220deg 80% 55%",
@@ -44,12 +43,11 @@ In spell mode, shows bridge count as subtitle and allows upward adjustment.
     /**
      * Whether an over-cap length can be corrected by pushing a clamped value
      * back. False when `currentLength` is derived from something the callback
-     * can't shrink (spell mode's word length) — those hosts get
-     * `onStepCapExceeded` instead.
+     * can't shrink (spell mode's word length); the cap is then enforced by the
+     * stepper's + button and the post-build cap in generate-actions.
      */
     clampToMax?: boolean;
     onLengthChange: (length: number) => void;
-    onStepCapExceeded?: () => void;
     subtitle?: string;
     color?: string;
     shadowColor?: string;
@@ -71,9 +69,9 @@ In spell mode, shows bridge count as subtitle and allows upward adjustment.
   const MIN_LENGTH = $derived(minOverride ?? (loopEnabled ? 4 : 4));
   const STEP = $derived(stepOverride ?? (loopEnabled ? 2 : 1));
 
-  // Clamp the displayed length to the tier cap. If the stored config has a
-  // value above the tier limit (e.g., default 16 for a guest with cap 8),
-  // push the clamped value back to the parent.
+  // Clamp the displayed length to the 64-step cap. If the stored config has a
+  // value above it (e.g., an old session or a spelled word), push the clamped
+  // value back to the parent.
   //
   // Only the parent that owns `length` outright can honor this. In spell mode
   // `currentLength` is derived from the typed word, so a clamp pushed back
@@ -95,10 +93,7 @@ In spell mode, shows bridge count as subtitle and allows upward adjustment.
 
   function handleIncrement() {
     if (locked) return;
-    if (currentLength >= MAX_LENGTH) {
-      onStepCapExceeded?.();
-      return;
-    }
+    if (currentLength >= MAX_LENGTH) return;
     const newLength = Math.min(currentLength + STEP, MAX_LENGTH);
     onLengthChange(newLength);
   }
@@ -121,7 +116,6 @@ In spell mode, shows bridge count as subtitle and allows upward adjustment.
   maxValue={MAX_LENGTH}
   onIncrement={handleIncrement}
   onDecrement={handleDecrement}
-  onIncrementBlocked={onStepCapExceeded}
   {formatValue}
   {subtitle}
   {color}

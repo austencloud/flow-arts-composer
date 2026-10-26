@@ -657,8 +657,6 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
         showElementalGlyph,
         showStepNumbers,
         showWordHeader,
-        wordHeaderHighlight:
-          visibilityManager.getSettings().wordHeaderHighlight,
         showProgressBar,
         isDarkMode,
         isCompositeMode: !!isCompositeMode,

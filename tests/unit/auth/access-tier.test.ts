@@ -17,13 +17,15 @@ describe("resolveAccessTier", () => {
   it("full premium → premium", () => {
     expect(resolveAccessTier(true, false, true)).toBe("premium");
   });
-  it("guest cap stays 8 for anonymous", () => {
-    expect(getMaxSteps(resolveAccessTier(true, true, false))).toBe(8);
+  it("anonymous guests build to the same 64-step ceiling", () => {
+    expect(getMaxSteps(resolveAccessTier(true, true, false))).toBe(64);
   });
 });
 
 describe("getMaxSteps", () => {
-  it("guest cap is 8", () => expect(getMaxSteps("guest")).toBe(8));
+  it("guest cap is 64", () => expect(getMaxSteps("guest")).toBe(64));
+  it("guests share the account ceiling", () =>
+    expect(getMaxSteps("guest")).toBe(getMaxSteps("user")));
   it("user cap is 64", () => expect(getMaxSteps("user")).toBe(64));
   it("premium cap is 64", () => expect(getMaxSteps("premium")).toBe(64));
 });

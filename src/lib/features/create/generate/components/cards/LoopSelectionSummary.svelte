@@ -45,20 +45,9 @@
       : gate.reason;
   });
 
-  const guestReason = $derived.by(() => {
-    if (!props.guestLock.locked) return "";
-    if (props.guestLock.kind === "category")
-      return t("create_deep_loop_guest_category");
-    const match = props.guestLock.reason.match(
-      /at least (\d+) steps\. Guests cap at (\d+)/
-    );
-    return match?.[1] !== undefined && match[2] !== undefined
-      ? t("create_deep_loop_guest_length", {
-          minimum: match[1],
-          maximum: match[2],
-        })
-      : props.guestLock.reason;
-  });
+  const guestReason = $derived(
+    props.guestLock.locked ? t("create_deep_loop_guest_category") : ""
+  );
 </script>
 
 <div

@@ -23,7 +23,10 @@
     trackAuthModalAbandoned,
     trackAuthSurfaceOpened,
   } from "#lib/shared/analytics/auth-events.js";
-  import { clearAuthSubmissionBridge } from "#lib/shared/auth/services/auth-analytics-bridge.js";
+  import {
+    clearAuthSubmissionBridge,
+    settleAuthSubmissionCompleted,
+  } from "#lib/shared/auth/services/auth-analytics-bridge.js";
   import { authState } from "../../auth/state/auth-state.svelte";
   import { inboxState } from "../../inbox/state/inbox-state.svelte";
   import { userPreviewState } from "../../debug/state/user-preview-state.svelte";
@@ -165,7 +168,9 @@
 
   $effect(() => {
     if (authView && isFullAccount) {
-      clearAuthSubmissionBridge();
+      // The account can appear before the sign-in form's provider promise
+      // resolves; settling counts the completion so the funnel keeps it.
+      settleAuthSubmissionCompleted();
       authView = false;
       void focusAccountRow();
     }

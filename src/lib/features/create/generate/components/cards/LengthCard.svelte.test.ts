@@ -15,37 +15,33 @@ import LengthCardClampHarness from "./__tests__/LengthCardClampHarness.svelte";
  * read as "the app crashed the instant I typed my name", and it repeated on
  * every panel open because the word is persisted to localStorage.
  *
- * Guest cap is 8 steps and the default generator config is a rotated+quartered
- * LOOP (x4), so any 3-letter word cleared the cap.
+ * The cap is 64 steps for every tier, and the default generator config is a
+ * rotated+quartered LOOP (x4), so any word past 16 letters clears it.
  */
 const flush = () => new Promise((resolve) => setTimeout(resolve, 250));
 
 describe("LengthCard tier-cap clamp", () => {
   it("stays inert when it cannot clamp, rather than looping (spell mode)", async () => {
     const onCall = vi.fn();
-    const onCapExceeded = vi.fn();
 
     render(LengthCardClampHarness, {
-      naturalDisplayLength: 24, // 6-letter word x4 LOOP multiplier
-      maxOverride: 8, // guest cap
+      naturalDisplayLength: 80, // 20-letter word x4 LOOP multiplier
+      maxOverride: 64, // step cap
       clampToMax: false,
       onCall,
-      onCapExceeded,
     });
 
     await flush();
 
     expect(onCall).not.toHaveBeenCalled();
-    // No auto-fired sign-up nudge just for opening the panel with a long word.
-    expect(onCapExceeded).not.toHaveBeenCalled();
   });
 
   it("does not loop when a churning parent cannot honor the clamp", async () => {
     const onCall = vi.fn();
 
     render(LengthCardClampHarness, {
-      naturalDisplayLength: 24,
-      maxOverride: 8,
+      naturalDisplayLength: 80,
+      maxOverride: 64,
       clampToMax: true, // parent claims it can clamp, but never lowers the value
       onCall,
     });
@@ -59,19 +55,19 @@ describe("LengthCard tier-cap clamp", () => {
   it("still clamps once when the parent CAN honor it (freeform)", async () => {
     const onLengthChange = vi.fn();
     const props = {
-      currentLength: 16,
+      currentLength: 80,
       currentMode: GenerationMode.FREEFORM,
-      maxOverride: 8,
+      maxOverride: 64,
       onLengthChange,
     };
 
     const screen = render(LengthCard, props);
     await flush();
-    expect(onLengthChange).toHaveBeenCalledWith(8);
+    expect(onLengthChange).toHaveBeenCalledWith(64);
 
     // Parent applies it; the clamp must go quiet rather than re-firing.
     onLengthChange.mockClear();
-    await screen.rerender({ ...props, currentLength: 8 });
+    await screen.rerender({ ...props, currentLength: 64 });
     await flush();
     expect(onLengthChange).not.toHaveBeenCalled();
   });

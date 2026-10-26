@@ -26,6 +26,7 @@
   import { dev } from "$app/env";
   import UnderConstruction from "#lib/shared/landing/components/UnderConstruction.svelte";
   import GuideShell from "../_components/GuideShell.svelte";
+  import Sentences from "../_components/Sentences.svelte";
   import GuideSeo from "../level-1/_components/GuideSeo.svelte";
   import SequenceShowcase from "../level-1/_components/SequenceShowcase.svelte";
   import { stripToSequence } from "../level-1/_data/guide-sequence-adapter";
@@ -113,11 +114,17 @@
   let rightMotion = $state<Motion>("anti");
   let leftTurn = $state<TurnValue>(1);
   let rightTurn = $state<TurnValue>(1);
+  // The turns of the left hand's beat back; null plays the chart's value.
+  let leftBack = $state<TurnValue | null>(null);
+  // Gage's chart doubles back with no turns after anti and one after pro,
+  // which keeps the prop turning the same way.
+  const chartBack = (motion: Motion): TurnValue => (motion === "anti" ? 0 : 1);
   let labelMode = $state<MatrixLabelMode>("turns");
   const TURN_VALUES = turnValuesForLevel(4);
   const leftSpin = $derived<CapHandSpin>({
     motion: leftMotion,
     turns: leftTurn,
+    back: leftBack ?? chartBack(leftMotion),
   });
   const rightSpin = $derived<CapHandSpin>({
     motion: rightMotion,
@@ -157,15 +164,27 @@
       tone: side === "left" ? ("blue" as const) : ("red" as const),
     }));
   // Named as the turn picker names its values: turns, or VTG ratios.
-  const spinLabel = (spin: CapHandSpin, side: "left" | "right") =>
-    spin.turns === "fl"
+  const runLabel = (motion: Motion, turns: TurnValue) =>
+    turns === "fl"
       ? t("shape_engine_float")
       : t("guide_eightstep_spin_label", {
-          motion: motionName(spin.motion, side),
+          motion: t(MOTION_LABEL[motion]),
           value:
             labelMode === "ratios"
-              ? ratioLabel(spin.turns)
-              : localizedMatrixTurnSpokenLabel(spin.turns, "turns"),
+              ? ratioLabel(turns)
+              : localizedMatrixTurnSpokenLabel(turns, "turns"),
+        });
+  const FLIP: Record<Motion, Motion> = { anti: "pro", pro: "anti" };
+  // The left hand names both runs with their turns: on, then back.
+  const spinLabel = (spin: CapHandSpin, side: "left" | "right") =>
+    side === "right"
+      ? runLabel(spin.motion, spin.turns)
+      : t("guide_eightstep_spin_label_back", {
+          on: runLabel(spin.motion, spin.turns),
+          back: runLabel(
+            FLIP[spin.motion],
+            spin.back ?? chartBack(spin.motion)
+          ),
         });
 
   // The CAP id names the sequence, so the player reloads on every new pick
@@ -206,7 +225,8 @@
 
   // The spin player shows both element glyphs where the app always puts
   // them: the hands' at the bottom right, changing with the path's rhythm,
-  // and the props' at the top right, which holds one element the whole way.
+  // and the props' at the top right, which follows beat by beat too. The
+  // props' opening beats name the CAP.
   const sharedVisibility = getAnimationVisibilityManager();
   const spinVisibility = new AnimationVisibilityStateManager({
     ephemeral: true,
@@ -218,7 +238,7 @@
   });
   spinVisibility.setMotionPolicySource(sharedVisibility);
 
-  // The props' one timing and direction names the CAP alongside its path.
+  // The props' opening timing and direction name the CAP alongside its path.
   const PROP_TIMING: Record<
     NonNullable<PropRelationship["timing"]>,
     Parameters<typeof t>[0]
@@ -333,7 +353,12 @@
           (p) => p.timing === timing && p.direction === direction
         );
         const entries = pairsFromPick.flatMap(([lm, rm]) => {
-          const left = { motion: lm, turns: leftTurn };
+          const left = {
+            motion: lm,
+            turns: leftTurn,
+            back:
+              lm === leftMotion ? (leftBack ?? chartBack(lm)) : chartBack(lm),
+          };
           const right = { motion: rm, turns: rightTurn };
           return paths.map((path) => ({
             path,
@@ -446,7 +471,47 @@
         </div>
       </section>
 
-      <div class="spin-demo">
+      <section class="spin-demo" aria-labelledby="spins-heading">
+        <div class="spin-intro">
+          <h2 id="spins-heading">{t("guide_eightstep_spins_title")}</h2>
+          <p><Sentences text={t("guide_eightstep_spins_body")} /></p>
+        </div>
+        <div class="picker path-row">
+          <span class="picker-label" id="path-picker-label"
+            >{t("guide_eightstep_path")}</span
+          >
+          <div class="path-picker">
+            <SegmentedControl
+              options={PATH_OPTIONS}
+              value={String(pathColumn)}
+              onchange={(v) => (pathColumn = Number(v))}
+              ariaLabelledby="path-picker-label"
+              semantics="radiogroup"
+              density="compact"
+              columns={4}
+            >
+              {#snippet optionContent(value)}
+                {@const path = CAP_HAND_PATHS[Number(value) - 1]!}
+                <span class="path-option">
+                  <span class="path-number">{value}</span>
+                  <span class="rhythm">
+                    {#each capPathRhythm(path) as half, h (h)}
+                      <span class="half">
+                        {#each half as el, i (i)}
+                          <img
+                            class="element"
+                            src={getElementImagePath(el)}
+                            alt=""
+                          />
+                        {/each}
+                      </span>
+                    {/each}
+                  </span>
+                </span>
+              {/snippet}
+            </SegmentedControl>
+          </div>
+        </div>
         <SequenceShowcase
           sequence={spinExample.sequence}
           items={spinExample.items}
@@ -458,45 +523,7 @@
           {picTheme}
         >
           {#snippet text()}
-            <h2>{t("guide_eightstep_spins_title")}</h2>
-            <p>{t("guide_eightstep_spins_body")}</p>
             <div class="pickers">
-              <div class="picker">
-                <span class="picker-label" id="path-picker-label"
-                  >{t("guide_eightstep_path")}</span
-                >
-                <div class="path-picker">
-                  <SegmentedControl
-                    options={PATH_OPTIONS}
-                    value={String(pathColumn)}
-                    onchange={(v) => (pathColumn = Number(v))}
-                    ariaLabelledby="path-picker-label"
-                    semantics="radiogroup"
-                    density="compact"
-                    columns={4}
-                  >
-                    {#snippet optionContent(value)}
-                      {@const path = CAP_HAND_PATHS[Number(value) - 1]!}
-                      <span class="path-option">
-                        <span class="path-number">{value}</span>
-                        <span class="rhythm">
-                          {#each capPathRhythm(path) as half, h (h)}
-                            <span class="half">
-                              {#each half as el, i (i)}
-                                <img
-                                  class="element"
-                                  src={getElementImagePath(el)}
-                                  alt=""
-                                />
-                              {/each}
-                            </span>
-                          {/each}
-                        </span>
-                      </span>
-                    {/snippet}
-                  </SegmentedControl>
-                </div>
-              </div>
               <div class="picker">
                 <span class="picker-label">{t("guide_eightstep_prop")}</span>
                 <PropChoiceRow
@@ -516,7 +543,12 @@
                     <SegmentedControl
                       options={motionOptions("left")}
                       value={leftMotion}
-                      onchange={(motion) => (leftMotion = motion)}
+                      onchange={(motion) => {
+                        // A new motion has its own chart row, so the beat
+                        // back goes back to that row's value.
+                        leftMotion = motion;
+                        leftBack = null;
+                      }}
                       ariaLabelledby="motion-left-label"
                       semantics="radiogroup"
                       color="blue"
@@ -542,10 +574,15 @@
                 <TurnNotationControls
                   {leftTurn}
                   {rightTurn}
+                  leftBackTurn={leftBack ?? chartBack(leftMotion)}
+                  leftBackLabel={t("guide_eightstep_turns_back")}
                   {labelMode}
                   turnValues={TURN_VALUES}
-                  onturn={(hand, turn) =>
-                    hand === "left" ? (leftTurn = turn) : (rightTurn = turn)}
+                  onturn={(hand, turn) => {
+                    if (hand === "left") leftTurn = turn;
+                    else if (hand === "left-back") leftBack = turn;
+                    else rightTurn = turn;
+                  }}
                   onlabelmodechange={(mode) => (labelMode = mode)}
                 />
               </div>
@@ -578,7 +615,7 @@
             </div>
           {/snippet}
         </SequenceShowcase>
-      </div>
+      </section>
 
       <section class="paths" aria-labelledby="paths-heading">
         <div class="paths-intro">
@@ -671,6 +708,7 @@
     margin: 0;
   }
   .intro,
+  .spin-intro,
   .paths-intro,
   .credit,
   .hands {
@@ -705,24 +743,67 @@
     }
   }
 
-  /* As wide as the hand tiles above it, so the text column ends with its
-     pickers instead of running on into empty space. */
+  /* As wide as the hand tiles above it. The intro and the hand-path row run
+     the full width; then the player sits beside only the controls that
+     change it. */
   .spin-demo {
     width: 100%;
     max-width: var(--demo-width);
     margin-inline: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg, 20px);
   }
-  /* The spin canvas is the section's picture: larger than the guide's usual
-     feature canvas, so it carries the column its pickers fill. */
+  /* Its own container, so the path columns follow the row's width. */
+  .path-row {
+    container-type: inline-size;
+  }
+  /* Player left, top-aligned with its controls. The player takes its 480px
+     top wherever it has a column; the stack threshold below guarantees the
+     column has room, so the two columns stand about level (480 against
+     505-511). */
+  .spin-demo :global(.banner) {
+    align-items: flex-start;
+  }
   .spin-demo :global(.banner > .canvas-box) {
-    flex-basis: clamp(230px, 34cqw, 420px);
+    flex-basis: 480px;
   }
-  /* The spin section's text column holds the pickers, left-aligned. */
+  /* Under 1150px the controls would not fit beside the full player (the two
+     hand toggles need 646px side by side), so the section stacks: the player
+     first and centred at up to 480px, the controls full width beneath. */
+  @container (max-width: 1149.98px) {
+    .spin-demo :global(.banner) {
+      flex-direction: column-reverse;
+      align-items: stretch;
+    }
+    .spin-demo :global(.banner > .canvas-box) {
+      flex: none;
+      width: min(100%, 480px);
+      margin-inline: auto;
+    }
+  }
+  /* A phone on its side keeps two columns with a smaller player, so the
+     picture and its controls share the short screen. */
+  @media (orientation: landscape) and (max-height: 500px) {
+    @container (min-width: 600px) {
+      .spin-demo :global(.banner) {
+        flex-direction: row-reverse;
+        align-items: flex-start;
+      }
+      .spin-demo :global(.banner > .canvas-box) {
+        flex: 0 0 clamp(240px, 34cqw, 300px);
+        width: auto;
+        margin-inline: 0;
+      }
+    }
+  }
+  /* The controls beside the player. Every row fills this column, so all
+     of them end on the right edge the hand-path row reaches, at every
+     width. */
   .pickers {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-md, 12px);
-    margin-top: var(--spacing-sm, 8px);
     container-type: inline-size;
   }
   .picker {
@@ -735,14 +816,16 @@
     font-weight: 600;
     color: var(--theme-text-muted);
   }
-  /* Eight props in whole rows: one row of eight, two of four, four of two. */
+  /* Eight props in whole rows that fill the column: two of four, one of
+     eight once the column has 900px (4K), four of two on a narrow phone.
+     The switch to eight keeps a tile under about 220px wide. */
   .picker :global(.prop-grid) {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 104px));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
-  @container (min-width: 780px) {
+  @container (min-width: 900px) {
     .picker :global(.prop-grid) {
-      grid-template-columns: repeat(8, minmax(0, 104px));
+      grid-template-columns: repeat(8, minmax(0, 1fr));
     }
   }
   @container (max-width: 300px) {
@@ -753,15 +836,28 @@
   .picker :global(.prop-option) {
     max-width: none;
   }
-  /* Eight paths in whole rows: two of four with room, four of two on a
-     phone, where four across would push the rhythms into each other. The
-     data-grid match outranks the control's own column rule. */
+  /* Four tiles across a phone: a slimmer side padding leaves the longest
+     prop name its width. */
+  @container (max-width: 400px) {
+    .picker :global(.prop-option) {
+      padding-inline: 4px;
+    }
+  }
+  /* Eight paths in whole rows: one of eight on a laptop, two of four on a
+     tablet, four of two on a phone, where four across would push the
+     rhythms into each other. The data-grid match outranks the control's own
+     column rule. */
   .path-picker :global(.ui-segments[data-grid]) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  @container (min-width: 520px) {
+  @container (min-width: 600px) {
     .path-picker :global(.ui-segments[data-grid]) {
       grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+  @container (min-width: 1100px) {
+    .path-picker :global(.ui-segments[data-grid]) {
+      grid-template-columns: repeat(8, minmax(0, 1fr));
     }
   }
   /* The props' element and what it means, under the pickers. */
@@ -799,19 +895,27 @@
     width: 1.25rem;
     height: 1.25rem;
   }
-  /* Each hand's two motions sit side by side, labelled by hand. */
+  /* Each hand's toggle takes half the row and grows to it, labelled by
+     hand; one toggle per row where two halves would crowd their words. */
   .hand-motions {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--spacing-sm, 8px) var(--spacing-lg, 24px);
+  }
+  @container (max-width: 599.98px) {
+    .hand-motions {
+      grid-template-columns: minmax(0, 1fr);
+    }
   }
   .hand-motion {
     display: flex;
     align-items: center;
     gap: var(--spacing-sm, 8px);
+    min-width: 0;
   }
   .hand-motion :global(.segmented-control) {
-    width: 12rem;
+    flex: 1 1 0;
+    min-width: 0;
   }
   /* One width for both labels, so the two toggles line up when stacked. */
   .hand-label {
@@ -828,23 +932,6 @@
     font-size: 0.9375rem;
     font-weight: 600;
     color: var(--theme-text);
-  }
-  /* Stacked on a phone, the showcase puts its whole text column above the
-     canvas, which would leave the picture a screen below the pickers that
-     change it. Unwrap the text column so the canvas sits between the heading
-     and the pickers. */
-  @container (max-width: 600px) {
-    .spin-demo :global(.banner-text) {
-      display: contents;
-    }
-    .spin-demo :global(.banner > .canvas-box) {
-      order: 1;
-    }
-    .spin-demo .pickers,
-    .spin-demo .poi-note,
-    .spin-demo .chip {
-      order: 2;
-    }
   }
 
   .paths {

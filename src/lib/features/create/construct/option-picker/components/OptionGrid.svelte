@@ -18,6 +18,11 @@ Computes reversal indicators for options based on current sequence.
   import OptionCard from "./OptionCard.svelte";
   import DoubleFloatOptionRows from "./DoubleFloatOptionRows.svelte";
   import { buildDoubleFloatOptionRows } from "../services/double-float-option-groups";
+  import { emanate } from "#lib/shared/transitions/emanate.js";
+  import {
+    optionCardEmanate,
+    tryGetOptionSheetOpeningContext,
+  } from "../context/option-sheet-opening-context";
 
   interface Props {
     options: PictographData[];
@@ -48,6 +53,8 @@ Computes reversal indicators for options based on current sequence.
 
   // Get reversal detection service
   const ReversalDetector = reversalDetector;
+  // Cards arrive from the landed start cell while the sheet opens.
+  const sheet = tryGetOptionSheetOpeningContext();
 
   // Reversal dots describe how each option relates to the sequence the option
   // SET was generated for.
@@ -104,7 +111,10 @@ Computes reversal indicators for options based on current sequence.
     style:grid-template-columns="repeat({effectiveColumns}, {cardSize}px)"
   >
     {#each optionsWithReversals() as option, index (index)}
-      <div class="option-card-wrapper">
+      <div
+        class="option-card-wrapper"
+        in:emanate|global={optionCardEmanate(sheet, index)}
+      >
         <OptionCard
           pictograph={option as PreparedPictographData}
           size={cardSize}

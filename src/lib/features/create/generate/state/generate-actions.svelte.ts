@@ -40,17 +40,13 @@ import {
   periodToNumber,
 } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 import { loopViabilityService } from "#lib/features/create/generate/shared/services/loop-viability-service.js";
-import {
-  guestLoopGate,
-  type GuestLoopLockKind,
-} from "#lib/shared/create/services/loop-guest-gate.js";
+import { guestLoopGate } from "#lib/shared/create/services/loop-guest-gate.js";
 import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   resolveAccessTier,
   getMaxSteps,
 } from "#lib/shared/auth/domain/access-tier.js";
 import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
-import { AUTH_NUDGE_TEXTS } from "#lib/shared/auth/domain/auth-nudge-trigger.js";
 import {
   showToast,
   toast,
@@ -138,7 +134,7 @@ export function createGenerationActionsState(
   getConfig?: () => UIGenerationConfig | undefined,
   getSpellState?: () => SpellModeState | undefined,
   pushUndoSnapshot?: (type: UndoOperationType, metadata?: UndoMetadata) => void,
-  onGuestLoopLocked?: (kind: GuestLoopLockKind) => void,
+  onGuestLoopLocked?: () => void,
   getAnimationTarget?: () => GenerationAnimationTarget | null | undefined
 ) {
   let isGenerating = $state(false);
@@ -191,10 +187,8 @@ export function createGenerationActionsState(
 
       // Guest LOOP safety net: the selector gates most configs up front, but a
       // locked config can still reach Generate — a signed-in session's loopType
-      // persisted in localStorage outlives sign-out, and a guest can push a
-      // rotated LOOP past their step cap by switching Period to Quartered.
-      // Open the same contextual auth screen the selector uses instead of a
-      // button-less toast or a raw engine error.
+      // persisted in localStorage outlives sign-out. Open the same contextual
+      // auth screen the selector uses instead of a button-less toast.
       if (options.loopType && options.mode === GenerationMode.CIRCULAR) {
         const guestTier = resolveAccessTier(
           authState.isAuthenticated,
@@ -202,14 +196,10 @@ export function createGenerationActionsState(
           isPremiumOrAbove(authState.role)
         );
         if (guestTier === "guest") {
-          const lock = guestLoopGate(
-            options.loopType,
-            options.loopSpecWire ?? null,
-            getMaxSteps("guest")
-          );
+          const lock = guestLoopGate(options.loopType);
           if (lock.locked) {
             if (onGuestLoopLocked) {
-              onGuestLoopLocked(lock.kind);
+              onGuestLoopLocked();
             } else {
               toast.info(lock.reason, 6000);
             }
@@ -254,8 +244,8 @@ export function createGenerationActionsState(
         }
       }
 
-      // Enforce tier step cap post-generation - handles words with bridge letters
-      // that push the sequence beyond what the user's tier allows.
+      // Enforce the 64-step engine ceiling post-generation - handles words
+      // with bridge letters that push the sequence past it.
       const tier = resolveAccessTier(
         authState.isAuthenticated,
         authState.isAnonymous,
@@ -267,16 +257,9 @@ export function createGenerationActionsState(
           ...generatedSequence,
           steps: generatedSequence.steps.slice(0, maxSteps),
         };
-        // Truncation lost steps the user's word implied. Guests get a
-        // free-account nudge for the full 64-step cap; signed-in users are
-        // already at the 64 ceiling, so it's a neutral note with no upsell.
-        if (tier === "guest") {
-          // Centralized copy (auth-nudge-trigger.ts) - same wording as the
-          // step-cap nudge shown elsewhere, not a local duplicate.
-          toast.info(AUTH_NUDGE_TEXTS["step-cap-guest"], 5000);
-        } else {
-          toast.info("Capped to 64 steps.", 5000);
-        }
+        // Truncation lost steps the user's word implied. Every tier shares
+        // the 64 ceiling, so it's a neutral note with no upsell.
+        toast.info("Capped to 64 steps.", 5000);
       }
 
       // Snapshot current state before replacing so the user can undo back to it
@@ -546,8 +529,8 @@ export function createGenerationActionsState(
         }
       }
 
-      // Enforce tier step cap post-generation - spell sequences with bridge letters
-      // can exceed the user's allowed length.
+      // Enforce the 64-step engine ceiling post-generation - spell sequences
+      // with bridge letters can exceed it.
       const spellTier = resolveAccessTier(
         authState.isAuthenticated,
         authState.isAnonymous,
@@ -559,17 +542,10 @@ export function createGenerationActionsState(
           ...loopedSequence,
           steps: loopedSequence.steps.slice(0, spellMaxSteps),
         };
-        // Truncation lost steps the spelled word implied. Guests get a
-        // free-account nudge for the full 64-step cap; signed-in users are
-        // already at the 64 ceiling, so it's a neutral note with no upsell.
-        // Mirrors the identical block in onGenerateClicked above.
-        if (spellTier === "guest") {
-          // Centralized copy (auth-nudge-trigger.ts) - same wording as the
-          // step-cap nudge shown elsewhere, not a local duplicate.
-          toast.info(AUTH_NUDGE_TEXTS["step-cap-guest"], 5000);
-        } else {
-          toast.info("Capped to 64 steps.", 5000);
-        }
+        // Truncation lost steps the spelled word implied. Every tier shares
+        // the 64 ceiling, so it's a neutral note with no upsell. Mirrors the
+        // identical block in onGenerateClicked above.
+        toast.info("Capped to 64 steps.", 5000);
       }
 
       // Snapshot current state before replacing so the user can undo back to it

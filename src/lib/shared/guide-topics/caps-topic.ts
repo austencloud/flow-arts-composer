@@ -91,12 +91,18 @@ export interface CapHand {
   spins: readonly CapSpin[];
   /**
    * One turn value for the hand's own spin, the one it sets off with, in
-   * place of that spin's own turns. The circling hand keeps its spin, so it
-   * takes the turns on every beat. The capping hand's beat back keeps the
-   * chart's spin at the chart's turns, which ends pointing out, as Gage's
-   * catalogue has it.
+   * place of that spin's own turns. The circling hand plays these turns on
+   * every beat. The capping hand plays them on its two beats on and plays
+   * `back` on its beat back.
    */
   turns?: TurnValue;
+  /**
+   * The turns of the capping hand's beat back, the spin it switches to on
+   * the way back. Without it the beat back keeps the chart's value: none
+   * after anti and one after pro, so the prop keeps turning the same way.
+   * The circling hand never doubles back, so it has no use for this.
+   */
+  back?: TurnValue;
 }
 
 export interface Cap {
@@ -1005,20 +1011,25 @@ export function capWorksOnPoi(cap: Cap): boolean {
   return capPoiProblem(cap) === null;
 }
 
-/** How one hand spins on a hand path: its motion and its turns. */
+/**
+ * How one hand spins on a hand path: its motion, its turns, and for the
+ * capping hand the turns of its beat back. The circling hand ignores `back`.
+ */
 export interface CapHandSpin {
   motion: "pro" | "anti";
   turns: TurnValue;
+  back?: TurnValue;
 }
 
 /**
- * A hand path with each hand spun one way at one turn value. The circling
- * hand spins that way on every beat. The capping hand spins that way on its
- * two beats on, and its beat back keeps the chart's spin at the chart's
- * turns, which ends pointing out, as Gage's catalogue has it. A pro hand at
- * 1 turn takes the chart's prospin row, so it plays exactly as the chart
- * does. The chart CAP with the same motions supplies the positions and the
- * word, which turns never change.
+ * A hand path with each hand spun one way at its picked turns. The circling
+ * hand plays its turns on every beat, so a pro hand at 1 turn plays pro 1
+ * all round rather than resting on pro 0 every third beat as the chart's
+ * prospin row does. The capping hand plays its turns on its two beats on
+ * and `back` on its beat back, the flipped motion. `back` defaults to the
+ * chart's value, none after anti and one after pro, so the prop keeps
+ * turning the same way. The chart CAP with the same motions supplies the
+ * positions and the word, which turns never change.
  */
 export function capOnPath(
   path: CapHandPath,
@@ -1037,9 +1048,13 @@ export function capOnPath(
   })!;
   const cap: Cap = {
     ...chart,
-    id: `${chart.id}:${left.turns}:${right.turns}`,
-    left: { ...chart.left, turns: left.turns },
-    right: { ...chart.right, turns: right.turns },
+    id: `${chart.id}:${left.turns}:${left.back ?? "chart"}:${right.turns}`,
+    left: { ...chart.left, turns: left.turns, back: left.back },
+    right: {
+      ...chart.right,
+      spins: chart.right.spins.map(() => spin(right)),
+      turns: right.turns,
+    },
   };
   // An odd number of quarter turns leaves the prop pointing in after twelve
   // beats, so the loop goes round twice to bring it home.
@@ -1088,15 +1103,17 @@ function opposite(direction: RotationDirection): RotationDirection {
 
 /**
  * A spin's motion on this hand. The hand's own spin takes the hand's turns
- * if it has them; any other spin, the capping hand's beat back, keeps the
- * chart's turns.
+ * if it has them, so the circling hand plays its turns on every beat. Any
+ * other spin is the capping hand's beat back, which takes `back` if the hand
+ * has it and otherwise the chart's turns: none after anti and one after pro,
+ * so the prop keeps turning the same way.
  */
 function spinMotion(hand: CapHand, spin: CapSpin) {
   const motion = CAP_SPIN_MOTION[spin];
   const own = spin === hand.spins[0];
   return {
     motionType: motion.motionType,
-    turns: own ? (hand.turns ?? motion.turns) : motion.turns,
+    turns: own ? (hand.turns ?? motion.turns) : (hand.back ?? motion.turns),
   };
 }
 
@@ -1171,11 +1188,12 @@ function handBeat(hand: CapHand, spin: CapSpin): CapHandBeat {
  * The props' timing and direction, read from the first beat. The hands change
  * element from beat to beat, but the props keep one direction the whole way
  * round: the capping hand switches motion on its beat back, so its prop never
- * changes direction. With equal turns the beats on are a full element, which
- * names the CAP alongside its path. With unequal turns the props drift apart
- * in timing, so only their direction holds. The beat back keeps the chart's
- * turns, so the timing can change there, as it does in Gage's chart (1-AA
- * runs split, then together). caps-topic.test.ts checks every beat keeps
+ * changes direction. With equal turns the opening beats are a full element,
+ * which names the CAP alongside its path. The corner glyph shows each beat's
+ * own reading, which can differ on the beat back: where the hands' turns
+ * differ there the timing changes, as it does in Gage's chart (1-AA runs
+ * split, then together). With unequal turns the props drift apart in timing,
+ * so only their direction holds. caps-topic.test.ts checks every beat keeps
  * the direction.
  */
 export function capPropRelationship(cap: Cap): PropRelationship {

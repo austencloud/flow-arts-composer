@@ -58,12 +58,8 @@ Card-based architecture with integrated Generate button:
     getEffectiveUserId,
   } from "#lib/shared/auth/state/auth-state.svelte.js";
   import { authDrawerState } from "#lib/shared/auth/state/auth-drawer-state.svelte.js";
-  import type { GuestLoopLockKind } from "#lib/shared/create/services/loop-guest-gate.js";
   import { userPreviewState } from "#lib/shared/debug/state/user-preview-state.svelte.js";
-  import {
-    resolveAccessTier,
-    getMaxSteps,
-  } from "#lib/shared/auth/domain/access-tier.js";
+  import { resolveAccessTier } from "#lib/shared/auth/domain/access-tier.js";
   import { isPremiumOrAbove } from "#lib/shared/auth/domain/models/user-role.js";
   // Get context for panel coordination (optional - may not be available in all contexts)
   const context = tryGetCreateModuleContext();
@@ -157,8 +153,8 @@ Card-based architecture with integrated Generate button:
     captureSetupSnapshot(configState.config, startEndState.options)
   );
 
-  // Guest LOOP gating: guests only get rotated LOOPs + configs within their step
-  // cap; tapping a gated LOOP opens a sign-up nudge (the conversion channel).
+  // Guest LOOP gating: guests only get rotated LOOPs; tapping a gated LOOP
+  // opens a sign-up nudge (the conversion channel).
   const accessTier = $derived(
     resolveAccessTier(
       authState.isAuthenticated,
@@ -166,18 +162,10 @@ Card-based architecture with integrated Generate button:
       isPremiumOrAbove(authState.role)
     )
   );
-  const guestLoopMaxLength = $derived(
-    accessTier === "guest" ? getMaxSteps("guest") : undefined
-  );
   // Every guest gate goes straight to the auth screen — no intermediate
   // nudge; the modal's contextual copy carries the why (Austen, 2026-08-10).
-  // Name the selected LOOP even when its minimum length is the restriction.
-  // Choosing a configuration is not an encounter with the current sequence cap.
-  function openLoopGateAuth(kind: GuestLoopLockKind) {
-    authDrawerState.show(
-      "signup",
-      kind === "length" ? "loop-step-cap-guest" : "loop-locked-guest"
-    );
+  function openLoopGateAuth() {
+    authDrawerState.show("signup", "loop-locked-guest");
   }
 
   // Spell mode: derived from word presence (if there's a word, it's spell mode)
@@ -212,10 +200,6 @@ Card-based architecture with integrated Generate button:
 
     if (source.kind === "community" && isAnonymousViewer) {
       authDrawerState.show("signup", "community-setups");
-      return;
-    }
-    if (accessTier === "guest" && saved.config.length > getMaxSteps("guest")) {
-      authDrawerState.show("signup", "setup-step-cap-guest");
       return;
     }
 
@@ -405,14 +389,14 @@ Card-based architecture with integrated Generate button:
               },
               sequenceLength: configState.config.length,
               handRelationship: configState.config.handRelationship,
-              guestMaxLength: guestLoopMaxLength,
+              guestGated: accessTier === "guest",
               onLoopDisable: () => {
                 morphGenerateCard("loop", () => panelState.closeLOOPPanel());
                 configState.updateConfig({ loopEnabled: false });
               },
-              onRequestSignup: (kind) => {
+              onRequestSignup: () => {
                 morphGenerateCard("loop", () => panelState.closeLOOPPanel());
-                openLoopGateAuth(kind);
+                openLoopGateAuth();
               },
               onRhythmChange: (u) =>
                 configState.updateConfig({

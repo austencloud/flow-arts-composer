@@ -354,7 +354,7 @@
   onSendInTka={hasFullAccount ? sendSequenceToInbox : undefined}
   needsAccountForFiles={!hasFullAccount}
   onRequestAccount={() =>
-    authDrawerState.show("signup", "share-sequence", undefined, sequence)}
+    authDrawerState.show("signup", "share-sequence", sequence)}
   onClose={() => {
     cancelWorkspaceVideo();
     onClose();

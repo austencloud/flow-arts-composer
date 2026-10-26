@@ -402,7 +402,7 @@
       rhythm={loop.rhythm}
       sequenceLength={loop.sequenceLength}
       onRhythmChange={loop.onRhythmChange}
-      guestMaxLength={loop.guestMaxLength}
+      guestGated={loop.guestGated}
       onRequestSignup={loop.onRequestSignup}
       handRelationship={loop.handRelationship}
       layout="responsive"

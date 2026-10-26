@@ -3,7 +3,6 @@ import { GUEST_SAVE_CAP } from "./guest-access-config";
 export type AuthNudgeTrigger =
   | "save"
   | "save-limit"
-  | "step-cap-guest"
   | "patterns-guest"
   | "extend-sequence"
   | "turn-pattern"
@@ -11,8 +10,6 @@ export type AuthNudgeTrigger =
   | "duration-pattern"
   | "choose-start"
   | "rewind-sequence"
-  | "loop-step-cap-guest"
-  | "setup-step-cap-guest"
   | "sync-library"
   | "community-map"
   | "export"
@@ -54,8 +51,6 @@ export interface AuthPromptContent {
 export const AUTH_NUDGE_TEXTS: Record<AuthNudgeTrigger, string> = {
   "save-limit": `Guests can save ${GUEST_SAVE_CAP} sequences on this device. Create a free account to save more.`,
   save: "Create a free account to save this sequence in your library.",
-  "step-cap-guest":
-    "Guests can create sequences up to 8 steps. Create a free account for up to 64 steps.",
   "patterns-guest":
     "Create a free account to use pattern tools like Turn Pattern, Direction, and Duration.",
   "extend-sequence":
@@ -70,10 +65,6 @@ export const AUTH_NUDGE_TEXTS: Record<AuthNudgeTrigger, string> = {
     "Create a free account to choose a new start pose for this sequence.",
   "rewind-sequence":
     "Create a free account to rewind this sequence from its ending pose.",
-  "loop-step-cap-guest":
-    "This LOOP needs more than 8 steps. Create a free account for sequences up to 64 steps.",
-  "setup-step-cap-guest":
-    "This setup needs more than 8 steps. Create a free account for sequences up to 64 steps.",
   "sync-library":
     "Create a free account to keep saved sequences and collections across devices.",
   "community-map":
@@ -100,8 +91,7 @@ export const AUTH_NUDGE_TEXTS: Record<AuthNudgeTrigger, string> = {
     "Create a free account to arrange sequences for several performers.",
   "method:assemble":
     "Create a free account to build a sequence by choosing grid points.",
-  "community-setups":
-    "Create a free account to use community setups and build sequences up to 64 steps.",
+  "community-setups": "Create a free account to use community setups.",
   "saved-setups": "Create a free account to keep setups across sessions.",
   // Every saved setup is public and shows the creator's name and avatar, so
   // saving needs a full account. Firestore rules block the write as a second
@@ -153,11 +143,6 @@ const AUTH_PROMPT_CONTENTS: Record<AuthNudgeTrigger, AuthPromptContent> = {
     title: "Save this sequence",
     body: "Create a free account to save this sequence in your library.",
   },
-  "step-cap-guest": {
-    key: "step-cap-guest",
-    title: "Eight is the guest limit.",
-    body: "A free account gets you up to 64 steps.",
-  },
   "patterns-guest": {
     key: "patterns-guest",
     title: "Use pattern tools",
@@ -192,16 +177,6 @@ const AUTH_PROMPT_CONTENTS: Record<AuthNudgeTrigger, AuthPromptContent> = {
     key: "rewind-sequence",
     title: "Rewind this sequence",
     body: "Create a free account to rewind this sequence from its ending pose.",
-  },
-  "loop-step-cap-guest": {
-    key: "loop-step-cap-guest",
-    title: "Generate this LOOP",
-    body: "This LOOP needs more than 8 steps. Create a free account for sequences up to 64 steps.",
-  },
-  "setup-step-cap-guest": {
-    key: "setup-step-cap-guest",
-    title: "Use this setup",
-    body: "This setup needs more than 8 steps. Create a free account for sequences up to 64 steps.",
   },
   "sync-library": {
     key: "sync-library",
@@ -271,7 +246,7 @@ const AUTH_PROMPT_CONTENTS: Record<AuthNudgeTrigger, AuthPromptContent> = {
   "community-setups": {
     key: "community-setups",
     title: "Use this setup",
-    body: "A free account lets you use community setups and build sequences up to 64 steps.",
+    body: "A free account lets you use community setups.",
   },
   "saved-setups": {
     key: "saved-setups",
@@ -367,54 +342,9 @@ const GENERIC_AUTH_PROMPTS: Record<AuthMode, AuthPromptContent> = {
   },
 };
 
-export type GuestEncorePrompt = "offer" | "spent" | "limit" | null;
-
 export function getAuthPromptContent(
   trigger: AuthNudgeTrigger | null | undefined,
-  mode: AuthMode,
-  attempt = 1,
-  encore: GuestEncorePrompt = null
+  mode: AuthMode
 ): AuthPromptContent {
-  if (trigger === "step-cap-guest" && encore) {
-    const index = Number.isFinite(attempt)
-      ? Math.max(0, Math.floor(attempt) - 1)
-      : 0;
-    const titles =
-      encore === "limit" ? ENCORE_LIMIT_TITLES : ENCORE_SPENT_TITLES;
-    return {
-      key: trigger,
-      title:
-        encore === "offer" ? "Fine. Sixteen." : titles[index % titles.length]!,
-      body:
-        encore === "offer"
-          ? "This sequence only."
-          : encore === "limit"
-            ? "Sixteen was the exception. A free account gets you up to 64 steps."
-            : "A free account gets you up to 64 steps.",
-    };
-  }
-  if (
-    trigger === "step-cap-guest" &&
-    Number.isFinite(attempt) &&
-    attempt >= 2
-  ) {
-    const index = (Math.floor(attempt) - 2) % STEP_CAP_REPEAT_TITLES.length;
-    return {
-      ...AUTH_PROMPT_CONTENTS[trigger],
-      title: STEP_CAP_REPEAT_TITLES[index]!,
-    };
-  }
   return trigger ? AUTH_PROMPT_CONTENTS[trigger] : GENERIC_AUTH_PROMPTS[mode];
 }
-
-const STEP_CAP_REPEAT_TITLES = [
-  "Still eight.",
-  "Nice try.",
-  "That did not change the limit.",
-  "You seem committed to this.",
-  "All right.",
-];
-
-const ENCORE_SPENT_TITLES = ["That was the exception."];
-
-const ENCORE_LIMIT_TITLES = ["Seventeen is not sixteen."];

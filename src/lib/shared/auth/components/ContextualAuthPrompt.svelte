@@ -28,8 +28,6 @@
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { authPromptCopy } from "../domain/auth-prompt-copy";
-  import { getMaxSteps } from "../domain/access-tier";
-  import { ENCORE_STEPS } from "../state/guest-encore-state.svelte";
   import { onDestroy, tick, untrack } from "svelte";
 
   interface Props {
@@ -43,8 +41,6 @@
     facebookError?: string | null;
     onClose?: () => void;
     onFacebookAuth?: () => void;
-    encoreOffer?: boolean;
-    onAcceptEncore?: () => void;
     /** The sequence being saved or shared; the art plays it when given. */
     artifact?: SequenceData | null;
   }
@@ -60,13 +56,10 @@
     facebookError = null,
     onClose,
     onFacebookAuth,
-    encoreOffer = false,
-    onAcceptEncore,
     artifact = null,
   }: Props = $props();
 
   let showEmailAuth = $state(false);
-  let showOtherProviders = $state(false);
   let showPhoneSignIn = $state(false);
   let emailFlow = $state<HTMLElement>();
   const lastMethod = $derived(getLastAuthMethod());
@@ -75,7 +68,6 @@
   // wake it only when they actually change.
   const isOpen = $derived(active);
   const contentKey = $derived(content.key);
-  const compact = $derived(contentKey === "step-cap-guest");
   const lastUsedEmail = $derived(
     lastMethod === "magic-link" || lastMethod === "password"
   );
@@ -92,7 +84,6 @@
     }
     contentKey;
     showEmailAuth = untrack(() => lastUsedEmail);
-    showOtherProviders = false;
     showPhoneSignIn = false;
     untrack(dropPhoneSession);
   });
@@ -146,13 +137,6 @@
   );
   const showcase = $derived(withArt ? import("./AuthShowcase.svelte") : null);
 
-  // The step-cap prompt draws the limit: the steps the person made, lit, out of
-  // the 64 an account allows. A one-time extension marks the steps it adds.
-  const ACCOUNT_STEPS = getMaxSteps("user");
-  const stepsMade = $derived(
-    Math.min(ACCOUNT_STEPS, artifact?.steps.length || getMaxSteps("guest"))
-  );
-
   const titleId = $derived(`${idPrefix}-title`);
   const descriptionId = $derived(`${idPrefix}-description`);
 
@@ -182,12 +166,9 @@
 
 <section
   class="contextual-auth-prompt"
-  class:compact
   class:embedded
   class:split={withArt}
   class:phone-up={withArt && showPhoneSignIn}
-  class:more-open={compact && showOtherProviders}
-  class:encore-offer={encoreOffer}
   aria-labelledby={titleId}
   aria-describedby={descriptionId}
   style:--art-fallback={withArt ? backgroundFallback : null}
@@ -225,14 +206,12 @@
   <div class="sign-in-column">
     {#if !embedded}
       <header class="prompt-header">
-        {#if !compact}
-          <div class="brand-lockup" transition:growFade>
-            <span class="brand-mark">
-              <img src="/branding/logo.jpg" alt="" width="56" height="56" />
-            </span>
-            <span class="brand-name">Flow Arts Composer</span>
-          </div>
-        {/if}
+        <div class="brand-lockup">
+          <span class="brand-mark">
+            <img src="/branding/logo.jpg" alt="" width="56" height="56" />
+          </span>
+          <span class="brand-name">Flow Arts Composer</span>
+        </div>
 
         {#if showClose}
           <button
@@ -249,14 +228,6 @@
     {/if}
 
     <div class="prompt-copy">
-      {#if compact}
-        <div class="fac-signature">
-          <img src="/branding/logo.jpg" alt="" width="28" height="28" />
-          {#if encoreOffer}<span transition:growFade={{ axis: "x" }}
-              >{t("auth_one_time_extension")}</span
-            >{/if}
-        </div>
-      {/if}
       <div id={titleId} class="prompt-heading" role="heading" aria-level="2">
         <Crossfade key={content.title}>
           {authPromptCopy(content.title)}
@@ -267,68 +238,20 @@
           {authPromptCopy(content.body)}
         </Crossfade>
       </div>
-      {#if compact}
-        <div class="step-meter" aria-hidden="true">
-          {#each { length: ACCOUNT_STEPS }, index (index)}
-            <span
-              class="step-cell"
-              class:made={index < stepsMade}
-              style:--along={index / Math.max(1, stepsMade - 1)}
-              class:offered={encoreOffer &&
-                index >= stepsMade &&
-                index < ENCORE_STEPS}
-            ></span>
-          {/each}
-        </div>
-      {/if}
     </div>
 
     <div class="auth-methods">
       <Crossfade
-        key={encoreOffer
-          ? "encore"
-          : compact
-            ? "compact"
-            : inAppBrowser
-              ? "browser"
-              : showPhoneSignIn
-                ? "phone"
-                : showEmailAuth
-                  ? "email"
-                  : "providers"}
+        key={inAppBrowser
+          ? "browser"
+          : showPhoneSignIn
+            ? "phone"
+            : showEmailAuth
+              ? "email"
+              : "providers"}
         animateHeight
       >
-        {#if compact && encoreOffer}
-          <button class="encore-button" type="button" onclick={onAcceptEncore}>
-            {t("auth_keep_going")}
-            <i class="fas fa-arrow-right" aria-hidden="true"></i>
-          </button>
-        {:else if compact}
-          <EmailAuthTabs bind:mode compact showMethods={showOtherProviders} />
-          <button
-            class="more-methods"
-            type="button"
-            aria-expanded={showOtherProviders}
-            onclick={() => (showOtherProviders = !showOtherProviders)}
-          >
-            <Crossfade key={showOtherProviders}>
-              {showOtherProviders
-                ? t("auth_fewer_options")
-                : t("auth_more_sign_in_options")}
-            </Crossfade>
-          </button>
-          {#if showOtherProviders}
-            <div
-              transition:growFade
-              onoutrostart={(event) =>
-                ((event.currentTarget as HTMLElement).inert = true)}
-              onintrostart={(event) =>
-                ((event.currentTarget as HTMLElement).inert = false)}
-            >
-              <SocialAuthCompact {mode} {onFacebookAuth} />
-            </div>
-          {/if}
-        {:else if inAppBrowser}
+        {#if inAppBrowser}
           <!-- Google first: in a webview its button opens this page in the real
                browser and carries on to Google there, so it is the one-tap
                path, not a dead end to warn about below the fold. -->
@@ -337,7 +260,7 @@
             <div class="email-divider">
               <span>{t("auth_continue_by_email")}</span>
             </div>
-            <EmailAuthTabs bind:mode {compact} showModeSwitch={false} />
+            <EmailAuthTabs bind:mode showModeSwitch={false} />
           </div>
         {:else if showPhoneSignIn}
           <div class="email-flow phone-flow">
@@ -368,7 +291,7 @@
               <i class="fas fa-arrow-left" aria-hidden="true"></i>
               {t("auth_other_sign_in_options")}
             </button>
-            <EmailAuthTabs bind:mode {compact} showModeSwitch={false} />
+            <EmailAuthTabs bind:mode showModeSwitch={false} />
           </div>
         {:else}
           <div class="method-grid">
@@ -417,28 +340,17 @@
       {/if}
     </div>
 
-    {#if !encoreOffer && (!compact || showOtherProviders)}
-      <button
-        class="mode-toggle"
-        type="button"
-        onclick={toggleMode}
-        transition:growFade
-        onoutrostart={(event) =>
-          ((event.currentTarget as HTMLElement).inert = true)}
-        onintrostart={(event) =>
-          ((event.currentTarget as HTMLElement).inert = false)}
-      >
-        <Crossfade key={mode}>
-          {#if mode === "signup"}
-            <span>{t("auth_already_have_account")}</span>
-            <strong>{t("auth_sign_in")}</strong>
-          {:else}
-            <span>{t("auth_new_here")}</span>
-            <strong>{t("auth_create_account")}</strong>
-          {/if}
-        </Crossfade>
-      </button>
-    {/if}
+    <button class="mode-toggle" type="button" onclick={toggleMode}>
+      <Crossfade key={mode}>
+        {#if mode === "signup"}
+          <span>{t("auth_already_have_account")}</span>
+          <strong>{t("auth_sign_in")}</strong>
+        {:else}
+          <span>{t("auth_new_here")}</span>
+          <strong>{t("auth_create_account")}</strong>
+        {/if}
+      </Crossfade>
+    </button>
   </div>
 </section>
 
@@ -546,16 +458,6 @@
     transition:
       height var(--duration-normal) var(--ease-standard),
       padding var(--duration-normal) var(--ease-standard);
-  }
-
-  /* On a phone the step-cap sheet folds its band away while the other sign-in
-     choices are open, so they fit without scrolling. */
-  @media (width < 45rem) {
-    .more-open .art-stage {
-      height: 0;
-      padding-block: 0;
-      overflow: hidden;
-    }
   }
 
   /* The code needs its full square, so the band opens up for it. */
@@ -992,205 +894,5 @@
     .email-method:hover {
       transform: none;
     }
-  }
-
-  .compact {
-    --min-touch-target: 44px;
-    --font-size-min: 0.875rem;
-    width: min(calc(100vw - 2rem), 24rem);
-    padding: 2rem 1.5rem 1rem;
-    border-color: var(--theme-stroke);
-    box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.25);
-  }
-
-  /* The step-cap sheet carries less, so its split is narrower and shorter. */
-  .contextual-auth-prompt.split.compact {
-    width: min(calc(100vw - 2rem), 28rem);
-  }
-
-  .split.compact .sign-in-column {
-    padding: 1.25rem 1.25rem 0.75rem;
-  }
-
-  @media (min-width: 45rem) {
-    .contextual-auth-prompt.split.compact {
-      width: min(calc(100vw - 2rem), clamp(44rem, 38vw, 60rem));
-      min-height: min(clamp(28rem, 46vh, 34rem), calc(100dvh - 3rem));
-    }
-
-    .split.compact .sign-in-column {
-      padding: clamp(1.5rem, 3vw, 2.75rem);
-    }
-
-    .split.compact .prompt-heading {
-      font-size: 1.875rem;
-      font-weight: 700;
-      line-height: 1.15;
-    }
-  }
-
-  /* Sixteen across, four down: one lit stretch of eight in a field of 64. */
-  .step-meter {
-    display: grid;
-    grid-template-columns: repeat(16, minmax(0, 1fr));
-    gap: 0.25rem;
-    margin-top: 1.25rem;
-  }
-
-  /* Short landscape screens: the step-cap sheet tightens before it scrolls. */
-  @media (max-height: 35rem) and (min-width: 45rem) {
-    .split.compact .sign-in-column {
-      padding-block: 0.5rem;
-    }
-
-    .split.compact .fac-signature {
-      margin-bottom: 0.5rem;
-    }
-
-    .split.compact .prompt-heading {
-      font-size: 1.5rem;
-    }
-
-    .split.compact .prompt-copy {
-      padding-bottom: 0.75rem;
-    }
-
-    .split.compact .step-meter {
-      margin-top: 0.75rem;
-    }
-  }
-
-  .step-cell {
-    aspect-ratio: 1;
-    background: color-mix(in srgb, var(--theme-text, #f8fafc) 6%, transparent);
-    border: 1px solid
-      color-mix(in srgb, var(--theme-text, #f8fafc) 16%, transparent);
-    border-radius: 0.2rem;
-  }
-
-  .step-cell.made {
-    /* The lit run fades from blue to red, one prop to the other. */
-    background: color-mix(
-      in oklab,
-      var(--prompt-blue),
-      var(--prompt-red) calc(var(--along) * 100%)
-    );
-    border-color: transparent;
-  }
-
-  .step-cell.offered {
-    background: color-mix(in srgb, var(--prompt-blue) 22%, transparent);
-    border-color: color-mix(in srgb, var(--prompt-blue) 60%, white);
-  }
-
-  .fac-signature {
-    display: flex;
-    align-items: center;
-    gap: 0.625rem;
-    min-height: 28px;
-    margin-bottom: 0.875rem;
-  }
-
-  .fac-signature img {
-    border-radius: 50%;
-  }
-
-  .fac-signature span {
-    color: var(--theme-text-dim);
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
-  .encore-button {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    width: 100%;
-    min-height: 48px;
-    padding: 0.75rem 1rem;
-    color: var(--theme-panel-bg);
-    background: var(--theme-text);
-    border: 1px solid transparent;
-    border-radius: var(--radius-sm, 0.5rem);
-    font-size: var(--font-size-min, 0.875rem);
-    font-weight: 600;
-    cursor: pointer;
-  }
-
-  .encore-button:hover {
-    background: color-mix(
-      in srgb,
-      var(--theme-text) 88%,
-      var(--theme-panel-bg)
-    );
-  }
-
-  .encore-button:focus-visible {
-    outline: 2px solid var(--theme-accent);
-    outline-offset: 3px;
-  }
-
-  .compact .close-button {
-    position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
-    background: transparent;
-    border: 0;
-    color: var(--theme-text-dim);
-  }
-
-  .compact .prompt-copy {
-    min-height: 0;
-    padding: 0 0 1.5rem;
-  }
-
-  .compact .prompt-heading {
-    padding-right: 1.75rem;
-    font-size: 1.5rem;
-    font-weight: 600;
-    line-height: 1.25;
-    letter-spacing: -0.025em;
-    text-wrap: pretty;
-  }
-
-  .compact .prompt-description {
-    min-height: 0;
-    margin-top: 0.625rem;
-    font-size: 0.9375rem;
-    line-height: 1.4;
-  }
-
-  .more-methods {
-    display: block;
-    margin: 0.5rem auto 0;
-    min-height: 44px;
-    padding: 0.5rem 0.75rem;
-    border: 0;
-    border-radius: var(--radius-sm, 0.5rem);
-    background: transparent;
-    color: var(--theme-text-dim);
-    font-size: var(--font-size-min);
-    cursor: pointer;
-  }
-
-  .more-methods:hover {
-    color: var(--theme-text);
-    background: var(--theme-card-bg);
-  }
-
-  .more-methods:focus-visible {
-    outline: 2px solid var(--theme-accent);
-    outline-offset: 2px;
-  }
-
-  .compact .mode-toggle {
-    margin-top: 0.5rem;
-    padding-inline: 0.5rem;
-    flex-wrap: wrap;
-    background: transparent;
-    border: 0;
   }
 </style>

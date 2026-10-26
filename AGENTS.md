@@ -67,6 +67,8 @@ unless a higher-priority platform or safety instruction conflicts.
 
 ## Verification
 
+- `npm run test:changed` finds and runs the tests a change touches, and
+  `wt:finish` gates on `check`, `check:tsc`, the spec checks and those tests.
 - Match evidence to risk and stop after appropriate checks pass. Documentation
   and instructions need formatting, reference resolution, and focused contract
   checks, not the full Svelte check. Code needs the closest silent-regression

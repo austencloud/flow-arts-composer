@@ -711,7 +711,6 @@ Last audit: 2025-12-27
   let stepNumbersVisible = $state(false);
   let globalDarkMode = $state(false);
   let wordHeaderVisible = $state(false);
-  let wordHeaderHighlight = $state<"arrival" | "travel">("arrival");
   let progressBarVisible = $state(false);
   let leftPathLinesVisible = $state(false);
   let rightPathLinesVisible = $state(false);
@@ -723,7 +722,6 @@ Last audit: 2025-12-27
     stepNumbersVisible = visibilityManager.getVisibility("stepNumbers");
     globalDarkMode = visibilityManager.isDarkMode();
     wordHeaderVisible = visibilityManager.getVisibility("wordHeader");
-    wordHeaderHighlight = visibilityManager.getSettings().wordHeaderHighlight;
     progressBarVisible = visibilityManager.getVisibility("progressBar");
     leftPathLinesVisible = visibilityManager.getVisibility("leftPathLines");
     rightPathLinesVisible = visibilityManager.getVisibility("rightPathLines");
@@ -768,7 +766,6 @@ Last audit: 2025-12-27
     stepNumbersVisible = visibilityManager.getVisibility("stepNumbers");
     globalDarkMode = visibilityManager.isDarkMode();
     wordHeaderVisible = visibilityManager.getVisibility("wordHeader");
-    wordHeaderHighlight = visibilityManager.getSettings().wordHeaderHighlight;
     progressBarVisible = visibilityManager.getVisibility("progressBar");
     leftPathLinesVisible = visibilityManager.getVisibility("leftPathLines");
     rightPathLinesVisible = visibilityManager.getVisibility("rightPathLines");
@@ -817,11 +814,7 @@ Last audit: 2025-12-27
   const computedOverlayComponents = $derived(loopDisplay.overlayComponents);
 
   const headerActiveStepNumber = $derived(
-    activeWordHeaderStep(
-      currentStep,
-      sequenceData?.steps.length ?? 0,
-      wordHeaderHighlight
-    )
+    activeWordHeaderStep(currentStep, sequenceData?.steps.length ?? 0)
   );
 
   function handleContextMenu(e: MouseEvent) {

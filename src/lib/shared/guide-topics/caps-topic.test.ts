@@ -337,12 +337,23 @@ describe("what the Eight Step page says about them", () => {
       // Two half turns on leave the poi pointing in, and the hand turns
       // round there.
       expect(at(spin("pro", 0.5), spin("pro", 1))).toBe("momentum");
+      // A picked beat back counts too. Pro 1 on the way back after anti
+      // ends pointing in as the hand turns round again.
+      expect(at({ motion: "anti", turns: 1, back: 1 }, spin("anti", 1))).toBe(
+        "momentum"
+      );
+      // Anti 0 on the way back after pro is out of reach on poi.
+      expect(at({ motion: "pro", turns: 0, back: 0 }, spin("pro", 0))).toBe(
+        "anti-zero"
+      );
     }
   });
 
   it("matches the chart CAP at the chart's own turns", () => {
-    // The picker at a spin's own turns plays the chart's CAP, beat back and
-    // all, on every path: all 72.
+    // The picker at a spin's own turns plays the chart's capping hand, beat
+    // back and all, on every path: all 72. The circling hand matches too,
+    // except that prospin plays pro 1 on every beat where the chart rests
+    // on pro 0 every third beat.
     const SPINS: [CapHandSpin, CapSpin][] = [
       [{ motion: "pro", turns: 0 }, "extension"],
       [{ motion: "anti", turns: 1 }, "antispin"],
@@ -361,9 +372,30 @@ describe("what the Eight Step page says about them", () => {
           expect(capHandSteps(cap.left), label).toEqual(
             capHandSteps(chart.left)
           );
-          expect(capHandSteps(cap.right), label).toEqual(
-            capHandSteps(chart.right)
-          );
+          const circlingSteps = capHandSteps(cap.right);
+          const chartRight = capHandSteps(chart.right);
+          if (circling !== "prospin") {
+            expect(circlingSteps, label).toEqual(chartRight);
+          } else {
+            // The extra turn every third beat flips which way the prop
+            // points from there on, so the other beats match in everything
+            // but orientation.
+            const motionOf = (step: SoloPropStepData) => ({
+              ...step,
+              startOrientation: undefined,
+              endOrientation: undefined,
+            });
+            circlingSteps.forEach((step, i) => {
+              const beat = `${label}, beat ${i + 1}`;
+              if (i % 3 !== 2) {
+                expect(motionOf(step), beat).toEqual(motionOf(chartRight[i]!));
+                return;
+              }
+              expect(chartRight[i]!.turns, beat).toBe(0);
+              expect(step.motionType, beat).toBe(MotionType.PRO);
+              expect(step.turns, beat).toBe(1);
+            });
+          }
           matched++;
         }
     expect(matched).toBe(72);
@@ -418,21 +450,15 @@ describe("strips", () => {
                   );
                 }
                 // The capping hand flips its motion only on the beat back,
-                // which keeps the chart's spin at the chart's turns: anti 1
+                // which with no back picked takes the chart's turns: anti 1
                 // after pro, pro 0 after anti.
                 if (travelOf(step) !== forward) {
                   expect(step.motionType).toBe(flip[spin.motion]);
                   expect(step.turns).toBe(spin.motion === "pro" ? 1 : 0);
                   return;
                 }
-                // Pro at 1 turn is the chart's prospin, whose circling hand
-                // rests on an extension every third beat: pro 1, pro 1, pro 0.
-                if (hand.spins[i] !== hand.spins[0]) {
-                  expect([spin.motion, turns]).toEqual(["pro", 1]);
-                  expect(step.motionType).toBe(MotionType.PRO);
-                  expect(step.turns).toBe(0);
-                  return;
-                }
+                // Every other beat, the circling hand's every beat
+                // included, plays the picked turns.
                 expect(step.turns).toBe(turns);
                 const motion =
                   turns === "fl" ? step.prefloatMotionType : step.motionType;
@@ -443,6 +469,28 @@ describe("strips", () => {
         }
       }
     }
+  });
+});
+
+describe("the capping hand's beat back", () => {
+  it("plays the picked back turns on each beat the hand turns round", () => {
+    for (const path of CAP_HAND_PATHS)
+      for (const motion of ["pro", "anti"] as const)
+        for (const back of [0, 1, 2, "fl"] as const) {
+          const cap = capOnPath(
+            path,
+            { motion, turns: 1, back },
+            { motion: "anti", turns: 1 }
+          );
+          const steps = capHandSteps(cap.left);
+          const forward = travelOf(steps[0]!);
+          const label = `path ${path.column} ${motion} back ${back}`;
+          steps.forEach((step, i) =>
+            expect(step.turns, `${label}, beat ${i + 1}`).toBe(
+              travelOf(step) === forward ? 1 : back
+            )
+          );
+        }
   });
 });
 
@@ -526,6 +574,31 @@ describe("the props on a hand path", () => {
                 reading(whole)
               );
             }
+  });
+
+  it("read Gage's 1-AA beat by beat as the corner glyph does", () => {
+    // The beat back changes the props' timing, which is why the copy names
+    // the CAP by its opening half.
+    const cap = capOnPath(
+      CAP_HAND_PATHS[0]!,
+      { motion: "anti", turns: 1 },
+      { motion: "anti", turns: 1 }
+    );
+    const readings = capStrip(cap)
+      .slice(1)
+      .map((step) => {
+        const r = derivePropRelationshipForStep(step);
+        return r.kind === "full" ? reading(r) : r.kind;
+      });
+    const six = [
+      "full split opp",
+      "full split opp",
+      "direction-only",
+      "full tog opp",
+      "full tog opp",
+      "direction-only",
+    ];
+    expect(readings).toEqual([...six, ...six]);
   });
 
   it("take the path's timing, and its direction when the motions match", () => {

@@ -60,6 +60,10 @@ Uses organizer and sizer services for section grouping and sizing.
     shouldCommitContainerSize,
     type TransitionLike,
   } from "../services/container-settle";
+  import { flyFade } from "#lib/shared/transitions/motion.js";
+  import { EMANATE_WINDOW_MS } from "#lib/shared/transitions/emanate.js";
+  import { findLandedStartCell } from "../../start-placement-picker/services/start-placement-morph";
+  import { setOptionSheetOpeningContext } from "../context/option-sheet-opening-context";
 
   interface Props {
     options: PreparedPictographData[];
@@ -156,8 +160,22 @@ Uses organizer and sizer services for section grouping and sizing.
   let containerWidth = $state(800);
   let containerHeight = $state(600);
   let sizingStable = $state(false);
+  // When the sheet first painted. Cards that mount within EMANATE_WINDOW_MS of
+  // it arrive from the landed start cell; later ones use the plain arrive.
+  let sheetOpenedAt: number | null = null;
   let sectionsElement: HTMLDivElement | null = $state(null);
   let rejectedDesktopFit = $state<string | null>(null);
+
+  setOptionSheetOpeningContext({
+    get opening() {
+      return (
+        sheetOpenedAt !== null &&
+        performance.now() - sheetOpenedAt < EMANATE_WINDOW_MS
+      );
+    },
+    origin: () => findLandedStartCell()?.getBoundingClientRect() ?? null,
+    bounds: () => containerElement?.getBoundingClientRect() ?? null,
+  });
 
   // Content-area bounds for the continuous compact grid. Fed by the same
   // HorizontalSwipeContainer the sectioned (All) layout uses, so the continuous
@@ -562,6 +580,7 @@ Uses organizer and sizer services for section grouping and sizing.
           containerWidth = rect.width;
           containerHeight = rect.height;
           sizingStable = true;
+          sheetOpenedAt ??= performance.now();
           span("ok", {
             timedOut: performance.now() - settleStartedAt > SETTLE_TIMEOUT_MS,
           });
@@ -682,7 +701,9 @@ Uses organizer and sizer services for section grouping and sizing.
            the owner recompose it without swapping visual systems or remounting
            the controls when the option grid crosses its own breakpoint. -->
       {#if useInlineControls && controlsAvailable}
-        <div class="picker-header-slot">
+        <!-- The bar leads the sheet's arrival; section headers and the
+             emanating cards follow. -->
+        <div class="picker-header-slot" in:flyFade|global={{ y: 6 }}>
           {@render inlineControls()}
         </div>
       {/if}

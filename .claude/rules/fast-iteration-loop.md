@@ -5,6 +5,7 @@ Use the cheapest check that can expose the current failure.
 | Need                         | Preferred check                                                    |
 | ---------------------------- | ------------------------------------------------------------------ |
 | One unit or contract         | Run that test file with the project Vitest config                  |
+| Tests touched by my change   | `npm run test:changed`                                             |
 | Live Svelte/type feedback    | Reuse an existing `npm run check:watch` process                    |
 | One-shot lighter type pass   | `npm run check:fast`                                               |
 | Runtime or visual behavior   | Existing server plus focused browser inspection                    |

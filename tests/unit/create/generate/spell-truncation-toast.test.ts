@@ -39,7 +39,6 @@ import { createSpellModeState } from "#lib/features/create/generate/state/spell-
 import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import type { UIGenerationConfig } from "#lib/shared/create/utils/config-mapper.js";
-import { AUTH_NUDGE_TEXTS } from "#lib/shared/auth/domain/auth-nudge-trigger.js";
 
 function makeConfig(
   overrides: Partial<UIGenerationConfig> = {}
@@ -63,7 +62,7 @@ function makeConfig(
   };
 }
 
-/** 12 bare-bones steps - enough to exceed the guest 8-step cap. */
+/** Bare-bones steps; 70 is enough to exceed the 64-step cap. */
 function makeSteps(count: number) {
   return Array.from({ length: count }, (_, i) => ({
     letter: "A",
@@ -129,7 +128,7 @@ describe("onSpellGenerate — truncation toast (mirrors onGenerateClicked)", () 
     }
   );
 
-  it("fires the guest-tier truncation toast when the spelled word's sequence exceeds the step cap", async () => {
+  it("fires the neutral truncation toast for a guest when the spelled word's sequence exceeds the 64-step cap", async () => {
     parseWordMock.mockResolvedValue({
       success: true,
       expandedLetters: [
@@ -151,7 +150,7 @@ describe("onSpellGenerate — truncation toast (mirrors onGenerateClicked)", () 
     generateSequenceMock.mockResolvedValue({
       id: "seq-1",
       word: "ABCDEFGHIJKL",
-      steps: makeSteps(12),
+      steps: makeSteps(70),
       metadata: {},
     });
 
@@ -169,19 +168,15 @@ describe("onSpellGenerate — truncation toast (mirrors onGenerateClicked)", () 
 
     await actions.onSpellGenerate();
 
-    // Centralized copy (auth-nudge-trigger.ts) — the hand-rolled "Capped to 8
-    // steps. Sign up free for up to 64." duplicate was consolidated onto
-    // AUTH_NUDGE_TEXTS["step-cap-guest"] (2026-07-18 nudge-copy spec).
-    expect(toastInfoSpy).toHaveBeenCalledWith(
-      AUTH_NUDGE_TEXTS["step-cap-guest"],
-      5000
-    );
-    expect(actions.lastGeneratedSequence?.steps.length).toBe(8);
+    // Guests share the 64 ceiling with accounts, so the note carries no
+    // account ask (the eight-step guest cap was removed 2026-10).
+    expect(toastInfoSpy).toHaveBeenCalledWith("Capped to 64 steps.", 5000);
+    expect(actions.lastGeneratedSequence?.steps.length).toBe(64);
 
     toastInfoSpy.mockRestore();
   });
 
-  it("does NOT fire the truncation toast when the sequence is within the step cap", async () => {
+  it("does NOT truncate a guest's twelve-step word (no eight-step guest cap)", async () => {
     parseWordMock.mockResolvedValue({
       success: true,
       expandedLetters: ["A", "B", "C"],
@@ -190,7 +185,7 @@ describe("onSpellGenerate — truncation toast (mirrors onGenerateClicked)", () 
     generateSequenceMock.mockResolvedValue({
       id: "seq-2",
       word: "ABC",
-      steps: makeSteps(3),
+      steps: makeSteps(12),
       metadata: {},
     });
 
@@ -209,7 +204,7 @@ describe("onSpellGenerate — truncation toast (mirrors onGenerateClicked)", () 
     await actions.onSpellGenerate();
 
     expect(toastInfoSpy).not.toHaveBeenCalled();
-    expect(actions.lastGeneratedSequence?.steps.length).toBe(3);
+    expect(actions.lastGeneratedSequence?.steps.length).toBe(12);
 
     toastInfoSpy.mockRestore();
   });

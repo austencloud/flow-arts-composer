@@ -31,7 +31,6 @@ describe("AUTH_NUDGE_TEXTS — one phrasing for the account ask", () => {
   it("includes the live triggers, including the save limit", () => {
     expect(Object.keys(AUTH_NUDGE_TEXTS).sort()).toEqual(
       [
-        "step-cap-guest",
         "community-setups",
         "community-map",
         "choose-start",
@@ -40,7 +39,6 @@ describe("AUTH_NUDGE_TEXTS — one phrasing for the account ask", () => {
         "extend-sequence",
         "export",
         "guest-first-save",
-        "loop-step-cap-guest",
         "loop-locked-guest",
         "method:assemble",
         "method:fuse",
@@ -61,7 +59,6 @@ describe("AUTH_NUDGE_TEXTS — one phrasing for the account ask", () => {
         "share-image-signin",
         "share-sequence",
         "save-setup",
-        "setup-step-cap-guest",
         "sync-library",
         "turn-pattern",
         "viewer-signin-account",
@@ -129,7 +126,7 @@ describe("contextual auth prompt copy", () => {
     }
   });
 
-  it("keeps the approved share, account-action, and sequence-limit prompts", () => {
+  it("keeps the approved share and account-action prompts", () => {
     expect(getAuthPromptContent("share-sequence", "signup")).toMatchObject({
       title: "Share this sequence",
       body: "Sign in or create an account to send it, make a link, or download a Choreo Card.",
@@ -138,10 +135,19 @@ describe("contextual auth prompt copy", () => {
       title: "Open this sequence anywhere",
       body: "A free account keeps it in your library and opens it on any device.",
     });
-    expect(getAuthPromptContent("step-cap-guest", "signup")).toMatchObject({
-      title: "Eight is the guest limit.",
-      body: "A free account gets you up to 64 steps.",
-    });
+  });
+
+  it("never asks for an account to build longer sequences", () => {
+    for (const [trigger, text] of entries) {
+      expect(text, `${trigger} nudge mentions a step limit`).not.toMatch(
+        /\d+ steps\b/
+      );
+      const content = getAuthPromptContent(trigger, "signup");
+      expect(
+        `${content.title} ${content.body}`,
+        `${trigger} prompt mentions a step limit`
+      ).not.toMatch(/\d+ steps\b/);
+    }
   });
 
   it("names the action that opened each sequence or cross-device prompt", () => {

@@ -21,7 +21,6 @@ import {
 import { getPathPoints } from "#lib/features/hand-paths/hand-path-builder/services/hand-path-animator.js";
 import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
 import { activeWordHeaderStep } from "#lib/shared/animation-engine/domain/word-header-highlight.js";
-import type { WordHeaderHighlight } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
 import { getMotionColor } from "#lib/shared/utils/svg-color-utils.js";
 import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
@@ -46,7 +45,6 @@ export interface FrameCompositorConfig {
   showElementalGlyph: boolean;
   showStepNumbers: boolean;
   showWordHeader: boolean;
-  wordHeaderHighlight?: WordHeaderHighlight;
   showProgressBar: boolean;
   isDarkMode: boolean;
   isCompositeMode: boolean;
@@ -350,11 +348,7 @@ export class ExportFrameCompositor {
         actualCanvasSize,
         sequenceWord,
         isDarkMode,
-        activeWordHeaderStep(
-          playbackPosition,
-          steps.length,
-          this.config.wordHeaderHighlight ?? "arrival"
-        ),
+        activeWordHeaderStep(playbackPosition, steps.length),
         difficultyLevel,
         loopComponents,
         rotationPeriod,

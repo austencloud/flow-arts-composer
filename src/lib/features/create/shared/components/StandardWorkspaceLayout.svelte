@@ -39,6 +39,7 @@
   import { logConstructImmediateUndo } from "../../construct/services/construct-analytics";
   import { isStartPlacementMorphCapturing } from "../../construct/start-placement-picker/services/start-placement-morph";
   import { constructPhoneSplit } from "../../construct/services/construct-phone-split";
+  import { hasOpenModalLayer } from "#lib/shared/keyboard/domain/shortcut-target-resolution.js";
 
   type CreateModuleState = ReturnType<typeof CreateModuleStateType>;
 
@@ -374,13 +375,7 @@
     // Keyboard-synthesized clicks have no press; only pointer clicks count.
     if (!pressedBackground || !isPlaybackBackground(event.target)) return;
     // A modal on top owns its own backdrop; the preview keeps running.
-    if (
-      document.querySelector(
-        'dialog[open], [role="dialog"], [role="alertdialog"], [aria-modal="true"]'
-      )
-    ) {
-      return;
-    }
+    if (hasOpenModalLayer()) return;
     panelState.stopWorkspacePlayback();
   }
 

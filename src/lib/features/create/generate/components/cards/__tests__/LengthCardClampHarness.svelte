@@ -24,13 +24,11 @@ a reactive dependency.
     maxOverride,
     clampToMax = true,
     onCall,
-    onCapExceeded,
   }: {
     naturalDisplayLength: number;
     maxOverride: number;
     clampToMax?: boolean;
     onCall: (length: number) => void;
-    onCapExceeded?: () => void;
   } = $props();
 
   let config = $state<{ writes: number }>({ writes: 0 });
@@ -54,5 +52,4 @@ a reactive dependency.
   {clampToMax}
   minOverride={naturalDisplayLength}
   onLengthChange={handleSpellLengthChange}
-  onStepCapExceeded={onCapExceeded}
 />
