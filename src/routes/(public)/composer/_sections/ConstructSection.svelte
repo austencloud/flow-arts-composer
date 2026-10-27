@@ -827,6 +827,7 @@
                   activeMode="construct"
                   manualColumnCount={STEP_COLUMNS}
                   allowFewStepOverflowOnNarrow={false}
+                  fitAllSteps={isCompactDemo}
                   arrivalSequence={composedSequence}
                   leftPropTypeOverride={effectiveLeftPropType}
                   rightPropTypeOverride={effectiveRightPropType}
@@ -1249,13 +1250,41 @@
     min-height: 0;
   }
 
+  /* The page sizes the guided frame to the window's room, and the sequence
+     and the picker split it. The grid band asks for what its cells can use:
+     one row at the 200px cell cap plus StepGrid's 40px of padding and edge
+     room (15rem), or two rows of width-sized cells in a narrow frame. The
+     picker takes the rest and never less than half, so a short frame shrinks
+     the band first and StepGrid fits its cells to what is left
+     (fitAllSteps). Every height down to the band stays definite: the frame is
+     definite, so each flexed size is too. StepGrid's size container needs
+     that; see the .ws-frame notes below. */
+  .guided-build .compact-layout .sequence-column {
+    flex: 0 1 auto;
+    min-height: 0;
+  }
+
+  .guided-build .compact-layout .build-column {
+    flex: 1 1 0;
+    min-height: 50%;
+  }
+
   .guided-build .compact-layout .sequence-column .workspace {
-    min-height: clamp(13rem, 32svh, 18rem);
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .guided-build .compact-layout .sequence-column .ws-frame {
+    flex: 0 1 min(15rem, 40cqw + 1.5rem);
+    height: auto;
+    min-height: 0;
   }
 
   .guided-build .compact-layout .build-column .picker-pane,
   .guided-build.compact-demo.play-phase .build-column .picker-pane {
-    min-height: clamp(18rem, 46svh, 22rem);
+    flex: 1 1 0;
+    height: auto;
+    min-height: 0;
   }
 
   .continuous-workspace .compact-layout .sequence-column .workspace {

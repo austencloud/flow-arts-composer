@@ -38,6 +38,7 @@ with pre-prepared data for better performance.
   import type { PictographPreparer } from "../services/pictograph-preparer";
   import { pictographPreparer } from "../services/pictograph-preparer";
   import type { PreparedPictographData } from "../domain/models/prepared-pictograph-data";
+  import { redrawsSameOption } from "../services/glide-rotation";
   import type { PictographData } from "../domain/models/pictograph-data";
   import { isVisibleMotion } from "../domain/models/motion-data";
   import { describePictograph } from "../domain/utils/pictograph-description";
@@ -177,8 +178,8 @@ with pre-prepared data for better performance.
     pictographData?: (StepData | PictographData) | null;
     disableTransitions?: boolean;
     /** Skip the crossfade when the pictograph id changes. With transitions
-     *  still on, a reused cell's props and arrows glide to their new places
-     *  instead of fading between two drawings. */
+     *  still on, a redraw of the same option glides its props and arrows to
+     *  their new places instead of snapping. */
     disableContentTransitions?: boolean;
     gridMode?: GridMode | null;
     showGrid?: boolean;
@@ -880,6 +881,30 @@ with pre-prepared data for better performance.
         : arrowOpacity
   );
 
+  // ── Same-option glide ───────────────────────────────────────────────────
+  // A pictograph without a cell identity that is redrawn as the same option
+  // (new turns, orientation, prop or grid mode) glides its props and arrows to
+  // the new drawing, as the option picker does. Cells with an identity travel
+  // on the edit clock instead; a different pictograph crossfades or snaps.
+  let previousPrepared: PreparedPictographData | null = null;
+  const redrawnInPlace = $derived.by(() => {
+    const shown = preparedData;
+    const same =
+      previousPrepared !== null &&
+      shown !== null &&
+      previousPrepared !== shown &&
+      redrawsSameOption(previousPrepared, shown);
+    previousPrepared = shown;
+    return same;
+  });
+  const glideInPlace = $derived(
+    redrawnInPlace &&
+      editIdentity == null &&
+      editEligible &&
+      editTravel === null &&
+      !disableTransitions
+  );
+
   // The clock waits for this drawing's new pose before it starts.
   $effect(() => {
     if (editTravel && editTargetApplied)
@@ -1007,6 +1032,7 @@ with pre-prepared data for better performance.
         animateContent={animateContent && liveAnimateVisibility}
         arrowOpacity={effectiveArrowOpacity}
         disableTransitions={disableTransitions || editTravel !== null}
+        {glideInPlace}
         onGridReady={handleGridReady}
       />
     {:else}
@@ -1064,6 +1090,7 @@ with pre-prepared data for better performance.
             animateContent={animateContent && liveAnimateVisibility}
             arrowOpacity={effectiveArrowOpacity}
             disableTransitions={disableTransitions || editTravel !== null}
+            {glideInPlace}
             onGridReady={handleGridReady}
           />
         </div>

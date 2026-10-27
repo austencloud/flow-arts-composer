@@ -18,6 +18,10 @@ fade and scale settle when the prop's artwork itself changes live here.
   import type { PropPosition } from "../domain/models/prop-position";
   import { getSettings } from "../../../application/state/app-state.svelte";
   import { applyHandColorOverride } from "../domain/prop-preview-color";
+  import {
+    glideRotation,
+    turnsChangeDirection,
+  } from "../../shared/services/glide-rotation";
 
   // Buugeng family - asymmetric props that can be flipped
   const BUUGENG_FAMILY = new Set([
@@ -85,6 +89,7 @@ fade and scale settle when the prop's artwork itself changes live here.
     // Per-frame motion is moving this prop; an artwork swap snaps instead of
     // settling its scale behind the motion.
     directPositioning = false,
+    glide = false,
     colorOverride = undefined,
     buugengFlippedOverride = undefined,
   } = $props<{
@@ -97,6 +102,9 @@ fade and scale settle when the prop's artwork itself changes live here.
     onPropClick?: () => void;
     /** Per-frame motion is moving this prop. */
     directPositioning?: boolean;
+    /** Ease a new resting position in (a hand shown or hidden beside this one,
+     *  or an option card whose turns changed). */
+    glide?: boolean;
     /** Optional display-only color. The motion remains blue/red semantically. */
     colorOverride?: string;
     buugengFlippedOverride?: boolean;
@@ -174,9 +182,29 @@ fade and scale settle when the prop's artwork itself changes live here.
     return false;
   });
 
+  // A gliding prop turns the short way round, or with the motion when its
+  // turns changed, rather than along the raw degrees.
+  let lastRotation: number | null = null;
+  let lastTurns: MotionData["turns"] | undefined;
+  const displayedRotation = $derived.by(() => {
+    const target = propPosition?.rotation ?? 0;
+    const turns = motionData.turns;
+    const rotation =
+      glide && !directPositioning && lastRotation !== null
+        ? glideRotation(
+            lastRotation,
+            target,
+            turnsChangeDirection(lastTurns, turns, motionData.rotationDirection)
+          )
+        : target;
+    lastRotation = rotation;
+    lastTurns = turns;
+    return rotation;
+  });
+
   const transformString = $derived(
     `translate(${propPosition?.x ?? 0}px, ${propPosition?.y ?? 0}px) ` +
-      `rotate(${propPosition?.rotation ?? 0}deg) ` +
+      `rotate(${displayedRotation}deg) ` +
       (shouldMirror ? "scaleX(-1) " : "")
   );
   const centeringTransform = $derived(
@@ -195,6 +223,7 @@ fade and scale settle when the prop's artwork itself changes live here.
       class="prop-svg {motionData.hand}-prop-svg clickable"
       class:selected={isSelected}
       class:prop-fading={propFading}
+      class:glide={glide && !directPositioning}
       data-prop-type={motionData?.propType}
       data-direct-positioning={directPositioning || undefined}
       style="transform: {transformString};"
@@ -236,6 +265,7 @@ fade and scale settle when the prop's artwork itself changes live here.
       class="prop-svg {motionData.hand}-prop-svg"
       class:selected={isSelected}
       class:prop-fading={propFading}
+      class:glide={glide && !directPositioning}
       data-prop-type={motionData?.propType}
       data-direct-positioning={directPositioning || undefined}
       style="transform: {transformString};"
@@ -272,6 +302,13 @@ fade and scale settle when the prop's artwork itself changes live here.
     transition: opacity var(--duration-fast) var(--ease-standard);
   }
 
+  /* A resting prop whose place shifts (its partner shown or hidden) eases there. */
+  .prop-svg.glide {
+    transition:
+      opacity var(--duration-fast) var(--ease-standard),
+      transform var(--duration-normal) var(--ease-standard);
+  }
+
   /* Brief fade when prop type changes (SVG content swap) */
   .prop-svg.prop-fading {
     opacity: 0.45;
@@ -288,6 +325,7 @@ fade and scale settle when the prop's artwork itself changes live here.
 
   @media (prefers-reduced-motion: reduce) {
     .prop-svg,
+    .prop-svg.glide,
     .prop-swap {
       transition: none;
     }

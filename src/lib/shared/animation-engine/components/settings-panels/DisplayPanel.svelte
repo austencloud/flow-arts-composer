@@ -64,6 +64,12 @@
      *  compact padding but fits the arrangement to both dimensions. Ignored
      *  with the per-hand chips. */
     compact = false,
+    /** The host lays the tiles out: they join the shared `.rt-tile-grid`
+     *  (rail-tile.css) and take its `--tile-grid-cols` and `--tile-grid-art`,
+     *  so this panel's tiles match the host's other tile grids exactly
+     *  (Settings → Display puts three side by side). Ignored with `fill`,
+     *  `compact` or the per-hand chips. */
+    hostSized = false,
     /** The four edge marks (TKA glyph, element, step number, word) describe a
      *  realized sequence. A host animating something that has no letter and no
      *  steps — the shape-matrix theory stage traces a bare spin ratio — turns
@@ -87,6 +93,7 @@
     grow?: boolean;
     stretch?: boolean;
     compact?: boolean;
+    hostSized?: boolean;
     showSequenceMarks?: boolean;
     showWordToggle?: boolean;
     onSettingChange?: ViewerControlSink;
@@ -419,6 +426,9 @@
   // at the largest picture, see how far the scroller overflows, then shrink),
   // and the second needs the first's result before anything paints.
   const compactMode = $derived(compact && !fill && !showPropChips);
+  const hostLaidOut = $derived(
+    hostSized && !fill && !compact && !showPropChips
+  );
 
   function scrollerOf(el: HTMLElement): HTMLElement | null {
     for (let node = el.parentElement; node; node = node.parentElement) {
@@ -506,6 +516,8 @@
     class:ten-tiles={showPropChips && chips.length === 10}
     class:fitted
     class:compact={compact && !showPropChips}
+    class:rt-tile-grid={hostLaidOut}
+    class:host-sized={hostLaidOut}
     class="vis-grid"
     bind:this={gridEl}
     style={fitted
@@ -628,7 +640,8 @@
   /* A breath between the layers that live in the square and the marks drawn at
      its edges, so the grouping is visible without a heading for each. Skipped
      on the landing variant, where the group boundary falls mid-row. */
-  .vis-grid:not(.motion-grid):not(.fitted):not(.compact) > :nth-child(n + 5) {
+  .vis-grid:not(.motion-grid):not(.fitted):not(.compact):not(.host-sized)
+    > :nth-child(n + 5) {
     margin-top: 10px;
   }
 
@@ -692,7 +705,7 @@
   /* The width-only ladder. It is the whole story where the host gives no
      height, and is skipped entirely once the measured fit sets --tile-art on
      the grid — a cap declared on the chip would win over the inherited one. */
-  .vis-grid:not(.fitted):not(.compact) .rt-chip {
+  .vis-grid:not(.fitted):not(.compact):not(.host-sized) .rt-chip {
     --tile-art: 6rem;
   }
 
@@ -702,16 +715,32 @@
      the picture takes 7rem, which spends the tile on the picture instead of on
      padding, and below it the column itself is the binding constraint. */
   @container (min-width: 24rem) {
-    .vis-grid:not(.fitted):not(.compact) .rt-chip {
+    .vis-grid:not(.fitted):not(.compact):not(.host-sized) .rt-chip {
       --tile-art: 7rem;
     }
   }
 
   /* The 3840 inspector again: 195px tiles were still carrying a 7rem picture. */
   @container (min-width: 46rem) {
-    .vis-grid:not(.fitted):not(.compact) .rt-chip {
+    .vis-grid:not(.fitted):not(.compact):not(.host-sized) .rt-chip {
       --tile-art: 8.5rem;
     }
+  }
+
+  /* Host-sized: the shared .rt-tile-grid owns columns, gap and picture size.
+     These restate it over the panel's own grid and padding, which are more
+     specific than the shared rules. */
+  .vis-grid.host-sized {
+    display: flex;
+    gap: var(--tile-grid-gap, 8px);
+  }
+
+  .vis-grid.host-sized .rt-chip {
+    padding: 10px 6px;
+  }
+
+  .vis-grid.host-sized .chip-label {
+    font-size: var(--font-size-xs, 0.75rem);
   }
 
   /* The compact layout. Short tiles, picture over label, in as few rows as the

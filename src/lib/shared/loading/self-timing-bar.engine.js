@@ -117,8 +117,18 @@
    *   tickMs     ticker period (default 80)
    *   log        an array milestone entries are pushed onto
    *   onSample   (now, percentOnScreen, percentTarget) per tick and move
+   *   now        the clock (default performance.now)
    */
   function createSelfTimingBar(options) {
+    // The clock every arrival and position is read on. The boot worker
+    // passes one on the page's clock (a worker's performance.now() counts
+    // from the worker's own start).
+    var clock =
+      typeof options.now === "function"
+        ? options.now
+        : function () {
+            return performance.now();
+          };
     var ranks = options.ranks;
     var last = ranks.length - 1;
     var origin = options.origin || 0;
@@ -340,7 +350,7 @@
       if (!waiting) return;
       waiting = false;
       try {
-        runSegment(performance.now());
+        runSegment(clock());
       } catch (e) {}
     }
 
@@ -382,7 +392,7 @@
     function tick() {
       try {
         if (finished) return;
-        var now = performance.now();
+        var now = clock();
         var value = at(now);
         if (still) placeExpected(now, value);
         sample(now, value);
@@ -411,7 +421,7 @@
     function milestone(name, opts) {
       var rank = ranks.indexOf(name);
       if (rank === -1 || arrived.hasOwnProperty(name)) return null;
-      var now = performance.now();
+      var now = clock();
       arrived[name] = now;
       var entry = { name: name, t: Math.round(now - origin) };
       log.push(entry);
@@ -433,7 +443,7 @@
       finished = true;
       waiting = false;
       stopTicker();
-      var now = performance.now();
+      var now = clock();
       if (still || !(ms > 0)) {
         place(100, now);
       } else {
@@ -447,7 +457,7 @@
      */
     function attach(next) {
       if (!next || next === fill) return;
-      var now = performance.now();
+      var now = clock();
       var value = at(now);
       var old = anim;
       anim = null;
@@ -485,12 +495,10 @@
       finish: finish,
       attach: attach,
       at: function (now) {
-        return at(now === undefined ? performance.now() : now);
+        return at(now === undefined ? clock() : now);
       },
       expected: function (now) {
-        return percent(
-          expectedFraction(now === undefined ? performance.now() : now)
-        );
+        return percent(expectedFraction(now === undefined ? clock() : now));
       },
       top: function () {
         return top < 0 ? null : ranks[top];

@@ -147,9 +147,7 @@ export const hmType2Content: GuideBlock[] = [
   {
     kind: "prose",
     html:
-      "The following examples explore both same and opposite handpaths.<br>" +
-      "They alternate the shifting hand.<br>" +
-      "Here, they are shifting in the same direction:",
+      "In the next two, the hands take turns shifting.<br>Here, they shift in the same direction:",
   },
   {
     kind: "pictographGroup",
@@ -161,7 +159,7 @@ export const hmType2Content: GuideBlock[] = [
   },
   {
     kind: "prose",
-    html: "And here, they are shifting in opposite directions.",
+    html: "And here, they shift in opposite directions:",
   },
   {
     kind: "pictographGroup",
@@ -173,6 +171,6 @@ export const hmType2Content: GuideBlock[] = [
   },
   {
     kind: "prose",
-    html: '<span class="pu">Shifts</span> seems mundane here, but they’re very useful later for constructing dynamic sequences.',
+    html: "<span class=\"pu\">Shifts</span> look plain here, but they’re very useful later for building dynamic sequences.",
   },
 ];

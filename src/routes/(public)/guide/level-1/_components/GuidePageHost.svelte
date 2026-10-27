@@ -19,11 +19,22 @@
    */
   import { onMount } from "svelte";
   import { GUIDE_BODY_PAGES, GROUP_TITLES } from "../_data/guide-manifest";
+  import { webPageNeighbours } from "../_data/guide-reader-nav";
   import { BUILT } from "../_data/built-pages";
   import { GUIDE_CONTENT, hasReflowContent } from "../_data/guide-content";
   import { seoForSlug } from "../_data/guide-page-seo";
   import { taglineInIntro } from "../_data/flow-intro";
   import FlowFrame from "./FlowFrame.svelte";
+  import GuideScreens from "../../_components/fit/GuideScreens.svelte";
+  import {
+    SMALL_TEXT_SCREEN_CHARS,
+    MEDIUM_TEXT_SCREEN_CHARS,
+    SMALL_TEXT_SCREEN_MAX_CHARS,
+    watchScreenTier,
+    type ScreenTier,
+  } from "../../_components/fit/guide-screen-url";
+  import { flowRenderItems, flowScreens } from "../_data/flow-render-items";
+  import { localizeLevel1Block } from "../_data/localize-level1-content";
   import GuidePage from "./GuidePage.svelte";
   import GuideCompanionHost from "../../_components/GuideCompanionHost.svelte";
   import { getConceptExperienceForGuideSlug } from "#lib/features/learn/domain/concept-experience-registry.js";
@@ -62,10 +73,54 @@
     meta ? `Level 1 · ${GROUP_TITLES[meta.group]}` : "Level 1"
   );
 
-  const prev = $derived(bodyIndex > 0 ? GUIDE_BODY_PAGES[bodyIndex - 1] : null);
-  const next = $derived(
-    bodyIndex >= 0 && bodyIndex < GUIDE_BODY_PAGES.length - 1
-      ? GUIDE_BODY_PAGES[bodyIndex + 1]
+  // A reflow topic shows one screen at a time (GuideScreens): its screens
+  // and their pill labels come from the same split FlowFrame draws.
+  // A phone gives long text its own screen (guide-screen-url.ts).
+  let tier = $state<ScreenTier>("large");
+  const smallScreen = $derived(tier === "small");
+  // On a phone a card's long words leave the card, so the words and the
+  // figure each get a screen (FlowFrame must split the same way).
+  const detachTextChars = $derived(
+    smallScreen ? SMALL_TEXT_SCREEN_CHARS : undefined
+  );
+  const pageScreens = $derived(
+    useFlow && content
+      ? flowScreens(
+          flowRenderItems(content, seo.tagline ?? "", localizeLevel1Block, {
+            detachTextChars,
+          }),
+          "Intro",
+          {
+            textScreenChars: smallScreen
+              ? SMALL_TEXT_SCREEN_CHARS
+              : tier === "medium"
+                ? MEDIUM_TEXT_SCREEN_CHARS
+                : undefined,
+            textScreenMaxChars: smallScreen
+              ? SMALL_TEXT_SCREEN_MAX_CHARS
+              : undefined,
+            // Only a large window has room for a set of figures at once.
+            keepGalleriesTogether: tier === "large",
+            introOwnScreen: tier === "medium",
+          }
+        )
+      : []
+  );
+  const screenLabels = $derived(pageScreens.map((s) => s.label));
+
+  // The web's order skips the print pages folded into another page.
+  const neighbours = $derived(webPageNeighbours(slug));
+  const prev = $derived(neighbours.prev);
+  const next = $derived(neighbours.next);
+
+  const prevLink = $derived(
+    prev
+      ? { href: localHref(`/guide/level-1/${prev.id}`), title: prev.title }
+      : null
+  );
+  const nextLink = $derived(
+    next
+      ? { href: localHref(`/guide/level-1/${next.id}`), title: next.title }
       : null
   );
 
@@ -140,6 +195,7 @@
       // sessionStorage unavailable - position just won't persist.
     }
   }
+  onMount(() => watchScreenTier((v) => (tier = v)));
   onMount(() => {
     let scrollRaf = 0;
     const onWinScroll = () => {
@@ -206,15 +262,48 @@
 </script>
 
 <GuideCompanionHost pageTitle={meta?.title ?? ""} levelLabel="Level 1">
-  <main class="guide-page-route">
+  <main
+    class="guide-page-route"
+    class:screens={Boolean(TopicPage) || Boolean(useFlow && content)}
+  >
     {#if TopicPage}
       <TopicPage
         darkMode={isDark}
         kicker={topicKicker}
+        title={seo.h1}
+        frame={{
+          prevPage: prevLink,
+          nextPage: nextLink,
+          hubHref: localHref("/guide"),
+        }}
         lessonHref={interactiveLesson
           ? buildConceptStartPath(interactiveLesson.conceptId)
           : null}
       />
+    {:else if useFlow && content}
+      <GuideScreens
+        title={seo.h1}
+        kicker={topicKicker}
+        subtitle={heroTagline}
+        labels={screenLabels}
+        prevPage={prevLink}
+        nextPage={nextLink}
+        hubHref={localHref("/guide")}
+        lead={interactiveLesson || relatedLinks.length > 0
+          ? lessonLinks
+          : undefined}
+      >
+        {#snippet screen(n)}
+          <FlowFrame
+            {content}
+            darkMode={isDark}
+            tagline={seo.tagline ?? ""}
+            layout={slug === "the-grid" ? "grid-reference" : "default"}
+            screen={pageScreens[n]?.items ?? []}
+            {detachTextChars}
+          />
+        {/snippet}
+      </GuideScreens>
     {:else}
       <header class="topic-hero" class:sheet-topic={!canFlow}>
         <!-- Built sheet fallbacks paint their own title. Reflow pages use this
@@ -275,29 +364,54 @@
       {/if}
     {/if}
 
-    <nav class="topic-nav" aria-label="Guide navigation">
-      {#if prev}
-        <a class="nav-link prev" href={localHref(`/guide/level-1/${prev.id}`)}>
-          <span class="nav-dir">Previous</span><span class="nav-title"
-            >{prev.title}</span
+    {#if !(useFlow && content) && !TopicPage}
+      <nav class="topic-nav" aria-label="Guide navigation">
+        {#if prev}
+          <a
+            class="nav-link prev"
+            href={localHref(`/guide/level-1/${prev.id}`)}
           >
-        </a>
-      {:else}
-        <span class="nav-spacer"></span>
-      {/if}
-      <a class="nav-link hub" href={localHref("/guide")}>All guides</a>
-      {#if next}
-        <a class="nav-link next" href={localHref(`/guide/level-1/${next.id}`)}>
-          <span class="nav-dir">Next</span><span class="nav-title"
-            >{next.title}</span
+            <span class="nav-dir">Previous</span><span class="nav-title"
+              >{prev.title}</span
+            >
+          </a>
+        {:else}
+          <span class="nav-spacer"></span>
+        {/if}
+        <a class="nav-link hub" href={localHref("/guide")}>All guides</a>
+        {#if next}
+          <a
+            class="nav-link next"
+            href={localHref(`/guide/level-1/${next.id}`)}
           >
-        </a>
-      {:else}
-        <span class="nav-spacer"></span>
-      {/if}
-    </nav>
+            <span class="nav-dir">Next</span><span class="nav-title"
+              >{next.title}</span
+            >
+          </a>
+        {:else}
+          <span class="nav-spacer"></span>
+        {/if}
+      </nav>
+    {/if}
   </main>
 </GuideCompanionHost>
+
+{#snippet lessonLinks()}
+  <span class="interactive-lesson">
+    {#if interactiveLesson}
+      <LinkChip href={buildConceptStartPath(interactiveLesson.conceptId)}
+        ><i class="fa-solid fa-graduation-cap" aria-hidden="true"></i>
+        Learn this interactively</LinkChip
+      >
+    {/if}
+    {#each relatedLinks as link (link.href)}
+      <LinkChip href={localHref(link.href)}
+        ><i class="fa-solid fa-{link.icon}" aria-hidden="true"></i>
+        {t(link.labelKey)}</LinkChip
+      >
+    {/each}
+  </span>
+{/snippet}
 
 <style>
   /* Standalone editorial topic page - owns its light/dark palette (not the app's
@@ -315,6 +429,16 @@
        narrow. inline-size only: block-size (min-height: 100vh) is unaffected. */
     container-type: inline-size;
   }
+  /* One screen at a time (GuideScreens owns the frame): the route spans
+     the full width on every screen. */
+  .guide-page-route.screens {
+    min-height: 0;
+    padding-block: 0;
+  }
+  :global(.guide-content > .guide-page-route.screens) {
+    grid-column: full;
+  }
+
   /* A centred section break, like every Guide page header: title, tagline,
      then the lesson links, on the reading column's axis. */
   .topic-hero {

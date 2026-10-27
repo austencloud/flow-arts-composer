@@ -2,8 +2,9 @@
  * The beat carousel a downloaded video can carry: the spotlight rail the app
  * shows under its animations (the current beat large, its neighbors shrinking
  * and fading), attached to one side of the video card. The card is the word
- * header over the animation square; the carousel's beat dots stand in for the
- * progress bar, so a carousel video has no progress bar.
+ * header, the animation square and the progress bar, each when the video
+ * shows it. The carousel's dots say which beat is playing; the bar says how
+ * far through the whole video it is.
  *
  * Pure layout and timing. The export compositor draws the band with the beat
  * carousel painter (`media-composition/services/beat-carousel-painter.ts`).
@@ -62,9 +63,12 @@ export function videoCarouselSourceFrame(input: {
   /** The animation square's edge, which is also the card's width. */
   squareSize: number;
   headerHeight: number;
+  /** The progress bar under the square; zero without one. */
+  footerHeight?: number;
 }): { width: number; height: number } {
   const band = input.squareSize * VIDEO_CAROUSEL_BAND_RATIO;
-  const cardHeight = input.squareSize + input.headerHeight;
+  const cardHeight =
+    input.squareSize + input.headerHeight + (input.footerHeight ?? 0);
   return videoCarouselOrientation(input.placement) === "vertical"
     ? { width: input.squareSize + band, height: cardHeight }
     : { width: input.squareSize, height: cardHeight + band };
@@ -85,6 +89,8 @@ export interface VideoCarouselFrame {
   /** The animation square's edge in output pixels. */
   canvasSize: number;
   headerHeight: number;
+  /** The progress bar's height under the square; zero without one. */
+  footerHeight: number;
   band: VideoCarouselRect;
 }
 
@@ -101,15 +107,22 @@ export function layoutVideoCarouselFrame(input: {
   sourceSquareSize: number;
   /** The header's height at source scale; zero without a word header. */
   sourceHeaderHeight: number;
+  /** The progress bar's height at source scale; zero without one. */
+  sourceFooterHeight?: number;
 }): VideoCarouselFrame {
   const { placement, outputWidth, outputHeight } = input;
+  const sourceFooterHeight = input.sourceFooterHeight ?? 0;
   const orientation = videoCarouselOrientation(placement);
   if (orientation === "horizontal") {
     const canvasSize = outputWidth;
     const headerHeight = Math.round(
       (input.sourceHeaderHeight * canvasSize) / input.sourceSquareSize
     );
-    const bandHeight = Math.max(0, outputHeight - headerHeight - canvasSize);
+    const footerHeight = Math.round(
+      (sourceFooterHeight * canvasSize) / input.sourceSquareSize
+    );
+    const cardHeight = headerHeight + canvasSize + footerHeight;
+    const bandHeight = Math.max(0, outputHeight - cardHeight);
     const above = placement === "above";
     return {
       orientation,
@@ -117,9 +130,10 @@ export function layoutVideoCarouselFrame(input: {
       cardY: above ? bandHeight : 0,
       canvasSize,
       headerHeight,
+      footerHeight,
       band: {
         x: 0,
-        y: above ? 0 : headerHeight + canvasSize,
+        y: above ? 0 : cardHeight,
         width: outputWidth,
         height: bandHeight,
       },
@@ -127,9 +141,11 @@ export function layoutVideoCarouselFrame(input: {
   }
 
   const scale =
-    outputHeight / (input.sourceSquareSize + input.sourceHeaderHeight);
+    outputHeight /
+    (input.sourceSquareSize + input.sourceHeaderHeight + sourceFooterHeight);
   const headerHeight = Math.round(input.sourceHeaderHeight * scale);
-  const canvasSize = outputHeight - headerHeight;
+  const footerHeight = Math.round(sourceFooterHeight * scale);
+  const canvasSize = outputHeight - headerHeight - footerHeight;
   const bandWidth = Math.max(0, outputWidth - canvasSize);
   const left = placement === "left";
   return {
@@ -138,6 +154,7 @@ export function layoutVideoCarouselFrame(input: {
     cardY: 0,
     canvasSize,
     headerHeight,
+    footerHeight,
     band: {
       x: left ? 0 : canvasSize,
       y: 0,

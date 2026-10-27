@@ -16,8 +16,11 @@ import {
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import { HUMAN_CHARACTER_IDS } from "#lib/shared/3d/performers/human-character-roster.js";
 import { mirrorSequence } from "#lib/shared/create/services/sequence-transformer.js";
-import { restFacing, turnToward } from "./village-rest-facing";
+import type { LocomotionGaitClock, TerminalStepPlan, TurnRequest } from "@austencloud/scene-3d";
+import { restFacing } from "./village-rest-facing";
+import { VillageWalker, type VillageWalkPose } from "./village-walk";
 import { VillageOrchestrator } from "../engine/village-orchestrator";
+import type { VillageWalkIntent } from "../engine/village-walk-intent";
 import { createVillageDriver, type VillageDriver } from "../engine/village-driver";
 import type { VisitorLessonRequest } from "../engine/village-visitor";
 import type { VillageRules } from "../domain/village-rules";
@@ -42,6 +45,29 @@ export interface AvatarRenderState {
 	loadedStartTick: number | null;
 	// Sat down before passing, so they pass where they sat.
 	wasSeated: boolean;
+	/**
+	 * How the body walks this frame, as PerformerRig props (village-walk.ts).
+	 * VillageAvatar spreads it onto the rig after its own isMoving/moveSpeed.
+	 */
+	readonly walk: VillageWalkRigProps;
+}
+
+/** The rig props a village body walks by; the getters stay reactive. */
+export interface VillageWalkRigProps {
+	readonly isMoving: boolean;
+	readonly moveSpeed: number;
+	readonly terminalStepPlan: TerminalStepPlan | null;
+	/** Undefined when no turn clip runs, so the rig keeps its beat turns. */
+	readonly turnRequestOverride: TurnRequest | undefined;
+	readonly locomotionResetKey: number;
+	readonly onGaitClock: (clock: LocomotionGaitClock) => void;
+}
+
+/** What the walk keeps per body, beside the render record. */
+interface WalkRecord {
+	walker: VillageWalker | null;
+	clock: LocomotionGaitClock | null;
+	setPose(pose: VillageWalkPose): void;
 }
 
 const MIRRORED_KEY = ":facing-mirror";
@@ -104,8 +130,56 @@ function visitorPlayback(visitor: VillageVisitorSnapshot): PlaybackFields {
 	};
 }
 
-function createAvatarRenderState(initial: VillageAvatarSnapshot): AvatarRenderState {
+function createWalkRecord(): { record: WalkRecord; props: VillageWalkRigProps } {
+	let pose = $state.raw<VillageWalkPose | null>(null);
+	const record: WalkRecord = {
+		walker: null,
+		clock: null,
+		setPose(next) {
+			const last = pose;
+			if (
+				last?.isMoving === next.isMoving &&
+				last.moveSpeed === next.moveSpeed &&
+				last.terminalStepPlan === next.terminalStepPlan &&
+				last.turnRequest === next.turnRequest &&
+				last.resetKey === next.resetKey
+			) {
+				return;
+			}
+			pose = next;
+		},
+	};
+	const onGaitClock = (clock: LocomotionGaitClock) => {
+		record.clock = clock;
+	};
+	const props: VillageWalkRigProps = {
+		get isMoving() {
+			return pose?.isMoving ?? false;
+		},
+		get moveSpeed() {
+			return pose?.moveSpeed ?? 0;
+		},
+		get terminalStepPlan() {
+			return pose?.terminalStepPlan ?? null;
+		},
+		get turnRequestOverride() {
+			return pose?.turnRequest;
+		},
+		get locomotionResetKey() {
+			return pose?.resetKey ?? 0;
+		},
+		onGaitClock,
+	};
+	return { record, props };
+}
+
+function createAvatarRenderState(
+	initial: VillageAvatarSnapshot,
+	walks: Map<string, WalkRecord>,
+): AvatarRenderState {
 	let avatar = $state.raw(initial);
+	const walk = createWalkRecord();
+	walks.set(initial.id, walk.record);
 	return {
 		entityId: initial.id,
 		instanceState: createAvatarInstanceState(
@@ -121,6 +195,7 @@ function createAvatarRenderState(initial: VillageAvatarSnapshot): AvatarRenderSt
 		loadedSequenceId: null,
 		loadedStartTick: null,
 		wasSeated: false,
+		walk: walk.props,
 	};
 }
 
@@ -199,11 +274,11 @@ const MOTION_WAIT_LIMIT_SECONDS = 10;
 // How far the rig may drift from the sim's place in a step before it is put
 // back, as a share of the step.
 const LESSON_DRIFT = 0.3;
-// How fast a body turns: brisk into a walk's heading, unhurried when settling
-// to look at someone. A long frame (a hidden tab) still turns at most this far.
-const WALK_TURN_RADIANS_PER_SECOND = 4;
-const REST_TURN_RADIANS_PER_SECOND = 2;
-const MAX_TURN_FRAME_SECONDS = 0.1;
+// A long frame (a hidden tab) still moves a body at most this far.
+const MAX_WALK_FRAME_SECONDS = 0.1;
+// Faster than this the village outruns the turn clips and planned stops,
+// so bodies just follow (village-walk.ts).
+const MAX_AUTHORED_WALK_SPEED = 2;
 
 export function createVillageState(options: CreateVillageStateOptions): VillageState {
 	const { rules } = options;
@@ -225,6 +300,10 @@ export function createVillageState(options: CreateVillageStateOptions): VillageS
 	let visitorRenderState = $state.raw<VisitorRenderState | null>(null);
 
 	const records = new Map<string, AvatarRenderState>();
+	const walks = new Map<string, WalkRecord>();
+	// Each walker's target and pace at the latest tick, and when it ran.
+	let walkIntents = new Map<string, VillageWalkIntent>();
+	let lastTickAt = performance.now();
 	const listeners = new Set<(events: VillageEvent[], snapshot: VillageSnapshot) => void>();
 	const advanceListeners = new Set<(events: VillageEvent[], snapshot: VillageSnapshot) => void>();
 	// The entry snapshot's own events (the opening's "started") were made
@@ -253,6 +332,8 @@ export function createVillageState(options: CreateVillageStateOptions): VillageS
 
 	function applySnapshot(next: VillageSnapshot): void {
 		snapshot = next;
+		walkIntents = orchestrator.walkIntents();
+		lastTickAt = performance.now();
 		const seen = new Set<string>();
 		let listChanged = false;
 
@@ -260,7 +341,7 @@ export function createVillageState(options: CreateVillageStateOptions): VillageS
 			seen.add(avatar.id);
 			let record = records.get(avatar.id);
 			if (!record) {
-				record = createAvatarRenderState(avatar);
+				record = createAvatarRenderState(avatar, walks);
 				records.set(avatar.id, record);
 				listChanged = true;
 			} else {
@@ -274,6 +355,7 @@ export function createVillageState(options: CreateVillageStateOptions): VillageS
 		for (const id of records.keys()) {
 			if (!seen.has(id)) {
 				records.delete(id);
+				walks.delete(id);
 				listChanged = true;
 			}
 		}
@@ -385,41 +467,61 @@ export function createVillageState(options: CreateVillageStateOptions): VillageS
 	}
 
 	/**
-	 * Smoothly move each rig toward where the sim last put the avatar.
+	 * Walk each body to where the sim puts the avatar (village-walk.ts).
 	 * Called every render frame; the sim only ticks a few times a second.
-	 * Bodies turn at a steady rate toward where they are going or, standing
-	 * still, toward where they rest their gaze (village-rest-facing.ts):
-	 * never a snap.
+	 * Bodies follow the sim's path at its pace, turn on the spot with the
+	 * turn clips before setting off the wrong way, end each walk in a planned
+	 * stop on the mark, and standing still settle their gaze toward where
+	 * they rest it (village-rest-facing.ts). Never a snap.
 	 */
 	let lastLerpAt: number | null = null;
 	function lerpAvatars(deltaSeconds?: number): void {
-		const POSITION_LERP = 0.15;
-		const MOVE_THRESHOLD = 0.02;
 		const now = performance.now();
 		const measured = lastLerpAt === null ? 1 / 60 : (now - lastLerpAt) / 1000;
-		const delta = Math.min(MAX_TURN_FRAME_SECONDS, deltaSeconds ?? measured);
+		const delta = Math.min(MAX_WALK_FRAME_SECONDS, deltaSeconds ?? measured);
 		lastLerpAt = now;
 		const watchRadius = rules.performance.attractionRadius;
+		const running = driver.isRunning;
+		const ticksPerSecond = rules.ticksPerSecond * speed;
+		const sinceTick = Math.min(1 / Math.max(1e-6, ticksPerSecond), (now - lastTickAt) / 1000);
+		const authoredSpeed = running && speed <= MAX_AUTHORED_WALK_SPEED;
 
 		for (const record of records.values()) {
+			const walk = walks.get(record.entityId);
+			if (!walk) continue;
 			const inst = record.instanceState;
 			const { avatar } = record;
-			const dx = avatar.x - inst.position.x;
-			const dz = avatar.z - inst.position.z;
-			const dist = Math.sqrt(dx * dx + dz * dz);
+			walk.walker ??= new VillageWalker({
+				id: record.entityId,
+				x: inst.position.x,
+				z: inst.position.z,
+				yaw: inst.facingAngle,
+				arrivalThreshold: rules.movement.arrivalThreshold,
+				fire: rules.campfire,
+			});
 
-			// A capped snapFacingAngle, not setFacingAngle: the village never
-			// calls updateLocomotion(), which is what eases toward a set target.
-			const walking = dist > MOVE_THRESHOLD;
-			const target = walking
-				? Math.atan2(dx, dz)
-				: toRigYaw(restFacing(avatar, snapshot, watchRadius));
-			const rate = walking ? WALK_TURN_RADIANS_PER_SECOND : REST_TURN_RADIANS_PER_SECOND;
-			const next = turnToward(inst.facingAngle, target, rate * delta);
-			if (next !== inst.facingAngle) inst.snapFacingAngle(next);
+			const intent = running ? walkIntents.get(record.entityId) : undefined;
+			const pace = intent ? intent.metresPerTick * ticksPerSecond : 0;
+			const pose = walk.walker.step({
+				delta,
+				sim: { x: avatar.x, z: avatar.z },
+				sinceTick,
+				intent:
+					intent && pace > 0
+						? { target: { x: intent.targetX, z: intent.targetZ }, speed: pace }
+						: null,
+				restYaw: toRigYaw(restFacing(avatar, snapshot, watchRadius)),
+				clock: walk.clock,
+				// A body playing a sequence moves by its motion, not the clips.
+				authored: authoredSpeed && record.loadedSequenceId === null,
+			});
 
-			inst.position.x += dx * POSITION_LERP;
-			inst.position.z += dz * POSITION_LERP;
+			inst.position.x = pose.x;
+			inst.position.z = pose.z;
+			// A snapFacingAngle, not setFacingAngle: the village never calls
+			// updateLocomotion(), which is what eases toward a set target.
+			if (pose.yaw !== inst.facingAngle) inst.snapFacingAngle(pose.yaw);
+			walk.setPose(pose);
 		}
 	}
 
@@ -427,6 +529,7 @@ export function createVillageState(options: CreateVillageStateOptions): VillageS
 		const wasRunning = driver.isRunning;
 		driver.pause();
 		records.clear();
+		walks.clear();
 		avatarList = [];
 		selectedAvatarId = null;
 		visitorRenderState = null;
@@ -573,6 +676,7 @@ export function createVillageState(options: CreateVillageStateOptions): VillageS
 			isRunning = false;
 			listeners.clear();
 			records.clear();
+			walks.clear();
 			avatarList = [];
 		},
 	};

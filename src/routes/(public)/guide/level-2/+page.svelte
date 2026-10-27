@@ -4,6 +4,29 @@
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import GuideSeo from "../level-1/_components/GuideSeo.svelte";
   import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
+  import { onMount } from "svelte";
+  import GuideScreens from "../_components/fit/GuideScreens.svelte";
+  import {
+    watchScreenTier,
+    type ScreenTier,
+  } from "../_components/fit/guide-screen-url";
+
+  // One screen at a time (2026-10-24 fit pass): a large window shows the
+  // intro and the chapters together; anything smaller gives each a screen.
+  let tier = $state<ScreenTier>("large");
+  onMount(() => watchScreenTier((v) => (tier = v)));
+  const views = $derived(
+    tier === "large"
+      ? [{ label: "Level 2", intro: true, chapters: true }]
+      : [
+          { label: "Intro", intro: true, chapters: false },
+          {
+            label: tDynamic("guide_level2_chapters"),
+            intro: false,
+            chapters: true,
+          },
+        ]
+  );
 </script>
 
 <GuideSeo
@@ -18,127 +41,147 @@
   ]}
 />
 
-<div class="landing">
-  <h1>The Kinetic Alphabet</h1>
-  <p class="subtitle">
-    <Sentences text={tDynamic("guide_level2_subtitle")} />
-  </p>
-  <p class="byline">{tDynamic("guide_level2_byline")}</p>
+<main class="landing">
+  <GuideScreens
+    title="The Kinetic Alphabet"
+    kicker="Level 2"
+    subtitle={tDynamic("guide_level2_subtitle")}
+    labels={views.map((v) => v.label)}
+    nextPage={{
+      href: localHref("/guide/level-2/turns"),
+      title: tDynamic("guide_level2_chapter1_title"),
+    }}
+    hubHref={localHref("/guide")}
+  >
+    {#snippet screen(n)}
+      {@const view = views[n]}
+      <div class="landing-body">
+        {#if view?.intro}
+          <p class="byline">{tDynamic("guide_level2_byline")}</p>
+          <section class="intro">
+            <p><Sentences text={tDynamic("guide_level2_intro")} /></p>
+          </section>
+        {/if}
+        {#if view?.chapters}
+          <nav class="toc" aria-label={tDynamic("guide_level2_toc")}>
+            <h2>{tDynamic("guide_level2_chapters")}</h2>
+            <ol>
+              <li>
+                <a href={localHref("/guide/level-2/turns")}>
+                  <span class="copy">
+                    <strong>{tDynamic("guide_level2_chapter1_title")}</strong>
+                    <span>{tDynamic("guide_level2_chapter1_description")}</span>
+                  </span>
+                  <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+                </a>
+              </li>
+              <li>
+                <a href={localHref("/guide/level-2/double-turns")}>
+                  <span class="copy">
+                    <strong>{tDynamic("guide_level2_chapter2_title")}</strong>
+                    <span>{tDynamic("guide_level2_chapter2_description")}</span>
+                  </span>
+                  <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+                </a>
+              </li>
+            </ol>
+          </nav>
 
-  <section class="intro">
-    <p><Sentences text={tDynamic("guide_level2_intro")} /></p>
-  </section>
-
-  <nav class="toc" aria-label={tDynamic("guide_level2_toc")}>
-    <h2>{tDynamic("guide_level2_chapters")}</h2>
-    <ol>
-      <li>
-        <a href={localHref("/guide/level-2/turns")}>
-          <strong>{tDynamic("guide_level2_chapter1_title")}</strong>
-          <span>{tDynamic("guide_level2_chapter1_description")}</span>
-        </a>
-      </li>
-      <li>
-        <a href={localHref("/guide/level-2/double-turns")}>
-          <strong>{tDynamic("guide_level2_chapter2_title")}</strong>
-          <span>{tDynamic("guide_level2_chapter2_description")}</span>
-        </a>
-      </li>
-    </ol>
-  </nav>
-
-  <section class="download">
-    <h2>{tDynamic("guide_level2_pdf_version")}</h2>
-    <p>
-      <LinkChip href="/guides/level-2.pdf" download
-        >{tDynamic("guide_level2_download_pdf")}</LinkChip
-      >
-    </p>
-  </section>
-</div>
+          <section class="download">
+            <LinkChip href="/guides/level-2.pdf" download
+              ><i class="fa-solid fa-file-arrow-down" aria-hidden="true"></i>
+              {tDynamic("guide_level2_download_pdf")}</LinkChip
+            >
+          </section>
+        {/if}
+      </div>
+    {/snippet}
+  </GuideScreens>
+</main>
 
 <style>
+  /* The level-2 layout renders on the dark guide background, so the ink is
+     always the light set. GuideScreens paints the title, subtitle and
+     Back/Next. */
   .landing {
-    /* rem (not the old 600px) so the landing rides guide.css's >=1680px root
-       ramp with the rest of the shell; 42rem also gives the chapter cards a
-       little more room at every size. */
+    --ink: #ececf2;
+    --ink-dim: #a8a8b4;
+    color: var(--ink);
+  }
+  :global(.guide-content > .landing) {
+    grid-column: full;
+  }
+  .landing-body {
     max-width: 42rem;
     margin: 0 auto;
-    padding-top: 1.5rem;
     text-align: center;
   }
-
-  /* Title in the guide's calligraphic script - parity with the hub's hero and
-     the level-1 topic heroes, instead of the generic Inter h1 the shared
-     .guide-content rule applies. */
-  .landing h1 {
-    font-family: var(--guide-script, "Cormorant Garamond", Georgia, serif);
-    font-weight: var(--guide-script-weight, 700);
-    font-variation-settings: normal;
-    letter-spacing: 0;
-    line-height: 0.95;
-    font-size: clamp(3rem, 2rem + 2vw, 4.6rem);
-    padding: 1.5rem 0 0.5rem;
-  }
-
-  /* The level-2 layout renders on the dark guide scroller background
-     (.guide-layout is oklch(0.13 0.015 270)), so all colors here must be
-     dark-theme values - the old #666/#888/#e5e5e5 set was written for a white
-     page and was near-invisible. */
-  .subtitle {
-    font-size: 1.2rem;
-    color: oklch(0.68 0.02 270);
-    margin-bottom: 0.5rem;
-  }
-
   .byline {
     font-size: 0.95rem;
     color: oklch(0.58 0.02 270);
-    margin-bottom: 2rem;
+    margin: 0 0 1.25rem;
   }
-
-  .intro,
-  .download {
-    text-align: left;
-    margin: 2rem 0;
+  .intro {
+    margin: 0 0 1.25rem;
   }
-
+  .intro p {
+    margin: 0;
+    text-wrap: pretty;
+  }
   .toc {
     text-align: left;
-    margin: 2rem 0;
+    margin: 0 0 1.25rem;
   }
-
+  .toc h2 {
+    text-align: center;
+    margin: 0 0 0.75rem;
+  }
   .toc ol {
     list-style: none;
     padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
   }
-
-  .toc li {
-    margin-bottom: 1rem;
-  }
-
   .toc a {
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    min-height: 44px;
     padding: 1rem;
     background: oklch(0.18 0.02 270 / 0.6);
     border: 1px solid oklch(0.45 0.04 270 / 0.35);
-    border-radius: 8px;
+    border-radius: 10px;
     text-decoration: none;
     color: inherit;
     transition:
-      border-color var(--duration-fast),
-      box-shadow var(--duration-fast);
+      border-color var(--duration-fast) var(--ease-standard),
+      background-color var(--duration-fast) var(--ease-standard);
   }
-
-  .toc a:hover {
+  .toc a:hover,
+  .toc a:focus-visible {
     border-color: #4ea7e8;
-    box-shadow: 0 2px 8px rgba(78, 167, 232, 0.25);
+    background: oklch(0.22 0.03 270 / 0.7);
   }
-
-  .toc span {
+  .copy {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .copy strong {
+    display: block;
+  }
+  .copy span {
     display: block;
     font-size: 0.9rem;
     color: oklch(0.68 0.02 270);
     margin-top: 0.25rem;
+  }
+  .toc i {
+    color: oklch(0.68 0.02 270);
+  }
+  .download {
+    display: flex;
+    justify-content: center;
   }
 </style>

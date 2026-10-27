@@ -92,6 +92,14 @@ Usage:
     // Motion visibility (hides arrows + props for that hand)
     leftMotionVisible = true,
     rightMotionVisible = true,
+    // How much of a hidden hand still shows (default: dimmed, not gone).
+    hiddenMotionOpacity = undefined,
+    // A hand shown or hidden fades, and the props and arrows that stay ease
+    // to their new places (a lone prop drops its beta offset, for one).
+    animateHandPresence = false,
+    // The same pictograph redrawn with new turns (an option card as the turn
+    // controls change): its props and arrows ease to their new places.
+    glideInPlace = false,
     leftColorOverride = undefined,
     rightColorOverride = undefined,
     leftBuugengFlippedOverride = undefined,
@@ -182,6 +190,12 @@ Usage:
     leftMotionVisible?: boolean;
     /** Hide red hand arrows + props when false */
     rightMotionVisible?: boolean;
+    /** Opacity of a hidden hand's arrows + props. Defaults to a dim 0.2; 0 removes them. */
+    hiddenMotionOpacity?: number;
+    /** Fade hands in and out and ease the remaining props and arrows to their new places. */
+    animateHandPresence?: boolean;
+    /** Ease props and arrows to their new places when this pictograph's turns change. */
+    glideInPlace?: boolean;
     /** Display-only hand colors for Tunnel performer cards. */
     leftColorOverride?: string;
     rightColorOverride?: string;
@@ -320,6 +334,7 @@ Usage:
   const propAssets = $derived(pictograph._prepared?.propAssets || {});
   // Opacity for dimmed (not hidden) motions - visible enough to see, clearly de-emphasized
   const DIMMED_OPACITY = 0.2;
+  const hiddenOpacity = $derived(hiddenMotionOpacity ?? DIMMED_OPACITY);
 
   // Pose-only hides the motion entirely so only the pose reads.
   const effectiveArrowOpacity = $derived(
@@ -344,7 +359,7 @@ Usage:
             hand === HandSide.LEFT ? leftMotionVisible : rightMotionVisible
           )
             ? 1
-            : DIMMED_OPACITY,
+            : hiddenOpacity,
         }))
     );
   });
@@ -420,8 +435,12 @@ Usage:
     leftMotionVisible && rightMotionVisible
   );
 
-  // Glyph opacity: full when both motions visible, dimmed when one is off
-  const glyphOpacity = $derived(bothMotionsFullyVisible ? 1 : DIMMED_OPACITY);
+  // Glyph opacity: full when both motions visible, dimmed when one is off.
+  // A hand removed outright (hiddenMotionOpacity 0) leaves the glyphs to their
+  // own show flags instead.
+  const glyphOpacity = $derived(
+    bothMotionsFullyVisible || hiddenMotionOpacity === 0 ? 1 : DIMMED_OPACITY
+  );
 
   // VTG and Elemental calculation
   const tndInfo = $derived.by(() => {
@@ -757,6 +776,7 @@ Usage:
       {#each showProps ? renderedProps : [] as { hand, data, opacity, asset, position } (hand)}
         <g
           {opacity}
+          class:hand-presence={animateHandPresence}
           transform={slideHandTransform(hand)}
           transition:opaqueFade={{ duration: contentDuration(), opacity }}
         >
@@ -773,6 +793,7 @@ Usage:
             directPositioning={directPropPositioning ||
               !!slide ||
               propPositionOverrides?.[hand] !== undefined}
+            glide={animateHandPresence || glideInPlace}
             colorOverride={hand === HandSide.LEFT
               ? effectiveLeftColor
               : effectiveRightColor}
@@ -793,7 +814,11 @@ Usage:
           <!-- Split rendering: shafts first, then tips on top -->
           {#each motions as { hand, data, opacity } (hand + "-shaft")}
             {#if arrowAssets[hand] && arrowPositions[hand]}
-              <g {opacity} transform={slideHandTransform(hand)}>
+              <g
+                {opacity}
+                class:hand-presence={animateHandPresence}
+                transform={slideHandTransform(hand)}
+              >
                 <ArrowSvg
                   motionData={data}
                   color={hand}
@@ -801,6 +826,7 @@ Usage:
                   arrowAssets={arrowAssets[hand]}
                   arrowPosition={arrowPositions[hand]}
                   shouldMirror={arrowMirroring[hand] || false}
+                  glide={(animateHandPresence || glideInPlace) && !slide}
                   {showArrow}
                   isClickable={arrowsClickable}
                   {darkMode}
@@ -814,7 +840,11 @@ Usage:
           {/each}
           {#each motions as { hand, data, opacity } (hand + "-tip")}
             {#if arrowAssets[hand] && arrowPositions[hand]}
-              <g {opacity} transform={slideHandTransform(hand)}>
+              <g
+                {opacity}
+                class:hand-presence={animateHandPresence}
+                transform={slideHandTransform(hand)}
+              >
                 <ArrowSvg
                   motionData={data}
                   color={hand}
@@ -822,6 +852,7 @@ Usage:
                   arrowAssets={arrowAssets[hand]}
                   arrowPosition={arrowPositions[hand]}
                   shouldMirror={arrowMirroring[hand] || false}
+                  glide={(animateHandPresence || glideInPlace) && !slide}
                   {showArrow}
                   isClickable={arrowsClickable}
                   {darkMode}
@@ -837,7 +868,11 @@ Usage:
           <!-- Normal rendering: single combined path per arrow (identical to current behavior) -->
           {#each motions as { hand, data, opacity } (hand)}
             {#if arrowAssets[hand] && arrowPositions[hand]}
-              <g {opacity} transform={slideHandTransform(hand)}>
+              <g
+                {opacity}
+                class:hand-presence={animateHandPresence}
+                transform={slideHandTransform(hand)}
+              >
                 <ArrowSvg
                   motionData={data}
                   color={hand}
@@ -845,6 +880,7 @@ Usage:
                   arrowAssets={arrowAssets[hand]}
                   arrowPosition={arrowPositions[hand]}
                   shouldMirror={arrowMirroring[hand] || false}
+                  glide={(animateHandPresence || glideInPlace) && !slide}
                   {showArrow}
                   isClickable={arrowsClickable}
                   {darkMode}
@@ -1101,6 +1137,11 @@ Usage:
     transition: none;
   }
 
+  /* A hand shown or hidden (animateHandPresence) fades its prop and arrow. */
+  .hand-presence {
+    transition: opacity var(--duration-normal) var(--ease-standard);
+  }
+
   /* Hand colour key: same fade as the other glyph overlays. Hidden by
      default; .visible drives the opacity transition. */
   .hand-color-key {
@@ -1115,7 +1156,8 @@ Usage:
   @media (prefers-reduced-motion: reduce) {
     .pictograph-arrows,
     .beat-layer,
-    .hand-color-key {
+    .hand-color-key,
+    .hand-presence {
       transition: none;
     }
   }

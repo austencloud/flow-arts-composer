@@ -556,5 +556,6 @@ describe("pre-effect declaration order", () => {
       )
       .filter((offender) => !FIXED_ON_ANOTHER_BRANCH.has(offender));
     expect(offenders).toEqual([]);
-  });
+    // Reads every .svelte file in src/; timed out at 30 s in a loaded d2 run.
+  }, 120_000);
 });

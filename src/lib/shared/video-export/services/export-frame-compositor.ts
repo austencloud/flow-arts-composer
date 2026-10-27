@@ -45,6 +45,8 @@ export interface FrameCompositorConfig {
   showElementalGlyph: boolean;
   showStepNumbers: boolean;
   showWordHeader: boolean;
+  /** Draw the word itself in the header strip. Omitted: shown. */
+  showHeaderWord?: boolean;
   showProgressBar: boolean;
   isDarkMode: boolean;
   isCompositeMode: boolean;
@@ -168,7 +170,9 @@ export class ExportFrameCompositor {
     playbackPosition: number,
     steps: readonly { duration?: number }[],
     stepDurations: number[],
-    _frameIndex: number
+    _frameIndex: number,
+    /** How far through the whole video this frame is, repeats included. */
+    videoProgress?: number
   ): void {
     const {
       headerHeight,
@@ -356,7 +360,8 @@ export class ExportFrameCompositor {
         overlayComponents,
         reflectionAxis,
         turnGlyphEntries,
-        reversalGlyph
+        reversalGlyph,
+        this.config.showHeaderWord ?? true
       );
     }
 
@@ -374,7 +379,8 @@ export class ExportFrameCompositor {
         steps.length,
         progressBeat,
         stepDurations,
-        isDarkMode
+        isDarkMode,
+        videoProgress
       );
     }
 

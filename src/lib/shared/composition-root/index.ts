@@ -17,17 +17,7 @@
 import { configureShortCodeManager } from "../qr/get-short-code-manager";
 import { getBrowseLoader } from "#lib/shared/browse/get-browse-loader.js";
 
-import { registerLoopDetector } from "../create/get-loop-detector";
-import { loopDetector } from "#lib/features/create/generate/circular/services/loop-detector.js";
-
-import {
-  registerLoopDisplayResolver,
-  registerLoopDisplayCacheClearer,
-} from "../loop-labeler/get-loop-display-resolver";
-import {
-  resolveLoopDisplay,
-  clearLoopDisplayCache,
-} from "#lib/features/loop-labeler/services/loop-display-resolver.js";
+import { registerLoopDisplay } from "./register-loop-display";
 
 import { registerLibraryRepository } from "./register-library-repository";
 
@@ -38,9 +28,7 @@ const _bootStart = typeof window !== "undefined" ? performance.now() : 0;
 // ── Critical registrations (browser-only) ──
 if (typeof window !== "undefined") {
   configureShortCodeManager(getBrowseLoader());
-  registerLoopDetector(loopDetector);
-  registerLoopDisplayResolver(resolveLoopDisplay);
-  registerLoopDisplayCacheClearer(clearLoopDisplayCache);
+  registerLoopDisplay();
   registerLibraryRepository();
 }
 

@@ -45,9 +45,15 @@
   let loadedRun = $state<number | null>(null);
   let playerStage = $state<HTMLElement | null>(null);
   let playbackArea = $state<HTMLElement | null>(null);
+  let playbackLayout = $state<HTMLElement | null>(null);
+  let playbackMedia = $state<HTMLElement | null>(null);
   let notationRail = $state<HTMLElement | null>(null);
   /** Where the open effect picker sits, or null while it is closed. */
   let effectPickerArrangement = $state<string | null>(null);
+  /** How far the open effect picker lifts the player, in px, and shrinks it
+   *  from its top edge. */
+  let effectPickerLift = $state(0);
+  let effectPickerScale = $state(1);
   const visibilityManager = getAnimationVisibilityManager();
   let effectsConfigState = $state<EffectsConfigState>(
     visibilityManager.effectsConfigState ?? createEffectsConfigState()
@@ -61,15 +67,54 @@
     playbackArea?.closest<HTMLElement>("#main-content") ?? playbackArea
   );
 
-  /** What the effect picker may cover under the player's controls: the
-   *  notation rail when it is open, whole, otherwise the empty space down to
-   *  the workspace's toolbar. */
+  /** The player where it rests, centred in its layout at its own size, so
+   *  the effect picker's fit gives the same answer while the player is lifted
+   *  or shrunk for it, or easing back. The lift and the shrink are a
+   *  transform: the layout's box and the transform on screen (mid-transition
+   *  included) say where the rest is. */
+  function playerAtRest() {
+    if (!playbackLayout || !playbackMedia || !playerStage) return null;
+    const layout = playbackLayout.getBoundingClientRect();
+    const media = playbackMedia.getBoundingClientRect();
+    const stage = playerStage.getBoundingClientRect();
+    const transform = getComputedStyle(playbackMedia).transform;
+    const scale =
+      transform && transform !== "none" ? new DOMMatrix(transform).a || 1 : 1;
+    // It shrinks from its top centre.
+    const centre = media.left + media.width / 2;
+    const top = layout.top + (layout.height - media.height / scale) / 2;
+    return {
+      room: Math.max(0, top - layout.top),
+      stage: new DOMRect(
+        centre + (stage.left - centre) / scale,
+        top + (stage.top - media.top) / scale,
+        stage.width / scale,
+        stage.height / scale
+      ),
+      scale,
+    };
+  }
+
+  /** The empty room above the player, which the effect picker's docked
+   *  sheet may lift it into, and the player's box at rest. */
+  function effectPickerRoomAbove() {
+    const rest = playerAtRest();
+    return { room: rest?.room ?? 0, rest: rest?.stage ?? null };
+  }
+
+  /** What the effect picker may cover under the player's controls, with the
+   *  player at rest: the notation rail when it is open, whole (it lifts with
+   *  the player), otherwise the empty space down to the workspace's toolbar. */
   function effectPickerRoomBelow() {
-    if (!playbackArea || !playerStage) return 0;
-    const stageBottom = playerStage.getBoundingClientRect().bottom;
+    const rest = playerAtRest();
+    if (!playbackArea || !playerStage || !rest) return 0;
     const rail = notationRail?.getBoundingClientRect();
-    if (rail && rail.height > 1) return rail.bottom - stageBottom;
-    return playbackArea.getBoundingClientRect().bottom - stageBottom;
+    if (rail && rail.height > 1) {
+      return (
+        (rail.bottom - playerStage.getBoundingClientRect().bottom) / rest.scale
+      );
+    }
+    return playbackArea.getBoundingClientRect().bottom - rest.stage.bottom;
   }
 
   $effect(() => {
@@ -103,6 +148,11 @@
     player={playerStage}
     bounds={effectPickerBounds}
     roomBelow={effectPickerRoomBelow}
+    roomAbove={effectPickerRoomAbove}
+    onLift={(px, scale) => {
+      effectPickerLift = px;
+      effectPickerScale = scale;
+    }}
     onArrange={(arrangement) => (effectPickerArrangement = arrangement)}
   />
 {/snippet}
@@ -112,10 +162,16 @@
   data-testid="workspace-playback"
   bind:this={playbackArea}
 >
-  <div class="playback-layout">
+  <div class="playback-layout" bind:this={playbackLayout}>
     <!-- Foreground for the workspace's click-background-to-close: taps here
          pause, seek, or scrub instead. -->
-    <div class="playback-media" data-playback-foreground>
+    <div
+      class="playback-media"
+      data-playback-foreground
+      bind:this={playbackMedia}
+      style:--picker-lift="{effectPickerLift}px"
+      style:--picker-scale={effectPickerScale}
+    >
       <div class="player-stage" bind:this={playerStage}>
         <InlineAnimationPlayer
           {sequence}
@@ -207,6 +263,19 @@
     inherits: false;
     initial-value: 0;
   }
+  /* How far the effect picker's docked sheet lifts the player into the empty
+     room above it, and shrinks it from its top edge where that is not enough.
+     Not inherited, so setting them restyles only .playback-media. */
+  @property --picker-lift {
+    syntax: "<length>";
+    inherits: false;
+    initial-value: 0px;
+  }
+  @property --picker-scale {
+    syntax: "<number>";
+    inherits: false;
+    initial-value: 1;
+  }
   .playback-layout {
     /* Left unresolved here: the container units resolve against this box
        wherever the size is read. */
@@ -221,7 +290,14 @@
     position: absolute;
     left: 50%;
     top: 50%;
-    transform: translate(-50%, -50%);
+    /* Centred, and lifted while the effect picker's docked sheet needs the
+       room above (shrunk from its top edge where even that is short): the
+       player slides up as the sheet rises under it, and back down as it
+       closes, the whole animation always above the sheet. A transform, so the
+       canvas keeps its size and buffer and only the compositor scales it. */
+    transform: translate(-50%, calc(-50% - var(--picker-lift)))
+      scale(var(--picker-scale));
+    transform-origin: top center;
     display: grid;
     /* The canvas stays square in the height the seek target and the open part
        of the rail leave. The sums are written out, not shared through a
@@ -245,7 +321,9 @@
         ) +
         var(--sequence-seek-target-size) + var(--rail-open) * var(--rail-size)
     );
-    transition: --rail-open var(--duration-emphasis) var(--ease-out);
+    transition:
+      --rail-open var(--duration-emphasis) var(--ease-out),
+      transform var(--duration-normal) var(--ease-standard);
   }
   .player-stage {
     position: relative;

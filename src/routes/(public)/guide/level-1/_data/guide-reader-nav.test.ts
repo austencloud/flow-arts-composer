@@ -1,7 +1,11 @@
 import { describe, it, expect } from "vitest";
 import type { Component } from "svelte";
-import { buildReaderNav, FRONT_MATTER_COUNT } from "./guide-reader-nav";
-import { GUIDE_BODY_PAGES } from "./guide-manifest";
+import {
+  buildReaderNav,
+  FRONT_MATTER_COUNT,
+  webPageNeighbours,
+} from "./guide-reader-nav";
+import { GUIDE_BODY_PAGES, GUIDE_WEB_PAGES } from "./guide-manifest";
 
 // Fake built registry keyed by the ids that are actually built (mirrors
 // built-pages.ts). Importing the real BUILT pulls in the Svelte page components
@@ -57,5 +61,19 @@ describe("buildReaderNav", () => {
       .filter((r) => r.kind === "group")
       .map((r) => (r.kind === "group" ? r.group : ""));
     expect(groups).toEqual(["1.0", "1.1", "1.2"]);
+  });
+});
+
+describe("webPageNeighbours", () => {
+  it("steps from Dual-Shifts to Type 2 Shifts and back, past the Gamma sheet", () => {
+    expect(webPageNeighbours("hm-type1").next?.id).toBe("hm-type2");
+    expect(webPageNeighbours("hm-type2").prev?.id).toBe("hm-type1");
+    expect(webPageNeighbours("hm-type1").prev?.id).toBe("hand-motions");
+  });
+
+  it("leaves the folded page out of the web order but keeps it in print", () => {
+    expect(GUIDE_WEB_PAGES.map((p) => p.id)).not.toContain("hm-gamma");
+    expect(GUIDE_BODY_PAGES.map((p) => p.id)).toContain("hm-gamma");
+    expect(webPageNeighbours("hm-gamma")).toEqual({ prev: null, next: null });
   });
 });

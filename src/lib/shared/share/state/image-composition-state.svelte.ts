@@ -106,6 +106,17 @@ export const DEFAULT_IMAGE_COMPOSITION_SETTINGS: ImageCompositionSettings = {
   addUserInfo: false,
 };
 
+/** The card switches Settings → Display surfaces and resets. */
+export const CARD_DISPLAY_KEYS = [
+  "addWord",
+  "addStepNumbers",
+  "addDifficultyLevel",
+  "showLoopGlyph",
+  "includeStartPlacement",
+  "showQRCode",
+  "showMandala",
+] as const satisfies readonly (keyof ImageCompositionSettings)[];
+
 type PersistedImageCompositionSettings = Partial<ImageCompositionSettings> & {
   showCreatorName?: unknown;
   showBirthday?: unknown;
@@ -913,6 +924,20 @@ class ImageCompositionStateManager {
 
   setShowLoopGlyph(value: boolean): void {
     this.settings.showLoopGlyph = value;
+    this.saveToStorage();
+    this.notifyObservers();
+  }
+
+  /**
+   * Settings → Display's card "Reset to defaults": what the card SHOWS goes
+   * back to its default in one write and one observer pass. Per-step-count
+   * layout choices (columns, start lane, info cell) and the footer text are
+   * layout and content, not display, so they keep the user's choice.
+   */
+  resetDisplayDefaults(): void {
+    for (const key of CARD_DISPLAY_KEYS) {
+      this.settings[key] = DEFAULT_IMAGE_COMPOSITION_SETTINGS[key];
+    }
     this.saveToStorage();
     this.notifyObservers();
   }

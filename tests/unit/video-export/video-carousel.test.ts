@@ -70,6 +70,44 @@ describe("video carousel frame", () => {
     }
   });
 
+  it("keeps a progress bar under the square beside the band", () => {
+    const below = layoutVideoCarouselFrame({
+      placement: "below",
+      outputWidth: 812,
+      outputHeight: 1080,
+      sourceSquareSize: 600,
+      sourceHeaderHeight: 42,
+      sourceFooterHeight: 24,
+    });
+    expect(below.footerHeight).toBe(Math.round((24 * 812) / 600));
+    // The band starts under the bar, and the frame still adds up.
+    expect(below.band.y).toBe(
+      below.headerHeight + below.canvasSize + below.footerHeight
+    );
+    expect(below.band.y + below.band.height).toBe(1080);
+
+    const right = layoutVideoCarouselFrame({
+      placement: "right",
+      outputWidth: 1272,
+      outputHeight: 1080,
+      sourceSquareSize: 600,
+      sourceHeaderHeight: 42,
+      sourceFooterHeight: 24,
+    });
+    expect(
+      right.headerHeight + right.canvasSize + right.footerHeight
+    ).toBe(1080);
+    expect(right.band.x).toBe(right.canvasSize);
+
+    const withBar = videoCarouselSourceFrame({
+      placement: "below",
+      squareSize: 600,
+      headerHeight: 42,
+      footerHeight: 24,
+    });
+    expect(withBar.height).toBeCloseTo(600 + 42 + 24 + 600 * 0.26);
+  });
+
   it("puts the band on the chosen side", () => {
     const at = (placement: "above" | "below" | "left" | "right") =>
       layoutVideoCarouselFrame({

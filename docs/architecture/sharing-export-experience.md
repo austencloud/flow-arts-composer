@@ -126,6 +126,27 @@ share sheet with the card ready, go."
   falls back to the app's `TkaFileShare` plugin, which writes the file to the
   app cache and opens Android's chooser through the existing FileProvider.
 
+### October 26: Show QR code on the share home
+
+Austen wanted to hand a sequence to someone standing next to him, at a jam or a
+festival, without downloading an image and sending it. The share home now has a
+Show QR code tile beside Copy link that opens a narrow "Scan to open" screen
+with a large code of the Copy link address.
+
+- The code holds the short link (`tkaflowarts.com/sequence/<code>`) with the
+  current view's parameters, never the inline viewer URL. A code of the inline
+  URL is too dense to read off a phone screen, which is why short codes are
+  signed-in only.
+- A guest cannot mint a short link, so a guest sees the "save this sequence"
+  message in place of a code. No code of the inline URL is drawn.
+- The short link is minted only when the tile is tapped, and Copy link and Show
+  QR code share one link per sequence. Back and in again reuses it.
+- This is the link QR. The file-transfer QR under Send to phone uploads a
+  prepared file and keeps its own labels, as the delivery-path rules below
+  require.
+- With five choices the short-landscape rail scrolls from about 520px tall
+  down. At 960×412 the rail already scrolled with four.
+
 ### Entry context determines the initial task
 
 | Entry                | Initial presentation                                                           | Primary result                                                               |

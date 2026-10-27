@@ -1594,24 +1594,45 @@
     margin-inline: auto;
   }
 
-  /* The builder stacks its panels in a narrow stop, and in any window under
-     75rem (its own compact query), so it needs a taller frame there. */
+  /* The builder stacks its panels in a narrow stop, so it needs a taller
+     frame there. */
   @container (max-width: 69rem) {
     .construct-frame {
       height: clamp(52rem, 110cqw, 62rem);
     }
   }
 
-  @media (max-width: 74.99rem) {
-    .construct-frame {
-      height: clamp(52rem, 110cqw, 62rem);
-    }
-  }
-
-  /* Both demos stack here. Last, so it wins over the rules above. */
+  /* Both demos stack here. */
   @container (max-width: 56rem) {
     .stop-frame {
       height: clamp(52rem, 170cqw, 74rem);
+    }
+  }
+
+  /* In any window under 75rem (its own compact query) the builder stacks its
+     sequence over its picker and the two share the frame, so the frame takes
+     the room the window gives the stop, as on the wide tier. The 52rem to
+     74rem floors above were sized for the old two-tab stack; under the guided
+     build they left empty panel below the options and pushed the stop past
+     the window. A window shorter than the floor keeps a usable stop and
+     scrolls the page. Last, so it wins over the container rules above. */
+  @media (max-width: 74.99rem) {
+    .construct-frame {
+      height: clamp(var(--making-floor), var(--making-fill), 62rem);
+    }
+
+    /* --making-fill counts the heading as one line. "Construct a sequence"
+       runs about 9.6 times its font size, so in a stop under about 24rem (a
+       phone, the Fold's cover screen) it wraps to a second line, which the
+       frame gives back. */
+    @container (max-width: 24rem) {
+      .construct-frame {
+        height: clamp(
+          var(--making-floor),
+          var(--making-fill) - var(--stop-title-size),
+          62rem
+        );
+      }
     }
   }
 

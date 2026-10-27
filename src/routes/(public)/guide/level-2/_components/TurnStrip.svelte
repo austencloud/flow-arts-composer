@@ -382,7 +382,13 @@
      print-oriented dark-on-white fallback, which renders near-invisible on
      the dark host. A future host that DOES set --ink still wins outright. */
   .turn-strip {
-    --frame-size: clamp(5rem, 18cqw, 11rem);
+    /* --fit: a one-screen guide page sizes the frames to the screen
+       (GuideFitBox); unset elsewhere, so print keeps these sizes. */
+    --frame-size: clamp(
+      calc(5rem * min(var(--fit, 1), 1)),
+      18cqw,
+      calc(11rem * var(--fit, 1))
+    );
     container-type: inline-size;
     /* inline-size containment zeroes this element's intrinsic width, so it
        MUST take a definite width from its context (width: 100%); auto-margin
@@ -393,7 +399,7 @@
     align-items: flex-start;
     justify-content: center;
     gap: 0.75rem 0.6rem;
-    margin: 1.9rem auto;
+    margin: calc(1.9rem * min(var(--fit, 1), 1)) auto;
     max-width: 72rem;
     /* Break out of the inherited prose column: GuideSection is a CSS subgrid
        (level-1/_styles/guide.css) whose `.guide-section > *` rule confines
@@ -517,7 +523,11 @@
 
   @container (max-width: 360px) {
     .turn-strip {
-      --frame-size: clamp(3.6rem, 22cqw, 6rem);
+      --frame-size: clamp(
+        calc(3.6rem * min(var(--fit, 1), 1)),
+        22cqw,
+        calc(6rem * var(--fit, 1))
+      );
       gap: 0.5rem 0.35rem;
     }
   }

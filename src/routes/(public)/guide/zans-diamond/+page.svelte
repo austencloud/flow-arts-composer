@@ -13,6 +13,12 @@
    * The record lives in #lib/shared/guide-topics/zans-diamond-topic.ts.
    */
   import { onMount } from "svelte";
+  import { localHref } from "#lib/shared/i18n/localized-href.svelte.js";
+  import GuideScreens from "../_components/fit/GuideScreens.svelte";
+  import {
+    watchScreenTier,
+    type ScreenTier,
+  } from "../_components/fit/guide-screen-url";
   import GuideShell from "../_components/GuideShell.svelte";
   import Sentences from "../_components/Sentences.svelte";
   import { sentences } from "../_components/sentences";
@@ -25,6 +31,7 @@
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import type { PictographRender } from "../level-1/_data/guide-content-blocks";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
   import {
     DEFAULT_TRAIL_SETTINGS,
     TrackingMode,
@@ -117,6 +124,45 @@
     )
   );
 
+  // One screen at a time (2026-10-24 fit pass): the credit, the original,
+  // the props and each family get a screen. A phone gives Zan's video and
+  // the families' intro screens of their own.
+  let tier = $state<ScreenTier>("large");
+  onMount(() => watchScreenTier((v) => (tier = v)));
+  const views = $derived.by(() => {
+    // A phone reads each player's words on a screen of their own, then
+    // watches the player on the next.
+    const small = tier === "small";
+    const out: { label: string; parts: string[] }[] = small
+      ? [
+          { label: t("guide_zans_title"), parts: ["lede"] },
+          { label: t("guide_zans_from_zan_title"), parts: ["fromZan"] },
+        ]
+      : [{ label: t("guide_zans_title"), parts: ["lede", "fromZan"] }];
+    const player = (label: string, key: string, before: string[] = []) => {
+      if (small) {
+        out.push({ label, parts: [...before, `${key}Text`] });
+        out.push({ label: `Watch: ${label}`, parts: [key] });
+      } else out.push({ label, parts: [...before, `${key}Text`, key] });
+    };
+    player(t("guide_zans_original_title"), "original");
+    player(t("guide_zans_props_title"), "props");
+    if (small)
+      out.push({
+        label: t("guide_zans_families_title"),
+        parts: ["familiesIntro"],
+      });
+    ZANS_DIAMOND_FAMILIES.forEach((family, k) =>
+      player(
+        t(family.title),
+        `family${k}`,
+        k === 0 && !small ? ["familiesIntro"] : []
+      )
+    );
+    out.push({ label: t("guide_zans_open_collection"), parts: ["collection"] });
+    return out;
+  });
+
   // Pictographs follow the site theme, as the Level 1 pages do.
   let picTheme = $state<"light" | "dark">("dark");
   onMount(() => {
@@ -154,139 +200,205 @@
 />
 
 <GuideShell>
-  <article class="zans-guide guide-page-route">
-    <header class="intro">
-      <h1>{t("guide_zans_title")}</h1>
-      <p class="lede">
-        {#each lede as parts, i (i)}<span class="sentence"
-            >{parts[0]}{#if parts.length > 1}{#if ZANS_DIAMOND_CREDIT.href}<a
+  <main class="zans-guide guide-page-route">
+    <GuideScreens
+      title={t("guide_zans_title")}
+      labels={views.map((v) => v.label)}
+      prevPage={{
+        href: localHref("/guide/motion-paths"),
+        title: t("guide_hub_motion_paths_title"),
+      }}
+      nextPage={{ href: "/codex", title: t("guide_nav_codex") }}
+      hubHref={localHref("/guide")}
+    >
+      {#snippet screen(n)}
+        {@const view = views[n]}
+        <div class="screen">
+          {#if view?.parts.includes("lede")}
+            <p class="lede">
+              {#each lede as parts, i (i)}<span class="sentence"
+                  >{parts[0]}{#if parts.length > 1}{#if ZANS_DIAMOND_CREDIT.href}<a
+                        href={ZANS_DIAMOND_CREDIT.href}
+                        target="_blank"
+                        rel="noopener noreferrer">{ZANS_DIAMOND_CREDIT.name}</a
+                      >{:else}{ZANS_DIAMOND_CREDIT.name}{/if}{parts[1]}{/if}</span
+                >{/each}
+            </p>
+          {/if}
+
+          {#if view?.parts.includes("fromZan")}
+            <section class="from-zan" aria-labelledby="from-zan-heading-{n}">
+              <div class="from-zan-intro">
+                <h2 id="from-zan-heading-{n}">
+                  {t("guide_zans_from_zan_title")}
+                </h2>
+                <p>
+                  <Sentences text={t("guide_zans_from_zan_body")} />
+                </p>
+              </div>
+              <div class="from-zan-video">
+                <SourceVideoCard
+                  id={ZANS_DIAMOND_TUTORIAL.id}
+                  title={ZANS_DIAMOND_TUTORIAL.title}
+                  creator={ZANS_DIAMOND_CREDIT.name}
+                  year={ZANS_DIAMOND_TUTORIAL.year}
+                />
+              </div>
+              {#if ZANS_DIAMOND_CREDIT.href}
+                <LinkChip
                   href={ZANS_DIAMOND_CREDIT.href}
                   target="_blank"
-                  rel="noopener noreferrer">{ZANS_DIAMOND_CREDIT.name}</a
-                >{:else}{ZANS_DIAMOND_CREDIT.name}{/if}{parts[1]}{/if}</span
-          >{/each}
-      </p>
-    </header>
+                  rel="noopener noreferrer"
+                  ><i class="fab fa-youtube" aria-hidden="true"></i>
+                  {t("guide_zans_channel")}</LinkChip
+                >
+              {/if}
+            </section>
+          {/if}
 
-    <section class="from-zan" aria-labelledby="from-zan-heading">
-      <div class="from-zan-intro">
-        <h2 id="from-zan-heading">{t("guide_zans_from_zan_title")}</h2>
-        <p>
-          <Sentences text={t("guide_zans_from_zan_body")} />
-        </p>
-      </div>
-      <div class="from-zan-video">
-        <SourceVideoCard
-          id={ZANS_DIAMOND_TUTORIAL.id}
-          title={ZANS_DIAMOND_TUTORIAL.title}
-          creator={ZANS_DIAMOND_CREDIT.name}
-          year={ZANS_DIAMOND_TUTORIAL.year}
-        />
-      </div>
-      {#if ZANS_DIAMOND_CREDIT.href}
-        <LinkChip
-          href={ZANS_DIAMOND_CREDIT.href}
-          target="_blank"
-          rel="noopener noreferrer"
-          ><i class="fab fa-youtube" aria-hidden="true"></i>
-          {t("guide_zans_channel")}</LinkChip
-        >
-      {/if}
-    </section>
+          {#if view?.parts.includes("originalText") && !view.parts.includes("original")}
+            <div class="text-screen">{@render originalText()}</div>
+          {/if}
+          {#if view?.parts.includes("propsText") && !view.parts.includes("props")}
+            <div class="text-screen">{@render propsText()}</div>
+          {/if}
+          {#each families as family, k (family.id)}
+            {#if view?.parts.includes(`family${k}Text`) && !view.parts.includes(`family${k}`)}
+              <div class="text-screen">{@render familyText(family)}</div>
+            {/if}
+          {/each}
 
-    <SequenceShowcase
-      sequence={original.sequence}
-      items={original.items}
-      trail={PATH_TRAIL}
-      render={RENDER}
-      loop
-      {picTheme}
-    >
-      {#snippet text()}
-        <h2>{t("guide_zans_original_title")}</h2>
-        <p>{t("guide_zans_original_path")}</p>
-      {/snippet}
-    </SequenceShowcase>
+          {#if view?.parts.includes("original")}
+            <SequenceShowcase
+              sequence={original.sequence}
+              items={original.items}
+              trail={PATH_TRAIL}
+              render={RENDER}
+              loop
+              stripBeside
+              {picTheme}
+            >
+              {#snippet text()}
+                {#if view.parts.includes("originalText")}
+                  {@render originalText()}
+                {/if}
+              {/snippet}
+            </SequenceShowcase>
+          {/if}
 
-    <SequenceShowcase
-      sequence={original.sequence}
-      items={original.items}
-      trail={TIP_TRAIL}
-      render={PROP_RENDER}
-      canvasLetter={false}
-      loop
-      {picTheme}
-    >
-      {#snippet text()}
-        <h2>{t("guide_zans_props_title")}</h2>
-        <p>{t("guide_zans_props_spin")}</p>
-        <div class="prop-choice">
-          <span class="prop-label">{t("guide_zans_props_picker")}</span>
-          <PropChoiceRow
-            value={propType}
-            options={PROP_CHOICES}
-            label={t("guide_zans_props_picker")}
-            onchange={(pt) => (propType = pt)}
-          />
+          {#if view?.parts.includes("props")}
+            <SequenceShowcase
+              sequence={original.sequence}
+              items={original.items}
+              trail={TIP_TRAIL}
+              render={PROP_RENDER}
+              canvasLetter={false}
+              loop
+              stripBeside
+              {picTheme}
+            >
+              {#snippet text()}
+                {#if view.parts.includes("propsText")}
+                  {@render propsText()}
+                {/if}
+                <div class="prop-choice">
+                  <span class="prop-label">{t("guide_zans_props_picker")}</span>
+                  <PropChoiceRow
+                    value={propType}
+                    options={PROP_CHOICES}
+                    iconOnly={tier !== "large"}
+                    label={t("guide_zans_props_picker")}
+                    onchange={(pt) => (propType = pt)}
+                  />
+                </div>
+              {/snippet}
+            </SequenceShowcase>
+          {/if}
+
+          {#if view?.parts.includes("familiesIntro")}
+            <div class="families-intro">
+              <h2>{t("guide_zans_families_title")}</h2>
+              <p>
+                <Sentences text={t("guide_zans_families_lead")} />
+              </p>
+            </div>
+          {/if}
+
+          {#each families as family, k (family.id)}
+            {#if view?.parts.includes(`family${k}`)}
+              <SequenceShowcase
+                sequence={family.first.sequence}
+                items={family.first.items}
+                pool={family.pool}
+                trail={TIP_TRAIL}
+                render={PROP_RENDER}
+                canvasLetter={false}
+                loop
+                stripBeside
+                {picTheme}
+              >
+                {#snippet text()}
+                  {#if view.parts.includes(`family${k}Text`)}
+                    {@render familyText(family)}
+                  {/if}
+                {/snippet}
+              </SequenceShowcase>
+            {/if}
+          {/each}
+
+          {#if view?.parts.includes("collection")}
+            <footer class="collection">
+              <p>
+                <Sentences text={t("guide_zans_collection_body")} />
+              </p>
+              <div class="links">
+                <LinkChip href={ZANS_DIAMOND_COLLECTION_PATH}
+                  ><i class="fa-solid fa-layer-group" aria-hidden="true"></i>
+                  {t("guide_zans_open_collection")}</LinkChip
+                >
+              </div>
+            </footer>
+          {/if}
         </div>
       {/snippet}
-    </SequenceShowcase>
-
-    <section class="families" aria-labelledby="families-heading">
-      <div class="families-intro">
-        <h2 id="families-heading">{t("guide_zans_families_title")}</h2>
-        <p>
-          <Sentences text={t("guide_zans_families_lead")} />
-        </p>
-      </div>
-      {#each families as family (family.id)}
-        <SequenceShowcase
-          sequence={family.first.sequence}
-          items={family.first.items}
-          pool={family.pool}
-          trail={TIP_TRAIL}
-          render={PROP_RENDER}
-          canvasLetter={false}
-          loop
-          {picTheme}
-        >
-          {#snippet text()}
-            <h3>{t(family.title)}</h3>
-            <p>{t(family.body)}</p>
-          {/snippet}
-        </SequenceShowcase>
-      {/each}
-    </section>
-
-    <footer class="collection">
-      <p>
-        <Sentences text={t("guide_zans_collection_body")} />
-      </p>
-      <div class="links">
-        <LinkChip href={ZANS_DIAMOND_COLLECTION_PATH}
-          ><i class="fa-solid fa-layer-group" aria-hidden="true"></i>
-          {t("guide_zans_open_collection")}</LinkChip
-        >
-      </div>
-    </footer>
-  </article>
+    </GuideScreens>
+  </main>
 </GuideShell>
+
+{#snippet originalText()}
+  <h2>{t("guide_zans_original_title")}</h2>
+  <p>{t("guide_zans_original_path")}</p>
+{/snippet}
+
+{#snippet propsText()}
+  <h2>{t("guide_zans_props_title")}</h2>
+  <p>{t("guide_zans_props_spin")}</p>
+{/snippet}
+
+{#snippet familyText(family: { title: TranslationKey; body: TranslationKey })}
+  <h3>{t(family.title)}</h3>
+  <p>{t(family.body)}</p>
+{/snippet}
 
 <style>
   .zans-guide {
     width: 100%;
     min-width: 0;
-    max-width: 1180px;
-    margin-inline: auto;
-    padding: clamp(20px, 3vw, 56px);
     color: var(--theme-text);
-    display: flex;
-    flex-direction: column;
-    gap: clamp(40px, 6vw, 72px);
-    /* SequenceShowcase colours its example cycler with the Level 1 ink
-       tokens; map them to this page's theme, as /guide/ratios does. */
+    /* SequenceShowcase and the screen frame colour their text with the
+       Level 1 ink tokens; map them to this page's theme, as /guide/ratios
+       does. */
     --ink: var(--theme-text);
     --ink-dim: var(--theme-text-muted);
+  }
+  .screen {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(0.75rem, 2.5vh, 2rem);
+    width: 100%;
+    /* Wider as the screen grows (--fit), so a 4K window gets 4K players. */
+    max-width: calc(1180px * max(var(--fit, 1), 1));
+    margin-inline: auto;
   }
   /* The cycler's label line and button use the page's type, not the Level 1
      book serif. */
@@ -299,11 +411,6 @@
     font-size: 1rem;
     font-weight: 600;
   }
-  .zans-guide h1 {
-    margin: 0;
-    padding: 0;
-    grid-column: auto;
-  }
   .zans-guide h2,
   .zans-guide h3 {
     margin: 0;
@@ -314,9 +421,8 @@
     color: var(--theme-text-muted);
     margin: 0;
   }
-  /* The page header, the families intro and the closing note are centred
-     section breaks; the text beside each player reads left. */
-  .intro,
+  /* The lede, the families intro and the closing note are centred section
+     breaks; the text beside each player reads left. */
   .from-zan,
   .from-zan-intro,
   .families-intro,
@@ -334,7 +440,9 @@
     text-wrap: balance;
   }
   .zans-guide .lede {
+    margin-inline: auto;
     font-size: 1.125rem;
+    text-align: center;
     color: var(--theme-text);
   }
   .lede a {
@@ -348,10 +456,11 @@
   }
 
   .from-zan {
-    gap: var(--spacing-lg, 20px);
+    gap: clamp(0.5rem, 2vh, 1.25rem);
   }
+  /* The video grows with the screen (--fit). */
   .from-zan-video {
-    width: min(100%, 480px);
+    width: min(100%, calc(30rem * var(--fit, 1)));
     text-align: left;
   }
   .from-zan-video :global(figcaption) {
@@ -361,6 +470,11 @@
     color: var(--theme-text);
   }
 
+  .text-screen {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
   .prop-choice {
     display: flex;
     flex-direction: column;
@@ -370,13 +484,6 @@
     font-size: var(--font-size-compact, 13px);
     font-weight: 600;
     color: var(--theme-text-muted);
-  }
-
-  .families {
-    container-type: inline-size;
-    display: flex;
-    flex-direction: column;
-    gap: clamp(32px, 5vw, 56px);
   }
   .links {
     display: flex;

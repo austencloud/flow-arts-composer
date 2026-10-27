@@ -92,6 +92,14 @@
   });
 
   let stage = $state(0);
+  // Beside rather than stacked: a wide frame, or a short landscape window
+  // (the Fold inner screen turned sideways) where stacking runs out of
+  // height.
+  let frameWidth = $state(0);
+  let landscapeWindow = $state(false);
+  const wide = $derived(
+    frameWidth >= 832 || (frameWidth >= 640 && landscapeWindow)
+  );
   let routePoints = $state<readonly IntroPoint[]>(INTRO_PATHS.arc);
   let hand = $state<IntroPoint>(INTRO_CENTER);
   let traceProgress = $state(0);
@@ -317,6 +325,10 @@
   }
 
   onMount(() => {
+    const landscapeQuery = window.matchMedia("(orientation: landscape)");
+    landscapeWindow = landscapeQuery.matches;
+    const syncLandscape = () => (landscapeWindow = landscapeQuery.matches);
+    landscapeQuery.addEventListener("change", syncLandscape);
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
     const updateMotionPreference = (): void => {
       isReducedMotion = reducedMotion();
@@ -334,6 +346,7 @@
 
     return () => {
       media.removeEventListener("change", updateMotionPreference);
+      landscapeQuery.removeEventListener("change", syncLandscape);
       observer.disconnect();
       unsubscribe();
     };
@@ -345,9 +358,10 @@
   });
 </script>
 
-<div class="intro-frame">
+<div class="intro-frame" bind:clientWidth={frameWidth}>
   <section
     class="motion-path-intro"
+    class:wide
     aria-labelledby="motion-path-intro-heading"
     use:renderGateTarget={gate}
     style:--hand-color={handColor}
@@ -513,13 +527,12 @@
   .motion-path-intro {
     --settings-stage-width: min(100%, 47.5rem);
     width: var(--settings-stage-width);
-    min-height: clamp(36rem, 70vh, 44rem);
     display: grid;
-    grid-template-rows: 5.5rem minmax(22rem, 1fr) auto;
+    grid-template-rows: 5.5rem auto auto;
     grid-template-areas: "copy" "stage" "controls";
     justify-items: center;
-    gap: clamp(1rem, 2.5cqw, 1.75rem);
-    margin: clamp(2rem, 6vw, 4.5rem) auto;
+    gap: clamp(calc(0.75rem * min(var(--fit, 1), 1)), 2.5cqw, 1.75rem);
+    margin: 0 auto;
     container-type: inline-size;
     color: var(--theme-text);
   }
@@ -527,7 +540,6 @@
   .intro-controls {
     grid-area: controls;
     width: 100%;
-    min-height: 5.75rem;
     display: grid;
     justify-items: center;
     align-items: start;
@@ -568,7 +580,8 @@
 
   .route-stage {
     grid-area: stage;
-    width: min(100%, 40rem);
+    /* Grows with the guide screen (--fit) so the drawing fills it. */
+    width: min(100%, calc(40rem * var(--fit, 1)));
     min-width: 0;
     min-height: 0;
     display: grid;
@@ -578,7 +591,7 @@
   svg {
     display: block;
     width: 100%;
-    max-height: 24rem;
+    max-height: calc(24rem * var(--fit, 1));
     overflow: visible;
   }
 
@@ -712,59 +725,61 @@
      leaving both rails empty. The drawing leads and the copy and Next cluster
      at its vertical center on the right, so the eye goes look, read, advance
      and Next lands where every stepper puts it. */
-  @container (min-width: 52rem) {
-    .motion-path-intro {
-      width: 100%;
-      min-height: 0;
-      /* The drawing track is capped at the svg's own height cap so the
-         drawing fills it edge to edge; the copy track is only as wide as the
-         longest caption. The pair is centered as one unit so the words sit
-         beside the drawing instead of drifting to the far rail. */
-      grid-template-columns: minmax(0, min(30rem, 62vh)) minmax(18rem, 20rem);
-      grid-template-rows: auto auto;
-      grid-template-areas:
-        "stage copy"
-        "stage controls";
-      justify-content: center;
-      align-content: center;
-      column-gap: clamp(1.5rem, 3cqw, 2.5rem);
-      row-gap: clamp(1rem, 2cqw, 1.5rem);
-      margin-block: clamp(1.5rem, 4vw, 3rem);
-    }
+  /* Wide (a 52rem frame, or a 40rem one in a landscape window): the
+     words and Next sit beside the drawing. */
+  .motion-path-intro.wide {
+    width: 100%;
+    min-height: 0;
+    /* The drawing track is capped at the svg's own height cap so the
+       drawing fills it edge to edge; the copy track is only as wide as the
+       longest caption. The pair is centered as one unit so the words sit
+       beside the drawing instead of drifting to the far rail. */
+    grid-template-columns: minmax(0, calc(30rem * var(--fit, 1))) minmax(
+        18rem,
+        20rem
+      );
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "stage copy"
+      "stage controls";
+    justify-content: center;
+    align-content: center;
+    column-gap: clamp(1.5rem, 3cqw, 2.5rem);
+    row-gap: clamp(1rem, 2cqw, 1.5rem);
+    margin-block: 0;
+  }
 
-    /* Beside the drawing the words and Next read left, as Guide text
-       beside a figure does; stacked above it they stay centred. */
-    .intro-copy {
-      align-self: end;
-      place-items: end start;
-      text-align: left;
-    }
+  /* Beside the drawing the words and Next read left, as Guide text
+     beside a figure does; stacked above it they stay centred. */
+  .wide .intro-copy {
+    align-self: end;
+    place-items: end start;
+    text-align: left;
+  }
 
-    .copy-layer {
-      justify-items: start;
-    }
+  .wide .copy-layer {
+    justify-items: start;
+  }
 
-    .intro-controls {
-      align-self: start;
-      min-height: 0;
-      justify-items: start;
-    }
+  .wide .intro-controls {
+    align-self: start;
+    min-height: 0;
+    justify-items: start;
+  }
 
-    .route-stage {
-      width: 100%;
-      align-self: center;
-    }
+  .wide .route-stage {
+    width: 100%;
+    align-self: center;
+  }
 
-    svg {
-      max-height: min(30rem, 62vh);
-    }
+  .wide svg {
+    max-height: calc(30rem * var(--fit, 1));
   }
 
   @container (max-width: 440px) {
     .motion-path-intro {
-      min-height: 31.25rem;
-      grid-template-rows: 5rem minmax(18rem, 1fr) auto;
-      margin-block: 2rem;
+      grid-template-rows: 5rem auto auto;
+      margin-block: 0;
     }
 
     h2 {
@@ -776,7 +791,7 @@
     }
 
     svg {
-      max-height: 19rem;
+      max-height: calc(19rem * var(--fit, 1));
     }
   }
 

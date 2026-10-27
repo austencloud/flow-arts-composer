@@ -36,6 +36,8 @@
     startAside,
     activeBeat = null,
     availableWidth,
+    minCell = 104,
+    maxCell = 132,
   }: {
     items: PictographData[];
     /** Per-cell labels ("Start", "1", …), parallel to `items`. Omitted → unlabeled. */
@@ -67,6 +69,13 @@
      * when the window widens. Omitted → the strip measures itself.
      */
     availableWidth?: number;
+    /**
+     * Cell width bounds. A one-screen guide page passes a smaller minimum
+     * and a larger maximum, so the steps stay in one row on a phone and grow
+     * with a 4K window (GuideScreens). Omitted → the reading-page sizes.
+     */
+    minCell?: number;
+    maxCell?: number;
   } = $props();
 
   const r = $derived({
@@ -79,9 +88,14 @@
     showStepNumbers: render?.showStepNumbers ?? false,
   });
 
-  const MIN_CELL = 104;
-  const MAX_CELL = 132;
+  const MIN_CELL = $derived(minCell);
+  const MAX_CELL = $derived(maxCell);
   const START_GAP_PX = 10; // must match .unit's column gap below
+  const NARROW_STRIP_W = 480;
+  /** A one-screen page's cell width at fit 1. */
+  const FIT_CELL_PX = 150;
+  /** A one-screen guide page passes its own cell bounds (GuideScreens). */
+  const oneScreen = $derived(maxCell > 132);
 
   const startBox = $derived(
     items.length && isStartBox(items[0] as unknown as StepData) ? items[0]! : null
@@ -123,8 +137,11 @@
         cellW: Math.min(MAX_CELL, Math.floor(measuredW / rowCols)),
       });
       // A start-row aside (the sequence's label) forces the TAB layout - the
-      // start box fused to the grid's top-left with the text beside it.
-      if (startAside) return rowLayout();
+      // start box fused to the grid's top-left with the text beside it -
+      // except on a one-screen page's phone-width strip, where the tab's
+      // extra row costs more height than the screen has. There the label is
+      // left out: the screen's pill already names the sequence.
+      if (startAside && (!oneScreen || measuredW >= NARROW_STRIP_W)) return rowLayout();
       // Otherwise: own COLUMN or own ROW - whichever leaves the steps in
       // fewer, wider rows. Ties go to the column (the start then leads the
       // reading direction, the card's top-left corner).
@@ -146,7 +163,16 @@
     };
   });
 
-  const cellWidth = $derived(layout.cellW ? `${layout.cellW}px` : undefined);
+  // A one-screen page also caps the cells by its fit scale, so GuideFitBox
+  // can shrink a strip that would otherwise fill the width and overflow the
+  // screen's height (the cell count per row still follows the width alone).
+  const cellWidth = $derived(
+    !layout.cellW
+      ? undefined
+      : oneScreen
+        ? `min(${layout.cellW}px, calc(${FIT_CELL_PX}px * var(--fit, 1)))`
+        : `${layout.cellW}px`
+  );
 </script>
 
 {#snippet stepCell(pos: PictographData, label: string | undefined, beatNumber: number | null = null)}
@@ -174,7 +200,7 @@
   </div>
 {/snippet}
 
-<figure class="guide-step-strip" role="group" aria-label={caption ?? "Sequence"} bind:clientWidth={ownW}>
+<figure class="guide-step-strip" class:grows={maxCell > 132} role="group" aria-label={caption ?? "Sequence"} bind:clientWidth={ownW}>
   {#if layout.mode === "scroll"}
     <!-- Pre-measurement fallback (SSR / no-JS): aside above, everything in one
          scrollable row rather than overflowing the page. Vanishes once measured. -->
@@ -302,6 +328,14 @@
     justify-content: safe center;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: thin;
+  }
+  /* Cells wider than the reading-page size (a one-screen page on a large
+     window): the pictograph fills its cell instead of stopping at sm. */
+  .grows .pic-card :global(.pictograph-wrapper) {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+    max-width: none;
   }
   .strip-cell {
     flex: 0 0 auto;

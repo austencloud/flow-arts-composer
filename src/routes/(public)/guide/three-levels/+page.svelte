@@ -21,6 +21,11 @@
   import { browser, dev } from "$app/env";
   import UnderConstruction from "#lib/shared/landing/components/UnderConstruction.svelte";
   import GuideShell from "../_components/GuideShell.svelte";
+  import GuideScreens from "../_components/fit/GuideScreens.svelte";
+  import {
+    watchScreenTier,
+    type ScreenTier,
+  } from "../_components/fit/guide-screen-url";
   import GuideSeo from "../level-1/_components/GuideSeo.svelte";
   import SequenceShowcase from "../level-1/_components/SequenceShowcase.svelte";
   import { stripToSequence } from "../level-1/_data/guide-sequence-adapter";
@@ -135,6 +140,77 @@
     vtgStep = 0;
   });
 
+  // One screen at a time (2026-10-24 fit pass). Each level gets its idea
+  // first, then its player. A phone reads the words on their own screen
+  // and watches the player on the next; longer readings split in two.
+  type Part =
+    | "lede"
+    | "namesText"
+    | "names"
+    | "namesLimit"
+    | "capBody"
+    | "capRules"
+    | "cap"
+    | "capCredit"
+    | "capLimit"
+    | "vtgCheck"
+    | "lettersText"
+    | "letters"
+    | "picker"
+    | "lettersShared"
+    | "vtgBody"
+    | "vtgCap"
+    | "vtg"
+    | "close";
+  let tier = $state<ScreenTier>("large");
+  onMount(() => watchScreenTier((v) => (tier = v)));
+  const views = $derived.by(() => {
+    const out: { label: string; parts: Part[] }[] = [];
+    const names = t("guide_caps_names_title");
+    const capTitle = t("guide_caps_cap_title");
+    const letters = t("guide_caps_letters_title");
+    const vtg = t("guide_caps_vtg_title");
+    if (tier === "small") {
+      out.push({ label: names, parts: ["lede", "namesText"] });
+      out.push({ label: `Watch: ${names}`, parts: ["names"] });
+      out.push({ label: "What a name leaves out", parts: ["namesLimit"] });
+      out.push({ label: capTitle, parts: ["capBody", "capLimit"] });
+      out.push({ label: "Gage's CAPs", parts: ["capRules", "capCredit"] });
+      out.push({ label: `Watch: ${capTitle}`, parts: ["cap"] });
+      out.push({ label: letters, parts: ["lettersText"] });
+      out.push({ label: `Watch: ${letters}`, parts: ["letters"] });
+      out.push({ label: t("guide_caps_picker_label"), parts: ["picker"] });
+      out.push({ label: "One word, many CAPs", parts: ["lettersShared"] });
+      out.push({ label: vtg, parts: ["vtgBody"] });
+      out.push({ label: "Three spins", parts: ["vtgCap", "vtgCheck"] });
+      out.push({ label: `Watch: ${vtg}`, parts: ["vtg"] });
+    } else {
+      if (tier === "large")
+        out.push({
+          label: names,
+          parts: ["lede", "namesText", "names", "namesLimit"],
+        });
+      else {
+        out.push({ label: names, parts: ["lede", "namesText", "names"] });
+        out.push({ label: "What a name leaves out", parts: ["namesLimit"] });
+      }
+      out.push({ label: capTitle, parts: ["capBody", "capRules"] });
+      out.push({ label: `Watch: ${capTitle}`, parts: ["cap", "capCredit"] });
+      out.push({ label: letters, parts: ["lettersText"] });
+      out.push({ label: `Watch: ${letters}`, parts: ["letters"] });
+      out.push({
+        label: t("guide_caps_picker_label"),
+        parts: ["picker", "lettersShared"],
+      });
+      out.push({ label: vtg, parts: ["vtgBody", "vtgCap"] });
+      out.push({ label: `Watch: ${vtg}`, parts: ["vtg"] });
+    }
+    out.push({ label: t("guide_caps_close_title"), parts: ["close"] });
+    return out;
+  });
+  const has = (n: number, part: Part) => views[n]?.parts.includes(part);
+  const small = $derived(tier === "small");
+
   // Pictographs follow the site theme, as the Level 1 pages do.
   let picTheme = $state<"light" | "dark">("dark");
   onMount(() => {
@@ -190,195 +266,264 @@
   />
 
   <GuideShell>
-    <article class="essay guide-page-route">
-      <header class="intro centered">
-        <p class="eyebrow">{t("guide_caps_eyebrow")}</p>
-        <h1>{t("guide_caps_title")}</h1>
-        <p class="lede">{t("guide_caps_lede")}</p>
-      </header>
+    <main class="essay guide-page-route">
+      <GuideScreens
+        title={t("guide_caps_title")}
+        kicker={t("guide_caps_eyebrow")}
+        labels={views.map((v) => v.label)}
+        hubHref={localHref("/guide")}
+      >
+        {#snippet screen(n)}
+          <div class="screen">
+            {#if has(n, "lede")}
+              <p class="lede centered-text">{t("guide_caps_lede")}</p>
+            {/if}
 
-      <section class="level" aria-labelledby="names-heading">
-        <div class="centered">
-          <h2 id="names-heading">{t("guide_caps_names_title")}</h2>
-          <p>{t("guide_caps_names_body")}</p>
-        </div>
-        <SequenceShowcase
-          variant="compact"
-          sequence={zans.sequence}
-          items={zans.items}
-          render={zans.render}
-          loop
-          {picTheme}
-        >
-          {#snippet text()}
-            <div class="name-label">
-              <h3>Zan's Diamond</h3>
-              <p>
-                {t("guide_caps_names_by", { name: ZANS_DIAMOND_CREDIT.name })}
-              </p>
-            </div>
-          {/snippet}
-        </SequenceShowcase>
-        <div class="centered">
-          <p>{t("guide_caps_names_limit")}</p>
-        </div>
-      </section>
-
-      <section class="level" aria-labelledby="cap-heading">
-        <div class="centered">
-          <h2 id="cap-heading">{t("guide_caps_cap_title")}</h2>
-          <p>{t("guide_caps_cap_body")}</p>
-          <p>{t("guide_caps_cap_rules", { count: CAPS.length })}</p>
-        </div>
-        <SequenceShowcase
-          sequence={capByName}
-          items={capItems}
-          render={capRender("name")}
-          loop
-          {picTheme}
-        >
-          {#snippet text()}
-            <div class="beside">
-              <h3>{t("guide_caps_figure_name")}</h3>
-              <p>{t("guide_caps_cap_limit")}</p>
-              <div class="cycle">
-                <button type="button" onclick={nextCap}>
-                  {t("guide_caps_show_another")}
-                </button>
-                <span
-                  >{t("guide_caps_figure_count", {
-                    n: capIndex + 1,
-                    total: CAPS.length,
-                  })}</span
-                >
+            {#if has(n, "namesText")}
+              <div class="centered">
+                <h2>{t("guide_caps_names_title")}</h2>
+                <p>{t("guide_caps_names_body")}</p>
               </div>
-            </div>
-          {/snippet}
-        </SequenceShowcase>
-        <div class="centered">
-          <p class="credit">{t("guide_caps_cap_credit")}</p>
-          <div class="links">
-            <LinkChip href={localHref("/guide/eight-step")}
-              >{t("guide_eightstep_title")}</LinkChip
-            >
-            <LinkChip href={localHref("/notation/caps")}
-              >{t("guide_caps_link_caps")}</LinkChip
-            >
-          </div>
-        </div>
-      </section>
+            {/if}
 
-      <section class="level" aria-labelledby="letters-heading">
-        <div class="centered">
-          <h2 id="letters-heading">{t("guide_caps_letters_title")}</h2>
-          <p>{t("guide_caps_letters_body")}</p>
-          <p>{t("guide_caps_letters_repeat")}</p>
-        </div>
-        <SequenceShowcase
-          sequence={capLettered}
-          items={capItems}
-          render={capRender("letters")}
-          loop
-          {picTheme}
-          onStepChange={(step) => (lettersStep = step)}
-        >
-          {#snippet text()}
-            <CapReadout {cap} level="letters" step={lettersStep} {picTheme} />
-          {/snippet}
-        </SequenceShowcase>
-        <div
-          class="picker"
-          role="group"
-          aria-label={t("guide_caps_picker_label")}
-        >
-          {#each groups as group (group.key)}
-            <div class="picker-group">
-              <p class="picker-heading">
-                {t(TIMING_LABEL[group.timing])} · {t(
-                  DIRECTION_LABEL[group.direction]
-                )}
-              </p>
-              <div class="picker-words">
-                {#each group.words as entry (entry.word)}
-                  <button
-                    type="button"
-                    class="word"
-                    class:selected={entry.word === cap.word}
-                    aria-pressed={entry.word === cap.word}
-                    aria-label={entry.word}
-                    onclick={() => (capIndex = entry.i)}
-                  >
-                    {#if browser}
-                      <TKAWordGlyph
-                        word={entry.word}
-                        height={22}
-                        darkMode={picTheme === "dark"}
-                      />
-                    {:else}
-                      <span class="word-text">{entry.word}</span>
+            {#if has(n, "names")}
+              <SequenceShowcase
+                variant="compact"
+                sequence={zans.sequence}
+                items={zans.items}
+                render={zans.render}
+                loop
+                stripBeside
+                {picTheme}
+              >
+                {#snippet text()}
+                  <div class="name-label">
+                    <h3>Zan's Diamond</h3>
+                    <p>
+                      {t("guide_caps_names_by", {
+                        name: ZANS_DIAMOND_CREDIT.name,
+                      })}
+                    </p>
+                  </div>
+                {/snippet}
+              </SequenceShowcase>
+            {/if}
+
+            {#if has(n, "namesLimit")}
+              <div class="centered">
+                <p>{t("guide_caps_names_limit")}</p>
+              </div>
+            {/if}
+
+            {#if has(n, "capBody") || has(n, "capRules")}
+              <div class="centered">
+                {#if has(n, "capBody")}
+                  <h2>{t("guide_caps_cap_title")}</h2>
+                  <p>{t("guide_caps_cap_body")}</p>
+                {/if}
+                {#if has(n, "capLimit")}
+                  <p>{t("guide_caps_cap_limit")}</p>
+                {/if}
+                {#if has(n, "capRules")}
+                  <p>{t("guide_caps_cap_rules", { count: CAPS.length })}</p>
+                {/if}
+              </div>
+            {/if}
+
+            {#if has(n, "cap")}
+              <SequenceShowcase
+                sequence={capByName}
+                items={capItems}
+                render={capRender("name")}
+                loop
+                stripBeside
+                {picTheme}
+              >
+                {#snippet text()}
+                  <div class="beside">
+                    {#if !small}
+                      <h3>{t("guide_caps_figure_name")}</h3>
+                      <p>{t("guide_caps_cap_limit")}</p>
                     {/if}
-                  </button>
+                    <div class="cycle">
+                      <button type="button" onclick={nextCap}>
+                        {t("guide_caps_show_another")}
+                      </button>
+                      <span
+                        >{t("guide_caps_figure_count", {
+                          n: capIndex + 1,
+                          total: CAPS.length,
+                        })}</span
+                      >
+                    </div>
+                  </div>
+                {/snippet}
+              </SequenceShowcase>
+            {/if}
+
+            {#if has(n, "capCredit")}
+              <div class="centered">
+                <p class="credit">{t("guide_caps_cap_credit")}</p>
+                <div class="links">
+                  <LinkChip href={localHref("/guide/eight-step")}
+                    >{t("guide_eightstep_title")}</LinkChip
+                  >
+                  <LinkChip href={localHref("/notation/caps")}
+                    >{t("guide_caps_link_caps")}</LinkChip
+                  >
+                </div>
+              </div>
+            {/if}
+
+            {#if has(n, "lettersText") && !has(n, "letters")}
+              <div class="centered">
+                <h2>{t("guide_caps_letters_title")}</h2>
+                <p>{t("guide_caps_letters_body")}</p>
+                <p>{t("guide_caps_letters_repeat")}</p>
+              </div>
+            {/if}
+
+            {#if has(n, "letters")}
+              <SequenceShowcase
+                sequence={capLettered}
+                items={capItems}
+                render={capRender("letters")}
+                loop
+                stripBeside
+                {picTheme}
+                onStepChange={(step) => (lettersStep = step)}
+              >
+                {#snippet text()}
+                  <div class="beside">
+                    {#if has(n, "lettersText")}
+                      <h2>{t("guide_caps_letters_title")}</h2>
+                      <p>{t("guide_caps_letters_body")}</p>
+                      <p>{t("guide_caps_letters_repeat")}</p>
+                    {/if}
+                    <CapReadout
+                      {cap}
+                      level="letters"
+                      step={lettersStep}
+                      {picTheme}
+                    />
+                  </div>
+                {/snippet}
+              </SequenceShowcase>
+            {/if}
+
+            {#if has(n, "picker")}
+              <div
+                class="picker"
+                role="group"
+                aria-label={t("guide_caps_picker_label")}
+              >
+                {#each groups as group (group.key)}
+                  <div class="picker-group">
+                    <p class="picker-heading">
+                      {t(TIMING_LABEL[group.timing])} · {t(
+                        DIRECTION_LABEL[group.direction]
+                      )}
+                    </p>
+                    <div class="picker-words">
+                      {#each group.words as entry (entry.word)}
+                        <button
+                          type="button"
+                          class="word"
+                          class:selected={entry.word === cap.word}
+                          aria-pressed={entry.word === cap.word}
+                          aria-label={entry.word}
+                          onclick={() => (capIndex = entry.i)}
+                        >
+                          {#if browser}
+                            <TKAWordGlyph
+                              word={entry.word}
+                              height={22}
+                              darkMode={picTheme === "dark"}
+                            />
+                          {:else}
+                            <span class="word-text">{entry.word}</span>
+                          {/if}
+                        </button>
+                      {/each}
+                    </div>
+                  </div>
                 {/each}
               </div>
-            </div>
-          {/each}
-        </div>
-        <div class="centered">
-          <p>
-            {t("guide_caps_letters_shared", {
-              caps: CAPS.length,
-              words: CAP_WORDS.length,
-            })}
-          </p>
-          <p>{t("guide_caps_letters_think")}</p>
-        </div>
-      </section>
+            {/if}
 
-      <section class="level" aria-labelledby="vtg-heading">
-        <div class="centered">
-          <h2 id="vtg-heading">{t("guide_caps_vtg_title")}</h2>
-          <p>{t("guide_caps_vtg_body")}</p>
-          <p>{t("guide_caps_vtg_cap")}</p>
-        </div>
-        <SequenceShowcase
-          sequence={capLettered}
-          items={capItems}
-          render={capRender("vtg")}
-          loop
-          {picTheme}
-          onStepChange={(step) => (vtgStep = step)}
-        >
-          {#snippet text()}
-            <div class="beside">
-              <CapReadout {cap} level="vtg" step={vtgStep} {picTheme} />
-              <p>{t("guide_caps_vtg_check")}</p>
-              {#if sameWord.total > 1}
-                <div class="cycle">
-                  <button type="button" onclick={nextSameWord}>
-                    {t("guide_caps_same_word")}
-                  </button>
-                  <span>{t("guide_caps_figure_count", sameWord)}</span>
+            {#if has(n, "lettersShared")}
+              <div class="centered">
+                <p>
+                  {t("guide_caps_letters_shared", {
+                    caps: CAPS.length,
+                    words: CAP_WORDS.length,
+                  })}
+                </p>
+                <p>{t("guide_caps_letters_think")}</p>
+              </div>
+            {/if}
+
+            {#if has(n, "vtgBody") || has(n, "vtgCap")}
+              <div class="centered">
+                {#if has(n, "vtgBody")}
+                  <h2>{t("guide_caps_vtg_title")}</h2>
+                  <p>{t("guide_caps_vtg_body")}</p>
+                {/if}
+                {#if has(n, "vtgCap")}
+                  <p>{t("guide_caps_vtg_cap")}</p>
+                {/if}
+                {#if has(n, "vtgCheck")}
+                  <p>{t("guide_caps_vtg_check")}</p>
+                {/if}
+              </div>
+            {/if}
+
+            {#if has(n, "vtg")}
+              <SequenceShowcase
+                sequence={capLettered}
+                items={capItems}
+                render={capRender("vtg")}
+                loop
+                stripBeside
+                {picTheme}
+                onStepChange={(step) => (vtgStep = step)}
+              >
+                {#snippet text()}
+                  <div class="beside">
+                    <CapReadout {cap} level="vtg" step={vtgStep} {picTheme} />
+                    {#if !small}<p>{t("guide_caps_vtg_check")}</p>{/if}
+                    {#if sameWord.total > 1}
+                      <div class="cycle">
+                        <button type="button" onclick={nextSameWord}>
+                          {t("guide_caps_same_word")}
+                        </button>
+                        <span>{t("guide_caps_figure_count", sameWord)}</span>
+                      </div>
+                    {/if}
+                  </div>
+                {/snippet}
+              </SequenceShowcase>
+            {/if}
+
+            {#if has(n, "close")}
+              <div class="centered">
+                <h2>{t("guide_caps_close_title")}</h2>
+                <p>{t("guide_caps_close_body")}</p>
+                <p>{t("guide_caps_close_take")}</p>
+                <div class="links">
+                  <LinkChip href={localHref("/guide/zans-diamond")}
+                    >Zan's Diamond</LinkChip
+                  >
+                  <LinkChip href={localHref("/guide/ratios")}
+                    >{t("guide_caps_link_ratios")}</LinkChip
+                  >
                 </div>
-              {/if}
-            </div>
-          {/snippet}
-        </SequenceShowcase>
-      </section>
-
-      <section class="level centered" aria-labelledby="close-heading">
-        <h2 id="close-heading">{t("guide_caps_close_title")}</h2>
-        <p>{t("guide_caps_close_body")}</p>
-        <p>{t("guide_caps_close_take")}</p>
-        <div class="links">
-          <LinkChip href={localHref("/guide/zans-diamond")}
-            >Zan's Diamond</LinkChip
-          >
-          <LinkChip href={localHref("/guide/ratios")}
-            >{t("guide_caps_link_ratios")}</LinkChip
-          >
-        </div>
-      </section>
-    </article>
+              </div>
+            {/if}
+          </div>
+        {/snippet}
+      </GuideScreens>
+    </main>
   </GuideShell>
 {/if}
 
@@ -386,33 +531,30 @@
   .essay {
     width: 100%;
     min-width: 0;
-    max-width: 1180px;
-    margin-inline: auto;
-    padding: clamp(20px, 3vw, 56px);
     color: var(--theme-text);
-    display: flex;
-    flex-direction: column;
-    gap: clamp(56px, 8vw, 96px);
     --ink: var(--theme-text);
     --ink-dim: var(--theme-text-muted);
   }
-  .essay h1 {
-    margin: 0;
-    padding: 0;
-    grid-column: auto;
+  .screen {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(0.75rem, 2.5vh, 2rem);
+    width: 100%;
+    max-width: calc(1180px * max(var(--fit, 1), 1));
+    margin-inline: auto;
   }
   .essay h2,
   .essay h3 {
     margin: 0;
   }
   .essay p {
-    line-height: 1.65;
+    line-height: 1.6;
     color: var(--theme-text-muted);
     margin: 0;
   }
 
-  /* Headings, intros and section prose sit centred, as on the other Guide
-     pages; the reading beside each canvas reads left. */
+  /* Headings and section prose sit centred, as on the other Guide pages;
+     the reading beside each canvas reads left. */
   .centered {
     display: flex;
     flex-direction: column;
@@ -423,28 +565,16 @@
   .centered p {
     max-width: 64ch;
   }
-  .intro {
-    gap: var(--spacing-sm, 8px);
-  }
-  .essay .eyebrow {
-    font-size: 0.8125rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-  }
   .essay .lede {
+    max-width: 56ch;
+    margin-inline: auto;
     font-size: 1.125rem;
+    text-align: center;
+    text-wrap: balance;
     color: var(--theme-text);
   }
   .essay .credit {
     font-size: 0.875rem;
-  }
-
-  /* One level: its heading and prose, its showcase, then any follow-up. */
-  .level {
-    display: flex;
-    flex-direction: column;
-    gap: clamp(20px, 3vw, 32px);
   }
 
   .name-label {
@@ -501,6 +631,12 @@
     font-variant-numeric: tabular-nums;
   }
 
+  /* The word buttons and the beat readout are drawn at fixed pixel sizes;
+     zoom lets them follow the screen's scale (--fit) like the rest. */
+  .picker,
+  .screen :global(.readout) {
+    zoom: clamp(0.45, var(--fit, 1), 1.75);
+  }
   .picker {
     display: flex;
     flex-wrap: wrap;

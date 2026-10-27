@@ -10209,7 +10209,7 @@ index 0000000000000000000000000000000000000000..752fdac92fe732640272cfeff9644dd9
 +    }
 +}
 diff --git a/dist/lib/services/implementations/AvatarAnimator.d.ts b/dist/lib/services/implementations/AvatarAnimator.d.ts
-index cac989e5e626274fb4d13d59e401a9a1b485760b..041ac97419964b76364665f15431e81683112997 100644
+index cac989e5e626274fb4d13d59e401a9a1b485760b..363c33c36f1a9e85f3343d8ee17d7bdb6145b492 100644
 --- a/dist/lib/services/implementations/AvatarAnimator.d.ts
 +++ b/dist/lib/services/implementations/AvatarAnimator.d.ts
 @@ -4,7 +4,8 @@
@@ -10268,7 +10268,7 @@ index cac989e5e626274fb4d13d59e401a9a1b485760b..041ac97419964b76364665f15431e816
      private _poleVectorsEnabled;
      private clavicleRaiser;
      private leftClavicleQuat;
-@@ -54,23 +87,330 @@ export declare class AvatarAnimator implements IAvatarAnimator {
+@@ -54,23 +87,337 @@ export declare class AvatarAnimator implements IAvatarAnimator {
       * on top of the twist rest pose before arm IK runs. 0 = disabled.
       */
      private externalSpinePitchRad;
@@ -10431,8 +10431,15 @@ index cac989e5e626274fb4d13d59e401a9a1b485760b..041ac97419964b76364665f15431e816
      update(deltaTime: number): void;
 +    getContactSolveDiagnostics(): Readonly<typeof this.strictDiagnostics>;
 +    private applyStrictContact;
++    /** Which way the strict solve's knees bend: ahead of the body, off the hip line. */
++    private strictKneePole;
++    /** The body's forward on the ground: world up crossed with the left-to-right hip line. */
++    private kneeForward;
 +    /** Solve a leg back to a planted foot: position and rotation. */
 +    private plantLeg;
++    private aimLeg;
++    /** Mirror a knee left behind its hip-to-ankle line through to the front. */
++    private holdKneeForward;
 +    /**
 +     * Move the body by the host's offset before anything measures it, so the
 +     * spine, the arms and the head all solve against where it now stands. With
@@ -10600,7 +10607,7 @@ index cac989e5e626274fb4d13d59e401a9a1b485760b..041ac97419964b76364665f15431e816
      addLayer(layer: AnimationLayer): void;
      removeLayer(layerId: string): void;
      setLayerWeight(layerId: string, weight: number): void;
-@@ -78,8 +418,16 @@ export declare class AvatarAnimator implements IAvatarAnimator {
+@@ -78,8 +425,16 @@ export declare class AvatarAnimator implements IAvatarAnimator {
      setSmoothBlending(enabled: boolean): void;
      setSmoothingFactor(factor: number): void;
      setExternalSpinePitch(radians: number): void;
@@ -10617,7 +10624,7 @@ index cac989e5e626274fb4d13d59e401a9a1b485760b..041ac97419964b76364665f15431e816
      /** Debug toggle: disable clavicle raise to compare old vs new shoulder behavior */
      toggleClavicleRaise(): boolean;
      /** Skip Hips counter-rotation (exhibit performers with planted feet) */
-@@ -89,4 +437,3 @@ export declare class AvatarAnimator implements IAvatarAnimator {
+@@ -89,4 +444,3 @@ export declare class AvatarAnimator implements IAvatarAnimator {
      /** Debug toggle: disable spine twist to compare old vs new torso behavior */
      toggleSpineTwist(): boolean;
  }
@@ -10627,10 +10634,10 @@ diff --git a/dist/lib/services/implementations/AvatarAnimator.d.ts.map b/dist/li
 deleted file mode 100644
 index f8e47d42167b6ea9bb4fd8f44f41273f48f1943b..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/implementations/AvatarAnimator.js b/dist/lib/services/implementations/AvatarAnimator.js
-index bdd5ae35ed47c58d29c537a7805705783f9b9066..88d122b19baf1d7ccbfb316bb023ee1ecaab9380 100644
+index bdd5ae35ed47c58d29c537a7805705783f9b9066..3831b8708e1ec5e9620b893a182c389e0bbda4d4 100644
 --- a/dist/lib/services/implementations/AvatarAnimator.js
 +++ b/dist/lib/services/implementations/AvatarAnimator.js
-@@ -1,10 +1,111 @@
+@@ -1,10 +1,113 @@
 +import { nearestCommonReachTranslation, cylindricalGripReachBound, selectPalmReachBounds } from "../geometry/CommonReachGeometry.js";
  /**
   * AvatarAnimator
@@ -10735,6 +10742,8 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..88d122b19baf1d7ccbfb316bb023ee1e
 + */
 +const BODY_FRAME_SIGN_MIN_DOT = 0.5;
 +const WORLD_UP = new Vector3(0, 1, 0);
++/** How far behind its hip-to-ankle line a knee may sit before it is held forward. */
++const KNEE_BEHIND_TOLERANCE_M = 0.005;
 +const MAX_HEAD_DODGE = 0.42;
 +const HEAD_DODGE_ENGAGE_DISTANCE = 0.32;
 +const HEAD_DODGE_FULL_DISTANCE = 0.14;
@@ -10743,7 +10752,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..88d122b19baf1d7ccbfb316bb023ee1e
  export class AvatarAnimator {
      ikSolver;
      skeleton;
-@@ -14,6 +115,61 @@ export class AvatarAnimator {
+@@ -14,6 +117,61 @@ export class AvatarAnimator {
      // Per-arm IK blend weights: 0 = animation drives the arm, 1 = IK drives the arm
      leftArmIK = { weight: 0, targetWeight: 0 };
      rightArmIK = { weight: 0, targetWeight: 0 };
@@ -10805,7 +10814,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..88d122b19baf1d7ccbfb316bb023ee1e
      ikBlendSpeed = 1 / 0.3; // ~0.3s ramp time
      smoothBlending = true;
      smoothingFactor = 0.15; // 0-1, higher = smoother but laggier
-@@ -23,8 +179,13 @@ export class AvatarAnimator {
+@@ -23,8 +181,13 @@ export class AvatarAnimator {
      transitionProgress = 0;
      transitionConfig = null;
      poleComputer;
@@ -10819,7 +10828,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..88d122b19baf1d7ccbfb316bb023ee1e
      _poleVectorsEnabled = true;
      clavicleRaiser;
      leftClavicleQuat = new Quaternion();
-@@ -67,6 +228,136 @@ export class AvatarAnimator {
+@@ -67,6 +230,136 @@ export class AvatarAnimator {
       * on top of the twist rest pose before arm IK runs. 0 = disabled.
       */
      externalSpinePitchRad = 0;
@@ -10956,7 +10965,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..88d122b19baf1d7ccbfb316bb023ee1e
      constructor(ikSolver, skeleton, poleComputer, clavicleRaiser, spineTwister) {
          this.ikSolver = ikSolver;
          this.skeleton = skeleton;
-@@ -140,9 +431,45 @@ export class AvatarAnimator {
+@@ -140,9 +433,45 @@ export class AvatarAnimator {
                  weight: 1,
              }
              : null;
@@ -11003,7 +11012,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..88d122b19baf1d7ccbfb316bb023ee1e
          this.leftArmIK.targetWeight = blueProp ? 1 : 0;
          this.rightArmIK.targetWeight = redProp ? 1 : 0;
          const ox = offset?.x ?? 0;
-@@ -154,6 +481,7 @@ export class AvatarAnimator {
+@@ -154,6 +483,7 @@ export class AvatarAnimator {
          this.targetPose.leftHand = blueProp
              ? {
                  targetPosition: new Vector3(blueProp.worldPosition.x - ox, blueProp.worldPosition.y - oy, blueProp.worldPosition.z - oz),
@@ -11011,7 +11020,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..88d122b19baf1d7ccbfb316bb023ee1e
                  staffAngle: blueProp.staffRotationAngle,
                  plane: blueProp.plane,
                  weight: 1,
-@@ -162,13 +490,212 @@ export class AvatarAnimator {
+@@ -162,13 +492,212 @@ export class AvatarAnimator {
          this.targetPose.rightHand = redProp
              ? {
                  targetPosition: new Vector3(redProp.worldPosition.x - ox, redProp.worldPosition.y - oy, redProp.worldPosition.z - oz),
@@ -11224,7 +11233,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..88d122b19baf1d7ccbfb316bb023ee1e
      setLeftHandTarget(target) {
          this.targetPose.leftHand = { ...target };
          this.targetPose.timestamp = Date.now();
-@@ -183,8 +710,14 @@ export class AvatarAnimator {
+@@ -183,8 +712,14 @@ export class AvatarAnimator {
      update(deltaTime) {
          // Ramp per-arm IK blend weights (framerate-independent exponential lerp)
          const blendFactor = 1 - Math.exp(-this.ikBlendSpeed * deltaTime);
@@ -11241,7 +11250,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..88d122b19baf1d7ccbfb316bb023ee1e
          if (this.transitioning) {
              this.updateTransition(deltaTime);
          }
-@@ -197,7 +730,645 @@ export class AvatarAnimator {
+@@ -197,7 +732,695 @@ export class AvatarAnimator {
          // Apply combined layers
          const finalPose = this.computeFinalPose();
          // Solve IK for arms
@@ -11469,7 +11478,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..88d122b19baf1d7ccbfb316bb023ee1e
 +        for (const chain of [state.leftLegChain, state.rightLegChain]) {
 +            if (!chain)
 +                continue;
-+            this.plantLeg(chain, this.strictFeet.get(chain.effector), this.strictKneeAxes.get(chain.root), new Vector3(0, 0, 1));
++            this.plantLeg(chain, this.strictFeet.get(chain.effector), this.strictKneeAxes.get(chain.root), this.strictKneePole(state));
 +        }
 +        this.refreshBodyFrame(state, state.leftArmChain, state.rightArmChain);
 +        this.refreshFaceClearanceCenter(state, state.leftArmChain, state.rightArmChain);
@@ -11515,7 +11524,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..88d122b19baf1d7ccbfb316bb023ee1e
 +            reachBodyShift.copy(hips.getWorldPosition(new Vector3())).sub(reachOrigin);
 +            for (const chain of [state.leftLegChain, state.rightLegChain]) {
 +                if (chain)
-+                    this.plantLeg(chain, this.strictFeet.get(chain.effector), this.strictKneeAxes.get(chain.root), new Vector3(0, 0, 1));
++                    this.plantLeg(chain, this.strictFeet.get(chain.effector), this.strictKneeAxes.get(chain.root), this.strictKneePole(state));
 +            }
 +            this.refreshBodyFrame(state, state.leftArmChain, state.rightArmChain);
 +            this.refreshFaceClearanceCenter(state, state.leftArmChain, state.rightArmChain);
@@ -11559,6 +11568,24 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..88d122b19baf1d7ccbfb316bb023ee1e
 +        state.root.updateWorldMatrix(true, true);
 +    }
 +    /** Solve a leg back to a planted foot: position and rotation. */
++    /**
++     * Which way the strict solve's knees bend: ahead of the body, read off the
++     * hip line the way the knee-anatomy grade reads it. A fixed world +Z only
++     * suited a performer facing +Z; one turned to face the camera on the
++     * Blossom or Ember stage had both knees driven backwards through the joint.
++     */
++    strictKneePole(state, fallback = new Vector3(0, 0, 1)) {
++        return state.leftLegChain && state.rightLegChain
++            ? this.kneeForward(state.leftLegChain, state.rightLegChain)
++            : fallback.clone();
++    }
++    /** The body's forward on the ground: world up crossed with the left-to-right hip line. */
++    kneeForward(left, right) {
++        const across = right.root.getWorldPosition(new Vector3()).sub(left.root.getWorldPosition(new Vector3()));
++        const forward = new Vector3().crossVectors(WORLD_UP, across);
++        forward.y = 0;
++        return forward.lengthSq() < 1e-8 ? new Vector3(0, 0, 1) : forward.normalize();
++    }
 +    plantLeg(chain, foot, kneeHingeAxis, pole) {
 +        this.strictLegSolver.solve({ chain, footTarget: foot.position, kneeHingeAxis, poleDirection: pole, weight: 1 });
 +        const hipRotation = chain.root.quaternion.clone();
@@ -11570,14 +11597,46 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..88d122b19baf1d7ccbfb316bb023ee1e
 +        chain.root.updateWorldMatrix(true, true);
 +        // Preserve the hinge solver's twist while removing bind-pose offsets
 +        // from its position result. Only joint rotations change.
-+        for (const [joint, end, target] of [[chain.root, chain.middle, kneePosition], [chain.middle, chain.effector, foot.position]]) {
++        this.aimLeg(chain, kneePosition, foot.position);
++        this.holdKneeForward(chain, pole);
++        this.setStrictHandRotation(chain.effector, foot.rotation);
++    }
++    aimLeg(chain, knee, ankle) {
++        for (const [joint, end, target] of [[chain.root, chain.middle, knee], [chain.middle, chain.effector, ankle]]) {
 +            const origin = joint.getWorldPosition(new Vector3());
 +            const from = end.getWorldPosition(new Vector3()).sub(origin).normalize();
 +            const to = target.clone().sub(origin).normalize();
 +            const world = joint.getWorldQuaternion(new Quaternion()).premultiply(new Quaternion().setFromUnitVectors(from, to));
 +            this.setStrictHandRotation(joint, world);
 +        }
-+        this.setStrictHandRotation(chain.effector, foot.rotation);
++    }
++    /**
++     * A knee only folds forward. Whatever the pole or the hinge calibration made
++     * of this leg, a knee left behind its hip-to-ankle line (the shank swinging
++     * in front of the thigh) is mirrored through that line to the same depth in
++     * front before the frame is drawn. The mirror keeps both bone lengths, so
++     * the ankle stays planted. Forward comes from the hip line itself, not from
++     * the pole, so a wrong pole cannot vouch for itself; the pole stands in only
++     * on a skeleton without both legs. Returns whether the knee needed it.
++     */
++    holdKneeForward(chain, fallbackForward) {
++        const forward = this.strictKneePole(this.skeleton.getState(), fallbackForward);
++        const hip = chain.root.getWorldPosition(new Vector3());
++        const knee = chain.middle.getWorldPosition(new Vector3());
++        const ankle = chain.effector.getWorldPosition(new Vector3());
++        const span = ankle.clone().sub(hip);
++        if (span.lengthSq() < 1e-8)
++            return false;
++        span.normalize();
++        const ahead = forward.clone().addScaledVector(span, -forward.dot(span));
++        if (ahead.lengthSq() < 1e-8)
++            return false;
++        ahead.normalize();
++        const depth = knee.clone().sub(hip).dot(ahead);
++        if (depth >= -KNEE_BEHIND_TOLERANCE_M)
++            return false;
++        this.aimLeg(chain, knee.addScaledVector(ahead, -2 * depth), ankle);
++        return true;
 +    }
 +    /**
 +     * Move the body by the host's offset before anything measures it, so the
@@ -11888,7 +11947,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..88d122b19baf1d7ccbfb316bb023ee1e
      }
      blendToTarget(_deltaTime) {
          // Hands snap directly to prop positions - no lerp.
-@@ -273,18 +1444,197 @@ export class AvatarAnimator {
+@@ -273,18 +1496,197 @@ export class AvatarAnimator {
          }
          return result;
      }
@@ -12087,7 +12146,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..88d122b19baf1d7ccbfb316bb023ee1e
          // Cache shoulder rest Y positions once (before any clavicle rotation has been applied).
          // CRITICAL: Do NOT read these per-frame after clavicle is rotated - the elevated
          // position feeds back and causes oscillation.
-@@ -335,7 +1685,7 @@ export class AvatarAnimator {
+@@ -335,7 +1737,7 @@ export class AvatarAnimator {
              // Nullable hands are first-class: SpineTwister handles the
              // single-hand-gaze branch and the no-hand identity branch
              // internally, so we pass pose hands through as-is.
@@ -12096,7 +12155,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..88d122b19baf1d7ccbfb316bb023ee1e
              // Apply twist to each bone individually for a natural spinal curve.
              // Each bone gets its own weighted quaternion from SpineTwister.
              const applySpineTwist = (boneName, key, twistQuat) => {
-@@ -389,11 +1739,148 @@ export class AvatarAnimator {
+@@ -389,11 +1791,148 @@ export class AvatarAnimator {
                      hipsBoneForUpdate.updateMatrixWorld(true);
              }
          }
@@ -12246,7 +12305,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..88d122b19baf1d7ccbfb316bb023ee1e
                  // Save what the locomotion animation wrote to bone quaternions
                  const animRootQuat = leftChain.root.quaternion.clone();
                  const animMiddleQuat = leftChain.middle.quaternion.clone();
-@@ -402,7 +1889,7 @@ export class AvatarAnimator {
+@@ -402,7 +1941,7 @@ export class AvatarAnimator {
                  if (this._clavicleRaiseEnabled && this.clavicleRaiser && this.shoulderRestCached) {
                      const leftShoulder = state.bones.get("LeftShoulder");
                      if (leftShoulder) {
@@ -12255,7 +12314,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..88d122b19baf1d7ccbfb316bb023ee1e
                          this.leftClavicleQuat.slerp(targetQuat, this.smoothingFactor);
                          leftShoulder.quaternion
                              .copy(this.leftClavicleRestQuat)
-@@ -410,19 +1897,56 @@ export class AvatarAnimator {
+@@ -410,19 +1949,56 @@ export class AvatarAnimator {
                          leftShoulder.updateMatrixWorld(true);
                      }
                  }
@@ -12315,7 +12374,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..88d122b19baf1d7ccbfb316bb023ee1e
                  // Save IK results BEFORE blending - .copy() would overwrite them
                  const ikRootQuat = leftChain.root.quaternion.clone();
                  const ikMiddleQuat = leftChain.middle.quaternion.clone();
-@@ -432,12 +1956,20 @@ export class AvatarAnimator {
+@@ -432,12 +2008,20 @@ export class AvatarAnimator {
                  leftChain.root.quaternion.copy(animRootQuat).slerp(ikRootQuat, w);
                  leftChain.middle.quaternion.copy(animMiddleQuat).slerp(ikMiddleQuat, w);
                  leftChain.effector.quaternion.copy(animEffectorQuat).slerp(ikEffectorQuat, w);
@@ -12337,7 +12396,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..88d122b19baf1d7ccbfb316bb023ee1e
                  // Save what the locomotion animation wrote to bone quaternions
                  const animRootQuat = rightChain.root.quaternion.clone();
                  const animMiddleQuat = rightChain.middle.quaternion.clone();
-@@ -446,7 +1978,7 @@ export class AvatarAnimator {
+@@ -446,7 +2030,7 @@ export class AvatarAnimator {
                  if (this._clavicleRaiseEnabled && this.clavicleRaiser && this.shoulderRestCached) {
                      const rightShoulder = state.bones.get("RightShoulder");
                      if (rightShoulder) {
@@ -12346,7 +12405,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..88d122b19baf1d7ccbfb316bb023ee1e
                          this.rightClavicleQuat.slerp(targetQuat, this.smoothingFactor);
                          rightShoulder.quaternion
                              .copy(this.rightClavicleRestQuat)
-@@ -454,19 +1986,49 @@ export class AvatarAnimator {
+@@ -454,19 +2038,49 @@ export class AvatarAnimator {
                          rightShoulder.updateMatrixWorld(true);
                      }
                  }
@@ -12399,7 +12458,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..88d122b19baf1d7ccbfb316bb023ee1e
                  // Save IK results BEFORE blending - .copy() would overwrite them
                  const ikRootQuat = rightChain.root.quaternion.clone();
                  const ikMiddleQuat = rightChain.middle.quaternion.clone();
-@@ -476,11 +2038,871 @@ export class AvatarAnimator {
+@@ -476,11 +2090,871 @@ export class AvatarAnimator {
                  rightChain.root.quaternion.copy(animRootQuat).slerp(ikRootQuat, w);
                  rightChain.middle.quaternion.copy(animMiddleQuat).slerp(ikMiddleQuat, w);
                  rightChain.effector.quaternion.copy(animEffectorQuat).slerp(ikEffectorQuat, w);
@@ -13271,7 +13330,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..88d122b19baf1d7ccbfb316bb023ee1e
      addLayer(layer) {
          this.layers.set(layer.id, layer);
      }
-@@ -521,6 +2943,12 @@ export class AvatarAnimator {
+@@ -521,6 +2995,12 @@ export class AvatarAnimator {
      setExternalSpinePitch(radians) {
          this.externalSpinePitchRad = radians;
      }
@@ -13284,7 +13343,7 @@ index bdd5ae35ed47c58d29c537a7805705783f9b9066..88d122b19baf1d7ccbfb316bb023ee1e
      /** Debug toggle: disable pole vectors to compare old vs new elbow behavior */
      togglePoleVectors() {
          this._poleVectorsEnabled = !this._poleVectorsEnabled;
-@@ -528,9 +2956,16 @@ export class AvatarAnimator {
+@@ -528,9 +3008,16 @@ export class AvatarAnimator {
              // Reset to default backward poles so difference is visible immediately
              this.leftPoleVector.set(0, 0, -1);
              this.rightPoleVector.set(0, 0, -1);
@@ -33280,7 +33339,7 @@ index 0000000000000000000000000000000000000000..1e89fc30e0d413a389a0a5be23675ba9
 +  }
 +}
 diff --git a/src/lib/services/implementations/AvatarAnimator.ts b/src/lib/services/implementations/AvatarAnimator.ts
-index c73bcabe86e07dd117e6f737532aea88ac9ec194..09cb49508799314e8275ef017101e0cd53a39ccd 100644
+index c73bcabe86e07dd117e6f737532aea88ac9ec194..6bef1dd5e31dc0465436bfe4db980f958628fbdd 100644
 --- a/src/lib/services/implementations/AvatarAnimator.ts
 +++ b/src/lib/services/implementations/AvatarAnimator.ts
 @@ -1,3 +1,4 @@
@@ -33288,7 +33347,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..09cb49508799314e8275ef017101e0cd
  /**
   * AvatarAnimator
   *
-@@ -5,21 +6,161 @@
+@@ -5,21 +6,163 @@
   * Bridges TKA prop states to skeleton IK targets.
   */
  
@@ -33446,6 +33505,8 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..09cb49508799314e8275ef017101e0cd
 +const BODY_FRAME_SIGN_MIN_DOT = 0.5;
 +
 +const WORLD_UP = new Vector3(0, 1, 0);
++/** How far behind its hip-to-ankle line a knee may sit before it is held forward. */
++const KNEE_BEHIND_TOLERANCE_M = 0.005;
 +const MAX_HEAD_DODGE = 0.42;
 +const HEAD_DODGE_ENGAGE_DISTANCE = 0.32;
 +const HEAD_DODGE_FULL_DISTANCE = 0.14;
@@ -33454,7 +33515,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..09cb49508799314e8275ef017101e0cd
  
  export class AvatarAnimator implements IAvatarAnimator {
    private currentPose: BodyPose;
-@@ -29,6 +170,68 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -29,6 +172,68 @@ export class AvatarAnimator implements IAvatarAnimator {
    // Per-arm IK blend weights: 0 = animation drives the arm, 1 = IK drives the arm
    private leftArmIK = { weight: 0, targetWeight: 0 };
    private rightArmIK = { weight: 0, targetWeight: 0 };
@@ -33523,7 +33584,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..09cb49508799314e8275ef017101e0cd
    private ikBlendSpeed = 1 / 0.3; // ~0.3s ramp time
    private smoothBlending = true;
    private smoothingFactor = 0.15; // 0-1, higher = smoother but laggier
-@@ -38,8 +241,13 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -38,8 +243,13 @@ export class AvatarAnimator implements IAvatarAnimator {
    private transitionProgress = 0;
    private transitionConfig: TransitionConfig | null = null;
    private poleComputer: IElbowPoleComputer | null;
@@ -33537,7 +33598,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..09cb49508799314e8275ef017101e0cd
    private _poleVectorsEnabled = true;
  
    private clavicleRaiser: IClavicleRaiser | null;
-@@ -85,6 +293,146 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -85,6 +295,146 @@ export class AvatarAnimator implements IAvatarAnimator {
     */
    private externalSpinePitchRad = 0;
  
@@ -33684,7 +33745,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..09cb49508799314e8275ef017101e0cd
    constructor(
      private ikSolver: IIKSolver,
      private skeleton: IAvatarSkeletonBuilder,
-@@ -180,13 +528,60 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -180,13 +530,60 @@ export class AvatarAnimator implements IAvatarAnimator {
          }
        : null;
  
@@ -33746,7 +33807,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..09cb49508799314e8275ef017101e0cd
    ): void {
      this.leftArmIK.targetWeight = blueProp ? 1 : 0;
      this.rightArmIK.targetWeight = redProp ? 1 : 0;
-@@ -205,6 +600,7 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -205,6 +602,7 @@ export class AvatarAnimator implements IAvatarAnimator {
              blueProp.worldPosition.y - oy,
              blueProp.worldPosition.z - oz
            ),
@@ -33754,7 +33815,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..09cb49508799314e8275ef017101e0cd
            staffAngle: blueProp.staffRotationAngle,
            plane: blueProp.plane,
            weight: 1,
-@@ -218,15 +614,253 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -218,15 +616,253 @@ export class AvatarAnimator implements IAvatarAnimator {
              redProp.worldPosition.y - oy,
              redProp.worldPosition.z - oz
            ),
@@ -34008,7 +34069,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..09cb49508799314e8275ef017101e0cd
    setLeftHandTarget(target: HandPose): void {
      this.targetPose.leftHand = { ...target };
      this.targetPose.timestamp = Date.now();
-@@ -244,8 +878,13 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -244,8 +880,13 @@ export class AvatarAnimator implements IAvatarAnimator {
    update(deltaTime: number): void {
      // Ramp per-arm IK blend weights (framerate-independent exponential lerp)
      const blendFactor = 1 - Math.exp(-this.ikBlendSpeed * deltaTime);
@@ -34024,7 +34085,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..09cb49508799314e8275ef017101e0cd
  
      if (this.transitioning) {
        this.updateTransition(deltaTime);
-@@ -259,7 +898,639 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -259,7 +900,693 @@ export class AvatarAnimator implements IAvatarAnimator {
      const finalPose = this.computeFinalPose();
  
      // Solve IK for arms
@@ -34248,7 +34309,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..09cb49508799314e8275ef017101e0cd
 +    }
 +    for (const chain of [state.leftLegChain, state.rightLegChain]) {
 +      if (!chain) continue;
-+      this.plantLeg(chain, this.strictFeet.get(chain.effector)!, this.strictKneeAxes.get(chain.root)!, new Vector3(0, 0, 1));
++      this.plantLeg(chain, this.strictFeet.get(chain.effector)!, this.strictKneeAxes.get(chain.root)!, this.strictKneePole(state));
 +    }
 +    this.refreshBodyFrame(state, state.leftArmChain, state.rightArmChain);
 +    this.refreshFaceClearanceCenter(state, state.leftArmChain, state.rightArmChain);
@@ -34291,7 +34352,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..09cb49508799314e8275ef017101e0cd
 +      reachBodyShift.copy(hips.getWorldPosition(new Vector3())).sub(reachOrigin);
 +      for (const chain of [state.leftLegChain, state.rightLegChain]) {
 +        if (chain) this.plantLeg(chain, this.strictFeet.get(chain.effector)!,
-+          this.strictKneeAxes.get(chain.root)!, new Vector3(0, 0, 1));
++          this.strictKneeAxes.get(chain.root)!, this.strictKneePole(state));
 +      }
 +      this.refreshBodyFrame(state, state.leftArmChain, state.rightArmChain);
 +      this.refreshFaceClearanceCenter(state, state.leftArmChain, state.rightArmChain);
@@ -34335,6 +34396,29 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..09cb49508799314e8275ef017101e0cd
 +  }
 +
 +  /** Solve a leg back to a planted foot: position and rotation. */
++  /**
++   * Which way the strict solve's knees bend: ahead of the body, read off the
++   * hip line the way the knee-anatomy grade reads it. A fixed world +Z only
++   * suited a performer facing +Z; one turned to face the camera on the
++   * Blossom or Ember stage had both knees driven backwards through the joint.
++   */
++  private strictKneePole(
++    state: { leftLegChain: BoneChain | null; rightLegChain: BoneChain | null },
++    fallback = new Vector3(0, 0, 1)
++  ): Vector3 {
++    return state.leftLegChain && state.rightLegChain
++      ? this.kneeForward(state.leftLegChain, state.rightLegChain)
++      : fallback.clone();
++  }
++
++  /** The body's forward on the ground: world up crossed with the left-to-right hip line. */
++  private kneeForward(left: BoneChain, right: BoneChain): Vector3 {
++    const across = right.root.getWorldPosition(new Vector3()).sub(left.root.getWorldPosition(new Vector3()));
++    const forward = new Vector3().crossVectors(WORLD_UP, across);
++    forward.y = 0;
++    return forward.lengthSq() < 1e-8 ? new Vector3(0, 0, 1) : forward.normalize();
++  }
++
 +  private plantLeg(
 +    chain: BoneChain,
 +    foot: { position: Vector3; rotation: Quaternion },
@@ -34351,14 +34435,45 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..09cb49508799314e8275ef017101e0cd
 +    chain.root.updateWorldMatrix(true, true);
 +    // Preserve the hinge solver's twist while removing bind-pose offsets
 +    // from its position result. Only joint rotations change.
-+    for (const [joint, end, target] of [[chain.root, chain.middle, kneePosition], [chain.middle, chain.effector, foot.position]] as const) {
++    this.aimLeg(chain, kneePosition, foot.position);
++    this.holdKneeForward(chain, pole);
++    this.setStrictHandRotation(chain.effector, foot.rotation);
++  }
++
++  private aimLeg(chain: BoneChain, knee: Vector3, ankle: Vector3): void {
++    for (const [joint, end, target] of [[chain.root, chain.middle, knee], [chain.middle, chain.effector, ankle]] as const) {
 +      const origin = joint.getWorldPosition(new Vector3());
 +      const from = end.getWorldPosition(new Vector3()).sub(origin).normalize();
 +      const to = target.clone().sub(origin).normalize();
 +      const world = joint.getWorldQuaternion(new Quaternion()).premultiply(new Quaternion().setFromUnitVectors(from, to));
 +      this.setStrictHandRotation(joint, world);
 +    }
-+    this.setStrictHandRotation(chain.effector, foot.rotation);
++  }
++
++  /**
++   * A knee only folds forward. Whatever the pole or the hinge calibration made
++   * of this leg, a knee left behind its hip-to-ankle line (the shank swinging
++   * in front of the thigh) is mirrored through that line to the same depth in
++   * front before the frame is drawn. The mirror keeps both bone lengths, so
++   * the ankle stays planted. Forward comes from the hip line itself, not from
++   * the pole, so a wrong pole cannot vouch for itself; the pole stands in only
++   * on a skeleton without both legs. Returns whether the knee needed it.
++   */
++  private holdKneeForward(chain: BoneChain, fallbackForward: Vector3): boolean {
++    const forward = this.strictKneePole(this.skeleton.getState(), fallbackForward);
++    const hip = chain.root.getWorldPosition(new Vector3());
++    const knee = chain.middle.getWorldPosition(new Vector3());
++    const ankle = chain.effector.getWorldPosition(new Vector3());
++    const span = ankle.clone().sub(hip);
++    if (span.lengthSq() < 1e-8) return false;
++    span.normalize();
++    const ahead = forward.clone().addScaledVector(span, -forward.dot(span));
++    if (ahead.lengthSq() < 1e-8) return false;
++    ahead.normalize();
++    const depth = knee.clone().sub(hip).dot(ahead);
++    if (depth >= -KNEE_BEHIND_TOLERANCE_M) return false;
++    this.aimLeg(chain, knee.addScaledVector(ahead, -2 * depth), ankle);
++    return true;
 +  }
 +
 +  /**
@@ -34665,7 +34780,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..09cb49508799314e8275ef017101e0cd
    }
  
    private blendToTarget(_deltaTime: number): void {
-@@ -378,13 +1649,229 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -378,13 +1705,229 @@ export class AvatarAnimator implements IAvatarAnimator {
      return result;
    }
  
@@ -34896,7 +35011,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..09cb49508799314e8275ef017101e0cd
      // Compute body center from Hips bone (or default to origin)
      const bodyCenter = new Vector3(0, 0, 0);
      const hipsBone = state.bones.get("Hips");
-@@ -392,6 +1879,11 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -392,6 +1935,11 @@ export class AvatarAnimator implements IAvatarAnimator {
        hipsBone.getWorldPosition(bodyCenter);
      }
  
@@ -34908,7 +35023,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..09cb49508799314e8275ef017101e0cd
      // Cache shoulder rest Y positions once (before any clavicle rotation has been applied).
      // CRITICAL: Do NOT read these per-frame after clavicle is rotated - the elevated
      // position feeds back and causes oscillation.
-@@ -445,7 +1937,8 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -445,7 +1993,8 @@ export class AvatarAnimator implements IAvatarAnimator {
          pose.leftHand?.targetPosition ?? null,
          pose.rightHand?.targetPosition ?? null,
          bodyCenter,
@@ -34918,7 +35033,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..09cb49508799314e8275ef017101e0cd
        );
  
        // Apply twist to each bone individually for a natural spinal curve.
-@@ -511,12 +2004,175 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -511,12 +2060,175 @@ export class AvatarAnimator implements IAvatarAnimator {
        }
      }
  
@@ -35095,7 +35210,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..09cb49508799314e8275ef017101e0cd
          // Save what the locomotion animation wrote to bone quaternions
          const animRootQuat = leftChain.root.quaternion.clone();
          const animMiddleQuat = leftChain.middle.quaternion.clone();
-@@ -527,7 +2183,7 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -527,7 +2239,7 @@ export class AvatarAnimator implements IAvatarAnimator {
            const leftShoulder = state.bones.get("LeftShoulder");
            if (leftShoulder) {
              const targetQuat = this.clavicleRaiser.computeClavicleRotation(
@@ -35104,7 +35219,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..09cb49508799314e8275ef017101e0cd
                "left",
                this.leftShoulderRestY,
                leftChain.totalLength
-@@ -540,6 +2196,15 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -540,6 +2252,15 @@ export class AvatarAnimator implements IAvatarAnimator {
            }
          }
  
@@ -35120,7 +35235,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..09cb49508799314e8275ef017101e0cd
          // Build IK target with optional pole vector
          const target: IKTarget = {
            position: leftTarget,
-@@ -547,19 +2212,76 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -547,19 +2268,76 @@ export class AvatarAnimator implements IAvatarAnimator {
          };
  
          if (this._poleVectorsEnabled && this.poleComputer && leftHand.plane) {
@@ -35200,7 +35315,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..09cb49508799314e8275ef017101e0cd
  
          // Save IK results BEFORE blending - .copy() would overwrite them
          const ikRootQuat = leftChain.root.quaternion.clone();
-@@ -572,13 +2294,24 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -572,13 +2350,24 @@ export class AvatarAnimator implements IAvatarAnimator {
          leftChain.middle.quaternion.copy(animMiddleQuat).slerp(ikMiddleQuat, w);
          leftChain.effector.quaternion.copy(animEffectorQuat).slerp(ikEffectorQuat, w);
  
@@ -35226,7 +35341,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..09cb49508799314e8275ef017101e0cd
          // Save what the locomotion animation wrote to bone quaternions
          const animRootQuat = rightChain.root.quaternion.clone();
          const animMiddleQuat = rightChain.middle.quaternion.clone();
-@@ -589,7 +2322,7 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -589,7 +2378,7 @@ export class AvatarAnimator implements IAvatarAnimator {
            const rightShoulder = state.bones.get("RightShoulder");
            if (rightShoulder) {
              const targetQuat = this.clavicleRaiser.computeClavicleRotation(
@@ -35235,7 +35350,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..09cb49508799314e8275ef017101e0cd
                "right",
                this.rightShoulderRestY,
                rightChain.totalLength
-@@ -602,6 +2335,15 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -602,6 +2391,15 @@ export class AvatarAnimator implements IAvatarAnimator {
            }
          }
  
@@ -35251,7 +35366,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..09cb49508799314e8275ef017101e0cd
          // Build IK target with optional pole vector
          const target: IKTarget = {
            position: rightTarget,
-@@ -609,19 +2351,69 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -609,19 +2407,69 @@ export class AvatarAnimator implements IAvatarAnimator {
          };
  
          if (this._poleVectorsEnabled && this.poleComputer && rightHand.plane) {
@@ -35324,7 +35439,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..09cb49508799314e8275ef017101e0cd
  
          // Save IK results BEFORE blending - .copy() would overwrite them
          const ikRootQuat = rightChain.root.quaternion.clone();
-@@ -634,13 +2426,1140 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -634,13 +2482,1140 @@ export class AvatarAnimator implements IAvatarAnimator {
          rightChain.middle.quaternion.copy(animMiddleQuat).slerp(ikMiddleQuat, w);
          rightChain.effector.quaternion.copy(animEffectorQuat).slerp(ikEffectorQuat, w);
  
@@ -36465,7 +36580,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..09cb49508799314e8275ef017101e0cd
  
    addLayer(layer: AnimationLayer): void {
      this.layers.set(layer.id, layer);
-@@ -689,6 +3608,20 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -689,6 +3664,20 @@ export class AvatarAnimator implements IAvatarAnimator {
      this.externalSpinePitchRad = radians;
    }
  
@@ -36486,7 +36601,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..09cb49508799314e8275ef017101e0cd
    /** Debug toggle: disable pole vectors to compare old vs new elbow behavior */
    togglePoleVectors(): boolean {
      this._poleVectorsEnabled = !this._poleVectorsEnabled;
-@@ -696,10 +3629,18 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -696,10 +3685,18 @@ export class AvatarAnimator implements IAvatarAnimator {
        // Reset to default backward poles so difference is visible immediately
        this.leftPoleVector.set(0, 0, -1);
        this.rightPoleVector.set(0, 0, -1);
@@ -36505,7 +36620,7 @@ index c73bcabe86e07dd117e6f737532aea88ac9ec194..09cb49508799314e8275ef017101e0cd
    /** Debug toggle: disable clavicle raise to compare old vs new shoulder behavior */
    toggleClavicleRaise(): boolean {
      this._clavicleRaiseEnabled = !this._clavicleRaiseEnabled;
-@@ -732,3 +3673,4 @@ export class AvatarAnimator implements IAvatarAnimator {
+@@ -732,3 +3729,4 @@ export class AvatarAnimator implements IAvatarAnimator {
      return this._spineTwistEnabled;
    }
  }

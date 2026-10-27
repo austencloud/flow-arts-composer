@@ -534,6 +534,13 @@
               localStorage.getItem(CURRENT_MODULE_KEY)) ||
             "create",
         });
+        // The next boot's Overture traces what is open now, written on idle
+        // (and again on pagehide), loaded lazily so the geometry calculator
+        // stays out of the boot.
+        void import("#lib/shared/loading/overture/overture-snapshot.js").then(
+          (overture) => overture.scheduleOvertureSnapshot(),
+          () => {}
+        );
         detectAndCaptureScanEntry();
       } catch (error) {
         console.error("Application initialization failed:", error);

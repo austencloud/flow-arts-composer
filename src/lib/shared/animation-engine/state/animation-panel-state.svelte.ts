@@ -53,6 +53,26 @@ const stepPlaybackStepSizePersistence =
     defaultValue: 1,
   });
 
+/**
+ * The user's stored tempo and playback mode, read without creating a panel
+ * state. A preview that must follow these preferences but never write them
+ * (Settings → Display's animation stage) builds an ephemeral state and seeds it
+ * from here.
+ */
+export function readStoredPlaybackPreferences(): {
+  speed: number;
+  playbackMode: PlaybackMode;
+  stepPlaybackPauseMs: number;
+  stepPlaybackStepSize: StepPlaybackStepSize;
+} {
+  return {
+    speed: speedPersistence.load(),
+    playbackMode: playbackModePersistence.load(),
+    stepPlaybackPauseMs: stepPlaybackPauseMsPersistence.load(),
+    stepPlaybackStepSize: stepPlaybackStepSizePersistence.load(),
+  };
+}
+
 /** Keys that can be observed for changes */
 export type AnimationStateKey =
   | "isPlaying"

@@ -6,6 +6,7 @@
  *   npm run test:changed -- --list       # print them grouped by reason
  *   npm run test:changed -- --base <ref> # compare against <ref>, not main
  *   npm run test:changed -- --committed-only   # ignore uncommitted edits
+ *   npm run test:changed -- --no-build   # skip `npm run build:packages`
  *
  * The changed set is `git diff <base>...HEAD` (base defaults to the merge base
  * with main) plus, unless --committed-only, staged, unstaged and untracked
@@ -21,6 +22,12 @@
  *     --list does the same walk through Vitest's Node API;
  *   - text mentions are prefiltered with `rg -F` when ripgrep is on PATH and
  *     confirmed per file, because contract tests read source as text.
+ *
+ * Before a run it rebuilds the workspace packages (`npm run build:packages`,
+ * an incremental `tsc --build`, a few seconds when nothing changed). Tests that
+ * load a workspace package go through its `exports`, whose `import` condition
+ * is the built dist, and nothing else rebuilds dist when package sources
+ * change; CI builds first for the same reason. --list builds nothing.
  *
  * wt:finish runs `--base <main sha> --committed-only` from the task worktree.
  */
@@ -48,6 +55,7 @@ function argumentAfter(name) {
 
 const LIST = process.argv.includes("--list");
 const COMMITTED_ONLY = process.argv.includes("--committed-only");
+const NO_BUILD = process.argv.includes("--no-build");
 const BASE_ARG = argumentAfter("--base");
 
 function capture(executable, args, opts = {}) {
@@ -451,6 +459,22 @@ async function main() {
   ) {
     console.log(`\nno tests touch these ${changed.length} changed files`);
     return 0;
+  }
+
+  if (NO_BUILD) {
+    console.log("\ntest:changed build:packages skipped (--no-build)");
+  } else {
+    const buildStart = Date.now();
+    console.log("\ntest:changed build:packages (workspace package dist)");
+    const buildStatus = runPackageScript(
+      "npm",
+      ["run", "build:packages"],
+      root
+    );
+    console.log(
+      `test:changed build:packages finished in ${seconds(buildStart)} (exit ${buildStatus})`
+    );
+    if (buildStatus !== 0) return buildStatus;
   }
 
   let status = 0;

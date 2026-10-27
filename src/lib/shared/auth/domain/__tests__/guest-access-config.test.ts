@@ -13,6 +13,7 @@ describe("guest Settings access", () => {
     expect(getAccessibleTabs("settings", "guest")).toEqual([
       "profile",
       "preferences",
+      "display",
       "theme",
       "props",
       "keyboard",
@@ -25,6 +26,7 @@ describe("guest Settings access", () => {
     "props",
     "theme",
     "preferences",
+    "display",
     "keyboard",
     "release-notes",
   ])("opens %s for guests", (tab) => {

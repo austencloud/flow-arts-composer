@@ -606,7 +606,12 @@ captureEffectDiagnostics to the context menu.
 
 <!-- Hidden GlyphRenderer that converts TKAGlyph to SVG for Canvas2D rendering -->
 {#if letter}
-  <GlyphRenderer {letter} {stepData} onSvgReady={handleGlyphSvgReady} />
+  <GlyphRenderer
+    {letter}
+    {stepData}
+    primaryPropColors={resolvedPrimaryPropColors}
+    onSvgReady={handleGlyphSvgReady}
+  />
 {/if}
 
 <div
@@ -640,6 +645,7 @@ captureEffectDiagnostics to the context menu.
         {placementGlyphVisible}
         opacity={chromeOpacity}
         darkMode={darkModeEnabled}
+        primaryPropColors={resolvedPrimaryPropColors}
         isAtStartPlacement={beatIndicators &&
           !hideStepNumbers &&
           currentStep < 1 &&

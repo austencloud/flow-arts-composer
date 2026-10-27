@@ -137,15 +137,23 @@ describe("/guide/level-2/[slug] route", () => {
     expect(routeSvelte).toMatch(/path=\{`\/guide\/level-2\/\$\{slug\}`\}/);
   });
 
-  it("renders a real <h1> (via Level2TopicBody)", () => {
-    expect(body).toContain('<h1>{localizedLevel2Topic(meta, "h1")}</h1>');
+  // Since the 2026-10-24 fit pass the topic is one screen at a time:
+  // GuideScreens paints the <h1> from its title and owns Back/Next.
+  it("renders a real <h1> (via Level2TopicBody's GuideScreens title)", () => {
+    expect(body).toContain("<GuideScreens");
+    expect(body).toContain('title={localizedLevel2Topic(meta, "h1")}');
   });
 
   it("renders every manifest page's sections and prev/next nav", () => {
-    expect(body).toMatch(/LEVEL2_TOPIC_SECTIONS\[meta\.slug\].* as Section/);
-    expect(body).toContain("topic-nav");
+    expect(body).toContain("LEVEL2_TOPIC_SECTIONS[meta.slug]");
+    expect(body).toMatch(/<Section \/>/);
+    expect(body).toContain("prevPage={prev");
+    expect(body).toContain("nextPage={next");
   });
 });
+
+const CHAPTER_HUB =
+  "src/routes/(public)/guide/level-2/_components/ChapterHub.svelte";
 
 describe("chapter hubs (/guide/level-2/turns, /guide/level-2/double-turns)", () => {
   it("both hubs link out to their topic pages instead of concatenating sections", () => {
@@ -158,7 +166,9 @@ describe("chapter hubs (/guide/level-2/turns, /guide/level-2/double-turns)", () 
       );
       expect(src, chapterDir).toContain("level2TopicPagesForChapter");
       expect(src, chapterDir).toContain(`"${chapter}"`);
-      expect(src, chapterDir).toMatch(
+      // The links live in the shared one-screen ChapterHub (2026-10-24).
+      expect(src, chapterDir).toContain("<ChapterHub");
+      expect(read(CHAPTER_HUB)).toMatch(
         /href=\{localHref\(`\/guide\/level-2\/\$\{topic\.slug\}`\)\}/
       );
       // The old concatenation imported every ch20/ch21 section component

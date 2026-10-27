@@ -56,6 +56,7 @@ import {
   shareOrDownloadBlob,
 } from "#lib/shared/foundation/services/file-downloader.js";
 import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+import { videoOverlayExport } from "#lib/shared/video-export/domain/video-overlays.js";
 import { detectPlatform } from "#lib/shared/mobile/services/platform-detector.js";
 import { logShareAction } from "#lib/shared/analytics/services/posthog-activity-logger.js";
 import type { createViewer3DState } from "#lib/shared/3d/state/viewer-3d-state.svelte.js";
@@ -963,6 +964,9 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
             ? { image: openerImage, holdBeats: VIDEO_OPENER_HOLD_BEATS }
             : undefined,
           carousel: opts.carousel,
+          // The Download screen's own on/off list; until it first opens, the
+          // video follows the canvas.
+          ...(opts.overlays ? videoOverlayExport(opts.overlays) : {}),
         },
         {
           canvas: animationCanvas,

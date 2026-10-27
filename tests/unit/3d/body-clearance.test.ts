@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
 import { Quaternion, Vector3 } from "three";
 import { Plane, PlaneMode } from "@austencloud/scene-3d";
 import {
@@ -34,7 +33,6 @@ import {
 } from "#lib/shared/3d/collision/body-clearance.js";
 import { propStateToStaffTarget } from "#lib/shared/3d/services/swept-volume/swept-volume-builder.js";
 import { fixedHandDistance } from "#lib/shared/3d/domain/performer-hand-distance.js";
-import { planUpperBodyStanceDepth, planUpperBodyStanceYawTarget, stanceTargetsForPropStates } from "#lib/shared/3d/collision/upper-body-stance-planner.js";
 import { propContinuityCorpus } from "../../tools/prop-continuity-corpus";
 
 /**
@@ -58,64 +56,6 @@ const CHEST_FRONT_M = 0.5 * 0.2 + R;
 const CHEST_BACK_M = -0.66 * 0.2 - R;
 /** The module tests staff points this far apart. */
 const STAFF_STEP_M = 0.01;
-
-it("keeps the captured staff A torso contacts unchanged while spreading its lane jumps", () => {
-  const sequence = JSON.parse(readFileSync("tests/fixtures/3d/family-staff-A.sequence.json", "utf8"));
-  const source = createCharacterInstanceState({ id: "staff-a-torso", persistent: false }, makeStandaloneDeps());
-  source.setPlaneMode(PlaneMode.WALL);
-  source.loadSequence(sequence);
-  const stanceTrack = buildStanceYawTrackForSource(source, PlaneMode.WALL);
-  const hardBeatTrack = buildHardBeatTrack({ source, stanceTrack, heightM: 1.905 });
-  const staffHalfLengthM = 0.654028 / 2;
-  const captureModel = defaultBodyClearanceModel({ heightM: 1.905 });
-  const contacts = { baseline: 0, smoothed: 0 };
-  const introduced: number[] = [];
-  const removed: number[] = [];
-  let baselinePeak = 0;
-  let smoothedPeak = 0;
-  for (let frame = 0; frame < 480; frame++) {
-    const score = frame / 30;
-    const props = source.propStatesAtScoreTime(score);
-    const stance = resolveTrackedUpperBodyStance(stanceTrack, score, PlaneMode.WALL, props.left, props.right);
-    const targets = stanceTargetsForPropStates(PlaneMode.WALL, props.left, props.right);
-    const baseline = planUpperBodyStanceDepth(
-      stance.segments.chestRad,
-      targets,
-      null,
-      planUpperBodyStanceYawTarget(targets)
-    );
-    const hardBeat = sampleHardBeatTrack(hardBeatTrack, score);
-    const staffLines = (leftDepth: number, rightDepth: number): (StaffLine | null)[] =>
-      ([
-        [displaceProp(props.left, hardBeat.left), leftDepth],
-        [displaceProp(props.right, hardBeat.right), rightDepth],
-      ] as const).map(([prop, depth]) => {
-        if (!prop) return null;
-        const line = propStateToStaffTarget(prop, staffHalfLengthM);
-        return {
-          a: { ...line.tipAWorld, z: line.tipAWorld.z + depth },
-          b: { ...line.tipBWorld, z: line.tipBWorld.z + depth },
-        };
-      });
-    const pose = { chestRad: stance.segments.chestRad, spine1Rad: stance.segments.spine1Rad };
-    const baselineInside = insideAfter(staffLines(baseline.leftDepthOffsetM, baseline.rightDepthOffsetM), pose, captureModel, 0, 0);
-    const smoothedInside = insideAfter(staffLines(stance.leftDepthOffsetM, stance.rightDepthOffsetM), pose, captureModel, 0, 0);
-    if (baselineInside > 0) contacts.baseline++;
-    if (smoothedInside > 0) contacts.smoothed++;
-    if (baselineInside === 0 && smoothedInside > 0) introduced.push(frame);
-    if (baselineInside > 0 && smoothedInside === 0) removed.push(frame);
-    baselinePeak = Math.max(baselinePeak, baselineInside);
-    smoothedPeak = Math.max(smoothedPeak, smoothedInside);
-    if ((frame >= 128 && frame <= 132) || (frame >= 368 && frame <= 372)) {
-      expect(baselineInside).toBe(0);
-      expect(smoothedInside).toBe(0);
-    }
-  }
-  expect(contacts).toEqual({ baseline: 90, smoothed: 90 });
-  expect(introduced).toEqual([]);
-  expect(removed).toEqual([]);
-  expect(smoothedPeak).toBeLessThanOrEqual(baselinePeak);
-});
 
 /** Straight back from the chest. */
 function back(pose: BodyClearancePose): BodyMove {

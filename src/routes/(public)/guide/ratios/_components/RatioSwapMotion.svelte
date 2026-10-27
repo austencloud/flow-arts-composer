@@ -113,7 +113,9 @@
   }
 
   function laps(value: number): string {
-    return tDynamic(value === 1 ? "guide_ratios_one_lap" : "guide_ratios_two_laps");
+    return tDynamic(
+      value === 1 ? "guide_ratios_one_lap" : "guide_ratios_two_laps"
+    );
   }
 
   const routes = $derived(
@@ -135,7 +137,12 @@
         circles,
         spins: (circles * panel.prop) / panel.hand,
         closed: clock >= panel.hand,
-        petals: tDynamic(petalCount === 1 ? "guide_ratios_one_petal" : "guide_ratios_many_petals", { count: petalCount }),
+        petals: tDynamic(
+          petalCount === 1
+            ? "guide_ratios_one_petal"
+            : "guide_ratios_many_petals",
+          { count: petalCount }
+        ),
       };
     })
   );
@@ -205,7 +212,9 @@
           />
         {/if}
       </svg>
-      <span>{tDynamic(playing ? "guide_ratios_pause" : "guide_ratios_play")}</span>
+      <span
+        >{tDynamic(playing ? "guide_ratios_pause" : "guide_ratios_play")}</span
+      >
     </button>
     <div class="spin-pick">
       <SegmentedControl
@@ -234,7 +243,15 @@
           class="motion-stage"
           viewBox="{-VIEW} {-VIEW} {VIEW * 2} {VIEW * 2}"
           role="img"
-          aria-label={tDynamic("guide_ratios_motion_description", { ratio: view.panel.ratio, style: tDynamic(spin === "pro" ? "guide_ratios_prospin" : "guide_ratios_antispin"), hand: times(view.panel.hand), prop: times(view.panel.prop), laps: laps(view.panel.hand) })}
+          aria-label={tDynamic("guide_ratios_motion_description", {
+            ratio: view.panel.ratio,
+            style: tDynamic(
+              spin === "pro" ? "guide_ratios_prospin" : "guide_ratios_antispin"
+            ),
+            hand: times(view.panel.hand),
+            prop: times(view.panel.prop),
+            laps: laps(view.panel.hand),
+          })}
           style="--ink-trail: {SHAPE_MATRIX_GUIDE_COLORS.left}"
         >
           <circle class="hand-circle" r={HAND_RADIUS} />
@@ -282,7 +299,9 @@
         </dl>
         <p class="motion-status" class:closed={view.closed}>
           {view.closed
-            ? tDynamic("guide_ratios_closed_after", { laps: laps(view.panel.hand) })
+            ? tDynamic("guide_ratios_closed_after", {
+                laps: laps(view.panel.hand),
+              })
             : tDynamic("guide_ratios_still_drawing")}
         </p>
       </li>
@@ -306,7 +325,7 @@
   .motion {
     container: motion / inline-size;
     display: grid;
-    gap: 0.9rem;
+    gap: clamp(0.4rem, 1.5vh, 0.9rem);
     min-inline-size: 0;
   }
 
@@ -403,7 +422,8 @@
 
   .motion-stage {
     display: block;
-    inline-size: min(100%, 22rem);
+    /* Follows the guide screen's scale, so the fit box can size it. */
+    inline-size: min(100%, calc(22rem * var(--fit, 1)));
     aspect-ratio: 1;
     margin-inline: auto;
     overflow: visible;

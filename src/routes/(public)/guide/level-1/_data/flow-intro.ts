@@ -13,6 +13,7 @@ import { localizeLevel1Text } from "./localize-level1-content";
 
 export const stripHtml = (html: string) =>
   html
+    .replace(/<br\s*\/?>/gi, " ")
     .replace(/<[^>]*>/g, "")
     .replace(/\s+/g, " ")
     .trim();
@@ -24,9 +25,16 @@ export function taglineInIntro(
   tagline: string
 ): TaglineInIntro {
   const tag = stripHtml(tagline);
-  const first = content.find((b) => b.kind === "prose");
-  if (!tag || !first || first.kind !== "prose") return "none";
-  const intro = stripHtml(localizeLevel1Text(first.html));
-  if (intro === tag) return "same";
-  return intro.includes(tag) ? "contains" : "none";
+  if (!tag) return "none";
+  // Every paragraph of the intro counts: the run of prose before the first
+  // heading or figure (LOOPs' tagline is its second paragraph).
+  let found: TaglineInIntro = "none";
+  for (const b of content) {
+    if (b.kind === "heading" && b.level === 1) continue;
+    if (b.kind !== "prose") break;
+    const intro = stripHtml(localizeLevel1Text(b.html));
+    if (intro === tag) return "same";
+    if (intro.includes(tag)) found = "contains";
+  }
+  return found;
 }

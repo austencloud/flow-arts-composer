@@ -95,9 +95,19 @@
   // chooser's presence, the chips' shape).
   const FIT_MIN_CONTAINER = 900;
   const FIT_MEDIA = "(min-height: 900px)";
+  // Inside a guide screen the explorer is given its room (the screen's
+  // height under its intro) and fits whenever that room holds the boxes.
+  const FIT_MIN_ROOM = 560;
+  let { room = null }: { room?: number | null } = $props();
   let explorerWidth = $state(0);
   let viewportTall = $state(false);
-  const fitMode = $derived(explorerWidth >= FIT_MIN_CONTAINER && viewportTall);
+  const fitMode = $derived(
+    explorerWidth >= FIT_MIN_CONTAINER &&
+      (room != null ? room >= FIT_MIN_ROOM : viewportTall)
+  );
+  // A guide screen shorter than the window the fit layout was drawn for
+  // keeps the hand-relationship chips at their compact size.
+  const shortRoom = $derived(room != null && room < 820);
   // The toy box is a studio: one thing at a time. A pill under the canvas
   // opens it on that section. What picks what plays (Trace, the path tiles,
   // the chooser) fades away first, then the canvas takes the room and the
@@ -126,7 +136,9 @@
     effort: "guide_paths_effort",
     display: "guide_paths_display",
   };
-  const shownLabel = $derived(tDynamic(TOY_SECTION_KEYS[shownSection] ?? "guide_paths_animation"));
+  const shownLabel = $derived(
+    tDynamic(TOY_SECTION_KEYS[shownSection] ?? "guide_paths_animation")
+  );
   // Side by side on a landscape screen, the canvas over its section on a
   // portrait one. The shape of the screen decides it, not its width: a short
   // landscape room (a phone on its side, a zoomed-in laptop) has no height
@@ -322,8 +334,14 @@
 
   function describeHand(flower: Flower): string {
     if (flower.style === "float") return tDynamic("guide_paths_float");
-    const style = flower.style === "pro" ? tDynamic("guide_paths_prospin") : tDynamic("guide_paths_antispin");
-    const turns = tDynamic(flower.turns === 1 ? "guide_paths_one_turn" : "guide_paths_many_turns", { count: flower.turns });
+    const style =
+      flower.style === "pro"
+        ? tDynamic("guide_paths_prospin")
+        : tDynamic("guide_paths_antispin");
+    const turns = tDynamic(
+      flower.turns === 1 ? "guide_paths_one_turn" : "guide_paths_many_turns",
+      { count: flower.turns }
+    );
     return `${style}, ${turns}`;
   }
 
@@ -333,16 +351,28 @@
     if (explorer.source === "sequence") {
       const word = simplifyRepeatedWord(explorer.browsed.word ?? "");
       const count = explorer.browsed.steps.length;
-      const steps = tDynamic(count === 1 ? "guide_paths_one_step" : "guide_paths_many_steps", { count });
-      return word ? `${word}, ${steps}.` : tDynamic("guide_paths_browsed_sequence", { steps });
+      const steps = tDynamic(
+        count === 1 ? "guide_paths_one_step" : "guide_paths_many_steps",
+        { count }
+      );
+      return word
+        ? `${word}, ${steps}.`
+        : tDynamic("guide_paths_browsed_sequence", { steps });
     }
     const pair = explorer.selectedPair;
     if (!pair) return tDynamic("guide_paths_loading_sequence");
     if (explorer.soloHand === "left")
-      return tDynamic("guide_paths_left_solo", { hand: describeHand(pair.left) });
+      return tDynamic("guide_paths_left_solo", {
+        hand: describeHand(pair.left),
+      });
     if (explorer.soloHand === "right")
-      return tDynamic("guide_paths_right_solo", { hand: describeHand(pair.right) });
-    return tDynamic("guide_paths_both_hands", { left: describeHand(pair.left), right: describeHand(pair.right) });
+      return tDynamic("guide_paths_right_solo", {
+        hand: describeHand(pair.right),
+      });
+    return tDynamic("guide_paths_both_hands", {
+      left: describeHand(pair.left),
+      right: describeHand(pair.right),
+    });
   });
 
   function chooseSource(value: ExplorerSource): void {
@@ -485,12 +515,14 @@
 
 <section
   class="explorer"
+  style:--explorer-room={room != null ? `${room}px` : undefined}
   aria-label={tDynamic("guide_paths_comparison")}
   bind:clientWidth={explorerWidth}
   bind:this={explorerElement}
 >
   <div
     class="explorer-workspace"
+    class:fit-mode={fitMode}
     class:studio={studioLayout}
     class:side={studioSideBySide}
     class:faded={restFaded && !studioLayout}
@@ -539,7 +571,10 @@
           />
         </div>
       </div>
-      <div class="motion-stage" aria-label={tDynamic("guide_paths_selected_animation")}>
+      <div
+        class="motion-stage"
+        aria-label={tDynamic("guide_paths_selected_animation")}
+      >
         <div class="animation" data-studio-stage>
           {#if browser}
             <MotionPathTransitionStage
@@ -672,8 +707,8 @@
                     <ElementChipRow
                       selected={explorer.selectedMode}
                       columns={3}
-                      compact={!fitMode}
-                      fill={fitMode}
+                      compact={!fitMode || shortRoom}
+                      fill={fitMode && !shortRoom}
                       disabled={!explorer.selectedPair}
                       onpick={(mode) =>
                         explorer.chooseHandRelationship(
@@ -698,7 +733,13 @@
             {#if explorer.pickerStatus === "loading"}
               <span>{tDynamic("guide_paths_building_sequence")}</span>
             {:else if explorer.pickerError}
-              <span role="alert">{tDynamic(explorer.pickerError.startsWith("That hand relationship") ? "guide_paths_relationship_error" : "guide_paths_sequence_error")}</span>
+              <span role="alert"
+                >{tDynamic(
+                  explorer.pickerError.startsWith("That hand relationship")
+                    ? "guide_paths_relationship_error"
+                    : "guide_paths_sequence_error"
+                )}</span
+              >
               <PanelButton onclick={explorer.retryMatrixSelection}
                 >{tDynamic("guide_paths_try_again")}</PanelButton
               >
@@ -815,7 +856,9 @@
     />
   {:catch}
     <p role="alert">{tDynamic("guide_paths_picker_error")}</p>
-    <PanelButton onclick={() => (pickerOpen = false)}>{tDynamic("guide_paths_close")}</PanelButton>
+    <PanelButton onclick={() => (pickerOpen = false)}
+      >{tDynamic("guide_paths_close")}</PanelButton
+    >
   {/await}
 {/if}
 
@@ -1165,74 +1208,78 @@
      the bottom (its transport and caption rows are fixed), and each box is
      the largest square its quadrant holds. Capped where the natural layout
      already fits. */
-  @container (min-width: 900px) {
-    @media (min-height: 900px) {
-      .explorer-workspace {
-        height: min(calc(100dvh - 56px - 2 * var(--spacing-md, 16px)), 1400px);
-        grid-template-rows: minmax(0, 1.2fr) minmax(0, 1fr);
-        align-items: stretch;
-      }
-      .path-column,
-      .motion-column,
-      .path-column :global(.path-shape-grid) {
-        min-height: 0;
-      }
-      .motion-stage {
-        display: flex;
-        justify-content: center;
-        flex: 1 1 0;
-        min-height: 0;
-        margin-bottom: 0;
-      }
-      .animation {
-        height: 100%;
-        width: auto;
-        max-width: 100%;
-      }
-      .chooser {
-        grid-template-rows: minmax(0, 1fr);
-        align-self: stretch;
-        min-height: 0;
-      }
-      /* The controls fill the row: heading, then the crossfaded controls,
-         then the status strip. The crossfade's layers fill that middle box,
-         so a source switch changes nothing the page anchors its scroll to,
-         and the chip row takes what the turn picker leaves. */
-      .source-controls {
-        display: flex;
-        flex-direction: column;
-        align-self: stretch;
-        min-height: 0;
-      }
-      .source-controls > :global(.crossfade.fill) {
-        flex: 1 1 0;
-        height: auto;
-        min-height: 0;
-      }
-      .matrix-controls {
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-        min-height: 0;
-      }
-      .relationship {
-        flex: 1 1 0;
-        min-height: 0;
-      }
-      .source-stage {
-        align-self: center;
-        height: 100%;
-        min-height: 0;
-        max-height: 34rem;
-      }
-    }
+  /* Fit mode (the fitMode flag: a 900px container with room to spare,
+     the window's height on its own or the guide screen's `room`). */
+  .explorer-workspace.fit-mode {
+    height: var(
+      --explorer-room,
+      min(calc(100dvh - 56px - 2 * var(--spacing-md, 16px)), 1400px)
+    );
+    grid-template-rows: minmax(0, 1.2fr) minmax(0, 1fr);
+    align-items: stretch;
+  }
+  .fit-mode .path-column,
+  .fit-mode .motion-column,
+  .fit-mode .path-column :global(.path-shape-grid) {
+    min-height: 0;
+  }
+  .fit-mode .motion-stage {
+    display: flex;
+    justify-content: center;
+    flex: 1 1 0;
+    min-height: 0;
+    margin-bottom: 0;
+  }
+  .fit-mode .animation {
+    height: 100%;
+    width: auto;
+    max-width: 100%;
+  }
+  .fit-mode .chooser {
+    grid-template-rows: minmax(0, 1fr);
+    align-self: stretch;
+    min-height: 0;
+  }
+  /* The controls fill the row: heading, then the crossfaded controls,
+       then the status strip. The crossfade's layers fill that middle box,
+       so a source switch changes nothing the page anchors its scroll to,
+       and the chip row takes what the turn picker leaves. */
+  .fit-mode .source-controls {
+    display: flex;
+    flex-direction: column;
+    align-self: stretch;
+    min-height: 0;
+  }
+  .fit-mode .source-controls > :global(.crossfade.fill) {
+    flex: 1 1 0;
+    height: auto;
+    min-height: 0;
+  }
+  .fit-mode .matrix-controls {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+  }
+  .fit-mode .relationship {
+    flex: 1 1 0;
+    min-height: 0;
+  }
+  .fit-mode .source-stage {
+    align-self: center;
+    height: 100%;
+    min-height: 0;
+    max-height: 34rem;
   }
   /* The studio: the canvas, its pills and one section, nothing else. Like
      fit mode it takes the viewport under the site header. Stacked, the
      section is a band under the pills; side by side, it takes the tiles'
      column and the canvas grows where it already was. */
   .explorer-workspace.studio {
-    height: min(calc(100dvh - 56px - 2 * var(--spacing-md, 16px)), 1400px);
+    height: var(
+      --explorer-room,
+      min(calc(100dvh - 56px - 2 * var(--spacing-md, 16px)), 1400px)
+    );
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: minmax(0, 1fr) minmax(0, clamp(16rem, 42%, 28rem));
     align-items: stretch;
@@ -1246,7 +1293,10 @@
   .explorer-workspace.studio.side {
     position: relative;
     height: auto;
-    max-height: min(calc(100dvh - 56px - 2 * var(--spacing-md, 16px)), 1400px);
+    max-height: var(
+      --explorer-room,
+      min(calc(100dvh - 56px - 2 * var(--spacing-md, 16px)), 1400px)
+    );
     grid-template-columns: clamp(18rem, 40%, 40rem) minmax(0, 1fr);
     grid-template-rows: minmax(0, 1fr);
   }

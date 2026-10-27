@@ -33,6 +33,7 @@
   import { getVisibilityStateManager } from "#lib/shared/pictograph/shared/state/visibility-state.svelte.js";
   import "#lib/shared/animation-panel/bento/rail-tile.css";
   import { columnOptionsFor } from "./bento/columns-stepper";
+  import { tryGetViewerVisibilityContext } from "../context/viewer-visibility-context";
   import ControlDock, { type ControlDockTab } from "./ControlDock.svelte";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
@@ -46,6 +47,7 @@
   } from "#lib/shared/render/services/container-aware-layout.js";
   import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
   import CardFooterEditor from "#lib/shared/share/components/CardFooterEditor.svelte";
+  import { buildCardContentToggles } from "#lib/shared/share/domain/card-content-toggles.js";
   import {
     cardPresentationFromFooterSettings,
     resolveCardFooter,
@@ -322,26 +324,47 @@
     return vm.getRawGlyphVisibility("reversalIndicators");
   });
 
-  // Master toggles: clicking a section label flips all its children.
+  // One-prop cards (a hand hidden in the viewer) draw no word or level and
+  // none of the glyphs that read both hands together, so those chips leave
+  // until both hands are back. Their settings are kept for that return.
+  const viewerVisibility = tryGetViewerVisibilityContext();
+  const oneProp = $derived(viewerVisibility?.isSolo ?? false);
+  const ONE_PROP_HIDDEN: ReadonlySet<string> = new Set([
+    "word",
+    "difficulty",
+    "tka_glyph",
+    "tnd_glyph",
+    "prop_tnd_glyph",
+    "positions_glyph",
+    "hand_color_key",
+    "reversals",
+  ]);
+
+  // Master toggles: clicking a section label flips all its shown children.
   // If any child is on, master is "on" and a click turns everything off;
   // if all are off, a click turns everything on.
-  const headerAnyOn = $derived(showWord || showDifficulty || showLoopGlyph);
+  const headerAnyOn = $derived(
+    showLoopGlyph || (!oneProp && (showWord || showDifficulty))
+  );
   const pictographAnyOn = $derived(
     showGrid ||
-      tkaGlyph ||
-      tndGlyph ||
-      propTndGlyph ||
-      placementsGlyph ||
-      handColorKey ||
-      nonRadial
+      nonRadial ||
+      (!oneProp &&
+        (tkaGlyph ||
+          tndGlyph ||
+          propTndGlyph ||
+          placementsGlyph ||
+          handColorKey))
   );
 
   function toggleHeader(): void {
     const target = !headerAnyOn;
     if (onHeaderAllChange) onHeaderAllChange(target);
     else {
-      imageComposition.setAddWord(target);
-      imageComposition.setAddDifficultyLevel(target);
+      if (!oneProp) {
+        imageComposition.setAddWord(target);
+        imageComposition.setAddDifficultyLevel(target);
+      }
       imageComposition.setShowLoopGlyph(target);
     }
     reportSetting("header_all", headerAnyOn, target);
@@ -352,13 +375,15 @@
     if (onPictographAllChange) onPictographAllChange(target);
     else {
       vm.setGridVisibility(target);
-      vm.setGlyphVisibility("tkaGlyph", target);
-      vm.setGlyphVisibility("tndGlyph", target);
-      vm.setGlyphVisibility("elementalGlyph", target);
-      vm.setGlyphVisibility("propTndGlyph", target);
-      vm.setGlyphVisibility("placementsGlyph", target);
-      vm.setGlyphVisibility("handColorKey", target);
       vm.setNonRadialVisibility(target);
+      if (!oneProp) {
+        vm.setGlyphVisibility("tkaGlyph", target);
+        vm.setGlyphVisibility("tndGlyph", target);
+        vm.setGlyphVisibility("elementalGlyph", target);
+        vm.setGlyphVisibility("propTndGlyph", target);
+        vm.setGlyphVisibility("placementsGlyph", target);
+        vm.setGlyphVisibility("handColorKey", target);
+      }
     }
     reportSetting("pictograph_all", pictographAnyOn, target);
   }
@@ -464,52 +489,22 @@
     toggle: () => void;
   }
 
-  const headerToggles = $derived<ShareToggle[]>([
-    {
-      id: "word",
-      label: t("viewer_ui_word"),
-      active: showWord,
-      toggle: () =>
-        toggleCompositionSetting(
-          "word",
-          showWord,
-          imageComposition.setAddWord.bind(imageComposition)
-        ),
-    },
-    {
-      id: "step_numbers",
-      label: "Steps",
-      active: showStepNumbers,
-      toggle: () =>
-        toggleCompositionSetting(
-          "step_numbers",
-          showStepNumbers,
-          imageComposition.setAddBeatNumbers.bind(imageComposition)
-        ),
-    },
-    {
-      id: "difficulty",
-      label: t("generator_level"),
-      active: showDifficulty,
-      toggle: () =>
-        toggleCompositionSetting(
-          "difficulty",
-          showDifficulty,
-          imageComposition.setAddDifficultyLevel.bind(imageComposition)
-        ),
-    },
-    {
-      id: "loop_glyph",
-      label: "LOOP",
-      active: showLoopGlyph,
-      toggle: () =>
-        toggleCompositionSetting(
-          "loop_glyph",
-          showLoopGlyph,
-          imageComposition.setShowLoopGlyph.bind(imageComposition)
-        ),
-    },
-  ]);
+  // The card-content switches come from the one shared list Settings →
+  // Display also renders (CardContentToggles), so a label or handler is
+  // written once. This panel only wraps each with its analytics report.
+  const cardToggles = $derived.by(() => {
+    void compositionVersion;
+    return buildCardContentToggles(imageComposition, { canQRCode });
+  });
+
+  const headerToggles = $derived<ShareToggle[]>(
+    cardToggles.header.map((item) => ({
+      id: item.id,
+      label: item.label,
+      active: item.active,
+      toggle: () => toggleCompositionSetting(item.id, item.active, item.set),
+    }))
+  );
 
   const pictographToggles = $derived<ShareToggle[]>([
     {
@@ -587,6 +582,17 @@
     },
   ]);
 
+  const shownHeaderToggles = $derived(
+    oneProp
+      ? headerToggles.filter((item) => !ONE_PROP_HIDDEN.has(item.id))
+      : headerToggles
+  );
+  const shownPictographToggles = $derived(
+    oneProp
+      ? pictographToggles.filter((item) => !ONE_PROP_HIDDEN.has(item.id))
+      : pictographToggles
+  );
+
   const themeOptions = $derived([
     {
       value: "light",
@@ -639,52 +645,15 @@
             <div class="field">
               <span class="field-label">{t("viewer_ui_header")}</span>
               <div class="rt-chip-row">
-                <button
-                  type="button"
-                  class="rt-chip"
-                  aria-pressed={showWord}
-                  onclick={() =>
-                    toggleCompositionSetting(
-                      "word",
-                      showWord,
-                      imageComposition.setAddWord.bind(imageComposition)
-                    )}>{t("viewer_ui_word")}</button
-                >
-                <button
-                  type="button"
-                  class="rt-chip"
-                  aria-pressed={showStepNumbers}
-                  onclick={() =>
-                    toggleCompositionSetting(
-                      "step_numbers",
-                      showStepNumbers,
-                      imageComposition.setAddBeatNumbers.bind(imageComposition)
-                    )}>Steps</button
-                >
-                <button
-                  type="button"
-                  class="rt-chip"
-                  aria-pressed={showDifficulty}
-                  onclick={() =>
-                    toggleCompositionSetting(
-                      "difficulty",
-                      showDifficulty,
-                      imageComposition.setAddDifficultyLevel.bind(
-                        imageComposition
-                      )
-                    )}>{t("generator_level")}</button
-                >
-                <button
-                  type="button"
-                  class="rt-chip"
-                  aria-pressed={showLoopGlyph}
-                  onclick={() =>
-                    toggleCompositionSetting(
-                      "loop_glyph",
-                      showLoopGlyph,
-                      imageComposition.setShowLoopGlyph.bind(imageComposition)
-                    )}>LOOP</button
-                >
+                {#each shownHeaderToggles as item (item.id)}
+                  <button
+                    type="button"
+                    class="rt-chip"
+                    aria-pressed={item.active}
+                    onclick={item.toggle}
+                    transition:growFade={{ axis: "x" }}>{item.label}</button
+                  >
+                {/each}
               </div>
             </div>
             <div class="footer-editor-field">
@@ -702,88 +671,15 @@
             <div class="field">
               <span class="field-label">{t("viewer_ui_glyphs")}</span>
               <div class="rt-chip-row">
-                <button
-                  type="button"
-                  class="rt-chip"
-                  aria-pressed={showGrid}
-                  onclick={() =>
-                    togglePictographSetting(
-                      "grid",
-                      showGrid,
-                      vm.setGridVisibility.bind(vm)
-                    )}>{t("generator_grid")}</button
-                >
-                <button
-                  type="button"
-                  class="rt-chip"
-                  aria-pressed={tkaGlyph}
-                  onclick={() =>
-                    togglePictographSetting("tka_glyph", tkaGlyph, (value) =>
-                      vm.setGlyphVisibility("tkaGlyph", value)
-                    )}>TKA</button
-                >
-                <button
-                  type="button"
-                  class="rt-chip"
-                  aria-pressed={tndGlyph}
-                  onclick={toggleTnD}>TnD</button
-                >
-                <button
-                  type="button"
-                  class="rt-chip"
-                  aria-pressed={propTndGlyph}
-                  onclick={() =>
-                    togglePictographSetting(
-                      "prop_tnd_glyph",
-                      propTndGlyph,
-                      (value) => vm.setGlyphVisibility("propTndGlyph", value)
-                    )}>{t("viewer_detail_prop_tnd")}</button
-                >
-                <button
-                  type="button"
-                  class="rt-chip"
-                  aria-pressed={placementsGlyph}
-                  onclick={() =>
-                    togglePictographSetting(
-                      "positions_glyph",
-                      placementsGlyph,
-                      (value) => vm.setGlyphVisibility("placementsGlyph", value)
-                    )}>{t("browse_chip_placements")}</button
-                >
-                <button
-                  type="button"
-                  class="rt-chip"
-                  aria-pressed={handColorKey}
-                  onclick={() =>
-                    togglePictographSetting(
-                      "hand_color_key",
-                      handColorKey,
-                      (value) => vm.setGlyphVisibility("handColorKey", value)
-                    )}>{t("viewer_ui_hand_key")}</button
-                >
-                <button
-                  type="button"
-                  class="rt-chip"
-                  aria-pressed={nonRadial}
-                  onclick={() =>
-                    togglePictographSetting(
-                      "non_radial",
-                      nonRadial,
-                      vm.setNonRadialVisibility.bind(vm)
-                    )}>{t("viewer_ui_non_radial")}</button
-                >
-                <button
-                  type="button"
-                  class="rt-chip"
-                  aria-pressed={reversalIndicators}
-                  onclick={() =>
-                    togglePictographSetting(
-                      "reversals",
-                      reversalIndicators,
-                      (value) =>
-                        vm.setGlyphVisibility("reversalIndicators", value)
-                    )}>Reversals</button
-                >
+                {#each shownPictographToggles as item (item.id)}
+                  <button
+                    type="button"
+                    class="rt-chip"
+                    aria-pressed={item.active}
+                    onclick={item.toggle}
+                    transition:growFade={{ axis: "x" }}>{item.label}</button
+                  >
+                {/each}
               </div>
             </div>
             {#if hasInfoCell}
@@ -983,14 +879,16 @@
           >{t("viewer_ui_header")}</span
         >
         <div class="chip-wrap">
-          {#each headerToggles as item (item.id)}
-            <FilterChipBase
-              mode="toggle"
-              labelScale="readable"
-              label={item.label}
-              active={item.active}
-              onclick={item.toggle}
-            />
+          {#each shownHeaderToggles as item (item.id)}
+            <span class="chip-slot" transition:growFade={{ axis: "x" }}>
+              <FilterChipBase
+                mode="toggle"
+                labelScale="readable"
+                label={item.label}
+                active={item.active}
+                onclick={item.toggle}
+              />
+            </span>
           {/each}
         </div>
       </div>
@@ -1004,14 +902,16 @@
           >{t("viewer_ui_pictograph")}</span
         >
         <div class="chip-wrap">
-          {#each pictographToggles as item (item.id)}
-            <FilterChipBase
-              mode="toggle"
-              labelScale="readable"
-              label={item.label}
-              active={item.active}
-              onclick={item.toggle}
-            />
+          {#each shownPictographToggles as item (item.id)}
+            <span class="chip-slot" transition:growFade={{ axis: "x" }}>
+              <FilterChipBase
+                mode="toggle"
+                labelScale="readable"
+                label={item.label}
+                active={item.active}
+                onclick={item.toggle}
+              />
+            </span>
           {/each}
         </div>
       </div>
@@ -1173,54 +1073,16 @@
             >{t("viewer_ui_header")}</button
           >
           <div class="chip-group">
-            <button
-              type="button"
-              class="chip"
-              class:active={showWord}
-              onclick={() =>
-                toggleCompositionSetting(
-                  "word",
-                  showWord,
-                  imageComposition.setAddWord.bind(imageComposition)
-                )}
-              aria-pressed={showWord}>{t("viewer_ui_word")}</button
-            >
-            <button
-              type="button"
-              class="chip"
-              class:active={showStepNumbers}
-              aria-pressed={showStepNumbers}
-              onclick={() =>
-                toggleCompositionSetting(
-                  "step_numbers",
-                  showStepNumbers,
-                  imageComposition.setAddBeatNumbers.bind(imageComposition)
-                )}>Steps</button
-            >
-            <button
-              type="button"
-              class="chip"
-              class:active={showDifficulty}
-              onclick={() =>
-                toggleCompositionSetting(
-                  "difficulty",
-                  showDifficulty,
-                  imageComposition.setAddDifficultyLevel.bind(imageComposition)
-                )}
-              aria-pressed={showDifficulty}>{t("generator_level")}</button
-            >
-            <button
-              type="button"
-              class="chip"
-              class:active={showLoopGlyph}
-              onclick={() =>
-                toggleCompositionSetting(
-                  "loop_glyph",
-                  showLoopGlyph,
-                  imageComposition.setShowLoopGlyph.bind(imageComposition)
-                )}
-              aria-pressed={showLoopGlyph}>LOOP</button
-            >
+            {#each shownHeaderToggles as item (item.id)}
+              <button
+                type="button"
+                class="chip"
+                class:active={item.active}
+                aria-pressed={item.active}
+                onclick={item.toggle}
+                transition:growFade={{ axis: "x" }}>{item.label}</button
+              >
+            {/each}
           </div>
         </div>
 
@@ -1250,96 +1112,16 @@
             >{t("viewer_ui_pictograph")}</button
           >
           <div class="chip-group">
-            <button
-              type="button"
-              class="chip"
-              class:active={showGrid}
-              onclick={() =>
-                togglePictographSetting(
-                  "grid",
-                  showGrid,
-                  vm.setGridVisibility.bind(vm)
-                )}
-              aria-pressed={showGrid}>{t("generator_grid")}</button
-            >
-            <button
-              type="button"
-              class="chip"
-              class:active={tkaGlyph}
-              onclick={() =>
-                togglePictographSetting("tka_glyph", tkaGlyph, (value) =>
-                  vm.setGlyphVisibility("tkaGlyph", value)
-                )}
-              aria-pressed={tkaGlyph}>TKA</button
-            >
-            <button
-              type="button"
-              class="chip"
-              class:active={tndGlyph}
-              onclick={toggleTnD}
-              aria-pressed={tndGlyph}>TnD</button
-            >
-            <button
-              type="button"
-              class="chip"
-              class:active={propTndGlyph}
-              onclick={() =>
-                togglePictographSetting(
-                  "prop_tnd_glyph",
-                  propTndGlyph,
-                  (value) => vm.setGlyphVisibility("propTndGlyph", value)
-                )}
-              aria-pressed={propTndGlyph}>{t("viewer_detail_prop_tnd")}</button
-            >
-            <button
-              type="button"
-              class="chip"
-              class:active={placementsGlyph}
-              onclick={() =>
-                togglePictographSetting(
-                  "positions_glyph",
-                  placementsGlyph,
-                  (value) => vm.setGlyphVisibility("placementsGlyph", value)
-                )}
-              aria-pressed={placementsGlyph}
-              >{t("browse_chip_placements")}</button
-            >
-            <button
-              type="button"
-              class="chip"
-              class:active={handColorKey}
-              onclick={() =>
-                togglePictographSetting(
-                  "hand_color_key",
-                  handColorKey,
-                  (value) => vm.setGlyphVisibility("handColorKey", value)
-                )}
-              aria-pressed={handColorKey}>{t("viewer_ui_hand_key")}</button
-            >
-            <button
-              type="button"
-              class="chip"
-              class:active={nonRadial}
-              onclick={() =>
-                togglePictographSetting(
-                  "non_radial",
-                  nonRadial,
-                  vm.setNonRadialVisibility.bind(vm)
-                )}
-              aria-pressed={nonRadial}>{t("viewer_ui_non_radial")}</button
-            >
-            <button
-              type="button"
-              class="chip"
-              class:active={reversalIndicators}
-              aria-pressed={reversalIndicators}
-              onclick={() =>
-                togglePictographSetting(
-                  "reversals",
-                  reversalIndicators,
-                  (value) => vm.setGlyphVisibility("reversalIndicators", value)
-                )}>Reversals</button
-            >
+            {#each shownPictographToggles as item (item.id)}
+              <button
+                type="button"
+                class="chip"
+                class:active={item.active}
+                aria-pressed={item.active}
+                onclick={item.toggle}
+                transition:growFade={{ axis: "x" }}>{item.label}</button
+              >
+            {/each}
           </div>
         </div>
 
@@ -1838,6 +1620,10 @@
     flex-wrap: wrap;
     gap: 0.5rem;
     min-width: 0;
+  }
+  /* Holds one chip so it can grow in and out of the row. */
+  .chip-slot {
+    display: flex;
   }
   .start-layout {
     flex: 1 1 12rem;

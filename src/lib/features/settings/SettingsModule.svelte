@@ -41,6 +41,7 @@
   import ProfileTab from "#lib/shared/settings/components/tabs/ProfileTab.svelte";
   import ReleaseNotesTab from "#lib/shared/settings/components/tabs/ReleaseNotesTab.svelte";
   import PropTypeTab from "#lib/shared/settings/components/tabs/PropTypeTab.svelte";
+  import DisplayTab from "#lib/shared/settings/components/tabs/DisplayTab.svelte";
   import BackgroundTab from "#lib/shared/settings/components/tabs/background/BackgroundTab.svelte";
   import PreferencesTab from "#lib/shared/settings/components/tabs/PreferencesTab.svelte";
   import LanguagePreference from "#lib/shared/settings/components/tabs/preferences/LanguagePreference.svelte";
@@ -270,6 +271,8 @@
             backLabel={t("settings_preferences")}
             onBack={() => handleSectionChange("preferences")}
           />
+        {:else if activeTab === "display"}
+          <DisplayTab />
         {:else if activeTab === "props"}
           <PropTypeTab {settings} onUpdate={handleSettingUpdate} />
         {:else if activeTab === "theme"}
@@ -454,6 +457,7 @@
           .preferences-workspace,
           .notification-workspace,
           .props-workspace,
+          .display-workspace,
           .theme-workspace
         )
       ),
@@ -465,6 +469,7 @@
           .preferences-workspace,
           .notification-workspace,
           .props-workspace,
+          .display-workspace,
           .theme-workspace
         )
       ) {

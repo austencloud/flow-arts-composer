@@ -14,16 +14,28 @@ const FIRESIDE_STATES: ReadonlySet<AvatarBehaviorState> = new Set([
 	"attending",
 ]);
 
-export class MovementSystem {
-	private phaseSpeed: Record<LifecyclePhase, number>;
+/**
+ * Metres a walker covers in one tick before steering: their walk speed, the
+ * pace of their age, and the table's step. The renderer reads the same
+ * number (village-walk-intent.ts) so a body walks at the sim's pace.
+ */
+export function walkStepPerTick(
+	speed: number,
+	phase: LifecyclePhase,
+	rules: VillageRules,
+): number {
+	const movement = rules.movement;
+	const phaseSpeed =
+		phase === "youth"
+			? movement.speedYouth
+			: phase === "adult"
+				? movement.speedAdult
+				: movement.speedElder;
+	return speed * phaseSpeed * movement.stepPerTick;
+}
 
-	constructor(private rules: VillageRules) {
-		this.phaseSpeed = {
-			youth: rules.movement.speedYouth,
-			adult: rules.movement.speedAdult,
-			elder: rules.movement.speedElder,
-		};
-	}
+export class MovementSystem {
+	constructor(private rules: VillageRules) {}
 
 	tick(world: VillageWorld): void {
 		const movement = this.rules.movement;
@@ -65,10 +77,11 @@ export class MovementSystem {
 			const moveZ = nz + steerZ;
 			const moveMag = Math.sqrt(moveX * moveX + moveZ * moveZ) || 1;
 
-			const step =
-				entity.transform.speed *
-				this.phaseSpeed[entity.lifecycle.phase] *
-				movement.stepPerTick;
+			const step = walkStepPerTick(
+				entity.transform.speed,
+				entity.lifecycle.phase,
+				this.rules,
+			);
 
 			const kept = keepToClearing(
 				{

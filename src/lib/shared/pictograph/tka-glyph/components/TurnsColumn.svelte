@@ -84,6 +84,13 @@ Props:
     instantAppear?: boolean;
   }>();
 
+  // Filter ids are document-global: with a shared id, every turn column on the
+  // page painted with whichever column's filter came first in the DOM, so a
+  // default-colored animation overlay recolored every card cell's numbers.
+  const uid = $props.id();
+  const blueFilterId = `turn-color-blue-${uid}`;
+  const redFilterId = `turn-color-red-${uid}`;
+
   // Get centralized visibility manager for cached colors (no getComputedStyle per component)
   const visibilityManager = getAnimationVisibilityManager();
 
@@ -319,7 +326,7 @@ Props:
     <!-- SVG Recoloring Filter Definitions -->
     <defs>
       <!-- Blue color filter - uses centralized MOTION_COLOR_MAP -->
-      <filter id="turn-color-blue" color-interpolation-filters="sRGB">
+      <filter id={blueFilterId} color-interpolation-filters="sRGB">
         <!-- Extract alpha channel -->
         <feColorMatrix
           type="matrix"
@@ -335,7 +342,7 @@ Props:
         <feComposite in="blue-flood" in2="alpha-only" operator="in" />
       </filter>
       <!-- Red color filter - uses centralized MOTION_COLOR_MAP -->
-      <filter id="turn-color-red" color-interpolation-filters="sRGB">
+      <filter id={redFilterId} color-interpolation-filters="sRGB">
         <!-- Extract alpha channel -->
         <feColorMatrix
           type="matrix"
@@ -365,8 +372,8 @@ Props:
             width={topOwnWidth}
             height={numberHeight}
             filter="url(#{turnColors.top === '#ED1C24'
-              ? 'turn-color-red'
-              : 'turn-color-blue'})"
+              ? redFilterId
+              : blueFilterId})"
             preserveAspectRatio="xMidYMin meet"
           />
         {/if}
@@ -377,8 +384,8 @@ Props:
             width={markWidth}
             height={numberHeight}
             filter="url(#{turnColors.top === '#ED1C24'
-              ? 'turn-color-red'
-              : 'turn-color-blue'})"
+              ? redFilterId
+              : blueFilterId})"
           />
         {/if}
       </g>
@@ -397,8 +404,8 @@ Props:
             width={bottomOwnWidth}
             height={numberHeight}
             filter="url(#{turnColors.bottom === '#ED1C24'
-              ? 'turn-color-red'
-              : 'turn-color-blue'})"
+              ? redFilterId
+              : blueFilterId})"
             preserveAspectRatio="xMidYMin meet"
           />
         {/if}
@@ -409,8 +416,8 @@ Props:
             width={markWidth}
             height={numberHeight}
             filter="url(#{turnColors.bottom === '#ED1C24'
-              ? 'turn-color-red'
-              : 'turn-color-blue'})"
+              ? redFilterId
+              : blueFilterId})"
           />
         {/if}
       </g>

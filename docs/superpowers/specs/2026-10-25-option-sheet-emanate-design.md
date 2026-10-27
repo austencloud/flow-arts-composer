@@ -152,3 +152,58 @@ the motion routing table in `.claude/rules/no-layout-shift.md` gains a row for
   read as one wave.
 - Lifting `emanate` into `@austencloud/motion` now: no second product needs it
   yet. It is written so it can move there unchanged.
+
+## Stacked layouts cascade in rows (added 2026-10-26)
+
+Austen, after the first version landed: on a phone the workspace and the step
+grid sit above the option picker, so the options should fold in from the top
+down. He chose a row cascade over a literal fold (rows hinging on a 3D axis),
+which crosses the "overdoing it" line.
+
+The layout decides the shape. `OptionPickerContent` already receives the Create
+module's side-by-side flag (`isSideBySideLayout`), the one that places the
+panels; the opening context passes `stacked: () => !isSideBySideLayout()` to
+every card, and `emanateTiming` takes `stacked` as a parameter. Stacked (the
+phone and the Fold inner screen, start cell above the sheet) runs in rows;
+side by side runs radial. Whether the origin is above or below is read
+against the sheet's vertical centre.
+
+The sheet's box cannot make this call. On the first pick after a page load the
+cards mount while that box is still the panel the start picker filled. At 412
+wide its top sat at 41 at mount and 405 settled, reaching up past the start
+cell; at 1440 wide it ran from x 206 at mount, spanning the start cell
+sideways (measured 2026-10-26). A vertical test misread the phone as side by
+side, and a horizontal test misread desktop as stacked, so both were tried
+and dropped. The far edge used for distances (the bottom, with the origin
+above) is already final when the cards mount.
+
+- The distance fraction is vertical only: the card centre's vertical distance
+  from the origin centre, over the vertical distance from the origin centre to
+  the sheet's far horizontal edge (the bottom edge with the origin above, the
+  top edge with it below), clamped to `[0, 1]`. Every card in a row shares a
+  delay, so a row lands together, and rows land in order away from the origin.
+- The push is straight along that axis: `dx: 0` and `dy: -SLIDE.lg` with the
+  origin above (the card starts 20 px up and glides down into its slot),
+  `dy: +SLIDE.lg` with it below.
+
+Side by side (desktop, where the start cell sits left of the sheet) nothing
+changes: radial distance, push toward the origin.
+
+Lead, spread, per-card duration, the fallbacks and the opening window are the
+same in both shapes. Tests: with the origin above the sheet, two cards in one
+row at different x get the same delay and a push of exactly `{ dx: 0,
+dy: -SLIDE.lg }`; a lower row gets a later delay; the bottom edge gets lead
+plus spread; side by side keeps the radial push, including while a stale box
+spans the origin; stacked keeps rows while a stale box covers it.
+
+Verification adds, at 412 wide and 707 by 772: cards in one row become
+visible in the same frame, rows become visible top to bottom, every card's
+initial transform is a pure vertical translate, and the last on-screen card
+settles about 610 ms after mount; at 1440 wide the push keeps its horizontal
+component and the order stays radial. Each size is measured on the first pick
+after a fresh page load, the case that broke both geometric tests.
+
+Rejected: a true fold (each row rotating down from its top edge with
+perspective), which is theatrical and puts 3D transforms on every card on a
+phone; and deciding the shape from the sheet's box, which is stale at mount
+on a fresh load (above).

@@ -178,6 +178,7 @@ void UFlowFestJamSlice::BeginPlay()
     FParse::Value(Line, TEXT("FlowFestJamExactBodies="), ExactLimit);
     FParse::Value(Line, TEXT("FlowFestJamLevers="), Levers);
     FParse::Value(Line, TEXT("FlowFestJamFireDistance="), FireDistanceCm);
+    bThrottleSpinners = FParse::Param(Line, TEXT("FlowFestJamThrottleSpinners"));
     FParse::Value(Line, TEXT("FlowFestJamShots="), ShotsAt);
     ShotDir = FPaths::ProjectSavedDir() / TEXT("Polish/Jam/People");
     NightSeconds = FMath::Clamp(NightSeconds, 5.f, 1800.f);
@@ -640,15 +641,30 @@ void UFlowFestJamSlice::LogStats(float DeltaTime)
     StatDraw += FPlatformTime::ToMilliseconds(GRenderThreadTime);
     StatGpu += FPlatformTime::ToMilliseconds(RHIGetGPUFrameCycles(0));
     ++StatFrames;
+    // A spinner whose performance clock did not move this frame showed the same staff angle twice.
+    for (const TWeakObjectPtr<USkeletalMeshComponent>& Weak : Budgeted)
+    {
+        const USkeletalMeshComponent* Body = Weak.Get();
+        if (!Body || !Body->WasRecentlyRendered() || !IsSpinning(Body)) continue;
+        const float Time = Cast<UFlowFestAnimInstance>(Body->GetAnimInstance())->GetPerformanceTime();
+        if (const float* Last = SpinTimes.Find(Weak))
+        {
+            ++SpinSamples;
+            if (Time != *Last) ++SpinAdvances;
+        }
+        SpinTimes.Add(Weak, Time);
+    }
     const double Now = FPlatformTime::Seconds();
     if (Now - StatSince < 5.0) return;
     const double Wall = (Now - StatSince) * 1000.0 / StatFrames;
-    UE_LOG(LogTemp, Display, TEXT("FlowFestJam stat unit [%s]: fps %.1f  frame %.1f ms  game %.1f  draw %.1f  gpu %.1f  (%d frames, clock %.2f, %d lit, %d near the entrance, %d bodies budgeted, clearance %d exact %d capsules %d skipped, %d exact switches, resolution %.0f%%)"),
+    const double SpinShare = SpinSamples > 0 ? static_cast<double>(SpinAdvances) / SpinSamples : 0.0;
+    UE_LOG(LogTemp, Display, TEXT("FlowFestJam stat unit [%s]: fps %.1f  frame %.1f ms  game %.1f  draw %.1f  gpu %.1f  (%d frames, clock %.2f, %d lit, %d near the entrance, %d bodies budgeted, clearance %d exact %d capsules %d skipped, %d exact switches, resolution %.0f%%, %d spinning, on-screen spinners pose %.0f%% of frames = %.1f poses/s%s)"),
         *StageName(), 1000.0 / Wall, Wall, StatGame / StatFrames, StatDraw / StatFrames, StatGpu / StatFrames, StatFrames,
         World ? World->GetTimeOfDay() : 0.f, Jam ? Jam->CountFireLit() : 0, Jam ? Jam->CountNearEntrance(6.f) : 0, BudgetedBodies, ExactBodies, Budgeted.Num() - ExactBodies - SkippedBodies, SkippedBodies, ExactSwitches,
-        ResolutionPercent());
+        ResolutionPercent(), SpinningBodies, 100.0 * SpinShare, SpinShare * 1000.0 / Wall, bThrottleSpinners ? TEXT(", spinners throttled") : TEXT(""));
     StatFrame = StatGame = StatDraw = StatGpu = 0.0;
     StatFrames = 0;
+    SpinSamples = SpinAdvances = 0;
     StatSince = Now;
 }
 
@@ -656,14 +672,15 @@ void UFlowFestJamSlice::BudgetBodies()
 {
     // The shared arm clearance solves a body on every evaluation and costs milliseconds a
     // body, so a frame affords only a handful. Update-rate optimisation evaluates large,
-    // near bodies every frame and small, far ones every few frames, interpolating between.
-    // The festival's own crowd stops casting shadows here, and with the shadow lever (the
-    // default) the jam's people do too.
+    // near bodies every frame and small, far ones every few frames, interpolating between;
+    // spinners are the exception (RateSpinners). The festival's own crowd stops casting
+    // shadows here, and with the shadow lever (the default) the jam's people do too.
     const double Now = FPlatformTime::Seconds();
     if (Now - ClearanceBudgetedAt >= .25)
     {
         ClearanceBudgetedAt = Now;
         BudgetClearance();
+        RateSpinners();
     }
     if (Now - BudgetedAt < 2.0) return;
     BudgetedAt = Now;
@@ -672,6 +689,10 @@ void UFlowFestJamSlice::BudgetBodies()
         USkeletalMeshComponent* Body = *It;
         if (Body->GetWorld() != GetWorld() || !Body->IsRegistered() || Body->bEnableUpdateRateOptimizations) continue;
         if (!Body->GetOwner() || Body->GetOwner() == Character) continue;
+        // Spinners turn the rate back off (RateSpinners); dress each body once.
+        bool bSeen = false;
+        Dressed.Add(Body, &bSeen);
+        if (bSeen) continue;
         if (Cast<UFlowFestAnimInstance>(Body->GetAnimInstance())) Budgeted.Add(Body);
         Body->bEnableUpdateRateOptimizations = true;
         if (FAnimUpdateRateParameters* Rate = Body->AnimUpdateRateParams)
@@ -696,6 +717,30 @@ void UFlowFestJamSlice::BudgetBodies()
             if (UFlowArtsNiagaraEffectComponent* Fire = Body->GetOwner()->FindComponentByClass<UFlowArtsNiagaraEffectComponent>())
                 Fire->MaxActiveDistanceCm = FireDistanceCm;
         ++BudgetedBodies;
+    }
+}
+
+bool UFlowFestJamSlice::IsSpinning(const USkeletalMeshComponent* Body)
+{
+    const UFlowFestAnimInstance* Anim = Cast<UFlowFestAnimInstance>(Body->GetAnimInstance());
+    const UFlowFestPropComponent* Prop = Body->GetOwner()->FindComponentByClass<UFlowFestPropComponent>();
+    return Anim && Prop && Prop->HasVisibleGrip() && Anim->GetPerformanceLength() > 0.f && Anim->GetPerformanceWeight() > 0.f;
+}
+
+void UFlowFestJamSlice::RateSpinners()
+{
+    // A spinner's performance clock, and with it the prop it carries, moves on only when its
+    // body evaluates. On the size-on-screen rate most spinners at the circle evaluated every
+    // 2nd to 6th frame, so a staff turned at 10 to 30 steps a second however fast the game
+    // ran. Spinners evaluate every frame; watchers and walkers keep the rate.
+    SpinningBodies = 0;
+    for (const TWeakObjectPtr<USkeletalMeshComponent>& Weak : Budgeted)
+    {
+        USkeletalMeshComponent* Body = Weak.Get();
+        if (!Body) continue;
+        const bool bSpinning = IsSpinning(Body);
+        SpinningBodies += bSpinning;
+        Body->bEnableUpdateRateOptimizations = !bSpinning || bThrottleSpinners;
     }
 }
 

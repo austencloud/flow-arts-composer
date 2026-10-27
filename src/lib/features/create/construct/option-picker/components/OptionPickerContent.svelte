@@ -56,14 +56,18 @@ Uses organizer and sizer services for section grouping and sizing.
     isConstructPhoneTier,
   } from "../../services/construct-phone-split";
   import {
-    hasPendingAncestorLayoutTransition,
+    isAncestorResizing,
     shouldCommitContainerSize,
     type TransitionLike,
   } from "../services/container-settle";
   import { flyFade } from "#lib/shared/transitions/motion.js";
   import { EMANATE_WINDOW_MS } from "#lib/shared/transitions/emanate.js";
   import { findLandedStartCell } from "../../start-placement-picker/services/start-placement-morph";
-  import { setOptionSheetOpeningContext } from "../context/option-sheet-opening-context";
+  import {
+    optionSheetControlsInWave,
+    setOptionSheetOpeningContext,
+    type OptionSheetOpening,
+  } from "../context/option-sheet-opening-context";
 
   interface Props {
     options: PreparedPictographData[];
@@ -163,10 +167,12 @@ Uses organizer and sizer services for section grouping and sizing.
   // When the sheet first painted. Cards that mount within EMANATE_WINDOW_MS of
   // it arrive from the landed start cell; later ones use the plain arrive.
   let sheetOpenedAt: number | null = null;
+  let waveStartedAt: number | null = null;
+  let waveStartPending = false;
   let sectionsElement: HTMLDivElement | null = $state(null);
   let rejectedDesktopFit = $state<string | null>(null);
 
-  setOptionSheetOpeningContext({
+  const sheetOpening: OptionSheetOpening = {
     get opening() {
       return (
         sheetOpenedAt !== null &&
@@ -175,7 +181,36 @@ Uses organizer and sizer services for section grouping and sizing.
     },
     origin: () => findLandedStartCell()?.getBoundingClientRect() ?? null,
     bounds: () => containerElement?.getBoundingClientRect() ?? null,
-  });
+    stacked: () => !isSideBySideLayout(),
+    wave: () => {
+      const sheet = containerElement?.getBoundingClientRect();
+      if (!sheet || sheetOpenedAt === null) return null;
+      // The wave's clock starts at the first frame that paints after its first
+      // row mounts. Mounting the cards can hold the main thread past the
+      // wave's first beats; nothing has moved on screen yet, so every row
+      // mounted before that frame counts from zero, and a row mounting after
+      // it (the cards, a beat behind the header) joins on its beat.
+      if (waveStartedAt === null) {
+        if (!waveStartPending) {
+          waveStartPending = true;
+          requestAnimationFrame(() => {
+            waveStartedAt = performance.now();
+          });
+        }
+        return { sheet, elapsed: 0 };
+      }
+      return { sheet, elapsed: performance.now() - waveStartedAt };
+    },
+  };
+  setOptionSheetOpeningContext(sheetOpening);
+
+  // On a stacked sheet that is opening, the header's rows arrive in the wave
+  // themselves; the slot fading as a block would hide that.
+  function headerArrival(node: Element) {
+    return optionSheetControlsInWave(sheetOpening)
+      ? { duration: 0 }
+      : flyFade(node, { y: 6 });
+  }
 
   // Content-area bounds for the continuous compact grid. Fed by the same
   // HorizontalSwipeContainer the sectioned (All) layout uses, so the continuous
@@ -548,17 +583,20 @@ Uses organizer and sizer services for section grouping and sizing.
     // not advance until a frame is produced, so the opening frames all report
     // the same pre-expansion width. Ask the transition itself instead — a
     // pending one is already registered by the time the probe forces layout —
-    // and commit only when nothing above us is still resizing.
+    // and commit only when nothing above us is still resizing. The caps count
+    // from the probe's first frame: a cold load can stall for seconds before
+    // it, and a cap counted from mount then committed the frozen first frame.
     const SETTLE_TIMEOUT_MS = 1500;
-    const settleStartedAt = performance.now();
+    const RESIZING_TIMEOUT_MS = 4000;
+    let firstFrameAt: number | null = null;
     let previous: { width: number; height: number } | null = null;
 
     function ancestorIsResizing(): boolean {
-      if (typeof document.getAnimations !== "function") return false;
-      return hasPendingAncestorLayoutTransition(
-        element,
-        document.getAnimations() as unknown as TransitionLike[]
-      );
+      const animations =
+        typeof document.getAnimations === "function"
+          ? (document.getAnimations() as unknown as TransitionLike[])
+          : [];
+      return isAncestorResizing(element, animations);
     }
 
     function probeUntilSettled() {
@@ -567,13 +605,17 @@ Uses organizer and sizer services for section grouping and sizing.
         // Reading the box first flushes style, so a transition queued by a
         // class change that has not painted yet is registered before we ask.
         const rect = element.getBoundingClientRect();
+        const now = performance.now();
+        firstFrameAt ??= now;
+        const elapsedMs = now - firstFrameAt;
         const commit = shouldCommitContainerSize({
           width: rect.width,
           height: rect.height,
           previous,
-          ancestorTransitionPending: ancestorIsResizing(),
-          elapsedMs: performance.now() - settleStartedAt,
+          ancestorResizing: ancestorIsResizing(),
+          elapsedMs,
           timeoutMs: SETTLE_TIMEOUT_MS,
+          resizingTimeoutMs: RESIZING_TIMEOUT_MS,
         });
         previous = { width: rect.width, height: rect.height };
         if (commit) {
@@ -581,9 +623,7 @@ Uses organizer and sizer services for section grouping and sizing.
           containerHeight = rect.height;
           sizingStable = true;
           sheetOpenedAt ??= performance.now();
-          span("ok", {
-            timedOut: performance.now() - settleStartedAt > SETTLE_TIMEOUT_MS,
-          });
+          span("ok", { timedOut: elapsedMs > SETTLE_TIMEOUT_MS });
           bootProfiler.milestone("construct:layout-committed");
           return;
         }
@@ -702,8 +742,8 @@ Uses organizer and sizer services for section grouping and sizing.
            the controls when the option grid crosses its own breakpoint. -->
       {#if useInlineControls && controlsAvailable}
         <!-- The bar leads the sheet's arrival; section headers and the
-             emanating cards follow. -->
-        <div class="picker-header-slot" in:flyFade|global={{ y: 6 }}>
+             emanating cards follow. Stacked, its rows lead the same wave. -->
+        <div class="picker-header-slot" in:headerArrival|global>
           {@render inlineControls()}
         </div>
       {/if}

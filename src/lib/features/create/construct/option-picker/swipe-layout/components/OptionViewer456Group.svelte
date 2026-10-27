@@ -1,15 +1,18 @@
 <!--
-OptionViewer456Group.svelte - Horizontal group for Types 4, 5, 6
+OptionViewer456Group.svelte - Grouped panel for Types 4, 5, 6
 
-Matches the desktop version exactly:
-- Horizontal layout for Types 4, 5, 6 (Dash, Dual-Dash, Static)
-- Fixed size policy to prevent stretching
-- Minimal spacing to prevent overflow
-- Centered alignment
+- Types 4, 5, 6 (Dash, Dual-Dash, Static) share one panel
+- The grouped layout planner picks the rows (one, two or three), splits each
+  row's width by option count, and sizes every tile the same, as large as the
+  panel's width and height allow (capped so tiles never dwarf the step grid)
+- Rows are centered as a group
 - In-place pictograph transitions on option changes
 -->
 <script lang="ts">
-  import { calculateOptimalLayout as calculateAspectLayout } from "#lib/features/create/construct/option-picker/services/aspect-layout-planner.js";
+  import {
+    planGroupedLayout,
+    type GroupedSectionPlan,
+  } from "#lib/features/create/construct/option-picker/services/grouped-layout-planner.js";
   import { getAnimator } from "#lib/shared/application/get-animator.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { observeSettledResize } from "#lib/shared/panels/panel-motion.js";
@@ -18,7 +21,6 @@ Matches the desktop version exactly:
     Letter,
     getLetterType,
   } from "#lib/shared/foundation/domain/models/letter.js";
-  import { calculateFitSize as calculateGridFitSize } from "../../services/option-grid-fit-calculator";
   import type { TypeFilter } from "../../domain/option-picker-types";
   import OptionViewerSection from "./OptionViewerSection.svelte";
 
@@ -51,7 +53,6 @@ Matches the desktop version exactly:
     onPictographSelected = () => {},
     containerWidth = 800,
     containerHeight = 600,
-    pictographSize = 144,
     gridGap = "8px",
     typeFilter,
     currentSequence = [],
@@ -63,7 +64,6 @@ Matches the desktop version exactly:
     onPictographSelected?: (pictograph: PictographData) => void;
     containerWidth?: number;
     containerHeight?: number;
-    pictographSize?: number;
     gridGap?: string;
     typeFilter?: TypeFilter;
     currentSequence?: PictographData[];
@@ -71,10 +71,6 @@ Matches the desktop version exactly:
     forcedPictographSize?: number;
     fitToViewport?: boolean;
   }>();
-
-  const effectivePictographSize = $derived(
-    () => forcedPictographSize ?? pictographSize
-  );
 
   // Reactive container dimension tracking (width AND height) - $effect syncs from prop
   let actualContainerWidth = $state(400);
@@ -135,13 +131,6 @@ Matches the desktop version exactly:
       return containerHeight;
     }
     return actualContainerHeight > 0 ? actualContainerHeight : 600;
-  });
-
-  // Calculate aspect ratio for layout decisions
-  const containerAspectRatio = $derived(() => {
-    const width = effectiveContainerWidth();
-    const height = effectiveContainerHeight();
-    return width / height;
   });
 
   // Groupable types (Types 4, 5, 6) - matches desktop exactly
@@ -208,186 +197,76 @@ Matches the desktop version exactly:
     }
   }
 
-  // Layout calculation delegated to AspectLayoutPlanner service
+  const ROW_GAP = 12;
+  const SECTION_GAP = 8;
+  const MIN_PICTOGRAPH_SIZE = 40;
+  // Tiles stop growing here so they never dwarf the step grid's cells.
+  const MAX_PICTOGRAPH_SIZE = 200;
+  // SectionHeader: a 160px-wide label with 8px margins above and below. Its
+  // height follows the font and the viewport, so the rendered one is measured;
+  // this is the first guess until one exists.
+  const HEADER_HEIGHT_GUESS = 54;
+  const HEADER_MIN_WIDTH = 168;
+  // Per-type headers stay only on rows at least this tall, as before.
+  const HEADER_MIN_ROW_HEIGHT = 200;
+  // .pictographs-grid pads 4px on each side.
+  const GRID_INSET = 8;
 
-  // Smart layout organization based on context and available space
-  const layoutSections = $derived(() => {
-    // Filter types based on typeFilter state
-    const enabledTypes = groupableTypes.filter((type) => isTypeEnabled(type));
+  const tileGap = $derived(parseInt(gridGap.replace("px", "")) || 8);
 
-    // If no types are enabled, return empty layout
-    if (enabledTypes.length === 0) {
-      return [];
-    }
+  let headerHeight = $state(HEADER_HEIGHT_GUESS);
+  $effect(() => {
+    if (!containerElement || !layoutPlan.showHeaders) return;
+    const header =
+      containerElement.querySelector<HTMLElement>(".section-header");
+    if (!header) return;
+    const measure = () => {
+      // A header leaving with its section reports 0; only a live one counts
+      // (a live header hidden by its container query really is 0 tall).
+      if (!header.isConnected) return;
+      const height = Math.ceil(header.getBoundingClientRect().height);
+      if (height !== headerHeight) headerHeight = height;
+    };
+    measure();
+    return observeSettledResize(header, measure);
+  });
 
-    // Get pictograph counts for each enabled type
-    const pictographsByType = currentPictographsByType();
-    const typeCounts = enabledTypes
-      .map((type) => ({
-        type,
-        count: pictographsByType[type]?.length || 0,
-      }))
+  // Rows, section widths, columns and one tile size for the whole panel.
+  const layoutPlan = $derived.by(() => {
+    const byType = currentPictographsByType();
+    const typeCounts = groupableTypes
+      .filter((type) => isTypeEnabled(type))
+      .map((type) => ({ type, count: byType[type]?.length || 0 }))
       .filter((item) => item.count > 0);
 
-    if (typeCounts.length === 0) {
-      return [];
-    }
-
-    // Calculate optimal layout using module function
-    return calculateAspectLayout(
+    return planGroupedLayout({
       typeCounts,
-      effectiveContainerWidth(),
-      effectiveContainerHeight()
-    );
-  });
-
-  // Calculate per-row height to prevent overflow when multiple rows exist
-  const ROW_GAP = 12;
-  const MIN_PICTOGRAPH_SIZE = 40;
-  const perRowHeight = $derived(() => {
-    const rows = layoutSections();
-    const rowCount = rows.length;
-    if (rowCount === 0) return effectiveContainerHeight();
-    const totalRowGaps = rowCount > 1 ? (rowCount - 1) * ROW_GAP : 0;
-    return Math.floor((effectiveContainerHeight() - totalRowGaps) / rowCount);
-  });
-
-  // Hide headers when vertical space is tight to maximize pictograph size
-  const shouldShowHeaders = $derived(() => perRowHeight() > 200);
-
-  // Calculate uniform pictograph size that fits ALL sections
-  // This ensures Types 4, 5, 6 all use the same pictograph size
-  const uniformPictographSize = $derived(() => {
-    const rows = layoutSections();
-    if (rows.length === 0) {
-      return effectivePictographSize();
-    }
-
-    const pictographsByType = currentPictographsByType();
-    const gap = parseInt(gridGap.replace("px", "")) || 8;
-    const headerHeight = shouldShowHeaders() ? 50 : 0;
-    // Short phone workspaces can leave each 4–6 row with less than 100px.
-    // Treating 100px as available space made every tile overflow its assigned
-    // row, which clipped the letter glyph along the tile's bottom edge.
-    const availableHeight = Math.max(perRowHeight() - headerHeight, 1);
-
-    let minSize = effectivePictographSize();
-
-    // Find the most constrained section and use its size for all
-    for (const row of rows) {
-      for (const letterType of row.types) {
-        const sectionWidth = getSectionWidthForUniform(
-          row.types,
-          row.containerWidth,
-          row.layout || "horizontal"
-        );
-        const numPictographs = pictographsByType[letterType]?.length || 0;
-        if (numPictographs === 0) continue;
-
-        // Use GridFitCalculator service for consistent sizing
-        const targetSize = effectivePictographSize();
-        const columnsAtTargetSize = Math.max(
-          1,
-          Math.floor(sectionWidth / (targetSize + gap))
-        );
-
-        const result = calculateGridFitSize({
-          itemCount: numPictographs,
-          columnCount: columnsAtTargetSize,
-          availableWidth: sectionWidth,
-          availableHeight,
-          gridGap: gap,
-          maxSize: targetSize,
-          minSize: Math.min(MIN_PICTOGRAPH_SIZE, availableHeight),
-        });
-
-        // Track the minimum (most constrained) size
-        if (result.pictographSize < minSize) {
-          minSize = result.pictographSize;
-        }
-      }
-    }
-
-    return minSize;
-  });
-
-  // Helper for uniform size calculation (non-reactive version)
-  const getSectionWidthForUniform = (
-    types: string[],
-    rowContainerWidth: number,
-    layout: string
-  ) => {
-    if (layout === "vertical" || types.length === 1) {
-      return rowContainerWidth;
-    }
-    const gap = parseInt(gridGap.replace("px", "")) || 8;
-    const totalGaps = gap * (types.length - 1);
-    const availableWidth = rowContainerWidth - totalGaps;
-    return Math.floor(availableWidth / types.length);
-  };
-
-  // Calculate section width for each layout row with improved spacing
-  const getSectionWidth = (
-    types: string[],
-    rowContainerWidth: number,
-    layout: string
-  ) => {
-    if (layout === "vertical" || types.length === 1) {
-      // Vertical layout or single type: use full width
-      return rowContainerWidth;
-    }
-
-    // Horizontal layout: distribute width evenly accounting for CSS gap
-    // rowContainerWidth is the group-widget's clientWidth (already accounts for padding)
-    const gap = parseInt(gridGap.replace("px", "")) || 8;
-    const totalGaps = gap * (types.length - 1);
-    const availableWidth = rowContainerWidth - totalGaps;
-
-    // Return width per section, floored to prevent overflow
-    return Math.floor(availableWidth / types.length);
-  };
-
-  // Create layout config for a specific section using GridFitCalculator
-  const createSectionLayoutConfig = (
-    sectionWidth: number,
-    _letterType: string,
-    numPictographs: number,
-    targetSize: number,
-    containerHeight: number,
-    showHeader: boolean = true
-  ) => {
-    const gap = parseInt(gridGap.replace("px", "")) || 8;
-
-    // Account for section header height only when headers are shown
-    const headerHeight = showHeader ? 50 : 0;
-    const availableHeight = Math.max(containerHeight - headerHeight, 1);
-
-    // Calculate columns based on target size
-    const columnsAtTargetSize = Math.max(
-      1,
-      Math.floor(sectionWidth / (targetSize + gap))
-    );
-
-    const result = calculateGridFitSize({
-      itemCount: numPictographs,
-      columnCount: columnsAtTargetSize,
-      availableWidth: sectionWidth,
-      availableHeight,
-      gridGap: gap,
-      maxSize: targetSize,
-      minSize: Math.min(MIN_PICTOGRAPH_SIZE, availableHeight),
+      width: effectiveContainerWidth(),
+      height: effectiveContainerHeight(),
+      tileGap,
+      sectionGap: SECTION_GAP,
+      rowGap: ROW_GAP,
+      gridInset: GRID_INSET,
+      headerHeight,
+      headerMinWidth: HEADER_MIN_WIDTH,
+      headerMinRowHeight: HEADER_MIN_ROW_HEIGHT,
+      maxSize: forcedPictographSize ?? MAX_PICTOGRAPH_SIZE,
+      minSize: MIN_PICTOGRAPH_SIZE,
     });
+  });
 
+  function sectionLayoutConfig(section: GroupedSectionPlan, rowHeight: number) {
+    const size = layoutPlan.tileSize;
     return {
-      optionsPerRow: result.columns,
-      pictographSize: result.pictographSize,
-      spacing: gap,
-      containerWidth: sectionWidth,
-      containerHeight,
-      gridColumns: result.gridColumns,
+      optionsPerRow: section.columns,
+      pictographSize: size,
+      spacing: tileGap,
+      containerWidth: section.width,
+      containerHeight: rowHeight,
+      gridColumns: `repeat(${section.columns}, ${size}px)`,
       gridGap,
     };
-  };
+  }
 </script>
 
 <div
@@ -397,41 +276,29 @@ Matches the desktop version exactly:
     ? `${contentAreaWidth()}px`
     : null}
   style:--row-gap={`${ROW_GAP}px`}
+  style:--section-gap={`${SECTION_GAP}px`}
 >
-  {#each layoutSections() as row, rowIndex (rowIndex)}
-    <div class="layout-row" style:--row-height={`${perRowHeight()}px`}>
-      {#each row.types as letterType (letterType)}
-        {@const sectionWidth = getSectionWidth(
-          row.types,
-          row.containerWidth,
-          row.layout || "horizontal"
-        )}
+  {#each layoutPlan.rows as row, rowIndex (rowIndex)}
+    <div class="layout-row" style:--row-height={`${row.height}px`}>
+      {#each row.sections as section (section.type)}
         {@const sectionPictographs =
-          currentPictographsByType()[letterType] || []}
-        {@const sectionLayoutConfig = createSectionLayoutConfig(
-          sectionWidth,
-          letterType,
-          sectionPictographs.length,
-          effectivePictographSize(),
-          perRowHeight(),
-          shouldShowHeaders()
-        )}
-        {#if sectionPictographs && sectionPictographs.length > 0}
+          currentPictographsByType()[section.type] || []}
+        {#if sectionPictographs.length > 0}
           <div
             class="section-container"
-            style:width="{sectionWidth}px"
+            style:width="{section.width}px"
             in:sectionFadeIn
             out:sectionFadeOut
           >
             <OptionViewerSection
-              {letterType}
+              letterType={section.type}
               pictographs={sectionPictographs}
               {onPictographSelected}
-              layoutConfig={sectionLayoutConfig}
+              layoutConfig={sectionLayoutConfig(section, row.height)}
               {currentSequence}
               {contentAreaBounds}
-              forcedPictographSize={uniformPictographSize()}
-              showHeader={shouldShowHeaders()}
+              forcedPictographSize={layoutPlan.tileSize}
+              showHeader={layoutPlan.showHeaders}
               {fitToViewport}
             />
           </div>
@@ -475,9 +342,9 @@ Matches the desktop version exactly:
     transition: transform var(--duration-emphasis) var(--ease-out);
   }
 
-  /* Horizontal layout: side-by-side with aesthetic spacing */
-  .layout-row:has(.section-container:nth-child(2)) {
-    gap: 8px; /* Aesthetic spacing between sections */
+  /* Side-by-side sections; the planner reserves the same gap. */
+  .layout-row {
+    gap: var(--section-gap);
   }
 
   .section-container {

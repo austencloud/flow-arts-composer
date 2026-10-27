@@ -512,6 +512,52 @@ describe("ExpandedCardStage", () => {
     await tick();
   });
 
+  // Session triage: "e is not a function" after closing Generator setups. The
+  // panel's close button passes its click event to onClose, and the stage used
+  // to take that event as the callback to run once the morph settled.
+  it("closes from the panel's own close button without throwing afterward", async () => {
+    const state = createPanelCoordinationState();
+    const { container } = render(ExpandedCardStage, props(state, true));
+
+    state.openPresetDrawer();
+    flushSync();
+
+    // Only TypeErrors: this render also leaves unrelated asset 404s around.
+    const failures: unknown[] = [];
+    const onError = (event: ErrorEvent) => {
+      if (event.error instanceof TypeError) failures.push(event.error);
+    };
+    const onRejection = (event: PromiseRejectionEvent) => {
+      if (event.reason instanceof TypeError) failures.push(event.reason);
+    };
+    window.addEventListener("error", onError);
+    window.addEventListener("unhandledrejection", onRejection);
+    const startViewTransition = vi.spyOn(document, "startViewTransition");
+    try {
+      const closeButton = container.querySelector<HTMLButtonElement>(
+        ".expanded-card-stage .close-button"
+      );
+      expect(closeButton).not.toBeNull();
+      await userEvent.click(closeButton!);
+
+      await vi.waitFor(() => {
+        flushSync();
+        expect(state.openGenerateCard).toBeNull();
+      });
+      // Settlement runs after the morph's `finished`, or on a short timer for
+      // a plain close. Wait past both before checking nothing threw.
+      const transition = startViewTransition.mock.results[0]?.value as
+        | ViewTransition
+        | undefined;
+      await transition?.finished.catch(() => undefined);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      expect(failures).toEqual([]);
+    } finally {
+      window.removeEventListener("error", onError);
+      window.removeEventListener("unhandledrejection", onRejection);
+    }
+  });
+
   it("returns focus to the trigger after a morph close", async () => {
     const fixture = document.createElement("div");
     fixture.className = "card-wrapper";

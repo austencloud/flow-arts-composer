@@ -5,7 +5,7 @@
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import PanelState from "#lib/shared/components/panel/PanelState.svelte";
-  import SortPopover from "#lib/features/browse/shared/components/SortPopover.svelte";
+  import SortChoice from "#lib/features/browse/shared/components/SortChoice.svelte";
   import { BrowseSortMethod } from "#lib/shared/browse/domain/enums/browse-enums.js";
   import { sortSequences } from "#lib/shared/browse/services/browse-sorter.js";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
@@ -56,7 +56,7 @@
     return () => visibilityManager.unregisterObserver(handleVisibilityChange);
   });
 
-  // Reuses the browse gallery's sort machinery: SortPopover UI + the shared
+  // Reuses the browse gallery's sort machinery: SortChoice UI + the shared
   // sortSequences() service. Default to newest-first — most useful for a large
   // personal library.
   let sortMethod = $state<BrowseSortMethod>(BrowseSortMethod.DATE_ADDED);
@@ -130,10 +130,9 @@
     </span>
     <!-- align="end": the trigger sits at the toolbar's right edge and the
          profile scroller clips overflow-x, so the panel must open leftward. -->
-    <SortPopover
+    <SortChoice
       currentMethod={sortMethod}
       onSortChange={(m) => (sortMethod = m)}
-      align="end"
     />
   </div>
 

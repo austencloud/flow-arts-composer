@@ -10,9 +10,11 @@
 import type { Component } from "svelte";
 import {
   GUIDE_BODY_PAGES,
+  GUIDE_WEB_PAGES,
   GROUP_TITLES,
   bodyPagesByGroup,
   type GuideGroup,
+  type GuidePageEntry,
 } from "./guide-manifest";
 
 /** GuideDocument renders 5 unnumbered front-matter pages before body page 0. */
@@ -58,6 +60,23 @@ export function buildReaderNav(built: Record<string, Component>): ReaderNavRow[]
     }
   }
   return rows;
+}
+
+/**
+ * A web topic page's Previous and Next pages: the manifest order minus the
+ * pages the web folds into another (`web`), so the web steps past them while
+ * the print book keeps them.
+ */
+export function webPageNeighbours(slug: string): {
+  prev: GuidePageEntry | null;
+  next: GuidePageEntry | null;
+} {
+  const i = GUIDE_WEB_PAGES.findIndex((p) => p.id === slug);
+  if (i === -1) return { prev: null, next: null };
+  return {
+    prev: GUIDE_WEB_PAGES[i - 1] ?? null,
+    next: GUIDE_WEB_PAGES[i + 1] ?? null,
+  };
 }
 
 /** Total reader page count = front matter + all body pages. */

@@ -34,6 +34,10 @@ Features:
     type LetterTypeGroupDescriptor,
     type LetterTypeGroupKey,
   } from "../../services/section-title-formatter";
+  import {
+    optionSheetControlIn,
+    tryGetOptionSheetOpeningContext,
+  } from "../../context/option-sheet-opening-context";
   import OptionPicker456Group from "./OptionViewer456Group.svelte";
   import OptionViewerSection from "./OptionViewerSection.svelte";
 
@@ -135,6 +139,31 @@ Features:
     organizedPictographs[activePanelIndex] ?? organizedPictographs[0]
   );
   const canWarmPanels = $derived(boundsReady());
+
+  // Types 1-3 put a header above their tiles and center the two together, so
+  // the tiles' center sits half a header below the viewport's. Each section
+  // reports that offset; the arrows follow the active panel's. Types 4-6
+  // center their rows as a whole, so their arrows sit on the viewport center.
+  let sectionArrowOffsets = $state<Record<number, number>>({});
+  function isGroupedSection(section: OrganizedSection | undefined) {
+    return section?.title === "Types 4-6" || section?.type === "grouped";
+  }
+  function setSectionArrowOffset(index: number, offset: number) {
+    if (sectionArrowOffsets[index] === offset) return;
+    sectionArrowOffsets = { ...sectionArrowOffsets, [index]: offset };
+  }
+  const arrowCenterOffset = $derived.by(() => {
+    if (phoneTier) return null;
+    if (!activePanel || activePanel.pictographs.length === 0) return 0;
+    if (isGroupedSection(activePanel)) return 0;
+    // Before the active panel has measured, borrow a sibling's: Types 1-3
+    // share one header, so the arrows do not move when it reports.
+    return (
+      sectionArrowOffsets[activePanelIndex] ??
+      Object.values(sectionArrowOffsets)[0] ??
+      0
+    );
+  });
 
   function mountPanel(index: number) {
     if (!mountedPanels.includes(index))
@@ -350,6 +379,13 @@ Features:
     activeUtilityPanel = null;
     requestAnimationFrame(() => document.getElementById(triggerId)?.focus());
   }
+
+  // The type tabs are one row of the opening sheet's wave, between the turn
+  // rows above and the option cards below. Side by side they follow the
+  // header's fade by a beat instead of standing there before it.
+  const sheetOpening = tryGetOptionSheetOpeningContext();
+  const tabsIn = (node: Element) =>
+    optionSheetControlIn(node, { sheet: sheetOpening, below: true });
 </script>
 
 {#snippet letterTypeGroupLabel(groupKey: LetterTypeGroupKey)}
@@ -374,6 +410,7 @@ Features:
   <div
     class="type-navigation"
     class:without-settings={!settingsEnabled || !settingsContent}
+    in:tabsIn|global
   >
     {#if settingsEnabled && settingsContent}
       <div class="type-navigation-edge">
@@ -524,6 +561,7 @@ Features:
       width="100%"
       preservePosition={true}
       storageKey={PANEL_STORAGE_KEY}
+      {arrowCenterOffset}
       bind:emblaApiRef={emblaApi}
     >
       {#each organizedPictographs as section, index (section.title)}
@@ -557,7 +595,7 @@ Features:
               </div>
             {:else if boundsReady() && (index === activePanelIndex || mountedPanels.includes(index))}
               <!-- Wait for bounds before rendering pictographs to prevent size burst on mobile -->
-              {#if section.title === "Types 4-6" || section.type === "grouped"}
+              {#if isGroupedSection(section)}
                 <!-- Grouped section (Types 4-6) -->
                 <OptionPicker456Group
                   pictographs={section.pictographs}
@@ -566,7 +604,6 @@ Features:
                     layoutConfig?.containerWidth ||
                     800}
                   containerHeight={layoutConfig?.containerHeight || 600}
-                  pictographSize={layoutConfig?.pictographSize || 144}
                   gridGap={layoutConfig?.gridGap || "8px"}
                   {currentSequence}
                   {contentAreaBounds}
@@ -584,6 +621,8 @@ Features:
                   {onSlotClicked}
                   continuationIndex={getContinuationIndex?.(section.title) ??
                     null}
+                  onArrowOffsetChange={(offset) =>
+                    setSectionArrowOffset(index, offset)}
                 />
               {/if}
             {/if}

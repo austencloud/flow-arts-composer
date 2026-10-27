@@ -40,6 +40,12 @@
     handLegend = null,
   }: Props = $props();
 
+  /** The footer type floors at 12px for legibility, but never above what the
+   *  band can hold: Georgia's ascender-to-descender height is about 1.15em,
+   *  and a small card's band (a phone's Settings → Display stage) is only
+   *  ~12px, which clipped the line's descenders at the card's edge. */
+  const FOOTER_LINE = 1.15;
+
   const exportTextRenderer = new TextRenderer();
   let exportCanvas = $state<HTMLCanvasElement>();
   let exportCanvasWidth = $state(0);
@@ -81,7 +87,8 @@
         ? customNotesText
         : t("viewer_detail_card_footer")
       : undefined}
-    style="height: {scaledFooterHeight}px; padding-left: {footerMargin}px; padding-right: {footerMargin}px; font-size: max(var(--font-size-compact, 12px), {footerFontSize}px);"
+    style="height: {scaledFooterHeight}px; padding-left: {footerMargin}px; padding-right: {footerMargin}px; font-size: max(min(var(--font-size-compact, 12px), {scaledFooterHeight /
+      FOOTER_LINE}px), {footerFontSize}px);"
     transition:flyFade|local={{
       y: 20,
       duration: exportPresentation ? 0 : DURATION.normal,
@@ -142,6 +149,8 @@
     background: rgba(245, 245, 245, 0.98);
     border-top: 1px solid rgba(0, 0, 0, 0.1);
     font-family: Georgia, serif;
+    /* FOOTER_LINE: the line box is the glyphs' own height, not the page's. */
+    line-height: 1.15;
     color: black;
     flex-shrink: 0;
     width: 100%;

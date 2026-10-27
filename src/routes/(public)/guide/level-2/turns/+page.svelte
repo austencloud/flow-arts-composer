@@ -1,5 +1,4 @@
 <script lang="ts">
-  import Sentences from "../../_components/Sentences.svelte";
   /**
    * Chapter hub for 1-Turns. Used to concatenate all 13 ch20 GuideSection
    * components into one long page; each now has its own crawlable
@@ -8,10 +7,9 @@
    * links, mirroring `/guide/level-2`'s own hub pattern. Kept at this URL
    * (rather than 301'd) since it already carries inbound/search traffic.
    */
-  import { localHref } from "#lib/shared/i18n/localized-href.svelte.js";
+  import ChapterHub from "../_components/ChapterHub.svelte";
   import GuideSeo from "../../level-1/_components/GuideSeo.svelte";
   import { level2TopicPagesForChapter } from "../_data/level2-topic-routes";
-  import { localizedLevel2Topic } from "../_data/localize-level2-topic";
   import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
 
   const topics = level2TopicPagesForChapter("turns");
@@ -30,68 +28,9 @@
   ]}
 />
 
-<div class="chapter-hub">
-  <h1>{tDynamic("guide_l2_turns_title")}</h1>
-  <p class="intro">
-    <Sentences text={tDynamic("guide_l2_turns_intro")} />
-  </p>
-
-  <nav class="topic-list" aria-label={tDynamic("guide_l2_turns_topics")}>
-    <ol>
-      {#each topics as topic (topic.slug)}
-        <li>
-          <a href={localHref(`/guide/level-2/${topic.slug}`)}>
-            <strong>{localizedLevel2Topic(topic, "h1")}</strong>
-            <span>{localizedLevel2Topic(topic, "description")}</span>
-          </a>
-        </li>
-      {/each}
-    </ol>
-  </nav>
-</div>
-
-<style>
-  .chapter-hub {
-    max-width: 44rem;
-    margin: 0 auto;
-    padding-bottom: 2rem;
-  }
-  .intro {
-    text-align: center;
-    margin: 0 auto 2rem;
-  }
-  .topic-list ol {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.85rem;
-  }
-  .topic-list a {
-    display: block;
-    padding: 1rem 1.25rem;
-    background: oklch(0.18 0.02 270 / 0.6);
-    border: 1px solid oklch(0.45 0.04 270 / 0.35);
-    border-radius: 8px;
-    text-decoration: none;
-    color: inherit;
-    transition:
-      border-color var(--duration-fast),
-      box-shadow var(--duration-fast);
-  }
-  .topic-list a:hover {
-    border-color: #4ea7e8;
-    box-shadow: 0 2px 8px rgba(78, 167, 232, 0.25);
-  }
-  .topic-list strong {
-    display: block;
-    color: oklch(0.9 0.02 270);
-  }
-  .topic-list span {
-    display: block;
-    font-size: 0.9rem;
-    color: oklch(0.68 0.02 270);
-    margin-top: 0.25rem;
-  }
-</style>
+<ChapterHub
+  title={tDynamic("guide_l2_turns_title")}
+  intro={tDynamic("guide_l2_turns_intro")}
+  listLabel={tDynamic("guide_l2_turns_topics")}
+  {topics}
+/>

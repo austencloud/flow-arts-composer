@@ -5,7 +5,10 @@ import { scanTree } from "@austencloud/motion/coverage";
 import { SKIP } from "./motion-coverage-skip";
 import { NOT_YET } from "./motion-not-yet";
 
-const SRC = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
+const SRC = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../../.."
+);
 
 describe("motion coverage", () => {
   // Scanning the whole tree takes about six seconds alone and has passed
@@ -20,5 +23,5 @@ describe("motion coverage", () => {
     const stillRaw = new Set(findings.map((f) => f.file));
     const clean = [...NOT_YET].filter((file) => !stillRaw.has(file));
     expect(clean, "remove these from motion-not-yet.ts").toEqual([]);
-  });
+  }, 120_000);
 });

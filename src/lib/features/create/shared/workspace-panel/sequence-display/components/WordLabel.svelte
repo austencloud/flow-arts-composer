@@ -633,10 +633,14 @@
     }
   }
 
+  /* A letter still waiting for its glyph renders as text in the same 1em box
+     the glyph image takes, so the swap never changes the label's height. */
   .letter {
     display: inline-flex;
     align-items: center;
     gap: 0.08em;
+    height: 1em;
+    line-height: 1;
     /* Opacity only. The active-state glow is a static drop-shadow that paints
        once when the class flips; transitioning `filter` re-ran the shadow pass
        every frame for 300ms on every letter in the word. */

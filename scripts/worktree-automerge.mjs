@@ -21,7 +21,9 @@
  *          20 MB budget, see scripts/tsc-gate.mjs)
  *       3. `npm run specs:check` and `npm run specs:test`
  *       4. scripts/test-changed.mjs --base <base> --committed-only, the
- *          worktree's own copy, which runs the tests the branch touches
+ *          worktree's own copy, which builds the workspace packages
+ *          (`npm run build:packages`) and then runs the tests the branch
+ *          touches
  *     Documentation-only branches run step 3 alone: a spec file without
  *     frontmatter is a docs-only change and turned CI red on 2026-10-24.
  *     `--skip-checks` skips the gate; in --finish mode it prints a warning

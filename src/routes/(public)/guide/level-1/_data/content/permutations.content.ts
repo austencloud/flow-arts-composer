@@ -188,9 +188,7 @@ export const permutationsContent: GuideBlock[] = [
   {
     kind: "prose",
     html:
-      "When a word ends on a variation of its start position, we can repeat it to trace a<br>" +
-      "complimentary pattern, eventually returning back to the start position (aka home).<br>" +
-      "This type of sequence is called a <strong><em>LOOP</em></strong>.",
+      "When a word ends on a variation of its start position, you can repeat it, tracing a matching pattern, until it comes back home. That kind of sequence is a <strong><em>LOOP</em></strong>.",
   },
   {
     kind: "prose",

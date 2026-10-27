@@ -30,6 +30,14 @@ file (`vitest related`), tests whose text names a changed file, the domain's
 change to `tests/config/`, `tests/setup/`, dependencies or a root config
 selects the whole suite. `npm run wt:finish` runs it for the branch.
 
+Tests that load a workspace package (`@tka/sequence-engine` and the rest of
+`packages/*`) get its built `dist`, because the package's `exports` map sends
+the `import` condition there, and nothing rebuilds `dist` when the package
+sources change. `test:changed` runs `npm run build:packages` before it runs
+anything (`--no-build` skips that), and CI builds first too. When a test fails
+locally with a missing export from a workspace package, run
+`npm run build:packages` and try again.
+
 ### Where a new test goes
 
 Beside its source as `name.test.ts`, or in `tests/unit/<domain>/`. Never loose

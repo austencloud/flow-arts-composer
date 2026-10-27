@@ -61,6 +61,15 @@ const FIRST_VISIT_IMPORTS: Array<[owner: string, specifier: string]> = [
     "src/lib/shared/landing/data/per-visit-demo-core.ts",
     "#lib/shared/create/services/generation-orchestrator.js",
   ],
+  // The hero's loader registers the LOOP badge resolver alongside the player, so both are first-visit imports.
+  [
+    "src/lib/shared/landing/components/SequenceHeroDemo.svelte",
+    "#lib/shared/composition-root/register-loop-display.js",
+  ],
+  [
+    "src/lib/shared/landing/components/SequenceHeroDemo.svelte",
+    "#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte",
+  ],
 ];
 
 // <LazyMount loader={() => import("…")} />

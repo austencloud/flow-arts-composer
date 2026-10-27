@@ -6,6 +6,10 @@
  */
 
 import { WebGLRenderer } from "three";
+import { guardEveryWebGLRenderer } from "../scene-boot/guarded-compile-async";
+
+guardEveryWebGLRenderer();
+
 export type RenderingBackend = "webgl" | "webgpu-auto";
 
 export interface RendererProfile {

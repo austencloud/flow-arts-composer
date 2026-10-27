@@ -17,6 +17,20 @@
     type VideoQuality,
   } from "#lib/shared/animation-panel/state/export-options-state.svelte.js";
   import type { VideoCarouselPlacement } from "#lib/shared/video-export/domain/video-carousel.js";
+  import {
+    VIDEO_ANIMATION_KEYS,
+    VIDEO_HEADER_KEYS,
+    VIDEO_OVERLAY_KEYS,
+    fillRowSpans,
+    toggleVideoOverlay as toggledVideoOverlays,
+    toggleWholeVideoHeader,
+    videoOverlaysFrom,
+    type VideoOverlayKey,
+  } from "#lib/shared/video-export/domain/video-overlays.js";
+  import { deriveHeaderPatternGlyphs } from "#lib/shared/foundation/domain/sequence-patterns/header-pattern-glyphs.js";
+  import { tryGetLoopDisplayResolver } from "#lib/shared/loop-labeler/get-loop-display-resolver.js";
+  import TempoControl from "#lib/shared/animation-panel/components/TempoControl.svelte";
+  import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
   import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import TKAWordGlyph from "#lib/shared/choreo-card/components/TKAWordGlyph.svelte";
   import InstagramIcon from "#lib/shared/auth/components/icons/InstagramIcon.svelte";
@@ -30,8 +44,12 @@
   import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
   import { deriveWord } from "#lib/shared/foundation/services/word-deriver.js";
   import { getVideoUploader } from "#lib/shared/share/get-video-uploader.js";
-  import { getQRCodeGenerator } from "#lib/shared/qr/get-qr-code-generator.js";
+  import {
+    getQRCodeGenerator,
+    getUrlQRCodeGenerator,
+  } from "#lib/shared/qr/get-qr-code-generator.js";
   import { getShortCodeManager } from "#lib/shared/qr/get-short-code-manager.js";
+  import { getShortCodeShareMessage } from "#lib/shared/qr/domain/short-code-error.js";
   import { getCaptionPresetManager } from "#lib/shared/share/state/caption-presets.svelte.js";
   import { createCardPreviewState } from "#lib/shared/share/state/card-preview-state.svelte.js";
   import LiveExportCard from "#lib/shared/share/components/LiveExportCard.svelte";
@@ -39,12 +57,14 @@
   import { createPostShareDraftState } from "#lib/shared/share/state/post-share-draft-state.svelte.js";
   import ExportImagePanel from "#lib/shared/sequence-viewer/components/ExportImagePanel.svelte";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import { clampTempoBpm } from "#lib/shared/animation-engine/domain/tempo-behavior.js";
   import {
     cardPresentationFromFooterSettings,
     type CardPresentation,
   } from "#lib/shared/share/domain/models/card-presentation.js";
   import { getImageCompositionManager } from "#lib/shared/share/state/image-composition-state.svelte.js";
   import { VIEWER_STATE_PARAM_NAMES } from "#lib/shared/sequence-viewer/services/viewer-url-state-codec.js";
+  import type { ViewerMode } from "#lib/shared/sequence-viewer/services/viewer-state-persistence.js";
   import {
     buildArtifactFilename,
     buildPostLink,
@@ -153,6 +173,10 @@
     liveVideoPreview?: Snippet;
     /** Hide controls when the host owns a fixed video format. */
     videoSettingsAvailable?: boolean;
+    /** The tempo the video preview plays and renders at. A host that passes
+     * a change handler gets a Speed control under the stage. */
+    videoBpm?: number;
+    onVideoBpmChange?: (bpm: number) => void;
   }
 
   let {
@@ -186,6 +210,8 @@
     initialEntry = "chooser",
     liveVideoPreview,
     videoSettingsAvailable = true,
+    videoBpm,
+    onVideoBpmChange,
   }: Props = $props();
 
   const postDeliveryState = createPostDeliveryState({
@@ -249,9 +275,21 @@
     }))
   );
   let presetsOpen = $state(false);
+  // The video's settings are two short screens instead of one long column:
+  // File shapes the file, Show picks what is drawn on it.
+  type VideoPane = "file" | "show";
+  let videoPane = $state<VideoPane>("file");
+  const videoPaneOptions: { value: VideoPane; label: string }[] = $derived([
+    { value: "file", label: t("share_video_pane_file") },
+    { value: "show", label: t("share_video_pane_show") },
+  ]);
+  // A phone or the Fold has no room for the stage and both panes, so the
+  // stage keeps the screen and File and Show are boxes under it; each opens
+  // as its own screen with a back arrow.
+  let videoDrillOpen = $state(false);
   /** Opening Share must not spend a render on a link or sequence handoff. */
   let filePreparationOpen = $state(false);
-  type ShareRoute = "home" | "download" | "publish";
+  type ShareRoute = "home" | "download" | "publish" | "scan";
   let shareRoute = $state<ShareRoute>("home");
   let pendingDownload = $state(false);
   let pendingDownloadVersion = $state<number | null>(null);
@@ -312,6 +350,195 @@
     { value: "left", label: t("share_video_carousel_left") },
     { value: "right", label: t("share_video_carousel_right") },
   ]);
+  // What the video draws over the animation. The screen keeps its own list;
+  // until the first time it opens, that list is whatever the canvas shows.
+  const animationVisibility = getAnimationVisibilityManager();
+  const videoOverlays = $derived(
+    exportOptions.videoOverlays ??
+      videoOverlaysFrom(
+        (key) => animationVisibility.getVisibility(key),
+        animationVisibility.isGridVisible()
+      )
+  );
+  function videoOverlayLabel(key: VideoOverlayKey): string {
+    switch (key) {
+      case "headerWord":
+        return t("share_overlay_word");
+      case "headerLevel":
+        return t("share_overlay_level");
+      case "headerTurns":
+        return t("share_overlay_turns");
+      case "headerReversals":
+        return t("share_overlay_reversals");
+      case "headerLoop":
+        return "LOOP";
+      case "tkaGlyph":
+        return t("share_overlay_letter");
+      case "stepNumbers":
+        return t("share_overlay_beat_numbers");
+      case "elementalGlyph":
+        return t("share_overlay_hand_glyph");
+      case "grid":
+        return t("share_overlay_grid");
+      case "progressBar":
+        return t("share_overlay_progress_bar");
+    }
+  }
+  function toggleVideoOverlay(key: VideoOverlayKey): void {
+    exportOptions.setVideoOverlays(
+      toggledVideoOverlays(videoOverlays, key, headerPartsAvailable)
+    );
+  }
+  // A header part this sequence doesn't have draws nothing, so it gets no
+  // pill: no turn pattern, no reversal pattern or no LOOP means one less.
+  const headerPartsAvailable = $derived.by(() => {
+    const patterns = deriveHeaderPatternGlyphs(sequence);
+    const loop = sequence ? tryGetLoopDisplayResolver()?.(sequence) : null;
+    return VIDEO_HEADER_KEYS.filter((key) => {
+      switch (key) {
+        case "headerTurns":
+          return !!patterns.turnGlyphEntries?.length;
+        case "headerReversals":
+          return !!patterns.reversalGlyph;
+        case "headerLoop":
+          return !!loop && loop.components.size > 0;
+        default:
+          return !!sequence?.steps?.length;
+      }
+    });
+  });
+  type OverlayPill =
+    | { kind: "whole"; span: number }
+    | { kind: "part"; key: VideoOverlayKey; span: number };
+  // Each group fills its rows: the spans split six columns so no row ends in
+  // empty space, whatever the sequence leaves out.
+  function overlayPills(
+    keys: readonly VideoOverlayKey[],
+    withWhole: boolean
+  ): OverlayPill[] {
+    const items: (
+      | { kind: "whole" }
+      | { kind: "part"; key: VideoOverlayKey }
+    )[] = [
+      ...(withWhole ? [{ kind: "whole" as const }] : []),
+      ...keys.map((key) => ({ kind: "part" as const, key })),
+    ];
+    const spans = fillRowSpans(items.length);
+    return items.map((item, index) => ({ ...item, span: spans[index]! }));
+  }
+  const overlayGroups = $derived([
+    {
+      id: "share-video-header",
+      label: t("share_overlay_group_header"),
+      pills: overlayPills(headerPartsAvailable, true),
+    },
+    {
+      id: "share-video-animation",
+      label: t("share_overlay_group_animation"),
+      pills: overlayPills(VIDEO_ANIMATION_KEYS, false),
+    },
+  ]);
+  const wholeHeaderPressed = $derived.by((): "true" | "false" | "mixed" => {
+    const shown = headerPartsAvailable.filter((key) => videoOverlays[key]);
+    if (shown.length === 0) return "false";
+    return shown.length === headerPartsAvailable.length ? "true" : "mixed";
+  });
+  function toggleWholeHeader(): void {
+    exportOptions.setVideoOverlays(
+      toggleWholeVideoHeader(videoOverlays, headerPartsAvailable)
+    );
+  }
+  const videoDrill = $derived(
+    videoDrillOpen &&
+      !splitLayout.current &&
+      shareRoute === "download" &&
+      artifact === "video" &&
+      !qrDataUrl
+  );
+  $effect(() => {
+    if (
+      splitLayout.current ||
+      shareRoute !== "download" ||
+      artifact !== "video"
+    ) {
+      videoDrillOpen = false;
+    }
+  });
+  function openVideoDrill(pane: VideoPane): void {
+    videoPane = pane;
+    videoDrillOpen = true;
+  }
+  const videoFileSummary = $derived(
+    [
+      videoResolutionOptions.find(
+        (option) => option.value === String(exportOptions.videoResolution)
+      )?.label,
+      videoFpsOptions.find(
+        (option) => option.value === String(exportOptions.videoFps)
+      )?.label,
+      is3DExport
+        ? videoQualityOptions.find(
+            (option) => option.value === exportOptions.videoQuality
+          )?.label
+        : null,
+      `${exportOptions.videoLoopCount}×`,
+      is3DExport
+        ? null
+        : `${t("share_video_carousel")}: ${
+            videoCarouselOptions.find(
+              (option) => option.value === exportOptions.videoCarousel
+            )?.label ?? ""
+          }`,
+    ]
+      .filter(Boolean)
+      .join(" · ")
+  );
+  const videoShowSummary = $derived.by(() => {
+    const shown = [...headerPartsAvailable, ...VIDEO_ANIMATION_KEYS].filter(
+      (key) => videoOverlays[key]
+    );
+    return shown.length
+      ? shown.map(videoOverlayLabel).join(", ")
+      : t("share_video_show_none");
+  });
+  const videoDrillBoxes = $derived([
+    {
+      pane: "file" as const,
+      icon: "fa-solid fa-file-video",
+      label: t("share_video_pane_file"),
+      summary: videoFileSummary,
+    },
+    ...(is3DExport
+      ? []
+      : [
+          {
+            pane: "show" as const,
+            icon: "fa-solid fa-eye",
+            label: t("share_video_pane_show"),
+            summary: videoShowSummary,
+          },
+        ]),
+  ]);
+  const overlaysOnScreen = $derived(
+    artifact === "video" &&
+      shareRoute === "download" &&
+      videoSettingsAvailable &&
+      !is3DExport
+  );
+  $effect(() => {
+    if (!overlaysOnScreen || exportOptions.videoOverlays) return;
+    untrack(() => exportOptions.setVideoOverlays(videoOverlays));
+  });
+  // Repeats as visible choices; a count saved outside them joins the row.
+  const VIDEO_REPEAT_CHOICES = [1, 2, 3, 4, 5, 10];
+  const videoRepeatOptions = $derived(
+    [...new Set([...VIDEO_REPEAT_CHOICES, exportOptions.videoLoopCount])]
+      .sort((a, b) => a - b)
+      .map((count) => ({ value: String(count), label: `${count}×` }))
+  );
+  function changeVideoBpm(bpm: number): void {
+    onVideoBpmChange?.(clampTempoBpm(bpm));
+  }
   let captionOpen = $state(false);
   let publishOpen = $state(false);
   let failedPreviewUrl = $state<string | null>(null);
@@ -466,6 +693,15 @@
   /** The link the last copy put on the clipboard, shown on the Copy link tile. */
   let copiedLinkUrl = $state<string | null>(null);
 
+  // Show QR code puts the Copy link address on screen as a code, so a person
+  // standing next to you opens the sequence on their own phone. It asks for
+  // the short link, never the inline viewer URL, so the code stays sparse
+  // enough to read off a phone held up at a jam.
+  let scanQrSrc = $state<string | null>(null);
+  let scanShortLink = $state<string | null>(null);
+  let scanError = $state("");
+  let scanRetryable = $state(false);
+
   let liveMetaStatus = $state<MetaPublishStatus>(EMPTY_META_PUBLISH_STATUS);
   let postingTarget = $state<MetaPublishTarget | null>(null);
   let connectingTarget = $state<MetaPublishTarget | null>(null);
@@ -492,25 +728,31 @@
 
   const postUrl = $derived(shortUrl ?? seededShortUrl);
 
+  const SHEET_STAGE_VIEW: ViewerMode = "animation";
+
   /**
    * Copy link hands over the viewer state too, so the recipient opens the exact
    * view that was shared. Captions keep the bare post link: a caption is read by
    * people, and a state blob in it is noise.
+   *
+   * A host outside the viewer (Create, for one) has no view to hand over. The
+   * link still names one: the 2D animation this sheet plays on its stage.
+   * Without it the recipient's viewer reopens whatever tab they used last.
    */
   function buildCopyLinkUrl(baseUrl: string, viewerUrl = shareUrl): string {
     if (!baseUrl) return "";
-    if (!viewerUrl) return baseUrl;
     try {
-      const state = new URL(viewerUrl).searchParams;
+      const state = viewerUrl ? new URL(viewerUrl).searchParams : null;
       const target = new URL(baseUrl);
-      let carried = false;
       for (const name of VIEWER_STATE_PARAM_NAMES) {
-        const value = state.get(name);
+        const value = state?.get(name) ?? null;
         if (value === null) continue;
         target.searchParams.set(name, value);
-        carried = true;
       }
-      return carried ? target.toString() : baseUrl;
+      if (!target.searchParams.has("pane")) {
+        target.searchParams.set("pane", SHEET_STAGE_VIEW);
+      }
+      return target.toString();
     } catch {
       return baseUrl;
     }
@@ -532,10 +774,11 @@
   // Without a live animation or a still, a phone strip would only show a
   // glyph, so the split layout alone keeps the empty stage.
   const stageVisible = $derived(
-    splitLayout.current ||
+    (splitLayout.current ||
       shareRoute === "download" ||
       homeLivePreview ||
-      !!animationPreviewUrl
+      !!animationPreviewUrl) &&
+      !videoDrill
   );
   const presets = $derived(
     captions.buildPresets({
@@ -820,6 +1063,7 @@
           is3DExport,
           opener: openerEnabled ? opener : undefined,
           carousel: exportOptions.videoCarousel,
+          overlays: VIDEO_OVERLAY_KEYS.filter((key) => videoOverlays[key]),
         })
       : "host-video-format"
   );
@@ -1007,6 +1251,9 @@
     }
     linkSequence = target;
     copyLinkPending = false;
+    scanQrSrc = null;
+    scanShortLink = null;
+    scanError = "";
     return () => {
       if (linkSession !== session) return;
       linkSession += 1;
@@ -1186,6 +1433,39 @@
     if (postingAvailable && !needsAccountForFiles) preparePostLink();
   }
 
+  async function openScanCode(): Promise<void> {
+    shareRoute = "scan";
+    if (scanQrSrc) return;
+
+    const session = linkSession;
+    const target = sequence;
+    const viewerUrl = shareUrl;
+    // A guest cannot mint a short link, and a code of the inline link is too
+    // dense to scan (the reason short codes are signed-in only), so a guest
+    // is told to save instead of shown a bad code.
+    if (!postUrl && !canCreateLink) {
+      scanRetryable = false;
+      scanError = t("share_save_sequence_link");
+      return;
+    }
+    scanError = "";
+    try {
+      const base = postUrl || (await requestPostLink());
+      const url = buildCopyLinkUrl(base, viewerUrl);
+      const image = await getUrlQRCodeGenerator().generateUrlAsImage(url, 768);
+      if (!target || !linkSessionIsCurrent(session, target)) return;
+      scanShortLink = base;
+      scanQrSrc = image.src;
+    } catch (error) {
+      if (target && !linkSessionIsCurrent(session, target)) return;
+      console.warn("[PostShareSheet] Couldn't make the link QR:", error);
+      // A sequence the link format refuses says why; trying again won't help.
+      const refusal = getShortCodeShareMessage(error);
+      scanRetryable = !refusal;
+      scanError = refusal ?? t("share_scan_failed");
+    }
+  }
+
   let sharingRail = $state<HTMLDivElement>();
 
   async function returnToChooser(): Promise<void> {
@@ -1194,7 +1474,9 @@
         ? "download"
         : shareRoute === "publish"
           ? "publish"
-          : null;
+          : shareRoute === "scan"
+            ? "scan"
+            : null;
     if (videoBusy || isExportingVideo) cancelVideo();
     filePreparationOpen = false;
     shareRoute = "home";
@@ -1853,6 +2135,104 @@
   });
 </script>
 
+{#snippet videoPaneRows(pane: VideoPane)}
+  {#if pane === "file"}
+    <div class="video-rows">
+      <div class="video-row">
+        <span id="share-video-resolution">{t("share_resolution")}</span>
+        <SegmentedControl
+          options={videoResolutionOptions}
+          value={String(exportOptions.videoResolution)}
+          onchange={(value) =>
+            exportOptions.setVideoResolution(Number(value) as VideoResolution)}
+          color="accent"
+          ariaLabelledby="share-video-resolution"
+        />
+      </div>
+      <div class="video-row">
+        <span id="share-video-fps">{t("share_frame_rate")}</span>
+        <SegmentedControl
+          options={videoFpsOptions}
+          value={String(exportOptions.videoFps)}
+          onchange={(value) =>
+            exportOptions.setVideoFps(Number(value) as VideoFps)}
+          color="accent"
+          ariaLabelledby="share-video-fps"
+        />
+      </div>
+      {#if is3DExport}
+        <div class="video-row">
+          <span id="share-video-quality">{t("share_quality")}</span>
+          <SegmentedControl
+            options={videoQualityOptions}
+            value={exportOptions.videoQuality}
+            onchange={(value) => exportOptions.setVideoQuality(value)}
+            color="accent"
+            ariaLabelledby="share-video-quality"
+          />
+        </div>
+      {/if}
+      <div class="video-row">
+        <span id="share-video-repeats">{t("share_repeats")}</span>
+        <SegmentedControl
+          options={videoRepeatOptions}
+          value={String(exportOptions.videoLoopCount)}
+          onchange={(value) => exportOptions.setVideoLoopCount(Number(value))}
+          color="accent"
+          ariaLabelledby="share-video-repeats"
+        />
+      </div>
+      {#if !is3DExport}
+        <div class="video-row">
+          <span id="share-video-carousel">{t("share_video_carousel")}</span>
+          <SegmentedControl
+            options={videoCarouselOptions}
+            value={exportOptions.videoCarousel}
+            onchange={(value) => exportOptions.setVideoCarousel(value)}
+            color="accent"
+            ariaLabelledby="share-video-carousel"
+          />
+        </div>
+      {/if}
+    </div>
+  {:else}
+    <div class="video-rows">
+      {#each overlayGroups as group (group.id)}
+        <div
+          class="video-row overlay-group"
+          role="group"
+          aria-labelledby={group.id}
+        >
+          <span id={group.id}>{group.label}</span>
+          <div class="overlay-pills">
+            {#each group.pills as pill (pill.kind === "whole" ? "whole" : pill.key)}
+              {#if pill.kind === "whole"}
+                <button
+                  type="button"
+                  class="overlay-pill"
+                  style:--pill-span={pill.span}
+                  aria-pressed={wholeHeaderPressed}
+                  onclick={toggleWholeHeader}
+                  >{t("share_overlay_whole_header")}</button
+                >
+              {:else}
+                <button
+                  type="button"
+                  class="overlay-pill"
+                  style:--pill-span={pill.span}
+                  aria-pressed={videoOverlays[pill.key]}
+                  onclick={() => toggleVideoOverlay(pill.key)}
+                  >{videoOverlayLabel(pill.key)}</button
+                >
+              {/if}
+            {/each}
+          </div>
+        </div>
+      {/each}
+    </div>
+  {/if}
+{/snippet}
+
 {#snippet brandMark(brand: "instagram" | "facebook")}
   <span class="brand-mark">
     {#if brand === "instagram"}
@@ -1920,16 +2300,18 @@
   {isOpen}
   ariaLabel={shareRoute === "publish"
     ? t("share_publish_post")
-    : shareRoute === "download"
-      ? artifact === "video"
-        ? videoSettingsAvailable
-          ? t("share_download_video")
-          : t("share_download_post")
-        : t("share_download_card")
-      : t("share_sequence")}
+    : shareRoute === "scan"
+      ? t("share_scan_title")
+      : shareRoute === "download"
+        ? artifact === "video"
+          ? videoSettingsAvailable
+            ? t("share_download_video")
+            : t("share_download_post")
+          : t("share_download_card")
+        : t("share_sequence")}
   {onClose}
   onClosed={runPendingHandoff}
-  narrow={!!qrDataUrl}
+  narrow={!!qrDataUrl || shareRoute === "scan"}
 >
   {#snippet children(surface)}
     <Crossfade
@@ -1966,11 +2348,13 @@
           use:focusOnMount
         >
           <header class="panel-header">
-            {#if (shareRoute === "download" && initialEntry === "chooser" && !qrDataUrl) || (shareRoute === "publish" && initialEntry !== "publish")}
+            {#if videoDrill || (shareRoute === "download" && initialEntry === "chooser" && !qrDataUrl) || (shareRoute === "publish" && initialEntry !== "publish") || shareRoute === "scan"}
               <button
                 type="button"
                 class="header-icon"
-                onclick={returnToChooser}
+                onclick={videoDrill
+                  ? () => (videoDrillOpen = false)
+                  : returnToChooser}
                 aria-label={t("share_back")}
               >
                 <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
@@ -1978,15 +2362,21 @@
             {/if}
             <div class="title-group">
               <h2 class="panel-title">
-                {shareRoute === "publish"
-                  ? t("share_publish_post")
-                  : shareRoute === "download"
-                    ? artifact === "video"
-                      ? videoSettingsAvailable
-                        ? t("share_download_video")
-                        : t("share_download_post")
-                      : t("share_download_card")
-                    : t("share_sequence")}
+                {videoDrill
+                  ? videoPane === "show"
+                    ? t("share_video_pane_show")
+                    : t("share_video_pane_file")
+                  : shareRoute === "publish"
+                    ? t("share_publish_post")
+                    : shareRoute === "scan"
+                      ? t("share_scan_title")
+                      : shareRoute === "download"
+                        ? artifact === "video"
+                          ? videoSettingsAvailable
+                            ? t("share_download_video")
+                            : t("share_download_post")
+                          : t("share_download_card")
+                        : t("share_sequence")}
               </h2>
               <div class="sequence-identity">
                 <TKAWordGlyph word={glyphWord} height={glyphHeight} darkMode />
@@ -2004,15 +2394,61 @@
 
           <!-- Home and Download are one split shell: a stage that stays mounted
                across both, and a rail whose task swaps. Publish keeps its own
-               single column inside the same dialog width. -->
+               single column inside the same dialog width; the link QR is one
+               centred column in the narrow dialog. -->
           <Crossfade
-            key={publishFlow ? "publish" : "split"}
+            key={shareRoute === "scan"
+              ? "scan"
+              : publishFlow
+                ? "publish"
+                : "split"}
             duration={DURATION.normal}
             mode="swap"
             motion="step"
           >
-            {#if !publishFlow}
-              <div class="share-split" data-route={splitRoute}>
+            {#if shareRoute === "scan"}
+              <div class="scan-body">
+                <!-- The square is reserved before the code arrives, so the
+                     caption under it never moves. White behind the code
+                     whatever the theme: a camera reads dark on light. -->
+                <div class="scan-tile" aria-busy={!scanQrSrc && !scanError}>
+                  {#if scanQrSrc}
+                    <img src={scanQrSrc} alt={t("share_scan_qr_alt")} />
+                  {:else if !scanError}
+                    <i
+                      class="fa-solid fa-circle-notch fa-spin"
+                      aria-hidden="true"
+                    ></i>
+                  {:else}
+                    <i
+                      class="fa-solid fa-triangle-exclamation"
+                      aria-hidden="true"
+                    ></i>
+                  {/if}
+                </div>
+                <p class="scan-caption" role="status">
+                  {scanError ||
+                    (scanQrSrc ? t("share_scan_hint") : t("share_preparing"))}
+                </p>
+                {#if scanError && scanRetryable}
+                  <button
+                    type="button"
+                    class="secondary"
+                    onclick={() => void openScanCode()}
+                  >
+                    <i class="fa-solid fa-rotate-right" aria-hidden="true"></i>
+                    {t("share_scan_retry")}
+                  </button>
+                {:else if scanShortLink}
+                  <p class="scan-link">{displayLink(scanShortLink)}</p>
+                {/if}
+              </div>
+            {:else if !publishFlow}
+              <div
+                class="share-split"
+                class:video-drill={videoDrill}
+                data-route={splitRoute}
+              >
                 {#if stageVisible}
                   <div class="stage-frame" transition:growFade={{ axis: "y" }}>
                     <div
@@ -2145,6 +2581,25 @@
                       </Crossfade>
                     </div>
 
+                    {#if shareRoute === "download" && artifact === "video" && videoBpm != null && onVideoBpmChange && !qrDataUrl}
+                      <!-- Speed sits under the stage it drives: the preview
+                           plays at it and the file renders at it. -->
+                      <fieldset
+                        class="speed-row"
+                        aria-labelledby="share-video-speed"
+                        disabled={videoBusy}
+                        transition:growFade={{ axis: "y" }}
+                      >
+                        <span id="share-video-speed"
+                          >{t("viewer_ui_speed")}</span
+                        >
+                        <TempoControl
+                          bpm={videoBpm}
+                          onBpmChange={changeVideoBpm}
+                          showPractice={false}
+                        />
+                      </fieldset>
+                    {/if}
                     {#if shareRoute === "download" && artifact === "video" && (videoBusy || videoStatus === "failed" || videoStatus === "canceled")}
                       <p
                         class="render-feedback"
@@ -2210,6 +2665,23 @@
                                   </small>
                                 </span>
                               </Crossfade>
+                            </button>
+                            <button
+                              type="button"
+                              class="intent"
+                              data-share-intent="scan"
+                              onclick={() => void openScanCode()}
+                            >
+                              <span class="intent-body">
+                                <i class="fa-solid fa-qrcode" aria-hidden="true"
+                                ></i>
+                                <span class="intent-label"
+                                  >{t("share_show_qr")}</span
+                                >
+                                <small class="intent-hint"
+                                  >{t("share_show_qr_hint")}</small
+                                >
+                              </span>
                             </button>
                             {#if onSendInTka}
                               <button
@@ -2334,8 +2806,12 @@
                       {:else}
                         <div class="rail-stack">
                           {#if !qrDataUrl}
-                            {#if availableArtifacts.length > 1}
-                              <fieldset class="file-type" disabled={videoBusy}>
+                            {#if availableArtifacts.length > 1 && !videoDrill}
+                              <fieldset
+                                class="file-type"
+                                disabled={videoBusy}
+                                transition:growFade={{ axis: "y" }}
+                              >
                                 <SegmentedControl
                                   options={artifactOptions}
                                   value={artifact}
@@ -2353,11 +2829,12 @@
                               duration={DURATION.normal}
                               animateHeight
                             >
-                              {#if openerEnabled && sequence}
+                              {#if openerEnabled && sequence && !videoDrill}
                                 <fieldset
                                   class="opener-row"
                                   aria-label={t("share_opens_with")}
                                   disabled={videoBusy}
+                                  transition:growFade={{ axis: "y" }}
                                 >
                                   <span id="share-video-opener"
                                     >{t("share_opens_with")}</span
@@ -2405,110 +2882,65 @@
                                   aria-label={t("share_video_settings")}
                                   disabled={videoBusy}
                                 >
-                                  <div class="video-rows">
-                                    <div class="video-row">
-                                      <span id="share-video-resolution"
-                                        >{t("share_resolution")}</span
-                                      >
-                                      <SegmentedControl
-                                        options={videoResolutionOptions}
-                                        value={String(
-                                          exportOptions.videoResolution
-                                        )}
-                                        onchange={(value) =>
-                                          exportOptions.setVideoResolution(
-                                            Number(value) as VideoResolution
-                                          )}
-                                        color="accent"
-                                        ariaLabelledby="share-video-resolution"
-                                      />
-                                    </div>
-                                    <div class="video-row">
-                                      <span id="share-video-fps"
-                                        >{t("share_frame_rate")}</span
-                                      >
-                                      <SegmentedControl
-                                        options={videoFpsOptions}
-                                        value={String(exportOptions.videoFps)}
-                                        onchange={(value) =>
-                                          exportOptions.setVideoFps(
-                                            Number(value) as VideoFps
-                                          )}
-                                        color="accent"
-                                        ariaLabelledby="share-video-fps"
-                                      />
-                                    </div>
-                                    {#if is3DExport}
-                                      <div class="video-row">
-                                        <span id="share-video-quality"
-                                          >{t("share_quality")}</span
-                                        >
-                                        <SegmentedControl
-                                          options={videoQualityOptions}
-                                          value={exportOptions.videoQuality}
-                                          onchange={(value) =>
-                                            exportOptions.setVideoQuality(
-                                              value
-                                            )}
-                                          color="accent"
-                                          ariaLabelledby="share-video-quality"
-                                        />
-                                      </div>
-                                    {/if}
-                                    <div
-                                      class="video-row repeat-stepper"
-                                      role="group"
-                                      aria-labelledby="share-video-repeats"
-                                    >
-                                      <span id="share-video-repeats"
-                                        >{t("share_repeats")}</span
-                                      >
-                                      <div class="stepper-keys">
-                                        <button
-                                          type="button"
-                                          aria-label={t(
-                                            "share_decrease_repeats"
-                                          )}
-                                          onclick={() =>
-                                            exportOptions.setVideoLoopCount(
-                                              exportOptions.videoLoopCount - 1
-                                            )}
-                                          disabled={exportOptions.videoLoopCount <=
-                                            1}>−</button
-                                        ><strong
-                                          >{exportOptions.videoLoopCount}</strong
-                                        ><button
-                                          type="button"
-                                          aria-label={t(
-                                            "share_increase_repeats"
-                                          )}
-                                          onclick={() =>
-                                            exportOptions.setVideoLoopCount(
-                                              exportOptions.videoLoopCount + 1
-                                            )}
-                                          disabled={exportOptions.videoLoopCount >=
-                                            10}>+</button
-                                        >
-                                      </div>
-                                    </div>
+                                  {#if splitLayout.current}
                                     {#if !is3DExport}
-                                      <div class="video-row">
-                                        <span id="share-video-carousel"
-                                          >{t("share_video_carousel")}</span
-                                        >
-                                        <SegmentedControl
-                                          options={videoCarouselOptions}
-                                          value={exportOptions.videoCarousel}
-                                          onchange={(value) =>
-                                            exportOptions.setVideoCarousel(
-                                              value
-                                            )}
-                                          color="accent"
-                                          ariaLabelledby="share-video-carousel"
-                                        />
-                                      </div>
+                                      <SegmentedControl
+                                        options={videoPaneOptions}
+                                        value={videoPane}
+                                        onchange={(value) =>
+                                          (videoPane = value)}
+                                        color="accent"
+                                        ariaLabel={t("share_video_settings")}
+                                      />
                                     {/if}
-                                  </div>
+                                    <Crossfade
+                                      key={is3DExport ? "file" : videoPane}
+                                      duration={DURATION.normal}
+                                    >
+                                      {@render videoPaneRows(
+                                        is3DExport ? "file" : videoPane
+                                      )}
+                                    </Crossfade>
+                                  {:else}
+                                    <Crossfade
+                                      key={videoDrill ? videoPane : "boxes"}
+                                      duration={DURATION.normal}
+                                    >
+                                      {#if videoDrill}
+                                        {@render videoPaneRows(
+                                          is3DExport ? "file" : videoPane
+                                        )}
+                                      {:else}
+                                        <div class="video-drill-boxes">
+                                          {#each videoDrillBoxes as box (box.pane)}
+                                            <button
+                                              type="button"
+                                              class="intent video-drill-box"
+                                              onclick={() =>
+                                                openVideoDrill(box.pane)}
+                                            >
+                                              <span class="intent-body">
+                                                <i
+                                                  class={box.icon}
+                                                  aria-hidden="true"
+                                                ></i>
+                                                <span class="intent-label"
+                                                  >{box.label}</span
+                                                >
+                                                <small class="intent-hint"
+                                                  >{box.summary}</small
+                                                >
+                                              </span>
+                                              <i
+                                                class="fa-solid fa-chevron-right drill-chevron"
+                                                aria-hidden="true"
+                                              ></i>
+                                            </button>
+                                          {/each}
+                                        </div>
+                                      {/if}
+                                    </Crossfade>
+                                  {/if}
                                   {#if videoSettingsStale}
                                     <p
                                       class="settings-note"
@@ -2864,11 +3296,69 @@
     color: var(--theme-text-secondary, rgba(255, 255, 255, 0.7));
   }
 
+  /* The link QR is held up for someone else's camera, so the code takes the
+     width of the narrow dialog, capped by height so the caption stays on
+     screen in a short landscape window. */
+  .scan-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 1.25rem 1.5rem;
+    text-align: center;
+  }
+  .scan-tile {
+    display: grid;
+    place-items: center;
+    width: min(100%, 24rem, calc(var(--viewport-height, 100dvh) - 13rem));
+    min-width: 10rem;
+    aspect-ratio: 1;
+    border-radius: 1rem;
+    background: #fff;
+    color: #5b5b66;
+    font-size: 1.5rem;
+    overflow: hidden;
+  }
+  .scan-tile img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 6%;
+  }
+  .scan-caption {
+    margin: 0;
+    max-width: 24rem;
+    font-size: 0.9375rem;
+    color: var(--theme-text-secondary, rgba(255, 255, 255, 0.7));
+  }
+  .scan-link {
+    margin: 0;
+    font-size: 0.875rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--theme-text, #fff);
+    overflow-wrap: anywhere;
+  }
+
   .video-settings {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
     min-width: 0;
     margin: 0;
     padding: 0;
     border: 0;
+  }
+  /* The File | Show pane fills the settings' height, so each pane's rows
+     spread down the rail the way the single list did. */
+  .video-settings > :global(.crossfade) {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+  .video-settings > :global(.crossfade > .layer) {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
   }
   .video-settings:disabled {
     opacity: 0.6;
@@ -2934,26 +3424,72 @@
       align-items: start;
     }
   }
-  .stepper-keys {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
+  /* A pill group is a label over a six-column grid. Each pill spans the
+     share its row needs (three, two or one per row), so every row ends at
+     the rail's edge. */
+  .video-row.overlay-group {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+    gap: 0.375rem;
   }
-  .stepper-keys strong {
-    min-width: 2rem;
-    text-align: center;
-    font-variant-numeric: tabular-nums;
+  .video-row.overlay-group > span {
+    color: var(--theme-text-secondary);
   }
-  .stepper-keys button {
-    width: var(--min-touch-target, 44px);
-    height: var(--min-touch-target, 44px);
+  .overlay-pills {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.375rem;
+    min-width: 0;
+  }
+  .overlay-pill {
+    grid-column: span var(--pill-span, 2);
+    min-width: 0;
+    min-block-size: var(--min-touch-target, 44px);
+    padding: 0.25rem 0.5rem;
     border: 1px solid var(--theme-stroke);
-    border-radius: 0.5rem;
+    border-radius: 999px;
     background: var(--theme-card-bg);
-    color: var(--theme-text);
+    color: var(--theme-text-secondary);
     font: inherit;
-    font-size: 1.125rem;
+    font-weight: 600;
+    line-height: 1.15;
+    text-wrap: balance;
     cursor: pointer;
+    transition:
+      background-color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
+  }
+  .overlay-pill:hover {
+    background: var(--theme-card-hover-bg);
+  }
+  .overlay-pill[aria-pressed="true"] {
+    border-color: var(--theme-accent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent) 25%,
+      var(--theme-card-bg)
+    );
+    color: var(--theme-text);
+  }
+  /* Some header parts are off: the whole-header pill shows a partial state. */
+  .overlay-pill[aria-pressed="mixed"] {
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent) 55%,
+      var(--theme-stroke)
+    );
+    border-style: dashed;
+    background: color-mix(
+      in srgb,
+      var(--theme-accent) 10%,
+      var(--theme-card-bg)
+    );
+    color: var(--theme-text);
+  }
+  .overlay-pill:focus-visible {
+    outline: 2px solid var(--theme-accent);
+    outline-offset: 2px;
   }
   .publish-preview {
     max-height: 20rem;
@@ -3460,6 +3996,41 @@
     height: 100%;
     color: var(--theme-text-dim);
   }
+  .speed-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    color: var(--theme-text);
+    font-size: var(--font-size-min, 0.875rem);
+    font-weight: 600;
+  }
+  .speed-row:disabled {
+    opacity: 0.6;
+  }
+  .speed-row > span {
+    color: var(--theme-text-secondary);
+  }
+  .speed-row :global(.tempo-wrapper) {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .speed-row :global(.tempo-control) {
+    justify-content: flex-start;
+    gap: 0.75rem;
+  }
+  .speed-row :global(.presets) {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .speed-row :global(.preset-btn) {
+    flex: 1 1 0;
+    min-width: 0;
+  }
   .render-feedback {
     margin: 0;
     font-size: var(--font-size-min, 0.875rem);
@@ -3573,6 +4144,20 @@
   .intent:disabled {
     opacity: 0.45;
     cursor: not-allowed;
+  }
+  /* File and Show on a small screen: a box per pane, its summary under
+     the label and a chevron saying it opens. */
+  .video-drill-boxes {
+    display: grid;
+    gap: 0.5rem;
+  }
+  .video-drill-box {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 0.75rem;
+  }
+  .drill-chevron {
+    color: var(--theme-text-secondary, rgba(255, 255, 255, 0.68));
   }
   /* Card / Video: one full-width two-part switch at the top of the column. */
   .file-type {
@@ -3806,6 +4391,40 @@
       height: calc(var(--download-h) + 2.5rem);
       grid-template-columns: minmax(0, 1fr) clamp(24rem, 31vw, 28rem);
     }
+    /* The stage takes the whole height beside the rail, less the Speed row
+       under it, instead of stopping at the Home stage's height. */
+    .share-split[data-route="download"] .stage-frame {
+      align-self: stretch;
+      min-height: 0;
+      container: share-stage / inline-size;
+    }
+    /* A narrow stage keeps minus, BPM and plus and drops the presets, so the
+       Speed row stays one line and the animation keeps its height. */
+    @container share-stage (max-width: 28rem) {
+      .speed-row :global(.presets) {
+        display: none;
+      }
+    }
+    @container share-stage (max-width: 16rem) {
+      .speed-row > span {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+      }
+      .speed-row :global(.tempo-control) {
+        justify-content: center;
+      }
+    }
+    .share-split[data-route="download"] .stage {
+      flex: 1 1 auto;
+      height: auto;
+    }
+    .share-split[data-route="download"] .card-host {
+      max-height: none;
+    }
     .share-split[data-route="download"] .rail-body {
       flex: 1 1 auto;
       container: share-rail / size;
@@ -3889,61 +4508,17 @@
         flex: 1 1 0;
         min-width: 0;
       }
-      /* The stepper is a bar the width of the controls above it: minus at
-         the start, the count in the middle, plus at the end. */
-      .share-split[data-route="download"] .stepper-keys {
-        display: grid;
-        grid-template-columns: auto minmax(0, 1fr) auto;
+      .share-split[data-route="download"] .overlay-pill {
         min-block-size: var(--video-control-h);
-        padding: 0.25rem;
-        border: 1px solid var(--theme-stroke);
-        border-radius: 0.75rem;
-        background: var(--theme-card-bg);
-      }
-      .share-split[data-route="download"] .stepper-keys strong {
-        align-self: center;
-        font-size: 1rem;
-      }
-      .share-split[data-route="download"] .stepper-keys button {
-        width: 4rem;
-        height: auto;
-        border: 0;
-        border-radius: 0.5rem;
-        background: transparent;
-        font-size: 1.375rem;
-      }
-      .share-split[data-route="download"]
-        .stepper-keys
-        button:not(:disabled):hover {
-        background: var(--theme-stroke);
       }
     }
-    /* A 3D export adds Quality. Five stacked groups need a taller rail, so
-       below it they keep each label beside its control. */
-    @container share-rail (min-height: 29rem) and (max-height: 34.99rem) {
-      .share-split[data-route="download"]
-        .video-rows:has(> .video-row:nth-child(5)) {
+    /* The Show tab's two pill groups sit together at the top instead of
+       being pulled to opposite ends of the rail. */
+    @container share-rail (min-height: 29rem) {
+      .share-split[data-route="download"] .video-rows:has(> .overlay-group) {
         --video-control-h: var(--min-touch-target, 44px);
         justify-content: flex-start;
-        gap: 0.5rem;
-        padding-top: 0;
-      }
-      .share-split[data-route="download"]
-        .video-rows:has(> .video-row:nth-child(5))::after {
-        content: none;
-      }
-      .share-split[data-route="download"]
-        .video-rows:has(> .video-row:nth-child(5))
-        .video-row {
-        grid-template-columns: var(--share-label-w) minmax(0, 1fr);
-        align-items: center;
-        gap: 0.25rem 0.75rem;
-      }
-      .share-split[data-route="download"]
-        .video-rows:has(> .video-row:nth-child(5))
-        .video-row
-        > span {
-        color: inherit;
+        gap: 1.5rem;
       }
     }
     .share-split[data-route="home"]:not(:has(.stage-frame)) {
@@ -4104,6 +4679,53 @@
     }
     .stage {
       transition: height var(--transition-normal);
+    }
+    /* Download video: the stage keeps the screen and File and Show are two
+       boxes under it, each opening its own screen in place of the stage.
+       The split asks for the whole viewport and the dialog's max-height
+       trims it, as on desktop, so the sheet keeps one height on both
+       screens and neither scrolls. */
+    .share-split[data-route="download"]:has(.video-settings) {
+      height: var(--viewport-height, 100dvh);
+    }
+    .share-split[data-route="download"]:has(.video-settings) .stage-frame {
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+    .share-split[data-route="download"]:has(.video-settings) .stage {
+      flex: 1 1 auto;
+      height: auto;
+    }
+    .share-split[data-route="download"]:has(.video-drill-boxes) .rail,
+    .share-split[data-route="download"]:has(.video-drill-boxes) .rail-body {
+      flex: 0 0 auto;
+    }
+    .share-split[data-route="download"]:has(.video-settings) .rail-body {
+      padding-block: 0.75rem;
+    }
+    /* An opened pane has the screen to itself: each setting is a label over
+       a tall full-width control, as on the desktop rail. */
+    .video-drill .video-rows {
+      gap: 1.25rem;
+    }
+    .video-drill .video-row {
+      grid-template-columns: minmax(0, 1fr);
+      align-items: stretch;
+      gap: 0.5rem;
+    }
+    .video-drill .video-row > span {
+      color: var(--theme-text-secondary);
+    }
+    .video-drill .video-row :global(.segmented-control) {
+      display: flex;
+      min-block-size: 3.5rem;
+    }
+    .video-drill .video-row :global(.segment) {
+      flex: 1 1 0;
+      min-width: 0;
+    }
+    .video-drill .overlay-pill {
+      min-block-size: 3.5rem;
     }
     .intent-grid {
       grid-auto-rows: minmax(4.5rem, auto);

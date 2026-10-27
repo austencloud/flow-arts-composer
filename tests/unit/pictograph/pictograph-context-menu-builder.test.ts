@@ -45,7 +45,30 @@ describe("pictograph context menu builder", () => {
       "Hand TnD",
       "Prop TnD",
       "Placements",
+      "Reversals",
+      "Hand key",
     ]);
+  });
+
+  // Settings → Display renders this same list as chips, so the reversal and
+  // hand colour key switches the card panel offered must live here too.
+  it("toggles reversals and the hand colour key on their own keys", () => {
+    vm.setGlyphVisibility("reversalIndicators", true);
+    vm.setGlyphVisibility("handColorKey", true);
+
+    glyphs()
+      .find((c) => c.id === "toggle-reversals")
+      ?.action?.();
+    expect(vm.getRawGlyphVisibility("reversalIndicators")).toBe(false);
+    expect(vm.getRawGlyphVisibility("handColorKey")).toBe(true);
+
+    glyphs()
+      .find((c) => c.id === "toggle-hand-color-key")
+      ?.action?.();
+    expect(vm.getRawGlyphVisibility("handColorKey")).toBe(false);
+    expect(glyphs().find((c) => c.id === "toggle-reversals")?.checked).toBe(
+      false
+    );
   });
 
   it("moves the hand TnD mark and its element together", () => {

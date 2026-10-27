@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import { PANEL_MOTION_ATTRIBUTE } from "#lib/shared/panels/panel-motion.js";
 import {
   hasPendingAncestorLayoutTransition,
+  isAncestorResizing,
   shouldCommitContainerSize,
   type TransitionLike,
 } from "./container-settle";
@@ -91,6 +93,26 @@ describe("hasPendingAncestorLayoutTransition", () => {
   });
 });
 
+describe("isAncestorResizing", () => {
+  it("waits on a panel group that is moving before its transition registers", () => {
+    const { wrapper, panel } = nest();
+    wrapper.setAttribute(PANEL_MOTION_ATTRIBUTE, "");
+    expect(isAncestorResizing(panel, [])).toBe(true);
+  });
+
+  it("waits on a pending layout transition outside any panel group", () => {
+    const { wrapper, panel } = nest();
+    expect(
+      isAncestorResizing(panel, [transition(wrapper, "flex-basis")])
+    ).toBe(true);
+  });
+
+  it("lets a still panel group through", () => {
+    const { panel } = nest();
+    expect(isAncestorResizing(panel, [])).toBe(false);
+  });
+});
+
 describe("shouldCommitContainerSize", () => {
   const settled = {
     width: 545,
@@ -98,6 +120,7 @@ describe("shouldCommitContainerSize", () => {
     previous: { width: 545, height: 700 },
     elapsedMs: 300,
     timeoutMs: 1500,
+    resizingTimeoutMs: 4000,
   };
 
   it("holds the pre-expansion width even though two frames agreed on it", () => {
@@ -108,9 +131,10 @@ describe("shouldCommitContainerSize", () => {
         width: 1089,
         height: 700,
         previous: { width: 1089, height: 700 },
-        ancestorTransitionPending: true,
+        ancestorResizing: true,
         elapsedMs: 156,
         timeoutMs: 1500,
+        resizingTimeoutMs: 4000,
       })
     ).toBe(false);
   });
@@ -119,7 +143,7 @@ describe("shouldCommitContainerSize", () => {
     expect(
       shouldCommitContainerSize({
         ...settled,
-        ancestorTransitionPending: false,
+        ancestorResizing: false,
       })
     ).toBe(true);
   });
@@ -129,7 +153,7 @@ describe("shouldCommitContainerSize", () => {
       shouldCommitContainerSize({
         ...settled,
         previous: null,
-        ancestorTransitionPending: false,
+        ancestorResizing: false,
       })
     ).toBe(false);
   });
@@ -139,16 +163,42 @@ describe("shouldCommitContainerSize", () => {
       shouldCommitContainerSize({
         ...settled,
         previous: { width: 800, height: 700 },
-        ancestorTransitionPending: false,
+        ancestorResizing: false,
       })
     ).toBe(false);
   });
 
-  it("commits past the cap rather than leaving the panel blank", () => {
+  it("holds the pre-expansion width past the cap while the panels still move", () => {
+    // A cold first load stopped producing frames for seconds with the slide
+    // frozen at its start; committing at the cap drew the desktop catalog
+    // and then swapped it, so the opening arrival played twice.
     expect(
       shouldCommitContainerSize({
         ...settled,
-        ancestorTransitionPending: true,
+        width: 1201,
+        previous: { width: 1201, height: 700 },
+        ancestorResizing: true,
+        elapsedMs: 1800,
+      })
+    ).toBe(false);
+  });
+
+  it("commits once a resize above has run past its own cap", () => {
+    expect(
+      shouldCommitContainerSize({
+        ...settled,
+        ancestorResizing: true,
+        elapsedMs: 4001,
+      })
+    ).toBe(true);
+  });
+
+  it("commits past the cap a box that keeps changing on its own", () => {
+    expect(
+      shouldCommitContainerSize({
+        ...settled,
+        previous: { width: 800, height: 700 },
+        ancestorResizing: false,
         elapsedMs: 1501,
       })
     ).toBe(true);
@@ -160,7 +210,7 @@ describe("shouldCommitContainerSize", () => {
         ...settled,
         width: 0,
         height: 0,
-        ancestorTransitionPending: false,
+        ancestorResizing: false,
         elapsedMs: 5000,
       })
     ).toBe(false);

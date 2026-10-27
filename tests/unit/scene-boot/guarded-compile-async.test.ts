@@ -7,9 +7,11 @@
  * poll treats a released program as done.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Camera, Object3D, WebGLRenderer } from "three";
+import { WebGLRenderer } from "three";
+import type { Camera, Object3D } from "three";
 import {
   compileAsyncGuarded,
+  guardRendererClass,
   installGuardedCompileAsync,
 } from "#lib/shared/3d/scene-boot/guarded-compile-async.js";
 import { resolveThrelteHandles } from "#lib/shared/3d/scene-boot/threlte-handles.js";
@@ -141,5 +143,77 @@ describe("installGuardedCompileAsync", () => {
 
     expect(handles?.renderer).toBe(renderer);
     expect(renderer.compileAsync).not.toBe(original);
+  });
+});
+
+describe("guardRendererClass", () => {
+  /** Shaped like three: the constructor assigns its own compileAsync. */
+  class FakeRenderer {
+    compile: ReturnType<typeof fakeRenderer>["compile"];
+    properties: ReturnType<typeof fakeRenderer>["properties"];
+    extensions: ReturnType<typeof fakeRenderer>["extensions"];
+    threeCompileAsync = vi.fn();
+    declare compileAsync: (o: Object3D, c: Camera) => Promise<Object3D>;
+    constructor(programs: Map<object, Program>) {
+      const base = fakeRenderer(programs);
+      this.compile = base.compile;
+      this.properties = base.properties;
+      this.extensions = base.extensions;
+      this.compileAsync = this.threeCompileAsync;
+    }
+  }
+
+  // Session triage: scene-3d's Avatar3D compiles on the Threlte renderer
+  // directly, so a renderer that never passed through resolveThrelteHandles
+  // still threw from three's poll when a character swap disposed a material.
+  it("guards renderers that never reach the per-instance install", async () => {
+    guardRendererClass(FakeRenderer);
+    const kept = {};
+    const disposed = {};
+    const keptProgram = program();
+    const renderer = new FakeRenderer(
+      new Map([
+        [kept, keptProgram],
+        [disposed, program()],
+      ])
+    );
+    let settled = false;
+    void renderer.compileAsync(object, camera).then(() => {
+      settled = true;
+    });
+
+    expect(renderer.threeCompileAsync).not.toHaveBeenCalled();
+    renderer.properties.remove(disposed);
+    expect(() => vi.advanceTimersByTime(30)).not.toThrow();
+    keptProgram.ready = true;
+    await vi.advanceTimersByTimeAsync(10);
+    expect(settled).toBe(true);
+  });
+
+  it("gives each renderer its own method, which a later install leaves alone", () => {
+    guardRendererClass(FakeRenderer);
+    guardRendererClass(FakeRenderer);
+    const a = new FakeRenderer(new Map());
+    const b = new FakeRenderer(new Map());
+    expect(Object.hasOwn(a, "compileAsync")).toBe(true);
+    expect(a.compileAsync).not.toBe(b.compileAsync);
+
+    const before = a.compileAsync;
+    installGuardedCompileAsync(a as unknown as WebGLRenderer);
+    expect(a.compileAsync).toBe(before);
+  });
+
+  // The guard depends on three assigning compileAsync in its constructor. A
+  // three upgrade that turns it into a class field or a prototype method
+  // would bypass the accessor without any error; this is where that shows.
+  it("matches how three's WebGLRenderer sets compileAsync", () => {
+    expect(WebGLRenderer.toString()).toMatch(
+      /this\.compileAsync\s*=\s*function/
+    );
+    const own = Object.getOwnPropertyDescriptor(
+      WebGLRenderer.prototype,
+      "compileAsync"
+    );
+    expect(typeof own?.value).not.toBe("function");
   });
 });

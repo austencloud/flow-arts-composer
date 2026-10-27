@@ -105,7 +105,9 @@ function worldOf(root: Group, name: string): Vector3 {
 }
 
 describe("chair seat", () => {
-  for (const scale of [1, 0.9]) {
+  // 1 and 0.9, plus the village's ages (village-age-look.ts): anyone seated
+  // sits at their own size, youth 0.82 and elder 0.97.
+  for (const scale of [1, 0.9, 0.82, 0.97]) {
     it(`puts the seat on the chair and the feet on the floor (scale ${scale})`, () => {
       const { root, meshes, pose } = seated(scale);
       expect(pose).not.toBeNull();

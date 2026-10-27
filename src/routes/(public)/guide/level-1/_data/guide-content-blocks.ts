@@ -91,7 +91,18 @@ export type GuideFlowArea =
 
 type GuideBlockContent =
   | { kind: "heading"; level: 1 | 2 | 3; text: string; sheet?: PtHint }
-  | { kind: "prose"; html: string; sheet?: PtHint }
+  | {
+      kind: "prose";
+      html: string;
+      /**
+       * Which figure this text belongs to in the flow and screen views.
+       * "next" = it introduces the figure after it; "previous" = it comments
+       * on the figure before it. Omitted, prose ending in a colon reads as
+       * "next" and anything else as "previous" (flow-render-items.ts).
+       */
+      attach?: "next" | "previous";
+      sheet?: PtHint;
+    }
   | {
       kind: "glyphImage";
       src: string;

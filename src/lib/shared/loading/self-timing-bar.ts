@@ -35,6 +35,8 @@ export interface SelfTimingBarOptions {
   tickMs?: number;
   log?: SelfTimingMilestone[];
   onSample?: (now: number, percent: number, target: number) => void;
+  /** The clock arrivals and positions are read on (default performance.now). */
+  now?: () => number;
 }
 
 export interface SelfTimingBar {

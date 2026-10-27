@@ -1,28 +1,5 @@
 
 /**
- * Aspect Layout Planner Service Interface
- *
- * Determines the optimal row arrangement for grouped sections
- * based on container aspect ratio.
- *
- * Used by OptionViewer456Group to decide whether to display
- * Types 4, 5, 6 vertically, horizontally, or in a 2-row layout.
- */
-export interface TypeCount {
-  type: string;
-  count: number;
-}
-
-export interface LayoutRow {
-  /** Types included in this row */
-  types: string[];
-  /** Width allocated to this row */
-  containerWidth: number;
-  /** Layout mode for this row */
-  layout: "vertical" | "horizontal" | "row-1" | "row-2" | "single";
-}
-
-/**
  * Device-specific configuration for sizing calculations
  */
 export interface DeviceConfig {

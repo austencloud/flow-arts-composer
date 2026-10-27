@@ -5,11 +5,17 @@
   screens the orientations head the columns so each one reads down all three
   placements; on narrow screens each placement stacks as a captioned 2 x 2.
   Every sentence comes from the shared topic record.
+
+  One screen at a time (2026-10-24 fit pass): a large window shows the
+  advice, the table and the two notes on one screen; a laptop gives the
+  advice a screen and the table the next; a phone gives the advice, each
+  placement and the notes a screen each. The pictographs grow with the
+  window (--fit).
 -->
 <script lang="ts">
+  import { onMount } from "svelte";
   import Sentences from "../../_components/Sentences.svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import { PLACEMENT_FAMILIES } from "#lib/shared/guide-topics/placements-topic.js";
@@ -20,15 +26,48 @@
     type ThumbColumn,
   } from "#lib/shared/guide-topics/staff-placements-topic.js";
   import GuidePictograph from "../_components/GuidePictograph.svelte";
-  import TopicHeader from "./TopicHeader.svelte";
+  import {
+    watchScreenTier,
+    type ScreenTier,
+  } from "../../_components/fit/guide-screen-url";
+  import TopicScreens from "./TopicScreens.svelte";
   import type { TopicPageProps } from "./topic-pages";
 
-  let { darkMode, kicker, lessonHref }: TopicPageProps = $props();
+  let { darkMode, kicker, lessonHref, frame }: TopicPageProps = $props();
 
   const picTheme = $derived(darkMode ? "dark" : "light");
 
   const thumbWord = (ori: Orientation) =>
     staffPlacementsTopicText(ori === Orientation.IN ? "thumbIn" : "thumbOut");
+
+  let tier = $state<ScreenTier>("large");
+  onMount(() => watchScreenTier((v) => (tier = v)));
+  type View = { label: string; intro: boolean; kinds: string[]; notes: boolean };
+  const ALL = PLACEMENT_FAMILIES.map((f) => f.kind as string);
+  const views = $derived<View[]>(
+    tier === "large"
+      ? [
+          { label: "Alpha, Beta, Gamma", intro: true, kinds: ALL, notes: false },
+          { label: "Notes", intro: false, kinds: [], notes: true },
+        ]
+      : tier === "medium"
+        ? [
+            { label: "Intro", intro: true, kinds: [], notes: false },
+            { label: "Alpha, Beta, Gamma", intro: false, kinds: ALL, notes: false },
+            { label: "Notes", intro: false, kinds: [], notes: true },
+          ]
+        : [
+            { label: "Intro", intro: true, kinds: [], notes: false },
+            ...PLACEMENT_FAMILIES.map((f) => ({
+              label: t(f.name),
+              intro: false,
+              kinds: [f.kind as string],
+              notes: false,
+            })),
+            { label: "Notes", intro: false, kinds: [], notes: true },
+          ]
+  );
+  const labels = $derived(views.map((v) => v.label));
 </script>
 
 {#snippet thumbLabel(col: ThumbColumn)}
@@ -41,87 +80,87 @@
   {/if}
 {/snippet}
 
-<article class="staff-topic" class:dark={darkMode}>
-  <TopicHeader
-    {kicker}
-    title={staffPlacementsTopicText("title")}
-    lede={staffPlacementsTopicText("markThumb")}
-  />
+<TopicScreens
+  title={staffPlacementsTopicText("title")}
+  {kicker}
+  {lessonHref}
+  {frame}
+  {labels}
+>
+  {#snippet screen(n)}
+    {@const view = views[n]}
+    <div class="staff-topic" class:dark={darkMode}>
+      {#if view?.intro}
+        <div class="intro">
+          <p class="lede">{staffPlacementsTopicText("markThumb")}</p>
+          <p>
+            <Sentences
+              text={`${staffPlacementsTopicText("trackRotations")} ${staffPlacementsTopicText("negativeSpace")}`}
+            />
+          </p>
+          <p>
+            {staffPlacementsTopicText("centerEnd")}
+            {staffPlacementsTopicText("practice")}
+          </p>
+        </div>
+      {/if}
 
-  <div class="intro">
-    <p>
-      <Sentences
-        text={`${staffPlacementsTopicText("trackRotations")} ${staffPlacementsTopicText("negativeSpace")}`}
-      />
-    </p>
-    <p>
-      {staffPlacementsTopicText("centerEnd")}
-      {staffPlacementsTopicText("practice")}
-    </p>
-  </div>
+      {#if view && view.kinds.length > 0}
+        <div class="matrix-wrap">
+          <div class="matrix">
+            <div class="col-heads" aria-hidden="true">
+              <span class="corner">{staffPlacementsTopicText("thumbs")}</span>
+              {#each THUMB_COLUMNS as col, k (k)}
+                <span class="col-head">{@render thumbLabel(col)}</span>
+              {/each}
+            </div>
+            {#each PLACEMENT_FAMILIES.filter((f) => view.kinds.includes(f.kind)) as family (family.kind)}
+              <section
+                class="placement"
+                aria-labelledby="staff-placement-{family.kind}"
+              >
+                <header class="row-head">
+                  <img class="glyph" src={family.glyph} alt="" aria-hidden="true" />
+                  <h2 id="staff-placement-{family.kind}">{t(family.name)}</h2>
+                </header>
+                {#each STAFF_CELLS_BY_KIND[family.kind] as cell, k (cell.id ?? k)}
+                  <figure class="cell">
+                    <GuidePictograph
+                      data={cell}
+                      size="lg"
+                      eager
+                      forceTheme={picTheme}
+                      propType={PropType.STAFF}
+                      showTKA={false}
+                    />
+                    <figcaption>
+                      <span class="thumbs-word"
+                        >{staffPlacementsTopicText("thumbs")}</span
+                      >
+                      {@render thumbLabel(THUMB_COLUMNS[k]!)}
+                    </figcaption>
+                  </figure>
+                {/each}
+              </section>
+            {/each}
+          </div>
+        </div>
+      {/if}
 
-  <div class="matrix-wrap">
-    <div class="matrix">
-      <div class="col-heads" aria-hidden="true">
-        <span class="corner">{staffPlacementsTopicText("thumbs")}</span>
-        {#each THUMB_COLUMNS as col, n (n)}
-          <span class="col-head">{@render thumbLabel(col)}</span>
-        {/each}
-      </div>
-      {#each PLACEMENT_FAMILIES as family (family.kind)}
-        <section
-          class="placement"
-          aria-labelledby="staff-placement-{family.kind}"
-        >
-          <header class="row-head">
-            <img class="glyph" src={family.glyph} alt="" aria-hidden="true" />
-            <h2 id="staff-placement-{family.kind}">{t(family.name)}</h2>
-          </header>
-          {#each STAFF_CELLS_BY_KIND[family.kind] as cell, n (cell.id ?? n)}
-            <figure class="cell">
-              <GuidePictograph
-                data={cell}
-                size="lg"
-                eager
-                forceTheme={picTheme}
-                propType={PropType.STAFF}
-                showTKA={false}
-              />
-              <figcaption>
-                <span class="thumbs-word"
-                  >{staffPlacementsTopicText("thumbs")}</span
-                >
-                {@render thumbLabel(THUMB_COLUMNS[n]!)}
-              </figcaption>
-            </figure>
-          {/each}
-        </section>
-      {/each}
+      {#if view?.notes}
+        <aside class="remember">
+          <p><Sentences text={staffPlacementsTopicText("unmarked")} /></p>
+          <p><Sentences text={staffPlacementsTopicText("thumbsInFirst")} /></p>
+        </aside>
+      {/if}
     </div>
-  </div>
-
-  <aside class="remember">
-    <p><Sentences text={staffPlacementsTopicText("unmarked")} /></p>
-    <p><Sentences text={staffPlacementsTopicText("thumbsInFirst")} /></p>
-  </aside>
-
-  {#if lessonHref}
-    <p class="lesson-link">
-      <LinkChip href={lessonHref}
-        ><i class="fa-solid fa-graduation-cap" aria-hidden="true"></i>
-        Learn this interactively</LinkChip
-      >
-    </p>
-  {/if}
-</article>
+  {/snippet}
+</TopicScreens>
 
 <style>
   .staff-topic {
-    max-width: 90rem;
-    margin: 0 auto;
-    padding: 1.5rem clamp(1rem, 4cqw, 2.5rem) 2rem;
     display: grid;
-    gap: clamp(1.75rem, 4cqw, 3rem);
+    gap: clamp(0.75rem, 2.5vh, 2rem);
     font-family: Inter, system-ui, sans-serif;
     color: var(--ink, #1a1a1a);
     text-align: left;
@@ -138,6 +177,15 @@
     max-width: 44rem;
     margin: 0 auto;
     text-align: center;
+  }
+  /* The book's italic serif, as the topic header's lede was. */
+  .intro .lede {
+    color: var(--ink-dim, #555);
+    font-family: var(--guide-display, "Cormorant Garamond", Georgia, serif);
+    font-size: clamp(1.15rem, 1rem + 0.5vw, 1.4rem);
+    font-style: italic;
+    font-weight: 500;
+    line-height: 1.35;
   }
   /* Balanced lines: a centered sentence never ends on a stranded word. */
   .intro p {
@@ -172,7 +220,12 @@
   .matrix {
     --pad: clamp(0.85rem, 2cqw, 1.25rem);
     --gap: 0.6rem;
-    --cell: min(11rem, (100cqw - 2 * var(--pad) - var(--gap)) / 2);
+    /* Grows with the window (--fit) up to the share of the width the
+       layout gives each cell. */
+    --cell: min(
+      calc(11rem * var(--fit, 1)),
+      (100cqw - 2 * var(--pad) - var(--gap)) / 2
+    );
     display: grid;
     gap: clamp(0.75rem, 2cqw, 1.25rem);
     justify-content: center;
@@ -227,15 +280,6 @@
     font-size: 0.9rem;
     text-align: center;
   }
-  /* The caption names its column on its own; the table heads say "Thumbs". */
-  .thumbs-word {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
   .col-head,
   .corner {
     font-size: 0.95rem;
@@ -253,13 +297,18 @@
   @container (min-width: 46rem) {
     .matrix {
       --cell: min(
-        11rem,
+        calc(11rem * var(--fit, 1)),
         (100cqw - 11rem - 2 * var(--pad) - 4 * var(--gap)) / 4
       );
       /* auto tracks: each row's padding adds to the edge tracks, and every
          row pads alike, so the columns still line up. */
       grid-template-columns: auto repeat(4, auto);
       column-gap: var(--gap);
+      row-gap: 0.5rem;
+    }
+    /* Thin rows: the height goes to the pictographs. */
+    .placement {
+      padding-block: 0.5rem;
     }
     .col-heads,
     .placement {
@@ -274,12 +323,14 @@
     .col-head {
       text-align: center;
     }
+    /* Glyph beside the name, so a row is only as tall as its cells. */
     .row-head {
       grid-column: auto;
       min-width: 8rem;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0.35rem;
+      gap: 0.5rem;
+    }
+    .staff-topic .row-head h2 {
+      font-size: clamp(1.4rem, calc(1.6rem * var(--fit, 1)), 2.4rem);
     }
     .cell figcaption {
       position: absolute;
@@ -304,15 +355,8 @@
   }
   .remember p {
     margin: 0;
+    font-size: clamp(0.95rem, 1.3cqw, 1.1rem);
     line-height: 1.55;
     text-wrap: balance;
-  }
-  /* LinkChip reads the app's theme variables; point them at this page's
-     palette, as the host does for its own title-band chip. */
-  .lesson-link {
-    margin: 0;
-    justify-self: center;
-    --theme-text: var(--ink, #1a1a1a);
-    --theme-accent: #647ff1;
   }
 </style>

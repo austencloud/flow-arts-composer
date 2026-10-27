@@ -29,6 +29,10 @@
   import type { GridJoin } from "@tka/tka-types";
   import { gridJoinCellResolver } from "@tka/render-core";
   import { portal } from "#lib/features/create/generate/components/modals/portal.js";
+  import {
+    takeArrivalOrigin,
+    type ArrivalOrigin,
+  } from "../services/arrival-origin";
 
   type ArrivalPhase =
     | "preparing"
@@ -48,6 +52,8 @@
   const FINISHED_HOLD_MS = 120;
   const REDUCED_MOTION_HOLD_MS = DURATION.dramatic;
   const STAGE_ENTER_EASING = "cubic-bezier(0.16, 1, 0.3, 1)";
+  /** The tapped option growing into the stage: the emphasis beat, like the start morph. */
+  const ORIGIN_FLIGHT_MS = DURATION.emphasis;
 
   let {
     request,
@@ -116,6 +122,8 @@
   let motionStartedAt: number | null = null;
   let cardElement: HTMLElement | null = $state(null);
   let scrimElement: HTMLElement | null = $state(null);
+  /** The tapped option's picture, riding on the card while it flies in. */
+  let originPicture: HTMLElement | null = null;
   let activeAnimations: Animation[] = [];
   let finishRequestSpan:
     | ((
@@ -197,11 +205,89 @@
     activeAnimations = [];
   }
 
+  function dropOriginPicture() {
+    originPicture?.remove();
+    originPicture = null;
+  }
+
   function clearActiveWork() {
     clearPhaseTimer();
     clearAnimationFrame();
     cancelActiveAnimations();
+    dropOriginPicture();
     motionStartedAt = null;
+  }
+
+  /**
+   * The card's settled box: where it sits once entered, ignoring the resting
+   * scale its stylesheet holds it at before the entrance.
+   */
+  function settledCardRect(card: HTMLElement): ArrivalRect | null {
+    const parent = card.offsetParent;
+    if (!(parent instanceof HTMLElement)) return null;
+    const parentBox = parent.getBoundingClientRect();
+    return {
+      left: parentBox.left + card.offsetLeft,
+      top: parentBox.top + card.offsetTop,
+      width: card.offsetWidth,
+      height: card.offsetHeight,
+    };
+  }
+
+  /**
+   * Grow the card out of the tapped option: from that option's box to its own,
+   * with the option's picture (finished pose and arrows) on top fading out to
+   * reveal the start pose underneath. Returns null when there is no box to fly
+   * between, and the caller enters the usual way.
+   */
+  function flyFromOrigin(
+    card: HTMLElement,
+    origin: ArrivalOrigin
+  ): Animation[] | null {
+    const settled = settledCardRect(card);
+    const transform = settled
+      ? calculatePictographArrivalTransform(settled, origin.rect)
+      : null;
+    if (!settled || !transform) return null;
+
+    // The card scales about its centre, so travel centre to centre.
+    const dx = transform.translateX + (origin.rect.width - settled.width) / 2;
+    const dy = transform.translateY + (origin.rect.height - settled.height) / 2;
+    const flight = card.animate(
+      [
+        {
+          opacity: 1,
+          transform: `translate3d(${dx}px, ${dy}px, 0) scale(${transform.scaleX}, ${transform.scaleY})`,
+          boxShadow: "0 0 0 rgba(0, 0, 0, 0)",
+        },
+        {
+          opacity: 1,
+          transform: "translate3d(0, 0, 0) scale(1, 1)",
+          boxShadow: "0 18px 55px rgba(0, 0, 0, 0.46)",
+        },
+      ],
+      {
+        duration: ORIGIN_FLIGHT_MS,
+        easing: PICTOGRAPH_ARRIVAL_LANDING_EASING,
+        fill: "both",
+      }
+    );
+    const animations = [flight];
+
+    if (origin.picture && typeof origin.picture.animate === "function") {
+      const picture = origin.picture;
+      picture.classList.add("arrival-origin-picture");
+      card.append(picture);
+      originPicture = picture;
+      animations.push(
+        picture.animate([{ opacity: 1 }, { opacity: 0 }], {
+          duration: ORIGIN_FLIGHT_MS,
+          easing: PICTOGRAPH_ARRIVAL_LANDING_EASING,
+          fill: "both",
+        })
+      );
+    }
+    return animations;
   }
 
   function handOffToCell(requestId: number, preserveLandedFrame = false) {
@@ -250,8 +336,22 @@
     const scrimDuration = reducedMotionEnabled
       ? REDUCED_MOTION_ENTER_MS
       : SCRIM_ENTER_MS;
-    const scrimDelay = reducedMotionEnabled ? 0 : SCRIM_ENTER_DELAY_MS;
-    const entranceAnimations: Animation[] = [];
+    // Taken even when unused, so a stale tap never reaches a later pick. Only
+    // the whole-screen stage flies: inside the step grid the card is clipped
+    // to the workspace, and the option it came from sits outside it.
+    const origin = isAudition ? null : takeArrivalOrigin();
+    const flight =
+      origin &&
+      playsOnScreen &&
+      !reducedMotionEnabled &&
+      card &&
+      typeof card.animate === "function"
+        ? flyFromOrigin(card, origin)
+        : null;
+    // The flight starts at the tapped card, so the dim starts with it.
+    const scrimDelay =
+      reducedMotionEnabled || flight ? 0 : SCRIM_ENTER_DELAY_MS;
+    const entranceAnimations: Animation[] = flight ?? [];
 
     if (scrim && typeof scrim.animate === "function") {
       entranceAnimations.push(
@@ -264,7 +364,7 @@
       );
     }
 
-    if (card && typeof card.animate === "function") {
+    if (!flight && card && typeof card.animate === "function") {
       entranceAnimations.push(
         card.animate(
           reducedMotionEnabled
@@ -295,10 +395,12 @@
       );
     }
 
-    if (!reducedMotionEnabled) {
+    if (!reducedMotionEnabled && !flight) {
       // The start placement only needs a quick recognition beat. Prop motion
       // begins while the card and background finish settling, so the arrival
-      // never feels like it has paused after popping forward.
+      // never feels like it has paused after popping forward. A card flying in
+      // from its option plays once it lands: the start pose is still fading in
+      // until then.
       phaseTimer = setTimeout(() => {
         phaseTimer = null;
         beginPropMotion(requestId);
@@ -319,6 +421,7 @@
     });
     for (const animation of entranceAnimations) animation.cancel();
     if (activeAnimations === entranceAnimations) activeAnimations = [];
+    dropOriginPicture();
 
     if (request.requestId !== requestId || request.owner !== "stage") return;
     if (reducedMotionEnabled) {
@@ -706,6 +809,14 @@
 
   .arrival-card.landing {
     transform-origin: top left;
+  }
+
+  /* The tapped option's picture, over the start pose while the card flies. */
+  .arrival-card :global(.arrival-origin-picture) {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
   }
 
   .arrival-card :global(.pictograph-container) {

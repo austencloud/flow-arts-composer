@@ -16,6 +16,8 @@
   import { ensureCardFonts } from "#lib/shared/render/services/gelasio-fonts.js";
   import { derivePropElementalTypeForStep } from "#lib/shared/shape-matrix/domain/prop-relationship.js";
   import { renderStepNumber } from "@tka/render-composition";
+  import { DURATION } from "@austencloud/motion";
+  import { motionDuration } from "#lib/shared/transitions/motion.js";
 
   let {
     live,
@@ -42,8 +44,86 @@
   const preparationKey = $derived(
     JSON.stringify([contract.data, contract.prepareOptions, live.epoch])
   );
-  let prepared = $state<PreparedPictographData | null>(null);
+  type Hand = "left" | "right";
+  const HANDS: readonly Hand[] = ["left", "right"];
+  type HandsShown = Readonly<Record<Hand, boolean>>;
+
+  let prepared = $state.raw<PreparedPictographData | null>(null);
   let preparedKey = $state("");
+  // The hands the prepared drawing was made with. The card keeps showing the
+  // old drawing until the new one is ready, so the hands follow the drawing,
+  // not the toggle.
+  let preparedHands = $state<HandsShown>({ left: true, right: true });
+  let preparedDataKey = "";
+  // Showing or hiding a hand redraws the same pictograph: that hand fades, and
+  // the other prop and arrow ease to where the new drawing puts them (a lone
+  // prop drops its beta offset). A different pictograph still redraws in place.
+  let handChange = $state(false);
+  // A hand just hidden keeps drawing from the previous drawing while it fades.
+  let fadingFrom = $state.raw<{
+    drawing: PreparedPictographData;
+    hands: ReadonlySet<Hand>;
+  } | null>(null);
+  // A hand just shown mounts at zero for a frame so its fade-in has a start.
+  let arrivingHands = $state.raw<ReadonlySet<Hand>>(new Set());
+  let fadeTimer: ReturnType<typeof setTimeout> | null = null;
+  let arriveFrame = 0;
+
+  function clearHandMotion(): void {
+    if (fadeTimer !== null) clearTimeout(fadeTimer);
+    fadeTimer = null;
+    if (arriveFrame) cancelAnimationFrame(arriveFrame);
+    arriveFrame = 0;
+    fadingFrom = null;
+    arrivingHands = new Set();
+  }
+
+  /** Lands a newly prepared drawing, fading any hand it shows or hides. */
+  function applyPrepared(
+    result: PreparedPictographData,
+    key: string,
+    dataKey: string,
+    hands: HandsShown
+  ): void {
+    const before = prepared;
+    const beforeHands = preparedHands;
+    const sameDrawing =
+      !exportPresentation &&
+      before !== null &&
+      dataKey === preparedDataKey &&
+      motionDuration(DURATION.normal) > 0;
+    const leaving = sameDrawing
+      ? HANDS.filter((hand) => beforeHands[hand] && !hands[hand])
+      : [];
+    const arriving = sameDrawing
+      ? HANDS.filter((hand) => !beforeHands[hand] && hands[hand])
+      : [];
+
+    clearHandMotion();
+    handChange = leaving.length > 0 || arriving.length > 0;
+    prepared = result;
+    preparedKey = key;
+    preparedDataKey = dataKey;
+    preparedHands = hands;
+    if (before && leaving.length > 0) {
+      fadingFrom = { drawing: before, hands: new Set(leaving) };
+      fadeTimer = setTimeout(() => {
+        fadeTimer = null;
+        fadingFrom = null;
+      }, motionDuration(DURATION.normal));
+    }
+    if (arriving.length > 0) {
+      arrivingHands = new Set(arriving);
+      arriveFrame = requestAnimationFrame(() => {
+        arriveFrame = requestAnimationFrame(() => {
+          arriveFrame = 0;
+          arrivingHands = new Set();
+        });
+      });
+    }
+  }
+  $effect(() => clearHandMotion);
+
   let failed = $state(false);
   let readyGridMode = $state<string | null>(null);
   let fontsReady = $state(false);
@@ -92,14 +172,18 @@
   $effect(() => {
     const key = preparationKey;
     const { data, prepareOptions } = untrack(() => contract);
+    const dataKey = JSON.stringify([data, untrack(() => live.epoch)]);
+    const hands: HandsShown = {
+      left: prepareOptions.showLeftMotion !== false,
+      right: prepareOptions.showRightMotion !== false,
+    };
     let cancelled = false;
     failed = false;
     pictographPreparer
       .prepareSingle(data, prepareOptions)
       .then((result) => {
         if (cancelled) return;
-        prepared = result;
-        preparedKey = key;
+        applyPrepared(result, key, dataKey, hands);
       })
       .catch((error: unknown) => {
         if (cancelled) return;
@@ -116,11 +200,43 @@
   const displayed = $derived.by(() => {
     if (!prepared) return null;
     const motions = { ...prepared.motions };
-    // The general workspace renderer dims hidden hands; cards omit them.
-    if (options.showLeftMotion === false) delete motions.left;
-    if (options.showRightMotion === false) delete motions.right;
-    return { ...prepared, motions };
+    const render = prepared._prepared;
+    const fading = fadingFrom;
+    const fadingRender = fading?.drawing._prepared;
+    if (!fading || !render || !fadingRender) {
+      // The general workspace renderer dims hidden hands; cards omit them.
+      for (const hand of HANDS) if (!preparedHands[hand]) delete motions[hand];
+      return { ...prepared, motions };
+    }
+    const merged = {
+      ...render,
+      propAssets: { ...render.propAssets },
+      propPositions: { ...render.propPositions },
+      arrowAssets: { ...render.arrowAssets },
+      arrowPositions: { ...render.arrowPositions },
+      arrowMirroring: { ...render.arrowMirroring },
+    };
+    for (const hand of HANDS) {
+      if (preparedHands[hand]) continue;
+      const motion = fading.hands.has(hand)
+        ? fading.drawing.motions?.[hand]
+        : undefined;
+      if (!motion) {
+        delete motions[hand];
+        continue;
+      }
+      // Drawn where it was, at the old drawing's place, while it fades out.
+      motions[hand] = motion;
+      merged.propAssets[hand] = fadingRender.propAssets[hand];
+      merged.propPositions[hand] = fadingRender.propPositions[hand];
+      merged.arrowAssets[hand] = fadingRender.arrowAssets[hand]!;
+      merged.arrowPositions[hand] = fadingRender.arrowPositions[hand]!;
+      merged.arrowMirroring[hand] = fadingRender.arrowMirroring[hand]!;
+    }
+    return { ...prepared, motions, _prepared: merged };
   });
+  const handShown = (hand: Hand): boolean =>
+    preparedHands[hand] && !arrivingHands.has(hand);
   const activeLocations = $derived(
     Object.values(contract.data.motions ?? {})
       .flatMap((motion) =>
@@ -174,6 +290,10 @@
         ? options.showHandColorKey !== false
         : undefined}
       animateVisibility={!exportPresentation}
+      leftMotionVisible={handShown("left")}
+      rightMotionVisible={handShown("right")}
+      hiddenMotionOpacity={0}
+      animateHandPresence={handChange}
       showPathShape={false}
       widthMultiplier={options.widthMultiplier}
       glyphLayout={options.primaryPropColors ? "card-custom" : "card"}

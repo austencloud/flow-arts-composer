@@ -65,6 +65,27 @@ export interface AnimationVisibilitySettings {
 
 const STORAGE_KEY = "animation-visibility-settings";
 
+/**
+ * The keys that decide what the canvas SHOWS, as Settings → Display's
+ * animation section surfaces them. Its "Reset to defaults" restores only
+ * these; effort, path policy, playback mode, speed, effects and dark mode are
+ * behaviour or theme and keep the user's choice.
+ */
+export const ANIMATION_DISPLAY_KEYS = [
+  "gridMode",
+  "props",
+  "stepNumbers",
+  "wordHeader",
+  "progressBar",
+  "mandala",
+  "tkaGlyph",
+  "elementalGlyph",
+  "propElementalGlyph",
+  "reversalIndicators",
+  "leftPathLines",
+  "rightPathLines",
+] as const satisfies readonly (keyof AnimationVisibilitySettings)[];
+
 export class AnimationVisibilityStateManager {
   private settings: AnimationVisibilitySettings;
   private observers: Set<VisibilityObserver> = new Set();
@@ -297,6 +318,20 @@ export class AnimationVisibilityStateManager {
     this.settings = this.getDefaultSettings();
     this.saveToStorage();
     this.notifyObservers();
+  }
+
+  /**
+   * Restores only what the canvas shows (`ANIMATION_DISPLAY_KEYS`). Use this,
+   * not `resetToDefaults()`, for a display reset: that one also wipes effort,
+   * path policy, tempo and dark mode.
+   */
+  resetDisplayDefaults(): void {
+    const defaults = this.getDefaultSettings();
+    const updates: Partial<AnimationVisibilitySettings> = {};
+    for (const key of ANIMATION_DISPLAY_KEYS) {
+      (updates as Record<string, unknown>)[key] = defaults[key];
+    }
+    this.updateSettings(updates);
   }
 
   /**

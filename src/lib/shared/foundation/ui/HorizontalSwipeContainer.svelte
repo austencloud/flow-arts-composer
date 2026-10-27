@@ -28,6 +28,10 @@
     preservePosition?: boolean; // Preserve scroll position across reInit (default: false)
     storageKey?: string; // SessionStorage key for position persistence (required if preservePosition is true)
     emblaApiRef?: EmblaCarouselType | undefined; // Bindable ref to the embla API for programmatic control
+    /** Centers the arrows this many px below the viewport's center, so a host
+     *  whose slides put a header above their content can line the arrows up
+     *  with the content. Null keeps them at the container's middle. */
+    arrowCenterOffset?: number | null;
   }
 
   let {
@@ -46,7 +50,16 @@
     preservePosition = false,
     storageKey = undefined,
     emblaApiRef: _emblaApiRef = $bindable(),
+    arrowCenterOffset = null,
   }: Props = $props();
+
+  // The viewport ends --embla-bottom-gap above the container's bottom edge,
+  // so its center sits half that gap above the container's 50%.
+  const arrowTop = $derived(
+    arrowCenterOffset === null
+      ? null
+      : `calc((100% - var(--embla-bottom-gap)) / 2 + ${arrowCenterOffset}px)`
+  );
 
   // Embla state
   let emblaApi: EmblaCarouselType;
@@ -261,6 +274,7 @@
 <div
   class="embla {className}"
   style="height: {height}; width: {width}; --nav-padding: {navPadding}px;"
+  style:--swipe-arrow-top={arrowTop}
 >
   <!-- Navigation Arrows -->
   {#if showArrows && shouldShowNavigation}
@@ -343,7 +357,8 @@
        so this gap replaces the space they used to reserve. */
     display: flex;
     flex-direction: column;
-    padding-bottom: 10px;
+    --embla-bottom-gap: 10px;
+    padding-bottom: var(--embla-bottom-gap);
   }
 
   .embla__viewport {
@@ -393,7 +408,7 @@
     z-index: 1;
     border-radius: 50%;
     position: absolute;
-    top: 50%;
+    top: var(--swipe-arrow-top, 50%);
     transform: translateY(-50%);
 
     /* Subtle frosted glass - less prominent since swiping is primary */

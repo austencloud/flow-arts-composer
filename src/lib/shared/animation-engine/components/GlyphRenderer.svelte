@@ -46,11 +46,14 @@ canvas rendering. This ensures the entire glyph fades as a unified unit.
     letter = null,
     stepData = null,
     pictographData = null,
+    primaryPropColors = null,
     onSvgReady,
   } = $props<{
     letter: string | null;
     stepData?: StartPlacementData | StepData | null;
     pictographData?: PictographData | null;
+    /** The viewer's hand colors; turn numbers wear the color of their hand. */
+    primaryPropColors?: { left: string; right: string } | null;
     onSvgReady?: (
       svgString: string,
       width: number,
@@ -62,6 +65,12 @@ canvas rendering. This ensures the entire glyph fades as a unified unit.
 
   // Generate turns tuple from step data
   const turnsTuple = $derived(glyphTurnsTuple(stepData));
+
+  const colorKey = $derived(
+    primaryPropColors
+      ? `${primaryPropColors.left}/${primaryPropColors.right}`
+      : ""
+  );
 
   // A beat that starts or ends in a zeta/eta position wears braces around its
   // letter - matches PictographRenderer.svelte's own skewedFrame gate, so the
@@ -165,6 +174,7 @@ canvas rendering. This ensures the entire glyph fades as a unified unit.
     const currentTurnsTuple = turnsTuple;
     const currentSkewed = skewedFrame;
     const currentExtent = braceRightExtent;
+    const currentColors = colorKey;
 
     if (currentLetter && svgElement && isReady) {
       // A skewed beat's braces read letterDimensions for their own layout
@@ -204,7 +214,8 @@ canvas rendering. This ensures the entire glyph fades as a unified unit.
       // A skewed-frame beat wears braces a non-skewed beat of the same
       // letter/turns does not, so the flag has to be part of the key -
       // otherwise the two would collide on one cached (un)braced SVG string.
-      const glyphCacheKey = `${letter}|${turnsTuple}|${skewedFrame ? "skew" : "plain"}`;
+      // The turn numbers are painted in the hand colors, so they key it too.
+      const glyphCacheKey = `${letter}|${turnsTuple}|${skewedFrame ? "skew" : "plain"}|${colorKey}`;
       const cached = serializedGlyphCache.get(glyphCacheKey);
       if (cached) {
         onSvgReady(
@@ -392,6 +403,8 @@ canvas rendering. This ensures the entire glyph fades as a unified unit.
       {turnsTuple}
       {letter}
       {pictographData}
+      leftColorOverride={primaryPropColors?.left}
+      rightColorOverride={primaryPropColors?.right}
       x={50}
       y={800}
       scale={1}

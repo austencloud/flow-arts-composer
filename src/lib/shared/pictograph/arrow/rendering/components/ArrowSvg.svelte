@@ -24,6 +24,10 @@ them between drawings.
   import { selectedArrowState } from "#lib/shared/create/state/selected-arrow-state.svelte.js";
   import { getAnimationVisibilityManager } from "../../../../animation-engine/state/animation-visibility-state.svelte";
   import { buildArrowHaloFilter } from "../arrow-halo";
+  import {
+    glideRotation,
+    turnsChangeDirection,
+  } from "../../../shared/services/glide-rotation";
   import { applyColorToSvg as applyDisplayColor } from "#lib/shared/utils/svg-color-utils.js";
 
   let {
@@ -41,6 +45,7 @@ them between drawings.
     darkMode = undefined,
     renderPart = undefined,
     colorOverride = undefined,
+    glide = false,
   } = $props<{
     motionData: MotionData;
     arrowAssets: ArrowAssets;
@@ -55,6 +60,9 @@ them between drawings.
     renderPart?: "shaft" | "tip";
     /** Optional display-only color. The motion remains blue/red semantically. */
     colorOverride?: string;
+    /** Ease a new resting position in (a hand shown or hidden beside this one,
+     *  or an option card whose turns changed). */
+    glide?: boolean;
   }>();
 
   const colorSuffix = $derived(colorOverride?.replace(/[^a-z0-9]/gi, "") ?? "");
@@ -146,6 +154,26 @@ them between drawings.
     y: Number.isFinite(arrowPosition?.y) ? arrowPosition.y : 0,
   });
 
+  // A gliding arrow turns the short way round, or with the motion when its
+  // turns changed, rather than along the raw degrees.
+  let lastRotation: number | null = null;
+  let lastTurns: MotionData["turns"] | undefined;
+  const displayedRotation = $derived.by(() => {
+    const target = arrowPosition?.rotation ?? 0;
+    const turns = motionData.turns;
+    const rotation =
+      glide && lastRotation !== null
+        ? glideRotation(
+            lastRotation,
+            target,
+            turnsChangeDirection(lastTurns, turns, motionData.rotationDirection)
+          )
+        : target;
+    lastRotation = rotation;
+    lastTurns = turns;
+    return rotation;
+  });
+
   // ============================================================================
   // SELECTION & INTERACTION LOGIC
   // ============================================================================
@@ -205,6 +233,7 @@ them between drawings.
     class:mirrored={shouldMirror}
     class:clickable={isClickable}
     class:selected={isSelected}
+    class:glide
     onclick={isClickable ? handleArrowClick : undefined}
     onkeydown={isClickable
       ? (e) => (e.key === "Enter" || e.key === " ") && handleArrowClick(e)
@@ -216,7 +245,7 @@ them between drawings.
       : undefined}
     style="
       transform: translate({safePosition.x}px, {safePosition.y}px)
-                 rotate({arrowPosition?.rotation ?? 0}deg)
+                 rotate({displayedRotation}deg)
                  {shouldMirror
       ? motionData.segment
         ? 'scale(1, -1)'
@@ -265,6 +294,14 @@ them between drawings.
     /* Only the hover and selection glow eases; position comes from the caller. */
     transition: filter var(--duration-normal)
       var(--ease-out, var(--ease-standard));
+  }
+
+  /* A resting arrow whose place shifts (its partner shown or hidden, or its
+     option's turns changed) eases there. */
+  .arrow-svg.glide {
+    transition:
+      filter var(--duration-normal) var(--ease-out, var(--ease-standard)),
+      transform var(--duration-normal) var(--ease-standard);
   }
 
   .arrow-svg.clickable {
@@ -330,7 +367,8 @@ them between drawings.
       stroke-width: 5;
     }
 
-    .arrow-svg {
+    .arrow-svg,
+    .arrow-svg.glide {
       transition: none;
     }
   }

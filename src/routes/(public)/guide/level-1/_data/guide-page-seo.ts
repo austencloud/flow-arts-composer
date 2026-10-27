@@ -46,18 +46,10 @@ export const GUIDE_PAGE_SEO: Record<string, GuidePageSeo> = {
     description: "There are three fundamental hand motions in the Alphabet.",
   },
   "hm-type1": {
-    h1: "Type 1 Dual-Shifts: Alpha and Beta",
+    h1: "Type 1 Dual-Shifts",
     tagline: "When both hands move to adjacent locations, it’s called a Dual-Shift.",
-    title: "Type 1 Dual-Shifts: Alpha and Beta · Flow Arts Notation Guide",
+    title: "Type 1 Dual-Shifts · Flow Arts Notation Guide",
     description: "When both hands move to adjacent locations, it’s called a Dual-Shift.",
-  },
-  "hm-gamma": {
-    h1: "Gamma: Quarter-Opposite and Quarter-Same",
-    tagline:
-      "Gamma, aka quarter-time, is based on two often forgotten modes: Quarter-Opp and Quarter-Same.",
-    title: "Gamma: Quarter-Opposite and Quarter-Same · Flow Arts Notation Guide",
-    description:
-      "Gamma, aka quarter-time, is based on two often forgotten modes: Quarter-Opp and Quarter-Same.",
   },
   "hm-type2": {
     h1: "Type 2 Shifts",

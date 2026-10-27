@@ -98,5 +98,8 @@ export const load: PageServerLoad = async ({ params, url }) => {
   return {
     meta,
     seo: buildSequenceSeo(params.id, meta),
+    // Prototype: `?frame=1` server-renders the record's first frame while the
+    // viewer loads. Read here so the server and the client agree.
+    firstFrame: url.searchParams.get("frame") === "1",
   };
 };

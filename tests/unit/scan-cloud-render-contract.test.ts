@@ -18,7 +18,7 @@ describe("QR scan cloud-render contract", () => {
     );
     expect(card).toContain("probeCloud: cloudProbeEnabled");
     expect(card).toContain(
-      "cloudOnly: scanCloudPolicy.cloudOnly && !handPathMode"
+      "cloudOnly: scanCellsAreCloudOnly(scanCloudPolicy, {"
     );
     expect(card).toContain("...CANONICAL_CARD_VISIBILITY");
     expect(card).toContain("showLeftMotion,");
@@ -73,8 +73,16 @@ describe("QR scan cloud-render contract", () => {
     expect(ingress.indexOf("await viewerModule;")).toBeLessThan(
       ingress.indexOf("await goto(destination")
     );
+    // The route starts the chunk once and awaits it; while it loads, either
+    // the bar or (with ?frame=1) the server-rendered first frame is on screen.
     expect(route).toMatch(
-      /\{#await loadSequenceViewerPage\(\)\}\s*<div class="sequence-route-loading">\s*\{#if loadingSession\}\s*<SequencePageLoading/
+      /const viewerModule = browser \? loadSequenceViewerPage\(\) : null;/
+    );
+    expect(route).toMatch(
+      /\{#await viewerModule!\}\s*\{#if !firstFrame\}\s*<div class="sequence-route-loading">\s*\{#if loadingSession\}\s*<SequencePageLoading/
+    );
+    expect(route).toMatch(
+      /\{#if firstFrame && !viewerReady\}\s*<div class="sequence-route-loading">\s*<SequenceFirstFrame/
     );
   });
 

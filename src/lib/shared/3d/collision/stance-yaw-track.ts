@@ -58,16 +58,6 @@ import type { PlaneMode } from "@austencloud/scene-3d";
 
 /** Geometry samples taken per motion step while building the curve. */
 const SAMPLES_PER_STEP = 24;
-// The strongest side-on engagement jumps cross their depth lane in a single
-// export frame. Spread only those events in score time: broader smoothing
-// moves staffs into the torso during otherwise clear passages.
-const CORRIDOR_HALF_WINDOW_STEPS = 0.125;
-/**
- * Side-blend change per motion step, independent of capture frame rate.
- * The captured staff score has 21.9/step jumps across clear side-lane changes
- * and 17.9/step changes near the torso. Smoothing the latter creates contacts.
- */
-const CORRIDOR_ABRUPT_RATE_PER_STEP = 19;
 
 /**
  * Two yaw samples this close (radians) are the same held facing. Wide enough
@@ -197,8 +187,6 @@ export interface StanceYawTrack {
   readonly rawTimes: readonly number[];
   readonly rawDesire: readonly number[];
   readonly rawLateral: readonly number[];
-  /** Local correction to the continuous corridor at the same score samples. */
-  readonly corridorDelta: readonly number[];
   /** Full front route used while solving the alternative hard-beat track. */
   readonly frontRouteOnly?: boolean;
   /** Accepted front route episodes, shared with the displaced prop track. */
@@ -481,7 +469,7 @@ export function buildStanceYawTrack(
   );
   const keyTangents = monotoneTangents(keyTimes, keyValues);
 
-  const track: StanceYawTrack = {
+  return {
     stepCount,
     loop: options.loop,
     keyTimes,
@@ -490,68 +478,7 @@ export function buildStanceYawTrack(
     rawTimes,
     rawDesire,
     rawLateral,
-    corridorDelta: [],
   };
-  const radius = Math.max(1, Math.round(CORRIDOR_HALF_WINDOW_STEPS * perStep));
-  const corridorRaw = rawTimes.map((scoreTime, index) =>
-    stanceSideBlend(
-      sampleStanceYawTrack(track, scoreTime).chestRad,
-      rawDesire[index]!
-    )
-  );
-  const abrupt = corridorRaw.map((value, index) => {
-    const previous = options.loop
-      ? (index - 1 + total) % total
-      : Math.max(index - 1, 0);
-    return (
-      Math.abs(value - corridorRaw[previous]!) * perStep >
-      CORRIDOR_ABRUPT_RATE_PER_STEP
-    );
-  });
-  const corridorBlend = corridorRaw.map((_, index) => {
-    const nearJump = Array.from({ length: radius * 2 + 1 }, (_, offset) => {
-      const candidate = index + offset - radius;
-      const sourceIndex = options.loop
-        ? (candidate + total) % total
-        : clamp(candidate, 0, total - 1);
-      return abrupt[sourceIndex];
-    }).some(Boolean);
-    if (!nearJump) return corridorRaw[index]!;
-    let weighted = 0;
-    let weightTotal = 0;
-    for (let offset = -radius; offset <= radius; offset++) {
-      const sourceIndex = options.loop
-        ? (index + offset + total) % total
-        : clamp(index + offset, 0, total - 1);
-      const weight = radius + 1 - Math.abs(offset);
-      weighted += weight * corridorRaw[sourceIndex]!;
-      weightTotal += weight;
-    }
-    return weighted / weightTotal;
-  });
-  return {
-    ...track,
-    corridorDelta: corridorBlend.map(
-      (value, index) => value - corridorRaw[index]!
-    ),
-  };
-}
-
-/** Interpolate only the local correction; all other times retain the source corridor. */
-function sampleCorridorDelta(track: StanceYawTrack, scoreTime: number): number {
-  const samples = track.corridorDelta;
-  if (samples.length === 0) return 0;
-  const perStep = samples.length / track.stepCount;
-  const position = track.loop
-    ? (((scoreTime % track.stepCount) + track.stepCount) % track.stepCount) *
-      perStep
-    : clamp(scoreTime * perStep, 0, samples.length - 1);
-  const before = Math.floor(position);
-  const after = track.loop
-    ? (before + 1) % samples.length
-    : Math.min(before + 1, samples.length - 1);
-  const fraction = position - before;
-  return samples[before]! * (1 - fraction) + samples[after]! * fraction;
 }
 
 /**
@@ -695,15 +622,9 @@ export function resolveTrackedUpperBodyStance(
         headLagRad: 0,
       } satisfies StanceYawSegments);
   const rawCorridorBlend = stanceSideBlend(segments.chestRad, desireRad);
-  const baseCorridorBlend =
-    track &&
-    segments.chestRad !== 0 &&
-    Math.sign(segments.chestRad) === Math.sign(desireRad)
-      ? clamp(rawCorridorBlend + sampleCorridorDelta(track, scoreTime), 0, 1)
-      : rawCorridorBlend;
   const corridorBlend = track?.frontRouteOnly
     ? 0
-    : baseCorridorBlend *
+    : rawCorridorBlend *
       (1 -
         sampleFrontRouteWeight(
           track?.frontRouteEvents,

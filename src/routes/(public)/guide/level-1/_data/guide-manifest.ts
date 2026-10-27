@@ -58,6 +58,13 @@ export type GuidePageEntry = {
    * titles). The `title` above still drives the TOC row + dev label.
    */
   selfTitled?: boolean;
+  /**
+   * The web folds this print page into another page: /guide/level-1/<id>
+   * redirects to `into` (at its 1-based `?screen=`), and the web's Previous,
+   * Next and sitemap skip it. The print book, the handbook and the in-app
+   * reader keep the sheet in its place.
+   */
+  web?: { into: string; screen?: number };
 };
 
 export const GROUP_TITLES: Record<GuideGroup, string> = {
@@ -71,8 +78,16 @@ export const GUIDE_BODY_PAGES: GuidePageEntry[] = [
   { id: "the-grid", title: "The Grid", level: 0, group: "1.0" },
   { id: "hand-placements", title: "Hand Placements", level: 0, group: "1.0" },
   { id: "hand-motions", title: "Hand Motions", level: 0, group: "1.0" },
-  { id: "hm-type1", title: "Type 1 Dual-Shifts - Alpha, Beta", level: 1, group: "1.0" },
-  { id: "hm-gamma", title: "Gamma - Quarter-Opp, Quarter-Same", level: 1, group: "1.0" },
+  { id: "hm-type1", title: "Type 1 Dual-Shifts", level: 1, group: "1.0" },
+  // On the web the Quarter modes are screens 6 to 8 of the Dual-Shifts page
+  // (2026-10-26); print keeps the Gamma sheet.
+  {
+    id: "hm-gamma",
+    title: "Gamma - Quarter-Opp, Quarter-Same",
+    level: 1,
+    group: "1.0",
+    web: { into: "hm-type1", screen: 6 },
+  },
   { id: "hm-type2", title: "Type 2 - Shifts", level: 1, group: "1.0" },
   { id: "hm-type34", title: "Type 3 - Cross-Shifts", level: 1, group: "1.0" },
   { id: "hm-type56", title: "Type 4/5/6 - Dash, Dual-Dash, Static", level: 1, group: "1.0", selfTitled: true },
@@ -134,6 +149,11 @@ export const GUIDE_BODY_PAGES: GuidePageEntry[] = [
   // Old p43 "Full-reversal CAPs" - CCKE, FLII, DAK.
   { id: "full-reversal-loops", title: "Full-Reversal LOOPs", level: 0, group: "1.2" },
 ];
+
+/** The body pages that have a web page of their own, in manifest order. */
+export const GUIDE_WEB_PAGES: GuidePageEntry[] = GUIDE_BODY_PAGES.filter(
+  (entry) => !entry.web
+);
 
 /** 1-based page number of an entry id, or undefined if not in the manifest. */
 export function pageNumberOf(id: string): number | undefined {

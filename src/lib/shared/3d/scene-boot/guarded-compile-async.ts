@@ -1,4 +1,5 @@
-import type { Camera, Object3D, Scene, WebGLRenderer } from "three";
+import { WebGLRenderer } from "three";
+import type { Camera, Object3D, Scene } from "three";
 
 /**
  * `renderer.compileAsync`, minus its one unguarded read.
@@ -71,4 +72,52 @@ export function installGuardedCompileAsync(renderer: WebGLRenderer): void {
   guardedRenderers.add(renderer);
   renderer.compileAsync = (object, camera, targetScene = null) =>
     compileAsyncGuarded(renderer, object, camera, targetScene);
+}
+
+type GuardableRenderer = Pick<
+  WebGLRenderer,
+  "compile" | "properties" | "extensions" | "compileAsync"
+>;
+
+const guardedPrototypes = new WeakSet<object>();
+
+/**
+ * Guard every renderer of `RendererClass` built after this call, not only the
+ * ones that reach {@link installGuardedCompileAsync}. scene-3d's Avatar3D
+ * (character prep and swap) and its glTF cache warm-up call compileAsync on
+ * the Threlte renderer directly, so the per-instance install never saw them
+ * (session triage: the same isReady throw after switching to 3D Animation and
+ * on the tunnel pane).
+ *
+ * three's constructor assigns `this.compileAsync = function …`. An accessor on
+ * the prototype turns that assignment into a call here, which stores the
+ * guarded version as the instance's own writable method instead.
+ */
+export function guardRendererClass(RendererClass: { prototype: object }): void {
+  const proto = RendererClass.prototype;
+  if (guardedPrototypes.has(proto)) return;
+  guardedPrototypes.add(proto);
+  Object.defineProperty(proto, "compileAsync", {
+    configurable: true,
+    get: () => undefined,
+    set(this: GuardableRenderer) {
+      guardedRenderers.add(this);
+      const guarded: WebGLRenderer["compileAsync"] = (
+        object,
+        camera,
+        targetScene = null
+      ) => compileAsyncGuarded(this, object, camera, targetScene);
+      Object.defineProperty(this, "compileAsync", {
+        configurable: true,
+        enumerable: true,
+        writable: true,
+        value: guarded,
+      });
+    },
+  });
+}
+
+/** {@link guardRendererClass} for three's WebGLRenderer. Safe to call often. */
+export function guardEveryWebGLRenderer(): void {
+  guardRendererClass(WebGLRenderer);
 }

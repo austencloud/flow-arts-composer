@@ -528,6 +528,16 @@ export const SETTINGS_TABS: Section[] = [
     gradient: "linear-gradient(135deg, #fb923c 0%, #f97316 100%)",
   },
   {
+    id: "display",
+    labelKey: "tab_settings_display",
+    descKey: "tab_desc_settings_display",
+    label: "Display",
+    icon: '<i class="fas fa-eye" aria-hidden="true"></i>',
+    description: "What pictographs, animations and cards show",
+    color: "#14b8a6",
+    gradient: "linear-gradient(135deg, #2dd4bf 0%, #14b8a6 100%)",
+  },
+  {
     id: "release-notes",
     navigationHidden: true,
     labelKey: "tab_settings_release_notes",

@@ -131,9 +131,10 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
       ? false
       : (options.overlayOverrides?.wordHeader ??
         visibilityManager.getVisibility("wordHeader"));
-    // The carousel's beat dots stand in for the progress bar.
+    // The bar can sit under the square beside a carousel: the dots say which
+    // beat is playing, the bar how far through the whole video it is.
     const showProgressBar =
-      hasSourceOverride || carouselPlacement
+      hasSourceOverride
         ? false
         : (options.overlayOverrides?.progressBar ??
           visibilityManager.getVisibility("progressBar"));
@@ -199,6 +200,7 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
           placement: carouselPlacement,
           squareSize: canvas.width,
           headerHeight: srcHeaderHeight,
+          footerHeight: srcProgressBarHeight,
         })
       : null;
     const sourceWidth = hasSourceOverride
@@ -549,6 +551,7 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
             outputHeight,
             sourceSquareSize: canvas.width,
             sourceHeaderHeight: srcHeaderHeight,
+            sourceFooterHeight: srcProgressBarHeight,
           })
         : null;
 
@@ -563,7 +566,9 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
       const headerHeight =
         carouselFrame?.headerHeight ??
         Math.round(srcHeaderHeight * scaleFactor);
-      const progressBarHeight = Math.round(srcProgressBarHeight * scaleFactor);
+      const progressBarHeight =
+        carouselFrame?.footerHeight ??
+        Math.round(srcProgressBarHeight * scaleFactor);
       // The square animation area in the output
       const outputCanvasSize = isCompositeMode
         ? sourceWidth
@@ -657,18 +662,20 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
         showElementalGlyph,
         showStepNumbers,
         showWordHeader,
+        showHeaderWord: ov?.headerWord !== false,
         showProgressBar,
         isDarkMode,
         isCompositeMode: !!isCompositeMode,
         sequenceWord: panelState.sequenceWord,
-        difficultyLevel,
-        turnGlyphEntries,
-        reversalGlyph,
-        loopComponents,
+        // Each header part can be left off; the strip stays for the rest.
+        difficultyLevel: ov?.headerLevel === false ? null : difficultyLevel,
+        turnGlyphEntries: ov?.headerTurns === false ? null : turnGlyphEntries,
+        reversalGlyph: ov?.headerReversals === false ? null : reversalGlyph,
+        loopComponents: ov?.headerLoop === false ? null : loopComponents,
         rotationPeriod,
         inversionPeriod,
         reflectionAxis,
-        overlayComponents,
+        overlayComponents: ov?.headerLoop === false ? null : overlayComponents,
         showLeftPathLines,
         showRightPathLines,
         sequenceSteps: steps,
@@ -986,7 +993,10 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
             playbackPosition,
             steps,
             stepDurations,
-            i
+            i,
+            // The bar fills across the whole file, holds and repeats included,
+            // and reaches the end on the last frame.
+            totalFrames > 1 ? i / (totalFrames - 1) : 1
           );
           frameCompositor.renderCarousel(offscreenCtx, carouselPosition);
         }

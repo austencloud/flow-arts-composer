@@ -57,10 +57,14 @@
 
 <style>
   /* WordLabel reads --text-color (its default is a light-theme navy). */
+  /* A fixed height, not a minimum: a label taller than the row (the word's
+     letters flash as Georgia text for a frame before their glyphs load) may
+     overflow it visually, but never resizes the row and moves the grid. */
   .word-row {
-    min-height: var(--word-row-h, 3.25rem);
+    height: var(--word-row-h, 3.25rem);
     display: grid;
     grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
     align-items: center;
     color: var(--theme-text, #fff);
     --text-color: var(--theme-text, #fff);

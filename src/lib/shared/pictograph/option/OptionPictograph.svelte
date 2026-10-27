@@ -11,6 +11,7 @@
   import { getVisibilityStateManager } from "../shared/state/visibility-state.svelte";
   import { getAnimationVisibilityManager } from "../../animation-engine/state/animation-visibility-state.svelte";
   import type { GridLocation } from "../grid/domain/enums/grid-enums";
+  import { redrawsSameOption } from "../shared/services/glide-rotation";
 
   let {
     pictograph,
@@ -59,6 +60,19 @@
     };
   });
 
+  // The turn controls redraw each card as the same option with new turns.
+  // That redraw glides its props and arrows; a card that now shows a different
+  // option (a new option set) snaps.
+  let previousPictograph: PreparedPictographData | null = null;
+  const glideInPlace = $derived.by(() => {
+    const glide =
+      previousPictograph !== null &&
+      previousPictograph !== pictograph &&
+      redrawsSameOption(previousPictograph, pictograph);
+    previousPictograph = pictograph;
+    return glide;
+  });
+
   // Compute active locations from motion end positions (where props are)
   const activeLocations = $derived.by(() => {
     const locations: GridLocation[] = [];
@@ -86,4 +100,5 @@
   {handPointVisibility}
   {activeLocations}
   {darkMode}
+  {glideInPlace}
 />

@@ -37,9 +37,22 @@ function Invoke-D2([string]$remote) {
   $out
 }
 
+# For read-only status and log reads only: a dropped connection (ssh exit 255)
+# mid-job is retried instead of abandoning a job that keeps running on d2. Never
+# for the command that starts a job, which must not run twice.
+function Invoke-D2Read([string]$remote) {
+  for ($try = 1; ; $try++) {
+    $out = & ssh @ssh $remote
+    if ($LASTEXITCODE -eq 0) { return $out }
+    if ($LASTEXITCODE -ne 255 -or $try -ge 5) { throw "ssh to d2 failed ($LASTEXITCODE): $remote" }
+    Write-Host "[d2-run] ssh to d2 dropped (try $try of 5); retrying in $(10 * $try)s"
+    Start-Sleep -Seconds (10 * $try)
+  }
+}
+
 function Show-Status([string]$id) {
   $dir = "$jobsRoot/$id"
-  Invoke-D2 "if (Test-Path '$dir/exit.txt') { 'EXIT ' + (Get-Content '$dir/exit.txt' -Raw).Trim() } elseif (Test-Path '$dir') { 'RUNNING' } else { 'MISSING' }"
+  Invoke-D2Read "if (Test-Path '$dir/exit.txt') { 'EXIT ' + (Get-Content '$dir/exit.txt' -Raw).Trim() } elseif (Test-Path '$dir') { 'RUNNING' } else { 'MISSING' }"
 }
 
 function Wait-D2Job([string]$id) {
@@ -50,13 +63,13 @@ function Wait-D2Job([string]$id) {
     if ($state -like 'EXIT *') { break }
     if ($state -eq 'MISSING') { throw "No job $id on d2." }
     $mins = [math]::Round(((Get-Date) - $started).TotalMinutes, 1)
-    $last = "$(Invoke-D2 "Get-Content '$dir/log.txt' -Encoding utf8 -Tail 1 -ErrorAction SilentlyContinue")".Trim()
+    $last = "$(Invoke-D2Read "Get-Content '$dir/log.txt' -Encoding utf8 -Tail 1 -ErrorAction SilentlyContinue")".Trim()
     if ($last.Length -gt 140) { $last = $last.Substring(0, 140) }
     Write-Host "[d2-run] $id running ${mins}m :: $last"
     Start-Sleep -Seconds $PollSeconds
   }
   Write-Host "----- d2 log tail ($id) -----"
-  Invoke-D2 "Get-Content '$dir/log.txt' -Encoding utf8 -Tail $TailLines" | Write-Host
+  Invoke-D2Read "Get-Content '$dir/log.txt' -Encoding utf8 -Tail $TailLines" | Write-Host
   $code = [int]($state -replace 'EXIT ', '')
   Write-Host "[d2-run] $id exit $code (full log: d2 $dir/log.txt)"
   exit $code

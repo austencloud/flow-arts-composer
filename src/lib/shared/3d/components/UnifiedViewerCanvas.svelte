@@ -12,6 +12,7 @@
 
   import { Canvas } from "@threlte/core";
   import { WebGLRenderer } from "three";
+  import { guardEveryWebGLRenderer } from "../scene-boot/guarded-compile-async";
 
   import Viewer3DCamera from "./Viewer3DCamera.svelte";
   import Viewer3DScene from "./Viewer3DScene.svelte";
@@ -110,6 +111,7 @@
     {#if canvasMountReady}
       <Canvas
         createRenderer={(canvas) => {
+          guardEveryWebGLRenderer();
           const renderer = new WebGLRenderer({
             canvas,
             preserveDrawingBuffer: true,

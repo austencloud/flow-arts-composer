@@ -12,6 +12,7 @@ Receives pre-calculated data, just renders it.
   import PictographContextMenuHost from "#lib/shared/pictograph/shared/components/context-menu/PictographContextMenuHost.svelte";
   import { tryGetOptionAuditionContext } from "../context/option-audition-context";
   import { createHoldToAuditionAttachment } from "../services/hold-to-audition";
+  import { noteArrivalOrigin } from "#lib/features/create/shared/workspace-panel/sequence-display/services/arrival-origin.js";
 
   interface Props {
     pictograph: PreparedPictographData;
@@ -51,8 +52,10 @@ Receives pre-calculated data, just renders it.
    * reader says about it.
    */
 
-  function handleClick() {
+  function handleClick(event: MouseEvent) {
     if (!disabled) {
+      // The step's arrival grows out of this card, so note it first.
+      noteArrivalOrigin(event.currentTarget as HTMLElement);
       onSelect(pictograph);
     }
   }

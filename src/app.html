@@ -345,6 +345,8 @@
             target: shown ? viewportRect(capsule) : null,
             readyMs: null,
             finishedMs: null,
+            // The Overture (overture-boot.js) fades in once this settles.
+            done: transition ? transition.finished : null,
           };
           window.__tkaHandoff = handoff;
           if (transition) {
@@ -1587,6 +1589,39 @@
         pointer-events: none;
       }
 
+      /* The Overture: the mandala the boot traces, drawn by a worker into
+         this canvas (src/lib/shared/loading/overture/). It is a layer of its
+         own behind the capsule and never replaces it. Hidden until the worker
+         draws and any Composer-button handoff has landed. While it flies
+         through at the finish, the sky's fade waits 200 ms for it. */
+      #boot-overture {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 300ms ease-out;
+      }
+
+      #boot-overture.on {
+        opacity: 1;
+      }
+
+      #app-loading.loaded[data-overture="on"] {
+        transition-delay: 200ms;
+      }
+
+      /* The capsule sits low, its bottom at 9% of the viewport, under the
+         mandala. It stays the handoff's morph target wherever it lays out. */
+      #app-loading > .boot-capsule {
+        position: absolute;
+        bottom: 9%;
+        left: 0;
+        right: 0;
+        margin: 0 auto;
+      }
+
       /* The only thing on the screen: the capsule the pressed Composer button
          lands as. Its brand-gradient fill is the self-timed progress, so
          the fill moving is the screen's only motion. It carries the
@@ -1651,6 +1686,7 @@
 
       @media (prefers-reduced-motion: reduce) {
         #app-loading,
+        #boot-overture,
         .boot-capsule-label,
         .boot-capsule-fill {
           transition: none;
@@ -1681,6 +1717,7 @@
       aria-valuemin="0"
       aria-valuemax="100"
     >
+      <canvas id="boot-overture" aria-hidden="true"></canvas>
       <!-- The pressed Composer button lands here (see the handoff script in
            <head>). The fill is the progress bar; the label is the status. -->
       <div id="boot-capsule" class="boot-capsule">
@@ -1938,12 +1975,19 @@
       // Without a bar (a hidden screen, or no engine) arrivals still leave
       // their profiler mark and log line.
       var __tkaSeen = {};
+      // The Overture's worker paces its trace from the same milestones.
+      function __tkaOvertureCall(type, name) {
+        try {
+          if (window.__tkaOverture) window.__tkaOverture(type, name);
+        } catch (e) {}
+      }
       function __tkaRecordMilestone(name) {
         var rank = __tkaBootRanks.indexOf(name);
         if (!__tkaBar) {
           if (rank === -1 || __tkaSeen.hasOwnProperty(name)) return;
           __tkaSeen[name] = true;
           __tkaMarkSplash(name);
+          __tkaOvertureCall("milestone", name);
           __tkaBootBar.milestones.push({
             name: name,
             t: Math.round(performance.now()),
@@ -1957,6 +2001,7 @@
         });
         if (!entry) return;
         __tkaMarkSplash(name);
+        __tkaOvertureCall("milestone", name);
         if (rank === __tkaBootLast && !entry.ignored) {
           __tkaSaveProfile(performance.now());
         }
@@ -1967,6 +2012,7 @@
       function __tkaFinishBoot() {
         if (__tkaFinished) return;
         __tkaFinished = true;
+        __tkaOvertureCall("finish");
         var screen = document.getElementById("app-loading");
         // The fill runs to full in 200 ms while the screen fades.
         try {
@@ -2201,6 +2247,8 @@
         try {
           if (__tkaBar) __tkaBar.stopTicker();
         } catch (e) {}
+        // A route that removed the screen itself still ends the Overture.
+        __tkaOvertureCall("finish");
         var screen = document.getElementById("app-loading");
         if (screen && !screen.classList.contains("loaded")) {
           __tkaMarkSplash("timeout-dismiss");
@@ -2216,6 +2264,9 @@
         }
       }, 15000);
     </script>
+    <!-- The Overture's boot script, inlined and started here by the server
+         (src/lib/server/performance/overture-inline.ts). -->
+    <!-- tka-overture -->
     <!-- tka-root-app-only:end -->
     <div style="display: contents">%sveltekit.body%</div>
     <noscript>

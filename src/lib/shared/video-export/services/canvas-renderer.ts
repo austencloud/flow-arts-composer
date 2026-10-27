@@ -129,7 +129,8 @@ export function renderWordHeaderToCanvas(
   overlayComponents: Set<string> | null = null,
   reflectionAxis?: LoopReflectionAxis,
   turnGlyphEntries?: readonly TurnGlyphEntry[] | null,
-  reversalGlyph?: ReversalGlyphData | null
+  reversalGlyph?: ReversalGlyphData | null,
+  showWord: boolean = true
 ): void {
   drawWordHeader(
     ctx,
@@ -144,7 +145,8 @@ export function renderWordHeaderToCanvas(
     overlayComponents,
     reflectionAxis,
     turnGlyphEntries,
-    reversalGlyph
+    reversalGlyph,
+    showWord
   );
 }
 
@@ -321,11 +323,13 @@ function drawWordHeader(
   overlayComponents: Set<string> | null = null,
   reflectionAxis?: LoopReflectionAxis,
   turnGlyphEntries?: readonly TurnGlyphEntry[] | null,
-  reversalGlyph?: ReversalGlyphData | null
+  reversalGlyph?: ReversalGlyphData | null,
+  showWord: boolean = true
 ): void {
   if (!word || word.trim() === "") return;
 
-  const displayText = simplifyRepeatedWord(word);
+  // A hidden word keeps the strip for the level, turns and LOOP beside it.
+  const displayText = showWord ? simplifyRepeatedWord(word) : "";
 
   const headerHeight = canvasSize * 0.07;
 

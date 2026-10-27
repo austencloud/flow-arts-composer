@@ -26,7 +26,7 @@ Order of reading: this file, your brief, `polish-program.md` (sections 1 and
 
 - Your worktree and branch were made from local `main`. Do not switch branches.
 - `unreal/FlowFest/Content` is a junction to the SHARED content store
-  `F:/FlowFestContent58/Content`, used by every other worktree and by `main`.
+  `E:/FlowFestContent58/Content`, used by every other worktree and by `main`.
   Never delete, move or replace that junction.
 - The editor target may not be built yet in your worktree. Build first (below).
 - Blender 5.0 is at `C:\Program Files\Blender Foundation\Blender 5.0\blender.exe`.

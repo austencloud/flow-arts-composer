@@ -4,7 +4,7 @@ import {
   localizePath,
   SEO_LOCALES,
 } from "#lib/shared/i18n/seo-locales.js";
-import { GUIDE_BODY_PAGES } from "../(public)/guide/level-1/_data/guide-manifest";
+import { GUIDE_WEB_PAGES } from "../(public)/guide/level-1/_data/guide-manifest";
 import { LEVEL2_TOPIC_PAGES } from "../(public)/guide/level-2/_data/level2-topic-routes";
 import { TIMING_DIRECTION_ARTICLE_SLUGS } from "../(public)/timing-and-direction/_data/timing-direction-articles";
 import { getAvailableConcepts } from "#lib/features/learn/domain/concept-experience-registry.js";
@@ -101,7 +101,7 @@ const pages: SitemapEntry[] = [
  * so a new body page is listed automatically. This covers both the mobile-first
  * reflow pages and the sheet-fallback pages.
  */
-const guideLevel1Entries = GUIDE_BODY_PAGES.map((p) => ({
+const guideLevel1Entries = GUIDE_WEB_PAGES.map((p) => ({
   url: `guide/level-1/${p.id}`,
 }));
 

@@ -460,6 +460,7 @@ const TAB_ORDERS: Record<string, string[]> = {
   settings: [
     "profile",
     "preferences",
+    "display",
     "release-notes",
     "keyboard",
     "theme",

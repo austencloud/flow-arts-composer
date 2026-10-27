@@ -219,6 +219,29 @@ describe("collectedTunnelFromPublicArtifact", () => {
     expect(discovered?.composition).toEqual(payload.composition);
   });
 
+  it("upgrades a tunnel published before saved colors", () => {
+    const payload = tunnelPublicPayload(tunnelFixture());
+    const { colors: _colors, presetRecipe: _recipe, ...tunnel } =
+      payload.snapshot.tunnel;
+    const legacy = {
+      ...payload,
+      snapshot: {
+        ...payload.snapshot,
+        version: 1,
+        tunnel: { ...tunnel, spectrum: true },
+      },
+    } as unknown as typeof payload;
+
+    const discovered = collectedTunnelFromPublicArtifact(
+      publicEnvelope(),
+      legacy
+    );
+
+    expect(discovered?.snapshot.tunnel.colors.mode).toBe("spectrum");
+    expect(discovered?.snapshot.tunnel.colors.custom).toBeDefined();
+    expect(discovered?.snapshot.tunnel.presetRecipe).toBeNull();
+  });
+
   it("rejects the wrong artifact type or an invalid revision payload", () => {
     const payload = tunnelPublicPayload(tunnelFixture());
     expect(

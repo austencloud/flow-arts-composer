@@ -26,8 +26,12 @@
   import {
     VIDEO_CAROUSEL_BAND_RATIO,
     videoCarouselOrientation,
-    videoCarouselSourceFrame,
   } from "#lib/shared/video-export/domain/video-carousel.js";
+  import {
+    showsVideoHeader,
+    videoOverlayExport,
+    videoOverlaysFrom,
+  } from "#lib/shared/video-export/domain/video-overlays.js";
   import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
   import { PLAYBACK_BASELINE_BPM } from "#lib/shared/animation-engine/domain/constants/timing.js";
   import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
@@ -61,6 +65,14 @@
   let activeVideoSourceKey: string | null = null;
   let videoRenderGeneration = 0;
 
+  // The video's speed starts at the workspace tempo each time the sheet opens.
+  // Changing it here shapes the preview and the file only; the workspace
+  // keeps its own tempo.
+  let videoBpm = $state(untrack(() => bpm));
+  $effect(() => {
+    if (isOpen) untrack(() => (videoBpm = bpm));
+  });
+
   const hasFullAccount = $derived(authState.isFullAccount);
   const guestShareUrl = $derived(
     isOpen && !hasFullAccount && sequence
@@ -71,7 +83,7 @@
     hashString(
       JSON.stringify({
         sequence,
-        bpm,
+        bpm: videoBpm,
         options: exportOptions.getVideoOptions(),
       })
     )
@@ -87,21 +99,53 @@
   const workspaceVideoPreviewWord = $derived(
     sequence ? deriveWord(sequence) : null
   );
-  // The live preview takes the rendered video's shape: the carousel the file
-  // will carry sits on the same side, following the preview's own playback.
+  // The preview draws what the file will: the Download screen's own list, or
+  // the canvas's until that screen first opens.
+  const previewOverlays = $derived(
+    exportOptions.videoOverlays ??
+      videoOverlaysFrom(
+        (key) => animationVisibility.getVisibility(key),
+        animationVisibility.isGridVisible()
+      )
+  );
+  const previewShowsHeader = $derived(showsVideoHeader(previewOverlays));
+  // The live preview takes the rendered video's shape, never the stage's:
+  // the animation is a square, the header and bar sit on it at whatever
+  // height they draw, and the carousel the file will carry sits on its side.
   const previewCarousel = $derived(exportOptions.videoCarousel);
-  const previewFrame = $derived.by(() => {
-    if (previewCarousel === "off") return null;
-    const frame = videoCarouselSourceFrame({
-      placement: previewCarousel,
-      squareSize: 1,
-      headerHeight: animationVisibility.getVisibility("wordHeader") ? 0.07 : 0,
-    });
-    const vertical = videoCarouselOrientation(previewCarousel) === "vertical";
-    return {
-      aspect: frame.width / frame.height,
-      bandShare:
-        VIDEO_CAROUSEL_BAND_RATIO / (vertical ? frame.width : frame.height),
+  const previewBand = $derived.by(() => {
+    if (previewCarousel === "off") return { w: 0, h: 0 };
+    return videoCarouselOrientation(previewCarousel) === "vertical"
+      ? { w: VIDEO_CAROUSEL_BAND_RATIO, h: 0 }
+      : { w: 0, h: VIDEO_CAROUSEL_BAND_RATIO };
+  });
+  // The header and bar heights the player draws, measured, so the frame
+  // wraps them and the square exactly instead of squeezing the square.
+  let previewCardEl = $state<HTMLElement | null>(null);
+  let previewChromePx = $state(0);
+  $effect(() => {
+    const card = previewCardEl;
+    if (!card) return;
+    const resize = new ResizeObserver(measure);
+    const observed = new Set<Element>();
+    function measure(): void {
+      let chrome = 0;
+      for (const slot of card!.querySelectorAll(".header-slot, .progress-slot")) {
+        if (!observed.has(slot)) {
+          observed.add(slot);
+          resize.observe(slot);
+        }
+        chrome += slot.getBoundingClientRect().height;
+      }
+      previewChromePx = Math.round(chrome);
+    }
+    const mounts = new MutationObserver(measure);
+    mounts.observe(card, { childList: true, subtree: true });
+    resize.observe(card);
+    measure();
+    return () => {
+      resize.disconnect();
+      mounts.disconnect();
     };
   });
   let previewStep = $state(0);
@@ -185,7 +229,7 @@
     // drain. The current workspace may regenerate during that wait.
     const currentSequence = structuredClone($state.snapshot(sequence));
     const options = exportOptions.getVideoOptions();
-    const speed = bpm / PLAYBACK_BASELINE_BPM;
+    const speed = videoBpm / PLAYBACK_BASELINE_BPM;
     const sourceKey = workspaceVideoSourceKey;
     cancelWorkspaceVideo();
     const renderGeneration = ++videoRenderGeneration;
@@ -244,6 +288,7 @@
         includeEndHold: options.includeEndHold,
         quality: options.quality,
         carousel: options.carousel,
+        ...(options.overlays ? videoOverlayExport(options.overlays) : {}),
         // The offscreen exporter calls this tunnel-shaped input for any custom
         // pair. Supplying the workspace pair keeps its downloaded file aligned
         // with the live animation, including non-blue/red prop choices.
@@ -277,12 +322,12 @@
     <div class="workspace-live-video-preview">
       <div
         class="preview-frame"
-        class:framed={previewFrame !== null}
         data-carousel={previewCarousel}
-        style:--frame-aspect={previewFrame?.aspect}
-        style:--band-share={previewFrame?.bandShare}
+        style:--band-w={previewBand.w}
+        style:--band-h={previewBand.h}
+        style:--chrome={`${previewChromePx}px`}
       >
-        <div class="preview-card">
+        <div class="preview-card" bind:this={previewCardEl}>
           <InlineAnimationPlayer
             {sequence}
             displayWord={workspaceVideoPreviewWord}
@@ -292,7 +337,7 @@
             showControls={false}
             autoPlay={true}
             autoPlayDelay={0}
-            externalBpm={bpm}
+            externalBpm={videoBpm}
             interactive={true}
             cornerToggle={true}
             hoverHint="none"
@@ -301,10 +346,14 @@
             visibilityManagerOverride={animationVisibility}
             effectsConfigState={animationVisibility.effectsConfigState ??
               undefined}
-            gridVisible={animationVisibility.isGridVisible()}
-            showWordHeader={animationVisibility.getVisibility("wordHeader")}
-            hideTkaGlyph={!animationVisibility.getVisibility("tkaGlyph")}
-            hideStepNumbers={!animationVisibility.getVisibility("stepNumbers")}
+            gridVisible={previewOverlays.grid}
+            showWordHeader={previewShowsHeader}
+            overlayVisibility={{
+              ...previewOverlays,
+              wordHeader: previewShowsHeader,
+              // The file never draws the prop glyph.
+              propElementalGlyph: false,
+            }}
             leftPropType={settingsService.settings.leftPropType}
             rightPropType={settingsService.settings.rightPropType}
             primaryPropColors={settingsService.settings.primaryPropColors ??
@@ -317,7 +366,7 @@
             <StepStrip
               {sequence}
               currentStep={previewStep}
-              {bpm}
+              bpm={videoBpm}
               presentation="spotlight"
               density="compact"
               orientation={videoCarouselOrientation(previewCarousel)}
@@ -341,6 +390,8 @@
   isExportingVideo={workspaceVideoExporting}
   exportProgress={workspaceVideoProgress}
   liveVideoPreview={workspaceLiveVideoPreview}
+  {videoBpm}
+  onVideoBpmChange={(next) => (videoBpm = next)}
   onRequestVideo={requestWorkspaceVideo}
   onCancelVideo={cancelWorkspaceVideo}
   onPrepareFile={(artifact) => {
@@ -370,18 +421,20 @@
     place-items: center;
     container-type: size;
   }
+  /* The rendered video's frame, contain-fit in the stage: --square is the
+     largest animation square that fits beside the carousel band and under
+     the header and bar, and the frame is exactly that plus them. */
   .preview-frame {
+    --square: min(
+      100cqw / (1 + var(--band-w)),
+      (100cqh - var(--chrome)) / (1 + var(--band-h))
+    );
     display: flex;
     flex-direction: column;
-    width: 100%;
-    height: 100%;
+    width: calc(var(--square) * (1 + var(--band-w)));
+    height: calc(var(--square) * (1 + var(--band-h)) + var(--chrome));
     min-width: 0;
     min-height: 0;
-  }
-  /* The rendered video's frame, contain-fit in the stage. */
-  .preview-frame.framed {
-    width: min(100cqw, 100cqh * var(--frame-aspect));
-    height: min(100cqh, 100cqw / var(--frame-aspect));
   }
   .preview-frame[data-carousel="above"] {
     flex-direction: column-reverse;
@@ -404,8 +457,8 @@
     min-width: 0;
     min-height: 0;
     overflow: hidden;
-    /* The band's share of the frame along its stacking axis, as rendered. */
-    flex-basis: calc(var(--band-share) * 100%);
+    /* The band's depth, as rendered: the square times its ratio. */
+    flex-basis: calc(var(--square) * (var(--band-w) + var(--band-h)));
   }
   .preview-band > :global(*) {
     flex: 1 1 auto;

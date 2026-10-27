@@ -8,7 +8,13 @@
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  import { onMount, onDestroy, untrack, type Snippet } from "svelte";
+  import {
+    onMount,
+    onDestroy,
+    untrack,
+    type ComponentProps,
+    type Snippet,
+  } from "svelte";
   import type { ViewerCustomColorPair } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
   import {
     createRenderActivityGate,
@@ -172,6 +178,7 @@
     backgroundAlpha = 1,
     hideTkaGlyph = false,
     hideStepNumbers = false,
+    overlayVisibility = undefined,
     gridVisible = true,
     disableContextMenu = false,
     videoDownload = false,
@@ -348,6 +355,9 @@
      *  like the caps live hero — "a prop floating in space"). */
     hideTkaGlyph?: boolean;
     hideStepNumbers?: boolean;
+    /** Forwarded to AnimatorCanvas: a file's own overlay list. Its progress
+     *  bar shows even in a fill-mode preview. */
+    overlayVisibility?: ComponentProps<typeof AnimatorCanvas>["overlayVisibility"];
     /** Hide the diamond/box grid — pattern-trace embeds show only the prop. */
     gridVisible?: boolean;
     /** Suppress the canvas right-click / long-press settings menu so a locked
@@ -1119,8 +1129,9 @@
         {onDisassemblyTargetChange}
         {hideTkaGlyph}
         {hideStepNumbers}
+        {overlayVisibility}
         hideHeader={fill && !showWordHeader}
-        hideProgressBar={fill && !scrubbable}
+        hideProgressBar={fill && !scrubbable && !overlayVisibility?.progressBar}
         {cornerToggle}
         {cornerToggleAtRest}
         {showScrubberPlaybackControl}

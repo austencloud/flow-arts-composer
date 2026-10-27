@@ -267,9 +267,7 @@ export const lt1MpNqOrStuvContent: GuideBlock[] = [
   {
     kind: "prose",
     html:
-      "The final γ→γ group (<em>Quarter-Same</em>) has 4 instead of 3.<br>" +
-      "It may seem like U and V contain the same information, but it’s impossible to rotate or<br>" +
-      "reflect U in order to turn it into V, and vice-versa, so they must be disambiguated.",
+      "The final γ→γ group (<em>Quarter-Same</em>) has 4 instead of 3.<br>U and V can look like the same motion, but no rotation or reflection<br>turns U into V or V into U, so each gets its own letter.",
   },
   {
     kind: "pictographGroup",

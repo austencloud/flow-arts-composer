@@ -1,4 +1,10 @@
 <script module lang="ts">
+  import { guardEveryWebGLRenderer } from "../scene-boot/guarded-compile-async";
+
+  // Before any canvas builds a renderer, so the character and its warm-ups
+  // compile through the guarded poll too.
+  guardEveryWebGLRenderer();
+
   // Two canvases can be alive at once (split pane plus a fullscreen handoff),
   // and the background hold is refcounted per key — so each instance needs one
   // of its own or the first release would unfreeze the backdrop under the other.

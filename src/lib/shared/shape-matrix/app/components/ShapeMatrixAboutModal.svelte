@@ -3,6 +3,7 @@
   import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
   import ModalHeader from "#lib/shared/foundation/ui/modal/ModalHeader.svelte";
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
+  import DifficultyBadge from "#lib/shared/components/DifficultyBadge.svelte";
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
   import { localizedLevelDescription } from "../../domain/shape-matrix-display";
   import { SHAPE_MATRIX_LEVELS } from "../shape-matrix-levels";
@@ -70,26 +71,6 @@
         </p>
       </section>
 
-      <section bind:this={levelsSection} class="levels-section">
-        <span class="section-kicker">{t("shape_engine_difficulty_kicker")}</span
-        >
-        <h2>{t("shape_engine_levels_heading")}</h2>
-        <p>
-          {t("shape_engine_levels_prose")}
-        </p>
-        <ol class="level-list">
-          {#each SHAPE_MATRIX_LEVELS as level (level)}
-            <li>
-              <span class="level-numeral">{level}</span>
-              <span class="level-copy">
-                <strong>{localizedLevelDescription(level).name}</strong>
-                <span>{localizedLevelDescription(level).blurb}</span>
-              </span>
-            </li>
-          {/each}
-        </ol>
-      </section>
-
       <section>
         <span class="section-kicker">{t("shape_engine_source_kicker")}</span>
         <h2>{t("shape_engine_source_heading")}</h2>
@@ -102,26 +83,39 @@
           {t("shape_engine_independence_prose")}
         </p>
       </section>
+
+      <section bind:this={levelsSection} class="levels-section">
+        <span class="section-kicker">{t("shape_engine_difficulty_kicker")}</span
+        >
+        <h2>{t("shape_engine_levels_heading")}</h2>
+        <p>
+          {t("shape_engine_levels_prose")}
+        </p>
+        <ol class="level-list">
+          {#each SHAPE_MATRIX_LEVELS as level (level)}
+            <li>
+              <DifficultyBadge {level} size="1.6rem" />
+              <span class="level-copy">
+                <strong>{localizedLevelDescription(level).name}</strong>
+                <span>{localizedLevelDescription(level).blurb}</span>
+              </span>
+            </li>
+          {/each}
+        </ol>
+      </section>
     </div>
     <div class="source-links">
-      <a href="/guide/ratios">
-        {t("shape_engine_read_ratios")}
-        <i class="fas fa-arrow-right" aria-hidden="true"></i>
-      </a>
-      <a
-        href={ORIGINAL_SHAPE_MATRIX_URL}
-        target="_blank"
-        rel="noopener noreferrer"
+      <LinkChip href="/guide/ratios">{t("shape_engine_read_ratios")}</LinkChip>
+      <LinkChip href={ORIGINAL_SHAPE_MATRIX_URL}
+        >{t("shape_engine_view_original_matrix")}</LinkChip
       >
-        {t("shape_engine_view_original_matrix")}
-        <i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i>
-      </a>
     </div>
   </div>
 </BaseModal>
 
 <style>
   .about-copy {
+    --about-column-gap: clamp(1.5rem, 4vw, 4rem);
     display: grid;
     gap: 1.5rem;
     padding: clamp(1rem, 2.2vw, 2rem);
@@ -133,7 +127,7 @@
   .about-columns {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: clamp(1.5rem, 4vw, 4rem);
+    gap: var(--about-column-gap);
   }
 
   section {
@@ -143,9 +137,31 @@
   }
 
   /* The one section a reader can be sent to directly, so it spans the columns
-     rather than being half a row someone has to find. */
+     rather than being half a row someone has to find. It comes after the two
+     credit sections so they share a row; placed between them, each credit was
+     left alone in half a row with the other half empty. */
   .levels-section {
     grid-column: 1 / -1;
+  }
+
+  /* A paragraph across both columns ran past a readable line, and a capped
+     one left half the row empty. Inside the section the same two columns
+     carry on: the explanation under the VTG credit, the four levels beside
+     it under the Lorq credit. */
+  @media (min-width: 52.0625rem) {
+    .levels-section {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: var(--about-column-gap);
+    }
+
+    .levels-section > * {
+      grid-column: 1;
+    }
+
+    .levels-section > .level-list {
+      grid-column: 2;
+      grid-row: 3;
+    }
   }
 
   .level-list {
@@ -158,22 +174,8 @@
 
   .level-list li {
     display: flex;
-    align-items: baseline;
-    gap: 0.65rem;
-  }
-
-  .level-numeral {
-    flex: 0 0 auto;
-    display: inline-flex;
     align-items: center;
-    justify-content: center;
-    width: 1.6rem;
-    height: 1.6rem;
-    border: 1px solid var(--theme-stroke, rgb(255 255 255 / 0.16));
-    border-radius: 8px;
-    color: var(--theme-text, #fff);
-    font-size: 0.85rem;
-    font-weight: 700;
+    gap: 0.65rem;
   }
 
   .level-copy {
@@ -192,10 +194,6 @@
     margin: 0;
   }
 
-  h2 {
-    color: var(--theme-text, #fff);
-  }
-
   .section-kicker {
     color: #f4b54c;
     font-size: var(--font-size-compact, 0.75rem);
@@ -206,42 +204,17 @@
 
   h2 {
     margin: -0.25rem 0 0;
+    color: var(--theme-text, #fff);
     font-size: clamp(1.2rem, 1.8vw, 1.55rem);
     line-height: 1.2;
     letter-spacing: -0.02em;
   }
 
   .source-links {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: flex;
+    flex-wrap: wrap;
     gap: 0.65rem;
     margin-top: 0.25rem;
-  }
-
-  .source-links a {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    min-height: var(--min-touch-target, 44px);
-    padding: 0.55rem 0.8rem;
-    border: 1px solid rgb(245 158 11 / 0.42);
-    border-radius: 12px;
-    background: rgb(245 158 11 / 0.08);
-    color: var(--theme-text, #fff);
-    font-weight: 600;
-    text-align: center;
-    text-decoration: none;
-  }
-
-  .source-links a:hover {
-    background: rgb(245 158 11 / 0.14);
-    border-color: rgb(245 158 11 / 0.7);
-  }
-
-  .source-links a:focus-visible {
-    outline: 2px solid #f59e0b;
-    outline-offset: 2px;
   }
 
   @media (max-width: 52rem) {
@@ -251,10 +224,6 @@
   }
 
   @media (max-width: 36rem) {
-    .source-links {
-      grid-template-columns: 1fr;
-    }
-
     .about-copy {
       padding: 1rem;
     }

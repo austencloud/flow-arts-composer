@@ -45,6 +45,22 @@ let _activeShortCode = $state<string | null>(null);
 let _analyticsSource = $state<SequenceViewerSource>("external_link");
 let _openToken = $state(0);
 
+/**
+ * Tells the Overture what was opened, so a boot with nothing open in Create
+ * traces it next time. Idle and lazy: the writer loads the geometry
+ * calculator.
+ */
+function noteOvertureSequence(sequence: SequenceData): void {
+  if (typeof window === "undefined") return;
+  void import("#lib/shared/loading/overture/overture-snapshot.js").then(
+    (overture) => {
+      overture.noteViewedSequence(sequence);
+      overture.scheduleOvertureSnapshot();
+    },
+    () => {}
+  );
+}
+
 export function openSequenceOverlay(
   sequence: SequenceData,
   options: {
@@ -97,6 +113,7 @@ export function openSequenceOverlay(
   _analyticsSource = options.analyticsSource;
   _isOpen = true;
   const token = ++_openToken;
+  noteOvertureSequence(sequence);
 
   if (!options.skipHistoryPush) {
     writeUrl("", {

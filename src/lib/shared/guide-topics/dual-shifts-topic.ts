@@ -1,10 +1,12 @@
 /**
  * Type 1 Dual-Shifts' shared teaching content: Austen's verbatim proof copy
- * (verified_level1_hm_type1_*) and the four mode loops, Split-Same, Tog-Same,
- * Split-Opp and Tog-Opp, each a start box and a four-count loop. The Guide web
- * page and the written-guide sheet read from here. The proof breaks each
- * paragraph into lines; the web page sets the opening line as its lede and
- * wraps the rest, with the words unchanged.
+ * (verified_level1_hm_type1_*) and the six mode loops, Split-Same, Tog-Same,
+ * Split-Opp, Tog-Opp, Quarter-Opp and Quarter-Same, each a start box and a
+ * four-count loop, plus the eight-count sequence that switches between the
+ * two Quarter modes. The Guide web page, the written-guide sheet and the
+ * Gamma flow content read from here. The proof breaks each paragraph into
+ * lines; the web page sets the opening line as its lede and wraps the rest,
+ * with the words unchanged.
  * Spec: docs/superpowers/specs/2026-10-10-guide-rethink-design.md
  */
 import { t } from "#lib/shared/i18n/i18n.svelte.js";
@@ -62,21 +64,38 @@ export function plainLine(html: string): string {
     .trim();
 }
 
+/** The page title without the proof's ": Alpha and Beta" subtitle, which
+ *  no longer fits a page that also teaches the Quarter modes. */
+export function dualShiftsTitle(): string {
+  return t(DUAL_SHIFTS_TOPIC_UNITS.title)
+    .replace(/\s*[:\uFF1A].*$/, "")
+    .trim();
+}
+
 /**
- * Web-only copy beside the verified units: the web page spells the four modes
- * out, leads each pair with where its modes travel, and drops three of the
- * book's sentences, while the printed sheet keeps the proof's words. Timing
- * and direction are named with the Timing and Direction lesson's own lines,
- * so the Guide and the lesson say the same.
+ * Web-only copy beside the verified units: the web page spells the six modes
+ * out, leads each mode with where it travels, and drops three of the book's
+ * sentences, while the printed sheet keeps the proof's words. Timing and
+ * direction are named with the Timing and Direction lesson's own lines, so the
+ * Guide and the lesson say the same. The Quarter names and notes, the
+ * switching line and the closing lines are Austen's words from the Gamma page,
+ * kept in English in every catalog.
  */
 export const DUAL_SHIFTS_WEB_COPY = {
   modesLead: "guide_topic_dual_shifts_modes_lead",
   sameLeadSplit: "guide_topic_dual_shifts_same_lead_split",
   sameLeadTog: "guide_topic_dual_shifts_same_lead_tog",
   oppLead: "guide_topic_dual_shifts_opp_lead",
+  quarterOpp: "guide_topic_dual_shifts_quarter_opp",
+  quarterSame: "guide_topic_dual_shifts_quarter_same",
+  quarterOppLead: "guide_topic_dual_shifts_quarter_opp_lead",
+  quarterSameLead: "guide_topic_dual_shifts_quarter_same_lead",
+  switchingLead: "guide_topic_dual_shifts_switching_lead",
+  continuous: "guide_topic_dual_shifts_continuous",
+  gammaPractice: "guide_topic_dual_shifts_gamma_practice",
 } as const satisfies Record<string, TranslationKey>;
 
-export type DualShiftTiming = "split" | "tog";
+export type DualShiftTiming = "split" | "tog" | "quarter";
 export type DualShiftDirection = "same" | "opp";
 
 /** The lesson's name and one-line meaning for each timing and direction. */
@@ -89,6 +108,10 @@ export const DUAL_SHIFT_KEY = {
     tog: {
       name: "learn_timing_intro_option_together",
       says: "learn_timing_intro_timing_together",
+    },
+    quarter: {
+      name: "learn_timing_intro_option_quarter",
+      says: "learn_timing_intro_timing_quarter",
     },
   },
   direction: {
@@ -106,11 +129,17 @@ export const DUAL_SHIFT_KEY = {
   Record<string, { name: TranslationKey; says: TranslationKey }>
 >;
 
+/** The key's rows and columns, in reading order. */
+export const DUAL_SHIFT_TIMINGS = ["split", "tog", "quarter"] as const;
+export const DUAL_SHIFT_DIRECTIONS = ["same", "opp"] as const;
+
 export type DualShiftModeId =
   | "split-same"
   | "tog-same"
   | "split-opp"
-  | "tog-opp";
+  | "tog-opp"
+  | "quarter-opp"
+  | "quarter-same";
 
 /**
  * Each mode's one full explainer: its Timing and Direction mode guide. The
@@ -122,10 +151,18 @@ export const DUAL_SHIFT_MODE_GUIDES = {
   "tog-same": "/timing-and-direction/together-time-same-direction",
   "split-opp": "/timing-and-direction/split-time-opposite-direction",
   "tog-opp": "/timing-and-direction/together-time-opposite-direction",
+  "quarter-opp": "/timing-and-direction/quarter-time-opposite-direction",
+  "quarter-same": "/timing-and-direction/quarter-time-same-direction",
 } as const satisfies Record<DualShiftModeId, `/timing-and-direction/${string}`>;
 
 /** [leftFrom, leftTo, rightFrom, rightTo]; a start box holds (from === to). */
-type Move = [GridLocation, GridLocation, GridLocation, GridLocation];
+export type DualShiftMove = [
+  GridLocation,
+  GridLocation,
+  GridLocation,
+  GridLocation,
+];
+type Move = DualShiftMove;
 
 export type DualShiftMode = {
   id: DualShiftModeId;
@@ -134,7 +171,7 @@ export type DualShiftMode = {
   /** Same modes stay in one placement; Opp modes travel between the two. */
   pair: DualShiftDirection;
   /** The book's row label: where the loop travels. */
-  travel: "α→α" | "β→β" | "α↔β";
+  travel: "α→α" | "β→β" | "α↔β" | "γ→γ";
   /** Letter of each box; the start box has none. */
   letters: readonly (Letter | null)[];
   /** Start box, then the four counts of the loop. */
@@ -212,6 +249,59 @@ export const DUAL_SHIFT_MODES: readonly DualShiftMode[] = [
       [E, S, W, S],
     ],
   },
+  // From the Gamma page (Austen's strips). Opposite spin, hands 90° apart:
+  // counts 1 and 3 are parallel; on 2 and 4 both hands travel the same edge
+  // in opposite directions (antiparallel). Those two arrows collide unless
+  // the arrow pipeline's letter-gated special placement separates them, so
+  // they carry letter P (both-PRO Quarter-Opp); every other box has none.
+  {
+    id: "quarter-opp",
+    name: DUAL_SHIFTS_WEB_COPY.quarterOpp,
+    timing: "quarter",
+    pair: "opp",
+    travel: "γ→γ",
+    letters: [null, null, Letter.P, null, Letter.P],
+    moves: [
+      [S, S, E, E],
+      [S, W, E, N],
+      [W, N, N, W],
+      [N, E, W, S],
+      [E, S, S, E],
+    ],
+  },
+  // Same spin, red one point ahead of blue the whole loop.
+  {
+    id: "quarter-same",
+    name: DUAL_SHIFTS_WEB_COPY.quarterSame,
+    timing: "quarter",
+    pair: "same",
+    travel: "γ→γ",
+    letters: [null, null, null, null, null],
+    moves: [
+      [S, S, E, E],
+      [S, E, E, N],
+      [E, N, N, W],
+      [N, W, W, S],
+      [W, S, S, E],
+    ],
+  },
+];
+
+/**
+ * The Gamma page's switching sequence: Start, then eight counts alternating
+ * Quarter-Opp and Quarter-Same, closing back on the start. No count has both
+ * hands on one edge, so no box needs a letter.
+ */
+export const DUAL_SHIFT_SWITCHING_MOVES: readonly DualShiftMove[] = [
+  [S, S, E, E],
+  [S, W, E, N], // Quarter-Opp
+  [W, S, N, W], // Quarter-Same
+  [S, E, W, N], // Quarter-Opp
+  [E, N, N, W], // Quarter-Same
+  [N, E, W, S], // Quarter-Opp
+  [E, N, S, E], // Quarter-Same
+  [N, W, E, S], // Quarter-Opp
+  [W, S, S, E], // Quarter-Same
 ];
 
 /** The mode's element (water, earth, fire, air) and its colours, from the
@@ -222,7 +312,7 @@ export function dualShiftElement(mode: DualShiftMode): TnDElement {
   return element;
 }
 
-/** The mode at one timing and direction, for the 2 x 2 key. */
+/** The mode at one timing and direction, for the 3 x 2 key. */
 export function dualShiftModeAt(
   timing: DualShiftTiming,
   direction: DualShiftDirection
@@ -253,7 +343,7 @@ const motion = (hand: HandSide, from: GridLocation, to: GridLocation) =>
   });
 
 const box = (
-  mode: DualShiftModeId,
+  mode: DualShiftModeId | "switching",
   m: Move,
   stepNumber: number,
   letter: Letter | null
@@ -278,4 +368,9 @@ const box = (
 /** A mode's boxes: the start box (step 0), then counts 1 to 4. */
 export function dualShiftSteps(mode: DualShiftMode): StepData[] {
   return mode.moves.map((m, n) => box(mode.id, m, n, mode.letters[n] ?? null));
+}
+
+/** The switching sequence's boxes: the start box, then counts 1 to 8. */
+export function dualShiftSwitchingSteps(): StepData[] {
+  return DUAL_SHIFT_SWITCHING_MOVES.map((m, n) => box("switching", m, n, null));
 }

@@ -4,6 +4,11 @@
  * Inline visibility toggles for pictograph right-click menu.
  * Submenus for Grid & Points, Grid join (opt-in), Glyphs. Direct toggle for Step Numbers.
  * Optional arrow adjustment items (admin only).
+ *
+ * This is the one list of pictograph switches. Settings → Display renders the
+ * same entries as picture tiles (MenuItemTileGrid), so a row added here shows
+ * up in both places and a label translated here reads the same in both. Every
+ * switch carries an icon: the tile draws it as its picture.
  */
 
 import type {
@@ -14,6 +19,7 @@ import type { VisibilityStateManager } from "../../state/visibility-state.svelte
 import { HandSide } from "../../domain/enums/pictograph-enums";
 import type { GridJoinController } from "#lib/shared/grid-join/grid-join-controller.js";
 import { buildGridJoinMenuItem } from "#lib/shared/grid-join/grid-join-menu.js";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
 interface PictographContextMenuDeps {
   visibilityManager: VisibilityStateManager;
@@ -38,14 +44,16 @@ function buildGridChildren(vm: VisibilityStateManager): ContextMenuItem[] {
   return [
     {
       id: "toggle-grid",
-      label: "Grid",
+      label: t("playback_audit_visual_grid"),
+      icon: "fa-table-cells",
       checked: vm.getGridVisibility(),
       keepOpen: true,
       action: () => vm.setGridVisibility(!vm.getGridVisibility()),
     },
     {
       id: "toggle-hand-points",
-      label: "Hand Points",
+      label: t("learn_ui_hand_points"),
+      icon: "fa-circle-dot",
       checked: vm.getHandPointVisibility() !== "none",
       keepOpen: true,
       action: () =>
@@ -55,7 +63,8 @@ function buildGridChildren(vm: VisibilityStateManager): ContextMenuItem[] {
     },
     {
       id: "toggle-non-radial",
-      label: "Non-Radial Points",
+      label: t("viewer_ui_non_radial"),
+      icon: "fa-ellipsis",
       checked: vm.getNonRadialVisibility(),
       keepOpen: true,
       action: () => vm.setNonRadialVisibility(!vm.getNonRadialVisibility()),
@@ -67,7 +76,8 @@ function buildGlyphChildren(vm: VisibilityStateManager): ContextMenuItem[] {
   return [
     {
       id: "toggle-tka-glyph",
-      label: "TKA",
+      label: t("pictograph_menu_tka"),
+      icon: "fa-font",
       checked: vm.getRawGlyphVisibility("tkaGlyph"),
       keepOpen: true,
       action: () =>
@@ -82,7 +92,8 @@ function buildGlyphChildren(vm: VisibilityStateManager): ContextMenuItem[] {
     // own key in the top-right corner.
     {
       id: "toggle-hand-tnd-glyph",
-      label: "Hand TnD",
+      label: t("animation_menu_hand_tnd"),
+      icon: "fa-hand",
       checked: vm.getRawGlyphVisibility("tndGlyph"),
       keepOpen: true,
       action: () => {
@@ -93,7 +104,8 @@ function buildGlyphChildren(vm: VisibilityStateManager): ContextMenuItem[] {
     },
     {
       id: "toggle-prop-tnd-glyph",
-      label: "Prop TnD",
+      label: t("viewer_detail_prop_tnd"),
+      icon: "fa-wand-magic-sparkles",
       checked: vm.getRawGlyphVisibility("propTndGlyph"),
       keepOpen: true,
       action: () =>
@@ -104,13 +116,40 @@ function buildGlyphChildren(vm: VisibilityStateManager): ContextMenuItem[] {
     },
     {
       id: "toggle-positions-glyph",
-      label: "Placements",
+      label: t("browse_chip_placements"),
+      icon: "fa-location-dot",
       checked: vm.getRawGlyphVisibility("placementsGlyph"),
       keepOpen: true,
       action: () =>
         vm.setGlyphVisibility(
           "placementsGlyph",
           !vm.getRawGlyphVisibility("placementsGlyph")
+        ),
+    },
+    // The two marks the card export panel offered and this menu did not, so
+    // every pictograph switch is reachable from a pictograph itself.
+    {
+      id: "toggle-reversals",
+      label: t("share_overlay_reversals"),
+      icon: "fa-rotate-left",
+      checked: vm.getRawGlyphVisibility("reversalIndicators"),
+      keepOpen: true,
+      action: () =>
+        vm.setGlyphVisibility(
+          "reversalIndicators",
+          !vm.getRawGlyphVisibility("reversalIndicators")
+        ),
+    },
+    {
+      id: "toggle-hand-color-key",
+      label: t("viewer_ui_hand_key"),
+      icon: "fa-palette",
+      checked: vm.getRawGlyphVisibility("handColorKey"),
+      keepOpen: true,
+      action: () =>
+        vm.setGlyphVisibility(
+          "handColorKey",
+          !vm.getRawGlyphVisibility("handColorKey")
         ),
     },
   ];
@@ -124,14 +163,14 @@ export function buildPictographContextMenuItems(
   const items: ContextMenuEntry[] = [
     {
       id: "grid-submenu",
-      label: "Grid & Points",
+      label: t("pictograph_menu_grid_points"),
       icon: "fa-border-all",
       children: buildGridChildren(vm),
     },
     ...(deps.gridJoin ? [buildGridJoinMenuItem(deps.gridJoin)] : []),
     {
       id: "glyphs-submenu",
-      label: "Glyphs",
+      label: t("viewer_ui_glyphs"),
       icon: "fa-font",
       children: buildGlyphChildren(vm),
     },
@@ -141,7 +180,7 @@ export function buildPictographContextMenuItems(
     items.push({ type: "separator" });
     items.push({
       id: "toggle-step-numbers",
-      label: "Step Numbers",
+      label: t("animation_menu_step_numbers"),
       icon: "fa-list-ol",
       checked: vm.getStepNumbersVisibility(),
       keepOpen: true,
@@ -153,14 +192,14 @@ export function buildPictographContextMenuItems(
     items.push({ type: "separator" });
     items.push({
       id: "adjust-left-arrow",
-      label: "Adjust Left Arrow",
+      label: t("pictograph_menu_adjust_left_arrow"),
       icon: "fa-arrows-alt",
       iconColor: "#2563eb",
       action: () => deps.onAdjustArrow!(HandSide.LEFT),
     });
     items.push({
       id: "adjust-right-arrow",
-      label: "Adjust Right Arrow",
+      label: t("pictograph_menu_adjust_right_arrow"),
       icon: "fa-arrows-alt",
       iconColor: "#dc2626",
       action: () => deps.onAdjustArrow!(HandSide.RIGHT),

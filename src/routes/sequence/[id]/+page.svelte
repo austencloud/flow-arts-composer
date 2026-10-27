@@ -4,6 +4,7 @@
   import { page } from "$app/state";
   import Seo from "#lib/shared/components/Seo.svelte";
   import SequencePageLoading from "./SequencePageLoading.svelte";
+  import SequenceFirstFrame from "./SequenceFirstFrame.svelte";
   import { provideSequencePageLoading } from "./sequence-page-loading.svelte.js";
   import { markScan } from "#lib/shared/analytics/scan-perf.js";
   import { loadSequenceViewerPage } from "./load-sequence-viewer-page.js";
@@ -33,6 +34,25 @@
   const loadingSession = browser ? loading.open() : null;
 
   const seo = $derived(data.seo);
+
+  /**
+   * Prototype behind `?frame=1`: the word, facts and stored thumbnail the
+   * server already resolved, drawn in the loading box on the server and kept
+   * on the client until the viewer module arrives. It sits outside the
+   * `browser` guard with a condition both sides agree on, so hydration adopts
+   * the server's image instead of rebuilding it. Without the flag nothing
+   * here renders and the page is unchanged.
+   */
+  const firstFrame = $derived(
+    data.firstFrame === true &&
+      Boolean(data.meta.word || data.meta.thumbnailUrl)
+  );
+  // Set whenever `browser` is; the template awaits it only inside that guard.
+  const viewerModule = browser ? loadSequenceViewerPage() : null;
+  let viewerReady = $state(false);
+  viewerModule?.then(() => {
+    viewerReady = true;
+  });
   const sequenceJsonLd = $derived(
     seo.jsonLd ? JSON.stringify(seo.jsonLd).replace(/</g, "\\u003c") : null
   );
@@ -77,6 +97,12 @@
   {/if}
 </Seo>
 
+{#if firstFrame && !viewerReady}
+  <div class="sequence-route-loading">
+    <SequenceFirstFrame meta={data.meta} session={loadingSession} />
+  </div>
+{/if}
+
 {#if browser}
   <!--
     The pending branch shows the same bar the viewer page shows while it
@@ -84,12 +110,14 @@
     Without it the layout's animated background was the only thing on screen
     for the whole chunk download — about five seconds on a cold phone visit.
   -->
-  {#await loadSequenceViewerPage()}
-    <div class="sequence-route-loading">
-      {#if loadingSession}
-        <SequencePageLoading session={loadingSession} />
-      {/if}
-    </div>
+  {#await viewerModule!}
+    {#if !firstFrame}
+      <div class="sequence-route-loading">
+        {#if loadingSession}
+          <SequencePageLoading session={loadingSession} />
+        {/if}
+      </div>
+    {/if}
   {:then { default: SequenceViewerPage }}
     {#key routeId}
       <SequenceViewerPage {data} />
@@ -97,8 +125,10 @@
   {/await}
 {/if}
 
-{#if seo.indexable}
-  <!--
+<!-- With the first frame on, these facts are already inside the viewport. -->
+{#if !firstFrame}
+  {#if seo.indexable}
+    <!--
     Server-rendered, crawlable detail block for a curated deck card. The
     interactive viewer above is client-only (`{#if browser}`), so without
     this a curated page's HTML response carried no visible word, letters,
@@ -106,48 +136,49 @@
     indexable. Firestore data only, no written copy, per the no-ghostwritten-
     copy house rule.
   -->
-  <section class="sequence-card-details panel-glass text-primary">
-    <h1>{seo.heading}</h1>
-    {#if data.meta.thumbnailUrl}
-      <img
-        class="sequence-card-details__image"
-        src={data.meta.thumbnailUrl}
-        alt={seo.ogImageAlt}
-        loading="lazy"
-      />
-    {/if}
-    <dl class="sequence-card-details__facts">
-      {#if data.meta.word}
-        <div>
-          <dt class="text-secondary">Word</dt>
-          <dd>{data.meta.word}</dd>
-        </div>
+    <section class="sequence-card-details panel-glass text-primary">
+      <h1>{seo.heading}</h1>
+      {#if data.meta.thumbnailUrl}
+        <img
+          class="sequence-card-details__image"
+          src={data.meta.thumbnailUrl}
+          alt={seo.ogImageAlt}
+          loading="lazy"
+        />
       {/if}
-      {#if data.meta.deckName}
-        <div>
-          <dt class="text-secondary">Deck</dt>
-          <dd>{data.meta.deckName}</dd>
-        </div>
+      <dl class="sequence-card-details__facts">
+        {#if data.meta.word}
+          <div>
+            <dt class="text-secondary">Word</dt>
+            <dd>{data.meta.word}</dd>
+          </div>
+        {/if}
+        {#if data.meta.deckName}
+          <div>
+            <dt class="text-secondary">Deck</dt>
+            <dd>{data.meta.deckName}</dd>
+          </div>
+        {/if}
+        {#if data.meta.creator}
+          <div>
+            <dt class="text-secondary">Creator</dt>
+            <dd>{data.meta.creator}</dd>
+          </div>
+        {/if}
+        {#if data.meta.stepCount}
+          <div>
+            <dt class="text-secondary">Steps</dt>
+            <dd>{data.meta.stepCount}</dd>
+          </div>
+        {/if}
+      </dl>
+      {#if data.meta.letters && data.meta.letters.length > 0}
+        <p class="sequence-card-details__letters text-secondary">
+          Letters: {data.meta.letters.join(" ")}
+        </p>
       {/if}
-      {#if data.meta.creator}
-        <div>
-          <dt class="text-secondary">Creator</dt>
-          <dd>{data.meta.creator}</dd>
-        </div>
-      {/if}
-      {#if data.meta.stepCount}
-        <div>
-          <dt class="text-secondary">Steps</dt>
-          <dd>{data.meta.stepCount}</dd>
-        </div>
-      {/if}
-    </dl>
-    {#if data.meta.letters && data.meta.letters.length > 0}
-      <p class="sequence-card-details__letters text-secondary">
-        Letters: {data.meta.letters.join(" ")}
-      </p>
-    {/if}
-  </section>
+    </section>
+  {/if}
 {/if}
 
 <style>

@@ -84,7 +84,8 @@
           : ""}{mixedGallery ? t("browse_audit_as_saved") : label}</span
       >
       {#if !mixedGallery}<span class="source">· {sourceLabel}</span>{/if}
-      <i class="fas fa-chevron-down" aria-hidden="true"></i>
+      <!-- It opens a panel, not a list of options, so it points onward. -->
+      <i class="fas fa-chevron-right" aria-hidden="true"></i>
     </PanelButton>
   </div>
 {/if}

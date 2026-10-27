@@ -67,6 +67,8 @@ function guideToc(): ModuleDefinition[] {
   for (const { group, entries } of bodyPagesByGroup()) {
     level1Groups.push({ id: group, label: `${group} ${GROUP_TITLES[group]}` });
     for (const { entry } of entries) {
+      // A print page the web folds into another page has no row of its own.
+      if (entry.web) continue;
       level1Sections.push({
         id: entry.id,
         label: seoForSlug(entry.id, entry.title).h1,

@@ -84,6 +84,7 @@ Supports letter highlighting during animation playback.
     overlayComponents,
     turnGlyphEntries = null,
     reversalGlyph = null,
+    showWord = true,
   }: {
     word?: string | null;
     visible?: boolean;
@@ -102,6 +103,8 @@ Supports letter highlighting during animation playback.
     overlayComponents?: Set<LOOPComponent> | null;
     turnGlyphEntries?: readonly TurnGlyphEntry[] | null;
     reversalGlyph?: ReversalGlyphData | null;
+    /** Draw the word; off keeps the strip for the marks beside it. */
+    showWord?: boolean;
   } = $props();
 
   // Animation state machine: "idle" | "exiting" | "entering"
@@ -367,6 +370,15 @@ Supports letter highlighting during animation playback.
       6
   );
   const patternGap = 4;
+  // The glyph boxes are sized to what they draw (see .pattern-glyph), so the
+  // 4px gap is the real distance from each glyph to its badge. Measured for
+  // the word's reserved space; 0 until the first layout, when the full
+  // 10-unit width stands in.
+  let turnGlyphWidth = $state(0);
+  let reversalGlyphWidth = $state(0);
+  // The fit decision stays on the full 10-unit box rather than the measured
+  // width: a measured width only exists once the glyph is shown, so deciding
+  // on it would flip the glyph off and on as it is measured.
   const patternsFit = $derived.by(() => {
     if (headerWidth < (presentation === "chrome" ? 180 : 300)) return false;
     const edge = Math.min(12, Math.max(6, headerWidth * 0.03));
@@ -388,11 +400,13 @@ Supports letter highlighting during animation playback.
   const showReversalGlyph = $derived(patternsFit && !!reversalGlyph);
   const leftIndicatorWidth = $derived(
     (difficultyLevel != null ? difficultyBadgeWidth : 0) +
-      (showTurnGlyph ? patternWidth + patternGap : 0)
+      (showTurnGlyph ? (turnGlyphWidth || patternWidth) + patternGap : 0)
   );
   const rightIndicatorWidth = $derived(
     (loopComponents ? loopBadgeWidth : 0) +
-      (showReversalGlyph ? patternWidth + patternGap : 0)
+      (showReversalGlyph
+        ? (reversalGlyphWidth || patternWidth) + patternGap
+        : 0)
   );
   const loopIconSize = $derived(
     presentation === "chrome"
@@ -499,6 +513,7 @@ Supports letter highlighting during animation playback.
     {#if showTurnGlyph && turnGlyphEntries}
       <div
         class="pattern-glyph turn-pattern"
+        bind:clientWidth={turnGlyphWidth}
         style:left="calc(clamp(6px, 3cqw, 12px) + {difficultyLevel != null
           ? difficultyBadgeWidth + patternGap
           : 0}px)"
@@ -515,6 +530,7 @@ Supports letter highlighting during animation playback.
     {#if showReversalGlyph && reversalGlyph}
       <div
         class="pattern-glyph reversal-pattern"
+        bind:clientWidth={reversalGlyphWidth}
         style:right="calc(clamp(6px, 3cqw, 12px) + {loopComponents
           ? loopBadgeWidth + patternGap
           : 0}px)"
@@ -540,6 +556,8 @@ Supports letter highlighting during animation playback.
          flex squeeze the glyphs individually. See .word-text. -->
     <span
       class="word-text"
+      class:word-hidden={!showWord}
+      aria-hidden={showWord ? undefined : "true"}
       style="--word-em: {wordEmWidth.toFixed(
         2
       )}; --badge-left: {leftIndicatorWidth}px; --badge-right: {rightIndicatorWidth}px; --badge-left-on: {difficultyLevel !=
@@ -697,23 +715,28 @@ Supports letter highlighting during animation playback.
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    padding: 2px 4px;
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 4px;
+    /* No box behind the icons: they sit on the header itself, like the level
+       badge on the other side. */
     height: var(--badge-size);
-  }
-
-  .word-header.dark-mode .loop-icon-badge {
-    background: rgba(255, 255, 255, 0.1);
   }
 
   .pattern-glyph {
     --glyph-unit: calc(var(--badge-size) / 6);
     --glyph-muted: #6b7280;
+    /* Resting beat columns stay fainter than the lit one but readable. The
+       letters' 0.2 is right for big white glyphs; thin coloured bars nearly
+       vanish at it (Austen picked 0.35, 2026-10-26). */
+    --glyph-rest-opacity: 0.35;
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    width: calc(var(--glyph-unit) * 10);
+    /* Sized to the glyph it draws, so `patternGap` is the visible distance to
+       the badge on both sides; a one-column reversal pattern no longer floats
+       in the middle of a 10-unit box. Both glyphs size their marks from
+       --glyph-unit and their own props, never from this box, so the cap only
+       bounds them. */
+    width: fit-content;
+    max-width: calc(var(--glyph-unit) * 10);
     height: var(--badge-size);
     display: flex;
     align-items: center;
@@ -726,6 +749,10 @@ Supports letter highlighting during animation playback.
 
   .word-header.dark-mode .pattern-glyph {
     --glyph-muted: #9ca3af;
+  }
+
+  .word-text.word-hidden {
+    visibility: hidden;
   }
 
   .word-text {

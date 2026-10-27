@@ -13,7 +13,18 @@
  * first batch of options keeps frames from being produced. Measured live, the
  * layout's grid-template-columns transition sat at currentTime 0 while the
  * picker opened. So ask the transition itself instead of guessing from widths.
+ *
+ * The PanelGroup also says so itself: from the update that changes an
+ * allocation until its track comes to rest, its root carries
+ * `data-panel-motion`, before a transition has been registered and while one
+ * is held. Either signal keeps the picker waiting, and no cap that counts from
+ * mount may cut that wait short: a cold first load can stop producing frames
+ * for seconds with the slide frozen at its start, and committing there drew
+ * the desktop catalog, then swapped it for the swipe layout, so the opening
+ * arrival played twice.
  */
+
+import { isInMovingPanelGroup } from "#lib/shared/panels/panel-motion.js";
 
 /**
  * Transitions that move a box. A decorative colour or opacity ease overhead
@@ -63,38 +74,60 @@ export function hasPendingAncestorLayoutTransition(
   });
 }
 
+/**
+ * True while something above `element` is still changing its box: its
+ * PanelGroup is mid-slide, or an ancestor's layout transition is running or
+ * queued.
+ */
+export function isAncestorResizing(
+  element: Element,
+  animations: readonly TransitionLike[]
+): boolean {
+  return (
+    isInMovingPanelGroup(element) ||
+    hasPendingAncestorLayoutTransition(element, animations)
+  );
+}
+
 export interface ContainerSettleInput {
   readonly width: number;
   readonly height: number;
   /** The previous frame's box, or null on the first probe. */
   readonly previous: { width: number; height: number } | null;
-  readonly ancestorTransitionPending: boolean;
+  readonly ancestorResizing: boolean;
+  /** Time since the probe's first frame, not since mount. */
   readonly elapsedMs: number;
+  /** How long a box that keeps changing with nothing above it moving may wait. */
   readonly timeoutMs: number;
+  /** How long a resize above that never reports settling may hold it back. */
+  readonly resizingTimeoutMs: number;
 }
 
 /**
  * Whether this frame's box may be committed as the picker's opening size.
  *
- * Committed when the box is measurable AND either it has held still for a
- * frame with nothing above it still resizing, or the cap has expired. The cap
- * keeps a box that never settles — an ancestor transition restarted every
- * frame, a drag-resize still being held — from leaving the panel blank; the
- * resize observer corrects whatever it commits.
+ * Never while something above is still resizing: the box is not the one the
+ * picker will live in. Only `resizingTimeoutMs` ends that wait, for a resize
+ * that never reports settling (a transition restarted every frame). Otherwise
+ * the box commits once it has held still for a frame, or after `timeoutMs` if
+ * it keeps changing on its own. The resize observer corrects whatever a cap
+ * commits.
  */
 export function shouldCommitContainerSize({
   width,
   height,
   previous,
-  ancestorTransitionPending,
+  ancestorResizing,
   elapsedMs,
   timeoutMs,
+  resizingTimeoutMs,
 }: ContainerSettleInput): boolean {
   if (width <= 100 || height <= 100) return false;
+  if (ancestorResizing) return elapsedMs > resizingTimeoutMs;
   if (elapsedMs > timeoutMs) return true;
-  const steady =
+  return (
     previous !== null &&
     Math.abs(previous.width - width) < 0.5 &&
-    Math.abs(previous.height - height) < 0.5;
-  return steady && !ancestorTransitionPending;
+    Math.abs(previous.height - height) < 0.5
+  );
 }

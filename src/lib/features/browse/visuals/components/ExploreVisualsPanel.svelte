@@ -32,7 +32,10 @@
     PublicArtifactEnvelope,
     PublicArtifactType,
   } from "#lib/shared/artifact-revisions/domain/public-artifact.js";
-  import type { TunnelPublicPayload } from "#lib/features/tunnel-collection/domain/tunnel-public-revision.js";
+  import {
+    collectedTunnelFromPublicArtifact,
+    type TunnelPublicPayload,
+  } from "#lib/features/tunnel-collection/domain/tunnel-public-revision.js";
   import type { MandalaPublicPayload } from "#lib/features/mandala/tabs/collection/domain/mandala-public-revision.js";
   import type { CollectedTunnel } from "#lib/features/tunnel-collection/domain/tunnel-collection-types.js";
   import PanelSpinner from "#lib/shared/components/panel/PanelSpinner.svelte";
@@ -306,29 +309,26 @@
           return;
         }
 
+        // The publication adapter validates the revision, upgrades snapshots
+        // published before saved colors, and keeps the authored cast.
+        const tunnel = collectedTunnelFromPublicArtifact(
+          detail.envelope,
+          detail.revision.payload as TunnelPublicPayload
+        );
+        if (!tunnel) {
+          detailError = t("browse_verified_visual_load_failed");
+          clearDetail();
+          return;
+        }
         if (!TunnelDetailPreview) {
           const loaded =
             await import("#lib/features/tunnel-collection/components/TunnelDetailPreview.svelte");
           if (token !== detailToken) return;
           TunnelDetailPreview = loaded.default;
         }
-        const payload = detail.revision.payload as TunnelPublicPayload;
         detailEnvelope = detail.envelope;
         detailMandala = null;
-        // TunnelDetailPreview renders a CollectedTunnel; the public payload
-        // carries exactly the fields it reads (steps + snapshot), so we shape
-        // one around the envelope's identity.
-        detailTunnel = {
-          id: detail.envelope.artifactId,
-          name: detail.envelope.title,
-          steps: payload.steps,
-          snapshot: payload.snapshot,
-          poster: payload.poster,
-          createdAt: 0,
-          ...(payload.sourceWord !== undefined && {
-            sourceWord: payload.sourceWord,
-          }),
-        };
+        detailTunnel = tunnel;
       } catch (cause) {
         console.warn("[ExploreVisuals] Detail load failed:", cause);
         if (token === detailToken) {

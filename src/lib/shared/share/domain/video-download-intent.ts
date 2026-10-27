@@ -61,10 +61,16 @@ export function videoDownloadSettingsKey(value: {
   opener?: string;
   /** The beat carousel's side; 2D only, and "off" leaves the key unchanged. */
   carousel?: string;
+  /** What the video draws over the animation, in screen order; 2D only. */
+  overlays?: readonly string[];
 }): string {
   const carousel =
     !value.is3DExport && value.carousel && value.carousel !== "off"
       ? [value.carousel]
+      : [];
+  const overlays =
+    !value.is3DExport && value.overlays
+      ? [`show:${value.overlays.join(",")}`]
       : [];
   return [
     value.resolution,
@@ -73,6 +79,7 @@ export function videoDownloadSettingsKey(value: {
     value.is3DExport ? value.quality : "",
     value.opener ?? "",
     ...carousel,
+    ...overlays,
   ].join("|");
 }
 

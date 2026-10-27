@@ -1,19 +1,22 @@
 <!--
-  BrowseToolbar - Unified sort dropdown + search + result count + optional source toggle.
+  BrowseToolbar - Unified sort choice + search + result count + optional source toggle.
   Replaces both SequenceTopBarControls (gallery) and PickerToolbar (picker).
 
   Layout (left to right):
   1. Source toggle (if showSourceToggle && engine.canSwitchSource)
-  2. Sort dropdown — trigger chip + popover with 4 options
+  2. Sort choice — every order as a visible button
   3. ExpandableSearchBar
   4. Result count (right-aligned, tabular-nums)
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { localizeFilterChip } from "./localize-filter-chip";
-  import { onMount, onDestroy, type Snippet } from "svelte";
+  import type { Snippet } from "svelte";
   import type { BrowseEngine } from "../engine/types";
   import { BrowseSortMethod } from "#lib/shared/browse/domain/enums/browse-enums.js";
+  import SortChoice, {
+    type SortChoiceOption,
+  } from "#lib/features/browse/shared/components/SortChoice.svelte";
   import ExpandableSearchBar from "#lib/shared/browse/components/ExpandableSearchBar.svelte";
   import LevelFilterChip from "#lib/shared/browse/components/filter-chips/LevelFilterChip.svelte";
   import FavoritesFilterChip from "#lib/shared/browse/components/filter-chips/FavoritesFilterChip.svelte";
@@ -87,55 +90,42 @@
     engine.allFilterChips.filter((c) => !c.locked).length
   );
 
-  // Sort dropdown state
+  // Sort choice
 
-  interface SortOption {
-    id: BrowseSortMethod;
-    label: string;
-    shortLabel: string;
-    icon: string;
-  }
+  type SortOption = SortChoiceOption<BrowseSortMethod>;
 
   const SORT_OPTIONS = $derived<SortOption[]>([
     {
       id: BrowseSortMethod.ALPHABETICAL,
       label: "A-Z",
-      shortLabel: "A-Z",
+      chipLabel: "A-Z",
       icon: "fa-font",
     },
     {
       id: BrowseSortMethod.DATE_ADDED,
       label: t("browse_ui_recent"),
-      shortLabel: t("browse_ui_recent"),
+      chipLabel: t("browse_ui_recent"),
       icon: "fa-clock",
     },
     {
       id: BrowseSortMethod.DIFFICULTY_LEVEL,
       label: t("browse_ui_level"),
-      shortLabel: t("browse_ui_level"),
+      chipLabel: t("browse_ui_level"),
       icon: "fa-signal",
     },
     {
       id: BrowseSortMethod.SEQUENCE_LENGTH,
       label: t("browse_ui_length"),
-      shortLabel: t("browse_ui_length"),
+      chipLabel: t("browse_ui_length"),
       icon: "fa-ruler",
     },
     {
       id: BrowseSortMethod.DENSITY,
       label: t("browse_ui_mandala"),
-      shortLabel: t("browse_ui_mandala"),
+      chipLabel: t("browse_ui_mandala"),
       icon: "fa-dharmachakra",
     },
   ]);
-
-  let sortOpen = $state(false);
-  let sortVisible = $state(false);
-  let sortTriggerEl: HTMLButtonElement | null = $state(null);
-  let sortPopoverEl: HTMLDivElement | null = $state(null);
-  let focusedIndex = $state(-1);
-
-  const EXIT_ANIMATION_MS = 180;
 
   const isHandsMode = $derived(engine.viewMode.subject === "hands");
 
@@ -150,7 +140,7 @@
           {
             id: BrowseSortMethod.CURATED,
             label: curatedSortLabel,
-            shortLabel: curatedSortLabel,
+            chipLabel: curatedSortLabel,
             icon: "fa-list-ol",
           },
           ...base,
@@ -158,104 +148,8 @@
       : base;
   });
 
-  const currentSortOption = $derived.by((): SortOption => {
-    return (
-      visibleSortOptions.find((o) => o.id === engine.sortMethod) ??
-      visibleSortOptions[0]!
-    );
-  });
-
-  function openSort() {
-    sortOpen = true;
-    focusedIndex = visibleSortOptions.findIndex(
-      (o) => o.id === engine.sortMethod
-    );
-    if (focusedIndex < 0) focusedIndex = 0;
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        sortVisible = true;
-        focusSortOptionAt(focusedIndex);
-      });
-    });
-  }
-
-  function closeSort() {
-    sortVisible = false;
-    focusedIndex = -1;
-    setTimeout(() => {
-      sortOpen = false;
-    }, EXIT_ANIMATION_MS);
-  }
-
-  function focusSortOptionAt(index: number) {
-    if (!sortPopoverEl) return;
-    const options =
-      sortPopoverEl.querySelectorAll<HTMLButtonElement>('[role="option"]');
-    options[index]?.focus();
-  }
-
-  function handleSortToggle() {
-    if (sortOpen) closeSort();
-    else openSort();
-  }
-
   function handleSortSelect(method: BrowseSortMethod) {
     withResultsMorph(() => engine.setSort(method, engine.sortDirection));
-    closeSort();
-  }
-
-  function handleSortKeydown(event: KeyboardEvent) {
-    if (!sortOpen) return;
-    switch (event.key) {
-      case "Escape":
-        event.stopPropagation();
-        closeSort();
-        sortTriggerEl?.focus();
-        break;
-      case "ArrowDown": {
-        event.preventDefault();
-        const next = (focusedIndex + 1) % visibleSortOptions.length;
-        focusedIndex = next;
-        focusSortOptionAt(next);
-        break;
-      }
-      case "ArrowUp": {
-        event.preventDefault();
-        const prev =
-          (focusedIndex - 1 + visibleSortOptions.length) %
-          visibleSortOptions.length;
-        focusedIndex = prev;
-        focusSortOptionAt(prev);
-        break;
-      }
-      case "Home":
-        event.preventDefault();
-        focusedIndex = 0;
-        focusSortOptionAt(0);
-        break;
-      case "End":
-        event.preventDefault();
-        focusedIndex = visibleSortOptions.length - 1;
-        focusSortOptionAt(focusedIndex);
-        break;
-      case "Enter":
-      case " ": {
-        const focused = visibleSortOptions[focusedIndex];
-        if (focused) {
-          event.preventDefault();
-          handleSortSelect(focused.id);
-        }
-        break;
-      }
-    }
-  }
-
-  function handlePointerDownOutside(event: PointerEvent) {
-    if (!sortOpen) return;
-    const target = event.target as Node;
-    if (sortTriggerEl?.contains(target) || sortPopoverEl?.contains(target))
-      return;
-    closeSort();
   }
 
   // Inline filter state (wide screens only — mirrors BrowseFilterBar)
@@ -390,18 +284,6 @@
   async function handleSourceChange(source: SequenceSource) {
     await engine.setSource(source);
   }
-
-  // ---------------------------------------------------------------------------
-  // Lifecycle
-  // ---------------------------------------------------------------------------
-
-  onMount(() => {
-    document.addEventListener("pointerdown", handlePointerDownOutside, true);
-  });
-
-  onDestroy(() => {
-    document.removeEventListener("pointerdown", handlePointerDownOutside, true);
-  });
 </script>
 
 <div class="browse-toolbar" class:embedded={variant === "embedded"}>
@@ -446,67 +328,12 @@
     </div>
   {/if}
 
-  <!-- 3. Sort dropdown -->
-  <div class="sort-dropdown-wrapper">
-    <button
-      type="button"
-      class="sort-trigger"
-      class:open={sortOpen}
-      bind:this={sortTriggerEl}
-      onclick={handleSortToggle}
-      onkeydown={handleSortKeydown}
-      aria-haspopup="listbox"
-      aria-expanded={sortOpen}
-      aria-label={t("browse_audit_sort_by", { sort: currentSortOption.label })}
-    >
-      <i
-        class="fas fa-arrow-down-short-wide sort-trigger-icon"
-        aria-hidden="true"
-      ></i>
-      <span class="sort-trigger-label">{currentSortOption.shortLabel}</span>
-      <i
-        class="fas fa-chevron-down sort-chevron"
-        class:rotated={sortOpen}
-        aria-hidden="true"
-      ></i>
-    </button>
-
-    {#if sortOpen}
-      <div
-        class="sort-popover"
-        class:visible={sortVisible}
-        bind:this={sortPopoverEl}
-        role="listbox"
-        aria-label={t("browse_sort_options")}
-        aria-activedescendant={focusedIndex >= 0
-          ? `sort-opt-${focusedIndex}`
-          : undefined}
-        onkeydown={handleSortKeydown}
-        tabindex="-1"
-      >
-        {#each visibleSortOptions as option, i}
-          <button
-            id="sort-opt-{i}"
-            type="button"
-            class="sort-option"
-            class:selected={engine.sortMethod === option.id}
-            class:focused={focusedIndex === i}
-            onclick={() => handleSortSelect(option.id)}
-            role="option"
-            aria-selected={engine.sortMethod === option.id}
-            tabindex={focusedIndex === i ? 0 : -1}
-            style="transition-delay: {sortVisible ? i * 30 : 0}ms"
-          >
-            <i class="fas {option.icon} option-icon" aria-hidden="true"></i>
-            <span class="option-label">{option.label}</span>
-            {#if engine.sortMethod === option.id}
-              <i class="fas fa-check check-icon" aria-hidden="true"></i>
-            {/if}
-          </button>
-        {/each}
-      </div>
-    {/if}
-  </div>
+  <!-- 3. Sort choice -->
+  <SortChoice
+    options={visibleSortOptions}
+    currentMethod={engine.sortMethod}
+    onSortChange={handleSortSelect}
+  />
 
   <!-- 3b. Filters pill (bottom-sheet pattern). The result count lives IN the
        pill — a bare number floating at the toolbar's edge read as noise
@@ -835,196 +662,6 @@
     outline-offset: 1px;
   }
 
-  .sort-dropdown-wrapper {
-    position: relative;
-    flex-shrink: 0;
-  }
-
-  .sort-trigger {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 0 12px;
-    min-height: var(--min-touch-target, 48px);
-    background: var(--theme-card-bg);
-    border: 1px solid var(--theme-stroke);
-    border-radius: var(--border-radius-md, 10px);
-    color: var(--theme-text-dim);
-    font-size: var(--font-size-compact, 12px);
-    font-weight: 500;
-    cursor: pointer;
-    white-space: nowrap;
-    transition:
-      background var(--duration-fast) var(--ease-standard),
-      border-color var(--duration-fast) var(--ease-standard),
-      color var(--duration-fast) var(--ease-standard),
-      transform var(--duration-fast) var(--ease-standard);
-  }
-
-  .sort-trigger:hover {
-    background: color-mix(in srgb, var(--theme-text) 6%, var(--theme-card-bg));
-    color: var(--theme-text);
-    border-color: color-mix(
-      in srgb,
-      var(--theme-stroke) 80%,
-      var(--theme-text)
-    );
-  }
-
-  .sort-trigger:active {
-    transform: scale(0.97);
-  }
-
-  .sort-trigger.open {
-    background: color-mix(
-      in srgb,
-      var(--theme-accent) 12%,
-      var(--theme-card-bg)
-    );
-    border-color: var(--theme-accent);
-    color: var(--theme-text);
-  }
-
-  .sort-trigger:focus-visible {
-    outline: 2px solid var(--theme-accent);
-    outline-offset: 2px;
-  }
-
-  .sort-trigger-icon {
-    font-size: var(--font-size-compact, 12px);
-    opacity: 0.7;
-  }
-
-  .sort-trigger-label {
-    font-weight: 600;
-  }
-
-  .sort-chevron {
-    font-size: 10px;
-    opacity: 0.5;
-    transition: transform var(--duration-fast) var(--ease-spring);
-  }
-
-  .sort-chevron.rotated {
-    transform: rotate(180deg);
-  }
-
-  .sort-popover {
-    position: absolute;
-    top: calc(100% + 6px);
-    left: 0;
-    min-width: 160px;
-    padding: 4px;
-    background: var(--theme-panel-bg);
-    border: 1px solid var(--theme-stroke);
-    border-radius: var(--border-radius-md, 10px);
-    box-shadow:
-      0 8px 32px rgba(0, 0, 0, 0.3),
-      0 2px 8px rgba(0, 0, 0, 0.2);
-    z-index: 100;
-
-    opacity: 0;
-    transform: scale(0.92) translateY(-4px);
-    transform-origin: top left;
-    transition:
-      opacity var(--duration-fast) var(--ease-standard),
-      transform var(--duration-normal) var(--ease-spring);
-  }
-
-  .sort-popover.visible {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-
-  .sort-option {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    width: 100%;
-    padding: 0 14px;
-    min-height: var(--min-touch-target, 48px);
-    background: transparent;
-    border: none;
-    border-radius: var(--border-radius-sm, 6px);
-    color: var(--theme-text-dim);
-    font-size: var(--font-size-compact, 12px);
-    font-weight: 500;
-    cursor: pointer;
-    text-align: left;
-
-    opacity: 0;
-    transform: translateY(-4px);
-    transition:
-      background var(--duration-fast) var(--ease-standard),
-      color var(--duration-fast) var(--ease-standard),
-      transform var(--duration-fast) var(--ease-standard);
-  }
-
-  .sort-popover.visible .sort-option {
-    opacity: 1;
-    transform: translateY(0);
-    transition:
-      background var(--duration-fast) var(--ease-standard),
-      color var(--duration-fast) var(--ease-standard),
-      transform var(--duration-fast) var(--ease-standard),
-      opacity var(--duration-fast) var(--ease-standard);
-  }
-
-  .sort-option:hover,
-  .sort-option.focused {
-    background: color-mix(in srgb, var(--theme-text) 8%, transparent);
-    color: var(--theme-text);
-  }
-
-  .sort-option:active {
-    transform: scale(0.98);
-  }
-
-  .sort-option.selected {
-    color: var(--theme-accent);
-  }
-
-  .sort-option:focus-visible {
-    outline: 2px solid var(--theme-accent);
-    outline-offset: -2px;
-  }
-
-  .option-icon {
-    width: 16px;
-    text-align: center;
-    font-size: var(--font-size-compact, 12px);
-    opacity: 0.7;
-    flex-shrink: 0;
-  }
-
-  .sort-option.selected .option-icon {
-    opacity: 1;
-  }
-
-  .option-label {
-    flex: 1;
-  }
-
-  .check-icon {
-    font-size: var(--font-size-compact, 12px);
-    color: var(--theme-accent);
-    animation: checkPop var(--duration-normal) var(--ease-spring);
-  }
-
-  @keyframes checkPop {
-    0% {
-      transform: scale(0);
-      opacity: 0;
-    }
-    60% {
-      transform: scale(1.2);
-    }
-    100% {
-      transform: scale(1);
-      opacity: 1;
-    }
-  }
-
   /* ---- Inline filters (wide only) ---- */
   .inline-filters {
     display: none;
@@ -1223,6 +860,9 @@
   }
 
   @container gallery (min-width: 900px) {
+    .browse-toolbar :global(.sort-choice .sort-name.rest) {
+      display: inline;
+    }
     .inline-filters {
       display: flex;
     }
@@ -1318,7 +958,7 @@
       padding: 0 6px;
     }
 
-    .sort-trigger-label {
+    .browse-toolbar :global(.sort-name) {
       display: none;
     }
 
@@ -1332,23 +972,9 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .sort-trigger,
-    .sort-chevron,
-    .sort-popover,
-    .sort-option,
-    .check-icon,
     .source-btn {
       transition: none !important;
       animation: none !important;
-    }
-
-    .sort-popover {
-      transform: none;
-    }
-
-    .sort-popover .sort-option {
-      opacity: 1;
-      transform: none;
     }
   }
 </style>

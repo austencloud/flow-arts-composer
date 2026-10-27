@@ -31,18 +31,30 @@
     localizeLevel1Block,
     localizeLevel1Text,
   } from "../_data/localize-level1-content";
-  import { stripHtml, taglineInIntro } from "../_data/flow-intro";
+  import {
+    flowRenderItems,
+    type FlowRenderItem,
+  } from "../_data/flow-render-items";
 
   let {
     content,
     darkMode = false,
     tagline = "",
     layout = "default",
+    screen = undefined,
+    detachTextChars = undefined,
   }: {
     content: GuideBlock[];
     darkMode?: boolean;
     tagline?: string;
     layout?: "default" | "grid-reference";
+    /**
+     * Show one screen of the page: the render-item indexes the host's
+     * flowScreens split gave it. Unset = the whole page.
+     */
+    screen?: number[];
+    /** Passed to flowRenderItems; the host's split must use the same. */
+    detachTextChars?: number;
   } = $props();
 
   // Theme handed to each pictograph: "dark" renders on the dark editorial theme
@@ -56,123 +68,41 @@
   const flowProse = (html: string) =>
     html.replace(/<br\s*\/?>/gi, " ").replace(/\s{2,}/g, " ");
 
-  // The page title (level-1 heading) is already shown by the host hero, so the
-  // flow column drops it. A first paragraph that is only the tagline goes too;
-  // when the paragraph says more, the hero drops its tagline instead
-  // (flow-intro.ts), so unique intros stay verbatim.
-  const rendered = $derived.by(() => {
-    const dropIntro = taglineInIntro(content, tagline) === "same";
-    const out: GuideBlock[] = [];
-    let firstProseSeen = false;
-    for (const b of content) {
-      if (b.kind === "heading" && b.level === 1) continue;
-      if (!firstProseSeen && b.kind === "prose") {
-        firstProseSeen = true;
-        if (dropIntro) continue;
-      }
-      out.push(b);
+  // Which text each showcase owns, and how the page splits into screens,
+  // live in flow-render-items.ts (pure, tested).
+  const renderItems = $derived(
+    flowRenderItems(content, tagline, localizeLevel1Block, { detachTextChars })
+  );
+  // `screen` set: draw only that screen's items (the topic page's one-screen
+  // view). Unset: the whole page in reading order (the reader, print-like).
+  const visible = $derived(
+    screen === undefined
+      ? renderItems.map((item, i) => ({ item, i }))
+      : screen.map((i) => ({
+          item: renderItems[i]!,
+          i,
+        }))
+  );
+
+  // One screen: gallery figures that share a screen sit side by side in one
+  // wrapping row, each with its caption, instead of stacking down the page.
+  const isGalleryItem = (item: FlowRenderItem) =>
+    item.type === "block" &&
+    item.block.kind === "pictographGroup" &&
+    item.block.layout !== "strip";
+  type Segment =
+    | { key: number; item: FlowRenderItem; row?: undefined }
+    | { key: number; row: { item: FlowRenderItem; i: number }[] };
+  const segments = $derived.by(() => {
+    const out: Segment[] = [];
+    for (const v of visible) {
+      const last = out[out.length - 1];
+      if (screen !== undefined && isGalleryItem(v.item)) {
+        if (last?.row) last.row.push(v);
+        else out.push({ key: v.i, row: [v] });
+      } else out.push({ key: v.i, item: v.item });
     }
     return out;
-  });
-
-  // Every `card: true` pictographGroup renders as ONE SequenceShowcase.
-  // Spec: docs/superpowers/specs/2026-07-16-sequence-showcase-design.md.
-  //
-  // Which text the card owns:
-  //   • Preceding text is absorbed ONLY as a complete heading-led mini-section
-  //     (heading → prose → card, the permutations shape). A prose run with no
-  //     heading directly above it is shared narrative for the whole page/family
-  //     (the dj-ek-fl intro) - it stays in the flow.
-  //   • Trailing prose up to the next heading/card is the card's own label or
-  //     explanation - always absorbed.
-  //   • Cards in a run of 2+ absorb nothing; the shared prose stays above.
-  //
-  // Which SHAPE the showcase takes (the layout answers to content density):
-  //   • feature - a heading or substantial prose: banner (canvas left, text
-  //     right) + full-width strip beneath.
-  //   • compact - caption-sized text or none: one tight band (canvas | label +
-  //     strip) hugging its content. A one-line label in the feature banner's
-  //     text column would float in a void of empty space.
-  type CardBlock = Extract<GuideBlock, { kind: "pictographGroup" }>;
-  type RenderItem =
-    | { type: "block"; block: GuideBlock }
-    | {
-        type: "showcase";
-        card: CardBlock;
-        text: GuideBlock[];
-        variant: "feature" | "compact";
-      };
-  const isCard = (b: GuideBlock): b is CardBlock =>
-    b.kind === "pictographGroup" && !!b.card;
-  const isFlowText = (b: GuideBlock) =>
-    b.kind === "prose" || b.kind === "glyphImage";
-  const isSectionHead = (
-    it: RenderItem
-  ): it is { type: "block"; block: GuideBlock } =>
-    it.type === "block" && it.block.kind === "heading" && it.block.level !== 1;
-  // Substantial = a heading, or more plain-text than a caption-sized label.
-  const FEATURE_TEXT_CHARS = 180;
-  const showcaseVariant = (text: GuideBlock[]): "feature" | "compact" => {
-    if (text.some((b) => b.kind === "heading")) return "feature";
-    const chars = text.reduce(
-      (n, b) => n + (b.kind === "prose" ? stripHtml(b.html).length : 0),
-      0
-    );
-    return chars > FEATURE_TEXT_CHARS ? "feature" : "compact";
-  };
-  const renderItems = $derived.by(() => {
-    const items: RenderItem[] = [];
-    const blocks = rendered.map(localizeLevel1Block);
-    let i = 0;
-    while (i < blocks.length) {
-      const b = blocks[i]!;
-      if (!isCard(b)) {
-        items.push({ type: "block", block: b });
-        i++;
-        continue;
-      }
-      // Collect the run of consecutive cards.
-      const run: CardBlock[] = [];
-      while (i < blocks.length && isCard(blocks[i]!))
-        run.push(blocks[i++] as CardBlock);
-      if (run.length >= 2) {
-        for (const c of run)
-          items.push({
-            type: "showcase",
-            card: c,
-            text: [],
-            variant: "compact",
-          });
-        continue;
-      }
-      // Lone card. Measure the contiguous text run already emitted above it,
-      // and absorb it (with its heading) only if a heading sits directly above
-      // - a complete mini-section that belongs to this card.
-      let k = items.length;
-      while (k > 0) {
-        const it = items[k - 1]!;
-        if (it.type === "block" && isFlowText(it.block)) k--;
-        else break;
-      }
-      const before: GuideBlock[] = [];
-      if (k < items.length && k > 0 && isSectionHead(items[k - 1]!)) {
-        const section = items.splice(k - 1);
-        for (const it of section)
-          before.push((it as { type: "block"; block: GuideBlock }).block);
-      }
-      // Trailing prose/glyphs are the card's own label or explanation.
-      const after: GuideBlock[] = [];
-      while (i < blocks.length && isFlowText(blocks[i]!))
-        after.push(blocks[i++]!);
-      const text = [...before, ...after];
-      items.push({
-        type: "showcase",
-        card: run[0]!,
-        text,
-        variant: showcaseVariant(text),
-      });
-    }
-    return items;
   });
 
   // Render hints → GuidePictograph props, defaulting to FlowFrame's prior hardcoded
@@ -222,8 +152,25 @@
     block.flowArea === "grid-overview" || block.flowArea === "grid-points";
 </script>
 
-<div class="flow-frame" class:grid-reference={layout === "grid-reference"}>
-  {#each renderItems as item, i (i)}
+<div
+  class="flow-frame"
+  class:grid-reference={layout === "grid-reference"}
+  class:one-screen={screen !== undefined}
+>
+  {#each segments as seg (seg.key)}
+    {#if seg.row}
+      <div class="gallery-row">
+        {#each seg.row as { item, i } (i)}
+          <div class="flow-gallery">{@render flowItem(item)}</div>
+        {/each}
+      </div>
+    {:else}
+      {@render flowItem(seg.item)}
+    {/if}
+  {/each}
+</div>
+
+{#snippet flowItem(item: FlowRenderItem)}
     {#if item.type === "showcase"}
       <!-- A word sequence's showcase: square live animation beside the section's
            text, the steps unrolled as a strip beneath. The strip + text are
@@ -239,6 +186,7 @@
           render={scard.render}
           variant={item.variant}
           pool={scard.pool?.entries}
+          stripBeside={screen !== undefined}
           {picTheme}
         >
           {#snippet text()}
@@ -388,8 +336,7 @@
       {/if}
       <!-- rule blocks are print-only chrome; the flow column uses spacing, not hairlines -->
     {/if}
-  {/each}
-</div>
+{/snippet}
 
 <style>
   /* Palette comes from the host via --ink/--ink-dim/--glyph-invert (with dark-ink
@@ -732,6 +679,68 @@
     .flow-figure {
       max-width: 20rem;
     }
+  }
+
+  /* ── One screen (GuidePageHost's screen view): the frame fills its fit box
+     and every figure band reads --fit, the scale GuideFitBox picks so the
+     screen fills the window without scrolling. Prose keeps its reading
+     measure and type size at every scale. */
+  .flow-frame.one-screen {
+    max-width: none;
+    padding: 0 0.25rem;
+  }
+  .flow-frame.one-screen > :global(:first-child) {
+    margin-top: 0;
+  }
+  .flow-frame.one-screen > :global(:last-child) {
+    margin-bottom: 0;
+  }
+  .one-screen .flow-p {
+    max-width: 44rem;
+  }
+  .one-screen .flow-h2 {
+    margin-top: 0.75rem;
+  }
+  /* Below the designed size the showcase keeps its width while the fit
+     search runs, so its layout (strip beside or below the canvas) does not
+     flip with the scale; above it, a 4K window widens the showcase so the
+     canvas and steps grow with --fit. */
+  .one-screen .flow-showcase {
+    width: min(100%, calc(84rem * max(1, var(--fit, 1))));
+    margin-inline: auto;
+    margin-block: 0.75rem;
+  }
+  .one-screen .flow-showcase.compact {
+    margin-block: 0.6rem;
+  }
+  .one-screen .flow-grid {
+    max-width: min(calc(30rem * var(--fit, 1)), 100%);
+    margin-block: 0.6rem 0.75rem;
+  }
+  /* Galleries that share a screen wrap side by side. Each keeps the grid's
+     width at this scale, so a smaller scale fits more per row and the
+     screen only ever gets shorter as --fit drops. */
+  .gallery-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-start;
+    column-gap: 1.5rem;
+  }
+  .flow-gallery {
+    flex: 0 1 auto;
+    width: min(calc(30rem * var(--fit, 1)), 100%);
+  }
+  .one-screen .flow-figure {
+    max-width: calc(15rem * var(--fit, 1));
+    margin-block: 0.75rem;
+  }
+  .one-screen .flow-grid-figure {
+    max-width: calc(18rem * var(--fit, 1));
+    margin-block: 0.75rem;
+  }
+  .one-screen .flow-glyph {
+    margin-top: 0.5rem;
   }
 
   /* Palette is HOST-owned: the reader's flow page is always a white sheet (keep

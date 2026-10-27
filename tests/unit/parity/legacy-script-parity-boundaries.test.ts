@@ -59,6 +59,33 @@ function readProjectFile(relativePath: string): string {
   return readFileSync(path.join(projectRoot, relativePath), "utf8");
 }
 
+// The importer loads @tka/sequence-engine through its built dist (the package's
+// `import` condition), and nothing rebuilds dist when the package sources
+// change. Resolve it the way the probe below does, so a stale build fails here
+// with the fix instead of deep inside the normalizer. In a linked worktree this
+// lands on the primary checkout's dist, through the node_modules junction.
+function assertSequenceEngineBuilt() {
+  const check = String.raw`
+    import("@tka/sequence-engine/core").then(
+      (core) => process.stdout.write(JSON.stringify({
+        ok: "CENTRIC_PLACEMENT_LOCATIONS" in core,
+        url: import.meta.resolve("@tka/sequence-engine/core"),
+      })),
+      (error) => process.stdout.write(JSON.stringify({ ok: false, url: String(error.message) }))
+    );
+  `;
+  const { ok, url } = JSON.parse(
+    execFileSync(process.execPath, ["--input-type=module", "-e", check], {
+      cwd: projectRoot,
+      encoding: "utf8",
+    })
+  ) as { ok: boolean; url: string };
+  if (!ok)
+    throw new Error(
+      `@tka/sequence-engine/core (${url}) has no CENTRIC_PLACEMENT_LOCATIONS: its dist is stale or missing; run \`npm run build:packages\``
+    );
+}
+
 describe("legacy sequence script parity boundaries", () => {
   const cells = JSON.parse(
     readProjectFile("docs/research/spiroanim/eightstep-72-sequences.json")
@@ -75,6 +102,7 @@ describe("legacy sequence script parity boundaries", () => {
   });
 
   it("runs private imports through the canonical persistence normalizer", async () => {
+    assertSequenceEngineBuilt();
     const probe = String.raw`
       const { readFileSync } = require("node:fs");
       const importer = require("./scripts/import-sequence.cjs");

@@ -6,7 +6,8 @@
   Fest jam's chair fit). With every chair taken the sim sits them where they
   are, so with no chair under them they sit on the ground in the clip's own
   pose. Says when it is ready, so the standing rig only fades out once there
-  is someone to fade to.
+  is someone to fade to. Their clothes carry the same tint as when they
+  stood (clothing-tint.ts), so nothing changes colour as they sit.
 -->
 <script lang="ts">
   import { T, useTask } from "@threlte/core";
@@ -17,6 +18,7 @@
     type ChairSitter,
   } from "#lib/shared/3d/performers/chair-sitter.js";
   import { seatedPlacement } from "#lib/shared/3d/performers/chair-seat.js";
+  import { tintClothing } from "#lib/shared/3d/performers/clothing-tint.js";
 
   interface Props {
     modelUrl: string;
@@ -29,6 +31,8 @@
     // The chair's seat top above that ground.
     seatTop: number;
     scale?: number;
+    // Whose clothes tint to wear (the person's id); none leaves them as drawn.
+    tintKey?: string;
     // Seconds into the clip, so elders side by side do not move in step.
     timeOffset?: number;
     opacity: number;
@@ -42,6 +46,7 @@
     floorY,
     seatTop,
     scale = 1,
+    tintKey,
     timeOffset = 0,
     opacity,
     onReady,
@@ -86,6 +91,7 @@
           return;
         }
         takeOwnMaterials(made.root);
+        if (tintKey) tintClothing(made.root, tintKey);
         sitter = made;
         onReady?.();
       })

@@ -78,6 +78,8 @@ export interface VideoExportOptions {
    * tunnel/art export can suppress glyph / header / progress / path lines / grid.
    */
   overlayOverrides?: VideoExportOrchestratorOptions["overlayOverrides"];
+  /** Draw the grid. Omitted: shown, as the live view does. */
+  gridVisible?: boolean;
 }
 
 /**
@@ -285,6 +287,7 @@ export class SequenceModalExporter {
           tunnelSpectrum: options.tunnelSpectrum,
           tunnelPropColors: options.tunnelPropColors,
           overlayOverrides: options.overlayOverrides,
+          gridVisible: options.gridVisible,
         }
       );
 

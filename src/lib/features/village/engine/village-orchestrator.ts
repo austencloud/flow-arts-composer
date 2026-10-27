@@ -41,6 +41,7 @@ import { FuneralSystem } from "./systems/funeral-system";
 import { MonumentSystem } from "./systems/monument-system";
 import { ProximityLearningSystem } from "./systems/proximity-learning-system";
 import { OpeningDirector } from "./village-opening";
+import { villageWalkIntents, type VillageWalkIntent } from "./village-walk-intent";
 import {
 	canLearnFromVisitor,
 	cancelVisitorLesson,
@@ -360,6 +361,11 @@ export class VillageOrchestrator implements VillageEventEmitter {
 
 	get snapshot(): VillageSnapshot {
 		return this._snapshot;
+	}
+
+	/** Each walker's target and pace now, beside the snapshot (village-walk-intent.ts). */
+	walkIntents(): Map<string, VillageWalkIntent> {
+		return villageWalkIntents(this.world, this.rules);
 	}
 
 	private buildSnapshot(): VillageSnapshot {

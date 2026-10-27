@@ -152,7 +152,14 @@ export interface VideoExportOrchestratorOptions {
     /** Hand timing-and-direction glyph; the prop glyph is not exported yet. */
     elementalGlyph: boolean;
     stepNumbers: boolean;
+    /** The header strip. Off removes it, and the video loses its height. */
     wordHeader: boolean;
+    /** Parts of the header strip; each off leaves the rest drawn. */
+    headerWord: boolean;
+    headerLevel: boolean;
+    headerTurns: boolean;
+    headerReversals: boolean;
+    headerLoop: boolean;
     progressBar: boolean;
     leftPathLines: boolean;
     rightPathLines: boolean;

@@ -14,7 +14,12 @@
   room is narrow). Where the player fills the width (a phone or tablet held
   upright) the pictures wrap four or more across under the same title row,
   floating under the player's controls or docked along the bottom of its
-  bounds, and scroll down where that room holds fewer rows than there are.
+  bounds. A docked sheet that needs more room asks the host to lift the
+  player into the empty space above it (onLift), only as far as every row
+  needs, and past that to shrink it a little from its top edge; the player
+  slides back when the picker closes. The sheet stands on the bounds' floor,
+  so it holds still while the player moves. The grid scrolls down only where
+  even that room holds fewer rows than there are.
   Where even that shows fewer effects than one row would (a short phone), it
   is one scrolling row instead, which fades, and with a mouse offers an
   arrow, at whichever end has more effects past it. The grid fades at
@@ -73,6 +78,16 @@
     /** Reads the height under the player's controls the picker may cover:
      *  empty space down to the next control, or a band it covers whole. */
     roomBelow?: () => number;
+    /** Reads how far the player may lift into empty space above it (`room`)
+     *  and the player's box at its resting place and size (`rest`), which
+     *  differs from its box on screen while it is lifted, shrunk, or easing
+     *  back. The fit works from the player at rest, so `roomBelow` reads at
+     *  rest too. */
+    roomAbove?: () => { room: number; rest: DOMRect | null };
+    /** Reports how far to lift the player and how far to shrink it from its
+     *  top edge while the picker is open: 0 and 1 once it closes or where the
+     *  picker needs no more room. */
+    onLift?: (px: number, scale: number) => void;
     /** Reports where the open picker sits, or null once it closes, so the
      *  player can fade what the floating row covers under its controls. */
     onArrange?: (
@@ -85,6 +100,8 @@
     player,
     bounds = null,
     roomBelow,
+    roomAbove,
+    onLift,
     onArrange,
   }: Props = $props();
 
@@ -150,12 +167,16 @@
   function measure() {
     if (!player) return;
     const area = boundsRect();
-    const box = player.getBoundingClientRect();
+    const above = roomAbove?.() ?? { room: 0, rest: null };
+    // Where the player rests: measured while it is lifted, shrunk, or easing
+    // back, its own box would ask for a different lift every time.
+    const box = above.rest ?? player.getBoundingClientRect();
     dockInset = { left: box.left - area.left, right: area.right - box.right };
     fit = fitEffectQuickPicker({
       bounds: area,
       player: box,
       roomBelow: roomBelow?.() ?? 0,
+      roomAbove: above.room,
       count: EFFECTS.length,
     });
   }
@@ -191,6 +212,10 @@
     onArrange?.(
       open && fit ? (fit.arrangement === "side" ? "side" : fit.side) : null
     );
+  });
+
+  $effect(() => {
+    onLift?.(open && fit ? fit.lift : 0, open && fit ? fit.scale : 1);
   });
 
   /** Page the row so the tile cut at that end comes fully into view. */

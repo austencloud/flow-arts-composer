@@ -346,7 +346,16 @@ const GLOSSARY_VERBATIM = new Set([
  * Keys whose English value is legitimately identical in every locale even
  * though it has more than three prose words: proper names and titles.
  */
-const IDENTICAL_ALLOWED = new Set(["shape_engine_source_heading"]);
+const IDENTICAL_ALLOWED = new Set([
+  "shape_engine_source_heading",
+  // Austen's Gamma page lines on the Dual-Shifts guide page (2026-10-26):
+  // kept in his English in every catalog until he has them translated.
+  "guide_topic_dual_shifts_quarter_opp_lead",
+  "guide_topic_dual_shifts_quarter_same_lead",
+  "guide_topic_dual_shifts_switching_lead",
+  "guide_topic_dual_shifts_continuous",
+  "guide_topic_dual_shifts_gamma_practice",
+]);
 
 /** Prose words in a message: Latin words of two or more letters that are not glossary terms. */
 function proseWords(message: string): string[] {

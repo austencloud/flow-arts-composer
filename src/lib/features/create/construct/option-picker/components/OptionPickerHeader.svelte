@@ -25,6 +25,11 @@
   import { growFade, popIn, flyFade } from "#lib/shared/transitions/motion.js";
   import { DURATION, STAGGER } from "#lib/shared/transitions/transitions.js";
   import {
+    optionSheetControlIn,
+    optionSheetControlsInWave,
+    tryGetOptionSheetOpeningContext,
+  } from "../context/option-sheet-opening-context";
+  import {
     formatTurnValue,
     keyToTurnValue,
     turnValueToKey,
@@ -126,6 +131,28 @@
   function dirLabel(d: RotationDirection): string {
     return d === RotationDirection.CLOCKWISE ? "CW" : "CCW";
   }
+
+  // While a stacked sheet opens, every row here takes its place in the sheet's
+  // wave: the level pills step across, then blue, then red. When the header
+  // mounts any other way (side by side, or inside the settings popover) its
+  // host's own entrance carries the hands. Only a hand row added later, because
+  // the level gained turns, glides in on its own, red one micro-beat behind.
+  // Intros start inside the update that mounts the header, so this flag is
+  // still set for them and cleared by the time a later update adds the row.
+  const sheet = tryGetOptionSheetOpeningContext();
+  let headerMounting = true;
+  queueMicrotask(() => (headerMounting = false));
+  const controlIn = (node: Element) => optionSheetControlIn(node, { sheet });
+  const pillIn = (node: Element) =>
+    optionSheetControlIn(node, { sheet, across: true });
+  function handIn(node: Element, delay: number) {
+    if (optionSheetControlsInWave(sheet))
+      return optionSheetControlIn(node, { sheet });
+    if (headerMounting) return { duration: 0 };
+    return flyFade(node, { y: 6, delay });
+  }
+  const blueIn = (node: Element) => handIn(node, 0);
+  const redIn = (node: Element) => handIn(node, STAGGER.micro);
 </script>
 
 <div
@@ -145,6 +172,7 @@
       {#if showFilter}
         <div
           class="filter-seg"
+          in:controlIn|global
           role="group"
           aria-label={t("create_ui_option_filter")}
           title={filterExplanation}
@@ -203,6 +231,7 @@
           compact={layout === "compact"}
           onchange={(n) => onLevelChange(n as TurnLevel)}
           ariaLabel={t("create_option_working_level")}
+          buttonIn={pillIn}
         />
       </div>
 
@@ -227,7 +256,7 @@
         class:has-spin={hasLeftTurns}
         role="group"
         aria-label={t("create_ui_left_turns")}
-        in:flyFade={{ y: 6 }}
+        in:blueIn|global
       >
         <div class="hand-meta">
           <!-- No Blue/Red word: the half is already blue/red (tint, border,
@@ -266,13 +295,14 @@
         </div>
       </div>
       <!-- Red trails blue by one micro-beat: the two halves read as one gesture
-           rather than a single slab dropping in. -->
+           rather than a single slab dropping in. In the opening wave the gap
+           comes from red sitting lower (or, side by side, arriving with blue). -->
       <div
         class="hand-half red"
         class:has-spin={hasRightTurns}
         role="group"
         aria-label={t("create_ui_right_turns")}
-        in:flyFade={{ y: 6, delay: STAGGER.micro }}
+        in:redIn|global
       >
         <div class="hand-meta">
           <span class="spin-slot">
@@ -692,7 +722,9 @@
   /* The compact tray sits over animated backgrounds. A deeper accent keeps
      the selected filter label readable at enhanced contrast without changing
      the shared control everywhere else it appears. */
-  .oph.compact .filter-seg :global(.segmented-control.accent .segment.selected) {
+  .oph.compact
+    .filter-seg
+    :global(.segmented-control.accent .segment.selected) {
     background: color-mix(in srgb, var(--theme-accent, #8b6cff) 48%, black);
   }
 

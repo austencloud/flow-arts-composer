@@ -17,6 +17,11 @@
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
   import GuideShell from "../_components/GuideShell.svelte";
+  import GuideScreens from "../_components/fit/GuideScreens.svelte";
+  import {
+    watchScreenTier,
+    type ScreenTier,
+  } from "../_components/fit/guide-screen-url";
   import Sentences from "../_components/Sentences.svelte";
   import { sentences } from "../_components/sentences";
   import GuideSeo from "../level-1/_components/GuideSeo.svelte";
@@ -531,6 +536,213 @@
       })
     )
   );
+
+  // One screen at a time (2026-10-24 fit pass). The reference reads in the
+  // order it always did, a screen per idea: the two counts, reading a
+  // ratio, the ladder level by level, the swap, the original twelve, one
+  // end or two, then the 144 pairings. A phone keeps each screen to a few
+  // sentences and shows one tray at a time.
+  type RatioView = { label: string; parts: string[]; duo?: boolean };
+  let tier = $state<ScreenTier>("large");
+  onMount(() => watchScreenTier((v) => (tier = v)));
+  const small = $derived(tier === "small");
+  const levelLabel = (level: number) =>
+    tDynamic("guide_ratios_level_heading", {
+      level,
+      name: tDynamic(`guide_ratios_level_${level}_name`),
+    });
+  const views = $derived.by((): RatioView[] => {
+    const reading = tDynamic("guide_ratios_reading");
+    const ladderTitle = tDynamic("guide_ratios_ladder");
+    const swap = tDynamic("guide_ratios_swap_title");
+    const twelve = tDynamic("guide_ratios_twelve_title");
+    const ends = tDynamic("guide_ratios_one_or_two");
+    const pairings = tDynamic("guide_ratios_pairings_title");
+    if (tier === "small") {
+      return [
+        { label: "Two counts", parts: ["intro:0-2"] },
+        { label: "Turns", parts: ["intro:2-"] },
+        { label: "Three ratios", parts: ["origins"] },
+        { label: reading, parts: ["h:reading", "terms"] },
+        { label: "Converting", parts: ["formula"] },
+        { label: "Petals", parts: ["petals"] },
+        { label: tDynamic("guide_ratios_float_name"), parts: ["float"] },
+        { label: tDynamic("guide_ratios_example_caption"), parts: ["worked"] },
+        { label: "Common names", parts: ["names"] },
+        { label: ladderTitle, parts: ["h:ladder", "ladderIntro"] },
+        { label: "Four flowers", parts: ["ladderOri:0-2"] },
+        { label: "How a flower sits", parts: ["ladderOri:2-3"] },
+        { label: "Quarter turn flowers", parts: ["ladderOri:3-"] },
+        { label: levelLabel(1), parts: ["tinted", "base"] },
+        // Two cards a screen: a phone draws each card's flowers large
+        // enough to read.
+        ...levelGroups.flatMap((group) =>
+          Array.from({ length: Math.ceil(group.cells / 2) }, (_, k) => ({
+            label:
+              k === 0
+                ? levelLabel(group.level)
+                : `${levelLabel(group.level)} (${k + 1})`,
+            parts: [`level-${group.level}:${k * 2}-${k * 2 + 2}`],
+          }))
+        ),
+        { label: swap, parts: ["h:swap", "swapIntro"] },
+        { label: "Laps", parts: ["swapLaps"] },
+        { label: "Watch: 1:2 and 2:1", parts: ["swapMotion"] },
+        { label: "Counting petals", parts: ["swapFormula"] },
+        { label: "Quarter turns lap twice", parts: ["swapQuarter"] },
+        { label: twelve, parts: ["h:twelve", "twelveIntro:0-2"] },
+        { label: "In or out", parts: ["twelveIntro:2-"] },
+        { label: "1:1 prospin", parts: ["twelveExample"] },
+        ...families.map((family, i) => ({
+          label: tDynamic("guide_ratios_family", { ratio: family.ratio }),
+          parts: [`family-${i}`],
+        })),
+        { label: ends, parts: ["h:ends", "endsIntro"] },
+        { label: "A staff draws both", parts: ["endsOpposite"] },
+        { label: "Ends at Level 1", parts: ["endsL1"] },
+        { label: "Ends past Level 1", parts: ["endsL4:0-2"] },
+        { label: "Ends at Level 4", parts: ["endsL4:2-"] },
+        // A phone shows one ends card at a time: its words don't shrink.
+        ...endsLevels.flatMap((tray) =>
+          tray.cases.map((_, k) => ({
+            label:
+              k === 0
+                ? `Both ends: Level ${tray.level}`
+                : `Both ends: Level ${tray.level} (${k + 1})`,
+            parts: [`ends-${tray.level}:${k}`],
+          }))
+        ),
+        { label: pairings, parts: ["h:pairings", "pairingsIntro"] },
+        { label: "Opening a cell", parts: ["pairingsChoose"] },
+        { label: tDynamic("guide_ratios_cell"), parts: ["anatomy"] },
+        { label: "The matrix", parts: ["scrollHint", "matrix"] },
+        { label: tDynamic("guide_ratios_beyond_title"), parts: ["beyond"] },
+        { label: tDynamic("guide_ratios_sources"), parts: ["sources"] },
+      ];
+    }
+    const medium = tier === "medium";
+    return [
+      { label: "Two counts", parts: ["intro", "origins"] },
+      ...(medium
+        ? [
+            {
+              label: reading,
+              parts: ["h:reading", "terms", "formula", "worked"],
+              duo: true,
+            },
+            { label: "Petals", parts: ["petals", "float"] },
+          ]
+        : [
+            {
+              label: reading,
+              parts: [
+                "h:reading",
+                "terms",
+                "formula",
+                "petals",
+                "float",
+                "worked",
+              ],
+              duo: true,
+            },
+          ]),
+      { label: "Common names", parts: ["names"] },
+      { label: ladderTitle, parts: ["h:ladder", "ladderIntro", "ladderOri"] },
+      { label: levelLabel(1), parts: ["tinted", "base"] },
+      ...(medium
+        ? [
+            { label: levelLabel(2), parts: ["level-2"] },
+            { label: levelLabel(3), parts: ["level-3"] },
+          ]
+        : [{ label: "Levels 2 and 3", parts: ["level-2", "level-3"] }]),
+      { label: levelLabel(4), parts: ["level-4"] },
+      ...(medium
+        ? [
+            {
+              label: swap,
+              parts: ["h:swap", "swapIntro", "swapLaps", "swapMotion"],
+              duo: true,
+            },
+            { label: "Counting petals", parts: ["swapFormula", "swapQuarter"] },
+          ]
+        : [
+            {
+              label: swap,
+              parts: [
+                "h:swap",
+                "swapIntro",
+                "swapLaps",
+                "swapFormula",
+                "swapQuarter",
+                "swapMotion",
+              ],
+              duo: true,
+            },
+          ]),
+      { label: twelve, parts: ["h:twelve", "twelveIntro", "twelveExample"] },
+      { label: "Three families", parts: ["families"] },
+      { label: ends, parts: ["h:ends", "endsIntro", "endsOpposite"] },
+      { label: "Ends level by level", parts: ["endsL1", "endsL4"] },
+      { label: "Both ends: Levels 1 and 2", parts: ["ends-1", "ends-2"] },
+      { label: "Both ends: Levels 3 and 4", parts: ["ends-3", "ends-4"] },
+      {
+        label: pairings,
+        parts: ["h:pairings", "pairingsIntro", "pairingsChoose", "anatomy"],
+        duo: true,
+      },
+      { label: "The matrix", parts: ["matrix"] },
+      {
+        label: tDynamic("guide_ratios_beyond_title"),
+        parts: ["beyond", "sources"],
+      },
+    ];
+  });
+
+  /** The one ends card a part names ("ends-2:1" is Level 2's second), or
+   * undefined for the whole tray. */
+  function shownEndsCase(
+    visuals: string[],
+    tray: EndsLevel
+  ): number | undefined {
+    const part = visuals.find((p) => partName(p) === `ends-${tray.level}`);
+    const k = part?.split(":")[1];
+    return k === undefined ? undefined : Number(k);
+  }
+  const VISUAL = /^(worked|base|level-|swapMotion|famil|ends-|anatomy|matrix)/;
+  const isText = (part: string) => !VISUAL.test(part);
+  /** A text part's sentence slice: "intro:2-" is the intro from its third
+   * sentence on. */
+  function slice(text: string, part: string): string {
+    const range = part.split(":")[1];
+    if (!range) return text;
+    const [a, b] = range.split("-");
+    return sentences(text)
+      .slice(Number(a), b ? Number(b) : undefined)
+      .join(" ");
+  }
+  const partName = (part: string) => part.split(":")[0]!;
+  /** Rows of a level part: "level-4:4-" is Level 4 from its fifth card. */
+  function levelPart(part: string) {
+    const level = Number(partName(part).slice("level-".length));
+    const group = levelGroups.find((g) => g.level === level);
+    const range = part.split(":")[1];
+    const [a, b] = range ? range.split("-").map(Number) : [0, undefined];
+    const from = a ?? 0;
+    const rows = group ? group.rows.slice(from, b || undefined) : [];
+    return {
+      group,
+      rows,
+      head: from === 0,
+      // The note card sits after the last row: shown by the slice that
+      // reaches past it.
+      aside:
+        !group || !b || (from <= group.rows.length && b > group.rows.length),
+    };
+  }
+  // The petals and swap paragraphs point at "One end or two": its screen.
+  const endsHref = $derived(
+    `?screen=${views.findIndex((v) => v.parts.includes("h:ends")) + 1}`
+  );
 </script>
 
 <GuideSeo
@@ -547,559 +759,620 @@
 />
 
 <GuideShell>
-  <article class="ratios guide-page-route" style="--tracks: {MATRIX_TRACKS}">
-    <div class="opening">
-      <header class="page-head">
-        <h1>{tDynamic("guide_ratios_title")}</h1>
-        <p><Sentences text={tDynamic("guide_ratios_intro")} /></p>
-        <!-- The Spin Science link sits mid-sentence: the sentence it closes
-             takes the link and the first sentence of the text after it. -->
-        <p>
-          <Sentences text={tDynamic("guide_ratios_origins_before")}
-            >{#snippet tail()}{" "}<LinkChip
-                size="inline"
-                href={SPIN_SCIENCE_URL}
-                newTabLabel={tDynamic("guide_ratios_new_tab")}
-                >Spin Science</LinkChip
-              >{originsAfter[0]}{/snippet}</Sentences
-          >{" "}<Sentences text={originsAfter.slice(1).join(" ")} />
-        </p>
-        {#if loadError}
-          <p class="notice error" role="alert">
-            {tDynamic("guide_ratios_load_error")}
-            <span class="notice-detail">{loadError}</span>
-          </p>
-        {/if}
-      </header>
-
-      <section class="reading" aria-labelledby="reading-heading">
-        <div class="reading-copy">
-          <h2 id="reading-heading">{tDynamic("guide_ratios_reading")}</h2>
-
-          <dl class="terms">
-            <div>
-              <dt>{tDynamic("guide_ratios_hand_cycles")}</dt>
-              <dd>{tDynamic("guide_ratios_hand_cycles_definition")}</dd>
+  <main
+    class="ratios guide-page-route"
+    class:small
+    style="--tracks: {MATRIX_TRACKS}"
+  >
+    <GuideScreens
+      title={tDynamic("guide_ratios_title")}
+      labels={views.map((v) => v.label)}
+      prevPage={{
+        href: localHref("/guide/level-2"),
+        title: tDynamic("guide_hub_level2_title"),
+      }}
+      nextPage={{
+        href: localHref("/guide/motion-paths"),
+        title: tDynamic("guide_hub_motion_paths_title"),
+      }}
+      hubHref={localHref("/guide")}
+    >
+      {#snippet screen(n)}
+        {@const view = views[n]!}
+        {@const texts = view.parts.filter(isText)}
+        {@const visuals = view.parts.filter((p) => !isText(p))}
+        {@const levels = visuals.filter((p) => p.startsWith("level-"))}
+        {@const trays = endsLevels.filter((tray) =>
+          visuals.some((p) => partName(p) === `ends-${tray.level}`)
+        )}
+        {@const shownFamilies = families.filter(
+          (_, i) =>
+            visuals.includes("families") || visuals.includes(`family-${i}`)
+        )}
+        <div
+          class="screen"
+          class:duo={view.duo && texts.length && visuals.length}
+        >
+          {#if texts.length}
+            <div class="copy">
+              {#if n === 0 && loadError}
+                <p class="notice error" role="alert">
+                  {tDynamic("guide_ratios_load_error")}
+                  <span class="notice-detail">{loadError}</span>
+                </p>
+              {/if}
+              {#each texts as part (part)}
+                {@render textPart(part)}
+              {/each}
             </div>
-            <div>
-              <dt>{tDynamic("guide_ratios_prop_rotations")}</dt>
-              <dd>{tDynamic("guide_ratios_prop_rotations_definition")}</dd>
+          {/if}
+
+          {#if visuals.length}
+            <div class="visuals">
+              {#if visuals.includes("worked")}
+                {@render worked()}
+              {/if}
+              {#if visuals.includes("base")}
+                {@render baseTray()}
+              {/if}
+              {#if levels.length}
+                <div class="board" class:pair={levels.length > 1 && !small}>
+                  {#each levels as part (part)}
+                    {@render levelTray(part)}
+                  {/each}
+                </div>
+              {/if}
+              {#if visuals.includes("swapMotion")}
+                <div class="swap-motion">
+                  <RatioSwapMotion panels={swapPanels} />
+                </div>
+              {/if}
+              {#if shownFamilies.length}
+                <div class="family-band">
+                  <div
+                    class="family-list"
+                    class:solo={shownFamilies.length === 1}
+                  >
+                    {#each shownFamilies as family (family.turns)}
+                      {@render familyCard(family)}
+                    {/each}
+                  </div>
+                </div>
+              {/if}
+              {#if trays.length}
+                <div class="board" class:pair={trays.length > 1 && !small}>
+                  {#each trays as tray (tray.level)}
+                    {@render endsTray(tray, shownEndsCase(visuals, tray))}
+                  {/each}
+                </div>
+              {/if}
+              {#if visuals.includes("anatomy")}
+                {@render anatomy()}
+              {/if}
+              {#if visuals.includes("matrix")}
+                {@render matrix()}
+              {/if}
             </div>
-          </dl>
-
-          <p>
-            {tDynamic("guide_ratios_formula_before")}
-            <code>P / H = 2 × turns + 1</code>{tDynamic(
-              "guide_ratios_formula_between"
-            )}
-            <code>turns = (P / H − 1) / 2</code>.
-          </p>
-          <p>
-            {tDynamic("guide_ratios_petals_before")}
-            <code>|P − H|</code>{tDynamic("guide_ratios_petals_between")}
-            <code>P + H</code>{tDynamic("guide_ratios_petals_after")}
-            <LinkChip size="inline" href="#ends-heading"
-              >{tDynamic("guide_ratios_one_or_two")}</LinkChip
-            >{tDynamic("guide_ratios_petals_end")}
-          </p>
-          <p>
-            {tDynamic("guide_ratios_float")}
-          </p>
-
-          <h3>Common names</h3>
-          <dl class="terms">
-            {#each COMMON_NAMES as entry (entry.name)}
-              <div>
-                <dt>{entry.name}</dt>
-                <dd>
-                  {ratioLabel(entry.turns)}
-                  {styleWord(entry.style).toLowerCase()}
-                </dd>
-              </div>
-            {/each}
-          </dl>
-          <p>
-            {tDynamic("guide_ratios_names_note")}
-            <LinkChip
-              size="inline"
-              href={localHref("/guide/level-1/staff-motions")}
-              >{tDynamic("verified_level1_staff_motions_274")}</LinkChip
-            >{spaced(tDynamic("guide_ratios_names_note_end"))}
-          </p>
+          {/if}
         </div>
+      {/snippet}
+    </GuideScreens>
+  </main>
+</GuideShell>
 
-        <figure class="worked">
-          <figcaption>{tDynamic("guide_ratios_example_caption")}</figcaption>
-          <div class="worked-shapes">
-            {#each [example.pro, example.anti] as flower (flowerKey(flower))}
-              <div class="worked-shape">
-                <span class="still still-lg">
+{#snippet textPart(part: string)}
+  {@const name = partName(part)}
+  {#if name === "intro"}
+    <p><Sentences text={slice(tDynamic("guide_ratios_intro"), part)} /></p>
+  {:else if name === "origins"}
+    <!-- The Spin Science link sits mid-sentence: the sentence it closes
+         takes the link and the first sentence of the text after it. -->
+    <p>
+      <Sentences text={tDynamic("guide_ratios_origins_before")}
+        >{#snippet tail()}{" "}<LinkChip
+            size="inline"
+            href={SPIN_SCIENCE_URL}
+            newTabLabel={tDynamic("guide_ratios_new_tab")}
+            >Spin Science</LinkChip
+          >{originsAfter[0]}{/snippet}</Sentences
+      >{" "}<Sentences text={originsAfter.slice(1).join(" ")} />
+    </p>
+  {:else if name === "h"}
+    {@const key = part.split(":")[1]}
+    {#if key === "reading"}
+      <h2>{tDynamic("guide_ratios_reading")}</h2>
+    {:else if key === "ladder"}
+      <h2>{tDynamic("guide_ratios_ladder")}</h2>
+    {:else if key === "swap"}
+      <h2>{tDynamic("guide_ratios_swap_title")}</h2>
+    {:else if key === "twelve"}
+      <h2>{tDynamic("guide_ratios_twelve_title")}</h2>
+    {:else if key === "ends"}
+      <h2 id="ends-heading">{tDynamic("guide_ratios_one_or_two")}</h2>
+    {:else if key === "pairings"}
+      <h2>{tDynamic("guide_ratios_pairings_title")}</h2>
+    {/if}
+  {:else if name === "terms"}
+    <dl class="terms">
+      <div>
+        <dt>{tDynamic("guide_ratios_hand_cycles")}</dt>
+        <dd>{tDynamic("guide_ratios_hand_cycles_definition")}</dd>
+      </div>
+      <div>
+        <dt>{tDynamic("guide_ratios_prop_rotations")}</dt>
+        <dd>{tDynamic("guide_ratios_prop_rotations_definition")}</dd>
+      </div>
+    </dl>
+  {:else if name === "formula"}
+    <p>
+      {tDynamic("guide_ratios_formula_before")}
+      <code>P / H = 2 × turns + 1</code>{tDynamic(
+        "guide_ratios_formula_between"
+      )}
+      <code>turns = (P / H − 1) / 2</code>.
+    </p>
+  {:else if name === "petals"}
+    <p>
+      {tDynamic("guide_ratios_petals_before")}
+      <code>|P − H|</code>{tDynamic("guide_ratios_petals_between")}
+      <code>P + H</code>{tDynamic("guide_ratios_petals_after")}
+      <LinkChip size="inline" href={endsHref}
+        >{tDynamic("guide_ratios_one_or_two")}</LinkChip
+      >{tDynamic("guide_ratios_petals_end")}
+    </p>
+  {:else if name === "float"}
+    <p>{tDynamic("guide_ratios_float")}</p>
+  {:else if name === "names"}
+    <h2>Common names</h2>
+    <dl class="terms">
+      {#each COMMON_NAMES as entry (entry.name)}
+        <div>
+          <dt>{entry.name}</dt>
+          <dd>
+            {ratioLabel(entry.turns)}
+            {styleWord(entry.style).toLowerCase()}
+          </dd>
+        </div>
+      {/each}
+    </dl>
+    <p>
+      {tDynamic("guide_ratios_names_note")}
+      <LinkChip size="inline" href={localHref("/guide/level-1/staff-motions")}
+        >{tDynamic("verified_level1_staff_motions_274")}</LinkChip
+      >{spaced(tDynamic("guide_ratios_names_note_end"))}
+    </p>
+  {:else if name === "ladderIntro"}
+    <p>{tDynamic("guide_ratios_ladder_intro")}</p>
+  {:else if name === "ladderOri"}
+    <p>{slice(tDynamic("guide_ratios_ladder_orientation"), part)}</p>
+  {:else if name === "tinted"}
+    <p class="note">{tDynamic("guide_ratios_tinted_cards")}</p>
+  {:else if name === "swapIntro"}
+    <p>{tDynamic("guide_ratios_swap_intro")}</p>
+  {:else if name === "swapLaps"}
+    <p>{tDynamic("guide_ratios_swap_laps")}</p>
+  {:else if name === "swapFormula"}
+    <p>
+      {tDynamic("guide_ratios_swap_formula_before")}
+      <code>|P − H|</code>{tDynamic("guide_ratios_swap_formula_between")}
+      <code>P + H</code>{tDynamic("guide_ratios_swap_formula_after")}
+    </p>
+  {:else if name === "swapQuarter"}
+    <p>
+      {tDynamic("guide_ratios_swap_quarter_before")}
+      <LinkChip size="inline" href={endsHref}
+        >{tDynamic("guide_ratios_one_or_two")}</LinkChip
+      >{tDynamic("guide_ratios_swap_quarter_after")}
+    </p>
+  {:else if name === "twelveIntro"}
+    <p>{slice(tDynamic("guide_ratios_twelve_intro"), part)}</p>
+  {:else if name === "twelveExample"}
+    <p>{tDynamic("guide_ratios_twelve_example")}</p>
+  {:else if name === "endsIntro"}
+    <p>{tDynamic("guide_ratios_ends_intro")}</p>
+  {:else if name === "endsOpposite"}
+    <p>{tDynamic("guide_ratios_ends_opposite")}</p>
+  {:else if name === "endsL1"}
+    <p>{tDynamic("guide_ratios_ends_level1")}</p>
+  {:else if name === "endsL4"}
+    <p>
+      {slice(
+        `${tDynamic("guide_ratios_ends_level4_before")}${SHAPE_ENGINE_SHORT_NAME}${tDynamic("guide_ratios_ends_level4_after")}`,
+        part
+      )}
+    </p>
+  {:else if name === "pairingsIntro"}
+    <p>{tDynamic("guide_ratios_pairings_intro")}</p>
+  {:else if name === "pairingsChoose"}
+    <p>
+      {tDynamic(
+        "guide_ratios_pairings_choose_before"
+      )}{SHAPE_ENGINE_SHORT_NAME}{tDynamic(
+        "guide_ratios_pairings_choose_after"
+      )}
+    </p>
+  {:else if name === "scrollHint"}
+    <p class="note">{tDynamic("guide_ratios_pairings_scroll")}</p>
+  {:else if name === "beyond"}
+    <h2>{tDynamic("guide_ratios_beyond_title")}</h2>
+    <p>{tDynamic("guide_ratios_beyond_body")}</p>
+  {:else if name === "sources"}
+    <h2>{tDynamic("guide_ratios_sources")}</h2>
+    <ul class="source-list">
+      <li>
+        <LinkChip
+          href={ORIGINAL_SHAPE_MATRIX_URL}
+          newTabLabel={tDynamic("guide_ratios_new_tab")}
+          >{tDynamic("guide_ratios_source_label", {
+            author: "Lorq Nichols",
+            name: ORIGINAL_SHAPE_MATRIX_NAME,
+          })}</LinkChip
+        >
+      </li>
+      <li>
+        <LinkChip href="/shape-engine">{SHAPE_ENGINE_SHORT_NAME}</LinkChip>
+      </li>
+    </ul>
+    <p class="note">
+      {tDynamic(
+        "guide_ratios_attribution_before"
+      )}{SHAPE_ENGINE_SHORT_NAME}{tDynamic(
+        "guide_ratios_attribution_middle"
+      )}{KINETIC_SHAPE_ENGINE_AUTHOR}{tDynamic(
+        "guide_ratios_attribution_after"
+      )}
+    </p>
+  {/if}
+{/snippet}
+
+{#snippet worked()}
+  <figure class="worked">
+    <figcaption>{tDynamic("guide_ratios_example_caption")}</figcaption>
+    <div class="worked-shapes">
+      {#each [example.pro, example.anti] as flower (flowerKey(flower))}
+        <div class="worked-shape">
+          <span class="still still-lg">
+            <ShapeMatrixMandalaArt
+              paint={paintFlower(flower)}
+              artKey={flowerKey(flower)}
+              alt={flowerAlt(flower)}
+            />
+          </span>
+          <span class="shape-name">{styleWord(flower.style)}</span>
+          <span class="shape-meta">{petalWord(flower.petals)}</span>
+        </div>
+      {/each}
+    </div>
+    <p class="worked-note">{tDynamic("guide_ratios_example_note")}</p>
+  </figure>
+{/snippet}
+
+{#snippet baseTray()}
+  <section
+    class="level-group base-tray"
+    aria-labelledby="level-{BASE_LEVEL}-heading"
+    style="--level-tint: {levelTint(BASE_LEVEL)}"
+  >
+    <header class="level-head">
+      <DifficultyBadge level={BASE_LEVEL} size="2rem" />
+      <span class="level-title">
+        <span id="level-{BASE_LEVEL}-heading" class="level-name">
+          {tDynamic("guide_ratios_level_heading", {
+            level: BASE_LEVEL,
+            name: baseLevel.name,
+          })}
+        </span>
+        <span class="level-blurb">{baseLevel.blurb}</span>
+      </span>
+    </header>
+    <ol class="base-cards" role="list">
+      {#each baseCards as card (card.ori)}
+        <li class="ratio-card family-card base-card">
+          <p class="card-head">
+            <span class="card-ratio">{baseRatio}</span>
+            <span class="card-turns">{card.label}</span>
+          </p>
+          <div class="card-flowers">
+            {#each card.flowers as item (flowerKey(item.flower))}
+              <div class="card-flower">
+                <span class="still">
                   <ShapeMatrixMandalaArt
-                    paint={paintFlower(flower)}
-                    artKey={flowerKey(flower)}
-                    alt={flowerAlt(flower)}
+                    paint={paintFlower(item.flower)}
+                    artKey={flowerKey(item.flower)}
+                    alt={`${baseRatio} ${styleWord(item.flower.style).toLowerCase()}, ${card.label.toLowerCase()}: ${item.meta.toLowerCase()}`}
                   />
                 </span>
-                <span class="shape-name">{styleWord(flower.style)}</span>
-                <span class="shape-meta">{petalWord(flower.petals)}</span>
+                <span class="card-style">{styleWord(item.flower.style)}</span>
+                <span class="card-petals">{item.meta}</span>
               </div>
             {/each}
           </div>
-          <p class="worked-note">
-            {tDynamic("guide_ratios_example_note")}
-          </p>
-        </figure>
-      </section>
-    </div>
+        </li>
+      {/each}
+    </ol>
+  </section>
+{/snippet}
 
-    <section class="ladder" aria-labelledby="ladder-heading">
-      <div class="ladder-copy">
-        <h2 id="ladder-heading">{tDynamic("guide_ratios_ladder")}</h2>
-        <p>{tDynamic("guide_ratios_ladder_intro")}</p>
-        <p>{tDynamic("guide_ratios_ladder_orientation")}</p>
-        <p class="ladder-note">
-          {tDynamic("guide_ratios_tinted_cards")}
-        </p>
-      </div>
-
-      <section
-        class="level-group base-tray"
-        aria-labelledby="level-{BASE_LEVEL}-heading"
-        style="--level-tint: {levelTint(BASE_LEVEL)}"
-      >
+{#snippet levelTray(part: string)}
+  {@const { group, rows, head, aside } = levelPart(part)}
+  {#if group}
+    <section
+      class="level-group"
+      aria-labelledby={head ? `level-${group.level}-heading` : undefined}
+      aria-label={head
+        ? undefined
+        : tDynamic("guide_ratios_level_heading", {
+            level: group.level,
+            name: group.name,
+          })}
+      style="--level-tint: {levelTint(group.level)}"
+    >
+      {#if head}
         <header class="level-head">
-          <DifficultyBadge level={BASE_LEVEL} size="2rem" />
+          <DifficultyBadge level={group.level} size="2rem" />
           <span class="level-title">
-            <span id="level-{BASE_LEVEL}-heading" class="level-name">
+            <span id={`level-${group.level}-heading`} class="level-name">
               {tDynamic("guide_ratios_level_heading", {
-                level: BASE_LEVEL,
-                name: baseLevel.name,
+                level: group.level,
+                name: group.name,
               })}
             </span>
-            <span class="level-blurb">{baseLevel.blurb}</span>
+            <span class="level-blurb">{group.blurb}</span>
           </span>
         </header>
-        <ol class="base-cards" role="list">
-          {#each baseCards as card (card.ori)}
-            <li class="ratio-card family-card base-card">
-              <p class="card-head">
-                <span class="card-ratio">{baseRatio}</span>
-                <span class="card-turns">{card.label}</span>
-              </p>
-              <div class="card-flowers">
-                {#each card.flowers as item (flowerKey(item.flower))}
-                  <div class="card-flower">
-                    <span class="still">
-                      <ShapeMatrixMandalaArt
-                        paint={paintFlower(item.flower)}
-                        artKey={flowerKey(item.flower)}
-                        alt={`${baseRatio} ${styleWord(item.flower.style).toLowerCase()}, ${card.label.toLowerCase()}: ${item.meta.toLowerCase()}`}
-                      />
-                    </span>
-                    <span class="card-style"
-                      >{styleWord(item.flower.style)}</span
-                    >
-                    <span class="card-petals">{item.meta}</span>
-                  </div>
-                {/each}
-              </div>
-            </li>
-          {/each}
-        </ol>
-      </section>
+      {/if}
 
-      <!-- One grid of equal cards. The levels span the tracks their cards
-           need, so the board is a solid rectangle at every width instead of
-           four stacks of different heights. -->
-      <div class="ladder-board">
-        <div class="ladder-grid">
-          {#each levelGroups as group (group.level)}
-            <section
-              class="level-group"
-              aria-labelledby={`level-${group.level}-heading`}
-              style="{boardSpan(group.cells, 2)}; {boardSpan(
-                group.cells,
-                4
-              )}; {boardSpan(group.cells, 8)}; --level-tint: {levelTint(
-                group.level
-              )}"
-            >
-              <header class="level-head">
-                <DifficultyBadge level={group.level} size="2rem" />
-                <span class="level-title">
-                  <span id={`level-${group.level}-heading`} class="level-name">
-                    {tDynamic("guide_ratios_level_heading", {
-                      level: group.level,
-                      name: group.name,
-                    })}
-                  </span>
-                  <span class="level-blurb">{group.blurb}</span>
-                </span>
-              </header>
-
-              <ol class="ratio-cards" role="list">
-                {#each group.rows as row (row.turnLabel)}
-                  <li class="ratio-card" class:family-card={row.family}>
-                    <p class="card-head">
-                      <span class="card-ratio">{row.ratio}</span>
-                      <span class="card-turns">{row.turnWords}</span>
-                    </p>
-                    {#if row.starts}
-                      {@const paired = row.starts.length > 1}
-                      <div class="card-grid">
-                        <span class="card-style"
-                          >{tDynamic("guide_ratios_prospin")}</span
-                        >
-                        <span class="card-style"
-                          >{tDynamic("guide_ratios_antispin")}</span
-                        >
-                        {#each row.starts as start (start.ori)}
-                          {#each start.flowers as flower (flowerKey(flower))}
-                            {@const facing = (
-                              paired
-                                ? flowerFacing(flower)
-                                : quarterTurnFacing()
-                            ).toLowerCase()}
-                            <span class="still">
-                              <ShapeMatrixMandalaArt
-                                paint={paintFlower(flower)}
-                                artKey={flowerKey(flower)}
-                                alt={`${row.ratio} ${styleWord(flower.style).toLowerCase()}, ${facing}: ${petalWord(flower.petals).toLowerCase()}`}
-                              />
-                            </span>
-                          {/each}
-                          {#each start.flowers as flower (flowerKey(flower))}
-                            <span class="card-facing" aria-hidden="true"
-                              >{paired
-                                ? flowerFacing(flower)
-                                : quarterTurnFacing()}</span
-                            >
-                          {/each}
-                        {/each}
-                        {#each row.starts[0]?.flowers ?? [] as flower (flowerKey(flower))}
-                          <span class="card-petals"
-                            >{petalWord(flower.petals)}</span
-                          >
-                        {/each}
-                      </div>
-                    {:else}
-                      <div class="card-float">
-                        <div class="float-grid">
-                          {#each floatFlowers as flower (flowerKey(flower))}
-                            <div class="float-start">
-                              <span class="still">
-                                <ShapeMatrixMandalaArt
-                                  paint={paintFlower(flower)}
-                                  artKey={flowerKey(flower)}
-                                  alt={tDynamic("guide_ratios_float_alt", {
-                                    ratio: row.ratio,
-                                    direction: tDynamic(
-                                      FLOAT_FACING[flower.ori] ??
-                                        "guide_ratios_up"
-                                    ),
-                                  })}
-                                />
-                              </span>
-                              <span class="card-facing" aria-hidden="true"
-                                >{tDynamic(
-                                  FLOAT_FACING[flower.ori] ?? "guide_ratios_up"
-                                )}</span
-                              >
-                            </div>
-                          {/each}
-                        </div>
-                        <span class="float-words">
-                          {tDynamic("guide_ratios_float_caption")}
-                        </span>
-                      </div>
-                    {/if}
-                  </li>
-                {/each}
-              </ol>
-
-              {#if group.level === WHOLE_TURN_LEVEL}
-                <p class="ladder-aside">
-                  {tDynamic("guide_ratios_whole_turn_note")}
-                </p>
-              {/if}
-
-              {#if group.level === QUARTER_TURN_LEVEL}
-                <p class="ladder-aside">
-                  {tDynamic("guide_ratios_quarter_turn_note")}
-                </p>
-              {/if}
-            </section>
-          {/each}
-        </div>
-      </div>
-
-      <section class="swap" aria-labelledby="swap-heading">
-        <div class="swap-copy">
-          <h3 id="swap-heading">{tDynamic("guide_ratios_swap_title")}</h3>
-          <p>{tDynamic("guide_ratios_swap_intro")}</p>
-          <p>{tDynamic("guide_ratios_swap_laps")}</p>
-          <p>
-            {tDynamic("guide_ratios_swap_formula_before")}
-            <code>|P − H|</code>{tDynamic("guide_ratios_swap_formula_between")}
-            <code>P + H</code>{tDynamic("guide_ratios_swap_formula_after")}
-          </p>
-          <p>
-            {tDynamic("guide_ratios_swap_quarter_before")}
-            <LinkChip size="inline" href="#ends-heading"
-              >{tDynamic("guide_ratios_one_or_two")}</LinkChip
-            >{tDynamic("guide_ratios_swap_quarter_after")}
-          </p>
-        </div>
-
-        <RatioSwapMotion panels={swapPanels} />
-      </section>
-    </section>
-
-    <section class="twelve" aria-labelledby="twelve-heading">
-      <div class="twelve-copy">
-        <h2 id="twelve-heading">{tDynamic("guide_ratios_twelve_title")}</h2>
-        <p>{tDynamic("guide_ratios_twelve_intro")}</p>
-        <p>{tDynamic("guide_ratios_twelve_example")}</p>
-      </div>
-
-      <div class="family-band">
-        <div class="family-list">
-          {#each families as family (family.turns)}
-            <section
-              class="family"
-              aria-label={tDynamic("guide_ratios_family", {
-                ratio: family.ratio,
-              })}
-            >
-              <header class="family-head">
-                <span class="family-ratio">{family.ratio}</span>
-                <span class="family-turns"
-                  >{tDynamic("guide_ratios_family_turns", {
-                    turns: turnWords(family.turns),
-                    level: family.level,
-                  })}</span
+      <ol class="ratio-cards" role="list">
+        {#each rows as row (row.turnLabel)}
+          <li class="ratio-card" class:family-card={row.family}>
+            <p class="card-head">
+              <span class="card-ratio">{row.ratio}</span>
+              <span class="card-turns">{row.turnWords}</span>
+            </p>
+            {#if row.starts}
+              {@const paired = row.starts.length > 1}
+              <div class="card-grid">
+                <span class="card-style"
+                  >{tDynamic("guide_ratios_prospin")}</span
                 >
-                <LinkChip class="family-link" href={bandHref(family.turns)}>
-                  {tDynamic("guide_ratios_open_band", { ratio: family.ratio })}
-                </LinkChip>
-              </header>
-              <ol class="family-shapes">
-                {#each family.shapes as flower (flowerKey(flower))}
-                  <li>
-                    <span class="still still-md">
+                <span class="card-style"
+                  >{tDynamic("guide_ratios_antispin")}</span
+                >
+                {#each row.starts as start (start.ori)}
+                  {#each start.flowers as flower (flowerKey(flower))}
+                    {@const facing = (
+                      paired ? flowerFacing(flower) : quarterTurnFacing()
+                    ).toLowerCase()}
+                    <span class="still">
                       <ShapeMatrixMandalaArt
                         paint={paintFlower(flower)}
                         artKey={flowerKey(flower)}
-                        alt={flowerAlt(flower)}
+                        alt={`${row.ratio} ${styleWord(flower.style).toLowerCase()}, ${facing}: ${petalWord(flower.petals).toLowerCase()}`}
                       />
                     </span>
-                    <span class="shape-name">{styleWord(flower.style)}</span>
-                    <span class="shape-meta">
-                      {tDynamic("guide_ratios_flower_start", {
-                        petals: petalWord(flower.petals),
-                        direction: tDynamic(
-                          flower.ori === "in"
-                            ? "guide_ratios_in"
-                            : "guide_ratios_out"
-                        ),
-                      })}
-                    </span>
-                  </li>
+                  {/each}
+                  {#each start.flowers as flower (flowerKey(flower))}
+                    <span class="card-facing" aria-hidden="true"
+                      >{paired
+                        ? flowerFacing(flower)
+                        : quarterTurnFacing()}</span
+                    >
+                  {/each}
                 {/each}
-              </ol>
-            </section>
-          {/each}
-        </div>
-      </div>
-    </section>
-
-    <section class="ends" aria-labelledby="ends-heading">
-      <div class="ends-copy">
-        <h2 id="ends-heading">{tDynamic("guide_ratios_one_or_two")}</h2>
-        <p>{tDynamic("guide_ratios_ends_intro")}</p>
-        <p>{tDynamic("guide_ratios_ends_opposite")}</p>
-        <p>{tDynamic("guide_ratios_ends_level1")}</p>
-        <p>
-          {tDynamic(
-            "guide_ratios_ends_level4_before"
-          )}{SHAPE_ENGINE_SHORT_NAME}{tDynamic(
-            "guide_ratios_ends_level4_after"
-          )}
-        </p>
-      </div>
-
-      <div class="ends-board">
-        {#each endsLevels as tray (tray.level)}
-          <section
-            class="ends-level"
-            aria-labelledby={`ends-level-${tray.level}`}
-            style="--level-tint: {levelTint(tray.level)}"
-          >
-            <header class="ends-level-head">
-              <DifficultyBadge level={tray.level} size="1.6rem" />
-              <span id={`ends-level-${tray.level}`} class="level-name"
-                >{tDynamic("guide_ratios_level_heading", {
-                  level: tray.level,
-                  name: tray.name,
-                })}</span
-              >
-            </header>
-            <ul class="ends-cards" role="list">
-              {#each tray.cases as item (`${item.ratio}-${item.style}`)}
-                <li class="ends-card">
-                  <p class="ends-head">
-                    <span class="ends-ratio">{item.ratio}</span>
-                    <span class="ends-style">{styleWord(item.style)}</span>
-                  </p>
-                  <div class="ends-sum">
-                    {#each item.frames as frame, index (frame.label)}
-                      <div class="ends-frame" class:ends-both={index === 2}>
-                        <span class="still">
-                          {#if index > 0}
-                            <span class="sum-op" aria-hidden="true"
-                              >{index === 1 ? "+" : "="}</span
-                            >
-                          {/if}
-                          <ShapeMatrixMandalaArt
-                            paint={paintTogether(frame.flowers)}
-                            artKey={`ends-${frame.flowers.map((flower) => flowerKey(flower)).join("+")}`}
-                            alt={`${item.ratio} ${styleWord(item.style).toLowerCase()}, ${frame.label.toLowerCase()}: ${frame.meta.toLowerCase()}`}
-                          />
-                        </span>
-                        <span class="ends-label">{frame.label}</span>
-                        <span class="ends-meta">{frame.meta}</span>
-                      </div>
-                    {/each}
-                  </div>
-                </li>
-              {/each}
-            </ul>
-            <p class="ends-summary">{tray.summary}</p>
-          </section>
+                {#each row.starts[0]?.flowers ?? [] as flower (flowerKey(flower))}
+                  <span class="card-petals">{petalWord(flower.petals)}</span>
+                {/each}
+              </div>
+            {:else}
+              <div class="card-float">
+                <div class="float-grid">
+                  {#each floatFlowers as flower (flowerKey(flower))}
+                    <div class="float-start">
+                      <span class="still">
+                        <ShapeMatrixMandalaArt
+                          paint={paintFlower(flower)}
+                          artKey={flowerKey(flower)}
+                          alt={tDynamic("guide_ratios_float_alt", {
+                            ratio: row.ratio,
+                            direction: tDynamic(
+                              FLOAT_FACING[flower.ori] ?? "guide_ratios_up"
+                            ),
+                          })}
+                        />
+                      </span>
+                      <span class="card-facing" aria-hidden="true"
+                        >{tDynamic(
+                          FLOAT_FACING[flower.ori] ?? "guide_ratios_up"
+                        )}</span
+                      >
+                    </div>
+                  {/each}
+                </div>
+                <span class="float-words">
+                  {tDynamic("guide_ratios_float_caption")}
+                </span>
+              </div>
+            {/if}
+          </li>
         {/each}
-      </div>
-    </section>
-
-    <section class="pairings" aria-labelledby="pairings-heading">
-      <div class="pairings-copy">
-        <h2 id="pairings-heading">{tDynamic("guide_ratios_pairings_title")}</h2>
-        <p>{tDynamic("guide_ratios_pairings_intro")}</p>
-        <p>
-          {tDynamic(
-            "guide_ratios_pairings_choose_before"
-          )}{SHAPE_ENGINE_SHORT_NAME}{tDynamic(
-            "guide_ratios_pairings_choose_after"
-          )}
-        </p>
-        <p class="scroll-hint">
-          {tDynamic("guide_ratios_pairings_scroll")}
-        </p>
-      </div>
-
-      <figure class="anatomy">
-        <div class="anatomy-sum">
-          <div class="anatomy-part">
-            <span class="still">
-              <ShapeMatrixMandalaArt
-                paint={paintHand(anatomyLeft, "left")}
-                artKey={`anatomy-left-${flowerKey(anatomyLeft)}`}
-                alt={tDynamic("guide_ratios_anatomy_left_alt")}
-              />
-            </span>
-            <span class="anatomy-label"
-              >{tDynamic("guide_ratios_row_left")}</span
-            >
-          </div>
-          <div class="anatomy-part">
-            <span class="still">
-              <span class="sum-op" aria-hidden="true">+</span>
-              <ShapeMatrixMandalaArt
-                paint={paintHand(anatomyRight, "right")}
-                artKey={`anatomy-right-${flowerKey(anatomyRight)}`}
-                alt={tDynamic("guide_ratios_anatomy_right_alt")}
-              />
-            </span>
-            <span class="anatomy-label"
-              >{tDynamic("guide_ratios_column_right")}</span
-            >
-          </div>
-          <div class="anatomy-part anatomy-cell">
-            <span class="still">
-              <span class="sum-op" aria-hidden="true">=</span>
-              <ShapeMatrixMandalaArt
-                paint={paintCell(anatomyLeft, anatomyRight)}
-                artKey={`anatomy-cell-${flowerKey(anatomyLeft)}-${flowerKey(anatomyRight)}`}
-                alt={tDynamic("guide_ratios_anatomy_cell_alt")}
-              />
-            </span>
-            <span class="anatomy-label">{tDynamic("guide_ratios_cell")}</span>
-          </div>
-        </div>
-        <figcaption>
-          {tDynamic("guide_ratios_pairing_caption")}
-          <LinkChip
-            class="pairing-link"
-            href={pairHref(anatomyLeft, anatomyRight)}
-            >{tDynamic("guide_ratios_open_pairing")}</LinkChip
-          >
-        </figcaption>
-      </figure>
-
-      <div class="matrix-stage">
-        {#if loadError}
-          <p class="load-status error">
-            {tDynamic("guide_ratios_drawings_unavailable")}
-          </p>
-        {:else if !data}
-          <p class="load-status">{tDynamic("guide_ratios_building_flowers")}</p>
-        {:else}
-          <ShapeMatrixGrid
-            {data}
-            rowAxis={originalAxis}
-            colAxis={originalAxis}
-            maxCellPx={88}
-            painter={CLUB_ARTWORK_PAINTER}
-            pressable={false}
-            onselect={({ left, right }) => goto(pairHref(left, right))}
-          />
+        {#if aside && group.level === WHOLE_TURN_LEVEL}
+          <li class="ladder-aside">
+            {tDynamic("guide_ratios_whole_turn_note")}
+          </li>
         {/if}
+        {#if aside && group.level === QUARTER_TURN_LEVEL}
+          <li class="ladder-aside">
+            {tDynamic("guide_ratios_quarter_turn_note")}
+          </li>
+        {/if}
+      </ol>
+    </section>
+  {/if}
+{/snippet}
+
+{#snippet familyCard(family: (typeof families)[number])}
+  <section
+    class="family"
+    aria-label={tDynamic("guide_ratios_family", { ratio: family.ratio })}
+  >
+    <header class="family-head">
+      <span class="family-ratio">{family.ratio}</span>
+      <span class="family-turns"
+        >{tDynamic("guide_ratios_family_turns", {
+          turns: turnWords(family.turns),
+          level: family.level,
+        })}</span
+      >
+      <LinkChip class="family-link" href={bandHref(family.turns)}>
+        {tDynamic("guide_ratios_open_band", { ratio: family.ratio })}
+      </LinkChip>
+    </header>
+    <ol class="family-shapes">
+      {#each family.shapes as flower (flowerKey(flower))}
+        <li>
+          <span class="still still-md">
+            <ShapeMatrixMandalaArt
+              paint={paintFlower(flower)}
+              artKey={flowerKey(flower)}
+              alt={flowerAlt(flower)}
+            />
+          </span>
+          <span class="shape-name">{styleWord(flower.style)}</span>
+          <span class="shape-meta">
+            {tDynamic("guide_ratios_flower_start", {
+              petals: petalWord(flower.petals),
+              direction: tDynamic(
+                flower.ori === "in" ? "guide_ratios_in" : "guide_ratios_out"
+              ),
+            })}
+          </span>
+        </li>
+      {/each}
+    </ol>
+  </section>
+{/snippet}
+
+{#snippet endsTray(tray: EndsLevel, only?: number)}
+  <section
+    class="ends-level"
+    aria-labelledby={`ends-level-${tray.level}`}
+    style="--level-tint: {levelTint(tray.level)}"
+  >
+    <header class="ends-level-head">
+      <DifficultyBadge level={tray.level} size="1.6rem" />
+      <span id={`ends-level-${tray.level}`} class="level-name"
+        >{tDynamic("guide_ratios_level_heading", {
+          level: tray.level,
+          name: tray.name,
+        })}</span
+      >
+    </header>
+    <ul class="ends-cards" role="list">
+      {#each tray.cases as item, k (`${item.ratio}-${item.style}`)}
+        {#if only === undefined || only === k}
+          <li class="ends-card">
+            <p class="ends-head">
+              <span class="ends-ratio">{item.ratio}</span>
+              <span class="ends-style">{styleWord(item.style)}</span>
+            </p>
+            <div class="ends-sum">
+              {#each item.frames as frame, index (frame.label)}
+                <div class="ends-frame" class:ends-both={index === 2}>
+                  <span class="still">
+                    {#if index > 0}
+                      <span class="sum-op" aria-hidden="true"
+                        >{index === 1 ? "+" : "="}</span
+                      >
+                    {/if}
+                    <ShapeMatrixMandalaArt
+                      paint={paintTogether(frame.flowers)}
+                      artKey={`ends-${frame.flowers.map((flower) => flowerKey(flower)).join("+")}`}
+                      alt={`${item.ratio} ${styleWord(item.style).toLowerCase()}, ${frame.label.toLowerCase()}: ${frame.meta.toLowerCase()}`}
+                    />
+                  </span>
+                  <span class="ends-label">{frame.label}</span>
+                  <span class="ends-meta">{frame.meta}</span>
+                </div>
+              {/each}
+            </div>
+          </li>
+        {/if}
+      {/each}
+    </ul>
+    {#if only === undefined || only === tray.cases.length - 1}
+      <p class="ends-summary">{tray.summary}</p>
+    {/if}
+  </section>
+{/snippet}
+
+{#snippet anatomy()}
+  <figure class="anatomy">
+    <div class="anatomy-sum">
+      <div class="anatomy-part">
+        <span class="still">
+          <ShapeMatrixMandalaArt
+            paint={paintHand(anatomyLeft, "left")}
+            artKey={`anatomy-left-${flowerKey(anatomyLeft)}`}
+            alt={tDynamic("guide_ratios_anatomy_left_alt")}
+          />
+        </span>
+        <span class="anatomy-label">{tDynamic("guide_ratios_row_left")}</span>
       </div>
+      <div class="anatomy-part">
+        <span class="still">
+          <span class="sum-op" aria-hidden="true">+</span>
+          <ShapeMatrixMandalaArt
+            paint={paintHand(anatomyRight, "right")}
+            artKey={`anatomy-right-${flowerKey(anatomyRight)}`}
+            alt={tDynamic("guide_ratios_anatomy_right_alt")}
+          />
+        </span>
+        <span class="anatomy-label"
+          >{tDynamic("guide_ratios_column_right")}</span
+        >
+      </div>
+      <div class="anatomy-part anatomy-cell">
+        <span class="still">
+          <span class="sum-op" aria-hidden="true">=</span>
+          <ShapeMatrixMandalaArt
+            paint={paintCell(anatomyLeft, anatomyRight)}
+            artKey={`anatomy-cell-${flowerKey(anatomyLeft)}-${flowerKey(anatomyRight)}`}
+            alt={tDynamic("guide_ratios_anatomy_cell_alt")}
+          />
+        </span>
+        <span class="anatomy-label">{tDynamic("guide_ratios_cell")}</span>
+      </div>
+    </div>
+    <figcaption>
+      {tDynamic("guide_ratios_pairing_caption")}
+      <LinkChip class="pairing-link" href={pairHref(anatomyLeft, anatomyRight)}
+        >{tDynamic("guide_ratios_open_pairing")}</LinkChip
+      >
+    </figcaption>
+  </figure>
+{/snippet}
 
-      <section class="beyond" aria-labelledby="beyond-heading">
-        <h3 id="beyond-heading">{tDynamic("guide_ratios_beyond_title")}</h3>
-        <p>{tDynamic("guide_ratios_beyond_body")}</p>
-      </section>
-    </section>
-
-    <section class="sources" aria-labelledby="sources-heading">
-      <h2 id="sources-heading">{tDynamic("guide_ratios_sources")}</h2>
-      <ul class="source-list">
-        <li>
-          <LinkChip
-            href={ORIGINAL_SHAPE_MATRIX_URL}
-            newTabLabel={tDynamic("guide_ratios_new_tab")}
-            >{tDynamic("guide_ratios_source_label", {
-              author: "Lorq Nichols",
-              name: ORIGINAL_SHAPE_MATRIX_NAME,
-            })}</LinkChip
-          >
-        </li>
-        <li>
-          <LinkChip href="/shape-engine">{SHAPE_ENGINE_SHORT_NAME}</LinkChip>
-        </li>
-      </ul>
-      <p class="attribution">
-        {tDynamic(
-          "guide_ratios_attribution_before"
-        )}{SHAPE_ENGINE_SHORT_NAME}{tDynamic(
-          "guide_ratios_attribution_middle"
-        )}{KINETIC_SHAPE_ENGINE_AUTHOR}{tDynamic(
-          "guide_ratios_attribution_after"
-        )}
+{#snippet matrix()}
+  <div class="matrix-stage">
+    {#if loadError}
+      <p class="load-status error">
+        {tDynamic("guide_ratios_drawings_unavailable")}
       </p>
-    </section>
-  </article>
-</GuideShell>
+    {:else if !data}
+      <p class="load-status">{tDynamic("guide_ratios_building_flowers")}</p>
+    {:else}
+      <ShapeMatrixGrid
+        {data}
+        rowAxis={originalAxis}
+        colAxis={originalAxis}
+        maxCellPx={88}
+        painter={CLUB_ARTWORK_PAINTER}
+        pressable={false}
+        onselect={({ left, right }) => goto(pairHref(left, right))}
+      />
+    {/if}
+  </div>
+{/snippet}
 
 <style>
   .ratios {
@@ -1110,64 +1383,72 @@
     --surface: var(--theme-card-bg, oklch(0.17 0.018 270 / 0.5));
     --accent: var(--theme-accent, oklch(0.74 0.11 265));
     --touch: var(--min-touch-target, 44px);
-    /* The wide composition is two tracks: prose at a fixed measure, visuals
-       in whatever is left. The article caps at the width where the matrix
-       reaches its largest tile beside that measure, and centres, so extra
-       width becomes symmetric margin instead of gaps inside the page. */
-    --copy: 36rem;
-    --gutter: clamp(1.5rem, 3vw, 3rem);
-    --section-gap: clamp(2.75rem, 5vw, 4.5rem);
-    --pad: clamp(1rem, 3vw, 3rem);
+    --copy: 40rem;
+    --gutter: clamp(1.25rem, 3vw, 3rem);
     --tracks: 13;
-    --stage-max: calc(var(--tracks) * 72px + 6px);
-    --stage-min: calc(var(--tracks) * 44px + 6px);
-    box-sizing: border-box;
+    --stage-max: calc(var(--tracks) * 88px + 6px);
     inline-size: 100%;
-    max-inline-size: calc(
-      var(--copy) + var(--gutter) + var(--stage-max) + 2 * var(--pad)
-    );
+    min-inline-size: 0;
+    color: var(--ink);
+  }
+
+  /* One screen: its words, then its figure; a duo screen sets them side by
+     side once the window is wide enough. Figures read the screen's scale
+     (--fit), so the fit box can grow or shrink them to fill the window. */
+  .screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(1rem, 2.5vh, 2rem);
+    inline-size: 100%;
+    max-inline-size: calc(1600px * max(var(--fit, 1), 1));
     margin-inline: auto;
-    display: grid;
-    gap: var(--section-gap);
-    padding: clamp(1.5rem, 3vw, 3rem) var(--pad) clamp(4rem, 7vw, 7rem);
   }
 
-  /* On a 4K class screen the guide band is fixed at its widest, so the grid
-     spends the extra room on larger tiles rather than a wider prose column. */
-  @media (min-width: 137.5rem) {
-    .ratios {
-      --stage-max: calc(var(--tracks) * 88px + 6px);
+  .copy {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    inline-size: 100%;
+    max-inline-size: var(--copy);
+    text-align: center;
+  }
+
+  .visuals {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    inline-size: 100%;
+    min-inline-size: 0;
+  }
+
+  @media (min-width: 62rem) {
+    .screen.duo {
+      display: grid;
+      grid-template-columns: minmax(0, var(--copy)) minmax(0, 1fr);
+      align-items: center;
+      gap: var(--gutter);
     }
-  }
 
-  .opening {
-    display: grid;
-    gap: var(--section-gap);
-  }
-
-  /* Below the tablet breakpoint the guide grid keeps this route in its prose
-     column, which already carries a 1rem gutter on each side. A second gutter
-     here would cost a phone 32px of a 343px column. */
-  @media (max-width: 768px) {
-    .ratios {
-      padding-inline: 0;
+    .screen.duo .copy {
+      text-align: left;
+      --sentence-display: inline;
     }
-  }
-
-  .ratios h1 {
-    grid-column: auto;
-    margin: 0 0 1rem;
-    padding: 0;
-    font-family: "Inter", system-ui, sans-serif;
-    font-size: clamp(2.1rem, 1.6rem + 1.6vw, 3.2rem);
-    font-weight: 700;
-    letter-spacing: -0.03em;
-    line-height: 1.05;
-    text-align: left;
   }
 
   .ratios h2 {
-    margin: 0 0 0.85rem;
+    margin: 0;
+  }
+
+  .ratios p {
+    margin: 0;
+    line-height: 1.6;
+  }
+
+  .note {
+    color: var(--ink-faint);
+    font-size: var(--font-size-min, 0.875rem);
   }
 
   .ratios code {
@@ -1180,24 +1461,7 @@
     white-space: nowrap;
   }
 
-  /* Stacked above the worked example, the header is a centred section
-     break, one sentence per line. */
-  .page-head {
-    text-align: center;
-  }
-  .ratios .page-head h1 {
-    text-align: center;
-  }
-  .page-head p {
-    max-inline-size: var(--copy);
-    margin-inline: auto;
-  }
-  .page-head p:last-child {
-    margin-bottom: 0;
-  }
-
   .notice {
-    margin: 1.25rem 0 0;
     padding: 0.85rem 1rem;
     border: 1px solid var(--rule);
     border-radius: 12px;
@@ -1223,37 +1487,22 @@
     overflow-wrap: anywhere;
   }
 
-  /* Two column sections: prose keeps a reading measure, the visual takes the
-     rest of the band, so a wide screen gains content instead of stretch. */
-  .reading,
-  .ladder,
-  .twelve,
-  .ends,
-  .pairings {
-    display: grid;
-    gap: var(--gutter);
-    padding-top: clamp(1.75rem, 3vw, 2.75rem);
-    border-top: 1px solid var(--rule);
-  }
-
-  @media (min-width: 62rem) {
-    .reading {
-      grid-template-columns: minmax(0, 1fr) minmax(20rem, 0.72fr);
-      align-items: start;
-    }
-  }
-
   .terms {
     display: grid;
     gap: 0.4rem;
-    margin: 0 0 1.25rem;
+    margin: 0;
   }
 
   .terms > div {
     display: flex;
     flex-wrap: wrap;
+    justify-content: center;
     gap: 0.5rem;
     align-items: baseline;
+  }
+
+  .screen.duo .terms > div {
+    justify-content: flex-start;
   }
 
   .terms dt {
@@ -1266,12 +1515,32 @@
     color: var(--ink-dim);
   }
 
+  /* Reserved square for every still: the engine loads async and the box
+     never changes size, so nothing moves when the artwork arrives. The
+     flowers are painted to their box, so they grow with the screen's scale
+     rather than being zoomed. */
+  .still {
+    display: block;
+    inline-size: calc(3rem * var(--fit, 1));
+    aspect-ratio: 1;
+    flex: none;
+  }
+
+  .still-md {
+    inline-size: calc(5rem * var(--fit, 1));
+  }
+
+  .still-lg {
+    inline-size: calc(7rem * var(--fit, 1));
+  }
+
   .worked {
     margin: 0;
     padding: 1.25rem;
     border: 1px solid var(--rule);
     border-radius: 14px;
     background: var(--surface);
+    text-align: center;
   }
 
   .worked figcaption {
@@ -1282,12 +1551,10 @@
     font-weight: 640;
   }
 
-  /* Two shapes side by side down to a 320px phone: 7rem tracks fit a 270px
-     card, where 8rem tracks missed by a few pixels and stacked. */
   .worked-shapes {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
-    gap: 1rem;
+    display: flex;
+    justify-content: center;
+    gap: calc(1.5rem * var(--fit, 1));
   }
 
   .worked-shape {
@@ -1297,26 +1564,9 @@
   }
 
   .worked-note {
-    margin: 1rem 0 0;
+    margin-top: 1rem;
     color: var(--ink-faint);
     font-size: var(--font-size-min, 0.875rem);
-  }
-
-  /* Reserved square for every still: the engine loads async and the box never
-     changes size, so nothing moves when the artwork arrives. */
-  .still {
-    display: block;
-    inline-size: 3rem;
-    aspect-ratio: 1;
-    flex: none;
-  }
-
-  .still-md {
-    inline-size: clamp(4rem, 9vw, 5.5rem);
-  }
-
-  .still-lg {
-    inline-size: clamp(5rem, 12vw, 7rem);
   }
 
   .shape-name {
@@ -1331,17 +1581,7 @@
     text-align: center;
   }
 
-  .ladder-copy p:last-child {
-    margin-bottom: 0;
-  }
-
-  .ladder-note {
-    color: var(--ink-faint);
-    font-size: var(--font-size-min, 0.875rem);
-  }
-
-  /* A level's tray. Each level on the page sits in its own tray, tinted with
-     its badge colour, so the levels read apart even where they share a row. */
+  /* A level's tray, tinted with its badge colour. */
   .level-group,
   .ends-level {
     border: 1px solid color-mix(in srgb, var(--level-tint) 30%, transparent);
@@ -1349,67 +1589,33 @@
     background: color-mix(in srgb, var(--level-tint) 7%, transparent);
   }
 
-  /* Level 1 sits apart from the board with its two cards, one per start.
-     Once its tray holds them side by side they take the board's wide card
-     layout; on a phone they are the same row cards as the rest. */
-  .base-tray {
-    container: base-tray / inline-size;
-    align-self: start;
-  }
-
-  .base-cards {
-    display: grid;
-    gap: 0.6rem;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  @container base-tray (min-width: 30rem) {
-    .base-cards {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    /* Doubled class: the board's card rules come later in the file. */
-    .base-card.ratio-card {
-      --card-still: 9rem;
-      grid-template-columns: minmax(0, 1fr);
-      align-items: start;
-      gap: 0.6rem;
-      padding: 0.75rem;
-    }
-
-    .base-card.ratio-card .card-head {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 0.2rem 0.5rem;
-    }
-  }
-
-  /* The board, not the grid, is the container, because a container query
-     answers for an ancestor. Below the first tier each level is a heading
-     over a list of wide cards, one per row. */
-  .ladder-board {
-    container: ladder-board / inline-size;
-  }
-
-  .ladder-grid {
-    display: grid;
-    gap: 1rem;
-  }
-
   .level-group {
     display: grid;
+    align-content: start;
     gap: 0.6rem;
     padding: 0.6rem;
+    inline-size: 100%;
+    min-inline-size: 0;
   }
 
-  /* The badge is the same numeral the cards carry, so a level reads the same
-     here as it does on a deck. The rule under it runs the width of the
-     level's own cards, which is what marks where one level ends and the next
-     begins on a shared row. */
+  .base-tray {
+    inline-size: auto;
+    max-inline-size: 100%;
+  }
+
+  /* One or two trays: two sit side by side on a wide window. */
+  .board {
+    display: grid;
+    gap: 1rem;
+    inline-size: 100%;
+    justify-items: center;
+  }
+
+  .board.pair {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+
   .level-head {
     display: flex;
     align-items: center;
@@ -1438,21 +1644,31 @@
     line-height: 1.3;
   }
 
-  .ratio-cards {
+  /* A level's cards fill the tray in as many columns as their flowers
+     allow at the screen's scale. */
+  .ratio-cards,
+  .base-cards {
+    --card-still: calc(3.5rem * var(--fit, 1));
     display: grid;
+    grid-template-columns: repeat(
+      auto-fill,
+      minmax(min(100%, calc(var(--card-still) * 2 + 2rem)), 1fr)
+    );
     gap: 0.6rem;
     margin: 0;
     padding: 0;
     list-style: none;
   }
 
-  /* Narrow card: the ratio and its turns on the left, the two flowers side
-     by side on the right, each with its style and count under it. */
+  .base-cards {
+    --card-still: calc(5rem * var(--fit, 1));
+    grid-template-columns: repeat(2, minmax(0, auto));
+    justify-content: center;
+  }
+
   .ratio-card {
-    --card-still: 3.25rem;
     display: grid;
-    grid-template-columns: 4.75rem minmax(0, 1fr);
-    align-items: center;
+    align-content: start;
     gap: 0.5rem;
     margin: 0;
     padding: 0.6rem 0.75rem;
@@ -1467,8 +1683,14 @@
   }
 
   .card-head {
-    display: grid;
-    gap: 0.1rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.2rem 0.5rem;
+  }
+
+  .ratios .card-head {
     margin: 0;
   }
 
@@ -1491,11 +1713,8 @@
     gap: 0.5rem;
   }
 
-  /* One fixed track: a label wider than its half must not widen the track,
-     or the still, sized to the track, grows on that side only. */
   .card-flower {
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
     justify-items: center;
     align-content: start;
     gap: 0.1rem;
@@ -1503,16 +1722,14 @@
     text-align: center;
   }
 
-  /* The still fills its half of the card up to the tier's size, so the two
-     flowers stay equal and never push the card wider. */
-  .card-flower .still {
-    inline-size: min(100%, var(--card-still));
-    margin-bottom: 0.2rem;
+  .card-flower .still,
+  .card-grid .still,
+  .float-start .still {
+    inline-size: var(--card-still);
   }
 
   /* A card's flowers as a table: styles across the top, one row per start
-     with each flower's facing under it, and petal counts along the foot,
-     since a ratio's two starts share them. */
+     with each flower's facing under it, and petal counts along the foot. */
   .card-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1523,11 +1740,6 @@
     text-align: center;
   }
 
-  .card-grid .still,
-  .float-start .still {
-    inline-size: min(100%, var(--card-still));
-  }
-
   .card-facing {
     color: var(--ink-faint);
     font-size: 0.64rem;
@@ -1536,7 +1748,6 @@
     text-transform: uppercase;
   }
 
-  /* Float's four starts in two by two, each labelled under its circle. */
   .card-float {
     display: grid;
     justify-items: center;
@@ -1557,6 +1768,10 @@
     justify-items: center;
     gap: 0.1rem;
     min-inline-size: 0;
+  }
+
+  .float-start .still {
+    inline-size: calc(var(--card-still) * 0.7);
   }
 
   .card-style {
@@ -1581,6 +1796,8 @@
   }
 
   .ladder-aside {
+    display: grid;
+    align-content: center;
     margin: 0;
     padding: 0.75rem;
     border: 1px solid var(--rule);
@@ -1590,117 +1807,27 @@
     line-height: 1.45;
   }
 
-  /* Two across on a tablet, then four, then eight. Every level spans its own
-     tracks on a shared grid and borrows the grid's rows through subgrid, so
-     the headings on one row sit on one line and every card on a row is the
-     same height.
-
-     A tray's padding and its tighter gap come out of the tracks at its
-     edges, so its end cards run a little narrower than its middle ones. The
-     flowers take one size from the board's width instead of filling their
-     card, sized for an end card, so every flower on the board matches:
-     half of a track, less the tray padding, the gap difference, the card
-     padding, and the gap between the two flowers. */
-  @container ladder-board (min-width: 34rem) {
-    /* Trays sit further apart than the cards inside them, which a subgrid's
-       own gap allows. */
-    .ladder-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 0.9rem;
-    }
-
-    .level-group {
-      grid-column: span var(--span-2);
-      grid-row: span var(--rows-2);
-      grid-template-columns: subgrid;
-      grid-template-rows: subgrid;
-      gap: 0.5rem;
-    }
-
-    .level-head {
-      grid-column: 1 / -1;
-      align-self: end;
-    }
-
-    .ratio-cards {
-      display: contents;
-    }
-
-    /* Wide card: ratio and turns across the top, the flowers under them. */
-    .ratio-card {
-      --card-still: min(7.5rem, calc((100cqi - 0.9rem) / 4 - 1.5rem));
-      grid-template-columns: minmax(0, 1fr);
-      grid-template-rows: auto 1fr;
-      align-items: start;
-      gap: 0.6rem;
-      padding: 0.75rem;
-    }
-
-    .card-head {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 0.2rem 0.5rem;
-    }
-
-    .ladder-aside {
-      display: grid;
-      align-content: center;
-    }
+  .swap-motion {
+    inline-size: min(100%, calc(48rem * var(--fit, 1)));
   }
 
-  /* Four across: Levels 2 and 3 fill a row each and Level 4 fills two. */
-  @container ladder-board (min-width: 52rem) {
-    .ladder-grid {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-
-    .level-group {
-      grid-column: span var(--span-4);
-      grid-row: span var(--rows-4);
-    }
-
-    .ratio-card {
-      --card-still: min(7.5rem, calc((100cqi - 2.7rem) / 8 - 1.5rem));
-    }
-  }
-
-  /* Eight across: Levels 2 and 3 share the first row and Level 4 fills the
-     second. */
-  @container ladder-board (min-width: 96rem) {
-    .ladder-grid {
-      grid-template-columns: repeat(8, minmax(0, 1fr));
-    }
-
-    .level-group {
-      grid-column: span var(--span-8);
-      grid-row: span var(--rows-8);
-    }
-
-    .ratio-card {
-      --card-still: min(7.5rem, calc((100cqi - 6.3rem) / 16 - 1.5rem));
-    }
-  }
-
-  /* The original twelve. Three families is a fixed count, so the tiers are
-     chosen, not fitted: one column of squares on a phone, one column of wide
-     bands with four shapes across on a tablet, three squares side by side on
-     a desktop. No tier strands a lone card on its own row. The band, not the
-     list, is the container because a container query answers for an
-     ancestor, never for the element it styles; on a wide screen the band is
-     the column beside the prose, so the tiers follow that column. */
+  /* The original twelve: three family cards, side by side when the band
+     holds them, each with its four shapes. */
   .family-band {
     container-type: inline-size;
+    inline-size: 100%;
   }
 
   .family-list {
     display: grid;
     gap: clamp(1rem, 2vw, 1.75rem);
     grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
   }
 
   .family {
+    inline-size: 100%;
+    max-inline-size: calc(30rem * var(--fit, 1));
     padding: 1.1rem 1.25rem 1.35rem;
     border: 1px solid var(--rule);
     border-radius: 14px;
@@ -1730,8 +1857,6 @@
     font-size: var(--font-size-min, 0.875rem);
   }
 
-  /* The band's pill sits at the header's end; the header wraps it under
-     the ratio when the card is too narrow for both. */
   .family-head :global(.family-link) {
     margin-left: auto;
     white-space: nowrap;
@@ -1753,50 +1878,21 @@
     margin: 0;
   }
 
-  @container (min-width: 36rem) {
-    .family-shapes {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-  }
-
-  @container (min-width: 56rem) {
-    .family-list {
+  @container (min-width: 48rem) {
+    .family-list:not(.solo) {
       grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-
-    .family-shapes {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 
   /* One end or two. Each card is a sum: the in start plus the out start is
      what a staff draws with both ends. */
-  .ends-copy p:last-child {
-    margin-bottom: 0;
-  }
-
-  /* Four trays, one per level, each holding that level's prospin and
-     antispin. Two trays across once each can hold its pair side by side. */
-  .ends {
-    container: ends / inline-size;
-  }
-
-  .ends-board {
-    display: grid;
-    gap: 1rem;
-  }
-
-  @container ends (min-width: 74rem) {
-    .ends-board {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-
   .ends-level {
     container: ends-level / inline-size;
     display: grid;
     align-content: start;
     gap: 0.75rem;
+    inline-size: 100%;
+    max-inline-size: calc(52rem * var(--fit, 1));
     padding: 0.75rem;
   }
 
@@ -1817,7 +1913,7 @@
     list-style: none;
   }
 
-  @container ends-level (min-width: 30rem) {
+  @container ends-level (min-width: 26rem) {
     .ends-cards {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
@@ -1838,6 +1934,9 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
+  }
+
+  .ratios .ends-head {
     margin: 0;
   }
 
@@ -1853,9 +1952,8 @@
     font-size: var(--font-size-min, 0.875rem);
   }
 
-  /* Three frames with room between them for the operators. Each operator
-     sits in the still it leads into, centred on the gap before it, so it
-     lines up with the drawings rather than with the words under them. */
+  /* Frames with room between them for the operators. Each operator sits in
+     the still it leads into, centred on the gap before it. */
   .ends-sum,
   .anatomy-sum {
     --op-gap: 1.5rem;
@@ -1869,9 +1967,8 @@
   .ends-sum {
     grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
     row-gap: 1.75rem;
-    max-inline-size: 27rem;
+    inline-size: min(100%, calc(16rem * var(--fit, 1)));
     margin-inline: auto;
-    inline-size: 100%;
   }
 
   .ends-both {
@@ -1880,10 +1977,26 @@
     align-self: center;
   }
 
-  /* The plus sits in the gap under the first start's words. */
   .ends-frame:nth-child(2) .sum-op {
     top: -0.9rem;
     left: 50%;
+  }
+
+  /* A phone sets the sum in one row, in + out = both, so a tray's two
+     cards share its screen. */
+  .ratios.small .ends-sum {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.5fr);
+    inline-size: min(100%, calc(22rem * var(--fit, 1)));
+  }
+
+  .ratios.small .ends-both {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .ratios.small .ends-frame:nth-child(2) .sum-op {
+    top: 50%;
+    left: calc(var(--op-gap) / -2);
   }
 
   .ends-frame,
@@ -1927,7 +2040,6 @@
   }
 
   .ends-summary {
-    margin: 0;
     padding-inline: 0.25rem;
     color: var(--ink-dim);
     font-size: var(--font-size-min, 0.875rem);
@@ -1936,6 +2048,7 @@
 
   /* Reading a cell: the row's flower plus the column's flower is the tile. */
   .anatomy {
+    inline-size: min(100%, calc(26rem * var(--fit, 1)));
     margin: 0;
     padding: 1rem;
     border: 1px solid var(--rule);
@@ -1956,326 +2069,45 @@
     margin-top: 0.75rem;
   }
 
-  /* Same petals, different laps: 1:2 and 2:1 moving side by side, each in
-     its own level's tray. */
-  .swap {
-    display: grid;
-    gap: 1.25rem;
-    padding-top: 0.5rem;
-  }
-
-  .reading-copy h3,
-  .swap-copy h3,
-  .beyond h3 {
-    margin: 0 0 0.6rem;
-    color: var(--ink);
-    font-size: 1.1rem;
-    font-weight: 660;
-  }
-
-  .swap-copy p:last-child {
-    margin-bottom: 0;
-  }
-
-  .beyond p {
-    margin: 0;
-  }
-
   /* The 144 pairings. ShapeMatrixGrid is container sized, so its stage owns
-     an explicit box: a square that grows with the band up to the grid's
-     largest tile, and never shrinks below the grid at its 44px touch floor.
-     On a desktop the whole matrix is therefore always in view and the wheel
-     scrolls the page. On a phone the square can't be that wide; the height
-     still holds every row and the grid slides sideways under its sticky
-     headers. */
-  .pairings {
-    container-type: inline-size;
-  }
-
-  .pairings-copy p:last-of-type {
-    margin-bottom: 0;
-  }
-
-  /* Stacked, the cell figure keeps to a reading width so its flowers stay
-     the size of the ladder's rather than growing across the band. */
-  .anatomy {
-    max-inline-size: 40rem;
-  }
-
-  /* Once the band is wide enough, the cell figure stands beside the prose
-     and the matrix runs full width under both. */
-  @media (min-width: 80rem) and (max-width: 119.99rem) {
-    .pairings {
-      grid-template-columns: minmax(0, var(--copy)) minmax(0, 1fr);
-      grid-template-areas:
-        "copy anatomy"
-        "stage stage"
-        "beyond beyond";
-      column-gap: var(--gutter);
-    }
-
-    .pairings-copy {
-      grid-area: copy;
-    }
-
-    .anatomy {
-      grid-area: anatomy;
-      align-self: center;
-    }
-
-    .matrix-stage {
-      grid-area: stage;
-    }
-
-    .beyond {
-      grid-area: beyond;
-    }
-  }
-
-  /* The hint is a narrow-screen affordance; it only shows where the grid
-     really is wider than its stage. */
-  .scroll-hint {
-    display: none;
-    color: var(--ink-faint);
-    font-size: var(--font-size-min, 0.875rem);
-  }
-
+     a square that grows with the screen's scale up to the grid's largest
+     tile. On a phone the grid is wider than the square and slides sideways
+     inside it under its sticky headers. */
   .matrix-stage {
     position: relative;
-    inline-size: min(100%, var(--stage-max));
+    inline-size: min(100%, calc(var(--stage-max) * var(--fit, 1) * 0.6));
     aspect-ratio: 1;
-    min-block-size: var(--stage-min);
     border: 1px solid var(--rule);
     border-radius: 14px;
     overflow: hidden;
-  }
-
-  @container (max-width: 36rem) {
-    .scroll-hint {
-      display: block;
-    }
-
-    /* The right edge fades into the stage so the cut-off column reads as
-       "more this way" rather than a broken grid. It sits above the grid's
-       sticky headers and lets pointer events through. */
-    .matrix-stage::after {
-      content: "";
-      position: absolute;
-      inset: 0 0 0 auto;
-      width: 2.5rem;
-      z-index: 6;
-      pointer-events: none;
-      background: linear-gradient(
-        to right,
-        transparent,
-        var(--theme-panel-bg, oklch(0.15 0.018 270))
-      );
-    }
   }
 
   .load-status {
     display: grid;
     place-items: center;
     height: 100%;
-    margin: 0;
     color: var(--ink-faint);
+  }
+
+  .ratios .load-status {
+    margin: 0;
   }
 
   .load-status.error {
     color: var(--semantic-error, oklch(0.7 0.16 25));
   }
 
-  .sources {
-    padding-top: clamp(1.75rem, 3vw, 2.75rem);
-    border-top: 1px solid var(--rule);
-  }
-
-  /* The sources are a row of pills that wraps, so no width leaves them in a
-     narrow column beside empty space. */
   .source-list {
     display: flex;
     flex-wrap: wrap;
+    justify-content: center;
     gap: 0.75rem;
-    margin: 0 0 1.5rem;
+    margin: 0;
     padding: 0;
     list-style: none;
   }
 
   .source-list li {
     margin: 0;
-  }
-
-  .attribution {
-    color: var(--ink-faint);
-    font-size: var(--font-size-min, 0.875rem);
-  }
-
-  /* Wide: the worked example becomes the opening panel. It stands beside the
-     heading and the reading notes together, its two flowers stacked and
-     drawn large, so the top of the page is one composition instead of a
-     heading with an empty right half. The reading section's own box goes
-     away here so its copy and figure can sit in the opening grid. */
-  @media (min-width: 96rem) {
-    .opening {
-      grid-template-columns: minmax(0, var(--copy)) minmax(0, 1fr);
-      grid-template-rows: auto auto;
-      column-gap: var(--gutter);
-      align-items: start;
-    }
-
-    .reading {
-      display: contents;
-    }
-
-    /* Beside the worked example it reads left, as one paragraph. */
-    .page-head {
-      grid-column: 1;
-      grid-row: 1;
-      text-align: left;
-      --sentence-display: inline;
-    }
-
-    .ratios .page-head h1 {
-      text-align: left;
-    }
-
-    .reading-copy {
-      grid-column: 1;
-      grid-row: 2;
-    }
-
-    .worked {
-      grid-column: 2;
-      grid-row: 1 / 3;
-      align-self: stretch;
-      container-type: inline-size;
-      display: grid;
-      align-content: center;
-      padding: clamp(1.5rem, 2vw, 3rem);
-    }
-
-    .worked-shapes {
-      grid-template-columns: minmax(0, 1fr);
-      gap: 2rem;
-    }
-
-    /* The panel's height is set by the prose beside it, which the fixed
-       measure keeps near constant across the tier, so the flowers grow with
-       the panel's width up to the size that fills that height. */
-    .still-lg {
-      inline-size: min(45cqw, 17rem);
-    }
-
-    .worked figcaption {
-      font-size: 1.25rem;
-      text-align: center;
-    }
-
-    .worked-note {
-      margin-inline: auto;
-      text-align: center;
-    }
-
-    .twelve {
-      grid-template-columns: minmax(0, var(--copy)) minmax(0, 1fr);
-      align-items: start;
-    }
-  }
-
-  /* On a wide band the end cards' prose runs in two columns across the top,
-     and the four trays sit two by two under it, so neither leaves a strip of
-     empty band beside the other. */
-  @media (min-width: 80rem) {
-    .ends-copy {
-      columns: 2;
-      column-gap: var(--gutter);
-    }
-
-    .ends-copy h2 {
-      column-span: all;
-    }
-  }
-
-  @media (min-width: 96rem) {
-    /* Level 1's tray takes the band beside the ladder's prose. */
-    .ladder {
-      grid-template-columns: minmax(0, var(--copy)) minmax(0, 1fr);
-      column-gap: var(--gutter);
-    }
-
-    .ladder-board,
-    .swap {
-      grid-column: 1 / -1;
-    }
-
-    .swap {
-      grid-template-columns: minmax(0, var(--copy)) minmax(0, 1fr);
-      column-gap: var(--gutter);
-      align-items: center;
-    }
-  }
-
-  /* The matrix sits beside its prose only once the band
-     holds a reading column and the whole grid at its 72px tiles, which the
-     guide's sidebar allows from about a 1920px screen. */
-  @media (min-width: 120rem) {
-    .pairings {
-      grid-template-columns: minmax(0, var(--copy)) minmax(0, 1fr);
-      column-gap: var(--gutter);
-    }
-
-    /* The matrix runs taller than its prose, so the column beside it
-       carries the rest of the section: how to read one cell, then where the
-       pairing goes past the twelve. Spare height gathers around the cell
-       figure and the last paragraph ends level with the grid's foot. */
-    .pairings {
-      grid-template-areas:
-        "copy stage"
-        "anatomy stage"
-        "beyond stage";
-      grid-template-rows: auto 1fr auto;
-    }
-
-    .pairings-copy {
-      grid-area: copy;
-    }
-
-    .anatomy {
-      grid-area: anatomy;
-      align-self: center;
-      max-inline-size: none;
-    }
-
-    .matrix-stage {
-      grid-area: stage;
-    }
-
-    .beyond {
-      grid-area: beyond;
-      align-self: end;
-    }
-  }
-
-  /* With 88px tiles the matrix stands 1150px tall. The two hand flowers
-     stack in a narrow track and the cell they make takes the wide one, so
-     the cell reads larger and the column beside the matrix reaches its
-     foot. */
-  @media (min-width: 137.5rem) {
-    .anatomy-sum {
-      grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
-      row-gap: 2rem;
-    }
-
-    .anatomy-cell {
-      grid-column: 2;
-      grid-row: 1 / span 2;
-      align-self: center;
-    }
-
-    /* The plus sits in the gap under the first flower's label. */
-    .anatomy-part:nth-child(2) .sum-op {
-      top: -1rem;
-      left: 50%;
-    }
   }
 </style>

@@ -136,6 +136,28 @@
     action();
   }
 
+  // Ways out of the viewer lead the menu. On a phone the motion and color
+  // section below fills the first screen, and a scanner never found "Open
+  // Flow Arts Composer" when it sat under it.
+  const leadItems = $derived.by((): MenuItem[] => {
+    const items: MenuItem[] = [];
+    if (onOpenApp) {
+      items.push({
+        label: openAppLabel ?? t("viewer_ui_open_app"),
+        icon: "fa-compass",
+        action: onOpenApp,
+      });
+    }
+    if (onGuideAction) {
+      items.push({
+        label: guideActionLabel ?? t("viewer_ui_see_guide"),
+        icon: "fa-book-open",
+        action: onGuideAction,
+      });
+    }
+    return items;
+  });
+
   const menuItems = $derived.by((): MenuItem[] => {
     const items: MenuItem[] = [];
 
@@ -187,22 +209,6 @@
             : "fa-download",
         action: onDownload,
         disabled: downloadBusy,
-      });
-    }
-    if (onOpenApp) {
-      items.push({
-        label: openAppLabel ?? t("viewer_ui_open_app"),
-        icon: "fa-compass",
-        action: onOpenApp,
-        dividerBefore: items.length > 0,
-      });
-    }
-    if (onGuideAction) {
-      items.push({
-        label: guideActionLabel ?? t("viewer_ui_see_guide"),
-        icon: "fa-book-open",
-        action: onGuideAction,
-        dividerBefore: items.length > 0,
       });
     }
     if (onPracticeToggle) {
@@ -263,9 +269,22 @@
   });
 
   const hasItems = $derived(menuItems.length > 0);
-  const hasMenu = $derived(hasItems || !!motionVisibility);
+  const hasLeadItems = $derived(leadItems.length > 0);
+  const hasMenu = $derived(hasItems || hasLeadItems || !!motionVisibility);
   const shouldRender = $derived(hasMenu || !!trigger);
 </script>
+
+{#snippet menuButton(item: MenuItem)}
+  <button
+    type="button"
+    class="viewer-overflow-item {item.className ?? ''}"
+    disabled={item.disabled}
+    onclick={() => handleItemSelect(item.action)}
+  >
+    <i class="fas {item.icon}" aria-hidden="true"></i>
+    <span>{item.label}</span>
+  </button>
+{/snippet}
 
 {#if shouldRender}
   <div class="overflow-wrapper" class:title-trigger={!!trigger}>
@@ -306,6 +325,13 @@
             class="viewer-overflow-popover"
             aria-label={t("viewer_ui_more_actions")}
           >
+            {#each leadItems as item}
+              {@render menuButton(item)}
+            {/each}
+            {#if hasLeadItems && (motionVisibility || hasItems)}
+              <hr class="viewer-overflow-divider" />
+            {/if}
+
             {#if motionVisibility}
               <div class="motion-vis-section">
                 <span class="motion-vis-label">{t("viewer_ui_motion")}</span>
@@ -332,15 +358,7 @@
               {#if item.dividerBefore}
                 <hr class="viewer-overflow-divider" />
               {/if}
-              <button
-                type="button"
-                class="viewer-overflow-item {item.className ?? ''}"
-                disabled={item.disabled}
-                onclick={() => handleItemSelect(item.action)}
-              >
-                <i class="fas {item.icon}" aria-hidden="true"></i>
-                <span>{item.label}</span>
-              </button>
+              {@render menuButton(item)}
             {/each}
           </Popover.Content>
         </Popover.Portal>

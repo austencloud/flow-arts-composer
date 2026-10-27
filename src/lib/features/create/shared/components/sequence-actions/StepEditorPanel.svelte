@@ -673,10 +673,12 @@
               />
             </div>
           {:else}
+            <!-- No crossfade between steps; a turns or orientation change
+                 glides this step's props and arrows to the new drawing. -->
             <PictographContainer
               pictographData={joinedStepData}
               arrowsClickable={isAdmin()}
-              disableTransitions={true}
+              disableContentTransitions
             />
           {/if}
         </div>

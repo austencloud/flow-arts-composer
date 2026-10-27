@@ -28,6 +28,9 @@
   with a cross instead of a check, so the learner can compare it with the
   picture asked about. It stays until the round's right answer.
 
+  `only` shows just the combinations it names, in board order, so a host
+  can spread the six across screens (the Guide does on small windows).
+
   A host can set `--board-wide-columns` (6 by default) for a wide board.
 -->
 <script lang="ts">
@@ -56,6 +59,7 @@
     onHint?: (id: HandCombinationId) => void;
     hintLabel?: (name: string) => string;
     missed?: ReadonlySet<HandCombinationId> | null;
+    only?: readonly HandCombinationId[] | null;
   }
 
   let {
@@ -72,6 +76,7 @@
     onHint = undefined,
     hintLabel = (name) => name,
     missed = null,
+    only = null,
   }: Props = $props();
 
   const cells = HAND_COMBINATIONS.map((combination) => ({
@@ -79,6 +84,9 @@
     ...combinationMove(combination),
     tones: LETTER_TYPE_COLORS[combination.letterType],
   }));
+  const shown = $derived(
+    only ? cells.filter((cell) => only.includes(cell.combination.id)) : cells
+  );
 </script>
 
 <div class="board-frame">
@@ -88,7 +96,7 @@
     class:names-only-narrow={namesOnlyWhenNarrow}
     aria-label={label}
   >
-    {#each cells as { combination, data, start, step, tones } (combination.id)}
+    {#each shown as { combination, data, start, step, tones } (combination.id)}
       {@const isFound = found === null || found.has(combination.id)}
       {@const hintable = !isFound && !!onHint}
       {@const progress = start

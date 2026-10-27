@@ -308,6 +308,8 @@ export const handleError: HandleClientError = ({ kind, error }) => {
   if (kind === "app") return;
   const status = kind === "framework" ? error.status : 500;
   const message = kind === "framework" ? error.message : "Internal Error";
+  // The error page only says "Internal Error"; in dev, print what threw.
+  if (dev) console.error("[handleError]", error);
   if (browser && !dev) {
     import("#lib/shared/error/services/error-telemetry-reporter.js")
       .then(({ reportErrorTelemetry }) => {

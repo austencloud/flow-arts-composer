@@ -17,7 +17,7 @@
     BACKGROUND_CARD_REGISTRY,
     getCardMetadata,
   } from "@austencloud/backgrounds/card";
-  import { onMount } from "svelte";
+  import { onMount, untrack } from "svelte";
   import type { AppSettings } from "../../../domain/app-settings";
   import { applyThemeFromColors } from "../../../utils/background-theme-calculator";
   import SettingsSectionHeader from "../../SettingsSectionHeader.svelte";
@@ -78,6 +78,16 @@
     if (!BACKGROUND_CARD_REGISTRY.some((theme) => theme.type === previewType)) {
       previewType = currentType;
     }
+  });
+
+  // Opening this page is the choice. A new member looked at the themes, kept
+  // the one they had, and the setup checklist still asked them to choose one.
+  // Setup progress loads after mount, so wait for it, then record once.
+  let themeVisitRecorded = false;
+  $effect(() => {
+    if (themeVisitRecorded || !needsThemeConfirmation) return;
+    themeVisitRecorded = true;
+    untrack(() => void accountSetupState?.markThemeChosen());
   });
 
   onMount(() => {

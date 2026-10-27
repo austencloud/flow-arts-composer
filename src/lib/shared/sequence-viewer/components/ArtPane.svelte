@@ -973,6 +973,8 @@
   .art-pane.dock-mode .art-settings-host {
     width: 100%;
     height: auto;
+    /* Row flex let the dock shrink to its content on phones; a column lets it stretch full width. */
+    flex-direction: column;
   }
   /* The shared Tunnel pane is a transparent companion over AnimatorCanvas. Its
      art body deliberately ignores input so canvas gestures still reach the

@@ -1,6 +1,11 @@
 import type { ThrelteContext } from "@threlte/core";
 import type { Camera, Object3D, Scene, WebGLRenderer } from "three";
-import { installGuardedCompileAsync } from "./guarded-compile-async";
+import {
+  guardEveryWebGLRenderer,
+  installGuardedCompileAsync,
+} from "./guarded-compile-async";
+
+guardEveryWebGLRenderer();
 
 /**
  * Threlte returns `camera` wrapped in a CurrentWritable (read `.current`) while

@@ -98,6 +98,27 @@ describe("pending video download delivery", () => {
       videoDownloadSettingsKey({ ...twoDimensional, is3DExport: true })
     );
   });
+
+  it("marks a prepared file stale when what it shows on top changes", () => {
+    const base = {
+      resolution: 1080,
+      fps: 60,
+      repeats: 1,
+      quality: "standard",
+      is3DExport: false,
+    };
+    expect(
+      videoDownloadSettingsKey({ ...base, overlays: ["wordHeader"] })
+    ).not.toBe(
+      videoDownloadSettingsKey({
+        ...base,
+        overlays: ["wordHeader", "progressBar"],
+      })
+    );
+    expect(videoDownloadSettingsKey({ ...base, overlays: [] })).not.toBe(
+      videoDownloadSettingsKey({ ...base, overlays: ["tkaGlyph"] })
+    );
+  });
 });
 
 describe("file request planning", () => {

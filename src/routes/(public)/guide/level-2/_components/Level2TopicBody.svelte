@@ -13,8 +13,16 @@
    * and its setGuideData call) on every topic change — cheap, since these
    * are static content pages anyway.
    */
+  import { onMount, tick } from "svelte";
   import { localHref } from "#lib/shared/i18n/localized-href.svelte.js";
+  import { mutateCurrentUrl } from "#lib/shared/navigation/services/url-state.js";
   import GuideCompanionHost from "../../_components/GuideCompanionHost.svelte";
+  import GuideScreens from "../../_components/fit/GuideScreens.svelte";
+  import {
+    SCREEN_PARAM,
+    watchScreenTier,
+    type ScreenTier,
+  } from "../../_components/fit/guide-screen-url";
   import { setGuideData } from "../../level-1/_data/guide-data-context";
   import type { GuideChapterData } from "../../level-1/_data/guide-types";
   import turnsData from "../_data/turns.json";
@@ -22,7 +30,14 @@
   import { localizedLevel2Topic } from "../_data/localize-level2-topic";
   import type { Level2TopicPage } from "../_data/level2-topic-routes";
   import { LEVEL2_TOPIC_SECTIONS } from "../_data/level2-topic-sections";
-  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import {
+    readSectionUnits,
+    showOnlyUnits,
+    splitSections,
+    SPLIT_RULES,
+    type SectionUnit,
+  } from "../_data/section-screens";
+  import { t, tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
 
   let {
     meta,
@@ -39,41 +54,115 @@
       ? doubleTurnsData
       : turnsData) as unknown as GuideChapterData
   );
+
+  const sections = $derived(LEVEL2_TOPIC_SECTIONS[meta.slug] ?? []);
+  const kicker = $derived(
+    `Level 2 · ${tDynamic(
+      meta.chapter === "double-turns"
+        ? "guide_level2_chapter2_title"
+        : "guide_level2_chapter1_title"
+    )}`
+  );
+
+  // One screen at a time (2026-10-24 fit pass). Before the page is live,
+  // each section is one screen, so the prerendered page keeps every word.
+  // Once live, the page reads its sections' blocks from a hidden copy and
+  // splits them for the window (section-screens.ts).
+  let tier = $state<ScreenTier>("large");
+  let units = $state<SectionUnit[] | null>(null);
+  let titles = $state<string[]>([]);
+  let censusEl = $state<HTMLDivElement>();
+  let censusing = $state(false);
+  const screens = $derived(
+    units ? splitSections(units, titles, SPLIT_RULES[tier]) : null
+  );
+  const labels = $derived(
+    screens
+      ? screens.map((s) => s.label)
+      : sections.map((_, n) => `${n + 1}`)
+  );
+
+  onMount(() => {
+    const stop = watchScreenTier((v) => (tier = v));
+    censusing = true;
+    void tick().then(() => {
+      const found = Array.from(
+        censusEl?.querySelectorAll(":scope > .guide-section") ?? []
+      );
+      titles = found.map((el) => el.querySelector("h2")?.textContent?.trim() ?? "");
+      const read = readSectionUnits(found);
+      // A link to one of the page's sections opens its first screen.
+      const hash = decodeURIComponent(window.location.hash.slice(1));
+      const target = found.findIndex((el) => el.id === hash);
+      if (target > 0) {
+        const first = splitSections(read, titles, SPLIT_RULES[tier]).findIndex(
+          (s) => s.section === target
+        );
+        if (first > 0)
+          mutateCurrentUrl(
+            (url) => url.searchParams.set(SCREEN_PARAM, String(first + 1)),
+            { mode: "replace" }
+          );
+      }
+      units = read;
+      censusing = false;
+    });
+    return stop;
+  });
+
+  function only(node: HTMLElement, paths: readonly string[] | null) {
+    const apply = (list: readonly string[] | null) => {
+      const section = node.querySelector(":scope > .guide-section");
+      if (section && list) showOnlyUnits(section, list);
+    };
+    apply(paths);
+    return { update: apply };
+  }
 </script>
 
 <GuideCompanionHost
   pageTitle={localizedLevel2Topic(meta, "h1")}
   levelLabel={t("guide_l2_level_label")}
 >
-  <h1>{localizedLevel2Topic(meta, "h1")}</h1>
-
-  {#each LEVEL2_TOPIC_SECTIONS[meta.slug] ?? [] as Section (Section)}
-    <Section />
-  {/each}
-
-  <nav class="topic-nav" aria-label={t("guide_l2_topic_navigation")}>
-    {#if prev}
-      <a class="nav-link prev" href={localHref(`/guide/level-2/${prev.slug}`)}>
-        <span class="nav-dir">{t("guide_l2_previous")}</span><span
-          class="nav-title">{localizedLevel2Topic(prev, "h1")}</span
-        >
-      </a>
-    {:else}
-      <span class="nav-spacer"></span>
-    {/if}
-    <a class="nav-link hub" href={localHref(`/guide/level-2/${meta.chapter}`)}
-      >{t("guide_l2_chapter_overview")}</a
+  <main class="l2-route">
+    <GuideScreens
+      title={localizedLevel2Topic(meta, "h1")}
+      {kicker}
+      {labels}
+      prevPage={prev
+        ? {
+            href: localHref(`/guide/level-2/${prev.slug}`),
+            title: localizedLevel2Topic(prev, "h1"),
+          }
+        : null}
+      nextPage={next
+        ? {
+            href: localHref(`/guide/level-2/${next.slug}`),
+            title: localizedLevel2Topic(next, "h1"),
+          }
+        : null}
+      hubHref={localHref(`/guide/level-2/${meta.chapter}`)}
+      hubLabel={t("guide_l2_chapter_overview")}
     >
-    {#if next}
-      <a class="nav-link next" href={localHref(`/guide/level-2/${next.slug}`)}>
-        <span class="nav-dir">{t("guide_l2_next")}</span><span class="nav-title"
-          >{localizedLevel2Topic(next, "h1")}</span
-        >
-      </a>
-    {:else}
-      <span class="nav-spacer"></span>
-    {/if}
-  </nav>
+      {#snippet screen(n)}
+        {@const sc = screens?.[n]}
+        {@const Section = sections[sc ? sc.section : n]}
+        {#if Section}
+          <div class="l2-screen" use:only={sc?.paths ?? null}>
+            <Section />
+          </div>
+        {/if}
+      {/snippet}
+    </GuideScreens>
+  </main>
+
+  {#if censusing}
+    <div class="census" bind:this={censusEl} aria-hidden="true" inert>
+      {#each sections as Section, k (k)}
+        <Section />
+      {/each}
+    </div>
+  {/if}
 </GuideCompanionHost>
 
 <style>
@@ -89,64 +178,44 @@
     --glyph-invert: 1;
   }
 
-  .topic-nav {
+  .l2-route {
+    --ink: #ececf2;
+    --ink-dim: #a8a8b4;
+    --glyph-invert: 1;
+    color: var(--ink);
+  }
+  :global(.guide-content > .l2-route) {
+    grid-column: full;
+  }
+  /* A section's blocks that belong to other screens stay out of layout. */
+  .l2-screen :global([hidden]) {
+    display: none !important;
+  }
+  /* On a screen the section is plain content: no scrolling card, no
+     scroll-driven reveal, and no page grid to hang its tracks on. */
+  .l2-screen :global(.guide-section) {
+    display: block;
+    margin: 0;
+    padding: 0;
+    background: none;
+    border: 0;
+    box-shadow: none;
+    backdrop-filter: none;
+    animation: none;
+  }
+  .l2-screen :global(.guide-section > *) {
     max-width: 44rem;
-    margin: 2rem auto 0;
-    padding: 1.5rem 0 2rem;
-    display: flex;
-    align-items: stretch;
-    justify-content: space-between;
-    gap: 0.75rem;
-    border-top: 1px solid oklch(0.4 0.03 270 / 0.35);
+    margin-inline: auto;
+    padding-inline: 0;
   }
-  .nav-link {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    min-height: 44px;
-    padding: 0.6rem 1.1rem;
-    border-radius: 12px;
-    border: 1px solid oklch(0.45 0.04 270 / 0.4);
-    color: oklch(0.85 0.02 270);
-    text-decoration: none;
-    flex: 1 1 0;
-    transition: background var(--duration-instant) var(--ease-standard);
+  .l2-screen :global(.guide-section > h2) {
+    margin-top: 0;
   }
-  .nav-link:hover {
-    background: oklch(0.24 0.03 270 / 0.5);
+  .l2-screen :global(.guide-section > .showcase-wrap) {
+    max-width: 76rem;
+    margin-block: calc(1.25rem * min(var(--fit, 1), 1));
   }
-  .nav-link.next {
-    text-align: right;
-  }
-  .nav-link.hub {
-    flex: 0 0 auto;
-    align-items: center;
-    justify-content: center;
-    font-weight: 650;
-    background: #e8590c;
-    color: #fff;
-    border-color: transparent;
-  }
-  .nav-link.hub:hover {
-    background: #d24e08;
-  }
-  .nav-dir {
-    font-size: 0.72rem;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: oklch(0.6 0.02 270);
-  }
-  .nav-title {
-    font-size: 0.98rem;
-    font-weight: 600;
-  }
-  .nav-spacer {
-    flex: 1 1 0;
-  }
-
-  @media (max-width: 44rem) {
-    .topic-nav {
-      flex-wrap: wrap;
-    }
+  .census {
+    display: none;
   }
 </style>

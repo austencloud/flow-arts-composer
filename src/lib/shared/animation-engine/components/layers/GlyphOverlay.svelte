@@ -76,6 +76,8 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
     glyphFrame = "pictograph",
     // Fades the whole overlay; the host brings it in over a running canvas.
     opacity = 1,
+    // The viewer's hand colors; turn numbers wear the color of their hand.
+    primaryPropColors = null,
   }: {
     letter?: Letter | null;
     displayedLetter?: Letter | null;
@@ -94,6 +96,7 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
     isAtEndPlacement?: boolean;
     glyphFrame?: GlyphOverlayFrameMode;
     opacity?: number;
+    primaryPropColors?: { left: string; right: string } | null;
   } = $props();
 
   let overlayWidth = $state(0);
@@ -300,6 +303,8 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
             {letter}
             {letterDimensions}
             pictographData={stepData}
+            leftColorOverride={primaryPropColors?.left}
+            rightColorOverride={primaryPropColors?.right}
             x={50}
             y={800}
             scale={1}

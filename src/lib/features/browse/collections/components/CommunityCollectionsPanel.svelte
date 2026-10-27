@@ -121,7 +121,7 @@ collections have stable URLs and ordinary browser back/forward behavior.
     gap: 14px;
     height: 100%;
     min-height: 0;
-    overflow-y: auto;
+    overflow: hidden;
     padding: clamp(12px, 3cqi, 28px);
     /* A handful of collections on a narrow panel otherwise huddles in the
 		   top-left corner — cap the column and center it so the page reads composed
@@ -137,12 +137,20 @@ collections have stable URLs and ordinary browser back/forward behavior.
 
   .card-grid {
     display: grid;
+    /* Takes the panel's height and lets its rows grow into it, up to a
+       comfortable card height, so a short list fills the screen instead of
+       floating between two empty bands. A long list keeps its cards at their
+       natural height and pans inside the grid. */
+    flex: 1 1 0;
+    min-height: 0;
+    overflow-y: auto;
+    grid-auto-rows: minmax(min-content, 10rem);
     grid-template-columns: repeat(
       auto-fill,
       minmax(min(100%, clamp(15rem, 13vw, 26rem)), 1fr)
     );
     gap: clamp(10px, 0.6vw, 22px);
-    align-content: start;
+    align-content: safe center;
   }
 
   .tile-skeleton {

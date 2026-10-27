@@ -106,6 +106,19 @@ export const BODY_YAW_STEP_RAD = 15 * DEG;
  *  sample's cheapest yaw, of the host's facing and of the stance's twist,
  *  rather than all twenty-five, which keeps the programme small. */
 export const BODY_YAW_WINDOW_RAD = 45 * DEG;
+/** The body turns at most this far either side of square to its grid. The
+ *  grid stays where the score put it while the body turns under it, so past
+ *  about a right angle one hand's grip falls behind its shoulder; the stage
+ *  measured the hips swinging to 180 degrees without this, the staffs behind
+ *  the back, before the behind-the-shoulder reach below existed. */
+export const BODY_YAW_LIMIT_RAD = 90 * DEG;
+/** A grip may sit this far behind its shoulder, along the chest's facing,
+ *  before the reach counts it short: an arm reaches a little behind the
+ *  shoulder line at the side, not round the back. */
+export const GRIP_BEHIND_ALLOWANCE_M = 0.1;
+/** Each metre further behind costs this many metres beyond the arm's length:
+ *  an arm stretched forward still holds, one bent round the back does not. */
+export const GRIP_BEHIND_WEIGHT = 4;
 /** Per metre of grip beyond the arm's reach, summed over the hands: between
  *  staff left inside (20) and the move itself (1), so the body moves or turns
  *  toward a grip but never into a staff to do it. */
@@ -176,6 +189,9 @@ export const BODY_RESPONSE_HEAD = Object.freeze({
 const YAW_CANDIDATES = Math.round((2 * Math.PI) / BODY_YAW_STEP_RAD) + 1;
 const YAW_ZERO_INDEX = (YAW_CANDIDATES - 1) / 2;
 const YAW_WINDOW = Math.round(BODY_YAW_WINDOW_RAD / BODY_YAW_STEP_RAD);
+const YAW_LIMIT = Math.round(BODY_YAW_LIMIT_RAD / BODY_YAW_STEP_RAD);
+const YAW_MIN_INDEX = YAW_ZERO_INDEX - YAW_LIMIT;
+const YAW_MAX_INDEX = YAW_ZERO_INDEX + YAW_LIMIT;
 /** The host's facing and the stance's twist each bring the two candidates
  *  either side of them into reach as well. */
 const GOAL_WINDOW = 1;
@@ -347,8 +363,15 @@ function smoothstep01(value: number): number {
  * direction takes over that much of the twist; past the stance, or against
  * it, the chest goes with the body rather than twisting back.
  */
-export function residualChestYaw(stanceRad: number, bodyYawRad: number): number {
-  const taken = clamp(bodyYawRad, Math.min(0, stanceRad), Math.max(0, stanceRad));
+export function residualChestYaw(
+  stanceRad: number,
+  bodyYawRad: number
+): number {
+  const taken = clamp(
+    bodyYawRad,
+    Math.min(0, stanceRad),
+    Math.max(0, stanceRad)
+  );
   return clamp(
     stanceRad - taken,
     -CHEST_RESIDUAL_CAP_RAD,
@@ -533,8 +556,29 @@ function leftAt(bins: Int32Array, t: number): number {
 }
 
 /** Grip beyond reach, summed over the hands, after a floor move. */
+/** A hand for the reach cost: its grip less its shoulder, and the chest's
+ *  facing on the floor, so a grip behind the shoulder line reads short. */
+interface FacingReachHand extends ReachHand {
+  fx: number;
+  fz: number;
+}
+
+function facingReachHands(
+  staffs: readonly (StaffLine | null)[],
+  chestRad: number,
+  model: BodyClearanceModel
+): FacingReachHand[] {
+  const fx = Math.sin(chestRad);
+  const fz = Math.cos(chestRad);
+  return reachHands(staffs, chestRad, model).map((hand) => ({
+    ...hand,
+    fx,
+    fz,
+  }));
+}
+
 function reachDeficit(
-  hands: readonly ReachHand[],
+  hands: readonly FacingReachHand[],
   reachM: number,
   dx: number,
   dz: number
@@ -545,6 +589,8 @@ function reachDeficit(
     const ez = hand.vz - dz;
     const d = Math.sqrt(ex * ex + hand.vy * hand.vy + ez * ez);
     if (d > reachM) deficit += d - reachM;
+    const behind = -(ex * hand.fx + ez * hand.fz) - GRIP_BEHIND_ALLOWANCE_M;
+    if (behind > 0) deficit += GRIP_BEHIND_WEIGHT * behind;
   }
   return deficit;
 }
@@ -676,7 +722,7 @@ function evaluateSample(
       head,
       horizonM
     );
-    const hands = reachHands(input.staffs, body.chestRad, model);
+    const hands = facingReachHands(input.staffs, body.chestRad, model);
     const deficit0 = reachDeficit(hands, reachM, 0, 0);
     if (!torso.inside && !headPoints.inside && deficit0 <= 0) {
       push(yi, 0, 0, base, 0, 0);
@@ -801,12 +847,12 @@ interface Chosen {
   maxStates: number;
 }
 
-/** The yaw candidate nearest an angle, within the candidates. */
+/** The yaw candidate nearest an angle, within the turn limit. */
 function yawIndexOf(rad: number): number {
   return clamp(
-    Math.round(rad / BODY_YAW_STEP_RAD) + YAW_ZERO_INDEX,
-    0,
-    YAW_CANDIDATES - 1
+    Math.round(wrapAngle(rad) / BODY_YAW_STEP_RAD) + YAW_ZERO_INDEX,
+    YAW_MIN_INDEX,
+    YAW_MAX_INDEX
   );
 }
 
@@ -844,8 +890,8 @@ function choosePath(
       [yawIndexOf(input.hintRad), GOAL_WINDOW],
       [yawIndexOf(input.stanceChestRad), GOAL_WINDOW],
     ] as const) {
-      const lo = Math.max(0, c - reach);
-      const hi = Math.min(YAW_CANDIDATES - 1, c + reach);
+      const lo = Math.max(YAW_MIN_INDEX, c - reach);
+      const hi = Math.min(YAW_MAX_INDEX, c + reach);
       for (let yi = lo; yi <= hi; yi++) wanted[yi] = 1;
     }
     const yawIndices: number[] = [];
@@ -1147,8 +1193,7 @@ function planFeet(
     const turnShare = Math.abs(dYaw) / STEP_TURN_RAD;
     // The foot on the side of the move leads; for a turn, the outside foot
     // (a turn to the performer's left swings the right foot round first).
-    const across =
-      dx * Math.cos(planted.yaw) - dz * Math.sin(planted.yaw);
+    const across = dx * Math.cos(planted.yaw) - dz * Math.sin(planted.yaw);
     const first: "left" | "right" =
       turnShare > moveShare
         ? dYaw > 0
@@ -1157,8 +1202,7 @@ function planFeet(
         : across >= 0
           ? "left"
           : "right";
-    const [lead, trail] =
-      first === "left" ? [left, right] : [right, left];
+    const [lead, trail] = first === "left" ? [left, right] : [right, left];
     const second = first === "left" ? "right" : "left";
     swingFoot(lead, trail, first, planted, to, planted, at);
     swingFoot(trail, lead, second, planted, to, to, at + swing);
@@ -1351,8 +1395,16 @@ export function buildBodyResponseTrack(
     const lifted = input.sweep.map((staff) =>
       staff
         ? {
-            a: { x: staff.a.x - chosen.x[j]!, y: staff.a.y + need, z: staff.a.z - chosen.z[j]! },
-            b: { x: staff.b.x - chosen.x[j]!, y: staff.b.y + need, z: staff.b.z - chosen.z[j]! },
+            a: {
+              x: staff.a.x - chosen.x[j]!,
+              y: staff.a.y + need,
+              z: staff.a.z - chosen.z[j]!,
+            },
+            b: {
+              x: staff.b.x - chosen.x[j]!,
+              y: staff.b.y + need,
+              z: staff.b.z - chosen.z[j]!,
+            },
           }
         : null
     );
@@ -1440,7 +1492,10 @@ function lerpAngleSample(
   return a + wrapAngle(values[at.i1]! - a) * at.w;
 }
 
-function sampleFoot(track: FootTrack, at: DenseSampleNeighbours): BodyResponseFoot {
+function sampleFoot(
+  track: FootTrack,
+  at: DenseSampleNeighbours
+): BodyResponseFoot {
   return {
     x: lerpDenseSample(track.x, at),
     z: lerpDenseSample(track.z, at),
@@ -1536,15 +1591,21 @@ export function describeBodyResponseTrack(
       if (beat.moveMaxM > REPORT_EPS_M) {
         const along: string[] = [];
         if (Math.abs(beat.offsetXM) > REPORT_EPS_M) {
-          along.push(`${cm(beat.offsetXM)} ${beat.offsetXM > 0 ? "left" : "right"}`);
+          along.push(
+            `${cm(beat.offsetXM)} ${beat.offsetXM > 0 ? "left" : "right"}`
+          );
         }
         if (Math.abs(beat.offsetZM) > REPORT_EPS_M) {
-          along.push(`${cm(beat.offsetZM)} ${beat.offsetZM > 0 ? "forward" : "back"}`);
+          along.push(
+            `${cm(beat.offsetZM)} ${beat.offsetZM > 0 ? "forward" : "back"}`
+          );
         }
         parts.push(`${cm(beat.moveMaxM)} cm, ${along.join(" and ")}`);
       }
       if (Math.abs(beat.yawRad) > REPORT_EPS_RAD) {
-        parts.push(`turned ${deg(beat.yawRad)} ${beat.yawRad > 0 ? "left" : "right"}`);
+        parts.push(
+          `turned ${deg(beat.yawRad)} ${beat.yawRad > 0 ? "left" : "right"}`
+        );
       }
       if (beat.duckM > REPORT_EPS_M) parts.push(`duck ${cm(beat.duckM)} cm`);
       if (beat.steps.length) {
@@ -1554,4 +1615,3 @@ export function describeBodyResponseTrack(
     })
     .join("\n");
 }
-

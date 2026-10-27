@@ -314,13 +314,21 @@
     }
 
     editorHandoffInFlight = true;
-    close(() => {
+    closeThen(() => {
       panelState.completeGenerateCardEditorHandoff();
       editorHandoffInFlight = false;
     });
   }
 
-  function close(onSettled?: () => void) {
+  // Panels wire this straight to a button's onclick, which hands it the click
+  // event. Taking no arguments keeps that event out of closeThen's onSettled,
+  // where it was called as a function once the morph settled (session triage,
+  // "e is not a function" after closing Generator setups).
+  function close() {
+    closeThen();
+  }
+
+  function closeThen(onSettled?: () => void) {
     const card = openCard;
     if (!card) return;
     const returnLoopFocus =

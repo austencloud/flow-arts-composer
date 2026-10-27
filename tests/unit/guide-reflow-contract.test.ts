@@ -102,11 +102,14 @@ describe("crawl route (paginated, one surface)", () => {
     expect(src).toContain("GuideSeo");
     expect(src).toContain("GuidePageHost");
   });
-  it("prerenders every body page via entries()", () => {
+  it("prerenders every unfolded body page via entries()", () => {
     const ts = read("src/routes/(public)/guide/level-1/[slug]/+page.ts");
-    expect(ts).toContain("prerender = true");
+    // "auto", not true: a folded page redirects with a ?screen= query, and
+    // the prerenderer would write that target as a file name with a "?" in
+    // it, which Windows refuses. Folded pages redirect at request time.
+    expect(ts).toContain('prerender = "auto"');
     expect(ts).toContain("entries");
-    expect(ts).toContain("GUIDE_BODY_PAGES");
+    expect(ts).toContain("GUIDE_BODY_PAGES.filter((p) => !p.web)");
   });
   it("the host renders crawlable flow content with a sheet fallback but no topic mode switch", () => {
     const src = read(host);
@@ -162,6 +165,8 @@ describe("sitemap", () => {
   it("enumerates the Level-1 topic routes dynamically from the manifest", () => {
     const src = read("src/routes/sitemap.xml/+server.ts");
     expect(src).toContain("guide/level-1/${p.id}");
-    expect(src).toContain("GUIDE_BODY_PAGES");
+    // The web pages only: a print page folded into another web page
+    // redirects, and a sitemap must not list a redirecting URL.
+    expect(src).toContain("GUIDE_WEB_PAGES");
   });
 });

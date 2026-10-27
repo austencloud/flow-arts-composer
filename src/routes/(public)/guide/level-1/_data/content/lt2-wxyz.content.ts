@@ -323,7 +323,6 @@ export const lt2WxyzContent: GuideBlock[] = [
   {
     kind: "prose",
     html:
-      "Though simple at this stage, these motions become more complex<br>" +
-      "as we dive deeper into the Alphabet and add rotations to static motions.",
+      "These motions look simple now. They get more complex later,<br>once static motions gain rotations.",
   },
 ];

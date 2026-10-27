@@ -33,7 +33,10 @@
   import { getVisibilityStateManager } from "#lib/shared/pictograph/shared/state/visibility-state.svelte.js";
   import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
   import { tryGetViewerVisibilityContext } from "../context/viewer-visibility-context";
-  import { getScanCardCloudPolicy } from "#lib/shared/sequence-viewer/scan-card-cloud-context.js";
+  import {
+    getScanCardCloudPolicy,
+    scanCellsAreCloudOnly,
+  } from "#lib/shared/sequence-viewer/scan-card-cloud-context.js";
   import { CANONICAL_CARD_VISIBILITY } from "#lib/shared/render/services/cloud-cell-key.js";
   import { normalizePropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
   import { normalizeTriangleGrip } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
@@ -924,9 +927,13 @@
       // context), so a cold scanner downloads pre-rendered cells instead of
       // rasterizing. Unset everywhere else => local render path, no extra latency.
       probeCloud: cloudProbeEnabled,
-      // Hand-path records embed motion data; their cells can be rendered locally
-      // without requiring the prop catalog's prepublished cloud assets.
-      cloudOnly: scanCloudPolicy.cloudOnly && !handPathMode,
+      // Only the printed two-hand card is published. Hand-path records and a
+      // card with one hand hidden render locally instead of failing.
+      cloudOnly: scanCellsAreCloudOnly(scanCloudPolicy, {
+        handPathMode,
+        showLeftMotion,
+        showRightMotion,
+      }),
     };
   }
 

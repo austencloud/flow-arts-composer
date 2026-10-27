@@ -321,9 +321,20 @@
           <!-- Not keyed on sequence id — the mounted player reloads onto a new
                sequence in place (see script comment above). The reserved stage
                footprint holds constant, so no layout shift either way. -->
+          <!-- The LOOP badge's resolver is registered before the player
+               mounts, not after: the canvas reads it once per sequence (it is
+               a plain variable, not reactive), and the public landing never
+               loads the app's composition root that normally registers it.
+               Without this the hero never shows a LOOP badge. -->
           <LazyMount
             loader={() =>
-              import("#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte")}
+              Promise.all([
+                import("#lib/shared/composition-root/register-loop-display.js"),
+                import("#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte"),
+              ]).then(([loopDisplay, player]) => {
+                loopDisplay.registerLoopDisplay();
+                return player;
+              })}
             active={active && !!sequence && !isNamedRouteMorphActive()}
             placeholder={playerPlaceholder}
             onStatusChange={(status) => {

@@ -553,7 +553,7 @@ Popover uses fixed positioning to escape overflow:hidden containers.
     padding: 4px;
     /* --theme-panel-bg is a translucent wash (rgba(0,0,0,0.75) on dark
        desktop) — floating menus need an opaque surface, so paint the wash
-       over a solid base. Same treatment as SortPopover. */
+       over a solid base. Same treatment the old sort popover used. */
     background-color: #12141c;
     background-image: linear-gradient(
       var(--theme-panel-bg, rgba(18, 18, 28, 0.98)),

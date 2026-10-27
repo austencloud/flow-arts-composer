@@ -32,6 +32,10 @@
 /fonts/*
   Cache-Control: public, max-age=2592000, stale-while-revalidate=2592000
 
+# The boot Overture's pool scenes keep a fixed name, so they revalidate.
+/boot/*
+  Cache-Control: public, no-cache
+
 # The pictograph dataframes ship UNCOMPRESSED, and the app fetches all four:
 # 449 KB of transfer that compresses to roughly 45 KB. Cloudflare only
 # auto-compresses content types on its allowlist, and `text/csv` is not on it

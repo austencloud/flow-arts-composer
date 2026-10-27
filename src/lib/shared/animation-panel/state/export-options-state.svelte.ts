@@ -15,6 +15,11 @@ import {
   isVideoCarouselPlacement,
   type VideoCarouselPlacement,
 } from "#lib/shared/video-export/domain/video-carousel.js";
+import {
+  isVideoOverlays,
+  readStoredVideoOverlays,
+  type VideoOverlays,
+} from "#lib/shared/video-export/domain/video-overlays.js";
 
 // Video FPS options
 export type VideoFps = 30 | 60 | 120;
@@ -56,6 +61,11 @@ export interface VideoExportOptions {
   opener: VideoOpener;
   /** Which side of the video carries the beat carousel, or "off". */
   carousel: VideoCarouselPlacement;
+  /**
+   * What the video draws over the animation. Null until the Download screen
+   * first opens, so the video follows the canvas until then.
+   */
+  overlays: VideoOverlays | null;
 }
 
 export interface SplitExportOptions extends VideoExportOptions {
@@ -95,6 +105,7 @@ export const DEFAULT_VIDEO_OPTIONS: VideoExportOptions = {
   quality: "standard",
   opener: DEFAULT_VIDEO_OPENER,
   carousel: DEFAULT_VIDEO_CAROUSEL,
+  overlays: null,
 };
 
 export const DEFAULT_SPLIT_OPTIONS: SplitExportOptions = {
@@ -110,6 +121,7 @@ export const DEFAULT_SPLIT_OPTIONS: SplitExportOptions = {
   quality: "standard",
   opener: DEFAULT_VIDEO_OPENER,
   carousel: DEFAULT_VIDEO_CAROUSEL,
+  overlays: null,
 };
 
 export const DEFAULT_IMAGE_OPTIONS: ImageExportOptions = {
@@ -215,6 +227,7 @@ export interface ExportOptionsStateManager {
   readonly videoQuality: VideoQuality;
   readonly videoOpener: VideoOpener;
   readonly videoCarousel: VideoCarouselPlacement;
+  readonly videoOverlays: VideoOverlays | null;
 
   // Split options (reactive getters)
   readonly splitFps: VideoFps;
@@ -243,6 +256,7 @@ export interface ExportOptionsStateManager {
   setVideoQuality(q: VideoQuality): void;
   setVideoOpener(opener: VideoOpener): void;
   setVideoCarousel(placement: VideoCarouselPlacement): void;
+  setVideoOverlays(overlays: VideoOverlays): void;
 
   // Split setters
   setSplitFps(fps: VideoFps): void;
@@ -303,6 +317,9 @@ export function createExportOptionsState(): ExportOptionsStateManager {
       ? stored.video.carousel
       : DEFAULT_VIDEO_CAROUSEL
   );
+  let videoOverlays = $state<VideoOverlays | null>(
+    readStoredVideoOverlays(stored.video.overlays)
+  );
 
   // Split export options (animation + grid composite)
   let splitFps = $state<VideoFps>(stored.split.fps);
@@ -342,6 +359,7 @@ export function createExportOptionsState(): ExportOptionsStateManager {
         quality: videoQuality,
         opener: videoOpener,
         carousel: videoCarousel,
+        overlays: videoOverlays,
       },
       split: {
         fps: splitFps,
@@ -356,6 +374,7 @@ export function createExportOptionsState(): ExportOptionsStateManager {
         quality: "standard",
         opener: DEFAULT_VIDEO_OPENER,
         carousel: DEFAULT_VIDEO_CAROUSEL,
+        overlays: null,
       },
       image: {
         includeStartPlacement: imageIncludeStartPlacement,
@@ -386,6 +405,7 @@ export function createExportOptionsState(): ExportOptionsStateManager {
     get videoQuality() { return videoQuality; },
     get videoOpener() { return videoOpener; },
     get videoCarousel() { return videoCarousel; },
+    get videoOverlays() { return videoOverlays; },
 
     // Split options (getters)
     get splitFps() { return splitFps; },
@@ -441,6 +461,11 @@ export function createExportOptionsState(): ExportOptionsStateManager {
       videoCarousel = isVideoCarouselPlacement(placement)
         ? placement
         : DEFAULT_VIDEO_CAROUSEL;
+      persist();
+    },
+    setVideoOverlays(overlays: VideoOverlays) {
+      if (!isVideoOverlays(overlays)) return;
+      videoOverlays = { ...overlays };
       persist();
     },
 
@@ -512,6 +537,7 @@ export function createExportOptionsState(): ExportOptionsStateManager {
         quality: videoQuality,
         opener: videoOpener,
         carousel: videoCarousel,
+        overlays: videoOverlays,
       };
     },
 
@@ -529,6 +555,7 @@ export function createExportOptionsState(): ExportOptionsStateManager {
         quality: "standard",
         opener: DEFAULT_VIDEO_OPENER,
         carousel: DEFAULT_VIDEO_CAROUSEL,
+        overlays: null,
       };
     },
 
@@ -553,6 +580,7 @@ export function createExportOptionsState(): ExportOptionsStateManager {
       videoIncludeEndHold = DEFAULT_VIDEO_OPTIONS.includeEndHold;
       videoQuality = DEFAULT_VIDEO_OPTIONS.quality;
       videoCarousel = DEFAULT_VIDEO_OPTIONS.carousel;
+      videoOverlays = DEFAULT_VIDEO_OPTIONS.overlays;
       splitFps = DEFAULT_SPLIT_OPTIONS.fps;
       splitLoopCount = DEFAULT_SPLIT_OPTIONS.loopCount;
       splitResolution = DEFAULT_SPLIT_OPTIONS.resolution;
@@ -594,6 +622,7 @@ export function createExportOptionsState(): ExportOptionsStateManager {
       videoCarousel = isVideoCarouselPlacement(next.video.carousel)
         ? next.video.carousel
         : DEFAULT_VIDEO_CAROUSEL;
+      videoOverlays = readStoredVideoOverlays(next.video.overlays);
       splitFps = next.split.fps;
       splitLoopCount = next.split.loopCount;
       splitResolution = next.split.resolution;

@@ -420,3 +420,55 @@
     transition: none;
   }
 }
+
+/* Picture tiles in rows a host sizes: each .rt-chip is a picture over its
+   label, `--tile-grid-cols` to a row, and a short last row sits centred under
+   the full ones rather than hanging off the left edge. The host sets the
+   column count and the picture cap (`--tile-grid-art`) once, so several grids
+   side by side (Settings → Display's three sections) get the same tile at the
+   same width. DisplayPanel uses it with `hostSized`; MenuItemTileGrid always.
+
+   The picture cap is registered as a length so a host can write it in
+   container units and every grid inherits the same pixels, whichever
+   container the grid itself sits in. */
+@property --tile-grid-art {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 64px; /* a registered length needs an absolute initial value */
+}
+
+.rt-tile-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--tile-grid-gap, 8px);
+  min-width: 0;
+}
+
+.rt-tile-grid > .rt-chip {
+  --tile-art: var(--tile-grid-art);
+  flex: 0 0
+    calc(
+      (100% - (var(--tile-grid-cols, 4) - 1) * var(--tile-grid-gap, 8px)) /
+        var(--tile-grid-cols, 4)
+    );
+  min-width: 0;
+  flex-direction: column;
+  justify-content: center;
+  gap: 7px;
+  height: auto;
+  padding: 10px 6px;
+}
+
+.rt-tile-grid > .rt-chip .chip-label {
+  font-size: var(--font-size-xs, 0.75rem);
+  line-height: 1.1;
+  text-align: center;
+  text-wrap: balance;
+}
+
+/* The picture carries recognition; dimming it when off keeps the preview
+   honest in both states. */
+.rt-tile-grid > .rt-chip:not([aria-pressed="true"]) .art {
+  opacity: 0.4;
+}

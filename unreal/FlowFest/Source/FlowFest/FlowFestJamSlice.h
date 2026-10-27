@@ -133,10 +133,20 @@ private:
     void Record();
     void LogStats(float DeltaTime);
     static float ResolutionPercent();
-    /** Every body but the player's updates at a rate set by its size on screen, interpolated between. */
+    /** Every body but the player's and the spinners' updates at a rate set by its size on screen, interpolated between. */
     void BudgetBodies();
     double BudgetedAt = -10.0;
     int32 BudgetedBodies = 0;
+    /** Every quarter second: spinners evaluate every frame, everyone else at the size-on-screen rate. */
+    void RateSpinners();
+    static bool IsSpinning(const USkeletalMeshComponent* Body);
+    int32 SpinningBodies = 0;
+    TSet<TWeakObjectPtr<USkeletalMeshComponent>> Dressed;
+    /** -FlowFestJamThrottleSpinners: spinners keep the size-on-screen rate too, as before 2026-10-27, to measure against. */
+    bool bThrottleSpinners = false;
+    /** How often a spinner's pose actually moved on, over the stat window. */
+    TMap<TWeakObjectPtr<USkeletalMeshComponent>, float> SpinTimes;
+    int32 SpinSamples = 0, SpinAdvances = 0;
     /** Every quarter second: which bodies solve arm clearance exactly, against capsules, or not at all. */
     void BudgetClearance();
     double ClearanceBudgetedAt = -10.0;

@@ -63,11 +63,25 @@ describe("one shared edit reaches every Grid view", () => {
       kicker: "Level 1 · Positions / Motions",
       lessonHref: "/learn/concepts/grid",
     });
-    for (const unit of [...DEFINITIONS, "intro", "closing"]) {
-      await expect
-        .element(screen.getByText(`PROBE:${unit}`))
-        .toBeInTheDocument();
+    // The page shows one screen at a time: read every screen in turn.
+    await expect
+      .element(screen.getByText("PROBE:intro"))
+      .toBeInTheDocument();
+    const seen = new Set<string>();
+    const pills = screen.container.querySelectorAll<HTMLButtonElement>(
+      ".guide-screens .pill"
+    );
+    for (const pill of pills) {
+      pill.click();
+      await new Promise((r) => setTimeout(r, 400));
+      for (const unit of [...DEFINITIONS, "intro", "closing"]) {
+        if (screen.container.textContent?.includes(`PROBE:${unit}`))
+          seen.add(unit);
+      }
     }
+    expect([...seen].sort()).toEqual(
+      [...DEFINITIONS, "intro", "closing"].sort()
+    );
   });
 
   it("the print handbook page shows every shared definition", async () => {

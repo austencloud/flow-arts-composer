@@ -80,6 +80,8 @@ const BASELINE_KEY = "tka_effects_baseline";
 const CUSTOM_KEY = "tka_effects_custom";
 /** Flag marking the one-time clear of the polluted v1 custom data. */
 const CUSTOM_CLEAN_FLAG = "tka_effects_custom_clean";
+/** Flag marking the one-time heal of leaked Neon trail colours. */
+const TRAIL_NEON_HEAL_FLAG = "tka_trail_neon_heal";
 const VM_STORAGE_KEY = "animation-visibility-settings";
 
 const EFFECT_IDS = [
@@ -329,6 +331,18 @@ function cleanPollutedCustomDataOnce(): void {
   }
 }
 
+/** True the first time it sees `key` (and marks it); false after, or without storage. */
+function takeOneTimeFlag(key: string): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    if (localStorage.getItem(key)) return false;
+    localStorage.setItem(key, "1");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function createEffectsConfigState(
   initial: EffectsConfig = DEFAULT_EFFECTS_CONFIG,
   options: { persist?: boolean } = {}
@@ -456,12 +470,44 @@ export function createEffectsConfigState(
     }
     return false;
   }
-  const healedConfig = healStaleTrailColors(
+  let healedConfig = healStaleTrailColors(
     config.trails as { leftColor?: string; rightColor?: string }
   );
-  const healedDefault = healStaleTrailColors(
+  let healedDefault = healStaleTrailColors(
     personalDefaults.trails as { leftColor?: string; rightColor?: string }
   );
+
+  // Heal leaked Neon trail colours, once. Picking the Neon preset and then
+  // nudging any trail control captured Neon's teal/magenta as the personal
+  // default and cleared the preset chip, so every trail on that device stayed
+  // teal/magenta, Default brought it back, and nothing said it was Neon.
+  // Phones that went through this looked stuck while a fresh desktop showed
+  // the matched blue/red. A live Neon whose chip is still selected is a real
+  // choice and stays; after this one pass a deliberate Neon tweak stays too.
+  if (persist && takeOneTimeFlag(TRAIL_NEON_HEAL_FLAG)) {
+    const isNeon = (
+      t: { leftColor?: string; rightColor?: string } | undefined | null
+    ) =>
+      t?.leftColor?.toLowerCase() === "#00ffcc" &&
+      t?.rightColor?.toLowerCase() === "#ff00ff";
+    const resetColors = (t: { leftColor?: string; rightColor?: string }) => {
+      t.leftColor = DEFAULT_EFFECTS_CONFIG.trails.leftColor;
+      t.rightColor = DEFAULT_EFFECTS_CONFIG.trails.rightColor;
+    };
+    const liveTrails = config.trails as { leftColor?: string; rightColor?: string };
+    if (config.activePresets.trails !== "trail-neon" && isNeon(liveTrails)) {
+      resetColors(liveTrails);
+      healedConfig = true;
+    }
+    const defaultTrails = personalDefaults.trails as {
+      leftColor?: string;
+      rightColor?: string;
+    } | null;
+    if (defaultTrails && isNeon(defaultTrails)) {
+      resetColors(defaultTrails);
+      healedDefault = true;
+    }
+  }
   if (persist && healedConfig) scheduleSave();
   if (persist && healedDefault) persistPersonalDefaults();
 

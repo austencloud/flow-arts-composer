@@ -16,6 +16,7 @@
   level's own tint, border and glow.
 -->
 <script lang="ts" generics="T extends number = LevelNumber">
+  import type { TransitionConfig } from "svelte/transition";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import {
     DIFFICULTY_LEVELS,
@@ -35,6 +36,11 @@
     compact?: boolean;
     ariaLabel?: string;
     disabled?: boolean;
+    /**
+     * Intro for each button, for a host whose arrival steps across the pills.
+     * Runs when the selector mounts. None by default.
+     */
+    buttonIn?: (node: Element) => TransitionConfig | (() => TransitionConfig);
   }
 
   const {
@@ -45,6 +51,7 @@
     compact = false,
     ariaLabel,
     disabled = false,
+    buttonIn = () => ({ duration: 0 }),
   }: Props = $props();
 
   function styleFor(level: T) {
@@ -117,6 +124,7 @@
       style="--lvl-bg: {styleFor(n).cssBg}; --lvl-ink: {styleFor(n)
         .text}; --lvl-accent: {accentFor(n)};"
       onclick={() => onchange(n)}
+      in:buttonIn|global
     >
       <span class="numeral">{n}</span>
       {#if !compact}<span class="name">{meta.name}</span>{/if}

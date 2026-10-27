@@ -92,13 +92,9 @@ export const negativeSpaceContent: GuideBlock[] = [
   {
     kind: "prose",
     html:
-      "Many sequences seem impossible, but most can be solved by using negative space or body turns.<br>" +
-      "<strong><em>Negative space</em></strong> lets you face the audience and reduces body movement<br>" +
-      "<strong><em>Body turns</em></strong> add movement and help you execute patterns with longer staves.<br>" +
-      "Each method is equally important, and learning both will maximize capability.<br>" +
-      "This guide will assume some knowledge of these fundamental concepts.",
+      "Many sequences seem impossible, but most can be solved with negative space or body turns.<br><strong><em>Negative space</em></strong> lets you face the audience and cuts down body movement.<br><strong><em>Body turns</em></strong> add movement and help you run patterns with longer staves.<br>Both matter equally, and knowing both lets you do more.<br>The rest of this guide assumes you know a little of each.",
   },
-  { kind: "prose", html: "To make the most of the Alphabet, it’s highly recommended that you learn the following." },
+  { kind: "prose", html: "To get the most out of the Alphabet, learn these two first." },
 
   { kind: "heading", level: 2, text: "360° Isolation" },
   {

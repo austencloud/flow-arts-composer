@@ -207,6 +207,11 @@ function Invoke-AustenRobocopy {
         '/COPY:DAT',
         '/DCOPY:DAT',
         '/XJ',
+        # /XJ skips junctions and symbolic links but not AF_UNIX socket files, which
+        # are reparse points too (Docker's engine.sock under the Claude app). One in
+        # the archive makes the next run's reparse-point guard fail. Found 2026-10-26.
+        '/XF',
+        '*.sock',
         '/XA:O',
         '/NP',
         '/NFL',

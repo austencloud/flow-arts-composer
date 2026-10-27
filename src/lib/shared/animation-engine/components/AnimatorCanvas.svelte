@@ -127,6 +127,7 @@ Last audit: 2025-12-27
     glyphFrame = "pictograph",
     hidePathLines = false,
     hideProgressBar = false,
+    overlayVisibility = undefined,
     shareStudioTransport = false,
     hideHeader = false,
     isSeamlesslyLoopable = undefined,
@@ -236,6 +237,27 @@ Last audit: 2025-12-27
      *  manager (e.g. the Tunnel art view, which never wants path overlays). */
     hidePathLines?: boolean;
     hideProgressBar?: boolean;
+    /**
+     * Overlay choices that win over the visibility manager, for a preview of
+     * a file with its own list (the Download video screen). A key left out
+     * follows the manager; the hide props above still win.
+     */
+    overlayVisibility?: Partial<
+      Record<
+        | "wordHeader"
+        | "headerWord"
+        | "headerLevel"
+        | "headerTurns"
+        | "headerReversals"
+        | "headerLoop"
+        | "progressBar"
+        | "tkaGlyph"
+        | "stepNumbers"
+        | "elementalGlyph"
+        | "propElementalGlyph",
+        boolean
+      >
+    >;
     shareStudioTransport?: boolean;
     /** Hide the WordHeader slot (portrait-mobile reclaims this vertical space). */
     hideHeader?: boolean;
@@ -731,22 +753,30 @@ Last audit: 2025-12-27
     previewDarkMode !== null ? previewDarkMode : globalDarkMode
   );
 
-  const effectiveTkaGlyphVisible = $derived(tkaGlyphVisible && !hideTkaGlyph);
+  const shownWordHeader = $derived(
+    overlayVisibility?.wordHeader ?? wordHeaderVisible
+  );
+  const shownProgressBar = $derived(
+    overlayVisibility?.progressBar ?? progressBarVisible
+  );
+  const effectiveTkaGlyphVisible = $derived(
+    (overlayVisibility?.tkaGlyph ?? tkaGlyphVisible) && !hideTkaGlyph
+  );
   // The elemental glyph describes the relationship between one blue prop and
   // one red prop. Once a tunnel adds more prop layers, showing that same glyph
   // would falsely describe the whole canvas as a single two-prop relationship.
   const effectiveElementalGlyphVisible = $derived(
-    elementalGlyphVisible &&
+    (overlayVisibility?.elementalGlyph ?? elementalGlyphVisible) &&
       additionalLayers.length === 0 &&
       !hideElementalGlyph
   );
   const effectivePropElementalGlyphVisible = $derived(
-    propElementalGlyphVisible &&
+    (overlayVisibility?.propElementalGlyph ?? propElementalGlyphVisible) &&
       additionalLayers.length === 0 &&
       !hideElementalGlyph
   );
   const effectiveBeatNumbersVisible = $derived(
-    stepNumbersVisible && !hideStepNumbers
+    (overlayVisibility?.stepNumbers ?? stepNumbersVisible) && !hideStepNumbers
   );
   const effectiveLeftPathLinesVisible = $derived(
     leftPathLinesVisible && !hidePathLines
@@ -879,17 +909,28 @@ Last audit: 2025-12-27
     <div class="header-slot">
       <WordHeader
         {word}
-        visible={wordHeaderVisible}
+        visible={shownWordHeader}
         darkMode={darkModeEnabled}
         activeStepNumber={headerActiveStepNumber}
-        difficultyLevel={computedDifficultyLevel}
-        loopComponents={computedLoopComponents}
+        difficultyLevel={overlayVisibility?.headerLevel === false
+          ? null
+          : computedDifficultyLevel}
+        loopComponents={overlayVisibility?.headerLoop === false
+          ? null
+          : computedLoopComponents}
         rotationPeriod={computedRotationPeriod}
         inversionPeriod={computedInversionPeriod}
         reflectionAxis={computedReflectionAxis}
-        overlayComponents={computedOverlayComponents}
-        turnGlyphEntries={headerPatternGlyphs.turnGlyphEntries}
-        reversalGlyph={headerPatternGlyphs.reversalGlyph}
+        overlayComponents={overlayVisibility?.headerLoop === false
+          ? null
+          : computedOverlayComponents}
+        turnGlyphEntries={overlayVisibility?.headerTurns === false
+          ? null
+          : headerPatternGlyphs.turnGlyphEntries}
+        reversalGlyph={overlayVisibility?.headerReversals === false
+          ? null
+          : headerPatternGlyphs.reversalGlyph}
+        showWord={overlayVisibility?.headerWord !== false}
       />
     </div>
 
@@ -1004,7 +1045,7 @@ Last audit: 2025-12-27
           {currentStep}
           totalSteps={sequenceData?.steps?.length ?? 0}
           stepDurations={sequenceData?.steps?.map((step) => step.duration ?? 1)}
-          visible={(progressBarVisible || !!onProgressBarSeek) &&
+          visible={(shownProgressBar || !!onProgressBarSeek) &&
             !hideProgressBar}
           darkMode={darkModeEnabled}
           onSeek={onProgressBarSeek
@@ -1020,21 +1061,15 @@ Last audit: 2025-12-27
           trailing={progressTrailing}
         />
       {:else}
-        <SequenceProgressBar
-          {currentStep}
-          totalSteps={sequenceData?.steps?.length ?? 0}
-          stepDurations={sequenceData?.steps?.map((step) => step.duration ?? 1)}
-          visible={progressBarVisible && !hideProgressBar}
-          darkMode={darkModeEnabled}
-          strip
-        />
         <!-- The transport is the canonical playback surface: play, tempo,
              scrubber, and continuous-vs-step all live here and nowhere else.
-             It used to be gated on the `progressBar` visibility flag, which
-             meant a toggle labelled "Progress" removed every playback control
-             on the page. Hosts can still opt out wholesale with
-             `hideProgressBar` (embedded previews, showcase players); the user
-             cannot switch away their own scrubber. -->
+             Its scrubber is the only progress readout in this branch; a
+             passive strip used to sit right above it and just duplicated it.
+             The transport used to be gated on the `progressBar` visibility
+             flag, which meant a toggle labelled "Progress" removed every
+             playback control on the page. Hosts can still opt out wholesale
+             with `hideProgressBar` (embedded previews, showcase players); the
+             user cannot switch away their own scrubber. -->
         <div
           class="shared-transport"
           data-shared-studio-transport={shareStudioTransport || undefined}

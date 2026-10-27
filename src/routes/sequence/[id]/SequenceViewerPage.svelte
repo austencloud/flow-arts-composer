@@ -9,6 +9,7 @@
   import { loadByIdentifier } from "#lib/shared/sequence-viewer/services/sequence-data-provider.js";
   import { loadSequencesByIds } from "#lib/features/choreo-card/services/catalog-loader.js";
   import type { SequenceRouteMeta } from "./sequence-seo";
+  import { resolveSequenceCloseTarget } from "./sequence-close-target";
   import { page } from "$app/state";
   import { goto } from "$app/navigation";
   import { browser } from "$app/env";
@@ -704,15 +705,16 @@
 
   function handleClose(reason?: "navigate") {
     if (isEmbedded || reason === "navigate") return;
-    if (handoffData?.returnPath) {
-      void goto(handoffData.returnPath);
-      return;
-    }
-    if (browser && window.history.length > 1) {
+    const target = resolveSequenceCloseTarget({
+      returnPath: handoffData?.returnPath,
+      scanOrigin: !!scanOriginCode,
+      historyLength: browser ? window.history.length : 0,
+    });
+    if (target.kind === "history-back") {
       window.history.back();
       return;
     }
-    void goto("/browse/gallery");
+    void goto(target.path);
   }
 
   /**

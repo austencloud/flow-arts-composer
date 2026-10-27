@@ -53,6 +53,7 @@
     onStepChange,
     canvasLetter = true,
     visibility,
+    stripBeside = false,
   }: {
     /** Playable sequence for the animation canvas (the DEFAULT / entry-0 example). */
     sequence: SequenceData;
@@ -122,6 +123,12 @@
      * Omitted → the visitor's shared settings.
      */
     visibility?: AnimationVisibilityStateManager;
+    /**
+     * Feature variant on a wide screen: the strip sits under the text, beside
+     * the canvas, instead of full width beneath both. A one-screen guide page
+     * uses it so the square and the steps share the height (GuideScreens).
+     */
+    stripBeside?: boolean;
   } = $props();
 
   const propType = $derived(render?.propType ?? PropType.HAND);
@@ -175,6 +182,24 @@
     if (style.flexDirection === "column") return showcaseW;
     return showcaseW - compactCanvasW - (parseFloat(style.columnGap) || 0);
   });
+  // Wide enough that canvas | (text over strip) leaves the strip room for
+  // readable steps; narrower, the strip runs full width beneath.
+  const STRIP_BESIDE_MIN_W = 900;
+  const beside = $derived(stripBeside && showcaseW >= STRIP_BESIDE_MIN_W);
+  // One-screen pages: steps stay in one row on a phone and grow on 4K.
+  // Beside the canvas the strip has height to spare, so its steps wrap to a
+  // second row before they shrink under a readable size. A long strip under
+  // the canvas (a 16-count on a phone) takes smaller steps in two rows, so
+  // the canvas, the strip and the words still share one screen.
+  const LONG_STRIP_STEPS = 9;
+  const cellBounds = $derived(
+    stripBeside
+      ? {
+          minCell: beside ? 96 : curItems.length > LONG_STRIP_STEPS ? 42 : 60,
+          maxCell: 300,
+        }
+      : {}
+  );
   let near = $state(false);
   let inView = $state(false);
 
@@ -304,6 +329,35 @@
   {/if}
 {/snippet}
 
+{#snippet featureStrip()}
+  {#if strip}
+    {@render strip(activeT)}
+  {:else if hasPool}
+    <!-- Every pool entry has the same step count → the same strip height, so a
+         keyed Crossfade swaps cleanly with zero layout shift (crossfade rule:
+         cheap identical-height content, not the heavy no-remount path). -->
+    <Crossfade key={exampleIndex} duration={DURATION.normal}>
+      <GuideStepStrip
+        items={curItems}
+        {stepLabels}
+        {render}
+        {picTheme}
+        {activeBeat}
+        {...cellBounds}
+      />
+    </Crossfade>
+  {:else}
+    <GuideStepStrip
+      {items}
+      {stepLabels}
+      {render}
+      {picTheme}
+      {activeBeat}
+      {...cellBounds}
+    />
+  {/if}
+{/snippet}
+
 <section
   class="showcase"
   class:compact={variant === "compact"}
@@ -363,39 +417,24 @@
             startAside={text}
             {activeBeat}
             availableWidth={stripRoom}
+            {...cellBounds}
           />
         {/if}
       </div>
     </div>
   {:else}
-    <div class="banner">
+    <div class="banner" class:beside>
       <div class="banner-text">
         {@render text?.()}
         {@render poolControls()}
+        {#if beside}{@render featureStrip()}{/if}
       </div>
       <div class="canvas-box" class:in-view={inView}>
         {@render player()}
       </div>
     </div>
 
-    {#if strip}
-      {@render strip(activeT)}
-    {:else if hasPool}
-      <!-- Every pool entry has the same step count → the same strip height, so a
-           keyed Crossfade swaps cleanly with zero layout shift (crossfade rule:
-           cheap identical-height content, not the heavy no-remount path). -->
-      <Crossfade key={exampleIndex} duration={DURATION.normal}>
-        <GuideStepStrip
-          items={curItems}
-          {stepLabels}
-          {render}
-          {picTheme}
-          {activeBeat}
-        />
-      </Crossfade>
-    {:else}
-      <GuideStepStrip {items} {stepLabels} {render} {picTheme} {activeBeat} />
-    {/if}
+    {#if !beside}{@render featureStrip()}{/if}
   {/if}
 
   <!-- Prerendered notation for crawlers + AT (standing rule: never drop it).
@@ -447,6 +486,24 @@
     flex-direction: row-reverse;
     align-items: center;
     gap: clamp(1.25rem, 4cqw, 2.5rem);
+  }
+  /* Strip beside the canvas: the text column carries the strip under the
+     words, and both sit level with the square. */
+  .banner.beside {
+    align-items: stretch;
+  }
+  /* The square stays square when the text column runs taller than it. */
+  .banner.beside .canvas-box {
+    align-self: center;
+    flex-basis: clamp(
+      calc(260px * min(var(--fit, 1), 1)),
+      40cqw,
+      calc(380px * var(--fit, 1))
+    );
+  }
+  .banner.beside .banner-text {
+    justify-content: center;
+    gap: 0.85rem;
   }
   .banner-text {
     flex: 1 1 0;
@@ -544,7 +601,15 @@
      Pointed at: the full gold glow (one showcase lights at a time). */
   .canvas-box {
     position: relative;
-    flex: 0 0 clamp(230px, 34cqw, 330px);
+    /* --fit: a one-screen guide page sizes its figures to the screen
+       (GuideFitBox); everywhere else it is unset and these are the designed
+       sizes. */
+    flex: 0 0
+      clamp(
+        calc(230px * min(var(--fit, 1), 1)),
+        34cqw,
+        calc(330px * var(--fit, 1))
+      );
     aspect-ratio: 1;
     border-radius: 14px;
     overflow: hidden;
@@ -587,7 +652,12 @@
     margin-inline: auto;
   }
   .compact .canvas-box {
-    flex: 0 0 clamp(190px, 24cqw, 250px);
+    flex: 0 0
+      clamp(
+        calc(190px * min(var(--fit, 1), 1)),
+        24cqw,
+        calc(250px * var(--fit, 1))
+      );
   }
   /* Strip-override compact (e.g. level-2's TurnStrip breakdown): the band
      fills the host and the strip column grows beside the canvas. fit-content
@@ -597,7 +667,12 @@
     width: 100%;
   }
   .compact.has-strip .canvas-box {
-    flex: 0 0 clamp(220px, 26cqw, 320px);
+    flex: 0 0
+      clamp(
+        calc(220px * min(var(--fit, 1), 1)),
+        26cqw,
+        calc(320px * var(--fit, 1))
+      );
   }
   .compact.has-strip .compact-right {
     flex: 1 1 0;
@@ -619,9 +694,10 @@
       gap: 0.9rem;
     }
     .canvas-box,
-    .compact .canvas-box {
+    .compact .canvas-box,
+    .compact.has-strip .canvas-box {
       flex: none;
-      width: min(100%, 20rem);
+      width: min(100%, calc(20rem * var(--fit, 1)));
       margin-inline: auto;
     }
     .compact-band {

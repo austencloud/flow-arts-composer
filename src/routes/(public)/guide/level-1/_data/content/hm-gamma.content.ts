@@ -13,15 +13,23 @@ import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js"
 import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import {
+  DUAL_SHIFT_MODES,
+  DUAL_SHIFT_SWITCHING_MOVES,
+  type DualShiftMove,
+} from "#lib/shared/guide-topics/dual-shifts-topic.js";
 
 /**
- * Verbatim prose lifted from _pages/GammaPage.svelte (Austen's words - never
- * AI-written). Pictograph construction is a faithful copy of that same file's
- * `motion`/`box`/STRIPS derivation, minus the reader-only wiring (selection,
- * overrides, click-to-animate, edit-mode dragging, pt geometry).
+ * Prose lifted from _pages/GammaPage.svelte (Austen's words - never
+ * AI-written). The reflow order differs from the sheet: each mode's note sits
+ * on its own example, and the two Quarter-Opp/Quarter-Same notes name what
+ * the strips below show (STRIPS comments). The printed sheet keeps its text.
+ * The strips' moves come from the shared Dual-Shifts record; the `motion` and
+ * `box` construction follows GammaPage, minus the reader-only wiring
+ * (selection, overrides, click-to-animate, edit-mode dragging, pt geometry).
+ * On the web, /guide/level-1/hm-gamma redirects into the Dual-Shifts page;
+ * this content stays for the in-app reader's flow view.
  */
-
-const { NORTH: N, EAST: E, SOUTH: SO_, WEST: W } = GridLocation;
 
 // A hand that moves → PRO shift (hand-path mode converts to FLOAT); a hand
 // that stays → STATIC (no arrow). Positions/elemental/numbers all derive
@@ -37,7 +45,7 @@ const motion = (color: HandSide, from: GridLocation, to: GridLocation) =>
   });
 
 // [leftFrom, leftTo, rightFrom, rightTo]; Start boxes hold (from === to).
-type Move = [GridLocation, GridLocation, GridLocation, GridLocation];
+type Move = DualShiftMove;
 const box = (m: Move, step: number, letter: Letter | null = null): StepData =>
   ({
     id: `gamma-${step}-${m.join("-")}`,
@@ -56,12 +64,10 @@ const box = (m: Move, step: number, letter: Letter | null = null): StepData =>
     isBlank: false,
   }) as unknown as StepData;
 
-// letter is null on every box EXCEPT the QO same-edge "antiparallel" cells:
-// there blue and red float along the SAME edge (e.g. W→N vs N→W), so their
-// arrows collide. The arrow pipeline separates them only through the
-// special-placement tier, which is letter-gated - letter "P" (both-PRO
-// Quarter-Opp, canonical DiamondPictographDataframe rows 187/188) unlocks the
-// separated placement. No other strip has a same-edge box.
+// The strips' moves and letters come from the shared Dual-Shifts record, so
+// this flow page and the Dual-Shifts web page draw the same boxes. Letter P
+// sits only on Quarter-Opp's two same-edge (antiparallel) counts, where it
+// unlocks the arrow pipeline's separated placement (see the record).
 type Cell = { m: Move; step: number; letter?: Letter | null } | null;
 type Strip = { rows: Cell[][] };
 const c = (m: Move, step: number, letter: Letter | null = null): Cell => ({
@@ -70,50 +76,19 @@ const c = (m: Move, step: number, letter: Letter | null = null): Cell => ({
   letter,
 });
 
+const modeRow = (id: "quarter-opp" | "quarter-same"): Cell[] => {
+  const mode = DUAL_SHIFT_MODES.find((m) => m.id === id)!;
+  return mode.moves.map((m, n) => c(m, n, mode.letters[n] ?? null));
+};
+const switching = DUAL_SHIFT_SWITCHING_MOVES.map((m, n) => c(m, n));
+
 const STRIPS: Strip[] = [
   // γ→γ Quarter-Opp - opposite spin, hands 90° apart the whole loop.
-  {
-    rows: [
-      [
-        c([SO_, SO_, E, E], 0), // Start: blue S, red E
-        c([SO_, W, E, N], 1), //  Parallel
-        c([W, N, N, W], 2, Letter.P), //    Antiparallel - same W↔N edge; P separates
-        c([N, E, W, SO_], 3), //  Parallel
-        c([E, SO_, SO_, E], 4, Letter.P), // Antiparallel - same E↔S edge; P separates
-      ],
-    ],
-  },
+  { rows: [modeRow("quarter-opp")] },
   // γ→γ Quarter-Same - same spin, red leads blue by one point.
-  {
-    rows: [
-      [
-        c([SO_, SO_, E, E], 0), // Start
-        c([SO_, E, E, N], 1),
-        c([E, N, N, W], 2),
-        c([N, W, W, SO_], 3),
-        c([W, SO_, SO_, E], 4),
-      ],
-    ],
-  },
+  { rows: [modeRow("quarter-same")] },
   // Switching sequence - alternates QO/QS each count; closes back to Start.
-  {
-    rows: [
-      [
-        c([SO_, SO_, E, E], 0), // Start
-        c([SO_, W, E, N], 1), //  QO
-        c([W, SO_, N, W], 2), //  QS
-        c([SO_, E, W, N], 3), //  QO
-        c([E, N, N, W], 4), //    QS
-      ],
-      [
-        null,
-        c([N, E, W, SO_], 5), // QO
-        c([E, N, SO_, E], 6), // QS
-        c([N, W, E, SO_], 7), // QO
-        c([W, SO_, SO_, E], 8), // QS
-      ],
-    ],
-  },
+  { rows: [switching.slice(0, 5), [null, ...switching.slice(5)]] },
 ];
 
 // Flatten a strip's rows (row-major, skipping null cells) into ordered
@@ -157,8 +132,20 @@ export const hmGammaContent: GuideBlock[] = [
     render: RENDER,
     caption: "γ→γ Quarter-Opp",
   },
-  { kind: "prose", html: "In Quarter-Same, this doesn’t happen:" },
+  {
+    kind: "prose",
+    attach: "previous",
+    html:
+      "The hands spin opposite ways. Steps 1 and 3 are parallel. " +
+      "On steps 2 and 4 both hands travel the same edge in opposite directions: antiparallel.",
+  },
   { kind: "heading", level: 2, text: "Quarter-Same" },
+  {
+    kind: "prose",
+    html:
+      "In Quarter-Same that never happens. Both hands spin the same way, " +
+      "and red stays one point ahead of blue.",
+  },
   {
     kind: "pictographGroup",
     items: stripSteps(STRIPS[1]!),
@@ -169,15 +156,12 @@ export const hmGammaContent: GuideBlock[] = [
     render: RENDER,
     caption: "γ→γ Quarter-Same",
   },
+  { kind: "heading", level: 2, text: "Switching between them" },
   {
     kind: "prose",
     html:
-      "When in gamma, you can move to any other variation of gamma.<br>" +
-      "These examples are continuous, but non-continuous sequence are also possible.",
-  },
-  {
-    kind: "prose",
-    html: "Here’s one that switches between Quarter-Opp and Quarter-Same:",
+      "When in gamma, you can move to any other variation of gamma. " +
+      "Here’s one that switches between Quarter-Opp and Quarter-Same:",
   },
   {
     kind: "pictographGroup",
@@ -186,6 +170,10 @@ export const hmGammaContent: GuideBlock[] = [
     card: true,
     render: RENDER,
     caption: "Quarter-Opp / Same switch",
+  },
+  {
+    kind: "prose",
+    html: "These examples are continuous, but non-continuous sequences are also possible.",
   },
   {
     kind: "prose",

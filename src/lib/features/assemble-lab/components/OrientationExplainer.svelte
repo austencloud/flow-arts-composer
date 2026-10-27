@@ -168,7 +168,6 @@
           {gridMode}
           showTKA={false}
           showReversals={false}
-          disableTransitions={true}
           disableContentTransitions={true}
           visibleHand="left"
         />

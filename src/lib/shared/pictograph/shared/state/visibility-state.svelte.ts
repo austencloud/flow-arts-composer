@@ -21,7 +21,7 @@ type VisibilityObserver = () => void;
 
 type VisibilityCategory = "glyph" | "non_radial" | "all" | "buttons";
 
-interface VisibilitySettings {
+export interface VisibilitySettings {
   reversalIndicators: boolean;
   tkaGlyph: boolean;
   tndGlyph: boolean;
@@ -36,6 +36,25 @@ interface VisibilitySettings {
   handPointVisibility: "all" | "active" | "none";
   stepNumbers: boolean;
 }
+
+/**
+ * What a pictograph shows before the user changes anything. One literal for the
+ * constructor and for Settings → Display's "Reset to defaults".
+ */
+export const DEFAULT_VISIBILITY_SETTINGS: Readonly<VisibilitySettings> =
+  Object.freeze({
+    reversalIndicators: true,
+    tkaGlyph: true,
+    tndGlyph: false,
+    elementalGlyph: false,
+    propTndGlyph: false,
+    placementsGlyph: false,
+    showGrid: true,
+    nonRadialPoints: false,
+    handColorKey: true,
+    handPointVisibility: "all",
+    stepNumbers: true,
+  });
 
 export class VisibilityStateManager {
   private settings: VisibilitySettings;
@@ -57,17 +76,7 @@ export class VisibilityStateManager {
 
   constructor(initialSettings?: Partial<AppSettings>) {
     this.settings = {
-      reversalIndicators: true,
-      tkaGlyph: true,
-      tndGlyph: false,
-      elementalGlyph: false,
-      propTndGlyph: false,
-      placementsGlyph: false,
-      showGrid: true,
-      nonRadialPoints: false,
-      handColorKey: true,
-      handPointVisibility: "all",
-      stepNumbers: true,
+      ...DEFAULT_VISIBILITY_SETTINGS,
       ...this.convertAppSettingsToVisibility(initialSettings),
     };
 
@@ -287,6 +296,16 @@ export class VisibilityStateManager {
 
   setStepNumbersVisibility(visible: boolean): void {
     this.settings.stepNumbers = visible;
+    this.notifyObservers(["all"]);
+    this.debouncedPersistSettings();
+  }
+
+  /**
+   * Put every pictograph switch back to its default in one step: one observer
+   * pass and one write, so every pictograph redraws once rather than per key.
+   */
+  resetToDefaults(): void {
+    this.settings = { ...DEFAULT_VISIBILITY_SETTINGS };
     this.notifyObservers(["all"]);
     this.debouncedPersistSettings();
   }

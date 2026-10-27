@@ -237,6 +237,62 @@ describe("EffectsConfigState", () => {
       vi.unstubAllGlobals();
     });
 
+    it("heals leaked Neon trail colours once, keeping other trail settings", () => {
+      vi.useFakeTimers();
+      const ls = makeLocalStorageStub();
+      vi.stubGlobal("window", {});
+      vi.stubGlobal("localStorage", ls);
+      // The shape found on a phone: live trails and a legacy-keyed personal
+      // default both carry Neon, with no preset chip selected.
+      ls.setItem(
+        "tka_effects_config",
+        JSON.stringify({
+          ...DEFAULT_EFFECTS_CONFIG,
+          trails: { ...DEFAULT_EFFECTS_CONFIG.trails, thickness: 6, leftColor: "#00ffcc", rightColor: "#ff00ff" },
+          activePresets: { ...DEFAULT_EFFECTS_CONFIG.activePresets, trails: null },
+        })
+      );
+      ls.setItem(
+        "tka_effects_custom",
+        JSON.stringify({ trails: { ...DEFAULT_EFFECTS_CONFIG.trails, blueColor: "#00ffcc", redColor: "#ff00ff" } })
+      );
+      ls.setItem("tka_effects_custom_clean", "1");
+
+      const state = createEffectsConfigState(undefined, { persist: true });
+      expect(state.trails.leftColor).toBe(DEFAULT_EFFECTS_CONFIG.trails.leftColor);
+      expect(state.trails.rightColor).toBe(DEFAULT_EFFECTS_CONFIG.trails.rightColor);
+      expect(state.trails.thickness).toBe(6);
+      expect(state.personalDefault("trails")?.leftColor).toBe(DEFAULT_EFFECTS_CONFIG.trails.leftColor);
+
+      // After the one pass, a deliberate Neon tweak survives a reload.
+      state.applyPreset("trails", "trail-neon", { leftColor: "#00ffcc", rightColor: "#ff00ff" });
+      state.updateEffect("trails", { thickness: 8 });
+      vi.advanceTimersByTime(350);
+      const reloaded = createEffectsConfigState(undefined, { persist: true });
+      expect(reloaded.trails.leftColor).toBe("#00ffcc");
+      expect(reloaded.personalDefault("trails")?.leftColor).toBe("#00ffcc");
+      vi.unstubAllGlobals();
+      vi.useRealTimers();
+    });
+
+    it("keeps a live Neon whose preset chip is still selected", () => {
+      const ls = makeLocalStorageStub();
+      vi.stubGlobal("window", {});
+      vi.stubGlobal("localStorage", ls);
+      ls.setItem(
+        "tka_effects_config",
+        JSON.stringify({
+          ...DEFAULT_EFFECTS_CONFIG,
+          trails: { ...DEFAULT_EFFECTS_CONFIG.trails, leftColor: "#00ffcc", rightColor: "#ff00ff" },
+          activePresets: { ...DEFAULT_EFFECTS_CONFIG.activePresets, trails: "trail-neon" },
+        })
+      );
+      ls.setItem("tka_effects_custom_clean", "1");
+      const state = createEffectsConfigState(undefined, { persist: true });
+      expect(state.trails.leftColor).toBe("#00ffcc");
+      vi.unstubAllGlobals();
+    });
+
     it("persists the personal default to CUSTOM_KEY on manual edit (round-trip)", () => {
       vi.useFakeTimers();
       const ls = makeLocalStorageStub();

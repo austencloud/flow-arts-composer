@@ -65,9 +65,9 @@ instead of showing an empty shell.
     type WorkShelfId,
   } from "../services/work-shelf-navigation.js";
   import DraftsShelf from "./DraftsShelf.svelte";
-  import SortPopover, {
-    type SortPopoverOption,
-  } from "#lib/features/browse/shared/components/SortPopover.svelte";
+  import SortChoice, {
+    type SortChoiceOption,
+  } from "#lib/features/browse/shared/components/SortChoice.svelte";
   import {
     DEFAULT_COLLECTION_SORT,
     readCollectionSortPreference,
@@ -169,7 +169,7 @@ instead of showing an empty shell.
     writeCollectionSortPreference(method);
   }
   const collectionSortOptions = $derived<
-    SortPopoverOption<CollectionSortMethod>[]
+    SortChoiceOption<CollectionSortMethod>[]
   >([
     {
       id: "recent",
@@ -677,14 +677,13 @@ instead of showing an empty shell.
      collections + the create tiles. -->
 {#snippet ownShelves(sel: { id: string; ownerId: string | null } | null)}
   {#if collections.length > 1}
-    <!-- The sort chip stays at the right edge so its menu opens over the cards. -->
+    <!-- The sort buttons sit at the right edge, above the cards. -->
     <div class="collections-sort-row">
       {#if collections.length > 1}
-        <SortPopover
+        <SortChoice
           options={collectionSortOptions}
           currentMethod={sortMethod}
           onSortChange={changeSort}
-          align="end"
         />
       {/if}
     </div>

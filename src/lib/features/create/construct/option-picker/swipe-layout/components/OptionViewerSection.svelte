@@ -35,6 +35,7 @@ Renders a section with:
     countDoubleFloatPathGroups,
   } from "../../services/double-float-option-groups";
   import { emanate } from "#lib/shared/transitions/emanate.js";
+  import { noteArrivalOrigin } from "#lib/features/create/shared/workspace-panel/sequence-display/services/arrival-origin.js";
   import {
     optionCardEmanate,
     tryGetOptionSheetOpeningContext,
@@ -53,6 +54,7 @@ Renders a section with:
     fitToViewport = false,
     onSlotClicked,
     continuationIndex = null,
+    onArrowOffsetChange,
   } = $props<{
     letterType?: string;
     pictographs?: PictographData[];
@@ -73,6 +75,10 @@ Renders a section with:
     fitToViewport?: boolean;
     onSlotClicked?: (typeSection: string, slotIndex: number) => void;
     continuationIndex?: number | null;
+    /** Reports how far the tiles' center sits below this section's center
+     *  (half the header block above them), so the carousel can center its
+     *  arrows on the tiles rather than on the header plus tiles. */
+    onArrowOffsetChange?: (offset: number) => void;
   }>();
 
   // Services - resolve synchronously to avoid first-render sizing issues
@@ -203,6 +209,26 @@ Renders a section with:
     return observeSettledResize(header, measureHeaderHeight);
   });
 
+  // Effect 4: where the tiles sit relative to the section's center. offsetTop
+  // ignores the carousel's transforms, and the value only changes when the
+  // header block does, so the arrows move at most once per real change.
+  $effect(() => {
+    const report = onArrowOffsetChange;
+    const section = sectionContainer;
+    if (!report || !section) return;
+
+    const measure = () => {
+      const content =
+        section.querySelector<HTMLElement>(":scope > .pictographs-grid") ??
+        (section.lastElementChild as HTMLElement | null);
+      if (!content) return;
+      report((content.offsetTop - section.offsetTop) / 2);
+    };
+
+    measure();
+    return observeSettledResize(section, measure);
+  });
+
   // Calculate optimal pictograph size and grid columns based on available space
   // CRITICAL: Considers BOTH width AND height constraints to prevent overflow
   // Size calculation delegated to GridFitCalculator service
@@ -243,7 +269,7 @@ Renders a section with:
         availableHeight: effectiveHeight,
         gridGap: gridGapValue,
         maxSize: basePictographSize,
-        columnOptions: [4, 8],
+        columnOptions: [4, 6, 8],
       });
 
       return {
@@ -277,7 +303,7 @@ Renders a section with:
         availableHeight: effectiveHeight || 400,
         gridGap: gridGapValue,
         maxSize: basePictographSize,
-        columnOptions: [4, 8],
+        columnOptions: [4, 6, 8],
       });
 
       return {
@@ -295,7 +321,7 @@ Renders a section with:
       availableHeight: adjustedHeight,
       gridGap: gridGapValue,
       maxSize: basePictographSize,
-      columnOptions: [4, 8],
+      columnOptions: [4, 6, 8],
     });
 
     return {
@@ -386,7 +412,11 @@ Renders a section with:
         <button
           class="pictograph-option"
           class:continuation={continuationIndex === index}
-          onclick={() => handlePictographClick(pictograph, index)}
+          onclick={(event) => {
+            // The step's arrival grows out of this option, so note it first.
+            noteArrivalOrigin(event.currentTarget);
+            handlePictographClick(pictograph, index);
+          }}
           oncontextmenu={handleContextMenu}
           style:width="{optimalLayout().pictographSize}px"
           style:height="{optimalLayout().pictographSize}px"
