@@ -56,6 +56,12 @@ const isMode = (value: unknown): value is ActiveCreateModule =>
   typeof value === "string" && modes.includes(value as ActiveCreateModule);
 const errorText = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
+// Whether a workspace holds anything at all. An editor that was never opened
+// has no sequence and no start placement.
+const holdsWork = (state: WorkspaceDraftState): boolean =>
+  state.currentSequence !== null ||
+  state.hasStartPlacement ||
+  state.selectedStartPlacement !== null;
 
 export class SequencePersister {
   private readonly writerId = newId();
@@ -237,6 +243,21 @@ export class SequencePersister {
     this.markDirty(mode);
     const generation = this.dirtyGeneration.get(mode) ?? 0;
     return this.enqueue(mode, async () => {
+      if (!this.revisions.has(mode) && !holdsWork(snapshot)) {
+        // This page never opened the mode (no load, new session or fresh
+        // draft read its head) and its editor is empty, yet a mode switch
+        // still saves the mode being left. Committing would overwrite the
+        // stored draft with nothing, and the unread revision made it look
+        // like another tab's (production 2026-10-24 to 10-27: a reload onto
+        // the Create front door, then a pick of Generate).
+        if (this.pending.get(mode) === snapshot) {
+          this.pending.delete(mode);
+          this.pendingHistory.delete(mode);
+        }
+        this.durableGeneration.set(mode, generation);
+        this.setStatus(mode, { status: "idle", error: null });
+        return;
+      }
       try {
         const current = this.getDraftStatus(mode).status;
         if (

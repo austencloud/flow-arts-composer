@@ -293,7 +293,25 @@ describe("ButtonPanel narrow geometry", () => {
     }
   });
 
-  it("adds labels at 768 CSS pixels without moving Play off center", async () => {
+  it("gives Construct one Play and no viewer button in the rail", async () => {
+    render(ButtonPanel, {
+      props: {
+        onClearSequence: vi.fn(),
+        onViewSequence: vi.fn(),
+      },
+      context: new Map([["createModule", createContext()]]),
+    });
+
+    await expect
+      .element(page.getByRole("button", { name: "Play sequence" }))
+      .toBeInTheDocument();
+    // Opening the full viewer moved onto the in-place player.
+    expect(
+      page.getByRole("button", { name: "Expand sequence viewer" }).query()
+    ).toBeNull();
+  });
+
+  it("adds labels at 640 CSS pixels without moving Play off center", async () => {
     const screen = render(ButtonPanel, {
       props: {
         onClearSequence: vi.fn(),
@@ -319,7 +337,7 @@ describe("ButtonPanel narrow geometry", () => {
     expect(actionsLabel).not.toBeNull();
     expect(shareLabel).not.toBeNull();
 
-    screen.container.style.width = "767px";
+    screen.container.style.width = "639px";
     await waitForLayout();
 
     expect(getComputedStyle(clearLabel!).display).toBe("none");
@@ -327,7 +345,7 @@ describe("ButtonPanel narrow geometry", () => {
     expect(getComputedStyle(actionsLabel!).display).toBe("none");
     expect(getComputedStyle(shareLabel!).display).toBe("none");
 
-    screen.container.style.width = "768px";
+    screen.container.style.width = "640px";
     await waitForLayout();
 
     expect(getComputedStyle(clearLabel!).display).not.toBe("none");

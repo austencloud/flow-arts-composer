@@ -1,9 +1,4 @@
 import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
-import {
-  normalizePropLook,
-  type PropLook,
-} from "#lib/shared/pictograph/prop/domain/prop-look.js";
-import { withPickVersion } from "#lib/shared/settings/domain/prop-version-rule.js";
 import type { PlaybackMode } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
 import {
   PLAYBACK_MAX_BPM,
@@ -38,9 +33,6 @@ interface TunnelPresentationInputs {
   animationSettings: AnimationSettingsState;
   initialLeftPropType: string;
   initialRightPropType: string;
-  /** The account's prop version for a new tunnel. Saved tunnels use their
-   * snapshot, and one saved before versions opens at Version 1. */
-  initialPropLook?: PropLook;
   /** The settings flag for a new tunnel. Saved tunnels use their snapshot. */
   initialCatDogMode?: boolean;
   initialLeftBuugengFlipped: boolean;
@@ -92,16 +84,6 @@ export function createTunnelPresentationState(
       ? (initialSnapshot.props.catDogMode ?? false)
       : (inputs.initialCatDogMode ?? false)) || leftPropType !== rightPropType
   );
-  // The creator owns its prop version. The account's setting only seeds a new
-  // tunnel, so a pick here never writes the account's version; opening the
-  // tunnel in the viewer stages it, as it does the prop pair.
-  let propLook = $state<PropLook>(
-    normalizePropLook(
-      initialSnapshot
-        ? initialSnapshot.props.propLook
-        : inputs.initialPropLook
-    )
-  );
   let propHand = $state<"left" | "right">("left");
   let unattachedTunnel = $state({
     config: clone(
@@ -138,9 +120,6 @@ export function createTunnelPresentationState(
     get catDogMode() {
       return catDog;
     },
-    get propLook() {
-      return propLook;
-    },
     updateSettings(patch) {
       if (patch.leftPropType !== undefined) leftPropType = patch.leftPropType;
       if (patch.rightPropType !== undefined)
@@ -152,8 +131,6 @@ export function createTunnelPresentationState(
         rightBuugengFlipped = patch.rightBuugengFlipped;
       }
       if (patch.catDogMode !== undefined) catDog = patch.catDogMode;
-      // A restored snapshot names its version outright, with no pick rule.
-      if (patch.propLook !== undefined) propLook = patch.propLook;
       if (leftPropType !== rightPropType) catDog = true;
       if (!catDog) propHand = "left";
     },
@@ -254,7 +231,6 @@ export function createTunnelPresentationState(
         catDogMode: catDog,
         leftBuugengFlipped,
         rightBuugengFlipped,
-        propLook,
       },
       trailRender: clone(inputs.animationSettings.trail),
     };
@@ -269,11 +245,6 @@ export function createTunnelPresentationState(
 
   function selectPropHand(hand: "left" | "right"): void {
     if (catDog) propHand = hand;
-  }
-
-  // Passed to the picker unbound, so it reads no `this`.
-  function setPropLook(look: PropLook): void {
-    propLook = normalizePropLook(look);
   }
 
   return {
@@ -300,9 +271,6 @@ export function createTunnelPresentationState(
     },
     get catDog() {
       return catDog;
-    },
-    get propLook() {
-      return propLook;
     },
     get propHand() {
       return propHand;
@@ -373,29 +341,12 @@ export function createTunnelPresentationState(
     togglePlaying() {
       playing = !playing;
     },
-    setPropLook,
-    // A tile that names a version wins. Otherwise the account's pair rule
-    // settles it: a different prop that has a Version 2 starts at Version 1.
-    setPropType(propType: string, look?: PropLook) {
-      const before = {
-        leftPropType: leftPropType as PropType,
-        rightPropType: rightPropType as PropType,
-        catDogMode: catDog,
-        propArtwork: propLook,
-      };
+    setPropType(propType: string) {
       if (catDog && propHand === "right") rightPropType = propType;
       else if (catDog) leftPropType = propType;
       else {
         leftPropType = propType;
         rightPropType = propType;
-      }
-      const settled = withPickVersion(before, {
-        leftPropType: leftPropType as PropType,
-        rightPropType: rightPropType as PropType,
-        ...(look === undefined ? {} : { propArtwork: look }),
-      });
-      if (settled.propArtwork !== undefined) {
-        propLook = normalizePropLook(settled.propArtwork);
       }
       inputs.animationSettings.setCurrentPropType(leftPropType);
     },

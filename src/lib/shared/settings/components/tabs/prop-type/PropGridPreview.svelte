@@ -4,7 +4,6 @@
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import type { CompositionRecipe } from "#lib/shared/pictograph/prop/domain/prop-composition-recipes.js";
   import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
-  import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
   import type { TriangleGrip } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
   import type { ViewerCustomColorPair } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
 
@@ -15,7 +14,6 @@
     darkBackground = false,
     neutral = false,
     fanAppearance,
-    propLook,
     triangleGrip,
     recipeOverrides = {},
     colors,
@@ -29,7 +27,6 @@
     darkBackground?: boolean;
     neutral?: boolean;
     fanAppearance: FanAppearance;
-    propLook?: PropLook;
     triangleGrip?: TriangleGrip;
     recipeOverrides?: Partial<Record<PropType, CompositionRecipe>>;
     colors?: ViewerCustomColorPair | null;
@@ -52,7 +49,7 @@
   {leftFlipped}
   {rightFlipped}
   useSavedOverrides={false}
-  appearanceOverride={{ fanAppearance, propLook, triangleGrip }}
+  appearanceOverride={{ fanAppearance, triangleGrip }}
   recipeOverride={recipeOverride ??
     recipeOverrides[getBasePropType(propType)] ??
     recipeOverrides[propType]}

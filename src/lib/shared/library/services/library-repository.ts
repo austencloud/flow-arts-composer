@@ -1,4 +1,6 @@
 import { publishOperation } from "./publish-permission-error";
+import type { PublicDuplicateError } from "./public-sequence-persister";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
 /**
  * LibraryRepository - Core Library Implementation
  *
@@ -664,6 +666,31 @@ export class LibraryRepository {
       libSeq = { ...libSeq, visibility: "private" };
     }
 
+    // Same reasoning for content the gallery already holds, or an id that is
+    // another creator's post (a library copy keeps the original id). The
+    // publish can never land, so the save stays private and says why ONCE,
+    // instead of writing a public owner document whose mirror the rules
+    // refuse — which left the row pending and replayed the refused publish on
+    // every app open (ISS-023/024, 2026-10-20..25). Read-only; a failed check
+    // falls through to the publish transaction, which repeats it.
+    let publishConflict: PublicDuplicateError | null = null;
+    if (libSeq.visibility === "public" && this.publicIndexSyncer) {
+      try {
+        publishConflict = await this.publicIndexSyncer.findPublishConflict(
+          libSeq,
+          userId
+        );
+      } catch (error) {
+        console.warn(
+          "[LibraryRepository] Publish pre-check failed (publishing anyway):",
+          error
+        );
+      }
+      if (publishConflict) {
+        libSeq = { ...libSeq, visibility: "private" };
+      }
+    }
+
     // Write sequence document using setDoc - works offline, queues in Firestore cache
     // IMPORTANT: birthday is set once on creation and NEVER changes
     const rawWriteData = {
@@ -807,7 +834,12 @@ export class LibraryRepository {
       // removeFromPublicIndex treats an absent mirror as success, so this is a
       // no-op for first-time private saves.
       try {
-        await this.publicIndexSyncer.removeFromPublicIndex(finalSequence.id);
+        // Only this user's own mirror: a copy of another creator's post
+        // shares their id, and their post is not this save's to remove.
+        await this.publicIndexSyncer.removeFromPublicIndex(
+          finalSequence.id,
+          userId
+        );
       } catch (error) {
         this.reportError(
           "Saved privately, but the old public copy may still be visible in the gallery.",
@@ -831,6 +863,10 @@ export class LibraryRepository {
         "warning"
       );
       throw error;
+    }
+
+    if (publishConflict) {
+      toast.info(describeKeptPrivate(publishConflict, userId), 7000);
     }
 
     void logSequenceAction(
@@ -1077,6 +1113,22 @@ export class LibraryRepository {
       );
     }
 
+    // Same moment for a publish that can never land (content already in the
+    // gallery, or another creator's post at this id): refuse with the typed
+    // duplicate BEFORE the owner turns public, so a refusal leaves nothing
+    // half-published to retry. A failed check falls through to the
+    // transaction, which repeats it.
+    if (
+      updates.visibility === "public" &&
+      existing.visibility !== "public" &&
+      this.publicIndexSyncer
+    ) {
+      const conflict = await this.publicIndexSyncer
+        .findPublishConflict({ ...existing, ...updates }, userId)
+        .catch(() => null);
+      if (conflict) throw conflict;
+    }
+
     // Apply updates locally for immediate return
     const updated = {
       ...existing,
@@ -1169,7 +1221,10 @@ export class LibraryRepository {
         }
       } else if (existing.visibility === "public") {
         try {
-          await this.publicIndexSyncer.removeFromPublicIndex(sequenceId);
+          await this.publicIndexSyncer.removeFromPublicIndex(
+            sequenceId,
+            userId
+          );
         } catch (error) {
           this.reportError(
             "Sequence updated, but it may still appear in the community gallery.",
@@ -1508,7 +1563,7 @@ export class LibraryRepository {
 
     // Likewise, an already-private doc can still have a stale legacy mirror.
     this.ownerFor(owner);
-    await this.publicIndexSyncer.removeFromPublicIndex(sequenceId);
+    await this.publicIndexSyncer.removeFromPublicIndex(sequenceId, owner);
     await this.touchSequenceCollections(owner, existing.collectionIds);
   }
 
@@ -1975,4 +2030,22 @@ export class LibraryRepository {
       sortDirection: "desc",
     });
   }
+}
+
+/** What a save that had to stay private tells the person, in plain words. */
+export function describeKeptPrivate(
+  conflict: PublicDuplicateError,
+  userId: string
+): string {
+  // By name, not instanceof: the persister stays out of this startup chunk
+  // (create-lazy-public-index-syncer.ts).
+  if (conflict.name === "PublicSequenceOwnedElsewhereError") {
+    return "Saved to your library. It's a copy of another creator's gallery post, so it stays private.";
+  }
+  const as = conflict.claimedWord
+    ? ` as "${simplifyRepeatedWord(conflict.claimedWord)}"`
+    : "";
+  return conflict.claimedByOwnerId === userId
+    ? `Saved to your library. You already posted this exact sequence${as}, so this copy stays private.`
+    : `Saved to your library. The gallery already has this exact sequence${as}, so your copy stays private.`;
 }

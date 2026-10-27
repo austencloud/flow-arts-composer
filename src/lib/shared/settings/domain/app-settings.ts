@@ -16,7 +16,6 @@ import type { BackgroundLabSettings } from "#lib/shared/background-builder/domai
 import type { TimeSignatureKey } from "../../foundation/domain/models/time-signature";
 import { normalizeLegacyPropConfig } from "@tka/tka-types";
 import type { FanAppearance } from "../../pictograph/prop/domain/fan-appearance";
-import type { PropLook } from "../../pictograph/prop/domain/prop-look";
 import type { TriangleGrip } from "../../pictograph/prop/domain/triangle-appearance";
 import { resolveViewerCustomColorPair, type ViewerCustomColorPair } from "../../sequence-viewer/domain/viewer-custom-colors";
 
@@ -29,8 +28,6 @@ export interface PropPreset {
   catDogMode: boolean;
   leftBuugengFlipped?: boolean; // Flip buugeng for blue hand (asymmetric prop)
   rightBuugengFlipped?: boolean; // Flip buugeng for red hand (asymmetric prop)
-  /** The version the setup was saved at. Presets saved before versions existed have none and apply as Version 1. */
-  propArtwork?: PropLook;
 }
 
 export interface AppSettings {
@@ -49,14 +46,6 @@ export interface AppSettings {
   fanAppearance?: FanAppearance;
   /** Where the hand holds the triangle: the printed elbow or a side's bow point. */
   triangleGrip?: TriangleGrip;
-  /** How the 2D canvas draws every non-fan prop: flat 3D-model sprite or pictograph. */
-  /**
-   * How the 2D canvas draws props. Named propArtwork (not propLook) on
-   * purpose: an earlier build persisted a "model" default under propLook
-   * into saved settings, and that stale key must not keep overriding the
-   * canonical pictograph artwork.
-   */
-  propArtwork?: PropLook;
   catDogMode?: boolean; // Whether CatDog Mode is enabled in prop type settings
   leftBuugengFlipped?: boolean; // Flip buugeng for blue hand (asymmetric prop)
   rightBuugengFlipped?: boolean; // Flip buugeng for red hand (asymmetric prop)

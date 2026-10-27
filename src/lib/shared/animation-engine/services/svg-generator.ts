@@ -1,7 +1,4 @@
 import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
-import { modelSpriteFacesAwayFromTips } from "#lib/shared/animation-engine/domain/types/prop-tip-points.js";
-import { PROP_MODEL_SPRITES } from "#lib/shared/pictograph/prop/domain/prop-model-sprites.generated.js";
-import { applyModelSpriteColor } from "#lib/shared/pictograph/prop/domain/prop-preview-color.js";
 import type { PropSvgData } from "#lib/shared/animation-engine/domain/types/svg-types.js";
 
 export type { PropSvgData } from "#lib/shared/animation-engine/domain/types/svg-types.js";
@@ -27,8 +24,6 @@ import {
   parseFanRenderKey,
 } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
 import {
-  modelSpriteArtwork,
-  parseModelRenderKey,
   propArtworkStem,
   type PropSpriteSide,
 } from "#lib/shared/pictograph/prop/domain/prop-look.js";
@@ -268,10 +263,6 @@ export function resolvePropSvgPath(
   if (triangleRenderKey) {
     return triangleAppearanceArtwork(triangleRenderKey.grip)!;
   }
-  const modelRenderKey = parseModelRenderKey(propTypeLower);
-  if (modelRenderKey) {
-    return modelSpriteArtwork(modelRenderKey.propType, side);
-  }
   const family = isAnimatedOnlyProp(propTypeLower) ? "animated" : "pictograph";
   return `/images/props/${family}/${propArtworkStem(propTypeLower, side)}.svg`;
 }
@@ -282,8 +273,8 @@ export function resolvePropSvgPath(
 export { applyFanFrameColor };
 
 /**
- * Model sprites are pre-lit in the blue and red motion colors, so the hand
- * picks the file. Callers that only know a color get the closer motion hue.
+ * Handed artwork (see propArtworkStem) has a file per hand. Callers that only
+ * know a color get the closer motion hue.
  */
 function spriteSideForColor(color: string): PropSpriteSide {
   const hex = color.trim().replace(/^#/, "");
@@ -302,28 +293,6 @@ function spriteSideForColor(color: string): PropSpriteSide {
 }
 
 /**
- * Turn a model capture to face its tip table. Captures are grip-centred, so
- * a one-sided prop captured facing -x (club, torch, poi, chicken, sword,
- * triads, hoops, triquetras) is rotated a half turn about the box centre;
- * that puts the painted end on the +x side where every tip table, trail, and
- * the mandala expect it. The staff models turn too, because their T-bar thumb
- * end was shot on -x. Other symmetric props are returned unchanged. The
- * predicate lives with the tip tables so the two never disagree about which
- * sprites turn.
- */
-export function orientModelSpriteToTips(propType: string, svg: string): string {
-  if (!modelSpriteFacesAwayFromTips(propType)) return svg;
-  const entry = PROP_MODEL_SPRITES[propType.toLowerCase()]!;
-  const cx = entry.width / 2;
-  const cy = entry.height / 2;
-  return svg.replace(
-    /(<svg\b[^>]*>)([\s\S]*)(<\/svg>\s*)$/i,
-    (_match, open: string, body: string, close: string) =>
-      `${open}<g transform="rotate(180 ${cx} ${cy})">${body}</g>${close}`
-  );
-}
-
-/**
  * Generate prop SVG with custom color
  */
 export async function generatePropSvg(
@@ -333,25 +302,6 @@ export async function generatePropSvg(
   side?: PropSpriteSide
 ): Promise<PropSvgData> {
   const propTypeLower = propType.toLowerCase();
-  const modelRenderKey = parseModelRenderKey(propTypeLower);
-  if (modelRenderKey) {
-    // Baked 3D capture: a raster lit in the blue or red capture palette. The
-    // chroma filter moves that paint to the requested color and leaves the
-    // neutral materials and shading alone.
-    const path = resolvePropSvgPath(
-      propTypeLower,
-      side ?? spriteSideForColor(color)
-    );
-    const svg = applyModelSpriteColor(
-      orientModelSpriteToTips(
-        modelRenderKey.propType,
-        await fetchPropSvg(path)
-      ),
-      color
-    );
-    const { width, height } = extractViewBoxDimensions(svg);
-    return { svg, width, height };
-  }
   const path = resolvePropSvgPath(
     propTypeLower,
     side ?? spriteSideForColor(color)

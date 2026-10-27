@@ -12,7 +12,6 @@ vi.mock(
 import { buildFlowerAxis } from "#lib/shared/shape-matrix/domain/flower-signature.js";
 import { createShapeMatrixAppState } from "#lib/shared/shape-matrix/app/state/shape-matrix-app-state.svelte.js";
 import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
-import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
 import type { Flower } from "#lib/shared/shape-matrix/domain/flower-signature.js";
 
 const LEVEL_FOUR_TURNS = [
@@ -46,8 +45,7 @@ function createState(
     right?: PropType;
     onPropPairChange?: (
       pair: { left: PropType; right: PropType },
-      catDog: boolean,
-      look?: PropLook
+      catDog: boolean
     ) => void;
   } = {}
 ) {
@@ -802,35 +800,18 @@ describe("shape matrix prop pair state", () => {
     );
   });
 
-  it("hands the host the version a pick names, with the pair it lands", async () => {
-    const onPropPairChange = vi.fn();
-    const { state } = createState(false, { onPropPairChange });
-    await state.load();
-    await state.setPropType(PropType.CAPSULE_BATON, undefined, "model");
-    expect(onPropPairChange).toHaveBeenCalledTimes(1);
-    expect(onPropPairChange).toHaveBeenCalledWith(
-      { left: PropType.CAPSULE_BATON, right: PropType.CAPSULE_BATON },
-      false,
-      "model"
-    );
-  });
-
-  it("never reports a version for a pick whose load was superseded", async () => {
+  it("never reports a pick whose load was superseded", async () => {
     const onPropPairChange = vi.fn();
     const { state, loadMatrix } = createState(false, { onPropPairChange });
     await state.load();
     const releaseBaton = heldOpenLoad(loadMatrix);
 
-    const batonPick = state.setPropType(
-      PropType.CAPSULE_BATON,
-      undefined,
-      "model"
-    );
+    const batonPick = state.setPropType(PropType.CAPSULE_BATON);
     const clubPick = state.setPropType(PropType.CLUB);
     releaseBaton();
     await Promise.all([batonPick, clubPick]);
 
-    // Only the pick that landed reports, and it names no version.
+    // Only the pick that landed reports.
     expect(onPropPairChange).toHaveBeenCalledTimes(1);
     expect(onPropPairChange).toHaveBeenCalledWith(
       { left: PropType.CLUB, right: PropType.CLUB },

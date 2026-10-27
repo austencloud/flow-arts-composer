@@ -430,11 +430,10 @@ describe("PropTypeManager.handleSettingsChange crossfade trigger", () => {
   });
 });
 
-// The public composer has no settings service to write the 3D look into, so it
-// passes the look as a prop. That prop must win over the stored setting and
-// swap the drawn artwork like any other prop change.
-describe("PropTypeManager.handleOverrides prop look override", () => {
-  it("swaps to the model artwork when the host passes propLook", async () => {
+// Prop versions were removed on 2026-10-27. A host or saved draft that still
+// passes the retired look must not swap the drawn artwork.
+describe("PropTypeManager.handleOverrides retired prop look", () => {
+  it("ignores a propLook a host still passes", async () => {
     const renderer = {
       prepareLeftPropCrossfade: vi.fn(),
       prepareRightPropCrossfade: vi.fn(),
@@ -444,7 +443,7 @@ describe("PropTypeManager.handleOverrides prop look override", () => {
     const ptm = new PropTypeManager();
     ptm.wire({
       settingsService: {
-        currentSettings: { propArtwork: "pictograph" },
+        currentSettings: {},
       } as any,
       propTextureService: null,
       trailCapturer: null,
@@ -460,22 +459,13 @@ describe("PropTypeManager.handleOverrides prop look override", () => {
     ptm.handleOverrides(chicken as any, state, getFrameParams, false);
     await flushHotSwap();
     ptm.handleOverrides(
-      { ...chicken, propLook: "pictograph" } as any,
-      state,
-      getFrameParams,
-      false
-    );
-    await flushHotSwap();
-    expect(renderer.prepareLeftPropCrossfade).not.toHaveBeenCalled();
-
-    ptm.handleOverrides(
       { ...chicken, propLook: "model" } as any,
       state,
       getFrameParams,
       false
     );
     await flushHotSwap();
-    expect(renderer.prepareLeftPropCrossfade).toHaveBeenCalledTimes(1);
-    expect(renderer.prepareRightPropCrossfade).toHaveBeenCalledTimes(1);
+    expect(renderer.prepareLeftPropCrossfade).not.toHaveBeenCalled();
+    expect(renderer.prepareRightPropCrossfade).not.toHaveBeenCalled();
   });
 });

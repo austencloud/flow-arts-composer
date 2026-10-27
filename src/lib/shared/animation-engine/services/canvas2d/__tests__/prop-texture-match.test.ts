@@ -4,10 +4,10 @@ import { propTextureMatchesRequest } from "../prop-texture-match";
 /**
  * The Canvas2D renderer decides per frame whether the sprite the image loader
  * holds is the one the frame params describe. Frame params carry the notation
- * prop type while the loader is fed render keys (fan builds, model sprites),
- * so a plain string comparison was permanently false for every fan build and
- * every model look: the prop froze at the crossfade origin for the whole load
- * plus fade, then snapped.
+ * prop type while the loader is fed render keys (fan builds, triangle grips),
+ * so a plain string comparison was permanently false for every fan build: the
+ * prop froze at the crossfade origin for the whole load plus fade, then
+ * snapped.
  */
 describe("propTextureMatchesRequest", () => {
   it("matches a fan build render key against its notation prop type", () => {
@@ -20,9 +20,9 @@ describe("propTextureMatchesRequest", () => {
     ).toBe(true);
     expect(
       propTextureMatchesRequest({
-        loaded: "club__model",
-        requested: "club__model",
-        paramsPropType: "Club",
+        loaded: "triangle__side",
+        requested: "triangle__side",
+        paramsPropType: "Triangle",
       })
     ).toBe(true);
   });

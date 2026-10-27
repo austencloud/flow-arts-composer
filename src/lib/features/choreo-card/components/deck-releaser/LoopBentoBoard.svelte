@@ -623,8 +623,6 @@
       selectedPropType={rs.leftPropType}
       variant="inline"
       showColors={false}
-      showPropLook={false}
-      propLook="pictograph"
       title="Select Prop"
       onSelect={(p: PropType) => {
         rs.selectedPropType = p;

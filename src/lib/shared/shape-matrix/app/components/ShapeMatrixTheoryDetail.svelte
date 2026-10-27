@@ -23,7 +23,10 @@
   import { traceScaledPath } from "#lib/shared/notation/qft/qft-model.js";
   import { propReachInHandRadii } from "#lib/shared/shape-matrix/services/theory-matrix-artwork.js";
   import { shapeMatrixTipPoint } from "#lib/shared/shape-matrix/services/shape-matrix-flowers.js";
-  import { foldUntraceablePropPair } from "#lib/shared/shape-matrix/domain/prop-pair.js";
+  import {
+    foldUntraceablePropPair,
+    shapeMatrixPickerProps,
+  } from "#lib/shared/shape-matrix/domain/prop-pair.js";
   import {
     isStationaryRatio,
     theoryKnobs,
@@ -554,9 +557,9 @@
           showTempoControls={false}
           showEffectsPlayback={false}
           selectedPropType={app.addressedPropType}
-          onPropChange={(next: PropType, look) =>
-            void app.setPropType(next, undefined, look)}
+          onPropChange={(next: PropType) => void app.setPropType(next)}
           handProps={app.handProps}
+          allowedProps={shapeMatrixPickerProps()}
           onPropPickerRequest={app.togglePropPicker}
           propPickerActive={app.propPickerOpen}
           sequence={null}

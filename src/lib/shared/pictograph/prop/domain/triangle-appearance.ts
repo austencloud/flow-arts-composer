@@ -49,18 +49,7 @@ export function resolveTriangleRenderKey(
   return `${normalized}__side`;
 }
 
-/**
- * The captured model sprite for a grip. The save endpoint only accepts
- * `[a-z0-9_]`, so the side sprite is `triangle_side`, not `triangle-side`.
- */
-export function triangleSpriteKey(grip: TriangleGrip): string {
-  return grip === "side" ? "triangle_side" : PropType.TRIANGLE;
-}
-
-/**
- * Parsed from either the glyph key `triangle__side` or the sprite key
- * `triangle_side`: both name the triangle's side grip.
- */
+/** Parsed from the glyph key `triangle__side`, the triangle's side grip. */
 export interface TriangleRenderKey {
   propType: "triangle";
   grip: "side";
@@ -70,7 +59,7 @@ export function parseTriangleRenderKey(
   value: string
 ): TriangleRenderKey | null {
   const normalized = value.toLowerCase();
-  if (normalized === "triangle__side" || normalized === "triangle_side") {
+  if (normalized === "triangle__side") {
     return { propType: "triangle", grip: "side" };
   }
   return null;

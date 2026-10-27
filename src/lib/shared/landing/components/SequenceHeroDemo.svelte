@@ -47,7 +47,6 @@
   import { prefersReducedData } from "#lib/shared/platform/network-conditions.js";
   import { markLanding } from "#lib/shared/performance/landing-marks.js";
   import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
-  import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
   import type { ViewerCustomColorPair } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
 
   let {
@@ -57,7 +56,6 @@
     leftPropType,
     rightPropType,
     fanAppearance,
-    propLook,
     primaryPropColors,
     leftBuugengFlipped,
     rightBuugengFlipped,
@@ -96,7 +94,6 @@
     /** Page-local prop appearance (fan build, 2D artwork look, buugeng
         chirality) for hosts that keep their picks off the app settings. */
     fanAppearance?: FanAppearance;
-    propLook?: PropLook;
     /** Optional host-owned color pair; null uses the player's default colors. */
     primaryPropColors?: ViewerCustomColorPair | null;
     leftBuugengFlipped?: boolean;
@@ -351,7 +348,6 @@
               leftPropType,
               rightPropType,
               fanAppearance,
-              propLook,
               primaryPropColors,
               leftBuugengFlipped,
               rightBuugengFlipped,

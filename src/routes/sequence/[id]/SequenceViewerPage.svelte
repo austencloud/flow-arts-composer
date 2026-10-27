@@ -137,7 +137,7 @@
 
   // Scan-origin cards keep the cloud pictograph path after /q hands off. This
   // context must exist before the descendant orchestrator mounts.
-  if (scanOriginCode) setScanCardCloudProbe(true, isDemo);
+  if (scanOriginCode) setScanCardCloudProbe(true);
 
   // URL params for state restoration
   const urlViewMode = $derived(

@@ -631,7 +631,6 @@
           settingsService.settings.leftBuugengFlipped ?? false,
         rightBuugengFlipped:
           settingsService.settings.rightBuugengFlipped ?? false,
-        propLook: settingsService.settings.propArtwork,
         updateSettings: () => {},
       },
       animationSettings,

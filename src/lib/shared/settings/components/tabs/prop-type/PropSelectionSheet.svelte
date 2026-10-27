@@ -20,7 +20,6 @@
   import type { PropChiralitySeam } from "./prop-chirality-seam";
   import CatDogToggle from "./CatDogToggle.svelte";
   import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
-  import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
 
   let {
     isOpen = $bindable(false),
@@ -38,15 +37,12 @@
     showColors = true,
     fanAppearance,
     onFanAppearanceChange,
-    propLook,
-    onPropLookChange,
-    showPropLook,
   } = $props<{
     isOpen?: boolean;
     selectedPropType: PropType;
     color?: "blue" | "red";
     title?: string;
-    onSelect: (propType: PropType, look?: PropLook) => void;
+    onSelect: (propType: PropType) => void;
     /** Show left/right tab bar for cat/dog mode */
     showTabs?: boolean;
     /** Active tab when showTabs is true */
@@ -70,13 +66,6 @@
     /** Host-owned appearance; unset edits the global settings. */
     fanAppearance?: FanAppearance;
     onFanAppearanceChange?: (appearance: FanAppearance) => void;
-    propLook?: PropLook;
-    onPropLookChange?: (look: PropLook) => void;
-    /**
-     * Turns the Version 1 / Version 2 choice off for a host whose render
-     * ignores it; see BentoPropGrid.
-     */
-    showPropLook?: boolean;
   }>();
 
   const displayTitle = $derived(title ?? t("settings_props_select_prop"));
@@ -110,14 +99,13 @@
     onOpenChange?.(open);
   }
 
-  function handlePropSelect(propType: PropType, look?: PropLook) {
+  function handlePropSelect(propType: PropType) {
     const hapticService = getHapticFeedback();
     hapticService?.trigger("selection");
     // Selection updates the live prop preview while the picker stays available
     // for comparison. Closing is always a separate action: backdrop, X,
     // Escape, or drag-dismiss.
-    if (look === undefined) onSelect(propType);
-    else onSelect(propType, look);
+    onSelect(propType);
   }
 
   function handleTabChange(tab: "left" | "right") {
@@ -212,9 +200,6 @@
         {showColors}
         {fanAppearance}
         {onFanAppearanceChange}
-        {propLook}
-        {onPropLookChange}
-        {showPropLook}
       />
     </div>
   </div>

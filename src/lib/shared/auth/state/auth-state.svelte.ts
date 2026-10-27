@@ -53,6 +53,7 @@ import {
   updatePronouns as doUpdatePronouns,
 } from "../services/profile-field-updater";
 import { initializeChildServices } from "../services/auth-boot-orchestrator";
+import { userServicesToRelease } from "../domain/user-services-owner";
 import { clearBootSnapshot } from "#lib/shared/application/services/boot-snapshot.js";
 import { isPermissionDeniedError } from "#lib/shared/auth/utils/is-permission-denied-error.js";
 import { identifyFirebaseUserToPostHog } from "#lib/shared/auth/services/posthog-user-identity.js";
@@ -79,7 +80,7 @@ const hmrAuthData = import.meta.hot?.data as
       authState?: AuthState;
       cleanupAuthListener?: (() => void) | null;
       cleanupSubscriptionListener?: (() => void) | null;
-      childServicesInitialized?: boolean;
+      childServicesUserId?: string | null;
       hasIdentifiedToPostHog?: boolean;
     }
   | undefined;
@@ -101,11 +102,18 @@ let cleanupAuthListener: (() => void) | null =
 let cleanupSubscriptionListener: (() => void) | null =
   hmrAuthData?.cleanupSubscriptionListener ?? null;
 
-// Track whether child services (settings, arrows, onboarding, etc.) have been initialized.
-// On HMR, the auth listener fires again because the Firebase app instance rotates, but
-// the child services don't need to re-initialize - they're already listening/loaded.
-// Without this guard, every file save in dev triggers ~12 Firestore reads.
-let childServicesInitialized = hmrAuthData?.childServicesInitialized ?? false;
+// The uid whose child services (settings, collections, onboarding, etc.) are
+// running. On HMR, the auth listener fires again for the same user and the
+// services are already listening/loaded; without this guard, every file save in
+// dev triggers ~12 Firestore reads. A DIFFERENT uid means the account changed
+// under them, and they are released before the new account's start.
+let childServicesUserId: string | null =
+  hmrAuthData?.childServicesUserId ?? null;
+
+// The latest release of a previous account's services. A new account's
+// services start only after it settles, so a late teardown can never stop the
+// listeners just opened for the account that replaced it.
+let pendingServicesRelease: Promise<void> = Promise.resolve();
 
 // Whether this browser has ever identified a real user to PostHog. The
 // onAuthStateChanged 'else' branch below reads "user logged out" but its actual
@@ -152,7 +160,7 @@ if (import.meta.hot) {
     data.authState = { ..._state };
     data.cleanupAuthListener = cleanupAuthListener;
     data.cleanupSubscriptionListener = cleanupSubscriptionListener;
-    data.childServicesInitialized = childServicesInitialized;
+    data.childServicesUserId = childServicesUserId;
     data.hasIdentifiedToPostHog = hasIdentifiedToPostHog;
   });
 }
@@ -474,6 +482,18 @@ async function doInitializeAuthListener(): Promise<void> {
   cleanupAuthListener = onAuthStateChanged(
     auth,
     async (user) => {
+      // Release the previous account's listeners before anything awaits:
+      // Firestore re-runs them under this user's token and the rules deny
+      // them a network round trip later, so unsubscribing now mutes them.
+      const releasedUid = userServicesToRelease(
+        childServicesUserId,
+        user?.uid ?? null
+      );
+      if (releasedUid) {
+        childServicesUserId = null;
+        pendingServicesRelease = releaseUserScopedListeners(releasedUid);
+      }
+
       // Immediately reflect user in state so UI updates even if
       // downstream Firestore/network operations hang (common in Tauri desktop).
       // Deliberately NOT setting initialized here: consumers (e.g. the /admin
@@ -695,14 +715,18 @@ async function doInitializeAuthListener(): Promise<void> {
         resetUser();
       }
 
-      // Initialize child services (non-blocking). The childServicesInitialized guard
+      // Initialize child services (non-blocking). The childServicesUserId guard
       // prevents re-running all Firestore reads on every Vite HMR reload.
-      if (user && !childServicesInitialized) {
-        childServicesInitialized = true;
-        initializeChildServices(user, () => _state.user);
+      if (user && childServicesUserId !== user.uid) {
+        childServicesUserId = user.uid;
+        void pendingServicesRelease.then(() => {
+          // Another account change while the release ran owns the next start.
+          if (childServicesUserId !== user.uid) return;
+          initializeChildServices(user, () => _state.user);
 
-        // Initialize subscription listener for real-time role sync
-        void initializeSubscriptionListener(user);
+          // Initialize subscription listener for real-time role sync
+          void initializeSubscriptionListener(user);
+        });
       }
 
       // Revalidate current module after auth state changes
@@ -728,6 +752,79 @@ async function doInitializeAuthListener(): Promise<void> {
       resolveAuthSettled();
     }
   );
+}
+
+/**
+ * Stop every Firestore listener and sync that auth-state started for one
+ * account. Runs before signOut() hands the token back, and whenever Auth
+ * reports a different user than the one these services were started for (see
+ * userServicesToRelease), so no listener is re-run under an account the rules
+ * deny it to. The releases run in parallel: each one only has to land before
+ * the server's denial does, and none should wait on another's module import.
+ */
+async function releaseUserScopedListeners(outgoingUid: string): Promise<void> {
+  if (cleanupSubscriptionListener) {
+    cleanupSubscriptionListener();
+    cleanupSubscriptionListener = null;
+  }
+
+  const release = async (
+    label: string,
+    teardown: () => Promise<void>
+  ): Promise<void> => {
+    try {
+      await teardown();
+    } catch (error) {
+      // A module that never loaded has nothing to release.
+      console.warn(`⚠️ [authState] Could not release ${label}:`, error);
+    }
+  };
+
+  await Promise.all([
+    release("settings sync", async () => {
+      const { settingsService } =
+        await import("../../settings/state/settings-state.svelte");
+      settingsService.cleanup();
+    }),
+    release("mandala collection", async () => {
+      const { mandalaCollectionState } =
+        await import("#lib/features/mandala/tabs/collection/state/mandala-collection-state.svelte.js");
+      mandalaCollectionState.teardown();
+    }),
+    release("tunnel collection", async () => {
+      const { tunnelCollectionState } =
+        await import("#lib/features/tunnel-collection/state/tunnel-collection-state.svelte.js");
+      tunnelCollectionState.teardown();
+    }),
+    release("3D scene collection", async () => {
+      const { scene3dCollectionState } =
+        await import("#lib/features/scene-3d-collection/state/scene-3d-collection-state.svelte.js");
+      scene3dCollectionState.teardown();
+    }),
+    release("film collection", async () => {
+      const { filmCollectionState } =
+        await import("#lib/features/film-collection/state/film-collection-state.svelte.js");
+      filmCollectionState.teardown();
+    }),
+    release("library collections", async () => {
+      const { collectionsState } =
+        await import("#lib/features/library/state/collections-state.svelte.js");
+      collectionsState.teardown();
+    }),
+    release("followed collections", async () => {
+      const { followedCollectionsState } =
+        await import("#lib/features/library/state/followed-collections-state.svelte.js");
+      followedCollectionsState.teardown();
+    }),
+  ]);
+
+  // Drop the local text mirror so this user's list never seeds the next
+  // signed-in account on the same device.
+  await release("collection mirror", async () => {
+    const { clearMirror } =
+      await import("#lib/features/library/services/collection-cache-mirror.js");
+    clearMirror(outgoingUid);
+  });
 }
 
 /**
@@ -782,8 +879,14 @@ export async function signOut(): Promise<void> {
     // Note: Profile settings state is now context-based (profile-settings-context.svelte.ts)
     // State is automatically cleaned up when the component unmounts, no manual reset needed
 
-    // Reset child services flag so next sign-in triggers the full init cascade
-    childServicesInitialized = false;
+    // Release this account's listeners BEFORE signing out, so none is re-run
+    // without a token, and so the next sign-in triggers the full init cascade.
+    const outgoingUid = _state.user?.uid ?? childServicesUserId;
+    childServicesUserId = null;
+    if (outgoingUid) {
+      pendingServicesRelease = releaseUserScopedListeners(outgoingUid);
+      await pendingServicesRelease;
+    }
 
     // Reset first-run cloud sync so next signin will sync fresh
     try {
@@ -825,12 +928,6 @@ export async function signOut(): Promise<void> {
       // Silently fail - presence is non-critical
     }
 
-    // Clean up subscription listener
-    if (cleanupSubscriptionListener) {
-      cleanupSubscriptionListener();
-      cleanupSubscriptionListener = null;
-    }
-
     // Unregister FCM push token before signing out
     try {
       const userId = _state.user?.uid;
@@ -840,66 +937,6 @@ export async function signOut(): Promise<void> {
       }
     } catch {
       // Push token cleanup is non-critical
-    }
-
-    // Clean up Firestore subscriptions BEFORE signing out
-    // This prevents permission errors when Firebase auth is invalidated
-    try {
-      const { settingsService } =
-        await import("../../settings/state/settings-state.svelte");
-      settingsService.cleanup();
-    } catch {
-      // Settings service may not be loaded - that's ok
-    }
-
-    try {
-      const { mandalaCollectionState } =
-        await import("#lib/features/mandala/tabs/collection/state/mandala-collection-state.svelte.js");
-      mandalaCollectionState.teardown();
-    } catch {
-      // Mandala collection may not be loaded - that's ok
-    }
-
-    try {
-      const { tunnelCollectionState } =
-        await import("#lib/features/tunnel-collection/state/tunnel-collection-state.svelte.js");
-      tunnelCollectionState.teardown();
-    } catch {
-      // Tunnel collection may not be loaded - that's ok
-    }
-
-    try {
-      const [{ scene3dCollectionState }, { filmCollectionState }] =
-        await Promise.all([
-          import("#lib/features/scene-3d-collection/state/scene-3d-collection-state.svelte.js"),
-          import("#lib/features/film-collection/state/film-collection-state.svelte.js"),
-        ]);
-      scene3dCollectionState.teardown();
-      filmCollectionState.teardown();
-    } catch {
-      // Scene/film collections may not be loaded - that's ok
-    }
-
-    try {
-      const [{ collectionsState }, { followedCollectionsState }] =
-        await Promise.all([
-          import("#lib/features/library/state/collections-state.svelte.js"),
-          import("#lib/features/library/state/followed-collections-state.svelte.js"),
-        ]);
-      // Otherwise the previous user's Firestore listeners stay live after
-      // logout and throw permission errors once the auth token is revoked.
-      collectionsState.teardown();
-      followedCollectionsState.teardown();
-      // Drop the local text mirror so this user's list never seeds the next
-      // signed-in account on the same device.
-      const outgoingUid = _state.user?.uid;
-      if (outgoingUid) {
-        const { clearMirror } =
-          await import("#lib/features/library/services/collection-cache-mirror.js");
-        clearMirror(outgoingUid);
-      }
-    } catch {
-      // Collection states may not be loaded - that's ok
     }
 
     // Drafts and unsent attachment bytes are deliberately device-local. A

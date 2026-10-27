@@ -400,123 +400,17 @@ describe("CellCacheKeyDeriver (lsp11/lsp12 composition)", () => {
       expect(classic).toContain('"leftPropType":"classic_club"');
     });
 
-    it("rekeys Realistic staff cells drawn before the staff models turned", () => {
-      const data = makeStartPlacement();
-      const realistic = (overrides: Partial<PreviewCellRenderOptions>) =>
-        deriver.deriveCacheKey(
-          data,
-          undefined,
-          true,
-          makeOptions({ ...overrides, propLook: "model" })
-        );
-
-      for (const staff of [PropType.STAFF, PropType.BIGSTAFF]) {
-        expect(realistic({ leftPropType: staff })).toContain(
-          '"propAppearanceRevision":"staff-model-thumb-end-v2"'
-        );
+    it("keeps staff cells on their notation key", () => {
+      for (const staff of [PropType.STAFF, PropType.BIGSTAFF, PropType.SIMPLESTAFF]) {
+        expect(
+          deriver.deriveCacheKey(
+            makeStartPlacement(),
+            undefined,
+            true,
+            makeOptions({ leftPropType: staff })
+          )
+        ).not.toContain("propAppearanceRevision");
       }
-      // Simple Staff and Capped Staff have no model capture, so the model look
-      // draws their notation artwork and their key carries no staff revision.
-      for (const staff of [PropType.SIMPLESTAFF, PropType.STAFF2]) {
-        expect(realistic({ leftPropType: staff })).not.toContain(
-          "propAppearanceRevision"
-        );
-      }
-      expect(
-        realistic({
-          leftPropType: PropType.STAFF,
-          rightPropType: PropType.CLUB,
-          catDogModeEnabled: true,
-        })
-      ).toContain(
-        '"propAppearanceRevision":"club-art-v2+staff-model-thumb-end-v2"'
-      );
-
-      // Classic staff cells, and the cloud corpus drawn from them, keep
-      // their keys, and so do other Realistic props.
-      expect(
-        deriver.deriveCacheKey(
-          data,
-          undefined,
-          true,
-          makeOptions({ leftPropType: PropType.STAFF })
-        )
-      ).not.toContain("propAppearanceRevision");
-      expect(realistic({ leftPropType: PropType.BUUGENG })).not.toContain(
-        "propAppearanceRevision"
-      );
-      expect(realistic({ leftPropType: PropType.CLUB })).toContain(
-        '"propAppearanceRevision":"club-art-v2"'
-      );
-    });
-  });
-
-  describe("retired staff captures in a mixed pair", () => {
-    // Simple Staff, Capped Staff and Fire Staff lost their model captures. Alone
-    // they draw no capture, but beside a Realistic prop they still sit in a
-    // model-look cell, and that cell's key used to match one drawn while they
-    // had a capture.
-    const data = makeStartPlacement();
-    const keyFor = (overrides: Partial<PreviewCellRenderOptions>) =>
-      deriver.deriveCacheKey(data, undefined, true, makeOptions(overrides));
-    const pair = (
-      left: PropType,
-      right: PropType,
-      propLook?: "pictograph" | "model"
-    ) =>
-      keyFor({
-        leftPropType: left,
-        rightPropType: right,
-        catDogModeEnabled: true,
-        propLook,
-      });
-    const RETIRED = [
-      PropType.SIMPLESTAFF,
-      PropType.STAFF2,
-      PropType.FIRE_DOUBLE_STAFF,
-    ];
-
-    it("keys a Realistic pair holding a retired staff apart from the old key", () => {
-      for (const retired of RETIRED) {
-        const key = pair(PropType.STAFF, retired, "model");
-        // The key a cell drawn with the old capture was stored under.
-        expect(key).not.toContain(
-          '"propAppearanceRevision":"staff-model-thumb-end-v2"'
-        );
-        expect(key).toContain(
-          '"propAppearanceRevision":"staff-model-capture-retired-v3+staff-model-thumb-end-v2"'
-        );
-        // Order of the hands does not change the key's meaning.
-        expect(pair(retired, PropType.STAFF, "model")).toContain(
-          '"propAppearanceRevision":"staff-model-capture-retired-v3+staff-model-thumb-end-v2"'
-        );
-        expect(key).not.toBe(
-          pair(PropType.STAFF, PropType.STAFF, "model")
-        );
-      }
-      expect(
-        pair(PropType.CLUB, PropType.SIMPLESTAFF, "model")
-      ).toContain(
-        '"propAppearanceRevision":"club-art-v2+staff-model-capture-retired-v3"'
-      );
-    });
-
-    it("keeps single-prop, Version 1 and capture-free keys as they were", () => {
-      for (const retired of RETIRED) {
-        // Alone it draws notation art and carries no model look.
-        const alone = keyFor({ leftPropType: retired, propLook: "model" });
-        expect(alone).not.toContain("propAppearanceRevision");
-        expect(alone).toBe(keyFor({ leftPropType: retired }));
-
-        // Version 1 never draws a capture, so the revision stays out.
-        const version1 = pair(PropType.STAFF, retired, "pictograph");
-        expect(version1).not.toContain("propAppearanceRevision");
-        expect(version1).toBe(pair(PropType.STAFF, retired));
-      }
-      // Two retired staffs together draw no capture, so no model look either.
-      expect(
-        pair(PropType.SIMPLESTAFF, PropType.FIRE_DOUBLE_STAFF, "model")
-      ).toBe(pair(PropType.SIMPLESTAFF, PropType.FIRE_DOUBLE_STAFF));
     });
   });
 
@@ -530,14 +424,12 @@ describe("CellCacheKeyDeriver (lsp11/lsp12 composition)", () => {
       );
     const triangle = { leftPropType: PropType.TRIANGLE };
 
-    it("keys a side-grip triangle apart from the corner glyph, in both looks", () => {
-      for (const propLook of ["pictograph", "model"] as const) {
-        const corner = keyFor({ ...triangle, propLook });
-        const side = keyFor({ ...triangle, propLook, triangleGrip: "side" });
-        expect(side).not.toBe(corner);
-        expect(side).toContain('"triangleGrip":"side"');
-        expect(side).toMatch(/^lsp11-/);
-      }
+    it("keys a side-grip triangle apart from the corner glyph", () => {
+      const corner = keyFor(triangle);
+      const side = keyFor({ ...triangle, triangleGrip: "side" });
+      expect(side).not.toBe(corner);
+      expect(side).toContain('"triangleGrip":"side"');
+      expect(side).toMatch(/^lsp11-/);
       // A mixed pair with one triangle draws the side grip too.
       expect(
         keyFor({
@@ -554,11 +446,9 @@ describe("CellCacheKeyDeriver (lsp11/lsp12 composition)", () => {
         keyFor(triangle)
       );
       for (const prop of [PropType.STAFF, PropType.MINIHOOP, PropType.FAN]) {
-        for (const propLook of [undefined, "model"] as const) {
-          expect(
-            keyFor({ leftPropType: prop, propLook, triangleGrip: "side" })
-          ).toBe(keyFor({ leftPropType: prop, propLook }));
-        }
+        expect(keyFor({ leftPropType: prop, triangleGrip: "side" })).toBe(
+          keyFor({ leftPropType: prop })
+        );
       }
     });
 

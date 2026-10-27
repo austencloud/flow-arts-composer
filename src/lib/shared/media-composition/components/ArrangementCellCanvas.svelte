@@ -457,7 +457,6 @@
         word={null}
         leftPropType={look?.propType ?? null}
         rightPropType={look?.propType ?? null}
-        propLook={look?.propLook}
         previewDarkMode={look?.darkMode ?? true}
         mandalaStrokeWidthOverride={look?.mandalaThickness}
         trailSettings={cellTrailSettings}

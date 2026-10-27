@@ -12,7 +12,6 @@ import type { PerformanceSnapshot } from "../../foundation/ui/ui-types";
 import { GridMode } from "../../pictograph/grid/domain/enums/grid-enums";
 import { PropType } from "../../pictograph/prop/domain/enums/prop-type";
 import { DEFAULT_FAN_APPEARANCE } from "../../pictograph/prop/domain/fan-appearance";
-import { DEFAULT_PROP_LOOK } from "../../pictograph/prop/domain/prop-look";
 import type { AppSettings } from "../../settings/domain/app-settings";
 import { healPropPair } from "../../settings/domain/prop-pair-rule";
 import type { SettingsState } from "../../settings/state/settings-state.svelte";
@@ -56,7 +55,6 @@ const DEFAULT_SETTINGS: AppSettings = {
   leftPropType: PropType.STAFF,
   rightPropType: PropType.STAFF,
   fanAppearance: DEFAULT_FAN_APPEARANCE,
-  propArtwork: DEFAULT_PROP_LOOK,
   selectedPresetIndex: 0,
 };
 

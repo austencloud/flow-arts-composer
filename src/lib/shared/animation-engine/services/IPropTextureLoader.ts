@@ -10,7 +10,6 @@ import type { TunnelPropColorPair } from "#lib/shared/sequence-viewer/tunnel/tun
 import type { ISVGGenerator } from "#lib/shared/animation-engine/services/ISVGGenerator.js";
 import type { ITrailCapturer } from "#lib/shared/animation-engine/services/ITrailCapturer.js";
 import { parseFanRenderKey } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
-import { parseModelRenderKey } from "#lib/shared/pictograph/prop/domain/prop-look.js";
 import { HOOP_FAMILY_BOXES } from "#lib/shared/pictograph/prop/domain/hoop-family-geometry.generated.js";
 import { parseTriangleRenderKey } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
 
@@ -179,13 +178,10 @@ export function getPropDimensions(propType: string): PropDimensions {
       ? { width: 600, height: 566.9 }
       : { width: 260, height: 207 };
   }
-  // A model sprite is captured into the same box as its pictograph artwork.
-  const modelRenderKey = parseModelRenderKey(normalized);
-  const baseType = modelRenderKey?.propType ?? normalized;
   // Both triangle grips share one grip-centred box (spec section 2).
-  const triangleKey = parseTriangleRenderKey(baseType);
+  const triangleKey = parseTriangleRenderKey(normalized);
   return (
-    PROP_DIMENSIONS[triangleKey?.propType ?? baseType] ?? {
+    PROP_DIMENSIONS[triangleKey?.propType ?? normalized] ?? {
       ...DEFAULT_PROP_DIMENSIONS,
     }
   );

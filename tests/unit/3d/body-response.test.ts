@@ -28,6 +28,7 @@ import {
 import {
   BODY_DUCK_MAX_M,
   BODY_RESPONSE_HEAD,
+  BODY_YAW_LIMIT_RAD,
   buildBodyResponseTrack,
   describeBodyResponseTrack,
   NO_BODY_RESPONSE,
@@ -35,6 +36,7 @@ import {
   sampleBodyResponseTrack,
   STEP_LIFT_M,
   STEP_REST_BEATS,
+  STEP_TURN_RAD,
   type BodyResponseTrack,
   type BodyResponseTrackOptions,
   type FootTrack,
@@ -440,7 +442,8 @@ describe("body response track", () => {
     const i = mid(track, 3.5);
     const { stanceChest } = seenAt(src, track, i);
     expect(stanceChest).toBeLessThan(-60 * DEG);
-    expect(track.yaw[i]!).toBeLessThan(-45 * DEG);
+    // The body turns as far as its trim allows; the chest twists the rest.
+    expect(track.yaw[i]!).toBeCloseTo(-BODY_YAW_LIMIT_RAD, 6);
     expect(track.clearance[i]!).toBeLessThan(track.maxM - 0.01);
     // Twist plus body stays the stance wherever the body turns no further
     // than it, so the residual shrinks as the yaw grows.
@@ -469,7 +472,12 @@ describe("body response track", () => {
           }
         : { left: null, right: null }
     );
-    const track = buildBodyResponseTrack(options(src, { staffLengthM: 0.67 }))!;
+    // A floor move of 12 cm leaves the head within 8.5 cm of one staff or
+    // the other, whatever its direction; a 25 cm cap would clear both
+    // diagonally.
+    const track = buildBodyResponseTrack(
+      options(src, { staffLengthM: 0.67, maxM: 0.12 })
+    )!;
     const i = mid(track, 2.5);
     const { staffs, stanceChest, stanceSpine1 } = seenAt(src, track, i);
     expect(
@@ -479,7 +487,9 @@ describe("body response track", () => {
     expect(insideCounts(staffs, pose, MODEL).head).toBe(0);
     expect(-pose.dy).toBeGreaterThan(0.1);
     expect(-pose.dy).toBeLessThanOrEqual(BODY_DUCK_MAX_M);
-    expect(track.clearance[i]!).toBeLessThan(0.02);
+    // The grips sit at the face, folded against the chest, so the body also
+    // steps back as far as it may; that alone leaves the head inside.
+    expect(track.clearance[i]!).toBeLessThanOrEqual(track.maxM + 1e-9);
     expect(describeBodyResponseTrack(track)).toMatch(
       /step 2: .*duck \d+\.\d cm/
     );
@@ -549,15 +559,54 @@ describe("body response track", () => {
   it("turns the feet under a sustained turn, the outside foot first", () => {
     const src = source(8, false, () => ({ left: null, right: null }));
     const track = buildBodyResponseTrack(
-      options(src, { facingHint: (t) => (t >= 2 ? 90 * DEG : null) })
+      options(src, { facingHint: (t) => (t >= 2 ? 45 * DEG : null) })
     )!;
     const last = track.yaw.length - 1;
-    expect(track.yaw[last]!).toBeCloseTo(90 * DEG, 6);
+    expect(track.yaw[last]!).toBeCloseTo(45 * DEG, 6);
     // A turn to the performer's left swings the right foot round first.
     expect(track.steps.map((s) => s.foot)).toEqual(["right", "left"]);
     for (const foot of [track.feet.left, track.feet.right]) {
       expect(foot.yaw[last]!).toBeCloseTo(track.yaw[last]!, 6);
       expectNoSlide(foot);
+    }
+  });
+
+  it("steps the feet round when the root turns, planted feet still on the floor", () => {
+    // The root (and the grid with it) turns 90 degrees left over beats 2-4;
+    // the body itself stays square to the grid.
+    const turn = (t: number) => {
+      const u = Math.min(1, Math.max(0, (t - 2) / 2));
+      return 90 * DEG * u * u * (3 - 2 * u);
+    };
+    const src = source(8, false, () => ({ left: null, right: null }));
+    const track = buildBodyResponseTrack(options(src, { rootTurn: turn }))!;
+    const per = track.samplesPerStep;
+    const last = track.yaw.length - 1;
+    expect(track.steps.length).toBeGreaterThanOrEqual(2);
+    for (const foot of [track.feet.left, track.feet.right]) {
+      // In the floor's frame a planted foot holds exactly still.
+      for (let i = 0; i + 1 < foot.lift.length; i++) {
+        if (foot.lift[i] !== 0 || foot.lift[i + 1] !== 0) continue;
+        const a = turn(i / per);
+        const b = turn((i + 1) / per);
+        const c = Math.cos(a), s = Math.sin(a);
+        const c1 = Math.cos(b), s1 = Math.sin(b);
+        const x0 = foot.x[i]! * c + foot.z[i]! * s;
+        const z0 = -foot.x[i]! * s + foot.z[i]! * c;
+        const x1 = foot.x[i + 1]! * c1 + foot.z[i + 1]! * s1;
+        const z1 = -foot.x[i + 1]! * s1 + foot.z[i + 1]! * c1;
+        expect(Math.abs(x1 - x0)).toBeLessThan(1e-9);
+        expect(Math.abs(z1 - z0)).toBeLessThan(1e-9);
+        expect(Math.abs(foot.yaw[i + 1]! + b - foot.yaw[i]! - a)).toBeLessThan(
+          1e-9
+        );
+      }
+      // Once the turn is done the feet stand square to the grid again, to
+      // within the turn that would prompt another step.
+      expect(Math.abs(foot.yaw[last]! - track.yaw[last]!)).toBeLessThan(
+        STEP_TURN_RAD
+      );
+      expect(foot.lift[last]).toBe(0);
     }
   });
 
@@ -597,11 +646,16 @@ describe("body response track", () => {
   it("faces where the host asks unless reach needs otherwise", () => {
     const empty = source(6, false, () => ({ left: null, right: null }));
     const hinted = buildBodyResponseTrack(
+      options(empty, { facingHint: () => 30 * DEG })
+    )!;
+    expect(hinted.yaw[mid(hinted, 3)]!).toBeCloseTo(30 * DEG, 6);
+    // A hint past the trim stops at it.
+    const far = buildBodyResponseTrack(
       options(empty, { facingHint: () => 60 * DEG })
     )!;
-    expect(hinted.yaw[mid(hinted, 3)]!).toBeCloseTo(60 * DEG, 6);
+    expect(far.yaw[mid(far, 3)]!).toBeCloseTo(BODY_YAW_LIMIT_RAD, 6);
     // One staff far across to the right and forward: the left shoulder
-    // cannot reach it from the hinted 60°, so reach pulls the body well away.
+    // cannot reach it from the hinted 30°, so reach pulls the body well away.
     const cross: HandSpec = {
       at: { x: -0.45, y: MODEL.shoulderDyM, z: 0.45 },
       rotation: ALONG_Z,
@@ -611,12 +665,12 @@ describe("body response track", () => {
       right: null,
     }));
     const track = buildBodyResponseTrack(
-      options(src, { facingHint: () => 60 * DEG })
+      options(src, { facingHint: () => 30 * DEG })
     )!;
     const i = mid(track, 3.5);
     const fromHint = Math.atan2(
-      Math.sin(track.yaw[i]! - 60 * DEG),
-      Math.cos(track.yaw[i]! - 60 * DEG)
+      Math.sin(track.yaw[i]! - 30 * DEG),
+      Math.cos(track.yaw[i]! - 30 * DEG)
     );
     expect(Math.abs(fromHint)).toBeGreaterThan(45 * DEG);
     const { staffs } = seenAt(src, track, i);

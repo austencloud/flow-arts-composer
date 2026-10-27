@@ -29,7 +29,7 @@ export interface TrailOverlayRenderParams {
   rightPropType?: string | null;
   /**
    * Render key of the artwork drawn for the base pair (`bigfan__fire_bare`,
-   * `sword__model`). Its tip table places the base pair's trails; tunnel
+   * `triangle__side`). Its tip table places the base pair's trails; tunnel
    * layers keep the notation prop type.
    */
   leftPropRenderKey?: string | null;

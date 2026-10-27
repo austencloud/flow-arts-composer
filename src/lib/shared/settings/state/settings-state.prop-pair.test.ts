@@ -170,92 +170,25 @@ describe("settings enforce the prop pair rule", () => {
   });
 });
 
-describe("settings give a pick its own version", () => {
-  beforeEach(async () => {
-    localStorage.clear();
-    await settingsService.updateSettings({
-      leftPropType: PropType.STAFF,
-      rightPropType: PropType.STAFF,
-      catDogMode: false,
-      propArtwork: "model",
-    });
-  });
+describe("settings retired prop versions", () => {
+  beforeEach(() => localStorage.clear());
 
-  it("goes back to Version 1 when a different prop is picked", async () => {
-    await settingsService.updateSetting("propType", PropType.CLUB);
-    expect(settingsService.settings).toMatchObject({
-      leftPropType: PropType.CLUB,
-      propArtwork: "pictograph",
-    });
-  });
-
-  it("goes back to Version 1 for a single-hand pick of a prop with a Version 2", async () => {
-    await settingsService.updateSetting("rightPropType", PropType.CLUB);
-    expect(settingsService.settings).toMatchObject({
-      catDogMode: true,
-      propArtwork: "pictograph",
-    });
-  });
-
-  // A Fan has no Version 2, so there is nothing for the pick to reset to and
-  // the Staff in the other hand keeps the version it was picked at.
-  it("keeps the version for a single-hand pick of a prop with no Version 2", async () => {
-    await settingsService.updateSetting("rightPropType", PropType.FAN);
-    expect(settingsService.settings).toMatchObject({
-      catDogMode: true,
-      propArtwork: "model",
-    });
-  });
-
-  it("keeps the version when only the size changes", async () => {
-    await settingsService.updateSetting("propType", PropType.BIGSTAFF);
-    expect(settingsService.settings).toMatchObject({
-      leftPropType: PropType.BIGSTAFF,
-      propArtwork: "model",
-    });
-  });
-
-  it("keeps the version a write names for itself", async () => {
+  // Version 2 prop art is gone. An older preset or client can still send the
+  // field: the pick lands and the field is not written back.
+  it("accepts a patch that still names propArtwork and drops the field", async () => {
     await settingsService.updateSettings({
       leftPropType: PropType.CLUB,
       rightPropType: PropType.CLUB,
-      propArtwork: "model",
-    });
-    expect(settingsService.settings.propArtwork).toBe("model");
-  });
-
-  it("keeps the version when the current prop is picked again", async () => {
-    await settingsService.updateSetting("propType", PropType.STAFF);
-    expect(settingsService.settings.propArtwork).toBe("model");
-  });
-
-  it("keeps the version when Cat Dog turns off", async () => {
-    await settingsService.updateSettings({
-      rightPropType: PropType.FAN,
-      propArtwork: "model",
-    });
-    await settingsService.updateSetting("catDogMode", false);
-    expect(settingsService.settings).toMatchObject({
-      rightPropType: PropType.STAFF,
       catDogMode: false,
       propArtwork: "model",
-    });
-  });
-
-  it("does not reset the version when settings load from storage", async () => {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({
-        leftPropType: PropType.CLUB,
-        rightPropType: PropType.CLUB,
-        catDogMode: false,
-        propArtwork: "model",
-      })
-    );
-    await settingsService.loadSettings();
+    } as Partial<AppSettings>);
     expect(settingsService.settings).toMatchObject({
       leftPropType: PropType.CLUB,
-      propArtwork: "model",
+      rightPropType: PropType.CLUB,
     });
+    expect(settingsService.settings).not.toHaveProperty("propArtwork");
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}")).not.toHaveProperty(
+      "propArtwork"
+    );
   });
 });

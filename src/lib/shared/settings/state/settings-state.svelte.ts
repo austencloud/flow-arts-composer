@@ -17,10 +17,23 @@ import {
   normalizePropPatch,
   PROP_PAIR_KEYS,
 } from "../domain/prop-pair-rule";
-import { withPickVersion } from "../domain/prop-version-rule";
 import { DEFAULT_FAN_APPEARANCE } from "../../pictograph/prop/domain/fan-appearance";
-import { DEFAULT_PROP_LOOK } from "../../pictograph/prop/domain/prop-look";
 import { DEFAULT_TRIANGLE_GRIP } from "../../pictograph/prop/domain/triangle-appearance";
+/**
+ * Prop versions (the `propArtwork` field) were removed on 2026-10-27. A patch
+ * from an older preset or client may still carry the field; it is dropped
+ * here so nothing writes it again. Saved settings that hold it still load.
+ */
+function withoutRetiredKeys(
+  patch: Partial<AppSettings>
+): Partial<AppSettings> {
+  if (!Object.prototype.hasOwnProperty.call(patch, "propArtwork")) return patch;
+  const { propArtwork: _retired, ...rest } = patch as Partial<AppSettings> & {
+    propArtwork?: unknown;
+  };
+  return rest;
+}
+
 // Dynamic import: posthog-activity-logger → posthog → $app/env/public.
 // Static import crashes the composition worker (no globalThis.__sveltekit_dev).
 async function logSettingChange(
@@ -89,7 +102,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
   propType: PropType.STAFF,
   fanAppearance: DEFAULT_FAN_APPEARANCE,
   triangleGrip: DEFAULT_TRIANGLE_GRIP,
-  propArtwork: DEFAULT_PROP_LOOK,
   primaryPropColors: null,
   blockedStartPlacements: [],
   blockedStartPlacementsByGridMode: {},
@@ -714,12 +726,9 @@ class SettingsState {
   }
 
   async updateSettings(newSettings: Partial<AppSettings>): Promise<void> {
-    // A version belongs to the pick: a write that brings a new prop into the
-    // hands and names no version goes back to Version 1. Loads and remote
-    // applies never come through here, so a restored V2 setup stays V2.
-    newSettings = withPickVersion(
+    newSettings = normalizePropPatch(
       settingsState,
-      normalizePropPatch(settingsState, newSettings)
+      withoutRetiredKeys(newSettings)
     );
     const oldBackgroundType = settingsState.backgroundType;
     const newBackgroundType = newSettings.backgroundType;

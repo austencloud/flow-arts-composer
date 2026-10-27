@@ -62,6 +62,15 @@ function getUserId(): string {
   return user.uid;
 }
 
+/**
+ * The rules let only a signed-in account read `videos`, so a signed-out
+ * visitor can see none: an empty list is the true answer for them, not a
+ * failed load (ISS-031: every anonymous /sequence view threw here).
+ */
+function getSignedInUserId(): string | null {
+  return getAuthSync().currentUser?.uid ?? null;
+}
+
 function getUserInfo(): {
   uid: string;
   displayName?: string;
@@ -741,7 +750,8 @@ export async function getVideosForSequence(
 ): Promise<CollaborativeVideo[]> {
   try {
     const firestore = await readFirestore();
-    const userId = getUserId();
+    const userId = getSignedInUserId();
+    if (!userId) return [];
     const collectionRef = collection(firestore, VIDEOS_COLLECTION);
 
     // Firestore rules are not result filters. Each query proves one access
@@ -797,7 +807,8 @@ export async function getVideosForTunnel(
 ): Promise<CollaborativeVideo[]> {
   try {
     const firestore = await readFirestore();
-    const userId = getUserId();
+    const userId = getSignedInUserId();
+    if (!userId) return [];
     const collectionRef = collection(firestore, VIDEOS_COLLECTION);
     const associationKey = `tunnel:${tunnelId}`;
 

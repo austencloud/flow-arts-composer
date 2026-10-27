@@ -1,5 +1,7 @@
 # Prop versions for hosts with their own prop
 
+> Superseded 2026-10-27: Austen removed prop versions; one look per prop.
+
 Approved by Austen on 2026-10-07 in conversation. Follows
 `2026-10-06-prop-versions-design.md`, whose "Known limit" this closes.
 

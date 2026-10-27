@@ -38,16 +38,8 @@
     centeredOrphan,
     sectionFillLayout,
   } from "./section-fill-layout";
-  import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
-  import {
-    hasModelSprite,
-    normalizePropLook,
-    propLookCredit,
-    propLookOptions,
-  } from "#lib/shared/pictograph/prop/domain/prop-look.js";
   import type { CompositionRecipe } from "#lib/shared/pictograph/prop/domain/prop-composition-recipes.js";
   import PropChiralityRow from "./PropChiralityRow.svelte";
-  import PropLookPicker from "./PropLookPicker.svelte";
   import FanStyleOptionsCore from "./FanStyleOptionsCore.svelte";
   import {
     fanBuildPreviewOptions,
@@ -94,8 +86,6 @@
     fanAppearance,
     onFanAppearanceChange,
     isUnlocked = () => true,
-    propLook,
-    onPropLookChange,
     recipeOverrides,
     colors,
     triangleGrip,
@@ -106,7 +96,7 @@
     selectedPropType: PropType | null;
     color?: "blue" | "red" | (string & {});
     title?: string;
-    onSelect: (propType: PropType, look?: PropLook) => void;
+    onSelect: (propType: PropType) => void;
     variant?: "panel" | "inline";
     /**
      * Flat mode: drop the section labels and pack every prop into one dense
@@ -168,9 +158,6 @@
     fanAppearance: FanAppearance;
     onFanAppearanceChange: (appearance: FanAppearance) => void;
     isUnlocked?: (prop: PropType) => boolean;
-    propLook?: PropLook;
-    /** Enables artwork choices; the host owns their persistence. */
-    onPropLookChange?: (look: PropLook) => void;
     recipeOverrides?: Partial<Record<PropType, CompositionRecipe>>;
     colors?: ViewerCustomColorPair | null;
     triangleGrip?: TriangleGrip;
@@ -309,8 +296,7 @@
   type Drill =
     | { kind: "family"; base: PropType }
     | { kind: "fan-look"; prop: PropType; fromChip?: boolean }
-    | { kind: "details"; prop: PropType }
-    | { kind: "prop-look" };
+    | { kind: "details"; prop: PropType };
   let drill = $state<Drill | null>(null);
   let rootEl = $state<HTMLDivElement | null>(null);
 
@@ -327,9 +313,7 @@
         ? `family:${drill.base}`
         : drill.kind === "fan-look"
           ? "fan-look"
-          : drill.kind === "details"
-            ? `details:${drill.prop}`
-            : "prop-look"
+          : `details:${drill.prop}`
   );
   const drillTitle = $derived(
     drill === null
@@ -340,11 +324,9 @@
           })
         : drill.kind === "fan-look"
           ? t("settings_fan_look")
-          : drill.kind === "details"
-            ? t("settings_prop_details", {
-                prop: localizedPropName(drill.prop),
-              })
-            : t("settings_prop_version")
+          : t("settings_prop_details", {
+              prop: localizedPropName(drill.prop),
+            })
   );
 
   async function openDrill(next: Drill): Promise<void> {
@@ -370,10 +352,10 @@
           ? previous.fromChip
             ? '[data-testid="fan-look-chip"]'
             : rootSelector(previous.prop)
-          : previous?.kind === "details"
+          : previous
             ? rootSelector(previous.prop)
-            : '[data-testid="prop-look-chip"]';
-    rootEl?.querySelector<HTMLElement>(selector)?.focus();
+            : null;
+    if (selector) rootEl?.querySelector<HTMLElement>(selector)?.focus();
   }
 
   // How much room the drilled view may claim in a `fill` host: a zero-width
@@ -557,32 +539,14 @@
   });
 
   const DRILL_GAP = 10;
-  /**
-   * A family's styles, each in every version it has: a style with a captured
-   * model sprite gets a V1 tile and a V2 tile, so one view holds every
-   * variation and a pick sets the prop and version together. V1 tiles come
-   * first so the V2 row reads as the same set again.
-   */
-  type FamilyTile = { style: PropType; prop: PropType; look?: PropLook };
+  /** A family's styles, each once, wearing the picked size. */
+  type FamilyTile = { style: PropType; prop: PropType };
   const familyTiles = $derived.by((): FamilyTile[] => {
     if (drill?.kind !== "family") return [];
-    const choices = familyChoices(drill.base).map((style) => ({
+    return familyChoices(drill.base).map((style) => ({
       style,
       prop: sizedStyle(style),
     }));
-    const withLooks =
-      onPropLookChange !== undefined
-        ? choices.filter((choice) => hasModelSprite(choice.prop))
-        : [];
-    if (withLooks.length === 0) return choices;
-    return [
-      ...choices.map((choice) =>
-        withLooks.includes(choice)
-          ? { ...choice, look: "pictograph" as const }
-          : choice
-      ),
-      ...withLooks.map((choice) => ({ ...choice, look: "model" as const })),
-    ];
   });
 
   // The picked style when it belongs to the open family. The family's page
@@ -698,7 +662,6 @@
   // current prop stops being a fan) returns to the grid on its own.
   $effect(() => {
     if (drill?.kind === "fan-look" && !showFanLook) drill = null;
-    if (drill?.kind === "prop-look" && !showPropLook) drill = null;
     if (drill?.kind === "family" && !allBases.includes(drill.base)) {
       drill = null;
     }
@@ -716,35 +679,6 @@
     drill?.kind === "details" || drill?.kind === "fan-look"
       ? drill.prop
       : selectedPropType
-  );
-
-  // Fans own their richer build / frame / cover contract. The global artwork
-  // setting only appears for a selected prop with a captured 3D sprite.
-  const showPropLook = $derived(
-    showAppearance &&
-      detailProp !== null &&
-      onPropLookChange !== undefined &&
-      hasModelSprite(detailProp)
-  );
-  // A style picked from a family's look tiles already carries its look, so
-  // its details keep to what the tiles cannot show (size, chirality).
-  const detailLookFromTiles = $derived(
-    drill?.kind === "details" &&
-      familyChoices(getBasePropType(drill.prop)).length > 1
-  );
-  const currentPropLook = $derived(normalizePropLook(propLook));
-  const selectedPropLookOption = $derived(
-    selectedPropType === null
-      ? undefined
-      : propLookOptions(selectedPropType).find(
-          (option) => option.id === (propLook ?? "pictograph")
-        )
-  );
-
-  const selectedVersionName = $derived(
-    t("settings_prop_version_n", {
-      version: selectedPropLookOption?.id === "model" ? 2 : 1,
-    })
   );
 
   // The triangle's grip is a look on top of the tile, like the fan build. It
@@ -784,8 +718,7 @@
   );
   // Looks traced from another maker's product link back to that maker from
   // the rail heading; the narrow rail shows the short name. The fan look page
-  // credits the build in use; a details or version page credits the version
-  // in use (Version 2 buugeng is a Flow DNA flowgeng).
+  // credits the build in use.
   const RAIL_CREDIT_SHORT_NAMES: Partial<Record<FanBuild, string>> = {
     "flat-grip": "Forged",
     star: "Renegade",
@@ -798,28 +731,19 @@
       const short = fanLook ? RAIL_CREDIT_SHORT_NAMES[fanLook.id] : undefined;
       return credit && short ? { ...credit, short } : undefined;
     }
-    if (drill?.kind === "details" || drill?.kind === "prop-look") {
-      const prop = drill.kind === "details" ? drill.prop : selectedPropType;
-      if (prop === null || !showPropLook) return undefined;
-      const credit = propLookCredit(prop, currentPropLook);
-      return credit ? { ...credit, short: credit.originator } : undefined;
-    }
     return undefined;
   });
 
   // Track which locked prop (if any) is showing its inline earn tip.
   let lockedTipFor = $state<PropType | null>(null);
 
-  // A tile that already carries a look has nothing left to ask about it.
-  function opensDetails(prop: PropType, lookChosen: boolean): boolean {
+  // A pick opens its details only when there is something left to choose.
+  function opensDetails(prop: PropType): boolean {
     return (
       showAppearance &&
       (isFanPropType(prop) ||
         hasBigVariant(prop) ||
         isTrianglePropType(prop) ||
-        (!lookChosen &&
-          onPropLookChange !== undefined &&
-          hasModelSprite(prop)) ||
         (chirality !== undefined && isBuugengFamilyProp(prop)))
     );
   }
@@ -837,13 +761,10 @@
     );
   }
 
-  function selectProp(prop: PropType, look?: PropLook): void {
-    // Scoped hosts can save the type and artwork as one undoable choice.
-    if (look === undefined) onSelect(prop);
-    else onSelect(prop, look);
-    if (look !== undefined) onPropLookChange?.(look);
+  function selectProp(prop: PropType): void {
+    onSelect(prop);
     if (drill?.kind === "family" && familyPageHolds(prop)) return;
-    if (!opensDetails(prop, look !== undefined)) return;
+    if (!opensDetails(prop)) return;
     void openDrill(
       isFanPropType(prop)
         ? { kind: "fan-look", prop }
@@ -855,14 +776,14 @@
    * Central click router for all tiles: an unlocked prop is selected, a
    * locked one toggles its inline earn tip and never calls onSelect.
    */
-  function handleTileClick(prop: PropType, look?: PropLook) {
+  function handleTileClick(prop: PropType) {
     if (
       (prop === PropType.HAND && includeBareHands) ||
       accessMode === "educational" ||
       isUnlocked(prop)
     ) {
       lockedTipFor = null;
-      selectProp(prop, look);
+      selectProp(prop);
       return;
     }
     lockedTipFor = lockedTipFor === prop ? null : prop;
@@ -949,28 +870,6 @@
       <i class="fas fa-chevron-right look-caret" aria-hidden="true"></i>
     </button>
   {/snippet}
-  {#snippet propLookControl()}
-    <button
-      type="button"
-      class="look-chip"
-      data-testid="prop-look-chip"
-      aria-label={t("settings_change_prop_look", {
-        look: selectedVersionName,
-      })}
-      onclick={() => void openDrill({ kind: "prop-look" })}
-    >
-      {#if selectedPropLookOption}
-        <img
-          class="look-thumb"
-          src={selectedPropLookOption.image}
-          alt=""
-          draggable="false"
-        />
-      {/if}
-      <span class="look-name">{selectedVersionName}</span>
-      <i class="fas fa-chevron-right look-caret" aria-hidden="true"></i>
-    </button>
-  {/snippet}
   {#if layout === "rail"}
     <header class="rail-toolbar">
       {#if drill !== null}
@@ -1015,7 +914,6 @@
         {#if showSize}{@render sizeControl()}{/if}
         {#if showGrip}{@render gripControl()}{/if}
         {#if showFanLook}{@render fanControl()}{/if}
-        {#if showPropLook}{@render propLookControl()}{/if}
       {/if}
       <div class="rail-actions">{@render actions?.()}</div>
     </header>
@@ -1026,26 +924,15 @@
     </header>
   {/if}
 
-  {#snippet tile(prop: PropType, placement?: string, look?: PropLook)}
+  {#snippet tile(prop: PropType, placement?: string)}
     <!--
       Each tile is wrapped in a relative-positioned container so the lock glyph
       and earn-tip can be positioned over / below the button. The click is
       always routed through handleTileClick (via PropTypeButton's onSelect
-      prop).
-
-      A tile that names no version draws Version 1 unless it is the selected
-      prop, which shows the current version. Otherwise one V2 pick would
-      repaint every other tile that has a capture. Size is a setting on a
-      prop, so the single tile of a prop whose Big twin is selected is the
-      selected prop too: Big Chicken at V2 lights the Chicken tile at V2.
+      prop). Size is a setting on a prop, so the single tile of a prop whose
+      Big twin is selected is the selected prop too.
     -->
-    {@const label =
-      look === undefined
-        ? localizedPropName(prop)
-        : t("settings_prop_version_tile", {
-            prop: localizedPropName(prop),
-            version: look === "model" ? 2 : 1,
-          })}
+    {@const label = localizedPropName(prop)}
     <div
       class="tile-wrapper"
       style={placement}
@@ -1054,18 +941,11 @@
       <PropGridButton
         propType={prop}
         {label}
-        actionLabel={look === undefined
-          ? undefined
-          : t("settings_select_prop_type", { prop: label })}
-        selected={look === undefined
-          ? isSameProp(selectedPropType, prop)
-          : selectedPropType === prop && currentPropLook === look}
+        selected={isSameProp(selectedPropType, prop)}
         {color}
-        buttonProps={{ "data-prop-tile": prop, "data-prop-look": look }}
-        onSelect={() => handleTileClick(prop, look)}
+        buttonProps={{ "data-prop-tile": prop }}
+        onSelect={() => handleTileClick(prop)}
         fanAppearance={normalizedFanAppearance}
-        propLook={look ??
-          (isSameProp(prop, selectedPropType) ? propLook : "pictograph")}
         triangleGrip={currentGrip}
         {recipeOverrides}
         {colors}
@@ -1111,7 +991,6 @@
         onSelect={() => void openDrill({ kind: "family", base })}
         {color}
         fanAppearance={normalizedFanAppearance}
-        propLook={selectedBase === base ? propLook : "pictograph"}
         triangleGrip={currentGrip}
         {recipeOverrides}
         {colors}
@@ -1151,7 +1030,6 @@
           class="drill-view"
           class:fill={fillHeight > 0}
           class:fan-look-drill={drill.kind === "fan-look"}
-          class:prop-look-drill={drill.kind === "prop-look"}
           style:height={fillHeight > 0 ? `${fillHeight}px` : undefined}
           aria-label={drillTitle}
           data-escape-shortcut-local
@@ -1205,32 +1083,16 @@
                   {@render gripControl()}
                 </div>
               {/if}
-              {#if showPropLook && onPropLookChange && !detailLookFromTiles}
-                <PropLookPicker
-                  propType={drill.prop}
-                  value={propLook}
-                  onchange={onPropLookChange}
-                  fill={fillHeight > 0}
-                />
-              {/if}
               {#if chirality && isBuugengFamilyProp(drill.prop)}
                 <PropChiralityRow
                   propType={drill.prop}
                   hands={chirality.hands}
                   partner={chirality.partner}
                   {colors}
-                  {propLook}
                   onChange={chirality.onChange}
                 />
               {/if}
             </div>
-          {:else if drill.kind === "prop-look" && selectedPropType !== null && onPropLookChange}
-            <PropLookPicker
-              propType={selectedPropType}
-              value={propLook}
-              onchange={onPropLookChange}
-              fill={fillHeight > 0}
-            />
           {:else}
             {#if layout !== "rail"}
               <!-- The picked style's settings, above the tiles that pick it.
@@ -1255,7 +1117,6 @@
                       hands={chirality.hands}
                       partner={chirality.partner}
                       {colors}
-                      {propLook}
                       onChange={chirality.onChange}
                     />
                   </div>
@@ -1287,15 +1148,14 @@
               onpointercancel={endRailPointer}
               onclickcapture={handleRailClick}
             >
-              {#each familyTiles as entry, index (`${entry.style}:${entry.look ?? ""}`)}
+              {#each familyTiles as entry, index (entry.style)}
                 {@render tile(
                   entry.prop,
                   drillLayout === null
                     ? drillOrphans.get(index)
                     : index === drillLayout.orphanIndex
                       ? columnStart(drillLayout.orphanStart)
-                      : undefined,
-                  entry.look
+                      : undefined
                 )}
               {/each}
             </div>
@@ -1523,13 +1383,6 @@
   .rail
     .drill-view:not(.fan-look-drill)
     > .detail-options
-    > :global(.prop-look-picker) {
-    flex: 0 0 min(22rem, 80cqw);
-    align-self: center;
-  }
-  .rail
-    .drill-view:not(.fan-look-drill)
-    > .detail-options
     > :global(.chirality-row) {
     flex: 0 0 24.5rem;
     align-self: center;
@@ -1545,10 +1398,6 @@
     flex: 1 1 0;
     height: auto;
     min-height: 0;
-  }
-  .rail .drill-view.prop-look-drill > :global(.prop-look-picker) {
-    align-self: center;
-    width: min(32rem, 100%);
   }
   .rail .drill-tiles.flat-grid {
     height: 100%;
@@ -1941,13 +1790,6 @@
     overscroll-behavior-y: contain;
     scrollbar-width: thin;
     padding: 0 2px 8px;
-  }
-
-  /* The version cards fill the room the settings below them leave, but never
-     shrink under their own height: on a short sheet they once slid beneath the
-     buugeng pair picker. The options scroll instead. */
-  .detail-options.fill > :global(.prop-look-picker) {
-    min-height: auto;
   }
 
   .detail-options.fill > :global(.fan-style-options) {

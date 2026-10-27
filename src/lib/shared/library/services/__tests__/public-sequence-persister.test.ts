@@ -23,6 +23,7 @@ vi.mock("firebase/firestore", () => ({
     path: segments.join("/"),
   })),
   getDocs: (...args: unknown[]) => mocks.getDocs(...args),
+  getDoc: (ref: unknown) => mocks.getDoc(ref),
   query: vi.fn((ref: unknown) => ref),
   where: vi.fn(() => ({ constraint: true })),
   serverTimestamp: vi.fn(() => SERVER_TS),
@@ -51,6 +52,8 @@ import {
   readExistingPublicOwnedFields,
   refreshPublicSequenceOwnerProfile,
   publishPublicSequence,
+  checkPublicSequencePublishable,
+  findPublishConflict,
   PublicDuplicateError,
   PublicSequenceOwnedElsewhereError,
 } from "../public-sequence-persister";
@@ -249,6 +252,23 @@ describe("unpublishPublicSequence", () => {
       ([ref]) => (ref as { path: string }).path
     );
     expect(deleted).toEqual(["publicSequences/seq-loser"]);
+  });
+
+  it("leaves another owner's mirror alone when scoped to an owner", async () => {
+    // A private library copy keeps the original post's id. Its save must not
+    // try to delete the publisher's mirror (the rules refuse, and it isn't ours).
+    primeDocs({
+      "publicSequences/seq-1": {
+        exists: true,
+        data: { ownerId: "publisher", contentHash: "h".repeat(64) },
+      },
+    });
+
+    const result = await unpublishPublicSequence(FIRESTORE, "seq-1", "copier");
+
+    expect(result.status).toBe("owned-elsewhere");
+    expect(mocks.deleteDoc).not.toHaveBeenCalled();
+    expect(mocks.updateDoc).not.toHaveBeenCalled();
   });
 
   it("treats an absent mirror as success with no writes", async () => {
@@ -736,5 +756,91 @@ describe("publishPublicSequence: another owner's gallery sequence", () => {
       publishPublicSequence(FIRESTORE, normalized, {} as never, "copier")
     ).rejects.toBeInstanceOf(PublicSequenceOwnedElsewhereError);
     expect(mocks.setDoc).not.toHaveBeenCalled();
+  });
+});
+
+describe("publish conflicts before any write (ISS-023/024)", () => {
+  const hash = "b".repeat(64);
+  const identity = {
+    sequenceId: "seq-1",
+    contentHash: hash,
+    contentHashVersion: 3,
+  };
+  const claimPath = `publicSequenceHashes/${publicSequenceClaimId(3, hash)}`;
+
+  it("reads a mirror with no owner field as someone else's", () => {
+    // The rules compare a missing ownerId against the caller and deny, so the
+    // commit would fail as a bare permission error (Sky, 2026-10-20 and 10-24).
+    const conflict = findPublishConflict(
+      "seq-1",
+      "sky",
+      { word: "HHHH" },
+      undefined
+    );
+    expect(conflict).toBeInstanceOf(PublicSequenceOwnedElsewhereError);
+    expect(conflict?.claimedWord).toBe("HHHH");
+  });
+
+  it("calls the caller's own earlier post of the same content a duplicate", () => {
+    const conflict = findPublishConflict(
+      "seq-new",
+      "sky",
+      undefined,
+      {
+        sequenceId: "seq-old",
+        ownerId: "sky",
+      },
+      "HHHH"
+    );
+    expect(conflict).toBeInstanceOf(PublicDuplicateError);
+    expect(conflict).not.toBeInstanceOf(PublicSequenceOwnedElsewhereError);
+    expect(conflict).toMatchObject({
+      claimedByOwnerId: "sky",
+      claimedWord: "HHHH",
+    });
+  });
+
+  it("lets the caller republish their own post", () => {
+    expect(
+      findPublishConflict(
+        "seq-1",
+        "sky",
+        { ownerId: "sky" },
+        { sequenceId: "seq-1", ownerId: "sky" }
+      )
+    ).toBeNull();
+  });
+
+  it("finds the duplicate with plain reads and names the winning word", async () => {
+    primeDocs({
+      [claimPath]: {
+        exists: true,
+        data: { sequenceId: "seq-old", ownerId: "other" },
+      },
+      "publicSequences/seq-old": {
+        exists: true,
+        data: { ownerId: "other", word: "HHHH" },
+      },
+    });
+
+    const conflict = await checkPublicSequencePublishable(
+      FIRESTORE,
+      identity,
+      "sky"
+    );
+
+    expect(conflict).toMatchObject({
+      claimedBySequenceId: "seq-old",
+      claimedByOwnerId: "other",
+      claimedWord: "HHHH",
+    });
+    expect(mocks.setDoc).not.toHaveBeenCalled();
+  });
+
+  it("returns null for content nobody has posted", async () => {
+    primeDocs({});
+    await expect(
+      checkPublicSequencePublishable(FIRESTORE, identity, "sky")
+    ).resolves.toBeNull();
   });
 });

@@ -403,7 +403,6 @@ export class LayerCompositor {
         handPointVisibility: options.handPointVisibility,
         showNonRadialPoints: options.showNonRadialPoints,
         fanAppearance: options.fanAppearance,
-        propLook: options.propLook,
         triangleGrip: options.triangleGrip,
         leftPropType: options.leftPropType,
         rightPropType: options.rightPropType,

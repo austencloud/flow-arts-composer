@@ -131,28 +131,17 @@ describe("TunnelSnapshotSchema", () => {
     expect(TunnelSnapshotSchema.safeParse(validSnapshot).success).toBe(true);
   });
 
-  it("keeps the creator's prop version through parsing", () => {
-    // zod strips unknown keys, so a saved Version 2 would vanish on load
-    // unless the field is declared.
-    const saved = {
-      ...validSnapshot,
-      props: { ...validSnapshot.props, propLook: "model" },
-    };
-    expect(TunnelSnapshotSchema.parse(saved).props.propLook).toBe("model");
-  });
-
-  it("accepts a snapshot saved before prop versions", () => {
-    const parsed = TunnelSnapshotSchema.safeParse(validSnapshot);
-    expect(parsed.success).toBe(true);
-    if (parsed.success) expect(parsed.data.props.propLook).toBeUndefined();
-  });
-
-  it("rejects a prop version that is not a known look", () => {
-    const bad = {
-      ...validSnapshot,
-      props: { ...validSnapshot.props, propLook: "hologram" },
-    };
-    expect(TunnelSnapshotSchema.safeParse(bad).success).toBe(false);
+  it("accepts a tunnel saved with a retired prop version and drops it", () => {
+    // Prop versions were removed on 2026-10-27; zod strips the old key.
+    for (const propLook of ["model", "pictograph", "hologram"]) {
+      const parsed = TunnelSnapshotSchema.safeParse({
+        ...validSnapshot,
+        props: { ...validSnapshot.props, propLook },
+      });
+      expect(parsed.success, propLook).toBe(true);
+      if (parsed.success)
+        expect(parsed.data.props).not.toHaveProperty("propLook");
+    }
   });
 
   it("rejects a snapshot missing the tunnel block", () => {
@@ -257,7 +246,6 @@ describe("captureTunnelSnapshot", () => {
       catDogMode: true,
       leftBuugengFlipped: true,
       rightBuugengFlipped: false,
-      propLook: "pictograph",
     });
   });
 
@@ -325,22 +313,6 @@ describe("captureTunnelSnapshot catDogMode", () => {
   });
 });
 
-describe("captureTunnelSnapshot propLook", () => {
-  it("writes the version the settings hold", () => {
-    const snap = captureTunnelSnapshot(
-      fakeDepsWithSettings({ propLook: "model" })
-    );
-    expect(snap.props.propLook).toBe("model");
-  });
-
-  it("writes Version 1 when the settings hold no version", () => {
-    const snap = captureTunnelSnapshot(
-      fakeDepsWithSettings({ propLook: undefined })
-    );
-    expect(snap.props.propLook).toBe("pictograph");
-  });
-});
-
 describe("applyTunnelSnapshot catDogMode", () => {
   function depsWithUpdateSpy(): {
     deps: SnapshotDeps;
@@ -389,7 +361,7 @@ describe("applyTunnelSnapshot catDogMode", () => {
   });
 });
 
-describe("applyTunnelSnapshot propLook", () => {
+describe("applyTunnelSnapshot retired prop version", () => {
   function applyWithSpy(snap: TunnelSnapshot) {
     const updateSettings = vi.fn();
     const deps = fakeDeps();
@@ -406,21 +378,17 @@ describe("applyTunnelSnapshot propLook", () => {
     return updateSettings;
   }
 
-  it("restores a saved Version 2", () => {
+  it("writes no prop version for a tunnel saved with one", () => {
     const snap = TunnelSnapshotSchema.parse({
       ...validSnapshot,
       props: { ...validSnapshot.props, propLook: "model" },
     });
-    expect(applyWithSpy(snap)).toHaveBeenCalledWith(
-      expect.objectContaining({ propLook: "model" })
-    );
-  });
-
-  it("restores a snapshot saved before prop versions as Version 1", () => {
-    const snap = TunnelSnapshotSchema.parse(validSnapshot);
-    expect(applyWithSpy(snap)).toHaveBeenCalledWith(
-      expect.objectContaining({ propLook: "pictograph" })
-    );
+    const updateSettings = applyWithSpy(snap);
+    expect(updateSettings).toHaveBeenCalled();
+    for (const [patch] of updateSettings.mock.calls) {
+      expect(patch).not.toHaveProperty("propLook");
+      expect(patch).not.toHaveProperty("propArtwork");
+    }
   });
 });
 
@@ -445,7 +413,6 @@ describe("applyTunnelSnapshot", () => {
       catDogMode: false,
       leftBuugengFlipped: false,
       rightBuugengFlipped: false,
-      propLook: "pictograph",
       bpm: 60,
       playbackMode: "continuous",
       effects: { activeEffect: "none" },
@@ -528,9 +495,6 @@ describe("applyTunnelSnapshot", () => {
         get rightBuugengFlipped() {
           return store.rightBuugengFlipped;
         },
-        get propLook() {
-          return store.propLook;
-        },
         updateSettings: vi.fn((p) => Object.assign(store, p)),
       },
       animationSettings: {
@@ -584,7 +548,6 @@ describe("applyTunnelSnapshot", () => {
         catDogMode: true,
         leftBuugengFlipped: true,
         rightBuugengFlipped: false,
-        propLook: "model",
       },
       trailRender: { mode: "trail" } as never,
     };

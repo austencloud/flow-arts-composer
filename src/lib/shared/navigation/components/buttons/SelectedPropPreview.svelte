@@ -23,7 +23,6 @@
   colors={settings.primaryPropColors}
   appearanceOverride={{
     fanAppearance: settings.fanAppearance,
-    propLook: settings.propArtwork,
     triangleGrip: settings.triangleGrip,
   }}
   leftFlipped={isBuugengFamilyProp(left) && settings.leftBuugengFlipped}

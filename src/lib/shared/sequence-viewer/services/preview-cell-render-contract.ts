@@ -54,15 +54,11 @@ export function resolvePreviewCellRender(
   const rightFlipped = isHandPath
     ? false
     : (options.rightBuugengFlipped ?? false);
-  // Cards draw the look the canvas beside them draws. Hands have no captured
-  // model, so a hand path drops it for the same reason it drops the fan build.
-  const propLook = isHandPath ? undefined : options.propLook;
-  // The triangle grip rides with the look, and a hand path has no triangle.
+  // A hand path has no triangle, so it drops the grip as it drops the fan build.
   const triangleGrip = isHandPath ? undefined : options.triangleGrip;
 
   const prepareOptions: PrepareOptions = {
     fanAppearance: isHandPath ? undefined : options.fanAppearance,
-    propLook,
     triangleGrip,
     themeMode: isDark ? "dark" : "light",
     leftPropType: effectiveLeftProp,
@@ -81,7 +77,6 @@ export function resolvePreviewCellRender(
 
   const renderOptions: LayerRenderOptions = {
     fanAppearance: isHandPath ? undefined : options.fanAppearance,
-    propLook,
     triangleGrip,
     primaryPropColors: options.primaryPropColors,
     size: options.size,

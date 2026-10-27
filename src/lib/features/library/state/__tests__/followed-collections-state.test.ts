@@ -11,6 +11,8 @@ const mocks = vi.hoisted(() => ({
 	toastError: vi.fn(),
 	toastWarning: vi.fn(),
 	snapshotCb: null as ((refs: FollowedCollectionRef[]) => void) | null,
+	errorCb: null as ((error: Error) => void) | null,
+	reportErrorTelemetry: vi.fn(),
 	previewReadOnly: false,
 	authState: {
 		user: { uid: "me" },
@@ -18,8 +20,12 @@ const mocks = vi.hoisted(() => ({
 	},
 	unsubscribes: [] as Array<ReturnType<typeof vi.fn>>,
 	subscribeToFollowedCollections: vi.fn(
-		(cb: (refs: FollowedCollectionRef[]) => void) => {
+		(
+			cb: (refs: FollowedCollectionRef[]) => void,
+			onError: (error: Error) => void,
+		) => {
 			mocks.snapshotCb = cb;
+			mocks.errorCb = onError;
 			const unsubscribe = vi.fn();
 			mocks.unsubscribes.push(unsubscribe);
 			return Promise.resolve(unsubscribe);
@@ -43,6 +49,9 @@ vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
 }));
 vi.mock("#lib/shared/debug/state/user-preview-state.svelte.js", () => ({
 	isPreviewReadOnly: () => mocks.previewReadOnly,
+}));
+vi.mock("#lib/shared/error/services/error-telemetry-reporter.js", () => ({
+	reportErrorTelemetry: mocks.reportErrorTelemetry,
 }));
 vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({
 	toast: {
@@ -87,6 +96,7 @@ beforeEach(() => {
 	localStorage.clear();
 	vi.clearAllMocks();
 	mocks.snapshotCb = null;
+	mocks.errorCb = null;
 	mocks.unsubscribes = [];
 	mocks.previewReadOnly = false;
 	mocks.authState.effectiveUserId = "me";
@@ -105,6 +115,45 @@ describe("followedCollectionsState", () => {
 
 		expect(mocks.subscribeToFollowedCollections).toHaveBeenCalledTimes(2);
 		expect(mocks.unsubscribes[0]).toHaveBeenCalledOnce();
+	});
+
+	it("ends quietly when the account changed under its listener", async () => {
+		followedCollectionsState.ensureStarted();
+		await Promise.resolve();
+
+		// A guest signed into an existing account: Firestore re-runs the old
+		// uid's listener under the new token and the rules deny it.
+		mocks.authState.effectiveUserId = "existing-account";
+		mocks.errorCb?.(
+			Object.assign(new Error("Missing or insufficient permissions."), {
+				code: "permission-denied",
+			}),
+		);
+
+		expect(mocks.errorCb).toBeTypeOf("function");
+		expect(followedCollectionsState.loading).toBe(false);
+		expect(mocks.reportErrorTelemetry).not.toHaveBeenCalled();
+	});
+
+	it("reports a listener failure for the signed-in account", async () => {
+		followedCollectionsState.ensureStarted();
+		await Promise.resolve();
+
+		mocks.errorCb?.(
+			Object.assign(new Error("Missing or insufficient permissions."), {
+				code: "permission-denied",
+			}),
+		);
+
+		expect(followedCollectionsState.loading).toBe(false);
+		expect(mocks.reportErrorTelemetry).toHaveBeenCalledOnce();
+		expect(mocks.reportErrorTelemetry.mock.calls[0]?.[0]).toMatchObject({
+			context: {
+				module: "firestore",
+				action: "listen",
+				additionalData: { path: "users/me/followedCollections" },
+			},
+		});
 	});
 
 	it("blocks follow writes while previewing another user", async () => {

@@ -61,11 +61,14 @@ afterEach(() => {
 describe("ThumbnailRenderOrchestrator failure boundaries", () => {
   it("returns a typed timeout failure with bounded stage context", async () => {
     const timeout = new ThumbnailRenderTimeoutError(15_000);
+    // Busy when the card enqueues, idle by the time it waits to retry.
+    let stats = { queued: 2, active: 3 };
     const queue = {
       enqueue: vi.fn(async () => {
+        stats = { queued: 0, active: 0 };
         throw timeout;
       }),
-      getStats: () => ({ queued: 2, active: 3 }),
+      getStats: () => stats,
       cancel: () => {},
     };
     const metrics = new ThumbnailMetricsCollector();
@@ -90,6 +93,8 @@ describe("ThumbnailRenderOrchestrator failure boundaries", () => {
       error: timeout,
     });
     expect(statuses.at(-1)).toBe("error");
+    // One retry after the queue drained, then the failure stands.
+    expect(queue.enqueue).toHaveBeenCalledTimes(2);
     expect(metrics.getCompletedRequests()[0]).toMatchObject({
       errorCode: "THUMBNAIL_RENDER_TIMEOUT",
       lastStage: "queue_wait",
@@ -104,6 +109,88 @@ describe("ThumbnailRenderOrchestrator failure boundaries", () => {
       timeout,
       expect.any(Object)
     );
+  });
+
+  // ISS-010: on a starved main thread a render can stop reporting progress for
+  // 15 s and time out. The tile used to stay blank; it now renders once more
+  // when the queue is idle.
+  it("recovers a timed-out tile by rendering again once the queue drains", async () => {
+    const timeout = new ThumbnailRenderTimeoutError(15_000);
+    let busy = true;
+    const queue = {
+      enqueue: vi
+        .fn()
+        .mockImplementationOnce(async () => {
+          throw timeout;
+        })
+        .mockImplementationOnce(
+          async (
+            _id: string,
+            execute: (s: AbortSignal, r: () => void) => unknown
+          ) => execute(new AbortController().signal, () => {})
+        ),
+      getStats: () =>
+        busy ? { queued: 1, active: 2 } : { queued: 0, active: 0 },
+      cancel: () => {},
+    };
+    const renderer = {
+      render: vi.fn(async () => ({
+        blob: new Blob(["png"]),
+        qrConsistent: true,
+      })),
+    };
+    vi.stubGlobal("URL", { ...URL, createObjectURL: () => "blob:recovered" });
+    const statuses: string[] = [];
+    const orchestrator = new ThumbnailRenderOrchestrator(
+      queue as never,
+      renderer as never,
+      { get: vi.fn(), set: vi.fn(async () => {}) } as never
+    );
+
+    const pending = orchestrator.getThumbnail({
+      sequence,
+      input,
+      skipCache: true,
+      onStatusChange: (status) => statuses.push(status.state),
+    });
+    await vi.waitFor(() => expect(queue.enqueue).toHaveBeenCalledTimes(1));
+    // Still waiting for the queue: no retry yet, and no error mark on the tile.
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    expect(queue.enqueue).toHaveBeenCalledTimes(1);
+    busy = false;
+
+    await expect(pending).resolves.toMatchObject({ url: "blob:recovered" });
+    expect(statuses).not.toContain("error");
+    expect(statuses.at(-1)).toBe("complete");
+  });
+
+  it("does not retry a render that was cancelled while waiting", async () => {
+    const timeout = new ThumbnailRenderTimeoutError(15_000);
+    const queue = {
+      enqueue: vi.fn(async () => {
+        throw timeout;
+      }),
+      getStats: () => ({ queued: 1, active: 1 }),
+      cancel: () => {},
+    };
+    const controller = new AbortController();
+    const orchestrator = new ThumbnailRenderOrchestrator(
+      queue as never,
+      { render: vi.fn() } as never,
+      { get: vi.fn(), set: vi.fn() } as never
+    );
+
+    const pending = orchestrator.getThumbnail({
+      sequence,
+      input,
+      skipCache: true,
+      signal: controller.signal,
+    });
+    await vi.waitFor(() => expect(queue.enqueue).toHaveBeenCalledTimes(1));
+    controller.abort();
+
+    await expect(pending).rejects.toMatchObject({ name: "AbortError" });
+    expect(queue.enqueue).toHaveBeenCalledTimes(1);
   });
 
   it("keeps cancellation out of exception capture", async () => {
@@ -371,15 +458,26 @@ describe("ThumbnailRenderOrchestrator failure boundaries", () => {
       onStatusChange: (status) => statuses.push(status.state),
     });
 
+    // The first timeout earns one retry once the queue is idle; that retry
+    // stalls on the same render and times out too.
+    await vi.advanceTimersByTimeAsync(15_000);
     await vi.advanceTimersByTimeAsync(15_000);
     const result = await request;
 
+    const settled = [
+      "queued",
+      "rendering",
+      "queued",
+      "queued",
+      "rendering",
+      "error",
+    ];
     expect(result.error).toBeInstanceOf(ThumbnailRenderTimeoutError);
-    expect(statuses).toEqual(["queued", "rendering", "error"]);
+    expect(statuses).toEqual(settled);
 
     emitProgress?.({ current: 2, total: 2, stage: "finalizing" });
     await Promise.resolve();
-    expect(statuses).toEqual(["queued", "rendering", "error"]);
+    expect(statuses).toEqual(settled);
 
     resolveRender({
       blob: new Blob(["late"], { type: "image/webp" }),
@@ -388,7 +486,7 @@ describe("ThumbnailRenderOrchestrator failure boundaries", () => {
     await Promise.resolve();
     await Promise.resolve();
 
-    expect(statuses).toEqual(["queued", "rendering", "error"]);
+    expect(statuses).toEqual(settled);
     expect(createObjectURL).not.toHaveBeenCalled();
     expect(localCache.set).not.toHaveBeenCalled();
     expect(cloudThumbnailCache.upload).not.toHaveBeenCalled();

@@ -28,7 +28,7 @@ export interface FireTipTrackerConfig {
   rightPropType?: string;
   /**
    * Render keys of the sprites the canvas is painting (`fan__lotus`,
-   * `club__model`). When present they resolve the tip table instead of the
+   * `triangle__side`). When present they resolve the tip table instead of the
    * notation type, so effects attach to the artwork on screen.
    */
   leftPropRenderKey?: string;

@@ -1,5 +1,7 @@
 # Prop versions: V1 and V2 instead of a global 3D look
 
+> Superseded 2026-10-27: Austen removed prop versions; one look per prop.
+
 Approved by Austen on 2026-10-06 in conversation.
 
 ## Problem

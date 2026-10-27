@@ -16,6 +16,8 @@ import {
 import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
 import { getPersonalMuseumDocPath } from "#lib/shared/library/data/firestore-paths.js";
 import { getEffectiveUserId } from "#lib/shared/auth/state/auth-state.svelte.js";
+import { isPermissionDeniedError } from "#lib/shared/auth/utils/is-permission-denied-error.js";
+import { reportErrorTelemetry } from "#lib/shared/error/services/error-telemetry-reporter.js";
 import {
   emptyPersonalMuseumDoc,
   type PersonalMuseumDoc,
@@ -101,11 +103,30 @@ export async function subscribePersonalMuseum(
   const uid = requireUserId();
   const firestore = await getFirestoreInstance();
   const ref = doc(firestore, getPersonalMuseumDocPath(uid));
-  return onSnapshot(ref, (snap) => {
-    onChange(
-      snap.exists()
-        ? (snap.data() as PersonalMuseumDoc)
-        : emptyPersonalMuseumDoc(uid, Date.now()),
-    );
-  });
+  return onSnapshot(
+    ref,
+    (snap) => {
+      onChange(
+        snap.exists()
+          ? (snap.data() as PersonalMuseumDoc)
+          : emptyPersonalMuseumDoc(uid, Date.now()),
+      );
+    },
+    (error) => {
+      // A denial after the account changed belongs to the departed uid; the
+      // page resubscribes for the new one. Anything else is reported, and the
+      // last snapshot stays on screen either way.
+      if (isPermissionDeniedError(error) && getEffectiveUserId() !== uid) return;
+      void reportErrorTelemetry({
+        message: "Personal museum listener failed",
+        severity: "warning",
+        context: {
+          module: "firestore",
+          action: "listen",
+          additionalData: { path: getPersonalMuseumDocPath(uid) },
+        },
+        error,
+      });
+    },
+  );
 }

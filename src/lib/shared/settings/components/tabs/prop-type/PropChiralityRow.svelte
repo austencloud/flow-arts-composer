@@ -27,7 +27,6 @@
     resolveViewerCustomColorPair,
     type ViewerCustomColorPair,
   } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
-  import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import BuugengPairPreview from "./BuugengPairPreview.svelte";
@@ -52,7 +51,6 @@
     partner,
     onChange,
     colors,
-    propLook,
   }: {
     /** The buugeng-family prop the tiles draw. */
     propType: PropType;
@@ -62,7 +60,6 @@
     partner?: PropChiralityHandState;
     onChange: (hand: ChiralityHand, flipped: boolean) => void;
     colors?: ViewerCustomColorPair | null;
-    propLook?: PropLook;
   } = $props();
 
   const palette = $derived(resolveViewerCustomColorPair(colors));
@@ -150,7 +147,6 @@
         <span class="pair-tile">
           <BuugengPairPreview
             {propType}
-            {propLook}
             leftFlipped={pair.leftFlipped}
             rightFlipped={pair.rightFlipped}
             leftColor={palette.left}
@@ -193,7 +189,6 @@
             <span class="pair-tile">
               <BuugengPairPreview
                 {propType}
-                {propLook}
                 leftFlipped={state.hand === "left" ? flipped : partnerFlipped}
                 rightFlipped={state.hand === "right" ? flipped : partnerFlipped}
                 leftColor={palette.left}

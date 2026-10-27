@@ -105,6 +105,29 @@ describe("one editor never conflicts with itself", () => {
     expect(persister.getDraftStatus("construct").status).toBe("saved");
   });
 
+  // Production 2026-10-24 to 10-27: a reload onto the Create front door, then
+  // a pick of Generate. Switching modes saves the mode being left, which this
+  // page never opened, so its editor was empty and had never read the head.
+  it("leaves a stored draft alone when a mode it never opened saves empty", async () => {
+    await new SequencePersister().saveCurrentState(workspace("before reload"));
+
+    const afterReload = new SequencePersister();
+    await expect(
+      afterReload.saveCurrentState({
+        currentSequence: null,
+        selectedStartPlacement: null,
+        hasStartPlacement: false,
+        activeBuildSection: "construct",
+      })
+    ).resolves.toBeUndefined();
+    expect(afterReload.getDraftStatus("construct").status).not.toBe("conflict");
+
+    // The stored draft survives, and opening the mode later restores it.
+    const loaded = await afterReload.loadCurrentState("construct");
+    expect(loaded?.currentSequence?.name).toBe("before reload");
+    expect(afterReload.getDraftStatus("construct").status).toBe("saved");
+  });
+
   it("still flags a head written by a different session", async () => {
     const persister = new SequencePersister();
     await persister.saveCurrentState(workspace("mine"));

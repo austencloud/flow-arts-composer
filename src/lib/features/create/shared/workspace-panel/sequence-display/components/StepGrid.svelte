@@ -11,7 +11,6 @@
   import type { TimeSignatureKey } from "#lib/shared/foundation/domain/models/time-signature.js";
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
-  import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type { ConstructOptionAudition } from "#lib/shared/create/domain/construct-option-audition.js";
   import type {
@@ -97,7 +96,6 @@
     leftPropTypeOverride = undefined,
     rightPropTypeOverride = undefined,
     fanAppearanceOverride = undefined,
-    propLookOverride = undefined,
     leftBuugengFlippedOverride = undefined,
     rightBuugengFlippedOverride = undefined,
     leftColorOverride = undefined,
@@ -163,7 +161,6 @@
     /** Override prop type for right hand. Used by demos/previews to bypass global settings. */
     rightPropTypeOverride?: PropType;
     fanAppearanceOverride?: FanAppearance;
-    propLookOverride?: PropLook;
     leftBuugengFlippedOverride?: boolean;
     rightBuugengFlippedOverride?: boolean;
     /** Display-only color for the blue-hand prop and arrow. */
@@ -869,7 +866,6 @@
       {leftPropTypeOverride}
       {rightPropTypeOverride}
       {fanAppearanceOverride}
-      {propLookOverride}
       {leftBuugengFlippedOverride}
       {rightBuugengFlippedOverride}
       {leftColorOverride}

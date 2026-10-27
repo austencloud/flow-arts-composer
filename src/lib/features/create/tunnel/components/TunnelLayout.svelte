@@ -13,7 +13,6 @@
   import type { GenerationAnimationTarget } from "#lib/features/create/generate/state/generate-actions.svelte.js";
   import { createSequenceState } from "#lib/features/create/shared/state/sequence-state-orchestrator.svelte.js";
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
-  import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
   import TunnelArtSettings from "#lib/shared/sequence-viewer/components/art-settings/TunnelArtSettings.svelte";
   import TunnelArtView from "#lib/shared/sequence-viewer/tunnel/TunnelArtView.svelte";
   import type { GeneratorTunnelSourceProvenance } from "#lib/shared/sequence-viewer/tunnel/tunnel-composition.js";
@@ -279,8 +278,8 @@
     );
   }
 
-  function changeProp(prop: PropType, look?: PropLook): void {
-    creator.presentation.setPropType(prop, look);
+  function changeProp(prop: PropType): void {
+    creator.presentation.setPropType(prop);
   }
 
   function changeCastCount(count: number): void {
@@ -329,8 +328,6 @@
         leftPropType={creator.presentation.addressedPropType}
         handProps={creator.presentation.handProps}
         onPropChange={changeProp}
-        propLook={creator.presentation.propLook}
-        onPropLookChange={creator.presentation.setPropLook}
         propChirality={creator.presentation.chirality}
         animationSettingsState={creator.presentation.animationSettings}
         exporting={false}
@@ -498,7 +495,6 @@
             {rightPropType}
             leftBuugengFlipped={creator.presentation.leftBuugengFlipped}
             rightBuugengFlipped={creator.presentation.rightBuugengFlipped}
-            propLook={creator.presentation.propLook}
             playing={creator.presentation.playing}
             onPlayingChange={creator.presentation.setPlaying}
             animationSettingsState={creator.presentation.animationSettings}

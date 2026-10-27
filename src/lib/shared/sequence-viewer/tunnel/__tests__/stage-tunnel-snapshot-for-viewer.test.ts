@@ -79,7 +79,6 @@ describe("stageTunnelSnapshotForViewer", () => {
     });
     expect(dependencies.settings.updateSettings).toHaveBeenCalledWith({
       ...snapshot.props,
-      propArtwork: "pictograph",
     });
     expect(dependencies.saveViewState).toHaveBeenCalledWith(snapshot.tunnel);
     expect(dependencies.ensureCustomColorPreference).toHaveBeenCalledOnce();
@@ -117,13 +116,12 @@ describe("stageTunnelSnapshotForViewer", () => {
 
     expect(dependencies.settings.updateSettings).toHaveBeenCalledWith({
       ...snapshotWithCatDog.props,
-      propArtwork: "pictograph",
     });
   });
 
-  // The viewer draws the tunnel from the account's version, so a saved
-  // Version 2 has to be written there or the viewer would show Version 1.
-  function stagedPropArtwork(propLook?: "model" | "pictograph"): unknown {
+  // Prop versions were removed on 2026-10-27. A tunnel saved with one must
+  // not write it into the viewer's settings.
+  it("stages no prop version for a tunnel saved with one", () => {
     const updateSettings = vi.fn();
     const dependencies = {
       visibility: {
@@ -142,18 +140,12 @@ describe("stageTunnelSnapshotForViewer", () => {
     stageTunnelSnapshotForViewer(
       {
         ...snapshot,
-        props: { ...snapshot.props, ...(propLook ? { propLook } : {}) },
+        props: { ...snapshot.props, propLook: "model" },
       } as unknown as TunnelSnapshot,
       dependencies
     );
-    return updateSettings.mock.calls[0]![0].propArtwork;
-  }
-
-  it("stages a saved Version 2 as the viewer's prop version", () => {
-    expect(stagedPropArtwork("model")).toBe("model");
-  });
-
-  it("stages a tunnel saved before prop versions as Version 1", () => {
-    expect(stagedPropArtwork()).toBe("pictograph");
+    const patch = updateSettings.mock.calls[0]![0];
+    expect(patch).not.toHaveProperty("propArtwork");
+    expect(patch).not.toHaveProperty("propLook");
   });
 });

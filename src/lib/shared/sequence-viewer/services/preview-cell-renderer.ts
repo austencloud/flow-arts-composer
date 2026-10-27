@@ -1,5 +1,4 @@
 import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
-import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
 import type { TriangleGrip } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
 /**
  * Preview Cell Renderer
@@ -20,10 +19,7 @@ import type { BrowseViewMode } from "#lib/shared/browse/domain/browse-view-mode.
  */
 export interface PreviewCellRenderOptions {
   fanAppearance?: FanAppearance;
-  /** Artwork for non-fan props: the look the canvas beside the card draws.
-   *  Omitted means notation artwork, which printed and scanned cards keep. */
-  propLook?: PropLook;
-  /** Where the hand holds a triangle, in either look. Omitted means the
+  /** Where the hand holds a triangle. Omitted means the
    *  corner grip, which printed and scanned cards keep. */
   triangleGrip?: TriangleGrip;
   primaryPropColors?: { left: string; right: string } | null;
@@ -104,10 +100,6 @@ export interface PreviewCellRenderOptions {
    *  the scan-card path sets this; gallery/compose/crossfade leave it false so
    *  they go straight to local render with no added network latency. */
   probeCloud?: boolean;
-
-  /** Require a cloud/IndexedDB hit and never rasterize on this device. QR scan
-   *  cards set this because QR creation verifies every canonical asset first. */
-  cloudOnly?: boolean;
 
   /** When true, after a local render upload the WebP to the shared cloud store
    *  under the canonical hash. ONLY render-at-publish sets this (it renders with
@@ -238,14 +230,9 @@ export async function renderCell(
     }
   }
 
-  if (options.cloudOnly) {
-    throw new Error(
-      cloudHash
-        ? `Canonical pictograph ${cloudHash} is unavailable`
-        : "Canonical pictograph hash is unavailable"
-    );
-  }
-
+  // A scan card whose cell the cloud lacks still draws it here. The QR warm
+  // covers only the prop the code was minted for, and a link can carry another
+  // (ACCT: minted staff, printed bp=1 big staff), so a miss is not a broken card.
   const { data, prepareOptions, renderOptions, visibility } =
     resolvePreviewCellRender(pictographData, isDark, options);
   const prepared = await pictographPreparer.prepareSingle(data, prepareOptions);

@@ -7,7 +7,7 @@
 
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { type User } from "firebase/auth";
-import { getFirestoreInstance } from "../firebase";
+import { getAuthInstance, getFirestoreInstance } from "../firebase";
 import { getProviderIds } from "./profile-picture-manager";
 import {
   generateUniqueUsername,
@@ -17,6 +17,8 @@ import {
 import { formatUsername } from "../domain/models/username-validation";
 import { isActivityStale } from "../domain/activity-refresh";
 import { retryAuthenticatedFirestoreOperation } from "./retry-authenticated-firestore-operation";
+import { runProfileSyncExclusively } from "./profile-sync-lock";
+import { isPermissionDeniedError } from "../utils/is-permission-denied-error";
 import { rememberAccountProfile } from "../state/account-profile-snapshot";
 
 import { generateAvatarUrl } from "#lib/shared/foundation/utils/avatar-generator.js";
@@ -81,6 +83,17 @@ export class UserDocumentManager {
    * Updates an existing document only where it differs from the latest auth data.
    */
   async createOrUpdateUserDocument(user: User): Promise<void> {
+    return runProfileSyncExclusively(user.uid, async () => {
+      // Queued behind a sync that ran while the account changed: this account
+      // is no longer the one Firestore authenticates, so every owner-scoped
+      // read below would be denied.
+      const auth = await getAuthInstance();
+      if (auth.currentUser && auth.currentUser.uid !== user.uid) return;
+      await this.syncUserDocument(user);
+    });
+  }
+
+  private async syncUserDocument(user: User): Promise<void> {
     let currentStep: ProfileSyncStep = {
       action: "initialize-profile-sync",
       message: "Could not initialize the signed-in user's profile sync",
@@ -436,6 +449,16 @@ export class UserDocumentManager {
         }
       }
     } catch (error) {
+      // The account changed while this sync ran (a guest signed into an
+      // existing account, or another tab replaced the identity). Its denial
+      // belongs to the departed uid; the new account runs its own sync.
+      const auth = await getAuthInstance();
+      if (
+        isPermissionDeniedError(error) &&
+        auth.currentUser?.uid !== user.uid
+      ) {
+        return;
+      }
       const reportedError =
         error instanceof Error ? error : new Error(String(error));
       await reportErrorTelemetry({

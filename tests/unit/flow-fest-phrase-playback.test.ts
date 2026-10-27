@@ -7,6 +7,9 @@ import {
 import {
   createPhrasePlayback,
   phraseFacingHint,
+  phraseFacingYaw,
+  phraseRootTurn,
+  phraseRootYaw,
   phrasePassBeats,
   rigFacingForYaw,
 } from "../../src/lib/features/flow-fest-sim/domain/flow-fest-phrase-playback";
@@ -47,7 +50,17 @@ describe("phrase playback", () => {
         expect(a.isMoving).toBe(false);
         expect(a.turnRequest).toBeNull();
         expect(b.position).toEqual(a.position);
-        expect(b.facingAngle).toBe(a.facingAngle);
+        // A rest holds the root; a planted phrase turns it, grid and all,
+        // on the score's clock, as its body response holds the feet against.
+        if (phrase.rest) expect(b.facingAngle).toBe(a.facingAngle);
+        else
+          for (const frame of [a, b])
+            expect(
+              Math.cos(
+                frame.facingAngle -
+                  rigFacingForYaw(phraseRootYaw(phrase, frame.scoreBeat))
+              )
+            ).toBeCloseTo(1, 9);
         const walkedBefore = phrases.slice(0, index).some((p) => p.path);
         if (walkedBefore)
           expect(b.gaitTimingSample?.planId).toBe(a.gaitTimingSample?.planId);
@@ -197,17 +210,44 @@ describe("phrase playback", () => {
             expect(Math.abs(wrapAngle(h - previous))).toBeLessThan(0.1);
           previous = h;
         }
-        // And matches the frame's facing against the root while it stands.
+        // And matches the body against the frame's root while it stands, on
+        // the score's clock the track runs on.
         if (phrase.mode === "planted" && !phrase.rest) {
           const frame = playback.sample(phrase.startBeat + pass / 2);
+          const body = phraseFacingYaw(phrase, from, frame.scoreBeat);
           expect(
             Math.cos(
-              hint(pass / 2)! -
-                wrapAngle(rigFacingForYaw(frame.facingYaw) - frame.facingAngle)
+              hint(frame.scoreBeat)! -
+                wrapAngle(rigFacingForYaw(body) - frame.facingAngle)
             )
           ).toBeCloseTo(1, 6);
         }
       }
     }
+  });
+  it("turns a planted phrase's root with the body over its first pass, and tells the body response", () => {
+    let turned = 0;
+    for (const playback of playbacks) {
+      for (const phrase of playback.performer.phrases) {
+        const turn = phraseRootTurn(phrase);
+        const pass = phrasePassBeats(phrase);
+        const start = rigFacingForYaw(phrase.facingStart);
+        expect(phraseRootTurn(phrase, true)(pass / 2)).toBe(0);
+        expect(turn(0)).toBeCloseTo(0, 9);
+        if (phrase.mode !== "planted" || phrase.rest) {
+          expect(turn(pass)).toBe(0);
+          continue;
+        }
+        const whole = wrapAngle(rigFacingForYaw(phrase.facingEnd) - start);
+        expect(Math.cos(turn(pass) - whole)).toBeCloseTo(1, 9);
+        if (Math.abs(whole) > 0.2) turned++;
+        // The frame's root is the track's root turn on from the start.
+        const frame = playback.sample(phrase.startBeat + pass / 3);
+        expect(
+          Math.cos(frame.facingAngle - start - turn(frame.scoreBeat))
+        ).toBeCloseTo(1, 9);
+      }
+    }
+    expect(turned).toBeGreaterThan(5);
   });
 });

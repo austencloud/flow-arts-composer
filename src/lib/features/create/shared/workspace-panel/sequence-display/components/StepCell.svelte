@@ -21,7 +21,6 @@
   import type { BuildModeId } from "#lib/shared/foundation/ui/ui-types.js";
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
-  import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
   import { onMount } from "svelte";
   import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import PictographContextMenuHost from "#lib/shared/pictograph/shared/components/context-menu/PictographContextMenuHost.svelte";
@@ -58,7 +57,6 @@
     leftPropTypeOverride = undefined,
     rightPropTypeOverride = undefined,
     fanAppearanceOverride = undefined,
-    propLookOverride = undefined,
     leftBuugengFlippedOverride = undefined,
     rightBuugengFlippedOverride = undefined,
     leftColorOverride = undefined,
@@ -99,7 +97,6 @@
     /** Override prop type for right hand. Bypasses global settings for demo/preview rendering. */
     rightPropTypeOverride?: PropType;
     fanAppearanceOverride?: FanAppearance;
-    propLookOverride?: PropLook;
     leftBuugengFlippedOverride?: boolean;
     rightBuugengFlippedOverride?: boolean;
     /** Display-only color for the blue-hand prop and arrow. */
@@ -449,7 +446,6 @@
     {leftPropTypeOverride}
     {rightPropTypeOverride}
     {fanAppearanceOverride}
-    {propLookOverride}
     {leftBuugengFlippedOverride}
     {rightBuugengFlippedOverride}
     {leftColorOverride}

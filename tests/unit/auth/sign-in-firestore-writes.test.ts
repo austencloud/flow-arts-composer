@@ -101,6 +101,8 @@ vi.mock("firebase/firestore", () => ({
 
 vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: vi.fn(async () => ({ name: "firestore" })),
+  // The sync skips an account Auth no longer reports; this one stays current.
+  getAuthInstance: vi.fn(async () => ({ currentUser: h.authState.user })),
 }));
 
 vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({

@@ -30,18 +30,11 @@ import {
   normalizeFanAppearance,
   scaleFanAppearanceForBigFan,
 } from "../domain/fan-appearance";
-import {
-  modelSpriteArtwork,
-  parseModelRenderKey,
-  propArtworkStem,
-  resolvePropRenderKey,
-} from "../domain/prop-look";
+import { propArtworkStem, resolvePropRenderKey } from "../domain/prop-look";
 import {
   parseTriangleRenderKey,
   triangleAppearanceArtwork,
 } from "../domain/triangle-appearance";
-import { orientModelSpriteToTips } from "#lib/shared/animation-engine/services/svg-generator.js";
-import { applyModelSpriteColor } from "../domain/prop-preview-color";
 import { getMotionColor } from "../../../utils/svg-color-utils";
 import { getAnimationVisibilityManager } from "../../../animation-engine/state/animation-visibility-state.svelte";
 import { assetFetch } from "../../../net/asset-fetch";
@@ -130,10 +123,8 @@ export class PropSvgLoader {
 
       const renderKey = resolvePropRenderKey(propType, {
         fanAppearance: options?.fanAppearance,
-        propLook: options?.propLook,
         triangleGrip: options?.triangleGrip,
       });
-      const modelRenderKey = parseModelRenderKey(renderKey);
       // The triangle's side grip, drawn the way the animator draws it. Its
       // glyph shares pictograph/triangle.svg's box, so placements hold.
       const triangleRenderKey = parseTriangleRenderKey(renderKey);
@@ -146,13 +137,12 @@ export class PropSvgLoader {
       //   /images/props/animated/    → animation canvas (wider viewBox for rotation)
       //   /images/props/pictograph/  → pictograph grid rendering
       const side = color === HandSide.RIGHT ? "right" : "left";
-      const path = modelRenderKey
-        ? modelSpriteArtwork(modelRenderKey.propType, side)
-        : (fanArtworkPath ??
-          triangleArtworkPath ??
-          (useGridVersion
-            ? `/images/props/animated/${propArtworkStem(propType, side)}.svg`
-            : `/images/props/pictograph/${propArtworkStem(propType, side)}.svg`));
+      const path =
+        fanArtworkPath ??
+        triangleArtworkPath ??
+        (useGridVersion
+          ? `/images/props/animated/${propArtworkStem(propType, side)}.svg`
+          : `/images/props/pictograph/${propArtworkStem(propType, side)}.svg`);
       // The prop type is part of the key because fan and bigfan share one
       // appearance file and differ only in the sizing applied below.
       const transformedCacheKey = `${path}:${propType}:${color}:${themeMode}`;
@@ -191,23 +181,15 @@ export class PropSvgLoader {
       // takes the hand color; the generic recolor would paint the wicks too.
       // Those materials were tuned on a dark pictograph; a light one (the
       // choreo sheet, its PDF) gets the paper palette so the fan still reads.
-      // A model capture is a raster, so it takes the hand color through a
-      // chroma filter rather than the fill rewrite; PropSvg and the card
-      // raster replace that tint with the user's color the same way.
-      const coloredSvgText = modelRenderKey
-        ? applyModelSpriteColor(
-            orientModelSpriteToTips(modelRenderKey.propType, originalSvgText),
-            getMotionColor(color, themeMode)
+      const coloredSvgText = fanArtworkPath
+        ? applyFanPaperContrast(
+            applyFanFrameColor(
+              originalSvgText,
+              getMotionColor(color, themeMode)
+            ),
+            themeMode
           )
-        : fanArtworkPath
-          ? applyFanPaperContrast(
-              applyFanFrameColor(
-                originalSvgText,
-                getMotionColor(color, themeMode)
-              ),
-              themeMode
-            )
-          : this.applyColorToSvg(originalSvgText, color, themeMode, propType);
+        : this.applyColorToSvg(originalSvgText, color, themeMode, propType);
       const sizedSvgText =
         fanArtworkPath && propType.toLowerCase() === "bigfan"
           ? scaleFanAppearanceForBigFan(coloredSvgText)
@@ -226,8 +208,7 @@ export class PropSvgLoader {
       // torch treatment grows the box around the flame, and Big Fan sizing
       // swaps the box entirely; the shared path-keyed metadata cache would
       // hand back the pre-treatment box.
-      const treated =
-        contrastAdjustedSvgText !== coloredSvgText || modelRenderKey !== null;
+      const treated = contrastAdjustedSvgText !== coloredSvgText;
       const { viewBox, center } = treated
         ? this.parsePropSvg(contrastAdjustedSvgText)
         : this.parsePropSvgCached(originalSvgText, path);

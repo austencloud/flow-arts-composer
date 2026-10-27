@@ -33,12 +33,8 @@
   import { getVisibilityStateManager } from "#lib/shared/pictograph/shared/state/visibility-state.svelte.js";
   import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
   import { tryGetViewerVisibilityContext } from "../context/viewer-visibility-context";
-  import {
-    getScanCardCloudPolicy,
-    scanCellsAreCloudOnly,
-  } from "#lib/shared/sequence-viewer/scan-card-cloud-context.js";
+  import { getScanCardCloudProbe } from "#lib/shared/sequence-viewer/scan-card-cloud-context.js";
   import { CANONICAL_CARD_VISIBILITY } from "#lib/shared/render/services/cloud-cell-key.js";
-  import { normalizePropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
   import { normalizeTriangleGrip } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
   import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import type { HandLabeling } from "#lib/shared/video-collaboration/domain/hand-labeling.js";
@@ -577,8 +573,7 @@
   );
 
   // True only under a scan-origin /sequence route — cells use the cloud cache.
-  const scanCloudPolicy = getScanCardCloudPolicy();
-  const cloudProbeEnabled = scanCloudPolicy.probeCloud;
+  const cloudProbeEnabled = getScanCardCloudProbe();
   // Cells draw the sequence's own join (the viewer layers its join choice
   // over the sequence it hands down).
   const cardSequence = $derived(sequence);
@@ -854,18 +849,9 @@
       getSettings().rightBuugengFlipped ??
       false
   );
-  // Cells draw the prop look the canvas beside the card draws. A scanned card
-  // stands for the printed one, whose shared cloud cells are notation artwork,
-  // so it drops the look exactly as it drops the fan build.
-  const cardPropLook = $derived(
-    cloudProbeEnabled
-      ? undefined
-      : normalizePropLook(
-          visibilityOverrides?.propLook ?? getSettings().propArtwork
-        )
-  );
-  // The triangle grip follows the look: cells draw the grip the canvas draws,
-  // and a scanned card keeps the printed card's corner glyph.
+  // Cells draw the triangle grip the canvas beside the card draws. A scanned
+  // card stands for the printed one, so it keeps the printed card's corner
+  // glyph exactly as it drops the fan build.
   const cardTriangleGrip = $derived(
     cloudProbeEnabled
       ? undefined
@@ -907,7 +893,6 @@
       fanAppearance: cloudProbeEnabled
         ? undefined
         : (visibilityOverrides?.fanAppearance ?? getSettings().fanAppearance),
-      propLook: cardPropLook,
       triangleGrip: cardTriangleGrip,
       primaryPropColors: effectivePrimaryPropColors,
       // A scan represents the printed card, not the scanner's personal export
@@ -927,13 +912,6 @@
       // context), so a cold scanner downloads pre-rendered cells instead of
       // rasterizing. Unset everywhere else => local render path, no extra latency.
       probeCloud: cloudProbeEnabled,
-      // Only the printed two-hand card is published. Hand-path records and a
-      // card with one hand hidden render locally instead of failing.
-      cloudOnly: scanCellsAreCloudOnly(scanCloudPolicy, {
-        handPathMode,
-        showLeftMotion,
-        showRightMotion,
-      }),
     };
   }
 
@@ -976,7 +954,6 @@
       fanAppearance: cloudProbeEnabled
         ? undefined
         : (visibilityOverrides?.fanAppearance ?? getSettings().fanAppearance),
-      propLook: cardPropLook,
       triangleGrip: cardTriangleGrip,
       primaryPropColors: effectivePrimaryPropColors,
       sequence: cardSequence,

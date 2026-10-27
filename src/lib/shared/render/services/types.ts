@@ -1,5 +1,4 @@
 import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
-import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
 import type { TriangleGrip } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
 import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import type { SequenceData } from "../../foundation/domain/models/sequence-data";
@@ -74,8 +73,6 @@ export type LayerType = "base" | "tka" | "reversal" | "beat";
  */
 export interface LayerRenderOptions {
   fanAppearance?: FanAppearance;
-  /** Non-fan prop artwork the pictograph was prepared with. Base-layer identity. */
-  propLook?: PropLook;
   /** Triangle grip the pictograph was prepared with. Base-layer identity. */
   triangleGrip?: TriangleGrip;
   primaryPropColors?: { left: string; right: string } | null;

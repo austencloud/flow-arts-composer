@@ -43,6 +43,7 @@
   import {
     createPhrasePlayback,
     phraseFacingHint,
+    phraseRootTurn,
     phrasePassBeats,
     type PhrasePlaybackFrame,
   } from "#lib/features/flow-fest-sim/domain/flow-fest-phrase-playback.js";
@@ -64,6 +65,12 @@
     /** A short name over each performer's head, by performer id. */
     names: Record<string, string>;
     probe?: boolean;
+    /** The bodies step, turn and duck round their props; `?response=off`
+     *  plays the clips as captured, for comparison. */
+    bodyResponse?: boolean;
+    /** "legacy" (the default here) keeps the stock grip for frame rate;
+     *  `?contact=full` closes the hands onto the staffs every frame. */
+    contactMode?: "prop-authoritative" | "legacy";
     onLoading?: (progress: JamLoadProgress) => void;
     onPrepared?: () => void;
     onFrames?: (frames: readonly PhrasePlaybackFrame[]) => void;
@@ -130,6 +137,24 @@
       facingHints.set(frame.phrase, hints);
     }
     return hints[frame.scoreBeat >= phrasePassBeats(frame.phrase) ? 1 : 0];
+  }
+
+  // The root turn under the body response, paired with the hints: a planted
+  // phrase turns the whole performer over its first pass, then holds.
+  const rootTurns = new WeakMap<
+    ScheduledPhrase,
+    [(t: number) => number, (t: number) => number]
+  >();
+  function rootTurnFor(frame: PhrasePlaybackFrame): (t: number) => number {
+    let turns = rootTurns.get(frame.phrase);
+    if (!turns) {
+      turns = [
+        phraseRootTurn(frame.phrase),
+        phraseRootTurn(frame.phrase, true),
+      ];
+      rootTurns.set(frame.phrase, turns);
+    }
+    return turns[frame.scoreBeat >= phrasePassBeats(frame.phrase) ? 1 : 0];
   }
 
   const playbacks = $derived(
@@ -369,7 +394,7 @@
       sequence={props.sequenceFor(phrase.sequenceId)}
       effectId="fire"
       effectQualityTier="medium"
-      contactMode="legacy"
+      contactMode={props.contactMode ?? "legacy"}
       scoreBeat={frame.scoreBeat}
       playbackSpeed={(props.tempoBpm / 60) * frame.scoreRate}
       active={!phrase.rest}
@@ -379,8 +404,9 @@
       gaitTimingSample={frame.gaitTimingSample}
       terminalStepPlan={frame.terminalStepPlan}
       turnRequest={frame.turnRequest}
-      bodyResponse={true}
+      bodyResponse={props.bodyResponse ?? true}
       facingHint={facingHintFor(i, frame)}
+      rootTurn={rootTurnFor(frame)}
       onReady={() => piece(`performer:${performer.id}`)}
       onMotionReady={() => piece(`performer-motion:${performer.id}`)}
       onMotionError={(message) => {

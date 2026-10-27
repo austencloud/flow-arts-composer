@@ -117,13 +117,12 @@
   const displayInfo = $derived(getPropTypeDisplayInfo(propType));
 
   // The tile shows the prop the way the user has chosen to see it: the fan
-  // build, the 3D model capture, or the notation glyph. Settings load lazily;
+  // build, the triangle grip, or the notation glyph. Settings load lazily;
   // until they arrive the tile draws the plain glyph rather than guessing a
   // look and flashing to another one a moment later.
   const settingsReady = $derived(!useSavedOverrides || getSettings !== null);
   const lookAppearance = $derived(
     appearanceOverride ?? {
-      propLook: getSettings?.().propArtwork ?? null,
       fanAppearance: getSettings?.().fanAppearance ?? null,
       triangleGrip: getSettings?.().triangleGrip ?? null,
     }
@@ -342,15 +341,9 @@
           : mixedPair
             ? "translate(28, 42) scale(0.34)"
             : leftTransform}
-        filter={leftGlyph.prelit
-          ? `url(#${id}-left)`
-          : smallLeftFan
-            ? `url(#${id}-fan-coverage)`
-            : undefined}
+        filter={smallLeftFan ? `url(#${id}-fan-coverage)` : undefined}
       >
-        <g
-          transform={`rotate(${leftGlyph.rotation ?? 0}) scale(${leftFlipped ? -1 : 1}, 1)`}
-        >
+        <g transform={`scale(${leftFlipped ? -1 : 1}, 1)`}>
           {@render propImage(coloredLeft, false)}
         </g>
       </g>
@@ -362,15 +355,9 @@
           : mixedPair
             ? "translate(72, 58) scale(0.34)"
             : rightTransform}
-        filter={rightGlyph.prelit
-          ? `url(#${id}-right)`
-          : smallRightFan
-            ? `url(#${id}-fan-coverage)`
-            : undefined}
+        filter={smallRightFan ? `url(#${id}-fan-coverage)` : undefined}
       >
-        <g
-          transform={`rotate(${rightGlyph.rotation ?? 0}) scale(${rightFlipped ? -1 : 1}, 1)`}
-        >
+        <g transform={`scale(${rightFlipped ? -1 : 1}, 1)`}>
           {@render propImage(coloredRight, false)}
         </g>
       </g>
@@ -482,7 +469,7 @@
     mix-blend-mode: screen;
   }
 
-  /* Model captures are already lit red; a hue shift would ruin them. */
+  /* Fan build photos are already lit; a hue shift would ruin them. */
   .red-prop.prelit {
     filter: none;
   }

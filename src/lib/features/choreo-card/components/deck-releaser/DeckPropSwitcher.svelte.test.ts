@@ -61,9 +61,8 @@ describe("DeckPropSwitcher modal", () => {
     await expect.element(trigger).toHaveFocus();
   });
 
-  // Deck cards print on a path that draws only Version 1, so a family offers
-  // no Version 2 tile to pick (and none to leak into the account's prop).
-  it("offers no Version 2 tile in a family", async () => {
+  // Each prop has one look, so a family offers one tile per style.
+  it("offers no version tile in a family", async () => {
     await page.viewport(900, 900);
     render(DeckPropSwitcher);
 

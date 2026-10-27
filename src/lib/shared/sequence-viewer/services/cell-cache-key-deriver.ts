@@ -128,7 +128,6 @@ function mapToVisibility(
 
   return {
     fanAppearance: handsView ? undefined : options.fanAppearance,
-    propLook: handsView ? undefined : options.propLook,
     triangleGrip: handsView ? undefined : options.triangleGrip,
     primaryPropColors: options.primaryPropColors,
     showTKA: options.showTKA ?? true,

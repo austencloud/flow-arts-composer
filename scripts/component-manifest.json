@@ -26893,23 +26893,6 @@
       "hiddenMonster": false
     },
     {
-      "file": "lib/shared/settings/components/tabs/prop-type/PropLookPicker.svelte",
-      "total": 76,
-      "scriptLines": 41,
-      "templateLines": 20,
-      "styleLines": 15,
-      "stateCount": 0,
-      "derivedCount": 4,
-      "effectCount": 0,
-      "functionCount": 0,
-      "childComponents": 1,
-      "diseaseScore": 57,
-      "species": "logic",
-      "action": "ok",
-      "reason": "below the disease-score gate",
-      "hiddenMonster": false
-    },
-    {
       "file": "lib/shared/video-collaboration/components/CollaborativeVideoCard.svelte",
       "total": 286,
       "scriptLines": 43,

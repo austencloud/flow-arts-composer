@@ -18,7 +18,6 @@
   import type { ScrollState } from "../state/scroll-state.svelte";
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
-  import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
   import {
     calculateStepPosition,
     calculateStepWaveBand,
@@ -107,7 +106,6 @@
     leftPropTypeOverride = undefined,
     rightPropTypeOverride = undefined,
     fanAppearanceOverride = undefined,
-    propLookOverride = undefined,
     leftBuugengFlippedOverride = undefined,
     rightBuugengFlippedOverride = undefined,
     leftColorOverride = undefined,
@@ -157,7 +155,6 @@
     leftPropTypeOverride?: PropType;
     rightPropTypeOverride?: PropType;
     fanAppearanceOverride?: FanAppearance;
-    propLookOverride?: PropLook;
     leftBuugengFlippedOverride?: boolean;
     rightBuugengFlippedOverride?: boolean;
     leftColorOverride?: string;
@@ -929,7 +926,6 @@
                 {leftPropTypeOverride}
                 {rightPropTypeOverride}
                 {fanAppearanceOverride}
-                {propLookOverride}
                 {leftBuugengFlippedOverride}
                 {rightBuugengFlippedOverride}
                 {leftColorOverride}
@@ -1074,7 +1070,6 @@
                     {leftPropTypeOverride}
                     {rightPropTypeOverride}
                     {fanAppearanceOverride}
-                    {propLookOverride}
                     {leftBuugengFlippedOverride}
                     {rightBuugengFlippedOverride}
                     {leftColorOverride}
@@ -1141,7 +1136,6 @@
               {leftPropTypeOverride}
               {rightPropTypeOverride}
               {fanAppearanceOverride}
-              {propLookOverride}
               {leftBuugengFlippedOverride}
               {rightBuugengFlippedOverride}
               {leftColorOverride}
@@ -1214,7 +1208,6 @@
               {leftPropTypeOverride}
               {rightPropTypeOverride}
               {fanAppearanceOverride}
-              {propLookOverride}
               {leftBuugengFlippedOverride}
               {rightBuugengFlippedOverride}
               {leftColorOverride}

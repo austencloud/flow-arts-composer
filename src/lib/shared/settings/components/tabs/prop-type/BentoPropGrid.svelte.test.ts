@@ -2,12 +2,6 @@ import { render } from "vitest-browser-svelte";
 import { page, userEvent } from "vitest/browser";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
-import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
-import { normalizePropPatch } from "#lib/shared/settings/domain/prop-pair-rule.js";
-import {
-  withPickVersion,
-  type PickVersionFields,
-} from "#lib/shared/settings/domain/prop-version-rule.js";
 vi.mock("./BuugengPairPreview.svelte", async () => ({
   default: (await import("./__test-stubs__/BuugengPairPreviewStub.svelte"))
     .default,
@@ -70,12 +64,13 @@ describe("BentoPropGrid style drill-down", () => {
       .not.toBeInTheDocument();
 
     const torchOption = page.getByRole("button", {
-      name: "Select Torch V1 prop type",
+      name: "Select Torch prop type",
+      exact: true,
     });
     await torchOption.click();
 
     expect(onSelect).toHaveBeenCalledTimes(1);
-    expect(onSelect).toHaveBeenCalledWith(PropType.TORCH, "pictograph");
+    expect(onSelect).toHaveBeenCalledWith(PropType.TORCH);
 
     // Picking stays one level down so styles can be compared; Back returns
     // to the full grid with the family tile closed.
@@ -136,9 +131,9 @@ describe("BentoPropGrid style settings", () => {
       .toBeVisible();
 
     await page
-      .getByRole("button", { name: "Select Triad V2 prop type", exact: true })
+      .getByRole("button", { name: "Select Triad prop type", exact: true })
       .click();
-    expect(onSelect).toHaveBeenLastCalledWith(PropType.TRIAD, "model");
+    expect(onSelect).toHaveBeenLastCalledWith(PropType.TRIAD);
     // Past the page swap a details page would take.
     await new Promise((resolve) => setTimeout(resolve, 600));
     expect(openSection("Triad details")).toBeNull();
@@ -149,51 +144,16 @@ describe("BentoPropGrid style settings", () => {
 
     // The tiles follow the size, so a later pick keeps it.
     await rerender({ selectedPropType: PropType.BIGTRIAD });
-    const bigModel = page.getByRole("button", {
-      name: "Select Big Triad V2 prop type",
+    const big = page.getByRole("button", {
+      name: "Select Big Triad prop type",
       exact: true,
     });
-    await expect.element(bigModel).toBeVisible();
+    await expect.element(big).toBeVisible();
     await expect
       .element(styles.getByRole("button", { name: "Big", exact: true }))
       .toHaveAttribute("aria-pressed", "true");
-    await bigModel.click();
-    expect(onSelect).toHaveBeenLastCalledWith(PropType.BIGTRIAD, "model");
-  });
-
-  // A size twin is the same prop, so the global pick rule keeps the version a
-  // Version 2 pick chose. The host here writes the way SettingsState does:
-  // pair normalization, then the pick rule.
-  it("keeps Version 2 when the size changes under the global pick rule", async () => {
-    let held: PickVersionFields = {
-      leftPropType: PropType.TRIAD,
-      rightPropType: PropType.TRIAD,
-      propType: PropType.TRIAD,
-      catDogMode: false,
-      propArtwork: "pictograph",
-    };
-    const write = (patch: PickVersionFields) => {
-      held = { ...held, ...withPickVersion(held, normalizePropPatch(held, patch)) };
-    };
-    const { rerender } = render(BentoPropGrid, {
-      selectedPropType: PropType.TRIAD,
-      onSelect: (prop: PropType) => write({ propType: prop }),
-      propLook: held.propArtwork,
-      onPropLookChange: (look: PropLook) => write({ propArtwork: look }),
-      allowedProps: [PropType.TRIAD, PropType.TRIGENG, PropType.BIGTRIAD],
-    });
-
-    await page.getByRole("button", { name: "Choose Triad style" }).click();
-    await page
-      .getByRole("button", { name: "Select Triad V2 prop type", exact: true })
-      .click();
-    expect(held.propArtwork).toBe("model");
-
-    await rerender({ propLook: "model" });
-    const styles = page.getByRole("region", { name: "Triad styles" });
-    await styles.getByRole("button", { name: "Big", exact: true }).click();
-    expect(held.propType).toBe(PropType.BIGTRIAD);
-    expect(held.propArtwork).toBe("model");
+    await big.click();
+    expect(onSelect).toHaveBeenLastCalledWith(PropType.BIGTRIAD);
   });
 
   it("keeps a buugeng style's pair picker on the same page", async () => {
@@ -284,18 +244,19 @@ describe("BentoPropGrid colours on a drill", () => {
   });
 });
 
-describe("BentoPropGrid prop version", () => {
+describe("BentoPropGrid one look per prop", () => {
   beforeEach(async () => {
     await page.viewport(760, 800);
     document.body.style.margin = "0";
   });
 
-  async function openBuugengDetails(showPropLook?: boolean): Promise<void> {
+  // Austen removed the Version 1 / Version 2 choice on 2026-10-27. A style's
+  // page holds its size and colours, and no version.
+  it("offers no version on a style's page", async () => {
     render(BentoPropGrid, {
       selectedPropType: PropType.BUUGENG,
       onSelect: vi.fn(),
       allowedProps: [PropType.BUUGENG, PropType.BIGBUUGENG],
-      ...(showPropLook === undefined ? {} : { showPropLook }),
     });
     await page
       .getByRole("button", { name: "Select Buugeng prop type" })
@@ -303,25 +264,9 @@ describe("BentoPropGrid prop version", () => {
     await expect
       .element(page.getByRole("button", { name: "Big" }))
       .toBeVisible();
-  }
-
-  it("offers the Version 1 and 2 choice by default", async () => {
-    await openBuugengDetails();
+    expect(document.body.textContent).not.toMatch(/Version/);
     await expect
-      .element(page.getByRole("radio", { name: "Version 1" }))
-      .toBeVisible();
-    await expect
-      .element(page.getByRole("radio", { name: "Version 2" }))
-      .toBeVisible();
-  });
-
-  it("leaves it out when the host renders in 3D", async () => {
-    await openBuugengDetails(false);
-    await expect
-      .element(page.getByRole("radio", { name: "Version 2" }))
-      .not.toBeInTheDocument();
-    await expect
-      .element(page.getByRole("radio", { name: "Version 1" }))
+      .element(page.getByRole("button", { name: /V2/ }))
       .not.toBeInTheDocument();
   });
 });

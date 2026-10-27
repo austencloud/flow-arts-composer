@@ -102,7 +102,6 @@
     animationSettings: localAnimationSettings,
     initialLeftPropType: settingsService.settings.leftPropType ?? "staff",
     initialRightPropType: settingsService.settings.rightPropType ?? "staff",
-    initialPropLook: settingsService.settings.propArtwork,
     initialCatDogMode: settingsService.settings.catDogMode ?? false,
     initialLeftBuugengFlipped:
       settingsService.settings.leftBuugengFlipped ?? false,

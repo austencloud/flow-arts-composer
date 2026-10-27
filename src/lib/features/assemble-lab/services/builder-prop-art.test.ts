@@ -8,7 +8,6 @@ import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js"
 import { normalizeFanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
 import type { PropRenderData } from "#lib/shared/pictograph/prop/domain/models/prop-render-data.js";
 import { applyHandColorOverride } from "#lib/shared/pictograph/prop/domain/prop-preview-color.js";
-import { normalizePropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
 import { normalizeTriangleGrip } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
 import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import { getMotionColor } from "#lib/shared/utils/svg-color-utils.js";
@@ -65,12 +64,11 @@ describe("loadBuilderPropArt", () => {
       "fanAppearance",
       "leftPropType",
       "primaryPropColors",
-      "propArtwork",
       "triangleGrip",
     ]);
   });
 
-  it("draws the hand's own prop type in the pictographs' look", async () => {
+  it("draws the hand's own prop type with the pictographs' build and grip", async () => {
     loadPropSvg.mockResolvedValue(art());
     await loadBuilderPropArt(HandSide.RIGHT, {
       leftPropType: PropType.STAFF,
@@ -84,7 +82,6 @@ describe("loadBuilderPropArt", () => {
     });
     expect(useGridVersion).toBe(false);
     expect(options).toEqual({
-      propLook: normalizePropLook(undefined),
       fanAppearance: normalizeFanAppearance(undefined),
       triangleGrip: normalizeTriangleGrip(undefined),
     });

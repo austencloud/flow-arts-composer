@@ -17,8 +17,8 @@ vi.mock("#lib/shared/animation-engine/services/svg-generator.js", () => ({
 
 import { Canvas2DImageLoader } from "../canvas-2d-image-loader";
 
-describe("Canvas2DImageLoader custom-colored model sprites", () => {
-  it("picks each hand's capture by hand, not by how red its custom color is", async () => {
+describe("Canvas2DImageLoader custom-colored handed artwork", () => {
+  it("picks each hand's drawing by hand, not by how red its custom color is", async () => {
     const loader = new Canvas2DImageLoader();
     vi.spyOn(
       loader as unknown as {
@@ -28,22 +28,20 @@ describe("Canvas2DImageLoader custom-colored model sprites", () => {
     ).mockResolvedValue({} as HTMLImageElement);
 
     // An orange left hand and a violet right hand would otherwise swap the
-    // blue and red captures.
-    await loader.loadPerColorPropImages(
-      "doublestar__model",
-      "doublestar__model",
-      true,
-      { left: "#f97316", right: "#8b5cf6" }
-    );
+    // left and right sticks.
+    await loader.loadPerColorPropImages("stick", "stick", true, {
+      left: "#f97316",
+      right: "#8b5cf6",
+    });
 
     expect(generatePropSvg).toHaveBeenCalledWith(
-      "doublestar__model",
+      "stick",
       "#f97316",
       "dark",
       "left"
     );
     expect(generatePropSvg).toHaveBeenCalledWith(
-      "doublestar__model",
+      "stick",
       "#8b5cf6",
       "dark",
       "right"

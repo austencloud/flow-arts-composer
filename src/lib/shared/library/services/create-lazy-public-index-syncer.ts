@@ -1,5 +1,6 @@
 import type { LibrarySequence } from "#lib/shared/library/domain/models/library-sequence.js";
 import type { IPublicIndexSyncer } from "./IPublicIndexSyncer";
+import type { PublicDuplicateError } from "./public-sequence-persister";
 
 type PublicIndexSyncerLoader = () => Promise<IPublicIndexSyncer>;
 
@@ -31,6 +32,14 @@ export function createLazyPublicIndexSyncer(
       return syncer.syncToPublicIndex(sequence, userId);
     },
 
+    async findPublishConflict(
+      sequence: LibrarySequence,
+      userId: string
+    ): Promise<PublicDuplicateError | null> {
+      const syncer = await getSyncer();
+      return syncer.findPublishConflict(sequence, userId);
+    },
+
     async updateThumbnails(
       sequenceId: string,
       thumbnails: string[]
@@ -39,9 +48,12 @@ export function createLazyPublicIndexSyncer(
       return syncer.updateThumbnails(sequenceId, thumbnails);
     },
 
-    async removeFromPublicIndex(sequenceId: string): Promise<void> {
+    async removeFromPublicIndex(
+      sequenceId: string,
+      ownerId?: string
+    ): Promise<void> {
       const syncer = await getSyncer();
-      return syncer.removeFromPublicIndex(sequenceId);
+      return syncer.removeFromPublicIndex(sequenceId, ownerId);
     },
   };
 }

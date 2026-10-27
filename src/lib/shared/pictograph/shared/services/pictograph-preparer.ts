@@ -394,12 +394,10 @@ export class PictographPreparer {
         : "",
       resolvePropRenderKey(effectiveLeft, {
         fanAppearance: options?.fanAppearance,
-        propLook: options?.propLook,
         triangleGrip: options?.triangleGrip,
       }),
       resolvePropRenderKey(effectiveRight, {
         fanAppearance: options?.fanAppearance,
-        propLook: options?.propLook,
         triangleGrip: options?.triangleGrip,
       }),
       pictograph.betaSwapped ? "bs" : "",
@@ -498,12 +496,10 @@ export class PictographPreparer {
               options?.useGridVersion ?? false,
               options?.themeMode ||
                 options?.fanAppearance ||
-                options?.propLook ||
                 options?.triangleGrip
                 ? {
                     themeMode: options.themeMode,
                     fanAppearance: options.fanAppearance,
-                    propLook: options.propLook,
                     triangleGrip: options.triangleGrip,
                   }
                 : undefined

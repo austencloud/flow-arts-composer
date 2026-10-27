@@ -1,5 +1,4 @@
 import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
-import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
 import type { TriangleGrip } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
 /**
  * Utility for rendering Pictograph component to SVG string
@@ -26,8 +25,6 @@ import { measureSvgBox } from "./measure-svg-box";
  */
 export interface PictographVisibilityOptions {
   fanAppearance?: FanAppearance;
-  /** Artwork for non-fan props. Omitted means notation artwork. */
-  propLook?: PropLook;
   /** Where the hand holds a triangle. Omitted means the corner grip. */
   triangleGrip?: TriangleGrip;
   primaryPropColors?: { left: string; right: string } | null;

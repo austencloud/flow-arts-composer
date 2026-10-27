@@ -17,9 +17,7 @@
   } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { isBuugengFamilyProp } from "#lib/shared/pictograph/prop/domain/enums/prop-classification.js";
-  import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
 
-  let look = $state<PropLook>("pictograph");
   let chirality = $state("normal");
   let cover = $state<"bare" | "covered">("bare");
   let colors = $state({ left: "#36d6c5", right: "#ff8dba" });
@@ -86,15 +84,6 @@
     <div class="controls">
       <SegmentedControl
         options={[
-          { value: "pictograph", label: "Pictograph" },
-          { value: "model", label: "Realistic" },
-        ]}
-        value={look}
-        onchange={(value) => (look = value)}
-        ariaLabel="Prop artwork"
-      />
-      <SegmentedControl
-        options={[
           { value: "normal", label: "Normal grip" },
           { value: "flipped", label: "Flipped grip" },
         ]}
@@ -155,7 +144,7 @@
     darkBackground
     useSavedOverrides={false}
     {colors}
-    appearanceOverride={{ fanAppearance: { ...fan, cover }, propLook: look }}
+    appearanceOverride={{ fanAppearance: { ...fan, cover } }}
     leftFlipped={isBuugengFamilyProp(type) && chirality === "flipped"}
     rightFlipped={type === PropType.HAND ||
       (isBuugengFamilyProp(type) && chirality === "flipped")}

@@ -1,25 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { propTileArtwork, propGlyphArtwork } from "../prop-look";
-import { PROP_MODEL_SPRITES } from "../prop-model-sprites.generated";
 
 const glyph = "/images/props/buttons/x.svg";
 
 describe("navigation prop artwork", () => {
-  it.each(["fire_double_staff", "simple_staff", "staff_v2"])(
-    "draws %s's notation artwork under the model look, since it has no capture",
-    (type) => {
-      const appearance = { propLook: "model" as const };
-      for (const side of ["left", "right"] as const) {
-        expect(propGlyphArtwork(type, side, appearance, glyph).href).toBe(glyph);
-        expect(propTileArtwork(type, side, appearance, glyph)).toEqual({
-          href: glyph,
-          styled: false,
-          prelit: false,
-        });
-      }
-      expect(PROP_MODEL_SPRITES[type]).toBeUndefined();
-    }
-  );
   it.each(["fan", "bigfan"])(
     "keeps flat grips in both %s glyphs without substituting a tile photo",
     (type) => {
@@ -57,16 +41,6 @@ describe("navigation prop artwork", () => {
         glyph
       ).href
     ).toBe(glyph);
-  });
-
-  it("retains the selected model and its per-hand crop for non-fans", () => {
-    const appearance = { propLook: "model" as const };
-    for (const side of ["left", "right"] as const) {
-      expect(propGlyphArtwork("club", side, appearance, glyph)).toEqual({
-        ...propTileArtwork("club", side, appearance, glyph),
-        rotation: 180,
-      });
-    }
   });
 
   it.each([
@@ -111,46 +85,16 @@ describe("navigation prop artwork", () => {
 });
 
 describe("propTileArtwork", () => {
-  it("draws the pre-lit model capture per hand for the model look", () => {
-    const look = { propLook: "model" as const };
-    const left = propTileArtwork("club", "left", look, glyph);
-    const right = propTileArtwork("club", "right", look, glyph);
-    expect(left.href).toMatch(/\/model\/club-blue\.svg/);
-    expect(right.href).toMatch(/\/model\/club-red\.svg/);
-    expect(left).toMatchObject({ styled: true, prelit: true });
-  });
-
-  it("crops a model capture to the window that holds the prop", () => {
-    const club = propTileArtwork("club", "left", { propLook: "model" }, glyph);
-    const entry = PROP_MODEL_SPRITES.club!;
-    expect(club.crop).toEqual({
-      imageWidth: entry.width,
-      imageHeight: entry.height,
-      ...entry.bounds,
-    });
-    // A one-sided prop paints only half of its grip-centred box.
-    expect(club.crop!.width).toBeLessThan(entry.width * 0.6);
-    // Every captured sprite carries its painted window.
-    for (const [prop, sprite] of Object.entries(PROP_MODEL_SPRITES)) {
-      expect(sprite.bounds, prop).toBeDefined();
-    }
-    // Notation glyphs are already cropped artwork.
-    expect(propTileArtwork("club", "left", {}, glyph).crop).toBeUndefined();
-  });
-
-  it("uses the notation glyph by default and for the pictograph look", () => {
+  it("uses the notation glyph for a prop with no build or grip", () => {
     expect(propTileArtwork("club", "left", {}, glyph)).toEqual({
       href: glyph,
       styled: false,
       prelit: false,
     });
-    expect(
-      propTileArtwork("club", "left", { propLook: "pictograph" }, glyph)
-    ).toEqual({ href: glyph, styled: false, prelit: false });
     expect(propTileArtwork("energy_saber", "left", {}, glyph).href).toBe(glyph);
   });
 
-  it("swaps in the side glyph for a side-grip triangle under the pictograph look", () => {
+  it("swaps in the side glyph for a side-grip triangle", () => {
     const side = propTileArtwork(
       "triangle",
       "left",

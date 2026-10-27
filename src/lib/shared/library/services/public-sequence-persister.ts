@@ -48,6 +48,7 @@ import {
 import {
   collection,
   doc,
+  getDoc,
   getDocs,
   query,
   runTransaction,
@@ -131,6 +132,104 @@ export class PublicSequenceOwnedElsewhereError extends PublicDuplicateError {
       "This sequence came from another creator's gallery post, so your copy can't be published as its own entry";
     this.name = "PublicSequenceOwnedElsewhereError";
   }
+}
+
+// ---------------------------------------------------------------------------
+// Publish conflicts
+// ---------------------------------------------------------------------------
+
+/**
+ * Why `userId` cannot publish `sequenceId`, judged from the stored public
+ * mirror and content claim, or null when nothing stands in the way.
+ *
+ * Mirrors the rules rather than guessing at them: an existing mirror or claim
+ * must name this caller as its owner. A missing owner field is NOT the
+ * caller's — the rules compare it against '' and deny — so it reads as owned
+ * elsewhere instead of falling through to a commit that fails as a bare
+ * permission error (Sky, 2026-10-20 and 10-24: a library copy of another
+ * creator's post, saved under that post's id).
+ */
+export function findPublishConflict(
+  sequenceId: string,
+  userId: string,
+  publicData: Record<string, unknown> | undefined,
+  claim: Partial<PublicSequenceHashClaim> | undefined,
+  claimWinnerWord?: string
+): PublicDuplicateError | null {
+  if (claim && claim.sequenceId !== sequenceId) {
+    return new PublicDuplicateError(
+      String(claim.sequenceId ?? ""),
+      String(claim.ownerId ?? ""),
+      claimWinnerWord
+    );
+  }
+  // Only documents that exist have an owner to compare.
+  const storedOwners: unknown[] = [
+    ...(publicData ? [publicData["ownerId"]] : []),
+    ...(claim ? [claim.ownerId] : []),
+  ];
+  const foreignOwners = storedOwners.filter((ownerId) => ownerId !== userId);
+  if (foreignOwners.length === 0) return null;
+  const namedOwner = foreignOwners.find(
+    (ownerId): ownerId is string =>
+      typeof ownerId === "string" && ownerId.length > 0
+  );
+  const word = publicData?.["word"];
+  return new PublicSequenceOwnedElsewhereError(
+    namedOwner ?? "",
+    sequenceId,
+    typeof word === "string" ? word : undefined
+  );
+}
+
+/**
+ * Read-only pre-check for a publish, run BEFORE the caller writes anything —
+ * the owner document included. Both documents are publicly readable, so this
+ * costs two reads and never a denial. The transaction repeats the same check
+ * against its own reads; this one exists so a save can decide to stay private
+ * instead of writing a public owner document whose mirror can never land.
+ */
+export async function checkPublicSequencePublishable(
+  firestore: Firestore,
+  identity: {
+    readonly sequenceId: string;
+    readonly contentHash: string;
+    readonly contentHashVersion: number;
+  },
+  userId: string
+): Promise<PublicDuplicateError | null> {
+  const [publicSnap, claimSnap] = await Promise.all([
+    getDoc(doc(firestore, getPublicSequencePath(identity.sequenceId))),
+    getDoc(
+      doc(
+        firestore,
+        PUBLIC_SEQUENCE_HASH_COLLECTION,
+        publicSequenceClaimId(identity.contentHashVersion, identity.contentHash)
+      )
+    ),
+  ]);
+  const claim = claimSnap.exists()
+    ? (claimSnap.data() as PublicSequenceHashClaim)
+    : undefined;
+  let winnerWord: string | undefined;
+  if (claim && claim.sequenceId !== identity.sequenceId && claim.sequenceId) {
+    const winnerSnap = await getDoc(
+      doc(firestore, getPublicSequencePath(claim.sequenceId))
+    );
+    const word = winnerSnap.exists()
+      ? (winnerSnap.data() as { word?: unknown }).word
+      : undefined;
+    winnerWord = typeof word === "string" ? word : undefined;
+  }
+  return findPublishConflict(
+    identity.sequenceId,
+    userId,
+    publicSnap.exists()
+      ? (publicSnap.data() as Record<string, unknown>)
+      : undefined,
+    claim,
+    winnerWord
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -267,54 +366,43 @@ export async function publishPublicSequence(
       () => tx.get(ownerRef)
     );
 
-    if (claimSnap.exists()) {
-      const claim = claimSnap.data() as PublicSequenceHashClaim;
-      if (claim.sequenceId !== sequenceId) {
-        // A publisher cannot adopt another owner's sequence id, so unlike the
-        // shortcode race there is no adoption path. Read the winner's word for
-        // the user-facing message (still a read — no writes have happened).
-        const winnerSnap = await publishOperation(
-          {
-            step: "read-duplicate-public-sequence",
-            path: "publicSequences/{sequenceId}",
-            operation: "get",
-          },
-          () => tx.get(doc(firestore, getPublicSequencePath(claim.sequenceId)))
-        );
-        const winnerWord = winnerSnap.exists()
-          ? (winnerSnap.data() as { word?: string }).word
-          : undefined;
-        throw new PublicDuplicateError(
-          claim.sequenceId,
-          claim.ownerId,
-          winnerWord
-        );
-      }
+    const claim = claimSnap.exists()
+      ? (claimSnap.data() as PublicSequenceHashClaim)
+      : undefined;
+    let claimWinnerWord: string | undefined;
+    if (claim && claim.sequenceId !== sequenceId) {
+      // A publisher cannot adopt another owner's sequence id, so unlike the
+      // shortcode race there is no adoption path. Read the winner's word for
+      // the user-facing message (still a read — no writes have happened).
+      const winnerSnap = await publishOperation(
+        {
+          step: "read-duplicate-public-sequence",
+          path: "publicSequences/{sequenceId}",
+          operation: "get",
+        },
+        () => tx.get(doc(firestore, getPublicSequencePath(claim.sequenceId)))
+      );
+      claimWinnerWord = winnerSnap.exists()
+        ? (winnerSnap.data() as { word?: string }).word
+        : undefined;
     }
 
     const publicData = publicSnap.exists()
       ? (publicSnap.data() as Record<string, unknown>)
       : undefined;
 
-    // Another owner already holds this id's mirror or this content's claim.
-    // The commit would be denied (2026-10 publish reports: copies of a gallery
-    // sequence saved under its original id), so stop here with nothing written.
-    const publicOwnerId = publicData?.["ownerId"];
-    const claimOwnerId = claimSnap.exists()
-      ? (claimSnap.data() as PublicSequenceHashClaim).ownerId
-      : undefined;
-    const foreignOwnerId = [publicOwnerId, claimOwnerId].find(
-      (ownerId): ownerId is string =>
-        typeof ownerId === "string" && ownerId.length > 0 && ownerId !== userId
+    // Another sequence holds this content's claim, or another owner holds
+    // this id's mirror or claim. The commit would be denied (2026-10 publish
+    // reports: copies of a gallery sequence saved under its original id), so
+    // stop here with nothing written.
+    const conflict = findPublishConflict(
+      sequenceId,
+      userId,
+      publicData,
+      claim,
+      claimWinnerWord
     );
-    if (foreignOwnerId) {
-      const word = publicData?.["word"];
-      throw new PublicSequenceOwnedElsewhereError(
-        foreignOwnerId,
-        sequenceId,
-        typeof word === "string" ? word : undefined
-      );
-    }
+    if (conflict) throw conflict;
 
     const prior: PublicProjectionPriorState = publicData
       ? { kind: "existing", fields: readExistingPublicOwnedFields(publicData) }
@@ -485,7 +573,12 @@ export async function publishPublicSequence(
 export type UnpublishPublicSequenceResult =
   | { readonly status: "unpublished" }
   /** No public document existed — nothing to remove, treated as success. */
-  | { readonly status: "absent" };
+  | { readonly status: "absent" }
+  /**
+   * The mirror at this id belongs to someone else (a library copy of their
+   * gallery post keeps their id). Not the caller's to remove; nothing written.
+   */
+  | { readonly status: "owned-elsewhere" };
 
 /**
  * Atomically remove a sequence's public presence: public document, its owned
@@ -494,13 +587,18 @@ export type UnpublishPublicSequenceResult =
  * callers that only know the sequence id (recycle bin, batch delete) need no
  * signature change.
  *
+ * `expectedOwnerId` is for a user removing their OWN mirror (a private
+ * re-save): a mirror owned by anyone else is left alone instead of attempting
+ * a delete the rules refuse. Admin tooling omits it.
+ *
  * Owner VISIBILITY is not touched here — the owner document's `visibility`
  * field is the caller's domain (a private re-save has already written it; a
  * delete flow is about to remove the whole document).
  */
 export async function unpublishPublicSequence(
   firestore: Firestore,
-  sequenceId: string
+  sequenceId: string,
+  expectedOwnerId?: string
 ): Promise<UnpublishPublicSequenceResult> {
   const publicRef = doc(firestore, getPublicSequencePath(sequenceId));
 
@@ -510,6 +608,9 @@ export async function unpublishPublicSequence(
       return { status: "absent" as const };
     }
     const data = publicSnap.data() as Record<string, unknown>;
+    if (expectedOwnerId !== undefined && data["ownerId"] !== expectedOwnerId) {
+      return { status: "owned-elsewhere" as const };
+    }
 
     // Owner stamps: cleared when the owner document still exists. It may not
     // (delete flows remove the owner first) — that is fine, not an error.

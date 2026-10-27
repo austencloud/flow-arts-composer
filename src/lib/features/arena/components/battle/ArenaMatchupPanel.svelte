@@ -11,7 +11,6 @@
     ArenaRating,
   } from "../../domain/models/arena-models";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
-  import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
   import InlineAnimationPlayer from "#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
@@ -24,7 +23,6 @@
     disabled = false,
     onvote,
     propType = null,
-    propLook,
     bpm = null,
   }: {
     entry: ArenaEntry;
@@ -35,7 +33,6 @@
     disabled: boolean;
     onvote: () => void;
     propType?: string | null;
-    propLook?: PropLook;
     bpm?: number | null;
   } = $props();
 
@@ -75,7 +72,6 @@
         showControls={false}
         leftPropType={propType}
         rightPropType={propType}
-        {propLook}
         externalBpm={bpm}
       />
     {/if}

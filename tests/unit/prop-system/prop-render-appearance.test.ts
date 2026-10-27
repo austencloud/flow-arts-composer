@@ -103,9 +103,6 @@ describe("triangle grip through export and in-memory layer caches", () => {
       buildCellLayerOptions(240, { triangleGrip: "side" }).options.triangleGrip
     ).toBe("side");
     expect(layerKey({ triangleGrip: "side" })).not.toBe(layerKey({}));
-    expect(layerKey({ triangleGrip: "side", propLook: "model" })).not.toBe(
-      layerKey({ propLook: "model" })
-    );
   });
 
   it("does not fragment corner, other-prop or hand-path layers", () => {

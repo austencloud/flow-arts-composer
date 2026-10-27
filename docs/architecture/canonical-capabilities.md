@@ -121,21 +121,15 @@ Prop selection and appearance use
 family drill-down, Back/Escape navigation, and animated decision screens.
 `BentoPropGrid.svelte` connects that presentation to account settings;
 `PropSelectionSheet.svelte` provides the bounded Change Prop drawer.
-Searches: prop look, model artwork, prop variants, Change Prop, fan styles.
-`PropLookPicker.svelte` composes `PropBuildPicker.svelte` for captured model
-("Realistic") versus pictograph artwork. `AppSettings.propArtwork` is the one
-look: `PictographContainer.svelte` and the canvas's `PropTypeManager` both read
-it, and a public route that shows the picker starts the settings service, as the
-sequence viewer and the motion-paths guide do. Sequence cards read it through
-`PreviewCellRenderOptions.propLook` (`ChoreoCard.svelte`, then
-`resolvePreviewCellRender`), and personal card exports carry it in
-`visibilityOverrides.propLook`. `renderedPropLook` adds the look to cell and
-layer cache keys only when a captured model replaces a prop. The triangle grip
-(`AppSettings.triangleGrip`) takes the same path in both looks, from
-`PropSvgLoader` through `triangleGrip` on the prepare, cell and export options.
-`renderedTriangleGrip` keys it only when a triangle is drawn with the side
-grip. Printed and scanned cards stay notation artwork: the deck profile and
-the scan card's cloud cells omit the look and the grip, as they omit the fan
+Searches: prop variants, Change Prop, fan styles, triangle grip.
+Each prop has one look, its notation artwork. Austen removed the Version 1 /
+Version 2 prop versions on 2026-10-27; do not add a second look back. Saved
+settings, tunnels and Post Studio drafts that still carry `propArtwork` or
+`propLook` load and ignore it. The triangle grip (`AppSettings.triangleGrip`)
+goes from `PropSvgLoader` through `triangleGrip` on the prepare, cell and
+export options. `renderedTriangleGrip` keys it only when a triangle is drawn
+with the side grip. Printed and scanned cards stay notation artwork: the deck
+profile and the scan card's cloud cells omit the grip, as they omit the fan
 build (decided 2026-09-27).
 `FanStyleOptionsCore.svelte` composes the existing
 `FanAppearancePicker.svelte` for fan builds and covers. The effect tuner and

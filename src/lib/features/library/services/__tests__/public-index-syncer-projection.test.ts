@@ -354,6 +354,8 @@ describe("syncToPublicIndex — resync over an existing document", () => {
       publicDoc: {
         exists: true,
         data: {
+          // The rules only let the owner rewrite an existing mirror.
+          ownerId: "owner-1",
           publishedAt: originalPublishedAt,
           forkCount: 42,
           viewCount: 9000,

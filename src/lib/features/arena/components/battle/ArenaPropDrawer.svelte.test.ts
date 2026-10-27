@@ -19,36 +19,34 @@ vi.mock(
   })
 );
 
-describe("ArenaPropDrawer prop version", () => {
+describe("ArenaPropDrawer family pick", () => {
   beforeEach(async () => {
     mocks.updateSettings.mockReset();
     await page.viewport(760, 800);
     document.body.style.margin = "0";
   });
 
-  // The Arena keeps its own version: a Version 2 pick goes to the Arena with
-  // the prop and never to the account setting.
-  it("hands a Version 2 pick to the Arena without writing the account", async () => {
+  // The Arena keeps its own prop: a family pick goes to the Arena alone and
+  // never to the account setting. Each style has one tile, with no version.
+  it("hands a family pick to the Arena without writing the account", async () => {
     const onSelect = vi.fn();
-    const onPropLookChange = vi.fn();
 
     render(ArenaPropDrawer, {
       isOpen: true,
-      selectedPropType: PropType.TRIAD,
-      propLook: "pictograph",
+      selectedPropType: PropType.STAFF,
       onSelect,
-      onPropLookChange,
     });
 
     await page.getByRole("button", { name: "Choose Triad style" }).click();
     await page
-      .getByRole("button", { name: "Select Triad V2 prop type", exact: true })
+      .getByRole("button", { name: "Select Triad prop type", exact: true })
       .click();
 
-    expect(onSelect).toHaveBeenLastCalledWith(PropType.TRIAD, "model");
-    expect(onPropLookChange).toHaveBeenLastCalledWith("model");
-    expect(mocks.updateSettings).not.toHaveBeenCalledWith(
-      expect.objectContaining({ propArtwork: expect.anything() })
-    );
+    expect(onSelect).toHaveBeenLastCalledWith(PropType.TRIAD);
+    expect(onSelect.mock.lastCall).toHaveLength(1);
+    await expect
+      .element(page.getByRole("button", { name: /V2/ }))
+      .not.toBeInTheDocument();
+    expect(mocks.updateSettings).not.toHaveBeenCalled();
   });
 });

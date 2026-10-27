@@ -2,14 +2,13 @@
 
 The trace in scripts/assets/buugeng-reference.svg follows a photo of a Flow DNA
 flowgeng (sold at https://flowtoys.com/flowgeng), credited as the design source
-in the GLB metadata and the Version 2 picker tile.
+in the GLB metadata.
 
 Run headless from the repository root:
 
     blender -b --python scripts/build-buugeng-model.py -- --output static/models/props/buugeng.glb
 
-then node scripts/verify-buugeng-glb.cjs, and re-capture the Version 2 sprite
-at /test/prop-3d-studio/sprites?prop=buugeng (and ?prop=bigbuugeng).
+then node scripts/verify-buugeng-glb.cjs.
 """
 
 from __future__ import annotations

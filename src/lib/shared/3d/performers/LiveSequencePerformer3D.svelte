@@ -38,6 +38,7 @@
   import {
     resolvePerformerContact,
     type BodyFacingHint,
+    type BodyRootTurn,
   } from "#lib/shared/3d/domain/performer-contact-displacement.js";
   import { performerScoreClock } from "#lib/shared/3d/domain/performer-score-clock.js";
   import {
@@ -183,6 +184,9 @@
     bodyResponse?: boolean;
     /** The facing the body response leans toward; pass a stable function. */
     facingHint?: BodyFacingHint | null;
+    /** The turn the host plays on the root under the body response, so the
+     *  planted feet hold still in the world; pass a stable function. */
+    rootTurn?: BodyRootTurn | null;
     /** The body response's plan for the loaded sequence, once it exists. */
     onBodyResponseTrack?: (track: BodyResponseTrack | null) => void;
     /** A study can author one pose directly while retaining this component's
@@ -278,6 +282,7 @@
       clearBody: props.bodyClearance != null,
       bodyResponse: props.bodyResponse === true,
       facingHint: props.facingHint ?? null,
+      rootTurn: props.rootTurn ?? null,
       staffLengthM: propLength,
       measurements: captureInputs.measurements,
     })

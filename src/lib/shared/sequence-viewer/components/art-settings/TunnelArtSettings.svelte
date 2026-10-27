@@ -10,7 +10,6 @@
   import { getPropTypeDisplayInfo } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
   import { viewingPropLabel } from "#lib/shared/foundation/services/prop-viewing.js";
   import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
-  import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
   import { EFFORTS } from "#lib/shared/effort/domain/effort-types.js";
   import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
   import { getAnimationVisibilityContext } from "#lib/shared/animation-engine/state/animation-visibility-context.js";
@@ -73,14 +72,9 @@
     onPlaybackModeChange: (mode: PlaybackMode) => void;
     onPlaybackToggle: () => void;
     leftPropType: string | null;
-    /** A Version 2 tile passes its version with the prop. */
-    onPropChange?: (propType: PropType, look?: PropLook) => void;
+    onPropChange?: (propType: PropType) => void;
     /** Per-hand picking for hosts that keep a local pair (Tunnel creator). */
     handProps?: HandPropToolbarProps;
-    /** The prop version of a host that owns it (Tunnel creator). Unset reads
-     *  the account's. */
-    propLook?: PropLook;
-    onPropLookChange?: (look: PropLook) => void;
     fanAppearance?: FanAppearance;
     onFanAppearanceChange?: (appearance: FanAppearance) => void;
     propChirality?: PropChiralitySeam;
@@ -112,8 +106,6 @@
     leftPropType,
     onPropChange,
     handProps,
-    propLook,
-    onPropLookChange,
     fanAppearance,
     propChirality = createGlobalChiralitySeam(),
     animationSettingsState = animationSettings,
@@ -364,8 +356,6 @@
       {selectedPropType}
       {onPropChange}
       {handProps}
-      {propLook}
-      {onPropLookChange}
       chirality={propChirality}
       {dense}
     />

@@ -15,11 +15,6 @@ import {
   type TunnelPropColorState,
 } from "./tunnel-prop-colors";
 import { safeClone } from "#lib/shared/foundation/utils/safe-clone.js";
-import {
-  normalizePropLook,
-  PROP_LOOKS,
-  type PropLook,
-} from "#lib/shared/pictograph/prop/domain/prop-look.js";
 
 export const SNAPSHOT_VERSION = 3;
 
@@ -57,9 +52,6 @@ export interface TunnelSnapshot {
     /** Optional only for snapshots saved before creator draft v4. */
     leftBuugengFlipped?: boolean;
     rightBuugengFlipped?: boolean;
-    /** The creator's prop version. Missing (tunnels saved before versions)
-     * means Version 1. */
-    propLook?: PropLook;
   };
   trailRender: TrailSettings;
 }
@@ -202,7 +194,6 @@ const RawTunnelSnapshotSchema = z.preprocess(
         catDogMode: z.boolean().optional(),
         leftBuugengFlipped: z.boolean().optional(),
         rightBuugengFlipped: z.boolean().optional(),
-        propLook: z.enum(PROP_LOOKS).optional(),
       }),
       trailRender: z.any(),
     })
@@ -235,14 +226,12 @@ export interface SnapshotDeps {
     catDogMode?: boolean;
     leftBuugengFlipped?: boolean;
     rightBuugengFlipped?: boolean;
-    propLook?: PropLook;
     updateSettings: (p: {
       leftPropType?: string;
       rightPropType?: string;
       catDogMode?: boolean;
       leftBuugengFlipped?: boolean;
       rightBuugengFlipped?: boolean;
-      propLook?: PropLook;
     }) => unknown;
   };
   animationSettings: AnimationSettingsState;
@@ -290,7 +279,6 @@ export function captureTunnelSnapshot(deps: SnapshotDeps): TunnelSnapshot {
         settings.leftPropType !== settings.rightPropType,
       leftBuugengFlipped: settings.leftBuugengFlipped ?? false,
       rightBuugengFlipped: settings.rightBuugengFlipped ?? false,
-      propLook: normalizePropLook(settings.propLook),
     },
     trailRender: safeClone(animationSettings.trail),
   };
@@ -346,7 +334,6 @@ export function applyTunnelSnapshot(
     ...(snap.props.rightBuugengFlipped !== undefined
       ? { rightBuugengFlipped: snap.props.rightBuugengFlipped }
       : {}),
-    propLook: normalizePropLook(snap.props.propLook),
   });
 }
 

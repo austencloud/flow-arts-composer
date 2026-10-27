@@ -1,5 +1,4 @@
 import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
-import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
 import type { TriangleGrip } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
 import type { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 import type { PropType } from "../../../pictograph/prop/domain/enums/prop-type";
@@ -67,12 +66,7 @@ export interface SequenceExportOptions {
   visibilityOverrides?: {
     fanAppearance?: FanAppearance;
     /**
-     * Artwork for non-fan props. Personal card exports pass the viewer's look;
-     * deck and print renders leave it unset and draw notation artwork.
-     */
-    propLook?: PropLook;
-    /**
-     * Where the hand holds a triangle. Follows the look: personal card exports
+     * Where the hand holds a triangle. Personal card exports
      * pass the viewer's grip; deck and print renders leave it unset (corner).
      */
     triangleGrip?: TriangleGrip;

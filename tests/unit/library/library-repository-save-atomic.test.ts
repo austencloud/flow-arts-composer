@@ -129,7 +129,11 @@ vi.mock("#lib/shared/analytics/services/posthog.js", () => ({
   captureException: firestoreMocks.captureException,
 }));
 
-import { LibraryRepository } from "#lib/shared/library/services/library-repository.js";
+import {
+  describeKeptPrivate,
+  LibraryRepository,
+} from "#lib/shared/library/services/library-repository.js";
+import { toast } from "#lib/shared/toast/state/toast-state.svelte.ts";
 
 function makeSequence() {
   return {
@@ -319,6 +323,97 @@ describe("LibraryRepository.saveSequence atomic persistence", () => {
     expect(firestoreMocks.captureEvent).not.toHaveBeenCalledWith(
       "library_sequence_delete_completed",
       expect.anything()
+    );
+  });
+});
+
+// ISS-023/024: a public save of content the gallery already holds, or of a
+// library copy that kept another creator's id, used to write a public owner
+// doc whose mirror the rules refused, leaving the row pending forever.
+describe("LibraryRepository.saveSequence publish conflicts", () => {
+  const ownedElsewhere = {
+    name: "PublicSequenceOwnedElsewhereError",
+    claimedBySequenceId: "sequence-1",
+    claimedByOwnerId: "someone-else",
+    claimedWord: "HHHH",
+  };
+
+  function makePublishable() {
+    return {
+      ...(makeSequence() as object),
+      steps: [{}, {}, {}, {}],
+      stepPairings: [{}, {}, {}, {}],
+    } as never;
+  }
+
+  function makeSyncer(conflict: unknown) {
+    return {
+      syncToPublicIndex: vi.fn().mockResolvedValue(undefined),
+      updateThumbnails: vi.fn().mockResolvedValue(undefined),
+      findPublishConflict: vi.fn().mockResolvedValue(conflict),
+      removeFromPublicIndex: vi.fn().mockResolvedValue(undefined),
+    };
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    firestoreMocks.previewReadOnly = false;
+    firestoreMocks.getDoc.mockResolvedValue({
+      exists: () => false,
+      data: () => undefined,
+    });
+    firestoreMocks.getDocs.mockResolvedValue({ empty: true, docs: [] });
+    firestoreMocks.batch.commit.mockResolvedValue(undefined);
+  });
+
+  it("keeps a conflicting public save private, says why once, and leaves the other owner's post alone", async () => {
+    const syncer = makeSyncer(ownedElsewhere);
+    const repository = new LibraryRepository(syncer as never);
+
+    await repository.saveSequence(makePublishable(), { visibility: "public" });
+
+    expect(firestoreMocks.batch.set.mock.calls[0]?.[1]).toMatchObject({
+      visibility: "private",
+    });
+    expect(syncer.syncToPublicIndex).not.toHaveBeenCalled();
+    expect(syncer.removeFromPublicIndex).toHaveBeenCalledWith(
+      "sequence-1",
+      "user-1"
+    );
+    expect(toast.info).toHaveBeenCalledOnce();
+  });
+
+  it("publishes when nothing stands in the way", async () => {
+    const syncer = makeSyncer(null);
+    const repository = new LibraryRepository(syncer as never);
+
+    await repository.saveSequence(makePublishable(), { visibility: "public" });
+
+    expect(firestoreMocks.batch.set.mock.calls[0]?.[1]).toMatchObject({
+      visibility: "public",
+    });
+    expect(syncer.syncToPublicIndex).toHaveBeenCalledOnce();
+    expect(toast.info).not.toHaveBeenCalled();
+  });
+
+  it("names the post the user already made, simplified", () => {
+    const ownDuplicate = {
+      name: "PublicDuplicateError",
+      claimedBySequenceId: "older-id",
+      claimedByOwnerId: "user-1",
+      claimedWord: "ABAB",
+    };
+    expect(describeKeptPrivate(ownDuplicate as never, "user-1")).toContain(
+      "You already posted this exact sequence"
+    );
+    expect(
+      describeKeptPrivate(
+        { ...ownDuplicate, claimedByOwnerId: "x" } as never,
+        "user-1"
+      )
+    ).toContain("The gallery already has this exact sequence");
+    expect(describeKeptPrivate(ownedElsewhere as never, "user-1")).toContain(
+      "another creator's gallery post"
     );
   });
 });

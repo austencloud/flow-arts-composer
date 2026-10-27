@@ -28,6 +28,9 @@ const mocks = vi.hoisted(() => ({
     async (_sequence: unknown, _ownerId: string) => undefined
   ),
   removeFromPublicIndex: vi.fn(async (_sequenceId: string) => undefined),
+  findPublishConflict: vi.fn(
+    async (_sequence: unknown, _ownerId: string) => null
+  ),
   /** Sequence documents by "<uid>/<sequenceId>". */
   sequences: new Map<string, Record<string, unknown>>(),
   /** Resolves the pending owner-document read, so a swap can land mid-publish. */
@@ -146,6 +149,7 @@ function makeRepository(): LibraryRepository {
   return new LibraryRepository({
     syncToPublicIndex: mocks.syncToPublicIndex,
     removeFromPublicIndex: mocks.removeFromPublicIndex,
+    findPublishConflict: mocks.findPublishConflict,
   } as never);
 }
 

@@ -60,9 +60,16 @@ export async function unfollowCollection(
   trackCollectionFollowChanged("unfollow", source, ownerId, collectionId);
 }
 
-/** Live list of the signed-in user's follow refs (not the collections themselves). */
+/**
+ * Live list of the signed-in user's follow refs (not the collections themselves).
+ *
+ * onError is required: Firestore logs a listener with no error callback as
+ * "Uncaught Error in snapshot listener", which is how an account switch under
+ * this app-wide listener reached users as an error screen (2026-10-22/24).
+ */
 export async function subscribeToFollowedCollections(
-  callback: (refs: FollowedCollectionRef[]) => void
+  callback: (refs: FollowedCollectionRef[]) => void,
+  onError: (error: Error) => void
 ): Promise<Unsubscribe> {
   const firestore = await getFirestoreInstance();
   const userId = getAuthenticatedUserId("read");
@@ -77,6 +84,7 @@ export async function subscribeToFollowedCollections(
         }
       });
       callback(refs);
-    }
+    },
+    onError
   );
 }

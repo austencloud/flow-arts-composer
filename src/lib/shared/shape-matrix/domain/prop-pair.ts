@@ -4,6 +4,7 @@ import {
 } from "#lib/shared/animation-engine/domain/types/prop-tip-points.js";
 import { getDefaultTrailPointConfig } from "#lib/shared/animation-engine/domain/types/trail-point-types.js";
 import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { getAllPropTypes } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
 
 /** The prop in each hand. Equal hands are the ordinary single-prop matrix. */
 export interface ShapeMatrixPropPair {
@@ -78,4 +79,18 @@ export function foldUntraceablePropPair(
     left: foldUntraceableProp(pair.left),
     right: foldUntraceableProp(pair.right),
   };
+}
+
+let pickerProps: readonly PropType[] | null = null;
+
+/**
+ * The props the Shape Engine's pickers offer: only the ones it can trace. A
+ * bare hand or a single contact ball has no tip point, so the engine folds it
+ * to staff -- offering it anyway meant picking contact ball drew a staff while
+ * the picker opened contact ball's version page. Settings saved before this
+ * may still hold one; {@link foldUntraceableProp} keeps handling those.
+ */
+export function shapeMatrixPickerProps(): readonly PropType[] {
+  pickerProps ??= getAllPropTypes().filter(hasTracedShapeMatrixSource);
+  return pickerProps;
 }

@@ -32,6 +32,7 @@ import {
 } from "#lib/shared/library/services/sequence-persistence-normalizer.js";
 import type { ProjectionSourceSequence } from "#lib/shared/library/services/public-sequence-projection.js";
 import {
+  checkPublicSequencePublishable,
   publishPublicSequence,
   PublicDuplicateError,
   unpublishPublicSequence,
@@ -304,6 +305,33 @@ export class PublicIndexSyncer {
   }
 
   /**
+   * Read-only publish pre-check (see IPublicIndexSyncer). A sequence that
+   * cannot be normalized returns null: the publish path owns those typed
+   * refusals and reports them itself.
+   */
+  async findPublishConflict(
+    sequence: LibrarySequence,
+    userId: string
+  ): Promise<PublicDuplicateError | null> {
+    let normalized: NormalizedSequenceWrite;
+    try {
+      normalized = await normalizeSequenceForPersistence(sequence);
+    } catch {
+      return null;
+    }
+    const firestore = await getFirestoreInstance();
+    return checkPublicSequencePublishable(
+      firestore,
+      {
+        sequenceId: normalized.ownerData.id,
+        contentHash: normalized.contentHash,
+        contentHashVersion: normalized.contentHashVersion,
+      },
+      userId
+    );
+  }
+
+  /**
    * Patch a completed background thumbnail without replaying a full public
    * sequence snapshot that may already be stale. The persister's narrow
    * transaction restamps the projection digest/revision on schema-2 documents
@@ -327,11 +355,21 @@ export class PublicIndexSyncer {
    * (public-sequence-persister.unpublishPublicSequence). An absent mirror is
    * success — out-of-sync visibility or a prior removal leaves nothing to do.
    */
-  async removeFromPublicIndex(sequenceId: string): Promise<void> {
+  async removeFromPublicIndex(
+    sequenceId: string,
+    ownerId?: string
+  ): Promise<void> {
     const firestore = await getFirestoreInstance();
 
     try {
-      await unpublishPublicSequence(firestore, sequenceId);
+      const result = await unpublishPublicSequence(
+        firestore,
+        sequenceId,
+        ownerId
+      );
+      // Another creator's post at this id: theirs to keep, and still theirs
+      // in the gallery cache.
+      if (result.status === "owned-elsewhere") return;
 
       // Remove from cache immediately so the gallery reflects the change.
       this.browseLoader?.removeFromCache(sequenceId);

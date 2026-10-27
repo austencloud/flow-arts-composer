@@ -662,7 +662,6 @@
               colors={getSettings().primaryPropColors}
               appearanceOverride={{
                 fanAppearance: getSettings().fanAppearance,
-                propLook: getSettings().propArtwork,
                 triangleGrip: getSettings().triangleGrip,
               }}
               {propType}
@@ -694,7 +693,6 @@
                           colors={getSettings().primaryPropColors}
                           appearanceOverride={{
                             fanAppearance: getSettings().fanAppearance,
-                            propLook: getSettings().propArtwork,
                             triangleGrip: getSettings().triangleGrip,
                           }}
                           {propType}

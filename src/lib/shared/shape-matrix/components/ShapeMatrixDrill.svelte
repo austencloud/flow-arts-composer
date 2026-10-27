@@ -73,12 +73,12 @@
   } from "../services/shape-matrix-artwork";
   import { getShapeMatrixTransitionRecorder } from "../debug/shape-matrix-transition-recorder";
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
-  import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
   import { TrackingMode } from "#lib/shared/animation-engine/domain/types/trail-types.js";
   import { QualityTier } from "#lib/shared/animation-engine/domain/types/quality-types.js";
   import { resolveRealizationEntryStep } from "../services/realization-phase-handoff";
   import type { ElementalType } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import AnimationPanel from "#lib/shared/animation-panel/components/AnimationPanel.svelte";
+  import { shapeMatrixPickerProps } from "#lib/shared/shape-matrix/domain/prop-pair.js";
   import type { HandPropToolbarProps } from "#lib/shared/settings/components/tabs/prop-type/HandPropToolbar.svelte";
   import { getShapeMatrixAnimationContext } from "../app/context/shape-matrix-animation-context";
   import { getOptionalShapeMatrixAppContext } from "../app/context/shape-matrix-app-context";
@@ -116,7 +116,7 @@
      * this is only which hand a pick lands on. Defaults to the left hand.
      */
     selectedPropType?: PropType;
-    onproptypechange?: (propType: PropType, look?: PropLook) => void;
+    onproptypechange?: (propType: PropType) => void;
     /** The cat dog chip and hand segments, when the host keeps a pair. */
     handProps?: HandPropToolbarProps;
     /**
@@ -1448,6 +1448,7 @@
         selectedPropType={selectedPropType ?? data.props.left}
         onPropChange={onproptypechange}
         {handProps}
+        allowedProps={shapeMatrixPickerProps()}
         onPropPickerRequest={onproppickertoggle}
         propPickerActive={propPickerOpen}
         sequence={captionRealization?.seq ?? null}

@@ -23,11 +23,13 @@
  *
  * At each score time the planner picks a body yaw (15 degree candidates, kept
  * within 45 degrees of the cheapest yaw so far, the host's facing or the
- * stance, and at most 15 degrees from the previous plan sample's) and a
+ * stance, never more than 45 degrees off square to the grid, and at most 15
+ * degrees from the previous plan sample's) and a
  * floor move (12 directions, each at its best length up to the cap). It
  * charges, per sample: staff left inside the pelvis, waist, chest or head;
  * each grip's distance beyond the arm's reach from its moved, turned
- * shoulder; the move; the chest twist the body has not taken over; and the
+ * shoulder, behind it, or folded against the chest; the move; the chest
+ * twist the body has not taken over; and the
  * yaw's distance from the facing the host wants. Between
  * samples it charges for a change of move and of yaw. A staff through the
  * head may be answered by a duck instead, when that is cheaper than leaving it
@@ -47,7 +49,9 @@
  *
  * Frame: the performer's own, as body-clearance: +x the performer's left, +y
  * up, +z toward the audience; heights from the grid centre. Every offset is in
- * that frame; the grid does not turn with the body.
+ * that frame. The grid turns only with the root: when the host turns the
+ * whole performer (`rootTurn`), the feet are planned on the floor and step
+ * round with it, while the body's own yaw stays a trim under the grid.
  */
 
 import { PlaneMode } from "@austencloud/scene-3d";
@@ -107,11 +111,13 @@ export const BODY_YAW_STEP_RAD = 15 * DEG;
  *  rather than all twenty-five, which keeps the programme small. */
 export const BODY_YAW_WINDOW_RAD = 45 * DEG;
 /** The body turns at most this far either side of square to its grid. The
- *  grid stays where the score put it while the body turns under it, so past
- *  about a right angle one hand's grip falls behind its shoulder; the stage
- *  measured the hips swinging to 180 degrees without this, the staffs behind
- *  the back, before the behind-the-shoulder reach below existed. */
-export const BODY_YAW_LIMIT_RAD = 90 * DEG;
+ *  grid stays where the score put it while the body turns under it, so this
+ *  is a trim, not a facing change: a big facing change turns the whole
+ *  performer, grid and all, and the feet step round with it (`rootTurn`).
+ *  The stage measured grips slipping from more than half the hands once the
+ *  body sat 75 degrees or more off its grid (10-27, stage left's left hand);
+ *  at 90 degrees one grip falls behind its shoulder. */
+export const BODY_YAW_LIMIT_RAD = 45 * DEG;
 /** A grip may sit this far behind its shoulder, along the chest's facing,
  *  before the reach counts it short: an arm reaches a little behind the
  *  shoulder line at the side, not round the back. */
@@ -119,6 +125,20 @@ export const GRIP_BEHIND_ALLOWANCE_M = 0.1;
 /** Each metre further behind costs this many metres beyond the arm's length:
  *  an arm stretched forward still holds, one bent round the back does not. */
 export const GRIP_BEHIND_WEIGHT = 4;
+/** A grip in front of the chest (within a shoulder's width of its middle)
+ *  must sit at least this far ahead of the chest's centre, at the 1.905 m
+ *  calibration height: the chest's front is about 0.18 m ahead, and a hand
+ *  closer than about a forearm's thickness beyond it folds the arm into the
+ *  body, where the arm clearance pushes it off its staff. The stage measured
+ *  the planner walking the body 4-9 cm into the grid, up to 20 cm, on
+ *  reachable grips the hands then missed (10-27). */
+export const GRIP_FRONT_MIN_M = 0.28;
+/** Each metre a grip sits closer than that costs this many metres beyond the
+ *  arm's reach, so stepping in for one hand stops where the other folds. */
+export const GRIP_FRONT_WEIGHT = 2;
+/** Past a shoulder's width out to the side the front limit fades to nothing
+ *  over this much more: a grip beside the body is held with a straight arm. */
+const GRIP_FRONT_FADE_M = 0.1;
 /** Per metre of grip beyond the arm's reach, summed over the hands: between
  *  staff left inside (20) and the move itself (1), so the body moves or turns
  *  toward a grip but never into a staff to do it. */
@@ -244,6 +264,11 @@ export interface BodyResponseTrackOptions {
   model?: BodyClearanceModel;
   /** A body yaw the host wants at a score time, radians; null for none. */
   facingHint?: ((scoreTime: number) => number | null) | null;
+  /** How far the whole performer, grid and all, has turned at a score time
+   *  since the track's first sample, radians in the rig's yaw sense. Every
+   *  offset stays in the grid's frame; planted feet hold still in the world
+   *  while the performer turns over them, and step round after it. */
+  rootTurn?: ((scoreTime: number) => number) | null;
 }
 
 export interface FootTrack {
@@ -257,6 +282,8 @@ export interface FootTrack {
 }
 
 export interface BodyStep {
+  /** Positions and yaws are in the frame the grid had at the track's first
+   *  sample, which is the grid's own frame unless the host turns the root. */
   foot: "left" | "right";
   /** Score time the foot lifts and lands. */
   startStep: number;
@@ -555,12 +582,18 @@ function leftAt(bins: Int32Array, t: number): number {
   return b * COVER_BIN_M - t;
 }
 
-/** Grip beyond reach, summed over the hands, after a floor move. */
-/** A hand for the reach cost: its grip less its shoulder, and the chest's
- *  facing on the floor, so a grip behind the shoulder line reads short. */
+/** A hand for the reach cost: its grip less its shoulder, the grip less the
+ *  chest's centre on the floor, and the chest's facing, so a grip behind the
+ *  shoulder line or folded against the chest reads short. */
 interface FacingReachHand extends ReachHand {
   fx: number;
   fz: number;
+  /** The grip from the chest's centre, on the floor. */
+  cx: number;
+  cz: number;
+  /** Half the shoulders' width, and the front limit, for this body. */
+  bandM: number;
+  frontM: number;
 }
 
 function facingReachHands(
@@ -570,13 +603,27 @@ function facingReachHands(
 ): FacingReachHand[] {
   const fx = Math.sin(chestRad);
   const fz = Math.cos(chestRad);
-  return reachHands(staffs, chestRad, model).map((hand) => ({
-    ...hand,
-    fx,
-    fz,
-  }));
+  const h = model.shoulderHalfWidthM;
+  const frontM = GRIP_FRONT_MIN_M * model.heightScale;
+  const sided = staffs.flatMap((line, index) =>
+    line ? [index === 0 ? 1 : -1] : []
+  );
+  return reachHands(staffs, chestRad, model).map((hand, k) => {
+    const side = sided[k]!;
+    return {
+      ...hand,
+      fx,
+      fz,
+      cx: hand.vx + side * h * fz,
+      cz: hand.vz + model.shoulderDzM - side * h * fx,
+      bandM: h,
+      frontM,
+    };
+  });
 }
 
+/** Grip beyond reach, summed over the hands, after a floor move: past the
+ *  arm's length, behind the shoulder line, or folded in front of the chest. */
 function reachDeficit(
   hands: readonly FacingReachHand[],
   reachM: number,
@@ -591,8 +638,20 @@ function reachDeficit(
     if (d > reachM) deficit += d - reachM;
     const behind = -(ex * hand.fx + ez * hand.fz) - GRIP_BEHIND_ALLOWANCE_M;
     if (behind > 0) deficit += GRIP_BEHIND_WEIGHT * behind;
+    deficit += GRIP_FRONT_WEIGHT * gripFolded(hand, dx, dz);
   }
   return deficit;
+}
+
+/** How far a grip sits inside the front limit, faded out beside the body. */
+function gripFolded(hand: FacingReachHand, dx: number, dz: number): number {
+  const ex = hand.cx - dx;
+  const ez = hand.cz - dz;
+  const ahead = ex * hand.fx + ez * hand.fz;
+  if (ahead >= hand.frontM) return 0;
+  const across = Math.abs(ex * hand.fz - ez * hand.fx) - hand.bandM;
+  const share = across <= 0 ? 1 : 1 - across / GRIP_FRONT_FADE_M;
+  return share > 0 ? share * (hand.frontM - Math.max(0, ahead)) : 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -648,7 +707,7 @@ function newScratch(horizonM: number): Scratch {
     head: new Float64Array(64),
     torsoBins: new Int32Array(bins),
     headBins: new Int32Array(bins),
-    lengths: new Float64Array(MOVE_SHARES.length + 8),
+    lengths: new Float64Array(MOVE_SHARES.length + 10),
     moves: {
       length: new Float64Array(MOVE_DIRECTIONS),
       cost: new Float64Array(MOVE_DIRECTIONS),
@@ -776,6 +835,13 @@ function evaluateSample(
         const disc = b * b - c0;
         if (c0 > 0 && disc >= 0) {
           const t = b - Math.sqrt(disc);
+          if (t > 0 && t <= maxM) lengths[count++] = t;
+        }
+        // Where a folded grip comes back out to the front limit.
+        const back = -(dir.x * hand.fx + dir.z * hand.fz);
+        if (back > 1e-6 && gripFolded(hand, 0, 0) > 0) {
+          const ahead = hand.cx * hand.fx + hand.cz * hand.fz;
+          const t = (hand.frontM - ahead) / back;
           if (t > 0 && t <= maxM) lengths[count++] = t;
         }
       }
@@ -1131,7 +1197,8 @@ function planFeet(
   hipZ: Float64Array,
   yaw: Float64Array,
   perStep: number,
-  loop: boolean
+  loop: boolean,
+  seam: FootPose | null = null
 ): FeetPlan {
   const n = hipX.length;
   const left = newFootTrack(n);
@@ -1140,8 +1207,10 @@ function planFeet(
   const swing = Math.max(2, 2 * Math.round((STEP_BEATS * perStep) / 2));
   const dwell = Math.round(STEP_DWELL_STEPS * perStep);
   const rest = Math.round(STEP_REST_BEATS * perStep);
-  const start: FootPose = { x: hipX[0]!, z: hipZ[0]!, yaw: yaw[0]! };
-  let planted: FootPose = { ...start };
+  let planted: FootPose = { x: hipX[0]!, z: hipZ[0]!, yaw: yaw[0]! };
+  // Where a loop's feet must be by the seam: where they started, unless the
+  // host turned the root meanwhile and the start has turned with it.
+  const start: FootPose = seam ?? { ...planted };
   // A loop keeps its last two swings for the way back to the start.
   const returnStart = loop ? n - 2 * swing : n;
   let lastLanding = -Infinity;
@@ -1254,6 +1323,79 @@ function planFeet(
   return { left, right, steps };
 }
 
+/** The root's turn at every dense sample, unwrapped so it runs on through
+ *  half turns; null when the host never turns the root. */
+function sampleRootTurn(
+  rootTurn: ((scoreTime: number) => number) | null,
+  n: number,
+  perStep: number
+): Float64Array | null {
+  if (!rootTurn) return null;
+  const turn = new Float64Array(n + 1);
+  let moved = false;
+  for (let i = 0; i <= n; i++) {
+    const value = rootTurn(i / perStep);
+    const raw = Number.isFinite(value) ? value : 0;
+    turn[i] = i === 0 ? raw : turn[i - 1]! + wrapAngle(raw - turn[i - 1]!);
+    moved ||= Math.abs(turn[i]! - turn[0]!) > FEET_EPS;
+  }
+  return moved ? turn : null;
+}
+
+/** Turns a floor point by the root's turn, the rig's yaw sense. */
+function turnPoint(x: number, z: number, a: number): { x: number; z: number } {
+  const c = Math.cos(a);
+  const s = Math.sin(a);
+  return { x: x * c + z * s, z: -x * s + z * c };
+}
+
+/**
+ * The feet, planned where they stand: in the frame the grid had at the first
+ * sample. A foot planted there holds still while the root turns, so in the
+ * grid's own frame it turns back the other way, and a step lands it under the
+ * hips' new place and facing. A loop's last steps bring the feet to where
+ * the next pass starts them, under the hips with the root turned on.
+ */
+function planTurningFeet(
+  offset: { x: Float64Array; z: Float64Array },
+  yaw: Float64Array,
+  rootAt: Float64Array | null,
+  perStep: number,
+  loop: boolean,
+  stepCount: number
+): FeetPlan {
+  if (!rootAt) return planFeet(offset.x, offset.z, yaw, perStep, loop);
+  const n = yaw.length;
+  const base = rootAt[0]!;
+  const hipX = new Float64Array(n);
+  const hipZ = new Float64Array(n);
+  const hipYaw = new Float64Array(n);
+  for (let i = 0; i < n; i++) {
+    const a = rootAt[i]! - base;
+    const p = turnPoint(offset.x[i]!, offset.z[i]!, a);
+    hipX[i] = p.x;
+    hipZ[i] = p.z;
+    hipYaw[i] = yaw[i]! + a;
+  }
+  let seam: FootPose | null = null;
+  if (loop) {
+    const a = rootAt[stepCount * perStep]! - base;
+    const p = turnPoint(offset.x[0]!, offset.z[0]!, a);
+    seam = { x: p.x, z: p.z, yaw: yaw[0]! + a };
+  }
+  const placed = planFeet(hipX, hipZ, hipYaw, perStep, loop, seam);
+  for (const track of [placed.left, placed.right]) {
+    for (let i = 0; i < n; i++) {
+      const a = rootAt[i]! - base;
+      const p = turnPoint(track.x[i]!, track.z[i]!, -a);
+      track.x[i] = p.x;
+      track.z[i] = p.z;
+      track.yaw[i] = track.yaw[i]! - a;
+    }
+  }
+  return placed;
+}
+
 // ---------------------------------------------------------------------------
 // The track
 // ---------------------------------------------------------------------------
@@ -1323,6 +1465,7 @@ export function buildBodyResponseTrack(
     const hint = options.facingHint?.(t);
     hintAt[i] = hint != null && Number.isFinite(hint) ? hint : 0;
   }
+  const rootAt = sampleRootTurn(options.rootTurn ?? null, n, perStep);
   const inputAt = (i: number): PlanInput => {
     const sweep = [...staffsAt[i]!];
     for (const d of SWEEP_OFFSETS) {
@@ -1447,7 +1590,7 @@ export function buildBodyResponseTrack(
     chestYaw[i] = residualChestYaw(stanceChest[i]!, yaw[i]!);
   }
   const clearance = offset.x.map((x, i) => Math.hypot(x, offset.z[i]!));
-  const feet = planFeet(offset.x, offset.z, yaw, perStep, loop);
+  const feet = planTurningFeet(offset, yaw, rootAt, perStep, loop, stepCount);
 
   return {
     stepCount,

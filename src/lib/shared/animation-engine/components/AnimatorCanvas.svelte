@@ -81,7 +81,6 @@ Last audit: 2025-12-27
   import type { EffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
   import type { QualityTier } from "../domain/types/quality-types";
   import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
-  import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
   import type { ElementalType } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import type { GlyphOverlayFrameMode } from "../domain/glyph-overlay-frame";
 
@@ -113,7 +112,6 @@ Last audit: 2025-12-27
     leftPropType = null,
     rightPropType = null,
     fanAppearance = undefined,
-    propLook = undefined,
     leftBuugengFlipped = undefined,
     rightBuugengFlipped = undefined,
     word = null,
@@ -214,8 +212,6 @@ Last audit: 2025-12-27
     leftPropType?: string | null;
     rightPropType?: string | null;
     fanAppearance?: FanAppearance;
-    /** Page-local 2D artwork look; unset falls back to the global setting. */
-    propLook?: PropLook;
     leftBuugengFlipped?: boolean;
     rightBuugengFlipped?: boolean;
     word?: string | null;
@@ -962,7 +958,6 @@ Last audit: 2025-12-27
       {leftPropType}
       {rightPropType}
       {fanAppearance}
-      {propLook}
       {leftBuugengFlipped}
       {rightBuugengFlipped}
       {previewDarkMode}
@@ -1026,7 +1021,6 @@ Last audit: 2025-12-27
         {leftPropType}
         {rightPropType}
         {fanAppearance}
-        {propLook}
         tipEffectMap={cellTipEffectMap}
         {visibilityManagerOverride}
         {showNonRadialPoints}

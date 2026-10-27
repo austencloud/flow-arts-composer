@@ -159,8 +159,11 @@
     }
   }
 
-  // Count center-zone buttons to key the container (for smooth cross-fade on
-  // layout changes). Save is the only workspace action in the header.
+  // Count center-zone buttons to key the container, so Play cross-fades in
+  // and out instead of popping. Play is the zone's only button: its Stop,
+  // Retry and Cancel states swap inside it and keep the key. Opening the
+  // full viewer lives on the in-place player. Save is the only workspace
+  // action in the header.
   const centerZoneButtonCount = $derived(() => {
     let count = 0;
     if (showViewSequenceButton) count++;
@@ -231,16 +234,6 @@
                     ? "play-sequence"
                     : undefined}
                 >
-                  {#if usesWorkspacePlayback}
-                    <div class="expand-viewer-action">
-                      <ViewSequenceButton
-                        purpose="expand-viewer"
-                        onclick={() => {
-                          panelState.handoffWorkspacePlaybackToViewer();
-                        }}
-                      />
-                    </div>
-                  {/if}
                   <ViewSequenceButton
                     onclick={handleFullSequencePlay}
                     isActive={isExportPanelOpen}
@@ -379,16 +372,6 @@
     outline-offset: 4px;
   }
 
-  .play-controls {
-    position: relative;
-  }
-
-  .expand-viewer-action {
-    position: absolute;
-    right: calc(100% + 8px);
-    bottom: 0;
-  }
-
   /* Remove mobile tap highlight (blue selection box) */
   .button-panel :global(button),
   .button-panel :global(a) {
@@ -398,8 +381,18 @@
     user-select: none;
   }
 
-  /* Container-based responsive adjustments - Progressive gap reduction to fit 48px buttons */
-  @container button-panel (min-width: 768px) {
+  /* Labels join the controls once the labelled row fits. Play is centred
+     absolutely, so each half of the rail must hold its own zone plus half of
+     Play. Labelled pills measured at 1920x1080: Clear 97px, Play 107px,
+     Actions 113px, Share 96px. Between 640px and 768px the rail pads 18px at
+     most per side and the zones gap 10px (the max-width: 768px rule below).
+       right half: 18 + Share 96 + 10 + Actions 113 + Play 107 / 2 = 290.5px
+       left half:  18 + Clear 97 + Play 107 / 2                    = 168.5px
+     The right half decides: 2 x 290.5 = 581px with Actions touching Play.
+     640px leaves 29.5px between them for longer translations. That keeps
+     labels on a 1440x900 laptop (682px rail) and off on phones; the short
+     landscape override below still turns them off. */
+  @container button-panel (min-width: 640px) {
     .button-panel {
       --workspace-action-label-display: inline;
       --workspace-action-width: auto;
@@ -560,10 +553,6 @@
       min-width: 50px;
       gap: 0;
       transform: none;
-    }
-
-    .expand-viewer-action {
-      bottom: calc((50px - var(--min-touch-target)) / 2);
     }
 
     .left-zone > div,

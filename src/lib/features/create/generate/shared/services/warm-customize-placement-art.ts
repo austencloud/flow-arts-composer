@@ -16,7 +16,6 @@ import { loadStartPlacementVariations } from "#lib/shared/components/placement-p
 import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
 import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
 import { normalizeFanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
-import { normalizePropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
 import { normalizeTriangleGrip } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
 import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import { svgPreloader } from "#lib/shared/pictograph/shared/services/svg-preloader.js";
@@ -43,7 +42,6 @@ async function warm(gridMode: GridMode): Promise<void> {
     leftBuugengFlipped: settings.leftBuugengFlipped ?? false,
     rightBuugengFlipped: settings.rightBuugengFlipped ?? false,
     fanAppearance: normalizeFanAppearance(settings.fanAppearance),
-    propLook: normalizePropLook(settings.propArtwork),
     triangleGrip: normalizeTriangleGrip(settings.triangleGrip),
     showLeftMotion: true,
     showRightMotion: true,

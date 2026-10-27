@@ -60,10 +60,6 @@ function sharesSurface(
   const from = animation.animationAppearance;
   const to = moves.animationAppearance;
   return (
-    !!from &&
-    !!to &&
-    moves.mode !== "mandala" &&
-    from.propType === to.propType &&
-    from.propLook === to.propLook
+    !!from && !!to && moves.mode !== "mandala" && from.propType === to.propType
   );
 }

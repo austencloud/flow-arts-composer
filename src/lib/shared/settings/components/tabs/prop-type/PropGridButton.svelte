@@ -3,7 +3,6 @@
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import PropGridPreview from "./PropGridPreview.svelte";
   import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
-  import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
   import type { TriangleGrip } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
   import type { CompositionRecipe } from "#lib/shared/pictograph/prop/domain/prop-composition-recipes.js";
   import { localizedPropName } from "./localized-prop-name";
@@ -24,7 +23,6 @@
     buttonProps,
     onSelect,
     fanAppearance,
-    propLook,
     triangleGrip,
     recipeOverrides,
     colors,
@@ -34,7 +32,7 @@
     previewPair = true,
   } = $props<{
     propType: PropType;
-    /** Overrides the registry name, e.g. "Triad V2" for a version tile. */
+    /** Overrides the registry name. */
     label?: string;
     selected?: boolean;
     selectedLeft?: boolean;
@@ -45,7 +43,6 @@
     buttonProps?: HTMLButtonAttributes;
     onSelect?: (propType: PropType) => void;
     fanAppearance: FanAppearance;
-    propLook?: PropLook;
     triangleGrip?: TriangleGrip;
     recipeOverrides?: Partial<Record<PropType, CompositionRecipe>>;
     colors?: ViewerCustomColorPair | null;
@@ -85,7 +82,6 @@
       rightFlipped={propType === PropType.HAND ||
         (isBuugengFamilyProp(propType) && rightFlipped)}
       {fanAppearance}
-      {propLook}
       {triangleGrip}
       {recipeOverrides}
     />

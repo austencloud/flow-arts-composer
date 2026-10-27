@@ -206,6 +206,7 @@
             panelState.failWorkspacePlaybackPreparation(playbackCandidate!);
         },
         onclose: () => panelState.stopWorkspacePlayback(),
+        onExpand: () => panelState.handoffWorkspacePlaybackToViewer(),
         onStepChange: (step: number) => (playbackStep = Math.floor(step)),
         onPlaybackChange: (
           reportedRun: number,

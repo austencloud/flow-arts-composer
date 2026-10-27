@@ -191,4 +191,33 @@ describe("intake-store", () => {
     expect(openSpy).not.toHaveBeenCalled();
     openSpy.mockRestore();
   });
+
+  // Production 2026-10-06 and 10-22, Safari: "share-intake: transaction
+  // aborted". Safari can drop a connection (backgrounding, storage pressure)
+  // without the close event that clears the cached one, so every later call
+  // failed on the dead handle.
+  it("reopens and retries once when the cached connection was lost", async () => {
+    await putIntake(intake());
+    let cached: IDBDatabase | null = null;
+    const transactionSpy = vi
+      .spyOn(IDBDatabase.prototype, "transaction")
+      .mockImplementationOnce(function (this: IDBDatabase, ...args) {
+        cached = this;
+        // A plain close() fires no close event, like Safari's dropped handle.
+        this.close();
+        return IDBDatabase.prototype.transaction.apply(this, args);
+      });
+
+    expect((await getIntake("si_abc"))?.receiptId).toBe("si_abc");
+    expect(cached).not.toBeNull();
+    transactionSpy.mockRestore();
+  });
+
+  it("does not retry a write the store refused", async () => {
+    await putIntake(bigIntake("pending", MAX_INTAKE_STORE_BYTES - 10, { status: "needs-auth" }));
+    const openSpy = vi.spyOn(indexedDB, "open");
+    await expect(putIntake(bigIntake("new", 100))).rejects.toThrow(/refusing the write/);
+    expect(openSpy).not.toHaveBeenCalled();
+    openSpy.mockRestore();
+  });
 });

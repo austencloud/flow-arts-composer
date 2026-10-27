@@ -12,7 +12,6 @@ import type { createCrossfaderState } from "#lib/shared/choreo-card/state/crossf
 
 export interface ChoreoCardRenderLifecycleDeps {
   readonly fanAppearance?: import("#lib/shared/pictograph/prop/domain/fan-appearance.js").FanAppearance;
-  readonly propLook?: import("#lib/shared/pictograph/prop/domain/prop-look.js").PropLook;
   readonly triangleGrip?: import("#lib/shared/pictograph/prop/domain/triangle-appearance.js").TriangleGrip;
   readonly primaryPropColors?: { left: string; right: string } | null;
   readonly sequence: SequenceData;
@@ -75,7 +74,6 @@ export function createChoreoCardRenderLifecycle(
       handPathMode: deps.handPathMode,
       browseViewMode: deps.browseViewMode,
       fanAppearance: deps.fanAppearance,
-      propLook: deps.propLook,
       triangleGrip: deps.triangleGrip,
       primaryPropColors: deps.primaryPropColors,
       leftPropType: deps.leftPropType,

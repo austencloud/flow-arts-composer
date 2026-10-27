@@ -177,6 +177,7 @@ export async function initializeChildServices(
       const { getFirestoreInstance } =
         await import("#lib/shared/auth/firebase.js");
       await getFirestoreInstance();
+      if (getUserFromState()?.uid !== user.uid) return;
       await tunnelCollectionState.init(user.uid);
     })
     .catch((error) => {
@@ -189,6 +190,7 @@ export async function initializeChildServices(
       const { getFirestoreInstance } =
         await import("#lib/shared/auth/firebase.js");
       await getFirestoreInstance();
+      if (getUserFromState()?.uid !== user.uid) return;
       await scene3dCollectionState.init(user.uid);
     })
     .catch((error) => {
@@ -201,6 +203,7 @@ export async function initializeChildServices(
       const { getFirestoreInstance } =
         await import("#lib/shared/auth/firebase.js");
       await getFirestoreInstance();
+      if (getUserFromState()?.uid !== user.uid) return;
       await filmCollectionState.init(user.uid);
     })
     .catch((error) => {

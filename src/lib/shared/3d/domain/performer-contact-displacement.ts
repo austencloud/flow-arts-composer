@@ -145,9 +145,11 @@ const bodyClearanceTracks = new WeakMap<
   CharacterInstanceState,
   CachedBodyClearanceTrack
 >();
-/** The response's key: the clearance key plus the facing the host wants. */
+/** The response's key: the clearance key plus the facing the host wants
+ *  and the root turn it plays. */
 interface BodyResponseTrackKey extends BodyClearanceTrackKey {
   facingHint: BodyFacingHint | null;
+  rootTurn: BodyRootTurn | null;
 }
 
 interface CachedBodyResponseTrack {
@@ -590,14 +592,16 @@ function resolveBodyResponseTrack(
   hardBeat: CachedHardBeatTrack,
   staffLengthM: number,
   measurements: PerformerReachMeasurements | null,
-  facingHint: BodyFacingHint | null
+  facingHint: BodyFacingHint | null,
+  rootTurn: BodyRootTurn | null
 ): BodyResponseTrack | null {
   const cached = bodyResponseTracks.get(performer);
   if (
     cached?.key.hardBeat === hardBeat &&
     cached.key.staffLengthM === staffLengthM &&
     cached.key.measurements === measurements &&
-    cached.key.facingHint === facingHint
+    cached.key.facingHint === facingHint &&
+    cached.key.rootTurn === rootTurn
   ) {
     return cached.track;
   }
@@ -612,12 +616,13 @@ function resolveBodyResponseTrack(
           measurements,
           planeMode: hardBeat.key.planeMode,
           facingHint,
+          rootTurn,
         })
       : null;
   // Contact history belongs to where the body stood.
   if (cached?.key.hardBeat === hardBeat) seekDetectorFor(performer).bump();
   bodyResponseTracks.set(performer, {
-    key: { hardBeat, staffLengthM, measurements, facingHint },
+    key: { hardBeat, staffLengthM, measurements, facingHint, rootTurn },
     track,
   });
   return track;
@@ -626,6 +631,11 @@ function resolveBodyResponseTrack(
 /** A body yaw the host wants at a score time, radians; null for none. Pass
  *  a stable function: a new one each frame replans every frame. */
 export type BodyFacingHint = (scoreTime: number) => number | null;
+
+/** How far the host has turned the whole performer, grid and all, at a score
+ *  time since the sequence's start, radians in the rig's sense: planted feet
+ *  hold still in the world against it. Pass a stable function. */
+export type BodyRootTurn = (scoreTime: number) => number;
 
 /**
  * The stance with its twist handed to the body: the chest yaw becomes the
@@ -673,6 +683,8 @@ export interface PerformerContactOptions {
   bodyResponse?: boolean;
   /** The facing the body response leans toward; null faces the audience. */
   facingHint?: BodyFacingHint | null;
+  /** The root turn the host plays under the body response; null for none. */
+  rootTurn?: BodyRootTurn | null;
   /** The staff on screen, tip to tip; the body clears that staff. */
   staffLengthM?: number;
   /** The rig's measurements, as the live stance plans with them; null plans
@@ -731,7 +743,8 @@ export function resolvePerformerContact(
           hardBeat,
           staffLengthM,
           options.measurements ?? null,
-          options.facingHint ?? null
+          options.facingHint ?? null,
+          options.rootTurn ?? null
         )
       : null;
   const bodyTrack =

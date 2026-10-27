@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { page } from "vitest/browser";
 import { render } from "vitest-browser-svelte";
 import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import WorkspacePlayback from "./WorkspacePlayback.svelte";
@@ -12,6 +13,12 @@ vi.mock(
 vi.mock("#lib/shared/timeline/StepStrip.svelte", async () => ({
   default: (await import("./__test-stubs__/StripStub.svelte")).default,
 }));
+vi.mock(
+  "#lib/shared/animation-engine/components/effects-panel/EffectQuickSwitch.svelte",
+  async () => ({
+    default: (await import("./__test-stubs__/EffectSwitchStub.svelte")).default,
+  })
+);
 
 /**
  * Layout proof for the Create preview. Play grows this box from the editor's
@@ -118,5 +125,60 @@ describe("WorkspacePlayback layout", () => {
     expect(getComputedStyle(rail).visibility).toBe("visible");
     expect(widthOf(strip)).toBeCloseTo(widthOf(media), 0);
     expect(widthOf(media)).toBeCloseTo(406 - 72 - SEEK, 0);
+  });
+});
+
+describe("WorkspacePlayback open in viewer", () => {
+  const sequence = createSequenceData({
+    id: "expand-test",
+    name: "Expand",
+    word: "A",
+    steps: [],
+  });
+  const base = {
+    sequence,
+    active: true,
+    run: 1,
+    onready: () => {},
+    onerror: () => {},
+  };
+
+  it("ends the scrubber row with the expand control and hands off on click", async () => {
+    const onExpand = vi.fn();
+    const { container } = render(WorkspacePlayback, { ...base, onExpand });
+
+    const expand = page.getByRole("button", { name: "Expand sequence viewer" });
+    await expect
+      .element(expand)
+      .toHaveAttribute("title", "Expand sequence viewer");
+
+    // Pause, scrubber, effect, expand: the effect button comes before it and
+    // nothing follows it.
+    const row = container.querySelector<HTMLElement>("[data-progress-row]");
+    const effect = row?.querySelector(".effect-switch-stub");
+    expect(effect).not.toBeNull();
+    expect(row?.lastElementChild).toBe(expand.element());
+    expect(
+      effect!.compareDocumentPosition(expand.element()) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+
+    const bounds = expand.element().getBoundingClientRect();
+    expect(bounds.width).toBeGreaterThanOrEqual(44);
+    expect(bounds.height).toBeGreaterThanOrEqual(44);
+
+    await expand.click();
+    expect(onExpand).toHaveBeenCalledTimes(1);
+  });
+
+  it("leaves the control out when no handler is passed", async () => {
+    const { container } = render(WorkspacePlayback, base);
+
+    await expect
+      .poll(() => container.querySelector(".effect-switch-stub"))
+      .not.toBeNull();
+    expect(
+      container.querySelector('[aria-label="Expand sequence viewer"]')
+    ).toBeNull();
   });
 });

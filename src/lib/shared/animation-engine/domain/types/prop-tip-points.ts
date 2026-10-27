@@ -13,14 +13,7 @@
  * here. Each effect renderer applies its own global scaling at read time.
  */
 
-import {
-  PROP_MODEL_SPRITES,
-  type PropModelSpriteEntry,
-} from "#lib/shared/pictograph/prop/domain/prop-model-sprites.generated.js";
-import {
-  HOOP_FAMILY_TIP_POINTS,
-  TRIANGLE_STATIONS_M,
-} from "#lib/shared/pictograph/prop/domain/hoop-family-geometry.generated.js";
+import { HOOP_FAMILY_TIP_POINTS } from "#lib/shared/pictograph/prop/domain/hoop-family-geometry.generated.js";
 
 /**
  * A single tip attachment point on a prop. Position only - no effect-specific
@@ -589,10 +582,8 @@ function fanBuildTables(
 export const PROP_RENDER_KEY_TIP_POINTS: Record<string, PropTipConfig> = {
   ...fanBuildTables("fan", 1),
   ...fanBuildTables("bigfan", BIGFAN_BUILD_SCALE),
-  // The side grip by glyph key and by sprite key. The model-sprite scaler only
-  // handles axial tables, so the sprite key is registered outright.
+  // The side grip by glyph key.
   triangle__side: TRIANGLE_SIDE_TIP_POINTS,
-  triangle_side__model: TRIANGLE_SIDE_TIP_POINTS,
 };
 
 // Callback injection avoids a circular dependency on the feature layer.
@@ -701,7 +692,6 @@ export const PROP_TIP_POINTS: Record<string, PropTipConfig> = {
 export const DEFAULT_TIP_POINTS: PropTipConfig = STAFF_TIP_POINTS;
 
 const RENDER_KEY_SEPARATOR = "__";
-const MODEL_RENDER_KEY_SUFFIX = "__model";
 
 /** The notation prop type behind a render key (`fan__lotus` -> `fan`). */
 function baseKeyOf(key: string): string {
@@ -709,177 +699,8 @@ function baseKeyOf(key: string): string {
   return separator === -1 ? key : key.slice(0, separator);
 }
 
-// ---------------------------------------------------------------------------
-// Model sprites. A "3D model" look draws a baked capture on the same
-// grip-centred box as the notation glyph, so the notation table applies —
-// except where the capture paints short of the notation reach along the prop
-// axis. Then an axial prop's tips are pulled in to the painted extent so
-// flames and trails attach to the sprite that is actually on screen. Tips are
-// never pushed out past the notation reach: several tables deliberately sit
-// inside the paint (wick centres, poi heads).
-// ---------------------------------------------------------------------------
-
-/** Painted reach is within this fraction of the box half-width: keep the table. */
-const MODEL_REACH_TOLERANCE = 0.05;
-
-/**
- * Painted reach below this fraction of the half-width means the capture has
- * no end on that side (a club held at its knob paints nothing past the hand).
- * Its tips are dropped rather than pulled in onto the hand.
- */
-const MODEL_REACH_DROP = 0.25;
-
-function isAxialTable(config: PropTipConfig): boolean {
-  return (
-    config.points.length > 0 && config.points.every((point) => point.dy === 0)
-  );
-}
-
-/**
- * Lean of the painted capture or the tip table off the grip, as a fraction of
- * the box half-width. Below this a side is not a side.
- */
-const MODEL_SIDE_BIAS = 0.1;
-
-/**
- * Staff captures whose thumb end was shot on -x. Staff3D builds its T-bar on
- * the thumb end; the notation staff marks that end at +x, the end the rotation
- * tables point at the centre for "in". The paint is centred and the tip table
- * two-ended, so the geometry below cannot tell which way these face.
- */
-const MODEL_THUMB_END_ON_NEGATIVE_X = new Set(["staff", "bigstaff"]);
-
-/**
- * True when a capture paints on the opposite side of the hand from its tip
- * table, or puts its thumb end where the notation glyph does not. The tables
- * put a one-sided prop's business end at +x (a triad's lead arm, a hoop's
- * rim), so the animation canvas rotates such sprites 180 degrees when it
- * draws them (svg-generator) and the derived tips below assume the rotated
- * sprite. Apart from the staff captures, the decision is made from the painted
- * geometry, so an axial capture that paints clearly on -x turns even when its
- * notation table is two-ended (the big club model is a club held at its knob).
- */
-export function modelSpriteFacesAwayFromTips(
-  propType: string,
-  entry: PropModelSpriteEntry | undefined = PROP_MODEL_SPRITES[
-    propType.toLowerCase()
-  ]
-): boolean {
-  if (!entry?.bounds) return false;
-  const key = baseKeyOf(propType.toLowerCase());
-  if (MODEL_THUMB_END_ON_NEGATIVE_X.has(key)) return true;
-  // A sprite key that is not a prop type (the side-grip triangle's
-  // triangle_side) keeps its table under its render key.
-  const base =
-    PROP_TIP_POINTS[key] ??
-    PROP_RENDER_KEY_TIP_POINTS[`${key}${MODEL_RENDER_KEY_SUFFIX}`];
-  if (!base || base.points.length === 0) return false;
-  const half = entry.width / 2;
-  const paintBias = (entry.bounds.x + entry.bounds.width / 2 - half) / half;
-  if (isAxialTable(base) && paintBias < -2 * MODEL_SIDE_BIAS) return true;
-  const xs = base.points.map((point) => point.dx);
-  const tipBias = (Math.max(...xs) + Math.min(...xs)) / 2 / half;
-  return (
-    Math.abs(tipBias) > MODEL_SIDE_BIAS &&
-    Math.abs(paintBias) > MODEL_SIDE_BIAS &&
-    Math.sign(tipBias) !== Math.sign(paintBias)
-  );
-}
-
-const modelTipCache = new Map<string, PropTipConfig>();
-
-function modelSpriteTipPoints(key: string): PropTipConfig | null {
-  const cached = modelTipCache.get(key);
-  if (cached) return cached;
-  const baseKey = baseKeyOf(key);
-  if (baseKey === "triangle" || baseKey === "triangle_side") {
-    const entry = PROP_MODEL_SPRITES[baseKey];
-    if (!entry) return null;
-    const { sideChord, sagitta, height, reach } = TRIANGLE_STATIONS_M;
-    // The model is framed at its physical hand origin. Its bowed side
-    // midpoints and vertices are closer to the hand than the notation tips.
-    const halfSide = sideChord / 2;
-    const bowSide = halfSide / 2 + (sagitta * Math.sqrt(3)) / 2;
-    const sideGrip = baseKey === "triangle_side";
-    const endY = sideGrip ? sagitta : height;
-    const bowedY = sideGrip
-      ? sagitta + height / 2 + sagitta / 2
-      : height / 2 - sagitta / 2;
-    const stations = [
-      [reach, 0],
-      [endY, halfSide],
-      [endY, -halfSide],
-      [bowedY, bowSide],
-      [bowedY, -bowSide],
-    ];
-    const result = {
-      points: stations.map(([axial, lateral]) => ({
-        dx: axial! * entry.fit,
-        dy: lateral! * entry.fit,
-      })),
-    };
-    modelTipCache.set(key, result);
-    return result;
-  }
-  const base = PROP_TIP_POINTS[baseKey];
-  const entry = PROP_MODEL_SPRITES[baseKey];
-  if (!base || !entry?.bounds || !isAxialTable(base)) return null;
-
-  const half = entry.width / 2;
-  const facesAway = modelSpriteFacesAwayFromTips(baseKey, entry);
-  // Reach on each side of the hand as the sprite is drawn (after the
-  // renderer's 180 degree correction for away-facing captures).
-  const paintedLeft = half - entry.bounds.x;
-  const paintedRight = entry.bounds.x + entry.bounds.width - half;
-  const reachPositive = facesAway ? paintedLeft : paintedRight;
-  const reachNegative = facesAway ? paintedRight : paintedLeft;
-  const scalePositive = Math.min(1, reachPositive / half);
-  const scaleNegative = Math.min(1, reachNegative / half);
-  const needsPositive =
-    base.points.some((point) => point.dx > 0) &&
-    scalePositive < 1 - MODEL_REACH_TOLERANCE;
-  const needsNegative =
-    base.points.some((point) => point.dx < 0) &&
-    scaleNegative < 1 - MODEL_REACH_TOLERANCE;
-  if (!needsPositive && !needsNegative) {
-    modelTipCache.set(key, base);
-    return base;
-  }
-  const scaled: PropTipConfig = {
-    points: base.points
-      .filter((point) =>
-        point.dx > 0
-          ? !needsPositive || scalePositive >= MODEL_REACH_DROP
-          : point.dx < 0
-            ? !needsNegative || scaleNegative >= MODEL_REACH_DROP
-            : true
-      )
-      .map((point) => ({
-        dx:
-          point.dx > 0 && needsPositive
-            ? point.dx * scalePositive
-            : point.dx < 0 && needsNegative
-              ? point.dx * scaleNegative
-              : point.dx,
-        dy: point.dy,
-      })),
-  };
-  // A capture with no end on either side has nothing to attach to; fall
-  // back to the notation table rather than an empty one.
-  const result = scaled.points.length > 0 ? scaled : base;
-  modelTipCache.set(key, result);
-  return result;
-}
-
 function tableFor(key: string): PropTipConfig | null {
-  if (key === "triangle_side__model") return modelSpriteTipPoints(key);
-  const renderKeyed = PROP_RENDER_KEY_TIP_POINTS[key];
-  if (renderKeyed) return renderKeyed;
-  if (key.endsWith(MODEL_RENDER_KEY_SUFFIX)) {
-    const model = modelSpriteTipPoints(key);
-    if (model) return model;
-  }
-  return null;
+  return PROP_RENDER_KEY_TIP_POINTS[key] ?? null;
 }
 
 export type TipPointSource = "override" | "render-key" | "base" | "default";
@@ -894,7 +715,7 @@ export interface TipPointResolution {
 
 /**
  * Where getTipPoints(key) gets its answer. Order: an override for the exact
- * key, the render-key table (fan builds, model sprites), an override for the
+ * key, the render-key table (fan builds, the side-grip triangle), an override for the
  * notation type behind the key, the notation table, then the staff default.
  * A render-key table outranks a notation override because the override was
  * tuned against the notation artwork, not this build.

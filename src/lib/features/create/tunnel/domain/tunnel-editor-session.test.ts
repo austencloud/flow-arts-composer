@@ -122,28 +122,19 @@ describe("Tunnel editor session replacement status", () => {
     expect(tunnelEditorSessionStatus(changed, opened()).dirty).toBe(true);
   });
 
-  it("reads a missing prop version as Version 1", () => {
-    // The creator always captures a version, but a tunnel saved before
-    // versions has none, and opening it must not look like an edit.
-    const captured = draft({
-      presentation: {
-        ...snapshot,
-        props: { ...snapshot.props, propLook: "pictograph" },
-      },
-    });
+  it("ignores a retired prop version an older tunnel still carries", () => {
+    // Prop versions were removed on 2026-10-27; opening a tunnel saved with
+    // one must not look like an edit.
+    for (const propLook of ["pictograph", "model"]) {
+      const legacy = draft({
+        presentation: {
+          ...snapshot,
+          props: { ...snapshot.props, propLook },
+        } as typeof snapshot,
+      });
 
-    expect(tunnelEditorSessionStatus(captured, opened()).dirty).toBe(false);
-  });
-
-  it("protects a prop version change", () => {
-    const changed = draft({
-      presentation: {
-        ...snapshot,
-        props: { ...snapshot.props, propLook: "model" },
-      },
-    });
-
-    expect(tunnelEditorSessionStatus(changed, opened()).dirty).toBe(true);
+      expect(tunnelEditorSessionStatus(legacy, opened()).dirty).toBe(false);
+    }
   });
 
   it("protects source identity and provenance changes", () => {

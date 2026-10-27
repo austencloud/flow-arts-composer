@@ -25,11 +25,9 @@
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
   import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
-  import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
 
   let {
     propType,
-    propLook,
     leftFlipped,
     rightFlipped,
     leftColor,
@@ -38,7 +36,6 @@
   }: {
     /** A buugeng-family prop. */
     propType: PropType;
-    propLook?: PropLook;
     leftFlipped: boolean;
     rightFlipped: boolean;
     leftColor?: string;
@@ -123,7 +120,6 @@
       disableTransitions
       leftPropTypeOverride={propType}
       rightPropTypeOverride={propType}
-      propLookOverride={propLook}
       leftBuugengFlippedOverride={leftFlipped}
       rightBuugengFlippedOverride={rightFlipped}
       leftColorOverride={leftColor}

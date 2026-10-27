@@ -6,7 +6,6 @@
   import { getPropTypeDisplayInfo } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
-  import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
   import type { PropChiralitySeam } from "#lib/shared/settings/components/tabs/prop-type/prop-chirality-seam.js";
   import type { ViewerCustomColorPair } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
 
@@ -18,21 +17,17 @@
     preview,
     fanAppearance,
     onFanAppearanceChange,
-    propLook,
-    onPropLookChange,
     chirality,
     primaryPropColors,
     onPrimaryPropColorsChange,
   }: {
     open: boolean;
     selectedPropType: PropType;
-    onSelect: (prop: PropType, look?: PropLook) => void;
+    onSelect: (prop: PropType) => void;
     onOpenChange: (open: boolean) => void;
     preview: Snippet;
     fanAppearance: FanAppearance;
     onFanAppearanceChange: (appearance: FanAppearance) => void;
-    propLook: PropLook;
-    onPropLookChange: (look: PropLook) => void;
     chirality: PropChiralitySeam;
     primaryPropColors: ViewerCustomColorPair | null;
     onPrimaryPropColorsChange: (colors: ViewerCustomColorPair | null) => void;
@@ -98,8 +93,6 @@
         isActive={open}
         {fanAppearance}
         {onFanAppearanceChange}
-        {propLook}
-        {onPropLookChange}
         {chirality}
         {onSelect}
       />

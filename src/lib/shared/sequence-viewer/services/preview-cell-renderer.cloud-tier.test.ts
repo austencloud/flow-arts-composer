@@ -87,20 +87,6 @@ describe("renderCell cloud tier", () => {
     expect(cloudUpload).not.toHaveBeenCalled();
   });
 
-  it("cloudOnly MISS: fails without loading the local renderer", async () => {
-    cloudDownload.mockResolvedValue(null);
-
-    await expect(
-      renderCell(data, undefined, true, {
-        size: 300,
-        probeCloud: true,
-        cloudOnly: true,
-      })
-    ).rejects.toThrow("Canonical pictograph HASH is unavailable");
-
-    expect(poolRender).not.toHaveBeenCalled();
-  });
-
   it("uploadCanonical: renders + uploads (render-at-publish path)", async () => {
     cloudDownload.mockResolvedValue(null);
     poolRender.mockResolvedValue(new Blob(["png"], { type: "image/png" }));

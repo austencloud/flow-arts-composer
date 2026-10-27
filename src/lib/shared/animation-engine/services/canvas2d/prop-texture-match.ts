@@ -4,9 +4,9 @@ import { basePropTypeOfRenderKey } from "#lib/shared/pictograph/prop/domain/prop
  * Whether the sprite the image loader holds for a hand is the one the current
  * frame describes.
  *
- * The loader is fed render keys (`fan__lotus`, `club__model`) while frame
- * params carry the notation prop type (`fan`, `club`), so the two can never be
- * compared directly. A hand matches when the loaded key is the key most
+ * The loader is fed render keys (`fan__lotus`, `triangle__side`) while frame
+ * params carry the notation prop type (`fan`, `triangle`), so the two can
+ * never be compared directly. A hand matches when the loaded key is the key most
  * recently requested (no load in flight) and the notation prop behind that
  * key is the one the frame describes (the params have not already moved on
  * to an incoming prop the manager has yet to request).

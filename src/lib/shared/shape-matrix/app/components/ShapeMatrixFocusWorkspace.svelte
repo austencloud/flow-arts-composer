@@ -3,6 +3,7 @@
   import { tick } from "svelte";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import BentoPropGrid from "#lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte";
+  import { shapeMatrixPickerProps } from "#lib/shared/shape-matrix/domain/prop-pair.js";
   import HandPropToolbar from "#lib/shared/settings/components/tabs/prop-type/HandPropToolbar.svelte";
   import { localizedPropName } from "#lib/shared/settings/components/tabs/prop-type/localized-prop-name.js";
   import type { PillId } from "#lib/shared/animation-panel/pill-nav/pill-types.js";
@@ -106,7 +107,8 @@
     <HandPropToolbar handProps={app.handProps} />
     <BentoPropGrid
       selectedPropType={app.addressedPropType}
-      onSelect={(next, look) => void app.setPropType(next, undefined, look)}
+      onSelect={(next) => void app.setPropType(next)}
+      allowedProps={shapeMatrixPickerProps()}
       variant="inline"
       accessMode="educational"
       flat
@@ -143,9 +145,9 @@
         showTempoControls={false}
         showEffectsPlayback={false}
         selectedPropType={app.addressedPropType}
-        onPropChange={(next, look) =>
-          void app.setPropType(next, undefined, look)}
+        onPropChange={(next) => void app.setPropType(next)}
         handProps={app.handProps}
+        allowedProps={shapeMatrixPickerProps()}
         sequence={theory ? null : animation.previewSequence}
         showPathShape={false}
         showMotionVisibility={true}

@@ -46,7 +46,7 @@ const TWO_ENDED_PROPS: ReadonlySet<PropType> = new Set([
  * How many prop tips the mandala traces for a prop: 2 = staff-like (both ends),
  * 1 = club-like (one end). Undefined defaults to 2 — staff is TKA's canonical
  * prop, so an unspecified prop keeps the historical two-tip render. A render
- * key (`bigclub__model`, `fan__lotus`) counts as the prop it draws.
+ * key (`bigfan__fire_bare`, `triangle__side`) counts as the prop it draws.
  */
 export function propTipEnds(propType: PropType | string | undefined): 1 | 2 {
   if (!propType) return 2;

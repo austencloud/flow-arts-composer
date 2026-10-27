@@ -41,7 +41,11 @@
     {#if actions}
       {@render actions()}
     {/if}
-    <button class="close-button" onclick={onClose} aria-label={closeLabel}>
+    <button
+      class="close-button"
+      onclick={() => onClose()}
+      aria-label={closeLabel}
+    >
       <svg
         viewBox="0 0 24 24"
         fill="none"

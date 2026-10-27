@@ -9,7 +9,6 @@ import {
   presetSettingsPatch,
   presetShortcutKey,
   presetSlots,
-  presetVersion,
   presetsMatch,
 } from "./prop-presets";
 
@@ -46,7 +45,6 @@ describe("prop presets", () => {
       catDogMode: false,
       leftBuugengFlipped: false,
       rightBuugengFlipped: false,
-      propArtwork: "pictograph",
     });
   });
 
@@ -87,7 +85,6 @@ describe("prop presets", () => {
       catDogMode: false,
       leftBuugengFlipped: false,
       rightBuugengFlipped: true,
-      propArtwork: "pictograph",
     });
   });
 
@@ -104,99 +101,19 @@ describe("prop presets", () => {
     expect(presetLabel(DEFAULT_PROP_PRESETS[9]!)).toContain(" + ");
   });
 
-  describe("versions", () => {
-    // LED Baton and Double Staff have a captured Version 2; Fan has none.
-    const baton = {
-      leftPropType: PropType.CAPSULE_BATON,
-      rightPropType: PropType.CAPSULE_BATON,
-      catDogMode: false,
+  it("names each prop through the screen's own lookup", () => {
+    const names: Partial<Record<PropType, string>> = {
+      [PropType.STAFF]: "Bastón doble",
+      [PropType.FAN]: "Abanico",
     };
-    const fan = DEFAULT_PROP_PRESETS[1]!;
-
-    it("saves the version the setup is at", () => {
-      expect(
-        presetFromSettings({ ...baton, propArtwork: "model" }).propArtwork
-      ).toBe("model");
-      expect(presetFromSettings(baton).propArtwork).toBe("pictograph");
-    });
-
-    it("applies the version last, so it lands after the prop writes", () => {
-      const patch = presetSettingsPatch({ ...baton, propArtwork: "model" }, 2);
-      expect(patch.propArtwork).toBe("model");
-      expect(Object.keys(patch).at(-1)).toBe("propArtwork");
-    });
-
-    it("applies a preset saved before versions existed as Version 1", () => {
-      expect(presetSettingsPatch(baton, 0).propArtwork).toBe("pictograph");
-      expect(presetSettingsPatch(DEFAULT_PROP_PRESETS[0]!, 0).propArtwork).toBe(
-        "pictograph"
-      );
-    });
-
-    it("counts Version 2 only when a held prop has one", () => {
-      expect(presetVersion({ ...baton, propArtwork: "model" })).toBe("model");
-      expect(presetVersion({ ...fan, propArtwork: "model" })).toBe("pictograph");
-      expect(
-        presetVersion({
-          ...fan,
-          rightPropType: PropType.CAPSULE_BATON,
-          catDogMode: true,
-          propArtwork: "model",
-        })
-      ).toBe("model");
-      expect(presetVersion(baton)).toBe("pictograph");
-    });
-
-    it("tells Version 1 from Version 2 for a prop that has both", () => {
-      const v2 = { ...baton, propArtwork: "model" as const };
-      expect(presetsMatch(baton, v2)).toBe(false);
-      expect(presetsMatch(v2, { ...v2 })).toBe(true);
-    });
-
-    it("treats a missing version as Version 1", () => {
-      expect(presetsMatch(baton, { ...baton, propArtwork: "pictograph" })).toBe(
-        true
-      );
-    });
-
-    it("ignores a stored Version 2 on a prop that has only one version", () => {
-      expect(presetsMatch(fan, { ...fan, propArtwork: "model" })).toBe(true);
-    });
-
-    it("ends a Version 2 label in V2", () => {
-      expect(presetLabel(baton)).not.toContain("V2");
-      expect(presetLabel({ ...baton, propArtwork: "model" })).toMatch(/ V2$/);
-    });
-
-    it("puts V2 on the prop that has one", () => {
-      const label = presetLabel({
+    const label = presetLabel(
+      {
         leftPropType: PropType.STAFF,
         rightPropType: PropType.FAN,
         catDogMode: true,
-        propArtwork: "model",
-      });
-      expect(label).toMatch(/V2 \+ /);
-      expect(label.endsWith("V2")).toBe(false);
-      expect(presetLabel({ ...fan, propArtwork: "model" })).toBe(
-        presetLabel(fan)
-      );
-    });
-
-    it("names each prop through the screen's own lookup", () => {
-      const names: Partial<Record<PropType, string>> = {
-        [PropType.STAFF]: "Bastón doble",
-        [PropType.FAN]: "Abanico",
-      };
-      const label = presetLabel(
-        {
-          leftPropType: PropType.STAFF,
-          rightPropType: PropType.FAN,
-          catDogMode: true,
-          propArtwork: "model",
-        },
-        (prop) => names[prop] ?? prop
-      );
-      expect(label).toBe("Bastón doble V2 + Abanico");
-    });
+      },
+      (prop) => names[prop] ?? prop
+    );
+    expect(label).toBe("Bastón doble + Abanico");
   });
 });

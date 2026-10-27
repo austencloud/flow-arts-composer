@@ -401,7 +401,7 @@
           ? ""
           : undefined}
       >
-        {#key `${animationAppearance.propType}:${animationAppearance.propLook}`}
+        {#key animationAppearance.propType}
           <AnimatorCanvas
             {leftProp}
             {rightProp}
@@ -420,7 +420,6 @@
             isPlaying={playing}
             leftPropType={animationAppearance.propType ?? leftPropType}
             rightPropType={animationAppearance.propType ?? rightPropType}
-            propLook={animationAppearance.propLook}
             word={sequence.word}
             previewDarkMode={animationAppearance.darkMode ?? true}
             mandalaStrokeWidthOverride={animationAppearance.mandalaThickness}

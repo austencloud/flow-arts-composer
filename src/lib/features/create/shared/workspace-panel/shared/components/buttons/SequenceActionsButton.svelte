@@ -124,10 +124,12 @@
     font-size: var(--font-size-lg);
   }
 
-  /* Mobile responsive - 48px minimum per iOS/Android guidelines */
+  /* Mobile responsive - 48px minimum per iOS/Android guidelines. A rail wide
+     enough for labels (640px and up) can sit in a window this narrow, so the
+     pill width the rail sets still wins, as it does for Clear. */
   @media (max-width: 768px) {
     .sequence-actions-button {
-      width: var(--min-touch-target);
+      width: var(--workspace-action-width, var(--min-touch-target));
       height: var(--min-touch-target);
       font-size: var(--font-size-base);
     }

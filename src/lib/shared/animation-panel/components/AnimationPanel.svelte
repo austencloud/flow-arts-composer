@@ -42,7 +42,6 @@
   import DisplayPanel from "#lib/shared/animation-engine/components/settings-panels/DisplayPanel.svelte";
   import PathShapePanel from "#lib/shared/animation-engine/components/settings-panels/PathShapePanel.svelte";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
-  import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
   import { getPropTypeDisplayInfo } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
   import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
   import type { PropChiralitySeam } from "#lib/shared/settings/components/tabs/prop-type/prop-chirality-seam.js";
@@ -138,12 +137,7 @@
       word?: string | null;
       steps?: ReadonlyArray<{ letter?: string | null }> | null;
     } | null;
-    /**
-     * `look` is the version a "V2" tile names. A host that writes the prop
-     * after an await has to carry it into that write, or the late write
-     * resets it to Version 1.
-     */
-    onPropChange?: (propType: PropType, look?: PropLook) => void;
+    onPropChange?: (propType: PropType) => void;
     /** Let a host route the Props destination into its canonical picker drawer
      * instead of squeezing the catalogue into the bottom dock tray. Sidebar
      * consumers keep the inline catalogue by omitting this callback. */
@@ -166,6 +160,13 @@
      * the single grid.
      */
     handProps?: HandPropToolbarProps;
+    /**
+     * The props the Props page lists. A host whose canvas can only draw some
+     * props (the Shape Engine traces a tip point, which a bare hand or a
+     * single contact ball lacks) narrows the page to them. Omit for every
+     * prop.
+     */
+    allowedProps?: readonly PropType[];
     /**
      * The prop grid's own primary-colour control (BentoPropGrid's
      * showColors). On by default: every canvas this panel drives draws its
@@ -250,6 +251,7 @@
     propPickerActive = false,
     propChirality,
     handProps,
+    allowedProps,
     showPropColors = true,
     onExport,
     captureVideoOpener,
@@ -893,6 +895,7 @@
           {selectedPropType}
           onSelect={onPropChange}
           chirality={propChirality}
+          {allowedProps}
           showColors={showPropColors}
           compactColors={layout === "bottom"}
           layout={layout === "bottom" ? "rail" : "grid"}

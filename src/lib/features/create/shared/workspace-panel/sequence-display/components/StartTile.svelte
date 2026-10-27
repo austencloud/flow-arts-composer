@@ -6,7 +6,6 @@
   import type { BuildModeId } from "#lib/shared/foundation/ui/ui-types.js";
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
-  import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
   import StepCell from "./StepCell.svelte";
 
   let {
@@ -23,7 +22,6 @@
     leftPropTypeOverride = undefined,
     rightPropTypeOverride = undefined,
     fanAppearanceOverride = undefined,
-    propLookOverride = undefined,
     leftBuugengFlippedOverride = undefined,
     rightBuugengFlippedOverride = undefined,
     leftColorOverride = undefined,
@@ -45,7 +43,6 @@
     leftPropTypeOverride?: PropType;
     rightPropTypeOverride?: PropType;
     fanAppearanceOverride?: FanAppearance;
-    propLookOverride?: PropLook;
     leftBuugengFlippedOverride?: boolean;
     rightBuugengFlippedOverride?: boolean;
     leftColorOverride?: string;
@@ -80,7 +77,6 @@
     {leftPropTypeOverride}
     {rightPropTypeOverride}
     {fanAppearanceOverride}
-    {propLookOverride}
     {leftBuugengFlippedOverride}
     {rightBuugengFlippedOverride}
     {leftColorOverride}

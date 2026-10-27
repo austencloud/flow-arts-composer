@@ -29,12 +29,6 @@
   } from "#lib/shared/animation-engine/components/effects-panel/effect-registry.js";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {
-    normalizePropLook,
-    versionAfterPick,
-    type PropLook,
-  } from "#lib/shared/pictograph/prop/domain/prop-look.js";
-  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
-  import {
     AnimationVisibilityStateManager,
     getAnimationVisibilityManager,
   } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
@@ -118,7 +112,6 @@
         : (sections[0] ?? "display")
   );
   let pickedPropType = $state<PropType | undefined>();
-  let pickedPropLook = $state<PropLook>("pictograph");
   const DEFAULT_MANDALA_THICKNESS = 2.5;
   let mandalaThickness = $state(DEFAULT_MANDALA_THICKNESS);
   let mandalaShown = $state(true);
@@ -333,9 +326,6 @@
         pickedPropType = appearance?.propType;
         mandalaThickness =
           appearance?.mandalaThickness ?? DEFAULT_MANDALA_THICKNESS;
-        pickedPropLook = normalizePropLook(
-          appearance?.propLook ?? getSettings().propArtwork
-        );
         effectsWereEdited = !!appearance?.effects || !!trail;
         const nextEffects = postAnimationEffectsConfig(
           appearance,
@@ -358,7 +348,6 @@
       keys.map((key) => [key, settings[key]])
     ) as Appearance;
     if (pickedPropType) appearance.propType = pickedPropType;
-    appearance.propLook = pickedPropLook;
     if (mandalaThickness !== DEFAULT_MANDALA_THICKNESS)
       appearance.mandalaThickness = mandalaThickness;
     if (effectsWereEdited) {
@@ -470,26 +459,11 @@
           {#snippet children(bounded)}
             <BentoPropGrid
               selectedPropType={pickedPropType ?? defaultPropType}
-              onSelect={(propType, look) => {
-                // A version belongs to the pick, so a different prop that
-                // names none starts at Version 1.
-                pickedPropLook = versionAfterPick(
-                  pickedPropType ?? defaultPropType,
-                  pickedPropLook,
-                  propType,
-                  look
-                );
+              onSelect={(propType) => {
                 pickedPropType = propType;
                 save();
               }}
-              propLook={pickedPropLook}
-              onPropLookChange={(look) => {
-                if (pickedPropLook === look) return;
-                pickedPropLook = look;
-                save();
-              }}
               showColors={false}
-              showPropLook
               showAppearance={false}
               scrollMode={bounded ? "internal" : "host"}
               variant="inline"

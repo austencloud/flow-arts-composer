@@ -609,7 +609,7 @@ export function toggleBigVariant(propType: PropType): PropType {
 /**
  * A prop at its standard size, lower-cased: Big Triad and Triad are both
  * "triad". Size is a setting on a prop, so anything that asks whether the
- * performer picked a different prop (a Version 2 pick, a highlighted tile)
+ * performer picked a different prop (a highlighted tile, a preset)
  * compares these keys rather than the raw prop values. Takes a string because
  * hosts hand props around in either case.
  */

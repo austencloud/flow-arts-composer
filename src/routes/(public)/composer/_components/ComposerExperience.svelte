@@ -20,11 +20,6 @@
     DEFAULT_FAN_APPEARANCE,
     type FanAppearance,
   } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
-  import {
-    DEFAULT_PROP_LOOK,
-    versionAfterPick,
-    type PropLook,
-  } from "#lib/shared/pictograph/prop/domain/prop-look.js";
   import type { PropChiralitySeam } from "#lib/shared/settings/components/tabs/prop-type/prop-chirality-seam.js";
   import type { ViewerCustomColorPair } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
   import {
@@ -131,7 +126,6 @@
   // Appearance and colors stay with this public page's prop choice. There is
   // no app settings service here, so writing to it would lose these edits.
   let fanAppearance = $state<FanAppearance>(DEFAULT_FAN_APPEARANCE);
-  let propLook = $state<PropLook>(DEFAULT_PROP_LOOK);
   let primaryPropColors = $state<ViewerCustomColorPair | null>(null);
   let buugengFlipped = $state({ left: false, right: false });
   const chirality: PropChiralitySeam = {
@@ -155,7 +149,6 @@
   };
   const propAppearance = $derived<ComposerPropAppearance>({
     fanAppearance,
-    propLook,
     primaryPropColors,
     leftBuugengFlipped: buugengFlipped.left,
     rightBuugengFlipped: buugengFlipped.right,
@@ -165,10 +158,6 @@
       return fanAppearance;
     },
     onFanAppearanceChange: (next: FanAppearance) => (fanAppearance = next),
-    get propLook() {
-      return propLook;
-    },
-    onPropLookChange: (next: PropLook) => (propLook = next),
     get primaryPropColors() {
       return primaryPropColors;
     },
@@ -183,10 +172,7 @@
     propPickerOpen = true;
   }
 
-  function selectProp(prop: PropType, look?: PropLook): void {
-    // A version belongs to the pick, so a different prop that names none
-    // starts at Version 1.
-    propLook = versionAfterPick(selectedProp, propLook, prop, look);
+  function selectProp(prop: PropType): void {
     // Keep the chooser open so a family pick can reveal its appearance options.
     selectedProp = prop;
   }

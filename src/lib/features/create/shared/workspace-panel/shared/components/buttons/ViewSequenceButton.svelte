@@ -1,9 +1,13 @@
 <!--
   ViewSequenceButton.svelte
 
-  View button that opens the sequence viewer for animation and export.
-  Public demos also reuse its appearance for real inline playback, so the
-  purpose prop keeps the accessible copy accurate for both actions.
+  The sequence's Play control, in two presentations:
+  - "open-viewer" opens the full Sequence Viewer for animation and export
+    (Shape, Fuse and Assemble).
+  - "play" plays in place: Construct and Generate run the workspace player,
+    and public demos play inline. That player carries its own control for
+    opening the full viewer, so the rail needs only this one button.
+  The purpose prop keeps the icon and accessible copy accurate for each.
   Choreographed entrance: hatches from nothing, overshoots, settles, then breathes.
 -->
 <script lang="ts">
@@ -23,7 +27,7 @@
   } = $props<{
     onclick?: () => void;
     isActive?: boolean;
-    purpose?: "open-viewer" | "expand-viewer" | "play";
+    purpose?: "open-viewer" | "play";
     isStopping?: boolean;
     playbackState?: "idle" | "preparing" | "retry";
     /** Plain surface for the phone Assemble rail, where the pictures lead. */
@@ -39,9 +43,7 @@
           ? "fa-stop"
           : purpose === "play"
             ? "fa-play"
-            : purpose === "expand-viewer"
-              ? "fa-expand"
-              : WORKSPACE_BUTTON_ICON.view.icon
+            : WORKSPACE_BUTTON_ICON.view.icon
   );
   const accessibleLabel = $derived(
     playbackState === "preparing"
@@ -52,9 +54,7 @@
           ? t("create_workspace_stop_playback")
           : purpose === "play"
             ? WORKSPACE_BUTTON_ICON.view.actionLabel
-            : purpose === "expand-viewer"
-              ? t("create_workspace_expand_viewer")
-              : t("create_workspace_open_viewer")
+            : t("create_workspace_open_viewer")
   );
   const visibleLabel = $derived(
     playbackState === "preparing"
@@ -95,7 +95,6 @@
   class="view-sequence-button glass-button"
   class:active={isActive}
   class:play-purpose={purpose === "play"}
-  class:expand-purpose={purpose === "expand-viewer"}
   class:stopping={isStopping}
   class:preparing={playbackState === "preparing"}
   class:retry={playbackState === "retry"}
@@ -187,7 +186,6 @@
   }
 
   /* Wherever the button stops pulsing, its glow layer stops too. */
-  .view-sequence-button.expand-purpose::after,
   .view-sequence-button.retry::after,
   .view-sequence-button.quiet::after,
   .view-sequence-button:hover::after {
@@ -197,40 +195,6 @@
   /* A still Play button keeps its brighter resting glow. */
   .view-sequence-button.play-purpose.retry:not(.quiet):not(:hover)::after {
     opacity: 1;
-  }
-
-  .view-sequence-button.expand-purpose {
-    border-color: color-mix(in srgb, var(--semantic-info) 72%, white);
-    background: linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--semantic-info) 84%, white) 0%,
-      color-mix(in srgb, var(--semantic-info) 74%, #075985) 100%
-    );
-    box-shadow:
-      0 5px 14px color-mix(in srgb, var(--semantic-info) 52%, transparent),
-      inset 0 1px 0 rgba(255, 255, 255, 0.28);
-    animation: none;
-  }
-
-  .view-sequence-button.expand-purpose i {
-    font-size: var(--font-size-lg);
-  }
-
-  .view-sequence-button.expand-purpose:hover {
-    background: linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--semantic-info) 76%, white) 0%,
-      color-mix(in srgb, var(--semantic-info) 68%, #075985) 100%
-    );
-    box-shadow: 0 6px 16px
-      color-mix(in srgb, var(--semantic-info) 64%, transparent);
-    transform: scale(1.05);
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .view-sequence-button.expand-purpose:hover {
-      transform: none;
-    }
   }
 
   .workspace-action-label {
@@ -331,8 +295,7 @@
   }
 
   .view-sequence-button.quiet,
-  .view-sequence-button.quiet.play-purpose,
-  .view-sequence-button.quiet.expand-purpose {
+  .view-sequence-button.quiet.play-purpose {
     border: 1px solid var(--theme-stroke);
     background: var(--theme-card-bg);
     box-shadow: none;
@@ -345,13 +308,9 @@
     box-shadow: none;
   }
 
-  /* Quiet keeps the familiar icon color: green Play, blue expand. */
+  /* Quiet keeps the familiar green on the Play icon. */
   .view-sequence-button.quiet i {
     color: color-mix(in srgb, var(--semantic-success) 78%, white);
-  }
-
-  .view-sequence-button.quiet.expand-purpose i {
-    color: color-mix(in srgb, var(--semantic-info) 72%, white);
   }
 
   .view-sequence-button i {

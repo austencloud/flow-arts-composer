@@ -63,37 +63,6 @@ describe("PropSvgLoader triangle grip", () => {
     expect(result.svgData!.center).toEqual({ x: 141.65, y: 81.085 });
   });
 
-  it("draws the side-grip capture under the Realistic look, turned like the corner one", async () => {
-    const side = await loader.loadPropSvg(
-      placement,
-      motion("triangle", HandSide.RIGHT),
-      false,
-      { themeMode: "dark", propLook: "model", triangleGrip: "side" }
-    );
-    const corner = await loader.loadPropSvg(
-      placement,
-      motion("triangle", HandSide.RIGHT),
-      false,
-      { themeMode: "dark", propLook: "model" }
-    );
-
-    expect(loader.fetched).toEqual([
-      expect.stringMatching(
-        /^\/images\/props\/appearances\/model\/triangle_side-red\.svg\?v=/
-      ),
-      expect.stringMatching(
-        /^\/images\/props\/appearances\/model\/triangle-red\.svg\?v=/
-      ),
-    ]);
-    // Both captures paint on -x while the glyphs and tip tables reach +x.
-    const turn = '<g transform="rotate(180 141.65 81.085)">';
-    expect(side.svgData!.svgContent).toContain(turn);
-    expect(corner.svgData!.svgContent).toContain(turn);
-    expect(side.svgData!.svgContent).toContain(
-      "triangle_side 3D model sprite (red)"
-    );
-  });
-
   it("keeps the corner glyph for the corner grip and ignores the grip for other props", async () => {
     const unset = await loader.loadPropSvg(
       placement,

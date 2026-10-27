@@ -13,10 +13,14 @@
  *   change never turns the body; the host holds the facing.
  * - Facing: `facingYaw` is the body's facing, eased from the last phrase's
  *   target to this one's over the phrase's first pass and held after it.
- *   `facingAngle` stays the root facing the grid turns with. A host hands the
- *   body facing to the body response as a facing hint
+ *   `facingAngle` is the root facing the grid turns with. On a planted phrase
+ *   the root follows the body, eased over the same first pass, so a big
+ *   facing change turns the whole performer, grid and all (Austen,
+ *   2026-10-27): the body response holds the feet still in the world while
+ *   the root turns and steps them round after it (`phraseRootTurn`). What is
+ *   left for the body to turn under its grid is the facing hint
  *   (`phraseFacingHint`): the body yaw relative to the root, per beat of the
- *   sequence.
+ *   sequence, a small trim.
  *
  * The schedule's yaw (0 faces +x, turning toward +z) maps to the rig's
  * facing (0 faces +z) as `rig = π/2 − yaw`.
@@ -107,15 +111,54 @@ export function phraseFacingHint(
     const local = settled
       ? pass
       : Math.max(0, Math.min(pass, Number.isFinite(scoreTime) ? scoreTime : 0));
-    const root =
-      phrase.mode === "turning" && phrase.turnBeats && local < phrase.turnBeats
-        ? phrase.facingStart
-        : phrase.facingEnd;
     return wrapAngle(
       rigFacingForYaw(phraseFacingYaw(phrase, from, local)) -
-        rigFacingForYaw(root)
+        rigFacingForYaw(phraseRootYaw(phrase, local))
     );
   };
+}
+
+/**
+ * How far the root has turned since a planted phrase began, at a score time
+ * in beats of its sequence, in the rig's sense: what the body response holds
+ * the feet still against. Zero for the passes after the first (`settled`)
+ * and for every other mode, whose turns the rig steps itself.
+ */
+export function phraseRootTurn(
+  phrase: ScheduledPhrase,
+  settled = false
+): (scoreTime: number) => number {
+  if (settled || !rootFollowsBody(phrase)) return () => 0;
+  const pass = phrasePassBeats(phrase);
+  const start = rigFacingForYaw(phrase.facingStart);
+  return (scoreTime: number) => {
+    const local = Math.max(
+      0,
+      Math.min(pass, Number.isFinite(scoreTime) ? scoreTime : 0)
+    );
+    return wrapAngle(rigFacingForYaw(phraseRootYaw(phrase, local)) - start);
+  };
+}
+
+/** A planted phrase that plays turns its root with the body; a rest holds. */
+function rootFollowsBody(phrase: ScheduledPhrase): boolean {
+  return phrase.mode === "planted" && !phrase.rest;
+}
+
+/**
+ * The root facing (schedule yaw) `local` beats into a phrase. A planted
+ * phrase eases it from `facingStart` to `facingEnd` over its first pass, as
+ * the body eases to its target; a turning phrase changes it at the end of
+ * its stepping turn; a walk keeps it.
+ */
+export function phraseRootYaw(phrase: ScheduledPhrase, local: number): number {
+  if (phrase.mode === "turning" && phrase.turnBeats) {
+    return local < phrase.turnBeats ? phrase.facingStart : phrase.facingEnd;
+  }
+  if (!rootFollowsBody(phrase)) return phrase.facingEnd;
+  const span = Math.min(phrasePassBeats(phrase), phrase.beats);
+  const delta = wrapAngle(phrase.facingEnd - phrase.facingStart);
+  return wrapAngle(phrase.facingStart + delta * smoothstep01(local / span));
 }
 
 /** Schedule yaw to the rig's facing. */
@@ -306,6 +349,9 @@ export function createPhrasePlayback(
           return frame;
         }
         frame.facingAngle = rigFacingForYaw(phrase.facingEnd);
+      } else if (rootFollowsBody(phrase)) {
+        // On the score's clock, as the body response's root turn is.
+        frame.facingAngle = rigFacingForYaw(phraseRootYaw(phrase, scoreBeat));
       }
 
       // Standing after a walk: hold that walk's settled gait sample.

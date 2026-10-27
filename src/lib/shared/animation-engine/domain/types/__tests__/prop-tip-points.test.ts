@@ -4,14 +4,12 @@ import {
   describeTipPointResolution,
   FAN_TIP_POINTS,
   getTipPoints,
-  modelSpriteFacesAwayFromTips,
   getTipPointsBaseline,
   PROP_RENDER_KEY_TIP_POINTS,
   PROP_TIP_POINTS,
   setTipPointOverrideProvider,
   tipPointSignature,
 } from "../prop-tip-points";
-import { PROP_MODEL_SPRITES } from "#lib/shared/pictograph/prop/domain/prop-model-sprites.generated.js";
 import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import { propTipEnds } from "#lib/shared/pictograph/prop/domain/prop-tip-ends.js";
 import { trailTipEnds } from "../trail-point-types";
@@ -139,189 +137,16 @@ describe("render-key tip points", () => {
   });
 });
 
-describe("model sprite tip points", () => {
-  it("places both triangle grips' five sources on their physical model stations", () => {
-    // Measured model stations in metres, then converted with the capture's fit.
-    // The old notation table reached 135.15 units, beyond the ~117-unit paint.
-    for (const [key, stations] of [
-      [
-        "triangle",
-        [
-          [0.506285, 0],
-          [0.483935, 0.2794],
-          [0.483935, -0.2794],
-          [0.2307925, 0.1590557],
-          [0.2307925, -0.1590557],
-        ],
-      ],
-      [
-        "triangle_side",
-        [
-          [0.506285, 0],
-          [0.02235, 0.2794],
-          [0.02235, -0.2794],
-          [0.2754925, 0.1590557],
-          [0.2754925, -0.1590557],
-        ],
-      ],
-    ] as const) {
-      const scale = PROP_MODEL_SPRITES[key]!.fit;
-      const points = getTipPoints(`${key}__model`).points;
-      closeTo(
-        points,
-        stations.map(([axial, lateral]) => [axial * scale, lateral * scale])
-      );
-      const entry = PROP_MODEL_SPRITES[key]!;
-      const bounds = entry.bounds!;
-      const paintedReach = entry.width / 2 - bounds.x;
-      const paintedHalfHeight = Math.max(
-        Math.abs(bounds.y - entry.height / 2),
-        Math.abs(bounds.y + bounds.height - entry.height / 2)
-      );
-      expect(Math.max(...points.map((point) => point.dx))).toBeLessThan(
-        paintedReach
-      );
-      expect(
-        Math.max(...points.map((point) => Math.abs(point.dy)))
-      ).toBeLessThan(paintedHalfHeight);
-    }
-    expect(getTipPoints("triangle").points).toEqual(
-      PROP_TIP_POINTS.triangle!.points
-    );
-  });
-
-  it("keeps the notation reach for a one-sided sprite that fills its half box", () => {
-    // The club capture faces away from the notation glyph; the sprite is
-    // rotated when it is drawn, so its tip stays on the notation reach.
-    expect(getTipPoints("club__model")).toBe(PROP_TIP_POINTS.club);
-    expect(getTipPoints("poi__model")).toBe(PROP_TIP_POINTS.poi);
-  });
-
-  it("pulls axial tips in to a sprite that paints short of the notation reach", () => {
-    // The big staff capture is drawn turned (T-bar on the thumb end), so its
-    // painted left reach lands on +x and its right reach on -x.
-    const entry = PROP_MODEL_SPRITES.bigstaff!;
-    const bounds = entry.bounds!;
-    const half = entry.width / 2;
-    const points = getTipPoints("bigstaff__model").points;
-    closeTo(points, [
-      [-(bounds.x + bounds.width - half), 0],
-      [half - bounds.x, 0],
-    ]);
-    expect(Math.abs(points[0]!.dx)).toBeLessThan(300);
-  });
-
-  it("turns every staff model so its T-bar sits on the thumb end", () => {
-    // Staff3D puts the T-bar on the thumb end, and each capture shot it on -x.
-    // The notation staff marks the thumb end at +x, the end the rotation
-    // tables point at the centre for "in". Drawn as captured, a Realistic
-    // staff set to "in" showed its T-bar on the outside.
-    for (const prop of ["staff", "bigstaff"]) {
-      expect(modelSpriteFacesAwayFromTips(prop), prop).toBe(true);
-    }
-    // Symmetric captures with no thumb marker stay as captured.
-    expect(modelSpriteFacesAwayFromTips("capsule_baton")).toBe(false);
-    // Simple Staff, Capped Staff and Fire Staff have no capture to turn.
-    for (const prop of ["simple_staff", "staff_v2", "fire_double_staff"]) {
-      expect(PROP_MODEL_SPRITES[prop], prop).toBeUndefined();
-      expect(modelSpriteFacesAwayFromTips(prop), prop).toBe(false);
-    }
-  });
-
-  it("turns a one-sided capture of a two-ended prop and keeps only its painted end", () => {
-    // The big club notation glyph is held in the middle, so its table carries
-    // both ends; the model capture is a club held at the knob and painted only
-    // on the -x half. Drawn rotated, it has one real end at +x and nothing
-    // at -x. A tip pulled in to the bare knob would put a flame on the hand.
-    expect(modelSpriteFacesAwayFromTips("bigclub")).toBe(true);
-    const points = getTipPoints("bigclub__model").points;
-    expect(points).toHaveLength(1);
-    closeTo(points, [[125.79, 0]]);
-  });
-
-  it("leaves radial props on their notation table", () => {
-    expect(getTipPoints("triad__model")).toBe(PROP_TIP_POINTS.triad);
-    expect(getTipPoints("buugeng__model")).toBe(PROP_TIP_POINTS.buugeng);
-  });
-
-  it("turns radial and hooped captures whose arms point away from their tips", () => {
-    // Each of these captures paints its lead arm, rim, or blade on -x while
-    // its table reaches +x; unturned, every trail and flame floats off the
-    // artwork.
-    for (const prop of [
-      "triad",
-      "bigtriad",
-      "trigeng",
-      "minihoop",
-      "bighoop",
-      "triquetra",
-      "triquetra2",
-      "sword",
-    ]) {
-      expect(modelSpriteFacesAwayFromTips(prop), prop).toBe(true);
-    }
-    for (const prop of [
-      "quiad",
-      "bigbuugeng",
-      "buugeng",
-      "bigchicken",
-      "guitar",
-      "ukulele",
-    ]) {
-      expect(modelSpriteFacesAwayFromTips(prop), prop).toBe(false);
-    }
-  });
-
-  it("turns the side-grip triangle capture the way it turns the corner one", () => {
-    // Both captures paint on -x; both glyphs and both tip tables reach +x.
-    // The side sprite key is not a prop type, so its table lives under its
-    // render key; unturned, a Realistic side grip was drawn mirrored against
-    // its Classic glyph and its trails.
-    expect(modelSpriteFacesAwayFromTips("triangle")).toBe(true);
-    expect(modelSpriteFacesAwayFromTips("triangle_side")).toBe(true);
-  });
-
-  it("never draws a capture leaning away from its tip table", () => {
-    for (const [prop, entry] of Object.entries(PROP_MODEL_SPRITES)) {
-      const table =
-        PROP_TIP_POINTS[prop] ?? PROP_RENDER_KEY_TIP_POINTS[`${prop}__model`];
-      const points = table?.points ?? [];
-      if (!entry.bounds || points.length === 0) continue;
-      const half = entry.width / 2;
-      const xs = points.map((point) => point.dx);
-      const tipBias = (Math.max(...xs) + Math.min(...xs)) / 2 / half;
-      const painted = (entry.bounds.x + entry.bounds.width / 2 - half) / half;
-      const drawn = modelSpriteFacesAwayFromTips(prop) ? -painted : painted;
-      if (Math.abs(tipBias) > 0.1 && Math.abs(drawn) > 0.1) {
-        expect(Math.sign(drawn), prop).toBe(Math.sign(tipBias));
-      }
-    }
-  });
-
-  it("puts a turned sword's tip on its blade end", () => {
-    const entry = PROP_MODEL_SPRITES.sword!;
-    const half = entry.width / 2;
-    const bladeReach = half - entry.bounds!.x;
-    const [tip] = getTipPoints("sword__model").points;
-    expect(tip!.dx).toBeGreaterThan(0);
-    expect(tip!.dx).toBeLessThanOrEqual(bladeReach + 1e-9);
-    expect(tip!.dx).toBeGreaterThan(
-      entry.bounds!.x + entry.bounds!.width - half
-    );
-  });
-});
-
 describe("render keys count as the prop they draw", () => {
   it("classifies a render key by its notation prop's ends", () => {
-    expect(propTipEnds("bigclub__model")).toBe(2);
-    expect(propTipEnds("staff__model")).toBe(2);
     expect(propTipEnds("bigfan__fire_bare")).toBe(1);
+    // A key cached before prop versions went reads as its notation prop.
+    expect(propTipEnds("staff__model")).toBe(2);
   });
 
-  it("traces one end when the drawn artwork has only one tip", () => {
+  it("traces both ends of a two-ended prop's notation artwork", () => {
     expect(trailTipEnds("bigclub")).toBe(2);
-    expect(trailTipEnds("bigclub__model")).toBe(1);
-    expect(trailTipEnds("staff__model")).toBe(2);
+    expect(trailTipEnds("staff")).toBe(2);
   });
 });
 

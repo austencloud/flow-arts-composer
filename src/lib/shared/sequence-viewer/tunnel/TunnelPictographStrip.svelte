@@ -4,13 +4,11 @@
   import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
-  import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
   import type { TunnelViewController } from "./tunnel-view-controller.svelte";
   import { sampleTunnelNotation } from "./tunnel-notation-sampling";
 
   interface Appearance {
     fanAppearance: FanAppearance;
-    propLook: PropLook;
     leftBuugengFlipped: boolean;
     rightBuugengFlipped: boolean;
   }
@@ -97,7 +95,6 @@
             | PropType
             | undefined}
           fanAppearanceOverride={appearance?.fanAppearance}
-          propLookOverride={appearance?.propLook}
           leftBuugengFlippedOverride={appearance?.leftBuugengFlipped}
           rightBuugengFlippedOverride={appearance?.rightBuugengFlipped}
           leftColorOverride={colors[index]?.leftHex}

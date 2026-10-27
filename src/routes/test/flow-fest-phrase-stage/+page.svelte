@@ -79,6 +79,9 @@
       ? new URLSearchParams()
       : new URLSearchParams(window.location.search);
   const probe = params.has("probe");
+  const bodyResponse = params.get("response") !== "off";
+  const contactMode =
+    params.get("contact") === "full" ? "prop-authoritative" : "legacy";
 
   // ------------------------------------------------------------------ library
 
@@ -488,6 +491,8 @@
             {tempoBpm}
             {begin}
             {probe}
+            {bodyResponse}
+            {contactMode}
             {atmosphere}
             {names}
             {onLoading}

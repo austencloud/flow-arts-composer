@@ -28,7 +28,6 @@ import type { PreparedPictographData } from "../domain/models/prepared-pictograp
 import type { ThemeMode } from "../../../utils/svg-color-utils";
 import type { PropType } from "../../prop/domain/enums/prop-type";
 import type { FanAppearance } from "../../prop/domain/fan-appearance";
-import type { PropLook } from "../../prop/domain/prop-look";
 import type { TriangleGrip } from "../../prop/domain/triangle-appearance";
 
 // Re-export for convenience
@@ -47,12 +46,7 @@ export interface PrepareOptions {
    */
   fanAppearance?: FanAppearance;
   /**
-   * The chosen artwork for non-fan props. The live workspace supplies this;
-   * exporters retain their explicit rendering policy unless they opt in.
-   */
-  propLook?: PropLook;
-  /**
-   * Where the hand holds a triangle, in either look. Omitted means the corner
+   * Where the hand holds a triangle. Omitted means the corner
    * grip, which printed and scanned cards keep.
    */
   triangleGrip?: TriangleGrip;

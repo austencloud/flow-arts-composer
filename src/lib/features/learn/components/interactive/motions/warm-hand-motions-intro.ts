@@ -19,7 +19,6 @@ import {
   motionMapTargets,
 } from "#lib/shared/guide-topics/hand-motions-topic.js";
 import { normalizeFanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
-import { normalizePropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
 import { normalizeTriangleGrip } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
 import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
@@ -39,7 +38,6 @@ async function warm(): Promise<void> {
     leftBuugengFlipped: settings.leftBuugengFlipped ?? false,
     rightBuugengFlipped: settings.rightBuugengFlipped ?? false,
     fanAppearance: normalizeFanAppearance(settings.fanAppearance),
-    propLook: normalizePropLook(settings.propArtwork),
     triangleGrip: normalizeTriangleGrip(settings.triangleGrip),
     showLeftMotion: true,
     showRightMotion: false,

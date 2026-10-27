@@ -7,68 +7,27 @@ import {
   resolveFanRenderKey,
   type FanAppearance,
 } from "./fan-appearance";
-import {
-  PROP_MODEL_SPRITES,
-  type PropModelSpriteEntry,
-} from "./prop-model-sprites.generated";
 import { HOOP_FAMILY_GLYPH_CROPS } from "./hoop-family-geometry.generated";
-import { isSameProp, standardSizeProp } from "./prop-type-display-registry";
 import {
   isTrianglePropType,
   normalizeTriangleGrip,
   parseTriangleRenderKey,
   resolveTriangleRenderKey,
   triangleAppearanceArtwork,
-  triangleSpriteKey,
   type TriangleGrip,
 } from "./triangle-appearance";
 
-/**
- * How the 2D animation canvas draws a prop.
- *
- * - `model` (Version 2 to viewers, since it is drawn flat): a capture of the
- *   same 3D model the viewer's 3D mode renders, pre-lit in the blue and red
- *   motion colors.
- * - `pictograph` (Version 1 to viewers): the flat notation artwork, recolored
- *   per hand at runtime.
- *
- * Fan keeps its own richer appearance contract (build, frame, cover); this
- * setting covers every other physical prop with one switch.
- */
-export const PROP_LOOKS = ["model", "pictograph"] as const;
-export type PropLook = (typeof PROP_LOOKS)[number];
-
-/**
- * The notation artwork stays the default: its proportions are canonical and
- * the 3D captures (a much thinner staff, for one) are an opt-in look.
- */
-export const DEFAULT_PROP_LOOK: PropLook = "pictograph";
-
 export { propArtworkStem, type PropSpriteSide };
-
-export function normalizePropLook(value: unknown): PropLook {
-  return value === "model" ? "model" : DEFAULT_PROP_LOOK;
-}
-
-/** Props with a captured model sprite pair on disk. */
-export function hasModelSprite(propType: string | null | undefined): boolean {
-  if (!propType) return false;
-  return Object.prototype.hasOwnProperty.call(
-    PROP_MODEL_SPRITES,
-    propType.toLowerCase()
-  );
-}
 
 export interface PropRenderAppearance {
   fanAppearance?: FanAppearance | null;
-  propLook?: PropLook | null;
   triangleGrip?: TriangleGrip | null;
 }
 
 /**
- * Renderer-only identity for the texture cache. Fan builds win for fans; every
- * other prop with a captured sprite gets `<prop>__model` when the model look is
- * active. Keys never enter PropType, choreography, or URLs.
+ * Renderer-only identity for the texture cache: a fan's build, or a triangle's
+ * grip. Every other prop keeps its plain type. Keys never enter PropType,
+ * choreography, or URLs.
  */
 export function resolvePropRenderKey(
   propType: string,
@@ -81,80 +40,29 @@ export function resolvePropRenderKey(
       normalizeFanAppearance(appearance.fanAppearance)
     );
   }
-  const wantsModel = normalizePropLook(appearance.propLook) === "model";
   if (isTrianglePropType(normalized)) {
-    // A sprite is captured per grip, so the grip picks which one under the
-    // model look.
-    const grip = normalizeTriangleGrip(appearance.triangleGrip);
-    const spriteKey = triangleSpriteKey(grip);
-    if (wantsModel && hasModelSprite(spriteKey)) return `${spriteKey}__model`;
-    return resolveTriangleRenderKey(normalized, grip);
-  }
-  if (wantsModel && hasModelSprite(normalized)) {
-    return `${normalized}__model`;
+    return resolveTriangleRenderKey(
+      normalized,
+      normalizeTriangleGrip(appearance.triangleGrip)
+    );
   }
   return normalized;
 }
 
-export interface ModelRenderKey {
-  propType: string;
-}
-
-export function parseModelRenderKey(value: string): ModelRenderKey | null {
-  const match = /^([a-z0-9_-]+)__model$/.exec(value.toLowerCase());
-  if (!match) return null;
-  return { propType: match[1]! };
-}
-
-/**
- * The look a render of these props is cached under: "model" only when it swaps
- * a captured sprite in for at least one of them. Every other case returns
- * undefined, so notation cells, fans and hands keep the cache keys (local and
- * cloud) they had before cards followed the look.
- */
-export function renderedPropLook(
-  propLook: PropLook | null | undefined,
-  propTypes: readonly (string | null | undefined)[]
-): "model" | undefined {
-  if (normalizePropLook(propLook) !== "model") return undefined;
-  return propTypes.some(
-    (propType) =>
-      !!propType &&
-      parseModelRenderKey(resolvePropRenderKey(propType, { propLook })) !==
-        null
-  )
-    ? "model"
-    : undefined;
-}
-
-/** The notation prop behind any render key (fan build, model, or plain). */
+/** The notation prop behind any render key (fan build, triangle grip, or plain). */
 export function basePropTypeOfRenderKey(value: string): string {
   const normalized = value.toLowerCase();
   const separator = normalized.indexOf("__");
   const head = separator === -1 ? normalized : normalized.slice(0, separator);
-  // triangle_side__model splits to the sprite key "triangle_side", which is
-  // not a PropType; map it (and the glyph key) back to "triangle".
+  // Map the triangle's glyph key back to "triangle".
   return parseTriangleRenderKey(head)?.propType ?? head;
-}
-
-export const MODEL_SPRITE_ROOT = "/images/props/appearances/model";
-
-export function modelSpriteArtwork(
-  propType: string,
-  side: PropSpriteSide
-): string {
-  const color = side === "left" ? "blue" : "red";
-  const entry = PROP_MODEL_SPRITES[propType.toLowerCase()];
-  const revision = entry ? `?v=${encodeURIComponent(entry.capturedAt)}` : "";
-  return `${MODEL_SPRITE_ROOT}/${propType.toLowerCase()}-${color}.svg${revision}`;
 }
 
 export interface PropTileArtwork {
   href: string;
   /**
-   * The artwork is a chosen look (a fan build or a model capture) rather than
-   * the plain notation glyph, so previews show it in color instead of as a
-   * white silhouette.
+   * The artwork is a chosen fan build rather than the plain notation glyph,
+   * so previews show it in color instead of as a white silhouette.
    */
   styled: boolean;
   /** Already lit in its hand's color; never recolor it. */
@@ -171,8 +79,6 @@ export interface PropTileArtwork {
    * half empty margin. Notation glyphs are already cropped artwork.
    */
   crop?: PropTileCrop;
-  /** Navigation-only correction for model captures facing away from the glyph. */
-  rotation?: number;
 }
 
 export interface PropTileCrop {
@@ -335,9 +241,9 @@ const NOTATION_GLYPH_CROPS: Record<string, PropTileCrop> = {
 };
 
 /**
- * The image a picker tile or preview should draw for a prop under the user's
- * current look: the fan build's artwork for fans, the pre-lit model capture
- * for props that have one, otherwise the notation artwork in `fallback`.
+ * The image a picker tile or preview should draw for a prop: the fan build's
+ * artwork for fans, the triangle's grip glyph, otherwise the notation artwork
+ * in `fallback`.
  */
 export function propTileArtwork(
   propType: string,
@@ -359,23 +265,8 @@ export function propTileArtwork(
           fill: FAN_PREVIEW_CROP,
         };
   }
-  const spriteKey = isTrianglePropType(normalized)
-    ? triangleSpriteKey(normalizeTriangleGrip(appearance.triangleGrip))
-    : normalized;
-  if (
-    normalizePropLook(appearance.propLook) === "model" &&
-    hasModelSprite(spriteKey)
-  ) {
-    return {
-      href: modelSpriteArtwork(spriteKey, side),
-      styled: true,
-      prelit: true,
-      crop: modelSpriteCrop(PROP_MODEL_SPRITES[spriteKey]!),
-    };
-  }
   if (isTrianglePropType(normalized)) {
-    // The default pictograph look otherwise ignores appearance, but the
-    // triangle's grip changes which glyph is correct even here. The sprite
+    // The triangle's grip changes which glyph is correct. The sprite
     // generator writes byte-identical SVGs into buttons/ and pictograph/, so
     // the side appearance artwork doubles as the side notation tile.
     const grip = normalizeTriangleGrip(appearance.triangleGrip);
@@ -408,123 +299,7 @@ export function propGlyphArtwork(
     };
   }
   const art = propTileArtwork(propType, side, appearance, fallback);
-  if (
-    art.prelit &&
-    [
-      "club",
-      "bigclub",
-      "torch",
-      "bigtorch",
-      "poi",
-      "chicken",
-      "bigchicken",
-    ].includes(propType.toLowerCase())
-  ) {
-    return { ...art, rotation: 180 };
-  }
   return art.styled
     ? art
     : { ...art, crop: NOTATION_GLYPH_CROPS[propType.toLowerCase()] };
-}
-
-/**
- * The painted window of a model capture as a tile crop. Captures are
- * grip-centred and mirrored about the hand, so a club or torch paints only
- * half its box; without measured bounds the whole box is drawn as before.
- */
-export function modelSpriteCrop(
-  entry: PropModelSpriteEntry
-): PropTileCrop | undefined {
-  if (!entry.bounds) return undefined;
-  return {
-    imageWidth: entry.width,
-    imageHeight: entry.height,
-    ...entry.bounds,
-  };
-}
-
-/** The maker whose product a look was traced from, and where to find it. */
-export interface PropDesignCredit {
-  originator: string;
-  /** Absent until the originator names a product page. */
-  sourceUrl?: string;
-}
-
-/**
- * Model looks captured from another maker's product. Version 2 buugeng is a
- * capture of static/models/props/buugeng.glb, which build-buugeng-model.py
- * extrudes from a trace of a Flow DNA flowgeng; Big Buugeng is the same model
- * at 1.4x. Fan builds carry their own credits in fan-appearance.ts.
- */
-const FLOW_DNA_CREDIT: PropDesignCredit = {
-  originator: "Flow DNA",
-  sourceUrl: "https://flowtoys.com/flowgeng",
-};
-const MODEL_LOOK_CREDITS: Readonly<Record<string, PropDesignCredit>> = {
-  buugeng: FLOW_DNA_CREDIT,
-  bigbuugeng: FLOW_DNA_CREDIT,
-};
-
-/** The credit a prop's version carries, if the look was traced from a maker. */
-export function propLookCredit(
-  propType: string,
-  look: PropLook | null | undefined
-): PropDesignCredit | undefined {
-  if (normalizePropLook(look) !== "model") return undefined;
-  return MODEL_LOOK_CREDITS[propType.toLowerCase()];
-}
-
-export interface PropLookOption {
-  id: PropLook;
-  label: string;
-  image: string;
-  /** Grip-centred art paints half its box; the card frames the painted part. */
-  crop?: PropTileCrop;
-  /** Set when the look was traced from another maker's product. */
-  designCredit?: PropDesignCredit;
-}
-
-/**
- * A prop's two versions, Version 1 (the notation art) first. The labels are the
- * plain English fallback; pickers show their localized strings.
- */
-export function propLookOptions(propType: string): readonly PropLookOption[] {
-  const normalized = propType.toLowerCase();
-  const sprite = PROP_MODEL_SPRITES[normalized];
-  return [
-    {
-      id: "pictograph",
-      label: "Version 1",
-      image: `/images/props/buttons/${normalized}.svg`,
-      crop: NOTATION_GLYPH_CROPS[normalized],
-    },
-    {
-      id: "model",
-      label: "Version 2",
-      image: modelSpriteArtwork(normalized, "left"),
-      crop: sprite ? modelSpriteCrop(sprite) : undefined,
-      designCredit: propLookCredit(normalized, "model"),
-    },
-  ];
-}
-
-/**
- * The version a host with its own local look holds after a pick. A version
- * belongs to the pick: a tile that names one wins, and a different prop that
- * has a Version 2 starts at Version 1. Choosing the prop already in hand, at
- * either size, keeps its version, and so does a pick of a prop with no
- * Version 2 (it has nothing to reset to). Global settings writes follow the
- * same rule in `withPickVersion`.
- */
-export function versionAfterPick(
-  heldProp: string | null | undefined,
-  heldLook: PropLook | null | undefined,
-  pickedProp: string,
-  pickedLook?: PropLook
-): PropLook {
-  if (pickedLook !== undefined) return normalizePropLook(pickedLook);
-  return isSameProp(heldProp, pickedProp) ||
-    !hasModelSprite(standardSizeProp(pickedProp))
-    ? normalizePropLook(heldLook)
-    : DEFAULT_PROP_LOOK;
 }

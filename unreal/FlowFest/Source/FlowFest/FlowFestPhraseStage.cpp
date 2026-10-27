@@ -495,6 +495,33 @@ FGait PlanGait(const FPerformer& Performer, float LengthBeats)
             GaitSteps += Steps;
             Gait.Walking.Add({Phrase.StartBeat + .2f * FMath::Min(Bps, 1.f), Phrase.StartBeat + Steps * Bps, 1.f});
         }
+        else if (!Phrase.bRest)
+        {
+            // A planted phrase turns the whole performer, grid and all, to its new facing over its
+            // first pass (Austen, 2026-10-27), as flow-fest-phrase-playback.ts eases the root: a
+            // pair of steps for each 30 degrees or part of it, the outside foot first, each pair
+            // landing where the eased facing has reached. The body response only trims on top.
+            const float Current = MeanYaw();
+            const float From = Current + Wrap(Phrase.FacingStart - Current);
+            const float Delta = Wrap(Phrase.FacingEnd - Phrase.FacingStart);
+            if (FMath::Abs(Delta) < 1.e-3f) continue;
+            const float Span = FMath::Min(Phrase.Beats / FMath::Max(1, Phrase.Repeats), Phrase.Beats);
+            const int32 Pairs = FMath::Max(1, FMath::CeilToInt(FMath::Abs(Delta) / FMath::DegreesToRadians(30.f) - 1.e-3f));
+            const float Interval = Span / Pairs;
+            const FVector2D Centre = Mid();
+            const int32 FirstSide = Delta > 0.f ? 1 : 0;
+            for (int32 K = 0; K < Pairs; ++K)
+            {
+                const float Yaw = From + Delta * Smooth(float(K + 1) / float(Pairs));
+                const float Land = Phrase.StartBeat + (K + 1) * Interval;
+                for (int32 Foot = 0; Foot < 2; ++Foot)
+                {
+                    const int32 Side = (FirstSide + Foot) % 2;
+                    Step(Side, Land - (1 - Foot) * .5f * Interval, .35f * Interval,
+                        Centre + LeftOf(Yaw) * (Side == 0 ? FootGaugeM : -FootGaugeM), Yaw, .05f);
+                }
+            }
+        }
     }
     Gait.Landings.Sort([](const TPair<float, int32>& A, const TPair<float, int32>& B) { return A.Key < B.Key; });
     return Gait;

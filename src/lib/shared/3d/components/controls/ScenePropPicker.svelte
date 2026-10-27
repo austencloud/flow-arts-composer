@@ -192,7 +192,6 @@
       scrollMode="host"
       allowedProps={SCENE_PROP_TYPES}
       showColors={false}
-      showPropLook={false}
       {fanAppearance}
       onFanAppearanceChange={chooseFanAppearance}
       includeBareHands={showBareHands}

@@ -24,8 +24,11 @@
  * Facing is continuous: the body turns with the props instead of snapping a
  * quarter turn at a time. Each phrase carries a `facingTarget` (schedule yaw,
  * any angle), and playback eases the body's facing to it over the phrase's
- * first pass. `facingStart`/`facingEnd` stay the root facing the grid turns
- * with, which only an authored turn changes.
+ * first pass. `facingStart`/`facingEnd` are the root facing the grid turns
+ * with. A planted phrase's root follows the body to its target (Austen,
+ * 2026-10-27: big facing changes turn the whole performer and grid together,
+ * with stepping feet); an authored turn turns it by a quarter or a half; a
+ * walk and a rest keep it.
  *
  * The rules, as the tests pin them:
  *   1. a phrase is one sequence played 1–3 times;
@@ -41,12 +44,13 @@
  *   6. travel stays inside the performer's area, and the root turns back to
  *      face out (before the next walk) whenever it has turned its back on the
  *      audience;
- *   7. a planted phrase never turns the root; a turning phrase always leads
- *      into a walk;
+ *   7. a planted phrase turns the root, grid and all, to its facing target;
+ *      a walk and a rest keep it; a turning phrase always leads into a walk;
  *   8. at most two turns in a row;
  *   9. the facing target drifts by up to 70 degrees a phrase from the last
- *      one, changes at most once a phrase, and is pulled back toward the
- *      audience once it is more than 100 degrees away;
+ *      one, changes at most once a phrase, is pulled back toward the
+ *      audience once it is more than 100 degrees away, and never drifts past
+ *      120 degrees from it;
  *  10. each phrase starts where the last one ended: both hands at the same
  *      grid location and orientation (a rest holds the chain, it does not
  *      reset it). Any library sequence may be picked; only a sequence that
@@ -129,7 +133,8 @@ export interface ScheduledPhrase {
   /** Per beat of one play of the sequence, each staff's plane; repeats replay it. */
   beatPlanes: PhraseBeatPlanes[];
   mode: PhraseMode;
-  /** The root facing (schedule yaw) the grid turns with; only an authored turn changes it. */
+  /** The root facing (schedule yaw) the grid turns with: a planted phrase
+   *  ends it at its target, a turn turns it, a walk and a rest keep it. */
   facingStart: number;
   facingEnd: number;
   /**
@@ -309,6 +314,10 @@ const FACING_DRIFT_MAX = (70 * Math.PI) / 180;
 const TURN_SETTLE_SPREAD = (25 * Math.PI) / 180;
 /** Past this far from the audience, the target drifts back toward it. */
 const FACING_AWAY = (100 * Math.PI) / 180;
+/** A drift never takes the target further than this from the audience. The
+ *  root follows a planted body round, so past rule 6's back-to-the-audience
+ *  line (135 degrees) a drift alone would send the performer turning back. */
+const FACING_DRIFT_LIMIT = (120 * Math.PI) / 180;
 
 /** The mean of a run length drawn from 2..6 with each beat longer `decay` times as likely. */
 function meanRun(decay: number): number {
@@ -540,7 +549,11 @@ export function planPhrases(input: PhraseBrainInput): ScheduledPhrase[] {
               (rng() * 2 - 1) * FACING_DRIFT_MAX - 0.3 * off
             )
           );
-    facingTarget = wrapAngle(facingTarget + drift);
+    const next = wrapAngle(facingTarget + drift - performer.outwardYaw);
+    facingTarget = wrapAngle(
+      performer.outwardYaw +
+        Math.max(-FACING_DRIFT_LIMIT, Math.min(FACING_DRIFT_LIMIT, next))
+    );
   };
 
   // Rule 10: the chain is where the hands are now; every phrase starts there.
@@ -1016,7 +1029,8 @@ export function planPhrases(input: PhraseBrainInput): ScheduledPhrase[] {
       driftFacing();
       push(choice.entry, choice.repeats, "planted", {
         beatPlanes: beatPlanesFor(choice.entry.beats, choice.repeats, null),
-        facingEnd: facing,
+        // The root follows the body round, grid and all.
+        facingEnd: facingTarget,
         turnBeats: null,
         path: null,
         rest: false,

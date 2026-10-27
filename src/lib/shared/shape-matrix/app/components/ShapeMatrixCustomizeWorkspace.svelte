@@ -31,6 +31,7 @@
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { tick } from "svelte";
   import AnimationPanel from "#lib/shared/animation-panel/components/AnimationPanel.svelte";
+  import { shapeMatrixPickerProps } from "#lib/shared/shape-matrix/domain/prop-pair.js";
   import type { PillId } from "#lib/shared/animation-panel/pill-nav/pill-types.js";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import { CANVAS2D_HOSTED_EFFECTS } from "#lib/shared/effects/services/canvas2d-effect-host.js";
@@ -151,9 +152,9 @@
         showEffectsPlayback={false}
         selectedPropType={appState.addressedPropType}
         sequence={theory ? null : animationState.previewSequence}
-        onPropChange={(propType, look) =>
-          void appState.setPropType(propType, undefined, look)}
+        onPropChange={(propType) => void appState.setPropType(propType)}
         handProps={appState.handProps}
+        allowedProps={shapeMatrixPickerProps()}
         showPathShape={false}
         showMotionVisibility={true}
         showSequenceMarks={!theory}

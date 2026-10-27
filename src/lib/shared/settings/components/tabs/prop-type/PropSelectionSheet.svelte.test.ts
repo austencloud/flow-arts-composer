@@ -19,85 +19,34 @@ vi.mock(
   })
 );
 
-describe("PropSelectionSheet prop version", () => {
+describe("PropSelectionSheet family pick", () => {
   beforeEach(async () => {
     mocks.updateSettings.mockReset();
     await page.viewport(760, 800);
     document.body.style.margin = "0";
   });
 
-  // A host that owns the version (Arena) passes its own look and writer, and
-  // the pick reaches it with the prop, never the account setting.
-  it("hands a Version 2 pick to the host without writing the account", async () => {
+  // Each style has one tile, and a pick reaches the host as the prop alone.
+  it("offers one tile per style and hands the host only the prop", async () => {
     const onSelect = vi.fn();
-    const onPropLookChange = vi.fn();
-
     render(PropSelectionSheet, {
       isOpen: true,
-      selectedPropType: PropType.TRIAD,
+      selectedPropType: PropType.STAFF,
       onSelect,
-      propLook: "pictograph",
-      onPropLookChange,
     });
 
     await page.getByRole("button", { name: "Choose Triad style" }).click();
+    await expect
+      .element(page.getByRole("button", { name: /V2/ }))
+      .not.toBeInTheDocument();
     await page
-      .getByRole("button", { name: "Select Triad V2 prop type", exact: true })
+      .getByRole("button", { name: "Select Triad prop type", exact: true })
       .click();
 
-    expect(onSelect).toHaveBeenLastCalledWith(PropType.TRIAD, "model");
-    expect(onPropLookChange).toHaveBeenLastCalledWith("model");
+    expect(onSelect).toHaveBeenLastCalledWith(PropType.TRIAD);
+    expect(onSelect.mock.lastCall).toHaveLength(1);
     expect(mocks.updateSettings).not.toHaveBeenCalledWith(
       expect.objectContaining({ propArtwork: expect.anything() })
     );
-  });
-
-  // The control: a host that passes no writer gets the account's, so the
-  // assertion above is one that can fail.
-  it("writes the account when the host passes no version writer", async () => {
-    render(PropSelectionSheet, {
-      isOpen: true,
-      selectedPropType: PropType.TRIAD,
-      onSelect: vi.fn(),
-      propLook: "pictograph",
-    });
-
-    await page.getByRole("button", { name: "Choose Triad style" }).click();
-    await page
-      .getByRole("button", { name: "Select Triad V2 prop type", exact: true })
-      .click();
-
-    expect(mocks.updateSettings).toHaveBeenCalledWith(
-      expect.objectContaining({ propArtwork: "model" })
-    );
-  });
-
-  // A host whose render ignores the version turns the choice off, so a family
-  // offers one plain tile per style.
-  it("leaves out the Version 2 tiles when the host turns the choice off", async () => {
-    render(PropSelectionSheet, {
-      isOpen: true,
-      selectedPropType: PropType.TRIAD,
-      onSelect: vi.fn(),
-      showPropLook: false,
-    });
-
-    await page.getByRole("button", { name: "Choose Triad style" }).click();
-    await expect
-      .element(
-        page.getByRole("button", {
-          name: "Select Triad prop type",
-          exact: true,
-        })
-      )
-      .toBeVisible();
-    await expect
-      .element(
-        page.getByRole("button", {
-          name: "Select Triad V2 prop type",
-          exact: true,
-        })
-      )
-      .not.toBeInTheDocument();
   });
 });

@@ -205,7 +205,6 @@
               leftPropTypeOverride: leftPropType,
               rightPropTypeOverride: rightPropType ?? leftPropType,
               fanAppearanceOverride: appearance?.fanAppearance,
-              propLookOverride: appearance?.propLook,
               leftBuugengFlippedOverride: appearance?.leftBuugengFlipped,
               rightBuugengFlippedOverride: appearance?.rightBuugengFlipped,
               leftColorOverride: appearance?.primaryPropColors?.left,

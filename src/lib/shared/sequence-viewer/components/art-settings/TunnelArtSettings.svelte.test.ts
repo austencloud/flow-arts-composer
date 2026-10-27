@@ -47,43 +47,31 @@ function renderPanel(props: Record<string, unknown>) {
   });
 }
 
-async function pickTriadVersion2() {
-  await page.getByRole("button", { name: "Choose Triad style" }).click();
-  await page
-    .getByRole("button", { name: "Select Triad V2 prop type", exact: true })
-    .click();
-}
-
-describe("TunnelArtSettings prop version", () => {
+describe("TunnelArtSettings prop pick", () => {
   beforeEach(async () => {
     mocks.updateSettings.mockReset();
     await page.viewport(760, 800);
     document.body.style.margin = "0";
   });
 
-  // The Tunnel creator passes its own look and writer, so a Version 2 pick
-  // reaches it with the prop and never changes the account's version.
-  it("hands a Version 2 pick to a host that owns the version", async () => {
+  // The Tunnel creator owns its props, so a family pick reaches it as the
+  // prop alone. Each style has one tile, with no version.
+  it("hands a family pick to the host as the prop alone", async () => {
     const onPropChange = vi.fn();
-    const onPropLookChange = vi.fn();
-    renderPanel({ onPropChange, propLook: "pictograph", onPropLookChange });
+    renderPanel({ onPropChange });
 
-    await pickTriadVersion2();
+    await page.getByRole("button", { name: "Choose Triad style" }).click();
+    await expect
+      .element(page.getByRole("button", { name: /V2/ }))
+      .not.toBeInTheDocument();
+    await page
+      .getByRole("button", { name: "Select Triad prop type", exact: true })
+      .click();
 
-    expect(onPropChange).toHaveBeenLastCalledWith(PropType.TRIAD, "model");
-    expect(onPropLookChange).toHaveBeenLastCalledWith("model");
+    expect(onPropChange).toHaveBeenLastCalledWith(PropType.TRIAD);
+    expect(onPropChange.mock.lastCall).toHaveLength(1);
     expect(mocks.updateSettings).not.toHaveBeenCalledWith(
       expect.objectContaining({ propArtwork: expect.anything() })
     );
-  });
-
-  // The viewer's Art pane passes neither, and keeps editing the account's
-  // version. This is the control that lets the assertion above fail.
-  it("writes the account when the host passes no version writer", async () => {
-    renderPanel({ onPropChange: vi.fn() });
-
-    await pickTriadVersion2();
-
-    expect(mocks.updateSettings).toHaveBeenCalledWith({ propArtwork: "model" });
   });
 });

@@ -30,11 +30,6 @@
     presetsMatch,
   } from "../../domain/prop-presets";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
-  import {
-    DEFAULT_PROP_LOOK,
-    normalizePropLook,
-    type PropLook,
-  } from "#lib/shared/pictograph/prop/domain/prop-look.js";
   import { localizedPropName } from "./prop-type/localized-prop-name";
   import PropCompositionPreview from "#lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
   import { resolveViewerCustomColorPair } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
@@ -77,9 +72,6 @@
   let catDogMode = $state(false);
   let leftBuugengFlipped = $state(false);
   let rightBuugengFlipped = $state(false);
-  // The version a preset saves and applies. A prop pick resets it in the
-  // settings store, so this follows settings rather than being set here.
-  let propArtwork = $state<PropLook>(DEFAULT_PROP_LOOK);
   let propPresets = $state<(PropPreset | null)[]>(presetSlots(undefined));
   let selectedPresetIndex = $state(-1);
 
@@ -109,7 +101,6 @@
     catDogMode = settings.catDogMode ?? false;
     leftBuugengFlipped = settings.leftBuugengFlipped ?? false;
     rightBuugengFlipped = settings.rightBuugengFlipped ?? false;
-    propArtwork = normalizePropLook(settings.propArtwork);
     propPresets = presetSlots(settings.propPresets);
     selectedPresetIndex = settings.selectedPresetIndex ?? -1;
   });
@@ -121,7 +112,6 @@
       catDogMode,
       leftBuugengFlipped,
       rightBuugengFlipped,
-      propArtwork,
     })
   );
   const pair = $derived(previewPair(current));
@@ -155,7 +145,6 @@
     catDogMode = preset.catDogMode;
     leftBuugengFlipped = preset.leftBuugengFlipped ?? false;
     rightBuugengFlipped = preset.rightBuugengFlipped ?? false;
-    propArtwork = normalizePropLook(patch.propArtwork);
     publish(patch);
   }
 

@@ -7,7 +7,6 @@ import {
   renderedTriangleGrip,
   resolveTriangleRenderKey,
   triangleAppearanceArtwork,
-  triangleSpriteKey,
 } from "../triangle-appearance";
 import { basePropTypeOfRenderKey, resolvePropRenderKey } from "../prop-look";
 import { getPropDimensions } from "#lib/shared/animation-engine/services/IPropTextureLoader.js";
@@ -40,14 +39,8 @@ describe("triangle grip appearance", () => {
       propType: "triangle",
       grip: "side",
     });
-    expect(parseTriangleRenderKey("triangle_side")).toEqual({
-      propType: "triangle",
-      grip: "side",
-    });
     expect(parseTriangleRenderKey("triangle")).toBeNull();
     expect(parseTriangleRenderKey("fan__lotus")).toBeNull();
-    expect(triangleSpriteKey("corner")).toBe("triangle");
-    expect(triangleSpriteKey("side")).toBe("triangle_side");
     expect(triangleAppearanceArtwork("side")).toBe(
       "/images/props/appearances/triangle-side.svg?v=1"
     );
@@ -59,14 +52,6 @@ describe("triangle grip appearance", () => {
     expect(resolvePropRenderKey("triangle", { triangleGrip: "side" })).toBe(
       "triangle__side"
     );
-    // Both grips have a captured model sprite, so the model look resolves to
-    // the side sprite's model key.
-    expect(
-      resolvePropRenderKey("triangle", {
-        triangleGrip: "side",
-        propLook: "model",
-      })
-    ).toBe("triangle_side__model");
     expect(resolvePropRenderKey("minihoop", { triangleGrip: "side" })).toBe(
       "minihoop"
     );
@@ -86,16 +71,14 @@ describe("triangle grip appearance", () => {
     ).toBeUndefined();
   });
 
-  it("maps the side grip's sprite key back to the triangle PropType", () => {
-    // triangle_side__model splits at "__" to the sprite key "triangle_side",
-    // which is not itself a PropType; both this and the glyph key must
-    // resolve to "triangle" or the crossfade matcher freezes the prop.
-    expect(basePropTypeOfRenderKey("triangle_side__model")).toBe("triangle");
+  it("maps the side grip's key back to the triangle PropType", () => {
+    // The glyph key must resolve to "triangle" or the crossfade matcher
+    // freezes the prop.
     expect(basePropTypeOfRenderKey("triangle__side")).toBe("triangle");
     expect(
       propTextureMatchesRequest({
-        loaded: "triangle_side__model",
-        requested: "triangle_side__model",
+        loaded: "triangle__side",
+        requested: "triangle__side",
         paramsPropType: "triangle",
       })
     ).toBe(true);
@@ -105,7 +88,6 @@ describe("triangle grip appearance", () => {
     const box = getPropDimensions("triangle");
     expect(box).toEqual(HOOP_FAMILY_BOXES.triangle);
     expect(getPropDimensions("triangle__side")).toEqual(box);
-    expect(getPropDimensions("triangle_side__model")).toEqual(box);
     expect(resolvePropSvgPath("triangle")).toBe(
       "/images/props/pictograph/triangle.svg"
     );
@@ -119,9 +101,6 @@ describe("triangle grip appearance", () => {
       HOOP_FAMILY_TIP_POINTS.triangle
     );
     expect(getTipPointsBaseline("triangle__side").points).toEqual(
-      HOOP_FAMILY_TIP_POINTS.triangle_side
-    );
-    expect(getTipPointsBaseline("triangle_side__model").points).not.toEqual(
       HOOP_FAMILY_TIP_POINTS.triangle_side
     );
     expect(getTipPointsBaseline("minihoop").points).toEqual(

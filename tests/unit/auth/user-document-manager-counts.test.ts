@@ -43,6 +43,8 @@ vi.mock("firebase/firestore", () => ({
 
 vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: h.getFirestoreInstance,
+  // The sync skips an account Auth no longer reports; this one stays current.
+  getAuthInstance: async () => ({ currentUser: { uid: "user-1" } }),
 }));
 
 vi.mock("#lib/shared/auth/services/profile-picture-manager.js", () => ({

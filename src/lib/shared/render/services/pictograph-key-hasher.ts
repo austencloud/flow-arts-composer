@@ -13,7 +13,6 @@ import {
   fanAppearanceSignature,
   normalizeFanAppearance,
 } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
-import { renderedPropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
 import { renderedTriangleGrip } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
 import { gridJoinKey, isGridJoin } from "@tka/render-core";
 // getSettings loaded dynamically to avoid pulling $app/env into worker bundle
@@ -56,9 +55,6 @@ interface PictographKeyInput {
   gridPointRevision?: string;
   visibility: {
     fanAppearance?: string;
-    // Present only when a captured model sprite replaces a notation prop, so
-    // every notation render keeps its established lsp11/lsp12 key.
-    propLook?: "model";
     // Present only when a triangle is drawn with the side grip, so corner-grip
     // renders and every other prop keep their established key.
     triangleGrip?: "side";
@@ -115,23 +111,6 @@ const PROP_APPEARANCE_REVISIONS: Readonly<Record<string, string>> = {
   // now baked into the loaded artwork, so cells cached before that must miss.
   torch: "torch-contrast-v2",
   bigtorch: "torch-contrast-v2",
-};
-const MODEL_LOOK_APPEARANCE_REVISIONS: Readonly<Record<string, string>> = {
-  // The Realistic staff captures used to draw with their T-bar (the thumb
-  // end) where the notation puts the far end, so "in" read as "out". They now
-  // turn to the thumb end, so Realistic cells cached before that must miss.
-  staff: "staff-model-thumb-end-v2",
-  bigstaff: "staff-model-thumb-end-v2",
-  // Simple Staff, Capped Staff and Fire Staff once had their own captures and
-  // have none now, so they draw notation artwork. Their own look needs no
-  // revision, because alone they draw no capture and their keys carry no model
-  // look. In a mixed pair, though, a Realistic Double Staff or LED Baton still
-  // turns the model look on, and cells cached while these props drew their old
-  // capture have the same key as the notation-art cells drawn now. Giving the
-  // retired props their own revision makes those old mixed-pair cells miss.
-  simple_staff: "staff-model-capture-retired-v3",
-  staff_v2: "staff-model-capture-retired-v3",
-  fire_double_staff: "staff-model-capture-retired-v3",
 };
 const NON_RADIAL_ORIENTATIONS = new Set(["clock", "counter"]);
 const SHIFT_MOTION_TYPES = new Set(["pro", "anti", "float"]);
@@ -262,23 +241,14 @@ export function getTurnGlyphRevision(
  * Prop types are already part of the cache identity. This extra seam covers a
  * different case: the SVG behind an existing prop type changes while its enum
  * value stays stable. Keeping the revision prop-scoped avoids throwing away
- * the established cloud corpus for every unrelated prop. Model-look revisions
- * apply only to cells that draw the Realistic look, so notation keys (and the
- * cloud corpus) stay as they were.
+ * the established cloud corpus for every unrelated prop.
  */
 export function getPropAppearanceRevision(
   leftPropType: string,
-  rightPropType: string,
-  propLook?: "model"
+  rightPropType: string
 ): string | undefined {
   const revisions = [leftPropType, rightPropType]
-    .flatMap((propType) => {
-      const key = propType.toLowerCase();
-      return [
-        PROP_APPEARANCE_REVISIONS[key],
-        propLook === "model" ? MODEL_LOOK_APPEARANCE_REVISIONS[key] : undefined,
-      ];
-    })
+    .map((propType) => PROP_APPEARANCE_REVISIONS[propType.toLowerCase()])
     .filter((revision): revision is string => Boolean(revision));
 
   const uniqueRevisions = [...new Set(revisions)].sort();
@@ -318,14 +288,9 @@ export class PictographKeyHasher {
     const reversalsVisible = visibility.showReversals ?? true;
     const step = data as Partial<StepData>;
     const propGeometryRevision = getPictographGeometryRevision(data);
-    const propLook = renderedPropLook(visibility.propLook, [
-      resolvedLeftProp,
-      resolvedRightProp,
-    ]);
     const propAppearanceRevision = getPropAppearanceRevision(
       resolvedLeftProp,
-      resolvedRightProp,
-      propLook
+      resolvedRightProp
     );
     // A hand path draws hands, so the grip cannot change a pixel there.
     const triangleGrip = visibility.handPathMode
@@ -369,7 +334,6 @@ export class PictographKeyHasher {
               normalizeFanAppearance(visibility.fanAppearance)
             ),
           }),
-        ...(propLook && { propLook }),
         ...(triangleGrip && { triangleGrip }),
         ...(visibility.primaryPropColors && {
           primaryPropColors: visibility.primaryPropColors,

@@ -19,6 +19,7 @@
     onStepChange,
     onPlaybackChange,
     onclose,
+    onExpand,
   }: {
     sequence: SequenceData;
     active: boolean;
@@ -33,6 +34,10 @@
     /** Returns the workspace to the editable card. Rendered as a corner X so
      *  the preview carries its own exit instead of relying on Stop or Escape. */
     onclose?: () => void;
+    /** Hands the running playback to the full Sequence Viewer. Rendered at
+     *  the end of the scrubber row, after the effect button, where video
+     *  players put fullscreen; hidden when no handler is passed. */
+    onExpand?: () => void;
   } = $props();
 
   let currentStep = $state(0);
@@ -142,7 +147,9 @@
   });
 </script>
 
-{#snippet effectSwitch()}
+<!-- The scrubber row's trailing controls, left to right after the scrubber:
+     the effect button, then open-in-viewer. -->
+{#snippet scrubberEnd()}
   <EffectQuickSwitch
     {effectsConfigState}
     player={playerStage}
@@ -155,6 +162,17 @@
     }}
     onArrange={(arrangement) => (effectPickerArrangement = arrangement)}
   />
+  {#if onExpand}
+    <button
+      type="button"
+      class="expand-viewer"
+      onclick={onExpand}
+      aria-label={t("create_workspace_expand_viewer")}
+      title={t("create_workspace_expand_viewer")}
+    >
+      <i class="fas fa-expand" aria-hidden="true"></i>
+    </button>
+  {/if}
 {/snippet}
 
 <div
@@ -181,7 +199,7 @@
           scrubbable
           videoDownload
           showScrubberPlaybackControl
-          scrubberTrailing={effectSwitch}
+          scrubberTrailing={scrubberEnd}
           hoverHint="none"
           autoPlay={active}
           autoPlayDelay={0}
@@ -368,6 +386,40 @@
     outline: 2px solid var(--theme-accent);
     outline-offset: 2px;
   }
+  /* Open in viewer: the scrubber row's own control idiom, matching the inline
+     play/pause toggle at the row's start. A bare glyph in a full 44px target
+     that shares the row's background, with a round tint on hover. */
+  .expand-viewer {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--min-touch-target, 44px);
+    height: var(--min-touch-target, 44px);
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--theme-text);
+    font-size: var(--font-size-sm, 14px);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition:
+      background var(--duration-fast) var(--ease-standard-out),
+      opacity var(--duration-fast) var(--ease-standard-out);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .expand-viewer:hover {
+      background: color-mix(in srgb, currentColor 14%, transparent);
+    }
+  }
+  .expand-viewer:active {
+    opacity: 0.6;
+  }
+  .expand-viewer:focus-visible {
+    outline: 2px solid var(--theme-accent);
+    outline-offset: -4px;
+  }
   /* Always laid out, closed until there is height for it, so its cells are
      built with the player rather than in the middle of Play's growth. Phones
      get the rail too: it sits under the canvas at every width. */
@@ -404,7 +456,8 @@
   }
   @media (prefers-reduced-motion: reduce) {
     .playback-media,
-    .notation-rail {
+    .notation-rail,
+    .expand-viewer {
       transition: none;
     }
   }

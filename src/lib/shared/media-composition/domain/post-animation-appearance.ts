@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
-import { PROP_LOOKS } from "#lib/shared/pictograph/prop/domain/prop-look.js";
 import type { EffectsConfig } from "#lib/shared/effects/domain/effects-config.js";
 import {
   TrackingMode,
@@ -20,7 +19,8 @@ import {
 export const PostAnimationAppearanceSchema = z
   .object({
     propType: z.nativeEnum(PropType).optional(),
-    propLook: z.enum(PROP_LOOKS).optional(),
+    /** Retired 2026-10-27 with prop versions. Older drafts carry it; nothing reads it. */
+    propLook: z.string().optional(),
     gridMode: z.enum(["none", "8point", "auto"]).optional(),
     props: z.boolean().optional(),
     tkaGlyph: z.boolean().optional(),

@@ -35,7 +35,6 @@ import { createRenderCanvas } from "./create-render-canvas";
 import { drawTintedImage } from "@tka/render-composition";
 import type { RenderCanvas } from "./types";
 import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
-import { applyModelSpriteColor } from "#lib/shared/pictograph/prop/domain/prop-preview-color.js";
 import {
   getGridJoinLayout,
   getGridPoints,
@@ -245,7 +244,6 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
       try {
         const prepared = await preparer.prepareSingle(pictograph, {
           fanAppearance: options.visibility.fanAppearance,
-          propLook: options.visibility.propLook,
           triangleGrip: options.visibility.triangleGrip,
           themeMode: options.visibility.darkMode ? "dark" : "light",
           leftPropType: options.visibility.leftPropType,
@@ -747,25 +745,20 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
       const viewBoxHeight = viewBoxParts[1] || 100;
 
       const displayColor = options.visibility.primaryPropColors?.[color];
-      // Model captures are rasters: the fill rewrite leaves them alone and
-      // the chroma tint does the recolor.
       const artwork = displayColor
-        ? applyModelSpriteColor(
-            applyColorToSvg(assets.imageSrc, displayColor, {
-              sourceColors: [
-                getMotionColor(color, "dark"),
-                getMotionColor(color, "light"),
-              ],
-              selectiveColorMode: (
-                SELECTIVE_COLOR_PROP_TYPES as readonly string[]
-              ).includes(
-                String(
-                  assets.propType ?? pictograph.motions?.[color]?.propType
-                ).toLowerCase()
-              ),
-            }),
-            displayColor
-          )
+        ? applyColorToSvg(assets.imageSrc, displayColor, {
+            sourceColors: [
+              getMotionColor(color, "dark"),
+              getMotionColor(color, "light"),
+            ],
+            selectiveColorMode: (
+              SELECTIVE_COLOR_PROP_TYPES as readonly string[]
+            ).includes(
+              String(
+                assets.propType ?? pictograph.motions?.[color]?.propType
+              ).toLowerCase()
+            ),
+          })
         : assets.imageSrc;
       const wrapped = wrapSvgContent(
         artwork,

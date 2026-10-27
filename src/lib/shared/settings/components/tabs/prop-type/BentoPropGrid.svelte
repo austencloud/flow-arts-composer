@@ -8,7 +8,6 @@
   import type { ComponentProps } from "svelte";
   import { normalizeFanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
   import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
-  import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
   import type { ViewerCustomColorPair } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
   import PropGrid from "./PropGrid.svelte";
   import PrimaryPropColorSettings from "./PrimaryPropColorSettings.svelte";
@@ -19,13 +18,10 @@
   let {
     fanAppearance,
     onFanAppearanceChange,
-    propLook,
-    onPropLookChange,
     primaryPropColors,
     onPrimaryPropColorsChange,
     showColors = true,
     compactColors = false,
-    showPropLook,
     onDrillChange,
     heading: hostHeading,
     ...props
@@ -42,8 +38,6 @@
   > & {
     fanAppearance?: FanAppearance;
     onFanAppearanceChange?: (appearance: FanAppearance) => void;
-    propLook?: PropLook;
-    onPropLookChange?: (look: PropLook) => void;
     /** An explicit null keeps a page on the default pair without reading account colours. */
     primaryPropColors?: ViewerCustomColorPair | null;
     onPrimaryPropColorsChange?: (colors: ViewerCustomColorPair | null) => void;
@@ -57,11 +51,6 @@
     showColors?: boolean;
     /** Show colours as a toolbar button that opens the full editor. */
     compactColors?: boolean;
-    /**
-     * The Version 1 / Version 2 choice is how the 2D canvas draws a prop. A 3D
-     * scene always renders the model, so its picker turns the choice off.
-     */
-    showPropLook?: boolean;
     onDrillChange?: (drilled: boolean) => void;
   } = $props();
   const settings = $derived(getSettings());
@@ -148,11 +137,6 @@
   onFanAppearanceChange={onFanAppearanceChange ??
     ((next) => void updateSettings({ fanAppearance: next }))}
   isUnlocked={isPropUnlocked}
-  propLook={propLook ?? settings.propArtwork}
-  onPropLookChange={(showPropLook ?? props.showAppearance !== false)
-    ? (onPropLookChange ??
-      ((propArtwork) => void updateSettings({ propArtwork })))
-    : undefined}
   recipeOverrides={settings.compositionRecipeOverrides}
   colors={displayedColors}
   triangleGrip={settings.triangleGrip ?? DEFAULT_TRIANGLE_GRIP}

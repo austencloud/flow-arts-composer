@@ -3,7 +3,6 @@
   import { onMount } from "svelte";
   import AnimatorCanvas from "#lib/shared/animation-engine/components/AnimatorCanvas.svelte";
   import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
-  import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
   import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type { ViewerPlaybackState } from "../domain/viewer-prop-groups";
@@ -35,7 +34,6 @@
     leftPropType,
     rightPropType,
     fanAppearance,
-    propLook,
     onSaveTunnel,
     saveTunnelLabel = "Save tunnel",
     onPlayingChange,
@@ -63,7 +61,6 @@
     rightPropType?: string;
     /** Host-owned prop appearance; unset reads the global settings. */
     fanAppearance?: FanAppearance;
-    propLook?: PropLook;
     /** Save the live tunnel to the collection (owned by ArtPane). Absent = no
      *  save entry in the canvas right-click menu. */
     onSaveTunnel?: () => void;
@@ -288,7 +285,6 @@
         {leftPropType}
         {rightPropType}
         {fanAppearance}
-        {propLook}
         {leftBuugengFlipped}
         {rightBuugengFlipped}
         sequenceData={seq}

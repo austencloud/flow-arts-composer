@@ -10,6 +10,7 @@ describe("createLazyPublicIndexSyncer", () => {
     const concrete: IPublicIndexSyncer = {
       syncToPublicIndex: vi.fn().mockResolvedValue(undefined),
       updateThumbnails: vi.fn().mockResolvedValue(undefined),
+      findPublishConflict: vi.fn().mockResolvedValue(null),
       removeFromPublicIndex: vi.fn().mockResolvedValue(undefined),
     };
     const load = vi.fn().mockResolvedValue(concrete);
@@ -28,13 +29,17 @@ describe("createLazyPublicIndexSyncer", () => {
     expect(concrete.updateThumbnails).toHaveBeenCalledWith(sequence.id, [
       "thumbnail.png",
     ]);
-    expect(concrete.removeFromPublicIndex).toHaveBeenCalledWith(sequence.id);
+    expect(concrete.removeFromPublicIndex).toHaveBeenCalledWith(
+      sequence.id,
+      undefined
+    );
   });
 
   it("retries the module load after a transient failure", async () => {
     const concrete: IPublicIndexSyncer = {
       syncToPublicIndex: vi.fn().mockResolvedValue(undefined),
       updateThumbnails: vi.fn().mockResolvedValue(undefined),
+      findPublishConflict: vi.fn().mockResolvedValue(null),
       removeFromPublicIndex: vi.fn().mockResolvedValue(undefined),
     };
     const load = vi

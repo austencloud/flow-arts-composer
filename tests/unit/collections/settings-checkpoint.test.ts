@@ -162,19 +162,9 @@ describe("settings checkpoint capture/revert symmetry", () => {
     expect(settingsService.settings.backgroundType).toBe(BackgroundType.COSMIC);
   });
 
-  describe("prop version", () => {
-    // The settings rule resets Version 2 to Version 1 when a write brings in a
-    // new prop that has a Version 2. Restoring the props is such a write, so
-    // the version has to ride along or Undo drops the performer to Version 1.
-    function holdWithVersion(prop: PropType, propArtwork: "model" | "pictograph") {
-      void settingsService.updateSettings({
-        leftPropType: prop,
-        rightPropType: prop,
-        catDogMode: false,
-        propArtwork,
-      });
-    }
-
+  describe("retired prop version", () => {
+    // Prop versions were removed on 2026-10-27. A checkpoint saved with one
+    // still restores its props and leaves the version behind.
     function storeCheckpoint(semantic: Record<string, unknown>) {
       localStorage.setItem(
         "tka_settings_checkpoint",
@@ -202,62 +192,17 @@ describe("settings checkpoint capture/revert symmetry", () => {
       );
     }
 
-    it("puts Version 2 back when the apply path moved to another prop", () => {
-      holdWithVersion(PropType.CLUB, "model");
-      captureSettingsCheckpoint("Version 2 scene");
-
-      // The apply path writes its own props and, naming no version, the rule
-      // drops the version to Version 1.
-      void settingsService.updateSettings({
-        leftPropType: PropType.STAFF,
-        rightPropType: PropType.STAFF,
-      });
-      expect(settingsService.settings.propArtwork).toBe("pictograph");
-
-      revertSettingsCheckpoint();
-
-      expect(settingsService.settings.leftPropType).toBe(PropType.CLUB);
-      expect(settingsService.settings.rightPropType).toBe(PropType.CLUB);
-      expect(settingsService.settings.propArtwork).toBe("model");
-    });
-
-    it("puts Version 1 back when the scene was opened on Version 1", () => {
-      holdWithVersion(PropType.CLUB, "pictograph");
-      captureSettingsCheckpoint("Version 1 scene");
-
-      // The apply path turned Version 2 on for its own look.
-      holdWithVersion(PropType.CLUB, "model");
-
-      revertSettingsCheckpoint();
-
-      expect(settingsService.settings.leftPropType).toBe(PropType.CLUB);
-      expect(settingsService.settings.propArtwork).toBe("pictograph");
-    });
-
-    it("leaves the version to the settings rule for a checkpoint saved before versions were captured", () => {
-      holdWithVersion(PropType.CLUB, "model");
-      // Same props as now, no version in the checkpoint: nothing new comes
-      // into the hands, so the performer's Version 2 must survive. Writing
-      // Version 1 here would change it.
+    it("restores the props of a checkpoint that carries a version", () => {
       storeCheckpoint({
         leftPropType: PropType.CLUB,
         rightPropType: PropType.CLUB,
+        propArtwork: "model",
       });
 
       expect(revertSettingsCheckpoint()).toBe("Props");
-      expect(settingsService.settings.propArtwork).toBe("model");
-    });
-
-    it("still lets the rule reset the version for an old checkpoint that brings in a new prop", () => {
-      holdWithVersion(PropType.CLUB, "model");
-      storeCheckpoint({
-        leftPropType: PropType.STAFF,
-        rightPropType: PropType.STAFF,
-      });
-
-      expect(revertSettingsCheckpoint()).toBe("Props");
-      expect(settingsService.settings.leftPropType).toBe(PropType.STAFF);
-      expect(settingsService.settings.propArtwork).toBe("pictograph");
+      expect(settingsService.settings.leftPropType).toBe(PropType.CLUB);
+      expect(settingsService.settings.rightPropType).toBe(PropType.CLUB);
+      expect(settingsService.settings).not.toHaveProperty("propArtwork");
     });
   });
 

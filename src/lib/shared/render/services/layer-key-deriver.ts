@@ -10,7 +10,6 @@
 import type { PreparedPictographData } from "../../pictograph/shared/domain/models/prepared-pictograph-data";
 import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import type { LayerRenderOptions } from "../services/types";
-import { renderedPropLook } from "../../pictograph/prop/domain/prop-look";
 import { renderedTriangleGrip } from "../../pictograph/prop/domain/triangle-appearance";
 import {
   isVisibleMotion,
@@ -21,9 +20,8 @@ import { gridJoinKey, joinedGridModesKey } from "@tka/render-core";
 export interface BaseLayerKeyComponents {
   motionHash: string;
   fanAppearance?: string;
-  // The model look swaps the prop artwork without touching the motion hash.
-  propLook?: "model";
-  // So does the triangle's side grip, in either look.
+  // The triangle's side grip swaps the prop artwork without touching the
+  // motion hash.
   triangleGrip?: "side";
   leftPropType: string;
   rightPropType: string;
@@ -121,14 +119,12 @@ export function getBaseLayerComponents(
 ): BaseLayerKeyComponents {
   const leftPropType = options.leftPropType ?? pictograph.motions?.left?.propType ?? "staff";
   const rightPropType = options.rightPropType ?? pictograph.motions?.right?.propType ?? "staff";
-  const propLook = renderedPropLook(options.propLook, [leftPropType, rightPropType]);
   const triangleGrip = options.handPathMode
     ? undefined
     : renderedTriangleGrip(options.triangleGrip, [leftPropType, rightPropType]);
   return {
     motionHash: deriveMotionHash(pictograph),
     ...(options.fanAppearance && { fanAppearance: JSON.stringify(options.fanAppearance) }),
-    ...(propLook && { propLook }),
     ...(triangleGrip && { triangleGrip }),
     leftPropType,
     rightPropType,

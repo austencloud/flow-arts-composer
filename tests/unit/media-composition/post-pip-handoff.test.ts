@@ -116,7 +116,7 @@ describe("picture-in-picture hand-off clock", () => {
 
 /**
  * An animation and the square it shrinks into. Unless `shared`, the square
- * shows a different prop look, which one surface cannot become.
+ * shows a different prop, which one surface cannot become.
  */
 function handoffProject(movesOnTop: boolean, shared = false) {
   const anim = overlay("anim", "animation", {
@@ -135,7 +135,7 @@ function handoffProject(movesOnTop: boolean, shared = false) {
     fill: true,
     animationAppearance: {
       mandala: false,
-      ...(shared ? {} : { propLook: "model" as const }),
+      ...(shared ? {} : { propType: "club" }),
     },
   } as Partial<PostMovesItem>);
   return project(

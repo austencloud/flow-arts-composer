@@ -429,7 +429,8 @@ export class ThumbnailRenderOrchestrator {
   private async loadThumbnail(
     request: ThumbnailRequest,
     continuedRequestId?: string,
-    renderQueue: ThumbnailRenderQueue = this.queue
+    renderQueue: ThumbnailRenderQueue = this.queue,
+    timeoutRetried = false
   ): Promise<ThumbnailResult> {
     const key = keyDeriverModule.deriveKey(request.input);
     const cloudKey = this.buildCloudKey(key);
@@ -611,7 +612,7 @@ export class ThumbnailRenderOrchestrator {
         key.hash,
         async (signal, reportActivity) => {
           if (renderQueue === this.backgroundQueue) {
-            await this.waitForPreviewQueue(signal, reportActivity);
+            await this.waitForIdle(this.queue, signal, reportActivity);
           }
           executedThisRequest = true;
           reportActivity();
@@ -743,6 +744,16 @@ export class ThumbnailRenderOrchestrator {
           err.message
         );
       }
+      // A timeout on the card queue is contention, not a broken sequence: the
+      // 2026-10-14 /creators failures all stalled at step 2 while three renders
+      // shared a starved main thread, and each tile stayed blank. Record the
+      // failure, then keep the card loading and render it once more after the
+      // queue goes idle, when it has the thread to itself (ISS-010).
+      const retryAfterDrain =
+        errorCode === "THUMBNAIL_RENDER_TIMEOUT" &&
+        !timeoutRetried &&
+        renderQueue === this.queue;
+
       const failureMetrics = this.metrics?.endRequest(requestId, "failed", {
         queueWaitTime,
         renderTime:
@@ -753,6 +764,14 @@ export class ThumbnailRenderOrchestrator {
       });
       if (!isOrphanedSequence && failureMetrics) {
         captureThumbnailRenderFailure(err, failureMetrics);
+      }
+      if (retryAfterDrain) {
+        request.onStatusChange?.({ state: "queued", position: 0 });
+        await this.waitForIdle(
+          this.queue,
+          request.signal ?? new AbortController().signal
+        );
+        return this.loadThumbnail(request, undefined, renderQueue, true);
       }
       request.onStatusChange?.({ state: "error", error: err });
 
@@ -776,9 +795,11 @@ export class ThumbnailRenderOrchestrator {
     return { queued, active };
   }
 
-  private waitForPreviewQueue(
+  /** Resolve once `queue` has nothing active or waiting; rejects on abort. */
+  private waitForIdle(
+    queue: ThumbnailRenderQueue,
     signal: AbortSignal,
-    reportActivity: () => void
+    reportActivity?: () => void
   ): Promise<void> {
     return new Promise((resolve, reject) => {
       let timer: ReturnType<typeof setTimeout> | undefined;
@@ -792,12 +813,12 @@ export class ThumbnailRenderOrchestrator {
       };
       const check = () => {
         if (signal.aborted) return onAbort();
-        const { active, queued } = this.queue.getStats();
+        const { active, queued } = queue.getStats();
         if (!active && !queued) {
           cleanup();
           resolve();
         } else {
-          reportActivity();
+          reportActivity?.();
           timer = setTimeout(check, 100);
         }
       };

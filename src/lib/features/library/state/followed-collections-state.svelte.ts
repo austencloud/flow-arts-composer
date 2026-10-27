@@ -11,6 +11,8 @@ import {
 import type { CollectionFollowSource } from "#lib/shared/analytics/social-events.js";
 import { getPublicCollection } from "#lib/features/library/services/public-collection-loader.js";
 import { getUserDisplayNames } from "#lib/shared/community/services/user-repository.js";
+import { isPermissionDeniedError } from "#lib/shared/auth/utils/is-permission-denied-error.js";
+import { reportErrorTelemetry } from "#lib/shared/error/services/error-telemetry-reporter.js";
 import {
 	readFollowedMirror,
 	writeFollowedMirror,
@@ -60,10 +62,31 @@ class FollowedCollectionsState {
 		this.items = seed;
 		this.loading = seed.length === 0;
 
-		void subscribeToFollowedCollections((refs) => {
-			this.refs = refs;
-			void this.resolve(refs);
-		})
+		void subscribeToFollowedCollections(
+			(refs) => {
+				this.refs = refs;
+				void this.resolve(refs);
+			},
+			(error) => {
+				if (this.startedFor !== uid) return;
+				this.loading = false;
+				// Denied after the account changed under this listener: auth-state
+				// restarts it for the new uid, so the old one only has to stop.
+				if (isPermissionDeniedError(error) && authState.effectiveUserId !== uid) {
+					return;
+				}
+				void reportErrorTelemetry({
+					message: "Followed collections listener failed",
+					severity: "warning",
+					context: {
+						module: "firestore",
+						action: "listen",
+						additionalData: { path: `users/${uid}/followedCollections` },
+					},
+					error,
+				});
+			},
+		)
 			.then((unsub) => {
 				// A teardown can race the async subscribe — drop the late sub.
 				if (this.startedFor === uid) {

@@ -50,10 +50,6 @@ with pre-prepared data for better performance.
     fanAppearanceSignature,
     normalizeFanAppearance,
   } from "../../prop/domain/fan-appearance";
-  import {
-    normalizePropLook,
-    type PropLook,
-  } from "../../prop/domain/prop-look";
   import { normalizeTriangleGrip } from "../../prop/domain/triangle-appearance";
   import { calculatePictographMotionPositions } from "../../prop/services/pictograph-motion-positioner";
   import type { PropPosition } from "../../prop/domain/models/prop-position";
@@ -138,7 +134,6 @@ with pre-prepared data for better performance.
     // Explicit prop types for export/thumbnail rendering
     // When provided, passed to PictographPreparer for consistency during async operations
     fanAppearanceOverride = undefined,
-    propLookOverride = undefined,
     leftBuugengFlippedOverride = undefined,
     rightBuugengFlippedOverride = undefined,
     leftPropTypeOverride = undefined,
@@ -227,7 +222,6 @@ with pre-prepared data for better performance.
     poseOnly?: boolean;
     /** Explicit prop type for the left hand. Export/thumbnail rendering provides this for consistency. */
     fanAppearanceOverride?: FanAppearance;
-    propLookOverride?: PropLook;
     leftBuugengFlippedOverride?: boolean;
     rightBuugengFlippedOverride?: boolean;
     leftPropTypeOverride?: PropType;
@@ -505,9 +499,6 @@ with pre-prepared data for better performance.
   const effectiveRightPropType = $derived(
     rightPropTypeOverride ?? getSettings().rightPropType
   );
-  const effectivePropLook = $derived(
-    normalizePropLook(propLookOverride ?? getSettings().propArtwork)
-  );
   const effectiveTriangleGrip = $derived(
     normalizeTriangleGrip(getSettings().triangleGrip)
   );
@@ -576,7 +567,6 @@ with pre-prepared data for better performance.
       fanAppearance: fanAppearanceSignature(
         normalizeFanAppearance(fanAppearanceOverride ?? settings.fanAppearance)
       ),
-      propLook: effectivePropLook,
       triangleGrip: effectiveTriangleGrip,
       darkMode: effectiveDarkMode, // Include effective dark mode for color-correct preparation
       leftMotion: leftFingerprint,
@@ -656,7 +646,6 @@ with pre-prepared data for better performance.
           fanAppearance: normalizeFanAppearance(
             fanAppearanceOverride ?? getSettings().fanAppearance
           ),
-          propLook: effectivePropLook,
           triangleGrip: effectiveTriangleGrip,
           showLeftMotion: preparationShowLeftMotion,
           showRightMotion: preparationShowRightMotion,

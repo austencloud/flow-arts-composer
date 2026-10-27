@@ -12,13 +12,14 @@ import {
 } from "#lib/shared/animation-engine/domain/types/trail-types.js";
 import PostAnimationAppearanceTool from "./PostAnimationAppearanceTool.svelte";
 
-it("saves a plain staff in one edit without changing the account's props or artwork", async () => {
+// A draft saved while prop versions existed still carries propLook. It opens,
+// and the next save drops it, without touching the account's props.
+it("opens a draft saved with a prop version and saves the prop alone", async () => {
   await page.viewport(760, 800);
   const settings = getSettings();
   const account = {
     left: settings.leftPropType,
     right: settings.rightPropType,
-    look: settings.propArtwork,
   };
   const onAppearanceChange = vi.fn();
   const { rerender } = render(PostAnimationAppearanceTool, {
@@ -31,133 +32,41 @@ it("saves a plain staff in one edit without changing the account's props or artw
   });
   await page.getByRole("tab", { name: "Props", exact: true }).click();
   await page.getByRole("button", { name: "Choose Double Staff style" }).click();
-  const plain = page.getByRole("button", {
-    name: "Select Double Staff V1 prop type",
+  await expect
+    .element(page.getByRole("button", { name: /V2/ }))
+    .not.toBeInTheDocument();
+  const staff = page.getByRole("button", {
+    name: "Select Double Staff prop type",
     exact: true,
   });
-  await plain.click();
+  await expect.element(staff).toHaveAttribute("aria-pressed", "true");
+
+  await page
+    .getByRole("button", { name: "Select LED Baton prop type", exact: true })
+    .click();
   expect(onAppearanceChange).toHaveBeenCalledTimes(1);
   const saved = onAppearanceChange.mock.calls[0]![0];
-  expect(saved).toMatchObject({
-    propType: PropType.STAFF,
-    propLook: "pictograph",
-  });
+  expect(saved).toMatchObject({ propType: PropType.CAPSULE_BATON });
+  expect(saved).not.toHaveProperty("propLook");
   await rerender({ appearanceOverride: saved });
-  await expect.element(plain).toHaveAttribute("aria-pressed", "true");
-  await expect
-    .element(
-      page.getByRole("button", {
-        name: "Select Double Staff V2 prop type",
-        exact: true,
-      })
-    )
-    .toHaveAttribute("aria-pressed", "false");
 
-  // A size edit only supplies a type; it must keep the saved artwork.
-  await page.getByRole("button", { name: "Big", exact: true }).click();
-  expect(onAppearanceChange.mock.calls.at(-1)![0]).toMatchObject({
-    propType: PropType.BIGSTAFF,
-    propLook: "pictograph",
+  // A size edit only supplies a type.
+  await page.getByRole("button", { name: "Back to all props" }).click();
+  await page.getByRole("button", { name: "Choose Triad style" }).click();
+  await page
+    .getByRole("button", { name: "Select Triad prop type", exact: true })
+    .click();
+  await rerender({
+    appearanceOverride: onAppearanceChange.mock.calls.at(-1)![0],
   });
+  await page.getByRole("button", { name: "Big", exact: true }).click();
+  const sized = onAppearanceChange.mock.calls.at(-1)![0];
+  expect(sized).toMatchObject({ propType: PropType.BIGTRIAD });
+  expect(sized).not.toHaveProperty("propLook");
   expect({
     left: getSettings().leftPropType,
     right: getSettings().rightPropType,
-    look: getSettings().propArtwork,
   }).toEqual(account);
-});
-
-it("saves Version 1 when a pick of a different prop with a Version 2 names no version", async () => {
-  await page.viewport(760, 800);
-  const onAppearanceChange = vi.fn();
-  const { rerender } = render(PostAnimationAppearanceTool, {
-    editor: {
-      project: createEmptyPostProject({ sequenceId: "prop-test", now: 1 }),
-    } as PostEditorState,
-    appearanceOverride: { propType: PropType.STAFF, propLook: "pictograph" },
-    onAppearanceChange,
-    locked: false,
-  });
-  await page.getByRole("tab", { name: "Props", exact: true }).click();
-  await page.getByRole("button", { name: "Choose Double Staff style" }).click();
-
-  await page
-    .getByRole("button", { name: "Select LED Baton V2 prop type", exact: true })
-    .click();
-  const v2 = onAppearanceChange.mock.calls.at(-1)![0];
-  expect(v2).toMatchObject({
-    propType: PropType.CAPSULE_BATON,
-    propLook: "model",
-  });
-  await rerender({ appearanceOverride: v2 });
-
-  // Stick has one version, so its tile names none and there is nothing for it
-  // to reset: the baton's Version 2 stays for the next prop that has one.
-  await page
-    .getByRole("button", { name: "Select Stick prop type", exact: true })
-    .click();
-  const stick = onAppearanceChange.mock.calls.at(-1)![0];
-  expect(stick).toMatchObject({
-    propType: PropType.STICK,
-    propLook: "model",
-  });
-  await rerender({ appearanceOverride: stick });
-
-  // Buugeng has a Version 2 of its own, and the pick names none, so it starts
-  // at Version 1. The Version 2 chosen for the baton must not follow it there.
-  await page.getByRole("button", { name: "Back to all props" }).click();
-  await page
-    .getByRole("button", { name: "Select Buugeng prop type", exact: true })
-    .click();
-  expect(onAppearanceChange.mock.calls.at(-1)![0]).toMatchObject({
-    propType: PropType.BUUGENG,
-    propLook: "pictograph",
-  });
-});
-
-it("keeps Version 2 when the size changes", async () => {
-  await page.viewport(760, 800);
-  const onAppearanceChange = vi.fn();
-  render(PostAnimationAppearanceTool, {
-    editor: {
-      project: createEmptyPostProject({ sequenceId: "prop-test", now: 1 }),
-    } as PostEditorState,
-    appearanceOverride: { propType: PropType.TRIAD, propLook: "model" },
-    onAppearanceChange,
-    locked: false,
-  });
-  await page.getByRole("tab", { name: "Props", exact: true }).click();
-  await page.getByRole("button", { name: "Choose Triad style" }).click();
-
-  // Big Triad is the same prop as Triad, so the look the performer chose stays.
-  await page.getByRole("button", { name: "Big", exact: true }).click();
-  expect(onAppearanceChange.mock.calls.at(-1)![0]).toMatchObject({
-    propType: PropType.BIGTRIAD,
-    propLook: "model",
-  });
-});
-
-it("keeps Version 2 when the pick has no Version 2 to show", async () => {
-  await page.viewport(760, 800);
-  const onAppearanceChange = vi.fn();
-  render(PostAnimationAppearanceTool, {
-    editor: {
-      project: createEmptyPostProject({ sequenceId: "prop-test", now: 1 }),
-    } as PostEditorState,
-    appearanceOverride: { propType: PropType.STAFF, propLook: "model" },
-    onAppearanceChange,
-    locked: false,
-  });
-  await page.getByRole("tab", { name: "Props", exact: true }).click();
-
-  // Fan has one version. Choosing it leaves the staff's Version 2 in place for
-  // when the performer comes back to a prop that has one.
-  await page
-    .getByRole("button", { name: "Select Fan prop type", exact: true })
-    .click();
-  expect(onAppearanceChange.mock.calls.at(-1)![0]).toMatchObject({
-    propType: PropType.FAN,
-    propLook: "model",
-  });
 });
 
 it("saves an LED look change from the selected effect inspector", async () => {

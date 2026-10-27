@@ -13,11 +13,6 @@
 import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import { isBuugengFamilyProp } from "#lib/shared/pictograph/prop/domain/enums/prop-classification.js";
 import { getPropTypeDisplayInfo } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
-import {
-  hasModelSprite,
-  normalizePropLook,
-  type PropLook,
-} from "#lib/shared/pictograph/prop/domain/prop-look.js";
 import type { AppSettings, PropPreset } from "./app-settings";
 
 export const PROP_PRESET_SLOT_COUNT = 10;
@@ -53,7 +48,6 @@ type SetupSettings = Pick<
   | "catDogMode"
   | "leftBuugengFlipped"
   | "rightBuugengFlipped"
-  | "propArtwork"
 >;
 
 /** The current prop setup, in the same shape a preset stores. */
@@ -66,7 +60,6 @@ export function presetFromSettings(settings: SetupSettings): PropPreset {
     catDogMode: settings.catDogMode ?? false,
     leftBuugengFlipped: settings.leftBuugengFlipped ?? false,
     rightBuugengFlipped: settings.rightBuugengFlipped ?? false,
-    propArtwork: normalizePropLook(settings.propArtwork),
   };
 }
 
@@ -102,21 +95,7 @@ export function heldProps(setup: PropPreset): {
   };
 }
 
-/**
- * The version a setup actually shows. "model" (Version 2) counts only when a
- * held prop has a Version 2 to show, so a stored "model" on a prop with one
- * version never makes two setups differ. A preset saved before versions
- * existed has none and is Version 1.
- */
-export function presetVersion(setup: PropPreset): PropLook {
-  if (normalizePropLook(setup.propArtwork) !== "model") return "pictograph";
-  const held = heldProps(setup);
-  return hasModelSprite(held.left) || hasModelSprite(held.right)
-    ? "model"
-    : "pictograph";
-}
-
-/** True when both put the same props, at the same version, in each hand. */
+/** True when both put the same props in each hand. */
 export function presetsMatch(a: PropPreset, b: PropPreset): boolean {
   const x = heldProps(a);
   const y = heldProps(b);
@@ -124,18 +103,12 @@ export function presetsMatch(a: PropPreset, b: PropPreset): boolean {
     x.left === y.left &&
     x.right === y.right &&
     x.leftFlipped === y.leftFlipped &&
-    x.rightFlipped === y.rightFlipped &&
-    presetVersion(a) === presetVersion(b)
+    x.rightFlipped === y.rightFlipped
   );
 }
 
 /**
  * The settings applying a preset writes: every field it stores, plus the slot.
- *
- * `propArtwork` stays the last key. The Props tab publishes the patch one key
- * at a time, in this order, and each prop write resets the version to
- * Version 1 (see prop-version-rule.ts); the preset's own version has to land
- * after them to stick.
  */
 export function presetSettingsPatch(
   preset: PropPreset,
@@ -148,7 +121,6 @@ export function presetSettingsPatch(
   | "catDogMode"
   | "leftBuugengFlipped"
   | "rightBuugengFlipped"
-  | "propArtwork"
 > {
   return {
     selectedPresetIndex: index,
@@ -157,7 +129,6 @@ export function presetSettingsPatch(
     catDogMode: preset.catDogMode,
     leftBuugengFlipped: preset.leftBuugengFlipped ?? false,
     rightBuugengFlipped: preset.rightBuugengFlipped ?? false,
-    propArtwork: normalizePropLook(preset.propArtwork),
   };
 }
 
@@ -167,24 +138,16 @@ export function presetShortcutKey(index: number): string {
 }
 
 /**
- * Human label, e.g. "Double Staff" or "Double Staff + Fan". A prop shown at
- * Version 2 ends in " V2": "LED Baton V2", "Double Staff V2 + Fan". A prop
- * with no Version 2 keeps its plain name even when the setup is at Version 2.
- * Screens pass `propName` to show each prop's name in the reader's language.
+ * Human label, e.g. "Double Staff" or "Double Staff + Fan". Screens pass `propName` to show each prop's name in the reader's language.
  */
 export function presetLabel(
   preset: PropPreset,
   propName: (prop: PropType) => string = (prop) =>
     getPropTypeDisplayInfo(prop).label
 ): string {
-  const versioned = presetVersion(preset) === "model";
-  const name = (prop: PropType) => {
-    const label = propName(prop);
-    return versioned && hasModelSprite(prop) ? `${label} V2` : label;
-  };
-  const left = name(preset.leftPropType);
+  const left = propName(preset.leftPropType);
   if (!preset.catDogMode || preset.rightPropType === preset.leftPropType) {
     return left;
   }
-  return `${left} + ${name(preset.rightPropType)}`;
+  return `${left} + ${propName(preset.rightPropType)}`;
 }

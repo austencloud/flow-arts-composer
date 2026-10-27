@@ -1,5 +1,4 @@
 import { canonicalJSON } from "#lib/shared/foundation/utils/canonical-json.js";
-import { normalizePropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
 import type { TunnelComposition } from "#lib/shared/sequence-viewer/tunnel/tunnel-composition.js";
 import type { TunnelSnapshot } from "#lib/shared/sequence-viewer/tunnel/tunnel-snapshot.js";
 import type { TunnelCreatorDraft } from "./tunnel-creator-draft";
@@ -15,9 +14,7 @@ export interface TunnelEditorSessionStatus {
 /**
  * Exact editor-content identity for workspace replacement decisions.
  * `updatedAt` is generated whenever the creator captures a draft, so it cannot
- * participate; every performed-result input and provenance field remains. A
- * missing prop version reads as Version 1, so a tunnel saved before versions
- * is not edited by being opened.
+ * participate; every performed-result input and provenance field remains.
  */
 export function tunnelEditorContentKey(
   composition: TunnelComposition | null,
@@ -25,15 +22,13 @@ export function tunnelEditorContentKey(
 ): string | null {
   if (!composition || !presentation) return null;
   const { updatedAt: _updatedAt, ...stableComposition } = composition;
+  // Tunnels saved before 2026-10-27 may carry a retired prop version. It
+  // draws nothing, so opening such a tunnel does not mark it as edited.
+  const { propLook: _retired, ...props } =
+    presentation.props as TunnelSnapshot["props"] & { propLook?: unknown };
   return canonicalJSON({
     composition: stableComposition,
-    presentation: {
-      ...presentation,
-      props: {
-        ...presentation.props,
-        propLook: normalizePropLook(presentation.props.propLook),
-      },
-    },
+    presentation: { ...presentation, props },
   });
 }
 

@@ -22,11 +22,6 @@
   import { getAuthSync } from "#lib/shared/auth/firebase.js";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {
-    DEFAULT_PROP_LOOK,
-    versionAfterPick,
-    type PropLook,
-  } from "#lib/shared/pictograph/prop/domain/prop-look.js";
-  import {
     PROP_TYPE_DISPLAY_REGISTRY,
     getAllPropTypes,
   } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
@@ -58,24 +53,15 @@
   // version belongs to the arena, never to the account's prop setting.
   let randomPropMode = $state(true);
   let matchupPropType = $state<PropType>(pickRandomPropType());
-  let matchupPropLook = $state<PropLook>(DEFAULT_PROP_LOOK);
   let propDrawerOpen = $state(false);
 
-  // A version belongs to the pick (versionAfterPick): a V2 tile sets Version 2,
-  // and a different prop, including a random one, starts at Version 1.
-  function setMatchupProp(prop: PropType, look?: PropLook): void {
-    matchupPropLook = versionAfterPick(
-      matchupPropType,
-      matchupPropLook,
-      prop,
-      look
-    );
+  function setMatchupProp(prop: PropType): void {
     matchupPropType = prop;
   }
 
-  function handlePropSelect(pt: PropType, look?: PropLook) {
+  function handlePropSelect(pt: PropType) {
     randomPropMode = false;
-    setMatchupProp(pt, look);
+    setMatchupProp(pt);
   }
 
   function toggleRandomProp() {
@@ -250,7 +236,6 @@
         disabled={transitioning}
         onvote={() => vote("left")}
         propType={matchupPropType}
-        propLook={matchupPropLook}
         bpm={arenaBpm}
       />
 
@@ -265,7 +250,6 @@
         disabled={transitioning}
         onvote={() => vote("right")}
         propType={matchupPropType}
-        propLook={matchupPropLook}
         bpm={arenaBpm}
       />
     </div>
@@ -346,9 +330,7 @@
     <ArenaPropDrawer
       bind:isOpen={propDrawerOpen}
       selectedPropType={matchupPropType}
-      propLook={matchupPropLook}
       onSelect={handlePropSelect}
-      onPropLookChange={(look) => (matchupPropLook = look)}
     />
   {:else}
     <div class="battle-empty" role="status">

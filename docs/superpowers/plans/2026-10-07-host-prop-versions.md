@@ -1,5 +1,7 @@
 # Host Prop Versions Implementation Plan
 
+> Superseded 2026-10-27: Austen removed prop versions; one look per prop.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Stop the deck releaser, tunnel creator, Arena and Guide codex from writing the account's prop version (`settings.propArtwork`).

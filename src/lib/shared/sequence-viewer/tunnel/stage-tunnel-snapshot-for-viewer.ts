@@ -5,7 +5,6 @@ import {
 } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
 import { EFFECTS_CONFIG_STORAGE_KEY } from "#lib/shared/effects/state/effects-config-state.svelte.js";
 import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
-import { normalizePropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
 import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
 import { saveTunnelViewState } from "./tunnel-view-state";
 import type { TunnelSnapshot } from "./tunnel-snapshot";
@@ -78,9 +77,6 @@ export function stageTunnelSnapshotForViewer(
     ...(snapshot.props.catDogMode !== undefined
       ? { catDogMode: snapshot.props.catDogMode }
       : {}),
-    // The viewer draws from the account's version, so it opens on the one the
-    // tunnel was saved with. A tunnel saved before versions opens at Version 1.
-    propArtwork: normalizePropLook(snapshot.props.propLook),
   });
 
   saveViewState({

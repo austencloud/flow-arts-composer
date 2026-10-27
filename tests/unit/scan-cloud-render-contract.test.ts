@@ -12,14 +12,14 @@ describe("QR scan cloud-render contract", () => {
     expect(page).not.toContain("getGlyphCache().initialize()");
   });
 
-  it("uses the scan context's cloud-only policy for canonical cells", () => {
+  it("probes canonical cells and draws a cloud miss locally", () => {
     const card = source(
       "src/lib/shared/sequence-viewer/components/ChoreoCard.svelte"
     );
     expect(card).toContain("probeCloud: cloudProbeEnabled");
-    expect(card).toContain(
-      "cloudOnly: scanCellsAreCloudOnly(scanCloudPolicy, {"
-    );
+    // ISS-030: a cloud-only scan card showed "!" for every cell the QR warm
+    // never uploaded, such as a link printed for another prop.
+    expect(card).not.toContain("cloudOnly");
     expect(card).toContain("...CANONICAL_CARD_VISIBILITY");
     expect(card).toContain("showLeftMotion,");
     expect(card).toContain("showRightMotion,");
@@ -118,7 +118,7 @@ describe("QR scan cloud-render contract", () => {
     expect(modes).toContain('if (scanOrigin) return "card";');
     expect(page).toContain("deferInteractiveStartup");
     expect(page).toContain("startInCardThenSplit");
-    expect(page).toContain("setScanCardCloudProbe(true, isDemo)");
+    expect(page).toContain("setScanCardCloudProbe(true)");
   });
 
   it("does not launch the local card pre-warmer for a cloud-backed scan", () => {

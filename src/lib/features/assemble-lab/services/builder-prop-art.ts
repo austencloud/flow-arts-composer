@@ -12,7 +12,6 @@ import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js"
 import { normalizeFanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
 import type { PropRenderData } from "#lib/shared/pictograph/prop/domain/models/prop-render-data.js";
 import { applyHandColorOverride } from "#lib/shared/pictograph/prop/domain/prop-preview-color.js";
-import { normalizePropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
 import { normalizeTriangleGrip } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
 import { propSvgLoader } from "#lib/shared/pictograph/prop/services/prop-svg-loader.js";
 import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
@@ -25,7 +24,6 @@ export type BuilderPropSettings = Pick<
   | "leftPropType"
   | "rightPropType"
   | "primaryPropColors"
-  | "propArtwork"
   | "fanAppearance"
   | "triangleGrip"
 >;
@@ -58,7 +56,6 @@ export async function loadBuilderPropArt(
   // Draw the look the pictographs draw (PictographContainer passes the
   // same options), so the stage and the Start pictograph show one prop.
   const appearance = {
-    propLook: normalizePropLook(settings.propArtwork),
     fanAppearance: normalizeFanAppearance(settings.fanAppearance),
     triangleGrip: normalizeTriangleGrip(settings.triangleGrip),
   };

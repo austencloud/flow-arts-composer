@@ -57,8 +57,6 @@ describe("PropGrid family tile art", () => {
       allowedProps: [PropType.STAFF, PropType.CAPSULE_BATON, PropType.BIGSTAFF],
       fanAppearance: { build: "fire", frameColor: "black", cover: "bare" },
       onFanAppearanceChange: vi.fn(),
-      propLook: "pictograph",
-      onPropLookChange: vi.fn(),
     });
     const staff = getPropTypeDisplayInfo(PropType.STAFF).image;
     const bigStaff = getPropTypeDisplayInfo(PropType.BIGSTAFF).image;

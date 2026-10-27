@@ -107,38 +107,16 @@ describe("PropSvgLoader fan builds", () => {
     expect(fire.svgData!.viewBox).not.toEqual(big.svgData!.viewBox);
   });
 
-  it("loads a hand-specific model sprite without recoloring it or reusing notation artwork", async () => {
+  it("draws the notation staff for a caller still asking for the retired Realistic look", async () => {
     const loader = new StaticFileLoader();
-    const notation = await loader.loadPropSvg(placement, motion("buugeng", HandSide.LEFT), false, {
-      themeMode: "dark",
-      propLook: "pictograph",
-    });
-    const model = await loader.loadPropSvg(placement, motion("buugeng", HandSide.RIGHT), false, {
-      themeMode: "dark",
-      propLook: "model",
-    });
-    expect(loader.fetched).toEqual([
-      "/images/props/pictograph/buugeng.svg",
-      expect.stringMatching(/^\/images\/props\/appearances\/model\/buugeng-red\.svg\?v=/),
-    ]);
-    expect(notation.svgData!.svgContent).not.toEqual(model.svgData!.svgContent);
-    expect(model.svgData!.svgContent).toContain("buugeng 3D model sprite (red)");
-    expect(model.svgData!.viewBox).toEqual({ width: 262.6, height: 135.9 });
-  });
-
-  it("turns the Realistic staff so its T-bar sits where the notation marks the thumb end", async () => {
-    // The capture's T-bar is on -x; the notation staff and the rotation tables
-    // put the thumb end on +x. Unturned, a staff set to "in" read as "out".
-    const loader = new StaticFileLoader();
-    const model = await loader.loadPropSvg(placement, motion("staff", HandSide.LEFT), false, {
-      themeMode: "dark",
-      propLook: "model",
-    });
-    expect(loader.fetched).toEqual([
-      expect.stringMatching(/^\/images\/props\/appearances\/model\/staff-blue\.svg\?v=/),
-    ]);
-    expect(model.svgData!.svgContent).toContain('<g transform="rotate(180 126.4 38.9)">');
-    expect(model.svgData!.center).toEqual({ x: 126.4, y: 38.9 });
+    // The loader's caches are module-level, shared by every instance.
+    loader.clearCache();
+    const options = { themeMode: "dark", propLook: "model" } as Parameters<
+      StaticFileLoader["loadPropSvg"]
+    >[3];
+    const staff = await loader.loadPropSvg(placement, motion("staff", HandSide.LEFT), false, options);
+    expect(loader.fetched).toEqual(["/images/props/pictograph/staff.svg"]);
+    expect(staff.svgData!.svgContent).not.toContain("3D model sprite");
   });
 
   it("hands a light pictograph the paper palette so the choreo sheet can read the fan", async () => {

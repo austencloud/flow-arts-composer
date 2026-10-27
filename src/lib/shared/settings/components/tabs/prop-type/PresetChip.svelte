@@ -6,10 +6,8 @@
   a plus. What a click does belongs to the shelf (PresetChipBar): apply, save,
   or choose a slot to manage. This button only reports the click.
 
-  The art is drawn at the preset's own version, not the current global one, so
-  a Version 2 preset reads as Version 2 while the app is on Version 1 and the
-  other way round. The fan build and triangle grip are not part of a preset, so
-  they follow the current settings.
+  The fan build and triangle grip are not part of a preset, so they follow the
+  current settings.
 -->
 <script lang="ts">
   import PropCompositionPreview from "#lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
@@ -17,7 +15,6 @@
   import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
   import type { TriangleGrip } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
   import type { PropPreset } from "../../../domain/app-settings";
-  import { presetVersion } from "../../../domain/prop-presets";
   import { previewPair } from "./prop-preview-pair";
 
   let {
@@ -57,7 +54,6 @@
   // why the fan build and grip ride along: leaving them out would draw those
   // props at their defaults.
   const appearance = $derived({
-    propLook: preset ? presetVersion(preset) : null,
     fanAppearance,
     triangleGrip,
   });

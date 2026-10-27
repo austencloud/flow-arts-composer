@@ -143,6 +143,45 @@ async function withStore<T>(
   mode: IDBTransactionMode,
   work: (store: IDBObjectStore) => Promise<T>
 ): Promise<T> {
+  try {
+    return await runTransaction(mode, work);
+  } catch (error) {
+    if (!lostTransaction(error)) throw error;
+    // Safari can drop a connection (backgrounding, storage pressure) without
+    // the close event that clears the cache, and then aborts with no error
+    // or refuses new transactions on the dead handle (production 2026-10-06
+    // and 10-22). An aborted transaction wrote nothing, so reopen and retry
+    // once. Quota and the store's own refusals are not retried.
+    const stale = dbPromise;
+    dbPromise = null;
+    void stale?.then((db) => db.close(), () => undefined);
+    return runTransaction(mode, work);
+  }
+}
+
+const TRANSACTION_ABORTED = "share-intake: transaction aborted";
+const LOST_TRANSACTION_ERRORS = new Set([
+  "AbortError",
+  "InvalidStateError",
+  "TransactionInactiveError",
+  "UnknownError",
+]);
+
+function lostTransaction(error: unknown): boolean {
+  if (error instanceof Error && error.message === TRANSACTION_ABORTED) {
+    return true;
+  }
+  return (
+    typeof DOMException !== "undefined" &&
+    error instanceof DOMException &&
+    LOST_TRANSACTION_ERRORS.has(error.name)
+  );
+}
+
+async function runTransaction<T>(
+  mode: IDBTransactionMode,
+  work: (store: IDBObjectStore) => Promise<T>
+): Promise<T> {
   const db = await openDb();
 
   return new Promise<T>((resolve, reject) => {
@@ -155,7 +194,7 @@ async function withStore<T>(
     };
     transaction.onabort = () => {
       failed = true;
-      reject(transaction.error ?? new Error("share-intake: transaction aborted"));
+      reject(transaction.error ?? new Error(TRANSACTION_ABORTED));
     };
     transaction.onerror = () => {
       failed = true;

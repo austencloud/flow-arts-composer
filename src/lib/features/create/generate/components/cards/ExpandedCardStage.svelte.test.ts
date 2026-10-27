@@ -847,6 +847,61 @@ describe("ExpandedCardStage on stacked layouts", () => {
     expectCentered(box);
   });
 
+  // Production 2026-10-24 and 10-26: on Android phones and tablets, tapping
+  // the X on Setups or Timing threw "e is not a function" once the close
+  // settled. The panel header hands its click event to onClose, and the
+  // stage took that event for a settle callback and called it.
+  it.each([
+    [
+      "Setups",
+      "Close generator setups",
+      (s: PanelCoordinationState) => s.openPresetDrawer(),
+    ],
+    [
+      "Timing",
+      "Close timing and direction",
+      (s: PanelCoordinationState) => s.openTnDPanel(),
+    ],
+  ])(
+    "closes %s from its X on a phone without throwing",
+    async (_name, label, open) => {
+      await page.viewport(375, 667);
+      const errors: unknown[] = [];
+      const onError = (event: ErrorEvent) => {
+        errors.push(event.error);
+        event.preventDefault();
+      };
+      const onRejection = (event: PromiseRejectionEvent) => {
+        errors.push(event.reason);
+        event.preventDefault();
+      };
+      window.addEventListener("error", onError);
+      window.addEventListener("unhandledrejection", onRejection);
+      try {
+        const state = createPanelCoordinationState();
+        render(ExpandedCardStage, props(state, false));
+
+        open(state);
+        flushSync();
+        await tick();
+        expect(viewportRoot().dataset.presentation).toBe("fill");
+
+        await page.getByRole("button", { name: label }).click();
+        await vi.waitFor(() => {
+          flushSync();
+          expect(state.openGenerateCard).toBeNull();
+        });
+        // The settle callback runs a beat after the close, on a timer or once
+        // the view transition finishes. Give it time to land.
+        await new Promise((resolve) => setTimeout(resolve, 250));
+        expect(errors).toEqual([]);
+      } finally {
+        window.removeEventListener("error", onError);
+        window.removeEventListener("unhandledrejection", onRejection);
+      }
+    }
+  );
+
   it("fills a phone screen, but keeps LOOP a bottom panel", async () => {
     await page.viewport(390, 844);
     const state = createPanelCoordinationState();
