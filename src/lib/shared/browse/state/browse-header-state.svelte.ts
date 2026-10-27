@@ -35,7 +35,9 @@ export interface BrowseHeaderState {
 }
 
 export function createBrowseHeaderState(): BrowseHeaderState {
-  let entry = $state<BrowseHeaderEntry | null>(null);
+  // Raw: the entry holds the screen's getters, nothing to deep-proxy, and
+  // unregistering compares it against the object the screen handed in.
+  let entry = $state.raw<BrowseHeaderEntry | null>(null);
 
   return {
     get entry() {

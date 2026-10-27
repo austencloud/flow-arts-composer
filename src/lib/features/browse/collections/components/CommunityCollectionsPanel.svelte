@@ -57,6 +57,17 @@ collections have stable URLs and ordinary browser back/forward behavior.
     };
   });
 
+  // The header bar renders this screen's action buttons above the panel in
+  // the tree, so on the flush that empties `selected` (the browser's Back
+  // button) those buttons re-run before the {#if} below has unmounted the
+  // detail. Its props keep the last collection shown rather than reading a
+  // closed (null) selection.
+  let lastSelected: NonNullable<typeof selected> | null = null;
+  const shownSelected = $derived.by(() => {
+    if (selected) lastSelected = selected;
+    return selected ?? lastSelected;
+  });
+
   function openCollection(item: CommunityCollection): void {
     trackBrowseCollectionOpened("community-card");
     browseNavigation.viewPublicCollectionDetail(
@@ -67,11 +78,11 @@ collections have stable URLs and ordinary browser back/forward behavior.
   }
 </script>
 
-{#if selected}
+{#if selected && shownSelected}
   <CollectionDetailView
-    collectionId={selected.collectionId}
-    foreignOwnerId={selected.ownerId}
-    ownerName={selected.ownerName}
+    collectionId={shownSelected.collectionId}
+    foreignOwnerId={shownSelected.ownerId}
+    ownerName={shownSelected.ownerName}
     onBack={() => browseNavigation.viewExploreCollections()}
   />
 {:else}
