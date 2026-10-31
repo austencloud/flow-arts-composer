@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-  PACE_CEILING,
+  CRUISE_SHARE,
+  MIN_SPEED,
   PACE_SAMPLES,
   PACE_TARGET,
   addBootSample,
@@ -106,16 +107,59 @@ describe("the steady pace", () => {
     );
   });
 
-  it("past the expected end it creeps toward the target without passing it", () => {
+  it("never stops: a boot far longer than expected keeps the pen at cruise and laps past 1", () => {
+    // The 10-29 freeze: a fast machine (1.6 s boots) had one slow boot, and
+    // the pen parked at 97% until the app arrived.
+    for (const expected of [1566, 3000, 6380, 14000]) {
+      const pacer = createOverturePacer({
+        start: 300,
+        expected,
+        profile: PROFILE,
+      });
+      const frames = run(pacer, 300, 30000);
+      const planned = (PACE_TARGET / Math.max(1000, expected - 300)) * 1000;
+      const cruise = Math.min(
+        planned,
+        Math.max(MIN_SPEED * 1000, planned * CRUISE_SHARE)
+      );
+      for (let i = 1; i < frames.length; i++) {
+        expect(speedAt(frames, i)).toBeGreaterThanOrEqual(cruise - 1e-9);
+      }
+      expect(frames[frames.length - 1]![1]).toBeGreaterThan(1);
+    }
+  });
+
+  it("past the expected end it eases down to cruise instead of braking", () => {
     const pacer = createOverturePacer({
       start: 600,
       expected: 3000,
       profile: PROFILE,
     });
-    const frames = run(pacer, 600, 20000);
-    const late = frames.filter(([t]) => t > 5000);
-    expect(late[late.length - 1]![1]).toBeLessThanOrEqual(PACE_CEILING);
-    expect(speedAt(late, late.length - 1)).toBeLessThan(speedAt(late, 1));
+    const frames = run(pacer, 600, 9000);
+    for (let i = 2; i < frames.length; i++) {
+      expect(
+        Math.abs(speedAt(frames, i) - speedAt(frames, i - 1))
+      ).toBeLessThan(0.02);
+    }
+    const planned = (PACE_TARGET / (3000 - 600)) * 1000;
+    expect(speedAt(frames, frames.length - 1)).toBeCloseTo(
+      planned * CRUISE_SHARE,
+      3
+    );
+  });
+
+  it("a milestone that never comes slows the pen but never parks it", () => {
+    const pacer = createOverturePacer({
+      start: 600,
+      expected: 6380,
+      profile: PROFILE,
+    });
+    const frames = run(pacer, 600, 14000);
+    const planned = (PACE_TARGET / (6380 - 600)) * 1000;
+    const floor = Math.max(MIN_SPEED * 1000, planned * CRUISE_SHARE);
+    expect(speedAt(frames, frames.length - 1)).toBeGreaterThanOrEqual(
+      floor - 1e-9
+    );
   });
 
   it("scales the profile's milestones to the learned boot length", () => {

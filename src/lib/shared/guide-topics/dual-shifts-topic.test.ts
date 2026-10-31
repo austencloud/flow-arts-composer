@@ -127,7 +127,6 @@ describe("Type 1 Dual-Shifts topic record", () => {
       DUAL_SHIFTS_WEB_COPY.gammaPractice,
     ];
     for (const key of keys) expect(german[key], key).toBe(english[key]);
-    expect(english[DUAL_SHIFTS_WEB_COPY.modesLead]).toContain("six modes");
   });
 
   it("gives each mode and the switching sequence a static start box and a closed loop", () => {

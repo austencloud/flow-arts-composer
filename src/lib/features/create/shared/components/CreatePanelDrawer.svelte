@@ -16,6 +16,7 @@
   import { onMount } from "svelte";
   import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
   import { tryGetCreateModuleContext } from "../context/create-module-context";
+  import { DRAWER_HANDLE_FOOTPRINT } from "./sequence-actions/sequence-actions-panel-height";
   import { responsiveLayoutManager } from "#lib/shared/create/services/responsive-layout-manager.js";
   import type { ResponsiveLayoutManager } from "#lib/shared/create/services/responsive-layout-manager.js";
   import type { Snippet } from "svelte";
@@ -108,9 +109,6 @@
     createModuleContext ? createModuleContext.panelState.toolPanelWidth : 0
   );
 
-  // Drawer handle footprint (height + vertical margins). Keep in sync with SheetDragHandle variables.
-  const drawerHandleFootprint = 29;
-
   // Calculate panel height for mobile/bottom placement
   const panelHeightStyle = $derived.by(() => {
     if (isSideBySideLayout) {
@@ -124,7 +122,7 @@
     // Otherwise use measured height if available
     if (combinedPanelHeight > 0) {
       const adjustedHeight = Math.max(
-        combinedPanelHeight - drawerHandleFootprint,
+        combinedPanelHeight - DRAWER_HANDLE_FOOTPRINT,
         0
       );
       return `height: ${adjustedHeight}px;`;

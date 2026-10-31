@@ -355,6 +355,9 @@ const IDENTICAL_ALLOWED = new Set([
   "guide_topic_dual_shifts_switching_lead",
   "guide_topic_dual_shifts_continuous",
   "guide_topic_dual_shifts_gamma_practice",
+  // The Dual-Shifts guide page's link to the Timing and Direction page
+  // (2026-10-28), in English everywhere until it is translated.
+  "guide_topic_dual_shifts_all_modes_link",
 ]);
 
 /** Prose words in a message: Latin words of two or more letters that are not glossary terms. */

@@ -39,6 +39,13 @@
   import { logConstructImmediateUndo } from "../../construct/services/construct-analytics";
   import { isStartPlacementMorphCapturing } from "../../construct/start-placement-picker/services/start-placement-morph";
   import { constructPhoneSplit } from "../../construct/services/construct-phone-split";
+  import {
+    sequenceRowCount,
+    stackedWorkspaceSplit,
+    USUAL_WORKSPACE_SHARE,
+    workspaceFloorHeight,
+  } from "../services/workspace-split";
+  import { sequenceActionsFit } from "./sequence-actions/sequence-actions-fit.svelte";
   import { hasOpenModalLayer } from "#lib/shared/keyboard/domain/shortcut-target-resolution.js";
 
   type CreateModuleState = ReturnType<typeof CreateModuleStateType>;
@@ -86,6 +93,12 @@
   let layoutWidth = $state(0);
   let layoutHeight = $state(0);
   let buttonPanelHeight = $state(0);
+  // The sequence header's height, reported once it mounts. It is kept while
+  // the workspace is empty, so the next sequence opens on the same split.
+  let workspaceHeaderHeight = $state(0);
+  function noteWorkspaceHeaderHeight(height: number) {
+    workspaceHeaderHeight = height;
+  }
   let workspaceWidth = $state(0);
   let panelSizes = $state<number[]>([]);
   let appliedPanelLayout = $state<string | null>(null);
@@ -240,39 +253,101 @@
       !useSideBySidePanels &&
       layoutHeight < SAVE_STACKED_SHORT_HEIGHT
   );
-  // Stacked, the step editor's preview, duration and turn controls need most
-  // of the height. The grid keeps a smaller share, still showing the steps to
-  // pick from. Side by side the usual split already gives it a full column.
+  // Stacked, the step editor's preview, duration and turn controls prefer
+  // most of the height. The grid keeps a smaller share, still showing the
+  // steps to pick from. Side by side the usual split already gives it a full
+  // column.
   const stepEditorStack = $derived(isStepEditorView && !useSideBySidePanels);
+  // Stacked, the workspace first gets its chrome plus two whole rows of
+  // legible step pictures; each view's preferred share applies above that,
+  // and the tool panel takes the rest and scrolls inside itself. Until the
+  // header first reports, a title row and its badges (72px) stand in. An
+  // empty workspace has no pictures to keep legible, so Assemble's grid keeps
+  // its usual height until the first step lands.
+  const WORKSPACE_HEADER_ESTIMATE = 72;
+  const workspaceFloor = $derived(
+    hasWorkspaceContent
+      ? workspaceFloorHeight({
+          width: layoutWidth,
+          chromeHeight:
+            (workspaceHeaderHeight || WORKSPACE_HEADER_ESTIMATE) +
+            buttonPanelHeight,
+        })
+      : 0
+  );
+  // Generate's settings cards compact to one line in a panel at least 630px
+  // wide (CardBasedSettingsContainer), so there the workspace also gets every
+  // row the sequence fills and a 16-step sequence shows whole on the
+  // unfolded Fold. A narrower phone panel has no such tier and keeps the
+  // usual split.
+  const GENERATE_COMPACT_MIN_WIDTH = 630;
+  const sequenceFloor = $derived(
+    hasWorkspaceContent &&
+      isGeneratorTab &&
+      layoutWidth >= GENERATE_COMPACT_MIN_WIDTH
+      ? workspaceFloorHeight({
+          width: layoutWidth,
+          chromeHeight:
+            (workspaceHeaderHeight || WORKSPACE_HEADER_ESTIMATE) +
+            buttonPanelHeight,
+          rows: sequenceRowCount(
+            CreateModuleState.sequenceState.currentSequence?.steps?.length ?? 0
+          ),
+        })
+      : 0
+  );
   // On a phone, Construct's job is picking the next option, so the picker
-  // takes the height its grid can use and the sequence keeps the rest.
+  // takes the height its grid can use above that floor.
   const constructPhoneSizes = $derived(
-    navigationState.activeTab === "construct"
+    navigationState.activeTab === "construct" && !stepEditorStack
       ? constructPhoneSplit({
           width: layoutWidth,
           height: layoutHeight,
           stacked: !useSideBySidePanels,
+          workspaceFloor,
         })
       : null
   );
+  const usualStackedSizes = $derived.by((): [number, number] | null => {
+    if (useSideBySidePanels || shortSaveStack || layoutHeight <= 0) {
+      return null;
+    }
+    if (constructPhoneSizes) return constructPhoneSizes;
+    const preferredShare = stepEditorStack
+      ? 1 / 3
+      : useCompactToolbar
+        ? 2 / 5
+        : isAssembleTab
+          ? 3 / 10
+          : USUAL_WORKSPACE_SHARE;
+    return stackedWorkspaceSplit({
+      height: layoutHeight,
+      preferredWorkspace: layoutHeight * preferredShare,
+      workspaceFloor,
+      sequenceFloor: stepEditorStack ? 0 : sequenceFloor,
+    });
+  });
+  // While Sequence Actions shows its root actions over the tool panel, the
+  // panel shrinks to the height those actions fill and the step grid takes
+  // the rest (sequence-actions-fit). It never grows the panel.
+  const stackedSizes = $derived.by((): [number, number] | null => {
+    const usual = usualStackedSizes;
+    const fit = sequenceActionsFit.toolPanelHeight;
+    if (!usual || fit <= 0 || fit >= usual[1]) return usual;
+    return [layoutHeight - fit, fit];
+  });
   const defaultPanelSizes = $derived(
     useSideBySidePanels
       ? wideSaveSplit
         ? [7, 3]
         : [1, 1]
-      : stepEditorStack
-        ? [1, 2]
-        : shortSaveStack
-          ? [2, 3]
-          : useCompactToolbar
-            ? [2, 3]
-            : isAssembleTab
-              ? [3, 7]
-              : (constructPhoneSizes ?? [5, 4])
+      : shortSaveStack
+        ? [2, 3]
+        : (stackedSizes ?? [5, 4])
   );
 
   $effect(() => {
-    const layoutKey = `${useSideBySidePanels}:${isAssembleTab}:${useCompactToolbar}:${wideSaveSplit}:${shortSaveStack}:${stepEditorStack}:${constructPhoneSizes?.join("/") ?? ""}`;
+    const layoutKey = `${useSideBySidePanels}:${isAssembleTab}:${useCompactToolbar}:${wideSaveSplit}:${shortSaveStack}:${stepEditorStack}:${stackedSizes?.join("/") ?? ""}`;
     if (layoutKey === appliedPanelLayout) return;
 
     appliedPanelLayout = layoutKey;
@@ -473,6 +548,7 @@
           currentDisplayWord,
           buttonPanelHeight,
           compactToolbar: useCompactToolbar,
+          onHeaderHeightChange: noteWorkspaceHeaderHeight,
           isSideBySideLayout: useSideBySidePanels,
           letterSources: currentLetterSources,
           ...(toolPanelRef?.getAnimationStateRef?.()
@@ -845,6 +921,12 @@
     position: relative;
     container-type: size;
     container-name: tool-panel;
+    /* The lower pane is the main panel of every Create method, so it paints
+       the theme's panel surface. Its pickers and editors put white text and
+       labels straight on this box; left transparent, they sat on the raw
+       scene, and Celestial's daylight sky turned them white on white. The
+       workspace above keeps the scene. */
+    background: var(--theme-panel-bg);
     --settings-generate-panel-max-height: min(65cqh, 750px);
     --settings-generate-panel-half-max-height: min(32.5cqh, 375px);
     /* The Level selector is pinned to the top of the settings panel and owns

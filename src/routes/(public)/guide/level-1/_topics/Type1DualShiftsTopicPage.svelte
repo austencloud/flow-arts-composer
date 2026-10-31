@@ -1,26 +1,38 @@
 <!--
   Type 1 Dual-Shifts as a Guide web page, on the topic template The Grid set
-  (2026-10-10). Austen's Dual-Shift definition opens the page, then a key
-  names the six modes by timing (Split, Together, Quarter) and direction
-  (Same, Opposite) in the Timing and Direction lesson's words. Each chip
-  links to that mode's Timing and Direction guide, the one place that
-  teaches timing and direction (one explainer per concept).
+  (2026-10-10). One screen at a time, the same on every window (2026-10-26).
+  Screens 1 to 6 draw one mode each, in the record's order: its line on where
+  it travels, then its card (a start box and its four-count loop in its
+  element's colour), with a link to that mode's Timing and Direction guide.
+  Tog-Opp closes the Split and Together modes with the practice line. Screen
+  7 is the Gamma page's sequence that switches between Quarter-Opp and
+  Quarter-Same, with Austen's closing lines.
 
-  One screen at a time, the same on every window (2026-10-26, Austen: all
-  six modes on the first table, then one at a time). Screen 1 is the lede,
-  the intro line and the key. Screens 2 to 7 draw one mode each, in the
-  record's order: its line on where it travels, then its card (a start box
-  and its four-count loop in its element's colour). Tog-Opp closes the
-  Split and Together modes with the practice line. Screen 8 is the Gamma
-  page's sequence that switches between Quarter-Opp and Quarter-Same, with
-  Austen's closing lines. Every mode screen keeps room for the longest lead
-  and the practice line, so all six cards draw at one size and stand in one
-  place. The loops come from the shared Dual-Shifts record the print sheets
-  also read, and the pictographs grow with the window (--fit).
+  Screen 1 opens with Austen's Dual-Shift definition and a link to the Timing
+  and Direction page, which keys the six modes by timing and direction. The
+  guide links there and does not draw the key again (2026-10-28, Austen: one
+  explainer per concept). Each mode card plays the mode as a moving animation over its start box
+  and four-count loop, the count that is playing ringed (2026-10-27,
+  Austen: each mode screen shows the animation with the strip below it);
+  the animation is the Timing and Direction guides' player on the same
+  hand path, and only the switching sequence's counts glide in. Every mode
+  screen keeps room for that opening, for
+  the longest lead and for the practice line, and the header stays the same
+  on every screen (steadyHead), so all six cards draw at one size and stand
+  in one place. The loops come from the shared Dual-Shifts
+  record the print sheets also read, and the pictographs grow with the window
+  (--fit).
 -->
 <script lang="ts">
   import Sentences from "../../_components/Sentences.svelte";
   import { onMount } from "svelte";
+  import { browser } from "$app/env";
+  import HandMotionPlayer from "#lib/features/learn/components/interactive/foundations/HandMotionPlayer.svelte";
+  import {
+    TIMING_DIRECTION_MODES,
+    type TimingDirectionModeId,
+  } from "#lib/features/learn/components/interactive/foundations/pictograph-foundation-content.js";
+  import { DEFAULT_VIEWER_CUSTOM_COLORS } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
@@ -29,14 +41,10 @@
   import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
   import {
-    DUAL_SHIFT_DIRECTIONS,
-    DUAL_SHIFT_KEY,
     DUAL_SHIFT_MODE_GUIDES,
     DUAL_SHIFT_MODES,
-    DUAL_SHIFT_TIMINGS,
     DUAL_SHIFTS_WEB_COPY,
     dualShiftElement,
-    dualShiftModeAt,
     dualShiftSteps,
     dualShiftSwitchingSteps,
     dualShiftsTitle,
@@ -48,6 +56,7 @@
   } from "#lib/shared/guide-topics/dual-shifts-topic.js";
   import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
   import { getElementImagePath } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import TopicScreens from "./TopicScreens.svelte";
   import { dualShiftScreens } from "./dual-shift-screens";
   import type { TopicPageProps } from "./topic-pages";
@@ -70,6 +79,24 @@
   );
   /** The practice line closes the Split and Together modes. */
   const PRACTICE_AFTER: DualShiftModeId = "tog-opp";
+
+  /** Each mode's animation: the Timing and Direction guides' sequence for
+   *  the same hand path (the two records author the same five rows). */
+  const PLAYER_MODE: Record<DualShiftModeId, TimingDirectionModeId> = {
+    "split-same": "ss",
+    "tog-same": "ts",
+    "split-opp": "so",
+    "tog-opp": "to",
+    "quarter-opp": "qo",
+    "quarter-same": "qs",
+  };
+  const playerSequence = (id: DualShiftModeId) =>
+    TIMING_DIRECTION_MODES.find((m) => m.id === PLAYER_MODE[id])!.sequence;
+  /** The beat a mode's animation is on: 0 while the start shows, then 1
+   *  to 4. Kept with its mode, so a new screen never rings the last one's. */
+  let playing = $state<{ id: DualShiftModeId; beat: number } | null>(null);
+  const isPlaying = (mode: DualShiftMode | null, beat: number) =>
+    mode !== null && playing?.id === mode.id && playing.beat === beat;
 
   /** Where a count's hands start, for the glide that plays the count. */
   function startPose(step: StepData): PictographData | null {
@@ -112,7 +139,8 @@
   const LOOP_BY_ID = new Map(LOOPS.map((l) => [l.id, l]));
 
   /**
-   * Each loop plays once when its screen opens: count 1's hands glide from
+   * The switching sequence has no animation, so its counts glide instead.
+   * It plays once when its screen opens: count 1's hands glide from
    * their start points as its arrows fade in, then the next count, so the
    * loop reads as a path. Each then holds its finished pictures, the book's
    * view; a hover or tap replays it. Reduced motion and print keep the
@@ -164,10 +192,13 @@
     if (elapsed[id] === loopMs(id)) play([id]);
   }
 
+  /** The loops that glide: the modes play in their animation instead. */
+  const GLIDES = LOOPS.filter((l) => !l.mode);
+
   /** Plays the loops on screen once every count of each has drawn. */
   function playWhenReady() {
     if (!armed) return;
-    const ready = LOOPS.filter((l) => inView.has(l.id) && !played.has(l.id));
+    const ready = GLIDES.filter((l) => inView.has(l.id) && !played.has(l.id));
     if (ready.length === 0) return;
     if (!ready.every((l) => l.counts.every((c) => drawn.has(c.step.id))))
       return;
@@ -206,7 +237,7 @@
     if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     // The loops wait at their start points until their screen opens.
     armed = true;
-    for (const l of LOOPS) elapsed[l.id] = 0;
+    for (const l of GLIDES) elapsed[l.id] = 0;
     playWhenReady();
     window.addEventListener("beforeprint", settle);
     return () => {
@@ -216,7 +247,7 @@
     };
   });
 
-  // The key, one screen per mode, then switching (dual-shift-screens.ts).
+  // One screen per mode, then switching (dual-shift-screens.ts).
   const screens = $derived(
     dualShiftScreens((id) => t(LOOP_BY_ID.get(id)!.mode!.name))
   );
@@ -251,8 +282,9 @@
   />
 {/snippet}
 
-<!-- A card: the mode's name over its start box and counts, in its element's
-     colours. The switching sequence has no name; its lead names it. -->
+<!-- A card: the mode's name and the link to its guide over its start box
+     and counts, in its element's colours. The switching sequence has no
+     name; its lead names it. -->
 {#snippet card(loop: Loop, labelledBy: string)}
   {@const { id, mode, start, counts } = loop}
   <!-- Replay is a pointer extra; every loop has already played on view. -->
@@ -268,22 +300,46 @@
     onclick={() => replay(id)}
   >
     {#if mode}
-      <h2 class="mode-name" id={labelledBy}>
-        <img
-          class="element"
-          src={getElementImagePath(dualShiftElement(mode).element)}
-          alt=""
-        />
-        {t(mode.name)}
-      </h2>
+      <div class="mode-head">
+        <h2 class="mode-name" id={labelledBy}>
+          <img
+            class="element"
+            src={getElementImagePath(dualShiftElement(mode).element)}
+            alt=""
+          />
+          {t(mode.name)}
+        </h2>
+        <span class="mode-link">
+          <LinkChip size="md" href={DUAL_SHIFT_MODE_GUIDES[mode.id]}
+            >{t(DUAL_SHIFTS_WEB_COPY.openModeGuide, {
+              mode: t(mode.name),
+            })}</LinkChip
+          >
+        </span>
+      </div>
+      <div class="player">
+        {#if browser}
+          <HandMotionPlayer
+            primaryPropColors={DEFAULT_VIEWER_CUSTOM_COLORS}
+            sequence={playerSequence(mode.id)}
+            ariaLabel={t(mode.name)}
+            showElementalGlyph
+            onStepChange={(step) =>
+              (playing = {
+                id: mode.id,
+                beat: step < 1 ? 0 : Math.floor(step),
+              })}
+          />
+        {/if}
+      </div>
     {/if}
     <div class="loop">
-      <div class="cell start">
+      <div class="cell start" class:guide-step-active={isPlaying(mode, 0)}>
         {@render pictograph(start, true, null, null)}
       </div>
       <div class="counts">
         {#each counts as { step, pose }, n (step.id)}
-          <div class="cell">
+          <div class="cell" class:guide-step-active={isPlaying(mode, n + 1)}>
             {@render pictograph(
               step,
               false,
@@ -304,80 +360,30 @@
   {lessonHref}
   {frame}
   labels={screens.labels}
+  steadyHead
 >
   {#snippet screen(n)}
     {@const view = screens.views[n]}
     <div class="dual-shifts-topic" class:dark={darkMode}>
-      {#if view?.kind === "key"}
-        <section class="set key-set">
-          <p class="lede">{lede}</p>
-          <p class="intro">
-            <Sentences html={t(DUAL_SHIFTS_WEB_COPY.modesLead)} />
-          </p>
-
-          <!-- The six modes as timing x direction, in the lesson's words;
-             each chip opens that mode's Timing and Direction guide. -->
-          <div class="key-wrap">
-            <table class="key">
-              <thead>
-                <tr>
-                  <td></td>
-                  {#each DUAL_SHIFT_DIRECTIONS as direction (direction)}
-                    <th scope="col">
-                      <span class="axis"
-                        >{t(DUAL_SHIFT_KEY.direction[direction].name)}</span
-                      >
-                      <span class="says"
-                        >{t(DUAL_SHIFT_KEY.direction[direction].says)}</span
-                      >
-                    </th>
-                  {/each}
-                </tr>
-              </thead>
-              <tbody>
-                {#each DUAL_SHIFT_TIMINGS as timing (timing)}
-                  <tr>
-                    <th scope="row">
-                      <span class="axis"
-                        >{t(DUAL_SHIFT_KEY.timing[timing].name)}</span
-                      >
-                      <span class="says"
-                        >{t(DUAL_SHIFT_KEY.timing[timing].says)}</span
-                      >
-                    </th>
-                    {#each DUAL_SHIFT_DIRECTIONS as direction (direction)}
-                      {@const mode = dualShiftModeAt(timing, direction)}
-                      <td>
-                        <a
-                          class="mode-chip"
-                          href={DUAL_SHIFT_MODE_GUIDES[mode.id]}
-                          style:--el={dualShiftElement(mode).accentColor}
-                          style:--el-deep={dualShiftElement(mode)
-                            .darkComplement}
-                        >
-                          <img
-                            class="element"
-                            src={getElementImagePath(
-                              dualShiftElement(mode).element
-                            )}
-                            alt=""
-                          />
-                          {t(mode.name)}
-                        </a>
-                      </td>
-                    {/each}
-                  </tr>
-                {/each}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      {:else if view?.kind === "mode"}
+      {#if view?.kind === "mode"}
         {@const loop = LOOP_BY_ID.get(view.mode)!}
+        {@const opens = n === 0}
         <section class="set">
-          <!-- Every mode screen holds the room of every lead and of the
-               practice line, so each card draws at one size in one place;
-               the lines this mode does not say stay hidden. -->
+          <!-- Every mode screen holds the room of screen 1's opening, of
+               every lead and of the practice line, so each card draws at one
+               size in one place; what this screen does not say stays hidden,
+               and a hidden link leaves the tab order. -->
+          <div class="opening" class:unsaid={!opens} aria-hidden={!opens}>
+            <p class="lede">{lede}</p>
+            <span class="all-modes-link">
+              <LinkChip
+                size="md"
+                href="/timing-and-direction"
+                tabindex={opens ? undefined : -1}
+                >{t(DUAL_SHIFTS_WEB_COPY.allModesLink)}</LinkChip
+              >
+            </span>
+          </div>
           <div class="slot lead-slot">
             {#each LEAD_KEYS as key (key)}
               {@const said = key === MODE_LEADS[view.mode]}
@@ -433,7 +439,6 @@
     font-weight: 700;
   }
   /* Balanced lines: a centered sentence never ends on a stranded word. */
-  .intro,
   .lead {
     margin: 0 auto;
     max-width: 44rem;
@@ -476,119 +481,55 @@
   .unsaid {
     visibility: hidden;
   }
-
-  /* The 3 x 2 key: the six chips sit centered on the page, the timing
-     words to their left and the direction words above, labelling the grid.
-     Each chip opens that mode's Timing and Direction guide. */
-  .key-wrap {
-    container-type: inline-size;
-  }
-  .key {
+  /* Screen 1's opening: the lede, then the link to the six-mode key on the
+     Timing and Direction page. */
+  .opening {
     display: grid;
-    grid-template-columns: 1fr auto auto 1fr;
-    gap: 0.5rem 0.6rem;
-    width: 100%;
-    font-size: clamp(0.95rem, 1.3cqw, 1.05rem);
+    justify-items: center;
+    gap: 0.85rem;
   }
-  .key thead,
-  .key tbody,
-  .key tr {
-    display: contents;
+  /* On a wide window the opening and the mode leads run wider, one line
+     for the opening, so the mode's animation keeps its room (a Quarter-Opp
+     lead held four lines at 44rem). */
+  @container (min-width: 60rem) {
+    .opening {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      column-gap: 1.25rem;
+    }
+    .opening > .lede {
+      margin: 0;
+    }
+    .lead-slot > .lead {
+      max-width: 60rem;
+    }
   }
-  .key thead td {
-    display: none;
+  /* LinkChip reads the app's theme variables: the page's ink, and on a
+     card the card's element. */
+  .all-modes-link,
+  .mode-link {
+    --theme-text: var(--ink, #1a1a1a);
+    --theme-accent: #647ff1;
   }
-  .key th,
-  .key td {
-    display: block;
-    padding: 0;
+  .mode-link {
+    --theme-accent: var(--tint);
   }
-  .key th {
-    align-self: center;
-    text-align: center;
-    font-weight: 400;
-  }
-  .key thead th:first-of-type {
-    grid-column: 2;
-  }
-  .key th[scope="row"] {
-    grid-column: 1;
-    justify-self: end;
-    max-width: 14rem;
-    padding-right: 0.4rem;
-    text-align: right;
-  }
-  .key .axis {
-    display: block;
-    font-weight: 700;
-  }
-  .key .says {
-    display: block;
-    font-size: 0.86em;
-    color: color-mix(in srgb, var(--ink, #1a1a1a) 72%, transparent);
-    text-wrap: balance;
-  }
+
   /* On a light page the pale elements (air, sun) need their deep colour
      mixed in to be seen; on a dark page the element colour stands on its
      own. */
-  .mode-chip,
   .mode {
     --tint: color-mix(in srgb, var(--el) 70%, var(--el-deep));
   }
-  .dark .mode-chip,
   .dark .mode {
     --tint: var(--el);
-  }
-  /* The chip is a block link, not text: it reads as a tile. */
-  .mode-chip {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    min-width: 9.5rem;
-    padding: 0.55rem 1rem;
-    border-radius: 0.75rem;
-    border: 1px solid color-mix(in srgb, var(--tint) 60%, transparent);
-    background: color-mix(in srgb, var(--tint) 14%, transparent);
-    color: var(--el-deep);
-    font-weight: 700;
-    text-decoration: none;
-  }
-  .dark .mode-chip {
-    color: var(--ink, #f4f4f8);
-    background: color-mix(in srgb, var(--tint) 22%, transparent);
-  }
-  .mode-chip:focus-visible {
-    outline: 2px solid var(--tint);
-    outline-offset: 2px;
   }
   .element {
     width: 1.5em;
     height: 1.5em;
     flex: none;
-  }
-  /* Where the 3 x 2 will not fit, each timing heads its own row of two
-     chips: the direction words stay above, the timing words go between. */
-  @container (width < 38rem) {
-    .key {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 0.5rem;
-    }
-    .key thead th:first-of-type {
-      grid-column: auto;
-    }
-    .key th[scope="row"] {
-      grid-column: 1 / -1;
-      justify-self: stretch;
-      max-width: none;
-      margin-top: 0.5rem;
-      padding-right: 0;
-      text-align: center;
-    }
-    .mode-chip {
-      min-width: 0;
-      padding-inline: 0.5rem;
-    }
   }
   /* The book's two-tone Type 1 colour code for "Dual-Shift": Dual = cyan,
      -Shift = purple (LETTER_TYPE_COLORS), the purple lifted on dark. */
@@ -634,7 +575,22 @@
     --el: color-mix(in srgb, var(--ink, #1a1a1a) 55%, transparent);
     --el-deep: var(--ink, #1a1a1a);
   }
-  /* Mode names in the book's serif, centered over the loop. */
+  /* The card's head: the name over its guide link, centered, on a narrow
+     card; the name left and the link right on a wide one. */
+  .mode-head {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  @container (min-width: 34rem) {
+    .mode-head {
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: space-between;
+    }
+  }
+  /* Mode names in the book's serif. */
   .dual-shifts-topic .mode-name {
     display: flex;
     align-items: center;
@@ -655,6 +611,14 @@
     height: 1.15em;
   }
 
+  /* The mode playing, square, over its strip. It grows with the window
+     (--fit) like the pictographs, so the screen still fits. */
+  .player {
+    width: min(100%, calc(17rem * var(--fit, 1)));
+    aspect-ratio: 1;
+    margin: 0 auto;
+  }
+
   /* The start box leads in its own frame; the counts fuse into one block
      with hairline seams (GuideStepStrip's shape). Narrow: the counts sit
      two to a row beside the start; wide: four to a row, so a mode's loop is
@@ -666,13 +630,27 @@
     align-items: start;
   }
   .counts {
+    --round: calc(0.75rem - 1px);
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1px;
     background: var(--seam);
     border: 1px solid var(--seam);
     border-radius: 0.75rem;
-    overflow: hidden;
+  }
+  /* The block rounds its corner counts rather than clipping, so the ring on
+     the playing count shows on every edge. */
+  .counts > .cell:nth-child(1) {
+    border-top-left-radius: var(--round);
+  }
+  .counts > .cell:nth-child(2) {
+    border-top-right-radius: var(--round);
+  }
+  .counts > .cell:nth-child(3) {
+    border-bottom-left-radius: var(--round);
+  }
+  .counts > .cell:nth-child(4) {
+    border-bottom-right-radius: var(--round);
   }
   @container (min-width: 34rem) {
     .loop {
@@ -681,6 +659,19 @@
     .counts {
       grid-template-columns: repeat(4, minmax(0, 1fr));
     }
+    .counts > .cell:nth-child(n) {
+      border-radius: 0;
+    }
+    .counts > .cell:nth-child(1) {
+      border-radius: var(--round) 0 0 var(--round);
+    }
+    .counts > .cell:nth-child(4) {
+      border-radius: 0 var(--round) var(--round) 0;
+    }
+  }
+  /* The switching sequence's eight counts never ring; its block clips. */
+  .switching .counts {
+    overflow: hidden;
   }
   /* The switching sequence keeps its two rows of four down to the width
      where a count is still about 64 px across. */

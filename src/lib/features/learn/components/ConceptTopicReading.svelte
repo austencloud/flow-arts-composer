@@ -15,9 +15,14 @@
   // Load the page on first open and keep it, so closing fades the sheet out
   // with the page still in it instead of blanking it on the first frame.
   function loadPage(id: string) {
-    return id === "grid"
-      ? import("../../../../routes/(public)/guide/level-1/_topics/GridTopicPage.svelte")
-      : import("../../../../routes/(public)/guide/level-1/_topics/PlacementsTopicPage.svelte");
+    switch (id) {
+      case "grid":
+        return import("../../../../routes/(public)/guide/level-1/_topics/GridTopicPage.svelte");
+      case "hand-motions-intro":
+        return import("../../../../routes/(public)/guide/level-1/_topics/HandMotionsTopicPage.svelte");
+      default:
+        return import("../../../../routes/(public)/guide/level-1/_topics/PlacementsTopicPage.svelte");
+    }
   }
   let loaded: { conceptId: string; page: ReturnType<typeof loadPage> } | null =
     null;
@@ -81,6 +86,7 @@
           {darkMode}
           kicker={t("learn_ui_read_topic")}
           lessonHref={null}
+          lessonId={null}
         />
       {/await}
     {/if}

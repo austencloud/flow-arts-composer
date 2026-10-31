@@ -5,14 +5,14 @@
 	"opening": true,
 	"entries": [
 		{
-			"tick": 6500,
+			"tick": 6200,
 			"type": "teach",
-			"learnerId": "avatar-12",
+			"learnerId": "avatar-11",
 			"sequenceId": "codex-ooga-seq",
-			"x": 3.88,
-			"z": -3.78,
-			"facing": 0.829
+			"x": 4.23,
+			"z": -1.42,
+			"facing": 5.444
 		}
 	],
-	"lastTick": 6700
+	"lastTick": 6400
 }

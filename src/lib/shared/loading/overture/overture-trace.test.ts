@@ -3,6 +3,7 @@ import {
   composeFrame,
   createFrameState,
   cumulativeLengths,
+  headAt,
   overtureLayout,
   pointAt,
   preparePath,
@@ -131,6 +132,40 @@ describe("path math", () => {
     expect(pointAt(path, 0.5).x).toBeCloseTo(2);
     expect(pointAt(path, 0.75).x).toBeCloseTo(12);
   });
+
+  it("headAt keeps the head moving past 1 with no jump: laps a closed line", () => {
+    const path = preparePath(square);
+    expect(path.closed).toBe(true);
+    let prev = headAt(path, 0.9).point;
+    for (let p = 0.904; p <= 3.2; p += 0.004) {
+      const { point } = headAt(path, p);
+      // 0.004 of a 40-unit square is 0.16 units: every step moves, none jumps.
+      const step = Math.hypot(point.x - prev.x, point.y - prev.y);
+      expect(step).toBeGreaterThan(0.05);
+      expect(step).toBeLessThan(0.3);
+      prev = point;
+    }
+    expect(headAt(path, 1.5).point).toMatchObject({ x: 10, y: 10 });
+  });
+
+  it("headAt runs an open line back and forth instead of jumping to its start", () => {
+    const open: OverturePoint[] = [
+      [0, 0],
+      [10, 0],
+      [20, 0],
+    ];
+    const path = preparePath(open);
+    expect(path.closed).toBe(false);
+    expect(headAt(path, 1.25)).toMatchObject({ t: 0.75, back: true });
+    expect(headAt(path, 1.25).point.tx).toBe(-1);
+    expect(headAt(path, 2.25)).toMatchObject({ t: 0.25, back: false });
+    let prev = headAt(path, 0.95).point.x;
+    for (let p = 0.954; p <= 4; p += 0.004) {
+      const x = headAt(path, p).point.x;
+      expect(Math.abs(x - prev)).toBeLessThan(0.1);
+      prev = x;
+    }
+  });
 });
 
 describe("composeFrame", () => {
@@ -254,5 +289,86 @@ describe("overtureLayout", () => {
       expect(layout.size).toBeLessThanOrEqual(560);
       expect(layout.lettersY).toBeLessThanOrEqual(h * 0.91 - 48 - 14);
     }
+  });
+});
+
+describe("lapping a long boot", () => {
+  /** A context that throws on any non-finite number, as a real canvas does. */
+  function strictContext(): OvertureContext {
+    const guard =
+      (name: string, result: unknown = undefined) =>
+      (...args: unknown[]) => {
+        for (const v of args)
+          if (typeof v === "number" && !Number.isFinite(v))
+            throw new Error(`${name}(${args.join(", ")})`);
+        return result;
+      };
+    const gradient = { addColorStop: guard("addColorStop") };
+    const target: Record<string, unknown> = {
+      createRadialGradient: guard("createRadialGradient", gradient),
+      measureText: () => ({ width: 10 }),
+    };
+    return new Proxy(target, {
+      get: (t, k: string) => (k in t ? t[k] : guard(k)),
+      set: (t, k: string, v) => {
+        t[k] = v;
+        return true;
+      },
+    }) as unknown as OvertureContext;
+  }
+
+  it("draws every pool scene with finite geometry from the start through two laps", async () => {
+    const { readFileSync } = await import("node:fs");
+    const pool = JSON.parse(
+      readFileSync("static/boot/overture-pool.json", "utf8")
+    ) as { scenes: OvertureScene[] };
+    const ctx = strictContext();
+    const layout = overtureLayout(1600, 900);
+    for (const scene of pool.scenes) {
+      const prepared = prepareScene(scene, "dark");
+      const state = createFrameState({ phone: false });
+      for (let p = 0; p < 3; p += 0.0037) {
+        const view: FrameView = {
+          width: 1600,
+          height: 900,
+          dpr: 1,
+          surface: "dark",
+          layout,
+          alpha: 1,
+          zoom: 1,
+          rotation: 0,
+          flare: 0,
+          sparks: true,
+          fontFamily: null,
+          lettersStill: false,
+        };
+        expect(() =>
+          composeFrame(ctx, prepared, p, p * 5000, view, state)
+        ).not.toThrow();
+      }
+    }
+  });
+
+  it("skips a frame on a canvas with no size instead of throwing", () => {
+    const scene = lineScene(["A", "B"], 2);
+    const prepared = prepareScene(scene, "dark");
+    const state = createFrameState({ phone: false });
+    const view: FrameView = {
+      width: 0,
+      height: 0,
+      dpr: 1,
+      surface: "dark",
+      layout: overtureLayout(0, 0),
+      alpha: 1,
+      zoom: 1,
+      rotation: 0,
+      flare: 0,
+      sparks: true,
+      fontFamily: null,
+      lettersStill: false,
+    };
+    expect(() =>
+      composeFrame(strictContext(), prepared, 0.5, 100, view, state)
+    ).not.toThrow();
   });
 });

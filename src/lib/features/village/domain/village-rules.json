@@ -108,9 +108,7 @@
 		"socializeTicks": 15,
 		"practiceTicks": 20,
 		"rehearsalGainPerTick": 0.004,
-		"performTicksAdult": 25,
-		"performTicksElder": 40,
-		"watchTicks": 25,
+		"watchTicks": 200,
 		"mourningTicks": 20,
 		"giftSociabilityMin": 0.8,
 		"giftChancePerSociability": 0.03,
@@ -120,7 +118,7 @@
 		"egoDecayPerTick": 0.0003
 	},
 	"teaching": {
-		"ticksPerStep": 20,
+		"ticksPerStep": 10,
 		"proficiencyThreshold": 0.7,
 		"fumbleBaseProbability": 0.3,
 		"frustrationPerFumble": 0.15,
@@ -132,12 +130,10 @@
 	},
 	"lesson": {
 		"demonstratePasses": 1,
-		"followSteps": 1,
-		"fumbleTicks": 6,
+		"sitOutPasses": 1,
 		"recognitionTicks": 10,
 		"soloPasses": 1,
-		"progressPerStep": 1,
-		"fumbleTempo": 0.35
+		"progressPerStep": 1
 	},
 	"passing": {
 		"retireAge": 0.85,
@@ -157,7 +153,13 @@
 	},
 	"performance": {
 		"attractionRadius": 6,
-		"minWatcherCuriosity": 0.3
+		"minWatcherCuriosity": 0.3,
+		"tempoBpm": 60,
+		"beatsAdult": 16,
+		"beatsElder": 24,
+		"gainPerBeat": 0.006,
+		"areaRadius": 2,
+		"seatClearance": 0.5
 	},
 	"funeral": {
 		"radius": 3,
@@ -208,7 +210,7 @@
 				"passingTicks": 84
 			},
 			"teaching": {
-				"ticksPerStep": 14
+				"ticksPerStep": 7
 			},
 			"prologue": {
 				"founderAgeSpread": 0.9,

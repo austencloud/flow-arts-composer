@@ -16,7 +16,21 @@ import {
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import { HUMAN_CHARACTER_IDS } from "#lib/shared/3d/performers/human-character-roster.js";
 import { mirrorSequence } from "#lib/shared/create/services/sequence-transformer.js";
-import type { LocomotionGaitClock, TerminalStepPlan, TurnRequest } from "@austencloud/scene-3d";
+import type {
+	LocomotionGaitClock,
+	Plane,
+	ScheduledGaitTimingSample,
+	TerminalStepPlan,
+	TurnRequest,
+} from "@austencloud/scene-3d";
+import {
+	createPhrasePlayback,
+	phraseBeatPlaneOverrides,
+	phraseFrameFacingHint,
+	phraseFrameRootTurn,
+	type PhrasePlayback,
+	type PhrasePlaybackFrame,
+} from "#lib/features/flow-fest-sim/domain/flow-fest-phrase-playback.js";
 import { restFacing } from "./village-rest-facing";
 import { VillageWalker, type VillageWalkPose } from "./village-walk";
 import { VillageOrchestrator } from "../engine/village-orchestrator";
@@ -25,7 +39,7 @@ import { createVillageDriver, type VillageDriver } from "../engine/village-drive
 import type { VisitorLessonRequest } from "../engine/village-visitor";
 import type { VillageRules } from "../domain/village-rules";
 import type { VillageInputLog } from "../domain/village-input-log";
-import type { VillageEvent } from "../domain/village-types";
+import type { VillageEvent, VillagePerformance } from "../domain/village-types";
 import type {
 	VillageAvatarSnapshot,
 	VillageSnapshot,
@@ -34,15 +48,13 @@ import type {
 
 export interface AvatarRenderState {
 	readonly entityId: string;
+	/** Where the body stands and faces; the walk moves it every frame. */
 	readonly instanceState: ReturnType<typeof createAvatarInstanceState>;
 	// Replaced whole every tick, never mutated in place, so a component that
 	// reads any field of it updates when the sim changes that avatar.
 	avatar: VillageAvatarSnapshot;
-	// Which playback this rig is showing, so a restart is only issued when the
-	// sim starts a new one. A mirrored lesson copy is keyed apart from the
-	// sequence itself.
-	loadedSequenceId: string | null;
-	loadedStartTick: number | null;
+	/** What the props play this tick, for LiveSequencePerformer3D. */
+	spin: VillageSpin;
 	// Sat down before passing, so they pass where they sat.
 	wasSeated: boolean;
 	/**
@@ -52,6 +64,27 @@ export interface AvatarRenderState {
 	readonly walk: VillageWalkRigProps;
 }
 
+/**
+ * What a body's props play, as LiveSequencePerformer3D props. A null
+ * sequence is empty hands. `scoreBeat` (motion beats from the start of beat
+ * 1) pins the props to the sim; the performer plays on its own clock at
+ * `beatsPerSecond` between ticks and only seeks when it drifts.
+ */
+export interface VillageSpin {
+	readonly sequence: SequenceData | null;
+	readonly scoreBeat: number | null;
+	readonly beatsPerSecond: number;
+	readonly active: boolean;
+	/** A performance's planes per beat (Flow Fest's phrases); none for poi. */
+	readonly beatPlaneOverrides?: ReadonlyMap<number, { left: Plane; right: Plane }>;
+	/** Where a performance turns the body as the phrase plays. */
+	readonly facingHint?: ((scoreTime: number) => number | null) | null;
+	/** How far the root has turned under a planted phrase, which the feet hold against. */
+	readonly rootTurn?: ((scoreTime: number) => number) | null;
+}
+
+const EMPTY_HANDS: VillageSpin = { sequence: null, scoreBeat: null, beatsPerSecond: 1, active: false };
+
 /** The rig props a village body walks by; the getters stay reactive. */
 export interface VillageWalkRigProps {
 	readonly isMoving: boolean;
@@ -59,6 +92,9 @@ export interface VillageWalkRigProps {
 	readonly terminalStepPlan: TerminalStepPlan | null;
 	/** Undefined when no turn clip runs, so the rig keeps its beat turns. */
 	readonly turnRequestOverride: TurnRequest | undefined;
+	/** A performance's walk: where the feet head and when they land. */
+	readonly moveDirection: { x: number; z: number } | undefined;
+	readonly gaitTimingSample: ScheduledGaitTimingSample | null;
 	readonly locomotionResetKey: number;
 	readonly onGaitClock: (clock: LocomotionGaitClock) => void;
 }
@@ -67,8 +103,17 @@ export interface VillageWalkRigProps {
 interface WalkRecord {
 	walker: VillageWalker | null;
 	clock: LocomotionGaitClock | null;
-	setPose(pose: VillageWalkPose): void;
+	/** The last pose's reset count, which a fresh walker carries on. */
+	resetKey: number;
+	setPose(pose: WalkPose): void;
 }
+
+// The walker's pose, or a performance's: its walks steer the feet and time
+// the footfalls.
+type WalkPose = VillageWalkPose & {
+	moveDirection?: { x: number; z: number };
+	gaitTimingSample?: ScheduledGaitTimingSample | null;
+};
 
 const MIRRORED_KEY = ":facing-mirror";
 
@@ -81,6 +126,7 @@ type PlaybackFields = Pick<
 	| "lessonPhase"
 	| "lessonStep"
 	| "lessonStepTick"
+	| "lessonStepCount"
 	| "lessonMirrored"
 >;
 
@@ -126,23 +172,29 @@ function visitorPlayback(visitor: VillageVisitorSnapshot): PlaybackFields {
 		lessonPhase: visitor.lessonPhase,
 		lessonStep: visitor.lessonStep,
 		lessonStepTick: visitor.lessonStepTick,
+		lessonStepCount: visitor.lessonStepCount,
 		lessonMirrored: visitor.lessonMirrored,
 	};
 }
 
 function createWalkRecord(): { record: WalkRecord; props: VillageWalkRigProps } {
-	let pose = $state.raw<VillageWalkPose | null>(null);
+	let pose = $state.raw<WalkPose | null>(null);
 	const record: WalkRecord = {
 		walker: null,
 		clock: null,
+		resetKey: 0,
 		setPose(next) {
+			record.resetKey = next.resetKey;
 			const last = pose;
 			if (
 				last?.isMoving === next.isMoving &&
 				last.moveSpeed === next.moveSpeed &&
 				last.terminalStepPlan === next.terminalStepPlan &&
 				last.turnRequest === next.turnRequest &&
-				last.resetKey === next.resetKey
+				last.resetKey === next.resetKey &&
+				last.moveDirection?.x === next.moveDirection?.x &&
+				last.moveDirection?.z === next.moveDirection?.z &&
+				last.gaitTimingSample === next.gaitTimingSample
 			) {
 				return;
 			}
@@ -165,6 +217,12 @@ function createWalkRecord(): { record: WalkRecord; props: VillageWalkRigProps } 
 		get turnRequestOverride() {
 			return pose?.turnRequest;
 		},
+		get moveDirection() {
+			return pose?.moveDirection;
+		},
+		get gaitTimingSample() {
+			return pose?.gaitTimingSample ?? null;
+		},
 		get locomotionResetKey() {
 			return pose?.resetKey ?? 0;
 		},
@@ -178,6 +236,7 @@ function createAvatarRenderState(
 	walks: Map<string, WalkRecord>,
 ): AvatarRenderState {
 	let avatar = $state.raw(initial);
+	let spin = $state.raw<VillageSpin>(EMPTY_HANDS);
 	const walk = createWalkRecord();
 	walks.set(initial.id, walk.record);
 	return {
@@ -192,8 +251,12 @@ function createAvatarRenderState(
 		set avatar(next) {
 			avatar = next;
 		},
-		loadedSequenceId: null,
-		loadedStartTick: null,
+		get spin() {
+			return spin;
+		},
+		set spin(next) {
+			spin = next;
+		},
 		wasSeated: false,
 		walk: walk.props,
 	};
@@ -349,7 +412,7 @@ export function createVillageState(options: CreateVillageStateOptions): VillageS
 			}
 			record.wasSeated =
 				avatar.state === "seated" || (avatar.state === "passing" && record.wasSeated);
-			syncSequencePlayback(record, avatar);
+			syncSpin(record, avatar, next.world.tick);
 		}
 
 		for (const id of records.keys()) {
@@ -399,14 +462,123 @@ export function createVillageState(options: CreateVillageStateOptions): VillageS
 		return undefined;
 	}
 
-	function syncSequencePlayback(record: PlaybackRecord, avatar: PlaybackFields): void {
-		const inst = record.instanceState;
+	/** The motion an entry plays, and the key a restart is judged by. */
+	function playedSequence(avatar: PlaybackFields): { sequence?: SequenceData; key: string | null } {
 		const id = avatar.activeSequenceId;
 		// While the mirrored copy is still being built the learner plays the
 		// sequence as it is; the next tick swaps it in.
 		const mirroredCopy = id && avatar.lessonMirrored ? mirroredSequence(id) : undefined;
 		const sequence = mirroredCopy ?? (id ? sequenceCatalogue.get(id) : undefined);
-		const key = mirroredCopy ? `${id}${MIRRORED_KEY}` : id;
+		return { sequence, key: mirroredCopy ? `${id}${MIRRORED_KEY}` : id };
+	}
+
+	/**
+	 * A villager's props for this tick. Nothing to play is empty hands, never
+	 * a paused sequence (that held the arms out at its pose). A lesson pins
+	 * the score to the lesson's step; anything else plays from when the sim
+	 * started it, on the sim's clock.
+	 */
+	function syncSpin(record: AvatarRenderState, avatar: VillageAvatarSnapshot, tick: number): void {
+		if (avatar.performance) {
+			const { playback, frame } = performanceFrame(avatar, avatar.performance, tick, 0);
+			record.spin = performanceSpin(avatar, avatar.performance, playback, frame);
+			return;
+		}
+		const { sequence } = playedSequence(avatar);
+		if (!sequence) {
+			if (record.spin !== EMPTY_HANDS) record.spin = EMPTY_HANDS;
+			return;
+		}
+		if (avatar.lessonPhase !== null) {
+			const step = avatar.lessonStep;
+			if (step === null) {
+				if (record.spin !== EMPTY_HANDS) record.spin = EMPTY_HANDS;
+				return;
+			}
+			const ticksPerStep = rules.teaching.ticksPerStep;
+			// The beat at the end of a pass holds the sequence's end pose.
+			const holding = step >= avatar.lessonStepCount;
+			record.spin = {
+				sequence,
+				scoreBeat: holding
+					? avatar.lessonStepCount - 0.001
+					: step + Math.min(0.999, avatar.lessonStepTick / ticksPerStep),
+				beatsPerSecond: (rules.ticksPerSecond * speed) / ticksPerStep,
+				active: !holding,
+			};
+			return;
+		}
+		const started = avatar.playbackStartTick ?? tick;
+		record.spin = {
+			sequence,
+			scoreBeat: (tick - started) / rules.ticksPerSecond,
+			beatsPerSecond: speed,
+			active: true,
+		};
+	}
+
+	// Each performance's playback, built once per plan: the phrases the sim
+	// planned, played the way Flow Fest plays them, so the feet land on the
+	// beat, the staffs keep their planes and the body turns with the phrase.
+	const playbacks = new WeakMap<VillagePerformance, PhrasePlayback>();
+
+	function performanceFrame(
+		avatar: VillageAvatarSnapshot,
+		perf: VillagePerformance,
+		tick: number,
+		sinceTick: number,
+	): { playback: PhrasePlayback; frame: PhrasePlaybackFrame } {
+		let playback = playbacks.get(perf);
+		if (!playback) {
+			playback = createPhrasePlayback(
+				{
+					id: avatar.id,
+					seed: perf.seed,
+					characterId: avatar.modelId,
+					propFamily: avatar.propType,
+					// Only the plan is played; the brain's inputs are spent.
+					personality: { skill: 0, style: 0, energy: 0 },
+					home: perf.home,
+					areaRadius: perf.areaRadius,
+					phrases: perf.phrases,
+				},
+				// A beat past the plan, so its last beat does not wrap to the first.
+				{ tempoBpm: perf.tempoBpm, lengthBeats: perf.beats + 1 },
+			);
+			playbacks.set(perf, playback);
+		}
+		const seconds = (tick - perf.startTick) / rules.ticksPerSecond + sinceTick * speed;
+		const beat = Math.max(0, Math.min(perf.beats, (seconds * perf.tempoBpm) / 60));
+		return { playback, frame: playback.sample(beat) };
+	}
+
+	/**
+	 * A performer's props for a frame: the phrase playing, pinned to its
+	 * score, with its planes per beat and the body's turn. Poi keep their own
+	 * rig's planes; the brain planned them as staffs.
+	 */
+	function performanceSpin(
+		avatar: VillageAvatarSnapshot,
+		perf: VillagePerformance,
+		playback: PhrasePlayback,
+		frame: PhrasePlaybackFrame,
+	): VillageSpin {
+		const sequence = sequenceCatalogue.get(frame.phrase.sequenceId);
+		if (!sequence) return EMPTY_HANDS;
+		return {
+			sequence,
+			scoreBeat: frame.scoreBeat,
+			beatsPerSecond: (perf.tempoBpm / 60) * frame.scoreRate * speed,
+			active: !frame.phrase.rest,
+			...(avatar.propType === "poi" ? {} : { beatPlaneOverrides: phraseBeatPlaneOverrides(frame.phrase) }),
+			facingHint: phraseFrameFacingHint(playback, frame),
+			rootTurn: phraseFrameRootTurn(frame),
+		};
+	}
+
+	function syncSequencePlayback(record: PlaybackRecord, avatar: PlaybackFields): void {
+		const inst = record.instanceState;
+		const { sequence, key } = playedSequence(avatar);
 
 		// Nothing to play: unload it, not just pause it. A paused rig keeps the
 		// sequence's start pose and props in hand, which is the arms-out stance
@@ -441,8 +613,8 @@ export function createVillageState(options: CreateVillageStateOptions): VillageS
 
 	/**
 	 * A lesson plays exactly the step the sim names, at the sim's tempo: one
-	 * step every teaching.ticksPerStep ticks. Holding still pauses the rig
-	 * where it is; a fumble plays the missed step at a stumbling tempo.
+	 * step every teaching.ticksPerStep ticks. Not playing pauses the rig where
+	 * it is; the beat at the end of a pass holds the sequence's end pose.
 	 */
 	function followLesson(inst: PlaybackRecord["instanceState"], avatar: PlaybackFields): void {
 		if (avatar.lessonStep === null) {
@@ -451,10 +623,9 @@ export function createVillageState(options: CreateVillageStateOptions): VillageS
 		}
 		const ticksPerStep = rules.teaching.ticksPerStep;
 		const stepsPerSecond = (rules.ticksPerSecond * speed) / ticksPerStep;
-		const fumbling = avatar.lessonPhase === "fumble";
-		const tempo = fumbling ? rules.lesson.fumbleTempo : 1;
-		const expected = Math.min(0.999, (avatar.lessonStepTick / ticksPerStep) * tempo);
-		const rigStep = avatar.lessonStep + inst.motionStepOffset;
+		const holding = avatar.lessonStep >= avatar.lessonStepCount;
+		const expected = holding ? 0.999 : Math.min(0.999, avatar.lessonStepTick / ticksPerStep);
+		const rigStep = Math.min(avatar.lessonStep, avatar.lessonStepCount - 1) + inst.motionStepOffset;
 
 		if (inst.currentStepIndex !== rigStep) {
 			inst.goToStep(rigStep);
@@ -462,7 +633,11 @@ export function createVillageState(options: CreateVillageStateOptions): VillageS
 		} else if (Math.abs(inst.progress - expected) > LESSON_DRIFT) {
 			inst.setProgress(expected);
 		}
-		inst.speed = stepsPerSecond * tempo;
+		if (holding) {
+			if (inst.isPlaying) inst.pause();
+			return;
+		}
+		inst.speed = stepsPerSecond;
 		if (!inst.isPlaying) inst.play();
 	}
 
@@ -491,6 +666,42 @@ export function createVillageState(options: CreateVillageStateOptions): VillageS
 			if (!walk) continue;
 			const inst = record.instanceState;
 			const { avatar } = record;
+
+			// A performer is moved by the phrases, not the walker: planted,
+			// turning, or walking the plan's steps on the beat. A fresh walker
+			// takes over from wherever the performance ends.
+			if (avatar.performance) {
+				const { playback, frame } = performanceFrame(
+					avatar,
+					avatar.performance,
+					snapshot.world.tick,
+					running ? sinceTick : 0,
+				);
+				inst.position.x = frame.position.x;
+				inst.position.z = frame.position.z;
+				if (frame.facingAngle !== inst.facingAngle) inst.snapFacingAngle(frame.facingAngle);
+				walk.walker = null;
+				walk.setPose({
+					x: frame.position.x,
+					z: frame.position.z,
+					yaw: frame.facingAngle,
+					isMoving: frame.isMoving,
+					moveSpeed: frame.moveSpeed,
+					terminalStepPlan: frame.terminalStepPlan,
+					turnRequest: frame.turnRequest ?? undefined,
+					resetKey: walk.resetKey,
+					moveDirection: frame.moveDirection,
+					gaitTimingSample: frame.gaitTimingSample,
+				});
+				// Between ticks only a new phrase (or its settled turn) needs new
+				// props; the tick pins the score.
+				const spin = performanceSpin(avatar, avatar.performance, playback, frame);
+				if (spin.sequence !== record.spin.sequence || spin.facingHint !== record.spin.facingHint) {
+					record.spin = spin;
+				}
+				continue;
+			}
+
 			walk.walker ??= new VillageWalker({
 				id: record.entityId,
 				x: inst.position.x,
@@ -498,6 +709,7 @@ export function createVillageState(options: CreateVillageStateOptions): VillageS
 				yaw: inst.facingAngle,
 				arrivalThreshold: rules.movement.arrivalThreshold,
 				fire: rules.campfire,
+				resetKey: walk.resetKey,
 			});
 
 			const intent = running ? walkIntents.get(record.entityId) : undefined;
@@ -513,7 +725,7 @@ export function createVillageState(options: CreateVillageStateOptions): VillageS
 				restYaw: toRigYaw(restFacing(avatar, snapshot, watchRadius)),
 				clock: walk.clock,
 				// A body playing a sequence moves by its motion, not the clips.
-				authored: authoredSpeed && record.loadedSequenceId === null,
+				authored: authoredSpeed && record.spin.sequence === null,
 			});
 
 			inst.position.x = pose.x;
@@ -643,9 +855,7 @@ export function createVillageState(options: CreateVillageStateOptions): VillageS
 			sequenceCatalogue = next;
 			mirrored.clear();
 			for (const record of records.values()) {
-				record.loadedSequenceId = null;
-				record.loadedStartTick = null;
-				syncSequencePlayback(record, record.avatar);
+				syncSpin(record, record.avatar, snapshot.world.tick);
 			}
 			if (visitorRenderState) {
 				visitorRenderState.loadedSequenceId = null;

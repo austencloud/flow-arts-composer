@@ -8,8 +8,9 @@ import {
 } from "../../domain/village-types";
 import {
 	createLesson,
+	lessonBeat,
+	lessonPassAt,
 	lessonPhaseTicks,
-	mirrorLearnerCount,
 } from "../../domain/village-lesson";
 import type { VillageRules } from "../../domain/village-rules";
 import type { VillageEventEmitter } from "../village-event-emitter";
@@ -58,15 +59,15 @@ export class TeachingSystem {
 			lesson.clock++;
 			switch (lesson.phase) {
 				case "demonstrate":
-				case "fumble":
-					// After a fumble the teacher leads again from the missed step.
+					// The learner joins on the very next beat, the first of a pass.
 					if (lesson.clock >= lessonPhaseTicks(lesson, this.rules)!) {
-						if (lesson.phase === "fumble") lesson.leadFrom = lesson.missedStep;
 						this.enterPhase(lesson, "mirror");
+						this.followBeat(teacher, learner, lesson, currentTick);
 					}
 					break;
 				case "mirror":
-					this.followStep(teacher, learner, lesson, currentTick);
+				case "fumble":
+					this.followBeat(teacher, learner, lesson, currentTick);
 					break;
 				case "recognition":
 					if (lesson.clock >= lessonPhaseTicks(lesson, this.rules)!) {
@@ -102,11 +103,12 @@ export class TeachingSystem {
 	}
 
 	/**
-	 * At each step boundary of the mirror phase: credit the step the learner
-	 * just finished, finish the lesson if that was enough, otherwise see
-	 * whether the step they are starting goes wrong.
+	 * On each beat of the mirror and fumble phases, whose clock runs on
+	 * unbroken from the first mirrored beat. On a pass boundary a learner who
+	 * sat out comes back in, or, having it, the lesson ends. On a beat the
+	 * learner plays: credit it, then see whether it goes wrong.
 	 */
-	private followStep(
+	private followBeat(
 		teacher: VillageEntity,
 		learner: VillageEntity,
 		lesson: LessonComponent,
@@ -114,32 +116,46 @@ export class TeachingSystem {
 	): void {
 		const teaching = this.rules.teaching;
 		if (lesson.clock % teaching.ticksPerStep !== 0) return;
-		const count = mirrorLearnerCount(lesson, this.rules);
-		if (count === null) return;
+		const beat = lessonBeat(lesson, this.rules);
+		const { pass, within } = lessonPassAt(lesson, beat);
 		const script = lesson.script;
 
-		if (count - 1 >= lesson.leadFrom) {
-			learner.social.teachingProgress +=
-				learner.personality.learnSpeed *
-				teacher.personality.patience *
-				this.teacherQuality(teacher, learner) *
-				(0.5 + this.rng()) *
-				this.rules.lesson.progressPerStep;
-			learner.social.frustrationLevel = Math.max(
-				0,
-				learner.social.frustrationLevel - teaching.frustrationDecay,
-			);
+		if (within === 0 && beat > 0) {
+			if (lesson.phase === "fumble" && pass >= lesson.joinPass) {
+				lesson.phase = "mirror";
+				lesson.slipPass = null;
+			}
+			// The learner played the whole of the last pass with the teacher.
 			const mayFinish = !script || script.fumbled;
-			if (mayFinish && learner.social.teachingProgress >= teaching.proficiencyThreshold) {
+			if (
+				lesson.phase === "mirror" &&
+				pass - 1 >= lesson.joinPass &&
+				mayFinish &&
+				learner.social.teachingProgress >= teaching.proficiencyThreshold
+			) {
 				this.completeTeaching(teacher, learner, currentTick);
 				return;
 			}
 		}
 
+		if (lesson.phase !== "mirror" || pass < lesson.joinPass || within >= lesson.stepCount) return;
+		const step = lesson.learnerSteps++;
+		learner.social.currentStepIndex = within;
+		learner.social.teachingProgress +=
+			learner.personality.learnSpeed *
+			teacher.personality.patience *
+			this.teacherQuality(teacher, learner) *
+			(0.5 + this.rng()) *
+			this.rules.lesson.progressPerStep;
+		learner.social.frustrationLevel = Math.max(
+			0,
+			learner.social.frustrationLevel - teaching.frustrationDecay,
+		);
+
 		// A scripted lesson fumbles once, where the script says, and draws
 		// nothing for it.
 		if (script) {
-			if (script.fumbled || count < script.fumbleAtStep) return;
+			if (script.fumbled || step < script.fumbleAtStep) return;
 			script.fumbled = true;
 		} else {
 			const fumbleChance =
@@ -147,17 +163,19 @@ export class TeachingSystem {
 			if (this.rng() >= fumbleChance) return;
 		}
 
+		// The learner plays on to the end of this pass, sits out the next and
+		// comes back in on the boundary after; the teacher never stops.
 		learner.social.frustrationLevel = Math.min(
 			1,
 			learner.social.frustrationLevel + teaching.frustrationPerFumble,
 		);
-		lesson.missedStep = count;
-		learner.social.currentStepIndex = count % lesson.stepCount;
-		this.enterPhase(lesson, "fumble");
+		lesson.phase = "fumble";
+		lesson.slipPass = pass;
+		lesson.joinPass = pass + 1 + this.rules.lesson.sitOutPasses;
 		this.emitter.emit({
 			type: "teaching:fumble",
 			learnerId: learner.id,
-			step: learner.social.currentStepIndex,
+			step: within,
 		});
 
 		if (

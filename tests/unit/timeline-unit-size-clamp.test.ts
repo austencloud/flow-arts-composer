@@ -30,6 +30,26 @@ describe("clampTimelineUnitSizeToHeight", () => {
     expect(clampTimelineUnitSizeToHeight(354, 293, 0)).toBe(354);
   });
 
+  it("keeps a legible floor and lets the extra rows scroll", () => {
+    // The Fold report: sixteen steps in four rows of the 230px host the
+    // split now gives fitted 48px cells. With the 94px floor the cells stay
+    // readable and two whole rows show.
+    expect(clampTimelineUnitSizeToHeight(130, 230, 4)).toBe(48);
+    expect(clampTimelineUnitSizeToHeight(130, 230, 4, 16, 94)).toBe(94);
+  });
+
+  it("never lifts a cell past what the width affords", () => {
+    // A 375px phone affords 65px per cell; the floor cannot widen the row.
+    expect(clampTimelineUnitSizeToHeight(65, 214, 4, 16, 94)).toBe(65);
+  });
+
+  it("gives way so a short host still shows two whole rows", () => {
+    // A 375px phone with twelve steps three to a row: the width affords 82px,
+    // but two 82px rows do not fit its 174px host, which showed one row.
+    // (174 - 32 - 1 - 8) / 2 = 66.
+    expect(clampTimelineUnitSizeToHeight(82, 174, 4, 16, 94)).toBe(66);
+  });
+
   it("integrates with the width-based size the way StepGrid wires it", () => {
     // Start-only on a Fold portrait: container 760 wide, 293 tall, 2 units
     // (narrow-mode floor), one rendered row. The clamped result must be

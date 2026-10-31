@@ -2,7 +2,11 @@ import { describe, expect, it } from "vitest";
 import { catalogueSeedIds, loadVillageRules } from "../domain/village-rules";
 import { planVillageCatalogue } from "../domain/village-catalogue";
 import { sequenceStepCount } from "../domain/village-campfire";
-import { buildVillageSequenceCatalogue, exportVillageCatalogue } from "./village-sequence-catalogue";
+import {
+	bakeVillagePhraseTable,
+	buildVillageSequenceCatalogue,
+	exportVillageCatalogue,
+} from "./village-sequence-catalogue";
 import { createSequenceData, type SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import carriedLog from "../engine/__fixtures__/village-carried-kept.json";
@@ -65,5 +69,19 @@ describe("village sequence catalogue", () => {
 		expect(motion.get("visitor-made-3")!.word).toBe(logged.word);
 		// Without its motion it is simply left out, as a seed with no exhibit is.
 		expect((await buildVillageSequenceCatalogue(sim.rules)).has("visitor-made-3")).toBe(false);
+	});
+
+	// The sim chains phrases from a baked table (domain/village-phrase-table.ts)
+	// so it never loads motion; this keeps the table true to the motion. After
+	// a catalogue change, refresh it with -u and check the diff.
+	it("keeps the baked phrase table true to the motion", async () => {
+		const rules = loadVillageRules();
+		const catalogue = await buildVillageSequenceCatalogue(rules);
+		const table = bakeVillagePhraseTable(catalogue);
+		expect(Object.keys(table.entries).sort()).toEqual([...catalogue.keys()].sort());
+		await expect(`${JSON.stringify(table, null, "	")}
+`).toMatchFileSnapshot(
+			"../domain/village-phrase-table.json",
+		);
 	});
 });

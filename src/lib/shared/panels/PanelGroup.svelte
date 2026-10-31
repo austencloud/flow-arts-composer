@@ -530,9 +530,12 @@
       heldSlides.delete(key);
       pixelSlides.delete(key);
       // The declared flex resolves to the size the slide ended on; without
-      // the transition it is a swap, not another trip.
+      // the transition it is a swap, not another trip. Take the latest one:
+      // sizes that changed mid-slide (a split that waits on a measured rail
+      // or header) would otherwise be overwritten by the flex captured when
+      // the slide began, and the panel would stay at that stale size.
       element.style.transition = "none";
-      setPanelFlex(element, flex);
+      setPanelFlex(element, appliedFlex.get(key) ?? flex);
       void element.offsetWidth;
       element.style.transition = "";
     };

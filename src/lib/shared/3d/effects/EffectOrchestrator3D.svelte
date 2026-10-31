@@ -18,11 +18,11 @@
    *   4. Passes tip positions to the appropriate renderer components
    */
 
-  import { useThrelte, useTask } from "@threlte/core";
+  import { useThrelte } from "@threlte/core";
   import { EffectMotionClock } from "./scene-effects/effect-motion-clock";
   import { flushSync, onDestroy } from "svelte";
   import { resolveCapturedPropTransforms } from "./captured-prop-transforms";
-  import { usePropEffectStages } from "./prop-effect-stages";
+  import { usePropEffectSourceTask } from "./prop-effect-stages";
   import { tryGetViewer3DContext } from "../context/viewer-3d-context";
   import { Vector3, Object3D, Matrix3, type Camera } from "three";
   import Trail3D from "./trails/Trail3D.svelte";
@@ -185,7 +185,6 @@
   const propBuild = $derived(propBuildOverride ?? propFinishState.build);
 
   const { scene, camera } = useThrelte();
-  const { sources: effectsSourceStage } = usePropEffectStages();
   const qualityTierDetector = getQualityTierDetector();
   const adaptiveQuality = tryGetAdaptiveQualityContext();
   const qualityTier = $derived(
@@ -1400,16 +1399,13 @@
   // Threlte render-loop: call the extracted update function each frame.
   // During offline export, Threlte is in 'manual' render mode so this
   // only fires when advance() is called - no gating needed.
-  useTask(
-    (delta) => {
-      // Trail and effects-layer props must reach their consumers before the
-      // particle stage; with none of those effects on, the normal batched
-      // flush is enough.
-      if (needsSyncFlush) flushSync(() => updateEffectsFrame(delta));
-      else updateEffectsFrame(delta);
-    },
-    { stage: effectsSourceStage }
-  );
+  usePropEffectSourceTask((delta) => {
+    // Trail and effects-layer props must reach their consumers before the
+    // particle stage; with none of those effects on, the normal batched
+    // flush is enough.
+    if (needsSyncFlush) flushSync(() => updateEffectsFrame(delta));
+    else updateEffectsFrame(delta);
+  });
 
   // Keep the bounded trail renderers mounted for every real prop end. The
   // selected effect only changes their visibility, so choosing Trails never

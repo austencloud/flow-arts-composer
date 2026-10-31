@@ -36,3 +36,37 @@ export function getSequenceActionsPanelHeight({
     maximumDrawerHeight
   );
 }
+
+/**
+ * The drawer's grab handle footprint (height plus vertical margins), which
+ * CreatePanelDrawer takes off the combined height to size its body. Keep in
+ * sync with SheetDragHandle's variables.
+ */
+export const DRAWER_HANDLE_FOOTPRINT = 29;
+
+interface FittedToolPanelInput {
+  /** The root actions' header plus toolbar at their natural height. */
+  contentHeight: number;
+  navigationBarHeight: number;
+}
+
+/**
+ * Tool panel height that leaves the open drawer's body exactly as tall as the
+ * root actions. The drawer copies the tool panel's height, so on a tall
+ * stacked screen (the unfolded Fold in portrait, a tablet) it kept the
+ * option picker's share and left a strip of empty drawer under two rows of
+ * actions while the step grid above stayed squeezed (2026-10-29). Shrinking
+ * the tool panel to this height hands that strip to the workspace. One pixel
+ * of slack keeps measurement rounding from squeezing the tiles, which would
+ * report a shorter toolbar and shrink the drawer again.
+ */
+export function fittedToolPanelHeight({
+  contentHeight,
+  navigationBarHeight,
+}: FittedToolPanelInput): number {
+  if (contentHeight <= 0) return 0;
+  return Math.max(
+    0,
+    Math.ceil(contentHeight + DRAWER_HANDLE_FOOTPRINT - navigationBarHeight) + 1
+  );
+}

@@ -77,7 +77,35 @@ export interface GridSizingConfig {
    * columns would drop below the floor, the ordinary policy comes back.
    */
   preferLongRows?: boolean;
+  /**
+   * The cell size below which a pictograph stops reading (see
+   * MIN_LEGIBLE_PICTOGRAPH_SIZE), for surfaces that would rather scroll than
+   * shrink. When set:
+   *
+   * - fitAllSteps only fits when every step gets at least this size;
+   * - no sizing branch crushes cells below it to fit a short host, unless
+   *   the width itself cannot afford it, in which case width decides;
+   * - a grid that has to scroll sizes its cells to show MIN_VISIBLE_ROWS
+   *   whole rows, so the user sees where the next row starts and scrolls
+   *   the grid itself to reach the rest.
+   *
+   * Without it the older policy stands: cells may shrink to minCellSize.
+   */
+  legibleCellSize?: number | null;
 }
+
+/** Whole rows a scrolling legible grid keeps in view. */
+export const MIN_VISIBLE_ROWS = 2;
+
+/**
+ * Room StepGrid's editable workbench keeps on each side of the grid for the
+ * selected cell's glow and scale pop. A passive preview reserves 4px.
+ */
+export const WORKBENCH_EDGE_RESERVE = 16;
+
+// These values mirror WorkspaceGrid's gap and scroll-wrapper padding.
+const GRID_GAP = 1;
+const SCROLL_CONTAINER_PADDING = 8;
 
 /** Smallest cell a long row may use; Assemble's readable floor elsewhere too. */
 const LONG_ROW_MIN_CELL_SIZE = 88;
@@ -85,11 +113,15 @@ const LONG_ROW_MAX_COLUMNS = 8;
 
 const DEFAULT_SIZING: Omit<
   Required<GridSizingConfig>,
-  "manualColumnCount" | "stableColumnCount" | "narrowMaxColumns"
+  | "manualColumnCount"
+  | "stableColumnCount"
+  | "narrowMaxColumns"
+  | "legibleCellSize"
 > & {
   manualColumnCount: number | null;
   stableColumnCount: number | null;
   narrowMaxColumns: number | null;
+  legibleCellSize: number | null;
 } = {
   minCellSize: 40, // Reduced from 50px to allow fitting more rows on small screens
   maxCellSize: 200,
@@ -105,6 +137,7 @@ const DEFAULT_SIZING: Omit<
   allowFewStepOverflowOnNarrow: true,
   fitAllSteps: false,
   preferLongRows: false,
+  legibleCellSize: null,
 };
 
 /**
@@ -152,8 +185,15 @@ export function calculateGridLayout(
   // small for the whole sequence at minCellSize gets the ordinary policy back:
   // big pictographs the reader scrolls, not sixteen unreadable dots. A phone
   // card offers 32px a cell — that is the fallback's case, not a fit.
+  // A surface that names a legible size asks the same question at that size:
+  // sixteen 48px dots in a short band are not a fit, they are the defect.
+  const legibleCellSize =
+    sizing.legibleCellSize !== null && sizing.legibleCellSize > 0
+      ? sizing.legibleCellSize
+      : null;
   const fitAllSteps =
-    fitSearch !== null && fitSearch.affordable >= sizing.minCellSize;
+    fitSearch !== null &&
+    fitSearch.affordable >= Math.max(sizing.minCellSize, legibleCellSize ?? 0);
   const useWidthSizing =
     !fitAllSteps &&
     (stableWideColumnCount !== null ||
@@ -224,9 +264,8 @@ export function calculateGridLayout(
   function candidateGeometry(columns: number) {
     const rows = Math.ceil(stepCount / columns);
     const totalColumns = columns + 1; // +1 for start placement
-    // These values mirror WorkspaceGrid's gap and scroll-wrapper padding.
-    const gridGap = 1;
-    const scrollContainerPadding = 8;
+    const gridGap = GRID_GAP;
+    const scrollContainerPadding = SCROLL_CONTAINER_PADDING;
     const availableWidth =
       containerWidth * sizing.widthPaddingRatio -
       (totalColumns - 1) * gridGap -
@@ -241,7 +280,45 @@ export function calculateGridLayout(
       totalColumns,
       maxCellWidth: availableWidth / totalColumns,
       maxCellHeight: availableHeight / rows,
+      // The cell that shows `visibleRows` whole rows in the host's height.
+      cellForRows: (visibleRows: number) =>
+        (containerHeight * sizing.heightPaddingRatio -
+          (visibleRows - 1) * gridGap -
+          scrollContainerPadding) /
+        visibleRows,
     };
+  }
+
+  /**
+   * Hold a cell to the legible floor, and size a grid that scrolls so that
+   * MIN_VISIBLE_ROWS whole rows show. The floor never exceeds what the width
+   * affords: there the grid could only overflow sideways, which the scroll
+   * wrapper clips.
+   */
+  function holdLegible(
+    cellSize: number,
+    geometry: ReturnType<typeof candidateGeometry>,
+    stableRows: boolean
+  ): number {
+    if (legibleCellSize === null) return cellSize;
+    const widthBound = Math.min(
+      sizing.maxCellSize,
+      Math.floor(geometry.maxCellWidth)
+    );
+    const floorCell = Math.max(
+      sizing.minCellSize,
+      Math.min(legibleCellSize, widthBound)
+    );
+    // A pinned column count promises that adding a row does not resize the
+    // steps, so it always budgets for the full band, even with one row.
+    const bandRows = stableRows
+      ? MIN_VISIBLE_ROWS
+      : Math.min(geometry.rows, MIN_VISIBLE_ROWS);
+    const bandCell = Math.floor(geometry.cellForRows(bandRows));
+    return Math.max(
+      floorCell,
+      Math.min(cellSize, Math.max(bandCell, floorCell))
+    );
   }
 
   /**
@@ -289,10 +366,13 @@ export function calculateGridLayout(
     return { columns: best.columns, affordable: best.affordable };
   }
 
-  function calculateCandidate(maxColumns: number): GridLayout {
+  function calculateCandidate(
+    maxColumns: number,
+    { hold = true }: { hold?: boolean } = {}
+  ): GridLayout {
     const columns = Math.min(stepCount, maxColumns);
-    const { rows, totalColumns, maxCellWidth, maxCellHeight } =
-      candidateGeometry(columns);
+    const geometry = candidateGeometry(columns);
+    const { rows, totalColumns, maxCellWidth, maxCellHeight } = geometry;
     let cellSize = 160;
 
     if (containerWidth > 0 && containerHeight > 0) {
@@ -330,6 +410,14 @@ export function calculateGridLayout(
           Math.min(sizing.maxCellSize, Math.floor(maxCellWidth))
         );
       }
+      // The lone start card on a narrow screen overflows by design.
+      if (hold && !fitAllSteps && !useUnboundedWidthSizing) {
+        cellSize = holdLegible(
+          cellSize,
+          geometry,
+          stableWideColumnCount !== null
+        );
+      }
     }
 
     return { rows, columns, totalColumns, cellSize, maxColumns };
@@ -351,7 +439,11 @@ export function calculateGridLayout(
   }
 
   if (sizing.preferLongRows && !isNarrowContainer) {
-    const longRowLayout = calculateCandidate(LONG_ROW_MAX_COLUMNS);
+    // Judged on the size the host affords, before the legible hold: a long
+    // row is for steps that fit, not a reason to scroll.
+    const longRowLayout = calculateCandidate(LONG_ROW_MAX_COLUMNS, {
+      hold: false,
+    });
     if (longRowLayout.cellSize >= LONG_ROW_MIN_CELL_SIZE) return longRowLayout;
   }
 
@@ -652,13 +744,18 @@ export function calculateTimelineUnitSize(
  * @param containerHeight - Container height in pixels
  * @param rowCount - Rendered cell rows (steps rows, or 1 for start-only)
  * @param popReserve - Padding reserved per edge for the selection pop (default 16)
+ * @param legibleSize - When set, the clamp never shrinks a cell below this,
+ *   and extra rows scroll. The floor gives way to the width-based size, and to
+ *   the size that still shows MIN_VISIBLE_ROWS whole rows, when either is
+ *   smaller, so a short or narrow host shows two rows rather than one.
  * @returns Unit size clamped to fit, never below the 48px touch floor
  */
 export function clampTimelineUnitSizeToHeight(
   widthBased: number,
   containerHeight: number,
   rowCount: number,
-  popReserve: number = 16
+  popReserve: number = 16,
+  legibleSize: number | null = null
 ): number {
   if (containerHeight <= 0 || rowCount <= 0) return widthBased;
 
@@ -666,6 +763,51 @@ export function clampTimelineUnitSizeToHeight(
   const padding = 8;
   const availableHeight = containerHeight - 2 * popReserve - gaps - padding;
   const heightBased = Math.floor(availableHeight / rowCount);
+  const fitted = Math.max(48, Math.min(widthBased, heightBased));
+  if (!legibleSize) return fitted;
 
-  return Math.max(48, Math.min(widthBased, heightBased));
+  const visibleRows = Math.min(rowCount, MIN_VISIBLE_ROWS);
+  const visibleRowsBased = Math.floor(
+    (containerHeight - 2 * popReserve - (visibleRows - 1) - padding) /
+      visibleRows
+  );
+  return Math.max(fitted, Math.min(legibleSize, widthBased, visibleRowsBased));
+}
+
+/**
+ * The host height a legible step grid needs to show `rows` whole rows
+ * (MIN_VISIBLE_ROWS by default), so a split can give the workspace that much
+ * before anything else.
+ *
+ * The Create workspace lays its steps out as timeline rows, so this inverts
+ * calculateTimelineUnitSize and clampTimelineUnitSizeToHeight for a full row
+ * of `units` cells (four steps plus the start column by default). The cell is
+ * the legible size, or less when the width cannot afford it. `edgeReserve` is
+ * the host's padding on each side (StepGrid's workbench reserves 16px).
+ */
+export function legibleGridHostHeight(params: {
+  hostWidth: number;
+  legibleCellSize: number;
+  edgeReserve: number;
+  units?: number;
+  rows?: number;
+}): number {
+  const {
+    hostWidth,
+    legibleCellSize,
+    edgeReserve,
+    units = 5,
+    rows = MIN_VISIBLE_ROWS,
+  } = params;
+  const sizingWidth = Math.max(0, hostWidth - 2 * edgeReserve);
+  const cell = Math.min(
+    legibleCellSize,
+    calculateTimelineUnitSize(sizingWidth, units)
+  );
+  return (
+    rows * cell +
+    (rows - 1) * GRID_GAP +
+    SCROLL_CONTAINER_PADDING +
+    2 * edgeReserve
+  );
 }

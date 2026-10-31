@@ -1068,6 +1068,74 @@ Delegates ALL logic to services (SRP compliant)
     }
   }
 
+  /* The unfolded Fold gives a 16-step sequence all four rows above this panel
+     and leaves it about 220px. The pictographs are the heroes there, so the
+     controls compact instead of scrolling: a slim Level bar, one-line card
+     rows and a shorter Generate, below the usual 44px floor on purpose
+     (Austen lifted it for dense phone editors, 2026-10-29). */
+  @container settings-grid (width >= 630px) and (height < 260px) {
+    .level-toolbar {
+      min-height: 0;
+      padding-block: 3px 4px;
+    }
+
+    .level-selector-slot :global(.level-selector .lvl) {
+      height: 2.125rem;
+    }
+
+    .level-selector-slot :global(.level-selector .numeral) {
+      width: 1.5rem;
+      height: 1.5rem;
+      font-size: 0.9rem;
+    }
+
+    .card-grid {
+      gap: 4px;
+    }
+
+    .card-grid[data-level="1"],
+    .card-grid[data-level="2"],
+    .card-grid[data-level="3"] {
+      grid-template-rows: repeat(3, minmax(0, 1fr)) minmax(40px, 1.1fr);
+      grid-auto-rows: unset;
+    }
+
+    .card-wrapper {
+      min-height: 0;
+    }
+
+    /* One line each: Word's title beside its field, and each grid mode's
+       icon beside its name. */
+    .card-wrapper[data-card-id="word-input"] :global(.word-input-card) {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 0.5rem;
+      padding-inline: 0.75rem;
+    }
+
+    /* The header is an inline-size container, so it has no content width of
+       its own; give it room for its one word. */
+    .card-wrapper[data-card-id="word-input"] :global(.card-header-container) {
+      flex: 0 0 3.5rem;
+      width: 3.5rem;
+    }
+
+    .card-wrapper[data-card-id="word-input"] :global(.input-row) {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .card-wrapper[data-card-id="word-input"] :global(.word-field) {
+      height: 1.625rem;
+    }
+
+    .card-wrapper[data-card-id="grid-mode"] :global(.toggle-option) {
+      flex-direction: row;
+      gap: 0.4rem;
+    }
+  }
+
   @container settings-grid (width < 630px) and (height < 560px) {
     .card-settings-container:not([data-desktop-layout="true"])
       .card-grid[data-level="1"],

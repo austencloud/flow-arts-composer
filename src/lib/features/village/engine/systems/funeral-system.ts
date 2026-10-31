@@ -66,6 +66,7 @@ export class FuneralSystem {
 				entity.social.state = "mourning";
 				entity.social.partner = null;
 				entity.social.activeSequenceId = null;
+				entity.social.performance = null;
 				entity.social.idleTimer = 0;
 				entity.transform.speed = 0;
 				entity.transform.facingAngle = Math.atan2(

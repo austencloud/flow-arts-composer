@@ -4,7 +4,12 @@ import { describe, expect, it } from "vitest";
 import {
   calculateGridLayout,
   calculateGridVerticalCenterOffset,
+  calculateTimelineUnitSize,
+  clampTimelineUnitSizeToHeight,
+  legibleGridHostHeight,
+  MIN_VISIBLE_ROWS,
 } from "../../src/lib/shared/create/utils/grid-calculations";
+import { MIN_LEGIBLE_PICTOGRAPH_SIZE } from "../../src/lib/shared/pictograph/shared/domain/constants/pictograph-legibility";
 import {
   WORKSPACE_BUTTON_LAYOUT,
   WORKSPACE_BUTTON_ICON,
@@ -356,6 +361,78 @@ describe("calculateGridLayout workspace column selection", () => {
     expect(defaultLayout.columns).toBe(8);
     expect(tunnelLayout.columns).toBe(4);
     expect(tunnelLayout.cellSize).toBeGreaterThan(defaultLayout.cellSize * 2);
+  });
+});
+
+describe("calculateGridLayout legible floor", () => {
+  // The Create workspace's config on Construct's phone tier: four pinned
+  // columns, fit-all for the short band, long rows where they fit.
+  const constructBand = {
+    stableColumnCount: 4,
+    fitAllSteps: true,
+    preferLongRows: true,
+    legibleCellSize: MIN_LEGIBLE_PICTOGRAPH_SIZE,
+  };
+
+  it("derives the floor from the letter glyph and the essential text size", () => {
+    // 14px text, 0.7 cap height, a 100-unit glyph in the 950-unit viewBox.
+    expect(MIN_LEGIBLE_PICTOGRAPH_SIZE).toBe(94);
+  });
+
+  it("scrolls sixteen steps on an unfolded Fold instead of shrinking them to fit", () => {
+    // 707px wide workspace at its legible floor: a 673x214 grid host.
+    // Fitting all sixteen gave 69px cells there (48px in the old 296px band).
+    const layout = calculateGridLayout(16, 673, 214, null, constructBand);
+    expect(layout.columns).toBe(4);
+    expect(layout.rows).toBe(4);
+    expect(layout.cellSize).toBeGreaterThanOrEqual(MIN_LEGIBLE_PICTOGRAPH_SIZE);
+  });
+
+  it("still fits every step when that keeps them legible", () => {
+    const layout = calculateGridLayout(5, 673, 214, null, constructBand);
+    expect(layout.rows).toBe(1);
+    expect(layout.cellSize).toBeGreaterThanOrEqual(MIN_LEGIBLE_PICTOGRAPH_SIZE);
+  });
+
+  it("lets width decide when a phone cannot afford the legible size", () => {
+    // 375px phone: five columns of 94px do not fit 341px, so the cell is the
+    // width's 62px rather than the short band's 30px.
+    const layout = calculateGridLayout(16, 341, 145, null, {
+      fitAllSteps: true,
+      preferLongRows: true,
+      legibleCellSize: MIN_LEGIBLE_PICTOGRAPH_SIZE,
+    });
+    expect(layout.cellSize).toBe(62);
+  });
+
+  it("shows two whole rows of a scrolling pinned grid at any step count", () => {
+    const pinned = { ...constructBand, fitAllSteps: false };
+    const one = calculateGridLayout(4, 673, 214, null, pinned);
+    const three = calculateGridLayout(12, 673, 214, null, pinned);
+    expect(one.cellSize).toBe(three.cellSize);
+    expect(three.cellSize * MIN_VISIBLE_ROWS).toBeLessThanOrEqual(214);
+  });
+
+  it("gives the split a host height that holds two legible timeline rows", () => {
+    // The workspace sizes its cells as timeline rows: four steps plus the
+    // start column across a 705px host on an unfolded Fold.
+    const host = legibleGridHostHeight({
+      hostWidth: 705,
+      legibleCellSize: MIN_LEGIBLE_PICTOGRAPH_SIZE,
+      edgeReserve: 16,
+    });
+    const widthBased = calculateTimelineUnitSize(705 - 32, 5);
+    expect(
+      clampTimelineUnitSizeToHeight(widthBased, host, MIN_VISIBLE_ROWS, 16)
+    ).toBe(MIN_LEGIBLE_PICTOGRAPH_SIZE);
+  });
+
+  it("leaves callers without a legible size on the old policy", () => {
+    const layout = calculateGridLayout(16, 673, 214, null, {
+      ...constructBand,
+      legibleCellSize: null,
+    });
+    expect(layout.cellSize).toBeLessThan(MIN_LEGIBLE_PICTOGRAPH_SIZE);
   });
 });
 

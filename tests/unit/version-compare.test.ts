@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { compareVersions } from "#lib/shared/versioning/domain/models/version-models.js";
+import {
+  compareVersions,
+  pickReleaseNotesVersion,
+  type AppVersion,
+} from "#lib/shared/versioning/domain/models/version-models.js";
 
 describe("compareVersions", () => {
   it("orders by major.minor.patch numerically", () => {
@@ -44,5 +48,39 @@ describe("high-water-mark gate (lastSeen >= current suppresses)", () => {
 
   it("shows when nothing has been seen yet", () => {
     expect(hasSeen(null, "0.25.0")).toBe(false);
+  });
+});
+
+describe("pickReleaseNotesVersion", () => {
+  const v = (version: string): AppVersion => ({
+    version,
+    releasedAt: new Date("2026-10-15T00:00:00Z"),
+    feedbackCount: 0,
+    feedbackSummary: { bugs: 0, features: 0, general: 0 },
+  }) as unknown as AppVersion;
+
+  // Firestore returns newest first by releasedAt; the pick must not rely on it.
+  const published = [v("0.47.0"), v("0.48.0"), v("0.46.0")];
+
+  it("opens the running version's notes when they exist", () => {
+    expect(pickReleaseNotesVersion(published, "0.47.0")?.version).toBe("0.47.0");
+  });
+
+  it("falls back to the newest published notes when the build is ahead of them", () => {
+    // Live 2026-10-28: the app ran 0.49.0 while only 0.48.0 was published, and
+    // the What's New button opened nothing.
+    expect(pickReleaseNotesVersion(published, "0.49.0")?.version).toBe("0.48.0");
+  });
+
+  it("never offers notes newer than the running build when older ones exist", () => {
+    expect(pickReleaseNotesVersion(published, "0.47.5")?.version).toBe("0.47.0");
+  });
+
+  it("uses the newest notes when every published version is ahead", () => {
+    expect(pickReleaseNotesVersion(published, "0.1.0")?.version).toBe("0.48.0");
+  });
+
+  it("returns null when nothing is published", () => {
+    expect(pickReleaseNotesVersion([], "0.49.0")).toBeNull();
   });
 });

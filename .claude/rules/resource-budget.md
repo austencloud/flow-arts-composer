@@ -47,6 +47,10 @@ d1's 32, so expect about twice the run time. Focused checks, the `wt:finish`
 gate, and browser verification stay on d1. If d2 is unreachable, say so and
 run the check on d1 under the rules above.
 
+One publish gate per snapshot: `push-public.mjs` runs at most one
+`publish-preflight` job for a snapshot commit. A second publish of the same
+snapshot, from any session, waits for that job and reuses its verdict.
+
 Each run leaves a scratch worktree of 5 to 8 GB on d2's E: drive. The d2
 scheduled task "d2 scratch prune" (`scripts/d2-prune.ps1`) runs every hour. It
 never touches a worktree with a live job or a process (dev server, install) in

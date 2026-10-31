@@ -55,7 +55,11 @@
   import MobileHandSelector from "./MobileHandSelector.svelte";
   import MobileActionToolbar from "./MobileActionToolbar.svelte";
   import ShareButton from "../../workspace-panel/shared/components/buttons/ShareButton.svelte";
-  import { getSequenceActionsPanelHeight } from "./sequence-actions-panel-height";
+  import {
+    fittedToolPanelHeight,
+    getSequenceActionsPanelHeight,
+  } from "./sequence-actions-panel-height";
+  import { sequenceActionsFit } from "./sequence-actions-fit.svelte";
   import { openSequenceViewer } from "#lib/shared/sequence-viewer/services/sequence-viewer-navigator.js";
   import { getReturnContext } from "#lib/shared/coordinators/sequence-handoff.svelte.js";
 
@@ -226,6 +230,30 @@
       hasDrilldown: subView !== null,
     });
   });
+
+  // Above the workspace the root actions are two rows of tiles, and the
+  // drawer copied the option picker's height, so a tall stacked screen left
+  // empty drawer under them while the step grid stayed squeezed. While the
+  // root actions show, the layout shrinks the tool panel until the drawer
+  // body fits them, and the step grid takes the rest. A drill-down drops the
+  // fit and gets its usual height back.
+  let rootHeaderHeight = $state(0);
+  let rootToolbarHeight = $state(0);
+  const fittedHeight = $derived(
+    isOpen && useWorkspaceContextLayout && subView === null
+      ? fittedToolPanelHeight({
+          contentHeight:
+            rootHeaderHeight > 0 && rootToolbarHeight > 0
+              ? rootHeaderHeight + rootToolbarHeight
+              : 0,
+          navigationBarHeight: panelState.navigationBarHeight,
+        })
+      : 0
+  );
+  $effect(() => {
+    sequenceActionsFit.set(fittedHeight);
+  });
+  $effect(() => () => sequenceActionsFit.set(0));
 
   const subViewTitle = $derived(viewState.subViewTitle);
   const backLabel = $derived(viewState.backLabel);
@@ -829,6 +857,7 @@
             class="compact-header"
             class:dimmed={helpMode === "selecting"}
             class:has-share={showHeaderShare}
+            bind:offsetHeight={rootHeaderHeight}
           >
             <div class="header-lead">
               <button
@@ -936,6 +965,7 @@
             <MobileActionToolbar
               {hasSequence}
               fillAvailableHeight={useWorkspaceContextLayout}
+              bind:renderedHeight={rootToolbarHeight}
               {hasSelection}
               {isTransforming}
               {canExtend}
@@ -1056,6 +1086,10 @@
       linear-gradient(var(--theme-panel-bg), var(--theme-panel-bg)),
       var(--sheet-bg-solid, rgb(15, 15, 20));
     --sheet-filter: none;
+    /* The drawer takes its height from the panel it covers, which fits the
+       root actions, so the base sheet's half-screen floor must not hold it
+       taller and leave empty space under the tiles. */
+    --sheet-min-height: 0px;
   }
 
   .editor-panel {

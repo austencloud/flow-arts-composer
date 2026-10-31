@@ -4,6 +4,9 @@
    * come from the production sequence stack.
    */
   import { onDestroy, untrack, type Snippet } from "svelte";
+  import { useThrelte } from "@threlte/core";
+  import { Vector3, type Object3D } from "three";
+  import { resolveThrelteScene } from "#lib/shared/3d/scene-boot/threlte-handles.js";
   import {
     cmToUnits,
     PerformerRig,
@@ -20,6 +23,7 @@
     ScheduledGaitTimingSample,
     TerminalStepPlan,
     TurnRequest,
+    LocomotionGaitClock,
   } from "@austencloud/scene-3d";
   import type { CharacterId } from "#lib/shared/3d/domain/character-model.js";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
@@ -58,6 +62,11 @@
   import { QualityTier } from "../effects/types";
   import { buildTipEffectMap } from "#lib/shared/animation-engine/domain/tip-effect-map.js";
   import EffectOrchestrator3D from "#lib/shared/3d/effects/EffectOrchestrator3D.svelte";
+  import {
+    lockStaffToPalm,
+    propStateFollowingStaff,
+  } from "#lib/shared/3d/domain/staff-palm-lock.js";
+  import { findRenderedPropNodes } from "#lib/shared/3d/native-capture/native-capture.js";
 
   export interface AuthoredUpperBodyStance {
     yawRad: number;
@@ -83,7 +92,13 @@
     propBuild?: PropBuild;
     leftPropFlipped?: boolean;
     rightPropFlipped?: boolean;
-    sequence: SequenceData;
+    /**
+     * What the props play. Null stands the body in its own idle with empty
+     * hands (the rig falls back to the character's idle clip); a host whose
+     * performer stops spinning between pieces passes null rather than
+     * pausing, which would hold the arms out at the sequence's pose.
+     */
+    sequence: SequenceData | null;
     effectId: string;
     effectQualityTier?: "low" | "medium" | "high";
     phaseOffsetSteps?: number;
@@ -111,6 +126,12 @@
      * turns from per-beat plane changes; pass null to hold the facing.
      */
     turnRequest?: TurnRequest | null;
+    /** Bump to drop the walk's locomotion history (PerformerRig). */
+    locomotionResetKey?: number;
+    /** The walk's gait clock each frame, for a host that times stops to footfalls. */
+    onGaitClock?: (clock: LocomotionGaitClock) => void;
+    /** The body's fade, 0 to 1 (PerformerRig's avatarOpacity). */
+    bodyOpacity?: number;
     /**
      * Drive the props from a score instead of the performer's own clock:
      * one unit is one beat of the sequence, from the start of beat 1, and
@@ -147,6 +168,14 @@
      * distance: the stock grip, at a small fraction of the cost.
      */
     contactMode?: "prop-authoritative" | "legacy";
+    /**
+     * Lock each staff to its palm after the arms solve. The hands still aim
+     * at the full-grid grip; where an arm falls short, its staff comes in to
+     * meet the palm by exactly the shortfall and keeps the grid's
+     * orientation (staff-palm-lock.ts). Tip effects follow the moved staff.
+     * Omit it and the staffs stay where the grid and the rig put them.
+     */
+    staffPalmLock?: boolean;
     /**
      * "captured" holds the body exactly where it is and skips its per-frame
      * pose work; a crowd host passes it for performers who are hidden or are
@@ -210,7 +239,11 @@
     onCollisionEvents?: (
       events: CollisionEvent[],
       diagnostics: AvatarPoseDiagnostics,
-      gripDiagnostics: AvatarGripDiagnostics
+      /** With `staffPalmLock`, the rendered grips are the locked ones and
+       *  `staffPalmLockShortfallM` says how far each staff moved. */
+      gripDiagnostics: AvatarGripDiagnostics & {
+        staffPalmLockShortfallM?: [number, number];
+      }
     ) => void;
   }
 
@@ -323,7 +356,7 @@
   export function seekScore(score: number): void {
     if (!Number.isFinite(score) || score < 0)
       throw new Error("Invalid performer score");
-    const steps = props.sequence.steps.length;
+    const steps = props.sequence?.steps.length ?? 0;
     if (!steps) throw new Error("Cannot seek an empty performer sequence");
     const wrapped = score % steps;
     performerState.pause();
@@ -365,6 +398,11 @@
         if (leftPlane) performerState.setHandPlane("left", leftPlane);
         if (rightPlane) performerState.setHandPlane("right", rightPlane);
       });
+      if (!sequence) {
+        if (performerState.isPlaying) performerState.pause();
+        if (performerState.hasSequence) performerState.clearSequence();
+        return;
+      }
       performerState.loadSequence(sequence);
       performerState.clearStepPlaneOverrides();
       getSceneUndoManager().withoutUndo(() => {
@@ -386,7 +424,7 @@
   $effect(() => {
     const score = props.scoreBeat;
     const sequence = props.sequence;
-    if (score == null || !sequence.steps.length) return;
+    if (score == null || !sequence?.steps.length) return;
     untrack(() => {
       // The performer runs on its own clock at `playbackSpeed` (beats per
       // second) and is only put back on the score when the two part by more
@@ -418,7 +456,7 @@
       if (props.scoreBeat != null) return;
       if (phase == null) {
         performerState.goToStep(0);
-      } else if (sequence.steps.length > 0) {
+      } else if (sequence && sequence.steps.length > 0) {
         const wrapped =
           ((phase % sequence.steps.length) + sequence.steps.length) %
           sequence.steps.length;
@@ -444,7 +482,7 @@
   });
 
   $effect(() => {
-    const active = props.active !== false;
+    const active = props.active !== false && props.sequence != null;
     const speed = props.playbackSpeed ?? 1;
     const scored = props.scoreBeat != null;
     untrack(() => {
@@ -475,6 +513,93 @@
     const track = contact.bodyResponseTrack;
     props.onBodyResponseTrack?.(track);
   });
+
+  // Staff palm lock. The rig hands its post-IK palm and grip measurement to
+  // onCollisionEvents at the end of its frame, after its own contact lock and
+  // before the frame renders, so moving the correction groups there changes
+  // this frame's pixels and the next frame's rig resets them again.
+  const threlteScene = resolveThrelteScene(useThrelte().scene);
+  type LockSide = { anchor: Object3D; correction: Object3D };
+  let lockNodes: [LockSide | null, LockSide | null] | null = null;
+  let effectShift = $state.raw<[Vector3 | null, Vector3 | null]>([null, null]);
+  const _lockPalm = new Vector3();
+  const _lockGrip = new Vector3();
+  const _lockLocal = new Vector3();
+
+  function staffLockNodes(): [LockSide | null, LockSide | null] | null {
+    const attached = (side: LockSide | null) =>
+      !side ||
+      (side.correction.parent === side.anchor && side.anchor.parent?.parent);
+    if (lockNodes && lockNodes.every(attached) && lockNodes.some(Boolean))
+      return lockNodes;
+    const rig = threlteScene.getObjectByName(`PERFORMER_${props.id}`)?.parent;
+    if (!rig) return null;
+    const side = (name: string): LockSide | null => {
+      const branch = rig.children.find((child) => child.name === name);
+      if (!branch) return null;
+      try {
+        const { correction } = findRenderedPropNodes(branch, props.id);
+        return correction.parent
+          ? { anchor: correction.parent, correction }
+          : null;
+      } catch {
+        // Props still loading: the branch has no mesh yet.
+        return null;
+      }
+    };
+    lockNodes = [side("PERFORMER_PROP_LEFT"), side("PERFORMER_PROP_RIGHT")];
+    return lockNodes.some(Boolean) ? lockNodes : null;
+  }
+
+  function lockStaffs(grip: AvatarGripDiagnostics) {
+    const nodes = staffLockNodes();
+    const shortfallM: [number, number] = [0, 0];
+    const rendered: [Vector3 | null, Vector3 | null] = [null, null];
+    const shift: [Vector3 | null, Vector3 | null] = [null, null];
+    (["left", "right"] as const).forEach((side, index) => {
+      const node = nodes?.[index];
+      const palm = side === "left" ? grip.leftPalm : grip.rightPalm;
+      const before =
+        side === "left" ? grip.renderedBlueGrip : grip.renderedRedGrip;
+      if (!node || !palm || !before) return;
+      shortfallM[index] = lockStaffToPalm(
+        node.correction,
+        _lockPalm.copy(palm),
+        _lockGrip.copy(before)
+      );
+      // Measured back off the moved group, not assumed from the palm.
+      rendered[index] = node.correction.getWorldPosition(new Vector3());
+      // Tip effects place themselves from the prop state in the hand
+      // branch's frame; carry them by the whole rendered offset.
+      const branch = node.anchor.parent;
+      if (branch)
+        shift[index] = branch
+          .worldToLocal(_lockLocal.copy(rendered[index]!))
+          .sub(node.anchor.position)
+          .clone();
+    });
+    const moved = (a: Vector3 | null, b: Vector3 | null) =>
+      !a !== !b || (a && b && a.distanceToSquared(b) > 1e-6);
+    if (
+      props.showEffects !== false &&
+      (moved(shift[0], effectShift[0]) || moved(shift[1], effectShift[1]))
+    )
+      effectShift = shift;
+    return {
+      ...grip,
+      renderedBlueGrip: rendered[0] ?? grip.renderedBlueGrip,
+      renderedRedGrip: rendered[1] ?? grip.renderedRedGrip,
+      staffPalmLockShortfallM: shortfallM,
+    };
+  }
+
+  function shiftedForEffects(
+    prop: PropState3D | null | undefined,
+    shift: Vector3 | null
+  ): PropState3D | null {
+    if (!prop) return null;
+    return props.staffPalmLock ? propStateFollowingStaff(prop, shift) : prop;
+  }
 
   onDestroy(() => performerState.destroy());
 </script>
@@ -510,6 +635,9 @@
   gaitTimingSample={props.gaitTimingSample ?? null}
   terminalStepPlan={props.terminalStepPlan ?? null}
   turnRequestOverride={props.turnRequest}
+  locomotionResetKey={props.locomotionResetKey ?? 0}
+  onGaitClock={props.onGaitClock}
+  avatarOpacity={props.bodyOpacity ?? 1}
   weldGrip={props.weldGrip ?? false}
   {propLength}
   propScale={performerState.gridScale}
@@ -544,7 +672,14 @@
     : performerState.isPlaying}
   onCollisionEvents={(events, diagnostics, gripDiagnostics) => {
     captureReach(diagnostics);
-    props.onCollisionEvents?.(events, diagnostics, gripDiagnostics);
+    if (!props.staffPalmLock) {
+      props.onCollisionEvents?.(events, diagnostics, gripDiagnostics);
+      return;
+    }
+    // Lock before handing the grips on: the lock moves the staffs whether or
+    // not anyone listens, and an optional call would skip its arguments.
+    const lockedGrips = lockStaffs(gripDiagnostics);
+    props.onCollisionEvents?.(events, diagnostics, lockedGrips);
   }}
   gridSlot={props.gridSlot}
   onAvatarSwapped={() => {
@@ -578,8 +713,12 @@
   })}
     {#if props.showEffects !== false}
       <EffectOrchestrator3D
-        leftPropState={performerState.showLeft ? bluePropState : null}
-        rightPropState={performerState.showRight ? redPropState : null}
+        leftPropState={performerState.showLeft
+          ? shiftedForEffects(bluePropState, effectShift[0])
+          : null}
+        rightPropState={performerState.showRight
+          ? shiftedForEffects(redPropState, effectShift[1])
+          : null}
         leftPropType={toScenePropType(props.propType)}
         rightPropType={toScenePropType(props.propType)}
         {isPlaying}

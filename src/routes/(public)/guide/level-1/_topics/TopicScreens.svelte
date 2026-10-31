@@ -17,6 +17,7 @@
     frame,
     labels,
     screen,
+    steadyHead = false,
   }: {
     title: string;
     kicker?: string;
@@ -24,6 +25,8 @@
     frame?: TopicFrame;
     labels: string[];
     screen: Snippet<[number]>;
+    /** Keep the header the same on every screen (GuideScreens). */
+    steadyHead?: boolean;
   } = $props();
 </script>
 
@@ -37,6 +40,7 @@
     hubHref={frame?.hubHref ?? "/guide"}
     lead={lessonHref ? lessonLink : undefined}
     {screen}
+    {steadyHead}
   />
 </div>
 

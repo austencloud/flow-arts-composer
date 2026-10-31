@@ -208,11 +208,57 @@
 </div>
 
 <style>
+  /* The picture to name and its answer line stand over the board, so the
+     board's pictures give up height to them: two rows of three under it,
+     or one row of six on a landscape screen. The quiz sizes itself, so the
+     lesson and the Guide page play it alike. */
   .quiz-stage {
+    --board-wide-columns: 3;
+    --board-art: max(
+      5.5rem,
+      calc((100 * var(--lesson-vh, 1svh) - 38.5rem) / 3.4)
+    );
+    --quiz-picture: calc(1.4 * var(--board-art));
     display: grid;
     justify-items: center;
     gap: clamp(0.75rem, calc(2 * var(--lesson-vh, 1svh)), 1.5rem);
-    width: 100%;
+    width: min(100%, calc(3 * var(--board-art) + 6.5rem));
+    margin-inline: auto;
+  }
+
+  /* A phone's board is names only, so the picture takes the height. */
+  @media (max-width: 30rem) {
+    .quiz-stage {
+      --quiz-picture: max(
+        8rem,
+        min(16rem, calc(100 * var(--lesson-vh, 1svh) - 37.5rem))
+      );
+      width: 100%;
+    }
+  }
+
+  @media (min-aspect-ratio: 3 / 2) {
+    .quiz-stage {
+      --board-wide-columns: 6;
+      --board-art: max(
+        6rem,
+        calc((100 * var(--lesson-vh, 1svh) - 35rem) / 2.4)
+      );
+      /* The board turns six across only from 56rem wide. */
+      width: min(100%, max(56rem, calc(6 * var(--board-art) + 9rem)));
+    }
+  }
+
+  /* A tall screen fills better with two rows of three. */
+  @media (min-aspect-ratio: 3 / 2) and (max-aspect-ratio: 11 / 5) and (min-height: 1100px) {
+    .quiz-stage {
+      --board-wide-columns: 3;
+      --board-art: max(
+        5.5rem,
+        calc((100 * var(--lesson-vh, 1svh) - 38.5rem) / 3.4)
+      );
+      width: min(100%, calc(3 * var(--board-art) + 6.5rem));
+    }
   }
 
   .mystery {

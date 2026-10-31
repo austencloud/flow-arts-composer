@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { getSequenceActionsPanelHeight } from "#lib/features/create/shared/components/sequence-actions/sequence-actions-panel-height.js";
+import {
+  DRAWER_HANDLE_FOOTPRINT,
+  fittedToolPanelHeight,
+  getSequenceActionsPanelHeight,
+} from "#lib/features/create/shared/components/sequence-actions/sequence-actions-panel-height.js";
 
 describe("Sequence Actions panel height", () => {
   it.each([
@@ -66,5 +70,29 @@ describe("Sequence Actions panel height", () => {
         hasDrilldown: true,
       })
     ).toBe(300);
+  });
+});
+
+describe("Sequence Actions fitted tool panel", () => {
+  it("leaves the drawer body as tall as the root actions, plus a pixel", () => {
+    // Body = navigation bar + tool panel - handle footprint.
+    const toolPanel = fittedToolPanelHeight({
+      contentHeight: 318,
+      navigationBarHeight: 44,
+    });
+    expect(toolPanel).toBe(318 + DRAWER_HANDLE_FOOTPRINT - 44 + 1);
+    expect(44 + toolPanel - DRAWER_HANDLE_FOOTPRINT).toBeGreaterThan(318);
+  });
+
+  it("rounds a fractional measurement up", () => {
+    expect(
+      fittedToolPanelHeight({ contentHeight: 318.4, navigationBarHeight: 44 })
+    ).toBe(Math.ceil(318.4 + DRAWER_HANDLE_FOOTPRINT - 44) + 1);
+  });
+
+  it("asks for no fit before anything is measured", () => {
+    expect(
+      fittedToolPanelHeight({ contentHeight: 0, navigationBarHeight: 44 })
+    ).toBe(0);
   });
 });

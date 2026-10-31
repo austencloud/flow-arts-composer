@@ -212,7 +212,6 @@
   let shouldUseSideBySideLayout = $state<boolean>(false);
   let error = $state<string | null>(null);
   let servicesInitialized = $state<boolean>(false);
-  let initProgress = $state<string>("");
   let WorkspaceLayout = $state<
     (typeof import("./StandardWorkspaceLayout.svelte"))["default"] | null
   >(null);
@@ -552,7 +551,6 @@
             });
         }
         const initStart = performance.now();
-        initProgress = t("create_ui_resolving_services");
         const { getCreateModuleInitializer } = await bootProfiler.measureAsync(
           "create:initializer-import",
           () =>
@@ -565,7 +563,6 @@
             undoManager.restoreDraftHistory(mode, sessionId, history),
         });
 
-        initProgress = t("create_ui_initializing_workspace");
         const result = await bootProfiler.measureAsync(
           "create:initialize",
           () => initService.initialize()
@@ -1158,7 +1155,6 @@
           {:else}
             <div class="create-tab create-loading">
               <IndeterminateBar height={3} position="top" />
-              <p class="init-status">{t("create_ui_initializing_workspace")}</p>
             </div>
           {/if}
         </div>
@@ -1240,9 +1236,6 @@
         <!-- Loading state while async initialization completes -->
         <div class="create-tab create-loading">
           <IndeterminateBar height={3} position="top" />
-          {#if initProgress}
-            <p class="init-status">{initProgress}</p>
-          {/if}
         </div>
       {/if}
     </div>
@@ -1303,11 +1296,5 @@
   .create-loading {
     align-items: center;
     justify-content: center;
-  }
-
-  .init-status {
-    margin: 0;
-    font-size: var(--font-size-sm, 13px);
-    color: var(--theme-text-dim, rgba(255, 255, 255, 0.5));
   }
 </style>

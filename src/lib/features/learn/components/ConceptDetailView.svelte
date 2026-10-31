@@ -72,7 +72,9 @@ Supports two navigation modes:
   let arrivedFrom = $state<string | null>(null);
   let readingOpen = $state(false);
   const hasInlineReading = $derived(
-    concept.id === "grid" || concept.id === "hand-placements"
+    concept.id === "grid" ||
+      concept.id === "hand-placements" ||
+      concept.id === "hand-motions-intro"
   );
 
   // Check if concept is completed (enables scroll mode)

@@ -1056,6 +1056,8 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
       "S is the pro/pro quarter-same letter",
       "T is the anti/anti quarter-same letter",
       "U and V split the hybrid case by which motion leads",
+      "U leads with pro, the round motion, and is shaped like a U; V leads with anti, the spiky motion, and is shaped like a V",
+      "Quarter-same comes last (after quarter-opposite, M to R) because it is the only group that needs four letters; that placement gives U and V their round-and-spiky reading, so the same/opposite alternation of the timing groups deliberately ends opposite, then same",
     ],
     relatedTerms: [
       "quarter-opposite",

@@ -73,8 +73,6 @@ export interface VillageRules {
 		practiceTicks: number;
 		// Proficiency gained per tick of practising or performing a sequence.
 		rehearsalGainPerTick: number;
-		performTicksAdult: number;
-		performTicksElder: number;
 		watchTicks: number;
 		mourningTicks: number;
 		giftSociabilityMin: number;
@@ -97,24 +95,19 @@ export interface VillageRules {
 		// a teacher at 0 proficiency still teaches at this fraction of full.
 		teacherQualityFloor: number;
 	};
-	// The lesson's choreography; see LessonComponent. Step timing is
-	// teaching.ticksPerStep.
+	// The lesson's choreography; see LessonComponent. A step is one beat:
+	// teaching.ticksPerStep must be one beat at performance.tempoBpm.
 	lesson: {
 		// Times the teacher plays the whole sequence before the learner joins.
 		demonstratePasses: number;
-		// How many steps the learner copies behind the teacher.
-		followSteps: number;
-		// How long both stop after a fumble before the teacher leads again.
-		fumbleTicks: number;
+		// Passes the learner sits out after a slip before joining in again.
+		sitOutPasses: number;
 		// The pause of recognition once the learner has it.
 		recognitionTicks: number;
 		// Times the learner plays the sequence alone at the end.
 		soloPasses: number;
 		// Scales the progress a learner makes for each step copied cleanly.
 		progressPerStep: number;
-		// For renderers: the stumbling learner plays the missed step at this
-		// share of the lesson's tempo. The sim's timing does not depend on it.
-		fumbleTempo: number;
 	};
 	// How an elder spends their last moments.
 	passing: {
@@ -138,7 +131,22 @@ export interface VillageRules {
 		structuralBonusPerTransform: number;
 		structuralBonusMax: number;
 	};
-	performance: { attractionRadius: number; minWatcherCuriosity: number };
+	// A performance is a phrase plan (engine/village-performance.ts).
+	performance: {
+		attractionRadius: number;
+		minWatcherCuriosity: number;
+		tempoBpm: number;
+		// How long a performance runs, in beats, before it is cut at its
+		// first jump between phrases.
+		beatsAdult: number;
+		beatsElder: number;
+		// Proficiency gained per beat played.
+		gainPerBeat: number;
+		// How far a performer may walk from where they started.
+		areaRadius: number;
+		// Room kept between a walking performer and the seats round the fire.
+		seatClearance: number;
+	};
 	funeral: { radius: number; panicCuriosityMin: number; panicRadiusScale: number };
 	monument: { generationThreshold: number };
 	proximityLearning: {
@@ -287,8 +295,6 @@ const NUMERIC_FIELDS: { [G in NumericGroup]: (keyof VillageRules[G])[] } = {
 		"socializeTicks",
 		"practiceTicks",
 		"rehearsalGainPerTick",
-		"performTicksAdult",
-		"performTicksElder",
 		"watchTicks",
 		"mourningTicks",
 		"giftSociabilityMin",
@@ -311,12 +317,10 @@ const NUMERIC_FIELDS: { [G in NumericGroup]: (keyof VillageRules[G])[] } = {
 	],
 	lesson: [
 		"demonstratePasses",
-		"followSteps",
-		"fumbleTicks",
+		"sitOutPasses",
 		"recognitionTicks",
 		"soloPasses",
 		"progressPerStep",
-		"fumbleTempo",
 	],
 	passing: ["retireAge", "walkSpeed", "studentRadius", "studentStandRadius", "studentSpacing"],
 	decay: [
@@ -328,7 +332,16 @@ const NUMERIC_FIELDS: { [G in NumericGroup]: (keyof VillageRules[G])[] } = {
 		"structuralBonusPerTransform",
 		"structuralBonusMax",
 	],
-	performance: ["attractionRadius", "minWatcherCuriosity"],
+	performance: [
+		"attractionRadius",
+		"minWatcherCuriosity",
+		"tempoBpm",
+		"beatsAdult",
+		"beatsElder",
+		"gainPerBeat",
+		"areaRadius",
+		"seatClearance",
+	],
 	funeral: ["radius", "panicCuriosityMin", "panicRadiusScale"],
 	monument: ["generationThreshold"],
 	proximityLearning: ["radius", "absorptionRate", "absorptionThreshold"],
@@ -412,6 +425,15 @@ export function parseVillageRules(raw: unknown): VillageRules {
 	const { preRunTicks, fumbleAtStep, clearTicks } = rules.prologue;
 	if (!Number.isInteger(preRunTicks) || !Number.isInteger(fumbleAtStep) || !Number.isInteger(clearTicks)) {
 		throw new VillageRulesError("prologue tick and step counts must be whole numbers");
+	}
+	const beatTicks = (rules.ticksPerSecond * 60) / rules.performance.tempoBpm;
+	if (Math.abs(rules.teaching.ticksPerStep - beatTicks) > 1e-9) {
+		throw new VillageRulesError(
+			`teaching.ticksPerStep must be one beat at performance.tempoBpm (${beatTicks} ticks)`,
+		);
+	}
+	if (!Number.isInteger(rules.lesson.sitOutPasses)) {
+		throw new VillageRulesError("lesson.sitOutPasses must be a whole number");
 	}
 	const ring = rules.campfire;
 	const { lessonDistance } = rules.prologue;

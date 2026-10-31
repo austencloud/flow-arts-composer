@@ -1,3 +1,5 @@
+import type { PhrasePoint, ScheduledPhrase } from "#lib/features/flow-fest-sim/domain/flow-fest-phrase-brain.js";
+
 export interface IdentityComponent {
 	name: string;
 	// Founders are 1. A newborn is one more than the oldest generation still
@@ -69,11 +71,13 @@ export type AvatarBehaviorState =
 	| "attending";
 
 /**
- * Where a lesson is. The teacher shows the whole sequence while the learner
- * watches; then the learner copies it one step behind, mirrored as a person
- * facing them would; a fumble stops both for a moment and the teacher leads
- * again from the step that was missed; once the learner has it, both pause,
- * and the learner plays it once alone while the teacher watches.
+ * Where a lesson is, all of it at the village's tempo (domain/village-lesson.ts).
+ * The teacher plays the whole sequence while the learner watches; then the
+ * learner joins in on a pass boundary, in unison and mirrored as a person
+ * facing them would. A fumble is a slip: the learner plays on to the end of
+ * that pass, sits out the next while the teacher carries on, and joins in
+ * again. Once the learner has it, both stop at the end of a pass, and the
+ * learner plays it once alone while the teacher watches.
  */
 export type LessonPhase = "demonstrate" | "mirror" | "fumble" | "recognition" | "solo";
 
@@ -83,11 +87,16 @@ export interface LessonComponent {
 	clock: number;
 	// Steps in the sequence being taught.
 	stepCount: number;
-	// The teacher's step count at the start of this run of the mirror phase.
-	// Starts at 0 and moves to the missed step after each fumble.
-	leadFrom: number;
-	// The learner step that was fumbled; the restart begins here.
-	missedStep: number;
+	// Beats in one pass: the steps, plus a beat held on the end pose when the
+	// sequence does not end where it starts.
+	passSteps: number;
+	// Mirror and fumble: the first pass the learner plays (again).
+	joinPass: number;
+	// The pass a slip fell in, which the learner plays on to its end; null
+	// once they have rejoined.
+	slipPass: number | null;
+	// Steps the learner has started in the mirror phase, slips included.
+	learnerSteps: number;
 	// Set only for the staged opening lesson: it fumbles once, on this
 	// learner step, never by chance, and cannot end before that fumble.
 	script: LessonScript | null;
@@ -111,6 +120,25 @@ export interface SocialComponent {
 	frustrationLevel: number;
 	idleTimer: number;
 	interactionCooldown: number;
+	// The phrase plan being played while performing; null otherwise.
+	performance: VillagePerformance | null;
+}
+
+/**
+ * A performance: phrases planned by the phrase brain (engine/village-
+ * performance.ts) from where the performer stood at `startTick`, played at
+ * `tempoBpm` for `beats` beats. The phrases' positions and facings are in
+ * the sim's frame; `home` is where it started.
+ */
+export interface VillagePerformance {
+	startTick: number;
+	tempoBpm: number;
+	beats: number;
+	seed: number;
+	home: PhrasePoint;
+	areaRadius: number;
+	outwardYaw: number;
+	phrases: ScheduledPhrase[];
 }
 
 export interface VillageTransformComponent {

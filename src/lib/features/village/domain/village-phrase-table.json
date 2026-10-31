@@ -1,0 +1,1300 @@
+{
+	"version": 1,
+	"entries": {
+		"performer-cave-seq": {
+			"beats": 4,
+			"tags": {
+				"totalTurns": 0,
+				"difficulty": 0,
+				"kind": "spin",
+				"motionCounts": {
+					"pro": 4,
+					"anti": 4,
+					"float": 0,
+					"dash": 0,
+					"static": 0
+				}
+			},
+			"joins": {
+				"start": {
+					"left": {
+						"location": "w",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "e",
+						"orientation": "in"
+					}
+				},
+				"end": {
+					"left": {
+						"location": "w",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "e",
+						"orientation": "in"
+					}
+				}
+			}
+		},
+		"gallery-spiral-seq": {
+			"beats": 4,
+			"tags": {
+				"totalTurns": 0,
+				"difficulty": 0.058,
+				"kind": "pass",
+				"motionCounts": {
+					"pro": 3,
+					"anti": 3,
+					"float": 0,
+					"dash": 2,
+					"static": 0
+				}
+			},
+			"joins": {
+				"start": {
+					"left": {
+						"location": "w",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "e",
+						"orientation": "in"
+					}
+				},
+				"end": {
+					"left": {
+						"location": "n",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "s",
+						"orientation": "out"
+					}
+				}
+			}
+		},
+		"gallery-scribes-seq": {
+			"beats": 4,
+			"tags": {
+				"totalTurns": 0,
+				"difficulty": 0.05,
+				"kind": "figure-eight",
+				"motionCounts": {
+					"pro": 3,
+					"anti": 5,
+					"float": 0,
+					"dash": 0,
+					"static": 0
+				}
+			},
+			"joins": {
+				"start": {
+					"left": {
+						"location": "e",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "e",
+						"orientation": "in"
+					}
+				},
+				"end": {
+					"left": {
+						"location": "e",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "e",
+						"orientation": "out"
+					}
+				}
+			}
+		},
+		"gallery-practice-seq": {
+			"beats": 3,
+			"tags": {
+				"totalTurns": 0,
+				"difficulty": 0.033,
+				"kind": "pass",
+				"motionCounts": {
+					"pro": 2,
+					"anti": 2,
+					"float": 0,
+					"dash": 2,
+					"static": 0
+				}
+			},
+			"joins": {
+				"start": {
+					"left": {
+						"location": "w",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "e",
+						"orientation": "in"
+					}
+				},
+				"end": {
+					"left": {
+						"location": "w",
+						"orientation": "out"
+					},
+					"right": {
+						"location": "e",
+						"orientation": "out"
+					}
+				}
+			}
+		},
+		"codex-ooga-seq": {
+			"beats": 6,
+			"tags": {
+				"totalTurns": 0,
+				"difficulty": 0.05,
+				"kind": "other",
+				"motionCounts": {
+					"pro": 9,
+					"anti": 2,
+					"float": 0,
+					"dash": 0,
+					"static": 1
+				}
+			},
+			"joins": {
+				"start": {
+					"left": {
+						"location": "n",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "e",
+						"orientation": "in"
+					}
+				},
+				"end": {
+					"left": {
+						"location": "s",
+						"orientation": "out"
+					},
+					"right": {
+						"location": "n",
+						"orientation": "out"
+					}
+				}
+			}
+		},
+		"performer-cave-seq:mirror": {
+			"beats": 4,
+			"tags": {
+				"totalTurns": 0,
+				"difficulty": 0,
+				"kind": "spin",
+				"motionCounts": {
+					"pro": 4,
+					"anti": 4,
+					"float": 0,
+					"dash": 0,
+					"static": 0
+				}
+			},
+			"joins": {
+				"start": {
+					"left": {
+						"location": "e",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "w",
+						"orientation": "in"
+					}
+				},
+				"end": {
+					"left": {
+						"location": "e",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "w",
+						"orientation": "in"
+					}
+				}
+			}
+		},
+		"performer-cave-seq:flip": {
+			"beats": 4,
+			"tags": {
+				"totalTurns": 0,
+				"difficulty": 0,
+				"kind": "spin",
+				"motionCounts": {
+					"pro": 4,
+					"anti": 4,
+					"float": 0,
+					"dash": 0,
+					"static": 0
+				}
+			},
+			"joins": {
+				"start": {
+					"left": {
+						"location": "w",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "e",
+						"orientation": "in"
+					}
+				},
+				"end": {
+					"left": {
+						"location": "w",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "e",
+						"orientation": "in"
+					}
+				}
+			}
+		},
+		"performer-cave-seq:rotate": {
+			"beats": 4,
+			"tags": {
+				"totalTurns": 0,
+				"difficulty": 0,
+				"kind": "spin",
+				"motionCounts": {
+					"pro": 4,
+					"anti": 4,
+					"float": 0,
+					"dash": 0,
+					"static": 0
+				}
+			},
+			"joins": {
+				"start": {
+					"left": {
+						"location": "n",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "s",
+						"orientation": "in"
+					}
+				},
+				"end": {
+					"left": {
+						"location": "n",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "s",
+						"orientation": "in"
+					}
+				}
+			}
+		},
+		"performer-cave-seq:swap": {
+			"beats": 4,
+			"tags": {
+				"totalTurns": 0,
+				"difficulty": 0,
+				"kind": "spin",
+				"motionCounts": {
+					"pro": 4,
+					"anti": 4,
+					"float": 0,
+					"dash": 0,
+					"static": 0
+				}
+			},
+			"joins": {
+				"start": {
+					"left": {
+						"location": "e",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "w",
+						"orientation": "in"
+					}
+				},
+				"end": {
+					"left": {
+						"location": "e",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "w",
+						"orientation": "in"
+					}
+				}
+			}
+		},
+		"performer-cave-seq:invert": {
+			"beats": 4,
+			"tags": {
+				"totalTurns": 0,
+				"difficulty": 0,
+				"kind": "spin",
+				"motionCounts": {
+					"pro": 4,
+					"anti": 4,
+					"float": 0,
+					"dash": 0,
+					"static": 0
+				}
+			},
+			"joins": {
+				"start": {
+					"left": {
+						"location": "w",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "e",
+						"orientation": "in"
+					}
+				},
+				"end": {
+					"left": {
+						"location": "w",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "e",
+						"orientation": "in"
+					}
+				}
+			}
+		},
+		"performer-cave-seq:rewind": {
+			"beats": 4,
+			"tags": {
+				"totalTurns": 0,
+				"difficulty": 0,
+				"kind": "spin",
+				"motionCounts": {
+					"pro": 4,
+					"anti": 4,
+					"float": 0,
+					"dash": 0,
+					"static": 0
+				}
+			},
+			"joins": {
+				"start": {
+					"left": {
+						"location": "w",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "e",
+						"orientation": "in"
+					}
+				},
+				"end": {
+					"left": {
+						"location": "w",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "e",
+						"orientation": "in"
+					}
+				}
+			}
+		},
+		"gallery-spiral-seq:mirror": {
+			"beats": 4,
+			"tags": {
+				"totalTurns": 0,
+				"difficulty": 0.058,
+				"kind": "pass",
+				"motionCounts": {
+					"pro": 3,
+					"anti": 3,
+					"float": 0,
+					"dash": 2,
+					"static": 0
+				}
+			},
+			"joins": {
+				"start": {
+					"left": {
+						"location": "e",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "w",
+						"orientation": "in"
+					}
+				},
+				"end": {
+					"left": {
+						"location": "n",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "s",
+						"orientation": "out"
+					}
+				}
+			}
+		},
+		"gallery-spiral-seq:flip": {
+			"beats": 4,
+			"tags": {
+				"totalTurns": 0,
+				"difficulty": 0.058,
+				"kind": "pass",
+				"motionCounts": {
+					"pro": 3,
+					"anti": 3,
+					"float": 0,
+					"dash": 2,
+					"static": 0
+				}
+			},
+			"joins": {
+				"start": {
+					"left": {
+						"location": "w",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "e",
+						"orientation": "in"
+					}
+				},
+				"end": {
+					"left": {
+						"location": "s",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "n",
+						"orientation": "out"
+					}
+				}
+			}
+		},
+		"gallery-spiral-seq:rotate": {
+			"beats": 4,
+			"tags": {
+				"totalTurns": 0,
+				"difficulty": 0.058,
+				"kind": "pass",
+				"motionCounts": {
+					"pro": 3,
+					"anti": 3,
+					"float": 0,
+					"dash": 2,
+					"static": 0
+				}
+			},
+			"joins": {
+				"start": {
+					"left": {
+						"location": "n",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "s",
+						"orientation": "in"
+					}
+				},
+				"end": {
+					"left": {
+						"location": "e",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "w",
+						"orientation": "out"
+					}
+				}
+			}
+		},
+		"gallery-spiral-seq:swap": {
+			"beats": 4,
+			"tags": {
+				"totalTurns": 0,
+				"difficulty": 0.058,
+				"kind": "pass",
+				"motionCounts": {
+					"pro": 3,
+					"anti": 3,
+					"float": 0,
+					"dash": 2,
+					"static": 0
+				}
+			},
+			"joins": {
+				"start": {
+					"left": {
+						"location": "e",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "w",
+						"orientation": "in"
+					}
+				},
+				"end": {
+					"left": {
+						"location": "s",
+						"orientation": "out"
+					},
+					"right": {
+						"location": "n",
+						"orientation": "in"
+					}
+				}
+			}
+		},
+		"gallery-spiral-seq:invert": {
+			"beats": 4,
+			"tags": {
+				"totalTurns": 0,
+				"difficulty": 0.058,
+				"kind": "pass",
+				"motionCounts": {
+					"pro": 3,
+					"anti": 3,
+					"float": 0,
+					"dash": 2,
+					"static": 0
+				}
+			},
+			"joins": {
+				"start": {
+					"left": {
+						"location": "w",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "e",
+						"orientation": "in"
+					}
+				},
+				"end": {
+					"left": {
+						"location": "n",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "s",
+						"orientation": "out"
+					}
+				}
+			}
+		},
+		"gallery-spiral-seq:rewind": {
+			"beats": 4,
+			"tags": {
+				"totalTurns": 0,
+				"difficulty": 0.058,
+				"kind": "pass",
+				"motionCounts": {
+					"pro": 3,
+					"anti": 3,
+					"float": 0,
+					"dash": 2,
+					"static": 0
+				}
+			},
+			"joins": {
+				"start": {
+					"left": {
+						"location": "n",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "s",
+						"orientation": "out"
+					}
+				},
+				"end": {
+					"left": {
+						"location": "w",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "e",
+						"orientation": "in"
+					}
+				}
+			}
+		},
+		"gallery-scribes-seq:mirror": {
+			"beats": 4,
+			"tags": {
+				"totalTurns": 0,
+				"difficulty": 0.05,
+				"kind": "figure-eight",
+				"motionCounts": {
+					"pro": 3,
+					"anti": 5,
+					"float": 0,
+					"dash": 0,
+					"static": 0
+				}
+			},
+			"joins": {
+				"start": {
+					"left": {
+						"location": "w",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "w",
+						"orientation": "in"
+					}
+				},
+				"end": {
+					"left": {
+						"location": "w",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "w",
+						"orientation": "out"
+					}
+				}
+			}
+		},
+		"gallery-scribes-seq:flip": {
+			"beats": 4,
+			"tags": {
+				"totalTurns": 0,
+				"difficulty": 0.05,
+				"kind": "figure-eight",
+				"motionCounts": {
+					"pro": 3,
+					"anti": 5,
+					"float": 0,
+					"dash": 0,
+					"static": 0
+				}
+			},
+			"joins": {
+				"start": {
+					"left": {
+						"location": "e",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "e",
+						"orientation": "in"
+					}
+				},
+				"end": {
+					"left": {
+						"location": "e",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "e",
+						"orientation": "out"
+					}
+				}
+			}
+		},
+		"gallery-scribes-seq:rotate": {
+			"beats": 4,
+			"tags": {
+				"totalTurns": 0,
+				"difficulty": 0.05,
+				"kind": "figure-eight",
+				"motionCounts": {
+					"pro": 3,
+					"anti": 5,
+					"float": 0,
+					"dash": 0,
+					"static": 0
+				}
+			},
+			"joins": {
+				"start": {
+					"left": {
+						"location": "s",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "s",
+						"orientation": "in"
+					}
+				},
+				"end": {
+					"left": {
+						"location": "s",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "s",
+						"orientation": "out"
+					}
+				}
+			}
+		},
+		"gallery-scribes-seq:swap": {
+			"beats": 4,
+			"tags": {
+				"totalTurns": 0,
+				"difficulty": 0.05,
+				"kind": "figure-eight",
+				"motionCounts": {
+					"pro": 3,
+					"anti": 5,
+					"float": 0,
+					"dash": 0,
+					"static": 0
+				}
+			},
+			"joins": {
+				"start": {
+					"left": {
+						"location": "e",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "e",
+						"orientation": "in"
+					}
+				},
+				"end": {
+					"left": {
+						"location": "e",
+						"orientation": "out"
+					},
+					"right": {
+						"location": "e",
+						"orientation": "in"
+					}
+				}
+			}
+		},
+		"gallery-scribes-seq:invert": {
+			"beats": 4,
+			"tags": {
+				"totalTurns": 0,
+				"difficulty": 0.05,
+				"kind": "figure-eight",
+				"motionCounts": {
+					"pro": 5,
+					"anti": 3,
+					"float": 0,
+					"dash": 0,
+					"static": 0
+				}
+			},
+			"joins": {
+				"start": {
+					"left": {
+						"location": "e",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "e",
+						"orientation": "in"
+					}
+				},
+				"end": {
+					"left": {
+						"location": "e",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "e",
+						"orientation": "out"
+					}
+				}
+			}
+		},
+		"gallery-scribes-seq:rewind": {
+			"beats": 4,
+			"tags": {
+				"totalTurns": 0,
+				"difficulty": 0.05,
+				"kind": "figure-eight",
+				"motionCounts": {
+					"pro": 3,
+					"anti": 5,
+					"float": 0,
+					"dash": 0,
+					"static": 0
+				}
+			},
+			"joins": {
+				"start": {
+					"left": {
+						"location": "e",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "e",
+						"orientation": "out"
+					}
+				},
+				"end": {
+					"left": {
+						"location": "e",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "e",
+						"orientation": "in"
+					}
+				}
+			}
+		},
+		"gallery-practice-seq:mirror": {
+			"beats": 3,
+			"tags": {
+				"totalTurns": 0,
+				"difficulty": 0.033,
+				"kind": "pass",
+				"motionCounts": {
+					"pro": 2,
+					"anti": 2,
+					"float": 0,
+					"dash": 2,
+					"static": 0
+				}
+			},
+			"joins": {
+				"start": {
+					"left": {
+						"location": "e",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "w",
+						"orientation": "in"
+					}
+				},
+				"end": {
+					"left": {
+						"location": "e",
+						"orientation": "out"
+					},
+					"right": {
+						"location": "w",
+						"orientation": "out"
+					}
+				}
+			}
+		},
+		"gallery-practice-seq:flip": {
+			"beats": 3,
+			"tags": {
+				"totalTurns": 0,
+				"difficulty": 0.033,
+				"kind": "pass",
+				"motionCounts": {
+					"pro": 2,
+					"anti": 2,
+					"float": 0,
+					"dash": 2,
+					"static": 0
+				}
+			},
+			"joins": {
+				"start": {
+					"left": {
+						"location": "w",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "e",
+						"orientation": "in"
+					}
+				},
+				"end": {
+					"left": {
+						"location": "w",
+						"orientation": "out"
+					},
+					"right": {
+						"location": "e",
+						"orientation": "out"
+					}
+				}
+			}
+		},
+		"gallery-practice-seq:rotate": {
+			"beats": 3,
+			"tags": {
+				"totalTurns": 0,
+				"difficulty": 0.033,
+				"kind": "pass",
+				"motionCounts": {
+					"pro": 2,
+					"anti": 2,
+					"float": 0,
+					"dash": 2,
+					"static": 0
+				}
+			},
+			"joins": {
+				"start": {
+					"left": {
+						"location": "n",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "s",
+						"orientation": "in"
+					}
+				},
+				"end": {
+					"left": {
+						"location": "n",
+						"orientation": "out"
+					},
+					"right": {
+						"location": "s",
+						"orientation": "out"
+					}
+				}
+			}
+		},
+		"gallery-practice-seq:swap": {
+			"beats": 3,
+			"tags": {
+				"totalTurns": 0,
+				"difficulty": 0.033,
+				"kind": "pass",
+				"motionCounts": {
+					"pro": 2,
+					"anti": 2,
+					"float": 0,
+					"dash": 2,
+					"static": 0
+				}
+			},
+			"joins": {
+				"start": {
+					"left": {
+						"location": "e",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "w",
+						"orientation": "in"
+					}
+				},
+				"end": {
+					"left": {
+						"location": "e",
+						"orientation": "out"
+					},
+					"right": {
+						"location": "w",
+						"orientation": "out"
+					}
+				}
+			}
+		},
+		"gallery-practice-seq:invert": {
+			"beats": 3,
+			"tags": {
+				"totalTurns": 0,
+				"difficulty": 0.033,
+				"kind": "pass",
+				"motionCounts": {
+					"pro": 2,
+					"anti": 2,
+					"float": 0,
+					"dash": 2,
+					"static": 0
+				}
+			},
+			"joins": {
+				"start": {
+					"left": {
+						"location": "w",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "e",
+						"orientation": "in"
+					}
+				},
+				"end": {
+					"left": {
+						"location": "w",
+						"orientation": "out"
+					},
+					"right": {
+						"location": "e",
+						"orientation": "out"
+					}
+				}
+			}
+		},
+		"gallery-practice-seq:rewind": {
+			"beats": 3,
+			"tags": {
+				"totalTurns": 0,
+				"difficulty": 0.033,
+				"kind": "pass",
+				"motionCounts": {
+					"pro": 2,
+					"anti": 2,
+					"float": 0,
+					"dash": 2,
+					"static": 0
+				}
+			},
+			"joins": {
+				"start": {
+					"left": {
+						"location": "w",
+						"orientation": "out"
+					},
+					"right": {
+						"location": "e",
+						"orientation": "out"
+					}
+				},
+				"end": {
+					"left": {
+						"location": "w",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "e",
+						"orientation": "in"
+					}
+				}
+			}
+		},
+		"codex-ooga-seq:mirror": {
+			"beats": 6,
+			"tags": {
+				"totalTurns": 0,
+				"difficulty": 0.05,
+				"kind": "other",
+				"motionCounts": {
+					"pro": 9,
+					"anti": 2,
+					"float": 0,
+					"dash": 0,
+					"static": 1
+				}
+			},
+			"joins": {
+				"start": {
+					"left": {
+						"location": "n",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "w",
+						"orientation": "in"
+					}
+				},
+				"end": {
+					"left": {
+						"location": "s",
+						"orientation": "out"
+					},
+					"right": {
+						"location": "n",
+						"orientation": "out"
+					}
+				}
+			}
+		},
+		"codex-ooga-seq:flip": {
+			"beats": 6,
+			"tags": {
+				"totalTurns": 0,
+				"difficulty": 0.05,
+				"kind": "other",
+				"motionCounts": {
+					"pro": 9,
+					"anti": 2,
+					"float": 0,
+					"dash": 0,
+					"static": 1
+				}
+			},
+			"joins": {
+				"start": {
+					"left": {
+						"location": "s",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "e",
+						"orientation": "in"
+					}
+				},
+				"end": {
+					"left": {
+						"location": "n",
+						"orientation": "out"
+					},
+					"right": {
+						"location": "s",
+						"orientation": "out"
+					}
+				}
+			}
+		},
+		"codex-ooga-seq:rotate": {
+			"beats": 6,
+			"tags": {
+				"totalTurns": 0,
+				"difficulty": 0.05,
+				"kind": "other",
+				"motionCounts": {
+					"pro": 9,
+					"anti": 2,
+					"float": 0,
+					"dash": 0,
+					"static": 1
+				}
+			},
+			"joins": {
+				"start": {
+					"left": {
+						"location": "e",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "s",
+						"orientation": "in"
+					}
+				},
+				"end": {
+					"left": {
+						"location": "w",
+						"orientation": "out"
+					},
+					"right": {
+						"location": "e",
+						"orientation": "out"
+					}
+				}
+			}
+		},
+		"codex-ooga-seq:swap": {
+			"beats": 6,
+			"tags": {
+				"totalTurns": 0,
+				"difficulty": 0.05,
+				"kind": "other",
+				"motionCounts": {
+					"pro": 9,
+					"anti": 2,
+					"float": 0,
+					"dash": 0,
+					"static": 1
+				}
+			},
+			"joins": {
+				"start": {
+					"left": {
+						"location": "e",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "n",
+						"orientation": "in"
+					}
+				},
+				"end": {
+					"left": {
+						"location": "n",
+						"orientation": "out"
+					},
+					"right": {
+						"location": "s",
+						"orientation": "out"
+					}
+				}
+			}
+		},
+		"codex-ooga-seq:invert": {
+			"beats": 6,
+			"tags": {
+				"totalTurns": 0,
+				"difficulty": 0.05,
+				"kind": "other",
+				"motionCounts": {
+					"pro": 2,
+					"anti": 9,
+					"float": 0,
+					"dash": 0,
+					"static": 1
+				}
+			},
+			"joins": {
+				"start": {
+					"left": {
+						"location": "n",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "e",
+						"orientation": "in"
+					}
+				},
+				"end": {
+					"left": {
+						"location": "s",
+						"orientation": "out"
+					},
+					"right": {
+						"location": "n",
+						"orientation": "out"
+					}
+				}
+			}
+		},
+		"codex-ooga-seq:rewind": {
+			"beats": 6,
+			"tags": {
+				"totalTurns": 0,
+				"difficulty": 0.05,
+				"kind": "other",
+				"motionCounts": {
+					"pro": 9,
+					"anti": 2,
+					"float": 0,
+					"dash": 0,
+					"static": 1
+				}
+			},
+			"joins": {
+				"start": {
+					"left": {
+						"location": "s",
+						"orientation": "out"
+					},
+					"right": {
+						"location": "n",
+						"orientation": "out"
+					}
+				},
+				"end": {
+					"left": {
+						"location": "n",
+						"orientation": "in"
+					},
+					"right": {
+						"location": "e",
+						"orientation": "in"
+					}
+				}
+			}
+		}
+	}
+}

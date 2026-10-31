@@ -29,6 +29,8 @@
   interface Props {
     hasSequence: boolean;
     fillAvailableHeight?: boolean;
+    /** The toolbar's rendered height, so the drawer can fit itself to it. */
+    renderedHeight?: number;
     initialCategory?: Category;
     persistCategory?: boolean;
     hasSelection: boolean;
@@ -64,6 +66,7 @@
   let {
     hasSequence,
     fillAvailableHeight = false,
+    renderedHeight = $bindable(0),
     initialCategory,
     persistCategory = true,
     hasSelection = false,
@@ -323,7 +326,11 @@
   }
 </script>
 
-<div class="mobile-toolbar" class:fill-available-height={fillAvailableHeight}>
+<div
+  class="mobile-toolbar"
+  class:fill-available-height={fillAvailableHeight}
+  bind:offsetHeight={renderedHeight}
+>
   <!-- Segmented category tabs -->
   <div
     class="category-tabs"
@@ -394,23 +401,28 @@
     padding: 4px 8px 8px;
   }
 
+  /* Above the workspace the toolbar keeps its natural height and the drawer
+     fits itself to it, so the step grid gets the rest instead of a void under
+     the tiles. Every category reserves Transform's two rows, so switching
+     tabs never moves the drawer edge. A drawer too short for that (a short
+     landscape stack) squeezes the rows toward a touch-and-a-half tile. */
   .mobile-toolbar.fill-available-height {
-    flex: 1 1 auto;
+    flex: 0 1 auto;
     min-height: 0;
     width: min(100%, 40rem);
     align-self: center;
-    justify-content: flex-start;
-    container-type: size;
   }
 
-  /* Rows grow with the drawer so a tall tablet drawer is not two short rows
-     over a void, capped so a phone-size tile stays a tile, not a billboard. */
   .mobile-toolbar.fill-available-height .action-grid {
-    grid-auto-rows: clamp(
-      calc(var(--min-touch-target) * 1.5),
-      26cqh,
-      calc(var(--min-touch-target) * 2.75)
+    flex: 0 1 auto;
+    grid-template-rows: repeat(
+      2,
+      minmax(
+        calc(var(--min-touch-target) * 1.5),
+        calc(var(--min-touch-target) * 2.25)
+      )
     );
+    grid-auto-rows: calc(var(--min-touch-target) * 1.5);
   }
 
   /* Segmented category tabs */

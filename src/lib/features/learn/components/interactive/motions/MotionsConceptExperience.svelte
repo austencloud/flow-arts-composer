@@ -41,6 +41,7 @@
   import LessonStageFrame from "../LessonStageFrame.svelte";
   import LessonStageHeading from "../LessonStageHeading.svelte";
   import {
+    HAND_MOTIONS_SCHEMA_KEY,
     HAND_MOTIONS_STAGE_COUNT,
     HAND_MOTIONS_STAGE_SCHEMA_VERSION,
     migrateHandMotionsSavedStep,
@@ -93,7 +94,7 @@
   const haptic = getHapticFeedback();
   const persistence = getExperiencePersistence("hand-motions-intro");
   const saved = persistence.load();
-  const schemaKey = "stageSchemaVersion";
+  const schemaKey = HAND_MOTIONS_SCHEMA_KEY;
   const savedSchemaVersion = persistence.getPhaseData(schemaKey, 1);
   const savedStep = migrateHandMotionsSavedStep(saved.step, savedSchemaVersion);
   const current = savedSchemaVersion >= HAND_MOTIONS_STAGE_SCHEMA_VERSION;
@@ -557,40 +558,6 @@
   @media (min-aspect-ratio: 3 / 2) and (max-aspect-ratio: 11 / 5) and (min-height: 1100px) {
     .board-stage {
       --board-wide-columns: 3;
-      width: min(100%, calc(3 * var(--board-art) + 6.5rem));
-    }
-  }
-
-  /* The quiz puts the picture to name and its answer line over the board,
-     so the board's pictures give up height to them: two rows of three under
-     it, or one row of six on a landscape screen. */
-  .board-stage.quiz {
-    --board-art: max(5.5rem, calc((100 * var(--lesson-vh) - 38.5rem) / 3.4));
-    --quiz-picture: calc(1.4 * var(--board-art));
-    width: min(100%, calc(3 * var(--board-art) + 6.5rem));
-  }
-
-  /* A phone's board is names only, so the picture takes the height. */
-  @media (max-width: 30rem) {
-    .board-stage.quiz {
-      --quiz-picture: max(
-        8rem,
-        min(16rem, calc(100 * var(--lesson-vh) - 37.5rem))
-      );
-      width: 100%;
-    }
-  }
-
-  @media (min-aspect-ratio: 3 / 2) {
-    .board-stage.quiz {
-      --board-art: max(6rem, calc((100 * var(--lesson-vh) - 35rem) / 2.4));
-      width: min(100%, calc(6 * var(--board-art) + 9rem));
-    }
-  }
-
-  @media (min-aspect-ratio: 3 / 2) and (max-aspect-ratio: 11 / 5) and (min-height: 1100px) {
-    .board-stage.quiz {
-      --board-art: max(5.5rem, calc((100 * var(--lesson-vh) - 38.5rem) / 3.4));
       width: min(100%, calc(3 * var(--board-art) + 6.5rem));
     }
   }

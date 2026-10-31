@@ -27,12 +27,14 @@
     onImageRemoved,
     disabled = false,
     isInputMode = false,
+    fillHeight = false,
     isIOSInputMode = false,
     isVoiceRecording = false,
     audioAnalyzer,
     voiceRecorder,
     onInput,
     onKeydown,
+    onBeforeInput,
     onRecordingStart,
     onRecordingEnd,
     onClearText,
@@ -53,6 +55,8 @@
     onImageRemoved?: (index: number) => void;
     disabled?: boolean;
     isInputMode?: boolean;
+    /** The textarea absorbs the parent's spare or missing height */
+    fillHeight?: boolean;
     /** iOS keyboard mode uses the visual viewport and keeps this editor bounded */
     isIOSInputMode?: boolean;
     /** Whether voice recording is active (shows waveform) */
@@ -63,6 +67,7 @@
     voiceRecorder?: VoiceRecorder;
     onInput: (value: string) => void;
     onKeydown: (event: KeyboardEvent) => void;
+    onBeforeInput?: (event: InputEvent) => void;
     onRecordingStart: (stream: MediaStream) => void;
     onRecordingEnd: (result: VoiceRecordingResult) => void;
     onClearText: () => void;
@@ -117,6 +122,7 @@
 <div
   class="field"
   class:input-mode={isInputMode}
+  class:fill-height={fillHeight}
   class:ios-input-mode={isIOSInputMode}
 >
   <label for="fb-description" class="sr-only"
@@ -150,12 +156,13 @@
       {value}
       oninput={(e) => onInput(e.currentTarget.value)}
       onkeydown={onKeydown}
+      onbeforeinput={onBeforeInput}
       onfocus={handleFocus}
       onblur={handleBlur}
-      placeholder={`${placeholder}${isTouchDevice ? "" : t("feedback_shift_enter_submit")}`}
+      placeholder={`${placeholder}${isTouchDevice ? "" : t("feedback_enter_submit_hint")}`}
       rows="6"
       inputmode="text"
-      enterkeyhint="done"
+      enterkeyhint="send"
       aria-invalid={!!error}
       aria-describedby={error ? "fb-description-error" : undefined}
     ></textarea>
@@ -574,6 +581,34 @@
     min-height: 100px;
     max-height: 100%;
     overflow-y: auto;
+  }
+
+  /* Fill mode (quick feedback sheet) - the textarea takes whatever height the
+     sheet has left, down to a floor that still shows a line of text above the
+     attach and voice buttons, then scrolls inside itself. */
+  .field.fill-height {
+    flex: 1 1 auto;
+  }
+
+  .field.fill-height .textarea-wrapper {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .field.fill-height .field-textarea {
+    flex: 1 1 auto;
+    /* Zero base height so rows="6" stops dictating the minimum; the floor
+       below is what the sheet must keep. */
+    height: 0;
+    min-height: 88px;
+    overflow-y: auto;
+  }
+
+  @media (max-height: 420px) {
+    .field.fill-height .field-textarea {
+      min-height: 52px;
+    }
   }
 
   /* A focused textarea that fills the whole pre-keyboard sheet makes Safari

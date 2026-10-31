@@ -48,6 +48,7 @@ import {
   type SequenceSelectionSnapshot,
 } from "./selection/sequence-selection-state.svelte";
 import { isStep } from "#lib/features/create/shared/domain/type-guards/pictograph-type-guards.js";
+import type { StepClickModifiers } from "#lib/features/create/shared/state/selection/grid-range-selection.js";
 import { createSequence as createSequenceData } from "#lib/shared/create/services/sequence-domain-manager.js";
 
 /**
@@ -935,10 +936,7 @@ export function createSequenceState(services: SequenceStateServices) {
       selectionState.toggleStepInMultiSelect(stepNumber),
     selectAllSteps: (stepNumbers: number[]) =>
       selectionState.selectAllSteps(stepNumbers),
-    applyClickSelection: (
-      stepNumber: number,
-      modifiers: { range: boolean; toggle: boolean }
-    ) => selectionState.applyClickSelection(stepNumber, modifiers),
+    applyClickSelection: (stepNumber: number, modifiers: StepClickModifiers) => selectionState.applyClickSelection(stepNumber, modifiers),
     get selectionAnchor() {
       return selectionState.selectionAnchor;
     },

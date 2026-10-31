@@ -3,6 +3,7 @@ import type { VillageRules } from "../../domain/village-rules";
 import type { VillageCatalogueEntry } from "../../domain/village-catalogue";
 import type { VillageEventEmitter } from "../village-event-emitter";
 import { pickFrom, type VillageRng } from "../village-rng";
+import { beginPerformance } from "../village-performance";
 
 /**
  * An inventor turns a seed they know into one of its catalogue variations
@@ -64,7 +65,15 @@ export class RecombinationSystem {
 				sequenceId: inventedId,
 			});
 
+			// They try the new sequence out on its own.
 			entity.social.state = "performing";
+			entity.social.performance = beginPerformance(
+				entity,
+				this.rules,
+				currentTick,
+				[inventedId],
+				Math.floor(this.rng() * 2 ** 32),
+			);
 			entity.social.activeSequenceId = inventedId;
 		}
 	}

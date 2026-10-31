@@ -15,6 +15,7 @@ import {
 	studentSpot,
 	type VillageCampLayout,
 } from "../../domain/village-campfire";
+import { beginPerformance, performanceBeat, samplePerformance } from "../village-performance";
 
 // What someone can leave to go and sit by the fire, or to keep a seated
 // teacher company. A lesson, a meeting under way or an invention is finished
@@ -58,7 +59,7 @@ export class SocialSystem {
 
 			switch (entity.social.state) {
 				case "idle":
-					this.handleIdle(entity, world);
+					this.handleIdle(entity, world, currentTick);
 					break;
 				case "wandering":
 					this.handleWandering(entity);
@@ -77,11 +78,10 @@ export class SocialSystem {
 					this.handlePracticing(entity);
 					break;
 				case "performing":
-					this.rehearse(entity, currentTick);
-					this.handlePerforming(entity);
+					this.handlePerforming(entity, currentTick);
 					break;
 				case "watching":
-					this.handleWatching(entity);
+					this.handleWatching(entity, world);
 					break;
 				case "mourning":
 					this.handleMourning(entity);
@@ -96,7 +96,7 @@ export class SocialSystem {
 		}
 	}
 
-	private handleIdle(entity: VillageEntity, world: VillageWorld): void {
+	private handleIdle(entity: VillageEntity, world: VillageWorld, currentTick: number): void {
 		const social = this.rules.social;
 		entity.social.idleTimer++;
 
@@ -123,7 +123,7 @@ export class SocialSystem {
 		) {
 			entity.social.state = "inventing";
 		} else if (known > 0 && roll < social.performChance) {
-			this.startPerforming(entity);
+			this.startPerforming(entity, currentTick);
 		} else if (
 			roll <
 			social.seekChanceBase + entity.personality.sociability * social.seekChancePerSociability
@@ -135,15 +135,21 @@ export class SocialSystem {
 		}
 	}
 
-	// Performers play what they know best; ties go to whatever they learned first.
-	private startPerforming(entity: VillageEntity): void {
+	// A performance strings together what the performer knows, phrase to
+	// phrase (engine/village-performance.ts). The seed is one draw from this
+	// system's stream.
+	private startPerforming(entity: VillageEntity, currentTick: number): void {
 		entity.social.state = "performing";
 		entity.social.idleTimer = 0;
-		let best: LearnedSequence | null = null;
-		for (const seq of entity.knowledge.knownSequences.values()) {
-			if (!best || seq.proficiency > best.proficiency) best = seq;
-		}
-		entity.social.activeSequenceId = best?.sequenceId ?? null;
+		const performance = beginPerformance(
+			entity,
+			this.rules,
+			currentTick,
+			[...entity.knowledge.knownSequences.keys()],
+			Math.floor(this.rng() * 2 ** 32),
+		);
+		entity.social.performance = performance;
+		entity.social.activeSequenceId = performance.phrases[0]!.sequenceId;
 	}
 
 	private handleWandering(entity: VillageEntity): void {
@@ -385,27 +391,72 @@ export class SocialSystem {
 		if (entity.social.idleTimer > this.rules.social.practiceTicks) {
 			entity.social.state = "idle";
 			entity.social.activeSequenceId = null;
+			entity.social.performance = null;
 			entity.social.idleTimer = 0;
 			entity.social.interactionCooldown = this.rules.social.interactionCooldownTicks;
 		}
 	}
 
-	private handlePerforming(entity: VillageEntity): void {
+	/**
+	 * Plays the performance's phrase plan: the performer stands, turns and
+	 * walks where the plan says, plays the phrase's sequence, and gets a
+	 * little better at it for every beat. They stop where the plan ends.
+	 */
+	private handlePerforming(entity: VillageEntity, currentTick: number): void {
 		entity.social.idleTimer++;
-		const maxDuration =
-			entity.lifecycle.phase === "elder"
-				? this.rules.social.performTicksElder
-				: this.rules.social.performTicksAdult;
-		if (entity.social.idleTimer > maxDuration) {
+		const performance = entity.social.performance;
+		const transform = entity.transform;
+		const at = performance
+			? samplePerformance(
+					performance,
+					performanceBeat(performance, currentTick, this.rules.ticksPerSecond),
+				)
+			: null;
+		if (!at || at.done) {
 			entity.social.state = "idle";
 			entity.social.activeSequenceId = null;
+			entity.social.performance = null;
 			entity.social.idleTimer = 0;
+			transform.targetX = transform.x;
+			transform.targetZ = transform.z;
+			return;
+		}
+		transform.x = at.x;
+		transform.z = at.z;
+		transform.targetX = at.x;
+		transform.targetZ = at.z;
+		transform.speed = 0;
+		transform.facingAngle = at.facing;
+		entity.social.activeSequenceId = at.phrase.sequenceId;
+
+		const learned = entity.knowledge.knownSequences.get(at.phrase.sequenceId);
+		if (learned) {
+			learned.lastUsedTick = currentTick;
+			learned.proficiency = Math.min(
+				1,
+				learned.proficiency +
+					(this.rules.performance.gainPerBeat * performance!.tempoBpm) /
+						60 /
+						this.rules.ticksPerSecond,
+			);
 		}
 	}
 
-	private handleWatching(entity: VillageEntity): void {
+	// A watcher stays while the performance lasts, turning with the performer
+	// as they move, and drifts off after watchTicks at most.
+	private handleWatching(entity: VillageEntity, world: VillageWorld): void {
 		entity.social.idleTimer++;
-		if (entity.social.idleTimer > this.rules.social.watchTicks) {
+		const performer = world.entities.find((e) => e.id === entity.social.partner);
+		if (performer?.social.state === "performing") {
+			entity.transform.facingAngle = Math.atan2(
+				performer.transform.z - entity.transform.z,
+				performer.transform.x - entity.transform.x,
+			);
+		}
+		if (
+			performer?.social.state !== "performing" ||
+			entity.social.idleTimer > this.rules.social.watchTicks
+		) {
 			entity.social.state = "idle";
 			entity.social.partner = null;
 			entity.social.idleTimer = 0;
@@ -450,6 +501,7 @@ export class SocialSystem {
 
 		elder.social.partner = null;
 		elder.social.activeSequenceId = null;
+		elder.social.performance = null;
 		elder.social.idleTimer = 0;
 		if (seat) {
 			elder.social.state = "retiring";
@@ -479,6 +531,7 @@ export class SocialSystem {
 			student.social.state = "attending";
 			student.social.partner = elder.id;
 			student.social.activeSequenceId = null;
+			student.social.performance = null;
 			student.social.idleTimer = 0;
 			student.transform.targetX = spot.x;
 			student.transform.targetZ = spot.z;

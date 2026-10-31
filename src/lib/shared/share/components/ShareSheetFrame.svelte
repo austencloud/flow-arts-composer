@@ -125,7 +125,13 @@
       width: min(79rem, calc(100vw - 3rem));
     }
   }
-  @media (max-width: 899px) {
+  /* Phones and portrait tablets get a bottom sheet. A landscape window from
+     720px wide and over 560px tall (an unfolded Fold held sideways, 823x707)
+     keeps the centred dialog: PostShareSheet lays it out as the split there,
+     and a phone-width sheet pinned to the bottom edge would leave the
+     artwork a strip and push the last choices off the screen. */
+  @media (max-width: 719px), (max-width: 899px) and (orientation: portrait),
+    (max-width: 899px) and (max-height: 560px) {
     :global(dialog.base-modal.share-sheet-modal[data-size]) {
       width: min(38rem, 100vw);
       height: fit-content;

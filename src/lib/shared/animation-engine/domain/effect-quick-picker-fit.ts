@@ -7,10 +7,17 @@
  *   picker is a panel beside the player holding every effect four across, as
  *   a picture of its look when the panel is tall enough for five rows of them
  *   and as the icon and name otherwise. The panel grows with the player, so
- *   a 4K player does not get a postage-stamp picker. Where the room beside
+ *   a 4K player does not get a postage-stamp picker, and stands the player's
+ *   full height wherever the pictures can share it (`fitEffectCatalog`'s
+ *   fill, two across with the name beside each picture where that makes them
+ *   larger), instead of a short box at the player's foot. Where the room beside
  *   the player is too narrow for four across (a landscape phone, or a
  *   laptop at 200% zoom), the panel is the player's height and holds two
- *   pictures across that scroll inside it.
+ *   pictures across that scroll inside it. A player centred in a wide, short
+ *   area (an unfolded Fold held sideways) has empty room on both sides of it
+ *   that is too narrow for the panel: the player `shift`s sideways into its
+ *   own empty room, only as far as the panel needs, so canvas and picker sit
+ *   side by side instead of the picker squeezing under the canvas.
  * - `grid`: where the player fills the width (phone and tablet portrait),
  *   the pictures wrap four or more across under an Effects title row that
  *   holds Off and close, in the room under the player that the animation does
@@ -49,6 +56,7 @@ import {
   CATALOG_INNER_GAP,
   CATALOG_TILE_BORDER,
   CATALOG_TILE_PAD,
+  fitEffectCatalog,
   fitEffectRoster,
   MIN_CATALOG_PORTRAIT,
   type EffectCatalogFit,
@@ -75,6 +83,11 @@ export interface QuickPickerBox {
    *  docked under it can grow: the room between its top and the top of the
    *  area it is centred in, with the player at rest. 0 when absent. */
   roomAbove?: number;
+  /** How far the player may move sideways into empty space beside it, so the
+   *  side panel can take the width it gives up: the room between its side and
+   *  the side of the area it is centred in, with the player at rest. 0 when
+   *  absent. */
+  roomBeside?: number;
   /** Effects offered. */
   count: number;
 }
@@ -87,12 +100,18 @@ export type EffectQuickPickerFit =
       width: number;
       /** Picture tiles, or null for the icon tiles. */
       catalog: EffectCatalogFit | null;
-      /** The panel's outer height in px where its tiles scroll inside it,
-       *  null where it takes the height they need. */
+      /** The panel's outer height in px where its tiles scroll inside it or
+       *  share the player's height (a `fill` catalog), null where it takes
+       *  the height they need. */
       height: number | null;
-      /** The side panel never moves the player. */
+      /** The tiles scroll down inside the panel (the narrow panel). */
+      scrolls: boolean;
+      /** The side panel never lifts or shrinks the player. */
       lift: 0;
       scale: 1;
+      /** How far in px the player moves sideways to make room for the panel,
+       *  negative to the left: 0 where the room beside it at rest holds it. */
+      shift: number;
     }
   | {
       arrangement: "grid";
@@ -113,6 +132,8 @@ export type EffectQuickPickerFit =
       /** How far the lifted player shrinks from its top edge while the
        *  docked sheet is open, 1 where it keeps its size. */
       scale: number;
+      /** The grid never moves the player sideways. */
+      shift: 0;
     }
   | {
       arrangement: "strip";
@@ -128,6 +149,7 @@ export type EffectQuickPickerFit =
       /** The strip never moves the player. */
       lift: 0;
       scale: 1;
+      shift: 0;
     };
 
 /** Panel padding, the Effects title row (the Off button's 44px target) and
@@ -279,16 +301,9 @@ export function fitEffectQuickPicker({
   player,
   roomBelow = 0,
   roomAbove = 0,
+  roomBeside = 0,
   count,
 }: QuickPickerBox): EffectQuickPickerFit {
-  const roomRight =
-    bounds.left +
-    bounds.width -
-    (player.left + player.width) -
-    QUICK_PICKER_OFFSET -
-    QUICK_PICKER_EDGE;
-  const roomLeft =
-    player.left - bounds.left - QUICK_PICKER_OFFSET - QUICK_PICKER_EDGE;
   const target = Math.min(
     QUICK_PICKER_MAX_SIDE_WIDTH,
     Math.max(
@@ -296,37 +311,170 @@ export function fitEffectQuickPicker({
       Math.round(player.height * SIDE_WIDTH_PER_PLAYER_HEIGHT)
     )
   );
-  // Right when it has the panel's full width, or at least as much as left.
-  const side = roomRight >= target || roomRight >= roomLeft ? "right" : "left";
-  const width = Math.floor(
-    Math.min(target, side === "right" ? roomRight : roomLeft)
-  );
+  const atRest = sideRoom(bounds, player, target);
+  if (atRest.width >= QUICK_PICKER_MIN_SIDE_WIDTH) {
+    return fitSide(bounds, player, atRest.side, atRest.width, count, 0);
+  }
 
-  if (width >= QUICK_PICKER_MIN_SIDE_WIDTH) {
-    const pictures = fitEffectRoster({
-      width: width - 2 * QUICK_PICKER_PAD,
-      count,
-      columns: SIDE_COLUMNS,
-    });
-    const fitsTall =
-      !!pictures &&
-      sidePanelHeight(pictures, count) <= bounds.height - 2 * QUICK_PICKER_EDGE;
-    return {
-      arrangement: "side",
+  // The player's own empty room beside it, given up to the panel: it slides
+  // left (or right, where only the left takes the panel), only as far as the
+  // panel's width needs, and the panel takes the side it slid away from.
+  const reach = Math.max(0, Math.floor(roomBeside));
+  const slid = (reach > 0 ? (["right", "left"] as const) : []).map((side) => {
+    const away = side === "right" ? -1 : 1;
+    const atRestWidth = Math.floor(sideWidth(bounds, player, side, target));
+    const allWidth = Math.floor(
+      sideWidth(
+        bounds,
+        // Field by field: the player is often a DOMRect, whose fields are
+        // getters a spread would drop.
+        {
+          left: player.left + away * reach,
+          top: player.top,
+          width: player.width,
+          height: player.height,
+        },
+        side,
+        target
+      )
+    );
+    return { side, away, atRestWidth, allWidth };
+  });
+  const slidFull = slid.find(
+    (option) => option.allWidth >= QUICK_PICKER_MIN_SIDE_WIDTH
+  );
+  if (slidFull) {
+    const { side, away, atRestWidth } = slidFull;
+    const shift = Math.min(reach, Math.max(0, target - atRestWidth));
+    return fitSide(
+      bounds,
+      player,
       side,
-      width,
-      catalog: fitsTall ? pictures : null,
-      height: null,
-      lift: 0,
-      scale: 1,
-    };
+      Math.min(target, atRestWidth + shift),
+      count,
+      away * shift
+    );
   }
 
   const strip = fitStrip(bounds, player, roomBelow, count);
   const grid = fitGrid(bounds, player, roomBelow, roomAbove, count, strip);
   if (grid) return grid;
   if (strip.arrangement === "strip" && strip.side === "below") return strip;
-  return fitNarrowSide(bounds, player, side, width, count) ?? strip;
+  const narrow =
+    fitNarrowSide(bounds, player, atRest.side, atRest.width, count, 0) ??
+    slid
+      .map((option) =>
+        fitNarrowSide(
+          bounds,
+          player,
+          option.side,
+          option.allWidth,
+          count,
+          option.away * reach
+        )
+      )
+      .find((option) => option !== null);
+  return narrow ?? strip;
+}
+
+/** The room for the panel on `side` of `player`, at most `target`. */
+function sideWidth(
+  bounds: QuickPickerRect,
+  player: QuickPickerRect,
+  side: "left" | "right",
+  target: number
+): number {
+  const room =
+    side === "right"
+      ? bounds.left +
+        bounds.width -
+        (player.left + player.width) -
+        QUICK_PICKER_OFFSET -
+        QUICK_PICKER_EDGE
+      : player.left - bounds.left - QUICK_PICKER_OFFSET - QUICK_PICKER_EDGE;
+  return Math.min(target, room);
+}
+
+/** The side with room for the panel beside `player` (right when it has the
+ *  panel's full width, or at least as much as left), and the panel's width
+ *  there, at most `target`. */
+function sideRoom(
+  bounds: QuickPickerRect,
+  player: QuickPickerRect,
+  target: number
+): { side: "left" | "right"; width: number } {
+  const roomRight = sideWidth(bounds, player, "right", Infinity);
+  const roomLeft = sideWidth(bounds, player, "left", Infinity);
+  const side = roomRight >= target || roomRight >= roomLeft ? "right" : "left";
+  return {
+    side,
+    width: Math.floor(sideWidth(bounds, player, side, target)),
+  };
+}
+
+/** The side panel `width` px wide: the player's height with the pictures
+ *  sharing it where that keeps them at least as large as four across;
+ *  otherwise four across, pictures where five rows of them fit the bounds'
+ *  height, the icons and names otherwise. */
+function fitSide(
+  bounds: QuickPickerRect,
+  player: QuickPickerRect,
+  side: "left" | "right",
+  width: number,
+  count: number,
+  shift: number
+): EffectQuickPickerFit {
+  const pictures = fitEffectRoster({
+    width: width - 2 * QUICK_PICKER_PAD,
+    count,
+    columns: SIDE_COLUMNS,
+  });
+  const height = Math.floor(
+    Math.min(player.height, bounds.height - 2 * QUICK_PICKER_EDGE)
+  );
+  const filled = fitEffectCatalog({
+    width: width - 2 * QUICK_PICKER_PAD,
+    height:
+      height -
+      2 * QUICK_PICKER_PAD -
+      2 * QUICK_PICKER_BORDER -
+      QUICK_PICKER_HEAD -
+      QUICK_PICKER_HEAD_GAP,
+    count,
+  });
+  // A player shorter than four across needs keeps the taller panel, and a
+  // panel too narrow for pictures keeps the icon tiles at their own height.
+  if (
+    filled &&
+    filled.orientation !== "list" &&
+    filled.portrait >= (pictures?.portrait ?? 0)
+  ) {
+    return {
+      arrangement: "side",
+      side,
+      width,
+      catalog: filled,
+      height,
+      scrolls: false,
+      lift: 0,
+      scale: 1,
+      shift,
+    };
+  }
+  const fitsTall =
+    !!pictures &&
+    sidePanelHeight(pictures, count) <= bounds.height - 2 * QUICK_PICKER_EDGE;
+  return {
+    arrangement: "side",
+    side,
+    width,
+    catalog: fitsTall ? pictures : null,
+    height: null,
+    scrolls: false,
+    lift: 0,
+    scale: 1,
+    shift,
+  };
 }
 
 /** Two pictures across in a panel the player's height, scrolling, which keeps
@@ -338,7 +486,8 @@ function fitNarrowSide(
   player: QuickPickerRect,
   side: "left" | "right",
   width: number,
-  count: number
+  count: number,
+  shift: number
 ): EffectQuickPickerFit | null {
   if (width < QUICK_PICKER_MIN_NARROW_SIDE_WIDTH) return null;
   const pictures = fitEffectRoster({
@@ -364,8 +513,10 @@ function fitNarrowSide(
     width,
     catalog: pictures,
     height: sidePanelHeight(pictures, count) > height ? height : null,
+    scrolls: sidePanelHeight(pictures, count) > height,
     lift: 0,
     scale: 1,
+    shift,
   };
 }
 
@@ -509,7 +660,16 @@ function fitGrid(
   );
   if (inGrid <= inStrip) return null;
 
-  return { arrangement: "grid", side, height, catalog, scrolls, lift, scale };
+  return {
+    arrangement: "grid",
+    side,
+    height,
+    catalog,
+    scrolls,
+    lift,
+    scale,
+    shift: 0,
+  };
 }
 
 interface GridPick {
@@ -606,6 +766,7 @@ function fitStrip(
     trackWidth: count * (portrait + 2 * INSET) + (count - 1) * CATALOG_GAP,
     lift: 0,
     scale: 1,
+    shift: 0,
   };
 }
 

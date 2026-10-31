@@ -108,6 +108,7 @@ export function createAvatarEntity(
 			frustrationLevel: 0,
 			idleTimer: 0,
 			interactionCooldown: 0,
+			performance: null,
 		},
 		transform: {
 			x,

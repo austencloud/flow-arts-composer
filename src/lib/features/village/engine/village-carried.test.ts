@@ -5,8 +5,8 @@
  * carries its steps so a return rebuilds it with nothing else passed in.
  *
  * Both logs are the museum village, with the visitor leaving 200 ticks after
- * teaching: a youth taught 200 ticks after entry keeps it, an elder near
- * retirement taught 2100 ticks after entry loses it. village-carried-expected.json holds each
+ * teaching: a young adult taught 4600 ticks after entry keeps it, an elder
+ * near retirement taught 6200 ticks after entry loses it. village-carried-expected.json holds each
  * return's memory block and hash; refresh it with `-u` only when a change to
  * the sim is meant to change them.
  */

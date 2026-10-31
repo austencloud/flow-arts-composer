@@ -119,6 +119,45 @@ describe("portable runtime motion bundle", () => {
     }
   });
 
+  it("names the palm lock and records how far it moved the staffs", async () => {
+    const { capture, sourceGlb } = await fixture();
+    capture.captureRevision = "monotonic-grip-validated-v4";
+    Object.assign(capture.provenance.motionOptions, {
+      contactMode: "prop-authoritative",
+      reachPolicy: "paired-body-final-socket-v1",
+      staffPalmLock: "prop-authoritative-palm-locked-v1",
+    });
+    const all = [...capture.frames, capture.terminalFrame];
+    all.forEach((frame, index) => {
+      Object.assign(frame, {
+        gripAttachment: {
+          leftPalmWorld: [0, 0, 0],
+          rightPalmWorld: [0, 0, 0],
+          leftRenderedGripWorld: [0, 0, 0],
+          rightRenderedGripWorld: [0, 0, 0],
+          staffPalmLockShortfallM: [0, index === 1 ? 0.12 : 0.03],
+        },
+      });
+      Object.assign(frame.leftProp, { correctionWorld: identity });
+      Object.assign(frame.rightProp, { correctionWorld: identity });
+    });
+    const options = { sourceGlb, sourceRigSHA256: rigSHA256, loop: false };
+    const bundle = await createRuntimeMotionBundle(capture, options);
+    expect(bundle.gripValidation).toMatchObject({
+      contactMode: "prop-authoritative-palm-locked-v1",
+      maxErrorCm: 0,
+      sideSamples: 6,
+      shortfallP50Cm: 0,
+      shortfallP95Cm: 12,
+      shortfallMaxCm: 12,
+      lockedSideSamples: 3,
+    });
+    delete all[0]!.gripAttachment.staffPalmLockShortfallM;
+    await expect(createRuntimeMotionBundle(capture, options)).rejects.toThrow("staff palm lock shortfall");
+    capture.provenance.motionOptions.staffPalmLock = "something-else";
+    await expect(createRuntimeMotionBundle(capture, options)).rejects.toThrow("Invalid staff palm lock");
+  });
+
   it("records actual palm attachment and rejects detached v4 captures", async () => {
     const { capture, sourceGlb } = await fixture();
     capture.captureRevision = "monotonic-grip-validated-v4";

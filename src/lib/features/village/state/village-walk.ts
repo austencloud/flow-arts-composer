@@ -84,6 +84,8 @@ export interface VillageWalkerOptions {
 	arrivalThreshold: number;
 	/** The fire's clear circle: a planned last stretch never cuts through it. */
 	fire: { x: number; z: number; clearRadius: number };
+	/** Carries on from the last body's reset count, so a fresh walker does not reset the gait. */
+	resetKey?: number;
 }
 
 // Turning rates kept from B1: brisk into a walk's heading, unhurried when
@@ -227,6 +229,7 @@ export class VillageWalker {
 		this.x = options.x;
 		this.z = options.z;
 		this.yaw = options.yaw;
+		this.resetKey = options.resetKey ?? 0;
 	}
 
 	/** The stop being walked, for tests and diagnostics. */

@@ -14,8 +14,11 @@
   room is narrow). Where the player fills the width (a phone or tablet held
   upright) the pictures wrap four or more across under the same title row,
   floating under the player's controls or docked along the bottom of its
-  bounds. A docked sheet that needs more room asks the host to lift the
-  player into the empty space above it (onLift), only as far as every row
+  bounds. A player centred with empty room on both sides that is too narrow
+  for the panel (a wide, short screen) slides sideways into it (onShift),
+  only as far as the panel needs, and the panel sits beside it. A docked
+  sheet that needs more room asks the host to lift the player into the
+  empty space above it (onLift), only as far as every row
   needs, and past that to shrink it a little from its top edge; the player
   slides back when the picker closes. The sheet stands on the bounds' floor,
   so it holds still while the player moves. The grid scrolls down only where
@@ -84,10 +87,17 @@
      *  back. The fit works from the player at rest, so `roomBelow` reads at
      *  rest too. */
     roomAbove?: () => { room: number; rest: DOMRect | null };
+    /** Reads how far the player may slide sideways into empty space beside
+     *  it, with the player at rest. */
+    roomBeside?: () => number;
     /** Reports how far to lift the player and how far to shrink it from its
      *  top edge while the picker is open: 0 and 1 once it closes or where the
      *  picker needs no more room. */
     onLift?: (px: number, scale: number) => void;
+    /** Reports how far to slide the player sideways while the picker is open,
+     *  negative to the left: 0 once it closes or where the room beside the
+     *  player already holds the panel. */
+    onShift?: (px: number) => void;
     /** Reports where the open picker sits, or null once it closes, so the
      *  player can fade what the floating row covers under its controls. */
     onArrange?: (
@@ -101,7 +111,9 @@
     bounds = null,
     roomBelow,
     roomAbove,
+    roomBeside,
     onLift,
+    onShift,
     onArrange,
   }: Props = $props();
 
@@ -113,6 +125,9 @@
   /** The player's distance from each side of the bounds, so a docked strip
    *  lines its tiles up under the player. */
   let dockInset = $state({ left: 0, right: 0 });
+  /** The player's box at rest, where the side panel lines up beside it once
+   *  it has slid over. */
+  let restBox = $state<DOMRect | null>(null);
   /** Which ends of the row, or of the grid's scroll, have effects scrolled
    *  past them. */
   let edges = $state<ScrollEdges>({ start: false, end: false });
@@ -172,11 +187,13 @@
     // back, its own box would ask for a different lift every time.
     const box = above.rest ?? player.getBoundingClientRect();
     dockInset = { left: box.left - area.left, right: area.right - box.right };
+    restBox = DOMRect.fromRect(box);
     fit = fitEffectQuickPicker({
       bounds: area,
       player: box,
       roomBelow: roomBelow?.() ?? 0,
       roomAbove: above.room,
+      roomBeside: roomBeside?.() ?? 0,
       count: EFFECTS.length,
     });
   }
@@ -216,6 +233,10 @@
 
   $effect(() => {
     onLift?.(open && fit ? fit.lift : 0, open && fit ? fit.scale : 1);
+  });
+
+  $effect(() => {
+    onShift?.(open && fit ? fit.shift : 0);
   });
 
   /** Page the row so the tile cut at that end comes fully into view. */
@@ -297,10 +318,26 @@
     return { destroy: () => node.removeEventListener("wheel", onWheel) };
   }
 
+  /** Where the player comes to rest once it has slid over for the side
+   *  panel: the panel is placed there, not beside the player mid-slide. */
+  const slidPlayer = {
+    getBoundingClientRect() {
+      const box = restBox ?? new DOMRect();
+      return new DOMRect(
+        box.left + (fit?.shift ?? 0),
+        box.top,
+        box.width,
+        box.height
+      );
+    },
+  };
+
   /** What the picker is placed against, and on which side of it. */
   const anchor = $derived(
     !fit || fit.arrangement === "side"
-      ? (player ?? null)
+      ? fit?.shift
+        ? slidPlayer
+        : (player ?? null)
       : fit.side === "dock"
         ? boundsFloor
         : row
@@ -482,11 +519,8 @@
               out:flyFade={{ ...motion, duration: DURATION.fast }}
             >
               {#if fit.arrangement !== "strip"}
-                {@const narrow = fit.arrangement === "side" && !!fit.height}
-                {@const scrolls =
-                  fit.arrangement === "grid"
-                    ? fit.scrolls
-                    : fit.height !== null}
+                {@const narrow = fit.arrangement === "side" && fit.scrolls}
+                {@const scrolls = fit.scrolls}
                 <div class="fx-quick-head">
                   <span class="fx-quick-title">{t("effect_deep_effects")}</span>
                   <div class="fx-quick-head-end">
@@ -511,6 +545,7 @@
                 <div
                   class="fx-quick-grid"
                   class:scrolls
+                  class:fill={fit.catalog?.fill}
                   class:fade-start={fit.arrangement === "grid" && edges.start}
                   class:fade-end={fit.arrangement === "grid" && edges.end}
                   bind:this={scrollerEl}
@@ -839,6 +874,15 @@
     overflow-y: auto;
     overscroll-behavior-y: contain;
     scrollbar-width: thin;
+  }
+
+  /* The side panel standing the player's height: the pictures share the
+     room under the title row (EffectSelector's fill). */
+  .fx-quick-grid.fill {
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
   }
 
   /* The grid fades at an end with effects past it, as the row does. */

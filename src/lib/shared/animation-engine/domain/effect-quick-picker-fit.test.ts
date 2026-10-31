@@ -46,11 +46,31 @@ describe("fitEffectQuickPicker", () => {
     expect(fit.arrangement).toBe("side");
     if (fit.arrangement !== "side") return;
     expect(fit.side).toBe("right");
-    expect(fit.catalog?.cols).toBe(4);
     expect(fit.catalog?.portrait).toBeGreaterThanOrEqual(MIN_CATALOG_PORTRAIT);
-    expect(sidePanelHeight(fit.catalog, COUNT)).toBeLessThanOrEqual(
-      laptop.bounds.height - 2 * QUICK_PICKER_EDGE
+  });
+
+  it("stands the laptop player's full height, not a short box at its foot", () => {
+    // Austen, 2026-10-30: the panel took 353px of a 658px player.
+    const fit = fitEffectQuickPicker(laptop);
+    if (fit.arrangement !== "side") throw new Error(fit.arrangement);
+    expect(fit.height).toBe(laptop.player.height);
+    expect(fit.scrolls).toBe(false);
+    expect(fit.catalog?.fill).toBe(true);
+    // Larger pictures than four across the same width would give.
+    const fourAcross = Math.floor(
+      (fit.width - 24 - 3 * CATALOG_GAP) / 4 - 2 * INSET
     );
+    expect(fit.catalog?.portrait).toBeGreaterThan(fourAcross);
+  });
+
+  it("keeps its own height beside a player too short to share", () => {
+    const fit = fitEffectQuickPicker({
+      ...laptop,
+      player: { ...laptop.player, height: 260 },
+    });
+    if (fit.arrangement !== "side") throw new Error(fit.arrangement);
+    expect(fit.height).toBeNull();
+    expect(fit.catalog?.fill ?? false).toBe(false);
   });
 
   it("measures its room from its bounds, not the viewport", () => {
@@ -519,6 +539,144 @@ describe("fitEffectQuickPicker lifting a tall phone's player", () => {
     expect(landscape.arrangement).toBe("side");
     expect(landscape.lift).toBe(0);
     expect(landscape.scale).toBe(1);
+  });
+});
+
+describe("fitEffectQuickPicker sliding a centred player aside", () => {
+  const count = EFFECTS.length;
+  // Measured on /create/construct while playing on an unfolded Galaxy Z Fold
+  // 6: the content area above the bottom navigation, the player's stage, the
+  // notation rail under it, and the empty room on either side of the player
+  // in the layout it is centred in.
+  const foldSideways = {
+    bounds: { left: 0, top: 0, width: 823, height: 663 },
+    player: { left: 208, top: 81, width: 408, height: 452 },
+    roomBelow: 73,
+    roomBeside: 195,
+    count,
+  };
+  const foldUpright = {
+    bounds: { left: 0, top: 0, width: 707, height: 779 },
+    player: { left: 101, top: 77, width: 505, height: 545 },
+    roomBelow: 74,
+    roomBeside: 88.5,
+    count,
+  };
+
+  /** A box whose fields are prototype getters, as a DOMRect's are: the
+   *  component passes the player's measured DOMRect straight in. */
+  class GetterRect {
+    readonly #box: { left: number; top: number; width: number; height: number };
+    constructor(box: {
+      left: number;
+      top: number;
+      width: number;
+      height: number;
+    }) {
+      this.#box = box;
+    }
+    get left() {
+      return this.#box.left;
+    }
+    get top() {
+      return this.#box.top;
+    }
+    get width() {
+      return this.#box.width;
+    }
+    get height() {
+      return this.#box.height;
+    }
+  }
+
+  it("fits a measured DOMRect player exactly as it fits a plain box", () => {
+    // A spread of a DOMRect copies none of its fields: the slid player came
+    // out NaN wide, and the upright Fold got a 25px side panel.
+    for (const box of [
+      foldSideways,
+      foldUpright,
+      { ...foldUpright, roomBelow: 88.66 },
+    ]) {
+      const measured = fitEffectQuickPicker({
+        ...box,
+        bounds: new GetterRect(box.bounds),
+        player: new GetterRect(box.player),
+      });
+      expect(measured).toEqual(fitEffectQuickPicker(box));
+      if (measured.arrangement === "side") {
+        expect(Number.isFinite(measured.width)).toBe(true);
+      }
+    }
+  });
+
+  it("slides the sideways Fold's player left so every effect shows beside it", () => {
+    // Before, the picker was one row under the canvas showing two and a half
+    // effects, with 195px of nothing on either side of the canvas.
+    const fit = fitEffectQuickPicker(foldSideways);
+    expect(fit.arrangement).toBe("side");
+    if (fit.arrangement !== "side") return;
+    expect(fit.side).toBe("right");
+    expect(fit.shift).toBeLessThan(0);
+    expect(-fit.shift).toBeLessThanOrEqual(foldSideways.roomBeside);
+    expect(fit.lift).toBe(0);
+    expect(fit.scale).toBe(1);
+    // Four pictures across sharing the player's height, every row in view.
+    expect(fit.catalog?.cols).toBe(4);
+    expect(fit.catalog?.fill).toBe(true);
+    expect(fit.height).toBe(foldSideways.player.height);
+    expect(fit.scrolls).toBe(false);
+    // The panel beside the slid player stays inside the bounds.
+    const slidRight =
+      foldSideways.player.left + fit.shift + foldSideways.player.width;
+    expect(
+      slidRight + QUICK_PICKER_OFFSET + fit.width + QUICK_PICKER_EDGE
+    ).toBeLessThanOrEqual(foldSideways.bounds.left + foldSideways.bounds.width);
+  });
+
+  it("slides only as far as the panel needs", () => {
+    const fit = fitEffectQuickPicker({ ...foldSideways, roomBeside: 400 });
+    if (fit.arrangement !== "side") throw new Error("expected a side panel");
+    const atRest = fitEffectQuickPicker({ ...foldSideways, roomBeside: 0 });
+    expect(atRest.arrangement).not.toBe("side");
+    // A pixel less and the panel would be narrower than it is.
+    expect(-fit.shift).toBeLessThan(400);
+    expect(fit.width).toBe(
+      foldSideways.bounds.width -
+        (foldSideways.player.left + fit.shift + foldSideways.player.width) -
+        QUICK_PICKER_OFFSET -
+        QUICK_PICKER_EDGE
+    );
+  });
+
+  it("keeps the upright Fold's picker under the player", () => {
+    // The room beside a player that nearly fills the width is too narrow
+    // for the panel even slid all the way over.
+    const fit = fitEffectQuickPicker(foldUpright);
+    expect(fit.arrangement).not.toBe("side");
+    expect(fit.shift).toBe(0);
+  });
+
+  it("never slides a player whose room beside it already holds the panel", () => {
+    const fit = fitEffectQuickPicker({
+      bounds: { left: 64, top: 0, width: 1366, height: 900 },
+      player: { left: 440, top: 81, width: 614, height: 658 },
+      roomBeside: 370,
+      count,
+    });
+    expect(fit.arrangement).toBe("side");
+    expect(fit.shift).toBe(0);
+  });
+
+  it("never slides a phone held upright, whose player fills the width", () => {
+    const fit = fitEffectQuickPicker({
+      bounds: { left: 0, top: 0, width: 375, height: 623 },
+      player: { left: 13, top: 119, width: 350, height: 394 },
+      roomBelow: 47,
+      roomBeside: 0,
+      count,
+    });
+    expect(fit.arrangement).not.toBe("side");
+    expect(fit.shift).toBe(0);
   });
 });
 

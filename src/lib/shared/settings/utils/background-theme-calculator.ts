@@ -406,11 +406,16 @@ export function generateMatteTheme(
   }
 
   // On mobile, increase opacity for better readability
-  // Desktop: 0.75/0.5, Mobile: 0.88/0.7
+  // Desktop: 0.8/0.5, Mobile: 0.88/0.7
+  //
+  // Panels and cards are translucent, so the scene shows through them. A
+  // "dark" theme only means the palette is dark: Celestial's scene is a
+  // daylight sky with white cloud. At 0.8, textDim stays above 7:1 even over
+  // a pure white patch of scene; 0.75 measured 6.7:1.
   return {
-    panelBg: mobile ? "rgba(0, 0, 0, 0.88)" : "rgba(0, 0, 0, 0.75)",
+    panelBg: mobile ? "rgba(0, 0, 0, 0.88)" : "rgba(0, 0, 0, 0.8)",
     panelElevatedBg: mobile ? "rgba(0, 0, 0, 0.7)" : "rgba(0, 0, 0, 0.5)",
-    cardBg: mobile ? "rgba(0, 0, 0, 0.88)" : "rgba(0, 0, 0, 0.75)",
+    cardBg: mobile ? "rgba(0, 0, 0, 0.88)" : "rgba(0, 0, 0, 0.8)",
     cardHoverBg: mobile ? "rgba(0, 0, 0, 0.7)" : "rgba(0, 0, 0, 0.55)",
     accent,
     accentStrong: accent, // Use same accent for strong variant

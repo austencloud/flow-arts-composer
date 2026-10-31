@@ -147,6 +147,8 @@ export interface TracePath {
    */
   beats: number;
   spb: number;
+  /** Ends where it starts, so a head can lap it without a jump. */
+  closed: boolean;
 }
 
 export function preparePath(
@@ -155,11 +157,18 @@ export function preparePath(
 ): TracePath {
   const segments = points.length - 1;
   const even = beats > 1 && segments % beats === 0;
+  const first = points[0];
+  const last = points[segments];
   return {
     pts: points,
     cum: cumulativeLengths(points),
     beats: even ? beats : 1,
     spb: even ? segments / beats : segments,
+    closed:
+      segments > 1 &&
+      first !== undefined &&
+      last !== undefined &&
+      Math.hypot(first[0] - last[0], first[1] - last[1]) < 0.5,
   };
 }
 
@@ -207,6 +216,41 @@ export function pointAt(path: TracePath, t: number): TracePoint {
     tx: dx / len,
     ty: dy / len,
   };
+}
+
+/** Where a head is, at what fraction of its line, and which way it runs. */
+export interface HeadPoint {
+  point: TracePoint;
+  t: number;
+  /** Running back along the line (an open line's return leg). */
+  back: boolean;
+}
+
+/**
+ * A tip's head at progress p. Up to 1 it is the trace's front. Past 1 the
+ * figure is whole and the head keeps lapping it at the same speed: round
+ * and round a closed line, back and forth along an open one. So a boot that
+ * runs long never leaves the heads standing still.
+ */
+export function headAt(path: TracePath, p: number): HeadPoint {
+  if (!(p > 1)) {
+    const t = p <= 0 ? 0 : p;
+    return { point: pointAt(path, t), t, back: false };
+  }
+  const f = p - 1;
+  if (path.closed) {
+    const t = f - Math.floor(f);
+    return { point: pointAt(path, t), t, back: false };
+  }
+  const u = f - 2 * Math.floor(f / 2);
+  const back = u < 1;
+  const t = back ? 1 - u : u - 1;
+  const point = pointAt(path, t);
+  if (back) {
+    point.tx = -point.tx;
+    point.ty = -point.ty;
+  }
+  return { point, t, back };
 }
 
 // ---------------------------------------------------------------------------
@@ -418,6 +462,10 @@ export function composeFrame(
     (0.38 * half) / MANDALA_GRID_RADIUS,
     (0.94 * half) / prepared.extent
   );
+  // A canvas with no size yet (styles still loading, a zero-width window):
+  // skip the frame instead of handing the canvas Infinity; the next resize
+  // brings it back.
+  if (!(scale > 0) || !Number.isFinite(scale) || !(view.zoom > 0)) return;
   const unitPx = 1 / scale;
   const traced = p <= 0 ? 0 : p >= 1 ? 1 : p;
 
@@ -430,6 +478,11 @@ export function composeFrame(
   ctx.lineJoin = "round";
 
   const ends = prepared.tips.map((tip) => pointAt(tip.path, traced));
+  // Past 1 the figure is whole and the heads lap it until the finish.
+  const lapping = p > 1;
+  const runners = lapping
+    ? prepared.tips.map((tip) => headAt(tip.path, p))
+    : ends.map((point) => ({ point, t: traced, back: false }));
   if (traced > 0) {
     if (state.glow) {
       prepared.tips.forEach((tip, k) => {
@@ -447,18 +500,30 @@ export function composeFrame(
     });
   }
 
-  // Hot trail and heads: the moving edge, gone once the loop has closed.
-  const heads = traced > 0 && (traced < 1 || view.flare > 0);
+  // Hot trail and heads: the moving edge. They stay while the heads lap a
+  // whole figure; only a trace finished exactly at 1 leaves them still.
+  const moving = traced < 1 || lapping;
+  const heads = traced > 0 && (moving || view.flare > 0);
   if (heads) {
     prepared.tips.forEach((tip, k) => {
-      const head = ends[k]!;
-      if (traced < 1) {
-        traceSpan(
-          ctx,
-          tip,
-          pointAt(tip.path, Math.max(0, traced - 0.012)),
-          head
-        );
+      const runner = runners[k]!;
+      const head = runner.point;
+      if (moving) {
+        if (runner.back) {
+          traceSpan(
+            ctx,
+            tip,
+            head,
+            pointAt(tip.path, Math.min(1, runner.t + 0.012))
+          );
+        } else {
+          traceSpan(
+            ctx,
+            tip,
+            pointAt(tip.path, Math.max(0, runner.t - 0.012)),
+            head
+          );
+        }
         ctx.strokeStyle = light ? tip.color : "rgba(255,255,255,0.9)";
         ctx.lineWidth = 3 * unitPx;
         ctx.stroke();
@@ -483,7 +548,7 @@ export function composeFrame(
       ctx.fill();
       ctx.globalAlpha = view.alpha;
 
-      if (view.sparks && traced < 1 && state.random() < 0.6) {
+      if (view.sparks && moving && state.random() < 0.6) {
         if (state.sparks.length >= state.maxSparks) state.sparks.shift();
         const speed = (0.03 + state.random() * 0.06) * unitPx; // px per ms
         const jitter = (state.random() - 0.5) * 1.4;

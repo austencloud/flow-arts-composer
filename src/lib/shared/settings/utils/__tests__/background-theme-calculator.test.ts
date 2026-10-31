@@ -164,3 +164,58 @@ describe("sceneMarkTone — touch rings drawn on the scene", () => {
     );
   });
 });
+
+// A dark theme's panels are translucent black, and "dark" describes only the
+// palette: Celestial's scene is a daylight sky with white cloud. Text on a
+// panel (Construct's lower pane, cards) must stay AAA even where the scene
+// behind it is pure white, the worst case for white text.
+describe("dark panels over the brightest scene", () => {
+  const toHex = (channels: number[]) =>
+    "#" +
+    channels
+      .map((v) => Math.round(v).toString(16).padStart(2, "0"))
+      .join("");
+
+  // Composite an rgba() token over an opaque backdrop given as 0-255 channels.
+  function over(rgba: string, backdrop: number[]): number[] {
+    const [r, g, b, a = 1] = rgba.match(/[\d.]+/g)!.map(Number);
+    return [r!, g!, b!].map((c, i) => c * a + backdrop[i]! * (1 - a));
+  }
+
+  const WHITE_SCENE = [255, 255, 255];
+  const celestial = BACKGROUND_THEME_COLORS.celestial!;
+  const accent = ensureAccentContrast(celestial[1]!, "dark", 7);
+
+  for (const [label, width] of [
+    ["phone", 400],
+    ["desktop", 1440],
+  ] as const) {
+    it(`${label}: text, dim text and accent text read on panels and cards`, () => {
+      const previous = window.innerWidth;
+      Object.defineProperty(window, "innerWidth", {
+        configurable: true,
+        value: width,
+      });
+      try {
+        const theme = generateMatteTheme("dark", celestial[1]);
+        expect(getThemeMode(calculateGradientLuminance(celestial))).toBe(
+          "dark"
+        );
+        for (const surfaceToken of [theme.panelBg, theme.cardBg]) {
+          const surface = over(surfaceToken, WHITE_SCENE);
+          const surfaceHex = toHex(surface);
+          expect(contrastRatio(theme.text, surfaceHex)).toBeGreaterThanOrEqual(7);
+          expect(
+            contrastRatio(toHex(over(theme.textDim, surface)), surfaceHex)
+          ).toBeGreaterThanOrEqual(7);
+          expect(contrastRatio(accent, surfaceHex)).toBeGreaterThanOrEqual(4.5);
+        }
+      } finally {
+        Object.defineProperty(window, "innerWidth", {
+          configurable: true,
+          value: previous,
+        });
+      }
+    });
+  }
+});

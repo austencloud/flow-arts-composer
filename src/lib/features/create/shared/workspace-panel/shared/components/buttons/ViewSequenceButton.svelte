@@ -1,12 +1,14 @@
 <!--
   ViewSequenceButton.svelte
 
-  The sequence's Play control, in two presentations:
+  The sequence's Play control, in three presentations:
   - "open-viewer" opens the full Sequence Viewer for animation and export
     (Shape, Fuse and Assemble).
   - "play" plays in place: Construct and Generate run the workspace player,
-    and public demos play inline. That player carries its own control for
-    opening the full viewer, so the rail needs only this one button.
+    and public demos play inline.
+  - "viewer" sits beside an in-place Play and opens the full viewer, handing
+    over any running playback. Its label says "Viewer" wherever the rail
+    shows labels, so it never reads as a second Play.
   The purpose prop keeps the icon and accessible copy accurate for each.
   Choreographed entrance: hatches from nothing, overshoots, settles, then breathes.
 -->
@@ -27,7 +29,7 @@
   } = $props<{
     onclick?: () => void;
     isActive?: boolean;
-    purpose?: "open-viewer" | "play";
+    purpose?: "open-viewer" | "play" | "viewer";
     isStopping?: boolean;
     playbackState?: "idle" | "preparing" | "retry";
     /** Plain surface for the phone Assemble rail, where the pictures lead. */
@@ -43,7 +45,9 @@
           ? "fa-stop"
           : purpose === "play"
             ? "fa-play"
-            : WORKSPACE_BUTTON_ICON.view.icon
+            : purpose === "viewer"
+              ? "fa-expand"
+              : WORKSPACE_BUTTON_ICON.view.icon
   );
   const accessibleLabel = $derived(
     playbackState === "preparing"
@@ -65,7 +69,9 @@
           ? t("viewer_ui_stop")
           : purpose === "play"
             ? WORKSPACE_BUTTON_ICON.view.visibleLabel
-            : t("train_view_label")
+            : purpose === "viewer"
+              ? t("create_workspace_viewer_label")
+              : t("train_view_label")
   );
 
   /**
@@ -95,6 +101,7 @@
   class="view-sequence-button glass-button"
   class:active={isActive}
   class:play-purpose={purpose === "play"}
+  class:viewer-purpose={purpose === "viewer"}
   class:stopping={isStopping}
   class:preparing={playbackState === "preparing"}
   class:retry={playbackState === "retry"}
@@ -186,6 +193,7 @@
   }
 
   /* Wherever the button stops pulsing, its glow layer stops too. */
+  .view-sequence-button.viewer-purpose::after,
   .view-sequence-button.retry::after,
   .view-sequence-button.quiet::after,
   .view-sequence-button:hover::after {
@@ -195,6 +203,31 @@
   /* A still Play button keeps its brighter resting glow. */
   .view-sequence-button.play-purpose.retry:not(.quiet):not(:hover)::after {
     opacity: 1;
+  }
+
+  /* Viewer: blue and still, so green Play stays the one that breathes. */
+  .view-sequence-button.viewer-purpose {
+    border-color: color-mix(in srgb, var(--semantic-info) 72%, white);
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--semantic-info) 84%, white) 0%,
+      color-mix(in srgb, var(--semantic-info) 74%, #075985) 100%
+    );
+    box-shadow:
+      0 5px 14px color-mix(in srgb, var(--semantic-info) 52%, transparent),
+      inset 0 1px 0 rgba(255, 255, 255, 0.28);
+    animation: none;
+  }
+
+  .view-sequence-button.viewer-purpose:hover {
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--semantic-info) 76%, white) 0%,
+      color-mix(in srgb, var(--semantic-info) 68%, #075985) 100%
+    );
+    box-shadow: 0 6px 16px
+      color-mix(in srgb, var(--semantic-info) 64%, transparent);
+    transform: scale(1.05);
   }
 
   .workspace-action-label {
@@ -295,7 +328,8 @@
   }
 
   .view-sequence-button.quiet,
-  .view-sequence-button.quiet.play-purpose {
+  .view-sequence-button.quiet.play-purpose,
+  .view-sequence-button.quiet.viewer-purpose {
     border: 1px solid var(--theme-stroke);
     background: var(--theme-card-bg);
     box-shadow: none;
@@ -308,9 +342,13 @@
     box-shadow: none;
   }
 
-  /* Quiet keeps the familiar green on the Play icon. */
+  /* Quiet keeps the familiar icon color: green Play, blue Viewer. */
   .view-sequence-button.quiet i {
     color: color-mix(in srgb, var(--semantic-success) 78%, white);
+  }
+
+  .view-sequence-button.quiet.viewer-purpose i {
+    color: color-mix(in srgb, var(--semantic-info) 72%, white);
   }
 
   .view-sequence-button i {
@@ -387,7 +425,8 @@
       opacity: 1;
     }
 
-    .view-sequence-button:hover {
+    .view-sequence-button:hover,
+    .view-sequence-button.viewer-purpose:hover {
       transform: none;
     }
 

@@ -4,6 +4,7 @@
   import { getDeviceDetector } from "#lib/shared/device/get-device-detector.js";
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import type { StepClickModifiers } from "#lib/features/create/shared/state/selection/grid-range-selection.js";
   import type { DeviceDetector } from "#lib/shared/device/services/device-detector.js";
   import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import type { BuildModeId } from "#lib/shared/foundation/ui/ui-types.js";
@@ -38,7 +39,9 @@
     calculateTimelineUnitSize,
     calculateTimelinePadding,
     clampTimelineUnitSizeToHeight,
+    WORKBENCH_EDGE_RESERVE,
   } from "#lib/shared/create/utils/grid-calculations.js";
+  import { MIN_LEGIBLE_PICTOGRAPH_SIZE } from "#lib/shared/pictograph/shared/domain/constants/pictograph-legibility.js";
   import { formatDurationCompact } from "../../../domain/models/duration-pattern-data";
   import type { ArrivalRect } from "../domain/pictograph-arrival-geometry";
   import { getArrivalPresentedStepCount } from "../domain/pictograph-arrival-layout";
@@ -114,7 +117,7 @@
     startPlacement?: StartPlacementData | StepData | null;
     onStepClick?: (
       stepNumber: number,
-      modifiers?: { range: boolean; toggle: boolean }
+      modifiers?: StepClickModifiers
     ) => void;
     onStartClick?: () => void;
     onStepDelete?: (stepNumber: number) => void;
@@ -257,7 +260,9 @@
   // A passive preview has no such interaction, so it spends that edge reserve
   // on the notation instead. WorkspaceGrid consumes this same value as padding
   // so the sizing calculation and painted content box stay aligned.
-  const edgeReserve = $derived(sizingProfile === "preview" ? 4 : 16);
+  const edgeReserve = $derived(
+    sizingProfile === "preview" ? 4 : WORKBENCH_EDGE_RESERVE
+  );
 
   // The cell cap is a px constant, so on a surface that ramps its root font for
   // large displays every rem around the grid grows while the pictographs stay
@@ -269,16 +274,26 @@
   const rampedMaxCellSize = $derived(rootFontRamp.scaled(BASE_MAX_CELL_SIZE));
 
   // On Construct's phone tier the workspace is a short band above the option
-  // grid. Its usual column table ignores height, so a second row could need
-  // less than the 40px floor and slide under the rail; there the grid picks
-  // whichever column count shows every step largest instead. The timeline
-  // rows take their beats per row from the same column count.
+  // grid. Its usual column table ignores height, so a second row could slide
+  // under the rail; there the grid picks whichever column count shows every
+  // step largest instead, but only while that stays legible (see
+  // legibleCellSize below). Past that the grid keeps legible cells and
+  // scrolls. The timeline rows take their beats per row from the same column
+  // count.
   const fitsConstructPhoneBand = $derived(
     activeMode === "construct" &&
       isConstructPhoneTier({
         width: containerWidth,
         stacked: !isSideBySideLayout,
       })
+  );
+
+  // The Create workspace scrolls rather than shrink its pictographs past
+  // reading; embedded and preview grids keep the older policy.
+  const legibleCellSize = $derived(
+    activeMode !== null && sizingProfile === "workbench"
+      ? MIN_LEGIBLE_PICTOGRAPH_SIZE
+      : null
   );
 
   function calculateResponsiveGridLayout(stepCount: number) {
@@ -313,6 +328,7 @@
         allowFewStepOverflowOnNarrow,
         fitAllSteps: fitAllSteps || fitsConstructPhoneBand,
         preferLongRows: activeMode !== null && sizingProfile === "workbench",
+        legibleCellSize,
         widthPaddingRatio: sizingProfile === "preview" ? 1 : undefined,
         heightPaddingRatio: sizingProfile === "preview" ? 1 : undefined,
       }
@@ -420,11 +436,14 @@
     // and the width-based size overflows a short host (Fold portrait: a 354px
     // tile in a 293px wrapper, clipping the props and the letter).
     const rowCount = Math.max(timelineRows.length, hasStart ? 1 : 0);
+    // The Create workspace keeps its pictographs readable and scrolls the
+    // rows that no longer fit, instead of shrinking every row to fit.
     return clampTimelineUnitSizeToHeight(
       widthBased,
       containerHeight,
       rowCount,
-      edgeReserve
+      edgeReserve,
+      legibleCellSize
     );
   });
 
@@ -762,7 +781,18 @@
     modifiers?: { range: boolean; toggle: boolean }
   ) {
     hapticService?.trigger("selection");
-    onStepClick?.(stepNumber, modifiers);
+    // Tell the selection how the beats are laid out, so shift-click can
+    // select a column or box instead of every beat in between.
+    onStepClick?.(
+      stepNumber,
+      modifiers && {
+        ...modifiers,
+        grid: {
+          columns: isTimelineMode ? timelineBeatsPerRow : gridLayout.columns,
+          stepCount: presentedSteps.length,
+        },
+      }
+    );
   }
 
   function handleStartClick() {

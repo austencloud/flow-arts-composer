@@ -3,20 +3,68 @@
 		"type": "teaching:started",
 		"teacherId": "avatar-7",
 		"learnerId": "avatar-11",
-		"sequenceId": "gallery-spiral-seq",
+		"sequenceId": "gallery-scribes-seq",
 		"tick": 4400
 	},
 	{
 		"type": "teaching:fumble",
 		"learnerId": "avatar-11",
 		"step": 1,
-		"tick": 4520
+		"tick": 4460
+	},
+	{
+		"type": "teaching:started",
+		"teacherId": "avatar-1",
+		"learnerId": "avatar-8",
+		"sequenceId": "performer-cave-seq",
+		"tick": 4488
+	},
+	{
+		"type": "teaching:started",
+		"teacherId": "avatar-9",
+		"learnerId": "avatar-10",
+		"sequenceId": "gallery-scribes-seq:rotate",
+		"tick": 4543
+	},
+	{
+		"type": "teaching:completed",
+		"teacherId": "avatar-1",
+		"learnerId": "avatar-8",
+		"sequenceId": "performer-cave-seq",
+		"tick": 4568
 	},
 	{
 		"type": "teaching:completed",
 		"teacherId": "avatar-7",
 		"learnerId": "avatar-11",
-		"sequenceId": "gallery-spiral-seq",
-		"tick": 4586
+		"sequenceId": "gallery-scribes-seq",
+		"tick": 4600
+	},
+	{
+		"type": "teaching:started",
+		"teacherId": "avatar-1",
+		"learnerId": "avatar-8",
+		"sequenceId": "gallery-scribes-seq:rotate",
+		"tick": 4640
+	},
+	{
+		"type": "teaching:completed",
+		"teacherId": "avatar-9",
+		"learnerId": "avatar-10",
+		"sequenceId": "gallery-scribes-seq:rotate",
+		"tick": 4643
+	},
+	{
+		"type": "teaching:fumble",
+		"learnerId": "avatar-8",
+		"step": 1,
+		"tick": 4700
+	},
+	{
+		"type": "teaching:completed",
+		"teacherId": "avatar-1",
+		"learnerId": "avatar-8",
+		"sequenceId": "gallery-scribes-seq:rotate",
+		"tick": 4840
 	}
 ]

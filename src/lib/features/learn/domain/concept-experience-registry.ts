@@ -1,6 +1,7 @@
 import type { Component } from "svelte";
 import type { ExperienceViewMode, LearnConcept } from "./types";
 import { TKA_CONCEPTS } from "./concepts";
+import { HAND_MOTIONS_STAGES } from "../components/interactive/motions/hand-motions-stage";
 
 interface ConceptExperienceProps {
   viewMode?: ExperienceViewMode;
@@ -15,6 +16,17 @@ interface ConceptExperienceProps {
 
 export type ConceptExperienceComponent = Component<ConceptExperienceProps>;
 
+/**
+ * The stages a page can open a lesson on, by name. `steps` are the lesson's
+ * 1-based saved steps; the schema key and version are written with the step
+ * so the lesson reads the place as current.
+ */
+export interface ConceptStageMap {
+  steps: Readonly<Record<string, number>>;
+  schemaKey: string;
+  schemaVersion: number;
+}
+
 export interface ConceptExperienceDefinition {
   conceptId: string;
   guideSlug: string;
@@ -22,6 +34,8 @@ export interface ConceptExperienceDefinition {
   reference?: { href: string; label: string };
   reviewStatus: "confirmed" | "built";
   load: () => Promise<{ default: ConceptExperienceComponent }>;
+  /** Present when a page may open the lesson mid-way. */
+  stages?: ConceptStageMap;
 }
 
 function experience(
@@ -64,6 +78,7 @@ export const CONCEPT_EXPERIENCES = [
     guideSlug: "hand-motions",
     guideLabel: "Hand Motions",
     reviewStatus: "built",
+    stages: HAND_MOTIONS_STAGES,
     load: () =>
       import("../components/interactive/motions/MotionsConceptExperience.svelte"),
   }),
@@ -85,6 +100,30 @@ export function getConceptExperienceForGuideSlug(
   // A focused lesson can share its written reference with a broader lesson.
   // The Guide still opens the first, broader experience for that topic.
   return CONCEPT_EXPERIENCES.find((entry) => entry.guideSlug === guideSlug);
+}
+
+/**
+ * Where a named stage lands in a lesson: the saved step to write, with the
+ * schema that makes it current. Undefined for an unknown name or a lesson
+ * that cannot be entered mid-way.
+ */
+export function conceptStageTarget(
+  conceptId: string,
+  stage: string
+): { step: number; schemaKey: string; schemaVersion: number } | undefined {
+  const definition: ConceptExperienceDefinition | undefined =
+    byConceptId.get(conceptId);
+  const stages = definition?.stages;
+  const step =
+    stages && Object.hasOwn(stages.steps, stage)
+      ? stages.steps[stage]
+      : undefined;
+  if (!stages || step === undefined) return undefined;
+  return {
+    step,
+    schemaKey: stages.schemaKey,
+    schemaVersion: stages.schemaVersion,
+  };
 }
 
 export function isConceptExperienceAvailable(conceptId: string): boolean {

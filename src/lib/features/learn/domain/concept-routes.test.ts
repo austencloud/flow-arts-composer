@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { enteredCourseFromOutside } from "./concept-routes";
+import {
+  buildConceptStagePath,
+  conceptHrefWithoutFlags,
+  conceptRestartFromUrl,
+  conceptStageFromUrl,
+  enteredCourseFromOutside,
+} from "./concept-routes";
 
 // What SvelteKit's afterNavigate hands a component: where the reader was and
 // where they landed. Only the URLs matter to this rule.
@@ -79,5 +85,60 @@ describe("enteredCourseFromOutside", () => {
         to: null,
       })
     ).toBe(false);
+  });
+});
+
+describe("stage links", () => {
+  it("builds a lesson link that names a stage", () => {
+    expect(buildConceptStagePath("hand-motions-intro", "two-hands")).toBe(
+      "/learn/concepts/hand-motions-intro?stage=two-hands"
+    );
+  });
+
+  it("reads the stage off a lesson URL", () => {
+    expect(
+      conceptStageFromUrl(
+        new URL(`${SITE}/learn/concepts/hand-motions-intro?stage=map`)
+      )
+    ).toEqual({ conceptId: "hand-motions-intro", stage: "map" });
+  });
+
+  it("is null without a stage, with an empty stage, or off a lesson", () => {
+    expect(
+      conceptStageFromUrl(new URL(`${SITE}/learn/concepts/hand-motions-intro`))
+    ).toBeNull();
+    expect(
+      conceptStageFromUrl(
+        new URL(`${SITE}/learn/concepts/hand-motions-intro?stage=`)
+      )
+    ).toBeNull();
+    expect(
+      conceptStageFromUrl(
+        new URL(`${SITE}/guide/level-1/hand-motions?stage=map`)
+      )
+    ).toBeNull();
+  });
+
+  it("strips both entry flags and keeps everything else", () => {
+    expect(
+      conceptHrefWithoutFlags(
+        new URL(
+          `${SITE}/learn/concepts/hand-motions-intro?from-start&stage=quiz&keep=1#top`
+        )
+      )
+    ).toBe("/learn/concepts/hand-motions-intro?keep=1#top");
+    expect(
+      conceptHrefWithoutFlags(
+        new URL(`${SITE}/learn/concepts/hand-motions-intro?keep=1`)
+      )
+    ).toBeNull();
+  });
+
+  it("a restart link still resets", () => {
+    expect(
+      conceptRestartFromUrl(
+        new URL(`${SITE}/learn/concepts/grid?from-start&stage=map`)
+      )?.conceptId
+    ).toBe("grid");
   });
 });

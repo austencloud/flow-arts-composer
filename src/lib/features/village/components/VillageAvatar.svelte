@@ -1,5 +1,7 @@
 <!--
-  VillageAvatar - Renders one village entity via PerformerRig with props and effects.
+  VillageAvatar - Renders one village entity through LiveSequencePerformer3D,
+  the performer Flow Fest uses: the props are fitted to this character's own
+  reach, the grip is welded to the palm, and the body answers the props.
 
   The body stays invisible until its model and walk clips are ready
   (PerformerRig's onAvatarMotionReady), then fades in. A small name label
@@ -12,33 +14,27 @@
   standing rig once it is ready, and the rig fades out. Its loading starts
   as they walk to the chair, and if it never loads they stand by the chair
   as before.
-  Age shows in the body (village-age-look.ts): a youth is a smaller person,
-  scaled evenly about the feet, growing to adult size when they come of age;
-  an elder stands a little smaller with a stoop (posture-stoop.ts) while
-  their hands are free. Each person's clothes carry their own tint
-  (clothing-tint.ts), in the chair too, so no two bodies match.
+  Every body is an adult; age shows in what people do, not in their size.
+  Each person's clothes carry their own tint (clothing-tint.ts), in the
+  chair too, so no two bodies match.
 
-  PerformerRig manages Avatar3D + Prop3D + EffectOrchestrator3D as a
-  coordinated hierarchy. Every field comes from the avatar's latest snapshot
-  entry; prop type and effect look are fixed identity picked at birth.
+  The props are in the hands only while the sim has them spinning
+  (renderState.spin). Otherwise someone who spins a staff carries it in the
+  approved carry pose (CarriedProp: upright beside the hip walking, resting
+  on the ground standing); anyone else's hands are empty. Every field comes from the avatar's latest snapshot entry;
+  prop type and effect look are fixed identity picked at birth.
 -->
 <script lang="ts">
   import { T, useTask, useThrelte } from "@threlte/core";
-  import { untrack } from "svelte";
   import { Vector3, type Group } from "three";
   import { HTML } from "@threlte/extras";
-  import { PerformerRig } from "@austencloud/scene-3d";
   import { userProportionsState } from "@austencloud/scene-3d";
-  import { PlaneMode } from "@austencloud/scene-3d";
+  import LiveSequencePerformer3D from "#lib/shared/3d/performers/LiveSequencePerformer3D.svelte";
+  import CarriedProp from "#lib/shared/3d/performers/carry/CarriedProp.svelte";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
-  import type {
-    TipEffectMap,
-    EffectType,
-  } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
   import type { AvatarRenderState } from "../state/village-state.svelte.js";
   import { VISITOR_ID } from "../domain/village-types";
-  import type { AvatarId, TerminalStepPlan } from "@austencloud/scene-3d";
-  import { toScenePropType } from "#lib/shared/3d/domain/scene-prop-type.js";
+  import type { CharacterId } from "#lib/shared/3d/domain/character-model.js";
   import { getVillageContext } from "../state/village-context";
   import {
     passingFade,
@@ -47,20 +43,9 @@
   import VillageSeatedFigure from "./VillageSeatedFigure.svelte";
   import { planCampLayout } from "../domain/village-campfire";
   import { SEATED_AUDIENCE_ANIMATION_URLS } from "#lib/shared/3d/config/seated-audience-assets.js";
-  import { getAvatarModelPath } from "@austencloud/scene-3d/worker";
+  import { getCharacterModelPath } from "#lib/shared/3d/domain/character-model.js";
   import { repairFadeLeftoverMaterials } from "#lib/shared/3d/performers/avatar-material-repair.js";
-  import {
-    createPostureStoop,
-    type PostureStoop,
-  } from "#lib/shared/3d/performers/posture-stoop.js";
   import { tintClothing } from "#lib/shared/3d/performers/clothing-tint.js";
-  import { usePropEffectStages } from "#lib/shared/3d/effects/prop-effect-stages.js";
-  import {
-    AGE_LOOK,
-    GROW_SECONDS,
-    STOOP_EASE_SECONDS,
-    easeToward,
-  } from "./village-age-look";
 
   interface Props {
     renderState: AvatarRenderState;
@@ -86,9 +71,8 @@
 
   const STAGE_LIFT = $derived(-userProportionsState.groundY);
   const avatar = $derived(renderState.avatar);
-  const avatarModelId = $derived(avatar.modelId as AvatarId);
+  const characterId = $derived(avatar.modelId as CharacterId);
   const avatarName = $derived(avatar.name);
-  const lifecyclePhase = $derived(avatar.phase);
   const socialState = $derived(avatar.state);
   // Taking a lesson from the museum visitor: the label says so, and shows
   // for the whole lesson so the visitor can see whom they are teaching.
@@ -96,40 +80,9 @@
     socialState === "learning" && avatar.partnerId === VISITOR_ID
   );
 
-  // The body's size for their age, scaled evenly about the feet. Eased, so
-  // a youth grows into an adult rather than popping up; the first frame
-  // starts at their size.
-  const ageLook = $derived(AGE_LOOK[lifecyclePhase]);
-  let bodyScale = $state(untrack(() => AGE_LOOK[avatar.phase].scale));
-  const GROW_SPAN = AGE_LOOK.adult.scale - AGE_LOOK.youth.scale;
-
-  // An elder's stoop, applied after the rig poses the body each frame (the
-  // pose stage, after the main stage where Avatar3D animates). Only while
-  // nothing is in their hands: bending the spine after the arm IK would pull
-  // the hands off a prop. Eased in and out.
-  const { pose: poseStage } = usePropEffectStages();
-  let stoop: PostureStoop | null = null;
-  let stoopAmount = 0;
-  let stoopUnavailable = false;
-
-  // The walk (village-walk.ts) speaks in world metres, but the rig reads
-  // speed and stop distances in the clip's own units, inside the age scale.
-  // A youth's stride is 0.82 of an adult's on screen, so their clip plays
-  // faster for the same ground speed; without this their feet slide.
   const walk = $derived(renderState.walk);
-  const rigMoveSpeed = $derived(walk.moveSpeed / bodyScale);
-  const rigStopPlan = $derived.by((): TerminalStepPlan | null => {
-    const plan = walk.terminalStepPlan;
-    if (!plan || bodyScale === 1) return plan;
-    return {
-      ...plan,
-      stepDistances: [
-        plan.stepDistances[0] / bodyScale,
-        plan.stepDistances[1] / bodyScale,
-      ],
-      remainingDistance: plan.remainingDistance / bodyScale,
-    };
-  });
+  const spin = $derived(renderState.spin);
+  const spinning = $derived(spin.sequence !== null);
 
   const isPassing = $derived(socialState === "passing");
   // In the chair, including passing there.
@@ -138,7 +91,7 @@
   );
   // Load the seated figure while they walk to the chair, so it is ready.
   const mountSeated = $derived(isSeated || socialState === "retiring");
-  const seatedModelUrl = $derived(getAvatarModelPath(avatarModelId));
+  const seatedModelUrl = $derived(getCharacterModelPath(characterId));
   const SEATED_CLIP_URL = SEATED_AUDIENCE_ANIMATION_URLS[0]!;
   // The forest campsite's chair (scripts/forest_prop_assets.py,
   // create_modern_camp_chair): its seat slopes from 0.443 m at the front to
@@ -177,11 +130,8 @@
   let bodyOpacity = $state(0);
   let shownReported = false;
 
-  // Where they stand, in x/z; the body group sits there on the floor.
+  // Where they stand, in x/z, on the floor.
   let avatarPosition = $state({ x: 0, z: 0 });
-  // The rig stands at the body group's origin; the group carries the place
-  // and the age scale.
-  const RIG_ORIGIN = { x: 0, z: 0 };
   let facingAngle = $state(0);
 
   // Once the body is fully in, the scene package can leave some of its
@@ -218,20 +168,7 @@
     const posZ = inst.position.z;
 
     avatarPosition = { x: posX, z: posZ };
-    bodyScale = easeToward(
-      bodyScale,
-      ageLook.scale,
-      GROW_SPAN,
-      GROW_SECONDS,
-      delta
-    );
     facingAngle = inst.facingAngle;
-
-    // Youth wobble: slight facing angle oscillation for youthful energy
-    if (lifecyclePhase === "youth") {
-      const wobbleAngle = Math.sin(performance.now() * 0.001 * Math.PI) * 0.05; // ~2.8 degrees
-      facingAngle += wobbleAngle;
-    }
 
     const seatTarget = isSeated && seatedReady ? 1 : 0;
     if (seatBlend !== seatTarget) {
@@ -271,34 +208,6 @@
     }
   });
 
-  useTask(
-    (delta) => {
-      const handsFree = !renderState.instanceState.hasSequence;
-      const target = handsFree && seatBlend < 1 ? ageLook.stoopRadians : 0;
-      stoopAmount = easeToward(
-        stoopAmount,
-        target,
-        AGE_LOOK.elder.stoopRadians,
-        STOOP_EASE_SECONDS,
-        delta
-      );
-      if (!bodyRoot || !motionReady) return;
-      // A model swap replaces the bones: find them again.
-      if (stoop && !stoop.attachedTo(bodyRoot)) stoop = null;
-      if (!stoop) {
-        // A rig with no spine to bend is looked through once, not every frame.
-        if (stoopAmount === 0 || stoopUnavailable) return;
-        stoop = createPostureStoop(bodyRoot);
-        if (!stoop) {
-          stoopUnavailable = true;
-          return;
-        }
-      }
-      stoop.apply(stoopAmount);
-    },
-    { stage: poseStage }
-  );
-
   // The chair they sit in, or the ground where they are.
   const seat = $derived.by(() => {
     const at = avatarPosition;
@@ -325,23 +234,9 @@
     socialState === "performing" || socialState === "practicing"
   );
 
-  // Map the avatar's effect look to TipEffectMap
-  const lookToEffect: Record<string, EffectType> = {
-    fire: "fire",
-    led: "led",
-    charcoal: "charcoal",
-    trails: "trails",
-    pure: "none",
-  };
-
-  const tipEffectMap = $derived<TipEffectMap>(
-    isActiveForEffects
-      ? {
-          "*": {
-            effect: lookToEffect[avatar.effectLook] ?? "none",
-          },
-        }
-      : {}
+  // "pure" spins with no effect at all.
+  const effectId = $derived(
+    avatar.effectLook === "pure" ? null : avatar.effectLook
   );
 
   // Map the avatar's prop type to PropType enum
@@ -354,43 +249,68 @@
   };
 
   const propType = $derived(propTypeMap[avatar.propType] ?? PropType.STAFF);
+
+  // Only the staff has an approved carry pose; the colour is fixed per person.
+  const carriesStaff = $derived(avatar.propType === "staff");
+  const carry = {
+    kind: "staff",
+    color:
+      [...renderState.entityId].reduce((sum, c) => sum + c.charCodeAt(0), 0) %
+        2 ===
+      0
+        ? "blue"
+        : "red",
+  } as const;
+  const carrying = $derived(
+    carriesStaff && !spinning && bodyVisible && !mountSeated && !isPassing
+  );
 </script>
 
-<!-- The body, on the floor where they stand, scaled for their age about the
-     feet. PerformerRig handles Y positioning internally: groundOffset
-     STAGE_LIFT puts its feet at the group's origin. -->
-<T.Group
-  bind:ref={bodyRoot}
-  position.x={avatarPosition.x}
-  position.y={floorY}
-  position.z={avatarPosition.z}
-  scale={bodyScale}
->
-  <PerformerRig
-    position={RIG_ORIGIN}
+<!-- The body, on the floor where they stand. The performer puts its feet
+     at position.y (VillageClearing's floor lift). -->
+<T.Group bind:ref={bodyRoot}>
+  <LiveSequencePerformer3D
+    id={`village-${renderState.entityId}`}
+    position={{ x: avatarPosition.x, y: floorY, z: avatarPosition.z }}
     {facingAngle}
-    planeMode={PlaneMode.WALL}
-    avatarState={renderState.instanceState}
-    avatarId={avatarModelId}
-    groundOffset={STAGE_LIFT}
-    avatarOpacity={bodyOpacity * (1 - seatBlend)}
-    onAvatarMotionReady={() => (motionReady = true)}
-    showGrid={false}
-    showProps={bodyVisible && seatBlend < 0.5}
-    showEffects={bodyVisible && isActiveForEffects}
-    enableLocomotion={true}
+    {characterId}
+    {propType}
+    sequence={spin.sequence}
+    scoreBeat={spin.scoreBeat}
+    playbackSpeed={spin.beatsPerSecond}
+    active={spin.active}
+    beatPlaneOverrides={spin.beatPlaneOverrides}
+    facingHint={spin.facingHint ?? null}
+    rootTurn={spin.rootTurn ?? null}
+    effectId={effectId ?? "led"}
+    effectQualityTier="low"
+    contactMode="legacy"
+    weldGrip={true}
+    bodyResponse={true}
+    bodyOpacity={bodyOpacity * (1 - seatBlend)}
+    showProps={spinning && bodyVisible && seatBlend < 0.5}
+    showEffects={effectId !== null &&
+      spinning &&
+      bodyVisible &&
+      isActiveForEffects}
     isMoving={walk.isMoving}
-    moveSpeed={rigMoveSpeed}
-    terminalStepPlan={rigStopPlan}
-    turnRequestOverride={walk.turnRequestOverride}
+    moveSpeed={walk.moveSpeed}
+    terminalStepPlan={walk.terminalStepPlan}
+    turnRequest={walk.turnRequestOverride}
+    moveDirection={walk.moveDirection}
+    gaitTimingSample={walk.gaitTimingSample}
     locomotionResetKey={walk.locomotionResetKey}
     onGaitClock={walk.onGaitClock}
-    {tipEffectMap}
-    bluePropType={toScenePropType(propType)}
-    redPropType={toScenePropType(propType)}
+    onMotionReady={() => (motionReady = true)}
+    onMotionError={() => (motionReady = true)}
   />
 
-  <T.Group bind:ref={labelAnchor} position.y={STAGE_LIFT + 0.6}>
+  <T.Group
+    bind:ref={labelAnchor}
+    position.x={avatarPosition.x}
+    position.y={floorY + STAGE_LIFT + 0.6}
+    position.z={avatarPosition.z}
+  >
     {#if showLabel && motionReady && bodyOpacity > 0 && (isSelected || isNear || learningFromVisitor)}
       <HTML center sprite>
         <div class="name-label" style:opacity={bodyOpacity}>
@@ -404,8 +324,17 @@
   </T.Group>
 </T.Group>
 
-<!-- Outside the body group: the sitter places itself in the chair, at the
-     same even scale, so the seat fit holds. -->
+{#if carriesStaff}
+  <CarriedProp
+    root={bodyRoot}
+    {carry}
+    isMoving={walk.isMoving}
+    groundY={floorY}
+    visible={carrying}
+  />
+{/if}
+
+<!-- Outside the body group: the sitter places itself in the chair. -->
 {#if mountSeated}
   <VillageSeatedFigure
     modelUrl={seatedModelUrl}
@@ -413,7 +342,6 @@
     {seat}
     {floorY}
     seatTop={CHAIR_SEAT_TOP}
-    scale={ageLook.scale}
     tintKey={renderState.entityId}
     timeOffset={seatedTimeOffset}
     opacity={bodyOpacity * seatBlend}

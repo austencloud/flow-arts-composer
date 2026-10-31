@@ -7,11 +7,11 @@
 		{
 			"tick": 4600,
 			"type": "teach",
-			"learnerId": "avatar-15",
+			"learnerId": "avatar-13",
 			"sequenceId": "visitor-made-3",
-			"x": 5.4,
-			"z": 0.94,
-			"facing": -1.421
+			"x": -5.3,
+			"z": 1.45,
+			"facing": 1.341
 		}
 	],
 	"lastTick": 4800,

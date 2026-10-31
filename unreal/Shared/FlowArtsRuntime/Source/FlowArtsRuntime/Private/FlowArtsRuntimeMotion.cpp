@@ -254,7 +254,9 @@ bool FFlowArtsRuntimeMotion::Parse(const FString& Json, const FString& ExpectedC
         if (!FieldObject(Root, TEXT("gripValidation"), Grip) ||
             !(*Grip)->TryGetStringField(TEXT("measurement"), Measurement) ||
             Measurement != TEXT("same-frame-calibrated-palm-to-rendered-grip") ||
-            !(*Grip)->TryGetStringField(TEXT("contactMode"), ContactMode) || ContactMode != TEXT("prop-authoritative") ||
+            !(*Grip)->TryGetStringField(TEXT("contactMode"), ContactMode) ||
+            // A phrase capture locks each staff to its palm after the arms solve.
+            (ContactMode != TEXT("prop-authoritative") && ContactMode != TEXT("prop-authoritative-palm-locked-v1")) ||
             !(*Grip)->TryGetStringField(TEXT("reachPolicy"), ReachPolicy) || ReachPolicy != TEXT("paired-body-final-socket-v1") ||
             !(*Grip)->TryGetNumberField(TEXT("maxErrorCm"), MaxErrorCm) || !FMath::IsFinite(MaxErrorCm) || MaxErrorCm < 0.0 ||
             !(*Grip)->TryGetNumberField(TEXT("limitCm"), LimitCm) || LimitCm != 0.2 || MaxErrorCm > LimitCm ||

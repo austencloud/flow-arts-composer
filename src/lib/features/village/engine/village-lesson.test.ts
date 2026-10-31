@@ -6,6 +6,7 @@
  */
 
 import { describe, expect, it } from "vitest";
+import { createLesson } from "../domain/village-lesson";
 import { loadVillageRules } from "../domain/village-rules";
 import { VillageOrchestrator } from "./village-orchestrator";
 import type { VillageAvatarSnapshot, VillageSnapshot } from "./village-snapshot";
@@ -65,6 +66,11 @@ function lessons(): Lesson[] {
 	return found;
 }
 
+// Beats in one pass of the sequence an avatar is being taught.
+function passSteps(avatar: VillageAvatarSnapshot): number {
+	return createLesson(RULES, avatar.activeSequenceId!).passSteps;
+}
+
 function collapse(phases: readonly string[]): string[] {
 	return phases.filter((phase, i) => phase !== phases[i - 1]);
 }
@@ -78,39 +84,62 @@ describe("the lesson", () => {
 		for (const lesson of all) {
 			const order = collapse(lesson.phases).join(" ");
 			// A lesson may stop early (a fumble too many, or someone passing),
-			// but never skips ahead or goes back.
-			expect(order).toMatch(/^demonstrate( mirror( fumble mirror)*( fumble)?( recognition( solo)?)?)?$/);
+			// but never skips ahead or goes back. A slip on the beat the learner
+			// joins skips mirror on the snapshot.
+			expect(order).toMatch(/^demonstrate( (mirror|fumble))*( recognition( solo)?)?$/);
 		}
 		for (const lesson of finished) {
 			expect(collapse(lesson.phases).join(" ")).toMatch(
-				/^demonstrate mirror( fumble mirror)* recognition solo$/,
+				/^demonstrate( (mirror|fumble))* mirror recognition solo$/,
 			);
 		}
 	});
 
-	it("demonstrates the whole sequence while the learner watches", () => {
-		const lesson = finished[0]!;
-		const first = avatarAt(lesson.run[lesson.startTick], lesson.learnerId)!;
-		const demoTicks = RULES.lesson.demonstratePasses * first.lessonStepCount * RULES.teaching.ticksPerStep;
-		expect(lesson.phases.slice(0, demoTicks).every((p) => p === "demonstrate")).toBe(true);
-		for (let t = 0; t < demoTicks; t++) {
-			const snapshot = lesson.run[lesson.startTick + t];
-			const teacher = avatarAt(snapshot, lesson.teacherId)!;
-			expect(teacher.lessonStep).toBe(Math.floor(t / RULES.teaching.ticksPerStep) % first.lessonStepCount);
-			expect(avatarAt(snapshot, lesson.learnerId)!.lessonStep).toBeNull();
-		}
-		// Then the teacher leads and the learner comes in a step behind, mirrored.
-		const follow = lesson.run[lesson.startTick + demoTicks + RULES.lesson.followSteps * RULES.teaching.ticksPerStep]!;
-		const learner = avatarAt(follow, lesson.learnerId)!;
-		if (learner.lessonPhase === "mirror") {
+	it("demonstrates the whole sequence while the learner watches, then both play it in unison", () => {
+		const tps = RULES.teaching.ticksPerStep;
+		for (const lesson of finished.slice(0, 5)) {
+			const first = avatarAt(lesson.run[lesson.startTick], lesson.learnerId)!;
+			const pass = passSteps(first);
+			expect(pass - first.lessonStepCount).toBeGreaterThanOrEqual(0);
+			expect(pass - first.lessonStepCount).toBeLessThanOrEqual(1);
+			const demoTicks = RULES.lesson.demonstratePasses * pass * tps;
+			expect(lesson.phases.slice(0, demoTicks).every((p) => p === "demonstrate")).toBe(true);
+			for (let t = 0; t < demoTicks; t++) {
+				const snapshot = lesson.run[lesson.startTick + t];
+				const teacher = avatarAt(snapshot, lesson.teacherId)!;
+				expect(teacher.lessonStep).toBe(Math.min(Math.floor(t / tps) % pass, first.lessonStepCount));
+				expect(avatarAt(snapshot, lesson.learnerId)!.lessonStep).toBeNull();
+			}
+			// The learner comes in on the next beat, on the teacher's step, mirrored.
+			const join = lesson.run[lesson.startTick + demoTicks]!;
+			const learner = avatarAt(join, lesson.learnerId)!;
+			expect(learner.lessonPhase).toMatch(/^(mirror|fumble)$/);
 			expect(learner.lessonStep).toBe(0);
 			expect(learner.lessonMirrored).toBe(true);
-			expect(avatarAt(follow, lesson.teacherId)!.lessonStep).toBe(RULES.lesson.followSteps % first.lessonStepCount);
+			expect(avatarAt(join, lesson.teacherId)!.lessonStep).toBe(0);
 		}
 	});
 
-	it("restarts a fumble from the step that was missed", () => {
-		const ticksPerStep = RULES.teaching.ticksPerStep;
+	it("never stops the teacher, and a playing learner is always on the teacher's beat", () => {
+		let beats = 0;
+		for (const lesson of all) {
+			lesson.phases.forEach((phase, t) => {
+				if (phase !== "mirror" && phase !== "fumble") return;
+				const snapshot = lesson.run[lesson.startTick + t];
+				const teacher = avatarAt(snapshot, lesson.teacherId)!;
+				const learner = avatarAt(snapshot, lesson.learnerId)!;
+				expect(teacher.lessonStep).not.toBeNull();
+				if (learner.lessonStep === null) return;
+				expect(learner.lessonStep).toBe(teacher.lessonStep);
+				expect(learner.lessonStepTick).toBe(teacher.lessonStepTick);
+				beats++;
+			});
+		}
+		expect(beats).toBeGreaterThan(100);
+	});
+
+	it("after a slip plays on to the end of the pass, sits one out, and rejoins on the next", () => {
+		const tps = RULES.teaching.ticksPerStep;
 		let checked = 0;
 		for (const run of RUNS) {
 			for (const snapshot of run) {
@@ -121,19 +150,25 @@ describe("the lesson", () => {
 					const teacherId = learner.partnerId!;
 					expect(learner.lessonPhase).toBe("fumble");
 					expect(learner.lessonStep).toBe(event.step);
-					expect(avatarAt(snapshot, teacherId)!.lessonStep).toBeNull();
+					expect(avatarAt(snapshot, teacherId)!.lessonStep).toBe(event.step);
 
-					// After the stumble the teacher plays the missed step again
-					// with the learner watching, then the learner plays it.
-					const resume = snapshot.world.tick + RULES.lesson.fumbleTicks;
-					const lead = avatarAt(run[resume], event.learnerId);
-					if (lead?.lessonPhase !== "mirror") continue;
-					expect(avatarAt(run[resume], teacherId)!.lessonStep).toBe(event.step);
-					expect(lead.lessonStep).toBeNull();
-					const again = avatarAt(run[resume + RULES.lesson.followSteps * ticksPerStep], event.learnerId);
-					if (again?.lessonPhase === "mirror" || again?.lessonPhase === "fumble") {
-						expect(again.lessonStep).toBe(event.step);
+					const pass = passSteps(learner);
+					const start = snapshot.world.tick;
+					const playOn = (pass - event.step) * tps;
+					const sitOut = RULES.lesson.sitOutPasses * pass * tps;
+					// Skip a lesson something else ended before the rejoin.
+					const span = Array.from({ length: playOn + sitOut + 1 }, (_, i) => avatarAt(run[start + i], event.learnerId));
+					if (span.some((a) => !a?.lessonPhase)) continue;
+					for (let i = 0; i < playOn; i++) expect(span[i]!.lessonStep).not.toBeNull();
+					for (let i = playOn; i < playOn + sitOut; i++) {
+						expect(span[i]!.lessonPhase).toBe("fumble");
+						expect(span[i]!.lessonStep).toBeNull();
 					}
+					const back = span[playOn + sitOut]!;
+					// Back in, unless having it already ended the lesson there.
+					if (back.lessonPhase === "recognition") continue;
+					expect(back.lessonPhase).toMatch(/^(mirror|fumble)$/);
+					expect(back.lessonStep).toBe(0);
 					checked++;
 				}
 			}
@@ -164,7 +199,10 @@ describe("the lesson", () => {
 					expect(watcher.state).toBe("teaching");
 					expect(watcher.lessonStep).toBeNull();
 
-					const soloTicks = RULES.lesson.soloPasses * solo.lessonStepCount * RULES.teaching.ticksPerStep;
+					const soloTicks = RULES.lesson.soloPasses * passSteps(solo) * RULES.teaching.ticksPerStep;
+					// A death nearby can send both off looking for knowledge mid-solo
+					// (funeral-system.ts); that lesson ends early by design.
+					if (avatarAt(run[soloTick + soloTicks - 1], event.learnerId)?.lessonPhase !== "solo") continue;
 					const after = run[soloTick + soloTicks];
 					if (!after) continue;
 					expect(avatarAt(after, event.learnerId)?.lessonPhase ?? null).toBeNull();

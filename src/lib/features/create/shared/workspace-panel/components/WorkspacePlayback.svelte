@@ -19,7 +19,6 @@
     onStepChange,
     onPlaybackChange,
     onclose,
-    onExpand,
   }: {
     sequence: SequenceData;
     active: boolean;
@@ -34,10 +33,6 @@
     /** Returns the workspace to the editable card. Rendered as a corner X so
      *  the preview carries its own exit instead of relying on Stop or Escape. */
     onclose?: () => void;
-    /** Hands the running playback to the full Sequence Viewer. Rendered at
-     *  the end of the scrubber row, after the effect button, where video
-     *  players put fullscreen; hidden when no handler is passed. */
-    onExpand?: () => void;
   } = $props();
 
   let currentStep = $state(0);
@@ -59,6 +54,10 @@
    *  from its top edge. */
   let effectPickerLift = $state(0);
   let effectPickerScale = $state(1);
+  /** How far the open effect picker slides the player sideways, in px,
+   *  negative to the left, so its side panel takes the empty room beside the
+   *  player on a wide, short screen. */
+  let effectPickerShift = $state(0);
   const visibilityManager = getAnimationVisibilityManager();
   let effectsConfigState = $state<EffectsConfigState>(
     visibilityManager.effectsConfigState ?? createEffectsConfigState()
@@ -73,10 +72,10 @@
   );
 
   /** The player where it rests, centred in its layout at its own size, so
-   *  the effect picker's fit gives the same answer while the player is lifted
-   *  or shrunk for it, or easing back. The lift and the shrink are a
-   *  transform: the layout's box and the transform on screen (mid-transition
-   *  included) say where the rest is. */
+   *  the effect picker's fit gives the same answer while the player is lifted,
+   *  shrunk or slid aside for it, or easing back. The lift, the shrink and
+   *  the slide are a transform: the layout's box and the transform on screen
+   *  (mid-transition included) say where the rest is. */
   function playerAtRest() {
     if (!playbackLayout || !playbackMedia || !playerStage) return null;
     const layout = playbackLayout.getBoundingClientRect();
@@ -85,13 +84,16 @@
     const transform = getComputedStyle(playbackMedia).transform;
     const scale =
       transform && transform !== "none" ? new DOMMatrix(transform).a || 1 : 1;
-    // It shrinks from its top centre.
+    // It shrinks from its top centre, which slides with it; at rest that
+    // centre is the layout's.
     const centre = media.left + media.width / 2;
+    const restCentre = layout.left + layout.width / 2;
     const top = layout.top + (layout.height - media.height / scale) / 2;
     return {
       room: Math.max(0, top - layout.top),
+      beside: Math.max(0, (layout.width - media.width / scale) / 2),
       stage: new DOMRect(
-        centre + (stage.left - centre) / scale,
+        restCentre + (stage.left - centre) / scale,
         top + (stage.top - media.top) / scale,
         stage.width / scale,
         stage.height / scale
@@ -105,6 +107,12 @@
   function effectPickerRoomAbove() {
     const rest = playerAtRest();
     return { room: rest?.room ?? 0, rest: rest?.stage ?? null };
+  }
+
+  /** The empty room on either side of the player, which the effect picker's
+   *  side panel may slide it into. */
+  function effectPickerRoomBeside() {
+    return playerAtRest()?.beside ?? 0;
   }
 
   /** What the effect picker may cover under the player's controls, with the
@@ -147,8 +155,8 @@
   });
 </script>
 
-<!-- The scrubber row's trailing controls, left to right after the scrubber:
-     the effect button, then open-in-viewer. -->
+<!-- The scrubber row ends with the effect button. Opening the full viewer is
+     the rail's labeled Viewer button, beside Play. -->
 {#snippet scrubberEnd()}
   <EffectQuickSwitch
     {effectsConfigState}
@@ -156,23 +164,14 @@
     bounds={effectPickerBounds}
     roomBelow={effectPickerRoomBelow}
     roomAbove={effectPickerRoomAbove}
+    roomBeside={effectPickerRoomBeside}
     onLift={(px, scale) => {
       effectPickerLift = px;
       effectPickerScale = scale;
     }}
+    onShift={(px) => (effectPickerShift = px)}
     onArrange={(arrangement) => (effectPickerArrangement = arrangement)}
   />
-  {#if onExpand}
-    <button
-      type="button"
-      class="expand-viewer"
-      onclick={onExpand}
-      aria-label={t("create_workspace_expand_viewer")}
-      title={t("create_workspace_expand_viewer")}
-    >
-      <i class="fas fa-expand" aria-hidden="true"></i>
-    </button>
-  {/if}
 {/snippet}
 
 <div
@@ -189,6 +188,7 @@
       bind:this={playbackMedia}
       style:--picker-lift="{effectPickerLift}px"
       style:--picker-scale={effectPickerScale}
+      style:--picker-shift="{effectPickerShift}px"
     >
       <div class="player-stage" bind:this={playerStage}>
         <InlineAnimationPlayer
@@ -294,6 +294,13 @@
     inherits: false;
     initial-value: 1;
   }
+  /* How far the effect picker's side panel slides the player into the empty
+     room beside it. */
+  @property --picker-shift {
+    syntax: "<length>";
+    inherits: false;
+    initial-value: 0px;
+  }
   .playback-layout {
     /* Left unresolved here: the container units resolve against this box
        wherever the size is read. */
@@ -311,9 +318,14 @@
     /* Centred, and lifted while the effect picker's docked sheet needs the
        room above (shrunk from its top edge where even that is short): the
        player slides up as the sheet rises under it, and back down as it
-       closes, the whole animation always above the sheet. A transform, so the
-       canvas keeps its size and buffer and only the compositor scales it. */
-    transform: translate(-50%, calc(-50% - var(--picker-lift)))
+       closes, the whole animation always above the sheet. Slid sideways the
+       same way while the side panel takes the empty room beside it. A
+       transform, so the canvas keeps its size and buffer and only the
+       compositor scales it. */
+    transform: translate(
+        calc(-50% + var(--picker-shift)),
+        calc(-50% - var(--picker-lift))
+      )
       scale(var(--picker-scale));
     transform-origin: top center;
     display: grid;
@@ -386,40 +398,6 @@
     outline: 2px solid var(--theme-accent);
     outline-offset: 2px;
   }
-  /* Open in viewer: the scrubber row's own control idiom, matching the inline
-     play/pause toggle at the row's start. A bare glyph in a full 44px target
-     that shares the row's background, with a round tint on hover. */
-  .expand-viewer {
-    flex: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: var(--min-touch-target, 44px);
-    height: var(--min-touch-target, 44px);
-    padding: 0;
-    border: 0;
-    border-radius: 50%;
-    background: transparent;
-    color: var(--theme-text);
-    font-size: var(--font-size-sm, 14px);
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-    transition:
-      background var(--duration-fast) var(--ease-standard-out),
-      opacity var(--duration-fast) var(--ease-standard-out);
-  }
-  @media (hover: hover) and (pointer: fine) {
-    .expand-viewer:hover {
-      background: color-mix(in srgb, currentColor 14%, transparent);
-    }
-  }
-  .expand-viewer:active {
-    opacity: 0.6;
-  }
-  .expand-viewer:focus-visible {
-    outline: 2px solid var(--theme-accent);
-    outline-offset: -4px;
-  }
   /* Always laid out, closed until there is height for it, so its cells are
      built with the player rather than in the middle of Play's growth. Phones
      get the rail too: it sits under the canvas at every width. */
@@ -456,8 +434,7 @@
   }
   @media (prefers-reduced-motion: reduce) {
     .playback-media,
-    .notation-rail,
-    .expand-viewer {
+    .notation-rail {
       transition: none;
     }
   }

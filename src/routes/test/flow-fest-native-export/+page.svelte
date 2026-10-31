@@ -66,6 +66,8 @@
   let shouldLoop = $state(true);
   let selectedCapturePlane = $state<CapturePlane>("wall");
   let capturePlane = $state<CapturePlane>("wall");
+  // Phrase capture alone locks each staff to its palm (staff-palm-lock.ts).
+  let captureStaffPalmLock = $state(false);
   let exportBusy = $state(false);
   let exportError = $state("");
   let character = $state<CharacterId>(DEPLOYED_CHARACTER_IDS[0]!);
@@ -444,8 +446,15 @@
       throw new Error(`Phrase ${entry.id} rebuilt to ${rebuilt.steps.length} steps, expected ${entry.beats}`);
     // One step per beat at the schedule's tempo, so the clip plays at rate 1.
     const sequence = { ...rebuilt, steps: rebuilt.steps.map(step => ({ ...step, duration: secondsPerStep })) };
-    return captureRuntimeSequence(nextCharacter, sequence, nextPropType, nextEffectId, true,
-      `${nextPropType}:default`, nextCapturePlane);
+    // The hands aim at the full 0.52 m grid; where an arm falls short the
+    // staff comes in to meet the palm instead of floating off it.
+    captureStaffPalmLock = true;
+    try {
+      return await captureRuntimeSequence(nextCharacter, sequence, nextPropType, nextEffectId, true,
+        `${nextPropType}:default`, nextCapturePlane);
+    } finally {
+      captureStaffPalmLock = false;
+    }
   }
 
   async function exportPastedScore() {
@@ -642,6 +651,7 @@
               rightFlipped={captureRightFlipped}
               sequence={sequenceForCaptureRole(role)}
               {capturePlane}
+              staffPalmLock={captureStaffPalmLock}
               onReady={() => {
                 readyKey = sceneKey;
               }}

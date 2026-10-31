@@ -78,6 +78,7 @@ export function startVisitorLesson(
 
 	learner.social.partner = VISITOR_ID;
 	learner.social.activeSequenceId = null;
+	learner.social.performance = null;
 	learner.social.idleTimer = 0;
 	learner.transform.targetX = learner.transform.x;
 	learner.transform.targetZ = learner.transform.z;
@@ -172,6 +173,7 @@ export function visitorAsTeacher(visitor: VillageVisitor, rules: VillageRules): 
 			frustrationLevel: 0,
 			idleTimer: 0,
 			interactionCooldown: 0,
+			performance: null,
 		},
 		transform: { x, z, facingAngle: facing, targetX: x, targetZ: z, speed: 0 },
 	};

@@ -33,11 +33,13 @@
  * where the last one ended), so a score that ran past the join, or short of
  * it, would show as a jump.
  */
-import type {
-  ScheduledGaitTimingSample,
-  TerminalStepPlan,
-  TurnRequest,
+import {
+  Plane,
+  type ScheduledGaitTimingSample,
+  type TerminalStepPlan,
+  type TurnRequest,
 } from "@austencloud/scene-3d";
+import type { PhrasePlane } from "./flow-fest-phrase-library";
 import {
   compileBeatTravel,
   sampleBeatTravel,
@@ -118,6 +120,69 @@ export function phraseFacingHint(
   };
 }
 
+const HAND_PLANES: Record<PhrasePlane, Plane> = {
+  wall: Plane.WALL,
+  wheel: Plane.WHEEL,
+  floor: Plane.FLOOR,
+};
+
+const planeOverrides = new WeakMap<
+  ScheduledPhrase,
+  ReadonlyMap<number, { left: Plane; right: Plane }>
+>();
+
+/**
+ * Each staff's plane per beat, as `LiveSequencePerformer3D`'s
+ * `beatPlaneOverrides`. The baseline is wall on both hands, which the
+ * performer stores as no override, so every beat's planes are given
+ * explicitly; step 0 is the start placement and takes the first beat's.
+ * Cached per phrase so a performer reloads only when its own phrase does.
+ */
+export function phraseBeatPlaneOverrides(
+  phrase: ScheduledPhrase
+): ReadonlyMap<number, { left: Plane; right: Plane }> {
+  let overrides = planeOverrides.get(phrase);
+  if (!overrides) {
+    const map = new Map<number, { left: Plane; right: Plane }>();
+    const hands = (b: PhraseBeatPlanes) => ({
+      left: HAND_PLANES[b.left],
+      right: HAND_PLANES[b.right],
+    });
+    if (phrase.beatPlanes[0]) map.set(0, hands(phrase.beatPlanes[0]));
+    phrase.beatPlanes.forEach((b, i) => map.set(i + 1, hands(b)));
+    overrides = map;
+    planeOverrides.set(phrase, overrides);
+  }
+  return overrides;
+}
+
+const frameFacingHints = new WeakMap<
+  ScheduledPhrase,
+  [(t: number) => number | null, (t: number) => number | null]
+>();
+
+/**
+ * The body response's facing hint for a frame (`phraseFacingHint`): eased
+ * over the phrase's first pass, then the target alone, because the
+ * response's track loops round the sequence. Cached per phrase and pass, so
+ * the performer sees the same function until the pass changes.
+ */
+export function phraseFrameFacingHint(
+  playback: PhrasePlayback,
+  frame: PhrasePlaybackFrame
+): (scoreTime: number) => number | null {
+  let hints = frameFacingHints.get(frame.phrase);
+  if (!hints) {
+    const from = playback.facingFrom(frame.phraseIndex);
+    hints = [
+      phraseFacingHint(frame.phrase, from),
+      phraseFacingHint(frame.phrase, from, true),
+    ];
+    frameFacingHints.set(frame.phrase, hints);
+  }
+  return hints[frame.scoreBeat >= phrasePassBeats(frame.phrase) ? 1 : 0];
+}
+
 /**
  * How far the root has turned since a planted phrase began, at a score time
  * in beats of its sequence, in the rig's sense: what the body response holds
@@ -159,6 +224,27 @@ export function phraseRootYaw(phrase: ScheduledPhrase, local: number): number {
   const span = Math.min(phrasePassBeats(phrase), phrase.beats);
   const delta = wrapAngle(phrase.facingEnd - phrase.facingStart);
   return wrapAngle(phrase.facingStart + delta * smoothstep01(local / span));
+}
+
+const frameRootTurns = new WeakMap<
+  ScheduledPhrase,
+  [(t: number) => number, (t: number) => number]
+>();
+
+/**
+ * The root turn under the body response for a frame (`phraseRootTurn`),
+ * paired with `phraseFrameFacingHint`: a planted phrase turns the whole
+ * performer over its first pass, then holds. Cached per phrase and pass.
+ */
+export function phraseFrameRootTurn(
+  frame: PhrasePlaybackFrame
+): (scoreTime: number) => number {
+  let turns = frameRootTurns.get(frame.phrase);
+  if (!turns) {
+    turns = [phraseRootTurn(frame.phrase), phraseRootTurn(frame.phrase, true)];
+    frameRootTurns.set(frame.phrase, turns);
+  }
+  return turns[frame.scoreBeat >= phrasePassBeats(frame.phrase) ? 1 : 0];
 }
 
 /** Schedule yaw to the rig's facing. */

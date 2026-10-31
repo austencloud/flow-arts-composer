@@ -38,6 +38,7 @@
     compactToolbar = false,
     isSideBySideLayout,
     letterSources = null,
+    onHeaderHeightChange,
   }: {
     animatingStepNumber?: number | null;
     animationStateRef?: ReturnType<IToolPanelMethods["getAnimationStateRef"]>;
@@ -49,6 +50,8 @@
     isSideBySideLayout: boolean;
     /** Letter sources for spell tab - enables original vs bridge letter styling */
     letterSources?: LetterSource[] | null;
+    /** The sequence header's height, for the workspace split's floor. */
+    onHeaderHeightChange?: (height: number) => void;
   } = $props();
 
   // Derive values from context
@@ -206,7 +209,6 @@
             panelState.failWorkspacePlaybackPreparation(playbackCandidate!);
         },
         onclose: () => panelState.stopWorkspacePlayback(),
-        onExpand: () => panelState.handoffWorkspacePlaybackToViewer(),
         onStepChange: (step: number) => (playbackStep = Math.floor(step)),
         onPlaybackChange: (
           reportedRun: number,
@@ -251,6 +253,7 @@
     {letterSources}
     showTitle={!compactToolbar}
     quietBadges={navigationState.activeTab === "assemble"}
+    onHeightChange={onHeaderHeightChange}
     activeStepNumber={playback
       ? playbackStep
       : (animatingStepNumber ?? practiceStepIndex)}

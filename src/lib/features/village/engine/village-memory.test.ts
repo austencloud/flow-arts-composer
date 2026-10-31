@@ -4,9 +4,9 @@
  *
  * The two logs in __fixtures__ are the Unreal parity set. Both are the museum
  * village and the visitor leaves 200 ticks after teaching OOGA. In one they
- * teach a youth 200 ticks after entry and the sequence is still carried at
- * the return; in the other they teach an elder near retirement, 2100 ticks
- * after entry, and nobody knows it. village-memory-expected.json holds each return's
+ * teach a young adult 4600 ticks after entry and the sequence is still
+ * carried at the return; in the other they teach an elder near retirement,
+ * 6200 ticks after entry, and nobody knows it. village-memory-expected.json holds each return's
  * memory block and snapshot hash; refresh it with `-u` only when a change to
  * the sim is meant to change them.
  */

@@ -1,5 +1,4 @@
 import { describe, expect, it, vi } from "vitest";
-import { page } from "vitest/browser";
 import { render } from "vitest-browser-svelte";
 import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import WorkspacePlayback from "./WorkspacePlayback.svelte";
@@ -128,57 +127,30 @@ describe("WorkspacePlayback layout", () => {
   });
 });
 
-describe("WorkspacePlayback open in viewer", () => {
+describe("WorkspacePlayback scrubber row", () => {
   const sequence = createSequenceData({
-    id: "expand-test",
-    name: "Expand",
+    id: "scrubber-row-test",
+    name: "Row",
     word: "A",
     steps: [],
   });
-  const base = {
-    sequence,
-    active: true,
-    run: 1,
-    onready: () => {},
-    onerror: () => {},
-  };
 
-  it("ends the scrubber row with the expand control and hands off on click", async () => {
-    const onExpand = vi.fn();
-    const { container } = render(WorkspacePlayback, { ...base, onExpand });
-
-    const expand = page.getByRole("button", { name: "Expand sequence viewer" });
-    await expect
-      .element(expand)
-      .toHaveAttribute("title", "Expand sequence viewer");
-
-    // Pause, scrubber, effect, expand: the effect button comes before it and
-    // nothing follows it.
-    const row = container.querySelector<HTMLElement>("[data-progress-row]");
-    const effect = row?.querySelector(".effect-switch-stub");
-    expect(effect).not.toBeNull();
-    expect(row?.lastElementChild).toBe(expand.element());
-    expect(
-      effect!.compareDocumentPosition(expand.element()) &
-        Node.DOCUMENT_POSITION_FOLLOWING
-    ).toBeTruthy();
-
-    const bounds = expand.element().getBoundingClientRect();
-    expect(bounds.width).toBeGreaterThanOrEqual(44);
-    expect(bounds.height).toBeGreaterThanOrEqual(44);
-
-    await expand.click();
-    expect(onExpand).toHaveBeenCalledTimes(1);
-  });
-
-  it("leaves the control out when no handler is passed", async () => {
-    const { container } = render(WorkspacePlayback, base);
+  it("ends with the effect button and leaves opening the viewer to the rail", async () => {
+    const { container } = render(WorkspacePlayback, {
+      sequence,
+      active: true,
+      run: 1,
+      onready: () => {},
+      onerror: () => {},
+    });
 
     await expect
       .poll(() => container.querySelector(".effect-switch-stub"))
       .not.toBeNull();
-    expect(
-      container.querySelector('[aria-label="Expand sequence viewer"]')
-    ).toBeNull();
+    const row = container.querySelector<HTMLElement>("[data-progress-row]");
+    expect(row?.lastElementChild).toBe(
+      container.querySelector(".effect-switch-stub")
+    );
+    expect(container.querySelector(".fa-expand")).toBeNull();
   });
 });

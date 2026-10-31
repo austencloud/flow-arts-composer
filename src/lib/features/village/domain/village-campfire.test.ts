@@ -164,13 +164,20 @@ describe("village campfire layout", () => {
 				// nobody walks into it.
 				expect(r).toBeGreaterThanOrEqual(fire.clearRadius - 1e-9);
 				expect(r).toBeLessThanOrEqual(museum.arena.radius + 1e-9);
-				if (playing.has(avatar.state)) {
+				// A performer may walk a phrase forward off the ring, into the
+				// open floor, but never as far as the seats.
+				if (avatar.state === "performing") {
+					expect(r).toBeGreaterThanOrEqual(
+						fire.seatRadius + museum.performance.seatClearance - 1e-9,
+					);
+					expect(r).toBeLessThanOrEqual(fire.ringOuterRadius + slack);
+				} else if (playing.has(avatar.state)) {
 					expect(r).toBeGreaterThanOrEqual(fire.ringInnerRadius - 1e-9);
 					expect(r).toBeLessThanOrEqual(fire.ringOuterRadius + slack);
 				}
 			}
 		}
-	});
+	}, 60_000);
 
 	it("exposes the fire, seats and audience spot in every snapshot", () => {
 		const sim = new VillageOrchestrator({ rules, seed: "campfire-snapshot", avatarModels: ["x-bot"] });

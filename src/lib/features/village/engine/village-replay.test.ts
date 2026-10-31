@@ -58,7 +58,7 @@ function runToHash(seed: string): string {
 
 describe("village replay", () => {
 	it("reproduces the golden final snapshot for the reference seed", () => {
-		expect(runToHash(SEED)).toBe("030581a37f094a601888967364845db0");
+		expect(runToHash(SEED)).toBe("cd10bae8cac6c2fab67b58c1b1ad20d3");
 	});
 
 	it("gives identical runs for the same seed and different runs for another", () => {

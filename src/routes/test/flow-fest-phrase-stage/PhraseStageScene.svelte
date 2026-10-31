@@ -11,6 +11,9 @@
    *
    * The hands use the jam's grip (`contactMode="legacy"`): the full finger
    * solve held this stage near 33 fps with two staffs, the legacy grip 60.
+   * Either way the staffs are locked to the palms (`staffPalmLock`), as the
+   * Unreal stage's captures are: the hands aim at the full grid and a staff
+   * the arm cannot reach comes in to meet the palm.
    *
    * Loading follows the jam's gate: the library, both bodies and their
    * motion, then a shader compile and a few smooth frames, before the page
@@ -35,16 +38,12 @@
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import type { CharacterId } from "#lib/shared/3d/domain/character-model.js";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
-  import type {
-    PhraseScheduleFile,
-    ScheduledPhrase,
-  } from "#lib/features/flow-fest-sim/domain/flow-fest-phrase-brain.js";
-  import type { PhrasePlane } from "#lib/features/flow-fest-sim/domain/flow-fest-phrase-library.js";
+  import type { PhraseScheduleFile } from "#lib/features/flow-fest-sim/domain/flow-fest-phrase-brain.js";
   import {
     createPhrasePlayback,
-    phraseFacingHint,
-    phraseRootTurn,
-    phrasePassBeats,
+    phraseBeatPlaneOverrides,
+    phraseFrameFacingHint,
+    phraseFrameRootTurn,
     type PhrasePlaybackFrame,
   } from "#lib/features/flow-fest-sim/domain/flow-fest-phrase-playback.js";
   import {
@@ -83,79 +82,6 @@
     scene: Scene;
     camera: { current: Camera };
   };
-
-  const HAND_PLANES: Record<PhrasePlane, Plane> = {
-    wall: Plane.WALL,
-    wheel: Plane.WHEEL,
-    floor: Plane.FLOOR,
-  };
-
-  // Each staff's plane per beat. The baseline is wall on both hands, which
-  // the performer stores as no override, so every beat's planes are given
-  // explicitly; step 0 is the start placement and takes the first beat's.
-  // Cached per phrase so a performer reloads only when its own phrase does.
-  const planeOverrides = new WeakMap<
-    ScheduledPhrase,
-    ReadonlyMap<number, { left: Plane; right: Plane }>
-  >();
-  function beatPlaneOverridesFor(
-    phrase: ScheduledPhrase
-  ): ReadonlyMap<number, { left: Plane; right: Plane }> {
-    let overrides = planeOverrides.get(phrase);
-    if (!overrides) {
-      const map = new Map<number, { left: Plane; right: Plane }>();
-      const hands = (b: (typeof phrase.beatPlanes)[number]) => ({
-        left: HAND_PLANES[b.left],
-        right: HAND_PLANES[b.right],
-      });
-      if (phrase.beatPlanes[0]) map.set(0, hands(phrase.beatPlanes[0]));
-      phrase.beatPlanes.forEach((b, i) => map.set(i + 1, hands(b)));
-      overrides = map;
-      planeOverrides.set(phrase, overrides);
-    }
-    return overrides;
-  }
-
-  // The body response's facing hint (radians against the root, rig sign):
-  // eased over the phrase's first pass, then the target alone, because the
-  // response's track loops round the sequence. Cached per phrase and pass.
-  const facingHints = new WeakMap<
-    ScheduledPhrase,
-    [(t: number) => number | null, (t: number) => number | null]
-  >();
-  function facingHintFor(
-    i: number,
-    frame: PhrasePlaybackFrame
-  ): (scoreTime: number) => number | null {
-    let hints = facingHints.get(frame.phrase);
-    if (!hints) {
-      const from = playbacks[i]!.facingFrom(frame.phraseIndex);
-      hints = [
-        phraseFacingHint(frame.phrase, from),
-        phraseFacingHint(frame.phrase, from, true),
-      ];
-      facingHints.set(frame.phrase, hints);
-    }
-    return hints[frame.scoreBeat >= phrasePassBeats(frame.phrase) ? 1 : 0];
-  }
-
-  // The root turn under the body response, paired with the hints: a planted
-  // phrase turns the whole performer over its first pass, then holds.
-  const rootTurns = new WeakMap<
-    ScheduledPhrase,
-    [(t: number) => number, (t: number) => number]
-  >();
-  function rootTurnFor(frame: PhrasePlaybackFrame): (t: number) => number {
-    let turns = rootTurns.get(frame.phrase);
-    if (!turns) {
-      turns = [
-        phraseRootTurn(frame.phrase),
-        phraseRootTurn(frame.phrase, true),
-      ];
-      rootTurns.set(frame.phrase, turns);
-    }
-    return turns[frame.scoreBeat >= phrasePassBeats(frame.phrase) ? 1 : 0];
-  }
 
   const playbacks = $derived(
     props.schedule.performers.map((performer) =>
@@ -389,12 +315,13 @@
       capturePlane="wall"
       leftPlane={Plane.WALL}
       rightPlane={Plane.WALL}
-      beatPlaneOverrides={beatPlaneOverridesFor(phrase)}
+      beatPlaneOverrides={phraseBeatPlaneOverrides(phrase)}
       propType={PropType.FIRE_DOUBLE_STAFF}
       sequence={props.sequenceFor(phrase.sequenceId)}
       effectId="fire"
       effectQualityTier="medium"
       contactMode={props.contactMode ?? "legacy"}
+      staffPalmLock={true}
       scoreBeat={frame.scoreBeat}
       playbackSpeed={(props.tempoBpm / 60) * frame.scoreRate}
       active={!phrase.rest}
@@ -405,8 +332,8 @@
       terminalStepPlan={frame.terminalStepPlan}
       turnRequest={frame.turnRequest}
       bodyResponse={props.bodyResponse ?? true}
-      facingHint={facingHintFor(i, frame)}
-      rootTurn={rootTurnFor(frame)}
+      facingHint={phraseFrameFacingHint(playbacks[i]!, frame)}
+      rootTurn={phraseFrameRootTurn(frame)}
       onReady={() => piece(`performer:${performer.id}`)}
       onMotionReady={() => piece(`performer-motion:${performer.id}`)}
       onMotionError={(message) => {

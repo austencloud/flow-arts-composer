@@ -5,6 +5,7 @@
   import { getCreateModuleContext } from "../../../context/create-module-context";
   import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
   import type { LetterSource } from "#lib/shared/create/domain/spell-models.js";
+  import type { StepClickModifiers } from "#lib/features/create/shared/state/selection/grid-range-selection.js";
   import type {
     MandalaPathShape,
     MandalaRenderOptions,
@@ -38,7 +39,7 @@
     sequenceState: SequenceState;
     onStepSelected?: (
       stepNumber: number,
-      modifiers?: { range: boolean; toggle: boolean }
+      modifiers?: StepClickModifiers
     ) => void;
     onStartPlacementSelected?: () => void;
     onStepDelete?: (stepNumber: number) => void;
@@ -159,7 +160,7 @@
 
   function handleStepClick(
     stepNumber: number,
-    modifiers?: { range: boolean; toggle: boolean }
+    modifiers?: StepClickModifiers
   ) {
     hapticService?.trigger("selection");
 

@@ -106,7 +106,9 @@ type ButtonPanelContextFixture = {
   >;
   panelState: Pick<
     CreateModuleContext["panelState"],
-    "isExportPanelOpen" | "openSequenceActionsPanel"
+    | "isExportPanelOpen"
+    | "openSequenceActionsPanel"
+    | "handoffWorkspacePlaybackToViewer"
   >;
   layout: Pick<CreateModuleContext["layout"], "shouldUseSideBySideLayout">;
 };
@@ -140,6 +142,7 @@ function createContext(): ButtonPanelContextFixture {
     panelState: {
       isExportPanelOpen: false,
       openSequenceActionsPanel: vi.fn(),
+      handoffWorkspacePlaybackToViewer: vi.fn(),
     },
     layout: {
       shouldUseSideBySideLayout: false,
@@ -241,7 +244,7 @@ describe("ButtonPanel narrow geometry", () => {
       .toBeInTheDocument();
   });
 
-  it("keeps four controls in one centered row at 320 CSS pixels", async () => {
+  it("keeps five controls in one centered row at 320 CSS pixels", async () => {
     const screen = render(ButtonPanel, {
       props: {
         onClearSequence: vi.fn(),
@@ -257,6 +260,7 @@ describe("ButtonPanel narrow geometry", () => {
     const play = rect("Play sequence");
     const buttons = [
       rect("Clear sequence"),
+      rect("Open sequence viewer"),
       play,
       rect("Sequence Actions"),
       rect("Share sequence"),
@@ -293,22 +297,31 @@ describe("ButtonPanel narrow geometry", () => {
     }
   });
 
-  it("gives Construct one Play and no viewer button in the rail", async () => {
+  it("puts Viewer beside Construct's in-place Play and opens the full viewer", async () => {
+    const context = createContext();
     render(ButtonPanel, {
       props: {
         onClearSequence: vi.fn(),
         onViewSequence: vi.fn(),
       },
-      context: new Map([["createModule", createContext()]]),
+      context: new Map([["createModule", context]]),
     });
 
-    await expect
-      .element(page.getByRole("button", { name: "Play sequence" }))
-      .toBeInTheDocument();
-    // Opening the full viewer moved onto the in-place player.
+    const viewer = page.getByRole("button", {
+      name: "Open sequence viewer",
+      exact: true,
+    });
+    await expect.element(viewer).toBeInTheDocument();
+    await waitForLayout();
+    // Directly left of Play, so the viewer (and its 3D view) is one tap away.
+    expect(rect("Open sequence viewer").right).toBeLessThanOrEqual(
+      rect("Play sequence").left
+    );
+
+    await viewer.click();
     expect(
-      page.getByRole("button", { name: "Expand sequence viewer" }).query()
-    ).toBeNull();
+      context.panelState.handoffWorkspacePlaybackToViewer
+    ).toHaveBeenCalledTimes(1);
   });
 
   it("adds labels at 640 CSS pixels without moving Play off center", async () => {
@@ -328,12 +341,16 @@ describe("ButtonPanel narrow geometry", () => {
     const playLabel = screen.container.querySelector<HTMLElement>(
       ".view-sequence-button .workspace-action-label"
     );
+    const viewerLabel = screen.container.querySelector<HTMLElement>(
+      ".viewer-purpose .workspace-action-label"
+    );
     const actionsLabel = screen.container.querySelector<HTMLElement>(
       "[data-testid='sequence-actions-button'] .workspace-action-label"
     );
 
     expect(clearLabel).not.toBeNull();
     expect(playLabel).not.toBeNull();
+    expect(viewerLabel).not.toBeNull();
     expect(actionsLabel).not.toBeNull();
     expect(shareLabel).not.toBeNull();
 
@@ -342,6 +359,7 @@ describe("ButtonPanel narrow geometry", () => {
 
     expect(getComputedStyle(clearLabel!).display).toBe("none");
     expect(getComputedStyle(playLabel!).display).toBe("none");
+    expect(getComputedStyle(viewerLabel!).display).toBe("none");
     expect(getComputedStyle(actionsLabel!).display).toBe("none");
     expect(getComputedStyle(shareLabel!).display).toBe("none");
 
@@ -350,16 +368,20 @@ describe("ButtonPanel narrow geometry", () => {
 
     expect(getComputedStyle(clearLabel!).display).not.toBe("none");
     expect(getComputedStyle(playLabel!).display).not.toBe("none");
+    expect(getComputedStyle(viewerLabel!).display).not.toBe("none");
+    expect(viewerLabel!.textContent?.trim()).toBe("Viewer");
     expect(getComputedStyle(actionsLabel!).display).not.toBe("none");
     expect(getComputedStyle(shareLabel!).display).not.toBe("none");
 
     const containerBounds = screen.container.getBoundingClientRect();
     const clear = rect("Clear sequence");
+    const viewer = rect("Open sequence viewer");
     const play = rect("Play sequence");
     const sequenceActions = rect("Sequence Actions");
     const share = rect("Share sequence");
 
     expect(clear.width).toBeGreaterThan(44);
+    expect(viewer.width).toBeGreaterThan(44);
     expect(play.width).toBeGreaterThan(50);
     expect(sequenceActions.width).toBeGreaterThan(44);
     expect(share.width).toBeGreaterThan(44);
@@ -367,7 +389,8 @@ describe("ButtonPanel narrow geometry", () => {
       containerBounds.left + containerBounds.width / 2,
       0
     );
-    expect(clear.right).toBeLessThanOrEqual(play.left);
+    expect(clear.right).toBeLessThanOrEqual(viewer.left);
+    expect(viewer.right).toBeLessThanOrEqual(play.left);
     expect(play.right).toBeLessThanOrEqual(sequenceActions.left);
     expect(sequenceActions.right).toBeLessThanOrEqual(share.left);
   });

@@ -12,6 +12,7 @@
     activeStepNumber = null,
     showTitle = true,
     quietBadges = false,
+    onHeightChange,
   }: {
     sequenceState: SequenceState;
     word: string;
@@ -22,7 +23,14 @@
     showTitle?: boolean;
     /** Gray corner badges, so the colored pictures stay the focal point. */
     quietBadges?: boolean;
+    /** Reports the header's height, which the workspace split budgets for. */
+    onHeightChange?: (height: number) => void;
   } = $props();
+
+  let headerHeight = $state(0);
+  $effect(() => {
+    if (headerHeight > 0) onHeightChange?.(headerHeight);
+  });
 
   const sequence = $derived(sequenceState.currentSequence);
   const loop = $derived(
@@ -47,6 +55,7 @@
 <!-- This header belongs to the sequence, so it survives card/player swaps. -->
 <div
   class="workspace-sequence-header"
+  bind:offsetHeight={headerHeight}
   class:strip={!showTitle}
   class:quiet-badges={quietBadges}
 >

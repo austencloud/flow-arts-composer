@@ -11,10 +11,13 @@
  * keep only one performer's phrases or one mode (planted, turning, travelling), and
  * FLOW_FEST_CAPTURE_PHRASE_KEEP_GOING=1 records a capture that fails its checks in
  * phrase-failures.json and moves on instead of stopping; a failed capture is never written.
+ * Also optional (2026-10-29): FLOW_FEST_CAPTURE_PHRASE_MISSING_SUFFIX=-g52 keeps only the
+ * routines the stage's store has no `<base>-g52.motion.json` for, so a recapture of the rest
+ * can import with that suffix without colliding with the files already there.
  */
 import { chromium } from "playwright";
 import { createHash } from "node:crypto";
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { access, mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadDeployedCharacters } from "../../Shared/Tools/character-catalog.mjs";
@@ -81,8 +84,18 @@ export async function capturePhrases(baseUrl, outputDir) {
   if (!(schedule.tempoBpm > 0)) throw new Error("The schedule has no tempo");
   const entries = new Map(library.entries.map((entry) => [entry.id, entry]));
   const secondsPerStep = 60 / schedule.tempoBpm;
-  const jobs = phraseCaptureJobs(schedule, maxBeats, { performerId: process.env.FLOW_FEST_CAPTURE_PHRASE_PERFORMER,
+  let jobs = phraseCaptureJobs(schedule, maxBeats, { performerId: process.env.FLOW_FEST_CAPTURE_PHRASE_PERFORMER,
     mode: process.env.FLOW_FEST_CAPTURE_PHRASE_MODE });
+  const missingSuffix = process.env.FLOW_FEST_CAPTURE_PHRASE_MISSING_SUFFIX;
+  if (missingSuffix !== undefined) {
+    if (!/^-[a-z0-9]+$/.test(missingSuffix)) throw new Error("FLOW_FEST_CAPTURE_PHRASE_MISSING_SUFFIX takes a tag such as -g52");
+    const motions = resolve(root, "unreal/FlowFest/Content/FlowFest/PhraseStage/Motions");
+    const stored = await Promise.all(jobs.map((job) =>
+      access(join(motions, job.file.replace(/.motion.json$/, `${missingSuffix}.motion.json`))).then(() => true, () => false)));
+    process.stdout.write(`Phrase capture: ${stored.filter(Boolean).length} of ${jobs.length} already have a ${missingSuffix} file; skipping them
+`);
+    jobs = jobs.filter((_, index) => !stored[index]);
+  }
   const keepGoing = process.env.FLOW_FEST_CAPTURE_PHRASE_KEEP_GOING === "1";
   const failures = [];
   const failuresPath = join(outputDir, "phrase-failures.json");

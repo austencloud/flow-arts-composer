@@ -160,10 +160,11 @@
   }
 
   // Count center-zone buttons to key the container, so Play cross-fades in
-  // and out instead of popping. Play is the zone's only button: its Stop,
-  // Retry and Cancel states swap inside it and keep the key. Opening the
-  // full viewer lives on the in-place player. Save is the only workspace
-  // action in the header.
+  // and out instead of popping. Play's Stop, Retry and Cancel states swap
+  // inside it and keep the key. Where Play runs in place, Viewer hangs off
+  // Play's left side, so it never moves Play off center and is one tap from
+  // the full viewer (and its 3D view). Save is the only workspace action in
+  // the header.
   const centerZoneButtonCount = $derived(() => {
     let count = 0;
     if (showViewSequenceButton) count++;
@@ -234,6 +235,15 @@
                     ? "play-sequence"
                     : undefined}
                 >
+                  {#if usesWorkspacePlayback}
+                    <div class="viewer-action">
+                      <ViewSequenceButton
+                        purpose="viewer"
+                        onclick={() =>
+                          panelState.handoffWorkspacePlaybackToViewer()}
+                      />
+                    </div>
+                  {/if}
                   <ViewSequenceButton
                     onclick={handleFullSequencePlay}
                     isActive={isExportPanelOpen}
@@ -366,6 +376,18 @@
     pointer-events: auto;
   }
 
+  .play-controls {
+    position: relative;
+  }
+
+  /* Viewer sits left of Play, bottom-aligned with the rail's other
+     controls rather than with Play's taller box. */
+  .viewer-action {
+    position: absolute;
+    right: calc(100% + 10px);
+    bottom: 0;
+  }
+
   .tutorial-target {
     border-radius: 999px;
     outline: 3px solid color-mix(in srgb, var(--theme-accent) 76%, transparent);
@@ -387,7 +409,8 @@
      Actions 113px, Share 96px. Between 640px and 768px the rail pads 18px at
      most per side and the zones gap 10px (the max-width: 768px rule below).
        right half: 18 + Share 96 + 10 + Actions 113 + Play 107 / 2 = 290.5px
-       left half:  18 + Clear 97 + Play 107 / 2                    = 168.5px
+     Construct and Generate also hang Viewer (about 100px) 10px left of Play:
+       left half:  18 + Clear 97 + Viewer 100 + 10 + Play 107 / 2  = 278.5px
      The right half decides: 2 x 290.5 = 581px with Actions touching Play.
      640px leaves 29.5px between them for longer translations. That keeps
      labels on a 1440x900 laptop (682px rail) and off on phones; the short
@@ -553,6 +576,12 @@
       min-width: 50px;
       gap: 0;
       transform: none;
+    }
+
+    /* Grid cells centre Play here, so Viewer centres on it too. */
+    .viewer-action {
+      right: calc(100% + var(--settings-workspace-action-gap));
+      bottom: calc((50px - var(--min-touch-target)) / 2);
     }
 
     .left-zone > div,

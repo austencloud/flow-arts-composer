@@ -79,21 +79,34 @@ export const GUIDE_BODY_PAGES: GuidePageEntry[] = [
   { id: "hand-placements", title: "Hand Placements", level: 0, group: "1.0" },
   { id: "hand-motions", title: "Hand Motions", level: 0, group: "1.0" },
   { id: "hm-type1", title: "Type 1 Dual-Shifts", level: 1, group: "1.0" },
-  // On the web the Quarter modes are screens 6 to 8 of the Dual-Shifts page
-  // (2026-10-26); print keeps the Gamma sheet.
+  // On the web the Quarter modes are screens 5 to 7 of the Dual-Shifts page
+  // (2026-10-26; the six-mode key left on 2026-10-28); print keeps the Gamma
+  // sheet. The number is dualShiftScreenNumber("quarter-opp"), kept literal
+  // so this manifest does not load the pictograph record; its test holds the two equal.
   {
     id: "hm-gamma",
     title: "Gamma - Quarter-Opp, Quarter-Same",
     level: 1,
     group: "1.0",
-    web: { into: "hm-type1", screen: 6 },
+    web: { into: "hm-type1", screen: 5 },
   },
   { id: "hm-type2", title: "Type 2 - Shifts", level: 1, group: "1.0" },
   { id: "hm-type34", title: "Type 3 - Cross-Shifts", level: 1, group: "1.0" },
-  { id: "hm-type56", title: "Type 4/5/6 - Dash, Dual-Dash, Static", level: 1, group: "1.0", selfTitled: true },
+  {
+    id: "hm-type56",
+    title: "Type 4/5/6 - Dash, Dual-Dash, Static",
+    level: 1,
+    group: "1.0",
+    selfTitled: true,
+  },
   { id: "staff-placements", title: "Staff Placements", level: 0, group: "1.0" },
   { id: "staff-motions", title: "Staff Motions", level: 0, group: "1.0" },
-  { id: "negative-space", title: "Negative Space / Body Turns", level: 0, group: "1.0" },
+  {
+    id: "negative-space",
+    title: "Negative Space / Body Turns",
+    level: 0,
+    group: "1.0",
+  },
 
   // ── 1.1 Letters (p11–p29) ─────────────────────────────────────────────
   { id: "base-letters", title: "Base Letters", level: 0, group: "1.1" },
@@ -116,13 +129,31 @@ export const GUIDE_BODY_PAGES: GuidePageEntry[] = [
   { id: "lt1-gamma-words", title: "Gamma Words", level: 1, group: "1.1" },
   // Old p27 is ONE page (letters + words) - the empty letters-type2 section row
   // was removed 2026-07-09; lt2-wxyz carries the whole Type 2 chapter page.
-  { id: "lt2-wxyz", title: "Type 2 - Shift", level: 0, group: "1.1", selfTitled: true },
+  {
+    id: "lt2-wxyz",
+    title: "Type 2 - Shift",
+    level: 0,
+    group: "1.1",
+    selfTitled: true,
+  },
   // Old p28 is ONE page - the empty letters-type3 section row was removed
   // 2026-07-09; lt3-dash-letters carries the whole Type 3 chapter page.
-  { id: "lt3-dash-letters", title: "Type 3 - Cross-Shift", level: 0, group: "1.1", selfTitled: true },
+  {
+    id: "lt3-dash-letters",
+    title: "Type 3 - Cross-Shift",
+    level: 0,
+    group: "1.1",
+    selfTitled: true,
+  },
   // Old p29 is ONE page covering Types 4/5/6 - the empty letters-type456 row
   // and the two seeded splits (-dash, -abg) were removed 2026-07-09.
-  { id: "lt456-phi-psi-lambda", title: "Type 4/5/6 - Φ, Ψ, Λ", level: 0, group: "1.1", selfTitled: true },
+  {
+    id: "lt456-phi-psi-lambda",
+    title: "Type 4/5/6 - Φ, Ψ, Λ",
+    level: 0,
+    group: "1.1",
+    selfTitled: true,
+  },
 
   // ── 1.2 Words (p30–p34) ───────────────────────────────────────────────
   { id: "words", title: "Words", level: 0, group: "1.2" },
@@ -131,9 +162,19 @@ export const GUIDE_BODY_PAGES: GuidePageEntry[] = [
   { id: "reversals", title: "Reversals", level: 0, group: "1.2" },
   { id: "examples-abc", title: "Examples", level: 0, group: "1.2" },
   // Old p35 "Guide pt. 2" - CCCC hybrid reversal variants.
-  { id: "examples-cccc", title: "Hybrid Reversals - CCCC", level: 1, group: "1.2" },
+  {
+    id: "examples-cccc",
+    title: "Hybrid Reversals - CCCC",
+    level: 1,
+    group: "1.2",
+  },
   // Old p36 "Guide pt. 3" - mixing hybrids with non-hybrids.
-  { id: "examples-acac", title: "Mixed Words - ACAC, BCBC", level: 1, group: "1.2" },
+  {
+    id: "examples-acac",
+    title: "Mixed Words - ACAC, BCBC",
+    level: 1,
+    group: "1.2",
+  },
   // "Type 1 CAPs" in the old guide - retitled to the app's LOOP terminology.
   { id: "misc-permutations", title: "Type 1 LOOPs", level: 0, group: "1.2" },
   // Old p38 "Type 1 Gamma Permutations" - SOTR, VPUQ, MVNU Rotated LOOPs.
@@ -145,9 +186,19 @@ export const GUIDE_BODY_PAGES: GuidePageEntry[] = [
   // Old p41 - IIΩXKEΣY, CΣNZIΘVW repeated twice.
   { id: "eight-letter-words", title: "8-Letter Words", level: 0, group: "1.2" },
   // Old p42 "Prop-reversal CAPs" - EΣQY, TWKΘ, BΔMX.
-  { id: "prop-reversal-loops", title: "Prop-Reversal LOOPs", level: 0, group: "1.2" },
+  {
+    id: "prop-reversal-loops",
+    title: "Prop-Reversal LOOPs",
+    level: 0,
+    group: "1.2",
+  },
   // Old p43 "Full-reversal CAPs" - CCKE, FLII, DAK.
-  { id: "full-reversal-loops", title: "Full-Reversal LOOPs", level: 0, group: "1.2" },
+  {
+    id: "full-reversal-loops",
+    title: "Full-Reversal LOOPs",
+    level: 0,
+    group: "1.2",
+  },
 ];
 
 /** The body pages that have a web page of their own, in manifest order. */
@@ -162,8 +213,14 @@ export function pageNumberOf(id: string): number | undefined {
 }
 
 /** The body entries grouped in manifest order, for TOC rendering. */
-export function bodyPagesByGroup(): { group: GuideGroup; entries: { entry: GuidePageEntry; page: number }[] }[] {
-  const out: { group: GuideGroup; entries: { entry: GuidePageEntry; page: number }[] }[] = [];
+export function bodyPagesByGroup(): {
+  group: GuideGroup;
+  entries: { entry: GuidePageEntry; page: number }[];
+}[] {
+  const out: {
+    group: GuideGroup;
+    entries: { entry: GuidePageEntry; page: number }[];
+  }[] = [];
   GUIDE_BODY_PAGES.forEach((entry, i) => {
     let bucket = out.find((b) => b.group === entry.group);
     if (!bucket) {

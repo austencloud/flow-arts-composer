@@ -22,6 +22,7 @@ import type {
 	VillageEvent,
 	VillageVisitor,
 	VillageWorld,
+	VillagePerformance,
 } from "../domain/village-types";
 import type { Monument } from "./systems/monument-system";
 import type { VillageCampLayout, VillageSeat } from "../domain/village-campfire";
@@ -52,11 +53,18 @@ export interface VillageAvatarSnapshot {
 	// the tick it started. Null when the avatar is not playing anything.
 	activeSequenceId: string | null;
 	playbackStartTick: number | null;
+	// While performing, the whole phrase plan (engine/village-performance.ts):
+	// the renderer plays it beat by beat; null otherwise. Never changed once
+	// made, so every snapshot of one performance shares the same object.
+	performance: VillagePerformance | null;
 	// The lesson this avatar is part of, null outside one; see
 	// domain/village-lesson.ts. lessonStep is the step of the sequence they
-	// play this tick (null while holding still), lessonStepTick how many ticks
-	// into it they are, lessonStepCount the sequence's length. A mirrored
-	// learner copies the teacher as someone facing them would.
+	// play this tick: null while not playing (hands empty), lessonStepCount
+	// while holding the end pose on the beat that closes a pass of a sequence
+	// that does not end where it starts. lessonStepTick is how many ticks into
+	// the step they are, lessonStepCount the sequence's length. A step is one
+	// beat at performance.tempoBpm. A mirrored learner copies the teacher, on
+	// the same beat, as someone facing them would.
 	lessonPhase: LessonPhase | null;
 	lessonRole: LessonRole | null;
 	lessonStep: number | null;
@@ -297,6 +305,7 @@ export function buildVillageSnapshot(input: BuildSnapshotInput): VillageSnapshot
 			playbackStartTick: activeSequenceId
 				? (input.playbackStartTicks.get(entity.id) ?? input.tick)
 				: null,
+			performance: entity.social.state === "performing" ? entity.social.performance : null,
 			...lessonFields(entity, byId, input.rules),
 			partnerId: entity.social.partner,
 			teacherId: resolveTeacherId(entity, activeSequenceId),

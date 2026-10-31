@@ -119,3 +119,27 @@ export function compareVersions(a: string, b: string): number {
   if (pb.pre === null) return -1;
   return pa.pre < pb.pre ? -1 : pa.pre > pb.pre ? 1 : 0;
 }
+
+/**
+ * Pick which release notes the "What's new" button opens.
+ *
+ * The running build can be ahead of the newest published notes: the version
+ * bump ships with the code, and the release record is written later. An exact
+ * match wins; otherwise the newest notes at or below the running version;
+ * otherwise the newest notes there are. Null only when nothing is published.
+ */
+export function pickReleaseNotesVersion(
+  versions: readonly AppVersion[],
+  current: string
+): AppVersion | null {
+  const exact = versions.find((v) => v.version === current);
+  if (exact) return exact;
+  const newestFirst = [...versions].sort((a, b) =>
+    compareVersions(b.version, a.version)
+  );
+  return (
+    newestFirst.find((v) => compareVersions(v.version, current) <= 0) ??
+    newestFirst[0] ??
+    null
+  );
+}

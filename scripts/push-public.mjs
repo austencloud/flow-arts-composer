@@ -12,7 +12,10 @@
 // went live that way. So --push first runs CI's validate steps on d2 against
 // the snapshot (scripts/ci-replica.mjs) and refuses on red. --check runs the
 // same preflight without pushing. A green tree is remembered on this machine,
-// so the --push after a green --check does not run it again.
+// so the --push after a green --check does not run it again. One d2 job per
+// snapshot: when another session is already gating the same snapshot (on d2,
+// or starting it on this machine), this waits for that job and takes its
+// verdict instead of starting a second one (scripts/lib/publish-preflight.mjs).
 //
 //   node scripts/push-public.mjs [--ref main]                build and print
 //   node scripts/push-public.mjs [--ref main] --check        also run the d2 preflight
@@ -22,9 +25,9 @@ import { execFileSync, spawnSync } from "node:child_process";
 
 import {
   d2Reachable,
+  gatePreflight,
   hasGreenPreflight,
   recordGreenPreflight,
-  runPreflight,
 } from "./lib/publish-preflight.mjs";
 
 const args = process.argv.slice(2);
@@ -136,7 +139,7 @@ if (skipPreflight) {
   console.log(
     `Preflight: Web App CI's validate steps on d2 for snapshot ${snapshot.slice(0, 10)}.`
   );
-  const { verdict, failed, steps, error } = await runPreflight(snapshot);
+  const { verdict, failed, steps, error } = await gatePreflight(snapshot);
   if (steps.length) console.log(`\nPreflight steps:\n  ${steps.join("\n  ")}`);
   if (verdict !== "green") {
     console.error(

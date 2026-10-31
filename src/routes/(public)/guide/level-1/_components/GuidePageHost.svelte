@@ -279,6 +279,7 @@
         lessonHref={interactiveLesson
           ? buildConceptStartPath(interactiveLesson.conceptId)
           : null}
+        lessonId={interactiveLesson?.conceptId ?? null}
       />
     {:else if useFlow && content}
       <GuideScreens

@@ -132,6 +132,15 @@ let drawn = 0; // frames drawn while tracing, for the fps report
 let drawMs = 0; // their total drawing time, for the report
 const trail: number[] = []; // [ms, traced × 1000] every 250 ms, for the report
 
+/**
+ * The mandala's slow turn at progress p: easing in over the trace, then on
+ * at the speed it reached, so a boot that runs long keeps it turning, and
+ * the finish carries on from wherever it is.
+ */
+function turnAt(p: number): number {
+  return p <= 1 ? p * p * 0.35 : 0.35 + 0.7 * (p - 1);
+}
+
 /** Now on the page's clock. */
 function clock(): number {
   return scope.performance.now() + offset;
@@ -267,15 +276,19 @@ function frame(): void {
     done = fade >= 1;
   } else if (finishAt !== null) {
     const t = now - finishAt;
-    // The rest at about the speed the trace was already running.
-    p = finishFrom + (1 - finishFrom) * Math.min(1, t / finishMs);
+    // The rest at about the speed the trace was already running; a figure
+    // already whole keeps lapping at its pace while it flies.
+    p =
+      finishFrom >= 1
+        ? (pacer?.at(now) ?? finishFrom)
+        : finishFrom + (1 - finishFrom) * Math.min(1, t / finishMs);
     view.flare =
       t < finishMs ? t / finishMs : Math.max(0, 1 - (t - finishMs) / 200);
     const f = Math.min(1, t / FLY_MS);
     const ease = f * f * f;
     view.zoom = 1 + (init.flyScale - 1) * ease;
     view.alpha = 1 - f * f;
-    view.rotation = 0.35;
+    view.rotation = turnAt(p);
     view.sparks = false;
     if (t >= FLY_MS) {
       stop();
@@ -292,7 +305,7 @@ function frame(): void {
     if (!fontRequested && fontDue(traced, prepared.scene.beats, false))
       void loadFont(init.font);
     view.zoom = 1 + 0.018 * Math.sin(now / 900);
-    view.rotation = p * p * 0.35;
+    view.rotation = turnAt(p);
   }
 
   composeFrame(ctx, prepared, p, now, view, state);

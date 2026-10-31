@@ -5,6 +5,7 @@ interface GripDiagnostics {
   rightPalm: Point | null;
   renderedBlueGrip: Point | null;
   renderedRedGrip: Point | null;
+  staffPalmLockShortfallM?: [number, number];
 }
 
 export function captureGripAttachment(diagnostics: GripDiagnostics) {
@@ -19,6 +20,10 @@ export function captureGripAttachment(diagnostics: GripDiagnostics) {
     rightPalmWorld: point(diagnostics.rightPalm),
     leftRenderedGripWorld: point(diagnostics.renderedBlueGrip),
     rightRenderedGripWorld: point(diagnostics.renderedRedGrip),
+    // Only a palm-locked capture records how far each staff came in.
+    ...(diagnostics.staffPalmLockShortfallM
+      ? { staffPalmLockShortfallM: [...diagnostics.staffPalmLockShortfallM] as [number, number] }
+      : {}),
   };
 }
 

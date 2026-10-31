@@ -214,10 +214,12 @@ export class OpeningDirector {
 			partner.social.sequenceBeingTransferred = null;
 			partner.social.teachingProgress = 0;
 			partner.social.activeSequenceId = null;
+			partner.social.performance = null;
 			partner.social.idleTimer = 0;
 		}
 		entity.social.partner = null;
 		entity.social.activeSequenceId = null;
+		entity.social.performance = null;
 	}
 
 	private placePair(teacher: VillageEntity, learner: VillageEntity): void {

@@ -9,11 +9,10 @@ const name = (id: string) =>
   english[DUAL_SHIFT_MODES.find((m) => m.id === id)!.name]!;
 
 describe("dualShiftScreens", () => {
-  it("opens on the six-mode key, then one mode per screen, then switching", () => {
+  it("draws one mode per screen, then switching, with no key screen", () => {
     const { views, labels } = dualShiftScreens(name);
-    expect(views).toHaveLength(8);
-    expect(views[0]).toEqual({ kind: "key" });
-    expect(views.slice(1, 7)).toEqual(
+    expect(views).toHaveLength(7);
+    expect(views.slice(0, 6)).toEqual(
       [
         "split-same",
         "tog-same",
@@ -23,9 +22,8 @@ describe("dualShiftScreens", () => {
         "quarter-same",
       ].map((mode) => ({ kind: "mode", mode }))
     );
-    expect(views[7]).toEqual({ kind: "switching" });
+    expect(views[6]).toEqual({ kind: "switching" });
     expect(labels).toEqual([
-      "Six modes",
       "Split-Same",
       "Tog-Same",
       "Split-Opp",
@@ -37,7 +35,7 @@ describe("dualShiftScreens", () => {
   });
 
   it("sends the old Gamma page to the Quarter-Opp screen", () => {
-    expect(dualShiftScreenNumber("quarter-opp")).toBe(6);
+    expect(dualShiftScreenNumber("quarter-opp")).toBe(5);
     const gamma = GUIDE_BODY_PAGES.find((p) => p.id === "hm-gamma");
     expect(gamma?.web).toEqual({
       into: "hm-type1",

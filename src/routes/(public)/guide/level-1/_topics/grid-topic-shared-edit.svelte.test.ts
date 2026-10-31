@@ -62,6 +62,7 @@ describe("one shared edit reaches every Grid view", () => {
       darkMode: false,
       kicker: "Level 1 · Positions / Motions",
       lessonHref: "/learn/concepts/grid",
+      lessonId: "grid",
     });
     // The page shows one screen at a time: read every screen in turn.
     await expect

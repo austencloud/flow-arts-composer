@@ -319,8 +319,12 @@
   // this the sheet is a bottom sheet with the stage as a band above the task.
   // Card and video settings are always on screen at every size; a short or
   // narrow sheet scrolls its one rail body instead of folding them away.
+  // A landscape window from 720px wide (an unfolded Galaxy Z Fold held
+  // sideways, 823x707) is a tablet, not a phone: it gets the split too. Keep
+  // this in step with the split and stacked media rules below and the frame's
+  // bottom-sheet rule in ShareSheetFrame.
   const splitLayout = new MediaQuery(
-    "(min-width: 900px), (min-width: 560px) and (max-height: 560px)"
+    "(min-width: 900px), (min-width: 560px) and (max-height: 560px), (min-width: 720px) and (orientation: landscape)"
   );
   // SegmentedControl values are strings; the numeric setting is converted at
   // the exportOptions boundary below.
@@ -4326,8 +4330,11 @@
      560px up (a phone on its side, or a desktop at 200% zoom: 720x450). Below
      900px and under 561px tall the stacked layout leaves the rail a sliver
      between the stage, the header and the dock, so the stage steps beside the
-     rail instead. Portrait phones and tablets stay stacked. */
-  @media (min-width: 900px), (min-width: 560px) and (max-height: 560px) {
+     rail instead. Portrait phones and tablets stay stacked. A landscape
+     window from 720px wide (an unfolded Fold held sideways) is a tablet and
+     takes the split too; see the tall landscape band below. */
+  @media (min-width: 900px), (min-width: 560px) and (max-height: 560px),
+    (min-width: 720px) and (orientation: landscape) {
     .title-group {
       flex-direction: row;
       align-items: center;
@@ -4644,6 +4651,40 @@
       padding-inline: 1.25rem;
     }
   }
+  /* Tall landscape under 900px wide: an unfolded Fold held sideways (823x707)
+     or a small tablet window. It has a desktop's height, so the stage keeps
+     the viewport-driven height above, but not a desktop's width: the rail
+     narrows and the gutters shrink so the stage stays wider than the rail.
+     At 823px the dialog is 775px wide: 40px of padding, a 16px gap and a
+     20rem rail leave the stage about 400px. */
+  @media (min-width: 720px) and (max-width: 899px) and (min-height: 561px) and (orientation: landscape) {
+    .share-split,
+    .share-split[data-route="download"] {
+      grid-template-columns: minmax(0, 1fr) minmax(17rem, 20rem);
+      column-gap: 1rem;
+      padding-inline: 1.25rem;
+    }
+    /* Home's choices share the stage's height as on desktop, at their
+       regular size: five of them fit beside the stage at 707px tall. */
+    .share-split[data-route="home"] .rail-body {
+      flex: 1 1 auto;
+    }
+    .share-split[data-route="home"] .rail-body :global(.crossfade),
+    .share-split[data-route="home"] .rail-body :global(.crossfade > .layer),
+    .share-split[data-route="home"] .intent-list {
+      height: 100%;
+    }
+    .share-split[data-route="home"] .intent-grid {
+      height: 100%;
+      grid-auto-rows: minmax(4.5rem, 1fr);
+      gap: 0.5rem;
+      align-content: stretch;
+    }
+    .share-split[data-route="home"] .intent {
+      min-height: 4.5rem;
+      padding: 0.75rem 1rem;
+    }
+  }
   /* Under 501px tall every pixel of height is the rail's: the split's own
      padding and the account note's gap shrink. Nothing is hidden. */
   @media (min-width: 560px) and (max-height: 500px) {
@@ -4666,8 +4707,10 @@
     }
   }
   /* Stacked layout: phones and tablets in portrait, and anything narrower than
-     560px. The 560-899px short landscape band uses the split shell instead. */
-  @media (max-width: 559px), (max-width: 899px) and (min-height: 561px) {
+     560px. The 560-899px short landscape band and the 720-899px tall landscape
+     band use the split shell instead. */
+  @media (max-width: 559px), (max-width: 719px) and (min-height: 561px),
+    (max-width: 899px) and (min-height: 561px) and (orientation: portrait) {
     .share-dock {
       padding-inline: 1.25rem;
     }

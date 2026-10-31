@@ -15,6 +15,7 @@
 import { getOnboardingPersister } from "#lib/shared/onboarding/get-onboarding-persister.js";
 import {
   compareVersions,
+  pickReleaseNotesVersion,
   type AppVersion,
 } from "#lib/shared/versioning/domain/models/version-models.js";
 import type { OnboardingPersister } from "#lib/shared/onboarding/services/onboarding-persister.js";
@@ -131,18 +132,32 @@ class WhatsNewState {
     this.mode = "manual";
     this.error = null;
 
+    let picked: AppVersion | null = null;
     try {
       const versions = await versionService.getVersions();
-      const currentVersion = versions.find((v) => v.version === __APP_VERSION__);
-      this.version = currentVersion || null;
-      // Open modal only after data is ready - prevents layout shift
-      this.isOpen = true;
+      // The running build can be ahead of the published notes (the version
+      // bump ships before the release record exists), so fall back to the
+      // newest notes instead of opening a modal with nothing to show.
+      picked = pickReleaseNotesVersion(versions, __APP_VERSION__);
     } catch (err) {
       this.error = "Failed to load release notes";
       console.error("Failed to load version:", err);
-      // Still open modal to show error state
-      this.isOpen = true;
     }
+
+    if (picked) {
+      this.version = picked;
+      // Open modal only after data is ready - prevents layout shift
+      this.isOpen = true;
+      return;
+    }
+
+    // The modal renders only with a version, so with nothing to show it would
+    // open invisibly and the click would look dead. Go to the Release Notes
+    // page instead, which has its own empty and error states.
+    const { handleModuleChange } = await import(
+      "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js"
+    );
+    await handleModuleChange("settings", "release-notes");
   }
 
   /**

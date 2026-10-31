@@ -5,8 +5,9 @@
   the same self-timing engine the boot screen does, fed the same scaled
   milestones. Nothing here draws: the worker does.
 
-  Query parameters set the controls (scene, surface, reduced, length, fly,
-  tier);
+  Query parameters set the controls (scene, surface, reduced, length, late,
+  fly, tier); `late=1` holds the finish 5 s past the boot length, the way a
+  slow boot on a fast machine does, so the pen's cruise and lap can be watched;
   `chrome=0` hides the panel for screenshots and `pauseAt=<ms>` freezes the
   whole lab that many ms into the fake boot (the finish is at the boot length;
   the fly-through ends about 540 ms later).
@@ -78,6 +79,9 @@
   );
   let reduced = $state(params.get("reduced") === "1" ? "on" : "off");
   let length = $state(params.get("length") === "6.4" ? "6.4" : "2.4");
+  let late = $state(params.get("late") === "1" ? "on" : "off");
+  /** How long a boot that runs long holds the finish past its expected end. */
+  const LATE_BY_MS = 5000;
   let fly = $state(
     ["1.25", "1.4"].includes(params.get("fly") ?? "")
       ? params.get("fly")!
@@ -139,6 +143,8 @@
     if (!canvas || !fill) return;
     const total = Number(length) * 1000;
     const profile = scaledProfile(total);
+    // The profile still expects `total`; a late boot ends after it.
+    const finishAt = late === "on" ? total + LATE_BY_MS : total;
     const start = (
       globalThis as unknown as { __tkaStartOverture?: StartOverture }
     ).__tkaStartOverture;
@@ -191,7 +197,7 @@
         bar?.finish(200, "ease");
         handle?.send("finish");
         leaving = true;
-      }, total)
+      }, finishAt)
     );
     if (pauseAt !== null && Number.isFinite(pauseAt)) {
       // Freeze everything: the worker, the capsule and the rest of the feed.
@@ -291,6 +297,19 @@
         onchange={(v) => (length = v)}
         size="sm"
         ariaLabel="Boot length"
+      />
+    </div>
+    <div class="row">
+      <span>Boot</span>
+      <SegmentedControl
+        options={[
+          { value: "off", label: "On time" },
+          { value: "on", label: "Runs long" },
+        ]}
+        value={late}
+        onchange={(v) => (late = v)}
+        size="sm"
+        ariaLabel="Boot timing"
       />
     </div>
     <div class="row">

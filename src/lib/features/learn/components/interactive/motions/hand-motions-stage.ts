@@ -15,3 +15,21 @@ export function migrateHandMotionsSavedStep(
   if (savedSchemaVersion < HAND_MOTIONS_STAGE_SCHEMA_VERSION) return 1;
   return Math.min(HAND_MOTIONS_STAGE_COUNT, Math.max(1, savedStep || 1));
 }
+
+/** The phase-data key the lesson writes its schema version under. */
+export const HAND_MOTIONS_SCHEMA_KEY = "stageSchemaVersion";
+
+/**
+ * The stages a page can open the lesson on, by name. The Guide's Hand
+ * Motions page links each of its sections to one of these.
+ */
+export const HAND_MOTIONS_STAGES = {
+  steps: {
+    motions: 1,
+    map: 2,
+    "two-hands": 3,
+    quiz: 4,
+  },
+  schemaKey: HAND_MOTIONS_SCHEMA_KEY,
+  schemaVersion: HAND_MOTIONS_STAGE_SCHEMA_VERSION,
+} as const;

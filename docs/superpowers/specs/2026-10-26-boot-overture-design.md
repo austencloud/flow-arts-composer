@@ -194,9 +194,16 @@ boot is expected to end, at one constant speed:
   while it is slow instead of all at once when it lands.
 - **Speed.** Each frame wants `(0.92 − p) / (end − now)`, which stays constant
   on plan, capped at 1.8× the planned speed. The speed eases toward that over
-  about 600 ms, so it never jumps. Past the expected end the pen creeps
-  toward 0.97 and never stops dead. A frame gap (a hidden tab) counts as at
-  most 100 ms.
+  about 600 ms, so it never jumps. It never asks for less than a cruising
+  speed (0.4× planned, at least a lap in 20 s), so the pen never stops: past
+  the target or the expected end it eases down to cruise and keeps going,
+  through 1 and on. Past 1 the figure is whole and the heads lap it (round a
+  closed line, back and forth along an open one) while the mandala keeps its
+  slow turn, until the finish flares and flies from wherever they are.
+  (Revised 2026-10-30: the first version crept toward a 0.97 ceiling, and the
+  speed's easing hit that ceiling and parked the pen, so any boot longer than
+  this machine's usual one froze the screen.) A frame gap (a hidden tab)
+  counts as at most 100 ms.
 - **Finish.** The rest traces at about the speed the pen was running,
   between 120 and 300 ms.
 
@@ -434,7 +441,8 @@ eyes cannot catch):
 
 - `overture-pace.test.ts`: constant speed on an on-time boot; a late step
   slows the pen gradually, before and after it lands, and never backwards;
-  a late boot creeps without passing 0.97; the median ignores one odd boot.
+  a boot far longer than expected never drops under cruise and laps past 1;
+  the median ignores one odd boot.
 - `overture-trace.test.ts`: `pointAt` at 0, 1, and a mid value on a known
   polyline; cumulative length monotonic; `composeFrame` against a
   recording fake context asserts path order (glow before crisp), the number

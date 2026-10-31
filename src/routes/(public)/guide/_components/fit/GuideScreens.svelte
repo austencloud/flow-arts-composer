@@ -13,9 +13,14 @@
 
   Before hydration the first screen stands where the live frame will draw
   it, centered in the same box, so the page does not change shape when the
-  script lands (only the figures grow to their fitted size). The other
-  screens follow in reading order, visually hidden, so the prerendered page
-  keeps every word and pictograph label for search engines.
+  script lands. It is drawn but not shown: the server cannot know the
+  window, so its figures and its screen split (the pills) would be the wrong
+  size and count, and the page would jump when the live frame took over.
+  The title and the Back and Next row show at once; the screen and its
+  pills fade in once, at their fitted size. Without scripts the first
+  paint shows as it is. The other screens follow in reading order, visually
+  hidden, so the prerendered page keeps every word and pictograph label for
+  search engines.
 -->
 <script lang="ts">
   import type { Snippet } from "svelte";
@@ -41,6 +46,7 @@
     hubLabel = "All guides",
     screen,
     lead,
+    steadyHead = false,
   }: {
     title: string;
     /** id for the title, for aria-labelledby. */
@@ -59,6 +65,9 @@
     screen: Snippet<[number]>;
     /** Drawn above the first screen's content (lesson links). */
     lead?: Snippet;
+    /** The header stays the same on every screen, so every screen gets the
+        same room: for a page whose screens draw one figure at one size. */
+    steadyHead?: boolean;
   } = $props();
 
   let live = $state(false);
@@ -124,7 +133,7 @@
   const nextLabel = $derived(index < last ? labels[index + 1] : nextPage?.title);
 </script>
 
-<div class="guide-screens" class:live class:later={live && index > 0}>
+<div class="guide-screens" class:live class:later={live && index > 0 && !steadyHead}>
   <header class="head">
     <div class="titles">
       {#if kicker}<p class="kicker">{kicker}</p>{/if}
@@ -166,6 +175,14 @@
     {:else}
       <!-- Prerender and first paint: screen 1 in the live frame's place;
            the rest stay in the page for search engines, out of sight. -->
+      <noscript>
+        <style>
+          .guide-screens .first,
+          .guide-screens .pills {
+            opacity: 1 !important;
+          }
+        </style>
+      </noscript>
       <div class="first">
         <div class="first-content">
           {#if lead}<div class="lead">{@render lead()}</div>{/if}
@@ -305,6 +322,14 @@
     scrollbar-width: none;
     justify-content: safe center;
   }
+  /* The server's pill count is a guess at the window's screen split; the
+     row keeps its height and shows once the page is live. */
+  .guide-screens:not(.live) .pills {
+    opacity: 0;
+  }
+  .guide-screens.live .pills {
+    transition: opacity var(--duration-fast) var(--ease-standard);
+  }
   .pills::-webkit-scrollbar {
     display: none;
   }
@@ -362,6 +387,8 @@
     height: 100%;
     min-height: 0;
     overflow: hidden;
+    /* Not shown: GuideFitBox fades the screen in at its fitted size. */
+    opacity: 0;
   }
   .first-content {
     width: 100%;

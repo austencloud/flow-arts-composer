@@ -270,6 +270,7 @@
           {formState}
           hideSuccessState={true}
           {isInputMode}
+          fillHeight={isBottomSheet}
           {isTouchDevice}
           onInputFocusChange={(focused) => {
             isInputFocused = focused;
@@ -480,13 +481,15 @@
   }
 
   /* ═══════════════════════════════════════════════════════════════════════════
-     PANEL BODY - Scrollable content area, vertically centered
+     PANEL BODY - Scrollable content area. The side drawer centers the form;
+     "safe" keeps a form taller than the body from overflowing above its top,
+     where it could never be scrolled back into view.
      ═══════════════════════════════════════════════════════════════════════════ */
   .panel-body {
     flex: 1;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: safe center;
     overflow-y: auto;
     overflow-x: hidden;
     padding: var(--panel-padding);
@@ -562,6 +565,15 @@
     height: 100dvh; /* Modern: accounts for iPhone browser chrome */
   }
 
+  /* The full-height sheet starts at the top of the screen, which in the
+     edge-to-edge Android app is under the status bar. Reserve that inset above
+     the grab handle (--safe-area-inset-top comes from @capacitor/system-bars,
+     env() is the web fallback; both are 0 on desktop). iOS input mode anchors
+     the sheet to the visual viewport instead, so it keeps no top inset. */
+  :global(.quick-feedback-drawer.bottom-sheet:not(.ios-input-mode)) {
+    padding-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
+  }
+
   /* iOS pans the visual viewport when its keyboard opens. Anchor the sheet to
      the live visible rectangle instead of subtracting a second keyboard inset. */
   :global(.quick-feedback-drawer.bottom-sheet.ios-input-mode) {
@@ -572,13 +584,24 @@
     max-height: var(--viewport-height, 100dvh);
   }
 
+  /* The grab handle above already spaces the header from the sheet's top
+     edge, so the sheet adds no padding of its own there. */
   .quick-feedback-panel.bottom-sheet {
     flex-direction: column;
     /* Use 100% to fill drawer-inner, not viewport units which overflow past the handle */
     height: 100%;
     max-height: none;
-    padding-top: max(12px, env(safe-area-inset-top));
-    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    padding-top: 0;
+    padding-bottom: var(
+      --safe-area-inset-bottom,
+      env(safe-area-inset-bottom, 0px)
+    );
+  }
+
+  /* A few pixels on top so the close button's focus ring is not clipped by
+     the header's overflow. */
+  .quick-feedback-panel.bottom-sheet .panel-header:not(.hidden) {
+    padding-block: 6px clamp(8px, 2cqi, 12px);
   }
 
   .quick-feedback-panel.bottom-sheet .panel-content {
@@ -586,8 +609,12 @@
     height: 100%;
   }
 
+  /* The form starts right under the header; FeedbackForm's fill-height mode
+     gives the textarea whatever height is left, so the sheet never scrolls. */
   .quick-feedback-panel.bottom-sheet .panel-body {
-    padding-bottom: clamp(12px, 4cqi, 18px);
+    justify-content: flex-start;
+    min-height: 0;
+    padding-block: clamp(8px, 2cqi, 12px);
     flex: 1;
   }
 

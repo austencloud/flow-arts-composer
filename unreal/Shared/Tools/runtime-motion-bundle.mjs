@@ -11,6 +11,18 @@ const MAX_FRAMES = 18000;
 const identity = [0, 0, 0, 1];
 const unit = [1, 1, 1];
 const round = n => Math.round(n * 1e5) / 1e5;
+// A phrase capture locks each staff to its palm after the arms solve toward
+// the full grid (src/lib/shared/3d/domain/staff-palm-lock.ts).
+const STAFF_PALM_LOCK_MODE = 'prop-authoritative-palm-locked-v1';
+
+/** p50, p95 and max of how far the lock moved the staffs, in centimetres. */
+function shortfallSummary(samplesM) {
+  const sorted = [...samplesM].sort((a, b) => a - b);
+  const at = q => sorted.length ? sorted[Math.min(sorted.length - 1, Math.ceil(q * sorted.length) - 1)] : 0;
+  const cm = m => Math.round(m * 1e5) / 1e3;
+  return { shortfallP50Cm: cm(at(.5)), shortfallP95Cm: cm(at(.95)), shortfallMaxCm: cm(at(1)),
+    lockedSideSamples: sorted.filter(m => m > 0).length };
+}
 
 export function sourceGlbJson(bytes) {
   const view = new DataView(bytes instanceof ArrayBuffer ? bytes : bytes.buffer,
@@ -181,6 +193,10 @@ export async function createRuntimeMotionBundle(capture, { sourceGlb, sourceRigS
   const sourceFrames = loop ? capture.frames : [...capture.frames, capture.terminalFrame];
   let maxPalmGripErrorM = 0;
   let visibleSideSamples = 0;
+  const staffPalmLock = capture.provenance.motionOptions.staffPalmLock;
+  if (staffPalmLock !== undefined && (staffPalmLock !== STAFF_PALM_LOCK_MODE || !hasGripValidation(capture)))
+    throw new Error('Invalid staff palm lock');
+  const shortfallsM = [];
   const frames = sourceFrames.map((frame, index) => {
     const propVisibility = frame.propVisibility === undefined ? [true, true] : frame.propVisibility;
     if (!Array.isArray(propVisibility) || propVisibility.length !== 2 ||
@@ -199,6 +215,12 @@ export async function createRuntimeMotionBundle(capture, { sourceGlb, sourceRigS
           if (errorM > 0.002) throw new Error(`Detached palm/visible grip at frame ${index}`);
           maxPalmGripErrorM = Math.max(maxPalmGripErrorM, errorM);
           visibleSideSamples++;
+          if (staffPalmLock) {
+            const shortfallM = frame.gripAttachment.staffPalmLockShortfallM?.[sideIndex];
+            if (!Number.isFinite(shortfallM) || shortfallM < 0)
+              throw new Error(`Missing staff palm lock shortfall at frame ${index}`);
+            shortfallsM.push(shortfallM);
+          }
         }
         const prop = frame[`${side}Prop`];
         if (['position', 'quaternion', 'scale'].some(field =>
@@ -248,8 +270,9 @@ export async function createRuntimeMotionBundle(capture, { sourceGlb, sourceRigS
       measurement: 'same-frame-calibrated-palm-to-rendered-grip',
       maxErrorCm: maxPalmGripErrorM * 100, limitCm: 0.2,
       sideSamples: visibleSideSamples,
-      contactMode: capture.provenance.motionOptions.contactMode,
+      contactMode: staffPalmLock ?? capture.provenance.motionOptions.contactMode,
       reachPolicy: capture.provenance.motionOptions.reachPolicy,
+      ...(staffPalmLock ? shortfallSummary(shortfallsM) : {}),
     } } : {}),
     skeleton: { space: 'three-performer-meters', rigSHA256: sourceRigSHA256, bones: skeleton },
     frames,

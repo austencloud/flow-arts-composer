@@ -19,7 +19,10 @@ export type TopicFrame = {
 export type TopicPageProps = {
   darkMode: boolean;
   kicker: string;
+  /** The lesson's start, for a page with one link into the lesson. */
   lessonHref: string | null;
+  /** The lesson's concept id, for a page that links its sections to stages. */
+  lessonId: string | null;
   /** Optional so a page renders alone (tests, previews). */
   frame?: TopicFrame;
   /** The page's own heading, for pages that serve more than one slug. */

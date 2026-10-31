@@ -11,9 +11,10 @@
   import {
     buildConceptPath,
     CONCEPT_LIST_PATH,
+    conceptHrefWithoutFlags,
     conceptIdFromPathname,
-    conceptRestartFromUrl,
   } from "../domain/concept-routes";
+  import { applyLessonEntryFlags } from "../domain/lesson-entry-flags";
   import { getExperiencePersistence } from "../state/experience-persistence.svelte";
   import Seo from "#lib/shared/components/Seo.svelte";
   import { writeUrl } from "#lib/shared/navigation/services/url-state.js";
@@ -21,16 +22,19 @@
   import { getLocale, t, tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import { localizedConcept } from "../domain/localized-concept";
 
-  // A "from the start" link clears the lesson's saved place here, before the
-  // lesson below creates its state from it, then drops the flag from the
-  // address bar once the navigation settles, so a reload resumes as usual.
-  const restart = browser
-    ? conceptRestartFromUrl(new URL(window.location.href))
-    : null;
-  if (restart) getExperiencePersistence(restart.conceptId).reset();
+  // Entry flags on a lesson link ("from the start", a named stage) are
+  // applied here, before the lesson below creates its state from the saved
+  // place, then dropped from the address bar once the navigation settles, so
+  // a reload resumes as usual.
+  if (browser) {
+    applyLessonEntryFlags(
+      new URL(window.location.href),
+      getExperiencePersistence
+    );
+  }
   afterNavigate(() => {
-    const pending = conceptRestartFromUrl(new URL(window.location.href));
-    if (pending) writeUrl(pending.cleanHref);
+    const clean = conceptHrefWithoutFlags(new URL(window.location.href));
+    if (clean) writeUrl(clean);
   });
 
   const courseName = $derived(tDynamic("learn_public_course_name"));

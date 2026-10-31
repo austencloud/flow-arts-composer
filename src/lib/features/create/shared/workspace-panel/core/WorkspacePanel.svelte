@@ -5,7 +5,6 @@
 	Main area for viewing and interacting with the sequence.
 -->
 <script lang="ts">
-  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { getStepOperator } from "#lib/features/create/shared/get-step-operator.js";
   import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
   import { tryGetCreateModuleContext } from "../../context/create-module-context";
@@ -18,6 +17,7 @@
   import type { IAnimationStateRef } from "../../types/create-module-types";
   import type { PanelCoordinationState } from "../../state/panel-coordination-state.svelte";
   import type { LetterSource } from "#lib/shared/create/domain/spell-models.js";
+  import type { StepClickModifiers } from "#lib/features/create/shared/state/selection/grid-range-selection.js";
 
   // Services
   let StepOperator: StepOperator | null = null;
@@ -83,7 +83,7 @@
   // Handle beat selection (receives stepNumber: 1, 2, 3... + shift/ctrl modifiers)
   function handleBeatSelected(
     stepNumber: number,
-    modifiers?: { range: boolean; toggle: boolean }
+    modifiers?: StepClickModifiers
   ) {
     if (panelState?.workspacePlayback) return;
     if (!sequenceState) return;
@@ -229,9 +229,7 @@
     />
   </div>
 {:else}
-  <div class="workspace-panel loading" data-testid="workspace-panel">
-    <div class="loading-message">{t("create_ui_initializing_workspace")}</div>
-  </div>
+  <div class="workspace-panel loading" data-testid="workspace-panel"></div>
 {/if}
 
 <style>
@@ -260,10 +258,5 @@
     display: flex;
     align-items: center;
     justify-content: center;
-  }
-
-  .loading-message {
-    color: #666;
-    font-size: var(--font-size-sm);
   }
 </style>

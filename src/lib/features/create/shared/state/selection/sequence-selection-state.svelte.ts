@@ -18,6 +18,10 @@
 
 import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
 import { createPersistenceHelper } from "#lib/shared/state/utils/persistent-state.js";
+import {
+  stepsInGridRange,
+  type StepClickModifiers,
+} from "./grid-range-selection.js";
 
 export type SelectionMode = "single" | "multi";
 
@@ -180,7 +184,9 @@ export function createSequenceSelectionState() {
      * and ctrl/cmd-toggle in one place so the start-placement guard and the
      * multi-vs-single transitions stay centralized.
      *
-     * - shift (range): select the contiguous span from the anchor to `target`.
+     * - shift (range): select the box from the anchor to `target` on the grid
+     *   (a column when both sit in one column), or the contiguous span when no
+     *   grid shape is given.
      * - toggle (ctrl/cmd): add/remove `target`, carrying the current single beat
      *   into the multi set on the first toggle.
      * - neither: plain single-select.
@@ -188,7 +194,7 @@ export function createSequenceSelectionState() {
      */
     applyClickSelection(
       target: number,
-      modifiers: { range: boolean; toggle: boolean }
+      modifiers: StepClickModifiers
     ) {
       const toSingle = (n: number) => {
         state.mode = "single";
@@ -209,14 +215,11 @@ export function createSequenceSelectionState() {
           toSingle(target);
           return;
         }
-        const lo = Math.min(anchor, target);
-        const hi = Math.max(anchor, target);
-        if (hi - lo < 1) {
+        const set = new Set(stepsInGridRange(anchor, target, modifiers.grid));
+        if (set.size < 2) {
           toSingle(target);
           return;
         }
-        const set = new Set<number>();
-        for (let n = lo; n <= hi; n++) set.add(n);
         state.mode = "multi";
         state.selectedStepNumbers = set;
         state.selectedStepNumber = null;

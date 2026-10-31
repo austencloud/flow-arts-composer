@@ -25,12 +25,17 @@
   import VoiceInputButton from "./VoiceInputButton.svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { detectPlatform } from "#lib/shared/mobile/services/platform-detector.js";
+  import {
+    resolveFeedbackEnterKey,
+    resolveFeedbackLineBreakInput,
+  } from "../quick/quick-feedback-input-mode";
 
   // Props
   const {
     formState,
     hideSuccessState = false,
     isInputMode = false,
+    fillHeight = false,
     isTouchDevice: isTouchDeviceProp,
     onInputFocusChange,
     onKeyboardHeightChange,
@@ -39,6 +44,9 @@
     hideSuccessState?: boolean;
     /** When true, form enters distraction-free input mode (mobile bottom sheet) */
     isInputMode?: boolean;
+    /** When true, the form fills its parent's height and only the textarea
+     * grows or shrinks (the quick feedback bottom sheet) */
+    fillHeight?: boolean;
     /** When true, device uses touch input (hides keyboard hints like Shift+Enter) */
     isTouchDevice?: boolean;
     /** Called when textarea focus changes - used by parent to disable backdrop dismissal */
@@ -219,14 +227,35 @@
     formState.updateField("title", "");
   }
 
+  // Enter (and the on-screen keyboard's send key) submits; Shift+Enter is
+  // the newline. See resolveFeedbackEnterKey for the full rule.
+  let newlineRequested = false;
+
+  function submitFromKeyboard() {
+    if (formState.isFormValid && !formState.isSubmitting) {
+      formState.submit();
+      hapticService?.trigger("selection");
+    }
+  }
+
   function handleKeydown(event: KeyboardEvent) {
-    // Submit on Shift+Enter
-    if (event.key === "Enter" && event.shiftKey) {
+    const action = resolveFeedbackEnterKey(event);
+    newlineRequested = action === "newline";
+    if (action === "submit") {
       event.preventDefault();
-      if (formState.isFormValid && !formState.isSubmitting) {
-        formState.submit();
-        hapticService?.trigger("selection");
-      }
+      submitFromKeyboard();
+    }
+  }
+
+  function handleBeforeInput(event: InputEvent) {
+    const action = resolveFeedbackLineBreakInput({
+      inputType: event.inputType,
+      newlineRequested,
+    });
+    newlineRequested = false;
+    if (action === "submit") {
+      event.preventDefault();
+      submitFromKeyboard();
     }
   }
 
@@ -247,6 +276,7 @@
   <form
     class="feedback-form"
     class:input-mode={isInputMode}
+    class:fill-height={fillHeight}
     onsubmit={handleSubmit}
     style="--active-type-color: {currentTypeConfig?.color ??
       'var(--theme-accent)'}"
@@ -276,12 +306,14 @@
       onImageRemoved={(index) => formState.removeImage(index)}
       disabled={formState.isSubmitting}
       {isInputMode}
+      {fillHeight}
       isIOSInputMode={isInputMode && isIOSPlatform}
       {isVoiceRecording}
       {audioAnalyzer}
       {voiceRecorder}
       onInput={handleManualInput}
       onKeydown={handleKeydown}
+      onBeforeInput={handleBeforeInput}
       onRecordingStart={handleRecordingStart}
       onRecordingEnd={handleRecordingEnd}
       onClearText={handleClearText}
@@ -408,6 +440,78 @@
     border: none;
     background: transparent;
     padding: clamp(8px, 2cqi, 12px);
+  }
+
+  /* Fill mode - the form takes its parent's height; FeedbackTextarea's
+     fill-height rules hand the spare (or missing) height to the textarea.
+     Everything else keeps its natural height. If even the textarea's floor
+     does not fit, the parent scrolls rather than squashing the controls. */
+  .feedback-form.fill-height {
+    flex: 1 1 auto;
+  }
+
+  .feedback-form.fill-height > :global(*) {
+    flex-shrink: 0;
+  }
+
+  .feedback-form.fill-height > :global(.field) {
+    flex-shrink: 1;
+  }
+
+  /* A short sheet (a landscape phone, or any phone once the keyboard has
+     shrunk the viewport) drops most of the card padding. */
+  @media (max-height: 520px) {
+    .feedback-form.fill-height:not(.input-mode) {
+      gap: 8px;
+      padding: 10px;
+    }
+  }
+
+  /* Very short (a portrait phone with the keyboard up): the tip line gives
+     way so the send button stays on screen without scrolling the sheet. */
+  @media (max-height: 420px) {
+    .feedback-form.fill-height:not(.input-mode) {
+      gap: 6px;
+    }
+
+    .feedback-form.fill-height:not(.input-mode) > :global(.encouragement-hint) {
+      display: none;
+    }
+  }
+
+  /* Short and wide (the unfolded Z Fold 6 in landscape with Gboard open): the
+     send button moves up beside the type selector so the textarea keeps a
+     useful height. The tip line gives way; the textarea placeholder already
+     says what to write. */
+  @media (max-height: 520px) and (min-width: 600px) {
+    .feedback-form.fill-height:not(.input-mode) {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-rows: auto 1fr auto;
+      align-items: center;
+    }
+
+    .feedback-form.fill-height:not(.input-mode) > :global(.type-selector) {
+      grid-area: 1 / 1;
+    }
+
+    .feedback-form.fill-height:not(.input-mode) > :global(.form-footer) {
+      grid-area: 1 / 2;
+      padding-top: 0;
+    }
+
+    .feedback-form.fill-height:not(.input-mode) > :global(.encouragement-hint) {
+      display: none;
+    }
+
+    .feedback-form.fill-height:not(.input-mode) > :global(.field) {
+      grid-column: 1 / -1;
+      align-self: stretch;
+    }
+
+    .feedback-form.fill-height:not(.input-mode) > :global([role="status"]) {
+      grid-column: 1 / -1;
+    }
   }
 
   /* Landscape phones: wide + short - side-by-side type selector and textarea */

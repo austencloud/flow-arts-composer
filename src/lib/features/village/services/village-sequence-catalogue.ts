@@ -20,6 +20,11 @@ import {
 	type VillageCatalogueEntry,
 	type VillageTransform,
 } from "../domain/village-catalogue";
+import type { VillagePhraseTable, VillagePhraseTableEntry } from "../domain/village-phrase-table";
+import {
+	tagPhraseSequence,
+	type PhraseStepLike,
+} from "#lib/features/flow-fest-sim/domain/flow-fest-phrase-library.js";
 
 /**
  * Motion for every sequence the village can name. The sim only ever passes
@@ -154,4 +159,41 @@ export async function exportVillageCatalogue(
 export function villageSeedWord(sequenceId: string): string {
 	const exhibit = MUSEUM_EXHIBIT_SEQUENCES[seedIdOf(sequenceId)];
 	return exhibit ? simplifyRepeatedWord(exhibit.word) : "a sequence";
+}
+
+/**
+ * The phrase table the sim chains performances from
+ * (domain/village-phrase-table.ts): each sequence's beats, the phrase
+ * brain's tags, and where both hands start and end. One step is one beat.
+ */
+export function bakeVillagePhraseTable(catalogue: ReadonlyMap<string, SequenceData>): VillagePhraseTable {
+	const entries: Record<string, VillagePhraseTableEntry> = {};
+	for (const [id, sequence] of catalogue) {
+		const steps = sequence.steps;
+		const first = steps[0];
+		const last = steps.at(-1);
+		if (!first || !last) continue;
+		const hand = (step: StepData, side: "left" | "right", at: "start" | "end") => {
+			const motion = step.motions[side];
+			return {
+				location: String((at === "start" ? motion?.startLocation : motion?.endLocation) ?? ""),
+				orientation: String((at === "start" ? motion?.startOrientation : motion?.endOrientation) ?? ""),
+			};
+		};
+		const tags = tagPhraseSequence(steps as unknown as PhraseStepLike[]);
+		entries[id] = {
+			beats: steps.length,
+			tags: {
+				totalTurns: tags.totalTurns,
+				difficulty: Math.round(tags.difficulty * 1000) / 1000,
+				kind: tags.kind,
+				motionCounts: tags.motionCounts,
+			},
+			joins: {
+				start: { left: hand(first, "left", "start"), right: hand(first, "right", "start") },
+				end: { left: hand(last, "left", "end"), right: hand(last, "right", "end") },
+			},
+		};
+	}
+	return { version: 1, entries };
 }

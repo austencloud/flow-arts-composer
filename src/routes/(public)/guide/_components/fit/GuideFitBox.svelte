@@ -7,6 +7,12 @@
   When even the smallest figures overflow, the box pans inside itself and the
   page still does not move. Content that grows later (pictographs prepare
   after mount, web fonts arrive) refits.
+
+  The reader never watches the search. The first fit waits briefly for the
+  web fonts, so they rarely land after it. A later refit with the box the
+  same size keeps the scale when it still fits and fills the box, and
+  otherwise searches out of sight and fades back in; only a resize, which
+  the reader is causing, searches in view.
 -->
 <script lang="ts">
   import type { Snippet } from "svelte";
@@ -41,6 +47,15 @@
   let lastHeight = -1;
   let lastArea = "";
   let raf = 0;
+  // Set once the first fit may run (after the short wait for fonts).
+  let started = false;
+
+  // A refit keeps the current scale when the content still fills at least
+  // this share of the box's height. The search lands a step or two short of
+  // a full box, so a few pixels of growth or shrinkage never set it off.
+  const KEEP_FILL = 0.9;
+  // How long the first fit waits for web fonts before going ahead.
+  const FONT_WAIT_MS = 800;
 
   // A pictograph's drawing bleeds a few pixels past its cell by design.
   const WIDTH_SLACK = 16;
@@ -82,6 +97,24 @@
     if (aw < 10 || ah < 10) return;
     const mine = ++generation;
     fitting = true;
+    // The box is the size it was at the last fit: the content moved on its
+    // own (fonts, a pictograph finished). Keep the scale when it still fits
+    // and fills the box; otherwise search out of sight.
+    if (ready && lastArea === `${aw}x${ah}`) {
+      const height = inner.offsetHeight;
+      // A panning screen stays at its pan scale while it still overflows.
+      const keeps = !fits
+        ? height > ah + 0.5
+        : !overflowsWidth(inner) &&
+          height <= ah + 0.5 &&
+          (scale >= max || height >= ah * KEEP_FILL);
+      if (keeps) {
+        lastHeight = height;
+        fitting = false;
+        return;
+      }
+      ready = false;
+    }
     const result = await fitScaleAsync(
       async (s) => {
         apply(s);
@@ -115,7 +148,7 @@
   }
 
   function schedule(): void {
-    if (raf) return;
+    if (raf || !started) return;
     raf = requestAnimationFrame(() => {
       raf = 0;
       void fit();
@@ -123,7 +156,16 @@
   }
 
   onMount(() => {
-    void fit();
+    // Fonts that land after the first fit change the text's height and
+    // force a second fit; give them a moment to arrive first.
+    const fontsReady = document.fonts?.ready ?? Promise.resolve();
+    void Promise.race([
+      fontsReady,
+      new Promise((r) => setTimeout(r, FONT_WAIT_MS)),
+    ]).then(() => {
+      started = true;
+      if (!fitted && !fitting) void fit();
+    });
     // The box changed size (window, rotation, fold): refit.
     const areaObserver = new ResizeObserver(() => {
       if (!area) return;

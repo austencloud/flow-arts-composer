@@ -140,10 +140,10 @@ describe("village state", () => {
 		back.destroy();
 	});
 
-	// Idle people idle: a rig plays a sequence only while the sim has its
-	// avatar perform, practise, teach or learn. Anyone else stands in the
-	// body's own idle with empty hands, never a held start pose.
-	it("unloads the sequence and props of everyone who is not playing", async () => {
+	// Idle people idle: a body spins only while the sim has its avatar
+	// perform, practise, teach or learn. Anyone else stands in the body's own
+	// idle with empty hands (a null sequence), never a held start pose.
+	it("gives everyone who is not playing empty hands", async () => {
 		const baseRules = loadVillageRules();
 		const village = createVillageState({
 			rules: baseRules,
@@ -158,15 +158,13 @@ describe("village state", () => {
 		for (let i = 0; i < 2400; i++) {
 			village.advance(0.1);
 			for (const record of village.avatarList) {
-				const inst = record.instanceState;
 				if (playing.has(record.avatar.state)) {
-					if (inst.hasSequence) checkedPlaying++;
+					if (record.spin.sequence) checkedPlaying++;
 					continue;
 				}
 				checkedIdle++;
-				expect(inst.hasSequence, `${record.avatar.state} at tick ${village.snapshot.world.tick}`).toBe(false);
-				expect(inst.bluePropState).toBeNull();
-				expect(inst.redPropState).toBeNull();
+				expect(record.spin.sequence, `${record.avatar.state} at tick ${village.snapshot.world.tick}`).toBeNull();
+				expect(record.spin.active).toBe(false);
 			}
 		}
 		expect(checkedIdle).toBeGreaterThan(0);

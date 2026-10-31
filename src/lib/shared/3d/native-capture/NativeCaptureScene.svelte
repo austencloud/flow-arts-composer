@@ -27,6 +27,7 @@
   import { scoreAtCaptureTime } from "./capture-score-time.js";
   import { primeCaptureScheduler, runCaptureScheduler } from "./capture-scheduler.js";
   import { captureGripAttachment, assertCaptureGripAttachment } from "./capture-grip.js";
+  import { STAFF_PALM_LOCK_MODE } from "#lib/shared/3d/domain/staff-palm-lock.js";
 
   interface Props {
     character: CharacterId;
@@ -44,6 +45,8 @@
     beatPlaneOverrides?: ReadonlyMap<number, { left?: Plane; right?: Plane }>;
     sequence: SequenceData;
     capturePlane?: "wall" | "wheel" | "floor";
+    /** Lock each staff to its palm after the arms solve (phrase capture). */
+    staffPalmLock?: boolean;
     onReady: () => void;
     onMotionError?: (message: string) => void;
   }
@@ -77,6 +80,8 @@
     ...(props.beatPlaneOverrides?.size
       ? { beatPlaneOverrides: [...props.beatPlaneOverrides.entries()].sort(([a], [b]) => a - b) }
       : {}),
+    // Absent unless set, so every other capture's options stay byte-identical.
+    ...(props.staffPalmLock ? { staffPalmLock: STAFF_PALM_LOCK_MODE } : {}),
   } as const;
   const { renderer: rendererValue, scene: sceneValue, camera } = useThrelte();
   const { autoRenderTask } = useRenderer<WebGLRenderer>();
@@ -216,6 +221,7 @@
   beatPlaneOverrides={props.beatPlaneOverrides}
   sequence={props.sequence}
   capturePlane={props.capturePlane}
+  staffPalmLock={props.staffPalmLock === true}
   active={false}
   playbackSpeed={motionOptions.playbackSpeed}
   phaseOffsetSteps={motionOptions.phaseOffsetSteps}

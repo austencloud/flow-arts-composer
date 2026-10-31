@@ -32,6 +32,8 @@ describe("village rules", () => {
 		["a visitor sequence that is also a seed", (t: Record<string, any>) => (t.visitor.sequences[0].sequenceId = t.seedSequenceIds[0])],
 		["a visitor stone with no colour", (t: Record<string, any>) => delete t.visitor.stone.colour],
 		["a visitor sequence with no steps", (t: Record<string, any>) => (t.visitor.sequences[0].steps = 0)],
+		["a lesson step that is not one beat", (t: Record<string, any>) => (t.teaching.ticksPerStep = 20)],
+		["a fractional sit-out", (t: Record<string, any>) => (t.lesson.sitOutPasses = 0.5)],
 	])("rejects %s", (_label, change) => {
 		const { presets: _presets, ...table } = withChange(change) as Record<string, any>;
 		expect(() => parseVillageRules(table)).toThrow(VillageRulesError);

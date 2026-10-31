@@ -35,6 +35,50 @@ export function conceptRestartFromUrl(
   };
 }
 
+// A page can open a lesson on one of its stages by name (the Guide's
+// "Try it yourself" beside the six combinations opens the two-hands stage).
+// Names, not numbers, so a renumbered lesson never breaks a page link.
+const CONCEPT_STAGE_PARAM = "stage";
+
+export function buildConceptStagePath(
+  conceptId: string,
+  stage: string
+): string {
+  return `${buildConceptPath(conceptId)}?${CONCEPT_STAGE_PARAM}=${encodeURIComponent(stage)}`;
+}
+
+/**
+ * Reads a named stage off a lesson URL, or null when the URL is not a
+ * lesson or names no stage.
+ */
+export function conceptStageFromUrl(
+  url: URL
+): { conceptId: string; stage: string } | null {
+  const stage = url.searchParams.get(CONCEPT_STAGE_PARAM);
+  if (!stage) return null;
+  const conceptId = conceptIdFromPathname(url.pathname);
+  if (!conceptId) return null;
+  return { conceptId, stage };
+}
+
+/**
+ * The same lesson URL without its entry flags (`from-start`, `stage`), so a
+ * reload resumes as usual. Null when there is nothing to strip.
+ */
+export function conceptHrefWithoutFlags(url: URL): string | null {
+  if (
+    !url.searchParams.has(CONCEPT_START_PARAM) &&
+    !url.searchParams.has(CONCEPT_STAGE_PARAM)
+  ) {
+    return null;
+  }
+  const params = new URLSearchParams(url.search);
+  params.delete(CONCEPT_START_PARAM);
+  params.delete(CONCEPT_STAGE_PARAM);
+  const query = params.toString();
+  return `${url.pathname}${query ? `?${query}` : ""}${url.hash}`;
+}
+
 export function conceptIdFromPathname(pathname: string): string | null {
   const match = /^\/learn\/concepts\/([^/]+)\/?$/.exec(pathname);
   if (!match?.[1]) return null;

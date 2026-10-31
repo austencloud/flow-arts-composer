@@ -6,9 +6,11 @@
  * machine's boots usually take (the median of its last few, kept by
  * overture-boot.js). Milestones that land early or late move the expected
  * end, and the speed follows that change gradually instead of jumping, so a
- * late network call slows the pen a little rather than stopping it. Past the
- * expected end it keeps creeping toward the ceiling without reaching it; the
- * finish draws whatever is left.
+ * late network call slows the pen a little rather than stopping it. It never
+ * stops: past the target, or past the expected end, it eases down to a
+ * cruising speed and keeps going, through 1 and on, so a boot that runs long
+ * finishes the mandala and then laps it (overture-trace.ts headAt) until the
+ * finish. A pen that halts reads as a frozen screen.
  *
  * Pure: no worker globals, no clock of its own. Times are ms on the page's
  * clock.
@@ -18,12 +20,12 @@
 
 /** Where the steady run aims to be when the boot ends. */
 export const PACE_TARGET = 0.92;
-/** A late boot creeps from the target toward this; the finish draws the rest. */
-export const PACE_CEILING = 0.97;
+/** Past the target or the expected end, the pen cruises at this share of the planned speed. */
+export const CRUISE_SHARE = 0.4;
+/** …but never slower than this, in fraction per ms (a lap in 20 s at most). */
+export const MIN_SPEED = 0.05 / 1000;
 /** Speed changes settle over about this long. */
 const SMOOTHING_MS = 600;
-/** Past the expected end, the gap to the ceiling closes on this time scale. */
-const LATE_MS = 1200;
 /** Catching up never runs faster than this multiple of the planned speed. */
 const MAX_SPEEDUP = 1.8;
 /** A frame gap longer than this (a hidden tab, a stalled worker) counts as this. */
@@ -41,7 +43,7 @@ export interface PaceProfile {
 }
 
 export interface OverturePacer {
-  /** The traced fraction at `now`; never goes back. */
+  /** The traced fraction at `now`: never goes back, never stops, and passes 1 on a long boot. */
   at(now: number): number;
   /** A milestone arrived at `at`: move the expected end by how early or late it was. */
   milestone(name: string, at: number): void;
@@ -105,6 +107,8 @@ export function createOverturePacer(options: {
   }
   // The speed that covers the run in the expected time, from the start.
   const planned = PACE_TARGET / Math.max(1000, expected - options.start);
+  // The floor under every frame's speed: the pen always visibly moves.
+  const cruise = Math.min(planned, Math.max(MIN_SPEED, planned * CRUISE_SHARE));
   // The latest arrival so far: everything due before the trace started
   // counts as on time.
   let anchorDue = options.start;
@@ -133,13 +137,18 @@ export function createOverturePacer(options: {
       if (dt === 0) return p;
       const end = endAt(now);
       // On plan this stays constant: the gap and the time left shrink together.
-      // Ahead of the target, or past the end, creep toward the ceiling.
+      // Past the target, or past the end, cruise. Nothing asks for less than
+      // cruise, and the speed eases toward what is asked from above, so it
+      // never drops under it.
       const wanted =
         now < end && p < PACE_TARGET
-          ? Math.min(planned * MAX_SPEEDUP, (PACE_TARGET - p) / (end - now))
-          : (PACE_CEILING - p) / LATE_MS;
+          ? Math.max(
+              cruise,
+              Math.min(planned * MAX_SPEEDUP, (PACE_TARGET - p) / (end - now))
+            )
+          : cruise;
       speed += (wanted - speed) * (1 - Math.exp(-dt / SMOOTHING_MS));
-      p = Math.min(PACE_CEILING, p + speed * dt);
+      p += Math.max(cruise, speed) * dt;
       return p;
     },
     milestone(name, at) {
@@ -151,6 +160,7 @@ export function createOverturePacer(options: {
     },
     end: () => endAt(last),
     finishMs(from) {
+      // Already lapping: the figure is whole; the finish is the flare alone.
       const left = Math.max(0, 1 - from);
       if (left === 0) return FINISH_MIN_MS;
       const ms = speed > 0 ? left / speed : FINISH_MAX_MS;
