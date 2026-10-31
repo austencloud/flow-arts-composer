@@ -240,6 +240,11 @@ h6 {
   --surface-glass: var(--theme-panel-elevated-bg, rgba(255, 255, 255, 0.05));
   --surface-dark: var(--theme-panel-bg, rgba(0, 0, 0, 0.35));
   --surface-darker: color-mix(in srgb, var(--surface-dark) 75%, black);
+  /* The panel wash laid over an opaque theme-derived floor, for menus that
+     open over moving or busy content. Use as a whole background value. */
+  --surface-panel-opaque:
+    linear-gradient(var(--theme-panel-bg), var(--theme-panel-bg)),
+    color-mix(in srgb, var(--theme-text, #fff) 8%, black);
   --surface-inset: rgba(0, 0, 0, 0.2);
   --surface-inset-deep: rgba(0, 0, 0, 0.3);
   --surface-glass-hover: color-mix(in srgb, var(--surface-glass) 75%, black);

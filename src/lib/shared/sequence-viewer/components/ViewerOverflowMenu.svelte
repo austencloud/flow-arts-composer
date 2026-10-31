@@ -480,12 +480,15 @@
     z-index: var(--z-dropdown, 1000);
     min-width: 12rem;
     max-width: calc(100vw - 24px);
-    max-height: min(70dvh, 32rem);
+    /* Bits UI measures the room between the trigger and the screen edge, so
+       the menu grows to its full length and scrolls only when it truly can't
+       fit. */
+    max-height: var(--bits-popover-content-available-height, 85dvh);
     overflow-y: auto;
     padding: 4px;
     border: 1.5px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: var(--radius-md, 12px);
-    background: var(--theme-panel-bg, rgba(18, 18, 28, 0.98));
+    background: var(--surface-panel-opaque);
     outline: none;
     transform-origin: var(--bits-popover-content-transform-origin);
   }

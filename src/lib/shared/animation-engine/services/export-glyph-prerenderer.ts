@@ -12,7 +12,7 @@
  */
 
 import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
-import type { SvgImageConverter } from '#lib/shared/foundation/services/svg-image-converter.js'
+import type { SvgImageConverter } from "#lib/shared/foundation/services/svg-image-converter.js";
 import {
   type ElementalType,
   getElementImagePath,
@@ -47,7 +47,10 @@ export interface ElementalGlyphAsset {
   sourceHeight: number;
 }
 import { TurnsTupleGenerator } from "#lib/shared/pictograph/arrow/positioning/placement/services/turns-tuple-generator.js";
-import { interpretTurnColors, resolveTurnDisplayColor } from "#lib/shared/pictograph/tka-glyph/services/turn-color-interpreter.js";
+import {
+  interpretTurnColors,
+  resolveTurnDisplayColor,
+} from "#lib/shared/pictograph/tka-glyph/services/turn-color-interpreter.js";
 import {
   getLetterImagePath,
   isDashLetter,
@@ -116,7 +119,8 @@ export class ExportGlyphPrerenderer {
 
   async prerenderGlyphs(
     steps: readonly StepData[],
-    isDarkMode: boolean
+    isDarkMode: boolean,
+    primaryPropColors: { left: string; right: string } | null = null
   ): Promise<void> {
     this.clear();
 
@@ -128,16 +132,19 @@ export class ExportGlyphPrerenderer {
       if (!step.letter) continue;
 
       const turnsTuple = this.tupleGenerator.generateTurnsTuple(step);
-      const interpreterColors = interpretTurnColors(
-        step.letter,
-        step
-      );
+      const interpreterColors = interpretTurnColors(step.letter, step);
 
-      // Interpreter colors name the hand; paint with that hand's theme color.
-      const topColor = resolveTurnDisplayColor(interpreterColors.top, isDarkMode);
+      // Interpreter colors name the hand; paint with that hand's prop color
+      // (the custom pair when the props wear one, else the theme default).
+      const topColor = resolveTurnDisplayColor(
+        interpreterColors.top,
+        isDarkMode,
+        primaryPropColors
+      );
       const bottomColor = resolveTurnDisplayColor(
         interpreterColors.bottom,
-        isDarkMode
+        isDarkMode,
+        primaryPropColors
       );
 
       // A skewed-frame beat wears braces a non-skewed beat of the same
@@ -223,7 +230,8 @@ export class ExportGlyphPrerenderer {
     const uniqueTypes = new Set<ElementalType>();
     for (let i = 0; i < steps.length; i++) {
       const step = steps[i]!;
-      if (!step.letter || getLetterType(step.letter) !== LetterType.TYPE1) continue;
+      if (!step.letter || getLetterType(step.letter) !== LetterType.TYPE1)
+        continue;
 
       const elementalType = deriveTnDFromPictograph(step).elementalType;
       if (!elementalType) continue;
@@ -235,17 +243,17 @@ export class ExportGlyphPrerenderer {
     await Promise.all(
       [...uniqueTypes].map(async (elementalType) => {
         const image = await getSvgImageCache().getImageFromUrl(
-          getElementImagePath(elementalType),
+          getElementImagePath(elementalType)
         );
-        const sourceWidth = "naturalWidth" in image
-          ? image.naturalWidth
-          : image.width;
-        const sourceHeight = "naturalHeight" in image
-          ? image.naturalHeight
-          : image.height;
+        const sourceWidth =
+          "naturalWidth" in image ? image.naturalWidth : image.width;
+        const sourceHeight =
+          "naturalHeight" in image ? image.naturalHeight : image.height;
 
         if (sourceWidth <= 0 || sourceHeight <= 0) {
-          throw new Error(`Elemental glyph has no intrinsic size: ${elementalType}`);
+          throw new Error(
+            `Elemental glyph has no intrinsic size: ${elementalType}`
+          );
         }
 
         this.elementalCache.set(elementalType, {
@@ -253,7 +261,7 @@ export class ExportGlyphPrerenderer {
           sourceWidth,
           sourceHeight,
         });
-      }),
+      })
     );
   }
 
@@ -294,7 +302,9 @@ export class ExportGlyphPrerenderer {
     const left = step.motions?.left;
     const right = step.motions?.right;
     return (
-      isVisibleMotion(left) && isVisibleMotion(right) && isSkewedFrameBeat(left, right)
+      isVisibleMotion(left) &&
+      isVisibleMotion(right) &&
+      isSkewedFrameBeat(left, right)
     );
   }
 
@@ -399,8 +409,12 @@ export class ExportGlyphPrerenderer {
     // canvas-2d-glyph-renderer.ts, so all three render paths agree on layout.
     const topOwnWidth = getTurnNumberWidth(parsed.top);
     const bottomOwnWidth = getTurnNumberWidth(parsed.bottom);
-    const topWidth = showTop ? getSlotUnitWidth(topOwnWidth, parsed.topHalved) : 0;
-    const bottomWidth = showBottom ? getSlotUnitWidth(bottomOwnWidth, parsed.bottomHalved) : 0;
+    const topWidth = showTop
+      ? getSlotUnitWidth(topOwnWidth, parsed.topHalved)
+      : 0;
+    const bottomWidth = showBottom
+      ? getSlotUnitWidth(bottomOwnWidth, parsed.bottomHalved)
+      : 0;
     const columnWidth = Math.max(topWidth, bottomWidth);
 
     // Compute composite bounds
@@ -452,7 +466,9 @@ export class ExportGlyphPrerenderer {
 
     // --- Letter + Dash group (optionally inverted for dark mode) ---
     const invertAttr = isDarkMode ? ' style="filter: invert(0.9)"' : "";
-    parts.push(`<g transform="translate(${xPadLeft}, ${yPadTop})"${invertAttr}>`);
+    parts.push(
+      `<g transform="translate(${xPadLeft}, ${yPadTop})"${invertAttr}>`
+    );
 
     // Inline the letter SVG content
     const letterContent = this.extractSvgInnerContent(letterSvg);
@@ -480,7 +496,9 @@ export class ExportGlyphPrerenderer {
     // approximation, these use SkewBraces.svelte's exact dark/light hex so
     // there is no drift from an inverted #231f20 not quite matching #d9d9d9) ---
     if (braceLayout && braceGlyphs) {
-      const braceFill = isDarkMode ? SKEW_BRACE_FILL_DARK : SKEW_BRACE_FILL_LIGHT;
+      const braceFill = isDarkMode
+        ? SKEW_BRACE_FILL_DARK
+        : SKEW_BRACE_FILL_LIGHT;
       const braceAttrs =
         `text-anchor="start" dominant-baseline="alphabetic" ` +
         `font-family="${SKEW_BRACE_FONT_FAMILY}" font-weight="${SKEW_BRACE_FONT_WEIGHT}" ` +
@@ -498,7 +516,11 @@ export class ExportGlyphPrerenderer {
     // --- Turn numbers + halved-motion marks (NOT inside the dark-mode-inverted group) ---
     if (hasTurns && turnPositions) {
       if (showTop) {
-        const topOffsetX = getSlotOffsetX(columnWidth, topOwnWidth, parsed.topHalved);
+        const topOffsetX = getSlotOffsetX(
+          columnWidth,
+          topOwnWidth,
+          parsed.topHalved
+        );
         if (showTopNumber) {
           this.appendTurnNumber(
             parts,
@@ -513,7 +535,11 @@ export class ExportGlyphPrerenderer {
         if (parsed.topHalved) {
           this.appendHalfMark(
             parts,
-            turnPositions.top.x + topOffsetX + topOwnWidth + MARK_GAP + xPadLeft,
+            turnPositions.top.x +
+              topOffsetX +
+              topOwnWidth +
+              MARK_GAP +
+              xPadLeft,
             turnPositions.top.y + yPadTop,
             "top-color",
             svgTextCache,
@@ -522,7 +548,11 @@ export class ExportGlyphPrerenderer {
         }
       }
       if (showBottom) {
-        const bottomOffsetX = getSlotOffsetX(columnWidth, bottomOwnWidth, parsed.bottomHalved);
+        const bottomOffsetX = getSlotOffsetX(
+          columnWidth,
+          bottomOwnWidth,
+          parsed.bottomHalved
+        );
         if (showBottomNumber) {
           this.appendTurnNumber(
             parts,
@@ -537,7 +567,11 @@ export class ExportGlyphPrerenderer {
         if (parsed.bottomHalved) {
           this.appendHalfMark(
             parts,
-            turnPositions.bottom.x + bottomOffsetX + bottomOwnWidth + MARK_GAP + xPadLeft,
+            turnPositions.bottom.x +
+              bottomOffsetX +
+              bottomOwnWidth +
+              MARK_GAP +
+              xPadLeft,
             turnPositions.bottom.y + yPadTop,
             "bottom-color",
             svgTextCache,
@@ -606,7 +640,9 @@ export class ExportGlyphPrerenderer {
     parts.push(
       `<g transform="translate(${x}, ${y})" filter="url(#${filterId})">`
     );
-    parts.push(`<g${originTranslate ? ` transform="${originTranslate.trim()}"` : ""}>`);
+    parts.push(
+      `<g${originTranslate ? ` transform="${originTranslate.trim()}"` : ""}>`
+    );
     parts.push(content);
     parts.push("</g></g>");
   }
@@ -647,7 +683,9 @@ export class ExportGlyphPrerenderer {
     parts.push(
       `<g transform="translate(${x}, ${y})" filter="url(#${filterId})">`
     );
-    parts.push(`<g${originTranslate ? ` transform="${originTranslate.trim()}"` : ""}>`);
+    parts.push(
+      `<g${originTranslate ? ` transform="${originTranslate.trim()}"` : ""}>`
+    );
     parts.push(content);
     parts.push("</g></g>");
   }

@@ -34,7 +34,10 @@ import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js
 // composite-SVG-string assembly) by pre-seeding those caches and swapping in
 // a stub SvgImageConverter that captures the string it was asked to convert.
 describe("ExportGlyphPrerenderer - halved-motion mark", () => {
-  function makeConverter(): { converter: SvgImageConverter; getCaptured: () => string } {
+  function makeConverter(): {
+    converter: SvgImageConverter;
+    getCaptured: () => string;
+  } {
     const converter = new SvgImageConverter();
     let captured = "";
     vi.spyOn(converter, "convertSvgStringToImage").mockImplementation(
@@ -56,8 +59,14 @@ describe("ExportGlyphPrerenderer - halved-motion mark", () => {
 
     const svgTextCache = new Map<string, string>([
       [letterPath, `<svg viewBox="0 0 100 100"><path d="M0 0"/></svg>`],
-      [topPath, `<svg viewBox="0 0 30 45"><path id="TOP_NUMBER" d="M1 1"/></svg>`],
-      [bottomPath, `<svg viewBox="0 0 30 45"><path id="BOTTOM_NUMBER" d="M2 2"/></svg>`],
+      [
+        topPath,
+        `<svg viewBox="0 0 30 45"><path id="TOP_NUMBER" d="M1 1"/></svg>`,
+      ],
+      [
+        bottomPath,
+        `<svg viewBox="0 0 30 45"><path id="BOTTOM_NUMBER" d="M2 2"/></svg>`,
+      ],
       [
         HALF_MARK_IMAGE_PATH,
         `<svg viewBox="0 0 16 45"><path id="HALF_MARK" d="M3 3"/></svg>`,
@@ -169,7 +178,10 @@ describe("ExportGlyphPrerenderer - halved-motion mark", () => {
 // draw position by so nothing lands to the right of where the live canvas
 // puts it.
 describe("ExportGlyphPrerenderer - skew braces", () => {
-  function makeConverter(): { converter: SvgImageConverter; getCaptured: () => string } {
+  function makeConverter(): {
+    converter: SvgImageConverter;
+    getCaptured: () => string;
+  } {
     const converter = new SvgImageConverter();
     let captured = "";
     vi.spyOn(converter, "convertSvgStringToImage").mockImplementation(
@@ -245,7 +257,8 @@ describe("ExportGlyphPrerenderer - skew braces", () => {
       const end = composite.indexOf(`>${glyph}</text>`);
       expect(end, `${glyph} brace`).toBeGreaterThan(0);
       const attrs = composite.slice(composite.lastIndexOf("<text ", end), end);
-      const attr = (name: string) => attrs.match(new RegExp(`${name}="([^"]+)"`))?.[1];
+      const attr = (name: string) =>
+        attrs.match(new RegExp(`${name}="([^"]+)"`))?.[1];
       return {
         x: Number(attr("x")),
         y: Number(attr("y")),
@@ -259,9 +272,13 @@ describe("ExportGlyphPrerenderer - skew braces", () => {
     // "(s, 0, 0)" displays no turns, so nothing pads the composite
     // vertically and the closing brace clears only the plain letter.
     // Node has no canvas to measure with, so the default ink applies.
-    const braceLayout = getSkewBraceLayout(Letter.A, { width: 100, height: 100 }, {
-      rightExtent: 0,
-    });
+    const braceLayout = getSkewBraceLayout(
+      Letter.A,
+      { width: 100, height: 100 },
+      {
+        rightExtent: 0,
+      }
+    );
     const ink = DEFAULT_SKEW_BRACE_INK;
     const fontSize = braceLayout.fontSize;
     const glyphs = placeSkewBraceGlyphs(braceLayout, ink);
@@ -276,16 +293,24 @@ describe("ExportGlyphPrerenderer - skew braces", () => {
     expect(close.x).toBeCloseTo(glyphs.close.x + asset!.xOffset);
 
     // Ink centred on the 100-unit letter.
-    expect(open.y - ((ink.open.ascent - ink.open.descent) / 2) * fontSize).toBeCloseTo(50);
-    expect(close.y - ((ink.close.ascent - ink.close.descent) / 2) * fontSize).toBeCloseTo(50);
+    expect(
+      open.y - ((ink.open.ascent - ink.open.descent) / 2) * fontSize
+    ).toBeCloseTo(50);
+    expect(
+      close.y - ((ink.close.ascent - ink.close.descent) / 2) * fontSize
+    ).toBeCloseTo(50);
 
     // The letter shifts by the same pad the caller is told about...
-    expect(composite).toContain(`<g transform="translate(${asset!.xOffset}, 0)"`);
+    expect(composite).toContain(
+      `<g transform="translate(${asset!.xOffset}, 0)"`
+    );
     // ...and that pad keeps the opening brace's ink inside the viewBox. A pad
     // of just the 14-unit gap left the whole glyph at negative x, where the
     // rasterised composite clipped it away.
     expect(open.x - ink.open.left * fontSize).toBeGreaterThanOrEqual(0);
-    expect(close.x + ink.close.right * fontSize).toBeLessThanOrEqual(asset!.dimensions.width);
+    expect(close.x + ink.close.right * fontSize).toBeLessThanOrEqual(
+      asset!.dimensions.width
+    );
   });
 
   it("leaves a plain (non-skewed) beat's composite exactly as before the skew-brace feature", async () => {
@@ -350,8 +375,14 @@ describe("ExportGlyphPrerenderer - skew braces", () => {
     const bottomPath = getTurnNumberImagePath(2);
     const svgTextCache = new Map<string, string>([
       [letterPath, `<svg viewBox="0 0 100 100"><path d="M0 0"/></svg>`],
-      [topPath, `<svg viewBox="0 0 30 45"><path id="TOP_NUMBER" d="M1 1"/></svg>`],
-      [bottomPath, `<svg viewBox="0 0 30 45"><path id="BOTTOM_NUMBER" d="M2 2"/></svg>`],
+      [
+        topPath,
+        `<svg viewBox="0 0 30 45"><path id="TOP_NUMBER" d="M1 1"/></svg>`,
+      ],
+      [
+        bottomPath,
+        `<svg viewBox="0 0 30 45"><path id="BOTTOM_NUMBER" d="M2 2"/></svg>`,
+      ],
       [
         HALF_MARK_IMAGE_PATH,
         `<svg viewBox="0 0 16 45"><path id="HALF_MARK" d="M3 3"/></svg>`,
@@ -384,8 +415,12 @@ describe("ExportGlyphPrerenderer - skew braces", () => {
     expect(asset).not.toBeNull();
     expect(asset!.xOffset).toBeGreaterThan(0);
 
-    const { topNumberBaseX, topHalfMarkBaseX, bottomNumberBaseX, bottomHalfMarkBaseX } =
-      computeUnpaddedTurnXs(Letter.A, "(s, 1/, 2/)");
+    const {
+      topNumberBaseX,
+      topHalfMarkBaseX,
+      bottomNumberBaseX,
+      bottomHalfMarkBaseX,
+    } = computeUnpaddedTurnXs(Letter.A, "(s, 1/, 2/)");
     const [topNumberX, topHalfMarkX, bottomNumberX, bottomHalfMarkX] =
       extractTurnGroupXs(getCaptured());
 
@@ -405,8 +440,14 @@ describe("ExportGlyphPrerenderer - skew braces", () => {
     const bottomPath = getTurnNumberImagePath(2);
     const svgTextCache = new Map<string, string>([
       [letterPath, `<svg viewBox="0 0 100 100"><path d="M0 0"/></svg>`],
-      [topPath, `<svg viewBox="0 0 30 45"><path id="TOP_NUMBER" d="M1 1"/></svg>`],
-      [bottomPath, `<svg viewBox="0 0 30 45"><path id="BOTTOM_NUMBER" d="M2 2"/></svg>`],
+      [
+        topPath,
+        `<svg viewBox="0 0 30 45"><path id="TOP_NUMBER" d="M1 1"/></svg>`,
+      ],
+      [
+        bottomPath,
+        `<svg viewBox="0 0 30 45"><path id="BOTTOM_NUMBER" d="M2 2"/></svg>`,
+      ],
       [
         HALF_MARK_IMAGE_PATH,
         `<svg viewBox="0 0 16 45"><path id="HALF_MARK" d="M3 3"/></svg>`,
@@ -432,8 +473,12 @@ describe("ExportGlyphPrerenderer - skew braces", () => {
     expect(asset).not.toBeNull();
     expect(asset!.xOffset).toBe(0);
 
-    const { topNumberBaseX, topHalfMarkBaseX, bottomNumberBaseX, bottomHalfMarkBaseX } =
-      computeUnpaddedTurnXs(Letter.A, "(s, 1/, 2/)");
+    const {
+      topNumberBaseX,
+      topHalfMarkBaseX,
+      bottomNumberBaseX,
+      bottomHalfMarkBaseX,
+    } = computeUnpaddedTurnXs(Letter.A, "(s, 1/, 2/)");
     const [topNumberX, topHalfMarkX, bottomNumberX, bottomHalfMarkX] =
       extractTurnGroupXs(getCaptured());
 
@@ -462,14 +507,23 @@ function computeUnpaddedTurnXs(letter: Letter, turnsTuple: string) {
   const bottomUnit = getSlotUnitWidth(bottomOwnWidth, parsed.bottomHalved);
   const columnWidth = Math.max(topUnit, bottomUnit);
   const topOffsetX = getSlotOffsetX(columnWidth, topOwnWidth, parsed.topHalved);
-  const bottomOffsetX = getSlotOffsetX(columnWidth, bottomOwnWidth, parsed.bottomHalved);
+  const bottomOffsetX = getSlotOffsetX(
+    columnWidth,
+    bottomOwnWidth,
+    parsed.bottomHalved
+  );
 
   const topNumberBaseX = turnPositions.top.x + topOffsetX;
   const topHalfMarkBaseX = topNumberBaseX + topOwnWidth + MARK_GAP;
   const bottomNumberBaseX = turnPositions.bottom.x + bottomOffsetX;
   const bottomHalfMarkBaseX = bottomNumberBaseX + bottomOwnWidth + MARK_GAP;
 
-  return { topNumberBaseX, topHalfMarkBaseX, bottomNumberBaseX, bottomHalfMarkBaseX };
+  return {
+    topNumberBaseX,
+    topHalfMarkBaseX,
+    bottomNumberBaseX,
+    bottomHalfMarkBaseX,
+  };
 }
 
 // Pulls the x from each of the composite's four turn/mark <g transform>
@@ -485,3 +539,59 @@ function extractTurnGroupXs(composite: string): number[] {
   expect(groups).toHaveLength(4);
   return groups.map((m) => parseFloat(m[1]!));
 }
+
+// Exported videos must paint turn numbers in the same custom prop colors the
+// props wear (Ellie's cyan/navy props kept red/blue digits before this).
+describe("ExportGlyphPrerenderer - custom prop colors", () => {
+  async function prerenderComposite(
+    primaryPropColors?: { left: string; right: string } | null
+  ): Promise<string> {
+    const converter = new SvgImageConverter();
+    let captured = "";
+    vi.spyOn(converter, "convertSvgStringToImage").mockImplementation(
+      async (svgString: string) => {
+        captured = svgString;
+        return {} as HTMLImageElement;
+      }
+    );
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({
+        ok: true,
+        text: async () => `<svg viewBox="0 0 30 45"><path d="M0 0"/></svg>`,
+      }))
+    );
+    const prerenderer = new ExportGlyphPrerenderer(converter);
+    vi.spyOn(
+      (
+        prerenderer as unknown as {
+          tupleGenerator: { generateTurnsTuple: () => string };
+        }
+      ).tupleGenerator,
+      "generateTurnsTuple"
+    ).mockReturnValue("(1, 2)");
+
+    // No motions: the interpreter gives the left hand the top number and the
+    // right hand the bottom one.
+    const step = { letter: Letter.A, motions: {} } as unknown as StepData;
+    await prerenderer.prerenderGlyphs([step], true, primaryPropColors);
+    vi.unstubAllGlobals();
+    return captured;
+  }
+
+  it("floods each turn number with its hand's custom prop color", async () => {
+    const composite = await prerenderComposite({
+      left: "#00E5FF",
+      right: "#1A237E",
+    });
+    expect(composite).toContain("#00E5FF");
+    expect(composite).toContain("#1A237E");
+    expect(composite).not.toContain("#ED1C24");
+  });
+
+  it("keeps the theme colors when the props wear no custom pair", async () => {
+    const composite = await prerenderComposite(null);
+    expect(composite).not.toContain("#00E5FF");
+    expect(composite).toMatch(/flood-color="#[0-9A-Fa-f]{6}"/);
+  });
+});

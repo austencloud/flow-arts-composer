@@ -133,11 +133,10 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
         visibilityManager.getVisibility("wordHeader"));
     // The bar can sit under the square beside a carousel: the dots say which
     // beat is playing, the bar how far through the whole video it is.
-    const showProgressBar =
-      hasSourceOverride
-        ? false
-        : (options.overlayOverrides?.progressBar ??
-          visibilityManager.getVisibility("progressBar"));
+    const showProgressBar = hasSourceOverride
+      ? false
+      : (options.overlayOverrides?.progressBar ??
+        visibilityManager.getVisibility("progressBar"));
     // Header/progress bar heights at SOURCE resolution - used only for
     // aspect ratio calculation so the output dimensions stay correct.
     const srcHeaderHeight = showWordHeader
@@ -530,7 +529,11 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
 
       // Pre-render complete glyphs (letter + dash + turns column) before the frame loop
       if (showTkaGlyph && steps.length > 0) {
-        await this.glyphPrerenderer.prerenderGlyphs(steps, isDarkMode);
+        await this.glyphPrerenderer.prerenderGlyphs(
+          steps,
+          isDarkMode,
+          options.tunnelPropColors ?? null
+        );
       }
       if (showElementalGlyph && steps.length > 0) {
         await this.glyphPrerenderer.prerenderElementalGlyphs(steps);

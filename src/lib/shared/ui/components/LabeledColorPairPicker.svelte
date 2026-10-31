@@ -641,10 +641,48 @@
     }
   }
 
-  @container color-pair (max-width: 19rem) {
+  /* Narrow hosts (the viewer's dots menu is about 18rem) keep the pair on
+     one row, with the swap between the two hands, by turning each tile
+     upright: swatch on top, label and value under it. */
+  @container color-pair (max-width: 22rem) {
+    .pair-controls,
+    .pair-controls.has-swap {
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      gap: 8px;
+    }
+
+    .color-control {
+      flex-direction: column;
+      justify-content: center;
+      gap: 6px;
+      min-height: 0;
+      padding: 10px 6px;
+    }
+
+    .color-meta {
+      align-items: center;
+      text-align: center;
+    }
+
+    .color-label {
+      overflow-wrap: anywhere;
+    }
+
+    .swap {
+      width: 40px;
+      height: 40px;
+    }
+  }
+
+  /* Only a host too narrow for two upright tiles stacks the rows. */
+  @container color-pair (max-width: 13rem) {
     .pair-controls,
     .pair-controls.has-swap {
       grid-template-columns: 1fr;
+    }
+
+    .color-control {
+      flex-direction: row;
     }
 
     .swap {

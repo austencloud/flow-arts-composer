@@ -10,6 +10,7 @@ import type {
 } from "@austencloud/video-editor/render";
 import { ExportGlyphPrerenderer } from "#lib/shared/animation-engine/services/export-glyph-prerenderer.js";
 import { getSvgImageConverter } from "#lib/shared/foundation/get-svg-image-converter.js";
+import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
 import { renderStepNumberToCanvas } from "#lib/shared/video-export/services/canvas-renderer.js";
 import {
   drawElementalGlyphToCanvas,
@@ -50,12 +51,16 @@ export function resolveOverlayStep(
 
 export class PostAnimationOverlayPainter implements PostStudioLayerPainter {
   private readonly steps: readonly StepData[];
+  // The clip's AnimatorCanvas colors its props from the app setting (no
+  // primaryPropColors prop is passed), so the turn numbers read it too.
+  private readonly primaryPropColors: { left: string; right: string } | null;
   private prerenderer: ExportGlyphPrerenderer | null = null;
   private preparing: Promise<void> | null = null;
   private ready = false;
 
   constructor(sequence: SequenceData) {
     this.steps = sequence.steps ?? [];
+    this.primaryPropColors = getSettings().primaryPropColors ?? null;
   }
 
   /**
@@ -73,7 +78,11 @@ export class PostAnimationOverlayPainter implements PostStudioLayerPainter {
       this.preparing = (async () => {
         const prerenderer = new ExportGlyphPrerenderer(getSvgImageConverter());
         await Promise.all([
-          prerenderer.prerenderGlyphs(this.steps, IS_DARK_MODE),
+          prerenderer.prerenderGlyphs(
+            this.steps,
+            IS_DARK_MODE,
+            this.primaryPropColors
+          ),
           prerenderer.prerenderElementalGlyphs(this.steps),
         ]);
         this.prerenderer = prerenderer;
