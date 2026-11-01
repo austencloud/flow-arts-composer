@@ -1,8 +1,8 @@
 ---
 status: active
-value: 5
-effort: L
-remaining: "Verify Collection Sharing and Collaboration against the current Collection Sharing and Collaboration runtime and acceptance criteria before resuming implementation. Prior recorded remainder: Approved in-session. Implementation and verification are in progress."
+value: 4
+effort: M
+remaining: "Implementation shipped in d335d1eb44 (firebase-functions/src/collections/collectionCollaboration.ts callables + emulator test, firestore.rules shares grants + rules tests, ShareCollectionSheet/CollectionMessageCard, CollectionCollaborationManager, shared-collections state) and was reworked through 859e55921e and 7f5bf078b9. Left: verification gates 5-6, an authenticated two-account Chrome run (owner share, recipient view, editor mutation, role downgrade, revocation) and the seven-viewport visual pass, none recorded."
 depends_on: ""
 plan_path: ""
 tags:
@@ -10,8 +10,8 @@ tags:
   - collections
   - messaging
   - collaboration
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: verification
 ---
 
 # Collection Sharing and Collaboration
