@@ -2,14 +2,16 @@
 status: active
 value: 3
 effort: M
-remaining: "Verify Profile as a Stage — Feedback Ledger against the current Profile as a Stage — Feedback Ledger runtime and acceptance criteria before resuming implementation. Prior recorded remainder: 'Living direction ledger for Profile-as-a-Stage, not a build spec — the Settled table must not be relitigated. Open: item 12 (word header on top of EVERY medium, not just the animation canvas) in progress; ProfileShowcase/ProfileTabs unreferenced but not safe to delete until other consumers are checked; black quads in the 3D scene preview (particle sprites failing to texture); stored 3D-scene names wrong in Firestore (FPsi repeated, wants a data repair not just render-time simplification); collection visibility field + rules and pin/unpin UI never started, so Showcase is auto-picked because nothing writes PinnedItem. Items 1, 4 and 7 are closed.'"
+remaining: "Item 12 shipped (dd78c0d8b8, WordHeader on every ArtifactTile); open items 1, 4, 7 closed. Left: open 2 (ProfileShowcase.svelte/ProfileTabs.svelte still on disk with no importers, deletion pending), open 3 (black quads in the 3D scene preview, not re-verified), open 5 (Firestore data repair of repeated 3D-scene names, render-time simplify only), open 6 (collection visibility field + rules and pin/unpin UI; ProfileStage.svelte still auto-picks Showcase because nothing writes PinnedItem)."
 depends_on: ""
 plan_path: ""
 tags: [profile, creators, feedback-ledger, direction]
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: in-progress
 ---
 # Profile as a Stage — Feedback Ledger
+
+> **Triage note (2026-11-01):** Settled item 12 (word header on every medium) shipped in dd78c0d8b8, so its 'In progress' status below is out of date. Open items 2, 3, 5 and 6 are still unresolved in the current code.
 
 Every piece of direction Austen has given on this feature, in his terms, so a
 later session does not re-derive it or re-ask. Live surface:
