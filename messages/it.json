@@ -2624,6 +2624,7 @@
   "viewer_ui_pathway_colors": "Colori dei percorsi",
   "viewer_ui_performer_color_mode": "Modalità colore dei performer",
   "viewer_ui_performer_to_color": "Performer da colorare",
+  "viewer_ui_performers_customized": "{count} personalizzati",
   "viewer_ui_preset_name": "Nome del preset",
   "viewer_ui_record_scene": "Registra scena",
   "viewer_ui_reset": "Ripristina",

@@ -20,10 +20,20 @@
   interface Props {
     controller: TunnelViewController;
     dense: boolean;
+    /** The sidebar shows both groups in one column. The phone dock gives each
+     * its own drilled-in screen, so it asks for one group at a time. */
+    section?: "all" | "tunnel" | "performers";
     onArtSettingChange?: ArtSettingChangeHandler;
   }
 
-  let { controller, dense, onArtSettingChange }: Props = $props();
+  let {
+    controller,
+    dense,
+    section = "all",
+    onArtSettingChange,
+  }: Props = $props();
+  const showTunnelColors = $derived(section !== "performers");
+  const showPerformerColors = $derived(section !== "tunnel");
   let selectedId = $state<string | null>(null);
   const selected = $derived(
     controller.colorPerformers.find((p) => p.id === selectedId) ??
@@ -100,51 +110,55 @@
   ]);
 </script>
 
-<div class="tunnel-colors">
-  <span class="section-label">{t("viewer_detail_tunnel_colors")}</span>
-  <SegmentedControl
-    options={colorOptions}
-    value={controller.colorMode}
-    onchange={(value) =>
-      changeSetting("colors", controller.colorMode, value, () => {
-        controller.colorMode = value as "hands" | "spectrum" | "custom";
-      })}
-    color="accent"
-    size="sm"
-  />
-  <Crossfade key={controller.colorMode} animateHeight>
-    {#if controller.colorMode === "custom"}
-      <LabeledColorPairPicker
-        left={controller.customPropColors.left}
-        right={controller.customPropColors.right}
-        onchange={(hand: HandSide, value: string) => {
-          const previous = controller.customPropColors[hand];
-          controller.setCustomPropColor(hand, value);
-          reportSetting(
-            hand === "left" ? "left_prop_color" : "right_prop_color",
-            previous,
-            value,
-            true
-          );
-        }}
-        onswap={() => {
-          const { left, right } = controller.customPropColors;
-          controller.setCustomPropColor("left", right);
-          controller.setCustomPropColor("right", left);
-          reportSetting("left_prop_color", left, right, true);
-          reportSetting("right_prop_color", right, left, true);
-        }}
-      />
-    {:else if !dense}
-      <p class="section-hint">
-        {controller.colorMode === "spectrum"
-          ? t("viewer_ui_generated_copies_use_distinct_hues")
-          : t("viewer_ui_stage_props_match_hand_colors")}
-      </p>
+<div class="tunnel-colors" class:divided={section === "all"}>
+  {#if showTunnelColors}
+    <span class="section-label">{t("viewer_detail_tunnel_colors")}</span>
+    <SegmentedControl
+      options={colorOptions}
+      value={controller.colorMode}
+      onchange={(value) =>
+        changeSetting("colors", controller.colorMode, value, () => {
+          controller.colorMode = value as "hands" | "spectrum" | "custom";
+        })}
+      color="accent"
+      size="sm"
+    />
+    <Crossfade key={controller.colorMode} animateHeight>
+      {#if controller.colorMode === "custom"}
+        <LabeledColorPairPicker
+          left={controller.customPropColors.left}
+          right={controller.customPropColors.right}
+          onchange={(hand: HandSide, value: string) => {
+            const previous = controller.customPropColors[hand];
+            controller.setCustomPropColor(hand, value);
+            reportSetting(
+              hand === "left" ? "left_prop_color" : "right_prop_color",
+              previous,
+              value,
+              true
+            );
+          }}
+          onswap={() => {
+            const { left, right } = controller.customPropColors;
+            controller.setCustomPropColor("left", right);
+            controller.setCustomPropColor("right", left);
+            reportSetting("left_prop_color", left, right, true);
+            reportSetting("right_prop_color", right, left, true);
+          }}
+        />
+      {:else if !dense}
+        <p class="section-hint">
+          {controller.colorMode === "spectrum"
+            ? t("viewer_ui_generated_copies_use_distinct_hues")
+            : t("viewer_ui_stage_props_match_hand_colors")}
+        </p>
+      {/if}
+    </Crossfade>
+  {/if}
+  {#if showPerformerColors && selected}
+    {#if section === "all"}
+      <span class="section-label">{t("viewer_detail_performer_colors")}</span>
     {/if}
-  </Crossfade>
-  {#if selected}
-    <span class="section-label">{t("viewer_detail_performer_colors")}</span>
     <SegmentedControl
       options={performerOptions}
       value={selected.id}
@@ -244,7 +258,9 @@
             >
           </div>
         </div>
-      {:else}
+      {:else if section === "all"}
+        <!-- "Above" is only true in the sidebar; the dock's Performers screen
+             has no tunnel colors on it. -->
         <p class="section-hint">{t("viewer_detail_uses_the_tunnel_colors_above")}</p>
       {/if}
     </Crossfade>
@@ -282,6 +298,8 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+  }
+  .tunnel-colors.divided {
     padding-top: 16px;
     border-top: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.06));
   }
@@ -303,7 +321,7 @@
     text-align: center;
   }
 
-  :global(.dock-dense) .tunnel-colors {
+  :global(.dock-dense) .tunnel-colors.divided {
     padding-top: 8px;
   }
 </style>

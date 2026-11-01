@@ -2593,6 +2593,7 @@
   "viewer_ui_pathway_colors": "Pfadfarben",
   "viewer_ui_performer_color_mode": "Farbmodus für Performer",
   "viewer_ui_performer_to_color": "Performer zum Einfärben",
+  "viewer_ui_performers_customized": "{count} angepasst",
   "viewer_ui_preset_name": "Vorlagenname",
   "viewer_ui_record_scene": "Szene aufnehmen",
   "viewer_ui_reset": "Zurücksetzen",

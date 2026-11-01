@@ -3210,6 +3210,7 @@
   "viewer_ui_pathway_colors": "Pathway colors",
   "viewer_ui_performer_color_mode": "Performer color mode",
   "viewer_ui_performer_to_color": "Performer to color",
+  "viewer_ui_performers_customized": "{count} customized",
   "viewer_ui_preset_name": "Preset name",
   "viewer_ui_record_scene": "Record Scene",
   "viewer_ui_reset": "Reset",

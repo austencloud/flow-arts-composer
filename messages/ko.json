@@ -2613,6 +2613,7 @@
   "viewer_ui_pathway_colors": "경로 색상",
   "viewer_ui_performer_color_mode": "퍼포머 색상 모드",
   "viewer_ui_performer_to_color": "색칠할 퍼포머",
+  "viewer_ui_performers_customized": "{count}명 사용자 지정",
   "viewer_ui_preset_name": "프리셋 이름",
   "viewer_ui_record_scene": "장면 녹화",
   "viewer_ui_reset": "초기화",

@@ -1,11 +1,18 @@
-<!-- Formation coordinates the preset browser and the primitive tuner. -->
+<!--
+  Formation coordinates the preset browser, the tuner and the color groups. The
+  sidebar shows colors inline; the short dock tray drills into them instead.
+-->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { TunnelViewController } from "../../tunnel/tunnel-view-controller.svelte";
+  import ArtDrillBack from "./ArtDrillBack.svelte";
   import TunnelPresetBrowser from "./TunnelPresetBrowser.svelte";
   import TunnelPrimitiveTuner from "./TunnelPrimitiveTuner.svelte";
   import TunnelConfigurationSummary from "./TunnelConfigurationSummary.svelte";
   import TunnelColorSettings from "./TunnelColorSettings.svelte";
+  import TunnelColorDrillRows, {
+    type TunnelColorDrill,
+  } from "./TunnelColorDrillRows.svelte";
   import TunnelCastLinks from "./TunnelCastLinks.svelte";
   import type { ArtSettingChangeHandler } from "./art-settings-types";
 
@@ -37,6 +44,20 @@
     reportDrill("customize", "presets", "back_button");
   }
 
+  // Dock-only color screens; local, so a reopened tray lands on the presets.
+  let colorDrill = $state<TunnelColorDrill | null>(null);
+
+  function openColorDrill(id: TunnelColorDrill): void {
+    colorDrill = id;
+    reportDrill("presets", id, "drill_row");
+  }
+
+  function closeColorDrill(): void {
+    const previous = colorDrill ?? "presets";
+    colorDrill = null;
+    reportDrill(previous, "presets", "back_button");
+  }
+
   // An analytics sink must never strand somebody in the preset surface. The
   // controller owns the edit state; telemetry is only an observer.
   function reportDrill(previous: string, value: string, source: string): void {
@@ -50,33 +71,49 @@
         source
       );
     } catch (error) {
-      console.warn(
-        "[TunnelLookSettings] Could not record tunnel drill:",
-        error
-      );
+      console.warn("[TunnelLookSettings] tunnel drill not recorded:", error);
     }
   }
 </script>
 
+{#snippet colorDrillRows()}
+  <TunnelColorDrillRows {controller} onOpen={openColorDrill} />
+{/snippet}
 <div class="section-pad">
-  <TunnelConfigurationSummary {controller} {dense} />
-  <TunnelCastLinks links={controller.castLinks} />
-  <TunnelColorSettings {controller} {dense} {onArtSettingChange} />
-  {#if controller.lookEditorOpen}
-    <TunnelPrimitiveTuner
+  {#if dense && colorDrill}
+    <ArtDrillBack label={t("create_ui_presets")} onBack={closeColorDrill} />
+    <TunnelColorSettings
       {controller}
-      onBack={closeTuner}
+      {dense}
+      section={colorDrill === "performers" ? "performers" : "tunnel"}
       {onArtSettingChange}
     />
   {:else}
-    <TunnelPresetBrowser
-      {controller}
-      {dense}
-      {onSaveTunnel}
-      {saveTunnelLabel}
-      onCustomize={(source) => openTuner(source)}
-      {onArtSettingChange}
-    />
+    <TunnelConfigurationSummary {controller} {dense} />
+    <TunnelCastLinks links={controller.castLinks} />
+    {#if !dense}
+      <TunnelColorSettings {controller} {dense} {onArtSettingChange} />
+    {/if}
+    {#if controller.lookEditorOpen}
+      <TunnelPrimitiveTuner
+        {controller}
+        onBack={closeTuner}
+        {onArtSettingChange}
+      />
+    {:else}
+      <!-- Dense: Display owns the grid toggle; Custom opens the tuner. -->
+      <TunnelPresetBrowser
+        {controller}
+        {dense}
+        {onSaveTunnel}
+        {saveTunnelLabel}
+        showGridControl={!dense}
+        showCustomizeButton={!dense}
+        beforeActions={dense ? colorDrillRows : undefined}
+        onCustomize={(source) => openTuner(source)}
+        {onArtSettingChange}
+      />
+    {/if}
   {/if}
 
   {#if controller.heavyLoad}

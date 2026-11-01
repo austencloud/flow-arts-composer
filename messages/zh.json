@@ -2612,6 +2612,7 @@
   "viewer_ui_pathway_colors": "路径颜色",
   "viewer_ui_performer_color_mode": "表演者颜色模式",
   "viewer_ui_performer_to_color": "要着色的表演者",
+  "viewer_ui_performers_customized": "{count} 位已自定义",
   "viewer_ui_preset_name": "预设名称",
   "viewer_ui_record_scene": "录制场景",
   "viewer_ui_reset": "重置",

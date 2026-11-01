@@ -1,5 +1,6 @@
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { Snippet } from "svelte";
   import PerformerRing from "../../tunnel/PerformerRing.svelte";
   import type { TunnelViewController } from "../../tunnel/tunnel-view-controller.svelte";
   import {
@@ -30,6 +31,9 @@
     showUserPresets?: boolean;
     showcase?: boolean;
     showGridControl?: boolean;
+    /** Rendered between the preset grid and the action buttons, so a host
+     * can keep its own rows above Save without owning that button. */
+    beforeActions?: Snippet;
     onArtSettingChange?: ArtSettingChangeHandler;
   }
 
@@ -49,6 +53,7 @@
     showUserPresets = true,
     showcase = false,
     showGridControl = true,
+    beforeActions,
     onArtSettingChange,
   }: Props = $props();
 
@@ -187,7 +192,7 @@
     >
       <PerformerRing
         config={p.config}
-        size={showcase ? 48 : 30}
+        size={showcase ? 48 : dense ? 24 : 30}
         animate={false}
       />
       <span>{p.name}</span>
@@ -221,7 +226,11 @@
               () => controller.applyUserPreset(up.id, up.name, up.config)
             )}
         >
-          <PerformerRing config={up.config} size={30} animate={false} />
+          <PerformerRing
+            config={up.config}
+            size={dense ? 24 : 30}
+            animate={false}
+          />
           <span>{up.name}</span>
         </button>
         <button
@@ -290,6 +299,8 @@
     >
   </div>
 {/if}
+
+{#if beforeActions}{@render beforeActions()}{/if}
 
 {#if showCustomizeButton}
   <button
@@ -538,9 +549,17 @@
     font-variant-numeric: tabular-nums;
   }
 
-  /* Dock composition preserves the shared touch floor while tightening gaps. */
+  /* Dock composition preserves the shared touch floor while tightening gaps.
+     Cards drop to a 24px ring and slimmer padding so a preset name reads in
+     full: six across on the Fold's inner screen, three on its cover, none
+     clipped to "Mand…". */
   :global(.dock-dense) .preset-grid {
     gap: 4px;
+    grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
+  }
+  :global(.dock-dense) .preset-card {
+    gap: 6px;
+    padding: 6px 8px;
   }
   :global(.dock-dense) .prim-row {
     min-height: 40px;

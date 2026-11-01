@@ -2625,6 +2625,7 @@
   "viewer_ui_pathway_colors": "Cores das trajetórias",
   "viewer_ui_performer_color_mode": "Modo de cor do performer",
   "viewer_ui_performer_to_color": "Performer a colorir",
+  "viewer_ui_performers_customized": "{count} personalizados",
   "viewer_ui_preset_name": "Nome da predefinição",
   "viewer_ui_record_scene": "Gravar cena",
   "viewer_ui_reset": "Redefinir",

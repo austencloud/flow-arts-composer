@@ -2625,6 +2625,7 @@
   "viewer_ui_pathway_colors": "Colores de trayectorias",
   "viewer_ui_performer_color_mode": "Modo de color del intérprete",
   "viewer_ui_performer_to_color": "Intérprete a colorear",
+  "viewer_ui_performers_customized": "{count} personalizados",
   "viewer_ui_preset_name": "Nombre del preajuste",
   "viewer_ui_record_scene": "Grabar escena",
   "viewer_ui_reset": "Restablecer",

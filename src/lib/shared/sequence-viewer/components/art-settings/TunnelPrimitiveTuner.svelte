@@ -3,6 +3,7 @@
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import PerformerRing from "../../tunnel/PerformerRing.svelte";
+  import ArtDrillBack from "./ArtDrillBack.svelte";
   import type { TunnelViewController } from "../../tunnel/tunnel-view-controller.svelte";
   import { FOLD_OPTIONS } from "../../tunnel/tunnel-config";
   import { tunnelUserPresets } from "../../tunnel/tunnel-user-presets.svelte";
@@ -152,10 +153,7 @@
 
 <!-- SECONDARY: the primitive tuner. Every tunnel is a combination of
          these. Even card grid for the toggles — no ragged wrap. -->
-<button class="back-btn" type="button" onclick={onBack}>
-  <i class="fas fa-chevron-left" aria-hidden="true"></i>
-  {t("create_ui_presets")}
-</button>
+<ArtDrillBack label={t("create_ui_presets")} {onBack} />
 
 {#if controller.presetRecipe}
   <p class="recipe-editing">
@@ -442,27 +440,6 @@
     opacity: 0.75;
   }
 
-  .back-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    align-self: flex-start;
-    min-height: var(--min-touch-target, 44px);
-    padding: 6px 8px;
-    background: none;
-    border: none;
-    color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
-    font-size: var(--font-size-compact, 12px);
-    cursor: pointer;
-  }
-  .back-btn:hover {
-    color: var(--theme-text, #fff);
-  }
-  .back-btn:focus-visible {
-    outline: 2px solid var(--theme-accent);
-    outline-offset: 2px;
-    border-radius: 6px;
-  }
   .prim-chip-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));

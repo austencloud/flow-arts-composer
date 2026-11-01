@@ -2613,6 +2613,7 @@
   "viewer_ui_pathway_colors": "Цвета траекторий",
   "viewer_ui_performer_color_mode": "Цветовой режим исполнителей",
   "viewer_ui_performer_to_color": "Чей цвет изменить",
+  "viewer_ui_performers_customized": "{count} настроено",
   "viewer_ui_preset_name": "Название шаблона",
   "viewer_ui_record_scene": "Записать сцену",
   "viewer_ui_reset": "Сбросить",

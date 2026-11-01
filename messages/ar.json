@@ -2612,6 +2612,7 @@
   "viewer_ui_pathway_colors": "ألوان المسارات",
   "viewer_ui_performer_color_mode": "نمط ألوان المؤدي",
   "viewer_ui_performer_to_color": "المؤدي المراد تلوينه",
+  "viewer_ui_performers_customized": "{count} مخصص",
   "viewer_ui_preset_name": "اسم الإعداد المسبق",
   "viewer_ui_record_scene": "سجّل المشهد",
   "viewer_ui_reset": "إعادة تعيين",

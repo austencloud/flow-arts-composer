@@ -427,7 +427,9 @@
     trailingAction={showExport ? tunnelDockExport : undefined}
     trayMaxHeight={openTunnelTab === "effects"
       ? "min(54vh, 360px)"
-      : "min(33vh, 250px)"}
+      : openTunnelTab === "tunnel"
+        ? "min(54vh, 380px)"
+        : "min(33vh, 250px)"}
   >
     {#snippet tray()}
       <div class="dock-dense">

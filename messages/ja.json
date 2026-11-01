@@ -2613,6 +2613,7 @@
   "viewer_ui_pathway_colors": "軌道の色",
   "viewer_ui_performer_color_mode": "パフォーマーの色モード",
   "viewer_ui_performer_to_color": "色を設定するパフォーマー",
+  "viewer_ui_performers_customized": "{count}件カスタマイズ済み",
   "viewer_ui_preset_name": "プリセット名",
   "viewer_ui_record_scene": "シーンを録画",
   "viewer_ui_reset": "リセット",

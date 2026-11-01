@@ -2643,6 +2643,7 @@
   "viewer_ui_pathway_colors": "Couleurs des trajectoires",
   "viewer_ui_performer_color_mode": "Mode de couleur des artistes",
   "viewer_ui_performer_to_color": "Artiste à colorer",
+  "viewer_ui_performers_customized": "{count} personnalisés",
   "viewer_ui_preset_name": "Nom du préréglage",
   "viewer_ui_record_scene": "Enregistrer la scène",
   "viewer_ui_reset": "Réinitialiser",
