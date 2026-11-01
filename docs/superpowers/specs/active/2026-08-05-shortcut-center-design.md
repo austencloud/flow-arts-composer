@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
-remaining: "Verify Ctrl+K and footer launch, binding display, history validation, and visual interaction in the current Shortcut Center before implementing gaps."
+value: 2
+effort: S
+remaining: "Shortcut Center, Jump to and visit history shipped in 04b5bba9a9 (src/lib/shared/keyboard/components/ShortcutCenter.svelte, domain/shortcut-center-catalog.ts + test, navigation/.../NavigationVisitPersister.ts, CommandPalette.svelte, SidebarFooter.svelte). The center is also embedded as a Settings Preferences > Keyboard subpage (SettingsModule.svelte:287, ed66c0e6b3), a departure from entry point 6. Left: the runtime checks (Recent/Often used, footer vs Ctrl+K geometry, 23 Choreo ids, reassign/disable/reload, live registration) and the seven-viewport visual pass."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: verification
 ---
 # Shortcut Center
 
