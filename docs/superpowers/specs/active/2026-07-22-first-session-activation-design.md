@@ -1,15 +1,17 @@
 ---
 status: active
-value: 5
-effort: M
-remaining: "Verify First-Session Activation — Design against src/lib/shared/library/services/library-repository.ts before resuming implementation. Prior recorded remainder: 'Says \"awaiting re-review\"; SP1/SP2/SP3 substantially built and tested. Remaining: retro-login anonymous guard; 3 SP3 ledger items unverified'"
+value: 4
+effort: S
+remaining: "SP1 durable save (15b0bab463, 093c906379, dee0c06c9b, 1ffca580c9) and SP2 guest preservation (70ef5823b3, 1ad1df0534, 26b3761d10; retro guard now at the owner in authenticator.ts upgradeCurrentGuestWith, 41f01a4081) shipped; SP3 Part A starter was removed at Austen's direction (814d857e57). Left: browser proof that a guest's saved id survives each conversion route, and a rollout decision for the keep-on-first-save nudge behind capability:onboarding:first-session-activation (still enabled:false)."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: verification
 ---
 # First-Session Activation — Design
+
+> **Triage note (2026-11-01):** The plan-and-build sequence below is historical. SP1 and SP2 shipped (for example 15b0bab463, dee0c06c9b, 70ef5823b3, 1ad1df0534), the retro-login guard now lives in authenticator.ts (41f01a4081), the SP3 keep-on-first-save nudge exists behind a flag that is still off, and the one-tap starter (SP3 Part A) was removed on 2026-07-29 (814d857e57). What remains is acceptance proof and the rollout decision.
 
 **Queue evidence (2026-10-07):** SP1-SP3 are substantially built; retro-login guard and three ledger items remain. See frontmatter for the remaining work.
 
