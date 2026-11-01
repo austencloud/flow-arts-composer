@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
-remaining: "Verify email opt-in routing, notification preference persistence, and queue decisions against current code."
+value: 3
+effort: S
+remaining: "Shipped in a65dbfc70a and 00c3aee2ff, restyled in 72f8a6f800 (NotificationPreferencesPanel.svelte, firebase-functions/src/email/notificationEmailQueue.ts, onNewVersionEmail.ts, with unit tests). Remaining: seven-viewport browser check of the panel and a live proof that an opted-in email reaches the mail queue."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: verification
 ---
 # Notification Delivery Preferences
 
