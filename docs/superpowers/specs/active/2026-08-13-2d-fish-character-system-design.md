@@ -1,19 +1,21 @@
 ---
 status: active
-value: 5
+value: 4
 effort: L
-remaining: "Verify 2D Fish Character System Design against the current 2D Fish Character System Design runtime and acceptance criteria before resuming implementation. Prior recorded remainder: implementation and visual sign-off"
+remaining: "Blocked on a decision: only the app-side harnesses shipped (9cdc3e7c9f OceanLab panel, /test/ocean-character-lab, /test/ocean-motion-benchmark). Installed @austencloud/backgrounds 0.7.12 has no FishPerceptionSystem, setOceanFishSimulationSeed, resident/intent/attention/memory or escapeManeuver (docs/reports/swarm-2026-10-14/types-w4-testpages.md, 3c2b55200c). Austen must choose to restore and publish the package implementation or retire the two routes; then implement and do visual sign-off."
 depends_on: ""
 plan_path: ""
 tags:
   - ocean
   - animation
   - character
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: blocked
 ---
 
 # 2D Fish Character System Design
+
+> **Triage note (2026-11-01):** The phase plan below describes package work that is not in the installed `@austencloud/backgrounds` 0.7.12. Only the app-side labs and OceanLab diagnostics shipped (9cdc3e7c9f); `docs/reports/swarm-2026-10-14/types-w4-testpages.md` (3c2b55200c) records the missing API and asks for a restore-or-retire decision before work resumes.
 
 **Date:** 2026-08-13  
 **Status:** Approved  
