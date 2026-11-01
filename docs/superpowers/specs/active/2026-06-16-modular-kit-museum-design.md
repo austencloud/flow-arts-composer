@@ -1,15 +1,17 @@
 ---
 status: active
-value: 3
-effort: M
-remaining: "Verify Modular Kit Museum — Vertical Slice against the current Modular Kit Museum — Vertical Slice runtime and acceptance criteria before resuming implementation. Prior recorded remainder: 'Kit instancing live for institutional wall-section only; corners/doorways never authored'"
+value: 2
+effort: L
+remaining: "Wall runs are resolved (src/lib/features/museum/services/wall-run-resolver.ts) and built as kit walls (institutional GLB static/models/museum/kit/institutional/wall-section.glb via museum-kit-glb.ts; other wings use kit-piece-provider.ts). Remains: corner/end-cap/doorway pieces (resolver doors output is unused), merged per-room floor/ceiling (floors are still per-tile buckets plus subfloor), baked AO in the kit, and Entrance Lobby FPS acceptance evidence. Confirm the direction first, since authored room shells (suppressTileGeometry, vulcan-cave-floor-plan.ts) now replace the tile geometry in some rooms."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: in-progress
 ---
 # Modular Kit Museum — Vertical Slice
+
+> **Triage note (2026-11-01):** In progress. `wall-run-resolver.ts` and the kit wall path in `museum-geometry-builder.ts` are live: one authored GLB (`institutional/wall-section.glb`), plus a procedural kit fallback for other wings. No corner, end-cap or doorway pieces exist, and `resolveWallRuns` returns `doors` that nothing consumes. Floors are still per-tile instanced buckets. No baked-lighting kit or FPS acceptance evidence is recorded. Since this spec was written, some rooms render an authored shell instead (`roomPresentation.suppressTileGeometry`). Decide whether the kit is still the target for generated rooms before fanning out.
 
 > **DRIFT WARNING — 2026-08-02.** Kit instancing live for institutional wall-section only; corners/doorways never authored
 >
