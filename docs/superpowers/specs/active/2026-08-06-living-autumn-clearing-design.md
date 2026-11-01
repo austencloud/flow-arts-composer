@@ -1,15 +1,17 @@
 ---
 status: active
-value: null
-effort: null
-remaining: "Verify autumn composition bounds, quiet zone, fixed gust envelope, and visual scene acceptance against current runtime."
+value: 3
+effort: S
+remaining: "Multiplane scene shipped via @austencloud/backgrounds 0.7.12 (autumn-composition, AutumnSceneryRenderer, DepthParallaxTracker) and plates in c5a5ffa5be/d51256bb9b; far plate swapped to public-domain McEntee crop per Austen 2026-10-26 (PROVENANCE.md). Left: recorded 7-viewport Autumn Lab sweep, interactive checks, Austen visual sign-off."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: verification
 ---
 # Living Autumn Clearing
+
+> **Triage note (2026-11-01):** The implementation scope below is historical. The multiplane Autumn scene shipped in c5a5ffa5be and d51256bb9b through `@austencloud/backgrounds` 0.7.12, and the far plate is now a public-domain painting crop (`static/images/backgrounds/autumn/PROVENANCE.md`, 2026-10-26). What remains is the recorded seven-viewport visual sweep and Austen's sign-off.
 
 ## Outcome
 
