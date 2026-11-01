@@ -1,15 +1,17 @@
 ---
 status: active
-value: null
-effort: null
-remaining: "Resolve the open Bramble-to-Elsa and Fathom coordination entries against later scene work; record which handoffs remain actionable."
+value: 1
+effort: XS
+remaining: "Fully resolved: no entry since 2026-08-10. The only shared-owner asks landed: per-route EnvironmentReviewCamera orbit limit (answered by Elsa), optional SkyGradient sun input (c192bf0c3c, sun prop in src/lib/shared/3d/environments/primitives/SkyGradient.svelte); other 'open' entries were status announcements. No actionable handoff remains."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: complete
 ---
 # Bramble and Elsa Scene Coordination
+
+> **Triage note (2026-11-01):** Every entry marked `open` below is now settled. The log has had no entry since 2026-08-10. The two shared-owner requests landed: the per-route review-camera orbit limit (answered by Elsa) and the optional `SkyGradient` sun input (c192bf0c3c). The remaining entries were Forest and Ocean gate announcements.
 
 - **Forest steward:** Bramble
 - **Winter steward:** Elsa
