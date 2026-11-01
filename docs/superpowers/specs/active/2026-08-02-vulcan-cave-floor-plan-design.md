@@ -1,19 +1,21 @@
 ---
 status: active
 value: 2
-effort: M
-remaining: "Rebuild and review one exhibit-scale cave habitat vertical slice before propagating all six"
+effort: S
+remaining: "Floor plan shipped (src/lib/features/museum/data/vulcan-cave-floor-plan.ts, tests/unit/museum/vulcan-cave-floor-plan.test.ts); the review route was deleted in 0d41fe2631 and chambers were built past the one-slice gate (Water authored shell, Fire 8b1382c0c7, Earth e1c2d33edb, f23fa12824). Left: Austen's recorded visual approval of one exhibit-scale habitat at final quality (first-fire-cinder-court/2026-09-06-first-fire-production-decision.md claims no gate approval)."
 depends_on: ""
 plan_path: ""
 tags:
   - museum
   - exhibit-design
   - experience-design
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: blocked
 ---
 
 # Vulcan Cave Floor Plan
+
+> **Triage note (2026-11-01):** The review page and seven-viewport gate below are historical: `/test/museum-cave-plan` was deleted in 0d41fe2631 when the authored cave joined `/museum`. The Water, Fire (8b1382c0c7) and Earth (e1c2d33edb) habitats have since been built. The one-chamber visual approval this correction requires has not been recorded and is Austen's call.
 
 **Queue evidence (2026-10-07):** The old dependency `5efa348fb2` is an existing entrance-lobby implementation commit, not an outstanding prerequisite. The exhibit-scale cave habitat correction below still needs one reviewed vertical slice before wider propagation.
 
