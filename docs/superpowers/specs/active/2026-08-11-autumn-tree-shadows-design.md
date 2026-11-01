@@ -1,15 +1,17 @@
 ---
 status: active
-value: null
-effort: null
-remaining: "Verify Blender-authored tree shadow asset, performance budget, and Autumn visual proof against current scene."
+value: 1
+effort: XS
+remaining: "Superseded: hero-tree casting shipped in 2e4c6f13b4, then 2026-08-31-autumn-scene-hardening.md (defbd630d4) reversed it after the walk audit found shadow islands; autumn-shadow-roles.ts now keeps Hero A meshes and the Hero B/sapling batch receive-only, with logs, boulders, ferns and the owl as casters; ready to move to archived."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: superseded
 ---
 # Autumn tree shadows
+
+> **Triage note (2026-11-01):** This design is historical. Hero-tree casting shipped in 2e4c6f13b4. The Autumn hardening pass (2026-08-31-autumn-scene-hardening.md, defbd630d4) then made Hero A and the Hero B/sapling batch receive-only to remove the shadow islands, so the caster contract below no longer describes production.
 
 ## Outcome
 
