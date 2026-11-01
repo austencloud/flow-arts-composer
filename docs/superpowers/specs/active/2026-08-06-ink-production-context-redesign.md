@@ -1,15 +1,17 @@
 ---
 status: active
-value: null
-effort: null
-remaining: "Run the existing Ink renderer/translator tests and capture production playback, seven-viewport review, and deterministic export parity; stroke gravity, path-length limits, Watercolor branches, and isolated AnimatorCanvas preview already exist (3dae20082a; tests/unit/effects/ink-2d-renderer.test.ts). Review current dense-palette behavior after e7a90da6dc rather than restoring the original material."
+value: 1
+effort: XS
+remaining: "Superseded by ab3afd4dcd (2026-10-17), which replaced the painted-stroke Ink2DRenderer with one liquid sim shared by 2D and 3D (src/lib/shared/3d/effects/ink/ink-liquid-sim.ts, ink-brush-2d.ts); the Watercolor stroke-gravity/path-length design was built in 3dae20082a but nothing outside canvas2d-translator.ts now reads strokeLengthPx/strokeGravityPx. Move to archived/; the dead translator fields are optional cleanup."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-14
-work_state: verification
+last_triaged: 2026-11-01
+work_state: superseded
 ---
 # 2D Ink Production-Context Redesign
+
+> **Triage note (2026-11-01):** This design and the 2026-10-14 verification steps are historical. Commit ab3afd4dcd (2026-10-17) replaced the painted-stroke renderer with a shared 2D/3D liquid ink sim, so the Watercolor stroke-gravity and path-length material no longer drives rendering. This matches the sibling 2026-08-14 Ink Sumi spec.
 
 > 2026-10-14 triage: Run the existing Ink renderer/translator tests and capture production playback, seven-viewport review, and deterministic export parity; stroke gravity, path-length limits, Watercolor branches, and isolated AnimatorCanvas preview already exist (3dae20082a; tests/unit/effects/ink-2d-renderer.test.ts). Review current dense-palette behavior after e7a90da6dc rather than restoring the original material. Earlier status banners and execution instructions are historical where they conflict with this review.
 
