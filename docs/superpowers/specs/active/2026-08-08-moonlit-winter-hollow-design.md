@@ -1,15 +1,17 @@
 ---
 status: active
-value: null
-effort: null
-remaining: "Verify Winter clearing deviation, authored assets, visual proof, and runtime placement against the current hollow scene."
+value: 2
+effort: XS
+remaining: "Pass-two design superseded by docs/superpowers/plans/active/2026-08-08-winter-environment-pass-three.md (Gates 0-2 approved) and the fire-court settlement contract in docs/superpowers/specs/moonlit-winter-hollow/scene-development.md (scene-gates.json currentGate 2); later work 8665a6e7c4, 3a6fa69894, 66d9541160. Archive; track Winter there."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: superseded
 ---
 # Moonlit Winter Hollow
+
+> **Triage note (2026-11-01):** This pass-two contract is superseded. Winter production now follows the pass-three gated plan and the fire-court settlement contract in `docs/superpowers/specs/moonlit-winter-hollow/scene-development.md` (later commits 8665a6e7c4, 3a6fa69894, 66d9541160). Its verification gates are not a current work list.
 
 Status: Pass two implemented and reviewed on 2026-08-08. Further work is
 governed by the
