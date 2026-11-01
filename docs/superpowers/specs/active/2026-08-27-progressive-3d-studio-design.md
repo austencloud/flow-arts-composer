@@ -2,7 +2,7 @@
 title: Progressive 3D Studio
 date: 2026-08-27
 status: active
-value: 5
+value: 4
 effort: L
 depends_on: 2026-08-25-director-control-surface-design.md
 tags:
@@ -11,13 +11,15 @@ tags:
 - progressive-disclosure
 - stage
 - film-director
-work_state: unverified
-remaining: Trace Studio persistence ownership and resolve Phase 0 open decisions; then establish which guided-start and Director paths actually exist.
+work_state: in-progress
+remaining: "Guided start shipped (06653d8b82, 75ef6a3214, 5a26000da4: StageStarter.svelte, minimal StudioProjectV1 envelope in stage/domain/studio-project.ts). Remaining: Phase 0 adapters and migrations, project save/reopen, legacy scene import replacing the session handoff in open-3d-scene.ts, the viewer Build your own link, and Director integration."
 plan_path: ''
-last_triaged: '2026-10-07'
+last_triaged: 2026-11-01
 ---
 
 # Progressive 3D Studio
+
+> **Triage note (2026-11-01):** Phase 1's guided start shipped in 06653d8b82 and 75ef6a3214 as StageStarter.svelte with a minimal StudioProjectV1 envelope. The Phase 0 adapters, Phase 2 persistence and Phase 3 Director work below have not been built.
 
 ## Decision
 
