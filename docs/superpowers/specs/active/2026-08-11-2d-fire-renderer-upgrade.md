@@ -1,12 +1,12 @@
 ---
 status: active
-value: null
-effort: null
-remaining: "Verify real WebGL2 shader compilation, synchronized legacy/cinematic playback, sprite-matte crossings, cached/headless export parity, and seven-viewport performance on /test/fire-2d-compare. The upgraded renderer, cache budget and focused tests already exist (31da45c190; src/lib/shared/animation-engine/services/fire/web-gl-fire-renderer.ts)."
+value: 3
+effort: S
+remaining: "Renderer upgrade exists with legacy/cinematic profiles in src/lib/shared/animation-engine/services/fire/web-gl-fire-renderer.ts (31da45c190, later 358d9c833e and the 890b316e26 shared wick-flame burn time); remaining is browser evidence on /test/fire-2d-compare: real WebGL2 shader compile, synchronized profile playback, sprite-matte crossings in live/cached/headless export, and the seven-viewport sweep with console and renderer diagnostics."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-14
+last_triaged: 2026-11-01
 work_state: verification
 ---
 # 2D Fire Renderer Upgrade
