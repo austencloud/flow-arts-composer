@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
-remaining: "Verify library date normalization, recent filtering and sorting, and all-results-first UI against current browse code and runtime."
+value: 2
+effort: XS
+remaining: "Fully shipped: 896de44a49 (withLibraryBrowseDate in src/lib/shared/browse/services/browse-date.ts, Recent default in AllLibraryView, FilterWorkspace Done via onClose, fit-first pane-height-allocation.ts) with tests/unit/browse/{browse-date,pane-height-allocation}.test.ts; plan ledger records check and 7-viewport evidence."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: complete
 ---
 # Library All: Results First
 
