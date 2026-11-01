@@ -1,15 +1,17 @@
 ---
 status: active
-value: null
-effort: null
-remaining: "Verify Canonical 3D Stage and Environment Transitions against src/lib/shared/3d/environments/domain/stage-coordinate-frame.ts before resuming implementation. Prior recorded remainder: Verify protected performer anchors and environment transition acceptance across each supported 3D scene before continuing the revision."
+value: 3
+effort: S
+remaining: "Coordinate frame, transition state machine, WebGL veil/compositor and tests shipped in 949221cd84 (stage-coordinate-frame.ts, environment-transition.ts, environment-transition-compositor.ts, tests/unit/3d/stage-coordinate-frame.test.ts, environment-transition.test.ts), then extended by 4f77058f93, 5c697b2b69 (worker renderer) and 24fab771cc. Left: the runtime contract in the current scene catalog (feet on deck, height and animation continuity through cover and reveal, Ocean caustics/flora/god rays/fish alignment, rapid-switch settle, no WebGL errors or memory climb) plus the viewport captures."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: verification
 ---
 # Canonical 3D Stage and Environment Transitions
+
+> **Triage note (2026-11-01):** The 'revision in progress' status line below is historical. The design shipped in 949221cd84 and was extended through 5c697b2b69, which wired the production viewer to a worker renderer (the later split this spec anticipated), and 24fab771cc. What remains is runtime acceptance across the current environments.
 
 **Date:** 2026-08-06  
 **Status:** Protected-performer transition revision in progress
