@@ -1,13 +1,13 @@
 ---
 status: backlog
-value: null
-effort: null
-work_state: unverified
-remaining: Reconcile prototype screen-take sources with Post Studio ownership and verify the output contract before implementation.
+value: 2
+effort: L
+work_state: ready
+remaining: "Nothing is built: no Screen Take code in src or @austencloud/video-editor, and prototype commit 9fbaa6396d (codex/portrait-director) is absent from this clone, so the prototype reconcile step cannot run here. Only be63ef12a9 (docs) landed. Build the capture adapter and Add Screen Take entry from the spec."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: 2026-11-01
 ---
 
 # Post Studio Screen Take Source
