@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
-remaining: "Verify Stage 3D Performance Studio against the current Stage 3D Performance Studio runtime and acceptance criteria before resuming implementation. Prior recorded remainder: Verify Stage document, workspace, and viewer ownership plus remaining scope against current 3D studio runtime."
+value: 3
+effort: L
+remaining: "Core shipped (per-performer StageSequenceClip lanes in stage-sequence-timeline.ts and StageTimeline.svelte via 21335f9da9; versioned StudioProjectV1 envelope in 06653d8b82; tests/unit/stage/). Remaining scope list is unbuilt: saved Stage document persistence and sharedSequenceId migration, clip duplication and multi-select, clip thumbnails, cross-performer collision warnings, Stage export/share; standalone viewer now lives at /test/viewer-3d, not /lab/viewer-3d."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: in-progress
 ---
 # Stage 3D Performance Studio
 
