@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
-work_state: unverified
-remaining: Verify exact Left/Right Tunnel colors through snapshot, share, render, and export round trips.
+value: 2
+effort: S
+work_state: verification
+remaining: "Shipped in 63ec274fa0 and 0bc07ad160 (tunnel-prop-colors.ts with tests, LabeledColorPairPicker.svelte shared with Mandala, SNAPSHOT_VERSION 3 in tunnel-snapshot.ts), hand-addressed in 119294877a; remaining: browser author/save/reopen/export-frame round trip and the seven-viewport plus 200% settings inspection."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: 2026-11-01
 ---
 
 # Tunnel Exact Prop Colors
