@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
+value: 2
+effort: S
 work_state: verification
-remaining: Verify the landed Flow Fest drive-in against gate geometry, tree visibility, arrival choices, and saved campsite return.
+remaining: "Browser proof of the full slice on /test/flow-fest-sim: drive from the west spawn to FLOW_FEST_GATE_PULL_OFF, exit inside the 30 m arrival radius into gate-check-in, queue cars for each departure, late-departure golden-hour light, and a mid-drive reload (mobility snapshot v2). Code shipped in 8c466b61f4, 16d488b67f, b71ed4b79c, 4c6cc812be (camera boom), 670d7c24b2; the 2026-09-05 notes verify only launch, W drive and HUD tiers."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: 2026-11-01
 ---
 
 # Flow Fest sim — sub-project 1 "Drive in" (design)
