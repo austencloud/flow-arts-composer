@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
+value: 2
+effort: S
 work_state: verification
-remaining: Presentation code exists; capture shape-matrix geometry at required viewports and verify performance and motion acceptance.
+remaining: "Hardening shipped in 73acc9b45a and 1276c85ec8 (merged 217cdfc7a9); owed: seven-viewport captures, warm cell-switch frame-pacing run, Lighthouse a11y/best-practices and the fresh adversarial audit; one 'as unknown as' cast remains at src/lib/shared/shape-matrix/domain/rotation-style.ts:27."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: '2026-11-01'
 ---
 
 # Shape Matrix Presentation Hardening
