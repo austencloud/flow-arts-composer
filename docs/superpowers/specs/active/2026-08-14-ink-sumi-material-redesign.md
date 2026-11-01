@@ -1,15 +1,17 @@
 ---
 status: active
-value: null
-effort: null
-remaining: "Verify Ink Preset Curation and Material Redesign against the current Ink Preset Curation and Material Redesign runtime and acceptance criteria before resuming implementation. Prior recorded remainder: Verify revised Sumi stroke and preset curation against the final art-direction criteria and current renderer."
+value: 1
+effort: XS
+remaining: "Preset curation shipped in 7e4671ee5c (ink-presets.ts = Toxic, Neon Tag, Splatter; cool-blue custom Default in effects/domain/defaults.ts; locked by preset-data.test.ts). The Sumi ribbon material and Splatter chip renderer were replaced by the shared liquid sim in ab3afd4dcd (ink-2d-renderer.ts, ink-liquid-sim.ts); nothing left to build here. Ready to archive."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: superseded
 ---
 # Ink Preset Curation and Material Redesign
+
+> **Triage note (2026-11-01):** The Sumi ribbon-material plan below is historical. Preset curation shipped in 7e4671ee5c; on 2026-10-17 ab3afd4dcd replaced the painted-stroke Ink renderer (including the Sumi branch and Splatter chips) with one liquid sim shared by 2D and 3D, so this design is superseded.
 
 **Status:** Approved by direct implementation request on 2026-08-14
 
