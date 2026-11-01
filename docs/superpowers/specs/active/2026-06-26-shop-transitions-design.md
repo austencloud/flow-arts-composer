@@ -1,17 +1,19 @@
 ---
 status: active
-value: 3
-effort: XS
-remaining: "Verify Shop Transitions — Design Spec against src/lib/shared/ui-animation/animations.svelte.ts before resuming implementation. Prior recorded remainder: 'Items 1-4 shipped past spec; item 5 (grid entrance stagger) never built. Its depends_on WSL blocker is stale'"
+value: 2
+effort: M
+remaining: "Driver and path-based shop pairing are live (src/lib/shared/transitions/navigation-morphs.ts) and fans are named for loop-deck and tnd-trilogy (StorePage.svelte, LoopDeckConfiguratorPage.svelte, TnDTrilogyPage.svelte). Remains: tnd-trilogy/+page.svelte still mounts via {#await import()} so its destination mounts too late; starter-pack tile and StarterPackPage carry no view-transition-name; book path /shop/{id} -> ProductDetailPage untested; grid entrance stagger (section 5) never built; criteria 1-5 browser evidence not recorded."
 depends_on: ""
 supersedes_context: ""
 tags: [shop, transitions, view-transitions, polish, ux]
-last_triaged: 2026-10-07
+last_triaged: 2026-11-01
 plan_path: ""
-work_state: unverified
+work_state: in-progress
 ---
 
 # Shop Transitions — Design Spec
+
+> **Triage note (2026-11-01):** In progress. The path-based pairing in `navigationMorphs()` and the named `shop-fan-loop-deck` / `shop-fan-tnd-trilogy` pairs are in code. `/shop/loop-deck` now imports its configurator statically and renders server-side, so the late-mount blocker likely no longer applies there; that is an inference, not checked in a browser. `/shop/tnd-trilogy` still uses `{#await import()}`. `/shop/choreography-cards` now 308-redirects to `/shop`, so the checklist items that name it are obsolete. The starter pack has no named pair on either side, the grid stagger was never built, and no browser evidence for criteria 1-5 is on record.
 
 **Queue evidence (2026-10-07):** Items 1-4 landed; the grid entrance stagger remains open and the WSL blocker is stale. See frontmatter for the remaining work.
 
