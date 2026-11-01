@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
-work_state: verification
-remaining: Verify Post Studio shared surfaces and the September 8-9 playback, sharpness, sidebar, and phone reflow follow-ups.
+value: 2
+effort: XS
+work_state: complete
+remaining: "Fully shipped: 8846496905/ec547f2738, e0b7206034, 3c48a5e9b9, 3db7b3720f, f17bd952a1, 3a397b11de and c19be1fa1c, with identity, playback, raster, sidebar and reflow evidence recorded across the seven tiers. The owner src/lib/shared/sequence-viewer/state/viewer-studio-surfaces.svelte.ts survives the later Post editor rebuild. Ready to move to shipped."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: 2026-11-01
 ---
 
 # Sequence Viewer ↔ Post Studio: live surface continuity
