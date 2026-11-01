@@ -1,15 +1,17 @@
 ---
 status: active
-value: 5
-effort: XL
-remaining: "Verify Sequence/Public Parity Repair against src/lib/shared/foundation/services/word-deriver.ts before resuming implementation. Prior recorded remainder: 'Phase 1 landed (public-sequence-index model, public-index-syncer, library-save-service, library-sync-retry, plus the Fable 5 hardening round). Phases 2-5 open: dual-compatible writer, dry-run + repair tooling, tighten Firestore rules, scheduled audit. Named-but-absent files are Phase 2+ deliverables (public-artifact-projector, public-projection-preparer, library-batch-operations, library-recycle-bin). The Opus 5 review this spec asked for HAS happened (2026-07-25): 16 of 16 spot-checked claims held and all 26 referenced paths exist, so queue this as implementation, not review.'"
+value: 3
+effort: M
+remaining: "Phases 1-5 shipped: transaction persister 5ebd2f7a45 + reroute 8bc4149650, corpus repair and duplicate closeout, strict rules f3240f5dec, scheduled audit 290e345e18, digest pin 8b099fb30e. Left: make LibrarySaveService the single feedback boundary (public-index-syncer.ts:290/382 and library-repository.ts:181 still call showUserError), retire public-index-syncer/IPublicIndexSyncer/feature-layer public-sequence-index per the delete list, and record acceptance #14 runtime canary (publish, edit, thumbnail, unpublish, delete parity)."
 depends_on: ""
 plan_path: ""
 tags: [firestore, sequences, public-index, data-integrity, parity]
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: in-progress
 ---
 # Sequence/Public Parity Repair
+
+> **Triage note (2026-11-01):** The phase plan below is historical. All five rollout phases landed between 2026-07-25 and 2026-07-27: the persister (5ebd2f7a45, 8bc4149650), the corpus repair, strict rules (f3240f5dec) and the scheduled audit (290e345e18), plus the 2026-09-30 incident repair. What remains is the feedback-boundary cleanup, deletion of the legacy syncer files, and the runtime canary from acceptance criterion 14.
 
 > Status: **reviewed and accepted; Phase 1 in progress**
 >
