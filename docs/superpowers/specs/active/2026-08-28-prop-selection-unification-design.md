@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
-work_state: unverified
-remaining: Audit shared prop selection across picker, profile, and Viewer; run exact family-art and Buugeng chirality checks.
+value: 2
+effort: S
+work_state: verification
+remaining: "Shipped: PropSelectionButton (67bf95cb9c), 3D ScenePropPicker composing BentoPropGrid with the global chirality seam (98104ab60a, 922d1e5e72); Viewer3DScene loads chirality for Browse. Remaining: browser pass of main drawer, profile editor and 3D Prop tab at the listed viewports, incl. visible 3D Buugeng mirroring."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: 2026-11-01
 ---
 
 # Prop Selection Unification
