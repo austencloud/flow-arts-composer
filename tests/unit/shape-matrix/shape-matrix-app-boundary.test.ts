@@ -171,9 +171,9 @@ describe("Shape Matrix app boundary", () => {
       ),
       "utf8"
     );
-    const renderLoopSource = readFileSync(
+    const mandalaGuideSource = readFileSync(
       resolve(
-        "src/lib/shared/animation-engine/services/animation-render-loop.ts"
+        "src/lib/shared/animation-engine/services/mandala-guide-painter.ts"
       ),
       "utf8"
     );
@@ -198,8 +198,8 @@ describe("Shape Matrix app boundary", () => {
     expect(playbackSyncSource).toContain(
       "this._lastPropsRef?.mandalaVisibleOverride ?? state.mandala"
     );
-    expect(renderLoopSource).toContain("const show: MandalaHandVisibility");
-    expect(renderLoopSource).toContain(
+    expect(mandalaGuideSource).toContain("const show: MandalaHandVisibility");
+    expect(mandalaGuideSource).toContain(
       'showLeft && showRight ? "both" : showLeft ? "left" : "right"'
     );
   });
