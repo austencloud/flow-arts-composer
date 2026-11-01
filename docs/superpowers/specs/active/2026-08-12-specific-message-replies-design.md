@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
-remaining: "Verify reply snapshot payload, attachment-only quote, legacy compatibility, and focus behavior in current Inbox."
+value: 3
+effort: S
+remaining: "Implemented in b115f91b88 (MessageActions swipe/menu reply, MessageThread jump-to-original, ReplyPreview, messenger.ts snapshot, firestore.rules isValidReplyPreview, finalizeMessageImage canonical snapshot, composer/rules/function tests). Remaining: the browser pass for quote activation, source highlight, swipe reset, clean console, and the 7-viewport frames, which is not recorded."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: verification
 ---
 # Specific Message Replies
 
