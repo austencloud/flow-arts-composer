@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
-work_state: unverified
-remaining: Verify Chrome taskbar identity scripts with AST parsing and disposable shortcut installation before rollout.
+value: 2
+effort: S
+work_state: verification
+remaining: "Implementation shipped in 32fff75f50 and dd7ec7836e (launchers/install-chrome-profile-shortcuts.ps1, scripts/launch-chrome-debug.ps1 Profile 1); remaining is the Windows-only Verification list (AST parse, disposable-desktop shortcut readback, ICO frames, stable 9222 listener) plus Austen's manual re-pin."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: 2026-11-01
 ---
 
 # Chrome Taskbar Identities
