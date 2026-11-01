@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
+value: 2
+effort: S
 work_state: verification
-remaining: Verify build-aware emitters, per-performer build, and auto-equip against the shipped code and visual acceptance.
+remaining: "All three phases shipped: emitters 19d80ad62d and 1cb8fb9892 (prop-build-tip-geometry-3d.ts), per-performer build (setPropBuild in character-instance-state.svelte.ts), auto-equip 2b04dcd094 (build-for-effect.ts). Remaining: screenshot of the seven-performer fire fan scene with five flames on the wicks of each fan."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: 2026-11-01
 ---
 
 # Fan Wick Emitters and Build-Gated Effects
