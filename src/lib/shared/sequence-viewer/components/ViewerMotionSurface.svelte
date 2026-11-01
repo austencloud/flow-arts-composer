@@ -147,9 +147,46 @@
   // on to the reveal.
   const sceneLoading = provideSceneLoadingSession();
   $effect(() => {
-    if (is3DActive && !requiresContactViewer && !sceneLoading.current) {
+    if (
+      is3DActive &&
+      !requiresContactViewer &&
+      (!sceneLoading.current || sceneLoading.current.done)
+    ) {
       sceneLoading.open();
     }
+  });
+
+  // Keep-alive is for a stage that finished building. Leaving 3D while it is
+  // still booting (models parsing, shaders compiling, performers retargeting)
+  // used to leave all of that running behind the next surface: a Tunnel
+  // chosen because 3D was taking too long then waited on 3D anyway. An
+  // unfinished boot leaves with the surface, after the outgoing dissolve has
+  // played, and the next 3D visit boots from the (already downloaded) module.
+  let abandon3DTimer: ReturnType<typeof setTimeout> | undefined;
+  $effect(() => {
+    const abandon =
+      side === "left" && is3DMounted && !is3DActive && !scene3DReady;
+    if (!abandon) {
+      clearTimeout(abandon3DTimer);
+      abandon3DTimer = undefined;
+      return;
+    }
+    const teardown = () => {
+      abandon3DTimer = undefined;
+      is3DMounted = false;
+      scene3DRevealed = false;
+      // The next surface owns the stage now; nothing waits for 3D to paint.
+      if (retainedMotionPane === "animation-3d")
+        retainedMotionPane = "animation";
+      sceneLoading.current?.abandon();
+    };
+    const dissolve = motionDuration(DURATION.emphasis);
+    if (dissolve === 0) teardown();
+    else abandon3DTimer = setTimeout(teardown, dissolve);
+    return () => {
+      clearTimeout(abandon3DTimer);
+      abandon3DTimer = undefined;
+    };
   });
 
   // 3D is one click away from here, and its models are the slowest thing in the

@@ -43,6 +43,7 @@
   import PerfMonitor from "./PerfMonitor.svelte";
   import type { RendererPerformanceSample } from "./renderer-performance-window";
   import InteractiveCanvasFrameBridge from "./InteractiveCanvasFrameBridge.svelte";
+  import CanvasLifecycle from "./CanvasLifecycle.svelte";
   import WorkerViewer3DScene from "./WorkerViewer3DScene.svelte";
   import UnrealComposerScene from "../unreal/components/UnrealComposerScene.svelte";
   import GaitProbe from "../diagnostics/gait/GaitProbe.svelte";
@@ -925,6 +926,11 @@
             createRenderer={(canvas) =>
               new WebGLRenderer({ canvas, preserveDrawingBuffer: false })}
           >
+            <!-- The sequence viewer now unmounts this canvas when a 3D boot
+                 is abandoned, and profile tiles mount it per card, so the
+                 WebGL context must go with the component instead of waiting
+                 for the browser's cap to evict it. -->
+            <CanvasLifecycle />
             <InteractiveCanvasFrameBridge />
             <PerfMonitor
               visible={viewer3DState.showPerf}

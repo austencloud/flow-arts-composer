@@ -47,7 +47,9 @@ const geometryTrace = read(
 const motionSurface = read(
   "src/lib/shared/sequence-viewer/components/ViewerMotionSurface.svelte"
 );
-const viewer3DCanvas = read("src/lib/shared/3d/components/Viewer3DCanvas.svelte");
+const viewer3DCanvas = read(
+  "src/lib/shared/3d/components/Viewer3DCanvas.svelte"
+);
 const tunnelController = read(
   "src/lib/shared/sequence-viewer/tunnel/tunnel-view-controller.svelte.ts"
 );
@@ -457,6 +459,28 @@ describe("Sequence Viewer transition orchestration contract", () => {
     expect(reviewPage).toContain(
       "3D is intentionally withheld at this viewport."
     );
+  });
+
+  it("abandons an unfinished 3D boot with the surface the user left", () => {
+    // Keep-alive covers a stage that finished building. A boot the user walked
+    // away from (3D was taking too long, so they chose Tunnel) must not keep
+    // parsing models and compiling shaders behind the surface they chose.
+    expect(motionSurface).toContain(
+      'side === "left" && is3DMounted && !is3DActive && !scene3DReady'
+    );
+    expect(motionSurface).toContain("is3DMounted = false;");
+    expect(motionSurface).toContain("sceneLoading.current?.abandon();");
+    // The dissolve still plays: teardown waits for the emphasis duration and
+    // a reversal within it cancels the teardown.
+    expect(motionSurface).toMatch(
+      /abandon3DTimer = setTimeout\(teardown, dissolve\)/
+    );
+    // A later 3D visit opens a fresh loading bar instead of the abandoned one.
+    expect(motionSurface).toContain(
+      "(!sceneLoading.current || sceneLoading.current.done)"
+    );
+    // The torn-down canvas releases its WebGL context with the component.
+    expect(viewer3DCanvas).toContain("<CanvasLifecycle />");
   });
 
   it("keeps reduced 2D and 3D motion to a canonical opacity-only handoff", () => {
