@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
-work_state: unverified
-remaining: Inspect the flow-arts software history route at specified viewports and verify parser/submission behavior.
+value: 3
+effort: S
+work_state: verification
+remaining: "Redesign shipped in 296f73999d (src/routes/(public)/roots/software/ with HistoryEra and SoftwareGallery, /api/software-submissions, firestore.rules create denied, tests/unit/server/software-submission-input.test.ts); owed: seven-viewport plus 200% zoom browser sweep, keyboard pass, Firestore emulator rules run and production-build proof that /roots/software serves."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: '2026-11-01'
 ---
 
 # Flow Arts Software History Redesign
