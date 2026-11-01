@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
-remaining: "Verify reduced-motion bypass and Compose-to-Review transitions in the current Deck Releaser."
+value: 2
+effort: S
+remaining: "Implemented in 06d1786476 (deck-releaser-motion.ts named View Transitions with reduced-motion bypass, wired at 6 call sites in DeckReleaserTab.svelte; tests/unit/deck-releaser-motion.test.ts covers bypass, class cleanup, no layout tweens, BaseModal pickers). Remaining: running-app pass of Compose -> Review -> Release, source switch, Browse/Print, Back, and released-deck selection across the 7 viewports; none is recorded."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: verification
 ---
 # Deck Releaser Motion System
 
