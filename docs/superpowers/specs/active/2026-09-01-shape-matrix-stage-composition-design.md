@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
-work_state: unverified
-remaining: Verify stage-framed shape-matrix view-box geometry for square, portrait, and landscape containers.
+value: 2
+effort: S
+work_state: verification
+remaining: "Shipped in e3a910504d: GlyphOverlayFrameMode 'stage' in src/lib/shared/animation-engine/domain/glyph-overlay-frame.ts (with glyph-overlay-frame.test.ts), threaded through CanvasSurface/AnimatorCanvas/InlineAnimationPlayer to ShapeMatrixDrill. Owed: live inspection at desktop, 4K, tablet, phone portrait and landscape, assembled and disassembled."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: '2026-11-01'
 ---
 
 # Shape Matrix Stage Composition
