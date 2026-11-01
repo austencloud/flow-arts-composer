@@ -1,16 +1,18 @@
 ---
 status: backlog
-value: 3
+value: 2
 effort: L
-remaining: Recount beat terminology hits by semantic category in current source before continuing the rename; the prior hit count is stale.
+remaining: "Phase 1 guide surfaces shipped (GuideStepStrip.svelte). Remaining: bucket-a strings (undo-manager.ts 'Add Beat', 'Update Beat'), Phase 1b en.json values (viewer_beats_count, train_total_beats, watch_card_beats), Phase 2 identifiers (displayedBeatNumber, BeatTransport.svelte, compare-beat-pairs.ts), Phases 3-4, and Austen's bucket-e calls."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: in-progress
 ---
 
 # Beat → Step Nomenclature Correction (2026-07-16)
+
+> **Triage note (2026-11-01):** The ledger below is still accurate: Phase 1 guide surfaces landed (`GuideStepStrip.svelte`), but unambiguous create strings remain (`undo-manager.ts` 'Add Beat'), `messages/en.json` values still say beats, and no Phase 2 identifier rename has landed (`displayedBeatNumber`, `BeatTransport.svelte`, `compare-beat-pairs.ts`). Several files the catalogs name were removed on 2026-10-22.
 
 **Decision (Austen, 2026-07-16):** "step" is the canonical term for a pictograph
 in a sequence. Docs, code, and UI drifted into calling these "beats". Replace
