@@ -1,15 +1,17 @@
 ---
 status: active
-value: 4
-effort: M
-remaining: "Reconcile each register family against the shipped 2026-07-02 absence-encoding design and current presence guards; record any uncovered behavior before marking this reference register complete."
+value: 2
+effort: XS
+remaining: "Fully shipped: all 110 register sites reconciled in shipped/2026-07-05-stepdata-migration-checkpoint-package.md §1b (85 re-encoded onto isVisibleMotion, 5 gone, 14 legit raw), the 8 absence-blind/dead gates fixed in Wave 0 cd2b8ee349, guards locked in tests/unit/presence-as-signal-guards.test.ts; migration closed 2026-07-11. Only move to shipped/ remains."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: complete
 ---
 # Presence-as-Signal Register — StepData→Step Migration Gate
+
+> **Triage note (2026-11-01):** The reconciliation this register asked for is done. The 2026-07-05 checkpoint package (shipped/2026-07-05-stepdata-migration-checkpoint-package.md §1b, §5) re-validated all 110 sites, Wave 0 (cd2b8ee349) fixed the 8 absence-blind or dead gates, and the parent migration closed on 2026-07-11. The queue evidence line below is out of date; this register is now a historical reference.
 
 **Queue evidence (2026-10-07):** The separate `shipped/2026-07-02-stepdata-step-absence-encoding-design.md` records the required encoding and adoption slice as shipped; current `step-data.ts` declares `StepData extends Step`. The original encoding prerequisite is no longer outstanding. This register's individual sites have not been re-audited here, so its closeout remains unverified.
 
