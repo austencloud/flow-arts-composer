@@ -13,6 +13,8 @@ work_state: verification
 
 > **Triage note (2026-11-01):** The approval status below is historical. The planner, keyed grid motion and Assemble history plan shipped in 43c1ca3a33 with unit tests. No recorded runtime proof for the Verification section was found.
 
+**Status:** verification as of the 2026-11-01 triage; the frontmatter `remaining` line records what is still owed. The original status line below is historical.
+
 **Status:** Approved for implementation
 
 **Date:** 2026-08-08

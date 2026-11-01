@@ -14,6 +14,8 @@ last_triaged: 2026-11-01
 
 > **Triage note (2026-11-01):** The Approved status above is historical. The gallery shipped in 6f1c22c141 and follow-ups (e1c9fc6e6b, fe10533ef3, 252c73767c), and Buugeng chirality was later reworked into four pair tiles (bbc12c6f2c); only the browser acceptance pass remains.
 
+**Status:** verification as of the 2026-11-01 triage; the frontmatter `remaining` line records what is still owed. The original status line below is historical.
+
 **Status:** Approved for implementation
 **Date:** 2026-08-28
 

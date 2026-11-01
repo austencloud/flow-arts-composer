@@ -11,6 +11,8 @@ work_state: verification
 ---
 # Notification Delivery Preferences
 
+**Status:** verification as of the 2026-11-01 triage; the frontmatter `remaining` line records what is still owed. The original status line below is historical.
+
 **Status:** Approved for implementation in feedback `F4vf4hSnNHqJiqGzdIxf`
 
 ## Outcome

@@ -14,6 +14,8 @@ last_triaged: '2026-11-01'
 
 > **Triage note (2026-11-01):** Implementation shipped in af0b0b15b2 (2026-08-31) and the share sheet was later redesigned in 7339a5df55; the silent-regression tests exist, and only the runtime and visual verification below remains.
 
+**Status:** verification as of the 2026-11-01 triage; the frontmatter `remaining` line records what is still owed. The original status line below is historical.
+
 **Status:** Approved for implementation
 **Date:** 2026-08-31
 **Supersedes:** Footer and caption ownership assumptions in the 2026-08-09 social-post handoff design

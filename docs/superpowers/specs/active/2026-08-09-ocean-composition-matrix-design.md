@@ -13,6 +13,8 @@ work_state: in-progress
 
 > **Triage note (2026-11-01):** The pipeline below is built (6d4480b24b through fcb6ab8a6a; frames in ocean-composition/). Production still ships the authored reef, the composed one loads only with ?flora=composed, and the FloraInstances/ocean-authored-flora aspect-ratio sway heuristic has not been replaced.
 
+**Status:** in-progress as of the 2026-11-01 triage; the frontmatter `remaining` line records what is still owed. The original status line below is historical.
+
 **Status:** approved 2026-08-09
 **Supersedes the placement half of:** `scripts/generate-ocean-placements.cjs` hardcoded scale buckets
 **Related:** `docs/superpowers/specs/active/2026-08-09-fathom-ocean-world-boundary-design.md` (Gate 3, the terrain this composes onto)

@@ -15,6 +15,8 @@ last_triaged: 2026-11-01
 > **Triage note (2026-11-01):** The approval status below is historical. The grid function, harness, capped content-sized sheet and animateHeight drill-in shipped (d0630b23c8, 69c84432b2); the browser check remains.
 
 Date: 2026-09-24
+**Status:** verification as of the 2026-11-01 triage; the frontmatter `remaining` line records what is still owed. The original status line below is historical.
+
 Status: approved by Austen in conversation ("go for it")
 
 ## Problem

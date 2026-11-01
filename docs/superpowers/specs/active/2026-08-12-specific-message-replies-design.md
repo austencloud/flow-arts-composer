@@ -11,6 +11,8 @@ work_state: verification
 ---
 # Specific Message Replies
 
+**Status:** verification as of the 2026-11-01 triage; the frontmatter `remaining` line records what is still owed. The original status line below is historical.
+
 **Status:** Approved for implementation by the direct request on 2026-08-12
 
 ## Outcome

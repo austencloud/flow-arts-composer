@@ -14,6 +14,8 @@ work_state: verification
 > **Triage note (2026-11-01):** The two-tab 3D Studio navigation below is historical: shipped 2026-08-26-one-stage-design.md collapsed Stage to one scene tab. The environment separation itself shipped in 21335f9da9; only the runtime verification list remains.
 
 **Date:** 2026-08-21  
+**Status:** verification as of the 2026-11-01 triage; the frontmatter `remaining` line records what is still owed. The original status line below is historical.
+
 **Status:** Approved for implementation
 
 ## Outcome

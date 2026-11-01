@@ -13,6 +13,8 @@ last_triaged: 2026-11-01
 # Sequence Route Consolidation
 
 **Date:** 2026-08-28
+**Status:** verification as of the 2026-11-01 triage; the frontmatter `remaining` line records what is still owed. The original status line below is historical.
+
 **Status:** Approved
 
 ## Product decision

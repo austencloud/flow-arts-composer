@@ -12,6 +12,8 @@ last_triaged: '2026-11-01'
 
 # Sequence Viewer Inspector Layout Pass
 
+**Status:** verification as of the 2026-11-01 triage; the frontmatter `remaining` line records what is still owed. The original status line below is historical.
+
 **Status:** Approved by Austen's direct request
 **Date:** 2026-09-01
 

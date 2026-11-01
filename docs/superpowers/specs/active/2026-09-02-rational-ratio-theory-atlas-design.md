@@ -14,6 +14,8 @@ last_triaged: 2026-11-01
 
 > 2026-10-14 triage: Verify exact ratio/closure suites, legacy URL compatibility and current Theory/Level 4 transitions at the seven viewports. The arithmetic, QFT geometry and Theory UI exist (6720731a94), and dd6947dd4f expanded ratios through 15; validate that evolution instead of rebuilding the original denominator-9 atlas. Earlier status banners and execution instructions are historical where they conflict with this review.
 
+**Status:** verification as of the 2026-11-01 triage; the frontmatter `remaining` line records what is still owed. The original status line below is historical.
+
 **Status:** Approved for implementation  
 **Date:** 2026-09-02  
 **Surface:** `/notation/shape-matrix`

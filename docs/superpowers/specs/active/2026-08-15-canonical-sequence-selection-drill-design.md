@@ -12,6 +12,8 @@ work_state: verification
 # Canonical Sequence Selection Drill
 
 **Date:** 2026-08-15  
+**Status:** verification as of the 2026-11-01 triage; the frontmatter `remaining` line records what is still owed. The original status line below is historical.
+
 **Status:** Approved
 
 ## Outcome

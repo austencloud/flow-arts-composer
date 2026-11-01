@@ -14,6 +14,8 @@ last_triaged: '2026-11-01'
 
 > **Triage note (2026-11-01):** The migration order below is historical. Steps 1-5 landed on branch codex/left-right-motion-migration (merged in 689b703bfc, 2026-09-01) with later legacy-read repairs; the checked-in static gallery metadata in step 6 was not migrated, and the verification matrix has no recorded run.
 
+**Status:** in-progress as of the 2026-11-01 triage; the frontmatter `remaining` line records what is still owed. The original status line below is historical.
+
 **Status:** Approved for implementation by Austen on 2026-08-31
 
 ## Decision

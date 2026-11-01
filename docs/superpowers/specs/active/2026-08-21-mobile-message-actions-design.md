@@ -11,6 +11,8 @@ work_state: verification
 ---
 # Mobile Message Actions
 
+**Status:** verification as of the 2026-11-01 triage; the frontmatter `remaining` line records what is still owed. The original status line below is historical.
+
 **Status:** Approved for implementation on 2026-08-21
 
 ## Outcome

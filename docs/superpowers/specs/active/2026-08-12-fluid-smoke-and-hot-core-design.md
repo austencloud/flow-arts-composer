@@ -11,6 +11,8 @@ work_state: verification
 ---
 # Fluid Smoke and White-Hot Fire Core
 
+**Status:** verification as of the 2026-11-01 triage; the frontmatter `remaining` line records what is still owed. The original status line below is historical.
+
 **Status:** Approved for implementation on 2026-08-12  
 **Supersedes:** The 2D renderer choice in `shipped/2026-04-15-effects-phase-1i-smoke-design.md`  
 **Extends:** `2026-08-11-2d-fire-renderer-upgrade.md`

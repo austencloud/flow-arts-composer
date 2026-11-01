@@ -13,6 +13,8 @@ last_triaged: '2026-11-01'
 # Flow Arts Software History Redesign
 
 **Date:** 2026-08-31
+**Status:** verification as of the 2026-11-01 triage; the frontmatter `remaining` line records what is still owed. The original status line below is historical.
+
 **Status:** Approved in session
 **Route:** `/roots/software`
 **Branch:** `codex/software-history-redesign`

@@ -13,6 +13,8 @@ work_state: verification
 
 > 2026-10-14 triage: Verify real WebGL2 shader compilation, synchronized legacy/cinematic playback, sprite-matte crossings, cached/headless export parity, and seven-viewport performance on /test/fire-2d-compare. The upgraded renderer, cache budget and focused tests already exist (31da45c190; src/lib/shared/animation-engine/services/fire/web-gl-fire-renderer.ts). Earlier status banners and execution instructions are historical where they conflict with this review.
 
+**Status:** verification as of the 2026-11-01 triage; the frontmatter `remaining` line records what is still owed. The original status line below is historical.
+
 **Status:** Approved for implementation on 2026-08-11  
 **Owner:** `src/lib/shared/animation-engine/services/fire/`
 

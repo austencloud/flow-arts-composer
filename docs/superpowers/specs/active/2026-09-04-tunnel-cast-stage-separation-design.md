@@ -14,6 +14,8 @@ last_triaged: 2026-11-01
 
 > **Triage note (2026-11-01):** The approval status below is historical. The stage-instance model, v2 composition migration and stage-aware formation settings shipped in 0655419800; the runtime Oregano checks and Austen's Phase 1 gate remain.
 
+**Status:** verification as of the 2026-11-01 triage; the frontmatter `remaining` line records what is still owed. The original status line below is historical.
+
 **Status:** Approved for implementation on 2026-09-04
 **Track:** Tunnel Creator Phase 1 correction
 **Precondition for Phase 2:** This correction and Austen's Phase 1 gate must pass first.

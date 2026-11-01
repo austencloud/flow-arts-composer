@@ -11,6 +11,8 @@ work_state: verification
 ---
 # Shortcut Center
 
+**Status:** verification as of the 2026-11-01 triage; the frontmatter `remaining` line records what is still owed. The original status line below is historical.
+
 **Status:** approved 2026-08-05
 
 ## Outcome

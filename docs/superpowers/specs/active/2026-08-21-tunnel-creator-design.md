@@ -13,6 +13,8 @@ work_state: in-progress
 # Tunnel Creator Design
 
 **Date:** 2026-08-21  
+**Status:** in-progress as of the 2026-11-01 triage; the frontmatter `remaining` line records what is still owed. The original status line below is historical.
+
 **Status:** Approved  
 **Authors:** Austen + Codex
 
