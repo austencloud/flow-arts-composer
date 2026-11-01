@@ -1,16 +1,18 @@
 ---
 status: active
-value: null
-effort: null
-work_state: unverified
-remaining: Verify nav-sheet module grid counts 1-16 on phone, side drawer, and 720px widths in the real switcher harness.
+value: 2
+effort: S
+work_state: verification
+remaining: "Browser check only on /test/module-switcher: 3 and 13 modules at the seven tiers and 200% zoom, and drill-in and back with and without reduced motion, recording sheet size, columns and scroll. Shipped in d0630b23c8 (module-grid-layout.ts with tests/unit/navigation/module-grid-layout.test.ts), 69c84432b2 and e45b0f4a05 (harness), and ModuleSwitcher.svelte's 720px start-edge sheet with animateHeight."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: 2026-11-01
 ---
 
 # Navigation Sheet Fits Its Contents
+
+> **Triage note (2026-11-01):** The approval status below is historical. The grid function, harness, capped content-sized sheet and animateHeight drill-in shipped (d0630b23c8, 69c84432b2); the browser check remains.
 
 Date: 2026-09-24
 Status: approved by Austen in conversation ("go for it")
