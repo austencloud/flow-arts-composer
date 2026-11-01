@@ -1,15 +1,17 @@
 ---
 status: active
-value: 2
+value: 1
 effort: XS
-remaining: "Verify Canon Prop + Browse Creators Redesign — Design against src/lib/shared/settings/services/firebase-settings-persister.ts before resuming implementation. Prior recorded remainder: '5 of 6 shipped; mobile title-row hide not done, and the panel was since redesigned'"
+remaining: "Superseded by shipped docs/superpowers/specs/shipped/2026-07-25-creators-discovery-design.md, which replaced CreatorCard/CreatorsSortBar/topbar with the roster CreatorsPanel + CreatorCell. Items 1, 2, 4 shipped (scripts/backfill-active-prop.cjs, activeProp mirror in firebase-settings-persister.ts, get-effective-prop.ts, PropFilterChips gone); items 3, 5, 6 target removed UI. Only remaining step: move to archived/."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: superseded
 ---
 # Canon Prop + Browse Creators Redesign — Design
+
+> **Triage note (2026-11-01):** Superseded. The shipped Creators Discovery design (`docs/superpowers/specs/shipped/2026-07-25-creators-discovery-design.md`) replaced the panel this spec edits. Shipped from this spec: the `activeProp` mirror (`src/lib/shared/settings/services/firebase-settings-persister.ts`, which now mirrors `leftPropType`), `scripts/backfill-active-prop.cjs`, `getEffectiveProp` (whose precedence has since changed: curated `propsISpinWith` now comes before `activeProp`), and removal of the chip row. Items 3, 5 and 6 target the sort bar, topbar and stats row, which no longer exist. The current `CreatorCell` shows no count stats, and the title shares one command row with search. The Design section's execution steps below are obsolete.
 
 **Queue evidence (2026-10-07):** Five of six changes landed; mobile title-row behavior and later panel redesign need reconciliation. See frontmatter for the remaining work.
 
