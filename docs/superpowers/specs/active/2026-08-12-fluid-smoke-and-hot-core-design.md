@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
-remaining: "Verify smoke/fluid tier, dissipation, lifecycle, and fallback behavior against current renderer."
+value: 2
+effort: S
+remaining: "Implemented in 31da45c190 (WebGLFluidSolver2D in services/fluid/, WebGLSmokeRenderer with Canvas fallback in smoke-overlay-renderer.ts, white-hot interior test in fire-renderer-quality.test.ts, /test/fire-2d-compare lab) and refined by 796c9da596 and c201b827af. Remaining: record the 7-viewport comparison-lab visual review and the export WebGL-to-Canvas fallback evidence; neither is recorded."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: verification
 ---
 # Fluid Smoke and White-Hot Fire Core
 
