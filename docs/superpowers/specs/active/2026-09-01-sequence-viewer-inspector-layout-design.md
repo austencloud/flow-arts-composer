@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
-work_state: unverified
-remaining: Verify inspector profile thresholds and no-reflow viewer transitions at the specified viewport sizes.
+value: 2
+effort: S
+work_state: verification
+remaining: "Shipped in 4cb3971e14: card clamp(480px, 28vw, 640px) in SequenceViewerShell.svelte, per-profile bounds in src/lib/shared/sequence-viewer/services/viewer-shell-model.ts, tests/unit/viewer-shell-model.test.ts. Owed: live Card panel inspection at seven viewports plus 200% zoom, separator and pointer/keyboard resize endpoints, full and reduced motion."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: '2026-11-01'
 ---
 
 # Sequence Viewer Inspector Layout Pass
