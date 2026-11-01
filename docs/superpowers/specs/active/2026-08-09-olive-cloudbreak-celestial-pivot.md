@@ -1,15 +1,17 @@
 ---
 status: active
-value: null
-effort: null
-remaining: "Verify cloudbreak silhouette and measured spatial plan in the current celestial scene before declaring acceptance."
+value: 1
+effort: XS
+remaining: "Superseded: Cloudbreak (Revision 6, a7eb8b7bf6) was replaced in production by Sunward Gardens (32159357c4), Dawn Observatory (75cc9f0976, docs/superpowers/specs/celestial-dawn-observatory.md) and the current Sky Citadel (e6b55c9f79, docs/architecture/celestial-sky-citadel.md, static/models/celestial/sky-citadel.glb); ready to move to archived."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: superseded
 ---
 # Olive Cloudbreak celestial pivot
+
+> **Triage note (2026-11-01):** This direction is historical. Production Celestial moved on to Sunward Gardens (32159357c4), Dawn Observatory (75cc9f0976) and now the Sky Citadel (e6b55c9f79, docs/architecture/celestial-sky-citadel.md), whose castle and ruins deliberately abandon the natural-mesa contract below.
 
 **Date:** 2026-08-09
 
