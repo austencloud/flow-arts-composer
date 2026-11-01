@@ -221,9 +221,16 @@ Per frame, in order, on a canvas sized to the layer (see Layout) at
    `e²·0.35 rad` where `e = p` eased, so the finished mandala has rotated a
    little from where it started.
 3. For each of the four paths, traced to `p`: a glow pass (stroke 7 px at
-   28 % alpha, hand colour), then a crisp pass (stroke 2 px). Left hand uses
-   blue, right hand red (`BLUE_STROKE`/`RED_STROKE` on the dark surface,
+   28 % alpha, hand colour), then a crisp pass (stroke 2 px). The hands take
+   the user's prop colours when settings hold them (`primaryPropColors`, read
+   by the boot script and passed to the worker); otherwise left is blue and
+   right red (`BLUE_STROKE`/`RED_STROKE` on the dark surface,
    `LIGHT_MOTION_BLUE_STROKE`/`LIGHT_MOTION_RED_STROKE` on the light one).
+   Then the crossings: each hand's crisp strokes on a mask of its own, the
+   masks intersected and laid over in the two colours' mix (the app's
+   `compositeMandalaOverlap`), so a left-over-right crossing reads as both
+   hands, not as whichever was drawn last. Under load it is the last thing
+   dropped, after the sparks and the glow.
 4. Hot trail: the last 1.2 % of each traced path (`p − 0.012 .. p`) at full
    white-tinted brightness, 3 px.
 5. Heads: a radial gradient dot at each `pointAt(path, p)`, radius 5 px with
