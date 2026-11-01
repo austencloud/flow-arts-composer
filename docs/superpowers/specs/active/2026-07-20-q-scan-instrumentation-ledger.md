@@ -1,15 +1,17 @@
 ---
 status: active
-value: 3
-effort: M
-remaining: "Re-audit the 90-control telemetry ledger against the current /q resolver and shared /sequence host before wiring any missing events."
+value: 2
+effort: S
+remaining: "Base props and a consolidated qr_* taxonomy shipped instead of the 75-event list (1ad895f9a4, 7a5269c324; src/lib/shared/analytics/scan-analytics.ts: qr_scan_resolution, qr_resolution_action, qr_viewer_opened, qr_view_changed, qr_playback_changed, qr_setting_changed, qr_practice_changed, qr_action, qr_export, qr_session_summary). Left: decide on and wire the uncovered lifecycle milestones (dwell heartbeats, first loop completed, sign-in attempted/dismissed, gated-action replay, install prompt), then close the ledger."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: in-progress
 ---
 # /q Scan Page — Analytics Instrumentation Ledger
+
+> **Triage note (2026-11-01):** The per-control wiring plan below is historical. Scan instrumentation shipped in 1ad895f9a4 and 7a5269c324 as a smaller consolidated qr_* event family with shared base props in src/lib/shared/analytics/scan-analytics.ts (only card_scanned and scan_app_opened keep their ledger names). What remains is the set of lifecycle milestones the consolidated events do not cover, such as dwell heartbeats, loop completion, sign-in and install prompt.
 
 > **ROUTING UPDATE — 2026-08-28.** `/q` now owns resolution and the one
 > physical-scan write, then replaces itself with `/sequence`. Viewer-control,
