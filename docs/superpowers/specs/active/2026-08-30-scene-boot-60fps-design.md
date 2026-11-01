@@ -1,16 +1,18 @@
 ---
 status: active
-value: null
-effort: null
+value: 3
+effort: M
 work_state: verification
-remaining: Verify the scene boot warmup, prefetch, frame gate, and first-visit 60 FPS acceptance on real scenes.
+remaining: "All six design parts shipped (282a9f342b, 37dab8ad6f, 313f72dda5; gate/compile fixes 0cbe3ae3aa, c40932b4bc) and docs/architecture/scene-boot-cost.md records measurements, but multi-second cold stalls remain (Rainbow, Autumn, Ocean); per-scene first-visit __sceneBoot sweep and background-hold runtime proof on the worker-renderer viewer are unrecorded."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: 2026-11-01
 ---
 
 # Scene Boot 60FPS — First-Visit Loading That Proves Smoothness Before Reveal
+
+> **Triage note (2026-11-01):** Production 3D now renders through a persistent worker renderer (2f47c0c7db, 2026-09-04), so the runtime verification plan below must be run against that path. Measured results and still-open stalls live in docs/architecture/scene-boot-cost.md.
 
 **Triage evidence (2026-10-07):** `src/lib/shared/3d/scene-boot/renderer-warmup.ts`, `scene-prefetch.ts`, and `frame-gate.ts` exist. This establishes implementation files, but first-visit frame-rate measurements on the specified scenes were not recorded in this review.
 
