@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
+value: 2
+effort: XS
 work_state: verification
-remaining: "Verify apply/edit/revert behavior in the current Setups UI and run favorite-state and snapshot coverage. Detachment and reattachment already exist in favorite-state.svelte.ts and SavedSetupRow disables Update for the active match (9a0121bc76); the old PresetDrawer target has been removed, so use its current replacement rather than recreating it."
+remaining: "Browser check only: apply a level 1 setup, pick level 2 and confirm the Setups card shows N saved with no row highlight, then pick level 1 and confirm Active. Shipped in 9a0121bc76 (favorite-state.svelte.ts derives activeSource from appliedBaseline); tests exist in tests/unit/create/favorite-state.test.ts and presets/SetupsPanel.svelte.test.ts, which replaced PresetDrawer."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: 2026-10-14
+last_triaged: 2026-11-01
 ---
 
 # Generate saved setups: detach on edit
