@@ -2,15 +2,61 @@
 status: backlog
 value: 3
 effort: M
-remaining: "Complete focus containment/restoration in CardInspectModal, MotionVisibilityToggle and LegalSheet, label BottomNavigation, and fix SidebarFooter/AccountPopover contrast before keyboard, screen-reader and reduced-motion acceptance. ChoreoCardThumbnail now has labels and Environment3D has reduced-motion handling, but LegalSheet still lacks focus trapping and SidebarFooter retains 0.25/0.15 icon alpha; the scan-radio item is explicitly a false positive in this spec."
+remaining: "Issue 1 only. Environment scenes already read the shared prefersReducedMotion() owner in src/lib/shared/3d/environments/primitives/motion-preference.ts, except ForestScene and VoidScene. Still open: gate the 16 effects renderers under src/lib/shared/3d/effects (static tip glow under reduced motion), pass the signal through Viewer3DCanvas context, and add the per-session Reduce Motion override in the effects panel; needs a WebGL-capable visual pass. Issues 2 to 7, 9 and 10 are implemented and verified (see the 2026-11-01 section); Issue 8 remains a false positive."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: 2026-10-14
+last_triaged: 2026-11-01
 work_state: in-progress
 ---
 
 # Accessibility Fixes Design Spec
+
+## 2026-11-01 implementation and verification
+
+Branch `claude/accessibility-fixes`, unattended cloud session. Issues 2, 3, 4,
+5, 6 and 10 are implemented. Issue 7 (ChoreoCardThumbnail label) and Issue 9
+(ViewerOverflowMenu, now a Bits UI popover with no raw backdrop) were already
+done; Issue 8 stays a false positive. Issue 1 is partly in place from earlier
+work and is the only open scope; see `remaining`.
+
+Two defects in the shared `FocusTrap` surfaced while wiring it and are fixed in
+`src/lib/shared/foundation/ui/drawer/focus-trap.ts`: `offsetParent !== null`
+dropped `position: fixed` controls (CardInspectModal's Close button) from the
+Tab cycle, and the tag selectors admitted `tabindex="-1"` elements (the hidden
+colour inputs behind the prop-colour swatches), so a native Tab from the real
+last button left the popover. Two corrections to this spec's design text:
+`aria-hidden` on the LegalSheet backdrop would have hidden the dialog inside
+it, so the backdrop is `role="presentation"` instead; and `--theme-text-dim`
+resolves to 0.75 white at runtime, so the AccountPopover version link was
+dragged to about 4:1 by its `opacity: 0.6`, not to 1.6:1. It now sits on the
+popover's arrow-key path as a `menuitem`, which axe's `aria-required-children`
+demanded of a `role="menu"` child.
+
+Evidence, headless Chromium (Playwright 1.61, chrome-headless-shell 1243), dev
+server over plain HTTP, axe-core from `node_modules` with the WCAG 2.x A/AA/AAA
+and best-practice tags. "Before" is `main` at `cadc83ce` with the branch's
+tracked changes stashed; "after" is this branch.
+
+| Route and state                              | Viewport | Before                                                                                                                       | After  | Note                                                                                                                                                                                                                                                                                                                                                                            |
+| -------------------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/support`, LegalSheet closed                | 375x667  | 0 rules / 0 nodes                                                                                                            | 0 / 0  |                                                                                                                                                                                                                                                                                                                                                                                 |
+| `/support`, LegalSheet open via footer Terms | 375x667  | 2 / 2 (`landmark-no-duplicate-banner`, `landmark-unique` on the page header, no longer reachable once the trap sets `inert`) | 0 / 0  | Tab from the last sheet link wrapped to Close; Escape returned focus to the Terms link (before: focus on `body`). `.last-updated` 5.33:1 to 8.44:1.                                                                                                                                                                                                                             |
+| `/support`                                   | 1440x900 | 0 / 0                                                                                                                        | 0 / 0  | Sheet only opens under 768px; link navigates to `/terms` otherwise.                                                                                                                                                                                                                                                                                                             |
+| `/sequence/DCKΨ-`, viewer                    | 375x667  | 2 / 50                                                                                                                       | 2 / 50 | Pre-existing `aria-prohibited-attr` on pictograph `<image aria-label>` (49) and `meta-viewport`; compact chrome hides the motion toggle here.                                                                                                                                                                                                                                   |
+| `/sequence/DCKΨ-`, motion popover open       | 1440x900 | 3 / 51                                                                                                                       | 3 / 51 | Same pre-existing nodes plus `aria-allowed-role` on the viewer `nav`; count varies 2 to 51 with pictograph render timing. Popover now takes focus, `aria-modal`, backdrop `aria-hidden` with no role; a native Tab from the last button (Edit Right prop) wraps to Hide Left motion (before: left to Add to collection); Escape returns focus to the trigger (before: did not). |
+| `/create`, BottomNavigation                  | 375x667  | 1 / 1                                                                                                                        | 1 / 1  | `nav` now labelled "Main navigation", same as the desktop sidebar. Pre-existing `nested-interactive` on `.prop-nav-button-wrapper`.                                                                                                                                                                                                                                             |
+| `/create`, sidebar                           | 1440x900 | 2 / 2                                                                                                                        | 2 / 2  | Pre-existing `aria-valid-attr-value` on `.expanded` and `region` on `#app-loading`. Mic button (voice opt-in and Web Speech API stubbed): inactive 1.41:1 to 4.43:1, default 2.04:1 to 6.26:1 against the rendered sidebar.                                                                                                                                                     |
+
+CardInspectModal and AccountPopover mount only inside signed-in Create flows,
+so their axe passes run in the browser test runner at 375x667 and 1440x900:
+`CardInspectModal.svelte.test.ts`, `AccountPopover.svelte.test.ts` (7:1
+`color-contrast-enhanced` on the version link, both tiers). Focus containment
+is proven with real `userEvent.tab()` presses in `CardInspectModal`,
+`MotionVisibilityToggle` and `LegalSheet` component tests; the shared
+`FocusTrap` jsdom test and the onboarding wizard's trap test still pass.
+Not verified here: screen-reader announcement (no NVDA or VoiceOver in the
+container) and the 3D reduced-motion behaviour (no WebGL pass attempted).
 
 > 2026-10-14 triage: Complete focus containment/restoration in CardInspectModal, MotionVisibilityToggle and LegalSheet, label BottomNavigation, and fix SidebarFooter/AccountPopover contrast before keyboard, screen-reader and reduced-motion acceptance. ChoreoCardThumbnail now has labels and Environment3D has reduced-motion handling, but LegalSheet still lacks focus trapping and SidebarFooter retains 0.25/0.15 icon alpha; the scan-radio item is explicitly a false positive in this spec. Earlier status banners and execution instructions are historical where they conflict with this review.
 
