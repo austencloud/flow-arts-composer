@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
-remaining: "Verify museum single-destination routing, corridor-null behavior, room filtering, and light-pool caps against current code and scene."
+value: 3
+effort: S
+remaining: "Shipped in 255a1fb5f8 (sections: [] in module-definitions.ts, editor and three-player-controller removed, /test/museum-showroom, fixed slots in museum-room-light-pool.ts) with tests/unit/museum/museum-room-light-pool.test.ts and the rendering contract test; later ebdcdeda71, 84a5cca513 kept it. Left: Chrome trace showing no post-gate shader compile or >50 ms task, plus viewport screenshots."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: verification
 ---
 # Museum Single Destination and Fixed Light Rig
 
