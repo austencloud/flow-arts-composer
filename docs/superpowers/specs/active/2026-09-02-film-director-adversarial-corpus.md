@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
-work_state: unverified
-remaining: Run the Film Director adversarial corpus against the current language and categorize remaining unsupported requests.
+value: 2
+effort: M
+work_state: ready
+remaining: "Re-score the 40 requests and gap census against the current language: waves a079e81f3d (concurrent moves, handheld), 1d1a1001e1 (scene inheritance, empty casts, bars), ffac8aa657 (cues), ef1629608e (per-hand effects, builds) and 5233f0cbd8 (tilt) landed after this corpus (5a7768d7d2), so its verdicts are stale; then list the still-wanted L gaps."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: '2026-11-01'
 ---
 
 # Film Director Adversarial Corpus (round 2)
