@@ -1,15 +1,17 @@
 ---
 status: active
-value: 2
-effort: M
-remaining: "Verify Enchanted Autumn Dusk — 3D Scene Redesign against scripts/generate-autumn-meshy-from-image.mjs before resuming implementation. Prior recorded remainder: Verify the autumn hero and fill assets against AutumnFlora and the current environment; identify any remaining Meshy swap and visual acceptance."
+value: 1
+effort: XS
+remaining: "Superseded: the Meshy image-to-3D assets shipped as static/models/autumn/*.glb (hero-tree-a/b, mushroom-grove, golden-larch, willow, snag, etc.) composed into autumn-environment.glb by scripts/build-autumn-environment.py and loaded imperatively via worlds/autumn/ + scenes/AutumnScene.svelte; the authored/AutumnFlora kit-fill swap is moot (no AutumnFlora or legacy AutumnForest files remain). Remaining Autumn acceptance belongs to active/2026-08-31-autumn-scene-hardening.md and active/2026-09-01-autumn-performance-reliability.md; only the archive move remains."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: superseded
 ---
 # Enchanted Autumn Dusk — 3D Scene Redesign
+
+> **Triage note (2026-11-01):** Superseded. The Meshy-authored scene shipped in a different architecture: one Blender-composed `static/models/autumn/autumn-environment.glb` (built by `scripts/build-autumn-environment.py` from the Meshy hero/fill GLBs) loaded by `src/lib/shared/3d/environments/worlds/autumn/` and `scenes/AutumnScene.svelte`, not the `authored/` + `runtime/*.svelte` tree in §4. The `AutumnFlora.svelte` kit-fill swap, the §4 file layout, and the §6 text-to-3D clone instructions are obsolete execution instructions. Visual, boot, and performance acceptance now live in `active/2026-08-31-autumn-scene-hardening.md` and `active/2026-09-01-autumn-performance-reliability.md`; no visual acceptance artifact for this spec was found.
 
 - **Date:** 2026-06-21
 - **Status:** Built (scene architecture + runtime complete, 2026-06-22). Hero/fill assets pending.
