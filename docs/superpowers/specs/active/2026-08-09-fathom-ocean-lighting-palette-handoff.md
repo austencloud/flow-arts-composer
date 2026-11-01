@@ -1,15 +1,17 @@
 ---
 status: active
-value: null
-effort: null
-remaining: "Verify Fathom — Ocean Lighting and Palette Pass against src/lib/shared/3d/environments/scenes/ocean/OceanScene.svelte before resuming implementation. Prior recorded remainder: Verify ocean lighting palette and carried zone-pass debt against current OceanScene and scene config before action."
+value: 3
+effort: L
+remaining: "Gates 1-2 shipped (OCEAN_FOG_DENSITY 0.026, hero god-ray key), Gate 3 shipped as the world-boundary spec (11c2df9ad5, 09b6e51b04), stage re-lit in 1209242886. Left: Gate 4 items 14-16 review, Gate 5 viewport and Autumn/Winter side-by-side, Scene Lab config still unwired (ScenePreview.svelte renders bare OceanScene), wreck import, R2 flora re-upload."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: in-progress
 ---
 # Fathom — Ocean Lighting and Palette Pass
+
+> **Triage note (2026-11-01):** The gate order below is historical. Gates 1 and 2 shipped, Gate 3 shipped through the world-boundary spec (11c2df9ad5, 09b6e51b04), and later stage fixes landed in 1209242886. Coral hue work now waits on the composition-matrix art decision. Still open: Gate 4 items 14-16, Gate 5 evidence, the Scene Lab config wiring and the carried debt table.
 
 - **Ocean steward:** Fathom
 - **Mood target:** Moody Twilight Reef (approved by Austen, 2026-08-09)
