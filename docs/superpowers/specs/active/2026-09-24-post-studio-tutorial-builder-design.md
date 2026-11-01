@@ -1,16 +1,18 @@
 ---
 status: active
-value: null
-effort: null
-work_state: in-progress
-remaining: Verify the tutorial-builder rebuild and finish the unbuilt region morph between consecutive acts on one take.
+value: 1
+effort: XS
+work_state: superseded
+remaining: "Superseded for editing by 2026-09-26-post-studio-timeline-editor-design.md, which keeps this design's timing work: take-timing.ts, tap-fit.ts, timing-verdict.ts and sequence-frame.ts remain in src/lib/shared/media-composition/domain/, and the plan and preset core moved to @austencloud/video-editor in 17b2af0db0. The act-to-act region morph belonged to the retired act model. Ready to move to archived."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: 2026-11-01
 ---
 
 # Post Studio Tutorial Builder
+
+> **Triage note (2026-11-01):** The delivery stages below are historical. The builder shipped in 0a11ea6541, and the 2026-09-26 timeline editor spec replaced its act-based editing while keeping its timing, evaluator and export work. The planned act-to-act region morph has no target in the current model.
 
 Date: 2026-09-24. Owner surface: Post Studio
 (`src/lib/shared/share/components/post-studio/`) on the media-composition model
