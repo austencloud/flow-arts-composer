@@ -1,15 +1,17 @@
 ---
 status: active
-value: null
-effort: null
-remaining: "Verify The Water Traverse — Design against the current The Water Traverse — Design runtime and acceptance criteria before resuming implementation. Prior recorded remainder: Verify the amended chamber scale and hand path against the current water traverse scene and acceptance views."
+value: 3
+effort: L
+remaining: "Graybox at the amended 58 m chamber scale with hand-path station and ring stations is built in src/lib/features/water-traverse/data/water-traverse-terrain.ts (318a11ec59, 8c0609ffd9, 5840ed8ab2, 1cf460734c, route /test/water-traverse); dressing, performers, and the traverse_seabed.py re-bake wait on Austen's graybox approval and his choice against the competing one-room Water Grotto graybox (182e692ee1, /test/water-grotto)."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: blocked
 ---
 # The Water Traverse — Design
+
+> **Triage note (2026-11-01):** The 58 m graybox from the amendment at the end of this spec is built (1cf460734c; src/lib/features/water-traverse/data/water-traverse-terrain.ts). Nothing has changed since 2026-08-12. A competing one-room Water Grotto graybox (182e692ee1, /test/water-grotto) is also in the tree, so build-order steps 3 and 4 wait on Austen's choice.
 
 **Date:** 2026-08-09
 **Status:** Approved (Austen, 2026-08-09: "finish this job without any more gates")
