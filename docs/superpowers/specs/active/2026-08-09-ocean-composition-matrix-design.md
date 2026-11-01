@@ -1,15 +1,17 @@
 ---
 status: active
-value: null
-effort: null
-remaining: "Verify ocean composition matrix proof and downstream scene changes against current asset facts and ecology rules."
+value: 2
+effort: M
+remaining: "Facts index, ecology rules, measure/substrate/generate/build/render scripts and proof frames shipped (6d4480b24b, 3139939765, 1ecd9efcbb, c6c18c5410, fcb6ab8a6a), but the composed reef is dev-only behind ?flora=composed and the downstream change is not done: src/lib/shared/3d/environments/worlds/ocean/ocean-authored-flora.ts still picks sway by bbox aspect (SWAY_ASPECT_MIN) instead of a silhouette lookup; promotion of the composed reef is an art decision."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: in-progress
 ---
 # Ocean Composition Matrix — Design
+
+> **Triage note (2026-11-01):** The pipeline below is built (6d4480b24b through fcb6ab8a6a; frames in ocean-composition/). Production still ships the authored reef, the composed one loads only with ?flora=composed, and the FloraInstances/ocean-authored-flora aspect-ratio sway heuristic has not been replaced.
 
 **Status:** approved 2026-08-09
 **Supersedes the placement half of:** `scripts/generate-ocean-placements.cjs` hardcoded scale buckets
