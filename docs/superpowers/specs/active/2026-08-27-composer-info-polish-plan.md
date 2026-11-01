@@ -1,16 +1,18 @@
 ---
 status: active
-value: null
-effort: null
-work_state: unverified
-remaining: Inspect /composer at the specified viewports and run focused Composer, route morph, and SEO checks against this plan.
+value: 1
+effort: XS
+work_state: superseded
+remaining: "Implemented in cf95af69a4, then replaced by later /composer redesigns: 2026-09-01-composer-showcase-range-design.md, 2026-10-07-composer-one-sequence-carried-design.md (f95531ea0d) and 2026-10-12-footer-unify.md. Ready to archive; the layout targets no longer describe the page."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: 2026-11-01
 ---
 
 # Composer Information Page Polish Plan
+
+> **Triage note (2026-11-01):** This plan shipped in cf95af69a4. The /composer page was later recomposed under 2026-09-01-composer-showcase-range-design.md, 2026-10-07-composer-one-sequence-carried-design.md and 2026-10-12-footer-unify.md, so the layout and footer steps below are historical.
 
 **Status:** Approved for implementation
 
