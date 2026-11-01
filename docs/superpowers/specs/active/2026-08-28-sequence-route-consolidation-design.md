@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
-work_state: unverified
-remaining: Verify /q route ownership, query preservation, scan recording, and legacy-route behavior against the consolidation gates.
+value: 3
+effort: S
+work_state: verification
+remaining: "Shipped in 2a2f91aed7 (QScanPage ingress, scan-sequence-handoff.ts, tests/unit/qr/scan-sequence-handoff.test.ts, shell contract tests) plus 3ccbd07051 and defab13cd7; native Android scans also record via native-card-scan.ts (31c82c6d99). Remaining: browser gates for scan handoff, reload, back/forward, demo and phone-to-4K layouts."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: 2026-11-01
 ---
 
 # Sequence Route Consolidation
