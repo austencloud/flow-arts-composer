@@ -2,15 +2,17 @@
 status: backlog
 value: 2
 effort: M
-remaining: Recheck math/format utility duplication and word-simplifier ownership against current source before assigning a deduplication slice.
+remaining: "Phase 4 shipped (only src/lib/shared/foundation/utils/word-simplifier.ts remains); src/lib/shared/utils/math.ts and format.ts still do not exist, 13 scalar lerp definitions (plus 3 Point2D lerp closures), 3 divergent lerpAngle exports (3d/camera/transitions.ts, 3d/services/angle-math-calculator.ts, animation-engine/services/angle-calculator.ts), and ~35 clamp definitions remain; re-inventory paths (several files renamed, quiz-results-analyzer.ts gone) then do Phases 1-3."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: ready
 ---
 
 # Utility Deduplication Design
+
+> **Triage note (2026-11-01):** Ready. Phase 4 (word-simplifier) is done; Phases 1-3 have not started: no shared `math.ts`/`format.ts`, 13 scalar `lerp` definitions, 3 exported `lerpAngle` variants with different output ranges, and about 35 `clamp` definitions remain. The audit tables below use stale paths (for example `StanceOptimizer.ts` is now `stance-optimizer.ts`, `FireTypes.ts` is `fire-types.ts`, and `features/learn/quiz/quiz-results-analyzer.ts` no longer exists), so re-inventory before following the migration plan. The Phase 5 `npm run check`/`npm run build` steps predate the current `wt:finish` gate.
 
 > **DRIFT WARNING — 2026-08-02.** Phase 4 (word-simplifier) shipped independently; `math.ts`/`format.ts` never created, ~12 `lerp` definitions remain
 >
