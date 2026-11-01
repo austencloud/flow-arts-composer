@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
+value: 2
+effort: S
 work_state: verification
-remaining: Verify the Post editor tool-row layout and selection-specific tools at short and phone viewports; run focused tool and history tests.
+remaining: "Browser proof of the tool row on the Post editor: seven tiers and 200% zoom, phone panel open and close, wide tool switching, crop drag with reveal, K in Crop, Position and Fade, Escape order, reduced motion. Shipped from 99a22a6486 (tool model, ValueSlider) through the 10-01 fixes; the editor UI moved to the vendored @austencloud/video-editor package in 6a60d3bc52 and d4e5599e03, so those checks now exercise package code."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: 2026-11-01
 ---
 
 # Post Editor Tool Row
