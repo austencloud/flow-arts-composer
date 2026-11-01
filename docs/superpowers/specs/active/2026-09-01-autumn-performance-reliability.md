@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
-work_state: verification
-remaining: 'Complete the Autumn release gate: production-scene performance/reliability run and P0/P1 issue review.'
+value: 3
+effort: M
+work_state: blocked
+remaining: "Implementation shipped (bcbaa22335, 97a419af64; runtime later moved by 6945385a3c). The release gate needs runs on the declared physical mobile/GPU hardware classes and a deterministic pre-change production-composer baseline for SSIM/DeltaE metrics, or Austen's approved revision of the 16.7 ms complete-frame and metric gates."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: '2026-11-01'
 ---
 
 # Autumn Performance Reliability
