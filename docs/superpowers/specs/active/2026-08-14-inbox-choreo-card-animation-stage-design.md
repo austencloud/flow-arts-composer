@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
-remaining: "Verify choreography card coordinator state transitions and explicit Play/retry behavior in the current Inbox."
+value: 2
+effort: S
+remaining: "Implementation shipped (80393b739d coordinator, 46e2544a73 shared SequenceShowcasePreview with manual activation, StepStrip, retry); unit and component tests exist. Remaining: browser proof of sent vs pasted-link parity, tap/keyboard transfer, no hover activation, and the seven-viewport sweep."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: verification
 ---
 # Inbox Choreo Card and Animation Stage
 
