@@ -1,15 +1,17 @@
 ---
 status: active
-value: 3
-effort: M
-remaining: "Recheck stored stepPairings, hydration, and the three reversal implementations against current code; then decide the canonical derivation and tests."
+value: 1
+effort: XS
+remaining: "Complete: Option A shipped (sequence-content-hasher.ts CONTENT_HASH_VERSION = V3 since 2026-09-04, V2/V3 excludeDerived drops reversal flags and gridMode; rollout spec in shipped/2026-06-30-content-hash-v2-rollout.md); processReversals now delegates to the single canonical engine deriveReversals with loop wrap and transparent chains, engine ReversalDetector class removed, Option C hand-arc signal exists as non-display handReversal channel. Nothing remains in this findings spec; ready to move to shipped/."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: complete
 ---
 # Reversal-Derivation Reconciliation — Findings
+
+> **Triage note (2026-11-01):** Resolved. `tests/unit/reversal-derivation-parity.test.ts` and `tests/unit/content-hash-v2-fork-proof.test.ts` pass (10/10 on 2026-11-01). Austen chose Option A and it is live: `src/lib/shared/library/services/sequence-content-hasher.ts` makes V3 the active identity hash (since 2026-09-04) and excludes the reversal flags and `gridMode` that hydrate re-derives, so resaving no longer forks a sequence. The three-implementation table below is obsolete: `src/lib/shared/create/services/reversal-detector.ts` now adapts the one canonical `packages/sequence-engine/src/analysis/deriveReversals.ts` (loop wrap, transparent chains, a separate non-display `handReversal` channel), and the engine `ReversalDetector` class is gone. The "decision required" framing and the Option B and C execution notes are historical.
 
 > Status: **investigation complete, decision required from Austen.** No live
 > code or persisted data changed. Read-only diagnostic + this writeup are the
