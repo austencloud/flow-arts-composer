@@ -1,16 +1,18 @@
 ---
 status: backlog
-value: 2
-effort: S
-remaining: Inspect the current per-variant prop picker and vestigial badge code to determine whether the popover half is superseded.
+value: 1
+effort: XS
+remaining: "Visual half shipped (glass PropSelectionButton, section labels in PropGrid.svelte, neutral mode in PropCompositionPreview.svelte); the floating-popover half was replaced by a family drill-in documented in the PropGrid.svelte header ('never shrink into a popover'), with familyCount badges now live on family tiles; VariantPopover.svelte and @floating-ui were never added. Nothing remains beyond moving to archived/."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
-work_state: unverified
+last_triaged: '2026-11-01'
+work_state: superseded
 ---
 
 # Prop Selection Redesign — Design Spec
+
+> **Triage note (2026-11-01):** Superseded. The glass button, white-silhouette (`neutral`) and section-label work shipped, but the variant popover was replaced by a drill-in: tapping a multi-build family in `PropGrid.svelte` replaces the grid with that family's styles behind a back bar, a decision recorded in that file's header comment. The variant-count badge is in use again on family tiles (`familyCount`), so the 2026-08-02 "vestigial badge code is dead" note is stale. The "Variant Handling: Floating Popover" section and the `VariantPopover.svelte` / Floating UI file plan below are obsolete.
 
 > **DRIFT WARNING — 2026-08-02.** Visual half shipped verbatim; popover half abandoned for a flat per-variant grid. Vestigial badge code is dead
 >
