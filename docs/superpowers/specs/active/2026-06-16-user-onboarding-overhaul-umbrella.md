@@ -2,14 +2,16 @@
 status: active
 value: 3
 effort: M
-remaining: "Verify User Onboarding Overhaul — Umbrella against the current User Onboarding Overhaul — Umbrella runtime and acceptance criteria before resuming implementation. Prior recorded remainder: 'Slices A, B shipped; D shipped copy-only; Slice C unbuilt — the only live gap'"
+remaining: "Slices A (CreateTutorialWizard empty-state offer, shipped/2026-06-19-guest-first-onboarding-design.md) and B (src/lib/shared/auth/services/guest-identity.ts, shipped slice-B spec) are in; partial C exists (/q scan -> viewer, viewer -> /learn/guide hop in SequenceViewerPage.svelte, /start funnel). Remaining: Slice C Create -> Learn contextual concept hops and back (none in src/lib/features/create), plus Austen deciding whether Slice D watermarked guest export is still wanted (PostShareSheet.svelte keeps the full guest take-it-home gate)."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: in-progress
 ---
 # User Onboarding Overhaul — Umbrella
+
+> **Triage note (2026-11-01):** Slices A and B shipped (see the shipped slice specs and `src/lib/shared/auth/services/guest-identity.ts`). Slice C is partial: QR scan lands in the sequence viewer and the viewer can hop into `/learn/guide/...`, but the Create module has no contextual "learn this" hop into a Learn concept. Slice D shipped as copy only; guest export is still fully gated in `PostShareSheet.svelte` with no watermarked guest path, which needs Austen's call before any build. The "Build order" and per-slice "brainstorm pending" lines below are historical.
 
 **Queue evidence (2026-10-07):** Slices A and B shipped, D has copy only, and C remains open. See frontmatter for the remaining work.
 
