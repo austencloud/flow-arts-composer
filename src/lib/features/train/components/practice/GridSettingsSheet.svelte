@@ -200,26 +200,27 @@
 </Drawer>
 
 <style>
-  /* Backdrop styling */
+  /* Drawer skin through the shared --sheet-* API in Drawer.css instead of
+     forced overrides of its placement rules (CSS-debt Phase 2). */
   :global(.grid-settings-backdrop) {
-    background: rgba(0, 0, 0, 0.7) !important;
+    --sheet-backdrop-bg: rgba(0, 0, 0, 0.7);
   }
 
-  /* Drawer content styling - content-aware sizing */
   :global(.grid-settings-sheet) {
     --sheet-bg: var(--sheet-bg-solid);
-    /* Bottom sheet: fit content height, don't stretch */
-    height: auto !important;
-    max-height: 85vh !important;
+    /* Bottom sheet: fit content height, capped at 85vh. The right-placement
+       base rule outranks this height, so the side drawer stays full height. */
+    --sheet-max-height: 85vh;
+    height: auto;
   }
 
-  :global(.grid-settings-sheet[data-placement="right"]) {
-    /* Side drawer: fit content width */
-    width: auto !important;
+  /* Side drawer: fit content width. Three selectors outrank the base
+     .drawer-content[data-placement="right"] rule by specificity alone; height
+     and max-height come from that base rule, as for every right drawer. */
+  :global(.drawer-content.grid-settings-sheet[data-placement="right"]) {
+    --sheet-width: auto;
     min-width: 320px;
-    max-width: min(400px, 90vw) !important;
-    height: 100% !important;
-    max-height: 100% !important;
+    max-width: min(400px, 90vw);
   }
 
   .settings-panel {
