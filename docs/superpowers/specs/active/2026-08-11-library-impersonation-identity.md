@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
-remaining: "Verify impersonated library identity and permission boundary against current owner resolution and runtime."
+value: 3
+effort: S
+remaining: "Implementation shipped in 89759afefb (effective-user scoping in create-browse-engine.svelte.ts, collections-state, collection-state preview projection, isPreviewReadOnly write guards; tests browse-engine-identity-switch, library-preview-access). Remaining: the approved browser pass switching admin -> user A -> user B -> admin in Browse > Library, confirming no stale data and blocked writes."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: verification
 ---
 # Library Impersonation Identity
 
