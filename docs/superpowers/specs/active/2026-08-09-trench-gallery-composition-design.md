@@ -1,15 +1,17 @@
 ---
 status: active
-value: null
-effort: null
-remaining: "Recheck built trench gallery composition against current asset placement and the documented proof views."
+value: 1
+effort: XS
+remaining: "Superseded: the gallery was built (9aed63f48d, 957a80810d, 7013b39bc9) but 318a11ec59 stripped the traverse to a graybox and the 2026-08-11 amendment in 2026-08-09-water-traverse-design.md rebuilt it at 58 m, so the z 92-190 trench no longer exists; TrenchGallery.svelte is mounted only by SeaChamberLife.svelte, which nothing imports; ready to move to archived."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: verification
+last_triaged: 2026-11-01
+work_state: superseded
 ---
 # Trench Gallery Composition — Design
+
+> **Triage note (2026-11-01):** This composition is historical. It was built (9aed63f48d, 957a80810d), then the traverse was reset to a graybox (318a11ec59) and re-authored at 58 m by the 2026-08-11 amendment in 2026-08-09-water-traverse-design.md. The trench it targets no longer exists and TrenchGallery.svelte is not mounted. The proof views below cannot be taken.
 
 **Queue evidence (2026-10-07):** The recorded 2026-08-09 build needs current placement and proof-view verification before completion.
 
