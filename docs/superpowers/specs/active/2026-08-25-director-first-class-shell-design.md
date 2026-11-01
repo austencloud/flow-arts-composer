@@ -1,16 +1,18 @@
 ---
 status: active
-value: null
-effort: null
-work_state: unverified
-remaining: Verify the Director shell on both entry surfaces at seven viewports and resolve the signed-in save rule gap described in this design.
+value: 3
+effort: S
+work_state: verification
+remaining: "Shipped: film origin acea69f1d5, FilmTimeline 03f6997926, film panel f60bbded11, marquee d5c378ae35, allowSaveScene gate in SceneControlWorkspace.svelte; library replaced by capability demos in bb56012675. Remaining: seven-viewport measurements for marquee and stage, and proof the film-collection rules in firestore.rules are deployed for signed-in saves."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: 2026-11-01
 ---
 
 # Director First-Class Shell — Design
+
+> **Triage note (2026-11-01):** The shell is implemented (acea69f1d5, 03f6997926, f60bbded11, d5c378ae35). The five-film library and the ?film=star check in section 8 are historical: bb56012675 replaced the library with one-scene capability demos, so verification should use a current capability key.
 
 **Date:** 2026-08-25
 **Status:** Active
