@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
-work_state: verification
-remaining: Recheck camera recovery on the avatar route and confirm persistence, 15 focused tests, and the project check.
+value: 2
+effort: XS
+work_state: complete
+remaining: "Fully shipped: cfb54c17b0 merged in 575ebfcfc7 (configureViewerOrbitNavigation in src/lib/shared/3d/camera/camera-controls-runtime.ts, Focus in SceneControlRail and MobileSceneControls); the spec records 15 focused tests, a clean check, worker and legacy wheel and focus measurements, and seven-tier geometry. Ready to move to shipped."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: 2026-11-01
 ---
 
 # Avatar camera recovery
