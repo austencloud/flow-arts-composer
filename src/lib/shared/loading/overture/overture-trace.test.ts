@@ -4,23 +4,28 @@ import {
   createFrameState,
   cumulativeLengths,
   headAt,
+  overtureColors,
   overtureLayout,
   pointAt,
   preparePath,
   prepareScene,
   type FrameView,
   type OvertureContext,
+  type OvertureOverlapLayers,
   type OverturePoint,
   type OvertureScene,
 } from "./overture-trace";
 
-/** A canvas stand-in that records strokes, fills and text. */
+/** A canvas stand-in that records strokes, fills, rect fills, images and text. */
 function recordingContext() {
   const strokes: { width: number; style: unknown; points: number }[] = [];
   const texts: string[] = [];
+  const rects: { style: unknown; op: string }[] = [];
+  const images: { image: unknown; op: string; alpha: number }[] = [];
   let points = 0;
   const ctx = {
     globalAlpha: 1,
+    globalCompositeOperation: "source-over",
     strokeStyle: "",
     fillStyle: "",
     lineWidth: 1,
@@ -35,6 +40,16 @@ function recordingContext() {
     restore() {},
     setTransform() {},
     clearRect() {},
+    fillRect() {
+      rects.push({ style: ctx.fillStyle, op: ctx.globalCompositeOperation });
+    },
+    drawImage(image: unknown) {
+      images.push({
+        image,
+        op: ctx.globalCompositeOperation,
+        alpha: ctx.globalAlpha,
+      });
+    },
     translate() {},
     rotate() {},
     scale() {},
@@ -58,7 +73,27 @@ function recordingContext() {
     measureText: (text: string) => ({ width: 10 * text.length }),
     createRadialGradient: () => ({ addColorStop() {} }),
   } satisfies OvertureContext;
-  return { ctx, strokes, texts };
+  return { ctx, strokes, texts, rects, images };
+}
+
+/** Two recording masks standing in for the worker's OffscreenCanvases. */
+function overlapLayers() {
+  const left = recordingContext();
+  const right = recordingContext();
+  const layers: OvertureOverlapLayers = {
+    left: { canvas: "left-canvas", ctx: left.ctx },
+    right: { canvas: "right-canvas", ctx: right.ctx },
+    width: 800,
+    height: 600,
+  };
+  return { layers, left, right };
+}
+
+/** A two-hand scene whose right line runs parallel to the left, 5 units down. */
+function twoHandScene(): OvertureScene {
+  const scene = lineScene(["A", "B"], 2);
+  scene.right = [scene.left[0]!.map(([x, y]) => [x, y + 5] as OverturePoint)];
+  return scene;
 }
 
 /** A straight-line scene: each beat is `spb` segments of one unit. */
@@ -370,5 +405,112 @@ describe("lapping a long boot", () => {
     expect(() =>
       composeFrame(strictContext(), prepared, 0.5, 100, view, state)
     ).not.toThrow();
+  });
+});
+
+describe("prop colours", () => {
+  it("accepts only a pair of six-digit hex colours", () => {
+    expect(overtureColors({ left: "#A855F7", right: "#22c55e" })).toEqual({
+      left: "#a855f7",
+      right: "#22c55e",
+    });
+    expect(overtureColors(null)).toBeNull();
+    expect(overtureColors({ left: "#a855f7" })).toBeNull();
+    expect(overtureColors({ left: "purple", right: "#22c55e" })).toBeNull();
+    expect(overtureColors({ left: "#abc", right: "#22c55e" })).toBeNull();
+  });
+
+  it("draws the hands in the user's colours on either surface, mixed where they cross", () => {
+    const colors = { left: "#a855f7", right: "#22c55e" };
+    for (const surface of ["dark", "light"] as const) {
+      const prepared = prepareScene(twoHandScene(), surface, colors);
+      expect(prepared.tips.map((tip) => tip.color)).toEqual([
+        "#a855f7",
+        "#22c55e",
+      ]);
+      expect(prepared.tips[0]!.rgb).toEqual([168, 85, 247]);
+      // The channel-wise mean, as applyMandalaHandColors mixes them.
+      expect(prepared.overlap).toBe("#658dab");
+    }
+  });
+
+  it("keeps the surface's blue, red and purple without user colours", () => {
+    const dark = prepareScene(twoHandScene(), "dark");
+    expect(dark.tips.map((tip) => tip.color)).toEqual(["#818cf8", "#f87171"]);
+    expect(dark.overlap).toBe("#a78bfa");
+    const light = prepareScene(twoHandScene(), "light", null);
+    expect(light.tips.map((tip) => tip.color)).toEqual(["#3D44B8", "#DC2626"]);
+    expect(light.overlap).toBe("#6d28d9");
+  });
+});
+
+describe("overlap pass", () => {
+  it("masks each hand, intersects them and lays the mix over the strokes", () => {
+    const prepared = prepareScene(twoHandScene(), "dark", {
+      left: "#a855f7",
+      right: "#22c55e",
+    });
+    const { layers, left, right } = overlapLayers();
+    const state = createFrameState();
+    state.overlap = layers;
+    const main = recordingContext();
+    composeFrame(main.ctx, prepared, 0.5, 0, view({ alpha: 0.8 }), state);
+    // One crisp stroke per hand on its own mask, as wide as the main crisp pass.
+    expect(left.strokes).toHaveLength(1);
+    expect(right.strokes).toHaveLength(1);
+    expect(left.strokes[0]!.width).toBe(main.strokes[2]!.width);
+    // Left mask keeps only what the right mask also covers, then takes the mix.
+    expect(left.images).toEqual([
+      { image: "right-canvas", op: "destination-in", alpha: 1 },
+    ]);
+    expect(left.rects).toEqual([{ style: "#658dab", op: "source-in" }]);
+    // The main canvas gets that mask once, at the layer's own opacity.
+    expect(main.images).toEqual([
+      { image: "left-canvas", op: "source-over", alpha: 0.8 },
+    ]);
+    // Nothing is drawn to the right mask but its stroke.
+    expect(right.images).toEqual([]);
+    expect(right.rects).toEqual([]);
+  });
+
+  it("skips the pass with one hand, without layers, or before the trace starts", () => {
+    const { layers, left } = overlapLayers();
+    const state = createFrameState();
+    state.overlap = layers;
+    const oneHand = recordingContext();
+    composeFrame(
+      oneHand.ctx,
+      prepareScene(lineScene(["A", "B"], 2), "dark"),
+      0.5,
+      0,
+      view(),
+      state
+    );
+    expect(oneHand.images).toEqual([]);
+    expect(left.strokes).toEqual([]);
+
+    const untraced = recordingContext();
+    composeFrame(
+      untraced.ctx,
+      prepareScene(twoHandScene(), "dark"),
+      0,
+      0,
+      view(),
+      state
+    );
+    expect(untraced.images).toEqual([]);
+
+    const noLayers = recordingContext();
+    composeFrame(
+      noLayers.ctx,
+      prepareScene(twoHandScene(), "dark"),
+      0.5,
+      0,
+      view(),
+      createFrameState()
+    );
+    expect(noLayers.images).toEqual([]);
+    // The crisp strokes are still there.
+    expect(noLayers.strokes.length).toBeGreaterThanOrEqual(4);
   });
 });

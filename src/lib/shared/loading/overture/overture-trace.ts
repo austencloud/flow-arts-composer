@@ -11,10 +11,14 @@
 import {
   BLUE_STROKE,
   LIGHT_MOTION_BLUE_STROKE,
+  LIGHT_MOTION_PURPLE_STROKE,
   LIGHT_MOTION_RED_STROKE,
   MANDALA_GRID_RADIUS,
+  PURPLE_STROKE,
   RED_STROKE,
 } from "../../mandala/domain/mandala-constants";
+import { mixColors } from "../../mandala/domain/mandala-palette";
+import { compositeMandalaOverlap } from "../../mandala/services/mandala-overlap-compositor";
 
 export type OverturePoint = [number, number];
 
@@ -35,9 +39,27 @@ export interface OvertureScene {
 
 export type OvertureSurface = "dark" | "light";
 
+/** The user's prop colours (settings `primaryPropColors`), `#rrggbb` each. */
+export interface OvertureColors {
+  left: string;
+  right: string;
+}
+
+const HEX_COLOR = /^#[0-9a-f]{6}$/i;
+
+/** The pair when both are six-digit hex colours, else null (the defaults). */
+export function overtureColors(value: unknown): OvertureColors | null {
+  if (!value || typeof value !== "object") return null;
+  const { left, right } = value as { left?: unknown; right?: unknown };
+  if (typeof left !== "string" || typeof right !== "string") return null;
+  if (!HEX_COLOR.test(left) || !HEX_COLOR.test(right)) return null;
+  return { left: left.toLowerCase(), right: right.toLowerCase() };
+}
+
 /** The subset of CanvasRenderingContext2D the Overture draws with. */
 export interface OvertureContext {
   globalAlpha: number;
+  globalCompositeOperation: string;
   strokeStyle: unknown;
   fillStyle: unknown;
   lineWidth: number;
@@ -59,6 +81,8 @@ export interface OvertureContext {
     f: number
   ): void;
   clearRect(x: number, y: number, w: number, h: number): void;
+  fillRect(x: number, y: number, w: number, h: number): void;
+  drawImage(image: unknown, x: number, y: number): void;
   translate(x: number, y: number): void;
   rotate(angle: number): void;
   scale(x: number, y: number): void;
@@ -259,6 +283,7 @@ export function headAt(path: TracePath, p: number): HeadPoint {
 
 export interface OvertureTip {
   path: TracePath;
+  hand: "left" | "right";
   color: string;
   rgb: [number, number, number];
 }
@@ -266,6 +291,8 @@ export interface OvertureTip {
 export interface PreparedScene {
   scene: OvertureScene;
   tips: OvertureTip[];
+  /** Where a left tip crosses a right one: the two hands' colours mixed. */
+  overlap: string;
   /** Farthest point from the centre, in grid units. */
   extent: number;
   /** The glyphs drawn: the first `unit` beats' letters. */
@@ -277,16 +304,30 @@ function hexRgb(hex: string): [number, number, number] {
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
 
+/**
+ * Prepares a scene's tips. With the user's prop colours the left hand takes
+ * `left` and the right `right` on either surface, as the app's mandalas do
+ * (applyMandalaHandColors); without them, the surface's blue and red.
+ */
 export function prepareScene(
   scene: OvertureScene,
-  surface: OvertureSurface
+  surface: OvertureSurface,
+  colors: OvertureColors | null = null
 ): PreparedScene {
-  const blue = surface === "light" ? LIGHT_MOTION_BLUE_STROKE : BLUE_STROKE;
-  const red = surface === "light" ? LIGHT_MOTION_RED_STROKE : RED_STROKE;
+  const light = surface === "light";
+  const blue =
+    colors?.left ?? (light ? LIGHT_MOTION_BLUE_STROKE : BLUE_STROKE);
+  const red = colors?.right ?? (light ? LIGHT_MOTION_RED_STROKE : RED_STROKE);
+  const overlap = colors
+    ? mixColors(colors.left, colors.right)
+    : light
+      ? LIGHT_MOTION_PURPLE_STROKE
+      : PURPLE_STROKE;
   const tips: OvertureTip[] = [];
   for (const points of scene.left) {
     tips.push({
       path: preparePath(points, scene.beats),
+      hand: "left",
       color: blue,
       rgb: hexRgb(blue),
     });
@@ -294,6 +335,7 @@ export function prepareScene(
   for (const points of scene.right) {
     tips.push({
       path: preparePath(points, scene.beats),
+      hand: "right",
       color: red,
       rgb: hexRgb(red),
     });
@@ -303,7 +345,13 @@ export function prepareScene(
     for (const p of tip.path.pts)
       extent = Math.max(extent, Math.hypot(p[0], p[1]));
   }
-  return { scene, tips, extent, slots: scene.letters.slice(0, scene.unit) };
+  return {
+    scene,
+    tips,
+    overlap,
+    extent,
+    slots: scene.letters.slice(0, scene.unit),
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -353,11 +401,32 @@ export interface Spark {
   rgb: [number, number, number];
 }
 
+/** A scratch canvas and its context, the size of the main canvas's backing. */
+export interface OvertureMaskLayer {
+  canvas: unknown;
+  ctx: OvertureContext;
+}
+
+/**
+ * Two scratch layers for the overlap pass: each hand's traced strokes go on
+ * its own layer, and where both have ink the main canvas gets the mixed
+ * colour. The worker owns them (OffscreenCanvas) and keeps them the backing
+ * size; without them the crossings keep the colour drawn last.
+ */
+export interface OvertureOverlapLayers {
+  left: OvertureMaskLayer;
+  right: OvertureMaskLayer;
+  /** Backing size, device px. */
+  width: number;
+  height: number;
+}
+
 /** What persists between frames: sparks and the letter row's timing. */
 export interface FrameState {
   sparks: Spark[];
   maxSparks: number;
   glow: boolean;
+  overlap: OvertureOverlapLayers | null;
   /** When each slot first lit (fade-in start), or undefined. */
   litAt: (number | undefined)[];
   /** When each slot last pulsed. */
@@ -375,6 +444,7 @@ export function createFrameState(
     sparks: [],
     maxSparks: options.phone ? 48 : 96,
     glow: true,
+    overlap: null,
     litAt: [],
     pulseAt: [],
     beat: -1,
@@ -469,13 +539,19 @@ export function composeFrame(
   const unitPx = 1 / scale;
   const traced = p <= 0 ? 0 : p >= 1 ? 1 : p;
 
+  // The stage: grid units about the centre, turned and zoomed. The overlap
+  // masks copy it so their ink lands on the same pixels.
+  const stage = (target: OvertureContext) => {
+    target.setTransform(view.dpr, 0, 0, view.dpr, 0, 0);
+    target.translate(layout.cx, layout.cy);
+    target.rotate(view.rotation);
+    target.scale(scale * view.zoom, scale * view.zoom);
+    target.lineCap = "round";
+    target.lineJoin = "round";
+  };
   ctx.save();
   ctx.globalAlpha = view.alpha;
-  ctx.translate(layout.cx, layout.cy);
-  ctx.rotate(view.rotation);
-  ctx.scale(scale * view.zoom, scale * view.zoom);
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
+  stage(ctx);
 
   const ends = prepared.tips.map((tip) => pointAt(tip.path, traced));
   // Past 1 the figure is whole and the heads lap it until the finish.
@@ -498,6 +574,9 @@ export function composeFrame(
       ctx.lineWidth = 2 * unitPx;
       ctx.stroke();
     });
+    if (state.overlap) {
+      drawOverlap(ctx, prepared, ends, state.overlap, stage, unitPx, view);
+    }
   }
 
   // Hot trail and heads: the moving edge. They stay while the heads lap a
@@ -588,6 +667,58 @@ export function composeFrame(
   ctx.restore();
 
   if (view.fontFamily) drawLetters(ctx, prepared, traced, now, view, state);
+}
+
+/**
+ * The crossings, as the app's mandalas draw them (mandala-renderer.ts): each
+ * hand's crisp strokes on their own mask, the masks intersected, and that
+ * intersection laid over the strokes in the two colours' mix. Without it the
+ * right hand, drawn last, covers every crossing in its own colour.
+ */
+function drawOverlap(
+  ctx: OvertureContext,
+  prepared: PreparedScene,
+  ends: TracePoint[],
+  layers: OvertureOverlapLayers,
+  stage: (target: OvertureContext) => void,
+  unitPx: number,
+  view: FrameView
+): void {
+  let left = false;
+  let right = false;
+  for (const tip of prepared.tips) {
+    if (tip.hand === "left") left = true;
+    else right = true;
+  }
+  if (!left || !right) return;
+  for (const layer of [layers.left, layers.right]) {
+    const mask = layer.ctx;
+    mask.setTransform(1, 0, 0, 1, 0, 0);
+    mask.globalCompositeOperation = "source-over";
+    mask.globalAlpha = 1;
+    mask.clearRect(0, 0, layers.width, layers.height);
+    stage(mask);
+    mask.lineWidth = 2 * unitPx;
+    mask.strokeStyle = "#000";
+  }
+  prepared.tips.forEach((tip, k) => {
+    const mask = tip.hand === "left" ? layers.left.ctx : layers.right.ctx;
+    tracePolyline(mask, tip, ends[k]!);
+    mask.stroke();
+  });
+  // The compositor takes real canvas contexts; these layers are the worker's
+  // OffscreenCanvases (or a test's stand-ins) and carry the members it uses.
+  compositeMandalaOverlap({
+    targetContext: ctx as unknown as OffscreenCanvasRenderingContext2D,
+    overlapMaskContext: layers.left
+      .ctx as unknown as OffscreenCanvasRenderingContext2D,
+    overlapMaskCanvas: layers.left.canvas as OffscreenCanvas,
+    otherMaskCanvas: layers.right.canvas as OffscreenCanvas,
+    width: layers.width,
+    height: layers.height,
+    color: prepared.overlap,
+    alpha: view.alpha,
+  });
 }
 
 /**
