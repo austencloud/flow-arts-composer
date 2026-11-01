@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
+value: 3
+effort: L
 work_state: in-progress
-remaining: Advance Flow Fest Sim through its measured Earth and playable graybox gates, then rehearse the Thursday-to-night slice and GNSS replay.
+remaining: "Gates 0-6 were built (8d84df820c, 18f99a5b3d, 73b63f915d, fee661187c), but scene-gates.json marks Gate 6 reopened-for-reality-lock and visual acceptance is withdrawn. Remaining: apply Austen's site labels and markers (e988d21a99), re-capture location evidence for his Reality Lock review, then GNSS replay rehearsal."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: 2026-11-01
 ---
 
 # Flow Fest Sim
