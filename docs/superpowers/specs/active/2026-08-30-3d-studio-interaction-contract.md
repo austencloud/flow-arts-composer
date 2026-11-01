@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
-work_state: unverified
-remaining: Exercise 3D Studio selection/delete and undo precedence across canvas, drill chart, inspector, and timeline lenses.
+value: 3
+effort: L
+work_state: in-progress
+remaining: "Slice 1 shipped in f5399a5093 (StageSelection union, stage-delete-command.ts, modal isolation, tests/unit/stage/*); Slice 2 not started (StudioProjectV1 still wraps only stage, no per-performer appearance in history); Slices 3-4 (snap preference, drag cancel, canvas/drill parity audit, Director/JSON binding) and live acceptance remain."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: 2026-11-01
 ---
 
 # 3D Studio Interaction Contract
