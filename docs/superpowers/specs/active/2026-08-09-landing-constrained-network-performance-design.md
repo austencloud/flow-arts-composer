@@ -1,12 +1,12 @@
 ---
 status: active
-value: null
-effort: null
-remaining: "Record the pending 6x CPU trace and compare it with the constrained-network performance target."
+value: 2
+effort: XS
+remaining: "Implementation shipped in 15d1a98bd8 (scripts/inline-landing-critical-css.cjs, src/hooks.server.ts preload policy); only a cold DevTools Slow 3G + 6x CPU trace at 375x667 on the current landing (changed since by a97b743f05, e2111f142a, ed5cd3a8a9) confirming LCP <= 4000 ms and CLS <= 0.10 remains."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
+last_triaged: 2026-11-01
 work_state: verification
 ---
 # Landing Constrained-Network Performance
