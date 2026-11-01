@@ -1,15 +1,17 @@
 ---
 status: active
-value: null
-effort: null
-remaining: "Verify Repository Root Cleanup against scripts/sync-shortcodes-to-kv.ts before resuming implementation. Prior recorded remainder: Verify phase 1-3 root cleanup and measured size against the current tree; then assess the Later Work section separately."
+value: 1
+effort: XS
+remaining: "Fully shipped: phases 1-3 landed in ccc58d970e; every phase-3 root file is gone from the tree, the moved files exist at their destinations (docs/reference/printables/, docs/research/interactive-prototypes/, scripts/research/build-prop-variant-playground.cjs, docs/superpowers/specs/audits/; poi-recon/ was later removed from the public tree), and the .gitignore rules for .kv-bulk-shortcodes.json and vite.debug*.config.mts are present. Phase-2 ignored output is per-machine and unrecorded. The Later Work items (static/ source assets, credential loader) are unscoped follow-ups for a new spec."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: complete
 ---
 # Repository Root Cleanup
+
+> **Triage note (2026-11-01):** Phases 1-3 are confirmed in the current tree (ccc58d970e). The root files are gone, the moved files are at their destinations (except `poi-recon/`, later removed from the public tree), and the ignore rules exist. The phase-2 reclaimed size was never recorded and cannot be re-measured, because that output is ignored and regenerates per machine. The Later Work section is not part of this pass.
 
 **Queue evidence (2026-10-07):** The phase 1–3 implementation claim is historical. Current-tree targets and measured reclaimed size still need checking before closeout.
 
