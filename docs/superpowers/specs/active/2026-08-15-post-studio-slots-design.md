@@ -1,15 +1,17 @@
 ---
 status: active
-value: null
-effort: null
-remaining: "Verify Post Studio Slots — Design against the current Post Studio Slots — Design runtime and acceptance criteria before resuming implementation. Prior recorded remainder: Reconcile the three unchecked slot-phase items and workspace-wide timing bar against current Post Studio, then verify."
+value: 1
+effort: XS
+remaining: "Superseded: P1-P3c shipped, then 0a11ea6541 rebuilt Post Studio as the step-by-step tutorial builder (2026-09-24-post-studio-tutorial-builder-design.md), deleting the slot preview, inspector and timeline; a8c19493cc and 7e721647c6 moved it onto the package VideoEditor. post-studio-slots.ts no longer exists, so unchecked P4-P6 have no target. Ready to archive."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: superseded
 ---
 # Post Studio Slots — Design
+
+> **Triage note (2026-11-01):** The unchecked P4-P6 phases below are obsolete. Post Studio was rebuilt as the tutorial builder in 0a11ea6541 (see 2026-09-24-post-studio-tutorial-builder-design.md) and then moved onto the package VideoEditor (a8c19493cc, 7e721647c6); the two-slot model and its files are gone.
 
 **Status:** active · **Date:** 2026-08-15 · **Iteration:** 2 of Post Studio
 
