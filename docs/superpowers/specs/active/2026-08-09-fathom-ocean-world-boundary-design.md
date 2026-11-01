@@ -1,15 +1,17 @@
 ---
 status: active
-value: null
-effort: null
-remaining: "Verify Fathom Ocean — Gate 3: World Boundary and Palette against src/lib/shared/3d/environments/primitives/SkyGradient.svelte before resuming implementation. Prior recorded remainder: Verify recorded boundary defects and their fixes against current ocean sky, camera views, and visual proof."
+value: 3
+effort: S
+remaining: "Implemented and verified 2026-08-09: terrain GLB, OceanDepthGradient, ocean-camera-bounds clamp, regrounded placements (4267e50208, 79da69934e, 11c2df9ad5, 09b6e51b04, record 85e6574ab2); WaterSurface size=110 now on main. Blocked on Austen's go-ahead for the coupled R2 flora upload plus deploy; coral hue pass deferred to composition-matrix art decision."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: blocked
 ---
 # Fathom Ocean — Gate 3: World Boundary and Palette
+
+> **Triage note (2026-11-01):** The 'implementation not started' status below is historical. The gate shipped in 4267e50208, 79da69934e, 11c2df9ad5 and 09b6e51b04, and the verification record at the end of this file covers it. What remains is the coupled R2 upload and deploy, which needs Austen's go-ahead. The coral hue pass is deferred.
 
 Date: 2026-08-09
 Status: design approved, implementation not started
