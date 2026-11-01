@@ -1,15 +1,17 @@
 ---
 status: active
-value: null
-effort: null
-remaining: "Verify 3D Smoke Volume Rebuild against the current 3D Smoke Volume Rebuild runtime and acceptance criteria before resuming implementation. Prior recorded remainder: Verify smoke volume at the eight-performer camera, orbit parallax, quality tiers, and fallback gates."
+value: 1
+effort: XS
+remaining: "Superseded: the CPU atlas volume solver (83c8415997, 91e6806ad4) was replaced by a GPU stable-fluid domain per rig in 6496d085f7 (smoke-fluid-domain-3d.ts, smoke-fluid-renderer-3d.ts), and 29ec1bfba3 removed /test/smoke-3d-compare in favor of review in the real viewers. Ready to archive; any new acceptance belongs to a spec for the GPU fluid."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: superseded
 ---
 # 3D Smoke Volume Rebuild
+
+> **Triage note (2026-11-01):** The architecture, harness and gates below are historical. The CPU volume solver shipped (83c8415997, 91e6806ad4) and was then replaced by a GPU stable fluid in 6496d085f7; 29ec1bfba3 deleted the /test/smoke-3d-compare harness. This design is superseded.
 
 **Status:** Active  
 **Date:** 2026-08-15  
