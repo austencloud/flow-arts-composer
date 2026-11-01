@@ -1,16 +1,18 @@
 ---
 status: backlog
-value: 2
-effort: S
-remaining: Verify the Q-cycle and current performance harness against this spec before assigning remaining work.
+value: 1
+effort: XS
+remaining: "Fully shipped in adapted form: Q-cycle viewMode state machine in src/lib/features/museum/components/game/DimensionFlipProof.svelte (on-foot mode toggles first/third only), disableModeToggle prop in packages/camera-3d UnifiedCameraController.svelte passed by Museum3DScene.svelte, scaling harness tests/unit/museum/MuseumGeometryScaling.test.ts (10/10 pass 2026-11-01), runtime phase timing via MuseumPerformanceRecorder and room streaming in museum-geometry-streamer.ts; nothing remains beyond moving to shipped/."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
-work_state: unverified
+last_triaged: '2026-11-01'
+work_state: complete
 ---
 
 # Unified View Toggle + Performance Test Harness
+
+> **Triage note (2026-11-01):** Complete. The Q-cycle shipped (`DimensionFlipProof.svelte` `viewMode`, with an on-foot variant where Q toggles first/third person only; transitions now snap instead of a 1.5s flip), and UCC's `disableModeToggle` is passed by `Museum3DScene.svelte`. The 2026-08-02 banner's "perf harness never built" is stale: the harness exists as `tests/unit/museum/MuseumGeometryScaling.test.ts` (grid + bucketing at progressive room counts; `buildMuseumGeometry` itself needs WebGL), with runtime per-phase timing in `MuseumPerformanceRecorder` and Level-2 room streaming in `museum-geometry-streamer.ts`. The file names and test path in "Files to Create/Modify" below are obsolete.
 
 > **DRIFT WARNING — 2026-08-02.** Q-cycle shipped exactly; perf harness never built
 >
