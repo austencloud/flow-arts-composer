@@ -1,16 +1,18 @@
 ---
 status: backlog
-value: 4
-effort: L
-remaining: Audit current GPU pipeline mounts and default renderer; the earlier phase ledger may no longer match the running app.
+value: 3
+effort: XL
+remaining: "Phases 0-1 live: src/lib/shared/render-graph/ backends, and trail-overlay-web-gl2.ts drives trails via createBackend(preferred webgl2); Phase 2/4 executors (fire/led/particle/overlay, web-gpu-backend.ts) exist but no app code emits those passes or requests WebGPU; UnifiedViewerCanvas.svelte (Phase 3) has zero mounts. Remaining: decide whether Phases 2-5 still proceed, then wire effect passes, mount or delete UnifiedViewerCanvas, roll out WebGPU, and do Phase 5 cleanup."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
-work_state: unverified
+last_triaged: '2026-11-01'
+work_state: in-progress
 ---
 
 # Unified GPU Render Pipeline — Design Spec
+
+> **Triage note (2026-11-01):** In progress. Phases 0-1 are live: `src/lib/shared/render-graph/` holds the domain, WebGL2 backend, FBO pool, shader library and trail translator, and `trail-overlay-web-gl2.ts` renders trails through `createBackend(canvas, { preferred: "webgl2" })` (A/B escape hatch `window.__TKA_TRAIL_GPU = false`). Fire/LED/particle/overlay executors and a `WebGPUBackend` now exist, but no app code emits those passes or asks for WebGPU, and `UnifiedViewerCanvas.svelte` is still unmounted. The phase durations and "Build" lists below are historical; whether to continue Phases 2-5 is an open product decision.
 
 > **DRIFT WARNING — 2026-08-02.** Phases 0-1 shipped and **live in production by default** (WebGL2 trails); Phase 2 half-built unwired; Phase 3 built then **orphaned** (zero mounts); Phase 4 unused scaffolding
 >
