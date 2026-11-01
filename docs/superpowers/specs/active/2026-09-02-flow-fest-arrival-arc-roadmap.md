@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
+value: 3
+effort: XL
 work_state: in-progress
-remaining: After the built Drive in, design and implement the next arrival-arc sub-project with its own gate; keep tree-pipeline dependencies explicit.
+remaining: "Drive in built (8c466b61f4, 16d488b67f; own spec 2026-09-04-flow-fest-drive-in-design.md); loadout has car and departure only (flow-fest-loadout.ts). Next: write the sub-project 2 canopy spec (general proximity-interaction owner; none exists beyond observeFlowFestFireJam), then camp arrival, campground, people; tree pipeline still open."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: '2026-11-01'
 ---
 
 # Flow Fest Arrival Arc — Roadmap
