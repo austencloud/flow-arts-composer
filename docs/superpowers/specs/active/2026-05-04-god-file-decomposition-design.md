@@ -2,16 +2,43 @@
 status: active
 value: 3
 effort: L
-remaining: "Rebaseline remaining responsibility splits against current owners, then verify behavior for any additional extraction; the old claim that library-repository and viewer orchestration were untouched is obsolete. library-repository imports extracted batch/recycle services (8bc4149650), museum helpers and viewer action/fullscreen/footer splits exist, but Museum3DScene is now 2404 lines and animation-render-loop 2817, so original line targets alone cannot establish completion."
+remaining: "Next: src/lib/features/museum/components/game/Museum3DScene.svelte (2492 lines, target ~600) via the four Phase 2 service owners. After it, by measurement on 2026-11-01: library-repository.ts 2051, video-export-orchestrator.ts 1332, image-composer.ts 1296, auth-state.svelte.ts 1171, WorldSceneContent.svelte 1120, PhraseEffortLabModule.svelte 1031; SequenceActionsPanel.svelte 1424 and SequenceViewerOrchestrator.svelte 1437 already have their splits and need re-triage, not another cut. animation-render-loop.ts is 1920 after the 2026-11-01 slice; its remaining bulk is the 930-line render() body, which the Phase 1 registry dedup already covers for effects and which needs a rewrite, not a move, to shrink further. Unlisted but over threshold: src/lib/shared/sequence-viewer/components/ChoreoCard.svelte (1534 lines, 1131 of script)."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-14
+last_triaged: 2026-11-01
 work_state: in-progress
 ---
 # God File Decomposition
 
 > 2026-10-14 triage: Rebaseline remaining responsibility splits against current owners, then verify behavior for any additional extraction; the old claim that library-repository and viewer orchestration were untouched is obsolete. library-repository imports extracted batch/recycle services (8bc4149650), museum helpers and viewer action/fullscreen/footer splits exist, but Museum3DScene is now 2404 lines and animation-render-loop 2817, so original line targets alone cannot establish completion. Earlier status banners and execution instructions are historical where they conflict with this review.
+
+## Evidence 2026-11-01: animation-render-loop.ts slice
+
+`src/lib/shared/animation-engine/services/animation-render-loop.ts` went from
+2817 to 1920 lines by moving code, not rewriting it. New owners, all under
+`src/lib/shared/animation-engine/services/`:
+
+| Module | Lines | Owns |
+| --- | --- | --- |
+| `effect-tip-builders.ts` | 225 | `buildEmitterTips`, `buildArrayTips`, `resolveTipColor`, `hasTrailTips`, `compactByTrailFlag` as plain functions (were private statics). |
+| `effect-dispatch-registry.ts` | 297 | `EFFECT_DISPATCH_REGISTRY` plus the `EffectDispatchContext`/`EffectDispatchEntry`/`EffectRenderer` types. Entries now receive the renderer map instead of the loop instance. |
+| `fire-cache-loop-detection.ts` | 44 | `isConfirmedFireCacheLoop`, `hasFireCachePlaybackDiscontinuity` (already tested by `tests/unit/animation-engine/fire-cache-playback-sync.test.ts`, import repointed). |
+| `frame-drop-diagnostics.ts` | 223 | The spec's `FrameDropDiagnostics`: drop log, rolling FPS window and the shared longtask observer singleton. The loop keeps `lastFrameTime` because `dtSeconds` depends on it. Two dead FPS aggregates (`avgFps`, `avgRender`) were dropped in the move. |
+| `mandala-guide-painter.ts` | 159 | `MandalaGuidePainter`: overlay handle, path preparer cache, previous paths, stroke-width config and the per-frame guide paint. |
+
+Verified: the six existing render-loop and loop-gating suites (42 tests), the
+repointed `fire-cache-playback-sync`, `virtual-time-visibility` and the two
+shape-matrix source-contract tests (77 tests across 10 files); `npm run
+test:changed` ran the full suite with 25431 passing and one unrelated failure in
+`tests/unit/render/canvas-2d-elemental-glyph-node.test.ts` (`Response` over a
+`Blob` lacks `stream` in this jsdom environment; the test imports none of the
+changed files); scoped `tsc` over the loop, the five modules and every importer
+reports no error in changed files (one pre-existing error in the unchanged
+`virtual-time-visibility.test.ts` mock typing, outside the root include);
+eslint clean; Playwright in headless Chromium rendered `/endless-spinner`
+through the live loop with props, trails and the mandala guide painted and
+zero console errors.
 
 **Queue evidence (2026-10-07):** Partial decomposition landed; the old Draft label no longer describes current code. See frontmatter for the remaining work.
 
