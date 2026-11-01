@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
-remaining: "Verify shared canonical selection behavior and the specified seven viewports before implementing any missing drill."
+value: 2
+effort: S
+remaining: "Drill shipped in c72f055527: SequencePickerModal.svelte composes createBrowseEngine, FilterWorkspace (onEject) and BrowsePanel with locked requiredBeatCount and 1680/2600 seams; later fixes bc9076bf05, 20f30d37ad, fc1c893d17. Remaining: seven-viewport inspection plus source switching, locked-length caller, compact Back and card selection via Video Lab."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: verification
 ---
 # Canonical Sequence Selection Drill
 
