@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
-work_state: unverified
-remaining: Run the opposite-point landing audit and compare measured fan placements against the gate in this design.
+value: 2
+effort: XS
+work_state: blocked
+remaining: "Audit gate shipped in 973abf9463, 16e8db4c3f and 2d51677faf (src/routes/test/prop-size-audit/CompactStageComparison.svelte, compact-stage.ts); blocked on Austen's visual approval of the 150% Fan / 75% grid landing. Size later became a picker dial (86d07da3fb) with Big Fan kept, so no production replacement started."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: 2026-11-01
 ---
 
 # Fan Opposite-Point Landing Audit
