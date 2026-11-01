@@ -1,16 +1,18 @@
 ---
 status: backlog
-value: 2
-effort: L
-remaining: Inspect current Collision Lab mesh collision, leg, and costume models against the future-work acceptance before implementing.
+value: 1
+effort: XL
+remaining: "Neither change is built: no AvatarMeshBVH/MeshBVH collision code (three-mesh-bvh is installed but used only by 3d/environments/scenes/ember/lava-river-geometry.ts, not by the lab) and no naturalness prior or aiSeedConfidence in src/lib/features/lab/tabs/collision-lab. Change 2 must be redesigned because the live CollisionDetector and DI container it plugs into no longer exist (only stance-simulator.ts comments mention them); Change 5 is research-grade ML."
 depends_on: ''
 plan_path: docs/superpowers/plans/shipped/2026-04-10-collision-lab.md
 tags: []
-last_triaged: '2026-10-07'
-work_state: unverified
+last_triaged: '2026-11-01'
+work_state: ready
 ---
 
 # Collision Lab — Future Work
+
+> **Triage note (2026-11-01):** Both changes remain unbuilt. Collision Lab is still mounted (`LabModule.svelte`), and its stance simulator/optimizer use sphere and segment primitives. However, the live `CollisionDetector` / `ICollisionDetector` and the DI container switch that Change 2's migration plan relies on no longer exist in `src/`, so the Architecture and Migration steps below are obsolete as written and need redesign before implementation.
 
 > Follow-ups from the 2026-04-11 state-of-the-art audit. The stance optimizer
 > and kinematic simulator from that session solve the biggest blocker (human
