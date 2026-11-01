@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
+value: 2
+effort: L
 work_state: in-progress
-remaining: Complete Phase 4 editorial clip instancing and retire scene.extends; then verify phases 1-3 against their gates.
+remaining: "Phases 1-3 landed (channel store and aim, bda9570acf, 0d47b3789c, FilmDirectorChannelEditor.svelte, manual layer in director-camera-channels.ts); open: Phase 4 clip instancing to retire scene.extends (film-director-schema.ts:1564, expand-scene-inheritance.ts), which Austen may drop (open decision 4), plus Phase 3 seven-viewport proof."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: '2026-11-01'
 ---
 
 # Film Director Channel Architecture Design
