@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
-remaining: "Verify choreography indicator flags and card-front size ratio in current card and Create workspace."
+value: 2
+effort: S
+remaining: "Implemented in 23bbf1bb3c (render-composition header-renderer 48 px card ratio, build-front-compose-options flags, PrintCardRenderer, SequenceMetadataRail.svelte in WorkspaceSequenceHeader, /test/choreo-indicators harness, unit tests). Remaining: the recorded review of /test/choreo-indicators card sides and the Create workspace rail at desktop, tablet, landscape-phone and narrow-phone viewports."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: verification
 ---
 # Choreo Indicator Restoration
 
