@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
-remaining: "Recheck bubble size/lifetime and film shader tests plus visual acceptance before closing the implemented claim."
+value: 2
+effort: XS
+remaining: "Fully shipped: a85b465e20 (thin-film pool) and 7e4671ee5c (living-film rupture, drainage, velocity stretch) in src/lib/shared/3d/effects/bubbles/ with tests/unit/3d-effects/bubble-film-3d.test.ts; spec records 40 passing tests, clean console, and 1440p-3840p captures plus 2D fallback tiers. Later edits (a97b743f05, cd6235653e) are type-only. Ready to move to shipped/."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: verification
+last_triaged: 2026-11-01
+work_state: complete
 ---
 # Bubbles Film Surface Pass
 
