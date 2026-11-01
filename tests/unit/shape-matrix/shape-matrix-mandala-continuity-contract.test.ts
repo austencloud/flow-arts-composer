@@ -141,13 +141,13 @@ describe("shape matrix mandala continuity", () => {
 
   it("shows the still floor at the live guide's opacity so the handoff is invisible", () => {
     const drill = read("components/ShapeMatrixDrill.svelte");
-    const loop = readSrc(
-      "lib/shared/animation-engine/services/animation-render-loop.ts"
+    const guide = readSrc(
+      "lib/shared/animation-engine/services/mandala-guide-painter.ts"
     );
     expect(drill).toContain(
       "livePlayerShowsPair ? 0 : MANDALA_GUIDE_FLOOR_OPACITY"
     );
-    expect(loop).toContain("opacity: MANDALA_GUIDE_FLOOR_OPACITY");
+    expect(guide).toContain("opacity: MANDALA_GUIDE_FLOOR_OPACITY");
   });
 
   it("keeps one mandala on stage: a canvas for another pair is offstage", () => {

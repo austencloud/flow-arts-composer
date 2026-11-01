@@ -23,10 +23,7 @@ import type { AnimationPathCache } from "#lib/shared/animation-engine/services/a
 import type { FrameBudgetMonitor } from "#lib/shared/animation-engine/services/frame-budget-monitor.js";
 import type { WebGLFireRenderer } from "./fire/web-gl-fire-renderer";
 import type { CharcoalSparkRenderer } from "./charcoal/charcoal-spark-renderer";
-import type {
-  RenderedPropTransform,
-  PropTipData,
-} from "../domain/types/fire-types";
+import type { RenderedPropTransform } from "../domain/types/fire-types";
 import type { RenderedPropSprite } from "../domain/types/rendered-prop-sprite";
 import type { LedSample } from "../domain/types/led-types";
 import type { FireTipTrackerConfig } from "./fire-tip-tracker";
@@ -48,27 +45,9 @@ import type {
   EffectType,
   TipEffectMap,
 } from "../domain/types/tip-effect-types";
-import {
-  dimHex,
-  spotlightFactor,
-  tunnelPropColor,
-  tunnelPerformerPair,
-  type TunnelPropColorPair,
-  type TunnelLayerSelection,
-} from "#lib/shared/sequence-viewer/tunnel/tunnel-prop-colors.js";
-import type { EmitterTip } from "#lib/shared/effects/renderers/emitter-tip.js";
 import type { FireTipUpdateResult } from "./fire-tip-tracker";
 import type { FireFrameInput } from "../domain/types/fire-types";
 import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
-import type { MandalaOverlayCanvas } from "#lib/shared/mandala/services/mandala-overlay-canvas.js";
-import { MandalaPathPreparer } from "#lib/shared/mandala/services/mandala-path-preparer.js";
-import { mandalaOffsetsFromHandUnits } from "#lib/shared/mandala/services/mandala-grid-join.js";
-import {
-  DEFAULT_MANDALA_OVERLAY_CONFIG,
-  type MandalaOverlayConfig,
-  MANDALA_GUIDE_FLOOR_OPACITY,
-} from "#lib/shared/mandala/domain/mandala-overlay-types.js";
-import type { MandalaHandVisibility } from "#lib/shared/mandala/domain/mandala-types.js";
 import type { RenderActivityGate } from "#lib/shared/render-gating/render-activity-gate.js";
 import { shiftTrailPointsBy } from "./animation-grid-join";
 import type { HandOffsets } from "#lib/shared/grid-join/grid-join-tween.js";
@@ -77,163 +56,21 @@ import {
   pickEvenIndices,
   type MotionSubSample,
 } from "./motion-sub-sampler";
+import { FrameDropDiagnostics } from "./frame-drop-diagnostics";
+import { MandalaGuidePainter } from "./mandala-guide-painter";
+import {
+  hasFireCachePlaybackDiscontinuity,
+  isConfirmedFireCacheLoop,
+} from "./fire-cache-loop-detection";
+import { compactByTrailFlag, hasTrailTips } from "./effect-tip-builders";
+import {
+  EFFECT_DISPATCH_REGISTRY,
+  type EffectDispatchContext,
+  type EffectDispatchEntry,
+} from "./effect-dispatch-registry";
 
 /** Most prior LED sets deposited for one slow frame; picked evenly beyond. */
 const LED_PRIOR_SET_CAP = 15;
-
-// Longtask observer singleton - one PerformanceObserver shared across every
-// AnimationRenderLoop instance. Without this, each loop attaches its own
-// observer and every main-thread stall produces N duplicate log lines where
-// N is the number of live AnimatorCanvas instances on the page.
-type LongTaskListener = (durationMs: number) => void;
-const longTaskListeners = new Set<LongTaskListener>();
-let longTaskObserverInstalled = false;
-let lastBigLongTaskLogTime = 0;
-
-function installLongTaskObserver(): void {
-  if (longTaskObserverInstalled) return;
-  if (typeof PerformanceObserver === "undefined") return;
-  if (!PerformanceObserver.supportedEntryTypes?.includes("longtask")) return;
-  try {
-    const observer = new PerformanceObserver((list) => {
-      const now = performance.now();
-      const warnEnabled =
-        typeof window !== "undefined" &&
-        (window as { __TKA_FPS_LOG?: boolean }).__TKA_FPS_LOG === true;
-      for (const entry of list.getEntries()) {
-        for (const listener of longTaskListeners) listener(entry.duration);
-        // Warn once per 2s for individually-huge stalls when the FPS diagnostic
-        // is enabled. Otherwise the listener just accumulates duration for the
-        // FPS summary window (which itself is gated).
-        if (
-          warnEnabled &&
-          entry.duration > 150 &&
-          now - lastBigLongTaskLogTime > 2000
-        ) {
-          lastBigLongTaskLogTime = now;
-          console.warn(
-            `[LongTask] ${entry.duration.toFixed(0)}ms main-thread block`
-          );
-        }
-      }
-    });
-    observer.observe({ entryTypes: ["longtask"] });
-    longTaskObserverInstalled = true;
-  } catch {
-    // Observer setup failed - silently degrade (FPS summary still works).
-  }
-}
-
-function subscribeToLongTasks(listener: LongTaskListener): () => void {
-  installLongTaskObserver();
-  longTaskListeners.add(listener);
-  return () => longTaskListeners.delete(listener);
-}
-
-function hasTrailTips(map: TipEffectMap | undefined): boolean {
-  if (!map) return false;
-  return Object.values(map).some((a) => a.effect === "trails");
-}
-
-/** A backwards step jump becomes a fire-cache loop boundary only when it
- * crosses the known sequence end into its start window. This excludes seeks
- * such as beat 3 → beat 1. Playback is one-based: a four-count
- * sequence runs from 1 through 5, then wraps back to 1. */
-export function isConfirmedFireCacheLoop(
-  previousStep: number,
-  currentStep: number,
-  sequenceSteps: number | undefined,
-  loopDetected: boolean,
-  isPlaying: boolean
-): boolean {
-  return (
-    isPlaying &&
-    loopDetected &&
-    sequenceSteps !== undefined &&
-    sequenceSteps > 0 &&
-    previousStep >= sequenceSteps + 1 - 0.5 &&
-    currentStep >= 1 &&
-    currentStep <= 1.5
-  );
-}
-
-/** Cache frames are only phase-safe while playback changes continuously. */
-export function hasFireCachePlaybackDiscontinuity(
-  previousStep: number,
-  currentStep: number,
-  isPlaying: boolean,
-  dtSeconds: number,
-  stepChangedWhilePaused: boolean,
-  tipGapDetected: boolean,
-  confirmedLoop: boolean
-): boolean {
-  return (
-    tipGapDetected ||
-    (!confirmedLoop &&
-      (stepChangedWhilePaused ||
-        Math.abs(currentStep - previousStep) > 0.5 ||
-        (isPlaying && dtSeconds > 0.2)))
-  );
-}
-
-const MANDALA_GUIDE_CONFIG: MandalaOverlayConfig = {
-  ...DEFAULT_MANDALA_OVERLAY_CONFIG,
-  enabled: true,
-  mode: "guide",
-  // Shared with the Shape Matrix hero floor so the live trail remains the
-  // brightest read while it runs directly over the mandala path, and the
-  // still floor → live guide handoff changes nothing on screen.
-  opacity: MANDALA_GUIDE_FLOOR_OPACITY,
-};
-
-/**
- * Context shared across all registry effect dispatches within a single frame.
- */
-interface EffectDispatchContext {
-  tipMap: TipEffectMap;
-  sharedTips: PropTipData[];
-  params: RenderFrameParams;
-  currentTime: number;
-  renderedTransforms:
-    | {
-        left: RenderedPropTransform | null;
-        right: RenderedPropTransform | null;
-      }
-    | undefined;
-  /** Live prop sprite images — echo ghosts these at past poses. */
-  propImages:
-    | { left: HTMLImageElement | null; right: HTMLImageElement | null }
-    | undefined;
-  loopDetectedThisFrame: boolean;
-  isSeamlesslyLoopable: boolean;
-}
-
-/**
- * Descriptor for a single registry-driven effect.
- * Each entry defines how to get the renderer, build the tip input,
- * and invoke the renderer's renderFrame method.
- */
-type EffectRenderer = {
-  isInitialized(): boolean;
-  clear(): void;
-  renderFrame: (...args: unknown[]) => void;
-};
-
-interface EffectDispatchEntry {
-  effect: EffectType;
-  configKey: keyof RenderFrameParams;
-  getRenderer: (loop: AnimationRenderLoop) => EffectRenderer | null;
-  needsDt: boolean;
-  resetTimeOnInactive: boolean;
-  buildInput: (ctx: EffectDispatchContext, dt: number) => unknown;
-  render: (
-    renderer: EffectRenderer,
-    config: unknown,
-    input: unknown,
-    dt: number,
-    ctx: EffectDispatchContext
-  ) => void;
-}
 
 export class AnimationRenderLoop {
   private renderer: AnimationRenderer | null = null;
@@ -244,10 +81,7 @@ export class AnimationRenderLoop {
   private ledSampler: LedSampler | null = null;
   private onEffectError: ((effectName: string, error: Error) => void) | null =
     null;
-  private mandalaOverlay: MandalaOverlayCanvas | null = null;
-  private readonly mandalaPathPreparer = new MandalaPathPreparer();
-  private previousMandalaPaths: ReturnType<MandalaPathPreparer["prepare"]> =
-    null;
+  private readonly mandalaGuide = new MandalaGuidePainter();
   /**
    * Registry-driven renderer map. Keyed by EffectType id.
    * Populated/updated via initialize() and updateConfig().
@@ -329,28 +163,8 @@ export class AnimationRenderLoop {
   // Track 2D overlay suppression state to clear canvases on transition
   private wasSuppressed: boolean = false;
 
-  // Frame drop diagnostics - logs slow frames to console for debugging.
-  // Disabled by default. Enable via browser console: window.__TKA_FRAME_DROP_LOG = true
-  private frameDropLoggingEnabled = false;
-  private static readonly FRAME_DROP_THRESHOLD_MS = 20; // ~50fps - anything below 60fps
+  private readonly frameDropDiagnostics = new FrameDropDiagnostics();
   private lastFrameTime = 0; // Track RAF-to-RAF gap (true frame duration including browser overhead)
-  private lastFrameDropLogTime = 0; // Rate-limit logs to avoid feedback loop with console recording extensions
-  private static readonly FRAME_DROP_LOG_COOLDOWN_MS = 2000; // Max 1 log per 2 seconds
-  private framesRenderedSinceStart = 0; // Warm-up grace period - skip frame drop logging for first N frames
-  private static readonly WARMUP_FRAMES = 10; // First 10 frames always have high RAF gaps
-
-  // Rolling FPS summary - logs once per second while playing so you can see
-  // average FPS + min/max frame time + frame count without spamming per-frame.
-  // Enabled by default; gate with window.__TKA_FPS_LOG = false to silence.
-  private fpsWindowStart = 0; // performance.now() at window open
-  private fpsWindowFrames = 0; // frames rendered in current window
-  private fpsWindowMinFrameMs = Infinity;
-  private fpsWindowMaxFrameMs = 0;
-  private fpsWindowMaxRenderMs = 0; // slowest render() call this window
-  private fpsWindowRenderMsSum = 0; // sum of render() times this window
-  private fpsWindowDrops = 0; // frames this window that breached budget
-  private fpsWindowLongTaskMs = 0; // total longtask ms attributed to window (read from module singleton)
-  private longTaskSubscriberDispose: (() => void) | null = null;
 
   // Idle auto-stop: after N consecutive idle frames (not playing, no needsRender, no
   // effects active), stop the RAF loop. Prevents 16+ arrange grid cells from each
@@ -380,15 +194,14 @@ export class AnimationRenderLoop {
     this.fireTipTracker = config.fireTipTracker ?? null;
     this.ledSampler = config.ledSampler ?? null;
     this.onEffectError = config.onEffectError ?? null;
-    this.mandalaOverlay = config.mandalaOverlay ?? null;
     // The lifecycle manager creates the overlay lazily, and the visibility
     // subscription that creates it fires before the resizer exists, so the
     // overlay may arrive at its 500px fallback square. The frame this loop is
     // handed is the real one; the overlay follows it from the first frame,
     // not only from the first resize.
-    this.mandalaOverlay?.resize(
-      this.canvasFrame.width,
-      this.canvasFrame.height
+    this.mandalaGuide.setOverlay(
+      config.mandalaOverlay ?? null,
+      this.canvasFrame
     );
     this.previousLeftTrailPropType = undefined;
     this.previousRightTrailPropType = undefined;
@@ -402,15 +215,7 @@ export class AnimationRenderLoop {
       }
     }
 
-    // Subscribe to the module-singleton longtask observer so the FPS summary
-    // can attribute main-thread stalls to the window in which they occurred.
-    // One observer serves all AnimationRenderLoop instances - without the
-    // singleton, N loops produced N duplicate log lines per longtask.
-    if (!this.longTaskSubscriberDispose) {
-      this.longTaskSubscriberDispose = subscribeToLongTasks((durationMs) => {
-        this.fpsWindowLongTaskMs += durationMs;
-      });
-    }
+    this.frameDropDiagnostics.attachLongTaskObserver();
   }
 
   updateConfig(config: Partial<RenderLoopConfig>): void {
@@ -428,9 +233,7 @@ export class AnimationRenderLoop {
         this.canvasSize = frame.size;
         this.canvasFrame = frame;
         this.offset = frameOffset(frame);
-        this.mandalaOverlay?.resize(frame.width, frame.height);
-        this.mandalaPathPreparer.clearCache();
-        this.previousMandalaPaths = null;
+        this.mandalaGuide.resize(frame);
       }
     }
     if (config.frameBudgetMonitor !== undefined)
@@ -442,14 +245,9 @@ export class AnimationRenderLoop {
     if (config.onEffectError !== undefined)
       this.onEffectError = config.onEffectError ?? null;
     if (config.mandalaOverlay !== undefined) {
-      this.mandalaOverlay = config.mandalaOverlay;
       // A newly enabled guide must match the already-measured prop canvas.
-      this.mandalaOverlay?.resize(
-        this.canvasFrame.width,
-        this.canvasFrame.height
-      );
-      this.mandalaPathPreparer.clearCache();
-      this.previousMandalaPaths = null;
+      this.mandalaGuide.setOverlay(config.mandalaOverlay, this.canvasFrame);
+      this.mandalaGuide.forgetPreparedPaths();
     }
     // Merge renderer additions/removals from the registry record.
     if (config.renderers !== undefined) {
@@ -471,7 +269,7 @@ export class AnimationRenderLoop {
   start(getFrameParams: () => RenderFrameParams): void {
     if (this.externallyDriven) return;
     this.getFrameParamsCallback = getFrameParams;
-    this.framesRenderedSinceStart = 0;
+    this.frameDropDiagnostics.resetWarmup();
     if (!this.gateAllows()) return;
     if (this.rafId === null && this.renderer) {
       this.rafId = requestAnimationFrame(this.renderLoop);
@@ -534,7 +332,7 @@ export class AnimationRenderLoop {
     // nothing else is "active work", or it reveals a stale composite.
     this.needsRender = true;
     this.consecutiveIdleFrames = 0;
-    this.framesRenderedSinceStart = 0;
+    this.frameDropDiagnostics.resetWarmup();
     this.rafId = requestAnimationFrame(this.renderLoop);
   }
 
@@ -551,7 +349,7 @@ export class AnimationRenderLoop {
     this.lastTrailSettingsKey = null;
     this.loopStartTime = 0;
     this.effectLastFrameTime.clear();
-    this.fpsWindowStart = 0;
+    this.frameDropDiagnostics.resetWindow();
   }
 
   /** See IAnimationRenderLoop.setExternallyDriven. Disables the rAF loop for
@@ -581,8 +379,8 @@ export class AnimationRenderLoop {
 
   resetRunHistory(): void {
     this.forgetLoopTracking();
-    for (const entry of this.effectDispatchRegistry) {
-      const renderer = entry.getRenderer(this);
+    for (const entry of EFFECT_DISPATCH_REGISTRY) {
+      const renderer = entry.getRenderer(this.renderers);
       if (renderer?.isInitialized()) renderer.clear();
     }
   }
@@ -612,7 +410,7 @@ export class AnimationRenderLoop {
     // Off screen or hidden tab: remember the request, draw it on resume.
     if (!this.gateAllows()) return;
     if (this.rafId === null && this.renderer) {
-      this.framesRenderedSinceStart = 0; // Reset warm-up on loop restart
+      this.frameDropDiagnostics.resetWarmup(); // Reset warm-up on loop restart
       this.rafId = requestAnimationFrame(this.renderLoop);
     }
   }
@@ -655,7 +453,7 @@ export class AnimationRenderLoop {
       fireDisabledByError: this.fireDisabledByError,
       ledDisabledByError: this.ledDisabledByError,
       consecutiveIdleFrames: this.consecutiveIdleFrames,
-      framesRenderedSinceStart: this.framesRenderedSinceStart,
+      framesRenderedSinceStart: this.frameDropDiagnostics.framesRendered,
       canvasSize: this.canvasSize,
       fireRendererInitialized: fireRenderer?.isInitialized() ?? false,
       charcoalRendererInitialized: charcoalRenderer?.isInitialized() ?? false,
@@ -677,8 +475,7 @@ export class AnimationRenderLoop {
     this.unsubscribeGate?.();
     this.unsubscribeGate = null;
     this.activityGate = null;
-    this.longTaskSubscriberDispose?.();
-    this.longTaskSubscriberDispose = null;
+    this.frameDropDiagnostics.detachLongTaskObserver();
     this.renderer = null;
     this.TrailCapturer = null;
     this.pathCache = null;
@@ -686,9 +483,7 @@ export class AnimationRenderLoop {
     this.getFrameParamsCallback = null;
     this.fireTipTracker = null;
     this.ledSampler = null;
-    this.mandalaOverlay = null;
-    this.mandalaPathPreparer.clearCache();
-    this.previousMandalaPaths = null;
+    this.mandalaGuide.dispose();
     this.previousLeftTrailPropType = undefined;
     this.previousRightTrailPropType = undefined;
     // Dispose all renderers in the registry map.
@@ -702,482 +497,6 @@ export class AnimationRenderLoop {
     this.reusableRightTrailPoints.length = 0;
     this.reusableAdditionalLayerTrails.length = 0;
   }
-
-  // ---------------------------------------------------------------------------
-  // Registry-driven effect dispatch infrastructure
-  // ---------------------------------------------------------------------------
-
-  /**
-   * Build the flat emitter list for the per-tip overlay effects. Unlike
-   * buildFourPosTips (4 fixed slots, base props only), this carries every
-   * matching tip including tunnel kaleidoscope layers (propIndex >= 2), each
-   * tagged with its end (for tracking-mode) and its spectrum-gated color (for
-   * prop-colored effects). Color gating mirrors the trail overlay: base props
-   * use the trail colors; layers use the spectrum fan when rainbow is on, base
-   * colors when off.
-   */
-  private static buildEmitterTips(
-    tips: PropTipData[],
-    tipMap: TipEffectMap,
-    effect: EffectType,
-    params: RenderFrameParams
-  ): EmitterTip[] {
-    const layerCount = params.props.additionalLayers.length;
-    const spectrum =
-      (params.props.tunnelSpectrum ?? true) && !params.props.tunnelPropColors;
-    const baseLeft =
-      params.props.tunnelPropColors?.left ?? params.trailSettings.leftColor;
-    const baseRight =
-      params.props.tunnelPropColors?.right ?? params.trailSettings.rightColor;
-    const out: EmitterTip[] = [];
-    for (const t of tips) {
-      if (resolveEffect(t.propIndex, t.tipIndex, tipMap, {}) !== effect)
-        continue;
-      out.push({
-        x: t.x,
-        y: t.y,
-        propIndex: t.propIndex,
-        tipIndex: t.tipIndex,
-        end: t.tipIndex === 0 ? "A" : "B",
-        color: AnimationRenderLoop.resolveTipColor(
-          t.propIndex,
-          layerCount,
-          spectrum,
-          baseLeft,
-          baseRight,
-          params.props.tunnelSelectedLayer ?? null,
-          params.props.tunnelPropColors
-        ),
-      });
-    }
-    return out;
-  }
-
-  /**
-   * Build array-of-tips input for bloom and pulse (effects that need
-   * {x, y, propIndex, tipIndex, leftColor, rightColor}[] with center fallback).
-   */
-  /**
-   * Resolve a tip's prop color the way the trail overlay does: the base pair
-   * (propIndex 0/1) uses the trail colors; overlaid tunnel layers (propIndex >= 2)
-   * fan across the spectrum when the rainbow toggle is on, base colors by parity
-   * (even = left family, odd = right) when off. Shared by buildEmitterTips and
-   * buildArrayTips so every per-tip effect — bloom and pulse included —
-   * color-matches the staff it sits on instead of collapsing every copy to red.
-   */
-  private static resolveTipColor(
-    propIndex: number,
-    layerCount: number,
-    spectrum: boolean,
-    baseLeft: string,
-    baseRight: string,
-    selectedLayer: TunnelLayerSelection = null,
-    colors?: TunnelPropColorPair | null
-  ): string {
-    const isLeft = propIndex % 2 === 0;
-    const exact = colors
-      ? tunnelPerformerPair(colors, Math.floor(propIndex / 2))
-      : null;
-    const raw = exact
-      ? isLeft
-        ? exact.left
-        : exact.right
-      : propIndex <= 1
-        ? isLeft
-          ? baseLeft
-          : baseRight
-        : spectrum
-          ? tunnelPropColor(propIndex, layerCount).hex
-          : isLeft
-            ? baseLeft
-            : baseRight;
-    // Spotlight: dim the tip's color when another performer is selected.
-    return dimHex(
-      raw,
-      spotlightFactor(selectedLayer, Math.floor(propIndex / 2))
-    );
-  }
-
-  private static buildArrayTips(
-    tips: PropTipData[],
-    tipMap: TipEffectMap,
-    effect: EffectType,
-    params: RenderFrameParams,
-    renderedTransforms:
-      | {
-          left: RenderedPropTransform | null;
-          right: RenderedPropTransform | null;
-        }
-      | undefined
-  ): {
-    x: number;
-    y: number;
-    propIndex: number;
-    tipIndex: number;
-    /** Which end of the prop (0 or 1); absent on center fallbacks. */
-    end?: number;
-    color: string;
-    velocityX?: number;
-    velocityY?: number;
-  }[] {
-    const layerCount = params.props.additionalLayers.length;
-    const spectrum =
-      (params.props.tunnelSpectrum ?? true) && !params.props.tunnelPropColors;
-    const baseLeft =
-      params.props.tunnelPropColors?.left ?? params.trailSettings.leftColor;
-    const baseRight =
-      params.props.tunnelPropColors?.right ?? params.trailSettings.rightColor;
-    const result: {
-      x: number;
-      y: number;
-      propIndex: number;
-      tipIndex: number;
-      end?: number;
-      color: string;
-      velocityX?: number;
-      velocityY?: number;
-    }[] = [];
-    let globalTipIndex = 0;
-    for (const t of tips) {
-      if (resolveEffect(t.propIndex, t.tipIndex, tipMap, {}) !== effect)
-        continue;
-      result.push({
-        x: t.x,
-        y: t.y,
-        propIndex: t.propIndex,
-        tipIndex: globalTipIndex++,
-        end: t.tipIndex,
-        velocityX: t.velocityX,
-        velocityY: t.velocityY,
-        color: AnimationRenderLoop.resolveTipColor(
-          t.propIndex,
-          layerCount,
-          spectrum,
-          baseLeft,
-          baseRight,
-          params.props.tunnelSelectedLayer ?? null,
-          params.props.tunnelPropColors
-        ),
-      });
-    }
-    // Center fallback for props with no tip-tracker output (base pair only).
-    const leftTransform = renderedTransforms?.left;
-    if (
-      params.props.leftProp &&
-      leftTransform &&
-      resolveEffect(0, 0, tipMap, {}) === effect &&
-      !result.some((t) => t.propIndex === 0)
-    ) {
-      result.push({
-        x: leftTransform.centerX,
-        y: leftTransform.centerY,
-        propIndex: 0,
-        tipIndex: globalTipIndex++,
-        color: baseLeft,
-      });
-    }
-    const rightTransform = renderedTransforms?.right;
-    if (
-      params.props.rightProp &&
-      rightTransform &&
-      resolveEffect(1, 0, tipMap, {}) === effect &&
-      !result.some((t) => t.propIndex === 1)
-    ) {
-      result.push({
-        x: rightTransform.centerX,
-        y: rightTransform.centerY,
-        propIndex: 1,
-        tipIndex: globalTipIndex++,
-        color: baseRight,
-      });
-    }
-    return result;
-  }
-
-  /** Dispatch registry — one entry per simple overlay effect. */
-  private readonly effectDispatchRegistry: readonly EffectDispatchEntry[] = [
-    // --- Zap: 4-pos, dt ---
-    {
-      effect: "zap",
-      configKey: "zapConfig",
-      getRenderer: (l) =>
-        (l.renderers.get("zap") ?? null) as EffectRenderer | null,
-      needsDt: true,
-      resetTimeOnInactive: false,
-      buildInput: (ctx) =>
-        AnimationRenderLoop.buildEmitterTips(
-          ctx.sharedTips,
-          ctx.tipMap,
-          "zap",
-          ctx.params
-        ),
-      render: (r, cfg, inp, dt) => r.renderFrame(cfg, inp, dt),
-    },
-    // --- Sparkles: 4-pos, dt ---
-    {
-      effect: "sparkles",
-      configKey: "sparklesConfig",
-      getRenderer: (l) =>
-        (l.renderers.get("sparkles") ?? null) as EffectRenderer | null,
-      needsDt: true,
-      resetTimeOnInactive: false,
-      buildInput: (ctx) =>
-        AnimationRenderLoop.buildEmitterTips(
-          ctx.sharedTips,
-          ctx.tipMap,
-          "sparkles",
-          ctx.params
-        ),
-      render: (r, cfg, inp, dt) => r.renderFrame(cfg, inp, dt),
-    },
-    // --- Ghost: stroboscopic prop mandala — emitters + playback phase + seq epoch ---
-    {
-      effect: "ghost",
-      configKey: "ghostConfig",
-      getRenderer: (l) =>
-        (l.renderers.get("ghost") ?? null) as EffectRenderer | null,
-      needsDt: true,
-      resetTimeOnInactive: false,
-      buildInput: (ctx) => {
-        // Ghost ghosts the REAL prop sprite at past poses (onion-skin). Assemble
-        // each live prop's blit transform from the already-computed prop
-        // transforms (center/angle/scale) + dimensions + the sprite image.
-        const rt = ctx.renderedTransforms;
-        const imgs = ctx.propImages;
-        const p = ctx.params;
-        const props: Array<{
-          id: number;
-          image: CanvasImageSource;
-          centerX: number;
-          centerY: number;
-          angle: number;
-          width: number;
-          height: number;
-          flipped: boolean;
-        }> = [];
-        if (rt?.left && imgs?.left && p.props.leftProp) {
-          props.push({
-            id: 0,
-            image: imgs.left,
-            centerX: rt.left.centerX,
-            centerY: rt.left.centerY,
-            angle: rt.left.angle,
-            width: p.props.leftPropDimensions.width * rt.left.scaleFactor,
-            height: p.props.leftPropDimensions.height * rt.left.scaleFactor,
-            flipped: p.leftPropFlipped ?? false,
-          });
-        }
-        if (rt?.right && imgs?.right && p.props.rightProp) {
-          props.push({
-            id: 1,
-            image: imgs.right,
-            centerX: rt.right.centerX,
-            centerY: rt.right.centerY,
-            angle: rt.right.angle,
-            width: p.props.rightPropDimensions.width * rt.right.scaleFactor,
-            height: p.props.rightPropDimensions.height * rt.right.scaleFactor,
-            flipped: p.rightPropFlipped ?? false,
-          });
-        }
-        // Wipe the exposure when the sequence changes; hold it across loop wraps.
-        return {
-          props,
-          currentStep: p.currentStep,
-          epoch: p.sequenceContentHash ?? "",
-        };
-      },
-      render: (r, cfg, inp, dt) => r.renderFrame(cfg, inp, dt),
-    },
-    // --- Bloom: array-of-tips, dt ---
-    {
-      effect: "bloom",
-      configKey: "bloomConfig",
-      getRenderer: (l) =>
-        (l.renderers.get("bloom") ?? null) as EffectRenderer | null,
-      needsDt: true,
-      resetTimeOnInactive: false,
-      buildInput: (ctx) =>
-        AnimationRenderLoop.buildArrayTips(
-          ctx.sharedTips,
-          ctx.tipMap,
-          "bloom",
-          ctx.params,
-          ctx.renderedTransforms
-        ),
-      render: (r, cfg, inp, dt) => r.renderFrame(cfg, inp, dt),
-    },
-    // --- Goo: 4-pos, dt, resetTimeOnInactive ---
-    {
-      effect: "goo",
-      configKey: "gooConfig",
-      getRenderer: (l) =>
-        (l.renderers.get("goo") ?? null) as EffectRenderer | null,
-      needsDt: true,
-      resetTimeOnInactive: true,
-      buildInput: (ctx) =>
-        AnimationRenderLoop.buildEmitterTips(
-          ctx.sharedTips,
-          ctx.tipMap,
-          "goo",
-          ctx.params
-        ),
-      render: (r, cfg, inp, dt) => r.renderFrame(cfg, inp, dt),
-    },
-    // --- Bubbles: 4-pos, dt, resetTimeOnInactive ---
-    {
-      effect: "bubbles",
-      configKey: "bubblesConfig",
-      getRenderer: (l) =>
-        (l.renderers.get("bubbles") ?? null) as EffectRenderer | null,
-      needsDt: true,
-      resetTimeOnInactive: true,
-      buildInput: (ctx) =>
-        AnimationRenderLoop.buildEmitterTips(
-          ctx.sharedTips,
-          ctx.tipMap,
-          "bubbles",
-          ctx.params
-        ),
-      render: (r, cfg, inp, dt) => r.renderFrame(cfg, inp, dt),
-    },
-    // --- Petals: 4-pos, dt, resetTimeOnInactive ---
-    {
-      effect: "petals",
-      configKey: "petalsConfig",
-      getRenderer: (l) =>
-        (l.renderers.get("petals") ?? null) as EffectRenderer | null,
-      needsDt: true,
-      resetTimeOnInactive: true,
-      buildInput: (ctx) =>
-        AnimationRenderLoop.buildEmitterTips(
-          ctx.sharedTips,
-          ctx.tipMap,
-          "petals",
-          ctx.params
-        ),
-      render: (r, cfg, inp, dt) => r.renderFrame(cfg, inp, dt),
-    },
-    // --- Smoke: 4-pos, dt, resetTimeOnInactive ---
-    {
-      effect: "smoke",
-      configKey: "smokeConfig",
-      getRenderer: (l) =>
-        (l.renderers.get("smoke") ?? null) as EffectRenderer | null,
-      needsDt: true,
-      resetTimeOnInactive: true,
-      buildInput: (ctx) =>
-        AnimationRenderLoop.buildEmitterTips(
-          ctx.sharedTips,
-          ctx.tipMap,
-          "smoke",
-          ctx.params
-        ),
-      render: (r, cfg, inp, dt) => r.renderFrame(cfg, inp, dt),
-    },
-    // --- Ink: 4-pos, dt, loop boundary continuity ---
-    {
-      effect: "ink",
-      configKey: "inkConfig",
-      getRenderer: (l) =>
-        (l.renderers.get("ink") ?? null) as EffectRenderer | null,
-      needsDt: true,
-      resetTimeOnInactive: true,
-      buildInput: (ctx) =>
-        AnimationRenderLoop.buildEmitterTips(
-          ctx.sharedTips,
-          ctx.tipMap,
-          "ink",
-          ctx.params
-        ),
-      render: (r, cfg, inp, dt, ctx) =>
-        r.renderFrame(cfg, inp, dt, {
-          loopDetected: ctx.loopDetectedThisFrame,
-          isSeamlesslyLoopable: ctx.isSeamlesslyLoopable,
-        }),
-    },
-    // --- Frost: 4-pos, dt, resetTimeOnInactive ---
-    {
-      effect: "frost",
-      configKey: "frostConfig",
-      getRenderer: (l) =>
-        (l.renderers.get("frost") ?? null) as EffectRenderer | null,
-      needsDt: true,
-      resetTimeOnInactive: true,
-      buildInput: (ctx) =>
-        AnimationRenderLoop.buildEmitterTips(
-          ctx.sharedTips,
-          ctx.tipMap,
-          "frost",
-          ctx.params
-        ),
-      render: (r, cfg, inp, dt) => r.renderFrame(cfg, inp, dt),
-    },
-    // --- Silk: 4-pos, dt, resetTimeOnInactive, loopDetected arg ---
-    {
-      effect: "silk",
-      configKey: "silkConfig",
-      getRenderer: (l) =>
-        (l.renderers.get("silk") ?? null) as EffectRenderer | null,
-      needsDt: true,
-      resetTimeOnInactive: true,
-      buildInput: (ctx) =>
-        AnimationRenderLoop.buildEmitterTips(
-          ctx.sharedTips,
-          ctx.tipMap,
-          "silk",
-          ctx.params
-        ),
-      render: (r, cfg, inp, dt, ctx) =>
-        r.renderFrame(
-          cfg,
-          inp,
-          dt,
-          ctx.loopDetectedThisFrame && ctx.isSeamlesslyLoopable
-        ),
-    },
-    // --- Animal: 4-pos, dt, resetTimeOnInactive, loopDetected arg (mirrors silk) ---
-    {
-      effect: "animal",
-      configKey: "animalConfig",
-      getRenderer: (l) =>
-        (l.renderers.get("animal") ?? null) as EffectRenderer | null,
-      needsDt: true,
-      resetTimeOnInactive: true,
-      buildInput: (ctx) =>
-        AnimationRenderLoop.buildEmitterTips(
-          ctx.sharedTips,
-          ctx.tipMap,
-          "animal",
-          ctx.params
-        ),
-      render: (r, cfg, inp, dt, ctx) =>
-        r.renderFrame(
-          cfg,
-          inp,
-          dt,
-          ctx.loopDetectedThisFrame && ctx.isSeamlesslyLoopable
-        ),
-    },
-    // --- Pulse: array-of-tips, dt, resetTimeOnInactive, currentStep arg ---
-    {
-      effect: "pulse",
-      configKey: "pulseConfig",
-      getRenderer: (l) =>
-        (l.renderers.get("pulse") ?? null) as EffectRenderer | null,
-      needsDt: true,
-      resetTimeOnInactive: true,
-      buildInput: (ctx) =>
-        AnimationRenderLoop.buildArrayTips(
-          ctx.sharedTips,
-          ctx.tipMap,
-          "pulse",
-          ctx.params,
-          ctx.renderedTransforms
-        ),
-      render: (r, cfg, inp, dt, ctx) =>
-        r.renderFrame(cfg, inp, ctx.params.currentStep ?? 0, dt),
-    },
-  ];
 
   /**
    * Dispatch a single effect from the registry. Handles:
@@ -1253,7 +572,7 @@ export class AnimationRenderLoop {
     entry: EffectDispatchEntry,
     ctx: EffectDispatchContext
   ): void {
-    const renderer = entry.getRenderer(this);
+    const renderer = entry.getRenderer(this.renderers);
     if (!renderer?.isInitialized()) return;
 
     const config = ctx.params[entry.configKey];
@@ -1375,8 +694,7 @@ export class AnimationRenderLoop {
       hasTrailTips(params.tipEffectMap) && trailSettings.mode !== TrailMode.OFF;
     const backgroundTransitioning =
       this.renderer?.isBackgroundTransitioning() ?? false;
-    const mandalaTransitioning =
-      this.mandalaOverlay?.isTransitioning() ?? false;
+    const mandalaTransitioning = this.mandalaGuide.isTransitioning();
 
     // Build a per-effect active map using the exact same gating semantics as before:
     //   fire:     params.fireConfig != null && renderer.isInitialized()
@@ -1386,15 +704,15 @@ export class AnimationRenderLoop {
     //   all 12 canvas2d effects: params.{id}Config != null && renderer.isInitialized()
     const activeByEffect = new Map<EffectType, boolean>();
     const paramsAsRecord = params as unknown as Record<string, unknown>;
-    for (const entry of this.effectDispatchRegistry) {
-      const renderer = entry.getRenderer(this);
+    for (const entry of EFFECT_DISPATCH_REGISTRY) {
+      const renderer = entry.getRenderer(this.renderers);
       const cfgPresent = paramsAsRecord[entry.configKey] != null;
       activeByEffect.set(
         entry.effect,
         cfgPresent && renderer?.isInitialized() === true
       );
     }
-    // Special gates for fire, charcoal, led (not in effectDispatchRegistry)
+    // Special gates for fire, charcoal, led (not in EFFECT_DISPATCH_REGISTRY)
     const fireActive =
       params.fireConfig != null &&
       this.renderers.get("fire")?.isInitialized() === true;
@@ -1622,13 +940,14 @@ export class AnimationRenderLoop {
     const effectiveRightMotionVisible =
       visibility.rightMotionVisible && props.rightProp !== null;
 
-    this.renderMandalaGuide(
+    this.mandalaGuide.render(
       params,
       dtSeconds,
       currentTime,
       effectiveLeftMotionVisible,
       effectiveRightMotionVisible,
-      loadedPropRenderKeys
+      loadedPropRenderKeys,
+      this.canvasSize
     );
 
     // Build additional layer render data
@@ -1689,8 +1008,8 @@ export class AnimationRenderLoop {
         }
       }
       // Clear all registry effect overlays (Canvas2D)
-      for (const entry of this.effectDispatchRegistry) {
-        const renderer = entry.getRenderer(this);
+      for (const entry of EFFECT_DISPATCH_REGISTRY) {
+        const renderer = entry.getRenderer(this.renderers);
         if (renderer?.isInitialized()) renderer.clear();
       }
     } else if (!params.suppress2DOverlays && this.wasSuppressed) {
@@ -1901,8 +1220,8 @@ export class AnimationRenderLoop {
         activeCharcoalRenderer);
     const hasAnyRegistryOverlay =
       this.fireTipTracker &&
-      this.effectDispatchRegistry.some((entry) => {
-        const renderer = entry.getRenderer(this);
+      EFFECT_DISPATCH_REGISTRY.some((entry) => {
+        const renderer = entry.getRenderer(this.renderers);
         return (
           renderer?.isInitialized() &&
           (params as unknown as Record<string, unknown>)[entry.configKey] !=
@@ -2098,7 +1417,7 @@ export class AnimationRenderLoop {
         loopDetectedThisFrame: this.loopDetectedThisFrame,
         isSeamlesslyLoopable: params.isSeamlesslyLoopable ?? false,
       };
-      for (const entry of this.effectDispatchRegistry) {
+      for (const entry of EFFECT_DISPATCH_REGISTRY) {
         this.dispatchEffect(entry, ctx);
       }
     }
@@ -2282,232 +1601,22 @@ export class AnimationRenderLoop {
       }
     }
 
-    // Frame drop diagnostics: log when frames exceed budget
-    // Rate-limited to prevent feedback loops with console recording extensions (rrweb, Sentry, etc.)
-    // Skip during warm-up (first N frames have high RAF gaps from browser initialization)
-    this.framesRenderedSinceStart++;
-    const isWarmingUp =
-      this.framesRenderedSinceStart <= AnimationRenderLoop.WARMUP_FRAMES;
-    const isFirstFrameAfterRestart = rafGap > 1000;
-    const logEnabled =
-      this.frameDropLoggingEnabled ||
-      (typeof window !== "undefined" &&
-        (window as { __TKA_FRAME_DROP_LOG?: boolean }).__TKA_FRAME_DROP_LOG ===
-          true);
-    const droppedThisFrame =
-      params.isPlaying &&
-      !isWarmingUp &&
-      !isFirstFrameAfterRestart &&
-      (renderTime > AnimationRenderLoop.FRAME_DROP_THRESHOLD_MS ||
-        rafGap > 100);
-    if (logEnabled && droppedThisFrame) {
-      const now = performance.now();
-      if (
-        now - this.lastFrameDropLogTime >
-        AnimationRenderLoop.FRAME_DROP_LOG_COOLDOWN_MS
-      ) {
-        this.lastFrameDropLogTime = now;
-        const fireState = this.renderers.get("fire")?.isInitialized()
-          ? params.fireConfig != null
-            ? "active"
-            : "idle"
-          : "off";
-        const trailCount =
-          this.reusableLeftTrailPoints.length +
-          this.reusableRightTrailPoints.length;
-        console.warn(
-          `[FrameDrop] render=${renderTime.toFixed(1)}ms rafGap=${rafGap.toFixed(1)}ms ` +
-            `step=${params.currentStep.toFixed(2)} fire=${fireState} ` +
-            `trails=${trailCount} tier=${this.previousQualityTier ?? "?"} ` +
-            `loop=${this.loopDetectedThisFrame ? "YES" : "no"}`
-        );
-      }
-    }
-
-    // Rolling 1-second FPS summary - complements the per-drop log by telling
-    // you the average even when individual drops fall below the 2s cooldown.
-    // Opt-in diagnostic: enable with window.__TKA_FPS_LOG = true
-    const fpsLogEnabled =
-      typeof window !== "undefined" &&
-      (window as { __TKA_FPS_LOG?: boolean }).__TKA_FPS_LOG === true;
-    if (
-      fpsLogEnabled &&
-      params.isPlaying &&
-      !isWarmingUp &&
-      !isFirstFrameAfterRestart
-    ) {
-      if (this.fpsWindowStart === 0) {
-        this.fpsWindowStart = currentTime;
-      }
-      this.fpsWindowFrames++;
-      this.fpsWindowRenderMsSum += renderTime;
-      if (rafGap > 0) {
-        if (rafGap < this.fpsWindowMinFrameMs)
-          this.fpsWindowMinFrameMs = rafGap;
-        if (rafGap > this.fpsWindowMaxFrameMs)
-          this.fpsWindowMaxFrameMs = rafGap;
-      }
-      if (renderTime > this.fpsWindowMaxRenderMs)
-        this.fpsWindowMaxRenderMs = renderTime;
-      if (droppedThisFrame) this.fpsWindowDrops++;
-
-      const elapsed = currentTime - this.fpsWindowStart;
-      if (elapsed >= 1000) {
-        const avgFps = (this.fpsWindowFrames / elapsed) * 1000;
-        const avgRender = this.fpsWindowRenderMsSum / this.fpsWindowFrames;
-        const fireState = this.renderers.get("fire")?.isInitialized()
-          ? params.fireConfig != null
-            ? "active"
-            : "idle"
-          : "off";
-        const trailsOn = hasTrailTips(params.tipEffectMap);
-        const trailCount =
-          this.reusableLeftTrailPoints.length +
-          this.reusableRightTrailPoints.length;
-        this.fpsWindowStart = currentTime;
-        this.fpsWindowFrames = 0;
-        this.fpsWindowMinFrameMs = Infinity;
-        this.fpsWindowMaxFrameMs = 0;
-        this.fpsWindowMaxRenderMs = 0;
-        this.fpsWindowRenderMsSum = 0;
-        this.fpsWindowDrops = 0;
-        this.fpsWindowLongTaskMs = 0;
-      }
-    } else if (!params.isPlaying) {
-      // Reset window when playback pauses so the next play-session starts clean
-      this.fpsWindowStart = 0;
-      this.fpsWindowFrames = 0;
-      this.fpsWindowMinFrameMs = Infinity;
-      this.fpsWindowMaxFrameMs = 0;
-      this.fpsWindowMaxRenderMs = 0;
-      this.fpsWindowRenderMsSum = 0;
-      this.fpsWindowDrops = 0;
-      this.fpsWindowLongTaskMs = 0;
-    }
-  }
-
-  /**
-   * Paint the complete engine-aligned path guide beneath the scene. Geometry is
-   * cached by sequence, path policy, prop types, and resolved trail endpoints,
-   * so the per-frame path is an identity check after the first preparation.
-   */
-  private guideConfigByStroke: MandalaOverlayConfig = MANDALA_GUIDE_CONFIG;
-
-  /** The guide config, with the post's per-animation line width when set. */
-  private mandalaGuideConfig(params: RenderFrameParams): MandalaOverlayConfig {
-    const strokeWidth =
-      params.mandalaStrokeWidth ?? MANDALA_GUIDE_CONFIG.strokeWidth;
-    if (this.guideConfigByStroke.strokeWidth !== strokeWidth) {
-      this.guideConfigByStroke = { ...MANDALA_GUIDE_CONFIG, strokeWidth };
-    }
-    return this.guideConfigByStroke;
-  }
-
-  private renderMandalaGuide(
-    params: RenderFrameParams,
-    deltaTime: number,
-    currentTime: number,
-    showLeft: boolean,
-    showRight: boolean,
-    renderKeys: { left: string | null; right: string | null } | null
-  ): void {
-    const overlay = this.mandalaOverlay;
-    if (!overlay) return;
-
-    const steps = params.mandalaSteps;
-    if (
-      !params.mandalaVisible ||
-      params.suppress2DOverlays ||
-      !steps ||
-      steps.length === 0 ||
-      (!showLeft && !showRight)
-    ) {
-      overlay.setVisible(false);
-      return;
-    }
-
-    // Joined grids: each hand's figure sits on its own grid, moved exactly as
-    // that hand's props are (sliding with them while the layout changes).
-    const handOffsets = mandalaOffsetsFromHandUnits(params.gridJoinOffsets);
-
-    // A prop type becomes reactive before its replacement texture finishes
-    // loading. Keep the old guide in place during that gap so the mandala and
-    // prop begin their crossfades together once the new artwork is ready.
-    if (params.trailsSuppressedUntilTextureLoad && this.previousMandalaPaths) {
-      overlay.setVisible(true);
-      overlay.renderFrame({
-        preparedPaths: this.previousMandalaPaths,
-        progress: 1,
-        config: this.mandalaGuideConfig(params),
-        deltaTime,
-        currentTime,
-        canvasSize: this.canvasSize,
+    this.frameDropDiagnostics.recordFrame(
+      { currentTime, rafGap, renderTime, isPlaying: params.isPlaying },
+      () => ({
         currentStep: params.currentStep,
-        handOffsets,
-      });
-      return;
-    }
-
-    const show: MandalaHandVisibility =
-      showLeft && showRight ? "both" : showLeft ? "left" : "right";
-    const preparedPaths = this.mandalaPathPreparer.prepare(
-      steps,
-      this.canvasSize,
-      {
-        show,
-        leftPropType: params.leftPropType,
-        rightPropType: params.rightPropType,
-        leftPropRenderKey: renderKeys?.left ?? null,
-        rightPropRenderKey: renderKeys?.right ?? null,
-        leftPropFlipped: params.leftPropFlipped ?? false,
-        rightPropFlipped: params.rightPropFlipped ?? false,
-        trackingMode: params.trailSettings.trackingMode,
-        pathOptions: params.mandalaPathOptions,
-        leftColor:
-          params.primaryPropColors?.left ?? params.trailSettings.leftColor,
-        rightColor:
-          params.primaryPropColors?.right ?? params.trailSettings.rightColor,
-        sequenceKey: params.sequenceContentHash,
-      }
+        fireState: this.renderers.get("fire")?.isInitialized()
+          ? params.fireConfig != null
+            ? "active"
+            : "idle"
+          : "off",
+        trailCount:
+          this.reusableLeftTrailPoints.length +
+          this.reusableRightTrailPoints.length,
+        tier: this.previousQualityTier ?? "?",
+        loopDetected: this.loopDetectedThisFrame,
+      })
     );
-
-    if (!preparedPaths) {
-      overlay.setVisible(false);
-      return;
-    }
-
-    if (
-      MANDALA_GUIDE_CONFIG.mode === "drawing" &&
-      this.previousMandalaPaths !== preparedPaths
-    ) {
-      overlay.clear();
-    }
-    this.previousMandalaPaths = preparedPaths;
-    overlay.setVisible(true);
-    overlay.renderFrame({
-      preparedPaths,
-      progress: 1,
-      config: this.mandalaGuideConfig(params),
-      deltaTime,
-      currentTime,
-      canvasSize: this.canvasSize,
-      currentStep: params.currentStep,
-      handOffsets,
-    });
-  }
-
-  private static compactByTrailFlag(
-    points: TrailPoint[],
-    tipMap: TipEffectMap
-  ): void {
-    let w = 0;
-    for (let i = 0; i < points.length; i++) {
-      const pt = points[i]!;
-      if (resolveEffect(pt.propIndex, pt.tipIndex, tipMap, {}) === "trails") {
-        points[w++] = pt;
-      }
-    }
-    points.length = w;
   }
 
   private gatherTrailPoints(
@@ -2783,14 +1892,8 @@ export class AnimationRenderLoop {
 
       // Post-filter captured points by per-tip trail flags (allocation-free compact)
       if (hasAnyTrailEntry) {
-        AnimationRenderLoop.compactByTrailFlag(
-          this.reusableLeftTrailPoints,
-          tipMap
-        );
-        AnimationRenderLoop.compactByTrailFlag(
-          this.reusableRightTrailPoints,
-          tipMap
-        );
+        compactByTrailFlag(this.reusableLeftTrailPoints, tipMap);
+        compactByTrailFlag(this.reusableRightTrailPoints, tipMap);
       }
     }
 
