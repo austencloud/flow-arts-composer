@@ -1,15 +1,17 @@
 ---
 status: active
-value: null
-effort: null
-remaining: "Verify one-action prop activation and label behavior for Undo, Save, Clear, Play, Actions, and Share against current Construct UI."
+value: 3
+effort: L
+remaining: "Phases 1-2 and the Phase 3 first-use hint are on main (2ebff4f56d effective-prop-visibility.ts, 6a3e172715 adaptive labels in ButtonPanel/workspace-button-layout.ts, 9012cff465 OptionInteractionHint). Left: Phase 3 pending-hold halo (option-audition-pending still unstyled; needs storyboard approval), Phase 4 guided Build demo (not started), Phase 5 Noah notification after Austen approves copy."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: in-progress
 ---
 # Construct Session Friction Recovery
+
+> **Triage note (2026-11-01):** The 'local, unshipped' wording below is historical. Phase 1 (2ebff4f56d), Phase 2 labels (6a3e172715) and the Phase 3 first-use hint (9012cff465) are on main. The pending-hold halo and Phases 4 and 5 have not started and keep their approval gates.
 
 - **Date:** 2026-08-08
 - **Status:** Phase 1 implemented and verified locally. Phase 2 approved and verified locally. Phase 3's shared preview engine and adaptive first-use interaction hint are implemented; pending-hold feedback remains separately gated. Phases 4 and 5 remain individually gated.
