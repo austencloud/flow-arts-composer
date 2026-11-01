@@ -1,8 +1,8 @@
 ---
 status: active
-value: 5
+value: 4
 effort: M
-remaining: Audit the Director control surface against the Phase 1 Star acceptance, including performer edits, camera presets, saves, and foot planting.
+remaining: "All three deliverables exist: performer edit sink 46dcf56152 (film-director-edit.ts freeze rule), camera presets with approvals bcbbbd28dd, overwrite and restore 7311fc1fd1, foot planting on in FilmDirectorScene.svelte. Remaining: Star acceptance needs a new fixture (Star of Five removed in bb56012675), the D to J sequence pinned with Austen, and the preset screenshot matrix."
 depends_on: 2026-08-25-director-module-design.md
 plan_path: ''
 tags:
@@ -11,11 +11,13 @@ tags:
 - camera
 - performers
 - admin
-last_triaged: '2026-10-07'
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: verification
 ---
 
 # Director Control Surface — Phase 1 Design
+
+> **Triage note (2026-11-01):** The deliverables in this design are implemented (46dcf56152, bcbbbd28dd, 7311fc1fd1). The Star of Five film named in section 9 was removed in bb56012675, so the acceptance run needs a replacement film and Austen's pinned D to J sequence.
 
 **Queue evidence, 2026-10-07:** The live Director workbench mounts `FilmDirectorChannelEditor`; the old “not started” queue claim is stale. The Phase 1 Star acceptance has not been re-proved, so this remains open.
 
