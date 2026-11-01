@@ -189,6 +189,7 @@
 <nav
   data-route-hold="nav"
   class="bottom-navigation"
+  aria-label={t("nav_ui_main_navigation")}
   class:hidden={!isUIVisible}
   class:floating={isDashboard}
   class:entry-animating={isEntryAnimating}

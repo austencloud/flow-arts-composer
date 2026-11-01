@@ -517,7 +517,7 @@
     border: none;
     border-radius: 50%;
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
-    color: rgba(255, 255, 255, 0.25);
+    color: rgba(255, 255, 255, 0.55);
     font-size: 13px;
     cursor: pointer;
     transition:
@@ -528,7 +528,7 @@
 
   .mic-button:hover {
     background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.08));
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.75);
   }
 
   .mic-button:focus-visible {
@@ -536,15 +536,17 @@
     outline-offset: 2px;
   }
 
-  /* Inactive: dimmer, indicates voice is available but not yet activated */
+  /* Inactive: dimmer, indicates voice is available but not yet activated.
+     The floor is 3:1 against the sidebar (WCAG 1.4.11 for UI components), so
+     the three tiers step 0.45 / 0.55 / green rather than 0.15 / 0.25 / green. */
   .mic-button.inactive {
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.02));
-    color: rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.45);
   }
 
   .mic-button.inactive:hover {
     background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.06));
-    color: rgba(255, 255, 255, 0.4);
+    color: rgba(255, 255, 255, 0.65);
   }
 
   /* Command mode: glowing green */

@@ -1,5 +1,6 @@
 <script lang="ts">
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
+  import { FocusTrap } from "#lib/shared/foundation/ui/drawer/focus-trap.js";
 
   type SheetType = "terms" | "privacy";
 
@@ -27,16 +28,37 @@
     terms: "Terms of Service",
     privacy: "Privacy Policy",
   };
+
+  // Focus containment for the sheet. Without it Tab walked from the sheet
+  // into the footer links beneath the backdrop. The shared FocusTrap moves
+  // focus onto the sheet when it opens, wraps Tab inside it, makes the page
+  // behind inert and returns focus to the footer link that opened it.
+  let sheetEl: HTMLDivElement | undefined = $state();
+  const focusTrap = new FocusTrap({
+    focusContainerOnInitial: true,
+    inertExclusions: [],
+  });
+
+  $effect(() => {
+    if (!isOpen || !sheetEl) return;
+    focusTrap.activate(sheetEl);
+    return () => focusTrap.deactivate();
+  });
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
 
 {#if isOpen}
+  <!-- role="presentation" strips the backdrop from the accessibility tree
+       while keeping the dialog inside it exposed; aria-hidden here would
+       have hidden the sheet too. -->
   <!-- svelte-ignore a11y_click_events_have_key_events -->
   <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <div class="sheet-backdrop" onclick={handleBackdropClick}>
+  <div class="sheet-backdrop" role="presentation" onclick={handleBackdropClick}>
     <div
       class="sheet"
+      bind:this={sheetEl}
+      tabindex="-1"
       role="dialog"
       aria-labelledby="sheet-title"
       aria-modal="true"
@@ -397,6 +419,13 @@
     z-index: 1;
   }
 
+  /* The sheet takes initial focus so Tab starts inside it; it is not a
+     control, so it draws no ring. */
+  .sheet:focus,
+  .sheet:focus-visible {
+    outline: none;
+  }
+
   @keyframes slideUp {
     from {
       transform: translateY(100%);
@@ -453,7 +482,8 @@
   }
 
   .last-updated {
-    color: rgba(255, 255, 255, 0.5);
+    /* 0.65 white on #0a0a0f clears 7:1; 0.5 sat near 5:1. */
+    color: rgba(255, 255, 255, 0.65);
     font-size: 0.875rem;
     margin: 0 0 24px 0;
   }

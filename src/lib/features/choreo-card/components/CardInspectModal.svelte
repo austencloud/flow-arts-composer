@@ -17,6 +17,7 @@
   import { initializeSpecialOverrides } from "#lib/shared/pictograph/arrow/positioning/special-override/services/special-override-singleton.js";
   import { initializeDefaultOverrides } from "#lib/shared/pictograph/arrow/positioning/default-override/services/default-override-singleton.js";
   import { getClaudeCodeCopier } from "#lib/shared/browse/get-claude-code-copier.js";
+  import { FocusTrap } from "#lib/shared/foundation/ui/drawer/focus-trap.js";
 
   interface Props {
     sequence?: SequenceData | null;
@@ -210,15 +211,60 @@
       onClose();
     }
   }
+
+  // Focus containment. `aria-modal` alone only tells assistive tech the
+  // dialog is modal; Tab still walked into the gallery behind it. The shared
+  // FocusTrap wraps Tab inside the overlay, marks everything behind it inert
+  // and hands focus back to the card that opened it on close. The trap wraps
+  // the whole overlay rather than the dialog box because the Close button is
+  // positioned outside `.modal-container`; trapping only the box would have
+  // made Close inert.
+  //
+  // The opener is captured at instantiation, before the modal renders, so the
+  // element that opened it is what gets focus back rather than whatever the
+  // trap itself focused.
+  const opener =
+    typeof document !== "undefined"
+      ? (document.activeElement as HTMLElement | null)
+      : null;
+  let overlayEl: HTMLDivElement | undefined = $state();
+  let dialogEl: HTMLDivElement | undefined = $state();
+  // Initial focus lands on the dialog box, not its first button, so opening
+  // the card does not light a focus ring on "Edit in Construct".
+  const focusTrap = new FocusTrap({ inertExclusions: [] });
+
+  // While the pictograph editor is open it owns the keyboard: it mounts as a
+  // sibling of this overlay, so the trap is released for its lifetime and
+  // re-armed, without bouncing focus to the opener, when it closes.
+  $effect(() => {
+    if (!overlayEl || selectedStep) return;
+    const el = overlayEl;
+    focusTrap.updateOptions({
+      returnFocusOnDeactivate: true,
+      initialFocus: dialogEl ?? null,
+    });
+    focusTrap.activate(el, opener);
+    return () => {
+      focusTrap.updateOptions({ returnFocusOnDeactivate: !selectedStep });
+      focusTrap.deactivate();
+    };
+  });
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
 
-<div class="modal-backdrop" role="presentation" onclick={handleBackdropClick}>
+<div
+  class="modal-backdrop"
+  role="presentation"
+  bind:this={overlayEl}
+  onclick={handleBackdropClick}
+>
   <div
     class="modal-container"
     class:live-container={presentation === "live"}
     class:rendered-pair-container={Boolean(backImageUrl)}
+    bind:this={dialogEl}
+    tabindex="-1"
     role="dialog"
     aria-modal="true"
     aria-label={presentation === "live"
@@ -410,6 +456,13 @@
     width: 90vw;
     height: 90vh;
     max-width: 1600px;
+  }
+
+  /* The dialog box takes initial focus so the trap has somewhere to land;
+     the box itself is not a control, so it draws no ring. */
+  .modal-container:focus,
+  .modal-container:focus-visible {
+    outline: none;
   }
 
   .modal-container.live-container {

@@ -278,7 +278,9 @@
 
     <!-- Version footer -->
     <div class="version-footer">
-      <button class="version-link" onclick={handleWhatsNew}>
+      <!-- A menu owns only menu items: this also puts the link on the
+           popover's arrow-key path, which walks button[role="menuitem"]. -->
+      <button class="version-link" role="menuitem" onclick={handleWhatsNew}>
         v{__APP_VERSION__}
         <span class="whats-new-label">{t("nav_ui_what_s_new")}</span>
       </button>
@@ -533,16 +535,16 @@
     border: none;
     padding: 10px 16px 12px;
     font-size: var(--font-size-sm, 14px);
-    color: var(--theme-text-dim, rgba(255, 255, 255, 0.4));
-    opacity: 0.6;
+    /* Secondary, but still a 14px text button. The theme resolves
+       --theme-text-dim to 0.75 white, which clears 7:1 on this surface; the
+       old `opacity: 0.6` on top of it dragged the text to about 4:1. The
+       fallback is raised for the same reason. */
+    color: var(--theme-text-dim, rgba(255, 255, 255, 0.62));
     cursor: pointer;
-    transition:
-      opacity var(--duration-fast) var(--ease-standard),
-      color var(--duration-fast) var(--ease-standard);
+    transition: color var(--duration-fast) var(--ease-standard);
   }
 
   .version-link:hover {
-    opacity: 1;
     color: var(--theme-accent);
   }
 

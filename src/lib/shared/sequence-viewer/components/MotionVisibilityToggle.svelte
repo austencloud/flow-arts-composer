@@ -13,6 +13,7 @@
   import { popIn } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { getViewerVisibilityContext } from "../context/viewer-visibility-context";
+  import { FocusTrap } from "#lib/shared/foundation/ui/drawer/focus-trap.js";
   import MotionColorChips from "#lib/shared/components/MotionColorChips.svelte";
   import PrimaryPropColorSettings from "#lib/shared/settings/components/tabs/prop-type/PrimaryPropColorSettings.svelte";
   import {
@@ -66,6 +67,24 @@
     document.addEventListener("keydown", onKeydown, true);
     return () => document.removeEventListener("keydown", onKeydown, true);
   });
+
+  // The popover is a small modal dialog: focus moves into it when it opens,
+  // Tab cycles its chips and color swatches, and focus returns to the trigger
+  // when it closes. The shared FocusTrap owns that; siblings are not made
+  // inert because the panel is anchored chrome, not a page takeover, and the
+  // transparent backdrop already swallows outside pointer input.
+  let triggerEl: HTMLButtonElement | undefined = $state();
+  let popoverEl: HTMLDivElement | undefined = $state();
+  const focusTrap = new FocusTrap({
+    focusContainerOnInitial: true,
+    setInertOnSiblings: false,
+  });
+
+  $effect(() => {
+    if (!open || !popoverEl) return;
+    focusTrap.activate(popoverEl, triggerEl ?? null);
+    return () => focusTrap.deactivate();
+  });
 </script>
 
 <div class="motion-vis-root">
@@ -73,6 +92,7 @@
     type="button"
     class="motion-vis-btn"
     class:open
+    bind:this={triggerEl}
     onclick={toggleOpen}
     aria-label={t("viewer_ui_motion_visibility")}
     title={t("viewer_ui_motion_visibility")}
@@ -95,17 +115,21 @@
   </button>
 
   {#if open}
+    <!-- Pointer-only dismiss surface. Keyboard users close with Escape or
+         the trigger, so it carries no role and is hidden from assistive tech. -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div
       class="motion-vis-backdrop"
-      role="button"
-      tabindex="-1"
-      aria-label={t("viewer_detail_close_motion_visibility_menu")}
+      aria-hidden="true"
       onpointerdown={onBackdropPointerDown}
     ></div>
     <div
       class="motion-vis-popover"
       role="dialog"
+      aria-modal="true"
       aria-label={t("viewer_ui_motion_visibility")}
+      tabindex="-1"
+      bind:this={popoverEl}
       in:popIn={{ duration: DURATION.fast, start: 0.96 }}
       out:popIn={{ duration: DURATION.instant, start: 0.98 }}
     >
@@ -215,6 +239,13 @@
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: 12px;
     z-index: 20;
+  }
+
+  /* The panel takes initial focus so Tab starts inside it; it is not itself a
+     control, so it draws no ring. */
+  .motion-vis-popover:focus,
+  .motion-vis-popover:focus-visible {
+    outline: none;
   }
 
   /* Popover chips stretch to fill the popover width evenly. */
