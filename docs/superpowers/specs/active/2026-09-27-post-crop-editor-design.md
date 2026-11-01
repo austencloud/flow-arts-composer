@@ -1,16 +1,18 @@
 ---
 status: active
-value: null
-effort: null
+value: 2
+effort: S
 work_state: verification
-remaining: Verify dedicated crop screen geometry, rotate/reset continuity, undo, and viewport behavior against this design.
+remaining: "Crop screen shipped in cdfcec2a70 (groundwork 61e0d86ac6), then 469964ada3 frame-first crop and clip shapes, 99ba032ece crop timeline, 893d813205 takeover; code now in @austencloud/video-editor. Remaining: the spec's browser matrix (seven viewports, 200% zoom, pan, pinch, corner settle, rotate without gaps, Cancel, one-step Done, reduced motion)."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: 2026-11-01
 ---
 
 # Post Studio Crop Editor
+
+> **Triage note (2026-11-01):** Correction: the 2026-10-07 evidence line cites commit `10729480`, which does not exist (that number is the Google Photos support URL id). The crop screen shipped in cdfcec2a70, with 469964ada3 switching to a still picture under a moving frame and 893d813205 stowing the post timeline; the code now ships in `@austencloud/video-editor`. Browser verification is still unrecorded.
 
 **Triage evidence (2026-10-07):** The spec cites the dedicated crop-screen implementation in commit `10729480`. Crop geometry, rotate/reset continuity, undo, and viewport behavior still need a recorded acceptance check.
 
