@@ -1,12 +1,12 @@
 ---
 status: active
-value: null
-effort: null
-remaining: "Verify notification session replay tests, exact user/session routing, and current delivery evidence."
+value: 2
+effort: S
+remaining: "Shipped in f7e9f3bcb8 (src/routes/api/admin/session-replay/+server.ts, SessionReplayPanel.svelte, firebase-functions/src/pulse/returnSessionContext.ts, InboxNotificationItem.svelte routing); remaining is acceptance step 8: a real admin-user-returned notification opening the exact session with the embedded PostHog player, which needs the server PostHog personal key to carry session_recording:read and sharing_configuration read/write (it lacked them at last check)."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
+last_triaged: 2026-11-01
 work_state: verification
 ---
 # Notification Session Replay
