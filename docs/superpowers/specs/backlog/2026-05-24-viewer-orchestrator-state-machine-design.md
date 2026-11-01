@@ -1,16 +1,18 @@
 ---
 status: backlog
-value: 3
+value: 2
 effort: L
-remaining: Audit viewer orchestrator ownership and state transitions against the design before implementation.
+remaining: "Not implemented: no ViewerActivity union or viewer-activity-machine.svelte.ts exists; mode is still split across viewerMode/exportContext/videoUploadOpen in sequence-viewer/state/viewer-state.svelte.ts plus playbackRestoreOnExit in viewer-edit-mode-state.svelte.ts. Partial mitigation already shipped: editingPane is a pure derivation (resolveEditingPane in services/viewer-orchestrator-model.ts) and wasPlayingBeforeImageExport is gone. Re-scope the union against the decomposed state modules, then implement."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: ready
 ---
 
 # Viewer Orchestrator State Machine
+
+> **Triage note (2026-11-01):** Ready, but re-scope first. The discriminated-union machine was never built. Since this spec was written the orchestrator was split into many `src/lib/shared/sequence-viewer/state/viewer-*-state.svelte.ts` modules; `editingPane` is now derived by `resolveEditingPane()` in `services/viewer-orchestrator-model.ts`, and `wasPlayingBeforeImageExport` was replaced by `playbackRestoreOnExit` in `viewer-edit-mode-state.svelte.ts`. The overlapping `viewerMode`/`exportContext`/`videoUploadOpen` flags in `viewer-state.svelte.ts` remain, so the Problem section is partly stale and the Migration Strategy needs re-mapping to the current modules.
 
 ## Problem
 
