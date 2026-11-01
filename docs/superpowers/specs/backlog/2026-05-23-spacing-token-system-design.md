@@ -1,16 +1,18 @@
 ---
 status: backlog
-value: 3
-effort: M
-remaining: Audit spacing-token usage against the design and identify the first concrete migration slice before implementation.
+value: 2
+effort: L
+remaining: "Nothing shipped: --spacing-* is still only xs-2xl (src/app.css:384-389 and @austencloud/theme 0.1.0 css/tokens.css:49-54), no numeric --spacing-N scale, no scripts/spacing-codemod.js, stylelint.config.js only checks !important, and --space-2026-* (src/app.css:685-690) now has refs in 6 files incl. village/VillageControls.svelte; first slice is defining the numeric scale and migrating the --space-2026-* refs, then the codemod phases and lint rule."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
-work_state: unverified
+last_triaged: '2026-11-01'
+work_state: ready
 ---
 
 # Spacing Token System
+
+> **Triage note (2026-11-01):** Not started; the gap is confirmed. `--spacing-xs`..`--spacing-2xl` are defined in `src/app.css` (lines 384-389) as well as in the theme package, so the claim that they live only in `@austencloud/theme` is out of date. `--space-2026-*` (`src/app.css` lines 685-690) is now used in 6 files, including `src/lib/features/village/components/VillageControls.svelte`. A rough grep finds about 11,800 padding/margin/gap declarations containing px in `.svelte` files, against the 7,783 counted below. The line numbers and counts below are historical.
 
 ## Status: BACKLOG
 
