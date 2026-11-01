@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
+value: 2
+effort: XS
 work_state: verification
-remaining: Review the September 30 Post Mapping workspace browser evidence against all acceptance viewports and 200% zoom.
+remaining: "Shipped in 99c434b843 (merge 2a33701f70) with the 2026-09-30 seven-viewport and reflow evidence recorded in the spec. Remaining: force the empty and missing-media states in a browser (only source-reviewed) and recheck after ee9ca99835 and the package extraction; tmp/mapping-review/ is not in the repo."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: 2026-11-01
 ---
 
 # Post mapping workspace
