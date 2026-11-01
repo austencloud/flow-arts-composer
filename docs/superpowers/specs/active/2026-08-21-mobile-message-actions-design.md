@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
-remaining: "Verify long-press cancellation, message selection, keyboard focus, and action sheet geometry on mobile."
+value: 2
+effort: S
+remaining: "Implemented in 46e2544a73 (MessageActionSheet.svelte, MessageActions.svelte with 10px hold cancel, click suppression, selection mode; component tests in MessageActions.svelte.test.ts). Remaining: browser proof of focus restoration, clean console, and sheet viewport containment at the seven required viewports."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: verification
 ---
 # Mobile Message Actions
 
