@@ -1,16 +1,18 @@
 ---
 status: active
-value: null
-effort: null
-work_state: unverified
-remaining: Verify whether the Breakdown Strip acceptance survived the later Tutorial Builder and timeline rebuild before assigning unfinished work.
+value: 1
+effort: XS
+work_state: superseded
+remaining: "Superseded: the Breakdown Strip shipped in f126fda1b1 and was replaced the same day by the tutorial builder (0a11ea6541, 2026-09-24-post-studio-tutorial-builder-design.md), which deleted PostStudioBreakdownControls; editing then moved to the timeline editor. beat-carousel-painter.ts and beat-carousel-layout.ts survive. Ready to move to archived."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: 2026-11-01
 ---
 
 # Post Studio Breakdown Strip and Tutorial Roadmap
+
+> **Triage note (2026-11-01):** This design is historical. The strip shipped in f126fda1b1, then the tutorial builder (0a11ea6541) replaced its UI and timing model and the timeline editor replaced that; only the carousel painter and layout remain in src/lib/shared/media-composition/services/. Nothing here is current work.
 
 Date: 2026-09-24. Owner surface: Post Studio
 (`src/lib/shared/share/components/post-studio/`) on the media-composition model
