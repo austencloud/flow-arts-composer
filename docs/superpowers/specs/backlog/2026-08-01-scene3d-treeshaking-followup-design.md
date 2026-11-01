@@ -1,16 +1,16 @@
 ---
 status: backlog
 value: 3
-effort: S
-remaining: Verify the current @austencloud/scene-3d package exports and sideEffects metadata, then measure boot JS before deciding the follow-up.
+effort: M
+remaining: "Installed @austencloud/scene-3d is still 0.1.6 with no sideEffects field; the local pnpm patch (patches/@austencloud__scene-3d@0.1.6.patch, 78982e711a) added ./worker and ./prop-hand-palette deep exports but nothing shipped upstream. Remaining: sideEffects audit, upstream deep exports, release and bump, before/after boot-JS measurement."
 depends_on: ''
 plan_path: ''
 tags:
 - performance
 - packages
 - three
-last_triaged: '2026-10-07'
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: in-progress
 ---
 
 # @austencloud/scene-3d Tree-Shaking Follow-Up — Design
