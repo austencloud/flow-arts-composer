@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
+value: 4
+effort: L
 work_state: in-progress
-remaining: Finish the Learn/Atlas progress projection and verify lesson start, concept return, and seven-viewport map behavior.
+remaining: "Level 1 places 1.1-1.6 live in concept-place-registry.ts (69c34007ec, 7c8d41a42f, 8e946a002f, c211be2814) and the Grid-to-Placements journey shipped in 071f215550; remaining: 1.7/1.8 places, unbound lessons, a tested Learn+Play progress projection, and Austen's hands-on lesson confirmation."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: 2026-11-01
 ---
 
 # Unified Learn and Atlas - Product and Architecture Contract
