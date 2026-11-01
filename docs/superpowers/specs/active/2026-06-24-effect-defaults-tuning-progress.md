@@ -1,15 +1,17 @@
 ---
 status: active
-value: 4
-effort: XL
-remaining: "Verify Effect Defaults Tuning Campaign — IN PROGRESS against the current Effect Defaults Tuning Campaign — IN PROGRESS runtime and acceptance criteria before resuming implementation. Prior recorded remainder: Infrastructure and bloom tuning are complete. Remaining: build shared 1/sqrt(N) normalization for bloom/echo/pulse/zap, add the all-presets overview, then tune and visually verify 15 effect families in both Clean and Tunnel scenes. Resume with echo/pulse/zap after Chrome DevTools MCP is available."
-depends_on: "external: Chrome DevTools MCP is unavailable in this Codex session; every remaining tuning decision requires live Clean/Tunnel visual proof"
+value: 3
+effort: L
+remaining: "Bloom is tuned and has 1/sqrt(propCount) normalization (resolveBloomSourceNormalization in src/lib/shared/effects/domain/bloom-optics.ts); fire intensity 0.7 is committed in defaults.ts. Remaining: share that normalization and the perceptual-intensity curve with zap/pulse/ghost (no such scaling in their 2D renderers), add an all-presets overview to /test/effect-tuner (effect-grid shows effects, not presets), decide bloom radius 36 vs 50 and LED preset unification with Austen, then tune and visually verify the other 16 registry effects in Clean and Tunnel."
+depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: in-progress
 ---
 # Effect Defaults Tuning Campaign — IN PROGRESS
+
+> **Triage note (2026-11-01):** Partly done. Bloom work and the tuner (`src/routes/test/effect-tuner`, `save-default/`) exist. The bloom gamma now lives in `src/lib/shared/effects/domain/bloom-optics.ts` (`perceptualBloomIntensity`) together with a bloom-only `1/sqrt(propCount)` source normalization. `fire.intensity: 0.7` is committed, so that loose end is closed. The effect list has changed since this was written: the registry now has 17 entries, with `ghost`, `goo` and `animal` and no `echo` or `water` (inference: echo became ghost and water became goo). The shared-index hazard and the session commit trail below are history, not current instructions. The two cross-referenced design specs are now in `docs/superpowers/specs/shipped/`. The old dependency (the Codex session had no Chrome DevTools MCP) was tied to that one session and has been cleared.
 
 **Date:** 2026-06-24
 **Status:** 🟡 In progress — infrastructure complete, bloom substantially tuned, 15 effects pending
