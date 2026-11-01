@@ -2,15 +2,17 @@
 status: backlog
 value: 3
 effort: M
-remaining: Audit the Firebase cost baseline and each optimization owner before implementation; the prior queue note did not establish current state.
+remaining: "Fix 2 shipped for isAdmin/isTester (firestore.rules:145-161 read request.auth.token claims, no get()) and EventActivityAnalyzer no longer exists; remaining: scope the unbounded users + userPrivateProfiles getDocs in src/lib/features/admin/services/system-state-manager.ts:154, the users getDocs (:35) and full-collection onSnapshot (:96, used by ActiveUsersPanel.svelte:99) in user-activity-tracker.ts, and the unbounded publicSequences scan plus per-candidate getOrCreateRating in src/lib/features/arena/services/arena-repository.ts:45,68, with any needed indexes."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
-work_state: unverified
+last_triaged: '2026-11-01'
+work_state: in-progress
 ---
 
 # Firebase Cost Optimization Design
+
+> **Triage note (2026-11-01):** Partly shipped. Rules `isAdmin()`/`isTester()` now use only auth-token claims (`firestore.rules` lines 145-161), so Fix 2 Steps 2a-2c are done for those helpers; `isPremium()` no longer exists, and developer/age helpers still use `get()` as this spec recommends. `EventActivityAnalyzer.ts` has been removed, so Fix 1's analyzer part and Fix 3 no longer apply. Fix 1 (admin user scans now in `system-state-manager.ts` and `user-activity-tracker.ts`) and Fix 4 (arena `loadPool()`) remain. The file paths, line numbers and rules snippets below are historical.
 
 **Date:** 2026-05-23
 **Status:** Backlog
