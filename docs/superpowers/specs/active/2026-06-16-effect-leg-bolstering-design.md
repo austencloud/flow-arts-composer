@@ -2,14 +2,16 @@
 status: active
 value: 2
 effort: S
-remaining: "Verify Effect Leg Bolstering — Design / Progress against src/lib/shared/effects/renderers/bloom-2d-renderer.ts before resuming implementation. Prior recorded remainder: '3 of 4 legs survive; Echo''s rework was deleted and replaced by Ghost'"
+remaining: "Bloom, zap and pulse upgrades exist (bloom/zap/pulse-2d-renderer.ts with tests; BloomIntent streak/spikes/afterglow, ZapIntent style, PulseIntent velocityScale/asymmetry/harmonics in effects-config.ts) and Echo was replaced by ghost-2d-renderer.ts; remaining: record in-browser visual acceptance for bloom/zap/pulse (none recorded; overlaps active/2026-06-24-effect-defaults-tuning-progress.md) and decide whether a 5th weak leg exists or the walk is done."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: verification
 ---
 # Effect Leg Bolstering — Design / Progress
+
+> **Triage note (2026-11-01):** Bloom, zap and pulse upgrades are in the current tree (`src/lib/shared/effects/renderers/{bloom,zap,pulse}-2d-renderer.ts` and their tests). The Echo leg is gone; `ghost-2d-renderer.ts` replaced it. The effect roster has also changed (now includes goo, ghost and animal; no echo or water). No browser verification of the three surviving legs is on record. The commit SHAs below are not in this repository's current history. The recipe's `EFFECTS_CONFIG_VERSION` "currently 20" is stale (it is 41), and the Echo verification checklist no longer applies.
 
 **Queue evidence (2026-10-07):** Three of four upgraded legs survive; Echo was removed and replaced by Ghost. See frontmatter for the remaining work.
 
