@@ -15,7 +15,7 @@ work_state: in-progress
 > **Triage note (2026-11-01):** Partly shipped. Rules `isAdmin()`/`isTester()` now use only auth-token claims (`firestore.rules` lines 145-161), so Fix 2 Steps 2a-2c are done for those helpers; `isPremium()` no longer exists, and developer/age helpers still use `get()` as this spec recommends. `EventActivityAnalyzer.ts` has been removed, so Fix 1's analyzer part and Fix 3 no longer apply. Fix 1 (admin user scans now in `system-state-manager.ts` and `user-activity-tracker.ts`) and Fix 4 (arena `loadPool()`) remain. The file paths, line numbers and rules snippets below are historical.
 
 **Date:** 2026-05-23
-**Status:** Backlog
+**Status:** In progress (triaged 2026-11-01; Fix 2 rules helpers shipped, Fix 3 moot, Fixes 1 and 4 remain). Original status: Backlog.
 **Impact:** Reduces Firestore read billing by an estimated 60-80% at 10K+ users
 
 ---
