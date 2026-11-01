@@ -1,15 +1,17 @@
 ---
 status: active
-value: null
-effort: null
-remaining: "Verify environment catalog normalization and 2D-pair migration against current 3D Studio and saved scene code."
+value: 3
+effort: S
+remaining: "Separation shipped in 21335f9da9: SceneEnvironmentId catalog with pairedBackgroundId (shared/3d/environments/domain/scene-environment.ts), tka-viewer3d-environment key, StageChoreography.environmentId, saved-scene v3 in capture-3d-scene.ts, tests/unit/3d-viewer/scene-environment.test.ts. The Scene/Stage two-tab plan was replaced by One Stage (single scene tab). Remaining: runtime checks 1-6 (background independence, reload, save/reopen) and the seven-viewport sweep."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: verification
 ---
 # 3D Studio and Environment Separation
+
+> **Triage note (2026-11-01):** The two-tab 3D Studio navigation below is historical: shipped 2026-08-26-one-stage-design.md collapsed Stage to one scene tab. The environment separation itself shipped in 21335f9da9; only the runtime verification list remains.
 
 **Date:** 2026-08-21  
 **Status:** Approved for implementation
