@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
-remaining: "Verify the YR0L inline player in the named Inbox conversation, including pause, focus, and full-view navigation."
+value: 2
+effort: S
+remaining: "Implemented in a3a5b99d96 (SequenceMessagePreview.svelte composing InlineAnimationPlayer, SequenceMessageCard poster/Open sequence footer, component and contract tests); later touched by f7a2d6ba9a and 6cd4ab6a8f. Remaining: play the YR0L link in the Sky Guys Quest conversation (needs an authenticated session) and record play, offscreen pause, full-view, focus, retry, and 7-viewport evidence."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: verification
 ---
 # Inbox Inline Sequence Player
 
