@@ -1,16 +1,18 @@
 ---
 status: backlog
 value: 2
-effort: M
-remaining: Verify guest/Scribe access policy, then implement and test mandala shareable-link creation and loading if still absent.
+effort: L
+remaining: "Not built: no mandala short-code type, resolveShortCodeFull, MandalaShortCodeCreator, /og/mandala route, App Check init, or mandala fields in firebase-functions/src/snapshotShortCodes.ts; src/routes/q/[code] is sequence-only. Only handle_links shipped (static/pwa/manifest.webmanifest). Re-scope against the current MandalaPane/MandalaControlDock (MandalaViewerControls no longer exists) and the shipped Explore publication path (mandala-publication-service.ts), confirm the Scribe gate, then implement."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
-work_state: unverified
+last_triaged: '2026-11-01'
+work_state: ready
 ---
 
 # Shareable Mandala Links — Phase 3 Design Spec
+
+> **Triage note (2026-11-01):** Not implemented. The `/q/[code]` landing, `ShortCodeManager`, Firestore `shortcodes` rules and the snapshot function have no mandala record type; none of the new files listed under Implementation Plan exist and App Check is not initialized. Section 11c is already done (`handle_links: "preferred"` is in `static/pwa/manifest.webmanifest`; there is no `static/manifest.json`). The file targets below are stale: `MandalaViewerControls.svelte` is gone (controls now live in `MandalaControlDock.svelte` / `ArtSettingsPanel.svelte`), and owners can already share saved mandalas to Explore through `src/lib/features/mandala/tabs/collection/services/mandala-publication-service.ts`. Re-scope against those before following the plan below.
 
 **Date:** 2026-05-25
 **Phase:** 3 of the mandala roadmap (Phase 1 = viewer pane complete; Phase 2 = Firebase persistence)
