@@ -1,16 +1,18 @@
 ---
 status: active
-value: null
-effort: null
+value: 2
+effort: S
 work_state: verification
-remaining: Verify the shipped Post Studio timeline editor against clip editing, zoom, keyboard, and responsive acceptance.
+remaining: "Model and editor shipped in 4c58dd3ebe and b31f6f4bd1 and now live in @austencloud/video-editor (f83d23b46c); the screen layout was later revised by docs/superpowers/specs/2026-10-10-studio-editor-layout-design.md. Remaining: no recorded browser gate (seven viewports, 200% zoom, split, trim, drag, resize, undo, timing, playback, short export)."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: 2026-11-01
 ---
 
 # Post Studio Timeline Editor
+
+> **Triage note (2026-11-01):** The `src/lib/shared/media-composition/...` and editor paths below are historical: the editor now ships in the vendored `@austencloud/video-editor` package (f83d23b46c), and its screen layout is governed by `2026-10-10-studio-editor-layout-design.md`. The model and editor shipped in 4c58dd3ebe and b31f6f4bd1; the browser gate under Tests and checks has no recorded evidence.
 
 Date: 2026-09-26. Supersedes the act-based builder in
 `2026-09-24-post-studio-tutorial-builder-design.md` for editing; its
