@@ -1,16 +1,18 @@
 ---
 status: active
-value: null
-effort: null
-work_state: in-progress
-remaining: Finish Triangle Hoop family sprites, grip variants, tests, and browser verification; one grip option landed 2026-09-27.
+value: 2
+effort: S
+work_state: verification
+remaining: "Visual pass only: the 3D studio with the triangle in both grips on both renderers, mini hoop before and after, pictograph cells in both grips, the picker tile and drill-down, and the Grip row at seven tiers. Shipped: PropType.TRIANGLE, the station table and generated glyphs (4f86c59c60, 9fefc947d5), scene-3d patch and worker builders, grip toggle and pictograph grip (51c6225f15). Model sprites (f182c94a2b, 588cbd48ff) were retired with the model look in 25e3898678."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: 2026-11-01
 ---
 
 # Triangle prop and the mini hoop upgrade
+
+> **Triage note (2026-11-01):** The in-progress status below is historical. Identity, station table, generated 2D, both 3D renderers and the grip toggle shipped (4f86c59c60, 9fefc947d5, 51c6225f15, 081a5c7e86); the model sprites shipped in f182c94a2b and were later removed with the app-wide model look in 25e3898678. Only the visual pass remains.
 
 **Triage evidence (2026-10-07):** The spec records the grip option in commit `6b27137f29`. The full triangle and mini-hoop family acceptance remains open, including sprites and visual checks.
 
