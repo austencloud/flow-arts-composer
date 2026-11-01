@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
-remaining: "Verify Feedback Manage layout, focus, and capability ownership against current adaptive workspace."
+value: 2
+effort: S
+remaining: "Shipped in d887393f75: feedback-manage-layout.ts classifier (600/1320/2600 width, 480 height) with tests/unit/feedback-manage-layout.test.ts, ResizeObserver-driven layoutMode in FeedbackKanbanBoard.svelte and kanban-board-state.svelte.ts, queue in KanbanMobileView.svelte. Remaining: authenticated live-feedback runtime check at the eight listed viewports (clipping, overflow, mode, fold recomposition)."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: verification
 ---
 # Feedback Manage Adaptive Workspace
 
