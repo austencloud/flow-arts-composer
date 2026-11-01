@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
-work_state: unverified
-remaining: Verify Account prop-preference flow for zero, one, and multiple saved props, including Profile display precedence and persistence.
+value: 3
+effort: S
+work_state: verification
+remaining: "Shipped in 8702cd7b04, 2364d20026 and c4cf4e9651 (profile-prop-catalog.ts, get-effective-prop.ts, MyPropsDrawer.svelte, prop-preference-state and account-setup tests). Remaining: browser check of the Account page and both prop steps at phone, tablet, desktop and 4K, plus reload persistence of props and Profile prop."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: 2026-11-01
 ---
 
 # Account Profile Confidence
