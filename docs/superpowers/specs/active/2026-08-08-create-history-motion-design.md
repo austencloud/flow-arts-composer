@@ -1,15 +1,17 @@
 ---
 status: active
-value: null
-effort: null
-remaining: "Verify Create history identity across insert, delete, rewind, and shift, then check motion and visual acceptance."
+value: 3
+effort: S
+remaining: "Implemented in 43c1ca3a33 (history-transition-planner.ts, assemble-history-transition-planner.ts, WorkspaceGrid motion, undo-controller.svelte.ts) with planner, assemble and undo-redo-integrity unit tests. Left: runtime proof sampling rects/transforms in standard and timeline layouts for the listed history actions, rapid undo/redo, and reduced motion."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: verification
 ---
 # Create History Motion
+
+> **Triage note (2026-11-01):** The approval status below is historical. The planner, keyed grid motion and Assemble history plan shipped in 43c1ca3a33 with unit tests. No recorded runtime proof for the Verification section was found.
 
 **Status:** Approved for implementation
 
