@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
-work_state: unverified
-remaining: Audit the Film collection naming, Library entry, persistence, and Director handoff against the design acceptance before claiming completion.
+value: 2
+effort: S
+work_state: verification
+remaining: "Shipped: schema v3 rename and normalizer (normalize-film-director-input.ts), collection module ae5aed0da9, prior version 7311fc1fd1, admin Library shelf 8dd1a602fa. Remaining: runtime proof that save, reload and open via ?film=saved:<id> reproduce a film, signed in and as guest."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: 2026-11-01
 ---
 
 # Film Collection — Design
