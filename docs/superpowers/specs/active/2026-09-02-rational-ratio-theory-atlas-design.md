@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
+value: 3
+effort: S
 work_state: verification
-remaining: "Verify exact ratio/closure suites, legacy URL compatibility and current Theory/Level 4 transitions at the seven viewports. The arithmetic, QFT geometry and Theory UI exist (6720731a94), and dd6947dd4f expanded ratios through 15; validate that evolution instead of rebuilding the original denominator-9 atlas."
+remaining: "Browser proof only: Theory surface on /shape-engine (theory=1 parsing in src/routes/(public)/shape-engine/_state/shape-matrix-url.ts), legacy Level 4 URLs, one mode and one ratio transition at the seven viewports. Arithmetic and ratios through 15 shipped in 6720731a94 and dd6947dd4f (THEORY_SPIN_RATIO_MAX_PART in packages/vtg-domain/src/reference/spin-ratio.ts) with tests/unit/vtg-spin-ratio.test.ts and qft-rational-ratios.test.ts."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: 2026-10-14
+last_triaged: 2026-11-01
 ---
 
 # Rational Ratio Theory Atlas
