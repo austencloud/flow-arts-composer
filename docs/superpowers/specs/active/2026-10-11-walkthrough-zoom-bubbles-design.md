@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
-work_state: ready
-remaining: Build the Level-chapter pilot and send it to Austen.
+value: 4
+effort: M
+work_state: in-progress
+remaining: "Builder shipped: 92f8abeab0 (post-walkthrough.ts, walkthrough-camera.ts, walkthrough-callouts.ts, callout painter), a0117220e5 (build-walkthrough op and CLI), 52d695a0dd, 6a6dc25228 (zoom only on small controls). Remaining: plan Task 5 pilot: record take 3 at 2x density, build the Level chapter, compare preview vs export, send Austen the clip and stills."
 depends_on: "2026-09-26-post-studio-keyframes-design.md"
 plan_path: "docs/superpowers/plans/2026-10-11-walkthrough-zoom-bubbles.md"
 tags: [post-studio, feature-video, tutorial]
-last_triaged: "2026-10-11"
+last_triaged: 2026-11-01
 ---
 
 # Walkthrough zoom and bubbles
