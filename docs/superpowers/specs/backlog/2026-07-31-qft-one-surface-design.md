@@ -1,16 +1,18 @@
 ---
 status: backlog
 value: 2
-effort: M
-remaining: Inspect the current QFT state and active implementation plan for One-hand/Two-hand migration progress before assigning a remaining slice.
+effort: XS
+remaining: "Fully shipped: 553cde49cc unified /notation/qft into One hand and Two hands (13-line +page.svelte, per-hand radius in QftHandControls.svelte, pendulum and extendulum through qft-trajectory.ts, landing card without the duplicate help button); the plan records tests, svelte-check and seven-viewport evidence. Ready to move to shipped."
 depends_on: ''
 plan_path: docs/superpowers/plans/active/2026-08-09-qft-one-surface-implementation.md
 tags: []
-last_triaged: '2026-10-07'
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: complete
 ---
 
 # QfT: One Surface, Two Hands — Design (2026-07-31)
+
+> **Triage note (2026-11-01):** Implemented in 553cde49cc (2026-08-09). The completion evidence is in `docs/superpowers/plans/active/2026-08-09-qft-one-surface-implementation.md`, which also records that Triquetra stays a preset rather than a flower-picker value.
 
 ## The problem
 
