@@ -1,16 +1,18 @@
 ---
 status: active
-value: null
-effort: null
-work_state: unverified
-remaining: Inspect the Prop Picker gallery in browser and verify Buugeng chirality, open-picker selection, and dismissal behavior.
+value: 2
+effort: S
+work_state: verification
+remaining: "Gallery shipped 2026-08-28 (6f1c22c141, e1c9fc6e6b, fe10533ef3, 252c73767c) in src/lib/shared/settings/components/tabs/prop-type/; Buugeng chirality later became four pair tiles (bbc12c6f2c). Remaining: browser proof of the acceptance list at the seven viewports plus 200% zoom, light and dark."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: 2026-11-01
 ---
 
 # Prop Picker Gallery
+
+> **Triage note (2026-11-01):** The Approved status above is historical. The gallery shipped in 6f1c22c141 and follow-ups (e1c9fc6e6b, fe10533ef3, 252c73767c), and Buugeng chirality was later reworked into four pair tiles (bbc12c6f2c); only the browser acceptance pass remains.
 
 **Status:** Approved for implementation
 **Date:** 2026-08-28
