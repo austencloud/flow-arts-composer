@@ -1,16 +1,18 @@
 ---
 status: active
-value: null
-effort: null
-work_state: in-progress
-remaining: Verify Autumn boot/retry and adaptive-quality acceptance on the production scene, then close remaining hardening gaps.
+value: 3
+effort: M
+work_state: verification
+remaining: "Hardening shipped (defbd630d4, bcbaa22335, de7de8a693, 97a419af64, world coherence 3596d48fda; autumn-geometry-tier.ts, autumn-boot-state.ts) and moved into the shared worker world (68047aa510, 6945385a3c); remaining: recorded high/medium/low budget and reject/timeout/retry runtime evidence on that path plus Austen's final visual acceptance."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: 2026-11-01
 ---
 
 # Autumn Scene Hardening
+
+> **Triage note (2026-11-01):** Implementation landed 2026-08-31 to 2026-09-01 (defbd630d4, bcbaa22335, de7de8a693, 97a419af64, 3596d48fda). AutumnScene is now a thin adapter over the shared world in src/lib/shared/3d/environments/worlds/autumn/ (68047aa510, 6945385a3c), so Svelte runtime owners named below may no longer exist. Release-gate evidence continues in 2026-09-01-autumn-performance-reliability.md.
 
 **Triage evidence (2026-10-07):** `src/lib/shared/3d/environments/scenes/AutumnScene.svelte` is present and the spec describes changes to the shipped scene. Boot, retry, adaptive-quality, and viewpoint acceptance still need production-scene verification.
 
