@@ -1,15 +1,17 @@
 ---
 status: active
-value: null
-effort: null
-remaining: "Verify Stage Performance Runtime against the current Stage Performance Runtime runtime and acceptance criteria before resuming implementation. Prior recorded remainder: Verify runtime clock, stage-space mapping, sequence resolution, and uncompleted follow-up order."
+value: 1
+effort: XS
+remaining: "Superseded: the vertical slice shipped; shipped/2026-08-23-stage-formation-choreography-design.md replaced the mark-chain model (b80d793708, 5e8b0e514b, 5446ee80de) and shipped/2026-08-26-one-stage-design.md replaced StageViewer (2686a4cb8). Open follow-ups (persistence, collision warnings) are tracked in 2026-08-20-stage-3d-performance-studio-design.md. Ready to archive."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: superseded
 ---
 # Stage Performance Runtime
+
+> **Triage note (2026-11-01):** The follow-up order below is historical. The mark-chain model was replaced by formations (shipped 2026-08-23-stage-formation-choreography-design.md; b80d793708) and StageViewer by One Stage (shipped 2026-08-26-one-stage-design.md); per-performer clip lanes shipped in 21335f9da9. Remaining persistence and warning work lives in 2026-08-20-stage-3d-performance-studio-design.md.
 
 **Date:** 2026-08-20  
 **Status:** Active, first production vertical slice implemented and verified
