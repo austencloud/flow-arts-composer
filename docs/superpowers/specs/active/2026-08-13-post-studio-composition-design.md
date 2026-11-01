@@ -1,16 +1,18 @@
 ---
 status: active
-value: null
-effort: null
-remaining: "Verify Post Studio Composition and Time Mapping against the animation-engine timeline step-grid calculator (removed as dead code 2026-10-22) before resuming implementation. Prior recorded remainder: Resolve the unused preset repository, rights-cleared audio, and whole-Compose persistence; verify current export gates."
+value: 3
+effort: M
+remaining: "Gates 1-5 core shipped (65129dcd07, 717ba711a2), time-map/preset core moved to @austencloud/video-editor (17b2af0db0), unused preset repository deleted (718a157ac8), music lane with gain/fades/grid merged (b7a633cdc0), drafts persist (e5e3559e99), saved beatMap feeds legacyStepMap in TkaEditorScope.svelte. Remaining: whole multi-cell Compose serialization, the uneven-video beat-map proof, and Gate 6 proof (direct Reel on a test account, Audio API report)."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: in-progress
 ---
 
 # Post Studio Composition and Time Mapping
+
+> **Triage note (2026-11-01):** The status line and gate plan below are partly historical. `media-composition-preset-repository.ts` was deleted as dead code in 718a157ac8, the editor core now comes from `@austencloud/video-editor` (17b2af0db0), and the feature-video music lane with gain, fades and beat grid merged in b7a633cdc0. Open work: whole-Compose serialization, the uneven-video beat-map proof, and Gate 6 Instagram proof.
 
 **Date:** 2026-08-13
 
