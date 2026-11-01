@@ -1,16 +1,18 @@
 ---
 status: active
-value: null
-effort: null
+value: 3
+effort: M
 work_state: verification
-remaining: Check implemented scene-boot phases against the first-visit performance and visual reveal gates; the checked ledger alone is insufficient.
+remaining: "All seven ledger phases shipped (282a9f342b, 37dab8ad6f, 313f72dda5, later 0cbe3ae3aa and c40932b4bc); remaining is the design's runtime acceptance: per-scene __sceneBoot sweep, no post-reveal long task, background-hold check, on the worker-renderer viewer (2f47c0c7db)."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: 2026-11-01
 ---
 
 # Scene Boot 60FPS — Implementation Plan
+
+> **Triage note (2026-11-01):** The worktree path and phase steps below are historical; every phase shipped (282a9f342b, 37dab8ad6f, 313f72dda5) and was later tuned (0cbe3ae3aa, c40932b4bc). Only the design's runtime acceptance remains; see the design spec and docs/architecture/scene-boot-cost.md.
 
 Spec: `docs/superpowers/specs/active/2026-08-30-scene-boot-60fps-design.md` (read it first).
 Worktree: `E:/worktrees/tka-platform/scene-boot-60fps` — ALL work happens here. Never touch `E:/tka-platform`.
