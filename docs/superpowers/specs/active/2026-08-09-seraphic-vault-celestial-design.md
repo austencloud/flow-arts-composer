@@ -1,15 +1,17 @@
 ---
 status: active
-value: null
-effort: null
-remaining: "Verify feather-rib silhouette, performer lane clearance, and runtime budget from default camera in current celestial scene."
+value: 1
+effort: XS
+remaining: "Superseded: the feather-rib direction was replaced the same day by the Olive Cloudbreak pivot (2026-08-09-olive-cloudbreak-celestial-pivot.md), and production Celestial is now the Sky Citadel (e6b55c9f79, docs/architecture/celestial-sky-citadel.md); the leftover seraphic-vault GLBs are only referenced by the unmounted CelestialSanctuaries.svelte; ready to move to archived."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: superseded
 ---
 # Seraphic Vault Celestial Environment
+
+> **Triage note (2026-11-01):** This target is historical. The Olive Cloudbreak pivot (same date) replaced the feather-rib direction, and production Celestial is now the Sky Citadel (e6b55c9f79, docs/architecture/celestial-sky-citadel.md). The production approval below no longer applies.
 
 **Date:** 2026-08-09  
 **Status:** Approved for production  
