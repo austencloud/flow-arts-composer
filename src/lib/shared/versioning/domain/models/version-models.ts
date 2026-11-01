@@ -29,7 +29,24 @@ export interface ChangelogEntry {
   feedbackId?: string; // Original feedback ID for linking to details
   contributorIds?: string[]; // References to contributor doc IDs
   media?: ChangelogMedia; // An example of the change: a picture, or a clip with its poster
+  /**
+   * Where the change lives. `"global"` or no surface means the note has no
+   * "Show me"; a module (and tab) gives the reader a way there.
+   */
+  surface?: ReleaseSurface;
+  /** One of the release's headline notes; a highlight IS an entry. */
+  highlight?: boolean;
+  /** Highlight only: a `data-release-anchor` value to pulse on arrival. */
+  anchor?: string;
+  /** Highlight only: one plain sentence shown on arrival when there is no anchor to show. */
+  callout?: string;
 }
+
+/**
+ * The surface a changelog entry is about. Authored per release and kept on
+ * the published entry so "Show me" can take the reader there.
+ */
+export type ReleaseSurface = { module: string; tab?: string } | "global";
 
 /**
  * A picture or short clip showing a changelog entry. `image` is the still
@@ -142,4 +159,30 @@ export function pickReleaseNotesVersion(
     newestFirst[0] ??
     null
   );
+}
+
+/**
+ * The releases a reader has not caught up on, newest first.
+ *
+ * Everything published after `lastSeen` (exclusive) up to the running
+ * `current` build (inclusive) with notes to show. A reader who skipped four
+ * releases gets all four in one sheet. With no `lastSeen` at all nothing is
+ * unseen: a first visit is baselined silently, not greeted with history.
+ * Notes published for a build newer than the one running stay out until that
+ * build is what the reader is on.
+ */
+export function selectUnseenVersions(
+  versions: readonly AppVersion[],
+  lastSeen: string | null,
+  current: string
+): AppVersion[] {
+  if (!lastSeen) return [];
+  return versions
+    .filter(
+      (v) =>
+        (v.changelogEntries?.length ?? 0) > 0 &&
+        compareVersions(v.version, lastSeen) > 0 &&
+        compareVersions(v.version, current) <= 0
+    )
+    .sort((a, b) => compareVersions(b.version, a.version));
 }

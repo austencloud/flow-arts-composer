@@ -10,6 +10,13 @@ description: Use when packaging and publishing a new version with changelog and 
 Build release notes from verified, reachable behavior, then publish the version,
 tag, and GitHub release. Never treat commit subjects as final copy.
 
+## 0. Is It Time?
+
+`node scripts/release.js --debt` counts the commits since the last tag, says
+how many land on live modules, how long it has been, and ends in a plain
+verdict. It needs no credentials and blocks nothing; it is the answer to "is
+it time to release?" from any session.
+
 ## 1. Gather Evidence
 
 Always gather feedback, commits, the existing release history, and the current
@@ -66,10 +73,22 @@ private `audience` and `surface` fields, then strips them before publishing.
     "category": "improved",
     "text": "Fuse rebuilt: mix and reshape sequences after signing in.",
     "audience": "account",
-    "surface": { "module": "create", "tab": "fuse" }
+    "surface": { "module": "create", "tab": "fuse" },
+    "highlight": true,
+    "anchor": "fuse-mixer",
+    "callout": "Pick two saved sequences to mix them here."
   }
 ]
 ```
+
+`surface` is published with the entry: it is what the app's "Show me" button
+navigates to, so name the exact tab whenever one exists. A highlight is an
+entry with `"highlight": true` (or picked with `--highlights`), never a
+separate list of text. On a highlight, `anchor` names a
+`data-release-anchor="..."` attribute that must exist under `src/` (the
+script refuses the release otherwise) and `callout` is the one-sentence line
+the reader sees on arrival when there is no anchor to show. Both are optional;
+arriving at the right tab is a complete experience on its own.
 
 Write that JSON to `.release-changelog.json`, then run:
 

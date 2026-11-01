@@ -23,6 +23,7 @@
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import SettingToggleButton from "../SettingToggleButton.svelte";
   import SettingActionRow from "../SettingActionRow.svelte";
+  import { whatsNewState } from "../../state/whats-new-state.svelte";
   import {
     SKIPPABLE_CONFIRMATIONS,
     type SkippableConfirmation,
@@ -193,13 +194,18 @@
           headingId="about-heading"
         />
         <div class="row-list">
-          <SettingActionRow
-            icon="fas fa-bullhorn"
-            label={t("nav_ui_what_s_new")}
-            description={versionLine}
-            opensPage
-            onclick={() => openSettingsPage("release-notes")}
-          />
+          <!-- data-release-anchor: a release highlight's "Show me" can land here. -->
+          <div data-release-anchor="settings-whats-new">
+            <SettingActionRow
+              icon="fas fa-bullhorn"
+              label={t("nav_ui_what_s_new")}
+              description={versionLine}
+              opensPage
+              unread={whatsNewState.hasUnseen}
+              unreadLabel={t("settings_unread_release_notes")}
+              onclick={() => openSettingsPage("release-notes")}
+            />
+          </div>
           {#if nativeUpdate.available}
             <div aria-live="polite">
               <SettingActionRow

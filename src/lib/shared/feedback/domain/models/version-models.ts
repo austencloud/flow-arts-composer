@@ -5,7 +5,10 @@
  */
 
 import type { FeedbackType } from "#lib/shared/feedback/domain/models/feedback-models.js";
-import type { ChangelogMedia } from "#lib/shared/versioning/domain/models/version-models.js";
+import type {
+  ChangelogMedia,
+  ReleaseSurface,
+} from "#lib/shared/versioning/domain/models/version-models.js";
 
 /**
  * Summary counts by feedback type
@@ -30,6 +33,10 @@ export interface ChangelogEntry {
   feedbackId?: string; // Original feedback ID for linking to details
   contributorIds?: string[]; // References to contributor doc IDs
   media?: ChangelogMedia; // An example of the change: a picture, or a clip with its poster
+  surface?: ReleaseSurface; // Where the change lives; "global" or absent means no "Show me"
+  highlight?: boolean; // One of the release's headline notes
+  anchor?: string; // Highlight only: data-release-anchor to pulse on arrival
+  callout?: string; // Highlight only: one-sentence arrival welcome
 }
 
 /**

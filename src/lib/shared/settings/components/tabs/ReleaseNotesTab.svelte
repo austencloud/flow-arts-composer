@@ -11,6 +11,7 @@
   import { getContributorLoader } from "#lib/shared/feedback/get-contributor-loader.js";
   import type { Contributor } from "#lib/shared/versioning/domain/models/contributor-models.js";
   import SettingsSubpage from "../SettingsSubpage.svelte";
+  import { whatsNewState } from "../../state/whats-new-state.svelte";
 
   let {
     backLabel,
@@ -26,6 +27,11 @@
   // Load versions on mount
   $effect(() => {
     versionState.loadVersions();
+  });
+
+  // Reading the page is the other way to catch up; it clears the unread dot.
+  $effect(() => {
+    whatsNewState.noteReleaseNotesOpened();
   });
 
   let selectedVersion = $state<AppVersion | null>(null);

@@ -18,6 +18,52 @@ import {
 } from "#lib/shared/offline/services/chunk-recovery-marker.js";
 
 const UPDATE_ACTION_TOAST_MS = 15_000;
+// How long the reload toast waits to learn whether a release accompanies the
+// deploy. Past this it fires with the generic words; the reload never waits
+// on the network.
+const UPDATE_COPY_LOOKUP_MS = 2_500;
+
+/**
+ * One update voice. A deploy that comes with a release says so, so the reload
+ * promises what the What's New toast will then deliver: "TKA v0.50.0 is
+ * ready. Reload to see what's new." A deploy with no release, or any trouble
+ * finding out, keeps the generic "An update is ready." Either way the Reload
+ * action is the same `apply`, and nothing here can stop it showing.
+ */
+async function showUpdateReadyToast(apply: () => void): Promise<void> {
+  let message = "An update is ready.";
+  try {
+    const released = await Promise.race([
+      lookUpReleasedVersion(),
+      new Promise<null>((resolve) =>
+        setTimeout(() => resolve(null), UPDATE_COPY_LOOKUP_MS)
+      ),
+    ]);
+    if (released) {
+      message = `TKA v${released} is ready. Reload to see what's new.`;
+    }
+  } catch {
+    // Generic copy; the lookup is a nicety, the reload is the point.
+  }
+  showToast({
+    message,
+    type: "info",
+    duration: UPDATE_ACTION_TOAST_MS,
+    action: { label: "Reload", onClick: apply },
+  });
+}
+
+/** The newest published release, when it is newer than the build running. */
+async function lookUpReleasedVersion(): Promise<string | null> {
+  const [{ getLatestVersion }, { compareVersions }] = await Promise.all([
+    import("#lib/shared/feedback/services/version-service.js"),
+    import("#lib/shared/versioning/domain/models/version-models.js"),
+  ]);
+  // One document read: the versions list ordered by release date, limit 1.
+  const latest = await getLatestVersion();
+  if (!latest || compareVersions(latest, __APP_VERSION__) <= 0) return null;
+  return latest;
+}
 
 // Dev: explain the previous automatic reload (if any) before the boot noise
 // starts, and arm the tracers for Vite's own full-reload/ws-disconnect reloads.
@@ -378,12 +424,7 @@ export const init: ClientInit = async () => {
           updateViaCache: "none",
         }),
       onUpdateReady: (apply) => {
-        showToast({
-          message: "An update is ready.",
-          type: "info",
-          duration: UPDATE_ACTION_TOAST_MS,
-          action: { label: "Reload", onClick: apply },
-        });
+        void showUpdateReadyToast(apply);
       },
     });
     if (startup === "reloading") {

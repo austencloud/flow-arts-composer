@@ -102,8 +102,19 @@ Every final entry contains:
 
 - `category`: `fixed`, `added`, or `improved`
 - `text`: the public sentence
-- `audience`: `guest` or `account`
-- `surface`: `global` or `{ "module": "...", "tab": "..." }`
+- `audience`: `guest` or `account` (authoring-only; stripped on publish)
+- `surface`: `global` or `{ "module": "...", "tab": "..." }` (published; the
+  app's "Show me" button navigates to it, so a tab beats a bare module)
+
+Optional, on an entry the release leads with:
+
+- `highlight`: `true` marks a headline note; a highlight is an entry, not a
+  separate list of text
+- `anchor`: a `data-release-anchor` value that exists under `src/`; the app
+  scrolls to it and pulses it on arrival. The script refuses an anchor that
+  matches nothing.
+- `callout`: one plain sentence shown on arrival when there is no anchor, or
+  the anchor is gone. Same jargon rules as `text`.
 
 Use `global` only after tracing a real global control or flow. For modules that
 mix guest and account-only tabs, name the exact tab.

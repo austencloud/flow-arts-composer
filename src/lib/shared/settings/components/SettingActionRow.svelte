@@ -15,6 +15,11 @@
     actionLabel?: string;
     /** Shows a chevron: the row opens another page. */
     opensPage?: boolean;
+    /** A dot before the chevron: the page it opens has something unread. The
+     *  slot is always reserved, so the dot never moves the row. */
+    unread?: boolean;
+    /** Screen-reader text for the dot, e.g. "New release notes". */
+    unreadLabel?: string;
     ariaLabel?: string;
     busy?: boolean;
     disabled?: boolean;
@@ -27,6 +32,8 @@
     description,
     actionLabel,
     opensPage = false,
+    unread = false,
+    unreadLabel,
     ariaLabel,
     busy = false,
     disabled = false,
@@ -55,9 +62,13 @@
 
   {#if actionLabel || opensPage}
     <span class="action-end" aria-hidden="true">
+      {#if opensPage}<span class="unread-dot" class:shown={unread}></span>{/if}
       {#if actionLabel}<span>{actionLabel}</span>{/if}
       {#if opensPage}<i class="fas fa-chevron-right"></i>{/if}
     </span>
+  {/if}
+  {#if unread && unreadLabel}
+    <span class="sr-only">{unreadLabel}</span>
   {/if}
 </button>
 
@@ -152,6 +163,18 @@
 
   .setting-action:hover:not(:disabled) .action-end {
     color: var(--theme-accent-text, var(--theme-accent));
+  }
+
+  .unread-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--theme-accent);
+    visibility: hidden;
+  }
+
+  .unread-dot.shown {
+    visibility: visible;
   }
 
   @media (prefers-reduced-motion: reduce) {

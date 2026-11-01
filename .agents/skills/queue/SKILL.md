@@ -19,6 +19,8 @@ Tell the user the selected task, score, and specific remaining work. For a verif
 
 ## Commands
 
+- `node scripts/release.js --debt`: user-facing commits since the last release
+  and a plain verdict on whether a release is worth cutting. Advice only.
 - `npm run specs:list`: show ranked eligible work and held entries with reasons.
 - `npm run specs:next`: show the next eligible entry without claiming or changing it.
 - `npm run specs:check`: validate queue metadata and referenced paths.

@@ -2,16 +2,18 @@
   WhatsNewModal - Beautiful changelog modal for version updates
 
   Displays structured changelog data with category cards,
-  proper visual hierarchy, and celebration energy.
+  proper visual hierarchy, and celebration energy. Usually one release;
+  when the reader has skipped several, every unread release in one sheet,
+  newest first, each under its own version badge.
 -->
 <script lang="ts">
   import { whatsNewState } from "../state/whats-new-state.svelte";
   import { handleModuleChange } from "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js";
-  import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
   import { getContributorLoader } from "#lib/shared/feedback/get-contributor-loader.js";
   import { CATEGORY_ICONS } from "#lib/shared/versioning/domain/constants/changelog-constants.js";
   import type { Contributor } from "#lib/shared/versioning/domain/models/contributor-models.js";
   import type {
+    AppVersion,
     ChangelogCategory,
     ChangelogEntry,
   } from "#lib/shared/versioning/domain/models/version-models.js";
@@ -19,8 +21,10 @@
   import ContributorBadge from "./tabs/release-notes/ContributorBadge.svelte";
   import ChangelogRichText from "./tabs/release-notes/ChangelogRichText.svelte";
   import ChangelogEntryMedia from "./tabs/release-notes/ChangelogEntryMedia.svelte";
+  import ShowMeButton from "./tabs/release-notes/ShowMeButton.svelte";
+  import WhatsNewFeaturedStrip from "./WhatsNewFeaturedStrip.svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  import { reducedMotion } from "#lib/shared/transitions/motion.js";
+  import { getReactiveLocale } from "#lib/shared/i18n/locale-state.svelte.js";
 
   // Category display order and colors
   const CATEGORY_CONFIG: Record<
@@ -45,18 +49,26 @@
   };
 
   // Derived state
+  const versions = $derived(whatsNewState.versions);
   const version = $derived(whatsNewState.version);
   const isOpen = $derived(whatsNewState.isOpen);
+  // More than one release: the catch-up sheet, each release under its badge.
+  const isRollup = $derived(versions.length > 1);
+
+  // Everyone credited on any release shown.
+  const contributorIds = $derived([
+    ...new Set(versions.flatMap((v) => v.contributorIds ?? [])),
+  ]);
 
   let contributors = $state<Map<string, Contributor>>(new Map());
 
   $effect(() => {
-    if (!version?.contributorIds?.length) {
+    if (!contributorIds.length) {
       contributors = new Map();
       return;
     }
     const loader = getContributorLoader();
-    loader.getByIds(version.contributorIds).then((list) => {
+    loader.getByIds(contributorIds).then((list) => {
       contributors = new Map(list.map((c) => [c.id, c]));
     });
   });
@@ -65,39 +77,35 @@
   // lines and Release Notes holds the rest, like the update email does.
   const COLUMN_PREVIEW = 4;
 
+  type CategoryGroup = {
+    category: ChangelogCategory;
+    total: number;
+    entries: ChangelogEntry[];
+    hidden: number;
+    order: number;
+    color: string;
+    bgColor: string;
+  };
+
   // Notes with an example clip or picture lead the sheet, one at a time in
   // a strip to step through, in the order the notes run (new features
   // first). Every other note is a line of text in the columns below.
-  const featured = $derived(
-    (version?.changelogEntries?.filter((entry) => entry.media) ?? []).sort(
+  function featuredOf(release: AppVersion): ChangelogEntry[] {
+    return (
+      release.changelogEntries?.filter((entry) => entry.media) ?? []
+    ).sort(
       (a, b) =>
         CATEGORY_CONFIG[a.category].order - CATEGORY_CONFIG[b.category].order
-    )
-  );
-
-  let track = $state<HTMLElement | null>(null);
-  let slide = $state(0);
-  const still = reducedMotion();
-
-  function showSlide(index: number) {
-    if (!track) return;
-    track.scrollTo({
-      left: index * track.clientWidth,
-      behavior: still ? "auto" : "smooth",
-    });
-  }
-
-  function syncSlide() {
-    if (track) slide = Math.round(track.scrollLeft / track.clientWidth);
+    );
   }
 
   // Group the remaining entries by category
-  const groupedChangelog = $derived.by(() => {
-    if (!version?.changelogEntries) return [];
+  function groupsOf(release: AppVersion): CategoryGroup[] {
+    if (!release.changelogEntries) return [];
 
     const groups = new Map<ChangelogCategory, ChangelogEntry[]>();
 
-    for (const entry of version.changelogEntries) {
+    for (const entry of release.changelogEntries) {
       const existing = groups.get(entry.category) || [];
       existing.push(entry);
       groups.set(entry.category, existing);
@@ -116,14 +124,26 @@
       })
       .filter((group) => group.entries.length > 0)
       .sort((a, b) => a.order - b.order);
-  });
+  }
 
-  // Total count for summary
-  const totalChanges = $derived(version?.changelogEntries?.length ?? 0);
-  const isTrimmed = $derived(
-    groupedChangelog.some((group) => group.hidden > 0)
+  const sections = $derived(
+    versions.map((release) => ({
+      release,
+      featured: featuredOf(release),
+      groups: groupsOf(release),
+    }))
   );
-  const categoryCount = $derived(Math.min(groupedChangelog.length, 3));
+
+  // Total count for summary, across every release shown
+  const totalChanges = $derived(
+    versions.reduce((sum, v) => sum + (v.changelogEntries?.length ?? 0), 0)
+  );
+  const isTrimmed = $derived(
+    sections.some((section) => section.groups.some((group) => group.hidden > 0))
+  );
+  const categoryCount = $derived(
+    Math.min(Math.max(0, ...sections.map((s) => s.groups.length)), 3)
+  );
   const layoutWidth = $derived(
     totalChanges >= 8 || categoryCount === 3
       ? "wide"
@@ -131,6 +151,14 @@
         ? "medium"
         : "compact"
   );
+
+  function releaseDate(release: AppVersion): string {
+    return release.releasedAt.toLocaleDateString(getReactiveLocale(), {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  }
 
   function handleClose() {
     whatsNewState.close();
@@ -160,7 +188,12 @@
         <div class="header-text">
           <h1 id="whats-new-title">{t("settings_whats_new")}</h1>
           <p class="subtitle">
-            {t("settings_release_update_count", { count: totalChanges })}
+            {#if isRollup}
+              {t("settings_rollup_count", { count: versions.length })}
+              · {t("settings_release_update_count", { count: totalChanges })}
+            {:else}
+              {t("settings_release_update_count", { count: totalChanges })}
+            {/if}
           </p>
         </div>
         <button
@@ -196,128 +229,105 @@
           <p>
             <ChangelogRichText text={entry.text} onNavigate={handleClose} />
           </p>
+          <ShowMeButton {entry} onNavigate={handleClose} />
         </div>
       {/snippet}
 
-      {#if featured.length > 1}
-        <section class="strip" aria-roledescription="carousel">
-          <div class="strip-track" bind:this={track} onscroll={syncSlide}>
-            {#each featured as entry, index}
+      {#each sections as section (section.release.version)}
+        <section
+          class="release-section"
+          aria-label="v{section.release.version}"
+        >
+          {#if isRollup}
+            <h2 class="release-heading">
+              <span class="release-version">v{section.release.version}</span>
+              <span class="release-date">{releaseDate(section.release)}</span>
+            </h2>
+          {/if}
+
+          {#if section.featured.length > 1}
+            <WhatsNewFeaturedStrip
+              featured={section.featured}
+              item={featuredItem}
+            />
+          {:else if section.featured.length}
+            <div class="featured-item">
+              {@render featuredItem(section.featured[0]!)}
+            </div>
+          {/if}
+
+          <div class="category-grid" data-category-count={categoryCount}>
+            {#each section.groups as group}
               <div
-                class="featured-item strip-card"
-                aria-roledescription="slide"
-                aria-label="{index + 1} / {featured.length}"
-                inert={index !== slide}
+                class="category-card"
+                style="--cat-color: {group.color}; --cat-bg: {group.bgColor};"
               >
-                {@render featuredItem(entry)}
+                <div class="category-header">
+                  <div class="category-icon">
+                    <i
+                      class="fas {CATEGORY_ICONS[group.category]}"
+                      aria-hidden="true"
+                    ></i>
+                  </div>
+                  <h3>{t(`settings_changelog_${group.category}`)}</h3>
+                  <span class="category-count">{group.total}</span>
+                </div>
+                <ul class="category-list">
+                  {#each group.entries as entry}
+                    <li>
+                      <ChangelogRichText
+                        text={entry.text}
+                        onNavigate={handleClose}
+                      />
+                      <span class="entry-show-me">
+                        <ShowMeButton
+                          {entry}
+                          size="sm"
+                          onNavigate={handleClose}
+                        />
+                      </span>
+                      {#if entry.contributorIds?.length}
+                        <span class="entry-contributors">
+                          {#each entry.contributorIds as cid}
+                            {@const contrib = contributors.get(cid)}
+                            {#if contrib}
+                              <ContributorBadge contributor={contrib} />
+                            {/if}
+                          {/each}
+                        </span>
+                      {/if}
+                    </li>
+                  {/each}
+                </ul>
+                {#if group.hidden > 0}
+                  <p class="category-more">
+                    {t("settings_more_count", { count: group.hidden })}
+                  </p>
+                {/if}
               </div>
             {/each}
           </div>
-          <div class="strip-nav">
-            <button
-              class="strip-btn"
-              type="button"
-              aria-label={t("action_back")}
-              disabled={slide === 0}
-              onclick={() => showSlide(slide - 1)}
-            >
-              <i class="fas fa-chevron-left" aria-hidden="true"></i>
-            </button>
-            <div class="strip-dots">
-              {#each featured as entry, index}
-                <button
-                  class="strip-dot"
-                  class:current={index === slide}
-                  type="button"
-                  aria-label={entry.media!.alt}
-                  aria-current={index === slide}
-                  onclick={() => showSlide(index)}
-                ></button>
-              {/each}
+
+          {#if section.groups.length === 0 && section.featured.length === 0}
+            <div class="empty-state">
+              <i class="fas fa-box-open" aria-hidden="true"></i>
+              <p>{t("settings_no_detailed_changelog")}</p>
             </div>
-            <span class="strip-count" aria-hidden="true">
-              {slide + 1} / {featured.length}
-            </span>
-            <button
-              class="strip-btn"
-              type="button"
-              aria-label={t("action_next")}
-              disabled={slide === featured.length - 1}
-              onclick={() => showSlide(slide + 1)}
-            >
-              <i class="fas fa-chevron-right" aria-hidden="true"></i>
-            </button>
-          </div>
+          {/if}
         </section>
-      {:else if featured.length}
-        <div class="featured-item">
-          {@render featuredItem(featured[0]!)}
-        </div>
-      {/if}
+      {/each}
 
-      <div class="category-grid" data-category-count={categoryCount}>
-        {#each groupedChangelog as group}
-          <div
-            class="category-card"
-            style="--cat-color: {group.color}; --cat-bg: {group.bgColor};"
-          >
-            <div class="category-header">
-              <div class="category-icon">
-                <i
-                  class="fas {CATEGORY_ICONS[group.category]}"
-                  aria-hidden="true"
-                ></i>
-              </div>
-              <h3>{t(`settings_changelog_${group.category}`)}</h3>
-              <span class="category-count">{group.total}</span>
-            </div>
-            <ul class="category-list">
-              {#each group.entries as entry}
-                <li>
-                  <ChangelogRichText
-                    text={entry.text}
-                    onNavigate={handleClose}
-                  />
-                  {#if entry.contributorIds?.length}
-                    <span class="entry-contributors">
-                      {#each entry.contributorIds as cid}
-                        {@const contrib = contributors.get(cid)}
-                        {#if contrib}
-                          <ContributorBadge contributor={contrib} />
-                        {/if}
-                      {/each}
-                    </span>
-                  {/if}
-                </li>
-              {/each}
-            </ul>
-            {#if group.hidden > 0}
-              <p class="category-more">
-                {t("settings_more_count", { count: group.hidden })}
-              </p>
-            {/if}
-          </div>
-        {/each}
-      </div>
-
-      {#if version?.contributorIds?.length && contributors.size > 0}
+      {#if contributorIds.length && contributors.size > 0}
         <div class="contributors-footer">
           <h4 class="contributors-title">{t("settings_contributors")}</h4>
           <div class="contributors-list">
-            {#each version.contributorIds as cid}
+            {#each contributorIds as cid}
               {@const contrib = contributors.get(cid)}
               {#if contrib}
                 <ContributorBadge contributor={contrib} size="md" />
               {/if}
             {/each}
           </div>
-        </div>
-      {/if}
-
-      {#if groupedChangelog.length === 0}
-        <div class="empty-state">
-          <i class="fas fa-box-open" aria-hidden="true"></i>
-          <p>{t("settings_no_detailed_changelog")}</p>
         </div>
       {/if}
     </div>
@@ -492,6 +502,41 @@
     gap: 16px;
   }
 
+  .release-section {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* Catching up: each release under its own badge, split by a hairline. */
+  .release-section + .release-section {
+    padding-top: 16px;
+    border-top: 1.5px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
+  }
+
+  .release-heading {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin: 0;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--theme-text);
+  }
+
+  .release-version {
+    padding: 2px 10px;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--theme-accent) 15%, transparent);
+    color: var(--theme-accent);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .release-date {
+    font-weight: 400;
+    color: var(--theme-text-dim);
+  }
+
   /* A featured example's width is capped by the viewport height too, so
      the columns below stay on screen. */
   .featured-item {
@@ -569,120 +614,6 @@
       align-items: flex-start;
       max-inline-size: 28rem;
       text-align: start;
-    }
-  }
-
-  /* The strip: one example at a time, swiped or stepped with the buttons.
-     Every card is a full track wide, so a step is one track width. */
-  .strip {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .strip-track {
-    display: flex;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    scrollbar-width: none;
-    overscroll-behavior-x: contain;
-  }
-
-  .strip-track::-webkit-scrollbar {
-    display: none;
-  }
-
-  .strip-card {
-    flex: 0 0 100%;
-    max-inline-size: none;
-    justify-content: center;
-    scroll-snap-align: center;
-  }
-
-  .strip-nav {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-  }
-
-  .strip-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 44px;
-    height: 44px;
-    background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
-    border: 1.5px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
-    border-radius: 50%;
-    color: var(--theme-text);
-    cursor: pointer;
-    transition:
-      background var(--duration-normal),
-      opacity var(--duration-normal);
-  }
-
-  .strip-btn:hover:not(:disabled) {
-    background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.08));
-  }
-
-  .strip-btn:disabled {
-    opacity: 0.35;
-    cursor: default;
-  }
-
-  .strip-dots {
-    display: flex;
-  }
-
-  /* The dot is small; its button keeps a full touch target around it. */
-  .strip-dot {
-    display: grid;
-    place-items: center;
-    width: 28px;
-    height: 44px;
-    padding: 0;
-    background: none;
-    border: none;
-    cursor: pointer;
-  }
-
-  .strip-dot::after {
-    content: "";
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--theme-text-dim);
-    opacity: 0.5;
-    transition:
-      background var(--duration-normal),
-      opacity var(--duration-normal),
-      transform var(--duration-normal);
-  }
-
-  .strip-dot.current::after {
-    background: var(--theme-accent);
-    opacity: 1;
-    transform: scale(1.3);
-  }
-
-  /* A phone has no room for a full touch target per dot, so it counts. */
-  .strip-count {
-    display: none;
-    min-inline-size: 4ch;
-    font-size: var(--font-size-sm);
-    font-variant-numeric: tabular-nums;
-    text-align: center;
-    color: var(--theme-text-dim);
-  }
-
-  @container release-notes (max-width: 30rem) {
-    .strip-dots {
-      display: none;
-    }
-
-    .strip-count {
-      display: block;
     }
   }
 
@@ -799,6 +730,18 @@
     color: var(--theme-text);
     line-height: 1.5;
     break-inside: avoid;
+  }
+
+  /* The button follows the sentence like a word, so a short note keeps it
+     on the same line and a long one wraps it to the next. */
+  .entry-show-me {
+    display: inline-block;
+    margin-inline-start: 8px;
+    vertical-align: middle;
+  }
+
+  .entry-show-me:empty {
+    display: none;
   }
 
   .category-list li::before {

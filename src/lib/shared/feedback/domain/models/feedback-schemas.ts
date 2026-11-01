@@ -192,6 +192,14 @@ const ChangelogMediaSchema = z.object({
   height: z.number().int().positive(),
 });
 
+// Where an entry's change lives, kept on the published entry so "Show me"
+// can take the reader there. Legacy docs have none; a malformed one is
+// dropped so the note still shows as plain text.
+const ReleaseSurfaceSchema = z.union([
+  z.literal("global"),
+  z.object({ module: z.string().min(1), tab: z.string().min(1).optional() }),
+]);
+
 const ChangelogEntrySchema = z
   .object({
     category: ChangelogCategorySchema,
@@ -199,6 +207,10 @@ const ChangelogEntrySchema = z
     feedbackId: z.string().optional(),
     contributorIds: z.array(z.string()).optional(),
     media: ChangelogMediaSchema.optional().catch(undefined),
+    surface: ReleaseSurfaceSchema.optional().catch(undefined),
+    highlight: z.boolean().optional().catch(undefined),
+    anchor: z.string().min(1).optional().catch(undefined),
+    callout: z.string().min(1).optional().catch(undefined),
   })
   .passthrough();
 

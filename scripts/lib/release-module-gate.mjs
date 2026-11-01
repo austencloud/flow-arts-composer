@@ -15,7 +15,7 @@
  * (loadProductionModules, collectCommits) live at the bottom.
  */
 
-import { readFileSync } from "fs";
+import { readFileSync, readdirSync } from "fs";
 import { execSync } from "child_process";
 
 /** Default location of the module-visibility source of truth. */
@@ -515,6 +515,10 @@ export function auditChangelogEntries(
       accountCount += 1;
     }
 
+    for (const problem of highlightFieldProblems(entry)) {
+      errors.push({ index, message: `${label} ${problem}` });
+    }
+
     if (entry?.surface == null) {
       errors.push({
         index,
@@ -646,23 +650,212 @@ export function changelogMediaProblem(media) {
 }
 
 /**
- * Remove release-audit metadata before notes are shown or published. An
- * entry's example media is public and stays.
+ * What is wrong with an entry's highlight fields, as a list of problems.
+ *
+ * `highlight` marks the entry as one of the release's headline notes.
+ * `anchor` and `callout` are the arrival hints a highlight's "Show me" uses in
+ * the app, so they only mean something on a highlight.
+ *
+ * @param {unknown} entry
+ * @returns {string[]}
+ */
+export function highlightFieldProblems(entry) {
+  const problems = [];
+  if (entry?.highlight !== undefined && typeof entry.highlight !== "boolean") {
+    problems.push("has a highlight flag that is not true or false");
+  }
+  const isHighlight = entry?.highlight === true;
+  for (const field of ["anchor", "callout"]) {
+    const value = entry?.[field];
+    if (value === undefined) continue;
+    if (typeof value !== "string" || value.trim() === "") {
+      problems.push(`has a ${field} that is not a non-empty string`);
+    } else if (!isHighlight) {
+      problems.push(`has a ${field} but is not a highlight`);
+    }
+  }
+  if (
+    typeof entry?.anchor === "string" &&
+    !RELEASE_ANCHOR_NAME.test(entry.anchor)
+  ) {
+    problems.push(
+      "has an anchor that is not a kebab-case name (letters, digits, hyphens)"
+    );
+  }
+  return problems;
+}
+
+/** An anchor is a plain attribute value: letters, digits and hyphens. */
+const RELEASE_ANCHOR_NAME = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+/**
+ * Every `data-release-anchor="<name>"` the app source declares. The attribute
+ * is the one authoring cost of an anchored highlight; the audit below checks
+ * each highlight's anchor against this set so a note can never point at an
+ * element that is not there.
+ *
+ * @param {string} source - concatenated or single-file source text
+ * @returns {Set<string>}
+ */
+export function parseReleaseAnchors(source) {
+  const anchors = new Set();
+  for (const match of source.matchAll(
+    /data-release-anchor\s*=\s*["']([^"']+)["']/g
+  )) {
+    anchors.add(match[1]);
+  }
+  return anchors;
+}
+
+/**
+ * Highlights whose `anchor` names no `data-release-anchor` in the app.
  *
  * @param {Array} entries
- * @returns {Array<{ category: string, text: string, media?: object }>}
+ * @param {Set<string>} anchors - from parseReleaseAnchors / collectReleaseAnchors
+ * @returns {Array<{ index: number, message: string }>}
+ */
+export function auditReleaseAnchors(entries, anchors) {
+  const errors = [];
+  entries.forEach((entry, index) => {
+    if (entry?.highlight !== true || typeof entry?.anchor !== "string") return;
+    if (!anchors.has(entry.anchor)) {
+      errors.push({
+        index,
+        message: `Entry ${index + 1} anchor "${entry.anchor}" matches no data-release-anchor="${entry.anchor}" under src/`,
+      });
+    }
+  });
+  return errors;
+}
+
+/**
+ * Mark the chosen entries as highlights. The selection is the release
+ * script's `--highlights` argument: 1-based indices into the "added" and
+ * "improved" entries in order, "all", or "none"/"0"/empty for no change.
+ * Entries that already carry `highlight: true` in the manifest keep it.
+ *
+ * @param {Array} entries
+ * @param {string | null | undefined} selection
+ * @returns {Array} a new array; entries are copied, never mutated
+ */
+export function applyHighlightSelection(entries, selection) {
+  const copy = entries.map((entry) => ({ ...entry }));
+  const arg = (selection ?? "").trim().toLowerCase();
+  if (arg === "" || arg === "none" || arg === "0") return copy;
+
+  const candidates = copy.filter(
+    (entry) => entry.category === "added" || entry.category === "improved"
+  );
+  const chosen =
+    arg === "all"
+      ? candidates
+      : arg
+          .split(",")
+          .map((part) => parseInt(part.trim(), 10) - 1)
+          .filter((i) => Number.isInteger(i) && i >= 0 && i < candidates.length)
+          .map((i) => candidates[i]);
+  for (const entry of chosen) entry.highlight = true;
+  return copy;
+}
+
+/**
+ * Remove release-audit metadata before notes are shown or published. An
+ * entry's example media is public and stays, and so are the fields the app
+ * reads to take the reader to the change: `surface`, `highlight`, `anchor`
+ * and `callout`. `audience` is authoring-only and is dropped.
+ *
+ * @param {Array} entries
+ * @returns {Array<{ category: string, text: string, media?: object, surface?: object | string, highlight?: boolean, anchor?: string, callout?: string }>}
  */
 export function toPublicChangelog(entries) {
-  return entries.map(({ category, text, media }) => {
-    if (!media) return { category, text };
-    const { image, video, alt, width, height } = media;
-    return {
-      category,
-      text,
-      media: { image, ...(video ? { video } : {}), alt, width, height },
-    };
-  });
+  return entries.map(
+    ({ category, text, media, surface, highlight, anchor, callout }) => {
+      const entry = { category, text };
+      if (surface === "global") {
+        entry.surface = "global";
+      } else if (surface && typeof surface.module === "string") {
+        entry.surface = {
+          module: surface.module,
+          ...(typeof surface.tab === "string" ? { tab: surface.tab } : {}),
+        };
+      }
+      if (highlight === true) {
+        entry.highlight = true;
+        if (typeof anchor === "string") entry.anchor = anchor;
+        if (typeof callout === "string") entry.callout = callout;
+      }
+      if (media) {
+        const { image, video, alt, width, height } = media;
+        entry.media = {
+          image,
+          ...(video ? { video } : {}),
+          alt,
+          width,
+          height,
+        };
+      }
+      return entry;
+    }
+  );
 }
+
+/**
+ * Release debt: what has shipped to production without a release note. The
+ * verdict is advice for whoever is deciding whether to cut a release; nothing
+ * reads it to block a push.
+ *
+ * @param {{
+ *   lastTag: string | null,
+ *   daysSinceRelease: number | null,
+ *   classified: Array<{ subject: string, released: boolean | null, module: string | null }>
+ * }} input
+ * @returns {{ total: number, userFacing: number, verdict: string, lines: string[] }}
+ */
+export function summarizeReleaseDebt({ lastTag, daysSinceRelease, classified }) {
+  const total = classified.length;
+  // User-facing: a commit on a live module. Shared/infra commits (null) and
+  // dark-flagged ones are not something a reader could notice.
+  const userFacing = classified.filter((c) => c.released === true).length;
+  const days = daysSinceRelease == null ? null : Math.floor(daysSinceRelease);
+
+  const lines = [];
+  lines.push(
+    lastTag
+      ? `Last release: v${lastTag}${days == null ? "" : `, ${days} day${days === 1 ? "" : "s"} ago`}`
+      : "Last release: none tagged"
+  );
+  lines.push(
+    `Commits since then: ${total} (${userFacing} user-facing on live modules)`
+  );
+
+  const byModule = new Map();
+  for (const c of classified) {
+    if (c.released !== true) continue;
+    byModule.set(c.module, (byModule.get(c.module) ?? 0) + 1);
+  }
+  for (const [module, count] of [...byModule.entries()].sort(
+    (a, b) => b[1] - a[1]
+  )) {
+    lines.push(`  ${module}: ${count}`);
+  }
+
+  let verdict;
+  if (total === 0) {
+    verdict = "Nothing has shipped since the last release.";
+  } else if (userFacing === 0) {
+    verdict = `${total} commits but none user-facing; nothing to announce yet.`;
+  } else if (userFacing >= RELEASE_DEBT_COMMITS || (days ?? 0) >= RELEASE_DEBT_DAYS) {
+    verdict = `${userFacing} user-facing commits${days == null ? "" : ` over ${days} days`}; worth cutting a release.`;
+  } else {
+    verdict = `${userFacing} user-facing commits${days == null ? "" : ` over ${days} days`}; a release can wait.`;
+  }
+  lines.push(verdict);
+  return { total, userFacing, verdict, lines };
+}
+
+/** Thresholds for the release-debt verdict: either one tips it. */
+export const RELEASE_DEBT_COMMITS = 10;
+export const RELEASE_DEBT_DAYS = 14;
 
 // ── Thin I/O wrappers (not unit-tested; exercised by release.js) ────────────
 
@@ -691,6 +884,30 @@ export function loadGuestModuleAccess(path = GUEST_MODULE_ACCESS_PATH) {
  */
 export function loadModuleTabs(path = TAB_DEFINITIONS_PATH) {
   return parseModuleTabs(readFileSync(path, "utf8"));
+}
+
+/**
+ * Every data-release-anchor declared under a source directory.
+ * @param {string} [dir]
+ * @returns {Set<string>}
+ */
+export function collectReleaseAnchors(dir = "src") {
+  const anchors = new Set();
+  const walk = (folder) => {
+    for (const entry of readdirSync(folder, { withFileTypes: true })) {
+      const path = `${folder}/${entry.name}`;
+      if (entry.isDirectory()) {
+        if (entry.name === "node_modules") continue;
+        walk(path);
+      } else if (/\.(svelte|ts|html)$/.test(entry.name)) {
+        for (const anchor of parseReleaseAnchors(readFileSync(path, "utf8"))) {
+          anchors.add(anchor);
+        }
+      }
+    }
+  };
+  walk(dir);
+  return anchors;
 }
 
 /**

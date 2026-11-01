@@ -69,28 +69,35 @@
       const versions = await versionService.getVersions();
       const versionData = versions.find((v) => v.version === currentVersion);
 
-      if (versionData && versionData.changelogEntries?.length) {
-        // Non-blocking update toast instead of an auto-popup modal. Mark seen
-        // on fire so it never re-nags even if ignored; the "See what's new"
-        // action opens the full modal for detail on demand.
+      // Every release newer than the seen mark is unread; the dot carries
+      // that memory until the sheet or Release Notes page opens.
+      whatsNewState.setPublishedVersions(versions, currentVersion);
+
+      if (!versionData || !versionData.changelogEntries?.length) {
+        // No changelog for this version: nothing to read, so nothing is owed.
         whatsNewState.markVersionAsSeen(currentVersion);
-        const count = versionData.changelogEntries.length;
-        showToast({
-          message: t("settings_update_count_toast", {
-            version: currentVersion,
-            count,
-          }),
-          type: "info",
-          duration: WHATS_NEW_TOAST_MS,
-          action: {
-            label: t("settings_see_whats_new"),
-            onClick: () => whatsNewState.openDetail(versionData),
-          },
-        });
-      } else {
-        // No changelog for this version, mark as seen silently
-        whatsNewState.markVersionAsSeen(currentVersion);
+        return;
       }
+
+      // One polite toast per version. Firing it is not reading it: the seen
+      // mark moves only when the sheet actually opens, so an ignored toast
+      // leaves the dot on. The toasted mark alone stops it re-firing.
+      if (whatsNewState.hasToastedVersion(currentVersion)) return;
+      whatsNewState.markVersionAsToasted(currentVersion);
+      const count = versionData.changelogEntries.length;
+      showToast({
+        message: t("settings_update_count_toast", {
+          version: currentVersion,
+          count,
+        }),
+        type: "info",
+        duration: WHATS_NEW_TOAST_MS,
+        action: {
+          label: t("settings_see_whats_new"),
+          // Catch up on everything unread, this release included.
+          onClick: () => whatsNewState.openRollup(versionData),
+        },
+      });
     } catch (error) {
       console.error("Failed to load version data for What's New:", error);
       // Don't show modal on error, but don't mark as seen either

@@ -9,6 +9,7 @@
   import ContributorPicker from "./ContributorPicker.svelte";
   import ChangelogRichText from "./ChangelogRichText.svelte";
   import ChangelogEntryMedia from "./ChangelogEntryMedia.svelte";
+  import ShowMeButton from "./ShowMeButton.svelte";
 
   let {
     entry,
@@ -306,6 +307,8 @@
         {/if}
       </div>
     </div>
+
+    <ShowMeButton {entry} size="sm" />
 
     {#if hasLink && onOpenFeedback}
       <button

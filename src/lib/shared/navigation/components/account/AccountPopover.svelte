@@ -281,6 +281,15 @@
       <button class="version-link" onclick={handleWhatsNew}>
         v{__APP_VERSION__}
         <span class="whats-new-label">{t("nav_ui_what_s_new")}</span>
+        <!-- Reserved slot: the dot toggles visibility, never layout. -->
+        <span
+          class="unread-dot"
+          class:shown={whatsNewState.hasUnseen}
+          aria-hidden="true"
+        ></span>
+        {#if whatsNewState.hasUnseen}
+          <span class="sr-only">{t("settings_unread_release_notes")}</span>
+        {/if}
       </button>
     </div>
   </div>
@@ -553,6 +562,20 @@
 
   .whats-new-label {
     font-weight: 500;
+  }
+
+  .unread-dot {
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--theme-accent);
+    box-shadow: 0 0 0 2px rgb(18, 18, 28);
+    visibility: hidden;
+  }
+
+  .unread-dot.shown {
+    visibility: visible;
   }
 
   @media (prefers-reduced-motion: reduce) {

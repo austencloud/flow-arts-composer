@@ -28,6 +28,7 @@
   import { settingsService as settingsServiceSingleton } from "#lib/shared/settings/state/settings-state.svelte.js";
   import { createGlobalChiralitySeam } from "../../settings/components/tabs/prop-type/prop-chirality-seam";
   import WhatsNewChecker from "../../settings/components/WhatsNewChecker.svelte";
+  import ReleaseTourArrival from "../../settings/components/ReleaseTourArrival.svelte";
   import ErrorModal from "../../error/components/ErrorModal.svelte";
   import ErrorToast from "../../error/components/ErrorToast.svelte";
   import InboxSubscriptionProvider from "../../inbox/components/InboxSubscriptionProvider.svelte";
@@ -832,6 +833,8 @@
 
     <!-- What's New Modal (version updates) -->
     <WhatsNewChecker />
+    <!-- Finishes a release highlight's "Show me" once its surface mounts -->
+    <ReleaseTourArrival />
 
     <!-- Global Error Modal -->
     <ErrorModal />

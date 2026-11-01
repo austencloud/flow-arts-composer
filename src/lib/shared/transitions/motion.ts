@@ -158,6 +158,60 @@ export function createDestinationFade(
   };
 }
 
+export interface AttentionPulseOptions {
+  /** One ring's grow-and-fade. Two rings by default. */
+  duration?: number;
+  rings?: number;
+  /** How far the ring reaches past the element's edge. */
+  reach?: number;
+}
+
+/**
+ * A soft ring that grows from an element's edge and fades, to say "this one,
+ * here" after an instant jump landed on it. The ring sibling of
+ * `createDestinationFade`: that cue fades a whole surface in, this one points
+ * at one element inside it. Under reduced motion the ring becomes a static
+ * outline held for the same total time, then removed. Returns a cancel.
+ */
+export function attentionPulse(
+  element: HTMLElement,
+  {
+    duration = DURATION.dramatic,
+    rings = 2,
+    reach = 12,
+  }: AttentionPulseOptions = {}
+): () => void {
+  const color = "var(--theme-accent, #6ea8fe)";
+  const total = duration * rings;
+
+  if (reducedMotion() || typeof element.animate !== "function") {
+    const previous = {
+      outline: element.style.outline,
+      outlineOffset: element.style.outlineOffset,
+    };
+    element.style.outline = `2px solid ${color}`;
+    element.style.outlineOffset = "3px";
+    const restore = () => {
+      element.style.outline = previous.outline;
+      element.style.outlineOffset = previous.outlineOffset;
+    };
+    const timer = setTimeout(restore, total);
+    return () => {
+      clearTimeout(timer);
+      restore();
+    };
+  }
+
+  const animation = element.animate(
+    [
+      { boxShadow: `0 0 0 0 ${color}` },
+      { boxShadow: `0 0 0 ${reach}px transparent` },
+    ],
+    { duration, iterations: rings, easing: EASE_OUT, composite: "add" }
+  );
+  return () => animation.cancel();
+}
+
 /**
  * Owns a content-sized overlay's height while it moves between two measured
  * layouts. The caller measures the natural destination; this keeps the visual

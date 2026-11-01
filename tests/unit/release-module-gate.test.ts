@@ -12,6 +12,11 @@ import {
   classifyCommit,
   gateCommits,
   auditChangelogEntries,
+  auditReleaseAnchors,
+  applyHighlightSelection,
+  highlightFieldProblems,
+  parseReleaseAnchors,
+  summarizeReleaseDebt,
   toPublicChangelog,
   DARK_DENYLIST,
 } from "../../scripts/lib/release-module-gate.mjs";
@@ -559,20 +564,61 @@ describe("auditChangelogEntries", () => {
 });
 
 describe("toPublicChangelog", () => {
-  it("strips private audience and surface metadata", () => {
+  it("strips audience but keeps the surface the app navigates with", () => {
     expect(
       toPublicChangelog([
         {
           category: "fixed",
           text: "Saved sequences open from your Library.",
           audience: "guest",
-          surface: { module: "browse", tab: "library" },
+          surface: { module: "browse", tab: "library", note: "private" },
+        },
+        {
+          category: "improved",
+          text: "Everything loads faster.",
+          audience: "guest",
+          surface: "global",
         },
       ])
     ).toEqual([
       {
         category: "fixed",
         text: "Saved sequences open from your Library.",
+        surface: { module: "browse", tab: "library" },
+      },
+      {
+        category: "improved",
+        text: "Everything loads faster.",
+        surface: "global",
+      },
+    ]);
+  });
+
+  it("keeps highlight, anchor and callout only on a highlight", () => {
+    const base = {
+      category: "added",
+      text: "A.",
+      audience: "guest",
+      surface: { module: "create", tab: "construct" },
+      anchor: "construct-start-pad",
+      callout: "Tap a start position to begin.",
+    };
+    expect(toPublicChangelog([{ ...base, highlight: true }])).toEqual([
+      {
+        category: "added",
+        text: "A.",
+        surface: { module: "create", tab: "construct" },
+        highlight: true,
+        anchor: "construct-start-pad",
+        callout: "Tap a start position to begin.",
+      },
+    ]);
+    // A stray anchor on a non-highlight is authoring debris, not public data.
+    expect(toPublicChangelog([{ ...base, highlight: false }])).toEqual([
+      {
+        category: "added",
+        text: "A.",
+        surface: { module: "create", tab: "construct" },
       },
     ]);
   });
@@ -599,9 +645,187 @@ describe("toPublicChangelog", () => {
       {
         category: "added",
         text: "A.",
+        surface: "global",
         media: { image: media.image, alt: "A", width: 520, height: 520 },
       },
     ]);
+  });
+});
+
+describe("highlight fields", () => {
+  const ctx = {
+    productionModules: PM,
+    guestModuleAccess: parseGuestModuleAccess(GUEST_ACCESS_SOURCE),
+    moduleTabs: parseModuleTabs(TAB_DEFINITIONS_SOURCE),
+  };
+  const entry = (extra: object) => ({
+    category: "added",
+    text: "Build from a start position.",
+    audience: "guest",
+    surface: { module: "create", tab: "construct" },
+    ...extra,
+  });
+
+  it("accepts a highlight with an anchor and a callout", () => {
+    expect(
+      highlightFieldProblems(
+        entry({ highlight: true, anchor: "start-pad", callout: "Tap one." })
+      )
+    ).toEqual([]);
+  });
+
+  it("rejects arrival hints on a non-highlight and malformed values", () => {
+    expect(highlightFieldProblems(entry({ anchor: "start-pad" }))).toEqual([
+      "has a anchor but is not a highlight",
+    ]);
+    expect(highlightFieldProblems(entry({ highlight: "yes" }))).toEqual([
+      "has a highlight flag that is not true or false",
+    ]);
+    expect(
+      highlightFieldProblems(entry({ highlight: true, anchor: "Start Pad" }))
+    ).toEqual([
+      "has an anchor that is not a kebab-case name (letters, digits, hyphens)",
+    ]);
+    expect(
+      highlightFieldProblems(entry({ highlight: true, callout: "  " }))
+    ).toEqual(["has a callout that is not a non-empty string"]);
+  });
+
+  it("surfaces highlight problems through the changelog audit", () => {
+    const result = auditChangelogEntries([entry({ callout: "Hi." })], ctx);
+    expect(result.errors.map((e: { message: string }) => e.message)).toEqual([
+      "Entry 1 has a callout but is not a highlight",
+    ]);
+  });
+});
+
+describe("release anchors", () => {
+  it("finds every data-release-anchor in source text", () => {
+    const anchors = parseReleaseAnchors(`
+      <div data-release-anchor="start-pad" class="pad"></div>
+      <button data-release-anchor='fuse-mixer'>Mix</button>
+      <span data-release-anchor = "spaced-out"></span>
+    `);
+    expect([...anchors].sort()).toEqual([
+      "fuse-mixer",
+      "spaced-out",
+      "start-pad",
+    ]);
+  });
+
+  it("blocks a highlight whose anchor matches nothing in the app", () => {
+    const anchors = new Set(["start-pad"]);
+    const entries = [
+      { category: "added", text: "A.", highlight: true, anchor: "start-pad" },
+      { category: "added", text: "B.", highlight: true, anchor: "gone-pad" },
+      { category: "added", text: "C.", highlight: true, callout: "No anchor." },
+      { category: "added", text: "D.", anchor: "gone-pad" },
+    ];
+    expect(auditReleaseAnchors(entries, anchors)).toEqual([
+      {
+        index: 1,
+        message:
+          'Entry 2 anchor "gone-pad" matches no data-release-anchor="gone-pad" under src/',
+      },
+    ]);
+  });
+});
+
+describe("applyHighlightSelection", () => {
+  const entries = [
+    { category: "fixed", text: "F1." },
+    { category: "added", text: "A1." },
+    { category: "improved", text: "I1." },
+    { category: "added", text: "A2.", highlight: true },
+  ];
+
+  it("flags 1-based indices into the added/improved entries only", () => {
+    const out = applyHighlightSelection(entries, "1,3");
+    expect(out.map((e) => e.highlight === true)).toEqual([
+      false,
+      true,
+      false,
+      true,
+    ]);
+    // Never mutates the manifest it was handed.
+    expect(entries[1]).toEqual({ category: "added", text: "A1." });
+  });
+
+  it("keeps manifest highlights with none/0/empty and flags all with all", () => {
+    for (const arg of ["none", "0", "", null, undefined]) {
+      expect(
+        applyHighlightSelection(entries, arg).map((e) => e.highlight === true)
+      ).toEqual([false, false, false, true]);
+    }
+    expect(
+      applyHighlightSelection(entries, "all").map((e) => e.highlight === true)
+    ).toEqual([false, true, true, true]);
+  });
+
+  it("ignores out-of-range and non-numeric picks", () => {
+    expect(
+      applyHighlightSelection(entries, "9,x,2").map((e) => e.highlight === true)
+    ).toEqual([false, false, true, true]);
+  });
+});
+
+describe("summarizeReleaseDebt", () => {
+  const live = (module: string) => ({ subject: "s", released: true, module });
+  const infra = { subject: "s", released: null, module: null };
+  const dark = { subject: "s", released: false, module: "mandala" };
+
+  it("counts only live-module commits as user-facing and tips on volume", () => {
+    const report = summarizeReleaseDebt({
+      lastTag: "0.49.0",
+      daysSinceRelease: 3.8,
+      classified: [
+        ...Array.from({ length: 10 }, () => live("create")),
+        live("browse"),
+        infra,
+        dark,
+      ],
+    });
+    expect(report.total).toBe(13);
+    expect(report.userFacing).toBe(11);
+    expect(report.verdict).toBe(
+      "11 user-facing commits over 3 days; worth cutting a release."
+    );
+    expect(report.lines[0]).toBe("Last release: v0.49.0, 3 days ago");
+    expect(report.lines).toContain("  create: 10");
+  });
+
+  it("tips on age alone and says so when a release can wait", () => {
+    expect(
+      summarizeReleaseDebt({
+        lastTag: "0.49.0",
+        daysSinceRelease: 20,
+        classified: [live("create")],
+      }).verdict
+    ).toBe("1 user-facing commits over 20 days; worth cutting a release.");
+    expect(
+      summarizeReleaseDebt({
+        lastTag: "0.49.0",
+        daysSinceRelease: 2,
+        classified: [live("create")],
+      }).verdict
+    ).toBe("1 user-facing commits over 2 days; a release can wait.");
+  });
+
+  it("names the empty and infra-only cases plainly", () => {
+    expect(
+      summarizeReleaseDebt({
+        lastTag: null,
+        daysSinceRelease: null,
+        classified: [],
+      }).verdict
+    ).toBe("Nothing has shipped since the last release.");
+    expect(
+      summarizeReleaseDebt({
+        lastTag: "0.49.0",
+        daysSinceRelease: 1,
+        classified: [infra, dark],
+      }).verdict
+    ).toBe("2 commits but none user-facing; nothing to announce yet.");
   });
 });
 
