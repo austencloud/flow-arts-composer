@@ -1,15 +1,17 @@
 ---
 status: active
-value: null
-effort: null
-remaining: "Verify Post Share Sheet — Handoff against src/lib/shared/share/components/PostShareSheet.svelte before resuming implementation. Prior recorded remainder: Reconcile the PostShareSheet handoff open-item list against current share flow and test the remaining transitions."
+value: 3
+effort: S
+remaining: "Open item 4 is fixed (src/routes/sequence/[id]/+page.server.ts resolves short codes via fetchPublicShortCodeRecord) and item 1's visual bar was overtaken by the Sept-Oct share rework (docs/architecture/sharing-export-experience.md, 8a82773c9f, be7c31c179); left are Austen-gated items 2-3: Meta app review before META_POSTING_ENABLED (meta-publish.ts) flips, functions deploy, and phone proofs of navigator.share and QR save, tracked in 2026-08-09-social-post-handoff-design.md."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: blocked
 ---
 # Post Share Sheet — Handoff
+
+> **Triage note (2026-11-01):** The repo-state and pickup steps below are historical. The /sequence short-code link preview (open item 4) is fixed, and the sheet was reworked under docs/architecture/sharing-export-experience.md (8a82773c9f through be7c31c179). What remains is Austen's Meta app review and phone proofs, tracked in 2026-08-09-social-post-handoff-design.md.
 
 **Written for a fresh agent picking this up cold.** Read this, then the design
 doc: `docs/superpowers/specs/active/2026-08-09-social-post-handoff-design.md`.
