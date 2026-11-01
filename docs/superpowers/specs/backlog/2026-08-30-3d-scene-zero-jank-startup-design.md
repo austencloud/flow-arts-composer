@@ -1,13 +1,13 @@
 ---
 status: backlog
-value: null
-effort: null
+value: 3
+effort: L
 work_state: ready
-remaining: "Implement demand-loaded pooled effects and conditional control imports, then measure the specified 1080p/4K startup and reveal acceptance. scene-effects-manager-3d.ts still statically imports renderers and initializes every pool at lines 154–166, SceneControlWorkspace imports closed controls eagerly, and scene-effect-task-scheduler-3d.ts is absent despite later startup work (7d1dfff785)."
+remaining: "Rechecked 2026-11-01: scene-effects-manager-3d.ts still statically imports every renderer and initializes all pools (lines 158-170), SceneControlWorkspace.svelte still imports SaveSceneModal, SceneControlInspector and MobileSceneControls eagerly, and scene-effect-task-scheduler-3d.ts does not exist. Implement demand loading and conditional controls, then measure 1080p/4K acceptance."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: 2026-10-14
+last_triaged: 2026-11-01
 ---
 
 # 3D Scene Zero-Jank Startup
