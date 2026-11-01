@@ -2,15 +2,80 @@
 status: backlog
 value: 2
 effort: S
-remaining: "Implement release entry metadata retention, validated Show me navigation/arrival state, unread discovery/rollup, release-aware reload copy and release-debt reporting. toPublicChangelog still strips entries to category/text (scripts/lib/release-module-gate.mjs:610–612), and release-tour/data-release-anchor are absent; 24a63db357 only changes rich-text rendering."
+remaining: "Verify on Austen's machine: a real release manifest with surface/highlight/anchor/callout through scripts/release.js --confirm (needs serviceAccountKey.json), the Show me hop from the What's New sheet into a live module and its anchor pulse in the full app shell (the container cannot boot Firebase), the unread dot in AccountPopover and the Preferences row with a signed-in account, and the release-aware SW reload toast on a real deploy. Component code, gate, --debt, state semantics and the arrival are implemented and tested."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: 2026-10-14
-work_state: ready
+last_triaged: 2026-11-01
+work_state: verification
 ---
 
 # Release Notes Deep-Linking + Discovery — Design
+
+> ## 2026-11-01 implementation evidence (branch `claude/release-notes-deep-linking`)
+>
+> All six sections are implemented; the remaining work is live verification
+> on Austen's machine (see `remaining`).
+>
+> **Code.** `ChangelogEntry` in both model copies and the Zod
+> `ChangelogEntrySchema` carry `surface`, `highlight`, `anchor`, `callout`
+> (malformed or null values degrade to undefined). `toPublicChangelog` keeps
+> them and still strips `audience`; `auditChangelogEntries` validates the
+> highlight fields; `auditReleaseAnchors` + `collectReleaseAnchors` block a
+> highlight whose anchor matches no `data-release-anchor` under `src/`;
+> `applyHighlightSelection` writes the flag instead of the parallel
+> `highlights` array (release.js no longer writes that array);
+> `scripts/release.js --debt` prints `summarizeReleaseDebt` without needing
+> credentials. "Show me" is `release-surface.ts` (`resolveShowMeTarget`) +
+> `ShowMeButton.svelte`, used by `WhatsNewModal` and
+> `EditableChangelogItem`, navigating through `handleModuleChange`. The
+> arrival is `release-tour-state.svelte.ts` (pending arrival),
+> `ReleaseTourArrival.svelte` (mounted in `MainApplication`),
+> `release-anchor-arrival.ts` (waits up to 8 s for the anchor, scrolls,
+> focuses) and `attentionPulse` in `shared/transitions/motion.ts` (two
+> `DURATION.dramatic` rings; static outline under reduced motion). The
+> first anchor is `data-release-anchor="settings-whats-new"` on the
+> Preferences "What's new" row. Discovery: `whatsNewState` marks seen only
+> when the sheet or the Release Notes page opens, keeps a separate
+> `tka-last-toasted-version` mark, exposes `unseenVersions`/`hasUnseen`
+> for the reserved-slot dots in `AccountPopover` and `SettingActionRow`
+> (Preferences row), and `openRollup` shows every unread release newest
+> first with a `v{x}` badge per section. `hooks.client.ts` upgrades the SW
+> toast to "TKA v{X} is ready. Reload to see what's new." when the newest
+> published release is newer than the running build (single limit-1 read,
+> 2.5 s cap, generic copy on any failure). `/release` and `/queue` skills
+> and `changelog-policy.md` reference the new fields and `--debt`.
+>
+> **Product calls made without Austen.** The callout reuses the toast owner
+> (`showToast`, polite, 10 s) rather than a new content-anchored callout
+> primitive; grep found no existing dismissible inline callout and the rule
+> is to reuse before building. The spec's em-dash copy for the SW toast was
+> written as two sentences per `docs/reference/ai-writing-guide.md`. The
+> release-tour state is a factory with one exported app instance (like
+> `whatsNewState`), not module-root context, because the arrival outlives
+> the settings surface that sets it.
+>
+> **Verified here.** Vitest: `tests/unit/release-module-gate.test.ts` (57,
+> gate, anchors, highlight selection, debt), `tests/unit/feedback/
+> app-version-entry-surface.test.ts`, `select-unseen-versions.test.ts`,
+> `src/lib/shared/versioning/domain/utils/release-surface.test.ts`,
+> `src/lib/shared/settings/state/whats-new-state.test.ts` (seen only on
+> open, toasted mark separate, rollup). Scoped `svelte-check` over the
+> touched files: no errors in them (the 81 reported are pre-existing in
+> unrelated 3D/maps files pulled in through imports). Playwright, headless
+> Chromium on `/test/release-tour` at 375×667 and 1440×900, each with and
+> without `prefers-reduced-motion`: Show me renders only for the
+> guest-reachable surfaced entry (hidden for account-only, global, unknown
+> module, no surface); the arrival scrolls the anchor into view, focuses it
+> (`tabindex=-1`), runs the pulse animation (static `outline: solid` under
+> reduced motion, instant scroll) and removes it afterwards; a missing
+> anchor shows the callout toast; the catch-up sheet shows two releases with
+> badges and no horizontal overflow at both widths.
+>
+> **Not verifiable in the container.** The full app shell stalls on
+> "Almost there" without Firebase config, so the real Show me hop into a
+> live module, the dots with a signed-in account, and the SW toast were not
+> exercised end to end.
 
 > 2026-10-14 triage: Implement release entry metadata retention, validated Show me navigation/arrival state, unread discovery/rollup, release-aware reload copy and release-debt reporting. toPublicChangelog still strips entries to category/text (scripts/lib/release-module-gate.mjs:610–612), and release-tour/data-release-anchor are absent; 24a63db357 only changes rich-text rendering. Earlier status banners and execution instructions are historical where they conflict with this review.
 
