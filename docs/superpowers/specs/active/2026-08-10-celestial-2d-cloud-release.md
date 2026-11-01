@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
-remaining: "Verify published celestial package contents, cloud layer test, and release evidence against current tag before archival."
+value: 2
+effort: XS
+remaining: "Fully shipped: @austencloud/backgrounds@0.7.12 is pinned in package.json and pnpm-lock.yaml, its installed CelestialBackgroundSystem.js has sunGlow and no drawIslands/pillars path, TKA controls and migration shipped in c90453b70a (celestial-lab-settings.ts, tests/unit/celestial-background-contract.test.ts), and the spec records npm, Android and on-device evidence; ready to move to shipped."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: verification
+last_triaged: 2026-11-01
+work_state: complete
 ---
 # Celestial 2D Cloud Release
 
