@@ -1,16 +1,18 @@
 ---
 status: active
-value: null
-effort: null
-work_state: unverified
-remaining: Verify Tunnel cast/stage ownership separation and saved-state migration against the design contract.
+value: 3
+effort: S
+work_state: verification
+remaining: "Runtime proof only: Oregano reopens as P1, P2, P3, P1 with an unchanged picture; removing the second P1 leaves three performers; a new performer adds one instance; invalid formation recipes show disabled with a reason; plus Austen's Phase 1 gate. Shipped in 0655419800 (tunnel-stage.ts, tunnel-composition.ts v2, TunnelStageFormationSettings.svelte, tests/unit/tunnel-stage.test.ts); the 2026-10-22 layout table covers the workspace tiers."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: 2026-11-01
 ---
 
 # Tunnel Cast and Stage Separation
+
+> **Triage note (2026-11-01):** The approval status below is historical. The stage-instance model, v2 composition migration and stage-aware formation settings shipped in 0655419800; the runtime Oregano checks and Austen's Phase 1 gate remain.
 
 **Status:** Approved for implementation on 2026-09-04
 **Track:** Tunnel Creator Phase 1 correction
