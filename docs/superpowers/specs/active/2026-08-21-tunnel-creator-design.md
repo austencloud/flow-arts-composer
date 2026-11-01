@@ -1,13 +1,13 @@
 ---
 status: active
-value: 5
-effort: XL
-remaining: "Deliver source-generation parity in four user-verified phases"
+value: 4
+effort: L
+remaining: "Creator, eight-performer cast (31cd93a813), Shape Matrix sources (89ec8c69f4), saved-tunnel reopen (19fc25a476) and Tunnels library picker shipped in src/lib/features/create/tunnel/. Remaining: Phase 2 Build/Adjust/Inspect/Save source routes (absent from TunnelPerformerCard menu), Austen's per-phase acceptance, and the seven-viewport matrix."
 depends_on: ""
 plan_path: ""
 tags: [create, tunnel, composition]
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: in-progress
 ---
 
 # Tunnel Creator Design
