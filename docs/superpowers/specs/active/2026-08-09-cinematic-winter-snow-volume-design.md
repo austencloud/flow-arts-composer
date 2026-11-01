@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
-remaining: "Confirm the snow-volume release gate, 4K benchmark, and visual review still apply to the current Winter renderer."
+value: 2
+effort: XS
+remaining: "Fully shipped: @austencloud/backgrounds 0.7.4/0.7.5 published and integrated in TKA (35aaa20a87); Verification record covers 7-viewport review, 4K benchmark (1.38 ms avg vs 1.85 ms) and package checks. Current dependency ^0.7.12 still ships winter/services/SnowVolumeRenderer.js."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: verification
+last_triaged: 2026-11-01
+work_state: complete
 ---
 # Cinematic Winter Snow Volume
 
