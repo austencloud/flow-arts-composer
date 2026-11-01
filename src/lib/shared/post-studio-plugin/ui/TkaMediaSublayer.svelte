@@ -19,6 +19,9 @@
     layerSequencePosition,
     paintedLabelRegions,
   } from "./tka-canvas-layer";
+  import { staggeredFrames } from "../staggered-performers";
+  import { createPerformerSequences } from "../performer-sequences.svelte";
+  import { sequencePositionToAnimationTime } from "#lib/shared/animation-engine/services/step-calculator.js";
 
   /**
    * tka's sequence surfaces inside a media layer: the live animation, the
@@ -59,11 +62,44 @@
   /** An animation turning into its square's look on one surface, 0 to 1. */
   const lookBlend = $derived(layer.lookBlend ?? 0);
   const effectsIn = $derived(layer.effectsIn ?? 1);
-  const sequencePosition = $derived(layerSequencePosition(layer, binding));
-  const sequencePassIndex = $derived(layer.sequencePassIndex);
-  const sequenceProgress = $derived(layer.sequenceFrame?.passBeatProgress);
+  // A staggered tunnel: the red/blue performer stops early and the others
+  // follow it on the same tapped count.
+  const staggered = $derived.by(() => {
+    const followers =
+      sourceItem?.kind === "animation" ? sourceItem.followers : undefined;
+    if (!followers?.length || !layer.sequenceFrame || !sequence) return null;
+    const moveBeats = sequence.steps.map((step) => step.duration ?? 1);
+    return staggeredFrames(
+      layer.sequenceFrame,
+      moveBeats,
+      followers.map((follower) => follower.beatsBehind)
+    );
+  });
+  const followerPositions = $derived(
+    staggered?.followers.map((frame) => frame.enginePosition) ?? []
+  );
+  // A partner facing the other way does the moves mirrored, flipped, swapped.
+  const followerSequences = createPerformerSequences(
+    () => sequence,
+    () => (sourceItem?.kind === "animation" ? sourceItem.followers : undefined)
+  );
+  const sequencePosition = $derived(
+    staggered?.leader.enginePosition ?? layerSequencePosition(layer, binding)
+  );
+  const sequencePassIndex = $derived(
+    staggered?.leader.pass ?? layer.sequencePassIndex
+  );
+  const sequenceProgress = $derived(
+    (staggered?.leader ?? layer.sequenceFrame)?.passBeatProgress
+  );
   const animationTimeSeconds = $derived(
-    layerAnimationTimeSeconds(layer, binding)
+    staggered && sequence
+      ? sequencePositionToAnimationTime(
+          staggered.leader.enginePosition,
+          sequence.steps,
+          1
+        )
+      : layerAnimationTimeSeconds(layer, binding)
   );
   const breakdownMotion = $derived(layerBreakdownMotion(role, sourceItem));
   const breakdownMode = $derived(layerBreakdownMode(sourceItem));
@@ -71,7 +107,9 @@
   const labelsPainted = $derived(
     paintedLabelRegions(tka.bindingFor, preset).has(regionId)
   );
-  const displayedBeatNumber = $derived(layer.displayedBeatNumber);
+  const displayedBeatNumber = $derived(
+    staggered?.leader.move ?? layer.displayedBeatNumber
+  );
 
   const arrangement = $derived(
     sourceItem?.kind === "arrangement" ? sourceItem : null
@@ -87,11 +125,15 @@
       : null
   );
   // A post without an arrangement should not load the grid's canvas engines.
-  let ArrangementLayer = $state.raw<typeof PostStudioArrangementLayerType | null>(
-    null
-  );
+  let ArrangementLayer = $state.raw<
+    typeof PostStudioArrangementLayerType | null
+  >(null);
   $effect(() => {
-    if (binding.renderMode !== "arrangement" || !arrangement || ArrangementLayer)
+    if (
+      binding.renderMode !== "arrangement" ||
+      !arrangement ||
+      ArrangementLayer
+    )
       return;
     let current = true;
     void import("./PostStudioArrangementLayer.svelte").then((module) => {
@@ -135,6 +177,8 @@
     {labelsPainted}
     {animationAppearance}
     {tunnelHook}
+    {followerPositions}
+    followerSequences={followerSequences.current}
     {chromeOpacity}
     {mandalaIn}
     {lookBlend}

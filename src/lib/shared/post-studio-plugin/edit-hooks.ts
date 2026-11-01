@@ -54,6 +54,10 @@ export const TKA_EDIT_HOOKS: EditHooks = {
     if (item.kind === "animation" && patch.overlay !== undefined) {
       next.overlay = patch.overlay;
     }
+    if (item.kind === "animation" && patch.followers !== undefined) {
+      if (patch.followers?.length) next.followers = patch.followers;
+      else delete next.followers;
+    }
     if (
       (item.kind === "animation" || item.kind === "moves") &&
       patch.animationAppearance !== undefined

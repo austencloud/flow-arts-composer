@@ -9271,6 +9271,7 @@
   "settings_display_pictograph": "Piktogramm",
   "settings_display_animation": "Animation",
   "settings_display_card": "Karte",
+  "settings_display_card_length": "Kartenlänge",
   "settings_display_pictograph_caption": "Lange drücken oder rechtsklicken auf ein beliebiges Piktogramm in der App für dieselben Schalter.",
   "settings_display_animation_caption": "Lange drücken oder rechtsklicken auf eine laufende Animation für diese und weitere Schalter.",
   "settings_display_card_caption": "Rechtsklick oder langes Drücken auf eine Karte im Viewer für dieselben Schalter.",

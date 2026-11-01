@@ -1,14 +1,22 @@
 <script lang="ts">
-  import type { PageData } from "./$types";
+  /**
+   * One mode's sequences on the timing-and-direction page: a player with
+   * props or hands, turns and the four sequence actions, beside a chooser of
+   * the mode's real loops (Diamond and Box). The page's mode grid and this
+   * section show the same mode; it has its own player state, so choosing a
+   * loop here never changes the grid's hand-path comparison.
+   *
+   * This was the /timing-and-direction/<mode> page until Austen chose one
+   * timing-and-direction page (2026-10-31); those addresses now redirect to
+   * /timing-and-direction?mode=<slug>#mode-sequences.
+   */
   import { untrack } from "svelte";
   import { flip } from "svelte/animate";
   import { browser } from "$app/env";
   import { TIMING_DIRECTION_MODES } from "#lib/features/learn/components/interactive/foundations/pictograph-foundation-content.js";
-  import Seo from "#lib/shared/components/Seo.svelte";
   import { Crossfade } from "#lib/shared/transitions/motion.js";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import SequenceTransformActions from "#lib/shared/create/components/SequenceTransformActions.svelte";
-  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import TurnNotationControls from "#lib/shared/shape-matrix/app/components/TurnNotationControls.svelte";
   import type { MatrixLabelMode } from "#lib/shared/shape-matrix/domain/matrix-turn-band.js";
@@ -28,12 +36,12 @@
     opaqueFade,
     reducedMotion,
   } from "#lib/shared/transitions/motion.js";
-  import { getTimingDirectionState } from "../_state/timing-direction-state.svelte";
-  import TimingDirectionModeCard from "../_components/TimingDirectionModeCard.svelte";
+  import { createTimingDirectionState } from "../_state/timing-direction-state.svelte";
+  import TimingDirectionModeCard from "./TimingDirectionModeCard.svelte";
   import {
     getTimingDirectionArticle,
     TIMING_DIRECTION_ARTICLES,
-    TIMING_DIRECTION_READING,
+    TIMING_DIRECTION_SEQUENCES_ID,
   } from "../_data/timing-direction-articles";
   import {
     adjustModeLoops,
@@ -46,28 +54,31 @@
     type ModeLoopTransform,
   } from "../_data/mode-sequences";
 
-  let { data }: { data: PageData } = $props();
+  let {
+    slug,
+    onSelectMode,
+  }: { slug: string; onSelectMode: (slug: string) => void } = $props();
 
-  const playback = getTimingDirectionState();
+  const playback = createTimingDirectionState(untrack(() => slug));
+  $effect(() => {
+    const next = slug;
+    untrack(() => playback.followRoute(next));
+  });
+  $effect(() => {
+    playback.pendingSeek.version;
+    untrack(() => playback.runPendingSeek());
+  });
   const displayPropType = $derived(
     playback.propDisplay === "hands" ? PropType.HAND : PropType.STAFF
   );
 
-  const article = $derived(getTimingDirectionArticle(data.mode)!);
+  const article = $derived(getTimingDirectionArticle(slug)!);
   const mode = $derived(
     TIMING_DIRECTION_MODES.find(
       (candidate) =>
         candidate.timing === article.timing &&
         candidate.direction === article.direction
     ) ?? TIMING_DIRECTION_MODES[0]!
-  );
-  const relatedArticles = $derived(
-    TIMING_DIRECTION_ARTICLES.filter(
-      (candidate) => candidate.code !== article.code
-    )
-  );
-  const canonical = $derived(
-    `https://tkaflowarts.com/timing-and-direction/${article.slug}`
   );
   const loopsPerGrid = $derived(modeLoopsPerGrid(article.code));
   const loopCount = $derived(modeLoopCount(article.code));
@@ -379,76 +390,7 @@
   // Hands view hides the props, so turns rest there instead of vanishing:
   // the rail keeps its shape and says why.
   const turnsLocked = $derived(adjusting || showingHands);
-
-  const jsonLd = $derived({
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "Article",
-        "@id": `${canonical}#article`,
-        mainEntityOfPage: canonical,
-        headline: article.name,
-        name: article.name,
-        description: article.metaDescription,
-        url: canonical,
-        inLanguage: "en-US",
-        citation: TIMING_DIRECTION_READING.map((source) => ({
-          "@type": "CreativeWork",
-          name: source.label,
-          url: source.url,
-        })),
-        author: {
-          "@type": "Person",
-          name: "Austen Cloud",
-          url: "https://tkaflowarts.com/about",
-        },
-        isPartOf: {
-          "@type": "CollectionPage",
-          name: "Timing and Direction in Flow Arts",
-          url: "https://tkaflowarts.com/timing-and-direction",
-        },
-        about: {
-          "@type": "DefinedTerm",
-          name: article.name,
-          alternateName: article.aliases,
-          description: article.definition,
-        },
-      },
-      {
-        "@type": "BreadcrumbList",
-        itemListElement: [
-          {
-            "@type": "ListItem",
-            position: 1,
-            name: "Home",
-            item: "https://tkaflowarts.com/",
-          },
-          {
-            "@type": "ListItem",
-            position: 2,
-            name: "Timing and Direction",
-            item: "https://tkaflowarts.com/timing-and-direction",
-          },
-          {
-            "@type": "ListItem",
-            position: 3,
-            name: article.name,
-            item: canonical,
-          },
-        ],
-      },
-    ],
-  });
 </script>
-
-<Seo
-  title={`${article.name}: Flow Arts Timing & Direction`}
-  description={article.metaDescription}
-  {canonical}
-  ogType="article"
->
-  {@html `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, "\\u003c")}<\/script>`}
-</Seo>
 
 {#snippet transformActions(panel: boolean)}
   <SequenceTransformActions
@@ -491,7 +433,7 @@
     </div>
 
     <section class="rail-group turns-group" aria-labelledby="turns-label">
-      <h2 id="turns-label" class="group-label">Turns</h2>
+      <h3 id="turns-label" class="group-label">Turns</h3>
       <div class="turn-scope">
         <SegmentedControl
           options={[
@@ -563,26 +505,31 @@
   </div>
 {/snippet}
 
-<article
+<section
+  id={TIMING_DIRECTION_SEQUENCES_ID}
   class="mode-page"
+  aria-labelledby="mode-title"
   style:--mode-accent={mode.element.accentColor}
   style:--loops-per-grid={loopsPerGrid}
 >
   <div class="mode-top">
     <header class="mode-header">
-      <nav class="page-nav" aria-label="Timing and direction">
-        <PanelButton href="/timing-and-direction">
-          <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
-          <span class="nav-label">All six modes</span>
-        </PanelButton>
-      </nav>
       <div class="mode-title">
         <img src={mode.element.iconPath} alt="" width="48" height="48" />
-        <h1 id="mode-title">{article.name}</h1>
+        <h2 id="mode-title">{article.name}</h2>
+      </div>
+      <div class="mode-switch" role="group" aria-label="Mode">
+        {#each TIMING_DIRECTION_ARTICLES as option (option.code)}
+          <TimingDirectionModeCard
+            article={option}
+            pressed={option.slug === slug}
+            onselect={() => onSelectMode(option.slug)}
+          />
+        {/each}
       </div>
     </header>
 
-    <section class="mode-hero" aria-labelledby="mode-title">
+    <div class="mode-hero">
       <figure
         class="demonstration"
         aria-label={`${selectedWord} sequence player`}
@@ -612,14 +559,14 @@
       </figure>
 
       <section class="loop-library" aria-labelledby="loop-library-title">
-        <h2 id="loop-library-title">Choose a sequence</h2>
+        <h3 id="loop-library-title">Choose a sequence</h3>
         <div class="loop-groups" aria-busy={loopsLoading}>
           {#each loopGroups as group (group.title)}
             <section
               class="loop-group"
               aria-labelledby={`${group.title}-loops`}
             >
-              <h3 id={`${group.title}-loops`}>{group.title}</h3>
+              <h4 id={`${group.title}-loops`}>{group.title}</h4>
               <div
                 class="loop-grid"
                 style:--shown={group.cards.length || loopsPerGrid}
@@ -692,43 +639,9 @@
           {/if}
         </div>
       </section>
-    </section>
+    </div>
   </div>
-
-  <div class="further">
-    <section class="credit" aria-labelledby="credit-title">
-      <div class="credit-origin">
-        <h2 id="credit-title">Where the names come from</h2>
-        <p>
-          Timing and direction come from the geometry of two hands sharing a
-          circle. Nobody invented them, and spinners used them long before they
-          had names. Noel Yee's Vulcan Tech Gospel standardized the names used
-          here. It sorts two-hand patterns by timing, together or split, and by
-          direction, same or opposite.{#if article.timing === "Quarter"}{" "}Quarter
-            time sits between together and split, with the hands a quarter cycle
-            apart.{/if}
-        </p>
-      </div>
-      <div class="credit-reading">
-        <h3 id="reading-title">Further reading</h3>
-        <ul class="reading-list" aria-labelledby="reading-title">
-          {#each TIMING_DIRECTION_READING as source (source.url)}
-            <li><LinkChip href={source.url} wrap>{source.label}</LinkChip></li>
-          {/each}
-        </ul>
-      </div>
-    </section>
-
-    <nav class="related" aria-label="Other timing and direction modes">
-      <h2>Other modes</h2>
-      <div class="related-modes">
-        {#each relatedArticles as related (related.code)}
-          <TimingDirectionModeCard article={related} />
-        {/each}
-      </div>
-    </nav>
-  </div>
-</article>
+</section>
 
 <style>
   /*
@@ -743,6 +656,8 @@
     --page-pad: 1.5rem;
     --header-h: var(--marketing-header-h, 64px);
     --title-h: 3rem;
+    --switch-h: 48px;
+    --switch-gap: 0.5rem;
     --title-gap: 1rem;
     --hero-foot: 1.5rem;
     --hero-gap: 1.5rem;
@@ -770,14 +685,18 @@
     );
     /* svh, not dvh: a collapsing mobile toolbar must not resize the frame. */
     --fit-h: calc(
-      100svh - var(--header-h) - 1rem - var(--title-h) - var(--title-gap) -
-        var(--hero-foot)
+      100svh - var(--header-h) - 1rem - var(--title-h) - var(--switch-gap) -
+        var(--switch-h) - var(--title-gap) - var(--hero-foot)
     );
     container: mode-page / inline-size;
     position: relative;
     max-width: var(--shell-w);
     margin: 0 auto;
-    padding: calc(var(--header-h) + 1rem) var(--page-pad) 3rem;
+    /* A jump here (from the grid above or an old mode address) stops where
+       the site's scroll padding puts it, 1rem under the site header, which
+       is the 1rem --fit-h subtracts. The top padding comes out of the
+       hero's foot. */
+    padding: 0.5rem var(--page-pad) 3rem;
     color: var(--theme-text);
     background: var(--theme-panel-bg);
   }
@@ -785,19 +704,14 @@
     display: grid;
     gap: var(--title-gap);
   }
-  /* The title sits centered over the frame below it; the back button keeps
-     to the left without pushing it off center. */
+  /* The title sits centered over the frame below it, with the six modes
+     on one row under it. */
   .mode-header {
     display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    align-items: center;
-    gap: 0.75rem 1rem;
-    min-height: var(--title-h);
-  }
-  .page-nav {
-    justify-self: start;
+    gap: var(--switch-gap);
   }
   .mode-title {
+    min-height: var(--title-h);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -810,7 +724,35 @@
     height: 48px;
     object-fit: contain;
   }
-  h1 {
+  .mode-switch {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.375rem;
+    max-width: 30rem;
+    width: 100%;
+    margin: 0 auto;
+  }
+  .mode-switch :global(.panel-btn) {
+    min-width: 0;
+    min-height: var(--switch-h);
+    padding-inline: 0.25rem;
+  }
+  .mode-switch :global(.mode-name) {
+    display: none;
+  }
+  /* Wide enough for "Together-Opposite" in each of six columns. */
+  @container mode-page (min-width: 64rem) {
+    .mode-switch {
+      max-width: 60rem;
+    }
+    .mode-switch :global(.mode-name) {
+      display: inline;
+    }
+    .mode-switch :global(.mode-code) {
+      display: none;
+    }
+  }
+  .mode-title h2 {
     margin: 0;
     font-size: clamp(1.375rem, 0.875rem + 1.25vw, 2rem);
     line-height: 1.15;
@@ -948,7 +890,7 @@
   .loop-library {
     min-width: 0;
   }
-  .loop-library h2 {
+  .loop-library h3 {
     display: flex;
     align-items: center;
     height: var(--lib-head);
@@ -962,7 +904,7 @@
   .loop-group {
     min-width: 0;
   }
-  .loop-group h3 {
+  .loop-group h4 {
     height: var(--group-head);
     margin: 0 0 var(--group-head-gap);
     font-size: 1rem;
@@ -1022,7 +964,7 @@
     color: var(--theme-text-dim);
   }
 
-  h2 {
+  h3 {
     margin: 0 0 0.5rem;
     font-size: 1.125rem;
     line-height: 1.3;
@@ -1033,66 +975,6 @@
     font-size: 1.125rem;
     line-height: 1.6;
     color: var(--theme-text);
-  }
-  .credit,
-  .related {
-    margin-top: 2.5rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--theme-stroke);
-  }
-  /* The headings are labels, set like the footer's column titles (Explore,
-     Learn); the reading list's chips echo the footer's link rows. */
-  .credit h2,
-  .credit h3 {
-    margin: 0 0 12px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: #8f8bb0;
-  }
-  .credit p {
-    max-width: 44rem;
-    margin: 0;
-  }
-  .credit-reading {
-    margin-top: 1.5rem;
-  }
-  .reading-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-  /* Side by side once two columns hold a readable line: the text on the left,
-     the reading list on the right. */
-  @media (min-width: 1024px) {
-    .credit {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      column-gap: clamp(32px, 3.5vw, 84px);
-      align-items: start;
-    }
-    .credit-reading {
-      margin-top: 0;
-    }
-  }
-  /* Once the left column still holds a comfortable line beside it, the list
-     takes the footer's link column: the footer sizes that column to its
-     longest link row (954.6px) inside a band 1.6px wider each side than this
-     page's, so 59.55rem starts the list where Explore starts. */
-  @media (min-width: 1680px) {
-    .credit {
-      grid-template-columns: minmax(15rem, 1fr) minmax(0, 59.55rem);
-    }
-  }
-  .related-modes {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
-    gap: 0.5rem;
-    margin-top: 1rem;
   }
   .mode-page :global(.panel-btn) {
     font-size: 1rem;
@@ -1107,36 +989,11 @@
     outline-offset: -3px;
   }
 
-  /* Wherever the title row is short of room, the back button keeps its name
-     for assistive tech but shows only its arrow. */
   @media (max-width: 599.98px),
     (orientation: landscape) and (max-height: 599.98px) {
-    .mode-header {
-      gap: 0.75rem;
-    }
-    .nav-label {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      overflow: hidden;
-      clip-path: inset(50%);
-      white-space: nowrap;
-    }
     .mode-title img {
       width: 40px;
       height: 40px;
-    }
-  }
-  /* The centered title leaves each side half of what it does not use. Below
-     about 60rem that half is too narrow for the back button's name. */
-  @container mode-page (max-width: 60rem) {
-    .nav-label {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      overflow: hidden;
-      clip-path: inset(50%);
-      white-space: nowrap;
     }
   }
 
@@ -1148,7 +1005,7 @@
       --title-gap: 0.625rem;
       --card-gap: 0.375rem;
       max-width: 100%;
-      padding: calc(var(--header-h) + 0.75rem) var(--page-pad) 2rem;
+      padding: 0.5rem var(--page-pad) 2rem;
     }
   }
 
@@ -1325,7 +1182,7 @@
       --sticky-top: calc(var(--header-h) + 0.5rem);
       /* The title and chooser column never gets narrower than this. */
       --side-min: 16rem;
-      padding-top: var(--sticky-top);
+      padding-top: 0.5rem;
     }
     .mode-top {
       grid-template-columns: auto minmax(0, 1fr);

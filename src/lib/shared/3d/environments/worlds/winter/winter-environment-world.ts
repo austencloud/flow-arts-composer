@@ -29,6 +29,7 @@ import {
 import {
   capWinterDetailTier,
   winterDetailTierFromAmount,
+  winterMountainIsVisible,
   winterObjectIsVisible,
   type WinterDetailTier,
 } from "../../scenes/winter/authored/winter-layout";
@@ -37,6 +38,11 @@ import { createWinterIcePlatform } from "./winter-ice-platform";
 import { createWinterPond } from "./winter-pond";
 import { createWinterSky } from "./winter-sky";
 import { createWinterStarfield } from "./winter-starfield";
+import {
+  isWinterFarRangeMaterial,
+  patchWinterMountainMaterial,
+  type WinterMountainLook,
+} from "./winter-mountain-material";
 
 export interface WinterEnvironmentWorldOptions {
   environmentRoot: Object3D;
@@ -151,6 +157,11 @@ export function createWinterEnvironmentWorld(
   const starfield = createWinterStarfield(config.starfield, 1, options.random);
   if (config.starfield.enabled) root.add(starfield.object);
 
+  const mountainLook: WinterMountainLook = {
+    moonDirection: config.moon.direction ?? [12, 14, -89],
+    hazeColor: config.mountainHaze ?? config.sky.midColor ?? config.fog.color,
+  };
+
   const environment = options.environmentRoot;
   environment.name ||= "winter-authored-environment";
   environment.position.y = groundY;
@@ -193,6 +204,23 @@ export function createWinterEnvironmentWorld(
     };
     mesh.castShadow = quality.shadows;
     mesh.receiveShadow = true;
+    if (child instanceof Mesh && child.userData.bluehourRole === "mountain") {
+      // Far beyond the ±35 m shadow camera: skip shadow work entirely.
+      mesh.castShadow = false;
+      mesh.receiveShadow = false;
+      const material = Array.isArray(child.material)
+        ? child.material[0]
+        : child.material;
+      if (material instanceof MeshStandardMaterial) {
+        const far = isWinterFarRangeMaterial(material);
+        child.visible = winterMountainIsVisible(far, tier);
+        patchWinterMountainMaterial(material, {
+          far,
+          tier,
+          look: mountainLook,
+        });
+      }
+    }
   });
   land.add(environment);
 

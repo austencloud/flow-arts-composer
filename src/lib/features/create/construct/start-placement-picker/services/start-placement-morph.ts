@@ -23,6 +23,7 @@
  */
 import { startMorph } from "#lib/shared/transitions/results-morph.js";
 import { DURATION } from "#lib/shared/transitions/transitions.js";
+import { pictographDrawState } from "#lib/shared/pictograph/shared/utils/pictograph-draw-state.js";
 
 export const START_MORPH_SOURCE_ATTRIBUTE = "data-start-morph-source";
 const ACTIVE_CLASS = "construct-start-morph-active";
@@ -60,8 +61,7 @@ function findTarget(): HTMLElement | null {
 function isDrawn(target: HTMLElement): boolean {
   return (
     !target.classList.contains("awaiting-reveal") &&
-    target.querySelector(".pictograph-container") !== null &&
-    target.querySelector('.pictograph-container[aria-busy="true"]') === null
+    pictographDrawState(target) === "drawn"
   );
 }
 

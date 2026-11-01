@@ -8989,6 +8989,7 @@
   "settings_display_pictograph": "象形图",
   "settings_display_animation": "动画",
   "settings_display_card": "卡片",
+  "settings_display_card_length": "卡片长度",
   "settings_display_pictograph_caption": "在应用中长按或右键点击任意象形图，即可使用相同的开关。",
   "settings_display_animation_caption": "在任意播放中的画布上长按或右键点击，可使用这些及更多开关。",
   "settings_display_card_caption": "在查看器中右键点击或长按卡片，可使用相同的开关。",

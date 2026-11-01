@@ -84,6 +84,8 @@ declare module "@austencloud/video-editor/core" {
     staffEffect?: PostStaffEffectId | null;
     animationAppearance?: PostAnimationItem["animationAppearance"] | null;
     cardAppearance?: PostCardItem["cardAppearance"] | null;
+    /** An animation's staggered performers; null removes them. */
+    followers?: PostAnimationItem["followers"] | null;
     /** A card's scan link; null removes it. A link that breaks the rule is passed over. */
     qrUrl?: string | null;
     /** A mandala clip's ordered sequences, and how it shifts and looks. */
@@ -150,6 +152,10 @@ export const POST_MAX_SEQUENCE_ACTIONS = 64;
 // one too, and `arrangement.ts` must not import this file.
 export { PostAnimationAppearanceSchema, type PostAnimationAppearance };
 
+/** How far behind a staggered performer can start, and how many there can be. */
+export const POST_MAX_BEATS_BEHIND = 32;
+export const POST_MAX_FOLLOWERS = 7;
+
 /** The sequence animation: the dual view's lower panel. */
 export const PostAnimationItemSchema = z
   .object({
@@ -172,6 +178,27 @@ export const PostAnimationItemSchema = z
      * without a `tunnelHook`.
      */
     tunnelAppearance: PostAnimationAppearanceSchema.optional(),
+    /**
+     * More performers doing the sequence with the red/blue one, as in a tunnel
+     * filmed live: each some beats behind (0 for together), and each may do it
+     * mirrored, flipped or hands swapped, as a partner facing the other way
+     * does. The tapped beats run from the first performer's first move to the
+     * last performer's last landing.
+     */
+    followers: z
+      .array(
+        z
+          .object({
+            beatsBehind: z.number().int().min(0).max(POST_MAX_BEATS_BEHIND),
+            mirror: z.boolean().optional(),
+            flip: z.boolean().optional(),
+            swap: z.boolean().optional(),
+          })
+          .strict()
+      )
+      .min(1)
+      .max(POST_MAX_FOLLOWERS)
+      .optional(),
   })
   .strict();
 
@@ -271,7 +298,9 @@ export const PostMandalaItemSchema = z
   .object({
     ...itemBase,
     kind: z.literal("mandala"),
-    sequences: z.array(MandalaSequenceSnapshotSchema).max(MANDALA_MAX_SEQUENCES),
+    sequences: z
+      .array(MandalaSequenceSnapshotSchema)
+      .max(MANDALA_MAX_SEQUENCES),
     shift: MandalaShiftSchema,
     look: MandalaLookSchema,
     sourceIn: z.number().finite().nonnegative(),

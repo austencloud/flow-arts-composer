@@ -13,6 +13,7 @@ import {
 import {
   createBeatClock,
   fitTapsToGrid,
+  MATCH_TOLERANCE,
   type TapFitResult,
 } from "#lib/shared/media-composition/domain/tap-fit.js";
 
@@ -358,9 +359,11 @@ function tapOwner(timing: TakeTiming, seconds: number): TimingSection {
 }
 
 /**
- * Adds a tap at `seconds` to the part whose landing it marks. The parts
- * after it that keep its count count on from it as it now is: a part that
- * started over has no count until its first tap.
+ * Adds a tap at `seconds` to the part whose landing it marks. A tap on a
+ * landing already tapped replaces that tap: tapping along again corrects the
+ * landing rather than doubling it, which would read as twice the tempo. The
+ * parts after it that keep its count count on from it as it now is: a part
+ * that started over has no count until its first tap.
  */
 export function addTakeTap(
   timing: TakeTiming,
@@ -370,9 +373,22 @@ export function addTakeTap(
   const owner = tapOwner(timing, seconds);
   const index = timing.sections.indexOf(owner);
   const sections = [...timing.sections];
+  const reach = MATCH_TOLERANCE * Math.min(...moveBeats) * (60 / owner.bpm);
+  let replaced = -1;
+  owner.taps.forEach((tap, at) => {
+    const distance = Math.abs(tap - seconds);
+    if (
+      distance <= reach &&
+      (replaced < 0 || distance < Math.abs(owner.taps[replaced]! - seconds))
+    ) {
+      replaced = at;
+    }
+  });
   sections[index] = {
     ...owner,
-    taps: [...owner.taps, seconds].sort((left, right) => left - right),
+    taps: [...owner.taps.filter((_, at) => at !== replaced), seconds].sort(
+      (left, right) => left - right
+    ),
   };
   recountChain(sections, index + 1, owner, moveBeats, null);
   return { ...timing, sections };

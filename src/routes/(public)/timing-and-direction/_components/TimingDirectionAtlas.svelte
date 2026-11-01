@@ -7,7 +7,10 @@
   import { reducedMotion } from "#lib/shared/transitions/motion.js";
   import HandMotionPlayer from "#lib/features/learn/components/interactive/foundations/HandMotionPlayer.svelte";
   import { DEFAULT_VIEWER_CUSTOM_COLORS } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
-  import type { DirectionValue } from "../_data/timing-direction-articles";
+  import {
+    TIMING_DIRECTION_SEQUENCES_ID,
+    type DirectionValue,
+  } from "../_data/timing-direction-articles";
   import {
     getTimingDirectionState,
     timingDirectionPreviews as modes,
@@ -137,12 +140,12 @@
       <div class="detail-animation" use:playback.registerTarget></div>
       <div class="detail-footer">
         <PanelButton
-          href={selected.href}
-          ariaLabel={`Read ${selected.article.name} article`}
+          href={`#${TIMING_DIRECTION_SEQUENCES_ID}`}
+          ariaLabel={`See ${selected.article.name} sequences`}
           accentColor={selected.motion.element.accentColor}
         >
-          <i class="fa-solid fa-book-open" aria-hidden="true"></i>
-          Read {selected.article.code} article
+          <i class="fa-solid fa-arrow-down" aria-hidden="true"></i>
+          See {selected.article.code} sequences
         </PanelButton>
       </div>
       <div class="compare-action">

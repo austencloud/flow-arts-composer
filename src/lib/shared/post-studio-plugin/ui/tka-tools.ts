@@ -1,5 +1,6 @@
 import type { PluginTool } from "@austencloud/video-editor";
 import {
+  faClone,
   faDiamond,
   faDrum,
   faEraser,
@@ -68,6 +69,12 @@ export const TKA_TOOLS: readonly PluginTool[] = [
     type: "panel",
     label: (_t, kind) => (kind === "mandala" ? "Sequences" : "Sequence"),
     icon: faShuffle,
+  },
+  {
+    id: "performers",
+    type: "panel",
+    label: () => "Performers",
+    icon: faClone,
   },
   {
     id: "beats",

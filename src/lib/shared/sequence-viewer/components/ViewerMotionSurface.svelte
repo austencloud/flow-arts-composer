@@ -11,9 +11,9 @@
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import CameraPreview from "#lib/shared/train/components/CameraPreview.svelte";
   import type { ViewerMotionSurfaceProps } from "./viewer-split-pane-types";
-  import SceneControlWorkspace from "#lib/shared/3d/components/controls/SceneControlWorkspace.svelte";
   import type { SceneControlLayout } from "#lib/shared/3d/domain/scene-control-layout.js";
   import ContactViewerRequired from "#lib/shared/3d/components/ContactViewerRequired.svelte";
+  import { getViewer3DSource } from "#lib/shared/3d/context/viewer-3d-context.js";
   import ScenePreparationSurface from "#lib/shared/3d/scene-features/components/ScenePreparationSurface.svelte";
   import { getSequenceDisplayName } from "#lib/shared/foundation/services/word-deriver.js";
   import { provideSceneLoadingSession } from "#lib/shared/3d/scene-features/scene-loading-session.svelte.js";
@@ -133,8 +133,14 @@
   });
   const shouldRender3D = $derived(side === "left" ? is3DMounted : is3DActive);
 
+  // The viewer builds its 3D state on first use. Both 3D surfaces read it while
+  // they start up, so each loader also waits for that state.
+  const viewer3D = getViewer3DSource();
+  function with3DState<T>(load: Promise<T>): Promise<T> {
+    return Promise.all([load, viewer3D?.load()]).then(([module]) => module);
+  }
   const loadViewer3DCanvas = () =>
-    import("#lib/shared/3d/components/Viewer3DCanvas.svelte");
+    with3DState(import("#lib/shared/3d/components/Viewer3DCanvas.svelte"));
 
   // One loading bar from the moment 3D is asked for: the placeholder below
   // shows it while the 3D code downloads, and the scene's curtain carries it
@@ -835,14 +841,23 @@
     inert={!is3DActive}
     aria-hidden={!is3DActive}
   >
-    <SceneControlWorkspace
-      {bpm}
-      unrealDisabledReason={rendererHandleRequired
-        ? "Unreal unavailable while recording or exporting. Close that panel to switch."
-        : null}
-      onSettingChange={onViewer3DSettingChange}
-      onAction={onViewer3DAction}
-      onLayoutChange={(next) => (sceneControlLayout = next)}
+    <!-- The 3D controls import three.js; a 2D-only viewer never loads them. -->
+    <LazyMount
+      loader={() =>
+        with3DState(
+          import("#lib/shared/3d/components/controls/SceneControlWorkspace.svelte")
+        )}
+      active
+      debugName="SceneControlWorkspace"
+      props={{
+        bpm,
+        unrealDisabledReason: rendererHandleRequired
+          ? "Unreal unavailable while recording or exporting. Close that panel to switch."
+          : null,
+        onSettingChange: onViewer3DSettingChange,
+        onAction: onViewer3DAction,
+        onLayoutChange: (next: SceneControlLayout) => (sceneControlLayout = next),
+      }}
     />
     {#if is3DRailPresented && showViewer3DIntro}
       <Viewer3DRailHint

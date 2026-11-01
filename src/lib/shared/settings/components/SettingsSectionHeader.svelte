@@ -19,13 +19,16 @@
     /** Rich description, e.g. a Crossfade when the text follows a switch. */
     details?: Snippet;
     action?: Snippet;
+    /** Before the icon tile, e.g. the back arrow of a drill-down screen. */
+    leading?: Snippet;
   }
 
-  let { icon, title, description, headingId, details, action }: Props =
+  let { icon, title, description, headingId, details, action, leading }: Props =
     $props();
 </script>
 
 <header class="section-header" class:title-only={!description && !details}>
+  {#if leading}{@render leading()}{/if}
   <span class="section-icon"><i class={icon} aria-hidden="true"></i></span>
   <span class="section-heading">
     <h2 id={headingId}>{title}</h2>

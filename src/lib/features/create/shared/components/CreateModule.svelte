@@ -51,6 +51,12 @@
   import type { BuildModeId } from "#lib/shared/foundation/ui/ui-types.js";
   import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import { setSideBySideLayout } from "#lib/shared/application/state/animation-visibility-state.svelte.js";
+  import {
+    bootScreenCovers,
+    FIRST_VIEW_WAIT_MS,
+    holdBootScreen,
+    runAfterBootScreen,
+  } from "#lib/shared/application/services/boot-screen.js";
   import { onMount, setContext, tick, untrack } from "svelte";
   import { goto, replaceState } from "$app/navigation";
   import ErrorBanner from "./ErrorBanner.svelte";
@@ -69,6 +75,22 @@
   import type { createCreateModuleState as CreateModuleStateType } from "../state/create-module-state.svelte";
   import type { createConstructTabState as ConstructTabStateType } from "../state/construct-tab-state.svelte";
   import { createPanelCoordinationState } from "../state/panel-coordination-state.svelte";
+  import { createMethodEntryState } from "../state/create-method-entry-state.svelte";
+  import {
+    CREATE_ENTRY_HOLD_CAP_MS,
+    decideCreateEntrySource,
+  } from "../services/create-method-entry-gate";
+  import {
+    isEntryLayerSettled,
+    startCreateEntryTrace,
+    type CreateEntryTrace,
+  } from "../services/create-entry-trace";
+  import {
+    loadWorkspaceLayout as importWorkspaceLayout,
+    warmCreateMethod,
+    warmInIdleSequence,
+    warmWorkspaceLayout,
+  } from "./create-method-loaders";
   import { setCreateModuleStateRef } from "#lib/shared/create/state/create-module-state-ref.svelte.js";
   import type {
     IToolPanelMethods,
@@ -218,10 +240,15 @@
   let workspaceLayoutError = $state<string | null>(null);
   let workspaceLayoutLoad: Promise<void> | null = null;
 
+  // The layout's code can arrive while the front door is open, but the layout
+  // itself mounts only once a workspace is wanted, so its panels never build
+  // behind a board the visitor is still looking at.
+  let workspaceWanted = $state(false);
+
   function loadWorkspaceLayout(): void {
     if (WorkspaceLayout || workspaceLayoutLoad) return;
     workspaceLayoutError = null;
-    workspaceLayoutLoad = import("./StandardWorkspaceLayout.svelte")
+    workspaceLayoutLoad = importWorkspaceLayout()
       .then(({ default: component }) => {
         WorkspaceLayout = component;
       })
@@ -237,7 +264,207 @@
   // A direct method link loads its workspace alongside state restoration. The
   // front door gets its first paint before any editor code is requested.
   $effect(() => {
-    if (!navigationState.isCreateFrontDoorOpen) loadWorkspaceLayout();
+    if (!navigationState.isCreateFrontDoorOpen) {
+      workspaceWanted = true;
+      loadWorkspaceLayout();
+    }
+  });
+
+  // While the board is open, warm what a tap will need: the layout, then the
+  // method used last, then the other methods this visitor can open, in board
+  // order. One chunk per idle period, so the turning previews keep their
+  // frames. A first visit has no last-used method, and a hover is far shorter
+  // than a panel's fetch, so without the rest a newcomer's first tap would
+  // still land on a spinner. Pointing at a card moves its method to the front
+  // (warmCreateMethod via the board's onWarm).
+  $effect(() => {
+    if (!navigationState.isCreateFrontDoorOpen) return;
+    const lastUsed = lastUsedCreateMode;
+    const openable = releasedCreateMethods
+      .map((method) => method.id)
+      .filter((id) => !lockedCreateMethodIds.has(id) && id !== lastUsed);
+    return untrack(() =>
+      warmInIdleSequence([
+        () => {
+          loadWorkspaceLayout();
+          return workspaceLayoutLoad ?? warmWorkspaceLayout();
+        },
+        ...[...(lastUsed ? [lastUsed] : []), ...openable].map(
+          (id) => () => warmCreateMethod(id)
+        ),
+      ])
+    );
+  });
+
+  // A tap on a method card keeps the board on screen until that method's
+  // workspace has mounted and drawn, then crossfades once onto it.
+  const methodEntry = createMethodEntryState();
+  let entryTrace = $state.raw<CreateEntryTrace | null>(null);
+  let entryCapReached = $state(false);
+  let entryLayer = $state<HTMLElement | null>(null);
+
+  const entryDecision = $derived.by(() => {
+    void entryCapReached;
+    const trace = entryTrace;
+    return decideCreateEntrySource({
+      doorOpen: navigationState.isCreateFrontDoorOpen,
+      entering: trace !== null,
+      panelReady: methodEntry.panelReady,
+      picturesReady: methodEntry.picturesReady,
+      elapsedMs: trace ? performance.now() - trace.tapAt : 0,
+      capMs: CREATE_ENTRY_HOLD_CAP_MS,
+    });
+  });
+  let enteredSource = $state<"door" | "workspace">("door");
+  const crossfadeActive = $derived(
+    entryDecision.source === "door" ? "first" : "second"
+  );
+
+  function beginMethodEntry(methodId: string): void {
+    entryTrace?.cancel();
+    methodEntry.begin(methodId);
+    entryCapReached = false;
+    entryTrace = startCreateEntryTrace(methodId, () => entryLayer);
+  }
+
+  // Timed from the tap, not from when this effect runs: mounting the workspace
+  // can hold the thread for a few hundred milliseconds before effects flush.
+  $effect(() => {
+    const trace = entryTrace;
+    if (!trace) return;
+    const handle = setTimeout(
+      () => (entryCapReached = true),
+      Math.max(0, CREATE_ENTRY_HOLD_CAP_MS - (performance.now() - trace.tapAt))
+    );
+    return () => clearTimeout(handle);
+  });
+
+  $effect(() => {
+    const trace = entryTrace;
+    if (!trace) return;
+    if (WorkspaceLayout && workspaceWanted) trace.stage("layout-ready");
+    if (methodEntry.panelReady) trace.stage("panel-ready");
+    if (methodEntry.picturesReady) trace.stage("pictures-ready");
+  });
+
+  // Once the panel is mounted, wait for the hidden layer to show the finished
+  // method for two frames in a row: the frame that found it ready still has to
+  // paint it.
+  $effect(() => {
+    const trace = entryTrace;
+    const layer = entryLayer;
+    if (!trace || !layer || !methodEntry.panelReady) return;
+    let settledFrames = 0;
+    let frame = requestAnimationFrame(function check() {
+      settledFrames = isEntryLayerSettled(layer, trace.method)
+        ? settledFrames + 1
+        : 0;
+      if (settledFrames >= 2) {
+        methodEntry.markPicturesReady(trace.method);
+        return;
+      }
+      frame = requestAnimationFrame(check);
+    });
+    return () => cancelAnimationFrame(frame);
+  });
+
+  $effect(() => {
+    const decision = entryDecision;
+    const trace = untrack(() => entryTrace);
+    if (decision.source === "workspace" && enteredSource === "door") {
+      trace?.swap(decision.cappedOut);
+    }
+    enteredSource = decision.source;
+  });
+
+  // Back on the board before the fade finished, the entry is abandoned.
+  $effect(() => {
+    if (navigationState.isCreateFrontDoorOpen) {
+      untrack(() => {
+        entryTrace?.cancel();
+        entryTrace = null;
+        methodEntry.finish();
+      });
+    }
+  });
+
+  function handleWorkspaceSettled(source: "first" | "second"): void {
+    if (source !== "second" || !entryTrace) return;
+    entryTrace.settled();
+    entryTrace = null;
+    methodEntry.finish();
+  }
+
+  // A visit that boots straight into a method keeps the boot screen up until
+  // that method's panel and beat grid have mounted and drawn, the same
+  // readiness a front-door tap waits for, so the screen hands over to a
+  // finished workspace instead of a loading bar. Taken during init, before
+  // ModuleRenderer releases its "module-view" hold, with the same first-view
+  // wait.
+  let bootEntryOpen = $state(false);
+  let releaseBootEntryHold = (): void => {};
+  let cancelBootEntryWatch = (): void => {};
+
+  function finishBootEntry(): void {
+    if (!bootEntryOpen) return;
+    bootEntryOpen = false;
+    releaseBootEntryHold();
+    cancelBootEntryWatch();
+    methodEntry.finish();
+  }
+
+  if (!navigationState.isCreateFrontDoorOpen && bootScreenCovers()) {
+    bootEntryOpen = true;
+    releaseBootEntryHold = holdBootScreen(
+      "create-workspace",
+      FIRST_VIEW_WAIT_MS
+    );
+    methodEntry.begin(navigationState.activeTab);
+    // Capped out: the workspace finishes in view and its idle work resumes.
+    cancelBootEntryWatch = runAfterBootScreen(() =>
+      queueMicrotask(finishBootEntry)
+    );
+  }
+
+  // A restored visit can settle on another method than the URL's first one.
+  $effect(() => {
+    const method = navigationState.activeTab;
+    if (!bootEntryOpen) return;
+    untrack(() => {
+      if (method !== methodEntry.method) methodEntry.begin(method);
+    });
+  });
+
+  // Nothing to wait for on the board, on an error, or once this unmounts.
+  $effect(() => {
+    if (
+      bootEntryOpen &&
+      (navigationState.isCreateFrontDoorOpen || error || workspaceLayoutError)
+    ) {
+      untrack(finishBootEntry);
+    }
+  });
+  $effect(() => () => untrack(finishBootEntry));
+
+  // Same two-frame check as a tap's entry: the frame that finds the method
+  // drawn still has to paint it.
+  $effect(() => {
+    const layer = entryLayer;
+    const method = methodEntry.method;
+    if (!bootEntryOpen || !layer || !method || !methodEntry.panelReady) return;
+    let settledFrames = 0;
+    let frame = requestAnimationFrame(function check() {
+      settledFrames = isEntryLayerSettled(layer, method)
+        ? settledFrames + 1
+        : 0;
+      if (settledFrames >= 2) {
+        bootProfiler.milestone("create:boot-entry-drawn", { method });
+        finishBootEntry();
+        return;
+      }
+      frame = requestAnimationFrame(check);
+    });
+    return () => cancelAnimationFrame(frame);
   });
 
   // Confirmation dialog states
@@ -351,6 +578,7 @@
     },
     constructTutorialState,
     panelState,
+    methodEntry,
     getSequenceTransformActions: () => sequenceTransformActions,
     get services() {
       if (!services) {
@@ -860,6 +1088,7 @@
   }
 
   function handleCreateMethodSelected(methodId: string): void {
+    beginMethodEntry(methodId);
     handleSectionChange(methodId);
   }
 
@@ -1110,13 +1339,15 @@
     active={navigationState.isCreateFrontDoorOpen}
     source={navigationState.createFrontDoorSource}
     lastUsedMode={lastUsedCreateMode}
+    enteringMethodId={entryTrace?.method ?? null}
+    onWarm={warmCreateMethod}
     onSelect={handleCreateMethodSelected}
     onLockedSelect={handleLockedCreateMethod}
   />
 {/snippet}
 
 {#snippet workspaceSurface()}
-  <div class="create-workspace-source">
+  <div class="create-workspace-source" bind:this={entryLayer}>
     {#if draftRecovery}
       <DraftRecovery controller={draftRecovery} surface="status" />
     {/if}
@@ -1125,7 +1356,7 @@
         <ErrorBanner message={error} onDismiss={clearError} />
       {:else if CreateModuleState && constructTabState && services}
         <div class="create-tab">
-          {#if WorkspaceLayout}
+          {#if WorkspaceLayout && workspaceWanted}
             <WorkspaceLayout
               {shouldUseSideBySideLayout}
               {CreateModuleState}
@@ -1244,10 +1475,11 @@
 
 <div class="create-module-stage">
   <DualSourceCrossfade
-    active={navigationState.isCreateFrontDoorOpen ? "first" : "second"}
+    active={crossfadeActive}
     first={frontDoorSurface}
     second={workspaceSurface}
     duration={DURATION.emphasis}
+    onsettled={handleWorkspaceSettled}
   />
 </div>
 

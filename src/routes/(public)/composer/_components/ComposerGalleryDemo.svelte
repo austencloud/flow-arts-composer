@@ -142,7 +142,7 @@
 <div class="gallery-frame" aria-busy={opening}>
   <header class="gallery-header">
     <div class="header-copy">
-      <h3>
+      <h3 class:wraps={!selected}>
         {selected
           ? selected.name || selected.word
           : "Or start from the community."}
@@ -382,6 +382,31 @@
     }
     .sequence-grid :global(.choreo-card) {
       max-height: 100%;
+    }
+  }
+  /* Phones: the heading takes the full row and the control sits under it,
+     in both states, so the header keeps one height when a sequence opens.
+     The gallery heading wraps instead of cutting off; a long sequence name
+     still ends in an ellipsis on its one line. */
+  @media (max-width: 37.4375rem) {
+    .gallery-header {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      justify-items: start;
+      gap: 0.5rem;
+    }
+    .header-copy {
+      justify-self: stretch;
+    }
+    h3.wraps {
+      overflow: visible;
+      text-overflow: clip;
+      white-space: normal;
+    }
+    .prop-picker {
+      flex-direction: row;
+      align-items: center;
+      gap: 0.6rem;
     }
   }
   @media (prefers-reduced-motion: reduce) {

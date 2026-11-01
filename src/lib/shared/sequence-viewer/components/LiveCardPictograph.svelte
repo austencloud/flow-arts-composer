@@ -18,6 +18,7 @@
   import { renderStepNumber } from "@tka/render-composition";
   import { DURATION } from "@austencloud/motion";
   import { motionDuration } from "#lib/shared/transitions/motion.js";
+  import { getCellPropNudges } from "../cell-prop-nudge-context";
 
   let {
     live,
@@ -235,6 +236,20 @@
     }
     return { ...prepared, motions, _prepared: merged };
   });
+  // A tunnel sheet slides this cell's staffs off a partner's drawn over it.
+  const cellPropNudges = getCellPropNudges();
+  const propNudgePositions = $derived.by(() => {
+    const nudges = cellPropNudges?.(stepNumber - 1);
+    const positions = displayed?._prepared?.propPositions;
+    if (!nudges || !positions) return null;
+    const moved: typeof positions = {};
+    for (const hand of HANDS) {
+      const at = positions[hand];
+      const by = nudges[hand];
+      if (at && by) moved[hand] = { ...at, x: at.x + by.x, y: at.y + by.y };
+    }
+    return Object.keys(moved).length ? moved : null;
+  });
   const handShown = (hand: Hand): boolean =>
     preparedHands[hand] && !arrivingHands.has(hand);
   const activeLocations = $derived(
@@ -280,11 +295,15 @@
     !
   </div>
 {:else if displayed}
-  <div class="live-pictograph">
+  <!-- A light card's cells are white, as the export paints them
+       (card-front-assembler fills the grid white and renders cells in print
+       mode). The renderer's own light background is the standalone
+       pictograph's grey, so on a card it stays out and the cell is paper. -->
+  <div class="live-pictograph" class:paper={!darkMode}>
     <PictographRenderer
       pictograph={displayed}
       {darkMode}
-      transparentBackground={exportPresentation}
+      transparentBackground={exportPresentation || !darkMode}
       showDuration={false}
       showHandColorKey={stepNumber === 0
         ? options.showHandColorKey !== false
@@ -295,6 +314,7 @@
       hiddenMotionOpacity={0}
       animateHandPresence={handChange}
       showPathShape={false}
+      propPositionOverrides={propNudgePositions}
       widthMultiplier={options.widthMultiplier}
       glyphLayout={options.primaryPropColors ? "card-custom" : "card"}
       leftColorOverride={options.primaryPropColors?.left}
@@ -345,6 +365,9 @@
     width: 100%;
     height: 100%;
     --pictograph-border: none;
+  }
+  .live-pictograph.paper {
+    background: #fff;
   }
   .number-layer {
     position: absolute;

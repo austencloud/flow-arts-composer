@@ -39,6 +39,10 @@
     logConstructStartPlacementCompleted,
     type StartPlacementPath,
   } from "../../construct/services/construct-analytics";
+  import {
+    CREATE_METHOD_PANEL_LOADERS,
+    isCreateMethodWarm,
+  } from "./create-method-loaders";
   import { getStartPlacementDisplayLabel } from "../../construct/start-placement-picker/services/start-placement-display-label";
   import { areStartPlacementsEquivalent } from "../../construct/start-placement-picker/services/start-placement-equivalence";
 
@@ -48,6 +52,7 @@
     constructTabState,
     constructTutorialState,
     panelState,
+    methodEntry,
     layout,
   } = ctx;
 
@@ -76,6 +81,15 @@
   let generateLoadStatus = $state<"idle" | "loading" | "loaded" | "error">(
     "idle"
   );
+  // The lazy panels of the other methods sit inside the tab's {#key}, so each
+  // visit mounts a fresh LazyMount that reports its own status again.
+  type PanelLoadStatus = "loading" | "loaded" | "error";
+  let keyedPanelStatus = $state<Record<string, PanelLoadStatus>>({});
+  function trackPanel(method: string) {
+    return (status: PanelLoadStatus) => {
+      keyedPanelStatus = { ...keyedPanelStatus, [method]: status };
+    };
+  }
 
   const activeSequenceState = $derived.by(() => {
     const state = createModuleState.getActiveTabSequenceState();
@@ -194,6 +208,26 @@
     !constructTabState?.isPersistenceInitialized ||
       shouldShowStartPlacementPicker === null
   );
+
+  // A front-door tap holds the front door until this reports the method's
+  // panel mounted. Reading the entry keeps this live when the same method is
+  // entered again, where nothing else about the slot changes.
+  const isActivePanelMounted = $derived.by(() => {
+    if (!isPersistenceFullyInitialized) return false;
+    switch (activeToolPanel) {
+      case "generate":
+        return generateLoadStatus === "loaded";
+      case "construct":
+        return !isPickerStateLoading;
+      default:
+        return keyedPanelStatus[activeToolPanel] === "loaded";
+    }
+  });
+  $effect(() => {
+    void methodEntry.method;
+    void methodEntry.panelReady;
+    if (isActivePanelMounted) methodEntry.markPanelReady(activeToolPanel);
+  });
 
   // Convert SequenceData to PictographData[] for OptionViewer
   // Include startingPlacement as the first element if it exists
@@ -334,10 +368,12 @@
   >
     <div class="sub-tab-content" data-tab="generate">
       <LazyMount
-        loader={() => import("../../generate/components/GeneratePanel.svelte")}
+        loader={CREATE_METHOD_PANEL_LOADERS.generate!}
         active={isGeneratePanelActive}
         keepAlive={false}
-        placeholder={isGeneratePanelActive ? generateLoading : undefined}
+        placeholder={isGeneratePanelActive && !isCreateMethodWarm("generate")
+          ? generateLoading
+          : undefined}
         error={generateError}
         debugName={t("create_audit_generator_panel")}
         onStatusChange={(status) => (generateLoadStatus = status)}
@@ -406,10 +442,10 @@
               {@const assembleTabState = createModuleState.assembleTabState}
               {#if assembleTabState}
                 <LazyMount
-                  loader={() =>
-                    import("../../assemble/components/AssembleToolPanel.svelte")}
+                  loader={CREATE_METHOD_PANEL_LOADERS.assemble!}
                   active
                   props={{ tabState: assembleTabState }}
+                  onStatusChange={trackPanel(activeToolPanel)}
                 />
               {:else}
                 <div class="coming-soon-panel">
@@ -419,20 +455,22 @@
             {:else if activeToolPanel === "fuse"}
               <!-- Fuse Mode - Combine two sequences into one (deferred chunk) -->
               <LazyMount
-                loader={() => import("#lib/features/fuse/FuseTab.svelte")}
+                loader={CREATE_METHOD_PANEL_LOADERS.fuse!}
                 active
+                onStatusChange={trackPanel(activeToolPanel)}
               />
             {:else if activeToolPanel === "tunnel"}
               <LazyMount
-                loader={() => import("../../tunnel/TunnelTab.svelte")}
+                loader={CREATE_METHOD_PANEL_LOADERS.tunnel!}
                 active
+                onStatusChange={trackPanel(activeToolPanel)}
               />
             {:else if activeToolPanel === "shape-engine"}
               <!-- Shape - pick a shape pairing, get the sequence (deferred chunk) -->
               <LazyMount
-                loader={() =>
-                  import("../../shape-engine/ShapeEngineTab.svelte")}
+                loader={CREATE_METHOD_PANEL_LOADERS["shape-engine"]!}
                 active
+                onStatusChange={trackPanel(activeToolPanel)}
               />
             {/if}
           </div>

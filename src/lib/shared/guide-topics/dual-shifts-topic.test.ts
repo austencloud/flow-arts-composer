@@ -48,11 +48,14 @@ describe("Type 1 Dual-Shifts topic record", () => {
     }
   });
 
-  it("links each mode to a Timing and Direction mode guide that exists", () => {
+  it("links each mode to its sequences on the timing-and-direction page", () => {
     for (const mode of DUAL_SHIFT_MODES) {
       const href = DUAL_SHIFT_MODE_GUIDES[mode.id];
-      const slug = href.replace("/timing-and-direction/", "");
-      expect(TIMING_DIRECTION_ARTICLE_SLUGS, href).toContain(slug);
+      const url = new URL(href, "https://tkaflowarts.com");
+      expect(url.pathname, href).toBe("/timing-and-direction");
+      expect(TIMING_DIRECTION_ARTICLE_SLUGS, href).toContain(
+        url.searchParams.get("mode")
+      );
     }
   });
 

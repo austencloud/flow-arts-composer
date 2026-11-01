@@ -1,0 +1,107 @@
+{
+  "description": "Blue Hour Lodge mountains. Heights are Blender metres (Z up); Blender X maps to Three X and Blender Y to Three -Z. Pixel row 0 is the largest Y (north, away from the hero camera for the near ranges).",
+  "generator": "scripts/build-winter-mountains.py",
+  "encoding": "16-bit grayscale PNG; height = minHeight + value / 65535 * (maxHeight - minHeight)",
+  "ranges": [
+    {
+      "name": "front-aretes",
+      "file": "front-aretes.png",
+      "layout": "cartesian",
+      "center": [
+        0.0,
+        109.5
+      ],
+      "size": [
+        420,
+        73
+      ],
+      "pixels": [
+        337,
+        59
+      ],
+      "minHeight": 0.5017,
+      "maxHeight": 45.711,
+      "rotationDegrees": 0,
+      "material": "Alpine massif rock"
+    },
+    {
+      "name": "summit-massif",
+      "file": "summit-massif.png",
+      "layout": "cartesian",
+      "center": [
+        0.0,
+        205.0
+      ],
+      "size": [
+        420,
+        134
+      ],
+      "pixels": [
+        324,
+        104
+      ],
+      "minHeight": 5.6761,
+      "maxHeight": 71.3818,
+      "rotationDegrees": 0,
+      "material": "Alpine massif rock"
+    },
+    {
+      "name": "south-range",
+      "file": "south-range.png",
+      "layout": "cartesian",
+      "center": [
+        0.0,
+        -157.0
+      ],
+      "size": [
+        420,
+        106
+      ],
+      "pixels": [
+        337,
+        86
+      ],
+      "minHeight": -2.6451,
+      "maxHeight": 49.1577,
+      "rotationDegrees": 0,
+      "material": "Alpine massif rock"
+    },
+    {
+      "name": "far-ring",
+      "file": "far-ring.png",
+      "layout": "polar",
+      "center": [
+        0,
+        0
+      ],
+      "pixels": [
+        312,
+        17
+      ],
+      "columns": "theta = column / columns * 360 degrees, measured from Blender +Y toward +X",
+      "rows": "radius in metres per row",
+      "radii": [
+        175,
+        200,
+        225,
+        250,
+        270,
+        285,
+        298,
+        310,
+        320,
+        330,
+        340,
+        350,
+        360,
+        371,
+        384,
+        397,
+        410
+      ],
+      "minHeight": -1.5865,
+      "maxHeight": 89.9013,
+      "material": "Distant blue range"
+    }
+  ]
+}

@@ -7,6 +7,7 @@
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { Snippet } from "svelte";
   import { opaqueFade, popIn } from "#lib/shared/transitions/motion.js";
   import { flip } from "svelte/animate";
   import { cubicOut } from "svelte/easing";
@@ -51,13 +52,13 @@
   import { mandalaGridJoinOffsets } from "#lib/shared/mandala/services/mandala-grid-join.js";
 
   import type { ChoreoCardCell as CellData } from "#lib/shared/choreo-card/services/choreo-card-render-engine.js";
+  import type { MandalaFill } from "../services/get-mandala-placements";
 
   interface MandalaPlacement {
     row: number;
     col: number;
     variant: "left" | "right" | "full";
   }
-
   interface Props {
     primaryPropColors?: { left: string; right: string } | null;
     sequence: SequenceData;
@@ -82,6 +83,8 @@
     qrGridPlacement: { gridColumn: number; gridRow: number } | null;
     showMandala: boolean;
     mandalaPlacements: MandalaPlacement[];
+    /** What each mandala slot draws, top slot first; slots past it stay empty. */
+    mandalaFills?: readonly MandalaFill[];
     flipDuration: number;
     cellWidth: number;
     activeDarkMode: boolean;
@@ -108,6 +111,11 @@
     getMotionSoloMotion: (cellIndex: number) => MotionData | undefined;
     formatSoloTurns: (turns: number | "fl" | undefined | null) => string;
     shortOrientation: (ori: string | undefined | null) => string | null;
+    /**
+     * Drawn over each pictograph cell, given the step index (-1 for the
+     * start): another performer on the same grid, as a tunnel sheet shows.
+     */
+    cellOverlay?: Snippet<[number]>;
     /** A portable export card holds the same path policy as its PNG snapshot. */
     mandalaPathShape?: MandalaPathShape;
     /** Render mandalas with the card PNG's canvas geometry. */
@@ -141,6 +149,7 @@
     qrGridPlacement,
     showMandala,
     mandalaPlacements,
+    mandalaFills,
     flipDuration,
     cellWidth,
     activeDarkMode,
@@ -163,6 +172,7 @@
     getMotionSoloMotion,
     formatSoloTurns,
     shortOrientation,
+    cellOverlay,
     mandalaPathShape: requestedMandalaPathShape,
     exportPresentation = false,
     morphMandala = false,
@@ -174,6 +184,14 @@
     mandalaGridJoinOffsets(sequence?.conjoined, sequence?.gridMode)
   );
 
+  // Given fills, each slot draws its own performer and slots past them stay empty.
+  const shownMandalas = $derived(
+    mandalaPlacements.flatMap((placement, index) => {
+      if (!mandalaFills) return [{ ...placement, fill: null }];
+      const fill = mandalaFills[index];
+      return fill ? [{ ...placement, fill }] : [];
+    })
+  );
   const mandalaCellScale = $derived(
     exportPresentation ? EXPORT_MANDALA_CELL_SCALE : MANDALA_CELL_SCALE
   );
@@ -249,6 +267,7 @@
         {getMotionSoloMotion}
         {formatSoloTurns}
         {shortOrientation}
+        {cellOverlay}
       />
     </button>
   {:else}
@@ -275,6 +294,7 @@
         {getMotionSoloMotion}
         {formatSoloTurns}
         {shortOrientation}
+        {cellOverlay}
       />
     </div>
   {/if}
@@ -415,6 +435,7 @@
                           {getMotionSoloMotion}
                           {formatSoloTurns}
                           {shortOrientation}
+                          {cellOverlay}
                         />
                       </button>
                     {:else}
@@ -445,6 +466,7 @@
                           {getMotionSoloMotion}
                           {formatSoloTurns}
                           {shortOrientation}
+                          {cellOverlay}
                         />
                       </div>
                     {/if}
@@ -521,6 +543,7 @@
                         {getMotionSoloMotion}
                         {formatSoloTurns}
                         {shortOrientation}
+                        {cellOverlay}
                       />
                     </button>
                   {:else}
@@ -551,6 +574,7 @@
                         {getMotionSoloMotion}
                         {formatSoloTurns}
                         {shortOrientation}
+                        {cellOverlay}
                       />
                     </div>
                   {/if}
@@ -617,6 +641,7 @@
                 {getMotionSoloMotion}
                 {formatSoloTurns}
                 {shortOrientation}
+                {cellOverlay}
               />
             </button>
           {:else}
@@ -647,6 +672,7 @@
                 {getMotionSoloMotion}
                 {formatSoloTurns}
                 {shortOrientation}
+                {cellOverlay}
               />
             </div>
           {/if}
@@ -663,7 +689,7 @@
           </div>
         </div>
       {/if}
-      {#each mandalaPlacements as placement (placement.row + "-" + placement.col + "-" + placement.variant)}
+      {#each shownMandalas as placement (placement.row + "-" + placement.col + "-" + placement.variant)}
         <div
           class="cell-flip-wrapper mandala-cell-wrapper"
           style="grid-column: {placement.col}; grid-row: {placement.row};"
@@ -674,11 +700,13 @@
             class:light-bg={isLightBackground}
           >
             <SequenceMandala
-              {primaryPropColors}
-              {sequence}
+              primaryPropColors={placement.fill?.colors ?? primaryPropColors}
+              sequence={placement.fill?.sequence ?? sequence}
               mode="card-back"
               style="stroke"
-              show={placement.variant === "full" ? "both" : placement.variant}
+              show={placement.fill || placement.variant === "full"
+                ? "both"
+                : placement.variant}
               size={Math.floor((cellWidth || 120) * mandalaCellScale)}
               darkMode={activeDarkMode}
               {leftPropType}
@@ -747,6 +775,7 @@
               {getMotionSoloMotion}
               {formatSoloTurns}
               {shortOrientation}
+              {cellOverlay}
             />
           </button>
         {:else}
@@ -776,6 +805,7 @@
               {getMotionSoloMotion}
               {formatSoloTurns}
               {shortOrientation}
+              {cellOverlay}
             />
           </div>
         {/if}
@@ -792,7 +822,7 @@
         </div>
       </div>
     {/if}
-    {#each mandalaPlacements as placement (placement.row + "-" + placement.col + "-" + placement.variant)}
+    {#each shownMandalas as placement (placement.row + "-" + placement.col + "-" + placement.variant)}
       <div
         class="cell-flip-wrapper mandala-cell-wrapper"
         style="grid-column: {placement.col}; grid-row: {placement.row};"
@@ -803,11 +833,13 @@
           class:light-bg={isLightBackground}
         >
           <SequenceMandala
-            {primaryPropColors}
-            {sequence}
+            primaryPropColors={placement.fill?.colors ?? primaryPropColors}
+            sequence={placement.fill?.sequence ?? sequence}
             mode="card-back"
             style="stroke"
-            show={placement.variant === "full" ? "both" : placement.variant}
+            show={placement.fill || placement.variant === "full"
+              ? "both"
+              : placement.variant}
             size={Math.floor((cellWidth || 120) * mandalaCellScale)}
             darkMode={activeDarkMode}
             {leftPropType}

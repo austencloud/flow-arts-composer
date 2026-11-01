@@ -9,6 +9,10 @@
  * same entries as picture tiles (MenuItemTileGrid), so a row added here shows
  * up in both places and a label translated here reads the same in both. Every
  * switch carries an icon: the tile draws it as its picture.
+ *
+ * The reversal marks and the hand colour key are not here: a pictograph
+ * ignores both (PictographContainer always draws reversals; the key draws only
+ * on a start placement). They are card switches, in card-content-toggles.ts.
  */
 
 import type {
@@ -124,32 +128,6 @@ function buildGlyphChildren(vm: VisibilityStateManager): ContextMenuItem[] {
         vm.setGlyphVisibility(
           "placementsGlyph",
           !vm.getRawGlyphVisibility("placementsGlyph")
-        ),
-    },
-    // The two marks the card export panel offered and this menu did not, so
-    // every pictograph switch is reachable from a pictograph itself.
-    {
-      id: "toggle-reversals",
-      label: t("share_overlay_reversals"),
-      icon: "fa-rotate-left",
-      checked: vm.getRawGlyphVisibility("reversalIndicators"),
-      keepOpen: true,
-      action: () =>
-        vm.setGlyphVisibility(
-          "reversalIndicators",
-          !vm.getRawGlyphVisibility("reversalIndicators")
-        ),
-    },
-    {
-      id: "toggle-hand-color-key",
-      label: t("viewer_ui_hand_key"),
-      icon: "fa-palette",
-      checked: vm.getRawGlyphVisibility("handColorKey"),
-      keepOpen: true,
-      action: () =>
-        vm.setGlyphVisibility(
-          "handColorKey",
-          !vm.getRawGlyphVisibility("handColorKey")
         ),
     },
   ];

@@ -22,7 +22,6 @@ import {
   ensureVideoExportOrchestrator,
   tryGetVideoExportOrchestrator,
 } from "#lib/shared/animation-engine/get-video-export-orchestrator.js";
-import { getOffline3DExporter } from "#lib/shared/3d/get-offline-3d-exporter.js";
 import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
 import type { CameraKeyframeBuffer } from "#lib/shared/video-export/domain/camera-keyframe.js";
 import { reportImageExportDelivery } from "./image-export-delivery";
@@ -325,6 +324,12 @@ export class SequenceModalExporter {
     callbacks: ExportCallbacks
   ): Promise<void> {
     const exportVersion = ++this._exportVersion;
+    // The 3D exporter brings three.js and the video encoder; the viewer only
+    // needs them once someone actually exports a 3D film.
+    const { getOffline3DExporter } = await import(
+      "#lib/shared/3d/get-offline-3d-exporter.js"
+    );
+    if (exportVersion !== this._exportVersion) return;
     const exporter = getOffline3DExporter() as Offline3DExporter;
     if (!exporter) {
       this._error = "3D export services not ready.";

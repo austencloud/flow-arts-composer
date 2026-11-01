@@ -19,6 +19,10 @@
   import { buildPictographContextMenuItems } from "#lib/shared/pictograph/shared/components/context-menu/pictograph-context-menu-builder.js";
   import { getVisibilityStateManager } from "#lib/shared/pictograph/shared/state/visibility-state.svelte.js";
   import { getImageCompositionManager } from "#lib/shared/share/state/image-composition-state.svelte.js";
+  import {
+    buildCardContentToggles,
+    cardMarkMenuItems,
+  } from "#lib/shared/share/domain/card-content-toggles.js";
   import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
   import type { ExportOptionsStateManager } from "#lib/shared/animation-panel/state/export-options-state.svelte.js";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
@@ -102,12 +106,21 @@
       sections.push({
         header: "Pictograph",
         entries: instrumentContextMenuEntries(
-          buildPictographContextMenuItems({
-            visibilityManager,
-            // Card step numbers read ImageComposition.addStepNumbers, not this
-            // manager — the toggle would lie here.
-            includeStepNumbers: false,
-          }),
+          [
+            ...buildPictographContextMenuItems({
+              visibilityManager,
+              // Card step numbers read ImageComposition.addStepNumbers, not
+              // this manager — the toggle would lie here.
+              includeStepNumbers: false,
+            }),
+            // Reversal marks and the hand colour key draw only on a card, so
+            // they come from the card's own switch list, not the pictograph's.
+            ...cardMarkMenuItems(
+              buildCardContentToggles(imageComposition, {
+                visibility: visibilityManager,
+              })
+            ),
+          ],
           "pictograph",
           onAction
         ),

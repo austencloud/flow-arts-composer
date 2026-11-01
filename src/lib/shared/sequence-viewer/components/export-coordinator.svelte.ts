@@ -79,7 +79,8 @@ type AccessibilityHelper = ReturnType<typeof createModalAccessibilityHelper>;
 
 export interface ExportCoordinatorDeps {
   getPropConfig?: () => ResolvedPropConfig;
-  viewer3DState: Viewer3DState;
+  /** Null until the viewer has loaded 3D, which a 3D export implies. */
+  getViewer3DState: () => Viewer3DState | null;
   accessibilityHelper: AccessibilityHelper;
   /**
    * Viewer Blue/Red motion toggles, read at export time. The offscreen export
@@ -91,7 +92,7 @@ export interface ExportCoordinatorDeps {
 
 export function createExportCoordinator(deps: ExportCoordinatorDeps) {
   const READY_TOAST_DURATION_MS = 12_000;
-  const { viewer3DState, accessibilityHelper, getMotionVisibility } = deps;
+  const { getViewer3DState, accessibilityHelper, getMotionVisibility } = deps;
   const measuredVideoUrls = new Set<string>();
 
   const exportOptions = getExportOptionsState();
@@ -551,13 +552,17 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
    * user away for being quick.
    */
   async function await3DExportHandles(timeoutMs = 10000): Promise<void> {
-    const ready = () =>
-      !!viewer3DState.webglCanvas &&
-      !!viewer3DState.threlteCamera &&
-      !!viewer3DState.threlteRenderer &&
-      !!viewer3DState.threlteRunFrame &&
-      !!viewer3DState.threltePauseAutoLoop &&
-      !!viewer3DState.threlteResumeAutoLoop;
+    const ready = () => {
+      const viewer3DState = getViewer3DState();
+      return (
+        !!viewer3DState?.webglCanvas &&
+        !!viewer3DState.threlteCamera &&
+        !!viewer3DState.threlteRenderer &&
+        !!viewer3DState.threlteRunFrame &&
+        !!viewer3DState.threltePauseAutoLoop &&
+        !!viewer3DState.threlteResumeAutoLoop
+      );
+    };
 
     const deadline = Date.now() + timeoutMs;
     while (!ready() && Date.now() < deadline) {
@@ -680,12 +685,14 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
     };
 
     // 3D mode: real-time capture from WebGL canvas
-    const is3DMode = viewer3DState.renderMode === "3d";
+    const viewer3DState = getViewer3DState();
+    const is3DMode = viewer3DState?.renderMode === "3d";
     if (is3DMode && exportType === "animation") await await3DExportHandles();
-    const webglCanvas = viewer3DState.webglCanvas;
+    const webglCanvas = viewer3DState?.webglCanvas;
 
     if (
       exportType === "animation" &&
+      viewer3DState &&
       is3DMode &&
       webglCanvas &&
       playbackController

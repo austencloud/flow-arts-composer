@@ -4,7 +4,7 @@ import {
   createSequenceData,
   type SequenceData,
 } from "#lib/shared/foundation/domain/models/sequence-data.js";
-import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import { stillLetterForPlacement } from "#lib/shared/foundation/domain/models/letter.js";
 import type { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   createMotionData,
@@ -14,17 +14,6 @@ import type { PictographData } from "#lib/shared/pictograph/shared/domain/models
 import { reversalDetector } from "#lib/shared/create/services/reversal-detector.js";
 import { normalizeLegacySequence } from "@tka/tka-types";
 import { hydrate } from "#lib/shared/foundation/services/sequence-hydrator.js";
-
-function letterFromGridPlacement(gridPlacement: unknown): Letter | null {
-  if (!gridPlacement) return null;
-  const placement = String(gridPlacement).toLowerCase();
-  if (placement.startsWith("alpha")) return Letter.ALPHA;
-  if (placement.startsWith("beta")) return Letter.BETA;
-  if (placement.startsWith("gamma")) return Letter.GAMMA;
-  if (placement.startsWith("zeta")) return Letter.ZETA;
-  if (placement.startsWith("eta")) return Letter.ETA;
-  return null;
-}
 
 function hydrateMotions(
   motions: PictographData["motions"] | undefined
@@ -74,7 +63,7 @@ export function hydrateSequence(raw: Record<string, unknown>): SequenceData {
         motions: hydrateMotions(sequence.startPlacement.motions),
         letter:
           sequence.startPlacement.letter ??
-          letterFromGridPlacement(sequence.startPlacement.gridPlacement),
+          stillLetterForPlacement(sequence.startPlacement.gridPlacement),
       }
     : undefined;
 

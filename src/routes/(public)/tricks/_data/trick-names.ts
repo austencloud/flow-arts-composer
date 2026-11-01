@@ -1,6 +1,7 @@
 import type { VtgMode } from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
 import {
   TIMING_DIRECTION_ARTICLES,
+  timingDirectionModeHref,
   type TimingDirectionArticle,
 } from "../../timing-and-direction/_data/timing-direction-articles";
 
@@ -47,7 +48,7 @@ function timingTrick(
     usage,
     detail: withDefinition ? article.definition : undefined,
     link: {
-      href: `/timing-and-direction/${article.slug}`,
+      href: timingDirectionModeHref(article.slug),
       label: article.name,
     },
     mode: code,

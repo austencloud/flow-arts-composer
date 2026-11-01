@@ -19,7 +19,10 @@
   import DisplaySection from "./DisplaySection.svelte";
   import type { DisplayExample } from "./display-example-data";
 
-  let { example }: { example: DisplayExample | null } = $props();
+  let {
+    example,
+    onBack,
+  }: { example: DisplayExample | null; onBack?: () => void } = $props();
 
   // 60 BPM is the player's 1.0x.
   const stored = readStoredPlaybackPreferences();
@@ -39,6 +42,7 @@
   title={t("settings_display_animation")}
   caption={t("settings_display_animation_caption")}
   onReset={() => animationVisibility.resetDisplayDefaults()}
+  {onBack}
 >
   {#snippet stage()}
     {#if example}

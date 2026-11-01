@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy, untrack, type Snippet } from "svelte";
   import { browser } from "$app/env";
-  import { page } from "$app/state";
   import HandMotionPlayer from "#lib/features/learn/components/interactive/foundations/HandMotionPlayer.svelte";
   import { DEFAULT_VIEWER_CUSTOM_COLORS } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
   import { reparentToInspector as reparentToSlot } from "#lib/shared/sequence-viewer/components/reparent-to-inspector.js";
@@ -16,20 +15,12 @@
   } from "./_state/timing-direction-state.svelte";
 
   let { children }: { children: Snippet } = $props();
-  const playback = createTimingDirectionState(page.params.mode);
+  const playback = createTimingDirectionState();
   setTimingDirectionState(playback);
   const gate = createRenderActivityGate({ name: "timing-direction-journey" });
-  // Each mode guide owns an inline showcase player. Only the hub explorer
-  // borrows this retained canvas.
-  const hubRoute = $derived(page.params.mode === undefined);
   onDestroy(() => gate.dispose());
   onMount(() => {
     if (reducedMotion()) playback.playing = false;
-  });
-
-  $effect(() => {
-    const slug = page.params.mode;
-    untrack(() => playback.followRoute(slug));
   });
 
   $effect(() => {
@@ -41,8 +32,9 @@
 <div use:renderGateTarget={gate}>
   {@render children()}
   <div class="player-parking">
-    <!-- This player belongs to the route layout, not either page. Moving its
-         host keeps the canvas, scrub position, and context-menu settings alive. -->
+    <!-- This player belongs to the route layout, not the page. Moving its
+         host keeps the canvas, scrub position, and context-menu settings alive.
+         The sequence section further down has a player of its own. -->
     <div
       class="shared-canvas"
       style:--mode-accent={playback.selected.motion.element.accentColor}
@@ -50,7 +42,7 @@
     >
       <!-- The animation engine is stubbed out of the production SSR build
            (see SSR_STUBBED_SHARED_RENDER_PATHS), so the canvas mounts client-only. -->
-      {#if browser && hubRoute}
+      {#if browser}
         <HandMotionPlayer
           primaryPropColors={DEFAULT_VIEWER_CUSTOM_COLORS}
           sequence={playback.sequence}

@@ -24,7 +24,7 @@ export const SCENE_ENVIRONMENT_LOADING_SKY: Record<
   // createDefaultCosmicNightConfig
   cosmic: { top: "#050510", mid: "#0d0d2a", horizon: "#1a1040" },
   // createDefaultWinterConfig
-  winter: { top: "#07152c", mid: "#344e68", horizon: "#617487" },
+  winter: { top: "#07152c", mid: "#4a6b92", horizon: "#617487" },
   // ocean-depth-gradient: shallow, mid, deep (the view is under water)
   ocean: { top: "#123c55", mid: "#0a2438", horizon: "#01060b" },
   // createDefaultEmberConfig (blackglass-inferno)

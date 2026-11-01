@@ -109,3 +109,65 @@ export function resolveInfoCellDisplay(args: ResolveInfoCellArgs): {
       return { showQRCode: false, showMandala: false };
   }
 }
+
+/**
+ * What the card's info cells hold, as one choice: the QR, the mandala, both
+ * (only where the card has two or more cells), or neither. The chooser shows
+ * the card's resolved state, so it is read back through resolveInfoCellDisplay
+ * rather than from the stored switches.
+ */
+export type InfoCellPick = "qr" | "mandala" | "both" | "none";
+
+export function infoCellPickOf(resolved: {
+  showQRCode: boolean;
+  showMandala: boolean;
+}): InfoCellPick {
+  if (resolved.showQRCode && resolved.showMandala) return "both";
+  if (resolved.showQRCode) return "qr";
+  if (resolved.showMandala) return "mandala";
+  return "none";
+}
+
+/**
+ * The picks a card offers. None when it has no info cell; Both only with two
+ * or more cells; QR (and so Both) only where a QR can be drawn.
+ */
+export function infoCellPicks(
+  infoCellCount: number,
+  canShowQRCode: boolean
+): InfoCellPick[] {
+  if (infoCellCount < 1) return [];
+  return [
+    ...(canShowQRCode ? (["qr"] as const) : []),
+    "mandala",
+    ...(canShowQRCode && infoCellCount >= 2 ? (["both"] as const) : []),
+    "none",
+  ];
+}
+
+export interface InfoCellWrite {
+  showQRCode: boolean;
+  showMandala: boolean;
+  /** Set only on a one-cell card, for that card's step count. */
+  infoCellChoice?: InfoCellChoice;
+}
+
+/**
+ * The stored values that make a card resolve to `pick`, in the existing
+ * storage shape. A one-cell card turns both switches on and lets its per-length
+ * choice decide the cell, so its pick never changes what a longer card shows.
+ * A card with more cells has no per-length choice: the two global switches are
+ * the pick.
+ */
+export function planInfoCellPick(
+  pick: InfoCellPick,
+  infoCellCount: number
+): InfoCellWrite {
+  if (infoCellCount === 1 && pick !== "both") {
+    return { showQRCode: true, showMandala: true, infoCellChoice: pick };
+  }
+  return {
+    showQRCode: pick === "qr" || pick === "both",
+    showMandala: pick === "mandala" || pick === "both",
+  };
+}

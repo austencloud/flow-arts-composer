@@ -50,6 +50,7 @@ interface Probe {
   holds: Array<{
     name: string;
     at: number;
+    waitMs?: number;
     releasedAt?: number;
     timedOut?: true;
   }>;
@@ -1060,6 +1061,45 @@ describe("boot holds and the composed milestone", () => {
     expect(at(run, "composed")).toBe(12370);
     expect(run.probe().holds.every((hold) => hold.timedOut)).toBe(true);
     expect(dismissals(run)).toHaveLength(1);
+  });
+
+  it("lets a hold with its own wait outlast the ceiling, up to ready + that wait", () => {
+    // 5173, 2026-10-31: ready at 10.9 s, the Create workspace drawn about
+    // 10 s later; the 8 s ceiling let the screen go on a bare loading bar.
+    const run = boot({ profile: devWarmProfile() });
+    run.replay(DEV_WARM.slice(0, 3));
+    const releaseView = run.win.__tkaBootHold("module-view");
+    run.win.__tkaBootHold("create-workspace", 15000);
+    run.replay([[4370, "ready"]]);
+    run.advance(4500);
+    releaseView();
+    run.advance(4370 + 8000);
+    expect(loaded(run)).toBe(false);
+    run.advance(4370 + 14999);
+    expect(loaded(run)).toBe(false);
+    run.advance(4370 + 15000);
+    expect(loaded(run)).toBe(true);
+    expect(at(run, "composed")).toBe(19370);
+    expect(run.probe().holds[1]).toMatchObject({
+      name: "create-workspace",
+      waitMs: 15000,
+      timedOut: true,
+    });
+    expect(dismissals(run)).toHaveLength(1);
+  });
+
+  it("keeps waiting on a held screen past the 15 s safety net once ready has arrived", () => {
+    const run = boot({ profile: devWarmProfile() });
+    run.replay(DEV_WARM.slice(0, 3));
+    const release = run.win.__tkaBootHold("create-workspace", 15000);
+    run.replay([[10900, "ready"]]);
+    run.advance(15500);
+    expect(loaded(run)).toBe(false);
+    expect(run.marks).not.toContain("boot:splash:timeout-dismiss");
+    run.advance(20400);
+    release();
+    expect(loaded(run)).toBe(true);
+    expect(at(run, "composed")).toBe(20400);
   });
 
   it("ignores a hold asked for after dismissal, and one on a route without the screen", () => {

@@ -47,6 +47,7 @@
   } from "../services/workspace-split";
   import { sequenceActionsFit } from "./sequence-actions/sequence-actions-fit.svelte";
   import { hasOpenModalLayer } from "#lib/shared/keyboard/domain/shortcut-target-resolution.js";
+  import { pictographDrawState } from "#lib/shared/pictograph/shared/utils/pictograph-draw-state.js";
 
   type CreateModuleState = ReturnType<typeof CreateModuleStateType>;
 
@@ -406,9 +407,7 @@
     // ready, so the slide starts on the frame after.
     let drawnBefore = false;
     let frame = requestAnimationFrame(function check(now) {
-      const drawn =
-        content.querySelector(".pictograph-container") !== null &&
-        !content.querySelector('.pictograph-container[aria-busy="true"]');
+      const drawn = pictographDrawState(content) === "drawn";
       if (drawnBefore || now - heldAt >= WORKSPACE_HOLD_CAP) {
         holdWorkspaceSlide = false;
         return;
@@ -555,7 +554,15 @@
             ? { animationStateRef: toolPanelRef.getAnimationStateRef() }
             : {}),
         }}
-      />
+      >
+        <!-- Marks the beat grid as still coming, so a Create entry waits
+             for it instead of revealing an empty workspace. -->
+        {#snippet placeholder()}
+          {#if hasWorkspaceContent}
+            <div class="workspace-area-pending" aria-hidden="true"></div>
+          {/if}
+        {/snippet}
+      </LazyMount>
       {#if !hasWorkspaceContent && isAssembleTab}
         <div class="assemble-workspace-placeholder">
           <i class="fas fa-layer-group" aria-hidden="true"></i>

@@ -33,6 +33,8 @@
  * every fps reading from one is fiction), and closes only that tab when done.
  */
 
+import { measureDisplayInterval, snapToRefreshRate } from "./lib/frame-budget.mjs";
+
 const args = new Map();
 for (let i = 2; i < process.argv.length; i += 1) {
   const a = process.argv[i];
@@ -299,49 +301,6 @@ const RECORDER = `async ({ ms, scrollTo, click, scrollSweep, requires }) => {
 // ------------------------------------------------------------------ reporting
 
 /**
- * Snap a measured interval to the nearest real refresh rate, so scheduling
- * noise cannot invent an impossible budget.
- *
- * Deriving this from the loaded page's own frames was wrong: on a janky or
- * CPU-throttled page the recorder's frames bunch unpredictably, and a single
- * short delta once produced a "155Hz" display and a 6.4ms budget. The interval
- * is measured on a blank page instead (see `measureDisplayInterval`), where an
- * empty rAF loop runs at exactly vsync.
- */
-function snapToRefreshRate(measuredMs) {
-  const known = [1000 / 240, 1000 / 165, 1000 / 144, 1000 / 120, 1000 / 90, 1000 / 60, 1000 / 50, 1000 / 30];
-  let best = 1000 / 60;
-  let bestErr = Infinity;
-  for (const k of known) {
-    const err = Math.abs(measuredMs - k);
-    if (err < bestErr) { bestErr = err; best = k; }
-  }
-  return best;
-}
-
-/** An empty rAF loop on about:blank runs at exactly the display's refresh rate. */
-async function measureDisplayInterval(ws, sessionId) {
-  const median = await run(
-    ws,
-    sessionId,
-    `async () => {
-      const f = [];
-      let last = performance.now();
-      let h = 0;
-      let stop = false;
-      const tick = () => { const n = performance.now(); f.push(n - last); last = n; if (!stop) h = requestAnimationFrame(tick); };
-      h = requestAnimationFrame(tick);
-      await new Promise((r) => setTimeout(r, 1000));
-      stop = true;
-      cancelAnimationFrame(h);
-      const s = f.slice(2).sort((a, b) => a - b);
-      return s.length ? s[Math.floor(s.length / 2)] : 16.7;
-    }`
-  );
-  return snapToRefreshRate(median);
-}
-
-/**
  * Block until the route is actually running, and report how long that took.
  *
  * Measuring before this point is how the harness once graded /composer as a
@@ -518,7 +477,9 @@ async function main() {
     // Always measure the real panel, even when --hz pins the budget: the two
     // together are what makes an override honest to read (see the warning
     // printed below when the override outruns the hardware).
-    const realInterval = await measureDisplayInterval(ws, sessionId);
+    const realInterval = await measureDisplayInterval((source) =>
+      run(ws, sessionId, source)
+    );
     const interval = HZ_OVERRIDE
       ? snapToRefreshRate(1000 / HZ_OVERRIDE)
       : realInterval;

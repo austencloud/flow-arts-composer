@@ -169,6 +169,28 @@ export function normalizeLetter(raw: string | null | undefined): Letter | null {
 }
 
 /**
+ * The letter of a pictograph whose hands both hold still at one placement: the
+ * placement's family (alpha1 → α, beta → β, gamma → γ, zeta → ζ, eta → η).
+ * Every pictograph dataframe agrees, on all four grids, so a start position
+ * needs no dataframe lookup. Takes a placement ("gamma11") or a family ("beta").
+ */
+export function stillLetterForPlacement(
+  placement: string | null | undefined
+): Letter | null {
+  if (!placement) return null;
+  const family = placement.toLowerCase().replace(/\d+$/, "");
+  return STILL_LETTER_BY_FAMILY[family] ?? null;
+}
+
+const STILL_LETTER_BY_FAMILY: Readonly<Record<string, Letter>> = {
+  alpha: Letter.ALPHA,
+  beta: Letter.BETA,
+  gamma: Letter.GAMMA,
+  zeta: Letter.ZETA,
+  eta: Letter.ETA,
+};
+
+/**
  * Get the LetterType for any letter enum value.
  * Tolerates known legacy aliases (so historical data renders instead of
  * crashing) but still throws for genuinely unknown input.

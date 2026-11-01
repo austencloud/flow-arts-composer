@@ -45,30 +45,19 @@ describe("pictograph context menu builder", () => {
       "Hand TnD",
       "Prop TnD",
       "Placements",
-      "Reversals",
-      "Hand key",
     ]);
   });
 
-  // Settings → Display renders this same list as chips, so the reversal and
-  // hand colour key switches the card panel offered must live here too.
-  it("toggles reversals and the hand colour key on their own keys", () => {
-    vm.setGlyphVisibility("reversalIndicators", true);
-    vm.setGlyphVisibility("handColorKey", true);
-
-    glyphs()
-      .find((c) => c.id === "toggle-reversals")
-      ?.action?.();
-    expect(vm.getRawGlyphVisibility("reversalIndicators")).toBe(false);
-    expect(vm.getRawGlyphVisibility("handColorKey")).toBe(true);
-
-    glyphs()
-      .find((c) => c.id === "toggle-hand-color-key")
-      ?.action?.();
-    expect(vm.getRawGlyphVisibility("handColorKey")).toBe(false);
-    expect(glyphs().find((c) => c.id === "toggle-reversals")?.checked).toBe(
-      false
-    );
+  // A pictograph ignores the reversal and hand colour key settings (reversals
+  // always draw, the key draws on a start placement only), so a row for either
+  // here would be a switch that changes nothing. They live in the card's list.
+  it("leaves out the card-only reversal and hand colour key switches", () => {
+    const ids = buildPictographContextMenuItems({ visibilityManager: vm })
+      .filter(isMenuItem)
+      .flatMap((entry) => [entry, ...(entry.children ?? [])])
+      .map((item) => item.id);
+    expect(ids).not.toContain("toggle-reversals");
+    expect(ids).not.toContain("toggle-hand-color-key");
   });
 
   it("moves the hand TnD mark and its element together", () => {

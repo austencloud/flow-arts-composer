@@ -26,7 +26,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
 import { resolve } from "path";
-import { Point } from "fabric";
+import { Point } from "#lib/shared/pictograph/arrow/orchestration/domain/point.js";
 import { pictographPreparer } from "#lib/shared/pictograph/shared/services/pictograph-preparer.js";
 import { SpecialPlacementLookup } from "#lib/shared/pictograph/arrow/positioning/placement/services/special-placement-lookup.js";
 import { turnsTupleGenerator } from "#lib/shared/pictograph/arrow/positioning/placement/services/turns-tuple-generator.js";

@@ -572,4 +572,22 @@ describe("fitTapsToGrid with a beat-1 mark", () => {
     ]);
     expect(result.worstMissSeconds).toBeLessThan(1e-6);
   });
+
+  it("reports taps before a marked opening pose without calling the run double time", () => {
+    const secondsPerBeat = 60 / 50;
+    const landing = (position: number) => 30 + secondsPerBeat * position;
+    const ahead = [-12, -11, -10, -9, -8, -7, -6, -5, -4, -3, -2, -1];
+    const run = Array.from({ length: 17 }, (_, position) => position);
+    const fit = fitTapsToGrid({
+      taps: [...ahead, ...run].map(landing),
+      bpm: 50,
+      moveBeats: [1, 1, 1, 1, 1, 1, 1, 1],
+      firstTapPosition: 0,
+      beatOneSeconds: landing(1),
+      tempo: "locked",
+    });
+    expect(fit.ignoredLeadingTaps).toBe(12);
+    expect(fit.octaveHint).toBeNull();
+    expect(fit.labels.slice(12).map((label) => label.position)).toEqual(run);
+  });
 });

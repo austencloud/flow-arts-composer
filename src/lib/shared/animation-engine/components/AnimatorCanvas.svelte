@@ -1057,8 +1057,9 @@ Last audit: 2025-12-27
       {:else}
         <!-- The transport is the canonical playback surface: play, tempo,
              scrubber, and continuous-vs-step all live here and nowhere else.
-             Its scrubber is the only progress readout in this branch; a
-             passive strip used to sit right above it and just duplicated it.
+             Its scrubber is the same progress line the showcase players and
+             exported video draw (PlaybackLine), flush with the canvas bottom,
+             so this branch shows exactly one line under the canvas.
              The transport used to be gated on the `progressBar` visibility
              flag, which meant a toggle labelled "Progress" removed every
              playback control on the page. Hosts can still opt out wholesale
@@ -1571,9 +1572,12 @@ Last audit: 2025-12-27
      shrinks to fit, never the other way around. (A floating overlay variant
      existed briefly and covered the bottom of the canvas; Viewer3DCanvas's
      timeline is in-flow now too, so both panes press up.) */
+  /* Not clipped: the progress line runs along the slot's top edge, and its
+     scrub knob is centred on that line, so half of it overhangs the canvas.
+     The content wrapper still clips anything past the player. */
   .progress-slot {
     flex-shrink: 0;
-    overflow: hidden;
+    overflow: visible;
     max-height: 100px;
     opacity: 1;
     transition:

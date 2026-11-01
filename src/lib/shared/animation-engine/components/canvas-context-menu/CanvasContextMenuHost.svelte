@@ -20,7 +20,7 @@
     getAnimationVisibilityManager,
     type AnimationVisibilityStateManager,
   } from "../../state/animation-visibility-state.svelte";
-  import { getViewer3DContext } from "#lib/shared/3d/context/viewer-3d-context.js";
+  import { getViewer3DSource } from "#lib/shared/3d/context/viewer-3d-context.js";
   import { tryGetGridJoinContext } from "#lib/shared/grid-join/grid-join-controller.js";
   import { getEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
   import type { EffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
@@ -63,13 +63,22 @@
   // Try to read the viewer-3d context. When this component is rendered inside
   // a sequence viewer, the orchestrator will have set it. In other contexts
   // (e.g., the compose tab) it won't be present and we gracefully omit the
-  // 3D menu item.
-  let viewer3DState: ReturnType<typeof getViewer3DContext> | undefined;
+  // 3D menu item. The viewer loads its 3D state on first use, so the menu
+  // reads 2D until then.
+  let viewer3DSource: ReturnType<typeof getViewer3DSource> = null;
   try {
-    viewer3DState = getViewer3DContext();
+    viewer3DSource = getViewer3DSource();
   } catch {
     // Context not available - not in a sequence viewer
   }
+  const viewer3DState = viewer3DSource
+    ? {
+        get renderMode() {
+          return viewer3DSource?.current?.renderMode ?? ("2d" as const);
+        },
+        webgl2Available: viewer3DSource.webgl2Available,
+      }
+    : undefined;
 
   let menuState: ContextMenuState = $state({ open: false });
   let menuItemsVersion: number = $state(0);

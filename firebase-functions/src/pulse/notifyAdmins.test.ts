@@ -11,7 +11,57 @@ jest.mock("firebase-admin", () => ({
   ),
 }));
 
-import { notifyAdmins, notifyAdminsScanDigest } from "./notifyAdmins";
+import {
+  notifyAdmins,
+  notifyAdminsScanDigest,
+  notifyAdminsVisitDigest,
+} from "./notifyAdmins";
+
+describe("Site visit digest", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("links the first visitor's push to the visitor replay screen", async () => {
+    const adminsSnap = { docs: [{ id: "admin-1", data: () => ({}) }] };
+    const noAdmins = { docs: [] };
+    collection.mockImplementation(() => ({
+      where: (field: string) => ({
+        get: async () => (field === "role" ? adminsSnap : noAdmins),
+      }),
+      doc: () => ({
+        collection: () => ({ doc: (id: string) => ({ id }) }),
+      }),
+    }));
+    doc.mockReturnValue({ get: async () => ({ data: () => undefined }) });
+    const set = jest.fn();
+    runTransaction.mockImplementation(async (work) =>
+      work({ get: async () => ({ exists: false }), set, update: jest.fn() })
+    );
+
+    await notifyAdminsVisitDigest({
+      visit: {
+        place: "Lyon, France",
+        source: "Google",
+        device: "iPhone",
+        landingPath: "/learn",
+        visitNumber: 1,
+        postHogSessionId: "019a-session",
+      },
+      windowMs: 600_000,
+      windowMinutes: 10,
+      now: 1_200_000,
+    });
+
+    expect(set).toHaveBeenCalledWith(
+      { id: "site-visit-digest-2" },
+      expect.objectContaining({
+        actionUrl: "/admin/visitors?notification=site-visit-digest-2",
+        postHogSessionId: "019a-session",
+      })
+    );
+  });
+});
 
 describe("Pulse agent activity suppression", () => {
   beforeEach(() => {

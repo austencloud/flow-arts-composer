@@ -343,8 +343,9 @@
   const isModuleBlocked = $derived(
     activeModule
       ? !isModuleAccessible(activeModule, accessTier) ||
-          (activeModule === "settings" &&
-            !isTabAccessible("settings", navigationState.activeTab, accessTier))
+          // Settings and Learn open to guests only in some tabs.
+          ((activeModule === "settings" || activeModule === "learn") &&
+            !isTabAccessible(activeModule, navigationState.activeTab, accessTier))
       : false
   );
 </script>

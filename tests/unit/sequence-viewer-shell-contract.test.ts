@@ -8,7 +8,7 @@
  * If this test fails, fix the host — do not loosen the assertions.
  */
 import { afterEach, describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { isFirstScanRouteVisit } from "#lib/shared/qr/utils/scan-detection.js";
@@ -32,6 +32,7 @@ const HOSTS: Record<string, string[]> = {
   "/from/spiroanim route host": [
     "src/routes/from/spiroanim/[cellKey]/+page.svelte",
   ],
+  "/tunnel route host": ["src/routes/tunnel/[pair]/TunnelViewerPage.svelte"],
 };
 
 /**
@@ -128,11 +129,82 @@ describe("SequenceViewerShell host contract", () => {
       /<AnimatorCanvas[\s\S]*?\bfillContainer\b[\s\S]*?\/>/
     );
     expect(viewerMotionSurfaceSource).toContain("<LazyMount");
-    expect(viewerMotionSurfaceSource).toContain("<SceneControlWorkspace");
+    expect(viewerMotionSurfaceSource).toContain(
+      'import("#lib/shared/3d/components/controls/SceneControlWorkspace.svelte")'
+    );
     expect(viewerCompanionSurfaceSource).toContain("createPaneKeepAlive");
     expect(viewerCompanionSurfaceSource).toContain("<ChoreoCard");
     expect(viewerCompanionSurfaceSource).toContain("<ArtPane");
     expect(viewerPracticeLaneSource).toContain("<PracticeLanePane");
+  });
+
+  // A scanned link draws its first frame from this shell. A static import of
+  // any of these brings the video editor, its media encoder or three.js into
+  // that first download, and nothing on screen would show it.
+  it("loads tap-only editors and 3D tools on demand", () => {
+    const staticImport = (source: string, file: string) =>
+      new RegExp(String.raw`^\s*import\s+[^;]*?["'][^"']*${file}["']`, "m").test(
+        source
+      );
+    expect(staticImport(shellSource, "PostStudioPane.svelte")).toBe(false);
+    expect(staticImport(shellSource, "PostShareSheet.svelte")).toBe(false);
+    expect(staticImport(shellSource, "get-post-workspace-navigator.js")).toBe(
+      false
+    );
+    expect(
+      staticImport(viewerMotionSurfaceSource, "SceneControlWorkspace.svelte")
+    ).toBe(false);
+    expect(
+      staticImport(viewerSplitPaneSource, "scene-asset-preloader.svelte.js")
+    ).toBe(false);
+    expect(
+      staticImport(
+        read("src/lib/shared/sequence-viewer/services/sequence-modal-exporter.svelte.ts"),
+        "get-offline-3d-exporter.js"
+      )
+    ).toBe(false);
+  });
+
+  it("builds the 3D state only when someone opens 3D", () => {
+    // A value import of either module puts three.js (about 1.5 MB) back on
+    // every scan. Type imports are erased and stay allowed.
+    const valueImport = (source: string, file: string) =>
+      new RegExp(
+        String.raw`^\s*import\s+(?!type\s)[^;]*?["']${file}["']`,
+        "m"
+      ).test(source);
+    const orchestrator = read(
+      "src/lib/shared/sequence-viewer/components/SequenceViewerOrchestrator.svelte"
+    );
+    for (const file of [
+      "#lib/shared/3d/state/viewer-3d-state.svelte.js",
+      "@austencloud/scene-3d",
+      "#lib/features/scene-3d-collection/services/open-3d-scene.js",
+    ]) {
+      expect(valueImport(orchestrator, file), file).toBe(false);
+    }
+    expect(
+      read("src/lib/shared/sequence-viewer/state/lazy-viewer-3d-state.svelte.ts")
+    ).toContain('import("#lib/shared/3d/state/viewer-3d-state.svelte.js")');
+  });
+
+  it("keeps the Codex letter table and fabric off the scan", () => {
+    // The guide index is built from the Codex letter table (about 215 KB) and
+    // only "See it in the Guide" needs it.
+    expect(read("src/routes/sequence/[id]/SequenceViewerPage.svelte")).not.toMatch(
+      /^\s*import\s+(?!type\s)[^;]*?guide-content-index["']/m
+    );
+    // Every scanned card places arrows. fabric was only ever used for `Point`
+    // here, and importing it loads the whole library (about 274 KB).
+    const arrowRoot = path.join(repoRoot, "src/lib/shared/pictograph/arrow");
+    const files = readdirSync(arrowRoot, { recursive: true, encoding: "utf8" })
+      .filter((file) => /\.(ts|svelte)$/.test(file));
+    for (const file of files) {
+      expect(
+        readFileSync(path.join(arrowRoot, file), "utf8"),
+        file
+      ).not.toMatch(/from\s+["']fabric["']/);
+    }
   });
 
   it("keeps compressed mobile dock tabs pressable", () => {

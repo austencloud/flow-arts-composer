@@ -901,8 +901,18 @@ const classifyChunk = (id: string): string | undefined => {
     // Keep feature-only packages out of the catch-all vendor chunk. A single
     // import of that chunk otherwise downloads every background, encoder, and
     // audio inference runtime together.
-    if (id.includes("node_modules/@austencloud/backgrounds/")) {
-      return "vendor-backgrounds";
+    // Only the package's core goes in the named chunk. Its factory imports
+    // each background on demand, and one chunk for all of them made every
+    // page with a background (a scanned sequence included) download all ten,
+    // about 427 KB, to draw one. The package index stays out too: a group
+    // takes in what its modules import, and the index re-exports every
+    // background. Each background has a ranked chunk of its own: left
+    // unnamed, they were taken in by `scene-stage-coordinate-frame`, which
+    // imports three, so a scan downloaded three.js to draw the cosmic sky.
+    if (normalizedId.includes("node_modules/@austencloud/backgrounds/")) {
+      if (normalizedId.includes("/dist/core/")) return "vendor-backgrounds";
+      const background = normalizedId.match(/\/dist\/backgrounds\/([^/]+)\//);
+      return background ? `vendor-bg-${background[1]}` : undefined;
     }
     if (
       id.includes("node_modules/mediabunny/") ||
@@ -963,6 +973,22 @@ const classifyChunk = (id: string): string | undefined => {
 // a higher priority captures first, and Rolldown removes its modules from the
 // groups below. Leaves rank first so their dependents cannot absorb them.
 // See docs/performance/2026-10-22-boot-measurements.md.
+// One chunk per folder in @austencloud/backgrounds/dist/backgrounds. Forest
+// ranks above winter, which borrows its trees.
+const BACKGROUND_CHUNKS = [
+  "autumn",
+  "blossom",
+  "celestial",
+  "cosmic",
+  "ember",
+  "forest",
+  "ocean",
+  "rainbow",
+  "simple",
+  "void",
+  "winter",
+].map((name) => `vendor-bg-${name}`);
+
 const CHUNK_PRIORITY = [
   "vendor-sveltekit",
   "vendor-svelte",
@@ -971,6 +997,7 @@ const CHUNK_PRIORITY = [
   "scene-prop-hand-palette",
   "vendor-three",
   "vendor-backgrounds",
+  ...BACKGROUND_CHUNKS,
   "vendor-media-export",
   "vendor-audio-inference",
   "vendor-firebase",

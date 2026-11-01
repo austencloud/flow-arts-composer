@@ -1,9 +1,17 @@
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+
 export type MandalaVariant = "left" | "right" | "full";
 
 export interface MandalaPlacement {
 	row: number;
 	col: number;
 	variant: MandalaVariant;
+}
+
+/** A performer a mandala slot draws whole, in their colors. */
+export interface MandalaFill {
+	sequence: SequenceData;
+	colors?: { left: string; right: string } | null;
 }
 
 export interface MandalaLayoutOverride {

@@ -10,6 +10,7 @@
  * Spec: docs/superpowers/specs/2026-10-10-guide-rethink-design.md
  */
 import { t } from "#lib/shared/i18n/i18n.svelte.js";
+import { timingDirectionModeHref } from "../../../routes/(public)/timing-and-direction/_data/timing-direction-articles";
 import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
 import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
@@ -143,18 +144,19 @@ export type DualShiftModeId =
   | "quarter-same";
 
 /**
- * Each mode's one full explainer: its Timing and Direction mode guide. The
- * Guide page names the modes and links here rather than teaching timing and
- * direction again (one explainer per concept, 2026-10-12).
+ * Each mode's one full explainer: its sequences on the timing-and-direction
+ * page. The Guide page names the modes and links there rather than teaching
+ * timing and direction again (one explainer per concept, 2026-10-12; one
+ * timing-and-direction page, 2026-10-31).
  */
 export const DUAL_SHIFT_MODE_GUIDES = {
-  "split-same": "/timing-and-direction/split-time-same-direction",
-  "tog-same": "/timing-and-direction/together-time-same-direction",
-  "split-opp": "/timing-and-direction/split-time-opposite-direction",
-  "tog-opp": "/timing-and-direction/together-time-opposite-direction",
-  "quarter-opp": "/timing-and-direction/quarter-time-opposite-direction",
-  "quarter-same": "/timing-and-direction/quarter-time-same-direction",
-} as const satisfies Record<DualShiftModeId, `/timing-and-direction/${string}`>;
+  "split-same": timingDirectionModeHref("split-time-same-direction"),
+  "tog-same": timingDirectionModeHref("together-time-same-direction"),
+  "split-opp": timingDirectionModeHref("split-time-opposite-direction"),
+  "tog-opp": timingDirectionModeHref("together-time-opposite-direction"),
+  "quarter-opp": timingDirectionModeHref("quarter-time-opposite-direction"),
+  "quarter-same": timingDirectionModeHref("quarter-time-same-direction"),
+} as const satisfies Record<DualShiftModeId, string>;
 
 /** [leftFrom, leftTo, rightFrom, rightTo]; a start box holds (from === to). */
 export type DualShiftMove = [

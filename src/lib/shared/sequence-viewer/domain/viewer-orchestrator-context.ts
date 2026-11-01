@@ -211,7 +211,9 @@ export interface OrchestratorContext {
   splitPanePropRendering: PropRenderingProps;
 
   renderMode: "2d" | "3d";
-  viewer3DState: ReturnType<typeof createViewer3DState>;
+  /** Null until someone opens 3D; the state loads on first use. */
+  viewer3DState: ReturnType<typeof createViewer3DState> | null;
+  webgl2Available: boolean;
   countdownValue: number;
   isRecording3D: boolean;
   /** A 3D take remains active while its recipe is saved and render choice is pending. */

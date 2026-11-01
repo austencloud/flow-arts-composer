@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { PostProjectSchema, normalizeProject, compilePostProject, editContext } from "#lib/shared/post-studio-plugin/index.js";
-import { POST_BOX, POST_MAX_SPEED, POST_MIN_ITEM_SECONDS, findItem, type PostItem, type PostProject, type PostVideoItem, framingAt, isAnimated, opacityAt, setKeyframe, addOverlayItem, addTake, appendCardClip, appendVideoClip, deleteItem, duplicateItem, editItemKeyframes, clearProjectKeyframes, moveMainItem, moveOverlayItem, moveSelectedItems, placeMainItem, removeTake, replaceTakeMedia, resetFraming, setMainCutCrossfade, setTrackCutCrossfade, setItemFill, setProjectAudio, setProjectBackground, setTrackFlag, setVideoSpeed, splitItemAt, trimItem, trimItemToSource, updateItem, updateItemAt } from "@austencloud/video-editor/core";
+import { POST_BOX, POST_MAX_SPEED, POST_MIN_ITEM_SECONDS, findItem, type PostItem, type PostProject, type PostVideoItem, framingAt, isAnimated, opacityAt, setKeyframe, addOverlayItem, addTake, appendCardClip, appendVideoClip, deleteItem, duplicateItem, editItemKeyframes, clearProjectKeyframes, moveMainItem, moveOverlayItem, moveSelectedItems, placeMainItem, removeTake, replaceTakeMedia, mainGapAt, closeMainGap, resetFraming, setMainCutCrossfade, setTrackCutCrossfade, setItemFill, setProjectAudio, setProjectBackground, setTrackFlag, setVideoSpeed, splitItemAt, trimItem, trimItemToSource, updateItem, updateItemAt } from "@austencloud/video-editor/core";
 import {
   createTakeTiming,
   resolveTakeTiming,
@@ -1324,17 +1324,52 @@ describe("replaceTakeMedia", () => {
 });
 
 describe("trimItem", () => {
-  it("cuts a main clip's head and keeps its place", () => {
+  it("cuts a main clip's head and leaves a gap, its end and the rest in place", () => {
     const base = twoClips();
     const result = valid(trimItem(base, "v1", "start", 3, ctx));
     expect(item(result, "v1")).toMatchObject({
       sourceIn: 3,
-      start: 0,
+      start: 3,
       duration: 7,
+      pinnedStart: true,
     });
-    expect(spans(result, 0)[1]).toEqual(["v2", 7, 6]);
-    expect(spans(result, 1)).toEqual([["anim", 0, 7]]);
-    expect(spans(result, 2)).toEqual([["t1", 9, 2]]);
+    expect(spans(result, 0)[1]).toEqual(["v2", 10, 6]);
+    expect(spans(result, 1)).toEqual([["anim", 3, 7]]);
+    expect(spans(result, 2)).toEqual([["t1", 12, 2]]);
+  });
+
+  it("keeps an overlay on the trimmed clip where it stood", () => {
+    const base = project(
+      [video("v1"), video("v2", { sourceOut: 8 })],
+      [[text("t1", 5, 2, { anchor: { itemId: "v1", offset: 5 } })]]
+    );
+    const result = valid(trimItem(base, "v1", "start", 2, ctx));
+    expect(spans(result, 1)).toEqual([["t1", 5, 2]]);
+    // Cut past it, the overlay stays and rides whatever is under it now.
+    const past = valid(trimItem(base, "v1", "start", 7, ctx));
+    expect(spans(past, 1)).toEqual([["t1", 5, 2]]);
+  });
+
+  it("grows a main clip to the right when its head opens past the clip before it", () => {
+    const base = twoClips();
+    const result = valid(trimItem(base, "v2", "start", 8, ctx));
+    expect(item(result, "v2")).toMatchObject({
+      start: 10,
+      sourceIn: 0,
+      sourceOut: 8,
+    });
+    expect(item(result, "v2").pinnedStart).toBeUndefined();
+  });
+
+  it("drags a pinned head back and closes its gap", () => {
+    const opened = trimItem(twoClips(), "v1", "start", 3, ctx);
+    const closed = valid(trimItem(opened, "v1", "start", 1, ctx));
+    expect(item(closed, "v1")).toMatchObject({
+      start: 1,
+      sourceIn: 1,
+      duration: 9,
+    });
+    expect(spans(closed, 0)[1]).toEqual(["v2", 10, 6]);
   });
 
   it("gives the same result when re-applied to the starting project", () => {
@@ -1414,12 +1449,50 @@ describe("trimItem", () => {
   });
 });
 
+describe("main track gaps", () => {
+  it("finds the gap a head trim opened, and none on a clip or past the end", () => {
+    const opened = trimItem(twoClips(), "v2", "start", 12, ctx);
+    expect(mainGapAt(opened, 11)).toEqual({ start: 10, end: 12 });
+    expect(mainGapAt(opened, 5)).toBeNull();
+    expect(mainGapAt(opened, 30)).toBeNull();
+    const first = trimItem(twoClips(), "v1", "start", 3, ctx);
+    expect(mainGapAt(first, 1)).toEqual({ start: 0, end: 3 });
+  });
+
+  it("closes a gap: what follows moves left and its overlays go with it", () => {
+    const opened = trimItem(twoClips(), "v2", "start", 12, ctx);
+    expect(spans(opened, 2)).toEqual([["t1", 12, 2]]);
+    const closed = valid(closeMainGap(opened, 11, ctx));
+    expect(spans(closed, 0)).toEqual([
+      ["v1", 0, 10],
+      ["v2", 10, 4],
+    ]);
+    expect(item(closed, "v2").pinnedStart).toBeUndefined();
+    expect(spans(closed, 2)).toEqual([["t1", 10, 2]]);
+  });
+
+  it("closes the gap at the post's start", () => {
+    const opened = trimItem(twoClips(), "v1", "start", 3, ctx);
+    const closed = valid(closeMainGap(opened, 1, ctx));
+    expect(spans(closed, 0)).toEqual([
+      ["v1", 0, 7],
+      ["v2", 7, 6],
+    ]);
+    expect(spans(closed, 1)).toEqual([["anim", 0, 7]]);
+  });
+
+  it("leaves the project alone with no gap there", () => {
+    const base = twoClips();
+    expect(closeMainGap(base, 5, ctx)).toBe(base);
+  });
+});
+
 describe("trimItemToSource", () => {
   it("sets a clip's In and Out as times in its take", () => {
     const base = twoClips();
     const cut = valid(trimItemToSource(base, "v2", "start", 4, ctx));
     expect(item(cut, "v2")).toMatchObject({
-      start: 10,
+      start: 12,
       sourceIn: 4,
       sourceOut: 8,
     });

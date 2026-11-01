@@ -8,7 +8,7 @@
 import { GridLocation } from "../../../grid/domain/enums/grid-enums";
 import { GridMode } from "../../../grid/domain/enums/grid-enums";
 import type { MotionData } from "../../../shared/domain/models/motion-data";
-import { Point } from "fabric";
+import { Point } from "#lib/shared/pictograph/arrow/orchestration/domain/point.js";
 import { createGridPointData } from "../../../grid/utils/grid-coordinate-utils";
 
 const SCENE_SIZE = 950;

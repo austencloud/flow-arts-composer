@@ -57,3 +57,45 @@ describe("VisibilityStateManager.resetToDefaults", () => {
     expect(DEFAULTS.showGrid).toBe(true);
   });
 });
+
+describe("VisibilityStateManager.resetKeysToDefaults", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    updateSetting.mockClear();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  // Settings → Display resets the pictograph and the card separately. The
+  // silent failure is one section's Reset also restoring the other's switches.
+  it("restores only the named keys and leaves the rest as the user set them", async () => {
+    vi.resetModules();
+    const mod = await import("../visibility-state.svelte");
+    const vm = new mod.VisibilityStateManager();
+    await vm.ensureSettingsLoaded();
+    vm.setGridVisibility(false);
+    vm.setGlyphVisibility("reversalIndicators", false);
+    vm.setGlyphVisibility("handColorKey", false);
+    await vi.runAllTimersAsync();
+    updateSetting.mockClear();
+
+    const observer = vi.fn();
+    vm.registerObserver(observer, ["all"]);
+    vm.resetKeysToDefaults(mod.PICTOGRAPH_VISIBILITY_KEYS);
+
+    expect(vm.getGridVisibility()).toBe(true);
+    expect(vm.getRawGlyphVisibility("reversalIndicators")).toBe(false);
+    expect(vm.getRawGlyphVisibility("handColorKey")).toBe(false);
+    expect(observer).toHaveBeenCalledTimes(1);
+
+    vm.resetKeysToDefaults(mod.CARD_VISIBILITY_KEYS);
+    expect(vm.getRawGlyphVisibility("reversalIndicators")).toBe(true);
+    expect(vm.getRawGlyphVisibility("handColorKey")).toBe(true);
+
+    await vi.runAllTimersAsync();
+    expect(updateSetting).toHaveBeenCalledTimes(1);
+    expect(mod.PICTOGRAPH_VISIBILITY_KEYS).not.toContain("handColorKey");
+    expect(mod.PICTOGRAPH_VISIBILITY_KEYS).toContain("stepNumbers");
+  });
+});

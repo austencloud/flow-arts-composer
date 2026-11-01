@@ -208,6 +208,20 @@ export const TIMING_DIRECTION_ARTICLE_SLUGS = TIMING_DIRECTION_ARTICLES.map(
   ({ slug }) => slug
 );
 
+/** The one timing-and-direction page's anchor for a mode's sequences. */
+export const TIMING_DIRECTION_SEQUENCES_ID = "mode-sequences";
+
+/**
+ * Where a link to one mode goes. /timing-and-direction is the only timing and
+ * direction page (Austen, 2026-10-31): a mode is a selection on it, opened
+ * at its sequences. The old /timing-and-direction/<slug> pages redirect here.
+ */
+export function timingDirectionModeHref(
+  slug: string
+): `/timing-and-direction?mode=${string}` {
+  return `/timing-and-direction?mode=${slug}#${TIMING_DIRECTION_SEQUENCES_ID}`;
+}
+
 export function getTimingDirectionArticle(
   slug: string
 ): TimingDirectionArticle | undefined {

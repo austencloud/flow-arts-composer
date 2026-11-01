@@ -164,6 +164,13 @@ describe("holdBootScreen", () => {
     expect(releases[0]).toHaveBeenCalledTimes(1);
   });
 
+  it("passes a hold's own wait to app.html", () => {
+    addBootScreen();
+    const { registry } = stubRegistry();
+    holdBootScreen("create-workspace", 15000);
+    expect(registry).toHaveBeenCalledWith("create-workspace", 15000);
+  });
+
   it("keeps separate names apart", () => {
     addBootScreen();
     const { releases } = stubRegistry();

@@ -82,6 +82,9 @@ const lazyChunks = [
 // chunk must still hold its packages, and the whole startup graph has a
 // ceiling. docs/performance/2026-10-22-boot-measurements.md
 const MIN_LAZY_CHUNK_BYTES = 100_000;
+// Since 2026-10-31 each background has its own chunk and vendor-backgrounds
+// holds only the package core (about 37 KB), so it gets a smaller floor.
+const MIN_LAZY_CHUNK_BYTES_BY_NAME = { "vendor-backgrounds": 25_000 };
 const MAX_STARTUP_RAW_BYTES = 3_000_000;
 const clientDir = values.manifest
   ? path.join(path.dirname(values.manifest), "..")
@@ -121,7 +124,8 @@ for (const name of lazyChunks) {
     );
   }
   const size = keys.reduce((sum, key) => sum + bytesOf(key), 0);
-  if (keys.length > 0 && size < MIN_LAZY_CHUNK_BYTES) {
+  const minimum = MIN_LAZY_CHUNK_BYTES_BY_NAME[name] ?? MIN_LAZY_CHUNK_BYTES;
+  if (keys.length > 0 && size < minimum) {
     failures.push(
       `${name} is only ${size} bytes; its packages were bundled elsewhere`
     );
@@ -134,6 +138,22 @@ for (const name of lazyChunks) {
     failures.push(
       `${name} loads at startup, imported by ${importers.join(", ")}`
     );
+  }
+}
+// A scan draws one background. On 2026-10-31 the backgrounds were merged into
+// a 3D chunk, so drawing the cosmic sky downloaded three.js too.
+const backgroundKeys = Object.keys(manifest).filter((key) =>
+  manifest[key].name?.startsWith("vendor-bg-")
+);
+if (backgroundKeys.length === 0) {
+  failures.push("no vendor-bg-* chunks; each background needs its own chunk");
+}
+for (const key of backgroundKeys) {
+  const three = [...staticClosure(manifest, [key])].some(
+    (dep) => manifest[dep]?.name === "vendor-three"
+  );
+  if (three) {
+    failures.push(`${manifest[key].name} statically imports vendor-three`);
   }
 }
 if (failures.length) {

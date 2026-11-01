@@ -6,6 +6,7 @@
   import TunnelPrimitiveTuner from "./TunnelPrimitiveTuner.svelte";
   import TunnelConfigurationSummary from "./TunnelConfigurationSummary.svelte";
   import TunnelColorSettings from "./TunnelColorSettings.svelte";
+  import TunnelCastLinks from "./TunnelCastLinks.svelte";
   import type { ArtSettingChangeHandler } from "./art-settings-types";
 
   interface Props {
@@ -59,6 +60,7 @@
 
 <div class="section-pad">
   <TunnelConfigurationSummary {controller} {dense} />
+  <TunnelCastLinks links={controller.castLinks} />
   <TunnelColorSettings {controller} {dense} {onArtSettingChange} />
   {#if controller.lookEditorOpen}
     <TunnelPrimitiveTuner

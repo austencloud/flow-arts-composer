@@ -19,7 +19,8 @@ const ROUTE_DIR = resolve(
 );
 const ROUTE_FILES = [
   "+layout.svelte",
-  "[mode]/+page.svelte",
+  "+page.svelte",
+  "_components/TimingDirectionModeExplorer.svelte",
   "_components/TimingDirectionAtlas.svelte",
 ];
 const CLIENT_ONLY_COMPONENTS = [

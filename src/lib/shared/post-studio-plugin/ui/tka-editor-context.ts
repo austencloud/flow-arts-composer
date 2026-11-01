@@ -39,6 +39,12 @@ export interface TkaEditorFacts {
    * export file name. Null for a post with no sequence, such as an arrangement.
    */
   readonly sequence: SequenceData | null;
+  /**
+   * The sequence the post draws: hand-labeled for its footage, with the
+   * Sequence tool's mirror, flip, turns and swap applied. A card shown beside
+   * the preview draws this one, so it matches the animation.
+   */
+  readonly displaySequence: SequenceData | null;
 }
 
 const FACTS = new WeakMap<object, TkaEditorFacts>();

@@ -6,6 +6,11 @@
   import BpmChips from "#lib/shared/animation-engine/components/controls/BpmChips.svelte";
   import PlaybackModeToggle from "#lib/shared/animation-engine/components/controls/PlaybackModeToggle.svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import PlaybackLine from "./PlaybackLine.svelte";
+  import { sequenceProgressStripHeightCss } from "#lib/shared/animation-engine/services/sequence-progress-renderer.js";
+
+  // The row starts below the line, however thick the line is at this size.
+  const lineHeight = sequenceProgressStripHeightCss();
 
   const BPM_PRESETS = [15, 30, 60, 90, 120, 150];
 
@@ -43,48 +48,20 @@
 
   const beatMarkers = $derived(playback.beatMarkerPositions);
 
-  let scrubberEl: HTMLDivElement | undefined = $state();
-  let isDragging = $state(false);
+  // A drag pauses playback and lets go where it started: playing resumes,
+  // paused stays paused.
   let wasPlayingBeforeScrub = false;
+  function scrubStart() {
+    wasPlayingBeforeScrub = playback.isPlaying;
+    if (wasPlayingBeforeScrub) playback.togglePlay();
+  }
+  function scrubEnd() {
+    if (wasPlayingBeforeScrub) playback.togglePlay();
+    wasPlayingBeforeScrub = false;
+  }
 
   let showBpmPopover = $state(false);
   let bpmBtnEl: HTMLButtonElement | undefined = $state();
-
-  function seekFromPointer(e: PointerEvent) {
-    if (!scrubberEl) return;
-    const rect = scrubberEl.getBoundingClientRect();
-    const ratio = Math.max(
-      0,
-      Math.min(1, (e.clientX - rect.left) / rect.width)
-    );
-    playback.seek(ratio);
-  }
-
-  function onPointerDown(e: PointerEvent) {
-    if (e.button !== 0) return;
-    e.stopPropagation();
-    e.preventDefault();
-    wasPlayingBeforeScrub = playback.isPlaying;
-    if (wasPlayingBeforeScrub) playback.togglePlay();
-    isDragging = true;
-    scrubberEl?.setPointerCapture(e.pointerId);
-    seekFromPointer(e);
-  }
-
-  function onPointerMove(e: PointerEvent) {
-    if (!isDragging) return;
-    e.stopPropagation();
-    e.preventDefault();
-    seekFromPointer(e);
-  }
-
-  function onPointerUp(e: PointerEvent) {
-    if (!isDragging) return;
-    e.stopPropagation();
-    isDragging = false;
-    scrubberEl?.releasePointerCapture(e.pointerId);
-    if (wasPlayingBeforeScrub) playback.togglePlay();
-  }
 
   function onKeydown(e: KeyboardEvent) {
     if (e.key === " " || e.key === "Spacebar") {
@@ -206,10 +183,30 @@
   <div
     class="unified-timeline"
     class:compact
+    style:--transport-line-height={lineHeight}
     role="group"
     aria-label={t("viewer_final_playback_transport")}
     onkeydown={onKeydown}
   >
+    <!-- The progress line along the top edge, flush with the canvas above,
+         is the scrubber. Its grab area fills the whole bar under the row, so
+         the row's buttons take their own taps and every empty spot seeks. -->
+    <PlaybackLine
+      class="pill-track"
+      cover
+      darkMode
+      progress={playback.overallProgress}
+      onSeek={(ratio) => playback.seek(ratio)}
+      onScrubStart={scrubStart}
+      onScrubEnd={scrubEnd}
+      bracketKeySeeks={false}
+      stops={beatMarkers}
+      label={t("viewer_final_playback_progress")}
+      valueText={t("viewer_final_progress_value", {
+        current: currentTimeLabel,
+        total: totalTimeLabel,
+      })}
+    />
     <div class="transport-pill">
       {#if !hidePlay}
         <button
@@ -260,36 +257,13 @@
         </div>
       {/if}
 
-      <div
-        class="pill-track"
-        bind:this={scrubberEl}
-        onpointerdown={onPointerDown}
-        onpointermove={onPointerMove}
-        onpointerup={onPointerUp}
-        onpointercancel={onPointerUp}
-        role="slider"
-        tabindex="0"
-        aria-label={t("viewer_final_playback_progress")}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-valuenow={Math.round(playback.overallProgress * 100)}
-        aria-valuetext={t("viewer_final_progress_value", {
-          current: currentTimeLabel,
-          total: totalTimeLabel,
-        })}
+      <!-- Where the scrubber track used to sit. The line above is the
+           scrubber now; this keeps the row's controls spread and shows
+           where playback is, and taps here still seek (they fall through
+           to the line's grab area underneath). -->
+      <span class="pill-time" aria-hidden="true"
+        >{currentTimeLabel} / {totalTimeLabel}</span
       >
-        <div
-          class="pill-fill"
-          style:width="{playback.overallProgress * 100}%"
-        ></div>
-        {#each beatMarkers as pct (pct)}
-          <div class="pill-beat-marker" style:left="{pct * 100}%"></div>
-        {/each}
-        <div
-          class="pill-knob"
-          style:left="{playback.overallProgress * 100}%"
-        ></div>
-      </div>
 
       {#if hasMode}
         <!-- The same labelled control the settings panels use, in its inline
@@ -466,28 +440,35 @@
     position: relative;
     container-type: inline-size;
     container-name: playback-transport;
+    background: rgba(20, 22, 32, 0.78);
+    backdrop-filter: blur(24px) saturate(150%);
+    touch-action: none;
   }
 
+  /* The row floats over the line's grab area: only its controls take
+     pointer input, so the gaps between them scrub. */
   .transport-pill {
+    position: relative;
+    z-index: 1;
+    pointer-events: none;
     display: flex;
     align-items: center;
-    /* Wraps rather than overflows. Every control but the track is
+    /* Wraps rather than overflows. Every control but the time readout is
        flex-shrink: 0, so in a column narrower than their combined intrinsic
        width the bar used to spill past its host and get clipped by whatever
        ancestor had overflow set — the mode toggle disappearing was the visible
-       symptom. The track hits its 80px floor first, so a second row only
+       symptom. The readout gives up its width first, so a second row only
        appears when there is genuinely no room. */
     flex-wrap: wrap;
     gap: 8px 12px;
     padding: 10px 14px;
+    padding-top: calc(var(--transport-line-height, 3px) + 6px);
     width: 100%;
     box-sizing: border-box;
-    background: rgba(20, 22, 32, 0.78);
-    backdrop-filter: blur(24px) saturate(150%);
-    border: none;
-    border-top: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 0;
-    touch-action: none;
+  }
+
+  .transport-pill > :not(.pill-time) {
+    pointer-events: auto;
   }
 
   .pill-play {
@@ -521,69 +502,21 @@
     transform: scale(0.94);
   }
 
-  .pill-track {
+  /* The old track's place in the row: it takes the free width, so the
+     controls after it sit flush right, and lets taps fall through to the
+     line's grab area underneath. */
+  .pill-time {
     flex: 1 1 0;
-    height: var(--min-touch-target, 44px);
-    background: transparent;
-    position: relative;
-    cursor: pointer;
-    min-width: 80px;
-    touch-action: none;
-    display: flex;
-    align-items: center;
-  }
-
-  .pill-track::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 50%;
-    height: 6px;
-    transform: translateY(-50%);
-    background: rgba(255, 255, 255, 0.08);
-    border-radius: 999px;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
     pointer-events: none;
-  }
-
-  .pill-track:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.7);
-    border-radius: 8px;
-  }
-
-  .pill-fill {
-    position: absolute;
-    left: 0;
-    top: 50%;
-    height: 6px;
-    transform: translateY(-50%);
-    background: #4338ca;
-    border-radius: 999px;
-    pointer-events: none;
-  }
-
-  .pill-knob {
-    position: absolute;
-    top: 50%;
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    background: white;
-    transform: translate(-50%, -50%);
-    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
-    pointer-events: none;
-  }
-
-  .pill-beat-marker {
-    position: absolute;
-    top: 50%;
-    width: 1.5px;
-    height: 10px;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 1px;
-    transform: translate(-50%, -50%);
-    pointer-events: none;
+    color: rgba(255, 255, 255, 0.78);
+    font-size: var(--font-size-compact, 12px);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
   }
 
   /* ── Tempo group (−  BPM  +) ── */
@@ -771,6 +704,7 @@
     flex-wrap: nowrap;
     gap: 8px;
     padding: 8px 10px;
+    padding-top: calc(var(--transport-line-height, 3px) + 6px);
   }
 
   .compact .tempo-group,
@@ -780,9 +714,6 @@
     display: none;
   }
 
-  .compact .pill-track {
-    min-width: 0;
-  }
   .compact .compact-more {
     display: flex;
   }
@@ -901,6 +832,7 @@
       flex-wrap: nowrap;
       gap: 8px;
       padding: 8px 10px;
+      padding-top: calc(var(--transport-line-height, 3px) + 6px);
     }
 
     .tempo-group,
@@ -908,10 +840,6 @@
     .pill-loop,
     .pill-trailing {
       display: none;
-    }
-
-    .pill-track {
-      min-width: 0;
     }
 
     .compact-more {

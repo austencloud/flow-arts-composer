@@ -17,6 +17,7 @@ import {
   wrapSequencePosition,
 } from "#lib/shared/animation-engine/services/step-calculator.js";
 import { sequenceFrameAt } from "#lib/shared/media-composition/domain/sequence-frame.js";
+import type { TkaSequenceFrame } from "./staggered-performers";
 import {
   resolveTakeTiming,
   takeSampleAt,
@@ -79,10 +80,14 @@ function sequenceFieldsFor(
   | "animationTimeSeconds"
   | "displayedBeatNumber"
 > {
-  const frame = sequenceFrameAt(sample.arrival, moveBeats, {
-    holdLandings,
-    endArrival: sample.endArrival,
-  });
+  // A staggered tunnel needs the last landing to stop its front performer early.
+  const frame: TkaSequenceFrame = Object.assign(
+    sequenceFrameAt(sample.arrival, moveBeats, {
+      holdLandings,
+      endArrival: sample.endArrival,
+    }),
+    { endArrival: sample.endArrival }
+  );
   return {
     sequenceFrame: frame,
     sequencePosition: frame.enginePosition,

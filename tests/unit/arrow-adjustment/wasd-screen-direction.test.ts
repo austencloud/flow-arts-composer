@@ -11,7 +11,7 @@ vi.mock("firebase/firestore", () => ({
   doc: vi.fn(),
 }));
 
-import { Point } from "fabric";
+import { Point } from "#lib/shared/pictograph/arrow/orchestration/domain/point.js";
 import { screenSpaceAdjustmentTransformer } from "#lib/shared/pictograph/arrow/positioning/calculation/services/screen-space-adjustment-transformer.js";
 import { directionalTupleProcessor } from "#lib/shared/pictograph/arrow/positioning/calculation/services/directional-tuple-processor.js";
 import { arrowLocationCalculator } from "#lib/shared/pictograph/arrow/positioning/calculation/services/arrow-location-calculator.js";

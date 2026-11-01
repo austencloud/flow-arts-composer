@@ -82,7 +82,7 @@ function createCoordinator() {
     cameraChoreography: { activePresetId: null, activePreset: null },
   };
   return createExportCoordinator({
-    viewer3DState: viewer3DState as never,
+    getViewer3DState: () => viewer3DState as never,
     accessibilityHelper: { announce: vi.fn() } as never,
   });
 }

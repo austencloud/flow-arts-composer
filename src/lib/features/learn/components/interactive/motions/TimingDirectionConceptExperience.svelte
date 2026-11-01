@@ -8,6 +8,7 @@
 -->
 <script lang="ts">
   import { t, tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
+  import { timingDirectionModeHref } from "../../../../../../routes/(public)/timing-and-direction/_data/timing-direction-articles";
   import { onDestroy, tick } from "svelte";
   import { TND_ELEMENTS } from "#lib/features/choreo-card/domain/tnd-element.js";
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
@@ -253,7 +254,9 @@
               modes={ELEMENTAL_MODES}
               showChoreoCards={false}
               articleHrefFor={(mode) =>
-                `/timing-and-direction/${mode.timing.toLowerCase()}-time-${mode.direction.toLowerCase()}-direction`}
+                timingDirectionModeHref(
+                  `${mode.timing.toLowerCase()}-time-${mode.direction.toLowerCase()}-direction`
+                )}
               active={isComparison && comparisonPresented}
               onReady={comparisonPrepared}
               onFocusChange={(focused) => (comparisonFocused = focused)}

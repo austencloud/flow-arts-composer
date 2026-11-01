@@ -75,8 +75,9 @@ export interface TapFitResult {
   /**
    * Taps before the first one the fit used; their labels are null. Usually a
    * key pressed while the performer was getting ready, but a real first tap
-   * followed by several missed landings looks the same, so the UI asks.
-   * Marking beat 1 settles it, and the count is then always 0.
+   * followed by several missed landings looks the same, so the UI asks. With
+   * beat 1 marked these are taps before the opening pose: landings tapped
+   * ahead of the run, which the UI offers to start from.
    */
   ignoredLeadingTaps: number;
 }
@@ -88,7 +89,7 @@ const PHASE_SEARCH_STEP_SECONDS = 0.004;
 const HUBER_SECONDS = 0.04;
 const REFINE_ITERATIONS = 8;
 /** A tap farther than this share of the shortest move is not that landing. */
-const MATCH_TOLERANCE = 0.35;
+export const MATCH_TOLERANCE = 0.35;
 /**
  * A first tap more than this many landings before the next is a stray...
  *
@@ -171,8 +172,8 @@ export function createBeatClock(moveBeats: readonly number[]) {
     nearestPosition,
     /** Beats the move landing at position p lasts (p ≥ 1). */
     moveBeatsAt(position: number): number {
-      const within = (((position - 1) % movesPerPass) + movesPerPass) %
-        movesPerPass;
+      const within =
+        (((position - 1) % movesPerPass) + movesPerPass) % movesPerPass;
       return moveBeats[within]!;
     },
   };
@@ -242,8 +243,7 @@ function searchGrid(
     const center =
       phaseWindow?.center ??
       seed.seconds - secondsPerBeat * clock.beatsBefore(seed.position);
-    const reach =
-      phaseWindow?.reach ?? secondsPerBeat * clock.shortestMove;
+    const reach = phaseWindow?.reach ?? secondsPerBeat * clock.shortestMove;
     for (let offset = -reach; offset <= reach + 1e-9; offset += phaseStep) {
       const originSeconds = center + offset;
       const score =
@@ -425,6 +425,10 @@ function median(values: readonly number[]): number {
     : (sorted[middle - 1]! + sorted[middle]!) / 2;
 }
 
+/**
+ * `extraCount` counts only the extras among the matched taps: taps ahead of
+ * the run or after it say nothing about how fast the run was tapped.
+ */
 function detectOctave(
   matched: readonly MatchedTap[],
   extraCount: number
@@ -658,7 +662,15 @@ export function fitTapsToGrid(input: TapFitInput): TapFitResult {
   }
   const extraCount = labels.length - matched.length;
   const firstUsed = labels.findIndex((label) => label.position !== null);
-  const ignoredLeadingTaps = beatOne === null ? Math.max(0, firstUsed) : 0;
+  const ignoredLeadingTaps = Math.max(0, firstUsed);
+  const runStart = matched[0]?.seconds ?? 0;
+  const runEnd = matched[matched.length - 1]?.seconds ?? 0;
+  const extrasInRun = labels.filter(
+    (label) =>
+      label.position === null &&
+      label.seconds > runStart &&
+      label.seconds < runEnd
+  ).length;
 
   return {
     secondsPerBeat: fitted.secondsPerBeat,
@@ -669,7 +681,7 @@ export function fitTapsToGrid(input: TapFitInput): TapFitResult {
     extraCount,
     medianMissSeconds: median(misses),
     worstMissSeconds: misses.length ? Math.max(...misses) : 0,
-    octaveHint: detectOctave(matched, extraCount),
+    octaveHint: detectOctave(matched, extrasInRun),
     ignoredLeadingTaps,
   };
 }

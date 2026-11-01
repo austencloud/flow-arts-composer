@@ -13,8 +13,10 @@
   } from "@austencloud/video-editor/core";
   import type { ToolPanelProps } from "@austencloud/video-editor";
   import {
+    POST_MAX_BEATS_BEHIND,
     POST_MAX_SPOKEN_LENGTH,
     type PostAnimationAppearance,
+    type PostAnimationItem,
     type PostMovesMode,
   } from "#lib/shared/post-studio-plugin/index.js";
   import {
@@ -58,6 +60,47 @@
     editor.editSetting(`${item.id}:${field}`, (project, ctx) =>
       updateItemAt(project, item.id, patch, editor.previewSeconds, ctx)
     );
+  }
+
+  type Follower = NonNullable<PostAnimationItem["followers"]>[number];
+  type PartnerMoves = "off" | "same" | "turned";
+
+  /** A tunnel's second performer, or null for none. */
+  function commitFollower(follower: Follower | null): void {
+    if (!item || locked) return;
+    const id = item.id;
+    const followers = follower
+      ? [
+          {
+            ...follower,
+            beatsBehind: Math.min(follower.beatsBehind, POST_MAX_BEATS_BEHIND),
+          },
+        ]
+      : null;
+    editor.editSetting(`${id}:followers`, (project, ctx) =>
+      updateItem(project, id, { followers }, ctx)
+    );
+  }
+
+  function partnerMoves(follower: Follower | undefined): PartnerMoves {
+    if (!follower) return "off";
+    return follower.mirror || follower.flip || follower.swap
+      ? "turned"
+      : "same";
+  }
+
+  function commitPartnerMoves(
+    moves: PartnerMoves,
+    current: Follower | undefined
+  ): void {
+    if (moves === "off") return commitFollower(null);
+    // A partner facing the other way does the moves mirrored, flipped and
+    // with hands swapped.
+    const turned = moves === "turned";
+    commitFollower({
+      beatsBehind: current?.beatsBehind ?? 0,
+      ...(turned && { mirror: true, flip: true, swap: true }),
+    });
   }
 
   function patchItem(patch: PostItemPatch): void {
@@ -286,6 +329,36 @@
       onchange={(value) => patchItem({ overlay: value === "shown" })}
       ariaLabel={t("share_studio_deep_beat_and_letter")}
     />
+  {:else if tool === "performers" && item.kind === "animation"}
+    {@const follower = item.followers?.[0]}
+    <SegmentedControl
+      color="accent"
+      options={[
+        { value: "off", label: "No partner", disabled: locked },
+        { value: "same", label: "Same moves", disabled: locked },
+        {
+          value: "turned",
+          label: "Mirrored, flipped, swapped",
+          disabled: locked,
+        },
+      ]}
+      value={partnerMoves(follower)}
+      onchange={(value) => commitPartnerMoves(value as PartnerMoves, follower)}
+      ariaLabel="Partner"
+    />
+    {#if follower}
+      <ValueSlider
+        label="Partner, beats behind"
+        value={follower.beatsBehind}
+        min={0}
+        max={16}
+        step={1}
+        format={(beats) => (beats === 0 ? "Together" : String(beats))}
+        disabled={locked}
+        onchange={(beats) =>
+          commitFollower({ ...follower, beatsBehind: Math.round(beats) })}
+      />
+    {/if}
   {/if}
 {:else if item?.kind === "moves"}
   {#if tool === "appearance" && item.kind === "moves"}

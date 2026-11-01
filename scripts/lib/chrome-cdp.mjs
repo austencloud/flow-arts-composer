@@ -267,7 +267,13 @@ async function browserEndpoint(port) {
  */
 export async function openTab(
   url,
-  { port = DEFAULT_PORT, bufferEvents, eventCapacity, commandTimeoutMs } = {}
+  {
+    port = DEFAULT_PORT,
+    bufferEvents,
+    eventCapacity,
+    commandTimeoutMs,
+    foreground = false,
+  } = {}
 ) {
   const browser = await connect(await browserEndpoint(port), {
     commandTimeoutMs,
@@ -304,6 +310,8 @@ export async function openTab(
   await page.send("Runtime.enable");
   // Sends Inspector.targetCrashed if the page crashes.
   await page.send("Inspector.enable");
+  // A background tab has rAF throttled; any frame reading from one is fiction.
+  if (foreground) await browser.send("Target.activateTarget", { targetId });
 
   return {
     ...page,

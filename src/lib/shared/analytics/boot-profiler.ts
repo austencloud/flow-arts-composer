@@ -101,12 +101,21 @@ export class BootProfiler {
   }
 
   /** Fixed milestone names only. Never attach user IDs, sequence data or URLs. */
-  milestone(label: string, detail: Detail = {}): void {
+  /** `startTime` backdates a milestone whose detail is only known later. The
+   *  detail also rides on the performance mark, so an external probe reading
+   *  `performance.getEntriesByType("mark")` sees it. */
+  milestone(
+    label: string,
+    detail: Detail = {},
+    startTime = performance.now()
+  ): void {
     if (!this.enabled || this.milestones.has(label)) return;
-    const startTime = performance.now();
     this.milestones.set(label, { label, startTime, detail: { ...detail } });
     try {
-      performance.mark(`boot:milestone:${label}`);
+      performance.mark(`boot:milestone:${label}`, {
+        startTime,
+        detail: { ...detail },
+      });
     } catch {
       /* unavailable */
     }
@@ -417,6 +426,32 @@ export class BootProfiler {
       );
     }
 
+    console.groupEnd();
+  }
+
+  /**
+   * Print one interaction's milestones (every label starting with `prefix`)
+   * as a table timed from its first milestone. The boot summary prints before
+   * a visitor does anything, so a profiled interaction reports itself here.
+   */
+  printTimeline(prefix: string): void {
+    if (!this.enabled || !isBootProfileVerbose()) return;
+    const entries = Array.from(this.milestones.values())
+      .filter((entry) => entry.label.startsWith(prefix))
+      .sort((a, b) => a.startTime - b.startTime);
+    const origin = entries[0]?.startTime;
+    if (origin === undefined) return;
+    console.group(
+      `%c⚡ ${prefix}`,
+      "font-size: 13px; font-weight: bold; color: #4fc3f7;"
+    );
+    console.table(
+      entries.map((entry) => ({
+        Milestone: entry.label.slice(prefix.length).replace(/^:/, "") || "tap",
+        "From tap (ms)": Math.round(entry.startTime - origin),
+        ...entry.detail,
+      }))
+    );
     console.groupEnd();
   }
 

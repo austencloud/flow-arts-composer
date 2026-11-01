@@ -16,8 +16,16 @@ import {
   emptySequenceMeta,
   firstTrustedThumbnail,
   loadPublishedMeta,
+  PUBLISHED_META_TIMEOUT_MS,
 } from "./published-meta";
 import { workerEnv } from "#lib/server/cloudflare/worker-env.js";
+import * as env from "$app/env/public";
+import { isScannableShortCode } from "#lib/shared/qr/domain/physical-card.js";
+import { fetchPublicShortCodeRecord } from "#lib/shared/qr/services/public-short-code-record-reader.js";
+import { prepareScanViewerPayload } from "#lib/server/scan/scan-viewer-payload-preparer.js";
+
+// Same project id the /q load and the client Firebase config use.
+const PROJECT_ID = env.PUBLIC_FIREBASE_PROJECT_ID || "the-kinetic-alphabet";
 
 function createUnverifiedMeta(url: URL): SequenceRouteMeta {
   return {
@@ -48,9 +56,38 @@ function buildInlineMeta(
   };
 }
 
+/**
+ * A shared link names its sequence by short code. The browser used to resolve
+ * that code itself, which waited for the Firestore SDK to boot and then parsed
+ * every pictograph dataframe to letter the steps: about ten seconds on a phone
+ * before the stage drew. The record is public, so read and hydrate it here,
+ * beside the link-preview lookup, and send the playable sequence with the page.
+ * Any miss returns null and the browser keeps its full resolver.
+ */
+async function prepareShortCodeSequence(
+  code: string
+): Promise<SequenceData | null> {
+  if (!isScannableShortCode(code)) return null;
+  try {
+    const record = await fetchPublicShortCodeRecord(code, {
+      projectId: PROJECT_ID,
+      timeoutMs: PUBLISHED_META_TIMEOUT_MS,
+    });
+    if (!record) return null;
+    return (await prepareScanViewerPayload(code, record))?.sequence ?? null;
+  } catch (error) {
+    console.error(
+      `[sequence-ssr] short-code preparation failed for "${code}":`,
+      error instanceof Error ? error.message : error
+    );
+    return null;
+  }
+}
+
 export const load: PageServerLoad = async ({ params, url }) => {
   const fallback = createUnverifiedMeta(url);
   let meta = fallback;
+  let preparedSequence: SequenceData | null = null;
 
   try {
     const parsed = parseSequenceRouteId(params.id);
@@ -85,11 +122,14 @@ export const load: PageServerLoad = async ({ params, url }) => {
       // the sequence and passed it to the viewer, a shortcode never has
       // release metadata, and the visit is not a crawl target. Waiting on
       // Firestore here held every scanned card on a loading screen.
-      meta = await loadPublishedMeta(
-        parsed.legacyId,
-        fallback,
-        workerEnv()?.FIREBASE_SERVICE_ACCOUNT_JSON
-      );
+      [meta, preparedSequence] = await Promise.all([
+        loadPublishedMeta(
+          parsed.legacyId,
+          fallback,
+          workerEnv()?.FIREBASE_SERVICE_ACCOUNT_JSON
+        ),
+        prepareShortCodeSequence(parsed.legacyId),
+      ]);
     }
   } catch {
     // A malformed route remains viewable as an error state and stays out of search.
@@ -101,5 +141,7 @@ export const load: PageServerLoad = async ({ params, url }) => {
     // Prototype: `?frame=1` server-renders the record's first frame while the
     // viewer loads. Read here so the server and the client agree.
     firstFrame: url.searchParams.get("frame") === "1",
+    // A released catalog card plays its catalog record, never the code's copy.
+    preparedSequence: meta.source === "catalog" ? null : preparedSequence,
   };
 };

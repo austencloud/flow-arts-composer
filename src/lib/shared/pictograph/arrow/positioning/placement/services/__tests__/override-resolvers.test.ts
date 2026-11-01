@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { Point } from "fabric";
+import { Point } from "#lib/shared/pictograph/arrow/orchestration/domain/point.js";
 import {
   setSpecialOverrideResolver, getSpecialOverrideResolver,
   setGlobalAdjustmentResolver, getGlobalAdjustmentResolver,

@@ -6,7 +6,6 @@ import {
 } from "#lib/shared/i18n/seo-locales.js";
 import { GUIDE_WEB_PAGES } from "../(public)/guide/level-1/_data/guide-manifest";
 import { LEVEL2_TOPIC_PAGES } from "../(public)/guide/level-2/_data/level2-topic-routes";
-import { TIMING_DIRECTION_ARTICLE_SLUGS } from "../(public)/timing-and-direction/_data/timing-direction-articles";
 import { getAvailableConcepts } from "#lib/features/learn/domain/concept-experience-registry.js";
 import { workerEnv } from "#lib/server/cloudflare/worker-env.js";
 import { getFirestoreRest } from "#lib/server/firestore/firestore-rest.js";
@@ -114,10 +113,6 @@ const guideLevel2TopicEntries = LEVEL2_TOPIC_PAGES.map((p) => ({
   url: `guide/level-2/${p.slug}`,
 }));
 
-const timingDirectionEntries = TIMING_DIRECTION_ARTICLE_SLUGS.map((slug) => ({
-  url: `timing-and-direction/${slug}`,
-}));
-
 /**
  * Every published interactive lesson (/learn/concepts/<id>). Only lessons in
  * the experience registry are prerendered; a planned lesson from concepts.ts
@@ -209,7 +204,6 @@ export const GET: RequestHandler = async () => {
 
   const allEntries: SitemapEntry[] = [
     ...pages,
-    ...timingDirectionEntries,
     ...guideLevel1Entries,
     ...guideLevel2TopicEntries,
     ...learnConceptsEntries,

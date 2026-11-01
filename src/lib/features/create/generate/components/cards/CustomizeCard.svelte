@@ -15,6 +15,7 @@ to three rows. Click opens the expanded overlay.
   } from "#lib/shared/create/state/panel-coordination-state.svelte.js";
   import { onMount, getContext, untrack } from "svelte";
   import { customizeOverlayWasOpen } from "#lib/shared/create/state/customize-overlay-hmr.js";
+  import { tryGetCreateModuleContext } from "../../../shared/context/create-module-context";
   import { morphGenerateCard } from "../../shared/services/generate-card-morph";
   import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import CardHeader from "./shared/CardHeader.svelte";
@@ -101,9 +102,15 @@ to three rows. Click opens the expanded overlay.
     if (customizeOverlayWasOpen() && !panelState?.isCustomizeOverlayOpen) {
       openOverlay();
     }
+  });
 
-    // Let the stage build the panel while the page is idle, so its thirty-two
-    // pictographs are not built inside the first tap's morph.
+  // Let the stage build the panel while the page is idle, so its thirty-two
+  // pictographs are not built inside the first tap's morph. Arriving from the
+  // Create board, the first idle moment falls inside the crossfade onto this
+  // panel, so the build waits until that fade has finished.
+  const methodEntry = tryGetCreateModuleContext()?.methodEntry;
+  $effect(() => {
+    if (primed || methodEntry?.arriving) return;
     const prime = () => (primed = true);
     if (typeof window.requestIdleCallback === "function") {
       const id = window.requestIdleCallback(prime, { timeout: 4000 });

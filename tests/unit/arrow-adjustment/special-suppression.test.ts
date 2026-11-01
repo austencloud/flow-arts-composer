@@ -15,7 +15,7 @@ import { describe, it, expect, afterEach, vi } from "vitest";
 
 vi.mock("firebase/firestore", () => ({ collection: vi.fn(), doc: vi.fn() }));
 
-import { Point } from "fabric";
+import { Point } from "#lib/shared/pictograph/arrow/orchestration/domain/point.js";
 import { ArrowAdjustmentCalculator } from "#lib/shared/pictograph/arrow/positioning/calculation/services/arrow-adjustment-calculator.js";
 import {
   setSpecialOverrideResolver,

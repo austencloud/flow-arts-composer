@@ -169,6 +169,7 @@ with pre-prepared data for better performance.
     directPropPositioning = false,
     animateContent = false,
     arrowOpacity = 1,
+    propNudges = null,
   } = $props<{
     pictographData?: (StepData | PictographData) | null;
     disableTransitions?: boolean;
@@ -258,6 +259,8 @@ with pre-prepared data for better performance.
     animateContent?: boolean;
     /** Opacity for the existing pictograph arrow layer. */
     arrowOpacity?: number;
+    /** Moves each hand's resting prop off another pictograph drawn on the same grid. */
+    propNudges?: Partial<Record<HandSide, { x: number; y: number }>> | null;
   }>();
 
   // Extract beat context from StepData if available.
@@ -859,8 +862,21 @@ with pre-prepared data for better performance.
       : turn.from + (turn.to - turn.from) * editFrame.progress;
   });
 
+  const nudgedPropPositions = $derived.by((): PropPositions | null => {
+    const positions = preparedData?._prepared?.propPositions;
+    if (!propNudges || !positions) return null;
+    const moved: PropPositions = {};
+    for (const hand of ["left", "right"] as HandSide[]) {
+      const at = positions[hand];
+      const by = propNudges[hand];
+      if (at && by) moved[hand] = { ...at, x: at.x + by.x, y: at.y + by.y };
+    }
+    return Object.keys(moved).length ? moved : null;
+  });
   const effectivePropPositionOverrides = $derived(
-    motionPropPositionOverrides ?? editPropPositionOverrides
+    motionPropPositionOverrides ??
+      editPropPositionOverrides ??
+      nudgedPropPositions
   );
   const effectiveArrowOpacity = $derived(
     editArrowOpacity !== null

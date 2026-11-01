@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getInfoCellCount, resolveInfoCellDisplay } from "#lib/shared/sequence-viewer/services/info-cell-display.js";
+import { getInfoCellCount, infoCellPickOf, infoCellPicks, planInfoCellPick, resolveInfoCellDisplay } from "#lib/shared/sequence-viewer/services/info-cell-display.js";
 
 describe("getInfoCellCount", () => {
   it("returns 0 for one-count and zero-count cards", () => {
@@ -94,5 +94,117 @@ describe("resolveInfoCellDisplay", () => {
   it("signed-in multi-cell keeps QR reserved (unchanged)", () => {
     expect(resolveInfoCellDisplay({ ...base, stepCount: 6, isAuthenticated: true, showQRCode: true, showMandala: true, infoCellChoice: "mandala" }))
       .toEqual({ showQRCode: true, showMandala: true });
+  });
+});
+
+describe("the info-cell chooser", () => {
+  const card = (stepCount: number) => ({
+    stepCount,
+    includeStartPlacement: true,
+    startPlacementLayout: "row" as const,
+    isAuthenticated: true,
+  });
+  /** Apply a pick's write to stored values, then read the card back. */
+  function pickAndResolve(
+    stored: {
+      showQRCode: boolean;
+      showMandala: boolean;
+      infoCellChoice: "qr" | "mandala" | "none";
+    },
+    pick: Parameters<typeof planInfoCellPick>[0],
+    stepCount: number,
+    isAuthenticated = true
+  ) {
+    const geometry = { ...card(stepCount), isAuthenticated };
+    const write = planInfoCellPick(pick, getInfoCellCount(geometry));
+    const next = { ...stored, ...write };
+    return infoCellPickOf(resolveInfoCellDisplay({ ...geometry, ...next }));
+  }
+
+  it("offers Both only where the card has two or more info cells", () => {
+    expect(infoCellPicks(1, true)).toEqual(["qr", "mandala", "none"]);
+    expect(infoCellPicks(2, true)).toEqual(["qr", "mandala", "both", "none"]);
+    expect(infoCellPicks(0, true)).toEqual([]);
+  });
+
+  it("withholds QR and Both from guests", () => {
+    expect(infoCellPicks(3, false)).toEqual(["mandala", "none"]);
+  });
+
+  // The silent failure: a pick that writes the switches but leaves the card
+  // showing something else, e.g. Mandala picked on a one-cell card while the
+  // per-length choice still says QR.
+  it("every offered pick resolves to itself on one-cell and multi-cell cards", () => {
+    const starts = [
+      { showQRCode: true, showMandala: true, infoCellChoice: "qr" as const },
+      {
+        showQRCode: false,
+        showMandala: false,
+        infoCellChoice: "none" as const,
+      },
+      {
+        showQRCode: true,
+        showMandala: false,
+        infoCellChoice: "mandala" as const,
+      },
+    ];
+    for (const stepCount of [4, 8, 16]) {
+      const count = getInfoCellCount(card(stepCount));
+      for (const pick of infoCellPicks(count, true)) {
+        for (const stored of starts) {
+          expect(
+            pickAndResolve(stored, pick, stepCount),
+            `${stepCount} ${pick}`
+          ).toBe(pick);
+        }
+      }
+    }
+  });
+
+  it("a one-cell pick keeps the globals on, so a longer card is unaffected", () => {
+    expect(planInfoCellPick("qr", 1)).toEqual({
+      showQRCode: true,
+      showMandala: true,
+      infoCellChoice: "qr",
+    });
+    expect(planInfoCellPick("none", 1)).toEqual({
+      showQRCode: true,
+      showMandala: true,
+      infoCellChoice: "none",
+    });
+  });
+
+  it("a multi-cell pick writes the two globals", () => {
+    expect(planInfoCellPick("both", 3)).toEqual({
+      showQRCode: true,
+      showMandala: true,
+    });
+    expect(planInfoCellPick("mandala", 3)).toEqual({
+      showQRCode: false,
+      showMandala: true,
+    });
+    expect(planInfoCellPick("none", 3)).toEqual({
+      showQRCode: false,
+      showMandala: false,
+    });
+  });
+
+  it("a guest's leftover QR choice reads as Mandala on a one-cell card", () => {
+    const resolved = resolveInfoCellDisplay({
+      ...card(4),
+      isAuthenticated: false,
+      showQRCode: true,
+      showMandala: true,
+      infoCellChoice: "qr",
+    });
+    expect(infoCellPickOf(resolved)).toBe("mandala");
+    expect(
+      pickAndResolve(
+        { showQRCode: true, showMandala: true, infoCellChoice: "qr" },
+        "none",
+        4,
+        false
+      )
+    ).toBe("none");
   });
 });

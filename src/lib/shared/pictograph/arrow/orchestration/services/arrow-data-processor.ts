@@ -6,7 +6,7 @@
  */
 
 import type { ArrowPlacementData } from "../../positioning/placement/domain/arrow-placement-data";
-import type { Point } from "fabric";
+import type { Point } from "#lib/shared/pictograph/arrow/orchestration/domain/point.js";
 import type { MotionData } from "../../../shared/domain/models/motion-data";
 import type { PictographData } from "../../../shared/domain/models/pictograph-data";
 import { getSceneCenter } from "./arrow-grid-coordinator";

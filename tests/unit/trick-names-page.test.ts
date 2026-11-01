@@ -3,7 +3,10 @@ import { runInNewContext } from "node:vm";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { detectSiteMode } from "../../src/config/domains";
 import { GUIDE_BODY_PAGES } from "../../src/routes/(public)/guide/level-1/_data/guide-manifest";
-import { TIMING_DIRECTION_ARTICLE_SLUGS } from "../../src/routes/(public)/timing-and-direction/_data/timing-direction-articles";
+import {
+  TIMING_DIRECTION_ARTICLE_SLUGS,
+  TIMING_DIRECTION_SEQUENCES_ID,
+} from "../../src/routes/(public)/timing-and-direction/_data/timing-direction-articles";
 import { TRICK_NAMES } from "../../src/routes/(public)/tricks/_data/trick-names";
 import { isPropKey } from "../../src/routes/(public)/notation/props/props-content";
 
@@ -22,8 +25,14 @@ afterEach(() => window.history.replaceState({}, "", "/"));
 /** True when the href lands on a page that exists, including its anchor. */
 function resolves(href: string): boolean {
   const [path = "", anchor] = href.split("#");
-  const tnd = path.match(/^\/timing-and-direction\/(.+)$/);
-  if (tnd) return TIMING_DIRECTION_ARTICLE_SLUGS.includes(tnd[1]!);
+  // A mode is a section of the one timing-and-direction page, picked by
+  // ?mode= and reached by the sequence section's anchor.
+  const tnd = path.match(/^\/timing-and-direction\?mode=(.+)$/);
+  if (tnd)
+    return (
+      TIMING_DIRECTION_ARTICLE_SLUGS.includes(tnd[1]!) &&
+      anchor === TIMING_DIRECTION_SEQUENCES_ID
+    );
   const guide = path.match(/^\/guide\/level-1\/(.+)$/);
   if (guide) return GUIDE_BODY_PAGES.some((page) => page.id === guide[1]);
   // The props page picks its panel from the hash (#clubs, #buugeng-chirality).

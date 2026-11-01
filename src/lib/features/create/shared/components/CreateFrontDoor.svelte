@@ -43,6 +43,8 @@
     active,
     source,
     lastUsedMode = null,
+    enteringMethodId = null,
+    onWarm,
     onSelect,
     onLockedSelect,
   }: {
@@ -53,6 +55,11 @@
     active: boolean;
     source: CreateFrontDoorSource;
     lastUsedMode?: string | null;
+    /** The method a tap is entering while its workspace gets ready. Its card
+     *  keeps the pressed look so the wait reads as the tap being taken. */
+    enteringMethodId?: string | null;
+    /** Fetch a method's code ahead of the tap, once a card is pointed at. */
+    onWarm?: (methodId: string) => void;
     onSelect: (methodId: string) => void;
     onLockedSelect?: (methodId: string) => void;
   } = $props();
@@ -238,6 +245,10 @@
     onSelect(methodId);
   }
 
+  function warmMethod(methodId: string): void {
+    if (!lockedMethodIds.has(methodId)) onWarm?.(methodId);
+  }
+
   function accessibleName(method: Section): string | undefined {
     const values = {
       name: t(method.labelKey),
@@ -283,10 +294,14 @@
           <button
             type="button"
             class="method-card"
+            class:entering={method.id === enteringMethodId}
             data-method-id={method.id}
             style:--method-color={method.color ?? "var(--theme-accent)"}
             aria-label={accessibleName(method)}
             onclick={(event) => selectMethod(method.id, event.currentTarget)}
+            onpointerenter={() => warmMethod(method.id)}
+            onpointerdown={() => warmMethod(method.id)}
+            onfocus={() => warmMethod(method.id)}
             use:methodPreviewHold={{ turns, id: method.id }}
           >
             {#if lockedMethodIds.has(method.id)}
@@ -875,6 +890,22 @@
       font-size: var(--font-size-min, 14px);
       line-height: 1.25;
     }
+  }
+
+  /* The tapped card while its workspace gets ready: the pressed tint over
+     the whole card and the hover ring around it. Written to outrank every
+     tier's resting background, so the tap reads as taken at any width. */
+  .method-index .method-item .method-card.entering {
+    background: color-mix(
+      in srgb,
+      var(--method-color) 22%,
+      var(--theme-card-bg)
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--method-color) 58%,
+      var(--theme-stroke-strong)
+    );
   }
 
   @media (prefers-reduced-motion: reduce) {

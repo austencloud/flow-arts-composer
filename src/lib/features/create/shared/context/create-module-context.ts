@@ -15,6 +15,7 @@ import { getContext, setContext } from "svelte";
 import type { createCreateModuleState as CreateModuleStateType } from "../state/create-module-state.svelte";
 import type { createConstructTabState as ConstructTabStateType } from "../state/construct-tab-state.svelte";
 import type { PanelCoordinationState } from "../state/panel-coordination-state.svelte";
+import type { MethodEntryState } from "../state/create-method-entry-state.svelte";
 import type { CreateModuleOrchestrators } from "../types/create-module-services";
 import type { SessionManager } from "../services/session-manager.svelte";
 import type { Autosaver } from "../services/autosaver";
@@ -35,6 +36,8 @@ export interface CreateModuleContext {
   constructTabState: ConstructTabState;
   constructTutorialState: ConstructTutorialState;
   panelState: PanelCoordinationState;
+  /** Readiness of the method a front-door tap is entering. */
+  methodEntry: MethodEntryState;
   getSequenceTransformActions: () => SequenceTransformActionDispatcher | null;
 
   // Services

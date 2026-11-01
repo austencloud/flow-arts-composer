@@ -2,6 +2,7 @@
   import type { VideoEditorState } from "@austencloud/video-editor";
   import PostTimingStage from "#lib/shared/share/components/post-studio/builder/PostTimingStage.svelte";
   import PostTimingAnimationPreview from "#lib/shared/share/components/post-studio/builder/PostTimingAnimationPreview.svelte";
+  import TkaTapGuide from "./TkaTapGuide.svelte";
   import { useTkaEditor } from "./tka-editor-context";
 
   /** The timing mode's stage: the take being mapped beside the animation. */
@@ -25,6 +26,11 @@
           editor={tka.editor}
           {session}
           sequence={tka.displaySequence}
+        />{/if}{/snippet}
+    {#snippet guide()}{#if tka.displaySequence}<TkaTapGuide
+          {session}
+          sequence={tka.displaySequence}
+          project={tka.editor.project}
         />{/if}{/snippet}
   </PostTimingStage>
 </div>

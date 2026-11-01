@@ -10,18 +10,21 @@
   import { growFade } from "#lib/shared/transitions/motion.js";
   import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import PictographContextMenuHost from "#lib/shared/pictograph/shared/components/context-menu/PictographContextMenuHost.svelte";
-  import { buildPictographContextMenuItems } from "#lib/shared/pictograph/shared/components/context-menu/pictograph-context-menu-builder.js";
-  import { getVisibilityStateManager } from "#lib/shared/pictograph/shared/state/visibility-state.svelte.js";
+  import {
+    getVisibilityStateManager,
+    PICTOGRAPH_VISIBILITY_KEYS,
+  } from "#lib/shared/pictograph/shared/state/visibility-state.svelte.js";
   import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import MenuItemTileGrid from "#lib/shared/components/context-menu/MenuItemTileGrid.svelte";
-  import {
-    isMenuItem,
-    type ContextMenuItem,
-  } from "#lib/shared/components/context-menu/context-menu-types.js";
+  import type { ContextMenuItem } from "#lib/shared/components/context-menu/context-menu-types.js";
   import DisplaySection from "./DisplaySection.svelte";
   import type { DisplayExample } from "./display-example-data";
+  import { pictographSwitches } from "./display-switches";
 
-  let { example }: { example: DisplayExample | null } = $props();
+  let {
+    example,
+    onBack,
+  }: { example: DisplayExample | null; onBack?: () => void } = $props();
 
   const vm = getVisibilityStateManager();
   let version = $state(0);
@@ -38,28 +41,9 @@
     return () => vm.unregisterObserver(bump);
   });
 
-  /** The menu's submenus flattened into one row, in the order a reader scans
-   *  the pictograph: grid and points, then its marks. */
-  const ORDER = [
-    "toggle-grid",
-    "toggle-hand-points",
-    "toggle-non-radial",
-    "toggle-step-numbers",
-    "toggle-tka-glyph",
-    "toggle-hand-tnd-glyph",
-    "toggle-prop-tnd-glyph",
-    "toggle-positions-glyph",
-    "toggle-reversals",
-    "toggle-hand-color-key",
-  ];
-
   const chips = $derived.by<ContextMenuItem[]>(() => {
     void version;
-    const flat = buildPictographContextMenuItems({ visibilityManager: vm })
-      .filter(isMenuItem)
-      .flatMap((entry) => entry.children ?? [entry]);
-    const byId = new Map(flat.map((item) => [item.id, item]));
-    return ORDER.flatMap((id) => byId.get(id) ?? []);
+    return pictographSwitches(vm);
   });
 
   let menuHost: PictographContextMenuHost | undefined = $state();
@@ -75,8 +59,9 @@
   icon="fas fa-shapes"
   title={t("settings_display_pictograph")}
   caption={t("settings_display_pictograph_caption")}
-  onReset={() => vm.resetToDefaults()}
+  onReset={() => vm.resetKeysToDefaults(PICTOGRAPH_VISIBILITY_KEYS)}
   onStageContextMenu={openMenu}
+  {onBack}
 >
   {#snippet stage()}
     {#if example}

@@ -93,6 +93,7 @@ export function tkaRow(
         "split",
         "appearance",
         "sequence",
+        "performers",
         ...(facts.isTunnelHook ? ["speed"] : []),
         ...(facts.hasBackdrop ? ["crop"] : []),
         "timing",

@@ -31,6 +31,7 @@
   import ViewerModeBottomBar from "./ViewerModeBottomBar.svelte";
   import { dockTrayState } from "./ControlDock.svelte";
   import type { OrchestratorContext } from "../domain/viewer-orchestrator-context";
+  import type { SplitConfig } from "../services/viewer-state-persistence";
   import {
     createVideoPlayheadBridge,
     setVideoPlayheadContext,
@@ -58,7 +59,7 @@
   import ExportImagePanel from "./ExportImagePanel.svelte";
   import VideoPreviewPanel from "./VideoPreviewPanel.svelte";
   import PracticeBar from "./PracticeBar.svelte";
-  import PostStudioPane from "./PostStudioPane.svelte";
+  import LazyMount from "#lib/shared/components/LazyMount.svelte";
   import type { ShareExport } from "@austencloud/video-editor/ui";
   import { POST_STUDIO_STAGE_MIN_WIDTH } from "../services/viewer-shell-model";
   import { resolveSequenceIdentityTitle } from "../services/viewer-title";
@@ -81,7 +82,6 @@
   import { getDeviceDetector } from "#lib/shared/device/get-device-detector.js";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import DeleteConfirmDialog from "./DeleteConfirmDialog.svelte";
-  import PostShareSheet from "#lib/shared/share/components/PostShareSheet.svelte";
   import type { VideoRenderRequest } from "#lib/shared/share/domain/video-opener.js";
   import { createCardPreviewState } from "#lib/shared/share/state/card-preview-state.svelte.js";
   import { getSharer } from "#lib/shared/share/get-sharer.js";
@@ -104,7 +104,6 @@
   import { VIDEO_UPLOAD_ENABLED } from "../config/viewer-feature-flags";
   import { uploadRenderedFilm } from "#lib/shared/video-collaboration/services/upload-rendered-film.js";
   import { canAccessPostStudio } from "../services/post-studio-access";
-  import { getPostWorkspaceNavigator } from "#lib/features/post/services/get-post-workspace-navigator.js";
   import {
     closeSequenceOverlay,
     isSequenceOverlayOpen,
@@ -129,6 +128,8 @@
     registerScanSessionCleanup,
   } from "#lib/shared/analytics/scan-analytics.js";
   import { createViewerShellLayoutState } from "../state/viewer-shell-layout-state.svelte";
+  import { isEnsembleView } from "../services/viewer-cast";
+  import { resolveViewerTitleOverride } from "../services/viewer-title";
   import {
     createViewerShellShareState,
     viewerVideoSourceIdentity,
@@ -281,6 +282,37 @@
     createViewerAnimatorInspectorState(loadActivePill());
   setViewerAnimatorInspectorContext(animatorInspector);
   $effect(() => inspectorHost.setTarget(artInspectorTarget));
+
+  /** The panes the stage renders for the current view. */
+  const stageSplitConfig = $derived.by((): SplitConfig => {
+    const mode = ctx.viewerState.viewerMode;
+    const stored = ctx.viewerState.splitConfig;
+    if (mode === "split" || mode === "videos") {
+      return { leftPane: "animation", rightPane: "card" };
+    }
+    if (mode === "card") return { ...stored, rightPane: "card" };
+    if (
+      mode === "animation" ||
+      mode === "animation-3d" ||
+      mode === "mandala" ||
+      mode === "tunnel"
+    ) {
+      return { ...stored, leftPane: mode };
+    }
+    return stored;
+  });
+
+  // A tunnel's ensemble views are titled with the composition's name; every
+  // other view shows the lead and titles it with the lead's own word.
+  const titleOverride = $derived(
+    resolveViewerTitleOverride({
+      compositionName: tunnelComposition?.name,
+      ensembleView: isEnsembleView(
+        ctx.viewerState.viewerMode,
+        stageSplitConfig
+      ),
+    })
+  );
 
   const imageCompositionDefaults = getImageCompositionManager();
   const cardPresentation = createCardPresentationState({
@@ -689,6 +721,10 @@
     if (openingPost) return;
     openingPost = true;
     try {
+      // Post's project store imports the video editor, so it loads on tap.
+      const { getPostWorkspaceNavigator } = await import(
+        "#lib/features/post/services/get-post-workspace-navigator.js"
+      );
       await getPostWorkspaceNavigator().openSequence(
         ctx.effectiveSequence ?? sequence
       );
@@ -1252,7 +1288,7 @@
       {embedded}
       {demoScanProps}
       navigation={embedded ? undefined : navigation}
-      titleOverride={tunnelComposition?.name?.trim() || null}
+      {titleOverride}
       {openAppHref}
       onAccountSignIn={!embedded ? onAccountSignIn : undefined}
       onAccountOpenApp={openAppHref && !embedded
@@ -1414,7 +1450,7 @@
               <ViewerContentRail
                 reviewPostStudio={import.meta.env.DEV && reviewPostStudio}
                 activeMode={ctx.viewerState.viewerMode}
-                webgl2Available={ctx.viewer3DState.webgl2Available}
+                webgl2Available={ctx.webgl2Available}
                 compact={layout.compactChrome && !isMobile}
                 footerAction={!embedded && !layout.compactChrome && guideAction
                   ? {
@@ -1474,19 +1510,25 @@
             {#snippet stage()}
               <div class="viewer-stage-container">
                 {#snippet studioSource()}
-                  {#if studio.mounted}
-                    <PostStudioPane
-                      active={layout.showPostStudio}
-                      sequence={effectiveSequence}
-                      resolvedCardAutoLayout={ctx.resolvedCardAutoLayout}
-                      onExported={adoptPostStudioRender}
-                      onSharePost={share.openPanel}
-                      previewTarget={postStudioSharePreviewTarget}
-                      onRegisterShareExport={(controls) =>
-                        (postStudioShareExport = controls)}
-                      sharing={share.panelOpen}
-                    />
-                  {/if}
+                  <!-- Post Studio brings the whole video editor and its encoder;
+                       a viewer that never opens it should not download them. -->
+                  <LazyMount
+                    loader={() => import("./PostStudioPane.svelte")}
+                    active={studio.mounted}
+                    keepAlive={false}
+                    debugName="PostStudioPane"
+                    props={{
+                      active: layout.showPostStudio,
+                      sequence: effectiveSequence,
+                      resolvedCardAutoLayout: ctx.resolvedCardAutoLayout,
+                      onExported: adoptPostStudioRender,
+                      onSharePost: share.openPanel,
+                      previewTarget: postStudioSharePreviewTarget,
+                      onRegisterShareExport: (controls: ShareExport | null) =>
+                        (postStudioShareExport = controls),
+                      sharing: share.panelOpen,
+                    }}
+                  />
                 {/snippet}
                 {#snippet viewerSource()}
                   {#snippet motionStageSource()}
@@ -1591,24 +1633,7 @@
                         onPlaybackModeChange={(mode) =>
                           interactions.handlePlaybackModeChange(mode, "viewer")}
                         onSceneReadyChange={(ready) => (sceneReady3d = ready)}
-                        splitConfig={ctx.viewerState.viewerMode === "split"
-                          ? { leftPane: "animation", rightPane: "card" }
-                          : ctx.viewerState.viewerMode === "card"
-                            ? {
-                                ...ctx.viewerState.splitConfig,
-                                rightPane: "card",
-                              }
-                            : ctx.viewerState.viewerMode === "animation" ||
-                                ctx.viewerState.viewerMode === "animation-3d" ||
-                                ctx.viewerState.viewerMode === "mandala" ||
-                                ctx.viewerState.viewerMode === "tunnel"
-                              ? {
-                                  ...ctx.viewerState.splitConfig,
-                                  leftPane: ctx.viewerState.viewerMode,
-                                }
-                              : ctx.viewerState.viewerMode === "videos"
-                                ? { leftPane: "animation", rightPane: "card" }
-                                : ctx.viewerState.splitConfig}
+                        splitConfig={stageSplitConfig}
                         isLoggedIn={ctx.isLoggedIn && !introPreview}
                         onVideoUpload={!introPreview &&
                         ctx.isLoggedIn &&
@@ -1721,7 +1746,7 @@
                   stepCount={sequence?.steps?.length ?? 0}
                   onAction={interactions.handleCardContextAction}
                 />
-                {#if layout.isRecordSceneActive && ctx.effectiveSequence && sceneReady3d && ctx.countdownValue === 0 && !ctx.isRecording3D}
+                {#if layout.isRecordSceneActive && ctx.effectiveSequence && ctx.viewer3DState && sceneReady3d && ctx.countdownValue === 0 && !ctx.isRecording3D}
                   <RecordSceneChrome
                     isExporting={ctx.isExporting || !!ctx.pendingFilmRender}
                     canvasReady={ctx.canvasReady}
@@ -1948,7 +1973,7 @@
           <ViewerModeBottomBar
             reviewPostStudio={import.meta.env.DEV && reviewPostStudio}
             activeMode={ctx.viewerState.viewerMode}
-            webgl2Available={ctx.viewer3DState.webgl2Available}
+            webgl2Available={ctx.webgl2Available}
             onSelectSplit={() => layout.selectSplitMode()}
             onSelectMode={(mode) => layout.selectViewerMode(mode)}
             onOpenPost={embedded ? undefined : openInPost}
@@ -2032,54 +2057,61 @@
     ></div>
   {/snippet}
 
-  <PostShareSheet
-    isOpen={share.postSheetOpen}
-    sequence={ctx.effectiveSequence ?? null}
-    shareUrl={share.postSheetOpen ? share.getShareUrl() : ""}
-    videoBlobUrl={artShareVideo.blobUrl}
-    isExportingVideo={artShareVideo.exporting}
-    exportProgress={artShareVideo.progress}
-    onRequestVideo={artShareVideo.request}
-    onCancelVideo={artShareVideo.cancel}
-    onPrepareFile={share.prepareFile}
-    initialEntry={share.initialEntry}
-    videoLabel={artShareVideo.label}
-    captureAnimationPreview={share.artShare
-      ? share.artShare.capturePreview
-      : share.postShare
-        ? () => ""
-        : ctx.captureAnimationPreview}
-    captureVideoOpener={ordinaryAnimationShare
-      ? ctx.captureVideoOpener
-      : undefined}
-    onOpenVideoExport={!share.artShare && !share.postShare
-      ? openVideoDownloadFromSheet
-      : undefined}
-    liveVideoPreview={share.postShare ? postStudioSharePreview : undefined}
-    videoSettingsAvailable={!share.postShare}
-    is3DExport={ctx.renderMode === "3d"}
-    videoSourceKey={`${ctx.effectiveSequence?.id ?? ctx.effectiveSequence?.word ?? "unsaved"}:${share.getShareUrl()}:${viewerVideoSourceIdentity(share.videoSourceKind, null)}:${ctx.renderMode}`}
-    initialArtifact={share.artShare || share.postShare
-      ? "video"
-      : ctx.viewerState.viewerMode === "card"
-        ? "card"
-        : share.initialEntry === "download" ||
-            ctx.viewerState.viewerMode === "animation"
-          ? "video"
-          : "card"}
-    resolvedCardAutoLayout={ctx.resolvedCardAutoLayout}
-    initialCardPresentation={cardPresentation.value}
-    onSaveCardPresentation={ctx.isOwned && ctx.isOwnedLibraryRecord
-      ? persistCardPresentation
-      : undefined}
-    needsAccountForFiles={!authState.isFullAccount}
-    onRequestAccount={() => authDrawerState.show("signup", "export")}
-    onOpenPostStudio={canAccessPostStudio()
-      ? embedded
-        ? () => layout.selectViewerMode("post-studio")
-        : openInPost
-      : undefined}
-    onClose={() => share.setPostSheetOpen(false)}
+  <!-- The post sheet's video preview and encoder pull in the video editor and
+       its media runtime; load them the first time someone opens the sheet. -->
+  <LazyMount
+    loader={() => import("#lib/shared/share/components/PostShareSheet.svelte")}
+    active={share.postSheetOpen}
+    debugName="PostShareSheet"
+    props={{
+      isOpen: share.postSheetOpen,
+      sequence: ctx.effectiveSequence ?? null,
+      shareUrl: share.postSheetOpen ? share.getShareUrl() : "",
+      videoBlobUrl: artShareVideo.blobUrl,
+      isExportingVideo: artShareVideo.exporting,
+      exportProgress: artShareVideo.progress,
+      onRequestVideo: artShareVideo.request,
+      onCancelVideo: artShareVideo.cancel,
+      onPrepareFile: share.prepareFile,
+      initialEntry: share.initialEntry,
+      videoLabel: artShareVideo.label,
+      captureAnimationPreview: share.artShare
+        ? share.artShare.capturePreview
+        : share.postShare
+          ? () => ""
+          : ctx.captureAnimationPreview,
+      captureVideoOpener: ordinaryAnimationShare
+        ? ctx.captureVideoOpener
+        : undefined,
+      onOpenVideoExport: !share.artShare && !share.postShare
+        ? openVideoDownloadFromSheet
+        : undefined,
+      liveVideoPreview: share.postShare ? postStudioSharePreview : undefined,
+      videoSettingsAvailable: !share.postShare,
+      is3DExport: ctx.renderMode === "3d",
+      videoSourceKey: `${ctx.effectiveSequence?.id ?? ctx.effectiveSequence?.word ?? "unsaved"}:${share.getShareUrl()}:${viewerVideoSourceIdentity(share.videoSourceKind, null)}:${ctx.renderMode}`,
+      initialArtifact: share.artShare || share.postShare
+        ? "video"
+        : ctx.viewerState.viewerMode === "card"
+          ? "card"
+          : share.initialEntry === "download" ||
+              ctx.viewerState.viewerMode === "animation"
+            ? "video"
+            : "card",
+      resolvedCardAutoLayout: ctx.resolvedCardAutoLayout,
+      initialCardPresentation: cardPresentation.value,
+      onSaveCardPresentation: ctx.isOwned && ctx.isOwnedLibraryRecord
+        ? persistCardPresentation
+        : undefined,
+      needsAccountForFiles: !authState.isFullAccount,
+      onRequestAccount: () => authDrawerState.show("signup", "export"),
+      onOpenPostStudio: canAccessPostStudio()
+        ? embedded
+          ? () => layout.selectViewerMode("post-studio")
+          : openInPost
+        : undefined,
+      onClose: () => share.setPostSheetOpen(false),
+    }}
   />
 </div>
 

@@ -8,6 +8,7 @@
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { Snippet } from "svelte";
   import LiveCardPictograph from "./LiveCardPictograph.svelte";
   import { opaqueFade } from "#lib/shared/transitions/motion.js";
   import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
@@ -34,6 +35,11 @@
     getMotionSoloMotion: (cellIndex: number) => MotionData | undefined;
     formatSoloTurns: (turns: number | "fl" | undefined | null) => string;
     shortOrientation: (ori: string | undefined | null) => string | null;
+    /**
+     * Drawn over each pictograph cell, given the step index (-1 for the
+     * start): another performer on the same grid, as a tunnel sheet shows.
+     */
+    cellOverlay?: Snippet<[number]>;
     /** Portable card previews use the compositor's opaque cell host. */
     exportPresentation?: boolean;
   }
@@ -56,6 +62,7 @@
     formatSoloTurns,
     shortOrientation,
     exportPresentation = false,
+    cellOverlay,
   }: Props = $props();
 
   const isSwapMode = $derived(transitionMode === "swap");
@@ -105,6 +112,10 @@
   <div class="cell-spinner-container">
     <ProgressRing percent={-1} size={20} strokeWidth={2} />
   </div>
+{/if}
+
+{#if cellOverlay && (cell.live || cell.isLoaded)}
+  <div class="cell-overlay">{@render cellOverlay(cell.index)}</div>
 {/if}
 
 {#if cell.live || cell.isLoaded}
@@ -183,6 +194,12 @@
 {/if}
 
 <style>
+  .cell-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
   .cell-image {
     display: block;
     width: 100%;

@@ -85,10 +85,6 @@
     initialScanPlaybackBpm,
     saveScanPlaybackBpm,
   } from "#lib/shared/sequence-viewer/services/scan-playback-tempo.js";
-  import {
-    guideTargetForLetter,
-    GUIDE_CODEX_SLUG,
-  } from "../../(public)/guide/level-1/_data/guide-content-index";
   import { setGuideScanIntent } from "../../(public)/guide/level-1/_data/guide-scan-intent";
 
   // This standalone route never mounts MainApplication's composition root, so
@@ -104,6 +100,8 @@
   interface Props {
     data: {
       meta: SequenceRouteMeta;
+      /** The short code's sequence, resolved and hydrated by the server load. */
+      preparedSequence?: SequenceData | null;
     };
   }
 
@@ -446,11 +444,17 @@
     void ctx.handleExport();
   }
 
-  function seeInGuide(): void {
-    if (!sequence) return;
+  // The letter index is built from the whole Codex letter table (about
+  // 215 KB), which only this tap needs, so it loads here, not with the scan.
+  async function seeInGuide(): Promise<void> {
+    const current = sequence;
+    if (!current) return;
+    const { guideTargetForLetter, GUIDE_CODEX_SLUG } = await import(
+      "../../(public)/guide/level-1/_data/guide-content-index"
+    );
     const label =
-      sequence.steps?.length === 1
-        ? stripWordNotation(sequence.word).trim()
+      current.steps?.length === 1
+        ? stripWordNotation(current.word).trim()
         : "";
     const target = label ? guideTargetForLetter(label) : null;
     if (target?.cellKey) {
@@ -459,7 +463,7 @@
       return;
     }
 
-    setGuideScanIntent({ slug: GUIDE_CODEX_SLUG, sequence });
+    setGuideScanIntent({ slug: GUIDE_CODEX_SLUG, sequence: current });
     void goto(`/learn/guide/${GUIDE_CODEX_SLUG}`);
   }
 
@@ -604,6 +608,13 @@
         // A legacy self-contained QR payload. The short-code manager owns that
         // envelope (`q1:`/`r1:`/`raw:`) and decodes it with the radio off.
         await loadSequenceFromId(parsed.inlineQr, run);
+      } else if (parsed.legacyId && data.preparedSequence) {
+        // The server already resolved and hydrated this short code, so the
+        // stage can draw without booting Firestore or the dataframes.
+        resolvedShortCode = parsed.legacyId;
+        sequence = data.preparedSequence;
+        applyUrlPropPreferences();
+        isLoading = false;
       } else if (parsed.legacyId) {
         const loadedFromCatalog = await loadReleasedCatalogSequence(
           parsed.legacyId,

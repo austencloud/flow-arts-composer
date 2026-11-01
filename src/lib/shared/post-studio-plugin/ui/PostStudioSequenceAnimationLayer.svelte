@@ -44,6 +44,9 @@
   import { DEFAULT_CONFIG } from "#lib/shared/sequence-viewer/tunnel/tunnel-config.js";
   import { buildTunnelLayers } from "#lib/shared/sequence-viewer/tunnel/tunnel-layer-builder.js";
   import { sampleTunnelProps } from "#lib/shared/sequence-viewer/tunnel/tunnel-prop-sampling.js";
+  import type { SequenceFrame } from "@austencloud/video-editor/core";
+  import { performerArrows } from "../performer-arrows";
+  import { followerPropColors } from "../tunnel-performers";
 
   let {
     sequence,
@@ -60,6 +63,9 @@
     rightPropType,
     animationAppearance = null,
     tunnelHook = null,
+    followerPositions = [],
+    followerSequences = [],
+    followerFrames = [],
     chromeOpacity = 1,
     mandalaIn = 1,
     lookBlend,
@@ -84,6 +90,21 @@
     animationAppearance?: PostAnimationItem["animationAppearance"] | null;
     /** The opening hook: extra performers around the sequence, leaving as it settles. */
     tunnelHook?: { hook: TunnelHook; progress: number } | null;
+    /**
+     * A staggered tunnel's other performers: where each is in the sequence,
+     * on the engine's count, drawn with the red/blue pair on one canvas.
+     */
+    followerPositions?: readonly number[];
+    /**
+     * Each of those performers' own sequence, when it is not the red/blue
+     * one's (a partner facing the other way); null while they build.
+     */
+    followerSequences?: readonly SequenceData[] | null;
+    /**
+     * Those performers' frames, when this layer draws arrows: each one's
+     * arrows in its own colors over the red/blue pair's.
+     */
+    followerFrames?: readonly SequenceFrame[];
     /** Grid, glyph, step number and progress strip: 0 during the hook, 1 once they have faded in. */
     chromeOpacity?: number;
     /**
@@ -356,6 +377,41 @@
     });
   });
 
+  const followerLayers = $derived(
+    followerPositions.map((position, index): AdditionalLayerProps => {
+      const props = sampleTunnelProps(
+        followerSequences?.[index] ?? sequence,
+        position
+      );
+      return {
+        leftProp: props.left,
+        rightProp: props.right,
+        leftPropType: propConfig.leftPropType,
+        rightPropType: propConfig.rightPropType,
+      };
+    })
+  );
+  const followerArrows = $derived(
+    arrowsMounted && followerSequences
+      ? followerFrames.map((frame, index) => ({
+          ...performerArrows(followerSequences[index] ?? sequence, frame),
+          ...followerPropColors(index, followerFrames.length),
+        }))
+      : []
+  );
+  const extraLayers = $derived(
+    followerLayers.length === 0
+      ? hookLayers
+      : [...hookLayers, ...followerLayers]
+  );
+  /** Extra performers still loading their prop artwork; an export waits for them. */
+  const extrasPending = $derived(
+    (Boolean(tunnelHook) && hookCopies.length === 0) ||
+      (followerPositions.length > 0 && followerSequences === null) ||
+      ((Boolean(tunnelHook) || followerPositions.length > 0) &&
+        hookTexturesPending)
+  );
+
   // With footage behind the tunnel, the panel stays clear while the canvas
   // moves and fills in once it has settled into its box.
   const panelAlpha = $derived(tunnelHookPanelOpacity(tunnelHook, sampleEasing));
@@ -380,8 +436,8 @@
   data-sequence-pass-index={sequencePassIndex}
   data-sequence-progress-visible={progressVisible}
   data-sequence-progress-dark={animationAppearance?.darkMode ?? true}
-  data-tunnel-hook-pending={Boolean(tunnelHook) &&
-    (hookCopies.length === 0 || hookTexturesPending)}
+  data-tunnel-hook-pending={extrasPending}
+  data-performers={1 + followerLayers.length}
 >
   <div class="animation-stage" use:destination={animationAppearance}>
     {#if showMandala}
@@ -405,10 +461,10 @@
           <AnimatorCanvas
             {leftProp}
             {rightProp}
-            additionalLayers={hookLayers}
+            additionalLayers={extraLayers}
             onAdditionalLayerTextureStatusChange={(status) =>
               (hookTexturesPending =
-                Boolean(tunnelHook) &&
+                (Boolean(tunnelHook) || followerPositions.length > 0) &&
                 (status.requested === 0 || status.loaded < status.requested))}
             gridVisible={animationAppearance.gridMode !== "none"}
             {chromeOpacity}
@@ -497,6 +553,70 @@
               stepNumberOverride={false}
             />
           </div>
+          {#each followerArrows as arrows, index (index)}
+            {@const propType = animationAppearance.propType}
+            <div
+              class="arrow-overlay"
+              class:unseen={arrowShare <= 0}
+              style:opacity={arrowShare < 1 ? arrowShare : undefined}
+              aria-hidden="true"
+            >
+              <PictographContainer
+                pictographData={arrows.step}
+                motionStartData={arrows.start}
+                motionProgress={arrows.progress}
+                arrowOpacity={arrows.opacity}
+                leftPropTypeOverride={propType ?? leftPropType}
+                rightPropTypeOverride={propType ?? rightPropType}
+                leftColorOverride={arrows.left}
+                rightColorOverride={arrows.right}
+                disableTransitions
+                darkMode={animationAppearance.darkMode ?? true}
+                transparentBackground
+                showProps={false}
+                showGrid={false}
+                showTKA={false}
+                showTnD={false}
+                showElemental={false}
+                showPropTnD={false}
+                showPlacements={false}
+                showHandColorKey={false}
+                showReversals={false}
+                showNonRadialPoints={false}
+                showHandPoints={false}
+                stepNumberOverride={false}
+              />
+            </div>
+            <div
+              class="outgoing-arrows"
+              class:unseen={arrowShare <= 0}
+              style:opacity={arrows.previousOpacity * arrowShare}
+              aria-hidden="true"
+            >
+              <PictographContainer
+                pictographData={arrows.previous}
+                leftPropTypeOverride={propType ?? leftPropType}
+                rightPropTypeOverride={propType ?? rightPropType}
+                leftColorOverride={arrows.left}
+                rightColorOverride={arrows.right}
+                disableTransitions
+                darkMode={animationAppearance.darkMode ?? true}
+                transparentBackground
+                showProps={false}
+                showGrid={false}
+                showTKA={false}
+                showTnD={false}
+                showElemental={false}
+                showPropTnD={false}
+                showPlacements={false}
+                showHandColorKey={false}
+                showReversals={false}
+                showNonRadialPoints={false}
+                showHandPoints={false}
+                stepNumberOverride={false}
+              />
+            </div>
+          {/each}
         {/if}
       </div>
     {:else if breakdownMotion && stepData}

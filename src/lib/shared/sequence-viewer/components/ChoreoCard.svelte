@@ -21,7 +21,7 @@
   import type { ViewerCustomColorPair } from "../domain/viewer-custom-colors";
   import type { PreviewCellRenderOptions } from "../services/preview-cell-renderer";
   import type { ViewerPaneBox } from "./viewer-panel-layout";
-  import { onDestroy, tick } from "svelte";
+  import { onDestroy, tick, type Snippet } from "svelte";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import type { authState as AuthStateModule } from "#lib/shared/auth/state/auth-state.svelte.js";
   import { hasSavedFirebaseUser } from "#lib/shared/auth/services/saved-firebase-user.js";
@@ -53,6 +53,7 @@
   import CardHeader, { HEADER_MOTION_MS } from "./CardHeader.svelte";
   import CardFooter from "./CardFooter.svelte";
   import CardGridLayout from "./CardGridLayout.svelte";
+  import type { MandalaFill } from "../services/get-mandala-placements";
 
   // Extracted modules
   import { buildRenderOptions } from "#lib/shared/choreo-card/services/choreo-card-cell-pipeline.js";
@@ -80,6 +81,10 @@
   import { composeMenu } from "#lib/shared/components/context-menu/compose-menu.js";
   import { buildCardMenuSection } from "#lib/shared/choreo-card/services/card-menu-section.js";
   import { buildPictographContextMenuItems } from "#lib/shared/pictograph/shared/components/context-menu/pictograph-context-menu-builder.js";
+  import {
+    buildCardContentToggles,
+    cardMarkMenuItems,
+  } from "#lib/shared/share/domain/card-content-toggles.js";
   import { isViewerDormant } from "../context/viewer-dormant-context";
 
   // Eagerly initialize the singleton so its constructor (which mutates $state)
@@ -88,6 +93,11 @@
 
   interface Props {
     sequence: SequenceData;
+    /**
+     * Drawn over each pictograph cell, given the step index (-1 for the
+     * start): another performer on the same grid, as a tunnel sheet shows.
+     */
+    cellOverlay?: Snippet<[number]>;
     // Visibility toggles
     showWord?: boolean;
     showStepNumbers?: boolean;
@@ -108,6 +118,13 @@
     qrSequence?: SequenceData;
     /** When true, fill empty col-0 cells with mandala visualizations */
     showMandala?: boolean;
+    /**
+     * What each mandala slot draws, top slot first: a performer's whole
+     * sequence in their colors, as a tunnel sheet shows one per performer.
+     * Slots past the list stay empty. Unset, the slots draw this sequence's
+     * hands.
+     */
+    mandalaFills?: readonly MandalaFill[];
     /** Render as hand path visualization (HAND props, float arrows, no TKA) */
     handPathMode?: boolean;
     /** Browse view mode for solo prop/hand filtering */
@@ -214,6 +231,7 @@
     qrUrl,
     qrSequence,
     showMandala = false,
+    mandalaFills,
     handPathMode: requestedHandPathMode = false,
     browseViewMode,
     darkMode = false,
@@ -252,6 +270,7 @@
     layoutAvailableWidth,
     layoutAvailableHeight,
     transitionKey = null,
+    cellOverlay,
   }: Props = $props();
 
   // Auth-aware WITHOUT dragging Firebase onto pages that never need it.
@@ -1051,12 +1070,18 @@
     return composeMenu([
       {
         header: "Pictograph",
-        entries: buildPictographContextMenuItems({
-          visibilityManager: vm,
-          // Card step numbers read ImageComposition.addStepNumbers, not the
-          // visibility manager — the toggle would lie here.
-          includeStepNumbers: false,
-        }),
+        entries: [
+          ...buildPictographContextMenuItems({
+            visibilityManager: vm,
+            // Card step numbers read ImageComposition.addStepNumbers, not the
+            // visibility manager — the toggle would lie here.
+            includeStepNumbers: false,
+          }),
+          // The card's own marks (reversals, hand colour key), from its list.
+          ...cardMarkMenuItems(
+            buildCardContentToggles(compositionManager, { visibility: vm })
+          ),
+        ],
       },
       {
         header: "Card",
@@ -1271,6 +1296,7 @@
         {qrGridPlacement}
         showMandala={effShowMandala}
         {mandalaPlacements}
+        {mandalaFills}
         {flipDuration}
         {cellWidth}
         {activeDarkMode}
@@ -1294,6 +1320,7 @@
         {getMotionSoloMotion}
         {formatSoloTurns}
         {shortOrientation}
+        {cellOverlay}
         {mandalaPathShape}
         morphMandala={!exportPresentation && transitionKey !== null}
       />

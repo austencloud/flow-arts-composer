@@ -329,3 +329,90 @@ Evidence (replaced, same names) in
 
 `1440x900-toggled.webp` shows Grid off in the pictograph and animation and
 Word off on the card; each section's Reset restored its tiles.
+
+## Revision: audit (2026-10-31)
+
+Austen's review of the 4K revision:
+
+> "on some choreo cards there is enough space to show both a QR code and a
+> mandala. So maybe it should be QR code / mandala / both if possible / none."
+
+> "Maybe we should have an example of a card which is 16 counts so that we
+> can actually see the other options. Or you should be able to select the
+> length of the card here."
+
+> "it looks pretty bad and it gives me pictographs that have this awkwardly
+> yucky gray background."
+
+What changed:
+
+- **Hand key and Reversals are card switches.** Only a card draws them, so
+  they left the pictograph menu (`buildPictographContextMenuItems` and the
+  section's order) and joined `buildCardContentToggles`, still stored in
+  `VisibilityStateManager`. The card groups are Header (Word, Level, LOOP),
+  Steps (Step numbers, Reversals), Start (Show, Hand key), Info and Theme.
+  `ExportImagePanel` lost its duplicate rows and renders the shared groups;
+  `ChoreoCardContextMenuHost` and `ChoreoCard`'s fallback menu take the same
+  marks through `cardMarkMenuItems`. Card Reset restores the card's own
+  switches, its theme and the two visibility keys
+  (`CARD_VISIBILITY_KEYS`); Pictograph Reset restores only
+  `PICTOGRAPH_VISIBILITY_KEYS`.
+- **One Info chooser: QR / Mandala / Both / None.** `buildInfoCellChooser`
+  shows what the card resolves to (through `resolveInfoCellDisplay`). Both
+  appears only where the card has two or more info cells, QR and Both only
+  for a signed-in account. On a one-cell card a pick turns both globals on
+  and stores the per-count choice; on a multi-cell card it writes the
+  globals (`planInfoCellPick`). Zero info cells hide the chooser. All three
+  `ExportImagePanel` layouts use it. Four picks run in one row at compact
+  density where each segment has 4.5rem, otherwise two rows of two.
+- **Card length 4 / 8 / 16.** A view choice in the card section (component
+  state, not stored), first in the switches beside Theme. The context-menu
+  host gets the same `stepCount`. Decision: one frame for all three lengths
+  (1.2 : 1); each card contains itself in it, measured unclipped at 4, 8 and
+  16 at every viewport below.
+- **Light cells are white, as in the export.** The live light card drew its
+  cells on the standalone pictograph's #d8d8d2 panel; `LiveCardPictograph`
+  now draws them transparent over white, the export's paper. Checked by
+  exporting the 16-count card as a PNG with `darkMode: false`: the cells
+  sample 255,255,255 (the header and info cells 240–245), no 216,216,210.
+  The standalone pictograph palette is unchanged.
+- **No scrolling below 64rem.** The stacked tier became three drill-down
+  boxes (icon, title, a one-line summary of what is on, chevron), the
+  PostShareSheet File/Show pattern. A box opens its section as its own
+  screen, crossfaded by the shared `Crossfade` (`DURATION.normal`): back
+  arrow and the quiet Reset in the header, the stage takes the height the
+  switches leave, five tiles to a row with the picture capped by width and
+  height, caption kept. A landscape screen puts the switches beside a
+  full-height stage (2 : 3, or 1 : 2 under 26rem tall with a tighter
+  header and rhythm); an upright screen stacks. The three-column tier at
+  64rem and up is unchanged apart from the card's new groups (four columns:
+  Length + Theme, Header, Steps + Start, Info).
+
+Measured as scrollHeight / clientHeight in px (the columns tier shows every
+section at once, so it has no open screen). "Worst" is the 16-count card with
+QR and Both offered (sign-in simulated in the page for inspection; component
+tests cover it with auth mocked).
+
+| Viewport              | Tier    | Tab (boxes)         | Pictograph, frame | Card, frame (4)    | Worst card          |
+| --------------------- | ------- | ------------------- | ----------------- | ------------------ | ------------------- |
+| 375×667               | drill   | 595/595             | 569/569, 226²     | 569/569, 131×109   | 569/569, 109×90     |
+| 412×915 (Fold cover)  | drill   | 842/842             | 817/817, 325²     | 817/817, 325×271   | fits                |
+| 707×772 (Fold inner)  | drill   | 674/674             | 648/648, 339²     | 648/648, 239×199   | fits                |
+| 820×1180              | drill   | 1075/1075           | 1050/1050, 686²   | 1050/1050, 672×560 | fits                |
+| 960×412               | drill   | 356/356             | 331/331, 198²     | 331/331, 246×205   | 331/331             |
+| 200% zoom of 1440×900 | drill   | 351/351             | 325/325, 185²     | 325/325            | 337/325 (12px over) |
+| 1440×900              | columns | 844/844, doc 900    | 382²              | 269×224            | fits                |
+| 1920×1080             | columns | 1024/1024, doc 1080 | 536²              | 535×446            | not measured        |
+| 2560×1440             | columns | 1384/1384, doc 1440 | 741²              | 740×617            | not measured        |
+| 3840×2160             | columns | 2104/2104, doc 2160 | 1167²             | 1167×972           | not measured        |
+
+The animation screen also fits at every drill size (frames 226², 325², 339²,
+686² and 218²). Open item: at 200% zoom the worst card (signed in, 8 or 16
+counts, Info in two rows) overflows its screen by 12px; the guest card fits.
+
+Every tile click changed the stage DOM except Reversals, whose example loop
+has no reversals; its key was checked flipping and restoring in
+`VisibilityStateManager`. Evidence replaced at the same names in
+`evidence/2026-10-27-settings-display-tab/`, plus `412x915.webp` and
+`707x772.webp`. The columns-tier shots show the Light card theme;
+`1440x900-toggled.webp` shows the 16-count card with Both picked.

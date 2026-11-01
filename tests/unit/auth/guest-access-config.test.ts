@@ -18,8 +18,8 @@ describe("isModuleAccessible", () => {
     expect(isModuleAccessible("creators", "guest")).toBe(true);
   });
 
-  it("blocks learn for guests", () => {
-    expect(isModuleAccessible("learn", "guest")).toBe(false);
+  it("opens learn to guests so a scanner can read the Guide", () => {
+    expect(isModuleAccessible("learn", "guest")).toBe(true);
   });
 
   it("blocks social for guests", () => {
@@ -53,6 +53,12 @@ describe("isTabAccessible", () => {
 
   it("does not invent sub-tabs for the Creators module", () => {
     expect(isTabAccessible("creators", "creators", "guest")).toBe(false);
+  });
+
+  it("allows only the written Guide in learn for guests", () => {
+    expect(isTabAccessible("learn", "guide", "guest")).toBe(true);
+    expect(isTabAccessible("learn", "concepts", "guest")).toBe(false);
+    expect(isTabAccessible("learn", "play", "guest")).toBe(false);
   });
 
   it("allows the shape-engine tab in create for guests", () => {

@@ -84,7 +84,7 @@ describe("enumerateVariationArrows", () => {
 // scoped to it and do NOT collide with the enumerator-portion tests above
 // (which import the REAL enumerator).
 
-import { Point } from "fabric";
+import { Point } from "#lib/shared/pictograph/arrow/orchestration/domain/point.js";
 import type { MigrationReport } from "../../../src/lib/features/admin/override-migration/services/override-migration";
 
 const ENGINE_PATH =

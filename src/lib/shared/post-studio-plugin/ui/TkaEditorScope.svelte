@@ -385,6 +385,9 @@
     get sequence() {
       return sequence;
     },
+    get displaySequence() {
+      return displaySequence;
+    },
   });
 
   $effect(() => onProjectPropChange(editor.project.propType));

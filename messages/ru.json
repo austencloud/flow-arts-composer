@@ -8990,6 +8990,7 @@
   "settings_display_pictograph": "Пиктограмма",
   "settings_display_animation": "Анимация",
   "settings_display_card": "Карточка",
+  "settings_display_card_length": "Длина карточки",
   "settings_display_pictograph_caption": "Долгое нажатие или правый клик по любой пиктограмме в приложении открывает те же переключатели.",
   "settings_display_animation_caption": "Долгое нажатие или правый клик по любой воспроизводимой анимации открывает эти и другие настройки.",
   "settings_display_card_caption": "Правый клик или долгое нажатие на карточку в просмотрщике открывает те же переключатели.",

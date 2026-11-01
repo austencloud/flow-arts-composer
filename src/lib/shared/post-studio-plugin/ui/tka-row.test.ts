@@ -65,6 +65,7 @@ describe("tka tool rows are today's rows", () => {
       "split",
       "appearance",
       "sequence",
+      "performers",
       "timing",
       ...TAIL,
     ]);
@@ -74,6 +75,7 @@ describe("tka tool rows are today's rows", () => {
         "split",
         "appearance",
         "sequence",
+        "performers",
         "speed",
         "crop",
         "timing",

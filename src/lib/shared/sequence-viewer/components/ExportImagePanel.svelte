@@ -37,17 +37,19 @@
   import ControlDock, { type ControlDockTab } from "./ControlDock.svelte";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
-  import {
-    getInfoCellCount,
-    type InfoCellChoice,
-  } from "../services/info-cell-display";
+  import type { InfoCellPick } from "../services/info-cell-display";
   import {
     getStepColumnsForLayout,
     type ResolvedAutoLayout,
   } from "#lib/shared/render/services/container-aware-layout.js";
   import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
   import CardFooterEditor from "#lib/shared/share/components/CardFooterEditor.svelte";
-  import { buildCardContentToggles } from "#lib/shared/share/domain/card-content-toggles.js";
+  import {
+    buildCardContentToggles,
+    buildInfoCellChooser,
+    infoCellGeometryFor,
+    type CardContentToggle,
+  } from "#lib/shared/share/domain/card-content-toggles.js";
   import {
     cardPresentationFromFooterSettings,
     resolveCardFooter,
@@ -190,14 +192,6 @@
       JSON.stringify(next)
     );
   }
-  const showQRCode = $derived.by(() => {
-    void compositionVersion;
-    return imageComposition.showQRCode;
-  });
-  const showMandala = $derived.by(() => {
-    void compositionVersion;
-    return imageComposition.showMandala;
-  });
   const showLoopGlyph = $derived.by(() => {
     void compositionVersion;
     return imageComposition.showLoopGlyph;
@@ -231,55 +225,28 @@
       : imageComposition.getStartPlacementLayoutForStepCount(stepCount);
   });
 
-  // One-spot cards (a single empty info cell) route QR vs Mandala through one
-  // explicit chooser; multi-cell cards keep the two independent chips.
-  const infoCellCount = $derived.by(() => {
+  // The info cells take one chooser from the shared owner (QR / Mandala /
+  // Both / None), the same one Settings → Display renders. It shows what the
+  // card resolves to; Both only where the card has two cells, QR only for an
+  // account that can mint one. Zero info cells (start hidden, or a 1-count)
+  // leave a QR or mandala nowhere to render, so it is null and the control
+  // leaves rather than offering a dead choice.
+  const infoChooser = $derived.by(() => {
     void compositionVersion;
-    return getInfoCellCount({
-      stepCount,
-      includeStartPlacement: imageComposition.includeStartPlacement,
-      startPlacementLayout: startPosLayout,
-      columnCount:
-        currentColumnCount ??
-        (automaticLayout ? getStepColumnsForLayout(automaticLayout) : null),
-    });
+    return buildInfoCellChooser(
+      imageComposition,
+      infoCellGeometryFor(imageComposition, stepCount, resolvedAutoLayout),
+      { canQRCode }
+    );
   });
-  const isOneSpot = $derived(infoCellCount === 1);
-  // Zero info cells (start position hidden, or a 1-count) means a QR/mandala has
-  // nowhere to render — hide the controls entirely rather than offer dead toggles.
-  const hasInfoCell = $derived(infoCellCount >= 1);
+  const hasInfoCell = $derived(infoChooser !== null);
 
-  // Same auth gate the card renderer uses (ChoreoCard / card-render-options), so
-  // the panel and the output agree; with QR gone the freed info cell flows into
-  // the mandala fill (resolveInfoCellDisplay forces guest QR off downstream).
-
-  // Text labels (not icons): they read at the same size as the sibling chips in
-  // this panel (Word / Level / Grid …) and a tiny QR/asterisk glyph is cryptic.
-  // The QR option drops out of the one-spot chooser for guests.
-  const infoCellOptions = $derived<{ value: InfoCellChoice; label: string }[]>(
-    canQRCode
-      ? [
-          { value: "qr", label: "QR" },
-          { value: "mandala", label: "Mandala" },
-          { value: "none", label: t("viewer_ui_none") },
-        ]
-      : [
-          { value: "mandala", label: "Mandala" },
-          { value: "none", label: t("viewer_ui_none") },
-        ]
-  );
-
-  const infoCellChoice = $derived.by<InfoCellChoice>(() => {
-    void compositionVersion;
-    return imageComposition.getInfoCellChoiceForStepCount(stepCount);
-  });
-
-  // What the segmented indicator shows: a guest's leftover "qr" choice (QR isn't
-  // in their option list) displays as mandala — its render-time degrade — so the
-  // indicator lands on a real option instead of nowhere.
-  const infoCellDisplayChoice = $derived<InfoCellChoice>(
-    infoCellChoice === "qr" && !canQRCode ? "mandala" : infoCellChoice
-  );
+  function selectInfoCell(pick: InfoCellPick): void {
+    if (!infoChooser) return;
+    const previous = infoChooser.value;
+    infoChooser.select(pick);
+    reportSetting("info_cell", previous, pick);
+  }
 
   // Pictograph visibility - sourced from VisibilityManager so this panel
   // stays in sync with the Visibility tab, context menus, and voice control.
@@ -311,17 +278,9 @@
     void vmVersion;
     return vm.getNonRadialVisibility();
   });
-  const handColorKey = $derived.by(() => {
-    void vmVersion;
-    return vm.getRawGlyphVisibility("handColorKey");
-  });
   const propTndGlyph = $derived.by(() => {
     void vmVersion;
     return vm.getRawGlyphVisibility("propTndGlyph");
-  });
-  const reversalIndicators = $derived.by(() => {
-    void vmVersion;
-    return vm.getRawGlyphVisibility("reversalIndicators");
   });
 
   // One-prop cards (a hand hidden in the viewer) draw no word or level and
@@ -349,12 +308,7 @@
   const pictographAnyOn = $derived(
     showGrid ||
       nonRadial ||
-      (!oneProp &&
-        (tkaGlyph ||
-          tndGlyph ||
-          propTndGlyph ||
-          placementsGlyph ||
-          handColorKey))
+      (!oneProp && (tkaGlyph || tndGlyph || propTndGlyph || placementsGlyph))
   );
 
   function toggleHeader(): void {
@@ -382,7 +336,6 @@
         vm.setGlyphVisibility("elementalGlyph", target);
         vm.setGlyphVisibility("propTndGlyph", target);
         vm.setGlyphVisibility("placementsGlyph", target);
-        vm.setGlyphVisibility("handColorKey", target);
       }
     }
     reportSetting("pictograph_all", pictographAnyOn, target);
@@ -409,12 +362,6 @@
     const previous = currentColumnCount;
     imageComposition.setColumnCountForStepCount(stepCount, value);
     if (track) reportSetting("columns", previous, value);
-  }
-
-  function setInfoCellChoice(value: InfoCellChoice): void {
-    const previous = infoCellDisplayChoice;
-    imageComposition.setInfoCellChoiceForStepCount(stepCount, value);
-    reportSetting("info_cell", previous, value);
   }
 
   function setStartPlacementLayout(value: "row" | "column"): void {
@@ -492,18 +439,29 @@
   // The card-content switches come from the one shared list Settings →
   // Display also renders (CardContentToggles), so a label or handler is
   // written once. This panel only wraps each with its analytics report.
+  // Header (word, level, LOOP), the step cells' marks (step numbers,
+  // reversals) and the start cell's (Show, hand key) all come from it; the
+  // step marks join this panel's Pictograph row, the hand key sits by Show.
   const cardToggles = $derived.by(() => {
     void compositionVersion;
-    return buildCardContentToggles(imageComposition, { canQRCode });
+    void vmVersion;
+    return buildCardContentToggles(imageComposition, { visibility: vm });
   });
 
+  const asShareToggle = (item: CardContentToggle): ShareToggle => ({
+    id: item.id,
+    label: item.label,
+    active: item.active,
+    toggle: () => toggleCompositionSetting(item.id, item.active, item.set),
+  });
   const headerToggles = $derived<ShareToggle[]>(
-    cardToggles.header.map((item) => ({
-      id: item.id,
-      label: item.label,
-      active: item.active,
-      toggle: () => toggleCompositionSetting(item.id, item.active, item.set),
-    }))
+    cardToggles.header.map(asShareToggle)
+  );
+  const stepToggles = $derived<ShareToggle[]>(
+    cardToggles.steps.map(asShareToggle)
+  );
+  const startToggles = $derived<ShareToggle[]>(
+    cardToggles.start.map(asShareToggle)
   );
 
   const pictographToggles = $derived<ShareToggle[]>([
@@ -552,15 +510,6 @@
         ),
     },
     {
-      id: "hand_color_key",
-      label: t("viewer_ui_hand_key"),
-      active: handColorKey,
-      toggle: () =>
-        togglePictographSetting("hand_color_key", handColorKey, (value) =>
-          vm.setGlyphVisibility("handColorKey", value)
-        ),
-    },
-    {
       id: "non_radial",
       label: t("viewer_ui_non_radial"),
       active: nonRadial,
@@ -571,15 +520,6 @@
           vm.setNonRadialVisibility.bind(vm)
         ),
     },
-    {
-      id: "reversals",
-      label: "Reversals",
-      active: reversalIndicators,
-      toggle: () =>
-        togglePictographSetting("reversals", reversalIndicators, (value) =>
-          vm.setGlyphVisibility("reversalIndicators", value)
-        ),
-    },
   ]);
 
   const shownHeaderToggles = $derived(
@@ -588,9 +528,12 @@
       : headerToggles
   );
   const shownPictographToggles = $derived(
-    oneProp
-      ? pictographToggles.filter((item) => !ONE_PROP_HIDDEN.has(item.id))
-      : pictographToggles
+    [...pictographToggles, ...stepToggles].filter(
+      (item) => !oneProp || !ONE_PROP_HIDDEN.has(item.id)
+    )
+  );
+  const shownStartToggles = $derived(
+    startToggles.filter((item) => !oneProp || !ONE_PROP_HIDDEN.has(item.id))
   );
 
   const themeOptions = $derived([
@@ -686,46 +629,15 @@
               <div class="field">
                 <span class="field-label">{t("viewer_ui_info")}</span>
                 <div class="rt-chip-row">
-                  {#if isOneSpot}
-                    <div class="seg-fill">
-                      <SegmentedControl
-                        options={infoCellOptions}
-                        value={infoCellDisplayChoice}
-                        onchange={setInfoCellChoice}
-                        color="accent"
-                        size="sm"
-                      />
-                    </div>
-                  {:else}
-                    {#if canQRCode}
-                      <button
-                        type="button"
-                        class="rt-chip"
-                        aria-pressed={showQRCode}
-                        onclick={() =>
-                          toggleCompositionSetting(
-                            "qr_code",
-                            showQRCode,
-                            imageComposition.setShowQRCode.bind(
-                              imageComposition
-                            )
-                          )}
-                        ><i class="fas fa-qrcode" aria-hidden="true"></i> QR</button
-                      >
-                    {/if}
-                    <button
-                      type="button"
-                      class="rt-chip"
-                      aria-pressed={showMandala}
-                      onclick={() =>
-                        toggleCompositionSetting(
-                          "mandala",
-                          showMandala,
-                          imageComposition.setShowMandala.bind(imageComposition)
-                        )}
-                      ><i class="fas fa-asterisk" aria-hidden="true"></i> Mandala</button
-                    >
-                  {/if}
+                  <div class="seg-fill">
+                    <SegmentedControl
+                      options={infoChooser!.options}
+                      value={infoChooser!.value}
+                      onchange={selectInfoCell}
+                      color="accent"
+                      size="sm"
+                    />
+                  </div>
                 </div>
               </div>
             {/if}
@@ -743,19 +655,15 @@
             <div class="field">
               <span class="field-label">{t("viewer_ui_start")}</span>
               <div class="rt-chip-row">
-                <button
-                  type="button"
-                  class="rt-chip"
-                  aria-pressed={showStartPos}
-                  onclick={() =>
-                    toggleCompositionSetting(
-                      "start_position",
-                      showStartPos,
-                      imageComposition.setIncludeStartPlacement.bind(
-                        imageComposition
-                      )
-                    )}>{t("viewer_ui_show")}</button
-                >
+                {#each shownStartToggles as item (item.id)}
+                  <button
+                    type="button"
+                    class="rt-chip"
+                    aria-pressed={item.active}
+                    onclick={item.toggle}
+                    transition:growFade={{ axis: "x" }}>{item.label}</button
+                  >
+                {/each}
                 {#if showStartPos}
                   <button
                     type="button"
@@ -942,18 +850,17 @@
              label, so the label reads as naming both. They stack under each
              other only when the rail is too narrow for the two. -->
         <div class="share-inline">
-          <FilterChipBase
-            mode="toggle"
-            labelScale="readable"
-            label={t("viewer_ui_show")}
-            active={showStartPos}
-            onclick={() =>
-              toggleCompositionSetting(
-                "start_position",
-                showStartPos,
-                imageComposition.setIncludeStartPlacement.bind(imageComposition)
-              )}
-          />
+          {#each shownStartToggles as item (item.id)}
+            <span class="chip-slot" transition:growFade={{ axis: "x" }}>
+              <FilterChipBase
+                mode="toggle"
+                labelScale="readable"
+                label={item.label}
+                active={item.active}
+                onclick={item.toggle}
+              />
+            </span>
+          {/each}
           {#if showStartPos}
             <div class="start-layout" transition:growFade={{ axis: "x" }}>
               <SegmentedControl
@@ -973,46 +880,13 @@
           <span class="share-label" id="share-info-label"
             >{t("viewer_ui_info")}</span
           >
-          {#if isOneSpot}
-            <SegmentedControl
-              options={infoCellOptions}
-              value={infoCellDisplayChoice}
-              onchange={setInfoCellChoice}
-              color="accent"
-              ariaLabelledby="share-info-label"
-            />
-          {:else}
-            <div class="chip-wrap">
-              {#if canQRCode}
-                <FilterChipBase
-                  mode="toggle"
-                  labelScale="readable"
-                  label="QR"
-                  icon="fas fa-qrcode"
-                  active={showQRCode}
-                  onclick={() =>
-                    toggleCompositionSetting(
-                      "qr_code",
-                      showQRCode,
-                      imageComposition.setShowQRCode.bind(imageComposition)
-                    )}
-                />
-              {/if}
-              <FilterChipBase
-                mode="toggle"
-                labelScale="readable"
-                label="Mandala"
-                icon="fas fa-asterisk"
-                active={showMandala}
-                onclick={() =>
-                  toggleCompositionSetting(
-                    "mandala",
-                    showMandala,
-                    imageComposition.setShowMandala.bind(imageComposition)
-                  )}
-              />
-            </div>
-          {/if}
+          <SegmentedControl
+            options={infoChooser!.options}
+            value={infoChooser!.value}
+            onchange={selectInfoCell}
+            color="accent"
+            ariaLabelledby="share-info-label"
+          />
           {#if canQRCode}
             <p class="qr-scope-note">
               {t(
@@ -1126,63 +1000,18 @@
         </div>
 
         {#if hasInfoCell}
-          {#if isOneSpot}
-            <!-- One info cell: QR and Mandala compete for it -> single chooser. -->
-            <div class="setting-row">
-              <span class="setting-label">{t("viewer_ui_info_cell")}</span>
-              <div class="chip-group seg-fill">
-                <SegmentedControl
-                  options={infoCellOptions}
-                  value={infoCellDisplayChoice}
-                  onchange={setInfoCellChoice}
-                  color="accent"
-                  size="sm"
-                />
-              </div>
+          <div class="setting-row">
+            <span class="setting-label">{t("viewer_ui_info_cell")}</span>
+            <div class="chip-group seg-fill">
+              <SegmentedControl
+                options={infoChooser!.options}
+                value={infoChooser!.value}
+                onchange={selectInfoCell}
+                color="accent"
+                size="sm"
+              />
             </div>
-          {:else}
-            <!-- QR code (standalone - it's a grid cell, not a banner). Signed-in
-             only: guests can't mint a scannable QR, so the row is hidden. -->
-            {#if canQRCode}
-              <div class="setting-row">
-                <span class="setting-label">QR</span>
-                <div class="chip-group">
-                  <button
-                    type="button"
-                    class="chip"
-                    class:active={showQRCode}
-                    onclick={() =>
-                      toggleCompositionSetting(
-                        "qr_code",
-                        showQRCode,
-                        imageComposition.setShowQRCode.bind(imageComposition)
-                      )}
-                    aria-pressed={showQRCode}
-                    >{t("viewer_detail_qr_code")}</button
-                  >
-                </div>
-              </div>
-            {/if}
-
-            <!-- Mandala fill (blue/red path visualization in empty col-0 cells) -->
-            <div class="setting-row">
-              <span class="setting-label">{t("viewer_ui_mandala")}</span>
-              <div class="chip-group">
-                <button
-                  type="button"
-                  class="chip"
-                  class:active={showMandala}
-                  onclick={() =>
-                    toggleCompositionSetting(
-                      "mandala",
-                      showMandala,
-                      imageComposition.setShowMandala.bind(imageComposition)
-                    )}
-                  aria-pressed={showMandala}>{t("viewer_ui_mandala")}</button
-                >
-              </div>
-            </div>
-          {/if}
+          </div>
         {/if}
 
         {#if hasInfoCell && canQRCode}
@@ -1196,20 +1025,16 @@
         <div class="setting-row">
           <span class="setting-label">{t("viewer_ui_start")}</span>
           <div class="chip-group">
-            <button
-              type="button"
-              class="chip"
-              class:active={showStartPos}
-              onclick={() =>
-                toggleCompositionSetting(
-                  "start_position",
-                  showStartPos,
-                  imageComposition.setIncludeStartPlacement.bind(
-                    imageComposition
-                  )
-                )}
-              aria-pressed={showStartPos}>{t("viewer_ui_show")}</button
-            >
+            {#each shownStartToggles as item (item.id)}
+              <button
+                type="button"
+                class="chip"
+                class:active={item.active}
+                aria-pressed={item.active}
+                onclick={item.toggle}
+                transition:growFade={{ axis: "x" }}>{item.label}</button
+              >
+            {/each}
             {#if showStartPos}
               <button
                 type="button"

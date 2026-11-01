@@ -6,6 +6,10 @@
 
   The three sections differ only in their stage and switches, so the frame is
   written once. Its shape follows PropTypeTab's section / stage / figcaption.
+
+  Below the three-column tier the tab opens one section at a time as its own
+  screen (`onBack` set): a back arrow before the title, the stage taking the
+  height the switches leave, so the screen never scrolls.
 -->
 <script lang="ts">
   import type { Snippet } from "svelte";
@@ -25,6 +29,8 @@
     /** Right-click / long-press on the stage opens the same menu as elsewhere. */
     onStageContextMenu?: (event: MouseEvent) => void;
     controls: Snippet;
+    /** Set when the section is a drill-down screen of its own. */
+    onBack?: () => void;
   }
 
   let {
@@ -36,6 +42,7 @@
     stage,
     onStageContextMenu,
     controls,
+    onBack,
   }: Props = $props();
 
   const uid = $props.id();
@@ -43,10 +50,23 @@
 
 <section
   class="workspace-section display-section"
+  class:screen={!!onBack}
   data-display-section={kind}
   aria-labelledby="{uid}-title"
 >
   <SettingsSectionHeader {icon} {title} headingId="{uid}-title">
+    {#snippet leading()}
+      {#if onBack}
+        <button
+          type="button"
+          class="back-button"
+          onclick={onBack}
+          aria-label={t("common_back")}
+        >
+          <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+        </button>
+      {/if}
+    {/snippet}
     {#snippet action()}
       <PanelButton
         variant="quiet"
@@ -125,6 +145,26 @@
     background: color-mix(in srgb, var(--theme-text) 3%, transparent);
   }
 
+  /* The drill-down screen's way back, as on the Download video screen. */
+  .back-button {
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--theme-stroke);
+    border-radius: 50%;
+    background: var(--theme-card-bg);
+    color: var(--theme-text);
+    font-size: 1rem;
+    cursor: pointer;
+  }
+
+  .back-button:focus-visible {
+    outline: 2px solid var(--theme-accent);
+    outline-offset: 2px;
+  }
+
   .stage-caption {
     max-width: 34ch;
     color: var(--theme-text-dim);
@@ -169,18 +209,101 @@
     }
   }
 
-  /* Stacked, in a section that is wide but short (a tablet, a phone on its
-     side): the switches sit beside the stage instead of a screen below it. */
-  @container display-tab (width < 64rem) {
-    @container display-section (min-width: 40rem) {
-      /* A fixed 2:3 split, so the switches get the same width, and so the same
-         tiles, in all three sections; the frame keeps its own caps. */
-      .section-body {
-        display: grid;
-        grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
-        align-items: center;
-        gap: 1.5rem;
-      }
+  /* A drill-down screen: the section is as tall as the tab, the switches and
+     caption keep their natural height and the stage takes what is left. */
+  .screen {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .screen .section-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  .screen .stage {
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+  }
+
+  .screen .stage-area {
+    flex: 1 1 auto;
+    min-height: 0;
+    container-type: size;
+    align-items: center;
+  }
+
+  .screen .stage-frame {
+    width: min(100cqi, calc(100cqb * var(--stage-ratio, 1)));
+  }
+
+  .screen .stage-caption {
+    flex: 0 0 auto;
+  }
+
+  /* On a screen of its own the stage is the flexible part, so the switches
+     take as little height as they can read at: five to a row, the picture
+     capped by the screen's height as well as its width (the tab sizes the
+     screen as the display-screen container). */
+  .screen .section-body {
+    gap: 0.75rem;
+    padding-block: 0.75rem;
+  }
+
+  /* Centred and capped, so the switches of a wide upright screen do not
+     stretch into a band of oversized tiles. The width is explicit: the
+     controls are an inline-size container and would shrink to nothing. */
+  .screen .controls {
+    align-self: center;
+    width: min(100%, 40rem);
+  }
+
+  .screen .controls > :global(*) {
+    --tile-grid-cols: 5;
+    --tile-grid-gap: 6px;
+    --tile-grid-art: clamp(
+      1.5rem,
+      min((100cqi - 4 * var(--tile-grid-gap)) / 5 - 2.5rem, 5cqh),
+      6rem
+    );
+  }
+
+  /* Side by side on a screen wider than it is tall (a phone on its side, a
+     zoomed desktop): stacked, the stage would get what the switches leave of
+     a short screen, so it takes a full-height column instead, with the
+     switches centred beside it. A fixed 2:3 split gives the switches the
+     same width, and so the same tiles, in all three sections. An upright
+     screen stacks however wide it is. */
+  @container display-screen (orientation: landscape) {
+    .screen .section-body {
+      display: grid;
+      grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+      align-items: stretch;
+      gap: 1.5rem;
+    }
+  }
+
+  /* A short screen (a phone on its side) tightens the header and the
+     switches' rhythm so the card's three rows of groups fit beside the
+     stage. */
+  @container display-screen (height < 26rem) {
+    .screen :global(.section-header) {
+      min-height: 0;
+      padding-block: 0.4em;
+    }
+
+    /* Beside a stage capped by the height, the switches take two thirds, so
+       their labels keep to one line. */
+    .screen .section-body {
+      padding-block: 0.25rem;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    }
+
+    .screen .controls > :global(*) {
+      --card-toggles-row-gap: 0.3rem;
+      --card-toggles-label-gap: 0.1rem;
     }
   }
 

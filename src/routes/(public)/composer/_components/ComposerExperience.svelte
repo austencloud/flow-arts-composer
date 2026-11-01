@@ -585,9 +585,14 @@
   >
     <div class="opening-copy">
       <h1 id="composer-title">Flow Arts <span>Composer</span></h1>
+      <!-- Phones show the first sentence only, so the player reaches the
+           first screen; the second sentence returns at every wider size. -->
       <p class="opening-lede">
-        Choose the moves or generate a 16-count loop. Composer is the browser
-        app for The Kinetic Alphabet, where notation and movement stay together.
+        <span>Choose the moves or generate a 16-count loop.</span>
+        <span class="lede-more"
+          >Composer is the browser app for The Kinetic Alphabet, where notation
+          and movement stay together.</span
+        >
       </p>
 
       <!-- The demos on this page are real but partial, so the way into the
@@ -840,7 +845,7 @@
   <section class="keeping" aria-labelledby="keeping-title" use:activateShelf>
     <div class="keeping-intro">
       <div class="keeping-lede">
-        <h2 id="keeping-title">Keep this sequence.</h2>
+        <h2 id="keeping-title">Keep this sequence</h2>
         <p>
           Guests keep three sequences on this device. A full account keeps a
           cloud library and collections.
@@ -1942,6 +1947,94 @@
 
     .small-screen-3d-poster {
       display: block;
+    }
+  }
+
+  /* Phones only (width, not the short-screen height clause above, so the
+     960x412 landscape keeps its own block below). The first screen names the
+     product, offers the way in, and shows the playing sequence; the note
+     moves under the player. One left edge for every heading and paragraph,
+     the same 16px gutter as the Create chooser, section titles on one line,
+     and two text sizes: 16px body, 14px notes. */
+  @media (max-width: 37.4375rem) {
+    .composer-page {
+      width: 100%;
+      padding-inline: 1rem;
+    }
+
+    /* The copy's children join the hero grid so the note can follow the
+       player without reordering the DOM for wider screens. */
+    .opening {
+      row-gap: 0;
+      padding-top: 0.75rem;
+    }
+
+    .opening-copy {
+      display: contents;
+      text-align: left;
+    }
+
+    h1 {
+      margin-inline: 0;
+      font-size: 2.5rem;
+    }
+
+    .opening-lede {
+      margin: 0.75rem 0 0;
+      font-size: 1rem;
+      line-height: 1.5;
+    }
+
+    .lede-more {
+      display: none;
+    }
+
+    .opening-actions {
+      justify-content: flex-start;
+      margin-top: 1.1rem;
+    }
+
+    .opening-player {
+      order: 1;
+    }
+
+    .opening-note {
+      order: 2;
+      margin-top: 1rem;
+      line-height: 1.55;
+    }
+
+    .opening :global(.scroll-cue) {
+      order: 3;
+    }
+
+    /* "Construct a sequence", the longest title, runs about 9.6 times its
+       size: 269px here, inside the 288px a 320px phone leaves. */
+    .stop {
+      --stop-title-size: 1.75rem;
+    }
+
+    h2 {
+      font-size: 1.75rem;
+    }
+
+    .stop > h2 {
+      text-align: left;
+    }
+
+    /* The title is one line here, so the frame keeps the line the narrow
+       container rule above gives back for a wrapped title. */
+    .construct-frame {
+      height: clamp(var(--making-floor), var(--making-fill), 62rem);
+    }
+
+    .keeping-lede > p,
+    .composer-page :global(.project-story p) {
+      font-size: 1rem;
+    }
+
+    .construct-frame :global(p.hint) {
+      font-size: var(--font-size-min, 0.875rem);
     }
   }
 

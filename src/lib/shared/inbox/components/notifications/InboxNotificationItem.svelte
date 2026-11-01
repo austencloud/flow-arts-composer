@@ -19,6 +19,7 @@
   import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
   import { buildAdminSessionReplayUrl } from "#lib/features/admin/domain/session-replay-target.js";
+  import { buildVisitorReplayUrl } from "#lib/features/admin/domain/visitor-replay.js";
   import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
   import { resolveAdminCreatedSequenceTarget } from "../../domain/admin-created-sequence-target";
   import { setPendingBrowseIntent } from "#lib/features/browse/state/pending-browse-intent.svelte.js";
@@ -452,17 +453,10 @@
         break;
 
       case "admin-site-visit": {
-        // Anonymous visitors have no user record, so there is no in-app
-        // Activity view to open. PostHog recorded the visit itself: one
-        // visitor opens their replay, a burst opens the recent-replays list.
-        const single = (notification.visitCount ?? 1) <= 1;
-        const sessionId = single
-          ? (notification.postHogSessionId ?? null)
-          : null;
-        const { postHogReplayUrl } =
-          await import("#lib/shared/analytics/services/posthog.js");
-        const url = postHogReplayUrl(sessionId);
-        if (url) window.open(url, "_blank", "noopener,noreferrer");
+        // Anonymous visitors have no user record, so the visitor screen plays
+        // PostHog's recording of the visit, with a chip per visitor in a burst.
+        inboxState.close();
+        await goto(buildVisitorReplayUrl(notification.id));
         break;
       }
 

@@ -52,6 +52,10 @@ import {
   type TunnelComposition,
 } from "./tunnel-composition";
 import {
+  deriveViewerCastLinks,
+  type ViewerCastLink,
+} from "../services/viewer-cast";
+import {
   loadTunnelViewState,
   saveTunnelViewState,
   type TunnelViewState,
@@ -226,6 +230,12 @@ export class TunnelViewController {
       arm,
       label: `Performer ${arm + 1}`,
     }));
+  }
+
+  /** The performers who dance a sequence of their own, each linking that
+   * sequence's page. Empty for a generated tunnel of copies. */
+  get castLinks(): ViewerCastLink[] {
+    return deriveViewerCastLinks(this.#sources.getComposition?.());
   }
 
   get colorPerformers(): Array<{ id: string; label: string }> {

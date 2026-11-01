@@ -19,7 +19,7 @@
  * For each quadrant's matrix, we compute and apply its mathematical inverse.
  */
 
-import { Point } from "fabric";
+import { Point } from "#lib/shared/pictograph/arrow/orchestration/domain/point.js";
 import type { MotionData } from "../../../../shared/domain/models/motion-data";
 import type { GridLocation } from "../../../../grid/domain/enums/grid-enums";
 import type { DirectionalTupleCalculator } from "./directional-tuple-processor";

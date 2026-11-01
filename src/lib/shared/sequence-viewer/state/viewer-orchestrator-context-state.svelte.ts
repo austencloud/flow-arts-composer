@@ -22,14 +22,13 @@ import type { createLibraryActionHandler } from "./library-action-handler.svelte
 import type { createPracticeViewPrefs } from "./practice-view-prefs.svelte";
 import type { createViewerState } from "./viewer-state.svelte";
 import type { SequenceViewerVisibilityState } from "./viewer-visibility-state.svelte";
-import type { createViewer3DState } from "#lib/shared/3d/state/viewer-3d-state.svelte.js";
+import type { LazyViewer3D } from "#lib/shared/3d/context/viewer-3d-context.js";
 import { capturePosterFrame } from "../tunnel/tunnel-poster";
 
 type FullscreenState = ReturnType<typeof createFullscreenController>;
 type LibraryActions = ReturnType<typeof createLibraryActionHandler>;
 type PracticeViewPrefs = ReturnType<typeof createPracticeViewPrefs>;
 type ViewerState = ReturnType<typeof createViewerState>;
-type Viewer3DState = ReturnType<typeof createViewer3DState>;
 
 interface ViewerOrchestratorContextHandlers {
   setResolvedCardAutoLayout: (layout: ResolvedAutoLayout | null) => void;
@@ -75,7 +74,7 @@ interface ViewerOrchestratorContextInputs {
   practiceViewPrefs: PracticeViewPrefs;
   viewerState: ViewerState;
   viewerVisibility: SequenceViewerVisibilityState;
-  viewer3DState: Viewer3DState;
+  viewer3D: LazyViewer3D;
   handlers: ViewerOrchestratorContextHandlers;
   getSequence: () => SequenceData | null;
   getEffectiveSequence: () => SequenceData | null;
@@ -186,20 +185,21 @@ export function createViewerOrchestratorContextState(
       isSyncConnected: inputs.lanSync.isConnected,
 
       canvasReady:
-        (inputs.viewer3DState.renderMode === "3d"
-          ? !!inputs.viewer3DState.webglCanvas &&
-            !!inputs.viewer3DState.threlteRenderer &&
-            !!inputs.viewer3DState.threlteScene &&
-            !!inputs.viewer3DState.threlteCamera &&
-            !!inputs.viewer3DState.threlteRunFrame &&
-            !!inputs.viewer3DState.threltePauseAutoLoop &&
-            !!inputs.viewer3DState.threlteResumeAutoLoop
+        (inputs.viewer3D.current?.renderMode === "3d"
+          ? !!inputs.viewer3D.current.webglCanvas &&
+            !!inputs.viewer3D.current.threlteRenderer &&
+            !!inputs.viewer3D.current.threlteScene &&
+            !!inputs.viewer3D.current.threlteCamera &&
+            !!inputs.viewer3D.current.threlteRunFrame &&
+            !!inputs.viewer3D.current.threltePauseAutoLoop &&
+            !!inputs.viewer3D.current.threlteResumeAutoLoop
           : !!inputs.exportCoordinator.animationCanvas) &&
         !!inputs.interactive.playbackController,
       onRenderProgress: inputs.handlers.onRenderProgress,
 
-      renderMode: inputs.viewer3DState.renderMode,
-      viewer3DState: inputs.viewer3DState,
+      renderMode: inputs.viewer3D.current?.renderMode ?? "2d",
+      viewer3DState: inputs.viewer3D.current,
+      webgl2Available: inputs.viewer3D.webgl2Available,
       countdownValue: inputs.exportCoordinator.countdownValue,
       isRecording3D: inputs.exportCoordinator.isRecording3D,
       sceneTakeActive: inputs.exportCoordinator.sceneTakeActive,
@@ -242,8 +242,8 @@ export function createViewerOrchestratorContextState(
       handleCanvasReady: inputs.exportCoordinator.handleCanvasReady,
       captureAnimationPreview: () => {
         const canvas =
-          inputs.viewer3DState.renderMode === "3d"
-            ? inputs.viewer3DState.webglCanvas
+          inputs.viewer3D.current?.renderMode === "3d"
+            ? inputs.viewer3D.current.webglCanvas
             : null;
         return canvas
           ? capturePosterFrame(canvas, {
@@ -259,7 +259,7 @@ export function createViewerOrchestratorContextState(
           : inputs.exportCoordinator.captureAnimationPreview();
       },
       captureVideoOpener: (kind) =>
-        inputs.viewer3DState.renderMode === "3d"
+        inputs.viewer3D.current?.renderMode === "3d"
           ? Promise.resolve("")
           : inputs.exportCoordinator.captureVideoOpener(
               kind,

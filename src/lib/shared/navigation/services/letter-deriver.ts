@@ -11,10 +11,16 @@
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
-import { normalizeLetter } from "#lib/shared/foundation/domain/models/letter.js";
+import {
+  normalizeLetter,
+  stillLetterForPlacement,
+  type Letter,
+} from "#lib/shared/foundation/domain/models/letter.js";
 import { getSequenceMotionProfile } from "#lib/shared/foundation/services/sequence-motion-profile.js";
 import { deriveWordFromBeats } from "#lib/shared/foundation/services/word-deriver.js";
 import { motionQueryHandler } from "#lib/shared/pictograph/shared/services/motion-query-handler.js";
+import { MotionType } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { getGridPlacementFromLocations } from "#lib/shared/pictograph/grid/services/grid-placement-deriver.js";
 import { deriveGridMode } from "../../pictograph/grid/services/grid-mode-deriver";
 
 export async function deriveLettersForSequence(
@@ -117,6 +123,14 @@ async function deriveLetterForBeat(
     return beat;
   }
 
+  // Both hands holding still name their placement family on every grid, so a
+  // start position never needs the pictograph dataframes. Fetching and parsing
+  // all four of them for that one lookup held a scanned link for seconds.
+  const stillLetter = letterForStillBeat(beat);
+  if (stillLetter) {
+    return { ...beat, letter: stillLetter as StepData["letter"] };
+  }
+
   try {
     // Derive the correct grid mode from the motions
     const gridMode = deriveGridMode(beat.motions.left, beat.motions.right);
@@ -145,4 +159,32 @@ async function deriveLetterForBeat(
     console.warn(`Failed to derive letter for ${identifier}:`, error);
     return beat;
   }
+}
+
+function letterForStillBeat(
+  beat: StepData | StartPlacementData
+): Letter | null {
+  const { left, right } = beat.motions;
+  if (!left || !right) return null;
+  if (
+    left.motionType !== MotionType.STATIC ||
+    right.motionType !== MotionType.STATIC
+  ) {
+    return null;
+  }
+  if (
+    left.startLocation !== left.endLocation ||
+    right.startLocation !== right.endLocation
+  ) {
+    return null;
+  }
+  let placement: string;
+  try {
+    placement =
+      beat.startPlacement ??
+      getGridPlacementFromLocations(left.startLocation, right.startLocation);
+  } catch {
+    return null;
+  }
+  return stillLetterForPlacement(placement);
 }

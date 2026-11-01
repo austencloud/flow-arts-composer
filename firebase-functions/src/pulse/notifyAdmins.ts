@@ -287,6 +287,9 @@ export async function notifyAdminsVisitDigest(
             userId: adminId,
             type: "admin-site-visit",
             message: singleVisitMessage(input.visit),
+            // The push opens the visitor screen, which plays this visit's
+            // PostHog replay and lists any visitors who join the burst.
+            actionUrl: `/admin/visitors?notification=${docId}`,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             read: false,
             visitCount: 1,

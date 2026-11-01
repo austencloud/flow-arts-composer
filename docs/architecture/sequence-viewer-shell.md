@@ -28,8 +28,17 @@ host. Parity by construction, not by discipline.
 - **View** is one selection shown on the viewer stage: Side by Side, 2D
   Animation, 3D Animation, Card, Performances, Tunnel, or Post Studio. Switchers
   name the concrete view instead of presenting Stage as another selectable mode.
-- **3D Studio → Stage** remains the authoring workspace for cast choreography.
-  A viewer stage displays one sequence; the 3D Studio Stage authors a project.
+- **3D Studio → Stage** remains the authoring workspace for cast choreography;
+  the 3D Studio Stage authors a project.
+- **Cast.** A viewer shows one sequence. A composition such as a partner
+  tunnel is shown only by its ensemble views (Tunnel, Performances, Post
+  Studio), which take the composition's name as their title. Every other view
+  (2D Animation, 3D Animation, Card, Side by Side) shows the lead exactly as
+  its own `/sequence` page would, titled with the lead's word; nothing there
+  refers to the composition and there is no performer switch. The other
+  performers' sequences open on their own pages from the cast rows in the
+  Tunnel view's Formation settings. The rules live in
+  `services/viewer-cast.ts` and `services/viewer-title.ts`.
 
 ```
 physical QR -> /q/[code] -> attribution + cached handoff -> /sequence/[id]

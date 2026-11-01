@@ -28,8 +28,6 @@ import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
 
 const SCENE_FEATURES_STORAGE_KEY = "tka-scene-features";
 
-/** Legacy one-shot tempo handoff retained for Sequence Viewer compatibility. */
-export const SCENE_BPM_INTENT_KEY = "tka_scene_bpm";
 const SCENE_STUDIO_HANDOFF_KEY = "tka_scene_studio_handoff";
 const APPLY_TOAST_DURATION_MS = 6_000;
 const OPEN_TOAST_DURATION_MS = 4_000;

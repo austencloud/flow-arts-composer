@@ -28,7 +28,7 @@ import { generatePlacementKey } from "../../key-generation/services/arrow-placem
 import { generateTurnsTuple } from "../../key-generation/services/turns-tuple-key-generator";
 import { getKeyFromArrow } from "../../key-generation/services/attribute-key-generator";
 import { GridMode } from "../../../../grid/domain/enums/grid-enums";
-import { Point } from "fabric";
+import { Point } from "#lib/shared/pictograph/arrow/orchestration/domain/point.js";
 import { derivePropGeometryKey } from "../../prop-geometry/domain/prop-geometry-key-deriver";
 import type {
   PipelineDiagnostics,

@@ -432,13 +432,32 @@ export function createPostTimingSession(
     return true;
   }
 
+  /**
+   * The first tap marks where the run starts: move 1, or the opening pose
+   * when taps start there, with move 1 the landing after it.
+   */
   function firstTapWasMoveOne(): void {
-    const first = resolvedSection?.fit?.labels[0]?.seconds;
-    if (first === undefined || !section) return;
+    const fit = resolvedSection?.fit;
+    const first = fit?.labels[0]?.seconds;
+    if (!fit || first === undefined || !section) return;
     // A label is the raw tap; beat 1 goes where the nudged grid draws it.
-    const drawn = first + section.offsetSeconds;
+    const drawn =
+      first +
+      section.offsetSeconds +
+      (section.firstTapPosition === 0
+        ? fit.secondsPerBeat * (moveBeats[0] ?? 1)
+        : 0);
     recountCurrent((current, id) =>
       setTakeBeatOneAt(current, id, moveBeats, drawn)
+    );
+  }
+
+  /** Which landing the first tap marks: 0 the start position, 1 move 1. */
+  function setFirstTapPosition(position: number): void {
+    editCurrent((current) =>
+      current.firstTapPosition === position
+        ? current
+        : { ...current, firstTapPosition: position }
     );
   }
 
@@ -871,6 +890,7 @@ export function createPostTimingSession(
       );
     },
     firstTapWasMoveOne,
+    setFirstTapPosition,
     dropLeadingTaps,
     nudgeGrid,
     setGridOffset,

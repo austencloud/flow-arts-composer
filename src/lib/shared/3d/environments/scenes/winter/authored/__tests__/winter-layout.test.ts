@@ -4,6 +4,7 @@ import {
   capWinterDetailTier,
   nearestWinterPondBankDistance,
   winterDetailTierFromAmount,
+  winterMountainIsVisible,
   winterObjectIsVisible,
 } from "../winter-layout";
 
@@ -30,5 +31,12 @@ describe("Moonlit Winter Hollow layout", () => {
     expect(winterObjectIsVisible("Winter_Medium_Drift", "low")).toBe(false);
     expect(winterObjectIsVisible("Winter_High_Ridge", "medium")).toBe(false);
     expect(winterObjectIsVisible("Winter_High_Ridge", "high")).toBe(true);
+  });
+
+  it("drops only the far mountain ring on the low tier", () => {
+    expect(winterMountainIsVisible(true, "low")).toBe(false);
+    expect(winterMountainIsVisible(true, "medium")).toBe(true);
+    expect(winterMountainIsVisible(true, "high")).toBe(true);
+    expect(winterMountainIsVisible(false, "low")).toBe(true);
   });
 });

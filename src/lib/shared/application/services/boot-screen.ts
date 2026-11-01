@@ -10,13 +10,13 @@
  * - `holdBootScreen` keeps it up until a part of the first view is ready to
  *   be seen. app.html dismisses once `ready` has arrived and every hold is
  *   released (the `composed` milestone), and stops waiting 4 s after
- *   `ready`. Spec: docs/superpowers/specs/2026-10-15-boot-composed-reveal.md
+ *   `ready` (8 s at most), or after a hold's own longer `waitMs`. Spec: docs/superpowers/specs/2026-10-15-boot-composed-reveal.md
  */
 
 declare global {
   interface Window {
     /** app.html's hold registry; returns an idempotent release. */
-    __tkaBootHold?: (name: string) => () => void;
+    __tkaBootHold?: (name: string, waitMs?: number) => () => void;
   }
 }
 
@@ -64,6 +64,14 @@ export function runAfterBootScreen(go: () => void): () => void {
   return () => observer.disconnect();
 }
 
+/**
+ * How long after `ready` the first view's holds may keep the screen up. The
+ * module and, in Create, its panel and beat grid arrive behind the screen as
+ * one finished view, so a slow boot waits for them rather than handing over
+ * to loading bars (Austen, 2026-10-31: "wait up to 15 s").
+ */
+export const FIRST_VIEW_WAIT_MS = 15_000;
+
 const noRelease = (): void => {};
 const openHolds = new Map<string, () => void>();
 
@@ -71,9 +79,10 @@ const openHolds = new Map<string, () => void>();
  * Keeps the boot screen up until the returned release runs (or
  * `releaseBootHold(name)`, from another component). Holds nothing when the
  * screen is not covering the page. One open hold per name: asking again
- * returns the same release. Releasing twice is harmless.
+ * returns the same release. Releasing twice is harmless. `waitMs` lets this
+ * hold outlast the usual limits, up to that long after `ready`.
  */
-export function holdBootScreen(name: string): () => void {
+export function holdBootScreen(name: string, waitMs?: number): () => void {
   const open = openHolds.get(name);
   if (open) return open;
   if (typeof window === "undefined" || !bootScreenCovers()) return noRelease;
@@ -81,7 +90,7 @@ export function holdBootScreen(name: string): () => void {
   if (typeof registry !== "function") return noRelease;
   let release: () => void;
   try {
-    release = registry(name);
+    release = waitMs === undefined ? registry(name) : registry(name, waitMs);
   } catch {
     return noRelease;
   }

@@ -8,6 +8,8 @@
     embedUrl?: string | null;
     message?: string | null;
     onretry?: () => void;
+    /** Fill the parent's height with no heading, for a full-screen player. */
+    fill?: boolean;
   }
 
   let {
@@ -15,22 +17,30 @@
     embedUrl = null,
     message = null,
     onretry = () => {},
+    fill = false,
   }: Props = $props();
 </script>
 
-<section class="replay-panel" aria-labelledby="session-replay-title">
-  <header class="replay-heading">
-    <div>
-      <span class="replay-kicker">PostHog</span>
-      <h5 id="session-replay-title">Session replay</h5>
-    </div>
-    {#if state === "ready"}
-      <span class="ready-badge">
-        <i class="fas fa-circle-play" aria-hidden="true"></i>
-        Ready
-      </span>
-    {/if}
-  </header>
+<section
+  class="replay-panel"
+  class:fill
+  aria-label={fill ? "Session replay" : undefined}
+  aria-labelledby={fill ? undefined : "session-replay-title"}
+>
+  {#if !fill}
+    <header class="replay-heading">
+      <div>
+        <span class="replay-kicker">PostHog</span>
+        <h5 id="session-replay-title">Session replay</h5>
+      </div>
+      {#if state === "ready"}
+        <span class="ready-badge">
+          <i class="fas fa-circle-play" aria-hidden="true"></i>
+          Ready
+        </span>
+      {/if}
+    </header>
+  {/if}
 
   {#if state === "ready" && embedUrl}
     <div class="replay-frame ready-frame">
@@ -111,6 +121,15 @@
     container-type: inline-size;
     display: grid;
     gap: 0.625rem;
+  }
+
+  .replay-panel.fill {
+    height: 100%;
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  .replay-panel.fill .replay-frame {
+    height: 100%;
   }
 
   .replay-heading {

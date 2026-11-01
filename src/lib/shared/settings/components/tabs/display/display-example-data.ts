@@ -21,11 +21,17 @@ import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js
 import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 import { letterQueryHandler } from "#lib/shared/pictograph/tka-glyph/services/letter-query-handler.js";
 
+/** The card lengths the card stage offers: one info cell, then several. */
+export const CARD_LENGTHS = [4, 8, 16] as const;
+export type CardLength = (typeof CARD_LENGTHS)[number];
+
 export interface DisplayExample {
   /** Letter A, the pictograph stage. */
   pictograph: StepData;
-  /** Four A's in a closed loop, for the animation and card stages. */
+  /** Four A's in a closed loop, for the animation stage. */
   sequence: SequenceData;
+  /** The same loop at each card length, for the card stage. */
+  cards: Readonly<Record<CardLength, SequenceData>>;
 }
 
 const STEP_COUNT = 4;
@@ -61,6 +67,21 @@ export function chainClosedLoop(
   return null;
 }
 
+function loopSequence(chain: readonly PictographData[]): SequenceData {
+  const steps = chain.map((p, i) =>
+    createStepData({ ...p, id: `display-example-${i + 1}`, stepNumber: i + 1 })
+  );
+  const word = "A".repeat(steps.length);
+  return createSequenceData({
+    id: `settings-display-example-${steps.length}`,
+    name: word,
+    word,
+    steps,
+    startPlacement: deriveStartPlacementFromSteps(steps),
+    gridMode: GridMode.DIAMOND,
+  });
+}
+
 async function build(): Promise<DisplayExample | null> {
   const all = await letterQueryHandler.getAllPictographVariations(
     GridMode.DIAMOND
@@ -69,18 +90,17 @@ async function build(): Promise<DisplayExample | null> {
   const chain = chainClosedLoop(letterA);
   if (!chain) return null;
 
-  const steps = chain.map((p, i) =>
-    createStepData({ ...p, id: `display-example-${i + 1}`, stepNumber: i + 1 })
-  );
-  const sequence = createSequenceData({
-    id: "settings-display-example",
-    name: "AAAA",
-    word: "AAAA",
-    steps,
-    startPlacement: deriveStartPlacementFromSteps(steps),
-    gridMode: GridMode.DIAMOND,
-  });
-  return { pictograph: steps[0]!, sequence };
+  // The loop closes after four steps, so longer cards repeat it.
+  const repeated = (length: number) =>
+    Array.from({ length }, (_, i) => chain[i % chain.length]!);
+  const sequence = loopSequence(chain);
+  const cards = Object.fromEntries(
+    CARD_LENGTHS.map((length) => [
+      length,
+      length === STEP_COUNT ? sequence : loopSequence(repeated(length)),
+    ])
+  ) as Record<CardLength, SequenceData>;
+  return { pictograph: sequence.steps[0]!, sequence, cards };
 }
 
 let pending: Promise<DisplayExample | null> | null = null;

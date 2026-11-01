@@ -31,7 +31,7 @@
   import { livePipelineEdit } from "./live-pipeline-edit.svelte";
   import DefaultArrowAdjustmentHistory from "./DefaultArrowAdjustmentHistory.svelte";
   import { selectedArrowState } from "#lib/shared/create/state/selected-arrow-state.svelte.js";
-  import { Point } from "fabric";
+  import { Point } from "#lib/shared/pictograph/arrow/orchestration/domain/point.js";
   import { screenSpaceAdjustmentTransformer } from "#lib/shared/pictograph/arrow/positioning/calculation/services/screen-space-adjustment-transformer.js";
   import { arrowLocationCalculator } from "#lib/shared/pictograph/arrow/positioning/calculation/services/arrow-location-calculator.js";
   import { computeSpecialOverrideKey } from "#lib/shared/pictograph/arrow/positioning/special-override/services/special-override-key.js";

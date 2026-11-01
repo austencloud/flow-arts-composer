@@ -8990,6 +8990,7 @@
   "settings_display_pictograph": "ピクトグラム",
   "settings_display_animation": "アニメーション",
   "settings_display_card": "カード",
+  "settings_display_card_length": "カードの長さ",
   "settings_display_pictograph_caption": "アプリ内のどのピクトグラムでも長押しまたは右クリックすると、同じスイッチが使えます。",
   "settings_display_animation_caption": "再生中のキャンバスならどこでも長押しまたは右クリックで、これらとその他の設定が使えます。",
   "settings_display_card_caption": "ビューアーでカードを右クリックまたは長押しすると、同じスイッチが使えます。",

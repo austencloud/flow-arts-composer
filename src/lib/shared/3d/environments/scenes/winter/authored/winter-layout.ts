@@ -40,6 +40,17 @@ export function winterObjectIsVisible(
   return true;
 }
 
+/**
+ * The near ranges carry the venue's enclosure on every tier. The far ring is
+ * horizon dressing: low tier drops it so phones skip its draw and shading.
+ */
+export function winterMountainIsVisible(
+  isFarRange: boolean,
+  tier: WinterDetailTier
+): boolean {
+  return !isFarRange || tier !== "low";
+}
+
 export function nearestWinterPondBankDistance(): number {
   const centerDistance = Math.hypot(
     WINTER_POND_LAYOUT.centerX,

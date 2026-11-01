@@ -58,6 +58,7 @@ import {
   resolveViewerFormationFacingAngle,
 } from "../domain/viewer-formation-facing";
 import { isWebGL2Available } from "../capabilities/webgl-capabilities";
+import { loadPersistedMode, STORAGE_KEY_MODE } from "./viewer-3d-render-mode-storage";
 import { getBlossomOpeningCamera } from "../environments/scenes/cherry-blossom/blossom-site";
 import { levelJoinedViewerOpeningShot } from "../camera/viewer-camera-framing";
 import { resolveGridJoin3D } from "../services/grid-join-3d";
@@ -103,7 +104,6 @@ export type PopoverId =
 
 // Persistence
 
-const STORAGE_KEY_MODE = "tka-viewer3d-renderMode";
 const STORAGE_KEY_CAMERA = "tka-viewer3d-camera";
 const STORAGE_KEY_VISIBLE_PLANES = "tka-viewer3d-visiblePlanes";
 const STORAGE_KEY_PRESET = "tka-viewer3d-activePreset";
@@ -208,16 +208,6 @@ export interface StoredPerformerSnapshot {
   name?: string | null;
   /** Cascade overrides; absent = no overrides (pre-v2 snapshots). */
   settings?: StoredPerformerSettings;
-}
-
-function loadPersistedMode(): "2d" | "3d" {
-  if (typeof localStorage === "undefined") return "2d";
-  try {
-    const v = localStorage.getItem(STORAGE_KEY_MODE);
-    return v === "3d" ? "3d" : "2d";
-  } catch {
-    return "2d";
-  }
 }
 
 function persistMode(mode: "2d" | "3d") {

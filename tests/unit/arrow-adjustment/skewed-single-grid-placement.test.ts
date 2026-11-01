@@ -1,4 +1,4 @@
-import { Point } from "fabric";
+import { Point } from "#lib/shared/pictograph/arrow/orchestration/domain/point.js";
 import { describe, expect, it, vi } from "vitest";
 
 import { rotateLocation } from "#lib/shared/create/services/rotation-helpers.js";

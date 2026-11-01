@@ -12,7 +12,6 @@
     setScene3DRenderContext,
   } from "#lib/shared/3d/scene-features/state/scene-3d-render-context.js";
   import { createScene3DRenderState } from "#lib/shared/3d/scene-features/state/scene-3d-render-state.svelte.js";
-  import { startSceneAssetPreload } from "#lib/shared/3d/services/scene-asset-preloader.svelte.js";
   import { foldTrailIntentIntoSettings } from "#lib/shared/effects/translators/canvas2d-translator.js";
   import {
     getEffectsConfigContext,
@@ -531,7 +530,11 @@
       splitConfig.rightPane === "animation-3d"
   );
   $effect(() => {
-    if (needs3D) startSceneAssetPreload();
+    // The preloader imports three.js, so a 2D viewer leaves it unloaded.
+    if (needs3D)
+      void import("#lib/shared/3d/services/scene-asset-preloader.svelte.js").then(
+        (preloader) => preloader.startSceneAssetPreload()
+      );
   });
   const needsTunnel = $derived(
     splitConfig.leftPane === "tunnel" || splitConfig.rightPane === "tunnel"

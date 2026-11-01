@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
-import { Point } from "fabric";
+import { Point } from "#lib/shared/pictograph/arrow/orchestration/domain/point.js";
 import type { PageServerLoad } from "./$types";
 import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {

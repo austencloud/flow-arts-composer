@@ -8990,6 +8990,7 @@
   "settings_display_pictograph": "픽토그램",
   "settings_display_animation": "애니메이션",
   "settings_display_card": "카드",
+  "settings_display_card_length": "카드 길이",
   "settings_display_pictograph_caption": "앱의 아무 픽토그램이나 길게 누르거나 마우스 오른쪽 버튼을 클릭하면 같은 스위치가 나옵니다.",
   "settings_display_animation_caption": "재생 중인 캔버스 어디서나 길게 누르거나 오른쪽 클릭하면 이 항목과 더 많은 설정이 나옵니다.",
   "settings_display_card_caption": "뷰어에서 카드를 오른쪽 클릭하거나 길게 누르면 같은 스위치가 나옵니다.",

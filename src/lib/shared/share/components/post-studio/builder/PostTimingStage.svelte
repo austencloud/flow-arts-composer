@@ -14,12 +14,15 @@
     session: PostTimingSession;
     ratio?: number;
     preview: Snippet;
+    /** What the next tap marks, drawn over the take's other corner. */
+    guide?: Snippet;
     onOpenAnimation: () => void;
   }
 
   let {
     session,
     preview,
+    guide,
     onOpenAnimation,
     ratio = $bindable(9 / 16),
   }: Props = $props();
@@ -63,6 +66,9 @@
             aria-hidden="true"
             {@attach videoMirror(session.video, "contain")}
           ></canvas>
+          {#if guide}
+            <div class="guide">{@render guide()}</div>
+          {/if}
           {#if session.showSquare && session.paintFrame}
             <button
               type="button"
@@ -157,6 +163,13 @@
     padding: 0;
     background: var(--theme-card-bg);
     cursor: pointer;
+  }
+  .guide {
+    position: absolute;
+    left: 3%;
+    bottom: 3%;
+    width: 34%;
+    min-width: 7rem;
   }
   .square:focus-visible {
     outline: 3px solid var(--theme-accent);

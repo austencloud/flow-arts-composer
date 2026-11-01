@@ -21,6 +21,9 @@ import {
 import { soloPropToSequence } from "#lib/shared/foundation/services/solo-prop-sequence-adapter.js";
 import { hashSoloProp } from "#lib/shared/foundation/services/content-hasher.js";
 import { decodeSequenceFromQR } from "#lib/shared/navigation/services/sequence-encoder.js";
+import { normalizeLetter } from "#lib/shared/foundation/domain/models/letter.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { parseWordNotation } from "#lib/shared/foundation/utils/word-notation.js";
 import { graftPrefloatFromEmbedded } from "./prefloat-graft";
 import type { ShortCodeData } from "./types";
 
@@ -63,6 +66,46 @@ function ownerFieldsFromRecord(
 }
 
 /**
+ * The compact blob drops step letters. A schema-2 `payloadWord` was derived
+ * from exactly those steps at mint time, one token per content beat, so it
+ * restores them without the pictograph dataframes; deriving them instead cost
+ * a phone seconds of fetch and parse on every scanned link, and the server
+ * load cannot read those files at all. Any disagreement — token count, an
+ * unknown token, or a step that already carries a different letter — leaves
+ * the steps untouched for the motion lookup to letter.
+ */
+function letterStepsFromPayloadWord(
+  sequence: SequenceData,
+  data: ShortCodeData
+): SequenceData {
+  if (
+    data.payloadSchemaVersion !== SHORTCODE_PAYLOAD_SCHEMA_VERSION ||
+    !data.payloadWord
+  ) {
+    return sequence;
+  }
+  const units = parseWordNotation(data.payloadWord);
+  const contentIndexes = sequence.steps.flatMap((step, index) =>
+    step.stepNumber !== 0 && !step.isBlank ? [index] : []
+  );
+  if (units.length === 0 || units.length !== contentIndexes.length) {
+    return sequence;
+  }
+
+  const steps: StepData[] = [...sequence.steps];
+  for (const [unitIndex, stepIndex] of contentIndexes.entries()) {
+    const letter = normalizeLetter(units[unitIndex]!.letter);
+    const step = steps[stepIndex]!;
+    if (!letter) return sequence;
+    if (step.letter !== null && normalizeLetter(step.letter) !== letter) {
+      return sequence;
+    }
+    steps[stepIndex] = { ...step, letter: letter as StepData["letter"] };
+  }
+  return { ...sequence, steps };
+}
+
+/**
  * Decode the normalized word blob and conservatively restore mint-time
  * prefloat testimony from its embedded companion.
  */
@@ -81,7 +124,7 @@ export async function decodeWordShortCodePayload(
     );
     const word = shortCodeImportedWord(data);
     return {
-      ...decoded,
+      ...letterStepsFromPayloadWord(decoded, data),
       id: code,
       ...ownerFieldsFromRecord(data),
       ...(word && { word, name: word }),

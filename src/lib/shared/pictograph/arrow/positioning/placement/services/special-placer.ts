@@ -14,7 +14,7 @@
  * Direct TypeScript mirror of reference/modern/application/services/positioning/arrows/placement/special_placement_service.py
  */
 
-import { Point as FabricPoint } from "fabric";
+import { Point as FabricPoint } from "#lib/shared/pictograph/arrow/orchestration/domain/point.js";
 import { normalizeLegacyHandSide } from "@tka/tka-types";
 import { deriveGridMode as _deriveGridMode } from "../../../../grid/services/grid-mode-deriver";
 import { GridMode } from "../../../../grid/domain/enums/grid-enums";

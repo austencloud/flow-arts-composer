@@ -56,6 +56,21 @@ export const DEFAULT_VISIBILITY_SETTINGS: Readonly<VisibilitySettings> =
     stepNumbers: true,
   });
 
+/**
+ * The two switches a pictograph on its own ignores and a choreo card draws:
+ * reversal marks on its step cells and the hand colour key on its start cell.
+ * Settings → Display offers and resets them with the card, not the pictograph.
+ */
+export const CARD_VISIBILITY_KEYS = [
+  "reversalIndicators",
+  "handColorKey",
+] as const satisfies readonly (keyof VisibilitySettings)[];
+
+/** Every other switch: what any pictograph draws. */
+export const PICTOGRAPH_VISIBILITY_KEYS = (
+  Object.keys(DEFAULT_VISIBILITY_SETTINGS) as (keyof VisibilitySettings)[]
+).filter((key) => !(CARD_VISIBILITY_KEYS as readonly string[]).includes(key));
+
 export class VisibilityStateManager {
   private settings: VisibilitySettings;
   private observers: Map<VisibilityCategory, Set<VisibilityObserver>> =
@@ -306,6 +321,21 @@ export class VisibilityStateManager {
    */
   resetToDefaults(): void {
     this.settings = { ...DEFAULT_VISIBILITY_SETTINGS };
+    this.notifyObservers(["all"]);
+    this.debouncedPersistSettings();
+  }
+
+  /**
+   * Put only the named switches back to their defaults, in one observer pass
+   * and one write. Settings → Display resets its pictograph and card sections
+   * separately, and each owns a different slice of this manager.
+   */
+  resetKeysToDefaults(keys: readonly (keyof VisibilitySettings)[]): void {
+    const next = { ...this.settings };
+    for (const key of keys) {
+      (next as Record<string, unknown>)[key] = DEFAULT_VISIBILITY_SETTINGS[key];
+    }
+    this.settings = next;
     this.notifyObservers(["all"]);
     this.debouncedPersistSettings();
   }

@@ -157,9 +157,10 @@ describe("arrangements in the Post editor", () => {
     };
     const id = editor.addArrangement(eight, 0)!;
     // Eight beats at 120 BPM is four seconds. A main clip trimmed at the
-    // start slides back to 0, so the end trim is measured from there.
+    // start keeps its place, so it now starts at 1 and the end trim to 3
+    // keeps two seconds of it.
     editor.edit((p, ctx) => trimItem(p, id, "start", 1, ctx));
-    editor.edit((p, ctx) => trimItem(p, id, "end", 2, ctx));
+    editor.edit((p, ctx) => trimItem(p, id, "end", 3, ctx));
     const before = editor.project.tracks[0]!.items[0]!;
     if (before.kind !== "arrangement") throw new Error("not an arrangement");
     expect(arrangementBeatAt(before.snapshot, before.sourceIn)).toBeCloseTo(2);

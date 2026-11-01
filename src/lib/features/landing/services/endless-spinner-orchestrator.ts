@@ -34,7 +34,7 @@ import {
   PropContinuity,
 } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
-import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import { stillLetterForPlacement } from "#lib/shared/foundation/domain/models/letter.js";
 import {} from "#lib/shared/create/services/sequence-transforms.js";
 import { recalculateAllOrientations } from "#lib/shared/create/services/orientation-propagation.js";
 // Cardinal locations (for DIAMOND grid) and intercardinal (for BOX grid)
@@ -133,23 +133,6 @@ function validateMotionData(sequence: SequenceData, label: string): string[] {
   }
 
   return warnings;
-}
-
-/**
- * Get the Greek letter for a placement group.
- * Start placements use lowercase Greek letters: α (alpha), β (beta), γ (gamma)
- */
-function getLetterForPlacementGroup(group: PlacementGroup | null): Letter | null {
-  switch (group) {
-    case "alpha":
-      return Letter.ALPHA; // "α"
-    case "beta":
-      return Letter.BETA; // "β"
-    case "gamma":
-      return Letter.GAMMA; // "γ"
-    default:
-      return null;
-  }
 }
 
 /**
@@ -802,7 +785,7 @@ export class EndlessSpinnerOrchestrator {
     }
 
     const targetGroup = getPlacementGroup(targetPlacement);
-    const newLetter = getLetterForPlacementGroup(targetGroup);
+    const newLetter = stillLetterForPlacement(targetGroup);
 
     if (!newLetter) {
       return sequence;

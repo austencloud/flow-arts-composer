@@ -10,6 +10,7 @@ import { loadByIdentifier } from "#lib/shared/sequence-viewer/services/sequence-
 import { auth } from "#lib/shared/auth/firebase.js";
 import { legacyPostOwner } from "#lib/shared/media-composition/services/post-project-store.js";
 import { isIndependentStudioProjectId } from "#lib/shared/media-composition/domain/studio-project-id.js";
+import { isScannableShortCode } from "#lib/shared/qr/domain/physical-card.js";
 import {
   arrangementSummaryOf,
   type ArrangementSummary,
@@ -165,7 +166,24 @@ export async function resolvePostSequence(
   // while a library card is loading in the background.
   if (isIndependentStudioProjectId(sequenceId)) return null;
   const loaded = await loadByIdentifier(sequenceId, { wordFallback: false });
-  return loaded?.id === sequenceId && loaded.steps?.length ? loaded : null;
+  if (loaded?.id === sequenceId && loaded.steps?.length) return loaded;
+  return isScannableShortCode(sequenceId)
+    ? shortCodeSequence(sequenceId)
+    : null;
+}
+
+/**
+ * A post made for a shared sequence keeps its short code (4UMY) as its id,
+ * since that sequence may live in no library the post can read.
+ */
+async function shortCodeSequence(code: string): Promise<SequenceData | null> {
+  const { getShortCodeManager } =
+    await import("#lib/shared/qr/get-short-code-manager.js");
+  const resolved = await getShortCodeManager().resolveShortCode(code);
+  if (!resolved?.steps?.length) return null;
+  const sequence = { ...resolved, id: code };
+  cachePostSequence(sequence);
+  return sequence;
 }
 
 /** Read a saved source snapshot without consulting the public sequence gallery. */

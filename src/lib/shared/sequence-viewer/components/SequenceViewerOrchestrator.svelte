@@ -32,7 +32,7 @@
     OrchestratorContext,
     ViewMode,
   } from "../domain/viewer-orchestrator-context";
-  import { SCENE_BPM_INTENT_KEY } from "#lib/features/scene-3d-collection/services/open-3d-scene.js";
+  import { SCENE_BPM_INTENT_KEY } from "#lib/features/scene-3d-collection/domain/scene-bpm-intent.js";
   import { goto } from "$app/navigation";
   import { browser } from "$app/env";
   import {
@@ -127,12 +127,10 @@
   import { createModalAccessibilityHelper } from "#lib/shared/sequence-viewer/services/modal-accessibility-helper.svelte.js";
   import { saveSequenceHandoff } from "#lib/shared/coordinators/sequence-handoff.svelte.js";
   import type { LibrarySequence } from "#lib/shared/library/domain/models/library-sequence.js";
-  import { createViewer3DState } from "#lib/shared/3d/state/viewer-3d-state.svelte.js";
   import { setViewer3DContext } from "#lib/shared/3d/context/viewer-3d-context.js";
   import { sceneEnvironmentIdForBackground } from "#lib/shared/3d/environments/domain/scene-environment.js";
   import { viewportFits3D } from "#lib/shared/3d/capabilities/viewport-3d-gate.svelte.js";
   import { setViewerVisibilityContext } from "../context/viewer-visibility-context";
-  import { propFinishState } from "@austencloud/scene-3d";
   import {
     fanAppearanceSignature,
     normalizeFanAppearance,
@@ -157,6 +155,8 @@
   import { createViewerOrchestratorContextState } from "../state/viewer-orchestrator-context-state.svelte";
   import { createViewerEditModeState } from "../state/viewer-edit-mode-state.svelte";
   import { createViewer3DActivationState } from "../state/viewer-3d-activation-state.svelte";
+  import { createLazyViewer3DState } from "../state/lazy-viewer-3d-state.svelte";
+  import { persistedModeOpens3D } from "#lib/shared/3d/state/viewer-3d-render-mode-storage.js";
   import { createViewerPropVisibilityState } from "../state/viewer-prop-visibility-state.svelte";
   import { createViewerDestinationActions } from "../services/viewer-destination-actions";
   import { createViewerShareActions } from "../services/viewer-share-actions";
@@ -389,7 +389,8 @@
       ? seedFromT3Slice(t3SeedPayload)
       : null;
 
-  const viewer3DState = createViewer3DState(undefined, {
+  // three.js and the scene package load the first time 3D opens, not on scan.
+  const viewer3DOptions = {
     firstUseEnvironment,
     appDefaultProp: getSettings().leftPropType ?? null,
     ...(t3Seed
@@ -398,8 +399,9 @@
           viewOnlySceneFeatures: t3Seed.sceneFeatures,
         }
       : {}),
-  });
-  setViewer3DContext(viewer3DState);
+  };
+  const viewer3D = createLazyViewer3DState(() => viewer3DOptions);
+  setViewer3DContext(viewer3D);
   // Published for viewer-internal hosts whose store is built per pane rather
   // than here — today `Viewer3DCanvas`, which registers the `t3` capture.
   setViewerUrlSessionContext(urlSession);
@@ -451,6 +453,10 @@
   let lastSettingsBuildSignature: string | null = null;
   let lastSceneBuildSignature: string | null = null;
   $effect(() => {
+    // The scene's finish state exists once 3D has loaded; its first run then
+    // copies settings into it, as it did at startup before 3D was lazy.
+    const propFinishState = viewer3D.propFinishState;
+    if (!propFinishState) return;
     const settingsAppearance = normalizeFanAppearance(
       getSettings().fanAppearance
     );
@@ -502,7 +508,7 @@
         collectionPropType,
         demoScanProps ? "as-saved" : undefined
       ).config,
-    viewer3DState,
+    getViewer3DState: () => viewer3D.current,
     accessibilityHelper,
     // Read lazily at export time: viewerVisibility is created further down and
     // the coordinator is first used after it exists.
@@ -594,7 +600,7 @@
   const practiceViewPrefs = createPracticeViewPrefs();
   playback.setPracticeViewPrefs(practiceViewPrefs);
 
-  if (viewer3DState.renderMode === "3d" && !viewerState.wants3D) {
+  if (persistedModeOpens3D() && !viewerState.wants3D) {
     viewerState.setSplitPaneContent("left", "animation-3d");
   }
 
@@ -1046,7 +1052,7 @@
 
   createViewer3DActivationState(
     {
-      viewer3DState,
+      viewer3D,
       viewerState,
       getSequence: () => sequence,
       getInitialRenderMode: () => initialRenderMode,
@@ -1141,7 +1147,7 @@
     playback.dispose();
     modalAnimationState.dispose();
     exportCoord.dispose();
-    viewer3DState.dispose();
+    viewer3D.dispose();
     fullscreen.clearControlsTimeout();
   });
 
@@ -1320,7 +1326,7 @@
     practiceViewPrefs,
     viewerState,
     viewerVisibility,
-    viewer3DState,
+    viewer3D,
     handlers: {
       setResolvedCardAutoLayout,
       onRenderProgress: handleRenderProgress,

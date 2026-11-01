@@ -49,11 +49,10 @@ describe("search indexing controls", () => {
       "<loc>https://tkaflowarts.com/timing-and-direction</loc>"
     );
     expect(sitemap).toContain("<loc>https://tkaflowarts.com/tricks</loc>");
-    expect(sitemap).toContain(
-      "<loc>https://tkaflowarts.com/timing-and-direction/quarter-time-same-direction</loc>"
-    );
-    expect(sitemap).toContain(
-      "<loc>https://tkaflowarts.com/timing-and-direction/quarter-time-opposite-direction</loc>"
+    // The six mode pages became sections of the one page (2026-10-31) and
+    // now redirect, so they are not listed.
+    expect(sitemap).not.toContain(
+      "https://tkaflowarts.com/timing-and-direction/quarter-time-same-direction"
     );
   });
 

@@ -10,7 +10,6 @@ export const timingDirectionPreviews = TIMING_DIRECTION_ARTICLES.map(
       (mode) =>
         mode.timing === article.timing && mode.direction === article.direction
     )!,
-    href: `/timing-and-direction/${article.slug}`,
   })
 );
 

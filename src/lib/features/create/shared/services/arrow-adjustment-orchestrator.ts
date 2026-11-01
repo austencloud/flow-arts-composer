@@ -7,7 +7,7 @@
  * Extracted from ArrowAdjustmentPanel.svelte to make business logic testable.
  */
 
-import { Point } from "fabric";
+import { Point } from "#lib/shared/pictograph/arrow/orchestration/domain/point.js";
 import { calculateAdjustment } from "./keyboard-arrow-adjuster";
 import type { ScreenSpaceAdjustmentTransformer } from "#lib/shared/pictograph/arrow/positioning/calculation/services/screen-space-adjustment-transformer.js";
 import type { ArrowAdjustmentCalculator } from "#lib/shared/pictograph/arrow/positioning/calculation/services/arrow-adjustment-calculator.js";

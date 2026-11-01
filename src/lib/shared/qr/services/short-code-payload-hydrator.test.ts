@@ -1,4 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "fs";
+import { resolve } from "path";
+import { deriveLettersForSequence } from "#lib/shared/navigation/services/letter-deriver.js";
 import type { ShortCodeData } from "./types";
 import {
   decodeWordShortCodePayload,
@@ -41,7 +44,10 @@ describe("short-code payload hydrator", () => {
     expect(saved?.id).toBe("Λ-γYΘγ");
     expect(saved?.ownerId).toBe("owner-1");
 
-    const unsaved = await hydrateSelfContainedShortCodePayload("B2ZM", record());
+    const unsaved = await hydrateSelfContainedShortCodePayload(
+      "B2ZM",
+      record()
+    );
     expect(unsaved?.id).toBe("B2ZM");
   });
 
@@ -61,5 +67,51 @@ describe("short-code payload hydrator", () => {
     await expect(
       decodeWordShortCodePayload("BAD1", record({ encoded: "not-a-sequence" }))
     ).resolves.toBeNull();
+  });
+
+  it("letters the steps from a strict payload word, matching the motion lookup", async () => {
+    // The compact blob carries no letters. Deriving them meant fetching and
+    // parsing every pictograph dataframe on the phone; the schema-2 word must
+    // give the very letters that lookup would, step for step.
+    const fromWord = await decodeWordShortCodePayload(
+      "B2ZM",
+      record({ payloadSchemaVersion: 2 })
+    );
+    const unlettered = await decodeWordShortCodePayload("B2ZM", record());
+    expect(unlettered?.steps.every((step) => step.letter === null)).toBe(true);
+
+    const root = resolve(__dirname, "../../../../..");
+    const read = (file: string) =>
+      readFileSync(resolve(root, "static/data/pictographs", file), "utf8");
+    Object.assign(window, {
+      csvData: {
+        diamondData: read("DiamondPictographDataframe.csv"),
+        boxData: read("BoxPictographDataframe.csv"),
+        skewedData: read("SkewedPictographDataframe.csv"),
+      },
+    });
+    const derived = await deriveLettersForSequence(unlettered!);
+
+    expect(fromWord?.steps.map((step) => step.letter)).toEqual(
+      derived.steps.map((step) => step.letter)
+    );
+    expect(fromWord?.steps.map((step) => step.letter).join("")).toBe(
+      "Λ-γYΘγΛ-γYΘγ"
+    );
+  });
+
+  it("leaves the steps unlettered when the word cannot be trusted", async () => {
+    const legacy = await decodeWordShortCodePayload("B2ZM", record());
+    const short = await decodeWordShortCodePayload(
+      "B2ZM",
+      record({ payloadSchemaVersion: 2, payloadWord: "Λ-γYΘγ" })
+    );
+    const unknown = await decodeWordShortCodePayload(
+      "B2ZM",
+      record({ payloadSchemaVersion: 2, payloadWord: "Λ-γYΘγΛ-γYΘ%" })
+    );
+    for (const sequence of [legacy, short, unknown]) {
+      expect(sequence?.steps.every((step) => step.letter === null)).toBe(true);
+    }
   });
 });

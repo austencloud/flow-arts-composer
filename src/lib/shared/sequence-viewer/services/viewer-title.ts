@@ -40,3 +40,17 @@ export function resolveSequenceIdentityTitle(
   }
   return "";
 }
+
+/**
+ * The header's non-word title, or null to show the shown sequence's own word.
+ * An ensemble view shows the whole cast, so it is titled with the
+ * composition's name ("DJII tunnel"). A performer view shows one performer,
+ * so the header falls back to that performer's word, with its word actions.
+ */
+export function resolveViewerTitleOverride(input: {
+  compositionName: string | null | undefined;
+  ensembleView: boolean;
+}): string | null {
+  if (!input.ensembleView) return null;
+  return input.compositionName?.trim() || null;
+}

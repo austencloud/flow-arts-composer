@@ -49,6 +49,8 @@ export interface WinterSceneConfig {
   /** Shared camera-facing moon, using the Forest scene owner. */
   moon: MoonConfig;
   fog: FogConfig;
+  /** Aerial-perspective colour the mountain material hazes toward with distance. */
+  mountainHaze?: string;
   ground: GroundConfig;
   /** Falling snow. */
   snow: FallingParticlesConfig;
@@ -146,7 +148,7 @@ export function createDefaultWinterConfig(): WinterSceneConfig {
   return {
     sky: {
       topColor: "#07152c",
-      midColor: "#344e68",
+      midColor: "#4a6b92",
       bottomColor: "#617487",
     },
     starfield: {
@@ -166,6 +168,7 @@ export function createDefaultWinterConfig(): WinterSceneConfig {
       glowOpacity: 0.025,
     },
     fog: { color: "#617487", density: 0.0045 },
+    mountainHaze: "#7086b4",
     ground: {
       color: "#eaf2fb",
       size: 50,

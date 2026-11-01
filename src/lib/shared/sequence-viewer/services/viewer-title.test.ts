@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   isAutoSequenceName,
   resolveSequenceIdentityTitle,
+  resolveViewerTitleOverride,
 } from "./viewer-title";
 
 describe("isAutoSequenceName", () => {
@@ -69,5 +70,33 @@ describe("resolveSequenceIdentityTitle", () => {
         name: "Sunday Flow",
       })
     ).toBe("Sunday Flow");
+  });
+});
+
+describe("resolveViewerTitleOverride", () => {
+  it("titles an ensemble view with the composition's name", () => {
+    expect(
+      resolveViewerTitleOverride({
+        compositionName: " DJII tunnel ",
+        ensembleView: true,
+      })
+    ).toBe("DJII tunnel");
+  });
+
+  it("leaves a performer view to the shown performer's word", () => {
+    expect(
+      resolveViewerTitleOverride({
+        compositionName: "DJII tunnel",
+        ensembleView: false,
+      })
+    ).toBeNull();
+  });
+
+  it("has no override without a composition, in any view", () => {
+    for (const ensembleView of [true, false]) {
+      expect(
+        resolveViewerTitleOverride({ compositionName: null, ensembleView })
+      ).toBeNull();
+    }
   });
 });

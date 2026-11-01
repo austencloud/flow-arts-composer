@@ -1,27 +1,31 @@
 import { describe, expect, it } from "vitest";
-import { navigationMorphs } from "#lib/shared/transitions/navigation-morphs.js";
+import { load as openMode } from "../../src/routes/(public)/timing-and-direction/[mode]/+page";
 import { TIMING_DIRECTION_ARTICLES } from "../../src/routes/(public)/timing-and-direction/_data/timing-direction-articles";
 
-const location = (pathname: string) => ({
-  url: { pathname },
-  route: { id: null },
-});
-const hub = "/timing-and-direction";
-
 describe("timing and direction navigation", () => {
-  // Each mode guide plays its own sequence, so no canvas is shared with the
-  // hub or another guide and a named morph would have nothing to carry.
-  it("does not start a shared-canvas morph between the hub and its guides", () => {
+  // Each mode had its own page until there was one timing-and-direction page
+  // (2026-10-31). Old links, bookmarks and search results must still land on
+  // the same mode, now a section of that page.
+  it("sends each old mode address to its sequences on the one page", () => {
     for (const article of TIMING_DIRECTION_ARTICLES) {
-      const detail = `${hub}/${article.slug}`;
-      expect(navigationMorphs(location(hub), location(detail))).toBe(false);
-      expect(navigationMorphs(location(detail), location(hub))).toBe(false);
+      try {
+        openMode({ params: { mode: article.slug } } as never);
+        expect.unreachable(`${article.slug} must redirect`);
+      } catch (error) {
+        expect(error).toMatchObject({
+          status: 308,
+          location: `/timing-and-direction?mode=${article.slug}#mode-sequences`,
+        });
+      }
     }
-    expect(
-      navigationMorphs(
-        location(`${hub}/${TIMING_DIRECTION_ARTICLES[0]!.slug}`),
-        location(`${hub}/${TIMING_DIRECTION_ARTICLES[1]!.slug}`)
-      )
-    ).toBe(false);
+  });
+
+  it("still answers an unknown mode with a 404", () => {
+    try {
+      openMode({ params: { mode: "sideways-time" } } as never);
+      expect.unreachable("an unknown mode must not redirect");
+    } catch (error) {
+      expect(error).toMatchObject({ status: 404 });
+    }
   });
 });

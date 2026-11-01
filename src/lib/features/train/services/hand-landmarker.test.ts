@@ -76,6 +76,8 @@ describe("HandLandmarker load lifecycle", () => {
     }
   }
 
+  // The warm-up below takes several seconds even alone, and it overran the
+  // 10 s hook default under the full suite on d2, hence the longer limit.
   beforeEach(async () => {
     pendingCreations = [];
     created = [];
@@ -106,7 +108,7 @@ describe("HandLandmarker load lifecycle", () => {
     pendingCreations.length = 0;
     created.length = 0;
     createFromOptions.mockClear();
-  });
+  }, 30_000);
 
   it("builds one landmarker when two callers race for the first detection", async () => {
     const landmarker = new HandLandmarker();

@@ -1,19 +1,70 @@
 <script lang="ts">
+  import { onMount, tick, untrack } from "svelte";
+  import { replaceState } from "$app/navigation";
+  import { page } from "$app/state";
   import Seo from "#lib/shared/components/Seo.svelte";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import TimingDirectionAtlas from "./_components/TimingDirectionAtlas.svelte";
-  import TimingDirectionModeCard from "./_components/TimingDirectionModeCard.svelte";
+  import TimingDirectionModeExplorer from "./_components/TimingDirectionModeExplorer.svelte";
+  import { getTimingDirectionState } from "./_state/timing-direction-state.svelte";
   import {
+    getTimingDirectionArticle,
     TIMING_DIRECTION_ARTICLES,
     TIMING_DIRECTION_DISCUSSIONS,
+    TIMING_DIRECTION_READING,
+    TIMING_DIRECTION_SEQUENCES_ID,
+    timingDirectionModeHref,
   } from "./_data/timing-direction-articles";
 
   const TITLE = "Timing and Direction in Flow Arts: All 6 Modes";
   const DESCRIPTION =
     "Together, split, and quarter timing crossed with same or opposite direction. See all six flow-arts modes with animations, definitions, history, and TKA examples.";
-  const URL = "https://tkaflowarts.com/timing-and-direction";
+  const CANONICAL = "https://tkaflowarts.com/timing-and-direction";
 
   const sources = TIMING_DIRECTION_DISCUSSIONS;
+  // The discussions already have cards above the reading list.
+  const reading = TIMING_DIRECTION_READING.filter(
+    (source) => !sources.some((discussion) => discussion.href === source.url)
+  );
+
+  // This is the one timing-and-direction page (Austen, 2026-10-31). The mode
+  // grid and the sequence section below it show the same mode, and the
+  // address carries it (?mode=) so a link can open any of the six. The query
+  // is read after load because the page is prerendered.
+  const playback = getTimingDirectionState();
+  const selectedSlug = $derived(playback.selected.article.slug);
+  let addressReady = $state(false);
+  let openedOn = "";
+  onMount(() => {
+    const requested = page.url.searchParams.get("mode");
+    if (requested && getTimingDirectionArticle(requested)) {
+      playback.select(requested);
+    }
+    openedOn = playback.selected.article.slug;
+    addressReady = true;
+    if (page.url.hash === `#${TIMING_DIRECTION_SEQUENCES_ID}`) {
+      // The mode grid can settle taller after hydration; land on the
+      // sequences again once it has.
+      void tick().then(() =>
+        document
+          .getElementById(TIMING_DIRECTION_SEQUENCES_ID)
+          ?.scrollIntoView({ block: "start", behavior: "instant" })
+      );
+    }
+  });
+  $effect(() => {
+    if (!addressReady) return;
+    const slug = selectedSlug;
+    untrack(() => {
+      const url = new URL(page.url);
+      if (url.searchParams.get("mode") === slug) return;
+      // A plain visit keeps its plain address until a mode is chosen.
+      if (!url.searchParams.has("mode") && slug === openedOn) return;
+      url.searchParams.set("mode", slug);
+      replaceState(url, page.state);
+    });
+  });
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -23,7 +74,7 @@
         name: "Timing and Direction in Flow Arts",
         headline: TITLE,
         description: DESCRIPTION,
-        url: URL,
+        url: CANONICAL,
         inLanguage: "en-US",
         author: {
           "@type": "Person",
@@ -37,7 +88,7 @@
             "@type": "ListItem",
             position: index + 1,
             name: article.name,
-            url: `${URL}/${article.slug}`,
+            url: `https://tkaflowarts.com${timingDirectionModeHref(article.slug)}`,
           })),
         },
       },
@@ -54,7 +105,7 @@
             "@type": "ListItem",
             position: 2,
             name: "Timing and Direction",
-            item: URL,
+            item: CANONICAL,
           },
         ],
       },
@@ -62,7 +113,7 @@
   };
 </script>
 
-<Seo title={TITLE} description={DESCRIPTION} canonical={URL}>
+<Seo title={TITLE} description={DESCRIPTION} canonical={CANONICAL}>
   {@html `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, "\\u003c")}<\/script>`}
 </Seo>
 
@@ -75,18 +126,24 @@
   </header>
 
   <TimingDirectionAtlas />
+</div>
 
-  <nav class="mode-guides" aria-labelledby="mode-guides-title">
-    <h2 id="mode-guides-title">Mode guides</h2>
-    <div class="guide-links">
-      {#each TIMING_DIRECTION_ARTICLES as article (article.code)}
-        <TimingDirectionModeCard {article} />
-      {/each}
-    </div>
-  </nav>
+<TimingDirectionModeExplorer
+  slug={selectedSlug}
+  onSelectMode={(slug) => playback.select(slug)}
+/>
 
+<div class="timing-page timing-page--end">
   <section class="history-sources" aria-labelledby="history-title">
     <h2 id="history-title">History & sources</h2>
+    <p class="history-intro">
+      Timing and direction come from the geometry of two hands sharing a circle.
+      Nobody invented them, and spinners used them long before they had names.
+      Noel Yee's Vulcan Tech Gospel standardized the names used here. It sorts
+      two-hand patterns by timing, together or split, and by direction, same or
+      opposite. Quarter time sits between together and split, with the hands a
+      quarter cycle apart.
+    </p>
     <p class="history-intro">
       Read the community discussions behind the terminology.
     </p>
@@ -113,6 +170,12 @@
             </span>
           </PanelButton>
         </li>
+      {/each}
+    </ul>
+    <h3 id="reading-title">Further reading</h3>
+    <ul class="reading-list" aria-labelledby="reading-title">
+      {#each reading as source (source.url)}
+        <li><LinkChip href={source.url} wrap>{source.label}</LinkChip></li>
       {/each}
     </ul>
     <nav aria-label="More about timing and direction">
@@ -161,40 +224,41 @@
     text-align: center;
   }
 
-  .history-sources h2,
-  .mode-guides h2 {
+  .timing-page--end {
+    padding-top: 0;
+  }
+
+  .history-sources h2 {
     margin: 0 0 0.5rem;
     color: var(--theme-text);
     font-size: 1.25rem;
   }
 
   .history-intro {
-    margin: 0 auto;
+    max-width: 44rem;
+    margin: 0 auto 0.75rem;
     color: var(--theme-text-dim);
     font-size: 1rem;
     line-height: 1.5;
   }
 
-  .mode-guides {
-    margin-top: 1.5rem;
-    text-align: center;
+  .history-sources h3 {
+    margin: 1.5rem 0 0.75rem;
+    color: var(--theme-text-dim);
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
   }
 
-  .guide-links {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  .reading-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: 0.5rem;
-  }
-
-  .guide-links :global(.panel-btn) {
-    min-width: 0;
-    white-space: normal;
-  }
-
-  @media (min-width: 1100px) {
-    .guide-links {
-      grid-template-columns: repeat(6, minmax(0, 1fr));
-    }
+    margin: 0 0 1.5rem;
+    padding: 0;
+    list-style: none;
   }
 
   .source-cards {
@@ -279,13 +343,13 @@
   }
 
   @media (max-width: 600px) {
-    .guide-links {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
     .timing-page {
       max-width: 100%;
       padding: 76px 1rem 2rem;
+    }
+
+    .timing-page--end {
+      padding-top: 0;
     }
 
     .page-header {

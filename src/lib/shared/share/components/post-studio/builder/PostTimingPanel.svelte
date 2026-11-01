@@ -103,7 +103,9 @@
           </p>
           <div class="row">
             <PanelButton onclick={session.firstTapWasMoveOne}>
-              {t("share_studio_deep_that_was_move_one")}
+              {session.section?.firstTapPosition === 0
+                ? "That was the start"
+                : t("share_studio_deep_that_was_move_one")}
             </PanelButton>
             <PanelButton onclick={() => session.dropLeadingTaps(ignored)}>
               {ignored === 1

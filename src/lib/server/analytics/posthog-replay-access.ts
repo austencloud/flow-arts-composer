@@ -28,6 +28,17 @@ export function postHogAppOrigin(configuredHost?: string): string {
   return url.origin;
 }
 
+/**
+ * The recording lookup that runs before sharing. Null means the recording
+ * exists and sharing can go ahead; anything else is the answer to return.
+ */
+export function mapPostHogRecordingLookup(
+  status: number
+): PostHogReplayAccessPayload | null {
+  if (status >= 200 && status < 300) return null;
+  return mapPostHogSharingResponse(status, null, "");
+}
+
 export function mapPostHogSharingResponse(
   status: number,
   body: unknown,

@@ -37,6 +37,8 @@ const factories = {
 };
 
 const expectedHashes: Record<keyof typeof factories, string> = {
+  // Re-baselined 2026-10-31: winter only, for the mountain pass (lighter sky
+  // mid band #344e68 -> #4a6b92 and the new mountainHaze colour).
   // Re-baselined 2026-09-07: blossom and celestial were rebuilt after the
   // 2026-09-05 re-stamp below and left this guard stale again. Blossom moved
   // in d6879d45aa (lantern garden + opening composition: sky/fog retune,
@@ -83,7 +85,7 @@ const expectedHashes: Record<keyof typeof factories, string> = {
   createDefaultVoidConfig:
     "b10ed0531f8504ea86366957b22e713b80aeb1b03a6b4f33fd485e395d6b42b2",
   createDefaultWinterConfig:
-    "d5004df6d577ee38ba678d011a2a5822da8576af6f6cf97ade425838dbb23151",
+    "46cd3d0b55743fbbd910a0b3d725580a8f7c3b15b08089afbe1446afafdb2317",
 };
 
 describe("scene configuration defaults", () => {
