@@ -1,16 +1,18 @@
 ---
 status: active
-value: null
-effort: null
-work_state: unverified
-remaining: Audit left/right motion identity migration across MCP, compact URLs, Firestore, and public index against the verification matrix.
+value: 2
+effort: S
+work_state: in-progress
+remaining: "Core migration shipped (merge 689b703bfc: 15090e3986 types, b1ddc4b796 engine, a417d11712 legacy normalizer, 6f0eceacc0 MCP; repairs 5c2a8e22d6, 0c8525490f, b35d6625a3); still owed: the 429 static/gallery/**/*.meta.json files still carry blue_attributes/red_attributes (zero use left_attributes), and no recorded verification-matrix run or optional Firestore corpus rewrite."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: '2026-11-01'
 ---
 
 # Left/Right Motion Identity Migration
+
+> **Triage note (2026-11-01):** The migration order below is historical. Steps 1-5 landed on branch codex/left-right-motion-migration (merged in 689b703bfc, 2026-09-01) with later legacy-read repairs; the checked-in static gallery metadata in step 6 was not migrated, and the verification matrix has no recorded run.
 
 **Status:** Approved for implementation by Austen on 2026-08-31
 
