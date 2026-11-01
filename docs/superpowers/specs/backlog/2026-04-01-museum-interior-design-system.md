@@ -1,16 +1,18 @@
 ---
 status: backlog
-value: 3
+value: 2
 effort: M
-remaining: Recheck the Museum interior systems against the current Museum code, especially whether the TV display remains absent.
+remaining: "Plaques (components/game/MuseumPlaque3D.svelte, per-plaque CanvasTexture), validator (services/museum-design-validator.ts, run dev-only from MuseumModule.svelte), design rules and dev whiteboards (domain/museum-design-rules.ts DEV_WHITEBOARDS_ENABLED, devNotes in data/museum-room-graph.ts) exist; Section 2 TV system is absent: no TV factory or sequence render-to-texture screen, sequence-screen tiles (wall-segment-stamper.ts) have no 3D renderer, and the TV GLBs in static/assets/museum/models/furniture are used only by ShowroomScene.svelte. Remaining: build or drop the era-matched TV displays."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
-work_state: unverified
+last_triaged: '2026-11-01'
+work_state: in-progress
 ---
 
 # Museum Interior Design System
+
+> **Triage note (2026-11-01):** Sections 1, 3 and 4 shipped under `src/lib/features/museum/` (not the `museum-2d/` paths in the File Locations table, which are obsolete). Section 2, the era-matched TV displays with sequence playback, is still not built: `sequence-screen` tiles are stamped but never rendered, and the TV GLBs appear only in the model showroom. The cave case screens (`MuseumCaseScreen3D.svelte`) show static canvas text, not sequence playback. No newer museum doc places TVs in rooms, so it is worth confirming this is still wanted before building it.
 
 > **DRIFT WARNING — 2026-08-02.** 3 of 4 systems shipped verbatim; TV display system (Section 2) does not exist
 >
