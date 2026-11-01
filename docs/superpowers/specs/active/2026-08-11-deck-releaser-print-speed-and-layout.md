@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
-remaining: "Verify print cache reuse, key isolation, failed-build retry, and preview responsiveness in Deck Releaser."
+value: 2
+effort: XS
+remaining: "Fully shipped: 177e96f4ab added print-pdf-cache.ts (LRU + IndexedDB + shared in-flight build, 5 cache tests), off-by-default How to Read FilterChipBase toggle in PrintPanel.svelte, 2-sheet @container layout in PrintPreviewPages.svelte, and Museum boot-preload contract in module-renderer-performance-contract.test.ts; spec records viewport sweep and heap traces. Ready to move to shipped/."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: complete
 ---
 # Deck Releaser print speed and layout
 
