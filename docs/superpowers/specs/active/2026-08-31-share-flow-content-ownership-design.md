@@ -1,16 +1,18 @@
 ---
 status: active
-value: null
-effort: null
-work_state: unverified
-remaining: Verify share-session reset, artifact support, card footer ownership, and Library flow against the silent-regression contract.
+value: 3
+effort: S
+work_state: verification
+remaining: "Shipped in af0b0b15b2 (merged 3e59a16ef9): card-presentation.ts, post-share-draft-state, CardFooterEditor, library-action-handler Save to card, with unit tests; later reshaped by 7339a5df55. Owed: live Card preview vs shared PNG comparison and share-sheet inspection at seven viewports plus 200% zoom, Custom-field transition and reduced motion."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: '2026-11-01'
 ---
 
 # Share Flow Content Ownership
+
+> **Triage note (2026-11-01):** Implementation shipped in af0b0b15b2 (2026-08-31) and the share sheet was later redesigned in 7339a5df55; the silent-regression tests exist, and only the runtime and visual verification below remains.
 
 **Status:** Approved for implementation
 **Date:** 2026-08-31
