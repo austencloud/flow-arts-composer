@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
-work_state: unverified
-remaining: Verify fan appearance normalization and asset resolution across 2D, Tunnel, 3D, and prop rails.
+value: 2
+effort: S
+work_state: verification
+remaining: "Shipped in 40ca6c9a61 (fan-appearance.ts, FanAppearancePicker.svelte) with 172f7cd19e, daf03fb79b, later builds 051b256df0, 36b457fff2; remaining: run the rail glyph and fire-fan fidelity review routes and the 2D/Tunnel/3D transition gate at the four viewport families, normal and reduced motion."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: 2026-11-01
 ---
 
 # Shared Fan Appearance in 2D, Tunnel, 3D, and Prop Rails
