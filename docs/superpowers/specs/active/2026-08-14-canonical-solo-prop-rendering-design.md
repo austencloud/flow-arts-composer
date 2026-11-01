@@ -1,13 +1,13 @@
 ---
 status: active
-value: null
-effort: null
-remaining: "Verify solo arrow placement for invisible and absent partners, and one-hand staff beta offset, against canonical prop code."
+value: 3
+effort: S
+remaining: "Implemented in aaeaa08d45 (visibleHand folded into PictographContainer prep flags, isVisibleMotion in pictograph-preparer.ts and beta-detector.ts; tests solo-placement-key.test.ts, prop-placer.beta-offset.test.ts, pictograph-preparer-visibility.test.ts), with Fuse sources projected via soloPropToSequence in fuse-solo-sequence.ts. Remaining: recorded visual check of Fuse source-card prop/arrow placement at desktop, 4K, tablet and phone."
 depends_on: ""
 plan_path: ""
 tags: []
-last_triaged: 2026-10-07
-work_state: unverified
+last_triaged: 2026-11-01
+work_state: verification
 ---
 # Canonical Solo-Prop Rendering
 
