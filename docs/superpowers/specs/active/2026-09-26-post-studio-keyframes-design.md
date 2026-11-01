@@ -1,16 +1,18 @@
 ---
 status: active
-value: null
-effort: null
-work_state: in-progress
-remaining: Verify keyframe rows under selected clips and finish remaining zoom, editing, undo, and export acceptance.
+value: 3
+effort: S
+work_state: verification
+remaining: "Shipped in 23bd386427 and 93915ecccd (channels, easing presets, curve editor, K shortcut, evaluator motion tracks), then 0d5ea36055 key rows, e5bc248b0d clearing, 1631839aea toolbar row; code now ships in @austencloud/video-editor. Remaining: browser proof that preview and export play the same keyed motion (owed via the walkthrough pilot), plus pinch, retime and undo checks."
 depends_on: ''
 plan_path: ''
 tags: []
-last_triaged: '2026-10-07'
+last_triaged: 2026-11-01
 ---
 
 # Post Studio keyframes with easing (drop 2)
+
+> **Triage note (2026-11-01):** The owner paths below (`post-project-keyframes.ts`, `PostCurveEditor.svelte`, the editor components) moved into the vendored `@austencloud/video-editor` package in October (f83d23b46c, c39e3fb42d). Keyframes shipped in 23bd386427 and 93915ecccd; keyframes later moved from the inspector to rows under the selected clip (0d5ea36055, 1631839aea). Preview-to-export parity still needs browser evidence.
 
 **Triage evidence (2026-10-07):** `src/lib/shared/share/components/post-studio/editor/PostKeyframeControls.svelte` exists. Its presence does not establish the requested zoom, easing, undo, and export parity; those need focused acceptance verification.
 
