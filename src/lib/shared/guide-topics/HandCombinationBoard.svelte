@@ -31,6 +31,9 @@
   `only` shows just the combinations it names, in board order, so a host
   can spread the six across screens (the Guide does on small windows).
 
+  `cellHref` makes each found cell a link, the whole cell its target (the
+  Guide links each combination to its own page or screen, 2026-10-31).
+
   A host can set `--board-wide-columns` (6 by default) for a wide board.
 -->
 <script lang="ts">
@@ -60,6 +63,7 @@
     hintLabel?: (name: string) => string;
     missed?: ReadonlySet<HandCombinationId> | null;
     only?: readonly HandCombinationId[] | null;
+    cellHref?: ((id: HandCombinationId) => string | null) | null;
   }
 
   let {
@@ -77,6 +81,7 @@
     hintLabel = (name) => name,
     missed = null,
     only = null,
+    cellHref = null,
   }: Props = $props();
 
   const cells = HAND_COMBINATIONS.map((combination) => ({
@@ -99,6 +104,7 @@
     {#each shown as { combination, data, start, step, tones } (combination.id)}
       {@const isFound = found === null || found.has(combination.id)}
       {@const hintable = !isFound && !!onHint}
+      {@const href = isFound ? (cellHref?.(combination.id) ?? null) : null}
       {@const progress = start
         ? (cellProgress?.(combination.id) ?? null)
         : null}
@@ -160,6 +166,10 @@
           class:fa-xmark={!isFound && !!missed?.has(combination.id)}
           aria-hidden="true"
         ></i>
+        {#if href}
+          <a class="go" {href} aria-label={plainTopicText(combination.name)}
+          ></a>
+        {/if}
         {#if hintable}
           <button
             type="button"
@@ -296,6 +306,11 @@
     opacity: 1;
   }
 
+  .cell:has(.go):hover {
+    border-color: color-mix(in srgb, var(--tone-a) 70%, transparent);
+  }
+
+  .go,
   .hint {
     position: absolute;
     inset: 0;
@@ -306,6 +321,11 @@
     cursor: pointer;
   }
 
+  .go {
+    border-radius: inherit;
+  }
+
+  .go:focus-visible,
   .hint:focus-visible {
     outline: 2px solid var(--theme-accent, currentColor);
     outline-offset: 2px;

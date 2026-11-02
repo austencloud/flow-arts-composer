@@ -1,15 +1,20 @@
 <script lang="ts">
-  import { onMount, tick, untrack } from "svelte";
-  import { replaceState } from "$app/navigation";
+  import { tick, untrack } from "svelte";
+  import { browser } from "$app/env";
+  import { afterNavigate, replaceState } from "$app/navigation";
   import { page } from "$app/state";
   import Seo from "#lib/shared/components/Seo.svelte";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
-  import TimingDirectionAtlas from "./_components/TimingDirectionAtlas.svelte";
+  import TimingDirectionIntro from "#lib/features/learn/components/interactive/motions/TimingDirectionIntro.svelte";
+  import { isConceptExperienceAvailable } from "#lib/features/learn/domain/concept-experience-registry.js";
   import TimingDirectionModeExplorer from "./_components/TimingDirectionModeExplorer.svelte";
   import { getTimingDirectionState } from "./_state/timing-direction-state.svelte";
   import {
     getTimingDirectionArticle,
+    getTimingDirectionArticleByPair,
+    type DirectionValue,
+    type TimingValue,
     TIMING_DIRECTION_ARTICLES,
     TIMING_DIRECTION_DISCUSSIONS,
     TIMING_DIRECTION_READING,
@@ -28,24 +33,30 @@
     (source) => !sources.some((discussion) => discussion.href === source.url)
   );
 
-  // This is the one timing-and-direction page (Austen, 2026-10-31). The mode
-  // grid and the sequence section below it show the same mode, and the
+  // This is the one timing-and-direction page (Austen, 2026-10-31). The
+  // basics, the mode grid and the player below it all show one mode, and the
   // address carries it (?mode=) so a link can open any of the six. The query
-  // is read after load because the page is prerendered.
+  // is read after each navigation: the page is prerendered, and a link that
+  // changes only ?mode keeps this page mounted.
   const playback = getTimingDirectionState();
   const selectedSlug = $derived(playback.selected.article.slug);
   let addressReady = $state(false);
   let openedOn = "";
-  onMount(() => {
-    const requested = page.url.searchParams.get("mode");
-    if (requested && getTimingDirectionArticle(requested)) {
+  afterNavigate(({ to }) => {
+    if (!to) return;
+    const requested = to.url.searchParams.get("mode");
+    if (
+      requested &&
+      getTimingDirectionArticle(requested) &&
+      requested !== playback.selected.article.slug
+    ) {
       playback.select(requested);
     }
     openedOn = playback.selected.article.slug;
     addressReady = true;
-    if (page.url.hash === `#${TIMING_DIRECTION_SEQUENCES_ID}`) {
-      // The mode grid can settle taller after hydration; land on the
-      // sequences again once it has.
+    if (to.url.hash === `#${TIMING_DIRECTION_SEQUENCES_ID}`) {
+      // The basics can settle taller after hydration; land on the
+      // sequences again once they have.
       void tick().then(() =>
         document
           .getElementById(TIMING_DIRECTION_SEQUENCES_ID)
@@ -53,6 +64,24 @@
       );
     }
   });
+
+  // The basics name timing and direction in lower case.
+  const basicsTiming = $derived(
+    playback.selected.article.timing.toLowerCase() as
+      | "together"
+      | "split"
+      | "quarter"
+  );
+  const basicsDirection = $derived(
+    playback.selected.article.direction.toLowerCase() as "same" | "opposite"
+  );
+  function selectFromBasics(timing: string, direction: string): void {
+    const article = getTimingDirectionArticleByPair(
+      (timing[0]!.toUpperCase() + timing.slice(1)) as TimingValue,
+      (direction[0]!.toUpperCase() + direction.slice(1)) as DirectionValue
+    );
+    playback.select(article.slug);
+  }
   $effect(() => {
     if (!addressReady) return;
     const slug = selectedSlug;
@@ -125,7 +154,31 @@
     </p>
   </header>
 
-  <TimingDirectionAtlas />
+  <section
+    id="timing-basics"
+    class="basics"
+    aria-label="Timing and direction basics"
+  >
+    <!-- The animation engine is stubbed out of the production SSR build, so
+         the basics mount client-only. -->
+    {#if browser}
+      <TimingDirectionIntro
+        selectedTiming={basicsTiming}
+        selectedDirection={basicsDirection}
+        onselect={selectFromBasics}
+      />
+    {/if}
+    <!-- The lesson link follows the published registry, so it disappears
+         while the lesson is withdrawn instead of leading to a 404. -->
+    {#if isConceptExperienceAvailable("timing-and-direction")}
+      <div class="lesson-link">
+        <PanelButton href="/learn/concepts/timing-and-direction">
+          <i class="fa-solid fa-graduation-cap" aria-hidden="true"></i>
+          Open full lesson
+        </PanelButton>
+      </div>
+    {/if}
+  </section>
 </div>
 
 <TimingDirectionModeExplorer
@@ -215,6 +268,22 @@
     color: var(--theme-text-dim);
     font-size: 1rem;
     line-height: 1.5;
+  }
+
+  /* Two rows, the basics then the lesson link. The basics fill their own
+     row (their root is height: 100%), so the link stays under them. */
+  .basics {
+    container-type: inline-size;
+    display: grid;
+    grid-template-rows: auto auto;
+    width: min(100%, 96rem);
+    margin-inline: auto;
+  }
+
+  .lesson-link {
+    display: flex;
+    justify-content: center;
+    margin-top: 1rem;
   }
 
   .history-sources {

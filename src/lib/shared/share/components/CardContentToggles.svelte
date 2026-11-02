@@ -12,13 +12,20 @@
   card it shows (`stepCount`, and the live card's measured Auto layout).
   Layout overrides (columns, start lane) and the footer text stay in the card
   panel: they are per-sequence-length or content choices.
+
+  `compact` (Settings → Display's phone screen) draws the same groups as five
+  labelled rows of small controls, the label in a fixed column on the left:
+  the host's lead beside Theme, then Header, Steps and Start as chips
+  (MenuItemChipRow), then Info as one segmented row. The card above them
+  keeps the height.
 -->
 <script lang="ts">
   import { onDestroy, type Snippet } from "svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { growFade } from "#lib/shared/transitions/motion.js";
   import MenuItemTileGrid from "#lib/shared/components/context-menu/MenuItemTileGrid.svelte";
-  import type { ContextMenuItem } from "#lib/shared/components/context-menu/context-menu-types";
+  import MenuItemChipRow from "#lib/shared/components/context-menu/MenuItemChipRow.svelte";
+  import type { ContextMenuItem } from "#lib/shared/components/context-menu/context-menu-types.js";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
   import { getImageCompositionManager } from "../state/image-composition-state.svelte";
@@ -46,6 +53,10 @@
     /** A host control that flows first, beside Theme, on the same columns
      *  (Settings → Display's card length). It brings its own label. */
     lead?: Snippet;
+    /** Labelled rows of small chips instead of tile groups (a phone screen
+     *  whose card is the hero). The lead then brings a label and a control,
+     *  which take the row's first two columns, Theme the third. */
+    compact?: boolean;
   }
 
   let {
@@ -55,6 +66,7 @@
     stepCount,
     resolvedAutoLayout = null,
     lead,
+    compact = false,
   }: Props = $props();
 
   const uid = $props.id();
@@ -116,8 +128,9 @@
   ]);
 
   // Four info picks run in one row, at the compact density, where each
-  // segment has room for a word like "Mandala" (about 4.5rem), and in two
-  // rows of two otherwise.
+  // segment has room for a word like "Mandala" (about 4.5rem in a tile
+  // group, 4rem in a compact row, whose segments carry less padding), and in
+  // two rows of two otherwise.
   let infoWidth = $state(0);
   const infoOneRow = $derived.by(() => {
     if (!chooser || chooser.options.length <= 3) return true;
@@ -125,7 +138,7 @@
       typeof document === "undefined"
         ? 16
         : parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-    return infoWidth >= chooser.options.length * 4.5 * rem;
+    return infoWidth >= chooser.options.length * (compact ? 4 : 4.5) * rem;
   });
   const infoFour = $derived((chooser?.options.length ?? 0) > 3);
 
@@ -135,58 +148,109 @@
   ]);
 </script>
 
-<div class="card-content-toggles">
-  {#if lead}
-    <div class="content-group" data-group="lead">
-      {@render lead()}
-    </div>
-  {/if}
-
-  <div class="content-group" data-group="theme" style:--n={2}>
-    <span class="group-label" id="{uid}-theme">{t("tab_settings_theme")}</span>
-    <SegmentedControl
-      options={themeOptions}
-      value={theme.imageDarkMode ? "dark" : "light"}
-      onchange={(value) => theme.setImageDarkMode(value === "dark")}
-      color="accent"
-      ariaLabelledby="{uid}-theme"
-    />
-  </div>
-  {#each rows as row (row.id)}
-    <div
-      class="content-group"
-      data-group={row.id}
-      style:--n={row.items.length}
-      aria-labelledby="{uid}-{row.id}"
-      role="group"
-    >
-      <span class="group-label" id="{uid}-{row.id}">{row.label}</span>
-      <MenuItemTileGrid items={row.items} />
-    </div>
-  {/each}
-
-  {#if chooser}
-    <div
-      class="content-group"
-      data-group="info"
-      data-four={infoFour || undefined}
-      style:--n={infoFour ? undefined : chooser.options.length}
-      bind:clientWidth={infoWidth}
-      transition:growFade
-    >
-      <span class="group-label" id="{uid}-info">{t("viewer_ui_info")}</span>
+{#if compact}
+  <div class="card-content-rows">
+    <div class="content-row" data-group="theme" class:with-lead={!!lead}>
+      {#if lead}
+        {@render lead()}
+      {:else}
+        <span class="row-label" id="{uid}-theme">{t("tab_settings_theme")}</span
+        >
+      {/if}
       <SegmentedControl
-        options={chooser.options}
-        value={chooser.value}
-        onchange={chooser.select}
+        options={themeOptions}
+        value={theme.imageDarkMode ? "dark" : "light"}
+        onchange={(value) => theme.setImageDarkMode(value === "dark")}
         color="accent"
-        columns={infoOneRow ? undefined : 2}
-        density={infoFour && infoOneRow ? "compact" : "standard"}
-        ariaLabelledby="{uid}-info"
+        size="sm"
+        density="compact"
+        ariaLabel={lead ? t("tab_settings_theme") : undefined}
+        ariaLabelledby={lead ? undefined : `${uid}-theme`}
       />
     </div>
-  {/if}
-</div>
+    {#each rows as row (row.id)}
+      <div class="content-row" data-group={row.id}>
+        <span class="row-label" id="{uid}-{row.id}">{row.label}</span>
+        <MenuItemChipRow
+          items={row.items}
+          ariaLabelledby="{uid}-{row.id}"
+          align="start"
+        />
+      </div>
+    {/each}
+    {#if chooser}
+      <div class="content-row" data-group="info" transition:growFade>
+        <span class="row-label" id="{uid}-info">{t("viewer_ui_info")}</span>
+        <div class="row-control" bind:clientWidth={infoWidth}>
+          <SegmentedControl
+            options={chooser.options}
+            value={chooser.value}
+            onchange={chooser.select}
+            color="accent"
+            size="sm"
+            density="compact"
+            columns={infoOneRow ? undefined : 2}
+            ariaLabelledby="{uid}-info"
+          />
+        </div>
+      </div>
+    {/if}
+  </div>
+{:else}
+  <div class="card-content-toggles">
+    {#if lead}
+      <div class="content-group" data-group="lead">
+        {@render lead()}
+      </div>
+    {/if}
+
+    <div class="content-group" data-group="theme" style:--n={2}>
+      <span class="group-label" id="{uid}-theme">{t("tab_settings_theme")}</span
+      >
+      <SegmentedControl
+        options={themeOptions}
+        value={theme.imageDarkMode ? "dark" : "light"}
+        onchange={(value) => theme.setImageDarkMode(value === "dark")}
+        color="accent"
+        ariaLabelledby="{uid}-theme"
+      />
+    </div>
+    {#each rows as row (row.id)}
+      <div
+        class="content-group"
+        data-group={row.id}
+        style:--n={row.items.length}
+        aria-labelledby="{uid}-{row.id}"
+        role="group"
+      >
+        <span class="group-label" id="{uid}-{row.id}">{row.label}</span>
+        <MenuItemTileGrid items={row.items} />
+      </div>
+    {/each}
+
+    {#if chooser}
+      <div
+        class="content-group"
+        data-group="info"
+        data-four={infoFour || undefined}
+        style:--n={infoFour ? undefined : chooser.options.length}
+        bind:clientWidth={infoWidth}
+        transition:growFade
+      >
+        <span class="group-label" id="{uid}-info">{t("viewer_ui_info")}</span>
+        <SegmentedControl
+          options={chooser.options}
+          value={chooser.value}
+          onchange={chooser.select}
+          color="accent"
+          columns={infoOneRow ? undefined : 2}
+          density={infoFour && infoOneRow ? "compact" : "standard"}
+          ariaLabelledby="{uid}-info"
+        />
+      </div>
+    {/if}
+  </div>
+{/if}
 
 <style>
   /* Groups flow on the host's tile columns: each is exactly as wide as the
@@ -239,5 +303,61 @@
     font-size: var(--font-size-xs, 0.75rem);
     font-weight: 600;
     text-align: center;
+  }
+
+  /* Compact: one row per group, its label in a fixed left column and its
+     control beside it, about 2rem tall. The lead row gives the host's
+     control the free width and Theme its two icons at the end. */
+  .card-content-rows {
+    --chip-row-gap: 0.3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    min-width: 0;
+  }
+
+  /* Three header chips must share one row beside the label column at a
+     375px phone; a slightly narrower chip keeps Word, Level and LOOP (and
+     Step numbers with Reversals) on one line instead of folding. */
+  .card-content-rows :global(.filter-chip.size-sm) {
+    padding-inline: 8px;
+  }
+
+  .content-row {
+    display: grid;
+    grid-template-columns: var(--card-row-label-w, 4.5rem) minmax(0, 1fr);
+    align-items: center;
+    column-gap: 0.5rem;
+    min-height: 2rem;
+    min-width: 0;
+  }
+
+  .content-row.with-lead {
+    grid-template-columns:
+      var(--card-row-label-w, 4.5rem) minmax(0, 1fr)
+      auto;
+  }
+
+  /* The row's label, including the one the host's lead brings. */
+  .content-row > .row-label,
+  .content-row.with-lead > :global(:first-child) {
+    min-width: 0;
+    color: var(--theme-text-dim);
+    font-size: var(--font-size-xs, 0.75rem);
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: start;
+  }
+
+  .row-control {
+    min-width: 0;
+  }
+
+  /* The shared segmented control keeps a 44px segment of its own; these
+     rows lower it with the chips beside them (a 2rem track). */
+  .card-content-rows :global(.segment) {
+    min-height: 1.5rem;
+    min-width: 2rem;
+    padding-block: 0.125rem;
   }
 </style>

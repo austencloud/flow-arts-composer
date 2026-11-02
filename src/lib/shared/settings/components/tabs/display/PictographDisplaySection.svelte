@@ -2,7 +2,8 @@
   Settings → Display: the pictograph section. A real letter A pictograph that
   reads the global VisibilityStateManager like every other pictograph, and the
   switches from the long-press menu's own builder, so the tiles and the menu
-  are one list.
+  are one list. On a drill-down screen (`compact`) the same list draws as
+  small chips, so the pictograph keeps the screen.
 -->
 <script lang="ts">
   import { onMount } from "svelte";
@@ -16,6 +17,7 @@
   } from "#lib/shared/pictograph/shared/state/visibility-state.svelte.js";
   import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import MenuItemTileGrid from "#lib/shared/components/context-menu/MenuItemTileGrid.svelte";
+  import MenuItemChipRow from "#lib/shared/components/context-menu/MenuItemChipRow.svelte";
   import type { ContextMenuItem } from "#lib/shared/components/context-menu/context-menu-types.js";
   import DisplaySection from "./DisplaySection.svelte";
   import type { DisplayExample } from "./display-example-data";
@@ -24,7 +26,13 @@
   let {
     example,
     onBack,
-  }: { example: DisplayExample | null; onBack?: () => void } = $props();
+    compact = false,
+  }: {
+    example: DisplayExample | null;
+    onBack?: () => void;
+    /** Chips instead of picture tiles (the tab's drill-down tier). */
+    compact?: boolean;
+  } = $props();
 
   const vm = getVisibilityStateManager();
   let version = $state(0);
@@ -77,10 +85,17 @@
   {#snippet controls()}
     {#if settingsReady}
       <div transition:growFade>
-        <MenuItemTileGrid
-          items={chips}
-          ariaLabel={t("settings_display_pictograph")}
-        />
+        {#if compact}
+          <MenuItemChipRow
+            items={chips}
+            ariaLabel={t("settings_display_pictograph")}
+          />
+        {:else}
+          <MenuItemTileGrid
+            items={chips}
+            ariaLabel={t("settings_display_pictograph")}
+          />
+        {/if}
       </div>
     {/if}
   {/snippet}

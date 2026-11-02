@@ -43,6 +43,10 @@
   import { loadOverrides } from "../_data/guide-overrides.svelte";
   import "../_styles/guide.css";
   import { TOPIC_PAGES } from "../_topics/topic-pages";
+  import {
+    HAND_TYPE_KICKER,
+    HAND_TYPE_SLUGS,
+  } from "../_topics/hand-type-switcher";
   import { guideRelatedLinks } from "../_data/guide-related-links";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { localHref } from "#lib/shared/i18n/localized-href.svelte.js";
@@ -69,8 +73,13 @@
   // Topics migrated to the shared-record template render their own page in
   // place of the title band and FlowFrame (guide rethink pilot, 2026-10-10).
   const TopicPage = $derived(TOPIC_PAGES[slug] ?? null);
+  // The six hand combinations' pages read as one run under one kicker.
   const topicKicker = $derived(
-    meta ? `Level 1 · ${GROUP_TITLES[meta.group]}` : "Level 1"
+    HAND_TYPE_SLUGS.has(slug)
+      ? HAND_TYPE_KICKER
+      : meta
+        ? `Level 1 · ${GROUP_TITLES[meta.group]}`
+        : "Level 1"
   );
 
   // A reflow topic shows one screen at a time (GuideScreens): its screens
@@ -271,6 +280,7 @@
         darkMode={isDark}
         kicker={topicKicker}
         title={seo.h1}
+        {slug}
         frame={{
           prevPage: prevLink,
           nextPage: nextLink,
@@ -425,6 +435,8 @@
     --ink: #1a1a1a;
     --ink-dim: #555;
     --glyph-invert: 0;
+    /* The page's own ground, for a disc that must read on any fill. */
+    --guide-plate: #fbfaf7;
     /* Size container so FlowFrame's card rows can break out to a fraction of THIS
        route's width (cqw) - using wide/4K screens - while the reading column stays
        narrow. inline-size only: block-size (min-height: 100vh) is unaffected. */
@@ -608,6 +620,7 @@
       --ink: #ececf2;
       --ink-dim: #a8a8b4;
       --glyph-invert: 1;
+      --guide-plate: var(--guide-canvas, oklch(0.13 0.015 270));
     }
   }
   :global(:root[data-theme="light"]) .guide-page-route {
@@ -616,6 +629,7 @@
     --ink: #1a1a1a;
     --ink-dim: #555;
     --glyph-invert: 0;
+    --guide-plate: #fbfaf7;
   }
   :global(:root[data-theme="dark"]) .guide-page-route {
     background: transparent;
@@ -623,5 +637,6 @@
     --ink: #ececf2;
     --ink-dim: #a8a8b4;
     --glyph-invert: 1;
+    --guide-plate: var(--guide-canvas, oklch(0.13 0.015 270));
   }
 </style>

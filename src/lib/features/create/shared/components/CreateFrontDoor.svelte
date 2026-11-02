@@ -873,6 +873,61 @@
     }
   }
 
+  /* A phone held sideways, like the Fold's cover screen turned on its side,
+     is often under 360px tall once the browser bar shows. Three rows of
+     cards can't fit there, so the methods sit three to a row in two rows
+     that share the height, each square beside its words, under a smaller
+     title. */
+  @container create-entry (max-height: 480px) and (min-width: 760px) {
+    .front-door-inner {
+      height: 100%;
+      grid-template-rows: auto minmax(0, 1fr);
+      gap: 0;
+      padding-block: 4px 8px;
+    }
+
+    h1 {
+      font-size: var(--font-size-xl, 1.25rem);
+    }
+
+    .method-index {
+      --preview-side: clamp(48px, 24cqh, 96px);
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      grid-auto-rows: minmax(0, 1fr);
+      column-gap: 8px;
+      row-gap: 12px;
+      padding-top: 12px;
+    }
+
+    .method-index .method-item,
+    .method-index .method-item.primary-method,
+    .method-index .method-item.default-method,
+    .method-index[data-method-count] .method-item:not(.primary-method) {
+      grid-column: span 2;
+    }
+
+    /* Two or four methods sit two to a row; with five, the last two share
+       the second row. */
+    .method-index[data-method-count="2"] .method-item.method-item,
+    .method-index[data-method-count="4"] .method-item.method-item,
+    .method-index[data-method-count="5"] .method-item.method-item:nth-child(n + 4) {
+      grid-column: span 3;
+    }
+
+    .method-index .method-item.method-item:only-child {
+      grid-column: 1 / -1;
+    }
+
+    .method-card,
+    .method-item.primary-method .method-card,
+    .method-item.default-method .method-card,
+    .method-index[data-method-count="3"] .method-card {
+      min-height: 0;
+      align-items: center;
+      padding: 8px 10px;
+    }
+  }
+
   /* The tapped card while its workspace gets ready: the pressed tint over
      the whole card and the hover ring around it. Written to outrank every
      tier's resting background, so the tap reads as taken at any width. */

@@ -51,23 +51,25 @@ export const GUIDE_PAGE_SEO: Record<string, GuidePageSeo> = {
     title: "Type 1 Dual-Shifts · Flow Arts Notation Guide",
     description: "When both hands move to adjacent locations, it’s called a Dual-Shift.",
   },
+  // The hand combinations' run (2026-10-31): each page is titled by its
+  // combination and opens on Austen's definition from the Hand Motions record.
   "hm-type2": {
-    h1: "Type 2 Shifts",
-    tagline: "To move between γ and α/β, you can shift one hand and keep the other hand static.",
-    title: "Type 2 Shifts · Flow Arts Notation Guide",
-    description: "To move between γ and α/β, you can shift one hand and keep the other hand static.",
+    h1: "Shift",
+    tagline: "One hand travels to an adjacent point and the other hand remains static.",
+    title: "Shift · Flow Arts Notation Guide",
+    description: "One hand travels to an adjacent point and the other hand remains static.",
   },
   "hm-type34": {
-    h1: "Type 3 Cross-Shifts",
-    tagline: "A Cross-Shift combines a shift and a dash.",
-    title: "Type 3 Cross-Shifts · Flow Arts Notation Guide",
-    description: "A Cross-Shift combines a shift and a dash.",
+    h1: "Cross-Shift",
+    tagline: "One hand travels to an adjacent point and the other travels to the opposite point.",
+    title: "Cross-Shift · Flow Arts Notation Guide",
+    description: "One hand travels to an adjacent point and the other travels to the opposite point.",
   },
   "hm-type56": {
-    h1: "Type 4, 5, 6: Dash, Dual-Dash, Static",
-    tagline: "With a Dash, one hand executes a dash while the other hand remains static.",
-    title: "Type 4, 5, 6: Dash, Dual-Dash, Static · Flow Arts Notation Guide",
-    description: "With a Dash, one hand executes a dash while the other hand remains static.",
+    h1: "Dash, Dual-Dash, Static",
+    tagline: "One hand travels to the opposite point and the other hand remains static",
+    title: "Dash, Dual-Dash, Static · Flow Arts Notation Guide",
+    description: "One hand travels to the opposite point and the other hand remains static",
   },
   "staff-placements": {
     h1: "Staff Placements",

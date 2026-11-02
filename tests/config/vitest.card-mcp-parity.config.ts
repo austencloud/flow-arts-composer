@@ -39,11 +39,30 @@ export default defineConfig({
       "@capacitor/core",
       "fflate",
       "mediabunny",
+      // CI on 2026-11-02 found these mid-run; the optimizer reload that
+      // followed made every test file fail to import.
+      "@austencloud/backgrounds",
+      "@austencloud/theme",
+      "@austencloud/motion",
+      "@capacitor/haptics",
+      "bits-ui",
+      "dexie",
     ],
   },
   resolve: {
     conditions: ["browser"],
     alias: {
+      // The Shape Engine packages and the engine's own `#lib/*` imports:
+      // see tests/config/vitest.config.ts.
+      "#lib": path.resolve(projectRoot, "src/lib"),
+      "@tka/shape-domain": path.resolve(
+        projectRoot,
+        "packages/shape-domain/src/index.ts"
+      ),
+      "@tka/shape-engine": path.resolve(
+        projectRoot,
+        "packages/shape-engine/src"
+      ),
       // Always the checkout's own package, never a node_modules link to another one.
       "@tka/render-composition": path.resolve(
         projectRoot,

@@ -9,10 +9,9 @@ const name = (id: string) =>
   english[DUAL_SHIFT_MODES.find((m) => m.id === id)!.name]!;
 
 describe("dualShiftScreens", () => {
-  it("draws one mode per screen, then switching, with no key screen", () => {
+  it("draws one mode per screen, with no key or switching screen", () => {
     const { views, labels } = dualShiftScreens(name);
-    expect(views).toHaveLength(7);
-    expect(views.slice(0, 6)).toEqual(
+    expect(views).toEqual(
       [
         "split-same",
         "tog-same",
@@ -22,7 +21,6 @@ describe("dualShiftScreens", () => {
         "quarter-same",
       ].map((mode) => ({ kind: "mode", mode }))
     );
-    expect(views[6]).toEqual({ kind: "switching" });
     expect(labels).toEqual([
       "Split-Same",
       "Tog-Same",
@@ -30,7 +28,6 @@ describe("dualShiftScreens", () => {
       "Tog-Opp",
       "Quarter-Opp",
       "Quarter-Same",
-      "Switching",
     ]);
   });
 

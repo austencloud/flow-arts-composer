@@ -234,6 +234,9 @@ export interface HandCombination {
   letterType: LetterType;
   /** The Guide page that teaches it. */
   guideSlug: string;
+  /** Its own screen of that page on the web: Dash, Dual-Dash and Static
+   *  share one page, a screen each (the board and the switcher link here). */
+  webHref: string;
   /** The book's two-hand example: blue makes the description's first move. */
   demo: { left: ComboHand; right: ComboHand };
   /** The example's letter (handPairLetter), which lays out its arrows. */
@@ -261,6 +264,7 @@ export const HAND_COMBINATIONS: readonly HandCombination[] = [
     description: "verified_level1_hand_motions_78",
     letterType: LetterType.TYPE1,
     guideSlug: "hm-type1",
+    webHref: "/guide/level-1/hm-type1",
     demo: { left: hand("shift", W, N), right: hand("shift", E, S) },
     demoLetter: Letter.A,
   },
@@ -270,6 +274,7 @@ export const HAND_COMBINATIONS: readonly HandCombination[] = [
     description: "verified_level1_hand_motions_80",
     letterType: LetterType.TYPE2,
     guideSlug: "hm-type2",
+    webHref: "/guide/level-1/hm-type2",
     demo: { left: hand("shift", W, N), right: hand("static", E, E) },
     demoLetter: Letter.SIGMA,
   },
@@ -279,6 +284,7 @@ export const HAND_COMBINATIONS: readonly HandCombination[] = [
     description: "verified_level1_hand_motions_82",
     letterType: LetterType.TYPE3,
     guideSlug: "hm-type34",
+    webHref: "/guide/level-1/hm-type34",
     demo: { left: hand("shift", W, N), right: hand("dash", E, W) },
     demoLetter: Letter.THETA_DASH,
   },
@@ -288,6 +294,7 @@ export const HAND_COMBINATIONS: readonly HandCombination[] = [
     description: "learn_motion_dash_description",
     letterType: LetterType.TYPE4,
     guideSlug: "hm-type56",
+    webHref: "/guide/level-1/hm-type56",
     demo: { left: hand("dash", W, E), right: hand("static", S, S) },
     demoLetter: Letter.LAMBDA,
   },
@@ -297,6 +304,7 @@ export const HAND_COMBINATIONS: readonly HandCombination[] = [
     description: "learn_motion_dual_dash_description",
     letterType: LetterType.TYPE5,
     guideSlug: "hm-type56",
+    webHref: "/guide/level-1/hm-type56?screen=2",
     demo: { left: hand("dash", W, E), right: hand("dash", E, W) },
     demoLetter: Letter.PHI_DASH,
   },
@@ -306,6 +314,7 @@ export const HAND_COMBINATIONS: readonly HandCombination[] = [
     description: "verified_level1_hand_motions_87",
     letterType: LetterType.TYPE6,
     guideSlug: "hm-type56",
+    webHref: "/guide/level-1/hm-type56?screen=3",
     demo: { left: hand("static", W, W), right: hand("static", E, E) },
     demoLetter: Letter.ALPHA,
   },

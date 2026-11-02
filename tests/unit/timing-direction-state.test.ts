@@ -33,18 +33,6 @@ describe("timing and direction playback continuity", () => {
     expect(playback.step).toBe(2.5);
   });
 
-  it("does not let an outgoing slot detach a newer route's slot", () => {
-    const playback = createTimingDirectionState();
-    const oldSlot = document.createElement("div");
-    const newSlot = document.createElement("div");
-    const oldRegistration = playback.registerTarget(oldSlot);
-    const newRegistration = playback.registerTarget(newSlot);
-    oldRegistration.destroy();
-    expect(playback.target).toBe(newSlot);
-    newRegistration.destroy();
-    expect(playback.target).toBeNull();
-  });
-
   it("keeps playback isolated between layout instances", () => {
     const first = createTimingDirectionState();
     const second = createTimingDirectionState();

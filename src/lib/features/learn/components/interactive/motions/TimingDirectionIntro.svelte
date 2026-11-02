@@ -1,6 +1,6 @@
 <script lang="ts">
   import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
-  import { onMount, onDestroy } from "svelte";
+  import { onMount, onDestroy, untrack } from "svelte";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import { Crossfade } from "#lib/shared/transitions/motion.js";
@@ -12,8 +12,21 @@
   import { reducedMotion } from "#lib/shared/transitions/motion.js";
   import { downbeatPulse, type TimingMode } from "./timing-intro-phase";
 
-  let { active = true } = $props<{ active?: boolean }>();
-  // These are separate examples, not controls for one combined motion.
+  type Direction = "same" | "opposite";
+  let {
+    active = true,
+    selectedTiming,
+    selectedDirection,
+    onselect,
+  } = $props<{
+    active?: boolean;
+    selectedTiming?: TimingMode;
+    selectedDirection?: Direction;
+    onselect?: (timing: TimingMode, direction: Direction) => void;
+  }>();
+  // Three separate examples. On the timing-and-direction page the timing and
+  // direction examples follow the mode chosen there and choose it back;
+  // placement always stands alone.
   let placementAngle = $state(180);
   const placement = $derived(
     placementAngle === 180 ? "alpha" : placementAngle === 0 ? "beta" : "gamma"
@@ -121,16 +134,40 @@
     else loop.stop();
     return () => loop.stop();
   });
-  function setTiming(value: TimingMode): void {
+  $effect(() => {
+    const next = selectedTiming;
+    untrack(() => {
+      if (next && next !== timing) restartTiming(next);
+    });
+  });
+  $effect(() => {
+    const next = selectedDirection;
+    untrack(() => {
+      if (next && next !== direction) pointRight(next);
+    });
+  });
+  function restartTiming(value: TimingMode): void {
     timing = value;
     elapsed = -0.15;
+  }
+  function pointRight(value: string): void {
+    rotations[1] = rotations[0]! * (value === "same" ? 1 : -1);
+  }
+  function setTiming(value: TimingMode): void {
+    restartTiming(value);
+    onselect?.(timing, direction);
   }
   function setPlacement(value: string): void {
     if (value !== placement)
       placementAngle = value === "alpha" ? 180 : value === "beta" ? 0 : 90;
   }
   function setDirection(value: string): void {
-    rotations[1] = rotations[0]! * (value === "same" ? 1 : -1);
+    pointRight(value);
+    onselect?.(timing, direction);
+  }
+  function flipArrow(index: number): void {
+    rotations[index] = -rotations[index]!;
+    onselect?.(timing, direction);
   }
 </script>
 
@@ -312,7 +349,7 @@
           <button
             class="arrow-button"
             style:left={`${(index === 0 ? 83 : 237) / 3.2}%`}
-            onclick={() => (rotations[index] = -rotation)}
+            onclick={() => flipArrow(index)}
             aria-label={tDynamic("learn_timing_intro_flip_arrow_state_aria", {
               side:
                 index === 0

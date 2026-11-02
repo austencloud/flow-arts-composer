@@ -12,6 +12,7 @@ import TkaArrangementSelection from "./TkaArrangementSelection.svelte";
 import TkaArrangementTools from "./TkaArrangementTools.svelte";
 import { tkaEditorOf } from "./tka-editor-context";
 import TkaKindTools from "./TkaKindTools.svelte";
+import TkaStage3DSelection from "./TkaStage3DSelection.svelte";
 
 /**
  * The icons and names the editor shows for tka's kinds, and the item tool's
@@ -29,6 +30,10 @@ export const TKA_KIND_UI: Record<
     label: (t) => t("post_editor_kind_animation"),
     toolPanel: TkaKindTools,
     parts: [TUNNEL_PART],
+    // A 3D clip on its saved shot turns its camera by dragging in the box.
+    selectionLayer: TkaStage3DSelection as unknown as NonNullable<
+      ItemKindUi["selectionLayer"]
+    >,
   },
   moves: {
     icon: faArrowsUpDownLeftRight,

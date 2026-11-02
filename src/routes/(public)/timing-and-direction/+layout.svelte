@@ -1,95 +1,14 @@
 <script lang="ts">
-  import { onMount, onDestroy, untrack, type Snippet } from "svelte";
-  import { browser } from "$app/env";
-  import HandMotionPlayer from "#lib/features/learn/components/interactive/foundations/HandMotionPlayer.svelte";
-  import { DEFAULT_VIEWER_CUSTOM_COLORS } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
-  import { reparentToInspector as reparentToSlot } from "#lib/shared/sequence-viewer/components/reparent-to-inspector.js";
-  import { reducedMotion } from "#lib/shared/transitions/motion.js";
-  import {
-    createRenderActivityGate,
-    renderGateTarget,
-  } from "#lib/shared/render-gating/render-activity-gate.js";
+  import type { Snippet } from "svelte";
   import {
     createTimingDirectionState,
     setTimingDirectionState,
   } from "./_state/timing-direction-state.svelte";
 
+  // The page's chosen mode lives here, so the basics, the mode grid and the
+  // player read one selection.
   let { children }: { children: Snippet } = $props();
-  const playback = createTimingDirectionState();
-  setTimingDirectionState(playback);
-  const gate = createRenderActivityGate({ name: "timing-direction-journey" });
-  onDestroy(() => gate.dispose());
-  onMount(() => {
-    if (reducedMotion()) playback.playing = false;
-  });
-
-  $effect(() => {
-    playback.pendingSeek.version;
-    untrack(() => playback.runPendingSeek());
-  });
+  setTimingDirectionState(createTimingDirectionState());
 </script>
 
-<div use:renderGateTarget={gate}>
-  {@render children()}
-  <div class="player-parking">
-    <!-- This player belongs to the route layout, not the page. Moving its
-         host keeps the canvas, scrub position, and context-menu settings alive.
-         The sequence section further down has a player of its own. -->
-    <div
-      class="shared-canvas"
-      style:--mode-accent={playback.selected.motion.element.accentColor}
-      use:reparentToSlot={playback.target}
-    >
-      <!-- The animation engine is stubbed out of the production SSR build
-           (see SSR_STUBBED_SHARED_RENDER_PATHS), so the canvas mounts client-only. -->
-      {#if browser}
-        <HandMotionPlayer
-          primaryPropColors={DEFAULT_VIEWER_CUSTOM_COLORS}
-          sequence={playback.sequence}
-          initialStep={playback.step}
-          ariaLabel={playback.selected.article.name}
-          propDisplay={playback.propDisplay}
-          showElementalGlyph
-          externalPlaying={playback.playing}
-          singlePlay={(
-            playback.sequence.metadata as
-              | { turnLoopClosed?: boolean }
-              | undefined
-          )?.turnLoopClosed === false}
-          onExternalPlayingChange={(value) => {
-            if (value !== playback.playing) playback.togglePlayback();
-          }}
-          onStepChange={playback.followStep}
-          onSeekRef={playback.registerSeek}
-          playbackGate={gate}
-          framed={false}
-        />
-      {/if}
-    </div>
-  </div>
-</div>
-
-<style>
-  .player-parking {
-    display: none;
-  }
-  .shared-canvas {
-    --sequence-seek-target-size: 48px;
-    width: 100%;
-    height: 100%;
-    min-width: 0;
-    min-height: 0;
-    overflow: hidden;
-    border: 1px solid
-      color-mix(in srgb, var(--mode-accent) 55%, var(--theme-stroke));
-    border-radius: var(--radius-lg, 0.75rem);
-    background: color-mix(
-      in srgb,
-      var(--mode-accent) 7%,
-      var(--theme-panel-bg)
-    );
-  }
-  .shared-canvas :global(.progress-bar-container) {
-    background: transparent;
-  }
-</style>
+{@render children()}

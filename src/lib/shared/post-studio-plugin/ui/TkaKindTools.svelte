@@ -35,6 +35,7 @@
   import ChipPopoverOption from "#lib/shared/browse/components/filter-chips/ChipPopoverOption.svelte";
   import PostAnimationAppearanceTool from "#lib/shared/post-studio-plugin/ui/PostAnimationAppearanceTool.svelte";
   import PostMandalaSequencesTool from "./PostMandalaSequencesTool.svelte";
+  import PostStage3DTool from "./PostStage3DTool.svelte";
   import { DEFAULT_MANDALA_OVERLAY_CONFIG } from "#lib/shared/mandala/domain/mandala-overlay-types.js";
   import { useTkaEditor } from "./tka-editor-context";
 
@@ -303,13 +304,16 @@
       defaultPropType={tka.cardRenderOptions?.propTypeOverride}
     />
   {:else if tool === "appearance" && item.kind === "animation"}
-    <PostAnimationAppearanceTool
-      fill={appearanceFill}
-      editor={tka.editor}
-      {item}
-      {locked}
-      defaultPropType={tka.cardRenderOptions?.propTypeOverride}
-    />
+    <PostStage3DTool {editor} {item} {locked} />
+    {#if !item.stage3d}
+      <PostAnimationAppearanceTool
+        fill={appearanceFill}
+        editor={tka.editor}
+        {item}
+        {locked}
+        defaultPropType={tka.cardRenderOptions?.propTypeOverride}
+      />
+    {/if}
   {:else if tool === "labels" && item.kind === "animation"}
     <SegmentedControl
       color="accent"

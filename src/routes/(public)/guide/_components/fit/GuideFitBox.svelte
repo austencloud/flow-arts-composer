@@ -13,11 +13,26 @@
   same size keeps the scale when it still fits and fills the box, and
   otherwise searches out of sight and fades back in; only a resize, which
   the reader is causing, searches in view.
+
+  A search in a box the size of the last one that landed (the next topic in
+  the same window, the next screen) starts from that scale, so similar
+  content lands in a probe or two instead of the full bisection.
 -->
+<script lang="ts" module>
+  // The last fit that landed, in any box: a page change in the same window
+  // seeds the next page's search with it.
+  let lastFit: { area: string; scale: number } | null = null;
+</script>
+
 <script lang="ts">
   import type { Snippet } from "svelte";
   import { onMount } from "svelte";
-  import { FIT_MAX_SCALE, FIT_MIN_SCALE, fitScaleAsync } from "./fit-scale";
+  import {
+    FIT_MAX_SCALE,
+    FIT_MIN_SCALE,
+    fitScaleAsync,
+    fitScaleFromSeedAsync,
+  } from "./fit-scale";
 
   let {
     children,
@@ -28,6 +43,8 @@
     /** Changes when the content swaps, so the box refits at once. */
     contentKey,
     panScale = 0.8,
+    top = false,
+    onready,
   }: {
     children: Snippet;
     min?: number;
@@ -37,6 +54,11 @@
     contentKey?: unknown;
     /** The scale used when the content pans because nothing fits. */
     panScale?: number;
+    /** Stand the content at the top of the box, the leftover height under
+        it, instead of centring it. */
+    top?: boolean;
+    /** Called each time a fit lands and the content shows. */
+    onready?: () => void;
   } = $props();
 
   let area = $state<HTMLDivElement>();
@@ -115,22 +137,22 @@
       }
       ready = false;
     }
-    const result = await fitScaleAsync(
-      async (s) => {
-        apply(s);
-        await settle();
-        // The screen swapped away mid-search; the cancel check ends it.
-        if (!inner) return { height: 0, overflowsWidth: false };
-        return {
-          height: inner.offsetHeight,
-          overflowsWidth: overflowsWidth(inner),
-        };
-      },
-      ah,
-      () => mine !== generation || !inner,
-      min,
-      max
-    );
+    const probe = async (s: number) => {
+      apply(s);
+      await settle();
+      // The screen swapped away mid-search; the cancel check ends it.
+      if (!inner) return { height: 0, overflowsWidth: false };
+      return {
+        height: inner.offsetHeight,
+        overflowsWidth: overflowsWidth(inner),
+      };
+    };
+    const stale = () => mine !== generation || !inner;
+    const seed = lastFit?.area === `${aw}x${ah}` ? lastFit.scale : null;
+    const result =
+      seed === null
+        ? await fitScaleAsync(probe, ah, stale, min, max)
+        : await fitScaleFromSeedAsync(probe, ah, stale, seed, min, max);
     if (!result || !inner) return;
     // Even the smallest figures overflow: the box pans anyway, so draw them
     // at a size that reads on a phone instead of the floor.
@@ -142,9 +164,11 @@
     if (mine !== generation || !inner) return;
     lastHeight = inner.offsetHeight;
     lastArea = `${aw}x${ah}`;
+    if (result.fits) lastFit = { area: lastArea, scale: final };
     fitted = true;
     fitting = false;
     ready = true;
+    onready?.();
   }
 
   function schedule(): void {
@@ -194,7 +218,7 @@
   });
 </script>
 
-<div class="fit-area" class:pans={!fits} bind:this={area}>
+<div class="fit-area" class:pans={!fits} class:top bind:this={area}>
   <div class="fit-content" class:ready bind:this={inner}>
     {@render children()}
   </div>
@@ -209,6 +233,9 @@
     height: 100%;
     min-height: 0;
     overflow: hidden;
+  }
+  .fit-area.top {
+    align-content: start;
   }
   /* Even the smallest figures overflow: the content pans inside its own
      area; the page itself never scrolls. */

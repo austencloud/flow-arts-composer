@@ -13,6 +13,7 @@
 <script lang="ts">
   import "#lib/shared/animation-panel/bento/rail-tile.css";
   import type { ContextMenuItem } from "./context-menu-types";
+  import { menuItemIconClass } from "./menu-item-icon";
 
   interface Props {
     items: readonly ContextMenuItem[];
@@ -21,15 +22,6 @@
   }
 
   let { items, ariaLabel }: Props = $props();
-
-  /** Menu builders write bare `fa-*` names (the menu adds the style class);
-   *  other lists write the full class. Both draw as the solid style. */
-  function iconClass(icon: string | undefined): string {
-    if (!icon) return "";
-    return /\bfa[srb]\b|\bfa-(solid|regular|brands)\b/.test(icon)
-      ? icon
-      : `fas ${icon}`;
-  }
 </script>
 
 <div class="rt-tile-grid" role="group" aria-label={ariaLabel}>
@@ -42,7 +34,7 @@
       onclick={() => void item.action?.()}
     >
       <span class="art" aria-hidden="true">
-        {#if item.icon}<i class={iconClass(item.icon)}></i>{/if}
+        {#if item.icon}<i class={menuItemIconClass(item.icon)}></i>{/if}
       </span>
       <span class="chip-label">{item.label}</span>
     </button>

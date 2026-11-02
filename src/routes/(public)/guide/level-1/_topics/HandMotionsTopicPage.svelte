@@ -28,6 +28,7 @@
   import HandPairsStage from "#lib/features/learn/components/interactive/motions/HandPairsStage.svelte";
   import HandMotionsQuizStage from "#lib/features/learn/components/interactive/motions/HandMotionsQuizStage.svelte";
   import type { HandPair } from "#lib/features/learn/components/interactive/motions/hand-pairs-round.js";
+  import { localHref } from "#lib/shared/i18n/localized-href.svelte.js";
   import HandCombinationBoard from "#lib/shared/guide-topics/HandCombinationBoard.svelte";
   import HandMotionsChart from "#lib/shared/guide-topics/HandMotionsChart.svelte";
   import { CombinationPlayback } from "#lib/shared/guide-topics/combination-playback.svelte.js";
@@ -111,6 +112,11 @@
     ),
     ...(playScreens ? ["Two hands", "Quiz"] : []),
   ]);
+  /** Each card opens its combination's own page or screen. */
+  const cellHref = (id: HandCombinationId) => {
+    const combination = HAND_COMBINATIONS.find((c) => c.id === id);
+    return combination ? localHref(combination.webHref) : null;
+  };
   const ids = (g: (typeof HAND_COMBINATIONS)[number][]): HandCombinationId[] =>
     g.map((c) => c.id);
 </script>
@@ -177,6 +183,7 @@
                     showDescriptions
                     {darkMode}
                     printMode={!darkMode}
+                    {cellHref}
                     label={handMotionsTopicText("combinationsLead")}
                   />
                 </div>
@@ -212,6 +219,7 @@
               printMode={!darkMode}
               cellProgress={playback.cellProgress}
               onCellPlay={playback.replay}
+              {cellHref}
               label={handMotionsTopicText("combinationsLead")}
             />
           </div>

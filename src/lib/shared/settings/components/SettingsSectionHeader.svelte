@@ -10,8 +10,10 @@
   import type { Snippet } from "svelte";
 
   interface Props {
-    /** Font Awesome classes for the icon tile, e.g. "fas fa-user". */
-    icon: string;
+    /** Font Awesome classes for the icon tile, e.g. "fas fa-user". Left out
+     *  where something else already shows it (a drill-down screen whose box
+     *  carried the icon). */
+    icon?: string;
     title: string;
     description?: string;
     /** Id for the heading, so the section can be labelled by it. */
@@ -29,7 +31,9 @@
 
 <header class="section-header" class:title-only={!description && !details}>
   {#if leading}{@render leading()}{/if}
-  <span class="section-icon"><i class={icon} aria-hidden="true"></i></span>
+  {#if icon}
+    <span class="section-icon"><i class={icon} aria-hidden="true"></i></span>
+  {/if}
   <span class="section-heading">
     <h2 id={headingId}>{title}</h2>
     {#if details}

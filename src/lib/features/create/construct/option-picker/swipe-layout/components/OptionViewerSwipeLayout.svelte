@@ -90,8 +90,9 @@ Features:
     phoneTier?: boolean;
     /** The phone tier on a wide, short picker (the unfolded Fold): the tabs
      *  stand in a rail down the left edge so the grid keeps the full height,
-     *  the settings and guide open over the grid beside the rail, and the
-     *  grid holds to the rail tier's columns (a 4x4 block for 16 options). */
+     *  the settings and guide open upward over the workspace so the grid
+     *  stays in view, and the grid holds to the rail tier's columns (a 4x4
+     *  block for 16 options). */
     typeRail?: boolean;
   }>();
 
@@ -139,11 +140,14 @@ Features:
   let activeUtilityPanel = $state<UtilityPanel | null>(null);
   let renderedUtilityPanel = $state<UtilityPanel>("info");
   let utilityAnchor = $state<HTMLElement | null>(null);
-  // The rail's tray opens over the grid, so it is sized to the picker.
+  // The rail's tray spans the whole picker, so it anchors to the layout and
+  // takes its width from it.
+  let layoutElement = $state<HTMLElement | null>(null);
   let layoutWidth = $state(0);
-  let layoutHeight = $state(0);
-  // The workspace popover owns the tray wherever the picker is stacked, and
-  // on the rail tier, where it opens over the grid beside the rail.
+  // The workspace popover owns the tray wherever the picker is stacked. On
+  // the rail tier it opens over the workspace above the whole picker: the
+  // workspace isn't needed while options are being tuned, and the grid stays
+  // in view to show what the settings change.
   const usePopoverTray = $derived(openIntoWorkspace || typeRail);
 
   // Only render section content when bounds are ready to prevent size burst
@@ -380,6 +384,21 @@ Features:
     activeUtilityPanel = panel;
   }
 
+  // The rail's tray anchors to the whole picker, so a tap on the grid does
+  // not count as outside it. Picking an option is the end of tuning, so it
+  // closes the tray here; tabs and swipes leave it open to compare groups.
+  function selectPictograph(pictograph: PictographData) {
+    if (usePopoverTray) activeUtilityPanel = null;
+    onPictographSelected(pictograph);
+  }
+
+  function closeUtilityPanel() {
+    const triggerId =
+      activeUtilityPanel === "settings" ? settingsTriggerId : infoTriggerId;
+    activeUtilityPanel = null;
+    requestAnimationFrame(() => document.getElementById(triggerId)?.focus());
+  }
+
   function handlePopoverOpenChange(open: boolean) {
     if (!open) {
       activeUtilityPanel = null;
@@ -390,10 +409,7 @@ Features:
     if (event.key !== "Escape" || activeUtilityPanel === null) return;
 
     event.preventDefault();
-    const triggerId =
-      activeUtilityPanel === "settings" ? settingsTriggerId : infoTriggerId;
-    activeUtilityPanel = null;
-    requestAnimationFrame(() => document.getElementById(triggerId)?.focus());
+    closeUtilityPanel();
   }
 
   // The type tabs are one row of the opening sheet's wave, between the turn
@@ -505,8 +521,8 @@ Features:
   class="swipe-layout"
   class:type-rail={typeRail}
   style:--type-rail-width={`${CONSTRUCT_TYPE_RAIL_WIDTH}px`}
+  bind:this={layoutElement}
   bind:clientWidth={layoutWidth}
-  bind:clientHeight={layoutHeight}
 >
   <div
     class="utility-shell"
@@ -521,9 +537,9 @@ Features:
 
         <Popover.Portal>
           <Popover.Content
-            customAnchor={utilityAnchor}
-            side={typeRail ? "right" : "top"}
-            align={typeRail ? "start" : "center"}
+            customAnchor={typeRail ? layoutElement : utilityAnchor}
+            side="top"
+            align="center"
             sideOffset={typeRail ? 4 : 0}
             avoidCollisions={false}
             forceMount
@@ -537,18 +553,30 @@ Features:
                     class="workspace-utility-panel"
                     class:rail-placement={typeRail}
                     style:--rail-tray-width={typeRail
-                      ? `${Math.max(0, layoutWidth - CONSTRUCT_TYPE_RAIL_WIDTH - 8)}px`
-                      : null}
-                    style:--rail-tray-height={typeRail
-                      ? `${layoutHeight}px`
+                      ? `${Math.max(0, layoutWidth - 8)}px`
                       : null}
                     role="region"
                     aria-label={utilityPanelLabel}
                     onkeydown={handleUtilityKeydown}
-                    transition:flyFade={typeRail
-                      ? { x: -8, duration: DURATION.normal }
-                      : { y: 8, duration: DURATION.normal }}
+                    transition:flyFade={{ y: 8, duration: DURATION.normal }}
                   >
+                    {#if typeRail}
+                      <!-- Away from its trigger, the tray names itself and
+                           says how to leave, so closing it never takes a
+                           guess tap on the grid. -->
+                      <div class="rail-tray-header">
+                        <Crossfade key={renderedUtilityPanel} duration={DURATION.normal}>
+                          <span class="rail-tray-title">{utilityPanelLabel}</span>
+                        </Crossfade>
+                        <OptionPickerIconButton
+                          icon="fa-xmark"
+                          density="compact"
+                          aria-label={t("common_close")}
+                          title={t("common_close")}
+                          onclick={closeUtilityPanel}
+                        />
+                      </div>
+                    {/if}
                     {@render utilityPanelContents()}
                   </div>
                 {/if}
@@ -632,7 +660,7 @@ Features:
                 <!-- Grouped section (Types 4-6) -->
                 <OptionPicker456Group
                   pictographs={section.pictographs}
-                  {onPictographSelected}
+                  onPictographSelected={selectPictograph}
                   containerWidth={contentAreaBounds?.width ||
                     layoutConfig?.containerWidth ||
                     800}
@@ -646,7 +674,7 @@ Features:
                 <OptionViewerSection
                   letterType={section.title}
                   pictographs={section.pictographs}
-                  {onPictographSelected}
+                  onPictographSelected={selectPictograph}
                   {layoutConfig}
                   {currentSequence}
                   {contentAreaBounds}
@@ -776,22 +804,60 @@ Features:
     );
   }
 
-  /* Beside the rail the tray opens over the grid: a whole card, no wider
-     than the grid and no taller than the picker. */
+  /* On the rail tier the tray opens over the workspace above the whole
+     picker: a whole card as wide as the picker, so the grid stays in view
+     below it. A header names it and holds its close button. */
   .workspace-utility-panel.rail-placement {
-    width: min(36rem, var(--rail-tray-width, 36rem));
-    max-height: var(--rail-tray-height, 21rem);
+    --rail-tray-header-height: 44px;
+
+    display: flex;
+    flex-direction: column;
+    width: var(--rail-tray-width, 36rem);
+    max-height: var(--bits-popover-content-available-height, 21rem);
     border-bottom: 1px solid
       var(--theme-stroke-strong, rgba(255, 255, 255, 0.2));
     border-radius: var(--radius-xl, 16px);
-    transform-origin: var(--bits-popover-content-transform-origin, left top);
+  }
+
+  .rail-tray-header {
+    display: flex;
+    flex: 0 0 var(--rail-tray-header-height);
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding-inline: 14px 4px;
+    border-bottom: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.14));
+  }
+
+  .rail-tray-title {
+    color: var(--theme-text-dim, rgba(255, 255, 255, 0.62));
+    font-size: var(--font-size-compact, 12px);
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    white-space: nowrap;
   }
 
   .workspace-utility-panel.rail-placement .utility-stage {
     height: min(
       var(--settings-utility-stage-height),
-      calc(var(--rail-tray-height, 21rem) - 2px)
+      calc(
+        var(--bits-popover-content-available-height, 21rem) -
+          var(--rail-tray-header-height) - 2px
+      )
     );
+  }
+
+  /* With the hands stacked (a picker under 40rem wide) Level 3 needs two
+     turn rows under Options and Level; side by side it needs one. */
+  .workspace-utility-panel.rail-placement .utility-stage.settings-stage {
+    --settings-utility-stage-height: 15rem;
+  }
+
+  @container (min-width: 40rem) {
+    .workspace-utility-panel.rail-placement .utility-stage.settings-stage {
+      --settings-utility-stage-height: 10.25rem;
+    }
   }
 
   .utility-disclosure {
@@ -835,10 +901,10 @@ Features:
   }
 
   /* Levels 2–3 need both turn rows. This height fits the complete Level 3
-     palette on a 327px phone without leaving the guide's extra reading space
-     below it. */
+     palette, with the Options count under its filter, without leaving the
+     guide's extra reading space below it. */
   .utility-stage.settings-stage {
-    --settings-utility-stage-height: 14.5rem;
+    --settings-utility-stage-height: 15rem;
   }
 
   /* Level 1 has no turn rows, so its tray hugs the Options/Level row instead
@@ -1051,7 +1117,7 @@ Features:
     }
 
     .utility-stage.settings-stage {
-      --settings-utility-stage-height: 14.5rem;
+      --settings-utility-stage-height: 15rem;
     }
 
     .utility-stage.single-row-settings-stage {

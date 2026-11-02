@@ -1,32 +1,47 @@
 <!--
   Type 1 Dual-Shifts as a Guide web page, on the topic template The Grid set
-  (2026-10-10). One screen at a time, the same on every window (2026-10-26).
-  Screens 1 to 6 draw one mode each, in the record's order: its line on where
-  it travels, then its card (a start box and its four-count loop in its
-  element's colour), with a link to that mode's Timing and Direction guide.
-  Tog-Opp closes the Split and Together modes with the practice line. Screen
-  7 is the Gamma page's sequence that switches between Quarter-Opp and
-  Quarter-Same, with Austen's closing lines.
+  (2026-10-10). One screen per mode, in the record's order, the same on
+  every window (2026-10-26). Each mode's card plays the mode as a moving
+  animation over its start box and four-count loop, the count that is
+  playing ringed (2026-10-27), in its element's colour, with a link to that
+  mode's Timing and Direction guide. The Gamma page's switching sequence
+  left the web page on 2026-10-31 for a later sequencing page (the print
+  sheet keeps it).
 
-  Screen 1 opens with Austen's Dual-Shift definition and a link to the Timing
-  and Direction page, which keys the six modes by timing and direction. The
-  guide links there and does not draw the key again (2026-10-28, Austen: one
-  explainer per concept). Each mode card plays the mode as a moving animation over its start box
-  and four-count loop, the count that is playing ringed (2026-10-27,
-  Austen: each mode screen shows the animation with the strip below it);
-  the animation is the Timing and Direction guides' player on the same
-  hand path, and only the switching sequence's counts glide in. Every mode
-  screen keeps room for that opening, for
-  the longest lead and for the practice line, and the header stays the same
-  on every screen (steadyHead), so all six cards draw at one size and stand
-  in one place. The loops come from the shared Dual-Shifts
-  record the print sheets also read, and the pictographs grow with the window
-  (--fit).
+  The page opens the hand combinations' run: the switcher of all six under
+  the kicker, then one group of two columns (2026-11-01, Austen's review: a
+  title and a pill row stacked under the switcher read as "a text sandwich
+  with chips as the bun", and a tall window left the words column mostly
+  empty). The text column is the same on every screen: the title
+  "Dual-Shift" in its two colours, Austen's definition, the line on the six
+  modes with the link to the Timing and Direction page (which keys the six
+  modes; the guide does not draw the key again, 2026-10-28), then the six
+  modes as tiles in two columns of three (ScreenList; Austen, 2026-11-02):
+  each tile the mode's element, its name and its start and end positions,
+  the tiles filling the column down to the card's foot, the current one
+  tinted with its element's colour.
+
+  Switching a mode changes only the card (Austen, same day): its inner
+  content crossfades and the list's tint moves; the title, words, link and
+  list hold still. The mode's line on where it travels sits in the card,
+  under its name; Split-Opp's line names both Opp modes, so Tog-Opp's card
+  carries the practice line that closes the Split and Together modes. The
+  card grows with the window (--fit) to its picture's bound and the group
+  stands centred in the body; the title, words and link are centred in
+  their column and the tiles fill it, each tile's content centred.
+  The card's start box says "Start" and joins the four counts as one strip
+  with hairline seams, like the other combination pages' cards.
+  Quarter-Same's sun yellow is a gold on this page only (Austen read the
+  full yellow as hard to look at). On a narrow
+  window the column stands over the card, the list folds into one row of
+  pills right above it, and the card's loop stays one row so the card ends
+  above the footer.
 -->
 <script lang="ts">
-  import Sentences from "../../_components/Sentences.svelte";
-  import { onMount } from "svelte";
   import { browser } from "$app/env";
+  import Sentences from "../../_components/Sentences.svelte";
+  import { Crossfade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import HandMotionPlayer from "#lib/features/learn/components/interactive/foundations/HandMotionPlayer.svelte";
   import {
     TIMING_DIRECTION_MODES,
@@ -37,8 +52,6 @@
   import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
-  import { startPlacementDeriver } from "#lib/shared/pictograph/shared/services/start-placement-deriver.js";
-  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
   import {
     DUAL_SHIFT_MODE_GUIDES,
@@ -46,8 +59,6 @@
     DUAL_SHIFTS_WEB_COPY,
     dualShiftElement,
     dualShiftSteps,
-    dualShiftSwitchingSteps,
-    dualShiftsTitle,
     dualShiftsTopicHtml,
     dualShiftsTopicLines,
     plainLine,
@@ -57,15 +68,28 @@
   import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
   import { getElementImagePath } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
+  import { HAND_COMBINATIONS } from "#lib/shared/guide-topics/hand-motions-topic.js";
   import TopicScreens from "./TopicScreens.svelte";
+  import HandTypeSwitcher from "./HandTypeSwitcher.svelte";
+  import CombinationName from "./CombinationName.svelte";
+  import ScreenList, { type ScreenListItem } from "./ScreenList.svelte";
   import { dualShiftScreens } from "./dual-shift-screens";
+  import {
+    navCombination,
+    runFrame,
+    type RunNavTarget,
+  } from "./hand-type-switcher";
   import type { TopicPageProps } from "./topic-pages";
 
   let { darkMode, kicker, lessonHref, frame }: TopicPageProps = $props();
 
+  /** The page's combination in the run: its name is the title. */
+  const DUAL_SHIFT = HAND_COMBINATIONS.find((c) => c.id === "dual-shift")!;
+  const pageFrame = $derived(runFrame(frame, (c) => t(c.name)));
+
   /** Austen's definition opens the page as its lede. */
   const lede = plainLine(dualShiftsTopicLines("intro")[0] ?? "");
-  /** The line set above a mode's card: where it travels, or how it moves.
+  /** A mode's line in its card: where it travels, or how it moves.
    *  Split-Opp's line names both Opp modes, so Tog-Opp has none. */
   const MODE_LEADS: Partial<Record<DualShiftModeId, TranslationKey>> = {
     "split-same": DUAL_SHIFTS_WEB_COPY.sameLeadSplit,
@@ -74,11 +98,16 @@
     "quarter-opp": DUAL_SHIFTS_WEB_COPY.quarterOppLead,
     "quarter-same": DUAL_SHIFTS_WEB_COPY.quarterSameLead,
   };
-  const LEAD_KEYS = Object.values(MODE_LEADS).filter(
-    (key): key is TranslationKey => key !== undefined
-  );
-  /** The practice line closes the Split and Together modes. */
+  /** The practice line closes the Split and Together modes, in the card of
+   *  the last of them. */
   const PRACTICE_AFTER: DualShiftModeId = "tog-opp";
+
+  /** A mode's colour on this page: its element's, with the sun's yellow
+   *  turned gold (Quarter-Same). The shared element colours stay as they
+   *  are everywhere else. */
+  const PAGE_GOLD = "#e3b341";
+  const modeColor = (mode: DualShiftMode) =>
+    mode.id === "quarter-same" ? PAGE_GOLD : dualShiftElement(mode).accentColor;
 
   /** Each mode's animation: the Timing and Direction guides' sequence for
    *  the same hand path (the two records author the same five rows). */
@@ -98,171 +127,47 @@
   const isPlaying = (mode: DualShiftMode | null, beat: number) =>
     mode !== null && playing?.id === mode.id && playing.beat === beat;
 
-  /** Where a count's hands start, for the glide that plays the count. */
-  function startPose(step: StepData): PictographData | null {
-    try {
-      return startPlacementDeriver.deriveFromFirstStep(
-        step
-      ) as unknown as PictographData;
-    } catch {
-      return null;
-    }
-  }
-
-  /** Each mode's loop, and the switching sequence. */
-  type LoopId = DualShiftModeId | "switching";
+  /** Each mode's loop: its start box and four counts. */
   type Loop = {
-    id: LoopId;
-    mode: DualShiftMode | null;
+    id: DualShiftModeId;
+    mode: DualShiftMode;
     start: StepData;
-    counts: { step: StepData; pose: PictographData | null }[];
+    counts: StepData[];
   };
-  const loopOf = (
-    id: LoopId,
-    steps: StepData[],
-    mode: DualShiftMode | null
-  ): Loop => {
-    const [start, ...counts] = steps;
-    return {
-      id,
-      mode,
-      start: start!,
-      counts: counts.map((step) => ({ step, pose: startPose(step) })),
-    };
+  const loopOf = (mode: DualShiftMode): Loop => {
+    const [start, ...counts] = dualShiftSteps(mode);
+    return { id: mode.id, mode, start: start!, counts };
   };
-  const LOOPS: Loop[] = [
-    ...DUAL_SHIFT_MODES.map((mode) =>
-      loopOf(mode.id, dualShiftSteps(mode), mode)
-    ),
-    loopOf("switching", dualShiftSwitchingSteps(), null),
-  ];
-  const LOOP_BY_ID = new Map(LOOPS.map((l) => [l.id, l]));
-
-  /**
-   * The switching sequence has no animation, so its counts glide instead.
-   * It plays once when its screen opens: count 1's hands glide from
-   * their start points as its arrows fade in, then the next count, so the
-   * loop reads as a path. Each then holds its finished pictures, the book's
-   * view; a hover or tap replays it. Reduced motion and print keep the
-   * finished pictures. The glide is the one LessonPictographStage plays for
-   * a move.
-   */
-  const COUNT_MS = 1050;
-  const loopMs = (id: LoopId) =>
-    COUNT_MS * (LOOP_BY_ID.get(id)?.counts.length ?? 4);
-  /** Milliseconds into each loop's play; absent = at rest, finished. */
-  let elapsed = $state<Partial<Record<LoopId, number>>>({});
-  const startedAt = new Map<LoopId, number>();
-  let raf: number | null = null;
-  /** Loops play once they are on screen and every count has drawn. */
-  const inView = new Set<LoopId>();
-  const played = new Set<LoopId>();
-  const drawn = new Set<string>();
-  let armed = false;
-
-  function countProgress(id: LoopId, count: number): number | null {
-    const ms = elapsed[id];
-    if (ms === undefined) return null;
-    const linear = Math.min(
-      1,
-      Math.max(0, (ms - (count - 1) * COUNT_MS) / COUNT_MS)
-    );
-    return 1 - Math.pow(1 - linear, 3);
-  }
-
-  function tick(now: number) {
-    for (const [id, start] of startedAt) {
-      const ms = Math.min(loopMs(id), Math.max(0, now - start));
-      elapsed[id] = ms;
-      if (ms >= loopMs(id)) startedAt.delete(id);
-    }
-    raf = startedAt.size > 0 ? requestAnimationFrame(tick) : null;
-  }
-
-  function play(ids: readonly LoopId[]) {
-    const now = performance.now();
-    for (const id of ids) {
-      startedAt.set(id, now);
-      elapsed[id] = 0;
-    }
-    raf ??= requestAnimationFrame(tick);
-  }
-
-  function replay(id: LoopId) {
-    if (elapsed[id] === loopMs(id)) play([id]);
-  }
-
-  /** The loops that glide: the modes play in their animation instead. */
-  const GLIDES = LOOPS.filter((l) => !l.mode);
-
-  /** Plays the loops on screen once every count of each has drawn. */
-  function playWhenReady() {
-    if (!armed) return;
-    const ready = GLIDES.filter((l) => inView.has(l.id) && !played.has(l.id));
-    if (ready.length === 0) return;
-    if (!ready.every((l) => l.counts.every((c) => drawn.has(c.step.id))))
-      return;
-    for (const l of ready) played.add(l.id);
-    play(ready.map((l) => l.id));
-  }
-
-  function onCountDrawn(stepId: string) {
-    drawn.add(stepId);
-    playWhenReady();
-  }
-
-  /** A card reports itself on screen; its screen may open later. */
-  function watchLoop(node: HTMLElement, id: LoopId) {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (!entries.some((entry) => entry.isIntersecting)) return;
-        observer.disconnect();
-        inView.add(id);
-        playWhenReady();
-      },
-      { threshold: 0.35 }
-    );
-    observer.observe(node);
-    return { destroy: () => observer.disconnect() };
-  }
-
-  function settle() {
-    startedAt.clear();
-    if (raf !== null) cancelAnimationFrame(raf);
-    raf = null;
-    elapsed = {};
-  }
-
-  onMount(() => {
-    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    // The loops wait at their start points until their screen opens.
-    armed = true;
-    for (const l of GLIDES) elapsed[l.id] = 0;
-    playWhenReady();
-    window.addEventListener("beforeprint", settle);
-    return () => {
-      window.removeEventListener("beforeprint", settle);
-      armed = false;
-      settle();
-    };
-  });
-
-  // One screen per mode, then switching (dual-shift-screens.ts).
-  const screens = $derived(
-    dualShiftScreens((id) => t(LOOP_BY_ID.get(id)!.mode!.name))
+  const LOOP_BY_ID = new Map(
+    DUAL_SHIFT_MODES.map((mode) => [mode.id, loopOf(mode)])
   );
+
+  // One screen per mode (dual-shift-screens.ts).
+  const screens = $derived(
+    dualShiftScreens((id) => t(LOOP_BY_ID.get(id)!.mode.name))
+  );
+  /** Each mode's row wears its element: its icon, its start and end
+   *  positions, and the current row's tint. */
+  const listItems = $derived<ScreenListItem[]>(
+    screens.views.map((view, n) => {
+      const mode = LOOP_BY_ID.get(view.mode)!.mode;
+      return {
+        label: screens.labels[n] ?? "",
+        icon: getElementImagePath(dualShiftElement(mode).element),
+        tail: mode.travel,
+        color: modeColor(mode),
+      };
+    })
+  );
+
+  /** A line's breaks are the print layout's; in the card they read as
+   *  spaces. */
+  const unbroken = (html: string) => html.replace(/\s*<br\s*\/?>\s*/gi, " ");
 </script>
 
-{#snippet pictograph(
-  step: StepData,
-  isStart: boolean,
-  progress: number | null,
-  pose: PictographData | null,
-  onDrawn?: () => void
-)}
+{#snippet pictograph(step: StepData, isStart: boolean)}
   <PictographContainer
     pictographData={step}
-    onReady={onDrawn}
     gridMode={GridMode.DIAMOND}
     leftPropTypeOverride={PropType.HAND}
     rightPropTypeOverride={PropType.HAND}
@@ -275,146 +180,147 @@
     stepNumberOverride={true}
     {darkMode}
     printMode={!darkMode}
-    motionStep={progress === null ? null : step}
-    motionStartData={progress === null ? null : pose}
-    motionProgress={progress}
-    arrowOpacity={progress ?? 1}
   />
 {/snippet}
 
-<!-- A card: the mode's name and the link to its guide over its start box
-     and counts, in its element's colours. The switching sequence has no
-     name; its lead names it. -->
+<!-- A mode's line, as its card shows it. -->
+{#snippet modeLine(id: DualShiftModeId)}
+  {@const lead = MODE_LEADS[id]}
+  {#if lead}<Sentences
+      text={t(lead)}
+    />{:else if id === PRACTICE_AFTER}<Sentences
+      html={unbroken(dualShiftsTopicHtml("practice"))}
+    />{/if}
+{/snippet}
+
+<!-- A card: the mode's name and the link to its guide, its line, then its
+     animation over its start box and counts, in its element's colours. The
+     card stays put across modes; its inside crossfades. -->
 {#snippet card(loop: Loop, labelledBy: string)}
-  {@const { id, mode, start, counts } = loop}
-  <!-- Replay is a pointer extra; every loop has already played on view. -->
-  <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
   <div
     class="mode"
-    class:switching={!mode}
-    style:--el={mode ? dualShiftElement(mode).accentColor : null}
-    style:--el-deep={mode ? dualShiftElement(mode).darkComplement : null}
+    style:--el={modeColor(loop.mode)}
+    style:--el-deep={dualShiftElement(loop.mode).darkComplement}
     aria-labelledby={labelledBy}
-    use:watchLoop={id}
-    onpointerenter={() => replay(id)}
-    onclick={() => replay(id)}
   >
-    {#if mode}
-      <div class="mode-head">
-        <h2 class="mode-name" id={labelledBy}>
-          <img
-            class="element"
-            src={getElementImagePath(dualShiftElement(mode).element)}
-            alt=""
-          />
-          {t(mode.name)}
-        </h2>
-        <span class="mode-link">
-          <LinkChip size="md" href={DUAL_SHIFT_MODE_GUIDES[mode.id]}
-            >{t(DUAL_SHIFTS_WEB_COPY.openModeGuide, {
-              mode: t(mode.name),
-            })}</LinkChip
-          >
-        </span>
-      </div>
-      <div class="player">
-        {#if browser}
-          <HandMotionPlayer
-            primaryPropColors={DEFAULT_VIEWER_CUSTOM_COLORS}
-            sequence={playerSequence(mode.id)}
-            ariaLabel={t(mode.name)}
-            showElementalGlyph
-            onStepChange={(step) =>
-              (playing = {
-                id: mode.id,
-                beat: step < 1 ? 0 : Math.floor(step),
-              })}
-          />
-        {/if}
-      </div>
-    {/if}
+    <Crossfade key={loop.id} duration={DURATION.emphasis}>
+      {@render cardInside(loop, labelledBy)}
+    </Crossfade>
+  </div>
+{/snippet}
+
+{#snippet cardInside(loop: Loop, labelledBy: string)}
+  {@const { mode, start, counts } = loop}
+  <div class="mode-inside">
+    <div class="mode-head">
+      <h2 class="mode-name" id={labelledBy}>
+        <img
+          class="element"
+          src={getElementImagePath(dualShiftElement(mode).element)}
+          alt=""
+        />
+        {t(mode.name)}
+      </h2>
+      <span class="mode-link">
+        <LinkChip size="md" href={DUAL_SHIFT_MODE_GUIDES[mode.id]}
+          >{t(DUAL_SHIFTS_WEB_COPY.openModeGuide, {
+            mode: t(mode.name),
+          })}</LinkChip
+        >
+      </span>
+    </div>
+    <!-- Every mode's line in one cell, this mode's shown, so the card is
+         the same height on every mode. -->
+    <div class="mode-lines">
+      {#each DUAL_SHIFT_MODES as other (other.id)}
+        <p
+          class="mode-line"
+          class:shown={other.id === mode.id}
+          aria-hidden={other.id === mode.id ? undefined : "true"}
+        >
+          {@render modeLine(other.id)}
+        </p>
+      {/each}
+    </div>
+    <div class="player">
+      {#if browser}
+        <HandMotionPlayer
+          primaryPropColors={DEFAULT_VIEWER_CUSTOM_COLORS}
+          sequence={playerSequence(mode.id)}
+          ariaLabel={t(mode.name)}
+          showElementalGlyph
+          onStepChange={(step) =>
+            (playing = {
+              id: mode.id,
+              beat: step < 1 ? 0 : Math.floor(step),
+            })}
+        />
+      {/if}
+    </div>
     <div class="loop">
-      <div class="cell start" class:guide-step-active={isPlaying(mode, 0)}>
-        {@render pictograph(start, true, null, null)}
+      <div class="cell" class:guide-step-active={isPlaying(mode, 0)}>
+        {@render pictograph(start, true)}
       </div>
-      <div class="counts">
-        {#each counts as { step, pose }, n (step.id)}
-          <div class="cell" class:guide-step-active={isPlaying(mode, n + 1)}>
-            {@render pictograph(
-              step,
-              false,
-              countProgress(id, n + 1),
-              pose,
-              () => onCountDrawn(step.id)
-            )}
-          </div>
-        {/each}
-      </div>
+      {#each counts as step, n (step.id)}
+        <div class="cell" class:guide-step-active={isPlaying(mode, n + 1)}>
+          {@render pictograph(step, false)}
+        </div>
+      {/each}
     </div>
   </div>
 {/snippet}
 
+{#snippet switcher()}
+  <HandTypeSwitcher current="dual-shift" {darkMode} />
+{/snippet}
+
+<!-- The mode screens keep their plain names; a page of the run is named by
+     its combination, in its colours. -->
+{#snippet navName(target: RunNavTarget)}
+  {@const combination = navCombination(target, () => null)}
+  {#if combination}<CombinationName
+      {combination}
+      {darkMode}
+    />{:else}{target.text.replaceAll("-", "\u2011")}{/if}
+{/snippet}
+
 <TopicScreens
-  title={dualShiftsTitle()}
+  title={t(DUAL_SHIFT.name)}
   {kicker}
   {lessonHref}
-  {frame}
+  frame={pageFrame}
   labels={screens.labels}
   steadyHead
+  bodyHead
+  beforeTitle={switcher}
+  navLabel={navName}
 >
-  {#snippet screen(n)}
+  {#snippet screen(n, go)}
     {@const view = screens.views[n]}
     <div class="dual-shifts-topic" class:dark={darkMode}>
-      {#if view?.kind === "mode"}
+      {#if view}
         {@const loop = LOOP_BY_ID.get(view.mode)!}
-        {@const opens = n === 0}
         <section class="set">
-          <!-- Every mode screen holds the room of screen 1's opening, of
-               every lead and of the practice line, so each card draws at one
-               size in one place; what this screen does not say stays hidden,
-               and a hidden link leaves the tab order. -->
-          <div class="opening" class:unsaid={!opens} aria-hidden={!opens}>
-            <p class="lede">{lede}</p>
-            <span class="all-modes-link">
-              <LinkChip
-                size="md"
-                href="/timing-and-direction"
-                tabindex={opens ? undefined : -1}
-                >{t(DUAL_SHIFTS_WEB_COPY.allModesLink)}</LinkChip
-              >
-            </span>
-          </div>
-          <div class="slot lead-slot">
-            {#each LEAD_KEYS as key (key)}
-              {@const said = key === MODE_LEADS[view.mode]}
-              <p class="lead" class:unsaid={!said} aria-hidden={!said}>
-                <Sentences text={t(key)} />
-              </p>
-            {/each}
-          </div>
-          {@render card(loop, `dual-shift-${view.mode}`)}
-          <div class="slot">
-            <p
-              class="lead"
-              class:unsaid={view.mode !== PRACTICE_AFTER}
-              aria-hidden={view.mode !== PRACTICE_AFTER}
-            >
-              <Sentences html={dualShiftsTopicHtml("practice")} />
+          <div class="column">
+            <p class="column-title" aria-hidden="true">
+              <CombinationName combination={DUAL_SHIFT} {darkMode} />
             </p>
+            <p class="lede">{lede}</p>
+            <div class="modes-row">
+              <p class="lead modes-line">
+                {t("guide_topic_dual_shifts_modes_line")}
+              </p>
+              <span class="all-modes-link">
+                <LinkChip size="md" href="/timing-and-direction"
+                  >{t(DUAL_SHIFTS_WEB_COPY.allModesLink)}</LinkChip
+                >
+              </span>
+            </div>
+            <ScreenList items={listItems} current={n} {go} />
           </div>
-        </section>
-      {:else if view?.kind === "switching"}
-        <section class="set">
-          <p class="lead" id="dual-shift-switching">
-            <Sentences text={t(DUAL_SHIFTS_WEB_COPY.switchingLead)} />
-          </p>
-          {@render card(LOOP_BY_ID.get("switching")!, "dual-shift-switching")}
-          <p class="lead">
-            <Sentences text={t(DUAL_SHIFTS_WEB_COPY.continuous)} />
-          </p>
-          <p class="lead">
-            <Sentences html={t(DUAL_SHIFTS_WEB_COPY.gammaPractice)} />
-          </p>
+          <div class="figure">
+            {@render card(loop, `dual-shift-${view.mode}`)}
+          </div>
         </section>
       {/if}
     </div>
@@ -443,7 +349,8 @@
     margin: 0 auto;
     max-width: 44rem;
     text-align: center;
-    font-size: clamp(1rem, 1.4cqw, 1.15rem);
+    /* Rises with a tall window, beside a card that grows with it. */
+    font-size: clamp(1rem, 1.4cqw, max(1.15rem, 1.3vh));
     line-height: 1.55;
     text-wrap: balance;
   }
@@ -454,56 +361,111 @@
     text-align: center;
     color: var(--ink-dim, #555);
     font-family: var(--guide-display, "Cormorant Garamond", Georgia, serif);
-    font-size: clamp(1.15rem, 1rem + 0.5vw, 1.4rem);
+    font-size: clamp(1.15rem, 1rem + 0.62vw, max(1.4rem, 1.65vh));
     font-style: italic;
     font-weight: 500;
     line-height: 1.35;
     text-wrap: balance;
   }
-  /* A line and the pictures it introduces stay together. */
+  /* Narrow: the column (title, words, then the row of pills) over the
+     card. */
   .set {
     display: grid;
+    gap: clamp(0.9rem, 2.4cqw, 1.5rem);
+    padding-bottom: 1rem;
+  }
+  .column {
+    display: grid;
     gap: 0.85rem;
-  }
-  /* A mode screen's line slots: every possible line shares one cell, so the
-     slot is as tall as the longest; the lines this mode does not say keep
-     their room but stay unseen. A lead sits on the card, the closing line
-     under it. */
-  .slot {
-    display: grid;
-  }
-  .slot > .lead {
-    grid-area: 1 / 1;
-  }
-  .lead-slot > .lead {
-    align-self: end;
-  }
-  .unsaid {
-    visibility: hidden;
-  }
-  /* Screen 1's opening: the lede, then the link to the six-mode key on the
-     Timing and Direction page. */
-  .opening {
-    display: grid;
     justify-items: center;
-    gap: 0.85rem;
+    width: 100%;
+    min-width: 0;
   }
-  /* On a wide window the opening and the mode leads run wider, one line
-     for the opening, so the mode's animation keeps its room (a Quarter-Opp
-     lead held four lines at 44rem). */
-  @container (min-width: 60rem) {
-    .opening {
-      display: flex;
-      flex-wrap: wrap;
+  /* "Dual-Shift" in its two colours, at the size the frame's title had
+     beside the switcher's 44 px chips. */
+  .column-title {
+    margin: 0;
+    font-family: var(--guide-script, "Cormorant Garamond", Georgia, serif);
+    font-weight: var(--guide-script-weight, 700);
+    font-size: clamp(2.4rem, 1rem + 4.4vh, 4.25rem);
+    line-height: 1.1;
+    text-align: center;
+  }
+  /* A phone holds the column, the pill row and the whole card above the
+     footer: the column and the card draw tighter, and the playing picture
+     takes the height left (--fit). */
+  @media (max-width: 520px) {
+    .set {
+      gap: 0.75rem;
+      padding-bottom: 0.5rem;
+    }
+    .column {
+      gap: 0.6rem;
+    }
+    .column-title {
+      font-size: 2.3rem;
+      line-height: 1.05;
+    }
+    .column .modes-row {
+      gap: 0.4rem 1rem;
+    }
+    .figure .mode {
+      --pad: 0.6rem;
+    }
+    .figure .mode-inside {
+      gap: 0.5rem;
+    }
+    .mode .player {
+      width: min(100%, calc(14rem * var(--fit, 1)));
+    }
+  }
+  /* The line on the six modes with the link to their key on the Timing and
+     Direction page beside it. */
+  .modes-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem 1rem;
+  }
+  .modes-row > .modes-line {
+    margin: 0;
+  }
+  .figure {
+    min-width: 0;
+  }
+  /* Wide: the text column beside the card, one group centred under the
+     switcher and standing at its top, as on the other pages of the run.
+     The column keeps a reading measure (380 to 480 px); the card's column
+     takes the rest up to the card's cap. */
+  @container (min-width: 56rem) {
+    .set {
+      grid-template-columns: clamp(23.75rem, 30cqw, 30rem) minmax(0, 68rem);
       justify-content: center;
+      align-items: stretch;
+      column-gap: clamp(2rem, 3cqw, 3.5rem);
+      padding-block: 1rem;
+    }
+    /* The column runs the card's height: the list takes what the words
+       leave, down to the card's foot. */
+    .column {
+      display: flex;
+      flex-direction: column;
       align-items: center;
-      column-gap: 1.25rem;
+      gap: 1rem;
     }
-    .opening > .lede {
+    .figure {
+      align-self: start;
+    }
+    /* The title, definition and guide line centred in the column (Austen,
+       2026-11-01); the list's rows still run its full width, their names
+       at the left. */
+    .column :is(.lede, .lead) {
       margin: 0;
+      max-width: none;
     }
-    .lead-slot > .lead {
-      max-width: 60rem;
+    .figure > .mode {
+      margin-inline: 0;
     }
   }
   /* LinkChip reads the app's theme variables: the page's ink, and on a
@@ -515,6 +477,14 @@
   }
   .mode-link {
     --theme-accent: var(--tint);
+  }
+  /* A tall window: the column's pill a step larger, with the words. */
+  @media (min-height: 1200px) {
+    .all-modes-link :global(.link-chip.md) {
+      min-height: 52px;
+      padding: 0.6rem 1.35rem;
+      font-size: 1.15rem;
+    }
   }
 
   /* On a light page the pale elements (air, sun) need their deep colour
@@ -549,45 +519,76 @@
 
   /* Each mode card wears its element (water, earth, fire, air, moon or sun,
      from the choreo-card palette) as a wash, a border and the name's
-     colour. The card grows with the window (--fit) but never drops under
-     the width where a loop's four counts sit in one row, which would make
-     it taller as it shrinks. */
+     colour. The card grows with the window (--fit) up to the text column's
+     neighbour cap, and keeps the width where a loop's four counts sit in one
+     row wherever the window has it. */
   .mode {
     --pad: clamp(0.85rem, 2cqw, 1.25rem);
     --seam: color-mix(in srgb, var(--tint) 45%, var(--ink, #1a1a1a) 10%);
     container-type: inline-size;
     display: grid;
-    gap: 0.75rem;
     box-sizing: border-box;
-    width: min(100%, max(37rem, calc(34rem * var(--fit, 1))));
+    width: min(100%, 68rem, max(37rem, calc(34rem * var(--fit, 1))));
     margin: 0 auto;
     padding: var(--pad);
     border-radius: 1rem;
     border: 1px solid color-mix(in srgb, var(--tint) 55%, transparent);
     background: color-mix(in srgb, var(--tint) 12%, transparent);
+    transition:
+      background-color var(--duration-emphasis) var(--ease-standard, ease),
+      border-color var(--duration-emphasis) var(--ease-standard, ease);
+  }
+  /* The card's inside, which crossfades from mode to mode. */
+  .mode-inside {
+    display: grid;
+    gap: 0.75rem;
+    min-width: 0;
+  }
+  /* The mode's line under its name; the lines share one cell so the card
+     keeps its height. */
+  .mode-lines {
+    display: grid;
+  }
+  .dual-shifts-topic .mode-line {
+    grid-area: 1 / 1;
+    margin: 0;
+    visibility: hidden;
+    color: var(--ink, #1a1a1a);
+    font-size: clamp(0.95rem, 2.4cqw, 1.1rem);
+    line-height: 1.5;
+    text-wrap: pretty;
+    --sentence-display: inline;
+  }
+  .dual-shifts-topic .mode-line.shown {
+    visibility: visible;
   }
   .dark .mode {
     background: color-mix(in srgb, var(--tint) 16%, transparent);
   }
-  /* The switching sequence moves between two modes, so it wears neither
-     element: a plain ink wash. */
-  .mode.switching {
-    --el: color-mix(in srgb, var(--ink, #1a1a1a) 55%, transparent);
-    --el-deep: var(--ink, #1a1a1a);
-  }
-  /* The card's head: the name over its guide link, centered, on a narrow
-     card; the name left and the link right on a wide one. */
+  /* The card's head: the name left and the guide link right. On a narrow
+     card the tinted pill right above it already names the mode, so the
+     name stays for screen readers and the link stands alone; the mode's
+     line stays for screen readers too, so a phone keeps the whole card
+     above the footer. */
   .mode-head {
     display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
     align-items: center;
+    justify-content: space-between;
     gap: 0.5rem;
   }
-  @container (min-width: 34rem) {
+  @container (max-width: 33.99rem) {
     .mode-head {
-      flex-direction: row;
-      flex-wrap: wrap;
-      justify-content: space-between;
+      justify-content: center;
+    }
+    .dual-shifts-topic .mode-name,
+    .dual-shifts-topic .mode-lines {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
     }
   }
   /* Mode names in the book's serif. */
@@ -619,69 +620,47 @@
     margin: 0 auto;
   }
 
-  /* The start box leads in its own frame; the counts fuse into one block
-     with hairline seams (GuideStepStrip's shape). Narrow: the counts sit
-     two to a row beside the start; wide: four to a row, so a mode's loop is
-     one row and the switching sequence two, counts 5 to 8 under 1 to 4. */
+  /* The start box ("Start" in its corner) and the four counts fuse into one
+     block with hairline seams (GuideStepStrip's shape; 2026-11-01, Austen:
+     the start joins count 1 with the same hairline, no gap), five to a row
+     at every width, so a mode's loop is one row and a phone's card ends
+     above the footer. The block rounds its end boxes rather than clipping,
+     so the ring on the playing box shows on every edge. */
   .loop {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
-    gap: 0.6rem;
-    align-items: start;
-  }
-  .counts {
     --round: calc(0.75rem - 1px);
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 1px;
     background: var(--seam);
     border: 1px solid var(--seam);
     border-radius: 0.75rem;
   }
-  /* The block rounds its corner counts rather than clipping, so the ring on
-     the playing count shows on every edge. */
-  .counts > .cell:nth-child(1) {
-    border-top-left-radius: var(--round);
+  .loop > .cell:first-child {
+    border-radius: var(--round) 0 0 var(--round);
   }
-  .counts > .cell:nth-child(2) {
-    border-top-right-radius: var(--round);
+  .loop > .cell:last-child {
+    border-radius: 0 var(--round) var(--round) 0;
   }
-  .counts > .cell:nth-child(3) {
-    border-bottom-left-radius: var(--round);
+  /* The box playing wears the ring inside its own edge, unscaled: a raised
+     box would cover its neighbour's corner label. */
+  .loop > .cell {
+    position: relative;
   }
-  .counts > .cell:nth-child(4) {
-    border-bottom-right-radius: var(--round);
+  .loop > .cell.guide-step-active {
+    z-index: auto;
+    transform: none;
+    box-shadow: none;
+    animation: none;
   }
-  @container (min-width: 34rem) {
-    .loop {
-      grid-template-columns: minmax(0, 1fr) minmax(0, 4fr);
-    }
-    .counts {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-    .counts > .cell:nth-child(n) {
-      border-radius: 0;
-    }
-    .counts > .cell:nth-child(1) {
-      border-radius: var(--round) 0 0 var(--round);
-    }
-    .counts > .cell:nth-child(4) {
-      border-radius: 0 var(--round) var(--round) 0;
-    }
-  }
-  /* The switching sequence's eight counts never ring; its block clips. */
-  .switching .counts {
-    overflow: hidden;
-  }
-  /* The switching sequence keeps its two rows of four down to the width
-     where a count is still about 64 px across. */
-  @container (min-width: 21rem) {
-    .switching .loop {
-      grid-template-columns: minmax(0, 1fr) minmax(0, 4fr);
-    }
-    .switching .counts {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
+  .loop > .cell.guide-step-active::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow:
+      inset 0 0 0 3px rgba(251, 191, 36, 0.9),
+      inset 0 0 12px rgba(251, 191, 36, 0.45);
+    pointer-events: none;
   }
   /* The pictograph paints its own ground once drawn; until then the cell
      shows a faint tint in either theme (the host settles dark mode after
@@ -691,12 +670,16 @@
     overflow: hidden;
     background: color-mix(in srgb, currentColor 5%, transparent);
   }
-  .start {
-    border: 1px solid var(--seam);
-    border-radius: 0.75rem;
-  }
   .cell :global(.pictograph-container) {
     width: 100%;
     height: 100%;
+  }
+  /* The counts' position labels follow the page, not the app (the renderer
+     inverts them whenever the app is dark). */
+  .dual-shifts-topic:not(.dark) .cell :global(.placement-glyph) {
+    filter: none;
+  }
+  .dual-shifts-topic.dark .cell :global(.placement-glyph) {
+    filter: invert(0.9);
   }
 </style>

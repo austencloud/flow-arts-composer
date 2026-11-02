@@ -700,3 +700,83 @@
     grid-column: breakout;
   }
 }
+
+/* Page to page along the hand combinations' run (2026-11-01, Austen: a chip
+   to another page must not fade the whole page to black and back). While
+   the route's crossfade runs between two pages of the run, the header (the
+   kicker and the switcher) and the Back and Next row get their own layers:
+   they hold their place and only their changed parts crossfade, so the
+   switcher's highlight moves. The body crossfades in place over the
+   clock's normal 200 ms, the new one rising the 8 px the route uses and
+   settling; the two fades share one clock, so nothing in between goes
+   dark. */
+html.route-transition .guide-screens.body-head > .head {
+  view-transition-name: guide-run-head;
+}
+html.route-transition .guide-screens.body-head > .controls {
+  view-transition-name: guide-run-controls;
+}
+::view-transition-group(guide-run-head),
+::view-transition-group(guide-run-controls) {
+  animation: none;
+}
+::view-transition-old(guide-run-head),
+::view-transition-new(guide-run-head),
+::view-transition-old(guide-run-controls),
+::view-transition-new(guide-run-controls) {
+  animation-duration: var(--duration-normal);
+  animation-timing-function: var(--ease-standard, ease);
+}
+/* The title and the card are the run's shared pieces (2026-11-01 review:
+   between Dual-Shift and the other pages the title vanished in one place
+   and appeared 280 px away). Each gets one name while the route changes,
+   on the one shown title and the one card: the title slides from its old
+   place to its new one, its words crossfading at their own size, centred
+   on the moving box, and the card reshapes in place while its contents
+   crossfade. Only the words between them fade with the page. A screen
+   change inside a page is not a route change, so it keeps its card-only
+   crossfade with the title still. */
+html.route-transition
+  .guide-screens.body-head
+  :is(
+    .combination-topic .column-title.shown,
+    .dual-shifts-topic .column-title
+  ) {
+  view-transition-name: guide-run-title;
+}
+html.route-transition
+  .guide-screens.body-head
+  :is(.combination-topic .figure > .demo, .dual-shifts-topic .figure > .mode) {
+  view-transition-name: guide-run-card;
+}
+::view-transition-group(guide-run-title),
+::view-transition-group(guide-run-card) {
+  animation-duration: var(--duration-emphasis);
+  animation-timing-function: var(--ease-standard, ease);
+}
+::view-transition-old(guide-run-title),
+::view-transition-new(guide-run-title),
+::view-transition-old(guide-run-card),
+::view-transition-new(guide-run-card) {
+  animation-duration: var(--duration-emphasis);
+  animation-timing-function: var(--ease-standard, ease);
+}
+::view-transition-old(guide-run-title),
+::view-transition-new(guide-run-title) {
+  inset-inline-start: 50%;
+  inline-size: auto;
+  block-size: 100%;
+  translate: -50% 0;
+}
+html.route-transition:has(.guide-screens.body-head)::view-transition-old(
+    page-content
+  ) {
+  animation: route-fade-out var(--duration-normal) var(--ease-standard, ease)
+    both;
+}
+html.route-transition:has(.guide-screens.body-head)::view-transition-new(
+    page-content
+  ) {
+  animation: route-rise-in var(--duration-normal) var(--ease-standard, ease)
+    both;
+}

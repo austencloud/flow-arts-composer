@@ -2,6 +2,8 @@
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onDestroy, onMount } from "svelte";
   import DisplayTilePreview from "./DisplayTilePreview.svelte";
+  import MenuItemChipRow from "#lib/shared/components/context-menu/MenuItemChipRow.svelte";
+  import type { ContextMenuItem } from "#lib/shared/components/context-menu/context-menu-types.js";
   import { getAnimationVisibilityManager } from "../../state/animation-visibility-state.svelte";
   import type { AnimationVisibilityStateManager } from "../../state/animation-visibility-state.svelte";
   import { getAnimationVisibilityContext } from "../../state/animation-visibility-context";
@@ -70,6 +72,11 @@
      *  (Settings → Display puts three side by side). Ignored with `fill`,
      *  `compact` or the per-hand chips. */
     hostSized = false,
+    /** Small toggle chips (MenuItemChipRow: icon and label) instead of
+     *  picture tiles, for a phone screen where the stage beside them is the
+     *  hero (Settings → Display's drill-down screen). Takes precedence over
+     *  the tile densities above; ignored with the per-hand chips. */
+    chips: asChips = false,
     /** The four edge marks (TKA glyph, element, step number, word) describe a
      *  realized sequence. A host animating something that has no letter and no
      *  steps — the shape-matrix theory stage traces a bare spin ratio — turns
@@ -94,6 +101,7 @@
     stretch?: boolean;
     compact?: boolean;
     hostSized?: boolean;
+    chips?: boolean;
     showSequenceMarks?: boolean;
     showWordToggle?: boolean;
     onSettingChange?: ViewerControlSink;
@@ -178,6 +186,8 @@
   interface Chip {
     id: string;
     label: string;
+    /** The chip presentation's glyph, the canvas menu's icon for the layer. */
+    icon: string;
     /** Which layer this tile draws a preview of. */
     preview?:
       | "grid"
@@ -202,6 +212,7 @@
     {
       id: "left",
       label: t("viewer_ui_left"),
+      icon: "fa-wand-sparkles",
       preview: "props",
       hand: "left",
       accent: "var(--prop-blue, #2196f3)",
@@ -212,6 +223,7 @@
     {
       id: "right",
       label: t("viewer_ui_right"),
+      icon: "fa-wand-sparkles",
       preview: "props",
       hand: "right",
       accent: "var(--prop-red, #f44336)",
@@ -224,6 +236,7 @@
   const masterPropsChip: Chip = {
     id: "props",
     label: t("viewer_ui_props"),
+    icon: "fa-wand-sparkles",
     preview: "props",
     active: () => propsVisible,
     toggle: () => toggleEffectivePropsVisibility(vm, trailOnlyState),
@@ -235,6 +248,7 @@
     {
       id: "grid",
       label: t("playback_audit_visual_grid"),
+      icon: "fa-table-cells",
       preview: "grid",
       active: () => gridVisible,
       toggle: toggleGrid,
@@ -242,6 +256,7 @@
     {
       id: "pathLines",
       label: t("animation_display_hand_paths"),
+      icon: "fa-route",
       preview: "paths",
       active: () => pathLines,
       toggle: togglePathLines,
@@ -249,6 +264,7 @@
     {
       id: "mandala",
       label: t("share_mandala"),
+      icon: "fa-draw-polygon",
       preview: "mandala",
       active: () => mandala,
       toggle: () => vm.toggleVisibility("mandala"),
@@ -261,6 +277,7 @@
     {
       id: "tkaGlyph",
       label: t("animation_menu_tka_glyph"),
+      icon: "fa-font",
       preview: "tkaGlyph",
       active: () => tkaGlyph,
       toggle: () => vm.toggleVisibility("tkaGlyph"),
@@ -268,6 +285,7 @@
     {
       id: "elementalGlyph",
       label: t("animation_menu_hand_tnd"),
+      icon: "fa-hand",
       preview: "element",
       active: () => elementalGlyph,
       toggle: () => vm.toggleVisibility("elementalGlyph"),
@@ -275,13 +293,15 @@
     {
       id: "propElementalGlyph",
       label: t("viewer_detail_prop_tnd"),
+      icon: "fa-fire-flame-curved",
       preview: "element",
       active: () => propElementalGlyph,
       toggle: () => vm.toggleVisibility("propElementalGlyph"),
     },
     {
       id: "stepNumbers",
-      label: t("animation_display_step_number"),
+      label: t("animation_menu_step_numbers"),
+      icon: "fa-list-ol",
       preview: "stepNumber",
       active: () => stepNumbers,
       toggle: () => vm.toggleVisibility("stepNumbers"),
@@ -289,6 +309,7 @@
     {
       id: "wordHeader",
       label: t("viewer_ui_word"),
+      icon: "fa-heading",
       preview: "word",
       active: () => wordHeader,
       toggle: () => vm.toggleVisibility("wordHeader"),
@@ -296,6 +317,7 @@
     {
       id: "progressBar",
       label: t("animation_menu_progress_bar"),
+      icon: "fa-bars-progress",
       preview: "progress",
       active: () => progressBar,
       toggle: () => vm.toggleVisibility("progressBar"),
@@ -429,6 +451,18 @@
   const hostLaidOut = $derived(
     hostSized && !fill && !compact && !showPropChips
   );
+  const chipRow = $derived(asChips && !showPropChips);
+  // The same chips as menu items, so MenuItemChipRow draws them; each click
+  // still goes through toggleChip and its analytics report.
+  const chipItems = $derived<ContextMenuItem[]>(
+    chips.map((chip) => ({
+      id: chip.id,
+      label: chip.label,
+      icon: chip.icon,
+      checked: chip.active(),
+      action: () => toggleChip(chip),
+    }))
+  );
 
   function scrollerOf(el: HTMLElement): HTMLElement | null {
     for (let node = el.parentElement; node; node = node.parentElement) {
@@ -505,67 +539,71 @@
   }
 </script>
 
-<div
-  class="vis-grid-shell"
-  class:fill
-  class:stretch={fill && stretch}
-  bind:this={shellEl}
->
+{#if chipRow}
+  <MenuItemChipRow items={chipItems} ariaLabel={t("viewer_ui_display")} />
+{:else}
   <div
-    class:motion-grid={showPropChips}
-    class:ten-tiles={showPropChips && chips.length === 10}
-    class:fitted
-    class:compact={compact && !showPropChips}
-    class:rt-tile-grid={hostLaidOut}
-    class:host-sized={hostLaidOut}
-    class="vis-grid"
-    bind:this={gridEl}
-    style={fitted
-      ? `--vis-cols: ${fitCols}; --vis-tile: ${fitTile}px; --tile-art: ${fitArt}px;`
-      : undefined}
+    class="vis-grid-shell"
+    class:fill
+    class:stretch={fill && stretch}
+    bind:this={shellEl}
   >
-    {#each chips as chip, index (chip.id)}
-      <button
-        class="rt-chip"
-        class:group-row={!showPropChips &&
-          !compact &&
+    <div
+      class:motion-grid={showPropChips}
+      class:ten-tiles={showPropChips && chips.length === 10}
+      class:fitted
+      class:compact={compact && !showPropChips}
+      class:rt-tile-grid={hostLaidOut}
+      class:host-sized={hostLaidOut}
+      class="vis-grid"
+      bind:this={gridEl}
+      style={fitted
+        ? `--vis-cols: ${fitCols}; --vis-tile: ${fitTile}px; --tile-art: ${fitArt}px;`
+        : undefined}
+    >
+      {#each chips as chip, index (chip.id)}
+        <button
+          class="rt-chip"
+          class:group-row={!showPropChips &&
+            !compact &&
+            fitted &&
+            fitCols < chips.length &&
+            index >= 4 &&
+            index < 4 + fitCols}
+          class:group-inline={!showPropChips &&
+            !compact &&
+            fitted &&
+            fitCols >= chips.length &&
+            index === 4}
+          type="button"
+          aria-pressed={chip.active()}
+          data-tone={chip.tone}
+          style:--rail-accent={chip.accent}
+          style:grid-column-start={compact &&
           fitted &&
-          fitCols < chips.length &&
-          index >= 4 &&
-          index < 4 + fitCols}
-        class:group-inline={!showPropChips &&
-          !compact &&
-          fitted &&
-          fitCols >= chips.length &&
-          index === 4}
-        type="button"
-        aria-pressed={chip.active()}
-        data-tone={chip.tone}
-        style:--rail-accent={chip.accent}
-        style:grid-column-start={compact &&
-        fitted &&
-        index === chips.length - (chips.length % fitCols)
-          ? Math.floor((fitCols - (chips.length % fitCols)) / 2) + 1
-          : undefined}
-        onclick={() => toggleChip(chip)}
-      >
-        {#if chip.preview}
-          <DisplayTilePreview
-            kind={chip.preview}
-            hand={chip.hand}
-            {gridMode}
-            {propType}
-            {pathShape}
-            {motionAware}
-            {darkMode}
-            {sequence}
-          />
-        {/if}
-        <span class="chip-label">{chip.label}</span>
-      </button>
-    {/each}
+          index === chips.length - (chips.length % fitCols)
+            ? Math.floor((fitCols - (chips.length % fitCols)) / 2) + 1
+            : undefined}
+          onclick={() => toggleChip(chip)}
+        >
+          {#if chip.preview}
+            <DisplayTilePreview
+              kind={chip.preview}
+              hand={chip.hand}
+              {gridMode}
+              {propType}
+              {pathShape}
+              {motionAware}
+              {darkMode}
+              {sequence}
+            />
+          {/if}
+          <span class="chip-label">{chip.label}</span>
+        </button>
+      {/each}
+    </div>
   </div>
-</div>
+{/if}
 
 <style>
   .vis-grid-shell {

@@ -67,7 +67,7 @@ export function animationSummary(vm: AnimationVisibilityStateManager): string {
     [vm.getVisibility("tkaGlyph"), t("animation_menu_tka_glyph")],
     [vm.getVisibility("elementalGlyph"), t("animation_menu_hand_tnd")],
     [vm.getVisibility("propElementalGlyph"), t("viewer_detail_prop_tnd")],
-    [vm.getVisibility("stepNumbers"), t("animation_display_step_number")],
+    [vm.getVisibility("stepNumbers"), t("animation_menu_step_numbers")],
     [vm.getVisibility("wordHeader"), t("viewer_ui_word")],
     [vm.getVisibility("progressBar"), t("animation_menu_progress_bar")],
   ];

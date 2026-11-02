@@ -58,6 +58,10 @@ export const TKA_EDIT_HOOKS: EditHooks = {
       if (patch.followers?.length) next.followers = patch.followers;
       else delete next.followers;
     }
+    if (item.kind === "animation" && patch.stage3d !== undefined) {
+      if (patch.stage3d) next.stage3d = patch.stage3d;
+      else delete next.stage3d;
+    }
     if (
       (item.kind === "animation" || item.kind === "moves") &&
       patch.animationAppearance !== undefined

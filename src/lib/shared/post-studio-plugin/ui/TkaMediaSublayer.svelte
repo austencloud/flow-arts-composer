@@ -19,7 +19,13 @@
     layerSequencePosition,
     paintedLabelRegions,
   } from "./tka-canvas-layer";
-  import { staggeredFrames } from "../staggered-performers";
+  import {
+    postPerformerPositions,
+    stage3DOrbitAngle,
+    stage3DPerformerSteps,
+    stage3DSecondsPerTurn,
+  } from "../stage-3d";
+  import type PostStudioStage3DLayerType from "./PostStudioStage3DLayer.svelte";
   import { createPerformerSequences } from "../performer-sequences.svelte";
   import { postFollowers } from "../tunnel-performers";
   import { sequencePositionToAnimationTime } from "#lib/shared/animation-engine/services/step-calculator.js";
@@ -65,28 +71,23 @@
   const effectsIn = $derived(layer.effectsIn ?? 1);
   // A staggered tunnel: the red/blue performer stops early and the others
   // follow it on the same tapped count.
-  const staggered = $derived.by(() => {
-    const followers =
-      sourceItem?.kind === "animation" ? sourceItem.followers : undefined;
-    if (!followers?.length || !layer.sequenceFrame || !sequence) return null;
-    const moveBeats = sequence.steps.map((step) => step.duration ?? 1);
-    return staggeredFrames(
+  // The 2D clip and the 3D stage read these same positions.
+  const performerPositions = $derived(
+    postPerformerPositions(
       layer.sequenceFrame,
-      moveBeats,
-      followers.map((follower) => follower.beatsBehind)
-    );
-  });
-  const followerPositions = $derived(
-    staggered?.followers.map((frame) => frame.enginePosition) ?? []
+      sequence ? sequence.steps.map((step) => step.duration ?? 1) : null,
+      sourceItem?.kind === "animation" ? sourceItem.followers : undefined,
+      layerSequencePosition(layer, binding)
+    )
   );
+  const staggered = $derived(performerPositions.staggered);
+  const followerPositions = $derived(performerPositions.followerPositions);
   // A partner facing the other way does the moves mirrored, flipped, swapped.
   const followerSequences = createPerformerSequences(
     () => sequence,
     () => (sourceItem?.kind === "animation" ? sourceItem.followers : undefined)
   );
-  const sequencePosition = $derived(
-    staggered?.leader.enginePosition ?? layerSequencePosition(layer, binding)
-  );
+  const sequencePosition = $derived(performerPositions.sequencePosition);
   const sequencePassIndex = $derived(
     staggered?.leader.pass ?? layer.sequencePassIndex
   );
@@ -125,6 +126,39 @@
       ? tka.arrangement.marks
       : null
   );
+  /** A 3D animation clip: its stage, its steps and its orbit at this time. */
+  const stageItem = $derived(
+    sourceItem?.kind === "animation" && sourceItem.stage3d ? sourceItem : null
+  );
+  const stageSteps = $derived(
+    stage3DPerformerSteps({ sequencePosition, followerPositions })
+  );
+  const stageOrbitAngle = $derived(
+    stageItem?.stage3d
+      ? stage3DOrbitAngle(
+          editor.previewSeconds,
+          stageItem.start,
+          stage3DSecondsPerTurn(editor.project, stageItem),
+          stageItem.stage3d.orbitDirection ?? 1
+        )
+      : 0
+  );
+  // A post without a 3D clip should not load the 3D viewer.
+  let Stage3DLayer = $state.raw<typeof PostStudioStage3DLayerType | null>(
+    null
+  );
+  $effect(() => {
+    if (binding.renderMode !== "scene-3d" || !stageItem || Stage3DLayer)
+      return;
+    let current = true;
+    void import("./PostStudioStage3DLayer.svelte").then((module) => {
+      if (current) Stage3DLayer = module.default;
+    });
+    return () => {
+      current = false;
+    };
+  });
+
   // A post without an arrangement should not load the grid's canvas engines.
   let ArrangementLayer = $state.raw<
     typeof PostStudioArrangementLayerType | null
@@ -155,6 +189,25 @@
       {exporting}
       {exportSize}
       editing={arrangementMarks}
+    />
+  {/if}
+{:else if binding.renderMode === "scene-3d" && stageItem?.stage3d && sequence}
+  {#if Stage3DLayer}
+    <Stage3DLayer
+      itemId={stageItem.id}
+      {sequence}
+      followerSequences={followerSequences.current}
+      followerCount={stageItem.followers?.length ?? 0}
+      performerSteps={stageSteps}
+      stage={stageItem.stage3d}
+      orbitAngle={stageOrbitAngle}
+      postSeconds={editor.previewSeconds}
+      leftPropType={cardRenderOptions?.leftPropTypeOverride ??
+        cardRenderOptions?.propTypeOverride}
+      rightPropType={cardRenderOptions?.rightPropTypeOverride ??
+        cardRenderOptions?.propTypeOverride}
+      {exporting}
+      {exportSize}
     />
   {/if}
 {:else if binding.renderMode === "mandala" && mandalaItem}

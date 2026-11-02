@@ -259,6 +259,36 @@ describe("OptionViewerSwipeLayout type navigation", () => {
     ).toBeLessThanOrEqual(1);
   });
 
+  it("fits Level 3 settings in the cover screen's tray without scrolling", async () => {
+    // The folded Fold: a 412px stacked picker under the workspace.
+    await page.viewport(412, 915);
+    render(OptionViewerSwipeLayoutTestHarness, {
+      organizedPictographs: EMPTY_PANELS,
+      width: 412,
+      height: 420,
+      settingsEnabled: true,
+      openIntoWorkspace: true,
+      touchTarget: 40,
+      topOffset: 440,
+      settingsLevel: 3,
+      hiddenCount: 12,
+    });
+
+    await page.getByRole("button", { name: "Option settings" }).click();
+    const region = page.getByRole("region", { name: "Option settings" });
+    await expect.element(region).toBeVisible();
+    await pause(400);
+
+    const scroller = region.element().querySelector<HTMLElement>(".settings-panel")!;
+    expect(scroller.scrollHeight).toBeLessThanOrEqual(scroller.clientHeight);
+    expect(scroller.scrollWidth).toBeLessThanOrEqual(scroller.clientWidth);
+    const palettes = region.element().querySelectorAll<HTMLElement>(".turn-seg");
+    expect(palettes).toHaveLength(2);
+    for (const palette of palettes) {
+      expect(palette.scrollWidth).toBeLessThanOrEqual(palette.clientWidth);
+    }
+  });
+
   it("expands the tray in flow when the picker has enough height", async () => {
     render(OptionViewerSwipeLayoutTestHarness, {
       organizedPictographs: EMPTY_PANELS,
@@ -416,9 +446,9 @@ describe("OptionViewerSwipeLayout type rail", () => {
     await expect.element(type2).toHaveAttribute("aria-selected", "true");
   });
 
-  it("opens the tray over the grid beside the rail and closes it", async () => {
+  it("opens the tray over the workspace above the picker, with a close button", async () => {
     renderRail();
-    const rail = document.querySelector<HTMLElement>(".type-navigation")!;
+    const layout = document.querySelector<HTMLElement>(".swipe-layout")!;
     const carousel = document.querySelector<HTMLElement>(".carousel-area")!;
     const carouselBefore = carousel.getBoundingClientRect();
 
@@ -426,24 +456,92 @@ describe("OptionViewerSwipeLayout type rail", () => {
     await info.click();
     const region = page.getByRole("region", { name: "Letter type guide" });
     await expect.element(region).toBeVisible();
-    await new Promise((resolve) => setTimeout(resolve, 320));
+    await pause(320);
 
-    const railBounds = rail.getBoundingClientRect();
+    // A card as wide as the picker, standing on its top edge, so the whole
+    // grid stays in view below it.
+    const picker = layout.getBoundingClientRect();
     const panel = region.element().getBoundingClientRect();
-    expect(panel.left).toBeGreaterThanOrEqual(railBounds.right);
-    expect(panel.top).toBeGreaterThanOrEqual(railBounds.top - 1);
-    expect(panel.bottom).toBeLessThanOrEqual(railBounds.bottom + 1);
-    expect(panel.right).toBeLessThanOrEqual(railBounds.left + 707);
-    // Opening it does not move the grid.
+    expect(panel.bottom).toBeLessThanOrEqual(picker.top + 1);
+    expect(panel.top).toBeGreaterThanOrEqual(0);
+    expect(panel.left).toBeGreaterThanOrEqual(picker.left);
+    expect(panel.right).toBeLessThanOrEqual(picker.right);
+    expect(panel.width).toBeGreaterThan(picker.width - 12);
     const carouselAfter = carousel.getBoundingClientRect();
     expect(carouselAfter.top).toBeCloseTo(carouselBefore.top, 0);
     expect(carouselAfter.left).toBeCloseTo(carouselBefore.left, 0);
 
+    // It names itself and closes from its own corner.
+    await expect.element(region.getByText("Letter type guide")).toBeVisible();
+    await region.getByRole("button", { name: "Close" }).click();
+    await expect.element(info).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("closes the tray from the lit rail button and from Escape", async () => {
+    renderRail();
+    const settings = page.getByRole("button", { name: "Option settings" });
+
+    await settings.click();
+    await expect.element(settings).toHaveAttribute("aria-expanded", "true");
+    await expect
+      .element(page.getByRole("region", { name: "Option settings" }))
+      .toBeVisible();
+    await settings.click();
+    await expect.element(settings).toHaveAttribute("aria-expanded", "false");
+
+    await settings.click();
+    const region = page.getByRole("region", { name: "Option settings" });
+    await expect.element(region).toBeVisible();
     region
       .element()
       .dispatchEvent(
         new KeyboardEvent("keydown", { key: "Escape", bubbles: true })
       );
-    await expect.element(info).toHaveAttribute("aria-expanded", "false");
+    await expect.element(settings).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("sets the hands side by side so Level 3 fits without scrolling", async () => {
+    render(OptionViewerSwipeLayoutTestHarness, {
+      organizedPictographs: EMPTY_PANELS,
+      width: 707,
+      height: 365,
+      settingsEnabled: true,
+      openIntoWorkspace: true,
+      typeRail: true,
+      touchTarget: 40,
+      topOffset: 360,
+      settingsLevel: 3,
+      hiddenCount: 12,
+    });
+
+    await page.getByRole("button", { name: "Option settings" }).click();
+    const region = page.getByRole("region", { name: "Option settings" });
+    await expect.element(region).toBeVisible();
+    await pause(400);
+
+    const scroller = region.element().querySelector<HTMLElement>(".settings-panel")!;
+    expect(scroller.scrollHeight).toBeLessThanOrEqual(scroller.clientHeight);
+    expect(scroller.scrollWidth).toBeLessThanOrEqual(scroller.clientWidth);
+    for (const palette of region
+      .element()
+      .querySelectorAll<HTMLElement>(".turn-seg")) {
+      expect(palette.scrollWidth).toBeLessThanOrEqual(palette.clientWidth);
+    }
+    const [blue, red] = Array.from(
+      region.element().querySelectorAll<HTMLElement>(".hand-half")
+    ).map((half) => half.getBoundingClientRect());
+    expect(blue).toBeDefined();
+    expect(Math.abs(blue!.top - red!.top)).toBeLessThanOrEqual(1);
+    expect(red!.left).toBeGreaterThanOrEqual(blue!.right);
+    // Every Level 3 value keeps a usable button.
+    const turnButtons = Array.from(
+      region.element().querySelectorAll<HTMLElement>(".turn-seg .segment")
+    );
+    expect(turnButtons).toHaveLength(16);
+    for (const button of turnButtons) {
+      expect(button.getBoundingClientRect().width).toBeGreaterThanOrEqual(28);
+    }
+    const panel = region.element().getBoundingClientRect();
+    expect(panel.top).toBeGreaterThanOrEqual(0);
   });
 });

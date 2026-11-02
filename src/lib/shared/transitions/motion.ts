@@ -367,6 +367,15 @@ export function flexPresence(
   };
 }
 
+/** True while a route change's view transition runs (@austencloud/motion
+ *  marks the root with `route-transition`). */
+function leavingRoute(): boolean {
+  return (
+    typeof document !== "undefined" &&
+    document.documentElement.classList.contains("route-transition")
+  );
+}
+
 interface OpaqueFadeParams {
   duration?: number;
   delay?: number;
@@ -389,6 +398,11 @@ interface OpaqueFadeParams {
  * it starts, even at zero duration, which forces a style recalc (and layout
  * inside size containers) for every element. Undo in the sequence grid paid
  * that once per entering and leaving cell, ~18 times in one frame.
+ *
+ * An outro while the route changes is skipped: the leaving page is already
+ * in the view transition's snapshot, and a `|global` outro would keep the
+ * whole old page mounted beside the new one until it ends (the Guide's
+ * Dual-Shift page lingered ~500 ms under the next topic, 2026-11-01).
  */
 export function opaqueFade(
   node: Element,
@@ -398,10 +412,12 @@ export function opaqueFade(
     dimmedBy = [],
     opacity = 1,
     easing,
-  }: OpaqueFadeParams = {}
+  }: OpaqueFadeParams = {},
+  options?: { direction?: "in" | "out" | "both" }
 ): TransitionConfig {
   const ms = motionDuration(duration);
   if (ms === 0) return { duration: 0 };
+  if (options?.direction === "out" && leavingRoute()) return { duration: 0 };
   if (dimmedBy.some((name) => node.classList.contains(name))) {
     return fade(node, { duration: ms, delay, easing });
   }

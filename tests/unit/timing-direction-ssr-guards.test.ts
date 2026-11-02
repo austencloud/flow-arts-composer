@@ -21,7 +21,7 @@ const ROUTE_FILES = [
   "+layout.svelte",
   "+page.svelte",
   "_components/TimingDirectionModeExplorer.svelte",
-  "_components/TimingDirectionAtlas.svelte",
+  "_components/TimingDirectionModeGrid.svelte",
 ];
 const CLIENT_ONLY_COMPONENTS = [
   "HandMotionPlayer",
@@ -71,7 +71,7 @@ describe("timing and direction SSR guards", () => {
         id: `E:/tka-platform/src/lib/${source.replace("#lib/", "")}`,
       }),
     };
-    const importer = `${ROUTE_DIR}/_components/TimingDirectionAtlas.svelte`;
+    const importer = `${ROUTE_DIR}/+page.svelte`;
 
     for (const source of [
       "#lib/shared/animation-engine/components/controls/TransportControls.svelte",

@@ -6,9 +6,11 @@
 
   Below the three-column tier (the tab under 64rem) the three sections do not
   fit one screen, and settings never scroll (no-page-scroll.md). The tab then
-  shows three drill-down boxes, each with a one-line summary of what is on,
-  and opens one section at a time as its own screen with a back arrow, as the
-  Download video screen's File and Show panes do.
+  shows three drill-down boxes sharing its height, each with a live thumbnail
+  of its section's stage, its title and a two-line summary of what is on, and
+  opens one section at a time as its own screen with a back arrow, as the
+  Download video screen's File and Show panes do. A screen of its own keeps
+  the stage big and its switches small (chips, the `compact` sections).
 
   The animation section is imported lazily: it carries the animation engine,
   which nothing else in Settings needs. Its frame holds the same header and
@@ -23,9 +25,12 @@
   import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
   import { getImageCompositionManager } from "#lib/shared/share/state/image-composition-state.svelte.js";
   import { getExportOptionsState } from "#lib/shared/animation-panel/state/export-options-state.svelte.js";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import DisplaySection from "./display/DisplaySection.svelte";
   import PictographDisplaySection from "./display/PictographDisplaySection.svelte";
   import CardDisplaySection from "./display/CardDisplaySection.svelte";
+  import CardDisplayStage from "./display/CardDisplayStage.svelte";
   import {
     loadDisplayExample,
     type DisplayExample,
@@ -42,7 +47,13 @@
   let AnimationSection = $state<Component<{
     example: DisplayExample | null;
     onBack?: () => void;
+    compact?: boolean;
   }> | null>(null);
+  // The animation box's thumbnail is the section's own stage, loaded lazily
+  // with it: it carries the animation engine.
+  let AnimationStage = $state<Component<{ example: DisplayExample }> | null>(
+    null
+  );
 
   // The tab's own width decides the tier, the same 64rem its container
   // queries use; 0 until the first measure, when nothing is laid out yet.
@@ -59,6 +70,7 @@
   const composition = getImageCompositionManager();
   const exportOptions = getExportOptionsState();
   let version = $state(0);
+  const uid = $props.id();
 
   onMount(() => {
     let alive = true;
@@ -69,6 +81,9 @@
     });
     void import("./display/AnimationDisplaySection.svelte").then((module) => {
       if (alive) AnimationSection = module.default;
+    });
+    void import("./display/AnimationDisplayStage.svelte").then((module) => {
+      if (alive) AnimationStage = module.default;
     });
     // The box summaries follow every switch, wherever it was flipped.
     const bump = () => version++;
@@ -90,25 +105,43 @@
     return [
       {
         kind: "pictograph" as const,
-        icon: "fas fa-shapes",
         label: t("settings_display_pictograph"),
         summary: pictographSummary(vm),
+        // The thumbnail's frame: its section stage's own ratio.
+        ratio: 1,
       },
       {
         kind: "animation" as const,
-        icon: "fas fa-play",
         label: t("settings_display_animation"),
         summary: animationSummary(animationVisibility),
+        ratio: 1,
       },
       {
         kind: "card" as const,
-        icon: "fas fa-id-card",
         label: t("settings_display_card"),
         summary: cardSummary(composition, vm, exportOptions.imageDarkMode),
+        ratio: 1.2,
       },
     ];
   });
 </script>
+
+<!-- What each box's thumbnail draws: its section's stage (the card at its
+     first length), reading the same managers, so a switch flipped on a
+     screen shows in its box on the way back. -->
+{#snippet thumbnail(kind: SectionKind, shown: DisplayExample)}
+  {#if kind === "pictograph"}
+    <PictographContainer
+      pictographData={shown.pictograph}
+      gridMode={GridMode.DIAMOND}
+      disableContentTransitions
+    />
+  {:else if kind === "animation"}
+    {#if AnimationStage}<AnimationStage example={shown} />{/if}
+  {:else}
+    <CardDisplayStage sequence={shown.cards[4]} />
+  {/if}
+{/snippet}
 
 {#snippet animationSection(onBack?: () => void)}
   <Crossfade
@@ -118,7 +151,7 @@
     fill={!!onBack}
   >
     {#if AnimationSection}
-      <AnimationSection {example} {onBack} />
+      <AnimationSection {example} {onBack} compact={!!onBack} />
     {:else}
       <DisplaySection
         kind="animation"
@@ -146,28 +179,45 @@
     <div class="display-workspace drill">
       <Crossfade key={open ?? "boxes"} duration={DURATION.normal}>
         {#if open === "pictograph"}
-          <PictographDisplaySection {example} onBack={back} />
+          <PictographDisplaySection {example} onBack={back} compact />
         {:else if open === "animation"}
           <div class="animation-slot">{@render animationSection(back)}</div>
         {:else if open === "card"}
-          <CardDisplaySection {example} onBack={back} />
+          <CardDisplaySection {example} onBack={back} compact />
         {:else}
           <div class="drill-boxes" data-display-boxes>
             {#each boxes as box (box.kind)}
-              <button
-                type="button"
+              <!-- The thumbnail is a picture of the stage, not a control: it
+                   is inert and lets clicks through, and the box's one button
+                   covers the whole box. -->
+              <div
                 class="drill-box"
-                data-drill={box.kind}
-                onclick={() => (open = box.kind)}
+                data-box={box.kind}
+                style:--thumb-ratio={box.ratio}
               >
-                <i class="drill-icon {box.icon}" aria-hidden="true"></i>
-                <span class="drill-label">{box.label}</span>
-                <small class="drill-summary">{box.summary}</small>
+                <div class="drill-thumb-area">
+                  <div class="drill-thumb" data-thumb={box.kind} inert>
+                    {#if example}{@render thumbnail(box.kind, example)}{/if}
+                  </div>
+                </div>
+                <span class="drill-label" id="{uid}-{box.kind}-label"
+                  >{box.label}</span
+                >
+                <small class="drill-summary" id="{uid}-{box.kind}-summary"
+                  >{box.summary}</small
+                >
                 <i
                   class="fa-solid fa-chevron-right drill-chevron"
                   aria-hidden="true"
                 ></i>
-              </button>
+                <button
+                  type="button"
+                  class="drill-hit"
+                  data-drill={box.kind}
+                  aria-labelledby="{uid}-{box.kind}-label {uid}-{box.kind}-summary"
+                  onclick={() => (open = box.kind)}
+                ></button>
+              </div>
             {/each}
           </div>
         {/if}
@@ -269,30 +319,43 @@
     min-height: 0;
   }
 
-  /* The boxes follow the Download video screen's File and Show panes: icon,
-     title, the one-line summary under it, a chevron saying it opens. */
+  /* The boxes follow the Download video screen's File and Show panes, with
+     the section's stage as the picture: thumbnail, title, the summary under
+     it, a chevron saying it opens. Three equal thirds of the frame, each at
+     most 14rem tall; where that caps them the stack sits at the top, centred
+     across. */
   .drill-boxes {
+    --box-pad: 0.625rem;
+    --boxes-gap: 0.5rem;
+    --boxes-pad: 0.75rem;
     display: grid;
-    align-content: start;
-    gap: 0.5rem;
-    padding: 1rem var(--settings-row-inline);
+    grid-template-rows: repeat(3, minmax(0, 1fr));
+    gap: var(--boxes-gap);
+    box-sizing: border-box;
+    width: min(100%, 44rem);
+    height: 100%;
+    max-height: calc(3 * 14rem + 2 * var(--boxes-gap) + 2 * var(--boxes-pad));
+    margin-inline: auto;
+    padding: var(--boxes-pad) min(var(--settings-row-inline), 0.5rem);
   }
 
+  /* The box is a size container, so the thumbnail is sized from its height
+     before anything mounts in it (no-layout-shift). */
   .drill-box {
+    position: relative;
     display: grid;
-    grid-template-columns: 2.75rem minmax(0, 1fr) auto;
-    grid-template-rows: auto auto;
-    column-gap: 0.875rem;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-rows: 1fr auto auto 1fr;
+    column-gap: 0.75rem;
+    row-gap: 0.25rem;
     align-items: center;
-    min-height: 5rem;
-    padding: 0.875rem 1.125rem;
+    min-height: 0;
+    padding: var(--box-pad);
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.12));
     border-radius: 0.875rem;
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.06));
     color: var(--theme-text, #fff);
-    font: inherit;
-    text-align: left;
-    cursor: pointer;
+    container: drill-box / size;
   }
 
   .drill-box:hover {
@@ -300,48 +363,129 @@
     background: var(--theme-surface-hover, rgba(255, 255, 255, 0.1));
   }
 
-  .drill-box:focus-visible {
+  .drill-box:has(.drill-hit:focus-visible) {
     outline: 2px solid var(--theme-accent);
     outline-offset: 2px;
   }
 
-  .drill-icon {
-    grid-row: span 2;
+  /* The box's whole face is its one target. */
+  .drill-hit {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: none;
+    border-radius: inherit;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .drill-hit:focus-visible {
+    outline: none;
+  }
+
+  /* Upright: the thumbnail fills the box's height at its stage's ratio, and
+     takes at most 45% of its width so the title and summary keep a readable
+     column. The column is sized by the widest stage (the card's 1.2) in
+     every box, so the three titles line up; a square thumbnail centres in
+     it. */
+  .drill-thumb-area {
+    grid-column: 1;
+    grid-row: 1 / -1;
+    width: min(45cqi, calc((100cqb - 2 * var(--box-pad)) * 1.2));
+    height: 100%;
     display: grid;
     place-items: center;
-    width: 2.75rem;
-    height: 2.75rem;
-    border-radius: 0.75rem;
-    background: color-mix(
-      in srgb,
-      var(--theme-accent, #8b7cff) 16%,
-      transparent
-    );
-    font-size: 1.25rem;
-    color: var(--theme-accent, #8b7cff);
+    container-type: size;
+  }
+
+  .drill-thumb {
+    position: relative;
+    width: min(100cqi, calc(100cqb * var(--thumb-ratio, 1)));
+    aspect-ratio: var(--thumb-ratio, 1);
+    overflow: hidden;
+    border-radius: 0.5rem;
+    border: 1px solid var(--theme-stroke);
+    background: color-mix(in srgb, var(--theme-text) 3%, transparent);
+    pointer-events: none;
+    --card-stage-pad: 0.25rem;
+  }
+
+  .drill-thumb > :global(*) {
+    width: 100%;
+    height: 100%;
   }
 
   .drill-label {
     grid-column: 2;
-    font-size: 1rem;
-    font-weight: 650;
-  }
-
-  .drill-summary {
-    grid-column: 2;
+    grid-row: 2;
     min-width: 0;
     overflow: hidden;
-    color: var(--theme-text-secondary, rgba(255, 255, 255, 0.68));
-    font-size: 0.875rem;
-    line-height: 1.35;
+    font-size: 1rem;
+    font-weight: 650;
+    line-height: 1.25;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
+  .drill-summary {
+    grid-column: 2;
+    grid-row: 3;
+    min-width: 0;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+    color: var(--theme-text-secondary, rgba(255, 255, 255, 0.68));
+    font-size: 0.875rem;
+    line-height: 1.35;
+  }
+
   .drill-chevron {
     grid-column: 3;
-    grid-row: 1 / span 2;
+    grid-row: 1 / -1;
     color: var(--theme-text-secondary, rgba(255, 255, 255, 0.68));
+  }
+
+  /* A screen wider than it is tall (a phone on its side, a zoomed desktop):
+     the three boxes stand in one row, each its thumbnail above its title. */
+  @container display-screen (orientation: landscape) {
+    .drill-boxes {
+      grid-template-rows: minmax(0, 1fr);
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      width: 100%;
+      max-height: none;
+    }
+
+    .drill-box {
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-rows: minmax(0, 1fr) auto auto;
+    }
+
+    .drill-thumb-area {
+      grid-column: 1 / -1;
+      grid-row: 1;
+      width: 100%;
+      min-height: 0;
+    }
+
+    .drill-label {
+      grid-column: 1;
+      grid-row: 2;
+    }
+
+    .drill-summary {
+      grid-column: 1;
+      grid-row: 3;
+    }
+
+    .drill-chevron {
+      grid-column: 2;
+      grid-row: 2 / span 2;
+    }
   }
 
   /* Side by side: three equal columns, split by vertical hairlines, filling

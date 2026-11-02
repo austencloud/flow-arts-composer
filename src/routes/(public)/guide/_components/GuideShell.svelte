@@ -259,4 +259,108 @@
       transition: none;
     }
   }
+
+  /* One ground (2026-10-31): on the guide routes the site header, the
+     contents rail and the page are all the guide canvas, parted by 1px
+     hairlines, instead of three shades of navy. SiteHeader itself is not
+     touched; these rules apply only while a guide shell is on the page.
+     The header keeps its blur. */
+  :global(html:has(.guide-layout)) {
+    --guide-ground: oklch(0.13 0.015 270); /* GUIDE_CANVAS */
+    --guide-chrome-ink: #ececf2;
+    --guide-hairline: color-mix(
+      in oklab,
+      var(--guide-chrome-ink) 10%,
+      transparent
+    );
+  }
+  :global(html:has(.guide-layout) header[data-route-hold="header"]),
+  :global(html:has(.guide-layout) header[data-route-hold="header"].scrolled) {
+    background: color-mix(in oklab, var(--guide-ground) 86%, transparent);
+    border-bottom-color: var(--guide-hairline);
+  }
+  .guide-layout {
+    background: var(--guide-ground);
+  }
+  .guide-layout :global(.guide-rail-host) {
+    --sidebar-opaque-base: var(--guide-ground);
+    --theme-panel-bg: transparent;
+    --theme-stroke: var(--guide-hairline);
+    --theme-stroke-strong: color-mix(
+      in oklab,
+      var(--guide-chrome-ink) 18%,
+      transparent
+    );
+  }
+
+  /* A Level 1 page in light mode is the light canvas, so its header and
+     rail are too, with dark ink. The contents drawer and pill stay dark:
+     their list is drawn for the dark canvas. */
+  @media (prefers-color-scheme: light) {
+    :global(html:not([data-theme="dark"]):has(.guide-page-route)) {
+      --guide-ground: #fbfaf7;
+      --guide-chrome-ink: #1a1a1a;
+    }
+  }
+  :global(html[data-theme="light"]:has(.guide-page-route)) {
+    --guide-ground: #fbfaf7;
+    --guide-chrome-ink: #1a1a1a;
+  }
+  @media (prefers-color-scheme: light) {
+    :global(
+        html:not([data-theme="dark"]):has(.guide-page-route)
+          header[data-route-hold="header"]
+      ) {
+      --guide-header-ink: #44425a;
+    }
+  }
+  :global(html[data-theme="light"]:has(.guide-page-route) header[data-route-hold="header"]) {
+    --guide-header-ink: #44425a;
+  }
+  /* Light header links: the site's pale nav colours turned to ink. */
+  :global(html:has(.guide-page-route) header[data-route-hold="header"] .desktop-nav a),
+  :global(html:has(.guide-page-route) header[data-route-hold="header"] .desktop-nav .trigger),
+  :global(html:has(.guide-page-route) header[data-route-hold="header"] .signin),
+  :global(html:has(.guide-page-route) header[data-route-hold="header"] .surface-back) {
+    color: var(--guide-header-ink, #c4c1d8);
+  }
+  :global(html:has(.guide-page-route) header[data-route-hold="header"] .desktop-nav a:hover),
+  :global(html:has(.guide-page-route) header[data-route-hold="header"] .desktop-nav a:focus-visible),
+  :global(html:has(.guide-page-route) header[data-route-hold="header"] .desktop-nav a.active),
+  :global(html:has(.guide-page-route) header[data-route-hold="header"] .desktop-nav .trigger:hover),
+  :global(html:has(.guide-page-route) header[data-route-hold="header"] .desktop-nav .trigger:focus-visible),
+  :global(html:has(.guide-page-route) header[data-route-hold="header"] .desktop-nav .trigger.active),
+  :global(html:has(.guide-page-route) header[data-route-hold="header"] .signin:hover),
+  :global(html:has(.guide-page-route) header[data-route-hold="header"] .signin:focus-visible) {
+    color: var(--guide-chrome-ink);
+  }
+  :global(html:has(.guide-page-route) header[data-route-hold="header"] .surface-back) {
+    border-color: var(--guide-hairline);
+  }
+  :global(html:has(.guide-page-route) header[data-route-hold="header"] .toggle .bar) {
+    background: var(--guide-chrome-ink);
+  }
+  :global(html:has(.guide-page-route) header[data-route-hold="header"] .avatar-btn) {
+    border-color: color-mix(in oklab, var(--guide-chrome-ink) 20%, transparent);
+  }
+  .guide-layout:has(:global(.guide-page-route)) :global(.guide-rail-host) {
+    --theme-text: var(--guide-chrome-ink);
+    --theme-text-dim: color-mix(
+      in oklab,
+      var(--guide-chrome-ink) 68%,
+      transparent
+    );
+  }
+  @media (prefers-color-scheme: light) {
+    :global(html:not([data-theme="dark"])) .guide-layout:has(:global(.guide-page-route)) :global(.guide-rail-host) {
+      --theme-card-bg: rgba(0, 0, 0, 0.04);
+      --theme-card-hover-bg: rgba(0, 0, 0, 0.07);
+      --theme-shadow: rgba(0, 0, 0, 0.12);
+    }
+  }
+  :global(html[data-theme="light"]) .guide-layout:has(:global(.guide-page-route)) :global(.guide-rail-host) {
+    --theme-card-bg: rgba(0, 0, 0, 0.04);
+    --theme-card-hover-bg: rgba(0, 0, 0, 0.07);
+    --theme-shadow: rgba(0, 0, 0, 0.12);
+  }
 </style>

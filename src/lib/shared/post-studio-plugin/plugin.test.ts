@@ -137,13 +137,14 @@ describe("tka plugin", () => {
 });
 
 describe("tka surfaces", () => {
-  it("gives every render its own surfaces for the sequence animation, the choreo card, arrangements and mandalas", () => {
+  it("gives every render its own surfaces for the sequence animation, the choreo card, arrangements, mandalas and 3D clips", () => {
     const one = createTkaSurfaces();
     const two = createTkaSurfaces();
     expect(one.map((surface) => surface.renderMode).sort()).toEqual([
       "arrangement",
       "choreo-card",
       "mandala",
+      "scene-3d",
       "sequence-animation",
     ]);
     for (const surface of one) expect(two).not.toContain(surface);

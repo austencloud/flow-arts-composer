@@ -4,6 +4,12 @@
   first screen, and Back, Next and All guides from the host. Each topic page
   says how its teaching splits into screens; the page never scrolls.
 -->
+<script lang="ts" module>
+  import type { ComponentProps as Props } from "svelte";
+  import type GuideScreensComponent from "../../_components/fit/GuideScreens.svelte";
+  type GuideScreensProps = Props<typeof GuideScreensComponent>;
+</script>
+
 <script lang="ts">
   import type { Snippet } from "svelte";
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
@@ -18,15 +24,22 @@
     labels,
     screen,
     steadyHead = false,
+    beforeTitle,
+    bodyHead = false,
+    navLabel,
   }: {
     title: string;
     kicker?: string;
     lessonHref: string | null;
     frame?: TopicFrame;
     labels: string[];
-    screen: Snippet<[number]>;
+    screen: Snippet<[number, (index: number) => void]>;
     /** Keep the header the same on every screen (GuideScreens). */
     steadyHead?: boolean;
+    /** The page's own head, title and list (GuideScreens). */
+    beforeTitle?: GuideScreensProps["beforeTitle"];
+    bodyHead?: boolean;
+    navLabel?: GuideScreensProps["navLabel"];
   } = $props();
 </script>
 
@@ -41,6 +54,9 @@
     lead={lessonHref ? lessonLink : undefined}
     {screen}
     {steadyHead}
+    {beforeTitle}
+    {bodyHead}
+    {navLabel}
   />
 </div>
 

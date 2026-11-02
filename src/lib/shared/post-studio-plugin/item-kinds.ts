@@ -86,6 +86,8 @@ declare module "@austencloud/video-editor/core" {
     cardAppearance?: PostCardItem["cardAppearance"] | null;
     /** An animation's staggered performers; null removes them. */
     followers?: PostAnimationItem["followers"] | null;
+    /** An animation drawn in 3D, and its camera; null puts it back in 2D. */
+    stage3d?: PostAnimationItem["stage3d"] | null;
     /** A card's scan link; null removes it. A link that breaks the rule is passed over. */
     qrUrl?: string | null;
     /** A mandala clip's ordered sequences, and how it shifts and looks. */
@@ -156,6 +158,45 @@ export { PostAnimationAppearanceSchema, type PostAnimationAppearance };
 export const POST_MAX_BEATS_BEHIND = 32;
 export const POST_MAX_FOLLOWERS = 7;
 
+/** The camera shots a 3D animation clip can use. */
+export const POST_STAGE_3D_SHOTS = ["front", "orbit", "saved"] as const;
+export type PostStage3DShot = (typeof POST_STAGE_3D_SHOTS)[number];
+export const POST_STAGE_3D_MIN_SECONDS_PER_TURN = 2;
+export const POST_STAGE_3D_MAX_SECONDS_PER_TURN = 600;
+
+const PostStagePointSchema = z
+  .object({ x: z.number().finite(), y: z.number().finite(), z: z.number().finite() })
+  .strict();
+
+/**
+ * An animation clip drawn as the 3D stage instead of the 2D grid: every
+ * performer on its own beat from the clip's clock, seen through one shot.
+ * Front holds a still camera on the cast; orbit circles it at a steady rate,
+ * so the angle is a function of post time alone; saved holds the camera the
+ * user left it at. The environment is a 3D viewer environment id, read
+ * leniently (an unknown id falls back to the default) so this file never
+ * imports the backgrounds package.
+ */
+export const PostStage3DSchema = z
+  .object({
+    shot: z.enum(POST_STAGE_3D_SHOTS),
+    orbitSecondsPerTurn: z
+      .number()
+      .finite()
+      .min(POST_STAGE_3D_MIN_SECONDS_PER_TURN)
+      .max(POST_STAGE_3D_MAX_SECONDS_PER_TURN)
+      .optional(),
+    orbitDirection: z.union([z.literal(1), z.literal(-1)]).optional(),
+    camera: z
+      .object({ position: PostStagePointSchema, target: PostStagePointSchema })
+      .strict()
+      .optional(),
+    environment: z.string().min(1).max(32).optional(),
+  })
+  .strict();
+
+export type PostStage3D = z.infer<typeof PostStage3DSchema>;
+
 /** The sequence animation: the dual view's lower panel. */
 export const PostAnimationItemSchema = z
   .object({
@@ -199,6 +240,8 @@ export const PostAnimationItemSchema = z
       .min(1)
       .max(POST_MAX_FOLLOWERS)
       .optional(),
+    /** Draw this clip as the 3D stage; absent draws the 2D animation. */
+    stage3d: PostStage3DSchema.optional(),
   })
   .strict();
 

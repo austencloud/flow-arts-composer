@@ -88,6 +88,20 @@ export function itemIdFromMandalaRole(role: string): string | null {
   return role.startsWith(prefix) ? role.slice(prefix.length) : null;
 }
 
+/**
+ * An animation clip drawn as the 3D stage. Each such clip has its own role,
+ * so two 3D clips on screen (a front shot over an orbit) keep their own
+ * surfaces while reading the same tapped-beat clock.
+ */
+export function stage3DRole(itemId: string): string {
+  return `stage-3d:${itemId}`;
+}
+
+export function itemIdFromStage3DRole(role: string): string | null {
+  const prefix = "stage-3d:";
+  return role.startsWith(prefix) ? role.slice(prefix.length) : null;
+}
+
 export const STAFF_EFFECT_ROLE_PREFIX = "staff:";
 
 /** The painted layer that draws a video clip's staff effect. */
@@ -111,6 +125,14 @@ function sequenceRoleFor(item: SequenceItem): {
 } {
   switch (item.kind) {
     case "animation":
+      if (item.stage3d) {
+        return {
+          key: stage3DRole(item.id),
+          label: "3D stage",
+          resolution: "linked-sequence-animation",
+          acceptedKinds: ["sequence-animation"],
+        };
+      }
       return {
         key: POST_STUDIO_ROLE.animation,
         label: "Animation",
@@ -385,6 +407,7 @@ export function compileSequenceItem(
     item.kind === "animation" &&
     item.overlay &&
     !item.animationAppearance &&
+    !item.stage3d &&
     !!context.animationOverlay;
   if (wantsOverlay) {
     useRole(

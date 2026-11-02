@@ -1,6 +1,7 @@
 import type { Component } from "svelte";
 import CodexPointerTopicPage from "./CodexPointerTopicPage.svelte";
 import GridTopicPage from "./GridTopicPage.svelte";
+import HandCombinationTopicPage from "./HandCombinationTopicPage.svelte";
 import HandMotionsTopicPage from "./HandMotionsTopicPage.svelte";
 import PlacementsTopicPage from "./PlacementsTopicPage.svelte";
 import StaffPlacementsTopicPage from "./StaffPlacementsTopicPage.svelte";
@@ -27,6 +28,8 @@ export type TopicPageProps = {
   frame?: TopicFrame;
   /** The page's own heading, for pages that serve more than one slug. */
   title?: string;
+  /** The Guide slug being shown, for pages that serve more than one. */
+  slug?: string;
 };
 
 /**
@@ -40,6 +43,9 @@ export const TOPIC_PAGES: Readonly<Record<string, Component<TopicPageProps>>> =
     "hand-motions": HandMotionsTopicPage,
     "staff-placements": StaffPlacementsTopicPage,
     "hm-type1": Type1DualShiftsTopicPage,
+    "hm-type2": HandCombinationTopicPage,
+    "hm-type34": HandCombinationTopicPage,
+    "hm-type56": HandCombinationTopicPage,
     codex: CodexPointerTopicPage,
     "codex-2": CodexPointerTopicPage,
   };

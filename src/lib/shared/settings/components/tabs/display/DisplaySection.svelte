@@ -8,8 +8,9 @@
   written once. Its shape follows PropTypeTab's section / stage / figcaption.
 
   Below the three-column tier the tab opens one section at a time as its own
-  screen (`onBack` set): a back arrow before the title, the stage taking the
-  height the switches leave, so the screen never scrolls.
+  screen (`onBack` set): a back arrow, the title and an icon-only Reset in a
+  one-line header, the stage as the hero taking all the height the small
+  switches leave, and no caption, so the screen never scrolls.
 -->
 <script lang="ts">
   import type { Snippet } from "svelte";
@@ -54,12 +55,18 @@
   data-display-section={kind}
   aria-labelledby="{uid}-title"
 >
-  <SettingsSectionHeader {icon} {title} headingId="{uid}-title">
+  <!-- A screen of its own drops the icon tile: the box that opened it showed
+       it, and the title needs the width to stay on one line. -->
+  <SettingsSectionHeader
+    icon={onBack ? undefined : icon}
+    {title}
+    headingId="{uid}-title"
+  >
     {#snippet leading()}
       {#if onBack}
         <button
           type="button"
-          class="back-button"
+          class="icon-button"
           onclick={onBack}
           aria-label={t("common_back")}
         >
@@ -68,13 +75,25 @@
       {/if}
     {/snippet}
     {#snippet action()}
-      <PanelButton
-        variant="quiet"
-        onclick={onReset}
-        ariaLabel="{t('settings_display_reset')}: {title}"
-      >
-        {t("settings_display_reset")}
-      </PanelButton>
+      {#if onBack}
+        <button
+          type="button"
+          class="icon-button"
+          onclick={onReset}
+          aria-label="{t('settings_display_reset')}: {title}"
+          title={t("settings_display_reset")}
+        >
+          <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
+        </button>
+      {:else}
+        <PanelButton
+          variant="quiet"
+          onclick={onReset}
+          ariaLabel="{t('settings_display_reset')}: {title}"
+        >
+          {t("settings_display_reset")}
+        </PanelButton>
+      {/if}
     {/snippet}
   </SettingsSectionHeader>
 
@@ -86,7 +105,9 @@
           {@render stage()}
         </div>
       </div>
-      <figcaption class="stage-caption">{caption}</figcaption>
+      {#if !onBack}
+        <figcaption class="stage-caption">{caption}</figcaption>
+      {/if}
     </figure>
 
     <div class="controls">
@@ -145,22 +166,28 @@
     background: color-mix(in srgb, var(--theme-text) 3%, transparent);
   }
 
-  /* The drill-down screen's way back, as on the Download video screen. */
-  .back-button {
+  /* The drill-down screen's way back and its Reset: round icon buttons at
+     the screen's lowered touch floor (2.25rem), as small as the switches. */
+  .icon-button {
     flex: 0 0 auto;
     display: grid;
     place-items: center;
-    width: 44px;
-    height: 44px;
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
     border: 1px solid var(--theme-stroke);
     border-radius: 50%;
     background: var(--theme-card-bg);
     color: var(--theme-text);
-    font-size: 1rem;
+    font-size: 0.9375rem;
     cursor: pointer;
   }
 
-  .back-button:focus-visible {
+  .icon-button:hover {
+    background: var(--theme-card-hover-bg, var(--theme-card-bg));
+  }
+
+  .icon-button:focus-visible {
     outline: 2px solid var(--theme-accent);
     outline-offset: 2px;
   }
@@ -209,17 +236,40 @@
     }
   }
 
-  /* A drill-down screen: the section is as tall as the tab, the switches and
-     caption keep their natural height and the stage takes what is left. */
+  /* A drill-down screen: the section is as tall as the tab, the switches
+     keep their natural height and the stage takes everything that is left.
+     A phone screen keeps its hero big and its controls small (Austen,
+     2026-10-29 and 11-01): the touch floor drops to 2rem here, so chips,
+     segments and the header's icon buttons are 32-36px, never 44px just to
+     meet a floor. */
   .screen {
     flex: 1 1 auto;
     min-height: 0;
+    --min-touch-target: 2rem;
+    /* The card is the hero here: a thinner mat gives it the width. */
+    --card-stage-pad: 0.25rem;
+  }
+
+  .screen :global(.section-header) {
+    min-height: 0;
+    gap: 0.6rem;
+    padding: 0.5rem 0.75rem;
+    align-items: center;
+  }
+
+  /* One line at every width: the header holds two 2.25rem buttons and the
+     title, so the title takes the rest and never wraps a letter at a time. */
+  .screen :global(.section-header h2) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .screen .section-body {
     flex: 1 1 auto;
     min-height: 0;
-    grid-template-rows: minmax(0, 1fr);
+    gap: 0.75rem;
+    padding-block: 0.75rem;
   }
 
   .screen .stage {
@@ -228,6 +278,8 @@
     width: 100%;
   }
 
+  /* The frame is the largest box of its ratio the area holds: the screen's
+     width is the cap, not the columns tier's 22rem. */
   .screen .stage-area {
     flex: 1 1 auto;
     min-height: 0;
@@ -239,71 +291,35 @@
     width: min(100cqi, calc(100cqb * var(--stage-ratio, 1)));
   }
 
-  .screen .stage-caption {
-    flex: 0 0 auto;
-  }
-
-  /* On a screen of its own the stage is the flexible part, so the switches
-     take as little height as they can read at: five to a row, the picture
-     capped by the screen's height as well as its width (the tab sizes the
-     screen as the display-screen container). */
-  .screen .section-body {
-    gap: 0.75rem;
-    padding-block: 0.75rem;
-  }
-
-  /* Centred and capped, so the switches of a wide upright screen do not
-     stretch into a band of oversized tiles. The width is explicit: the
-     controls are an inline-size container and would shrink to nothing. */
+  /* Centred and capped, so the chips of a wide upright screen stay one
+     group instead of a band across it. The width is explicit: the controls
+     are an inline-size container and would shrink to nothing. */
   .screen .controls {
     align-self: center;
     width: min(100%, 40rem);
   }
 
-  .screen .controls > :global(*) {
-    --tile-grid-cols: 5;
-    --tile-grid-gap: 6px;
-    --tile-grid-art: clamp(
-      1.5rem,
-      min((100cqi - 4 * var(--tile-grid-gap)) / 5 - 2.5rem, 5cqh),
-      6rem
-    );
-  }
-
   /* Side by side on a screen wider than it is tall (a phone on its side, a
      zoomed desktop): stacked, the stage would get what the switches leave of
      a short screen, so it takes a full-height column instead, with the
-     switches centred beside it. A fixed 2:3 split gives the switches the
-     same width, and so the same tiles, in all three sections. An upright
-     screen stacks however wide it is. */
+     switches centred beside it. Chips need less width than tiles did, so the
+     stage gets half. An upright screen stacks however wide it is. */
   @container display-screen (orientation: landscape) {
     .screen .section-body {
       display: grid;
-      grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
-      align-items: stretch;
-      gap: 1.5rem;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      align-items: center;
+      gap: 1.25rem;
+    }
+
+    .screen .stage {
+      align-self: stretch;
     }
   }
 
-  /* A short screen (a phone on its side) tightens the header and the
-     switches' rhythm so the card's three rows of groups fit beside the
-     stage. */
   @container display-screen (height < 26rem) {
-    .screen :global(.section-header) {
-      min-height: 0;
-      padding-block: 0.4em;
-    }
-
-    /* Beside a stage capped by the height, the switches take two thirds, so
-       their labels keep to one line. */
     .screen .section-body {
-      padding-block: 0.25rem;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
-    }
-
-    .screen .controls > :global(*) {
-      --card-toggles-row-gap: 0.3rem;
-      --card-toggles-label-gap: 0.1rem;
+      padding-block: 0.5rem;
     }
   }
 

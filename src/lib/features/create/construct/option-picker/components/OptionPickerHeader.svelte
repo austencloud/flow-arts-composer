@@ -811,7 +811,11 @@
     width: 100%;
   }
 
+  /* A tray row holds Level 3's eight values only below the shared
+     control's 44px button floor: about 38px each on the Fold's cover screen
+     and 32px with the hands side by side, both still easy taps. */
   .oph.compact .turn-seg :global(.segment) {
+    min-width: 0;
     padding-inline: 0.2rem;
   }
 
@@ -832,6 +836,20 @@
 
   .oph.compact .spin-inline.edge:active {
     transform: scale(0.96);
+  }
+
+  /* A tray this wide (the Fold's, spanning the picker) sets the hands side
+     by side, so the whole Level 3 palette fits in one row under Options and
+     Level and the tray never scrolls. */
+  @container (min-width: 40rem) {
+    .oph.compact .oph-turns-row {
+      flex-direction: row;
+    }
+
+    .oph.compact .hand-half {
+      flex: 1 1 0;
+      width: auto;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {

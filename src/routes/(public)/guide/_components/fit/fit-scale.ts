@@ -84,3 +84,69 @@ export async function fitScaleAsync(
   }
   return stale() ? null : { scale: Math.floor(lo * 1000) / 1000, fits: true };
 }
+
+/**
+ * The search started from a known scale (the last fit's, when a page change
+ * keeps the window): content of a similar height lands in a probe or two
+ * instead of the bisection's ten, so the next topic is fitted before the
+ * route's crossfade takes its picture (2026-11-01; the full search left the
+ * body blank for ~250 ms). A scale is good once it fits and fills `fill` of
+ * the area. Each guess scales the last probe by the room left, or
+ * interpolates between the nearest fitting and overflowing probes, and
+ * bisects when a guess leaves that bracket.
+ */
+export async function fitScaleFromSeedAsync(
+  measure: (scale: number) => Promise<FitMeasure>,
+  areaHeight: number,
+  stale: () => boolean,
+  seed: number,
+  min = FIT_MIN_SCALE,
+  max = FIT_MAX_SCALE,
+  fill = 0.97,
+  probes = 8
+): Promise<FitResult | null> {
+  const fitsIn = (m: FitMeasure) =>
+    !m.overflowsWidth && m.height <= areaHeight + 0.5;
+  // Aim a little under full so the guess lands inside the good band.
+  const aim = areaHeight * (1 + fill) * 0.5;
+  let lo = min;
+  let hi = max;
+  let loHeight = -1; // a probe that fits, at lo
+  let hiHeight = -1; // a probe that overflows by height alone, at hi
+  let loKnown = false;
+  let hiKnown = false;
+  let s = Math.min(max, Math.max(min, seed));
+  for (let n = 0; n < probes; n++) {
+    if (stale()) return null;
+    const m = await measure(s);
+    if (stale()) return null;
+    if (fitsIn(m)) {
+      if (m.height >= areaHeight * fill || s >= max)
+        return { scale: Math.floor(s * 1000) / 1000, fits: true };
+      lo = s;
+      loHeight = m.height;
+      loKnown = true;
+    } else {
+      if (s <= min) return { scale: min, fits: false };
+      hi = s;
+      hiHeight = m.overflowsWidth ? -1 : m.height;
+      hiKnown = true;
+    }
+    if (hi - lo < 0.005) break;
+    let next: number;
+    if (loKnown && hiKnown && loHeight > 0 && hiHeight > loHeight) {
+      next = lo + ((aim - loHeight) / (hiHeight - loHeight)) * (hi - lo);
+    } else if (m.height > 0 && !m.overflowsWidth) {
+      next = s * (aim / m.height);
+    } else {
+      next = (lo + hi) / 2;
+    }
+    if (!hiKnown && next >= max) next = max;
+    else if (!loKnown && next <= min) next = min;
+    else if (!(next > lo && next < hi)) next = (lo + hi) / 2;
+    s = next;
+  }
+  if (stale()) return null;
+  if (loKnown) return { scale: Math.floor(lo * 1000) / 1000, fits: true };
+  return fitScaleAsync(measure, areaHeight, stale, min, max);
+}

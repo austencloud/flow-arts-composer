@@ -1,10 +1,9 @@
 <script lang="ts">
   /**
-   * One mode's sequences on the timing-and-direction page: a player with
-   * props or hands, turns and the four sequence actions, beside a chooser of
-   * the mode's real loops (Diamond and Box). The page's mode grid and this
-   * section show the same mode; it has its own player state, so choosing a
-   * loop here never changes the grid's hand-path comparison.
+   * One mode's sequences on the timing-and-direction page: the mode grid,
+   * then a player with props or hands beside a chooser of the mode's real
+   * loops (Diamond and Box). Turns and the four sequence actions wait behind
+   * Adjust; until then the rail says what the mode is.
    *
    * This was the /timing-and-direction/<mode> page until Austen chose one
    * timing-and-direction page (2026-10-31); those addresses now redirect to
@@ -37,10 +36,9 @@
     reducedMotion,
   } from "#lib/shared/transitions/motion.js";
   import { createTimingDirectionState } from "../_state/timing-direction-state.svelte";
-  import TimingDirectionModeCard from "./TimingDirectionModeCard.svelte";
+  import TimingDirectionModeGrid from "./TimingDirectionModeGrid.svelte";
   import {
     getTimingDirectionArticle,
-    TIMING_DIRECTION_ARTICLES,
     TIMING_DIRECTION_SEQUENCES_ID,
   } from "../_data/timing-direction-articles";
   import {
@@ -80,6 +78,13 @@
         candidate.direction === article.direction
     ) ?? TIMING_DIRECTION_MODES[0]!
   );
+  // Other names people use; the short code stays in data, not in labels.
+  const aliases = $derived(
+    article.aliases.filter(
+      (alias) => alias !== article.code && alias !== article.name
+    )
+  );
+  let adjustOpen = $state(false);
   const loopsPerGrid = $derived(modeLoopsPerGrid(article.code));
   const loopCount = $derived(modeLoopCount(article.code));
   const loopCountWord = $derived(
@@ -432,75 +437,100 @@
       {/if}
     </div>
 
-    <section class="rail-group turns-group" aria-labelledby="turns-label">
-      <h3 id="turns-label" class="group-label">Turns</h3>
-      <div class="turn-scope">
-        <SegmentedControl
-          options={[
-            { value: "all", label: "All steps", disabled: showingHands },
-            { value: "current", label: "This step", disabled: showingHands },
-          ]}
-          value={applyTo}
-          onchange={setApplyTo}
-          ariaLabel="Which steps the turns change"
-          density="tight"
-          color="accent"
-        />
-        <PanelButton
-          onclick={resetTurns}
-          disabled={turnsLocked || turnsAreReset}
-          ariaLabel="Reset turns"
-          title="Reset turns"
-        >
-          <i class="fa-solid fa-arrow-rotate-left" aria-hidden="true"></i>
-        </PanelButton>
-      </div>
-      <div class="turn-values" aria-busy={adjusting}>
-        <!-- A tall rail lays every value out. A short one keeps each
+    {#if adjustOpen}
+      <section class="rail-group turns-group" aria-labelledby="turns-label">
+        <h3 id="turns-label" class="group-label">Turns</h3>
+        <div class="turn-scope">
+          <SegmentedControl
+            options={[
+              { value: "all", label: "All steps", disabled: showingHands },
+              { value: "current", label: "This step", disabled: showingHands },
+            ]}
+            value={applyTo}
+            onchange={setApplyTo}
+            ariaLabel="Which steps the turns change"
+            density="tight"
+            color="accent"
+          />
+          <PanelButton
+            onclick={resetTurns}
+            disabled={turnsLocked || turnsAreReset}
+            ariaLabel="Reset turns"
+            title="Reset turns"
+          >
+            <i class="fa-solid fa-arrow-rotate-left" aria-hidden="true"></i>
+          </PanelButton>
+        </div>
+        <div class="turn-values" aria-busy={adjusting}>
+          <!-- A tall rail lays every value out. A short one keeps each
                hand's values behind its own menu so the actions still fit. -->
-        <div class="turns-inline">
-          <TurnNotationControls
-            layout="inline"
-            leftTurn={leftTurns}
-            rightTurn={rightTurns}
-            labelMode={turnLabelMode}
-            onlabelmodechange={(value) => (turnLabelMode = value)}
-            onturn={chooseTurn}
-            turnValues={availableTurns}
-            primaryPropColors={DEFAULT_VIEWER_CUSTOM_COLORS}
-            disabled={turnsLocked}
-          />
+          <div class="turns-inline">
+            <TurnNotationControls
+              layout="inline"
+              leftTurn={leftTurns}
+              rightTurn={rightTurns}
+              labelMode={turnLabelMode}
+              onlabelmodechange={(value) => (turnLabelMode = value)}
+              onturn={chooseTurn}
+              turnValues={availableTurns}
+              primaryPropColors={DEFAULT_VIEWER_CUSTOM_COLORS}
+              disabled={turnsLocked}
+            />
+          </div>
+          <div class="turns-menu">
+            <TurnNotationControls
+              leftTurn={leftTurns}
+              rightTurn={rightTurns}
+              labelMode={turnLabelMode}
+              onlabelmodechange={(value) => (turnLabelMode = value)}
+              onturn={chooseTurn}
+              turnValues={availableTurns}
+              primaryPropColors={DEFAULT_VIEWER_CUSTOM_COLORS}
+              disabled={turnsLocked}
+            />
+          </div>
         </div>
-        <div class="turns-menu">
-          <TurnNotationControls
-            leftTurn={leftTurns}
-            rightTurn={rightTurns}
-            labelMode={turnLabelMode}
-            onlabelmodechange={(value) => (turnLabelMode = value)}
-            onturn={chooseTurn}
-            turnValues={availableTurns}
-            primaryPropColors={DEFAULT_VIEWER_CUSTOM_COLORS}
-            disabled={turnsLocked}
-          />
-        </div>
-      </div>
-    </section>
+      </section>
 
-    <section class="rail-group actions-group" aria-label="Sequence actions">
-      <!-- A tall rail gets the panel tiles. A short one puts all four
+      <section class="rail-group actions-group" aria-label="Sequence actions">
+        <!-- A tall rail gets the panel tiles. A short one puts all four
            actions on one row so nothing scrolls out of view. -->
-      <div class="actions-tiles">
-        {@render transformActions(true)}
-      </div>
-      <div class="actions-row">
-        {@render transformActions(false)}
-      </div>
-    </section>
+        <div class="actions-tiles">
+          {@render transformActions(true)}
+        </div>
+        <div class="actions-row">
+          {@render transformActions(false)}
+        </div>
+      </section>
 
-    <div class="rail-status" aria-live="polite">
-      <Crossfade key={controlStatus}>
-        <p>{controlStatus}</p>
-      </Crossfade>
+      <div class="rail-status" aria-live="polite">
+        <Crossfade key={controlStatus}>
+          <p>{controlStatus}</p>
+        </Crossfade>
+      </div>
+    {:else}
+      <section class="rail-about" aria-label="About this mode">
+        <p class="definition">{article.definition}</p>
+        {#if aliases.length > 0}
+          <p class="aliases">
+            <span class="group-label">Also called</span>
+            {aliases.join(", ")}
+          </p>
+        {/if}
+      </section>
+    {/if}
+    <div class="rail-foot">
+      <PanelButton
+        fullWidth
+        ariaExpanded={adjustOpen}
+        onclick={() => (adjustOpen = !adjustOpen)}
+      >
+        <i
+          class={adjustOpen ? "fa-solid fa-check" : "fa-solid fa-sliders"}
+          aria-hidden="true"
+        ></i>
+        {adjustOpen ? "Done" : "Adjust"}
+      </PanelButton>
     </div>
   </div>
 {/snippet}
@@ -514,18 +544,14 @@
 >
   <div class="mode-top">
     <header class="mode-header">
+      <TimingDirectionModeGrid
+        selectedSlug={slug}
+        playing={playback.playing}
+        onselect={onSelectMode}
+      />
       <div class="mode-title">
         <img src={mode.element.iconPath} alt="" width="48" height="48" />
         <h2 id="mode-title">{article.name}</h2>
-      </div>
-      <div class="mode-switch" role="group" aria-label="Mode">
-        {#each TIMING_DIRECTION_ARTICLES as option (option.code)}
-          <TimingDirectionModeCard
-            article={option}
-            pressed={option.slug === slug}
-            onselect={() => onSelectMode(option.slug)}
-          />
-        {/each}
       </div>
     </header>
 
@@ -655,9 +681,13 @@
     --sequence-seek-target-size: 48px;
     --page-pad: 1.5rem;
     --header-h: var(--marketing-header-h, 64px);
+    /* The mode grid: a heading row and two rows of tiles (see
+       TimingDirectionModeGrid), with the title under it. */
+    --mode-tile-h: 4.5rem;
+    --grid-h: calc(1.5rem + 2 * var(--mode-tile-h) + 2 * 0.375rem);
     --title-h: 3rem;
-    --switch-h: 48px;
-    --switch-gap: 0.5rem;
+    --header-gap: 0.25rem;
+    --head-h: calc(var(--grid-h) + var(--header-gap) + var(--title-h));
     --title-gap: 1rem;
     --hero-foot: 1.5rem;
     --hero-gap: 1.5rem;
@@ -685,8 +715,8 @@
     );
     /* svh, not dvh: a collapsing mobile toolbar must not resize the frame. */
     --fit-h: calc(
-      100svh - var(--header-h) - 1rem - var(--title-h) - var(--switch-gap) -
-        var(--switch-h) - var(--title-gap) - var(--hero-foot)
+      100svh - var(--header-h) - 1rem - var(--head-h) - var(--title-gap) -
+        var(--hero-foot)
     );
     container: mode-page / inline-size;
     position: relative;
@@ -704,11 +734,12 @@
     display: grid;
     gap: var(--title-gap);
   }
-  /* The title sits centered over the frame below it, with the six modes
-     on one row under it. */
+  /* The mode grid sits centered over the frame below it, with the chosen
+     mode's name under it. */
   .mode-header {
     display: grid;
-    gap: var(--switch-gap);
+    justify-items: center;
+    gap: var(--header-gap);
   }
   .mode-title {
     min-height: var(--title-h);
@@ -723,34 +754,6 @@
     width: 48px;
     height: 48px;
     object-fit: contain;
-  }
-  .mode-switch {
-    display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: 0.375rem;
-    max-width: 30rem;
-    width: 100%;
-    margin: 0 auto;
-  }
-  .mode-switch :global(.panel-btn) {
-    min-width: 0;
-    min-height: var(--switch-h);
-    padding-inline: 0.25rem;
-  }
-  .mode-switch :global(.mode-name) {
-    display: none;
-  }
-  /* Wide enough for "Together-Opposite" in each of six columns. */
-  @container mode-page (min-width: 64rem) {
-    .mode-switch {
-      max-width: 60rem;
-    }
-    .mode-switch :global(.mode-name) {
-      display: inline;
-    }
-    .mode-switch :global(.mode-code) {
-      display: none;
-    }
   }
   .mode-title h2 {
     margin: 0;
@@ -886,6 +889,36 @@
     line-height: 1.4;
     color: var(--theme-text-dim);
   }
+  /* Until a visitor asks to adjust, the rail says what the mode is. */
+  .rail-about {
+    flex: none;
+  }
+  .rail-about .definition {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+  .rail-about .aliases {
+    margin: 0.75rem 0 0;
+    font-size: 0.9375rem;
+    line-height: 1.4;
+    color: var(--theme-text-dim);
+  }
+  .rail-about .aliases .group-label {
+    display: block;
+    padding-left: 0;
+    margin-bottom: 0.25rem;
+  }
+  .player-controls > .rail-foot {
+    flex: none;
+    margin-top: auto;
+    padding-top: clamp(0.75rem, 2.5cqh, 1.5rem);
+  }
+  /* While adjusting, the status above already took the free space. */
+  .player-controls > .rail-status + .rail-foot {
+    margin-top: 0;
+    padding-top: 0.5rem;
+  }
 
   .loop-library {
     min-width: 0;
@@ -1004,6 +1037,9 @@
       --page-pad: 1rem;
       --title-gap: 0.625rem;
       --card-gap: 0.375rem;
+      /* Three tiles and the direction labels within 343px. */
+      --mode-tile-w: 4.5rem;
+      --mode-tile-h: 4rem;
       max-width: 100%;
       padding: 0.5rem var(--page-pad) 2rem;
     }
@@ -1180,8 +1216,11 @@
       --rail-w: 14rem;
       --strip-h: 4rem;
       --sticky-top: calc(var(--header-h) + 0.5rem);
-      /* The title and chooser column never gets narrower than this. */
-      --side-min: 16rem;
+      /* The title and chooser column never gets narrower than this, which
+         holds the mode grid at its smallest tiles. */
+      --side-min: 18rem;
+      --mode-tile-w: 4rem;
+      --mode-tile-h: 3.5rem;
       padding-top: 0.5rem;
     }
     .mode-top {

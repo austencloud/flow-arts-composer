@@ -55,7 +55,7 @@ function fakeExportOptions() {
   return { imageDarkMode: false, setImageDarkMode: vi.fn() };
 }
 
-function renderToggles(stepCount: number) {
+function renderToggles(stepCount: number, compact = false) {
   const composition = fakeComposition();
   const visibility = fakeVisibility();
   const exportOptions = fakeExportOptions();
@@ -64,6 +64,7 @@ function renderToggles(stepCount: number) {
     visibility: visibility as never,
     exportOptions: exportOptions as never,
     stepCount,
+    compact,
   });
   return { composition, visibility, exportOptions };
 }
@@ -134,5 +135,42 @@ describe("CardContentToggles", () => {
     expect(button("QR").elements()).toHaveLength(0);
     expect(button("Both").elements()).toHaveLength(0);
     auth.isAuthenticated = true;
+  });
+
+  // Compact (Settings → Display on a phone): one labelled row per group.
+  // A chip in the wrong row reads as the wrong part of the card, and the
+  // chips must still reach the same setters as the tiles.
+  it("compact rows put each chip in its own group and keep the wiring", async () => {
+    const { composition, visibility, exportOptions } = renderToggles(4, true);
+
+    const rows: [string, string[]][] = [
+      ["Header", ["Word", "Level", "LOOP"]],
+      ["Steps", ["Step numbers", "Reversals"]],
+      ["Start", ["Show", "Hand key"]],
+    ];
+    for (const [row, names] of rows) {
+      const group = page.getByRole("group", { name: row, exact: true });
+      await expect.element(group).toBeVisible();
+      for (const name of names) {
+        await expect
+          .element(group.getByRole("button", { name, exact: true }))
+          .toBeVisible();
+      }
+    }
+
+    await button("Word").click();
+    expect(composition.setAddWord).toHaveBeenCalledExactlyOnceWith(false);
+    await button("Hand key").click();
+    expect(visibility.setGlyphVisibility).toHaveBeenCalledExactlyOnceWith(
+      "handColorKey",
+      true
+    );
+    await button("Dark").click();
+    expect(exportOptions.setImageDarkMode).toHaveBeenCalledWith(true);
+    await button("Mandala").click();
+    expect(composition.setInfoCellChoiceForStepCount).toHaveBeenCalledWith(
+      4,
+      "mandala"
+    );
   });
 });

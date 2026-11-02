@@ -416,3 +416,62 @@ has no reversals; its key was checked flipping and restoring in
 `evidence/2026-10-27-settings-display-tab/`, plus `412x915.webp` and
 `707x772.webp`. The columns-tier shots show the Light card theme;
 `1440x900-toggled.webp` shows the 16-count card with Both picked.
+
+## Revision: phone pass (2026-11-01)
+
+Austen looked at the drill tier on an iPhone SE (375×667): it "looks pretty
+ugly all around", and he wanted "a whole pass for iPhone SE". Titles wrapped
+letter by letter beside a 132px "Reset to defaults", five 53px tiles to a
+row wrapped their labels, and the 4-step card was 114px wide. His phone rule
+decides the pass: the hero stays big, controls get small (about 32px), and
+nothing scrolls. The three-column tier at 64rem and up is unchanged.
+
+What changed, drill tier only:
+
+- **Header.** Back arrow, a one-line title, and Reset as an icon-only button
+  (`fa-rotate-left`, labelled with `settings_display_reset` and the title).
+  No icon tile; the box that opened the screen showed it. No caption.
+- **Stage.** Full width, all the height the switches leave; the screen
+  lowers `--min-touch-target` to 2rem. The card frame is 1.1 here (1.2 in
+  the columns tier) so the squarer 16-step card fills the width too, and
+  its mat is 0.25rem.
+- **Switches as chips.** A new shared `MenuItemChipRow` (FilterChipBase
+  toggles, sm) draws the pictograph switches; `DisplayPanel chips` draws the
+  animation's ten through it; `CardContentToggles compact` draws five
+  labelled rows: Card length + Theme, Header, Steps, Start, Info (always one
+  row of Info picks at 4rem a pick). The deck is 189px tall.
+- **Landscape.** Stage and switches side by side at 1 : 1 (the chips need
+  less width than the tiles did).
+- **Tab.** Three boxes share the height (14rem cap, top-aligned), each with
+  a live, inert thumbnail of its stage on the left: the pictograph, a
+  second `InlineAnimationPlayer` (lazy, through `AnimationDisplayStage`),
+  and the 4-step `ChoreoCard` (through `CardDisplayStage`, shared with the
+  section). The thumbnail column is sized by the card's ratio in every box
+  so the titles line up. Title 1rem/650, summary clamped to two lines,
+  chevron. Landscape puts the boxes in one row, thumbnail above the title.
+  The card thumbnail follows a Theme change (checked: `dark-mode` class off
+  on the screen and on the box after picking Light).
+- **One step-number label.** The animation panel now uses
+  `animation_menu_step_numbers` ("Step numbers"), the pictograph menu's key,
+  instead of `animation_display_step_number` ("Step #").
+
+Measured as scrollHeight / clientHeight in px, guest (no QR). Card widths
+are the rendered card at 4 / 8 / 16 steps. Every title is one line.
+
+| Viewport              | Tab       | Boxes   | Screens   | Card 4 / 8 / 16 | Deck |
+| --------------------- | --------- | ------- | --------- | --------------- | ---- |
+| 375×667               | 595/595   | 304×176 | 569/569   | 282 / 282 / 282 | 189  |
+| 412×915               | 842/842   | 338×224 | 817/817   | 316 / 316 / 316 | 189  |
+| 707×772               | 674/674   | 605×203 | 648/648   | 398 / 398 / 398 | 189  |
+| 820×1180              | 1075/1075 | 688×224 | 1050/1050 | 676 / 676 / 676 | 189  |
+| 960×412               | 356/356   | 252×307 | 331/331   | 279 / 279 / 279 | 189  |
+| 200% zoom of 1440×900 | 351/351   | 200×301 | 325/325   | 273 / 273 / 273 | 189  |
+
+1440×900 (columns) measured against the primary server: identical section,
+frame and control geometry; only the animation tile label changed.
+
+Every chip changed its own stage's DOM, except Reversals (the example loop
+has no reversals, as before). Animation chips draw on a canvas, so a few
+runs missed a change in the readback; Props was confirmed by screenshot.
+Evidence: `evidence/2026-10-27-settings-display-tab/phone-*.webp` (tab and
+three screens at 375×667 and 960×412, tab at 412×915 and 707×772).

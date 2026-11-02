@@ -68,6 +68,7 @@ export function createTkaPluginUi(): PluginUi {
         "choreo-card",
         "tunnel",
         "mandala",
+        "scene-3d",
         "arrangement",
       ],
       component: TkaMediaSublayer,

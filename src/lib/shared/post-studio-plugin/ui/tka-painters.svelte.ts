@@ -14,6 +14,7 @@ import {
   itemIdFromArrangementRole,
   itemIdFromMandalaRole,
   itemIdFromMovesAnimationRole,
+  itemIdFromStage3DRole,
   itemIdFromStaffEffectRole,
   staffEffectRole,
 } from "#lib/shared/post-studio-plugin/index.js";
@@ -226,6 +227,17 @@ export function createTkaBindings(env: {
         previewUrl: null,
         renderMode: "arrangement",
         status: "ready",
+      };
+    }
+    // A 3D clip stages its performers on the post's clock.
+    if (itemIdFromStage3DRole(role)) {
+      return {
+        roleKey: role,
+        kind: "sequence-animation",
+        label: t("post_stage_3d_label"),
+        previewUrl: null,
+        renderMode: "scene-3d",
+        status: hasSteps ? "ready" : "missing",
       };
     }
     // A mandala clip draws itself from the post's clock, like an arrangement.

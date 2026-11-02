@@ -20,7 +20,6 @@ export function createTimingDirectionState(initialSlug?: string) {
   );
   let playing = $state(true);
   let step = $state(0);
-  let target = $state.raw<HTMLElement | null>(null);
   let exampleSequence = $state.raw<SequenceData | null>(null);
   let seek: ((step: number) => void) | null = null;
   let pendingSeekStep = $state(0);
@@ -121,17 +120,6 @@ export function createTimingDirectionState(initialSlug?: string) {
     },
     set propDisplay(value: "hands" | "staff") {
       propDisplay = value;
-    },
-    get target() {
-      return target;
-    },
-    registerTarget(node: HTMLElement) {
-      target = node;
-      return {
-        destroy() {
-          if (target === node) target = null;
-        },
-      };
     },
   };
 }

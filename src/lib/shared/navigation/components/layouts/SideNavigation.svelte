@@ -227,6 +227,40 @@
     padding-top: 0;
   }
 
+  /* A phone held sideways can be under 360px tall once the browser bar
+     shows. The buttons shrink to fit the rail instead of scrolling, and
+     "safe" centring keeps the first one from sliding off the top. */
+  .sections {
+    justify-content: safe center;
+  }
+
+  @media (max-height: 480px) {
+    .side-navigation {
+      gap: 4px;
+      padding-block: max(6px, env(safe-area-inset-top, 0px))
+        max(6px, env(safe-area-inset-bottom, 0px));
+    }
+
+    .sections {
+      gap: 2px;
+    }
+
+    .side-navigation :global(.nav-button.section) {
+      flex: 0 1 var(--min-touch-target);
+      height: auto;
+      min-height: 30px;
+      padding: 4px;
+    }
+
+    .side-navigation :global(.nav-button.special) {
+      width: 36px;
+      height: 36px;
+      min-width: 36px;
+      min-height: 36px;
+      max-width: 36px;
+    }
+  }
+
   /* Side layout - always hide labels (icon-only) */
   .side-navigation :global(.nav-label) {
     display: none !important;

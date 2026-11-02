@@ -1,8 +1,9 @@
 <!--
   Settings → Display: the card section. The shared ChoreoCard of the example
-  loop, drawn from the same composition, image-theme and pictograph managers
-  the viewer's card panel writes, with CardContentToggles (the switches that
-  panel shows) under it.
+  loop (CardDisplayStage), drawn from the same composition, image-theme and
+  pictograph managers the viewer's card panel writes, with CardContentToggles
+  (the switches that panel shows) under it: picture tiles in the columns
+  tier, labelled rows of small chips on a drill-down screen (`compact`).
 
   Columns, the start lane and the info-cell choice are stored per step count,
   so a length chooser (4 · 8 · 16) decides which card the switches edit and
@@ -10,9 +11,7 @@
   stored.
 -->
 <script lang="ts">
-  import { onMount } from "svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  import ChoreoCard from "#lib/shared/sequence-viewer/components/ChoreoCard.svelte";
   import ChoreoCardContextMenuHost from "#lib/shared/sequence-viewer/components/choreo-card-context-menu/ChoreoCardContextMenuHost.svelte";
   import CardContentToggles from "#lib/shared/share/components/CardContentToggles.svelte";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
@@ -25,10 +24,9 @@
     DEFAULT_IMAGE_OPTIONS,
     getExportOptionsState,
   } from "#lib/shared/animation-panel/state/export-options-state.svelte.js";
-  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
-  import { PUBLIC_SITE_URL } from "#lib/shared/browse/navigation/browse-route-resolver.js";
   import type { ResolvedAutoLayout } from "#lib/shared/render/services/container-aware-layout.js";
   import DisplaySection from "./DisplaySection.svelte";
+  import CardDisplayStage from "./CardDisplayStage.svelte";
   import {
     CARD_LENGTHS,
     type CardLength,
@@ -38,7 +36,13 @@
   let {
     example,
     onBack,
-  }: { example: DisplayExample | null; onBack?: () => void } = $props();
+    compact = false,
+  }: {
+    example: DisplayExample | null;
+    onBack?: () => void;
+    /** Labelled chip rows instead of picture tiles (the drill-down tier). */
+    compact?: boolean;
+  } = $props();
 
   const composition = getImageCompositionManager();
   const exportOptions = getExportOptionsState();
@@ -48,27 +52,6 @@
   const sequence = $derived(example?.cards[length] ?? null);
   // The live card reports the grid Auto picked, which decides its info cells.
   let autoLayout = $state<ResolvedAutoLayout | null>(null);
-
-  let version = $state(0);
-  onMount(() => {
-    const bump = () => version++;
-    composition.registerObserver(bump);
-    return () => composition.unregisterObserver(bump);
-  });
-
-  const card = $derived.by(() => {
-    void version;
-    return {
-      showWord: composition.addWord,
-      showStepNumbers: composition.addStepNumbers,
-      showDifficultyLevel: composition.addDifficultyLevel,
-      showLoopGlyph: composition.showLoopGlyph,
-      includeStartPlacement: composition.includeStartPlacement,
-      // Same gate as the card panel: guests cannot mint a scannable QR.
-      showQRCode: composition.showQRCode && authState.isAuthenticated,
-      showMandala: composition.showMandala,
-    };
-  });
 
   /** What the card shows goes back to its defaults: the card's own switches,
    *  its theme, and the two pictograph-manager marks only a card draws. */
@@ -82,11 +65,6 @@
     value: String(value),
     label: String(value),
   }));
-
-  // The example has no record of its own. Without a link the card would mint
-  // a real short code for it (a database write) on every visit, so its QR
-  // points at the site instead.
-  const exampleQrUrl = PUBLIC_SITE_URL;
 
   let menuHost: ChoreoCardContextMenuHost | undefined = $state();
   const uid = $props.id();
@@ -102,21 +80,19 @@
 >
   {#snippet stage()}
     {#if sequence}
-      <div class="card-stage">
-        <ChoreoCard
-          {sequence}
-          {...card}
-          darkMode={exportOptions.imageDarkMode}
-          forceContain
-          qrUrl={exampleQrUrl}
-          onAutoLayoutResolved={(layout) => (autoLayout = layout)}
-          onContextMenu={(x, y) => menuHost?.openContextMenu(x, y)}
-        />
-      </div>
+      <CardDisplayStage
+        {sequence}
+        onAutoLayoutResolved={(layout) => (autoLayout = layout)}
+        onContextMenu={(x, y) => menuHost?.openContextMenu(x, y)}
+      />
     {/if}
   {/snippet}
   {#snippet controls()}
-    <CardContentToggles stepCount={length} resolvedAutoLayout={autoLayout}>
+    <CardContentToggles
+      stepCount={length}
+      resolvedAutoLayout={autoLayout}
+      {compact}
+    >
       {#snippet lead()}
         <span class="group-label" id="{uid}-length"
           >{t("settings_display_card_length")}</span
@@ -126,6 +102,8 @@
           value={String(length)}
           onchange={(value) => (length = Number(value) as CardLength)}
           color="accent"
+          size={compact ? "sm" : "md"}
+          density={compact ? "compact" : "standard"}
           ariaLabelledby="{uid}-length"
         />
       {/snippet}
@@ -141,16 +119,6 @@
 />
 
 <style>
-  /* The card picks its column count from this box, so the box is pinned to
-     the frame rather than sized by the card it holds. */
-  .card-stage {
-    position: absolute;
-    inset: 0;
-    display: grid;
-    place-items: center;
-    padding: 0.5rem;
-  }
-
   .group-label {
     color: var(--theme-text-dim);
     font-size: var(--font-size-xs, 0.75rem);
@@ -165,5 +133,13 @@
   :global([data-display-section="card"]) {
     --stage-ratio: 1.2;
     --stage-max-w: 22rem;
+  }
+
+  /* On a screen of its own the frame is width-capped, and a 16-step card
+     (a 5 by 4 grid under a header row) is squarer than the 1.2 frame: at
+     1.1 both lengths fill the width instead of the 16-step card shrinking
+     to the frame's height. */
+  :global([data-display-section="card"].screen) {
+    --stage-ratio: 1.1;
   }
 </style>
