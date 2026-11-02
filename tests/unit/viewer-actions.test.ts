@@ -65,6 +65,33 @@ describe("buildHeaderActions", () => {
     expect(a.onAddToCollection).toBeUndefined();
   });
 
+  it("cast: offers nothing that would act on the front performer alone", () => {
+    const a = buildHeaderActions(
+      makeCtx({
+        isOwned: true,
+        isOwnedLibraryRecord: true,
+        isSaved: true,
+        isLoggedIn: true,
+      }),
+      "cast",
+      wiring
+    );
+    expect(a.showPractice).toBe(false);
+    for (const handler of [
+      a.onFavoriteToggle,
+      a.onSave,
+      a.onRemix,
+      a.onPracticeToggle,
+      a.onAddToCollection,
+      a.onVideoUpload,
+      a.onPublish,
+      a.onUnpublish,
+      a.onDeleteRequest,
+    ]) {
+      expect(handler).toBeUndefined();
+    }
+  });
+
   it("exact owned library record: management actions light up", () => {
     const a = buildHeaderActions(
       makeCtx({

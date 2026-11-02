@@ -229,6 +229,10 @@ export async function retryPendingSyncs(): Promise<void> {
           tags: [...sequence.tags],
           notes: sequence.pendingSyncMetadata?.notes ?? "",
           thumbnailUrl: sequence.thumbnails[0],
+          // A copy of another creator's sequence stays a credited copy.
+          ...(sequence.pendingSyncMetadata?.copyOf && {
+            copyOf: sequence.pendingSyncMetadata.copyOf,
+          }),
           // Identity fence, re-checked inside the repository AFTER it resolves
           // the uid it is about to stamp. The ownership filter above selected
           // this row for `ownerUid`; the guard before the loop is only a cheap
@@ -261,6 +265,9 @@ export async function retryPendingSyncs(): Promise<void> {
                 visibility:
                   sequence.pendingSyncMetadata?.visibility ?? "private",
                 notes: sequence.pendingSyncMetadata?.notes ?? "",
+                ...(sequence.pendingSyncMetadata?.copyOf && {
+                  copyOf: sequence.pendingSyncMetadata.copyOf,
+                }),
                 blockedReason: permanent.code,
                 // When and on what content, so a permission block can come
                 // back after the content changes (blocked-publish-policy).

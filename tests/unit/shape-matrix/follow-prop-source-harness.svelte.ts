@@ -5,11 +5,11 @@
  * re-run the way it does against the app's actual settings store.
  */
 import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
-import { followPropSource } from "#lib/shared/shape-matrix/app/state/follow-prop-source.svelte.js";
+import { followPropSource } from "@tka/shape-engine/app/state/follow-prop-source.svelte.js";
 import type {
   ShapeMatrixAppState,
   ShapeMatrixPropSource,
-} from "#lib/shared/shape-matrix/app/state/shape-matrix-app-state.svelte.js";
+} from "@tka/shape-engine/app/state/shape-matrix-app-state.svelte.js";
 
 export interface FollowPropSourceSettings {
   leftPropType: PropType;

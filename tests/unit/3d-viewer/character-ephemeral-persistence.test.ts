@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Guards the Task 1 fix from
  * docs/superpowers/plans/2026-08-24-film-director-plane-axes.md: a seeded

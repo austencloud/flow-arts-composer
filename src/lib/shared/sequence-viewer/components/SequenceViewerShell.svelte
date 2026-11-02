@@ -71,8 +71,12 @@
   import { formatExportTimeEstimate } from "#lib/shared/animation-panel/state/export-timing-tracker.js";
   import {
     VIEWER_MODE_OPTIONS,
+    showsViewerModeSwitcher,
     viewerModeLabel,
+    viewerModeOptions,
+    type ViewerSubject,
   } from "../services/viewer-modes";
+  import { viewportFits3D } from "#lib/shared/3d/capabilities/viewport-3d-gate.svelte.js";
   import Recording3DOverlay from "./Recording3DOverlay.svelte";
   import ExportTakeover from "#lib/shared/video-export/components/ExportTakeover.svelte";
   import TKAWordGlyph from "#lib/shared/choreo-card/components/TKAWordGlyph.svelte";
@@ -128,7 +132,7 @@
     registerScanSessionCleanup,
   } from "#lib/shared/analytics/scan-analytics.js";
   import { createViewerShellLayoutState } from "../state/viewer-shell-layout-state.svelte";
-  import { isEnsembleView } from "../services/viewer-cast";
+  import { isCastComposition, isEnsembleView } from "../services/viewer-cast";
   import { resolveViewerTitleOverride } from "../services/viewer-title";
   import {
     createViewerShellShareState,
@@ -283,6 +287,29 @@
   setViewerAnimatorInspectorContext(animatorInspector);
   $effect(() => inspectorHost.setTarget(artInspectorTarget));
 
+  // The address names the subject. A cast (a tunnel of several performers'
+  // own sequences) offers only the views that draw all of them and no action
+  // that acts on one performer alone; each performer's page is one tap away
+  // through the Tunnel view's cast rows. Set before anything reads the mode,
+  // so a cast's first paint is already its tunnel.
+  const viewerSubject = $derived<ViewerSubject>(
+    isCastComposition(tunnelComposition) ? "cast" : "sequence"
+  );
+  $effect.pre(() => {
+    ctx.viewerState.setSubject(viewerSubject);
+  });
+  const modeOptions = $derived(
+    viewerModeOptions(
+      ctx.webgl2Available,
+      viewportFits3D(),
+      canAccessPostStudio() || (import.meta.env.DEV && reviewPostStudio),
+      viewerSubject
+    )
+  );
+  // Neither switcher is wired with a Practice toggle here (practice lives in
+  // the header), so a single view leaves nothing to switch between.
+  const modeSwitcherShown = $derived(showsViewerModeSwitcher(modeOptions));
+
   /** The panes the stage renders for the current view. */
   const stageSplitConfig = $derived.by((): SplitConfig => {
     const mode = ctx.viewerState.viewerMode;
@@ -309,7 +336,8 @@
       compositionName: tunnelComposition?.name,
       ensembleView: isEnsembleView(
         ctx.viewerState.viewerMode,
-        stageSplitConfig
+        stageSplitConfig,
+        viewerSubject
       ),
     })
   );
@@ -432,6 +460,7 @@
       // never during construction.
       getSharePanelOpen: () => share.panelOpen,
       getWorkspaceElement: () => viewerWorkspaceElement,
+      getModeSwitcherShown: () => modeSwitcherShown,
       startInSplit,
       startInCardThenSplit,
     },
@@ -606,6 +635,7 @@
       getOnRemix: () => onRemix,
       getOpenAppHref: () => openAppHref,
       getOnAccountSignIn: () => onAccountSignIn,
+      getHeaderProfile: () => (viewerSubject === "cast" ? "cast" : "full"),
       onClose,
     },
     {
@@ -1308,7 +1338,7 @@
       !embedded
         ? interactions.handleAddToCollection
         : undefined}
-      onRemix={(onRemix ?? interactions.headerActions.onRemix) && !embedded
+      onRemix={interactions.headerActions.onRemix && !embedded
         ? interactions.handleRemix
         : undefined}
       onPracticeToggle={interactions.headerActions.showPractice
@@ -1438,16 +1468,21 @@
           class:stacked-rail={layout.stackedExportWithRail}
           class:sidebar-collapsed={layout.exportSidebarCollapsed &&
             !layout.isImageExportActive}
-          class:has-rail={layout.showRail && !introPreview}
+          class:has-rail={layout.showRail && modeSwitcherShown && !introPreview}
         >
           {#if layout.showRail && !introPreview}
+            <!-- A subject with one view has no rail: it starts collapsed (no
+                 width, no motion on first paint) and glides open through the
+                 same collapse owner if a second view arrives later, such as
+                 Studio access resolving after sign-in. -->
             <div
               class="viewer-rail-wrap"
-              class:collapsed={ctx.practiceActive}
-              inert={ctx.practiceActive}
-              aria-hidden={ctx.practiceActive}
+              class:collapsed={ctx.practiceActive || !modeSwitcherShown}
+              inert={ctx.practiceActive || !modeSwitcherShown}
+              aria-hidden={ctx.practiceActive || !modeSwitcherShown}
             >
               <ViewerContentRail
+                subject={viewerSubject}
                 reviewPostStudio={import.meta.env.DEV && reviewPostStudio}
                 activeMode={ctx.viewerState.viewerMode}
                 webgl2Available={ctx.webgl2Available}
@@ -1951,7 +1986,7 @@
         {/if}
       {/if}
     </div>
-    {#if isMobile && !introPreview && ctx.hasSequence && ctx.effectiveSequence && !focusedModeActive && dockTrayState.openCount === 0}
+    {#if isMobile && !introPreview && modeSwitcherShown && ctx.hasSequence && ctx.effectiveSequence && !focusedModeActive && dockTrayState.openCount === 0}
       <!-- Ducks while any ControlDock tray is open — the media switcher is
            noise while the user edits, and the tray gets the room.
            Choreography: the slot height eases closed (outer slide) while
@@ -1971,6 +2006,7 @@
           }}
         >
           <ViewerModeBottomBar
+            subject={viewerSubject}
             reviewPostStudio={import.meta.env.DEV && reviewPostStudio}
             activeMode={ctx.viewerState.viewerMode}
             webgl2Available={ctx.webgl2Available}

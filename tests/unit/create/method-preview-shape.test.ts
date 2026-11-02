@@ -20,11 +20,11 @@ import {
   shapeCorner,
   type ShapePage,
 } from "#lib/features/create/shared/components/method-previews/method-preview-shape.js";
-import { SHAPE_MATRIX_REVEAL } from "#lib/shared/shape-matrix/app/services/shape-matrix-reveal.js";
+import { SHAPE_MATRIX_REVEAL } from "@tka/shape-engine/app/services/shape-matrix-reveal.js";
 import {
   buildShapeMatrixAxis,
   flowerKey,
-} from "#lib/shared/shape-matrix/domain/flower-signature.js";
+} from "@tka/shape-domain";
 
 /** The attract ghost's shortest glide (glide() in attract-ghost.svelte.ts). */
 const MIN_GLIDE_MS = 300;

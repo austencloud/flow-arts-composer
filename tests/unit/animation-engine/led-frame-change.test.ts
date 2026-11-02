@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, expect, it, vi } from "vitest";
 import { WebGLLedRenderer } from "#lib/shared/animation-engine/services/led/web-gl-led-renderer.js";
 import {

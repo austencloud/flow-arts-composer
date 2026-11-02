@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from "vitest";
 import { Shortcut } from "#lib/shared/keyboard/domain/models/shortcut.js";
 import { keyboardShortcutState } from "#lib/shared/keyboard/state/keyboard-shortcut-state.svelte.js";

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from "vitest";
 import { createGenerationConfigState } from "./generate-config.svelte";
 import { uiConfigToGenerationOptions } from "../shared/utils/config-mapper";

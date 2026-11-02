@@ -12,10 +12,50 @@ const EMPTY_PANELS: OrganizedSection[] = [
   { title: "Types 4-6", pictographs: [], type: "grouped" },
 ];
 
+function wheel(deltaX: number, deltaY: number) {
+  document
+    .querySelector(".embla__viewport")!
+    .dispatchEvent(
+      new WheelEvent("wheel", {
+        deltaX,
+        deltaY,
+        bubbles: true,
+        cancelable: true,
+      })
+    );
+}
+
+const pause = (ms: number) => new Promise((done) => setTimeout(done, ms));
+
 describe("OptionViewerSwipeLayout type navigation", () => {
   beforeEach(async () => {
     sessionStorage.clear();
     await page.viewport(900, 900);
+  });
+
+  it("turns one page per side-wheel gesture and ignores the main wheel", async () => {
+    render(OptionViewerSwipeLayoutTestHarness, {
+      organizedPictographs: EMPTY_PANELS,
+    });
+    const type1 = page.getByRole("tab", {
+      name: "Type 1: Dual-Shift, 0 options",
+    });
+    const type2 = page.getByRole("tab", { name: "Type 2: Shift, 0 options" });
+    await expect.element(type1).toHaveAttribute("aria-selected", "true");
+
+    wheel(0, 120);
+    await pause(250);
+    await expect.element(type1).toHaveAttribute("aria-selected", "true");
+
+    wheel(60, 0);
+    wheel(60, 0);
+    wheel(60, 0);
+    await expect.element(type2).toHaveAttribute("aria-selected", "true");
+    await pause(250);
+    await expect.element(type2).toHaveAttribute("aria-selected", "true");
+
+    wheel(-60, 0);
+    await expect.element(type1).toHaveAttribute("aria-selected", "true");
   });
 
   it("keeps direct selection, carousel arrows, and the active panel in sync", async () => {
@@ -241,5 +281,169 @@ describe("OptionViewerSwipeLayout type navigation", () => {
     expect(carousel!.getBoundingClientRect().top).toBeGreaterThan(
       carouselTopBefore + 100
     );
+  });
+});
+
+describe("OptionViewerSwipeLayout type rail", () => {
+  beforeEach(async () => {
+    sessionStorage.clear();
+    // The unfolded Fold: its stacked picker is about 707x365.
+    await page.viewport(707, 772);
+  });
+
+  function renderRail() {
+    return render(OptionViewerSwipeLayoutTestHarness, {
+      organizedPictographs: EMPTY_PANELS,
+      width: 707,
+      height: 365,
+      settingsEnabled: true,
+      openIntoWorkspace: true,
+      typeRail: true,
+      touchTarget: 40,
+      topOffset: 360,
+    });
+  }
+
+  it("stands the tabs in a left rail and gives the grid the full height", async () => {
+    renderRail();
+
+    const rail = document.querySelector<HTMLElement>(".type-navigation");
+    const carousel = document.querySelector<HTMLElement>(".carousel-area");
+    expect(rail).not.toBeNull();
+    expect(carousel).not.toBeNull();
+    const railBounds = rail!.getBoundingClientRect();
+    const carouselBounds = carousel!.getBoundingClientRect();
+
+    // The rail is a column on the left; the carousel fills the rest.
+    expect(railBounds.width).toBeLessThanOrEqual(52);
+    expect(railBounds.height).toBeCloseTo(365, 0);
+    expect(carouselBounds.left).toBeGreaterThanOrEqual(railBounds.right - 1);
+    expect(carouselBounds.height).toBeCloseTo(365, 0);
+    expect(carouselBounds.right).toBeCloseTo(railBounds.left + 707, 0);
+
+    // Tabs keep their order, stacked top to bottom, inside the rail.
+    const tabs = Array.from(
+      rail!.querySelectorAll<HTMLElement>('[role="tab"]')
+    ).map((tab) => tab.getBoundingClientRect());
+    expect(tabs).toHaveLength(4);
+    for (let i = 1; i < tabs.length; i++) {
+      expect(tabs[i]!.top).toBeGreaterThanOrEqual(tabs[i - 1]!.bottom - 1);
+      expect(Math.abs(tabs[i]!.left - tabs[0]!.left)).toBeLessThanOrEqual(1);
+    }
+    for (const tab of tabs) {
+      expect(tab.left).toBeGreaterThanOrEqual(railBounds.left);
+      expect(tab.right).toBeLessThanOrEqual(railBounds.right);
+    }
+
+    // Settings above the tabs, the guide below them.
+    const settings = page
+      .getByRole("button", { name: "Option settings" })
+      .element()
+      .getBoundingClientRect();
+    const info = page
+      .getByRole("button", { name: "Explain letter types" })
+      .element()
+      .getBoundingClientRect();
+    expect(settings.bottom).toBeLessThanOrEqual(tabs[0]!.top + 1);
+    expect(info.top).toBeGreaterThanOrEqual(tabs[3]!.bottom - 1);
+  });
+
+  it("pages the type groups up and down, matching the rail", async () => {
+    renderRail();
+    const carousel = document.querySelector<HTMLElement>(".carousel-area")!;
+    const panels = Array.from(carousel.querySelectorAll<HTMLElement>(".panel"));
+    expect(panels).toHaveLength(4);
+
+    // Panels stack in a column, so Type 2 waits below Type 1, as its tab does.
+    const first = panels[0]!.getBoundingClientRect();
+    const second = panels[1]!.getBoundingClientRect();
+    expect(Math.abs(second.left - first.left)).toBeLessThanOrEqual(1);
+    expect(second.top).toBeCloseTo(first.bottom, 0);
+
+    // The tabs share the rail's height instead of bunching at the top.
+    const tabs = Array.from(
+      document.querySelectorAll<HTMLElement>('.type-navigation [role="tab"]')
+    ).map((tab) => tab.getBoundingClientRect().height);
+    for (const height of tabs) expect(height).toBeGreaterThan(50);
+
+    // Choosing Type 3 slides its panel up into the carousel's frame.
+    await page
+      .getByRole("tab", { name: "Type 3: Cross-Shift, 0 options" })
+      .click();
+    const top = () => carousel.getBoundingClientRect().top;
+    await expect
+      .poll(() => Math.abs(panels[2]!.getBoundingClientRect().top - top()))
+      .toBeLessThanOrEqual(1);
+    expect(
+      Math.abs(
+        panels[2]!.getBoundingClientRect().left -
+          carousel.getBoundingClientRect().left
+      )
+    ).toBeLessThanOrEqual(1);
+  });
+
+  it("turns the rail's pages with the main wheel, not the side wheel", async () => {
+    renderRail();
+    const type1 = page.getByRole("tab", {
+      name: "Type 1: Dual-Shift, 0 options",
+    });
+    const type2 = page.getByRole("tab", { name: "Type 2: Shift, 0 options" });
+
+    wheel(120, 0);
+    await pause(250);
+    await expect.element(type1).toHaveAttribute("aria-selected", "true");
+
+    wheel(0, 100);
+    await expect.element(type2).toHaveAttribute("aria-selected", "true");
+    await pause(250);
+
+    wheel(0, -100);
+    await expect.element(type1).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("moves between tabs with the vertical arrow keys", async () => {
+    renderRail();
+    const type1 = page.getByRole("tab", {
+      name: "Type 1: Dual-Shift, 0 options",
+    });
+    const type2 = page.getByRole("tab", { name: "Type 2: Shift, 0 options" });
+
+    const type1Element = type1.element() as HTMLButtonElement;
+    type1Element.focus();
+    type1Element.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true })
+    );
+    await expect.element(type2).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("opens the tray over the grid beside the rail and closes it", async () => {
+    renderRail();
+    const rail = document.querySelector<HTMLElement>(".type-navigation")!;
+    const carousel = document.querySelector<HTMLElement>(".carousel-area")!;
+    const carouselBefore = carousel.getBoundingClientRect();
+
+    const info = page.getByRole("button", { name: "Explain letter types" });
+    await info.click();
+    const region = page.getByRole("region", { name: "Letter type guide" });
+    await expect.element(region).toBeVisible();
+    await new Promise((resolve) => setTimeout(resolve, 320));
+
+    const railBounds = rail.getBoundingClientRect();
+    const panel = region.element().getBoundingClientRect();
+    expect(panel.left).toBeGreaterThanOrEqual(railBounds.right);
+    expect(panel.top).toBeGreaterThanOrEqual(railBounds.top - 1);
+    expect(panel.bottom).toBeLessThanOrEqual(railBounds.bottom + 1);
+    expect(panel.right).toBeLessThanOrEqual(railBounds.left + 707);
+    // Opening it does not move the grid.
+    const carouselAfter = carousel.getBoundingClientRect();
+    expect(carouselAfter.top).toBeCloseTo(carouselBefore.top, 0);
+    expect(carouselAfter.left).toBeCloseTo(carouselBefore.left, 0);
+
+    region
+      .element()
+      .dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Escape", bubbles: true })
+      );
+    await expect.element(info).toHaveAttribute("aria-expanded", "false");
   });
 });

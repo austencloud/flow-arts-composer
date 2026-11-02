@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { createViewerState } from "./viewer-state.svelte";
 
@@ -30,6 +31,16 @@ describe("createViewerState URL seeding", () => {
     expect(setItem).toHaveBeenCalledWith("tka-viewer-mode", "card");
   });
 
+  it("a host's seeded opening view is not saved, but a later choice is", () => {
+    const state = createViewerState();
+    const setItem = vi.spyOn(Storage.prototype, "setItem");
+    state.seedViewerMode("tunnel");
+    expect(state.viewerMode).toBe("tunnel");
+    expect(setItem).not.toHaveBeenCalledWith("tka-viewer-mode", expect.anything());
+    state.setViewerMode("card");
+    expect(setItem).toHaveBeenCalledWith("tka-viewer-mode", "card");
+  });
+
   it("URL post-studio is honored (explicit-intent carve-out)", () => {
     const state = createViewerState({ initialMode: "post-studio", persist: false });
     expect(state.viewerMode).toBe("post-studio");
@@ -47,6 +58,34 @@ describe("createViewerState URL seeding", () => {
   it("preserves initial 2D and Card export contexts", () => {
     expect(createViewerState({ initialMode: "animation", persist: false }).exportContext).toBe("animation-export");
     expect(createViewerState({ initialMode: "card", persist: false }).exportContext).toBe("image-export");
+  });
+
+  it("a cast lands performer-only modes on the tunnel without touching the remembered mode", () => {
+    localStorage.setItem("tka-viewer-mode", "card");
+    const state = createViewerState({ initialMode: "split" });
+    state.setSubject("cast");
+    expect(state.viewerMode).toBe("tunnel");
+    expect(state.wants3D).toBe(false);
+    expect(state.rawViewerMode).toBe("split");
+
+    const setItem = vi.spyOn(Storage.prototype, "setItem");
+    state.setViewerMode("post-studio");
+    expect(state.viewerMode).toBe("post-studio");
+    state.setViewerMode("animation");
+    expect(state.viewerMode).toBe("tunnel");
+    expect(setItem).not.toHaveBeenCalled();
+    expect(localStorage.getItem("tka-viewer-mode")).toBe("card");
+  });
+
+  it("keeps a cast's 3D stage, and falls back to its tunnel when 3D does not fit", () => {
+    const state = createViewerState({ initialMode: "animation-3d", persist: false });
+    state.setSubject("cast");
+    expect(state.viewerMode).toBe("animation-3d");
+    expect(state.wants3D).toBe(true);
+    gate.fits = false;
+    const small = createViewerState({ initialMode: "animation-3d", persist: false });
+    small.setSubject("cast");
+    expect(small.viewerMode).toBe("tunnel");
   });
 
   it("raw getters keep the 3D preference a small viewport coerces away", () => {

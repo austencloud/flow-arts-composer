@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
 import { SceneEnvironmentId } from "#lib/shared/3d/environments/domain/scene-environment.js";
 import { createViewer3DStateForTest } from "./viewer3d-test-helpers.svelte";

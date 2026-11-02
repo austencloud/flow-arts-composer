@@ -43,7 +43,7 @@ import {
   containElementalGlyph,
   getElementalGlyphBox,
 } from "../../pictograph/shared/domain/constants/elemental-glyph-layout";
-import { derivePropElementalTypeForStep } from "#lib/shared/shape-matrix/domain/prop-relationship.js";
+import { derivePropElementalTypeForStep } from "#lib/shared/pictograph/shared/domain/utils/prop-elemental-type.js";
 import { getMotionColor } from "../../utils/svg-color-utils";
 import { drawMonochromeImage, drawTintedImage } from "@tka/render-composition";
 import { drawSkewBraces } from "../utils/draw-skew-braces";

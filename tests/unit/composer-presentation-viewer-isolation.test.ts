@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { tick } from "svelte";
 import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";

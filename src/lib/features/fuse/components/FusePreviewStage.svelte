@@ -41,7 +41,23 @@
   const { state: fuseState } = getFuseContext();
   let tempoOpen = $state(false);
   let decompositionOverride = $state<boolean | null>(null);
-  const previewDecomposed = $derived(decompositionOverride ?? compact);
+
+  // A wide frame track seats a Blue and a Red solo beside the result without
+  // shrinking it, so it opens disassembled: the room is there, and the solos
+  // are the two paths the result is made of. The threshold is the sizing
+  // math in FuseAnimationPreview (hero = 0.625 of the width less two gaps),
+  // the point where the hero still takes the full height. Disassemble and
+  // Reassemble override it either way until the stage remounts.
+  const SOLO_GAP_PX = 8;
+  let frameTrackWidth = $state(0);
+  let frameTrackHeight = $state(0);
+  const roomForSolos = $derived(
+    frameTrackHeight > 0 &&
+      frameTrackWidth >= 1.6 * frameTrackHeight + 2 * SOLO_GAP_PX
+  );
+  const previewDecomposed = $derived(
+    decompositionOverride ?? (compact || roomForSolos)
+  );
 
   // Disassemble and Reassemble resize the frame and the hero through CSS
   // transitions, but only for the length of that request. Left on, the same
@@ -143,7 +159,11 @@
     </div>
   {/if}
 
-  <div class="frame-wrap">
+  <div
+    class="frame-wrap"
+    bind:clientWidth={frameTrackWidth}
+    bind:clientHeight={frameTrackHeight}
+  >
     <div class="preview-frame" role="img" aria-label={previewDescription}>
       {#if fuseState.previewSequence}
         <FuseAnimationPreview

@@ -120,7 +120,7 @@ describe("shape-matrix hero pool — firebase-free contract", () => {
       firebaseReach("src/lib/features/choreo-card/services/reversal-transform-apply.ts"),
     ).toEqual([]);
     expect(
-      firebaseReach("src/lib/shared/shape-matrix/services/tnd-base-index.ts"),
+      firebaseReach("packages/shape-engine/src/services/tnd-base-index.ts"),
     ).toEqual([]);
   });
 

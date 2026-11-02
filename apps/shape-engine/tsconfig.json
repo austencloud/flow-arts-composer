@@ -12,6 +12,8 @@
     "types": ["vite/client"],
     "paths": {
       "#lib/*": ["../../src/lib/*"],
+      "@tka/shape-domain": ["../../packages/shape-domain/src/index.ts"],
+      "@tka/shape-engine/*": ["../../packages/shape-engine/src/*"],
       "$app/env": ["./src/environment.ts"]
     }
   },

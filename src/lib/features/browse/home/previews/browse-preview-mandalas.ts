@@ -4,7 +4,7 @@
  * and a red-hand flower (column). The picks step around the axis so turns
  * side by side never repeat a tile. Pure, so tests check the picks.
  */
-import type { Flower } from "#lib/shared/shape-matrix/domain/flower-signature.js";
+import type { Flower } from "@tka/shape-domain";
 
 /** Row and column steps, as shares of the axis, for successive turns. */
 const PICKS: ReadonlyArray<readonly [number, number]> = [

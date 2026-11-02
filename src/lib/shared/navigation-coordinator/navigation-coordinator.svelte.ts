@@ -49,7 +49,10 @@ import {
 } from "../application/state/ui/module-state";
 import { authState } from "../auth/state/auth-state.svelte";
 import { resolveAccessTier } from "../auth/domain/access-tier";
-import { isTabAccessible } from "../auth/domain/guest-access-config";
+import {
+  guestSettingsEntryTab,
+  isTabAccessible,
+} from "../auth/domain/guest-access-config";
 import { isPremiumOrAbove } from "../auth/domain/models/user-role";
 import {
   featureFlagService,
@@ -176,10 +179,9 @@ export function getAccessibleSectionsForModule(module: ModuleId) {
   // Create module section filtering
   if (module === "create") {
     // Filter sections based on user's feature access (role-based) AND the
-    // guest-tier gate — mirroring the browse/default branches. Without the
-    // isTabAccessible() check, guests saw the Fuse tab on mobile/collapsed nav
-    // even though GUEST_MODULE_ACCESS.create excludes it and the desktop sidebar
-    // hides it.
+    // guest-tier gate, mirroring the browse/default branches and the desktop
+    // sidebar. Every creation method is open to guests today; the check keeps
+    // the surfaces agreeing if a Create tab is ever held back from them.
     const availableSections = baseSections.filter((section) => {
       return (
         featureFlagService.canAccessTab("create", section.id) &&
@@ -304,6 +306,25 @@ export async function handleModuleChange(
   // navigation-state boundary.
   if (moduleId === "browse" && targetTab !== undefined) {
     targetTab = normalizeSectionId("browse", targetTab);
+  }
+
+  // A guest who opens Settings lands on a tab they can use. Profile holds
+  // only an account invitation for them, so it waits for a tap.
+  if (
+    moduleId === "settings" &&
+    targetTab === undefined &&
+    resolveAccessTier(
+      authState.isAuthenticated,
+      authState.isAnonymous,
+      isPremiumOrAbove(authState.role)
+    ) === "guest"
+  ) {
+    targetTab = guestSettingsEntryTab(
+      (navigationState.getModuleDefinition("settings")?.sections ?? []).map(
+        (section) => section.id
+      ),
+      navigationState.savedTabFor("settings")
+    );
   }
 
   const currentMod = currentModule();

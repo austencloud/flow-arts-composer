@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AnimationRenderLoop } from "#lib/shared/animation-engine/services/animation-render-loop.js";
 import { Canvas2DAnimationRenderer } from "#lib/shared/animation-engine/services/canvas-2d-animation-renderer.js";

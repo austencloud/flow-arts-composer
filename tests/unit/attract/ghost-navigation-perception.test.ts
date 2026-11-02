@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
 import { transitionGhostHover } from "#lib/shared/attract/services/ghost-hover.js";
 import {

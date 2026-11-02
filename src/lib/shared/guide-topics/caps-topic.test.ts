@@ -23,7 +23,7 @@ import {
   type TurnValue,
 } from "#lib/shared/create/services/level-turn-values.js";
 import { deriveTnDFromPictograph } from "#lib/shared/pictograph/shared/domain/utils/tnd-deriver.js";
-import { derivePropRelationshipForStep } from "#lib/shared/shape-matrix/domain/prop-relationship.js";
+import { derivePropRelationshipForStep } from "@tka/shape-domain";
 import type { SoloPropStepData } from "#lib/shared/foundation/domain/models/solo-prop-step-data.js";
 
 const travelOf = (step: SoloPropStepData) =>

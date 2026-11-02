@@ -36,7 +36,7 @@
   import {
     HERO_TIP_EFFECT_MAP,
     HERO_TRAIL_PRESET,
-  } from "#lib/shared/landing/data/hero-trail-preset.js";
+  } from "@tka/shape-engine/services/hero-trail-preset.js";
   import { setPendingGenerationAnimation } from "#lib/features/create/shared/workspace-panel/sequence-display/state/step-grid-display-state.svelte.js";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";

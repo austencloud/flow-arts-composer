@@ -36,8 +36,10 @@ import {
   publishPublicSequence,
   PublicDuplicateError,
   unpublishPublicSequence,
+  updatePublicCreatorIntent,
   updatePublicThumbnails,
 } from "#lib/shared/library/services/public-sequence-persister.js";
+import type { CreatorIntent } from "#lib/shared/foundation/domain/models/creator-intent.js";
 import type { LibrarySequence } from "#lib/shared/library/domain/models/library-sequence.js";
 import { stripWordNotation } from "#lib/shared/foundation/utils/word-notation.js";
 import type { FlaggedTerm } from "#lib/features/moderation/domain/models/content-moderation-models.js";
@@ -347,6 +349,28 @@ export class PublicIndexSyncer {
 
     await updatePublicThumbnails(firestore, sequenceId, publicThumbnails);
     this.browseLoader?.updateThumbnailsInCache(sequenceId, publicThumbnails);
+  }
+
+  /**
+   * Patch the public mirror's `creatorIntent` (a restamped look) the same
+   * narrow way as a thumbnail: one transaction that restamps the projection
+   * digest/revision on both documents, then the warm gallery cache. A full
+   * `syncToPublicIndex` would re-run artifact extraction, loop detection and
+   * tag resolution for a change that touches none of them.
+   */
+  async updateCreatorIntent(
+    sequenceId: string,
+    creatorIntent: CreatorIntent
+  ): Promise<void> {
+    const firestore = await getFirestoreInstance();
+    const result = await updatePublicCreatorIntent(
+      firestore,
+      sequenceId,
+      creatorIntent
+    );
+    if (result.status === "updated") {
+      this.browseLoader?.updateCreatorIntentInCache(sequenceId, creatorIntent);
+    }
   }
 
   /**

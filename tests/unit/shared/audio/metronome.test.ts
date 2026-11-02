@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Metronome lifecycle contract.
  *

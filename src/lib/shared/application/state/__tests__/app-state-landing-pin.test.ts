@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 

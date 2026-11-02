@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Static guards on the presenter's safety layers and its annotation contract
  * (spec: 2026-08-04-ghost-mind-design.md §Testing, rows 3, 5, 6).

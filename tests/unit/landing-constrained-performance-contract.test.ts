@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Landing constrained-network contract.
  *

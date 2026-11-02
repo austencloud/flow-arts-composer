@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * SVG asset corpus contract (Opus batch 2026-09-12 read-only audit).
  *

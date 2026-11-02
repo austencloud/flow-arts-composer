@@ -1,4 +1,4 @@
-import type { VtgMode } from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
+import type { VtgMode } from "@tka/shape-domain";
 import {
   TIMING_DIRECTION_ARTICLES,
   timingDirectionModeHref,

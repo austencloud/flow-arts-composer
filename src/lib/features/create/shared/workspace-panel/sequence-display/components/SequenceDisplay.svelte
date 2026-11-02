@@ -33,6 +33,7 @@
     isSideBySideLayout = false,
     shouldOrbitAroundCenter = false,
     activeMode = null,
+    builderHopProgress = null,
     currentDisplayWord = "",
     letterSources = null,
   } = $props<{
@@ -49,6 +50,11 @@
     isSideBySideLayout?: boolean;
     shouldOrbitAroundCenter?: boolean;
     activeMode?: BuildModeId | null;
+    /**
+     * Assemble's running hop, 0 to 1, or null: the slot mandala draws a new
+     * beat in on this clock so the line keeps pace with the prop.
+     */
+    builderHopProgress?: number | null;
     currentDisplayWord?: string;
     /** Optional: When provided for spell tab, enables original vs bridge letter styling */
     letterSources?: LetterSource[] | null;
@@ -255,6 +261,7 @@
           {practiceStepNumber}
           {isSideBySideLayout}
           {activeMode}
+          {builderHopProgress}
           {isTimelineMode}
           {highlightedSteps}
           onDurationChange={isDurationPreviewMode

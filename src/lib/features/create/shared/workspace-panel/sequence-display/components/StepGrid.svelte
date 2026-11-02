@@ -78,6 +78,7 @@
     isSideBySideLayout = false,
     shouldOrbitAroundCenter = false,
     activeMode = null,
+    builderHopProgress = null,
     isTimelineMode = false,
     manualColumnCount = null,
     highlightedSteps = null,
@@ -134,6 +135,11 @@
     isSideBySideLayout?: boolean;
     shouldOrbitAroundCenter?: boolean;
     activeMode?: BuildModeId | null;
+    /**
+     * Assemble's running hop, 0 to 1, or null: the slot mandala draws a new
+     * beat in on this clock so the line keeps pace with the prop.
+     */
+    builderHopProgress?: number | null;
     isTimelineMode?: boolean;
     manualColumnCount?: number | null;
     highlightedSteps?: Map<number, { bg: string; border: string }> | null;
@@ -878,6 +884,7 @@
       {autoFocusSelectedStep}
       {practiceStepNumber}
       {activeMode}
+      {builderHopProgress}
       {removingStepIndex}
       {removingStepIndices}
       {isClearing}

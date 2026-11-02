@@ -1,8 +1,14 @@
 # Tests
 
 The suite is Vitest. Most of it runs under one config,
-`tests/config/vitest.config.ts`, in jsdom; the rest has its own config because
-it needs a real browser or a Firebase emulator.
+`tests/config/vitest.config.ts`; the rest has its own config because it needs a
+real browser or a Firebase emulator.
+
+The main config runs files without a DOM by default. A test that needs one
+(`window`, `document`, `localStorage`, `requestAnimationFrame`, or code that
+branches on whether `window` exists) puts `// @vitest-environment jsdom` on
+line 1. Without it such a test fails with `window is not defined` or similar,
+so a new DOM test finds out on its first run.
 
 ## Where tests live
 
@@ -47,15 +53,15 @@ finds it.
 
 ## Configs
 
-| Config                             | Runs                                                       | Command                                                     |
-| ---------------------------------- | ---------------------------------------------------------- | ----------------------------------------------------------- |
-| `vitest.config.ts` (main)          | `tests/unit`, `tests/migration`, `src/**/*.test.ts`, jsdom | `npm test`, `npm run test:ci`, `npm run test:changed`       |
-| `vitest.components.config.ts`      | `src/**/*.svelte.{test,spec}.ts` in Chromium               | `npm run test:components`, `test:components:ci`             |
-| `vitest.rules.config.ts`           | `tests/integration/firestore-rules`, Firestore emulator    | `npm run test:rules` (manual)                               |
-| `vitest.e2e.config.ts`             | `tests/integration/auth-upgrade/*.e2e.test.ts`, emulator   | `npm run test:e2e` (manual)                                 |
-| `vitest.render-parity.config.ts`   | `tests/render-parity/render-parity.test.ts` in a browser   | `npm run test:render-parity` (`:capture`, `:compare`)       |
-| `vitest.card-mcp-parity.config.ts` | card and QR parity tests in `tests/render-parity/`         | `npm run test:card-mcp-parity`, `test:live-card-png-parity` |
-| `vitest.contact-lab.config.ts`     | `tests/experimental/contact-correct/`                      | `npm run test:contact-lab-acceptance`                       |
+| Config                             | Runs                                                              | Command                                                     |
+| ---------------------------------- | ----------------------------------------------------------------- | ----------------------------------------------------------- |
+| `vitest.config.ts` (main)          | `tests/unit`, `tests/migration`, `src/**/*.test.ts`, node + jsdom | `npm test`, `npm run test:ci`, `npm run test:changed`       |
+| `vitest.components.config.ts`      | `src/**/*.svelte.{test,spec}.ts` in Chromium                      | `npm run test:components`, `test:components:ci`             |
+| `vitest.rules.config.ts`           | `tests/integration/firestore-rules`, Firestore emulator           | `npm run test:rules` (manual)                               |
+| `vitest.e2e.config.ts`             | `tests/integration/auth-upgrade/*.e2e.test.ts`, emulator          | `npm run test:e2e` (manual)                                 |
+| `vitest.render-parity.config.ts`   | `tests/render-parity/render-parity.test.ts` in a browser          | `npm run test:render-parity` (`:capture`, `:compare`)       |
+| `vitest.card-mcp-parity.config.ts` | card and QR parity tests in `tests/render-parity/`                | `npm run test:card-mcp-parity`, `test:live-card-png-parity` |
+| `vitest.contact-lab.config.ts`     | `tests/experimental/contact-correct/`                             | `npm run test:contact-lab-acceptance`                       |
 
 `vitest.diagnostics.config.ts` runs `tests/tools/` by hand.
 `playwright.config.ts` points at `tests/e2e/`, which now holds only snapshots;
@@ -83,7 +89,8 @@ with `npm run test:packages` (five packages have a `test` script).
 ## Layout
 
 - `config/`: the configs above.
-- `setup/`: `vitest-setup.ts` (jsdom shims) and `stubs/` for `$app/*` and
-  `cloudflare:workers`.
+- `setup/`: `vitest-setup.ts` (shims; the DOM ones apply only in jsdom files),
+  `node-client-environment.ts` (the main config's default environment) and
+  `stubs/` for `$app/*` and `cloudflare:workers`.
 - `helpers/`, `mocks/`, `fixtures/`: shared test support.
 - `unit/`, `migration/`, `integration/`, `render-parity/`: suites as above.

@@ -28,27 +28,27 @@
   import { Crossfade } from "#lib/shared/transitions/motion.js";
   import ChoreoCard from "#lib/shared/sequence-viewer/components/ChoreoCard.svelte";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
-  import TurnNotationControls from "#lib/shared/shape-matrix/app/components/TurnNotationControls.svelte";
-  import ShapeMatrixGrid from "#lib/shared/shape-matrix/components/ShapeMatrixGrid.svelte";
-  import ElementChipRow from "#lib/shared/shape-matrix/components/ElementChipRow.svelte";
-  import { applyFilter } from "#lib/shared/shape-matrix/domain/filter-flower-axis.js";
+  import TurnNotationControls from "@tka/shape-engine/app/components/TurnNotationControls.svelte";
+  import ShapeMatrixGrid from "@tka/shape-engine/components/ShapeMatrixGrid.svelte";
+  import ElementChipRow from "@tka/shape-engine/components/ElementChipRow.svelte";
+  import { applyFilter } from "@tka/shape-domain";
   import {
     matrixFiltersForTurns,
     type MatrixLabelMode,
-  } from "#lib/shared/shape-matrix/domain/matrix-turn-band.js";
+  } from "@tka/shape-domain";
   import {
     flowerKey,
     flowerPetals,
     type Flower,
-  } from "#lib/shared/shape-matrix/domain/flower-signature.js";
-  import { pairAtTurns } from "#lib/shared/shape-matrix/domain/flower-at-turn.js";
-  import { buildModeRealization } from "#lib/shared/shape-matrix/services/build-mode-realizations.js";
+  } from "@tka/shape-domain";
+  import { pairAtTurns } from "@tka/shape-domain";
+  import { buildModeRealization } from "@tka/shape-engine/services/build-mode-realizations.js";
   import {
     loadShapeMatrix,
     shapeMatrixTipPoint,
     type ShapeMatrixData,
-  } from "#lib/shared/shape-matrix/services/shape-matrix-flowers.js";
-  import type { VtgMode } from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
+  } from "@tka/shape-engine/services/shape-matrix-flowers.js";
+  import type { VtgMode } from "@tka/shape-domain";
   import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {

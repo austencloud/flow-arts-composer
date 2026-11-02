@@ -11,6 +11,8 @@ const LOCAL_ESCAPE_OWNER_SELECTOR = [
   "[contenteditable]:not([contenteditable='false'])",
   "[data-escape-shortcut-local]",
   "[aria-expanded='true']",
+  // Bits UI popover content has no role; its own escape layer closes it.
+  "[data-popover-content]",
   "[role='combobox']",
   "[role='menu']",
   "[role='listbox']",

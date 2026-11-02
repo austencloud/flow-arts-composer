@@ -104,6 +104,7 @@ export class SvgPropAnimator {
       startOrientation,
       durationMs,
       propCenter,
+      onProgress,
     } = params;
 
     // Respect reduced motion
@@ -131,12 +132,16 @@ export class SvgPropAnimator {
         normalizeAnglePositive(startStaffAngle + staffRotationDelta),
         propCenter
       );
+      onProgress?.(1);
       return;
     }
 
     return new Promise<void>((resolve) => {
       this.cancelResolve = resolve;
       const startTime = performance.now();
+      // Report the start now, before the first frame, so whatever follows the
+      // hop sees it begin in the same update that started it.
+      onProgress?.(0);
 
       const tick = (now: number) => {
         const elapsed = now - startTime;
@@ -151,6 +156,7 @@ export class SvgPropAnimator {
         );
 
         this.applyTransform(element, point.x, point.y, staffAngle, propCenter);
+        onProgress?.(rawProgress < 1 ? t : 1);
 
         if (rawProgress < 1) {
           this.animationFrameId = requestAnimationFrame(tick);

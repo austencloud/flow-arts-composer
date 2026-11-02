@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { authedFetch } from "#lib/shared/auth/services/authed-fetch.js";
 import { PHYSICAL_CARD_SCHEMA_VERSION } from "#lib/shared/qr/domain/physical-card.js";

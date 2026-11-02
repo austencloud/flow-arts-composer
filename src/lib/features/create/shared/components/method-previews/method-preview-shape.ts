@@ -4,14 +4,14 @@
  * Matrix's own reveal. Pure, so tests check them without drawing.
  */
 import type { TurnValue } from "#lib/shared/create/services/level-turn-values.js";
-import { applyFilter } from "#lib/shared/shape-matrix/domain/filter-flower-axis.js";
-import type { Flower } from "#lib/shared/shape-matrix/domain/flower-signature.js";
+import { applyFilter } from "@tka/shape-domain";
+import type { Flower } from "@tka/shape-domain";
 import {
   matrixFiltersForTurns,
   matrixTurnsForLevel,
   SHAPE_MATRIX_DEFAULT_LEVEL,
   SHAPE_MATRIX_DEFAULT_TURN,
-} from "#lib/shared/shape-matrix/domain/matrix-turn-band.js";
+} from "@tka/shape-domain";
 import type { ShapeLayout } from "./method-preview-compositions";
 
 /**

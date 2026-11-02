@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const startMorph = vi.fn<(mutate: () => void) => ViewTransition | null>();

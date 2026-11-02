@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * The Create preview hands its player an effects state as a prop and sets no
  * effects context. The right-click menu read only the context, so its Effects

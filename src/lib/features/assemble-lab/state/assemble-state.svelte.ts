@@ -61,6 +61,9 @@ export function createAssembleState(
     get phase() {
       return document.phase;
     },
+    get hopProgress() {
+      return document.hopProgress;
+    },
     get activeHand() {
       return document.activeHand;
     },
@@ -182,5 +185,11 @@ export function createAssembleState(
     switchToHand: path.switchToHand,
     toggleKeyboardMode: settings.toggleKeyboardMode,
     setAnimationCallback: path.setAnimationCallback,
+    reportHopProgress(progress: number) {
+      // A report after the hop has ended (a frame that lands late) must not
+      // start a hop nothing is running.
+      if (document.phase !== "animating") return;
+      document.hopProgress = progress;
+    },
   };
 }

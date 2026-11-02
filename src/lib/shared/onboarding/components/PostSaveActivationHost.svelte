@@ -11,7 +11,7 @@
 
       const shown = authDrawerState.offerGuestSaveNudge({
         message:
-          "Sequence saved on this device. Create an account to keep it across devices.",
+          "Saved on this device. An account keeps it on every device. Free, about ten seconds.",
         onDismiss: () => postSaveActivation.dismissPrompt(),
         action: {
           label: "Create account",

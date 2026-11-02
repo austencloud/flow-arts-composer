@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from "vitest";
 import { page } from "$app/state";
 import { createContactInspectionState } from "../../../src/routes/test/grip-lab/contact-inspection-state.svelte";

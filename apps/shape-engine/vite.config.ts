@@ -43,6 +43,14 @@ export default defineConfig({
         find: /^(?:.*\/)?BentoPropGrid\.svelte$/,
         replacement: `${appRoot}src/ShapeEnginePropGrid.svelte`,
       },
+      {
+        find: /^@tka\/shape-domain$/,
+        replacement: `${repoRoot}packages/shape-domain/src/index.ts`,
+      },
+      {
+        find: /^@tka\/shape-engine\//,
+        replacement: `${repoRoot}packages/shape-engine/src/`,
+      },
       { find: "#lib", replacement: `${repoRoot}src/lib` },
       { find: /^\$app\/env$/, replacement: `${appRoot}src/environment.ts` },
     ],

@@ -88,6 +88,7 @@
     autoFocusSelectedStep = true,
     practiceStepNumber = null,
     activeMode = null,
+    builderHopProgress = null,
     removingStepIndex = null,
     removingStepIndices = new Set<number>(),
     isClearing = false,
@@ -131,6 +132,11 @@
     autoFocusSelectedStep?: boolean;
     practiceStepNumber?: number | null;
     activeMode?: BuildModeId | null;
+    /**
+     * Assemble's running hop, 0 to 1, or null: the slot mandala draws a new
+     * beat in on this clock so the line keeps pace with the prop.
+     */
+    builderHopProgress?: number | null;
     removingStepIndex?: number | null;
     removingStepIndices?: Set<number>;
     isClearing?: boolean;
@@ -855,6 +861,7 @@
     pathShape={mandalaPathShape}
     handOffsets={mandalaHandOffsets}
     morphChanges
+    traceProgress={builderHopProgress}
   />
 {/snippet}
 

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const firestoreMocks = vi.hoisted(() => {
@@ -278,6 +279,70 @@ describe("LibraryRepository.saveSequence atomic persistence", () => {
     expect(firestoreMocks.batch.commit).not.toHaveBeenCalled();
   });
 
+  describe("a new look on a sequence that stays public", () => {
+    const creatorIntent = { presentation: null };
+
+    function setup(visibility: "public" | "private") {
+      const publicIndexSyncer = {
+        syncToPublicIndex: vi.fn().mockResolvedValue(undefined),
+        updateThumbnails: vi.fn().mockResolvedValue(undefined),
+        updateCreatorIntent: vi.fn().mockResolvedValue(undefined),
+        removeFromPublicIndex: vi.fn(),
+      };
+      firestoreMocks.firestoreGet.mockResolvedValue({
+        ...makeSequence(),
+        visibility,
+        ownerId: "user-1",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      return {
+        publicIndexSyncer,
+        repository: new LibraryRepository(publicIndexSyncer as never),
+      };
+    }
+
+    it("patches the mirror narrowly after the owner write lands", async () => {
+      const { publicIndexSyncer, repository } = setup("public");
+      const order: string[] = [];
+      firestoreMocks.updateDoc.mockImplementationOnce(async () => {
+        order.push("owner");
+      });
+      publicIndexSyncer.updateCreatorIntent.mockImplementationOnce(async () => {
+        order.push("mirror");
+      });
+
+      await repository.updateSequence("sequence-1", { creatorIntent });
+
+      expect(order).toEqual(["owner", "mirror"]);
+      expect(publicIndexSyncer.updateCreatorIntent).toHaveBeenCalledWith(
+        "sequence-1",
+        creatorIntent
+      );
+      expect(publicIndexSyncer.syncToPublicIndex).not.toHaveBeenCalled();
+    });
+
+    it("surfaces a failed owner write instead of patching the mirror", async () => {
+      const { publicIndexSyncer, repository } = setup("public");
+      firestoreMocks.updateDoc.mockRejectedValueOnce(
+        new Error("permission-denied")
+      );
+
+      await expect(
+        repository.updateSequence("sequence-1", { creatorIntent })
+      ).rejects.toThrow("permission-denied");
+      expect(publicIndexSyncer.updateCreatorIntent).not.toHaveBeenCalled();
+    });
+
+    it("leaves a private sequence's (absent) mirror alone", async () => {
+      const { publicIndexSyncer, repository } = setup("private");
+
+      await repository.updateSequence("sequence-1", { creatorIntent });
+
+      expect(publicIndexSyncer.updateCreatorIntent).not.toHaveBeenCalled();
+    });
+  });
+
   it("uses the complete cloud path and removes the durable local copy", async () => {
     const repository = new LibraryRepository(null as never);
 
@@ -415,5 +480,162 @@ describe("LibraryRepository.saveSequence publish conflicts", () => {
     expect(describeKeptPrivate(ownedElsewhere as never, "user-1")).toContain(
       "another creator's gallery post"
     );
+  });
+});
+
+// 2026-10-31: saving another creator's gallery sequence wrote a record that
+// was private only by accident, said source "created", carried the creator's
+// name and avatar as the saver's owner fields, and pointed nowhere back.
+describe("LibraryRepository.saveSequence copies of another creator's sequence", () => {
+  const origin = {
+    sequenceId: "sequence-1",
+    creatorId: "creator-9",
+    creatorName: "Creator Nine",
+    creatorPhotoUrl: "https://assets.example.com/creator.png",
+  };
+
+  function makeViewedPost() {
+    return {
+      ...(makeSequence() as object),
+      steps: [{}, {}, {}, {}],
+      stepPairings: [{}, {}, {}, {}],
+      ownerId: "creator-9",
+      ownerDisplayName: "Creator Nine",
+      ownerAvatarUrl: "https://assets.example.com/creator.png",
+      sourceRef: "users/creator-9/sequences/sequence-1",
+      publicProjectionDigest: "digest",
+      publicProjectionRevision: 3,
+      publicProjectionSchemaVersion: 2,
+    } as never;
+  }
+
+  function makeSyncer(conflict: unknown = null) {
+    return {
+      syncToPublicIndex: vi.fn().mockResolvedValue(undefined),
+      updateThumbnails: vi.fn().mockResolvedValue(undefined),
+      findPublishConflict: vi.fn().mockResolvedValue(conflict),
+      removeFromPublicIndex: vi.fn().mockResolvedValue(undefined),
+    };
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    firestoreMocks.previewReadOnly = false;
+    // The saver's profile exists; the sequence is new to their library.
+    firestoreMocks.getDoc.mockImplementation(async (ref: { path: string }) =>
+      ref.path === "users/user-1"
+        ? {
+            exists: () => true,
+            data: () => ({
+              displayName: "Saver One",
+              photoURL: "https://assets.example.com/saver.png",
+            }),
+          }
+        : { exists: () => false, data: () => undefined }
+    );
+    firestoreMocks.getDocs.mockResolvedValue({ empty: true, docs: [] });
+    firestoreMocks.batch.commit.mockResolvedValue(undefined);
+  });
+
+  it("writes a private, credited copy under the saver's own name", async () => {
+    const syncer = makeSyncer();
+    const repository = new LibraryRepository(syncer as never);
+
+    const saved = await repository.saveSequence(makeViewedPost(), {
+      copyOf: origin,
+    });
+
+    const written = firestoreMocks.batch.set.mock.calls[0]?.[1];
+    expect(written).toMatchObject({
+      id: "sequence-1",
+      ownerId: "user-1",
+      visibility: "private",
+      source: "copied",
+      ownerDisplayName: "Saver One",
+      ownerAvatarUrl: "https://assets.example.com/saver.png",
+      forkAttribution: {
+        originalSequenceId: "sequence-1",
+        originalCreatorId: "creator-9",
+        originalCreatorName: "Creator Nine",
+        originalCreatorPhotoUrl: "https://assets.example.com/creator.png",
+      },
+    });
+    expect(written.forkAttribution.forkedAt).toBeInstanceOf(Date);
+    // The creator's gallery post is theirs: none of its stamps ride along.
+    expect(written).not.toHaveProperty("sourceRef");
+    expect(written).not.toHaveProperty("publicProjectionDigest");
+    expect(written).not.toHaveProperty("publicProjectionRevision");
+    expect(written).not.toHaveProperty("publicProjectionSchemaVersion");
+    expect(saved.visibility).toBe("private");
+    expect(syncer.findPublishConflict).not.toHaveBeenCalled();
+    expect(syncer.syncToPublicIndex).not.toHaveBeenCalled();
+    expect(syncer.removeFromPublicIndex).toHaveBeenCalledWith(
+      "sequence-1",
+      "user-1"
+    );
+  });
+
+  it("leaves no owner name at all rather than the creator's when the saver has no profile", async () => {
+    firestoreMocks.getDoc.mockResolvedValue({
+      exists: () => false,
+      data: () => undefined,
+    });
+    const repository = new LibraryRepository(makeSyncer() as never);
+
+    await repository.saveSequence(makeViewedPost(), { copyOf: origin });
+
+    const written = firestoreMocks.batch.set.mock.calls[0]?.[1];
+    expect(written).toMatchObject({ source: "copied", visibility: "private" });
+    expect(written).not.toHaveProperty("ownerDisplayName");
+    expect(written).not.toHaveProperty("ownerAvatarUrl");
+  });
+
+  it("credits the creator when only the gallery can tell the id is theirs", async () => {
+    // Entry points other than the viewer pass no copyOf and ask for public.
+    const ownedElsewhere = {
+      name: "PublicSequenceOwnedElsewhereError",
+      claimedBySequenceId: "sequence-1",
+      claimedByOwnerId: "creator-9",
+      claimedWord: "AAAA",
+    };
+    const repository = new LibraryRepository(
+      makeSyncer(ownedElsewhere) as never
+    );
+
+    await repository.saveSequence(makeViewedPost(), { visibility: "public" });
+
+    const written = firestoreMocks.batch.set.mock.calls[0]?.[1];
+    expect(written).toMatchObject({
+      visibility: "private",
+      source: "copied",
+      ownerDisplayName: "Saver One",
+      forkAttribution: {
+        originalSequenceId: "sequence-1",
+        originalCreatorId: "creator-9",
+        originalCreatorName: "Creator Nine",
+      },
+    });
+  });
+
+  it("keeps a save of the person's own sequence a public creation", async () => {
+    const syncer = makeSyncer();
+    const repository = new LibraryRepository(syncer as never);
+    const own = {
+      ...(makeViewedPost() as object),
+      ownerId: "user-1",
+      ownerDisplayName: "Saver One",
+      ownerAvatarUrl: undefined,
+    } as never;
+
+    await repository.saveSequence(own, { visibility: "public" });
+
+    const written = firestoreMocks.batch.set.mock.calls[0]?.[1];
+    expect(written).toMatchObject({
+      visibility: "public",
+      source: "created",
+      ownerDisplayName: "Saver One",
+    });
+    expect(written).not.toHaveProperty("forkAttribution");
+    expect(syncer.syncToPublicIndex).toHaveBeenCalledOnce();
   });
 });

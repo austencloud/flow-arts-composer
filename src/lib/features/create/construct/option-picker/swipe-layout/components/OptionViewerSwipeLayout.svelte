@@ -38,6 +38,10 @@ Features:
     optionSheetControlIn,
     tryGetOptionSheetOpeningContext,
   } from "../../context/option-sheet-opening-context";
+  import {
+    CONSTRUCT_TYPE_RAIL_COLUMN_OPTIONS,
+    CONSTRUCT_TYPE_RAIL_WIDTH,
+  } from "../../../services/construct-phone-split";
   import OptionPicker456Group from "./OptionViewer456Group.svelte";
   import OptionViewerSection from "./OptionViewerSection.svelte";
 
@@ -55,6 +59,7 @@ Features:
     settingsHasTurnRows = true,
     openIntoWorkspace = false,
     phoneTier = false,
+    typeRail = false,
   } = $props<{
     organizedPictographs?: OrganizedSection[];
     onPictographSelected?: (pictograph: PictographData) => void;
@@ -83,6 +88,11 @@ Features:
      *  group and, with the swipe, move between groups, so the arrows' gutters
      *  and the repeated type heading give their room back to the grid. */
     phoneTier?: boolean;
+    /** The phone tier on a wide, short picker (the unfolded Fold): the tabs
+     *  stand in a rail down the left edge so the grid keeps the full height,
+     *  the settings and guide open over the grid beside the rail, and the
+     *  grid holds to the rail tier's columns (a 4x4 block for 16 options). */
+    typeRail?: boolean;
   }>();
 
   type UtilityPanel = "settings" | "info";
@@ -129,6 +139,12 @@ Features:
   let activeUtilityPanel = $state<UtilityPanel | null>(null);
   let renderedUtilityPanel = $state<UtilityPanel>("info");
   let utilityAnchor = $state<HTMLElement | null>(null);
+  // The rail's tray opens over the grid, so it is sized to the picker.
+  let layoutWidth = $state(0);
+  let layoutHeight = $state(0);
+  // The workspace popover owns the tray wherever the picker is stacked, and
+  // on the rail tier, where it opens over the grid beside the rail.
+  const usePopoverTray = $derived(openIntoWorkspace || typeRail);
 
   // Only render section content when bounds are ready to prevent size burst
   const boundsReady = $derived(() => {
@@ -434,6 +450,7 @@ Features:
         options={typeOptions}
         value={activeGroupKey}
         onchange={handleTypeSelect}
+        columns={typeRail ? 1 : undefined}
         color="accent"
         size="md"
         density="tight"
@@ -484,13 +501,19 @@ Features:
   </div>
 {/snippet}
 
-<div class="swipe-layout">
+<div
+  class="swipe-layout"
+  class:type-rail={typeRail}
+  style:--type-rail-width={`${CONSTRUCT_TYPE_RAIL_WIDTH}px`}
+  bind:clientWidth={layoutWidth}
+  bind:clientHeight={layoutHeight}
+>
   <div
     class="utility-shell"
-    class:expanded={utilityOpen}
-    class:workspace-placement={openIntoWorkspace}
+    class:expanded={utilityOpen && !typeRail}
+    class:workspace-placement={openIntoWorkspace && !typeRail}
   >
-    {#if openIntoWorkspace}
+    {#if usePopoverTray}
       <Popover.Root open={utilityOpen} onOpenChange={handlePopoverOpenChange}>
         <div class="utility-surface" bind:this={utilityAnchor}>
           {@render typeNavigation()}
@@ -499,9 +522,9 @@ Features:
         <Popover.Portal>
           <Popover.Content
             customAnchor={utilityAnchor}
-            side="top"
-            align="center"
-            sideOffset={0}
+            side={typeRail ? "right" : "top"}
+            align={typeRail ? "start" : "center"}
+            sideOffset={typeRail ? 4 : 0}
             avoidCollisions={false}
             forceMount
           >
@@ -512,10 +535,19 @@ Features:
                     {...props}
                     id={utilityPanelId}
                     class="workspace-utility-panel"
+                    class:rail-placement={typeRail}
+                    style:--rail-tray-width={typeRail
+                      ? `${Math.max(0, layoutWidth - CONSTRUCT_TYPE_RAIL_WIDTH - 8)}px`
+                      : null}
+                    style:--rail-tray-height={typeRail
+                      ? `${layoutHeight}px`
+                      : null}
                     role="region"
                     aria-label={utilityPanelLabel}
                     onkeydown={handleUtilityKeydown}
-                    transition:flyFade={{ y: 8, duration: DURATION.normal }}
+                    transition:flyFade={typeRail
+                      ? { x: -8, duration: DURATION.normal }
+                      : { y: 8, duration: DURATION.normal }}
                   >
                     {@render utilityPanelContents()}
                   </div>
@@ -562,6 +594,7 @@ Features:
       preservePosition={true}
       storageKey={PANEL_STORAGE_KEY}
       {arrowCenterOffset}
+      axis={typeRail ? "y" : "x"}
       bind:emblaApiRef={emblaApi}
     >
       {#each organizedPictographs as section, index (section.title)}
@@ -618,6 +651,9 @@ Features:
                   {currentSequence}
                   {contentAreaBounds}
                   showHeader={!phoneTier}
+                  columnOptions={typeRail
+                    ? CONSTRUCT_TYPE_RAIL_COLUMN_OPTIONS
+                    : undefined}
                   {onSlotClicked}
                   continuationIndex={getContinuationIndex?.(section.title) ??
                     null}
@@ -737,6 +773,24 @@ Features:
     height: min(
       var(--settings-utility-stage-height),
       var(--bits-popover-content-available-height, calc(100dvh - 8px))
+    );
+  }
+
+  /* Beside the rail the tray opens over the grid: a whole card, no wider
+     than the grid and no taller than the picker. */
+  .workspace-utility-panel.rail-placement {
+    width: min(36rem, var(--rail-tray-width, 36rem));
+    max-height: var(--rail-tray-height, 21rem);
+    border-bottom: 1px solid
+      var(--theme-stroke-strong, rgba(255, 255, 255, 0.2));
+    border-radius: var(--radius-xl, 16px);
+    transform-origin: var(--bits-popover-content-transform-origin, left top);
+  }
+
+  .workspace-utility-panel.rail-placement .utility-stage {
+    height: min(
+      var(--settings-utility-stage-height),
+      calc(var(--rail-tray-height, 21rem) - 2px)
     );
   }
 
@@ -898,6 +952,56 @@ Features:
     flex: 1 1 auto;
     width: 100%;
     min-height: 0;
+  }
+
+  /* Rail tier: the same navigation shell, stood on its side down the
+     picker's left edge, with the carousel taking the rest of the width.
+     Settings and the tabs read from the top; the guide sits at the foot. */
+  .swipe-layout.type-rail {
+    flex-direction: row;
+  }
+
+  .type-rail .utility-shell {
+    width: var(--type-rail-width);
+    height: 100%;
+    margin-inline: 0;
+    transition: none;
+  }
+
+  .type-rail .utility-surface {
+    height: 100%;
+  }
+
+  .type-rail .type-navigation {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    justify-items: center;
+    align-items: start;
+    height: 100%;
+    min-height: 0;
+  }
+
+  .type-rail .type-navigation.without-settings {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+
+  /* The tabs run the full height between settings and the guide, as four
+     equal rows, instead of bunching under the settings button. */
+  .type-rail .type-navigation-selector {
+    align-self: stretch;
+    height: 100%;
+  }
+
+  .type-rail .type-navigation-selector :global(.segmented-control) {
+    height: 100%;
+    grid-auto-rows: minmax(0, 1fr);
+  }
+
+  .type-rail .carousel-area {
+    width: auto;
+    min-width: 0;
+    height: 100%;
   }
 
   .panel {

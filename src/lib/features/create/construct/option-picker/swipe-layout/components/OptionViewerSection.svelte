@@ -21,6 +21,8 @@ Renders a section with:
     calculateOptimalColumnLayout,
   } from "../../services/option-grid-fit-calculator";
   import { onMount, untrack } from "svelte";
+
+  const DEFAULT_COLUMN_OPTIONS: readonly number[] = [4, 6, 8];
   import { observeSettledResize } from "#lib/shared/panels/panel-motion.js";
   import { getLetterBorderColors } from "#lib/shared/pictograph/shared/utils/letter-border-utils.js";
   import OptionPictographCell from "./OptionPictographCell.svelte";
@@ -55,6 +57,7 @@ Renders a section with:
     onSlotClicked,
     continuationIndex = null,
     onArrowOffsetChange,
+    columnOptions = DEFAULT_COLUMN_OPTIONS,
   } = $props<{
     letterType?: string;
     pictographs?: PictographData[];
@@ -79,6 +82,9 @@ Renders a section with:
      *  (half the header block above them), so the carousel can center its
      *  arrows on the tiles rather than on the header plus tiles. */
     onArrowOffsetChange?: (offset: number) => void;
+    /** Column counts the fitted grid may choose between. Construct's rail
+     *  tier narrows this so a group of 16 sits as a 4x4 block. */
+    columnOptions?: readonly number[];
   }>();
 
   // Services - resolve synchronously to avoid first-render sizing issues
@@ -269,7 +275,7 @@ Renders a section with:
         availableHeight: effectiveHeight,
         gridGap: gridGapValue,
         maxSize: basePictographSize,
-        columnOptions: [4, 6, 8],
+        columnOptions,
       });
 
       return {
@@ -303,7 +309,7 @@ Renders a section with:
         availableHeight: effectiveHeight || 400,
         gridGap: gridGapValue,
         maxSize: basePictographSize,
-        columnOptions: [4, 6, 8],
+        columnOptions,
       });
 
       return {
@@ -321,7 +327,7 @@ Renders a section with:
       availableHeight: adjustedHeight,
       gridGap: gridGapValue,
       maxSize: basePictographSize,
-      columnOptions: [4, 6, 8],
+      columnOptions,
     });
 
     return {

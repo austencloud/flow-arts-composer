@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { LibraryCollection } from "#lib/shared/library/domain/models/collection.js";
 import { writeOwnMirror } from "#lib/features/library/services/collection-cache-mirror.js";

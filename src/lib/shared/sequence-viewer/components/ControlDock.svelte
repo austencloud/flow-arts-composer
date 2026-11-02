@@ -152,6 +152,34 @@
     if (activeTab) onTabSelect(activeTab); // every consumer toggles on re-select
   }
 
+  // A session replay showed a phone double tap on Props open the tray and then,
+  // 200 ms later, land on the same button (now the close chevron) and shut it.
+  // So a pointer tap that would close a tray this same tab opened moments ago
+  // is dropped. Keyboard activation (click detail 0) is never held back.
+  const REOPEN_TAP_GUARD_MS = 350;
+  let lastTabOpen: { id: string; at: number } | null = null;
+
+  function selectTab(id: string, event: MouseEvent): void {
+    const wouldClose = activeTab === id && trayOpen;
+    // The event's own timestamp, not handler time: a phone busy mounting the
+    // tray delivers the second tap late, but the finger landed 200 ms in.
+    const now = event.timeStamp;
+    if (wouldClose) {
+      const fromPointer = event.detail > 0;
+      if (
+        fromPointer &&
+        lastTabOpen?.id === id &&
+        now - lastTabOpen.at < REOPEN_TAP_GUARD_MS
+      ) {
+        return;
+      }
+      lastTabOpen = null;
+    } else {
+      lastTabOpen = { id, at: now };
+    }
+    onTabSelect(id);
+  }
+
   // Publish tray-open to the shared counter so viewer chrome (mode bottom bar)
   // can duck out of the way while the user edits.
   $effect(() => {
@@ -361,7 +389,7 @@
           class:open={activeTab === t.id && trayOpen}
           style:--cat-accent={t.accentColor ?? null}
           style:--btn-i={i}
-          onclick={() => onTabSelect(t.id)}
+          onclick={(event) => selectTab(t.id, event)}
           aria-pressed={activeTab === t.id || !!t.pressed}
           aria-expanded={activeTab === t.id && trayOpen}
           aria-label={activeTab === t.id && trayOpen

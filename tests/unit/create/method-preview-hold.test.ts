@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Resting a mouse or pen on a Create method card, or reaching it by
  * keyboard, asks the turn coordinator for that card's turn. Touch never

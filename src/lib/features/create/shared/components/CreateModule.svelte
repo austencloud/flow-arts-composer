@@ -122,15 +122,12 @@
     featureFlagService,
     featureFlagState,
   } from "#lib/shared/auth/services/post-hog-feature-flag-service.svelte.js";
-  import { authDrawerState } from "#lib/shared/auth/state/auth-drawer-state.svelte.js";
   import { appEntryState } from "#lib/shared/onboarding/state/app-entry-state.svelte.js";
   import {
     getMaxSteps,
     resolveAccessTier,
   } from "#lib/shared/auth/domain/access-tier.js";
   import { isPremiumOrAbove } from "#lib/shared/auth/domain/models/user-role.js";
-  import { isTabAccessible } from "#lib/shared/auth/domain/guest-access-config.js";
-  import { createMethodNudgeTrigger } from "#lib/shared/auth/domain/auth-nudge-trigger.js";
   import {
     createPanelHeightTracker,
     type PanelHeightTrackerCleanup,
@@ -271,8 +268,7 @@
   });
 
   // While the board is open, warm what a tap will need: the layout, then the
-  // method used last, then the other methods this visitor can open, in board
-  // order. One chunk per idle period, so the turning previews keep their
+  // method used last, then the other methods, in board order. One chunk per idle period, so the turning previews keep their
   // frames. A first visit has no last-used method, and a hover is far shorter
   // than a panel's fetch, so without the rest a newcomer's first tap would
   // still land on a spinner. Pointing at a card moves its method to the front
@@ -282,7 +278,7 @@
     const lastUsed = lastUsedCreateMode;
     const openable = releasedCreateMethods
       .map((method) => method.id)
-      .filter((id) => !lockedCreateMethodIds.has(id) && id !== lastUsed);
+      .filter((id) => id !== lastUsed);
     return untrack(() =>
       warmInIdleSequence([
         () => {
@@ -488,19 +484,6 @@
         featureFlagService.canAccessTab("create", tab.id)
     );
   });
-  // Guests see the account-only methods too, as locked cards that open the
-  // sign-up screen. The board keeps one shape for everyone, and a guest can
-  // see what a free account adds.
-  const lockedCreateMethodIds = $derived(
-    new Set(
-      releasedCreateMethods
-        .filter((tab) => !isTabAccessible("create", tab.id, accessTier))
-        .map((tab) => tab.id)
-    )
-  );
-  function handleLockedCreateMethod(methodId: string): void {
-    authDrawerState.show("signup", createMethodNudgeTrigger(methodId));
-  }
   const lastUsedCreateMode = $derived(
     navigationState.hasRememberedCreateMode
       ? navigationState.currentCreateMode
@@ -1335,14 +1318,12 @@
 {#snippet frontDoorSurface()}
   <CreateFrontDoor
     methods={releasedCreateMethods}
-    lockedMethodIds={lockedCreateMethodIds}
     active={navigationState.isCreateFrontDoorOpen}
     source={navigationState.createFrontDoorSource}
     lastUsedMode={lastUsedCreateMode}
     enteringMethodId={entryTrace?.method ?? null}
     onWarm={warmCreateMethod}
     onSelect={handleCreateMethodSelected}
-    onLockedSelect={handleLockedCreateMethod}
   />
 {/snippet}
 

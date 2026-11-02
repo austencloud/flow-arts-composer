@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * The sign-up window on pages without the app (AuthModalHost).
  *

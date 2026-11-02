@@ -28,9 +28,6 @@
   import { ProfilePhotoError } from "#lib/shared/auth/services/profile-photo-image.js";
   import { getAccountManager } from "#lib/shared/auth/get-account-manager.js";
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
-  import { signInWithFacebook } from "#lib/shared/auth/services/authenticator.js";
-  import { trackAuthProviderResult } from "#lib/shared/analytics/auth-events.js";
-  import { recordAuthSubmission } from "#lib/shared/auth/services/auth-analytics-bridge.js";
   import {
     authState,
     refreshUser,
@@ -55,7 +52,7 @@
   import PasswordChangeForm from "#lib/shared/navigation/components/profile-settings/PasswordChangeForm.svelte";
   import DangerZone from "#lib/shared/navigation/components/profile-settings/DangerZone.svelte";
   import ProfileHeroSection from "./profile/ProfileHeroSection.svelte";
-  import AuthPrompt from "./profile/AuthPrompt.svelte";
+  import GuestAccountCard from "./profile/GuestAccountCard.svelte";
   import ProfilePhotoPicker from "../ProfilePhotoPicker.svelte";
   import SettingsSectionHeader from "../SettingsSectionHeader.svelte";
   import MyPropsCard from "#lib/shared/navigation/components/account/MyPropsCard.svelte";
@@ -284,23 +281,6 @@
     } catch (error) {
       console.error("Sign out failed:", error);
       toast.error(t("settings_sign_out_failed"));
-    }
-  }
-
-  async function handleFacebookAuth() {
-    hapticService?.trigger("selection");
-    recordAuthSubmission("facebook");
-    try {
-      await signInWithFacebook();
-      trackAuthProviderResult("facebook", "completed");
-    } catch (error) {
-      trackAuthProviderResult(
-        "facebook",
-        "failed",
-        (error as { code?: string })?.code ?? "unknown"
-      );
-      console.error("Facebook sign-in failed:", error);
-      hapticService?.trigger("error");
     }
   }
 
@@ -676,7 +656,7 @@
       </div>
     </div>
   {:else}
-    <AuthPrompt onFacebookAuth={handleFacebookAuth} />
+    <GuestAccountCard />
   {/if}
 </div>
 

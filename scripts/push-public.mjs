@@ -16,11 +16,16 @@
 // snapshot: when another session is already gating the same snapshot (on d2,
 // or starting it on this machine), this waits for that job and takes its
 // verdict instead of starting a second one (scripts/lib/publish-preflight.mjs).
+// A red tree is remembered too and refused at once; --recheck runs it again.
+// scripts/preflight-watch.mjs (pm2: tka-preflight-watch) runs --check ahead of
+// time once main has been quiet for ten minutes, so --push usually finds the
+// verdict already cached.
 //
 //   node scripts/push-public.mjs [--ref main]                build and print
 //   node scripts/push-public.mjs [--ref main] --check        also run the d2 preflight
 //   node scripts/push-public.mjs [--ref main] --push         preflight, push on green
 //   ... --push --skip-preflight                              d2 down: push unchecked
+//   ... --check|--push --recheck                             run again after a red
 import { execFileSync, spawnSync } from "node:child_process";
 
 import {
@@ -28,6 +33,8 @@ import {
   gatePreflight,
   hasGreenPreflight,
   recordGreenPreflight,
+  recordRedPreflight,
+  redPreflight,
 } from "./lib/publish-preflight.mjs";
 
 const args = process.argv.slice(2);
@@ -35,6 +42,7 @@ const ref = args.includes("--ref") ? args[args.indexOf("--ref") + 1] : "main";
 const doPush = args.includes("--push");
 const doCheck = doPush || args.includes("--check");
 const skipPreflight = args.includes("--skip-preflight");
+const recheck = args.includes("--recheck");
 const REMOTE = "origin";
 
 if (skipPreflight && !doPush) {
@@ -127,6 +135,13 @@ if (skipPreflight) {
   console.log(
     `Preflight: tree ${tree.slice(0, 10)} already passed on d2; not running it again.`
   );
+} else if (!recheck && redPreflight(tree)) {
+  const { at, failed } = redPreflight(tree);
+  console.error(
+    `Refusing: tree ${tree.slice(0, 10)} was red on d2 (${at}). Failing step: ${failed.join(", ") || "(see that run's log)"}.\n` +
+      "Run again with --recheck to rerun the preflight (a flaky step, or d2 itself was the problem)."
+  );
+  process.exit(1);
 } else {
   if (!d2Reachable()) {
     console.error(
@@ -142,6 +157,7 @@ if (skipPreflight) {
   const { verdict, failed, steps, error } = await gatePreflight(snapshot);
   if (steps.length) console.log(`\nPreflight steps:\n  ${steps.join("\n  ")}`);
   if (verdict !== "green") {
+    if (verdict === "red") recordRedPreflight(tree, failed);
     console.error(
       verdict === "red"
         ? `Refusing: snapshot ${snapshot.slice(0, 10)} is red on d2. Failing step: ${failed.join(", ") || "(see the log above)"}.`

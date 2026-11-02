@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, expect, it, vi } from "vitest";
 import { reparentToInspector } from "#lib/shared/sequence-viewer/components/reparent-to-inspector.js";
 

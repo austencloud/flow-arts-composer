@@ -1,3 +1,4 @@
+import type { CreatorIntent } from "#lib/shared/foundation/domain/models/creator-intent.js";
 import type { LibrarySequence } from "#lib/shared/library/domain/models/library-sequence.js";
 import type { IPublicIndexSyncer } from "./IPublicIndexSyncer";
 import type { PublicDuplicateError } from "./public-sequence-persister";
@@ -46,6 +47,14 @@ export function createLazyPublicIndexSyncer(
     ): Promise<void> {
       const syncer = await getSyncer();
       return syncer.updateThumbnails(sequenceId, thumbnails);
+    },
+
+    async updateCreatorIntent(
+      sequenceId: string,
+      creatorIntent: CreatorIntent
+    ): Promise<void> {
+      const syncer = await getSyncer();
+      return syncer.updateCreatorIntent(sequenceId, creatorIntent);
     },
 
     async removeFromPublicIndex(

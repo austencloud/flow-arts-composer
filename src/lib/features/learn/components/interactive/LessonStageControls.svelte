@@ -114,9 +114,10 @@
       variant="secondary"
       onclick={onPrevious}
       disabled={previousDisabled}
+      ariaLabel={previousLabel}
     >
       <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
-      <span>{previousLabel}</span>
+      <span class="previous-label">{previousLabel}</span>
     </PanelButton>
     <div class="progress-stack">
       <ExperienceProgressIndicator
@@ -261,6 +262,66 @@
 
     .navigation :global(.panel-btn) {
       width: 100%;
+    }
+  }
+
+  /* Phone: one row no taller than 4rem. Previous is an icon, the progress
+     sits between, and the forward action keeps its words. The step count
+     and the curriculum label stay with the progress bar's accessible name.
+     Controls drop to 40px; on a phone the lesson is the hero. */
+  @media (max-width: 639.98px), (max-width: 767.98px) and (max-height: 700px) {
+    .lesson-stage-controls {
+      flex-direction: row-reverse;
+      justify-content: space-between;
+      gap: 0.5rem;
+      width: 100%;
+    }
+
+    .lesson-stage-controls.navigation {
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: 0.5rem;
+    }
+
+    .navigation .progress-stack {
+      grid-column: auto;
+      grid-row: auto;
+      justify-self: center;
+    }
+
+    .curriculum-progress {
+      display: none;
+    }
+
+    .navigation :global(.panel-btn) {
+      width: auto;
+      min-height: 2.5rem;
+    }
+
+    .navigation > :global(.panel-btn:first-child) {
+      width: 2.5rem;
+      min-width: 2.5rem;
+      padding: 0;
+      justify-content: center;
+    }
+
+    .previous-label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
+    .primary-action {
+      min-width: 0;
+      min-height: 2.5rem;
+      padding: 0.5rem 1.25rem;
+      border-radius: 10px;
+    }
+
+    .primary-action:only-child {
+      flex: 1;
     }
   }
 

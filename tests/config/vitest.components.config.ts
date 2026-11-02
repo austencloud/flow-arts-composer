@@ -56,6 +56,17 @@ export default defineConfig({
   resolve: {
     conditions: ["browser"],
     alias: {
+      // The Shape Engine packages and the engine's own `#lib/*` imports:
+      // see tests/config/vitest.config.ts.
+      "#lib": path.resolve(projectRoot, "src/lib"),
+      "@tka/shape-domain": path.resolve(
+        projectRoot,
+        "packages/shape-domain/src/index.ts"
+      ),
+      "@tka/shape-engine": path.resolve(
+        projectRoot,
+        "packages/shape-engine/src"
+      ),
       $shared: path.resolve(projectRoot, "src/lib/shared"),
       // Listed before `$app/env`, which would otherwise match these as a prefix.
       "$app/env/public": path.resolve(
@@ -87,6 +98,10 @@ export default defineConfig({
     dedupe: ["svelte", "mediabunny", "zod", "dexie"],
   },
 
+  // SvelteKit serves static/ at the root; the Shape Engine fetches its
+  // matrix data from there (/data/...), so the browser suite does too.
+  publicDir: path.resolve(projectRoot, "static"),
+
   // As in vite.config.ts: in a worktree whose node_modules is a junction
   // into the primary checkout, browser mode reads files outside the worktree.
   server: {
@@ -97,7 +112,10 @@ export default defineConfig({
 
   test: {
     name: "components",
-    include: ["src/**/*.svelte.{test,spec}.ts"],
+    include: [
+      "src/**/*.svelte.{test,spec}.ts",
+      "packages/shape-engine/src/**/*.svelte.{test,spec}.ts",
+    ],
     browser: {
       enabled: true,
       headless: true,

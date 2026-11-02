@@ -21,6 +21,7 @@
     clampTempoBpm,
     recordTempoTap,
   } from "#lib/shared/animation-engine/domain/tempo-behavior.js";
+  import { holdRepeat } from "#lib/shared/ui/hold-repeat.js";
 
   // Props
   let {
@@ -28,6 +29,7 @@
     min = PLAYBACK_MIN_BPM,
     max = PLAYBACK_MAX_BPM,
     step = 1,
+    fastStep = 5,
     variant = "full",
     onBpmChange,
   }: {
@@ -35,6 +37,8 @@
     min?: number;
     max?: number;
     step?: number;
+    /** Step once a held +/- has been repeating for a while. */
+    fastStep?: number;
     variant?: "full" | "compact";
     onBpmChange?: (bpm: number) => void;
   } = $props();
@@ -60,14 +64,10 @@
     showCustomPopover = false;
   }
 
-  function decreaseBpm() {
-    const newBpm = clampTempoBpm(bpm - step, min, max);
-    bpm = newBpm;
-    onBpmChange?.(newBpm);
-  }
-
-  function increaseBpm() {
-    const newBpm = clampTempoBpm(bpm + step, min, max);
+  // A tap moves `step`; holding repeats, at `fastStep` after a while.
+  function adjustBpm(delta: number) {
+    const newBpm = clampTempoBpm(bpm + delta, min, max);
+    if (newBpm === bpm) return;
     bpm = newBpm;
     onBpmChange?.(newBpm);
   }
@@ -154,7 +154,11 @@
       <div class="bpm-adjuster">
         <button
           class="adjust-btn"
-          onclick={decreaseBpm}
+          use:holdRepeat={{
+            step,
+            fastStep,
+            onStep: (size) => adjustBpm(-size),
+          }}
           disabled={bpm <= min}
           aria-label={t("compose_decrease_bpm")}
           type="button"
@@ -177,7 +181,7 @@
 
         <button
           class="adjust-btn"
-          onclick={increaseBpm}
+          use:holdRepeat={{ step, fastStep, onStep: (size) => adjustBpm(size) }}
           disabled={bpm >= max}
           aria-label={t("compose_increase_bpm")}
           type="button"
@@ -237,7 +241,11 @@
       <div class="popover-controls">
         <button
           class="popover-btn"
-          onclick={decreaseBpm}
+          use:holdRepeat={{
+            step,
+            fastStep,
+            onStep: (size) => adjustBpm(-size),
+          }}
           disabled={bpm <= min}
           aria-label={t("compose_decrease_bpm")}
           type="button"
@@ -252,7 +260,7 @@
 
         <button
           class="popover-btn"
-          onclick={increaseBpm}
+          use:holdRepeat={{ step, fastStep, onStep: (size) => adjustBpm(size) }}
           disabled={bpm >= max}
           aria-label={t("compose_increase_bpm")}
           type="button"
@@ -396,6 +404,10 @@
       transform var(--duration-normal) var(--ease-standard),
       opacity var(--duration-normal) var(--ease-standard);
     -webkit-tap-highlight-color: transparent;
+    /* Held to repeat: no double-tap zoom, text selection or callout. */
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-touch-callout: none;
   }
 
   @media (hover: hover) and (pointer: fine) {
@@ -569,6 +581,9 @@
       transform var(--duration-fast) var(--ease-standard),
       opacity var(--duration-fast) var(--ease-standard);
     font-size: var(--font-size-compact, 12px);
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-touch-callout: none;
   }
 
   @media (hover: hover) and (pointer: fine) {

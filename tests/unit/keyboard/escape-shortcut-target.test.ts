@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   activateEscapeShortcutTarget,
@@ -62,6 +63,19 @@ describe("Escape shortcut target", () => {
     trigger.setAttribute("aria-expanded", "true");
     testDocument.body.append(trigger);
     setActiveElement(testDocument, trigger);
+
+    expect(shouldDeferEscapeShortcut(testDocument)).toBe(true);
+    expect(hasEscapeShortcutTarget(testDocument)).toBe(false);
+  });
+
+  it("lets an open popover close itself before any page-level target", () => {
+    appendTarget(testDocument);
+    const popover = testDocument.createElement("div");
+    popover.setAttribute("data-popover-content", "");
+    const row = testDocument.createElement("button");
+    popover.append(row);
+    testDocument.body.append(popover);
+    setActiveElement(testDocument, row);
 
     expect(shouldDeferEscapeShortcut(testDocument)).toBe(true);
     expect(hasEscapeShortcutTarget(testDocument)).toBe(false);

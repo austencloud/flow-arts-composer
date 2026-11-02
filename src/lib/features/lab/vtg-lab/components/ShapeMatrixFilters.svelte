@@ -1,11 +1,11 @@
 <script lang="ts">
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import { TURN_VALUES } from "#lib/features/choreo-card/domain/turn-pattern-parser.js";
-  import { ratioLabel } from "#lib/shared/shape-matrix/domain/flower-signature.js";
+  import { ratioLabel } from "@tka/shape-domain";
   import type {
     AxisFilter,
     MatrixFilters,
-  } from "#lib/shared/shape-matrix/domain/filter-flower-axis.js";
+  } from "@tka/shape-domain";
   import type { TurnValue } from "#lib/shared/create/services/level-turn-values.js";
   import {
     HandSide,

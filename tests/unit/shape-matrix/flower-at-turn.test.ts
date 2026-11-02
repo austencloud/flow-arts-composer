@@ -3,11 +3,11 @@ import {
   flowerAtTurn,
   pairAtTurns,
   semanticVariant,
-} from "#lib/shared/shape-matrix/domain/flower-at-turn.js";
+} from "@tka/shape-domain";
 import {
   flowerPetals,
   type Flower,
-} from "#lib/shared/shape-matrix/domain/flower-signature.js";
+} from "@tka/shape-domain";
 
 const proIn: Flower = {
   style: "pro",

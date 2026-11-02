@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * The live mandala guide is a promise about the props: every point a traced
  * tip passes through lies on the guide, and the guide draws nothing the tips
@@ -52,23 +53,23 @@ import {
   flowerPetals,
   type FlowerStyle,
   type RotatingFlower,
-} from "#lib/shared/shape-matrix/domain/flower-signature.js";
-import type { RotationStyle } from "#lib/shared/shape-matrix/domain/rotation-style.js";
-import { resolveFlowerArchetype } from "#lib/shared/shape-matrix/services/flower-archetype.js";
+} from "@tka/shape-domain";
+import type { RotationStyle } from "@tka/shape-domain";
+import { resolveFlowerArchetype } from "@tka/shape-engine/services/flower-archetype.js";
 import {
   buildBaseIndex,
   resolveBase,
-} from "#lib/shared/shape-matrix/services/build-realization-sequence.js";
+} from "@tka/shape-engine/services/build-realization-sequence.js";
 import {
   classifyRotationStyleMembers,
   representativeRotationStyleMember,
   type RotationStyleArchetype,
-} from "#lib/shared/shape-matrix/services/rotation-style-archetypes.js";
+} from "@tka/shape-engine/services/rotation-style-archetypes.js";
 import {
   solvePropRelationshipPhase,
   type FlowerParityTarget,
-} from "#lib/shared/shape-matrix/services/solve-prop-relationship-phase.js";
-import type { VtgMode } from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
+} from "@tka/shape-engine/services/solve-prop-relationship-phase.js";
+import type { VtgMode } from "@tka/shape-domain";
 import baseWords from "../../../static/data/hero/tnd-base-words.json";
 
 interface Pt {

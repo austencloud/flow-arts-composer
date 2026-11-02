@@ -6,12 +6,15 @@
     viewerModeLabel,
     PRACTICE_OPTION,
     type SelectableViewerMode,
+    type ViewerSubject,
   } from "../services/viewer-modes";
   import { canAccessPostStudio } from "../services/post-studio-access";
   import { viewportFits3D } from "#lib/shared/3d/capabilities/viewport-3d-gate.svelte.js";
   import NavButton from "#lib/shared/navigation/components/buttons/NavButton.svelte";
 
   interface Props {
+    /** What the viewer is showing; a cast lists only its own views. */
+    subject?: ViewerSubject;
     reviewPostStudio?: boolean;
     activeMode: ViewerMode;
     webgl2Available?: boolean;
@@ -30,6 +33,7 @@
   }
 
   let {
+    subject = "sequence",
     reviewPostStudio = false,
     activeMode,
     webgl2Available = true,
@@ -45,7 +49,8 @@
     viewerModeOptions(
       webgl2Available,
       viewportFits3D(),
-      canAccessPostStudio() || (import.meta.env.DEV && reviewPostStudio)
+      canAccessPostStudio() || (import.meta.env.DEV && reviewPostStudio),
+      subject
     )
       .filter((m) => allowSplit || m.id !== "split")
       .map((m) => ({
@@ -73,7 +78,7 @@
       onClick={() => selectMode(mode.id)}
     />
   {/each}
-  {#if onPracticeToggle}
+  {#if onPracticeToggle && subject === "sequence"}
     <NavButton
       icon={`<i class="fas ${practiceActive ? "fa-stop" : PRACTICE_OPTION.icon}"></i>`}
       label={practiceActive ? t("viewer_ui_stop") : t("viewer_ui_practice")}

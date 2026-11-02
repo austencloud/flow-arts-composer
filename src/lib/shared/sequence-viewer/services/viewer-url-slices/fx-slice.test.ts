@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { captureFxSlice, seedFromFxSlice } from "./fx-slice";
 import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";

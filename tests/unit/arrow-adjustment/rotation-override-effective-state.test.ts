@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from "vitest";
 import { ArrowRotationCalculator } from "#lib/shared/pictograph/arrow/positioning/calculation/services/arrow-rotation-calculator.js";
 import { rotationAngleOverrideKeyGenerator } from "#lib/shared/pictograph/arrow/positioning/key-generation/services/rotation-angle-override-key-generator.js";

@@ -25,6 +25,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
+import { BUILD_ID_PLACEHOLDER } from "./stamp-service-worker.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -140,6 +141,22 @@ const CHECKS = [
         };
       }
       return { pass: true, detail: `cache "${actualCacheName}"; all ${SW_MARKERS.length} markers present` };
+    },
+  },
+  {
+    // An unstamped sw.js is byte-identical to the last deploy's, so browsers
+    // keep the old worker and its old /app shell (scripts/stamp-service-worker.js).
+    name: "sw.js stamped with a build id",
+    modes: ["artifact", "live"],
+    async run() {
+      const res = await loadResource("/sw.js");
+      if (!res.ok) return { pass: false, detail: `sw.js missing/unreadable (status ${res.status})` };
+      const text = res.body.toString("utf8");
+      if (text.includes(BUILD_ID_PLACEHOLDER)) {
+        return { pass: false, detail: `still contains ${BUILD_ID_PLACEHOLDER}; the stamp step did not run` };
+      }
+      const idMatch = text.match(/BUILD_ID\s*=\s*"([^"]+)"/);
+      return { pass: true, detail: `build id "${idMatch ? idMatch[1] : "(unnamed)"}"` };
     },
   },
   {

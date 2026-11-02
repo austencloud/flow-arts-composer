@@ -3,11 +3,11 @@ import { t } from "#lib/shared/i18n/i18n.svelte.js";
 import { mandalaIndex } from "#lib/shared/browse/services/mandala-index.svelte.js";
 import { formatMandalaLabel } from "#lib/shared/browse/services/sequence-density.js";
 import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
-import { localizedModeName } from "#lib/shared/shape-matrix/domain/shape-matrix-display.js";
+import { localizedModeName } from "@tka/shape-engine/services/shape-matrix-display.js";
 import {
   MODE_FAMILY_ID,
   type VtgMode,
-} from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
+} from "@tka/shape-domain";
 
 /** Translate built-in chip copy at display time; saved labels and user names stay intact. */
 export function localizeFilterChip(filter: {

@@ -262,7 +262,26 @@ export interface SequenceData {
      */
     readonly blockedAt?: number;
     readonly blockedContentHash?: string;
+    /**
+     * Set when this save was a copy of another creator's sequence, so a
+     * retried sync or a guest import writes the same private, credited copy
+     * instead of a plain creation.
+     */
+    readonly copyOf?: SequenceCopyOrigin;
   };
+}
+
+/**
+ * Whose sequence a saved copy came from: the record the saver was looking at
+ * when they pressed save. Plain data (no Date) because it also rides on the
+ * Dexie row's pendingSyncMetadata. The library turns it into the record's
+ * forkAttribution (library-sequence.ts asLibraryCopy).
+ */
+export interface SequenceCopyOrigin {
+  readonly sequenceId: string;
+  readonly creatorId: string;
+  readonly creatorName: string;
+  readonly creatorPhotoUrl?: string;
 }
 
 export function createSequenceData(

@@ -15,7 +15,11 @@
 import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
 import { warmSequenceCells } from "#lib/shared/render/services/warm-sequence-cells.js";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
-import type { SequenceVisibility } from "#lib/shared/library/domain/models/library-sequence.js";
+import {
+  withoutOriginalOwnership,
+  type SequenceVisibility,
+} from "#lib/shared/library/domain/models/library-sequence.js";
+import type { SequenceCopyOrigin } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import { findTagByName, createUserTag } from "./tag-manager";
 import type { ArtifactExtractor } from "./artifact-extractor";
 import { TAG_COLORS } from "../domain/models/tag";
@@ -52,17 +56,21 @@ import {
   captureActivePropConfig,
   resolveRecordedPropConfig,
 } from "#lib/shared/foundation/services/recorded-prop-intent.js";
-import {
-  capturePresentation,
-  resolvePresentation,
-} from "#lib/shared/foundation/services/presentation-intent.js";
-import { animationSettings } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
-import { loadPersistedEffectsConfig } from "#lib/shared/effects/state/effects-config-state.svelte.js";
-import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
+import { resolvePresentation } from "#lib/shared/foundation/services/presentation-intent.js";
+import { captureSettingsPresentation } from "#lib/shared/library/services/settings-presentation.js";
 import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
 
 /** How long the "Saved!" success state lingers before the overlay dismisses. */
 const SUCCESS_STATE_LINGER_MS = 800;
+
+/**
+ * What the first cloud write did. `visibility` is what the repository actually
+ * stored (after its own publish-conflict demotion); absent when the content
+ * was already in the library and nothing new was written.
+ */
+type CloudSyncOutcome =
+  | { readonly synced: false }
+  | { readonly synced: true; readonly visibility?: SequenceVisibility };
 
 // NOTE: The 'Service' suffix violates the service-naming rule (should be e.g.
 // LibrarySaveCoordinator). Rename deferred: this class is imported as a type by
@@ -108,14 +116,16 @@ export class LibrarySaveService {
       );
     }
 
-    const { name, displayName, tags, notes } = options;
+    const { name, displayName, tags, notes, copyOf } = options;
     // Community gate: under the minimum, a sequence can still be saved to the
     // user's own library — just not posted to the community gallery. Degrade the
     // requested visibility and tell them, rather than failing the save. The
     // repository + syncer enforce the same invariant as a backstop.
     // Public is the product default. Callers may still opt into private, and
     // the community minimum below remains the authoritative safety gate.
-    let visibility = options.visibility ?? "public";
+    // A copy of another creator's sequence is private unless the caller
+    // explicitly asked otherwise.
+    let visibility = options.visibility ?? (copyOf ? "private" : "public");
     // Decide the downgrade now (it shapes the Dexie/Firestore write metadata
     // below), but DON'T announce "Saved to your library." until the local write
     // actually lands — otherwise a subsequent Dexie failure that rejects this
@@ -138,8 +148,10 @@ export class LibrarySaveService {
     // sequence. Previously the thumbnail + Firestore sync received the original
     // (often id-less) `sequence`, so LibraryRepository minted a *different* UUID
     // for the cloud copy — duplicating the cloud doc and orphaning the Dexie row.
+    // A copy's local row is the saver's too: drop the creator's owner and
+    // gallery fields here, as the repository does for the cloud record.
     const resolvedSequence: SequenceData = {
-      ...sequence,
+      ...(copyOf ? withoutOriginalOwnership(sequence) : sequence),
       id: sequence.id || crypto.randomUUID(),
     };
 
@@ -239,11 +251,8 @@ export class LibrarySaveService {
         ? captureActivePropConfig(settingsService.settings)
         : null;
     // Same publication-moment rule for the look: a public save with nothing
-    // recorded stamps the creator's current look. Colors and trail come from
-    // the global settings; effects come from the persisted key, which is what
-    // any fresh scope boots with, tracks a live persisting scope within its
-    // 300ms save debounce, and is the only source on surfaces with no scope
-    // (scan, intake, retro, video record). Recorded and explicit default-look
+    // recorded stamps the creator's current look (captureSettingsPresentation
+    // says where each part comes from). Recorded and explicit default-look
     // (null) sequences are never restamped, and a malformed snapshot is kept
     // as is (it resolves neutral, not absent) so a re-save from an older
     // client never destroys a shape a newer one wrote. Private saves are
@@ -252,12 +261,7 @@ export class LibrarySaveService {
       visibility === "public" &&
       resolvePresentation(resolvedSequence.creatorIntent, resolvedSequence.id)
         .kind === "absent"
-        ? capturePresentation({
-            primaryPropColors:
-              settingsService.settings.primaryPropColors ?? null,
-            trail: animationSettings.trail,
-            effects: loadPersistedEffectsConfig() ?? DEFAULT_EFFECTS_CONFIG,
-          })
+        ? captureSettingsPresentation()
         : null;
     const sequenceToSave = withCanonicalStepCount({
       ...resolvedSequence,
@@ -269,6 +273,8 @@ export class LibrarySaveService {
         },
         ...(capturedIntent && { intendedProp: capturedIntent }),
       }),
+      // The saver owns their copy (absent for a save with no identity yet).
+      ...(copyOf && { ownerId: saverUid ?? undefined }),
       name,
       displayName: displayName || undefined,
       tags: [...tags],
@@ -280,7 +286,11 @@ export class LibrarySaveService {
       // only in Dexie so far. See docs/superpowers/specs/active/
       // 2026-07-18-onboarding-silent-work-loss.md.
       syncStatus: "pending",
-      pendingSyncMetadata: { visibility, notes: notes ?? "" },
+      pendingSyncMetadata: {
+        visibility,
+        notes: notes ?? "",
+        ...(copyOf && { copyOf }),
+      },
     });
     let persisted = false;
     try {
@@ -368,6 +378,7 @@ export class LibrarySaveService {
       // quietly write the guest's sequence into that account first, making the
       // consent prompt moot.
       expectedOwnerId: saverUid,
+      ...(copyOf && { copyOf }),
     };
 
     // Step 3: Background Firestore sync (non-blocking)
@@ -384,6 +395,9 @@ export class LibrarySaveService {
           expectedOwnerId: saverUid,
         })
       : this.deferCloudSync(sequenceToSave.id);
+    // The visibility the analytics event reports: what was written, not what
+    // was asked for. Refined below when the cloud write is awaited.
+    let landedVisibility: SequenceVisibility = visibility;
 
     // Thumbnail work is an enhancement to an already-durable save. A slow or
     // blocked upload must never hold the save overlay open. Once the image is
@@ -433,11 +447,15 @@ export class LibrarySaveService {
     // before the UI reports completion. Private saves and guest/offline saves
     // retain the local-first path above.
     if (isFullAccount && visibility === "public") {
-      const synced = await initialCloudSync;
-      if (!synced) {
+      const outcome = await initialCloudSync;
+      if (!outcome.synced) {
         toast.warning(
           "Saved on this device, but it is not public on other devices yet. It will retry when you are online."
         );
+      } else if (outcome.visibility) {
+        // The repository keeps a save private when the gallery already holds
+        // the content or the id is another creator's post.
+        landedVisibility = outcome.visibility;
       }
     }
 
@@ -458,9 +476,10 @@ export class LibrarySaveService {
           properties: {
             sequenceId,
             stepCount: sequenceToSave.sequenceLength ?? 0,
-            visibility,
+            visibility: landedVisibility,
             durability: isFullAccount ? "cloud" : "local",
             source: options.analyticsSource ?? "unspecified",
+            ...(copyOf && { sequenceSource: "copied" as const }),
           },
         },
         // The account that made this save. The reporter stamps the LIVE uid as
@@ -534,26 +553,30 @@ export class LibrarySaveService {
       notes: string;
       thumbnailUrl?: string;
       expectedOwnerId?: string;
+      copyOf?: SequenceCopyOrigin;
     }
-  ): Promise<boolean> {
+  ): Promise<CloudSyncOutcome> {
     try {
-      await this.libraryRepository.saveSequenceWithMetadata(sequence, metadata);
+      const saved = await this.libraryRepository.saveSequenceWithMetadata(
+        sequence,
+        metadata
+      );
       await markSequenceSyncStatus(sequence.id, "synced");
-      return true;
+      return { synced: true, visibility: saved?.visibility };
     } catch (error) {
       if (error instanceof LibraryError && error.code === "ALREADY_EXISTS") {
         toast.info("This exact sequence is already in your library.");
         // The content is already safe in Firestore under an existing doc -
         // this save didn't create a duplicate, but nothing was lost.
         await markSequenceSyncStatus(sequence.id, "synced");
-        return true;
+        return { synced: true };
       } else {
         console.warn(
           "[LibrarySaveService] Firestore sync failed (data safe in Dexie):",
           error
         );
         await markSequenceSyncStatus(sequence.id, "failed");
-        return false;
+        return { synced: false };
       }
     }
   }
@@ -563,14 +586,14 @@ export class LibrarySaveService {
    * local row is already durable; leaving it "pending" hands it to the
    * ownership-scoped retry rather than to whoever signs in next.
    */
-  private async deferCloudSync(sequenceId: string): Promise<boolean> {
+  private async deferCloudSync(sequenceId: string): Promise<CloudSyncOutcome> {
     await markSequenceSyncStatus(sequenceId, "pending");
-    return false;
+    return { synced: false };
   }
 
   private async generateAndAttachThumbnail(
     sequence: SequenceData,
-    initialCloudSync: Promise<boolean>,
+    initialCloudSync: Promise<CloudSyncOutcome>,
     expectedOwnerId: string | null
   ): Promise<void> {
     const thumbnailUrl = await this.generateAndUploadThumbnail(sequence);
@@ -592,7 +615,7 @@ export class LibrarySaveService {
 
     // If the first cloud write failed, the retry service reads this freshly
     // patched Dexie row and carries the thumbnail on its next bounded pass.
-    if (!(await initialCloudSync)) return;
+    if (!(await initialCloudSync).synced) return;
 
     // The slowest write in the save: a render plus an upload have completed
     // since the user pressed save, so the account can easily have changed.

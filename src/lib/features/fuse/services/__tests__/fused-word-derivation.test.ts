@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Fused-word derivation — regression for the "GI" bug (2026-07-08).
  *

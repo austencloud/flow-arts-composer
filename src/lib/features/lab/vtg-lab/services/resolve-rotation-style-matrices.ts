@@ -2,7 +2,7 @@ import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence
 import { applyVariationDescriptor } from "#lib/features/choreo-card/services/deck-variation.js";
 import type { CardVariation } from "#lib/features/choreo-card/domain/models/DeckRelease.js";
 import { loadDiamondEdges } from "#lib/features/choreo-card/services/pictograph-letter-lookup.js";
-import type { RotationStyle } from "#lib/shared/shape-matrix/domain/rotation-style.js";
+import type { RotationStyle } from "@tka/shape-domain";
 import {
   classifyRotationStyleMembers,
   loadRotationStyleBases,
@@ -10,7 +10,7 @@ import {
   ROTATION_STYLE_ORDER,
   type RotationGridMode,
   type StartOrientationPair,
-} from "#lib/shared/shape-matrix/services/rotation-style-archetypes.js";
+} from "@tka/shape-engine/services/rotation-style-archetypes.js";
 import { allTurnPatterns } from "../domain/tnd-turn-patterns";
 import { getPrintCardRenderer } from "#lib/features/choreo-card/getPrintCardRenderer.js";
 import { TND_BY_FAMILY } from "#lib/features/choreo-card/domain/tnd-element.js";

@@ -20,9 +20,6 @@ export type AuthNudgeTrigger =
   | "module:other"
   | "edit-community"
   | "loop-locked-guest"
-  | "method:fuse"
-  | "method:tunnel"
-  | "method:assemble"
   | "community-setups"
   | "saved-setups"
   | "save-setup"
@@ -43,66 +40,70 @@ export interface AuthPromptContent {
   body: string;
 }
 
-// One phrasing for the account ask across every entry: "Create a free
-// account to <do the specific thing>." The button that pairs with this copy
-// (AuthNudge.svelte) reads "Create account". No "Sign up free" / "Create
-// Account - free" variants — those drifted into four incompatible phrasings
-// (2026-06-18 finding, closed 2026-07-18).
+// Each line leads with what the person gets, then "Free, about ten
+// seconds." (Austen, 2026-10-31: an account is asked for only for what it
+// gives, never as a toll). The button that pairs with this copy reads "Create
+// account". The same line is the toast a gate shows while a guest's "not now"
+// cooldown runs (auth-drawer-state). No "Sign up free" / "Create Account -
+// free" variants; those drifted into four incompatible phrasings (2026-06-18
+// finding, closed 2026-07-18).
 export const AUTH_NUDGE_TEXTS: Record<AuthNudgeTrigger, string> = {
-  "save-limit": `Guests can save ${GUEST_SAVE_CAP} sequences on this device. Create a free account to save more.`,
-  save: "Create a free account to save this sequence in your library.",
+  "save-limit": `Guests keep ${GUEST_SAVE_CAP} sequences on this device. An account keeps every sequence on every device. Free, about ten seconds.`,
+  save: "Keep this sequence in your library on every phone and laptop. Free, about ten seconds.",
   "patterns-guest":
-    "Create a free account to use pattern tools like Turn Pattern, Direction, and Duration.",
+    "Reshape a whole sequence with Turn Pattern, Direction, and Duration. Free, about ten seconds.",
   "extend-sequence":
-    "Create a free account to extend this sequence with a LOOP.",
+    "Extend this sequence with a LOOP once you have an account. Free, about ten seconds.",
   "turn-pattern":
-    "Create a free account to apply turn patterns across this sequence.",
+    "Apply turn patterns across this whole sequence with an account. Free, about ten seconds.",
   "rotation-direction":
-    "Create a free account to set a rotation direction pattern for this sequence.",
+    "Set a rotation direction pattern for this sequence with an account. Free, about ten seconds.",
   "duration-pattern":
-    "Create a free account to set a duration pattern for this sequence.",
+    "Set a duration pattern for this sequence with an account. Free, about ten seconds.",
   "choose-start":
-    "Create a free account to choose a new start pose for this sequence.",
+    "Pick a new start pose for this sequence with an account. Free, about ten seconds.",
   "rewind-sequence":
-    "Create a free account to rewind this sequence from its ending pose.",
+    "Rewind this sequence from its ending pose with an account. Free, about ten seconds.",
   "sync-library":
-    "Create a free account to keep saved sequences and collections across devices.",
+    "Keep your saved sequences and collections on every phone and laptop. Free, about ten seconds.",
   "community-map":
-    "Sign in or create a free account to add your city to the map.",
-  export: "Create a free account to export your sequences.",
-  "module:learn": "Create a free account to start learning TKA notation.",
+    "Add your city to the community map with an account. Free, about ten seconds.",
+  export:
+    "Download your sequences as animations and Choreo Cards with an account. Free, about ten seconds.",
+  "module:learn":
+    "Start learning TKA notation with an account. Free, about ten seconds.",
   "module:library":
-    "Your saved sequences live here. Log in or create a free account to see them.",
-  "module:settings": "Create a free account to manage notifications.",
+    "Your saved sequences live on this device. An account carries them everywhere. Free, about ten seconds.",
+  "module:settings":
+    "Choose which notifications reach you, with an account. Free, about ten seconds.",
   "module:stage":
-    "Create a free account to use 3D Studio and choreograph sequences in 3D.",
-  "module:other": "Create a free account to open this part of the app.",
-  "edit-community": "Create a free account to edit and remix sequences.",
-  // Lead with the ask, never with a definition. A guest hits this after
-  // tapping Mirrored/Inverted/etc., so opening with "Rotated LOOPs are
-  // sequences that..." reads as a non sequitur (Austen, 2026-08-10). What
-  // rotated means is the guide's job; this nudge only names the unlock and
-  // what stays free meanwhile.
+    "Choreograph sequences in 3D Studio with an account. Free, about ten seconds.",
+  "module:other":
+    "An account opens this part of the app and keeps your work on every device. Free, about ten seconds.",
+  "edit-community":
+    "Edit and remix community sequences with an account. Free, about ten seconds.",
+  // Lead with what the account gives, never with a definition. A guest hits
+  // this after tapping Mirrored/Inverted/etc., so opening with "Rotated LOOPs
+  // are sequences that..." reads as a non sequitur (Austen, 2026-08-10). What
+  // rotated means is the guide's job; this nudge only names what an account
+  // adds and what keeps working without one.
   "loop-locked-guest":
-    "Create a free account to use every LOOP type. Rotated LOOPs stay free without one.",
-  // Account-only Create methods a guest sees as locked cards on the front door.
-  "method:fuse": "Create a free account to combine two sequences into one.",
-  "method:tunnel":
-    "Create a free account to arrange sequences for several performers.",
-  "method:assemble":
-    "Create a free account to build a sequence by choosing grid points.",
-  "community-setups": "Create a free account to use community setups.",
-  "saved-setups": "Create a free account to keep setups across sessions.",
+    "Use every LOOP type with an account. Free, about ten seconds. Rotated LOOPs work without one.",
+  "community-setups":
+    "Start from setups the community shared, with an account. Free, about ten seconds.",
+  "saved-setups":
+    "Keep your setups between visits with an account. Free, about ten seconds.",
   // Every saved setup is public and shows the creator's name and avatar, so
   // saving needs a full account. Firestore rules block the write as a second
   // gate.
   "save-setup":
-    "Create a free account to save setups. Saved setups are shared with the community.",
+    "Save setups with an account. Saved setups are shared with the community. Free, about ten seconds.",
   "share-sequence":
-    "Create a free account to send sequences, make links, and share or download Choreo Cards.",
+    "Send sequences, make links, and share Choreo Cards with an account. Free, about ten seconds.",
   // Guests can build collections, but sending one through the inbox names the
   // sender, so it needs a full account just like saving a setup does.
-  "share-collection": "Create a free account to share your collections.",
+  "share-collection":
+    "Share your collections with an account. Free, about ten seconds.",
   // Sequence viewer / /q scan funnel - the three reasons that actually reach
   // the shared AuthModal (publish/download require a full account per
   // gated-action-policy.ts; account is the /q header chip's plain sign-in).
@@ -110,23 +111,25 @@ export const AUTH_NUDGE_TEXTS: Record<AuthNudgeTrigger, string> = {
   // they need no key here. The viewer maps reason -> trigger in
   // auth-action-queue.svelte.ts (`signInTriggerFor`); it holds no auth copy of
   // its own, so this stays the single source of truth for the ask.
-  "viewer-signin-publish": "Create a free account to publish this sequence.",
-  "viewer-signin-download": "Create a free account to download this sequence.",
+  "viewer-signin-publish":
+    "Publish this sequence with an account. Free, about ten seconds.",
+  "viewer-signin-download":
+    "Download this sequence with an account. Free, about ten seconds.",
   "viewer-signin-account":
-    "Create a free account to save your scans and build your library.",
+    "Keep your scans in a library on every device. Free, about ten seconds.",
   // SP3 first-session activation (Part B): fires once, after a guest's first
   // save persists - see docs/superpowers/specs/active/2026-07-22-first-session-activation-design.md.
   "guest-first-save":
-    "Create a free account to keep your sequences and find them on any device.",
+    "Keep your sequences on every phone and laptop. Free, about ten seconds.",
   "prop-collection":
-    "Create a free account to keep your earned prop collection.",
+    "Keep the props you earned on every device. Free, about ten seconds.",
   // Share intake, trace 3: the user shared an image while signed out.
   // services/implementations/MessageImageSender.ts:32-34 rejects anonymous/guest
   // uploads outright, so this is a hard requirement, not a nudge. Phrased as
   // the ask rather than the refusal - the bytes are already safe in IndexedDB
   // and the send resumes by itself once they are in.
   "share-image-signin":
-    "Create a free account to send the image you shared. It's saved until you do.",
+    "Send the image you shared once you have an account. It stays saved until then. Free, about ten seconds.",
 };
 
 // The nudge card and the auth modal meet the user at different moments. The
@@ -141,162 +144,147 @@ const AUTH_PROMPT_CONTENTS: Record<AuthNudgeTrigger, AuthPromptContent> = {
   save: {
     key: "save",
     title: "Save this sequence",
-    body: "Create a free account to save this sequence in your library.",
+    body: AUTH_NUDGE_TEXTS["save"],
   },
   "patterns-guest": {
     key: "patterns-guest",
     title: "Use pattern tools",
-    body: "A free account adds Turn Pattern, Direction, Duration, Choose Start, and Rewind.",
+    body: "Reshape whole sequences with Turn Pattern, Direction, Duration, Choose Start, and Rewind. Free, about ten seconds.",
   },
   "extend-sequence": {
     key: "extend-sequence",
     title: "Extend this sequence",
-    body: "Create a free account to extend this sequence with a LOOP.",
+    body: AUTH_NUDGE_TEXTS["extend-sequence"],
   },
   "turn-pattern": {
     key: "turn-pattern",
     title: "Apply a turn pattern",
-    body: "Create a free account to apply turn patterns across this sequence.",
+    body: AUTH_NUDGE_TEXTS["turn-pattern"],
   },
   "rotation-direction": {
     key: "rotation-direction",
     title: "Set rotation directions",
-    body: "Create a free account to set a rotation direction pattern for this sequence.",
+    body: AUTH_NUDGE_TEXTS["rotation-direction"],
   },
   "duration-pattern": {
     key: "duration-pattern",
     title: "Set step durations",
-    body: "Create a free account to set a duration pattern for this sequence.",
+    body: AUTH_NUDGE_TEXTS["duration-pattern"],
   },
   "choose-start": {
     key: "choose-start",
     title: "Choose a new start",
-    body: "Create a free account to choose a new start pose for this sequence.",
+    body: AUTH_NUDGE_TEXTS["choose-start"],
   },
   "rewind-sequence": {
     key: "rewind-sequence",
     title: "Rewind this sequence",
-    body: "Create a free account to rewind this sequence from its ending pose.",
+    body: AUTH_NUDGE_TEXTS["rewind-sequence"],
   },
   "sync-library": {
     key: "sync-library",
     title: "Open your library on any device",
-    body: "A free account keeps saved sequences and collections across devices.",
+    body: "Your saved sequences and collections, on every phone and laptop. Free, about ten seconds.",
   },
   "community-map": {
     key: "community-map",
     title: "Add your city to the map",
-    body: "Sign in or create a free account to add your city to the map.",
+    body: AUTH_NUDGE_TEXTS["community-map"],
   },
   export: {
     key: "export",
     title: "Export this sequence",
-    body: "Sign in or create an account to download animations and Choreo Cards.",
+    body: AUTH_NUDGE_TEXTS["export"],
   },
   "module:learn": {
     key: "module:learn",
     title: "Start learning",
-    body: "Sign in or create an account to start learning TKA notation.",
+    body: "Start learning TKA notation with an account. Free, about ten seconds.",
   },
   "module:library": {
     key: "module:library",
     title: "Open your library",
-    body: "Sign in or create an account to open your saved sequences.",
+    body: "Your saved sequences live on this device. An account carries them everywhere. Free, about ten seconds.",
   },
   "module:settings": {
     key: "module:settings",
     title: "Notification settings",
-    body: "Sign in or create an account to manage notifications.",
+    body: "Choose which notifications reach you, with an account. Free, about ten seconds.",
   },
   "module:stage": {
     key: "module:stage",
     title: "Open 3D Studio",
-    body: "Sign in or create an account to build and choreograph sequences in 3D.",
+    body: "Build and choreograph sequences in 3D Studio with an account. Free, about ten seconds.",
   },
   "module:other": {
     key: "module:other",
     title: "Open this part of the app",
-    body: "Sign in or create an account to continue.",
+    body: "An account opens this part of the app and keeps your work on every device. Free, about ten seconds.",
   },
   "edit-community": {
     key: "edit-community",
     title: "Edit this sequence",
-    body: "Sign in or create an account to edit and remix this sequence.",
+    body: AUTH_NUDGE_TEXTS["edit-community"],
   },
   "loop-locked-guest": {
     key: "loop-locked-guest",
     title: "Try every LOOP type",
-    body: "A free account lets you use every LOOP type.",
-  },
-  "method:fuse": {
-    key: "method:fuse",
-    title: "Use Fuse",
-    body: "A free account lets you combine two sequences into one.",
-  },
-  "method:tunnel": {
-    key: "method:tunnel",
-    title: "Use Tunnel",
-    body: "A free account lets you arrange sequences for several performers.",
-  },
-  "method:assemble": {
-    key: "method:assemble",
-    title: "Use Assemble",
-    body: "A free account lets you build a sequence by choosing grid points.",
+    body: "Use every LOOP type, not only rotated ones. Free, about ten seconds.",
   },
   "community-setups": {
     key: "community-setups",
     title: "Use this setup",
-    body: "A free account lets you use community setups.",
+    body: "Start from setups the community shared. Free, about ten seconds.",
   },
   "saved-setups": {
     key: "saved-setups",
     title: "Keep your setups",
-    body: "Sign in or create an account to keep setups across sessions.",
+    body: AUTH_NUDGE_TEXTS["saved-setups"],
   },
   "save-setup": {
     key: "save-setup",
     title: "Save this setup",
-    body: "Sign in or create an account to save it. Saved setups are shared with the community.",
+    body: AUTH_NUDGE_TEXTS["save-setup"],
   },
   "share-sequence": {
     key: "share-sequence",
     title: "Share this sequence",
-    body: "Sign in or create an account to send it, make a link, or download a Choreo Card.",
+    body: AUTH_NUDGE_TEXTS["share-sequence"],
   },
   "share-collection": {
     key: "share-collection",
     title: "Share this collection",
-    body: "Sign in or create an account to send this collection.",
+    body: AUTH_NUDGE_TEXTS["share-collection"],
   },
   "viewer-signin-publish": {
     key: "viewer-signin-publish",
     title: "Publish this sequence",
-    body: "Sign in or create an account to publish this sequence.",
+    body: AUTH_NUDGE_TEXTS["viewer-signin-publish"],
   },
   "viewer-signin-download": {
     key: "viewer-signin-download",
     title: "Download this sequence",
-    body: "Sign in or create an account to download this sequence.",
+    body: AUTH_NUDGE_TEXTS["viewer-signin-download"],
   },
   "viewer-signin-account": {
     key: "viewer-signin-account",
     title: "Keep your scans",
-    body: "A free account keeps your scans in your library.",
+    body: "Keep your scans in your library on every device. Free, about ten seconds.",
   },
   "guest-first-save": {
     key: "guest-first-save",
     title: "Open this sequence anywhere",
-    body: "A free account keeps it in your library and opens it on any device.",
+    body: "Keep this sequence in your library and open it on any device. Free, about ten seconds.",
   },
   "prop-collection": {
     key: "prop-collection",
     title: "Keep your prop collection",
-    body: "A free account keeps the props you earn in your collection.",
+    body: "Keep the props you earn, on every device. Free, about ten seconds.",
   },
   "share-image-signin": {
     key: "share-image-signin",
     title: "Send this image",
-    body: "Sign in to send this image. It is saved and will send when you return.",
+    body: AUTH_NUDGE_TEXTS["share-image-signin"],
   },
 };
 
@@ -311,19 +299,6 @@ const MODULE_NUDGE_TRIGGERS: Partial<Record<string, AuthNudgeTrigger>> = {
 
 export function moduleNudgeTrigger(moduleId: string): AuthNudgeTrigger {
   return MODULE_NUDGE_TRIGGERS[moduleId] ?? "module:other";
-}
-
-// The prompt a guest sees after tapping a locked method on the Create front
-// door. It names the method so the ask reads as a next step, not a wall.
-const CREATE_METHOD_NUDGE_TRIGGERS: Partial<Record<string, AuthNudgeTrigger>> =
-  {
-    fuse: "method:fuse",
-    tunnel: "method:tunnel",
-    assemble: "method:assemble",
-  };
-
-export function createMethodNudgeTrigger(methodId: string): AuthNudgeTrigger {
-  return CREATE_METHOD_NUDGE_TRIGGERS[methodId] ?? "module:other";
 }
 
 // One key for both modes: the key marks a new encounter, and switching between

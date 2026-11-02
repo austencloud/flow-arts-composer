@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => ({
   toastWarning: vi.fn(),
   showToast: vi.fn(),
   authDrawerShow: vi.fn(),
+  authDrawerShowOnRequest: vi.fn(),
   offerGuestSaveNudge: vi.fn(),
   previewReadOnly: false,
   authState: {
@@ -59,6 +60,7 @@ vi.mock("#lib/shared/debug/state/user-preview-state.svelte.js", () => ({
 vi.mock("#lib/shared/auth/state/auth-drawer-state.svelte.js", () => ({
   authDrawerState: {
     show: mocks.authDrawerShow,
+    showOnRequest: mocks.authDrawerShowOnRequest,
     offerGuestSaveNudge: mocks.offerGuestSaveNudge,
   },
 }));
@@ -226,7 +228,7 @@ describe("collectionsState", () => {
     const nudge = mocks.offerGuestSaveNudge.mock.calls[0]![0];
     expect(nudge.action.label).toBe("Create account");
     nudge.action.onClick();
-    expect(mocks.authDrawerShow).toHaveBeenCalledWith(
+    expect(mocks.authDrawerShowOnRequest).toHaveBeenCalledWith(
       "signup",
       "sync-library"
     );

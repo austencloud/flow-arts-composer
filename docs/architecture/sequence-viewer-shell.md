@@ -37,8 +37,14 @@ host. Parity by construction, not by discipline.
   its own `/sequence` page would, titled with the lead's word; nothing there
   refers to the composition and there is no performer switch. The other
   performers' sequences open on their own pages from the cast rows in the
-  Tunnel view's Formation settings. The rules live in
-  `services/viewer-cast.ts` and `services/viewer-title.ts`.
+  Tunnel view's Formation settings. A cast page (`isCastComposition`) offers
+  only the views that draw the whole cast and only actions that act on the
+  cast; the rail and the phone mode bar disappear when one view remains. On a
+  cast page the 3D view is an ensemble view too: it stages every performer
+  front to back, each dancing its own tunnel layer on the tunnel's clock and in
+  its tunnel colors (`tunnel/tunnel-cast-3d.ts`). The
+  rules live in `services/viewer-cast.ts`, `services/viewer-modes.ts` and
+  `services/viewer-title.ts`.
 
 ```
 physical QR -> /q/[code] -> attribution + cached handoff -> /sequence/[id]

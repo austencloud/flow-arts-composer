@@ -182,19 +182,75 @@
     }
   }
 
-  @media (max-width: 640px) {
-    .lesson-stage-frame {
-      grid-template-rows: minmax(5rem, auto) minmax(0, 1fr) auto;
-      padding-inline: 0.75rem;
+  /* Phone: the whole lesson fits the screen with no scrolling. The stage
+     title rides in the lesson's 48px top strip, between Back and Read
+     (ConceptDetailView), with the lead line small under it; the controls
+     are one short row at the foot; the artifact takes everything between
+     and sizes to it. Workshop lessons fill the same way instead of growing
+     to their natural height. */
+  @media (max-width: 639.98px), (max-width: 767.98px) and (max-height: 700px) {
+    .lesson-stage-frame,
+    .lesson-stage-frame.workshop {
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      gap: 0.375rem;
+      height: 100%;
+      min-height: 0;
+      padding: 0 0.75rem max(0.375rem, env(safe-area-inset-bottom));
     }
 
+    .lesson-stage-frame.workshop {
+      justify-content: flex-start;
+    }
+
+    .stage-heading {
+      align-self: start;
+    }
+
+    .stage-heading :global(.title-copy) {
+      min-height: 3rem;
+      align-content: center;
+    }
+
+    /* Clear of Back on the left and Read and Review on the right, the
+       same on both sides so the title stays centred. */
+    .stage-heading :global(h1) {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      overflow: hidden;
+      padding-inline: 4.75rem;
+      font-size: 1.125rem;
+      line-height: 1.15;
+    }
+
+    .stage-heading :global(.description),
+    .stage-heading :global(.description p) {
+      min-height: 0;
+      font-size: var(--font-size-min, 0.875rem);
+      line-height: 1.3;
+    }
+
+    /* A lead with its own measure sits centred under the title. */
+    .stage-heading :global(.description p) {
+      margin-inline: auto;
+    }
+
+    .workshop .stage-artifact {
+      flex: 1 1 0;
+      height: auto;
+      min-height: 0;
+      container-type: size;
+    }
+
+    .workshop .artifact-inner.wide {
+      height: 100cqh;
+    }
+
+    .stage-controls,
     .workshop .stage-controls {
-      position: sticky;
-      bottom: 0;
-      z-index: 2;
-      padding-block: 0.75rem;
-      background: var(--theme-panel-bg);
-      backdrop-filter: blur(16px);
+      width: 100%;
+      min-height: 0;
+      align-self: stretch;
     }
   }
 

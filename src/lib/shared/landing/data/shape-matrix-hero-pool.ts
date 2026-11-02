@@ -33,14 +33,14 @@ import {
 import {
   buildBaseIndex,
   resolveBase,
-} from "#lib/shared/shape-matrix/services/tnd-base-index.js";
+} from "@tka/shape-engine/services/tnd-base-index.js";
 import { applyVariationDescriptor } from "#lib/features/choreo-card/services/deck-variation.js";
 import {
   buildFlowerAxis,
   type Flower,
-} from "#lib/shared/shape-matrix/domain/flower-signature.js";
-import { applyFilter } from "#lib/shared/shape-matrix/domain/filter-flower-axis.js";
-import { MODE_ORDER } from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
+} from "@tka/shape-domain";
+import { applyFilter } from "@tka/shape-domain";
+import { MODE_ORDER } from "@tka/shape-domain";
 import { TURN_VALUES } from "#lib/features/choreo-card/domain/turn-pattern-parser.js";
 import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import type { TnDElement } from "#lib/features/choreo-card/domain/tnd-element.js";

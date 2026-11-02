@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { describeImageSource } from "./describe-image-source";
 import { svgStringToImage } from "../services/image-format-converter";

@@ -827,12 +827,28 @@
     }
   }
 
+  /* The compact bar is one shallow row: 36px play and more buttons, the
+     time readout right after play, and the free width between the readout
+     and the more button. A narrow pane has no height to spend on air. */
   @container playback-transport (max-width: 64rem) {
-    .transport-pill {
+    .transport-pill,
+    .compact .transport-pill {
       flex-wrap: nowrap;
       gap: 8px;
-      padding: 8px 10px;
-      padding-top: calc(var(--transport-line-height, 3px) + 6px);
+      padding: 4px 8px;
+      padding-top: calc(var(--transport-line-height, 3px) + 4px);
+    }
+
+    .pill-play,
+    .compact-more {
+      width: 36px;
+      height: 36px;
+      min-width: 36px;
+      min-height: 36px;
+    }
+
+    .pill-time {
+      text-align: start;
     }
 
     .tempo-group,

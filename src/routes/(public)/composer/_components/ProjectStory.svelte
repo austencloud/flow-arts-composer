@@ -94,6 +94,21 @@
 
     .creator-portrait {
       width: min(100%, 23rem);
+      justify-self: center;
+    }
+
+    /* One column: the name, sentence and links center under the portrait,
+       matching the page's centered headings on small screens. */
+    .creator-copy {
+      text-align: center;
+    }
+
+    p {
+      margin-inline: auto;
+    }
+
+    .creator-links {
+      justify-content: center;
     }
   }
 </style>

@@ -26,6 +26,12 @@ interface ViewerShellLayoutInputs {
    */
   getSharePanelOpen: () => boolean;
   getWorkspaceElement: () => HTMLElement | null;
+  /**
+   * The subject offers more than one view. When it offers one (a cast page
+   * without Studio), the rail and the phone mode bar are not shown and the
+   * stage takes their room.
+   */
+  getModeSwitcherShown?: () => boolean;
   startInSplit: boolean;
   startInCardThenSplit: boolean;
 }
@@ -66,6 +72,12 @@ export function createViewerShellLayoutState(
   const isLandscape = $derived(responsiveSettings?.isLandscapeMobile ?? false);
   const compactChrome = $derived(isMobile || bodyWidth < 1080);
   const sharePanelOpen = $derived(inputs.getSharePanelOpen());
+  const modeSwitcherShown = $derived(inputs.getModeSwitcherShown?.() ?? true);
+  // The width the rail takes beside the stage: none on a phone host or when
+  // the subject has no other view to switch to.
+  const railTrack = $derived<"hidden" | "full">(
+    isMobile || !modeSwitcherShown ? "hidden" : "full"
+  );
 
   const isVideoExportActive = $derived(
     inputs.getContext().editingPane === "animation"
@@ -123,24 +135,28 @@ export function createViewerShellLayoutState(
   const cardExportNarrow = $derived(
     isImageExportActive &&
       !isMobile &&
-      bodyWidth < resolveExportSidebarMinWidth(persistedRailWidth, "card")
+      bodyWidth < resolveExportSidebarMinWidth(persistedRailWidth, "card", railTrack)
   );
   const videoExportNarrow = $derived(
     isVideoExportActive &&
       !isRecordSceneActive &&
       !isMobile &&
-      bodyWidth < resolveExportSidebarMinWidth(persistedRailWidth, "motion")
+      bodyWidth < resolveExportSidebarMinWidth(persistedRailWidth, "motion", railTrack)
   );
   const artInspectorNarrow = $derived(
     isArtInspectorActive &&
       !isMobile &&
-      bodyWidth < resolveExportSidebarMinWidth(persistedRailWidth, "art")
+      bodyWidth < resolveExportSidebarMinWidth(persistedRailWidth, "art", railTrack)
   );
   const performanceInspectorNarrow = $derived(
     showVideoGallery &&
       !isMobile &&
       bodyWidth <
-        resolveExportSidebarMinWidth(persistedRailWidth, "performance")
+        resolveExportSidebarMinWidth(
+          persistedRailWidth,
+          "performance",
+          railTrack
+        )
   );
   // Post Studio's stage is a 9:16 frame, so the share column docks beside it
   // on any body that can hold both, phone hosts included. Stacked, the panel
@@ -151,14 +167,18 @@ export function createViewerShellLayoutState(
       bodyWidth >=
         resolvePostStudioShareDockMinWidth(
           persistedRailWidth,
-          isMobile ? "hidden" : compactChrome ? "compact" : "full"
+          railTrack === "hidden"
+            ? "hidden"
+            : compactChrome
+              ? "compact"
+              : "full"
         )
   );
   const shareInspectorNarrow = $derived(
     sharePanelOpen &&
       !isMobile &&
       !shareDocksBesideStudio &&
-      bodyWidth < resolveExportSidebarMinWidth(persistedRailWidth, "share")
+      bodyWidth < resolveExportSidebarMinWidth(persistedRailWidth, "share", railTrack)
   );
   // "Mobile" here means the workspace stacks its inspector under the stage.
   const effectiveMobile = $derived(
@@ -637,6 +657,9 @@ export function createViewerShellLayoutState(
     },
     get showRail() {
       return showRail;
+    },
+    get modeSwitcherShown() {
+      return modeSwitcherShown;
     },
     get stackedExportWithRail() {
       return stackedExportWithRail;

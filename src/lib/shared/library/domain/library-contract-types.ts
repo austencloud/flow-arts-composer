@@ -3,6 +3,7 @@
  */
 
 import type { SequenceVisibility } from "#lib/shared/library/domain/models/library-sequence.js";
+import type { SequenceCopyOrigin } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 // === From ILibraryRepository ===
 
@@ -21,7 +22,7 @@ export interface LibraryStats {
 
 export interface LibraryQueryOptions {
   /** Filter by source type */
-  source?: "created" | "forked" | "all";
+  source?: "created" | "forked" | "copied" | "all";
   /** Filter by visibility */
   visibility?: SequenceVisibility | "all";
   /** Filter by collection ID */
@@ -79,6 +80,11 @@ export interface SaveToLibraryOptions {
     | "video_record"
     | "retro"
     | "fuse";
+  /**
+   * Set when the sequence belongs to another creator. The save becomes their
+   * credited copy, private unless `visibility` is given explicitly.
+   */
+  copyOf?: SequenceCopyOrigin;
 }
 
 export interface SaveProgress {

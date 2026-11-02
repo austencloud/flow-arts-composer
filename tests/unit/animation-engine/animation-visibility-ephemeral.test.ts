@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Ephemeral visibility-manager isolation.
  *

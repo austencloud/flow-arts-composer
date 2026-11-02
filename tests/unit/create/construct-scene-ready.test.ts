@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * The Construct preview scene reports ready once every slot it shows has
  * drawn, including through a resize before the last one reported (the card

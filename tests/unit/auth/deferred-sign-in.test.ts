@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Quiet sign-in on public pages (deferred-sign-in.ts).
  *
@@ -26,7 +27,7 @@ vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
 }));
 
 // The full Shape Engine app is irrelevant to sign-in and far too heavy to mount.
-vi.mock("#lib/shared/shape-matrix/app/ShapeMatrixApp.svelte", () => ({
+vi.mock("@tka/shape-engine/app/ShapeMatrixApp.svelte", () => ({
   default: () => {},
 }));
 

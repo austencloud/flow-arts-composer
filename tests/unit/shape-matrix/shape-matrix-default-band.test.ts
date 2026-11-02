@@ -9,7 +9,7 @@ import {
   matrixTurnsForLevel,
   SHAPE_MATRIX_DEFAULT_LEVEL,
   SHAPE_MATRIX_DEFAULT_TURN,
-} from "#lib/shared/shape-matrix/domain/matrix-turn-band.js";
+} from "@tka/shape-domain";
 import { readShapeMatrixRouteState } from "../../../src/routes/(public)/shape-engine/_state/shape-matrix-url";
 
 describe("Shape Matrix default band", () => {
@@ -23,7 +23,7 @@ describe("Shape Matrix default band", () => {
     const app = readFileSync(
       resolve(
         process.cwd(),
-        "src/lib/shared/shape-matrix/app/ShapeMatrixApp.svelte"
+        "packages/shape-engine/src/app/ShapeMatrixApp.svelte"
       ),
       "utf8"
     );

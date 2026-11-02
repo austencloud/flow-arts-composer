@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { randomUUID } from "node:crypto";
 import { promises as fs } from "node:fs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";

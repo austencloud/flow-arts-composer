@@ -31,7 +31,7 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
   import { parseTurnsTuple } from "#lib/shared/pictograph/tka-glyph/utils/turn-tuple-parser.js";
   import { getTurnsColumnRightExtent } from "#lib/shared/pictograph/tka-glyph/utils/turn-position-calculator.js";
   import { deriveTnDFromPictograph } from "#lib/shared/pictograph/shared/domain/utils/tnd-deriver.js";
-  import { derivePropElementalTypeForStep } from "#lib/shared/shape-matrix/domain/prop-relationship.js";
+  import { derivePropElementalTypeForStep } from "#lib/shared/pictograph/shared/domain/utils/prop-elemental-type.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   // These groups rest at full opacity, so they fade and settle without the
   // computed-style read Svelte's fade and scale make (one forced style pass

@@ -44,6 +44,8 @@ let _openedFromUrl = $state(false);
 let _activeShortCode = $state<string | null>(null);
 let _analyticsSource = $state<SequenceViewerSource>("external_link");
 let _openToken = $state(0);
+// Plain, not $state: only read once per open by the drawer host's timing.
+let _openedAtMs: number | null = null;
 
 /**
  * Tells the Overture what was opened, so a boot with nothing open in Create
@@ -87,8 +89,11 @@ export function openSequenceOverlay(
     tunnelComposition?: TunnelComposition;
     tunnelSaveTarget?: TunnelSaveTarget;
     onTunnelSaved?: TunnelSavedCallback;
+    /** `performance.now()` at the tap, for the open's timing event. */
+    openedAtMs?: number;
   }
 ): void {
+  _openedAtMs = options.openedAtMs ?? null;
   _sequence = sequence;
   _collectionPropType = options.collectionPropType ?? null;
   _variations = options.variations ?? [sequence];
@@ -255,6 +260,7 @@ export function closeSequenceOverlay(): void {
   _openedFromUrl = false;
   _activeShortCode = null;
   _analyticsSource = "external_link";
+  _openedAtMs = null;
 }
 
 export function switchVariation(index: number): void {
@@ -336,6 +342,10 @@ export function getSequenceOverlayState() {
     },
     get analyticsSource() {
       return _analyticsSource;
+    },
+    /** When the tap that opened this viewer happened; null when untimed. */
+    get openedAtMs() {
+      return _openedAtMs;
     },
     /** Changes for every open, including replacing an already-open sequence. */
     get sessionKey() {

@@ -3,7 +3,11 @@ import { describe, expect, it } from "vitest";
 import type { MandalaPaths, MandalaPoint } from "../../domain/mandala-types";
 import { calculate } from "../mandala-geometry-calculator";
 import { parsePoints } from "../mandala-fingerprint";
-import { createMandalaMorph, planMandalaMorph } from "../mandala-path-interpolator";
+import {
+  createMandalaMorph,
+  planMandalaMorph,
+  planMandalaTrace,
+} from "../mandala-path-interpolator";
 import type { MotionLike, StepLike } from "../types";
 
 const CLOCKWISE = ["n", "e", "s", "w"] as const;
@@ -183,5 +187,74 @@ describe("mandala morph plan", () => {
     const from = calculate(short, undefined, undefined, undefined, narrow);
     const to = calculate(circle(1), undefined, undefined, undefined, narrow);
     samePaths(plan.at(from, to, 0.3), createMandalaMorph(from, to)(0.3));
+  });
+});
+
+describe("mandala trace", () => {
+  const full = circle(0);
+  const before = calculate(full.slice(0, 4));
+  const after = calculate(full.slice(0, 5));
+
+  it("draws an appended beat in, from the old picture to the new", () => {
+    const trace = planMandalaTrace(before, after);
+    expect(trace).not.toBeNull();
+    expect(trace!(0)).toBe(before);
+    expect(trace!(1)).toBe(after);
+    // Just after the start the frame draws the old curves exactly, with only
+    // a vanishing stub of the new beat after them.
+    const start = trace!(1e-9);
+    for (const hand of ["left", "right"] as const) {
+      start[hand].forEach((path, i) => {
+        expect(path.d.startsWith(before[hand][i]!.d)).toBe(true);
+      });
+    }
+  });
+
+  it("halfway, keeps every old point and reveals about half the new beat", () => {
+    const middle = planMandalaTrace(before, after)!(0.5);
+    for (const hand of ["left", "right"] as const) {
+      middle[hand].forEach((path, i) => {
+        const oldPoints = before[hand][i]!.beats!.flat();
+        const shown = parsePoints(path.d);
+        oldPoints.forEach((point, k) => {
+          expect(Math.hypot(point.x - shown[k]!.x, point.y - shown[k]!.y)).toBeLessThan(0.01);
+        });
+        const tail = after[hand][i]!.beats![4]!.length;
+        const added = shown.length - oldPoints.length;
+        expect(added).toBeGreaterThan(tail * 0.3);
+        expect(added).toBeLessThan(tail * 0.7);
+      });
+    }
+  });
+
+  it("does not trace an edit of an earlier beat", () => {
+    const edited = calculate(circle(1).slice(0, 5));
+    expect(planMandalaTrace(before, edited)).toBeNull();
+  });
+
+  it("does not trace equal pictures or paths without beats", () => {
+    expect(planMandalaTrace(before, calculate(full.slice(0, 4)))).toBeNull();
+    const bare: MandalaPaths = {
+      left: before.left.map(({ d, tipIndex }) => ({ d, tipIndex })),
+      right: before.right.map(({ d, tipIndex }) => ({ d, tipIndex })),
+      purple: [],
+    };
+    expect(planMandalaTrace(bare, after)).toBeNull();
+  });
+
+  it("draws in a new hand's lines where that hand had none", () => {
+    const blueOnly: MandalaPaths = { ...after, right: [] };
+    const trace = planMandalaTrace(blueOnly, after);
+    expect(trace).not.toBeNull();
+    const middle = trace!(0.5);
+    expect(middle.left).toEqual(after.left);
+    expect(middle.right).toHaveLength(after.right.length);
+    middle.right.forEach((path, i) => {
+      const total = after.right[i]!.beats!.flat().length;
+      const shown = parsePoints(path.d).length;
+      expect(shown).toBeGreaterThan(total * 0.3);
+      expect(shown).toBeLessThan(total * 0.7);
+    });
+    expect(trace!(0).right).toHaveLength(0);
   });
 });

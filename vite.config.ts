@@ -1484,6 +1484,23 @@ export default defineConfig(({ command, mode }) => ({
     dedupe: ["three", "@threlte/core", "svelte", "mediabunny", "zod", "dexie"],
     conditions: ["svelte", "module", "browser", "development|production"],
     alias: [
+      // The Shape Engine packages resolve to this checkout's sources: the
+      // junctioned node_modules has no link for them until the primary runs
+      // `pnpm install`, and the engine's own `#lib/*` imports sit under
+      // packages/shape-engine, whose package.json has no `imports` map.
+      {
+        find: /^@tka\/shape-domain$/,
+        replacement: path.resolve(dirname, "packages/shape-domain/src/index.ts"),
+      },
+      {
+        find: /^@tka\/shape-engine$/,
+        replacement: path.resolve(dirname, "packages/shape-engine/src/index.ts"),
+      },
+      {
+        find: /^@tka\/shape-engine\//,
+        replacement: path.resolve(dirname, "packages/shape-engine/src") + "/",
+      },
+      { find: /^#lib\//, replacement: path.resolve(dirname, "src/lib") + "/" },
       {
         find: /^@austencloud\/scene-3d$/,
         replacement: path.resolve(

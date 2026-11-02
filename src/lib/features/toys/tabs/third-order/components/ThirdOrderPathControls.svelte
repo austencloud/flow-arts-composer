@@ -6,7 +6,7 @@
     MODE_LABEL,
     MODE_ORDER,
     type VtgMode,
-  } from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
+  } from "@tka/shape-domain";
   import { getThirdOrderContext } from "../context/third-order-context";
   import {
     THIRD_ORDER_FLOWER_RATIOS,

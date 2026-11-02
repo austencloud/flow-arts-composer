@@ -2,22 +2,23 @@
  * Generate the app icon from the real arrow assets.
  *
  * The icon is the TKA mandala: in each quadrant of the diamond grid a 0-turn
- * pro (the outer quarter-arc) and a 0-turn anti (the curl inside it), white
+ * pro (the outer quarter-arc) and a 1-turn anti (the loop inside it), white
  * dots on the four hand points and the center, on the app's navy. Arrow
  * anchors, rotations and assets come from render-core, the same pieces the app
  * and the MCP renderer use, so the icon can be rebuilt and recolored.
  *
  * Usage:
- *   npx tsx scripts/generate-app-icon.ts --out <dir> [--palette rainbow]
- *     Writes <dir>/<palette>.png (1024) and <dir>/<palette>.svg only.
- *   npm run icons:app -- --write [--palette rainbow]
+ *   npm run icons:app -- --out <dir> [--palette spectrum]
+ *     Writes <dir>/<palette>.png (1024), <palette>-maskable.png and
+ *     <palette>.svg only.
+ *   npm run icons:app -- --write [--palette spectrum]
  *     Rewrites the PWA, resources/ and Android launcher icon set.
  *   --dots hand-points puts the dots on the literal +-150 grid hand points
  *     instead of where the outer arcs end (see handDots).
  *
  * Palettes: hands (red/blue like the old hand-drawn icon), rainbow (eight
- * solid hues around the wheel, the default) and spectrum (one continuous hue
- * gradient around the ring).
+ * solid hues around the wheel) and spectrum (one continuous hue gradient
+ * around the ring, the default).
  */
 
 import sharp from "sharp";
@@ -44,7 +45,7 @@ const CENTER = { x: 475, y: 475 };
 // Radial nudges along each quadrant's diagonal, in 950-unit grid space. At the
 // bare layer-2 anchor the pro and anti of a quadrant sit on top of each other;
 // the pro is pushed outward into the big outer arc and the anti pulled inward
-// into the curl, as the hand-drawn icon has them, with a clear gap between.
+// into the inner loop, as the hand-drawn icon has them, with a clear gap between.
 const PRO_RADIAL_OFFSET = 60;
 const ANTI_RADIAL_OFFSET = 30;
 
@@ -63,16 +64,23 @@ const MASKABLE_SAFE_RADIUS = 0.4;
 const SAT = 0.85;
 const LIGHT = 0.57;
 
+// Turns per motion type. Every motion starts radial ("in").
+const PRO_TURNS = 0;
+const ANTI_TURNS = 1;
+
 /**
- * Tail and head of each 0-turn radial asset, in its own viewBox space, read
- * from the path data. pro_0.0 starts its path at the arrowhead tip
- * (228.3, 244.3) and its round tail cap spans (0, 0)-(11, 18.8); anti_0.0's
- * tail cap spans (0.4, 9.4)-(17.6, 9.7) at the top and its tip is the
- * right-most point (230.5, ~210).
+ * Tail and head of each radial asset the icon can use, in its own viewBox
+ * space, read from the path data (keyed by asset file name). pro_0.0 starts
+ * its path at the arrowhead tip (228.3, 244.3) and its round tail cap spans
+ * (0, 0)-(11, 18.8). anti_0.0's tail cap spans (0.4, 9.4)-(17.6, 9.7) at the
+ * top and its tip is the right-most point (230.5, ~210). anti_1.0's tail cap
+ * spans (0, 9.1)-(18.5, 9.2) at the top and its path closes on the tip
+ * (230.2, 213.4).
  */
-const ASSET_ENDS: Record<"pro" | "anti", { tail: Pt; head: Pt }> = {
-  pro: { tail: { x: 6, y: 9.4 }, head: { x: 228.3, y: 244.3 } },
-  anti: { tail: { x: 9, y: 4 }, head: { x: 230.5, y: 210 } },
+const ASSET_ENDS: Record<string, { tail: Pt; head: Pt }> = {
+  "pro_0.0": { tail: { x: 6, y: 9.4 }, head: { x: 228.3, y: 244.3 } },
+  "anti_0.0": { tail: { x: 9, y: 4 }, head: { x: 230.5, y: 210 } },
+  "anti_1.0": { tail: { x: 9.2, y: 4 }, head: { x: 230.2, y: 213.4 } },
 };
 
 type Pt = { x: number; y: number };
@@ -88,8 +96,9 @@ interface QuadrantMotion {
   handColor: string;
 }
 
-// Every motion starts radial ("in") with 0 turns. Hand colors follow the old
-// icon: the NW and SE pros are red, the NE and SW pros blue, each anti the other.
+// Every motion starts radial ("in"); turns come from PRO_TURNS / ANTI_TURNS.
+// Hand colors follow the old icon: the NW and SE pros are red, the NE and SW
+// pros blue, each anti the other.
 const MOTIONS: QuadrantMotion[] = [
   {
     quadrant: "se",
@@ -211,7 +220,7 @@ function placeArrows(): PlacedArrow[] {
     const assetPath = resolveFullArrowAssetPath({
       motionType: motion.motionType,
       startOrientation: "in",
-      turns: 0,
+      turns: motion.motionType === "pro" ? PRO_TURNS : ANTI_TURNS,
     });
     const asset = readAsset(assetPath);
     const mirror = shouldMirror(motion.motionType, rotationDirection);
@@ -240,7 +249,9 @@ function placeArrows(): PlacedArrow[] {
         y: y + lx * Math.sin(r) + ly * Math.cos(r),
       };
     };
-    const ends = ASSET_ENDS[motion.motionType];
+    const assetName = path.basename(assetPath, ".svg");
+    const ends = ASSET_ENDS[assetName];
+    if (!ends) throw new Error(`No tail/head points for ${assetName}`);
 
     return {
       motion,
@@ -292,7 +303,7 @@ function round(n: number): number {
  * Rainbow: one hue per arrow, 45 degrees apart. Arrows are ordered clockwise
  * by the angle of their tail-head midpoint; the pro and anti of a quadrant
  * share that angle (snapped to the quadrant diagonal), so the outer arc takes
- * one step and the curl the next, and the eye reads a single wheel. Each pair
+ * one step and the inner loop the next, and the eye reads a single wheel. Each pair
  * straddles its diagonal's own angle (-22.5 / +22.5), which lines the wheel up
  * with the spectrum palette.
  */
@@ -362,7 +373,7 @@ function buildArrows(arrows: PlacedArrow[], palette: Palette): Art {
 /**
  * Where the four hand dots go. The arrow assets are drawn larger than the
  * +-150 hand-point spacing (in the app they overlap the grid), so dots on the
- * literal hand points land inside the curls. The hand-drawn icon instead puts
+ * literal hand points land inside the inner loops. The hand-drawn icon instead puts
  * each dot where the two outer arcs beside it begin and end; "ends" does the
  * same, at the mean axis distance of the pro tails and heads.
  */
@@ -625,7 +636,7 @@ function parseArgs(argv: string[]): {
   out?: string;
   write: boolean;
 } {
-  let palette: Palette = "rainbow";
+  let palette: Palette = "spectrum";
   let dots: DotPlacement = "ends";
   let out: string | undefined;
   let write = false;

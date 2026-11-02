@@ -1296,7 +1296,11 @@
      at least 11px clear of the logo from 375px wide; narrower bars say
      "Composer". Back keeps its accessible name as an arrow-only circle. */
   @media (max-width: 544px) {
+    /* The desktop 92vw band plus this padding left the bar 31px in from each
+       edge while page content sits 16px in; on a phone the bar spans the
+       screen so Back and the menu line up with the content edge. */
     .inner {
+      max-width: none;
       padding: 0 1rem;
     }
     .left-group {

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { flexPresence } from "#lib/shared/transitions/motion.js";
 import { DURATION } from "#lib/shared/transitions/transitions.js";

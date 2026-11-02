@@ -1,5 +1,6 @@
 <script lang="ts">
   import { t, tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
+  import { formatList } from "#lib/shared/i18n/i18n-formatters.js";
   import { onDestroy, onMount, tick, untrack } from "svelte";
   import { createLayoutMotion } from "#lib/shared/transitions/layout-flip.js";
   import {
@@ -122,6 +123,11 @@
   /** The placement just built, which its slot answers. */
   let lit = $state<PlacementType | null>(null);
   let builds = $state(0);
+  /** A build of a placement already in this round's set. Its prompt names
+   * the build and points at one still missing, since in production learners
+   * rebuilt the same placement over and over while the prompt only asked
+   * for a left hand again (Porto and Saint Paul, 2026-10). */
+  let repeated = $state<PlacementType | null>(null);
   // In each round a built placement holds for a beat and then the hands
   // leave the board, so each placement is built fresh rather than dragged
   // from the last one. Once all three are found the next round starts by
@@ -200,17 +206,34 @@
 
   /** Continue was pressed: the board is settling before Hand Motions. */
   let leaving = $state(false);
+  /** This round's placements not yet found, in alpha, beta, gamma order. */
+  const missing = $derived(
+    workshop.canFinish
+      ? []
+      : PLACEMENT_KINDS.filter((kind) => !workshop.found.includes(kind))
+  );
+  const repeatHint = $derived(
+    repeated && missing.length > 0
+      ? `${t("learn_ui_placement_again", {
+          placement: PLACEMENT_TYPE_INFO[repeated].label,
+        })} ${tDynamic(`learn_ui_placement_try_${missing[0]}`)}`
+      : ""
+  );
   const instruction = $derived(
     leaving ||
       (!workshop.canFinish &&
         placement.complete &&
         placement.activeHand === null)
       ? ""
-      : placement.activeHand === HandSide.LEFT
-        ? t("learn_ui_tap_left_hand")
-        : placement.activeHand === HandSide.RIGHT
-          ? t("learn_ui_place_right_hand")
-          : t("learn_ui_drag_or_tap_hand")
+      : repeatHint &&
+          !placement.leftLocation &&
+          placement.activeHand === HandSide.LEFT
+        ? repeatHint
+        : placement.activeHand === HandSide.LEFT
+          ? t("learn_ui_tap_left_hand")
+          : placement.activeHand === HandSide.RIGHT
+            ? t("learn_ui_place_right_hand")
+            : t("learn_ui_drag_or_tap_hand")
   );
 
   // The board comes first. Grid modes, transforms and the worked examples
@@ -270,12 +293,23 @@
       };
     })
   );
+  const labels = (kinds: readonly PlacementType[]) =>
+    formatList(kinds.map((kind) => PLACEMENT_TYPE_INFO[kind].label));
+  // The lead keeps score: what this round has found and what is left, so
+  // the cards read as a set being filled rather than a choice to make.
   const lead = $derived(
-    workshop.phase === "explore"
-      ? t("learn_ui_place_both_hands_name")
-      : workshop.phase === "box"
-        ? t("learn_ui_find_three_box_grid")
-        : t("learn_ui_keep_exploring_instruction")
+    workshop.canFinish
+      ? t("learn_ui_keep_exploring_instruction")
+      : workshop.roundDone
+        ? t("learn_ui_placements_all_found")
+        : workshop.found.length > 0
+        ? t("learn_ui_placements_progress", {
+            found: labels(workshop.found),
+            missing: labels(missing),
+          })
+        : workshop.phase === "box"
+          ? t("learn_ui_find_three_box_grid")
+          : t("learn_ui_placements_find_three")
   );
 
   function changed(change: PropPlacementChange) {
@@ -294,6 +328,7 @@
     const kind = placementKindFor(change.leftLocation, change.rightLocation);
     const settled = change.complete && change.activeHand === null;
     if (freePlay || !kind || !settled) return;
+    repeated = workshop.found.includes(kind) ? kind : null;
     workshop.discover(kind);
     lit = kind;
     builds++;
@@ -364,6 +399,7 @@
     if (!workshop.advance()) return;
     replacedPairs = [];
     lit = null;
+    repeated = null;
     if (workshop.phase === "box") {
       gridMode = GridMode.BOX;
       loadPair(null, null);
@@ -397,7 +433,7 @@
     {#snippet heading()}
       <div data-placement-stage="heading" aria-live="polite" aria-atomic="true">
         <LessonStageHeading
-          key={workshop.phase}
+          key={`${workshop.phase}:${workshop.found.length}`}
           title={t("learn_ui_hand_placements")}
         >
           <p>{lead}</p>
@@ -416,59 +452,63 @@
         </div>
 
         <div class="stage-row">
-          <div
-            class="board"
-            data-placement-stage="board"
-            bind:this={boardElement}
-            {@attach (node) => {
-              // Back from Hand Motions, the hands ride the board in.
-              if (backFromMotions) liveBoard?.follow(node);
-            }}
-            tabindex="-1"
-            role="group"
-            aria-label={t("learn_ui_hand_placement_grid")}
-            bind:clientWidth={boardWidth}
-            bind:clientHeight={boardHeight}
-          >
-            <PropPlacementGrid
-              bind:this={grid}
-              {gridMode}
-              positionLetter={built ? PLACEMENT_LETTERS[built] : null}
-              pictographLabel={built
-                ? `${PLACEMENT_TYPE_INFO[built].label}. ${placementBrief(built)}`
-                : t("learn_ui_your_placement")}
-              animateContent={true}
-              leftPropType={PropType.HAND}
-              rightPropType={PropType.HAND}
-              leftNoun="left hand"
-              rightNoun="right hand"
-              promptText=""
-              initialLeftLocation={preset.left}
-              initialRightLocation={preset.right}
-              resetEpoch={epoch}
-              hitTargetRadius={Math.max(
-                75,
-                (44 * 950) /
-                  Math.max(128, Math.min(boardWidth, boardHeight)) /
-                  2
-              )}
-              editAfterCompletion
-              dragLocations
-              renderTray={false}
-              showGrid={false}
-              transparentBackground
-              onChange={changed}
+          <!-- On a phone this cell is the space left for the board, which
+               sizes itself to the cell's smaller side. -->
+          <div class="board-cell">
+            <div
+              class="board"
+              data-placement-stage="board"
+              bind:this={boardElement}
+              {@attach (node) => {
+                // Back from Hand Motions, the hands ride the board in.
+                if (backFromMotions) liveBoard?.follow(node);
+              }}
+              tabindex="-1"
+              role="group"
+              aria-label={t("learn_ui_hand_placement_grid")}
+              bind:clientWidth={boardWidth}
+              bind:clientHeight={boardHeight}
             >
-              {#snippet underlay()}
-                <LessonBoardSlot
-                  phase={gridMode === GridMode.BOX ? "box" : "diamond"}
-                  look="pictograph"
-                />
-              {/snippet}
-            </PropPlacementGrid>
-            <span class="sr-only" aria-live="polite"
-              >{built ? PLACEMENT_TYPE_INFO[built].label : ""}</span
-            >
+              <PropPlacementGrid
+                bind:this={grid}
+                {gridMode}
+                positionLetter={built ? PLACEMENT_LETTERS[built] : null}
+                pictographLabel={built
+                  ? `${PLACEMENT_TYPE_INFO[built].label}. ${placementBrief(built)}`
+                  : t("learn_ui_your_placement")}
+                animateContent={true}
+                leftPropType={PropType.HAND}
+                rightPropType={PropType.HAND}
+                leftNoun="left hand"
+                rightNoun="right hand"
+                promptText=""
+                initialLeftLocation={preset.left}
+                initialRightLocation={preset.right}
+                resetEpoch={epoch}
+                hitTargetRadius={Math.max(
+                  75,
+                  (44 * 950) /
+                    Math.max(128, Math.min(boardWidth, boardHeight)) /
+                    2
+                )}
+                editAfterCompletion
+                dragLocations
+                renderTray={false}
+                showGrid={false}
+                transparentBackground
+                onChange={changed}
+              >
+                {#snippet underlay()}
+                  <LessonBoardSlot
+                    phase={gridMode === GridMode.BOX ? "box" : "diamond"}
+                    look="pictograph"
+                  />
+                {/snippet}
+              </PropPlacementGrid>
+              <span class="sr-only" aria-live="polite"
+                >{built ? PLACEMENT_TYPE_INFO[built].label : ""}</span
+              >
+            </div>
           </div>
 
           <div class="placement-slots">
@@ -601,6 +641,9 @@
     gap: clamp(1rem, 2.5cqw, 2rem);
     max-width: 100%;
   }
+  .board-cell {
+    display: contents;
+  }
   .board {
     position: relative;
     aspect-ratio: 1;
@@ -648,11 +691,12 @@
     width: 100%;
   }
   p {
-    margin: 0;
+    margin: 0 auto;
     font-size: 1rem;
     line-height: 1.5;
     max-width: 38ch;
     color: var(--theme-text-dim);
+    text-wrap: balance;
   }
   .sr-only {
     position: absolute;
@@ -713,6 +757,92 @@
       --placement-board-size: 64rem;
       --placement-panel-width: 28rem;
       --lesson-workshop-max: 104rem;
+    }
+  }
+
+  /* Phone: the lesson fills the space between its strip and controls with
+     no scrolling. The task line, the slots and the hand controls keep their
+     height and the board takes what is left, so the answer cards and Undo
+     and Clear stay on screen above Continue. Free play's extra tools join
+     Undo and Clear as one row of icons; each keeps its accessible name. */
+  @media (max-width: 639.98px), (max-width: 767.98px) and (max-height: 700px) {
+    .placements-experience {
+      flex: 1 1 0;
+      height: 100%;
+      min-height: 0;
+    }
+    .workshop {
+      height: 100%;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      gap: 0.375rem;
+    }
+    .current-task {
+      min-height: 1.25rem;
+      line-height: 1.25;
+      text-align: center;
+    }
+    .stage-row {
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr) auto;
+      align-items: stretch;
+      justify-items: center;
+      gap: 0.375rem;
+    }
+    .board-cell {
+      display: grid;
+      place-items: center;
+      width: 100%;
+      min-height: 0;
+      container-type: size;
+    }
+    .board {
+      width: min(100cqw, 100cqh);
+    }
+    .placement-slots {
+      width: min(100%, 24rem);
+    }
+    .hand-controls {
+      --min-touch-target: 2.5rem;
+      gap: 0.375rem;
+    }
+    .free-play .hand-controls {
+      --min-touch-target: 2.25rem;
+      --workspace-action-label-display: none;
+      --workspace-action-width: 2.25rem;
+      --workspace-action-padding-inline: 0;
+      --workspace-action-radius: 50%;
+      flex-wrap: nowrap;
+      gap: 0.3rem;
+    }
+    .free-play .history-controls,
+    .free-play .transform-controls {
+      flex-wrap: nowrap;
+    }
+    .free-play .hand-controls :global(.grid-mode-toggle) {
+      width: 2.25rem;
+      min-width: 2.25rem;
+      height: 2.25rem;
+      padding: 0;
+      border-radius: 50%;
+    }
+    .free-play .hand-controls :global(.grid-mode-toggle .mode-label) {
+      display: none;
+    }
+    .free-play .hand-controls :global(.toolbar .section-grid) {
+      flex-wrap: nowrap;
+      gap: 0.3rem;
+    }
+    .free-play .hand-controls :global(.toolbar .grid-btn) {
+      width: 2.25rem;
+      min-width: 2.25rem;
+      height: 2.25rem;
+      padding: 0;
+    }
+    .free-play .hand-controls :global(.toolbar .btn-text) {
+      display: none;
     }
   }
 

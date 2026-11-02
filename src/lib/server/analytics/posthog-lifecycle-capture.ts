@@ -51,6 +51,9 @@ function lifecycleProperties(
         is_public: envelope.properties.visibility === "public",
         durability: envelope.properties.durability,
         source: envelope.properties.source ?? "unspecified",
+        ...(envelope.properties.sequenceSource
+          ? { sequence_source: envelope.properties.sequenceSource }
+          : {}),
       };
     case "tunnel_save":
       return {

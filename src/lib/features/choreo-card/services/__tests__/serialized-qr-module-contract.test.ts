@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Contract: every serialized card layout prints its QR with modules of at
  * least MIN_PRINTED_QR_MODULE_MM on both print paths, or is listed below as a

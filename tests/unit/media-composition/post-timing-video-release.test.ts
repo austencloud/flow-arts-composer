@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Timing mode's take video must close its download when it leaves the page.
  * A removed video keeps its download open but stops reading it. Over HTTP/2 a

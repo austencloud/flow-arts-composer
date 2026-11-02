@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AutumnSceneryRenderer } from "../../node_modules/@austencloud/backgrounds/dist/backgrounds/autumn/services/AutumnSceneryRenderer.js";
 

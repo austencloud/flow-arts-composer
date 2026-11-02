@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
 import type { CollisionEvent } from "@austencloud/scene-3d";
 import {

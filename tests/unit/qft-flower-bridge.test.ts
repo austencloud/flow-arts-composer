@@ -14,8 +14,8 @@ import {
   buildFlowerAxis,
   flowerPetals,
   type Flower,
-} from "../../src/lib/shared/shape-matrix/domain/flower-signature";
-import { MODE_ORDER } from "../../src/lib/shared/shape-matrix/services/shape-matrix-realizations";
+} from "@tka/shape-domain";
+import { MODE_ORDER } from "@tka/shape-domain";
 import {
   FLOWER_RADIUS,
   flowerToKnobs,

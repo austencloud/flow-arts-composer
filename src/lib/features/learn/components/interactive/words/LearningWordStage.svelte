@@ -7,7 +7,7 @@
   } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
-  import { derivePropElementalType } from "#lib/shared/shape-matrix/domain/prop-relationship.js";
+  import { derivePropElementalType } from "#lib/shared/pictograph/shared/domain/utils/prop-elemental-type.js";
   import ChoreoCard from "#lib/shared/sequence-viewer/components/ChoreoCard.svelte";
   import PanelGroup from "#lib/shared/panels/PanelGroup.svelte";
   import type { LearningLetterTeachingContent } from "./learning-letter-teaching-content";

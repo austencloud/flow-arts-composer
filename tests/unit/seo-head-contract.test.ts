@@ -62,8 +62,9 @@ describe("SEO head contract", () => {
   it("gives Flow Arts Composer one canonical product identity", () => {
     const composer = read("src/routes/(public)/composer/+page.svelte");
     // f64350ce63 fused About into the complete Composer experience:
-    // +page.svelte kept the SEO/JSON-LD identity below, but the marketing
-    // lede copy moved into ComposerExperience, which +page.svelte now wraps.
+    // +page.svelte kept the SEO/JSON-LD identity below. The hero has no
+    // tagline since 2026-11-01 (Austen: a one-line summary of the whole app
+    // falls short, and "16-count loop" is unexplained there).
     const composerExperience = read(
       "src/routes/(public)/composer/_components/ComposerExperience.svelte"
     );
@@ -81,9 +82,7 @@ describe("SEO head contract", () => {
     expect(composer).toContain(
       '"https://tkaflowarts.com/branding/composer-og-image.png"'
     );
-    expect(composerExperience).toContain(
-      "Choose the moves or generate a 16-count loop."
-    );
+    expect(composerExperience).not.toContain("16-count loop");
     expect(composer).toContain(
       "Use cloud saves, publishing, following, and exports with a full account"
     );

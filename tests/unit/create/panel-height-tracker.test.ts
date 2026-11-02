@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createPanelHeightTracker } from "#lib/features/create/shared/state/managers/panel-height-tracker.svelte.js";
 import type { PanelCoordinationState } from "#lib/shared/create/state/panel-coordination-state.svelte.js";

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { BackgroundType } from "@austencloud/backgrounds";
 import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";

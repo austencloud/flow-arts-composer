@@ -17,10 +17,15 @@
   const logger = createComponentLogger("SequenceActionsCoordinator");
 
   // Tabs that support the Sequence Actions Panel
-  const SUPPORTED_TABS = new Set(["construct", "assemble", "generate", "spell"]);
+  const SUPPORTED_TABS = new Set([
+    "construct",
+    "assemble",
+    "generate",
+    "spell",
+  ]);
 
   const ctx = getCreateModuleContext();
-  const { CreateModuleState, panelState } = ctx;
+  const { panelState } = ctx;
 
   // Only show panel if the current tab supports it AND panel state says it's open
   const currentTab = $derived(navigationState.activeTab);
@@ -33,9 +38,10 @@
   function handleClose() {
     logger.log("SequenceActionsCoordinator closing sequence actions panel");
     panelState.closeSequenceActionsPanel();
-
-    // Clear beat selection when panel closes
-    CreateModuleState.sequenceState.clearSelection();
+    // No selection clear here. Opening Actions already dropped the selection,
+    // and when a step click closes the drawer this handler runs after that
+    // click selected the step; clearing it would undo the selection and leave
+    // the editor with nothing to show.
   }
 
   // Debug effect to track panel visibility

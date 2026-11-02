@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect, vi } from "vitest";
 import { exportDeckZIP } from "../print-zip-exporter";
 import type { ZipCardPair } from "../types";

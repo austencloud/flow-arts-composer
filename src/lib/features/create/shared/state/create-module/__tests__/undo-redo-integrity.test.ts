@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Undo/redo integrity for the Create module history.
  *

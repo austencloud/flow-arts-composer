@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * When a per-frame motion renderer hands a prop back to its still pose, the
  * prop must not spin. Since the shared edit clock (8ca7b6a531, 2026-10-15)

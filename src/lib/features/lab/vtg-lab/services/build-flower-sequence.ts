@@ -7,7 +7,7 @@ import {
   flowerStartOrientation,
   flowerTurnPattern,
   type Flower,
-} from "#lib/shared/shape-matrix/domain/flower-signature.js";
+} from "@tka/shape-domain";
 import { closeSequenceOrientationCycle } from "#lib/shared/create/services/sequence-orientation-cycle.js";
 
 /**

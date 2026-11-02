@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
 import { isCreateSurfaceCollapsed } from "#lib/shared/hmr-helper.js";
 

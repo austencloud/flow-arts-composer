@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { effect_root } from "svelte/internal/client";
 import { createScrollState } from "#lib/features/create/shared/workspace-panel/sequence-display/state/scroll-state.svelte.js";

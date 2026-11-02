@@ -89,6 +89,19 @@ function writeWorktreeTsconfig() {
     // No generated config yet: tsc reports the missing `extends` itself.
   }
 
+  // `paths` here replaces tsconfig.json's own rather than merging with it,
+  // so carry those over too (the Shape Engine packages resolve through them).
+  try {
+    const own = JSON.parse(readFileSync(resolve(ROOT, "tsconfig.json"), "utf8"));
+    for (const [key, targets] of Object.entries(
+      own.compilerOptions?.paths ?? {}
+    )) {
+      kitPaths[key] = targets.map((target) => posix(resolve(ROOT, target)));
+    }
+  } catch {
+    // tsc reports an unreadable tsconfig.json itself.
+  }
+
   const file = resolve(
     ROOT,
     ".svelte-kit",

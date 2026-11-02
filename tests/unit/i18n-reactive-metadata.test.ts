@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { afterEach, expect, it } from "vitest";
 import { setLocale } from "../../src/lib/shared/i18n/i18n.svelte";
 import { COLOR_PRESETS } from "../../src/lib/shared/ui/color-presets";

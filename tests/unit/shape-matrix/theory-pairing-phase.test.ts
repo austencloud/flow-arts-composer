@@ -10,11 +10,11 @@ import {
   theoryKnobs,
   theorySoloKnobs,
   type TheoryFlower,
-} from "#lib/shared/shape-matrix/domain/theory-flower.js";
+} from "@tka/shape-domain";
 import {
   MODE_ORDER,
   type VtgMode,
-} from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
+} from "@tka/shape-domain";
 
 /** Austen's report: 5:1 antispin, prop starting in, both hands the same. */
 const FIVE_ONE_ANTI_IN: TheoryFlower = {

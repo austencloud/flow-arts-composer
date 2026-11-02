@@ -12,6 +12,8 @@
     settingsEnabled = false,
     openIntoWorkspace = false,
     topOffset = 0,
+    typeRail = false,
+    touchTarget = 44,
   } = $props<{
     organizedPictographs: OrganizedSection[];
     onSectionChange?: (index: number) => void;
@@ -24,6 +26,8 @@
     settingsEnabled?: boolean;
     openIntoWorkspace?: boolean;
     topOffset?: number;
+    typeRail?: boolean;
+    touchTarget?: number;
   }>();
 </script>
 
@@ -32,6 +36,7 @@
   style:width={`${width}px`}
   style:height={`${height}px`}
   style:margin-top={`${topOffset}px`}
+  style:--min-touch-target={`${touchTarget}px`}
 >
   <OptionViewerSwipeLayout
     {organizedPictographs}
@@ -39,6 +44,8 @@
     {onLetterTypeGroupSelected}
     {settingsEnabled}
     {openIntoWorkspace}
+    {typeRail}
+    phoneTier={typeRail}
   >
     {#snippet settingsContent()}
       <div class="test-settings">Settings content</div>
@@ -49,7 +56,6 @@
 <style>
   .harness {
     container-type: size;
-    --min-touch-target: 44px;
     --theme-panel-bg: #12141c;
     --theme-card-bg: #202938;
     --theme-card-hover-bg: #2d3748;

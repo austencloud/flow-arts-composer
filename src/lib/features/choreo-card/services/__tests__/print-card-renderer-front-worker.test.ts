@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Hoisted mocks — vi.mock factories are lifted above imports, so any value they

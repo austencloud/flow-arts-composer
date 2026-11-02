@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * The export guard must stop any card whose QR is missing, carries the wrong
  * payload, or prints too small to scan, and name that card in the error.

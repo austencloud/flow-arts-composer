@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
 import type { PhysicsProvider, Vector3 } from "@austencloud/camera-3d";
 import { FlowFestElectricUnicycleDrive } from "#lib/features/flow-fest-sim/services/flow-fest-electric-unicycle-drive.js";

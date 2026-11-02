@@ -28,6 +28,7 @@
     recordTempoTap,
   } from "#lib/shared/animation-engine/domain/tempo-behavior.js";
   import ScrubbableNumber from "#lib/shared/ui/components/ScrubbableNumber.svelte";
+  import { holdRepeat } from "#lib/shared/ui/hold-repeat.js";
 
   // Engine-derived: offering a BPM the playback clamp rejects makes the
   // buttons silent no-ops (readout freezes at the real ceiling).
@@ -35,9 +36,6 @@
   const BPM_MAX = PLAYBACK_MAX_BPM;
   const STEP_NORMAL = 5;
   const STEP_FAST = 10;
-  const HOLD_DELAY_MS = 500;
-  const HOLD_TICK_MS = 100;
-  const HOLD_ACCEL_MS = 2000;
 
   interface Props {
     bpm: number;
@@ -75,11 +73,6 @@
   // Popover state (popover mode only)
   let showPopover = $state(false);
 
-  // Hold-to-repeat state
-  let holdTimer: ReturnType<typeof setTimeout> | null = null;
-  let holdInterval: ReturnType<typeof setInterval> | null = null;
-  let holdStartTime = 0;
-
   // BPM intensity color
   let bpmColor = $derived.by(() => {
     if (bpm <= 30) return "var(--semantic-success, #22c55e)";
@@ -93,34 +86,12 @@
     SEMANTIC_TEMPO_PRESETS.find((preset) => preset.bpm === bpm)?.label ?? null
   );
 
-  function adjustBpm(direction: 1 | -1) {
-    const elapsed = performance.now() - holdStartTime;
-    const step = elapsed > HOLD_ACCEL_MS ? STEP_FAST : STEP_NORMAL;
-    const newBpm = clampTempoBpm(bpm + direction * step);
+  // `holdRepeat` sizes the step: STEP_NORMAL per tap and per repeat,
+  // STEP_FAST once the press has been held a while.
+  function adjustBpm(delta: number) {
+    const newBpm = clampTempoBpm(bpm + delta);
     if (newBpm !== bpm) {
       onBpmChange(newBpm);
-    }
-  }
-
-  function startHold(direction: 1 | -1) {
-    holdStartTime = performance.now();
-    adjustBpm(direction);
-
-    holdTimer = setTimeout(() => {
-      holdInterval = setInterval(() => {
-        adjustBpm(direction);
-      }, HOLD_TICK_MS);
-    }, HOLD_DELAY_MS);
-  }
-
-  function stopHold() {
-    if (holdTimer) {
-      clearTimeout(holdTimer);
-      holdTimer = null;
-    }
-    if (holdInterval) {
-      clearInterval(holdInterval);
-      holdInterval = null;
     }
   }
 
@@ -180,7 +151,6 @@
   // Cleanup on unmount
   $effect(() => {
     return () => {
-      stopHold();
       if (tapTimeout) clearTimeout(tapTimeout);
     };
   });
@@ -192,10 +162,11 @@
     <div class="bpm-adjuster">
       <button
         class="adjust-btn"
-        onpointerdown={() => startHold(-1)}
-        onpointerup={stopHold}
-        onpointerleave={stopHold}
-        onpointercancel={stopHold}
+        use:holdRepeat={{
+          step: STEP_NORMAL,
+          fastStep: STEP_FAST,
+          onStep: (step) => adjustBpm(-step),
+        }}
         disabled={bpm <= BPM_MIN}
         aria-label={t("compose_decrease_bpm")}
         type="button"
@@ -225,10 +196,11 @@
 
       <button
         class="adjust-btn"
-        onpointerdown={() => startHold(1)}
-        onpointerup={stopHold}
-        onpointerleave={stopHold}
-        onpointercancel={stopHold}
+        use:holdRepeat={{
+          step: STEP_NORMAL,
+          fastStep: STEP_FAST,
+          onStep: (step) => adjustBpm(step),
+        }}
         disabled={bpm >= BPM_MAX}
         aria-label={t("compose_increase_bpm")}
         type="button"

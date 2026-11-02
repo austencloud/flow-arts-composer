@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * The homepage hero's whole-word header names the sequence the engine is
  * playing. At a loop boundary the playback controller loads the prepared

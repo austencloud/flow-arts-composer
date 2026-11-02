@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Session simulator — watch the presenter for a few hundred decisions and
  * write down what it actually did.

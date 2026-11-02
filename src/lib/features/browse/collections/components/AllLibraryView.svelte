@@ -271,7 +271,8 @@ the gallery's, and the source is pinned to my-library with no toggle.
         ? {
             label: t("browse_audit_create_account"),
             description: t("browse_audit_create_account_description"),
-            onClick: () => authDrawerState.show("signup", "sync-library"),
+            onClick: () =>
+              authDrawerState.showOnRequest("signup", "sync-library"),
           }
         : undefined,
   });
@@ -303,7 +304,7 @@ the gallery's, and the source is pinned to my-library with no toggle.
         {backLabel}
         onBrowse={emptyAction.onClick}
         onCreateAccount={!authState.isFullAccount
-          ? () => authDrawerState.show("signup", "sync-library")
+          ? () => authDrawerState.showOnRequest("signup", "sync-library")
           : undefined}
       />
     </div>

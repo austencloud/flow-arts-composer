@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { resolveTheoryPlaybackTick } from "#lib/shared/shape-matrix/services/theory-playback-clock.js";
+import { resolveTheoryPlaybackTick } from "@tka/shape-engine/services/theory-playback-clock.js";
 
 describe("Theory playback clock", () => {
   it("advances continuously without retaining a step clock", () => {

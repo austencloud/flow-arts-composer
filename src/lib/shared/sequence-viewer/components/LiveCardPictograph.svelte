@@ -14,7 +14,7 @@
   import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
   import { resolvePreviewCellRender } from "../services/preview-cell-render-contract";
   import { ensureCardFonts } from "#lib/shared/render/services/gelasio-fonts.js";
-  import { derivePropElementalTypeForStep } from "#lib/shared/shape-matrix/domain/prop-relationship.js";
+  import { derivePropElementalTypeForStep } from "#lib/shared/pictograph/shared/domain/utils/prop-elemental-type.js";
   import { renderStepNumber } from "@tka/render-composition";
   import { DURATION } from "@austencloud/motion";
   import { motionDuration } from "#lib/shared/transitions/motion.js";

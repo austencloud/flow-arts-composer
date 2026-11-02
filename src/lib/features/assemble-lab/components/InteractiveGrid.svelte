@@ -324,6 +324,8 @@
             startOrientation: step.startOrientation,
             durationMs: durationMs ?? ANIMATION_DURATION_MS,
             propCenter: activePropCenter,
+            // The step grid's mandala draws the new beat in on this clock.
+            onProgress: (progress) => builderState.reportHopProgress(progress),
           })
         );
 

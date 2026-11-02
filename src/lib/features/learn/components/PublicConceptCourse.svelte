@@ -150,7 +150,13 @@
   {@html `<script type="application/ld+json">${breadcrumbJsonLd}</script>`}
 </Seo>
 
-<section class="public-course" aria-label={t("learn_ui_interactive_lessons")}>
+<!-- A lesson brings its own one-row header on a phone; MarketingChrome then
+     leaves out the site header and footer (data-phone-owns-chrome). -->
+<section
+  class="public-course"
+  aria-label={t("learn_ui_interactive_lessons")}
+  data-phone-owns-chrome={concept ? "" : undefined}
+>
   {#if browser}
     <LearnTab publicCourse />
   {:else}
@@ -203,10 +209,16 @@
 </section>
 
 <style>
+  /* MarketingChrome publishes its fixed header's height, which is zero on a
+     phone lesson, where the lesson's own strip is the only header. */
   .public-course {
     width: 100%;
-    min-height: calc(100dvh - 64px);
-    margin-top: 64px;
+    min-height: calc(100dvh - var(--marketing-header-h, 64px));
+    margin-top: var(--marketing-header-h, 64px);
+  }
+
+  .public-course :global(.learn-tab.public-course:not(.course-index)) {
+    height: calc(100dvh - var(--marketing-header-h, 64px));
   }
 
   /* Lesson titles use the brand's page-title face, the same wonky Fraunces

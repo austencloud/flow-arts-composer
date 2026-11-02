@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createEmptyPoiReversalObservationFile } from "../../src/lib/features/levels/poi-lab/domain/poi-reversal-observations";
 import { createPoiReversalReviewState } from "../../src/lib/features/levels/poi-lab/state/poi-reversal-review-state.svelte";

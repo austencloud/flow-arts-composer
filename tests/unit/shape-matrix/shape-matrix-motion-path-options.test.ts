@@ -21,17 +21,17 @@ async function loadHarness(loadEdges = vi.fn().mockResolvedValue([])) {
     })
   );
   vi.doMock(
-    "#lib/shared/shape-matrix/services/rotation-style-archetypes.js",
+    "@tka/shape-engine/services/rotation-style-archetypes.js",
     () => ({ resolveRotationStyleArchetypes: resolveArchetypes })
   );
   vi.doMock(
     "#lib/features/choreo-card/services/pictograph-letter-lookup.js",
     () => ({ loadDiamondEdges: loadEdges })
   );
-  vi.doMock("#lib/shared/shape-matrix/services/flower-archetype.js", () => ({
+  vi.doMock("@tka/shape-engine/services/flower-archetype.js", () => ({
     resolveFlowerArchetype: () => ({}),
   }));
-  vi.doMock("#lib/shared/shape-matrix/domain/flower-signature.js", () => ({
+  vi.doMock("@tka/shape-domain", () => ({
     buildShapeMatrixAxis: () => axis,
     flowerKey: (flower: (typeof axis)[number]) => flower.key,
   }));
@@ -62,17 +62,17 @@ async function loadHarness(loadEdges = vi.fn().mockResolvedValue([])) {
   );
 
   const { loadShapeMatrix } =
-    await import("#lib/shared/shape-matrix/services/shape-matrix-flowers.js");
+    await import("@tka/shape-engine/services/shape-matrix-flowers.js");
   return { loadShapeMatrix, resolveArchetypes };
 }
 
 afterEach(() => {
   vi.doUnmock("#lib/shared/animation-engine/domain/types/prop-tip-points.js");
   vi.doUnmock("#lib/shared/animation-engine/domain/types/trail-point-types.js");
-  vi.doUnmock("#lib/shared/shape-matrix/services/rotation-style-archetypes.js");
+  vi.doUnmock("@tka/shape-engine/services/rotation-style-archetypes.js");
   vi.doUnmock("#lib/features/choreo-card/services/pictograph-letter-lookup.js");
-  vi.doUnmock("#lib/shared/shape-matrix/services/flower-archetype.js");
-  vi.doUnmock("#lib/shared/shape-matrix/domain/flower-signature.js");
+  vi.doUnmock("@tka/shape-engine/services/flower-archetype.js");
+  vi.doUnmock("@tka/shape-domain");
   vi.doUnmock("#lib/features/lab/vtg-lab/services/build-flower-sequence.js");
   vi.resetModules();
 });
@@ -83,7 +83,7 @@ function pathFor(data: Awaited<ReturnType<typeof importMatrix>>, key: string) {
 
 async function importMatrix() {
   const { loadShapeMatrix } =
-    await import("#lib/shared/shape-matrix/services/shape-matrix-flowers.js");
+    await import("@tka/shape-engine/services/shape-matrix-flowers.js");
   return loadShapeMatrix(PropType.STAFF);
 }
 

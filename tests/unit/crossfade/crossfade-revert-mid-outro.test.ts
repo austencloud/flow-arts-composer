@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { flushSync, mount, unmount } from "svelte";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import CrossfadeRevertHarness from "./CrossfadeRevertHarness.svelte";

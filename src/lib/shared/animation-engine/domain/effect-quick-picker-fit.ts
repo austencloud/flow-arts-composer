@@ -40,12 +40,18 @@
  *   rather than a phone's tiles stretched.
  * - `strip`: where the grid would not show more effects at once (too little
  *   room for its title row and a row and a half of pictures, as on a short
- *   phone), one scrolling row of pictures, placed so the whole animation
- *   stays in view: floating under the controls where the room there holds
- *   it (with smaller pictures if need be), otherwise docked along the bottom
- *   of its bounds, and over the animation's bottom edge only when neither of
- *   those nor the narrow side panel fits. The pictures are sized so the last
- *   one in view is cut about in half, which shows the row scrolls.
+ *   phone), pictures in a row that scrolls sideways, led by a slim Off tile,
+ *   with the close button a disc in the sheet's top-right corner over the
+ *   row's faded end, so neither takes room from the pictures. One row floats
+ *   under the controls where the room there holds it (with smaller pictures
+ *   if need be). Otherwise the sheet docks along the bottom of its bounds,
+ *   and there it takes two rows where they fit: twice as tall, standing on
+ *   the bounds' floor and reaching up over the player's control row
+ *   (`controls`, which it may `cover`), never over the animation above it.
+ *   The controls are not needed while comparing looks. Short of that, one
+ *   row docks, and lies over the animation's bottom edge only when neither
+ *   the dock nor the narrow side panel fits. The pictures are sized so the
+ *   last one in view is cut about in half, which shows the row scrolls.
  *
  * Pure arithmetic over the picture tiles' own metrics (effect-catalog-fit),
  * so the CSS that draws the tiles and the fit cannot drift apart.
@@ -88,6 +94,9 @@ export interface QuickPickerBox {
    *  the side of the area it is centred in, with the player at rest. 0 when
    *  absent. */
   roomBeside?: number;
+  /** The height of the player's control row along its bottom edge, which a
+   *  docked two-row strip may cover. 0 when absent. */
+  controls?: number;
   /** Effects offered. */
   count: number;
 }
@@ -142,9 +151,15 @@ export type EffectQuickPickerFit =
       side: "below" | "dock" | "above";
       /** The strip's outer height in px. */
       height: number;
-      /** One row of picture tiles. */
+      /** The picture tiles, in one row or two. */
       catalog: EffectCatalogFit;
-      /** The width of that row in px, wider than the strip so it scrolls. */
+      /** One row of tiles, or two that scroll sideways together. */
+      rows: 1 | 2;
+      /** How many px of the player's control row the docked sheet stands
+       *  over: 0 for one row, or where the room under the player holds it. */
+      cover: number;
+      /** The width of the tiles' track in px, wider than the strip so it
+       *  scrolls. */
       trackWidth: number;
       /** The strip never moves the player. */
       lift: 0;
@@ -176,11 +191,12 @@ export const QUICK_PICKER_ICON_TILE = 48;
 const ICON_GAP = 6;
 const SIDE_COLUMNS = 4;
 
-/** Strip padding, the leading Off tile's width and the trailing close
- *  button's. */
+/** Strip padding and the leading Off tile's width (the touch-target floor).
+ *  The close button is a disc in the corner, out of the row. */
 export const QUICK_PICKER_STRIP_PAD = 8;
-export const QUICK_PICKER_OFF_WIDTH = 64;
-export const QUICK_PICKER_CLOSE_WIDTH = 44;
+export const QUICK_PICKER_OFF_WIDTH = 44;
+/** The strip's close disc, in its top-right corner over the row's end. */
+export const QUICK_PICKER_CLOSE_DISC = 32;
 /** The tray's and the docked sheet's border. */
 const QUICK_PICKER_BORDER = 1;
 /** The grid wants at least this many columns: fewer and the side panel or
@@ -250,6 +266,10 @@ export function stripTilePitch(portrait: number): number {
  *  be clear of the fade and of the arrow over it. The strip's scroll padding,
  *  so its snap positions start a tile here too. */
 export const QUICK_PICKER_STRIP_EDGE_CLEAR = 40;
+/** The scroll padding at the strip's end: the close disc over it and the
+ *  fade (28px) beside the disc, so a tile scrolled into view there is not
+ *  hidden under the disc. */
+export const QUICK_PICKER_STRIP_END_CLEAR = QUICK_PICKER_CLOSE_DISC + 28;
 
 /**
  * Where an arrow scrolls the strip to. Every stop starts a tile just clear of
@@ -302,6 +322,7 @@ export function fitEffectQuickPicker({
   roomBelow = 0,
   roomAbove = 0,
   roomBeside = 0,
+  controls = 0,
   count,
 }: QuickPickerBox): EffectQuickPickerFit {
   const target = Math.min(
@@ -374,7 +395,7 @@ export function fitEffectQuickPicker({
         )
       )
       .find((option) => option !== null);
-  return narrow ?? strip;
+  return narrow ?? fitTwoRowStrip(bounds, player, controls, count, strip);
 }
 
 /** The room for the panel on `side` of `player`, at most `target`. */
@@ -649,14 +670,11 @@ function fitGrid(
     ? Math.floor((height - head + catalog.gap) / (tile + catalog.gap))
     : catalog.rows;
   const inGrid = Math.min(count, wholeRows * catalog.cols);
-  const stripRoom =
-    player.width -
-    2 * QUICK_PICKER_STRIP_PAD -
-    QUICK_PICKER_OFF_WIDTH -
-    QUICK_PICKER_CLOSE_WIDTH -
-    2 * CATALOG_GAP;
+  // Against the one-row strip: two rows are a short phone's way of using
+  // the room the grid cannot.
   const inStrip = Math.floor(
-    (stripRoom + CATALOG_GAP) / stripTilePitch(strip.catalog.portrait)
+    (stripRoom(player.width) + CATALOG_GAP) /
+      stripTilePitch(strip.catalog.portrait)
   );
   if (inGrid <= inStrip) return null;
 
@@ -715,26 +733,36 @@ function wholeGrid(
   return best;
 }
 
-function fitStrip(
-  bounds: QuickPickerRect,
-  player: QuickPickerRect,
-  roomBelow: number,
-  count: number
-): EffectQuickPickerFit {
-  const { width } = player;
-  const room =
-    width -
-    2 * QUICK_PICKER_STRIP_PAD -
-    QUICK_PICKER_OFF_WIDTH -
-    QUICK_PICKER_CLOSE_WIDTH -
-    2 * CATALOG_GAP;
-  const base = Math.min(
+/** The width of the strip's row of pictures: the player's width less the
+ *  strip's padding and the Off tile leading the row. */
+function stripRoom(width: number): number {
+  return (
+    width - 2 * QUICK_PICKER_STRIP_PAD - QUICK_PICKER_OFF_WIDTH - CATALOG_GAP
+  );
+}
+
+/** The pictures' width before the peek adjustment. */
+function stripBase(width: number): number {
+  return Math.min(
     QUICK_PICKER_MAX_STRIP_PORTRAIT,
     Math.max(
       QUICK_PICKER_MIN_STRIP_PORTRAIT,
       Math.round(width * STRIP_PORTRAIT_PER_WIDTH)
     )
   );
+}
+
+type StripFit = Extract<EffectQuickPickerFit, { arrangement: "strip" }>;
+
+/** The one-row strip. */
+function fitStrip(
+  bounds: QuickPickerRect,
+  player: QuickPickerRect,
+  roomBelow: number,
+  count: number
+): StripFit {
+  const { width } = player;
+  const room = stripRoom(width);
   // The largest pictures the room under the controls holds, with the gap
   // above the tray.
   const largestBelow = Math.floor(
@@ -743,7 +771,7 @@ function fitStrip(
   const below = largestBelow >= QUICK_PICKER_MIN_STRIP_PORTRAIT;
   const portrait = stripPortrait(
     room,
-    base,
+    stripBase(width),
     below
       ? Math.min(QUICK_PICKER_MAX_STRIP_PORTRAIT, largestBelow)
       : QUICK_PICKER_MAX_STRIP_PORTRAIT
@@ -763,23 +791,111 @@ function fitStrip(
       gap: CATALOG_GAP,
       fill: false,
     },
-    trackWidth: count * (portrait + 2 * INSET) + (count - 1) * CATALOG_GAP,
+    rows: 1,
+    cover: 0,
+    trackWidth: trackWidth(count, portrait),
     lift: 0,
     scale: 1,
     shift: 0,
   };
 }
 
-/** Pictures near `base` px wide, at most `largest`, sized so the tiles in
- *  `room` end with about half of one more showing at the edge. */
-function stripPortrait(room: number, base: number, largest: number): number {
+/**
+ * Two rows of pictures in the docked sheet, where the one-row strip would
+ * dock or lie over the animation: the sheet stands on the bounds' floor and
+ * may reach up over the player's control row, never above it. Two rows go
+ * for more effects at once rather than larger pictures: one more tile across
+ * than the one row shows, still cut about in half at the end, where that
+ * keeps the pictures at the catalog's smallest (56px) or larger. On a 375x667
+ * phone that is three and a half 56px pictures a row where one row held two
+ * and a half 88px ones, and a sheet short enough to leave most of the control
+ * row in view. Two rows may go under the one row's 64px floor for this, down
+ * to the catalog's 56px, and shrink no further to fit the room: the one-row
+ * strip where even that does not fit.
+ */
+function fitTwoRowStrip(
+  bounds: QuickPickerRect,
+  player: QuickPickerRect,
+  controls: number,
+  count: number,
+  oneRow: StripFit
+): StripFit {
+  // Floating under the controls, one row covers nothing it needs to.
+  if (oneRow.side === "below" || count < 2) return oneRow;
+  const roomDocked = Math.floor(
+    bounds.top + bounds.height - (player.top + player.height)
+  );
+  const reach = roomDocked + Math.max(0, Math.floor(controls));
+  // Padding, the gap between the rows, and the sheet's top border.
+  const fixed = 2 * QUICK_PICKER_STRIP_PAD + CATALOG_GAP + QUICK_PICKER_BORDER;
+  const tallest = Math.floor(
+    (((reach - fixed) / 2 - pictureTileHeight(0)) * 8) / 3
+  );
+  if (tallest < MIN_CATALOG_PORTRAIT) return oneRow;
+  const room = stripRoom(player.width);
+  const whole = Math.floor(room / stripTilePitch(oneRow.catalog.portrait));
+  const denser = Math.floor(room / (whole + 1.5) - 2 * INSET - CATALOG_GAP);
+  let portrait = Math.min(
+    denser >= MIN_CATALOG_PORTRAIT ? denser : oneRow.catalog.portrait,
+    tallest
+  );
+  // Pictures shrunk to fit can leave the last tile in view nearly whole, or
+  // barely showing: size them again for the half-cut tile, no larger.
+  const inView = room / stripTilePitch(portrait);
+  const peek = inView - Math.floor(inView);
+  if (peek < 0.25 || peek > 0.75) {
+    portrait = stripPortrait(
+      room,
+      stripBase(player.width),
+      portrait,
+      MIN_CATALOG_PORTRAIT
+    );
+  }
+  const height = Math.ceil(fixed + 2 * pictureTileHeight(portrait));
+  if (height > reach) return oneRow;
+  const cols = Math.ceil(count / 2);
+  return {
+    arrangement: "strip",
+    side: "dock",
+    height,
+    catalog: {
+      cols,
+      rows: 2,
+      orientation: "stack",
+      portrait,
+      gap: CATALOG_GAP,
+      fill: false,
+    },
+    rows: 2,
+    cover: Math.max(0, height - roomDocked),
+    trackWidth: trackWidth(cols, portrait),
+    lift: 0,
+    scale: 1,
+    shift: 0,
+  };
+}
+
+/** The width of `cols` tiles of pictures `portrait` px wide, side by side. */
+function trackWidth(cols: number, portrait: number): number {
+  return cols * (portrait + 2 * INSET) + (cols - 1) * CATALOG_GAP;
+}
+
+/** Pictures near `base` px wide, at most `largest` and at least `least`,
+ *  sized so the tiles in `room` end with about half of one more showing at
+ *  the edge. */
+function stripPortrait(
+  room: number,
+  base: number,
+  largest: number,
+  least = QUICK_PICKER_MIN_STRIP_PORTRAIT
+): number {
   let whole = Math.max(1, Math.floor(room / stripTilePitch(base) - 0.5));
   // Pictures held to `largest` would show more of the next tile than half,
   // or all of it: take one more whole tile and make them all smaller.
   while (room / (whole + 0.5) > stripTilePitch(largest)) whole += 1;
   const pitch = room / (whole + 0.5);
   return Math.max(
-    QUICK_PICKER_MIN_STRIP_PORTRAIT,
+    least,
     Math.min(largest, Math.floor(pitch - 2 * INSET - CATALOG_GAP))
   );
 }

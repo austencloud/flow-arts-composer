@@ -203,6 +203,27 @@
     scroll-padding-top: calc(var(--marketing-header-h) + 1rem);
   }
 
+  /* A page marked data-phone-owns-chrome (an interactive lesson) brings its
+     own one-row header on a phone, so the site header and footer step aside
+     there and the page gets the whole screen. The published header height
+     drops to zero with them, so the page's own offsets stay right. CSS only,
+     so the server-rendered page is already laid out this way. */
+  @media (max-width: 639.98px), (max-width: 767.98px) and (max-height: 700px) {
+    :global(html:has(.mkt-shell [data-phone-owns-chrome])) {
+      --marketing-header-h: 0px;
+      scroll-padding-top: 0;
+    }
+
+    .mkt-shell:has(:global([data-phone-owns-chrome]))
+      .mkt-layer
+      > :global(header[data-route-hold="header"]),
+    .mkt-shell:has(:global([data-phone-owns-chrome]))
+      .mkt-layer
+      > :global(.site-footer) {
+      display: none;
+    }
+  }
+
   .mkt-shell {
     position: relative;
     min-height: 100vh;

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * `npm run check` does not typecheck plain `.ts` files reachable only through
  * a Svelte import graph, so a syntax error in boot-profiler.ts passed a green

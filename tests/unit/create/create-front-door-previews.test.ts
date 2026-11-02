@@ -123,25 +123,20 @@ describe("Create front door, method previews", () => {
   let bootScreen: HTMLElement | null = null;
   let stubbedCreateElement: typeof document.createElement;
   const onSelect = vi.fn();
-  const onLockedSelect = vi.fn();
 
   function render({
     methods = methodsFor(ALL),
-    locked = [],
     lastUsedMode = null,
   }: {
     methods?: Section[];
-    locked?: string[];
     lastUsedMode?: string | null;
   } = {}): void {
     frontDoor = mount(FrontDoorHost, {
       target: host,
       props: {
         methods,
-        lockedMethodIds: new Set(locked),
         lastUsedMode,
         onSelect,
-        onLockedSelect,
       },
     });
     flushSync();
@@ -229,7 +224,6 @@ describe("Create front door, method previews", () => {
     host = document.createElement("div");
     document.body.append(host);
     onSelect.mockReset();
-    onLockedSelect.mockReset();
     analytics.logCreateFrontDoorViewed.mockReset();
     analytics.logCreateMethodSelected.mockReset();
   });
@@ -463,21 +457,6 @@ describe("Create front door, method previews", () => {
     expect(playingMethod()).toBeNull();
   });
 
-  it("keeps the turns going when a guest taps a locked method", () => {
-    render({ locked: ["fuse"] });
-    setOpen(true);
-    advance(firstOpenTurnMs());
-
-    card("fuse").click();
-    flushSync();
-
-    expect(onLockedSelect).toHaveBeenCalledWith("fuse");
-    expect(onSelect).not.toHaveBeenCalled();
-    expect(playingMethod()).toBe("construct");
-    advance(TURN_CYCLE_MS);
-    expect(playingMethod()).toBe("generate");
-  });
-
   it("shows every finished picture and plays nothing under reduced motion", () => {
     document.documentElement.dataset.motionPreference = "reduce";
     render();
@@ -616,7 +595,6 @@ describe("Create front door, method previews", () => {
       method: "generate",
       source: "direct",
       isLastUsed: true,
-      isLocked: false,
     });
   });
 

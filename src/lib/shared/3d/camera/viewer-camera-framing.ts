@@ -22,6 +22,29 @@ export interface ViewerCameraFraming {
   target: { x: number; y: number; z: number };
 }
 
+/**
+ * How far a hosted cast's opening shot turns off the front-stage axis. Enough
+ * to show a performer standing directly behind another, little enough that
+ * both still read as facing the audience.
+ */
+export const HOSTED_CAST_OPENING_AZIMUTH_RAD = (28 * Math.PI) / 180;
+
+/** Swing a camera around its target on the ground plane, keeping its distance. */
+export function rotateEyeAboutTarget(
+  eye: { x: number; z: number },
+  target: { x: number; z: number },
+  angleRad: number
+): { x: number; z: number } {
+  const dx = eye.x - target.x;
+  const dz = eye.z - target.z;
+  const cos = Math.cos(angleRad);
+  const sin = Math.sin(angleRad);
+  return {
+    x: target.x + dx * cos + dz * sin,
+    z: target.z - dx * sin + dz * cos,
+  };
+}
+
 /** Level a joined opening at the rig's grid center without losing the elevated shot's fit distance. */
 export function levelJoinedViewerOpeningShot(
   shot: {

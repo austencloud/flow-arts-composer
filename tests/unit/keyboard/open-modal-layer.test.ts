@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
 import { hasOpenModalLayer } from "#lib/shared/keyboard/domain/shortcut-target-resolution.js";
 

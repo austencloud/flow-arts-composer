@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { createNativeViewerConnection } from "../../src/lib/shared/3d/unreal/state/native-viewer-connection.svelte";
 

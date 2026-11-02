@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * ConceptProgressTracker persistence/state integrity.
  *

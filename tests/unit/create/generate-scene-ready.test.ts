@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * The Generate preview scene reports ready once, when every cell it shows
  * has drawn, including across a resize (the card would otherwise rest on

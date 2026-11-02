@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Finished serialized card fronts must carry a QR that decodes to the exact
  * serialized URL and fills its slot. Rendering uses node-canvas and the

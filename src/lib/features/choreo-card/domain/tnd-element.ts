@@ -1,82 +1,34 @@
-export interface TnDElement {
-  readonly familyId: string;
-  readonly name: string;
-  readonly element: string;
-  readonly accentColor: string;
-  readonly darkComplement: string;
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { deriveTnDFromPictograph } from "#lib/shared/pictograph/shared/domain/utils/tnd-deriver.js";
+import {
+  TND_ELEMENTS as BASE_ELEMENTS,
+  type TnDElement as BaseTnDElement,
+} from "@tka/shape-domain";
+
+export {
+  MODE_ELEMENT,
+  elementFor,
+  type ElementIcons,
+  type ElementName,
+} from "@tka/shape-domain";
+
+/**
+ * The six elements live in @tka/shape-domain without icon paths, so a host
+ * outside the Composer can point at its own copies. The Composer's deck,
+ * cards and glyphs read `iconPath`, which this adapter adds back.
+ */
+export interface TnDElement extends Omit<BaseTnDElement, "element"> {
+  /** One of the six elements, or a stand-in such as the store's "cover" frame. */
+  readonly element: BaseTnDElement["element"] | (string & {});
   readonly iconPath: string;
-  /** CIELAB-tuned opacity (0–1) for card interior tint; compensates for each color's perceptual distance from white */
-  readonly cardTintOpacity: number;
-  /** Per-icon visual-size multiplier for display. Now 1 for every element: the
-   *  normalization is baked into the assets themselves (`/images/elements/norm/*`
-   *  — each glyph trimmed, perceptually sized, and centered in a uniform square
-   *  with padding), so no consumer needs a per-icon fudge factor. Kept as a hook
-   *  for any future asset that can't be pre-normalized. */
-  readonly iconScale: number;
 }
 
-export const TND_ELEMENTS: readonly TnDElement[] = [
-  {
-    familyId: "split-same",
-    name: "Split-Same",
-    element: "water",
-    accentColor: "#3568a0",
-    darkComplement: "#1a3a5e",
-    iconPath: "/images/elements/norm/water.png",
-    cardTintOpacity: 0.25,
-    iconScale: 1,
-  },
-  {
-    familyId: "tog-same",
-    name: "Tog-Same",
-    element: "earth",
-    accentColor: "#75A874",
-    darkComplement: "#2a4a29",
-    iconPath: "/images/elements/norm/earth.png",
-    cardTintOpacity: 0.15,
-    iconScale: 1,
-  },
-  {
-    familyId: "quarter-same",
-    name: "Quarter-Same",
-    element: "sun",
-    accentColor: "#ffde17",
-    darkComplement: "#7a6a00",
-    iconPath: "/images/elements/norm/sun.png",
-    cardTintOpacity: 0.09,
-    iconScale: 1,
-  },
-  {
-    familyId: "split-opp",
-    name: "Split-Opp",
-    element: "fire",
-    accentColor: "#f2673a",
-    darkComplement: "#6b1a0a",
-    iconPath: "/images/elements/norm/fire.png",
-    cardTintOpacity: 0.09,
-    iconScale: 1,
-  },
-  {
-    familyId: "tog-opp",
-    name: "Tog-Opp",
-    element: "air",
-    accentColor: "#bce4f7",
-    darkComplement: "#3a6a8b",
-    iconPath: "/images/elements/norm/air.png",
-    cardTintOpacity: 0.16,
-    iconScale: 1,
-  },
-  {
-    familyId: "quarter-opp",
-    name: "Quarter-Opp",
-    element: "moon",
-    accentColor: "#6a4199",
-    darkComplement: "#2a1540",
-    iconPath: "/images/elements/norm/moon.png",
-    cardTintOpacity: 0.09,
-    iconScale: 1,
-  },
-] as const;
+export const TND_ELEMENTS: readonly TnDElement[] = BASE_ELEMENTS.map(
+  (element) => ({
+    ...element,
+    iconPath: `/images/elements/norm/${element.element}.png`,
+  })
+);
 
 export const TND_BY_FAMILY: Readonly<Record<string, TnDElement>> =
   Object.fromEntries(TND_ELEMENTS.map((t) => [t.familyId, t]));
@@ -159,5 +111,3 @@ export function getTnDElementByIconPath(iconPath: string): TnDElement | null {
   const normalized = ICON_LEGACY[iconPath] ?? iconPath;
   return TND_ELEMENTS.find((t) => t.iconPath === normalized) ?? null;
 }
-import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
-import { deriveTnDFromPictograph } from "#lib/shared/pictograph/shared/domain/utils/tnd-deriver.js";

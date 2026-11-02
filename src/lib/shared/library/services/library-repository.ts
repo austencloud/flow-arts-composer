@@ -66,7 +66,10 @@ import {
 } from "#lib/shared/library/services/sequence-content-hasher.js";
 import { decideFork } from "#lib/shared/library/services/fork-decision.js";
 import { getTagMigrator } from "#lib/shared/library/get-tag-migrator.js";
-import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type {
+  SequenceCopyOrigin,
+  SequenceData,
+} from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type {
   LibraryStats,
   LibraryQueryOptions,
@@ -74,10 +77,14 @@ import type {
   LibrarySequencePage,
 } from "#lib/shared/library/domain/library-contract-types.js";
 import type {
+  LibraryOwnerProfile,
   LibrarySequence,
   SequenceVisibility,
 } from "#lib/shared/library/domain/models/library-sequence.js";
-import { createLibrarySequence } from "#lib/shared/library/domain/models/library-sequence.js";
+import {
+  asLibraryCopy,
+  createLibrarySequence,
+} from "#lib/shared/library/domain/models/library-sequence.js";
 import {
   getUserCollectionPath,
   getUserSequencesPath,
@@ -468,10 +475,16 @@ export class LibraryRepository {
       notes?: string;
       /** Refuse the write if the account captured by the caller changed. */
       expectedOwnerId?: string;
+      /**
+       * The caller knows this is another creator's sequence (the viewer
+       * does). The new record is the saver's private, credited copy.
+       */
+      copyOf?: SequenceCopyOrigin;
     }
   ): Promise<LibrarySequence> {
     const firestore = await getFirestoreInstance();
     const userId = this.ownerFor(overrides?.expectedOwnerId);
+    const copyOf = overrides?.copyOf;
 
     if (isEmptySequence(sequence)) {
       throw new LibraryError(
@@ -496,6 +509,11 @@ export class LibraryRepository {
       getDoc(userDocRef),
     ]);
     let isNewSequence = !existingDoc.exists();
+    // A copy shows its saver as owner, never the creator whose display fields
+    // the viewed sequence carried in.
+    const ownerProfile = ownerProfileFrom(
+      userProfileDoc.exists() ? userProfileDoc.data() : undefined
+    );
 
     // Compute content hash for the incoming sequence
     const incomingHash = await computeHash(sequence).catch(() => undefined);
@@ -551,22 +569,35 @@ export class LibraryRepository {
         );
         isNewSequence = true;
 
-        libSeq = createLibrarySequence(
-          { ...sequence, id: actualSequenceId },
-          userId,
-          {
-            // Forks default to public - TKA notation is meant to be shared
-            visibility: overrides?.visibility ?? "public",
-            notes: overrides?.notes,
-            source: "forked",
-            forkAttribution: {
-              originalSequenceId: parentId,
-              originalCreatorId: existingData?.ownerId ?? userId,
-              originalCreatorName: existingData?.ownerDisplayName ?? "",
-              forkedAt: new Date(),
-            },
-          }
-        );
+        libSeq = copyOf
+          ? // Still someone else's sequence: credit the creator, not the
+            // saver's older record at this id.
+            createLibrarySequence(
+              { ...sequence, id: actualSequenceId },
+              userId,
+              {
+                visibility: overrides?.visibility,
+                notes: overrides?.notes,
+                copyOf,
+                ownerProfile,
+              }
+            )
+          : createLibrarySequence(
+              { ...sequence, id: actualSequenceId },
+              userId,
+              {
+                // Forks default to public - TKA notation is meant to be shared
+                visibility: overrides?.visibility ?? "public",
+                notes: overrides?.notes,
+                source: "forked",
+                forkAttribution: {
+                  originalSequenceId: parentId,
+                  originalCreatorId: existingData?.ownerId ?? userId,
+                  originalCreatorName: existingData?.ownerDisplayName ?? "",
+                  forkedAt: new Date(),
+                },
+              }
+            );
       } else {
         // Same hash or no stored hash - normal metadata update
         const existing = this.mapDocToLibrarySequence(
@@ -589,12 +620,15 @@ export class LibraryRepository {
         }
       }
     } else {
+      // Public by default; a copy of someone else's sequence is private by
+      // default (createLibrarySequence owns both defaults).
       libSeq = createLibrarySequence(
         { ...sequence, id: actualSequenceId },
         userId,
         {
-          visibility: overrides?.visibility ?? "public",
+          visibility: overrides?.visibility,
           notes: overrides?.notes,
+          ...(copyOf && { copyOf, ownerProfile }),
         }
       );
     }
@@ -689,6 +723,35 @@ export class LibraryRepository {
       if (publishConflict) {
         libSeq = { ...libSeq, visibility: "private" };
       }
+    }
+
+    // Fallback for callers that cannot tell whose sequence this is (every
+    // entry but the viewer): the gallery says this id is another creator's
+    // post, so the new record is a copy of it and is credited as one.
+    if (
+      !copyOf &&
+      isNewSequence &&
+      libSeq.source !== "copied" &&
+      publishConflict?.name === "PublicSequenceOwnedElsewhereError"
+    ) {
+      const creatorId = publishConflict.claimedByOwnerId;
+      libSeq = asLibraryCopy(
+        libSeq,
+        {
+          sequenceId: libSeq.id,
+          creatorId,
+          // The incoming display fields are the creator's only when the
+          // sequence still names them as owner.
+          creatorName:
+            sequence.ownerId === creatorId
+              ? (sequence.ownerDisplayName ?? "")
+              : "",
+          ...(sequence.ownerId === creatorId && sequence.ownerAvatarUrl
+            ? { creatorPhotoUrl: sequence.ownerAvatarUrl }
+            : {}),
+        },
+        ownerProfile
+      );
     }
 
     // Write sequence document using setDoc - works offline, queues in Firestore cache
@@ -893,6 +956,8 @@ export class LibraryRepository {
       thumbnailUrl?: string;
       /** Forwarded to saveSequence's identity fence. */
       expectedOwnerId?: string;
+      /** Forwarded to saveSequence: another creator's sequence, saved as a copy. */
+      copyOf?: SequenceCopyOrigin;
     }
   ): Promise<LibrarySequence> {
     // Put the new thumbnail first, filter out duplicates so re-saves
@@ -939,6 +1004,7 @@ export class LibraryRepository {
         visibility: metadata.visibility,
         notes: metadata.notes,
         expectedOwnerId: metadata.expectedOwnerId,
+        ...(metadata.copyOf && { copyOf: metadata.copyOf }),
       });
     };
 
@@ -1161,10 +1227,22 @@ export class LibraryRepository {
       "library"
     );
 
+    // A new look on a sequence that stays public is also a cross-document
+    // change: the mirror carries `creatorIntent` (it is what public cards
+    // render), and its patch restamps the owner's projection stamps, so the
+    // owner write lands first and a failure reaches the caller.
+    const patchesPublicCreatorIntent =
+      !visibilityChanged &&
+      existing.visibility === "public" &&
+      updates.creatorIntent != null &&
+      Boolean(this.publicIndexSyncer);
+
     // Visibility is a cross-document invariant: the owner doc must land before
     // its public mirror is created or removed. Other metadata keeps the
     // existing optimistic, local-first behavior.
-    if (visibilityChanged) {
+    if (patchesPublicCreatorIntent) {
+      await updateWrite;
+    } else if (visibilityChanged) {
       try {
         await updateWrite;
       } catch (error) {
@@ -1196,6 +1274,13 @@ export class LibraryRepository {
       sequenceId,
       updates as Record<string, unknown>
     );
+
+    if (patchesPublicCreatorIntent && updates.creatorIntent) {
+      await this.publicIndexSyncer.updateCreatorIntent(
+        sequenceId,
+        updates.creatorIntent
+      );
+    }
 
     if (visibilityChanged && updates.visibility) {
       if (!this.publicIndexSyncer) {
@@ -2030,6 +2115,18 @@ export class LibraryRepository {
       sortDirection: "desc",
     });
   }
+}
+
+/** The saver's display fields from their users/{uid} profile, for a copy. */
+function ownerProfileFrom(
+  profile: DocumentData | undefined
+): LibraryOwnerProfile {
+  const displayName = profile?.["displayName"];
+  const avatarUrl = profile?.["photoURL"];
+  return {
+    ...(typeof displayName === "string" && displayName ? { displayName } : {}),
+    ...(typeof avatarUrl === "string" && avatarUrl ? { avatarUrl } : {}),
+  };
 }
 
 /** What a save that had to stay private tells the person, in plain words. */

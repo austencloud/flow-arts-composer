@@ -1,12 +1,12 @@
 /**
  * The flower the 8-beat 3:4 sequence traces.
  *
- * The Shape Matrix's own turn axis (src/lib/shared/shape-matrix/domain/
+ * The Shape Matrix's own turn axis (packages/shape-domain/src/flowers/
  * flower-signature.ts) only expresses ratios reachable through TKA turn
  * values on a plain 90-degree hand arc; it has no arc-angle parameter, so it
  * cannot represent a skewed 135-degree arc directly.
  *
- * The Theory surface (src/lib/shared/shape-matrix/domain/theory-flower.ts,
+ * The Theory surface (packages/shape-domain/src/flowers/theory-flower.ts,
  * built on the QfT model at src/lib/shared/notation/qft/qft-model.ts) draws
  * any rational hand:prop ratio directly, with no dependence on a 90-degree
  * base arc, exactly what this ratio needs. It IS the Shape Engine's answer

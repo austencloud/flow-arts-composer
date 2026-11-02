@@ -5,19 +5,19 @@ import { makeSpinRatio, THEORY_SPIN_RATIO_MAX_PART } from "@vtg/domain";
 import { calculate as calculateMandalaGeometry } from "#lib/shared/mandala/services/mandala-geometry-calculator.js";
 import { traceScaledPath } from "#lib/shared/notation/qft/qft-model.js";
 import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
-import { flowerKey } from "#lib/shared/shape-matrix/domain/flower-signature.js";
+import { flowerKey } from "@tka/shape-domain";
 import {
   buildTheoryAxis,
   theoryKnobs,
   theorySoloKnobs,
-} from "#lib/shared/shape-matrix/domain/theory-flower.js";
-import { buildModeRealizationCandidates } from "#lib/shared/shape-matrix/services/build-mode-realizations.js";
+} from "@tka/shape-domain";
+import { buildModeRealizationCandidates } from "@tka/shape-engine/services/build-mode-realizations.js";
 import {
   CURVE_MATCH_EPS,
   curveDistance,
-} from "#lib/shared/shape-matrix/services/__tests__/curve-distance.js";
-import { loadShapeMatrix } from "#lib/shared/shape-matrix/services/shape-matrix-flowers.js";
-import { MODE_ORDER } from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
+} from "@tka/shape-engine/services/__tests__/curve-distance.js";
+import { loadShapeMatrix } from "@tka/shape-engine/services/shape-matrix-flowers.js";
+import { MODE_ORDER } from "@tka/shape-domain";
 
 /*
  * The sweep Austen expected after the three-against-four report (feedback

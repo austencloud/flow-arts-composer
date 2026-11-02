@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * A bare key pressed inside an open drawer belongs to that drawer.
  *

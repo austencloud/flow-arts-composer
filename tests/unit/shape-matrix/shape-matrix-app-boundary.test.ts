@@ -2,8 +2,8 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { relative, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const MATRIX_ROOT = resolve("src/lib/shared/shape-matrix");
-const APP_ROOT = resolve("src/lib/shared/shape-matrix/app");
+const MATRIX_ROOT = resolve("packages/shape-engine/src");
+const APP_ROOT = resolve("packages/shape-engine/src/app");
 
 function readTree(directory: string): string {
   return readdirSync(directory)
@@ -58,7 +58,7 @@ describe("Shape Matrix app boundary", () => {
     );
 
     expect(pageSource).toContain(
-      "#lib/shared/shape-matrix/app/ShapeMatrixApp.svelte"
+      "@tka/shape-engine/app/ShapeMatrixApp.svelte"
     );
     expect(pageSource).toContain("mutateCurrentUrl");
     expect(pageSource).toContain("<ShapeMatrixApp {persistence} />");
@@ -66,7 +66,7 @@ describe("Shape Matrix app boundary", () => {
 
   it("reuses the canonical animation menu and pictograph carousel", () => {
     const drillSource = readFileSync(
-      resolve("src/lib/shared/shape-matrix/components/ShapeMatrixDrill.svelte"),
+      resolve("packages/shape-engine/src/components/ShapeMatrixDrill.svelte"),
       "utf8"
     );
 
@@ -92,7 +92,7 @@ describe("Shape Matrix app boundary", () => {
     // The Hands -> Props derivation lives in the shared relationship bridge.
     const bridgeSource = readFileSync(
       resolve(
-        "src/lib/shared/shape-matrix/components/PropRelationshipChipRow.svelte"
+        "packages/shape-engine/src/components/PropRelationshipChipRow.svelte"
       ),
       "utf8"
     );
@@ -207,7 +207,7 @@ describe("Shape Matrix app boundary", () => {
   it("does not reserve an empty hand-path row for ordinary prop relationships", () => {
     const propPickerSource = readFileSync(
       resolve(
-        "src/lib/shared/shape-matrix/components/PropRelationshipChipRow.svelte"
+        "packages/shape-engine/src/components/PropRelationshipChipRow.svelte"
       ),
       "utf8"
     );
@@ -227,25 +227,25 @@ describe("Shape Matrix app boundary", () => {
   it("customizes the animation over the grid, in one workspace", () => {
     const read = (path: string) => readFileSync(resolve(path), "utf8");
     const drillSource = read(
-      "src/lib/shared/shape-matrix/components/ShapeMatrixDrill.svelte"
+      "packages/shape-engine/src/components/ShapeMatrixDrill.svelte"
     );
     const theoryDetailSource = read(
-      "src/lib/shared/shape-matrix/app/components/ShapeMatrixTheoryDetail.svelte"
+      "packages/shape-engine/src/app/components/ShapeMatrixTheoryDetail.svelte"
     );
     const matrixPaneSource = read(
-      "src/lib/shared/shape-matrix/app/components/ShapeMatrixMatrixPane.svelte"
+      "packages/shape-engine/src/app/components/ShapeMatrixMatrixPane.svelte"
     );
     const theoryPaneSource = read(
-      "src/lib/shared/shape-matrix/app/components/ShapeMatrixTheoryPane.svelte"
+      "packages/shape-engine/src/app/components/ShapeMatrixTheoryPane.svelte"
     );
     const workspaceSource = read(
-      "src/lib/shared/shape-matrix/app/components/ShapeMatrixCustomizeWorkspace.svelte"
+      "packages/shape-engine/src/app/components/ShapeMatrixCustomizeWorkspace.svelte"
     );
     const shellSource = read(
-      "src/lib/shared/shape-matrix/app/components/ShapeMatrixAppShell.svelte"
+      "packages/shape-engine/src/app/components/ShapeMatrixAppShell.svelte"
     );
     const stateSource = read(
-      "src/lib/shared/shape-matrix/app/state/shape-matrix-app-state.svelte.ts"
+      "packages/shape-engine/src/app/state/shape-matrix-app-state.svelte.ts"
     );
     const dockSource = read(
       "src/lib/shared/sequence-viewer/components/ControlDock.svelte"
@@ -291,7 +291,7 @@ describe("Shape Matrix app boundary", () => {
     // Whether it is open is decided once, for the workspace, the panes that
     // go inert under it and the shell that rebalances the split for it.
     const customizeSource = read(
-      "src/lib/shared/shape-matrix/app/state/shape-matrix-customize.ts"
+      "packages/shape-engine/src/app/state/shape-matrix-customize.ts"
     );
     expect(customizeSource).toContain(
       'animation.activeSection ?? (app.propPickerOpen ? "props" : null)'
@@ -302,7 +302,7 @@ describe("Shape Matrix app boundary", () => {
     // The gear waits for a pair rather than answering Customize with a
     // workspace that closes at once.
     const stageActionsSource = read(
-      "src/lib/shared/shape-matrix/components/ShapeMatrixStageActions.svelte"
+      "packages/shape-engine/src/components/ShapeMatrixStageActions.svelte"
     );
     expect(stageActionsSource).toContain(
       "const hasPair = $derived(surfaceHasPair(appState));"
@@ -325,7 +325,7 @@ describe("Shape Matrix app boundary", () => {
     // Wide hosts put Customize alongside the realization actions, clear of
     // the animation. Compact hosts keep the AnimationPanel controls.
     const animationStateSource = read(
-      "src/lib/shared/shape-matrix/app/state/shape-matrix-animation-state.svelte.ts"
+      "packages/shape-engine/src/app/state/shape-matrix-animation-state.svelte.ts"
     );
     expect(drillSource).toMatch(
       /\{#if !appState \|\| appState\.compact\}[\s\S]*?<AnimationPanel/
@@ -346,7 +346,7 @@ describe("Shape Matrix app boundary", () => {
     // One owner for the key, and it is the app's registry rather than a
     // listener of this feature's own.
     const shortcutSource = read(
-      "src/lib/shared/shape-matrix/app/services/shape-matrix-playback-shortcut.ts"
+      "packages/shape-engine/src/app/services/shape-matrix-playback-shortcut.ts"
     );
     expect(shortcutSource).toContain("getKeyboardShortcutManager()");
     // Registering is not listening. Nothing on a public route or a standalone
@@ -388,7 +388,7 @@ describe("Shape Matrix app boundary", () => {
     );
     expect(shellSource).not.toContain("PropSelectionSheet");
     const focusWorkspaceSource = read(
-      "src/lib/shared/shape-matrix/app/components/ShapeMatrixFocusWorkspace.svelte"
+      "packages/shape-engine/src/app/components/ShapeMatrixFocusWorkspace.svelte"
     );
     expect(focusWorkspaceSource).toContain("<BentoPropGrid");
     expect(stageActionsSource).toContain("aria-pressed={open}");
@@ -438,7 +438,7 @@ describe("Shape Matrix app boundary", () => {
   it("offers prop choice once, under the animation", () => {
     const overflowSource = readFileSync(
       resolve(
-        "src/lib/shared/shape-matrix/app/components/ShapeMatrixOverflowMenu.svelte"
+        "packages/shape-engine/src/app/components/ShapeMatrixOverflowMenu.svelte"
       ),
       "utf8"
     );
@@ -452,7 +452,7 @@ describe("Shape Matrix app boundary", () => {
   it("marks the chosen relationship with more than a colour", () => {
     const chipSource = readFileSync(
       resolve(
-        "src/lib/shared/shape-matrix/components/RelationshipChoiceChip.svelte"
+        "packages/shape-engine/src/components/RelationshipChoiceChip.svelte"
       ),
       "utf8"
     );
@@ -473,25 +473,25 @@ describe("Shape Matrix app boundary", () => {
     // instead, so it is checked below for the entry rather than the scroller.
     const scrollerSource = readFileSync(
       resolve(
-        "src/lib/shared/shape-matrix/app/components/ShapeMatrixValueScroller.svelte"
+        "packages/shape-engine/src/app/components/ShapeMatrixValueScroller.svelte"
       ),
       "utf8"
     );
     const turnSource = readFileSync(
       resolve(
-        "src/lib/shared/shape-matrix/app/components/ShapeMatrixTurnControls.svelte"
+        "packages/shape-engine/src/app/components/ShapeMatrixTurnControls.svelte"
       ),
       "utf8"
     );
     const theorySource = readFileSync(
       resolve(
-        "src/lib/shared/shape-matrix/app/components/ShapeMatrixTheoryControls.svelte"
+        "packages/shape-engine/src/app/components/ShapeMatrixTheoryControls.svelte"
       ),
       "utf8"
     );
     const ratioEntrySource = readFileSync(
       resolve(
-        "src/lib/shared/shape-matrix/app/components/ShapeMatrixRatioEntry.svelte"
+        "packages/shape-engine/src/app/components/ShapeMatrixRatioEntry.svelte"
       ),
       "utf8"
     );
@@ -539,11 +539,11 @@ describe("Shape Matrix app boundary", () => {
     // mandala with the other prop hidden, so the pickers that only mean
     // something for a pair are gone rather than left inert.
     const gridSource = readFileSync(
-      resolve("src/lib/shared/shape-matrix/components/ShapeMatrixGrid.svelte"),
+      resolve("packages/shape-engine/src/components/ShapeMatrixGrid.svelte"),
       "utf8"
     );
     const drillSource = readFileSync(
-      resolve("src/lib/shared/shape-matrix/components/ShapeMatrixDrill.svelte"),
+      resolve("packages/shape-engine/src/components/ShapeMatrixDrill.svelte"),
       "utf8"
     );
     const shellSource = readFileSync(
@@ -624,7 +624,8 @@ describe("Shape Matrix app boundary", () => {
     // The route host writes the address; the app only asks for it.
     expect(stateSource).toContain("dependencies.link?.(snapshot())");
     expect(pageSource).toContain("writeShapeMatrixRouteState(url, snapshot);");
-    expect(shellSource).toContain("{#if appState.canShare}");
+    // A mirror host traces the pick instead of sharing it.
+    expect(shellSource).toContain("{#if appState.canShare && !mirror}");
     // The level is a difficulty to whoever opens the link.
     expect(shellSource).not.toContain("Kinetic Alphabet level");
     expect(popoverSource).not.toContain("Kinetic Alphabet level");
@@ -654,7 +655,7 @@ describe("Shape Matrix app boundary", () => {
 
   it("keeps each elemental button's visible words, element and mode in its accessible name", () => {
     const elementChipSource = readFileSync(
-      resolve("src/lib/shared/shape-matrix/components/ElementChipRow.svelte"),
+      resolve("packages/shape-engine/src/components/ElementChipRow.svelte"),
       "utf8"
     );
 
@@ -668,13 +669,13 @@ describe("Shape Matrix app boundary", () => {
   it("loads public base words from the checked-in snapshot, not Firebase", () => {
     const flowerSource = readFileSync(
       resolve(
-        "src/lib/shared/shape-matrix/services/rotation-style-archetypes.ts"
+        "packages/shape-engine/src/services/rotation-style-archetypes.ts"
       ),
       "utf8"
     );
     const realizationSource = readFileSync(
       resolve(
-        "src/lib/shared/shape-matrix/services/build-realization-sequence.ts"
+        "packages/shape-engine/src/services/build-realization-sequence.ts"
       ),
       "utf8"
     );

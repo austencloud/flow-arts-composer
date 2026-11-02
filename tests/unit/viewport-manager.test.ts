@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, expect, it, vi } from "vitest";
 import { ViewportManager } from "../../src/lib/shared/device/services/viewport-manager.svelte";
 

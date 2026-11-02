@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Audit repro: the cloud tier only answers for keys the cloud manifest has
  * already registered, and the manifest load is deferred to browser idle time.

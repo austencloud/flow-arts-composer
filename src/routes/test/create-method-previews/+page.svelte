@@ -9,8 +9,8 @@
    * drives both views, with the front door's hover and keyboard holds.
    *
    * `?view=front-door` renders the real front door alone, for the layout
-   * check: `count` (2 to 6 methods, in board order), `guest=1` (Free
-   * account badges), and `last` (a method id, or `none`; default Generate);
+   * check: `count` (2 to 6 methods, in board order) and `last` (a method
+   * id, or `none`; default Generate);
    * `w` and `h` (CSS px) size the board like /create's, which loses the
    * app's navigation.
    */
@@ -18,7 +18,6 @@
   import { page } from "$app/state";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import LastUsedBadge from "#lib/shared/components/LastUsedBadge.svelte";
-  import { isTabAccessible } from "#lib/shared/auth/domain/guest-access-config.js";
   import { CREATE_TABS } from "#lib/shared/navigation/config/tab-definitions.js";
   import CreateFrontDoor from "#lib/features/create/shared/components/CreateFrontDoor.svelte";
   import CreateMethodPreview from "#lib/features/create/shared/components/method-previews/CreateMethodPreview.svelte";
@@ -64,13 +63,6 @@
   const frontDoorLast =
     frontDoorLastParam === "none" ? null : frontDoorLastParam;
   const frontDoorMethods = methods.slice(0, frontDoorCount);
-  const frontDoorLocked: ReadonlySet<string> = new Set(
-    params.get("guest") === "1"
-      ? frontDoorMethods
-          .filter((method) => !isTabAccessible("create", method.id, "guest"))
-          .map((method) => method.id)
-      : []
-  );
   // The layout check passes /create's board size (`w`, `h`, in CSS px), so the
   // bench board gets the same container as the real one, which loses the
   // app's navigation. Without them the board fills the window.
@@ -89,7 +81,6 @@
   let initialPreference: string | undefined;
   /** The front door marks the last used method; Generate stands in for it. */
   const LAST_USED = "generate";
-  let guest = $state(false);
   /**
    * A portrait board's height: its card rows and the 16px gaps between them.
    * The front door's rows share their board's height the same way. A
@@ -101,11 +92,6 @@
           (Math.ceil(methods.length / 2) - 1) * 16
       : undefined
   );
-
-  /** As a guest, methods outside the guest tier carry the Free account badge. */
-  function lockedFor(id: string): boolean {
-    return guest && !isTabAccessible("create", id, "guest");
-  }
 
   const readyIds = new Set<string>();
   const turns = createMethodPreviewTurns({
@@ -179,16 +165,13 @@
     style:height={frontDoorHeight}
     data-count={frontDoorMethods.length}
     data-last={frontDoorLast ?? "none"}
-    data-guest={frontDoorLocked.size > 0}
   >
     <CreateFrontDoor
       methods={frontDoorMethods}
-      lockedMethodIds={frontDoorLocked}
       active={true}
       source="direct"
       lastUsedMode={frontDoorLast}
       onSelect={() => {}}
-      onLockedSelect={() => {}}
     />
   </div>
 {:else}
@@ -265,11 +248,6 @@
             onclick={() => showCardShape(key as CardShape)}>{card.label}</button
           >
         {/each}
-        <button
-          type="button"
-          aria-pressed={guest}
-          onclick={() => (guest = !guest)}>Guest</button
-        >
       </div>
       <div class="compositions">
         {#each ["inset", "edge"] as composition (composition)}
@@ -297,9 +275,7 @@
                     : undefined}
                   use:methodPreviewHold={{ turns, id: method.id }}
                 >
-                  {#if lockedFor(method.id)}
-                    <LastUsedBadge label={t("create_ui_account_badge")} />
-                  {:else if method.id === LAST_USED}
+                  {#if method.id === LAST_USED}
                     <LastUsedBadge />
                   {/if}
                   <span class="mock-stage">

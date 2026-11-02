@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { LocalPoseLabelRepository } from "#lib/features/lab/tabs/collision-lab/services/local-pose-label-repository.js";
 import type {

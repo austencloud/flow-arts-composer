@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Static contract test for the SequenceViewerShell host pattern.
  *

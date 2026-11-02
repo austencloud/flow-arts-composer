@@ -501,6 +501,25 @@ export class PublicSequencesLoader {
   }
 
   /**
+   * Patch a restamped look into the warm gallery cache, so the creator's own
+   * Browse and Creators cards show it without a refetch.
+   */
+  updateCreatorIntentInCache(
+    sequenceId: string,
+    creatorIntent: NonNullable<SequenceData["creatorIntent"]>
+  ): void {
+    if (!this.cachedSequences) return;
+    const index = this.cachedSequences.findIndex(
+      (sequence) => sequence.id === sequenceId
+    );
+    if (index < 0) return;
+
+    const next = [...this.cachedSequences];
+    next[index] = { ...next[index]!, creatorIntent };
+    this.cachedSequences = next;
+  }
+
+  /**
    * Force a fresh Firestore fetch regardless of cache state.
    * Used by the prefetcher to sync in the background after warming from IndexedDB.
    * Updates the in-memory cache and persists to IndexedDB offline cache.

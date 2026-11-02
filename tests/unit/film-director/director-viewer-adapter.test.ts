@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Task 3 of docs/superpowers/plans/2026-08-24-film-director-plane-axes.md:
  * "wire resolved planes into the viewer." Task 2 (already landed) taught

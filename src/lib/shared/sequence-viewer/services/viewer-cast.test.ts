@@ -11,7 +11,11 @@ import {
   createTunnelComposition,
 } from "../tunnel/tunnel-composition";
 import { DEFAULT_CONFIG } from "../tunnel/tunnel-config";
-import { deriveViewerCastLinks, isEnsembleView } from "./viewer-cast";
+import {
+  deriveViewerCastLinks,
+  isCastComposition,
+  isEnsembleView,
+} from "./viewer-cast";
 
 describe("viewer cast links", () => {
   it("has none without a composition", () => {
@@ -75,6 +79,26 @@ describe("viewer cast links", () => {
     ]);
   });
 
+  it("calls a tunnel a cast only when two performers dance their own sequences", async () => {
+    expect(isCastComposition(null)).toBe(false);
+    const sequence = { ...sequenceOf(FRONT), id: "lead-id", word: "DJII" };
+    const lead = createIndependentTunnelPerformer(sequence, 0, "Lead", {
+      sourceSequenceId: sequence.id,
+    });
+    const copy = createDerivedTunnelPerformer(lead.id, 1, [{ kind: "mirror" }]);
+    const generated = createTunnelComposition([lead, copy], {
+      formation: { ...DEFAULT_CONFIG, fold: 2 },
+    });
+    expect(isCastComposition(generated)).toBe(false);
+
+    const partners = await partnerTunnelComposition(
+      { front: "4UMY", back: "B7Y4" },
+      { ...sequenceOf(FRONT), id: "front-id", word: "DJII" },
+      { ...sequenceOf(PARTNER), id: "back-id", word: "KLMN" }
+    );
+    expect(isCastComposition(partners)).toBe(true);
+  });
+
   it("separates ensemble views from performer views", () => {
     const left = (leftPane: "animation" | "tunnel") => ({ leftPane });
     expect(isEnsembleView("tunnel", left("tunnel"))).toBe(true);
@@ -85,5 +109,12 @@ describe("viewer cast links", () => {
     expect(isEnsembleView("animation", left("animation"))).toBe(false);
     expect(isEnsembleView("animation-3d", left("animation"))).toBe(false);
     expect(isEnsembleView("card", left("tunnel"))).toBe(false);
+  });
+
+  it("treats a cast's 3D stage as an ensemble view", () => {
+    const left = { leftPane: "animation" as const };
+    expect(isEnsembleView("animation-3d", left, "cast")).toBe(true);
+    expect(isEnsembleView("animation-3d", left, "sequence")).toBe(false);
+    expect(isEnsembleView("animation", left, "cast")).toBe(false);
   });
 });

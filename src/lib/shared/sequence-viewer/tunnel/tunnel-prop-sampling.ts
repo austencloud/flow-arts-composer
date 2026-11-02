@@ -21,18 +21,36 @@ function tunnelStepFrameAt(
   offset = 0,
   speed = 1
 ): { idx: number; progress: number } | null {
-  if (length <= 0) return null;
+  const effectiveStep = tunnelEffectiveStepAt(
+    length,
+    currentStep,
+    offset,
+    speed
+  );
+  if (effectiveStep === null) return null;
+  return stepToIndexProgress(effectiveStep, length);
+}
 
-  let effectiveStep = currentStep;
+/**
+ * The playhead one tunnel layer performs at, on the same 1-indexed fractional
+ * scale as `currentStep` (the start position is below 1). Stagger and Speed
+ * shift and scale it, wrapped into the layer's own length. The 3D cast samples
+ * each performer here too, so 2D and 3D land on the same beat.
+ */
+export function tunnelEffectiveStepAt(
+  length: number,
+  currentStep: number,
+  offset = 0,
+  speed = 1
+): number | null {
+  if (length <= 0) return null;
   if (speed !== 1 || offset !== 0) {
     let beat = (currentStep - 1) * speed + offset;
     beat = ((beat % length) + length) % length;
-    effectiveStep = beat + 1;
-  } else if (currentStep - 1 >= length) {
-    effectiveStep = ((currentStep - 1) % length) + 1;
+    return beat + 1;
   }
-
-  return stepToIndexProgress(effectiveStep, length);
+  if (currentStep - 1 >= length) return ((currentStep - 1) % length) + 1;
+  return currentStep;
 }
 
 export function tunnelStepIndexAt(

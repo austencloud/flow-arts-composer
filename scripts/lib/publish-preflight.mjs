@@ -34,6 +34,33 @@ export function recordGreenPreflight(tree) {
   appendFileSync(greenListPath(), `${tree}\n`);
 }
 
+// Trees that came back red, `<tree>\t<when>\t<failing steps>` per line, so a
+// --push after a red pre-warm (scripts/preflight-watch.mjs) refuses at once
+// instead of rerunning the 22-minute replica. A later green for the tree wins.
+function redListPath() {
+  return join(dirname(greenListPath()), "publish-preflight-red.txt");
+}
+
+/** @returns {{ at: string, failed: string[] } | null} the tree's last red record */
+export function redPreflight(tree) {
+  const path = redListPath();
+  if (!existsSync(path)) return null;
+  const line = readFileSync(path, "utf8")
+    .split(/\r?\n/)
+    .findLast((entry) => entry.startsWith(`${tree}\t`));
+  if (!line) return null;
+  const [, at, failed = ""] = line.split("\t");
+  return { at, failed: failed ? failed.split(", ") : [] };
+}
+
+export function recordRedPreflight(tree, failed) {
+  const steps = failed.map((step) => step.replace(/[\t\r\n]+/g, " "));
+  appendFileSync(
+    redListPath(),
+    `${tree}\t${new Date().toISOString()}\t${steps.join(", ")}\n`
+  );
+}
+
 const SSH = [
   "-o",
   "BatchMode=yes",

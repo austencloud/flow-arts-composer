@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import type { AppSettings } from "#lib/shared/settings/domain/app-settings.js";

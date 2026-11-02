@@ -36,20 +36,20 @@
     runShapeMatrixGridReveal,
     SHAPE_MATRIX_REVEAL_CHOSEN_CLASS,
     type RevealAnimator,
-  } from "#lib/shared/shape-matrix/app/services/shape-matrix-reveal.js";
-  import ShapeMatrixMandalaArt from "#lib/shared/shape-matrix/components/ShapeMatrixMandalaArt.svelte";
-  import { flowerKey } from "#lib/shared/shape-matrix/domain/flower-signature.js";
-  import { propPairFromLegacy } from "#lib/shared/shape-matrix/domain/prop-pair.js";
+  } from "@tka/shape-engine/app/services/shape-matrix-reveal.js";
+  import ShapeMatrixMandalaArt from "@tka/shape-engine/components/ShapeMatrixMandalaArt.svelte";
+  import { flowerKey } from "@tka/shape-domain";
+  import { propPairFromLegacy } from "@tka/shape-engine/services/prop-pair.js";
   import {
     cellArtworkSrc,
     headerArtworkSrc,
     shapeMatrixArtworkPainterForColors,
-  } from "#lib/shared/shape-matrix/services/shape-matrix-artwork.js";
+  } from "@tka/shape-engine/services/shape-matrix-artwork.js";
   import {
     loadShapeMatrix,
     type ShapeMatrixData,
-  } from "#lib/shared/shape-matrix/services/shape-matrix-flowers.js";
-  import { createCellRevealFrame } from "#lib/shared/shape-matrix/services/shape-matrix-render.js";
+  } from "@tka/shape-engine/services/shape-matrix-flowers.js";
+  import { createCellRevealFrame } from "@tka/shape-engine/services/shape-matrix-render.js";
   import MethodPreviewFinger from "./MethodPreviewFinger.svelte";
   import {
     cellCenter,

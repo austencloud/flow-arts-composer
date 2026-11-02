@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { FocusTrap } from "#lib/shared/foundation/ui/drawer/focus-trap.js";
 

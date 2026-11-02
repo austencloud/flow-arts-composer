@@ -345,10 +345,11 @@
   }
 
   /* Disassembled, the combined result stays the hero in the middle and the
-     Blue and Red solos flank it, each between 0.3 and 0.5 of its size. The
-     hero takes the height when the width allows the smallest solo on each
-     side; otherwise the width decides (1 / 1.6 of it) and the solos keep
-     that smallest share. */
+     Blue and Red solos flank it. The hero takes the height when the width
+     allows a solo of at least 0.3 of it on each side; otherwise the width
+     decides (1 / 1.6 of it) and the solos keep that smallest share. Each solo
+     then fills its whole flank, up to the hero's own size, so a wide track
+     has no empty frame around them. */
   .decomposed .preview-unit {
     --hero: min(
       var(--frame-h),
@@ -357,7 +358,7 @@
     --solo: max(
       0px,
       min(
-        calc(var(--hero) / 2),
+        var(--hero),
         calc((var(--frame-w) - var(--hero)) / 2 - var(--solo-gap))
       )
     );

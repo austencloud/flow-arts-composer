@@ -8,7 +8,7 @@ import {
   runShapeMatrixDetailReveal,
   runShapeMatrixGridReveal,
   type RevealAnimator,
-} from "#lib/shared/shape-matrix/app/services/shape-matrix-reveal.js";
+} from "@tka/shape-engine/app/services/shape-matrix-reveal.js";
 
 interface Call {
   element: Element;

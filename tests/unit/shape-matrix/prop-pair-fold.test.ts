@@ -11,8 +11,8 @@ import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js"
 import {
   foldUntraceableProp,
   foldUntraceablePropPair,
-} from "#lib/shared/shape-matrix/domain/prop-pair.js";
-import { shapeMatrixTipPoint } from "#lib/shared/shape-matrix/services/shape-matrix-flowers.js";
+} from "@tka/shape-engine/services/prop-pair.js";
+import { shapeMatrixTipPoint } from "@tka/shape-engine/services/shape-matrix-flowers.js";
 
 describe("foldUntraceableProp", () => {
   it("agrees with shapeMatrixTipPoint (the fact build() throws on) for every prop type", () => {

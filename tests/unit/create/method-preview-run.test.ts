@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * A scene's turn is one cancellable timeline. Ending the turn ends every
  * wait at once, lifts the demo finger, and runs the scene's cleanups.

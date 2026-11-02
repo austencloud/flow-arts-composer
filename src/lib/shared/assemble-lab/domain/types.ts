@@ -31,4 +31,9 @@ export interface AnimationParams {
   durationMs: number;
   /** Center point of the prop SVG artwork (for transform origin correction) */
   propCenter: { x: number; y: number };
+  /**
+   * Called with the hop's eased progress (the value that places the prop):
+   * 0 as it starts, each frame, and 1 when it lands.
+   */
+  onProgress?: (eased: number) => void;
 }

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from "vitest";
 import { PANEL_MOTION_ATTRIBUTE } from "#lib/shared/panels/panel-motion.js";
 import {

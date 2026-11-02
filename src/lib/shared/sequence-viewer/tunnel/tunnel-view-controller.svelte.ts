@@ -53,6 +53,7 @@ import {
 } from "./tunnel-composition";
 import {
   deriveViewerCastLinks,
+  isCastComposition,
   type ViewerCastLink,
 } from "../services/viewer-cast";
 import {
@@ -236,6 +237,12 @@ export class TunnelViewController {
    * sequence's page. Empty for a generated tunnel of copies. */
   get castLinks(): ViewerCastLink[] {
     return deriveViewerCastLinks(this.#sources.getComposition?.());
+  }
+
+  /** Whether this tunnel is a cast: performers who each dance their own
+   * sequence, so every view of it shows all of them. */
+  get isCast(): boolean {
+    return isCastComposition(this.#sources.getComposition?.());
   }
 
   get colorPerformers(): Array<{ id: string; label: string }> {

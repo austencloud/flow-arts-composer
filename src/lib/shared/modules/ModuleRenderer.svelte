@@ -378,9 +378,15 @@
     <AuthNudge
       trigger={moduleNudgeTrigger(activeModule!)}
       onCreateAccount={() =>
-        authDrawerState.show("signup", moduleNudgeTrigger(activeModule!))}
+        authDrawerState.showOnRequest(
+          "signup",
+          moduleNudgeTrigger(activeModule!)
+        )}
       onLogin={() =>
-        authDrawerState.show("signin", moduleNudgeTrigger(activeModule!))}
+        authDrawerState.showOnRequest(
+          "signin",
+          moduleNudgeTrigger(activeModule!)
+        )}
       onDismiss={() => switchModule("create")}
     />
     <BootHoldRelease name="module-view" />

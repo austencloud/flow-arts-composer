@@ -6,6 +6,13 @@
  * The growth used to be 0.04 every 12 frames: a hand pulled in to 60% took two
  * seconds at 60 fps to reach full length again, four at 30 fps, and read as a
  * lingering let-go. It now grows at a fixed rate per second.
+ *
+ * Since 2026-10-16 the animator first looks for an elbow angle that clears the
+ * body at full reach, so only a grip no angle can reach cleanly is shortened.
+ * A hand pressed straight into the chest is never shortened (the grip is
+ * already inside every retry), and must come straight back. A hand reaching
+ * across the chest to the far side is shortened with no clear route at all,
+ * and that case used to skip the timed recovery and pop back in one frame.
  */
 
 import { Group, Vector3, type Object3D } from "three";
@@ -18,11 +25,14 @@ const HEIGHT_M = 1.905;
 
 const at = (node: Object3D) => node.getWorldPosition(new Vector3());
 
+/** Where the left grip goes for a quarter second before it is put back. */
+type Press = "into the chest" | "across to the far side";
+
 /**
- * Hold the left grip out in front of the shoulder, press it into the chest for
- * a quarter second, then put it back, and time the wrist's return at `fps`.
+ * Hold the left grip out in front of the shoulder, move it to `press` for a
+ * quarter second, then put it back, and time the wrist's return at `fps`.
  */
-async function recovery(fps: number) {
+async function recovery(fps: number, press: Press) {
   const { scene } = await loadRig(avatar("ch07"));
   const services = createAvatarServices({
     enableLocomotion: false,
@@ -49,7 +59,13 @@ async function recovery(fps: number) {
   const ahead = at(chain.root).add(
     new Vector3(0.05, -0.05, chain.totalLength * 0.8)
   );
-  const inChest = at(chest).add(new Vector3(0, 0, 0.05));
+  // The rig's left is +X, so -X reaches across the body: the forearm would
+  // have to pass through the torso to put the hand there.
+  const pressed = at(chest).add(
+    press === "into the chest"
+      ? new Vector3(0, 0, 0.05)
+      : new Vector3(-0.4, -0.05, 0.1)
+  );
   const dt = 1 / fps;
   const hold = (grip: Vector3) => {
     // Only a hand on a plane gets the elbow pole that body clearance steers.
@@ -67,7 +83,7 @@ async function recovery(fps: number) {
 
   for (let t = 0; t < 1; t += dt) hold(ahead);
   const settled = at(chain.effector);
-  for (let t = 0; t < 0.25; t += dt) hold(inChest);
+  for (let t = 0; t < 0.25; t += dt) hold(pressed);
 
   let seconds = 0;
   let firstMiss = 0;
@@ -83,8 +99,8 @@ async function recovery(fps: number) {
 
 describe.skipIf(!avatarAssetsPresent())("arm clearance recovery", () => {
   it("returns a pulled-in hand to its grip in the same short time at 30 and 120 fps", async () => {
-    const slow = await recovery(30);
-    const fast = await recovery(120);
+    const slow = await recovery(30, "across to the far side");
+    const fast = await recovery(120, "across to the far side");
     for (const run of [slow, fast]) {
       // The chest press must actually have pulled the hand in.
       expect(
@@ -94,5 +110,12 @@ describe.skipIf(!avatarAssetsPresent())("arm clearance recovery", () => {
       expect(run.seconds, "seconds until the wrist is back").toBeLessThan(0.4);
     }
     expect(Math.abs(slow.seconds - fast.seconds)).toBeLessThan(1 / 30 + 1e-6);
+  }, 120_000);
+
+  it("puts a hand that was never shortened straight back on its grip", async () => {
+    for (const fps of [30, 120]) {
+      const run = await recovery(fps, "into the chest");
+      expect(run.seconds, `seconds until the wrist is back at ${fps} fps`).toBeLessThanOrEqual(1 / 30 + 1e-6);
+    }
   }, 120_000);
 });

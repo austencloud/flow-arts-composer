@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect, vi, beforeAll, afterEach } from "vitest";
 import { createViewer3DStateForTest } from "../../3d-viewer/viewer3d-test-helpers.svelte";
 import { __resetWebGL2CapabilityForTests } from "#lib/shared/3d/capabilities/webgl-capabilities.js";

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Contract: the Shape Matrix tile and the detail hero are one artwork
  * primitive, and exactly one endpoint claims the shared-element name.
@@ -9,9 +10,9 @@ import { describe, expect, it } from "vitest";
 import {
   SHAPE_MATRIX_ACTIVE_MANDALA_NAME,
   SHAPE_MATRIX_ACTIVE_STAGE_NAME,
-} from "#lib/shared/shape-matrix/services/shape-matrix-artwork.js";
+} from "@tka/shape-engine/services/shape-matrix-artwork.js";
 
-const ROOT = resolve(process.cwd(), "src/lib/shared/shape-matrix");
+const ROOT = resolve(process.cwd(), "packages/shape-engine/src");
 const read = (relative: string) =>
   readFileSync(resolve(ROOT, relative), "utf8");
 const readSrc = (relative: string) =>

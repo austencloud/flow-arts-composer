@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   CONSTRUCT_PHONE_MAX_WIDTH,
+  CONSTRUCT_TYPE_RAIL_MIN_WIDTH,
   constructPhoneSplit,
   isConstructPhoneTier,
+  isConstructTypeRailTier,
 } from "./construct-phone-split";
 import { workspaceFloorHeight } from "../../shared/services/workspace-split";
 
@@ -22,6 +24,36 @@ describe("isConstructPhoneTier", () => {
 
   it("waits for a real measurement", () => {
     expect(isConstructPhoneTier({ width: 0, stacked: true })).toBe(false);
+  });
+});
+
+describe("isConstructTypeRailTier", () => {
+  it("gives the unfolded Fold's picker a left rail of type tabs", () => {
+    expect(isConstructTypeRailTier({ width: 707, stacked: true })).toBe(true);
+    expect(
+      isConstructTypeRailTier({
+        width: CONSTRUCT_TYPE_RAIL_MIN_WIDTH,
+        stacked: true,
+      })
+    ).toBe(true);
+  });
+
+  it("keeps the tab row on phones and off the phone tier", () => {
+    expect(isConstructTypeRailTier({ width: 375, stacked: true })).toBe(false);
+    expect(isConstructTypeRailTier({ width: 412, stacked: true })).toBe(false);
+    expect(
+      isConstructTypeRailTier({
+        width: CONSTRUCT_TYPE_RAIL_MIN_WIDTH - 1,
+        stacked: true,
+      })
+    ).toBe(false);
+    expect(
+      isConstructTypeRailTier({
+        width: CONSTRUCT_PHONE_MAX_WIDTH,
+        stacked: true,
+      })
+    ).toBe(false);
+    expect(isConstructTypeRailTier({ width: 707, stacked: false })).toBe(false);
   });
 });
 
@@ -73,7 +105,24 @@ describe("constructPhoneSplit", () => {
     expect(workspace + picker).toBe(870);
   });
 
-  it("caps the option size so a wide folded screen does not hoard height", () => {
-    expect(split(707, 3000)![1]).toBe(52 + 10 + 120 * 4 + 24);
+  it("caps the option size so a wide phone picker does not hoard height", () => {
+    // Just under the rail tier: the tab row still costs its 52px.
+    expect(split(599, 3000)![1]).toBe(52 + 10 + 120 * 4 + 24);
+  });
+
+  it("asks no height for the tab row once the tabs stand in a rail", () => {
+    // Unfolded Fold: the tabs sit in the left rail, so the picker's wanted
+    // height is the carousel padding and four capped rows alone.
+    expect(split(707, 3000)![1]).toBe(10 + 120 * 4 + 24);
+    expect(split(CONSTRUCT_TYPE_RAIL_MIN_WIDTH, 3000)![1]).toBe(
+      10 + 120 * 4 + 24
+    );
+  });
+
+  it("still keeps the unfolded Fold's two legible rows on the rail tier", () => {
+    // 707x772 with the app's nav bar: the floor, not the grid, sets the split.
+    const [workspace, picker] = split(707, 715)!;
+    expect(workspace).toBe(floorAt(707));
+    expect(workspace + picker).toBe(715);
   });
 });

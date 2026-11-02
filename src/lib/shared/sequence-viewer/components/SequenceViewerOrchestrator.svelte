@@ -400,7 +400,13 @@
         }
       : {}),
   };
-  const viewer3D = createLazyViewer3DState(() => viewer3DOptions);
+  // Read when 3D first opens, after the shell has named the subject: a cast
+  // page stages its whole cast itself (see tunnel/tunnel-cast-3d.ts) and must
+  // not inherit or overwrite the single-sequence viewer's remembered stage.
+  const viewer3D = createLazyViewer3DState(() => ({
+    ...viewer3DOptions,
+    hostOwnsCast: viewerState.subject === "cast",
+  }));
   setViewer3DContext(viewer3D);
   // Published for viewer-internal hosts whose store is built per pane rather
   // than here — today `Viewer3DCanvas`, which registers the `t3` capture.
@@ -570,8 +576,9 @@
   // Precedence: an explicit open option beats the URL, which beats localStorage.
   // A programmatic open (`openSequenceOverlay({ initialViewerMode })`, the scan
   // funnel's card-first boot) is a deliberate app action, so it lands last.
+  // It is seeded, not set: the device's remembered view stays its own.
   if (initialViewerMode) {
-    viewerState.setViewerMode(initialViewerMode);
+    viewerState.seedViewerMode(initialViewerMode);
     viewerState.setExportContext(null);
   }
   // The capture reads the RAW (pre-coercion) mode and split. The address bar

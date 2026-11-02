@@ -137,7 +137,7 @@
 
   @media (max-width: 480px) {
     .sequence-actions-button {
-      width: var(--min-touch-target); /* Maintain 48px minimum */
+      width: var(--workspace-action-width, var(--min-touch-target));
       height: var(--min-touch-target);
       font-size: var(--font-size-base);
     }
@@ -145,7 +145,7 @@
 
   @media (max-width: 320px) {
     .sequence-actions-button {
-      width: var(--min-touch-target); /* NEVER below 48px for accessibility */
+      width: var(--workspace-action-width, var(--min-touch-target));
       height: var(--min-touch-target);
       font-size: var(--font-size-sm);
     }

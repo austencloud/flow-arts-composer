@@ -1018,7 +1018,8 @@ instead of showing an empty shell.
         </PanelButton>
         <PanelButton
           variant="secondary"
-          onclick={() => authDrawerState.show("signup", "sync-library")}
+          onclick={() =>
+            authDrawerState.showOnRequest("signup", "sync-library")}
         >
           {t("browse_ui_create_account")}
         </PanelButton>
@@ -1099,7 +1100,8 @@ instead of showing an empty shell.
           </PanelButton>
           <PanelButton
             variant="secondary"
-            onclick={() => authDrawerState.show("signup", "sync-library")}
+            onclick={() =>
+              authDrawerState.showOnRequest("signup", "sync-library")}
           >
             {t("browse_ui_create_account")}
           </PanelButton>

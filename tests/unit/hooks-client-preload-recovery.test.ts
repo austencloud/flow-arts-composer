@@ -25,8 +25,30 @@ describe("production dynamic-import recovery", () => {
     expect(preloadHandler).toContain("window.location.replace");
     // The recovery must leave a breadcrumb: the root layout strips ?fresh=
     // during boot, so this marker is the only trace of the reload.
-    expect(preloadHandler).toContain("markChunkRecoveryReload()");
+    expect(preloadHandler).toContain("markChunkRecoveryReload(step)");
     expect(preloadHandler).not.toContain("event.preventDefault()");
+  });
+
+  it("escalates a repeat failure instead of leaving a dead page", () => {
+    const preloadHandler = between(
+      'window.addEventListener("vite:preloadError"',
+      "// Report unhandled promise rejections"
+    );
+
+    // One soft and one hard reload per minute, then the notice; the counting
+    // itself is covered in chunk-recovery-marker.test.ts.
+    expect(preloadHandler).toContain("claimChunkRecoveryStep()");
+    expect(preloadHandler).toContain("forceFreshReload()");
+    expect(preloadHandler).toContain("showChunkLoadFailureNotice()");
+    // The hard path must not need a lazy chunk: the chunk graph is what broke.
+    expect(hooksSource).toContain(
+      'import { forceFreshReload } from "#lib/shared/foundation/services/force-fresh.js";'
+    );
+    const notice = between(
+      "function showChunkLoadFailureNotice",
+      "// Production: auto-recover from stale chunks"
+    );
+    expect(notice).not.toContain("import(");
   });
 
   it("keeps the expected rejected import quiet while the page exits", () => {
@@ -41,5 +63,8 @@ describe("production dynamic-import recovery", () => {
       "Failed to fetch dynamically imported module"
     );
     expect(rejectionHandler).toContain("Importing a module script failed");
+    expect(rejectionHandler).toContain(
+      "error loading dynamically imported module"
+    );
   });
 });

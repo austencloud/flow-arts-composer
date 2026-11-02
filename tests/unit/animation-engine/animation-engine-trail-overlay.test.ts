@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * An engine builds the GPU trail layer unless its host opts out before
  * initialize(): the host's choice has to reach the lifecycle manager's init

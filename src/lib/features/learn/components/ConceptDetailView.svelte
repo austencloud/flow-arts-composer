@@ -568,4 +568,41 @@ Supports two navigation modes:
       display: none;
     }
   }
+
+  /* Phone: one 48px strip is the lesson's only header. Back on the left,
+     the stage title centred (LessonStageFrame lays the h1 into this row),
+     Read and Review as icons on the right. The lesson is the hero, so the
+     buttons drop to 40px (Austen's phone policy waives the 44px floor). */
+  @media (max-width: 639.98px), (max-width: 767.98px) and (max-height: 700px) {
+    .header-bar {
+      height: 3rem;
+      padding: 0 0.375rem;
+      gap: 0.375rem;
+    }
+
+    .header-actions {
+      gap: 0.375rem;
+    }
+
+    .back-button {
+      min-height: 2.5rem;
+      padding: 0 0.75rem 0 0.625rem;
+      gap: 0.375rem;
+    }
+
+    .reference-link,
+    .mode-toggle {
+      width: 2.5rem;
+      min-width: 2.5rem;
+      height: 2.5rem;
+      min-height: 2.5rem;
+      padding: 0;
+      justify-content: center;
+    }
+
+    /* The link keeps its name in aria-label. */
+    .reference-link span {
+      display: none;
+    }
+  }
 </style>

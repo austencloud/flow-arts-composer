@@ -1218,5 +1218,6 @@ describe("GooRenderer3D", () => {
     expect(pools.some((pool) => pool.x > 2.5 && pool.fade === 1)).toBe(true);
     puddles.dispose();
     material.dispose();
-  });
+    // About 20 s alone on d1; a full run on a shared machine can triple it.
+  }, 120_000);
 });

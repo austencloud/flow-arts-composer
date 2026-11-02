@@ -1,5 +1,7 @@
 import type { AuthNudgeTrigger } from "../domain/auth-nudge-trigger";
 import { AUTH_NUDGE_TEXTS } from "../domain/auth-nudge-trigger";
+import { authNudgeCopy } from "../domain/auth-prompt-copy";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import { trackAuthSurfaceOpened } from "#lib/shared/analytics/auth-events.js";
 import {
@@ -33,6 +35,58 @@ function hasSeenGuestSaveNudge(): boolean {
   }
 }
 
+/**
+ * One ask, then quiet (Austen, 2026-10-31). A visitor who closed the sheet
+ * four times in 19 minutes left. Once a guest closes a sheet a gate opened,
+ * or lets the first-save invitation go, any gate that fires within the next
+ * day shows a toast instead of the sheet. The toast says what an account
+ * gives and offers "Create account". A tap on a Sign in or Create account button still opens
+ * the sheet (showOnRequest, or show() without a reason). Signing in clears it.
+ */
+const GATE_DISMISSED_AT_KEY = "tka-auth-gate-dismissed-at";
+export const AUTH_GATE_COOLDOWN_MS = 24 * 60 * 60 * 1000;
+const GATE_COOLDOWN_TOAST_DURATION_MS = 6_000;
+let gateDismissedAt: number | null = null;
+let gateCooldownToastId: string | null = null;
+
+function readGateDismissedAt(): number | null {
+  if (gateDismissedAt !== null) return gateDismissedAt;
+  try {
+    const stored = Number(localStorage.getItem(GATE_DISMISSED_AT_KEY));
+    return Number.isFinite(stored) && stored > 0 ? stored : null;
+  } catch {
+    return null;
+  }
+}
+
+function recordGateDismissal() {
+  gateDismissedAt = Date.now();
+  try {
+    localStorage.setItem(GATE_DISMISSED_AT_KEY, String(gateDismissedAt));
+  } catch {
+    /* The in-memory time still quiets this page. */
+  }
+}
+
+function clearGateDismissal() {
+  gateDismissedAt = null;
+  try {
+    localStorage.removeItem(GATE_DISMISSED_AT_KEY);
+  } catch {
+    /* Nothing stored to clear. */
+  }
+}
+
+function gateCoolingDown(): boolean {
+  const at = readGateDismissedAt();
+  return at !== null && Date.now() - at < AUTH_GATE_COOLDOWN_MS;
+}
+
+function removeGateCooldownToast() {
+  if (gateCooldownToastId) removeToast(gateCooldownToastId, "programmatic");
+  gateCooldownToastId = null;
+}
+
 let _open = $state(false);
 let _initialMode = $state<"signin" | "signup">("signup");
 // Why the drawer is opening (e.g. "export"), so AuthModal can show that
@@ -43,6 +97,10 @@ let _reason = $state<AuthNudgeTrigger | null>(null);
 // The sequence the person was saving or sharing when the sheet opened. The
 // sheet plays it on its art; without one it plays a showcase sequence.
 let _artifact = $state.raw<SequenceData | null>(null);
+// Whether a gate opened the sheet (show() with a reason) rather than a tap on
+// a Sign in or Create account button. Only closing a gate's sheet starts the
+// day of quiet.
+let _openedByGate = false;
 
 /**
  * The sheet's code arrives through a lazy import, so an ask shows nothing
@@ -112,9 +170,14 @@ export const authDrawerState = {
       announcement: "polite",
       action: {
         label: "Create account",
-        onClick: () => this.show("signup", "guest-first-save"),
+        onClick: () => this.showOnRequest("signup", "guest-first-save"),
       },
       ...options,
+      // Closing this invitation, or letting it run out, is a "not now".
+      onDismiss: () => {
+        recordGateDismissal();
+        options.onDismiss?.();
+      },
     });
     return true;
   },
@@ -153,15 +216,50 @@ export const authDrawerState = {
     }
     if (status === "error" && _open) {
       showFeedbackToast();
-      this.hide();
+      this.close();
     }
   },
+  /**
+   * A gate asks for an account. Within a day of the guest closing a sheet
+   * that named a reason, this shows the reason's one line in a toast with a
+   * "Create account" action instead of opening the sheet. Without a reason it
+   * is a plain account button and always opens.
+   */
   show(
     mode: "signin" | "signup" = "signup",
     reason?: AuthNudgeTrigger,
     artifact?: SequenceData | null
   ) {
+    if (reason && !_open && gateCoolingDown()) {
+      this.dismissGuestSaveNudge();
+      removeGateCooldownToast();
+      gateCooldownToastId = showToast({
+        message: authNudgeCopy(reason),
+        type: "info",
+        duration: GATE_COOLDOWN_TOAST_DURATION_MS,
+        announcement: "polite",
+        action: {
+          label: t("auth_nudge_create_account"),
+          onClick: () => this.showOnRequest(mode, reason, artifact),
+        },
+      });
+      return;
+    }
+    this.showOnRequest(mode, reason, artifact);
+    _openedByGate = Boolean(reason);
+  },
+  /**
+   * The person tapped Sign in or Create account. Always opens the sheet, with
+   * the reason's copy when one is given, whatever the cooldown says.
+   */
+  showOnRequest(
+    mode: "signin" | "signup" = "signup",
+    reason?: AuthNudgeTrigger,
+    artifact?: SequenceData | null
+  ) {
     this.dismissGuestSaveNudge();
+    removeGateCooldownToast();
+    _openedByGate = false;
     if (_open && _initialMode === mode && _reason === (reason ?? null)) {
       // The sheet is modal, so the same ask can only repeat while its code
       // has not put it on screen. Answer in words instead of swallowing it.
@@ -180,10 +278,22 @@ export const authDrawerState = {
       auth_mode: mode,
     });
   },
+  /** The person closed the sheet. Closing one a gate opened is a "not now". */
   hide() {
+    if (_open && _openedByGate) recordGateDismissal();
+    this.close();
+  },
+  /** Close without counting it as the person's answer. */
+  close() {
     clearFeedbackTimer();
     _open = false;
+    _openedByGate = false;
     _artifact = null;
+  },
+  /** A full account signed in (or the person signed out): gates may ask again. */
+  clearGateCooldown() {
+    clearGateDismissal();
+    removeGateCooldownToast();
   },
   /**
    * Called by the auth listener whenever the user's authenticated status
@@ -195,6 +305,7 @@ export const authDrawerState = {
   reset() {
     if (guestSaveToastId) removeToast(guestSaveToastId, "programmatic");
     guestSaveToastId = null;
+    removeGateCooldownToast();
     clearFeedbackTimer();
     removeFeedbackToast();
     _hostStatus = "idle";

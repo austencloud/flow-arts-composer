@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Unowned saves are adopted by an ANONYMOUS identity, and by nothing else.
  *

@@ -19,7 +19,7 @@
     renderGateTarget,
   } from "#lib/shared/render-gating/render-activity-gate.js";
   import { reducedMotion } from "#lib/shared/transitions/motion.js";
-  import { SHAPE_MATRIX_GUIDE_COLORS } from "#lib/shared/shape-matrix/services/shape-matrix-render.js";
+  import { SHAPE_MATRIX_GUIDE_COLORS } from "@tka/shape-engine/services/shape-matrix-render.js";
   import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
 
   let { panels }: { panels: RatioSwapPanel[] } = $props();

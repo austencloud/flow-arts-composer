@@ -12,7 +12,7 @@ import {
   type ThirdOrderSourceTarget,
   type ThirdOrderTimingMode,
 } from "../domain/third-order-composition";
-import type { VtgMode } from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
+import type { VtgMode } from "@tka/shape-domain";
 import type { SpinStyle } from "@vtg/domain";
 import type { ProjectedTrajectorySet } from "#lib/shared/mandala/domain/trajectory-types.js";
 import {

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Boot contract for the desktop offline asset runtime.
  *

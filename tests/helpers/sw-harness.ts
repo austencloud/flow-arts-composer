@@ -354,9 +354,15 @@ export function createSwHarness(options: SwHarnessOptions = {}) {
     return responsePromise ?? Promise.resolve(null);
   }
 
-  /** Fires the SW's `message` listeners with a { data } event (postMessage). */
-  function dispatchMessage(data: unknown): void {
-    const event = { data };
+  /**
+   * Fires the SW's `message` listeners with a { data, ports } event
+   * (postMessage, optionally with a MessageChannel port to reply on).
+   */
+  function dispatchMessage(
+    data: unknown,
+    ports: Array<{ postMessage: (message: unknown) => void }> = []
+  ): void {
+    const event = { data, ports };
     for (const fn of listeners.get("message") ?? []) fn(event);
   }
 

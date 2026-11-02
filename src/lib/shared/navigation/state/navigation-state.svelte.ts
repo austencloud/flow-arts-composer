@@ -666,6 +666,10 @@ export function createNavigationState() {
 
     setCurrentModule,
     setActiveTab,
+    /** The tab this module last showed on this device, if any. */
+    savedTabFor(moduleId: string): string | null {
+      return loadModuleTab(moduleId);
+    },
     openModuleHome,
     openCreateFrontDoor,
     isModuleHomeOpen(moduleId: ModuleId) {

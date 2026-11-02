@@ -12,7 +12,7 @@
 <script lang="ts">
   import { MediaQuery } from "svelte/reactivity";
   import LazyMount from "#lib/shared/components/LazyMount.svelte";
-  import MandalaHeroLayer from "#lib/shared/shape-matrix/components/MandalaHeroLayer.svelte";
+  import MandalaHeroLayer from "@tka/shape-engine/components/MandalaHeroLayer.svelte";
   import { buildYutaCapSequence } from "./yuta-cap-sequence";
   import { setPerHand } from "#lib/shared/animation-engine/services/tip-effect-resolver.js";
   import { setTipPointOverrideProvider } from "#lib/shared/animation-engine/domain/types/prop-tip-points.js";

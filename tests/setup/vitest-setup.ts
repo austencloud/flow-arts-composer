@@ -1,7 +1,16 @@
-import "@testing-library/jest-dom";
 import { vi } from "vitest";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+
+// Most files run in the node-client environment (no DOM); a file that needs
+// one opts in with `// @vitest-environment jsdom`. Everything below that
+// touches `window` or `document` runs only in those files. The fetch shim,
+// the ImageData polyfill and every `vi.mock` apply to both.
+const hasDom = typeof window !== "undefined" && typeof document !== "undefined";
+
+if (hasDom) {
+  await import("@testing-library/jest-dom");
+}
 
 // Serve root-relative URLs out of `static/`, the way the real server does.
 //
@@ -61,19 +70,21 @@ globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
 }) as typeof globalThis.fetch;
 
 // Mock browser APIs BEFORE any imports that might use them
-Object.defineProperty(window, "matchMedia", {
-  writable: true,
-  value: vi.fn().mockImplementation((query) => ({
-    matches: query === "(pointer: fine)" ? true : false, // Return true for pointer: fine
-    media: query,
-    onchange: null,
-    addListener: vi.fn(), // deprecated
-    removeListener: vi.fn(), // deprecated
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-  })),
-});
+if (hasDom) {
+  Object.defineProperty(window, "matchMedia", {
+    writable: true,
+    value: vi.fn().mockImplementation((query) => ({
+      matches: query === "(pointer: fine)" ? true : false, // Return true for pointer: fine
+      media: query,
+      onchange: null,
+      addListener: vi.fn(), // deprecated
+      removeListener: vi.fn(), // deprecated
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })),
+  });
+}
 
 // Mock DOM APIs for document.
 //
@@ -136,68 +147,70 @@ if (typeof (globalThis as { ImageData?: unknown }).ImageData === "undefined") {
   }
   (globalThis as { ImageData?: unknown }).ImageData = ImageDataShim;
 }
-Object.defineProperty(document, "createElement", {
-  writable: true,
-  value: vi.fn().mockImplementation((tagName: string) => {
-    if (tagName.toLowerCase() === "canvas") {
-      const canvas = {
-        tagName: "CANVAS",
-        width: 0,
-        height: 0,
+if (hasDom) {
+  Object.defineProperty(document, "createElement", {
+    writable: true,
+    value: vi.fn().mockImplementation((tagName: string) => {
+      if (tagName.toLowerCase() === "canvas") {
+        const canvas = {
+          tagName: "CANVAS",
+          width: 0,
+          height: 0,
+          style: {},
+          getContext: vi.fn().mockImplementation((kind: string) => {
+            if (kind !== "2d") return null;
+            return {
+              fillStyle: "#000000",
+              fillRect: vi.fn(),
+              clearRect: vi.fn(),
+              drawImage: vi.fn(),
+              getImageData: vi
+                .fn()
+                .mockImplementation(
+                  (_x: number, _y: number, w: number, h: number) =>
+                    new ImageData(w, h)
+                ),
+            };
+          }),
+          toDataURL: vi.fn(() => "data:image/png;base64,"),
+          toBlob: vi.fn((cb: (b: Blob | null) => void) => cb(new Blob())),
+          addEventListener: vi.fn(),
+          removeEventListener: vi.fn(),
+          dispatchEvent: vi.fn(),
+        };
+        return canvas;
+      }
+
+      const element = {
+        tagName: tagName.toUpperCase(),
         style: {},
-        getContext: vi.fn().mockImplementation((kind: string) => {
-          if (kind !== "2d") return null;
-          return {
-            fillStyle: "#000000",
-            fillRect: vi.fn(),
-            clearRect: vi.fn(),
-            drawImage: vi.fn(),
-            getImageData: vi
-              .fn()
-              .mockImplementation(
-                (_x: number, _y: number, w: number, h: number) =>
-                  new ImageData(w, h)
-              ),
-          };
-        }),
-        toDataURL: vi.fn(() => "data:image/png;base64,"),
-        toBlob: vi.fn((cb: (b: Blob | null) => void) => cb(new Blob())),
+        href: "",
+        download: "",
+        click: vi.fn(),
+        appendChild: vi.fn(),
+        removeChild: vi.fn(),
+        remove: vi.fn(),
+        setAttribute: vi.fn(),
+        removeAttribute: vi.fn(),
+        getAttribute: vi.fn(() => null),
         addEventListener: vi.fn(),
         removeEventListener: vi.fn(),
         dispatchEvent: vi.fn(),
       };
-      return canvas;
-    }
-
-    const element = {
-      tagName: tagName.toUpperCase(),
-      style: {},
-      href: "",
-      download: "",
-      click: vi.fn(),
-      appendChild: vi.fn(),
-      removeChild: vi.fn(),
-      remove: vi.fn(),
-      setAttribute: vi.fn(),
-      removeAttribute: vi.fn(),
-      getAttribute: vi.fn(() => null),
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-      dispatchEvent: vi.fn(),
-    };
-    return element;
-  }),
-});
-
-// Mock document.body if not already available
-if (!document.body) {
-  Object.defineProperty(document, "body", {
-    writable: true,
-    value: {
-      appendChild: vi.fn(),
-      removeChild: vi.fn(),
-    },
+      return element;
+    }),
   });
+
+  // Mock document.body if not already available
+  if (!document.body) {
+    Object.defineProperty(document, "body", {
+      writable: true,
+      value: {
+        appendChild: vi.fn(),
+        removeChild: vi.fn(),
+      },
+    });
+  }
 }
 
 // Mock SvelteKit globals for tests

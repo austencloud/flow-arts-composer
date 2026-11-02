@@ -25,8 +25,8 @@
   import Sentences from "../_components/Sentences.svelte";
   import { sentences } from "../_components/sentences";
   import GuideSeo from "../level-1/_components/GuideSeo.svelte";
-  import ShapeMatrixGrid from "#lib/shared/shape-matrix/components/ShapeMatrixGrid.svelte";
-  import ShapeMatrixMandalaArt from "#lib/shared/shape-matrix/components/ShapeMatrixMandalaArt.svelte";
+  import ShapeMatrixGrid from "@tka/shape-engine/components/ShapeMatrixGrid.svelte";
+  import ShapeMatrixMandalaArt from "@tka/shape-engine/components/ShapeMatrixMandalaArt.svelte";
   import DifficultyBadge from "#lib/shared/components/DifficultyBadge.svelte";
   import RatioSwapMotion, {
     type RatioSwapPanel,
@@ -36,13 +36,13 @@
     CLUB_ARTWORK_PAINTER,
     cellArtworkSrc,
     headerArtworkSrc,
-  } from "#lib/shared/shape-matrix/services/shape-matrix-artwork.js";
+  } from "@tka/shape-engine/services/shape-matrix-artwork.js";
   import {
     loadShapeMatrix,
     type ShapeMatrixData,
-  } from "#lib/shared/shape-matrix/services/shape-matrix-flowers.js";
-  import { applyFilter } from "#lib/shared/shape-matrix/domain/filter-flower-axis.js";
-  import { matrixFiltersForSize } from "#lib/shared/shape-matrix/domain/matrix-size-preset.js";
+  } from "@tka/shape-engine/services/shape-matrix-flowers.js";
+  import { applyFilter } from "@tka/shape-domain";
+  import { matrixFiltersForSize } from "@tka/shape-domain";
   import {
     buildFloatAxis,
     buildShapeMatrixAxis,
@@ -54,9 +54,9 @@
     type RotatingFlower,
     type RotatingFlowerOri,
     type ShapePathStyle,
-  } from "#lib/shared/shape-matrix/domain/flower-signature.js";
-  import { matrixTurnsForLevel } from "#lib/shared/shape-matrix/domain/matrix-turn-band.js";
-  import { SHAPE_MATRIX_LEVELS } from "#lib/shared/shape-matrix/app/shape-matrix-levels.js";
+  } from "@tka/shape-domain";
+  import { matrixTurnsForLevel } from "@tka/shape-domain";
+  import { SHAPE_MATRIX_LEVELS } from "@tka/shape-engine/app/shape-matrix-levels.js";
   import {
     levelForTurnValue,
     levelForTurns,
@@ -70,7 +70,7 @@
     ORIGINAL_SHAPE_MATRIX_URL,
     SHAPE_ENGINE_SHORT_NAME,
     SPIN_SCIENCE_URL,
-  } from "#lib/shared/shape-matrix/app/shape-engine-identity.js";
+  } from "@tka/shape-engine/app/shape-engine-identity.js";
   import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
 

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import "fake-indexeddb/auto";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";

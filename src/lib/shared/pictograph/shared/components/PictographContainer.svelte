@@ -42,7 +42,7 @@ with pre-prepared data for better performance.
   import type { PictographData } from "../domain/models/pictograph-data";
   import { isVisibleMotion } from "../domain/models/motion-data";
   import { describePictograph } from "../domain/utils/pictograph-description";
-  import { derivePropElementalTypeForStep } from "#lib/shared/shape-matrix/domain/prop-relationship.js";
+  import { derivePropElementalTypeForStep } from "#lib/shared/pictograph/shared/domain/utils/prop-elemental-type.js";
   import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
   import type { PropType } from "../../prop/domain/enums/prop-type";
   import {

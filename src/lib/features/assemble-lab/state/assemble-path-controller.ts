@@ -75,6 +75,9 @@ export function createAssemblePathController(
     );
 
     document.phase = "animating";
+    // The hop starts at 0 in the same update that appends the step, so a
+    // mandala drawing the new beat in starts from the old picture.
+    document.hopProgress = 0;
     const animationPromise = onAnimationRequest
       ? onAnimationRequest(step)
       : Promise.resolve();
@@ -95,6 +98,7 @@ export function createAssemblePathController(
       await animationPromise;
     } finally {
       document.phase = "building";
+      document.hopProgress = null;
       const handSteps =
         hand === HandSide.LEFT ? document.leftSteps : document.rightSteps;
       history.recordSnapshot(

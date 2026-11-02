@@ -61,6 +61,9 @@ const SequenceSaveEventSchema = z
             "unspecified",
           ])
           .optional(),
+        // Present only when the save copied another creator's sequence.
+        // `source` above is the UI path, so the library origin is its own key.
+        sequenceSource: z.literal("copied").optional(),
       })
       .strict(),
   })

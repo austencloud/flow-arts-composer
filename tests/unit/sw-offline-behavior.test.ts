@@ -359,6 +359,70 @@ describe("sw.js offline navigation fallbacks", () => {
   });
 });
 
+describe("sw.js ?fresh= recovery navigations", () => {
+  // Fix: stale-shell crash loop (Oct 28). hooks.client.ts reloads with
+  // ?fresh= after a lazy chunk 404s, because the shell it booted from belongs
+  // to a deploy that is gone. Answering that reload with the cached shell
+  // handed back the same dead chunk, so these must come from the network or
+  // fail honestly.
+  it("never answers a fresh in-app navigation with the cached shell", async () => {
+    const h = createSwHarness();
+    await h.seedCache(h.constants.cacheName, "/app", "<html>old shell</html>");
+
+    const offline = await h.dispatchFetch(`${ORIGIN}/create?fresh=123`, {
+      mode: "navigate",
+    });
+    expect(offline!.status).toBe(503);
+
+    h.route("/create", respondWith("<html>new shell</html>"));
+    const online = await h.dispatchFetch(`${ORIGIN}/create?fresh=124`, {
+      mode: "navigate",
+    });
+    expect(await online!.text()).toBe("<html>new shell</html>");
+  });
+
+  it("skips the shell and the per-URL copy for a fresh /sequence/* navigation", async () => {
+    const h = createSwHarness();
+    await h.seedCache(h.constants.cacheName, "/app", SHELL_HTML);
+    await h.seedCache(
+      h.constants.cacheName,
+      "/sequence/xyz?fresh=9",
+      "<html>old seq</html>"
+    );
+
+    const res = await h.dispatchFetch(`${ORIGIN}/sequence/xyz?fresh=9`, {
+      mode: "navigate",
+    });
+    expect(res!.status).toBe(503);
+  });
+
+  it("waits out a slow network up to 30s instead of the usual 10s", async () => {
+    vi.useFakeTimers();
+    const h = createSwHarness();
+    await h.seedCache(h.constants.cacheName, "/app", SHELL_HTML);
+    h.route(
+      "/create",
+      () =>
+        new Promise<Response>((resolve) =>
+          setTimeout(() => resolve(new Response("<html>new</html>")), 20_000)
+        )
+    );
+
+    const pending = h.dispatchFetch(`${ORIGIN}/create?fresh=1`, {
+      mode: "navigate",
+    });
+    await vi.advanceTimersByTimeAsync(21_000);
+    expect(await (await pending)!.text()).toBe("<html>new</html>");
+
+    h.route("/train", () => new Promise<Response>(() => {}));
+    const hung = h.dispatchFetch(`${ORIGIN}/train?fresh=2`, {
+      mode: "navigate",
+    });
+    await vi.advanceTimersByTimeAsync(31_000);
+    expect((await hung)!.status).toBe(503);
+  });
+});
+
 describe("sw.js passthrough boundaries", () => {
   // Fix: the SW must never intercept mutations or foreign origins — a cached
   // response to a POST (or to a third-party request) would be a data-loss
@@ -511,5 +575,22 @@ describe("sw.js update flow", () => {
 
     h.dispatchMessage({ type: "SKIP_WAITING" });
     expect(h.self.skipWaiting).toHaveBeenCalledTimes(1);
+  });
+
+  // Fix: identical sw.js on every deploy meant no update ever installed. The
+  // build stamps BUILD_ID; GET_VERSION reports it, which also keeps the
+  // constant from being dropped as dead code.
+  it("answers GET_VERSION with the stamped build id on the reply port", () => {
+    const h = createSwHarness();
+    const postMessage = vi.fn();
+
+    h.dispatchMessage({ type: "GET_VERSION" }, [{ postMessage }]);
+
+    expect(postMessage).toHaveBeenCalledWith({
+      type: "VERSION",
+      buildId: "__TKA_BUILD_ID__",
+      cacheName: h.constants.cacheName,
+    });
+    expect(h.self.skipWaiting).not.toHaveBeenCalled();
   });
 });

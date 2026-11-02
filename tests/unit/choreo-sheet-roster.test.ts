@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, expect, it, vi } from "vitest";
 import { createChoreoSheetState } from "../../src/lib/features/write/state/choreo-sheet-state.svelte";
 import type { ResolveOutcome } from "../../src/lib/features/write/services/sheet-sequence-resolver";

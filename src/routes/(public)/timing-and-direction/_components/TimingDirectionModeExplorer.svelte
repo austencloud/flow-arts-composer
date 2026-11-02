@@ -18,8 +18,8 @@
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import SequenceTransformActions from "#lib/shared/create/components/SequenceTransformActions.svelte";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
-  import TurnNotationControls from "#lib/shared/shape-matrix/app/components/TurnNotationControls.svelte";
-  import type { MatrixLabelMode } from "#lib/shared/shape-matrix/domain/matrix-turn-band.js";
+  import TurnNotationControls from "@tka/shape-engine/app/components/TurnNotationControls.svelte";
+  import type { MatrixLabelMode } from "@tka/shape-domain";
   import {
     turnValuesForLevel,
     type TurnValue,

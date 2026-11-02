@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MusicPlayer } from "#lib/features/write/services/music-player.js";
 

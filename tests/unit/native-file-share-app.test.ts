@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // Android's WebView has no navigator.share, so inside the app a file only

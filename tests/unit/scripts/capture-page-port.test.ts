@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createCdpPage } from "../../../scripts/feature-video/capture/cdp-page.mjs";
 import { createCodexPage } from "../../../scripts/feature-video/capture/codex-page.mjs";

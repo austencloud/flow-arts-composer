@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { flushSync, mount, unmount } from "svelte";
 import { Group } from "three";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";

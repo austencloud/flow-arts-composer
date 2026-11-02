@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Fused motion fidelity — the fuser must not lose authored domain fields.
  *

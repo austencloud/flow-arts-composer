@@ -478,6 +478,16 @@
     zoom: var(--zoom);
   }
 
+  /* Phone: the lesson fills the screen between its strip and controls
+     rather than growing past it. */
+  @media (max-width: 639.98px), (max-width: 767.98px) and (max-height: 700px) {
+    .motions-experience {
+      flex: 1 1 0;
+      height: 100%;
+      min-height: 0;
+    }
+  }
+
   @media (min-width: 2400px) and (min-height: 1300px) {
     .motions-experience {
       --zoom: 1.25;
@@ -559,6 +569,69 @@
     .board-stage {
       --board-wide-columns: 3;
       width: min(100%, calc(3 * var(--board-art) + 6.5rem));
+    }
+  }
+
+  /* Phone: each stage fits the space between the lesson's strip and its
+     controls (LessonStageFrame makes that space a size container, so 100cqh
+     is its height). The map keeps its three slots on screen as small cards
+     and gives up the rest of its size; the finished board is three across,
+     with the descriptions shown where the screen is tall enough for them
+     (the two-hands stage reads each one out as it is found). */
+  @media (max-width: 639.98px), (max-width: 767.98px) and (max-height: 700px) {
+    .motions-experience :global(.map-layout) {
+      --map-gap: 0.5rem;
+    }
+
+    .motions-experience :global(.map-stage .figure) {
+      width: min(100%, calc(100cqh - 8.5rem));
+    }
+
+    .motions-experience :global(.map-stage .moves li) {
+      gap: 0.2rem;
+      padding: 0.375rem;
+    }
+
+    .motions-experience :global(.map-stage .moves .art) {
+      width: 3rem;
+      max-width: 3rem;
+    }
+
+    .motions-experience :global(.map-stage .caption) {
+      font-size: var(--font-size-compact, 0.75rem);
+      line-height: 1.25;
+    }
+
+    .motions-experience :global(.map-stage .check) {
+      top: 0.375rem;
+      right: 0.375rem;
+      width: 1.25rem;
+      font-size: 0.7rem;
+    }
+
+    .board-stage:not(.quiz) {
+      width: 100%;
+    }
+
+    .board-stage:not(.quiz) :global(.combination-board) {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.375rem;
+    }
+
+    .board-stage:not(.quiz) :global(.cell) {
+      gap: 0.3rem;
+      padding: 0.375rem;
+    }
+
+    .board-stage:not(.quiz) :global(.description) {
+      font-size: var(--font-size-compact, 0.75rem);
+      line-height: 1.3;
+    }
+  }
+
+  @media (max-width: 767.98px) and (max-height: 639.98px) {
+    .board-stage:not(.quiz) :global(.description) {
+      display: none;
     }
   }
 </style>

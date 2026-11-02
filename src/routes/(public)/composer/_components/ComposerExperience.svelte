@@ -37,7 +37,7 @@
   import {
     HERO_TRAIL_PRESET,
     HERO_TIP_EFFECT_MAP,
-  } from "#lib/shared/landing/data/hero-trail-preset.js";
+  } from "@tka/shape-engine/services/hero-trail-preset.js";
   import { isConstrainedConnection } from "#lib/shared/platform/network-conditions.js";
   import { runAfterNamedRouteMorphIdle } from "#lib/shared/transitions/named-route-morph-state.svelte.js";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
@@ -184,6 +184,7 @@
   let tunnelVisible = $state(false);
   let viewerOpen = $state(false);
   let shelfActive = $state(false);
+  let footageNear = $state(false);
   let webglChecked = $state(false);
   let webglAvailable = $state(false);
 
@@ -418,8 +419,29 @@
       })
       .catch(() => undefined);
   }
-  const activateViewer = activateNear("viewing", warmViewerStage);
+  const activateViewer = activateNear("viewing", () => {
+    footageNear = true;
+    warmViewerStage();
+  });
   const activateShelf = activateNear("keeping", () => (shelfActive = true));
+
+  // Phones and short screens show a recorded loop of the viewer instead of
+  // the live one. Its poster arrives with the stop's activation above, and
+  // the clip plays only while it is on screen, through the same visibility
+  // owner as the tunnel demo, so nothing downloads far down the page. Under
+  // reduced motion it waits for a tap on its own controls.
+  const PHONE_FOOTAGE =
+    "https://assets.tkaflowarts.com/landing/composer-3d-phone-v1";
+  const playFootageWhileVisible = (video: HTMLVideoElement) =>
+    observeComposerStopVisibility(video, (visible) => {
+      if (!visible) {
+        if (!video.paused) video.pause();
+        return;
+      }
+      footageNear = true;
+      if (reduceMotion.current) return;
+      video.play().catch(() => undefined);
+    });
 </script>
 
 {#snippet propControl()}
@@ -584,16 +606,9 @@
     use:holdWhenHeroLeaves
   >
     <div class="opening-copy">
+      <!-- No tagline: a one-line summary of the whole app always fell short,
+           and the playing sequence beside the title shows what it does. -->
       <h1 id="composer-title">Flow Arts <span>Composer</span></h1>
-      <!-- Phones show the first sentence only, so the player reaches the
-           first screen; the second sentence returns at every wider size. -->
-      <p class="opening-lede">
-        <span>Choose the moves or generate a 16-count loop.</span>
-        <span class="lede-more"
-          >Composer is the browser app for The Kinetic Alphabet, where notation
-          and movement stay together.</span
-        >
-      </p>
 
       <!-- The demos on this page are real but partial, so the way into the
            app itself has to be the one thing on the first screen nobody can
@@ -611,10 +626,14 @@
         </a>
       </div>
 
+      <!-- Phones keep the first sentence only: the guest limit and the
+           alphabet note read as small print under the player there. -->
       <p class="opening-note">
-        Free in your browser, no account needed. Guests keep three sequences on
-        this device. Each step is a letter of The Kinetic Alphabet; the sequence
-        is the word they spell.
+        <span>Free in your browser, no account needed.</span>
+        <span class="note-more"
+          >Guests keep three sequences on this device. Each step is a letter of
+          The Kinetic Alphabet; the sequence is the word they spell.</span
+        >
       </p>
     </div>
 
@@ -754,7 +773,7 @@
   </section>
 
   <!-- Activation sits on the stop, not the viewer, because small screens
-       hide the viewer and show the poster and its note instead. -->
+       hide the viewer and show the recorded footage and its note instead. -->
   <section
     class="stop viewer-stop"
     aria-labelledby="viewer-title"
@@ -824,20 +843,29 @@
       </div>
     </div>
 
-    <!-- Small screens cannot run the viewer, so they get the poster the
-         portal card shows, plus the reason. -->
+    <!-- Small screens do not run the live viewer, so they get a recorded
+         loop of it playing a sequence in one of its scenes. -->
     <figure class="small-screen-3d-poster">
-      <img
-        src={PORTAL_STILL}
-        alt="A still from the 3D viewer."
-        width="2400"
-        height="1090"
-        loading="lazy"
-        decoding="async"
-      />
+      <video
+        class="small-screen-3d-footage"
+        muted
+        loop
+        playsinline
+        preload="none"
+        controls={reduceMotion.current}
+        poster={footageNear && !viewportFits3D()
+          ? `${PHONE_FOOTAGE}.jpg`
+          : undefined}
+        width="720"
+        height="720"
+        aria-label="A sequence playing in the 3D viewer."
+        use:playFootageWhileVisible
+      >
+        <source src={`${PHONE_FOOTAGE}.mp4`} type="video/mp4" />
+      </video>
       <figcaption class="small-screen-3d-note">
-        The 3D viewer needs WebGL2 and a screen at least 600px in both
-        directions.
+        A sequence playing in the 3D viewer. On a laptop or tablet it runs live
+        on this page, and you choose the scene and the camera.
       </figcaption>
     </figure>
   </section>
@@ -1255,13 +1283,6 @@
   h1 span {
     display: block;
     color: oklch(0.79 0.15 278);
-  }
-
-  .opening-lede {
-    margin: 1.55rem 0 0;
-    color: oklch(0.79 0.015 270);
-    font-size: clamp(1rem, 0.94rem + 0.32vw, 1.28rem);
-    line-height: 1.65;
   }
 
   .opening-actions,
@@ -1811,10 +1832,15 @@
     margin: 0;
   }
 
-  .small-screen-3d-poster img {
+  /* The box is square before anything loads, so the poster and the clip
+     arriving never move the caption. Short landscape screens also land here;
+     the cap keeps the square inside the window there. */
+  .small-screen-3d-footage {
     display: block;
-    width: 100%;
+    width: min(100%, 24rem, 80vh);
     height: auto;
+    aspect-ratio: 1;
+    object-fit: cover;
     border-radius: 1rem;
     border: 1px solid var(--theme-stroke, oklch(0.45 0.03 270 / 0.2));
   }
@@ -1885,8 +1911,7 @@
       text-align: center;
     }
 
-    h1,
-    .opening-lede {
+    h1 {
       margin-inline: auto;
     }
 
@@ -1948,6 +1973,11 @@
     .small-screen-3d-poster {
       display: block;
     }
+
+    /* The footage plays its own sequence, not the hero's word. */
+    .viewer-stop :global(.word-row) {
+      display: none;
+    }
   }
 
   /* Phones only (width, not the short-screen height clause above, so the
@@ -1957,55 +1987,86 @@
      the same 16px gutter as the Create chooser, section titles on one line,
      and two text sizes: 16px body, 14px notes. */
   @media (max-width: 37.4375rem) {
+    /* The whole first screen of a 375x667 phone (Chrome's iPhone SE) holds
+       the title, button, player, note and Scroll chip, like the Create
+       chooser fills its screen. The page starts 0.75rem under the header.
+       Every piece of it is one line or one control, so it all centers on the
+       player. */
     .composer-page {
       width: 100%;
       padding-inline: 1rem;
+      padding-top: calc(var(--marketing-header-h, 64px) + 0.75rem);
     }
 
     /* The copy's children join the hero grid so the note can follow the
        player without reordering the DOM for wider screens. */
     .opening {
       row-gap: 0;
-      padding-top: 0.75rem;
+      padding-top: 0;
     }
 
     .opening-copy {
       display: contents;
-      text-align: left;
     }
 
+    /* One line: "Flow Arts Composer" runs about 9.2 times its size, so 9.4vw
+       fits the 288px a 320px phone leaves and 2rem fits 343px at 375. */
     h1 {
+      max-width: none;
       margin-inline: 0;
-      font-size: 2.5rem;
+      font-size: clamp(1.75rem, 9.4vw, 2rem);
+      text-align: center;
     }
 
-    .opening-lede {
-      margin: 0.75rem 0 0;
-      font-size: 1rem;
-      line-height: 1.5;
-    }
-
-    .lede-more {
-      display: none;
+    h1 span {
+      display: inline;
     }
 
     .opening-actions {
-      justify-content: flex-start;
-      margin-top: 1.1rem;
+      justify-content: center;
+      margin-top: 0.75rem;
     }
 
+    .open-app {
+      min-height: max(var(--min-touch-target, 48px), 48px);
+      padding: 0.6em 1.4em;
+      font-size: 1rem;
+    }
+
+    /* The player is about 1.12 times its width less 3rem tall (square, word
+       header, toolbar row) and everything else on the first screen about
+       13.375rem, so this cap is the width that ends the Scroll chip at the
+       fold. A 375x667 phone and taller keep the full 22rem; the 20.125rem
+       floor keeps the square at 230px on a 375px screen, and a 320px phone
+       keeps its full width. */
     .opening-player {
       order: 1;
+      --hero-demo-max-width: min(
+        100%,
+        22rem,
+        max(20.125rem, calc((100svh - 13.375rem) / 1.12))
+      );
+    }
+
+    .opening .opening-player :global(.hero-demo.with-notation-strip) {
+      margin-top: 0.75rem;
     }
 
     .opening-note {
       order: 2;
-      margin-top: 1rem;
-      line-height: 1.55;
+      margin-top: 0.5rem;
+      font-size: var(--font-size-min, 0.875rem);
+      line-height: 1.45;
+      text-align: center;
+    }
+
+    .note-more {
+      display: none;
     }
 
     .opening :global(.scroll-cue) {
       order: 3;
+      justify-self: center;
     }
 
     /* "Construct a sequence", the longest title, runs about 9.6 times its
@@ -2018,8 +2079,15 @@
       font-size: 1.75rem;
     }
 
-    .stop > h2 {
-      text-align: left;
+    /* Centered like the hero above them, so the page keeps one alignment
+       for its headings and the short blocks under them. */
+    .stop > h2,
+    .keeping-lede {
+      text-align: center;
+    }
+
+    .keeping-intro .keeping-actions {
+      justify-content: center;
     }
 
     /* The title is one line here, so the frame keeps the line the narrow
@@ -2058,12 +2126,6 @@
     h1 {
       margin-inline: 0;
       font-size: clamp(2.4rem, 6.2vw, 4rem);
-    }
-
-    .opening-lede {
-      margin: 0.8rem 0 0;
-      font-size: var(--font-size-min, 0.875rem);
-      line-height: 1.45;
     }
 
     .opening-actions {

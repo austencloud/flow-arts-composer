@@ -3,6 +3,13 @@
  * No Workbox. No precache manifest. Hashed immutable assets are cached on first visit.
  */
 
+// A browser only installs a new worker when sw.js changes byte for byte. This
+// file used to ship identical on every deploy, so the /app shell cached on a
+// person's first visit was never replaced, and on a slow connection that old
+// shell pointed at lazy chunks the server had long since dropped.
+// scripts/stamp-service-worker.js writes a per-deploy id here after
+// `vite build`, so every deploy installs a worker that re-caches the shell.
+const BUILD_ID = "__TKA_BUILD_ID__"; // replaced at build time
 const CACHE_NAME = "tka-v3";
 const ASSETS_3D_CACHE = "tka-3d-assets-v1";
 const APP_SHELL_URLS = ["/app"];
@@ -32,9 +39,19 @@ self.addEventListener("install", (event) => {
 
 // Activate the waiting worker on demand (user clicked "Reload" in the update
 // toast). Mirrors static/legacy-sw.js:431.
+//
+// GET_VERSION answers with the stamped build id, which tells you which deploy
+// the controlling worker came from. It also keeps BUILD_ID in use, so no
+// minifier or cleanup pass drops the one line that makes each deploy's sw.js
+// differ from the last.
 self.addEventListener("message", (event) => {
-  if (event.data && event.data.type === "SKIP_WAITING") {
+  if (!event.data) return;
+  if (event.data.type === "SKIP_WAITING") {
     self.skipWaiting();
+  } else if (event.data.type === "GET_VERSION") {
+    const reply = { type: "VERSION", buildId: BUILD_ID, cacheName: CACHE_NAME };
+    if (event.ports && event.ports[0]) event.ports[0].postMessage(reply);
+    else if (event.source) event.source.postMessage(reply);
   }
 });
 
@@ -235,13 +252,15 @@ self.addEventListener("fetch", (event) => {
 
     if (!isPublicRoute) {
       event.respondWith(
-        fetchWithTimeout(event.request, 10000).catch(() =>
-          caches
-            .match("/app")
-            .then(
-              (cached) => cached || new Response("Offline", { status: 503 })
+        isFreshNavigation(url)
+          ? freshNavigation(event.request)
+          : fetchWithTimeout(event.request, 10000).catch(() =>
+              caches
+                .match("/app")
+                .then(
+                  (cached) => cached || new Response("Offline", { status: 503 })
+                )
             )
-        )
       );
       return;
     }
@@ -339,6 +358,7 @@ async function networkFirst(request) {
 // masked by the shell. If the shell isn't cached either, degrade to the plain
 // networkFirst failure path: a previously cached copy of the page, then 503.
 async function networkFirstNavigation(request) {
+  if (isFreshNavigation(new URL(request.url))) return freshNavigation(request);
   try {
     const response = await fetchWithTimeout(request, 10000);
     // Cache successful page loads exactly like networkFirst, so a previously
@@ -353,6 +373,28 @@ async function networkFirstNavigation(request) {
     if (shell) return shell;
     const cached = await caches.match(request);
     return cached || new Response("Offline", { status: 503 });
+  }
+}
+
+// `?fresh=` is the page asking for HTML from the network: hooks.client.ts adds
+// it when a lazy chunk failed to load, because the shell this tab booted from
+// pointed at a build the server no longer has. Answering that request with the
+// cached /app shell (or a cached copy of the page) hands back the same stale
+// HTML and the same dead chunk, so these navigations get a longer wait and,
+// if the network still fails, an honest 503 instead of the old shell. Nothing
+// is cached either: the query is unique per reload, so the entry would never
+// be read again.
+const FRESH_NAVIGATION_TIMEOUT_MS = 30000;
+
+function isFreshNavigation(url) {
+  return url.searchParams.has("fresh");
+}
+
+async function freshNavigation(request) {
+  try {
+    return await fetchWithTimeout(request, FRESH_NAVIGATION_TIMEOUT_MS);
+  } catch {
+    return new Response("Offline", { status: 503 });
   }
 }
 

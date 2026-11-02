@@ -96,23 +96,79 @@ export function viewerModeLabel(id: ViewerMode): string {
 }
 
 /**
+ * What the viewer is showing. A `sequence` page offers every view of that
+ * sequence. A `cast` page (a tunnel whose performers each dance their own
+ * sequence, see `isCastComposition`) offers only the views that draw the
+ * whole cast; each performer's own views live on that performer's page.
+ */
+export type ViewerSubject = "sequence" | "cast";
+
+/**
+ * The views that draw a whole cast, in the order a cast page lists them: the
+ * tunnel (the page's home view), the 3D stage with every performer on it
+ * (see `tunnel/tunnel-cast-3d.ts`), and a post composed of it.
+ */
+const CAST_VIEWER_MODE_ORDER: readonly ViewerMode[] = [
+  "tunnel",
+  "animation-3d",
+  "post-studio",
+];
+const CAST_VIEWER_MODES: ReadonlySet<ViewerMode> = new Set<ViewerMode>(
+  CAST_VIEWER_MODE_ORDER
+);
+
+/**
  * Filter helper: drops WebGL2-only options when WebGL2 is unavailable,
  * large-viewport-only options (3D) when the viewport is too small to host
  * them, and early-access options (Post Studio) when access isn't granted.
  * `postStudioAccess` defaults to false — hidden unless the caller proves
- * access — so a call site that forgets the check fails closed.
+ * access — so a call site that forgets the check fails closed. A `cast`
+ * subject keeps only the views that draw the whole cast.
  */
 export function viewerModeOptions(
   webgl2Available: boolean,
   viewportFits3D = true,
-  postStudioAccess = false
+  postStudioAccess = false,
+  subject: ViewerSubject = "sequence"
 ): ViewerModeOption[] {
-  return VIEWER_MODE_OPTIONS.filter(
+  const options = VIEWER_MODE_OPTIONS.filter(
     (m) =>
       (!m.requiresWebgl2 || webgl2Available) &&
       (!m.requiresLargeViewport || viewportFits3D) &&
-      (!m.requiresPostStudioAccess || postStudioAccess)
+      (!m.requiresPostStudioAccess || postStudioAccess) &&
+      (subject === "sequence" || CAST_VIEWER_MODES.has(m.id))
   );
+  if (subject === "sequence") return options;
+  return options.sort(
+    (a, b) =>
+      CAST_VIEWER_MODE_ORDER.indexOf(a.id) -
+      CAST_VIEWER_MODE_ORDER.indexOf(b.id)
+  );
+}
+
+/**
+ * The mode a subject can actually show. A sequence shows any mode. A cast
+ * shows only its own views, so a `?pane=animation` link or a remembered 2D
+ * surface lands on the tunnel instead. Pure: the viewer state reads it at
+ * render time and never writes the coerced mode back to storage.
+ */
+export function viewerModeForSubject(
+  mode: ViewerMode,
+  subject: ViewerSubject
+): ViewerMode {
+  if (subject === "sequence" || CAST_VIEWER_MODES.has(mode)) return mode;
+  return "tunnel";
+}
+
+/**
+ * A switcher with one view to pick is no switcher. The rail and the phone
+ * bottom bar are shown only when there is a choice to make.
+ */
+export function showsViewerModeSwitcher(
+  options: readonly ViewerModeOption[],
+  practiceToggle = false
+): boolean {
+  return practiceToggle || options.length > 1;
 }
 
 /**

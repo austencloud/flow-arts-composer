@@ -26,11 +26,11 @@ import {
   theorySoloKnobs,
   STATIONARY_RATIO,
   type TheoryFlower,
-} from "#lib/shared/shape-matrix/domain/theory-flower.js";
+} from "@tka/shape-domain";
 import {
   MODE_ORDER,
   type VtgMode,
-} from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
+} from "@tka/shape-domain";
 
 /** The eighths a timing puts between the two hands. */
 const TIMING_OFFSET: Record<string, number> = { S: 4, T: 0, Q: 2 };

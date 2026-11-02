@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from "vitest";
 import { NAVIGATION_VISITS_KEY } from "#lib/shared/navigation/config/storage-keys.js";
 import {

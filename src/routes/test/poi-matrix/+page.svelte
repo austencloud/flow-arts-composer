@@ -9,17 +9,17 @@
 	import {
 		loadShapeMatrix,
 		type ShapeMatrixData,
-	} from "#lib/shared/shape-matrix/services/shape-matrix-flowers.js";
-	import ShapeMatrixGrid from "#lib/shared/shape-matrix/components/ShapeMatrixGrid.svelte";
+	} from "@tka/shape-engine/services/shape-matrix-flowers.js";
+	import ShapeMatrixGrid from "@tka/shape-engine/components/ShapeMatrixGrid.svelte";
 	import {
 		renderPoiCell,
 		renderPoiHeader,
-	} from "#lib/shared/shape-matrix/services/shape-matrix-poi-render.js";
-	import { applyFilter } from "#lib/shared/shape-matrix/domain/filter-flower-axis.js";
+	} from "@tka/shape-engine/services/shape-matrix-poi-render.js";
+	import { applyFilter } from "@tka/shape-domain";
 	import {
 		matrixFiltersForSize,
 		type MatrixSize,
-	} from "#lib/shared/shape-matrix/domain/matrix-size-preset.js";
+	} from "@tka/shape-domain";
 	import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
 	import { createPoiLegalVerdicts } from "#lib/features/levels/poi-lab/services/poi-legal-verdicts.svelte.js";
 

@@ -5,7 +5,6 @@ import {
   DEFAULT_FAN_APPEARANCE,
   normalizeFanAppearance,
 } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
-import { DEFAULT_PROP_LOOK } from "#lib/shared/pictograph/prop/domain/prop-look.js";
 import {
   normalizeLegacyAppSettings,
   type AppSettings,
@@ -26,7 +25,6 @@ const DEFAULT_SETTINGS: AppSettings = {
   leftPropType: PropType.STAFF,
   rightPropType: PropType.STAFF,
   fanAppearance: DEFAULT_FAN_APPEARANCE,
-  propArtwork: DEFAULT_PROP_LOOK,
   primaryPropColors: null,
   leftBuugengFlipped: false,
   rightBuugengFlipped: false,

@@ -316,13 +316,13 @@
     }
   }
   // Wide screens recompose Share as a persistent stage beside a rail; below
-  // this the sheet is a bottom sheet with the stage as a band above the task.
+  // this the sheet stacks the stage as a band above the task.
   // Card and video settings are always on screen at every size; a short or
   // narrow sheet scrolls its one rail body instead of folding them away.
   // A landscape window from 720px wide (an unfolded Galaxy Z Fold held
   // sideways, 823x707) is a tablet, not a phone: it gets the split too. Keep
   // this in step with the split and stacked media rules below and the frame's
-  // bottom-sheet rule in ShareSheetFrame.
+  // phone rule in ShareSheetFrame.
   const splitLayout = new MediaQuery(
     "(min-width: 900px), (min-width: 560px) and (max-height: 560px), (min-width: 720px) and (orientation: landscape)"
   );
@@ -2658,15 +2658,11 @@
                                         ? t("share_link_copied")
                                         : t("share_copy_link")}
                                   </span>
-                                  <small
-                                    class="intent-hint"
-                                    class:link-value={copyLinkState ===
-                                      "copied"}
-                                  >
-                                    {copyLinkState === "copied" && copiedLinkUrl
-                                      ? displayLink(copiedLinkUrl)
-                                      : t("share_link_description")}
-                                  </small>
+                                  {#if copyLinkState === "copied" && copiedLinkUrl}
+                                    <small class="intent-hint link-value"
+                                      >{displayLink(copiedLinkUrl)}</small
+                                    >
+                                  {/if}
                                 </span>
                               </Crossfade>
                             </button>
@@ -2681,9 +2677,6 @@
                                 ></i>
                                 <span class="intent-label"
                                   >{t("share_show_qr")}</span
-                                >
-                                <small class="intent-hint"
-                                  >{t("share_show_qr_hint")}</small
                                 >
                               </span>
                             </button>
@@ -2702,9 +2695,6 @@
                                   <span class="intent-label"
                                     >{t("share_send_friend")}</span
                                   >
-                                  <small class="intent-hint"
-                                    >{t("share_send_friend_hint")}</small
-                                  >
                                 </span>
                               </button>
                             {/if}
@@ -2722,9 +2712,6 @@
                                 <span class="intent-label"
                                   >{t("share_download_file")}</span
                                 >
-                                <small class="intent-hint"
-                                  >{t("share_download_file_hint")}</small
-                                >
                               </span>
                             </button>
                             <button
@@ -2740,9 +2727,6 @@
                                 ></i>
                                 <span class="intent-label"
                                   >{t("share_publish_socially")}</span
-                                >
-                                <small class="intent-hint"
-                                  >{t("share_publish_hint")}</small
                                 >
                               </span>
                             </button>
@@ -4076,10 +4060,11 @@
     gap: 0.75rem;
     min-width: 0;
   }
+  /* Home's choices are one row each: an icon and a label, no subtext. */
   .intent-grid {
     display: grid;
     grid-template-columns: 1fr;
-    grid-auto-rows: minmax(6rem, auto);
+    grid-auto-rows: minmax(4rem, auto);
     align-content: start;
     gap: 0.75rem;
   }
@@ -4106,6 +4091,10 @@
     border-radius: 0.875rem;
     text-align: left;
   }
+  .intent-grid .intent {
+    min-height: 4rem;
+    padding: 0.75rem 1rem;
+  }
   .intent-body {
     display: grid;
     grid-template-columns: 2.75rem minmax(0, 1fr);
@@ -4113,7 +4102,6 @@
     align-items: center;
   }
   .intent-body > i {
-    grid-row: span 2;
     display: grid;
     place-items: center;
     width: 2.75rem;
@@ -4131,7 +4119,11 @@
     font-size: 1rem;
     font-weight: 650;
   }
-  /* The copied link replaces the hint in place; two lines cover both. */
+  /* A line under the label: a video pane's summary, or the link just
+     copied. The icon spans both lines. */
+  .intent-body:has(> .intent-hint) > i {
+    grid-row: span 2;
+  }
   .intent-hint {
     color: var(--theme-text-secondary, rgba(255, 255, 255, 0.68));
     font-size: 0.875rem;
@@ -4333,7 +4325,8 @@
      rail instead. Portrait phones and tablets stay stacked. A landscape
      window from 720px wide (an unfolded Fold held sideways) is a tablet and
      takes the split too; see the tall landscape band below. */
-  @media (min-width: 900px), (min-width: 560px) and (max-height: 560px),
+  @media (min-width: 900px),
+    (min-width: 560px) and (max-height: 560px),
     (min-width: 720px) and (orientation: landscape) {
     .title-group {
       flex-direction: row;
@@ -4575,7 +4568,7 @@
     }
     .share-split[data-route="home"] .intent-grid {
       height: 100%;
-      grid-auto-rows: minmax(6rem, 1fr);
+      grid-auto-rows: minmax(4rem, 1fr);
       align-content: stretch;
     }
     .share-split[data-route="home"] .intent {
@@ -4593,14 +4586,11 @@
     .share-split[data-route="home"] .intent-label {
       font-size: 1.125rem;
     }
-    .share-split[data-route="home"] .intent-hint {
-      font-size: 0.9375rem;
-    }
   }
   /* Short landscape: one column of compact rows, so every choice fits beside
      the stage without scrolling. Never a grid of narrow cards. The stage is a
      square about as tall as the row stack, and the width it frees goes to the
-     rows so their hints fit on a line (and wrap, never clip, when they do not).
+     rows so their labels fit on a line (and wrap, never clip, when they do not).
      It also owns the 560-899px short landscape band (see the split shell
      above). */
   @media (min-width: 560px) and (max-height: 560px) {
@@ -4620,7 +4610,8 @@
       gap: 0.5rem;
       grid-auto-rows: minmax(var(--min-touch-target, 44px), auto);
     }
-    .intent {
+    .intent,
+    .intent-grid .intent {
       min-height: var(--min-touch-target, 44px);
       padding: 0.5rem 0.75rem;
     }
@@ -4676,12 +4667,12 @@
     }
     .share-split[data-route="home"] .intent-grid {
       height: 100%;
-      grid-auto-rows: minmax(4.5rem, 1fr);
+      grid-auto-rows: minmax(4rem, 1fr);
       gap: 0.5rem;
       align-content: stretch;
     }
     .share-split[data-route="home"] .intent {
-      min-height: 4.5rem;
+      min-height: 4rem;
       padding: 0.75rem 1rem;
     }
   }
@@ -4709,16 +4700,56 @@
   /* Stacked layout: phones and tablets in portrait, and anything narrower than
      560px. The 560-899px short landscape band and the 720-899px tall landscape
      band use the split shell instead. */
-  @media (max-width: 559px), (max-width: 719px) and (min-height: 561px),
+  @media (max-width: 559px),
+    (max-width: 719px) and (min-height: 561px),
     (max-width: 899px) and (min-height: 561px) and (orientation: portrait) {
     .share-dock {
       padding-inline: 1.25rem;
     }
-    /* Phone: Home carries the animation as a compact strip above the choices;
-       Download grows the same stage to its working height. Only the stage's
-       height moves, through the shared transition token. */
+    /* Phone: Home's stage asks for 24rem and gives up height before the
+       choices do. The dialog's max-height trims the split, the stage shrinks
+       first (down to 11.5rem) and the rows under it keep their size; only
+       a screen too short for even that scrolls the rail. Download sets its
+       own stage height. Only the stage's height moves between the two,
+       through the shared transition token. */
     .share-split[data-route="home"] {
-      --stage-h: 11.5rem;
+      --stage-h: 24rem;
+    }
+    .share-split[data-route="home"] .stage-frame {
+      flex: 0 1000 auto;
+      min-height: calc(11.5rem + 1rem);
+    }
+    .share-split[data-route="home"] .stage {
+      flex: 0 1 auto;
+      min-height: 11.5rem;
+    }
+    .share-split[data-route="home"] .rail {
+      flex: 0 1 auto;
+    }
+    /* Coming back from Download, the Download rail and its dock fade out
+       before the choices arrive. Until they go, the rail gives up the height
+       instead of the stage, so the stage grows straight to its Home size
+       rather than dipping to its floor and climbing back. */
+    .share-split[data-route="home"]:has(
+        .rail-body > :global(.crossfade) > :global(.layer + .layer)
+      )
+      .rail,
+    .share-split[data-route="home"]:has(.share-dock) .rail {
+      flex-shrink: 1000;
+    }
+    .share-split[data-route="home"]:has(
+        .rail-body > :global(.crossfade) > :global(.layer + .layer)
+      )
+      .stage-frame,
+    .share-split[data-route="home"]:has(.share-dock) .stage-frame {
+      flex-shrink: 1;
+    }
+    .share-split[data-route="home"]:has(
+        .rail-body > :global(.crossfade) > :global(.layer + .layer)
+      )
+      .rail-body,
+    .share-split[data-route="home"]:has(.share-dock) .rail-body {
+      overflow: hidden;
     }
     .stage {
       transition: height var(--transition-normal);
@@ -4771,12 +4802,24 @@
       min-block-size: 3.5rem;
     }
     .intent-grid {
-      grid-auto-rows: minmax(4.5rem, auto);
+      grid-auto-rows: minmax(3.5rem, auto);
       gap: 0.5rem;
     }
     .intent {
       min-height: 4.5rem;
       padding: 0.75rem 1rem;
+    }
+    .intent-grid .intent {
+      min-height: 3.5rem;
+      padding: 0.375rem 1rem;
+    }
+    .intent-grid .intent-body {
+      grid-template-columns: 2.5rem minmax(0, 1fr);
+    }
+    .intent-grid .intent-body > i {
+      width: 2.5rem;
+      height: 2.5rem;
+      font-size: 1.125rem;
     }
     .intent-hint {
       display: -webkit-box;

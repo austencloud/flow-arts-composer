@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect, vi } from "vitest";
 import { ExportGlyphPrerenderer } from "../export-glyph-prerenderer";
 import { SvgImageConverter } from "#lib/shared/foundation/services/svg-image-converter.js";

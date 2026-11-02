@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from "vitest";
 import { buildCardDescriptors } from "../card-configurator";
 import { createGenerationConfigState } from "../../../state/generate-config.svelte";

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { readFileSync } from "node:fs";
 import { JSDOM } from "jsdom";
 import { afterEach, describe, expect, it } from "vitest";

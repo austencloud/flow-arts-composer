@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, expect, it, vi } from "vitest";
 import type { Ghost2DParams } from "../translators/canvas2d-types";
 import {

@@ -10,7 +10,7 @@ import {
   ORIGINAL_SHAPE_MATRIX_VTG_RATIOS,
   SHAPE_ENGINE_SHORT_NAME,
   SHAPE_MATRIX_EXPLORER_LEGACY_NAME,
-} from "#lib/shared/shape-matrix/app/shape-engine-identity.js";
+} from "@tka/shape-engine/app/shape-engine-identity.js";
 
 function read(path: string): string {
   return readFileSync(resolve(path), "utf8");
@@ -34,10 +34,10 @@ describe("Shape Engine identity", () => {
 
     const page = read("src/routes/(public)/shape-engine/+page.svelte");
     const shell = read(
-      "src/lib/shared/shape-matrix/app/components/ShapeMatrixAppShell.svelte"
+      "packages/shape-engine/src/app/components/ShapeMatrixAppShell.svelte"
     );
     const surface = read(
-      "src/lib/shared/shape-matrix/app/components/ShapeMatrixSurfaceControl.svelte"
+      "packages/shape-engine/src/app/components/ShapeMatrixSurfaceControl.svelte"
     );
 
     expect(page).toContain("KINETIC_SHAPE_ENGINE_NAME");
@@ -65,16 +65,16 @@ describe("Shape Engine identity", () => {
 
     const page = read("src/routes/(public)/shape-engine/+page.svelte");
     const shell = read(
-      "src/lib/shared/shape-matrix/app/components/ShapeMatrixAppShell.svelte"
+      "packages/shape-engine/src/app/components/ShapeMatrixAppShell.svelte"
     );
     const surface = read(
-      "src/lib/shared/shape-matrix/app/components/ShapeMatrixSurfaceControl.svelte"
+      "packages/shape-engine/src/app/components/ShapeMatrixSurfaceControl.svelte"
     );
     const about = read(
-      "src/lib/shared/shape-matrix/app/components/ShapeMatrixAboutModal.svelte"
+      "packages/shape-engine/src/app/components/ShapeMatrixAboutModal.svelte"
     );
     const menu = read(
-      "src/lib/shared/shape-matrix/app/components/ShapeMatrixOverflowMenu.svelte"
+      "packages/shape-engine/src/app/components/ShapeMatrixOverflowMenu.svelte"
     );
 
     expect(page).toContain('"isBasedOn"');

@@ -679,6 +679,9 @@ async function doInitializeAuthListener(): Promise<void> {
           const { authDrawerState } =
             await import("../state/auth-drawer-state.svelte");
           authDrawerState.reset();
+          // A real account no longer needs asking. An anonymous guest
+          // provisioned by a save is still a guest who said "not now".
+          if (!user.isAnonymous) authDrawerState.clearGateCooldown();
         } catch {
           // Drawer state may not be loaded in some code paths - safe to ignore.
         }
@@ -840,6 +843,7 @@ export async function signOut(): Promise<void> {
       const { authDrawerState } =
         await import("../state/auth-drawer-state.svelte");
       authDrawerState.reset();
+      authDrawerState.clearGateCooldown();
     } catch {
       // Non-critical; UI will still end up in the right place.
     }

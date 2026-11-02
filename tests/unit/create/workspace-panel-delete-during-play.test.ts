@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * The step grid's own Delete waits from the moment Play is pressed until Stop.
  *

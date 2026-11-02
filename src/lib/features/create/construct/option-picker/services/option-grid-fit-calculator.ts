@@ -109,7 +109,7 @@ export function calculateOptimalColumnLayout(params: {
   gridGap: number;
   maxSize: number;
   minSize?: number;
-  columnOptions?: number[];
+  columnOptions?: readonly number[];
 }): GridFitResult {
   const {
     itemCount,

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * The Fuse preview scene reports ready once, when every fused cell and every
  * one-hand source it shows has drawn: six reports in all. A cell that is
@@ -149,7 +150,7 @@ describe("Fuse scene turn", () => {
   });
 
   // The still picture can draw a prop a full turn from where its travel ends
-  // (90° against -270°), and the prop's own rotation easing spun it round
+  // (90ï¿½ against -270ï¿½), and the prop's own rotation easing spun it round
   // once when a finished step handed back to the still picture.
   it("rests each fused step on its travel's last frame when a turn ends", async () => {
     vi.useFakeTimers({

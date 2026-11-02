@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * The preview box in a Create front door method card: reserved and tinted
  * from first paint, hidden from assistive technology, and swapped to its

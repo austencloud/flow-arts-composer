@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * experience-persistence legacy concept id fold.
  *

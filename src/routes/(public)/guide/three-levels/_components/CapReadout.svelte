@@ -11,21 +11,21 @@
    */
   import { browser } from "$app/env";
   import TKAWordGlyph from "#lib/shared/choreo-card/components/TKAWordGlyph.svelte";
-  import ShapeMatrixMandalaArt from "#lib/shared/shape-matrix/components/ShapeMatrixMandalaArt.svelte";
+  import ShapeMatrixMandalaArt from "@tka/shape-engine/components/ShapeMatrixMandalaArt.svelte";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {
     CLUB_ARTWORK_PAINTER,
     headerArtworkSrc,
-  } from "#lib/shared/shape-matrix/services/shape-matrix-artwork.js";
+  } from "@tka/shape-engine/services/shape-matrix-artwork.js";
   import {
     loadShapeMatrix,
     type ShapeMatrixData,
-  } from "#lib/shared/shape-matrix/services/shape-matrix-flowers.js";
+  } from "@tka/shape-engine/services/shape-matrix-flowers.js";
   import {
     flowerKey,
     flowerPetals,
     type RotatingFlower,
-  } from "#lib/shared/shape-matrix/domain/flower-signature.js";
+  } from "@tka/shape-domain";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import {
     capBeats,

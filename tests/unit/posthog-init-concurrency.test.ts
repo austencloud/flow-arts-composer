@@ -50,6 +50,19 @@ describe("PostHog initialization", () => {
     expect(postHogMock.reloadFeatureFlags).toHaveBeenCalledOnce();
   });
 
+  it("turns on canvas capture so replays show the animation canvases", async () => {
+    const { initPostHog } =
+      await import("#lib/shared/analytics/services/posthog.js");
+    postHogMock.init.mockImplementation((_key, config) => {
+      config.loaded(postHogMock);
+    });
+
+    await initPostHog();
+
+    const config = postHogMock.init.mock.calls[0]?.[1];
+    expect(config.session_recording.captureCanvas.recordCanvas).toBe(true);
+  });
+
   it("identifies a user who signs in before PostHog is ready", async () => {
     const { identifyUser, initPostHog } =
       await import("#lib/shared/analytics/services/posthog.js");

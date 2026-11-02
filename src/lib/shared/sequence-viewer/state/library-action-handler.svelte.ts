@@ -9,7 +9,10 @@ import {
 import { getLibraryRepository } from "#lib/shared/library/get-library-repository.js";
 import { getVisualSequenceSaveCoordinator } from "#lib/shared/library/get-visual-sequence-save-coordinator.js";
 import type { LibraryRepository } from "#lib/shared/library/services/library-repository.js";
-import type { LibrarySequence } from "#lib/shared/library/domain/models/library-sequence.js";
+import {
+  copyOriginOf,
+  type LibrarySequence,
+} from "#lib/shared/library/domain/models/library-sequence.js";
 import { computeHash } from "#lib/shared/library/services/sequence-content-hasher.js";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
@@ -229,6 +232,10 @@ export function createLibraryActionHandler(deps: LibraryActionHandlerDeps) {
     savedStateRevision += 1;
     isSaving = true;
 
+    // A sequence that names an owner who is not the signed-in person is
+    // someone else's: saving it makes a private copy credited to them.
+    const copyOf = deps.getIsOwned() ? undefined : copyOriginOf(sequence);
+
     try {
       const coordinator = await getVisualSequenceSaveCoordinator();
       const outcome = await coordinator.save(sequence, {
@@ -237,6 +244,7 @@ export function createLibraryActionHandler(deps: LibraryActionHandlerDeps) {
         catDogModeEnabled: selectedProps.catDogMode,
         pathShape: getAnimationVisibilityManager().getPathShape(),
         ...presentationPatch,
+        ...(copyOf && { copyOf }),
       });
       if (outcome.status === "failed") return;
 

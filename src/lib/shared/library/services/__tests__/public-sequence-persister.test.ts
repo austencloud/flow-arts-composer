@@ -46,6 +46,7 @@ vi.mock("firebase/firestore", () => ({
 import {
   unpublishPublicSequence,
   updatePublicThumbnails,
+  updatePublicCreatorIntent,
   publicSequenceClaimId,
   deleteSequenceCompletely,
   softDeleteSequenceEverywhere,
@@ -378,6 +379,80 @@ describe("updatePublicThumbnails", () => {
     ]);
     expect(result.status).toBe("absent");
     expect(mocks.updateDoc).not.toHaveBeenCalled();
+  });
+});
+
+describe("updatePublicCreatorIntent", () => {
+  const oldIntent = {
+    propConfig: {
+      leftPropType: "staff",
+      rightPropType: "staff",
+      catDogMode: false,
+    },
+    presentation: { primaryPropColors: null, trail: {}, effects: {} },
+  };
+  const storedSchemaTwo = (): Record<string, unknown> => ({
+    id: "seq-1",
+    ownerId: "owner-1",
+    word: "ABCD",
+    creatorIntent: oldIntent,
+    contentHash: "h".repeat(64),
+    contentHashVersion: 2,
+    publicProjectionSchemaVersion: 2,
+    publicProjectionRevision: 3,
+    publicProjectionDigest: "stale-digest",
+  });
+  const primeSchemaTwo = (stored: Record<string, unknown>) =>
+    primeDocs({
+      "publicSequences/seq-1": { exists: true, data: stored },
+      [`publicSequenceHashes/${publicSequenceClaimId(2, "h".repeat(64))}`]: {
+        exists: true,
+        data: { sequenceId: "seq-1" },
+      },
+      "users/owner-1/sequences/seq-1": { exists: true, data: {} },
+    });
+  const patchFor = (path: string) =>
+    mocks.updateDoc.mock.calls.find(
+      ([ref]) => (ref as { path: string }).path === path
+    )?.[1] as Record<string, unknown> | undefined;
+
+  it("replaces the intent whole and restamps both documents from the patched mirror", async () => {
+    const stored = storedSchemaTwo();
+    primeSchemaTwo(stored);
+    // No presentation key: a restored "never recorded" look must not keep
+    // the old one through a merge.
+    const next = { propConfig: oldIntent.propConfig } as never;
+
+    const result = await updatePublicCreatorIntent(FIRESTORE, "seq-1", next);
+
+    expect(result.status).toBe("updated");
+    const publicPatch = patchFor("publicSequences/seq-1")!;
+    expect(publicPatch["creatorIntent"]).toEqual(next);
+    const expectedDigest = await computeStoredProjectionDigest({
+      ...stored,
+      creatorIntent: next,
+    });
+    expect(publicPatch["publicProjectionDigest"]).toBe(expectedDigest);
+    expect(publicPatch["publicProjectionRevision"]).toBe(4);
+
+    const ownerPatch = patchFor("users/owner-1/sequences/seq-1")!;
+    expect(ownerPatch).toEqual({
+      publicProjectionDigest: expectedDigest,
+      publicProjectionRevision: 4,
+    });
+  });
+
+  it("keeps the revision when the patch leaves the digest unchanged", async () => {
+    const stored = storedSchemaTwo();
+    stored["publicProjectionDigest"] =
+      await computeStoredProjectionDigest(stored);
+    primeSchemaTwo(stored);
+
+    await updatePublicCreatorIntent(FIRESTORE, "seq-1", oldIntent as never);
+
+    expect(
+      patchFor("publicSequences/seq-1")!["publicProjectionRevision"]
+    ).toBe(3);
   });
 });
 

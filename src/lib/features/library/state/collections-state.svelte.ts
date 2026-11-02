@@ -186,7 +186,8 @@ class CollectionsState {
             message: `Added to "${c.name}". Create a free account to open your collections on any device.`,
             action: {
               label: "Create account",
-              onClick: () => authDrawerState.show("signup", "sync-library"),
+              onClick: () =>
+                authDrawerState.showOnRequest("signup", "sync-library"),
             },
           });
         }

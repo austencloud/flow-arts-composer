@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * The hero timeline's stage contract.
  *

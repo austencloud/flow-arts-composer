@@ -13,9 +13,11 @@ import {
   recordReloadReason,
 } from "#lib/shared/dev/reload-breadcrumb.js";
 import {
+  claimChunkRecoveryStep,
   markChunkRecoveryReload,
   printChunkRecoveryReloadBreadcrumb,
 } from "#lib/shared/offline/services/chunk-recovery-marker.js";
+import { forceFreshReload } from "#lib/shared/foundation/services/force-fresh.js";
 
 const UPDATE_ACTION_TOAST_MS = 15_000;
 
@@ -204,14 +206,52 @@ if (browser && dev) {
   setTimeout(() => sessionStorage.removeItem(HMR_RELOAD_KEY), 4000);
 }
 
+// The last stop after both automatic recoveries failed within a minute. Plain
+// DOM on purpose: whatever is broken is the chunk graph, so this cannot lean on
+// a Svelte component, the i18n bundle or anything else that loads lazily.
+function showChunkLoadFailureNotice(): void {
+  if (document.getElementById("tka-chunk-load-failure")) return;
+  const notice = document.createElement("div");
+  notice.id = "tka-chunk-load-failure";
+  notice.setAttribute("role", "alert");
+  notice.style.cssText =
+    "position:fixed;inset:0;z-index:2147483647;display:flex;flex-direction:column;" +
+    "align-items:center;justify-content:center;gap:16px;padding:24px;" +
+    "background:#111;color:#fff;font:16px/1.4 system-ui,sans-serif;text-align:center";
+  const message = document.createElement("p");
+  message.style.margin = "0";
+  message.textContent =
+    "The app could not finish loading. Reload to try again.";
+  const reload = document.createElement("button");
+  reload.type = "button";
+  reload.textContent = "Reload";
+  reload.style.cssText =
+    "min-height:44px;padding:0 24px;border:0;border-radius:8px;" +
+    "background:#fff;color:#111;font:inherit;font-weight:600;cursor:pointer";
+  reload.addEventListener("click", () => {
+    reload.disabled = true;
+    void forceFreshReload();
+  });
+  notice.append(message, reload);
+  (document.body ?? document.documentElement).append(notice);
+  reload.focus();
+}
+
 // Production: auto-recover from stale chunks after a deploy.
 // When the SW serves an old HTML shell that references chunk hashes the server
-// no longer has, dynamic imports fail. A single reload fetches the new manifest.
+// no longer has, dynamic imports fail. A cache-busted reload usually fetches
+// the new shell; if it does not, a second try clears the service worker
+// itself, and a third failure stops and asks the person instead of looping.
 if (browser && !dev) {
   // Explain the previous stale-chunk recovery (if any) before the boot noise,
   // and park it for the session_start event. Prod counterpart of the dev
   // breadcrumb above; the SW update reload reports itself the same way.
   printChunkRecoveryReloadBreadcrumb();
+
+  // Every chunk a failed page needed fails at once, so one bad shell fires a
+  // burst of preloadErrors. Only the first one on this page decides; the rest
+  // would read the stamp it just wrote and escalate on the spot.
+  let chunkRecoveryStarted = false;
 
   window.addEventListener("vite:preloadError", () => {
     // Vite turns a cancelled preload error into a fulfilled import whose value
@@ -219,16 +259,30 @@ if (browser && !dev) {
     // long enough to destructure that missing module and emit a cascade of fake
     // state/initializer failures. Let the import reject so its caller stops;
     // the rejection listener below keeps the expected exit quiet.
-    // Time-based guard, NOT cleared on boot: the old clear-on-load guard could
+    if (chunkRecoveryStarted) return;
+    chunkRecoveryStarted = true;
+
+    // Time-based steps, NOT cleared on boot: the old clear-on-load guard could
     // loop (fail → reload → boot clears guard → fail → reload …) when the SW
     // kept serving the same stale shell — one user logged 74 of these in a row.
-    const last = Number(sessionStorage.getItem("tka-chunk-reload") || 0);
-    if (Date.now() - last < 60_000) return;
-    sessionStorage.setItem("tka-chunk-reload", String(Date.now()));
-    markChunkRecoveryReload();
+    // Within a minute this allows one soft and one hard reload, then gives up.
+    const step = claimChunkRecoveryStep();
+    if (step === "give-up") {
+      showChunkLoadFailureNotice();
+      return;
+    }
+    markChunkRecoveryReload(step);
+    if (step === "hard") {
+      // The soft reload came back to the same dead chunk, so the worker is
+      // still handing out an old shell. Drop it and its caches and boot
+      // uncontrolled. Imported statically: this path cannot need a lazy chunk.
+      void forceFreshReload();
+      return;
+    }
     // Cache-bust the navigation: a plain reload can re-serve the identical
     // SW-cached HTML shell with the same dead chunk hashes (same trick as the
-    // dev SW-escape above). The unique query forces the HTML from network.
+    // dev SW-escape above). sw.js sends `?fresh=` navigations to the network
+    // and never answers them with its cached shell.
     const url = new URL(window.location.href);
     url.searchParams.set("fresh", String(Date.now()));
     window.location.replace(url.toString());
@@ -266,9 +320,12 @@ if (browser && !dev) {
 
     const isModuleLoadFailure =
       message.includes("Failed to fetch dynamically imported module") ||
-      // Safari's phrasing of the same stale-chunk failure the vite:preloadError
-      // handler above already recovers from.
+      // Safari's and Firefox's phrasings of the same stale-chunk failure the
+      // vite:preloadError handler above already recovers from.
       message.includes("Importing a module script failed") ||
+      message
+        .toLowerCase()
+        .includes("error loading dynamically imported module") ||
       message.includes("MIME type");
     if (isModuleLoadFailure) {
       event.preventDefault();

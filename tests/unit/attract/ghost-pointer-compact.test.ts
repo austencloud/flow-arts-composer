@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Create method previews press inside boxes as small as 40px, so the ghost
  * has a compact size: a class the stylesheet sizes off the preview box. The

@@ -10,7 +10,12 @@ import {
 	isValidViewerMode,
 	isValidSplitConfig
 } from '../services/viewer-state-persistence';
-import { coerce3DContent, coerce3DSplit } from '../services/viewer-modes';
+import {
+	coerce3DContent,
+	coerce3DSplit,
+	viewerModeForSubject,
+	type ViewerSubject
+} from '../services/viewer-modes';
 import { viewportFits3D } from '#lib/shared/3d/capabilities/viewport-3d-gate.svelte.js';
 
 export type { ViewerMode, ExportContext, ContentType, SplitConfig };
@@ -53,11 +58,31 @@ export function createViewerState(options?: ViewerStateOptions) {
 	);
 	let splitConfig = $state<SplitConfig>(seededSplit ?? loadSplitConfig({ persist }));
 	let videoUploadOpen = $state(false);
+	// Who the viewer is showing. The shell sets it from the composition it was
+	// handed; a cast renders only its own views (see `viewerModeForSubject`).
+	let subject = $state<ViewerSubject>('sequence');
+
+	function setSubject(next: ViewerSubject) {
+		subject = next;
+	}
+
+	// A cast page's view says nothing about how this device likes to see a
+	// sequence, so choices made on one never overwrite the remembered surface.
+	function persistMode(mode: ViewerMode) {
+		if (persist && subject === 'sequence') persistViewerMode(mode);
+	}
 
 	function setViewerMode(mode: ViewerMode) {
 		viewerMode = mode;
 		videoUploadOpen = false;
-		if (persist) persistViewerMode(mode);
+		persistMode(mode);
+	}
+
+	// A host's opening view (the tunnel page, the scan funnel's card boot) is
+	// page intent, not this device's preference, so it is never saved.
+	function seedViewerMode(mode: ViewerMode) {
+		viewerMode = mode;
+		videoUploadOpen = false;
 	}
 
 	function setExportContext(ctx: ExportContext) {
@@ -86,7 +111,7 @@ export function createViewerState(options?: ViewerStateOptions) {
 			viewerMode = 'card';
 		}
 		exportContext = type;
-		if (persist) persistViewerMode(viewerMode);
+		persistMode(viewerMode);
 	}
 
 	function exitExport() {
@@ -99,7 +124,7 @@ export function createViewerState(options?: ViewerStateOptions) {
 		viewerMode = 'videos';
 		exportContext = null;
 		videoUploadOpen = true;
-		if (persist) persistViewerMode(viewerMode);
+		persistMode(viewerMode);
 	}
 
 	function closeVideoUpload() {
@@ -107,20 +132,29 @@ export function createViewerState(options?: ViewerStateOptions) {
 	}
 
 
+	// The mode the subject can show. A cast lands a 2D or card mode (a
+	// `?pane=` link, a remembered surface) on its tunnel; the stored value is
+	// left alone, so a sequence page still opens where this device left it.
+	const subjectViewerMode = $derived<ViewerMode>(viewerModeForSubject(viewerMode, subject));
+
 	// wants3D reflects the RAW stored preference (not the viewport-coerced getters
 	// below), so folding a Z Fold suppresses 3D via the orchestrator's fits3D
 	// guard while the preference survives — unfolding re-enters 3D automatically.
 	const wants3D = $derived(
-		viewerMode === 'animation-3d' ||
-		(viewerMode === 'split' &&
+		subjectViewerMode === 'animation-3d' ||
+		(subjectViewerMode === 'split' &&
 			(splitConfig.leftPane === 'animation-3d' || splitConfig.rightPane === 'animation-3d'))
 	);
 
 	// Effective (viewport-gated) views for RENDERING. When the viewport can't host
 	// 3D, a persisted 3D mode/pane renders as 2D without overwriting storage. Live
 	// via viewportFits3D() — grows back to 3D the instant the screen fits again.
+	// A cast has no 2D animation of its own, so a cast whose 3D view does not
+	// fit falls back to its tunnel rather than to the lead's 2D animation.
 	const effectiveViewerMode = $derived<ViewerMode>(
-		viewerMode === 'animation-3d' ? coerce3DContent('animation-3d', viewportFits3D()) : viewerMode
+		subjectViewerMode === 'animation-3d'
+			? viewerModeForSubject(coerce3DContent('animation-3d', viewportFits3D()), subject)
+			: subjectViewerMode
 	);
 	const effectiveSplitConfig = $derived<SplitConfig>(coerce3DSplit(splitConfig, viewportFits3D()));
 
@@ -152,7 +186,12 @@ export function createViewerState(options?: ViewerStateOptions) {
 		get wants3D() {
 			return wants3D;
 		},
+		get subject() {
+			return subject;
+		},
+		setSubject,
 		setViewerMode,
+		seedViewerMode,
 		setExportContext,
 		setSplitPaneContent,
 		setSplitConfig,

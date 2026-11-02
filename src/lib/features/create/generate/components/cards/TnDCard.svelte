@@ -18,7 +18,7 @@
   import { onMount, getContext, flushSync } from "svelte";
   import type { PanelCoordinationState } from "#lib/shared/create/state/panel-coordination-state.svelte.js";
   import type { TnDSelection } from "#lib/shared/create/domain/hand-relationship.js";
-  import type { VtgMode } from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
+  import type { VtgMode } from "@tka/shape-domain";
   import { morphGenerateCard } from "../../shared/services/generate-card-morph";
   import { buildTnDCardDisplay } from "./tnd-card-display";
   import { describeCreateTnDSelection } from "./tnd-presentation";

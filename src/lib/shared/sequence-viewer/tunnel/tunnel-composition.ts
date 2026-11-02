@@ -10,8 +10,8 @@ import {
   type CopyOp,
   type TunnelConfig,
 } from "./tunnel-config";
-import type { Flower } from "#lib/shared/shape-matrix/domain/flower-signature.js";
-import type { VtgMode } from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
+import type { Flower } from "@tka/shape-domain";
+import type { VtgMode } from "@tka/shape-domain";
 import {
   cloneTunnelStage,
   createExplicitTunnelStage,

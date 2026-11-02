@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
 import { setLocale, t } from "#lib/shared/i18n/i18n.svelte.js";
 import { tkaEditorTranslate } from "#lib/shared/media-composition/state/editor-strings.js";

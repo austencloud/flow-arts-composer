@@ -7,7 +7,7 @@
   URL, and takes its prop pair from settings like every other surface.
 -->
 <script lang="ts">
-  import ShapeMatrixApp from "#lib/shared/shape-matrix/app/ShapeMatrixApp.svelte";
+  import ShapeMatrixApp from "@tka/shape-engine/app/ShapeMatrixApp.svelte";
   import {
     getSettings,
     updateSettings,

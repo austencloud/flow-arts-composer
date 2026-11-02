@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createEmptyPostProject } from "#lib/shared/post-studio-plugin/index.js";
 import { createArrangementProject } from "#lib/shared/media-composition/domain/post-arrangement-item.js";

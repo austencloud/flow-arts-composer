@@ -7,11 +7,11 @@ import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js"
 import {
   flowerKey,
   type Flower,
-} from "#lib/shared/shape-matrix/domain/flower-signature.js";
+} from "@tka/shape-domain";
 import {
   MODE_ORDER,
   type VtgMode,
-} from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
+} from "@tka/shape-domain";
 import { motionPathExamples } from "./motion-path-examples";
 
 export type MotionPathRealizationBuilder = (

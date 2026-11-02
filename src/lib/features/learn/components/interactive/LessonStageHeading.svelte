@@ -102,8 +102,9 @@
     line-height: 1.45;
   }
 
+  /* A lead with a capped measure still sits under the centred title. */
   .description :global(p) {
-    margin: 0;
+    margin: 0 auto;
   }
 
   .description :global(strong) {

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
 import { pinDocumentLanguage, setLocale } from "./i18n.svelte";
 import { siteCopyLocale } from "#lib/shared/landing/site-copy.js";

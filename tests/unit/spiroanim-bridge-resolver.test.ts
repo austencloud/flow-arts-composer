@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * The SpiroAnim bridge resolver: cellKey → hydrated SequenceData.
  *

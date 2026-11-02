@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, expect, it, vi } from "vitest";
 import { handlePerformerCopyShortcut } from "#lib/shared/3d/domain/performer-copy-shortcuts.js";
 

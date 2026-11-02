@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Boot bar contract: the app.html fill replays the last boot's own timing.
  *

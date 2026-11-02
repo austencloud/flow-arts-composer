@@ -36,6 +36,7 @@
   import { WebGLRenderer } from "three";
 
   import Viewer3DScene from "./Viewer3DScene.svelte";
+  import type { PerformerPropColors } from "../rendering/performer-prop-tint";
   import WebComposerMotionPreparation from "./WebComposerMotionPreparation.svelte";
   import type { composerCaptureRequest } from "../unreal/domain/composer-capture-request";
   import Viewer3DCamera from "./Viewer3DCamera.svelte";
@@ -167,6 +168,8 @@
     performerStepOffsets?: readonly number[];
     /** Resolved per-performer step for hosts whose lanes run independent clocks. */
     performerSteps?: readonly (number | null | undefined)[] | null;
+    /** Per-performer prop colors — see Viewer3DScene. Main-thread renderer only. */
+    performerPropColors?: readonly (PerformerPropColors | null | undefined)[] | null;
     /** Host world geometry rendered in the performer coordinate frame. */
     worldChildren?: Snippet;
     /** Keep reserved rigs mounted while rendering only the active shot's cast. */
@@ -229,6 +232,7 @@
     waitForPerformersOnInitialReveal = false,
     performerStepOffsets = [],
     performerSteps = null,
+    performerPropColors = null,
     worldChildren,
     visiblePerformerCount,
     stageBoundsPositions = null,
@@ -461,6 +465,7 @@
       !renderEmptyScene &&
       !stageBoundsPositions &&
       !stageExtent &&
+      !performerPropColors &&
       !onPerformanceSample &&
       !gaitProbeState.enabled &&
       viewer3DState.performerManager.renderablePerformers.every(
@@ -992,6 +997,7 @@
                   {effectQualityTier}
                   {performerStepOffsets}
                   {performerSteps}
+                  {performerPropColors}
                   {worldChildren}
                   {visiblePerformerCount}
                   {stageBoundsPositions}

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -16,8 +17,10 @@ const stateSource = readFileSync(
 
 const disposals: Array<() => void> = [];
 
-function makePersistentState() {
-  const { state, dispose } = createPersistentViewerStateForTest();
+function makePersistentState(
+  options?: Parameters<typeof createPersistentViewerStateForTest>[0]
+) {
+  const { state, dispose } = createPersistentViewerStateForTest(options);
   disposals.push(dispose);
   return state;
 }
@@ -57,6 +60,24 @@ describe("Viewer 3D camera persistence", () => {
     );
     expect(stateSource).toContain(
       "if (!_hasPlayedWelcome && !_persistedCamera)"
+    );
+  });
+
+  it("leaves the remembered camera to the single-sequence viewer when a host stages its own cast", () => {
+    const pose: CameraStateSnapshot = {
+      position: { x: 1, y: 2, z: 3 },
+      rotation: { x: 0, y: 0, z: 0 },
+      fov: 50,
+      target: { x: 0, y: 1, z: 0 },
+      timestamp: 1,
+    };
+    makePersistentState().updateCameraSnapshot(pose);
+
+    const hosted = makePersistentState({ hostOwnsCast: true });
+    expect(hosted.persistedCamera).toBeNull();
+    hosted.updateCameraSnapshot({ ...pose, position: { x: 9, y: 9, z: 9 } });
+    expect(JSON.parse(localStorage.getItem(CAMERA_KEY) ?? "null")).toEqual(
+      pose
     );
   });
 });

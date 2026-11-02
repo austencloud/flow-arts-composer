@@ -9,7 +9,7 @@ patchedDependencies:
     hash: c3af8573dd6280639488ac6ca0725551a64d91575fbdfb9d86ff2bc3a2af7e06
     path: patches/@austencloud__backgrounds@0.7.12.patch
   '@austencloud/scene-3d@0.1.6':
-    hash: 808352772fe76a62395f42029fec0c839fe8d93bdfa2c71e000ea74360b3154b
+    hash: 86230cf5ce335070e315fff0ea3016ec3e6de01422511e951a721f22329a786f
     path: patches/@austencloud__scene-3d@0.1.6.patch
   rollup@4.57.1:
     hash: 6b60c20b3aab385a92f1669e15227e7bc9ad56e476a3847cadafd55aacf41847
@@ -72,7 +72,7 @@ importers:
         version: file:vendor/austencloud-phone-sign-in-0.1.0.tgz(svelte@5.57.2(@typescript-eslint/types@8.59.4))
       '@austencloud/scene-3d':
         specifier: ^0.1.6
-        version: 0.1.6(patch_hash=808352772fe76a62395f42029fec0c839fe8d93bdfa2c71e000ea74360b3154b)(@threlte/core@8.3.1(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0))(@threlte/extras@9.7.1(@types/three@0.182.0)(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0))(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0)
+        version: 0.1.6(patch_hash=86230cf5ce335070e315fff0ea3016ec3e6de01422511e951a721f22329a786f)(@threlte/core@8.3.1(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0))(@threlte/extras@9.7.1(@types/three@0.182.0)(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0))(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0)
       '@austencloud/sidebar':
         specifier: file:vendor/austencloud-sidebar-1.2.0.tgz
         version: file:vendor/austencloud-sidebar-1.2.0.tgz(svelte@5.57.2(@typescript-eslint/types@8.59.4))
@@ -719,6 +719,56 @@ importers:
       typescript:
         specifier: ^5.0.0
         version: 5.9.3
+
+  packages/shape-domain:
+    dependencies:
+      '@tka/sequence-engine':
+        specifier: workspace:*
+        version: link:../sequence-engine
+      '@tka/tka-types':
+        specifier: workspace:*
+        version: link:../tka-types
+      '@vtg/domain':
+        specifier: workspace:*
+        version: link:../vtg-domain
+    devDependencies:
+      rimraf:
+        specifier: ^5.0.0
+        version: 5.0.10
+      typescript:
+        specifier: ^6.0.0
+        version: 6.0.3
+
+  packages/shape-engine:
+    dependencies:
+      '@austencloud/motion':
+        specifier: file:../../vendor/austencloud-motion-0.2.1.tgz
+        version: file:vendor/austencloud-motion-0.2.1.tgz(svelte@5.57.2(@typescript-eslint/types@8.59.4))
+      '@tka/shape-domain':
+        specifier: workspace:*
+        version: link:../shape-domain
+    devDependencies:
+      '@sveltejs/package':
+        specifier: ^2.3.0
+        version: 2.5.7(svelte@5.57.2(@typescript-eslint/types@8.59.4))(typescript@6.0.3)
+      '@sveltejs/vite-plugin-svelte':
+        specifier: ^7.0.0
+        version: 7.3.1(svelte@5.57.2(@typescript-eslint/types@8.59.4))(vite@8.3.4(@types/node@25.2.0)(esbuild@0.28.1)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.0))
+      rimraf:
+        specifier: ^5.0.0
+        version: 5.0.10
+      svelte:
+        specifier: ^5.57.1
+        version: 5.57.2(@typescript-eslint/types@8.59.4)
+      svelte-check:
+        specifier: ^4.0.0
+        version: 4.7.6(picomatch@4.0.7)(svelte@5.57.2(@typescript-eslint/types@8.59.4))(typescript@6.0.3)
+      typescript:
+        specifier: ^6.0.0
+        version: 6.0.3
+      vite:
+        specifier: ^8.0.12
+        version: 8.3.4(@types/node@25.2.0)(esbuild@0.28.1)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.0)
 
   packages/spin-science-domain:
     dependencies:
@@ -9749,7 +9799,7 @@ snapshots:
     optionalDependencies:
       svelte: 5.57.2(@typescript-eslint/types@8.59.4)
 
-  '@austencloud/scene-3d@0.1.6(patch_hash=808352772fe76a62395f42029fec0c839fe8d93bdfa2c71e000ea74360b3154b)(@threlte/core@8.3.1(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0))(@threlte/extras@9.7.1(@types/three@0.182.0)(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0))(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0)':
+  '@austencloud/scene-3d@0.1.6(patch_hash=86230cf5ce335070e315fff0ea3016ec3e6de01422511e951a721f22329a786f)(@threlte/core@8.3.1(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0))(@threlte/extras@9.7.1(@types/three@0.182.0)(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0))(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0)':
     dependencies:
       '@threlte/core': 8.3.1(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0)
       '@threlte/extras': 9.7.1(@types/three@0.182.0)(svelte@5.57.2(@typescript-eslint/types@8.59.4))(three@0.182.0)
@@ -12268,6 +12318,17 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
+  '@sveltejs/package@2.5.7(svelte@5.57.2(@typescript-eslint/types@8.59.4))(typescript@6.0.3)':
+    dependencies:
+      chokidar: 5.0.0
+      kleur: 4.1.5
+      sade: 1.8.1
+      semver: 7.8.1
+      svelte: 5.57.2(@typescript-eslint/types@8.59.4)
+      svelte2tsx: 0.7.47(svelte@5.57.2(@typescript-eslint/types@8.59.4))(typescript@6.0.3)
+    transitivePeerDependencies:
+      - typescript
+
   '@sveltejs/vite-plugin-svelte-inspector@4.0.1(@sveltejs/vite-plugin-svelte@5.1.1(svelte@5.57.2(@typescript-eslint/types@8.59.4))(vite@6.4.2(@types/node@25.2.0)(jiti@2.6.1)(lightningcss@1.33.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.0)))(svelte@5.57.2(@typescript-eslint/types@8.59.4))(vite@6.4.2(@types/node@25.2.0)(jiti@2.6.1)(lightningcss@1.33.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.0))':
     dependencies:
       '@sveltejs/vite-plugin-svelte': 5.1.1(svelte@5.57.2(@typescript-eslint/types@8.59.4))(vite@6.4.2(@types/node@25.2.0)(jiti@2.6.1)(lightningcss@1.33.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.0))
@@ -12834,10 +12895,10 @@ snapshots:
 
   '@vercel/oidc@3.1.0': {}
 
-  '@vitest/browser-playwright@4.0.18(playwright@1.61.1)(vite@7.3.1(@types/node@25.2.0)(jiti@2.6.1)(lightningcss@1.33.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.0))(vitest@4.0.18)':
+  '@vitest/browser-playwright@4.0.18(playwright@1.61.1)(vite@6.4.2(@types/node@25.2.0)(jiti@2.6.1)(lightningcss@1.33.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.0))(vitest@4.0.18)':
     dependencies:
-      '@vitest/browser': 4.0.18(vite@7.3.1(@types/node@25.2.0)(jiti@2.6.1)(lightningcss@1.33.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.0))(vitest@4.0.18)
-      '@vitest/mocker': 4.0.18(vite@7.3.1(@types/node@25.2.0)(jiti@2.6.1)(lightningcss@1.33.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.0))
+      '@vitest/browser': 4.0.18(vite@6.4.2(@types/node@25.2.0)(jiti@2.6.1)(lightningcss@1.33.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.0))(vitest@4.0.18)
+      '@vitest/mocker': 4.0.18(vite@6.4.2(@types/node@25.2.0)(jiti@2.6.1)(lightningcss@1.33.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.0))
       playwright: 1.61.1
       tinyrainbow: 3.1.0
       vitest: 4.0.18(@opentelemetry/api@1.9.0)(@types/node@25.2.0)(@vitest/browser-playwright@4.0.18)(jiti@2.6.1)(jsdom@28.1.0(canvas@3.2.1))(lightningcss@1.33.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.0)
@@ -12861,9 +12922,9 @@ snapshots:
       - utf-8-validate
       - vite
 
-  '@vitest/browser@4.0.18(vite@7.3.1(@types/node@25.2.0)(jiti@2.6.1)(lightningcss@1.33.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.0))(vitest@4.0.18)':
+  '@vitest/browser@4.0.18(vite@6.4.2(@types/node@25.2.0)(jiti@2.6.1)(lightningcss@1.33.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.0))(vitest@4.0.18)':
     dependencies:
-      '@vitest/mocker': 4.0.18(vite@7.3.1(@types/node@25.2.0)(jiti@2.6.1)(lightningcss@1.33.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.0))
+      '@vitest/mocker': 4.0.18(vite@6.4.2(@types/node@25.2.0)(jiti@2.6.1)(lightningcss@1.33.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.0))
       '@vitest/utils': 4.0.18
       magic-string: 0.30.21
       pixelmatch: 7.1.0
@@ -12930,13 +12991,13 @@ snapshots:
     optionalDependencies:
       vite: 7.3.1(@types/node@25.2.0)(jiti@2.6.1)(lightningcss@1.33.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.0)
 
-  '@vitest/mocker@4.0.18(vite@7.3.1(@types/node@25.2.0)(jiti@2.6.1)(lightningcss@1.33.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.0))':
+  '@vitest/mocker@4.0.18(vite@6.4.2(@types/node@25.2.0)(jiti@2.6.1)(lightningcss@1.33.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.0))':
     dependencies:
       '@vitest/spy': 4.0.18
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
-      vite: 7.3.1(@types/node@25.2.0)(jiti@2.6.1)(lightningcss@1.33.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.0)
+      vite: 6.4.2(@types/node@25.2.0)(jiti@2.6.1)(lightningcss@1.33.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.0)
 
   '@vitest/mocker@4.1.11(vite@8.3.4(@types/node@25.2.0)(esbuild@0.28.1)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.0))':
     dependencies:
@@ -18608,7 +18669,7 @@ snapshots:
   vitest@4.0.18(@opentelemetry/api@1.9.0)(@types/node@25.2.0)(@vitest/browser-playwright@4.0.18)(jiti@2.6.1)(jsdom@28.1.0(canvas@3.2.1))(lightningcss@1.33.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.0):
     dependencies:
       '@vitest/expect': 4.0.18
-      '@vitest/mocker': 4.0.18(vite@7.3.1(@types/node@25.2.0)(jiti@2.6.1)(lightningcss@1.33.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.0))
+      '@vitest/mocker': 4.0.18(vite@6.4.2(@types/node@25.2.0)(jiti@2.6.1)(lightningcss@1.33.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.0))
       '@vitest/pretty-format': 4.0.18
       '@vitest/runner': 4.0.18
       '@vitest/snapshot': 4.0.18
@@ -18625,12 +18686,12 @@ snapshots:
       tinyexec: 1.0.2
       tinyglobby: 0.2.16
       tinyrainbow: 3.0.3
-      vite: 7.3.1(@types/node@25.2.0)(jiti@2.6.1)(lightningcss@1.33.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.0)
+      vite: 6.4.2(@types/node@25.2.0)(jiti@2.6.1)(lightningcss@1.33.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.0)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@opentelemetry/api': 1.9.0
       '@types/node': 25.2.0
-      '@vitest/browser-playwright': 4.0.18(playwright@1.61.1)(vite@7.3.1(@types/node@25.2.0)(jiti@2.6.1)(lightningcss@1.33.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.0))(vitest@4.0.18)
+      '@vitest/browser-playwright': 4.0.18(playwright@1.61.1)(vite@6.4.2(@types/node@25.2.0)(jiti@2.6.1)(lightningcss@1.33.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.0))(vitest@4.0.18)
       jsdom: 28.1.0(canvas@3.2.1)
     transitivePeerDependencies:
       - jiti

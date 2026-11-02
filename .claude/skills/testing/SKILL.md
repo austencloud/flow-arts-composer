@@ -64,17 +64,21 @@ directory walk or a bare name), so the locator's mention scan finds it.
 ## Always pass the config when running one file
 
 `npm test` resolves to `vitest --config tests/config/vitest.config.ts`, which
-sets `environment: "jsdom"` — the same environment CI uses. Invoking vitest
-directly on a single file does **not** inherit that:
+runs files in a DOM-free node environment that keeps the browser module
+transforms, and in jsdom when the file starts with
+`// @vitest-environment jsdom` — the same setup CI uses. A new test that needs
+`window`, `document` or storage adds that line. Invoking vitest directly on a
+single file does **not** inherit any of that:
 
 ```sh
 npx vitest run path/to/thing.test.ts                               # ❌ node env — CI does not run this
 npx vitest run --config tests/config/vitest.config.ts path/to/…    # ✅ matches CI
 ```
 
-The bare form silently picks up the default config and a node environment, so a
-test can pass locally and fail in CI on anything the two environments disagree
-about. jsdom is the more limited of the two: its `Blob` predates
+The bare form silently picks up the default config and Vitest's own node
+environment, which transforms modules for the server, without the aliases or
+setup file, so a test can pass locally and fail in CI on anything the two
+disagree about. jsdom is the more limited of the two: its `Blob` predates
 `Blob.prototype.arrayBuffer`, its canvas and `ImageData` are shimmed in
 `tests/setup/vitest-setup.ts`, and node globals present under `node` may be
 absent under jsdom.

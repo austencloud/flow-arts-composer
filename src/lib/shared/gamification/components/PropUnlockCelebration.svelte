@@ -221,7 +221,7 @@
     reset();
   }
   function signUpToKeep() {
-    authDrawerState.show("signup", "prop-collection");
+    authDrawerState.showOnRequest("signup", "prop-collection");
   }
 </script>
 

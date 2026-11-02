@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 // @vitest-environment-options {"url":"https://tkaflowarts.com/learn?utm_source=newsletter&utm_medium=email"}
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 

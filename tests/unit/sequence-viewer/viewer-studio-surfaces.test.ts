@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
 import type { Snippet } from "svelte";
 import type { UnifiedPlaybackContext } from "#lib/shared/timeline/unified-playback-context.js";

@@ -1,11 +1,11 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { loadShapeMatrix, type ShapeMatrixData } from "#lib/shared/shape-matrix/services/shape-matrix-flowers.js";
-  import ShapeMatrixGrid from "#lib/shared/shape-matrix/components/ShapeMatrixGrid.svelte";
+  import { loadShapeMatrix, type ShapeMatrixData } from "@tka/shape-engine/services/shape-matrix-flowers.js";
+  import ShapeMatrixGrid from "@tka/shape-engine/components/ShapeMatrixGrid.svelte";
   import ShapeMatrixDrillModal from "#lib/features/lab/vtg-lab/components/ShapeMatrixDrillModal.svelte";
   import ShapeMatrixFilters from "#lib/features/lab/vtg-lab/components/ShapeMatrixFilters.svelte";
-  import { applyFilter, defaultMatrixFilters, type MatrixFilters } from "#lib/shared/shape-matrix/domain/filter-flower-axis.js";
-  import type { Flower } from "#lib/shared/shape-matrix/domain/flower-signature.js";
+  import { applyFilter, defaultMatrixFilters, type MatrixFilters } from "@tka/shape-domain";
+  import type { Flower } from "@tka/shape-domain";
 
   let data = $state<ShapeMatrixData | null>(null);
   let err = $state("");

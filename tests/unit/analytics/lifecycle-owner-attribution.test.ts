@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * A lifecycle event is attributed to the account that DID the thing.
  *

@@ -64,8 +64,31 @@
     markNativeScanViewerReady,
     subscribeNativeScanViewerTransition,
   } from "#lib/shared/platform/services/native-scan-viewer-readiness.js";
+  import {
+    createViewerOpenTiming,
+    type ViewerOpenMilestone,
+  } from "../analytics/viewer-open-timing";
+  import {
+    trackViewerOpenTiming,
+    type ViewerAnalyticsContext,
+  } from "../analytics/viewer-events";
 
   const overlay = getSequenceOverlayState();
+
+  // Tap to drawer, tap to viewer: one `viewer_open_timing` event per timed
+  // open, plus User Timing measures so the same spans show in a profile.
+  const openTiming = createViewerOpenTiming<ViewerAnalyticsContext>({
+    now: () => performance.now(),
+    measure: (milestone: ViewerOpenMilestone, start: number, end: number) => {
+      try {
+        performance.measure(`viewer-open:${milestone}`, { start, end });
+      } catch {
+        // User Timing with explicit times is missing on very old engines.
+      }
+    },
+    send: ({ context, drawerVisibleMs, viewerRevealedMs }) =>
+      trackViewerOpenTiming(context, drawerVisibleMs, viewerRevealedMs),
+  });
 
   let isMobileWidth = $state(true);
 
@@ -113,6 +136,7 @@
     }
     if (viewerRevealed) return;
     viewerRevealed = true;
+    openTiming.viewerRevealed();
     layerFade?.play();
   }
 
@@ -237,12 +261,29 @@
               dormantPrewarm !== null &&
               isPrewarmedContent(dormantPrewarm, overlay.sequence);
           }
+          startOpenTiming();
         }
       }
+      if (!open) openTiming.end();
       if (open) openedSession = session;
       drawerOpen = open;
     });
   });
+
+  // Only opens that carry a tap time (the navigator's) are timed. The frame
+  // after the open flips is the drawer's first frame on screen; a busy main
+  // thread holds that frame back, which is what the number is for.
+  function startOpenTiming() {
+    openTiming.end();
+    const startMs = overlay.openedAtMs;
+    if (startMs === null || startMs === undefined) return;
+    openTiming.start(startMs, {
+      sequenceId: overlay.sequence?.id ?? "",
+      source: overlay.analyticsSource,
+    });
+    if (viewerRevealed) openTiming.viewerRevealed();
+    requestAnimationFrame(() => openTiming.drawerVisible());
+  }
 
   // The mount runs once the slide has started: by then the slide belongs to
   // the compositor, so building the viewer cannot hold it back. Measured in one trace, the slide dropped one frame while the viewer
@@ -604,6 +645,7 @@
   }
 
   function handleDismiss(reason?: "navigate") {
+    openTiming.end();
     // A plain close slides the drawer away; its close callback finishes the
     // dismissal once the viewer is off-screen.
     if (reason !== "navigate" && drawerOpen) {
@@ -645,6 +687,7 @@
   }
 
   function handleDrawerClose() {
+    openTiming.end();
     if (overlay.isOpen) dismissAfterSlide();
     else finishDismiss();
   }
@@ -732,8 +775,11 @@
       class:awaiting-reveal={!viewerRevealed}
       bind:this={viewerLayer}
     >
+      <!-- Not kept alive: kept content built the whole viewer inside the tap's
+           task on every open after the first, 5 to 9.6 s to the drawer at 6x. -->
       <LazyMount
         loader={loadSequenceViewerContent}
+        keepAlive={false}
         active={(overlay.sequence !== null &&
           (viewerMountAllowed || adopted)) ||
           viewerDormant}

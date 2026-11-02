@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Loading session contract: one load, one bar, however many surfaces show it.
  *

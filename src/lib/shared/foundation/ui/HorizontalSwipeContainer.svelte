@@ -32,6 +32,10 @@
      *  whose slides put a header above their content can line the arrows up
      *  with the content. Null keeps them at the container's middle. */
     arrowCenterOffset?: number | null;
+    /** The swipe direction. "y" stacks the panels and pages them up and
+     *  down, for hosts whose tabs run down a side rail. Arrows are a
+     *  left/right affordance, so a vertical container never shows them. */
+    axis?: "x" | "y";
   }
 
   let {
@@ -51,7 +55,11 @@
     storageKey = undefined,
     emblaApiRef: _emblaApiRef = $bindable(),
     arrowCenterOffset = null,
+    axis = "x",
   }: Props = $props();
+
+  const vertical = $derived(axis === "y");
+  const arrowsShown = $derived(showArrows && !vertical);
 
   // The viewport ends --embla-bottom-gap above the container's bottom edge,
   // so its center sits half that gap above the container's 50%.
@@ -108,7 +116,7 @@
   // then shrinks when arrows appear after slide count is determined.
   // We assume arrows WILL be present initially to avoid layout shift.
   let navPadding = $derived.by(() =>
-    showArrows ? measuredArrowWidth + ARROW_SPACING : 0
+    arrowsShown ? measuredArrowWidth + ARROW_SPACING : 0
   );
 
   let prevArrowButton = $state<HTMLButtonElement | undefined>();
@@ -140,7 +148,7 @@
       // CRITICAL: Always assume arrow space when showArrows is true
       // This matches the navPadding calculation above and prevents layout shift
       // where content initially renders larger then shrinks when arrows appear
-      const navPaddingValue = showArrows
+      const navPaddingValue = arrowsShown
         ? measuredArrowWidth + ARROW_SPACING
         : 0;
       const leftOffset = navPaddingValue;
@@ -244,6 +252,56 @@
     }
   });
 
+  // A mouse wheel turns one page per gesture along the carousel's own axis:
+  // the main wheel when the panels stack (axis "y"), a side wheel or
+  // trackpad sideways swipe when they sit in a row. Wheel movement across
+  // the axis is left alone. A gesture ends after a short quiet gap, so a
+  // free-spinning wheel or trackpad momentum still turns only one page.
+  const WHEEL_PAGE_THRESHOLD = 40;
+  const WHEEL_GESTURE_GAP_MS = 180;
+
+  $effect(() => {
+    const node = emblaNode;
+    if (!node) return;
+    const alongY = vertical;
+    let travelled = 0;
+    let turned = false;
+    let quietTimer: ReturnType<typeof setTimeout> | undefined;
+
+    const onWheel = (event: WheelEvent) => {
+      const unit =
+        event.deltaMode === 1
+          ? 16
+          : event.deltaMode === 2
+            ? node.clientHeight
+            : 1;
+      const along = (alongY ? event.deltaY : event.deltaX) * unit;
+      const across = (alongY ? event.deltaX : event.deltaY) * unit;
+      if (Math.abs(along) <= Math.abs(across)) return;
+      if (!emblaApi || emblaApi.scrollSnapList().length < 2) return;
+      event.preventDefault();
+
+      clearTimeout(quietTimer);
+      quietTimer = setTimeout(() => {
+        travelled = 0;
+        turned = false;
+      }, WHEEL_GESTURE_GAP_MS);
+
+      if (turned) return;
+      travelled += along;
+      if (Math.abs(travelled) < WHEEL_PAGE_THRESHOLD) return;
+      turned = true;
+      if (travelled > 0) emblaApi.scrollNext();
+      else emblaApi.scrollPrev();
+    };
+
+    node.addEventListener("wheel", onWheel, { passive: false });
+    return () => {
+      clearTimeout(quietTimer);
+      node.removeEventListener("wheel", onWheel);
+    };
+  });
+
   onDestroy(() => {
     resizeObserver?.disconnect();
 
@@ -273,11 +331,12 @@
 <!-- Embla Carousel Container -->
 <div
   class="embla {className}"
+  class:vertical
   style="height: {height}; width: {width}; --nav-padding: {navPadding}px;"
   style:--swipe-arrow-top={arrowTop}
 >
   <!-- Navigation Arrows -->
-  {#if showArrows && shouldShowNavigation}
+  {#if arrowsShown && shouldShowNavigation}
     <button
       class="embla__button embla__button--prev"
       onclick={scrollPrev}
@@ -299,7 +358,7 @@
     class="embla__viewport"
     bind:this={emblaNode}
     use:emblaCarouselSvelte={{
-      options: { loop, startIndex: initialPanelIndex },
+      options: { loop, startIndex: initialPanelIndex, axis },
       plugins: [],
     }}
     onemblaInit={onEmblaInit}
@@ -313,7 +372,7 @@
   </div>
 
   <!-- Navigation Arrows -->
-  {#if showArrows && shouldShowNavigation}
+  {#if arrowsShown && shouldShowNavigation}
     <button
       class="embla__button embla__button--next"
       onclick={scrollNext}
@@ -387,6 +446,17 @@
     padding-left: var(--nav-padding, 44px);
     padding-right: var(--nav-padding, 44px);
     box-sizing: border-box;
+  }
+
+  /* Vertical paging: panels stack and the container claims vertical drags,
+     leaving horizontal ones to the page. */
+  .embla.vertical .embla__container {
+    flex-direction: column;
+    touch-action: pan-x pinch-zoom;
+  }
+
+  .embla.vertical .embla__container :global(> *) {
+    min-height: 0;
   }
 
   .embla__button {

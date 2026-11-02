@@ -509,3 +509,149 @@ export function interpolateMandalaPaths(
 ): MandalaPaths {
   return createMandalaMorph(from, to)(t);
 }
+
+// ─── Trace (an append draws itself in) ──────────────────────────────────────
+//
+// Adding a beat to the end of a sequence leaves every earlier beat where it
+// was, so instead of morphing, the new tail is drawn in like a pen stroke.
+// Every beat is sampled with the same number of points, so revealing points
+// at a steady rate over time keeps the line's tip in step with a prop that
+// moves through the beat on the same clock.
+
+/** The geometry partway through drawing an appended tail, by progress. */
+export interface MandalaTrace {
+  (t: number): MandalaPaths;
+}
+
+/** Points this close (mandala units) are the same for an append check. */
+const SAME_BEAT_POINT = 1e-6;
+
+function sameBeat(
+  a: readonly MandalaPoint[],
+  b: readonly MandalaPoint[]
+): boolean {
+  return (
+    a.length === b.length &&
+    a.every(
+      (point, i) =>
+        Math.abs(point.x - b[i]!.x) <= SAME_BEAT_POINT &&
+        Math.abs(point.y - b[i]!.y) <= SAME_BEAT_POINT
+    )
+  );
+}
+
+/** One path of a trace: its kept beats and the beats it is drawing in. */
+interface TracePath {
+  readonly tipIndex: number;
+  readonly prefix: readonly MandalaPoint[];
+  readonly tail: Beats;
+  /** Steps between the tail's distinct points; the clock the reveal runs on. */
+  readonly steps: number;
+}
+
+type GroupTrace = readonly (TracePath | SVGPathData)[];
+
+function isTracePath(entry: TracePath | SVGPathData): entry is TracePath {
+  return "tail" in entry;
+}
+
+/** A group's trace, or null when `to` is not `from` with beats appended. */
+function planGroupTrace(
+  from: readonly SVGPathData[],
+  to: readonly SVGPathData[]
+): { entries: GroupTrace; grows: boolean } | null {
+  if (to.length < from.length) return null;
+  let grows = false;
+  const entries: (TracePath | SVGPathData)[] = [];
+  for (let index = 0; index < to.length; index++) {
+    const next = to[index]!;
+    const previous = from[index];
+    const nextBeats = next.beats;
+    if (!nextBeats) return null;
+    const previousBeats = previous ? previous.beats : [];
+    if (!previousBeats) return null;
+    if (previous && previous.tipIndex !== next.tipIndex) return null;
+    if (previousBeats.length > nextBeats.length) return null;
+    for (let beat = 0; beat < previousBeats.length; beat++) {
+      if (!sameBeat(previousBeats[beat]!, nextBeats[beat]!)) return null;
+    }
+    if (previousBeats.length === nextBeats.length) {
+      entries.push(next);
+      continue;
+    }
+    const tail = nextBeats.slice(previousBeats.length);
+    // Each beat starts on the point the one before it ended, so a beat of n
+    // points adds n - 1 steps of line.
+    const steps = tail.reduce((sum, points) => sum + Math.max(0, points.length - 1), 0);
+    grows = true;
+    entries.push({
+      tipIndex: next.tipIndex,
+      prefix: previousBeats.flat(),
+      tail,
+      steps,
+    });
+  }
+  return { entries, grows };
+}
+
+/**
+ * The path's points with the tail revealed up to `position` steps. Points
+ * keep the layout the geometry calculator gives them (each beat's own list,
+ * starting on the previous beat's last point), so the finished trace draws
+ * exactly the target's curve.
+ */
+function revealedPoints(path: TracePath, position: number): MandalaPoint[] {
+  const points = [...path.prefix];
+  let left = position;
+  for (const beat of path.tail) {
+    const beatSteps = beat.length - 1;
+    if (left >= beatSteps) {
+      points.push(...beat);
+      left -= beatSteps;
+      continue;
+    }
+    const whole = Math.floor(left);
+    points.push(...beat.slice(0, whole + 1));
+    const fraction = left - whole;
+    if (fraction > 0) {
+      points.push(interpolatePoint(beat[whole]!, beat[whole + 1]!, fraction));
+    }
+    break;
+  }
+  return points;
+}
+
+function traceGroup(entries: GroupTrace, t: number): SVGPathData[] {
+  return entries.flatMap((entry) => {
+    if (!isTracePath(entry)) return [entry];
+    const d = pointsToSVGPath(revealedPoints(entry, t * entry.steps));
+    return d ? [{ d, tipIndex: entry.tipIndex }] : [];
+  });
+}
+
+/**
+ * A trace from `from` to `to`, or null unless `to` only appends beats to
+ * `from`: the same paths, each one's beats a prefix of its new beats, plus
+ * any brand new paths. Null too when no path gains a beat (nothing to draw)
+ * or when a path carries no beats (a blended morph frame), so the caller
+ * morphs instead.
+ */
+export function planMandalaTrace(
+  from: MandalaPaths,
+  to: MandalaPaths
+): MandalaTrace | null {
+  const left = planGroupTrace(from.left, to.left);
+  const right = left && planGroupTrace(from.right, to.right);
+  const purple = right && planGroupTrace(from.purple, to.purple);
+  if (!left || !right || !purple) return null;
+  if (!left.grows && !right.grows && !purple.grows) return null;
+  return (t: number) => {
+    if (t <= 0) return from;
+    if (t >= 1) return to;
+    return {
+      left: traceGroup(left.entries, t),
+      right: traceGroup(right.entries, t),
+      purple: traceGroup(purple.entries, t),
+    };
+  };
+}

@@ -37,6 +37,15 @@
  * the worktree and branch, and prints the :5173 delivery URL. It deliberately
  * leaves everything intact when a safety gate fails.
  *
+ * Concurrency (since 2026-11-01): the gate runs in the task worktree with no
+ * lock held, so several finishes verify in parallel (at most GATE_SLOTS at a
+ * time, so d1 is not swamped). Only the merge into main
+ * takes the repo-wide lock, for seconds, and a finish waits for it instead of
+ * failing. If main moved while the gate ran and none of the landed commits
+ * touch the branch's files, the branch merges on top as-is; if they overlap,
+ * the finish merges main into the branch and runs the gate again (up to
+ * GATE_ROUNDS times) before merging.
+ *
  * Diagnostic scan usage:
  *   node scripts/worktree-automerge.mjs                 # dry run, full gate
  *   node scripts/worktree-automerge.mjs --skip-checks   # dry run, cheap gates only (fast preview)
@@ -48,6 +57,7 @@ import {
   existsSync,
   lstatSync,
   readdirSync,
+  readFileSync,
   realpathSync,
   rmSync,
   statSync,
@@ -66,7 +76,17 @@ const SKIP_BRANCH_PREFIXES = [
 ];
 const SKIP_FILE = ".automerge-skip";
 const QUIESCENT_MIN = 30;
-const LOCK_STALE_MIN = 60;
+// The lock covers only the merge window, so a holder older than this is a
+// crashed run unless its process is still alive.
+const LOCK_STALE_MIN = 30;
+// How long a finish waits for the merge window before giving up.
+const LOCK_WAIT_MIN = 45;
+// How many times a finish re-gates when main lands changes over its files.
+const GATE_ROUNDS = 3;
+// How many finishes may run their gate at the same time on this machine, and
+// how long one waits for a slot.
+const GATE_SLOTS = 3;
+const GATE_WAIT_MIN = 90;
 const MAIN = "main";
 
 function requiresProjectCheck(paths) {
@@ -207,8 +227,8 @@ function logLine(obj) {
   appendFileSync(LOG, JSON.stringify(obj) + "\n");
 }
 
-function fail(message) {
-  throw new Error(message);
+function fail(message, options) {
+  throw new Error(message, options);
 }
 
 function splitNullList(raw) {
@@ -375,63 +395,127 @@ function localFinish() {
     );
   }
 
+  const primaryOverlap = (taskPaths) =>
+    [...changedPaths(primary.path)].filter((path) => taskPaths.has(path));
+  const pathsSince = (base, head) =>
+    new Set(splitNullList(git(["diff", "--name-only", "-z", `${base}..${head}`])));
+
   if (!alreadyIntegrated) {
-    const taskPaths = new Set(
-      splitNullList(
-        git(["diff", "--name-only", "-z", `${mainBefore}..${taskHead}`])
-      )
-    );
-    const overlaps = [...changedPaths(primary.path)].filter((path) =>
-      taskPaths.has(path)
-    );
-    if (overlaps.length) {
-      fail(
-        `primary checkout has overlapping uncommitted paths: ${overlaps.join(", ")}`
-      );
+    // The gate runs in the task worktree with no lock held, so several
+    // finishes can verify at once. Only the merge below is serialized.
+    let head = taskHead;
+    let base = mainBefore;
+    let merged = false;
+    for (let round = 1; round <= GATE_ROUNDS && !merged; round++) {
+      let taskPaths = pathsSince(base, head);
+      const overlaps = primaryOverlap(taskPaths);
+      if (overlaps.length) {
+        fail(
+          `primary checkout has overlapping uncommitted paths: ${overlaps.join(", ")}`
+        );
+      }
+
+      if (SKIP_CHECKS) {
+        console.log(
+          "    WARNING: --skip-checks: no check, tsc, spec or test gate ran for this finish"
+        );
+      } else {
+        const slot = acquireGateSlot();
+        try {
+          projectGate(task.path, base, [...taskPaths]);
+        } finally {
+          releaseGateSlot(slot);
+        }
+      }
+
+      console.log(`worktree finish — ${DRY_RUN ? "DRY RUN" : "APPLY"}`);
+      console.log(`  task: ${FINISH_BRANCH} @ ${head.slice(0, 10)}`);
+      console.log(`  main: ${base.slice(0, 10)} @ ${primary.path}`);
+      console.log("  merge: ready for local --no-ff integration");
+      if (url) console.log(`  delivery: ${url}`);
+      else console.log("  delivery: nonvisual task");
+      if (DRY_RUN) return;
+
+      // Merge window: short, and the only part two finishes may not share.
+      const outcome = withLock(() => {
+        assertNoGitOperation(primary.path);
+        const mainNow = git(["-C", primary.path, "rev-parse", "HEAD"]);
+        if (mainNow !== base) {
+          const landed = pathsSince(base, mainNow);
+          const touched = [...landed].filter((path) => taskPaths.has(path));
+          if (touched.length) {
+            console.log(
+              `    main moved while the gate ran and touched ${touched.length} of this branch's files (${touched.slice(0, 3).join(", ")}${touched.length > 3 ? ", …" : ""}); bringing the branch up to date and re-running the gate`
+            );
+            return { rerun: true, mainNow };
+          }
+          console.log(
+            `    main moved while the gate ran (${git(["rev-list", "--count", `${base}..${mainNow}`])} commits, none touching this branch's files); merging on top`
+          );
+        }
+        const lateOverlaps = primaryOverlap(taskPaths);
+        if (lateOverlaps.length) {
+          fail(
+            `primary checkout has overlapping uncommitted paths: ${lateOverlaps.join(", ")}`
+          );
+        }
+        git(
+          ["-C", primary.path, "merge", "--no-ff", "--no-edit", FINISH_BRANCH],
+          { stdio: "inherit" }
+        );
+        const mainAfterMerge = git(["-C", primary.path, "rev-parse", "HEAD"]);
+        if (!isAncestor(head, mainAfterMerge))
+          fail("post-merge verification failed: task head is not on main");
+        logLine({
+          at: new Date().toISOString(),
+          branch: FINISH_BRANCH,
+          head,
+          preMergeMain: mainNow,
+          gateBase: base,
+          postMergeMain: mainAfterMerge,
+          action: "local-finish-merged",
+          deliveryUrl: url,
+          ...(SKIP_CHECKS ? { skippedChecks: true } : {}),
+        });
+        console.log(`    ✔ merged ${FINISH_BRANCH} into local ${MAIN}`);
+        return { rerun: false };
+      });
+
+      if (!outcome.rerun) {
+        merged = true;
+        break;
+      }
+      if (round === GATE_ROUNDS) {
+        fail(
+          `main kept moving over this branch's files through ${GATE_ROUNDS} gate rounds; update the task branch and try again`
+        );
+      }
+      // Outside the lock: fold the new main into the task branch, then gate
+      // again against it. A conflict is a real overlap for a person to settle.
+      try {
+        git(["-C", task.path, "merge", "--no-edit", MAIN], { stdio: "inherit" });
+      } catch (error) {
+        try {
+          git(["-C", task.path, "merge", "--abort"]);
+        } catch {
+          /* nothing to abort */
+        }
+        fail(
+          `merging main into ${FINISH_BRANCH} conflicts; resolve it in ${task.path} and re-run`,
+          { cause: error }
+        );
+      }
+      head = git(["-C", task.path, "rev-parse", "HEAD"]);
+      base = outcome.mainNow;
     }
-
-    if (SKIP_CHECKS) {
-      console.log(
-        "    WARNING: --skip-checks: no check, tsc, spec or test gate ran for this finish"
-      );
-    } else {
-      projectGate(task.path, mainBefore, [...taskPaths]);
-    }
-
-    const mainAfterChecks = git(["-C", primary.path, "rev-parse", "HEAD"]);
-    if (mainAfterChecks !== mainBefore)
-      fail("main moved while checks ran; update the task branch and try again");
-  }
-
-  console.log(`worktree finish — ${DRY_RUN ? "DRY RUN" : "APPLY"}`);
-  console.log(`  task: ${FINISH_BRANCH} @ ${taskHead.slice(0, 10)}`);
-  console.log(`  main: ${mainBefore.slice(0, 10)} @ ${primary.path}`);
-  if (alreadyIntegrated)
+  } else {
+    console.log(`worktree finish — ${DRY_RUN ? "DRY RUN" : "APPLY"}`);
+    console.log(`  task: ${FINISH_BRANCH} @ ${taskHead.slice(0, 10)}`);
+    console.log(`  main: ${mainBefore.slice(0, 10)} @ ${primary.path}`);
     console.log("  merge: already integrated; cleanup only");
-  else console.log("  merge: ready for local --no-ff integration");
-  if (url) console.log(`  delivery: ${url}`);
-  else console.log("  delivery: nonvisual task");
-
-  if (DRY_RUN) return;
-
-  if (!alreadyIntegrated) {
-    git(["-C", primary.path, "merge", "--no-ff", "--no-edit", FINISH_BRANCH], {
-      stdio: "inherit",
-    });
-    const mainAfterMerge = git(["-C", primary.path, "rev-parse", "HEAD"]);
-    if (!isAncestor(taskHead, mainAfterMerge))
-      fail("post-merge verification failed: task head is not on main");
-    logLine({
-      at: new Date().toISOString(),
-      branch: FINISH_BRANCH,
-      head: taskHead,
-      preMergeMain: mainBefore,
-      postMergeMain: mainAfterMerge,
-      action: "local-finish-merged",
-      deliveryUrl: url,
-      ...(SKIP_CHECKS ? { skippedChecks: true } : {}),
-    });
-    console.log(`    ✔ merged ${FINISH_BRANCH} into local ${MAIN}`);
+    if (url) console.log(`  delivery: ${url}`);
+    else console.log("  delivery: nonvisual task");
+    if (DRY_RUN) return;
   }
 
   removeRootNodeModules(task.path);
@@ -468,18 +552,100 @@ function listWorktrees() {
   return parseWorktrees(git(["worktree", "list", "--porcelain"]));
 }
 
-// Lock so a slow run and the next scheduled tick don't collide on git/gh.
+// The lock serializes only the merge into main (and the diagnostic scan).
+// Gates run outside it, so several finishes verify at once and each waits
+// only for the seconds another one spends merging.
+function lockHolderAlive(path) {
+  try {
+    const pid = Number(readFileSync(path, "utf8").split(" ")[0]);
+    if (!Number.isInteger(pid) || pid <= 0 || pid === process.pid) return false;
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+function lockHeld(path = LOCK) {
+  if (!existsSync(path)) return false;
+  const ageMin = (Date.now() - statSync(path).mtimeMs) / 60000;
+  if (ageMin >= LOCK_STALE_MIN) return false;
+  // A holder whose process is gone crashed; a very young lock is trusted
+  // even before its pid is readable.
+  return lockHolderAlive(path) || ageMin < 2;
+}
+function sleepMs(ms) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+/**
+ * Gates run in parallel, but only GATE_SLOTS at a time machine-wide: on
+ * 2026-11-01 six unbounded gates put 93 vitest and svelte-check processes on
+ * d1 at 100% CPU and timed each other's tests out. A slot is a pid file next
+ * to the merge lock; a dead holder frees it.
+ */
+function acquireGateSlot() {
+  const started = Date.now();
+  let announced = false;
+  for (;;) {
+    for (let i = 1; i <= GATE_SLOTS; i++) {
+      const path = join(GIT_COMMON_DIR, `automerge-gate-${i}.lock`);
+      if (lockHeld(path)) continue;
+      writeFileSync(path, `${process.pid} ${new Date().toISOString()}\n`);
+      if (announced)
+        console.log(`    gate slot ${i} free after ${elapsed(started)}`);
+      return path;
+    }
+    if (Date.now() - started > GATE_WAIT_MIN * 60000) {
+      fail(`waited ${GATE_WAIT_MIN} minutes for a free gate slot`);
+    }
+    if (!announced) {
+      console.log(
+        `    all ${GATE_SLOTS} gate slots busy with other finishes; waiting …`
+      );
+      announced = true;
+    }
+    sleepMs(5000);
+  }
+}
+function releaseGateSlot(path) {
+  try {
+    rmSync(path);
+  } catch {
+    /* already gone */
+  }
+}
 function acquireLock() {
-  if (existsSync(LOCK)) {
-    const ageMin = (Date.now() - statSync(LOCK).mtimeMs) / 60000;
-    if (ageMin < LOCK_STALE_MIN) {
-      const message = `Another automerge run holds the lock (${ageMin.toFixed(0)}m old).`;
-      if (FINISH_REQUESTED) fail(message);
-      console.log(`${message} Exiting.`);
+  if (lockHeld()) {
+    if (!FINISH_REQUESTED) {
+      console.log("Another automerge run holds the lock. Exiting.");
       process.exit(0);
     }
+    const started = Date.now();
+    let announced = false;
+    while (lockHeld()) {
+      if (Date.now() - started > LOCK_WAIT_MIN * 60000) {
+        fail(
+          `waited ${LOCK_WAIT_MIN} minutes for another finish to release the merge lock`
+        );
+      }
+      if (!announced) {
+        console.log(
+          "    waiting for another finish to release the merge lock …"
+        );
+        announced = true;
+      }
+      sleepMs(2000);
+    }
+    if (announced) console.log(`    merge lock free after ${elapsed(started)}`);
   }
   writeFileSync(LOCK, `${process.pid} ${new Date().toISOString()}\n`);
+}
+function withLock(action) {
+  acquireLock();
+  try {
+    return action();
+  } finally {
+    releaseLock();
+  }
 }
 function releaseLock() {
   try {
@@ -589,13 +755,9 @@ function readinessMain() {
 }
 
 function main() {
-  acquireLock();
-  try {
-    if (FINISH_REQUESTED) localFinish();
-    else readinessMain();
-  } finally {
-    releaseLock();
-  }
+  // A finish takes the lock itself, only around its merge.
+  if (FINISH_REQUESTED) localFinish();
+  else withLock(readinessMain);
 }
 
 const isMainModule =

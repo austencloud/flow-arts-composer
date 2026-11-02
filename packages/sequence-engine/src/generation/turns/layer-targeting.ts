@@ -36,6 +36,10 @@ import {
   type FlipVector,
   type LayerPattern,
 } from "../../core/orientation/layer-signature.js";
+import {
+  calculateEndOrientation,
+  RADIAL_CW_CYCLE,
+} from "../../core/orientation/OrientationCalculator.js";
 import { getTurnPool } from "./TurnAllocator.js";
 
 export interface LayerTargetOptions {
@@ -268,4 +272,291 @@ export function enforceHandFlipParity(
   }
 
   return { steps: result, satisfied: misses.length === 0, misses };
+}
+
+export interface LayerCrossingOptions extends LayerTargetOptions {
+  /**
+   * Both hands share one turn value on every step ("Match turns", or a prop
+   * timing). The crossing then goes on both hands, with the same value on
+   * each, so the turn counts still agree afterwards.
+   */
+  matchHands?: boolean;
+  /**
+   * Never change the orientation each prop ends the sequence in. Set it for a
+   * LOOP seed: the passes a LOOP needs to close are counted from that ending,
+   * and a seed pushed to close on a different count gets regenerated (or, for
+   * a one-step seed, can get stuck in a length the request cannot take).
+   */
+  keepClosure?: boolean;
+  /** Injectable entropy for tests; defaults to Math.random. */
+  random?: () => number;
+}
+
+type Hand = "left" | "right";
+
+function hasRotation(motion: Motion): boolean {
+  const rotation = String(motion.rotationDirection ?? "").toLowerCase();
+  return rotation !== "" && rotation !== "norotation" && rotation !== "no_rot";
+}
+
+/**
+ * A dash or static that held still has no rotation direction, and a half turn
+ * needs one. Borrow the hand's last real direction so the spin carries on, or
+ * fall back to clockwise.
+ */
+function withRotation(
+  motion: Motion,
+  steps: readonly SequenceStep[],
+  stepIndex: number,
+  hand: Hand
+): Motion {
+  if (hasRotation(motion)) return motion;
+  for (let i = stepIndex - 1; i >= 1; i--) {
+    const previous = steps[i]!.motions[hand];
+    if (hasRotation(previous)) {
+      return { ...motion, rotationDirection: previous.rotationDirection };
+    }
+  }
+  return { ...motion, rotationDirection: "cw" as Motion["rotationDirection"] };
+}
+
+/** One way to make one step's prop(s) cross. */
+interface CrossingMove {
+  readonly stepIndex: number;
+  readonly motions: Partial<Record<Hand, Motion>>;
+  /**
+   * How far round the eight-point orientation cycle the change moves where
+   * each prop ends up, mod 8. A half turn always moves it two points one way
+   * or the other.
+   */
+  readonly shift: Partial<Record<Hand, number>>;
+  /** True when no motion had to borrow a rotation direction to take the turn. */
+  readonly clean: boolean;
+}
+
+const mod8 = (n: number): number => ((n % 8) + 8) % 8;
+
+/**
+ * How far round the eight-point radial cycle this motion turns a prop, read
+ * from the same calculator propagation uses. Every radial rule there (whole
+ * turns, half turns, floats) is a fixed step round the cycle whatever the
+ * start, so this from "in" holds for any radial start, and the steps of a
+ * whole sequence add up to where each prop finishes.
+ */
+function cycleSteps(motion: Motion): number {
+  const end = calculateEndOrientation({
+    motionType: motion.motionType,
+    turns: motion.turns ?? 0,
+    rotationDirection: motion.rotationDirection || "cw",
+    startLocation: motion.startLocation,
+    endLocation: motion.endLocation,
+    startOrientation: "in",
+  });
+  return mod8(RADIAL_CW_CYCLE.indexOf(end));
+}
+
+/**
+ * Every half turn this motion could take to cross, each with how far it moves
+ * where the prop ends up. The values either side of the current one are
+ * offered, because the two move the prop opposite ways round, and the pairing
+ * below needs that.
+ */
+function crossingTurns(
+  motion: Motion,
+  steps: readonly SequenceStep[],
+  stepIndex: number,
+  hand: Hand,
+  options: LayerTargetOptions
+): { moves: Array<{ motion: Motion; shift: number; turns: number }>; reason?: string } {
+  const nudged = retargetMotionFlip(motion, true, options);
+  if (!nudged.satisfied || typeof nudged.motion.turns !== "number") {
+    return { moves: [], reason: nudged.reason };
+  }
+  const { crossing } = turnChoices(options);
+  const turns = typeof motion.turns === "number" ? motion.turns : 0;
+  const values = new Set<number>([
+    nudged.motion.turns,
+    ...crossing.filter((v) => Math.abs(v - turns) === 0.5),
+  ]);
+  const before = cycleSteps(motion);
+  const moves: Array<{ motion: Motion; shift: number; turns: number }> = [];
+  for (const value of values) {
+    const next = withRotation({ ...motion, turns: value }, steps, stepIndex, hand);
+    moves.push({ motion: next, shift: mod8(cycleSteps(next) - before), turns: value });
+    // A prop that held still has no direction of its own, so it can spin
+    // either way. The other way turns it round the opposite way, which is
+    // often what a crossing elsewhere on the hand needs to come back.
+    if (!hasRotation(motion)) {
+      const other = {
+        ...next,
+        rotationDirection: (String(next.rotationDirection).toLowerCase() === "ccw"
+          ? "cw"
+          : "ccw") as Motion["rotationDirection"],
+      };
+      moves.push({ motion: other, shift: mod8(cycleSteps(other) - before), turns: value });
+    }
+  }
+  return { moves };
+}
+
+/** The ways one step can cross: one hand at a time, or both with equal turns. */
+function crossingMoves(
+  steps: readonly SequenceStep[],
+  stepIndex: number,
+  options: LayerCrossingOptions
+): { moves: CrossingMove[]; reason?: string } {
+  const step = steps[stepIndex]!;
+  const left = crossingTurns(step.motions.left, steps, stepIndex, "left", options);
+  const right = crossingTurns(step.motions.right, steps, stepIndex, "right", options);
+  const reason = left.reason ?? right.reason;
+  const leftClean = hasRotation(step.motions.left);
+  const rightClean = hasRotation(step.motions.right);
+  const moves: CrossingMove[] = [];
+
+  if (options.matchHands) {
+    for (const l of left.moves) {
+      for (const r of right.moves) {
+        if (r.turns !== l.turns) continue;
+        moves.push({
+          stepIndex,
+          motions: { left: l.motion, right: r.motion },
+          shift: { left: l.shift, right: r.shift },
+          clean: leftClean && rightClean,
+        });
+      }
+    }
+    return { moves, reason };
+  }
+
+  for (const l of left.moves) {
+    moves.push({
+      stepIndex,
+      motions: { left: l.motion },
+      shift: { left: l.shift },
+      clean: leftClean,
+    });
+  }
+  for (const r of right.moves) {
+    moves.push({
+      stepIndex,
+      motions: { right: r.motion },
+      shift: { right: r.shift },
+      clean: rightClean,
+    });
+  }
+  return { moves, reason };
+}
+
+/** Two moves on the same hand(s) whose shifts cancel round the cycle. */
+function cancels(a: CrossingMove, b: CrossingMove): boolean {
+  for (const hand of ["left", "right"] as const) {
+    const sa = a.shift[hand];
+    const sb = b.shift[hand];
+    if ((sa === undefined) !== (sb === undefined)) return false;
+    if (sa !== undefined && mod8(sa + sb!) !== 0) return false;
+  }
+  return true;
+}
+
+function pick<T>(items: readonly T[], random: () => number): T {
+  return items[Math.floor(random() * items.length) % items.length]!;
+}
+
+/**
+ * Make sure a level 3 sequence leaves radial at least once.
+ *
+ * Level 3 is the level where props can sit clock or counter, and the difficulty
+ * badge reads it that way. Turn allocation rolls each step at random, though,
+ * so nothing stops every roll from landing on a whole turn, and a rolled float
+ * on a dash or static quietly becomes zero turns. When that happens the
+ * sequence never crosses and reads as level 2. This finds that case after the
+ * motions are settled and adds the crossing.
+ *
+ * It adds the crossing as a pair on one prop: out of radial on one step and
+ * back on a later one, the second half turn moving the prop the opposite way
+ * round. The prop then ends the sequence in exactly the orientation it would
+ * have without them, so a LOOP built on it closes after the same number of
+ * passes as before, whatever the LOOP does to the hands (rotate, mirror, swap,
+ * invert or rewind all act on both half turns alike, so they still cancel). A
+ * single crossing would leave the prop a quarter of the way round at the end,
+ * and the LOOP would need twice the passes to come home. When no such pair
+ * exists (a one-step sequence, say) it falls back to one crossing, unless
+ * `keepClosure` says where the props end up must not change; then it leaves
+ * the sequence alone and reports the miss.
+ *
+ * Below level 3 nothing is touched: those levels are radial by definition. A
+ * sequence that already crosses is returned as it is. The steps are chosen at
+ * random among the workable ones, preferring props that already spin a known
+ * way. With matched hands both props cross on the same steps with the same
+ * turn values, so their turn counts stay equal.
+ */
+export function ensureLayerCrossing(
+  steps: readonly SequenceStep[],
+  options: LayerCrossingOptions = {}
+): LayerTargetResult {
+  const level = options.level ?? DEFAULT_LEVEL;
+  if (level < 3) return { steps: [...steps], satisfied: true, misses: [] };
+
+  for (let i = 1; i < steps.length; i++) {
+    const { left, right } = steps[i]!.motions;
+    if (flipsLayer(left) || flipsLayer(right)) {
+      return { steps: [...steps], satisfied: true, misses: [] };
+    }
+  }
+
+  const perStep: CrossingMove[][] = [];
+  let reason: string | undefined;
+  for (let i = 1; i < steps.length; i++) {
+    const found = crossingMoves(steps, i, options);
+    reason ??= found.reason;
+    perStep.push(found.moves);
+  }
+
+  const pairs: Array<{ moves: CrossingMove[]; clean: boolean }> = [];
+  for (let a = 0; a < perStep.length; a++) {
+    for (let b = a + 1; b < perStep.length; b++) {
+      for (const first of perStep[a]!) {
+        for (const second of perStep[b]!) {
+          if (!cancels(first, second)) continue;
+          pairs.push({ moves: [first, second], clean: first.clean && second.clean });
+        }
+      }
+    }
+  }
+  const singles = perStep.flat().map((move) => ({ moves: [move], clean: move.clean }));
+  const candidates =
+    pairs.length > 0 ? pairs : options.keepClosure ? [] : singles;
+
+  if (candidates.length === 0) {
+    const why =
+      singles.length > 0
+        ? "no two steps can cross out and back on one prop, and a single " +
+          "crossing would change where the props end up"
+        : (reason ??
+          (options.matchHands
+            ? "no step could give both hands the same half turn"
+            : "no step could take a half turn"));
+    return {
+      steps: [...steps],
+      satisfied: false,
+      misses: [
+        { stepIndex: -1, hand: "left", reason: why },
+        { stepIndex: -1, hand: "right", reason: why },
+      ],
+    };
+  }
+
+  const clean = candidates.filter((c) => c.clean);
+  const chosen = pick(clean.length > 0 ? clean : candidates, options.random ?? Math.random);
+
+  const result = [...steps];
+  for (const move of chosen.moves) {
+    const step = result[move.stepIndex]!;
+    result[move.stepIndex] = withMotions(
+      step,
+      move.motions.left ?? step.motions.left,
+      move.motions.right ?? step.motions.right
+    );
+  }
+  return { steps: result, satisfied: true, misses: [] };
 }

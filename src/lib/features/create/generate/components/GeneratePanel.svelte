@@ -448,7 +448,7 @@ Card-based architecture with integrated Generate button:
               onRequestSaveAccount: () =>
                 authDrawerState.show("signup", "save-setup"),
               onRequestSignIn: () =>
-                authDrawerState.show("signin", "saved-setups"),
+                authDrawerState.showOnRequest("signin", "saved-setups"),
             }}
           />
         {/if}

@@ -54,8 +54,13 @@
   :global(dialog.base-modal.share-sheet-modal[data-size]) {
     width: min(63rem, calc(100vw - 3rem));
     max-width: none;
+    /* The content inherits the dialog's cap less its block borders, so a
+       trimmed sheet fills the dialog exactly instead of overflowing it by
+       the border's width. */
+    --share-sheet-max-h: calc(var(--viewport-height, 100dvh) - 3rem);
+    --share-sheet-border-block: 2px;
     height: fit-content;
-    max-height: calc(var(--viewport-height, 100dvh) - 3rem);
+    max-height: var(--share-sheet-max-h);
     padding: 0;
     background:
       linear-gradient(var(--theme-panel-bg), var(--theme-panel-bg)), #17171f;
@@ -66,7 +71,9 @@
   }
   :global(dialog.share-sheet-modal[data-size="full"] .modal-content-wrapper) {
     height: auto;
-    max-height: inherit;
+    max-height: calc(
+      var(--share-sheet-max-h, 100dvh) - var(--share-sheet-border-block, 0px)
+    );
     min-height: 0;
   }
   :global(dialog.share-sheet-modal[data-size="full"] .modal-body) {
@@ -100,8 +107,9 @@
   }
   :global(dialog.base-modal.share-sheet-modal--expanded[data-size]) {
     width: calc(100vw - 1rem);
-    height: calc(var(--viewport-height, 100dvh) - 1rem);
-    max-height: calc(var(--viewport-height, 100dvh) - 1rem);
+    --share-sheet-max-h: calc(var(--viewport-height, 100dvh) - 1rem);
+    height: var(--share-sheet-max-h);
+    max-height: var(--share-sheet-max-h);
   }
   /* Wider canvases recompose the same split with a larger stage; controls
      keep their size (4k-native-layout.md). */
@@ -125,20 +133,23 @@
       width: min(79rem, calc(100vw - 3rem));
     }
   }
-  /* Phones and portrait tablets get a bottom sheet. A landscape window from
-     720px wide and over 560px tall (an unfolded Fold held sideways, 823x707)
-     keeps the centred dialog: PostShareSheet lays it out as the split there,
-     and a phone-width sheet pinned to the bottom edge would leave the
-     artwork a strip and push the last choices off the screen. */
-  @media (max-width: 719px), (max-width: 899px) and (orientation: portrait),
+  /* Phones and portrait tablets get a narrower, taller dialog. It stays
+     centred like every other size: a sheet pinned to the bottom edge left a
+     dark band above it on the Fold's cover screen (412x915), which Austen
+     rejected on 2026-11-01. A landscape window from 720px wide and over
+     560px tall (an unfolded Fold held sideways, 823x707) keeps the wide
+     dialog: PostShareSheet lays it out as the split there. */
+  @media (max-width: 719px),
+    (max-width: 899px) and (orientation: portrait),
     (max-width: 899px) and (max-height: 560px) {
     :global(dialog.base-modal.share-sheet-modal[data-size]) {
       width: min(38rem, 100vw);
+      --share-sheet-max-h: calc(var(--viewport-height, 100dvh) - 1.5rem);
       height: fit-content;
-      max-height: calc(var(--viewport-height, 100dvh) - 0.75rem);
-      margin-block: auto 0;
-      border-radius: 1.25rem 1.25rem 0 0;
-      border-bottom: 0;
+      max-height: var(--share-sheet-max-h);
+      /* modal-tokens.css zeroes the margin of a full-size phone dialog so it
+         fills the screen; this one is shorter than the screen and centres. */
+      margin: auto;
     }
     :global(dialog.base-modal.share-sheet-modal--narrow[data-size]) {
       width: min(30rem, calc(100vw - 1rem));

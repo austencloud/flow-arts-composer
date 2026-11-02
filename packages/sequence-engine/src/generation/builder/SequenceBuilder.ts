@@ -66,8 +66,10 @@ import {
 import {
   applyLayerPattern,
   enforceHandFlipParity,
+  ensureLayerCrossing,
 } from "../turns/layer-targeting.js";
 import {
+  orientationClass,
   parsePattern,
   type FlipVector,
   type LayerPattern,
@@ -205,6 +207,18 @@ function overlayPeriodWithoutStructure(
   return null;
 }
 
+/** True when some prop sits off radial (clock, counter or between) at some point. */
+function leavesRadial(sequence: readonly SequenceStep[]): boolean {
+  return sequence.some((step) =>
+    [step.motions.left, step.motions.right].some((motion) =>
+      [motion.startOrientation, motion.endOrientation].some((orientation) => {
+        const layerClass = orientationClass(orientation);
+        return layerClass !== null && layerClass !== 0;
+      })
+    )
+  );
+}
+
 /**
  * What the request wants done to the layers, if anything.
  *
@@ -213,11 +227,19 @@ function overlayPeriodWithoutStructure(
  * four-repetition request becomes the weaker "each prop crosses an odd number
  * of times", which is what makes the orientations take two passes to come back
  * around without dictating where the crossings land.
+ *
+ * Without a pattern, a level 3 build also asks for at least one crossing:
+ * level 3 is the level where props leave radial, and a random roll can miss
+ * every half turn. Turns the caller fixed (a turn pattern, or a required turn
+ * value) are theirs and are left alone, like a named pattern.
  */
 function resolveLayerShaping(options: BuildOptions):
   | {
       pattern?: LayerPattern;
       handFlipParity?: "odd" | "even";
+      ensureCrossing?: boolean;
+      matchHands?: boolean;
+      keepClosure?: boolean;
       level?: number;
       maxTurnIntensity?: number;
     }
@@ -238,8 +260,25 @@ function resolveLayerShaping(options: BuildOptions):
     return { pattern, level, maxTurnIntensity };
   }
 
+  const allocation = resolveTurnAllocationOptions(options);
+  const ensureCrossing =
+    level >= 3 &&
+    !options.turnPattern &&
+    allocation.requiredTurns === undefined;
+  const crossing = ensureCrossing
+    ? {
+        ensureCrossing,
+        matchHands: allocation.matchHands === true,
+        keepClosure: options.loop !== undefined,
+      }
+    : {};
+
   if (shouldForcePeriod4OrientationCycle(options.loop)) {
-    return { handFlipParity: "odd", level, maxTurnIntensity };
+    return { handFlipParity: "odd", ...crossing, level, maxTurnIntensity };
+  }
+
+  if (ensureCrossing) {
+    return { ...crossing, level, maxTurnIntensity };
   }
 
   return undefined;
@@ -750,6 +789,13 @@ export class SequenceBuilder {
     let workingOptions = options;
     let lastFailure = "no result";
     let symmetricFallback: BuildResult | undefined;
+    // Level 3 must leave radial somewhere. postProcess adds a crossing to the
+    // seed, but on a LOOP only as an out-and-back pair, and a seed too short
+    // or too uniform for a pair stays radial. Such a seed is a correct LOOP,
+    // so keep it in case nothing better turns up, and reroll for one that
+    // crosses.
+    const wantsCrossing = resolveLayerShaping(options)?.ensureCrossing === true;
+    let radialFallback: BuildResult | undefined;
     let noOpSwapAttempts = 0;
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
@@ -805,7 +851,12 @@ export class SequenceBuilder {
           workingOptions.loop!,
           workingOptions.constraintOptions?.handRelationship
         );
-        if (!validationFailure) return result;
+        if (!validationFailure) {
+          if (!wantsCrossing || leavesRadial(result.sequence)) return result;
+          radialFallback ??= result;
+          lastFailure = "the LOOP never left radial";
+          continue;
+        }
         lastFailure = validationFailure;
 
         // A seed whose hands are symmetric can satisfy the requested label
@@ -842,6 +893,7 @@ export class SequenceBuilder {
       }
     }
 
+    if (radialFallback) return radialFallback;
     if (symmetricFallback) return symmetricFallback;
 
     // Every seed of the word put both hands on one path at every step (every
@@ -1934,6 +1986,12 @@ export class SequenceBuilder {
       pattern?: LayerPattern;
       /** Or just settle how many times each prop crosses, and leave where to it. */
       handFlipParity?: "odd" | "even";
+      /** Make sure some prop leaves radial (level 3 without a pattern). */
+      ensureCrossing?: boolean;
+      /** Both hands share turn values, so a crossing goes on both. */
+      matchHands?: boolean;
+      /** A LOOP will repeat the seed: keep where each prop ends up. */
+      keepClosure?: boolean;
       /** Keeps the rewritten turns inside the values this level actually has. */
       level?: number;
       maxTurnIntensity?: number;
@@ -2059,6 +2117,21 @@ export class SequenceBuilder {
       shaped = enforceHandFlipParity(shaped, layerShaping.handFlipParity, {
         level: layerShaping.level,
         maxTurnIntensity: layerShaping.maxTurnIntensity,
+      }).steps;
+    }
+    // Level 3 promises a prop leaves radial somewhere, and a random roll can
+    // miss every half turn (or roll a float that a dash turns into zero). The
+    // seed is shaped here, before any LOOP copies it, so the crossing repeats;
+    // it goes out and back on one prop, so the LOOP still closes on time. A
+    // LOOP seed too short for that is left as rolled (keepClosure) rather than
+    // pushed into a closure the request cannot take; the LOOP retry rerolls it.
+    // After odd parity this is a no-op: odd parity already crossed.
+    if (layerShaping?.ensureCrossing && !layerShaping.pattern) {
+      shaped = ensureLayerCrossing(shaped, {
+        level: layerShaping.level,
+        maxTurnIntensity: layerShaping.maxTurnIntensity,
+        matchHands: layerShaping.matchHands,
+        keepClosure: layerShaping.keepClosure,
       }).steps;
     }
 

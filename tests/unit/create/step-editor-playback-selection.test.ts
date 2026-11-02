@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Play keeps the step editor's selection for Stop to restore.
  *

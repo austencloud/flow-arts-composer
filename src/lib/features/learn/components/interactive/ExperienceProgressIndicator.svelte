@@ -140,6 +140,17 @@ Displays:
     );
   }
 
+  /* Phone: the dots alone; the count stays in the bar's accessible name. */
+  @media (max-width: 639.98px), (max-width: 767.98px) and (max-height: 700px) {
+    .progress-indicator {
+      padding: 0.375rem 0.625rem;
+    }
+
+    .progress-text {
+      display: none;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .progress-dot {
       transition: none;

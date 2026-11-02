@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * The Shape Matrix stills are painted by the animation canvas's guide
  * painter. These tests pin the contract that makes a tile and the live guide
@@ -15,7 +16,7 @@ import type {
 import { mandalaGuideScale } from "#lib/shared/mandala/services/mandala-guide-image.js";
 import { computeEngineAlignedMandalaScale } from "#lib/shared/mandala/services/mandala-path-preparer.js";
 import type { PreparedMandalaPath } from "#lib/shared/mandala/services/types.js";
-import { HERO_TRAIL_PRESET } from "#lib/shared/landing/data/hero-trail-preset.js";
+import { HERO_TRAIL_PRESET } from "@tka/shape-engine/services/hero-trail-preset.js";
 import {
   engineExtentBoxRatio,
   renderCell,
@@ -23,15 +24,15 @@ import {
   renderExtentFit,
   renderHeader,
   SHAPE_MATRIX_GUIDE_COLORS,
-} from "#lib/shared/shape-matrix/services/shape-matrix-render.js";
+} from "@tka/shape-engine/services/shape-matrix-render.js";
 import {
   cellArtworkSrc,
   pathsArtworkSrc,
   shapeMatrixArtworkPainterForColors,
   type ShapeMatrixArtworkPainter,
-} from "#lib/shared/shape-matrix/services/shape-matrix-artwork.js";
-import type { ShapeMatrixData } from "#lib/shared/shape-matrix/services/shape-matrix-flowers.js";
-import type { Flower } from "#lib/shared/shape-matrix/domain/flower-signature.js";
+} from "@tka/shape-engine/services/shape-matrix-artwork.js";
+import type { ShapeMatrixData } from "@tka/shape-engine/services/shape-matrix-flowers.js";
+import type { Flower } from "@tka/shape-domain";
 import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 const left: MandalaPaths = {

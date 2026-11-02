@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildFlowerAxis,
   flowerKey,
-} from "#lib/shared/shape-matrix/domain/flower-signature.js";
+} from "@tka/shape-domain";
 import {
   readShapeMatrixRouteState,
   writeShapeMatrixRouteState,

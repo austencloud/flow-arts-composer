@@ -25,7 +25,7 @@
   import TunnelRelationshipEditor from "./TunnelRelationshipEditor.svelte";
   import TunnelStageFormationSettings from "./TunnelStageFormationSettings.svelte";
   import ShapeMatrixTunnelSourcePicker from "./ShapeMatrixTunnelSourcePicker.svelte";
-  import type { ModeRealization } from "#lib/shared/shape-matrix/services/build-mode-realizations.js";
+  import type { ModeRealization } from "@tka/shape-engine/services/build-mode-realizations.js";
   import type { SequenceSource } from "#lib/shared/browse/engine/types.js";
   import {
     resolveTunnelPerformerDisplays,

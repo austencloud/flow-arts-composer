@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
 import demo from "../../src/lib/shared/landing/data/demo-sequence.json";
 import { APP_DOMAIN } from "../../src/config/domains";

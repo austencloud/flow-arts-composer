@@ -4,10 +4,10 @@ import path from "node:path";
 import {
   loadShapeMatrix,
   shapeMatrixTipPoint,
-} from "#lib/shared/shape-matrix/services/shape-matrix-flowers.js";
-import { flowerKey } from "#lib/shared/shape-matrix/domain/flower-signature.js";
-import { buildModeRealizationCandidates } from "#lib/shared/shape-matrix/services/build-mode-realizations.js";
-import { propPairFromLegacy } from "#lib/shared/shape-matrix/domain/prop-pair.js";
+} from "@tka/shape-engine/services/shape-matrix-flowers.js";
+import { flowerKey } from "@tka/shape-domain";
+import { buildModeRealizationCandidates } from "@tka/shape-engine/services/build-mode-realizations.js";
+import { propPairFromLegacy } from "@tka/shape-engine/services/prop-pair.js";
 import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 // Real data: the checked-in base-word snapshot and the diamond dataframe,

@@ -14,7 +14,7 @@
   import {
     ratioLabel,
     type RotatingFlower,
-  } from "#lib/shared/shape-matrix/domain/flower-signature.js";
+  } from "@tka/shape-domain";
   import { flowerToKnobs } from "#lib/shared/notation/qft/qft-flower-bridge.js";
   import { tracePath } from "#lib/shared/notation/qft/qft-model.js";
 

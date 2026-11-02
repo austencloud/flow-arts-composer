@@ -2,7 +2,7 @@
   import Seo from "#lib/shared/components/Seo.svelte";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import { TND_BY_FAMILY } from "#lib/features/choreo-card/domain/tnd-element.js";
-  import { MODE_FAMILY_ID } from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
+  import { MODE_FAMILY_ID } from "@tka/shape-domain";
   import { TRICK_NAMES } from "./_data/trick-names";
   import "#lib/shared/landing/styles/public-editorial.css";
 

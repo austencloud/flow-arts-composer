@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "declaration": true,
+    "declarationMap": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "types": ["svelte"],
+    "exactOptionalPropertyTypes": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "paths": {
+      "#lib/*": ["../../src/lib/*"],
+      "@tka/shape-domain": ["../shape-domain/src/index.ts"]
+    }
+  },
+  "include": ["src/**/*", "src/**/*.svelte"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts"]
+}

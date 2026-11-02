@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * A joined sequence keeps its one join into the public document and back out
  * of it (no cell carries a join of its own): the projection writes the sequence's join only when it has one, the wire

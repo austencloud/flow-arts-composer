@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * What a signed-in page load writes to Firestore.
  *

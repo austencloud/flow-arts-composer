@@ -4,7 +4,8 @@
   One workspace panel, like the other settings tabs, with two sections
   opened by header bands:
   - "Your props": the current props drawn large in the performer's colors,
-    the color pair, and the ten presets. The drawing takes whatever height
+    the color pair (with, for a full account, the action that copies the
+    current look onto their published sequences), and the ten presets. The drawing takes whatever height
     the other two leave, so the section fills its column instead of
     towering over the picker.
   - "Select prop": the Cat Dog switch in the band, then the prop grid, one
@@ -40,6 +41,12 @@
   import { growFade } from "#lib/shared/transitions/motion.js";
   import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import type {
+    PreviousLooks,
+    RestampResult,
+  } from "#lib/shared/library/services/published-look-restamp.js";
   import CatDogToggle from "./prop-type/CatDogToggle.svelte";
   import SettingsSectionHeader from "../SettingsSectionHeader.svelte";
   import PresetChipBar from "./prop-type/PresetChipBar.svelte";
@@ -52,7 +59,7 @@
     PropChiralitySeam,
   } from "./prop-type/prop-chirality-seam";
 
-  const PRESET_UNDO_TOAST_MS = 6_000;
+  const UNDO_TOAST_MS = 6_000;
 
   let { settings, onUpdate } = $props<{
     settings: AppSettings;
@@ -168,7 +175,7 @@
     showToast({
       message,
       type: "info",
-      duration: PRESET_UNDO_TOAST_MS,
+      duration: UNDO_TOAST_MS,
       action: {
         label: t("settings_preset_undo"),
         onClick: () => writePresets(previous, previousSelected),
@@ -207,6 +214,80 @@
       defaults.findIndex((preset) => presetsMatch(preset, current)),
       t("settings_presets_reset")
     );
+  }
+
+  // ── Published look ─────────────────────────────────────────────────────
+  // Published sequences keep the look they were saved with; viewers never
+  // see their own settings on someone's card. This copies the current look
+  // onto all of the creator's public sequences, with the same undo toast as
+  // a preset write.
+
+  let applyingLook = $state(false);
+
+  // Loaded on press: the library repository and Firestore stay out of the
+  // Settings chunk for everyone who never uses this.
+  const loadRestamp = () =>
+    import("#lib/shared/library/services/published-look-restamp.js");
+
+  async function applyLookToPublished() {
+    if (applyingLook) return;
+    hapticService?.trigger("selection");
+    applyingLook = true;
+    try {
+      const { restampPublishedLook } = await loadRestamp();
+      announceRestamp(await restampPublishedLook());
+    } catch (error) {
+      console.error("[PropTypeTab] restampPublishedLook failed:", error);
+      showToast(t("settings_props_apply_look_error"), "error");
+    } finally {
+      applyingLook = false;
+    }
+  }
+
+  function announceRestamp({ updated, failed, previous }: RestampResult) {
+    if (updated === 0 && failed === 0) {
+      showToast(t("settings_props_apply_look_none"), "info");
+      return;
+    }
+    showToast({
+      message:
+        failed > 0
+          ? t("settings_props_apply_look_partial", { count: updated, failed })
+          : t(
+              updated === 1
+                ? "settings_props_apply_look_done_one"
+                : "settings_props_apply_look_done_other",
+              { count: updated }
+            ),
+      type: failed > 0 ? "warning" : "info",
+      duration: UNDO_TOAST_MS,
+      action: {
+        label: t("settings_preset_undo"),
+        onClick: () => void undoRestamp(previous),
+      },
+    });
+  }
+
+  async function undoRestamp(previous: PreviousLooks) {
+    applyingLook = true;
+    try {
+      const { restorePublishedLook } = await loadRestamp();
+      const { restored, failed } = await restorePublishedLook(previous);
+      if (failed > 0) {
+        showToast(
+          t("settings_props_apply_look_undo_partial", {
+            count: restored,
+            failed,
+          }),
+          "warning"
+        );
+      }
+    } catch (error) {
+      console.error("[PropTypeTab] restorePublishedLook failed:", error);
+      showToast(t("settings_props_apply_look_error"), "error");
+    } finally {
+      applyingLook = false;
+    }
   }
 
   // ── Prop choice ────────────────────────────────────────────────────────
@@ -364,6 +445,33 @@
           {darkMode}
           onchange={(value) => onUpdate?.({ key: "primaryPropColors", value })}
         />
+
+        {#if authState.isFullAccount}
+          <div class="published-look" transition:growFade>
+            <PanelButton
+              fullWidth
+              disabled={applyingLook}
+              ariaBusy={applyingLook}
+              onclick={applyLookToPublished}
+            >
+              <!-- The full label stays in the cell as a ghost, so the shorter
+                   busy label never narrows or shortens the button. -->
+              <span class="published-look-label">
+                <span class="published-look-ghost" aria-hidden="true"
+                  >{t("settings_props_apply_look")}</span
+                >
+                <Crossfade key={applyingLook}>
+                  {applyingLook
+                    ? t("settings_props_apply_look_busy")
+                    : t("settings_props_apply_look")}
+                </Crossfade>
+              </span>
+            </PanelButton>
+            <p class="published-look-hint">
+              {t("settings_props_apply_look_hint")}
+            </p>
+          </div>
+        {/if}
 
         <PresetChipBar
           slots={propPresets}
@@ -602,6 +710,36 @@
     width: 0.625rem;
     height: 0.625rem;
     border-radius: 50%;
+  }
+
+  /* ── Published look ── */
+
+  .published-look {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+
+  .published-look-label {
+    display: grid;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .published-look-label > :global(*) {
+    grid-area: 1 / 1;
+  }
+
+  .published-look-ghost {
+    visibility: hidden;
+  }
+
+  .published-look-hint {
+    margin: 0;
+    color: var(--theme-text-dim);
+    font-size: var(--font-size-min, 14px);
+    line-height: 1.4;
   }
 
   /* ── Select prop ── */

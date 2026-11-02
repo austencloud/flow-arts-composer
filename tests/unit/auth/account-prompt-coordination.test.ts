@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("#lib/shared/analytics/auth-events.js", () => ({
@@ -44,7 +45,8 @@ describe("account prompt coordination", () => {
     const { auth, toastQueue, showToast } = await load();
     showToast({ message: "Upload failed", type: "error", duration: 0 });
     auth.offerGuestSaveNudge({ message: "Saved" });
-    auth.show("signup", "save");
+    // A tap on Create account, so no earlier "not now" can quiet it.
+    auth.showOnRequest("signup", "save");
     expect(auth.open).toBe(true);
     expect(toastQueue.map((t) => t.message)).toEqual(["Upload failed"]);
     auth.hide();

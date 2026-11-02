@@ -7,8 +7,8 @@
     signInWhenIdle,
   } from "#lib/shared/auth/services/deferred-sign-in.js";
   import { mutateCurrentUrl } from "#lib/shared/navigation/services/url-state.js";
-  import ShapeMatrixApp from "#lib/shared/shape-matrix/app/ShapeMatrixApp.svelte";
-  import type { ShapeMatrixAppSnapshot } from "#lib/shared/shape-matrix/app/state/shape-matrix-app-state.svelte.js";
+  import ShapeMatrixApp from "@tka/shape-engine/app/ShapeMatrixApp.svelte";
+  import type { ShapeMatrixAppSnapshot } from "@tka/shape-engine/app/state/shape-matrix-app-state.svelte.js";
   import {
     readShapeMatrixRouteState,
     writeShapeMatrixRouteState,
@@ -21,7 +21,7 @@
     ORIGINAL_SHAPE_MATRIX_VTG_RATIOS,
     KINETIC_SHAPE_ENGINE_LEGACY_NAME,
     SHAPE_MATRIX_EXPLORER_LEGACY_NAME,
-  } from "#lib/shared/shape-matrix/app/shape-engine-identity.js";
+  } from "@tka/shape-engine/app/shape-engine-identity.js";
 
   const TITLE = `${KINETIC_SHAPE_ENGINE_NAME} | Flow Arts Composer`;
   const DESCRIPTION = KINETIC_SHAPE_ENGINE_DESCRIPTION;

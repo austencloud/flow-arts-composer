@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { tick } from "svelte";
 import type { ResolvedTakeTiming } from "#lib/shared/media-composition/domain/take-timing.js";

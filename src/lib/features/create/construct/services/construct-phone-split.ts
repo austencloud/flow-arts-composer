@@ -11,6 +11,26 @@ import { stackedWorkspaceSplit } from "../../shared/services/workspace-split";
 /** Below this picker width the option grid swipes between letter types. */
 export const CONSTRUCT_PHONE_MAX_WIDTH = 750;
 
+/**
+ * From this picker width up (still on the phone tier), the letter-type tabs
+ * stand in a rail down the picker's left edge instead of a row on top. The
+ * unfolded Fold (707 wide) qualifies; 375 and 412 phones keep the row. The
+ * picker there is wide and short, so the row's height is worth more to the
+ * grid than the rail's width.
+ */
+export const CONSTRUCT_TYPE_RAIL_MIN_WIDTH = 600;
+/**
+ * The rail's width: the tier's 40px tabs in the same 52px shell the tab row
+ * stands in (the tab strip's 4px and the shell's 2px on each side).
+ */
+export const CONSTRUCT_TYPE_RAIL_WIDTH = 52;
+/**
+ * Grid columns the option grid may choose on the rail tier. Four keeps a
+ * position's 16 Type 1 options as one 4x4 block; [4, 6] lets it pick six
+ * wider-than-tall columns again, for comparison.
+ */
+export const CONSTRUCT_TYPE_RAIL_COLUMN_OPTIONS: readonly number[] = [4];
+
 // The picker's own rows, measured at 375px: the letter-type navigation (the
 // tier's 40px target in its 52px shell) and the carousel's bottom padding. On
 // this tier the tabs name the group, so the grid carries no type heading, and
@@ -35,6 +55,17 @@ export function isConstructPhoneTier(params: {
   );
 }
 
+/** The phone tier at a width that gives its letter-type tabs a left rail. */
+export function isConstructTypeRailTier(params: {
+  width: number;
+  stacked: boolean;
+}): boolean {
+  return (
+    isConstructPhoneTier(params) &&
+    params.width >= CONSTRUCT_TYPE_RAIL_MIN_WIDTH
+  );
+}
+
 /**
  * Pixel sizes for [workspace, option picker] on the phone tier, or null when
  * the layout is not on that tier (the caller keeps its usual split).
@@ -53,14 +84,19 @@ export function constructPhoneSplit(params: {
   const { width, height, workspaceFloor } = params;
   if (!isConstructPhoneTier(params) || height <= 0) return null;
 
+  // With the tabs in a left rail, the grid loses the rail's width and the
+  // picker no longer spends a row of height on them.
+  const typeRail = isConstructTypeRailTier(params);
+  const gridWidth = width - (typeRail ? CONSTRUCT_TYPE_RAIL_WIDTH : 0);
   const optionSize = Math.min(
     MAX_OPTION_SIZE,
-    (width - GRID_INLINE_PADDING - GRID_GAP * (GRID_COLUMNS - 1)) / GRID_COLUMNS
+    (gridWidth - GRID_INLINE_PADDING - GRID_GAP * (GRID_COLUMNS - 1)) /
+      GRID_COLUMNS
   );
   // An upper bound: the picker lays out four to eight columns, and four is
   // the most height it can ask for.
   const pickerWanted =
-    TYPE_NAVIGATION_HEIGHT +
+    (typeRail ? 0 : TYPE_NAVIGATION_HEIGHT) +
     CAROUSEL_BOTTOM_PADDING +
     optionSize * GRID_ROWS +
     GRID_GAP * (GRID_ROWS - 1);

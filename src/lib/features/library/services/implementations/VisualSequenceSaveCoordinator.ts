@@ -74,7 +74,7 @@ export class VisualSequenceSaveCoordinator implements IVisualSequenceSaveCoordin
     const existingSave = this.inFlightByContent.get(contentHash);
     if (existingSave) return existingSave;
 
-    const save = this.persist(sequenceWithIntent, contentHash);
+    const save = this.persist(sequenceWithIntent, contentHash, intent.copyOf);
     this.inFlightByContent.set(contentHash, save);
     try {
       return await save;
@@ -133,7 +133,8 @@ export class VisualSequenceSaveCoordinator implements IVisualSequenceSaveCoordin
 
   private async persist(
     sequence: SequenceData,
-    contentHash: string
+    contentHash: string,
+    copyOf: VisualSequenceSaveIntent["copyOf"]
   ): Promise<VisualSequenceSaveOutcome> {
     const pendingToastId = showToast({
       message: "Saving to library…",
@@ -145,10 +146,13 @@ export class VisualSequenceSaveCoordinator implements IVisualSequenceSaveCoordin
     try {
       const result = await this.librarySaveService.saveSequence(sequence, {
         name: deriveSequenceName(sequence),
-        visibility: "public",
+        // Your own work is shared by default; someone else's is kept as a
+        // private copy credited to them.
+        visibility: copyOf ? "private" : "public",
         tags: [],
         notes: "",
         analyticsSource: "viewer",
+        ...(copyOf && { copyOf }),
       });
       removeToast(pendingToastId, "programmatic");
       showToast("Saved to library", "success");

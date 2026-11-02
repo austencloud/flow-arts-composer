@@ -25,7 +25,7 @@
   import {
     HERO_TIP_EFFECT_MAP,
     HERO_TRAIL_PRESET,
-  } from "#lib/shared/landing/data/hero-trail-preset.js";
+  } from "@tka/shape-engine/services/hero-trail-preset.js";
   import WorkspaceGrid from "#lib/features/create/shared/workspace-panel/sequence-display/components/WorkspaceGrid.svelte";
   import WordLabel from "#lib/features/create/shared/workspace-panel/sequence-display/components/WordLabel.svelte";
   import { createStepGridDisplayState } from "#lib/features/create/shared/workspace-panel/sequence-display/state/step-grid-display-state.svelte.js";

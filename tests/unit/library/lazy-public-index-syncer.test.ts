@@ -10,6 +10,7 @@ describe("createLazyPublicIndexSyncer", () => {
     const concrete: IPublicIndexSyncer = {
       syncToPublicIndex: vi.fn().mockResolvedValue(undefined),
       updateThumbnails: vi.fn().mockResolvedValue(undefined),
+      updateCreatorIntent: vi.fn().mockResolvedValue(undefined),
       findPublishConflict: vi.fn().mockResolvedValue(null),
       removeFromPublicIndex: vi.fn().mockResolvedValue(undefined),
     };
@@ -21,8 +22,13 @@ describe("createLazyPublicIndexSyncer", () => {
     await Promise.all([
       syncer.syncToPublicIndex(sequence, "user-1"),
       syncer.updateThumbnails(sequence.id, ["thumbnail.png"]),
+      syncer.updateCreatorIntent(sequence.id, { presentation: null }),
       syncer.removeFromPublicIndex(sequence.id),
     ]);
+
+    expect(concrete.updateCreatorIntent).toHaveBeenCalledWith(sequence.id, {
+      presentation: null,
+    });
 
     expect(load).toHaveBeenCalledTimes(1);
     expect(concrete.syncToPublicIndex).toHaveBeenCalledWith(sequence, "user-1");
@@ -39,6 +45,7 @@ describe("createLazyPublicIndexSyncer", () => {
     const concrete: IPublicIndexSyncer = {
       syncToPublicIndex: vi.fn().mockResolvedValue(undefined),
       updateThumbnails: vi.fn().mockResolvedValue(undefined),
+      updateCreatorIntent: vi.fn().mockResolvedValue(undefined),
       findPublishConflict: vi.fn().mockResolvedValue(null),
       removeFromPublicIndex: vi.fn().mockResolvedValue(undefined),
     };

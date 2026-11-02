@@ -17,7 +17,7 @@
   import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import { letterQueryHandler } from "#lib/shared/pictograph/tka-glyph/services/letter-query-handler.js";
-  import { derivePropElementalType } from "#lib/shared/shape-matrix/domain/prop-relationship.js";
+  import { derivePropElementalType } from "#lib/shared/pictograph/shared/domain/utils/prop-elemental-type.js";
   import type { ExperienceViewMode } from "../../../domain/types";
   import { getExperiencePersistence } from "../../../state/experience-persistence.svelte";
   import LessonStageControls from "../LessonStageControls.svelte";

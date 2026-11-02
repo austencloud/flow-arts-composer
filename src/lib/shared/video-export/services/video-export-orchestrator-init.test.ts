@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, expect, it, vi } from "vitest";
 import type { AnimationPanelState } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
 import type { AnimationPlaybackController } from "#lib/shared/animation-engine/services/animation-playback-controller.js";

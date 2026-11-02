@@ -6,6 +6,7 @@
     viewerModeLabel,
     PRACTICE_OPTION,
     type SelectableViewerMode,
+    type ViewerSubject,
   } from "../services/viewer-modes";
   import { canAccessPostStudio } from "../services/post-studio-access";
   import { viewportFits3D } from "#lib/shared/3d/capabilities/viewport-3d-gate.svelte.js";
@@ -22,6 +23,8 @@
     | { label: string; icon: string; onSelect: () => void };
 
   interface Props {
+    /** What the viewer is showing; a cast lists only its own views. */
+    subject?: ViewerSubject;
     reviewPostStudio?: boolean;
     activeMode: RailMode;
     webgl2Available?: boolean;
@@ -38,6 +41,7 @@
   }
 
   let {
+    subject = "sequence",
     reviewPostStudio = false,
     activeMode,
     webgl2Available = true,
@@ -54,7 +58,8 @@
     ...viewerModeOptions(
       webgl2Available,
       viewportFits3D(),
-      canAccessPostStudio() || (import.meta.env.DEV && reviewPostStudio)
+      canAccessPostStudio() || (import.meta.env.DEV && reviewPostStudio),
+      subject
     ).map((m) => ({
       id: m.id,
       icon: m.icon,
@@ -64,7 +69,8 @@
           : viewerModeLabel(m.id),
     })),
     // Practice is only listed when a toggle handler is wired (feature not ready — entry point withheld).
-    ...(onPracticeToggle
+    // A cast has no Practice: it would drill the front performer alone.
+    ...(onPracticeToggle && subject === "sequence"
       ? [
           {
             id: "practice" as const,

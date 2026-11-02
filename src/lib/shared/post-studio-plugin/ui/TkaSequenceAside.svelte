@@ -6,20 +6,11 @@
     clampDisplayedBeatNumber,
     displayedBeatNumber,
   } from "#lib/shared/animation-engine/services/step-calculator.js";
-  import TunnelPoseCell, { type TunnelPose } from "./TunnelPoseCell.svelte";
+  import TunnelChoreoCard from "./TunnelChoreoCard.svelte";
   import { postCardHighlightedStepIndex } from "./post-card-highlight";
   import { tkaEditorOf } from "./tka-editor-context";
   import { createPerformerSequences } from "../performer-sequences.svelte";
-  import { performerSequence } from "../performer-sequence";
-  import {
-    backPerformerName,
-    followerPropColors,
-    postFollowers,
-  } from "../tunnel-performers";
-  import { tapGuidePoses } from "../tap-guide";
-  import { tunnelPropNudges } from "../tunnel-prop-nudges";
-  import { setCellPropNudges } from "#lib/shared/sequence-viewer/cell-prop-nudge-context";
-  import { findPartnerTunnelUrl } from "#lib/shared/sequence-viewer/tunnel/partner-tunnel.js";
+  import { backPerformerName, postFollowers } from "../tunnel-performers";
 
   /**
    * The post's sequence beside the preview while editing, its step lit as
@@ -101,109 +92,14 @@
       : sequence
   );
 
-  // The empty cells under Start draw each performer's mandala, front first.
-  const mandalaFills = $derived(
-    shownView === "both" && sequence
-      ? [
-          { sequence, colors: null },
-          ...followers.flatMap((_, index) => {
-            const of = followerSequences.current?.[index];
-            return of
-              ? [
-                  {
-                    sequence: of,
-                    colors: followerPropColors(index, followers.length),
-                  },
-                ]
-              : [];
-          }),
-        ]
-      : undefined
-  );
-
-  // The last empty cell carries a QR to the tunnel page, which names both
-  // performers. Like the card's own QR it names the source sequences, not the
-  // copies labeled for the footage, so it looks up the codes of the post's
-  // source and of the partner built from that source.
+  /** The source behind the labeled sheet; the tunnel QR names its code. */
   const sourceSequence = $derived(facts?.sequence ?? null);
-  let tunnelQrUrl = $state<string | null>(null);
-  $effect(() => {
-    const front = sourceSequence;
-    const follower = followers.length === 1 ? followers[0] : undefined;
-    tunnelQrUrl = null;
-    if (!front || !follower) return;
-    let live = true;
-    void performerSequence(front, follower)
-      .then((back) => findPartnerTunnelUrl(front, back))
-      .then((url) => {
-        if (live) tunnelQrUrl = url;
-      });
-    return () => {
-      live = false;
-    };
-  });
 
   const cardPropTypes = $derived({
     left: options?.leftPropTypeOverride ?? options?.propTypeOverride,
     right: options?.rightPropTypeOverride ?? options?.propTypeOverride,
   });
-
-  /** Every performer's pose at a card cell (-1 the start), front first. */
-  function cellPoses(cellIndex: number): TunnelPose[] {
-    if (!sequence) return [];
-    const front =
-      cellIndex < 0
-        ? (sequence.startPlacement ?? sequence.startingPlacement)
-        : sequence.steps[cellIndex];
-    return [{ data: front }, ...followerPoses(cellIndex)];
-  }
-
-  // The front pair's staffs slide off a partner's on the same spot, as the
-  // partner's slide off theirs in the overlay.
-  setCellPropNudges((cellIndex) => {
-    if (shownView !== "both" || followers.length === 0) return undefined;
-    return tunnelPropNudges(
-      cellPoses(cellIndex).map((pose) => ({
-        motions: pose.data?.motions,
-        propTypes: cardPropTypes,
-      }))
-    )[0];
-  });
-
-  /**
-   * The performers behind at a card cell (-1 the start), in tunnel colors,
-   * drawn over the front pair's cell: the whole tunnel at that landing.
-   */
-  function followerPoses(cellIndex: number): TunnelPose[] {
-    if (!sequence) return [];
-    const { followers: poses } = tapGuidePoses(
-      cellIndex + 1,
-      beatsBehind,
-      sequence.steps.length
-    );
-    return poses.map((pose, index) => {
-      const of = followerSequences.current?.[index] ?? null;
-      return {
-        data: !of
-          ? null
-          : pose.stepIndex === null
-            ? (of.startPlacement ?? of.startingPlacement)
-            : of.steps[pose.stepIndex],
-        ...followerPropColors(index, followers.length),
-      };
-    });
-  }
 </script>
-
-{#snippet tunnelOverlay(cellIndex: number)}
-  <TunnelPoseCell
-    poses={cellPoses(cellIndex)}
-    label=""
-    grid={false}
-    frontDrawn
-    propTypes={cardPropTypes}
-  />
-{/snippet}
 
 {#if sequence}
   <div class="sequence-aside" aria-label="Sequence">
@@ -222,7 +118,24 @@
       />
     {/if}
     <div class="card">
-      {#if shownSequence}
+      {#if shownView === "both" && sequence}
+        <TunnelChoreoCard
+          {sequence}
+          {sourceSequence}
+          {followers}
+          {highlightedStepIndex}
+          showHighlight={highlightedStepIndex !== null}
+          darkMode
+          showWord
+          showStepNumbers
+          showDifficultyLevel={false}
+          includeStartPlacement={options?.includeStartPlacement ?? true}
+          showLoopGlyph={options?.showLoopGlyph ?? true}
+          leftPropType={cardPropTypes.left}
+          rightPropType={cardPropTypes.right}
+          forceContain
+        />
+      {:else if shownSequence}
         <ChoreoCard
           sequence={shownSequence}
           {highlightedStepIndex}
@@ -233,16 +146,9 @@
           showDifficultyLevel={false}
           includeStartPlacement={options?.includeStartPlacement ?? true}
           showLoopGlyph={options?.showLoopGlyph ?? true}
-          leftPropType={options?.leftPropTypeOverride ??
-            options?.propTypeOverride}
-          rightPropType={options?.rightPropTypeOverride ??
-            options?.propTypeOverride}
+          leftPropType={cardPropTypes.left}
+          rightPropType={cardPropTypes.right}
           forceContain
-          cellOverlay={shownView === "both" ? tunnelOverlay : undefined}
-          showMandala={!!mandalaFills}
-          {mandalaFills}
-          showQRCode={shownView === "both" && !!tunnelQrUrl}
-          qrUrl={tunnelQrUrl ?? undefined}
         />
       {/if}
     </div>

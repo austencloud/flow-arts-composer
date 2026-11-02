@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
 import { setLocale } from "#lib/shared/i18n/i18n.svelte.js";
 import {
@@ -5,7 +6,7 @@ import {
   getGeneratorCardHelp,
   getGeneratorCardTourLabel,
 } from "#lib/shared/create/domain/card-registry.js";
-import { localizedModeWords } from "#lib/shared/shape-matrix/domain/shape-matrix-display.js";
+import { localizedModeWords } from "@tka/shape-engine/services/shape-matrix-display.js";
 import { describeCreateTnDSelection } from "#lib/features/create/generate/components/cards/tnd-presentation.js";
 import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {

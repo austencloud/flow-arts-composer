@@ -1,0 +1,401 @@
+<!--
+  A compact presentation of the Shape Matrix turn palette. Callers own the
+  displayed axes, the two hands and optionally the left hand's beat back; the
+  Matrix domain remains the source for values, labels, and ratio notation.
+-->
+<script lang="ts">
+  import { s as t } from "../../strings.svelte.js";
+  import { localizedMatrixTurnSpokenLabel } from "../../services/shape-matrix-display";
+  import { Popover } from "bits-ui";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import {
+    turnValueToKey,
+    type TurnValue,
+  } from "#lib/shared/create/services/level-turn-values.js";
+  import {
+    matrixTurnVisibleLabel,
+    matrixTurnsForLevel,
+    type MatrixLabelMode,
+  } from "@tka/shape-domain";
+  import type { ViewerCustomColorPair } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
+  import { flyFade } from "@austencloud/motion";
+  import { DURATION } from "@austencloud/motion";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import ShapeMatrixValueScroller from "./ShapeMatrixValueScroller.svelte";
+
+  type Hand = "left" | "right" | "left-back";
+
+  interface Props {
+    leftTurn: TurnValue;
+    rightTurn: TurnValue;
+    /** A third axis after the left one, for the turns of the left hand's
+        beat back. It shows only when given, and reports as "left-back". */
+    leftBackTurn?: TurnValue;
+    leftBackLabel?: string;
+    labelMode: MatrixLabelMode;
+    turnValues?: readonly TurnValue[];
+    primaryPropColors?: ViewerCustomColorPair | null;
+    disabled?: boolean;
+    /** "menu" puts each hand's values behind a trigger. "inline" lays them
+        out as visible choices, for a host with height to spare. */
+    layout?: "menu" | "inline";
+    /** Columns the inline values wrap into. */
+    inlineColumns?: number;
+    onturn: (hand: Hand, turn: TurnValue) => void;
+    onlabelmodechange: (mode: MatrixLabelMode) => void;
+  }
+
+  let {
+    leftTurn,
+    rightTurn,
+    leftBackTurn,
+    leftBackLabel,
+    labelMode,
+    turnValues = matrixTurnsForLevel(4),
+    primaryPropColors = getSettings().primaryPropColors,
+    disabled = false,
+    layout = "menu",
+    inlineColumns = 4,
+    onturn,
+    onlabelmodechange,
+  }: Props = $props();
+
+  let openHand = $state<Hand | null>(null);
+  // The beat back belongs to the left hand, so it takes the left prop's
+  // colour and tone.
+  const axes = $derived([
+    {
+      hand: "left" as Hand,
+      side: "left" as const,
+      label: t("shape_engine_left"),
+      turn: leftTurn,
+    },
+    ...(leftBackTurn !== undefined
+      ? [
+          {
+            hand: "left-back" as Hand,
+            side: "left" as const,
+            label: leftBackLabel ?? t("shape_engine_left"),
+            turn: leftBackTurn,
+          },
+        ]
+      : []),
+    {
+      hand: "right" as Hand,
+      side: "right" as const,
+      label: t("shape_engine_right"),
+      turn: rightTurn,
+    },
+  ]);
+  const turnKeys = $derived(turnValues.map(turnValueToKey));
+  const notationOptions = $derived([
+    { value: "turns" as const, label: t("shape_engine_turns"), disabled },
+    { value: "ratios" as const, label: t("shape_engine_ratios"), disabled },
+  ]);
+
+  function optionsFor(side: "left" | "right") {
+    return turnValues.map((turn) => ({
+      value: turnValueToKey(turn),
+      label: localizedMatrixTurnSpokenLabel(turn, labelMode),
+      shortLabel: matrixTurnVisibleLabel(turn, labelMode),
+      tone: side === "left" ? ("blue" as const) : ("red" as const),
+      disabled,
+    }));
+  }
+
+  function setOpen(hand: Hand, open: boolean): void {
+    if (disabled && open) return;
+    if (open) openHand = hand;
+    else if (openHand === hand) openHand = null;
+  }
+
+  function chooseTurn(hand: Hand, value: string): void {
+    if (disabled) return;
+    const turn = turnValues.find(
+      (candidate) => turnValueToKey(candidate) === value
+    );
+    if (turn === undefined) return;
+    onturn(hand, turn);
+    if (openHand === hand) openHand = null;
+  }
+</script>
+
+<div
+  class="turn-controls"
+  class:inline={layout === "inline"}
+  class:with-back={leftBackTurn !== undefined}
+  aria-label={t("shape_engine_turns_aria")}
+>
+  <div class="notation-control">
+    <SegmentedControl
+      options={notationOptions}
+      value={labelMode}
+      onchange={onlabelmodechange}
+      size="sm"
+      density="tight"
+      color="accent"
+      semantics="radiogroup"
+      ariaLabel={t("shape_engine_turn_label_system")}
+    />
+  </div>
+
+  {#each axes as axis (axis.hand)}
+    {@const unit =
+      labelMode === "ratios" ? t("shape_engine_ratio") : t("shape_engine_turn")}
+    {#if layout === "inline"}
+      <div
+        class="turn-values"
+        style:--dm-motion-blue={primaryPropColors?.left}
+        style:--dm-motion-red={primaryPropColors?.right}
+      >
+        <span class="hand-label">{axis.label}</span>
+        <SegmentedControl
+          options={optionsFor(axis.side)}
+          value={turnValueToKey(axis.turn)}
+          onchange={(value: string) => chooseTurn(axis.hand, value)}
+          columns={inlineColumns}
+          size="md"
+          density="standard"
+          color="accent"
+          semantics="radiogroup"
+          ariaLabel={t("shape_engine_axis_value_short", {
+            axis: axis.label,
+            unit,
+          })}
+        />
+      </div>
+    {:else}
+      <Popover.Root
+        open={openHand === axis.hand}
+        onOpenChange={(open) => setOpen(axis.hand, open)}
+      >
+        <Popover.Trigger>
+          {#snippet child({ props })}
+            <button
+              {...props}
+              type="button"
+              class="turn-trigger"
+              class:left={axis.side === "left"}
+              class:right={axis.side === "right"}
+              aria-label={t("shape_engine_choose_axis_value", {
+                axis: axis.label,
+                value: localizedMatrixTurnSpokenLabel(axis.turn, labelMode),
+              })}
+              {disabled}
+            >
+              <span class="hand-label">{axis.label}</span>
+              <span
+                class="turn-value"
+                style:color={primaryPropColors?.[axis.side]}
+                >{matrixTurnVisibleLabel(axis.turn, labelMode)}</span
+              >
+              <i class="fas fa-chevron-down" aria-hidden="true"></i>
+            </button>
+          {/snippet}
+        </Popover.Trigger>
+
+        <Popover.Portal>
+          <Popover.Content
+            side="bottom"
+            align="start"
+            sideOffset={6}
+            avoidCollisions={true}
+            collisionPadding={8}
+            forceMount
+          >
+            {#snippet child({ open, wrapperProps, props })}
+              <div {...wrapperProps}>
+                {#if open}
+                  <section
+                    {...props}
+                    class="turn-popover"
+                    style:--dm-motion-blue={primaryPropColors?.left}
+                    style:--dm-motion-red={primaryPropColors?.right}
+                    transition:flyFade={{ y: -6, duration: DURATION.normal }}
+                    aria-label={t("shape_engine_choose_axis_unit", {
+                      axis: axis.label,
+                      unit:
+                        labelMode === "ratios"
+                          ? t("shape_engine_ratio")
+                          : t("shape_engine_turn"),
+                    })}
+                  >
+                    <ShapeMatrixValueScroller
+                      label={t("shape_engine_axis_unit", {
+                        axis: axis.label,
+                        unit:
+                          labelMode === "ratios"
+                            ? t("shape_engine_ratio")
+                            : t("shape_engine_turn"),
+                      })}
+                      options={optionsFor(axis.side)}
+                      keys={turnKeys}
+                      value={turnValueToKey(axis.turn)}
+                      onchange={(value) => chooseTurn(axis.hand, value)}
+                      layout="tray"
+                      ariaLabel={t("shape_engine_axis_value_short", {
+                        axis: axis.label,
+                        unit:
+                          labelMode === "ratios"
+                            ? t("shape_engine_ratio")
+                            : t("shape_engine_turn"),
+                      })}
+                    />
+                  </section>
+                {/if}
+              </div>
+            {/snippet}
+          </Popover.Content>
+        </Popover.Portal>
+      </Popover.Root>
+    {/if}
+  {/each}
+</div>
+
+<style>
+  .turn-controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) repeat(2, minmax(6.5rem, 1fr));
+    gap: var(--spacing-xs, 4px);
+    width: 100%;
+  }
+
+  .turn-controls.with-back:not(.inline) {
+    grid-template-columns: minmax(0, 1.25fr) repeat(3, minmax(6.5rem, 1fr));
+  }
+
+  .notation-control {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .hand-label {
+    color: var(--theme-text-muted);
+    font-size: var(--font-size-compact, 12px);
+    line-height: 1.2;
+  }
+
+  .turn-trigger {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto 1fr;
+    min-width: 0;
+    min-height: var(--min-touch-target, 44px);
+    align-items: center;
+    padding: 0.3rem 0.55rem;
+    border: 1px solid var(--theme-stroke, rgb(255 255 255 / 0.16));
+    border-radius: 8px;
+    background: var(--theme-card-bg, rgb(255 255 255 / 0.05));
+    color: var(--theme-text, #fff);
+    cursor: pointer;
+    font: inherit;
+    text-align: start;
+    transition:
+      border-color var(--transition-fast),
+      background var(--transition-fast);
+  }
+
+  .turn-trigger:hover:not(:disabled) {
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #f59e0b) 55%,
+      transparent
+    );
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #f59e0b) 10%,
+      transparent
+    );
+  }
+
+  .turn-trigger:disabled {
+    cursor: default;
+    opacity: 0.55;
+  }
+
+  .turn-trigger:focus-visible {
+    outline: 2px solid var(--theme-accent, #f59e0b);
+    outline-offset: 2px;
+  }
+
+  .turn-value {
+    grid-column: 1;
+    min-width: 0;
+    color: var(--theme-text, #fff);
+    font-size: var(--font-size-min, 0.875rem);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .turn-trigger i {
+    grid-column: 2;
+    grid-row: 1 / -1;
+    color: var(--theme-text-muted);
+    font-size: 0.75rem;
+  }
+
+  .turn-trigger.left .turn-value {
+    color: var(--prop-blue-text, #818cf8);
+  }
+
+  .turn-trigger.right .turn-value {
+    color: var(--prop-red-text, #fb7185);
+  }
+
+  .turn-popover {
+    width: max-content;
+    max-width: var(--bits-popover-content-available-width, calc(100vw - 1rem));
+    padding: var(--spacing-sm, 8px);
+    border: 1px solid var(--theme-stroke, rgb(255 255 255 / 0.16));
+    border-radius: 10px;
+    background-color: var(--theme-bg-deep, #0a0f17);
+    background-image: linear-gradient(
+      var(--theme-panel-bg, #171717),
+      var(--theme-panel-bg, #171717)
+    );
+    max-height: var(
+      --bits-popover-content-available-height,
+      calc(100dvh - 16px)
+    );
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    box-shadow: 0 12px 30px rgb(0 0 0 / 0.28);
+    z-index: var(--z-dropdown, 1000);
+  }
+
+  .turn-controls.inline {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--spacing-sm, 8px);
+  }
+
+  .turn-values {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  @container (max-width: 410px) {
+    .turn-controls {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .turn-controls.with-back:not(.inline) {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .notation-control {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .turn-trigger {
+      transition: none;
+    }
+  }
+</style>

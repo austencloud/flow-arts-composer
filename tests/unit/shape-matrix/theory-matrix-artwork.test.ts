@@ -7,13 +7,13 @@
  */
 import { describe, expect, it } from "vitest";
 import { makeSpinRatio } from "@vtg/domain";
-import type { TheoryFlower } from "#lib/shared/shape-matrix/domain/theory-flower.js";
+import type { TheoryFlower } from "@tka/shape-domain";
 import type { MandalaPaths } from "#lib/shared/mandala/domain/mandala-types.js";
-import type { ShapeMatrixArtworkPainter } from "#lib/shared/shape-matrix/services/shape-matrix-artwork.js";
+import type { ShapeMatrixArtworkPainter } from "@tka/shape-engine/services/shape-matrix-artwork.js";
 import {
   theoryCellArtworkSrc,
   theoryHeaderArtworkSrc,
-} from "#lib/shared/shape-matrix/services/theory-matrix-artwork.js";
+} from "@tka/shape-engine/services/theory-matrix-artwork.js";
 
 const leftFlower: TheoryFlower = {
   ratio: makeSpinRatio(3, 2),

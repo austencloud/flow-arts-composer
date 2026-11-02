@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("$app/env", () => ({ browser: true }));
@@ -47,7 +48,7 @@ describe("logSessionStart", () => {
   });
 
   it("reports a stale-chunk recovery reload consumed at boot, exactly once", async () => {
-    rememberChunkRecoveryReload({ occurred: true, ageMs: 800 });
+    rememberChunkRecoveryReload({ occurred: true, ageMs: 800, stage: "hard" });
 
     await logSessionStart();
 
@@ -56,6 +57,7 @@ describe("logSessionStart", () => {
       expect.objectContaining({
         chunk_recovery_reload: true,
         chunk_recovery_reload_age_ms: 800,
+        chunk_recovery_stage: "hard",
         sw_update_reload: false,
       })
     );
@@ -68,6 +70,7 @@ describe("logSessionStart", () => {
       expect.objectContaining({
         chunk_recovery_reload: false,
         chunk_recovery_reload_age_ms: null,
+        chunk_recovery_stage: null,
       })
     );
   });

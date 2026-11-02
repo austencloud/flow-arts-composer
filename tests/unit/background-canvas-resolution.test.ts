@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { BackgroundController } from "@austencloud/backgrounds";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mountBackgroundAtDisplayResolution } from "../../src/lib/shared/background/shared/background-canvas-resolution";

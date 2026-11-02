@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect, beforeEach } from "vitest";
 import { createGenerationConfigState } from "../generate-config.svelte";
 import { LOOPType, Period } from "../../circular/domain/models/circular-models";

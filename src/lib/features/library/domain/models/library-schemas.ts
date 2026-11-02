@@ -46,7 +46,7 @@ export const LibrarySequenceDocSchema = z
 
     // Ownership
     ownerId: z.string().optional(),
-    source: z.enum(["created", "forked", "imported"]).optional(),
+    source: z.enum(["created", "forked", "imported", "copied"]).optional(),
     forkAttribution: ForkAttributionSchema.optional(),
 
     // Visibility

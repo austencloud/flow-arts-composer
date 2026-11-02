@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
 		effectiveUserId: "guest-1" as string | null,
 	},
 	authDrawerShow: vi.fn(),
+	authDrawerShowOnRequest: vi.fn(),
 	canAccess: vi.fn(() => true),
 	captureEvent: vi.fn(),
 	hasSeen: vi.fn(() => false),
@@ -19,6 +20,7 @@ vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
 vi.mock("#lib/shared/auth/state/auth-drawer-state.svelte.js", () => ({
 	authDrawerState: {
 		show: mocks.authDrawerShow,
+		showOnRequest: mocks.authDrawerShowOnRequest,
 		hide: vi.fn(),
 	},
 }));
@@ -155,7 +157,7 @@ describe("postSaveActivation", () => {
 		it("accept opens the signup drawer with the guest-first-save reason and hides", () => {
 			postSaveActivation.accept();
 
-			expect(mocks.authDrawerShow).toHaveBeenCalledWith("signup", "guest-first-save");
+			expect(mocks.authDrawerShowOnRequest).toHaveBeenCalledWith("signup", "guest-first-save");
 			expect(mocks.captureEvent).toHaveBeenCalledWith(
 				"onboarding_guest_first_save_prompt_accepted",
 				{ sequenceId: "seq-1" }
@@ -166,7 +168,7 @@ describe("postSaveActivation", () => {
 		it("login opens the signin drawer and hides", () => {
 			postSaveActivation.login();
 
-			expect(mocks.authDrawerShow).toHaveBeenCalledWith("signin", "guest-first-save");
+			expect(mocks.authDrawerShowOnRequest).toHaveBeenCalledWith("signin", "guest-first-save");
 			expect(mocks.captureEvent).toHaveBeenCalledWith(
 				"onboarding_guest_first_save_prompt_login",
 				{ sequenceId: "seq-1" }
@@ -178,6 +180,7 @@ describe("postSaveActivation", () => {
 			postSaveActivation.dismissPrompt();
 
 			expect(mocks.authDrawerShow).not.toHaveBeenCalled();
+			expect(mocks.authDrawerShowOnRequest).not.toHaveBeenCalled();
 			expect(mocks.captureEvent).toHaveBeenCalledWith(
 				"onboarding_guest_first_save_prompt_declined",
 				{ sequenceId: "seq-1" }

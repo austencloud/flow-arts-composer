@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { flushSync } from "svelte";
 import { propFinishState } from "@austencloud/scene-3d";

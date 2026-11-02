@@ -7,7 +7,7 @@
   import {
     HERO_TRAIL_PRESET,
     HERO_TIP_EFFECT_MAP,
-  } from "#lib/shared/landing/data/hero-trail-preset.js";
+  } from "@tka/shape-engine/services/hero-trail-preset.js";
 
   import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
 

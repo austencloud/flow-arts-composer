@@ -4,7 +4,7 @@
  *
  * The engine (grid, drill, realization services, flower domain) was moved out
  * of the internal, disposable `src/lib/features/lab/vtg-lab/` feature into
- * `src/lib/shared/shape-matrix/` so public marketing routes can consume it
+ * `packages/shape-engine/src/` so public marketing routes can consume it
  * without reaching into lab internals. This test locks that boundary: no file
  * under `src/routes/(public)/` may import a deep `vtg-lab` path, and the lab
  * dev harness route imports the engine from its new shared home.
@@ -20,7 +20,7 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../
 
 const PUBLIC_ROUTES_DIR = "src/routes/(public)";
 const LAB_HARNESS_ROUTE = "src/routes/test/shape-matrix/+page.svelte";
-const SHAPE_MATRIX_MODULE_DIR = "src/lib/shared/shape-matrix";
+const SHAPE_MATRIX_MODULE_DIR = "packages/shape-engine/src";
 
 const VTG_LAB_DEEP_IMPORT = /#lib\/features\/lab\/vtg-lab\//;
 const FEATURES_LAB_IMPORT = /#lib\/features\/lab\//;
@@ -59,10 +59,10 @@ function walk(rel: string): string[] {
 
 describe("shape-matrix engine contract", () => {
   it("public engine module exists at its extracted home", () => {
-    expect(() => read("src/lib/shared/shape-matrix/services/shape-matrix-flowers.ts")).not.toThrow();
-    expect(() => read("src/lib/shared/shape-matrix/components/ShapeMatrixGrid.svelte")).not.toThrow();
-    expect(() => read("src/lib/shared/shape-matrix/domain/flower-signature.ts")).not.toThrow();
-    expect(() => read("src/lib/shared/shape-matrix/domain/matrix-size-preset.ts")).not.toThrow();
+    expect(() => read("packages/shape-engine/src/services/shape-matrix-flowers.ts")).not.toThrow();
+    expect(() => read("packages/shape-engine/src/components/ShapeMatrixGrid.svelte")).not.toThrow();
+    expect(() => read("packages/shape-domain/src/flowers/flower-signature.ts")).not.toThrow();
+    expect(() => read("packages/shape-domain/src/flowers/matrix-size-preset.ts")).not.toThrow();
   });
 
   it("no file under src/routes/(public)/ imports deep vtg-lab paths", () => {
@@ -73,9 +73,9 @@ describe("shape-matrix engine contract", () => {
 
   it("the lab dev harness route imports the engine from its shared home", () => {
     const source = read(LAB_HARNESS_ROUTE);
-    expect(source).toContain("#lib/shared/shape-matrix/services/shape-matrix-flowers.js");
-    expect(source).toContain("#lib/shared/shape-matrix/components/ShapeMatrixGrid.svelte");
-    expect(source).toContain("#lib/shared/shape-matrix/domain/filter-flower-axis.js");
+    expect(source).toContain("@tka/shape-engine/services/shape-matrix-flowers.js");
+    expect(source).toContain("@tka/shape-engine/components/ShapeMatrixGrid.svelte");
+    expect(source).toContain("@tka/shape-domain");
     // The lab route legitimately still imports its own diagnostic harness
     // (ShapeMatrixDrillModal/ShapeMatrixFilters, which stayed in vtg-lab) —
     // only the moved engine symbols must no longer resolve to the old path.
@@ -84,8 +84,11 @@ describe("shape-matrix engine contract", () => {
     expect(source).not.toContain("#lib/features/lab/vtg-lab/domain/filter-flower-axis");
   });
 
-  it("src/lib/shared/shape-matrix/** has no undocumented imports from src/lib/features/lab/", () => {
-    const files = walk(SHAPE_MATRIX_MODULE_DIR);
+  it("packages/shape-engine/src/** has no undocumented imports from src/lib/features/lab/", () => {
+    // The package's own tests quote import paths as data (the allowlist).
+    const files = walk(SHAPE_MATRIX_MODULE_DIR).filter(
+      (f) => !/[\\/]__tests__[\\/]/.test(f)
+    );
     const violations: string[] = [];
     for (const f of files) {
       const lines = read(f).split("\n");

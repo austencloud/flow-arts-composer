@@ -3,7 +3,6 @@ import {
   fitEffectQuickPicker,
   gridPanelHeight,
   pictureTileHeight,
-  QUICK_PICKER_CLOSE_WIDTH,
   QUICK_PICKER_EDGE,
   QUICK_PICKER_HEAD,
   QUICK_PICKER_HEAD_GAP,
@@ -192,8 +191,7 @@ describe("fitEffectQuickPicker", () => {
         playerWidth -
         2 * QUICK_PICKER_STRIP_PAD -
         QUICK_PICKER_OFF_WIDTH -
-        QUICK_PICKER_CLOSE_WIDTH -
-        2 * CATALOG_GAP;
+        CATALOG_GAP;
       const inView = room / (fit.catalog.portrait + 2 * INSET + CATALOG_GAP);
       const peek = inView - Math.floor(inView);
       expect(peek).toBeGreaterThan(0.25);
@@ -268,6 +266,86 @@ describe("fitEffectQuickPicker", () => {
     });
     expect(fit.side).toBe("above");
   });
+
+  // Austen, 2026-11-01, on a 375x667 phone: "You can only see two effects at
+  // a time, and the X button and the off button take up large amounts of
+  // clickable space."
+  it("docks two rows over the short phone's control row, never the animation", () => {
+    const controls = 44;
+    const fit = strip({ ...phone, controls });
+    expect(fit.side).toBe("dock");
+    expect(fit.rows).toBe(2);
+    expect(fit.catalog.rows).toBe(2);
+    expect(fit.catalog.cols).toBe(Math.ceil(COUNT / 2));
+    // Two rows of tiles, the gap between them, the padding and the border.
+    const tile = pictureTileHeight(fit.catalog.portrait);
+    expect(fit.height).toBeGreaterThanOrEqual(
+      2 * QUICK_PICKER_STRIP_PAD + 2 * tile + CATALOG_GAP
+    );
+    // It stands on the floor and reaches over the control row, no further.
+    const roomDocked =
+      phone.bounds.top +
+      phone.bounds.height -
+      (phone.player.top + phone.player.height);
+    expect(fit.cover).toBeGreaterThan(0);
+    expect(fit.cover).toBeLessThanOrEqual(controls);
+    expect(fit.cover).toBe(fit.height - roomDocked);
+    expect(fit.catalog.portrait).toBeGreaterThanOrEqual(MIN_CATALOG_PORTRAIT);
+    // Three whole tiles a row and part of a fourth, where one row held two.
+    const room =
+      phone.player.width -
+      2 * QUICK_PICKER_STRIP_PAD -
+      QUICK_PICKER_OFF_WIDTH -
+      CATALOG_GAP;
+    const inView = room / stripTilePitch(fit.catalog.portrait);
+    expect(Math.floor(inView)).toBeGreaterThanOrEqual(3);
+    expect(inView - Math.floor(inView)).toBeGreaterThan(0.25);
+    expect(inView - Math.floor(inView)).toBeLessThan(0.75);
+    expect(fit.trackWidth).toBe(
+      fit.catalog.cols * (fit.catalog.portrait + 2 * INSET) +
+        (fit.catalog.cols - 1) * CATALOG_GAP
+    );
+    expect(fit.trackWidth).toBeGreaterThan(room);
+  });
+
+  it("takes smaller pictures in two rows for a fourth effect across, not larger ones", () => {
+    // Measured on /create/generate at 375x667 while playing, 2026-11-01: the
+    // room under the player (145px) holds two rows of the one row's 88px
+    // pictures, two and a half a row. Smaller ones show three and a half.
+    const box = {
+      bounds: { left: 0, top: 0, width: 375, height: 622.5 },
+      player: { left: 12.7, top: 83.3, width: 350, height: 394 },
+      roomBelow: 0,
+      controls: 44,
+      count: EFFECTS.length,
+    };
+    const fit = strip(box);
+    expect(fit.rows).toBe(2);
+    expect(fit.catalog.portrait).toBeGreaterThanOrEqual(MIN_CATALOG_PORTRAIT);
+    const room =
+      box.player.width -
+      2 * QUICK_PICKER_STRIP_PAD -
+      QUICK_PICKER_OFF_WIDTH -
+      CATALOG_GAP;
+    const inView = room / stripTilePitch(fit.catalog.portrait);
+    expect(Math.floor(inView)).toBe(3);
+    expect(fit.cover).toBeGreaterThanOrEqual(0);
+    expect(fit.cover).toBeLessThan(box.controls / 2);
+  });
+
+  it("keeps one row where there is no control row to cover", () => {
+    const fit = strip({ ...phone, controls: 0 });
+    expect(fit.rows).toBe(1);
+    expect(fit.cover).toBe(0);
+    expect(fit.side).toBe("dock");
+  });
+
+  it("keeps one row floating under the tablet's controls", () => {
+    const fit = strip({ ...tablet, controls: 44 });
+    expect(fit.side).toBe("below");
+    expect(fit.rows).toBe(1);
+    expect(fit.cover).toBe(0);
+  });
 });
 
 describe("fitEffectQuickPicker on a phone held upright", () => {
@@ -309,8 +387,7 @@ describe("fitEffectQuickPicker on a phone held upright", () => {
       playerWidth -
       2 * QUICK_PICKER_STRIP_PAD -
       QUICK_PICKER_OFF_WIDTH -
-      QUICK_PICKER_CLOSE_WIDTH -
-      2 * CATALOG_GAP;
+      CATALOG_GAP;
     return Math.floor((room + CATALOG_GAP) / stripTilePitch(portrait));
   }
 

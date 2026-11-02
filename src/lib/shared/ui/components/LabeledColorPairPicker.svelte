@@ -20,6 +20,17 @@
     onchange: (hand: HandSide, value: string) => void;
     /** One call that swaps both hands; the button only appears when provided. */
     onswap?: () => void;
+    /** What the line under each tile says. "name" is for hosts where a hex
+        code is noise (the viewer's dots menu): a preset's name, or "Custom".
+        The hex is still there inside the open editor's field. */
+    valueLabel?: "hex" | "name";
+    /** The gradient bar over the tiles. A host whose tiles already carry the
+        colors and has little room turns it off. */
+    showPairPreview?: boolean;
+    /** Names that win over the preset lookup in "name" mode. The dots menu
+        passes "Default" while no pair is chosen, because the default motion
+        colors aren't presets and the tiles would otherwise say "Custom". */
+    valueNames?: { left?: string; right?: string };
   }
 
   let {
@@ -31,6 +42,9 @@
     preview,
     onchange,
     onswap,
+    valueLabel = "hex",
+    showPairPreview = true,
+    valueNames,
   }: Props = $props();
 
   let editing = $state<HandSide | null>(null);
@@ -53,6 +67,19 @@
       input: rightInput,
     },
   ]);
+
+  // The cool and warm lists are cuts of the same matrix, so one lookup over
+  // COLOR_PRESETS names every swatch the editor offers.
+  function displayValue(hand: HandSide, value: string): string {
+    if (valueLabel === "hex") return value.toUpperCase();
+    const given = valueNames?.[hand];
+    if (given) return given;
+    const hex = value.toLowerCase();
+    return (
+      COLOR_PRESETS.find((preset) => preset.hex === hex)?.name ??
+      t("color_value_custom")
+    );
+  }
 
   const neutralPresets = COLOR_PRESETS.filter(
     (preset) => preset.row === "neutral"
@@ -105,11 +132,13 @@
   {#if preview}
     <div class="pair-preview-art">{@render preview({ left, right })}</div>
   {/if}
-  <span
-    class="pair-preview"
-    style:background={`linear-gradient(90deg, ${left}, ${right})`}
-    aria-hidden="true"
-  ></span>
+  {#if showPairPreview}
+    <span
+      class="pair-preview"
+      style:background={`linear-gradient(90deg, ${left}, ${right})`}
+      aria-hidden="true"
+    ></span>
+  {/if}
   <div class="pair-controls" class:has-swap={!!onswap}>
     {#each entries as entry, index (entry.hand)}
       {#if index === 1 && onswap}
@@ -129,7 +158,7 @@
         style:--color={entry.value}
         aria-label={t("color_edit_value", {
           label: entry.label,
-          value: entry.value.toUpperCase(),
+          value: displayValue(entry.hand, entry.value),
         })}
         aria-expanded={editing === entry.hand}
         aria-controls={editing === entry.hand ? editorId : undefined}
@@ -140,7 +169,12 @@
         </span>
         <span class="color-meta">
           <span class="color-label">{entry.label}</span>
-          <span class="color-value" dir="ltr">{entry.value.toUpperCase()}</span>
+          <span
+            class="color-value"
+            class:named={valueLabel === "name"}
+            dir={valueLabel === "hex" ? "ltr" : undefined}
+            >{displayValue(entry.hand, entry.value)}</span
+          >
         </span>
       </button>
     {/each}
@@ -437,6 +471,13 @@
     font-size: var(--font-size-compact, 12px);
     font-weight: 700;
     letter-spacing: 0.02em;
+  }
+
+  .color-value.named {
+    font-family: inherit;
+    font-weight: 600;
+    letter-spacing: normal;
+    overflow-wrap: anywhere;
   }
 
   /* Editor: swatch matrix + fine tune. A container query never matches the

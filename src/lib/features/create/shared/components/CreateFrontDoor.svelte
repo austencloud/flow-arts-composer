@@ -35,23 +35,16 @@
     ["assemble", 5],
   ]);
 
-  const NO_LOCKED_METHODS: ReadonlySet<string> = new Set();
-
   let {
     methods,
-    lockedMethodIds = NO_LOCKED_METHODS,
     active,
     source,
     lastUsedMode = null,
     enteringMethodId = null,
     onWarm,
     onSelect,
-    onLockedSelect,
   }: {
     methods: Section[];
-    /** Methods a guest can see but needs a free account to open. They keep
-     *  their place in the bento so the board never changes shape at sign-in. */
-    lockedMethodIds?: ReadonlySet<string>;
     active: boolean;
     source: CreateFrontDoorSource;
     lastUsedMode?: string | null;
@@ -61,7 +54,6 @@
     /** Fetch a method's code ahead of the tap, once a card is pointed at. */
     onWarm?: (methodId: string) => void;
     onSelect: (methodId: string) => void;
-    onLockedSelect?: (methodId: string) => void;
   } = $props();
 
   const orderedMethods = $derived(
@@ -227,26 +219,20 @@
   });
 
   function selectMethod(methodId: string, trigger: HTMLButtonElement): void {
-    const locked = lockedMethodIds.has(methodId);
     haptics?.trigger("selection");
     logCreateMethodSelected({
       method: methodId,
       source,
-      isLastUsed: !locked && methodId === lastUsedMode,
-      isLocked: locked,
+      isLastUsed: methodId === lastUsedMode,
     });
     trigger.blur();
-    if (locked) {
-      onLockedSelect?.(methodId);
-      return;
-    }
     // Choosing a method ends the turns.
     turns.stop();
     onSelect(methodId);
   }
 
   function warmMethod(methodId: string): void {
-    if (!lockedMethodIds.has(methodId)) onWarm?.(methodId);
+    onWarm?.(methodId);
   }
 
   function accessibleName(method: Section): string | undefined {
@@ -254,9 +240,6 @@
       name: t(method.labelKey),
       description: t(method.descKey),
     };
-    if (lockedMethodIds.has(method.id)) {
-      return t("create_ui_account_method", values);
-    }
     if (method.id === lastUsedMode) {
       return t("create_ui_last_used_method", values);
     }
@@ -304,9 +287,7 @@
             onfocus={() => warmMethod(method.id)}
             use:methodPreviewHold={{ turns, id: method.id }}
           >
-            {#if lockedMethodIds.has(method.id)}
-              <LastUsedBadge label={t("create_ui_account_badge")} />
-            {:else if method.id === lastUsedMode}
+            {#if method.id === lastUsedMode}
               <LastUsedBadge />
             {/if}
 

@@ -35,10 +35,10 @@ const shapeMatrixDestination = readSource(
   "src/routes/(public)/shape-engine/+page.svelte"
 );
 const shapeMatrixApp = readSource(
-  "src/lib/shared/shape-matrix/app/ShapeMatrixApp.svelte"
+  "packages/shape-engine/src/app/ShapeMatrixApp.svelte"
 );
 const shapeMatrixMatrixPane = readSource(
-  "src/lib/shared/shape-matrix/app/components/ShapeMatrixMatrixPane.svelte"
+  "packages/shape-engine/src/app/components/ShapeMatrixMatrixPane.svelte"
 );
 const sitemap = readSource("src/routes/sitemap.xml/+server.ts");
 const componentManifest = readSource("scripts/component-manifest.json");
@@ -127,14 +127,14 @@ describe("notation catalog", () => {
 
   it("keeps the interactive Shape Engine at the /shape-engine destination", () => {
     expect(shapeMatrixDestination).toContain(
-      "#lib/shared/shape-matrix/app/ShapeMatrixApp.svelte"
+      "@tka/shape-engine/app/ShapeMatrixApp.svelte"
     );
     expect(shapeMatrixDestination).toContain(
       "<ShapeMatrixApp {persistence} />"
     );
     expect(shapeMatrixApp).toContain("loadShapeMatrix");
     expect(shapeMatrixMatrixPane).toContain(
-      "#lib/shared/shape-matrix/components/ShapeMatrixGrid.svelte"
+      "../../components/ShapeMatrixGrid.svelte"
     );
   });
 

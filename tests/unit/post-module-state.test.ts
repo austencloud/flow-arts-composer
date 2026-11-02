@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {

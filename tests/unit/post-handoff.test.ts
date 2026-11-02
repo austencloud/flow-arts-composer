@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { setLocale } from "#lib/shared/i18n/i18n.svelte.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 

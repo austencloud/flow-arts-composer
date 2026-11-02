@@ -72,6 +72,9 @@ describe("getAccessibleTabs", () => {
       "construct",
       "generate",
       "shape-engine",
+      "fuse",
+      "tunnel",
+      "assemble",
     ]);
   });
 

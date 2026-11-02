@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // downloadBlob / shareOrDownloadBlob gate on the DEVICE (detectPlatform), not on

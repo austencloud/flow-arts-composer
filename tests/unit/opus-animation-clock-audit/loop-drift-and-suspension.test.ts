@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Audit: loop-boundary drift, speed scaling, and hidden-tab resume, driving the
  * REAL AnimationPlaybackController + REAL AnimationLoop + REAL orchestrator

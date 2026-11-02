@@ -25,10 +25,10 @@
   import GenerationSettingsOverlay from "./GenerationSettingsOverlay.svelte";
   import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import TnDModeGrid from "#lib/features/choreo-card/components/TnDModeGrid.svelte";
-  import RelationshipChoiceChip from "#lib/shared/shape-matrix/components/RelationshipChoiceChip.svelte";
+  import RelationshipChoiceChip from "@tka/shape-engine/components/RelationshipChoiceChip.svelte";
   import { type TnDSelection } from "#lib/shared/create/domain/hand-relationship.js";
   import { describeCreateTnDSelection } from "./tnd-presentation";
-  import type { VtgMode } from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
+  import type { VtgMode } from "@tka/shape-domain";
   import type { StartFeasibilityResult } from "#lib/shared/create/domain/start-feasibility.js";
 
   let {

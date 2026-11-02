@@ -358,7 +358,7 @@
   /* Mobile responsive adjustments - ALWAYS 48px minimum per iOS/Android guidelines */
   @media (max-width: 768px) {
     .view-sequence-button {
-      width: var(--min-touch-target);
+      width: var(--workspace-action-width, var(--min-touch-target));
       height: var(--min-touch-target);
       font-size: var(--font-size-base);
     }
@@ -370,7 +370,7 @@
 
   @media (max-width: 480px) {
     .view-sequence-button {
-      width: var(--min-touch-target);
+      width: var(--workspace-action-width, var(--min-touch-target));
       height: var(--min-touch-target);
       font-size: var(--font-size-base);
     }
@@ -382,7 +382,7 @@
 
   @media (max-width: 320px) {
     .view-sequence-button {
-      width: var(--min-touch-target);
+      width: var(--workspace-action-width, var(--min-touch-target));
       height: var(--min-touch-target);
       font-size: var(--font-size-base);
     }
@@ -395,7 +395,7 @@
   /* Landscape mobile: Maintain 48px minimum */
   @media (min-aspect-ratio: 17/10) and (max-height: 500px) {
     .view-sequence-button {
-      width: var(--min-touch-target);
+      width: var(--workspace-action-width, var(--min-touch-target));
       height: var(--min-touch-target);
     }
 

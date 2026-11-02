@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { NativeInitializer } from "#lib/shared/platform/services/native-initializer.js";
 

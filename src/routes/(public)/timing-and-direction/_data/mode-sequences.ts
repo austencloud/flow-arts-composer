@@ -21,7 +21,7 @@ import { deriveTnDFromPictograph } from "#lib/shared/pictograph/shared/domain/ut
 import {
   MODE_FAMILY_ID,
   type VtgMode,
-} from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
+} from "@tka/shape-domain";
 
 export interface ModeLoop {
   readonly id: string;

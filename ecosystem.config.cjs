@@ -17,6 +17,21 @@ module.exports = {
       windowsHide: true,
     },
     {
+      // Runs the d2 ship preflight (push-public.mjs --check, never --push)
+      // once local main has been quiet on a new tree for 10 minutes, so a ship
+      // finds the verdict cached. Decisions: .git/publish-preflight-watch.log.
+      name: "tka-preflight-watch",
+      script: "scripts/preflight-watch.mjs",
+      cwd: __dirname,
+      autorestart: true,
+      min_uptime: 10000,
+      restart_delay: 30000,
+      // A stop mid-run leaves the d2 job running; the next publish of that
+      // snapshot waits for it and reuses its verdict.
+      kill_timeout: 5000,
+      windowsHide: true,
+    },
+    {
       // Laptop-only backup tunnel: dev2.tkaflowarts.com -> this machine's
       // :5173. Not auto-started by `pm2 start ecosystem.config.cjs` on other
       // machines unless explicitly started: pm2 start ecosystem.config.cjs --only tka-tunnel2

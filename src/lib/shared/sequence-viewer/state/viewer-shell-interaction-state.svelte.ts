@@ -10,7 +10,10 @@ import type {
   ViewerControlValue,
 } from "../domain/viewer-control-analytics";
 import type { TempoPracticeConfig } from "../services/tempo-practice-orchestrator";
-import { buildHeaderActions } from "../services/viewer-actions";
+import {
+  buildHeaderActions,
+  type ViewerHeaderProfile,
+} from "../services/viewer-actions";
 import {
   buildCardExportAnalyticsConfig,
   buildPracticeConfigProperties,
@@ -55,6 +58,9 @@ interface ViewerShellInteractionInputs {
   getOnRemix: () => (() => void) | undefined;
   getOpenAppHref: () => string | undefined;
   getOnAccountSignIn: () => (() => void) | undefined;
+  /** Which actions the header offers; a cast page offers none that act on
+   *  one performer's sequence. Defaults to `full`. */
+  getHeaderProfile?: () => ViewerHeaderProfile;
   onClose: () => void;
 }
 
@@ -84,7 +90,7 @@ export function createViewerShellInteractionState(
   let practiceReturnState: PracticeReturnState | null = null;
 
   const headerActions = $derived(
-    buildHeaderActions(inputs.getContext(), "full", {
+    buildHeaderActions(inputs.getContext(), inputs.getHeaderProfile?.() ?? "full", {
       onDeleteRequest: () => (deleteConfirmOpen = true),
     })
   );

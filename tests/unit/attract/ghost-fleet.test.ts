@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * The fleet — many sessions at once, for the patterns one session cannot show.
  *

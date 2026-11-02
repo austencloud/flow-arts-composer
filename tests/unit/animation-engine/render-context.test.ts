@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect, vi } from "vitest";
 import { LiveRenderContext } from "#lib/shared/animation-engine/services/render-context.js";
 

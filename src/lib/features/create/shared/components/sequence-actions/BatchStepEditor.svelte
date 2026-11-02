@@ -1,7 +1,7 @@
 <!--
   BatchStepEditor.svelte
 
-  Multi-select batch editor TOP zone: header (count + select-all + close) and the
+  Multi-select batch editor TOP zone: header (mode line + select-all + Done) and the
   pictograph grid. Rendered inside the coordinator's shared drawer, in the top-
   zone crossfade opposite the single-step preview. The blue/red turn controls
   live in the shared, persistent StepControlsZone below (so they morph across
@@ -12,6 +12,7 @@
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
@@ -93,23 +94,20 @@
 
 <div class="batch-editor">
   <!-- Header -->
+  <!-- Same mode line and Done as the single-step header, so both editor
+       modes read as "you are editing a selection" and leave the same way. -->
   <header class="batch-header">
-    <button
-      class="header-btn close"
-      type="button"
-      onclick={onClose}
-      aria-label={t("create_ui_close_batch_editor")}
-    >
-      <i class="fas fa-times" aria-hidden="true"></i>
-    </button>
-    <span class="batch-title">{t("create_edit_steps", { count })}</span>
+    <span class="batch-title">
+      {t("create_editor_editing_steps", { count: stepNumbers.length })}
+    </span>
     {#if count < totalBeats}
       <button class="header-btn select-all" type="button" onclick={onSelectAll}>
         {t("create_review_select_all")}
       </button>
-    {:else}
-      <span class="header-spacer"></span>
     {/if}
+    <PanelButton onclick={onClose} title={t("create_ui_close_batch_editor")}>
+      {t("create_editor_done")}
+    </PanelButton>
   </header>
 
   <!-- Pictograph grid: every selected step, animated on add/remove/reflow -->
@@ -159,9 +157,14 @@
     flex-shrink: 0;
   }
 
+  /* Left-aligned like the single-step mode line. On the narrowest phones it
+     trims rather than pushing Done off the row. */
   .batch-title {
     flex: 1;
-    text-align: center;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
     font-size: var(--font-size-md, 1rem);
     font-weight: 700;
     color: var(--theme-text, rgba(255, 255, 255, 0.95));
@@ -185,15 +188,6 @@
 
   .header-btn:hover {
     background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.1));
-  }
-
-  .header-btn.close {
-    min-width: var(--min-touch-target, 44px);
-    padding: 0;
-  }
-
-  .header-spacer {
-    min-width: var(--min-touch-target, 44px);
   }
 
   .grid-scroll {

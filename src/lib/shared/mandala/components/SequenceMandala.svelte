@@ -10,7 +10,7 @@
 		createRenderActivityGate,
 		renderGateTarget
 	} from "#lib/shared/render-gating/render-activity-gate.js";
-	import { cubicInOut } from "svelte/easing";
+	import { cubicInOut, cubicOut } from "svelte/easing";
 	import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
 	import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
 	import { applyMandalaHandColors } from "../domain/mandala-palette";
@@ -50,7 +50,12 @@
 	} from "../services/mandala-geometry-calculator";
 	import { getMandalaPathOptions } from "../services/mandala-path-options";
 	import { resolveMandalaTipOffsets } from "../services/mandala-path-preparer";
-	import { createMandalaMorph, mandalaPathsEqual } from "../services/mandala-path-interpolator";
+	import {
+		createMandalaMorph,
+		mandalaPathsEqual,
+		planMandalaTrace,
+		type MandalaTrace,
+	} from "../services/mandala-path-interpolator";
 	import { TrackingMode } from "#lib/shared/animation-engine/domain/types/trail-types.js";
 	import { pairTipEnds } from "#lib/shared/pictograph/prop/domain/prop-tip-ends.js";
 	import { DURATION } from "#lib/shared/transitions/transitions.js";
@@ -164,6 +169,13 @@
 		 * grid, applied when both hands show. Null or absent for one grid.
 		 */
 		handOffsets?: MandalaHandOffsets | null;
+		/**
+		 * How far along something on screen is in drawing the change being
+		 * made, 0 to 1. When the next change only adds beats and this is a
+		 * number, the new tail draws in on this clock (the Assemble prop's hop)
+		 * instead of the mandala's own; null or 1 finishes it.
+		 */
+		traceProgress?: number | null;
 	}
 
 	let {
@@ -192,6 +204,7 @@
 		gradient,
 		tipEnds,
 		handOffsets = null,
+		traceProgress = undefined,
 	}: Props = $props();
 
 	// Prop-aware tip count: an explicit `tipEnds` prop wins (labs / overrides);
@@ -289,11 +302,20 @@
 	let changeMorphPaths: MandalaPaths | null = $state(null);
 	let pathMorph: {
 		readonly at: (t: number) => MandalaPaths;
+		readonly ease: (t: number) => number;
 		readonly duration: number;
 		elapsed: number;
 		last: number | null;
 	} | null = null;
 	let lastChangeTarget: MandalaPaths | null = null;
+	// An appended tail drawing in on someone else's clock (`traceProgress`):
+	// each new progress value paints the next frame, and the end of that clock
+	// ends the trace.
+	let externalTrace: MandalaTrace | null = null;
+
+	function clampProgress(t: number): number {
+		return Math.min(1, Math.max(0, t));
+	}
 	// The join slide: the shared GridJoinTween on the pictographs' clock, so the
 	// two figures glide apart or together in step with the joined grids.
 	// `slidingHandOffsets` is the shown frame while it runs, undefined at rest.
@@ -467,6 +489,7 @@
 		const target = calculatedPaths;
 		if (!target) {
 			lastChangeTarget = null;
+			externalTrace = null;
 			return;
 		}
 
@@ -475,6 +498,7 @@
 
 		if (!lastChangeTarget || !canMorph) {
 			pathMorph = null;
+			externalTrace = null;
 			changeMorphPaths = null;
 			lastChangeTarget = target;
 			return;
@@ -487,6 +511,28 @@
 
 		const from = untrack(() => changeMorphPaths ?? lastChangeTarget)!;
 		lastChangeTarget = target;
+
+		// New beats on the end leave the old ones where they are, so the new
+		// tail draws itself in like a pen stroke instead of morphing. With a
+		// clock from outside (the prop hopping in Assemble) the line keeps pace
+		// with the prop; otherwise it draws on its own, fast then settling.
+		const trace = planMandalaTrace(from, target);
+		if (trace) {
+			const progress = untrack(() => traceProgress);
+			if (typeof progress === "number" && progress < 1) {
+				pathMorph = null;
+				externalTrace = trace;
+				changeMorphPaths = trace(clampProgress(progress));
+				return;
+			}
+			externalTrace = null;
+			changeMorphPaths = from;
+			pathMorph = { at: trace, ease: cubicOut, duration, elapsed: 0, last: null };
+			startChangeLoop();
+			return;
+		}
+
+		externalTrace = null;
 		const morph = createMandalaMorph(from, target);
 		// The same picture with its lines re-dealt between tips: nothing moves.
 		if (morph.still) {
@@ -495,8 +541,22 @@
 			return;
 		}
 		changeMorphPaths = from;
-		pathMorph = { at: morph, duration, elapsed: 0, last: null };
+		pathMorph = { at: morph, ease: EASING_FNS.bloom, duration, elapsed: 0, last: null };
 		startChangeLoop();
+	});
+
+	// The outside clock of a held trace: each value paints its frame, and the
+	// clock stopping (null) or reaching the end shows the finished picture.
+	$effect(() => {
+		const progress = traceProgress;
+		const trace = externalTrace;
+		if (!trace) return;
+		if (typeof progress !== "number" || progress >= 1) {
+			externalTrace = null;
+			changeMorphPaths = null;
+			return;
+		}
+		changeMorphPaths = trace(clampProgress(progress));
 	});
 
 	// A new join slides the figures from where they are shown to where the join
@@ -539,7 +599,7 @@
 			morph.last = now;
 			const linearProgress = Math.min(1, morph.elapsed / morph.duration);
 			if (linearProgress < 1) {
-				changeMorphPaths = morph.at(EASING_FNS.bloom(linearProgress));
+				changeMorphPaths = morph.at(morph.ease(linearProgress));
 				running = true;
 			} else {
 				pathMorph = null;

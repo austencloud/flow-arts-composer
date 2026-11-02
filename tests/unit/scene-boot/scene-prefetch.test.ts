@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * The prefetcher spends a viewer's bandwidth on models they have not asked for
  * yet. Every one of its brakes fails silently: a broken Data Saver check just

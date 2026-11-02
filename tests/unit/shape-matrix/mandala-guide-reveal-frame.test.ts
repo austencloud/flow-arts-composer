@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * The Create front door's Shape preview draws a matrix tile's mandala from
  * start to finish. The reveal frame paints with the tile's own options,
@@ -22,7 +23,7 @@ import {
   shapeMatrixGuideOptions,
   SHAPE_MATRIX_GUIDE_COLORS,
   SHAPE_MATRIX_GUIDE_STROKE_WIDTH,
-} from "#lib/shared/shape-matrix/services/shape-matrix-render.js";
+} from "@tka/shape-engine/services/shape-matrix-render.js";
 
 const left: MandalaPaths = {
   left: [{ d: "M 0 0 C 10 0 10 10 20 10", tipIndex: 0 }],

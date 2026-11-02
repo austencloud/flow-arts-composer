@@ -31,7 +31,7 @@ import {
   drawElementalGlyph,
   drawPropElementalGlyph,
 } from "#lib/shared/render/services/canvas-2d-glyph-renderer.js";
-import { derivePropElementalTypeForStep } from "#lib/shared/shape-matrix/domain/prop-relationship.js";
+import { derivePropElementalTypeForStep } from "#lib/shared/pictograph/shared/domain/utils/prop-elemental-type.js";
 
 /** Letter A at alpha3: w to n and e to s, split-same, the Water element. */
 const letterA = {

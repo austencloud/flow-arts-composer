@@ -10,7 +10,7 @@ import {
 import {
   MODE_FAMILY_ID,
   type VtgMode,
-} from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
+} from "@tka/shape-domain";
 import {
   TND_BY_FAMILY,
   type TnDElement,

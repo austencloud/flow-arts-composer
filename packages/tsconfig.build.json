@@ -8,6 +8,7 @@
     { "path": "./spin-science-domain" },
     { "path": "./9square-domain" },
     { "path": "./render-core" },
-    { "path": "./sequence-engine" }
+    { "path": "./sequence-engine" },
+    { "path": "./shape-domain" }
   ]
 }

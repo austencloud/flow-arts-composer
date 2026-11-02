@@ -35,13 +35,13 @@
   import TunnelArtView from "#lib/shared/sequence-viewer/tunnel/TunnelArtView.svelte";
   import { TunnelViewController } from "#lib/shared/sequence-viewer/tunnel/tunnel-view-controller.svelte.js";
   import { DEFAULT_TUNNEL_VIEW_STATE } from "#lib/shared/sequence-viewer/tunnel/tunnel-view-state.js";
-  import { flowerKey } from "#lib/shared/shape-matrix/domain/flower-signature.js";
-  import { propPairFromLegacy } from "#lib/shared/shape-matrix/domain/prop-pair.js";
+  import { flowerKey } from "@tka/shape-domain";
+  import { propPairFromLegacy } from "@tka/shape-engine/services/prop-pair.js";
   import {
     loadShapeMatrix,
     type ShapeMatrixData,
-  } from "#lib/shared/shape-matrix/services/shape-matrix-flowers.js";
-  import { createCellRevealFrame } from "#lib/shared/shape-matrix/services/shape-matrix-render.js";
+  } from "@tka/shape-engine/services/shape-matrix-flowers.js";
+  import { createCellRevealFrame } from "@tka/shape-engine/services/shape-matrix-render.js";
   import { DEMO_SEQUENCE } from "#lib/features/create/shared/components/method-previews/method-preview-demo.js";
   import {
     playTravel,

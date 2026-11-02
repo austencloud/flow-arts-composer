@@ -68,6 +68,11 @@ export function openSequenceViewer(
   sequence: SequenceData,
   options: OpenSequenceViewerOptions
 ): void {
+  // The tap's time, taken before any work below, so the drawer host can time
+  // tap-to-drawer for every opener that comes through here.
+  const openedAtMs =
+    typeof performance === "undefined" ? undefined : performance.now();
+
   // Use prefetched hydrated data if available (hover prefetch completed)
   // Preserve ownership metadata from the original sequence since cached/hydrated
   // versions loaded from IndexedDB or public index may lack ownerId.
@@ -104,5 +109,6 @@ export function openSequenceViewer(
     shareOnOpen: options.shareOnOpen,
     saveOnOpen: options.saveOnOpen,
     viewStateParams: options.viewStateParams,
+    openedAtMs,
   });
 }

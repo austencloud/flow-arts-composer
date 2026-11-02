@@ -68,7 +68,7 @@
   import {
     HERO_TIP_EFFECT_MAP,
     HERO_TRAIL_PRESET,
-  } from "#lib/shared/landing/data/hero-trail-preset.js";
+  } from "@tka/shape-engine/services/hero-trail-preset.js";
   import GhostPointer from "#lib/shared/attract/components/GhostPointer.svelte";
   import {
     createConstructAttractAct,

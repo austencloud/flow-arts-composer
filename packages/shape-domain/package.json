@@ -1,0 +1,31 @@
+{
+  "name": "@tka/shape-domain",
+  "version": "0.1.0",
+  "description": "Shape Engine rules: the flower axis, the six timing-and-direction elements and the pictograph letter lookup. Framework-free.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "bake-edges": "node scripts/bake-edges.mjs",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@tka/tka-types": "workspace:*",
+    "@tka/sequence-engine": "workspace:*",
+    "@vtg/domain": "workspace:*"
+  },
+  "devDependencies": {
+    "rimraf": "^5.0.0",
+    "typescript": "^6.0.0"
+  },
+  "author": "Austen Cloud <austencloud@gmail.com>",
+  "license": "MIT"
+}

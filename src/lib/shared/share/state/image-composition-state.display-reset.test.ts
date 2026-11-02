@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 // Settings -> Display card reset. Same mocking shape as cd-slice.test.ts: the jsdom stub pins `browser` to

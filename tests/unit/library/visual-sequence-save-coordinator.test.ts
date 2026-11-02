@@ -96,6 +96,27 @@ describe("VisualSequenceSaveCoordinator", () => {
     expect(onGuestSaveSucceeded).toHaveBeenCalledWith("seq-1");
   });
 
+  it("saves another creator's sequence as a private copy credited to them", async () => {
+    const saveSequence = vi.fn().mockResolvedValue({
+      sequenceId: "seq-1",
+      persisted: true,
+      isGuest: false,
+    });
+    const coordinator = new VisualSequenceSaveCoordinator({ saveSequence });
+    const copyOf = {
+      sequenceId: "seq-1",
+      creatorId: "creator-9",
+      creatorName: "Creator Nine",
+    };
+
+    await coordinator.save(SEQUENCE, { copyOf });
+
+    expect(saveSequence.mock.calls[0]![1]).toMatchObject({
+      visibility: "private",
+      copyOf,
+    });
+  });
+
   it("shares one persistence operation across concurrent clicks", async () => {
     let finish!: (value: {
       sequenceId: string;

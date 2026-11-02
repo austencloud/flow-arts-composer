@@ -8,7 +8,7 @@ const keys: Partial<Record<string, TranslationKey>> = {
   "Keep saving sequences": "auth_prompt_keep_saving",
   "Save this sequence": "auth_prompt_save_sequence",
   "Use pattern tools": "auth_prompt_use_patterns",
-  "A free account adds Turn Pattern, Direction, Duration, Choose Start, and Rewind.":
+  "Reshape whole sequences with Turn Pattern, Direction, Duration, Choose Start, and Rewind. Free, about ten seconds.":
     "auth_prompt_pattern_tools_body",
   "Extend this sequence": "auth_prompt_extend_sequence",
   "Apply a turn pattern": "auth_prompt_apply_turn_pattern",
@@ -18,72 +18,47 @@ const keys: Partial<Record<string, TranslationKey>> = {
   "Rewind this sequence": "auth_prompt_rewind_sequence",
   "Use this setup": "auth_prompt_use_setup",
   "Open your library on any device": "auth_prompt_library_any_device",
-  "A free account keeps saved sequences and collections across devices.":
+  "Your saved sequences and collections, on every phone and laptop. Free, about ten seconds.":
     "auth_prompt_saved_across_devices",
   "Export this sequence": "auth_prompt_export_sequence",
-  "Sign in or create an account to download animations and Choreo Cards.":
-    "auth_prompt_export_body",
   "Start learning": "auth_prompt_start_learning",
-  "Sign in or create an account to start learning TKA notation.":
+  "Start learning TKA notation with an account. Free, about ten seconds.":
     "auth_prompt_start_learning_body",
   "Open your library": "auth_prompt_open_library",
-  "Sign in or create an account to open your saved sequences.":
+  "Your saved sequences live on this device. An account carries them everywhere. Free, about ten seconds.":
     "auth_prompt_open_library_body",
   "Notification settings": "auth_prompt_save_settings",
-  "Sign in or create an account to manage notifications.":
+  "Choose which notifications reach you, with an account. Free, about ten seconds.":
     "auth_prompt_save_settings_body",
   "Open 3D Studio": "auth_prompt_open_stage",
-  "Sign in or create an account to build and choreograph sequences in 3D.":
+  "Build and choreograph sequences in 3D Studio with an account. Free, about ten seconds.":
     "auth_prompt_open_stage_body",
   "Open this part of the app": "auth_prompt_open_module",
-  "Sign in or create an account to continue.": "auth_prompt_open_module_body",
-  "Use Fuse": "auth_prompt_use_fuse",
-  "A free account lets you combine two sequences into one.":
-    "auth_prompt_use_fuse_body",
-  "Use Tunnel": "auth_prompt_use_tunnel",
-  "A free account lets you arrange sequences for several performers.":
-    "auth_prompt_use_tunnel_body",
-  "Use Assemble": "auth_prompt_use_assemble",
-  "A free account lets you build a sequence by choosing grid points.":
-    "auth_prompt_use_assemble_body",
+  "An account opens this part of the app and keeps your work on every device. Free, about ten seconds.":
+    "auth_prompt_open_module_body",
   "Edit this sequence": "auth_prompt_edit_sequence",
-  "Sign in or create an account to edit and remix this sequence.":
-    "auth_prompt_edit_sequence_body",
   "Try every LOOP type": "auth_prompt_try_every_loop",
-  "A free account lets you use every LOOP type.": "auth_prompt_every_loop_body",
-  "A free account lets you use community setups.":
+  "Use every LOOP type, not only rotated ones. Free, about ten seconds.":
+    "auth_prompt_every_loop_body",
+  "Start from setups the community shared. Free, about ten seconds.":
     "auth_prompt_community_setups_body",
   "Keep your setups": "auth_prompt_keep_setups",
-  "Sign in or create an account to keep setups across sessions.":
-    "auth_prompt_keep_setups_body",
   "Save this setup": "auth_prompt_save_setup",
-  "Sign in or create an account to save it. Saved setups are shared with the community.":
-    "auth_prompt_save_setup_body",
   "Share this sequence": "auth_prompt_share_sequence",
-  "Sign in or create an account to send it, make a link, or download a Choreo Card.":
-    "auth_prompt_share_sequence_body",
   "Share this collection": "auth_prompt_share_collection",
-  "Sign in or create an account to send this collection.":
-    "auth_prompt_share_collection_body",
   "Publish this sequence": "auth_prompt_publish_sequence",
-  "Sign in or create an account to publish this sequence.":
-    "auth_prompt_publish_sequence_body",
   "Download this sequence": "auth_prompt_download_sequence",
-  "Sign in or create an account to download this sequence.":
-    "auth_prompt_download_sequence_body",
   "Keep your scans": "auth_prompt_keep_scans",
-  "A free account keeps your scans in your library.":
+  "Keep your scans in your library on every device. Free, about ten seconds.":
     "auth_prompt_keep_scans_body",
   "Open this sequence anywhere": "auth_prompt_open_sequence_anywhere",
-  "A free account keeps it in your library and opens it on any device.":
+  "Keep this sequence in your library and open it on any device. Free, about ten seconds.":
     "auth_prompt_open_sequence_anywhere_body",
   "Add your city to the map": "auth_prompt_add_city",
   "Keep your prop collection": "auth_prompt_keep_props",
-  "A free account keeps the props you earn in your collection.":
+  "Keep the props you earn, on every device. Free, about ten seconds.":
     "auth_prompt_earned_props",
   "Send this image": "auth_prompt_send_image",
-  "Sign in to send this image. It is saved and will send when you return.":
-    "auth_prompt_send_image_body",
   "Create your account": "auth_prompt_create_account",
   "Save your sequences and open them on any device.":
     "auth_prompt_save_any_device",
@@ -113,9 +88,6 @@ const nudgeKeys = {
   "module:other": "auth_nudge_module_other",
   "edit-community": "auth_nudge_edit_community",
   "loop-locked-guest": "auth_nudge_loop_locked_guest",
-  "method:fuse": "auth_nudge_method_fuse",
-  "method:tunnel": "auth_nudge_method_tunnel",
-  "method:assemble": "auth_nudge_method_assemble",
   "community-setups": "auth_nudge_community_setups",
   "saved-setups": "auth_nudge_saved_setups",
   "save-setup": "auth_nudge_save_setup",

@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "declaration": true,
+    "declarationMap": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "composite": true,
+    "paths": {
+      "@tka/tka-types": ["../tka-types/dist/index.d.ts"],
+      "@tka/sequence-engine/generation": [
+        "../sequence-engine/dist/generation/index.d.ts"
+      ],
+      "@vtg/domain": ["../vtg-domain/dist/index.d.ts"]
+    }
+  },
+  "references": [
+    { "path": "../tka-types" },
+    { "path": "../sequence-engine" },
+    { "path": "../vtg-domain" }
+  ],
+  "include": ["src/**/*.ts", "src/**/*.json"],
+  "exclude": ["src/**/__tests__/**", "src/**/*.test.ts"]
+}

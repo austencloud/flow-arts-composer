@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { flushSync } from "svelte";
 import { describe, expect, it, vi } from "vitest";
 import type {

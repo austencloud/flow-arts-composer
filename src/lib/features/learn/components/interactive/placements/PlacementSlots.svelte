@@ -5,6 +5,10 @@
   alpha, beta and gamma on the right edge, the way Hand Motions shows its
   moves). In practice the slot asked for is marked and a wrong try shows the
   fix in it; in free play each slot loads its example onto the board.
+  Under the board each slot is a tile the found pair fills edge to edge, with
+  its name in the corner, so the row reads as a set being collected. Only
+  free play marks a slot as chosen; a build answers with a ping, not a ring
+  that would read as "pick this one" (Austen, 2026-11-01).
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
@@ -50,7 +54,7 @@
   {#each slots as slot (slot.kind)}
     {@const info = PLACEMENT_TYPE_INFO[slot.kind]}
     <li
-      class:lit={lit === slot.kind || slot.selected}
+      class:selected={slot.selected}
       class:target={slot.target}
       class:correction={slot.correction}
       class:found={slot.checked}
@@ -111,7 +115,8 @@
   .slots {
     --slot-art: clamp(3.25rem, 9cqw, 6rem);
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 12rem));
+    justify-content: center;
     gap: 0.5rem;
     width: 100%;
     margin: 0;
@@ -119,20 +124,16 @@
     list-style: none;
   }
 
-  /* As the Hand Motions slots: the picture over its name. */
+  /* Under the board a slot is a square tile: the found pair fills it and
+     its name sits in the top corner. An empty slot is a dashed outline
+     holding the placement's symbol. */
   li {
     position: relative;
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-areas:
-      "art"
-      "name"
-      "caption";
-    align-content: start;
-    gap: 0.3rem;
+    aspect-ratio: 1;
     min-width: 0;
-    padding: 0.45rem;
-    border: 1px solid color-mix(in srgb, currentColor 16%, transparent);
+    overflow: hidden;
+    border: 1px dashed color-mix(in srgb, currentColor 28%, transparent);
     border-radius: 0.75rem;
     transition:
       background-color var(--transition-normal),
@@ -140,15 +141,17 @@
       box-shadow var(--transition-normal);
   }
 
+  li.filled {
+    border-style: solid;
+    border-color: color-mix(in srgb, currentColor 30%, transparent);
+  }
+
   .art {
-    grid-area: art;
-    position: relative;
+    position: absolute;
+    inset: 0;
     display: grid;
     place-items: center;
-    justify-self: center;
-    width: var(--slot-art);
-    aspect-ratio: 1;
-    border-radius: 0.5rem;
+    border-radius: inherit;
     background: color-mix(in srgb, currentColor 5%, transparent);
   }
 
@@ -164,7 +167,18 @@
   }
 
   .name {
-    text-align: center;
+    position: absolute;
+    top: 0.3rem;
+    left: 0.3rem;
+    z-index: 1;
+    padding: 0.05rem 0.45rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--theme-panel-bg, #000) 72%, transparent);
+    font-size: var(--font-size-compact, 0.75rem);
+  }
+
+  .filled .name {
+    background: color-mix(in srgb, #000 62%, transparent);
   }
 
   /* Beside the board, each slot is a row: picture, then name and line.
@@ -178,6 +192,8 @@
       }
 
       li {
+        aspect-ratio: auto;
+        overflow: visible;
         grid-template-columns: var(--slot-art) minmax(0, 1fr);
         grid-template-areas:
           "art name"
@@ -187,7 +203,22 @@
         padding: 0.6rem 2.5rem 0.6rem 0.6rem;
       }
 
-      .name {
+      .art {
+        grid-area: art;
+        position: relative;
+        inset: auto;
+        width: var(--slot-art);
+        aspect-ratio: 1;
+        border-radius: 0.5rem;
+      }
+
+      .name,
+      .filled .name {
+        grid-area: name;
+        position: static;
+        padding: 0;
+        background: none;
+        font-size: inherit;
         align-self: end;
         text-align: start;
       }
@@ -216,9 +247,9 @@
     }
   }
 
-  .slots li.lit {
-    /* The slot just built stands out from the blue page: a light ring and
-       glow rather than a blue tint (Austen, 2026-10-14). */
+  .slots li.selected {
+    /* Free play's chosen example stands out from the blue page: a light
+       ring and glow rather than a blue tint (Austen, 2026-10-14). */
     background: color-mix(in srgb, var(--theme-text) 12%, transparent);
     border-color: var(--theme-text);
     box-shadow:
@@ -256,7 +287,7 @@
     place-items: center;
     width: 100%;
     height: 100%;
-    font-size: calc(var(--slot-art) * 0.5);
+    font-size: clamp(1.75rem, 8cqw, 3.5rem);
     line-height: 1;
     font-weight: 600;
     color: var(--theme-text-dim);
@@ -303,7 +334,7 @@
   .found .name,
   .filled .name,
   .target .name,
-  .lit .name {
+  .selected .name {
     opacity: 1;
   }
 
@@ -325,6 +356,7 @@
     position: absolute;
     top: 0.3rem;
     right: 0.3rem;
+    z-index: 1;
     display: grid;
     place-items: center;
     width: 1.25rem;
@@ -344,6 +376,7 @@
   .hit {
     position: absolute;
     inset: 0;
+    z-index: 2;
     border: 0;
     border-radius: inherit;
     background: transparent;

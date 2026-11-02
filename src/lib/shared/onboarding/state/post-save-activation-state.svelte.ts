@@ -113,14 +113,14 @@ export const postSaveActivation = {
   /** User chose "Create account". */
   accept() {
     logPrompt("onboarding_guest_first_save_prompt_accepted", _sequenceId);
-    authDrawerState.show("signup", "guest-first-save");
+    authDrawerState.showOnRequest("signup", "guest-first-save");
     this.hide();
   },
 
   /** User chose "Log in" (already has an account). */
   login() {
     logPrompt("onboarding_guest_first_save_prompt_login", _sequenceId);
-    authDrawerState.show("signin", "guest-first-save");
+    authDrawerState.showOnRequest("signin", "guest-first-save");
     this.hide();
   },
 

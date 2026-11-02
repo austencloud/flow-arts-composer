@@ -4,8 +4,8 @@
   } from "#lib/shared/notation/qft/components/QftStage.svelte";
   import { QFT_FLOWERS } from "#lib/shared/notation/qft/qft-app-selection.js";
   import { GUIDE_MOVES } from "#lib/shared/notation/qft/qft-guide.js";
-  import { ratioLabel } from "#lib/shared/shape-matrix/domain/flower-signature.js";
-  import { MODE_LABEL } from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
+  import { ratioLabel } from "@tka/shape-domain";
+  import { MODE_LABEL } from "@tka/shape-domain";
   import { getQftAppContext } from "../_context/qft-app-context";
   import QftHandControls from "./QftHandControls.svelte";
   import QftNotationPanel from "./QftNotationPanel.svelte";

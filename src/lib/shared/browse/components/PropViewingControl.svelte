@@ -53,6 +53,25 @@
   const mixedGallery = $derived(
     settings.propViewingMode === "as-saved" && !sequence && !collectionPropType
   );
+  // This sets which props sequences are drawn with; it never filters the
+  // list, so the words say "shown with". The viewer header mounts it for one
+  // sequence, where "thumbnails" would be wrong.
+  const inGallery = $derived(!sequence);
+  // The toolbar's eye icon stands in for the "Shown with" prefix.
+  const buttonText = $derived(
+    presentation !== "default"
+      ? mixedGallery
+        ? t("browse_audit_as_saved")
+        : label
+      : mixedGallery
+        ? t("browse_audit_shown_with_saved_props")
+        : `${t("browse_audit_viewing_prefix")}${label}`
+  );
+  const title = $derived(
+    inGallery
+      ? t("browse_audit_viewing_props")
+      : t("browse_audit_show_sequences_with")
+  );
   let ownProps = $state(captureActivePropConfig(getSettings()));
   const titleId = $props.id();
 
@@ -67,22 +86,23 @@
     <PanelButton
       variant="secondary"
       onclick={show}
-      ariaLabel={t("browse_audit_viewing_props_value", {
-        props: mixedGallery
-          ? t("browse_audit_as_saved")
-          : `${label}, ${sourceLabel}`,
-      })}
+      ariaLabel={t(
+        inGallery
+          ? "browse_audit_viewing_props_value"
+          : "browse_audit_sequence_shown_with_value",
+        {
+          props: mixedGallery
+            ? t("browse_audit_as_saved")
+            : `${label}, ${sourceLabel}`,
+        }
+      )}
       ariaExpanded={open}
     >
       {#if presentation === "toolbar"}<i
           class="fas fa-eye viewing-icon"
           aria-hidden="true"
         ></i>{/if}
-      <span class="prop-label"
-        >{presentation === "default"
-          ? t("browse_audit_viewing_prefix")
-          : ""}{mixedGallery ? t("browse_audit_as_saved") : label}</span
-      >
+      <span class="prop-label">{buttonText}</span>
       {#if !mixedGallery}<span class="source">· {sourceLabel}</span>{/if}
       <!-- It opens a panel, not a list of options, so it points onward. -->
       <i class="fas fa-chevron-right" aria-hidden="true"></i>
@@ -91,9 +111,12 @@
 {/if}
 <BaseModal bind:open size="fit" labelledBy={titleId}>
   {#snippet header()}<h2 id={titleId}>
-      {t("browse_audit_viewing_props")}
+      {title}
     </h2>{/snippet}
   <div class="choices">
+    {#if inGallery}
+      <p>{t("browse_audit_thumbnails_note")}</p>
+    {/if}
     {#if !mixedGallery}
       <p class="current-props">
         {label}<span class="source"> · {sourceLabel}</span>
@@ -107,7 +130,7 @@
       value={settings.propViewingMode ?? "my-props"}
       onchange={(mode) => void onUpdate({ propViewingMode: mode })}
       semantics="radiogroup"
-      ariaLabel={t("browse_audit_viewing_props")}
+      ariaLabel={title}
     />
     <p>
       {settings.propViewingMode === "as-saved"

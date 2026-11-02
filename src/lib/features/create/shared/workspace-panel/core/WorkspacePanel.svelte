@@ -197,6 +197,15 @@
     }
   }
 
+  // Assemble's hop clock, so the step grid's mandala draws each new beat in
+  // step with the prop that is moving through it.
+  const builderHopProgress = $derived(
+    createModuleState?.activeSection === "assemble"
+      ? (createModuleState.assembleTabState?.assembleBuilderState.hopProgress ??
+          null)
+      : null
+  );
+
   // Initialize services on mount
   onMount(() => {
     StepOperator = getStepOperator();
@@ -217,6 +226,7 @@
         {isSideBySideLayout}
         {shouldOrbitAroundCenter}
         activeMode={createModuleState?.activeSection ?? null}
+        {builderHopProgress}
         {currentDisplayWord}
         {letterSources}
       />

@@ -18,7 +18,7 @@ import {
   handRelationshipHolds,
   type HandRelationshipOptions,
 } from "@tka/sequence-engine/generation";
-import type { VtgMode } from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
+import type { VtgMode } from "@tka/shape-domain";
 import { HAND_MODE_MAPS } from "./hand-relationship";
 
 interface RowMotion {

@@ -6,16 +6,12 @@
 
   let {
     methods,
-    lockedMethodIds,
     lastUsedMode = null,
     onSelect,
-    onLockedSelect,
   }: {
     methods: Section[];
-    lockedMethodIds?: ReadonlySet<string>;
     lastUsedMode?: string | null;
     onSelect: (methodId: string) => void;
-    onLockedSelect?: (methodId: string) => void;
   } = $props();
 
   let active = $state(false);
@@ -25,12 +21,4 @@
   }
 </script>
 
-<CreateFrontDoor
-  {methods}
-  {lockedMethodIds}
-  {active}
-  source="direct"
-  {lastUsedMode}
-  {onSelect}
-  {onLockedSelect}
-/>
+<CreateFrontDoor {methods} {active} source="direct" {lastUsedMode} {onSelect} />

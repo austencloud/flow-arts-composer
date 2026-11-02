@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
 
 import { NormalizedKeyboardEvent } from "#lib/shared/keyboard/domain/models/keyboard-event.js";

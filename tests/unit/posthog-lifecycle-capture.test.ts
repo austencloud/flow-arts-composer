@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { capturePostHogLifecycleEvent } from "#lib/server/analytics/posthog-lifecycle-capture.js";
+import { LifecycleEventEnvelopeSchema } from "#lib/shared/analytics/domain/lifecycle-event.js";
 
 describe("PostHog lifecycle capture", () => {
   it("uses the verified UID, replay session, UUID, and original timestamp", async () => {
@@ -45,6 +46,41 @@ describe("PostHog lifecycle capture", () => {
       },
     });
     expect(shutdown).toHaveBeenCalledOnce();
+  });
+
+  it("marks a saved copy of another creator's sequence", async () => {
+    const captureImmediate = vi.fn().mockResolvedValue(undefined);
+    const envelope = LifecycleEventEnvelopeSchema.parse({
+      event: "sequence_save",
+      eventId: "6a0d8c75-cf65-4c53-a378-f6533d654c73",
+      occurredAt: "2026-08-21T12:00:00.000Z",
+      properties: {
+        sequenceId: "sequence-1",
+        stepCount: 4,
+        visibility: "private",
+        durability: "cloud",
+        source: "viewer",
+        sequenceSource: "copied",
+      },
+    });
+
+    await capturePostHogLifecycleEvent(
+      {
+        apiKey: "phc_test",
+        distinctId: "firebase-uid",
+        sessionId: null,
+        isGuest: false,
+        envelope,
+      },
+      () => ({ captureImmediate, shutdown: vi.fn() })
+    );
+
+    expect(captureImmediate.mock.calls[0]?.[0].properties).toMatchObject({
+      visibility: "private",
+      is_public: false,
+      source: "viewer",
+      sequence_source: "copied",
+    });
   });
 
   it("still shuts down when capture fails", async () => {

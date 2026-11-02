@@ -58,6 +58,7 @@ function makeOperations() {
     {
       syncToPublicIndex: vi.fn(),
       updateThumbnails: vi.fn(),
+      updateCreatorIntent: vi.fn(),
       findPublishConflict: vi.fn(),
       removeFromPublicIndex: vi.fn(),
     },

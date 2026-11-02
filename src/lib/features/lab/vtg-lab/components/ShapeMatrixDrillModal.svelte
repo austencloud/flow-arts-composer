@@ -1,10 +1,10 @@
 <script lang="ts">
   import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
   import ModalHeader from "#lib/shared/foundation/ui/modal/ModalHeader.svelte";
-  import { buildModeCards, type ModeCard } from "#lib/shared/shape-matrix/services/build-realization-cards.js";
-  import { renderCell } from "#lib/shared/shape-matrix/services/shape-matrix-render.js";
-  import { flowerKey, flowerLabel, type Flower } from "#lib/shared/shape-matrix/domain/flower-signature.js";
-  import type { ShapeMatrixData } from "#lib/shared/shape-matrix/services/shape-matrix-flowers.js";
+  import { buildModeCards, type ModeCard } from "@tka/shape-engine/services/build-realization-cards.js";
+  import { renderCell } from "@tka/shape-engine/services/shape-matrix-render.js";
+  import { flowerKey, flowerLabel, type Flower } from "@tka/shape-domain";
+  import type { ShapeMatrixData } from "@tka/shape-engine/services/shape-matrix-flowers.js";
 
   interface Props {
     open: boolean;

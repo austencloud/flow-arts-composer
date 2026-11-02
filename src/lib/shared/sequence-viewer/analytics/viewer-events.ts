@@ -98,6 +98,18 @@ export function trackSequenceViewed(context: ViewerAnalyticsContext): void {
   captureViewerEvent("sequence_view", context);
 }
 
+/** Tap-to-drawer and tap-to-viewer times for one open, in milliseconds. */
+export function trackViewerOpenTiming(
+  context: ViewerAnalyticsContext,
+  drawerVisibleMs: number,
+  viewerRevealedMs: number | null
+): void {
+  captureViewerEvent("viewer_open_timing", context, {
+    drawer_visible_ms: drawerVisibleMs,
+    viewer_revealed_ms: viewerRevealedMs,
+  });
+}
+
 export function trackSequenceRemixStarted(
   context: ViewerAnalyticsContext
 ): void {

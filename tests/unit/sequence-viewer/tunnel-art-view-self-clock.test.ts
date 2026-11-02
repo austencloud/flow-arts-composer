@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * TunnelArtView's self-clock advances the playhead only while the tunnel
  * plays, and keeps no frame loop while paused. A paused tunnel (a gallery

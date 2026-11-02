@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, expect, it, vi } from "vitest";
 
 // Node test env has no localStorage; the engine reads it at creation.

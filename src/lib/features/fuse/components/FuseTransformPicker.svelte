@@ -621,15 +621,18 @@
     width: 100%;
   }
 
-  /* The Linked controls share one label row and one control band. */
+  /* The Linked controls are one row, the height of the Separate/Linked
+     switch above them. Each label sits beside its control instead of over it,
+     and nothing is stretched: this band used to be 115px of a 900px window,
+     three times the header's own controls, and the path grids below paid for
+     it. */
   .transform-picker.inline {
     flex: none;
-    display: grid;
-    grid-template-columns:
-      minmax(160px, 1fr) minmax(360px, 2fr) minmax(170px, 1fr)
-      minmax(200px, 1fr);
-    align-items: start;
-    gap: 8px;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 18px;
   }
   .inline .field,
   .inline .rule-field {
@@ -638,25 +641,37 @@
     border-radius: 0;
     background: none;
     padding: 0;
-    gap: 6px;
   }
   .inline .rule-field {
     display: contents;
     container-type: normal;
   }
+  /* Each group grows to fill its row, weighted by how many choices it holds,
+     so a band that wraps to two rows fills both instead of leaving the
+     remainder on the right, and every button in a row is the same width. */
   .inline .field,
   .inline .timing-axis,
   .inline .direction-axis,
   .inline .operations-axis {
-    display: grid;
-    grid-template-rows: 20px auto;
-    align-content: start;
+    display: flex;
+    flex: 2 1 auto;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
     min-width: 0;
-    gap: 6px;
+  }
+  .inline .timing-axis {
+    flex-grow: 4;
   }
   .inline .field-heading,
   .inline .axis-label {
-    align-self: center;
+    flex: none;
+  }
+  .inline .field-control,
+  .inline .timing-axis :global(.segmented-control),
+  .inline .direction-axis :global(.segmented-control),
+  .inline .operation-list {
+    flex: 1 1 auto;
   }
   .inline .axis-label {
     color: var(--theme-text, #fff);
@@ -664,20 +679,20 @@
     letter-spacing: normal;
     text-transform: none;
   }
-  .inline .driver-control :global(.segment),
-  .inline .timing-axis :global(.segment),
-  .inline .direction-axis :global(.segment) {
-    min-height: 64px;
+  .inline .driver-control {
+    width: auto;
   }
   .inline .operation-list {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: flex;
+    gap: 6px;
   }
   .inline .operation-toggle {
     display: flex;
+    flex: 1 1 0;
     justify-content: center;
-    gap: 6px;
-    min-height: 72px;
-    padding: 6px;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 12px;
     white-space: nowrap;
   }
   .inline .op-glyph,
@@ -692,7 +707,7 @@
     transform: translateX(8px);
   }
   .inline .operation-note {
-    grid-column: 1 / -1;
+    flex-basis: 100%;
     margin: 0;
   }
   .quarter-choice {
@@ -723,53 +738,34 @@
   .offset-axis :global(.segment) {
     min-height: 48px;
   }
-  @container (max-width: 65rem) {
-    .transform-picker.inline {
-      grid-template-columns: minmax(150px, 1fr) minmax(360px, 2.4fr);
-    }
-    .inline .direction-axis,
-    .inline .operations-axis {
-      grid-row: 2;
-    }
-    .inline .driver-control :global(.segment),
-    .inline .timing-axis :global(.segment),
-    .inline .direction-axis :global(.segment) {
-      min-height: 48px;
-    }
-    .inline .operation-toggle {
-      min-height: 56px;
-    }
-  }
+  /* Narrower bands wrap group by group, the four-way timing control first
+     since it is the widest; each label stays beside its control. */
   @container (max-width: 40rem) {
-    .transform-picker.inline {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-    .inline .timing-axis {
-      grid-column: 1 / -1;
-      grid-row: 2;
-    }
-    .inline .direction-axis {
-      grid-column: 2;
-      grid-row: 1;
-    }
+    .inline .timing-axis,
     .inline .operations-axis {
-      grid-column: 1 / -1;
-      grid-row: 3;
+      flex-basis: 100%;
     }
   }
   @container (max-width: 28rem) {
     .inline .field,
     .inline .direction-axis {
-      grid-column: 1 / -1;
+      flex-basis: 100%;
     }
-    .inline .direction-axis {
-      grid-row: 2;
-    }
+    /* Four nowrap timing choices run past a phone's edge beside their label,
+       so the label takes a line of its own and the control the full width. */
     .inline .timing-axis {
-      grid-row: 3;
+      flex-wrap: wrap;
     }
-    .inline .operations-axis {
-      grid-row: 4;
+    .inline .timing-axis .axis-label {
+      flex-basis: 100%;
+      min-width: 0;
+    }
+    .inline .timing-axis :global(.segmented-control) {
+      flex: 1 1 100%;
+    }
+    .inline .axis-label,
+    .inline .field-heading {
+      min-width: 5.5rem;
     }
   }
 

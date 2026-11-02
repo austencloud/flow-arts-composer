@@ -391,6 +391,11 @@ async function initializePostHog(): Promise<void> {
       blockClass: "ph-no-capture",
       collectFonts: true,
       inlineStylesheet: true,
+      // Replays showed the 2D animation and tunnel canvases solid black: canvas
+      // capture was off on both the client and the project. This records them,
+      // at posthog-js's defaults (4 fps, webp quality 0.4). rrweb's getContext
+      // patch forces preserveDrawingBuffer on WebGL contexts made while it records.
+      captureCanvas: { recordCanvas: true },
     },
 
     // Registered unconditionally (not gated on captureEnabled): capture_exceptions

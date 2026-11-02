@@ -6,7 +6,7 @@
   import PostStudioMandalaLayer from "#lib/shared/post-studio-plugin/ui/PostStudioMandalaLayer.svelte";
   import PostStudioShiftingMandalaLayer from "./PostStudioShiftingMandalaLayer.svelte";
   import type PostStudioArrangementLayerType from "./PostStudioArrangementLayer.svelte";
-  import { useTkaEditor } from "./tka-editor-context";
+  import { tkaEditorOf, useTkaEditor } from "./tka-editor-context";
   import {
     hookChromeOpacity,
     layerAnimationAppearance,
@@ -21,6 +21,7 @@
   } from "./tka-canvas-layer";
   import { staggeredFrames } from "../staggered-performers";
   import { createPerformerSequences } from "../performer-sequences.svelte";
+  import { postFollowers } from "../tunnel-performers";
   import { sequencePositionToAnimationTime } from "#lib/shared/animation-engine/services/step-calculator.js";
 
   /**
@@ -196,6 +197,8 @@
     {cardRenderOptions}
     {qrSequence}
     {qrUrl}
+    followers={postFollowers(editor.project)}
+    tunnelSource={tkaEditorOf(editor)?.sequence ?? null}
   />
 {:else if binding.renderMode === "tunnel" && sequence}
   <PostStudioTunnelLayer

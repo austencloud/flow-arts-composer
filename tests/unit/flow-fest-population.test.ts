@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { parseFlowFestRuntimeContract } from "../../src/routes/test/flow-fest-graybox/flow-fest-runtime-contract";

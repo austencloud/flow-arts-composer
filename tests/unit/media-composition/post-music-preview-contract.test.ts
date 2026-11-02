@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Static contract test for how the Post editor wires its music preview.
  *

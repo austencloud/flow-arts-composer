@@ -21,7 +21,7 @@ import {
   generateStructuredSoloLoopFromMotions,
   reverseSoloLoopTraversal,
 } from "#lib/features/fuse/services/solo-loop-generator.js";
-import type { Flower } from "#lib/shared/shape-matrix/domain/flower-signature.js";
+import type { Flower } from "@tka/shape-domain";
 
 const templates = [
   createMotionData({

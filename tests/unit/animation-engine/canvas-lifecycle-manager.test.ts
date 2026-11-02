@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect, vi } from "vitest";
 import { CanvasLifecycleManager } from "#lib/shared/animation-engine/services/canvas-lifecycle-manager.js";
 

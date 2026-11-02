@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { mount, unmount } from "svelte";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { VideoCache } from "#lib/shared/video/services/video-cache.js";

@@ -1,7 +1,12 @@
-// Guests (unauthenticated users) get a limited view of the app.
-// Create and Browse are open with restricted tabs. Creators is readable so a
-// visitor can follow an attribution link into a profile; account actions such
-// as Follow still enforce sign-in at the action boundary.
+// What a guest (no account, or an anonymous one) can open. The rule since
+// 2026-10-31: an account is asked for only when it gives the person something
+// they cannot have without one, such as keeping work on every device, a library
+// beyond GUEST_SAVE_CAP, publishing, or following. Opening a part of the app is
+// never a toll, so every Create method opens for guests and the limits live at
+// the action itself (save, publish, export, follow). After a guest says "not
+// now" to a gate, auth-drawer-state keeps quiet for a day and answers later
+// gates with a toast. Creators is readable so a visitor can follow an
+// attribution link into a profile.
 
 import type { AccessTier } from "./access-tier";
 
@@ -15,10 +20,16 @@ export const GUEST_SAVE_CAP = 3;
 // GUEST_SAVE_CAP, kept locally) live under browse > library. Without it a guest
 // could save but never see what they saved.
 const GUEST_MODULE_ACCESS: Record<string, string[]> = {
-  // shape-engine is public at /shape-engine already, so the tab is too.
-  // Assemble, Fuse and Tunnel need a free account; the front door shows them
-  // to guests with a Free account label that opens sign-up.
-  create: ["construct", "generate", "shape-engine"],
+  // Every Create method. Saving past the cap, publishing and exporting still
+  // ask for an account inside each method.
+  create: [
+    "construct",
+    "generate",
+    "shape-engine",
+    "fuse",
+    "tunnel",
+    "assemble",
+  ],
   browse: [
     "sequences",
     "collections",
@@ -36,7 +47,8 @@ const GUEST_MODULE_ACCESS: Record<string, string[]> = {
   // progress on an account.
   learn: ["guide"],
   // Device preferences and appearance belong to the visitor's browser.
-  // Notifications still require an account.
+  // Notifications still require an account. Profile shows a guest a short
+  // invitation card, and opening Settings never lands on it.
   settings: [
     "profile",
     "preferences",
@@ -73,4 +85,20 @@ export function getAccessibleTabs(
 ): string[] | null {
   if (tier !== "guest") return null;
   return GUEST_MODULE_ACCESS[moduleId] ?? [];
+}
+
+/**
+ * The tab a guest lands on when they open Settings without naming one. Their
+ * last tab if they can use it, otherwise the first usable tab in Settings
+ * order. Never Profile: for a guest it only invites them to create an account,
+ * and opening Settings is not a request to sign in.
+ */
+export function guestSettingsEntryTab(
+  orderedTabIds: readonly string[],
+  savedTab: string | null
+): string | undefined {
+  const usable = (tab: string) =>
+    tab !== "profile" && isTabAccessible("settings", tab, "guest");
+  if (savedTab && usable(savedTab)) return savedTab;
+  return orderedTabIds.find(usable);
 }

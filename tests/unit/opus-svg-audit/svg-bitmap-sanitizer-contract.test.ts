@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Bitmap-decode sanitizer contract (Opus batch 2026-09-12 read-only audit).
  *

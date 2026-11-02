@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createViewer3DStateForTest } from "./viewer3d-test-helpers.svelte";
 

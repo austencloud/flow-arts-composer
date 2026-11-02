@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
-import type { Flower } from "#lib/shared/shape-matrix/domain/flower-signature.js";
+import type { Flower } from "@tka/shape-domain";
 
 const mocks = vi.hoisted(() => ({
   buildFlowerSequence: vi.fn(),
@@ -18,7 +18,7 @@ vi.mock(
     loadDiamondEdges: mocks.loadDiamondEdges,
   })
 );
-vi.mock("#lib/shared/shape-matrix/services/flower-archetype.js", () => ({
+vi.mock("@tka/shape-engine/services/flower-archetype.js", () => ({
   resolveFlowerArchetype: mocks.resolveFlowerArchetype,
 }));
 vi.mock(

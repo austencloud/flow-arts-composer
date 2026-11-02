@@ -39,7 +39,7 @@ import {
   MotionType,
   Orientation,
 } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
-import type { Flower } from "#lib/shared/shape-matrix/domain/flower-signature.js";
+import type { Flower } from "@tka/shape-domain";
 import type { TurnLevel } from "#lib/shared/create/services/level-turn-values.js";
 import {
   isVisibleMotion,

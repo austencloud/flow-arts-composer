@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * A choreo card whose grids join draws image cells, every one (the start cell
  * included) set to the sequence's one join. A card on one grid hands its cells

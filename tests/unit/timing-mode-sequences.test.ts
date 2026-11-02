@@ -5,7 +5,7 @@ import { TnDMode } from "#lib/shared/pictograph/shared/domain/enums/pictograph-e
 import { deriveTnDFromPictograph } from "#lib/shared/pictograph/shared/domain/utils/tnd-deriver.js";
 import { deriveWord } from "#lib/shared/foundation/services/word-deriver.js";
 import { jsonCache } from "#lib/shared/pictograph/shared/services/simple-json-cache.js";
-import { MODE_ORDER } from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
+import { MODE_ORDER } from "@tka/shape-domain";
 import { handPathIdFor } from "#lib/features/choreo-card/services/hand-path-data-builder.js";
 import {
   adjustModeLoop,

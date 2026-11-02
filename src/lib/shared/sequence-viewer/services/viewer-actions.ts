@@ -3,10 +3,13 @@ import { VIDEO_UPLOAD_ENABLED } from "../config/viewer-feature-flags";
 import { openCollectionPicker } from "#lib/features/library/state/collection-picker-state.svelte.js";
 import { ensureGuestIdentity } from "#lib/shared/auth/services/guest-identity.js";
 
-// One profile since every viewer destination adopted SequenceViewerShell (the
-// same chrome verbatim) — the hand-rolled "scan" funnel profile is gone. The param
-// survives so call sites read explicitly.
-export type ViewerHeaderProfile = "full";
+// Every viewer destination adopted SequenceViewerShell (the same chrome
+// verbatim), so the profile follows the subject, not the host. `full` acts on
+// the sequence on screen. `cast` is a tunnel of several performers' own
+// sequences: favorite, save, remix, practice, collection and upload would each
+// act on the front performer alone, so a cast offers none of them; each
+// performer's page, one tap away through the cast rows, still does.
+export type ViewerHeaderProfile = "full" | "cast";
 
 /**
  * Handlers the orchestrator `ctx` cannot own — page-local wiring (e.g. the
@@ -52,7 +55,7 @@ export interface ViewerHeaderActions {
  */
 export function buildHeaderActions(
   ctx: OrchestratorContext,
-  _profile: ViewerHeaderProfile,
+  profile: ViewerHeaderProfile,
   wiring: ViewerActionWiring = {}
 ): ViewerHeaderActions {
   const ownerCanManage = ctx.isOwned && ctx.isSaved && ctx.isOwnedLibraryRecord;
@@ -63,8 +66,9 @@ export function buildHeaderActions(
     isSaving: ctx.isSaving,
     isPublished: ctx.isPublished,
     practiceActive: ctx.practiceActive,
-    showPractice: true,
+    showPractice: profile === "full",
   };
+  if (profile === "cast") return a;
 
   a.onFavoriteToggle = () =>
     ctx.invokeGatedAction("favorite", ctx.handleFavoriteToggle);

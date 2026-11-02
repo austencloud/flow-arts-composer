@@ -24,9 +24,15 @@
   so it holds still while the player moves. The grid scrolls down only where
   even that room holds fewer rows than there are.
   Where even that shows fewer effects than one row would (a short phone), it
-  is one scrolling row instead, which fades, and with a mouse offers an
-  arrow, at whichever end has more effects past it. The grid fades at
-  whichever of its top and bottom has more effects past it.
+  is a strip of pictures that scrolls sideways instead, which fades, and with
+  a mouse offers an arrow, at whichever end has more effects past it. A slim
+  Off tile leads it and the close button is a disc in its top-right corner,
+  over the faded end, so neither takes the pictures' room. Docked, the strip
+  takes two rows where they fit, reaching up over the player's control row
+  (never the animation): the first screen holds the first eight effects in
+  reading order, four across each row, and the next four columns the next
+  eight. The grid fades at whichever of its top and bottom has more effects
+  past it.
 -->
 <script lang="ts">
   import { Popover } from "bits-ui";
@@ -49,9 +55,11 @@
   import {
     fitEffectQuickPicker,
     pictureTileHeight,
+    QUICK_PICKER_CLOSE_DISC,
     QUICK_PICKER_EDGE,
     QUICK_PICKER_OFFSET,
     QUICK_PICKER_STRIP_EDGE_CLEAR,
+    QUICK_PICKER_STRIP_END_CLEAR,
     QUICK_PICKER_STRIP_GAP,
     stripPageTarget,
     type EffectQuickPickerFit,
@@ -194,6 +202,7 @@
       roomBelow: roomBelow?.() ?? 0,
       roomAbove: above.room,
       roomBeside: roomBeside?.() ?? 0,
+      controls: row?.offsetHeight ?? 0,
       count: EFFECTS.length,
     });
   }
@@ -563,7 +572,9 @@
                   />
                 </div>
               {:else}
-                {@const tileHeight = pictureTileHeight(fit.catalog.portrait)}
+                {@const tile = pictureTileHeight(fit.catalog.portrait)}
+                <!-- Off stands the full height of the rows, both of them on a
+                     two-row strip. -->
                 <button
                   type="button"
                   class="fx-quick-off-tile"
@@ -571,25 +582,34 @@
                   aria-pressed={!effectOn}
                   aria-label={offLabel}
                   data-quick-off
-                  style:height="{tileHeight}px"
+                  style:height="{fit.rows === 2
+                    ? 2 * tile + fit.catalog.gap
+                    : tile}px"
                   onclick={turnOff}
                 >
                   <i class="fas fa-power-off" aria-hidden="true"></i>
                   <span>{t("effect_deep_off")}</span>
                 </button>
-                <div class="fx-quick-scroll">
+                <div class="fx-quick-scroll" class:one-row={fit.rows === 1}>
                   <div
                     class="fx-quick-scroller"
                     class:fade-start={edges.start}
                     class:fade-end={edges.end}
-                    style:scroll-padding-inline="{QUICK_PICKER_STRIP_EDGE_CLEAR}px"
+                    style:scroll-padding-inline="{QUICK_PICKER_STRIP_EDGE_CLEAR}px
+                    {QUICK_PICKER_STRIP_END_CLEAR}px"
                     bind:this={scrollerEl}
                     use:wheelScrollsSideways
                     use:scrollEdges={(next) => (edges = next)}
                   >
+                    <!-- The track ends a disc's width past its last tile, so
+                         the row scrolled all the way shows that tile clear of
+                         the close disc. -->
                     <div
                       class="fx-quick-track"
+                      class:two-row={fit.rows === 2}
                       style:width="{fit.trackWidth}px"
+                      style:padding-inline-end="{QUICK_PICKER_CLOSE_DISC +
+                        fit.catalog.gap}px"
                     >
                       <EffectSelector
                         {activeEffect}
@@ -910,12 +930,22 @@
     padding: 8px;
   }
 
-  /* ── Strip: one row resting on the scrubber ── */
+  /* ── Strip: one row resting on the scrubber, or two docked ── */
   .fx-quick-panel.strip {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 6px;
     padding: 8px;
+  }
+  /* Close leaves the row: a disc in the sheet's top-right corner, its edges
+     on the tiles' top and end, over the row's faded end. Its 44px target
+     reaches into the padding round it. */
+  .fx-quick-panel.strip .fx-quick-close {
+    position: absolute;
+    z-index: 1;
+    top: 2px;
+    right: calc(var(--dock-right, 0px) + 2px);
   }
   /* A tray floating just under the controls, drawn like the side panel. */
   .fx-quick-panel.below {
@@ -971,6 +1001,20 @@
   }
   .fx-quick-track {
     position: relative;
+    box-sizing: content-box;
+  }
+  /* Two rows that scroll together, in reading order a page of four columns
+     at a time: the first four effects across the top, the next four under
+     them, then the next eight in the next four columns. Row placement puts
+     each tile in the next free column of its row. */
+  .fx-quick-track.two-row :global(.effect-btn) {
+    grid-row: 1;
+  }
+  .fx-quick-track.two-row :global(.effect-btn:nth-child(8n + 5)),
+  .fx-quick-track.two-row :global(.effect-btn:nth-child(8n + 6)),
+  .fx-quick-track.two-row :global(.effect-btn:nth-child(8n + 7)),
+  .fx-quick-track.two-row :global(.effect-btn:nth-child(8n + 8)) {
+    grid-row: 2;
   }
 
   /* Over the faded end, centred on the tiles. Touch swipes the row, so only
@@ -989,11 +1033,17 @@
   .fx-quick-arrow.end {
     right: -6px;
   }
+  /* One row is too short for the end's arrow beside the close disc above
+     it: the arrow drops to the row's foot. */
+  .fx-quick-scroll.one-row .fx-quick-arrow.end {
+    align-items: flex-end;
+  }
   .fx-quick-arrow button {
     pointer-events: auto;
     color: var(--theme-text, #fff);
   }
-  .fx-quick-arrow .fx-quick-disc {
+  .fx-quick-arrow .fx-quick-disc,
+  .fx-quick-panel.strip .fx-quick-close .fx-quick-disc {
     border: 1px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.14));
     background:
       linear-gradient(var(--theme-panel-bg), var(--theme-panel-bg)),
@@ -1009,18 +1059,18 @@
     scroll-snap-align: start;
   }
 
-  /* The leading Off tile: a tile of the row's height with the power glyph
-     where the picture would be. */
+  /* The leading Off tile: slim (QUICK_PICKER_OFF_WIDTH, the touch-target
+     floor), the rows' height, the power glyph above the word. */
   .fx-quick-off-tile {
     flex: none;
     box-sizing: border-box;
-    width: 64px;
+    width: 44px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    padding: 8px 4px;
+    padding: 8px 2px;
     border: 1.5px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: 10px;
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));

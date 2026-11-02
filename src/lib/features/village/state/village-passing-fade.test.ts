@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
 import { loadVillageRules } from "../domain/village-rules";
 import { PASSING_FADE_SECONDS, passingFade, passingWindowSeconds } from "./village-passing-fade";

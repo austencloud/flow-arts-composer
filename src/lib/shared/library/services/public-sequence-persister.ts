@@ -77,6 +77,7 @@ import {
 } from "#lib/shared/library/data/firestore-paths.js";
 import { buildSequenceRevisionRecord } from "#lib/shared/library/services/sequence-revision.js";
 import type { ArtifactRevisionRef } from "#lib/shared/artifact-revisions/domain/artifact-revision.js";
+import type { CreatorIntent } from "#lib/shared/foundation/domain/models/creator-intent.js";
 
 // Claims
 
@@ -853,24 +854,19 @@ export async function softDeleteSequenceEverywhere(
 }
 
 // ---------------------------------------------------------------------------
-// Thumbnails (narrow patch)
+// Narrow field patches: thumbnails, creator intent
 // ---------------------------------------------------------------------------
 
-export type UpdatePublicThumbnailsResult =
+export type UpdatePublicProjectionFieldsResult =
   | { readonly status: "updated" }
   | { readonly status: "absent" };
 
+export type UpdatePublicThumbnailsResult = UpdatePublicProjectionFieldsResult;
+
 /**
  * Patch a completed background thumbnail without replaying a full sequence
- * snapshot that may already be stale (spec section 6). For a schema-2 document
- * the projection digest and revision are restamped from the PATCHED stored
- * document (`computeStoredProjectionDigest`), and the owner document's stamp
- * copies move with them so owner/mirror parity holds. Legacy documents get the
- * plain patch — they have no stamps to maintain.
- *
- * Also self-heals a missing claim: a schema-2 document published before the
- * claim collection existed gains its claim here, so the phase 4 strict rules
- * cannot strand it.
+ * snapshot that may already be stale (spec section 6). See
+ * {@link patchPublicProjectionFields} for the stamp and claim handling.
  */
 export async function updatePublicThumbnails(
   firestore: Firestore,
@@ -878,8 +874,46 @@ export async function updatePublicThumbnails(
   thumbnails: readonly string[],
   thumbnailLimit = 3
 ): Promise<UpdatePublicThumbnailsResult> {
+  return patchPublicProjectionFields(firestore, sequenceId, {
+    thumbnails: thumbnails.slice(0, thumbnailLimit),
+  });
+}
+
+/**
+ * Replace the public document's `creatorIntent` (the creator's recorded look
+ * and prop pair) without replaying a full publish: no renormalization,
+ * artifact extraction, loop detection or tag resolution. The value replaces
+ * the stored map whole, so a key the caller left out (an absent
+ * `presentation`) is gone afterwards rather than kept from the old map. It
+ * must already be Firestore-clean (no `undefined` anywhere): the digest is
+ * computed from exactly what is written.
+ */
+export async function updatePublicCreatorIntent(
+  firestore: Firestore,
+  sequenceId: string,
+  creatorIntent: CreatorIntent
+): Promise<UpdatePublicProjectionFieldsResult> {
+  return patchPublicProjectionFields(firestore, sequenceId, { creatorIntent });
+}
+
+/**
+ * The one narrow-patch transaction for public mirror fields. For a schema-2
+ * document the projection digest and revision are restamped from the PATCHED
+ * stored document (`computeStoredProjectionDigest`), and the owner
+ * document's stamp copies move with them so owner/mirror parity holds. A
+ * patch that leaves the digest unchanged keeps its revision. Legacy
+ * documents get the plain patch — they have no stamps to maintain.
+ *
+ * Also self-heals a missing claim: a schema-2 document published before the
+ * claim collection existed gains its claim here, so the phase 4 strict rules
+ * cannot strand it.
+ */
+async function patchPublicProjectionFields(
+  firestore: Firestore,
+  sequenceId: string,
+  fields: Readonly<Record<string, unknown>>
+): Promise<UpdatePublicProjectionFieldsResult> {
   const publicRef = doc(firestore, getPublicSequencePath(sequenceId));
-  const publicThumbnails = thumbnails.slice(0, thumbnailLimit);
 
   return runTransaction(firestore, async (tx) => {
     const publicSnap = await tx.get(publicRef);
@@ -893,7 +927,7 @@ export async function updatePublicThumbnails(
 
     if (!isSchemaTwo) {
       tx.update(publicRef, {
-        thumbnails: publicThumbnails,
+        ...fields,
         updatedAt: serverTimestamp(),
       });
       return { status: "updated" as const };
@@ -929,7 +963,7 @@ export async function updatePublicThumbnails(
       }
     }
 
-    const patched = { ...data, thumbnails: publicThumbnails };
+    const patched = { ...data, ...fields };
     const digest = await computeStoredProjectionDigest(patched);
     const revision =
       digest === data["publicProjectionDigest"]
@@ -938,7 +972,7 @@ export async function updatePublicThumbnails(
 
     // --- writes -------------------------------------------------------------
     tx.update(publicRef, {
-      thumbnails: publicThumbnails,
+      ...fields,
       updatedAt: serverTimestamp(),
       publicProjectionDigest: digest,
       publicProjectionRevision: revision,

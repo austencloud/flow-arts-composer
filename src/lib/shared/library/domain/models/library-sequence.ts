@@ -5,13 +5,18 @@
  * Extends the base SequenceData with ownership, visibility, organization, and attribution.
  */
 
-import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type {
+  SequenceCopyOrigin,
+  SequenceData,
+} from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { SequenceTag } from "./sequence-tag";
 
 /**
- * How the sequence entered the user's library
+ * How the sequence entered the user's library.
+ * - copied: saved from another creator's sequence, unchanged. Private by
+ *   default and credited through forkAttribution.
  */
-export type SequenceSource = "created" | "forked" | "imported";
+export type SequenceSource = "created" | "forked" | "imported" | "copied";
 
 /**
  * Visibility level for library sequences
@@ -22,7 +27,7 @@ export type SequenceSource = "created" | "forked" | "imported";
 export type SequenceVisibility = "private" | "unlisted" | "public";
 
 /**
- * Attribution metadata for forked sequences
+ * Attribution metadata for forked and copied sequences
  */
 export interface ForkAttribution {
   /** Original sequence ID in the source user's library */
@@ -33,7 +38,7 @@ export interface ForkAttribution {
   readonly originalCreatorName: string;
   /** Profile photo URL of original creator (denormalized) */
   readonly originalCreatorPhotoUrl?: string;
-  /** When this fork was created */
+  /** When this fork or copy was created */
   readonly forkedAt: Date;
   /** Chain of fork ancestors for deep fork lineage (oldest first) */
   readonly forkChain?: readonly string[];
@@ -51,7 +56,7 @@ export interface LibrarySequence extends SequenceData {
   /** How this sequence entered the library */
   readonly source: SequenceSource;
 
-  /** Fork attribution (only present if source === "forked") */
+  /** Credit to the original (present when source is "forked" or "copied") */
   readonly forkAttribution?: ForkAttribution;
 
   /** Current visibility state (defaults to "public") */
@@ -152,6 +157,100 @@ export interface CreateLibrarySequenceOptions {
   notes?: string;
   /** Explicit birthday to use (e.g., from legacy import). Defaults to createdAt. */
   birthday?: Date;
+  /**
+   * Another creator's sequence this save copies. Makes the record a private
+   * (unless `visibility` says otherwise), credited copy owned by the saver.
+   */
+  copyOf?: SequenceCopyOrigin;
+  /** The saver's own profile, shown as the owner of a copy. */
+  ownerProfile?: LibraryOwnerProfile;
+}
+
+/** The library owner's display fields, from their users/{uid} profile. */
+export interface LibraryOwnerProfile {
+  readonly displayName?: string;
+  readonly avatarUrl?: string;
+}
+
+/**
+ * Fields a viewed sequence carries about its ORIGINAL owner or its public
+ * gallery post. A copy is the saver's record, so none of them may ride along:
+ * the display fields would credit the wrong person as owner, and the public
+ * projection stamps describe the original's gallery mirror (the rules refuse
+ * deleting a stamped owner doc while that mirror exists).
+ */
+const ORIGINAL_OWNER_FIELDS = [
+  "ownerDisplayName",
+  "ownerAvatarUrl",
+  "sourceRef",
+  "publishedAt",
+  "isForked",
+  "originalCreatorId",
+  "originalCreatorName",
+  "isFeatured",
+  "visibilityChangedAt",
+  "publicPerformanceCount",
+  "latestPublicPerformanceAt",
+  "publicProjectionSchemaVersion",
+  "publicProjectionRevision",
+  "publicProjectionDigest",
+] as const;
+
+export function withoutOriginalOwnership<T extends SequenceData>(
+  sequence: T
+): T {
+  const stripped = { ...sequence };
+  for (const field of ORIGINAL_OWNER_FIELDS) {
+    Reflect.deleteProperty(stripped, field);
+  }
+  return stripped;
+}
+
+/**
+ * The copy origin of a sequence someone is about to save, or undefined when
+ * it names no owner (a fresh, never-saved sequence). Callers decide whether
+ * that owner is someone else; this only reads the fields.
+ */
+export function copyOriginOf(
+  sequence: SequenceData
+): SequenceCopyOrigin | undefined {
+  if (!sequence.ownerId) return undefined;
+  return {
+    sequenceId: sequence.id,
+    creatorId: sequence.ownerId,
+    creatorName: sequence.ownerDisplayName ?? "",
+    ...(sequence.ownerAvatarUrl
+      ? { creatorPhotoUrl: sequence.ownerAvatarUrl }
+      : {}),
+  };
+}
+
+/**
+ * Turn a library record into a credited copy: the saver's own display fields,
+ * source "copied", and forkAttribution pointing at the original. Visibility is
+ * the caller's decision (createLibrarySequence defaults a copy to private).
+ */
+export function asLibraryCopy(
+  sequence: LibrarySequence,
+  origin: SequenceCopyOrigin,
+  owner: LibraryOwnerProfile = {},
+  copiedAt: Date = new Date()
+): LibrarySequence {
+  return {
+    ...withoutOriginalOwnership(sequence),
+    source: "copied",
+    forkAttribution: {
+      originalSequenceId: origin.sequenceId,
+      originalCreatorId: origin.creatorId,
+      originalCreatorName: origin.creatorName,
+      ...(origin.creatorPhotoUrl
+        ? { originalCreatorPhotoUrl: origin.creatorPhotoUrl }
+        : {}),
+      forkedAt: copiedAt,
+    },
+    ...(owner.displayName ? { ownerDisplayName: owner.displayName } : {}),
+    ...(owner.avatarUrl ? { ownerAvatarUrl: owner.avatarUrl } : {}),
+  };
 }
 
 export function createLibrarySequence(
@@ -161,12 +260,12 @@ export function createLibrarySequence(
 ): LibrarySequence {
   const now = new Date();
 
-  return {
+  const record: LibrarySequence = {
     ...sequenceData,
     ownerId,
     source: options.source ?? "created",
     forkAttribution: options.forkAttribution,
-    visibility: options.visibility ?? "public",
+    visibility: options.visibility ?? (options.copyOf ? "private" : "public"),
     collectionIds: options.collectionIds ?? [],
     tagIds: options.tagIds ?? [],
     sequenceTags: options.sequenceTags ?? [],
@@ -178,6 +277,9 @@ export function createLibrarySequence(
     createdAt: now,
     updatedAt: now,
   };
+  return options.copyOf
+    ? asLibraryCopy(record, options.copyOf, options.ownerProfile, now)
+    : record;
 }
 
 export function updateLibrarySequence(

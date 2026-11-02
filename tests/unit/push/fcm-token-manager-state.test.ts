@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { FCMTokenManager } from "#lib/shared/push/services/fcm-token-manager.js";
 

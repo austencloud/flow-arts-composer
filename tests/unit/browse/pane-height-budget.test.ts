@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
 import { measureEditor } from "#lib/features/browse/gallery-home/pane-height-budget.js";
 

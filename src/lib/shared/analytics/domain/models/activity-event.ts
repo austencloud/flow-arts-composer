@@ -67,6 +67,7 @@ export type ActivityEventType =
   // Shared viewer decision events
   | "viewer_action"
   | "viewer_export"
+  | "viewer_open_timing"
   | "viewer_playback_changed"
   | "viewer_practice_changed"
   | "viewer_setting_changed"

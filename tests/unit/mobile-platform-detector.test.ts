@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { detectPlatform } from "../../src/lib/shared/mobile/services/platform-detector";
 

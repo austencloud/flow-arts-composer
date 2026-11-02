@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Serialized QRs carry only `tka.run/{code}?pid={id}`; the card's props come
  * from its physicalCards record. Covers the record read, the public props

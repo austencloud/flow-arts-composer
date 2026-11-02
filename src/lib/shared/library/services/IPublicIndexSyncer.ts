@@ -1,3 +1,4 @@
+import type { CreatorIntent } from "#lib/shared/foundation/domain/models/creator-intent.js";
 import type { LibrarySequence } from "#lib/shared/library/domain/models/library-sequence.js";
 import type { PublicDuplicateError } from "./public-sequence-persister";
 
@@ -13,6 +14,15 @@ export interface IPublicIndexSyncer {
     userId: string
   ): Promise<PublicDuplicateError | null>;
   updateThumbnails(sequenceId: string, thumbnails: string[]): Promise<void>;
+  /**
+   * Narrow patch of an already-public sequence's `creatorIntent` (its saved
+   * look and prop pair). Replaces the stored map whole and restamps the
+   * projection, without replaying a full publish.
+   */
+  updateCreatorIntent(
+    sequenceId: string,
+    creatorIntent: CreatorIntent
+  ): Promise<void>;
   /** `ownerId` limits removal to that user's own mirror. */
   removeFromPublicIndex(sequenceId: string, ownerId?: string): Promise<void>;
 }

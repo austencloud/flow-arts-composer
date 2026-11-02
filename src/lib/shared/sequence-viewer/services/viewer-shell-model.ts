@@ -62,10 +62,11 @@ function resolveRailWidth(persistedRailWidth: string | null): number {
 
 export function resolveExportSidebarMinWidth(
   persistedRailWidth: string | null,
-  profile: ViewerInspectorProfile = "motion"
+  profile: ViewerInspectorProfile = "motion",
+  rail: "hidden" | "full" = "full"
 ): number {
   return (
-    resolveRailWidth(persistedRailWidth) +
+    (rail === "hidden" ? 0 : resolveRailWidth(persistedRailWidth)) +
     INSPECTOR_LAYOUTS[profile].defaultWidth +
     VIEWER_INSPECTOR_HANDLE_SIZE +
     VIEWER_STAGE_MIN_WIDTH

@@ -10,23 +10,13 @@
 
   aria-hidden because the same information belongs in the host control's
   accessible name (for example, "Generate, last used on this device").
-
-  The `label` override lets the Create front door use the same corner mark
-  for its "Free account" methods; that meaning also goes in the accessible
-  name.
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  interface Props {
-    /** Override the label. Defaults to "Last used". */
-    label?: string;
-  }
-
-  let { label }: Props = $props();
 </script>
 
 <span class="last-used-badge" aria-hidden="true"
-  >{label ?? t("create_ui_last_used")}</span
+  >{t("create_ui_last_used")}</span
 >
 
 <style>

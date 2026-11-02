@@ -1,13 +1,13 @@
 import {
   buildShapeMatrixAxis,
   flowerKey,
-} from "#lib/shared/shape-matrix/domain/flower-signature.js";
+} from "@tka/shape-domain";
 import {
   matrixTurnsForLevel,
   SHAPE_MATRIX_DEFAULT_LEVEL,
   SHAPE_MATRIX_DEFAULT_TURN,
   type MatrixLabelMode,
-} from "#lib/shared/shape-matrix/domain/matrix-turn-band.js";
+} from "@tka/shape-domain";
 import {
   asTurnLevel,
   keyToTurnValue,
@@ -18,21 +18,21 @@ import {
 import {
   MODE_ORDER,
   type VtgMode,
-} from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
-import type { ShapeMatrixAppSnapshot } from "#lib/shared/shape-matrix/app/state/shape-matrix-app-state.svelte.js";
-import type { ShapeMatrixAxisTarget } from "#lib/shared/shape-matrix/app/state/shape-matrix-app-state.svelte.js";
-import type { ShapeMatrixSurface } from "#lib/shared/shape-matrix/app/state/shape-matrix-app-state.svelte.js";
+} from "@tka/shape-domain";
+import type { ShapeMatrixAppSnapshot } from "@tka/shape-engine/app/state/shape-matrix-app-state.svelte.js";
+import type { ShapeMatrixAxisTarget } from "@tka/shape-engine/app/state/shape-matrix-app-state.svelte.js";
+import type { ShapeMatrixSurface } from "@tka/shape-engine/app/state/shape-matrix-app-state.svelte.js";
 import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import { spinRatioEquals, spinRatioKey, type SpinRatio } from "@vtg/domain";
 import {
   parseTheoryFlowerKey,
   theoryFlowerKey,
   type TheoryFlower,
-} from "#lib/shared/shape-matrix/domain/theory-flower.js";
+} from "@tka/shape-domain";
 import {
   DEFAULT_THEORY_RATIO,
   theoryRatioFromParts,
-} from "#lib/shared/shape-matrix/domain/theory-ratio.js";
+} from "@tka/shape-domain";
 
 const MODES = new Set<VtgMode>(MODE_ORDER);
 const LABEL_MODES = new Set<MatrixLabelMode>(["turns", "ratios"]);

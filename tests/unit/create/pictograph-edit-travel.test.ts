@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
 import {

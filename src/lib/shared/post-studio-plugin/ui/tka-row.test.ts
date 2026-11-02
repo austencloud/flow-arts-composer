@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
 import type { PostItem, PostItemKind } from "@austencloud/video-editor/core";
 import {

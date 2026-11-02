@@ -60,7 +60,11 @@ import {
 import { isWebGL2Available } from "../capabilities/webgl-capabilities";
 import { loadPersistedMode, STORAGE_KEY_MODE } from "./viewer-3d-render-mode-storage";
 import { getBlossomOpeningCamera } from "../environments/scenes/cherry-blossom/blossom-site";
-import { levelJoinedViewerOpeningShot } from "../camera/viewer-camera-framing";
+import {
+  HOSTED_CAST_OPENING_AZIMUTH_RAD,
+  levelJoinedViewerOpeningShot,
+  rotateEyeAboutTarget,
+} from "../camera/viewer-camera-framing";
 import { resolveGridJoin3D } from "../services/grid-join-3d";
 import { fits3DViewportNow } from "../capabilities/viewport-3d-gate.svelte";
 import { userProportionsState } from "@austencloud/scene-3d";
@@ -574,6 +578,16 @@ export interface Viewer3DStateOptions {
   /** A document host can own performer selection while the shared viewer
    * exposes the same index-based interaction surface to scene controls. */
   performerSelection?: ViewerPerformerSelectionController;
+  /**
+   * The host stages the cast itself: how many performers, which sequence each
+   * one dances, where they stand. The tunnel page does this to put its whole
+   * cast on stage. Such a viewer neither restores nor writes the remembered
+   * cast, formation, selection, camera or render mode, which belong to the
+   * single-sequence viewer; scene looks such as the environment still persist.
+   * Its opening shot turns off the front-stage axis so a performer standing
+   * directly behind another stays visible.
+   */
+  hostOwnsCast?: boolean;
 }
 
 function buildViewer3DState(
@@ -601,6 +615,7 @@ function buildViewer3DState(
    * namesake for this instance only; call sites are unchanged.
    */
   const persistent = seed === undefined;
+  const castIsHosted = options.hostOwnsCast === true;
   /**
    * Should restored performer settings be applied verbatim? Three cases:
    *
@@ -613,8 +628,10 @@ function buildViewer3DState(
    *    pre-feature behavior. Crucially it does NOT consume the marker, so a
    *    pending preset intent survives for the host it was written for.
    */
+  // A hosted cast restores no performers, so it leaves a pending preset
+  // intent for the viewer it was written for.
   const _restoreVerbatim =
-    persistent && options.appDefaultProp !== undefined
+    persistent && !castIsHosted && options.appDefaultProp !== undefined
       ? consumeViewer3DPresetIntent()
       : true;
   const seededEnvironment =
@@ -640,13 +657,19 @@ function buildViewer3DState(
   const noop = () => {};
   const persistNavMode = persistent ? WRITERS.navMode : noop;
   const persistDefaultProp = persistent ? WRITERS.defaultProp : noop;
-  const persistMode = persistent ? WRITERS.mode : noop;
-  const persistCamera = persistent ? WRITERS.camera : noop;
+  // A hosted cast is the host's document, not this device's remembered stage.
+  const persistsStage = persistent && !castIsHosted;
+  const persistMode = persistsStage ? WRITERS.mode : noop;
+  const persistCamera = persistsStage ? WRITERS.camera : noop;
   const persistPlanes = persistent ? WRITERS.planes : noop;
-  const persistPerformers = persistent ? WRITERS.performers : noop;
-  const persistActiveFormation = persistent ? WRITERS.activeFormation : noop;
-  const persistSelectedIndex = persistent ? WRITERS.selectedIndex : noop;
-  const persistSelectedIndices = persistent ? WRITERS.selectedIndices : noop;
+  const persistPerformers = persistsStage ? WRITERS.performers : noop;
+  const persistActiveFormation = persistsStage
+    ? WRITERS.activeFormation
+    : noop;
+  const persistSelectedIndex = persistsStage ? WRITERS.selectedIndex : noop;
+  const persistSelectedIndices = persistsStage
+    ? WRITERS.selectedIndices
+    : noop;
   const persistEffectToggles = persistent ? WRITERS.effectToggles : noop;
   const persistSceneEnvironment =
     persistent && !environmentIsViewOnly ? persistEnvironment : noop;
@@ -664,9 +687,13 @@ function buildViewer3DState(
   // orchestrator's fits3D guard corrects it. Non-mutating: storage keeps '3d', so
   // unfolding restores 3D.
   const _persistedMode = seeded(seed?.renderMode, () =>
-    _webgl2Available && fits3DViewportNow() ? loadPersistedMode() : "2d"
+    _webgl2Available && fits3DViewportNow() && !castIsHosted
+      ? loadPersistedMode()
+      : "2d"
   );
-  const _persistedCamera = seeded(seed?.camera, loadPersistedCamera);
+  const _persistedCamera = castIsHosted
+    ? null
+    : seeded(seed?.camera, loadPersistedCamera);
 
   // Synchronously restore the last render mode from localStorage so that
   // closing and reopening the sequence drawer keeps the user in 3D if that's
@@ -886,6 +913,20 @@ function buildViewer3DState(
     performers: readonly CharacterInstanceState[]
   ) {
     const shot = computeViewerFrontStageShot(performers);
+    if (castIsHosted && performers.length > 1) {
+      // A hosted cast can stand in a file, one behind another. Dead front, the
+      // nearest body hides the rest, so open on the elevated overview turned
+      // off the front-stage axis. The framing sphere is centred on the cast,
+      // so the turn keeps every performer and prop tip in frame.
+      const turned = rotateEyeAboutTarget(
+        { x: shot.eye.x, z: shot.eye.z },
+        { x: shot.target.x, z: shot.target.z },
+        HOSTED_CAST_OPENING_AZIMUTH_RAD
+      );
+      shot.eye.x = turned.x;
+      shot.eye.z = turned.z;
+      return shot;
+    }
     if (
       environmentId === "blossom" &&
       performers.length === 1 &&
@@ -2038,7 +2079,9 @@ function buildViewer3DState(
     // Restore persisted performers, if any. Each additional snapshot beyond
     // the first one spawns a new performer via the manager so the count
     // matches the saved state before we overwrite their fields.
-    const persisted = seeded(seed?.performers, loadPersistedPerformers);
+    const persisted = castIsHosted
+      ? null
+      : seeded(seed?.performers, loadPersistedPerformers);
     if (persisted && persisted.length > 0) {
       while (performerManager.performers.length < persisted.length) {
         performerManager.addPerformer();
@@ -2084,14 +2127,17 @@ function buildViewer3DState(
     // and environment controls have a concrete stage to frame.
     _currentSequenceData = sequenceData;
     for (const p of performerManager.performers) {
+      // A hosted cast already holds the sequence each performer dances; only
+      // an empty rig takes the opened one while the host stages it.
+      if (castIsHosted && p.sourceSequence) continue;
       if (sequenceData) p.loadSequence(sequenceData);
       else p.clearSequence();
     }
 
     // Restore viewer-level state.
-    const savedFormation = loadPersistedActiveFormation();
+    const savedFormation = castIsHosted ? null : loadPersistedActiveFormation();
     if (savedFormation) activeFormation = savedFormation;
-    if (!options.performerSelection) {
+    if (!options.performerSelection && !castIsHosted) {
       // Either selection field seeds the whole selection. A seed with only the
       // legacy single index must not pick up the real viewer's stored list,
       // or a stored "[]" leaves the preview with nobody to edit.
@@ -2431,6 +2477,18 @@ function buildViewer3DState(
     _welcomeAnimationPending = false;
     const shot = openingShot();
     if (shot) snapCameraTo(shot.position, shot.target);
+  }
+
+  /**
+   * Glide to the opening shot of the cast now on stage. A host that stages its
+   * own cast calls this after changing who stands where, so the first frame
+   * frames the whole cast rather than the lone performer that entered first.
+   * Waits for the camera when it has not registered yet.
+   */
+  function requestOpeningShot(): void {
+    _welcomeAnimationPending = true;
+    _hasPlayedWelcome = true;
+    if (_snapToFn) requestAnimationFrame(() => _fireWelcome());
   }
 
   /**
@@ -2885,6 +2943,7 @@ function buildViewer3DState(
     toggleEffect,
     updateCameraSnapshot,
     registerSnapTo,
+    requestOpeningShot,
     snapCameraTo,
     openingShot,
     dispose,

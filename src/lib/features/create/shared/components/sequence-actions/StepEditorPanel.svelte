@@ -21,6 +21,7 @@
   import ArrowAdjustmentHistory from "./ArrowAdjustmentHistory.svelte";
   import StepEditorTour from "#lib/shared/onboarding/components/step-editor-tour/StepEditorTour.svelte";
   import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import { motionDuration } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { NARROW_EDITOR_WIDTH, SHORT_EDITOR_HEIGHT } from "./editor-layout";
@@ -225,11 +226,14 @@
   let placementResetEpoch = $state(0);
   let placementMotionMove = $state<PlacementMotionMove | null>(null);
 
-  const stepLabel = $derived.by(() => {
-    if (displayedStepNumber === null) return "";
+  // The header says which mode you're in: the step editor replaces the tools,
+  // and Sequence Actions closes while a step is selected, so this line is how
+  // you know what you're editing and that Done is the way back.
+  const modeLabel = $derived.by(() => {
+    if (displayedStepNumber === null) return t("create_ui_step_editor");
     return displayedStepNumber === 0
-      ? t("create_ui_start_placement_label")
-      : t("create_editor_numbered_step", { number: displayedStepNumber });
+      ? t("create_editor_editing_start")
+      : t("create_editor_editing_step", { number: displayedStepNumber });
   });
 
   // Calculate how many subsequent steps would be affected by orientation changes
@@ -537,10 +541,9 @@
     class:tour-dim={tourHighlight !== "none"}
   >
     <div class="header-info">
-      <h2>{t("create_ui_step_editor")}</h2>
-      <span class="subtitle">
-        {stepLabel}
-        {#if cascadeCount > 0 && !isStartPlacementSelected}
+      <h2>{modeLabel}</h2>
+      {#if cascadeCount > 0 && !isStartPlacementSelected}
+        <span class="subtitle">
           <span class="cascade-indicator" class:pulse={showCascadePulse}>
             → +{t(
               cascadeCount === 1
@@ -549,8 +552,8 @@
               { count: cascadeCount }
             )}
           </span>
-        {/if}
-      </span>
+        </span>
+      {/if}
     </div>
 
     <!-- Beta swap is an on/off toggle, so it is the shared filter chip. The
@@ -611,13 +614,15 @@
           <i class="fa-solid fa-trash" aria-hidden="true"></i>
         </button>
       {/if}
-      <button
-        class="icon-btn close"
+      <!-- Done, not a bare ×: it ends the selection and brings the tools
+           back, which reads as finishing an edit rather than dismissing a
+           sheet. -->
+      <PanelButton
         onclick={handleClose}
-        aria-label={t("create_ui_close_step_editor")}
+        title={t("create_ui_close_step_editor")}
       >
-        <i class="fas fa-times" aria-hidden="true"></i>
-      </button>
+        {t("create_editor_done")}
+      </PanelButton>
     </div>
   </header>
 

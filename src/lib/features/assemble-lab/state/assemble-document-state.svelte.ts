@@ -16,6 +16,12 @@ import type {
 
 export interface AssembleDocumentState {
   phase: BuilderPhase;
+  /**
+   * How far the hop that is adding a step has gone, 0 to 1 (eased, as the
+   * prop moves), or null when no hop is running. Live display only: it is
+   * never part of a snapshot or the undo history.
+   */
+  hopProgress: number | null;
   activeHand: HandSide;
   gridMode: GridMode;
   showCenter: boolean;
@@ -69,6 +75,7 @@ export function handLabel(hand: HandSide): string {
 
 export function createAssembleDocumentState(): AssembleDocumentState {
   let phase = $state<BuilderPhase>("idle");
+  let hopProgress = $state<number | null>(null);
   let activeHand = $state<HandSide>(HandSide.LEFT);
   let gridMode = $state<GridMode>(GridMode.DIAMOND);
   let showCenter = $state(false);
@@ -181,6 +188,12 @@ export function createAssembleDocumentState(): AssembleDocumentState {
     },
     set phase(value) {
       phase = value;
+    },
+    get hopProgress() {
+      return hopProgress;
+    },
+    set hopProgress(value) {
+      hopProgress = value;
     },
     get activeHand() {
       return activeHand;

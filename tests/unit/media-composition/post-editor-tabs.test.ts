@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";

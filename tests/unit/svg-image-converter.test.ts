@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
 import { withRootSvgSize } from "#lib/shared/foundation/services/svg-image-converter.js";
 

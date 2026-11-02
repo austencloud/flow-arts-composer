@@ -314,6 +314,49 @@ describe("sequence viewer library action feedback", () => {
     expect(sequence).not.toHaveProperty("creatorIntent");
   });
 
+  it("saves someone else's sequence as a private copy credited to its creator", async () => {
+    mocks.saveSequence.mockResolvedValue({
+      persisted: true,
+      sequenceId: "sequence-1",
+    });
+    const theirs = {
+      ...sequence,
+      ownerId: "creator-9",
+      ownerDisplayName: "Creator Nine",
+      ownerAvatarUrl: "https://assets.example.com/creator.png",
+    };
+    const handler = makeHandler(false, LIVE_SOURCE, undefined, () => theirs);
+    const pending = handler.handleSave();
+    handler.finishPropChoice(true);
+    await pending;
+
+    expect(mocks.saveSequence.mock.calls[0]?.[1]).toMatchObject({
+      visibility: "private",
+      copyOf: {
+        sequenceId: "sequence-1",
+        creatorId: "creator-9",
+        creatorName: "Creator Nine",
+        creatorPhotoUrl: "https://assets.example.com/creator.png",
+      },
+    });
+  });
+
+  it("saves the person's own sequence publicly and not as a copy", async () => {
+    mocks.saveSequence.mockResolvedValue({
+      persisted: true,
+      sequenceId: "sequence-1",
+    });
+    const mine = { ...sequence, ownerId: "viewer-test-user" };
+    const handler = makeHandler(true, LIVE_SOURCE, undefined, () => mine);
+    const pending = handler.handleSave();
+    handler.finishPropChoice(true);
+    await pending;
+
+    const options = mocks.saveSequence.mock.calls[0]?.[1];
+    expect(options).toMatchObject({ visibility: "public" });
+    expect(options).not.toHaveProperty("copyOf");
+  });
+
   it("cancelling the prop choice never writes a library record", async () => {
     const handler = makeHandler();
     const pending = handler.handleSave();

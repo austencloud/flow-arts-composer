@@ -1,8 +1,9 @@
 <!--
   The tunnel page's viewer host. It resolves both performers' codes and opens
-  the shared viewer on its tunnel playback with both of them cast. The other
-  views show the front performer; the Tunnel view's settings link each
-  performer's own page. Viewer chrome stays the shell's.
+  the shared viewer on its tunnel playback with both of them cast. The shell
+  sees a cast in the composition and offers only the views and actions that
+  cover both performers; the Tunnel view's settings link each performer's own
+  page. Viewer chrome stays the shell's.
 -->
 <script lang="ts">
   import { browser } from "$app/env";

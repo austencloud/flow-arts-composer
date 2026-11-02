@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
 	viewerModeOptions,
+	viewerModeForSubject,
+	showsViewerModeSwitcher,
 	coerce3DContent,
 	coerce3DSplit,
 	legacyViewModeFor
@@ -37,6 +39,46 @@ describe('viewerModeOptions', () => {
 		expect(viewerModeOptions(true, true).some((m) => m.id === 'post-studio')).toBe(false);
 		expect(viewerModeOptions(false, false, true).some((m) => m.id === 'post-studio')).toBe(true);
 		expect(viewerModeOptions(true, true, true).some((m) => m.id === 'post-studio')).toBe(true);
+	});
+});
+
+describe('a cast subject', () => {
+	const ids = (postStudioAccess: boolean) =>
+		viewerModeOptions(true, true, postStudioAccess, 'cast').map((m) => m.id);
+
+	it('offers only the views that draw the whole cast, tunnel first', () => {
+		expect(ids(false)).toEqual(['tunnel', 'animation-3d']);
+		expect(ids(true)).toEqual(['tunnel', 'animation-3d', 'post-studio']);
+	});
+
+	it('drops the cast 3D view behind the same WebGL2 and viewport gates', () => {
+		const castIds = (webgl2: boolean, fits3D: boolean) =>
+			viewerModeOptions(webgl2, fits3D, false, 'cast').map((m) => m.id);
+		expect(castIds(false, true)).toEqual(['tunnel']);
+		expect(castIds(true, false)).toEqual(['tunnel']);
+	});
+
+	it('keeps every view for a sequence subject', () => {
+		expect(viewerModeOptions(true, true, false, 'sequence')).toEqual(
+			viewerModeOptions(true, true, false)
+		);
+	});
+
+	it('lands a performer-only mode on the tunnel', () => {
+		for (const mode of ['split', 'animation', 'card', 'videos', 'mandala'] as const) {
+			expect(viewerModeForSubject(mode, 'cast')).toBe('tunnel');
+		}
+		expect(viewerModeForSubject('tunnel', 'cast')).toBe('tunnel');
+		expect(viewerModeForSubject('animation-3d', 'cast')).toBe('animation-3d');
+		expect(viewerModeForSubject('post-studio', 'cast')).toBe('post-studio');
+		expect(viewerModeForSubject('card', 'sequence')).toBe('card');
+	});
+
+	it('shows no switcher when there is one view and no practice toggle', () => {
+		expect(showsViewerModeSwitcher(viewerModeOptions(true, false, false, 'cast'))).toBe(false);
+		expect(showsViewerModeSwitcher(viewerModeOptions(true, true, false, 'cast'))).toBe(true);
+		expect(showsViewerModeSwitcher(viewerModeOptions(true, false, true, 'cast'))).toBe(true);
+		expect(showsViewerModeSwitcher(viewerModeOptions(true, false, false, 'cast'), true)).toBe(true);
 	});
 });
 

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it } from "vitest";
 import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
 import { SPARKLES_PRESET_GROUP } from "../presets/sparkles-presets";

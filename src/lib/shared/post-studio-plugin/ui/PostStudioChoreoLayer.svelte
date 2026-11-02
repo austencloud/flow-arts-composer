@@ -7,6 +7,8 @@
   import { getImageCompositionManager } from "#lib/shared/share/state/image-composition-state.svelte.js";
   import { getViewerStudioSurfaces } from "#lib/shared/sequence-viewer/context/viewer-studio-surfaces-context.js";
   import { postCardHighlightedStepIndex } from "./post-card-highlight";
+  import TunnelChoreoCard from "./TunnelChoreoCard.svelte";
+  import type { PostFollower } from "../tunnel-performers";
 
   let {
     sequence,
@@ -14,6 +16,8 @@
     cardRenderOptions = null,
     qrSequence = sequence,
     qrUrl,
+    followers = [],
+    tunnelSource = null,
   }: {
     sequence: SequenceData;
     displayedBeatNumber?: number;
@@ -22,7 +26,13 @@
     qrSequence?: SequenceData;
     /** A saved scan link the card's QR shows instead of the account's own code. */
     qrUrl?: string;
+    /** The performers behind on a tunnel post; the card then draws the tunnel. */
+    followers?: readonly PostFollower[];
+    /** The stored sequence behind the labeled one; the tunnel QR names its code. */
+    tunnelSource?: SequenceData | null;
   } = $props();
+
+  const tunnel = $derived(followers.length > 0);
 
   const highlightedStepIndex = $derived(
     postCardHighlightedStepIndex(displayedBeatNumber)
@@ -56,6 +66,8 @@
   const shared = getViewerStudioSurfaces();
   const owner = {};
   function cardDestination(node: HTMLElement) {
+    // The shared card draws one performer; a tunnel card draws here.
+    if (tunnel) return {};
     return {
       destroy: shared?.requestCard(owner, node, () => ({
         sequence,
@@ -73,7 +85,32 @@
 </script>
 
 <div class="choreo-layer" use:cardDestination data-studio-card-destination>
-  {#if !shared?.ownsCard(owner)}
+  {#if tunnel}
+    <TunnelChoreoCard
+      {sequence}
+      sourceSequence={tunnelSource}
+      {followers}
+      {highlightedStepIndex}
+      showHighlight={highlightedStepIndex !== null}
+      visibilityOverrides={cardRenderOptions?.visibilityOverrides}
+      darkMode={cardRenderOptions?.visibilityOverrides?.darkMode ?? true}
+      showWord={cardRenderOptions?.addWord ?? true}
+      showStepNumbers={cardRenderOptions?.addStepNumbers ?? true}
+      showDifficultyLevel={cardRenderOptions?.addDifficultyLevel ?? true}
+      includeStartPlacement={cardRenderOptions?.includeStartPlacement ?? true}
+      showNotes={cardRenderOptions?.showNotes ?? false}
+      customNotesText={cardRenderOptions?.customNotesText}
+      showLoopGlyph={cardRenderOptions?.showLoopGlyph ?? true}
+      leftPropType={cardRenderOptions?.leftPropTypeOverride ??
+        cardRenderOptions?.propTypeOverride}
+      rightPropType={cardRenderOptions?.rightPropTypeOverride ??
+        cardRenderOptions?.propTypeOverride}
+      {columnCount}
+      {startPlacementLayoutOverride}
+      forceContain
+      fitWidth
+    />
+  {:else if !shared?.ownsCard(owner)}
     <ChoreoCard
       {sequence}
       {qrSequence}

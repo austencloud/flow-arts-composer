@@ -455,6 +455,10 @@ export async function importDrafts(
       await repo.saveSequence(draft, {
         visibility: draft.pendingSyncMetadata?.visibility ?? "private",
         notes: draft.pendingSyncMetadata?.notes ?? "",
+        // A guest's copy of another creator's sequence stays credited to them.
+        ...(draft.pendingSyncMetadata?.copyOf && {
+          copyOf: draft.pendingSyncMetadata.copyOf,
+        }),
         // The account the user agreed to import INTO. Each write awaits, and
         // the repository resolves the uid it stamps only after its own await,
         // so without this a switch between drafts would silently redirect the

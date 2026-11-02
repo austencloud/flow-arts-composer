@@ -60,6 +60,8 @@ export interface AssembleStateOptions {
 
 export interface AssembleState {
   readonly phase: BuilderPhase;
+  /** The running hop's eased progress, 0 to 1, or null between hops. */
+  readonly hopProgress: number | null;
   readonly activeHand: HandSide;
   readonly gridMode: GridMode;
   readonly leftSteps: BuilderStep[];
@@ -123,6 +125,8 @@ export interface AssembleState {
   setAnimationCallback(
     cb: (step: BuilderStep, durationMs?: number) => Promise<void>
   ): () => void;
+  /** The animator's report of how far the running hop has gone. */
+  reportHopProgress(progress: number): void;
 }
 
 export interface AssembleSnapshot {

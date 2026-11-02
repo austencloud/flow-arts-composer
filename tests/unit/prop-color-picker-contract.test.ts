@@ -54,9 +54,9 @@ const HOSTS: Record<string, string> = {
   "sequence viewer props panel":
     "src/lib/shared/sequence-viewer/components/SequenceViewerShell.svelte",
   "shape matrix customize":
-    "src/lib/shared/shape-matrix/app/components/ShapeMatrixCustomizeWorkspace.svelte",
+    "packages/shape-engine/src/app/components/ShapeMatrixCustomizeWorkspace.svelte",
   "shape matrix focus":
-    "src/lib/shared/shape-matrix/app/components/ShapeMatrixFocusWorkspace.svelte",
+    "packages/shape-engine/src/app/components/ShapeMatrixFocusWorkspace.svelte",
   // In @austencloud/video-editor since Task 20; this reads the installed
   // package.
   "post studio look panel":

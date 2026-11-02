@@ -5,10 +5,10 @@ import { describe, expect, it } from "vitest";
 import {
   flowerPetals,
   ratioLabel,
-} from "#lib/shared/shape-matrix/domain/flower-signature.js";
-import { matrixFiltersForSize } from "#lib/shared/shape-matrix/domain/matrix-size-preset.js";
-import { applyFilter } from "#lib/shared/shape-matrix/domain/filter-flower-axis.js";
-import { buildShapeMatrixAxis } from "#lib/shared/shape-matrix/domain/flower-signature.js";
+} from "@tka/shape-domain";
+import { matrixFiltersForSize } from "@tka/shape-domain";
+import { applyFilter } from "@tka/shape-domain";
+import { buildShapeMatrixAxis } from "@tka/shape-domain";
 
 function read(path: string): string {
   return readFileSync(resolve(path), "utf8");
@@ -69,7 +69,7 @@ describe("Shape Engine ratio guide", () => {
   it("connects the guide and Shape Engine without linking the withdrawn archive", () => {
     const page = read(PAGE_PATH);
     const about = read(
-      "src/lib/shared/shape-matrix/app/components/ShapeMatrixAboutModal.svelte"
+      "packages/shape-engine/src/app/components/ShapeMatrixAboutModal.svelte"
     );
     const toc = read("src/routes/(public)/guide/_data/guide-toc.ts");
     const sitemap = read("src/routes/sitemap.xml/+server.ts");

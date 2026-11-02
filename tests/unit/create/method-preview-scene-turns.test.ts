@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * A Create method preview scene runs one cancellable timeline per turn. A
  * run cut off mid-scene fades through to the finished picture; a run that

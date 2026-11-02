@@ -268,7 +268,7 @@
           dropDown
           align="left"
           onPropsOpen={() => viewingControl?.show()}
-          propsLabel={t("viewer_header_viewing_props", { props: viewingLabel })}
+          propsSummary={viewingLabel}
           onOpenChange={onOverflowOpenChange}
         />
       {/if}
@@ -464,7 +464,7 @@
           onPropsOpen={showViewingProps
             ? () => viewingControl?.show()
             : undefined}
-          propsLabel={t("viewer_header_viewing_props", { props: viewingLabel })}
+          propsSummary={viewingLabel}
           dropDown
           align="left"
           {isFavorite}

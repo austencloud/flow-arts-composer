@@ -527,3 +527,83 @@ describe("LibrarySaveService.saveSequence - publication-moment intent capture", 
     );
   });
 });
+
+describe("LibrarySaveService.saveSequence - copies and the visibility that landed", () => {
+  const fourSteps = [
+    { letter: "A" },
+    { letter: "B" },
+    { letter: "C" },
+    { letter: "D" },
+  ];
+  const copyOf = {
+    sequenceId: "seq-1",
+    creatorId: "creator-9",
+    creatorName: "Creator Nine",
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    dbPutMock.mockResolvedValue(undefined);
+    dbGetMock.mockResolvedValue(undefined);
+    ledgerIdsMock.mockReturnValue([]);
+    (authState as any).isAuthenticated = true;
+    (authState as any).isAnonymous = false;
+  });
+
+  it("keeps a copy private by default, credits it on retry, and reports it as a copy", async () => {
+    const repository = makeRepository();
+    const service = new LibrarySaveService(null, null, repository, null);
+
+    await service.saveSequence(
+      makeSequence({
+        steps: fourSteps,
+        ownerId: "creator-9",
+        ownerDisplayName: "Creator Nine",
+        ownerAvatarUrl: "https://assets.example.com/creator.png",
+      }),
+      { name: "ABCD", tags: [], notes: "", copyOf }
+    );
+
+    const row = dbPutMock.mock.calls[0]?.[0];
+    expect(row).toMatchObject({
+      ownerId: "u1",
+      pendingSyncMetadata: { visibility: "private", copyOf },
+    });
+    expect(row).not.toHaveProperty("ownerDisplayName");
+    expect(row).not.toHaveProperty("ownerAvatarUrl");
+    expect(repository.saveSequenceWithMetadata).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ visibility: "private", copyOf })
+    );
+    expect(reportLifecycleMock).toHaveBeenCalledWith(
+      {
+        event: "sequence_save",
+        properties: expect.objectContaining({
+          visibility: "private",
+          sequenceSource: "copied",
+        }),
+      },
+      "u1"
+    );
+  });
+
+  it("reports the visibility the repository wrote, not the one requested", async () => {
+    // The gallery already holds this content, so the repository kept the
+    // requested public save private.
+    const repository = makeRepository({
+      saveSequenceWithMetadata: vi
+        .fn()
+        .mockResolvedValue({ visibility: "private" }),
+    });
+    const service = new LibrarySaveService(null, null, repository, null);
+
+    await service.saveSequence(makeSequence({ steps: fourSteps }), {
+      ...makeOptions(),
+      visibility: "public",
+    });
+
+    const event = reportLifecycleMock.mock.calls[0]?.[0];
+    expect(event.properties.visibility).toBe("private");
+    expect(event.properties).not.toHaveProperty("sequenceSource");
+  });
+});

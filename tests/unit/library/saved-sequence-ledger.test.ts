@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 // Per-uid saved-sequence ledger: the scoping mechanism that stops a
 // guest→account upgrade from importing a prior user's library on a shared,
 // never-cleared Dexie store (SP2 capture-source fix).

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { mount, unmount } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 

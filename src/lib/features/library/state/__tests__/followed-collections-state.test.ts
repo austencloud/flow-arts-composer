@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { LibraryCollection } from "#lib/shared/library/domain/models/collection.js";
 import type { FollowedCollectionRef } from "#lib/shared/library/services/followed-collections.js";

@@ -42,24 +42,15 @@ import {
   recallCustomizeScreen,
   rememberCustomizeOverlayOpen,
 } from "#lib/shared/create/state/customize-overlay-hmr.js";
-import type { CreateModuleState } from "#lib/shared/create/state/create-module-state-types.js";
 import type { ConstructOptionAudition } from "#lib/shared/create/domain/construct-option-audition.js";
 import { logSequenceActionsOpened } from "#lib/shared/create/analytics/sequence-action-events.js";
 import type { SequenceActionsOpenSource } from "#lib/shared/create/domain/sequence-action-types.js";
 
-// Lazy import to break circular dependency
-// panel-coordination-state ↔ create-module-state-ref ↔ construct-tab-state (cycle)
-let _cachedGetCreateModuleStateRef:
-  | (() => CreateModuleState | null)
-  | undefined;
-function getCreateModuleStateRefLazy() {
-  if (!_cachedGetCreateModuleStateRef) {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const mod = require("#lib/shared/create/state/create-module-state-ref.svelte.js");
-    _cachedGetCreateModuleStateRef = mod.getCreateModuleStateRef;
-  }
-  return _cachedGetCreateModuleStateRef!();
-}
+// A plain import is safe: create-module-state-ref only imports types, so there
+// is no runtime cycle back to this file. It used to be a lazy require(), which
+// isn't defined in the browser's ES modules and which Vitest can't resolve, so
+// a call that needed the selection never reached it.
+import { getCreateModuleStateRef } from "#lib/shared/create/state/create-module-state-ref.svelte.js";
 
 // Re-export TargetHand from standalone types file for backwards compatibility
 // The type is defined in domain/types/panel-types.ts to break circular dependency
@@ -272,6 +263,8 @@ export interface PanelCoordinationState {
 
   // Beat Editor Panel State (non-modal - allows click-through to pictographs)
   get isStepEditorPanelOpen(): boolean;
+  /** The open editor replaced Sequence Actions; cleared when it closes. */
+  get stepEditorReplacedActions(): boolean;
   get mandalaViewerSelection(): MandalaViewerSelection | null;
   get pendingGenerateCardEditorHandoff(): PendingGenerateCardEditorHandoff | null;
 
@@ -503,6 +496,10 @@ export function createPanelCoordinationState(): PanelCoordinationState {
   // Persisted so a dev HMR / page refresh restores the open editor instead of
   // closing it out from under the user.
   let isStepEditorPanelOpen = $state(stepEditorPanelPersistence.load());
+  // True while the open editor is the one that took over from Sequence
+  // Actions. The tool slot reads it to put the editor in place at once, so
+  // the drawer slides away to reveal the editor instead of the tools.
+  let stepEditorReplacedActions = $state(false);
   let mandalaViewerSelection = $state<MandalaViewerSelection | null>(null);
   let pendingGenerateCardEditorHandoff =
     $state.raw<PendingGenerateCardEditorHandoff | null>(null);
@@ -649,6 +646,7 @@ export function createPanelCoordinationState(): PanelCoordinationState {
     isFilterPanelOpen = false;
     isSequenceActionsPanelOpen = false;
     isStepEditorPanelOpen = false;
+    stepEditorReplacedActions = false;
     mandalaViewerSelection = null;
     pendingGenerateCardEditorHandoff = null;
 
@@ -788,7 +786,7 @@ export function createPanelCoordinationState(): PanelCoordinationState {
       dropWorkspacePlayback();
       closeAllPanels();
       // Clear beat editor selection when opening animation panel
-      const moduleState = getCreateModuleStateRefLazy();
+      const moduleState = getCreateModuleStateRef();
       if (moduleState?.sequenceState) {
         moduleState.sequenceState.clearSelection();
       }
@@ -925,6 +923,18 @@ export function createPanelCoordinationState(): PanelCoordinationState {
       // This prevents the panel from closing when beat operations update state
       if (!isSequenceActionsPanelOpen) {
         closeAllPanels();
+        // Actions and the step editor are one mode at a time. Closing the
+        // editor alone isn't enough: the selection survives, and the auto-open
+        // effects put the editor right back. Dropping the selection here
+        // covers every entry point (toolbar button, workflow, tab restore).
+        //
+        // A tab restore is treated like a tap. Under this rule the saved panel
+        // can only be Actions if nothing was selected when the tab was left,
+        // so clearing changes nothing there. It only matters for storage saved
+        // before the rule, and one clean mode beats two half-open ones.
+        getCreateModuleStateRef()?.sequenceState.exitMultiSelectMode();
+        // Nothing is selected any more, so Stop has no editor to bring back.
+        restoreStepEditorAfterPlayback = false;
         logSequenceActionsOpened(source);
       }
       isSequenceActionsPanelOpen = true;
@@ -957,6 +967,10 @@ export function createPanelCoordinationState(): PanelCoordinationState {
       return isStepEditorPanelOpen;
     },
 
+    get stepEditorReplacedActions() {
+      return stepEditorReplacedActions;
+    },
+
     get mandalaViewerSelection() {
       return mandalaViewerSelection;
     },
@@ -970,6 +984,15 @@ export function createPanelCoordinationState(): PanelCoordinationState {
       // This allows the user to click on pictographs while the panel is open
       // It does need the editable card, so a running preview ends here.
       dropWorkspacePlayback();
+      // The one exception is Sequence Actions: selecting steps and acting on
+      // the whole sequence are one mode at a time, and selection wins. Every
+      // auto-open path (single step, multi-select, Actions' own Edit turns
+      // tile) comes through here, so this is the one place that enforces it.
+      const replacesActions = isSequenceActionsPanelOpen;
+      if (replacesActions) {
+        isSequenceActionsPanelOpen = false;
+        cancelDurationPreview();
+      }
       mandalaViewerSelection = null;
       if (
         isCustomizeOverlayOpen ||
@@ -981,11 +1004,17 @@ export function createPanelCoordinationState(): PanelCoordinationState {
         return;
       }
       pendingGenerateCardEditorHandoff = null;
+      // Keep the hand-off noted only while the editor stays open: a later
+      // step click while it is open leaves it as it was.
+      if (replacesActions || !isStepEditorPanelOpen) {
+        stepEditorReplacedActions = replacesActions;
+      }
       isStepEditorPanelOpen = true;
     },
 
     closeStepEditorPanel() {
       isStepEditorPanelOpen = false;
+      stepEditorReplacedActions = false;
       mandalaViewerSelection = null;
       pendingGenerateCardEditorHandoff = null;
     },

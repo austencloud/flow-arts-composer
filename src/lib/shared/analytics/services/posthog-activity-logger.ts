@@ -120,6 +120,7 @@ export async function logSessionStart(): Promise<void> {
     sw_update_reload_age_ms: swReload.ageMs,
     chunk_recovery_reload: chunkReload.occurred,
     chunk_recovery_reload_age_ms: chunkReload.ageMs,
+    chunk_recovery_stage: chunkReload.stage,
     document_was_discarded: wasDiscarded,
   });
 }

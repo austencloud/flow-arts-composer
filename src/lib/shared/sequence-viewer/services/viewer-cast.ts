@@ -10,6 +10,7 @@ import { resolveSequenceIdentityTitle } from "./viewer-title";
 import type { TunnelComposition } from "../tunnel/tunnel-composition";
 import { partnerTunnelAddressOf } from "../tunnel/partner-tunnel";
 import type { SplitConfig, ViewerMode } from "./viewer-state-persistence";
+import type { ViewerSubject } from "./viewer-modes";
 
 export interface ViewerCastLink {
   performerId: string;
@@ -54,16 +55,35 @@ export function deriveViewerCastLinks(
 }
 
 /**
+ * Whether a composition is a cast: two or more performers who each dance a
+ * sequence of their own. A cast is the viewer's whole subject, so the viewer
+ * offers only the views and actions that cover all of it. A generated tunnel
+ * (one lead plus copies of it) is still a view of one sequence.
+ */
+export function isCastComposition(
+  composition: TunnelComposition | null | undefined
+): boolean {
+  if (!composition) return false;
+  return (
+    composition.performers.filter(
+      (performer) => performer.source.kind === "independent"
+    ).length >= 2
+  );
+}
+
+/**
  * Ensemble views draw the cast together: Tunnel, Performances and Post Studio,
- * and a side-by-side whose left pane is the tunnel. Every other view draws the
- * lead alone.
+ * and a side-by-side whose left pane is the tunnel. On a cast page the 3D view
+ * stages every performer too. Every other view draws the lead alone.
  */
 export function isEnsembleView(
   mode: ViewerMode,
-  split: Pick<SplitConfig, "leftPane">
+  split: Pick<SplitConfig, "leftPane">,
+  subject: ViewerSubject = "sequence"
 ): boolean {
   if (mode === "tunnel" || mode === "videos" || mode === "post-studio") {
     return true;
   }
+  if (mode === "animation-3d" && subject === "cast") return true;
   return mode === "split" && split.leftPane === "tunnel";
 }

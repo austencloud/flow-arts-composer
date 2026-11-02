@@ -1,4 +1,7 @@
-import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type {
+  SequenceCopyOrigin,
+  SequenceData,
+} from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { SaveResult } from "#lib/shared/library/domain/library-contract-types.js";
 import type { PresentationIntent } from "#lib/shared/foundation/domain/models/presentation-intent.js";
 
@@ -15,6 +18,11 @@ export interface VisualSequenceSaveIntent {
    * is saved.
    */
   presentation?: PresentationIntent | null;
+  /**
+   * Set when the sequence is another creator's (the viewer knows). The save
+   * is a private copy credited to them.
+   */
+  copyOf?: SequenceCopyOrigin;
 }
 
 export type VisualSequenceSaveOutcome =

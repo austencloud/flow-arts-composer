@@ -54,6 +54,7 @@ Uses organizer and sizer services for section grouping and sizing.
   import {
     CONSTRUCT_PHONE_MAX_WIDTH,
     isConstructPhoneTier,
+    isConstructTypeRailTier,
   } from "../../services/construct-phone-split";
   import {
     isAncestorResizing,
@@ -374,6 +375,14 @@ Uses organizer and sizer services for section grouping and sizing.
   // swipe, so the carousel's arrow gutters go back to the grid.
   const isPhoneTier = $derived(
     isConstructPhoneTier({
+      width: containerWidth,
+      stacked: isMobileStackedLayout(),
+    })
+  );
+  // A phone-tier picker this wide and short (the unfolded Fold) stands its
+  // tabs in a left rail and keeps the height for the grid.
+  const isTypeRailTier = $derived(
+    isConstructTypeRailTier({
       width: containerWidth,
       stacked: isMobileStackedLayout(),
     })
@@ -817,6 +826,7 @@ Uses organizer and sizer services for section grouping and sizing.
             settingsHasTurnRows={turnControlsEditable && level > 1}
             openIntoWorkspace={isMobileStackedLayout()}
             phoneTier={isPhoneTier}
+            typeRail={isTypeRailTier}
           >
             {#snippet settingsContent()}
               {@render compactControls()}

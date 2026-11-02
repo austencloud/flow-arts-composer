@@ -14,6 +14,7 @@
 
 import type { TranslationKey } from "./i18n-types.js";
 import { localizedPageLocale } from "./seo-locales.js";
+import { setTranslator as setShapeEngineTranslator } from "@tka/shape-engine/strings.svelte.js";
 import enMessagesStatic from "../../../../messages/en.json";
 
 // Available locales - must match messages/*.json files
@@ -451,6 +452,11 @@ export function t(
 
   return text;
 }
+
+// The Shape Engine package carries English only. Its keys are Composer keys,
+// so handing it `t` once here translates the engine everywhere the Composer
+// shows it, including the display helpers Composer code calls directly.
+setShapeEngineTranslator((key, params) => t(key, params));
 
 /**
  * Initialize the i18n system

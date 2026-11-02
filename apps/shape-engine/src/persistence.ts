@@ -1,4 +1,4 @@
-import type { ShapeMatrixAppPersistence } from "#lib/shared/shape-matrix/app/state/shape-matrix-app-state.svelte.js";
+import type { ShapeMatrixAppPersistence } from "@tka/shape-engine/app/state/shape-matrix-app-state.svelte.js";
 import { setCurrentPropPair } from "./native-settings.svelte";
 import {
   readShapeMatrixRouteState,

@@ -21,7 +21,7 @@ import {
 import {
   MODE_ORDER,
   type VtgMode,
-} from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
+} from "@tka/shape-domain";
 import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 import {
   getLOOPSpecExpansionMultiplier,

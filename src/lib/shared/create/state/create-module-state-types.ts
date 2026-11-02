@@ -23,6 +23,8 @@ export interface SequenceStateMinimal {
   clearPersistedState(): Promise<void>;
   setCurrentSequence(sequence: SequenceData | null): void;
   clearSelection(): void;
+  /** Drops every selection, single or multi. */
+  exitMultiSelectMode(): void;
   clearError(): void;
   clearSequence(): void;
   clearSequenceCompletely(): Promise<void>;

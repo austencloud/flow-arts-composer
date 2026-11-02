@@ -10,6 +10,7 @@ import {
 } from "#lib/shared/toast/state/toast-state.svelte.js";
 import { AUTH_NUDGE_TEXTS } from "../domain/auth-nudge-trigger";
 import {
+  AUTH_GATE_COOLDOWN_MS,
   AUTH_SHEET_FEEDBACK_GRACE_MS,
   authDrawerState,
 } from "./auth-drawer-state.svelte";
@@ -39,6 +40,7 @@ describe("authDrawerState while the sheet's code is still loading", () => {
 
   afterEach(() => {
     authDrawerState.reset();
+    authDrawerState.clearGateCooldown();
     clearToasts();
     vi.useRealTimers();
   });
@@ -126,5 +128,142 @@ describe("authDrawerState while the sheet's code is still loading", () => {
     vi.advanceTimersByTime(AUTH_SHEET_FEEDBACK_GRACE_MS);
 
     expect(messages()).toEqual([]);
+  });
+});
+
+/**
+ * One ask, then quiet. A guest on a phone was shown the sheet four times in
+ * 19 minutes and left. After a "not now" on a gate's sheet, gates answer with
+ * a toast for a day; a tap on an account button still opens the sheet.
+ */
+describe("authDrawerState after a guest says not now", () => {
+  beforeEach(() => {
+    const store = new Map<string, string>();
+    vi.stubGlobal("localStorage", {
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, value: string) => store.set(key, String(value)),
+      removeItem: (key: string) => store.delete(key),
+    });
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-10-31T12:00:00Z"));
+  });
+
+  afterEach(() => {
+    authDrawerState.reset();
+    authDrawerState.clearGateCooldown();
+    clearToasts();
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  function dismissGateSheet() {
+    askToSaveMore();
+    expect(authDrawerState.open).toBe(true);
+    authDrawerState.hide();
+  }
+
+  it("remembers the dismissal of a gate's sheet", () => {
+    dismissGateSheet();
+
+    expect(localStorage.getItem("tka-auth-gate-dismissed-at")).toBe(
+      String(Date.now())
+    );
+  });
+
+  it("does not count closing a sheet the guest asked for", () => {
+    authDrawerState.showOnRequest("signup", "save-limit");
+    authDrawerState.hide();
+    authDrawerState.show("signin");
+    authDrawerState.hide();
+
+    askToSaveMore();
+    expect(authDrawerState.open).toBe(true);
+  });
+
+  it("answers the next gate with a toast and keeps the sheet closed", () => {
+    dismissGateSheet();
+
+    askToSaveMore();
+
+    expect(authDrawerState.open).toBe(false);
+    expect(messages()).toEqual([SAVE_LIMIT_TEXT]);
+    expect(toastQueue[0]?.action?.label).toBe("Create account");
+  });
+
+  it("opens the sheet from the toast's Create account action", () => {
+    dismissGateSheet();
+    askToSaveMore();
+
+    toastQueue[0]?.action?.onClick();
+
+    expect(authDrawerState.open).toBe(true);
+    expect(authDrawerState.reason).toBe("save-limit");
+    expect(messages()).toEqual([]);
+  });
+
+  it("still opens the sheet for a tap on an account button", () => {
+    dismissGateSheet();
+
+    authDrawerState.showOnRequest("signup", "sync-library");
+    expect(authDrawerState.open).toBe(true);
+    authDrawerState.close();
+
+    authDrawerState.show("signin");
+    expect(authDrawerState.open).toBe(true);
+    expect(messages()).toEqual([]);
+  });
+
+  it("lets gates open the sheet again after a day", () => {
+    dismissGateSheet();
+
+    vi.advanceTimersByTime(AUTH_GATE_COOLDOWN_MS - 1);
+    askToSaveMore();
+    expect(authDrawerState.open).toBe(false);
+
+    clearToasts();
+    vi.advanceTimersByTime(1);
+    askToSaveMore();
+    expect(authDrawerState.open).toBe(true);
+  });
+
+  it("starts the quiet day when the first-save invitation is dismissed", async () => {
+    // The invitation is offered once per page, so use a fresh copy of both
+    // modules that has not offered it yet.
+    vi.resetModules();
+    const toasts =
+      await import("#lib/shared/toast/state/toast-state.svelte.js");
+    const { authDrawerState: fresh } =
+      await import("./auth-drawer-state.svelte");
+    let hostDismissed = false;
+    expect(
+      fresh.offerGuestSaveNudge({
+        message: "Saved on this device.",
+        onDismiss: () => {
+          hostDismissed = true;
+        },
+      })
+    ).toBe(true);
+    const invitation = toasts.toastQueue[0];
+
+    toasts.removeToast(invitation!.id, "dismissed");
+
+    expect(hostDismissed).toBe(true);
+    fresh.show("signup", "save-limit");
+    expect(fresh.open).toBe(false);
+    expect(toasts.toastQueue.map((toast) => toast.message)).toEqual([
+      SAVE_LIMIT_TEXT,
+    ]);
+    fresh.clearGateCooldown();
+    toasts.clearToasts();
+  });
+
+  it("clears the quiet day on sign-in", () => {
+    dismissGateSheet();
+
+    authDrawerState.clearGateCooldown();
+
+    expect(localStorage.getItem("tka-auth-gate-dismissed-at")).toBeNull();
+    askToSaveMore();
+    expect(authDrawerState.open).toBe(true);
   });
 });

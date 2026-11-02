@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * The save path's lifecycle event belongs to the account that made the save.
  *

@@ -18,6 +18,8 @@ import {
 } from "#lib/shared/3d/domain/viewer-formation-facing.js";
 
 import {
+  HOSTED_CAST_OPENING_AZIMUTH_RAD,
+  rotateEyeAboutTarget,
   computeViewerAlignedCamera,
   joinedPerformerExtent,
   levelJoinedViewerOpeningShot,
@@ -241,5 +243,19 @@ describe("viewer camera framing", () => {
         timestamp: 1,
       })
     ).toBe(false);
+  });
+});
+
+describe("hosted cast opening turn", () => {
+  it("swings the eye around the target at the same distance", () => {
+    const target = { x: 0.5, z: -0.8 };
+    const eye = { x: 0.5, z: 6 };
+    const turned = rotateEyeAboutTarget(eye, target, HOSTED_CAST_OPENING_AZIMUTH_RAD);
+    expect(Math.hypot(turned.x - target.x, turned.z - target.z)).toBeCloseTo(
+      Math.hypot(eye.x - target.x, eye.z - target.z)
+    );
+    expect(
+      Math.atan2(turned.x - target.x, turned.z - target.z)
+    ).toBeCloseTo(HOSTED_CAST_OPENING_AZIMUTH_RAD);
   });
 });

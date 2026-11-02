@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PostFootageVault } from "@austencloud/video-editor";
 import type { PostTake } from "@austencloud/video-editor/core";

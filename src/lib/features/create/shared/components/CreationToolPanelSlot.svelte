@@ -148,6 +148,14 @@
     return () => cancelIdleCallback(handle);
   });
   const isStepEditorView = $derived(wantsStepEditorView && stepEditorLoaded);
+  // Selecting a step while Sequence Actions is open closes the drawer, and
+  // the drawer slides off this very panel. The usual swap (tools fade out,
+  // then the editor fades in) left the tools and then an empty panel showing
+  // under the leaving drawer. Here the tools vanish at once and the editor
+  // arrives on a short crossfade, so the drawer slides away to reveal it.
+  const arrivesUnderDrawer = $derived(
+    isStepEditorView && panelState.stepEditorReplacedActions
+  );
 
   const isOverlayView = $derived(isSaveView || isStepEditorView);
   const toolStageKey = $derived(
@@ -392,6 +400,7 @@
     class="tool-stage tools-layer"
     class:is-idle={showGeneratePanel}
     class:covered={isOverlayView}
+    class:under-drawer={arrivesUnderDrawer}
     aria-hidden={isOverlayView}
     inert={isOverlayView}
   >
@@ -488,7 +497,12 @@
        start placement picker and the option picker do: the leaving one fades
        out, then the arriving one fades in, both pinned to the same box. -->
   <div class="tool-stage" class:is-idle={!isOverlayView}>
-    <Crossfade key={toolStageKey} duration={DURATION.normal} mode="swap" fill>
+    <Crossfade
+      key={toolStageKey}
+      duration={arrivesUnderDrawer ? DURATION.fast : DURATION.normal}
+      mode={arrivesUnderDrawer ? "crossfade" : "swap"}
+      fill
+    >
       {#if isSaveView}
         <div class="creation-tool-content" data-active-tab="save">
           <div class="sub-tab-content" data-tab="save">
@@ -572,6 +586,13 @@
     transition:
       opacity var(--duration-normal) var(--ease-standard),
       visibility 0s linear var(--duration-normal);
+  }
+
+  /* Covered by the editor that replaced the Sequence Actions drawer: the
+     drawer still hides this layer on the first frame, so it drops out at
+     once rather than fading in view as the drawer slides off. */
+  .tools-layer.covered.under-drawer {
+    transition: none;
   }
 
   @media (prefers-reduced-motion: reduce) {

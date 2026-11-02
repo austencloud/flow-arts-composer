@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * The invitation family and the savor beat
  * (spec: 2026-08-05-ghost-presence-design.md).

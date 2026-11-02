@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -5,7 +6,7 @@ import { TrailMode } from "#lib/shared/animation-engine/domain/types/trail-types
 import {
   HERO_TIP_EFFECT_MAP,
   HERO_TRAIL_PRESET,
-} from "#lib/shared/landing/data/hero-trail-preset.js";
+} from "@tka/shape-engine/services/hero-trail-preset.js";
 
 const ghostHarness = vi.hoisted(() => ({
   paused: false,

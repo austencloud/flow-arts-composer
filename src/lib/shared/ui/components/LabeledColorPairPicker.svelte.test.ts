@@ -267,6 +267,41 @@ describe("LabeledColorPairPicker", () => {
     ]);
   });
 
+  it("names a preset under its tile and calls anything else Custom", async () => {
+    const preset = COLOR_PRESETS[12]!;
+    const { screen } = renderPicker({
+      left: preset.hex,
+      right: "#123456",
+      valueLabel: "name",
+    });
+    const values = [
+      ...screen.container.querySelectorAll<HTMLElement>(".color-value"),
+    ].map((value) => value.textContent?.trim());
+    expect(values).toEqual([preset.name, "Custom"]);
+    await expect
+      .element(
+        page.getByRole("button", { name: `Edit Left prop, ${preset.name}` })
+      )
+      .toBeVisible();
+  });
+
+  it("lets a host's given name win over the preset lookup", async () => {
+    const preset = COLOR_PRESETS[12]!;
+    const { screen } = renderPicker({
+      left: preset.hex,
+      right: "#123456",
+      valueLabel: "name",
+      valueNames: { left: "Default", right: "Default" },
+    });
+    const values = [
+      ...screen.container.querySelectorAll<HTMLElement>(".color-value"),
+    ].map((value) => value.textContent?.trim());
+    expect(values).toEqual(["Default", "Default"]);
+    await expect
+      .element(page.getByRole("button", { name: "Edit Right prop, Default" }))
+      .toBeVisible();
+  });
+
   it("has no axe violations with the editor open", async () => {
     renderPicker();
     await openLeft();

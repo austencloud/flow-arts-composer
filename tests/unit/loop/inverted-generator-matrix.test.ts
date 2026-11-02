@@ -94,8 +94,13 @@ function refusesQuarter(
   );
 }
 
+// The same-seed comparison below needs a seed whose rotated_swapped_inverted
+// build keeps a pro or anti shift to invert. That is luck of the draw, not a
+// property of the generator: 123456789 lost it when level 3 started adding a
+// guaranteed half turn (which draws from the same stream), and 987654321
+// never had it. 42 has it with and without that change.
 function seedRandom(): void {
-  let seed = 123456789;
+  let seed = 42;
   vi.spyOn(Math, "random").mockImplementation(() => {
     seed = (1664525 * seed + 1013904223) >>> 0;
     return seed / 0x100000000;

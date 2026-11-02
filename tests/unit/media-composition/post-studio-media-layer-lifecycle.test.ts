@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { flushSync } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mountPlaybackMediaLayer } from "./post-studio-media-layer-harness.svelte";

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Recording lifecycle integrity.
  *

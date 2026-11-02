@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * The silent failures here: Favorites sliding below a user collection, the
  * creation-time `sortOrder` leaking back in so new collections sink, and a

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * AnimatorCanvas hosts decorative previews as well as full players. Two
  * options keep a preview cheap and quiet: trailOverlay={false} reaches the

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createStartEndOptionsState } from "#lib/features/create/generate/state/start-end-options-state.svelte.js";
 import {

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect, beforeEach } from "vitest";
 import { RenderContextRegistry } from "#lib/shared/animation-engine/services/render-context-registry.js";
 

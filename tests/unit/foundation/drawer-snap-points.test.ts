@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, expect, it, vi } from "vitest";
 import { SnapPoints } from "#lib/shared/foundation/ui/drawer/snap-points.js";
 import { SwipeToDismiss } from "#lib/shared/foundation/ui/drawer/swipe-to-dismiss.js";

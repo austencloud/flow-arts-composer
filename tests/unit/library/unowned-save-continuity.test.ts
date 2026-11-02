@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * A save made with NO identity must still end up owned by the guest who made it.
  *

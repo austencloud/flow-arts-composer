@@ -7,7 +7,6 @@
 import { describe, expect, it } from "vitest";
 import {
   AUTH_NUDGE_TEXTS,
-  createMethodNudgeTrigger,
   getAuthPromptContent,
   moduleNudgeTrigger,
   type AuthNudgeTrigger,
@@ -40,9 +39,6 @@ describe("AUTH_NUDGE_TEXTS — one phrasing for the account ask", () => {
         "export",
         "guest-first-save",
         "loop-locked-guest",
-        "method:assemble",
-        "method:fuse",
-        "method:tunnel",
         "module:learn",
         "module:library",
         "module:other",
@@ -79,12 +75,29 @@ describe("AUTH_NUDGE_TEXTS — one phrasing for the account ask", () => {
     }
   });
 
-  it("every entry uses the canonical 'create a free account' ask (case-insensitive)", () => {
+  // 2026-10-31: the ask leads with what the person gets and says what it
+  // costs, never "Create a free account to ..." as a toll.
+  it("every entry leads with the benefit and names the cost", () => {
     for (const [trigger, text] of entries) {
-      expect(
-        text.toLowerCase(),
-        `${trigger} missing canonical ask phrase`
-      ).toContain("create a free account");
+      expect(text, `${trigger} opens with the account ask`).not.toMatch(
+        /^(Create|Sign in|Log in)/
+      );
+      expect(text, `${trigger} does not name the cost`).toContain(
+        "Free, about ten seconds."
+      );
+    }
+  });
+
+  it("keeps each sentence short and plain", () => {
+    for (const [trigger, text] of entries) {
+      expect(text, `${trigger} uses an exclamation mark`).not.toContain("!");
+      expect(text, `${trigger} uses a semicolon`).not.toContain(";");
+      for (const sentence of text.split(/(?<=\.)\s+/)) {
+        expect(
+          sentence.split(/\s+/).length,
+          `${trigger}: "${sentence}" runs long`
+        ).toBeLessThan(20);
+      }
     }
   });
 
@@ -104,7 +117,7 @@ describe("AUTH_NUDGE_TEXTS — one phrasing for the account ask", () => {
     // (Mirrored, Inverted, ...), so opening with a definition of rotated
     // LOOPs reads as a non sequitur. The nudge opens with the account ask;
     // what "rotated" means belongs to the guide, not this modal.
-    expect(text.startsWith("Create a free account")).toBe(true);
+    expect(text.startsWith("Use every LOOP type")).toBe(true);
     expect(text).not.toContain("sequences that");
     // Rotated LOOPs may appear only as the what-stays-free note, degree-free.
     expect(text).not.toContain("180°");
@@ -129,11 +142,11 @@ describe("contextual auth prompt copy", () => {
   it("keeps the approved share and account-action prompts", () => {
     expect(getAuthPromptContent("share-sequence", "signup")).toMatchObject({
       title: "Share this sequence",
-      body: "Sign in or create an account to send it, make a link, or download a Choreo Card.",
+      body: "Send sequences, make links, and share Choreo Cards with an account. Free, about ten seconds.",
     });
     expect(getAuthPromptContent("guest-first-save", "signup")).toMatchObject({
       title: "Open this sequence anywhere",
-      body: "A free account keeps it in your library and opens it on any device.",
+      body: "Keep this sequence in your library and open it on any device. Free, about ten seconds.",
     });
   });
 
@@ -153,15 +166,15 @@ describe("contextual auth prompt copy", () => {
   it("names the action that opened each sequence or cross-device prompt", () => {
     expect(getAuthPromptContent("extend-sequence", "signup")).toMatchObject({
       title: "Extend this sequence",
-      body: "Create a free account to extend this sequence with a LOOP.",
+      body: "Extend this sequence with a LOOP once you have an account. Free, about ten seconds.",
     });
     expect(getAuthPromptContent("sync-library", "signup")).toMatchObject({
       title: "Open your library on any device",
-      body: "A free account keeps saved sequences and collections across devices.",
+      body: "Your saved sequences and collections, on every phone and laptop. Free, about ten seconds.",
     });
     expect(getAuthPromptContent("community-map", "signin")).toMatchObject({
       title: "Add your city to the map",
-      body: "Sign in or create a free account to add your city to the map.",
+      body: "Add your city to the community map with an account. Free, about ten seconds.",
     });
   });
 
@@ -196,28 +209,5 @@ describe("module gate prompt", () => {
       expect(trigger).toBe("module:other");
       expect(AUTH_NUDGE_TEXTS[trigger]).not.toContain("saved sequences");
     }
-  });
-});
-
-describe("Create method gate prompt", () => {
-  // A guest who taps a locked method on the Create front door should hear
-  // what that method does, not a generic "open this part of the app".
-  it("names the method the guest tapped", () => {
-    expect(createMethodNudgeTrigger("fuse")).toBe("method:fuse");
-    expect(createMethodNudgeTrigger("tunnel")).toBe("method:tunnel");
-    expect(createMethodNudgeTrigger("assemble")).toBe("method:assemble");
-    expect(getAuthPromptContent("method:fuse", "signup").title).toContain(
-      "Fuse"
-    );
-    expect(getAuthPromptContent("method:tunnel", "signup").title).toContain(
-      "Tunnel"
-    );
-    expect(getAuthPromptContent("method:assemble", "signup").title).toContain(
-      "Assemble"
-    );
-  });
-
-  it("falls back to the neutral ask for a method without its own copy", () => {
-    expect(createMethodNudgeTrigger("construct")).toBe("module:other");
   });
 });

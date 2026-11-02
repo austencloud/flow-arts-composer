@@ -20,7 +20,7 @@ import {
   MODE_LABEL,
   MODE_ORDER,
   type VtgMode,
-} from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
+} from "@tka/shape-domain";
 import {
   TND_BY_FAMILY,
   type TnDElement,

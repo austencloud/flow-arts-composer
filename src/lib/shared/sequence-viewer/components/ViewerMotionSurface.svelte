@@ -39,6 +39,12 @@
     TUNNEL_REVEAL_DURATION,
   } from "../tunnel/tunnel-layer-reveal";
   import type { AdditionalLayerTextureStatus } from "#lib/shared/animation-engine/services/animation-engine.svelte.js";
+  import {
+    applyTunnelCastToViewer,
+    buildTunnelCast3D,
+    tunnelCastPerformerSteps,
+  } from "../tunnel/tunnel-cast-3d";
+  import { untrack } from "svelte";
 
   let {
     side,
@@ -141,6 +147,39 @@
   }
   const loadViewer3DCanvas = () =>
     with3DState(import("#lib/shared/3d/components/Viewer3DCanvas.svelte"));
+
+  // A cast page's 3D view stages the whole cast: each performer of the 2D
+  // tunnel, dancing that layer's sequence on that layer's clock, in that
+  // layer's colors. A plain sequence page leaves the 3D stage to the viewer.
+  const tunnelCast3D = $derived(
+    tunnelController.isCast && tunnelController.layersReady
+      ? buildTunnelCast3D(
+          tunnelController.notationLayers,
+          tunnelController.speedPerformers,
+          (layer) => tunnelController.samplingTimingForLayer(layer)
+        )
+      : null
+  );
+  const castPerformerSteps = $derived(
+    tunnelCast3D
+      ? tunnelCastPerformerSteps(tunnelCast3D, playback.currentStep)
+      : null
+  );
+  const castPropColors = $derived(
+    tunnelCast3D?.map((performer) => performer.colors) ?? null
+  );
+  $effect(() => {
+    const state = viewer3D?.current;
+    const cast = tunnelCast3D;
+    if (!state || !cast || state.renderMode !== "3d") return;
+    // Entering 3D seeds empty rigs with the opened sequence, and the stage
+    // axis turns with the environment; both send the cast back to its places.
+    for (const rig of state.performerManager.performers) void rig.sourceSequence;
+    void state.environmentId;
+    untrack(() => {
+      if (applyTunnelCastToViewer(state, cast)) state.requestOpeningShot();
+    });
+  });
 
   // One loading bar from the moment 3D is asked for: the placeholder below
   // shows it while the 3D code downloads, and the scene's curtain carries it
@@ -597,6 +636,8 @@
             sequenceData: playback.animationState.sequenceData,
             currentStep: playback.currentStep,
             isPlaying: playback.isPlaying,
+            performerSteps: castPerformerSteps,
+            performerPropColors: castPropColors,
             bpm,
             onBpmChange,
             leftPropType:

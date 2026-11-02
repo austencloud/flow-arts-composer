@@ -17,7 +17,7 @@
  * and checks it against the transcription. The chart codes stay here as ids;
  * the pages never show them.
  */
-import { ratioLabel } from "#lib/shared/shape-matrix/domain/flower-signature.js";
+import { ratioLabel } from "@tka/shape-domain";
 import { deriveTnDFromPictograph } from "#lib/shared/pictograph/shared/domain/utils/tnd-deriver.js";
 import {
   TND_ELEMENTS,
@@ -41,7 +41,7 @@ import { getGridPlacementFromLocations } from "#lib/shared/pictograph/grid/servi
 import {
   derivePropRelationshipForStep,
   type PropRelationship,
-} from "#lib/shared/shape-matrix/domain/prop-relationship.js";
+} from "@tka/shape-domain";
 import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import type { TurnValue } from "#lib/shared/create/services/level-turn-values.js";
 import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";

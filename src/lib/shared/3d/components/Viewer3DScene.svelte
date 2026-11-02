@@ -88,6 +88,8 @@
   import { resolveGridJoin3D } from "../services/grid-join-3d";
   import { getAvatarSequenceCollisionAudit } from "../collision/avatar-sequence-collision-audit";
   import { getAvatarGripMotionAudit } from "../diagnostics/avatar-grip-motion-audit";
+  import PerformerPropTint from "./PerformerPropTint.svelte";
+  import type { PerformerPropColors } from "../rendering/performer-prop-tint";
   import {
     resolveViewerBaseLighting,
     VIEWER_KEY_LIGHT_POSITION,
@@ -144,6 +146,12 @@
      * shared clock, so a partially-driven cast still animates.
      */
     performerSteps?: readonly (number | null | undefined)[] | null;
+    /**
+     * Per-performer prop colors, for a cast whose performers each wear their
+     * own pair (the tunnel page's 3D stage). Missing entries keep the shared
+     * hand colors.
+     */
+    performerPropColors?: readonly (PerformerPropColors | null | undefined)[] | null;
     /**
      * Host world geometry rendered in the performer coordinate frame — the
      * same space `performer.position` is expressed in, so floor paths and
@@ -206,6 +214,7 @@
     effectQualityTier,
     performerStepOffsets = [],
     performerSteps = null,
+    performerPropColors = null,
     worldChildren,
     visiblePerformerCount,
     stageBoundsPositions = null,
@@ -1081,6 +1090,9 @@
                 {/if}
               {/snippet}
             </PerformerRig>
+            {#if performerPropColors?.[i]}
+              <PerformerPropTint colors={performerPropColors[i] ?? null} />
+            {/if}
           {/snippet}
         </CharacterSwapTransition>
       </PerformerVisualPickTarget>

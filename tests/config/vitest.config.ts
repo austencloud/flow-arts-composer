@@ -15,7 +15,9 @@ export default defineConfig({
   plugins: [sveltekit(svelteOptions), ...workspaceResolvePlugins(projectRoot)],
 
   test: {
-    environment: "jsdom",
+    // No DOM by default; see tests/setup/node-client-environment.ts. A file
+    // that needs one starts with `// @vitest-environment jsdom`.
+    environment: "./tests/setup/node-client-environment.ts",
     globals: true,
 
     setupFiles: ["./tests/setup/vitest-setup.ts"],
@@ -31,6 +33,8 @@ export default defineConfig({
       "tests/integration/**/*.{test,spec}.{js,ts}",
       "tests/migration/**/*.{test,spec}.{js,ts}",
       "src/**/*.{test,spec}.{js,ts}",
+      "packages/shape-domain/src/**/*.{test,spec}.{js,ts}",
+      "packages/shape-engine/src/**/*.{test,spec}.{js,ts}",
     ],
     exclude: [
       "legacy_app/**/*",
@@ -93,6 +97,16 @@ export default defineConfig({
         projectRoot,
         "packages/render-composition/src/index.ts"
       ),
+      // The Shape Engine packages have no node_modules link at all in a
+      // worktree until the primary installs them; same fix as above.
+      "@tka/shape-domain": path.resolve(
+        projectRoot,
+        "packages/shape-domain/src/index.ts"
+      ),
+      "@tka/shape-engine": path.resolve(
+        projectRoot,
+        "packages/shape-engine/src"
+      ),
     },
 
     // Worker pool. `pool: "forks"` is Vitest 4's default; it stays explicit so
@@ -116,6 +130,14 @@ export default defineConfig({
     // instead of leaning on the 30 s default below. To bisect a cross-file
     // leak, pass `--no-file-parallelism` on the command line rather than
     // pinning a single worker here.
+    //
+    // Measured again 2026-11-01 on d2 (12 threads, 2,938 files). With every
+    // file in jsdom the run took 1,101 s of wall time; of the worker time,
+    // environment 5,693 s, import 2,428 s, setup 1,230 s, tests 1,022 s,
+    // transform 217 s. With the node-client default and 480 files opting into
+    // jsdom it took 397 s while two other jobs shared the machine:
+    // environment 569 s, import 1,637 s, tests 830 s, setup 227 s, transform
+    // 189 s.
     pool: "forks",
 
     // The default five-second budget is too short when 2,566 files share the
@@ -126,6 +148,10 @@ export default defineConfig({
     // shared-machine load.
     testTimeout: 30_000,
 
+    // Every file gets a fresh worker. Tried 2026-11-01: a `node` project with
+    // `isolate: false` beside an isolated `dom` project failed 843 of 2,938
+    // files on d2, because module mocks and globals leak between files that
+    // share a worker. Fixing that is a cleanup of its own, so isolation stays.
     isolate: true,
 
     outputFile: {

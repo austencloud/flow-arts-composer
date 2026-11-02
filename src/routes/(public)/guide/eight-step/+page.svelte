@@ -75,11 +75,11 @@
     AnimationVisibilityStateManager,
     getAnimationVisibilityManager,
   } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
-  import type { PropRelationship } from "#lib/shared/shape-matrix/domain/prop-relationship.js";
-  import TurnNotationControls from "#lib/shared/shape-matrix/app/components/TurnNotationControls.svelte";
-  import type { MatrixLabelMode } from "#lib/shared/shape-matrix/domain/matrix-turn-band.js";
-  import { ratioLabel } from "#lib/shared/shape-matrix/domain/flower-signature.js";
-  import { localizedMatrixTurnSpokenLabel } from "#lib/shared/shape-matrix/domain/shape-matrix-display.js";
+  import type { PropRelationship } from "@tka/shape-domain";
+  import TurnNotationControls from "@tka/shape-engine/app/components/TurnNotationControls.svelte";
+  import type { MatrixLabelMode } from "@tka/shape-domain";
+  import { ratioLabel } from "@tka/shape-domain";
+  import { localizedMatrixTurnSpokenLabel } from "@tka/shape-engine/services/shape-matrix-display.js";
   import {
     turnValuesForLevel,
     type TurnValue,

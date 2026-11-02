@@ -3,21 +3,21 @@
   import { onMount } from "svelte";
   import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
   import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
-  import ShapeMatrixGrid from "#lib/shared/shape-matrix/components/ShapeMatrixGrid.svelte";
-  import ShapeMatrixDrill from "#lib/shared/shape-matrix/components/ShapeMatrixDrill.svelte";
+  import ShapeMatrixGrid from "@tka/shape-engine/components/ShapeMatrixGrid.svelte";
+  import ShapeMatrixDrill from "@tka/shape-engine/components/ShapeMatrixDrill.svelte";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
-  import { applyFilter } from "#lib/shared/shape-matrix/domain/filter-flower-axis.js";
-  import { propPairFromLegacy } from "#lib/shared/shape-matrix/domain/prop-pair.js";
+  import { applyFilter } from "@tka/shape-domain";
+  import { propPairFromLegacy } from "@tka/shape-engine/services/prop-pair.js";
   import {
     matrixFiltersForSize,
     type MatrixSize,
-  } from "#lib/shared/shape-matrix/domain/matrix-size-preset.js";
-  import type { Flower } from "#lib/shared/shape-matrix/domain/flower-signature.js";
-  import type { ModeRealization } from "#lib/shared/shape-matrix/services/build-mode-realizations.js";
+  } from "@tka/shape-domain";
+  import type { Flower } from "@tka/shape-domain";
+  import type { ModeRealization } from "@tka/shape-engine/services/build-mode-realizations.js";
   import {
     loadShapeMatrix,
     type ShapeMatrixData,
-  } from "#lib/shared/shape-matrix/services/shape-matrix-flowers.js";
+  } from "@tka/shape-engine/services/shape-matrix-flowers.js";
 
   let {
     targetLabel,
