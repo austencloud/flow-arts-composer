@@ -149,6 +149,9 @@ Features:
   // workspace isn't needed while options are being tuned, and the grid stays
   // in view to show what the settings change.
   const usePopoverTray = $derived(openIntoWorkspace || typeRail);
+  // A rail picker beside the workspace (a phone held sideways) has no room
+  // above it, so its tray opens to the left, over the workspace.
+  const trayBeside = $derived(typeRail && !openIntoWorkspace);
 
   // Only render section content when bounds are ready to prevent size burst
   const boundsReady = $derived(() => {
@@ -538,7 +541,7 @@ Features:
         <Popover.Portal>
           <Popover.Content
             customAnchor={typeRail ? layoutElement : utilityAnchor}
-            side="top"
+            side={trayBeside ? "left" : "top"}
             align="center"
             sideOffset={typeRail ? 4 : 0}
             avoidCollisions={false}
@@ -552,13 +555,16 @@ Features:
                     id={utilityPanelId}
                     class="workspace-utility-panel"
                     class:rail-placement={typeRail}
-                    style:--rail-tray-width={typeRail
+                    class:beside={trayBeside}
+                    style:--rail-tray-width={typeRail && !trayBeside
                       ? `${Math.max(0, layoutWidth - 8)}px`
                       : null}
                     role="region"
                     aria-label={utilityPanelLabel}
                     onkeydown={handleUtilityKeydown}
-                    transition:flyFade={{ y: 8, duration: DURATION.normal }}
+                    transition:flyFade={trayBeside
+                      ? { x: 8, duration: DURATION.normal }
+                      : { y: 8, duration: DURATION.normal }}
                   >
                     {#if typeRail}
                       <!-- Away from its trigger, the tray names itself and
@@ -836,6 +842,12 @@ Features:
     letter-spacing: 0.05em;
     text-transform: uppercase;
     white-space: nowrap;
+  }
+
+  /* 26rem stops short of the app's nav rail on a sideways Fold cover. */
+  .workspace-utility-panel.rail-placement.beside {
+    width: min(26rem, var(--bits-popover-content-available-width, 26rem));
+    max-height: calc(var(--bits-popover-content-available-height, 21rem) - 8px);
   }
 
   .workspace-utility-panel.rail-placement .utility-stage {

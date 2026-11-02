@@ -55,11 +55,32 @@ export function isConstructPhoneTier(params: {
   );
 }
 
-/** The phone tier at a width that gives its letter-type tabs a left rail. */
+/**
+ * A side-by-side picker this short is a phone held sideways (the Fold's
+ * cover screen on its side, often under 360px tall with the browser bar).
+ * A tab row there costs a sixth of the grid's height, so the tabs take the
+ * rail instead.
+ */
+export const CONSTRUCT_SHORT_LANDSCAPE_MAX_HEIGHT = 480;
+
+/**
+ * The phone tier at a width that gives its letter-type tabs a left rail, or
+ * a short side-by-side picker on a phone held sideways.
+ */
 export function isConstructTypeRailTier(params: {
   width: number;
   stacked: boolean;
+  height?: number;
 }): boolean {
+  if (!params.stacked) {
+    const height = params.height ?? 0;
+    return (
+      height > 0 &&
+      height <= CONSTRUCT_SHORT_LANDSCAPE_MAX_HEIGHT &&
+      params.width > 0 &&
+      params.width < CONSTRUCT_PHONE_MAX_WIDTH
+    );
+  }
   return (
     isConstructPhoneTier(params) &&
     params.width >= CONSTRUCT_TYPE_RAIL_MIN_WIDTH

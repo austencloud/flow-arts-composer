@@ -1368,6 +1368,18 @@
     min-height: 0;
   }
 
+  /* A sideways phone leaves the empty stage about 150px. The performer card
+     beside it already says to choose a sequence, so the stage keeps only its
+     icon and title instead of running its message under the button bar. */
+  .short-landscape .frame-wrap.empty :global(.panel-state) {
+    gap: 6px;
+    padding: 8px;
+  }
+
+  .short-landscape .frame-wrap.empty :global(.panel-state__message) {
+    display: none;
+  }
+
   .short-landscape .source-column {
     min-height: 0;
   }

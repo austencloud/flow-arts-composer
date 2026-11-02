@@ -12,6 +12,8 @@ work_state: blocked
 
 # First-session analytics reliability design
 
+**Update (2026-11-01):** The first-visit Construct guide offer was removed. Since Aug 25, 151 live visitors saw it, 7 pressed Start, 14 pressed Not now, and nobody but Austen had finished the guide since mid-August. The guide stays reachable from Settings and the admin toolbar.
+
 **Queue evidence (2026-10-07):** The recorded remainder requires a production release and next real lifecycle event, while this spec's verification contract requires a production Worker smoke event visible in PostHog. Current deployment state has not been established in this audit, so local source verification alone cannot unblock closeout.
 
 **Date:** 2026-08-21  

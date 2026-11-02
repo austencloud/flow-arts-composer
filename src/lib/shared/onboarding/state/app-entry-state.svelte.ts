@@ -3,10 +3,14 @@
  *
  * Manages the post-onboarding experience:
  * - Wizard exit transition after first-run wizard
- * - Create tutorial walkthrough
+ * - Create tutorial walkthrough (the guided build)
  *
  * State machine phases:
  *   "wizard-active" -> "wizard-exiting" -> "create-tutorial" -> "complete"
+ *
+ * Nothing offers the walkthrough on its own: it starts from Settings
+ * ("replay tutorial") or the admin toolbar, both through replay(), or after
+ * the first-run wizard when AUTO_TOURS_ENABLED is on.
  *
  * Returning users start at "complete" (checked via localStorage).
  * Persisted to localStorage + Firebase (same pattern as first-run-state).
@@ -15,18 +19,12 @@
  * so they can never disagree - see the hasCompleted-phase-divergence fix.
  * syncFromCloud() resets to the clean default on a missing doc (mirrors
  * first-run-state.svelte.ts) so a reused device doesn't inherit a prior
- * account's completed flag, and the guided-build offer waits for that first
- * cloud read (cloudSynced) before showing, for a signed-in user.
+ * account's completed flag.
  */
 
+import { AUTO_TOURS_ENABLED } from "../domain/onboarding-flags";
 import {
-  AUTO_TOURS_ENABLED,
-  CREATE_TUTORIAL_ENABLED,
-} from "../domain/onboarding-flags";
-import {
-  logOnboardingTutorialOffered,
   logOnboardingTutorialAccepted,
-  logOnboardingTutorialDeclined,
   logOnboardingTutorialCompleted,
 } from "#lib/shared/analytics/services/onboarding-events.js";
 import {
@@ -37,7 +35,6 @@ import {
 export type AppEntryPhase =
   | "wizard-active"
   | "wizard-exiting"
-  | "tutorial-prompt"
   | "create-tutorial"
   | "complete";
 
@@ -76,7 +73,7 @@ function createAppEntryState() {
   const initialPhase: AppEntryPhase = isOnboarded
     ? "complete"
     : firstRunDone // implies AUTO_TOURS_ENABLED here, since isOnboarded is false
-      ? "tutorial-prompt"
+      ? "create-tutorial"
       : "wizard-active";
 
   const state = $state<AppEntryState>({
@@ -89,28 +86,10 @@ function createAppEntryState() {
   // Duration constants (ms) for the choreography
   const WIZARD_EXIT_DURATION = 400;
 
-  // An offer request that arrived before the first cloud read resolved for a
-  // signed-in user. Replayed once the sync settles (see resolveCloudSync),
-  // instead of showing the prompt immediately and possibly having to yank it
-  // back down the moment the cloud read says this account is already done.
-  let pendingOffer = false;
-
-  /** Flip the sync gate and replay any offer that was waiting on it. */
+  /** Flip the sync gate once the first cloud read has settled. */
   function resolveCloudSync() {
     state.cloudSynced = true;
     state.syncInProgress = false;
-
-    if (
-      pendingOffer &&
-      CREATE_TUTORIAL_ENABLED &&
-      !state.hasCompleted &&
-      state.phase !== "create-tutorial" &&
-      state.phase !== "tutorial-prompt"
-    ) {
-      state.phase = "tutorial-prompt";
-      logOnboardingTutorialOffered({ source: "app_entry" });
-    }
-    pendingOffer = false;
   }
 
   return {
@@ -158,8 +137,8 @@ function createAppEntryState() {
         return;
       }
 
-      // Auto-tours are deactivated: skip the tutorial prompt entirely and
-      // drop the user straight into the app after the first-run wizard.
+      // Auto-tours are deactivated: skip the tutorial entirely and drop the
+      // user straight into the app after the first-run wizard.
       if (!AUTO_TOURS_ENABLED) {
         this.completeEntry("skipped");
         return;
@@ -168,82 +147,16 @@ function createAppEntryState() {
       state.phase = "wizard-exiting";
 
       setTimeout(() => {
-        state.phase = "tutorial-prompt";
-        logOnboardingTutorialOffered({ source: "app_entry" });
+        state.phase = "create-tutorial";
       }, WIZARD_EXIT_DURATION);
     },
 
     /**
-     * Check if the tutorial prompt should be showing.
-     */
-    isTutorialPrompt(): boolean {
-      return state.phase === "tutorial-prompt";
-    },
-
-    /**
-     * Offer the guided build (opt-in) the first time a user lands on an empty
-     * Create. No-op if already completed, already mid-tutorial/prompt, or the
-     * flag is off. Declining (declineTutorial) marks entry complete, so it
-     * never re-pops across reloads.
-     *
-     * For a signed-in user whose cloud state hasn't been read back yet, the
-     * offer is deferred until that read resolves (see resolveCloudSync) so a
-     * returning user who already completed onboarding elsewhere doesn't see
-     * the prompt flash on and immediately get yanked back down. A session
-     * with no Firebase user at all (a guest who hasn't triggered anonymous
-     * sign-in yet) has no cloud doc to wait for - local state governs.
-     */
-    async offerCreateTutorial() {
-      if (!CREATE_TUTORIAL_ENABLED) return;
-      if (state.hasCompleted) return;
-      if (
-        state.phase === "create-tutorial" ||
-        state.phase === "tutorial-prompt"
-      ) {
-        return;
-      }
-
-      if (isBrowser) {
-        try {
-          const { authState } =
-            await import("#lib/shared/auth/state/auth-state.svelte.js");
-          if (authState.user && !state.cloudSynced) {
-            pendingOffer = true;
-            return;
-          }
-        } catch {
-          // Auth module unavailable - fall through and offer from local state.
-        }
-      }
-
-      state.phase = "tutorial-prompt";
-      logOnboardingTutorialOffered({ source: "app_entry" });
-    },
-
-    /**
-     * User accepted the tutorial prompt - show the full walkthrough.
-     */
-    acceptTutorial() {
-      state.phase = "create-tutorial";
-      logOnboardingTutorialAccepted({ source: "app_entry" });
-    },
-
-    /**
-     * User declined the tutorial prompt - skip to main app.
-     */
-    declineTutorial() {
-      logOnboardingTutorialDeclined({ source: "app_entry" });
-      this.completeEntry("declined");
-    },
-
-    /**
      * Called when create tutorial completes (all steps done or skipped).
-     * `reason` distinguishes a genuine finish from a decline/mid-wizard skip
-     * so onboarding_tutorial_completed only fires for an actual completion -
-     * declineTutorial fires its own declined event instead of double-firing
-     * "completed" through this shared terminal transition.
+     * `reason` distinguishes a genuine finish from a mid-wizard skip so
+     * onboarding_tutorial_completed only fires for an actual completion.
      */
-    completeEntry(reason: "completed" | "declined" | "skipped" = "completed") {
+    completeEntry(reason: "completed" | "skipped" = "completed") {
       state.phase = "complete";
       state.hasCompleted = true;
 
@@ -276,7 +189,7 @@ function createAppEntryState() {
       logOnboardingTutorialAccepted({ source: "manual" });
 
       setTimeout(() => {
-        // Skip the prompt when replaying from Settings - user already opted in
+        // Replaying is the opt-in, so go straight to the walkthrough.
         state.phase = "create-tutorial";
       }, 100); // Brief delay for DOM reset
     },
@@ -304,7 +217,7 @@ function createAppEntryState() {
     /**
      * Mark cloud sync as complete without a read (used when the sync path
      * fails externally, e.g. the dynamic import chain itself throws), so the
-     * offer isn't stuck deferred forever.
+     * sync gate isn't left closed forever.
      */
     markCloudSyncComplete() {
       resolveCloudSync();
@@ -365,7 +278,7 @@ function createAppEntryState() {
      * Sync entry status TO Firebase.
      */
     async syncToCloud(
-      reason: "completed" | "declined" | "skipped" = "completed"
+      reason: "completed" | "skipped" = "completed"
     ): Promise<void> {
       if (!isBrowser) return;
 

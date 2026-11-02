@@ -44,6 +44,16 @@ export default defineConfig({
   resolve: {
     conditions: ["browser"],
     alias: {
+      // The Shape Engine packages are alias-only (not root dependencies):
+      // see tests/config/vitest.config.ts.
+      "@tka/shape-domain": path.resolve(
+        projectRoot,
+        "packages/shape-domain/src/index.ts"
+      ),
+      "@tka/shape-engine": path.resolve(
+        projectRoot,
+        "packages/shape-engine/src"
+      ),
       $shared: path.resolve(projectRoot, "src/lib/shared"),
       // browser:true stub — the render pipeline's singletons gate on it, and
       // this project genuinely runs in Chromium (unlike the shared stub's false).

@@ -379,11 +379,13 @@ Uses organizer and sizer services for section grouping and sizing.
       stacked: isMobileStackedLayout(),
     })
   );
-  // A phone-tier picker this wide and short (the unfolded Fold) stands its
-  // tabs in a left rail and keeps the height for the grid.
+  // A phone-tier picker this wide and short (the unfolded Fold), or a short
+  // side-by-side picker on a phone held sideways, stands its tabs in a left
+  // rail and keeps the height for the grid.
   const isTypeRailTier = $derived(
     isConstructTypeRailTier({
       width: containerWidth,
+      height: containerHeight,
       stacked: isMobileStackedLayout(),
     })
   );
@@ -792,7 +794,7 @@ Uses organizer and sizer services for section grouping and sizing.
              grid instead of from a parallel fudge-factor formula. -->
         <div class="swipe-container">
           <HorizontalSwipeContainer
-            showArrows={!isPhoneTier}
+            showArrows={!isPhoneTier && !isTypeRailTier}
             showIndicators={false}
             height="100%"
             width="100%"
@@ -825,7 +827,7 @@ Uses organizer and sizer services for section grouping and sizing.
             settingsEnabled={useDisclosedCompactControls}
             settingsHasTurnRows={turnControlsEditable && level > 1}
             openIntoWorkspace={isMobileStackedLayout()}
-            phoneTier={isPhoneTier}
+            phoneTier={isPhoneTier || isTypeRailTier}
             typeRail={isTypeRailTier}
           >
             {#snippet settingsContent()}

@@ -23,18 +23,8 @@
   > = {
     arrival: {
       title: "The workspace gets the first second.",
-      body: "Construct is already open. A small guide offer sits inside the workspace, but nothing covers the app or traps focus.",
-      note: "The start choices remain usable underneath it.",
-    },
-    guide: {
-      title: "The guide starts only when asked.",
-      body: "Choosing Show guide begins the existing Construct lesson. The lesson is now the result of a decision, not the price of entering the app.",
-      note: "Leaving the guide returns to the same unfinished workspace.",
-    },
-    workspace: {
-      title: "Not now ends the interruption.",
-      body: "The offer folds back into the normal start-placement heading. No replacement prompt appears and no setup task is marked complete.",
-      note: "The guide stays available from its replay control later.",
+      body: "Construct is already open on an empty workspace. Nothing covers the app, traps focus or offers a tour.",
+      note: "The guide stays available from Settings for anyone who wants it.",
     },
     compose: {
       title: "The app waits for intent.",
@@ -59,10 +49,6 @@
   const primaryLabel = $derived.by(() => {
     switch (simulation.scene) {
       case "arrival":
-        return "Not now";
-      case "guide":
-        return "Leave guide";
-      case "workspace":
         return "Choose a start";
       case "compose":
         return "Add first move";
@@ -179,10 +165,10 @@
     <aside class="story-card" aria-live="polite">
       <div class="story-progress-row">
         <span class="step-count">
-          Step {simulation.currentStep} of 5
+          Step {simulation.currentStep} of 4
         </span>
         <ol class="step-track" aria-label="Walkthrough progress">
-          {#each [1, 2, 3, 4, 5] as step}
+          {#each [1, 2, 3, 4] as step}
             <li
               class:complete={step < simulation.currentStep}
               class:current={step === simulation.currentStep}
@@ -347,7 +333,7 @@
 
   .step-track {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 0.35rem;
     margin: 0;
     padding: 0;

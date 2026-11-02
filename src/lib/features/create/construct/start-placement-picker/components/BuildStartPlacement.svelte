@@ -378,6 +378,36 @@
     }
   }
 
+  /* A sideways Fold cover with the browser bar showing leaves under 300px,
+     too short for four controls in one column. The prop dials take one
+     column and the grid and apply button the next, beside the grid. */
+  @container placement-builder (min-width: 600px) and (max-height: 300px) {
+    .builder-layout {
+      width: min(100%, calc(100cqh + 32rem), 60rem);
+      padding: 8px;
+      gap: 12px;
+    }
+    .builder-controls {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-rows: auto auto;
+      align-content: center;
+      align-items: end;
+      width: 30rem;
+      gap: 10px 12px;
+    }
+    .orientation-controls {
+      grid-column: 1;
+      grid-row: 1 / span 2;
+      align-self: center;
+      gap: 6px;
+    }
+    .grid-mode-control,
+    .apply-control,
+    .apply-control.full-width {
+      grid-column: 2;
+    }
+  }
   @container placement-builder (min-width: 1000px) and (min-height: 560px) {
     .builder-layout {
       width: min(100%, calc(100cqh + 24rem), 110rem);

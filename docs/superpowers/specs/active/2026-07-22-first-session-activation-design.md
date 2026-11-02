@@ -11,6 +11,8 @@ work_state: unverified
 ---
 # First-Session Activation — Design
 
+**Update (2026-11-01):** The first-visit Construct guide offer was removed. Since Aug 25, 151 live visitors saw it, 7 pressed Start, 14 pressed Not now, and nobody but Austen had finished the guide since mid-August. The guide stays reachable from Settings and the admin toolbar.
+
 **Queue evidence (2026-10-07):** SP1-SP3 are substantially built; retro-login guard and three ledger items remain. See frontmatter for the remaining work.
 
 > **DRIFT WARNING — 2026-08-02.** Says "awaiting re-review"; SP1/SP2/SP3 substantially built and tested. Remaining: retro-login anonymous guard; 3 SP3 ledger items unverified

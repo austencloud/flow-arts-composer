@@ -11,7 +11,7 @@ Controls moved below the grid for better UX
   import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import type { GridJoin } from "@tka/tka-types";
   import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
-  import { onDestroy, onMount, type Snippet } from "svelte";
+  import { onDestroy, onMount } from "svelte";
   import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import {
@@ -32,9 +32,6 @@ Controls moved below the grid for better UX
     type StartPlacementPath,
   } from "../../services/construct-analytics";
   import { morphStartPlacementIntoWorkspace } from "../services/start-placement-morph";
-
-  // The caller can replace this picker's heading with an inline guide offer.
-  // Preview and tutorial embeds keep their existing heading ownership.
 
   // Local storage key for persisting picker preferences
   const STORAGE_KEY = "tka-start-placement-picker-prefs";
@@ -61,7 +58,6 @@ Controls moved below the grid for better UX
     rememberPreferences = true,
     validationMessage = null,
     onPlacementSubmitted = () => {},
-    heading,
     suppressHeading = false,
     morphIntoWorkspace = false,
   } = $props<{
@@ -92,7 +88,6 @@ Controls moved below the grid for better UX
       placement: PictographData,
       path: StartPlacementPath
     ) => void;
-    heading?: Snippet;
     /** The active Construct guide owns this instruction band. Keep the wrapper
      *  mounted so its height can collapse on the same clock as the guide. */
     suppressHeading?: boolean;
@@ -397,6 +392,7 @@ Controls moved below the grid for better UX
   bind:this={pickerElement}
   class="start-placement-picker"
   class:headerless={embedded && lockedPath !== undefined}
+  class:with-footer={!embedded && activePath === "presets"}
   data-testid="start-placement-picker"
   onclickcapture={noteActivation}
   onkeydowncapture={noteActivation}
@@ -412,13 +408,9 @@ Controls moved below the grid for better UX
           >
             {#if !suppressHeading}
               <div class="workspace-heading">
-                {#if heading}
-                  {@render heading()}
-                {:else}
-                  <p class="workspace-hint">
-                    {t("create_ui_choose_your_start_placement")}
-                  </p>
-                {/if}
+                <p class="workspace-hint">
+                  {t("create_ui_choose_your_start_placement")}
+                </p>
               </div>
             {/if}
           </Crossfade>
@@ -844,6 +836,105 @@ Controls moved below the grid for better UX
     }
   }
 
+  /* A phone held sideways (the Fold's cover screen on its side, often under
+     360px tall) has width to spare and no height. The title or guide offer
+     takes the top left and the Presets/Build switch the top right, in the
+     same place on both paths. Presets fill the left below, and the
+     orientation and view controls stack in a column under the switch. */
+  @media (max-height: 480px) and (min-width: 700px) and (orientation: landscape) {
+    .start-placement-picker {
+      --short-side-column: minmax(13rem, 18rem);
+    }
+
+    .picker-header {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) var(--short-side-column);
+      align-items: center;
+      gap: 4px;
+      padding: 6px 12px 0 0;
+    }
+
+    .start-placement-picker .workspace-heading {
+      min-height: 0;
+      align-items: center;
+      padding: 0 0 0 var(--picker-leading-action-offset, 0px);
+    }
+
+    .start-placement-picker :global(.workspace-hint) {
+      font-size: var(--font-size-lg, 1.125rem);
+    }
+
+    .start-placement-picker .path-selector {
+      width: 100%;
+      margin: 0;
+    }
+
+    .start-placement-picker.with-footer {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) var(--short-side-column);
+      grid-template-rows: auto auto minmax(0, 1fr);
+      grid-template-areas:
+        "heading path"
+        "message footer"
+        "view footer";
+      align-items: center;
+      column-gap: 4px;
+      padding: 6px 12px 0 0;
+    }
+
+    .with-footer .validation-message,
+    .with-footer .picker-view {
+      align-self: stretch;
+    }
+
+    .with-footer .picker-header {
+      display: contents;
+    }
+
+    .with-footer .heading-region {
+      grid-area: heading;
+    }
+
+    .with-footer .path-selector {
+      grid-area: path;
+      width: auto;
+    }
+
+    .with-footer .validation-message {
+      grid-area: message;
+    }
+
+    .with-footer .picker-view {
+      grid-area: view;
+    }
+
+    .with-footer .controls-footer {
+      grid-area: footer;
+      align-self: stretch;
+      flex-direction: column;
+      flex-wrap: nowrap;
+      justify-content: center;
+      gap: 8px;
+      max-width: none;
+      margin: 0;
+      padding: 6px 0 8px;
+      box-sizing: border-box;
+    }
+
+    .with-footer .orientation-controls,
+    .with-footer .mode-controls {
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .with-footer .orientation-controls :global(.orientation-cycler),
+    .with-footer .mode-controls :global(.grid-mode-toggle),
+    .with-footer .control-button {
+      flex: 0 0 auto;
+      min-height: 44px;
+    }
+  }
+
   @media (min-width: 1100px) and (min-height: 700px) {
     .start-placement-picker {
       max-width: none;
@@ -894,6 +985,20 @@ Controls moved below the grid for better UX
       border-top: 1px solid var(--theme-stroke);
       padding-top: 16px;
       box-sizing: border-box;
+    }
+  }
+
+  /* Large-display sizes the Construct tab heading already had when the
+     removed guide offer component rendered it. */
+  @media (min-width: 1680px) {
+    .start-placement-picker :global(.workspace-hint) {
+      font-size: clamp(2rem, 2.2vw, 3rem);
+    }
+  }
+
+  @media (min-width: 2600px) {
+    .start-placement-picker :global(.workspace-hint) {
+      font-size: clamp(3rem, 2vw, 4.25rem);
     }
   }
 </style>

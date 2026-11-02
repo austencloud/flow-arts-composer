@@ -27,6 +27,16 @@ export default defineConfig({
     // `$app/env/public` would throw at collection time and the whole file would
     // report 0 tests.
     alias: {
+      // The Shape Engine packages are alias-only (not root dependencies):
+      // see tests/config/vitest.config.ts.
+      "@tka/shape-domain": path.resolve(
+        projectRoot,
+        "packages/shape-domain/src/index.ts"
+      ),
+      "@tka/shape-engine": path.resolve(
+        projectRoot,
+        "packages/shape-engine/src"
+      ),
       $shared: path.resolve(projectRoot, "src/lib/shared"),
       // Listed before `$app/env`, which would otherwise match these as a prefix.
       "$app/env/public": path.resolve(

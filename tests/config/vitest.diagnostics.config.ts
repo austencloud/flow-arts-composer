@@ -31,6 +31,16 @@ export default defineConfig({
     exclude: ["**/node_modules/**/*"],
 
     alias: {
+      // The Shape Engine packages are alias-only (not root dependencies):
+      // see tests/config/vitest.config.ts.
+      "@tka/shape-domain": path.resolve(
+        projectRoot,
+        "packages/shape-domain/src/index.ts"
+      ),
+      "@tka/shape-engine": path.resolve(
+        projectRoot,
+        "packages/shape-engine/src"
+      ),
       // Listed before `$app/env`, which would otherwise match these as a prefix.
       "$app/env/public": path.resolve(
         projectRoot,

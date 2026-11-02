@@ -700,4 +700,101 @@
       padding: 0 18px 18px;
     }
   }
+
+  /* A phone held sideways (the Fold's cover on its side leaves about 280px
+     under the top bar). The top bar already says Browse, so the question
+     and the group blurbs step aside; the three Community tiles sit in one
+     row with their previews beside their names, and Your library becomes a
+     single row of five buttons. Nothing scrolls. */
+  @container browse-home (min-width: 700px) and (max-height: 480px) {
+    .browse-home-inner {
+      width: calc(100% - 24px);
+      grid-template-rows: auto auto;
+      align-content: center;
+      gap: 10px;
+      padding-block: 8px;
+    }
+    .browse-home-header {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+    .destination-group {
+      gap: 6px;
+    }
+    .group-heading h2 {
+      font-size: var(--font-size-lg, 1.125rem);
+    }
+    .group-heading p,
+    .tile-description,
+    .library-copy small,
+    .library-arrow {
+      display: none;
+    }
+    .tile-index {
+      --stage-side: clamp(48px, 20cqh, 88px);
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-rows: none;
+      column-gap: 10px;
+      padding-top: 0;
+    }
+    .tile,
+    .tile.has-chips {
+      display: flex;
+      flex-direction: column;
+      grid-column: auto;
+      grid-row: auto;
+      margin-top: 0;
+    }
+    .tile-main,
+    .has-chips .tile-main {
+      flex: 1;
+      grid-row: auto;
+      grid-template-columns: var(--stage-side) minmax(0, 1fr);
+      grid-template-rows: auto;
+      align-items: center;
+      align-content: center;
+      column-gap: 10px;
+      padding: 8px 10px;
+    }
+    .tile-stage,
+    .has-chips .tile-stage {
+      grid-row: auto;
+      width: var(--stage-side);
+      height: var(--stage-side);
+      min-height: 0;
+      aspect-ratio: 1;
+    }
+    .tile-copy,
+    .has-chips .tile-copy {
+      grid-row: auto;
+    }
+    .tile-name {
+      font-size: var(--font-size-lg, 1.125rem);
+    }
+    .tile-chips,
+    .has-chips .tile-chips {
+      flex-wrap: nowrap;
+      gap: 6px;
+      padding: 0 10px 8px;
+    }
+    .tile-chip {
+      min-height: 36px;
+      padding: 0 10px;
+    }
+    .library-links {
+      grid-template-columns: none;
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(0, 1fr);
+      gap: 8px;
+    }
+    .library-link {
+      min-height: 44px;
+      gap: 8px;
+      padding: 6px 10px;
+    }
+  }
 </style>

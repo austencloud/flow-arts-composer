@@ -1,15 +1,18 @@
 /**
  * Onboarding Events
  *
- * Thin captureEvent wrappers for the app-entry / create-tutorial funnel
- * (offered -> accepted -> completed, or offered -> declined) plus first-run
+ * Thin captureEvent wrappers for the create-tutorial funnel (a manual replay
+ * from Settings or the admin toolbar -> accepted -> completed) plus first-run
  * completion. Keeping every call site behind these functions means the event
  * names and property shape live in one place instead of drifting per
  * call site, mirroring the captureEvent wrappers in
  * `#lib/shared/analytics/landing-events.js`.
  *
- * `source` distinguishes the normal automatic app-entry flow from a user
- * manually re-triggering the tutorial (Settings "replay tutorial").
+ * `source` distinguishes the automatic app-entry flow (after the first-run
+ * wizard, only when auto-tours are on) from a user starting the tutorial by
+ * hand (Settings "replay tutorial"). The first-visit offer on the Construct
+ * tab and its offered, prompt-viewed, ignored and declined events were
+ * removed 2026-11-01.
  */
 import { captureWhenReady } from "./posthog";
 
@@ -41,39 +44,11 @@ function captureOnboardingEvent(
   captureWhenReady(event, properties);
 }
 
-/** The guided-build tutorial prompt was shown. */
-export function logOnboardingTutorialOffered(
-  props: OnboardingEventProps = {}
-): void {
-  captureWhenReady("onboarding_tutorial_offered", props);
-}
-
-/** The inline offer was actually mounted where the user could see it. */
-export function logOnboardingTutorialPromptViewed(
-  props: OnboardingEventProps = {}
-): void {
-  captureWhenReady("onboarding_tutorial_prompt_viewed", props);
-}
-
-/** The visible offer disappeared without either action being chosen. */
-export function logOnboardingTutorialIgnored(
-  props: OnboardingEventProps = {}
-): void {
-  captureWhenReady("onboarding_tutorial_ignored", props);
-}
-
-/** The user accepted the guided-build tutorial prompt (or replayed it). */
+/** The user started the guided-build tutorial (replay from Settings). */
 export function logOnboardingTutorialAccepted(
   props: OnboardingEventProps = {}
 ): void {
   captureWhenReady("onboarding_tutorial_accepted", props);
-}
-
-/** The user declined the guided-build tutorial prompt. */
-export function logOnboardingTutorialDeclined(
-  props: OnboardingEventProps = {}
-): void {
-  captureWhenReady("onboarding_tutorial_declined", props);
 }
 
 /** The guided-build tutorial ran to completion (all steps finished). */

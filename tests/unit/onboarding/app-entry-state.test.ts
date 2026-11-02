@@ -43,18 +43,15 @@ vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: mockAuthState,
 }));
 
-// AUTO_TOURS_ENABLED/CREATE_TUTORIAL_ENABLED are compile-time constants in
-// the real module - mock them as mutable getters so each test can drive the
-// seed-permutation matrix without touching the real flag file.
+// AUTO_TOURS_ENABLED is a compile-time constant in the real module - mock it
+// as a mutable getter so each test can drive the seed-permutation matrix
+// without touching the real flag file.
 const { flags } = vi.hoisted(() => ({
-  flags: { AUTO_TOURS_ENABLED: false, CREATE_TUTORIAL_ENABLED: true },
+  flags: { AUTO_TOURS_ENABLED: false },
 }));
 vi.mock("#lib/shared/onboarding/domain/onboarding-flags.js", () => ({
   get AUTO_TOURS_ENABLED() {
     return flags.AUTO_TOURS_ENABLED;
-  },
-  get CREATE_TUTORIAL_ENABLED() {
-    return flags.CREATE_TUTORIAL_ENABLED;
   },
 }));
 
@@ -97,7 +94,6 @@ function resetMocks() {
   mockDocSnap.exists = false;
   mockDocSnap.data = {};
   flags.AUTO_TOURS_ENABLED = false;
-  flags.CREATE_TUTORIAL_ENABLED = true;
   captureEventSpy.mockClear();
   markAppCompletedSpy.mockClear();
   markAppSkippedSpy.mockClear();
@@ -122,18 +118,17 @@ describe("appEntryState — seed derivation (hasCompleted/phase can never diverg
     flags.AUTO_TOURS_ENABLED = false;
     const state = await freshState();
     // Before the fix: phase became "complete" here but hasCompleted stayed
-    // false (seeded from `completed` alone), so a later offerCreateTutorial()
-    // call would overwrite phase back to "tutorial-prompt" and re-pop the
-    // tutorial for an already-onboarded member.
+    // false (seeded from `completed` alone), so the two could disagree for an
+    // already-onboarded member.
     expect(state.phase).toBe("complete");
     expect(state.hasCompleted).toBe(true);
   });
 
-  it("firstRunDone + AUTO_TOURS on seeds the tutorial-prompt phase, not onboarded", async () => {
+  it("firstRunDone + AUTO_TOURS on seeds the create-tutorial phase, not onboarded", async () => {
     localStorage.setItem("tka-first-run-completed", "true");
     flags.AUTO_TOURS_ENABLED = true;
     const state = await freshState();
-    expect(state.phase).toBe("tutorial-prompt");
+    expect(state.phase).toBe("create-tutorial");
     expect(state.hasCompleted).toBe(false);
   });
 
@@ -143,15 +138,6 @@ describe("appEntryState — seed derivation (hasCompleted/phase can never diverg
     expect(state.hasCompleted).toBe(false);
   });
 
-  it("an onboarded member from the divergence-bug scenario is not re-offered the tutorial", async () => {
-    localStorage.setItem("tka-first-run-completed", "true");
-    flags.AUTO_TOURS_ENABLED = false;
-    const state = await freshState();
-    await state.offerCreateTutorial();
-    // hasCompleted now correctly gates offerCreateTutorial's early return, so
-    // phase must stay "complete" rather than being overwritten.
-    expect(state.phase).toBe("complete");
-  });
 });
 
 describe("appEntryState — syncFromCloud reset-on-missing-doc", () => {
@@ -194,32 +180,6 @@ describe("appEntryState — syncFromCloud reset-on-missing-doc", () => {
   });
 });
 
-describe("appEntryState — cloudSynced gates the guided-build offer", () => {
-  beforeEach(resetMocks);
-
-  it("defers the offer for a signed-in user until the cloud read resolves, then replays it", async () => {
-    mockAuthState.user = { uid: "authed-uid" };
-    mockDocSnap.exists = false; // brand-new account cloud-side too
-
-    const state = await freshState();
-    await state.offerCreateTutorial();
-    // No cloud read yet — must NOT flash the prompt on.
-    expect(state.phase).toBe("wizard-active");
-
-    await state.syncFromCloud();
-    // Deferred offer replays once the read resolves and confirms this
-    // account genuinely isn't onboarded.
-    expect(state.phase).toBe("tutorial-prompt");
-  });
-
-  it("offers immediately for a signed-out session (no Firebase user at all)", async () => {
-    mockAuthState.user = null;
-    const state = await freshState();
-    await state.offerCreateTutorial();
-    expect(state.phase).toBe("tutorial-prompt");
-  });
-});
-
 describe("appEntryState — localStorage failure doesn't block Firebase sync", () => {
   beforeEach(resetMocks);
 
@@ -258,31 +218,29 @@ describe("appEntryState — localStorage failure doesn't block Firebase sync", (
 describe("appEntryState — analytics events", () => {
   beforeEach(resetMocks);
 
-  it("offer -> accept -> complete fires 3 distinct events", async () => {
+  it("manual replay -> complete fires accepted (manual) then completed", async () => {
     const state = await freshState();
-    await state.offerCreateTutorial();
-    state.acceptTutorial();
+    state.replay();
     state.completeEntry();
 
-    const names = captureEventSpy.mock.calls.map((call) => call[0]);
-    expect(names).toEqual([
-      "onboarding_tutorial_offered",
-      "onboarding_tutorial_accepted",
-      "onboarding_tutorial_completed",
+    expect(captureEventSpy.mock.calls).toEqual([
+      ["onboarding_tutorial_accepted", { source: "manual" }],
+      ["onboarding_tutorial_completed", { source: "app_entry" }],
     ]);
   });
 
-  it("decline fires its own event and does NOT also fire completed", async () => {
+  it("AUTO_TOURS on runs the wizard exit straight into the walkthrough", async () => {
+    flags.AUTO_TOURS_ENABLED = true;
     const state = await freshState();
-    await state.offerCreateTutorial();
-    state.declineTutorial();
-
-    const names = captureEventSpy.mock.calls.map((call) => call[0]);
-    expect(names).toEqual([
-      "onboarding_tutorial_offered",
-      "onboarding_tutorial_declined",
-    ]);
-    expect(names).not.toContain("onboarding_tutorial_completed");
+    vi.useFakeTimers();
+    try {
+      state.startEntrySequence();
+      expect(state.phase).toBe("wizard-exiting");
+      vi.advanceTimersByTime(400);
+      expect(state.phase).toBe("create-tutorial");
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("AUTO_TOURS off records a skip without claiming the tutorial completed", async () => {

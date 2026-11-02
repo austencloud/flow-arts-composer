@@ -951,19 +951,6 @@
           }
         }
 
-        // First-time guided-build offer: only when the user landed on an empty
-        // Create (no deep link, no restored work). isWorkspaceEmpty() counts a
-        // start-placement-only sequence as non-empty, so a guest who began a
-        // build isn't interrupted. Skippable and self-suppressing after the
-        // first decision (appEntryState persists it).
-        if (
-          !hasDeepLink &&
-          !draftRecovery.hasUnresolvedDraft &&
-          CreateModuleState.isWorkspaceEmpty()
-        ) {
-          appEntryState.offerCreateTutorial();
-        }
-
         // Detect if we're on mobile for responsive dialog rendering
         checkIsMobile = () => {
           isMobile = window.innerWidth < 768;

@@ -332,7 +332,7 @@
   /* Programmatic focus target (tabindex=-1) — the wizard container is the
      dialog root, not an interactive control, so suppress the focus ring the
      global `:focus-visible` rule would otherwise draw around the whole
-     overlay. Matches Drawer.svelte / TutorialPrompt.svelte. */
+     overlay. Matches Drawer.svelte. */
   .create-tutorial-wizard:focus,
   .create-tutorial-wizard:focus-visible {
     outline: none;

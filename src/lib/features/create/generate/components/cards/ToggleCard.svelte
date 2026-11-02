@@ -281,8 +281,6 @@ Hides header when card height is below 65px for space optimization
   }
 
   .toggle-card.landscape-mobile .toggle-options {
-    /* Keep vertical stacking for readability */
-    flex-direction: column;
     gap: clamp(2px, 0.5cqi, 4px); /* Minimal gap */
   }
 
@@ -290,7 +288,9 @@ Hides header when card height is below 65px for space optimization
   /* Switch to horizontal layout ONLY when card is significantly wider than tall */
   /* Aspect ratio > 3.5:1 ensures vertical layout stays for most reasonable card sizes */
   /* No JavaScript needed - browser-native, performant, declarative */
-  @container toggle-card (aspect-ratio > 3.5) {
+  /* A card under 70px tall (a phone held sideways) has no room for two
+     stacked options either: Diamond and Box squashed to slivers. */
+  @container toggle-card (aspect-ratio > 3.5) or (height < 70px) {
     .toggle-options {
       flex-direction: row; /* Horizontal stacking when card is wide */
       justify-content: center;

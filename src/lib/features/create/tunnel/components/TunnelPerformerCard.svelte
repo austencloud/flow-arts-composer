@@ -330,7 +330,9 @@
         </Crossfade>
       </div>
     {/if}
-    <div class="live-grid">
+    <!-- An empty grid draws its own "no sequence" note, which showed through
+         the card's empty state; the empty state speaks for it instead. -->
+    <div class="live-grid" class:idle={!previewSequence}>
       <StepGrid
         bind:this={gridRef}
         steps={previewSequence?.steps ?? []}
@@ -541,6 +543,10 @@
     min-height: 0;
     padding: var(--settings-spacing-xs, 6px);
     overflow: hidden;
+  }
+
+  .live-grid.idle {
+    visibility: hidden;
   }
 
   .compact-source-actions {
@@ -810,5 +816,21 @@
 
   .source-card.short .workbench-stage {
     grid-template-rows: minmax(0, 1fr);
+  }
+
+  /* A sideways phone gives the card body about 120px: the words and the
+     button fit only without the icon and the tall floor. */
+  .source-card.short .source-empty {
+    gap: var(--settings-spacing-sm, 8px);
+    min-height: 0;
+    padding: var(--settings-spacing-sm, 8px) var(--settings-spacing-md, 14px);
+  }
+
+  .source-card.short .source-empty > i {
+    display: none;
+  }
+
+  .source-card.short .source-empty > div {
+    gap: 2px;
   }
 </style>

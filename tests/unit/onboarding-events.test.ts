@@ -8,10 +8,7 @@ vi.mock("#lib/shared/analytics/services/posthog.js", () => ({
 
 import {
   logOnboardingTutorialAccepted,
-  logOnboardingTutorialDeclined,
-  logOnboardingTutorialIgnored,
-  logOnboardingTutorialOffered,
-  logOnboardingTutorialPromptViewed,
+  logOnboardingTutorialCompleted,
   logOnboardingTutorialSkipped,
   logOnboardingTutorialStepCompleted,
   logOnboardingTutorialStepViewed,
@@ -24,30 +21,13 @@ import {
 describe("onboarding events", () => {
   beforeEach(() => captureWhenReady.mockClear());
 
-  it("queues the complete tutorial-offer decision funnel until PostHog is ready", () => {
-    logOnboardingTutorialOffered({ source: "app_entry" });
-    logOnboardingTutorialPromptViewed({ source: "app_entry" });
-    logOnboardingTutorialAccepted({ source: "app_entry" });
-    logOnboardingTutorialDeclined({ source: "app_entry" });
-    logOnboardingTutorialIgnored({
-      source: "app_entry",
-      reason: "offer_unmounted",
-      visible_ms: 4_200,
-    });
+  it("queues the manual-replay tutorial funnel until PostHog is ready", () => {
+    logOnboardingTutorialAccepted({ source: "manual" });
+    logOnboardingTutorialCompleted({ source: "app_entry" });
 
     expect(captureWhenReady.mock.calls).toEqual([
-      ["onboarding_tutorial_offered", { source: "app_entry" }],
-      ["onboarding_tutorial_prompt_viewed", { source: "app_entry" }],
-      ["onboarding_tutorial_accepted", { source: "app_entry" }],
-      ["onboarding_tutorial_declined", { source: "app_entry" }],
-      [
-        "onboarding_tutorial_ignored",
-        {
-          source: "app_entry",
-          reason: "offer_unmounted",
-          visible_ms: 4_200,
-        },
-      ],
+      ["onboarding_tutorial_accepted", { source: "manual" }],
+      ["onboarding_tutorial_completed", { source: "app_entry" }],
     ]);
   });
 

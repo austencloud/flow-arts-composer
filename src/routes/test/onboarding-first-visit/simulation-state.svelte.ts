@@ -10,21 +10,13 @@ import {
 } from "#lib/shared/onboarding/domain/account-setup-progress.js";
 import type { OnboardingStatus } from "#lib/shared/onboarding/services/types.js";
 
-export type FirstVisitScene =
-  | "arrival"
-  | "guide"
-  | "workspace"
-  | "compose"
-  | "reminder"
-  | "profile";
+export type FirstVisitScene = "arrival" | "compose" | "reminder" | "profile";
 
 const STEP_BY_SCENE: Record<FirstVisitScene, number> = {
   arrival: 1,
-  guide: 1,
-  workspace: 2,
-  compose: 3,
-  reminder: 4,
-  profile: 5,
+  compose: 2,
+  reminder: 3,
+  profile: 4,
 };
 
 function statusWith(accountSetup: AccountSetupProgress): OnboardingStatus {
@@ -87,14 +79,6 @@ export function createFirstVisitSimulationState() {
     await accountSetup.loadForCurrentUser();
   }
 
-  function startGuide(): void {
-    scene = "guide";
-  }
-
-  function dismissGuide(): void {
-    scene = "workspace";
-  }
-
   function chooseStart(): void {
     scene = "compose";
   }
@@ -147,14 +131,8 @@ export function createFirstVisitSimulationState() {
     switch (scene) {
       case "arrival":
         return scene;
-      case "guide":
-        scene = "arrival";
-        break;
-      case "workspace":
-        scene = "arrival";
-        break;
       case "compose":
-        scene = "workspace";
+        scene = "arrival";
         break;
       case "reminder":
         scene = "compose";
@@ -169,10 +147,6 @@ export function createFirstVisitSimulationState() {
   function advance(): FirstVisitScene {
     switch (scene) {
       case "arrival":
-      case "guide":
-        dismissGuide();
-        break;
-      case "workspace":
         chooseStart();
         break;
       case "compose":
@@ -215,8 +189,6 @@ export function createFirstVisitSimulationState() {
     },
     initialize,
     reset,
-    startGuide,
-    dismissGuide,
     chooseStart,
     addFirstMove,
     openProfile,

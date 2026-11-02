@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   CONSTRUCT_PHONE_MAX_WIDTH,
+  CONSTRUCT_SHORT_LANDSCAPE_MAX_HEIGHT,
   CONSTRUCT_TYPE_RAIL_MIN_WIDTH,
   constructPhoneSplit,
   isConstructPhoneTier,
@@ -54,6 +55,35 @@ describe("isConstructTypeRailTier", () => {
       })
     ).toBe(false);
     expect(isConstructTypeRailTier({ width: 707, stacked: false })).toBe(false);
+  });
+
+  it("gives a short side-by-side picker on a sideways phone the rail", () => {
+    // The Fold's cover screen on its side, with and without the browser bar.
+    expect(
+      isConstructTypeRailTier({ width: 420, height: 340, stacked: false })
+    ).toBe(true);
+    expect(
+      isConstructTypeRailTier({
+        width: 420,
+        height: CONSTRUCT_SHORT_LANDSCAPE_MAX_HEIGHT,
+        stacked: false,
+      })
+    ).toBe(true);
+    // A laptop's side-by-side picker is taller and keeps its tab row.
+    expect(
+      isConstructTypeRailTier({
+        width: 420,
+        height: CONSTRUCT_SHORT_LANDSCAPE_MAX_HEIGHT + 1,
+        stacked: false,
+      })
+    ).toBe(false);
+    expect(
+      isConstructTypeRailTier({
+        width: CONSTRUCT_PHONE_MAX_WIDTH,
+        height: 340,
+        stacked: false,
+      })
+    ).toBe(false);
   });
 });
 

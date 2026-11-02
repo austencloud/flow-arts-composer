@@ -19,7 +19,6 @@
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import type { SimplifiedStartPlacementState } from "#lib/shared/create/state/start-placement-state.svelte.js";
   import ConstructTutorialGuide from "../../construct/tutorial/components/ConstructTutorialGuide.svelte";
-  import ConstructGuideEntry from "../../construct/tutorial/components/ConstructGuideEntry.svelte";
   import type { StartPlacementPath } from "../../construct/services/construct-analytics";
   import { getCreateModuleContext } from "../context/create-module-context";
 
@@ -70,10 +69,6 @@
   }>();
 </script>
 
-{#snippet startPlacementHeading()}
-  <ConstructGuideEntry />
-{/snippet}
-
 <div
   class="construct-tab-content"
   data-testid="construct-tab-content"
@@ -87,9 +82,9 @@
       <!-- Start placement → option picker is one continuous construct flow, so
            it transitions in place rather than cutting (crossfade-primitive.md).
            SWAP, not overlap: these two pickers share no chrome — a true
-           crossfade superimposes the letter-type tabs, the α/β/γ cards and the
-           guide banner on top of each other for the whole overlap, which reads
-           as a broken frame rather than a transition. Sequential fade keeps one
+           crossfade superimposes the letter-type tabs and the α/β/γ cards on
+           top of each other for the whole overlap, which reads as a broken
+           frame rather than a transition. Sequential fade keeps one
            coherent picture on screen at every instant. -->
       <div class="picker-wrapper">
         <Crossfade
@@ -108,7 +103,6 @@
               onNavigateToAdvanced={onStartPlacementNavigateToAdvanced}
               onNavigateToDefault={onStartPlacementNavigateToDefault}
               onPlacementSubmitted={onStartPlacementSubmitted}
-              heading={startPlacementHeading}
               suppressHeading={constructTutorialState.isActive}
               morphIntoWorkspace
             />

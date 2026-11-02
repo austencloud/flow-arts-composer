@@ -1,6 +1,5 @@
 <script lang="ts">
   import AccountSetupChecklist from "#lib/shared/onboarding/components/account-setup/AccountSetupChecklist.svelte";
-  import ConstructGuideEntry from "#lib/features/create/construct/tutorial/components/ConstructGuideEntry.svelte";
   import { Crossfade } from "#lib/shared/transitions/motion.js";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
@@ -128,40 +127,9 @@
             <span class="scene-kicker">Empty workspace</span>
             <h3>Pick a starting point</h3>
           </div>
-          <ConstructGuideEntry
-            offerVisible={true}
-            onShowGuide={simulation.startGuide}
-            onDismiss={simulation.dismissGuide}
-          />
           {@render startChoices()}
           <p class="workspace-caption">
-            The workspace stays active while the offer is visible.
-          </p>
-        </div>
-      {:else if simulation.scene === "guide"}
-        <div class="scene guide-scene themed-scrollbar">
-          <div class="guide-board" aria-hidden="true">
-            <span></span><span></span><span></span><span></span>
-          </div>
-          <div class="guide-callout">
-            <span class="scene-kicker">Guide requested</span>
-            <h3>Choose a start</h3>
-            <p>The Construct lesson is active because Show guide was chosen.</p>
-            <PanelButton variant="primary" onclick={onChooseStart}>
-              Use the highlighted start
-            </PanelButton>
-          </div>
-        </div>
-      {:else if simulation.scene === "workspace"}
-        <div class="scene construct-scene themed-scrollbar">
-          <div class="scene-heading">
-            <span class="scene-kicker">Construct</span>
-            <h3>Pick a starting point</h3>
-          </div>
-          <ConstructGuideEntry offerVisible={false} />
-          {@render startChoices()}
-          <p class="workspace-caption">
-            No modal follows Not now. The next click belongs to Construct.
+            Nothing covers the workspace. The next click belongs to Construct.
           </p>
         </div>
       {:else if simulation.scene === "compose"}
@@ -531,7 +499,6 @@
   }
 
   .scene-heading h3,
-  .guide-callout h3,
   .move-result h3,
   .profile-heading h3 {
     margin: 0.25rem 0 0;
@@ -617,48 +584,6 @@
     text-align: center;
   }
 
-  .guide-scene {
-    position: relative;
-    align-items: center;
-    justify-content: center;
-    padding: clamp(1rem, 4cqi, 3rem);
-  }
-
-  .guide-board {
-    position: absolute;
-    inset: 8%;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1rem;
-    opacity: 0.32;
-  }
-
-  .guide-board span {
-    background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
-    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
-    border-radius: var(--radius-lg, 1rem);
-  }
-
-  .guide-board span:first-child {
-    border-color: var(--simulation-blue);
-    box-shadow: 0 0 0 3px
-      color-mix(in srgb, var(--simulation-blue) 24%, transparent);
-  }
-
-  .guide-callout {
-    position: relative;
-    z-index: 1;
-    width: min(100%, 28rem);
-    padding: clamp(1rem, 3cqi, 2rem);
-    text-align: center;
-    background: var(--theme-panel-bg, rgba(15, 17, 24, 0.98));
-    border: 1px solid
-      color-mix(in srgb, var(--simulation-blue) 45%, transparent);
-    border-radius: var(--radius-xl, 1.25rem);
-    box-shadow: 0 1.25rem 4rem rgba(0, 0, 0, 0.42);
-  }
-
-  .guide-callout p,
   .move-result p {
     margin: 0.75rem 0 1rem;
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.7));
@@ -990,14 +915,12 @@
 
     .construct-scene,
     .compose-scene,
-    .guide-scene,
     .reminder-scene {
       gap: 0.55rem;
       padding: 0.65rem;
     }
 
     .scene-heading h3,
-    .guide-callout h3,
     .move-result h3 {
       font-size: 1.1rem;
     }
@@ -1091,7 +1014,6 @@
     }
 
     .scene-heading h3,
-    .guide-callout h3,
     .move-result h3,
     .profile-heading h3 {
       font-size: 3.5rem;
@@ -1125,44 +1047,15 @@
     }
 
     .workspace-caption,
-    .guide-callout p,
     .move-result p {
       font-size: 1.35rem;
     }
 
-    .construct-scene :global(.guide-offer) {
-      max-width: 100rem;
-      gap: 2rem;
-      padding: 1.5rem 2rem;
-      border-radius: 1.5rem;
-    }
-
-    .construct-scene :global(.offer-title) {
-      font-size: 2rem;
-    }
-
-    .construct-scene :global(.offer-description) {
-      margin-top: 0.35rem;
-      font-size: 1.35rem;
-    }
-
-    .construct-scene :global(.offer-actions) {
-      gap: 1rem;
-    }
-
-    .construct-scene :global(.offer-actions .panel-btn),
-    .guide-callout :global(.panel-btn),
     .reminder-scene :global(.panel-btn),
     .setup-destination :global(.panel-btn) {
       min-height: 4.5rem;
       padding: 1.1rem 1.5rem;
       font-size: 1.25rem;
-    }
-
-    .guide-callout {
-      width: min(100%, 54rem);
-      padding: 3rem;
-      border-radius: 2rem;
     }
 
     .move-result,

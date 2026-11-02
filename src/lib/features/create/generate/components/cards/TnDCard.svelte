@@ -354,6 +354,18 @@
     }
   }
 
+  /* Short but wide (a phone held sideways): the row has room for the words
+     beside the icon, and a lone ring with a letter says too little. */
+  @container tnd-card (max-height: 96px) and (min-width: 240px) {
+    .tile-words {
+      display: -webkit-box;
+      -webkit-line-clamp: 1;
+      line-clamp: 1;
+      overflow-wrap: normal;
+      text-align: start;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .tnd-tile {
       transition: none;

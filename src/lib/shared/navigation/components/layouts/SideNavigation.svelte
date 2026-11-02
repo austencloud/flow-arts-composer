@@ -241,15 +241,17 @@
         max(6px, env(safe-area-inset-bottom, 0px));
     }
 
+    /* Browse's nine sections must still fit a 340px-tall sideways phone
+       (the Fold's cover with the browser bar showing). */
     .sections {
-      gap: 2px;
+      gap: 1px;
     }
 
     .side-navigation :global(.nav-button.section) {
       flex: 0 1 var(--min-touch-target);
       height: auto;
-      min-height: 30px;
-      padding: 4px;
+      min-height: 24px;
+      padding: 2px 4px;
     }
 
     .side-navigation :global(.nav-button.special) {

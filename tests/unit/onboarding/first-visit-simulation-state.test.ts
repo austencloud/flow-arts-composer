@@ -2,25 +2,24 @@ import { describe, expect, it } from "vitest";
 import { createFirstVisitSimulationState } from "../../../src/routes/test/onboarding-first-visit/simulation-state.svelte";
 
 describe("first-visit onboarding simulator", () => {
-  it("moves through the first-session timeline without forcing the guide", async () => {
+  it("moves through the first-session timeline without a guide offer", async () => {
     const simulation = createFirstVisitSimulationState();
     await simulation.initialize();
 
     expect(simulation.scene).toBe("arrival");
     expect(simulation.currentStep).toBe(1);
 
-    simulation.dismissGuide();
-    expect(simulation.scene).toBe("workspace");
+    simulation.chooseStart();
+    expect(simulation.scene).toBe("compose");
     expect(simulation.currentStep).toBe(2);
 
-    simulation.chooseStart();
     simulation.addFirstMove();
     expect(simulation.scene).toBe("reminder");
-    expect(simulation.currentStep).toBe(4);
+    expect(simulation.currentStep).toBe(3);
 
     simulation.openProfile();
     expect(simulation.scene).toBe("profile");
-    expect(simulation.currentStep).toBe(5);
+    expect(simulation.currentStep).toBe(4);
   });
 
   it("opens each sandbox destination before its task can complete", async () => {
