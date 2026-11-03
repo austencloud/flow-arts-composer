@@ -8,15 +8,9 @@
   through DisplaySection with the other Display screens' header grammar: a
   back arrow, one-line title, and Use theme where Reset sits on the others.
   `compact` (the drill tier's screen) makes the choices one wrapping row of
-  small tiles so the screen never scrolls. Without `onBack` it keeps its old
-  standalone layout.
-
-  Revision: Theme is the fourth column (2026-11-02). With `column` set it
-  renders the same DisplaySection frame without a back arrow, as the first
-  of the columns tier's four columns: palette icon tile, title, Use theme /
-  Current theme where the others show Reset, the live stage over the free
-  height, and the ten choices as a 5×2 (or 2×5 on a narrow column) grid of
-  picture tiles in the pictograph tiles' size family.
+  small tiles so the screen never scrolls; without it (the columns tier's
+  showroom) the tiles are larger. Without `onBack` it keeps its old standalone
+  layout.
 -->
 <script lang="ts">
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
@@ -50,7 +44,6 @@
     settings,
     onUpdate,
     onBack,
-    column = false,
     compact = false,
     title,
   } = $props<{
@@ -58,9 +51,6 @@
     onUpdate?: (event: { key: string; value: unknown }) => void;
     /** Set when the showroom is a screen of Settings → Display. */
     onBack?: () => void;
-    /** The first column of Settings → Display's columns tier: the same
-     *  DisplaySection frame as the screen, with no back arrow. */
-    column?: boolean;
     /** Small tiles in one wrapping row, for a screen that must not scroll. */
     compact?: boolean;
     /** The screen's title; Display passes the Theme label. */
@@ -127,23 +117,10 @@
     untrack(() => void accountSetupState?.markThemeChosen());
   });
 
-  // The page's background holds still under a showroom so only the stage
-  // animates. A screen or the standalone page holds it for its whole visit.
-  // The Display column is on screen for the whole visit to Display, so it
-  // holds only while it previews a theme other than the current one: once
-  // Use theme applies it, the page's background runs the new theme.
-  const HOLD_KEY = "settings-theme-preview";
   onMount(() => {
     hapticService = getHapticFeedback();
-    if (column) return;
-    holdBackground(HOLD_KEY);
-    return () => releaseBackground(HOLD_KEY);
-  });
-
-  $effect(() => {
-    if (!column || previewIsCurrent) return;
-    holdBackground(HOLD_KEY);
-    return () => releaseBackground(HOLD_KEY);
+    holdBackground("settings-theme-preview");
+    return () => releaseBackground("settings-theme-preview");
   });
 
   async function recordThemeChoice(): Promise<void> {
@@ -227,14 +204,8 @@
   </div>
 {/snippet}
 
-{#if onBack || column}
-  <div
-    class="theme-screen"
-    class:compact
-    class:column
-    data-theme-screen
-    data-theme-column={column || undefined}
-  >
+{#if onBack}
+  <div class="theme-screen" class:compact data-theme-screen>
     <DisplaySection
       kind="theme"
       icon="fas fa-palette"
@@ -272,45 +243,45 @@
     </DisplaySection>
   </div>
 {:else}
-  <div class="background-tab themed-scrollbar">
-    <section class="theme-workspace" aria-labelledby="theme-heading">
-      <div class="theme-band">
-        <SettingsSectionHeader
-          icon="fas fa-palette"
-          title={t("settings_choose_theme")}
-          description={t("settings_themes_available", {
-            count: BACKGROUND_CARD_REGISTRY.length,
-          })}
-          headingId="theme-heading"
-        >
-          {#snippet action()}
-            {@render applyAction()}
-          {/snippet}
-        </SettingsSectionHeader>
-      </div>
-
-      <section
-        class="theme-stage"
-        aria-label={t("settings_previewing_theme", {
-          theme: themeName(previewType),
+<div class="background-tab themed-scrollbar">
+  <section class="theme-workspace" aria-labelledby="theme-heading">
+    <div class="theme-band">
+      <SettingsSectionHeader
+        icon="fas fa-palette"
+        title={t("settings_choose_theme")}
+        description={t("settings_themes_available", {
+          count: BACKGROUND_CARD_REGISTRY.length,
         })}
+        headingId="theme-heading"
       >
-        <ThemePreview type={previewType} fallback={preview?.gradient ?? ""} />
-        <div class="stage-scrim"></div>
-        <div class="stage-copy">
-          <p class="stage-label">{t("settings_live_preview")}</p>
-          <Crossfade key={previewType} duration={DURATION.normal}>
-            <div class="stage-title-wrap">
-              <p class="stage-title">{themeName(previewType)}</p>
-              <p>{themeDescription(previewType)}</p>
-            </div>
-          </Crossfade>
-        </div>
-      </section>
+        {#snippet action()}
+          {@render applyAction()}
+        {/snippet}
+      </SettingsSectionHeader>
+    </div>
 
-      {@render themeChoices()}
+    <section
+      class="theme-stage"
+      aria-label={t("settings_previewing_theme", {
+        theme: themeName(previewType),
+      })}
+    >
+      <ThemePreview type={previewType} fallback={preview?.gradient ?? ""} />
+      <div class="stage-scrim"></div>
+      <div class="stage-copy">
+        <p class="stage-label">{t("settings_live_preview")}</p>
+        <Crossfade key={previewType} duration={DURATION.normal}>
+          <div class="stage-title-wrap">
+            <p class="stage-title">{themeName(previewType)}</p>
+            <p>{themeDescription(previewType)}</p>
+          </div>
+        </Crossfade>
+      </div>
     </section>
-  </div>
+
+    {@render themeChoices()}
+  </section>
+</div>
 {/if}
 
 <style>
@@ -634,6 +605,7 @@
     }
   }
 
+
   /* ── Theme screen of Settings → Display ──
      The section is the screen's height. The live background is the stage and
      takes every pixel the header and choices leave (DisplaySection `bleed`);
@@ -734,59 +706,13 @@
     background: rgba(0, 0, 0, 0.4);
   }
 
-  /* The fourth column of Settings → Display: ten picture tiles in the
-     family of the pictograph's tiles beside it. A 17-22rem column takes
-     them 2×5 as wide, short bands; from 22rem, 5×2 near-square tiles. No
-     count leaves a single tile on a row. Selected is the full ring above;
-     current keeps its "Current" badge. */
-  .theme-screen.column .theme-choices {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-  }
-
-  .theme-screen.column .theme-choices button {
-    aspect-ratio: 2.4;
-  }
-
-  .theme-screen.column .choice-name {
-    right: 0.5rem;
-    bottom: 0.4rem;
-    left: 0.5rem;
-    font-size: 0.8125rem;
-  }
-
-  .theme-screen.column .choice-current {
-    top: 0.3rem;
-    left: 0.3rem;
-    padding: 1px 5px;
-    font-size: 0.6875rem;
-  }
-
-  @container display-controls (min-width: 22rem) {
-    .theme-screen.column .theme-choices {
-      grid-template-columns: repeat(5, minmax(0, 1fr));
-    }
-
-    .theme-screen.column .theme-choices button {
-      aspect-ratio: 0.9;
-    }
-
-    .theme-screen.column .choice-name {
-      right: 0.25rem;
-      left: 0.25rem;
-      text-align: center;
-    }
-  }
-
   /* The header's action is the height of the back arrow (2.25rem) in both
-     states, so Use theme replacing Current theme never moves the stage. The
-     column keeps the other columns' full-size header action instead, so
-     its header lines up with theirs. */
-  .theme-screen:not(.column) .theme-status {
+     states, so Use theme replacing Current theme never moves the stage. */
+  .theme-screen .theme-status {
     min-height: 2.25rem;
   }
 
-  .theme-screen:not(.column) .apply-action :global(.panel-btn) {
+  .theme-screen .apply-action :global(.panel-btn) {
     min-height: 2.25rem;
     padding-block: 0.375rem;
   }

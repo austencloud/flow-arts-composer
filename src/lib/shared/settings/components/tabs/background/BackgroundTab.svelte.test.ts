@@ -64,32 +64,4 @@ describe("Settings Theme page and the setup checklist", () => {
       })
     );
   });
-
-  // Theme became the fourth column of Display's columns tier (2026-11-02):
-  // the same frame with Use theme in the header, no way back, ten choices.
-  it("works as the Display tab's Theme column", async () => {
-    const { state } = fakeSetup();
-    const onUpdate = vi.fn();
-    render(Harness, { state, onUpdate, column: true });
-
-    expect(document.querySelector("[data-theme-column]")).not.toBeNull();
-    expect(
-      document.querySelector('[data-display-section="theme"]')
-    ).not.toBeNull();
-    expect(document.querySelectorAll(".theme-choices button")).toHaveLength(10);
-    await expect
-      .element(page.getByRole("button", { name: "Back" }))
-      .not.toBeInTheDocument();
-
-    await page.getByRole("button", { name: "Celestial", exact: true }).click();
-    await page
-      .getByRole("button", { name: "Use Celestial", exact: true })
-      .click();
-    await vi.waitFor(() =>
-      expect(onUpdate).toHaveBeenCalledWith({
-        key: "backgroundType",
-        value: "celestial",
-      })
-    );
-  });
 });

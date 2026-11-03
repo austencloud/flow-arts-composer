@@ -8,17 +8,16 @@ const readSource = (path: string): string =>
   readFileSync(resolve(process.cwd(), path), "utf-8");
 
 // The 2026-09-29 rewrite (docs/superpowers/specs/2026-09-29-notation-caps-plain-rewrite.md)
-// cut the page to plain prose. The 2026-11-02 rewrite added the three reverse
-// settings and Gage DeMello's two-hand catalogue, still as figures, not widgets.
+// cut the page to plain prose, one CAP figure and one CAP-beside-LOOP pair.
 describe("CAPs page stays plain", () => {
   const page = readSource(`${CAPS_DIR}/+page.svelte`);
 
-  it("mounts only the CAP figures, the hand tile and the LOOP demo", () => {
+  it("mounts only the CAP figure and the LOOP comparison", () => {
     const imports = [...page.matchAll(/^\s*import (\w+) from "([^"]+\.svelte)";/gm)].map(
       ([, name]) => name
     );
     expect(imports.sort()).toEqual(
-      ["CapTrace", "CapsAssembly", "HandTile", "LinkChip", "Seo", "SequenceHeroDemo"].sort()
+      ["CapsAssembly", "LinkChip", "Seo", "SequenceHeroDemo", "YutaCapLiveDemo"].sort()
     );
   });
 
@@ -38,15 +37,8 @@ describe("CAPs page stays plain", () => {
     expect(page).not.toMatch(/style="--accent/);
   });
 
-  it("covers the definition, reversal, two hands, the origin and the LOOP difference", () => {
-    for (const heading of [
-      "What a CAP is",
-      "Where you reverse",
-      "Two hands",
-      "Where the idea came from",
-      "CAPs and LOOPs",
-      "Sources",
-    ]) {
+  it("covers the definition, the origin and the LOOP difference", () => {
+    for (const heading of ["What a CAP is", "Where the idea came from", "CAPs and LOOPs", "Sources"]) {
       expect(page).toContain(`>${heading}</h2>`);
     }
   });

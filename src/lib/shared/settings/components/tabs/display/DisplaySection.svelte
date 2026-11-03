@@ -7,13 +7,12 @@
   The three sections differ only in their stage and switches, so the frame is
   written once. Its shape follows PropTypeTab's section / stage / figcaption.
 
-  Below the columns tier the tab opens one section at a time as its own
+  Below the three-column tier the tab opens one section at a time as its own
   screen (`onBack` set): a back arrow, the title and an icon-only Reset in a
   one-line header, the stage as the hero taking all the height the small
   switches leave, and no caption, so the screen never scrolls.
 
-  Theme is the first of the columns tier's four columns (2026-11-02), and
-  the drill tier's Theme screen; either way it is a fourth user of the frame: it has no
+  The Theme screen (2026-11-02) is a fourth user of the frame: it has no
   Reset, so it passes its own header `action` (Use theme / Current theme),
   and its stage is a live background that fills the whole area (`bleed`)
   instead of a box of one ratio.
@@ -116,11 +115,15 @@
     <figure class="stage" data-stage={kind}>
       <div class="stage-area">
         <!-- svelte-ignore a11y_no_static_element_interactions -->
-        <div class="stage-frame" class:bleed oncontextmenu={onStageContextMenu}>
+        <div
+          class="stage-frame"
+          class:bleed
+          oncontextmenu={onStageContextMenu}
+        >
           {@render stage()}
         </div>
       </div>
-      {#if !onBack && caption}
+      {#if !onBack}
         <figcaption class="stage-caption">{caption}</figcaption>
       {/if}
     </figure>
@@ -229,19 +232,16 @@
      sections (MenuItemTileGrid, DisplayPanel hostSized, CardContentToggles).
      The ladder reads this box's own width, so the same width gives the same
      tiles in every section; the picture size is a registered length, so it
-     reaches every grid as the same pixels. Only the columns tier draws
-     tiles (the drill screens draw chips), and its columns are at least 17rem
-     of content (2026-11-02), so the ladder starts at four: ten tiles run
-     4+4+2, never 3+3+3+1, and the pictograph's eight run 4×2. From 30rem
-     they run 5×2; the card groups its seven per row. */
+     reaches every grid as the same pixels. Ten tiles run 3-wide on a phone,
+     4+4+2 from 22rem and 5×2 from 30rem; the card groups its seven per row. */
   .controls {
     min-width: 0;
     container: display-controls / inline-size;
   }
 
   .controls > :global(*) {
-    --tile-grid-cols: 4;
-    --tile-grid-gap: 8px;
+    --tile-grid-cols: 3;
+    --tile-grid-gap: 6px;
     --tile-grid-art: clamp(
       2.5rem,
       (100cqi - (var(--tile-grid-cols) - 1) * var(--tile-grid-gap)) /
@@ -250,29 +250,16 @@
     );
   }
 
+  @container display-controls (min-width: 22rem) {
+    .controls > :global(*) {
+      --tile-grid-cols: 4;
+      --tile-grid-gap: 8px;
+    }
+  }
+
   @container display-controls (min-width: 30rem) {
     .controls > :global(*) {
       --tile-grid-cols: 5;
-    }
-  }
-
-  /* The animation's four Header chips wrap 3+1 on a column this narrow;
-     two by two they stay one deliberate block under the tiles. */
-  @container display-controls (width < 22rem) {
-    .controls :global([data-header-parts] .menu-chip-row) {
-      display: grid;
-      grid-template-columns: repeat(2, max-content);
-      justify-content: center;
-    }
-  }
-
-  /* A column under 20rem (the four-column tier near its 81rem threshold,
-     1440×900) has no room for the icon tile, the title and "Reset to
-     defaults" on one line: "Pictograph" broke a letter onto a second line.
-     The tile goes; the title and its action keep their size. */
-  @container display-section (width < 20rem) {
-    .display-section:not(.screen) :global(.section-icon) {
-      display: none;
     }
   }
 
@@ -367,7 +354,7 @@
      the switches leave, and the frame is the largest box of its ratio that
      fits that area, measured as a size container — so a 4K column carries a
      big stage instead of a capped one over an empty band. */
-  @container display-tab (min-width: 81rem) {
+  @container display-tab (min-width: 64rem) {
     .display-section {
       flex: 1 1 auto;
       min-height: 0;
@@ -384,12 +371,13 @@
       width: 100%;
     }
 
-    /* The floor is back at 14rem now the Theme band is gone (Theme is the
-       fourth column, 2026-11-02); it was 9rem while the band took 76px
-       from every column. */
+    /* The floor is the card column's fit at 1440×900: the Theme band
+       (2026-11-02) takes 76px from every column and the card's switches are
+       415px tall, which leaves its stage 9rem. A higher floor pushes the
+       card's caption over its switches. */
     .stage-area {
       flex: 1 1 auto;
-      min-height: 14rem;
+      min-height: 9rem;
       container-type: size;
       align-items: center;
     }
