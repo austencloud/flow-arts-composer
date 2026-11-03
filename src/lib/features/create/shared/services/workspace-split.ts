@@ -41,8 +41,8 @@ export const MIN_TOOL_PANEL_SHARE = 2 / 7;
  * (a stepper card's label over its value needs 44px).
  * The installed app on the unfolded Fold has 728px, not Chrome's 779, and
  * 2/7 of that (208px) squeezed the Length, Setups and Turns cards to 31px
- * rows that cut their labels in half (2026-11-02). The sequence scrolls its
- * last row instead.
+ * rows that cut their labels in half (2026-11-02). The step grid shrinks its
+ * cells to fit the rest (fitTimelineRows in grid-calculations.ts).
  */
 export const MIN_TOOL_PANEL_HEIGHT = 260;
 

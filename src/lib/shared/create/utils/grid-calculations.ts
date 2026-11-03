@@ -775,6 +775,86 @@ export function clampTimelineUnitSizeToHeight(
 }
 
 /**
+ * The smallest unit the Create workspace will shrink to so a whole sequence
+ * shows without scrolling. Below it the grid keeps legible cells and scrolls.
+ */
+export const TIMELINE_FIT_MIN_UNIT = 60;
+
+/**
+ * A row twice as long is taken only when its cells come out this much larger;
+ * otherwise the requested row length wins, since it fills the host's height.
+ */
+export const WIDER_ROW_GAIN = 1.1;
+
+/**
+ * Lays out a Create timeline so every row fits the host, shrinking cells
+ * below the legible size rather than hiding rows under the rail. Tries the
+ * requested beats per row and, on a wide host, twice that (still aligned with
+ * a LOOP repeat), and keeps whichever gives the larger cell. Holding cells at
+ * the legible 94px left a 16-step sequence's fourth row out of sight on the
+ * unfolded Fold (2026-11-03).
+ *
+ * Returns null when no layout fits at TIMELINE_FIT_MIN_UNIT or larger; the
+ * caller then keeps legible cells and scrolls.
+ */
+export function fitTimelineRows(params: {
+  steps: readonly { duration?: number }[];
+  beatsPerRow: number;
+  /** Host width minus the edge reserve on both sides. */
+  sizingWidth: number;
+  containerHeight: number;
+  popReserve: number;
+  hasStart: boolean;
+  /** A narrow host sizes by its cell count and never doubles its rows. */
+  isNarrow: boolean;
+}): { beatsPerRow: number; rows: TimelineRow[]; unitSize: number } | null {
+  const {
+    steps,
+    beatsPerRow,
+    sizingWidth,
+    containerHeight,
+    popReserve,
+    hasStart,
+    isNarrow,
+  } = params;
+  if (containerHeight <= 0 || sizingWidth <= 0 || beatsPerRow <= 0) {
+    return null;
+  }
+
+  const start = hasStart ? 1 : 0;
+  const candidates = [beatsPerRow];
+  if (!isNarrow && steps.length > beatsPerRow) candidates.push(beatsPerRow * 2);
+
+  let best: { beatsPerRow: number; rows: TimelineRow[]; unitSize: number } | null =
+    null;
+  for (const beats of candidates) {
+    const rows = calculateTimelineRowsByBeatCount(steps, beats);
+    const rowCount = Math.max(rows.length, start);
+    if (rowCount === 0) continue;
+
+    let maxRowDuration = 0;
+    for (const row of rows) {
+      maxRowDuration = Math.max(maxRowDuration, row.totalDuration);
+    }
+    const fullRowUnits = maxRowDuration + start;
+    const units = isNarrow
+      ? Math.max(Math.min(steps.length + start, fullRowUnits), 2)
+      : Math.max(fullRowUnits, 2);
+    const widthBased = calculateTimelineUnitSize(sizingWidth, units);
+
+    const heightBased = Math.floor(
+      (containerHeight - 2 * popReserve - (rowCount - 1) - 8) / rowCount
+    );
+    const unitSize = Math.min(widthBased, heightBased);
+    if (unitSize < TIMELINE_FIT_MIN_UNIT) continue;
+    if (!best || unitSize > best.unitSize * WIDER_ROW_GAIN) {
+      best = { beatsPerRow: beats, rows, unitSize };
+    }
+  }
+  return best;
+}
+
+/**
  * The host height a legible step grid needs to show `rows` whole rows
  * (MIN_VISIBLE_ROWS by default), so a split can give the workspace that much
  * before anything else.

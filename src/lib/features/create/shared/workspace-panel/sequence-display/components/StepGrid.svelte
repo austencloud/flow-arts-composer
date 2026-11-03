@@ -39,6 +39,7 @@
     calculateTimelineUnitSize,
     calculateTimelinePadding,
     clampTimelineUnitSizeToHeight,
+    fitTimelineRows,
     WORKBENCH_EDGE_RESERVE,
   } from "#lib/shared/create/utils/grid-calculations.js";
   import { MIN_LEGIBLE_PICTOGRAPH_SIZE } from "#lib/shared/pictograph/shared/domain/constants/pictograph-legibility.js";
@@ -294,8 +295,10 @@
       })
   );
 
-  // The Create workspace scrolls rather than shrink its pictographs past
-  // reading; embedded and preview grids keep the older policy.
+  // The Create workspace shrinks its pictographs to show the whole sequence
+  // down to TIMELINE_FIT_MIN_UNIT (timelineFit below), and past that scrolls
+  // rather than shrink them further; embedded and preview grids keep the
+  // older policy.
   const legibleCellSize = $derived(
     activeMode !== null && sizingProfile === "workbench"
       ? MIN_LEGIBLE_PICTOGRAPH_SIZE
@@ -386,7 +389,7 @@
   // it keeps a 20-per-repeat LOOP readable instead of stamping out a row of
   // floor-sized slivers that used to run past the wrapper and get clipped.
   const TIMELINE_MIN_UNIT = 48;
-  const timelineBeatsPerRow = $derived.by(() => {
+  const requestedBeatsPerRow = $derived.by(() => {
     const fallback = gridLayout.columns;
     if (manualColumnCount === null || manualColumnCount === undefined)
       return fallback;
@@ -401,8 +404,27 @@
     if (maxBeats >= manualColumnCount) return manualColumnCount;
     return Math.max(1, Math.min(fallback, maxBeats));
   });
+  // The Create workspace shows the whole sequence when its cells can stay at
+  // least TIMELINE_FIT_MIN_UNIT: smaller cells, or twice as many to a row on
+  // a wide host. Past that it keeps legible cells and scrolls.
+  const timelineFit = $derived.by(() => {
+    if (!isTimelineMode || legibleCellSize === null) return null;
+    return fitTimelineRows({
+      steps: presentedSteps,
+      beatsPerRow: requestedBeatsPerRow,
+      sizingWidth: Math.max(0, containerWidth - 2 * edgeReserve),
+      containerHeight,
+      popReserve: edgeReserve,
+      hasStart: Boolean(startPlacement && !startPlacement.isBlank),
+      isNarrow: containerWidth > 0 && containerWidth < 650,
+    });
+  });
+  const timelineBeatsPerRow = $derived(
+    timelineFit?.beatsPerRow ?? requestedBeatsPerRow
+  );
   const timelineRows = $derived.by(() => {
     if (!isTimelineMode) return [];
+    if (timelineFit) return timelineFit.rows;
     return calculateTimelineRowsByBeatCount(
       presentedSteps,
       timelineBeatsPerRow
@@ -411,6 +433,7 @@
 
   const timelineUnitSize = $derived.by(() => {
     if (!isTimelineMode) return 0;
+    if (timelineFit) return timelineFit.unitSize;
     const hasStart = startPlacement && !startPlacement.isBlank;
     const actualCellCount = presentedSteps.length + (hasStart ? 1 : 0);
 
@@ -442,8 +465,9 @@
     // and the width-based size overflows a short host (Fold portrait: a 354px
     // tile in a 293px wrapper, clipping the props and the letter).
     const rowCount = Math.max(timelineRows.length, hasStart ? 1 : 0);
-    // The Create workspace keeps its pictographs readable and scrolls the
-    // rows that no longer fit, instead of shrinking every row to fit.
+    // Reached only when timelineFit found no layout: the Create workspace
+    // then keeps its pictographs readable and scrolls the rows that no
+    // longer fit.
     return clampTimelineUnitSizeToHeight(
       widthBased,
       containerHeight,
