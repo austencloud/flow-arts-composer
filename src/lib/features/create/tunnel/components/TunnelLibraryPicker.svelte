@@ -663,6 +663,78 @@
     }
   }
 
+  /* A phone held sideways (the Fold's cover on its side, about 340px tall)
+     left the list a 47px window under four full bands. There the Mine and
+     Explore tabs share one row with the search, sort and new buttons, the
+     header drops its count (the Mine tab carries it), and the footer keeps
+     its button but not its note. The cards go compact
+     (TunnelDiscoveryCard), so the list shows two whole cards and more. */
+  @media (max-height: 480px) and (min-width: 700px) {
+    .tunnel-library {
+      grid-template-columns: auto minmax(0, 1fr);
+      grid-template-rows: auto auto minmax(0, 1fr) auto;
+      grid-template-areas:
+        "header header"
+        "source tools"
+        "list list"
+        "footer footer";
+    }
+
+    .tunnel-library > :global(.panel-header) {
+      grid-area: header;
+      padding-block: 6px;
+    }
+
+    .tunnel-library > :global(.panel-header .subtitle) {
+      display: none;
+    }
+
+    .source-switcher {
+      grid-area: source;
+      display: flex;
+      align-items: center;
+      padding: 6px 0 6px var(--settings-spacing-md, 14px);
+      border-bottom: 1px solid var(--theme-stroke);
+    }
+
+    .library-toolbar {
+      grid-area: tools;
+      padding-block: 6px;
+    }
+
+    .sort-field {
+      flex: 0 0 7.5rem;
+      padding-left: 8px;
+    }
+
+    .sort-field select {
+      padding-left: 6px;
+    }
+
+    .library-scroll {
+      grid-area: list;
+    }
+
+    .library-footer {
+      grid-area: footer;
+      padding-block: 6px;
+    }
+
+    .library-footer p {
+      display: none;
+    }
+
+    /* Explore's footer is only its note. */
+    .library-footer:not(:has(.footer-actions)) {
+      display: none;
+    }
+
+    .library-state {
+      min-height: 0;
+      padding: var(--settings-spacing-md, 14px);
+    }
+  }
+
   @container tunnel-library (max-width: 25rem) {
     .library-toolbar {
       display: grid;

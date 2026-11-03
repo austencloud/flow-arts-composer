@@ -148,9 +148,9 @@ const ROUTES: RouteNode[] = [
     requiresAuth: true,
   },
   {
-    label: "settings--theme",
+    label: "settings--display",
     moduleId: "settings",
-    tabId: "theme",
+    tabId: "display",
     requiresAuth: true,
   },
   // Feedback

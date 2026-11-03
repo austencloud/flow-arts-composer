@@ -42,6 +42,23 @@ const INSPECTOR_LAYOUTS: Record<
   share: { defaultWidth: 400, minWidth: 340, maxWidth: 720 },
 };
 
+/**
+ * A phone held sideways (the Fold's cover turned horizontal, about 915x340)
+ * lays the viewer out in columns: rail, stage, and a control column beside
+ * it, with the header at the top of that column so the stage takes the whole
+ * height. The 53px header row cost a sixth of that screen.
+ *
+ * A phone host is the narrow band (700 to 767 wide) that is also a phone
+ * width. It keeps its phone chrome (no rail, the mode bar underneath, the card
+ * dock over the stage), which this layout does not replace, so it stays out.
+ */
+export function isViewerSideways(input: {
+  sidewaysViewport: boolean;
+  phoneHost: boolean;
+}): boolean {
+  return input.sidewaysViewport && !input.phoneHost;
+}
+
 export function viewerInspectorConstraints(profile: ViewerInspectorProfile): {
   minWidth: number;
   maxWidth: number;

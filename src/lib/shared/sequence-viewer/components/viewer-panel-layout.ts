@@ -11,6 +11,12 @@ export interface ViewerPanelLayoutInput {
   practiceActive: boolean;
   practiceCanvasFraction: number;
   /**
+   * A phone held sideways (the shell's `layout.sideways`, never the device's
+   * landscape flag, which tall landscape phones share). Practice then gives
+   * the canvas the height-derived pane and the lane a narrow fixed column.
+   */
+  sideways?: boolean;
+  /**
    * The animation pane's share of the Side by Side split per axis, as the
    * user dragged it. Focus and Practice still decide their own allocation.
    */
@@ -31,6 +37,14 @@ interface ViewerPanelDirectionInput {
 }
 
 export const MIN_VIEWER_PANE_REVEAL_SIZE = 240;
+
+/**
+ * The sideways practice read-ahead lane: one column of cells between the
+ * canvas and the practice controls. The shell sizes its practice column from
+ * the same number (it sets --viewer-practice-lane-width from this constant),
+ * so the canvas pane left between them is the square the height allows.
+ */
+export const SIDEWAYS_PRACTICE_LANE_WIDTH = 120;
 
 /**
  * A focused workspace only has one readable pane, so changing its split axis
@@ -73,6 +87,16 @@ interface ViewerPaneRevealInput {
   /** Available stage bounds, so a genuinely short viewport is still usable. */
   stageWidth?: number;
   stageHeight?: number;
+  /**
+   * A pane held at a fixed narrow width (the sideways practice lane) is
+   * readable well under the general floor; this replaces it on the width axis.
+   */
+  minWidth?: number;
+  /**
+   * A pane sized to its content on the vertical axis (the portrait practice
+   * foot, one row of cells) is readable at its own height; same on that axis.
+   */
+  minHeight?: number;
 }
 
 /**
@@ -85,13 +109,16 @@ export function resolveViewerPaneRevealReady(
 ): boolean {
   if (input.focusedPane !== null && input.focusedPane !== input.pane)
     return false;
-  const threshold = (available?: number) =>
+  const threshold = (
+    available: number | undefined,
+    floor = MIN_VIEWER_PANE_REVEAL_SIZE
+  ) =>
     available !== undefined && available > 0
-      ? Math.min(MIN_VIEWER_PANE_REVEAL_SIZE, available * 0.9)
-      : MIN_VIEWER_PANE_REVEAL_SIZE;
+      ? Math.min(floor, available * 0.9)
+      : floor;
   return (
-    input.width >= threshold(input.stageWidth) &&
-    input.height >= threshold(input.stageHeight)
+    input.width >= threshold(input.stageWidth, input.minWidth) &&
+    input.height >= threshold(input.stageHeight, input.minHeight)
   );
 }
 
@@ -109,6 +136,16 @@ export function resolveViewerPanelLayout(
   input: ViewerPanelLayoutInput
 ): ViewerPanelLayout {
   if (input.practiceActive) {
+    // Sideways the canvas pane takes what the lane leaves, and the shell's
+    // practice column is sized so that is the square the height allows. The
+    // lane is held at its own width rather than a share of the split.
+    if (input.sideways) {
+      return {
+        direction: "horizontal",
+        sizes: [1, 1],
+        previewPreferredSize: `${SIDEWAYS_PRACTICE_LANE_WIDTH}px`,
+      };
+    }
     const direction: ViewerPanelDirection =
       input.isMobile && !input.isLandscapeMobile ? "vertical" : "horizontal";
     if (direction === "vertical") {

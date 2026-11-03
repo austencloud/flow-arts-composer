@@ -25,6 +25,10 @@ describe("AnimationVisibilityStateManager.resetDisplayDefaults", () => {
       gridMode: "none",
       props: false,
       wordHeader: false,
+      headerLevel: false,
+      headerLoop: false,
+      headerTurns: false,
+      headerReversals: false,
       mandala: false,
       tkaGlyph: false,
       elementalGlyph: true,
@@ -58,5 +62,39 @@ describe("AnimationVisibilityStateManager.resetDisplayDefaults", () => {
     expect(stored.gridMode).toBe("8point");
     expect(stored.props).toBe(true);
     expect(stored.speed).toBe(1.5);
+  });
+
+  // The header parts became their own switches on 2026-11-02. A save from
+  // before then has none of the keys; reading it must not hide the parts.
+  it("shows every header part for a save from before the part switches", () => {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ wordHeader: true, props: false })
+    );
+    const vm = new AnimationVisibilityStateManager();
+    for (const key of [
+      "headerLevel",
+      "headerLoop",
+      "headerTurns",
+      "headerReversals",
+    ] as const) {
+      expect(vm.getVisibility(key), key).toBe(true);
+    }
+    expect(vm.getVisibility("props")).toBe(false);
+  });
+
+  it("persists one header part without touching the others", () => {
+    const vm = new AnimationVisibilityStateManager();
+    const observer = vi.fn();
+    vm.registerObserver(observer);
+    vm.setVisibility("headerLevel", false);
+    expect(observer).toHaveBeenCalledTimes(1);
+
+    const reloaded = new AnimationVisibilityStateManager();
+    expect(reloaded.getVisibility("headerLevel")).toBe(false);
+    expect(reloaded.getVisibility("headerLoop")).toBe(true);
+    expect(reloaded.getVisibility("headerTurns")).toBe(true);
+    expect(reloaded.getVisibility("headerReversals")).toBe(true);
+    expect(reloaded.getVisibility("wordHeader")).toBe(true);
   });
 });

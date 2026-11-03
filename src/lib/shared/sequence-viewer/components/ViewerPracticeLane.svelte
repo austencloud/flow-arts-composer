@@ -12,6 +12,7 @@
     cellSize,
     running,
     countdown,
+    orientation = "horizontal",
     onSeek,
   }: {
     playback: ViewerPlaybackState;
@@ -20,6 +21,8 @@
     cellSize: number;
     running: boolean;
     countdown: number;
+    /** Vertical on a phone held sideways, where the lane is a narrow column. */
+    orientation?: "horizontal" | "vertical";
     onSeek?: (targetStep: number) => void;
   } = $props();
 
@@ -35,7 +38,11 @@
   });
 </script>
 
-<div class="practice-deck lane" class:lane-in={running}>
+<div
+  class="practice-deck lane"
+  class:vertical={orientation === "vertical"}
+  class:lane-in={running}
+>
   <PracticeLanePane
     sequence={playback.animationState.sequenceData}
     currentStep={playback.currentStep}
@@ -45,5 +52,6 @@
     rightPropType={propRendering.rightPropType}
     onSeek={onSeek ?? null}
     showStartCell={laneAtStart}
+    {orientation}
   />
 </div>

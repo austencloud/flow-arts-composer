@@ -162,6 +162,26 @@
   transform: translateX(0);
 }
 
+/* On a portrait phone the lane is a foot under the canvas, and the split sizes
+   that pane to its content. Absolute children have no content height, so the
+   deck sits in flow there: the foot is exactly as tall as the strip, and the
+   canvas pane takes the rest. The slide still parks it off the right edge. */
+.split-view[data-panel-direction="vertical"] .practice-deck:not(.vertical) {
+  position: relative;
+  inset: auto;
+}
+
+/* The sideways lane is a column whose cells rise toward the focus at its top,
+   so it parks below its own bottom edge and rises in on Start, along the way
+   it reads. Same transition as above; only the parked side changes. */
+.split-view .practice-deck.vertical {
+  transform: translateY(100%);
+}
+
+.split-view .practice-deck.vertical.lane-in {
+  transform: translateY(0);
+}
+
 .split-view .media-pane {
   flex: 1;
   min-height: 0;

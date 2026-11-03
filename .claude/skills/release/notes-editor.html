@@ -1,0 +1,451 @@
+<title>TKA Release Notes</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  /* Layout: the app's What's New sheet, centred, with three category cards; each note is a click-to-edit line. */
+  :root {
+    --bg: #eef0f6;
+    --sheet: #ffffff;
+    --sheet-head: #f3f1fb;
+    --stroke: rgba(20, 24, 48, 0.12);
+    --stroke-strong: rgba(20, 24, 48, 0.24);
+    --text: #161a2e;
+    --dim: #5b6178;
+    --accent: #6d5ce8;
+    --accent-2: #4f7df0;
+    --added: #148a4a;
+    --improved: #2563c9;
+    --fixed: #a86400;
+    --danger: #c23a3a;
+    --field: #ffffff;
+    --font-ui: "Nunito Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0b0d18; --sheet: #141728; --sheet-head: #1b1934;
+      --stroke: rgba(255,255,255,0.10); --stroke-strong: rgba(255,255,255,0.22);
+      --text: #f1f2fa; --dim: #a3a8c3; --accent: #8b7bff; --accent-2: #5b8cff;
+      --added: #4ade80; --improved: #60a5fa; --fixed: #fbbf24; --danger: #f87171;
+      --field: #0f1222; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0b0d18; --sheet: #141728; --sheet-head: #1b1934;
+    --stroke: rgba(255,255,255,0.10); --stroke-strong: rgba(255,255,255,0.22);
+    --text: #f1f2fa; --dim: #a3a8c3; --accent: #8b7bff; --accent-2: #5b8cff;
+    --added: #4ade80; --improved: #60a5fa; --fixed: #fbbf24; --danger: #f87171;
+    --field: #0f1222; color-scheme: dark;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-ui);
+    font-size: 15px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 24px 40px;
+  }
+  .wrap { max-width: 88rem; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+
+  .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; color: var(--dim); font-size: 13px; }
+  .toolbar .grow { flex: 1; min-width: 0; }
+  .status { display: inline-flex; align-items: center; gap: 6px; font-variant-numeric: tabular-nums; }
+  .status::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--dim); }
+  .status[data-state="saved"]::before { background: var(--added); }
+  .status[data-state="saving"]::before { background: var(--fixed); }
+  .status[data-state="error"]::before { background: var(--danger); }
+  .status[data-state="error"] { color: var(--danger); }
+
+  .sheet {
+    background: var(--sheet);
+    border: 1.5px solid var(--stroke);
+    border-radius: 20px;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.18);
+    overflow: hidden;
+  }
+  .head {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    padding: 20px 24px;
+    background: linear-gradient(180deg, var(--sheet-head), transparent);
+    border-bottom: 1.5px solid var(--stroke);
+  }
+  .badge {
+    display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 24px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #fff; font-weight: 700; font-size: 14px; letter-spacing: 0.5px;
+  }
+  .head h1 { margin: 0; font-size: 22px; font-weight: 800; }
+  .head p { margin: 2px 0 0; font-size: 14px; color: var(--dim); }
+
+  .body { container: notes / inline-size; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+  .grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  @container notes (min-width: 42rem) {
+    .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid > :last-child { grid-column: 1 / -1; }
+  }
+  @container notes (min-width: 68rem) {
+    .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .grid > :last-child { grid-column: auto; }
+  }
+
+  .card {
+    --c: var(--dim);
+    padding: 16px;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--c) 10%, transparent);
+    border: 1.5px solid color-mix(in srgb, var(--c) 22%, transparent);
+    min-width: 0;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .card[data-cat="added"] { --c: var(--added); }
+  .card[data-cat="improved"] { --c: var(--improved); }
+  .card[data-cat="fixed"] { --c: var(--fixed); }
+  .card-head { display: flex; align-items: center; gap: 10px; }
+  .card-icon {
+    width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center;
+    background: color-mix(in srgb, var(--c) 20%, transparent); color: var(--c); font-weight: 800;
+  }
+  .card-head h2 { flex: 1; margin: 0; font-size: 15px; font-weight: 700; color: var(--c); }
+  .count {
+    padding: 4px 10px; border-radius: 10px; font-size: 13px; font-weight: 700; color: var(--c);
+    background: color-mix(in srgb, var(--c) 15%, transparent); font-variant-numeric: tabular-nums;
+  }
+
+  ol { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; }
+  li.note { position: relative; padding: 6px 0 6px 16px; line-height: 1.5; }
+  li.note::before {
+    content: ""; position: absolute; left: 0; top: 15px; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--c); opacity: 0.75;
+  }
+  .fold {
+    margin: 6px 0; display: flex; align-items: center; gap: 8px;
+    font-size: 12px; color: var(--dim); letter-spacing: 0.3px;
+  }
+  .fold::before, .fold::after { content: ""; flex: 1; border-top: 1px dashed var(--stroke-strong); }
+
+  .text {
+    display: block; width: 100%; text-align: left; font: inherit; color: inherit; background: none;
+    border: 1.5px solid transparent; border-radius: 8px; padding: 2px 6px; margin: -3px -7px; cursor: text;
+  }
+  .text:hover { border-color: var(--stroke-strong); background: color-mix(in srgb, var(--c) 6%, transparent); }
+  .text:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .chip {
+    display: inline; padding: 1px 8px; border-radius: 999px; white-space: normal;
+    border: 1.5px solid color-mix(in srgb, var(--accent) 45%, transparent);
+    background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--text); font-weight: 600;
+  }
+  .tag {
+    display: inline-block; margin-left: 6px; padding: 0 7px; border-radius: 6px; font-size: 11px;
+    font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; vertical-align: 2px;
+    border: 1px solid var(--stroke-strong); color: var(--dim);
+  }
+  .tag.lead { border-color: var(--accent); color: var(--accent); }
+
+  .editor { display: flex; flex-direction: column; gap: 8px; }
+  textarea {
+    width: 100%; box-sizing: border-box; min-height: 5.5em; resize: vertical;
+    font: inherit; line-height: 1.5; color: var(--text); background: var(--field);
+    border: 1.5px solid var(--accent); border-radius: 10px; padding: 8px 10px;
+  }
+  .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .row .grow { flex: 1; }
+  button.b {
+    font: inherit; font-size: 13px; font-weight: 700; min-height: 34px; padding: 6px 12px;
+    border-radius: 9px; border: 1.5px solid var(--stroke-strong); background: var(--sheet); color: var(--text); cursor: pointer;
+  }
+  button.b:hover { border-color: var(--accent); }
+  button.b:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button.b.primary { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; border-color: transparent; }
+  button.b.danger { color: var(--danger); }
+  button.b[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+  select {
+    font: inherit; font-size: 13px; min-height: 34px; padding: 4px 8px; border-radius: 9px;
+    border: 1.5px solid var(--stroke-strong); background: var(--sheet); color: var(--text);
+  }
+  .hint { font-size: 12px; color: var(--dim); }
+  code { font-family: var(--font-mono); font-size: 12px; }
+  .add { align-self: flex-start; margin-top: 4px; }
+
+  .foot {
+    display: flex; justify-content: flex-end; gap: 12px; padding: 16px 24px;
+    border-top: 1.5px solid var(--stroke);
+  }
+  .fake {
+    padding: 11px 20px; border-radius: 12px; font-weight: 700; font-size: 14px; min-width: 10rem; text-align: center;
+    border: 1.5px solid var(--stroke); color: var(--text); opacity: 0.7;
+  }
+  .fake.primary { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; border-color: transparent; }
+
+  .empty { padding: 48px 16px; text-align: center; color: var(--dim); }
+
+  @media (max-width: 540px) {
+    .head, .body { padding: 16px; }
+    .foot { padding: 12px 16px; }
+    .fake { flex: 1; min-width: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700;6..12,800&family=JetBrains+Mono&display=swap">
+
+<div class="wrap">
+  <div class="toolbar">
+    <span class="grow">Click a note to change it. Changes save on their own, and Claude reads them before releasing.</span>
+    <span class="status" id="status" data-state="idle">Connecting…</span>
+  </div>
+
+  <section class="sheet" aria-labelledby="title">
+    <header class="head">
+      <span class="badge" id="badge">v…</span>
+      <div>
+        <h1 id="title">What's New</h1>
+        <p id="subtitle">Waiting for the draft</p>
+      </div>
+    </header>
+    <div class="body">
+      <div class="grid" id="grid">
+        <div class="empty" id="empty">The draft notes appear here once Claude loads them.</div>
+      </div>
+    </div>
+    <footer class="foot" aria-hidden="true">
+      <span class="fake">All releases</span>
+      <span class="fake primary">Got it</span>
+    </footer>
+  </section>
+  <p class="hint">Links are written <code>[label](https://tkaflowarts.com/route)</code> and show as pills. <strong>**bold**</strong> works too. What's New shows the first four lines of each card; the rest appear under Release Notes and in the email.</p>
+</div>
+
+<script>
+(() => {
+  const CATS = [
+    { id: "added", label: "New", icon: "+" },
+    { id: "improved", label: "Improved", icon: "↑" },
+    { id: "fixed", label: "Fixed", icon: "✓" },
+  ];
+  const PREVIEW = 4;
+  const DOC = "drafts/current";
+
+  const $ = (id) => document.getElementById(id);
+  const grid = $("grid"), statusEl = $("status");
+  let db = null, draft = null, editingId = null, canWrite = true;
+  let saveChain = Promise.resolve();
+
+  function setStatus(state, text) { statusEl.dataset.state = state; statusEl.textContent = text; }
+
+  function richText(el, text) {
+    el.replaceChildren();
+    const re = /\*\*(.+?)\*\*|\[([^\]]+)\]\(([^)\s]+)\)/g;
+    let last = 0, m;
+    const push = (parent, s) => parent.append(document.createTextNode(s));
+    while ((m = re.exec(text))) {
+      push(el, text.slice(last, m.index));
+      if (m[1] !== undefined) {
+        const b = document.createElement("strong");
+        richText(b, m[1]);
+        el.append(b);
+      } else {
+        const c = document.createElement("span");
+        c.className = "chip";
+        c.title = m[3];
+        c.textContent = m[2];
+        el.append(c);
+      }
+      last = re.lastIndex;
+    }
+    push(el, text.slice(last));
+  }
+
+  function newId() { return "n" + Math.random().toString(36).slice(2, 9); }
+
+  function render() {
+    if (!draft) return;
+    $("badge").textContent = "v" + draft.version;
+    const total = draft.entries.length;
+    $("subtitle").textContent = total + (total === 1 ? " update" : " updates") + " in this release";
+    grid.replaceChildren();
+    for (const cat of CATS) {
+      const items = draft.entries.filter((e) => e.category === cat.id);
+      const card = document.createElement("section");
+      card.className = "card";
+      card.dataset.cat = cat.id;
+      card.innerHTML = `<div class="card-head"><span class="card-icon" aria-hidden="true">${cat.icon}</span><h2>${cat.label}</h2><span class="count">${items.length}</span></div>`;
+      const list = document.createElement("ol");
+      items.forEach((entry, i) => {
+        if (i === PREVIEW) {
+          const f = document.createElement("li");
+          f.className = "fold";
+          f.textContent = "What's New stops here · Release Notes shows the rest";
+          list.append(f);
+        }
+        list.append(entry.id === editingId ? editorFor(entry) : lineFor(entry));
+      });
+      card.append(list);
+      if (canWrite) {
+        const add = document.createElement("button");
+        add.className = "b add";
+        add.type = "button";
+        add.textContent = "Add a note";
+        add.onclick = () => {
+          const entry = { id: newId(), category: cat.id, audience: "guest", surface: "global", text: "" };
+          draft.entries.push(entry);
+          editingId = entry.id;
+          render();
+        };
+        card.append(add);
+      }
+      grid.append(card);
+    }
+    const ta = grid.querySelector("textarea");
+    if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
+  }
+
+  function lineFor(entry) {
+    const li = document.createElement("li");
+    li.className = "note";
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "text";
+    btn.disabled = !canWrite;
+    const span = document.createElement("span");
+    richText(span, entry.text || "(empty note)");
+    btn.append(span);
+    if (entry.highlight) btn.insertAdjacentHTML("beforeend", '<span class="tag lead">Highlight</span>');
+    if (entry.audience === "account") btn.insertAdjacentHTML("beforeend", '<span class="tag">Signed in</span>');
+    btn.setAttribute("aria-label", "Edit note: " + entry.text);
+    btn.onclick = () => { editingId = entry.id; render(); };
+    li.append(btn);
+    return li;
+  }
+
+  function editorFor(entry) {
+    const li = document.createElement("li");
+    li.className = "note";
+    const box = document.createElement("div");
+    box.className = "editor";
+    const ta = document.createElement("textarea");
+    ta.id = "edit-" + entry.id;
+    ta.value = entry.text;
+    ta.setAttribute("aria-label", "Note text");
+    const fit = () => { ta.style.height = "auto"; ta.style.height = ta.scrollHeight + 4 + "px"; };
+    ta.addEventListener("input", fit);
+    requestAnimationFrame(fit);
+    const row = document.createElement("div");
+    row.className = "row";
+
+    const sel = document.createElement("select");
+    sel.id = "cat-" + entry.id;
+    sel.setAttribute("aria-label", "Card");
+    for (const c of CATS) sel.add(new Option(c.label, c.id, false, c.id === entry.category));
+
+    const aud = document.createElement("button");
+    aud.type = "button"; aud.className = "b";
+    aud.textContent = "Signed-in only";
+    aud.setAttribute("aria-pressed", String(entry.audience === "account"));
+    aud.onclick = () => aud.setAttribute("aria-pressed", String(aud.getAttribute("aria-pressed") !== "true"));
+
+    const lead = document.createElement("button");
+    lead.type = "button"; lead.className = "b";
+    lead.textContent = "Highlight";
+    lead.setAttribute("aria-pressed", String(!!entry.highlight));
+    lead.onclick = () => lead.setAttribute("aria-pressed", String(lead.getAttribute("aria-pressed") !== "true"));
+
+    const up = document.createElement("button");
+    up.type = "button"; up.className = "b"; up.textContent = "Move up";
+    up.onclick = () => { commit(); move(entry, -1); };
+    const down = document.createElement("button");
+    down.type = "button"; down.className = "b"; down.textContent = "Move down";
+    down.onclick = () => { commit(); move(entry, 1); };
+
+    const del = document.createElement("button");
+    del.type = "button"; del.className = "b danger"; del.textContent = "Delete";
+    del.onclick = () => {
+      if (del.dataset.armed) {
+        draft.entries = draft.entries.filter((e) => e !== entry);
+        editingId = null; save(); render();
+      } else { del.dataset.armed = "1"; del.textContent = "Delete for good?"; }
+    };
+
+    const spacer = document.createElement("span"); spacer.className = "grow";
+    const cancel = document.createElement("button");
+    cancel.type = "button"; cancel.className = "b"; cancel.textContent = "Cancel";
+    cancel.onclick = () => {
+      if (!entry.text) draft.entries = draft.entries.filter((e) => e !== entry);
+      editingId = null; render();
+    };
+    const done = document.createElement("button");
+    done.type = "button"; done.className = "b primary"; done.textContent = "Save";
+
+    function commit() {
+      const text = ta.value.trim();
+      const changed = text !== entry.text || sel.value !== entry.category ||
+        (aud.getAttribute("aria-pressed") === "true") !== (entry.audience === "account") ||
+        (lead.getAttribute("aria-pressed") === "true") !== !!entry.highlight;
+      entry.text = text;
+      entry.category = sel.value;
+      entry.audience = aud.getAttribute("aria-pressed") === "true" ? "account" : "guest";
+      if (lead.getAttribute("aria-pressed") === "true") entry.highlight = true; else delete entry.highlight;
+      return changed;
+    }
+    done.onclick = () => {
+      const changed = commit();
+      if (!entry.text) draft.entries = draft.entries.filter((e) => e !== entry);
+      editingId = null;
+      if (changed || !entry.text) save();
+      render();
+    };
+    ta.addEventListener("keydown", (ev) => {
+      if (ev.key === "Enter" && (ev.ctrlKey || ev.metaKey)) { ev.preventDefault(); done.click(); }
+      if (ev.key === "Escape") { ev.preventDefault(); cancel.click(); }
+    });
+
+    row.append(sel, aud, lead, up, down, del, spacer, cancel, done);
+    box.append(ta, row, Object.assign(document.createElement("span"), { className: "hint", textContent: "Ctrl+Enter saves · Esc cancels" }));
+    li.append(box);
+    return li;
+  }
+
+  function move(entry, dir) {
+    const same = draft.entries.filter((e) => e.category === entry.category);
+    const idx = same.indexOf(entry);
+    const target = same[idx + dir];
+    if (!target) { render(); return; }
+    const a = draft.entries.indexOf(entry), b = draft.entries.indexOf(target);
+    [draft.entries[a], draft.entries[b]] = [draft.entries[b], draft.entries[a]];
+    save(); render();
+  }
+
+  function save() {
+    if (!db) return;
+    const body = { version: draft.version, entries: draft.entries.map((e) => ({ ...e })), editedAt: new Date().toISOString() };
+    setStatus("saving", "Saving…");
+    saveChain = saveChain.then(() => db.doc(DOC).set(body)).then(
+      () => setStatus("saved", "Saved " + new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })),
+      (err) => {
+        if (err && err.code === "invalid_argument") { canWrite = false; render(); }
+        setStatus("error", "Not saved: " + (err && err.message ? err.message : "the store refused the change") + ". Tell Claude in chat.");
+      }
+    );
+  }
+
+  async function start() {
+    const timer = setTimeout(() => { if (!draft) setStatus("error", "Can't reach the saved draft yet"); }, 10000);
+    db = await claude.use("db");
+    if (!db) { clearTimeout(timer); setStatus("error", "Saving isn't available in this view. Open the page signed in to claude.ai."); return; }
+    try {
+      const user = await claude.use("user");
+      const may = user ? await user.can("data.write") : null;
+      if (may === false) canWrite = false;
+    } catch (_) {}
+    db.doc(DOC).onSnapshot((snap) => {
+      if (!snap.metadata.fromCache) clearTimeout(timer);
+      if (!snap.exists) { setStatus("idle", "No draft loaded yet"); return; }
+      if (snap.metadata.hasPendingWrites) return;
+      const data = snap.data();
+      draft = { version: data.version, entries: data.entries.map((e) => ({ ...e })) };
+      if (statusEl.dataset.state !== "saved") setStatus(canWrite ? "saved" : "idle", canWrite ? "Up to date" : "Read only");
+      if (!editingId) render();
+    }, (err) => { clearTimeout(timer); setStatus("error", "Lost the connection to the draft (" + err.code + ")"); });
+  }
+  start();
+})();
+</script>

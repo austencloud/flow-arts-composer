@@ -37,6 +37,32 @@ describe("video overlays", () => {
     });
   });
 
+  it("starts each header part from its own canvas preference", () => {
+    const canvas: Record<string, boolean> = {
+      wordHeader: true,
+      headerLevel: false,
+      headerLoop: true,
+      headerTurns: false,
+      headerReversals: true,
+      progressBar: true,
+      tkaGlyph: true,
+      stepNumbers: true,
+      elementalGlyph: true,
+    };
+    const overlays = videoOverlaysFrom((key) => canvas[key]!, true);
+    expect(overlays).toMatchObject({
+      headerWord: true,
+      headerLevel: false,
+      headerLoop: true,
+      headerTurns: false,
+      headerReversals: true,
+    });
+    // With the header off no part shows, whatever its own preference.
+    canvas.wordHeader = false;
+    const off = videoOverlaysFrom((key) => canvas[key]!, true);
+    for (const key of VIDEO_HEADER_KEYS) expect(off[key]).toBe(false);
+  });
+
   it("accepts only a complete on/off list", () => {
     expect(isVideoOverlays(allOn)).toBe(true);
     expect(isVideoOverlays({ ...allOn, progressBar: "yes" })).toBe(false);

@@ -1,3 +1,4 @@
+import { page } from "vitest/browser";
 import { render } from "vitest-browser-svelte";
 import { describe, expect, it, vi } from "vitest";
 import type { AccountSetupState } from "#lib/shared/onboarding/state/account-setup-state.svelte.js";
@@ -37,5 +38,58 @@ describe("Settings Theme page and the setup checklist", () => {
     await vi.waitFor(() => expect(markThemeChosen).toHaveBeenCalledTimes(1));
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(markThemeChosen).toHaveBeenCalledTimes(1);
+  });
+
+  // Theme folded into Settings → Display (2026-11-02). As a Display screen
+  // the showroom must still count as the choice, go back, and apply.
+  it("works as the Display tab's Theme screen", async () => {
+    const { setup, state, markThemeChosen } = fakeSetup();
+    setup.available = true;
+    const onBack = vi.fn();
+    const onUpdate = vi.fn();
+    render(Harness, { state, onBack, onUpdate });
+
+    await vi.waitFor(() => expect(markThemeChosen).toHaveBeenCalledTimes(1));
+    expect(document.querySelector("[data-theme-screen]")).not.toBeNull();
+
+    await page.getByRole("button", { name: "Back" }).click();
+    expect(onBack).toHaveBeenCalledTimes(1);
+
+    await page.getByRole("button", { name: "Ocean", exact: true }).click();
+    await page.getByRole("button", { name: "Use Ocean", exact: true }).click();
+    await vi.waitFor(() =>
+      expect(onUpdate).toHaveBeenCalledWith({
+        key: "backgroundType",
+        value: "ocean",
+      })
+    );
+  });
+
+  // Theme became the fourth column of Display's columns tier (2026-11-02):
+  // the same frame with Use theme in the header, no way back, ten choices.
+  it("works as the Display tab's Theme column", async () => {
+    const { state } = fakeSetup();
+    const onUpdate = vi.fn();
+    render(Harness, { state, onUpdate, column: true });
+
+    expect(document.querySelector("[data-theme-column]")).not.toBeNull();
+    expect(
+      document.querySelector('[data-display-section="theme"]')
+    ).not.toBeNull();
+    expect(document.querySelectorAll(".theme-choices button")).toHaveLength(10);
+    await expect
+      .element(page.getByRole("button", { name: "Back" }))
+      .not.toBeInTheDocument();
+
+    await page.getByRole("button", { name: "Celestial", exact: true }).click();
+    await page
+      .getByRole("button", { name: "Use Celestial", exact: true })
+      .click();
+    await vi.waitFor(() =>
+      expect(onUpdate).toHaveBeenCalledWith({
+        key: "backgroundType",
+        value: "celestial",
+      })
+    );
   });
 });

@@ -69,6 +69,20 @@ export function animationSummary(vm: AnimationVisibilityStateManager): string {
     [vm.getVisibility("propElementalGlyph"), t("viewer_detail_prop_tnd")],
     [vm.getVisibility("stepNumbers"), t("animation_menu_step_numbers")],
     [vm.getVisibility("wordHeader"), t("viewer_ui_word")],
+    // The header's parts count only while the header itself shows.
+    ...(
+      [
+        ["headerLevel", t("share_overlay_level")],
+        ["headerLoop", "LOOP"],
+        ["headerTurns", t("share_overlay_turns")],
+        ["headerReversals", t("share_overlay_reversals")],
+      ] as const
+    ).map(
+      ([key, label]): [boolean, string] => [
+        vm.getVisibility("wordHeader") && vm.getVisibility(key),
+        label,
+      ]
+    ),
     [vm.getVisibility("progressBar"), t("animation_menu_progress_bar")],
   ];
   return onList(on.filter(([active]) => active).map(([, label]) => label));

@@ -19,7 +19,6 @@ describe("guest Settings access", () => {
       "profile",
       "preferences",
       "display",
-      "theme",
       "props",
       "keyboard",
       "release-notes",
@@ -29,7 +28,6 @@ describe("guest Settings access", () => {
   it.each([
     "profile",
     "props",
-    "theme",
     "preferences",
     "display",
     "keyboard",

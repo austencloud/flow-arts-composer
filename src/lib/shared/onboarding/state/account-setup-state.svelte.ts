@@ -16,6 +16,8 @@ export const ACCOUNT_SETUP_SETTINGS_DESTINATIONS = {
   "display-name": "profile",
   "profile-photo": "profile",
   props: "profile",
+  // Theme folded into Display (2026-11-02): this old tab id is the alias
+  // that opens Display with its Theme screen open.
   theme: "theme",
 } as const satisfies Record<AccountSetupTaskId, string>;
 

@@ -5,16 +5,21 @@
  */
 
 import type { ModuleDefinition, ModuleId, Section } from "../domain/types";
-import { MODULE_DEFINITIONS } from "../config/module-definitions";
+import {
+  MODULE_DEFINITIONS,
+  normalizeSectionId,
+} from "../config/module-definitions";
 
 export function isValidModule(moduleId: string): moduleId is ModuleId {
   return MODULE_DEFINITIONS.some((m) => m.id === moduleId);
 }
 
+/** A renamed or folded tab's old id counts: it still opens where it went. */
 export function isValidTabForModule(moduleId: ModuleId, tabId: string): boolean {
   const moduleDef = getModuleDefinition(moduleId);
   if (!moduleDef) return false;
-  return moduleDef.sections.some((tab) => tab.id === tabId);
+  const id = normalizeSectionId(moduleId, tabId) ?? tabId;
+  return moduleDef.sections.some((tab) => tab.id === id);
 }
 
 export function isValidTab(tabs: Section[], tabId: string): boolean {

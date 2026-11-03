@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import { getAllPropTypes } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
-import { foldUntraceableProp, shapeMatrixPickerProps } from "../prop-pair";
+import {
+  SHAPE_MATRIX_DEFAULT_PROP,
+  foldUntraceableProp,
+  propPairFromLegacy,
+  shapeMatrixPickerProps,
+} from "../prop-pair";
 
 describe("Shape Engine picker props", () => {
   it("leaves out the props with no tip point to trace", () => {
@@ -25,5 +30,24 @@ describe("Shape Engine picker props", () => {
     expect(new Set(shapeMatrixPickerProps())).toEqual(
       new Set(drawnAsThemselves)
     );
+  });
+});
+
+describe("Shape Engine default prop", () => {
+  it("is poi, and poi is a prop the engine traces", () => {
+    expect(SHAPE_MATRIX_DEFAULT_PROP).toBe(PropType.POI);
+    expect(foldUntraceableProp(PropType.POI)).toBe(PropType.POI);
+    expect(shapeMatrixPickerProps()).toContain(PropType.POI);
+  });
+
+  it("gives both hands poi when the settings name no prop", () => {
+    expect(propPairFromLegacy({})).toEqual({
+      left: PropType.POI,
+      right: PropType.POI,
+    });
+  });
+
+  it("folds a prop with nothing to trace to poi", () => {
+    expect(foldUntraceableProp(PropType.HAND)).toBe(PropType.POI);
   });
 });

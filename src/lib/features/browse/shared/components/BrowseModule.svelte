@@ -84,6 +84,7 @@
   import { Crossfade, growFade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { page } from "$app/state";
+  import { isSidewaysViewport } from "#lib/shared/ui/sideways-viewport.js";
   import {
     GALLERY_LETTER_QUERY_PARAM,
     parseGalleryLetterQuery,
@@ -475,6 +476,20 @@
     responsiveSettings?.isMobile || responsiveSettings?.isTablet || false
   );
 
+  // A phone or tablet on an explore list stacks the bar, the section tabs and
+  // the scope bar above the grid. Held sideways (the Fold's cover on its side,
+  // about 340px tall) that stack ate three quarters of the height, so there
+  // the three move into a column beside the list (the CSS below decides when).
+  const exploreSwitcherShown = $derived(
+    isMobile && !homeOpen && activePrimary === "explore"
+  );
+  const sideColumnEligible = $derived(
+    exploreSwitcherShown &&
+      browseNavigationState.currentLocation?.view === "list"
+  );
+  // In the column the section tabs stand one per line.
+  const sideColumn = $derived(sideColumnEligible && isSidewaysViewport());
+
   // Desktop sidebar visibility (to hide top section when sidebar is visible)
   const showDesktopSidebar = $derived(desktopSidebarState.isVisible);
 
@@ -766,12 +781,12 @@
 <!-- Sequence Details Modal removed - BrowseEventHandler.handleViewDetail() navigates to /sequence/[id] route -->
 
 <!-- Main layout - shows immediately with skeletons while data loads -->
-<div class="browse-content">
+<div class="browse-content" class:side-column={sideColumnEligible}>
   <!-- One navigation bar for every Browse screen. It sits above the
        Crossfade so the trail, back box and screen actions never fade or move
        with the content under them. -->
   <BrowseHeaderBar compact={isMobile} />
-  {#if isMobile && !homeOpen && activePrimary === "explore"}
+  {#if exploreSwitcherShown}
     <!-- Phones and tablets have no sidebar, so the Community sibling switcher
          sits in its own row under the bar, above the section's own search and
          filters: it picks what they filter. -->
@@ -800,6 +815,7 @@
           }}
           color="accent"
           semantics="tabs"
+          columns={sideColumn ? 1 : undefined}
           ariaLabel={t("browse_ui_explore_content_type")}
         />
       </div>
@@ -941,6 +957,56 @@
     flex: 1;
     min-height: 0;
     overflow: hidden;
+  }
+
+  /* A phone held sideways (the Fold's cover on its side: 915 wide, about 340
+     tall with the browser bar). The bar, the section tabs and the scope bar
+     stand in a column at the left and the list takes the full height beside
+     it, the only part that scrolls. The tabs stack one per line; the scope
+     chips wrap and take the rest of the column. */
+  @media (max-height: 480px) and (min-width: 700px) {
+    .browse-content.side-column {
+      display: grid;
+      grid-template-columns: 15rem minmax(0, 1fr);
+      grid-template-rows: auto auto minmax(0, 1fr);
+      grid-template-areas:
+        "head list"
+        "tabs list"
+        "scope list";
+    }
+
+    .side-column > :global(.browse-header) {
+      grid-area: head;
+      height: 52px;
+    }
+
+    .side-column .explore-switcher-row {
+      grid-area: tabs;
+      padding: 8px 10px;
+    }
+
+    .side-column .explore-switcher :global(.ui-segments button) {
+      min-height: 34px;
+      padding-block: 4px;
+    }
+
+    .side-column .scope-bar-slot {
+      grid-area: scope;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .side-column .scope-bar-slot > :global(.scope-frame) {
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+
+    .side-column .browse-tab-content {
+      grid-area: list;
+      border-inline-start: 1px solid
+        color-mix(in srgb, var(--theme-text, #fff) 10%, transparent);
+    }
   }
 
   /* Phones reach the Community sections from the bottom navigation, so the

@@ -3,16 +3,16 @@
    * Creation Workspace Area
    *
    * Wrapper for the actual workspace panel when a creation method has been selected.
-   * Provides fade transitions and dynamic padding for the button panel at the bottom.
-   * The padding is measured from the actual ButtonPanel height to adapt to different
-   * screen sizes and responsive layouts.
+   * Provides fade transitions and reserves room for the button panel at the bottom.
+   * The room is measured from the actual ButtonPanel height to adapt to different
+   * screen sizes and responsive layouts, and folds away in theater mode.
    *
    * Extracted from CreateModule to reduce component size.
    *
    * Domain: Create module - Workspace presentation
    */
 
-  import { opaqueFade } from "#lib/shared/transitions/motion.js";
+  import { growFade, opaqueFade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import type { IToolPanelMethods } from "../types/create-module-types";
   import type { LetterSource } from "#lib/shared/create/domain/spell-models.js";
@@ -25,6 +25,9 @@
   import { onDestroy, untrack } from "svelte";
   import { isStartPlacementMorphCapturing } from "../../construct/start-placement-picker/services/start-placement-morph";
   import { hasOpenModalLayer } from "#lib/shared/keyboard/domain/shortcut-target-resolution.js";
+  import ViewSequenceButton from "../workspace-panel/shared/components/buttons/ViewSequenceButton.svelte";
+  import ShareButton from "../workspace-panel/shared/components/buttons/ShareButton.svelte";
+  import { shareTarget } from "#lib/shared/mobile/share-action.svelte.js";
 
   const ctx = getCreateModuleContext();
   const { CreateModuleState, panelState, layout } = ctx;
@@ -35,6 +38,7 @@
     animationStateRef,
     currentDisplayWord,
     buttonPanelHeight = 0,
+    theater = false,
     compactToolbar = false,
     isSideBySideLayout,
     letterSources = null,
@@ -44,6 +48,9 @@
     animationStateRef?: ReturnType<IToolPanelMethods["getAnimationStateRef"]>;
     currentDisplayWord: string;
     buttonPanelHeight?: number;
+    /** Sideways phone preview (workspace-theater): the header and the room
+     *  under the workspace fold away so the player gets the whole height. */
+    theater?: boolean;
     /** The word sits in the bottom rail, so the header keeps only its badges */
     compactToolbar?: boolean;
     /** Use the actual panel direction when choosing pictograph columns. */
@@ -58,6 +65,10 @@
   const practiceStepIndex = $derived(panelState.practiceStepIndex);
   const shouldOrbitAroundCenter = $derived(panelState.shouldOrbitAroundCenter);
   const isMobilePortrait = $derived(layout.isMobilePortrait());
+  // The same sheet choice ButtonPanel makes for its Share.
+  const useMobileShareSheet = $derived(
+    shareTarget.isMobile || !layout.shouldUseSideBySideLayout
+  );
 
   const optionAudition = $derived(panelState.optionAudition);
   const playback = $derived(panelState.workspacePlayback);
@@ -185,6 +196,28 @@
   {/key}
 {/snippet}
 
+<!-- Theater mode's actions, beside the player while the bottom bar is away.
+     The same owners and wiring as ButtonPanel: Viewer hands the running
+     preview to the full viewer, Share shares the sequence being edited, and
+     Play's stopping state ends the preview. -->
+{#snippet theaterActions()}
+  <ViewSequenceButton
+    purpose="viewer"
+    onclick={() => panelState.handoffWorkspacePlaybackToViewer()}
+  />
+  {#if CreateModuleState.canShowActionButtons()}
+    <ShareButton
+      sequence={activeSequenceState.currentSequence}
+      useMobileSheet={useMobileShareSheet}
+    />
+  {/if}
+  <ViewSequenceButton
+    purpose="play"
+    isStopping
+    onclick={() => panelState.stopWorkspacePlayback()}
+  />
+{/snippet}
+
 {#snippet animation()}
   {#if retainedPlayback}
     <!-- One player serves every sequence. Any source change stops playback
@@ -209,6 +242,7 @@
             panelState.failWorkspacePlaybackPreparation(playbackCandidate!);
         },
         onclose: () => panelState.stopWorkspacePlayback(),
+        theaterActions,
         onStepChange: (step: number) => (playbackStep = Math.floor(step)),
         onPlaybackChange: (
           reportedRun: number,
@@ -231,7 +265,6 @@
 <!-- Layout 2: Actual workspace when method is selected -->
 <div
   class="workspace-panel-wrapper"
-  style:padding-bottom="{buttonPanelHeight}px"
   in:opaqueFade={{
     // The chosen start card flies into this panel's start cell, and its
     // landing image carries this wrapper's opacity: fading in here would fade
@@ -247,17 +280,26 @@
   <!-- CRITICAL: {#key} block ensures fresh StepGrid instances per tab
        This prevents animation state pollution (step-grid-display-state.svelte)
        But we DON'T key the parent layout to avoid workspace visibility timing issues -->
-  <WorkspaceSequenceHeader
-    sequenceState={activeSequenceState}
-    word={currentDisplayWord}
-    {letterSources}
-    showTitle={!compactToolbar}
-    quietBadges={navigationState.activeTab === "assemble"}
-    onHeightChange={onHeaderHeightChange}
-    activeStepNumber={playback
-      ? playbackStep
-      : (animatingStepNumber ?? practiceStepIndex)}
-  />
+  <!-- Folds away in theater mode, so the player gets the height. Its box
+       is this wrapper, so the header keeps measuring its own full height. -->
+  {#if !theater}
+    <div
+      class="sequence-header-presence"
+      transition:growFade={{ duration: DURATION.normal }}
+    >
+      <WorkspaceSequenceHeader
+        sequenceState={activeSequenceState}
+        word={currentDisplayWord}
+        {letterSources}
+        showTitle={!compactToolbar}
+        quietBadges={navigationState.activeTab === "assemble"}
+        onHeightChange={onHeaderHeightChange}
+        activeStepNumber={playback
+          ? playbackStep
+          : (animatingStepNumber ?? practiceStepIndex)}
+      />
+    </div>
+  {/if}
   <div class="workspace-content">
     <!-- Play collapses the tool panel as the grid hands off to the animator,
          and Close brings it back. Holding the outgoing side spares the hidden
@@ -274,6 +316,16 @@
       second={animation}
     />
   </div>
+  <!-- The room the bottom bar covers. It folds away with the bar in theater
+       mode and grows back to the bar's height when the bar returns. -->
+  {#if !theater}
+    <div
+      class="button-panel-room"
+      style:height="{buttonPanelHeight}px"
+      aria-hidden="true"
+      transition:growFade={{ duration: DURATION.normal }}
+    ></div>
+  {/if}
 </div>
 
 <style>
@@ -287,7 +339,11 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    /* padding-bottom is set dynamically via style attribute based on ButtonPanel height */
+  }
+
+  .sequence-header-presence,
+  .button-panel-room {
+    flex: 0 0 auto;
   }
 
   .workspace-panel-wrapper :global(.source > .workspace-panel) {

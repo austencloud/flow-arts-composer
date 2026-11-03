@@ -44,6 +44,12 @@
     mirrorOn: boolean;
     /** Toggle the AR mirror on/off. */
     onToggleMirror: () => void;
+    /**
+     * "dock" is the strip along the foot of the viewer. "column" is the same
+     * cockpit centred in the practice column of a phone held sideways, where
+     * the dock's top accent and lifted shadow would float mid-column.
+     */
+    placement?: "dock" | "column";
   }
 
   let {
@@ -59,6 +65,7 @@
     onToggleMetronome,
     mirrorOn,
     onToggleMirror,
+    placement = "dock",
   }: Props = $props();
 
   let bpmColor = $derived.by(() => {
@@ -166,6 +173,7 @@
 
 <div
   class="practice-bar"
+  class:column={placement === "column"}
   role="region"
   aria-label={t("viewer_ui_practice_controls")}
 >
@@ -380,6 +388,16 @@
     flex-shrink: 0;
     container-type: inline-size;
     container-name: practice-bar;
+  }
+
+  /* In the sideways practice column the cockpit sits in the middle of the
+     column under the header, not on the screen's bottom edge: no dock edge,
+     no lift, and no home-indicator inset to clear. */
+  .practice-bar.column {
+    background: transparent;
+    border-top: 0;
+    box-shadow: none;
+    padding-bottom: 14px;
   }
 
   /* Centered control cluster. */

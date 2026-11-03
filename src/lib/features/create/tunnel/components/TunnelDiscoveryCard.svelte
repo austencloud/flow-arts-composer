@@ -329,6 +329,40 @@
     }
   }
 
+  /* A phone held sideways: the library list is about 160px tall, so each
+     card keeps a small poster, its name and its counts, and leaves the
+     recipe, formation, playback and date to the viewer it opens. */
+  @media (max-height: 480px) and (min-width: 700px) {
+    .tunnel-card {
+      grid-template-columns: 3.5rem minmax(0, 1fr) 1.5rem;
+      gap: var(--settings-spacing-sm, 8px);
+      min-height: 0;
+      padding: 6px 8px;
+    }
+
+    .poster-frame {
+      width: 3.5rem;
+    }
+
+    .poster-fallback {
+      font-size: 1.25rem;
+    }
+
+    .recipe,
+    .formation,
+    .playback,
+    .saved-date {
+      display: none;
+    }
+
+    .active-badge {
+      width: 1.4rem;
+      padding: 0;
+      justify-content: center;
+      font-size: 0;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .tunnel-card {
       transition: none;

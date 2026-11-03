@@ -53,7 +53,6 @@ const GUEST_MODULE_ACCESS: Record<string, string[]> = {
     "profile",
     "preferences",
     "display",
-    "theme",
     "props",
     "keyboard",
     "release-notes",

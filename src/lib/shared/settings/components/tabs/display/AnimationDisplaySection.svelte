@@ -52,6 +52,7 @@
   {#snippet controls()}
     <DisplayPanel
       showWordToggle
+      showHeaderParts
       showMotionVisibility={false}
       hostSized
       chips={compact}

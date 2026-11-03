@@ -17,8 +17,8 @@ const COMMON = {
   theoryMode: "SS" as const,
   theoryPair: null,
   activeAxis: "both" as const,
-  leftPropType: PropType.STAFF,
-  rightPropType: PropType.STAFF,
+  leftPropType: PropType.POI,
+  rightPropType: PropType.POI,
   propMode: null,
   solo: null,
 };
@@ -422,7 +422,7 @@ describe("shape matrix URL state", () => {
       pair: null,
       mode: null,
     });
-    expect(url.searchParams.get("prop")).toBe("staff");
+    expect(url.searchParams.get("prop")).toBe("poi");
     expect(url.searchParams.has("rp")).toBe(false);
 
     writeShapeMatrixRouteState(url, {
@@ -435,7 +435,7 @@ describe("shape matrix URL state", () => {
       pair: null,
       mode: null,
     });
-    expect(url.searchParams.get("prop")).toBe("staff");
+    expect(url.searchParams.get("prop")).toBe("poi");
     expect(url.searchParams.get("rp")).toBe("fan");
   });
 });

@@ -428,6 +428,15 @@
       })
     : null;
   const displaySequence = $derived(labeledCard?.sequence ?? null);
+  const performedCard = firstSequence
+    ? createPostSequenceView({
+        getSequence: () => sequence ?? firstSequence,
+        getLabeling: () => "as-performed",
+        getMirrored: () => false,
+        getActions: () => editor.project.sequenceActions ?? [],
+      })
+    : null;
+  const performedSequence = $derived(performedCard?.sequence ?? null);
 
   // Set by the bindings and the workspace as the editor opens.
   let staffTips = $state.raw<StaffTipAnalysis | null>(null);
@@ -464,6 +473,12 @@
     },
     get displaySequence() {
       return displaySequence;
+    },
+    get performedSequence() {
+      return performedSequence;
+    },
+    get handsDrawnSwapped() {
+      return handLabeling === "mirror-me";
     },
     // The canvas was never handed a separate scan record, so a card's QR
     // opens the sequence the post draws.

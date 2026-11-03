@@ -33,6 +33,7 @@
   } from "#lib/shared/sequence-viewer/tunnel/tunnel-cast-3d.js";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type { PostStage3D } from "../item-kinds";
+  import { propHandPalette } from "@austencloud/scene-3d/prop-hand-palette";
   import { backPerformerName, followerPropColors } from "../tunnel-performers";
   import { registerStage3DFrameSource } from "../stage-3d-registry";
   import {
@@ -41,6 +42,7 @@
     type StageCameraPose,
   } from "./stage-3d-camera";
   import { stage3DCameraState } from "./stage-3d-camera-state.svelte";
+  import { stage3DShotEditor } from "./stage-3d-shot-editor.svelte";
 
   let {
     itemId,
@@ -48,13 +50,14 @@
     followerSequences,
     followerCount,
     performerSteps,
-    stage,
+    stage: clipStage,
     orbitAngle,
     postSeconds,
     leftPropType,
     rightPropType,
     exporting,
     exportSize,
+    swapHandColors = false,
   }: {
     itemId: string;
     sequence: SequenceData;
@@ -71,7 +74,12 @@
     rightPropType?: string | null;
     exporting: boolean;
     exportSize?: { width: number; height: number } | null;
+    /** Each hand wears the other's color, as the post's drawing does. */
+    swapHandColors?: boolean;
   } = $props();
+
+  // While the shot editor has this clip open, the stage shows its draft.
+  const stage = $derived(stage3DShotEditor.draftFor(itemId) ?? clipStage);
 
   const environmentId = $derived(
     normalizeSceneEnvironmentId(stage.environment)
@@ -81,9 +89,14 @@
   const viewer = createViewer3DState(
     {
       renderMode: "3d",
-      environmentId: normalizeSceneEnvironmentId(stage.environment),
+      environmentId: normalizeSceneEnvironmentId(clipStage.environment),
       // The post owns its look: no device effects, grid or plane labels.
-      effectToggles: { fire: false, led: false, trails: false, charcoal: false },
+      effectToggles: {
+        fire: false,
+        led: false,
+        trails: false,
+        charcoal: false,
+      },
       showGridLabels: false,
       visiblePlanes: [],
     },
@@ -98,6 +111,7 @@
   let entered = $state(false);
   let sceneReady = $state(false);
   let element = $state<HTMLDivElement | null>(null);
+  let picture = $state<HTMLDivElement | null>(null);
   let boxWidth = $state(0);
   let boxHeight = $state(0);
 
@@ -138,10 +152,18 @@
     ];
   });
   const propColors = $derived<(PerformerPropColors | null)[]>([
-    null,
-    ...Array.from({ length: followerCount }, (_, index) =>
-      followerPropColors(index, followerCount)
-    ),
+    swapHandColors
+      ? {
+          left: propHandPalette("red").main,
+          right: propHandPalette("blue").main,
+        }
+      : null,
+    ...Array.from({ length: followerCount }, (_, index) => {
+      const colors = followerPropColors(index, followerCount);
+      return swapHandColors
+        ? { left: colors.right, right: colors.left }
+        : colors;
+    }),
   ]);
 
   let castApplied = $state(false);
@@ -153,7 +175,8 @@
     }
     // Entering 3D seeds an empty rig with the opened sequence, and the stage
     // axis turns with the environment; both send the cast back to its places.
-    for (const rig of viewer.performerManager.performers) void rig.sourceSequence;
+    for (const rig of viewer.performerManager.performers)
+      void rig.sourceSequence;
     void viewer.environmentId;
     untrack(() => {
       applyTunnelCastToViewer(viewer, current);
@@ -227,6 +250,22 @@
   onMount(() => {
     frame = requestAnimationFrame(holdCamera);
     return () => cancelAnimationFrame(frame);
+  });
+
+  // ---- Shot editor ---------------------------------------------------------
+
+  // The open editor borrows the picture itself: the same canvas moves into
+  // its frame and grows there, then comes home when the editor closes.
+  const editorFrame = $derived(stage3DShotEditor.frameFor(itemId));
+  $effect(() => {
+    const frame = editorFrame;
+    const moved = picture;
+    const home = element;
+    if (!frame || !moved || !home) return;
+    frame.append(moved);
+    return () => {
+      home.append(moved);
+    };
   });
 
   // ---- Export ----------------------------------------------------------------
@@ -348,30 +387,35 @@
 <div
   class="stage-3d"
   bind:this={element}
-  bind:clientWidth={boxWidth}
-  bind:clientHeight={boxHeight}
   data-stage-3d={itemId}
   data-stage-3d-ready={ready}
   data-stage-3d-shot={stage.shot}
   data-stage-3d-orbit-angle={orbitAngle.toFixed(4)}
   data-stage-3d-steps={performerSteps.map((step) => step.toFixed(4)).join(",")}
 >
-  {#if entered}
-    <Viewer3DCanvas
-      sequenceData={sequence}
-      currentStep={performerSteps[0] ?? 0}
-      performerSteps={performerSteps}
-      performerPropColors={propColors}
-      isPlaying={false}
-      {leftPropType}
-      {rightPropType}
-      hideOverlays
-      hidePerformerBadges
-      hideSceneMarkers
-      rendererHandleRequired
-      onSceneReadyChange={(value: boolean) => (sceneReady = value)}
-    />
-  {/if}
+  <div
+    class="picture"
+    bind:this={picture}
+    bind:clientWidth={boxWidth}
+    bind:clientHeight={boxHeight}
+  >
+    {#if entered}
+      <Viewer3DCanvas
+        sequenceData={sequence}
+        currentStep={performerSteps[0] ?? 0}
+        {performerSteps}
+        performerPropColors={propColors}
+        isPlaying={false}
+        {leftPropType}
+        {rightPropType}
+        hideOverlays
+        hidePerformerBadges
+        hideSceneMarkers
+        rendererHandleRequired
+        onSceneReadyChange={(value: boolean) => (sceneReady = value)}
+      />
+    {/if}
+  </div>
 </div>
 
 <style>
@@ -380,5 +424,10 @@
     inset: 0;
     overflow: hidden;
     background: #000;
+  }
+
+  .picture {
+    position: absolute;
+    inset: 0;
   }
 </style>

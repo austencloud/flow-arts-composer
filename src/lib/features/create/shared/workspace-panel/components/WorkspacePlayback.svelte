@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { Snippet } from "svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import InlineAnimationPlayer from "#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte";
@@ -9,6 +10,8 @@
     type EffectsConfigState,
   } from "#lib/shared/effects/state/effects-config-state.svelte.js";
   import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import { flyFade } from "#lib/shared/transitions/motion.js";
+  import { isTheaterViewport } from "#lib/features/create/shared/services/workspace-theater.js";
 
   let {
     sequence,
@@ -19,6 +22,7 @@
     onStepChange,
     onPlaybackChange,
     onclose,
+    theaterActions,
   }: {
     sequence: SequenceData;
     active: boolean;
@@ -33,7 +37,14 @@
     /** Returns the workspace to the editable card. Rendered as a corner X so
      *  the preview carries its own exit instead of relying on Stop or Escape. */
     onclose?: () => void;
+    /** Viewer, Share and Stop for theater mode, where the workspace's bottom
+     *  bar steps aside and they sit in a column beside the rail. */
+    theaterActions?: Snippet;
   } = $props();
+
+  // Sideways on a phone the player is three columns: canvas, a vertical
+  // notation rail, then the actions. The CSS reads the same query.
+  const theater = $derived(isTheaterViewport());
 
   let currentStep = $state(0);
   let playing = $state(false);
@@ -116,13 +127,15 @@
   }
 
   /** What the effect picker may cover under the player's controls, with the
-   *  player at rest: the notation rail when it is open, whole (it lifts with
-   *  the player), otherwise the empty space down to the workspace's toolbar. */
+   *  player at rest: the notation rail when it is open under the canvas,
+   *  whole (it lifts with the player), otherwise the empty space down to the
+   *  workspace's toolbar. In theater mode the rail stands beside the canvas,
+   *  so only the space below counts. */
   function effectPickerRoomBelow() {
     const rest = playerAtRest();
     if (!playbackArea || !playerStage || !rest) return 0;
     const rail = notationRail?.getBoundingClientRect();
-    if (rail && rail.height > 1) {
+    if (!theater && rail && rail.height > 1) {
       return (
         (rail.bottom - playerStage.getBoundingClientRect().bottom) / rest.scale
       );
@@ -242,8 +255,8 @@
       </div>
       <div
         class="notation-rail"
-        class:under-picker={effectPickerArrangement === "below" ||
-          effectPickerArrangement === "dock"}
+        class:under-picker={effectPickerArrangement === "dock" ||
+          (!theater && effectPickerArrangement === "below")}
         bind:this={notationRail}
         role="group"
         aria-label={t("create_ui_sequence_pictographs")}
@@ -257,11 +270,26 @@
             bpm={60}
             density="compact"
             presentation="strip"
+            orientation={theater ? "vertical" : "horizontal"}
             fillHeight
             onCellClick={(step) => seek?.(step)}
           />
         </div>
       </div>
+      {#if theater}
+        <!-- Its column is reserved whenever the layout is theater, so the
+             canvas never resizes as the buttons arrive or leave. -->
+        <div class="theater-actions">
+          {#if active && theaterActions}
+            <div
+              class="theater-actions-stack"
+              transition:flyFade={{ x: 8, y: 0 }}
+            >
+              {@render theaterActions()}
+            </div>
+          {/if}
+        </div>
+      {/if}
     </div>
   </div>
 </div>
@@ -424,6 +452,69 @@
       visibility: visible;
       opacity: 1;
     }
+  }
+  /* Theater mode: a phone on its side, previewing. The workspace's chrome has
+     stepped aside (workspace-theater.ts holds the same query), so the player
+     is three columns centred as one group: the square canvas with its
+     scrubber beneath, the notation rail standing beside it at full height,
+     and Viewer, Share and Stop. The rail is always open here, so the
+     under-canvas --rail-open sums give way to their own: the canvas takes the
+     height the scrubber leaves, unless the width runs out first. After the
+     container rule above so it wins at a tall-enough sideways height. */
+  @media (max-height: 480px) and (min-width: 700px) {
+    .playback-layout {
+      --theater-rail: clamp(72px, 14cqw, 104px);
+      /* Stop keeps Play's 50px floor; Viewer and Share use the touch size. */
+      --theater-actions: max(var(--min-touch-target, 44px), 50px);
+      --theater-gap: 8px;
+    }
+    .playback-media {
+      --theater-canvas: min(
+        100cqh - var(--sequence-seek-target-size),
+        100cqw - var(--theater-rail) - var(--theater-actions) - 2 *
+          var(--theater-gap)
+      );
+      grid-template-columns: var(--theater-canvas) var(--theater-rail) var(
+          --theater-actions
+        );
+      grid-template-rows: minmax(0, 1fr);
+      column-gap: var(--theater-gap);
+      width: calc(
+        var(--theater-canvas) + var(--theater-rail) + var(--theater-actions) +
+          2 * var(--theater-gap)
+      );
+      height: calc(var(--theater-canvas) + var(--sequence-seek-target-size));
+    }
+    .notation-rail {
+      visibility: visible;
+      opacity: 1;
+    }
+    .rail-content {
+      height: 100%;
+    }
+  }
+  .theater-actions {
+    display: grid;
+    place-items: center;
+    min-height: 0;
+    /* Icon-only round controls, as the short-landscape bottom bar draws
+       them. */
+    --workspace-action-label-display: none;
+    --workspace-action-width: var(--min-touch-target, 44px);
+    --workspace-action-gap: 0;
+    --workspace-action-padding-inline: 0;
+    --workspace-action-radius: 50%;
+    --share-trigger-label-display: none;
+    --share-trigger-width: var(--min-touch-target, 44px);
+    --share-trigger-gap: 0;
+    --share-trigger-padding-inline: 0;
+    --share-trigger-radius: 50%;
+  }
+  .theater-actions-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
   }
   /* The effect picker's row floats over the rail, or docks over the toolbar
      across the rail's lower edge on a short phone: the rail fades out behind

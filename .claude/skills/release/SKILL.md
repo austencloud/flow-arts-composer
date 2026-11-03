@@ -47,10 +47,32 @@ version rationale, categorized changelog, and worktree warnings.
 Do not request release confirmation while product work is uncommitted or a
 listed behavior is known to be broken or actively removed.
 
+Present the notes themselves on the editable page, not only as a list in chat.
+Austen asked for this on 2026-11-02 so he can edit wording himself instead of
+routing every change through chat. The page is the private artifact
+[TKA Release Notes](https://claude.ai/artifact/EmasiiQUZwPSNVitLNWa93),
+laid out like the What's New sheet, with each note editable in place.
+
+1. Write the draft to its database (`ArtifactData`, the artifact's `url`):
+   collection `drafts`, doc `current`, body
+   `{version, entries: [{id, category, audience, surface, text, highlight?}], editedAt}`.
+   Give each entry a stable `id` (`n01`, `n02`, ...) and mark the headline
+   with `highlight: true`. Read the doc first and pin the write to its
+   `version`. The page itself does not need republishing.
+2. Send him the link and ask him to edit there, or to say it reads right.
+3. Before the release, read `drafts/current` back. That read is the final
+   copy: drop `id` and `highlight` and write the entries, in order, to the
+   manifest below. `--highlights` takes 1-based positions among the `added`
+   and `improved` entries, so count the highlighted ones in that list.
+
+If the artifact is gone or a different account is signed in, publish
+`notes-editor.html` (beside this file) as a new artifact with
+`capabilities: {db: {}, user: {}}`, then update the link above.
+
 ## 4. Get Confirmation
 
 Ask the user to choose: release now, change the version, edit the changelog, or
-cancel.
+cancel. His edits on the page do not count as a yes; the yes comes in chat.
 
 ## 5. Write and Validate the Manifest
 

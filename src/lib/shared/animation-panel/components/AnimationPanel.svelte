@@ -221,6 +221,16 @@
     /** A height-bounded sidebar can give its visual pages the remaining room.
      *  Auto-height hosts leave this off so their content sets the height. */
     fillPages?: boolean;
+    /** Replaces every page's own bottom-dock tray cap. Those caps keep a dock
+     *  from swallowing the stage above it. A host that docks the panel in a
+     *  column beside its stage (the viewer on a phone held sideways) has no
+     *  stage above the dock, so it passes the room the column has above the
+     *  bar, and the tallest page scrolls inside the tray instead. */
+    dockTrayMaxHeight?: string;
+    /** Open the bottom dock on the remembered page instead of closed. A dock
+     *  under the stage opens closed so the stage keeps its height; a dock in
+     *  a column beside the stage would leave that column empty. */
+    dockStartsOpen?: boolean;
   }
 
   let {
@@ -270,6 +280,8 @@
     closeRequest = 0,
     regionLabel,
     fillPages = false,
+    dockTrayMaxHeight,
+    dockStartsOpen = false,
   }: Props = $props();
 
   const effectiveRegionLabel = $derived(
@@ -292,23 +304,27 @@
   // Desktop sidebar reopens to the last section (default Effects) for proper
   // persistence; mobile bottom sheet stays closed on mount.
   let activePill = $state<PillId | null>(
-    layout === "sidebar" ? loadActivePill() : null
+    layout === "sidebar" || dockStartsOpen ? loadActivePill() : null
   );
   // The viewer shell mounts this panel once and re-lays it out in place
   // (sidebar while another mode owns the workspace, bottom once the stacked
   // motion dock opens), so the initial value above only describes the layout
   // it mounted in. A dock has to open closed: carrying the remembered sidebar
   // page across put the phone on an open Props tray, which ducks the mode bar
-  // that is the only way back out of 2D.
-  let appliedLayout = layout;
+  // that is the only way back out of 2D. A host that asks for an open dock
+  // (dockStartsOpen) has no such bar to hide, and turning the phone into that
+  // layout opens the dock the same way mounting in it does.
+  let appliedLayout = `${layout}:${dockStartsOpen}`;
   $effect(() => {
-    if (layout === appliedLayout) return;
-    appliedLayout = layout;
+    const key = `${layout}:${dockStartsOpen}`;
+    if (key === appliedLayout) return;
+    appliedLayout = key;
     const previous = untrack(() => activePill);
-    const next = layout === "bottom" ? null : loadActivePill();
+    const next =
+      layout === "bottom" && !dockStartsOpen ? null : loadActivePill();
     if (previous === next) return;
     activePill = next;
-    if (layout === "bottom") onActiveSectionChange?.(null);
+    if (layout === "bottom") onActiveSectionChange?.(next);
   });
   let panelDirection = $state(1);
 
@@ -844,6 +860,13 @@
   // ── Mobile ControlDock wiring ──
   // The pill specs become dock tabs; Export's trigger is the compact trailing
   // download icon, mirroring the mandala dock.
+  const pillTrayMaxHeight = $derived(
+    resolvedPill === "effects"
+      ? "min(54vh, 360px)"
+      : resolvedPill === "props"
+        ? "min(80dvh, 380px)"
+        : "min(35vh, 250px)"
+  );
   const dockTabs = $derived<ControlDockTab[]>(
     pillSpecs.map((p) => ({
       id: p.id,
@@ -1381,11 +1404,7 @@
         onTabSelect={(id) => handlePillSelect(id as PillId)}
         trailingAction={dockTrailing}
         {secondaryActions}
-        trayMaxHeight={resolvedPill === "effects"
-          ? "min(54vh, 360px)"
-          : resolvedPill === "props"
-            ? "min(80dvh, 380px)"
-            : "min(35vh, 250px)"}
+        trayMaxHeight={dockTrayMaxHeight ?? pillTrayMaxHeight}
         tray={presentation === "full" ? dockTray : undefined}
       />
     {/if}

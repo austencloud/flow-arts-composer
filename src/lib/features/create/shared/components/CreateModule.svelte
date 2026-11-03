@@ -177,13 +177,6 @@
   let sessionManager: SessionManager | null = $state(null);
   let autosaver: Autosaver | null = $state(null);
   let draftRecovery: DraftRecoveryController | null = $state(null);
-  let resolvingDraftRequest = $state(true);
-
-  $effect(() => {
-    if (!resolvingDraftRequest && !navigationState.isCreateFrontDoorOpen) {
-      draftRecovery?.observeActiveMode();
-    }
-  });
 
   const autosaveMode = $derived(draftMode(navigationState.activeTab));
   const autosaveSessionId = $derived.by(() => draftRecovery?.status?.sessionId);
@@ -917,7 +910,6 @@
           draftUrl.searchParams.delete("draft");
           replaceState(draftUrl, {});
         }
-        resolvingDraftRequest = false;
 
         logger.success("Autosave started");
         logger.success("CreateModule initialized successfully");
@@ -959,7 +951,6 @@
         window.addEventListener("resize", checkIsMobile);
         finishActivation();
       } catch (err) {
-        resolvingDraftRequest = false;
         finishActivation("error");
         error =
           err instanceof Error

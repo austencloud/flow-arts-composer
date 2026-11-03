@@ -26,6 +26,10 @@
      *  trigger — so opening via the Custom preset appears at the preset rather
      *  than over on the far-right gear. */
     customAnchor?: HTMLElement | null;
+    /** Which side of the trigger the panel opens on. "bottom" suits the setup
+     *  bar along the foot of the viewer; "left" suits the practice column of a
+     *  phone held sideways, which is too short for the panel above or below. */
+    side?: "bottom" | "left";
   }
 
   let {
@@ -33,6 +37,7 @@
     onUpdate,
     open = $bindable(false),
     customAnchor = null,
+    side = "bottom",
   }: Props = $props();
 
   // Display values fall back to the orchestrator defaults.
@@ -92,12 +97,14 @@
 
   <Popover.Portal>
     <Popover.Content
-      side="bottom"
-      align={customAnchor ? "center" : "end"}
+      {side}
+      align={customAnchor || side === "left" ? "center" : "end"}
       sideOffset={8}
       collisionPadding={12}
       customAnchor={customAnchor ?? undefined}
-      class="practice-config-panel"
+      class={side === "left"
+        ? "practice-config-panel compact"
+        : "practice-config-panel"}
     >
       <header class="config-header">{t("viewer_detail_practice_ramp")}</header>
 
@@ -294,6 +301,21 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
+  }
+
+  /* Opened beside the sideways practice column the panel has the full screen
+     height to itself, but that height is only about 340px. Tighter spacing and
+     a wider panel (so the summary keeps to one line) keep every row, goal
+     included, on screen without turning the panel into a scroller. */
+  :global(.practice-config-panel.compact) {
+    width: 320px;
+  }
+  :global(.practice-config-panel.compact) .config-header {
+    padding: 8px 14px 6px;
+  }
+  :global(.practice-config-panel.compact) .config-body {
+    gap: 6px;
+    padding: 8px 14px 10px;
   }
 
   .config-label {

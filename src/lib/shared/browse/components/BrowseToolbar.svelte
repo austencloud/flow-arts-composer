@@ -971,6 +971,20 @@
     }
   }
 
+  /* A phone held sideways: the row is the only band above the grid, so it
+     keeps to its controls' height and the count keeps its number only
+     (BrowsePanel folds the viewing control into this row there). */
+  @media (max-height: 480px) and (min-width: 700px) {
+    .browse-toolbar {
+      min-height: 0;
+      padding-block: 6px;
+    }
+
+    .result-count-word {
+      display: none;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .source-btn {
       transition: none !important;

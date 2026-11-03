@@ -26,6 +26,7 @@
   import PracticeCountInOverlay from "./PracticeCountInOverlay.svelte";
   import {
     MIN_VIEWER_PANE_REVEAL_SIZE,
+    SIDEWAYS_PRACTICE_LANE_WIDTH,
     readViewerCardPaneBox,
     rememberViewerCardPaneBox,
     rememberViewerSplitCardPaneBox,
@@ -250,6 +251,9 @@
   const splitResizable = $derived(
     !layout.isMobile && !practiceActive && viewerFocusedPane === null
   );
+  // Practice on a phone held sideways: canvas | narrow vertical lane, with the
+  // shell's practice column beside the whole split.
+  const sidewaysPractice = $derived(practiceActive && !!layout.sideways);
   const responsivePanelLayout = $derived(
     resolveViewerPanelLayout({
       isFullscreen: layout.isFullscreen,
@@ -260,6 +264,7 @@
       focusedPane: viewerFocusedPane,
       practiceActive,
       practiceCanvasFraction,
+      sideways: layout.sideways ?? false,
       userSplitShares: splitResizable ? userSplitShares : undefined,
     })
   );
@@ -502,6 +507,16 @@
       height: previewPanelHeight,
       stageWidth: splitWidth,
       stageHeight: splitHeight,
+      // The sideways lane is a fixed narrow column; it reads once nearly open.
+      minWidth: sidewaysPractice
+        ? SIDEWAYS_PRACTICE_LANE_WIDTH * 0.9
+        : undefined,
+      // The portrait foot is one row of cells sized to its content, far under
+      // the general floor; it reads once it is a cell tall.
+      minHeight:
+        practiceActive && panelLayout.direction === "vertical"
+          ? practiceCellSize
+          : undefined,
     });
   });
 
@@ -742,6 +757,7 @@
           cellSize={practiceCellSize}
           running={practiceRunning}
           countdown={practiceCountdown}
+          orientation={sidewaysPractice ? "vertical" : "horizontal"}
           onSeek={onProgressBarSeek}
         />
       {/if}

@@ -253,6 +253,36 @@
     }
   }
 
+  /* A phone held sideways on a one-screen-at-a-time page (GuideScreens):
+     the site header steps aside and the Contents button opens the guide's
+     single top row as an icon, its name kept for screen readers. The drawer
+     opens under that row. */
+  @media (max-height: 480px) and (min-width: 700px) {
+    :global(html:has(.guide-screens)) .mobile-menu-btn {
+      top: 2px;
+      left: 0.5rem;
+      width: 40px;
+      min-height: 40px;
+      padding: 0;
+    }
+    :global(html:has(.guide-screens)) .mobile-menu-btn span {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+    :global(html:has(.guide-screens)) .mobile-menu-btn.tucked {
+      transform: translateY(calc(-100% - 1rem));
+    }
+    :global(html:has(.guide-screens)) .guide-drawer.open {
+      top: 44px;
+      height: calc(100dvh - 44px);
+      padding-top: 0.75rem;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .mobile-menu-btn,
     .mobile-menu-btn.tucked {

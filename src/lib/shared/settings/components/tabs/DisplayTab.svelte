@@ -1,10 +1,10 @@
 <!--
   Settings → Display: what pictographs, animations and cards show, each beside
   a live example bound to the same global switches the long-press menus write.
-  Three equal columns filling the tab's height where it is wide enough, one
-  stacked column below, with all three sections always visible.
+  Equal columns filling the tab's height where it is wide enough, with every
+  section always visible.
 
-  Below the three-column tier (the tab under 64rem) the three sections do not
+  Below the columns tier (see the revisions for its width) the sections do not
   fit one screen, and settings never scroll (no-page-scroll.md). The tab then
   shows three drill-down boxes sharing its height, each with a live thumbnail
   of its section's stage, its title and a two-line summary of what is on, and
@@ -15,9 +15,30 @@
   The animation section is imported lazily: it carries the animation engine,
   which nothing else in Settings needs. Its frame holds the same header and
   stage box while it loads, then crossfades to the live section.
+
+  Revision: Theme folds in (2026-11-02). Austen: "maybe themes should be
+  folded into the display area". Theme is the first item on both tiers
+  (Theme, Pictograph, Animation, Card) and the Theme tab left the bar. Below
+  64rem it is a fourth box opening BackgroundTab as a drill screen; at 64rem
+  and up it is a band above the columns whose Change swaps the columns for
+  the showroom. `/settings/theme` is an alias that opens it. The boxes lost
+  their 14rem cap and share the whole height ("a big-ass empty space
+  underneath the last option", at 690×830).
+
+  Revision: Theme is the fourth column (2026-11-02). Austen, at 1440×900:
+  "it's weird that the theme is so understated when we're on the actual
+  larger page ... such a very small section". The band and its showroom
+  swap are gone: the columns tier is four equal columns (Theme, Pictograph,
+  Animation, Card), the Theme column being BackgroundTab's `column` mode in
+  the same DisplaySection frame. The tier is used only where each column
+  keeps at least 17rem of content, a tab of 81rem (COLUMNS_MIN_REM below);
+  under it the drill tier's four boxes show. The columns tier's stage floor
+  is back at 14rem (it was 9rem to pay for the band). `/settings/theme`
+  opens the Theme screen on the drill tier and opens nothing on the columns
+  tier, where the Theme column is already on screen.
 -->
 <script lang="ts">
-  import { onMount, type Component } from "svelte";
+  import { onMount, untrack, type Component } from "svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { Crossfade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
@@ -27,6 +48,16 @@
   import { getExportOptionsState } from "#lib/shared/animation-panel/state/export-options-state.svelte.js";
   import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
+  import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
+  import { BackgroundType } from "@austencloud/backgrounds";
+  import {
+    BACKGROUND_CARD_REGISTRY,
+    getCardMetadata,
+  } from "@austencloud/backgrounds/card";
+  import type { AppSettings } from "../../domain/app-settings";
+  import BackgroundTab from "./background/BackgroundTab.svelte";
+  import ThemePreview from "./background/ThemePreview.svelte";
   import DisplaySection from "./display/DisplaySection.svelte";
   import PictographDisplaySection from "./display/PictographDisplaySection.svelte";
   import CardDisplaySection from "./display/CardDisplaySection.svelte";
@@ -41,7 +72,33 @@
     pictographSummary,
   } from "./display/display-switches";
 
-  type SectionKind = "pictograph" | "animation" | "card";
+  type SectionKind = "theme" | "pictograph" | "animation" | "card";
+
+  let {
+    settings,
+    onUpdate,
+  }: {
+    settings?: AppSettings;
+    onUpdate?: (event: { key: string; value: unknown }) => void;
+  } = $props();
+
+  // The Theme box's thumbnail is the showroom's static preview image over the
+  // theme's gradient, not a live background canvas. Measured 2026-11-02 on
+  // the boxes screen at 412x915 beside the live animation thumbnail: live
+  // 56 fps, but 33 fps (p95 50 ms) under 4x CPU throttling, against 50 fps
+  // (p95 33 ms) static. 33 is too close to the 30 fps floor for a phone.
+  // The Theme screen itself still draws the live background.
+  const LIVE_THEME_THUMBNAIL = false;
+
+  const themeType = $derived<BackgroundType>(
+    settings?.backgroundType || BackgroundType.COSMIC
+  );
+  const themeCard = $derived(
+    getCardMetadata(themeType) ?? BACKGROUND_CARD_REGISTRY[0]
+  );
+  const themeName = $derived(
+    t(`settings_theme_${themeType}` as TranslationKey)
+  );
 
   let example = $state<DisplayExample | null>(null);
   let AnimationSection = $state<Component<{
@@ -55,15 +112,46 @@
     null
   );
 
-  // The tab's own width decides the tier, the same 64rem its container
-  // queries use; 0 until the first measure, when nothing is laid out yet.
+  // The tab's own width decides the tier, the same 81rem its container
+  // queries use (DisplaySection); 0 until the first measure, when nothing is
+  // laid out yet. 81rem is where each of the four columns keeps at least
+  // 17rem (272px) of content: the workspace's side margins (2cqi each, 0.04
+  // of the tab), its 2px border and the three 1px hairlines come off the tab,
+  // then each section body's 1.15em padding on both sides (36.8px). So
+  // 0.96W - 5 >= 4 x (272 + 36.8) gives W >= 1292px; 81rem = 1296px leaves
+  // 273px of content a column.
+  const COLUMNS_MIN_REM = 81;
   let tabWidth = $state(0);
   let remPx = $state(16);
   const tier = $derived<"columns" | "drill" | null>(
-    tabWidth === 0 ? null : tabWidth >= 64 * remPx ? "columns" : "drill"
+    tabWidth === 0
+      ? null
+      : tabWidth >= COLUMNS_MIN_REM * remPx
+        ? "columns"
+        : "drill"
   );
   let open = $state<SectionKind | null>(null);
   const back = () => (open = null);
+
+  // `/settings/theme` (the old Theme tab, and the account-setup checklist's
+  // theme task) lands here with the Theme screen asked for. The drill tier
+  // opens it; the columns tier already shows the Theme column, so the
+  // request is only cleared. It waits for the first measure to know which.
+  $effect(() => {
+    const request = navigationState.requestedScreen;
+    const current = tier;
+    if (
+      current === null ||
+      request?.moduleId !== "settings" ||
+      request.sectionId !== "display" ||
+      request.screen !== "theme"
+    )
+      return;
+    untrack(() => {
+      if (current === "drill") open = "theme";
+      navigationState.clearRequestedScreen();
+    });
+  });
 
   const vm = getVisibilityStateManager();
   const animationVisibility = getAnimationVisibilityManager();
@@ -104,6 +192,12 @@
     void exportOptions.imageDarkMode;
     return [
       {
+        kind: "theme" as const,
+        label: t("tab_settings_theme"),
+        summary: themeName,
+        ratio: 1.2,
+      },
+      {
         kind: "pictograph" as const,
         label: t("settings_display_pictograph"),
         summary: pictographSummary(vm),
@@ -130,7 +224,20 @@
      first length), reading the same managers, so a switch flipped on a
      screen shows in its box on the way back. -->
 {#snippet thumbnail(kind: SectionKind, shown: DisplayExample)}
-  {#if kind === "pictograph"}
+  {#if kind === "theme"}
+    {#if LIVE_THEME_THUMBNAIL}
+      <ThemePreview type={themeType} fallback={themeCard?.gradient ?? ""} />
+    {:else}
+      <!-- The showroom's own preview image over the theme's gradient. -->
+      <span
+        class="theme-picture"
+        style:background={themeCard?.gradient}
+        aria-hidden="true"
+      >
+        <img src={`/images/theme-previews/${themeType}.webp`} alt="" />
+      </span>
+    {/if}
+  {:else if kind === "pictograph"}
     <PictographContainer
       pictographData={shown.pictograph}
       gridMode={GridMode.DIAMOND}
@@ -170,15 +277,31 @@
 
 <div class="display-tab" bind:clientWidth={tabWidth} data-tier={tier}>
   {#if tier === "columns"}
-    <div class="display-workspace">
-      <PictographDisplaySection {example} />
-      <div class="animation-slot">{@render animationSection()}</div>
-      <CardDisplaySection {example} />
+    <div class="display-workspace columns">
+      <div class="display-columns">
+        <BackgroundTab
+          settings={settings ?? ({} as AppSettings)}
+          {onUpdate}
+          column
+          title={t("tab_settings_theme")}
+        />
+        <PictographDisplaySection {example} />
+        <div class="animation-slot">{@render animationSection()}</div>
+        <CardDisplaySection {example} />
+      </div>
     </div>
   {:else if tier === "drill"}
     <div class="display-workspace drill">
       <Crossfade key={open ?? "boxes"} duration={DURATION.normal}>
-        {#if open === "pictograph"}
+        {#if open === "theme"}
+          <BackgroundTab
+            settings={settings ?? ({} as AppSettings)}
+            {onUpdate}
+            onBack={back}
+            compact
+            title={t("tab_settings_theme")}
+          />
+        {:else if open === "pictograph"}
           <PictographDisplaySection {example} onBack={back} compact />
         {:else if open === "animation"}
           <div class="animation-slot">{@render animationSection(back)}</div>
@@ -197,7 +320,10 @@
               >
                 <div class="drill-thumb-area">
                   <div class="drill-thumb" data-thumb={box.kind} inert>
-                    {#if example}{@render thumbnail(box.kind, example)}{/if}
+                    {#if box.kind === "theme" || example}{@render thumbnail(
+                        box.kind,
+                        example as DisplayExample
+                      )}{/if}
                   </div>
                 </div>
                 <span class="drill-label" id="{uid}-{box.kind}-label"
@@ -321,20 +447,20 @@
 
   /* The boxes follow the Download video screen's File and Show panes, with
      the section's stage as the picture: thumbnail, title, the summary under
-     it, a chevron saying it opens. Three equal thirds of the frame, each at
-     most 14rem tall; where that caps them the stack sits at the top, centred
-     across. */
+     it, a chevron saying it opens. Four equal quarters of the frame's whole
+     height, centred across: no height cap, so a tall window gives taller
+     boxes and bigger thumbnails instead of a dead band under the last one
+     (Austen, 2026-11-02, at 690×830). */
   .drill-boxes {
     --box-pad: 0.625rem;
     --boxes-gap: 0.5rem;
     --boxes-pad: 0.75rem;
     display: grid;
-    grid-template-rows: repeat(3, minmax(0, 1fr));
+    grid-template-rows: repeat(4, minmax(0, 1fr));
     gap: var(--boxes-gap);
     box-sizing: border-box;
     width: min(100%, 44rem);
     height: 100%;
-    max-height: calc(3 * 14rem + 2 * var(--boxes-gap) + 2 * var(--boxes-pad));
     margin-inline: auto;
     padding: var(--boxes-pad) min(var(--settings-row-inline), 0.5rem);
   }
@@ -386,15 +512,21 @@
     outline: none;
   }
 
-  /* Upright: the thumbnail fills the box's height at its stage's ratio, and
-     takes at most 45% of its width so the title and summary keep a readable
-     column. The column is sized by the widest stage (the card's 1.2) in
-     every box, so the three titles line up; a square thumbnail centres in
-     it. */
+  /* Upright: the thumbnail fills the box's height at its stage's ratio.
+     A tall box would make it wider than the box can spare, so it stops at
+     60% of the box's width and never leaves the title and summary less than
+     7rem; the box keeps its height and the text column takes the rest.
+     The column is sized by the widest stage (the card's and the theme's
+     1.2) in every box, so the four titles line up; a square thumbnail
+     centres in it. */
   .drill-thumb-area {
     grid-column: 1;
     grid-row: 1 / -1;
-    width: min(45cqi, calc((100cqb - 2 * var(--box-pad)) * 1.2));
+    width: min(
+      60cqi,
+      calc(100cqi - 2 * 0.75rem - 1rem - 7rem),
+      calc(100cqb * 1.2)
+    );
     height: 100%;
     display: grid;
     place-items: center;
@@ -416,6 +548,22 @@
   .drill-thumb > :global(*) {
     width: 100%;
     height: 100%;
+  }
+
+  /* The theme's picture where no live background draws: the showroom's own
+     preview image over the theme's gradient. */
+  .theme-picture {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .theme-picture img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 
   .drill-label {
@@ -451,13 +599,12 @@
   }
 
   /* A screen wider than it is tall (a phone on its side, a zoomed desktop):
-     the three boxes stand in one row, each its thumbnail above its title. */
+     the four boxes stand in one row, each its thumbnail above its title. */
   @container display-screen (orientation: landscape) {
     .drill-boxes {
       grid-template-rows: minmax(0, 1fr);
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       width: 100%;
-      max-height: none;
     }
 
     .drill-box {
@@ -488,48 +635,54 @@
     }
   }
 
-  /* Side by side: three equal columns, split by vertical hairlines, filling
-     the tab's height. Each section's stage takes its column's free height
-     (DisplaySection), so the band widens with the window's height too: a
-     column only as wide as the 2600px shell allows would make a 4K column
-     ~830px wide and ~2000px tall, and no square stage can fill that. The
-     band stays the shell's on a laptop and grows toward full width where the
-     window is tall enough to use it. */
-  @container display-tab (min-width: 64rem) {
-    .display-workspace {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      grid-template-rows: minmax(0, 1fr);
-      flex: 1 1 auto;
-      min-height: 0;
-    }
+  /* Side by side: four equal columns split by vertical hairlines (Theme,
+     Pictograph, Animation, Card), filling the tab's height. Each section's
+     stage takes its column's free height (DisplaySection), so the band
+     widens with the window's height too: a column only as wide as the
+     2600px shell allows would make a 4K column ~620px wide and ~2000px
+     tall, and no square stage can fill that. The band stays the shell's on
+     a laptop and grows toward full width where the window is tall enough to
+     use it. */
+  .display-workspace.columns {
+    grid-template-rows: minmax(0, 1fr);
+    flex: 1 1 auto;
+    min-height: 0;
+  }
 
-    .display-workspace > :global(* + *) {
-      border-left: 1px solid var(--theme-stroke);
-    }
+  .display-columns {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-rows: minmax(0, 1fr);
+    flex: 1 1 auto;
+    min-height: 0;
+  }
 
-    .display-workspace > :global(*) {
-      display: flex;
-      flex-direction: column;
-      min-height: 0;
-    }
+  .display-columns > :global(* + *) {
+    border-left: 1px solid var(--theme-stroke);
+  }
 
-    /* The crossfade box and its layer pass the column's height through. Its
-       animateHeight writes the stacked tier's content height inline; here
-       the row fixes the height, so the column's wins. */
-    .animation-slot > :global(.crossfade) {
-      flex: 1 1 auto;
-      height: auto !important;
-      min-height: 0;
-      grid-template-rows: minmax(0, 1fr);
-    }
+  .display-columns > :global(*) {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
 
-    /* animateHeight pins each layer to its natural height (align-self:
-       start); a full-height layer is its natural height here. */
-    .animation-slot :global(.crossfade > .layer) {
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-    }
+  /* The crossfade box and its layer pass the column's height through. Its
+     animateHeight writes the stacked tier's content height inline; here
+     the row fixes the height, so the column's wins. */
+  .display-columns .animation-slot > :global(.crossfade) {
+    flex: 1 1 auto;
+    height: auto !important;
+    min-height: 0;
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  /* animateHeight pins each layer to its natural height (align-self:
+     start); a full-height layer is its natural height here. */
+  .display-columns .animation-slot :global(.crossfade > .layer) {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
   }
 
   @media (min-width: 64rem) {

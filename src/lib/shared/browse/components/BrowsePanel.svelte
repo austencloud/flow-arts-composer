@@ -17,6 +17,7 @@
   import type { SectionedGridApi } from "./SectionedVirtualGrid.svelte";
   import type { VirtualGridApi } from "./VirtualizedSequenceGrid.svelte";
   import { untrack } from "svelte";
+  import { MediaQuery } from "svelte/reactivity";
   import { reducedMotion } from "#lib/shared/transitions/motion.js";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import SelectionToolbar from "#lib/shared/components/selection/SelectionToolbar.svelte";
@@ -188,8 +189,21 @@
   // which scroll sideways in their slot rather than wrapping. Measured by
   // the same observer that feeds the engine's column math.
   const INLINE_CHROME_MIN_WIDTH = 760;
+  // A phone held sideways (the Fold's cover on its side, about 340px tall)
+  // has no height for a second band, and beside Browse's side column the
+  // panel is about 600px wide. There the toolbar drops the count's word and
+  // the row folds in from 560px.
+  const SIDEWAYS_INLINE_CHROME_MIN_WIDTH = 560;
+  const sidewaysPhone = new MediaQuery(
+    "(max-height: 480px) and (min-width: 700px)"
+  );
   let containerWidth = $state(0);
-  const inlineChrome = $derived(containerWidth >= INLINE_CHROME_MIN_WIDTH);
+  const inlineChrome = $derived(
+    containerWidth >=
+      (sidewaysPhone.current
+        ? SIDEWAYS_INLINE_CHROME_MIN_WIDTH
+        : INLINE_CHROME_MIN_WIDTH)
+  );
   const showViewingControl = $derived(engine.viewMode.subject !== "hands");
 
   // ---- Reveal ----

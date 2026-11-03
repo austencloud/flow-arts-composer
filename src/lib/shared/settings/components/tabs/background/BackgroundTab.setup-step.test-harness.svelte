@@ -3,8 +3,24 @@
   import type { AccountSetupState } from "#lib/shared/onboarding/state/account-setup-state.svelte.js";
   import BackgroundTab from "./BackgroundTab.svelte";
 
-  let { state }: { state: AccountSetupState } = $props();
+  let {
+    state,
+    onBack,
+    onUpdate,
+    column = false,
+  }: {
+    state: AccountSetupState;
+    onBack?: () => void;
+    column?: boolean;
+    onUpdate?: (event: { key: string; value: unknown }) => void;
+  } = $props();
   setAccountSetupContext(state);
 </script>
 
-<BackgroundTab settings={{} as never} />
+<BackgroundTab
+  settings={{ backgroundType: "cosmic" } as never}
+  {onBack}
+  {onUpdate}
+  {column}
+  compact={!!onBack}
+/>

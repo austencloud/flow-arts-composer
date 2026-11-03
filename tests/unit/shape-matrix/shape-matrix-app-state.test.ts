@@ -955,7 +955,7 @@ describe("shape matrix prop pair state", () => {
     );
   });
 
-  it("adopts an untraceable pair as its raw self and loads it folded to staff", async () => {
+  it("adopts an untraceable pair as its raw self and loads it folded to poi", async () => {
     const { state, loadMatrix } = createState(false, {
       left: PropType.STAFF,
       right: PropType.STAFF,
@@ -966,19 +966,19 @@ describe("shape matrix prop pair state", () => {
     // Bare hand has no tracked tip; the engine cannot trace it. Settings can
     // still hold it (a global choice). Adopting it keeps that raw value in
     // state -- so an announcement back to the host never turns Hand into
-    // Staff behind its back -- while the value handed to the engine folds so
+    // Poi behind its back -- while the value handed to the engine folds so
     // the matrix still draws instead of erroring.
     state.adoptPropPair({ left: PropType.HAND, right: PropType.CLUB }, true);
     expect(state.leftPropType).toBe(PropType.HAND);
     expect(state.rightPropType).toBe(PropType.CLUB);
     await vi.waitFor(() =>
       expect(state.data?.props).toEqual({
-        left: PropType.STAFF,
+        left: PropType.POI,
         right: PropType.CLUB,
       })
     );
     expect(loadMatrix).toHaveBeenLastCalledWith({
-      left: PropType.STAFF,
+      left: PropType.POI,
       right: PropType.CLUB,
     });
 
@@ -996,8 +996,8 @@ describe("shape matrix prop pair state", () => {
     state.adoptPropPair({ left: PropType.HAND, right: PropType.HAND }, false);
     await vi.waitFor(() =>
       expect(state.data?.props).toEqual({
-        left: PropType.STAFF,
-        right: PropType.STAFF,
+        left: PropType.POI,
+        right: PropType.POI,
       })
     );
 
@@ -1017,7 +1017,7 @@ describe("shape matrix prop pair state", () => {
     state.adoptPropPair({ left: PropType.HAND, right: PropType.STAFF }, true);
     await vi.waitFor(() =>
       expect(state.data?.props).toEqual({
-        left: PropType.STAFF,
+        left: PropType.POI,
         right: PropType.STAFF,
       })
     );
@@ -1027,7 +1027,7 @@ describe("shape matrix prop pair state", () => {
     await state.setPropType(PropType.CLUB);
 
     expect(loadMatrix).toHaveBeenLastCalledWith({
-      left: PropType.STAFF,
+      left: PropType.POI,
       right: PropType.CLUB,
     });
     expect(state.leftPropType).toBe(PropType.HAND);
@@ -1038,22 +1038,22 @@ describe("shape matrix prop pair state", () => {
     );
   });
 
-  it("picking a prop the engine cannot trace loads folded to staff instead of erroring", async () => {
+  it("picking a prop the engine cannot trace loads folded to poi instead of erroring", async () => {
     const { state, loadMatrix } = createState(false);
     await state.load();
 
     await state.setPropType(PropType.CONTACTBALL);
 
     expect(state.loadError).toBeNull();
-    // Loaded folded to staff: this is the exact pair `build()` would throw
+    // Loaded folded to poi: this is the exact pair `build()` would throw
     // on, so the fold at the load boundary is what keeps this a success.
     expect(loadMatrix).toHaveBeenLastCalledWith({
-      left: PropType.STAFF,
-      right: PropType.STAFF,
+      left: PropType.POI,
+      right: PropType.POI,
     });
     expect(state.data?.props).toEqual({
-      left: PropType.STAFF,
-      right: PropType.STAFF,
+      left: PropType.POI,
+      right: PropType.POI,
     });
     expect(state.leftPropType).toBe(PropType.CONTACTBALL);
     expect(state.rightPropType).toBe(PropType.CONTACTBALL);

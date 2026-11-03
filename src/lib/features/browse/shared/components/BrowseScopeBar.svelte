@@ -363,4 +363,41 @@ shared query itself.
       }
     }
   }
+
+  /* The same phone in Browse's side column (BrowseModule): a narrow bar that
+     owns the column's remaining height. The chips wrap into lines instead of
+     a sideways strip, and only the chip list scrolls when the collections
+     outgrow the column. */
+  @media (max-height: 480px) and (min-width: 700px) {
+    @container (max-width: 400px) {
+      .scope-bar {
+        height: 100%;
+        box-sizing: border-box;
+        padding: 8px 10px;
+        border-bottom: none;
+      }
+
+      .scope-chips {
+        flex: 1 1 auto;
+        min-height: 0;
+        margin-inline: 0;
+        overflow-y: auto;
+        overscroll-behavior-y: contain;
+        scrollbar-width: thin;
+        scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+      }
+
+      .chip-track {
+        flex-wrap: wrap;
+        overflow-x: visible;
+        padding-inline: 0;
+      }
+
+      .chip-slot {
+        flex: 0 1 auto;
+        min-width: 0;
+        max-width: 100%;
+      }
+    }
+  }
 </style>

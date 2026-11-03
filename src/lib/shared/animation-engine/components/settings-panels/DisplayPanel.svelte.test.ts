@@ -77,3 +77,87 @@ describe("DisplayPanel chips", () => {
       .toHaveAttribute("aria-pressed", String(!before));
   });
 });
+
+// The header's parts became their own switches on 2026-11-02, after Word,
+// disabled (never hidden) while the header is off so the list keeps its shape.
+// The silent failures: a part chip that writes the whole header or another
+// part, and a list that reflows when Word goes off.
+describe("DisplayPanel header parts", () => {
+  const parts = [
+    ["Level", "headerLevel"],
+    ["LOOP", "headerLoop"],
+    ["Turns", "headerTurns"],
+    ["Reversals", "headerReversals"],
+  ] as const;
+
+  it("adds Level, LOOP, Turns and Reversals after Word as chips", async () => {
+    const scope = scopeRef.current;
+    if (!scope) throw new Error("no scope");
+    render(DisplayPanel, { chips: true, showHeaderParts: true });
+
+    const group = page.getByRole("group");
+    await expect.element(group).toBeVisible();
+    const labels = group
+      .getByRole("button")
+      .elements()
+      .map((el) => el.textContent?.trim());
+    expect(labels).toHaveLength(14);
+    const word = labels.indexOf("Word");
+    expect(labels.slice(word + 1, word + 5)).toEqual(
+      parts.map(([label]) => label)
+    );
+
+    // Each chip turns off its own part only: the parts after it stay on.
+    for (const [index, [label, key]] of parts.entries()) {
+      await page.getByRole("button", { name: label, exact: true }).click();
+      expect(scope.visibility.getVisibility(key), key).toBe(false);
+      expect(scope.visibility.getVisibility("wordHeader")).toBe(true);
+      for (const [, later] of parts.slice(index + 1)) {
+        expect(scope.visibility.getVisibility(later), later).toBe(true);
+      }
+    }
+  });
+
+  it("keeps the parts in place but disabled while Word is off, as chips and as the Header row", async () => {
+    const scope = scopeRef.current;
+    if (!scope) throw new Error("no scope");
+    scope.visibility.setVisibility("wordHeader", false);
+
+    const chipsView = render(DisplayPanel, {
+      chips: true,
+      showHeaderParts: true,
+    });
+    for (const [label] of parts) {
+      await expect
+        .element(page.getByRole("button", { name: label, exact: true }))
+        .toBeDisabled();
+    }
+    chipsView.unmount();
+
+    render(DisplayPanel, { hostSized: true, showHeaderParts: true });
+    // Beside picture tiles the parts are a Header row of small chips under
+    // the ten tiles, so the tiles (and the stage above them) keep their size.
+    expect(document.querySelectorAll(".vis-grid .rt-chip")).toHaveLength(10);
+    const row = page.getByRole("group", { name: "Header" });
+    await expect.element(row).toBeVisible();
+    for (const [label] of parts) {
+      await expect
+        .element(row.getByRole("button", { name: label, exact: true }))
+        .toBeDisabled();
+    }
+    scope.visibility.setVisibility("wordHeader", true);
+    await expect
+      .element(row.getByRole("button", { name: "Level", exact: true }))
+      .toBeEnabled();
+    await row.getByRole("button", { name: "Turns", exact: true }).click();
+    expect(scope.visibility.getVisibility("headerTurns")).toBe(false);
+    expect(scope.visibility.getVisibility("headerLevel")).toBe(true);
+  });
+
+  it("leaves other hosts at their ten switches", async () => {
+    render(DisplayPanel, { chips: true });
+    const group = page.getByRole("group");
+    await expect.element(group).toBeVisible();
+    expect(group.getByRole("button").elements()).toHaveLength(10);
+  });
+});

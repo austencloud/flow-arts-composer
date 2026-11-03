@@ -73,4 +73,37 @@
     width: 100%;
     max-width: 320px;
   }
+
+  /* A phone held sideways (the Fold's cover on its side, about 340px tall):
+     the two buttons stand side by side and the card keeps a tighter rhythm,
+     so Sign in stays on screen without the settings body scrolling. */
+  @media (max-height: 480px) and (min-width: 700px) {
+    .guest-card {
+      max-width: 520px;
+      gap: 12px;
+      padding: 12px 16px;
+    }
+
+    .guest-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      font-size: 22px;
+    }
+
+    .guest-body {
+      max-width: 44ch;
+      line-height: 1.4;
+    }
+
+    .guest-actions {
+      flex-direction: row;
+      max-width: 440px;
+    }
+
+    .guest-actions > :global(*) {
+      flex: 1 1 0;
+      min-width: 0;
+    }
+  }
 </style>

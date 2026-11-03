@@ -26,6 +26,8 @@
     stage3DSecondsPerTurn,
   } from "../stage-3d";
   import type PostStudioStage3DLayerType from "./PostStudioStage3DLayer.svelte";
+  import type PostStage3DShotEditorType from "./PostStage3DShotEditor.svelte";
+  import { stage3DShotEditor } from "./stage-3d-shot-editor.svelte";
   import { createPerformerSequences } from "../performer-sequences.svelte";
   import { postFollowers } from "../tunnel-performers";
   import { sequencePositionToAnimationTime } from "#lib/shared/animation-engine/services/step-calculator.js";
@@ -52,6 +54,9 @@
   const tka = useTkaEditor();
 
   const sequence = $derived(tka.sequence);
+  // A 3D performer dances what the person in the footage really does, not
+  // the drawing flipped to match the camera.
+  const performedSequence = $derived(tka.performedSequence);
   /** The record a scan of the card opens: the source, not a labeled copy. */
   const qrSequence = $derived(tka.qrSequence);
   const qrUrl = $derived(layerQrUrl(sourceItem));
@@ -86,6 +91,10 @@
   const followerSequences = createPerformerSequences(
     () => sequence,
     () => (sourceItem?.kind === "animation" ? sourceItem.followers : undefined)
+  );
+  const performedFollowerSequences = createPerformerSequences(
+    () => (stageItem ? performedSequence : null),
+    () => stageItem?.followers
   );
   const sequencePosition = $derived(performerPositions.sequencePosition);
   const sequencePassIndex = $derived(
@@ -133,26 +142,47 @@
   const stageSteps = $derived(
     stage3DPerformerSteps({ sequencePosition, followerPositions })
   );
+  /** The clip's stage, or its draft while the shot editor has it open. */
+  const shownStage = $derived(
+    stageItem
+      ? (stage3DShotEditor.draftFor(stageItem.id) ?? stageItem.stage3d ?? null)
+      : null
+  );
   const stageOrbitAngle = $derived(
-    stageItem?.stage3d
+    stageItem && shownStage
       ? stage3DOrbitAngle(
           editor.previewSeconds,
           stageItem.start,
-          stage3DSecondsPerTurn(editor.project, stageItem),
-          stageItem.stage3d.orbitDirection ?? 1
+          stage3DSecondsPerTurn(editor.project, {
+            ...stageItem,
+            stage3d: shownStage,
+          }),
+          shownStage.orbitDirection ?? 1
         )
       : 0
   );
   // A post without a 3D clip should not load the 3D viewer.
-  let Stage3DLayer = $state.raw<typeof PostStudioStage3DLayerType | null>(
-    null
-  );
+  let Stage3DLayer = $state.raw<typeof PostStudioStage3DLayerType | null>(null);
   $effect(() => {
-    if (binding.renderMode !== "scene-3d" || !stageItem || Stage3DLayer)
-      return;
+    if (binding.renderMode !== "scene-3d" || !stageItem || Stage3DLayer) return;
     let current = true;
     void import("./PostStudioStage3DLayer.svelte").then((module) => {
       if (current) Stage3DLayer = module.default;
+    });
+    return () => {
+      current = false;
+    };
+  });
+
+  const shotEditorOpen = $derived(
+    stageItem !== null && stage3DShotEditor.open?.itemId === stageItem.id
+  );
+  let ShotEditor = $state.raw<typeof PostStage3DShotEditorType | null>(null);
+  $effect(() => {
+    if (!shotEditorOpen || ShotEditor) return;
+    let current = true;
+    void import("./PostStage3DShotEditor.svelte").then((module) => {
+      if (current) ShotEditor = module.default;
     });
     return () => {
       current = false;
@@ -191,12 +221,13 @@
       editing={arrangementMarks}
     />
   {/if}
-{:else if binding.renderMode === "scene-3d" && stageItem?.stage3d && sequence}
+{:else if binding.renderMode === "scene-3d" && stageItem?.stage3d && performedSequence}
   {#if Stage3DLayer}
     <Stage3DLayer
       itemId={stageItem.id}
-      {sequence}
-      followerSequences={followerSequences.current}
+      sequence={performedSequence}
+      followerSequences={performedFollowerSequences.current}
+      swapHandColors={tka.handsDrawnSwapped}
       followerCount={stageItem.followers?.length ?? 0}
       performerSteps={stageSteps}
       stage={stageItem.stage3d}
@@ -209,6 +240,9 @@
       {exporting}
       {exportSize}
     />
+    {#if shotEditorOpen && ShotEditor && !exporting}
+      <ShotEditor {editor} item={stageItem} />
+    {/if}
   {/if}
 {:else if binding.renderMode === "mandala" && mandalaItem}
   <PostStudioShiftingMandalaLayer

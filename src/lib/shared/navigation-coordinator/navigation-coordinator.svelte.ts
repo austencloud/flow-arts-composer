@@ -484,7 +484,6 @@ const TAB_ORDERS: Record<string, string[]> = {
     "display",
     "release-notes",
     "keyboard",
-    "theme",
     "props",
     "notifications",
   ],

@@ -5,7 +5,9 @@ import type { ResolvedAutoLayout } from "#lib/shared/render/services/container-a
 import type { ContentType } from "./viewer-state.svelte";
 import type { SelectableViewerMode } from "../services/viewer-modes";
 import type { OrchestratorContext } from "../domain/viewer-orchestrator-context";
+import { isSidewaysViewport } from "#lib/shared/ui/sideways-viewport.js";
 import {
+  isViewerSideways,
   resolveExportSidebarMinWidth,
   resolvePostStudioShareDockMinWidth,
   type ViewerInspectorProfile,
@@ -70,6 +72,15 @@ export function createViewerShellLayoutState(
 
   const isMobile = $derived(inputs.getIsMobile());
   const isLandscape = $derived(responsiveSettings?.isLandscapeMobile ?? false);
+  // A phone held sideways (the shared short-and-wide breakpoint), not the
+  // device detector's landscape flag: that one is also true on landscape
+  // phones tall enough for the ordinary stacked layout.
+  const sideways = $derived(
+    isViewerSideways({
+      sidewaysViewport: isSidewaysViewport(),
+      phoneHost: isMobile,
+    })
+  );
   const compactChrome = $derived(isMobile || bodyWidth < 1080);
   const sharePanelOpen = $derived(inputs.getSharePanelOpen());
   const modeSwitcherShown = $derived(inputs.getModeSwitcherShown?.() ?? true);
@@ -605,6 +616,9 @@ export function createViewerShellLayoutState(
     },
     get isLandscape() {
       return isLandscape;
+    },
+    get sideways() {
+      return sideways;
     },
     get compactChrome() {
       return compactChrome;

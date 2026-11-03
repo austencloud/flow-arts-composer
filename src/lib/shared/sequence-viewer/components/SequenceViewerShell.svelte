@@ -38,6 +38,7 @@
   } from "../context/video-playhead-context";
   import DualSourceCrossfade from "#lib/shared/components/DualSourceCrossfade.svelte";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import { SIDEWAYS_PRACTICE_LANE_WIDTH } from "./viewer-panel-layout";
   import {
     flyFade,
     growFade,
@@ -1150,6 +1151,27 @@
   const studioUsesSideInspector = $derived(
     layout.showPostStudio && studioCanShareSideInspector && !share.panelOpen
   );
+  const workspaceInspectorActive = $derived(
+    !introPreview &&
+      (layout.isWorkspaceInspectorActive || studioUsesSideInspector)
+  );
+  // A phone held sideways moves the header out of its row and into the top of
+  // a control column, so the stage keeps the whole height. It goes only
+  // where there is a column to put it in: Practice has its own (the practice
+  // column beside the lane), Play and the inspectors have theirs, while Split,
+  // 3D and the art views keep their controls over the stage, and an empty
+  // column beside them would be a strip of nothing, so their header stays a
+  // row. Practice wins: its column is the one on screen while it is open.
+  const headerColumn = $derived<"practice" | "inspector" | null>(
+    !layout.sideways
+      ? null
+      : ctx.practiceActive
+        ? "practice"
+        : workspaceInspectorActive
+          ? "inspector"
+          : null
+  );
+  const headerInColumn = $derived(headerColumn !== null);
   const motionInspectorVisible = $derived(
     !share.panelOpen &&
       (layout.isVideoExportActive ||
@@ -1223,6 +1245,10 @@
   >
     <ExportVideoDrawer
       fillPages
+      dockTrayMaxHeight={layout.sideways
+        ? "var(--viewer-sideways-tray-max)"
+        : undefined}
+      dockStartsOpen={layout.sideways}
       exportOptions={studioSurfaces.active ? undefined : ctx.exportOptions}
       reserveExportSpace={studioSurfaces.active}
       isExporting={interactions.videoBusy}
@@ -1303,11 +1329,17 @@
 
 <div
   class="drawer-viewer-container"
+  class:sideways={layout.sideways}
+  style:--viewer-practice-lane-width="{SIDEWAYS_PRACTICE_LANE_WIDTH}px"
   class:landscape={layout.isLandscape}
   class:practice-mobile={isMobile && ctx.practiceActive}
   class:intro-preview={introPreview}
 >
-  {#if !introPreview}
+  <!-- One header, three places: its own row above the workspace, or the top
+       of a control column when a phone is held sideways (the inspector's, or
+       Practice's own). Moving it remounts it, and each place grows and fades
+       it in through the same owner. -->
+  {#snippet viewerHeader()}
     <ViewerHeader
       {ctx}
       sequence={ctx.effectiveSequence ?? sequence}
@@ -1386,6 +1418,17 @@
           { count: reason !== "item" }
         )}
     />
+  {/snippet}
+
+  {#if !introPreview && !headerInColumn}
+    <div
+      class="viewer-header-row"
+      transition:growFade={{
+        duration: layout.prefersReducedMotion ? 0 : DURATION.emphasis,
+      }}
+    >
+      {@render viewerHeader()}
+    </div>
   {/if}
 
   {#if contextContent && !ctx.isFullscreen && !introPreview}
@@ -1456,8 +1499,7 @@
         <div
           bind:this={viewerWorkspaceElement}
           class="viewer-and-export"
-          class:export-active={!introPreview &&
-            (layout.isWorkspaceInspectorActive || studioUsesSideInspector)}
+          class:export-active={workspaceInspectorActive}
           class:record-scene-active={layout.isRecordSceneActive}
           class:card-inspector={layout.inspectorProfile === "card"}
           class:performance-inspector={layout.inspectorProfile ===
@@ -1469,6 +1511,7 @@
           class:sidebar-collapsed={layout.exportSidebarCollapsed &&
             !layout.isImageExportActive}
           class:has-rail={layout.showRail && modeSwitcherShown && !introPreview}
+          class:sideways={layout.sideways}
         >
           {#if layout.showRail && !introPreview}
             <!-- A subject with one view has no rail: it starts collapsed (no
@@ -1519,9 +1562,11 @@
           {/snippet}
 
           <ViewerWorkspacePanels
-            direction={layout.effectiveMobile ? "vertical" : "horizontal"}
-            inspectorActive={!introPreview &&
-              (layout.isWorkspaceInspectorActive || studioUsesSideInspector)}
+            direction={layout.effectiveMobile && !layout.sideways
+              ? "vertical"
+              : "horizontal"}
+            sideways={layout.sideways}
+            inspectorActive={workspaceInspectorActive}
             inspectorCollapsed={!studioUsesSideInspector &&
               !share.panelOpen &&
               layout.exportSidebarCollapsed &&
@@ -1613,6 +1658,7 @@
                           fullscreenStackVertical: ctx.fullscreenStackVertical,
                           isMobile: layout.effectiveMobile,
                           isLandscapeMobile: layout.isLandscape,
+                          sideways: layout.sideways,
                           focusedPane:
                             ctx.viewerState.viewerMode !== "split"
                               ? ctx.viewerState.viewerMode === "card"
@@ -1803,6 +1849,18 @@
                 class:sidebar={!layout.effectiveMobile &&
                   (layout.isVideoExportActive || layout.isVideoUploadActive)}
               >
+                {#if !introPreview && headerColumn === "inspector"}
+                  <div
+                    class="viewer-header-column"
+                    transition:growFade={{
+                      duration: layout.prefersReducedMotion
+                        ? 0
+                        : DURATION.emphasis,
+                    }}
+                  >
+                    {@render viewerHeader()}
+                  </div>
+                {/if}
                 <!-- These layers share the inspector track for their entire
                      lifetime. Changing data-active now starts the content
                      crossfade in the same frame that PanelGroup moves the
@@ -2023,47 +2081,65 @@
          content up (so the bottom rows stay visible). Height toggles in
          one reflow at the slide's near edge; the visible motion is a
          composited translateY → 60fps even while the animator runs.
-         Parked (height 0) + inert when not practicing. -->
+         Parked (height 0) + inert when not practicing. On a phone held
+         sideways the same element is the practice column at the right: it
+         holds the header above the conveyor and glides its width instead. -->
     <div
       class="practice-bar-rise"
+      class:sideways={layout.sideways}
       class:reserved={ctx.practiceActive}
       class:up={ctx.practiceActive}
       inert={!ctx.practiceActive}
     >
+      {#if headerColumn === "practice"}
+        <div
+          class="viewer-header-column practice-header"
+          transition:growFade={{
+            duration: layout.prefersReducedMotion ? 0 : DURATION.emphasis,
+          }}
+        >
+          {@render viewerHeader()}
+        </div>
+      {/if}
       <!-- Bottom-bar conveyor: setup config (setup phase) ↔ running cockpit
            (running phase). Config slides out left as the cockpit slides in
            from the right on Start. Cockpit is the flow child so it defines
            the bar's height; config overlays it. -->
-      <div
-        class="bar-pane config"
-        class:active={!ctx.practiceRunning}
-        inert={ctx.practiceRunning}
-      >
-        <PracticeSetupBar
-          config={ctx.practiceState.userConfig}
-          onSetConfig={interactions.handlePracticeSetConfig}
-          onStart={interactions.handlePracticeStart}
-        />
-      </div>
-      <div
-        class="bar-pane cockpit"
-        class:active={ctx.practiceRunning}
-        inert={!ctx.practiceRunning}
-      >
-        <PracticeBar
-          progress={ctx.practiceState.progress}
-          bpm={ctx.bpmLocal}
-          isPlaying={ctx.isPlayingLocal}
-          onBpmChange={(bpm) => interactions.handleBpmChange(bpm, "practice")}
-          onPlayPause={() => interactions.handlePlaybackToggle("practice")}
-          onStepLevel={interactions.handlePracticeStepLevel}
-          onToggleHold={interactions.handlePracticeToggleHold}
-          onStop={interactions.handlePracticeStop}
-          metronomeOn={ctx.metronomeEnabled}
-          onToggleMetronome={interactions.handleToggleMetronome}
-          mirrorOn={ctx.mirrorEnabled}
-          onToggleMirror={interactions.handleToggleMirror}
-        />
+      <div class="practice-conveyor">
+        <div
+          class="bar-pane config"
+          class:active={!ctx.practiceRunning}
+          inert={ctx.practiceRunning}
+        >
+          <PracticeSetupBar
+            config={ctx.practiceState.userConfig}
+            onSetConfig={interactions.handlePracticeSetConfig}
+            onStart={interactions.handlePracticeStart}
+            configSide={layout.sideways ? "left" : "bottom"}
+          />
+        </div>
+        <div
+          class="bar-pane cockpit"
+          class:active={ctx.practiceRunning}
+          inert={!ctx.practiceRunning}
+        >
+          <PracticeBar
+            placement={layout.sideways ? "column" : "dock"}
+            progress={ctx.practiceState.progress}
+            bpm={ctx.bpmLocal}
+            isPlaying={ctx.isPlayingLocal}
+            onBpmChange={(bpm) =>
+              interactions.handleBpmChange(bpm, "practice")}
+            onPlayPause={() => interactions.handlePlaybackToggle("practice")}
+            onStepLevel={interactions.handlePracticeStepLevel}
+            onToggleHold={interactions.handlePracticeToggleHold}
+            onStop={interactions.handlePracticeStop}
+            metronomeOn={ctx.metronomeEnabled}
+            onToggleMetronome={interactions.handleToggleMetronome}
+            mirrorOn={ctx.mirrorEnabled}
+            onToggleMirror={interactions.handleToggleMirror}
+          />
+        </div>
       </div>
     </div>
   {/if}
@@ -2295,7 +2371,13 @@
 
   /* Inner conveyor: config (setup) ↔ cockpit (running). Cockpit is the flow child
      so it defines the bar's auto height; config is an absolute overlay. Both slide
-     on the shared clock — config exits left, cockpit enters right on Start. */
+     on the shared clock — config exits left, cockpit enters right on Start.
+     The conveyor is the config's positioning box: under the bottom bar it is
+     the whole bar, and in the sideways practice column it is the cockpit's
+     box under the header rather than the full column. */
+  .practice-conveyor {
+    position: relative;
+  }
   .bar-pane {
     transition: transform var(--ws-dur) var(--ws-ease);
     will-change: transform;
@@ -2816,5 +2898,150 @@
     position: relative;
     flex-shrink: 0;
     z-index: 3;
+  }
+
+  /* A phone held sideways (layout.sideways, the shared SIDEWAYS_VIEWPORT_QUERY
+     breakpoint). The workspace is rail | stage | control column: the stage
+     takes the whole height and ViewerWorkspacePanels sizes the column from
+     it. The column stacks the header, then the active inspector layer, whose
+     dock bar sits at the foot with its tray open above it. Every layer shares
+     the one cell under the header, so they still crossfade in place. */
+  .viewer-and-export.sideways .export-panel-container {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    border-top: none;
+    border-left: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
+  }
+
+  .viewer-header-column {
+    grid-area: 1 / 1;
+    min-width: 0;
+  }
+
+  /* Each layer is a size container so a dock tray can take the layer's
+     height less the bar (4rem holds the 46px pills, their padding and the
+     border) as its cap; the page caps protect a stage that is not above it
+     here. AnimationPanel takes it as a prop; a dock that sets no cap of its
+     own (Card's) inherits it through ControlDock's --dock-tray-max. */
+  .viewer-and-export.sideways
+    .export-panel-container
+    > .inspector-content-layer,
+  .viewer-and-export.sideways
+    .export-panel-container
+    > .inspector-content-layer[data-active="true"] {
+    grid-area: 2 / 1;
+    position: relative;
+    inset: auto;
+    container-type: size;
+    --viewer-sideways-tray-max: calc(100cqh - 4rem);
+    --dock-tray-max: var(--viewer-sideways-tray-max);
+  }
+
+  .viewer-and-export.sideways
+    :is(.motion-settings-layer, .card-settings-layer) {
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: stretch;
+    overflow: hidden;
+  }
+
+  /* The shared inspector is reparented into the origin at run time, so the
+     compiler cannot see it under the workspace; :global keeps the rule. */
+  .viewer-and-export.sideways .animator-inspector-origin,
+  .viewer-and-export.sideways
+    .animator-inspector-origin
+    > :global(.shared-animator-inspector) {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+
+  .viewer-and-export.sideways
+    .performance-inspector-layer
+    > :global(.performance-inspector),
+  .viewer-and-export.sideways .share-layer > .share-layer-content.sending {
+    height: 100%;
+    min-height: 0;
+  }
+
+  /* Practice on a phone held sideways: canvas | lane | practice column, all
+     at the full height, with no header row and no bottom bar. The shell is a
+     grid whenever the phone is sideways, not only while Practice is open, so
+     entering and leaving Practice only glides the second track's width and
+     never swaps the container's layout mode mid-motion. Outside Practice that
+     track is zero wide and every other child keeps the first column.
+
+     The practice column is what the width leaves once the canvas has the
+     square its height allows (the same height-derived stage as sideways Play,
+     see ViewerWorkspacePanels) and the lane has its fixed width, never less
+     than 16rem. The shell's own box answers cqw/cqh for that. */
+  .drawer-viewer-container.sideways {
+    container: viewer-shell / size;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto minmax(0, 1fr);
+    --viewer-practice-column-width: max(
+      16rem,
+      100cqw - (100cqh - 1.5rem) - var(--viewer-practice-lane-width)
+    );
+  }
+  .drawer-viewer-container.sideways > .viewer-header-row {
+    grid-area: 1 / 1;
+  }
+  .drawer-viewer-container.sideways > .drawer-main {
+    grid-area: 3 / 1;
+  }
+
+  /* The practice column. The same element and the same clock as the bottom
+     bar; only the axis it glides on changes. Its children hold the column's
+     settled width, so the header and the bars lay out once and the moving
+     edge carries them in instead of reflowing them every frame. */
+  .drawer-viewer-container.sideways > .practice-bar-rise {
+    grid-area: 1 / 2 / -1 / 3;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    width: 0;
+    height: auto;
+    transform: translateX(16px);
+    will-change: transform, opacity, width;
+    transition:
+      transform var(--ws-dur) var(--ws-ease),
+      opacity var(--ws-dur) var(--ws-ease),
+      width var(--ws-dur) var(--ws-ease);
+  }
+  .drawer-viewer-container.sideways > .practice-bar-rise.reserved {
+    width: var(--viewer-practice-column-width);
+  }
+  .drawer-viewer-container.sideways > .practice-bar-rise.reserved.up {
+    transform: translateX(0);
+  }
+  /* The seam against the lane. A border would hold the zero-wide track open
+     by a pixel, so it is drawn over the column's edge instead. */
+  .drawer-viewer-container.sideways > .practice-bar-rise::before {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    left: 0;
+    width: 1px;
+    background: var(--theme-stroke, rgba(255, 255, 255, 0.1));
+    z-index: 1;
+  }
+  .drawer-viewer-container.sideways > .practice-bar-rise > * {
+    width: var(--viewer-practice-column-width);
+  }
+  /* Header on top; the conveyor centred in the height under it. */
+  .drawer-viewer-container.sideways > .practice-bar-rise > .practice-conveyor {
+    grid-area: 2 / 1;
+    align-self: center;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .drawer-viewer-container.sideways > .practice-bar-rise {
+      transition: none;
+    }
   }
 </style>

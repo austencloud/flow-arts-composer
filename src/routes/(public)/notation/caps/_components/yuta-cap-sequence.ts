@@ -1,17 +1,25 @@
 /**
- * Hand-authored Yuta CAP sequence for the /notation/caps live hero.
+ * Hand-authored CAP sequences for /notation/caps: one club, one hand, an
+ * extension piece joined to an antispin piece, reversing after a quarter, a
+ * half or three quarters of the circle.
  *
- * The exact pattern Austen specced (2026-07-19), verified against the domain
- * server's orientation algebra (pro + even turns preserves orientation; anti +
- * odd turns preserves orientation), so every step is out → out:
+ * Damien's notation for each piece ends in a division d, the share of the
+ * circle used before the next piece starts. The half setting is the Yuta CAP
+ * Austen specced (2026-07-19):
  *
- *   1. pro  E → S, 0 turns, cw   (extension — pro at 0 turns, ori out: the
+ *   1. pro  E > S, 0 turns, cw   (extension: pro at 0 turns, ori out, so the
  *                                 club points away from center the whole way)
- *   2. pro  S → W, 0 turns, cw   (extension)
- *   3. anti W → S, 1 turn,  ccw  (antispin petal)
- *   4. anti S → E, 1 turn,  ccw  (antispin petal — closes the loop at east)
+ *   2. pro  S > W, 0 turns, cw   (extension)
+ *   3. anti W > S, 1 turn,  cw   (antispin petal)
+ *   4. anti S > E, 1 turn,  cw   (antispin petal, closes the loop at east)
  *
- * One club, one hand: the blue hand is authored static-at-west with
+ * The quarter and three-quarter settings use the same two pieces: `quarters`
+ * pro legs clockwise round E, S, W, N, then the same points retraced back to
+ * East as anti legs. Every step is out to out, checked against the domain
+ * server's orientation algebra (pro + even turns keeps orientation; anti + odd
+ * turns keeps orientation), so every setting closes and repeats.
+ *
+ * One club, one hand: the blue hand is authored static at west with
  * isVisible:false, so engine and renderers skip it entirely.
  * Template lineage: buildGuideMotionSequence (guide-motion-configs.ts).
  */
@@ -36,6 +44,9 @@ import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/mot
 
 type PathShape = "arc" | "linear" | "concave";
 
+/** How many quarters of the circle the hand travels before it reverses. */
+export type CapQuarters = 1 | 2 | 3;
+
 interface Leg {
   start: GridLocation;
   end: GridLocation;
@@ -43,52 +54,49 @@ interface Leg {
   turns: number;
   rotation: RotationDirection;
   /* Per-motion pathShape WINS over the engine's motion-aware default
-     (resolvePathType returns it first). Arc is canonical for CAP work —
-     the hand rides the circle the whole way (Austen 2026-07-19). The
-     antispin character comes from prop rotation vs hand travel, not from
-     the hand path shape. */
+     (resolvePathType returns it first). Arc is canonical for CAP work: the
+     hand rides the circle the whole way (Austen 2026-07-19). The antispin
+     character comes from prop rotation against hand travel, not from the
+     hand path shape. */
   pathShape: PathShape;
 }
 
-const RED_LEGS: Leg[] = [
-  {
-    start: GridLocation.EAST,
-    end: GridLocation.SOUTH,
-    type: MotionType.PRO,
-    turns: 0,
-    rotation: RotationDirection.CLOCKWISE,
-    pathShape: "arc",
-  },
-  {
-    start: GridLocation.SOUTH,
-    end: GridLocation.WEST,
-    type: MotionType.PRO,
-    turns: 0,
-    rotation: RotationDirection.CLOCKWISE,
-    pathShape: "arc",
-  },
-  /* rotationDirection is the PROP's rotation, not the hand's travel: the
-     prop keeps spinning CW through the whole pattern. On the return half the
-     hand travels ccw (w>s>e) against that cw prop rotation — which is
-     exactly what makes these steps anti. Verified against a real app dump
-     of this sequence (letters V V N Q): anti cw w>s t=1, anti cw s>e t=1. */
-  {
-    start: GridLocation.WEST,
-    end: GridLocation.SOUTH,
-    type: MotionType.ANTI,
-    turns: 1,
-    rotation: RotationDirection.CLOCKWISE,
-    pathShape: "arc",
-  },
-  {
-    start: GridLocation.SOUTH,
-    end: GridLocation.EAST,
-    type: MotionType.ANTI,
-    turns: 1,
-    rotation: RotationDirection.CLOCKWISE,
-    pathShape: "arc",
-  },
+const CIRCLE: readonly GridLocation[] = [
+  GridLocation.EAST,
+  GridLocation.SOUTH,
+  GridLocation.WEST,
+  GridLocation.NORTH,
 ];
+
+/* rotationDirection is the PROP's rotation, not the hand's travel: the prop
+   keeps spinning cw through the whole pattern. On the return half the hand
+   travels ccw, back the way it came, against that cw prop rotation, which is
+   exactly what makes those steps anti. Verified against a real app dump of
+   the half setting (letters V V N Q): anti cw w>s t=1, anti cw s>e t=1. */
+function capLegs(quarters: CapQuarters): Leg[] {
+  const legs: Leg[] = [];
+  for (let i = 0; i < quarters; i++) {
+    legs.push({
+      start: CIRCLE[i]!,
+      end: CIRCLE[i + 1]!,
+      type: MotionType.PRO,
+      turns: 0,
+      rotation: RotationDirection.CLOCKWISE,
+      pathShape: "arc",
+    });
+  }
+  for (let i = quarters; i > 0; i--) {
+    legs.push({
+      start: CIRCLE[i]!,
+      end: CIRCLE[i - 1]!,
+      type: MotionType.ANTI,
+      turns: 1,
+      rotation: RotationDirection.CLOCKWISE,
+      pathShape: "arc",
+    });
+  }
+  return legs;
+}
 
 function makeMotion(
   hand: HandSide,
@@ -143,10 +151,19 @@ function staticBlue(): MotionData {
   );
 }
 
-export function buildYutaCapSequence(): SequenceData {
+/* The half setting keeps its original ids, so its poster and cached mandala
+   art stay keyed as before. */
+const KEYS: Record<CapQuarters, string> = {
+  1: "quarter",
+  2: "yuta",
+  3: "three-quarter",
+};
+
+export function buildCapSequence(quarters: CapQuarters): SequenceData {
+  const key = KEYS[quarters];
   const startPlacement: StartPlacementData = {
     isStartPlacement: true as const,
-    id: "caps-yuta-start",
+    id: `caps-${key}-start`,
     gridMode: GridMode.DIAMOND,
     motions: {
       left: staticBlue(),
@@ -163,8 +180,8 @@ export function buildYutaCapSequence(): SequenceData {
     },
   };
 
-  const steps: StepData[] = RED_LEGS.map((leg, i) => ({
-    id: `caps-yuta-step${i + 1}`,
+  const steps: StepData[] = capLegs(quarters).map((leg, i) => ({
+    id: `caps-${key}-step${i + 1}`,
     stepNumber: i + 1,
     duration: 1,
     leftReversal: false,
@@ -190,11 +207,16 @@ export function buildYutaCapSequence(): SequenceData {
   }));
 
   return createSequenceData({
-    id: "caps-yuta-live",
-    name: "Yuta CAP",
-    word: "yuta-cap",
+    id: `caps-${key}-live`,
+    name: quarters === 2 ? "Yuta CAP" : `CAP, ${key}`,
+    word: `${key}-cap`,
     steps,
     startPlacement,
     gridMode: GridMode.DIAMOND,
   });
+}
+
+/** The half setting, the Yuta CAP. CapsAssembly draws its two halves. */
+export function buildYutaCapSequence(): SequenceData {
+  return buildCapSequence(2);
 }

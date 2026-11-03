@@ -257,9 +257,12 @@ describe("Sequence Viewer transition orchestration contract", () => {
 
   it("routes inspector presence through the same canonical panel owner", () => {
     expect(shell).toContain("<ViewerWorkspacePanels");
-    expect(shell).toContain(
-      'direction={layout.effectiveMobile ? "vertical" : "horizontal"}'
+    // A phone held sideways keeps the side-by-side axis: its inspector is the
+    // control column beside the stage, not a dock under it.
+    expect(shell).toMatch(
+      /direction=\{layout\.effectiveMobile && !layout\.sideways\s+\? "vertical"\s+: "horizontal"\}/
     );
+    expect(shell).toContain("sideways={layout.sideways}");
     expect(shell).not.toContain("grid-template-columns: 1fr 0px");
     expect(shell).not.toContain("transition: grid-template-columns");
     expect(workspacePanels).toContain(

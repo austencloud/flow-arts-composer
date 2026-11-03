@@ -7,8 +7,24 @@ import {
   buildViewerShareActions,
   resolveExportSidebarMinWidth,
   resolvePostStudioShareDockMinWidth,
+  isViewerSideways,
   viewerInspectorConstraints,
 } from "#lib/shared/sequence-viewer/services/viewer-shell-model.js";
+
+describe("isViewerSideways", () => {
+  it("takes the sideways columns only on a sideways screen that is not a phone host", () => {
+    expect(isViewerSideways({ sidewaysViewport: true, phoneHost: false })).toBe(
+      true
+    );
+    // 700 to 767 wide and sideways: the host still lays out for a phone.
+    expect(isViewerSideways({ sidewaysViewport: true, phoneHost: true })).toBe(
+      false
+    );
+    expect(
+      isViewerSideways({ sidewaysViewport: false, phoneHost: false })
+    ).toBe(false);
+  });
+});
 
 describe("viewer shell model", () => {
   it("uses only valid persisted rail widths in the export threshold", () => {

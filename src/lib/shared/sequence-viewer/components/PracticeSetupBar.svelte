@@ -21,9 +21,12 @@
     config: Partial<TempoPracticeConfig>;
     onSetConfig: (patch: Partial<TempoPracticeConfig>) => void;
     onStart: () => void;
+    /** Side the ramp popover opens on; see PracticeConfigPopover. */
+    configSide?: "bottom" | "left";
   }
 
-  let { config, onSetConfig, onStart }: Props = $props();
+  let { config, onSetConfig, onStart, configSide = "bottom" }: Props =
+    $props();
 
   type PresetId = "creep" | "staircase" | "custom";
 
@@ -113,6 +116,7 @@
         onUpdate={onSetConfig}
         bind:open={cfgOpen}
         customAnchor={configAnchor}
+        side={configSide}
       />
     </div>
   </div>

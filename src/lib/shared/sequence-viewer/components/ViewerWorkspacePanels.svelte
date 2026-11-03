@@ -25,6 +25,12 @@
     stackedInspectorSize?: string;
     /** The stage's drag floor; Post Studio's 9:16 frame needs far less. */
     stageMinSize?: number;
+    /**
+     * A phone held sideways: the inspector is a fixed control column beside a
+     * stage sized from the screen's height (see --viewer-sideways-inspector-width
+     * below), with no drag seam, whatever the inspector shows.
+     */
+    sideways?: boolean;
   }
 
   let {
@@ -38,6 +44,7 @@
     takeoverActive = false,
     stackedInspectorSize = "auto",
     stageMinSize = VIEWER_STAGE_MIN_WIDTH,
+    sideways = false,
   }: Props = $props();
 
   // With one panel the axis is visually irrelevant, so retain the last axis
@@ -52,22 +59,31 @@
   const inspectorConstraints = $derived(
     viewerInspectorConstraints(inspectorProfile)
   );
+  // Sideways the seam is not draggable: the 6px handle and a stage the thumb
+  // can squeeze cost more on a 340px-tall phone than resizing buys.
   const inspectorResizable = $derived(
-    direction === "horizontal" && inspectorActive && !inspectorCollapsed
+    direction === "horizontal" &&
+      inspectorActive &&
+      !inspectorCollapsed &&
+      !sideways
   );
   // The profile's own width token, not --active-inspector-width. The shell
   // switches that variable with a class on an ancestor, and that class can
   // land after this panel list has already mounted a new track. The track
   // then measured the previous profile's width: opening share on a 707px
   // Fold grew the column toward 560px and then snapped it back to 360px.
+  // Sideways every profile shares one column width, so switching between
+  // Effects, Card, Performances and Share never moves the stage.
   const inspectorWidthToken = $derived(
-    inspectorProfile === "card"
-      ? "var(--card-sidebar-width)"
-      : inspectorProfile === "performance"
-        ? "var(--performance-sidebar-width)"
-        : inspectorProfile === "share"
-          ? "var(--share-sidebar-width)"
-          : "var(--export-sidebar-width)"
+    sideways
+      ? "var(--viewer-sideways-inspector-width)"
+      : inspectorProfile === "card"
+        ? "var(--card-sidebar-width)"
+        : inspectorProfile === "performance"
+          ? "var(--performance-sidebar-width)"
+          : inspectorProfile === "share"
+            ? "var(--share-sidebar-width)"
+            : "var(--export-sidebar-width)"
   );
 
   const panels = $derived.by(() => {
@@ -128,6 +144,7 @@
 {#snippet panelWorkspace()}
   <div
     class="panel-workspace-source viewer-motion-stage-layer"
+    class:sideways
     data-active={!takeoverActive}
     data-persistent-viewer-stage
   >
@@ -166,5 +183,16 @@
     min-width: 0;
     min-height: 0;
     overflow: hidden;
+  }
+
+  /* Sideways the stage is as wide as the square the animation draws at the
+     full height (AnimatorCanvas's constrained branch: height less 2.5rem,
+     plus a 1rem gutter), and the control column takes the rest of the width,
+     never less than 16rem. The container lets the column's flex-basis read
+     this track's height; nothing between here and the column is a size
+     container. */
+  .panel-workspace-source.sideways {
+    container-type: size;
+    --viewer-sideways-inspector-width: max(16rem, 100cqw - (100cqh - 1.5rem));
   }
 </style>

@@ -105,6 +105,8 @@ const SECTION_ID_MIGRATIONS: Readonly<
   },
   settings: {
     language: "preferences",
+    // Theme folded into Display (2026-11-02); see SECTION_SCREEN_ALIASES.
+    theme: "display",
   },
   choreo_card: {
     "scan-activity": CHOREO_CARD_SCAN_ATLAS_TAB_ID,
@@ -118,6 +120,27 @@ export function normalizeSectionId(
 ): string | undefined {
   if (!rawSectionId) return undefined;
   return SECTION_ID_MIGRATIONS[moduleId]?.[rawSectionId] ?? rawSectionId;
+}
+
+/**
+ * Retired tabs that live on as a screen of the tab they folded into. Their
+ * address still opens that screen: /settings/theme opens Display with its
+ * Theme screen open. The section id itself migrates above; this names the
+ * screen the tab shows on arrival.
+ */
+const SECTION_SCREEN_ALIASES: Readonly<
+  Record<string, Readonly<Record<string, string>>>
+> = {
+  settings: { theme: "theme" },
+};
+
+/** The screen a retired section id opens inside the tab it folded into. */
+export function sectionScreenAlias(
+  moduleId: string,
+  rawSectionId: string | null | undefined
+): string | undefined {
+  if (!rawSectionId) return undefined;
+  return SECTION_SCREEN_ALIASES[moduleId]?.[rawSectionId];
 }
 
 /** Sections that moved to another module. Old links open what the tab became. */

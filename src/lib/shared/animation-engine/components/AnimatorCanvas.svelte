@@ -729,6 +729,11 @@ Last audit: 2025-12-27
   let stepNumbersVisible = $state(false);
   let globalDarkMode = $state(false);
   let wordHeaderVisible = $state(false);
+  // The header's parts, each its own preference since 2026-11-02.
+  let headerLevelVisible = $state(true);
+  let headerLoopVisible = $state(true);
+  let headerTurnsVisible = $state(true);
+  let headerReversalsVisible = $state(true);
   let progressBarVisible = $state(false);
   let leftPathLinesVisible = $state(false);
   let rightPathLinesVisible = $state(false);
@@ -740,6 +745,10 @@ Last audit: 2025-12-27
     stepNumbersVisible = visibilityManager.getVisibility("stepNumbers");
     globalDarkMode = visibilityManager.isDarkMode();
     wordHeaderVisible = visibilityManager.getVisibility("wordHeader");
+    headerLevelVisible = visibilityManager.getVisibility("headerLevel");
+    headerLoopVisible = visibilityManager.getVisibility("headerLoop");
+    headerTurnsVisible = visibilityManager.getVisibility("headerTurns");
+    headerReversalsVisible = visibilityManager.getVisibility("headerReversals");
     progressBarVisible = visibilityManager.getVisibility("progressBar");
     leftPathLinesVisible = visibilityManager.getVisibility("leftPathLines");
     rightPathLinesVisible = visibilityManager.getVisibility("rightPathLines");
@@ -751,6 +760,20 @@ Last audit: 2025-12-27
 
   const shownWordHeader = $derived(
     overlayVisibility?.wordHeader ?? wordHeaderVisible
+  );
+  // A file's own list (the Download video screen) wins where it names the
+  // part; otherwise the part follows its preference.
+  const shownHeaderLevel = $derived(
+    overlayVisibility?.headerLevel ?? headerLevelVisible
+  );
+  const shownHeaderLoop = $derived(
+    overlayVisibility?.headerLoop ?? headerLoopVisible
+  );
+  const shownHeaderTurns = $derived(
+    overlayVisibility?.headerTurns ?? headerTurnsVisible
+  );
+  const shownHeaderReversals = $derived(
+    overlayVisibility?.headerReversals ?? headerReversalsVisible
   );
   const shownProgressBar = $derived(
     overlayVisibility?.progressBar ?? progressBarVisible
@@ -792,6 +815,10 @@ Last audit: 2025-12-27
     stepNumbersVisible = visibilityManager.getVisibility("stepNumbers");
     globalDarkMode = visibilityManager.isDarkMode();
     wordHeaderVisible = visibilityManager.getVisibility("wordHeader");
+    headerLevelVisible = visibilityManager.getVisibility("headerLevel");
+    headerLoopVisible = visibilityManager.getVisibility("headerLoop");
+    headerTurnsVisible = visibilityManager.getVisibility("headerTurns");
+    headerReversalsVisible = visibilityManager.getVisibility("headerReversals");
     progressBarVisible = visibilityManager.getVisibility("progressBar");
     leftPathLinesVisible = visibilityManager.getVisibility("leftPathLines");
     rightPathLinesVisible = visibilityManager.getVisibility("rightPathLines");
@@ -908,24 +935,18 @@ Last audit: 2025-12-27
         visible={shownWordHeader}
         darkMode={darkModeEnabled}
         activeStepNumber={headerActiveStepNumber}
-        difficultyLevel={overlayVisibility?.headerLevel === false
-          ? null
-          : computedDifficultyLevel}
-        loopComponents={overlayVisibility?.headerLoop === false
-          ? null
-          : computedLoopComponents}
+        difficultyLevel={shownHeaderLevel ? computedDifficultyLevel : null}
+        loopComponents={shownHeaderLoop ? computedLoopComponents : null}
         rotationPeriod={computedRotationPeriod}
         inversionPeriod={computedInversionPeriod}
         reflectionAxis={computedReflectionAxis}
-        overlayComponents={overlayVisibility?.headerLoop === false
-          ? null
-          : computedOverlayComponents}
-        turnGlyphEntries={overlayVisibility?.headerTurns === false
-          ? null
-          : headerPatternGlyphs.turnGlyphEntries}
-        reversalGlyph={overlayVisibility?.headerReversals === false
-          ? null
-          : headerPatternGlyphs.reversalGlyph}
+        overlayComponents={shownHeaderLoop ? computedOverlayComponents : null}
+        turnGlyphEntries={shownHeaderTurns
+          ? headerPatternGlyphs.turnGlyphEntries
+          : null}
+        reversalGlyph={shownHeaderReversals
+          ? headerPatternGlyphs.reversalGlyph
+          : null}
         showWord={overlayVisibility?.headerWord !== false}
       />
     </div>

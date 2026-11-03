@@ -6,14 +6,6 @@ import type {
   SequencePersister,
 } from "../../services/sequence-persister";
 import { distinctVisibleVersions } from "../../services/draft-visible-versions.js";
-import {
-  removeToast,
-  showToast,
-} from "#lib/shared/toast/state/toast-state.svelte.js";
-
-// How long the recovered-draft notice stays up: long enough to read and reach
-// its Drafts action.
-const DRAFT_NOTICE_MS = 8000;
 
 export const draftModes = ["construct", "generate", "assemble"] as const;
 export type DraftMode = (typeof draftModes)[number];
@@ -37,17 +29,9 @@ export function createDraftRecoveryController(deps: {
   let dialogMode = $state<DraftMode>("construct");
   let message = $state<string | null>(null);
   let dialogKind = $state<"recovery" | "conflict" | "history">("history");
-  const offered = new Map<DraftMode, string>();
-  const offerToasts = new Map<DraftMode, string>();
   const unsubscribe = draftModes.map((mode) =>
     deps.persister.subscribeDraftStatus(mode, (status) => {
       statuses[mode] = status;
-      const toastId = offerToasts.get(mode);
-      if (toastId && !["recovery", "conflict"].includes(status.status)) {
-        // Resolved, usually by editing on: the offer no longer applies.
-        removeToast(toastId, "programmatic");
-        offerToasts.delete(mode);
-      }
       if (open && dialogMode === mode && status.candidates.length) {
         versions = distinctVisibleVersions(status.candidates);
       }
@@ -105,51 +89,6 @@ export function createDraftRecoveryController(deps: {
     }
   }
 
-  function observeActiveMode() {
-    const mode = draftMode(deps.getActiveMode());
-    if (!mode) return;
-    const status = statuses[mode];
-    if (!status || !["recovery", "conflict"].includes(status.status)) return;
-    // Offer once per state, never as a dialog: editing on makes this
-    // editor's work the draft and every other version stays in Drafts.
-    const key = `${status.sessionId}:${status.status}`;
-    if (offered.get(mode) === key) return;
-    offered.set(mode, key);
-    offerDraft(mode, status);
-  }
-
-  function offerDraft(mode: DraftMode, status: DraftStatus) {
-    const latest = distinctVisibleVersions(status.candidates)[0];
-    const state = deps.getSequenceState(mode);
-    const editorEmpty =
-      !state.hasStartPlacement && !state.currentSequence?.steps?.length;
-    const previous = offerToasts.get(mode);
-    if (previous) removeToast(previous, "programmatic");
-    const toastId =
-      editorEmpty && latest
-        ? showToast({
-            message: "You have an unfinished draft.",
-            // Stays until closed or until building on resolves it, so a slow
-            // load cannot time the offer out before anyone sees it.
-            duration: 0,
-            announcement: "polite",
-            action: {
-              label: "Resume",
-              onClick: () => void resume(mode, latest.id),
-            },
-          })
-        : showToast({
-            message:
-              status.status === "conflict"
-                ? "This draft also changed in another tab. Both versions are in Drafts."
-                : "An earlier version of this draft is in Drafts.",
-            duration: DRAFT_NOTICE_MS,
-            announcement: "polite",
-            action: { label: "Drafts", onClick: deps.openDrafts },
-          });
-    offerToasts.set(mode, toastId);
-  }
-
   async function recover(id: string): Promise<boolean> {
     if (busy) return false;
     busy = true;
@@ -169,7 +108,6 @@ export function createDraftRecoveryController(deps: {
       deps.getSequenceState(dialogMode).restoreDraftState(workspace);
       deps.onRestored(dialogMode);
       open = false;
-      offered.delete(dialogMode);
       return true;
     } catch {
       message =
@@ -210,7 +148,6 @@ export function createDraftRecoveryController(deps: {
       });
       deps.onRestored(dialogMode);
       open = false;
-      offered.delete(dialogMode);
     } catch {
       message =
         "Your latest edits could not be saved. Try again before starting a new draft.";
@@ -287,7 +224,6 @@ export function createDraftRecoveryController(deps: {
       if (!busy) open = false;
     },
     showDrafts,
-    observeActiveMode,
     recover,
     resume,
     startFresh,
@@ -295,7 +231,6 @@ export function createDraftRecoveryController(deps: {
     flushPending,
     dispose() {
       unsubscribe.forEach((stop) => stop());
-      offerToasts.forEach((id) => removeToast(id, "programmatic"));
     },
   };
 }

@@ -86,6 +86,7 @@
     ".agents/skills/release-deck/agents/openai.yaml",
     ".agents/skills/release/SKILL.md",
     ".agents/skills/release/agents/openai.yaml",
+    ".agents/skills/release/notes-editor.html",
     ".agents/skills/release/references/changelog-policy.md",
     ".agents/skills/release/references/release-media.md",
     ".agents/skills/screenshots/SKILL.md",

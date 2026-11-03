@@ -35,6 +35,17 @@ export const USUAL_WORKSPACE_SHARE = 5 / 9;
  */
 export const MIN_TOOL_PANEL_SHARE = 2 / 7;
 
+/**
+ * Nor does it take the tool panel below the height Generate's compact cards
+ * need: the slim Level bar, three 45px card rows and the Generate button
+ * (a stepper card's label over its value needs 44px).
+ * The installed app on the unfolded Fold has 728px, not Chrome's 779, and
+ * 2/7 of that (208px) squeezed the Length, Setups and Turns cards to 31px
+ * rows that cut their labels in half (2026-11-02). The sequence scrolls its
+ * last row instead.
+ */
+export const MIN_TOOL_PANEL_HEIGHT = 260;
+
 /** Steps in one workspace row: a full row is four steps beside the start. */
 const STEPS_PER_ROW = 4;
 
@@ -71,7 +82,7 @@ export function workspaceFloorHeight(params: {
  * Pixel sizes for [workspace, tool panel]. The workspace gets the largest of
  * the share the view prefers, the legible floor (capped at the usual 5:4
  * share) and, when given, the whole-sequence floor (capped where the tool
- * panel would drop below MIN_TOOL_PANEL_SHARE).
+ * panel would drop below MIN_TOOL_PANEL_SHARE or MIN_TOOL_PANEL_HEIGHT).
  */
 export function stackedWorkspaceSplit(params: {
   height: number;
@@ -84,7 +95,8 @@ export function stackedWorkspaceSplit(params: {
   const floor = Math.min(workspaceFloor, height * USUAL_WORKSPACE_SHARE);
   const wholeSequence = Math.min(
     sequenceFloor,
-    height * (1 - MIN_TOOL_PANEL_SHARE)
+    height * (1 - MIN_TOOL_PANEL_SHARE),
+    height - MIN_TOOL_PANEL_HEIGHT
   );
   const workspace = Math.round(
     Math.min(height, Math.max(0, preferredWorkspace, floor, wholeSequence))

@@ -7,13 +7,16 @@
     type StageCameraPose,
   } from "./stage-3d-camera";
   import { stage3DCameraState } from "./stage-3d-camera-state.svelte";
+  import { stage3DShotEditor } from "./stage-3d-shot-editor.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   /**
    * A selected 3D clip on its "My angle" shot: a drag inside it turns the
    * camera around the performers (across) and raises or lowers it (up and
    * down). The clip shows the camera live, and letting go stores it on the
    * clip. Any other clip, or any other shot, leaves presses to the canvas, so
-   * the box moves as usual.
+   * the box moves as usual. The corner button opens the clip full size to set
+   * up its shot.
    */
   let { editor, item, locked, canvas }: SelectionLayerProps = $props();
 
@@ -106,4 +109,60 @@
   export function contextMenu(): boolean {
     return false;
   }
+
+  const stage = $derived(
+    item.kind === "animation" && item.stage3d ? item.stage3d : null
+  );
 </script>
+
+{#if stage && !locked}
+  <button
+    type="button"
+    class="open-shot"
+    title={t("post_stage_3d_open_editor")}
+    aria-label={t("post_stage_3d_open_editor")}
+    onpointerdown={(event) => event.stopPropagation()}
+    onclick={(event) => {
+      event.stopPropagation();
+      editor.pause();
+      stage3DShotEditor.start(item.id, stage);
+    }}
+  >
+    <i class="fa-solid fa-up-right-and-down-left-from-center" aria-hidden="true"
+    ></i>
+  </button>
+{/if}
+
+<style>
+  .open-shot {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    z-index: 2;
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: 1px solid rgb(255 255 255 / 0.28);
+    border-radius: 999px;
+    background: rgb(0 0 0 / 0.55);
+    color: #fff;
+    font-size: 0.8125rem;
+    cursor: pointer;
+    backdrop-filter: blur(4px);
+    transition:
+      background var(--duration-fast) var(--ease-standard),
+      scale var(--duration-fast) var(--ease-standard);
+  }
+
+  .open-shot:hover {
+    background: rgb(0 0 0 / 0.8);
+    scale: 1.08;
+  }
+
+  .open-shot:focus-visible {
+    outline: 2px solid var(--theme-accent, #6aa9ff);
+    outline-offset: 2px;
+  }
+</style>

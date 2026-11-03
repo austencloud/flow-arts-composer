@@ -4,16 +4,29 @@
   import SequenceHeroDemo from "#lib/shared/landing/components/SequenceHeroDemo.svelte";
   import { NOTATION_LOOP_TEASER_SEQUENCE } from "#lib/shared/loop-explorer/domain/notation-loop-teaser.js";
   import CapsAssembly from "./_components/CapsAssembly.svelte";
-  import YutaCapLiveDemo from "./_components/YutaCapLiveDemo.svelte";
+  import CapTrace from "./_components/CapTrace.svelte";
+  import HandTile from "#lib/shared/guide-topics/components/HandTile.svelte";
+  import { buildCapSequence } from "./_components/yuta-cap-sequence";
+  import {
+    CAP_HAND_PATHS,
+    capStrip,
+  } from "#lib/shared/guide-topics/caps-topic.js";
+  import { stripToSequence } from "#lib/shared/guide-topics/strip-to-sequence.js";
+  import {
+    DEFAULT_TRAIL_SETTINGS,
+    TrackingMode,
+    TrailMode,
+    type TrailSettings,
+  } from "#lib/shared/animation-engine/domain/types/trail-types.js";
   import "#lib/shared/landing/styles/public-editorial.css";
 
   // Suffix is deliberately NOT "| The Kinetic Alphabet". CAPs are not TKA's,
   // and a brand suffix on a title is the strongest ownership signal a reader
-  // or an indexer sees — it reads exactly like "Hooks | React".
+  // or an indexer sees: it reads exactly like "Hooks | React".
   const TITLE =
     "CAPs: Continuous Assembly Patterns | Flow Arts Notation Archive";
   const DESCRIPTION =
-    "What a CAP is, where Continuous Assembly Patterns came from, and how they differ from LOOPs, with links to the original sources.";
+    "What a CAP is, where in the circle you reverse, how Gage DeMello catalogued the two-hand version, where Continuous Assembly Patterns came from, and how they differ from LOOPs, with links to the original sources.";
   const URL = "https://tkaflowarts.com/notation/caps";
 
   const THREAD_URL =
@@ -39,11 +52,44 @@
       label: "Learning CAPs (Capped Antispin Patterns), PlayPoi, 2016",
     },
     { href: EIGHT_STEP_URL, label: "Double staff 8-step CAP recipe, 2016" },
+    { href: "https://spiroanim.com/", label: "SpiroAnim, by Mentive" },
     {
       href: "https://www.youtube.com/playlist?list=PLDE05D5E593C54AED",
       label: "Charlie's 9-Square Theory playlist",
     },
   ];
+
+  // Three settings of the same two curves, played in step by one recipe.
+  const TRACES = [
+    {
+      quarters: 1 as const,
+      caption: "Reverse after a quarter",
+      artKey: "cap-quarter",
+    },
+    {
+      quarters: 2 as const,
+      caption: "Reverse after a half: the Yuta CAP",
+      artKey: "yuta-cap",
+    },
+    {
+      quarters: 3 as const,
+      caption: "Reverse after three quarters",
+      artKey: "cap-three-quarter",
+    },
+  ].map((trace) => ({ ...trace, sequence: buildCapSequence(trace.quarters) }));
+
+  // The two-hand figure is the middle tile of the Eight Step page's header:
+  // the first CAP on the first hand path, both hands drawing their paths.
+  const firstCap = CAP_HAND_PATHS[0]!.caps[0]!;
+  const twoHands = stripToSequence(capStrip(firstCap), {
+    word: firstCap.word,
+    name: firstCap.id,
+  });
+  const HAND_TRAIL: TrailSettings = {
+    ...DEFAULT_TRAIL_SETTINGS,
+    mode: TrailMode.LOOP_CLEAR,
+    trackingMode: TrackingMode.HAND,
+  };
 </script>
 
 <Seo title={TITLE} description={DESCRIPTION} canonical={URL} ogType="article">
@@ -67,7 +113,8 @@
         { "@type": "Person", "name": "Alien Jon" },
         { "@type": "Person", "name": "Nick Woolsey" },
         { "@type": "Person", "name": "Ben Drexler" },
-        { "@type": "Person", "name": "Charlie Cushing" }
+        { "@type": "Person", "name": "Charlie Cushing" },
+        { "@type": "Person", "name": "Gage DeMello" }
       ]
     },
     "citation": [
@@ -92,7 +139,8 @@
   <header class="editorial-header">
     <h1 class="page-title">CAPs: Continuous Assembly Patterns</h1>
     <p class="page-subtitle">
-      What a CAP is, where the idea came from, and how it differs from a LOOP.
+      What a CAP is, where you reverse, the two-hand version, where the idea
+      came from, and how it differs from a LOOP.
     </p>
   </header>
 
@@ -103,8 +151,8 @@
         <p>
           A CAP is the path of one prop, built from two or more simple curves
           joined end to end. A curve can be used more than once. The prop
-          traces every piece in turn and comes back to where it started, so
-          the whole path can repeat.
+          traces each piece in turn and comes back to where it started, so the
+          whole path repeats.
         </p>
         <p>
           Damien coined the term and published the construction on <LinkChip
@@ -116,14 +164,85 @@
           The CAP drawn here has two halves. In the first, the hand carries the
           prop through half a circle while the prop keeps pointing away from
           the center. That is an extension. In the second, the hand comes back
-          while the prop turns against it, which draws the inner petals. That
-          is antispin. The halves meet at a shared point, and the prop ends in
-          the same place and direction it started, so the path closes.
+          while the prop turns against it, drawing the inner petals. That is
+          antispin. The prop ends in the same place and direction it started,
+          so the path closes.
         </p>
       </div>
       <figure class="figure">
         <div class="assembly-frame"><CapsAssembly /></div>
       </figure>
+    </div>
+  </section>
+
+  <section id="reverse" class="editorial-section">
+    <div class="prose">
+      <h2 class="section-title">Where you reverse</h2>
+      <p>
+        Damien wrote each piece of a CAP as a short line of numbers. The last
+        one is a fraction: how much of the curve the prop uses before the next
+        piece starts. That fraction is where you reverse.
+      </p>
+      <p>
+        His first worked example in the 2009 thread uses a half. Half a circle
+        of extension, <code>1 0 ; 1 3/4 ; 1/2</code>, joins half a circle of
+        antispin, <code>-1 4 ; 1 3/4 ; 1/2</code>. That is the Yuta CAP, the
+        pattern most spinners mean by "a cap" today and the one Drex and Nick
+        Woolsey taught. In the same post he drew the two curves again at three
+        quarters.
+      </p>
+      <p>
+        At a quarter, the same two curves give a quarter circle of extension
+        and one antispin petal back. Each setting joins the curves at a
+        different point, so each one draws a different closed shape with its
+        own count of petals.
+      </p>
+    </div>
+    <div class="trace-row">
+      {#each TRACES as trace (trace.quarters)}
+        <figure class="figure trace-figure">
+          <div class="cap-frame">
+            <CapTrace
+              sequence={trace.sequence}
+              artKey={trace.artKey}
+              poster={trace.poster}
+            />
+          </div>
+          <figcaption>{trace.caption}</figcaption>
+        </figure>
+      {/each}
+    </div>
+  </section>
+
+  <section id="two-hands" class="editorial-section">
+    <div class="text-and-figure">
+      <div class="prose">
+        <h2 class="section-title">Two hands</h2>
+        <p>
+          Gage DeMello catalogued the two-hand version. One hand caps: it goes
+          two beats on round the diamond and one beat back, changing its spin
+          on the way back. The other hand keeps circling.
+        </p>
+        <p>
+          Eight hand paths, with three spins for each hand, make 72 CAPs. The
+          figure plays the first of them.
+        </p>
+        <p class="credit">
+          CAPs by Gage DeMello, transcribed from Mentive's SpiroAnim.
+        </p>
+        <div class="chip-row">
+          <LinkChip href="/guide/eight-step">Eight Hand Paths</LinkChip>
+        </div>
+      </div>
+      <div class="figure hand-figure">
+        <HandTile
+          sequence={twoHands}
+          hand="both"
+          caption="Left hand caps, right hand circles"
+          trail={HAND_TRAIL}
+          stepNumbers
+        />
+      </div>
     </div>
   </section>
 
@@ -133,8 +252,7 @@
       <p>
         Alien Jon described sessions at Burning Man in 2007 where the OMCC
         group, with Noel, Greg, Jordan and Zan, took complex poi patterns apart
-        to see how they worked. Damien joined them with his own CAP
-        explorations.
+        to see how they worked. Damien joined them with his own CAP ideas.
       </p>
       <p>
         The name reached a wider audience in 2009, in a <LinkChip
@@ -182,10 +300,6 @@
       </p>
     </div>
     <div id="comparison" class="comparison">
-      <figure class="figure cap-figure">
-        <div class="cap-frame"><YutaCapLiveDemo /></div>
-        <figcaption>a CAP: one club, one path</figcaption>
-      </figure>
       <div class="figure">
         <SequenceHeroDemo
           sequence={NOTATION_LOOP_TEASER_SEQUENCE}
@@ -234,20 +348,36 @@
   }
 
   .comparison {
-    --pair-w: min(26rem, 100%);
-    --hero-demo-max-width: var(--pair-w);
-    --hero-demo-wide-max-width: var(--pair-w);
-    display: grid;
-    gap: clamp(1.5rem, 1rem + 2vw, 3rem);
+    --hero-demo-max-width: min(26rem, 100%);
+    --hero-demo-wide-max-width: min(26rem, 100%);
     margin-block-start: clamp(1.5rem, 1rem + 1vw, 2.5rem);
-    align-items: start;
   }
 
-  /* Same width and stage as the LOOP demo beside it, so the pair reads as
-     one comparison. */
-  .cap-figure {
-    inline-size: var(--pair-w);
+  /* The three traces share one track width so they read as one comparison:
+     a column on phones, three across from 960px. */
+  .trace-row {
+    --trace-w: min(20rem, 100%);
+    display: grid;
+    grid-template-columns: var(--trace-w);
+    justify-content: center;
+    gap: clamp(1.5rem, 1rem + 2vw, 3rem);
+    margin-block-start: clamp(1.5rem, 1rem + 1vw, 2.5rem);
+  }
+
+  .hand-figure {
+    inline-size: min(100%, 20rem);
     margin-inline: auto;
+  }
+
+  .credit {
+    font-style: italic;
+    color: oklch(0.62 0.02 270);
+  }
+
+  .chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
   }
 
   .comparison :global(.hero-demo) {
@@ -255,12 +385,14 @@
   }
 
   .cap-frame {
+    overflow: hidden;
     border: 1px solid oklch(0.4 0.04 270 / 0.14);
     border-radius: 18px;
     background: oklch(0.14 0.006 270);
   }
 
-  .cap-figure figcaption {
+  .trace-figure figcaption {
+    text-align: center;
     margin-block-start: 0.8rem;
     font-size: clamp(0.85rem, 0.8rem + 0.12vw, 1rem);
     font-style: italic;
@@ -287,10 +419,8 @@
       grid-template-columns: minmax(0, 68ch) minmax(0, 1fr);
     }
 
-    .comparison {
-      grid-template-columns: repeat(2, var(--pair-w));
-      justify-content: center;
-      column-gap: clamp(3rem, 2rem + 3vw, 6rem);
+    .trace-row {
+      grid-template-columns: repeat(3, minmax(0, 20rem));
     }
   }
 </style>

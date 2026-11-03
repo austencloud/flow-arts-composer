@@ -19,26 +19,38 @@
     type StageCameraPose,
   } from "./stage-3d-camera";
   import { stage3DCameraState } from "./stage-3d-camera-state.svelte";
+  import { stage3DShotEditor } from "./stage-3d-shot-editor.svelte";
 
   /**
    * An animation clip's 3D controls, at the top of its look: 2D or 3D, and in
    * 3D the camera shot, the orbit's speed and direction, a saved angle's
    * distance, and the scene. The scene picker is the 3D viewer's own.
+   *
+   * The full-size shot editor uses the same controls on its draft: given
+   * `draft`, every change goes to `ondraft` and nothing reaches the clip.
    */
   let {
     editor,
     item,
     locked,
+    draft = null,
+    ondraft,
   }: {
     editor: VideoEditorState;
     item: PostAnimationItem;
     locked: boolean;
+    draft?: PostStage3D | null;
+    ondraft?: (next: PostStage3D) => void;
   } = $props();
 
-  const stage = $derived(item.stage3d ?? null);
+  const stage = $derived(draft ?? item.stage3d ?? null);
 
   function commit(key: string, next: PostStage3D | null): void {
     if (locked) return;
+    if (ondraft) {
+      if (next) ondraft(next);
+      return;
+    }
     const id = item.id;
     editor.editSetting(`${id}:stage3d:${key}`, (project, ctx) =>
       updateItem(project, id, { stage3d: next }, ctx)
@@ -104,17 +116,29 @@
 </script>
 
 <div class="stage-3d-tool">
-  <SegmentedControl
-    color="accent"
-    options={[
-      { value: "2d", label: t("post_stage_3d_view_2d"), disabled: locked },
-      { value: "3d", label: t("post_stage_3d_view_3d"), disabled: locked },
-    ]}
-    value={stage ? "3d" : "2d"}
-    onchange={(value) =>
-      commit("view", value === "3d" ? (stage ?? { shot: "front" }) : null)}
-    ariaLabel={t("post_stage_3d_view")}
-  />
+  {#if !ondraft}
+    <SegmentedControl
+      color="accent"
+      options={[
+        { value: "2d", label: t("post_stage_3d_view_2d"), disabled: locked },
+        { value: "3d", label: t("post_stage_3d_view_3d"), disabled: locked },
+      ]}
+      value={stage ? "3d" : "2d"}
+      onchange={(value) =>
+        commit("view", value === "3d" ? (stage ?? { shot: "front" }) : null)}
+      ariaLabel={t("post_stage_3d_view")}
+    />
+    {#if item.stage3d}
+      <PanelButton
+        disabled={locked}
+        onclick={() => {
+          if (item.stage3d) stage3DShotEditor.start(item.id, item.stage3d);
+        }}
+      >
+        {t("post_stage_3d_open_editor")}
+      </PanelButton>
+    {/if}
+  {/if}
 
   {#if stage}
     <SegmentedControl
@@ -181,7 +205,9 @@
         ariaLabel={t("post_stage_3d_direction")}
       />
     {:else if stage.shot === "saved"}
-      <p class="hint">{t("post_stage_3d_saved_hint")}</p>
+      <p class="hint">
+        {t(ondraft ? "post_stage_3d_editor_hint" : "post_stage_3d_saved_hint")}
+      </p>
       {#if savedPose}
         {@const distance = distanceOf(savedPose)}
         <ValueSlider
@@ -215,8 +241,7 @@
     {#if ScenePicker}
       <ScenePicker
         value={stage.environment ?? "cosmic"}
-        onchange={(environment) =>
-          commit("scene", { ...stage, environment })}
+        onchange={(environment) => commit("scene", { ...stage, environment })}
       />
     {/if}
   {/if}

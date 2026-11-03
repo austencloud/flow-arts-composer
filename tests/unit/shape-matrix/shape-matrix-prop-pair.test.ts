@@ -100,15 +100,15 @@ describe("shape matrix prop pair", () => {
     expect(collapsed).toHaveLength(0);
   }, 60_000);
 
-  it("draws a prop with no tracked tip as staff instead of failing", async () => {
-    const staff = await loadShapeMatrix(PropType.STAFF);
+  it("draws a prop with no tracked tip as poi instead of failing", async () => {
+    const poi = await loadShapeMatrix(PropType.POI);
     const hand = await loadShapeMatrix(PropType.HAND);
-    expect(hand).toBe(staff);
+    expect(hand).toBe(poi);
     const mixed = await loadShapeMatrix({
       left: PropType.CONTACTBALL,
       right: PropType.FAN,
     });
-    expect(mixed.props).toEqual({ left: PropType.STAFF, right: PropType.FAN });
+    expect(mixed.props).toEqual({ left: PropType.POI, right: PropType.FAN });
   });
 });
 
@@ -136,10 +136,10 @@ describe("propPairFromLegacy", () => {
     ).toEqual({ left: PropType.STAFF, right: PropType.FAN });
   });
 
-  it("falls back to staff/staff when nothing is set", () => {
+  it("falls back to poi/poi when nothing is set", () => {
     expect(propPairFromLegacy({})).toEqual({
-      left: PropType.STAFF,
-      right: PropType.STAFF,
+      left: PropType.POI,
+      right: PropType.POI,
     });
   });
 });

@@ -42,7 +42,6 @@
   import ReleaseNotesTab from "#lib/shared/settings/components/tabs/ReleaseNotesTab.svelte";
   import PropTypeTab from "#lib/shared/settings/components/tabs/PropTypeTab.svelte";
   import DisplayTab from "#lib/shared/settings/components/tabs/DisplayTab.svelte";
-  import BackgroundTab from "#lib/shared/settings/components/tabs/background/BackgroundTab.svelte";
   import PreferencesTab from "#lib/shared/settings/components/tabs/PreferencesTab.svelte";
   import LanguagePreference from "#lib/shared/settings/components/tabs/preferences/LanguagePreference.svelte";
   import ShortcutCenter from "#lib/shared/keyboard/components/ShortcutCenter.svelte";
@@ -272,11 +271,10 @@
             onBack={() => handleSectionChange("preferences")}
           />
         {:else if activeTab === "display"}
-          <DisplayTab />
+          <!-- Theme lives here since 2026-11-02 (the Theme tab folded in). -->
+          <DisplayTab {settings} onUpdate={handleSettingUpdate} />
         {:else if activeTab === "props"}
           <PropTypeTab {settings} onUpdate={handleSettingUpdate} />
-        {:else if activeTab === "theme"}
-          <BackgroundTab {settings} onUpdate={handleSettingUpdate} />
         {:else if activeTab === "notifications"}
           <NotificationPreferencesPanel />
         {:else if activeTab === "preferences"}
@@ -457,8 +455,7 @@
           .preferences-workspace,
           .notification-workspace,
           .props-workspace,
-          .display-workspace,
-          .theme-workspace
+          .display-workspace
         )
       ),
     :global(html.tab-slide-right)
@@ -469,8 +466,7 @@
           .preferences-workspace,
           .notification-workspace,
           .props-workspace,
-          .display-workspace,
-          .theme-workspace
+          .display-workspace
         )
       ) {
       view-transition-name: settings-surface;

@@ -5,7 +5,9 @@ import {
   rememberViewerCardPaneBox,
   rememberViewerSplitCardPaneBox,
   resolveViewerCardMotionBox,
+  resolveViewerPaneRevealReady,
   resolveViewerPanelLayout,
+  SIDEWAYS_PRACTICE_LANE_WIDTH,
 } from "./viewer-panel-layout";
 
 const desktop = {
@@ -65,6 +67,86 @@ describe("resolveViewerPanelLayout with a user split share", () => {
         practiceCanvasFraction: 0.38,
       }).sizes
     ).toEqual([0.38, 0.62]);
+  });
+});
+
+describe("Practice on a phone held sideways", () => {
+  const sidewaysPractice = {
+    ...desktop,
+    isLandscapeMobile: true,
+    practiceActive: true,
+    sideways: true,
+  };
+
+  it("holds the lane at its fixed width beside a canvas pane that takes the rest", () => {
+    expect(resolveViewerPanelLayout(sidewaysPractice)).toEqual({
+      direction: "horizontal",
+      sizes: [1, 1],
+      previewPreferredSize: `${SIDEWAYS_PRACTICE_LANE_WIDTH}px`,
+    });
+  });
+
+  it("ignores the canvas fraction and any user share", () => {
+    expect(
+      resolveViewerPanelLayout({
+        ...sidewaysPractice,
+        practiceCanvasFraction: 0.38,
+        userSplitShares: { horizontal: 0.62 },
+      }).previewPreferredSize
+    ).toBe(`${SIDEWAYS_PRACTICE_LANE_WIDTH}px`);
+  });
+
+  it("leaves landscape phones that are not sideways on the shared split", () => {
+    expect(
+      resolveViewerPanelLayout({ ...sidewaysPractice, sideways: false })
+    ).toEqual({ direction: "horizontal", sizes: [0.5, 0.5] });
+  });
+
+  it("leaves the layout alone outside Practice", () => {
+    expect(
+      resolveViewerPanelLayout({ ...sidewaysPractice, practiceActive: false })
+        .previewPreferredSize
+    ).toBeUndefined();
+  });
+
+  it("reveals the narrow lane once it is nearly open, not at the general floor", () => {
+    const lane = {
+      pane: "image" as const,
+      focusedPane: null,
+      direction: "horizontal" as const,
+      height: 340,
+      stageWidth: 436,
+      stageHeight: 340,
+      minWidth: SIDEWAYS_PRACTICE_LANE_WIDTH * 0.9,
+    };
+    expect(
+      resolveViewerPaneRevealReady({ ...lane, width: SIDEWAYS_PRACTICE_LANE_WIDTH })
+    ).toBe(true);
+    expect(resolveViewerPaneRevealReady({ ...lane, width: 40 })).toBe(false);
+    expect(
+      resolveViewerPaneRevealReady({
+        ...lane,
+        minWidth: undefined,
+        width: SIDEWAYS_PRACTICE_LANE_WIDTH,
+      })
+    ).toBe(false);
+  });
+
+  it("reveals the portrait foot at its own content height, under the general floor", () => {
+    const foot = {
+      pane: "image" as const,
+      focusedPane: null,
+      direction: "vertical" as const,
+      width: 411,
+      stageWidth: 411,
+      stageHeight: 666,
+      minHeight: 72,
+    };
+    expect(resolveViewerPaneRevealReady({ ...foot, height: 188 })).toBe(true);
+    expect(resolveViewerPaneRevealReady({ ...foot, height: 1 })).toBe(false);
+    expect(
+      resolveViewerPaneRevealReady({ ...foot, minHeight: undefined, height: 188 })
+    ).toBe(false);
   });
 });
 

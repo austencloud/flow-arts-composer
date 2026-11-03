@@ -48,6 +48,8 @@ export interface ViewerLayoutState {
   fullscreenStackVertical: boolean;
   isMobile: boolean;
   isLandscapeMobile?: boolean;
+  /** A phone held sideways (the shell's shared breakpoint, see layout.sideways). */
+  sideways?: boolean;
   focusedPane: "animation" | "image" | "video-upload" | null;
   /** When true, suppress pane close buttons (during export mode) */
   suppressCloseButton?: boolean;

@@ -41,7 +41,12 @@
   the script): the server already knows its first screen and its pills, so
   both show at once, and the first paint stays over the live frame until
   the live frame has fitted, then fades into it. Its screens stand at the
-  top of the body.
+  top of the body. A body-head page's first paint is the exception to that
+  exception (2026-11-02, Austen: the run's screen showed at its designed
+  size, then jumped to its fitted one as it loaded): its title, words and
+  list share one group with its card, so the screen waits out of sight
+  like any other page's and fades in once, fitted, under a header that
+  shows at once.
 
   A body-head page reached by a link from another page of the same visit
   (the hand combinations' run, 2026-11-01) has no first paint to hand
@@ -150,6 +155,10 @@
     handedOver = true;
     release();
   }
+  // Only a steady-head page that draws its head in the frame shows its first
+  // paint. Every other first paint leaves from out of sight, so its fade-out
+  // never flashes it.
+  const firstShows = $derived(steadyHead && !bodyHead);
   let direction = $state<1 | -1>(1);
   let pillRow = $state<HTMLElement>();
   const count = $derived(labels.length);
@@ -266,6 +275,7 @@
 
 <div
   class="guide-screens"
+  data-sideways-owns-chrome
   class:live
   class:steady={steadyHead}
   class:body-head={bodyHead}
@@ -345,7 +355,7 @@
         class="first"
         class:over={live}
         aria-hidden={live ? "true" : undefined}
-        out:opaqueFade
+        out:opaqueFade={{ opacity: firstShows ? 1 : 0 }}
       >
         <div class="first-content">
           {#if lead}<div class="lead">{@render lead()}</div>{/if}
@@ -622,9 +632,12 @@
     align-content: start;
     opacity: 1;
   }
-  /* A page that keeps its screen mounted stands it centred in the body. */
+  /* A page that keeps its screen mounted stands it centred in the body,
+     and its first paint stays out of sight: its words, list and card share
+     one group whose size only the live fit knows. */
   .steady.body-head .first {
     align-content: safe center;
+    opacity: 0;
   }
   /* Once live, the first paint stays over the live frame (which is still
      fitting out of sight) until that has fitted. */
@@ -825,6 +838,96 @@
     }
     .pills {
       justify-content: flex-start;
+    }
+  }
+
+  /* A phone held sideways (the Fold's cover on its side, about 340px tall
+     with the browser bar). The site header steps aside
+     (data-sideways-owns-chrome, MarketingChrome) and one 44px row holds
+     everything: the Contents button (GuideShell, fixed at its left), the
+     title, the screen pills, then Back, All guides and Next at the right as
+     compact buttons that keep their names for screen readers. There is no
+     bottom bar; the screen gets the whole height under the row. */
+  @media (max-height: 480px) and (min-width: 700px) {
+    :global(.guide-layout:has(.guide-screens)) {
+      padding-top: 0;
+    }
+    .guide-screens {
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-rows: 44px minmax(0, 1fr);
+      grid-template-areas:
+        "head controls"
+        "body body";
+    }
+    .head,
+    .head:not(:has(.pills)),
+    .body-head .head {
+      grid-area: head;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      min-width: 0;
+      /* Clears the fixed Contents button. */
+      padding: 0 0 0 calc(0.5rem + 40px + 0.6rem);
+      text-align: start;
+    }
+    .titles {
+      flex: 0 1 auto;
+      justify-items: start;
+    }
+    .title {
+      max-width: 22rem;
+      font-size: 1.35rem;
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    /* A page that draws its own title: its switcher takes the title's
+       place in the row. */
+    .before-title,
+    .body-head .before-title {
+      margin: 0;
+    }
+    .pills {
+      order: 0;
+      flex: 1 1 auto;
+      align-items: center;
+      margin-left: 0;
+      min-height: 0;
+      padding: 0;
+    }
+    .pill {
+      min-height: 36px;
+      font-size: 0.85rem;
+    }
+    .body {
+      grid-area: body;
+      padding-block: 0.25rem 0.4rem;
+    }
+    .controls {
+      grid-area: controls;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0 0.6rem 0 0.6rem;
+      border-top: none;
+      font-size: 0.85rem;
+    }
+    .step,
+    .step.next {
+      justify-content: center;
+      width: 36px;
+      min-height: 36px;
+      padding: 0;
+    }
+    .step-title,
+    .step-spacer {
+      display: none;
+    }
+    .hub {
+      min-height: 36px;
+      padding: 0 0.9em;
     }
   }
 </style>

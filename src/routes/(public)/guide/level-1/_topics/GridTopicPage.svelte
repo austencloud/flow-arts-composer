@@ -14,7 +14,10 @@
   import TopicScreens from "./TopicScreens.svelte";
   import type { TopicPageProps } from "./topic-pages";
   import { onMount } from "svelte";
-  import { watchSmallScreen } from "../../_components/fit/guide-screen-url";
+  import {
+    watchSidewaysScreen,
+    watchSmallScreen,
+  } from "../../_components/fit/guide-screen-url";
 
   let { darkMode, kicker, lessonHref, frame }: TopicPageProps = $props();
 
@@ -26,11 +29,21 @@
 
   // A phone shows the labeled figure first and the three definitions on a
   // screen of their own, so neither has to shrink past reading size.
+  // A phone held sideways is short but wide: the figure and the definitions
+  // share one screen there, in two columns.
   let small = $state(false);
-  onMount(() => watchSmallScreen((v) => (small = v)));
+  let sideways = $state(false);
+  onMount(() => {
+    const stopSmall = watchSmallScreen((v) => (small = v));
+    const stopSideways = watchSidewaysScreen((v) => (sideways = v));
+    return () => {
+      stopSmall();
+      stopSideways();
+    };
+  });
   type Part = "figure" | "points" | "both" | "modes";
   const parts = $derived<Part[]>(
-    small ? ["figure", "points", "modes"] : ["both", "modes"]
+    small && !sideways ? ["figure", "points", "modes"] : ["both", "modes"]
   );
   const labels = $derived(
     parts.map((part) =>
@@ -178,6 +191,45 @@
     width: 0.85rem;
     height: 0.85rem;
   }
+  /* A phone held sideways: the figure stands in a left column for the whole
+     height and the lede and definitions stack in the right one, so neither
+     shrinks past reading size nor waits for a second screen. */
+  @media (max-height: 480px) and (min-width: 700px) {
+    .overview {
+      grid-template-columns: auto minmax(0, 30rem);
+      grid-template-areas:
+        "figure lede"
+        "figure definitions";
+      align-items: center;
+      justify-content: center;
+      justify-items: stretch;
+      column-gap: clamp(1rem, 4vw, 3rem);
+      row-gap: 0.75rem;
+    }
+    .overview .lede {
+      grid-area: lede;
+      align-self: end;
+    }
+    .pair {
+      display: contents;
+    }
+    .pair :global(.labeled-grid) {
+      grid-area: figure;
+      width: calc(15rem * var(--fit, 1));
+    }
+    .definitions {
+      grid-area: definitions;
+      align-self: start;
+      gap: 0.5rem;
+    }
+    .definitions ul {
+      gap: 0.4rem;
+    }
+    .definitions li {
+      line-height: 1.35;
+    }
+  }
+
   /* The prose keeps a 40rem measure; the equation is an artifact and may
      run wider on large screens. */
   .modes {

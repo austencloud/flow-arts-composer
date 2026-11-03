@@ -1,3 +1,5 @@
+import { SIDEWAYS_VIEWPORT_QUERY } from "#lib/shared/ui/sideways-viewport.js";
+
 /**
  * The screen a guide page shows is URL state: `?screen=2` opens its second
  * screen, so a link lands on the right screen and the phone's Back steps
@@ -30,6 +32,27 @@ export const MEDIUM_TEXT_SCREEN_CHARS = 280;
 /** Calls back now and whenever the window crosses the small-screen line. */
 export function watchSmallScreen(onChange: (small: boolean) => void): () => void {
   const mq = window.matchMedia(SMALL_SCREEN_QUERY);
+  const handler = () => onChange(mq.matches);
+  handler();
+  mq.addEventListener("change", handler);
+  return () => mq.removeEventListener("change", handler);
+}
+
+/**
+ * A phone held sideways (the Fold's cover on its side: about 915 by 340).
+ * It is a small screen by height, but wide enough for a figure and its words
+ * side by side, so a page that splits them for a phone may keep them on one
+ * screen in two columns here. The breakpoint is the shared sideways one
+ * (`shared/ui/sideways-viewport.ts`); this callback form serves the guide's
+ * non-rune watchers.
+ */
+export const SIDEWAYS_SCREEN_QUERY = SIDEWAYS_VIEWPORT_QUERY;
+
+/** Calls back now and whenever the window turns sideways or back. */
+export function watchSidewaysScreen(
+  onChange: (sideways: boolean) => void
+): () => void {
+  const mq = window.matchMedia(SIDEWAYS_SCREEN_QUERY);
   const handler = () => onChange(mq.matches);
   handler();
   mq.addEventListener("change", handler);

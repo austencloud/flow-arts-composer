@@ -240,9 +240,12 @@ describe("landing shared-element contract", () => {
       "src/lib/shared/landing/components/MarketingChrome.svelte"
     );
     expect(chrome).toContain("isNamedRouteMorphActive()");
+    // The opening page, already drawn by the server, never fades in; every
+    // navigation that changes the content key does.
     expect(chrome).toMatch(
-      /duration:\s*suppressContentFade\s*\?\s*0\s*:\s*DURATION\.normal/
+      /duration:\s*suppressContentFade\s*\|\|\s*!navigated\s*\?\s*0\s*:\s*DURATION\.normal/
     );
+    expect(chrome).toContain("if (contentKey !== openingKey) navigated = true;");
     expect(chrome).toContain(
       'import { DURATION } from "#lib/shared/transitions/transitions.js";'
     );

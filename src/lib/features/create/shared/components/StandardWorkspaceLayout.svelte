@@ -16,6 +16,7 @@
   import LazyMount from "#lib/shared/components/LazyMount.svelte";
   import PanelGroup from "#lib/shared/panels/PanelGroup.svelte";
   import {
+    flyFade,
     growFade,
     reducedMotion,
     standardEasing,
@@ -48,6 +49,10 @@
   import { sequenceActionsFit } from "./sequence-actions/sequence-actions-fit.svelte";
   import { hasOpenModalLayer } from "#lib/shared/keyboard/domain/shortcut-target-resolution.js";
   import { pictographDrawState } from "#lib/shared/pictograph/shared/utils/pictograph-draw-state.js";
+  import {
+    isTheaterViewport,
+    workspaceTheaterActive,
+  } from "../services/workspace-theater";
 
   type CreateModuleState = ReturnType<typeof CreateModuleStateType>;
 
@@ -168,6 +173,17 @@
         "complete"
   );
   const isWorkspacePlayback = $derived(!!panelState.workspacePlayback);
+  // Sideways on a phone, the preview takes the whole workspace: Undo/Redo,
+  // Save and the bottom bar step aside (CreationWorkspaceArea folds the
+  // header away too) and the player carries Viewer, Share and Stop itself.
+  const isWorkspaceTheater = $derived(
+    workspaceTheaterActive({
+      theaterViewport: isTheaterViewport(),
+      playing: isWorkspacePlayback,
+      preparing: !!panelState.workspacePlaybackPreparation,
+      preparationFailed: !!panelState.workspacePlaybackPreparationError,
+    })
+  );
   // Save mode: the tool panel becomes the save view and the step grid stays
   // where it is as the preview, sliding wider to be the subject. The
   // workspace's own controls fade and stop taking input until the save view
@@ -495,9 +511,13 @@
         buttonPanelElement.getBoundingClientRect().height
       );
     }
+    // Theater mode lifts the bar out of its wrapper. Its height is kept
+    // through the preview, so the room under the workspace grows back to the
+    // same size when the bar returns instead of growing from nothing.
     const resizeObserver = new ResizeObserver((entries) => {
       const box = entries.at(-1)?.borderBoxSize?.[0];
-      if (box) buttonPanelHeight = Math.round(box.blockSize);
+      if (box && !isWorkspaceTheater)
+        buttonPanelHeight = Math.round(box.blockSize);
     });
     resizeObserver.observe(buttonPanelElement, { box: "border-box" });
 
@@ -546,6 +566,7 @@
           animatingStepNumber,
           currentDisplayWord,
           buttonPanelHeight,
+          theater: isWorkspaceTheater,
           compactToolbar: useCompactToolbar,
           onHeaderHeightChange: noteWorkspaceHeaderHeight,
           isSideBySideLayout: useSideBySidePanels,
@@ -571,30 +592,39 @@
       {/if}
     </div>
 
+    <!-- Theater mode's own blocks sit inside the usual ones, so their
+         transitions play only when the preview starts or ends, never when
+         the workspace itself opens. -->
     {#if shouldShowWorkspace && !useCompactToolbar}
-      <div
-        class="workspace-history-actions"
-        class:save-mode={isSaveView}
-        inert={!!panelState.workspacePlayback || isSaveView}
-      >
-        <UndoButton {CreateModuleState} onAction={handleWorkspaceUndo} />
-        <UndoButton {CreateModuleState} direction="redo" />
-      </div>
+      {#if !isWorkspaceTheater}
+        <div
+          class="workspace-history-actions"
+          class:save-mode={isSaveView}
+          inert={!!panelState.workspacePlayback || isSaveView}
+          transition:flyFade={{ y: -8 }}
+        >
+          <UndoButton {CreateModuleState} onAction={handleWorkspaceUndo} />
+          <UndoButton {CreateModuleState} direction="redo" />
+        </div>
+      {/if}
     {/if}
 
     {#if shouldShowWorkspace && !useCompactToolbar && canSaveToLibrary}
-      <div
-        class="workspace-save-action"
-        class:save-mode={isSaveView}
-        inert={isSaveView}
-      >
-        {#if canSaveToLibrary}
-          <SaveToLibraryButton
-            sequence={currentSequence}
-            onclick={() => panelState.openSaveToLibraryPanel()}
-          />
-        {/if}
-      </div>
+      {#if !isWorkspaceTheater}
+        <div
+          class="workspace-save-action"
+          class:save-mode={isSaveView}
+          inert={isSaveView}
+          transition:flyFade={{ y: -8 }}
+        >
+          {#if canSaveToLibrary}
+            <SaveToLibraryButton
+              sequence={currentSequence}
+              onclick={() => panelState.openSaveToLibraryPanel()}
+            />
+          {/if}
+        </div>
+      {/if}
     {/if}
 
     <!-- Button Panel - Shows when workspace is visible -->
@@ -605,12 +635,16 @@
         inert={isSaveView}
         bind:this={buttonPanelElement}
       >
-        <ButtonPanel
-          {onClearSequence}
-          {onViewSequence}
-          compact={useCompactToolbar}
-          trailingActions={compactSaveAction}
-        />
+        {#if !isWorkspaceTheater}
+          <div class="button-panel-presence" transition:flyFade={{ y: 8 }}>
+            <ButtonPanel
+              {onClearSequence}
+              {onViewSequence}
+              compact={useCompactToolbar}
+              trailingActions={compactSaveAction}
+            />
+          </div>
+        {/if}
       </div>
     {/if}
 

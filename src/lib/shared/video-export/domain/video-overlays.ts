@@ -38,6 +38,10 @@ export type VideoOverlays = Record<VideoOverlayKey, boolean>;
 /** The canvas display flags a first list is copied from. */
 export type CanvasOverlayKey =
   | "wordHeader"
+  | "headerLevel"
+  | "headerLoop"
+  | "headerTurns"
+  | "headerReversals"
   | "progressBar"
   | "tkaGlyph"
   | "stepNumbers"
@@ -72,18 +76,24 @@ export function readStoredVideoOverlays(value: unknown): VideoOverlays | null {
   );
 }
 
-/** The list a person starts from: whatever the canvas shows right now. */
+/**
+ * The list a person starts from: whatever the canvas shows right now. Each
+ * header part is its own canvas preference since 2026-11-02, shown only while
+ * the header is; a reader without a part's key (a list stored before then)
+ * leaves that part following the header.
+ */
 export function videoOverlaysFrom(
   read: (key: CanvasOverlayKey) => boolean,
   gridVisible: boolean
 ): VideoOverlays {
   const header = read("wordHeader");
+  const part = (key: CanvasOverlayKey) => header && read(key) !== false;
   return {
     headerWord: header,
-    headerLevel: header,
-    headerTurns: header,
-    headerReversals: header,
-    headerLoop: header,
+    headerLevel: part("headerLevel"),
+    headerTurns: part("headerTurns"),
+    headerReversals: part("headerReversals"),
+    headerLoop: part("headerLoop"),
     tkaGlyph: read("tkaGlyph"),
     stepNumbers: read("stepNumbers"),
     elementalGlyph: read("elementalGlyph"),

@@ -86,6 +86,14 @@
      *  never shows one (a fill-mode player on a single transition) leaves the
      *  Word tile out rather than offering a toggle that changes nothing. */
     showWordToggle = true,
+    /** The word header's parts (Level, LOOP, Turns, Reversals) as switches of
+     *  their own, disabled while the header is off. With `chips` they follow
+     *  the Word chip in the same row; with tiles they are one row of small
+     *  chips labelled Header under the ten tiles, so the tiles keep their
+     *  size and the stage above keeps its height. Settings → Display's
+     *  animation section sets it; the canvas menus and rails keep their ten
+     *  tiles. */
+    showHeaderParts = false,
     onSettingChange,
     visibilityManagerOverride,
     animationSettingsOverride,
@@ -104,6 +112,7 @@
     chips?: boolean;
     showSequenceMarks?: boolean;
     showWordToggle?: boolean;
+    showHeaderParts?: boolean;
     onSettingChange?: ViewerControlSink;
     visibilityManagerOverride?: AnimationVisibilityStateManager;
     animationSettingsOverride?: AnimationSettingsState;
@@ -134,6 +143,10 @@
     )
   );
   let wordHeader = $state(vm.getVisibility("wordHeader"));
+  let headerLevel = $state(vm.getVisibility("headerLevel"));
+  let headerLoop = $state(vm.getVisibility("headerLoop"));
+  let headerTurns = $state(vm.getVisibility("headerTurns"));
+  let headerReversals = $state(vm.getVisibility("headerReversals"));
   let mandala = $state(vm.getVisibility("mandala"));
   let pathLines = $state(
     vm.getVisibility("leftPathLines") || vm.getVisibility("rightPathLines")
@@ -154,6 +167,10 @@
     progressBar = vm.getVisibility("progressBar");
     propsVisibilityEnabled = vm.getVisibility("props");
     wordHeader = vm.getVisibility("wordHeader");
+    headerLevel = vm.getVisibility("headerLevel");
+    headerLoop = vm.getVisibility("headerLoop");
+    headerTurns = vm.getVisibility("headerTurns");
+    headerReversals = vm.getVisibility("headerReversals");
     mandala = vm.getVisibility("mandala");
     pathLines =
       vm.getVisibility("leftPathLines") || vm.getVisibility("rightPathLines");
@@ -200,6 +217,9 @@
       | "progress"
       | "word";
     accent?: string;
+    /** Greyed out but kept in place (no-layout-shift), e.g. a header part
+     *  while the header is off. */
+    disabled?: () => boolean;
     tone?: "blue" | "red";
     hand?: "left" | "right";
     active: () => boolean;
@@ -324,11 +344,71 @@
     },
   ];
 
+  // The word header's parts, each its own switch (Austen, 2026-11-02: "no
+  // option to turn off the level indicator, or the loop indicator, or the
+  // reversal indicator"). Labels and icons are the Download video screen's
+  // and the card's, so one part reads the same everywhere.
+  const headerOff = () => !wordHeader;
+  const headerPartChips: Chip[] = [
+    {
+      id: "headerLevel",
+      label: t("share_overlay_level"),
+      icon: "fa-signal",
+      active: () => headerLevel,
+      toggle: () => vm.toggleVisibility("headerLevel"),
+      disabled: headerOff,
+    },
+    {
+      id: "headerLoop",
+      label: "LOOP",
+      icon: "fa-infinity",
+      active: () => headerLoop,
+      toggle: () => vm.toggleVisibility("headerLoop"),
+      disabled: headerOff,
+    },
+    {
+      id: "headerTurns",
+      label: t("share_overlay_turns"),
+      icon: "fa-rotate",
+      active: () => headerTurns,
+      toggle: () => vm.toggleVisibility("headerTurns"),
+      disabled: headerOff,
+    },
+    {
+      id: "headerReversals",
+      label: t("share_overlay_reversals"),
+      icon: "fa-rotate-left",
+      active: () => headerReversals,
+      toggle: () => vm.toggleVisibility("headerReversals"),
+      disabled: headerOff,
+    },
+  ];
+
+  // Among the chips they sit beside Word; beside picture tiles they get a
+  // row of their own (2026-11-02: four more tiles took the columns tier's
+  // stage height at 1440×900).
+  const headerPartsInline = $derived(
+    showHeaderParts && asChips && !showPropChips
+  );
+  const headerPartsRow = $derived(
+    showHeaderParts &&
+      !headerPartsInline &&
+      showSequenceMarks &&
+      showWordToggle &&
+      !showPropChips
+  );
+
   const chips: Chip[] = $derived([
     ...(showPropChips ? propChips : [masterPropsChip]),
     ...fieldChips,
     ...(showSequenceMarks
-      ? markChips.filter((chip) => showWordToggle || chip.id !== "wordHeader")
+      ? markChips
+          .filter((chip) => showWordToggle || chip.id !== "wordHeader")
+          .flatMap((chip) =>
+            chip.id === "wordHeader" && headerPartsInline
+              ? [chip, ...headerPartChips]
+              : [chip]
+          )
       : []),
   ]);
 
@@ -460,9 +540,22 @@
       label: chip.label,
       icon: chip.icon,
       checked: chip.active(),
+      disabled: chip.disabled?.() ?? false,
       action: () => toggleChip(chip),
     }))
   );
+
+  const headerPartItems = $derived<ContextMenuItem[]>(
+    headerPartChips.map((chip) => ({
+      id: chip.id,
+      label: chip.label,
+      icon: chip.icon,
+      checked: chip.active(),
+      disabled: chip.disabled?.() ?? false,
+      action: () => toggleChip(chip),
+    }))
+  );
+  const partsUid = $props.id();
 
   function scrollerOf(el: HTMLElement): HTMLElement | null {
     for (let node = el.parentElement; node; node = node.parentElement) {
@@ -577,6 +670,8 @@
             index === 4}
           type="button"
           aria-pressed={chip.active()}
+          disabled={chip.disabled?.() ?? false}
+          data-chip={chip.id}
           data-tone={chip.tone}
           style:--rail-accent={chip.accent}
           style:grid-column-start={compact &&
@@ -602,12 +697,52 @@
         </button>
       {/each}
     </div>
+    {#if headerPartsRow}
+      <!-- The chip row is the labelled group; this only lays out the label
+           beside it. -->
+      <div class="header-parts" data-header-parts>
+        <span class="header-parts-label" id="{partsUid}-header"
+          >{t("viewer_ui_header")}</span
+        >
+        <MenuItemChipRow
+          items={headerPartItems}
+          ariaLabelledby="{partsUid}-header"
+        />
+      </div>
+    {/if}
   </div>
 {/if}
 
 <style>
   .vis-grid-shell {
     container-type: inline-size;
+  }
+
+  /* The Word tile's parts: one row of small chips under the tiles, its dim
+     label in the card section's row-label style. */
+  .header-parts {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem 0.6rem;
+    margin-top: var(--tile-grid-gap, 8px);
+    /* Small controls beside a big stage (Austen, 2026-11-01: the 44px
+       floor is lowered everywhere; ~32-36px is fine). */
+    --min-touch-target: 2rem;
+  }
+
+  .header-parts-label {
+    color: var(--theme-text-dim);
+    font-size: var(--font-size-xs, 0.75rem);
+    font-weight: 600;
+  }
+
+  /* A header part while the header is off: kept in place, visibly unavailable. */
+  .rt-chip:disabled {
+    opacity: 0.42;
+    cursor: default;
+    pointer-events: none;
   }
 
   /* Given a real height, take all of it. The grid's rows are then fractions of

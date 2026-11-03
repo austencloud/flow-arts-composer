@@ -35,7 +35,7 @@
   import GuideSeo from "../level-1/_components/GuideSeo.svelte";
   import SequenceShowcase from "../level-1/_components/SequenceShowcase.svelte";
   import { stripToSequence } from "../level-1/_data/guide-sequence-adapter";
-  import HandTile from "./_components/HandTile.svelte";
+  import HandTile from "#lib/shared/guide-topics/components/HandTile.svelte";
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import PropChoiceRow from "#lib/shared/pictograph/prop/components/PropChoiceRow.svelte";

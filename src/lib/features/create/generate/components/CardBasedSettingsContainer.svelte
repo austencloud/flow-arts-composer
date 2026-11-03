@@ -1068,11 +1068,12 @@ Delegates ALL logic to services (SRP compliant)
     }
   }
 
-  /* The unfolded Fold gives a 16-step sequence all four rows above this panel
-     and leaves it about 220px. The pictographs are the heroes there, so the
-     controls compact instead of scrolling: a slim Level bar, one-line card
-     rows and a shorter Generate, below the usual 44px floor on purpose
-     (Austen lifted it for dense phone editors, 2026-10-29). */
+  /* The unfolded Fold gives a 16-step sequence as many rows as it can above
+     this panel and leaves it at least 260px (MIN_TOOL_PANEL_HEIGHT in
+     workspace-split.ts). The pictographs are the heroes there, so the
+     controls compact instead of scrolling: a slim Level bar, card rows of
+     about 45px (a stepper's label over its value needs 44) and a shorter
+     Generate. A smaller panel cut those cards in half (2026-11-02). */
   @container settings-grid (width >= 630px) and (height < 260px) {
     .level-toolbar {
       min-height: 0;

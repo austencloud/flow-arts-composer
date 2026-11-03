@@ -466,12 +466,12 @@ export const APP_MODULES: RouteConfig[] = [
   },
   {
     path: "/app",
-    label: "settings--theme",
+    label: "settings--display",
     requiresAuth: true,
     isModule: true,
     moduleId: "settings",
-    tabId: "theme",
-    waitSelector: ".background-selector, .ios-background-card",
+    tabId: "display",
+    waitSelector: ".display-tab",
   },
   {
     path: "/app",

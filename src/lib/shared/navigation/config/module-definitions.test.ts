@@ -3,6 +3,7 @@ import {
   MODULE_DEFINITIONS,
   normalizeNavigationTarget,
   normalizeSectionId,
+  sectionScreenAlias,
 } from "./module-definitions";
 import { SETTINGS_TABS } from "./tab-definitions";
 import { isTabAccessible } from "#lib/shared/auth/domain/guest-access-config.js";
@@ -32,6 +33,21 @@ describe("settings language navigation migration", () => {
         SETTINGS_TABS.find((tab) => tab.id === sectionId)?.navigationHidden
       ).toBe(true);
     }
+  });
+});
+
+// Theme folded into Display (2026-11-02). Old links, the setup checklist and
+// a saved last tab must still reach the theme chooser, not a dead tab.
+describe("settings theme folds into Display", () => {
+  it("opens Display with its Theme screen from the old address", () => {
+    expect(SETTINGS_TABS.some((tab) => tab.id === "theme")).toBe(false);
+    expect(normalizeNavigationTarget("settings", "theme")).toEqual({
+      moduleId: "settings",
+      sectionId: "display",
+    });
+    expect(sectionScreenAlias("settings", "theme")).toBe("theme");
+    expect(sectionScreenAlias("settings", "display")).toBeUndefined();
+    expect(isTabAccessible("settings", "display", "guest")).toBe(true);
   });
 });
 

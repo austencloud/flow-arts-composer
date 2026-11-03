@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  MIN_TOOL_PANEL_HEIGHT,
   MIN_TOOL_PANEL_SHARE,
   sequenceRowCount,
   stackedWorkspaceSplit,
@@ -72,8 +73,10 @@ describe("whole-sequence floor", () => {
     expect(sequenceRowCount(17)).toBe(5);
   });
 
-  it("gives a 16-step sequence all four rows on an unfolded Fold", () => {
-    // Two rows left rows three and four under the rail at the 5:4 share.
+  it("gives a 16-step sequence every row Generate's cards can spare on an unfolded Fold", () => {
+    // Two rows left rows three and four under the rail at the 5:4 share. All
+    // four (553px) would leave the cards 226px, so the workspace stops where
+    // the panel keeps its 260px.
     const sequenceFloor = workspaceFloorHeight({
       width: 707,
       chromeHeight: CHROME,
@@ -85,17 +88,30 @@ describe("whole-sequence floor", () => {
       workspaceFloor: workspaceFloorHeight({ width: 707, chromeHeight: CHROME }),
       sequenceFloor,
     });
-    expect(workspace).toBe(sequenceFloor);
-    expect(tool).toBeGreaterThanOrEqual(Math.floor(779 * MIN_TOOL_PANEL_SHARE));
+    expect(sequenceFloor).toBe(553);
+    expect(workspace).toBe(779 - MIN_TOOL_PANEL_HEIGHT);
+    expect(tool).toBe(MIN_TOOL_PANEL_HEIGHT);
   });
 
   it("stops where the tool panel would drop below its share", () => {
     const [, tool] = stackedWorkspaceSplit({
-      height: 779,
-      preferredWorkspace: 779 * USUAL_WORKSPACE_SHARE,
+      height: 1100,
+      preferredWorkspace: 1100 * USUAL_WORKSPACE_SHARE,
       workspaceFloor: 363,
       sequenceFloor: 2000,
     });
-    expect(tool).toBe(779 - Math.round(779 * (1 - MIN_TOOL_PANEL_SHARE)));
+    expect(tool).toBe(1100 - Math.round(1100 * (1 - MIN_TOOL_PANEL_SHARE)));
+  });
+
+  it("leaves Generate's compact cards their height in the installed Fold app", () => {
+    // The app's 728px gave the panel 2/7 (208px) and cut the cards in half.
+    const [workspace, tool] = stackedWorkspaceSplit({
+      height: 728,
+      preferredWorkspace: 728 * USUAL_WORKSPACE_SHARE,
+      workspaceFloor: 363,
+      sequenceFloor: 549,
+    });
+    expect(tool).toBe(MIN_TOOL_PANEL_HEIGHT);
+    expect(workspace).toBe(728 - MIN_TOOL_PANEL_HEIGHT);
   });
 });

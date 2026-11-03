@@ -36,6 +36,16 @@ export interface AnimationVisibilitySettings {
   playbackMode: PlaybackMode;
   speed: number;
   wordHeader: boolean;
+  /**
+   * The parts of the word header, each its own switch (2026-11-02). They
+   * share their names with the per-file `overlayVisibility` overrides the
+   * Download video screen writes, which still win where present. All of them
+   * show only while `wordHeader` is on.
+   */
+  headerLevel: boolean;
+  headerLoop: boolean;
+  headerTurns: boolean;
+  headerReversals: boolean;
   progressBar: boolean;
   mandala: boolean;
 
@@ -76,6 +86,10 @@ export const ANIMATION_DISPLAY_KEYS = [
   "props",
   "stepNumbers",
   "wordHeader",
+  "headerLevel",
+  "headerLoop",
+  "headerTurns",
+  "headerReversals",
   "progressBar",
   "mandala",
   "tkaGlyph",
@@ -145,6 +159,10 @@ export class AnimationVisibilityStateManager {
       playbackMode: "continuous",
       speed: 1.0,
       wordHeader: true,
+      headerLevel: true,
+      headerLoop: true,
+      headerTurns: true,
+      headerReversals: true,
       progressBar: true,
       mandala: true,
 

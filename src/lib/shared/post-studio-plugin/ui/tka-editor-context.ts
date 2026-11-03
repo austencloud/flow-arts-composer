@@ -120,6 +120,19 @@ export interface TkaEditorContext {
   readonly sequence: SequenceData | null;
   /** The same sequence, by the name the workspace and the bindings read. */
   readonly displaySequence: SequenceData | null;
+  /**
+   * What the performer really does: the post's own presses applied, but not
+   * the footage's hand labeling or the post's mirror, which only make the
+   * drawing match the camera. A 3D performer dances this, so facing the
+   * camera it moves like the person in the footage.
+   */
+  readonly performedSequence: SequenceData | null;
+  /**
+   * The drawing gives each hand the other hand's color, so the color on the
+   * viewer's right is the viewer's right hand. A 3D performer facing the
+   * camera wears its props the same way, so both pictures agree.
+   */
+  readonly handsDrawnSwapped: boolean;
   /** The record a scan of the card opens: the source, not a labeled copy. */
   readonly qrSequence: SequenceData | undefined;
   /** The workspace's source for a role; a layer reads another role's through it. The workspace sets it. */

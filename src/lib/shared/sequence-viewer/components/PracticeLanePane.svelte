@@ -21,6 +21,7 @@
     rightPropType = null,
     onSeek = null,
     showStartCell = false,
+    orientation = "horizontal",
   }: {
     sequence: SequenceData | null | undefined;
     /** Float step from playback (integer step + fractional progress). */
@@ -34,6 +35,9 @@
     /** Pre-roll count-in: include + focus the start-placement tile so the lane
      *  matches the start pose parked on the canvas. Off during the running loop. */
     showStartCell?: boolean;
+    /** Vertical when the lane is a narrow column beside the canvas (a phone
+     *  held sideways): the focus sits at the top and the next steps rise to it. */
+    orientation?: "horizontal" | "vertical";
   } = $props();
 
   // Practice loops continuously, so during the running loop we drop the
@@ -89,6 +93,7 @@
       stepPulse={true}
       onCellClick={onSeek}
       anchor="start"
+      {orientation}
       fillHeight={wide}
       loop={true}
     />

@@ -199,10 +199,10 @@ export const APP_CAPABILITIES: AppCapability[] = [
     id: "settings-background",
     action: "Change the app background",
     module: "Settings",
-    tab: "Background",
-    keywords: ["background", "theme", "wallpaper", "dark", "light", "color", "appearance"],
+    tab: "Display",
+    keywords: ["background", "theme", "wallpaper", "dark", "light", "color", "appearance", "display"],
     instructions:
-      "Go to Settings > Background. Choose from solid colors, gradients, or animated backgrounds (aurora, galaxy, forest, fish). The entire app theme adapts to your choice.",
+      "Go to Settings > Display and open Theme. Choose from solid colors, gradients, or animated backgrounds (aurora, galaxy, forest, fish). The entire app theme adapts to your choice.",
   },
   {
     id: "settings-display-name",

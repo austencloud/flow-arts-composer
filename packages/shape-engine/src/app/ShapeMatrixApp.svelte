@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { loadShapeMatrix } from "../services/shape-matrix-flowers.js";
+  import { SHAPE_MATRIX_DEFAULT_PROP } from "../services/prop-pair.js";
 
   import { setShapeMatrixAppContext } from "./context/shape-matrix-app-context";
   import ShapeMatrixAboutModal from "./components/ShapeMatrixAboutModal.svelte";
@@ -24,7 +25,6 @@
     setStrings,
     type ShapeEngineStrings,
   } from "../strings.svelte.js";
-  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { DEFAULT_THEORY_RATIO } from "@tka/shape-domain";
   import {
     SHAPE_MATRIX_DEFAULT_LEVEL,
@@ -104,8 +104,8 @@
     rightTurn: SHAPE_MATRIX_DEFAULT_TURN,
     activeAxis: "both",
     labelMode: "turns",
-    leftPropType: propSource?.left ?? PropType.STAFF,
-    rightPropType: propSource?.right ?? PropType.STAFF,
+    leftPropType: propSource?.left ?? SHAPE_MATRIX_DEFAULT_PROP,
+    rightPropType: propSource?.right ?? SHAPE_MATRIX_DEFAULT_PROP,
     pair: null,
     mode: null,
     propMode: null,

@@ -1,21 +1,25 @@
 <!--
-  Live Yuta CAP hero for /notation/caps: one club floating in space, drawing
-  the pattern's trace as it plays, looping forever. Same recipe as the
+  CapTrace: one CAP played live on /notation/caps, one club floating in space,
+  drawing the pattern's trace as it plays, looping forever. The page shows
+  three of them side by side (reverse after a quarter, a half, three quarters),
+  so the sequence comes in as a prop and every instance shares the recipe,
+  BPM and effort below, which keeps the three in step. Same recipe as the
   shape-matrix drill hero (InlineAnimationPlayer + transparent canvas + trail
   preset + tip-effect map + engine-aligned MandalaHeroLayer ghost underneath),
   so it reads as "a prop doing the pattern" with no letter/step chrome and no
   background box.
 
   This surface is LOCKED for visitors: effort/BPM/prop hardcoded, grid hidden,
-  context menu suppressed — a public exhibit, not an editable canvas.
+  context menu suppressed: a public exhibit, not an editable canvas.
 -->
 <script lang="ts">
   import { MediaQuery } from "svelte/reactivity";
   import LazyMount from "#lib/shared/components/LazyMount.svelte";
   import MandalaHeroLayer from "@tka/shape-engine/components/MandalaHeroLayer.svelte";
-  import { buildYutaCapSequence } from "./yuta-cap-sequence";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import { setPerHand } from "#lib/shared/animation-engine/services/tip-effect-resolver.js";
   import { setTipPointOverrideProvider } from "#lib/shared/animation-engine/domain/types/prop-tip-points.js";
+  import { CLUB_TIP_DX, capTraceFit } from "./cap-trace-fit";
   import { calculate as calculateMandalaGeometry } from "#lib/shared/mandala/services/mandala-geometry-calculator.js";
   import type { EffortId } from "#lib/shared/effort/domain/effort-types.js";
   import { AnimationVisibilityStateManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
@@ -26,7 +30,17 @@
     type TrailSettings,
   } from "#lib/shared/animation-engine/domain/types/trail-types.js";
 
-  const sequence = buildYutaCapSequence();
+  let {
+    sequence,
+    artKey,
+    poster,
+  }: {
+    sequence: SequenceData;
+    /** Stable key for the ghost mandala art; one per setting on the page. */
+    artKey: string;
+    /** SSR still, only where a matching drawing exists (the Yuta CAP). */
+    poster?: { src: string; alt: string };
+  } = $props();
 
   // Austen's directive is no play/pause control on this exhibit, so the
   // accessibility accommodation is a static poster, not a pause button: under
@@ -43,7 +57,7 @@
     mounted = true;
   });
 
-  // The static mandala under the live trail — same alignment contract as the
+  // The static mandala under the live trail: same alignment contract as the
   // shape-matrix drill: both layers fill the SAME square, and the geometry is
   // computed with the club's outer tip so the ghost sits exactly under the path
   // the prop traces. (Blue is invisible in this sequence, so only the red hand's
@@ -52,11 +66,26 @@
   // Tip reach = the VISIBLE club tip, not the trail EMITTER. The emitter point
   // in prop-tip-points is dx=130, but the club's weighted bulb reaches farther
   // (measured ~150, i.e. one grid radius), and the eye follows that bulb tip.
-  // Feeding the emitter's 130 drew the ghost ring ~7% inset — sitting inside the
+  // Feeding the emitter's 130 drew the ghost ring ~7% inset, sitting inside the
   // very path the prop visibly traces (Austen, 2026-07-20: "make the mandala
   // match what the prop is currently doing"). 150 lands the ghost on the club
   // tip. Verified by pixel-measuring club reach vs ghost radius at 0.316·size.
-  const clubTipDx = 150;
+  const clubTipDx = CLUB_TIP_DX;
+
+  // Where the stage sits in the frame so the shape, not the hand circle, is
+  // centred (cap-trace-fit.ts). The stage is resized in layout rather than
+  // CSS-scaled, so the canvas redraws at its new size and stays sharp.
+  // svelte-ignore state_referenced_locally
+  const fit = capTraceFit(sequence);
+  const fitStyle = [
+    `left: ${fit.translateX * 100}%`,
+    `top: ${fit.translateY * 100}%`,
+    `width: ${fit.scale * 100}%`,
+    `height: ${fit.scale * 100}%`,
+  ].join("; ");
+  // Each trace's sequence is fixed for its lifetime, so the geometry is
+  // computed once.
+  // svelte-ignore state_referenced_locally
   const mandalaPaths = calculateMandalaGeometry(
     sequence.steps,
     undefined,
@@ -65,7 +94,7 @@
     { dx: clubTipDx, dy: 0 }
   );
 
-  // Trails on the red (solo) hand only — index 1 = red.
+  // Trails on the red (solo) hand only: index 1 = red.
   const tipEffectMap = setPerHand({}, 1, "trails");
 
   // Emit the trail from the club's VISIBLE tip (dx 150), matching the ghost and
@@ -84,7 +113,7 @@
 
   // Per-instance ephemeral visibility manager. Without it the player's
   // orchestrator reads effort/path-shape from the GLOBAL singleton (a
-  // visitor's — or Austen's — in-app glide leaks into this embed) and
+  // visitor's (or Austen's) in-app glide leaks into this embed) and
   // setSpeed WRITES the embed's BPM back into that singleton. Ephemeral =
   // defaults, no localStorage, no DOM sync; fully isolated both directions.
   const visibilityManager = new AnimationVisibilityStateManager({
@@ -100,7 +129,7 @@
   });
 
   // Hero-visibility numbers from the landing hero preset, with LOOP_CLEAR so
-  // the club redraws the full closed curve fresh on every cycle — the trace IS
+  // the club redraws the full closed curve fresh on every cycle; the trace IS
   // the mandala, drawn live over its ghost.
   const trailSettings: TrailSettings = {
     ...DEFAULT_TRAIL_SETTINGS,
@@ -113,6 +142,7 @@
     minOpacity: 0.55,
   };
 
+  // svelte-ignore state_referenced_locally
   const playerProps = {
     sequence,
     autoPlay: true,
@@ -136,44 +166,54 @@
 </script>
 
 <div class="yuta-demo">
-  <div class="yuta-stage">
-    {#if !mounted}
-      <img
-        class="yuta-poster"
-        src="/caps/yuta-cap.svg"
-        alt="The Yuta CAP: an extension arc joined to antispin petals, traced by one prop"
-        width="500"
-        height="500"
-      />
-    {/if}
-    <MandalaHeroLayer
-      paths={mandalaPaths}
-      artKey="yuta-cap"
-      tipDx={clubTipDx}
-      opacity={1}
-    />
-    {#if !reduceMotion.current}
-      <div class="player-layer">
-        <LazyMount
-          loader={() =>
-            import("#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte")}
-          active={true}
-          props={playerProps}
+  <div class="yuta-frame">
+    <div class="yuta-stage" style={fitStyle}>
+      {#if !mounted && poster}
+        <img
+          class="yuta-poster"
+          src={poster.src}
+          alt={poster.alt}
+          width="500"
+          height="500"
         />
-      </div>
-    {/if}
+      {/if}
+      <MandalaHeroLayer
+        paths={mandalaPaths}
+        {artKey}
+        tipDx={clubTipDx}
+        opacity={1}
+      />
+      {#if !reduceMotion.current}
+        <div class="player-layer">
+          <LazyMount
+            loader={() =>
+              import("#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte")}
+            active={true}
+            props={playerProps}
+          />
+        </div>
+      {/if}
+    </div>
   </div>
 </div>
 
 <style>
-  /* Square stage reserved up front (no-layout-shift); mandala ghost and player
-     both fill THIS box, so their coordinate frames coincide — that is the
-     alignment contract (see ShapeMatrixDrill's .hero-square). The player's
-     canvas is transparent, so ghost and page background show through. */
-  .yuta-stage {
+  /* Square frame reserved up front (no-layout-shift). It clips the stage,
+     which the fit moves and enlarges so the shape fills the frame. */
+  .yuta-frame {
     position: relative;
     width: 100%;
     aspect-ratio: 1;
+    overflow: hidden;
+  }
+
+  /* Mandala ghost, poster and player all fill THIS box, so their coordinate
+     frames coincide; that is the alignment contract (see ShapeMatrixDrill's
+     .hero-square). Its left, top and size come from capTraceFit as
+     percentages of the frame side. The player's canvas is transparent, so
+     ghost and page background show through. */
+  .yuta-stage {
+    position: absolute;
   }
 
   .player-layer {

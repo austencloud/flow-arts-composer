@@ -23,6 +23,7 @@ import type { ShapeMatrixAppSnapshot } from "@tka/shape-engine/app/state/shape-m
 import type { ShapeMatrixAxisTarget } from "@tka/shape-engine/app/state/shape-matrix-app-state.svelte.js";
 import type { ShapeMatrixSurface } from "@tka/shape-engine/app/state/shape-matrix-app-state.svelte.js";
 import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { SHAPE_MATRIX_DEFAULT_PROP } from "@tka/shape-engine/services/prop-pair.js";
 import { spinRatioEquals, spinRatioKey, type SpinRatio } from "@vtg/domain";
 import {
   parseTheoryFlowerKey,
@@ -137,7 +138,9 @@ export function readShapeMatrixRouteState(
   const requestedProp = params.get("prop") as PropType | null;
   const requestedRightProp = params.get("rp") as PropType | null;
   const leftPropType =
-    requestedProp && PROP_TYPES.has(requestedProp) ? requestedProp : PropType.STAFF;
+    requestedProp && PROP_TYPES.has(requestedProp)
+      ? requestedProp
+      : SHAPE_MATRIX_DEFAULT_PROP;
 
   const surface: ShapeMatrixSurface =
     params.get("theory") === "1" ? "theory" : "matrix";

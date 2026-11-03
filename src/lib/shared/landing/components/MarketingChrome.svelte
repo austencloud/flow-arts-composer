@@ -13,7 +13,7 @@
   import { currentRoutePath } from "#lib/shared/i18n/localized-href.svelte.js";
   import type { Snippet } from "svelte";
   import type { BackgroundType } from "@austencloud/backgrounds";
-  import { onDestroy, onMount } from "svelte";
+  import { onDestroy, onMount, untrack } from "svelte";
   import { isNamedRouteMorphActive } from "#lib/shared/transitions/named-route-morph-state.svelte.js";
   import { opaqueFade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
@@ -150,6 +150,15 @@
   // allowlisted navigation is active. Ordinary marketing navigation keeps the
   // 200ms fade.
   const suppressContentFade = $derived(isNamedRouteMorphActive());
+
+  // The page the visit opened on is already drawn by the server: fading it in
+  // when the script lands blanks it and brings it back (the Guide's run did
+  // this on every load, 2026-11-02). Only a navigation fades the content.
+  const openingKey = untrack(() => contentKey);
+  let navigated = $state(false);
+  $effect.pre(() => {
+    if (contentKey !== openingKey) navigated = true;
+  });
 </script>
 
 <div class="mkt-shell">
@@ -171,7 +180,7 @@
         <div
           class="mkt-content"
           in:opaqueFade|global={{
-            duration: suppressContentFade ? 0 : DURATION.normal,
+            duration: suppressContentFade || !navigated ? 0 : DURATION.normal,
           }}
         >
           {@render children()}
@@ -218,6 +227,26 @@
       .mkt-layer
       > :global(header[data-route-hold="header"]),
     .mkt-shell:has(:global([data-phone-owns-chrome]))
+      .mkt-layer
+      > :global(.site-footer) {
+      display: none;
+    }
+  }
+
+  /* A page marked data-sideways-owns-chrome (a guide page shown one screen
+     at a time) brings its own one-row header on a phone held sideways, where
+     the 64px site header would take a fifth of the height. Same hand-off as
+     above, for that shape only. */
+  @media (max-height: 480px) and (min-width: 700px) {
+    :global(html:has(.mkt-shell [data-sideways-owns-chrome])) {
+      --marketing-header-h: 0px;
+      scroll-padding-top: 0;
+    }
+
+    .mkt-shell:has(:global([data-sideways-owns-chrome]))
+      .mkt-layer
+      > :global(header[data-route-hold="header"]),
+    .mkt-shell:has(:global([data-sideways-owns-chrome]))
       .mkt-layer
       > :global(.site-footer) {
       display: none;

@@ -475,3 +475,156 @@ has no reversals, as before). Animation chips draw on a canvas, so a few
 runs missed a change in the readback; Props was confirmed by screenshot.
 Evidence: `evidence/2026-10-27-settings-display-tab/phone-*.webp` (tab and
 three screens at 375×667 and 960×412, tab at 412×915 and 707×772).
+
+## Revision: Theme folds in (2026-11-02)
+
+Austen, looking at the phone pass in a window about 690×830: "It's better,
+but there's still a big-ass empty space underneath the last option. Also,
+maybe themes should be folded into the display area, don't you think?" He
+picked folding Theme in. A minute later he asked for switches for the level,
+LOOP, turn and reversal parts of the animation header.
+
+What changed:
+
+- **Boxes fill the frame.** The 14rem cap on each drill box is gone; the four
+  boxes share the whole height. The thumbnail grows with the box but never
+  past 60% of its width, so the title and summary keep at least 7rem beside
+  it. Landscape keeps one row of four.
+- **Theme is the first Display item.** Order on both tiers: Theme,
+  Pictograph, Animation, Card. On the drill tier it is a fourth box (static
+  preview image over the theme's gradient, title "Theme", the theme's name as
+  summary) opening the Theme screen: `BackgroundTab` with `onBack` and
+  `compact`, in the same header grammar as the other screens, with Use theme
+  / Current theme where Reset sits. On the columns tier a Theme band sits
+  above the three columns (thumbnail, title, theme name, a `PanelButton`
+  Change); Change swaps the columns for the showroom ("Choose a theme") in a
+  `Crossfade`, and the band stays above it.
+- **The thumbnail is a static image, not a live canvas.** Four boxes with a
+  live theme canvas beside the animation player measured 56 fps unthrottled
+  but 33 fps (p95 50 ms) at 4× CPU throttle at 412×915; the static image
+  measured 50 fps (p95 33 ms) under the same throttle. 33 fps is too close to
+  the 30 fps floor. `LIVE_THEME_THUMBNAIL` in `DisplayTab.svelte` flips it.
+- **The Theme tab left the bar.** `/settings/theme` is an alias: the section
+  migration maps `theme` to `display` and asks the Display tab for its Theme
+  screen (`navigationState.requestedScreen`), which opens the screen on the
+  drill tier and the showroom on the columns tier. The account-setup theme
+  task, the screenshot orchestrator, the capabilities manifest and guest
+  access point at the alias.
+- **Header parts are preferences.** `headerLevel`, `headerLoop`,
+  `headerTurns` and `headerReversals` (default on) join the animation
+  preferences and Reset. The canvas uses a file's own override when it has
+  one and the preference otherwise. On the phone screen they are chips after
+  Word; on the columns tier the ten tiles stay and the four parts are one row
+  of small chips labelled Header under them, so the animation stage keeps its
+  height. Either way they are disabled while Word is off. The Download video
+  screen starts its Show list from them and its own choice still wins.
+- **The columns tier's stage floor is 9rem, down from 14rem.** The band takes
+  76px from every column; the card's switches are 415px tall, which leaves its
+  stage 144px at 1440×900. Any higher floor pushes the card's caption over its
+  switches.
+
+Measured on the task preview (scroll = `scrollHeight/clientHeight`; last-box
+gap is the distance from the last box to the frame's bottom padding):
+
+| Viewport              | Tab       | Last-box gap | Boxes (w×h) | Theme screen / showroom | Stage   |
+| --------------------- | --------- | ------------ | ----------- | ----------------------- | ------- |
+| 375×667               | 595/595   | 0            | 304×130     | 569/569                 | 291×361 |
+| 412×915               | 838/838   | 0            | 338×191     | 813/813                 | 325×604 |
+| 690×830               | 733/733   | 0            | 589×165     | 707/707                 | 568×541 |
+| 707×772               | 674/674   | 0            | 605×150     | 648/648                 | 584×482 |
+| 820×1180              | 1075/1075 | 0            | 688×250     | 1050/1050               | 686×883 |
+| 960×412               | 356/356   | 0            | 189×307     | 331/331                 | 370×262 |
+| 720×450               | 351/351   | 0            | 149×301     | 325/325                 | 289×257 |
+| 200% zoom of 1440×900 | 351/351   | 0            | 148×301     | 325/325                 | 288×257 |
+
+Columns tier: band 75.8px at 1440×900 and 79.1px at 1920×1080 and
+2560×1440; tab 844/844, 1024/1024 and 1384/1384; showroom 730/730, 894/894
+and 1248/1248. Stages (pictograph / animation / card): 367 / 216 / 173×144
+at 1440×900, 510 / 457 / 446×372 at 1920×1080, 741 / 740 / 740×617 at
+2560×1440. Animation tiles plus the Header row: 302 + 32px at 1440×900. Applying a theme updates the band's image and name
+immediately.
+
+Header DOM diffs on the animation stage: Level removes only the level badge,
+LOOP only the LOOP badge, Turns only the turn pattern, Reversals only the
+reversal pattern (turns and reversals were checked at 820×1180 with patterns
+injected into the example for the run; the example has none of its own, and
+at 375 wide the patterns do not fit the header). Word removes the whole
+strip and disables the four part switches. With Level off in Settings, the
+Download video Show list starts with Level off; turning it on there brings
+the level badge back in that preview.
+
+Evidence: `evidence/2026-10-27-settings-display-tab/theme-*.webp` (tab at
+375×667, 690×830, 820×1180, 1440×900, 1920×1080 and 2560×1440; Theme screen at 375×667
+and 960×412; showroom at 1440×900; animation screen with Level off at
+375×667).
+
+## Revision: Theme is the fourth column (2026-11-02)
+
+Austen, looking at the merged Theme band at 1440×900: "It's good, but now
+it's weird that the theme is so understated when we're on the actual larger
+page, like you can't really tell very easily because it's such a very small
+section."
+
+What changed:
+
+- **Theme is a full column.** The columns tier is four equal columns: Theme,
+  Pictograph, Animation, Card. The Theme column is `BackgroundTab` with
+  `column` set, rendering through `DisplaySection` without a back arrow:
+  palette icon tile, title, Use theme / Current theme where the others show
+  Reset, the live `ThemePreview` over the column's free height with the
+  name and description, and the ten choices under it. The choices are 2×5
+  short bands on a column under 22rem of content and 5×2 near-square tiles
+  from 22rem, so no row strands one tile. Picking previews on the stage;
+  Use theme applies it. The band, its Change button and the showroom swap
+  are gone. The drill tier is unchanged.
+- **The page background follows Use theme.** A screen holds the page's
+  background still for its whole visit; the column is on screen for the
+  whole visit to Display, so it holds only while it previews a theme other
+  than the current one, and the page runs the new theme once it is applied.
+- **Threshold rule.** The columns tier is used only when each of the four
+  columns keeps at least 17rem (272px) of content width. The tab loses its
+  side margins (2cqi each), the workspace border (2px) and three 1px
+  hairlines, and each section body pads 1.15em on both sides, so
+  0.96W − 5 ≥ 4 × (272 + 36.8) gives W ≥ 1292px. The tier starts at a tab
+  width of **81rem** (1296px, 273px of content a column); below it the drill
+  tier's four boxes show. 1280×800 (tab 1150) is drill; 1440×900 (tab 1310)
+  is columns.
+- **Stage floor back to 14rem.** With the band gone the columns tier's stage
+  floor returns from 9rem to 14rem.
+- **Tile ladder starts at four.** Only the columns tier draws tiles, and its
+  columns are at least 17rem, so the ladder is 4 columns below 30rem of
+  content and 5 from there: the animation's ten run 4+4+2 or 5×2 (never
+  3+3+3+1) and the pictograph's eight 4×2 or 5+3. Below 22rem of content the
+  animation's four Header chips sit 2×2 instead of 3+1.
+- **A column under 20rem drops the header's icon tile**, so "Pictograph"
+  and "Reset to defaults" share one line at the threshold.
+- `/settings/theme` and the account-setup theme task still open the Theme
+  screen on the drill tier; on the columns tier the request is cleared and
+  nothing opens, since the Theme column is already on screen.
+
+The card at the threshold (tab 1296px): Card length (4 · 8 · 16) and the
+sun/moon Theme control share one row, and Info (Mandala / None in the
+example) is one row, so the labelled rows do not stack.
+
+Measured on the task preview (column = section box; content = inside its
+padding; stages are rendered frame sizes; scroll is page and
+`.display-workspace` `scrollHeight/clientHeight`; deck bottom is the card
+controls' bottom against the workspace bottom):
+
+| Viewport  | Tab  | Tier    | Column × content | Theme / Pictograph / Animation / Card stage | Page      | Workspace | Deck / workspace bottom |
+| --------- | ---- | ------- | ---------------- | ------------------------------------------- | --------- | --------- | ----------------------- |
+| 1024×768  | 958  | drill   | boxes 220×611    | —                                           | 768/768   | 635/635   | —                       |
+| 1280×800  | 1150 | drill   | boxes 266×686    | —                                           | 800/800   | 710/710   | —                       |
+| 1426×900  | 1296 | columns | 311 × 273        | 274×372 / 273 / 242 / 269×224               | 900/900   | 806/806   | 833 / 854               |
+| 1440×900  | 1310 | columns | 314 × 276        | 277×368 / 277 / 242 / 269×224               | 900/900   | 806/806   | 833 / 854               |
+| 1920×1080 | 1790 | columns | 429 × 392        | 392×679 / 392 / 392 / 392×327               | 1080/1080 | 973/973   | 1006 / 1027             |
+| 2560×1440 | 2430 | columns | 583 × 546        | 546×966 / 546 / 546 / 546×455               | 1440/1440 | 1327/1327 | 1363 / 1384             |
+| 3840×2160 | 3710 | columns | 903 × 866        | 866×1544 / 866 / 866 / 866×721              | 2160/2160 | 2047/2047 | 2083 / 2104             |
+| 720×450   | 660  | drill   | boxes 148×301    | —                                           | 450/450   | 325/325   | —                       |
+
+At 1440×900, picking Ocean changed the stage and Use Ocean moved the
+Current badge, changed the accent and stored `backgroundType: ocean`; with
+the hold change, Use Ember turned the page's background to Ember.
+
+Evidence: `evidence/2026-10-27-settings-display-tab/column-*-tab.webp`
+(1024×768, 1280×800, 1440×900, 1920×1080, 2560×1440, 3840×2160).

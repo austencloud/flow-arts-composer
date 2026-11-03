@@ -27,6 +27,14 @@ export interface ShapeMatrixReachPair {
   right: number;
 }
 
+/**
+ * The prop a Shape Engine opens with when nothing chose one: a first visit to
+ * the public page with no saved settings and no prop in the address, a saved
+ * setting that predates per-hand props, or a prop the engine cannot trace.
+ * Poi, because most visitors arrive from poi.
+ */
+export const SHAPE_MATRIX_DEFAULT_PROP: PropType = PropType.POI;
+
 /** One prop names both hands; a pair is taken as given. */
 export function asPropPair(
   props: PropType | ShapeMatrixPropPair
@@ -43,7 +51,8 @@ export function propPairFromLegacy(source: {
   leftPropType?: PropType;
   rightPropType?: PropType;
 }): ShapeMatrixPropPair {
-  const left = source.leftPropType ?? source.propType ?? PropType.STAFF;
+  const left =
+    source.leftPropType ?? source.propType ?? SHAPE_MATRIX_DEFAULT_PROP;
   return { left, right: source.rightPropType ?? left };
 }
 
@@ -60,7 +69,7 @@ function hasTracedShapeMatrixSource(propType: PropType): boolean {
 }
 
 /**
- * A prop the Shape Engine cannot trace folds to staff, so a caller that reads
+ * A prop the Shape Engine cannot trace folds to the default prop, so a caller that reads
  * the pair from outside the engine (app settings, a persisted snapshot, a
  * shared URL) never hands it one that would leave the Create tab's matrix
  * permanently stuck on "could not be built". The fold is draw-only: it never
@@ -68,7 +77,9 @@ function hasTracedShapeMatrixSource(propType: PropType): boolean {
  * bare hand or contact ball stays exactly as they set it.
  */
 export function foldUntraceableProp(propType: PropType): PropType {
-  return hasTracedShapeMatrixSource(propType) ? propType : PropType.STAFF;
+  return hasTracedShapeMatrixSource(propType)
+    ? propType
+    : SHAPE_MATRIX_DEFAULT_PROP;
 }
 
 /** The pair-level version of {@link foldUntraceableProp}, one hand at a time. */

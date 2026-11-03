@@ -274,6 +274,8 @@
   const verticalHeadroom = $derived(
     density === "compact" ? (effCell >= 64 ? 14 : 12) : 26
   );
+  // The horizontal rail's own height. A vertical rail runs along its host's
+  // height whatever fillHeight says, so it never takes this one.
   const viewportHeight = $derived(FRAME + verticalHeadroom);
 
   let focusOffset = $derived(
@@ -366,7 +368,7 @@
     class:vertical
     class:continuous-strip={presentation === "strip"}
     bind:this={stepStripEl}
-    style="--slide-dur: {slideDurMs}ms; {fillHeight
+    style="--slide-dur: {slideDurMs}ms; {fillHeight || vertical
       ? 'height: 100%'
       : `height: ${viewportHeight}px`}"
   >

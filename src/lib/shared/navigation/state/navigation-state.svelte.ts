@@ -18,6 +18,7 @@ import {
   normalizeModuleId,
   normalizeNavigationTarget,
   normalizeSectionId,
+  sectionScreenAlias,
 } from "../config/module-definitions";
 
 import {
@@ -85,6 +86,21 @@ export function createNavigationState() {
   let previousModule = $state<ModuleId | null>(loadPreviousModuleFromSession());
 
   let previousTab = $state<string>(loadPreviousTabFromSession());
+
+  // A retired tab's address asks the tab it folded into for one of its
+  // screens (/settings/theme: Display, Theme screen open). The tab takes the
+  // request when it shows; it is never persisted.
+  let requestedScreen = $state<{
+    moduleId: string;
+    sectionId: string;
+    screen: string;
+  } | null>(null);
+
+  function noteScreenAlias(moduleId: string, rawTab: string | undefined) {
+    const screen = sectionScreenAlias(moduleId, rawTab);
+    const sectionId = normalizeSectionId(moduleId, rawTab);
+    if (screen && sectionId) requestedScreen = { moduleId, sectionId, screen };
+  }
 
   function loadPreviousModuleFromSession(): ModuleId | null {
     if (typeof sessionStorage === "undefined") return null;
@@ -220,6 +236,7 @@ export function createNavigationState() {
 
         let normalizedModule = normalizeModuleId(rawUrlModule);
         if (normalizedModule) {
+          noteScreenAlias(normalizedModule, urlTab);
           const target = normalizeNavigationTarget(normalizedModule, urlTab);
           normalizedModule = target.moduleId;
           urlTab = target.sectionId;
@@ -365,6 +382,7 @@ export function createNavigationState() {
       const moduleDefinition = MODULE_DEFINITIONS.find(
         (m) => m.id === moduleId
       );
+      noteScreenAlias(moduleId, targetTab);
       const normalizedTargetTab = normalizeSectionId(moduleId, targetTab);
       let nextTab = "";
       if (moduleDefinition && moduleDefinition.sections.length > 0) {
@@ -441,6 +459,7 @@ export function createNavigationState() {
   function setActiveTab(tabId: string) {
     const normalizedTabId = normalizeSectionId(currentModule, tabId);
     if (!normalizedTabId) return;
+    noteScreenAlias(currentModule, tabId);
 
     const debug =
       typeof window !== "undefined" &&
@@ -598,6 +617,14 @@ export function createNavigationState() {
     },
     get previousTab() {
       return previousTab;
+    },
+    /** A screen a retired tab's address asked its new tab to open. */
+    get requestedScreen() {
+      return requestedScreen;
+    },
+    /** The tab that showed the requested screen clears the request. */
+    clearRequestedScreen() {
+      requestedScreen = null;
     },
 
     get createTabs() {
