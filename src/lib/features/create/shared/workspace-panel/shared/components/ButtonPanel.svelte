@@ -31,6 +31,7 @@
   import ViewSequenceButton from "./buttons/ViewSequenceButton.svelte";
   import ShareButton from "./buttons/ShareButton.svelte";
   import { workspaceButtonsInZone } from "../workspace-button-layout";
+  import { playsInWorkspace } from "#lib/features/create/shared/services/workspace-playback-tabs.js";
   import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
   import { shareTarget } from "#lib/shared/mobile/share-action.svelte.js";
   import { logConstructFullPlay } from "#lib/features/create/construct/services/construct-analytics.js";
@@ -88,7 +89,7 @@
   });
   const isConstructTab = $derived(navigationState.activeTab === "construct");
   const usesWorkspacePlayback = $derived(
-    isConstructTab || navigationState.activeTab === "generate"
+    playsInWorkspace(navigationState.activeTab)
   );
   const hasWorkspacePlayback = $derived(
     !!panelState.workspacePlayback || !!panelState.workspacePlaybackPreparation

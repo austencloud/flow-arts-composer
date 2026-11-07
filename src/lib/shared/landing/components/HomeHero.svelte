@@ -17,12 +17,12 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { page } from "$app/state";
-  import SequenceHeroDemo from "./SequenceHeroDemo.svelte";
+  import SequenceHeroDemo, { HERO_BPM } from "./SequenceHeroDemo.svelte";
   import { siteCopy } from "../site-copy";
-  import { createHeroAct } from "#lib/shared/landing/data/hero-act.svelte.js";
-  import { FALLBACK_DEMO } from "#lib/shared/landing/data/per-visit-demo.js";
+  import { getResidentHeroAct } from "#lib/shared/landing/data/hero-act.svelte.js";
   import { isConstrainedConnection } from "#lib/shared/platform/network-conditions.js";
   import { runAfterNamedRouteMorphIdle } from "#lib/shared/transitions/named-route-morph-state.svelte.js";
+  import { DEFAULT_FAN_APPEARANCE } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
   import {
     HERO_TRAIL_PRESET,
     HERO_TIP_EFFECT_MAP,
@@ -32,16 +32,13 @@
     trackDemoInteraction,
   } from "#lib/shared/analytics/landing-events.js";
 
-  const heroAct = createHeroAct({ initialSequence: FALLBACK_DEMO });
+  const heroAct = getResidentHeroAct();
 
   onMount(() => {
+    heroAct.takeStage({ cycleProps: true });
     if (isConstrainedConnection()) return;
     return runAfterNamedRouteMorphIdle(heroAct.start);
   });
-
-  // Pinned so a visitor's persisted Compose playback speed can't skew the
-  // marketing surface — every visitor sees the act at the same tempo.
-  const HERO_BPM = 60;
 
   // The demo keeps playing on its own, but a visitor can replace the current
   // sequence immediately. Tracking stays beside the action so the homepage
@@ -61,6 +58,7 @@
   </h1>
 
   <SequenceHeroDemo
+    resident
     sequence={heroAct.sequence}
     element={heroAct.element}
     note="a sequence in TKA notation"
@@ -68,6 +66,10 @@
     rerolling={heroAct.rerolling}
     leftPropType={heroAct.propType}
     rightPropType={heroAct.propType}
+    fanAppearance={DEFAULT_FAN_APPEARANCE}
+    primaryPropColors={null}
+    leftBuugengFlipped={false}
+    rightBuugengFlipped={false}
     onSequenceBoundary={heroAct.offerSequenceBoundary}
     trailSettingsOverride={HERO_TRAIL_PRESET}
     tipEffectMap={HERO_TIP_EFFECT_MAP}

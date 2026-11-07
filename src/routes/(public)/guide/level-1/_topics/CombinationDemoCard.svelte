@@ -547,11 +547,22 @@
     .demo figcaption {
       font-size: 0.8rem;
     }
+    /* The fit box sizes the pair by height alone; the card's width caps
+       them too, two thirds and one third of the row (the card's padding,
+       borders and the 0.5rem gap taken out), so a tall phone that grows
+       --fit never pushes them past the card's sides (2026-11-03: 54px over
+       at 375 wide). */
     .square {
-      width: calc(17rem * var(--card-fit));
+      width: min(
+        calc(17rem * var(--card-fit)),
+        calc((100cqw - 2.25rem) * 2 / 3)
+      );
     }
     .under {
-      width: calc(8.5rem * var(--card-fit));
+      width: min(
+        calc(8.5rem * var(--card-fit)),
+        calc((100cqw - 2.25rem) / 3)
+      );
     }
     .strip:not(.four) {
       grid-template-columns: minmax(0, 1fr);
@@ -626,6 +637,18 @@
   @media (prefers-reduced-motion: reduce) {
     .another {
       animation: none;
+    }
+  }
+  /* A short phone: the button takes the phone's 36 px height and the card
+     closes up, so the example above it keeps its size. */
+  @media (max-width: 520px) and (max-height: 760px), (max-height: 520px) {
+    .another {
+      min-height: 36px;
+      padding-block: 0.25em;
+    }
+    .demo,
+    .inside {
+      gap: 0.5rem;
     }
   }
 </style>

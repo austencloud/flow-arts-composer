@@ -3,12 +3,13 @@
   import { browser } from "$app/env";
   import GuideShell from "../_components/GuideShell.svelte";
   import Sentences from "../_components/Sentences.svelte";
+  import { sentences } from "../_components/sentences";
   import GuideSeo from "../level-1/_components/GuideSeo.svelte";
   import MotionPathExplorer from "./_components/MotionPathExplorer.svelte";
   import MotionPathExplanation from "./_components/MotionPathExplanation.svelte";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
-  import { onMount } from "svelte";
+  import { onMount, tick } from "svelte";
   import GuideScreens from "../_components/fit/GuideScreens.svelte";
   import {
     watchScreenTier,
@@ -91,17 +92,37 @@
   ]);
   const has = (n: number, part: Part) => views[n]?.parts.includes(part);
 
-  // The explorer's room: its screen's height under the explorer's intro.
-  // The explorer fills it when its boxes fit there, and otherwise keeps its
-  // own layout and pans inside the screen.
+  // The explorer's room: its screen's height, less its intro. The explorer
+  // composes itself to fit exactly that.
   let room = $state<number | null>(null);
+  // A short screen keeps the canvas big: the intro's first sentence stays with
+  // the explorer and the rest is one tap away, in the explorer's place.
+  const SHORT_SCREEN_HEIGHT = 520;
+  let shortScreen = $state(false);
+  let introOpen = $state(false);
+  let moreButton = $state<HTMLElement | null>(null);
+  let backButton = $state<HTMLElement | null>(null);
+  const introBody = $derived(tDynamic("guide_paths_try_four_body"));
+
+  async function showIntro(open: boolean) {
+    introOpen = open;
+    await tick();
+    (open ? backButton : moreButton)?.querySelector("button")?.focus();
+  }
+
   function measureRoom(node: HTMLElement) {
     const area = node.closest<HTMLElement>(".fit-area");
+    if (!area) return;
     const intro = node.querySelector<HTMLElement>(".explorer-intro");
-    if (!area || !intro) return;
+    if (!intro) return;
+    introOpen = false;
     const update = () => {
-      const gap = parseFloat(getComputedStyle(intro).marginBottom) || 0;
-      room = Math.floor(area.clientHeight - intro.offsetHeight - gap - 2);
+      shortScreen = area.clientHeight < SHORT_SCREEN_HEIGHT;
+      if (!shortScreen) introOpen = false;
+      const introHeight =
+        intro.offsetHeight +
+        (parseFloat(getComputedStyle(intro).marginBottom) || 0);
+      room = Math.floor(area.clientHeight - introHeight - 2);
     };
     const observer = new ResizeObserver(update);
     observer.observe(area);
@@ -147,19 +168,37 @@
           {/if}
 
           {#if has(n, "explore")}
-            <div class="explore" use:measureRoom>
-              <header class="explorer-intro">
-                <h2>{tDynamic("guide_paths_try_four")}</h2>
-                <p>
-                  <Sentences text={tDynamic("guide_paths_try_four_body")} />
-                </p>
+            <div class="explore" class:intro-open={introOpen} use:measureRoom>
+              <header class="explorer-intro" class:short={shortScreen}>
+                {#if shortScreen}
+                  <p>{sentences(introBody)[0]}</p>
+                  <span class="intro-more" bind:this={moreButton}>
+                    <PanelButton onclick={() => showIntro(true)}>More</PanelButton>
+                  </span>
+                {:else}
+                  <h2>{tDynamic("guide_paths_try_four")}</h2>
+                  <p><Sentences text={introBody} /></p>
+                {/if}
               </header>
-              {#if browser}
-                <MotionPathExplorer {room} />
-              {:else}
-                <p role="status">
-                  {tDynamic("guide_paths_loading_comparison")}
-                </p>
+              <div class="explorer-slot">
+                {#if browser}
+                  <MotionPathExplorer {room} />
+                {:else}
+                  <p role="status">
+                    {tDynamic("guide_paths_loading_comparison")}
+                  </p>
+                {/if}
+              </div>
+              {#if shortScreen}
+                <div class="intro-drill" inert={!introOpen}>
+                  <h2>{tDynamic("guide_paths_try_four")}</h2>
+                  <p><Sentences text={introBody} /></p>
+                  <span bind:this={backButton}>
+                    <PanelButton onclick={() => showIntro(false)}
+                      >{tDynamic("common_back")}</PanelButton
+                    >
+                  </span>
+                </div>
               {/if}
             </div>
           {/if}
@@ -309,6 +348,77 @@
   .explorer-intro {
     text-align: center;
     margin-bottom: clamp(0.5rem, 1.5vh, 1.25rem);
+  }
+  .explorer-intro.short {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm, 8px);
+  }
+  .explorer-intro.short p {
+    margin: 0;
+    min-width: 0;
+    text-wrap: balance;
+  }
+  .intro-more {
+    flex: none;
+  }
+  .explore {
+    position: relative;
+  }
+  /* The rest of the intro opens in the explorer's place; the explorer keeps its
+     box under it, so opening and closing moves nothing. */
+  /* Whatever is arriving is visible at once, so it can take focus; whatever is
+     leaving stays visible until its fade ends. */
+  .explorer-intro,
+  .explorer-slot,
+  .intro-open .intro-drill {
+    transition:
+      opacity var(--duration-fast) var(--ease-standard),
+      visibility 0s linear;
+  }
+  .intro-open .explorer-intro,
+  .intro-open .explorer-slot,
+  .intro-drill {
+    transition:
+      opacity var(--duration-fast) var(--ease-standard),
+      visibility 0s linear var(--duration-fast);
+  }
+  .intro-open .explorer-intro,
+  .intro-open .explorer-slot {
+    opacity: 0;
+    visibility: hidden;
+  }
+  .intro-drill {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-md, 16px);
+    text-align: center;
+    opacity: 0;
+    visibility: hidden;
+  }
+  .intro-open .intro-drill {
+    opacity: 1;
+    visibility: visible;
+    transition:
+      opacity var(--duration-fast) var(--ease-standard),
+      visibility 0s linear;
+  }
+  .intro-drill h2 {
+    margin: 0;
+    font-size: clamp(1.3rem, 1rem + 1.2vh, 1.85rem);
+    line-height: 1.15;
+  }
+  .intro-drill p {
+    margin: 0;
+    max-width: 60ch;
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--theme-text-muted);
   }
   .explorer-intro h2,
   .reading h2 {

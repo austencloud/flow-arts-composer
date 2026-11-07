@@ -30,13 +30,15 @@ export function isTheaterViewport(): boolean {
  * Whether the workspace is in theater mode. It starts as soon as Play is
  * pressed, so the player builds its engine at its final size rather than
  * resizing after its first frame. A preparation that failed brings the bar
- * back, because Retry lives there.
+ * back, because Retry lives there. The save view keeps the ordinary layout: it
+ * needs the tool panel beside the player, and its switch sits in the bar's room.
  */
 export function workspaceTheaterActive({
   theaterViewport,
   playing,
   preparing,
   preparationFailed,
+  saveViewOpen = false,
 }: {
   theaterViewport: boolean;
   /** The preview is showing (panelState.workspacePlayback). */
@@ -45,8 +47,9 @@ export function workspaceTheaterActive({
   preparing: boolean;
   /** The loading player reported an error; the bar offers Retry. */
   preparationFailed: boolean;
+  saveViewOpen?: boolean;
 }): boolean {
-  if (!theaterViewport) return false;
+  if (!theaterViewport || saveViewOpen) return false;
   if (playing) return true;
   return preparing && !preparationFailed;
 }

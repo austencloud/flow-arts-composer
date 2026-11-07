@@ -128,7 +128,7 @@
       {#if view}
         <section class="set">
           <div class="column">
-            <div class="stack" aria-hidden="true">
+            <div class="stack title-stack" aria-hidden="true">
               {#each titles as combination (combination.id)}
                 <p
                   class="column-title layer"
@@ -369,6 +369,56 @@
       margin-inline: 0;
     }
   }
+  /* Between a phone and the wide group (the Fold's inner screen upright):
+     the same two columns as on the Type 1 page (same band and reasons,
+     Type1DualShiftsTopicPage), the text column narrower and the card
+     taking the rest, its width from --fit with no floor so the fit box
+     sizes it to the screen's height. */
+  @media (min-aspect-ratio: 4 / 5) {
+    @container (min-width: 34rem) and (max-width: 55.99rem) {
+      .set {
+        --band-column: clamp(15rem, 40cqw, 23.75rem);
+        --band-gap: clamp(1rem, 3cqw, 2rem);
+        grid-template-columns:
+          var(--band-column)
+          min(
+            calc(100% - var(--band-column) - var(--band-gap)),
+            calc(34rem * var(--fit, 1))
+          );
+        justify-content: center;
+        align-items: stretch;
+        column-gap: var(--band-gap);
+        padding-block: 0.5rem;
+      }
+      .column {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+      }
+      .column-title {
+        font-size: clamp(2.2rem, 1rem + 3.4vh, 3.25rem);
+      }
+      .figure {
+        align-self: center;
+      }
+      .words {
+        --sentence-display: block;
+      }
+      /* Beside the card, as when wide, a switch eases the words' cell. */
+      .words-stack {
+        transition: height var(--duration-emphasis) var(--ease-standard, ease);
+      }
+      .column .words :is(.lede, .lead) {
+        margin: 0;
+      }
+      .figure :global(.demo) {
+        width: 100%;
+        margin-inline: 0;
+      }
+    }
+  }
   .lead {
     margin: 0 auto;
     max-width: 40rem;
@@ -401,6 +451,34 @@
   @media (max-width: 520px) {
     .column-title {
       font-size: 2.6rem;
+    }
+  }
+  /* A short phone (an iPhone SE) holds the words and the whole card above
+     the footer only if the title gives up its line: the switcher's chip
+     right above it shows the same name in the same colours (the page's h1
+     stays for screen readers; the title here is aria-hidden already). The
+     link takes the phone's 36 px height and the gaps close up, so the
+     example keeps a size that reads (as on the Type 1 page). */
+  @media (max-width: 520px) and (max-height: 760px), (max-height: 520px) {
+    .title-stack {
+      display: none;
+    }
+    .set {
+      gap: 0.6rem;
+      padding-bottom: 0.25rem;
+    }
+    .column,
+    .words {
+      gap: 0.5rem;
+    }
+    .combination-topic {
+      --min-touch-target: 36px;
+    }
+    .breakdown-link :global(.link-chip.md) {
+      padding-block: 0.3rem;
+    }
+    .lead {
+      line-height: 1.45;
     }
   }
 </style>

@@ -363,6 +363,36 @@ describe("CanvasResizer", () => {
     resizer.dispose();
   });
 
+  it("sizes the props canvas to the engine's square, not the whole box", () => {
+    // Session replay snapshots a canvas at its element's size. A square props
+    // raster in a wide box was recorded squashed to the box's shape.
+    const size = { width: 358, height: 282 };
+    const container = laidOut(
+      mountHtml(
+        '<div><canvas data-animation-layer="props" width="846" height="846"></canvas><canvas width="358" height="282"></canvas></div>'
+      ) as HTMLDivElement,
+      size
+    );
+    const [props, trails] = [...container.children] as HTMLCanvasElement[];
+    const resizer = new CanvasResizer();
+    resizer.initialize(container, {
+      resize: vi.fn().mockResolvedValue(undefined),
+    });
+    resizer.setup();
+    notifyResize([], {} as ResizeObserver);
+    expect(props!.style.width).toBe("282px");
+    expect(props!.style.height).toBe("282px");
+    expect(trails!.style.width).toBe("");
+
+    size.width = 300;
+    size.height = 500;
+    notifyResize([], {} as ResizeObserver);
+    expect(props!.style.width).toBe("300px");
+    expect(props!.style.height).toBe("300px");
+
+    resizer.dispose();
+  });
+
   it("keeps a laid-out staging source current while it is inert", async () => {
     // A crossfade's standby source is inert but keeps the stage's full box,
     // so its observations are real layout, not a collapsing pane. It must

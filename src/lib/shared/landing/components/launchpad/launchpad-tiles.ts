@@ -46,12 +46,12 @@ export interface LaunchpadTileDef {
    */
   activate?: boolean;
   /**
-   * Static view-transition-name for the cross-route shared-element morph
-   * (landing tile -> destination page hero). Present on both endpoints;
-   * inert unless a morph navigation runs. Rev. 3 pairs all six primary
-   * destinations; the route allowlist is derived from these names.
+   * The tile's own destination sits outside the public shell (no
+   * MarketingChrome, no site header), so there is nothing for it to open into:
+   * it gets the ordinary page change instead. Its chips are judged by the same
+   * rule and today all land inside the shell.
    */
-  morphName?: string;
+  opensOutsideShell?: boolean;
 }
 
 export const LAUNCHPAD_TILES: LaunchpadTileDef[] = [
@@ -65,7 +65,6 @@ export const LAUNCHPAD_TILES: LaunchpadTileDef[] = [
     icon: "fa-pen-nib",
     media: "mandala",
     magnetic: true,
-    morphName: "launchpad-composer",
   },
   {
     id: "choreo-cards",
@@ -76,7 +75,6 @@ export const LAUNCHPAD_TILES: LaunchpadTileDef[] = [
     color: "#34d399",
     icon: "fa-layer-group",
     media: "choreo-card",
-    morphName: "launchpad-choreo-cards",
     chips: [
       { label: "LOOP Deck", href: "/shop/loop-deck" },
       { label: "Starter Pack", href: "/shop/starter-pack" },
@@ -91,7 +89,6 @@ export const LAUNCHPAD_TILES: LaunchpadTileDef[] = [
     color: "#60a5fa",
     icon: "fa-map-signs",
     media: "guide-cover",
-    morphName: "launchpad-guide",
     chips: [{ label: "Read the Guide", href: "/guide" }],
   },
   // The grid's cell count must stay a multiple of 4 or the last row ships
@@ -108,6 +105,7 @@ export const LAUNCHPAD_TILES: LaunchpadTileDef[] = [
   {
     id: "notation",
     href: "/shape-engine",
+    opensOutsideShell: true,
     heading: "Notation",
     descriptor: "Shape Engine, plus one page per prop.",
     span: "2x1",
@@ -130,7 +128,6 @@ export const LAUNCHPAD_TILES: LaunchpadTileDef[] = [
     span: "1x1",
     color: "#f59e0b",
     icon: "fa-circle-question",
-    morphName: "launchpad-faq",
   },
   {
     id: "glossary",
@@ -141,7 +138,6 @@ export const LAUNCHPAD_TILES: LaunchpadTileDef[] = [
     color: "#94a3b8",
     icon: "fa-compass",
     media: "dictionary",
-    morphName: "launchpad-glossary",
   },
 ];
 
@@ -166,6 +162,13 @@ export const HERO_POINTER = {
  * those two feed ONE breakdown in PostHog. Two copies of the rule is two ways
  * for that breakdown to silently split in half the first time the rule changes.
  */
+/** Pages a tile opens into, which offer the way back to the launchpad. */
+export const TILE_FLIGHT_PATHS: readonly string[] = Object.freeze(
+  LAUNCHPAD_TILES.filter((tile) => !tile.opensOutsideShell).map(
+    (tile) => tile.href
+  )
+);
+
 export function hrefSlug(href: string): string {
   return href.replace(/^\//, "").replace(/\//g, "-");
 }

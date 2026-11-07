@@ -21,11 +21,14 @@
     example,
     onBack,
     compact = false,
+    cell = false,
   }: {
     example: DisplayExample | null;
     onBack?: () => void;
     /** Chips instead of picture tiles (the tab's drill-down tier). */
     compact?: boolean;
+    /** A cell of the tab's wide tier (DisplaySection `cell`). */
+    cell?: boolean;
   } = $props();
 
   const animationVisibility = getAnimationVisibilityManager();
@@ -43,6 +46,7 @@
   caption={t("settings_display_animation_caption")}
   onReset={() => animationVisibility.resetDisplayDefaults()}
   {onBack}
+  {cell}
 >
   {#snippet stage()}
     {#if example}

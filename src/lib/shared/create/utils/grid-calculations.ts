@@ -794,8 +794,8 @@ export const WIDER_ROW_GAIN = 1.1;
  * the legible 94px left a 16-step sequence's fourth row out of sight on the
  * unfolded Fold (2026-11-03).
  *
- * Returns null when no layout fits at TIMELINE_FIT_MIN_UNIT or larger; the
- * caller then keeps legible cells and scrolls.
+ * Returns null when no layout fits at the floor or larger; the caller then
+ * keeps legible cells and scrolls.
  */
 export function fitTimelineRows(params: {
   steps: readonly { duration?: number }[];
@@ -807,6 +807,10 @@ export function fitTimelineRows(params: {
   hasStart: boolean;
   /** A narrow host sizes by its cell count and never doubles its rows. */
   isNarrow: boolean;
+  /** For a card nobody can scroll or edit: the whole sequence matters more than
+   *  the cell size, so there is no floor, and longer rows are tried even on a
+   *  narrow host. */
+  shrinkToFit?: boolean;
 }): { beatsPerRow: number; rows: TimelineRow[]; unitSize: number } | null {
   const {
     steps,
@@ -816,6 +820,7 @@ export function fitTimelineRows(params: {
     popReserve,
     hasStart,
     isNarrow,
+    shrinkToFit = false,
   } = params;
   if (containerHeight <= 0 || sizingWidth <= 0 || beatsPerRow <= 0) {
     return null;
@@ -823,10 +828,20 @@ export function fitTimelineRows(params: {
 
   const start = hasStart ? 1 : 0;
   const candidates = [beatsPerRow];
-  if (!isNarrow && steps.length > beatsPerRow) candidates.push(beatsPerRow * 2);
+  if (shrinkToFit) {
+    for (let beats = beatsPerRow; steps.length > beats; beats *= 2) {
+      candidates.push(beats * 2);
+    }
+  } else if (!isNarrow && steps.length > beatsPerRow) {
+    candidates.push(beatsPerRow * 2);
+  }
+  const minUnit = shrinkToFit ? 1 : TIMELINE_FIT_MIN_UNIT;
 
-  let best: { beatsPerRow: number; rows: TimelineRow[]; unitSize: number } | null =
-    null;
+  let best: {
+    beatsPerRow: number;
+    rows: TimelineRow[];
+    unitSize: number;
+  } | null = null;
   for (const beats of candidates) {
     const rows = calculateTimelineRowsByBeatCount(steps, beats);
     const rowCount = Math.max(rows.length, start);
@@ -840,13 +855,17 @@ export function fitTimelineRows(params: {
     const units = isNarrow
       ? Math.max(Math.min(steps.length + start, fullRowUnits), 2)
       : Math.max(fullRowUnits, 2);
-    const widthBased = calculateTimelineUnitSize(sizingWidth, units);
+    const widthBased = calculateTimelineUnitSize(
+      sizingWidth,
+      units,
+      shrinkToFit ? 0 : undefined
+    );
 
     const heightBased = Math.floor(
       (containerHeight - 2 * popReserve - (rowCount - 1) - 8) / rowCount
     );
     const unitSize = Math.min(widthBased, heightBased);
-    if (unitSize < TIMELINE_FIT_MIN_UNIT) continue;
+    if (unitSize < minUnit) continue;
     if (!best || unitSize > best.unitSize * WIDER_ROW_GAIN) {
       best = { beatsPerRow: beats, rows, unitSize };
     }

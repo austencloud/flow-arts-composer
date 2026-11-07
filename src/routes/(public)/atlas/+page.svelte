@@ -33,7 +33,7 @@
 {#if dev}
   <KineticAtlasDraft {data} />
 {:else}
-  <div style:view-transition-name="launchpad-glossary">
+  <div>
     <UnderConstruction
       title="The Kinetic Atlas"
       eyebrow="Coming soon"

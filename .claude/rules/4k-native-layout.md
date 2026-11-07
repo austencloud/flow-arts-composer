@@ -80,6 +80,7 @@ only the affected tiers and states, as defined by
 
 - 375×667
 - 960×412
+- 707×772 (Fold unfolded, upright)
 - 820×1180
 - 1440×900
 - 1920×1080

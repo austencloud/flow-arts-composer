@@ -54,6 +54,9 @@
     canvasLetter = true,
     visibility,
     stripBeside = false,
+    stripUnder = false,
+    stripMinCell,
+    exampleLine,
   }: {
     /** Playable sequence for the animation canvas (the DEFAULT / entry-0 example). */
     sequence: SequenceData;
@@ -129,6 +132,24 @@
      * uses it so the square and the steps share the height (GuideScreens).
      */
     stripBeside?: boolean;
+    /**
+     * With `stripBeside`: keep the one-screen strip sizes but run the strip
+     * full width under the canvas and text, for a text column already full of
+     * controls. Omitted → the strip sits beside on a wide screen.
+     */
+    stripUnder?: boolean;
+    /**
+     * With `stripBeside`: the smallest a step may draw before its strip wraps
+     * to another row. Omitted → the sizes below.
+     */
+    stripMinCell?: number;
+    /**
+     * Draws the current pool example's line (for a page whose words can be
+     * edited in place); gets the example's index. The pool's `proseHtml` still
+     * reserves the height and fills the screen-reader text. Omitted → the
+     * plain `proseHtml`.
+     */
+    exampleLine?: Snippet<[number]>;
   } = $props();
 
   const propType = $derived(render?.propType ?? PropType.HAND);
@@ -185,7 +206,9 @@
   // Wide enough that canvas | (text over strip) leaves the strip room for
   // readable steps; narrower, the strip runs full width beneath.
   const STRIP_BESIDE_MIN_W = 900;
-  const beside = $derived(stripBeside && showcaseW >= STRIP_BESIDE_MIN_W);
+  const beside = $derived(
+    stripBeside && !stripUnder && showcaseW >= STRIP_BESIDE_MIN_W
+  );
   // One-screen pages: steps stay in one row on a phone and grow on 4K.
   // Beside the canvas the strip has height to spare, so its steps wrap to a
   // second row before they shrink under a readable size. A long strip under
@@ -195,7 +218,9 @@
   const cellBounds = $derived(
     stripBeside
       ? {
-          minCell: beside ? 96 : curItems.length > LONG_STRIP_STEPS ? 42 : 60,
+          minCell:
+            stripMinCell ??
+            (beside ? 96 : curItems.length > LONG_STRIP_STEPS ? 42 : 60),
           maxCell: 300,
         }
       : {}
@@ -309,7 +334,9 @@
       {/each}
       <!-- The live prose sits atop the sizers; its text changes on cycle and the
            aria-live region announces it. -->
-      <p class="ex-live">{entry?.proseHtml}</p>
+      <p class="ex-live">
+        {#if exampleLine}{@render exampleLine(exampleIndex)}{:else}{entry?.proseHtml}{/if}
+      </p>
     </div>
     <div class="cycle">
       <button

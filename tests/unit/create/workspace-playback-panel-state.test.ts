@@ -92,7 +92,6 @@ describe("workspace playback", () => {
     state.openSequenceActionsPanel("workspace_button");
     expect(state.workspacePlayback).toBe(session);
     expect(state.isSequenceActionsPanelOpen).toBe(true);
-    state.openSaveToLibraryPanel();
     state.openFilterPanel();
     state.openPresetDrawer();
     state.openLOOPPanel("rotated" as never, new Set(), () => {});
@@ -121,6 +120,107 @@ describe("workspace playback", () => {
       expect(state.workspacePlaybackSourceRevision).toBeNull();
       cleanup?.();
     }
+  });
+
+  it("keeps a running preview running when the save view opens", () => {
+    const state = createState();
+    const session = startPlayback(state);
+    state.openSaveToLibraryPanel();
+    expect(state.isSaveToLibraryPanelOpen).toBe(true);
+    expect(state.workspacePlayback).toBe(session);
+    expect(state.workspacePlaybackSourceRevision).toBe(1);
+    expect(state.isWorkspacePreviewChosen).toBe(true);
+  });
+
+  it("keeps a loading preview loading when the save view opens", () => {
+    const state = createState();
+    state.startWorkspacePlayback(sequence(), 1);
+    const prepared = state.workspacePlaybackPreparation;
+    state.openSaveToLibraryPanel();
+    expect(state.isSaveToLibraryPanelOpen).toBe(true);
+    expect(state.workspacePlaybackPreparation).toBe(prepared);
+    expect(state.isWorkspacePreviewChosen).toBe(true);
+    state.confirmWorkspacePlaybackReady(prepared!);
+    expect(state.workspacePlayback).toBe(prepared);
+    expect(state.isSaveToLibraryPanelOpen).toBe(true);
+  });
+
+  it("starts a preview beside the open save view", () => {
+    const state = createState();
+    state.openSaveToLibraryPanel();
+    expect(state.isWorkspacePreviewChosen).toBe(false);
+    startPlayback(state);
+    expect(state.isSaveToLibraryPanelOpen).toBe(true);
+    expect(state.workspacePlayback).not.toBeNull();
+  });
+
+  it("ends the preview from save mode with the save view still open", () => {
+    const state = createState();
+    state.openSaveToLibraryPanel();
+    startPlayback(state);
+    state.stopWorkspacePlayback();
+    expect(state.workspacePlayback).toBeNull();
+    expect(state.isWorkspacePreviewChosen).toBe(false);
+    expect(state.isSaveToLibraryPanelOpen).toBe(true);
+  });
+
+  it("carries the preview on as the ordinary one when the save view closes", () => {
+    const state = createState();
+    const session = startPlayback(state);
+    state.openSaveToLibraryPanel();
+    state.closeSaveToLibraryPanel();
+    expect(state.workspacePlayback).toBe(session);
+    expect(state.isSaveToLibraryPanelOpen).toBe(false);
+  });
+
+  it("never brings the step editor up behind the save view", () => {
+    const fromPlay = createState();
+    fromPlay.openStepEditorPanel();
+    startPlayback(fromPlay);
+    fromPlay.openSaveToLibraryPanel();
+    fromPlay.stopWorkspacePlayback();
+    expect(fromPlay.isStepEditorPanelOpen).toBe(false);
+    expect(fromPlay.isSaveToLibraryPanelOpen).toBe(true);
+    cleanup?.();
+
+    const fromSwitch = createState();
+    fromSwitch.openSaveToLibraryPanel();
+    startPlayback(fromSwitch);
+    fromSwitch.closeSaveToLibraryPanel();
+    fromSwitch.stopWorkspacePlayback();
+    expect(fromSwitch.isStepEditorPanelOpen).toBe(false);
+  });
+
+  it("falls back to the card when loading fails in save mode, and can start again", () => {
+    const state = createState();
+    state.openSaveToLibraryPanel();
+    state.startWorkspacePlayback(sequence(), 1);
+    const failed = state.workspacePlaybackPreparation!;
+
+    state.failWorkspacePlaybackPreparation(failed);
+
+    // Nothing is left loading or waiting on the bar's inert Retry.
+    expect(state.workspacePlaybackPreparation).toBeNull();
+    expect(state.workspacePlaybackPreparationError).toBeNull();
+    expect(state.isWorkspacePreviewChosen).toBe(false);
+    expect(state.isSaveToLibraryPanelOpen).toBe(true);
+
+    startPlayback(state);
+    expect(state.workspacePlayback).not.toBeNull();
+  });
+
+  it("clears a failed preview when the save view opens over it", () => {
+    const state = createState();
+    state.startWorkspacePlayback(sequence(), 1);
+    state.failWorkspacePlaybackPreparation(state.workspacePlaybackPreparation!);
+    expect(state.isWorkspacePreviewChosen).toBe(false);
+
+    state.openSaveToLibraryPanel();
+
+    expect(state.workspacePlaybackPreparation).toBeNull();
+    expect(state.workspacePlaybackPreparationError).toBeNull();
+    startPlayback(state);
+    expect(state.workspacePlayback).not.toBeNull();
   });
 
   it("hands off to another panel without restoring a competing editor", () => {

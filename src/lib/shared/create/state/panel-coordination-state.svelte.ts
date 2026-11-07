@@ -403,6 +403,9 @@ export interface PanelCoordinationState {
     playing: boolean;
   } | null;
   get workspacePlaybackPreparationError(): string | null;
+  /** The preview is playing or loading, rather than the card showing or a
+   *  failed load waiting on Retry. */
+  get isWorkspacePreviewChosen(): boolean;
   startWorkspacePlayback(
     sequence: SequenceData,
     sourceSequenceRevision: number,
@@ -620,9 +623,9 @@ export function createPanelCoordinationState(): PanelCoordinationState {
    * This ensures only ONE panel is open at a time, preventing state conflicts
    *
    * The quick preview is not a panel. Sheets and drawers that sit beside the
-   * workspace (sequence actions, share, save, filter, generate settings) open
-   * over a running preview and leave it running; see dropWorkspacePlayback for
-   * the surfaces that must end it.
+   * workspace (sequence actions, share, filter, generate settings) open over
+   * a running preview and leave it running, and so does the save view; see
+   * dropWorkspacePlayback for the surfaces that must end it.
    */
   function closeAllPanels() {
     workspacePlaybackHandoff = null;
@@ -867,6 +870,12 @@ export function createPanelCoordinationState(): PanelCoordinationState {
     },
 
     openSaveToLibraryPanel() {
+      // Saving keeps whatever was showing: a running or loading preview
+      // carries on beside the form. A failed one has only the bottom bar's
+      // Retry, which save mode makes inert, so it goes back to the card. Save
+      // also takes over from the step editor, as it does without a preview.
+      if (workspacePlaybackPreparationError) dropWorkspacePlayback();
+      restoreStepEditorAfterPlayback = false;
       closeAllPanels();
       isSaveToLibraryPanelOpen = true;
     },
@@ -1315,6 +1324,13 @@ export function createPanelCoordinationState(): PanelCoordinationState {
       return workspacePlaybackPreparationError;
     },
 
+    get isWorkspacePreviewChosen() {
+      return (
+        (!!workspacePlayback || !!workspacePlaybackPreparation) &&
+        !workspacePlaybackPreparationError
+      );
+    },
+
     startWorkspacePlayback(
       sequence,
       sourceSequenceRevision,
@@ -1327,8 +1343,11 @@ export function createPanelCoordinationState(): PanelCoordinationState {
       )
         return;
       const restoreEditor = isStepEditorPanelOpen;
+      // The save view's switch starts the preview beside the form.
+      const keepSaveView = isSaveToLibraryPanelOpen;
       closeAllPanels();
-      restoreStepEditorAfterPlayback = restoreEditor;
+      isSaveToLibraryPanelOpen = keepSaveView;
+      restoreStepEditorAfterPlayback = restoreEditor && !keepSaveView;
       // The fixed document can load while editing remains in place. It only
       // becomes active after its player reports a ready canvas.
       workspacePlaybackPreparation = {
@@ -1357,6 +1376,12 @@ export function createPanelCoordinationState(): PanelCoordinationState {
       message = "Playback could not load."
     ) {
       if (workspacePlaybackPreparation !== session) return;
+      // Retry lives in the bottom bar, which is inert in save mode. The switch
+      // is the way back in there, so the failed attempt just ends.
+      if (isSaveToLibraryPanelOpen) {
+        dropWorkspacePlayback();
+        return;
+      }
       workspacePlaybackPreparationError = message;
     },
 

@@ -1334,40 +1334,434 @@ html.sequence-viewer-reduced-dissolve::view-transition-new(
  */
 
 /* ============================================================================
-   LAUNCHPAD ROUTE MORPHS
-   Each landing launchpad tile (view-transition-name: launchpad-<id>) morphs
-   into its destination page's masthead/hero (same name) across the client
-   navigation, in BOTH directions. The route driver suppresses root capture, so
-   only the named group animates; everything else cuts. Names stay 1:1 with the
-   tile defs' `morphName` in launchpad-tiles.ts.
+   RESIDENT PLAYER FLIGHT
+   The one live player (resident-player.svelte.ts) travels between the heroes
+   that host it. Both ends are the same running element, so only the live new
+   image shows: no crossfade, and it keeps playing in flight. object-fit: none
+   holds its contents at their real size, so its words never scale even when
+   the two stages differ by a few pixels. A page with no stage at one end leaves
+   one image, which fades instead of cutting. Named only inside a named morph,
+   so an ordinary page fade never lifts the player out of its page.
    ============================================================================ */
-::view-transition-group(launchpad-composer),
-::view-transition-group(launchpad-choreo-cards),
-::view-transition-group(launchpad-guide),
-::view-transition-group(launchpad-faq),
-::view-transition-group(launchpad-glossary) {
-  animation-duration: 380ms;
-  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+html.named-route-morph [data-resident-slot="player"][data-resident-claimed] {
+  view-transition-name: resident-player;
+}
+html.named-route-morph [data-resident-slot="rail"][data-resident-claimed] {
+  view-transition-name: resident-rail;
+}
+/* The stage the player is flying to is an empty frame until it lands, so it
+   stays unpainted for the flight. The player covers it when it comes back. */
+html.site-flight .demo-stage:has(> [data-resident-slot="player"]) {
+  background: none;
+  border-color: transparent;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+::view-transition-group(resident-player),
+::view-transition-group(resident-rail) {
+  animation-duration: var(--duration-surface-travel);
+  animation-timing-function: var(--ease-surface-travel);
+  z-index: 3;
+}
+::view-transition-old(resident-player),
+::view-transition-old(resident-rail) {
+  display: none;
+}
+::view-transition-new(resident-player),
+::view-transition-new(resident-rail) {
+  animation: none;
+  opacity: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: none;
+  object-position: left top;
+}
+/* The flying player lifts off the page and sets down again. */
+html.site-flight::view-transition-new(resident-player):not(:only-child) {
+  border-radius: 12px;
+  animation: resident-lift var(--duration-surface-travel) var(--ease-in-out)
+    both;
+}
+@keyframes resident-lift {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+  45% {
+    box-shadow: 0 34px 80px -28px rgba(0, 0, 0, 0.85);
+  }
+}
+::view-transition-old(resident-player):only-child,
+::view-transition-old(resident-rail):only-child {
+  display: block;
+  animation: resident-leave var(--duration-fast) var(--ease-standard-out) both;
+}
+::view-transition-new(resident-player):only-child,
+::view-transition-new(resident-rail):only-child {
+  animation: resident-arrive var(--duration-normal) var(--ease-standard-out)
+    both;
+}
+@keyframes resident-leave {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes resident-arrive {
+  from {
+    opacity: 0;
+  }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  ::view-transition-group(launchpad-composer),
-  ::view-transition-old(launchpad-composer),
-  ::view-transition-new(launchpad-composer),
-  ::view-transition-group(launchpad-choreo-cards),
-  ::view-transition-old(launchpad-choreo-cards),
-  ::view-transition-new(launchpad-choreo-cards),
-  ::view-transition-group(launchpad-guide),
-  ::view-transition-old(launchpad-guide),
-  ::view-transition-new(launchpad-guide),
-  ::view-transition-group(launchpad-faq),
-  ::view-transition-old(launchpad-faq),
-  ::view-transition-new(launchpad-faq),
-  ::view-transition-group(launchpad-glossary),
-  ::view-transition-old(launchpad-glossary),
-  ::view-transition-new(launchpad-glossary) {
-    animation: none !important;
+/* ============================================================================
+   SITE FLIGHT: what the rest of the page does around a flight
+   In a glide between the player's hosts the old page leaves as one quick fade,
+   so nothing cuts on the first frame; a tile flight replaces that fade with its
+   own recede. Both sit under the glass panel, which sits under the player, and
+   the header holds still above them all, changing only its active underline. The
+   Back chip is its own picture, so it fades in clear of the sliding logo.
+   ============================================================================ */
+html.site-flight header[data-route-hold="header"] {
+  view-transition-name: route-hold-header;
+}
+html.site-flight::view-transition-group(route-hold-header) {
+  z-index: 4;
+}
+/* The Back chip pushes the logo along when it appears, so the logo slides there
+   as one picture rather than crossfading with itself. */
+html.site-flight header[data-route-hold="header"] .logo {
+  view-transition-name: site-logo;
+}
+::view-transition-group(site-logo) {
+  animation-duration: var(--duration-normal);
+  animation-timing-function: var(--ease-standard-out);
+  z-index: 5;
+}
+::view-transition-old(site-logo) {
+  display: none;
+}
+::view-transition-new(site-logo) {
+  animation: none;
+  opacity: 1;
+}
+html.site-flight header[data-route-hold="header"] .surface-back {
+  view-transition-name: site-back;
+}
+::view-transition-group(site-back) {
+  z-index: 5;
+  animation: none;
+}
+::view-transition-new(site-back) {
+  animation: site-back-in calc(var(--duration-surface-travel) * 0.6)
+    var(--ease-surface-travel) calc(var(--duration-surface-travel) * 0.4) both;
+}
+::view-transition-old(site-back) {
+  animation: site-flight-out calc(var(--duration-surface-travel) * 0.2)
+    var(--ease-standard-out) both;
+}
+@keyframes site-back-in {
+  from {
+    opacity: 0;
+    translate: -8px 0;
   }
+}
+::view-transition-group(route-hold-header) {
+  animation-duration: var(--duration-normal);
+}
+/* The header is taller at the top of a page than once scrolled, and it centres
+   its controls, so a flight from a scrolled page would crossfade two pictures
+   whose pill sits 4px apart. Centring both pictures in the morphing box keeps
+   them on top of each other. */
+html.site-flight::view-transition-old(route-hold-header),
+html.site-flight::view-transition-new(route-hold-header) {
+  block-size: 100%;
+  object-fit: none;
+  object-position: 50% 50%;
+}
+::view-transition-group(page-leaving) {
+  animation: none;
+  z-index: 1;
+}
+::view-transition-old(page-leaving) {
+  animation: site-flight-out var(--duration-fast) var(--ease-standard-out) both;
+}
+@keyframes site-flight-out {
+  to {
+    opacity: 0;
+  }
+}
+
+/* ============================================================================
+   TILE FLIGHT
+   A homepage tile opens into its page (tile-flight.svelte.ts). The pressed tile's
+   own glass becomes a real panel, the view-transition group, which travels
+   between the tile and the screen. Nothing is clipped. The tile's picture and the
+   page's picture stay pinned where they sit on screen and only fade, the old page
+   recedes from the pressed tile's centre, and the glass clears once the page has
+   resolved on it. Back is the mirror. Boxes arrive as --tile-flight-* in viewport
+   pixels at transition.ready; the panel's first and last frames are the resting
+   tile, which hands its own glass over while the browser captures it.
+   ============================================================================ */
+/* The sidebar package names itself inline. In a flight it is page content and
+   belongs inside the window, not floating over it. */
+html.tile-flight-open nav.ac-sidebar,
+html.tile-flight-close nav.ac-sidebar {
+  view-transition-name: none !important;
+}
+@property --tile-flight-tint-live {
+  syntax: "<color>";
+  inherits: false;
+  initial-value: transparent;
+}
+/* Three states of the panel's rim and shadow. The same four layers each, so they
+   interpolate: a full-perimeter ring, a top highlight, the drop, the tinted glow. */
+html.tile-flight-open,
+html.tile-flight-close {
+  --tile-flight-shadow-resting:
+    inset 0 0 0 1px var(--tile-glass-border),
+    inset 0 1px 0 0 var(--tile-glass-highlight),
+    0 18px 40px -28px rgba(0, 0, 0, 0.8), 0 0 110px -30px transparent;
+  --tile-flight-shadow-lit:
+    inset 0 0 0 1px oklch(0.78 0.07 275 / 0.3),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.28),
+    0 50px 140px -40px rgba(0, 0, 0, 0.8),
+    0 0 110px -30px
+      color-mix(in oklch, var(--tile-flight-tint, transparent) 55%, transparent);
+  --tile-flight-shadow-clear:
+    inset 0 0 0 1px transparent, inset 0 1px 0 0 transparent,
+    0 50px 140px -40px transparent, 0 0 110px -30px transparent;
+}
+
+/* The panel: one real box that travels between the tile and the screen. */
+::view-transition-group(tile-window) {
+  z-index: 2;
+  box-sizing: border-box;
+  overflow: visible;
+  border-radius: var(--tile-flight-radius, var(--tile-glass-radius));
+  background-color: var(--tile-glass-fill);
+  background-image: radial-gradient(
+    90% 70% at 0% 0%,
+    var(--tile-flight-tint-live),
+    transparent 70%
+  );
+  -webkit-backdrop-filter: blur(var(--tile-glass-blur));
+  backdrop-filter: blur(var(--tile-glass-blur));
+  box-shadow: var(--tile-flight-shadow-lit);
+}
+html.tile-flight-open::view-transition-group(tile-window) {
+  animation:
+    tile-flight-travel var(--duration-surface-travel) var(--ease-surface-travel)
+      both,
+    tile-flight-glass-open var(--duration-surface-travel) linear both;
+}
+html.tile-flight-close::view-transition-group(tile-window) {
+  animation:
+    tile-flight-travel var(--duration-surface-travel) var(--ease-surface-travel)
+      both,
+    tile-flight-glass-close var(--duration-surface-travel) linear both;
+}
+@keyframes tile-flight-travel {
+  from {
+    transform: translate(var(--tile-flight-from-x), var(--tile-flight-from-y));
+    width: var(--tile-flight-from-w);
+    height: var(--tile-flight-from-h);
+  }
+  to {
+    transform: translate(var(--tile-flight-to-x), var(--tile-flight-to-y));
+    width: var(--tile-flight-to-w);
+    height: var(--tile-flight-to-h);
+  }
+}
+/* Starts as the resting tile, lights up as it lifts, clears on the page. */
+@keyframes tile-flight-glass-open {
+  0% {
+    box-shadow: var(--tile-flight-shadow-resting);
+    --tile-flight-tint-live: transparent;
+  }
+  16%,
+  58% {
+    border-radius: var(--tile-flight-radius, var(--tile-glass-radius));
+    background-color: var(--tile-glass-fill);
+    box-shadow: var(--tile-flight-shadow-lit);
+    --tile-flight-tint-live: color-mix(
+      in oklch,
+      var(--tile-flight-tint, transparent) 14%,
+      transparent
+    );
+    -webkit-backdrop-filter: blur(var(--tile-glass-blur));
+    backdrop-filter: blur(var(--tile-glass-blur));
+  }
+  100% {
+    border-radius: 0px;
+    background-color: transparent;
+    box-shadow: var(--tile-flight-shadow-clear);
+    --tile-flight-tint-live: transparent;
+    -webkit-backdrop-filter: blur(0px);
+    backdrop-filter: blur(0px);
+  }
+}
+/* The mirror: forms over the page, settles into the resting tile. */
+@keyframes tile-flight-glass-close {
+  0% {
+    border-radius: 0px;
+    background-color: transparent;
+    box-shadow: var(--tile-flight-shadow-clear);
+    --tile-flight-tint-live: transparent;
+    -webkit-backdrop-filter: blur(0px);
+    backdrop-filter: blur(0px);
+  }
+  26%,
+  84% {
+    border-radius: var(--tile-flight-radius, var(--tile-glass-radius));
+    background-color: var(--tile-glass-fill);
+    box-shadow: var(--tile-flight-shadow-lit);
+    --tile-flight-tint-live: color-mix(
+      in oklch,
+      var(--tile-flight-tint, transparent) 14%,
+      transparent
+    );
+    -webkit-backdrop-filter: blur(var(--tile-glass-blur));
+    backdrop-filter: blur(var(--tile-glass-blur));
+  }
+  100% {
+    box-shadow: var(--tile-flight-shadow-resting);
+    --tile-flight-tint-live: transparent;
+  }
+}
+
+/* Both pictures stay where they sit on screen; only the glass travels. They
+   are pinned with left/top, not translate, on purpose: the panel animates
+   width/height on the main thread, and a compositor-driven translate drifts
+   away from it whenever the main thread is busy loading the page. */
+::view-transition-image-pair(tile-window) {
+  isolation: auto;
+}
+::view-transition-old(tile-window),
+::view-transition-new(tile-window) {
+  position: absolute;
+  inset: 0 auto auto 0;
+  mix-blend-mode: normal;
+  object-fit: none;
+  object-position: left top;
+  background: none;
+  opacity: 1;
+  transform-origin: var(--tile-flight-screen-x, 50%)
+    var(--tile-flight-screen-y, 50%);
+}
+@keyframes tile-flight-pin-tile {
+  from {
+    left: calc(var(--tile-flight-tile-x) - var(--tile-flight-from-x));
+    top: calc(var(--tile-flight-tile-y) - var(--tile-flight-from-y));
+  }
+  to {
+    left: calc(var(--tile-flight-tile-x) - var(--tile-flight-to-x));
+    top: calc(var(--tile-flight-tile-y) - var(--tile-flight-to-y));
+  }
+}
+@keyframes tile-flight-pin-page {
+  from {
+    left: calc(var(--tile-flight-page-x) - var(--tile-flight-from-x));
+    top: calc(var(--tile-flight-page-y) - var(--tile-flight-from-y));
+  }
+  to {
+    left: calc(var(--tile-flight-page-x) - var(--tile-flight-to-x));
+    top: calc(var(--tile-flight-page-y) - var(--tile-flight-to-y));
+  }
+}
+@keyframes tile-flight-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes tile-flight-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes tile-flight-page-in {
+  from {
+    opacity: 0;
+    scale: 0.985;
+  }
+}
+@keyframes tile-flight-page-out {
+  to {
+    opacity: 0;
+    scale: 0.985;
+  }
+}
+@keyframes tile-flight-recede {
+  to {
+    opacity: 0;
+    scale: 0.96;
+    filter: blur(8px);
+  }
+}
+@keyframes tile-flight-advance {
+  from {
+    opacity: 0;
+    scale: 0.96;
+    filter: blur(8px);
+  }
+}
+
+/* Open: the tile's picture dissolves in place, the page resolves on the glass,
+   the homepage recedes into the pressed tile. The two pictures overlap so the
+   glass is never bare: the tile art is still going as the page ghosts in. */
+html.tile-flight-open::view-transition-old(tile-window) {
+  width: var(--tile-flight-tile-w);
+  height: var(--tile-flight-tile-h);
+  animation:
+    tile-flight-pin-tile var(--duration-surface-travel)
+      var(--ease-surface-travel) both,
+    tile-flight-fade-out calc(var(--duration-surface-travel) * 0.36)
+      var(--ease-standard-out) both;
+}
+html.tile-flight-open::view-transition-new(tile-window) {
+  width: var(--tile-flight-page-w);
+  height: var(--tile-flight-page-h);
+  animation:
+    tile-flight-pin-page var(--duration-surface-travel)
+      var(--ease-surface-travel) both,
+    tile-flight-page-in calc(var(--duration-surface-travel) * 0.46)
+      var(--ease-standard-out) calc(var(--duration-surface-travel) * 0.24) both;
+}
+html.tile-flight-open::view-transition-old(page-leaving) {
+  transform-origin: var(--tile-flight-origin-x, 50%)
+    var(--tile-flight-origin-y, 50%);
+  animation: tile-flight-recede calc(var(--duration-surface-travel) * 0.36)
+    var(--ease-in-out) both;
+}
+
+/* Close: the page dissolves, the glass gathers into the tile, the homepage
+   comes forward, and the tile's picture is back inside the glass while it is
+   still gathering, so the panel never travels empty. */
+html.tile-flight-close::view-transition-old(tile-window) {
+  width: var(--tile-flight-page-w);
+  height: var(--tile-flight-page-h);
+  animation:
+    tile-flight-pin-page var(--duration-surface-travel)
+      var(--ease-surface-travel) both,
+    tile-flight-page-out calc(var(--duration-surface-travel) * 0.36)
+      var(--ease-standard-out) both;
+}
+html.tile-flight-close::view-transition-new(tile-window) {
+  width: var(--tile-flight-tile-w);
+  height: var(--tile-flight-tile-h);
+  animation:
+    tile-flight-pin-tile var(--duration-surface-travel)
+      var(--ease-surface-travel) both,
+    tile-flight-fade-in calc(var(--duration-surface-travel) * 0.5)
+      var(--ease-standard-out) calc(var(--duration-surface-travel) * 0.32) both;
+}
+::view-transition-group(page-arriving) {
+  animation: none;
+  z-index: 1;
+}
+::view-transition-new(page-arriving) {
+  transform-origin: var(--tile-flight-origin-x, 50%)
+    var(--tile-flight-origin-y, 50%);
+  animation: tile-flight-advance calc(var(--duration-surface-travel) * 0.6)
+    var(--ease-standard-out) calc(var(--duration-surface-travel) * 0.18) both;
 }
 
 /* ============================================================================

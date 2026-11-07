@@ -6,19 +6,22 @@
    * links (LaunchpadTile) plus a compact secondary link strip. A single
    * IntersectionObserver marks tiles visible as they scroll in — that drives
    * the subtle reveal transition. Decorative media mounts separately, one
-   * tile per idle turn, so returning home never parses six chunks in one frame.
+   * tile per idle turn, so a first visit never parses six chunks in one frame.
+   * A later visit mounts what this session already loaded in its first render,
+   * because a return flight captures the homepage as soon as it exists.
    *
    * Every tile is fully readable and navigable with JS disabled: the reveal
    * transition only ever applies once `jsReady` (client-only, set in
    * onMount) is true, so a no-JS render never ships hidden content.
    */
-  import { onMount } from "svelte";
+  import { onMount, untrack } from "svelte";
   import {
     isNamedRouteMorphActive,
     runAfterNamedRouteMorph,
     runAfterNamedRouteMorphIdle,
   } from "#lib/shared/transitions/named-route-morph-state.svelte.js";
   import LaunchpadTile from "./LaunchpadTile.svelte";
+  import { loadedTileMedia } from "./launchpad-media-session";
   import {
     LAUNCHPAD_TILES,
     STRIP_LINKS,
@@ -59,7 +62,16 @@
       ? new Set(tiles.map((tile) => tile.id))
       : new Set()
   );
-  let mediaActive = $state<Set<string>>(new Set());
+  // Nothing is remembered on the server or on a first visit, so the stagger still
+  // starts from empty there. Data-saver skips media however it got cached.
+  let mediaActive = $state<Set<string>>(
+    untrack(() => {
+      const seeded = tiles
+        .filter((tile) => loadedTileMedia(variant, tile.id))
+        .map((tile) => tile.id);
+      return new Set(seeded.length > 0 && !prefersReducedData() ? seeded : []);
+    })
+  );
   let jsReady = $state(false);
   let reportMediaSettled = $state<(id: string) => void>(() => {});
 

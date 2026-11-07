@@ -249,7 +249,7 @@
   }}
 >
   <section class="launch-zone" aria-labelledby="course-title">
-    <header class="course-intro" style:view-transition-name="launchpad-guide">
+    <header class="course-intro">
       <div>
         <h1 id="course-title">{t("learn_ui_interactive_lessons")}</h1>
         <p>{t("learn_ui_course_intro")}</p>

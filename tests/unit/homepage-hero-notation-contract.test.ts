@@ -26,6 +26,9 @@ const inlinePlayer = readSource(
 const animatorCanvas = readSource(
   "src/lib/shared/animation-engine/components/AnimatorCanvas.svelte"
 );
+const heroChunks = readSource(
+  "src/lib/shared/landing/services/hero-player-chunks.ts"
+);
 const landingPage = readSource("src/routes/+page.svelte");
 const launchpadGrid = readSource(
   "src/lib/shared/landing/components/launchpad/LaunchpadGrid.svelte"
@@ -58,15 +61,17 @@ describe("homepage hero notation rail contract", () => {
 
   it("reuses the shared StepStrip through the hero's lazy stage seam", () => {
     expect(homeHero).toContain("showNotationStrip={true}");
-    expect(sequenceHero).toContain(
+    expect(heroChunks).toContain(
       'import("#lib/shared/timeline/StepStrip.svelte")'
     );
     expect(sequenceHero).toContain('density: "compact"');
-    expect(sequenceHero).toContain(
-      "active={active && !!sequence && !isNamedRouteMorphActive()}"
+    // A host with its own player still waits out any route morph. The resident
+    // player does not: it is the thing flying.
+    expect(sequenceHero).toMatch(
+      /active=\{active &&\s*!!sequence &&\s*!isNamedRouteMorphActive\(\) &&/
     );
     expect(sequenceHero).toMatch(
-      /active=\{active &&\s*canvasReady &&\s*!!sequence &&\s*shouldMountNotationRail &&\s*!isNamedRouteMorphActive\(\)\}/
+      /active=\{active &&\s*canvasReady &&\s*!!sequence &&\s*shouldMountNotationRail &&\s*!isNamedRouteMorphActive\(\) &&/
     );
     expect(stepStrip).toContain(
       "const resolvedCells = $derived(cells ?? buildNotationCells(sequence))"
@@ -101,8 +106,8 @@ describe("homepage hero notation rail contract", () => {
 
   it("uses the animation renderer's canonical elemental glyph", () => {
     expect(homeHero).toContain("element={heroAct.element}");
-    expect(sequenceHero).toContain(
-      "syncHeroElementalGlyphVisibility(heroVisibilityManager, element !== null)"
+    expect(sequenceHero).toMatch(
+      /syncHeroElementalGlyphVisibility\(\s*residentHandle\?\.visibilityManager \?\? heroVisibilityManager,\s*element !== null\s*\)/
     );
     expect(sequenceHero).not.toContain('class="element-badge"');
     expect(sequenceHero).not.toContain("shownElement.iconPath");

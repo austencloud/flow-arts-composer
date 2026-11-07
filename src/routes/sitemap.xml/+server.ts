@@ -55,7 +55,8 @@ const pages: SitemapEntry[] = [
   { url: "shape-engine" },
   // /notation/loops is gated in production (404 via its +page.server.ts) while
   // the LOOP algebra page gets rebuilt. Un-gate before re-listing it.
-  // /notation/caps is gated the same way (2026-09-29) until it is rewritten.
+  // The CAPs page was rewritten and un-gated on 2026-11-03.
+  { url: "notation/caps" },
   // The Kinetic Atlas is behind a noindex Coming Soon gate while it is rebuilt.
   // Re-list it when the production gate is removed.
   // The staff choreography article is deliberately absent while it awaits

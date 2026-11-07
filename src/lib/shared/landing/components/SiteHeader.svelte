@@ -17,7 +17,7 @@
   import { page } from "$app/state";
   import { afterNavigate, preloadData } from "$app/navigation";
   import { isShallowGoto } from "#lib/shared/navigation/services/url-state.js";
-  import { LAUNCHPAD_TILES } from "./launchpad/launchpad-tiles";
+  import { TILE_FLIGHT_PATHS } from "./launchpad/launchpad-tiles";
   import { onMount, type Component } from "svelte";
   import RobustAvatar from "../../components/avatar/RobustAvatar.svelte";
   import NavDropdown, {
@@ -76,15 +76,12 @@
   const photoURL = $derived(user?.photoURL ?? null);
 
   // Back-to-launchpad affordance: shown only on pages you "dove into" from the
-  // landing launchpad (a tile carrying a morphName). Clicking it navigates to
-  // "/", which fires the reverse shared-element route morph — the page contracts
-  // back into its tile, so the dive reads as reversible. GuideShell mounts this
-  // same SiteHeader, so /guide gets the control too. Derived from the tile list.
-  const MORPH_DEST_PATHS = new Set(
-    LAUNCHPAD_TILES.filter((t) => t.morphName).map((t) => t.href)
-  );
+  // landing launchpad. Clicking it navigates to "/"; after a tile flight the
+  // page closes back into its tile (tile-flight.svelte.ts), and otherwise it is
+  // an ordinary page change.
+  const FLIGHT_PATHS = new Set(TILE_FLIGHT_PATHS);
   const currentPath = $derived(page.url ? currentRoutePath() : "");
-  const showBack = $derived(MORPH_DEST_PATHS.has(currentPath));
+  const showBack = $derived(FLIGHT_PATHS.has(currentPath));
 
   // Load the real authState once (idempotent). Pulls Firebase — only ever
   // called when there's a reason to (persisted session found, or the user

@@ -37,11 +37,14 @@
     example,
     onBack,
     compact = false,
+    cell = false,
   }: {
     example: DisplayExample | null;
     onBack?: () => void;
     /** Labelled chip rows instead of picture tiles (the drill-down tier). */
     compact?: boolean;
+    /** A cell of the tab's wide tier (DisplaySection `cell`). */
+    cell?: boolean;
   } = $props();
 
   const composition = getImageCompositionManager();
@@ -77,6 +80,7 @@
   caption={t("settings_display_card_caption")}
   onReset={reset}
   {onBack}
+  {cell}
 >
   {#snippet stage()}
     {#if sequence}
@@ -141,5 +145,18 @@
      to the frame's height. */
   :global([data-display-section="card"].screen) {
     --stage-ratio: 1.1;
+  }
+
+  /* In a cell's 17rem pane a 4.5rem label column leaves Word, Level and
+     LOOP (and Step numbers with Reversals) too little room, and each row
+     folded in two. A narrower column keeps every row on one line; "Card
+     length" takes two lines in it. */
+  :global([data-display-section="card"].cell) {
+    --card-row-label-w: 3.5rem;
+    /* The tile deck is the tallest of the four cells; the tighter rhythm
+       CardContentToggles offers a short host keeps it to 387px at its
+       smallest tiles, so a 1920×1080 cell (390px of stage) draws tiles. */
+    --card-toggles-row-gap: 0.5rem;
+    --card-toggles-label-gap: 0.2rem;
   }
 </style>

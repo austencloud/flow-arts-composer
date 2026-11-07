@@ -37,26 +37,20 @@ export const TIMING = {
 
 
 export const RESPONSIVE = {
-	/** Desktop: horizontal split */
+	/** Desktop: horizontal split. The split offsets live in GridMergeAnimation's stylesheet. */
 	DESKTOP: {
-		SPLIT_OFFSET_X: 260,
-		SPLIT_OFFSET_Y: 0,
 		MAX_WIDTH_INTRO: 400,
 		MAX_WIDTH_SPLIT: 900,
 		MAX_WIDTH_MERGED: 500
 	},
 	/** Tablet: vertical split */
 	TABLET: {
-		SPLIT_OFFSET_X: 0,
-		SPLIT_OFFSET_Y: 200,
 		MAX_WIDTH_INTRO: 320,
 		MAX_WIDTH_SPLIT: 400,
 		MAX_WIDTH_MERGED: 380
 	},
 	/** Mobile: tighter vertical split */
 	MOBILE: {
-		SPLIT_OFFSET_X: 0,
-		SPLIT_OFFSET_Y: 180,
 		MAX_WIDTH_INTRO: 280,
 		MAX_WIDTH_SPLIT: 340,
 		MAX_WIDTH_MERGED: 320

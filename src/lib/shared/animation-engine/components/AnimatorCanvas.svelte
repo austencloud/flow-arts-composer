@@ -78,6 +78,7 @@ Last audit: 2025-12-27
   } from "../services/disassembly-arrangement";
   import SplitCanvasView from "./SplitCanvasView.svelte";
   import { resolveAnimationGridJoin } from "../services/animation-grid-join";
+  import { createHoverHintLinger } from "../services/hover-hint-linger";
   import type { EffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
   import type { QualityTier } from "../domain/types/quality-types";
   import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
@@ -342,7 +343,8 @@ Last audit: 2025-12-27
     /** Mouse-only hover affordance teaching "click the canvas to play/pause".
      *  Only renders on fine-pointer/hover devices (touch keeps the tap-flash).
      *  Pairs with tapToToggle. Off by default so existing consumers are
-     *  unaffected.
+     *  unaffected. While the animation plays the hint shows only for a moment
+     *  after the mouse moves or presses, so it never sits on the animation.
      *  - "badge": centered glass circle + word (Pause/Play) fades in on hover.
      *  - "pill":  small corner caption pill on hover.
      *  - "scrim": faint hover vignette, no icon.
@@ -457,6 +459,10 @@ Last audit: 2025-12-27
     null
   );
   let tapFeedbackTimer: ReturnType<typeof setTimeout> | null = null;
+  let hoverHintAwake = $state(false);
+  const hoverHintLinger = createHoverHintLinger((awake) => {
+    hoverHintAwake = awake;
+  });
 
   const isDisassembledView = $derived(viewState !== "assembled");
   // Mount the split view in the DOM for all non-assembled states.
@@ -583,6 +589,7 @@ Last audit: 2025-12-27
   }
 
   function handlePointerDown(e: PointerEvent) {
+    hoverHintLinger.wake();
     // Right-clicks and auxiliary buttons open the context menu; they are never
     // canvas taps and must not leave a play/pause gesture armed for pointerup.
     if (e.button !== 0) {
@@ -602,6 +609,7 @@ Last audit: 2025-12-27
   }
 
   function handlePointerMove(e: PointerEvent) {
+    hoverHintLinger.wake();
     cancelLongPress();
     if (pointerStart) {
       const dx = e.clientX - pointerStart.x;
@@ -683,6 +691,7 @@ Last audit: 2025-12-27
   $effect(() => {
     return () => {
       cancelLongPress();
+      hoverHintLinger.dispose();
       if (tapFeedbackTimer !== null) {
         clearTimeout(tapFeedbackTimer);
         tapFeedbackTimer = null;
@@ -907,6 +916,7 @@ Last audit: 2025-12-27
   data-no-progress={hideProgressBar || undefined}
   data-hide-header={hideHeader || undefined}
   data-hover-hint={hoverHint !== "none" ? hoverHint : undefined}
+  data-hover-hint-resting={(isPlaying && !hoverHintAwake) || undefined}
   data-tap-toggle={tapToToggle || undefined}
   data-corner-toggle={cornerToggle || undefined}
   data-corner-toggle-at-rest={(cornerToggle && cornerToggleAtRest) || undefined}
@@ -1263,7 +1273,10 @@ Last audit: 2025-12-27
       transition: opacity var(--duration-fast) var(--ease-standard-out);
     }
 
-    .animation-container[data-hover-hint]:hover .hover-hint {
+    .animation-container[data-hover-hint]:not(
+        [data-hover-hint-resting]
+      ):hover
+      .hover-hint {
       opacity: 1;
     }
 

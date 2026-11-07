@@ -92,11 +92,14 @@ interface ReadNavigationOption {
  * buttons carry aria-labels while collapsed, but those are accessibility names
  * for a human using assistive tech, not words the on-screen Ghost has looked
  * at. Reading them early is how it used to announce a destination before ever
- * approaching the rail.
+ * approaching the rail. The label elements stay mounted, transparent, in the
+ * rail, so being in the DOM does not count as painted.
  */
 export function readNavigationOptions(
   sidebar: HTMLElement
 ): ReadNavigationOption[] {
+  if (sidebar.matches(".collapsed:not(.hover-expanded)")) return [];
+
   const modules = [
     ...sidebar.querySelectorAll<HTMLElement>(NAV_MODULE_SEL),
   ].flatMap((element) => {
@@ -297,7 +300,7 @@ export const EXPLORE_INTENTIONS: Intention[] = [
 
       // Crossing this element's `.ghost-hover-boundary` fires the sidebar
       // package's real pointer-enter path. Its 50ms intent delay completes
-      // during this deliberate pause, then and only then do labels exist.
+      // during this deliberate pause, then and only then are labels painted.
       await g.hoverOn(target, g.jitter(700, 500));
       if (g.halted()) return false;
       const expanded = await g.waitFor(

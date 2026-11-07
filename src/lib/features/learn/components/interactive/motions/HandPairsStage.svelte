@@ -75,9 +75,13 @@
     /** Each combination found so far, with the pair that first made it. */
     found: Partial<Record<HandCombinationId, HandPair>>;
     onFind?: (id: HandCombinationId, pair: HandPair) => void;
+    /** On a one-screen Guide page: the grids shrink with the host's --fit
+     *  below 1 too, past the window-height floors (2026-11-03: 361 px in a
+     *  358 px screen at 960x412). The lesson leaves it off. */
+    fitted?: boolean;
   }
 
-  let { found, onFind }: Props = $props();
+  let { found, onFind, fitted = false }: Props = $props();
 
   type Spots = Record<HandSide, GridLocation>;
   const BLUE = HandSide.LEFT;
@@ -612,7 +616,7 @@
   });
 </script>
 
-<div class="pairs-stage">
+<div class="pairs-stage" class:fitted>
   <div class="pairs-layout">
     <div class="duo" class:together class:flying bind:this={duo} tabindex="-1">
       <!-- The grids draw no backdrop of their own: these lie under both, so
@@ -828,6 +832,9 @@
     container: hand-pairs / inline-size;
     width: 100%;
   }
+  .pairs-stage.fitted {
+    --fit-shrink: min(var(--fit, 1), 1);
+  }
 
   /* Two grids side by side, and the larger picture they fuse into: 1.4 times
      a grid. Stacked, the result line and the bars sit under the grids and the
@@ -837,7 +844,10 @@
     --pairs-gap: clamp(1rem, 2.5vw, 2.5rem);
     --half-gap: clamp(0.75rem, 2cqi, 1.5rem);
     --room: 100cqi;
-    --tall: max(17rem, calc(100 * var(--lesson-vh, 1svh) - 30rem));
+    --tall: calc(
+      max(17rem, calc(100 * var(--lesson-vh, 1svh) - 30rem)) *
+        var(--fit-shrink, 1)
+    );
     --half: min(
       calc((var(--room) - var(--half-gap)) / 2),
       calc(var(--tall) / 1.4),
@@ -1091,12 +1101,14 @@
     .pairs-layout {
       /* The grids take their full size first; the results get what is left. */
       --room: calc(100cqi - 18rem - var(--pairs-gap));
-      --tall: max(
-        20rem,
-        min(
-          calc(100 * var(--lesson-vh, 1svh) - 25rem),
-          calc(74 * var(--lesson-vh, 1svh))
-        )
+      --tall: calc(
+        max(
+          20rem,
+          min(
+            calc(100 * var(--lesson-vh, 1svh) - 25rem),
+            calc(74 * var(--lesson-vh, 1svh))
+          )
+        ) * var(--fit-shrink, 1)
       );
       grid-template-columns: auto minmax(18rem, 30rem);
       justify-content: center;

@@ -21,6 +21,8 @@ import {
   stage3DSecondsPerTurn,
 } from "./stage-3d";
 import { staggeredFrames, type TkaSequenceFrame } from "./staggered-performers";
+import { PostStage3DSchema } from "./item-kinds";
+import { holdStageAfterFootage } from "./compile-hooks";
 
 const DCK_FILE = "tests/fixtures/video-editor-parity/dck.project.json";
 const TURN = 2 * Math.PI;
@@ -220,5 +222,93 @@ describe("a 3D clip in the compiled post", () => {
         stage3d: { shot: "sideways" },
       })
     ).toThrow();
+  });
+
+  it("keeps spacing, zoom and elevation and refuses them out of range", () => {
+    const stage3d = { shot: "orbit", spacing: 0.9, zoom: 0.6, elevation: 20 };
+    expect(PostStage3DSchema.parse(stage3d)).toEqual(stage3d);
+    expect(PostStage3DSchema.parse({ shot: "front" })).toEqual({ shot: "front" });
+    for (const [key, low, high] of [
+      ["spacing", 0.4, 3],
+      ["zoom", 0.35, 2],
+      ["elevation", 5, 60],
+    ] as const) {
+      expect(PostStage3DSchema.parse({ shot: "front", [key]: low })[key]).toBe(low);
+      expect(PostStage3DSchema.parse({ shot: "front", [key]: high })[key]).toBe(high);
+      expect(() => PostStage3DSchema.parse({ shot: "front", [key]: low - 0.01 })).toThrow();
+      expect(() => PostStage3DSchema.parse({ shot: "front", [key]: high + 0.01 })).toThrow();
+      expect(() =>
+        PostStage3DSchema.parse({ shot: "front", [key]: Number.NaN })
+      ).toThrow();
+    }
+  });
+});
+
+describe("a 3D clip past its footage", () => {
+  it("holds the footage's last instant instead of the opening pose", () => {
+    const covered = {
+      start: 2,
+      end: 10,
+      sourceIn: 4,
+      sourceOut: 12,
+      rate: 1,
+      useResolvedTimeMap: true,
+      timeMapRole: "take:a",
+      takeId: "a",
+    };
+    const after = {
+      start: 10,
+      end: 13,
+      sourceIn: 0,
+      sourceOut: 3,
+      rate: 1,
+      useResolvedTimeMap: false,
+    };
+    const [first, held] = holdStageAfterFootage([covered, after]);
+    expect(first).toBe(covered);
+    expect(held).toMatchObject({
+      start: 10,
+      end: 13,
+      sourceIn: 11.999,
+      sourceOut: 12,
+      useResolvedTimeMap: true,
+      timeMapRole: "take:a",
+    });
+    // Freezing a piece on one instant would fail the clip schema.
+    expect(held!.sourceOut).toBeGreaterThan(held!.sourceIn);
+    // Nothing before the footage to hold: the opening pose stays.
+    expect(holdStageAfterFootage([after])).toEqual([after]);
+  });
+});
+
+describe("a 3D clip running over the end card", () => {
+  it("compiles, holding the footage's last moment under the card", () => {
+    const project = dck();
+    const footage = project.tracks[0]!.items.find(
+      (item) => item.id === "dck-main-2"
+    )!;
+    const footageEnd = footage.start + footage.duration;
+    const staged = withAnimation(project, (item) => ({
+      ...item,
+      start: footageEnd - 4,
+      duration: 6,
+      anchor: null,
+      stage3d: { shot: "orbit" },
+    }));
+    const clips = compilePostProject(staged, {
+      now: project.updatedAt,
+      animationOverlay: false,
+    })!.preset.clips.filter(
+      (clip) => clip.sourceRole === stage3DRole("animation-1")
+    );
+    expect(clips).toHaveLength(2);
+    const [over, after] = clips as unknown as {
+      sourceOut: { value: number };
+      useResolvedTimeMap: boolean;
+      timeMapRole?: string;
+    }[];
+    expect(after!.useResolvedTimeMap).toBe(true);
+    expect(after!.timeMapRole).toBe(over!.timeMapRole);
+    expect(after!.sourceOut.value).toBeCloseTo(over!.sourceOut.value);
   });
 });

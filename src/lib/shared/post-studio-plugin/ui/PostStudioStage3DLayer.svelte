@@ -39,6 +39,7 @@
   import {
     stage3DBaseShot,
     stage3DCameraPose,
+    type StageBaseShot,
     type StageCameraPose,
   } from "./stage-3d-camera";
   import { stage3DCameraState } from "./stage-3d-camera-state.svelte";
@@ -169,6 +170,7 @@
   let castApplied = $state(false);
   $effect(() => {
     const current = cast;
+    const spacing = stage.spacing;
     if (!entered || !current) {
       castApplied = false;
       return;
@@ -179,7 +181,9 @@
       void rig.sourceSequence;
     void viewer.environmentId;
     untrack(() => {
-      applyTunnelCastToViewer(viewer, current);
+      // A spacing change moves the rigs; their positions are state, so the
+      // base shot below reframes on its own.
+      applyTunnelCastToViewer(viewer, current, { spacing });
       castApplied =
         viewer.performerManager.performers.length === current.length;
     });
@@ -194,7 +198,7 @@
         : 1
   );
 
-  const baseShot = $derived.by((): StageCameraPose | null => {
+  const baseShot = $derived.by((): StageBaseShot | null => {
     if (!castApplied) return null;
     const performers = viewer.performerManager.performers;
     if (performers.length === 0) return null;

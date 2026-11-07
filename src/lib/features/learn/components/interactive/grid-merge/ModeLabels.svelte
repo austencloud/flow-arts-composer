@@ -83,23 +83,27 @@
     opacity: 1;
   }
 
-  /* Position groups using inherited CSS custom properties */
+  /* Position groups using inherited CSS custom properties. The lesson slot
+     lowers them with --grid-mode-drop and sets the --grid-mode-* sizes, so its
+     names don't shrink with the viewport on top of the board shrinking. */
   .diamond-group {
     transform: translate(
       var(--split-offset-x-neg, -260px),
-      var(--split-offset-y-neg, 0)
+      calc(var(--split-offset-y-neg, 0px) + var(--grid-mode-drop, 0px))
     );
+    transition: transform var(--merge-duration) var(--merge-easing);
   }
 
   .box-group {
     transform: translate(
       var(--split-offset-x, 260px),
-      var(--split-offset-y, 0)
+      calc(var(--split-offset-y, 0px) + var(--grid-mode-drop, 0px))
     );
+    transition: transform var(--merge-duration) var(--merge-easing);
   }
 
   .mode-label {
-    font-size: 36px;
+    font-size: var(--grid-mode-name-size, var(--own-name-size, 36px));
     font-weight: 700;
     fill: var(--theme-accent, #22d3ee);
     font-family:
@@ -114,7 +118,7 @@
   }
 
   .mode-subtitle {
-    font-size: 22px;
+    font-size: var(--grid-mode-caption-size, var(--own-caption-size, 22px));
     font-weight: 500;
     fill: var(--theme-text-dim, #9ca3af);
     font-family:
@@ -132,25 +136,27 @@
   /* === RESPONSIVE: Font sizes only, positioning handled by CSS vars === */
   @media (max-width: 700px) {
     .mode-label {
-      font-size: 28px;
+      --own-name-size: 28px;
     }
 
     .mode-subtitle {
-      font-size: 18px;
+      --own-caption-size: 18px;
     }
   }
 
   @media (max-width: 500px) {
     .mode-label {
-      font-size: 24px;
+      --own-name-size: 24px;
     }
 
     .mode-subtitle {
-      font-size: 16px;
+      --own-caption-size: 16px;
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
+    .diamond-group,
+    .box-group,
     .mode-labels,
     .mode-label,
     .mode-subtitle {

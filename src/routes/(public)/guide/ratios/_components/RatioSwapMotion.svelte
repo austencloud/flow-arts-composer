@@ -564,4 +564,35 @@
       font-size: 1.1rem;
     }
   }
+
+  /* A short, wide window: the controls and scrubber share one row, and each
+     drawing takes its panel's height with its counts beside it. */
+  @media (max-height: 520px) and (min-width: 640px) {
+    .motion {
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: center;
+    }
+
+    .spin-pick {
+      flex: none;
+      inline-size: 14rem;
+    }
+
+    .motion-panels {
+      grid-column: 1 / -1;
+      grid-row: 2;
+    }
+
+    .motion-panel {
+      grid-template-columns: max-content minmax(0, 1fr);
+      align-content: center;
+      column-gap: 0.75rem;
+    }
+
+    .motion-stage {
+      grid-column: 1;
+      grid-row: 1 / span 3;
+      inline-size: calc(22rem * var(--fit, 1));
+    }
+  }
 </style>

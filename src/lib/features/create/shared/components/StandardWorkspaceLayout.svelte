@@ -49,6 +49,8 @@
   import { sequenceActionsFit } from "./sequence-actions/sequence-actions-fit.svelte";
   import { hasOpenModalLayer } from "#lib/shared/keyboard/domain/shortcut-target-resolution.js";
   import { pictographDrawState } from "#lib/shared/pictograph/shared/utils/pictograph-draw-state.js";
+  import SavePreviewSwitch from "./SavePreviewSwitch.svelte";
+  import { playsInWorkspace } from "../services/workspace-playback-tabs";
   import {
     isTheaterViewport,
     workspaceTheaterActive,
@@ -173,6 +175,11 @@
         "complete"
   );
   const isWorkspacePlayback = $derived(!!panelState.workspacePlayback);
+  // Save mode: the tool panel becomes the save view and the step grid, or the
+  // animation if that was playing, stays where it is as the preview, sliding
+  // wider to be the subject. The workspace's own controls fade and stop taking
+  // input until the save view is left again.
+  const isSaveView = $derived(panelState.isSaveToLibraryPanelOpen);
   // Sideways on a phone, the preview takes the whole workspace: Undo/Redo,
   // Save and the bottom bar step aside (CreationWorkspaceArea folds the
   // header away too) and the player carries Viewer, Share and Stop itself.
@@ -182,13 +189,9 @@
       playing: isWorkspacePlayback,
       preparing: !!panelState.workspacePlaybackPreparation,
       preparationFailed: !!panelState.workspacePlaybackPreparationError,
+      saveViewOpen: isSaveView,
     })
   );
-  // Save mode: the tool panel becomes the save view and the step grid stays
-  // where it is as the preview, sliding wider to be the subject. The
-  // workspace's own controls fade and stop taking input until the save view
-  // is left again.
-  const isSaveView = $derived(panelState.isSaveToLibraryPanelOpen);
   // The step editor takes the tool panel's place the same way (see
   // CreationToolPanelSlot), but the workspace stays fully live beside it:
   // picking another step is how you move through the sequence.
@@ -265,10 +268,34 @@
   const wideSaveSplit = $derived(
     isSaveView && useSideBySidePanels && layoutWidth >= SAVE_SPLIT_MIN_WIDTH
   );
-  const shortSaveStack = $derived(
-    isSaveView &&
-      !useSideBySidePanels &&
-      layoutHeight < SAVE_STACKED_SHORT_HEIGHT
+  const shortStackHeight = $derived(
+    !useSideBySidePanels && layoutHeight < SAVE_STACKED_SHORT_HEIGHT
+  );
+  const shortSaveStack = $derived(isSaveView && shortStackHeight);
+  // Phones, stacked or sideways. This reads the screen and not the save view,
+  // so the switch keeps its size while it fades out as the view closes.
+  const phoneSaveTier = $derived(shortStackHeight || isTheaterViewport());
+  // Those tiers leave the player so little height that its scrubber would take
+  // a third of it. The word's row folds away while the animation shows there,
+  // about doubling the canvas; the save view names the word.
+  const foldHeaderForPreview = $derived(
+    isSaveView && phoneSaveTier && panelState.isWorkspacePreviewChosen
+  );
+  // The room under the workspace while the switch sits in it. A phone keeps
+  // only what the small switch needs. A larger screen keeps the bar's room,
+  // grown when the bar is shorter than the switch and the gap above it. The
+  // gap is the slot's top padding, so nothing above can come closer than that.
+  const SAVE_SWITCH_HEIGHT = { sm: 36, md: 52 };
+  const SAVE_SWITCH_GAP_ABOVE = 6;
+  const SAVE_SWITCH_GAP_BELOW = 4;
+  const saveSwitchSize = $derived<"sm" | "md">(phoneSaveTier ? "sm" : "md");
+  const saveSwitchRoom = $derived(
+    phoneSaveTier
+      ? SAVE_SWITCH_GAP_ABOVE + SAVE_SWITCH_HEIGHT.sm + SAVE_SWITCH_GAP_BELOW
+      : Math.max(
+          buttonPanelHeight,
+          SAVE_SWITCH_GAP_ABOVE + SAVE_SWITCH_HEIGHT.md
+        )
   );
   // Stacked, the step editor's preview, duration and turn controls prefer
   // most of the height. The grid keeps a smaller share, still showing the
@@ -385,6 +412,21 @@
       (hasWorkspaceContent || isAssembleTab)
   );
   const showCompactHistory = $derived(shouldShowWorkspace && useCompactToolbar);
+  // Only a tab whose Play runs in place, and only with steps to animate.
+  const showSavePreviewSwitch = $derived(
+    shouldShowWorkspace &&
+      isSaveView &&
+      playsInWorkspace(navigationState.activeTab) &&
+      (currentSequence?.steps?.length ?? 0) > 0
+  );
+  // The room eases to its new height along with the panels, but only once the
+  // save view has been open. Before that the room is just following the bar's
+  // first measurement, and that shouldn't slide the workspace on the way in.
+  // Set before the DOM updates, so the very first open already eases.
+  let saveRoomEases = $state(false);
+  $effect.pre(() => {
+    if (showSavePreviewSwitch) saveRoomEases = true;
+  });
 
   // A generated sequence draws its pictographs a tenth of a second or so after
   // the tap. Sliding the workspace open at once shared those frames and
@@ -565,8 +607,12 @@
         props={{
           animatingStepNumber,
           currentDisplayWord,
-          buttonPanelHeight,
+          roomHeight: showSavePreviewSwitch
+            ? saveSwitchRoom
+            : buttonPanelHeight,
+          roomEases: saveRoomEases,
           theater: isWorkspaceTheater,
+          headerFolded: foldHeaderForPreview,
           compactToolbar: useCompactToolbar,
           onHeaderHeightChange: noteWorkspaceHeaderHeight,
           isSideBySideLayout: useSideBySidePanels,
@@ -645,6 +691,19 @@
             />
           </div>
         {/if}
+      </div>
+    {/if}
+
+    <!-- Fades in over the room under the workspace as the bar fades out. A
+         sibling of the bar, which is inert in save mode. -->
+    {#if showSavePreviewSwitch}
+      <div
+        class="save-preview-slot"
+        style:height="{saveSwitchRoom}px"
+        style:padding-top="{SAVE_SWITCH_GAP_ABOVE}px"
+        transition:flyFade={{ y: 0, duration: DURATION.normal }}
+      >
+        <SavePreviewSwitch size={saveSwitchSize} />
       </div>
     {/if}
 
@@ -745,11 +804,14 @@
         content: toolPanel,
         defaultSize: defaultPanelSizes[1],
         fixedSize:
-          isWorkspacePlayback || isAssembleComplete ? "0px" : undefined,
+          !isSaveView && (isWorkspacePlayback || isAssembleComplete)
+            ? "0px"
+            : undefined,
         resizable: false,
-        // Play folds the tools away. Their cards keep the size they had and
-        // the closing edge covers them, instead of re-laying out every card
-        // (and their container-query padding) on each frame of the slide.
+        // Play folds the tools away, unless the save view is in them. Their
+        // cards keep the size they had and the closing edge covers them,
+        // instead of re-laying out every card (and their container-query
+        // padding) on each frame of the slide.
         revealContent: true,
       },
     ]}
@@ -955,6 +1017,22 @@
        when slide-in panels are open */
     z-index: 160;
     /* Allow taps to pass through empty areas to the step grid below */
+    pointer-events: none;
+  }
+
+  /* The same box as the room under the workspace, so the switch stays clear of
+     whatever the workspace is showing. */
+  .save-preview-slot {
+    box-sizing: border-box;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 161;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-inline: var(--settings-spacing-sm, 8px);
     pointer-events: none;
   }
 

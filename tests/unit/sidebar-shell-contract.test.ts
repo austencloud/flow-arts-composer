@@ -61,7 +61,7 @@ describe("Desktop sidebar host contract", () => {
       "filterSection",
       "translateLabel",
       "getBadgeCount",
-      "brandLead",
+      "{#snippet brand(",
       "{#snippet footer",
       "{#snippet beforeTree",
     ]) {

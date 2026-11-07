@@ -163,6 +163,16 @@ export const POST_STAGE_3D_SHOTS = ["front", "orbit", "saved"] as const;
 export type PostStage3DShot = (typeof POST_STAGE_3D_SHOTS)[number];
 export const POST_STAGE_3D_MIN_SECONDS_PER_TURN = 2;
 export const POST_STAGE_3D_MAX_SECONDS_PER_TURN = 600;
+/** Metres between neighbouring performers in the file; absent = 1.7. */
+export const POST_STAGE_3D_MIN_SPACING = 0.4;
+export const POST_STAGE_3D_MAX_SPACING = 3;
+/** The front and orbit shots' distance factor; absent = 1. */
+export const POST_STAGE_3D_MIN_ZOOM = 0.35;
+export const POST_STAGE_3D_MAX_ZOOM = 2;
+/** The front and orbit shots' angle above the ground, degrees; absent = 36. */
+export const POST_STAGE_3D_MIN_ELEVATION = 5;
+export const POST_STAGE_3D_MAX_ELEVATION = 60;
+export const POST_STAGE_3D_DEFAULT_ELEVATION = 36;
 
 const PostStagePointSchema = z
   .object({ x: z.number().finite(), y: z.number().finite(), z: z.number().finite() })
@@ -192,6 +202,27 @@ export const PostStage3DSchema = z
       .strict()
       .optional(),
     environment: z.string().min(1).max(32).optional(),
+    /** Metres between neighbouring performers, front to back. */
+    spacing: z
+      .number()
+      .finite()
+      .min(POST_STAGE_3D_MIN_SPACING)
+      .max(POST_STAGE_3D_MAX_SPACING)
+      .optional(),
+    /** Front and orbit: the camera's distance as a factor of the framing's. */
+    zoom: z
+      .number()
+      .finite()
+      .min(POST_STAGE_3D_MIN_ZOOM)
+      .max(POST_STAGE_3D_MAX_ZOOM)
+      .optional(),
+    /** Front and orbit: the camera's angle above the ground, in degrees. */
+    elevation: z
+      .number()
+      .finite()
+      .min(POST_STAGE_3D_MIN_ELEVATION)
+      .max(POST_STAGE_3D_MAX_ELEVATION)
+      .optional(),
   })
   .strict();
 

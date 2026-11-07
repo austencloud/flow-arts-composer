@@ -1273,8 +1273,11 @@
           panelState,
           // Playback owns the workspace while the tools collapse. Keeping their
           // viewport metrics current during that motion invalidates every overlay
-          // for a panel the user cannot see.
-          isToolPanelVisible: () => !panelState.workspacePlayback,
+          // for a panel the user cannot see. The save view keeps the panel open
+          // beside the preview.
+          isToolPanelVisible: () =>
+            !panelState.workspacePlayback ||
+            panelState.isSaveToLibraryPanelOpen,
         });
       }
     });

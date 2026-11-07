@@ -71,25 +71,17 @@ describe("ghost navigation perception", () => {
   it("cannot choose a named destination until expanded labels have rendered", () => {
     document.body.innerHTML = `
       <aside class="ac-sidebar collapsed ghost-hover-boundary">
-        <button class="module-button active" data-tour-module="create"></button>
-        <button class="module-button" data-tour-module="library"></button>
-        <button class="module-button" data-tour-module="museum"></button>
+        <button class="module-button active" data-tour-module="create"><span class="module-label">create</span></button>
+        <button class="module-button" data-tour-module="library"><span class="module-label">library</span></button>
+        <button class="module-button" data-tour-module="museum"><span class="module-label">museum</span></button>
       </aside>
     `;
     const ctx = context();
     const sidebar = document.querySelector<HTMLElement>(".ac-sidebar")!;
 
+    // The package keeps these labels mounted and transparent in the rail.
     expect(readNavigationOptions(sidebar)).toEqual([]);
 
-    for (const button of sidebar.querySelectorAll<HTMLElement>(
-      ".module-button"
-    )) {
-      const text = button.getAttribute("data-tour-module") ?? "";
-      button.insertAdjacentHTML(
-        "beforeend",
-        `<span class="module-label">${text}</span>`
-      );
-    }
     sidebar.classList.add("hover-expanded");
 
     expect(

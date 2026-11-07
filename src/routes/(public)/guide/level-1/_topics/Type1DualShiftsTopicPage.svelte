@@ -468,6 +468,95 @@
       margin-inline: 0;
     }
   }
+  /* Between a phone and the wide group (the Fold's inner screen held
+     upright, 707 by 772; a phone on its side): the same two columns, the
+     text column narrower (240 to 380 px) and the card taking the rest, its
+     width from --fit with no floor, so the fit box can size the player to
+     the screen's height. Stacked, the words and the card stood 250 px taller
+     than the Fold's screen (2026-11-03). A tall portrait window (a tablet,
+     820 by 1180) keeps the stack, which has the height to spare: the band
+     starts where the window is at least 4 wide to 5 tall. ScreenList and
+     HandCombinationTopicPage use the same band. */
+  @media (min-aspect-ratio: 4 / 5) {
+    @container (min-width: 34rem) and (max-width: 55.99rem) {
+      .set {
+        --band-column: clamp(15rem, 40cqw, 23.75rem);
+        --band-gap: clamp(1rem, 3cqw, 2rem);
+        grid-template-columns:
+          var(--band-column)
+          min(
+            calc(100% - var(--band-column) - var(--band-gap)),
+            calc(34rem * var(--fit, 1))
+          );
+        justify-content: center;
+        align-items: stretch;
+        column-gap: var(--band-gap);
+        padding-block: 0.5rem;
+      }
+      .column {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.75rem;
+      }
+      .column-title {
+        font-size: clamp(2.2rem, 1rem + 3.4vh, 3.25rem);
+      }
+      .figure {
+        align-self: start;
+      }
+      .column :is(.lede, .lead) {
+        margin: 0;
+        max-width: none;
+      }
+      .figure > .mode {
+        width: 100%;
+        margin-inline: 0;
+      }
+    }
+  }
+  /* A short phone (an iPhone SE) holds the words, the pills and the whole
+     card above the footer only if the column gives up two lines: the
+     title, which the switcher's chip right above it already shows in the
+     same colours (the page's h1 stays for screen readers), and the line on
+     the six modes, which the link beside it names and the pills under it
+     list (it stays for screen readers too). The links and pills take the
+     phone's 36 px height, and the gaps close up, so the player keeps a size
+     that reads. A short landscape window (960x412) gives up the same two
+     lines: its column needed 418 px of a 358 px screen (2026-11-03). */
+  @media (max-width: 520px) and (max-height: 760px), (max-height: 520px) {
+    .column-title,
+    .modes-row > .modes-line {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+    .set {
+      gap: 0.5rem;
+    }
+    .column {
+      gap: 0.4rem;
+    }
+    .dual-shifts-topic {
+      --min-touch-target: 36px;
+    }
+    .all-modes-link :global(.link-chip.md),
+    .mode-link :global(.link-chip.md) {
+      padding-block: 0.3rem;
+    }
+  }
+  /* A short landscape window: the loop's row spans the card at any --fit,
+     so the fit box could shrink only the player (126 px at 960x412). Tied
+     to --fit too, the row and the player share the height (2026-11-03). */
+  @media (max-height: 520px) and (min-width: 521px) {
+    .loop {
+      width: min(100%, calc(28rem * var(--fit, 1)));
+      justify-self: center;
+    }
+  }
   /* LinkChip reads the app's theme variables: the page's ink, and on a
      card the card's element. */
   .all-modes-link,

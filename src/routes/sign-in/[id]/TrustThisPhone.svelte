@@ -20,6 +20,13 @@
   } from "#lib/shared/auth/phone-sign-in/client.js";
   import { APP_NAME } from "#lib/shared/auth/phone-sign-in/values.js";
   import PhoneNotice from "#lib/shared/auth/phone-sign-in/PhoneNotice.svelte";
+  import {
+    askToNotify,
+    refreshSignInNotifications,
+    turnOffSignInNotifications,
+    turnOnSignInNotifications,
+    type SignInNotifications,
+  } from "#lib/shared/auth/phone-sign-in/phone-sign-in-push.js";
 
   interface Props {
     /** The signed-in account. The key on this phone only counts for the account it was made for. */
@@ -43,12 +50,25 @@
   const STOPPED_PARTIAL = `This phone no longer approves by itself. ${APP_NAME} couldn't remove its record, which does nothing without this phone.`;
   // The browser's own words ("The operation failed for an unknown transient reason") mean nothing to Austen.
   const KEY_NOT_SAVED = "This phone couldn't save its key. Try again.";
+  const NOTIFY_TEXT: Record<SignInNotifications, string> = {
+    on: "Sign-ins now pop up here as a notification. One tap signs the computer in.",
+    blocked: `Notifications are blocked for ${APP_NAME} in this browser, so sign-ins use the QR code.`,
+    unavailable:
+      "Sign-in notifications aren't available here, so sign-ins use the QR code.",
+    failed: "Sign-in notifications didn't turn on, so sign-ins use the QR code.",
+  };
 
   let phase = $state<Phase>("hidden");
   // A tap is on its way; both taps wait for it.
   let busy = $state(false);
   // Why trusting failed. The offer stays on screen with its button.
   let error = $state<string | null>(null);
+  // Whether sign-ins reach this phone as notifications, once known.
+  let notify = $state<SignInNotifications | null>(null);
+  // The stop control offers to turn notifications on unless they are on or blocked.
+  const offerNotify = $derived(notify === "unavailable" || notify === "failed");
+  // Set by the button, so the answer is shown and read aloud only after a tap.
+  let notifyTapped = $state(false);
 
   // Only the key on this phone decides which control shows. The server is not asked.
   $effect(() => {
@@ -57,7 +77,13 @@
     void (async () => {
       if (!trustedPhoneSupported()) return;
       const keyPair = await loadTrustedKey(forUid);
-      if (current) phase = keyPair ? "stop" : "offer";
+      if (!current) return;
+      phase = keyPair ? "stop" : "offer";
+      // A trusted phone keeps sign-ins pointed at itself, asking nothing.
+      if (keyPair) {
+        const state = await refreshSignInNotifications(forUid);
+        if (current) notify = state;
+      }
     })();
     return () => {
       current = false;
@@ -67,12 +93,14 @@
   // Read aloud when a tap changes what the control says.
   const liveText = $derived(
     phase === "trusted"
-      ? TRUSTED
+      ? `${TRUSTED} ${notify ? NOTIFY_TEXT[notify] : ""}`
       : phase === "stopped"
         ? STOPPED
         : phase === "stopped-partial"
           ? STOPPED_PARTIAL
-          : (error ?? "")
+          : phase === "stop" && notifyTapped && notify
+            ? NOTIFY_TEXT[notify]
+            : (error ?? "")
   );
 
   async function trust() {
@@ -80,6 +108,8 @@
     busy = true;
     error = null;
     try {
+      // First, while Android still connects the prompt to this tap.
+      await askToNotify();
       let publicKey: PublicKeyJwk;
       try {
         publicKey = await createTrustedKey(uid);
@@ -90,12 +120,15 @@
       }
       try {
         await trustThisPhone(publicKey);
-        phase = "trusted";
       } catch (e) {
         // A key the server never heard of would only fail later, so it goes too.
         await forgetTrustedKey();
         error = e instanceof Error ? e.message : "Could not trust this phone.";
+        return;
       }
+      // Trusted now, whatever happens to notifications: a failure here only means the QR code.
+      notify = await turnOnSignInNotifications(uid);
+      phase = "trusted";
     } finally {
       busy = false;
     }
@@ -104,15 +137,24 @@
   async function stop() {
     if (busy) return;
     busy = true;
-    let removed = true;
-    try {
-      await stopTrustingPhone();
-    } catch {
-      removed = false;
-    }
-    // The key goes whatever the server said. Without it this phone cannot approve.
+    const [stopped] = await Promise.allSettled([
+      stopTrustingPhone(),
+      turnOffSignInNotifications(),
+    ]);
+    // The key goes whatever the server said. Without it this phone cannot
+    // approve, and the server stops ringing a phone it no longer trusts.
     await forgetTrustedKey();
-    phase = removed ? "stopped" : "stopped-partial";
+    phase = stopped.status === "fulfilled" ? "stopped" : "stopped-partial";
+    notify = null;
+    busy = false;
+  }
+
+  async function turnOnNotifications() {
+    if (busy) return;
+    busy = true;
+    notifyTapped = true;
+    await askToNotify();
+    notify = await turnOnSignInNotifications(uid);
     busy = false;
   }
 </script>
@@ -123,8 +165,9 @@
   {#if phase === "offer"}
     <div class="block">
       <p class="hint">
-        Next time, scanning the code can sign in by itself while this phone is
-        on the same internet connection as your computer.
+        Next time, the sign-in can pop up here as a notification you tap, and
+        scanning the code can sign in by itself while this phone is on the same
+        internet connection as your computer.
       </p>
 
       {#if error}
@@ -150,6 +193,30 @@
     </div>
   {:else if phase === "stop"}
     <div class="block">
+      {#if notifyTapped && notify}
+        <div class="row" transition:growFade>
+          <PhoneNotice
+            tone={notify === "on" ? "good" : "plain"}
+            icon={notify === "on" ? "fa-bell" : "fa-bell-slash"}
+          >
+            <p>{NOTIFY_TEXT[notify]}</p>
+          </PhoneNotice>
+        </div>
+      {/if}
+      {#if offerNotify}
+        <div class="action" transition:growFade>
+          <PanelButton
+            disabled={busy}
+            ariaBusy={busy}
+            onclick={turnOnNotifications}
+          >
+            <span class="lead-icon">
+              <i class="fa-solid fa-bell" aria-hidden="true"></i>
+            </span>
+            Send sign-ins here as notifications
+          </PanelButton>
+        </div>
+      {/if}
       <div class="action">
         <PanelButton disabled={busy} ariaBusy={busy} onclick={stop}>
           <span class="lead-icon">
@@ -168,6 +235,16 @@
       <div class="row">
         <PhoneNotice tone="good" icon="fa-check"><p>{TRUSTED}</p></PhoneNotice>
       </div>
+      {#if notify}
+        <div class="row">
+          <PhoneNotice
+            tone={notify === "on" ? "good" : "plain"}
+            icon={notify === "on" ? "fa-bell" : "fa-bell-slash"}
+          >
+            <p>{NOTIFY_TEXT[notify]}</p>
+          </PhoneNotice>
+        </div>
+      {/if}
     </div>
   {:else if phase === "stopped" || phase === "stopped-partial"}
     <div class="block">

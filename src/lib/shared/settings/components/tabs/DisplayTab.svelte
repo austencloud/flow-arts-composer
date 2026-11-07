@@ -1,10 +1,10 @@
 <!--
   Settings → Display: what pictographs, animations and cards show, each beside
   a live example bound to the same global switches the long-press menus write.
-  Three equal columns filling the tab's height where it is wide enough, one
-  stacked column below, with all three sections always visible.
+  Four equal cells, two by two, filling the tab where it is wide and tall
+  enough, with every section always visible.
 
-  Below the three-column tier (the tab under 64rem) the three sections do not
+  Below the wide tier (see the last revision for its size) the sections do not
   fit one screen, and settings never scroll (no-page-scroll.md). The tab then
   shows three drill-down boxes sharing its height, each with a live thumbnail
   of its section's stage, its title and a two-line summary of what is on, and
@@ -24,6 +24,49 @@
   the showroom. `/settings/theme` is an alias that opens it. The boxes lost
   their 14rem cap and share the whole height ("a big-ass empty space
   underneath the last option", at 690×830).
+
+  Revision: Theme is the fourth column (2026-11-02). Austen, at 1440×900:
+  "it's weird that the theme is so understated when we're on the actual
+  larger page ... such a very small section". The band and its showroom
+  swap are gone: the columns tier is four equal columns (Theme, Pictograph,
+  Animation, Card), the Theme column being BackgroundTab's `column` mode in
+  the same DisplaySection frame. The tier is used only where each column
+  keeps at least 17rem of content, a tab of 81rem (COLUMNS_MIN_REM below);
+  under it the drill tier's four boxes show. The columns tier's stage floor
+  is back at 14rem (it was 9rem to pay for the band). `/settings/theme`
+  opens the Theme screen on the drill tier and opens nothing on the columns
+  tier, where the Theme column is already on screen.
+
+  Revision: two-by-two cells (2026-11-02). Austen, at 1740×1420: "no it
+  looks awkward". The four columns did not share a shape: the Theme preview
+  ran from header to floor while the other three stages floated small in
+  the middle of tall, empty columns. The wide tier is now a 2×2 grid (Theme
+  and Pictograph on top, Animation and Card below) of equal cells, each its
+  header, then its stage on the left at the cell's full height and its
+  switches centred on the right (DisplaySection `cell`). The four-across
+  arrangement is gone. The tier needs both a width and a height
+  (WIDE_MIN_WIDTH_REM, WIDE_MIN_HEIGHT_REM below); under either, the drill
+  tier shows. Cells at least CELL_TILES_MIN_REM tall draw picture tiles,
+  shorter cells draw the drill screens' chips, all four alike.
+  `/settings/theme` behaves on the wide tier as it did on the columns tier.
+
+  Revision: cells fill, theme shows through (2026-11-03). Austen, at
+  1740×1420: "I don't think we're utilizing the available space much",
+  "a little over containerized", "the gray theme against whatever
+  background we've chosen just feels a little drab", and the theme buttons
+  "could just be taller in order to fill it, so you see more of the
+  background". The Theme cell's stage runs the body's full height and its
+  ten tiles fill the pane beside it top to bottom (2×5, or 5×2 on a pane of
+  30rem or more that is 2 to 2.5 times as wide as tall; BackgroundTab).
+  The workspace's surface is the theme's panel glass (`--theme-panel-bg`)
+  instead of the near-black mix, and the cells and the animation slot lost
+  their 2% tints, so only the frame and the cell hairlines remain.
+
+  Revision: Theme applies on click (2026-11-06). Austen: "Should we have a use
+  button when we choose the theme or should we just make it so you click your
+  theme and then it immediately changes the background? I think that would be
+  better, the second one." The Use theme button
+  is gone on both tiers; BackgroundTab applies a theme when its tile is pressed.
 -->
 <script lang="ts">
   import { onMount, untrack, type Component } from "svelte";
@@ -37,7 +80,6 @@
   import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
-  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
   import { BackgroundType } from "@austencloud/backgrounds";
   import {
@@ -45,7 +87,6 @@
     getCardMetadata,
   } from "@austencloud/backgrounds/card";
   import type { AppSettings } from "../../domain/app-settings";
-  import SettingsSectionHeader from "../SettingsSectionHeader.svelte";
   import BackgroundTab from "./background/BackgroundTab.svelte";
   import ThemePreview from "./background/ThemePreview.svelte";
   import DisplaySection from "./display/DisplaySection.svelte";
@@ -95,6 +136,7 @@
     example: DisplayExample | null;
     onBack?: () => void;
     compact?: boolean;
+    cell?: boolean;
   }> | null>(null);
   // The animation box's thumbnail is the section's own stage, loaded lazily
   // with it: it carries the animation engine.
@@ -102,28 +144,77 @@
     null
   );
 
-  // The tab's own width decides the tier, the same 64rem its container
-  // queries use; 0 until the first measure, when nothing is laid out yet.
+  // The tab's own size decides the tier; 0 until the first measure, when
+  // nothing is laid out yet. The workspace takes 2cqi side margins, block
+  // margins of at most 1.75rem, a 1px border all round and one 1px hairline
+  // each way, and splits what is left into two by two cells.
+  //
+  // Width: a cell's body pads 1rem on both sides and keeps a 1rem gap, and
+  // needs 17rem (272px) of switches beside a stage of at least 14rem
+  // (224px): (0.96W - 3) / 2 >= 32 + 16 + 272 + 224 = 544 gives
+  // W >= 1137px; 71.25rem = 1140px.
+  const WIDE_MIN_WIDTH_REM = 71.25;
+  // Height: a cell's header is 73px and its body pads 0.75rem top and
+  // bottom, over a 14rem stage: (H - 2 x 28 - 3) / 2 >= 73 + 24 + 224 = 321
+  // gives H >= 701px; 44rem = 704px.
+  const WIDE_MIN_HEIGHT_REM = 44;
+  // Cells at least this tall draw picture tiles, shorter ones chips, all
+  // four alike. The card's tile deck is the tallest of the four: 388px at
+  // its smallest tiles (measured), and about 432px where a pane under 18rem
+  // folds four Info picks (a signed-in user's QR / Mandala / Both / None)
+  // into two rows. A cell gives its stage and switches its height less the
+  // 73px header and 24px of padding: 388 + 97 = 485px, 30.25rem = 484px
+  // (a 1920×1080 cell is 486px); 432 + 97 = 529px, 33rem = 528px.
+  const CELL_TILES_MIN_REM = 30.25;
+  const CELL_TILES_NARROW_MIN_REM = 33;
   let tabWidth = $state(0);
+  let tabHeight = $state(0);
   let remPx = $state(16);
-  const tier = $derived<"columns" | "drill" | null>(
-    tabWidth === 0 ? null : tabWidth >= 64 * remPx ? "columns" : "drill"
+  const tier = $derived<"cells" | "drill" | null>(
+    tabWidth === 0 || tabHeight === 0
+      ? null
+      : tabWidth >= WIDE_MIN_WIDTH_REM * remPx &&
+          tabHeight >= WIDE_MIN_HEIGHT_REM * remPx
+        ? "cells"
+        : "drill"
   );
+  // A cell's size from the tab's, by the same margins the workspace uses,
+  // so the first frame already draws the right switches. The card's pane
+  // is what its 1.2 stage leaves of the cell (DisplaySection `cell`).
+  const cellChips = $derived.by(() => {
+    const clamp = (min: number, value: number, max: number) =>
+      Math.min(Math.max(min, value), max);
+    const marginInline = clamp(0.75 * remPx, 0.02 * tabWidth, 3 * remPx);
+    const marginBlock = clamp(0.75 * remPx, 0.014 * tabWidth, 1.75 * remPx);
+    const cellWidth = (tabWidth - 2 * marginInline - 3) / 2;
+    const cellHeight = (tabHeight - 2 * marginBlock - 3) / 2;
+    const body = cellWidth - 3 * remPx;
+    const stageHeight = cellHeight - 73 - 1.5 * remPx;
+    const cardPane = body - Math.min(1.2 * stageHeight, body - 17 * remPx);
+    const needed =
+      cardPane >= 18 * remPx ? CELL_TILES_MIN_REM : CELL_TILES_NARROW_MIN_REM;
+    return cellHeight < needed * remPx;
+  });
+
   let open = $state<SectionKind | null>(null);
   const back = () => (open = null);
 
   // `/settings/theme` (the old Theme tab, and the account-setup checklist's
-  // theme task) lands here with the Theme screen asked for.
+  // theme task) lands here with the Theme screen asked for. The drill tier
+  // opens it; the wide tier already shows the Theme cell, so the
+  // request is only cleared. It waits for the first measure to know which.
   $effect(() => {
     const request = navigationState.requestedScreen;
+    const current = tier;
     if (
+      current === null ||
       request?.moduleId !== "settings" ||
       request.sectionId !== "display" ||
       request.screen !== "theme"
     )
       return;
     untrack(() => {
-      open = "theme";
+      if (current === "drill") open = "theme";
       navigationState.clearRequestedScreen();
     });
   });
@@ -198,22 +289,19 @@
 <!-- What each box's thumbnail draws: its section's stage (the card at its
      first length), reading the same managers, so a switch flipped on a
      screen shows in its box on the way back. -->
-{#snippet themePicture()}
-  <span
-    class="theme-picture"
-    style:background={themeCard?.gradient}
-    aria-hidden="true"
-  >
-    <img src={`/images/theme-previews/${themeType}.webp`} alt="" />
-  </span>
-{/snippet}
-
 {#snippet thumbnail(kind: SectionKind, shown: DisplayExample)}
   {#if kind === "theme"}
     {#if LIVE_THEME_THUMBNAIL}
       <ThemePreview type={themeType} fallback={themeCard?.gradient ?? ""} />
     {:else}
-      {@render themePicture()}
+      <!-- The showroom's own preview image over the theme's gradient. -->
+      <span
+        class="theme-picture"
+        style:background={themeCard?.gradient}
+        aria-hidden="true"
+      >
+        <img src={`/images/theme-previews/${themeType}.webp`} alt="" />
+      </span>
     {/if}
   {:else if kind === "pictograph"}
     <PictographContainer
@@ -228,15 +316,18 @@
   {/if}
 {/snippet}
 
-{#snippet animationSection(onBack?: () => void)}
+{#snippet animationSection(
+  onBack: (() => void) | undefined,
+  compact: boolean,
+  cell: boolean
+)}
   <Crossfade
     key={AnimationSection ? "live" : "loading"}
     duration={DURATION.normal}
-    animateHeight={!onBack}
-    fill={!!onBack}
+    fill
   >
     {#if AnimationSection}
-      <AnimationSection {example} {onBack} compact={!!onBack} />
+      <AnimationSection {example} {onBack} {compact} {cell} />
     {:else}
       <DisplaySection
         kind="animation"
@@ -245,6 +336,7 @@
         caption={t("settings_display_animation_caption")}
         onReset={() => {}}
         {onBack}
+        {cell}
       >
         {#snippet stage()}{/snippet}
         {#snippet controls()}{/snippet}
@@ -253,53 +345,30 @@
   </Crossfade>
 {/snippet}
 
-<div class="display-tab" bind:clientWidth={tabWidth} data-tier={tier}>
-  {#if tier === "columns"}
-    <div class="display-workspace columns">
-      <div class="theme-band" data-theme-band>
-        <SettingsSectionHeader
+<div
+  class="display-tab"
+  bind:clientWidth={tabWidth}
+  bind:clientHeight={tabHeight}
+  data-tier={tier}
+>
+  {#if tier === "cells"}
+    <div class="display-workspace cells">
+      <div
+        class="display-columns"
+        data-controls={cellChips ? "chips" : "tiles"}
+      >
+        <BackgroundTab
+          settings={settings ?? ({} as AppSettings)}
+          {onUpdate}
+          cell
+          compact={cellChips}
           title={t("tab_settings_theme")}
-          description={themeName}
-          headingId="{uid}-theme-title"
-        >
-          {#snippet leading()}
-            <span class="band-thumb">{@render themePicture()}</span>
-          {/snippet}
-          {#snippet action()}
-            <PanelButton
-              variant="quiet"
-              onclick={() => (open = open === "theme" ? null : "theme")}
-              ariaExpanded={open === "theme"}
-              ariaLabel="{t('settings_change')}: {t('tab_settings_theme')}"
-            >
-              {t("settings_change")}
-            </PanelButton>
-          {/snippet}
-        </SettingsSectionHeader>
-      </div>
-      <div class="display-body">
-        <Crossfade
-          key={open === "theme" ? "theme" : "columns"}
-          duration={DURATION.normal}
-          fill
-        >
-          {#if open === "theme"}
-            <div class="showroom-slot">
-              <BackgroundTab
-                settings={settings ?? ({} as AppSettings)}
-                {onUpdate}
-                onBack={back}
-                title={t("settings_choose_theme")}
-              />
-            </div>
-          {:else}
-            <div class="display-columns">
-              <PictographDisplaySection {example} />
-              <div class="animation-slot">{@render animationSection()}</div>
-              <CardDisplaySection {example} />
-            </div>
-          {/if}
-        </Crossfade>
+        />
+        <PictographDisplaySection {example} cell compact={cellChips} />
+        <div class="animation-slot">
+          {@render animationSection(undefined, cellChips, true)}
+        </div>
+        <CardDisplaySection {example} cell compact={cellChips} />
       </div>
     </div>
   {:else if tier === "drill"}
@@ -316,7 +385,9 @@
         {:else if open === "pictograph"}
           <PictographDisplaySection {example} onBack={back} compact />
         {:else if open === "animation"}
-          <div class="animation-slot">{@render animationSection(back)}</div>
+          <div class="animation-slot">
+            {@render animationSection(back, true, false)}
+          </div>
         {:else if open === "card"}
           <CardDisplaySection {example} onBack={back} compact />
         {:else}
@@ -378,8 +449,11 @@
     container: display-tab / inline-size;
   }
 
-  /* Matches the Preferences, Account and Props panels: one bordered surface,
-     sections opened by header bands and split by hairlines. */
+  /* One bordered surface, sections opened by header bands and split by
+     hairlines. Its surface is the theme's own panel glass, the translucent
+     `--theme-panel-bg` the shell's back pill uses, not the 86% near-black
+     mix of the other settings panels (2026-11-03): the chosen theme shows
+     through the whole tab. */
   .display-workspace {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
@@ -389,35 +463,20 @@
     overflow: hidden;
     border: 1px solid var(--theme-stroke-strong, var(--theme-stroke));
     border-radius: 1.25em;
-    background: color-mix(
-      in srgb,
-      var(--theme-panel-bg, rgba(0, 0, 0, 0.88)) 14%,
-      #070b10 86%
-    );
+    background: var(--theme-panel-bg, rgba(0, 0, 0, 0.8));
     box-shadow: var(--theme-panel-shadow, 0 1rem 3rem rgba(0, 0, 0, 0.35));
     isolation: isolate;
     --settings-row-inline: 1.15em;
   }
 
   :global(html[data-theme-luminance="bright"]) .display-workspace {
-    background: color-mix(
-      in srgb,
-      var(--theme-panel-bg, rgba(255, 255, 255, 0.88)) 14%,
-      #f6f7f9 86%
-    );
+    background: var(--theme-panel-bg, rgba(255, 255, 255, 0.88));
   }
 
-  /* The crossfade wrapper sizes to its content, so the slot carries the
-     section tint down the full column instead of the section. */
   .animation-slot {
     display: flex;
     flex-direction: column;
     min-width: 0;
-    background: color-mix(in srgb, var(--theme-text) 2%, transparent);
-  }
-
-  .animation-slot :global(.display-section) {
-    background: transparent;
   }
 
   @container display-tab (max-width: 32rem) {
@@ -647,97 +706,49 @@
     }
   }
 
-  /* Side by side: the Theme band, then three equal columns split by
-     vertical hairlines, filling the tab's height. Each section's stage takes
-     its column's free height (DisplaySection), so the band widens with the
-     window's height too: a column only as wide as the 2600px shell allows
-     would make a 4K column ~830px wide and ~2000px tall, and no square stage
-     can fill that. The band stays the shell's on a laptop and grows toward
-     full width where the window is tall enough to use it. */
-  .display-workspace.columns {
-    grid-template-rows: auto minmax(0, 1fr);
-    flex: 1 1 auto;
-    min-height: 0;
-  }
-
-  /* One row of the section-header family across the top: the theme's
-     picture where the other headers carry an icon tile, the name as the
-     caption, Change on the right. It takes its own row and nothing else. */
-  .theme-band {
-    min-width: 0;
-    background: color-mix(in srgb, var(--theme-text) 2%, transparent);
-  }
-
-  .band-thumb {
-    flex: 0 0 auto;
-    width: 3.6rem;
-    aspect-ratio: 1.2;
-    overflow: hidden;
-    border-radius: 0.5rem;
-    border: 1px solid var(--theme-stroke);
-  }
-
-  /* The columns and the showroom take turns in the one box under the band;
-     the crossfade stacks both there. A size container, so the showroom's
-     screen sets its stage beside its choices on a wide box. */
-  .display-body {
-    position: relative;
-    min-height: 0;
-    container: display-screen / size;
-  }
-
-  .display-body > :global(.crossfade) {
-    position: absolute;
-    inset: 0;
-  }
-
-  .display-body > :global(.crossfade > .layer) {
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-  }
-
-  .showroom-slot {
-    display: flex;
-    flex-direction: column;
+  /* Two by two (2026-11-02): four equal cells filling the tab, Theme and
+     Pictograph on top, Animation and Card below, split by structural
+     hairlines in the theme stroke. Each cell lays out its stage beside its
+     switches (DisplaySection `cell`). */
+  .display-workspace.cells {
+    grid-template-rows: minmax(0, 1fr);
     flex: 1 1 auto;
     min-height: 0;
   }
 
   .display-columns {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    grid-template-rows: minmax(0, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(2, minmax(0, 1fr));
     flex: 1 1 auto;
     min-height: 0;
   }
 
-  .display-columns > :global(* + *) {
+  .display-columns > :global(:nth-child(even)) {
     border-left: 1px solid var(--theme-stroke);
+  }
+
+  .display-columns > :global(:nth-child(n + 3)) {
+    border-top: 1px solid var(--theme-stroke);
   }
 
   .display-columns > :global(*) {
     display: flex;
     flex-direction: column;
+    min-width: 0;
     min-height: 0;
   }
 
-  /* The crossfade box and its layer pass the column's height through. Its
-     animateHeight writes the stacked tier's content height inline; here
-     the row fixes the height, so the column's wins. */
+  /* The crossfade box and its layer pass the cell's height through. */
   .display-columns .animation-slot > :global(.crossfade) {
     flex: 1 1 auto;
-    height: auto !important;
     min-height: 0;
-    grid-template-rows: minmax(0, 1fr);
   }
 
-  /* animateHeight pins each layer to its natural height (align-self:
-     start); a full-height layer is its natural height here. */
   .display-columns .animation-slot :global(.crossfade > .layer) {
-    height: 100%;
     display: flex;
     flex-direction: column;
+    min-height: 0;
   }
 
   @media (min-width: 64rem) {

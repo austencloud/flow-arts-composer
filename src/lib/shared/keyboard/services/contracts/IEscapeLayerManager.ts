@@ -2,7 +2,9 @@ export type EscapeLayerResult = "dismissed" | "blocked" | "unhandled";
 
 export interface EscapeLayerRegistration {
   id: string;
-  dismiss: () => void;
+  /** Return "remains" when the press stepped the layer back without closing
+   *  it, so the next press reaches it again. */
+  dismiss: () => void | "remains";
   canDismiss: () => boolean;
 }
 

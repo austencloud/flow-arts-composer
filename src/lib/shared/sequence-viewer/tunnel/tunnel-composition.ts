@@ -1,5 +1,6 @@
 import { t } from "#lib/shared/i18n/i18n.svelte.js";
 import { z } from "zod";
+import { normalizeLegacySequence } from "@tka/tka-types";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   DEFAULT_CONFIG,
@@ -140,15 +141,22 @@ const CopyOpSchema = z.discriminatedUnion("kind", [
 
 // SequenceData is deliberately open at this boundary. Its hydrated motion
 // payload evolves independently, while a tunnel only needs a stable identity
-// and a non-empty steps array to preserve a performer's choreography.
+// and a non-empty steps array to preserve a performer's choreography. The one
+// thing it does settle is hand identity: casts saved before the left/right
+// rename still hold motions.blue/red, which the renderer reads as no motion and
+// draws a blank stage.
 const TunnelSequenceSchema = z
-  .object({
-    id: z.string().min(1),
-    name: z.string(),
-    word: z.string(),
-    steps: z.array(z.any()),
-  })
-  .passthrough()
+  .preprocess(
+    normalizeLegacySequence,
+    z
+      .object({
+        id: z.string().min(1),
+        name: z.string(),
+        word: z.string(),
+        steps: z.array(z.any()),
+      })
+      .passthrough()
+  )
   // Identity at runtime; it only restates the openness above as the type the
   // rest of the module works with.
   .transform((value): SequenceData => value as unknown as SequenceData);

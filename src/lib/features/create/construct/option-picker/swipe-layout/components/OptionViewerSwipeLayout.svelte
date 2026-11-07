@@ -86,7 +86,8 @@ Features:
     openIntoWorkspace?: boolean;
     /** A stacked phone-width picker. Its letter-type tabs name the selected
      *  group and, with the swipe, move between groups, so the arrows' gutters
-     *  and the repeated type heading give their room back to the grid. */
+     *  go back to the grid and the type heading takes only height the grid
+     *  leaves over. */
     phoneTier?: boolean;
     /** The phone tier on a wide, short picker (the unfolded Fold): the tabs
      *  stand in a rail down the left edge so the grid keeps the full height,
@@ -684,7 +685,7 @@ Features:
                   {layoutConfig}
                   {currentSequence}
                   {contentAreaBounds}
-                  showHeader={!phoneTier}
+                  headerOnlyWithRoom={phoneTier}
                   columnOptions={typeRail
                     ? CONSTRUCT_TYPE_RAIL_COLUMN_OPTIONS
                     : undefined}

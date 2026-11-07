@@ -24,6 +24,7 @@ import {
 } from "#lib/shared/foundation/services/storage-manager.js";
 import { ANDROID_NOTIFICATION_CHANNELS } from "../notification-channels";
 import { VAPID_KEY } from "../config/vapid";
+import { fcmTokenDocId } from "../fcm-token-doc-id";
 
 const FCM_TOKENS_COLLECTION = "fcmTokens";
 
@@ -152,6 +153,11 @@ export class FCMTokenManager {
     } catch (error) {
       console.error("[FCMTokenManager] Token unregistration failed:", error);
     }
+  }
+
+  /** The token this device last registered for this account, if any. */
+  registeredTokenFor(userId: string): string | null {
+    return this.currentTokenOwnerId === userId ? this.currentToken : null;
   }
 
   async isSupported(): Promise<boolean> {
@@ -391,7 +397,7 @@ export class FCMTokenManager {
   ): Promise<void> {
     const firestore = await getFirestoreInstance();
     if (!canStore()) return;
-    const tokenHash = await this.hashToken(token);
+    const tokenHash = await fcmTokenDocId(token);
     if (!canStore()) return;
     const deviceId = getDeviceId();
     const tokensCol = collection(
@@ -448,23 +454,12 @@ export class FCMTokenManager {
 
   private async removeToken(userId: string, token: string): Promise<void> {
     const firestore = await getFirestoreInstance();
-    const tokenHash = await this.hashToken(token);
+    const tokenHash = await fcmTokenDocId(token);
     const tokenRef = doc(
       collection(firestore, "users", userId, FCM_TOKENS_COLLECTION),
       tokenHash
     );
     await deleteDoc(tokenRef);
-  }
-
-  private async hashToken(token: string): Promise<string> {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(token);
-    const hash = await crypto.subtle.digest("SHA-256", data);
-    const hashArray = Array.from(new Uint8Array(hash));
-    return hashArray
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("")
-      .slice(0, 32);
   }
 
   private getDeviceLabel(): string {

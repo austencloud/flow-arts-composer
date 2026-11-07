@@ -86,6 +86,13 @@ function main() {
     );
     process.exit(1);
   }
+  // sw.js loads this inside a try/catch, so a build without it would ship and
+  // quietly lose one-tap sign-in. scripts/build-phone-sign-in-worker.mjs makes it.
+  const signInWorker = path.join(path.dirname(target), "phone-sign-in-worker.js");
+  if (!fs.existsSync(signInWorker)) {
+    console.error(`[stamp-service-worker] missing ${signInWorker}`);
+    process.exit(1);
+  }
   const buildId = resolveBuildId();
   try {
     fs.writeFileSync(target, stampServiceWorker(source, buildId));

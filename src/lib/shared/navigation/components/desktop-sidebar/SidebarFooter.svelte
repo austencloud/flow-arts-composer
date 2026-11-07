@@ -157,9 +157,7 @@
       <div class="button-icon">
         <i class="fas fa-cog" aria-hidden="true"></i>
       </div>
-      {#if !isCollapsed}
-        <span class="button-label">{t("module_settings")}</span>
-      {/if}
+      <span class="button-label">{t("module_settings")}</span>
     </button>
 
     <!-- Jump to is a quiet footer utility, not a selected navigation row. -->
@@ -175,9 +173,7 @@
       <div class="button-icon">
         <i class="fas fa-search" aria-hidden="true"></i>
       </div>
-      {#if !isCollapsed}
-        <span class="button-label">{t("nav_ui_jump_to")}</span>
-      {/if}
+      <span class="button-label">{t("nav_ui_jump_to")}</span>
     </button>
 
     <!-- Inbox Button (members only) -->
@@ -199,13 +195,11 @@
             </span>
           {/if}
         </div>
-        {#if !isCollapsed}
-          <span class="button-label">{t("module_inbox")}</span>
-          {#if hasUnread}
-            <span class="unread-label-badge">
-              {badgeCount}
-            </span>
-          {/if}
+        <span class="button-label">{t("module_inbox")}</span>
+        {#if hasUnread}
+          <span class="unread-label-badge">
+            {badgeCount}
+          </span>
         {/if}
       </button>
     {/if}
@@ -223,9 +217,7 @@
       <div class="button-icon">
         <SelectedPropPreview />
       </div>
-      {#if !isCollapsed}
-        <span class="button-label">{propLabel}</span>
-      {/if}
+      <span class="button-label">{propLabel}</span>
     </button>
 
     <!-- Account Row (popover rendered outside nav to avoid overflow clipping) -->
@@ -270,22 +262,22 @@
     gap: 8px;
     padding: 12px 10px;
     border-top: 1px solid var(--theme-stroke);
-    /* Pin footer content to the expanded width (like .navigation-content).
-       The nav's overflow:hidden clips it while the width animates, so footer
-       icons stay left-anchored at x=32 instead of drifting as the box grows. */
+    /* Pin footer content to the expanded width (like .navigation-content) in
+       BOTH states. The nav's overflow:hidden clips it while the width animates,
+       so the icons stay left-anchored and the top divider ends at the nav's
+       edge, never snapping to the rail's width while the nav is still wide. */
     width: 220px;
   }
 
   .sidebar-footer.collapsed {
-    padding: 12px 8px;
-    align-items: center;
-    /* Pin to the rail width so centered buttons stay at x=32 during the
-       collapse animation instead of flying to the center of the wide box. */
-    width: 64px;
+    align-items: flex-start;
   }
 
+  /* Full width in both states: the rail's align-items:flex-start would otherwise
+     shrink it to the row, and the row's width could not ease against it. */
   .account-section {
     position: relative;
+    width: 100%;
   }
 
   /* ============================================================================
@@ -303,11 +295,13 @@
     border-radius: 12px;
     color: var(--theme-text-dim, var(--theme-text-dim));
     cursor: pointer;
-    /* Transition only VISUALS, never geometry. The rail→expanded swap flips
-       the button width (44↔200) instantly; the nav's overflow:hidden clip
-       reveals it. Animating width here would squeeze the flex icon column
-       mid-flight (the left-then-right icon jump). */
+    /* The width moves 156px (44↔200), as the nav's does (64↔220), on the nav's
+       token and curve, so the button's right edge keeps its distance from the
+       nav's. The icon column is pinned by flex-shrink:0, so it never squeezes.
+       Revised 2026-11-06: the width used to snap, which cut the label off on
+       the first frame of a collapse. */
     transition:
+      width var(--duration-emphasis) var(--ease-out),
       background var(--duration-normal) var(--ease-standard),
       border-color var(--duration-normal) var(--ease-standard),
       color var(--duration-normal) var(--ease-standard);
@@ -383,25 +377,34 @@
     background: var(--theme-card-hover-bg);
   }
 
+  /* Always mounted, so a label moves with the width in both directions. It
+     opens on the width's curve with no delay. It closes on the shorter token,
+     so it has faded before the narrowing button reaches its letters. */
   .button-label {
     flex: 1;
+    min-width: 0;
+    overflow: hidden;
     text-align: left;
     font-weight: 500;
-
-    /* Delayed fade-in animation when sidebar expands (Google Calendar-style) */
-    animation: label-fade-in var(--duration-normal) var(--ease-standard-out)
-      var(--duration-fast) both;
+    white-space: nowrap;
+    transition: opacity var(--duration-normal) var(--ease-out);
   }
 
-  @keyframes label-fade-in {
-    from {
-      opacity: 0;
-      transform: translateX(-4px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
+  .footer-button.collapsed .button-label,
+  .footer-button.collapsed .unread-label-badge {
+    opacity: 0;
+    transition: opacity var(--duration-instant) var(--ease-out);
+  }
+
+  .unread-label-badge {
+    transition: opacity var(--duration-normal) var(--ease-out);
+  }
+
+  .footer-button.collapsed .unread-label-badge {
+    min-width: 0;
+    width: 0;
+    padding: 0;
+    overflow: hidden;
   }
 
   .prop-button {
@@ -496,7 +499,9 @@
   @media (prefers-reduced-motion: reduce) {
     .sidebar-footer,
     .footer-button,
-    .button-icon {
+    .button-icon,
+    .button-label,
+    .unread-label-badge {
       transition: none !important;
     }
 

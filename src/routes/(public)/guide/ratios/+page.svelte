@@ -1353,7 +1353,7 @@
 {/snippet}
 
 {#snippet matrix()}
-  <div class="matrix-stage">
+  <div class="matrix-stage" data-fit-self-scroll>
     {#if loadError}
       <p class="load-status error">
         {tDynamic("guide_ratios_drawings_unavailable")}
@@ -1881,6 +1881,22 @@
   @container (min-width: 48rem) {
     .family-list:not(.solo) {
       grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  /* A short, wide window spends its width: the swap panels fill it, and one
+     family's shapes run in a single row. */
+  @media (max-height: 520px) and (min-width: 640px) {
+    .swap-motion {
+      inline-size: 100%;
+    }
+
+    .family-list.solo .family {
+      max-inline-size: calc(56rem * var(--fit, 1));
+    }
+
+    .family-list.solo .family-shapes {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
     }
   }
 

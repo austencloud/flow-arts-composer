@@ -605,4 +605,20 @@ Supports two navigation modes:
       display: none;
     }
   }
+
+  /* A phone held sideways, on the frame that sits its board under this strip:
+     the same 48px strip, so the board gets the height. */
+  @media (max-height: 480px) and (min-width: 700px) {
+    .concept-detail:has(:global(.lesson-stage-frame.square)) .header-bar {
+      height: 3rem;
+      padding: 0 0.5rem;
+    }
+
+    .concept-detail:has(:global(.lesson-stage-frame.square)) .back-button,
+    .concept-detail:has(:global(.lesson-stage-frame.square)) .reference-link,
+    .concept-detail:has(:global(.lesson-stage-frame.square)) .mode-toggle {
+      min-height: 2.5rem;
+      padding-block: 0;
+    }
+  }
 </style>

@@ -21,7 +21,7 @@ The full viewport pass alone cannot approve a visual direction.
   Inspect the affected viewport tiers and every changed state.
 - Full pass: a new surface, responsive recomposition, shared primitive geometry,
   layout/grid/flex/breakpoint change, added or removed element, or a claimed fix
-  for a cross-viewport defect. Inspect all seven viewport tiers.
+  for a cross-viewport defect. Inspect all eight viewport tiers.
 - If a string, asset, or async state can change geometry, classify it by the
   resulting geometry rather than by file type.
 
@@ -31,6 +31,7 @@ Required full-pass CSS viewports:
 | --------------- | --------- |
 | iPhone SE       | 375×667   |
 | short landscape | 960×412   |
+| Fold unfolded   | 707×772   |
 | tablet portrait | 820×1180  |
 | laptop          | 1440×900  |
 | 4K at 200%      | 1920×1080 |
@@ -38,7 +39,12 @@ Required full-pass CSS viewports:
 | 4K at 100%      | 3840×2160 |
 
 Skip a tier only when the surface cannot appear there; name the reason in the
-verification evidence. New layouts also need a 200% browser-zoom reflow check.
+verification evidence.
+The Fold unfolded tier is the Galaxy Z Fold 6 inner screen held upright with
+the browser bar showing: wider than a phone, shorter than a tablet. It is
+the only tier between 520 and 960 px wide with under 800 px of height, so a
+layout that fits phones and tablets can still overflow there (the guide's
+card pages did on 2026-11-03). New layouts also need a 200% browser-zoom reflow check.
 
 ## Browser Loop
 

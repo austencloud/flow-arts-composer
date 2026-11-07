@@ -275,9 +275,10 @@ describe("create delete shortcuts yield to a foreign open layer", () => {
  */
 describe("create delete shortcuts through the shortcut manager", () => {
   const removeStep = vi.fn();
+  const executeSequenceAction = vi.fn();
   let manager: KeyboardShortcutManager | null = null;
 
-  function startCreateShortcuts() {
+  function startCreateShortcuts(panelState: object = {}) {
     manager = new KeyboardShortcutManager(new ShortcutRegistry());
     registerCreateShortcuts(manager, {
       settings: { enableSingleKeyShortcuts: true },
@@ -298,8 +299,9 @@ describe("create delete shortcuts through the shortcut manager", () => {
         getActiveTabSequenceState: () => sequenceState,
       },
       constructTabState: {},
-      panelState: {},
+      panelState,
       removeStep,
+      executeSequenceAction,
     } as unknown as Parameters<typeof setCreateModuleStateRef>[0]);
   }
 
@@ -313,6 +315,47 @@ describe("create delete shortcuts through the shortcut manager", () => {
     target.dispatchEvent(event);
     return event;
   }
+
+  // The card is out of reach while saving, but these keys listen on the window
+  // and don't care. Both would change the sequence with no sign on screen until
+  // it had been saved that way.
+  describe("while the save view is open", () => {
+    const pressAltM = (target: HTMLElement) => {
+      target.focus();
+      target.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: "m",
+          altKey: true,
+          bubbles: true,
+          cancelable: true,
+        })
+      );
+    };
+    const focusable = () =>
+      mount(`<button type="button">Save</button>`).querySelector("button")!;
+
+    it("Delete and Backspace leave the hidden selected step alone", () => {
+      startCreateShortcuts({ isSaveToLibraryPanelOpen: true });
+      const target = focusable();
+      press(target, "Delete");
+      press(target, "Backspace");
+      expect(removeStep).not.toHaveBeenCalled();
+    });
+
+    it("the Alt transforms leave the sequence alone", () => {
+      startCreateShortcuts({ isSaveToLibraryPanelOpen: true });
+      const target = focusable();
+      pressAltM(target);
+      expect(executeSequenceAction).not.toHaveBeenCalled();
+    });
+
+    it("the Alt transforms still run once it has closed", () => {
+      startCreateShortcuts({ isSaveToLibraryPanelOpen: false });
+      const target = focusable();
+      pressAltM(target);
+      expect(executeSequenceAction).toHaveBeenCalledTimes(1);
+    });
+  });
 
   // Drawer.svelte stamps these attributes on its open <dialog>.
   function drawer(
@@ -348,6 +391,7 @@ describe("create delete shortcuts through the shortcut manager", () => {
     manager = null;
     setCreateModuleStateRef(null);
     removeStep.mockReset();
+    executeSequenceAction.mockReset();
     document.body.innerHTML = "";
   });
 
@@ -402,7 +446,10 @@ describe("create delete shortcuts through the shortcut manager", () => {
     for (const target of [picker, option]) {
       for (const key of ["Delete", "Backspace"] as const) {
         const event = press(target, key);
-        expect(removeStep, `${key} on ${target.tagName}`).not.toHaveBeenCalled();
+        expect(
+          removeStep,
+          `${key} on ${target.tagName}`
+        ).not.toHaveBeenCalled();
         expect(event.defaultPrevented, `${key} on ${target.tagName}`).toBe(
           false
         );

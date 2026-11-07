@@ -3,10 +3,13 @@ import { fade, type TransitionConfig } from "svelte/transition";
 import {
   DURATION,
   EASE_STANDARD,
+  flyFade as packageFlyFade,
+  growFade as packageGrowFade,
   motionDuration,
   popIn as packagePopIn,
   reducedMotion,
 } from "@austencloud/motion";
+import { replayRecording } from "#lib/shared/analytics/replay-recording.js";
 import { cssCubicBezier } from "./ws-ease";
 
 // Shared owners come from the package (same code Ringmaster and the website
@@ -16,19 +19,23 @@ export {
   STEP_DRIFT_PX,
   arrive,
   flipDuration,
-  flyFade,
-  growFade,
   leave,
   motionDuration,
   reducedMotion,
 } from "@austencloud/motion";
 
+// The package's fades, made visible to session replay (see recordedMotion).
+// Most of the Composer's in/out/transition directives use these four.
+export const flyFade = recordedMotion(packageFlyFade);
+export const growFade = recordedMotion(packageGrowFade);
 // Composer also transitions SVG groups. The package implementation only
-// ignores this argument, so keep its identity while retaining that wider use.
-export const popIn = packagePopIn as (
-  node: Element,
-  params?: Parameters<typeof packagePopIn>[1]
-) => ReturnType<typeof packagePopIn>;
+// ignores the node's type, so the wider signature is safe.
+export const popIn = recordedMotion(
+  packagePopIn as (
+    node: Element,
+    params?: Parameters<typeof packagePopIn>[1]
+  ) => ReturnType<typeof packagePopIn>
+);
 
 const STANDARD_MOTION_EASING = EASE_STANDARD;
 
@@ -404,7 +411,7 @@ interface OpaqueFadeParams {
  * whole old page mounted beside the new one until it ends (the Guide's
  * Dual-Shift page lingered ~500 ms under the next topic, 2026-11-01).
  */
-export function opaqueFade(
+function restingFade(
   node: Element,
   {
     duration = DURATION.fast,
@@ -422,4 +429,71 @@ export function opaqueFade(
     return fade(node, { duration: ms, delay, easing });
   }
   return { duration: ms, delay, easing, css: (t) => `opacity: ${t * opacity}` };
+}
+
+export const opaqueFade = recordedMotion(restingFade);
+
+// The inline values a recorded transition found on each node before it first
+// wrote, shared by every transition on that node so an outro reversed into an
+// intro still restores what the node had before either began.
+const inlineBeforeMotion = new WeakMap<
+  Element,
+  Map<string, { value: string; priority: string }>
+>();
+
+/**
+ * While session replay records this visit, the transition is painted frame by
+ * frame into the node's inline style instead of handed to the browser as a Web
+ * Animation. The recorder sees style changes but not Web Animations, so a
+ * replay showed every fade and slide as a jump (and cross-fading glyphs as two
+ * at full strength). An intro hands the node back with its inline style as it
+ * found it. Visits nobody records keep the Web Animation, which costs nothing
+ * per frame on the main thread.
+ */
+export function recordedMotion<N extends Element, P, O>(
+  transition: (node: N, params?: P, options?: O) => TransitionConfig
+): (node: N, params?: P, options?: O) => TransitionConfig {
+  return (node, params, options) => {
+    const style = (node as Element as HTMLElement | SVGElement).style;
+    // A transition cut short left its frame inline. Put the node back first,
+    // so the next one measures and pins the node's own style, not that frame.
+    restoreInlineBeforeMotion(node, style);
+    const config = transition(node, params, options);
+    const { css, tick, ...rest } = config;
+    if (!css || !replayRecording()) return config;
+    return {
+      ...rest,
+      tick: (t, u) => {
+        tick?.(t, u);
+        let before = inlineBeforeMotion.get(node);
+        if (!before) inlineBeforeMotion.set(node, (before = new Map()));
+        for (const declaration of css(t, u).split(";")) {
+          const colon = declaration.indexOf(":");
+          if (colon < 0) continue;
+          const property = declaration.slice(0, colon).trim();
+          if (!before.has(property)) {
+            before.set(property, {
+              value: style.getPropertyValue(property),
+              priority: style.getPropertyPriority(property),
+            });
+          }
+          style.setProperty(property, declaration.slice(colon + 1).trim());
+        }
+        if (t === 1) restoreInlineBeforeMotion(node, style);
+      },
+    };
+  };
+}
+
+function restoreInlineBeforeMotion(
+  node: Element,
+  style: CSSStyleDeclaration
+): void {
+  const before = inlineBeforeMotion.get(node);
+  if (!before) return;
+  for (const [property, { value, priority }] of before) {
+    if (value) style.setProperty(property, value, priority);
+    else style.removeProperty(property);
+  }
+  inlineBeforeMotion.delete(node);
 }

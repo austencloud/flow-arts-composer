@@ -1,7 +1,12 @@
 // @vitest-environment jsdom
 
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { opaqueFade, popIn } from "#lib/shared/transitions/motion.js";
+import { setReplayRecordingProbe } from "#lib/shared/analytics/replay-recording.js";
+import {
+  opaqueFade,
+  popIn,
+  recordedMotion,
+} from "#lib/shared/transitions/motion.js";
 
 const DIMMED = ["hidden-for-sequential"] as const;
 
@@ -77,5 +82,65 @@ describe("opaqueFade", () => {
 
     expect(read).toHaveBeenCalledWith(node);
     expect(config.css?.(1, 0)).toBe("opacity: 0");
+  });
+});
+
+describe("recordedMotion", () => {
+  afterEach(() => {
+    setReplayRecordingProbe(null);
+    document.body.innerHTML = "";
+  });
+
+  it("leaves the Web Animation alone when nobody is recording", () => {
+    const config = recordedMotion(popIn)(cell(), { duration: 180 });
+
+    expect(config.css).toBeDefined();
+    expect(config.tick).toBeUndefined();
+  });
+
+  it("paints the fade into inline style while replay records", () => {
+    setReplayRecordingProbe(() => true);
+    const node = cell("<svg><g></g></svg>").querySelector("g")!;
+
+    const config = recordedMotion(popIn)(node, { duration: 180, start: 1.06 });
+
+    expect(config.css).toBeUndefined();
+    config.tick?.(0.5, 0.5);
+    expect(node.style.opacity).toBe("0.5");
+    expect(node.style.transform).toBe("scale(1.03)");
+  });
+
+  it("hands the node back with its own inline style when the intro ends", () => {
+    setReplayRecordingProbe(() => true);
+    const node = cell('<div style="opacity: 0.7"></div>');
+
+    const config = opaqueFade(node, { duration: 180 });
+    config.tick?.(0.4, 0.6);
+    expect(node.style.opacity).toBe("0.4");
+    config.tick?.(1, 0);
+
+    expect(node.style.opacity).toBe("0.7");
+  });
+
+  it("clears a frame left by a cut-short transition before the next one", () => {
+    setReplayRecordingProbe(() => true);
+    const node = cell();
+
+    opaqueFade(node, { duration: 180 }).tick?.(0.3, 0.7);
+    expect(node.style.opacity).toBe("0.3");
+    const next = popIn(node, { duration: 180 });
+
+    expect(node.style.opacity).toBe("");
+    expect(next.tick).toBeDefined();
+  });
+
+  it("keeps the wrapped transition's skips and timing", () => {
+    setReplayRecordingProbe(() => true);
+
+    expect(opaqueFade(cell(), { duration: 0 })).toEqual({ duration: 0 });
+    expect(opaqueFade(cell(), { duration: 180, delay: 40 })).toMatchObject({
+      duration: 180,
+      delay: 40,
+    });
   });
 });

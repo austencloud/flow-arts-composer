@@ -29,6 +29,7 @@
   import {
     SMALL_TEXT_SCREEN_CHARS,
     MEDIUM_TEXT_SCREEN_CHARS,
+    LARGE_INTRO_BESIDE_CHARS,
     SMALL_TEXT_SCREEN_MAX_CHARS,
     watchScreenTier,
     type ScreenTier,
@@ -92,11 +93,17 @@
   const detachTextChars = $derived(
     smallScreen ? SMALL_TEXT_SCREEN_CHARS : undefined
   );
+  // A large window keeps long opening words on the screen with the first
+  // figure, beside it (FlowFrame must split the same way).
+  const introBesideChars = $derived(
+    tier === "large" ? LARGE_INTRO_BESIDE_CHARS : undefined
+  );
   const pageScreens = $derived(
     useFlow && content
       ? flowScreens(
           flowRenderItems(content, seo.tagline ?? "", localizeLevel1Block, {
             detachTextChars,
+            introBesideChars,
           }),
           "Intro",
           {
@@ -312,6 +319,7 @@
             layout={slug === "the-grid" ? "grid-reference" : "default"}
             screen={pageScreens[n]?.items ?? []}
             {detachTextChars}
+            {introBesideChars}
           />
         {/snippet}
       </GuideScreens>

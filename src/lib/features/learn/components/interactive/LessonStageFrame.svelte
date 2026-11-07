@@ -48,7 +48,15 @@
   const ownHeading = $derived(ownRegions && !isLessonHeadingSplit());
 </script>
 
-<div class="lesson-stage-frame" class:workshop={artifactLayout === "workshop"}>
+<!-- data-sideways-owns-chrome: on a phone held sideways the square layout puts
+     its own strip over the board and the heading beside it, and the 64px site
+     header (MarketingChrome) would take a sixth of the height. -->
+<div
+  class="lesson-stage-frame"
+  class:workshop={artifactLayout === "workshop"}
+  class:square={artifactLayout === "square"}
+  data-sideways-owns-chrome={artifactLayout === "square" ? "" : undefined}
+>
   <div
     class="stage-heading"
     use:claimedViewTransitionName={{
@@ -251,6 +259,69 @@
       width: 100%;
       min-height: 0;
       align-self: stretch;
+    }
+  }
+
+  /* A phone held sideways (SIDEWAYS_VIEWPORT_QUERY in sideways-viewport.ts):
+     the board fills the height on the left, under the lesson's header strip,
+     with the heading and the controls in a column on the right. */
+  @media (max-height: 480px) and (min-width: 700px) {
+    .lesson-stage-frame.square {
+      grid-template-columns: minmax(0, 1fr) clamp(15rem, 34%, 20rem);
+      grid-template-rows: minmax(0, 1fr) auto;
+      grid-template-areas:
+        "artifact heading"
+        "artifact controls";
+      justify-items: stretch;
+      gap: 0.5rem 1rem;
+      padding: 3rem 1rem max(0.5rem, env(safe-area-inset-bottom));
+    }
+
+    .square .stage-artifact {
+      grid-area: artifact;
+    }
+
+    .square .stage-heading {
+      grid-area: heading;
+      width: 100%;
+      align-self: center;
+    }
+
+    .square .stage-heading :global(.title-copy) {
+      min-height: 0;
+    }
+
+    .square .stage-heading :global(h1) {
+      display: block;
+      padding-inline: 0;
+    }
+
+    .square .stage-controls {
+      grid-area: controls;
+      width: 100%;
+      min-height: 0;
+      align-self: end;
+    }
+
+    /* The column is too narrow for the row: progress over the two buttons.
+       Previous is an icon, as on a phone, so the long last label stays on one
+       line and the controls keep one height on every screen. */
+    .square .stage-controls :global(.lesson-stage-controls.navigation) {
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 0.5rem;
+    }
+
+    .square .stage-controls :global(.previous-label) {
+      display: none;
+    }
+
+    .square .stage-controls :global(.progress-stack) {
+      grid-column: 1 / -1;
+      grid-row: 1;
+    }
+
+    .square .stage-controls :global(.panel-btn) {
+      width: 100%;
     }
   }
 

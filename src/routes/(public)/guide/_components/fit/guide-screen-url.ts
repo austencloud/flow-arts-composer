@@ -28,6 +28,9 @@ export const SMALL_TEXT_SCREEN_MAX_CHARS = 340;
 
 /** On a laptop-sized window only a long passage gets its own screen. */
 export const MEDIUM_TEXT_SCREEN_CHARS = 280;
+/** Opening words this long will not fit above the first figure even in a
+ *  large window, so they read beside it, with the figure's own words. */
+export const LARGE_INTRO_BESIDE_CHARS = 380;
 
 /** Calls back now and whenever the window crosses the small-screen line. */
 export function watchSmallScreen(onChange: (small: boolean) => void): () => void {

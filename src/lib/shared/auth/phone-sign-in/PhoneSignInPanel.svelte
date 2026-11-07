@@ -1,11 +1,12 @@
 <!--
-  The computer's side of "Sign in with your phone": the QR code, its number,
+  The computer's side of "Sign in with your phone": the QR code or, when the
+  server rang the phone, a phone mark with a way to scan instead; the number,
   the time left, and what happened. It shows whatever `session` is doing; the
-  sign-in sheet starts the session when the phone choice is pointed at, so the
-  code is often ready by the time this panel finishes arriving.
+  sign-in sheet starts the session when the phone choice is pressed.
   Spec: docs/superpowers/specs/2026-10-10-shared-phone-sign-in-design.md
 -->
 <script lang="ts">
+  import { tick } from "svelte";
   import { QrCode } from "@austencloud/phone-sign-in/svelte";
   import { Crossfade } from "#lib/shared/transitions/motion.js";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
@@ -19,6 +20,10 @@
   } from "./phone-sign-in-session.svelte";
 
   const QR_SIZE = 208;
+  const SCAN_LEAD =
+    "Scan it with your phone while it's signed in, then tap Approve. Your phone shows the same number.";
+  const PHONE_LEAD =
+    "Tap the notification on your phone. It shows the same number.";
 
   interface Props {
     session: PhoneSignInSession;
@@ -30,12 +35,29 @@
   let { session, part = "both" }: Props = $props();
 
   const view = $derived(session.view);
+  const showsPhone = $derived(
+    view.kind === "waiting" && session.mode === "phone"
+  );
+  // No words while the request is on its way, since the server decides which apply.
+  const leadMode = $derived(
+    session.mode ??
+      (view.kind === "idle" || view.kind === "starting" ? null : "qr")
+  );
+  let leadSlot = $state<HTMLElement>();
+
+  async function scanInstead() {
+    session.scanInstead();
+    // The button is going away, so focus moves to the words it just changed.
+    // After tick(), so this wins over Crossfade's own handoff.
+    await tick();
+    leadSlot?.focus();
+  }
 
   // The QR side swaps between the code and a tile with the state's mark, and
   // the words beside it between the matching lines and buttons.
   const tileKey = $derived(
     view.kind === "waiting"
-      ? `qr-${view.request.id}`
+      ? `${showsPhone ? "phone" : "qr"}-${view.request.id}`
       : view.kind === "idle" ||
           view.kind === "starting" ||
           view.kind === "signing-in"
@@ -50,7 +72,11 @@
   <div class="stage">
     <div class="tile">
       <Crossfade key={tileKey} fill>
-        {#if view.kind === "waiting"}
+        {#if showsPhone}
+          <div class="mark" aria-hidden="true">
+            <i class="fa-solid fa-mobile-screen"></i>
+          </div>
+        {:else if view.kind === "waiting"}
           <QrCode
             value={view.request.approveUrl}
             label="QR code to approve this sign-in on your phone"
@@ -88,10 +114,19 @@
 
 {#snippet words()}
   <div class="words">
-    <p class="lead">
-      Scan it with your phone while it's signed in, then tap Approve. Your phone
-      shows the same number.
-    </p>
+    <!-- Sized by the longer words, so swapping them moves nothing. -->
+    <div class="lead-slot" tabindex="-1" bind:this={leadSlot}>
+      <p class="lead lead-ghost" aria-hidden="true">{SCAN_LEAD}</p>
+      <div class="lead-live">
+        <Crossfade key={leadMode ?? "none"} fill>
+          {#if leadMode === "phone"}
+            <p class="lead">{PHONE_LEAD}</p>
+          {:else if leadMode === "qr"}
+            <p class="lead">{SCAN_LEAD}</p>
+          {/if}
+        </Crossfade>
+      </div>
+    </div>
 
     <Crossfade
       key={view.kind === "idle" || view.kind === "starting"
@@ -100,9 +135,27 @@
       animateHeight
     >
       {#if view.kind === "waiting"}
-        <p class="quiet" role="timer">
-          Expires in <span class="time">{session.countdown}</span>
-        </p>
+        <div class="stack">
+          <p class="quiet" role="timer">
+            Expires in <span class="time">{session.countdown}</span>
+          </p>
+          {#if session.notified}
+            <!-- An invisible copy stays once it is used, so the panel holds its size. -->
+            <Crossfade key={showsPhone ? "offer" : "used"}>
+              {#if showsPhone}
+                <div class="actions">
+                  <PanelButton onclick={scanInstead}>
+                    Scan a code instead
+                  </PanelButton>
+                </div>
+              {:else}
+                <div class="actions used" inert aria-hidden="true">
+                  <PanelButton disabled>Scan a code instead</PanelButton>
+                </div>
+              {/if}
+            </Crossfade>
+          {/if}
+        </div>
       {:else if view.kind === "idle" || view.kind === "starting"}
         <p class="quiet">Getting a code...</p>
       {:else if view.kind === "signing-in" || view.kind === "signed-in"}
@@ -236,6 +289,29 @@
     width: 100%;
   }
 
+  .lead-slot {
+    display: grid;
+    max-width: 36ch;
+  }
+
+  /* Only ever focused from code, when the button that had focus goes away. */
+  .lead-slot:focus {
+    outline: none;
+  }
+
+  .lead-ghost,
+  .lead-live {
+    grid-area: 1 / 1;
+  }
+
+  .lead-ghost {
+    visibility: hidden;
+  }
+
+  .lead-live {
+    position: relative;
+  }
+
   .lead {
     margin: 0;
     max-width: 36ch;
@@ -253,6 +329,10 @@
 
   .actions {
     display: flex;
+  }
+
+  .actions.used {
+    visibility: hidden;
   }
 
   /* Digits are tabular, so the width holds still as the seconds change. */

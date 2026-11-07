@@ -680,4 +680,70 @@ describe("createHeroAct — weighted sources", () => {
       });
     }
   );
+
+  describe("crossing between the pages that share it", () => {
+    function seededAct() {
+      mocks.generatePerVisitDemo.mockImplementation(async () =>
+        fakeSequence("next", "alpha1")
+      );
+      const act = createHeroAct({
+        random: () => 0.5,
+        sourceWeights: { generated: 1 },
+        boxFraction: 0,
+        mixedFraction: 0,
+        initialSequence: fakeSequence("opening", "alpha1"),
+      });
+      act.start();
+      return act;
+    }
+
+    it("keeps the picked prop through a new sequence where it does not cycle", async () => {
+      const act = seededAct();
+      act.takeStage({ cycleProps: false });
+      act.setProp(PropType.FAN);
+      await flush();
+
+      await act.advanceNow();
+      expect(act.sequence?.id).toBe("next");
+      expect(act.propType).toBe(PropType.FAN);
+
+      await flush();
+      const handoff = act.offerSequenceBoundary();
+      expect(handoff).not.toBeNull();
+      handoff?.accept();
+      expect(act.propType).toBe(PropType.FAN);
+    });
+
+    it("walks the props again once the homepage takes it back", async () => {
+      const act = seededAct();
+      act.takeStage({ cycleProps: false });
+      await flush();
+      act.takeStage({ cycleProps: true });
+
+      const before = act.propType;
+      await act.advanceNow();
+      expect(act.propType).not.toBe(before);
+    });
+
+    it("lets a held act advance on its own again when a page takes the stage", async () => {
+      const act = seededAct();
+      await flush();
+      act.hold();
+      expect(act.offerSequenceBoundary()).toBeNull();
+
+      act.takeStage({ cycleProps: true });
+      expect(act.held).toBe(false);
+      expect(act.offerSequenceBoundary()).not.toBeNull();
+    });
+
+    it("does not restart when a second page calls start", async () => {
+      const act = seededAct();
+      await flush();
+      const calls = mocks.generatePerVisitDemo.mock.calls.length;
+      act.start();
+      await flush();
+      expect(act.sequence?.id).toBe("opening");
+      expect(mocks.generatePerVisitDemo.mock.calls.length).toBe(calls);
+    });
+  });
 });

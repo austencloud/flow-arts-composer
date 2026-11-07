@@ -436,5 +436,14 @@ function fetchWithTimeout(request, ms) {
   });
 }
 
+// The phone's one-tap sign-in notifications. Inside try/catch so a script that
+// failed to load costs only that: the handler still shows the notification and
+// its tap opens the review page.
+try {
+  importScripts("/phone-sign-in-worker.js");
+} catch {
+  // Handled in firebase-messaging-handler.js.
+}
+
 // Firebase Cloud Messaging handler (push notifications)
 importScripts("/firebase-messaging-handler.js");

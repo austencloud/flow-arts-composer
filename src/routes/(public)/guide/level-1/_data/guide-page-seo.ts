@@ -85,8 +85,6 @@ export const GUIDE_PAGE_SEO: Record<string, GuidePageSeo> = {
   },
   "negative-space": {
     h1: "Negative Space and Body Turns",
-    tagline:
-      "Many sequences seem impossible, but most can be solved by using negative space or body turns.",
     title: "Negative Space and Body Turns · Flow Arts Notation Guide",
     description:
       "Many sequences seem impossible, but most can be solved by using negative space or body turns.",

@@ -32,13 +32,20 @@
    * first paint. Pass a skeleton whose GEOMETRY matches the loaded component
    * exactly (same aspect boxes, same chrome heights); the swap then causes zero
    * layout shift by construction (no-layout-shift.md).
+   *
+   * `loaded`: the component, if its module already loaded earlier this session.
+   * It mounts in the first render with no import and no status reports, for a
+   * host that is captured the moment it is built. Read once, at creation.
+   * `onLoaded` hands back the component a mount resolved, for the host to keep.
    */
-  import { onDestroy, type Component, type Snippet } from "svelte";
+  import { onDestroy, untrack, type Component, type Snippet } from "svelte";
 
   let {
     loader,
     active = false,
     keepAlive = true,
+    loaded = null,
+    onLoaded,
     prefetch = false,
     props = {},
     placeholder,
@@ -53,6 +60,10 @@
     active?: boolean;
     /** Keep the loaded component instance mounted while inactive. */
     keepAlive?: boolean;
+    /** An already-resolved component to mount in the first render. */
+    loaded?: Component<any> | null;
+    /** Receives the component once a mount has resolved it. */
+    onLoaded?: (component: Component<any>) => void;
     /** Warm the chunk on idle (no mount) so the first open is instant. */
     prefetch?: boolean;
     /** Props forwarded to the loaded component. */
@@ -69,9 +80,10 @@
     retryKey?: unknown;
   } = $props();
 
-  let Loaded = $state<Component<any> | null>(null);
+  const initial = untrack(() => loaded);
+  let Loaded = $state<Component<any> | null>(initial);
   let loadError = $state<unknown>(null);
-  let started = false;
+  let started = initial !== null;
   let destroyed = false;
   // Single in-flight import shared by mount + prefetch, so warming the chunk
   // and the eventual mount never double-fetch.
@@ -93,6 +105,7 @@
         if (destroyed) return;
         loadError = null;
         Loaded = module.default;
+        onLoaded?.(module.default);
         onStatusChange?.("loaded");
       },
       (caught) => {

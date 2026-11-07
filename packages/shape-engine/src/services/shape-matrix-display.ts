@@ -1,4 +1,5 @@
 import { s as t } from "../strings.svelte.js";
+import type { PetalAnchor } from "./flower-petal-anchor.js";
 import {
   isFloatRatio,
   isStationaryRatio,
@@ -125,6 +126,122 @@ export function localizedFlowerLabel(flower: Flower): string {
     grid,
     petals: flower.petals,
   });
+}
+
+/** One system's reading of a flower, its name kept apart from what it says. */
+export interface SoloFlowerReading {
+  system: string;
+  value: string;
+}
+
+export interface SoloFlowerDescription {
+  /** Which hand is playing alone. */
+  hand: string;
+  /** The flower's name the way a spinner says it: no system owns these words. */
+  headline: string;
+  note: string | null;
+  /** What the mode word in the headline means; null when none is shown. */
+  modeMeaning: string | null;
+  /** Turns and spin direction are TKA's. */
+  tka: SoloFlowerReading;
+  /** The hand:prop ratio is VTG's, never TKA's. */
+  vtg: SoloFlowerReading;
+}
+
+function soloVtgReading(flower: Flower): SoloFlowerReading {
+  return {
+    system: t("shape_engine_solo_reading_vtg"),
+    value: ratioLabel(flower.turns),
+  };
+}
+
+function floatOrientationWord(ori: Flower["ori"]): string {
+  if (ori === "clock") return t("shape_engine_orientation_clock");
+  if (ori === "counter") return t("shape_engine_orientation_counter");
+  return localizedOrientation(ori);
+}
+
+/**
+ * Box and diamond only name a flower with one petal per quarter or three: 8
+ * petals point both ways at once, and other counts line up with neither.
+ */
+function soloMode(
+  petals: number,
+  anchor: PetalAnchor | null
+): { word: string; meaning: string } | null {
+  if (!anchor || petals % 4 !== 0 || petals % 8 === 0) return null;
+  return anchor === "diagonal"
+    ? {
+        word: t("shape_engine_grid_box"),
+        meaning: t("shape_engine_solo_mode_box"),
+      }
+    : {
+        word: t("shape_engine_grid_diamond"),
+        meaning: t("shape_engine_solo_mode_diamond"),
+      };
+}
+
+export function describeSoloFlower(
+  flower: Flower,
+  hand: "left" | "right",
+  anchor: PetalAnchor | null
+): SoloFlowerDescription {
+  const handWord = t(
+    hand === "left"
+      ? "shape_engine_solo_hand_left"
+      : "shape_engine_solo_hand_right"
+  );
+  if (flower.style === "float") {
+    return {
+      hand: handWord,
+      headline: t("shape_engine_float"),
+      note: t("shape_engine_solo_float_note"),
+      modeMeaning: null,
+      tka: {
+        system: t("shape_engine_solo_reading_tka"),
+        value: t("shape_engine_solo_tka_float", {
+          orientation: floatOrientationWord(flower.ori),
+        }),
+      },
+      vtg: soloVtgReading(flower),
+    };
+  }
+
+  const { petals, style } = flower;
+  const mode = soloMode(petals, anchor);
+  let headline: string;
+  if (style === "pro" && petals === 0) {
+    headline = t("shape_engine_solo_extension");
+  } else if (style === "pro") {
+    headline = mode
+      ? t("shape_engine_solo_pro_mode", { petals, mode: mode.word })
+      : t("shape_engine_solo_pro", { petals });
+  } else {
+    headline = mode
+      ? t("shape_engine_solo_anti_mode", { petals, mode: mode.word })
+      : t("shape_engine_solo_anti", { petals });
+  }
+  return {
+    hand: handWord,
+    headline,
+    note: null,
+    modeMeaning: mode?.meaning ?? null,
+    tka: {
+      system: t("shape_engine_solo_reading_tka"),
+      value: t("shape_engine_solo_tka_value", {
+        style: t(
+          style === "pro" ? "shape_engine_prospin" : "shape_engine_antispin"
+        ),
+        turns: t(
+          flower.turns === 1
+            ? "shape_engine_spoken_turn_one"
+            : "shape_engine_spoken_turn_many",
+          { value: flower.turns }
+        ),
+      }),
+    },
+    vtg: soloVtgReading(flower),
+  };
 }
 
 export function localizedTheoryFlowerLabel(flower: TheoryFlower): string {

@@ -36,7 +36,10 @@
     collectedTunnelFromPublicArtifact,
     type TunnelPublicPayload,
   } from "#lib/features/tunnel-collection/domain/tunnel-public-revision.js";
-  import type { MandalaPublicPayload } from "#lib/features/mandala/tabs/collection/domain/mandala-public-revision.js";
+  import {
+    mandalaPublicPayloadFromArtifact,
+    type MandalaPublicPayload,
+  } from "#lib/features/mandala/tabs/collection/domain/mandala-public-revision.js";
   import type { CollectedTunnel } from "#lib/features/tunnel-collection/domain/tunnel-collection-types.js";
   import PanelSpinner from "#lib/shared/components/panel/PanelSpinner.svelte";
   import TkaLabel from "#lib/shared/components/TkaLabel.svelte";
@@ -298,6 +301,16 @@
         }
 
         if (detail.envelope.artifactType === "mandala") {
+          // Upgrades mandalas published with red and blue hands, as the tunnel
+          // adapter below does for tunnels.
+          const mandala = mandalaPublicPayloadFromArtifact(
+            detail.revision.payload
+          );
+          if (!mandala) {
+            detailError = t("browse_verified_visual_load_failed");
+            clearDetail();
+            return;
+          }
           if (!MandalaDetailPreview) {
             const loaded = await import("./MandalaDetailPreview.svelte");
             if (token !== detailToken) return;
@@ -305,7 +318,7 @@
           }
           detailEnvelope = detail.envelope;
           detailTunnel = null;
-          detailMandala = detail.revision.payload as MandalaPublicPayload;
+          detailMandala = mandala;
           return;
         }
 

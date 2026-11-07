@@ -4,7 +4,9 @@
   sent before a tap, except by a trusted phone on the same internet connection
   as the computer, which approves by itself. Every other case, and every
   failure of the automatic path, shows Approve and Deny. A signed-out phone
-  gets the usual sign-in sheet and then the request.
+  gets the usual sign-in sheet and then the request. A notification opens this
+  page with ?review=1 when its own tap could not finish, so nothing approves by
+  itself here, and with ?done=auto to offer "That wasn't me" after it approved.
   Spec: docs/superpowers/specs/2026-10-10-shared-phone-sign-in-design.md
 -->
 <script lang="ts">
@@ -238,6 +240,13 @@
       now = Date.now();
       loadedAt = arrivedAt;
       if (loaded) gate = newGate(loaded.sameNetwork);
+      // Only the server's word that it was approved shows the done screen.
+      if (
+        page.url.searchParams.get("done") === "auto" &&
+        (loaded?.status === "approved" || loaded?.status === "used")
+      ) {
+        answered = "auto-approved";
+      }
       view = loaded
         ? { kind: "request", request: loaded }
         : { kind: "missing" };
@@ -294,7 +303,7 @@
       hasKey: pair !== null,
       visible,
       prerendering: isPrerendering(),
-      tried: autoTried,
+      tried: autoTried || page.url.searchParams.get("review") === "1",
     });
     if (!go || !pair || !id) return;
     autoTried = true;

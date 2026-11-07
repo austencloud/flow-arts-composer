@@ -115,6 +115,8 @@
   };
   const highlightedSteps = $derived.by(() => {
     if (!sequenceState.isMultiSelectMode) return null;
+    // The save view's card shows what will be saved, not what is selected.
+    if (panelState.isSaveToLibraryPanelOpen) return null;
     const map = new Map<number, { bg: string; border: string }>();
     for (const n of sequenceState.selectedStepNumbers) {
       map.set(n, MULTI_HIGHLIGHT);
@@ -164,10 +166,7 @@
     };
   });
 
-  function handleStepClick(
-    stepNumber: number,
-    modifiers?: StepClickModifiers
-  ) {
+  function handleStepClick(stepNumber: number, modifiers?: StepClickModifiers) {
     hapticService?.trigger("selection");
 
     // If in shift start mode, use the shift handler instead of normal selection.
@@ -274,6 +273,7 @@
           manualColumnCount={loopAlignedColumnCount}
           sequenceWord={currentDisplayWord}
           observeScroll={!panelState.workspacePlayback}
+          shrinkToFit={panelState.isSaveToLibraryPanelOpen}
         />
       </div>
     </div>

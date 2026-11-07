@@ -14,7 +14,7 @@
 <script lang="ts">
   import type { Snippet, Component } from "svelte";
   import { onMount } from "svelte";
-  import { afterNavigate, onNavigate, goto } from "$app/navigation";
+  import { afterNavigate, beforeNavigate, onNavigate, goto } from "$app/navigation";
   import { isShallowGoto } from "#lib/shared/navigation/services/url-state.js";
   import { page } from "$app/state";
   import { dev } from "$app/env";
@@ -29,6 +29,10 @@
   import { detectSiteMode, type SiteMode } from "../config/domains";
   import { navigationMorphs } from "#lib/shared/transitions/navigation-morphs.js";
   import { installRouteMotion } from "@austencloud/motion";
+  import {
+    startSiteFlight,
+    tileFlight,
+  } from "#lib/shared/transitions/tile-flight.svelte.js";
   import { isConstrainedConnection } from "#lib/shared/platform/network-conditions.js";
   import { pruneRouteScopedParams } from "#lib/shared/navigation/services/url-parameter-policy.js";
   import {
@@ -121,12 +125,27 @@
     onNavigate,
     morphs: navigationMorphs,
     isShallow: isShallowGoto,
-    onTransition: import.meta.env.DEV
-      ? (transition, navigation) =>
-          startMorphProbe(
-            `${navigation.from?.url.pathname}→${navigation.to?.url.pathname}`
-          ).attach(transition)
-      : undefined,
+    onTransition: (transition, navigation) => {
+      startSiteFlight(transition, navigation);
+      if (import.meta.env.DEV) {
+        startMorphProbe(
+          `${navigation.from?.url.pathname}→${navigation.to?.url.pathname}`
+        ).attach(transition);
+      }
+    },
+  });
+
+  beforeNavigate((navigation) => {
+    tileFlight.navigationStarting(navigation.to?.url.pathname);
+    navigation.complete.catch(() => tileFlight.disarm());
+  });
+  afterNavigate((navigation) => {
+    if (navigation.to) {
+      tileFlight.navigationSettled(
+        navigation.from?.url.pathname,
+        navigation.to.url.pathname
+      );
+    }
   });
 
   afterNavigate((navigation) => {

@@ -2,11 +2,14 @@
 import { readFileSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { LAUNCHPAD_TILES } from "../../src/lib/shared/landing/components/launchpad/launchpad-tiles";
 import {
-  LAUNCHPAD_MORPH_PATHS,
   navigationMorphs,
+  RESIDENT_HOST_PATHS,
 } from "../../src/lib/shared/transitions/navigation-morphs";
+import {
+  TILE_FLIGHT_PATHS,
+} from "../../src/lib/shared/landing/components/launchpad/launchpad-tiles";
+import { tileFlight } from "../../src/lib/shared/transitions/tile-flight.svelte";
 import {
   isNamedRouteMorphActive,
   NAMED_ROUTE_MORPH_CLASS,
@@ -22,29 +25,6 @@ const readSource = (path: string): string =>
 // catalog. The English there is still the wording these contracts guard.
 const readEnglishMessages = (): Record<string, string> =>
   JSON.parse(readSource("messages/en.json")) as Record<string, string>;
-
-// A destination may host its morph participant in a local component rather than
-// in +page.svelte. Each entry therefore lists every file the participant is
-// allowed to live in.
-const routeSourceByPath: Record<string, string[]> = {
-  // f64350ce63 moved the Composer page body, participant included, into
-  // ComposerExperience when About fused into it. /about renders it too, so a
-  // separate test proves /composer still does.
-  "/composer": [
-    "src/routes/(public)/composer/+page.svelte",
-    "src/routes/(public)/composer/_components/ComposerExperience.svelte",
-  ],
-  // The Choreo Cards tile lands on the catalog now; its morph participant is
-  // the front door's hero copy block.
-  "/shop": [
-    "src/lib/features/store/components/front-door/ShopFrontDoorHero.svelte",
-  ],
-  "/learn/concepts": [
-    "src/lib/features/learn/components/ConceptPathView.svelte",
-  ],
-  "/faq": ["src/routes/(public)/faq/+page.svelte"],
-  "/atlas": ["src/routes/(public)/atlas/+page.svelte"],
-};
 
 const location = (pathname: string, routeId = pathname) => ({
   url: { pathname },
@@ -71,14 +51,30 @@ afterEach(() => {
 });
 
 describe("landing route morph allowlist", () => {
-  it("allows every launchpad morph in both directions", () => {
-    expect(LAUNCHPAD_MORPH_PATHS).toEqual(
-      LAUNCHPAD_TILES.filter((tile) => tile.morphName).map((tile) => tile.href)
-    );
+  it("lets the resident player glide between every pair of its hosts", () => {
+    for (const a of RESIDENT_HOST_PATHS) {
+      for (const b of RESIDENT_HOST_PATHS) {
+        if (a === b) continue;
+        expect(navigationMorphs(location(a), location(b))).toBe(true);
+      }
+    }
+  });
 
-    for (const pathname of LAUNCHPAD_MORPH_PATHS) {
+  // tile-flight.test.ts holds the arm and disarm rules. This is the wiring: a
+  // tile destination morphs only because the flight owner says so.
+  it("morphs a tile destination only while the flight owner allows it", () => {
+    expect(TILE_FLIGHT_PATHS.length).toBeGreaterThan(0);
+
+    for (const pathname of TILE_FLIGHT_PATHS) {
+      if (RESIDENT_HOST_PATHS.includes(pathname)) continue;
+      expect(navigationMorphs(location("/"), location(pathname))).toBe(false);
+      expect(navigationMorphs(location(pathname), location("/"))).toBe(false);
+
+      tileFlight.arm("test-tile", pathname);
       expect(navigationMorphs(location("/"), location(pathname))).toBe(true);
+      tileFlight.navigationSettled("/", pathname);
       expect(navigationMorphs(location(pathname), location("/"))).toBe(true);
+      tileFlight.navigationSettled(pathname, "/");
     }
   });
 
@@ -124,7 +120,7 @@ describe("landing route morph allowlist", () => {
     expect(navigationMorphs(null, location("/composer"))).toBe(false);
     expect(navigationMorphs(location("/"), undefined)).toBe(false);
     expect(navigationMorphs(location("/"), location("/"))).toBe(false);
-    expect(navigationMorphs(location("/about"), location("/composer"))).toBe(
+    expect(navigationMorphs(location("/atlas"), location("/composer"))).toBe(
       false
     );
     expect(navigationMorphs(location("/composer"), location("/faq"))).toBe(
@@ -139,40 +135,36 @@ describe("landing route morph allowlist", () => {
   });
 });
 
-const MORPHING_TILES = LAUNCHPAD_TILES.filter((tile) => tile.morphName);
-
 describe("landing shared-element contract", () => {
-  // A tile may opt out of the morph when its destination has no hero to grow
-  // into (Notation fronts Shape Engine since the History archive was
-  // withdrawn); every tile that has a name keeps the full contract.
-  it("gives every morphing tile one unique name and a matching destination participant", () => {
-    const morphNames = MORPHING_TILES.map((tile) => tile.morphName);
-    expect(morphNames.length).toBeGreaterThan(0);
-    expect(new Set(morphNames).size).toBe(morphNames.length);
-    expect(Object.keys(routeSourceByPath).sort()).toEqual(
-      [...LAUNCHPAD_MORPH_PATHS].sort()
-    );
-
-    const tileSource = readSource(
+  // Every tile shares one window and one destination, so no page has to carry a
+  // name of its own, and a name left on a page would pull it out of the window.
+  it("flies every tile through one name on the shell's content region", () => {
+    const tile = readSource(
       "src/lib/shared/landing/components/launchpad/LaunchpadTile.svelte"
     );
-    expect(tileSource).toContain("style:view-transition-name={tile.morphName}");
+    const chrome = readSource(
+      "src/lib/shared/landing/components/MarketingChrome.svelte"
+    );
+    const css = readSource("src/lib/shared/transitions/view-transitions.css");
 
-    for (const tile of MORPHING_TILES) {
-      const morphName = tile.morphName;
-      expect(morphName).toBeTruthy();
-      if (!morphName) continue;
+    expect(tile).toContain(
+      "style:view-transition-name={flying ? TILE_WINDOW_NAME : undefined}"
+    );
+    expect(chrome).toContain(
+      "style:view-transition-name={tileFlight.arrivingContentName(path)}"
+    );
+    expect(css).toContain("::view-transition-group(tile-window)");
+    expect(css).not.toMatch(/launchpad-/);
 
-      const routePaths = routeSourceByPath[tile.href];
-      expect(routePaths).toBeTruthy();
-      if (!routePaths) continue;
-      const hostsParticipant = routePaths.some((path) =>
-        readSource(path).includes(`style:view-transition-name="${morphName}"`)
-      );
-      expect(
-        hostsParticipant,
-        `${tile.href} has no element named ${morphName}, so its tile morph degrades to a cut`
-      ).toBe(true);
+    for (const page of [
+      "src/routes/(public)/composer/_components/ComposerExperience.svelte",
+      "src/routes/(public)/faq/+page.svelte",
+      "src/routes/(public)/atlas/+page.svelte",
+      "src/routes/(public)/guide/+page.svelte",
+      "src/lib/features/learn/components/ConceptPathView.svelte",
+      "src/lib/features/store/components/front-door/ShopFrontDoorHero.svelte",
+    ]) {
+      expect(readSource(page), page).not.toContain("launchpad-");
     }
   });
 
@@ -188,15 +180,10 @@ describe("landing shared-element contract", () => {
     expect(route).toMatch(/<ComposerExperience\b[^>]*\/>/);
   });
 
-  it("styles every named group and suppresses only the scoped root capture", () => {
-    const css = readSource("src/lib/shared/transitions/view-transitions.css");
+  it("suppresses only the scoped root capture", () => {
     const namedMorphCss = readSource(
       "node_modules/@austencloud/motion/css/named-route-morph.css"
     );
-    for (const morphName of MORPHING_TILES.map((tile) => tile.morphName)) {
-      expect(css).toContain(`::view-transition-group(${morphName})`);
-    }
-
     expect(namedMorphCss).toMatch(
       /html\.named-route-morph\s*\{\s*view-transition-name:\s*none;/
     );
@@ -331,9 +318,7 @@ describe("landing shared-element contract", () => {
     // /composer opens on the baked fixture exactly as the home hero does
     // (21c54ab457): only the live generation itself, not the synchronous
     // seed, has to stay behind the morph.
-    expect(composer).toContain(
-      "const heroAct = createHeroAct({ initialSequence: FALLBACK_DEMO });"
-    );
+    expect(composer).toContain("const heroAct = getResidentHeroAct();");
     expect(composer).toContain("runAfterNamedRouteMorphIdle(heroAct.start)");
     // The tunnel and 3D bands open on the baked fixture; every live hero
     // draw becomes the page sequence, written untracked, and the hero is

@@ -35,6 +35,10 @@ export function createPhoneSignInSession(
 ) {
   let view = $state<PhoneSignInView>({ kind: "idle" });
   let now = $state(Date.now());
+  // How this request is being answered: by the phone's notification, or by
+  // scanning. Null until a request arrives. It outlasts the wait, so the words
+  // don't change the moment the phone answers.
+  let mode = $state<"phone" | "qr" | null>(null);
   let pollTimer: ReturnType<typeof setTimeout> | undefined;
   let clockTimer: ReturnType<typeof setInterval> | undefined;
   // Bumped on every start, cancel and dispose so a late answer from an older
@@ -56,7 +60,9 @@ export function createPhoneSignInSession(
       case "starting":
         return "Getting a code.";
       case "waiting":
-        return "Code ready. Scan the QR code with your phone, then tap Approve.";
+        return mode === "phone"
+          ? "Sent to your phone. Tap the notification to sign in."
+          : "Code ready. Scan the QR code with your phone, then tap Approve.";
       case "signing-in":
         return "Signing in.";
       case "denied":
@@ -90,10 +96,12 @@ export function createPhoneSignInSession(
     stopTimers();
     const mine = ++generation;
     view = { kind: "starting" };
+    mode = null;
 
     let request: StartedRequest;
     try {
-      request = await startPhoneSignIn();
+      // The server decides whether this actually rings the phone, and says so.
+      request = await startPhoneSignIn({ notify: true });
     } catch (e) {
       if (mine !== generation) return;
       view = {
@@ -106,6 +114,7 @@ export function createPhoneSignInSession(
     if (mine !== generation) return;
 
     now = Date.now();
+    mode = request.notified ? "phone" : "qr";
     view = { kind: "waiting", request, deadline: now + request.expiresInMs };
     clockTimer = setInterval(() => {
       now = Date.now();
@@ -161,6 +170,11 @@ export function createPhoneSignInSession(
     }
   }
 
+  /** Shows the QR for the same request. The notification keeps working too. */
+  function scanInstead() {
+    mode = "qr";
+  }
+
   /** Drops the code on screen. The next start gets a fresh one. */
   function cancel() {
     if (view.kind !== "waiting" && view.kind !== "starting") return;
@@ -184,7 +198,15 @@ export function createPhoneSignInSession(
     get announcement() {
       return announcement;
     },
+    get mode() {
+      return mode;
+    },
+    /** True when the server sent this request to the phone. */
+    get notified() {
+      return view.kind === "waiting" && view.request.notified === true;
+    },
     start,
+    scanInstead,
     cancel,
     dispose,
   };

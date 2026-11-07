@@ -51,7 +51,36 @@ function hasSavedUserInLocalStorage(): boolean {
   return false;
 }
 
-function hasSavedUserInIndexedDb(): Promise<boolean> {
+const SAVED_USER_KEYS = () =>
+  IDBKeyRange.bound(SAVED_USER_KEY_PREFIX, `${SAVED_USER_KEY_PREFIX}\uffff`);
+
+async function hasSavedUserInIndexedDb(): Promise<boolean> {
+  const count = await readAuthStore(
+    (store) => store.count(SAVED_USER_KEYS()),
+    0
+  );
+  return count > 0;
+}
+
+/**
+ * Every user record Firebase has saved in IndexedDB, for the service worker,
+ * which has no Firebase and cannot read localStorage. Empty when there are none.
+ */
+export async function readSavedFirebaseUsers(): Promise<
+  { key: string; value: unknown }[]
+> {
+  const records = await readAuthStore<{ fbase_key: string; value: unknown }[]>(
+    (store) => store.getAll(SAVED_USER_KEYS()),
+    []
+  );
+  return records.map(({ fbase_key, value }) => ({ key: fbase_key, value }));
+}
+
+/** One read from Firebase's store, or `missing` when it does not exist. Never creates it. */
+function readAuthStore<T>(
+  read: (store: IDBObjectStore) => IDBRequest<T>,
+  missing: T
+): Promise<T> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(AUTH_DATABASE);
     let databaseWasMissing = false;
@@ -63,7 +92,7 @@ function hasSavedUserInIndexedDb(): Promise<boolean> {
       request.transaction?.abort();
     };
     request.onerror = () => {
-      if (databaseWasMissing) resolve(false);
+      if (databaseWasMissing) resolve(missing);
       else reject(request.error);
     };
     request.onsuccess = () => {
@@ -72,23 +101,16 @@ function hasSavedUserInIndexedDb(): Promise<boolean> {
       database.onversionchange = () => database.close();
       if (!database.objectStoreNames.contains(AUTH_STORE)) {
         database.close();
-        resolve(false);
+        resolve(missing);
         return;
       }
       try {
         const transaction = database.transaction(AUTH_STORE, "readonly");
         transaction.oncomplete = () => database.close();
         transaction.onabort = () => database.close();
-        const count = transaction
-          .objectStore(AUTH_STORE)
-          .count(
-            IDBKeyRange.bound(
-              SAVED_USER_KEY_PREFIX,
-              `${SAVED_USER_KEY_PREFIX}\uffff`
-            )
-          );
-        count.onsuccess = () => resolve(count.result > 0);
-        count.onerror = () => reject(count.error);
+        const reading = read(transaction.objectStore(AUTH_STORE));
+        reading.onsuccess = () => resolve(reading.result);
+        reading.onerror = () => reject(reading.error);
       } catch (error) {
         database.close();
         reject(error);

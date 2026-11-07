@@ -55,6 +55,7 @@
     createMotionPathExplorerState,
     type ExplorerSource,
   } from "../_data/motion-path-explorer-state.svelte";
+  import { explorerLayout } from "../_data/explorer-layout";
   import { loopDetector } from "#lib/features/create/generate/circular/services/loop-detector.js";
   import { registerLoopDetector } from "#lib/shared/create/get-loop-detector.js";
   import { initializeAppServices } from "#lib/shared/application/state/services.svelte.js";
@@ -84,30 +85,21 @@
     onBpmChange: (bpm) => explorer.setBpm(bpm),
   });
   let pickerOpen = $state(false);
-  // The lesson is the path. Everything that picks what plays (the matrix, a
-  // browsed sequence, turns, timing) waits behind one button.
-  let chooserOpen = $state(false);
-  // Four boxes on one screen. Once the tiles and the canvas sit side by side
-  // (a 900px container) on a viewport tall enough (900px), the workspace
-  // takes the viewport's height, every box scales to its quadrant and the
-  // chooser is simply there. The fit-mode CSS below carries the same two
-  // thresholds; this flag drives what CSS cannot (the tiles' size, the
-  // chooser's presence, the chips' shape).
-  const FIT_MIN_CONTAINER = 900;
-  const FIT_MEDIA = "(min-height: 900px)";
-  // Inside a guide screen the explorer is given its room (the screen's
-  // height under its intro) and fits whenever that room holds the boxes.
-  const FIT_MIN_ROOM = 560;
+  // The screen gives the explorer its room and the explorer composes to it
+  // (explorer-layout.ts): nothing here pans. When the room cannot hold what
+  // picks what plays beside the canvas, that opens behind one button.
   let { room = null }: { room?: number | null } = $props();
   let explorerWidth = $state(0);
-  let viewportTall = $state(false);
-  const fitMode = $derived(
-    explorerWidth >= FIT_MIN_CONTAINER &&
-      (room != null ? room >= FIT_MIN_ROOM : viewportTall)
+  const layout = $derived(explorerLayout(explorerWidth, room ?? 0));
+  const chooserInGrid = $derived(
+    layout.mode === "quad" || layout.mode === "trio"
   );
-  // A guide screen shorter than the window the fit layout was drawn for
+  // A guide screen shorter than the window the four boxes were drawn for
   // keeps the hand-relationship chips at their compact size.
   const shortRoom = $derived(room != null && room < 820);
+  // A small phone: the studio gives up the transport so the canvas stays large
+  // enough to watch while choosing. Playback keeps running.
+  const TIGHT_STUDIO_ROOM = 460;
   // The toy box is a studio: one thing at a time. A pill under the canvas
   // opens it on that section. What picks what plays (Trace, the path tiles,
   // the chooser) fades away first, then the canvas takes the room and the
@@ -121,16 +113,22 @@
   //   closing    studio layout, section panel fading out
   //   revealing  lesson layout back, its pickers about to fade in
   type StudioPhase = "rest" | "clearing" | "open" | "closing" | "revealing";
-  let toySection = $state<PillId | null>(null);
+  //
+  // "Change what plays" is one more such section where it has no box of its
+  // own: it opens the same way, from a button in the lesson row.
+  type StudioSection = PillId | "sequence";
+  let toySection = $state<StudioSection | null>(null);
   // The page the panel shows. It keeps the last section while the panel
   // fades out, so the page does not change under the fade.
-  let shownSection = $state<PillId>("display");
+  let shownSection = $state<StudioSection>("display");
+  const pillSection = $derived(toySection === "sequence" ? null : toySection);
   let studioPhase = $state<StudioPhase>("rest");
   const restFaded = $derived(studioPhase !== "rest");
   const studioLayout = $derived(
     studioPhase === "open" || studioPhase === "closing"
   );
-  const TOY_SECTION_KEYS: Partial<Record<PillId, string>> = {
+  const TOY_SECTION_KEYS: Partial<Record<StudioSection, string>> = {
+    sequence: "guide_paths_change_sequence",
     effects: "guide_paths_effects",
     props: "guide_paths_props",
     effort: "guide_paths_effort",
@@ -139,18 +137,16 @@
   const shownLabel = $derived(
     tDynamic(TOY_SECTION_KEYS[shownSection] ?? "guide_paths_animation")
   );
-  // Side by side on a landscape screen, the canvas over its section on a
-  // portrait one. The shape of the screen decides it, not its width: a short
-  // landscape room (a phone on its side, a zoomed-in laptop) has no height
-  // for a band under the canvas. The minimum only keeps the section's own
-  // column plus some canvas. The side-by-side panel is tall, so it gets the
-  // inspector's page; the stacked one is short and wide, so it gets the dock
-  // tray's dense page.
-  const STUDIO_SIDE_MIN_CONTAINER = 480;
-  let landscape = $state(false);
-  const studioSideBySide = $derived(
-    explorerWidth >= STUDIO_SIDE_MIN_CONTAINER && landscape
-  );
+  // Beside the canvas in a landscape room, the canvas over its section in a
+  // portrait one. The shape of the room decides it (explorer-layout.ts), not
+  // the window's: a short landscape room has no height for a band under the
+  // canvas. The side-by-side panel is tall, so it gets the inspector's page;
+  // the stacked one is short and wide, so it gets the dock tray's dense page.
+  const studioSideBySide = $derived(layout.studioSide);
+  const sequenceShown = $derived(shownSection === "sequence");
+  // On a phone what plays takes the whole room. The canvas stays mounted out
+  // of sight so the playing sequence is still there on the way back.
+  const sequenceBesideCanvas = $derived(layout.mode !== "stack");
   let explorerElement = $state<HTMLElement>();
   let phaseTimer: ReturnType<typeof setTimeout> | undefined;
   // The canvas and the dock are what the two layouts share, so they fly
@@ -184,7 +180,18 @@
       }
       // Laid out at no opacity by the play above, the lesson's pickers now
       // fade back in, unless a pill was pressed again in the meantime.
-      if (studioPhase === "revealing") studioPhase = "rest";
+      if (studioPhase !== "revealing") return;
+      studioPhase = "rest";
+      if (focusChangeOnRest) {
+        focusChangeOnRest = false;
+        // Hidden until its fade begins, and a hidden button takes no focus.
+        afterFade(() => {
+          if (studioPhase !== "rest") return;
+          explorerElement
+            ?.querySelector<HTMLElement>(".change-sequence button")
+            ?.focus({ preventScroll: true });
+        });
+      }
     });
   }
 
@@ -204,9 +211,21 @@
     phaseTimer = setTimeout(next, motionDuration(DURATION.fast));
   }
 
-  function chooseToySection(next: PillId | null): void {
+  function chooseToySection(next: StudioSection | null): void {
     toySection = next;
     if (next !== null) {
+      // A pill pressed while what plays is open (or the reverse) changes the
+      // shape of the studio, so its canvas and dock fly to their new places.
+      if (studioPhase === "open" && (next === "sequence") !== sequenceShown) {
+        stageMotion.capture();
+        dockMotion.capture();
+        shownSection = next;
+        void tick().then(() => {
+          stageMotion.play();
+          dockMotion.play();
+        });
+        return;
+      }
       shownSection = next;
       if (studioPhase === "closing") {
         // Pressed again while the panel was leaving: it comes straight back.
@@ -229,14 +248,23 @@
   }
 
   // Back to paths and Escape leave from inside the panel, which is about to
-  // go, so focus goes to the pill that was pressed.
+  // go, so focus goes to what opened it: the pill that was pressed, or the
+  // "Change what plays" button once the lesson row is back.
+  let focusChangeOnRest = false;
   function leaveStudio(): void {
+    focusChangeOnRest = toySection === "sequence";
     const pill = explorerElement?.querySelector<HTMLElement>(
       '[data-studio-dock] [aria-pressed="true"]'
     );
     chooseToySection(null);
     pill?.focus({ preventScroll: true });
   }
+
+  // A window grown until what plays has its own box again: the drill closes.
+  $effect(() => {
+    if (chooserInGrid && toySection === "sequence")
+      untrack(() => chooseToySection(null));
+  });
 
   // While the studio is asked for, Escape leaves it and the guide's floating
   // contents pill stays tucked off the studio's controls.
@@ -472,19 +500,9 @@
       if (preference.matches) explorer.playing = false;
     };
     preference.addEventListener("change", pauseForReducedMotion);
-    const tall = window.matchMedia(FIT_MEDIA);
-    viewportTall = tall.matches;
-    const syncTall = () => (viewportTall = tall.matches);
-    tall.addEventListener("change", syncTall);
-    const orientation = window.matchMedia("(orientation: landscape)");
-    landscape = orientation.matches;
-    const syncOrientation = () => (landscape = orientation.matches);
-    orientation.addEventListener("change", syncOrientation);
     return () => {
       mounted = false;
       preference.removeEventListener("change", pauseForReducedMotion);
-      tall.removeEventListener("change", syncTall);
-      orientation.removeEventListener("change", syncOrientation);
     };
   });
 </script>
@@ -497,7 +515,7 @@
     isExporting={false}
     {layout}
     presentation="content"
-    controlledSection={shownSection}
+    controlledSection={shownSection === "sequence" ? null : shownSection}
     isPlaying={explorer.playing}
     bpm={explorer.bpm}
     onBpmChange={explorer.setBpm}
@@ -513,243 +531,106 @@
   />
 {/snippet}
 
-<section
-  class="explorer"
-  style:--explorer-room={room != null ? `${room}px` : undefined}
-  aria-label={tDynamic("guide_paths_comparison")}
-  bind:clientWidth={explorerWidth}
-  bind:this={explorerElement}
->
-  <div
-    class="explorer-workspace"
-    class:fit-mode={fitMode}
-    class:studio={studioLayout}
-    class:side={studioSideBySide}
-    class:faded={restFaded && !studioLayout}
-  >
-    <!-- The path comes first. It is the one thing this page teaches, so it is
-         the first thing to see and the first thing to touch. -->
-    <div class="path-column" data-rest-only inert={restFaded}>
-      <PathShapePanel
-        showHelp={false}
-        fill={fitMode}
-        onSettingChange={() => explorer.syncPolicy()}
-      >
-        {#snippet preview(path: MandalaPathShape, size: number)}
-          <SequenceMandala
-            sequence={explorer.variants[path]}
-            pathShape={path}
-            show={explorer.soloHand ?? "both"}
-            {size}
-            mode="gallery"
-            darkMode
-            leftPropType={explorer.propType}
-            rightPropType={explorer.propType}
-            tipEnds={1}
-            tipDx={explorer.trace === "hands" ? 0 : matrixTipDx}
-            animate={false}
-          />
-        {/snippet}
-      </PathShapePanel>
-    </div>
+<!-- Which of the two sources plays. In the drill it shares the header row with
+     Back, which leaves the matrix the height. -->
+{#snippet sourceChoice()}
+  <SegmentedControl
+    options={SOURCE_OPTIONS}
+    value={explorer.source}
+    size={layout.mode === "stack" ? "sm" : undefined}
+    ariaLabel={tDynamic("guide_paths_sequence_source")}
+    onchange={chooseSource}
+  />
+{/snippet}
 
-    <div class="motion-column">
-      <!-- Trace is the lesson's own switch: which point the mandala follows.
-           Everything else about the canvas lives in the toy box under it. -->
-      <div class="transport" data-rest-only inert={restFaded}>
-        <span class="stage-label">{tDynamic("guide_paths_animation")}</span>
-        <div class="trace-choice">
-          <span class="control-label">{tDynamic("guide_paths_trace")}</span>
-          <SegmentedControl
-            options={[
-              { value: "hands", label: tDynamic("guide_paths_hands") },
-              { value: "tips", label: tDynamic("guide_paths_prop_tips") },
-            ]}
-            value={explorer.trace}
-            ariaLabel={tDynamic("guide_paths_trace_point")}
-            onchange={(value) => (explorer.trace = value)}
-          />
-        </div>
-      </div>
-      <div
-        class="motion-stage"
-        aria-label={tDynamic("guide_paths_selected_animation")}
-      >
-        <div class="animation" data-studio-stage>
-          {#if browser}
-            <MotionPathTransitionStage
-              sequence={explorer.sequence}
-              transitionKey={explorer.transitionKey}
-              scope={explorer.scope}
-              playing={explorer.playing}
-              bpm={explorer.bpm}
-              trace={explorer.trace}
-              leftPropType={explorer.propType}
-              rightPropType={explorer.propType}
-              hideGlyph={explorer.soloHand !== null}
-              onplayingchange={(value) => (explorer.playing = value)}
-              onstepchange={(value) => (explorer.liveStep = value)}
-              onseekref={(seek) => (seekDisplayed = seek)}
-              ondisplayedsequencechange={(shown) => (displayedSequence = shown)}
-              onready={() => {
-                ready = true;
-                playerFailed = false;
-              }}
-              onloaderror={() => {
-                ready = true;
-                playerFailed = true;
-              }}
-            />
-          {/if}
-          {#if !ready}<span class="loading" role="status"
-              >{tDynamic("guide_paths_loading_animation")}</span
-            >{/if}
-        </div>
-      </div>
-      <div class="canvas-transport" data-studio-transport>
-        <UnifiedTimeline playback={transport} compact />
-      </div>
-      <!-- The toy box: the same controls the viewer and the Shape Engine
-           offer, scoped to this canvas. Path shape is left out because the
-           tiles beside the canvas are that control here, and tempo because
-           the transport above holds it. Its pills open the studio and stay
-           its section tabs. -->
-      <div class="toy-box" data-studio-dock>
-        <AnimationPanel
-          isExporting={false}
-          layout="bottom"
-          isPlaying={explorer.playing}
-          bpm={explorer.bpm}
-          onBpmChange={explorer.setBpm}
-          onPlaybackToggle={() => (explorer.playing = !explorer.playing)}
-          showEffectsPlayback={false}
-          showTempoControls={false}
-          showPathShape={false}
-          showWordToggle={false}
-          selectedPropType={explorer.propType}
-          onPropChange={choosePropType}
-          sequence={explorer.sequence}
-          presentation="navigation"
-          controlledSection={toySection}
-          onActiveSectionChange={chooseToySection}
-          regionLabel={tDynamic("guide_paths_animation_controls")}
-        />
-      </div>
-      <span class="sr-only" aria-live="polite">{nowPlaying}</span>
-      {#if !fitMode}
-        <div class="now-playing" data-rest-only inert={restFaded}>
-          <PanelButton
-            ariaExpanded={chooserOpen}
-            ariaControls="motion-path-chooser"
-            onclick={() => (chooserOpen = !chooserOpen)}
-          >
-            {tDynamic("guide_paths_change_sequence")}
-            <i
-              class="fas fa-chevron-down chooser-chevron"
-              class:open={chooserOpen}
-              aria-hidden="true"
-            ></i>
-          </PanelButton>
-        </div>
-      {/if}
-    </div>
-
-    {#if chooserOpen || fitMode}
-      <!-- The played sequence has two sources. Each owns its own controls and
-           its own stage, and the two swap in place. -->
-      <section
-        id="motion-path-chooser"
-        class="chooser"
-        aria-label={tDynamic("guide_paths_change_sequence")}
-        data-rest-only
-        inert={restFaded}
-        transition:growFade={{ axis: "y", duration: DURATION.normal }}
-      >
-        <div class="source-controls">
-          <div class="picker-heading">
-            <SegmentedControl
-              options={SOURCE_OPTIONS}
-              value={explorer.source}
-              ariaLabel={tDynamic("guide_paths_sequence_source")}
-              onchange={chooseSource}
-            />
-          </div>
-          <!-- Stacked, the box eases between the two control heights. In fit
-               mode the controls fill their row, so the layers fill the box
-               and the chips take whatever the turn picker leaves. -->
-          <Crossfade
-            key={explorer.source}
-            duration={DURATION.normal}
-            animateHeight
-            fill={fitMode}
-          >
-            {#if explorer.source === "matrix"}
-              <div class="matrix-controls">
-                <div class="turn-picker">
-                  <TurnNotationControls
-                    {leftTurn}
-                    {rightTurn}
-                    {labelMode}
-                    onturn={chooseTurn}
-                    onlabelmodechange={(value) => (labelMode = value)}
+<!-- What plays: the played sequence has two sources. Each owns its own controls
+     and its own stage, and the two swap in place. The box decides how they sit:
+     side by side when it is wider than tall, the stage taking the rest of the
+     height when it is not. -->
+{#snippet chooserBody(inStudio: boolean)}
+  <div class="chooser-box">
+    <div class="chooser">
+      <div class="source-controls">
+        {#if !inStudio}
+          <div class="picker-heading">{@render sourceChoice()}</div>
+        {/if}
+        <!-- Stacked, the box eases between the two control heights. Beside a
+             stage in the four boxes the controls fill their row, so the layers
+             fill the box and the chips take what the turn picker leaves. -->
+        <Crossfade
+          key={explorer.source}
+          duration={DURATION.normal}
+          animateHeight
+          fill={layout.mode === "quad"}
+        >
+          {#if explorer.source === "matrix"}
+            <div class="matrix-controls">
+              <div class="turn-picker">
+                <TurnNotationControls
+                  {leftTurn}
+                  {rightTurn}
+                  {labelMode}
+                  onturn={chooseTurn}
+                  onlabelmodechange={(value) => (labelMode = value)}
+                />
+              </div>
+              <!-- Timing and direction belong to the matrix pair. A solo has
+                   one hand, so the row leaves with it. -->
+              {#if !explorer.soloHand}
+                <div
+                  class="relationship"
+                  transition:growFade={{
+                    axis: "y",
+                    duration: DURATION.normal,
+                  }}
+                >
+                  <ElementChipRow
+                    selected={explorer.selectedMode}
+                    columns={layout.mode === "quad" ? 3 : 2}
+                    compact={layout.mode !== "quad" || shortRoom}
+                    fill={layout.mode === "quad" && !shortRoom}
+                    disabled={!explorer.selectedPair}
+                    onpick={(mode) =>
+                      explorer.chooseHandRelationship(
+                        mode,
+                        buildMatrixSequence
+                      )}
                   />
                 </div>
-                <!-- Timing and direction belong to the matrix pair. A solo has
-                     one hand, so the row leaves with it. -->
-                {#if !explorer.soloHand}
-                  <div
-                    class="relationship"
-                    transition:growFade={{
-                      axis: "y",
-                      duration: DURATION.normal,
-                    }}
-                  >
-                    <ElementChipRow
-                      selected={explorer.selectedMode}
-                      columns={3}
-                      compact={!fitMode || shortRoom}
-                      fill={fitMode && !shortRoom}
-                      disabled={!explorer.selectedPair}
-                      onpick={(mode) =>
-                        explorer.chooseHandRelationship(
-                          mode,
-                          buildMatrixSequence
-                        )}
-                    />
-                  </div>
-                {/if}
-              </div>
-            {:else}
-              <div class="browse-row">
-                <PanelButton fullWidth onclick={() => (pickerOpen = true)}
-                  >{tDynamic("guide_paths_browse_sequences")}</PanelButton
-                >
-              </div>
-            {/if}
-          </Crossfade>
-          <!-- The strip keeps its height while idle so a build in progress
-               moves nothing beside it. -->
-          <div class="picker-feedback" aria-live="polite">
-            {#if explorer.pickerStatus === "loading"}
-              <span>{tDynamic("guide_paths_building_sequence")}</span>
-            {:else if explorer.pickerError}
-              <span role="alert"
-                >{tDynamic(
-                  explorer.pickerError.startsWith("That hand relationship")
-                    ? "guide_paths_relationship_error"
-                    : "guide_paths_sequence_error"
-                )}</span
+              {/if}
+            </div>
+          {:else}
+            <div class="browse-row">
+              <PanelButton fullWidth onclick={() => (pickerOpen = true)}
+                >{tDynamic("guide_paths_browse_sequences")}</PanelButton
               >
-              <PanelButton onclick={explorer.retryMatrixSelection}
-                >{tDynamic("guide_paths_try_again")}</PanelButton
-              >
-            {/if}
-          </div>
+            </div>
+          {/if}
+        </Crossfade>
+        <!-- The strip keeps its height while idle so a build in progress
+             moves nothing beside it. -->
+        <div class="picker-feedback" aria-live="polite">
+          {#if explorer.pickerStatus === "loading"}
+            <span>{tDynamic("guide_paths_building_sequence")}</span>
+          {:else if explorer.pickerError}
+            <span role="alert"
+              >{tDynamic(
+                explorer.pickerError.startsWith("That hand relationship")
+                  ? "guide_paths_relationship_error"
+                  : "guide_paths_sequence_error"
+              )}</span
+            >
+            <PanelButton onclick={explorer.retryMatrixSelection}
+              >{tDynamic("guide_paths_try_again")}</PanelButton
+            >
+          {/if}
         </div>
-        <!-- The stage is a square the height of the controls beside it (never
-             smaller than 20rem, never larger than the matrix's 34rem), so the
-             chooser packs into one band with nothing under the controls. -->
-        <div class="source-stage">
+      </div>
+      <!-- The stage is the largest square its share of the box holds. On a
+           phone the matrix is larger than that and scrolls inside it, under
+           its sticky headers. -->
+      <div class="source-stage">
+        <div class="source-square" data-fit-self-scroll>
           <Crossfade key={explorer.source} duration={DURATION.normal} fill>
             {#if explorer.source === "matrix"}
               <div class="matrix-stage" aria-busy={!matrixData && !matrixError}>
@@ -810,6 +691,167 @@
             {/if}
           </Crossfade>
         </div>
+      </div>
+    </div>
+  </div>
+{/snippet}
+
+<section
+  class="explorer"
+  style:--explorer-room={room != null ? `${room}px` : undefined}
+  style:--canvas-column={layout.canvasColumn
+    ? `${layout.canvasColumn}px`
+    : undefined}
+  style:--tile-column={layout.tileColumn
+    ? `${layout.tileColumn}px`
+    : undefined}
+  aria-label={tDynamic("guide_paths_comparison")}
+  bind:clientWidth={explorerWidth}
+  bind:this={explorerElement}
+>
+  <div
+    class="explorer-workspace mode-{layout.mode}"
+    class:beside={layout.tilesBeside}
+    class:studio={studioLayout}
+    class:tight={layout.mode === "stack" &&
+      room != null &&
+      room < TIGHT_STUDIO_ROOM}
+    class:side={studioSideBySide && !sequenceShown}
+    class:sequence={sequenceShown}
+    class:with-canvas={sequenceBesideCanvas}
+    class:faded={restFaded && !studioLayout}
+  >
+    <!-- The path comes first. It is the one thing this page teaches, so it is
+         the first thing to see and the first thing to touch. -->
+    <div class="path-column">
+      <div class="path-panel" data-rest-only inert={restFaded}>
+        <PathShapePanel
+          showHelp={false}
+          fill={layout.mode !== "stack" || layout.tilesBeside}
+          columns={layout.tileColumns}
+          onSettingChange={() => explorer.syncPolicy()}
+        >
+          {#snippet preview(path: MandalaPathShape, size: number)}
+            <SequenceMandala
+              sequence={explorer.variants[path]}
+              pathShape={path}
+              show={explorer.soloHand ?? "both"}
+              {size}
+              mode="gallery"
+              darkMode
+              leftPropType={explorer.propType}
+              rightPropType={explorer.propType}
+              tipEnds={1}
+              tipDx={explorer.trace === "hands" ? 0 : matrixTipDx}
+              animate={false}
+            />
+          {/snippet}
+        </PathShapePanel>
+      </div>
+      <!-- Trace is the lesson's own switch: which point the mandala follows.
+           Everything else about the canvas lives in the toy box under it. -->
+      <div class="lesson" data-rest-only inert={restFaded}>
+        <div class="trace-choice">
+          <span class="control-label">{tDynamic("guide_paths_trace")}</span>
+          <SegmentedControl
+            options={[
+              { value: "hands", label: tDynamic("guide_paths_hands") },
+              { value: "tips", label: tDynamic("guide_paths_prop_tips") },
+            ]}
+            value={explorer.trace}
+            size={layout.mode === "stack" ? "sm" : undefined}
+            ariaLabel={tDynamic("guide_paths_trace_point")}
+            onchange={(value) => (explorer.trace = value)}
+          />
+        </div>
+        {#if !chooserInGrid}
+          <div class="change-sequence">
+            <PanelButton onclick={() => chooseToySection("sequence")}>
+              {tDynamic("guide_paths_change_sequence")}
+              <i class="fas fa-chevron-right chooser-chevron" aria-hidden="true"
+              ></i>
+            </PanelButton>
+          </div>
+        {/if}
+      </div>
+    </div>
+
+    <div class="motion-column">
+      <div
+        class="motion-stage"
+        aria-label={tDynamic("guide_paths_selected_animation")}
+      >
+        <div class="animation" data-studio-stage>
+          {#if browser}
+            <MotionPathTransitionStage
+              sequence={explorer.sequence}
+              transitionKey={explorer.transitionKey}
+              scope={explorer.scope}
+              playing={explorer.playing}
+              bpm={explorer.bpm}
+              trace={explorer.trace}
+              leftPropType={explorer.propType}
+              rightPropType={explorer.propType}
+              hideGlyph={explorer.soloHand !== null}
+              onplayingchange={(value) => (explorer.playing = value)}
+              onstepchange={(value) => (explorer.liveStep = value)}
+              onseekref={(seek) => (seekDisplayed = seek)}
+              ondisplayedsequencechange={(shown) => (displayedSequence = shown)}
+              onready={() => {
+                ready = true;
+                playerFailed = false;
+              }}
+              onloaderror={() => {
+                ready = true;
+                playerFailed = true;
+              }}
+            />
+          {/if}
+          {#if !ready}<span class="loading" role="status"
+              >{tDynamic("guide_paths_loading_animation")}</span
+            >{/if}
+        </div>
+      </div>
+      <div class="canvas-transport" data-studio-transport>
+        <UnifiedTimeline playback={transport} compact />
+      </div>
+      <!-- The toy box: the same controls the viewer and the Shape Engine
+           offer, scoped to this canvas. Path shape is left out because the
+           tiles beside the canvas are that control here, and tempo because
+           the transport above holds it. Its pills open the studio and stay
+           its section tabs. -->
+      <div class="toy-box" data-studio-dock>
+        <AnimationPanel
+          isExporting={false}
+          layout="bottom"
+          isPlaying={explorer.playing}
+          bpm={explorer.bpm}
+          onBpmChange={explorer.setBpm}
+          onPlaybackToggle={() => (explorer.playing = !explorer.playing)}
+          showEffectsPlayback={false}
+          showTempoControls={false}
+          showPathShape={false}
+          showWordToggle={false}
+          selectedPropType={explorer.propType}
+          onPropChange={choosePropType}
+          sequence={explorer.sequence}
+          presentation="navigation"
+          controlledSection={pillSection}
+          onActiveSectionChange={chooseToySection}
+          regionLabel={tDynamic("guide_paths_animation_controls")}
+        />
+      </div>
+      <span class="sr-only" aria-live="polite">{nowPlaying}</span>
+    </div>
+
+    {#if chooserInGrid}
+      <section
+        class="chooser-cell"
+        aria-label={tDynamic("guide_paths_change_sequence")}
+        data-rest-only
+        inert={restFaded}
+      >
+        {@render chooserBody(false)}
       </section>
     {/if}
 
@@ -822,14 +864,26 @@
         transition:flyFade={{ y: 8, duration: DURATION.fast }}
       >
         <header class="toy-section-header">
-          <PanelButton onclick={leaveStudio}>
+          <PanelButton
+            onclick={leaveStudio}
+            ariaLabel={tDynamic("guide_paths_back")}
+          >
             <i class="fas fa-arrow-left" aria-hidden="true"></i>
-            <span>{tDynamic("guide_paths_back")}</span>
+            {#if !(sequenceShown && layout.mode === "stack")}
+              <span>{tDynamic("guide_paths_back")}</span>
+            {/if}
           </PanelButton>
-          <h3 class="toy-section-title">{shownLabel}</h3>
+          {#if sequenceShown}
+            <h3 class="sr-only">{shownLabel}</h3>
+            <div class="header-source">{@render sourceChoice()}</div>
+          {:else}
+            <h3 class="toy-section-title">{shownLabel}</h3>
+          {/if}
         </header>
-        <div class="toy-section-body">
-          {#if studioSideBySide}
+        <div class="toy-section-body" class:sequence-body={sequenceShown}>
+          {#if sequenceShown}
+            {@render chooserBody(true)}
+          {:else if studioSideBySide}
             {@render sectionPage("sidebar")}
           {:else}
             <Crossfade key={shownSection} duration={DURATION.normal} fill>
@@ -869,27 +923,162 @@
     /* Under the fixed site header when something scrolls to it. */
     scroll-margin-top: calc(56px + var(--spacing-md, 16px));
   }
-  .explorer-workspace,
-  .chooser {
+  /* The workspace is exactly the room its screen gives it, in every mode.
+     What goes in it comes from explorer-layout.ts, so nothing can push the
+     screen taller than its frame. */
+  .explorer-workspace {
+    position: relative;
     display: grid;
-    align-items: start;
+    align-items: stretch;
     gap: var(--spacing-lg, 24px);
+    height: var(--explorer-room);
     min-width: 0;
   }
-  .chooser {
+
+  /* ── The tiles and the lesson row ─────────────────────────────────── */
+  .path-column {
+    display: flex;
+    flex-direction: column;
     gap: var(--spacing-sm, 8px);
-    padding-top: var(--spacing-md, 16px);
-    border-top: 1px solid var(--theme-stroke);
+    min-width: 0;
+    min-height: 0;
+  }
+  .path-panel {
+    display: grid;
+    flex: 1 1 0;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    min-width: 0;
+    min-height: 0;
+  }
+  .path-panel :global(.path-header) {
+    align-items: center;
+    min-height: 24px;
+    margin-bottom: var(--spacing-sm, 8px);
+  }
+  .path-panel :global(.rt-section-label) {
+    font-size: var(--font-size-min, 14px);
+    font-weight: 650;
+    flex-shrink: 0;
+  }
+  .path-panel :global(.path-shape-grid) {
+    margin-top: 0;
+    min-height: 0;
+  }
+  .lesson {
+    display: flex;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-sm, 8px);
+    min-height: 44px;
+  }
+  .trace-choice {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm, 8px);
+    min-width: 0;
+  }
+  /* A set width, not a flex basis: the row sizes itself from content, and
+     a basis is not content, so the control would shrink to the labels and
+     wrap the longer one. */
+  .trace-choice :global(.segmented-control) {
+    flex: 0 1 auto;
+    width: 13rem;
+    max-width: 100%;
+  }
+  .control-label {
+    color: var(--theme-text-muted);
+    font-size: var(--font-size-sm, 14px);
+  }
+  .change-sequence > :global(button) {
+    flex-shrink: 0;
+  }
+  .chooser-chevron {
+    margin-left: var(--spacing-xs, 4px);
+  }
+
+  /* ── The canvas, its transport and its pills ──────────────────────── */
+  .motion-column {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+  }
+  /* The canvas is the largest square the room holds. */
+  .motion-stage {
+    display: grid;
+    flex: 1 1 0;
+    place-items: center;
+    width: 100%;
+    min-height: 0;
+    container-type: size;
+  }
+  .animation {
+    position: relative;
+    width: min(100cqw, 100cqh);
+    aspect-ratio: 1;
+  }
+  .loading {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    pointer-events: none;
+    color: var(--theme-text-muted);
+  }
+  /* The transport sits on the canvas's bottom edge, as in the viewer. It
+     counts the steps of the path that is loading, so its row is there from
+     the first paint and nothing moves when the canvas arrives. */
+  .canvas-transport {
+    flex-shrink: 0;
+    min-width: 0;
+    overflow: hidden;
+    border-radius: 12px;
+  }
+  .toy-box {
+    flex-shrink: 0;
+    min-width: 0;
+    margin-top: var(--spacing-sm, 8px);
+  }
+
+  /* ── What plays ───────────────────────────────────────────────────── */
+  .chooser-cell {
+    min-width: 0;
+    min-height: 0;
+  }
+  .chooser-box {
+    container: chooser / size;
+    flex: 1 1 0;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+  }
+  .chooser {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: var(--spacing-sm, 8px);
+    box-sizing: border-box;
+    height: 100%;
+    min-height: 0;
+  }
+  /* Wider than tall: the controls beside the largest square left over. */
+  @container chooser (min-aspect-ratio: 5 / 4) {
+    .chooser {
+      grid-template-rows: minmax(0, 1fr);
+      grid-template-columns:
+        minmax(16rem, 1fr)
+        minmax(0, min(100cqh, calc(100cqw - 16rem - var(--spacing-sm, 8px))));
+    }
   }
   .source-controls,
   .matrix-controls {
     display: grid;
+    align-content: start;
     gap: var(--spacing-sm, 8px);
     min-width: 0;
   }
-  .picker-heading,
-  .transport,
-  .now-playing {
+  .picker-heading {
     display: flex;
     align-items: center;
     gap: var(--spacing-sm, 8px);
@@ -901,28 +1090,6 @@
   .browse-row {
     margin-block: var(--spacing-xs, 4px);
   }
-  /* Stacked, the stage is a square as wide as the matrix reads well; the
-     layers inside fill it, so the card takes the matrix's square and the
-     swap changes nothing below. */
-  .source-stage {
-    position: relative;
-    width: 100%;
-    max-width: 34rem;
-    aspect-ratio: 1;
-    min-width: 0;
-  }
-  .card-stage {
-    width: 100%;
-    height: 100%;
-    min-width: 0;
-  }
-  .stage-label {
-    margin: 0;
-    margin-right: auto;
-    color: var(--theme-text);
-    font-size: var(--font-size-min, 14px);
-    font-weight: 650;
-  }
   .turn-picker {
     display: grid;
     gap: var(--spacing-xs, 4px);
@@ -930,9 +1097,42 @@
     margin-block: var(--spacing-xs, 4px);
     container-type: inline-size;
   }
-  .control-label {
+  .relationship {
+    min-width: 0;
+  }
+  .picker-feedback {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--spacing-sm, 8px);
+    min-height: 1.4em;
     color: var(--theme-text-muted);
-    font-size: var(--font-size-sm, 14px);
+    font-size: var(--font-size-compact, 12px);
+    line-height: 1.4;
+  }
+  .source-stage {
+    display: grid;
+    place-items: center;
+    min-width: 0;
+    min-height: 0;
+    container-type: size;
+  }
+  .source-square {
+    position: relative;
+    width: min(100cqw, 100cqh);
+    aspect-ratio: 1;
+  }
+  /* A phone's what-plays is taller than it has room for, so the stage takes
+     the whole width: the matrix's columns all show and only its rows scroll. */
+  .mode-stack .source-square {
+    width: 100%;
+    height: 100%;
+    aspect-ratio: auto;
+  }
+  .card-stage {
+    width: 100%;
+    height: 100%;
+    min-width: 0;
   }
   .matrix-stage {
     height: 100%;
@@ -959,68 +1159,129 @@
   .matrix-status.error {
     color: var(--semantic-error);
   }
-  .picker-feedback {
+
+  /* ── The four modes (explorer-layout.ts) ──────────────────────────── */
+  /* Four boxes: the tiles and the canvas over the controls and the matrix,
+     the top row a little taller because its transport rows are fixed. */
+  .mode-quad:not(.studio) {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1.2fr) minmax(0, 1fr);
+  }
+  .mode-quad:not(.studio) .motion-column {
+    justify-self: center;
+    width: 100%;
+    max-width: 640px;
+  }
+  .mode-quad .chooser-cell {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  /* The columns match the workspace, so the stage sits under the canvas and
+     the controls under the tiles. */
+  .mode-quad .chooser {
+    grid-template-rows: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: var(--spacing-lg, 24px);
+    padding-top: var(--spacing-md, 16px);
+    border-top: 1px solid var(--theme-stroke);
+  }
+  /* The controls fill the row: heading, then the crossfaded controls, then
+     the status strip. The crossfade's layers fill that middle box, so a
+     source switch changes nothing beside it, and the chip row takes what the
+     turn picker leaves. */
+  .mode-quad .source-controls {
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .mode-quad .source-controls > :global(.crossfade.fill) {
+    flex: 1 1 0;
+    height: auto;
+    min-height: 0;
+  }
+  .mode-quad .matrix-controls {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+  }
+  .mode-quad .relationship {
+    flex: 1 1 0;
+    min-height: 0;
+  }
+  /* Three columns: wide but not tall. The canvas takes all the height it can
+     use; the tiles and what plays share the width left. */
+  .mode-trio:not(.studio) {
+    grid-template-columns:
+      minmax(0, 0.7fr) var(--canvas-column) minmax(0, 1.5fr);
+    grid-template-rows: minmax(0, 1fr);
+  }
+  /* The tiles beside the canvas, what plays one tap away. */
+  .mode-split:not(.studio) {
+    grid-template-columns: minmax(0, 1fr) var(--canvas-column);
+    grid-template-rows: minmax(0, 1fr);
+  }
+  /* A phone: the canvas with its tiles beside it or in a row under it. Every
+     piece is a grid item here, so the canvas takes whatever height is left. */
+  .mode-stack:not(.studio) {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto auto auto auto;
+    grid-template-areas: "stage" "transport" "dock" "tiles" "lesson";
     gap: var(--spacing-sm, 8px);
-    min-height: 2.8em;
-    color: var(--theme-text-muted);
-    font-size: var(--font-size-compact, 12px);
-    line-height: 1.4;
   }
-  .motion-column,
-  .path-column {
-    min-width: 0;
-    width: 100%;
+  .mode-stack.beside:not(.studio) {
+    grid-template-columns: minmax(0, 1fr) var(--tile-column);
+    grid-template-rows: minmax(0, 1fr) auto auto auto;
+    grid-template-areas:
+      "stage tiles"
+      "transport tiles"
+      "dock tiles"
+      "lesson lesson";
   }
-  .motion-column {
-    max-width: 580px;
-    margin-inline: auto;
+  .mode-stack:not(.studio) .path-column,
+  .mode-stack:not(.studio) .motion-column {
+    display: contents;
   }
-  /* Stacked, the canvas and the first row of tiles share one phone screen,
-     and the chooser opens right under the button that names it. Side by
-     side, the path comes first; the placements below make that explicit. */
-  .path-column {
-    order: 1;
+  .mode-stack:not(.studio) .motion-stage {
+    grid-area: stage;
   }
-  .animation {
-    position: relative;
-    aspect-ratio: 1;
+  .mode-stack:not(.studio) .canvas-transport {
+    grid-area: transport;
   }
-  .motion-stage {
-    width: 100%;
+  .mode-stack:not(.studio) .toy-box {
+    grid-area: dock;
+    margin-top: 0;
   }
-  .loading {
-    position: absolute;
-    inset: 0;
-    display: grid;
-    place-items: center;
-    pointer-events: none;
-    color: var(--theme-text-muted);
+  .mode-stack:not(.studio) .path-panel {
+    grid-area: tiles;
   }
-  .transport {
-    flex-wrap: wrap;
-    margin-bottom: var(--spacing-sm, 8px);
+  .mode-stack:not(.studio) .lesson {
+    grid-area: lesson;
+    flex-wrap: nowrap;
+    min-height: 36px;
   }
-  .now-playing {
-    justify-content: flex-end;
-    margin-top: var(--spacing-sm, 8px);
+  /* Too narrow for a caption; the tile's own label names the path. The tiles
+     take the panel's first row then, so that row is the one that stretches. */
+  .mode-stack.beside .path-panel {
+    grid-template-rows: minmax(0, 1fr) auto;
   }
-  /* The transport sits on the canvas's bottom edge, as in the viewer. It
-     counts the steps of the path that is loading, so its row is there from
-     the first paint and nothing moves when the canvas arrives. */
-  .canvas-transport {
-    flex-shrink: 0;
-    min-width: 0;
-    overflow: hidden;
-    border-radius: 12px;
+  .mode-stack.beside .path-panel :global(.path-header) {
+    display: none;
   }
-  .toy-box {
-    flex-shrink: 0;
-    min-width: 0;
-    margin-top: var(--spacing-sm, 8px);
+  /* One line on a phone: the segmented control names its own choices. */
+  .mode-stack .control-label,
+  .mode-stack .chooser-chevron {
+    display: none;
   }
+  .mode-stack .trace-choice {
+    flex: none;
+  }
+  .mode-stack .trace-choice :global(.segmented-control) {
+    width: auto;
+    white-space: nowrap;
+  }
+
+  /* ── Leaving for the studio and coming back ───────────────────────── */
   /* The lesson's pickers leave before the studio takes their room and come
      back after it gives the room back. */
   [data-rest-only] {
@@ -1064,6 +1325,10 @@
   .toy-section-header :global(.panel-btn) {
     flex: 0 0 auto;
   }
+  .header-source {
+    flex: 1 1 0;
+    min-width: 0;
+  }
   .toy-section-title {
     margin: 0;
     min-width: 0;
@@ -1076,6 +1341,13 @@
     flex-direction: column;
     min-width: 0;
     min-height: 0;
+  }
+  /* The name the chips answer to: at phone width they become one row of six
+     icons (ElementChipRow), the way the Shape Engine draws them on a phone. */
+  .toy-section-body.sequence-body {
+    container: shape-matrix-app / inline-size;
+    padding: var(--spacing-sm, 8px);
+    box-sizing: border-box;
   }
   .toy-section-body > :global(.animator-inspector),
   .toy-section-body > :global(.crossfade) {
@@ -1103,200 +1375,30 @@
     display: grid;
     align-content: safe center;
   }
-  .now-playing > :global(button) {
-    flex-shrink: 0;
-  }
-  .chooser-chevron {
-    margin-left: var(--spacing-xs, 4px);
-    transition: transform var(--duration-fast) var(--ease-out);
-  }
-  .chooser-chevron.open {
-    transform: rotate(180deg);
-  }
-  .relationship {
-    min-width: 0;
-  }
-  .path-column :global(.path-header) {
-    align-items: center;
-    min-height: 44px;
-    margin-bottom: var(--spacing-sm, 8px);
-  }
-  .path-column :global(.rt-section-label) {
-    font-size: var(--font-size-min, 14px);
-    font-weight: 650;
-    flex-shrink: 0;
-  }
-  .path-column :global(.path-shape-grid) {
-    margin-top: 0;
-  }
-  .trace-choice {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm, 8px);
-    margin-left: auto;
-    min-width: 0;
-  }
-  /* A set width, not a flex basis: the row sizes itself from content, and
-     a basis is not content, so the control would shrink to the labels and
-     wrap the longer one. */
-  .trace-choice :global(.segmented-control) {
-    flex: 0 1 auto;
-    width: 13rem;
-    max-width: 100%;
-  }
-  @container (min-width: 640px) {
-    .explorer-workspace {
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    }
-    .path-column {
-      display: grid;
-      grid-column: 1;
-      grid-row: 1;
-      grid-template-rows: auto minmax(0, 1fr);
-      align-self: stretch;
-      order: 0;
-    }
-    .motion-column {
-      grid-column: 2;
-      grid-row: 1;
-      display: flex;
-      flex-direction: column;
-      align-self: stretch;
-    }
-    /* The transport stays on the canvas; the room left over goes under it. */
-    .canvas-transport {
-      margin-bottom: auto;
-    }
-    .path-column :global(.path-shape-grid) {
-      grid-template-rows: repeat(2, minmax(0, 1fr));
-    }
-    .chooser {
-      grid-column: 1 / -1;
-      grid-row: 2;
-    }
-  }
-  /* Two columns in the chooser only once the controls column can hold the
-     timing chips unclipped. The columns match the workspace so the stage
-     sits under the canvas and the controls under the tiles. The stage
-     stretches to the row the controls set and takes its width from that. */
-  @container (min-width: 900px) {
-    .chooser {
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-      column-gap: var(--spacing-lg, 24px);
-    }
-    .source-controls {
-      grid-column: 1;
-      align-self: start;
-    }
-    .source-stage {
-      grid-column: 2;
-      align-self: stretch;
-      justify-self: center;
-      width: auto;
-      max-width: 100%;
-      min-height: 20rem;
-      max-height: 34rem;
-    }
-  }
-  @container (min-width: 1100px) {
-    .motion-column {
-      max-width: 640px;
-    }
-  }
-  /* Fit mode: the same two thresholds as the script. The workspace takes the
-     viewport under the 56px site header, the top row gets a little more than
-     the bottom (its transport and caption rows are fixed), and each box is
-     the largest square its quadrant holds. Capped where the natural layout
-     already fits. */
-  /* Fit mode (the fitMode flag: a 900px container with room to spare,
-     the window's height on its own or the guide screen's `room`). */
-  .explorer-workspace.fit-mode {
-    height: var(
-      --explorer-room,
-      min(calc(100dvh - 56px - 2 * var(--spacing-md, 16px)), 1400px)
-    );
-    grid-template-rows: minmax(0, 1.2fr) minmax(0, 1fr);
-    align-items: stretch;
-  }
-  .fit-mode .path-column,
-  .fit-mode .motion-column,
-  .fit-mode .path-column :global(.path-shape-grid) {
-    min-height: 0;
-  }
-  .fit-mode .motion-stage {
-    display: flex;
-    justify-content: center;
-    flex: 1 1 0;
-    min-height: 0;
-    margin-bottom: 0;
-  }
-  .fit-mode .animation {
-    height: 100%;
-    width: auto;
-    max-width: 100%;
-  }
-  .fit-mode .chooser {
-    grid-template-rows: minmax(0, 1fr);
-    align-self: stretch;
-    min-height: 0;
-  }
-  /* The controls fill the row: heading, then the crossfaded controls,
-       then the status strip. The crossfade's layers fill that middle box,
-       so a source switch changes nothing the page anchors its scroll to,
-       and the chip row takes what the turn picker leaves. */
-  .fit-mode .source-controls {
-    display: flex;
-    flex-direction: column;
-    align-self: stretch;
-    min-height: 0;
-  }
-  .fit-mode .source-controls > :global(.crossfade.fill) {
-    flex: 1 1 0;
-    height: auto;
-    min-height: 0;
-  }
-  .fit-mode .matrix-controls {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    min-height: 0;
-  }
-  .fit-mode .relationship {
-    flex: 1 1 0;
-    min-height: 0;
-  }
-  .fit-mode .source-stage {
-    align-self: center;
-    height: 100%;
-    min-height: 0;
-    max-height: 34rem;
-  }
-  /* The studio: the canvas, its pills and one section, nothing else. Like
-     fit mode it takes the viewport under the site header. Stacked, the
-     section is a band under the pills; side by side, it takes the tiles'
-     column and the canvas grows where it already was. */
+
+  /* ── The studio ───────────────────────────────────────────────────── */
+  /* The canvas, its pills and one section, nothing else. Stacked, the section
+     is a band under the pills; side by side, it takes the tiles' column and
+     the canvas grows where it already was. */
   .explorer-workspace.studio {
-    height: var(
-      --explorer-room,
-      min(calc(100dvh - 56px - 2 * var(--spacing-md, 16px)), 1400px)
-    );
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr) minmax(0, clamp(16rem, 42%, 28rem));
-    align-items: stretch;
+    grid-template-rows: minmax(0, 1fr) minmax(0, clamp(11rem, 42%, 28rem));
     gap: var(--spacing-md, 16px);
   }
+  .explorer-workspace.studio.tight:not(.side, .sequence) {
+    grid-template-rows: minmax(0, 1fr) minmax(0, 10rem);
+  }
+  .studio.tight .canvas-transport {
+    display: none;
+  }
   /* Side by side, the canvas group sets the height: a square canvas as wide
-     as its column, its transport and its pills, up to the room under the
-     site header. A wide column no longer leaves a band of empty stage above
-     and below the canvas, and the section card is placed beside it without
-     sizing the row (see .toy-section below). */
+     as its column, its transport and its pills, up to the room. A wide column
+     no longer leaves a band of empty stage above and below the canvas, and
+     the section card is placed beside it without sizing the row (see
+     .toy-section below). */
   .explorer-workspace.studio.side {
-    position: relative;
     height: auto;
-    max-height: var(
-      --explorer-room,
-      min(calc(100dvh - 56px - 2 * var(--spacing-md, 16px)), 1400px)
-    );
+    max-height: var(--explorer-room);
     grid-template-columns: clamp(18rem, 40%, 40rem) minmax(0, 1fr);
     grid-template-rows: minmax(0, 1fr);
   }
@@ -1306,12 +1408,8 @@
   .studio .motion-column {
     grid-column: 1;
     grid-row: 1;
-    display: flex;
-    flex-direction: column;
     justify-content: center;
     align-self: stretch;
-    max-width: none;
-    min-height: 0;
     container-type: inline-size;
   }
   .studio.side .motion-column {
@@ -1328,20 +1426,8 @@
     grid-column: 1 / 2;
     grid-row: 1 / 2;
   }
-  /* The canvas is the largest square the room holds. */
   .studio .motion-stage {
-    flex: 1 1 0;
-    min-height: 0;
     max-height: 100cqw;
-    margin: 0;
-    container-type: size;
-    display: grid;
-    place-items: center;
-  }
-  .studio .animation {
-    width: min(100cqw, 100cqh);
-    height: auto;
-    max-width: none;
   }
   /* Its own square first. A room too short for it squeezes the stage, and
      the canvas inside takes the stage's shorter side. */
@@ -1350,9 +1436,26 @@
     aspect-ratio: 1;
     max-height: none;
   }
-  /* The canvas, its transport and the pills stay one centered group. */
-  .studio .canvas-transport {
-    margin-bottom: 0;
+  /* What plays in the studio: beside the canvas, which holds still, or the
+     whole room on a phone with the canvas mounted out of sight. */
+  .explorer-workspace.studio.sequence {
+    grid-template-rows: minmax(0, 1fr);
+  }
+  .explorer-workspace.studio.sequence .toy-section {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .explorer-workspace.studio.sequence.with-canvas {
+    grid-template-columns: minmax(0, 1fr) min(var(--canvas-column, 50%), 50%);
+  }
+  .studio.sequence.with-canvas .motion-column {
+    grid-column: 2;
+  }
+  .studio.sequence:not(.with-canvas) .motion-column {
+    position: absolute;
+    inset: 0;
+    visibility: hidden;
+    pointer-events: none;
   }
   @media (prefers-reduced-motion: reduce) {
     [data-rest-only] {

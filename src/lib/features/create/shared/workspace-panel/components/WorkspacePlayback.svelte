@@ -23,6 +23,7 @@
     onPlaybackChange,
     onclose,
     theaterActions,
+    saving = false,
   }: {
     sequence: SequenceData;
     active: boolean;
@@ -35,11 +36,15 @@
     onStepChange?: (step: number) => void;
     onPlaybackChange?: (run: number, step: number, playing: boolean) => void;
     /** Returns the workspace to the editable card. Rendered as a corner X so
-     *  the preview carries its own exit instead of relying on Stop or Escape. */
+     *  the preview carries its own exit instead of relying on Stop or Escape.
+     *  Not while saving: the switch's Card option sits right under the player. */
     onclose?: () => void;
     /** Viewer, Share and Stop for theater mode, where the workspace's bottom
      *  bar steps aside and they sit in a column beside the rail. */
     theaterActions?: Snippet;
+    /** The save view is open beside the player. Theater's Viewer would close
+     *  the form and its Stop repeats the switch's Card, so that column goes. */
+    saving?: boolean;
   } = $props();
 
   // Sideways on a phone the player is three columns: canvas, a vertical
@@ -198,6 +203,7 @@
     <div
       class="playback-media"
       data-playback-foreground
+      class:without-actions={saving}
       bind:this={playbackMedia}
       style:--picker-lift="{effectPickerLift}px"
       style:--picker-scale={effectPickerScale}
@@ -241,7 +247,7 @@
           }}
           onSeekRef={(callback) => (seek = callback)}
         />
-        {#if onclose}
+        {#if onclose && !saving}
           <button
             type="button"
             class="close-preview"
@@ -276,7 +282,7 @@
           />
         </div>
       </div>
-      {#if theater}
+      {#if theater && !saving}
         <!-- Its column is reserved whenever the layout is theater, so the
              canvas never resizes as the buttons arrive or leave. -->
         <div class="theater-actions">
@@ -484,6 +490,17 @@
           2 * var(--theater-gap)
       );
       height: calc(var(--theater-canvas) + var(--sequence-seek-target-size));
+    }
+    /* Beside the save form: the canvas and the rail, with no actions column. */
+    .playback-media.without-actions {
+      --theater-canvas: min(
+        100cqh - var(--sequence-seek-target-size),
+        100cqw - var(--theater-rail) - var(--theater-gap)
+      );
+      grid-template-columns: var(--theater-canvas) var(--theater-rail);
+      width: calc(
+        var(--theater-canvas) + var(--theater-rail) + var(--theater-gap)
+      );
     }
     .notation-rail {
       visibility: visible;

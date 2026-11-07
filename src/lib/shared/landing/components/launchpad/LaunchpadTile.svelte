@@ -5,7 +5,8 @@
    * One bento tile in the homepage Launchpad grid: a real SSR `<a>` (heading +
    * descriptor always in the markup) with a lazy-mounted living media layer
    * that only activates after the tile scrolls into view and reaches its turn
-   * in the parent's idle-mount queue.
+   * in the parent's idle-mount queue. Media already loaded this session mounts
+   * in the first render instead, so a return flight lands on the real artwork.
    *
    * Chips (LOOP Deck, Staves, ...) are real `<a>` elements and must be
    * siblings of the main tile link, never nested inside it — nested
@@ -15,7 +16,12 @@
   import { cursorGlow } from "#lib/actions/cursor-glow.js";
   import { pressSpring } from "#lib/actions/press-spring.js";
   import { magnetic } from "#lib/actions/magnetic.js";
+  import { untrack, type Component } from "svelte";
   import LazyMount from "#lib/shared/components/LazyMount.svelte";
+  import {
+    loadedTileMedia,
+    rememberTileMedia,
+  } from "./launchpad-media-session";
   import {
     hrefSlug,
     isProductionTileId,
@@ -24,6 +30,11 @@
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import demoJson from "#lib/shared/landing/data/demo-sequence.json";
   import { siteCopy } from "../../site-copy";
+  import {
+    isPlainPress,
+    TILE_WINDOW_NAME,
+    tileFlight,
+  } from "#lib/shared/transitions/tile-flight.svelte.js";
   import {
     trackLaunchpadClick,
     type LaunchpadTileId,
@@ -50,7 +61,19 @@
     onMediaSettled?: (id: string) => void;
   } = $props();
 
-  let mediaLoaded = $state(false);
+  // Set only when the grid seeded this tile active in its first render.
+  const seededMedia = untrack(() =>
+    active ? loadedTileMedia(variant, tile.id) : null
+  );
+  // The choreo card draws itself after its module loads and reports when it has,
+  // so its poster stays up until then either way.
+  let mediaLoaded = $state(
+    untrack(() => seededMedia !== null && tile.media !== "choreo-card")
+  );
+
+  function rememberMedia(media: Component<any>): void {
+    rememberTileMedia(variant, tile.id, media);
+  }
 
   // Action tiles remain real links so they still work before JavaScript loads.
   // Once enhanced, an ordinary activation opens the in-page experience while
@@ -58,6 +81,16 @@
   const isAction = $derived(
     tile.activate === true && typeof onActivate === "function"
   );
+
+  // Only the homepage's tiles open into their pages; the Composer's own bento
+  // links are ordinary. Tiles past `isAction` take over in place and never
+  // navigate, so they have nothing to fly to.
+  const canFly = $derived(variant === "home" && !isAction);
+  const flying = $derived(canFly && tileFlight.isFlying(tile.id));
+
+  function armFlight(event: MouseEvent, href: string): void {
+    if (canFly && isPlainPress(event)) tileFlight.arm(tile.id, href);
+  }
 
   function handleActivate(event: MouseEvent) {
     // Fires before the isAction/modifier-key guard below on purpose: all six
@@ -79,6 +112,7 @@
         ? (tile.id as LaunchpadTileId)
         : null,
     });
+    if (!tile.opensOutsideShell) armFlight(event, tile.href);
 
     if (
       !isAction ||
@@ -114,8 +148,9 @@
 <li
   class="tile variant-{variant} s-{tile.span} t-{tile.id}"
   class:visible
+  class:flying
   style="--c: {tile.color}; --i: {index}"
-  style:view-transition-name={tile.morphName}
+  style:view-transition-name={flying ? TILE_WINDOW_NAME : undefined}
   data-tile-id={tile.id}
 >
   <div
@@ -194,6 +229,8 @@
               <LazyMount
                 loader={() =>
                   import("#lib/shared/mandala/components/SequenceMandala.svelte")}
+                loaded={seededMedia}
+                onLoaded={rememberMedia}
                 {active}
                 prefetch={visible}
                 onStatusChange={handleMediaStatus}
@@ -210,6 +247,8 @@
             <span class="choreo-card-box">
               <LazyMount
                 loader={() => import("./ChoreoCardPreview.svelte")}
+                loaded={seededMedia}
+                onLoaded={rememberMedia}
                 {active}
                 prefetch={visible}
                 onStatusChange={(status) => {
@@ -227,6 +266,8 @@
               <LazyMount
                 loader={() =>
                   import("#lib/shared/pictograph/shared/components/PictographContainer.svelte")}
+                loaded={seededMedia}
+                onLoaded={rememberMedia}
                 {active}
                 prefetch={visible}
                 onStatusChange={handleMediaStatus}
@@ -242,6 +283,8 @@
             <span class="pictograph-fade-box">
               <LazyMount
                 loader={() => import("./PictographFadeCard.svelte")}
+                loaded={seededMedia}
+                onLoaded={rememberMedia}
                 {active}
                 prefetch={visible}
                 onStatusChange={handleMediaStatus}
@@ -255,6 +298,8 @@
             <span class="dictionary-box">
               <LazyMount
                 loader={() => import("./GlossaryDictionaryCard.svelte")}
+                loaded={seededMedia}
+                onLoaded={rememberMedia}
                 {active}
                 prefetch={visible}
                 onStatusChange={handleMediaStatus}
@@ -265,6 +310,8 @@
             <span class="alphabet-box">
               <LazyMount
                 loader={() => import("./AlphabetMarquee.svelte")}
+                loaded={seededMedia}
+                onLoaded={rememberMedia}
                 {active}
                 prefetch={visible}
                 onStatusChange={handleMediaStatus}
@@ -273,6 +320,8 @@
           {:else if tile.mediaLoader}
             <LazyMount
               loader={tile.mediaLoader}
+              loaded={seededMedia}
+              onLoaded={rememberMedia}
               {active}
               prefetch={visible}
               onStatusChange={handleMediaStatus}
@@ -301,11 +350,13 @@
             <a
               class="chip"
               href={chip.href}
-              onclick={() =>
+              onclick={(event) => {
                 trackLaunchpadClick({
                   target: "chip",
                   chip_id: hrefSlug(chip.href),
-                })}>{siteCopy(chip.label)}</a
+                });
+                armFlight(event, chip.href);
+              }}>{siteCopy(chip.label)}</a
             >
           </li>
         {/each}
@@ -315,13 +366,39 @@
 </li>
 
 <style>
+  /* Pressed and about to fly: settle everything that moves, so the browser
+     captures the tile still. It keeps its glass while the navigation loads. */
+  .tile.flying {
+    animation: none;
+  }
+  .tile.flying .card {
+    transform: none;
+    translate: none;
+    will-change: auto;
+  }
+  /* While the browser captures a flight the tile hands its glass to the panel,
+     which alone draws it on the first and last frames. No transition, or the
+     capture would catch the border and shadow on their way out. */
+  :global(html.site-flight) .tile.flying {
+    box-shadow: none;
+    transition: none;
+  }
+  :global(html.site-flight) .tile.flying .card {
+    background: none;
+    border-color: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    transition: none;
+  }
+
   /* ---- grid placement (the <li> is a direct child of the parent's CSS
 	   grid; span rules apply here even though the grid itself is declared in
 	   LaunchpadGrid.svelte, because grid-column/grid-row are properties of
 	   this element, not of its owning component). ---- */
   .tile {
     list-style: none;
-    border-radius: 22px;
+    border-radius: var(--tile-glass-radius);
     /* Drop shadow lives here (not on .card, which is overflow:hidden for
 		   media clipping) so it never gets clipped by that overflow. One
 		   consolidated transition covers hover shadow, the reveal (opacity/
@@ -370,18 +447,18 @@
   .card {
     position: relative;
     height: 100%;
-    border-radius: 22px;
+    border-radius: var(--tile-glass-radius);
     overflow: hidden;
     isolation: isolate;
     /* Literal glass, matching SequenceHeroDemo's stage on this same page —
 		   the cosmic theme pipeline sets --theme-card-bg to a near-opaque
 		   content-panel black (rgba(0,0,0,.75)), which would render these as
 		   heavy slabs instead of glass over the canvas. */
-    border: 1px solid oklch(0.4 0.04 270 / 0.16);
-    background: oklch(0.16 0.018 270 / 0.45);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.18) inset;
+    border: 1px solid var(--tile-glass-border);
+    background: var(--tile-glass-fill);
+    backdrop-filter: blur(var(--tile-glass-blur));
+    -webkit-backdrop-filter: blur(var(--tile-glass-blur));
+    box-shadow: 0 1px 0 0 var(--tile-glass-highlight) inset;
     transform: perspective(var(--rot-perspective, 800px))
       rotateX(var(--rot-x, 0deg)) rotateY(var(--rot-y, 0deg))
       scale(var(--press, 1));
@@ -444,7 +521,7 @@
   .tile-link:focus-visible {
     outline: 2px solid var(--c);
     outline-offset: -3px;
-    border-radius: 22px;
+    border-radius: var(--tile-glass-radius);
   }
   .card:has(.tile-link:focus-visible) {
     border-color: color-mix(in oklch, var(--c) 55%, rgba(255, 255, 255, 0.22));

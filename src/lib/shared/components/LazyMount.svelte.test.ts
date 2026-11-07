@@ -4,9 +4,24 @@ import { describe, expect, it, vi } from "vitest";
 import LazyMountLifecycleTestHarness from "./LazyMountLifecycleTestHarness.svelte";
 import LazyMountInactiveTestHarness from "./LazyMountInactiveTestHarness.svelte";
 import LazyMountRetryKeyTestHarness from "./LazyMountRetryKeyTestHarness.svelte";
+import LazyMountTestContent from "./LazyMountTestContent.svelte";
 import LazyMountTestHarness from "./LazyMountTestHarness.svelte";
+import LazyMount from "./LazyMount.svelte";
 
 describe("LazyMount recovery", () => {
+  it("mounts an already-loaded component in the first render, with no import", () => {
+    const loader = vi.fn(async () => ({ default: LazyMountTestContent }));
+    const { container } = render(LazyMount, {
+      loader,
+      loaded: LazyMountTestContent,
+      active: true,
+    });
+
+    // Synchronous on purpose: a view transition captures this first render.
+    expect(container.textContent).toContain("Loaded after retry");
+    expect(loader).not.toHaveBeenCalled();
+  });
+
   it("retries a recoverable loader rejection from a visible error state", async () => {
     const errorLog = vi.spyOn(console, "error").mockImplementation(() => {});
     render(LazyMountTestHarness);

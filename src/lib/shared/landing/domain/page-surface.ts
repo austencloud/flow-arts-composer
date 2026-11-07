@@ -22,7 +22,7 @@ export const ARCHIVE_INK = "oklch(0.115 0.008 270)";
  * edge to edge (GuideShell publishes it to guide.css as --guide-canvas), and
  * the footer beneath continues it. The hub was once left out to keep the
  * homepage's live sky for a home -> hub morph; the launchpad tile that morphs
- * now leads to /learn/concepts (navigation-morphs.ts), so no morph lands here.
+ * now leads to /learn/concepts, so no morph lands here.
  */
 export const GUIDE_CANVAS = "oklch(0.13 0.015 270)";
 

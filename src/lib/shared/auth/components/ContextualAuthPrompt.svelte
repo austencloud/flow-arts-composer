@@ -92,10 +92,10 @@
   const phoneOffered = $derived(
     browser && offersPhoneSignIn(page.url, isNative())
   );
-  // One phone sign-in per opening of the sheet. Pointing at the choice already
-  // asks for a code, so it is usually on screen by the time the panel arrives.
-  // The server allows a few codes per address in ten minutes, which is why
-  // merely opening the sheet does not ask, and why going back keeps the code.
+  // One phone sign-in per opening of the sheet. Pointing at the choice loads the
+  // panel, and only pressing it asks for a code, because a request can ring the
+  // owner's phone. The server also allows only a few codes per address in ten
+  // minutes, which is why going back keeps the code.
   let phoneSession = $state.raw<PhoneSignInSession | null>(null);
   let phonePanel = $state.raw<Promise<
     typeof import("../phone-sign-in/PhoneSignInPanel.svelte")
@@ -103,17 +103,14 @@
 
   function warmPhoneSignIn() {
     phonePanel ??= import("../phone-sign-in/PhoneSignInPanel.svelte");
-    if (!phoneSession) {
-      phoneSession = createPhoneSignInSession();
-      void phoneSession.start();
-    }
   }
 
   function openPhoneSignIn() {
     warmPhoneSignIn();
-    // A code warmed long ago may have run out; this asks for a new one then,
-    // and does nothing while one is on its way or showing.
-    void phoneSession?.start();
+    phoneSession ??= createPhoneSignInSession();
+    // A code from earlier may have run out; this asks for a new one then, and
+    // does nothing while one is on its way or showing.
+    void phoneSession.start();
     showPhoneSignIn = true;
   }
 

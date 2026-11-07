@@ -726,3 +726,42 @@ touch targets. A `motionMove` with `path: "dash"` travels straight through the
 center (the default is the pro arc), for `durationMs`. Searches: one hand,
 single hand, motion map, dash travel, figure layer, arrow overlay. Decision:
 extend the owner (2026-10-11).
+
+In-place copy editing lives in `shared/copy-edit/`. Searches: contenteditable,
+"Save changes", editText, guide-edit, inline edit, EditableText, live edit. A
+page opts in by keeping its strings in a flat `copy.json` beside its
+`+page.svelte`, reading them through `createPageCopy`, rendering each with
+`CopyText` (`{0}` marks an island, such as a `LinkChip`, that stays in source)
+and mounting `CopyEditBar` through `LazyMount` in dev. Saves go through
+`/api/dev/copy`, which only rewrites an existing `copy.json` under `src/`.
+Markup inside a string reuses `shared/i18n/message-markup.ts`. Closest match:
+`guide/level-1/_data/guide-edit.svelte.ts`, which stays the print guide's editor
+because its text lives in Svelte source and it copies values to the clipboard
+for pasting back; the two may merge later. Decision: new owner (2026-11-03).
+
+One live hero player carried across pages lives in
+`shared/landing/services/resident-player.svelte.ts` (claim, release, park,
+destroy), rendered once by `ResidentPlayerHost.svelte` in `MarketingChrome`, with
+the shared show in `getResidentHeroAct()`. A hero opts in with `resident` on
+`SequenceHeroDemo`; the homepage and the Composer page body do. Searches: hero
+player, keep playing across pages, carried animator, remount, persistent player,
+moveBefore, parked player. Closest match: the `/timing-and-direction` layout, which
+keeps one selection across the pages under one route and so never has to move a
+live player between stages. Decision: new owner (2026-11-06).
+
+A homepage tile opening into its page lives in
+`shared/transitions/tile-flight.svelte.ts`, with its styles under TILE FLIGHT in
+`view-transitions.css`. A plain press on a tile or chip arms it; `navigationMorphs`
+asks it, so only a press flies. The window is one view-transition name,
+`tile-window`, on the tile and on `.mkt-content` in `MarketingChrome`. The tile's
+glass (the `--tile-glass-*` tokens) becomes the view-transition group, a real panel
+that travels between the tile and the screen, while both pictures stay pinned in
+place and only fade. Nothing is clipped. Pages carry no name for it; a
+page whose first screen draws late uses `holdPageReady`, which the flight honours.
+It also owns the header and logo stillness in the resident player's glide. Searches:
+launchpad morph, tile morph, shared element, view-transition-name, route morph,
+named route morph, page transition, startViewTransition. Closest match:
+`named-route-morph-state.svelte.ts` and `navigation-morphs.ts`, which run named morphs
+generally and which the flight extends rather than replaces. It replaced the
+per-tile `launchpad-*` names, which stretched snapshots between mismatched boxes.
+Decision: new owner (2026-11-06).

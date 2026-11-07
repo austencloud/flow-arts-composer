@@ -44,7 +44,7 @@ export class EscapeLayerManager implements IEscapeLayerManager {
     if (layer.dismissing || !layer.registration.canDismiss()) return "blocked";
 
     layer.dismissing = true;
-    layer.registration.dismiss();
+    if (layer.registration.dismiss() === "remains") layer.dismissing = false;
     return "dismissed";
   }
 }

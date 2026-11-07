@@ -69,6 +69,7 @@
   import { browser } from "$app/env";
   import { afterNavigate } from "$app/navigation";
   import { holdPageReady } from "@austencloud/motion";
+  import { tileFlight } from "#lib/shared/transitions/tile-flight.svelte.js";
   import { Crossfade, opaqueFade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { mutateCurrentUrl } from "#lib/shared/navigation/services/url-state.js";
@@ -84,6 +85,7 @@
 
   let {
     title,
+    titleContent,
     titleId,
     kicker,
     subtitle,
@@ -100,6 +102,9 @@
     navLabel,
   }: {
     title: string;
+    /** Draws the title in place of the plain `title` string (a page whose
+        words can be edited in place). */
+    titleContent?: Snippet;
     /** id for the title, for aria-labelledby. */
     titleId?: string;
     kicker?: string;
@@ -144,9 +149,12 @@
   // live frame's first fit lands.
   let handedOver = $state(linkedIn);
   let index = $state(linkedIn ? urlScreen() : 0);
-  // The route's crossfade waits for the linked page's first fit (capped by
-  // the transition itself; released here at the latest after a second).
-  let releaseReady: (() => void) | null = linkedIn ? holdPageReady() : null;
+  // The route's crossfade waits for the linked page's first fit, and a homepage
+  // tile opening into this page waits for it too, so the window never lands on
+  // an empty frame (capped by the transition itself; released here at the latest
+  // after a second).
+  let releaseReady: (() => void) | null =
+    linkedIn || tileFlight.kind === "open" ? holdPageReady() : null;
   function release(): void {
     releaseReady?.();
     releaseReady = null;
@@ -287,7 +295,7 @@
       {#if beforeTitle}<div class="before-title">
           {@render beforeTitle(index, goTo)}
         </div>{/if}
-      <h1 class="title" class:unseen={bodyHead} id={titleId}>{title}</h1>
+      <h1 class="title" class:unseen={bodyHead} id={titleId}>{#if titleContent}{@render titleContent()}{:else}{title}{/if}</h1>
       {#if subtitle}<p class="subtitle">{subtitle}</p>{/if}
     </div>
     {#if count > 1 && !bodyHead}
@@ -765,14 +773,19 @@
     .kicker {
       display: none;
     }
-    /* A page that draws its own title: the Contents pill's row, then the
-       row over the title; the title comes with the screen. */
+    /* A page that draws its own title (the hand combinations' run): its
+       switcher row shares the Contents pill's line, as the screen pills
+       do, and the title comes with the screen. A row of its own cost the
+       Fold's inner screen and a phone the 50 px their card needed
+       (2026-11-03). */
     .body-head .head {
-      padding-top: calc(44px + 1.4rem);
+      padding-top: 1rem;
       gap: 0.3rem;
     }
     .body-head .before-title {
-      margin: 0;
+      width: auto;
+      justify-self: stretch;
+      margin: 0 0 0 10rem;
     }
   }
   /* A short window (a phone, the Fold inner screen in landscape) spends its
@@ -791,10 +804,15 @@
       display: none;
     }
   }
-  /* A phone past the first screen: the active pill names the screen and
+  /* A phone, or a narrow portrait window (the Fold's inner screen held
+     upright), past the first screen: the active pill names the screen and
      the title has been read, so the title steps aside for the figure. It
-     stays in the page for screen readers and search. */
-  @media (max-width: 639.98px), (max-height: 640px) {
+     stays in the page for screen readers and search. The queries are
+     SMALL_SCREEN_QUERY and NARROW_PORTRAIT_QUERY in guide-screen-url.ts,
+     the windows the screen split already treats as small. */
+  @media (max-width: 639.98px),
+    (max-height: 640px),
+    (max-width: 959.98px) and (orientation: portrait) {
     .later .title {
       position: absolute;
       width: 1px;

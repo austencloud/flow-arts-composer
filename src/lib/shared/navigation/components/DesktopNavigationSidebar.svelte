@@ -22,6 +22,7 @@
     saveDesktopSidebarCollapsedState,
   } from "../../layout/desktop-sidebar-state.svelte";
   import SidebarFooter from "./desktop-sidebar/SidebarFooter.svelte";
+  import SidebarWordmark from "./desktop-sidebar/SidebarWordmark.svelte";
   import SidebarContextMenu from "./desktop-sidebar/SidebarContextMenu.svelte";
   import type { ContextMenuState } from "./desktop-sidebar/SidebarContextMenu.svelte";
   import AccountPopover from "./account/AccountPopover.svelte";
@@ -329,13 +330,8 @@
   holdOpen={heldOpen}
   class={`${isEntryAnimating ? "tka-sidebar-entry " : ""}ghost-hover-boundary${currentModule === "browse" ? " browse-destinations" : ""}`}
 >
-  <!-- Wordmark in the brand hero face (Fraunces italic 700), matching the
-       landing SiteHeader wordmark so both read as one brand. Both words share
-       the treatment to preserve the package's slide-reveal morph: the rail
-       face shows "Flow", expanding reveals " Arts Composer". -->
-  {#snippet brandLead()}<span class="brand-wordmark">Flow</span>{/snippet}
-  {#snippet brandRest()}<span class="brand-wordmark">{" Arts Composer"}</span
-    >{/snippet}
+  <!-- The rail reads FAC; expanding opens it into Flow Arts Composer. -->
+  {#snippet brand(expanded)}<SidebarWordmark {expanded} />{/snippet}
 
   {#snippet beforeTree(expanded)}
     {#if isInSettings}
@@ -415,34 +411,6 @@
     transform: scale(1.15);
   }
 
-  /* Brand wordmark face — same as the landing SiteHeader .logo-text. The
-     @austencloud/sidebar package leaves the brand font-family unset (inherits
-     the app sans); these snippets override it to the Fraunces italic voice so
-     the desktop-nav "TKA" matches the landing "TKA". Size + gradient stay owned
-     by the package's .brand. Authored here, so this scoped rule reaches the
-     span even though it renders inside the package. */
-  .brand-wordmark {
-    display: block;
-    font-family: "Fraunces", Georgia, serif;
-    font-style: italic;
-    font-weight: 700;
-    /* "Flow Arts Composer" must clear the absolutely-placed pin toggle inside
-       the 220px expanded sidebar (~160px of text room). The package's 1.05rem
-       overflows; 0.9rem + tighter tracking fits with margin. Both words share
-       the size so the slide-reveal morph never changes font mid-transition. */
-    font-size: 0.9rem;
-    letter-spacing: 0.01em;
-  }
-
-  /* The package mounts the always-visible word directly in a flex row, while
-     the revealed words sit inside its clipping wrapper. Centering that wrapper
-     gives both snippets the same line box, so the expanded name reads as one
-     continuous wordmark instead of "Flow" floating above the rest. */
-  :global(.ghost-hover-boundary .brand-rest-text) {
-    display: flex;
-    align-items: center;
-  }
-
   /* ============================================================================
      SETTINGS SUB-NAV (rendered via the package's beforeTree slot)
      ============================================================================ */
@@ -493,17 +461,21 @@
     font-size: var(--font-size-base);
   }
 
+  /* Opens on the width's curve. Closes on the shorter token, so it has faded
+     before the narrowing button reaches its letters. */
   .back-label {
     flex: 1;
+    min-width: 0;
     text-align: left;
     font-weight: 500;
     white-space: nowrap;
     opacity: 1;
-    transition: opacity var(--duration-normal) var(--ease-standard);
+    transition: opacity var(--duration-normal) var(--ease-out);
   }
 
   .settings-back-button.collapsed .back-label {
     opacity: 0;
+    transition: opacity var(--duration-instant) var(--ease-out);
   }
 
   .settings-back-button:focus-visible {

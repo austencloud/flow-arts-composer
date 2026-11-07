@@ -46,12 +46,16 @@ describe("FlowFrame", () => {
 });
 
 describe("GUIDE_CONTENT registry", () => {
+  // guide-content pulls in the whole lesson tree: about 2 s on its own, but
+  // 20 s and more inside a full-suite run where every worker is transforming
+  // at once (a change to messages/en.json puts every test in test:changed).
+  const GUIDE_IMPORT_TIMEOUT = 90_000;
   it("registers hand-placements", async () => {
     const { GUIDE_CONTENT, hasReflowContent } =
       await import("../../src/routes/(public)/guide/level-1/_data/guide-content");
     expect(hasReflowContent("hand-placements")).toBe(true);
     expect(GUIDE_CONTENT["hand-placements"]!.length).toBeGreaterThan(0);
-  }, 20_000);
+  }, GUIDE_IMPORT_TIMEOUT);
 
   it("models The Grid as one reflow source with one canonical mode explorer", async () => {
     const { GUIDE_CONTENT, hasReflowContent } =
@@ -68,7 +72,7 @@ describe("GUIDE_CONTENT registry", () => {
     expect(blockProseText(content)).toContain(
       "Together, diamond and box form an 8-point grid:"
     );
-  }, 20_000);
+  }, GUIDE_IMPORT_TIMEOUT);
 });
 
 describe("frame toggle wiring", () => {

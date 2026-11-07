@@ -1,6 +1,6 @@
 /**
  * Grid Experience State Machine
- * Manages step progression, phase transitions, persistence, and accessibility announcements
+ * Manages screen progression, persistence, and accessibility announcements
  */
 
 import { getExperiencePersistence } from "../../../state/experience-persistence.svelte";
@@ -24,12 +24,82 @@ export function normalizeGridStep(step: number): number {
   return Math.max(0, Math.min(GRID_LAST_STEP, Math.trunc(step)));
 }
 
-export interface GridExperienceState {
+export interface GridScreen {
   step: number;
   gridPhase: GridPhase;
   pointTypePhase: PointTypePhase;
-  animateIn: boolean;
-  announcement: string;
+  announcementKey: string;
+}
+
+/** The lesson, screen by screen. Everything the lesson shows reads from here. */
+export const GRID_SCREENS: readonly GridScreen[] = [
+  {
+    step: 0,
+    gridPhase: "split",
+    pointTypePhase: "center",
+    announcementKey: "learn_grid_announcement_intro",
+  },
+  {
+    step: 1,
+    gridPhase: "split",
+    pointTypePhase: "center",
+    announcementKey: "learn_grid_announcement_split",
+  },
+  {
+    step: 1,
+    gridPhase: "diamond-labels",
+    pointTypePhase: "center",
+    announcementKey: "learn_grid_announcement_diamond",
+  },
+  {
+    step: 1,
+    gridPhase: "box-labels",
+    pointTypePhase: "center",
+    announcementKey: "learn_grid_announcement_box",
+  },
+  {
+    step: 1,
+    gridPhase: "merged",
+    pointTypePhase: "center",
+    announcementKey: "learn_grid_announcement_merged",
+  },
+  {
+    step: 2,
+    gridPhase: "split",
+    pointTypePhase: "center",
+    announcementKey: "learn_grid_announcement_center",
+  },
+  {
+    step: 2,
+    gridPhase: "split",
+    pointTypePhase: "hand",
+    announcementKey: "learn_grid_announcement_hand",
+  },
+  {
+    step: 2,
+    gridPhase: "split",
+    pointTypePhase: "outer",
+    announcementKey: "learn_grid_announcement_outer",
+  },
+];
+
+/**
+ * The screen a saved place points at. Saved places keep the step and phase
+ * fields they always had, and a phase this lesson no longer has lands on the
+ * first screen of its step.
+ */
+export function gridScreenIndexFromSaved(saved: {
+  step: number;
+  phaseData?: Record<string, unknown>;
+}): number {
+  const step = normalizeGridStep(saved.step);
+  const firstOfStep = GRID_SCREENS.findIndex((screen) => screen.step === step);
+  if (step === 0) return firstOfStep;
+  const field = step === 1 ? "gridPhase" : "pointTypePhase";
+  const exact = GRID_SCREENS.findIndex(
+    (screen) => screen.step === step && screen[field] === saved.phaseData?.[field]
+  );
+  return exact >= 0 ? exact : firstOfStep;
 }
 
 export function createGridExperienceState(isScrollMode: boolean = false) {
@@ -38,208 +108,81 @@ export function createGridExperienceState(isScrollMode: boolean = false) {
     ? persistence.load()
     : { step: 0, phaseData: {} };
 
-  const totalSteps = GRID_LAST_STEP + 1;
-
-  // Core state
-  let step = $state(normalizeGridStep(initialState.step));
-  let gridPhase = $state<GridPhase>(
-    (initialState.phaseData?.gridPhase as GridPhase) ?? "split"
-  );
-  let pointTypePhase = $state<PointTypePhase>(
-    (initialState.phaseData?.pointTypePhase as PointTypePhase) ?? "center"
-  );
-  let animateIn = $state(false);
+  // One number holds the place, and it changes in the press that moved it, so
+  // presses inside one frame each move one screen and can't run past either end.
+  let screenIndex = $state(gridScreenIndexFromSaved(initialState));
   let announcement = $state("");
+
+  const screen = $derived(GRID_SCREENS[screenIndex]!);
 
   // Derived phases for GridMergeAnimation
   const effectivePhase = $derived<EffectivePhase>(
     // Point types are taught on the four-point diamond the copy describes,
     // which is also the grid Hand Placements continues on.
-    step === 0 ? "intro" : step === 1 ? gridPhase : "diamond"
+    screen.step === 0
+      ? "intro"
+      : screen.step === 1
+        ? screen.gridPhase
+        : "diamond"
   );
 
   const effectiveHighlightPhase = $derived<HighlightPhase>(
-    step === 2 ? pointTypePhase : "none"
+    screen.step === 2 ? screen.pointTypePhase : "none"
   );
 
   // Store the key so the live text follows a locale change.
-  function getAnnouncementKey(): string {
-    if (step === 0) return "learn_grid_announcement_intro";
-    if (step === 1) {
-      if (gridPhase === "split") return "learn_grid_announcement_split";
-      if (gridPhase === "diamond-labels")
-        return "learn_grid_announcement_diamond";
-      if (gridPhase === "box-labels") return "learn_grid_announcement_box";
-      if (gridPhase === "merged") return "learn_grid_announcement_merged";
-    }
-    if (step === 2) {
-      if (pointTypePhase === "center") return "learn_grid_announcement_center";
-      if (pointTypePhase === "hand") return "learn_grid_announcement_hand";
-      if (pointTypePhase === "outer") return "learn_grid_announcement_outer";
-    }
-    return "";
-  }
-
   function announce() {
     announcement = "";
     requestAnimationFrame(() => {
-      announcement = getAnnouncementKey();
+      announcement = screen.announcementKey;
     });
   }
 
   function startAnimations() {
-    requestAnimationFrame(() => {
-      animateIn = true;
-      announce();
-    });
+    requestAnimationFrame(announce);
   }
 
-  // Returns true if handled internally (phase change), false if step change needed
-  function handleNextPhase(): boolean {
-    // Step 1 grid phases
-    if (step === 1) {
-      if (gridPhase === "split") {
-        gridPhase = "diamond-labels";
-        persistence.savePhaseData("gridPhase", "diamond-labels");
-        announce();
-        return true;
-      } else if (gridPhase === "diamond-labels") {
-        gridPhase = "box-labels";
-        persistence.savePhaseData("gridPhase", "box-labels");
-        announce();
-        return true;
-      } else if (gridPhase === "box-labels") {
-        gridPhase = "merged";
-        persistence.savePhaseData("gridPhase", "merged");
-        announce();
-        return true;
-      } else if (gridPhase === "merged") {
-        // Reset for next time
-        gridPhase = "split";
-        persistence.savePhaseData("gridPhase", "split");
-        pointTypePhase = "center";
-        persistence.savePhaseData("pointTypePhase", "center");
-        return false; // Proceed to next step
-      }
-    }
-
-    // Step 2 point type phases
-    if (step === 2) {
-      if (pointTypePhase === "center") {
-        pointTypePhase = "hand";
-        persistence.savePhaseData("pointTypePhase", "hand");
-        announce();
-        return true;
-      } else if (pointTypePhase === "hand") {
-        pointTypePhase = "outer";
-        persistence.savePhaseData("pointTypePhase", "outer");
-        announce();
-        return true;
-      } else if (pointTypePhase === "outer") {
-        pointTypePhase = "center";
-        persistence.savePhaseData("pointTypePhase", "center");
-        return false; // Proceed to next step
-      }
-    }
-
-    return false;
+  function moveTo(index: number): boolean {
+    if (index < 0 || index >= GRID_SCREENS.length) return false;
+    screenIndex = index;
+    const { step, gridPhase, pointTypePhase } = GRID_SCREENS[index]!;
+    persistence.saveStep(step);
+    persistence.savePhaseData("gridPhase", gridPhase);
+    persistence.savePhaseData("pointTypePhase", pointTypePhase);
+    announce();
+    return true;
   }
 
-  // Returns true if handled internally (phase change), false if step change needed
-  function handleBackPhase(): boolean {
-    // Step 1 grid phases
-    if (step === 1) {
-      if (gridPhase === "merged") {
-        gridPhase = "box-labels";
-        persistence.savePhaseData("gridPhase", "box-labels");
-        announce();
-        return true;
-      } else if (gridPhase === "box-labels") {
-        gridPhase = "diamond-labels";
-        persistence.savePhaseData("gridPhase", "diamond-labels");
-        announce();
-        return true;
-      } else if (gridPhase === "diamond-labels") {
-        gridPhase = "split";
-        persistence.savePhaseData("gridPhase", "split");
-        announce();
-        return true;
-      }
-    }
-
-    // Step 2 point type phases
-    if (step === 2) {
-      if (pointTypePhase === "outer") {
-        pointTypePhase = "hand";
-        persistence.savePhaseData("pointTypePhase", "hand");
-        announce();
-        return true;
-      } else if (pointTypePhase === "hand") {
-        pointTypePhase = "center";
-        persistence.savePhaseData("pointTypePhase", "center");
-        announce();
-        return true;
-      }
-    }
-
-    return false;
+  /** Moves one screen on. False on the last screen, where nothing changes. */
+  function next(): boolean {
+    return moveTo(screenIndex + 1);
   }
 
-  function nextStep(onComplete?: () => void) {
-    animateIn = false;
-    requestAnimationFrame(() => {
-      step++;
-      persistence.saveStep(step);
-      requestAnimationFrame(() => {
-        animateIn = true;
-        announce();
-        onComplete?.();
-      });
-    });
-  }
-
-  function prevStep(onComplete?: () => void) {
-    animateIn = false;
-    requestAnimationFrame(() => {
-      step--;
-      persistence.saveStep(step);
-      // Reset phases when returning to previous steps
-      if (step === 1) {
-        gridPhase = "merged";
-        persistence.savePhaseData("gridPhase", "merged");
-      } else if (step === 2) {
-        pointTypePhase = "outer";
-        persistence.savePhaseData("pointTypePhase", "outer");
-      }
-      requestAnimationFrame(() => {
-        animateIn = true;
-        announce();
-        onComplete?.();
-      });
-    });
+  /** Moves one screen back. False on the first screen, where nothing changes. */
+  function previous(): boolean {
+    return moveTo(screenIndex - 1);
   }
 
   function reset() {
     persistence.reset();
   }
 
-  function setScrollMode() {
-    gridPhase = "merged";
-  }
-
   return {
     // State (reactive getters)
     get step() {
-      return step;
+      return screen.step;
     },
     get gridPhase() {
-      return gridPhase;
+      return screen.gridPhase;
     },
     get pointTypePhase() {
-      return pointTypePhase;
+      return screen.pointTypePhase;
     },
-    get animateIn() {
-      return animateIn;
+    get screenIndex() {
+      return screenIndex;
+    },
+    get isLastScreen() {
+      return screenIndex === GRID_SCREENS.length - 1;
     },
     get announcement() {
       return announcement ? tDynamic(announcement) : "";
@@ -250,16 +193,13 @@ export function createGridExperienceState(isScrollMode: boolean = false) {
     get effectiveHighlightPhase() {
       return effectiveHighlightPhase;
     },
-    totalSteps,
+    screenTotal: GRID_SCREENS.length,
 
     // Actions
     startAnimations,
-    handleNextPhase,
-    handleBackPhase,
-    nextStep,
-    prevStep,
+    next,
+    previous,
     reset,
-    setScrollMode,
   };
 }
 

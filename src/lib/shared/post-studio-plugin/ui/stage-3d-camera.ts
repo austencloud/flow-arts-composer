@@ -3,7 +3,14 @@ import type { PerformerShotSubject } from "#lib/shared/sequence-viewer/camera-ch
 import { getViewerFrontStageCameraZ } from "#lib/shared/3d/domain/viewer-formation-facing.js";
 import { rotateEyeAboutTarget } from "#lib/shared/3d/camera/viewer-camera-framing.js";
 import type { SceneEnvironmentId } from "#lib/shared/3d/environments/domain/scene-environment.js";
-import type { PostStage3D } from "../item-kinds";
+import {
+  POST_STAGE_3D_DEFAULT_ELEVATION,
+  POST_STAGE_3D_MAX_ELEVATION,
+  POST_STAGE_3D_MAX_ZOOM,
+  POST_STAGE_3D_MIN_ELEVATION,
+  POST_STAGE_3D_MIN_ZOOM,
+  type PostStage3D,
+} from "../item-kinds";
 
 /**
  * Where a 3D animation clip's camera stands for each shot. The framing is the
@@ -24,6 +31,11 @@ export interface StageCameraPose {
   target: StagePoint;
 }
 
+/** The cast's framing, with the stage floor's height it was framed over. */
+export interface StageBaseShot extends StageCameraPose {
+  groundY: number;
+}
+
 /**
  * How far the front shot turns off dead front. Dead front, a performer
  * standing in a file behind another is hidden by them; this little turn and
@@ -37,7 +49,7 @@ export function stage3DBaseShot(
   groundY: number,
   aspect: number,
   environmentId: SceneEnvironmentId
-): StageCameraPose {
+): StageBaseShot {
   const shot = computeChoreographerShot(subjects, groundY, aspect);
   const eyeZ = getViewerFrontStageCameraZ(
     shot.target.z,
@@ -47,6 +59,82 @@ export function stage3DBaseShot(
   return {
     position: { x: shot.eye.x, y: shot.eye.y, z: eyeZ },
     target: { x: shot.target.x, y: shot.target.y, z: shot.target.z },
+    groundY,
+  };
+}
+
+/**
+ * How high a low camera looks: the choreographer shot aims at the cast's
+ * waist (0.55 m), which from 36° up keeps heads in frame. A lower camera sees
+ * the bodies more side on, so aimed that low it crops their heads and raised
+ * staffs; it aims at chest height instead, 1 m at 20° and below, easing back
+ * to the waist at 36°.
+ */
+export const STAGE_3D_LOW_TARGET_HEIGHT = 1;
+const LOW_TARGET_ELEVATION = 20;
+
+export function stage3DTargetLift(elevationDeg: number, baseHeight: number): number {
+  const low = Math.min(
+    1,
+    Math.max(
+      0,
+      (POST_STAGE_3D_DEFAULT_ELEVATION - elevationDeg) /
+        (POST_STAGE_3D_DEFAULT_ELEVATION - LOW_TARGET_ELEVATION)
+    )
+  );
+  return Math.max(0, (STAGE_3D_LOW_TARGET_HEIGHT - baseHeight) * low);
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+/**
+ * The framing seen from `elevationDeg` above the ground and `zoom` times as
+ * far. The choreographer shot puts its eye `distance` from the cast's centre
+ * on the floor, `distance·sin(36°)` up; this keeps that distance and its
+ * ground direction and swaps the angle, so the eye stands
+ * `distance·cos(elevation)` out and `distance·sin(elevation)` up. Then the
+ * eye moves along its line to the target by `zoom`. Below 36° the target
+ * rises toward chest height (`stage3DTargetLift`). At 36° and 1 the base
+ * pose comes back unchanged.
+ */
+export function stage3DFramedPose(
+  base: StageBaseShot,
+  elevationDeg = POST_STAGE_3D_DEFAULT_ELEVATION,
+  zoom = 1
+): StageCameraPose {
+  const { position: eye, groundY } = base;
+  const dx = eye.x - base.target.x;
+  const dz = eye.z - base.target.z;
+  const flat = Math.hypot(dx, dz);
+  const distance = Math.hypot(flat, eye.y - groundY);
+  const degrees = clamp(
+    elevationDeg,
+    POST_STAGE_3D_MIN_ELEVATION,
+    POST_STAGE_3D_MAX_ELEVATION
+  );
+  const elevation = (degrees * Math.PI) / 180;
+  const target: StagePoint = {
+    ...base.target,
+    y: base.target.y + stage3DTargetLift(degrees, base.target.y - groundY),
+  };
+  const outward = distance * Math.cos(elevation);
+  const ux = flat > 1e-9 ? dx / flat : 0;
+  const uz = flat > 1e-9 ? dz / flat : 1;
+  const elevated: StagePoint = {
+    x: target.x + ux * outward,
+    y: groundY + distance * Math.sin(elevation),
+    z: target.z + uz * outward,
+  };
+  const factor = clamp(zoom, POST_STAGE_3D_MIN_ZOOM, POST_STAGE_3D_MAX_ZOOM);
+  return {
+    position: {
+      x: target.x + (elevated.x - target.x) * factor,
+      y: target.y + (elevated.y - target.y) * factor,
+      z: target.z + (elevated.z - target.z) * factor,
+    },
+    target: { ...target },
   };
 }
 
@@ -67,13 +155,15 @@ export function turnStagePose(
 }
 
 /**
- * The camera for a clip's shot: front holds the turned front pose; orbit
- * swings from there by `orbitAngle` (see `stage3DOrbitAngle`); saved holds
- * the camera stored on the clip, or the front pose until one is stored.
+ * The camera for a clip's shot: front holds the turned front pose, at the
+ * clip's elevation and zoom; orbit swings from there by `orbitAngle` (see
+ * `stage3DOrbitAngle`); saved holds the camera stored on the clip, or the
+ * front pose until one is stored. A saved camera ignores elevation and zoom:
+ * it already has its own height and distance.
  */
 export function stage3DCameraPose(
   stage: PostStage3D,
-  base: StageCameraPose,
+  base: StageBaseShot,
   orbitAngle: number
 ): StageCameraPose {
   if (stage.shot === "saved" && stage.camera) {
@@ -82,7 +172,11 @@ export function stage3DCameraPose(
       target: { ...stage.camera.target },
     };
   }
-  const front = turnStagePose(base, STAGE_3D_FRONT_TURN_RAD);
+  const framed =
+    stage.shot === "saved"
+      ? stage3DFramedPose(base)
+      : stage3DFramedPose(base, stage.elevation, stage.zoom);
+  const front = turnStagePose(framed, STAGE_3D_FRONT_TURN_RAD);
   return stage.shot === "orbit" ? turnStagePose(front, orbitAngle) : front;
 }
 

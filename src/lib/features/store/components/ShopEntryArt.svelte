@@ -51,7 +51,7 @@
     bookWidth = "clamp(6rem, 42%, 11rem)",
   }: Props = $props();
 
-  // The launchpad's Choreo Cards tile morphs into this page, and the print
+  // The launchpad's Choreo Cards tile opens into this page, and the print
   // pipeline (canvas + workers) is exactly the work that stutters a morph's
   // final frame. Hold it until the transition and one idle turn have cleared.
   // Until then the page renders what the server sent, so nothing moves.

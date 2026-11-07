@@ -93,7 +93,7 @@ function clampIndex(i: number): number {
 }
 
 /** A path's on-curve points: its beats, or the end point of each command. */
-function pointsOf(path: SVGPathData): MandalaPoint[] {
+export function pointsOf(path: SVGPathData): MandalaPoint[] {
 	if (path.beats && path.beats.length > 0) return path.beats.flat();
 	return endPointsOf(path.d);
 }

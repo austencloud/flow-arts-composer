@@ -1,12 +1,9 @@
-import { LAUNCHPAD_TILES } from "#lib/shared/landing/components/launchpad/launchpad-tiles.js";
 import type { NavigationLike } from "@austencloud/motion";
+import { RESIDENT_HOST_PATHS, tileFlight } from "./tile-flight.svelte";
 
-/** Landing destinations with a shared-element counterpart on the home page. */
-export const LAUNCHPAD_MORPH_PATHS: readonly string[] = Object.freeze(
-  LAUNCHPAD_TILES.filter((tile) => tile.morphName).map((tile) => tile.href)
-);
+export { RESIDENT_HOST_PATHS };
 
-const launchpadMorphPaths = new Set(LAUNCHPAD_MORPH_PATHS);
+const residentHostPaths = new Set(RESIDENT_HOST_PATHS);
 
 type RouteLocation = NonNullable<NavigationLike["from"]>;
 
@@ -24,7 +21,8 @@ function isRouteWithin(pathname: string, root: string): boolean {
 
 /**
  * True only when both ends of a client navigation provide the same named
- * transition participant. Keeping this pure makes allowlist drift testable.
+ * transition participant. The route pairs are pure, so allowlist drift stays
+ * testable; a tile flight also depends on what was just pressed.
  */
 export function navigationMorphs(
   from: RouteLocation | null | undefined,
@@ -52,7 +50,9 @@ export function navigationMorphs(
     x.url.pathname === SHOP_INDEX_PATH && isShopProduct(y);
   if (shopProductPair(from, to) || shopProductPair(to, from)) return true;
 
-  const launchpadPair = (x: string, y: string): boolean =>
-    x === "/" && launchpadMorphPaths.has(y);
-  return launchpadPair(a, b) || launchpadPair(b, a);
+  // Between the player's hosts it glides, however the visitor got there.
+  if (residentHostPaths.has(a) && residentHostPaths.has(b)) return true;
+
+  // A tile opens into its page only when it was the thing pressed.
+  return tileFlight.decide(a, b) !== null;
 }

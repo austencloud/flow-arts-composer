@@ -49,6 +49,7 @@
   import { MANDALA_GUIDE_FLOOR_OPACITY } from "#lib/shared/mandala/domain/mandala-overlay-types.js";
   import ElementChipRow from "./ElementChipRow.svelte";
   import PropRelationshipChipRow from "./PropRelationshipChipRow.svelte";
+  import ShapeMatrixSoloCard from "./ShapeMatrixSoloCard.svelte";
   import {
     buildModeRealizationCandidates,
     type ModeRealization,
@@ -61,6 +62,8 @@
   } from "../services/shape-matrix-realizations";
   import type { MandalaPaths } from "#lib/shared/mandala/domain/mandala-types.js";
   import { HERO_TRAIL_PRESET } from "../services/hero-trail-preset.js";
+  import { flowerPetalAnchor } from "../services/flower-petal-anchor.js";
+  import { describeSoloFlower } from "../services/shape-matrix-display.js";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import { DURATION } from "@austencloud/motion";
   import { growFade } from "@austencloud/motion";
@@ -336,6 +339,18 @@
           : (data.right.get(flowerKey(pair.right))?.right ?? []),
       purple: [],
     };
+  });
+
+  // A solo has no hand relationship to pick, so the picker's place says what
+  // the flower is, read from the same paths the hero draws.
+  const soloDescription = $derived.by(() => {
+    if (!solo || !pair) return null;
+    const flower = pair[solo];
+    const anchor =
+      flower.style === "float"
+        ? null
+        : flowerPetalAnchor(heroPaths?.[solo] ?? [], flower.style);
+    return describeSoloFlower(flower, solo, anchor);
   });
 
   // Build the selected relationship first, then fill the remaining five one
@@ -1265,6 +1280,13 @@
         ontarget={selectPropMode}
       />
     </div>
+  {:else if solo && pair && soloDescription}
+    <ShapeMatrixSoloCard
+      description={soloDescription}
+      flower={pair[solo]}
+      hand={solo}
+      {data}
+    />
   {/if}
 
   <div class="media-stage">

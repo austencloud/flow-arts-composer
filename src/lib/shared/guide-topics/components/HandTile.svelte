@@ -7,6 +7,7 @@
   the step number, so a row of tiles carries one counter between them.
 -->
 <script lang="ts">
+  import type { Snippet } from "svelte";
   import { browser } from "$app/env";
   import InlineAnimationPlayer from "#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte";
   import { setViewerVisibilityContext } from "#lib/shared/sequence-viewer/context/viewer-visibility-context.js";
@@ -18,13 +19,16 @@
   let {
     sequence,
     hand,
-    caption,
+    caption = "",
+    captionContent,
     trail,
     stepNumbers = false,
   }: {
     sequence: SequenceData;
     hand: "both" | "left" | "right";
-    caption: string;
+    caption?: string;
+    /** Takes the place of `caption` when the words need their own markup. */
+    captionContent?: Snippet;
     trail: TrailSettings;
     stepNumbers?: boolean;
   } = $props();
@@ -59,7 +63,7 @@
   <figcaption>
     {#if hand !== "right"}<span class="dot left" aria-hidden="true"></span>{/if}
     {#if hand !== "left"}<span class="dot right" aria-hidden="true"></span>{/if}
-    {caption}
+    {#if captionContent}{@render captionContent()}{:else}{caption}{/if}
   </figcaption>
 </figure>
 

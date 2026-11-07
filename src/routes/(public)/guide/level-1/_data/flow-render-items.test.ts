@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import type { GuideBlock } from "./guide-content-blocks";
 import { flowRenderItems, flowScreens, isLeadIn, unbreakSentences } from "./flow-render-items";
 import { hmGammaContent } from "./content/hm-gamma.content";
+import { negativeSpaceContent } from "./content/negative-space.content";
+import { LARGE_INTRO_BESIDE_CHARS } from "../../_components/fit/guide-screen-url";
 
 const card = (caption: string): GuideBlock =>
   ({
@@ -123,6 +125,18 @@ describe("flowScreens", () => {
       "prose",
     ]);
     expect(flowScreens(items)).toHaveLength(1);
+  });
+});
+
+describe("the Negative Space page in a large window", () => {
+  it("keeps every word on a screen with a figure", () => {
+    const items = flowRenderItems(negativeSpaceContent, "", undefined, {
+      introBesideChars: LARGE_INTRO_BESIDE_CHARS,
+    });
+    const screens = flowScreens(items, "Intro", { keepGalleriesTogether: true });
+    expect(screens.map((s) => s.label)).toEqual(["360° Isolation", "4-Petal Antispin"]);
+    expect(screens.every((s) => s.items.some((i) => items[i]!.type === "showcase"))).toBe(true);
+    expect(textOf(items)[0]).toContain("learn these two first");
   });
 });
 

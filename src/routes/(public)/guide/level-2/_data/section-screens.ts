@@ -42,7 +42,7 @@ export type SplitRules = {
 export const SPLIT_RULES: Readonly<Record<ScreenTier, SplitRules>> = {
   small: { maxText: 340, leadIn: 60, notes: 60 },
   medium: { maxText: 560, leadIn: 160, notes: 160 },
-  large: { maxText: 900, leadIn: 500, notes: 500 },
+  large: { maxText: 800, leadIn: 500, notes: 500 },
 };
 
 export function splitSections(
@@ -117,6 +117,7 @@ export function splitSections(
 
 const FIGURE_SELECTOR = "svg, canvas, img, .canvas-box, .pictograph-wrapper";
 const CAPTION_SELECTOR = "figcaption, .turn-strip-caption";
+const LIST_ITEM_MIN_CHARS = 70;
 
 /** Reads each rendered `.guide-section` into screen units. */
 export function readSectionUnits(sections: readonly Element[]): SectionUnit[] {
@@ -127,7 +128,17 @@ export function readSectionUnits(sections: readonly Element[]): SectionUnit[] {
       : el.matches(FIGURE_SELECTOR) || el.querySelector(FIGURE_SELECTOR)
         ? "figure"
         : "text";
-  const chars = (el: Element) => (el.textContent ?? "").replace(/\s+/g, " ").trim().length;
+  const textLength = (el: Element) =>
+    (el.textContent ?? "").replace(/\s+/g, " ").trim().length;
+  // A list item takes a whole line however few characters it has, so a list
+  // counts for what it fills, not for what it says.
+  const chars = (el: Element) =>
+    /^[UO]L$/.test(el.tagName)
+      ? Array.from(el.children).reduce(
+          (n, item) => n + Math.max(textLength(item), LIST_ITEM_MIN_CHARS),
+          0
+        )
+      : textLength(el);
   const caption = (el: Element) => {
     const text = el
       .querySelector(CAPTION_SELECTOR)

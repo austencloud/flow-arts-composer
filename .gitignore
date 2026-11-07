@@ -425,6 +425,8 @@ static/models/autumn/*_raw.glb
 
 # SW precache manifest (generated at build by scripts/generate-svg-precache-manifest.cjs)
 static/svg-precache-manifest.json
+# Phone sign-in worker bundle (generated at build by scripts/build-phone-sign-in-worker.mjs)
+static/phone-sign-in-worker.js
 
 # Data-parity guard baseline (ephemeral frozen corpus, regenerate per migration)
 scripts/migrations/fixtures/data-parity-baseline.json

@@ -128,10 +128,7 @@
 </svelte:head>
 
 <GuideShell>
-  <main
-    class="guide-hub guide-page-route"
-    style:view-transition-name="launchpad-guide"
-  >
+  <main class="guide-hub guide-page-route">
     <GuideScreens
       title={tDynamic("guide_hub_title")}
       labels={screenLabels}

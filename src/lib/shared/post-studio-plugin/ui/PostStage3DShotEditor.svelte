@@ -13,7 +13,12 @@
   import type { VideoEditorState } from "@austencloud/video-editor";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import ValueSlider from "#lib/shared/ui/components/ValueSlider.svelte";
-  import type { PostAnimationItem, PostStage3D } from "../item-kinds";
+  import {
+    POST_STAGE_3D_MAX_ZOOM,
+    POST_STAGE_3D_MIN_ZOOM,
+    type PostAnimationItem,
+    type PostStage3D,
+  } from "../item-kinds";
   import PostStage3DTool from "./PostStage3DTool.svelte";
   import {
     orbitStagePose,
@@ -245,6 +250,25 @@
 
   function zoom(event: WheelEvent): void {
     if (!draft || closing || drag) return;
+    // Front and orbit keep their shot and move along it: the wheel sets the
+    // framing's zoom. Only a saved angle moves its own stored camera.
+    if (draft.shot !== "saved") {
+      event.preventDefault();
+      setDraft({
+        ...draft,
+        zoom:
+          Math.round(
+            Math.min(
+              POST_STAGE_3D_MAX_ZOOM,
+              Math.max(
+                POST_STAGE_3D_MIN_ZOOM,
+                (draft.zoom ?? 1) * Math.exp(event.deltaY * ZOOM_PER_PIXEL)
+              )
+            ) * 1000
+          ) / 1000,
+      });
+      return;
+    }
     const start = stage3DCameraState.shownPose(item.id) ?? draft.camera;
     if (!start) return;
     event.preventDefault();

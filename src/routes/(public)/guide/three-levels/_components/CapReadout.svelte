@@ -151,6 +151,9 @@
 
 <style>
   .readout {
+    /* The flower is a figure, so it alone follows the screen's scale (--fit);
+       the words around it keep their type roles. */
+    --flower: calc(80px * clamp(0.45, var(--fit, 1), 1.75));
     display: flex;
     flex-direction: column;
     gap: 0.6rem;
@@ -196,7 +199,7 @@
   }
   .hands {
     display: grid;
-    grid-template-columns: repeat(2, 96px);
+    grid-template-columns: repeat(2, max(96px, calc(var(--flower) + 16px)));
     gap: 1rem;
   }
   .hand {
@@ -208,7 +211,7 @@
   }
   .flower {
     display: block;
-    width: 80px;
+    width: var(--flower);
     aspect-ratio: 1;
   }
   .ratio {

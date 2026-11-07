@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  fitTimelineRows,
-  TIMELINE_FIT_MIN_UNIT,
-} from "./grid-calculations";
+import { fitTimelineRows, TIMELINE_FIT_MIN_UNIT } from "./grid-calculations";
 
 const steps = (count: number) =>
   Array.from({ length: count }, () => ({ duration: 1 }));
@@ -61,6 +58,40 @@ describe("fitTimelineRows", () => {
       beatsPerRow: 4,
     });
     expect(fit).toBeNull();
+  });
+
+  describe("shrinkToFit, the save view's card on a 375px phone", () => {
+    // The band left above the save form once the room under it has shrunk.
+    const PHONE_SAVE_CARD = {
+      sizingWidth: 375 - 32,
+      containerHeight: 130,
+      popReserve: 16,
+      hasStart: true,
+      isNarrow: true,
+      shrinkToFit: true,
+    };
+
+    it.each([8, 16, 24, 32, 64])(
+      "shows all %i steps without scrolling",
+      (count) => {
+        const fit = fitTimelineRows({
+          ...PHONE_SAVE_CARD,
+          steps: steps(count),
+          beatsPerRow: 4,
+        });
+        expect(fit).not.toBeNull();
+        const { rows, unitSize, beatsPerRow } = fit!;
+        expect(rows.length * beatsPerRow).toBeGreaterThanOrEqual(count);
+        // Rows, their 1px gaps, 8px padding and the pop reserve fit the height.
+        expect(
+          rows.length * unitSize + (rows.length - 1) + 8 + 32
+        ).toBeLessThanOrEqual(130);
+        // A row of cells plus the start column fits the width.
+        expect((beatsPerRow + 1) * unitSize + beatsPerRow).toBeLessThanOrEqual(
+          343
+        );
+      }
+    );
   });
 
   it("keeps a sequence that already fits at its width-based size", () => {

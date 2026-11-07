@@ -38,9 +38,13 @@
     onMiss?: () => void;
     /** After the last one has had its moment. */
     onFinish?: () => void;
+    /** On a one-screen Guide page: the pictures shrink with the host's
+     *  --fit below 1 as well. The lesson leaves it off. */
+    fitted?: boolean;
   }
 
-  let { answered, onAnswer, onMiss, onFinish }: Props = $props();
+  let { answered, onAnswer, onMiss, onFinish, fitted = false }: Props =
+    $props();
 
   // Reading time for a right answer before the next picture.
   const HOLD_MS = 1600;
@@ -123,7 +127,7 @@
   }
 </script>
 
-<div class="quiz-stage">
+<div class="quiz-stage" class:fitted>
   <div
     class="mystery"
     class:right={verdict?.right}
@@ -214,9 +218,9 @@
      lesson and the Guide page play it alike. */
   .quiz-stage {
     --board-wide-columns: 3;
-    --board-art: max(
-      5.5rem,
-      calc((100 * var(--lesson-vh, 1svh) - 38.5rem) / 3.4)
+    --board-art: calc(
+      max(5.5rem, calc((100 * var(--lesson-vh, 1svh) - 38.5rem) / 3.4)) *
+        var(--fit-shrink, 1)
     );
     --quiz-picture: calc(1.4 * var(--board-art));
     display: grid;
@@ -229,9 +233,9 @@
   /* A phone's board is names only, so the picture takes the height. */
   @media (max-width: 30rem) {
     .quiz-stage {
-      --quiz-picture: max(
-        8rem,
-        min(16rem, calc(100 * var(--lesson-vh, 1svh) - 37.5rem))
+      --quiz-picture: calc(
+        max(8rem, min(16rem, calc(100 * var(--lesson-vh, 1svh) - 37.5rem))) *
+          var(--fit-shrink, 1)
       );
       width: 100%;
     }
@@ -240,9 +244,9 @@
   @media (min-aspect-ratio: 3 / 2) {
     .quiz-stage {
       --board-wide-columns: 6;
-      --board-art: max(
-        6rem,
-        calc((100 * var(--lesson-vh, 1svh) - 35rem) / 2.4)
+      --board-art: calc(
+        max(6rem, calc((100 * var(--lesson-vh, 1svh) - 35rem) / 2.4)) *
+          var(--fit-shrink, 1)
       );
       /* The board turns six across only from 56rem wide. */
       width: min(100%, max(56rem, calc(6 * var(--board-art) + 9rem)));
@@ -253,12 +257,26 @@
   @media (min-aspect-ratio: 3 / 2) and (max-aspect-ratio: 11 / 5) and (min-height: 1100px) {
     .quiz-stage {
       --board-wide-columns: 3;
-      --board-art: max(
-        5.5rem,
-        calc((100 * var(--lesson-vh, 1svh) - 38.5rem) / 3.4)
+      --board-art: calc(
+        max(5.5rem, calc((100 * var(--lesson-vh, 1svh) - 38.5rem) / 3.4)) *
+          var(--fit-shrink, 1)
       );
       width: min(100%, calc(3 * var(--board-art) + 6.5rem));
     }
+  }
+  /* On a one-screen Guide page the pictures also shrink with the host's
+     --fit below 1, past their floors (2026-11-03: 8 px over at 412x915).
+     The lesson leaves it off, so its sizes are unchanged. */
+  .quiz-stage.fitted {
+    --fit-shrink: min(var(--fit, 1), 1);
+  }
+  /* The board keeps 56rem for its row of six, and its pictures fill their
+     tiles, so on a short landscape window only the picture to name shrank
+     (80 px over 118 px tiles at 960x412). Held to the board's unit, the
+     tiles' pictures shrink with it. */
+  .quiz-stage.fitted :global(.combination-board .art) {
+    width: min(100%, var(--board-art));
+    margin-inline: auto;
   }
 
   .mystery {

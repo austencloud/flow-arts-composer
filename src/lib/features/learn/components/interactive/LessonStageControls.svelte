@@ -278,7 +278,8 @@
     }
 
     .lesson-stage-controls.navigation {
-      grid-template-columns: auto minmax(0, 1fr) auto;
+      grid-template-columns: auto auto auto;
+      justify-content: space-between;
       gap: 0.5rem;
     }
 
@@ -295,6 +296,21 @@
     .navigation :global(.panel-btn) {
       width: auto;
       min-height: 2.5rem;
+    }
+
+    /* A long forward label takes two lines inside the same 40px, beside the
+       progress, so its last screen doesn't take height from the stage. */
+    .navigation > :global(.panel-btn:last-child) {
+      padding: 0.125rem 0.625rem;
+      line-height: 1.1;
+    }
+
+    .navigation .progress-stack :global(.progress-indicator) {
+      padding: 0.4rem 0.5rem;
+    }
+
+    .navigation .progress-stack :global(.progress-dots) {
+      gap: 0.25rem;
     }
 
     .navigation > :global(.panel-btn:first-child) {

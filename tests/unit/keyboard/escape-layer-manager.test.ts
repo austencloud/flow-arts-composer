@@ -35,6 +35,18 @@ describe("EscapeLayerManager", () => {
     expect(dismiss).not.toHaveBeenCalled();
   });
 
+  it("lets a layer that only stepped back take the next press", () => {
+    const manager = new EscapeLayerManager();
+    const dismiss = vi.fn<() => void | "remains">();
+    dismiss.mockReturnValueOnce("remains");
+    manager.register({ id: "save-view", dismiss, canDismiss: () => true });
+
+    expect(manager.dismissTopLayer()).toBe("dismissed");
+    expect(manager.dismissTopLayer()).toBe("dismissed");
+    expect(manager.dismissTopLayer()).toBe("blocked");
+    expect(dismiss).toHaveBeenCalledTimes(2);
+  });
+
   it("does not dispatch the same layer twice while it is closing", () => {
     const manager = new EscapeLayerManager();
     const dismiss = vi.fn();

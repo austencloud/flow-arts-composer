@@ -58,11 +58,14 @@ function singleKeyShortcutAllowed(
  * Stop to restore, so the keys used to remove a step the user could not see.
  * While the player loads, or shows Retry after a failed load, the card still
  * shows that step, but the user asked to play the sequence, not to edit it.
+ * The save view hides the selection and keeps it for Cancel, so the same goes
+ * there: the key would delete a step nobody can see is selected.
  */
 function deleteShortcutAllowed(): boolean {
   const panelState = getCreateModuleRef()?.panelState;
   if (panelState?.workspacePlayback || panelState?.workspacePlaybackPreparation)
     return false;
+  if (panelState?.isSaveToLibraryPanelOpen) return false;
   if (typeof document === "undefined") return true;
   return !isLayerOwnedKeyboardTarget(document.activeElement);
 }
@@ -91,6 +94,17 @@ function deleteSelectedStep(): void {
   }
 
   ref.removeStep(selectedStepIndex);
+}
+
+/**
+ * The Alt transforms rewrite the whole sequence, so they stand down while the
+ * save view is open: what's on screen is what is about to be saved.
+ */
+function transformShortcutAllowed(): boolean {
+  const ref = getCreateModuleRef();
+  if (!ref || ref.panelState?.isSaveToLibraryPanelOpen) return false;
+  const sequenceState = ref.CreateModuleState.getActiveTabSequenceState();
+  return sequenceState?.hasSequence() ?? false;
 }
 
 async function executeSequenceShortcut(
@@ -344,12 +358,7 @@ export function registerCreateShortcuts(
     context: "create",
     scope: "sequence-management",
     priority: "medium",
-    condition: () => {
-      const ref = getCreateModuleRef();
-      if (!ref) return false;
-      const sequenceState = ref.CreateModuleState.getActiveTabSequenceState();
-      return sequenceState?.hasSequence() ?? false;
-    },
+    condition: transformShortcutAllowed,
     action: () => executeSequenceShortcut("mirror"),
   });
 
@@ -363,12 +372,7 @@ export function registerCreateShortcuts(
     context: "create",
     scope: "sequence-management",
     priority: "medium",
-    condition: () => {
-      const ref = getCreateModuleRef();
-      if (!ref) return false;
-      const sequenceState = ref.CreateModuleState.getActiveTabSequenceState();
-      return sequenceState?.hasSequence() ?? false;
-    },
+    condition: transformShortcutAllowed,
     action: () => executeSequenceShortcut("flip"),
   });
 
@@ -382,12 +386,7 @@ export function registerCreateShortcuts(
     context: "create",
     scope: "sequence-management",
     priority: "medium",
-    condition: () => {
-      const ref = getCreateModuleRef();
-      if (!ref) return false;
-      const sequenceState = ref.CreateModuleState.getActiveTabSequenceState();
-      return sequenceState?.hasSequence() ?? false;
-    },
+    condition: transformShortcutAllowed,
     action: () => executeSequenceShortcut("swap"),
   });
 
@@ -401,12 +400,7 @@ export function registerCreateShortcuts(
     context: "create",
     scope: "sequence-management",
     priority: "medium",
-    condition: () => {
-      const ref = getCreateModuleRef();
-      if (!ref) return false;
-      const sequenceState = ref.CreateModuleState.getActiveTabSequenceState();
-      return sequenceState?.hasSequence() ?? false;
-    },
+    condition: transformShortcutAllowed,
     action: () => executeSequenceShortcut("invert"),
   });
 
@@ -420,12 +414,7 @@ export function registerCreateShortcuts(
     context: "create",
     scope: "sequence-management",
     priority: "medium",
-    condition: () => {
-      const ref = getCreateModuleRef();
-      if (!ref) return false;
-      const sequenceState = ref.CreateModuleState.getActiveTabSequenceState();
-      return sequenceState?.hasSequence() ?? false;
-    },
+    condition: transformShortcutAllowed,
     action: () => executeSequenceShortcut("shift_start", 2),
   });
 
@@ -439,12 +428,7 @@ export function registerCreateShortcuts(
     context: "create",
     scope: "sequence-management",
     priority: "medium",
-    condition: () => {
-      const ref = getCreateModuleRef();
-      if (!ref) return false;
-      const sequenceState = ref.CreateModuleState.getActiveTabSequenceState();
-      return sequenceState?.hasSequence() ?? false;
-    },
+    condition: transformShortcutAllowed,
     action: () => executeSequenceShortcut("rewind"),
   });
 
@@ -458,12 +442,7 @@ export function registerCreateShortcuts(
     context: "create",
     scope: "sequence-management",
     priority: "medium",
-    condition: () => {
-      const ref = getCreateModuleRef();
-      if (!ref) return false;
-      const sequenceState = ref.CreateModuleState.getActiveTabSequenceState();
-      return sequenceState?.hasSequence() ?? false;
-    },
+    condition: transformShortcutAllowed,
     action: () => executeSequenceShortcut("rotate_clockwise"),
   });
 
@@ -477,12 +456,7 @@ export function registerCreateShortcuts(
     context: "create",
     scope: "sequence-management",
     priority: "medium",
-    condition: () => {
-      const ref = getCreateModuleRef();
-      if (!ref) return false;
-      const sequenceState = ref.CreateModuleState.getActiveTabSequenceState();
-      return sequenceState?.hasSequence() ?? false;
-    },
+    condition: transformShortcutAllowed,
     action: () => executeSequenceShortcut("rotate_counterclockwise"),
   });
 

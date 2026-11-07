@@ -145,7 +145,11 @@
                  gate), so they render in the browser only, as on the
                  Dual-Shifts page. -->
             {#if browser}
-              <HandMotionsMapStage found={mapMoves} onFind={foundMove} />
+              <HandMotionsMapStage
+                found={mapMoves}
+                onFind={foundMove}
+                fitted
+              />
             {/if}
           </div>
         </section>
@@ -154,7 +158,11 @@
           <h2 id="hand-pairs-heading">{handMotionsTopicText("pairsPrompt")}</h2>
           <div class="figure play" class:dark={darkMode}>
             {#if browser}
-              <HandPairsStage found={pairsFound} onFind={foundCombination} />
+              <HandPairsStage
+                found={pairsFound}
+                onFind={foundCombination}
+                fitted
+              />
             {/if}
           </div>
         </section>
@@ -171,6 +179,7 @@
                         answered={quizAnswered}
                         onAnswer={answeredQuiz}
                         onFinish={() => (quizOpen = false)}
+                        fitted
                       />
                     {/key}
                   {/if}
@@ -301,9 +310,12 @@
   }
   .play {
     width: 100%;
-    /* The stages size to the window by the lesson's unit, which leaves room
-       for the lesson's heading and buttons. The Guide's title, pills and
-       prompt take a little more, so the unit gives that back. */
+    /* The map sizes to this page's fit box (its `fitted` prop reads
+       --fit). The two hands and the quiz size to the window by the lesson's
+       unit, which leaves room for the lesson's heading and buttons; the
+       Guide's title, pills and prompt take a little more, so the unit gives
+       that back, and their `fitted` prop lets the fit box shrink them past
+       their floors where the window is too short (2026-11-03). */
     --lesson-vh: calc(1svh - 0.04rem);
   }
   /* The stage's prompt, one line where the width allows, as the lesson's

@@ -15,6 +15,7 @@
   import type { BackgroundType } from "@austencloud/backgrounds";
   import { onDestroy, onMount, untrack } from "svelte";
   import { isNamedRouteMorphActive } from "#lib/shared/transitions/named-route-morph-state.svelte.js";
+  import { tileFlight } from "#lib/shared/transitions/tile-flight.svelte.js";
   import { opaqueFade } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { prefersReducedData } from "#lib/shared/platform/network-conditions.js";
@@ -23,6 +24,7 @@
   import ToastContainer from "#lib/shared/toast/components/ToastContainer.svelte";
   import SiteHeader from "./SiteHeader.svelte";
   import SiteFooter from "./SiteFooter.svelte";
+  import ResidentPlayerHost from "./ResidentPlayerHost.svelte";
 
   type BackgroundHostComponent =
     (typeof import("#lib/shared/background/shared/components/BackgroundHost.svelte"))["default"];
@@ -147,9 +149,11 @@
   const pageOwnsSurface = $derived(footerSurface !== undefined);
 
   // Named route morphs suppress the keyed content fade only while that exact
-  // allowlisted navigation is active. Ordinary marketing navigation keeps the
-  // 200ms fade.
-  const suppressContentFade = $derived(isNamedRouteMorphActive());
+  // allowlisted navigation is active, and only when the morph itself uncovers
+  // the page. Ordinary marketing navigation keeps the 200ms fade.
+  const suppressContentFade = $derived(
+    isNamedRouteMorphActive() && !tileFlight.contentFades
+  );
 
   // The page the visit opened on is already drawn by the server: fading it in
   // when the script lands blanks it and brings it back (the Guide's run did
@@ -179,6 +183,7 @@
       {#key contentKey}
         <div
           class="mkt-content"
+          style:view-transition-name={tileFlight.arrivingContentName(path)}
           in:opaqueFade|global={{
             duration: suppressContentFade || !navigated ? 0 : DURATION.normal,
           }}
@@ -198,6 +203,7 @@
     {/if}
   </div>
   <ToastContainer />
+  <ResidentPlayerHost />
 </div>
 
 <style>
@@ -251,6 +257,15 @@
       > :global(.site-footer) {
       display: none;
     }
+  }
+
+  /* A page marked data-page-is-fixed-frame fills the screen and never scrolls,
+     at every size. A lesson mounts and leaves by shallow routing, which leaves
+     the route path behind, so its own mark says it is here. */
+  .mkt-shell:has(:global([data-page-is-fixed-frame]))
+    .mkt-layer
+    > :global(.site-footer) {
+    display: none;
   }
 
   .mkt-shell {

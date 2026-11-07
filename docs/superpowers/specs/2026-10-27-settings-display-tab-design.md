@@ -557,3 +557,248 @@ Evidence: `evidence/2026-10-27-settings-display-tab/theme-*.webp` (tab at
 375×667, 690×830, 820×1180, 1440×900, 1920×1080 and 2560×1440; Theme screen at 375×667
 and 960×412; showroom at 1440×900; animation screen with Level off at
 375×667).
+
+## Revision: Theme is the fourth column (2026-11-02)
+
+Austen, looking at the merged Theme band at 1440×900: "It's good, but now
+it's weird that the theme is so understated when we're on the actual larger
+page, like you can't really tell very easily because it's such a very small
+section."
+
+What changed:
+
+- **Theme is a full column.** The columns tier is four equal columns: Theme,
+  Pictograph, Animation, Card. The Theme column is `BackgroundTab` with
+  `column` set, rendering through `DisplaySection` without a back arrow:
+  palette icon tile, title, Use theme / Current theme where the others show
+  Reset, the live `ThemePreview` over the column's free height with the
+  name and description, and the ten choices under it. The choices are 2×5
+  short bands on a column under 22rem of content and 5×2 near-square tiles
+  from 22rem, so no row strands one tile. Picking previews on the stage;
+  Use theme applies it. The band, its Change button and the showroom swap
+  are gone. The drill tier is unchanged.
+- **The page background follows Use theme.** A screen holds the page's
+  background still for its whole visit; the column is on screen for the
+  whole visit to Display, so it holds only while it previews a theme other
+  than the current one, and the page runs the new theme once it is applied.
+- **Threshold rule.** The columns tier is used only when each of the four
+  columns keeps at least 17rem (272px) of content width. The tab loses its
+  side margins (2cqi each), the workspace border (2px) and three 1px
+  hairlines, and each section body pads 1.15em on both sides, so
+  0.96W − 5 ≥ 4 × (272 + 36.8) gives W ≥ 1292px. The tier starts at a tab
+  width of **81rem** (1296px, 273px of content a column); below it the drill
+  tier's four boxes show. 1280×800 (tab 1150) is drill; 1440×900 (tab 1310)
+  is columns.
+- **Stage floor back to 14rem.** With the band gone the columns tier's stage
+  floor returns from 9rem to 14rem.
+- **Tile ladder starts at four.** Only the columns tier draws tiles, and its
+  columns are at least 17rem, so the ladder is 4 columns below 30rem of
+  content and 5 from there: the animation's ten run 4+4+2 or 5×2 (never
+  3+3+3+1) and the pictograph's eight 4×2 or 5+3. Below 22rem of content the
+  animation's four Header chips sit 2×2 instead of 3+1.
+- **A column under 20rem drops the header's icon tile**, so "Pictograph"
+  and "Reset to defaults" share one line at the threshold.
+- `/settings/theme` and the account-setup theme task still open the Theme
+  screen on the drill tier; on the columns tier the request is cleared and
+  nothing opens, since the Theme column is already on screen.
+
+The card at the threshold (tab 1296px): Card length (4 · 8 · 16) and the
+sun/moon Theme control share one row, and Info (Mandala / None in the
+example) is one row, so the labelled rows do not stack.
+
+Measured on the task preview (column = section box; content = inside its
+padding; stages are rendered frame sizes; scroll is page and
+`.display-workspace` `scrollHeight/clientHeight`; deck bottom is the card
+controls' bottom against the workspace bottom):
+
+| Viewport  | Tab  | Tier    | Column × content | Theme / Pictograph / Animation / Card stage | Page      | Workspace | Deck / workspace bottom |
+| --------- | ---- | ------- | ---------------- | ------------------------------------------- | --------- | --------- | ----------------------- |
+| 1024×768  | 958  | drill   | boxes 220×611    | —                                           | 768/768   | 635/635   | —                       |
+| 1280×800  | 1150 | drill   | boxes 266×686    | —                                           | 800/800   | 710/710   | —                       |
+| 1426×900  | 1296 | columns | 311 × 273        | 274×372 / 273 / 242 / 269×224               | 900/900   | 806/806   | 833 / 854               |
+| 1440×900  | 1310 | columns | 314 × 276        | 277×368 / 277 / 242 / 269×224               | 900/900   | 806/806   | 833 / 854               |
+| 1920×1080 | 1790 | columns | 429 × 392        | 392×679 / 392 / 392 / 392×327               | 1080/1080 | 973/973   | 1006 / 1027             |
+| 2560×1440 | 2430 | columns | 583 × 546        | 546×966 / 546 / 546 / 546×455               | 1440/1440 | 1327/1327 | 1363 / 1384             |
+| 3840×2160 | 3710 | columns | 903 × 866        | 866×1544 / 866 / 866 / 866×721              | 2160/2160 | 2047/2047 | 2083 / 2104             |
+| 720×450   | 660  | drill   | boxes 148×301    | —                                           | 450/450   | 325/325   | —                       |
+
+At 1440×900, picking Ocean changed the stage and Use Ocean moved the
+Current badge, changed the accent and stored `backgroundType: ocean`; with
+the hold change, Use Ember turned the page's background to Ember.
+
+Evidence: `evidence/2026-10-27-settings-display-tab/column-*-tab.webp`
+(1024×768, 1280×800, 1440×900, 1920×1080, 2560×1440, 3840×2160).
+
+## Revision: Two-by-two cells (2026-11-02)
+
+Austen, looking at the four columns in a tall window (about 1740×1420):
+"no it looks awkward". The four did not share a shape: the Theme column's
+preview ran from header to floor while the other three stages floated small
+(a 380px square in 900px of height) in the middle of empty columns. He chose
+two-by-two cells.
+
+What changed:
+
+- **The wide tier is a 2×2 grid of equal cells**: Theme and Pictograph on
+  top, Animation and Card below, split by hairlines in the theme stroke. The
+  four-across arrangement is gone, with its 81rem constant, the icon tile
+  hiding under 20rem and the cell captions ("Long-press or right-click …";
+  the strings stay).
+- **A cell** is `DisplaySection` with `cell` set: the header as before (icon
+  tile, title, Reset or Use theme / Current theme on one line), then the
+  body as a size container laid out stage left, switches right. The stage
+  is the body's full height and as wide as its ratio allows there, but the
+  switches keep at least 17rem; where both cannot hold the stage gives way
+  and its frame is the largest box of its ratio that fits. The Theme stage
+  is a 1.2 column (the card's ratio) filled by the live background, never
+  taller than a square stage beside it would be, so it cannot run header to
+  floor while the others stop short. The switches centre in the pane's
+  height and fill its width.
+- **Tiles or chips, all four alike, by cell size.** Tall cells draw the
+  picture tiles (the `--tile-grid-*` ladder, 4 across, 5 from 30rem of
+  pane); short cells draw the drill screens' chips (`MenuItemChipRow`,
+  `CardContentToggles compact`, the Animation's Header chips after Word),
+  at the drill screens' 2rem touch floor. Theme: ten tiles, 5×2 from a
+  22rem pane, 2×5 under it, about 2.25rem tall in chip cells. In a cell the
+  tile picture is also capped by the stage height
+  (`min((100cqb - 21rem) / 2, (100cqb - 17rem) / 3)`), so a wide, short
+  pane never grows its deck past the stage. The card cell narrows its chip
+  rows' label column to 3.5rem (each row folded in two at 4.5rem in a 17rem
+  pane) and tightens its tile deck's gaps (0.5rem rows, 0.2rem labels).
+
+Thresholds (`DisplayTab.svelte`, beside the old `COLUMNS_MIN_REM`):
+
+- **Width, `WIDE_MIN_WIDTH_REM` = 71.25rem.** The workspace takes 2cqi side
+  margins, a 1px border each side and one 1px hairline; a cell body pads
+  1rem each side with a 1rem gap and needs 17rem (272px) of switches beside
+  a 14rem (224px) stage: (0.96W − 3) / 2 ≥ 32 + 16 + 272 + 224 = 544 gives
+  W ≥ 1137px; 71.25rem = 1140px.
+- **Height, `WIDE_MIN_HEIGHT_REM` = 44rem.** Block margins of at most 1.75rem,
+  the borders and one hairline; a cell's 73px header and 0.75rem body
+  padding over a 14rem stage: (H − 56 − 3) / 2 ≥ 73 + 24 + 224 = 321 gives
+  H ≥ 701px; 44rem = 704px. Under either threshold the drill tier shows,
+  unchanged.
+- **Tiles from a cell height of `CELL_TILES_MIN_REM` = 30.25rem.** The card's
+  tile deck is the tallest: 388px at its smallest tiles (measured at
+  1740×1420), so 388 + 97 (header and padding) = 485px. Where the card's
+  pane is under 18rem a signed-in user's four Info picks fold into two rows
+  (about 432px), so the cutoff there is `CELL_TILES_NARROW_MIN_REM` = 33rem
+  (432 + 97 = 529px). The tab computes the cell's size from its own, with
+  the workspace's margins, so the first frame draws the right switches.
+  The brief expected tiles from about 26rem; the measured deck needs 30.25.
+
+Measured on the task preview (cell = section box; stage = rendered frame;
+pane = switches width; block = switches height; gap = switches to stage
+top and bottom; page and workspace are `scrollHeight/clientHeight`):
+
+| Viewport  | Tab       | Tier  | Cell      | Theme / Pictograph / Animation / Card stage | Controls | Panes (T/P/A/C) | Blocks (T/P/A/C) | Gaps (T/P/A/C)  | Page      | Workspace |
+| --------- | --------- | ----- | --------- | ------------------------------------------- | -------- | --------------- | ---------------- | --------------- | --------- | --------- |
+| 1280×800  | 1150×744  | cells | 551×355   | 231×231 / 231 / 231 / 231×192               | chips    | 272/272/272/272 | 204/147/224/189  | 28/56/17/35     | 800/800   | 710/710   |
+| 1366×768  | 1236×712  | cells | 593×338   | 273×242 / 242 / 241 / 272×227               | chips    | 272/302/303/272 | 204/109/186/189  | 19/67/28/26     | 768/768   | 676/676   |
+| 1440×900  | 1310×844  | cells | 628×403   | 308×307 / 307 / 306 / 307×256               | chips    | 272/272/274/272 | 204/147/224/189  | 52/80/41/59     | 900/900   | 806/806   |
+| 1740×1420 | 1610×1364 | cells | 772×659   | 452×452 / 451 / 452 / 451×376               | tiles    | 272/272/272/272 | 307/197/392/388  | 128/183/85/87   | 1420/1420 | 1318/1318 |
+| 1920×1080 | 1790×1024 | cells | 859×486   | 468×390 / 390 / 390 / 468×390               | tiles    | 342/420/421/342 | 380/171/314/388  | 5/110/38/1      | 1080/1080 | 973/973   |
+| 2560×1440 | 2430×1384 | cells | 1166×663  | 681×567 / 567 / 567 / 680×567               | tiles    | 438/550/552/438 | 188/218/272/421  | 190/174/147/73  | 1440/1440 | 1327/1327 |
+| 3840×2160 | 3710×2104 | cells | 1806×1023 | 1108×923 / 923 / 923 / 1107×923             | tiles    | 650/834/836/650 | 283/332/373/381  | 320/296/275/271 | 2160/2160 | 2047/2047 |
+| 1024×768  | 958×663   | drill | —         | —                                           | —        | —               | —                | —               | 768/768   | 635/635   |
+| 720×450   | 660×351   | drill | —         | —                                           | —        | —               | —                | —               | 450/450   | 325/325   |
+
+No element in any cell overflows; the header icon tile shows in every cell.
+At 1440×900 and 1920×1080, picking Ocean changed the Theme stage to
+"Previewing Ocean theme", Use Ocean changed the page accent (#7a73da →
+#0891b2; Cosmic restored after), the Animation's Level switch removed the
+header's level badge and brought it back, and Card length 16 drew the
+16-step card (12 → 38 drawn parts).
+
+Evidence: `evidence/2026-10-27-settings-display-tab/cells-*-tab.webp`
+(1440×900, 1740×1420, 1920×1080, 2560×1440, 3840×2160).
+
+## Revision: Cells fill, theme shows through (2026-11-03)
+
+Austen, at about 1740×1420 on the two-by-two tab: "Looks decent, but I
+don't think we're utilizing the available space much, because if you look
+above and below the whole theme section, there's a bunch of empty space.
+And the buttons that you click to change the actual theme could just be
+taller in order to fill it, so you see more of the background. I don't
+know, it just feels like it's a little over containerized here, and the
+gray theme against whatever background we've chosen just feels a little
+drab."
+
+### Theme cell fills its height
+
+- The Theme cell is a `fill` cell (DisplaySection: `cell && bleed`). Its
+  stage runs the body's full height (`height: 100%`), as wide as a 1.2 box
+  at that height where the 17rem pane allows. The other three cells keep
+  their square / 1.2 stages centred.
+- Its switches pane stretches to the body's height and is a size container
+  (`display-controls`). The ten tiles fill it: rows `minmax(0, 1fr)`, no
+  aspect ratio, no 104px floor, pictures `object-fit: cover`.
+- Columns: 2×5 by default. 5×2 only on a pane of 30rem or more that is 2
+  to 2.5 times as wide as tall, so each tile is 0.8 to 1 times as wide as
+  tall. The brief's rule (5×2 from 30rem when tiles stay at least as tall as
+  wide) gave 124×458 pillars at 3840×2160, where the pane is 650×923 and
+  taller than wide; 2×5 there gives 321×178 pictures. No tested viewport
+  reaches 5×2.
+- Chip mode (1280×800, 1440×900) uses the same fill with shorter tiles; the
+  2.25rem compact tile and its dot badge no longer apply to the Theme cell
+  (the drill screen keeps them). Labels and the "Current" badge sit as on
+  the tile cells; from a 40rem pane the name takes the 14px label size.
+
+### Less box, more theme
+
+- `.display-workspace` is `var(--theme-panel-bg)` (rgba(0,0,0,0.8) on
+  desktop, 0.88 on a phone), the translucent panel glass, instead of the
+  14% / 86% near-black mix. The bright-luminance override follows suit. The
+  settings shell uses no backdrop blur, so none was added.
+- The 1px stroke and 1.25em radius stay: on Celestial the bright sky meets
+  the panel's edge, and the frame keeps the tab one object there.
+- The per-cell 2% tint (`.cell`) and the animation slot's 2% tint are gone;
+  the theme-choices band already had none in a cell. The hairlines between
+  cells stay. Drill screens keep their section tint; the drill boxes keep
+  `--theme-card-bg`, so on the drill tier the glass shows only around them.
+
+Measured on the task preview (Cosmic; page, tab and workspace
+`scrollHeight === clientHeight` everywhere; Theme pane and tile grid
+`scrollHeight === clientHeight` everywhere; workspace background
+rgba(0,0,0,0.8), 0.88 at 375×667; cell background transparent):
+
+| Viewport  | Tier  | Controls | Tab       | Theme stage | Pane / grid | Grid | Tile           |
+| --------- | ----- | -------- | --------- | ----------- | ----------- | ---- | -------------- |
+| 1280×800  | cells | chips    | 1150×744  | 231×259     | 272×259     | 2×5  | 133×47         |
+| 1440×900  | cells | chips    | 1310×844  | 308×307     | 272×307     | 2×5  | 133×57         |
+| 1740×1420 | cells | tiles    | 1610×1364 | 452×563     | 272×563     | 2×5  | 132×106        |
+| 1920×1080 | cells | tiles    | 1790×1024 | 468×390     | 342×390     | 2×5  | 167×72         |
+| 2560×1440 | cells | tiles    | 2430×1384 | 681×567     | 438×567     | 2×5  | 215×107        |
+| 3840×2160 | cells | tiles    | 3710×2104 | 1108×923    | 650×923     | 2×5  | 321×178        |
+| 1024×768  | drill | —        | 958×663   | —           | —           | —    | —              |
+| 375×667   | drill | —        | 345×595   | —           | —           | —    | 68×36 (screen) |
+
+The four cell headers share their top and bottom lines at every cells
+viewport. At 1740×1420, picking Celestial set the stage to "Previewing
+Celestial theme", Use Celestial applied it and moved the Current badge;
+Forest, Ember and Void were applied the same way and their text stayed
+white on the panel glass; Cosmic was restored after.
+
+Evidence: `evidence/2026-10-27-settings-display-tab/fill-*.webp`
+(1440×900, 1740×1420, 1920×1080, 2560×1440 on Cosmic; 1740×1420 on
+Celestial and Forest).
+
+## Revision: Theme applies on click (2026-11-06)
+
+Austen: "Should we have a use button when we choose the theme or should we
+just make it so you click your theme and then it immediately changes the
+background? I think that would be better, the second one."
+
+- Clicking, or pressing Enter or Space on, a theme tile applies it at once on
+  every tier. The Use theme button, the Current theme status and the Current
+  badge are gone. The Theme header keeps its icon tile and title, and its
+  action slot is empty.
+- The selected tile is always the current theme: one mark, the full ring plus
+  `aria-pressed`. The stage shows that theme, with its name and description
+  swapping through the existing `Crossfade`.
+- The drill screen's background hold now ends at the first pick. A held
+  controller queues a new theme until release, so the page behind the screen
+  would otherwise have kept the old theme until the visitor went back. The
+  cell's "hold while previewing another theme" effect is gone, because nothing
+  previews without applying now.
+- Opening the page still records the setup choice, and so does a click.

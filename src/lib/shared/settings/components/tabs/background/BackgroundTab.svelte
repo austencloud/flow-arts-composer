@@ -1,6 +1,6 @@
 <!--
-  BackgroundTab: the theme showroom (a live preview stage, the ten choices,
-  and Use theme / Current theme).
+  BackgroundTab: the theme showroom (a live preview stage and the ten
+  choices). Clicking a choice applies it.
 
   Revision: Theme folds in (2026-11-02). Austen: "maybe themes should be
   folded into the display area". Settings has no Theme tab any more; this is
@@ -8,9 +8,34 @@
   through DisplaySection with the other Display screens' header grammar: a
   back arrow, one-line title, and Use theme where Reset sits on the others.
   `compact` (the drill tier's screen) makes the choices one wrapping row of
-  small tiles so the screen never scrolls; without it (the columns tier's
-  showroom) the tiles are larger. Without `onBack` it keeps its old standalone
-  layout.
+  small tiles so the screen never scrolls. Without `onBack` it keeps its old
+  standalone layout.
+
+  Revision: Theme is the fourth column (2026-11-02), then the first of four
+  two-by-two cells (2026-11-02). With `cell` set it renders the same
+  DisplaySection frame without a back arrow, as the first cell of the wide
+  tier: palette icon tile, title, Use theme / Current theme where the others
+  show Reset, the live stage over the cell's full height on the left, and
+  the ten choices on the right as a 5×2 grid of picture tiles (2×5 on a
+  pane under 22rem) in the other cells' tile family, or about 2.25rem tall
+  with `compact` when the cells draw chips.
+
+  Revision: cells fill, theme shows through (2026-11-03). Austen: the
+  theme buttons "could just be taller in order to fill it, so you see more
+  of the background". In a cell the stage runs the body's full height and
+  the ten tiles fill the pane beside it top to bottom: 2×5, or 5×2 on a
+  pane of 30rem or more that is two to two and a half times as wide as
+  tall, so the tiles stay pictures, never pillars. Chip-mode cells use the
+  same fill with shorter tiles.
+
+  Revision: Theme applies on click (2026-11-06). Austen: "Should we have a use
+  button when we choose the theme or should we just make it so you click your
+  theme and then it immediately changes the background? I think that would be
+  better, the second one." The Use theme button, the Current theme status and
+  the Current badge are gone on every tier. A click applies the theme, so the
+  selected tile is always the current theme: one mark, the full ring plus
+  aria-pressed. The stage follows it, and the Theme header's action slot is
+  empty.
 -->
 <script lang="ts">
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
@@ -19,7 +44,6 @@
     releaseBackground,
   } from "#lib/shared/background/shared/state/background-hold.svelte.js";
   import { Crossfade } from "#lib/shared/transitions/motion.js";
-  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
   import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
@@ -44,6 +68,7 @@
     settings,
     onUpdate,
     onBack,
+    cell = false,
     compact = false,
     title,
   } = $props<{
@@ -51,6 +76,9 @@
     onUpdate?: (event: { key: string; value: unknown }) => void;
     /** Set when the showroom is a screen of Settings → Display. */
     onBack?: () => void;
+    /** The first cell of Settings → Display's wide tier: the same
+     *  DisplaySection frame as the screen, with no back arrow. */
+    cell?: boolean;
     /** Small tiles in one wrapping row, for a screen that must not scroll. */
     compact?: boolean;
     /** The screen's title; Display passes the Theme label. */
@@ -82,30 +110,22 @@
   }
 
   let hapticService: HapticFeedback | null = null;
-  let previewType = $state<BackgroundType>(
-    settings?.backgroundType || BackgroundType.COSMIC
+  const currentType = $derived<BackgroundType>(
+    BACKGROUND_CARD_REGISTRY.some(
+      (theme) => theme.type === settings?.backgroundType
+    )
+      ? settings.backgroundType
+      : BackgroundType.COSMIC
   );
-
-  const currentType = $derived(
-    settings?.backgroundType || BackgroundType.COSMIC
+  const current = $derived(
+    getCardMetadata(currentType) ?? BACKGROUND_CARD_REGISTRY[0]
   );
-  const preview = $derived(
-    getCardMetadata(previewType) ?? BACKGROUND_CARD_REGISTRY[0]
-  );
-  const previewIsCurrent = $derived(previewType === currentType);
   const needsThemeConfirmation = $derived(
     accountSetupState?.available &&
       accountSetupState.tasks.some(
         (task) => task.id === "theme" && !task.complete
       )
   );
-  const canApplyPreview = $derived(!previewIsCurrent || needsThemeConfirmation);
-
-  $effect(() => {
-    if (!BACKGROUND_CARD_REGISTRY.some((theme) => theme.type === previewType)) {
-      previewType = currentType;
-    }
-  });
 
   // Opening this page is the choice. A new member looked at the themes, kept
   // the one they had, and the setup checklist still asked them to choose one.
@@ -117,10 +137,18 @@
     untrack(() => void accountSetupState?.markThemeChosen());
   });
 
+  // The page's background holds still under a showroom so only the stage
+  // animates. A screen or the standalone page holds it until a theme is
+  // picked: a held controller queues a new theme until release, and the whole
+  // page has to change on the click (2026-11-06).
+  // The Display cell is on screen for the whole visit to Display, so it never
+  // holds: the page's background runs the chosen theme beside it.
+  const HOLD_KEY = "settings-theme-preview";
   onMount(() => {
     hapticService = getHapticFeedback();
-    holdBackground("settings-theme-preview");
-    return () => releaseBackground("settings-theme-preview");
+    if (cell) return;
+    holdBackground(HOLD_KEY);
+    return () => releaseBackground(HOLD_KEY);
   });
 
   async function recordThemeChoice(): Promise<void> {
@@ -139,53 +167,30 @@
     });
   }
 
-  function previewTheme(type: BackgroundType): void {
-    previewType = type;
+  function applyTheme(type: BackgroundType): void {
     hapticService?.trigger("selection");
-  }
-
-  function applyPreview(): void {
-    if (!canApplyPreview || !preview) return;
-    hapticService?.trigger("success");
-    if (!previewIsCurrent) {
-      applyThemeFromColors(undefined, preview.themeColors);
-      onUpdate?.({ key: "backgroundType", value: previewType });
+    if (type !== currentType) {
+      releaseBackground(HOLD_KEY);
+      const theme = getCardMetadata(type);
+      if (theme) applyThemeFromColors(undefined, theme.themeColors);
+      onUpdate?.({ key: "backgroundType", value: type });
     }
     void recordThemeChoice();
   }
 </script>
 
-{#snippet applyAction()}
-  <Crossfade key={canApplyPreview ? previewType : "current"}>
-    {#if canApplyPreview}
-      <span class="apply-action">
-        <PanelButton variant="primary" onclick={applyPreview}>
-          {t("settings_use_theme", { theme: themeName(previewType) })}
-        </PanelButton>
-      </span>
-    {:else}
-      <!-- A state, not an action, so it reads as a quiet label. -->
-      <span class="theme-status">
-        <i class="fas fa-check" aria-hidden="true"></i>
-        {t("settings_current_theme")}
-      </span>
-    {/if}
-  </Crossfade>
-{/snippet}
+<!-- The header's action slot stays empty: the click on a tile is the action. -->
+{#snippet noAction()}{/snippet}
 
 {#snippet themeChoices()}
   <div class="theme-choices" aria-label={t("settings_theme_choices")}>
     {#each BACKGROUND_CARD_REGISTRY as theme}
       <button
         type="button"
-        class:previewing={previewType === theme.type}
-        aria-pressed={previewType === theme.type}
-        aria-label={currentType === theme.type
-          ? t("settings_theme_current_aria", {
-              theme: themeName(theme.type),
-            })
-          : themeName(theme.type)}
-        onclick={() => previewTheme(theme.type as BackgroundType)}
+        class:selected={currentType === theme.type}
+        aria-pressed={currentType === theme.type}
+        aria-label={themeName(theme.type)}
+        onclick={() => applyTheme(theme.type as BackgroundType)}
       >
         <span
           class="choice-art"
@@ -195,42 +200,46 @@
           <img src={`/images/theme-previews/${theme.type}.webp`} alt="" />
           <span class="choice-scrim"></span>
           <span class="choice-name">{themeName(theme.type)}</span>
-          {#if currentType === theme.type}
-            <span class="choice-current">{t("settings_current")}</span>
-          {/if}
         </span>
       </button>
     {/each}
   </div>
 {/snippet}
 
-{#if onBack}
-  <div class="theme-screen" class:compact data-theme-screen>
+{#if onBack || cell}
+  <div
+    class="theme-screen"
+    class:compact
+    class:cell
+    data-theme-screen
+    data-theme-cell={cell || undefined}
+  >
     <DisplaySection
       kind="theme"
       icon="fas fa-palette"
       title={title ?? t("tab_settings_theme")}
       caption=""
-      action={applyAction}
+      action={noAction}
       bleed
       {onBack}
+      {cell}
     >
       {#snippet stage()}
         <div
           class="theme-stage screen-stage"
           aria-label={t("settings_previewing_theme", {
-            theme: themeName(previewType),
+            theme: themeName(currentType),
           })}
           role="img"
         >
-          <ThemePreview type={previewType} fallback={preview?.gradient ?? ""} />
+          <ThemePreview type={currentType} fallback={current?.gradient ?? ""} />
           <div class="stage-scrim"></div>
           <div class="stage-copy">
-            <Crossfade key={previewType} duration={DURATION.normal}>
+            <Crossfade key={currentType} duration={DURATION.normal}>
               <div class="stage-title-wrap">
-                <p class="stage-title">{themeName(previewType)}</p>
+                <p class="stage-title">{themeName(currentType)}</p>
                 <p class="stage-description">
-                  {themeDescription(previewType)}
+                  {themeDescription(currentType)}
                 </p>
               </div>
             </Crossfade>
@@ -243,45 +252,41 @@
     </DisplaySection>
   </div>
 {:else}
-<div class="background-tab themed-scrollbar">
-  <section class="theme-workspace" aria-labelledby="theme-heading">
-    <div class="theme-band">
-      <SettingsSectionHeader
-        icon="fas fa-palette"
-        title={t("settings_choose_theme")}
-        description={t("settings_themes_available", {
-          count: BACKGROUND_CARD_REGISTRY.length,
-        })}
-        headingId="theme-heading"
-      >
-        {#snippet action()}
-          {@render applyAction()}
-        {/snippet}
-      </SettingsSectionHeader>
-    </div>
-
-    <section
-      class="theme-stage"
-      aria-label={t("settings_previewing_theme", {
-        theme: themeName(previewType),
-      })}
-    >
-      <ThemePreview type={previewType} fallback={preview?.gradient ?? ""} />
-      <div class="stage-scrim"></div>
-      <div class="stage-copy">
-        <p class="stage-label">{t("settings_live_preview")}</p>
-        <Crossfade key={previewType} duration={DURATION.normal}>
-          <div class="stage-title-wrap">
-            <p class="stage-title">{themeName(previewType)}</p>
-            <p>{themeDescription(previewType)}</p>
-          </div>
-        </Crossfade>
+  <div class="background-tab themed-scrollbar">
+    <section class="theme-workspace" aria-labelledby="theme-heading">
+      <div class="theme-band">
+        <SettingsSectionHeader
+          icon="fas fa-palette"
+          title={t("settings_choose_theme")}
+          description={t("settings_themes_available", {
+            count: BACKGROUND_CARD_REGISTRY.length,
+          })}
+          headingId="theme-heading"
+        />
       </div>
-    </section>
 
-    {@render themeChoices()}
-  </section>
-</div>
+      <section
+        class="theme-stage"
+        aria-label={t("settings_previewing_theme", {
+          theme: themeName(currentType),
+        })}
+      >
+        <ThemePreview type={currentType} fallback={current?.gradient ?? ""} />
+        <div class="stage-scrim"></div>
+        <div class="stage-copy">
+          <p class="stage-label">{t("settings_live_preview")}</p>
+          <Crossfade key={currentType} duration={DURATION.normal}>
+            <div class="stage-title-wrap">
+              <p class="stage-title">{themeName(currentType)}</p>
+              <p>{themeDescription(currentType)}</p>
+            </div>
+          </Crossfade>
+        </div>
+      </section>
+
+      {@render themeChoices()}
+    </section>
+  </div>
 {/if}
 
 <style>
@@ -301,8 +306,7 @@
   }
 
   /* Matches the Preferences and Props panels: one bordered surface opened by
-     a header band. The band carries the apply action so it sits beside the
-     choices it applies. */
+     a header band. */
   .theme-workspace {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
@@ -341,27 +345,6 @@
     grid-area: band;
     min-width: 0;
     background: color-mix(in srgb, var(--theme-text) 2%, transparent);
-  }
-
-  .theme-status {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5em;
-    min-height: var(--min-touch-target, 44px);
-    color: var(--theme-text-dim);
-    font-size: var(--font-size-sm, 0.875rem);
-    font-weight: 600;
-    white-space: nowrap;
-  }
-
-  .theme-status i {
-    color: var(--theme-accent-text, var(--theme-accent));
-  }
-
-  /* The label stays visible at every width; the band hides span labels on
-     narrow tabs, which suits icon actions but not this one. */
-  .apply-action :global(.panel-btn) {
-    white-space: nowrap;
   }
 
   /* ── Live preview ── */
@@ -462,7 +445,7 @@
     box-shadow: 0 0 0 1px var(--theme-stroke-strong);
   }
 
-  .theme-choices button.previewing {
+  .theme-choices button.selected {
     border-color: var(--theme-accent);
     box-shadow: 0 0 0 2px var(--theme-accent);
   }
@@ -522,42 +505,9 @@
     white-space: nowrap;
   }
 
-  .choice-current {
-    position: absolute;
-    z-index: 2;
-    top: 8px;
-    left: 8px;
-    padding: 3px 6px;
-    color: #fff;
-    font-size: 12px;
-    font-weight: 700;
-    line-height: 1.2;
-    background: rgba(0, 0, 0, 0.68);
-    border: 1px solid rgba(255, 255, 255, 0.7);
-    border-radius: 5px;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
-  }
-
-  /* A phone has no room for the title and "Use Celestial" side by side, so
-     the action takes its own full-width row under the title. */
   @container theme-tab (max-width: 32rem) {
     .theme-workspace {
       --settings-row-inline: 0.9rem;
-    }
-
-    .theme-band :global(.section-header) {
-      flex-wrap: wrap;
-      align-items: center;
-    }
-
-    .theme-band :global(.section-action) {
-      flex: 1 1 100%;
-    }
-
-    .apply-action,
-    .apply-action :global(.panel-btn) {
-      display: flex;
-      width: 100%;
     }
   }
 
@@ -604,7 +554,6 @@
       }
     }
   }
-
 
   /* ── Theme screen of Settings → Display ──
      The section is the screen's height. The live background is the stage and
@@ -685,36 +634,73 @@
     text-align: center;
   }
 
-  /* A small tile marks the current theme with a dot, not a badge that
-     would cover its name; the button's label says it in words. */
-  .theme-screen.compact .choice-current {
-    top: 0.25rem;
-    right: 0.25rem;
-    left: auto;
-    width: 0.5rem;
-    height: 0.5rem;
-    padding: 0;
-    overflow: hidden;
-    font-size: 0;
-    border-radius: 50%;
-    background: var(--theme-accent, #fff);
-    border-color: #fff;
-  }
-
   .theme-screen.compact .choice-scrim {
     inset: 0;
     background: rgba(0, 0, 0, 0.4);
   }
 
-  /* The header's action is the height of the back arrow (2.25rem) in both
-     states, so Use theme replacing Current theme never moves the stage. */
-  .theme-screen .theme-status {
-    min-height: 2.25rem;
+  /* The first cell of Settings → Display (revised 2026-11-03, "taller in
+     order to fill it, so you see more of the background"): the ten tiles
+     fill the switches pane top to bottom, so the pane holds pictures, not
+     a small grid floating in empty space. The pane is a size container as
+     tall as the stage (DisplaySection `fill`). Up to a 30rem pane they run
+     2×5; from 30rem, where the pane is two to two and a half times as wide
+     as tall, 5×2, so each tile is 0.8 to 1 times as wide as tall. A pane
+     taller than that ratio keeps 2×5: at 3840×2160 the pane is 650×923
+     and 5×2 would make 124×458 pillars where 2×5 gives 321×178
+     pictures. The same fill holds when the cells draw chips (`compact`),
+     with shorter tiles; it replaces the 2.25rem compact tile there. Selected is the full ring
+     above. The stage is as wide as a
+     1.2 box at the body's height (the card's ratio) where the 17rem pane
+     allows it; the tiles take the rest. */
+  .theme-screen.cell {
+    --cell-stage-ratio: 1.2;
   }
 
-  .theme-screen .apply-action :global(.panel-btn) {
-    min-height: 2.25rem;
-    padding-block: 0.375rem;
+  .theme-screen.cell .theme-choices {
+    box-sizing: border-box;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(5, minmax(0, 1fr));
+    height: 100%;
+    gap: 8px;
+  }
+
+  .theme-screen.cell .theme-choices button {
+    height: auto;
+    min-height: 0;
+    aspect-ratio: auto;
+  }
+
+  .theme-screen.cell.compact .theme-choices {
+    gap: 0.375rem;
+  }
+
+  .theme-screen.cell .choice-name {
+    right: 0.5rem;
+    bottom: 0.4rem;
+    left: 0.5rem;
+    font-size: 0.8125rem;
+    text-align: left;
+  }
+
+  .theme-screen.cell.compact .choice-scrim {
+    inset: 35% 0 0;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));
+  }
+
+  @container display-controls (min-width: 30rem) and (min-aspect-ratio: 2 / 1) and (max-aspect-ratio: 5 / 2) {
+    .theme-screen.cell .theme-choices {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      grid-template-rows: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  /* Tiles at least about 7rem tall (a pane of 40rem, 2×5) take the larger
+     label size. */
+  @container display-controls (min-height: 40rem) {
+    .theme-screen.cell .choice-name {
+      font-size: 14px;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {

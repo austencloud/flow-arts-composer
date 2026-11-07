@@ -258,7 +258,7 @@
     margin: 0;
     color: var(--ink, #1a1a1a);
     font-family: var(--guide-display, "Cormorant Garamond", Georgia, serif);
-    font-size: clamp(1.6rem, 3cqw, 2.1rem);
+    font-size: 1.6rem;
     font-weight: 700;
   }
   .cell {
@@ -328,9 +328,6 @@
       grid-column: auto;
       min-width: 8rem;
       gap: 0.5rem;
-    }
-    .staff-topic .row-head h2 {
-      font-size: clamp(1.4rem, calc(1.6rem * var(--fit, 1)), 2.4rem);
     }
     .cell figcaption {
       position: absolute;

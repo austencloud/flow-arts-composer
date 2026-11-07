@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { replayableImage } from "#lib/shared/analytics/replayable-image.js";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import { buildCanonicalCardVisibility } from "#lib/features/choreo-card/domain/canonical-card-visibility.js";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
@@ -83,6 +84,7 @@
 {#if imageUrl}
   <img
     src={imageUrl}
+    use:replayableImage={imageUrl}
     alt=""
     width="960"
     height="1344"

@@ -90,6 +90,7 @@ export function flowRenderItems(
   localize: (b: GuideBlock) => GuideBlock = (b) => b,
   {
     detachTextChars,
+    introBesideChars,
   }: {
     /**
      * A small window: a lone card whose text runs at least this long keeps
@@ -98,6 +99,12 @@ export function flowRenderItems(
      * the words a screen and the figure a screen.
      */
     detachTextChars?: number;
+    /**
+     * A large window: opening words at least this long join the first card's
+     * own words, beside its figure, instead of stacking above it. Words stay
+     * on the screen with their picture and the figure keeps its height.
+     */
+    introBesideChars?: number;
   } = {}
 ): FlowRenderItem[] {
   const intro = taglineInIntro(content, tagline);
@@ -149,6 +156,17 @@ export function flowRenderItems(
       from = j;
     }
     const before = items.splice(from).map((it) => (it as BlockItem).block);
+    if (
+      introBesideChars !== undefined &&
+      items.length > 0 &&
+      items.every((it) => it.type === "block" && it.block.kind === "prose") &&
+      items.reduce(
+        (n, it) => n + stripHtml(((it as BlockItem).block as { html: string }).html).length,
+        0
+      ) >= introBesideChars
+    ) {
+      before.unshift(...items.splice(0).map((it) => (it as BlockItem).block));
+    }
     const after: GuideBlock[] = [];
     while (i < blocks.length && isFlowText(blocks[i]!) && !isLeadIn(blocks[i]!))
       after.push(blocks[i++]!);

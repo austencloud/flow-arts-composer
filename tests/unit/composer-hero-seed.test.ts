@@ -21,7 +21,10 @@ const repoRoot = path.resolve(
   "../.."
 );
 
-const SEEDED_HOSTS = [
+// Both hosts now read the one act the resident player plays, so the seed lives
+// with it.
+const SEEDED_HOSTS = ["src/lib/shared/landing/data/hero-act.svelte.ts"];
+const ACT_READERS = [
   "src/routes/(public)/composer/_components/ComposerExperience.svelte",
   "src/lib/shared/landing/components/HomeHero.svelte",
 ];
@@ -30,10 +33,19 @@ describe("hero act seeding", () => {
   for (const host of SEEDED_HOSTS) {
     it(`${host} seeds createHeroAct with an opening sequence`, () => {
       const source = readFileSync(path.join(repoRoot, host), "utf-8");
-      const call = source.match(/createHeroAct\(([\s\S]*?)\);/);
+      const call = source.match(
+        /residentAct \?\?= createHeroAct\(([\s\S]*?)\);/
+      );
       expect(call, `${host} does not call createHeroAct`).not.toBeNull();
       expect(call?.[1]).toContain("initialSequence");
       expect(call?.[1]).toContain("FALLBACK_DEMO");
+    });
+  }
+
+  for (const host of ACT_READERS) {
+    it(`${host} reads the seeded act`, () => {
+      const source = readFileSync(path.join(repoRoot, host), "utf-8");
+      expect(source).toContain("getResidentHeroAct()");
     });
   }
 });

@@ -280,6 +280,37 @@
       container: screen-list / size;
     }
   }
+  /* A short phone: the pills take the phone's 36 px height, so the card
+     under them keeps its room. */
+  @media (max-width: 520px) and (max-height: 760px), (max-height: 520px) {
+    .item {
+      min-height: 36px;
+      padding-block: 0.2em;
+    }
+  }
+  /* The band between a phone and the wide group (the Fold's inner screen
+     upright): the page sets its column beside the card there too
+     (Type1DualShiftsTopicPage, same query), so the list is tiles in two
+     columns as when wide. A narrower column gives each tile less width;
+     the tiles' own rules scale their names to it. */
+  @media (min-aspect-ratio: 4 / 5) {
+    @container (min-width: 34rem) and (max-width: 55.99rem) {
+      .screen-list {
+        flex: 1 1 auto;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-auto-rows: minmax(44px, 1fr);
+        gap: 0.5rem;
+        min-height: calc(
+          var(--grid-rows, 3) * 44px + (var(--grid-rows, 3) - 1) * 0.5rem
+        );
+        padding: 0;
+        overflow: visible;
+        mask-image: none;
+        container: screen-list / size;
+      }
+    }
+  }
   /* The tiles' rules ask the list itself, which is a container only when
      wide (an unnamed query from a tile would find the list, not the page). */
   @container screen-list (min-width: 0px) {
@@ -310,6 +341,18 @@
       display: inline-flex;
       align-items: center;
       font-size: clamp(0.95rem, min(14cqh, 11cqw), 1.75rem);
+    }
+  }
+  /* A short tile (a 960x412 window gives each about 50 px): icon, name and
+     tail stacked overflowed it, so the icon stands beside the name. The
+     query asks the tile itself, a size container. */
+  @container (max-height: 80px) {
+    .item .name {
+      flex-direction: row;
+    }
+    .icon {
+      width: 1.5rem;
+      height: 1.5rem;
     }
   }
 </style>

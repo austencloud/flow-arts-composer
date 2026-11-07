@@ -30,9 +30,9 @@
   import { analyticsRoute } from "#lib/shared/analytics/analytics-context.js";
   import { isWebGL2Available } from "#lib/shared/3d/capabilities/webgl-capabilities.js";
   import { viewportFits3D } from "#lib/shared/3d/capabilities/viewport-3d-gate.svelte.js";
-  import SequenceHeroDemo from "#lib/shared/landing/components/SequenceHeroDemo.svelte";
+  import SequenceHeroDemo, { HERO_BPM } from "#lib/shared/landing/components/SequenceHeroDemo.svelte";
   import { composerIntent } from "#lib/shared/landing/services/composer-prefetch.js";
-  import { createHeroAct } from "#lib/shared/landing/data/hero-act.svelte.js";
+  import { getResidentHeroAct } from "#lib/shared/landing/data/hero-act.svelte.js";
   import { FALLBACK_DEMO } from "#lib/shared/landing/data/per-visit-demo.js";
   import {
     HERO_TRAIL_PRESET,
@@ -71,7 +71,10 @@
   // exact preset: it is now a 16-count MYΩN draw that passes the quality gate.
   // The first live draw takes over at the next loop boundary via the act's
   // existing prefetch handoff.
-  const heroAct = createHeroAct({ initialSequence: FALLBACK_DEMO });
+  //
+  // The act is the one the homepage hero runs, so arriving from there keeps its
+  // sequence and prop, and the resident player does not restart.
+  const heroAct = getResidentHeroAct();
 
   // The page has one sequence. The hero's live draws write it until the
   // visitor builds or generates one further down; after that, last write
@@ -118,7 +121,7 @@
     return holdWhenStopLeaves(node, holdHero);
   }
 
-  let selectedProp = $state<PropType>(PropType.STAFF);
+  const selectedProp = $derived(heroAct.propType);
   // The demos draw the canonical hands, blue left and red right, because the
   // public layout pins the settings every public page reads. The picker's
   // choice reaches the demos as explicit overrides.
@@ -174,7 +177,7 @@
 
   function selectProp(prop: PropType): void {
     // Keep the chooser open so a family pick can reveal its appearance options.
-    selectedProp = prop;
+    heroAct.setProp(prop);
   }
 
   const reduceMotion = new MediaQuery("(prefers-reduced-motion: reduce)");
@@ -355,6 +358,7 @@
   onMount(() => {
     webglAvailable = isWebGL2Available();
     webglChecked = true;
+    heroAct.takeStage({ cycleProps: false });
     if (isConstrainedConnection()) return;
     return runAfterNamedRouteMorphIdle(heroAct.start);
   });
@@ -602,7 +606,6 @@
   <section
     class="opening"
     aria-labelledby="composer-title"
-    style:view-transition-name="launchpad-composer"
     use:holdWhenHeroLeaves
   >
     <div class="opening-copy">
@@ -644,6 +647,7 @@
     >
       <div class="player-main">
         <SequenceHeroDemo
+          resident
           sequence={heroAct.sequence}
           element={heroAct.element}
           toolbar={heroToolbar}
@@ -651,6 +655,7 @@
           rightPropType={selectedProp}
           {...propAppearance}
           onSequenceBoundary={heroAct.offerSequenceBoundary}
+          externalBpm={HERO_BPM}
           note="a real sequence playing in Composer"
           trailSettingsOverride={HERO_TRAIL_PRESET}
           tipEffectMap={HERO_TIP_EFFECT_MAP}

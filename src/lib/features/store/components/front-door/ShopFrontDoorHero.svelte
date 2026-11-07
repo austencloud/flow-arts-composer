@@ -27,11 +27,7 @@
 </script>
 
 <section class="hero">
-  <!-- The launchpad's Choreo Cards tile morphs into this block. The name moved
-       here when /shop/choreography-cards retired and the tile started pointing
-       at the catalog; without a participant on this end the tile morph would
-       degrade to a cut (tests/unit/landing-route-morph.test.ts holds the pair). -->
-  <div class="copy" style:view-transition-name="launchpad-choreo-cards">
+  <div class="copy">
     <h1><em>Choreo Cards</em></h1>
     <p class="lede">The latest evolution of flow arts technology</p>
     <ol class="steps">

@@ -33,8 +33,9 @@ export const CONSTRUCT_TYPE_RAIL_COLUMN_OPTIONS: readonly number[] = [4];
 
 // The picker's own rows, measured at 375px: the letter-type navigation (the
 // tier's 40px target in its 52px shell) and the carousel's bottom padding. On
-// this tier the tabs name the group, so the grid carries no type heading, and
-// the arrows are gone, so the grid spans the width less its 4px insets.
+// this tier the tabs name the group, so the split reserves no height for a type
+// heading, and the arrows are gone, so the grid spans the width less its 4px
+// insets.
 const TYPE_NAVIGATION_HEIGHT = 52;
 const CAROUSEL_BOTTOM_PADDING = 10;
 const GRID_INLINE_PADDING = 8;

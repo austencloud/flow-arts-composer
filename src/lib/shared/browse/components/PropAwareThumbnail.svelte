@@ -14,6 +14,7 @@
   - Cloud caching for instant subsequent loads
 -->
 <script lang="ts">
+  import { replayableImage } from "#lib/shared/analytics/replayable-image.js";
   import { onMount, onDestroy } from "svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
@@ -607,6 +608,7 @@
   {#if thumbnailUrl && !hasError}
     <img
       src={thumbnailUrl}
+      use:replayableImage={thumbnailUrl}
       alt={t("browse_audit_preview_of_sequence", { name: sequenceName })}
       loading="lazy"
       decoding="async"

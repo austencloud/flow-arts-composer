@@ -7,6 +7,7 @@
 <script lang="ts">
   import { localHref } from "#lib/shared/i18n/localized-href.svelte.js";
   import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import TopicScreens from "./TopicScreens.svelte";
   import type { TopicPageProps } from "./topic-pages";
 
@@ -23,45 +24,25 @@
   {#snippet screen()}
     <div class="codex-pointer">
       <p class="lede">{tDynamic("guide_codex_intro")}</p>
-      <a class="open" href={localHref("/codex")}>
-        Open the Codex
-        <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
-      </a>
+      <LinkChip href={localHref("/codex")}>Open the Codex</LinkChip>
     </div>
   {/snippet}
 </TopicScreens>
 
 <style>
+  /* A sentence and a link: type roles at every window, centred in the frame.
+     The sentence wraps only when the window runs out of width. */
   .codex-pointer {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: calc(1.5rem * var(--fit, 1));
+    gap: 1.5rem;
     text-align: center;
   }
   .lede {
-    max-width: calc(32rem * var(--fit, 1));
     margin: 0;
-    font-size: calc(1.15rem * var(--fit, 1));
+    font-size: var(--font-size-lg, 1.125rem);
     line-height: 1.5;
     text-wrap: balance;
-  }
-  .open {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.6rem;
-    padding: calc(0.8rem * var(--fit, 1)) calc(1.4rem * var(--fit, 1));
-    border: 1.5px solid color-mix(in oklab, var(--ink, #1a1a1a) 30%, transparent);
-    border-radius: 999px;
-    background: color-mix(in oklab, var(--ink, #1a1a1a) 8%, transparent);
-    color: var(--ink, #1a1a1a);
-    font-size: calc(1rem * var(--fit, 1));
-    font-weight: 600;
-    text-decoration: none;
-    transition: background-color var(--duration-fast) var(--ease-standard);
-  }
-  .open:hover,
-  .open:focus-visible {
-    background: color-mix(in oklab, var(--ink, #1a1a1a) 16%, transparent);
   }
 </style>

@@ -6,6 +6,7 @@
  * Handles:
  * - Push messages: hand them to a visible tab, or show a notification
  * - App badge updates
+ * - Phone sign-in pushes and clicks, handed to /phone-sign-in-worker.js
  * - Notification click routing
  *
  * No Firebase SDK here. Our Cloud Functions send data-only FCM messages and the
@@ -36,6 +37,19 @@ async function handlePush(event) {
     // Not JSON, so not an FCM message.
   }
   if (!payload || typeof payload !== "object") return;
+
+  // A sign-in always shows, even with a tab open: the tap is the whole point,
+  // and the page would not know what to do with it. Without its worker it still
+  // shows, plainly, and the tap opens data.url, the review page.
+  if (payload.data?.type === "phone-sign-in") {
+    try {
+      if (await self.phoneSignInWorker?.showPush(payload)) return;
+    } catch {
+      // Falls through to the plain notification.
+    }
+    await showBackgroundMessage(payload);
+    return;
+  }
 
   const windowClients = await self.clients.matchAll({
     type: "window",
@@ -71,7 +85,8 @@ async function showBackgroundMessage(payload) {
       self.registration.getNotifications().then((delivered) => {
         for (const n of delivered) {
           // Leave DM notifications alone — message reads sync separately.
-          if (n.data?.type !== "message-received") n.close();
+          // A sign-in is waiting on an answer, and has nothing to do with the inbox.
+          if (n.data?.type !== "message-received" && !n.data?.signIn) n.close();
         }
       }),
       updateBadge(parseInt(data.unreadCount, 10)),
@@ -123,6 +138,13 @@ async function updateBadge(count) {
 // Notification click handler - focus existing window or open new one
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
+
+  if (self.phoneSignInWorker?.ownsClick(event.notification)) {
+    event.waitUntil(
+      self.phoneSignInWorker.answerClick(event.action, event.notification.data)
+    );
+    return;
+  }
 
   const url = event.notification.data?.url || "/app";
 

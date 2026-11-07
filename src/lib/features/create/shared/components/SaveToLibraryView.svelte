@@ -136,7 +136,8 @@
   // Escape leaves the save view (the drawer used to own Escape). It goes
   // through the shared escape layers, so a dialog opened from the view (the
   // prop picker, the appeal modal, the age gate) sits above it and one press
-  // closes only that dialog.
+  // closes only that dialog. With the animation showing beside the form, the
+  // press flips back to the card and the form stays; the next one leaves.
   $effect(() => {
     if (!s.isOpen) return;
     return getEscapeLayerManager().register({
@@ -146,7 +147,13 @@
         !s.showAppealModal &&
         !s.showShameGate &&
         !document.querySelector('[role="listbox"]'),
-      dismiss: () => s.handleClose(),
+      dismiss: () => {
+        if (ctx.panelState.isWorkspacePreviewChosen) {
+          ctx.panelState.stopWorkspacePlayback();
+          return "remains";
+        }
+        s.handleClose();
+      },
     });
   });
 
@@ -159,8 +166,10 @@
       if (e.key === "Enter" && !e.shiftKey && s.canSave) {
         const target = e.target as HTMLElement;
         if (target.tagName === "TEXTAREA" || target.tagName === "INPUT") return;
-        // Enter on a dialog control (a prop tile) belongs to that dialog.
-        if (target.closest("dialog")) return;
+        // Enter on a dialog control (a prop tile) belongs to that dialog, and
+        // on the player or the Card | Animation switch beside the form it
+        // belongs to that control. Neither should save the sequence.
+        if (target.closest("dialog, [data-playback-foreground]")) return;
         e.preventDefault();
         s.handleSave();
       }

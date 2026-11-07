@@ -19,10 +19,13 @@ Renders a section with:
   import {
     calculateFitSize as calculateGridFitSize,
     calculateOptimalColumnLayout,
+    headerFitsBesideTiles,
   } from "../../services/option-grid-fit-calculator";
   import { onMount, untrack } from "svelte";
 
   const DEFAULT_COLUMN_OPTIONS: readonly number[] = [4, 6, 8];
+  // SectionHeader's height until a rendered one has been measured.
+  const HEADER_HEIGHT_GUESS = 54;
   import { observeSettledResize } from "#lib/shared/panels/panel-motion.js";
   import { getLetterBorderColors } from "#lib/shared/pictograph/shared/utils/letter-border-utils.js";
   import OptionPictographCell from "./OptionPictographCell.svelte";
@@ -53,6 +56,7 @@ Renders a section with:
     contentAreaBounds = null,
     forcedPictographSize,
     showHeader = true,
+    headerOnlyWithRoom = false,
     fitToViewport = false,
     onSlotClicked,
     continuationIndex = null,
@@ -75,6 +79,9 @@ Renders a section with:
     contentAreaBounds?: { left: number; right: number; width: number } | null;
     forcedPictographSize?: number;
     showHeader?: boolean;
+    /** Show the header only where the tiles can spare the height. Phone-tier
+     *  pickers fill their height with the grid. */
+    headerOnlyWithRoom?: boolean;
     fitToViewport?: boolean;
     onSlotClicked?: (typeSection: string, slotIndex: number) => void;
     continuationIndex?: number | null;
@@ -142,6 +149,28 @@ Renders a section with:
   let availableWidth = $state(0);
   let availableHeight = $state(0);
   let actualHeaderHeight = $state(0);
+  // The last height a visible header measured. Unlike actualHeaderHeight it
+  // survives the header leaving, so the room check below stays settled.
+  let headerRoomNeeded = $state(HEADER_HEIGHT_GUESS);
+
+  const headerVisible = $derived.by(() => {
+    if (!showHeader) return false;
+    if (!headerOnlyWithRoom) return true;
+    // Double-float rows add their own labels, so tile counts don't give their
+    // height.
+    if (doubleFloatRows()) return false;
+    const width = contentAreaBounds?.width || availableWidth;
+    if (!width || !availableHeight) return false;
+    return headerFitsBesideTiles({
+      itemCount: displayedItems().length,
+      availableWidth: width,
+      availableHeight,
+      gridGap: parseInt(layoutConfig?.gridGap || "8px"),
+      maxSize: layoutConfig?.pictographSize || 144,
+      columnOptions,
+      headerHeight: headerRoomNeeded,
+    });
+  });
 
   // Effect 1: Width measurement from contentAreaBounds or container
   $effect(() => {
@@ -193,7 +222,7 @@ Renders a section with:
 
   // Effect 3: Header height measurement
   $effect(() => {
-    if (!showHeader) {
+    if (!headerVisible) {
       actualHeaderHeight = 0;
       return;
     }
@@ -208,6 +237,7 @@ Renders a section with:
     const measureHeaderHeight = () => {
       const headerRect = header.getBoundingClientRect();
       actualHeaderHeight = headerRect.height;
+      if (headerRect.height > 0) headerRoomNeeded = headerRect.height;
     };
 
     // Initial measurement; later ones wait out any tool panel slide.
@@ -390,7 +420,7 @@ Renders a section with:
   data-letter-type={letterType}
 >
   <!-- Section Header -->
-  {#if showHeader}
+  {#if headerVisible}
     <SectionHeader {letterType} />
   {/if}
 

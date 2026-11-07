@@ -21,21 +21,28 @@
    * as Zan's Diamond does; a quarter box also swaps which hand leads. These
    * are hand paths, so the strips show no letters.
    * The record lives in #lib/shared/guide-topics/caps-topic.ts.
+   *
+   * One rule for the screens (2026-11-05): a control is never on a screen
+   * without the player it changes. The words live in copy.json beside this
+   * file, so Austen can retype them in place.
    */
   import { onMount } from "svelte";
   import { dev } from "$app/env";
+  import LazyMount from "#lib/shared/components/LazyMount.svelte";
+  import CopyText from "#lib/shared/copy-edit/CopyText.svelte";
+  import { createPageCopy } from "#lib/shared/copy-edit/page-copy.svelte";
   import UnderConstruction from "#lib/shared/landing/components/UnderConstruction.svelte";
   import GuideShell from "../_components/GuideShell.svelte";
   import GuideScreens from "../_components/fit/GuideScreens.svelte";
   import {
     watchScreenTier,
+    watchSmallScreen,
     type ScreenTier,
   } from "../_components/fit/guide-screen-url";
-  import Sentences from "../_components/Sentences.svelte";
   import GuideSeo from "../level-1/_components/GuideSeo.svelte";
   import SequenceShowcase from "../level-1/_components/SequenceShowcase.svelte";
   import { stripToSequence } from "../level-1/_data/guide-sequence-adapter";
-  import HandTile from "./_components/HandTile.svelte";
+  import HandTile from "#lib/shared/guide-topics/components/HandTile.svelte";
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import PropChoiceRow from "#lib/shared/pictograph/prop/components/PropChoiceRow.svelte";
@@ -70,12 +77,10 @@
     getElementImagePath,
     type ElementalType,
   } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
-  import { elementalDisplayLabel } from "#lib/shared/pictograph/shared/components/elemental-display-label.js";
   import {
     AnimationVisibilityStateManager,
     getAnimationVisibilityManager,
   } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
-  import type { PropRelationship } from "@tka/shape-domain";
   import TurnNotationControls from "@tka/shape-engine/app/components/TurnNotationControls.svelte";
   import type { MatrixLabelMode } from "@tka/shape-domain";
   import { ratioLabel } from "@tka/shape-domain";
@@ -84,6 +89,12 @@
     turnValuesForLevel,
     type TurnValue,
   } from "#lib/shared/create/services/level-turn-values.js";
+  import copyJson from "./copy.json";
+
+  const copy = createPageCopy({
+    file: "src/routes/(public)/guide/eight-step/copy.json",
+    initial: copyJson,
+  });
 
   // The bare hands draw their path as they travel: the left hand closes the
   // ring once in twelve beats, the right in four. The drawing stays until the
@@ -229,44 +240,38 @@
   spinVisibility.setMotionPolicySource(sharedVisibility);
 
   // The props' opening timing and direction name the CAP alongside its path.
-  const PROP_TIMING: Record<
-    NonNullable<PropRelationship["timing"]>,
-    Parameters<typeof t>[0]
-  > = {
-    split: "guide_eightstep_props_timing_split",
-    tog: "guide_eightstep_props_timing_together",
-    quarter: "guide_eightstep_props_timing_quarter",
-  };
-  const PROP_DIRECTION: Record<
-    NonNullable<PropRelationship["direction"]>,
-    Parameters<typeof t>[0]
-  > = {
-    same: "guide_eightstep_props_direction_same",
-    opp: "guide_eightstep_props_direction_opposite",
-  };
+  // Each case is one whole sentence in copy.json, so Austen can retype it.
+  const PROP_TIMING_KEY = {
+    split: "split",
+    tog: "together",
+    quarter: "quarter",
+  } as const;
+  const PROP_DIRECTION_KEY = { same: "same", opp: "opposite" } as const;
   const propReading = $derived.by(() => {
     const props = capPropRelationship(spinCap);
     if (props.kind === "full") {
-      const element = props.element.element as ElementalType;
       return {
-        element,
-        text: t("guide_eightstep_props_full", {
-          element: elementalDisplayLabel(element),
-          timing: t(PROP_TIMING[props.timing]),
-          direction: t(PROP_DIRECTION[props.direction]),
-        }),
+        element: props.element.element as ElementalType,
+        key: `props-${PROP_TIMING_KEY[props.timing]}-${PROP_DIRECTION_KEY[props.direction]}`,
       };
     }
     if (props.kind === "direction-only") {
       return {
         element: null,
-        text: t("guide_eightstep_props_drift", {
-          direction: t(PROP_DIRECTION[props.direction]),
-        }),
+        key: `props-drift-${PROP_DIRECTION_KEY[props.direction]}`,
       };
     }
     return null;
   });
+  // Every sentence the props line can show, so the line keeps its height
+  // while the picks change it.
+  const PROP_LINE_KEYS = [
+    ...CAP_TIMINGS.flatMap((timing) =>
+      CAP_DIRECTIONS.map((direction) => `props-${timing}-${direction}`)
+    ),
+    "props-drift-same",
+    "props-drift-opposite",
+  ];
   const poiProblem = (cap: Cap) =>
     propType === PropType.POI ? capPoiProblem(cap) : null;
 
@@ -279,26 +284,16 @@
     8: "guide_eightstep_path_apart_title",
   };
 
-  const TIMING_COPY: Record<
-    CapTiming,
-    { title: Parameters<typeof t>[0]; body: Parameters<typeof t>[0] }
-  > = {
-    split: {
-      title: "guide_eightstep_timing_split_title",
-      body: "guide_eightstep_timing_split_body",
-    },
-    together: {
-      title: "guide_eightstep_timing_together_title",
-      body: "guide_eightstep_timing_together_body",
-    },
-    quarter: {
-      title: "guide_eightstep_timing_quarter_title",
-      body: "guide_eightstep_timing_quarter_body",
-    },
+  // The tile's timing word is a control label; the heading and its sentence
+  // are copy.
+  const TIMING_WORD: Record<CapTiming, Parameters<typeof t>[0]> = {
+    split: "guide_eightstep_timing_split_title",
+    together: "guide_eightstep_timing_together_title",
+    quarter: "guide_eightstep_timing_quarter_title",
   };
-  const DIRECTION_TITLE: Record<CapDirection, Parameters<typeof t>[0]> = {
-    same: "guide_eightstep_direction_same",
-    opposite: "guide_eightstep_direction_opposite",
+  const DIRECTION_WORD: Record<CapDirection, Parameters<typeof t>[0]> = {
+    same: "guide_eightstep_screen_same",
+    opposite: "guide_eightstep_screen_opposite",
   };
 
   // The path row: the eight numbers in the chart's order, 1 to 8. Split and
@@ -308,49 +303,20 @@
     CAP_HAND_PATHS.map((path) => ({
       value: String(path.column),
       label: String(path.column),
-      ariaLabel: `${t("guide_eightstep_path_option", { n: path.column })}, ${t(TIMING_COPY[path.timing].title)}`,
+      ariaLabel: `${t("guide_eightstep_path_option", { n: path.column })}, ${t(TIMING_WORD[path.timing])}`,
     }))
   );
   const PATH_TIMING_WORD = $derived(
     Object.fromEntries(
       CAP_HAND_PATHS.map((path) => [
         String(path.column),
-        t(TIMING_COPY[path.timing].title),
+        t(TIMING_WORD[path.timing]),
       ])
     ) as Record<string, string>
   );
-  // The caption names the picked path's setup: where the hands start and
-  // which way they set off, and for a quarter path which hand leads or
-  // which change comes first.
-  const PATH_TIMING: Record<CapTiming, Parameters<typeof t>[0]> = {
-    split: "guide_eightstep_props_timing_split",
-    together: "guide_eightstep_props_timing_together",
-    quarter: "guide_eightstep_props_timing_quarter",
-  };
-  const PATH_DIRECTION: Record<CapDirection, Parameters<typeof t>[0]> = {
-    same: "guide_eightstep_props_direction_same",
-    opposite: "guide_eightstep_props_direction_opposite",
-  };
-  const QUARTER_CLAUSE: Record<number, Parameters<typeof t>[0]> = {
-    5: "guide_eightstep_path_ahead_clause",
-    6: "guide_eightstep_path_behind_clause",
-    7: "guide_eightstep_path_swap_clause",
-    8: "guide_eightstep_path_apart_clause",
-  };
-  const pathReading = $derived.by(() => {
-    const setup = {
-      n: spinPath.column,
-      timing: t(PATH_TIMING[spinPath.timing]),
-      direction: t(PATH_DIRECTION[spinPath.direction]),
-    };
-    const variant = QUARTER_CLAUSE[spinPath.column];
-    return variant
-      ? t("guide_eightstep_path_setup_quarter", {
-          ...setup,
-          variant: t(variant),
-        })
-      : t("guide_eightstep_path_setup", setup);
-  });
+  // The caption names the picked path's setup, one whole sentence per path in
+  // copy.json; every path's sentence reserves the line's height.
+  const PATH_LINE_KEYS = CAP_HAND_PATHS.map((path) => `path-${path.column}`);
 
   // A box opens on the picked motions, then steps through the others at the
   // same turns; in a quarter box each pairing shows both of its paths.
@@ -364,6 +330,13 @@
     [leftMotion, rightMotion] as const,
     ...MOTION_PAIRS.filter(([l, r]) => l !== leftMotion || r !== rightMotion),
   ]);
+  // The whole line as text, for the showcase's height reservation and its
+  // crawlable copy; the visible line renders the same words through CopyText.
+  const fillCopy = (key: string, values: readonly string[]) =>
+    values.reduce(
+      (text, value, i) => text.replace(`{${i}}`, value),
+      copy.text[key] ?? ""
+    );
   const exampleProse = (
     path: CapHandPath,
     cap: Cap,
@@ -374,11 +347,18 @@
       left: spinLabel(left, "left"),
       right: spinLabel(right, "right"),
     };
-    const variant = QUARTER_PATH[path.column];
+    const variantKey = QUARTER_PATH[path.column];
+    const variant = variantKey ? t(variantKey) : null;
+    const notPoi = !!poiProblem(cap);
     const line = variant
-      ? t("guide_eightstep_example_variant", { variant: t(variant), ...spins })
-      : t("guide_eightstep_example", spins);
-    return poiProblem(cap) ? `${line} ${t("guide_eightstep_not_poi")}` : line;
+      ? fillCopy("example-variant", [variant, spins.left, spins.right])
+      : fillCopy("example", [spins.left, spins.right]);
+    return {
+      ...spins,
+      variant,
+      notPoi,
+      proseHtml: notPoi ? `${line} ${copy.text["not-poi"] ?? ""}` : line,
+    };
   };
 
   // A row per timing, a box per direction; each box's examples cycle with
@@ -386,7 +366,6 @@
   const rows = $derived(
     CAP_TIMINGS.map((timing) => ({
       timing,
-      ...TIMING_COPY[timing],
       boxes: CAP_DIRECTIONS.map((direction) => {
         const paths = CAP_HAND_PATHS.filter(
           (p) => p.timing === timing && p.direction === direction
@@ -408,13 +387,12 @@
         });
         return {
           direction,
-          title: DIRECTION_TITLE[direction],
           element: TND_TO_ELEMENTAL[capMode(timing, direction)],
           first: showcase(entries[0]!.cap),
           pool: entries.map(({ path, cap, left, right }) => ({
             word: cap.id,
             loopLabel: "",
-            proseHtml: exampleProse(path, cap, left, right),
+            ...exampleProse(path, cap, left, right),
             items: capStrip(cap),
           })),
         };
@@ -422,62 +400,80 @@
     }))
   );
 
-  // One screen at a time (2026-10-24 fit pass). The hands open, then the
-  // spin player, then a screen per timing. A large window keeps the pickers
-  // beside the player, with the reading on the screen before; smaller ones
-  // give the pickers their own screens and show one box of a timing row at
-  // a time.
+  // One screen at a time. The hands open, then the player with its controls,
+  // then the timings. Three layouts: a phone (either way up) gets a screen per
+  // control plus one for the steps; a tablet, the Fold and a laptop get two
+  // player screens; a large window gets one. The Fold and a portrait tablet
+  // count as "small" for other guide pages, whose figures need the height;
+  // here the player and a compact control share their frame.
   let tier = $state<ScreenTier>("large");
+  let phone = $state(false);
+  // Same and Opposite share a screen where a pair still leaves each player
+  // its size; the query is the one that takes in 820x1180 and 1000x800.
+  let pairRoom = $state(true);
   onMount(() => watchScreenTier((v) => (tier = v)));
+  onMount(() => watchSmallScreen((v) => (phone = v)));
+  onMount(() => {
+    const mq = window.matchMedia("(min-width: 800px) and (min-height: 760px)");
+    const update = () => (pairRoom = mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  });
+  const layout = $derived<"phone" | "mid" | "large">(
+    phone ? "phone" : tier === "large" ? "large" : "mid"
+  );
   const views = $derived.by(() => {
-    const small = tier === "small";
-    const out: { label: string; parts: string[] }[] = [];
-    const hands = t("guide_eightstep_hands_title");
-    const spins = t("guide_eightstep_spins_title");
-    if (small) {
-      out.push({ label: hands, parts: ["lede", "hands"] });
-      out.push({ label: spins, parts: ["spinsText"] });
-      out.push({
-        label: `Watch: ${t("guide_eightstep_title")}`,
-        parts: ["spin"],
-      });
-      out.push({ label: t("guide_eightstep_path"), parts: ["pickPath"] });
-      out.push({ label: t("guide_eightstep_prop"), parts: ["pickProp"] });
-      out.push({ label: t("guide_eightstep_motion"), parts: ["pickSpin"] });
-    } else if (tier === "medium") {
-      out.push({ label: hands, parts: ["lede", "hands"] });
-      out.push({ label: spins, parts: ["spinsText"] });
-      out.push({
-        label: `Watch: ${t("guide_eightstep_title")}`,
-        parts: ["spin"],
-      });
-      out.push({
-        label: `${t("guide_eightstep_path")}, ${t("guide_eightstep_prop")}`,
-        parts: ["pickPath", "pickProp"],
-      });
-      out.push({ label: t("guide_eightstep_motion"), parts: ["pickSpin"] });
+    const out: { label: string; parts: string[] }[] = [
+      {
+        label: t("guide_eightstep_screen_hands"),
+        parts: ["lede", "hands", "credit"],
+      },
+    ];
+    const spin = (label: string, ...parts: string[]) =>
+      out.push({ label, parts: ["spin", ...parts] });
+    if (layout === "phone") {
+      spin(t("guide_eightstep_path"), "pickPath", "readPath");
+      spin(t("guide_eightstep_prop"), "pickProp", "readProps");
+      spin(t("guide_eightstep_screen_spin"), "pickSpin");
+      spin(t("guide_eightstep_screen_steps"), "strip", "backNote");
+    } else if (layout === "mid" && pairRoom) {
+      spin(t("guide_eightstep_path"), "strip", "pickPath", "readPath");
+      spin(
+        t("guide_eightstep_screen_prop_spin"),
+        "pickProp",
+        "pickSpin",
+        "readProps",
+        "backNote"
+      );
+    } else if (layout === "mid") {
+      // The Fold's frame cannot hold a real player over all these controls.
+      spin(t("guide_eightstep_path"), "strip", "pickPath", "readPath");
+      spin(t("guide_eightstep_prop"), "pickProp", "readProps");
+      spin(t("guide_eightstep_screen_spin"), "pickSpin", "backNote");
     } else {
-      out.push({ label: hands, parts: ["lede", "hands"] });
-      out.push({ label: spins, parts: ["spinsText"] });
-      out.push({
-        label: `Watch: ${t("guide_eightstep_title")}`,
-        parts: ["spin", "pickers"],
-      });
+      spin(
+        t("guide_eightstep_screen_all"),
+        "strip",
+        "pickPath",
+        "pickProp",
+        "pickSpin",
+        "readPath",
+        "readProps",
+        "backNote"
+      );
     }
-    out.push({
-      label: t("guide_eightstep_paths_title"),
-      parts: ["pathsIntro"],
-    });
-    for (const timing of CAP_TIMINGS) {
-      const title = t(TIMING_COPY[timing].title);
-      if (tier !== "large") {
-        // A phone reads the timing's words on their own screen first.
-        if (small) out.push({ label: title, parts: [`head-${timing}`] });
+    // Every box screen carries its timing's head, and the first also the
+    // paths' words, so no timing needs a screen of words alone.
+    CAP_TIMINGS.forEach((timing, m) => {
+      const title = t(TIMING_WORD[timing]);
+      const head = [...(m === 0 ? ["pathsIntro"] : []), `head-${timing}`];
+      if (layout === "phone" || (layout === "mid" && !pairRoom)) {
         CAP_DIRECTIONS.forEach((direction, k) =>
           out.push({
-            label: `${title}: ${t(DIRECTION_TITLE[direction])}`,
+            label: `${title}, ${t(DIRECTION_WORD[direction])}`,
             parts: [
-              ...(k === 0 && !small ? [`head-${timing}`] : []),
+              ...(k === 0 ? head : [`head-${timing}`]),
               `box-${timing}-${direction}`,
             ],
           })
@@ -485,17 +481,54 @@
       } else {
         out.push({
           label: title,
-          parts: [
-            `head-${timing}`,
-            ...CAP_DIRECTIONS.map((d) => `box-${timing}-${d}`),
-          ],
+          parts: [...head, ...CAP_DIRECTIONS.map((d) => `box-${timing}-${d}`)],
         });
       }
-    }
-    out.push({ label: t("guide_caps_link_caps"), parts: ["credit"] });
+    });
     return out;
   });
   const has = (n: number, part: string) => views[n]?.parts.includes(part);
+
+  // Two boxes side by side: six steps a row beside the start box, so the steps
+  // grow with the window instead of thinning into one long row. The share keeps
+  // the minimum under a seventh of a box's width; above that the start box takes
+  // a row of its own and the players lose its height. A lone box on the Fold
+  // fits all twelve in one row beside it at 40. Elsewhere the steps stay one
+  // size.
+  let windowWidth = $state(0);
+
+  // Every timing screen draws its players at one size. The fit search cannot
+  // promise that: it stops anywhere in a band, and where depends on the screen
+  // it came from. So these boxes step out of it (their own --fit is fixed) and
+  // take the room the frame leaves a player, measured here. A phone sets its
+  // size outright.
+  const BOX_PLAYER_FLOOR = 135;
+  let boxPlayer = $state(0);
+  function measureBoxPlayer(grid: HTMLElement) {
+    const content = grid.closest<HTMLElement>(".fit-content");
+    const area = grid.closest<HTMLElement>(".fit-area");
+    if (!content || !area) return;
+    const measure = () => {
+      const player = grid.querySelector<HTMLElement>(".banner > .canvas-box");
+      if (!player || layout === "phone") return;
+      const rest = content.offsetHeight - player.offsetHeight;
+      boxPlayer = Math.max(
+        BOX_PLAYER_FLOOR,
+        Math.floor(area.clientHeight - rest)
+      );
+    };
+    const observer = new ResizeObserver(measure);
+    observer.observe(content);
+    observer.observe(area);
+    return { destroy: () => observer.disconnect() };
+  }
+  const boxStripMinCell = $derived(
+    layout === "large" || (layout === "mid" && pairRoom)
+      ? Math.round(windowWidth * 0.058)
+      : layout === "mid"
+        ? 40
+        : 42
+  );
 
   // Pictographs follow the site theme, as the Level 1 pages do.
   let picTheme = $state<"light" | "dark">("dark");
@@ -527,6 +560,8 @@
   {/if}
 </svelte:head>
 
+<svelte:window bind:innerWidth={windowWidth} />
+
 {#if !dev}
   <UnderConstruction
     title="Being written"
@@ -554,63 +589,71 @@
   <GuideShell>
     <main class="eight-step guide-page-route">
       <GuideScreens
-        title={t("guide_eightstep_title")}
+        title={copy.text.title ?? ""}
         labels={views.map((v) => v.label)}
         hubHref={localHref("/guide")}
       >
+        {#snippet titleContent()}<CopyText {copy} key="title" />{/snippet}
         {#snippet screen(n)}
-          <div class="screen">
+          <div class="screen {layout}" class:compact={layout !== "large"}>
             {#if has(n, "lede")}
               <p class="lede">
-                {t("guide_eightstep_lede", { name: "Gage DeMello" })}
+                <CopyText {copy} key="lede" islands={[gageName]} />
               </p>
             {/if}
 
             {#if has(n, "hands")}
               <section class="hands" aria-labelledby="hands-heading-{n}">
                 <h2 id="hands-heading-{n}">
-                  {t("guide_eightstep_hands_title")}
+                  <CopyText {copy} key="hands-title" />
                 </h2>
                 <div class="hand-tiles">
                   <HandTile
                     sequence={hands}
                     hand="left"
-                    caption={t("guide_eightstep_hand_left")}
+                    captionContent={handLeftCaption}
                     trail={HAND_TRAIL}
                   />
                   <HandTile
                     sequence={hands}
                     hand="both"
-                    caption={t("guide_eightstep_hand_both")}
+                    captionContent={handBothCaption}
                     trail={HAND_TRAIL}
                     stepNumbers
                   />
                   <HandTile
                     sequence={hands}
                     hand="right"
-                    caption={t("guide_eightstep_hand_right")}
+                    captionContent={handRightCaption}
                     trail={HAND_TRAIL}
                   />
                 </div>
               </section>
             {/if}
 
-            {#if has(n, "spinsText") && !has(n, "spin")}
-              <section class="reading">
-                <h2>{t("guide_eightstep_spins_title")}</h2>
-                <p><Sentences text={t("guide_eightstep_spins_body")} /></p>
-                {@render prospinChip()}
-              </section>
+            {#if has(n, "credit")}
+              <footer class="credit">
+                <p><CopyText {copy} key="credit" /></p>
+                <LinkChip href={localHref("/notation/caps")}
+                  >{t("guide_caps_link_caps")}</LinkChip
+                >
+              </footer>
             {/if}
 
-            <!-- A large window composes the spin section around its player:
-                 the hand-path row runs the full width, then the player sits
-                 beside only the controls that change it. Smaller windows show
-                 the player alone, its strip beside it, and give each picker
-                 its own screen. -->
+            <!-- The player and the controls that change it, always together:
+                 the path row runs the full width above a wide player, and the
+                 other controls and the reading lines sit beside or under it.
+                 A screen without the steps passes the showcase an empty strip;
+                 the steps' words stay in its screen-reader text. -->
             {#if has(n, "spin")}
-              <div class="spin-demo" class:composed={has(n, "pickers")}>
-                {#if has(n, "pickers")}
+              <div
+                class="spin-demo"
+                class:no-strip={!has(n, "strip")}
+                class:big-player={layout === "large"}
+                class:phone-steps={layout === "phone" && has(n, "strip")}
+                class:fold-stack={layout === "mid" && !pairRoom && !has(n, "strip")}
+              >
+                {#if has(n, "pickPath") && layout === "mid"}
                   <div class="pickers path-row">{@render pathPicker()}</div>
                 {/if}
                 <SequenceShowcase
@@ -622,49 +665,86 @@
                   visibility={spinVisibility}
                   loop
                   stripBeside
+                  stripUnder={layout === "large"}
+                  stripMinCell={layout === "large" ? 60 : undefined}
+                  strip={has(n, "strip") ? undefined : noStrip}
                   {picTheme}
                 >
                   {#snippet text()}
-                    {#if has(n, "pickers")}
+                    {#if has(n, "pickProp") || has(n, "pickSpin") || (has(n, "pickPath") && layout !== "mid")}
                       <div class="pickers">
-                        {@render propPicker()}
-                        {@render spinPicker()}
+                        {#if has(n, "pickPath") && layout !== "mid"}
+                          {@render pathPicker()}
+                        {/if}
+                        {#if has(n, "pickProp")}{@render propPicker()}{/if}
+                        {#if has(n, "pickSpin")}{@render spinPicker()}{/if}
                       </div>
                     {/if}
-                    {@render spinReading()}
+                    {#if has(n, "readPath") || has(n, "readProps") || has(n, "backNote")}
+                      <div class="readings">
+                        {#if has(n, "backNote")}
+                          <p class="back-note">
+                            <CopyText {copy} key="back-note" />
+                          </p>
+                        {/if}
+                        {#if has(n, "readPath")}{@render pathLine()}{/if}
+                        {#if has(n, "readProps")}{@render propsLine()}{/if}
+                      </div>
+                    {/if}
                   {/snippet}
                 </SequenceShowcase>
               </div>
             {/if}
 
-            {#if has(n, "pickPath") || has(n, "pickProp") || has(n, "pickSpin")}
-              <div class="pickers standalone">
-                {#if has(n, "pickPath")}{@render pathPicker()}{/if}
-                {#if has(n, "pickProp")}{@render propPicker()}{/if}
-                {#if has(n, "pickSpin")}{@render spinPicker()}{/if}
-                {@render spinReading()}
-              </div>
-            {/if}
-
-            {#if has(n, "pathsIntro")}
-              <section class="paths-intro">
-                <h2>{t("guide_eightstep_paths_title")}</h2>
-                <p>{t("guide_eightstep_paths_body")}</p>
-              </section>
-            {/if}
-
             {#each rows as row (row.timing)}
               {#if has(n, `head-${row.timing}`)}
-                <div class="timing-head">
-                  <h3>{t(row.title)}</h3>
-                  <p>{t(row.body)}</p>
+                <!-- The first timing's head also carries the paths' words.
+                     The hidden copy reserves that height on all three, so
+                     every box screen leaves its players the same room. A phone
+                     sets its player's size outright and needs no reserve. -->
+                <div class="box-head">
+                  {#if layout !== "phone"}
+                    <div class="head-group head-ghost" aria-hidden="true">
+                      <div class="paths-intro">
+                        <h2>{copy.text["paths-title"]}</h2>
+                        <p>{copy.text["paths-body"]}</p>
+                      </div>
+                      <div class="timing-head">
+                        <h3>{copy.text[`timing-${row.timing}-title`]}</h3>
+                        <p>{copy.text[`timing-${row.timing}-body`]}</p>
+                      </div>
+                    </div>
+                  {/if}
+                  <div class="head-group">
+                    {#if has(n, "pathsIntro")}
+                      <section class="paths-intro">
+                        <h2><CopyText {copy} key="paths-title" /></h2>
+                        <p><CopyText {copy} key="paths-body" /></p>
+                      </section>
+                    {/if}
+                    <div class="timing-head">
+                      <h3>
+                        <CopyText {copy} key="timing-{row.timing}-title" />
+                      </h3>
+                      <p>
+                        <CopyText {copy} key="timing-{row.timing}-body" />
+                      </p>
+                    </div>
+                  </div>
                 </div>
               {/if}
               {@const shown = row.boxes.filter((box) =>
                 has(n, `box-${row.timing}-${box.direction}`)
               )}
               {#if shown.length}
-                <div class="box-grid" class:pair={shown.length > 1}>
+                <div
+                  class="box-grid"
+                  class:pair={shown.length > 1}
+                  class:stacks={layout !== "phone"}
+                  class:fixed-player={layout === "phone"}
+                  style:--box-player={boxPlayer ? `${boxPlayer}px` : null}
+                  use:measureBoxPlayer
+                >
                   {#each shown as box (box.direction)}
                     <SequenceShowcase
                       sequence={box.first.sequence}
@@ -674,9 +754,34 @@
                       render={PROP_RENDER}
                       canvasLetter={false}
                       loop
-                      stripBeside={shown.length === 1}
+                      stripBeside
+                      stripMinCell={boxStripMinCell}
                       {picTheme}
                     >
+                      {#snippet exampleLine(index)}
+                        {@const line = box.pool[index]!}
+                        {#snippet leftSpin()}{line.left}{/snippet}
+                        {#snippet rightSpin()}{line.right}{/snippet}
+                        {#snippet variantName()}{line.variant}{/snippet}
+                        <span>
+                          {#if line.variant}
+                            <CopyText
+                              {copy}
+                              key="example-variant"
+                              islands={[variantName, leftSpin, rightSpin]}
+                            />
+                          {:else}
+                            <CopyText
+                              {copy}
+                              key="example"
+                              islands={[leftSpin, rightSpin]}
+                            />
+                          {/if}
+                        </span>
+                        {#if line.notPoi}
+                          <span><CopyText {copy} key="not-poi" /></span>
+                        {/if}
+                      {/snippet}
                       {#snippet text()}
                         <h4 class="box-title">
                           <img
@@ -684,7 +789,12 @@
                             src={getElementImagePath(box.element)}
                             alt=""
                           />
-                          {t(box.title)}
+                          <span
+                            ><CopyText
+                              {copy}
+                              key="direction-{box.direction}"
+                            /></span
+                          >
                         </h4>
                       {/snippet}
                     </SequenceShowcase>
@@ -693,22 +803,24 @@
               {/if}
             {/each}
 
-            {#if has(n, "credit")}
-              <footer class="credit">
-                <p>{t("guide_caps_cap_credit")}</p>
-                <div class="links">
-                  <LinkChip href={localHref("/notation/caps")}
-                    >{t("guide_caps_link_caps")}</LinkChip
-                  >
-                </div>
-              </footer>
-            {/if}
           </div>
         {/snippet}
       </GuideScreens>
     </main>
   </GuideShell>
+
+  <LazyMount
+    loader={() => import("#lib/shared/copy-edit/CopyEditBar.svelte")}
+    active={dev}
+    debugName="copy edit bar"
+  />
 {/if}
+
+{#snippet gageName()}Gage DeMello{/snippet}
+{#snippet handLeftCaption()}<CopyText {copy} key="hand-left" />{/snippet}
+{#snippet handBothCaption()}<CopyText {copy} key="hand-both" />{/snippet}
+{#snippet handRightCaption()}<CopyText {copy} key="hand-right" />{/snippet}
+{#snippet noStrip(_progress: number)}{/snippet}
 
 {#snippet pathPicker()}
   <div class="picker path-picker">
@@ -716,12 +828,13 @@
       >{t("guide_eightstep_path")}</span
     >
     <SegmentedControl
+      size={layout === "phone" ? "sm" : "md"}
+      density={layout === "phone" ? "tight" : "compact"}
       options={PATH_OPTIONS}
       value={String(pathColumn)}
       onchange={(v) => (pathColumn = Number(v))}
       ariaLabelledby="path-picker-label"
       semantics="button-group"
-      density="compact"
       columns={4}
     >
       {#snippet optionContent(value)}
@@ -748,13 +861,20 @@
 
 {#snippet spinPicker()}
   <div class="picker">
-    <span class="picker-label">{t("guide_eightstep_motion")}</span>
+    <div class="picker-head">
+      <span class="picker-label">{t("guide_eightstep_motion")}</span>
+      <LinkChip href={localHref("/guide/prospin-and-inspin")}
+        >{t("guide_eightstep_link_prospin")}</LinkChip
+      >
+    </div>
     <div class="hand-motions">
       <div class="hand-motion">
         <span class="hand-label" id="motion-left-label"
           >{t("guide_eightstep_spin_left")}</span
         >
         <SegmentedControl
+          size={layout === "phone" ? "sm" : "md"}
+          density={layout === "phone" ? "tight" : "standard"}
           options={motionOptions("left")}
           value={leftMotion}
           onchange={(motion) => {
@@ -773,6 +893,8 @@
           >{t("guide_eightstep_spin_right")}</span
         >
         <SegmentedControl
+          size={layout === "phone" ? "sm" : "md"}
+          density={layout === "phone" ? "tight" : "standard"}
           options={motionOptions("right")}
           value={rightMotion}
           onchange={(motion) => (rightMotion = motion)}
@@ -802,15 +924,7 @@
   </div>
 {/snippet}
 
-{#snippet prospinChip()}
-  <div class="chip">
-    <LinkChip href={localHref("/guide/prospin-and-inspin")}
-      >{t("guide_eightstep_link_prospin")}</LinkChip
-    >
-  </div>
-{/snippet}
-
-{#snippet spinReading()}
+{#snippet pathLine()}
   <p class="prop-reading path-reading" aria-live="polite">
     <span class="rhythm">
       {#each capPathRhythm(spinPath) as half, h (h)}
@@ -821,27 +935,55 @@
         </span>
       {/each}
     </span>
-    <span>{pathReading}</span>
+    <span class="line-stack">
+      {#each PATH_LINE_KEYS as key (key)}
+        <span class="line-ghost" aria-hidden="true"
+          >{copy.text[key]} {copy.text["corner-hands"]}</span
+        >
+      {/each}
+      <span class="line-live">
+        <span><CopyText {copy} key="path-{spinPath.column}" /></span>
+        <span><CopyText {copy} key="corner-hands" /></span>
+      </span>
+    </span>
   </p>
+{/snippet}
+
+{#snippet propsLine()}
   {#if propReading}
     <p class="prop-reading" aria-live="polite">
-      {#if propReading.element}
-        <img
-          class="prop-element"
-          src={getElementImagePath(propReading.element)}
-          alt=""
-        />
-      {/if}
-      <span>{propReading.text}</span>
+      <span class="prop-element-slot">
+        {#if propReading.element}
+          <img
+            class="prop-element"
+            src={getElementImagePath(propReading.element)}
+            alt=""
+          />
+        {/if}
+      </span>
+      <span class="line-stack">
+        {#each PROP_LINE_KEYS as key (key)}
+          <span class="line-ghost" aria-hidden="true"
+            >{copy.text[key]}{key.includes("drift")
+              ? ""
+              : ` ${copy.text["corner-props"]}`}</span
+          >
+        {/each}
+        <span class="line-live">
+          <span><CopyText {copy} key={propReading.key} /></span>
+          {#if propReading.element}
+            <span><CopyText {copy} key="corner-props" /></span>
+          {/if}
+        </span>
+      </span>
     </p>
   {/if}
   {#if poiProblem(spinCap)}
     <p class="poi-note">
-      {t(
-        poiProblem(spinCap) === "anti-zero"
-          ? "guide_eightstep_poi_anti_zero"
-          : "guide_eightstep_poi_note"
-      )}
+      <CopyText
+        {copy}
+        key={poiProblem(spinCap) === "anti-zero" ? "poi-anti-zero" : "poi-note"}
+      />
     </p>
   {/if}
 {/snippet}
@@ -861,12 +1003,17 @@
        wide screens so they don't sit as a thin column in the middle. */
     --demo-width: clamp(1320px, 62cqw, 1680px);
   }
+  /* The playing step grows and takes a ring. When the steps close the frame,
+     this keeps the ring's bottom edge inside it. */
+  .spin-demo:not(.no-strip),
+  .box-grid {
+    padding-block-end: 6px;
+  }
   .screen {
     display: flex;
     flex-direction: column;
     gap: clamp(0.75rem, 2.5vh, 2rem);
     width: 100%;
-    max-width: calc(1680px * max(var(--fit, 1), 1));
     margin-inline: auto;
     container-type: inline-size;
   }
@@ -875,13 +1022,25 @@
   .eight-step h4 {
     margin: 0;
   }
+  /* The guide's shared heading and paragraph sizes follow the window's width.
+     This page's words hold one size in a window of any width. */
+  .eight-step h2 {
+    font-size: var(--title-size, 1.75rem);
+  }
   .eight-step p {
-    max-width: 72ch;
+    font-size: var(--read-size, 1.0625rem);
     line-height: 1.6;
     color: var(--theme-text-muted);
     margin: 0;
   }
-  .reading,
+  .screen.compact {
+    --title-size: 1.375rem;
+    --read-size: 1rem;
+  }
+  .screen.phone {
+    --title-size: 1.3rem;
+    --read-size: 0.95rem;
+  }
   .paths-intro,
   .credit,
   .hands {
@@ -891,7 +1050,7 @@
     gap: var(--spacing-sm, 8px);
     text-align: center;
   }
-  .eight-step .lede {
+  .lede.lede {
     margin-inline: auto;
     text-align: center;
     font-size: 1.125rem;
@@ -915,85 +1074,178 @@
      one figure; the screen's fit shrinks them on a short window. */
   .hand-tiles {
     margin-inline: auto;
-    max-width: min(100%, calc(var(--demo-width) * min(var(--fit, 1), 1)));
+    max-width: min(100%, calc(var(--demo-width) * var(--fit, 1)));
+  }
+  /* A phone's frame is short: the first screen's words close up, and the
+     credit runs beside its link. */
+  .screen.phone {
+    gap: var(--spacing-xs, 6px);
+  }
+  .screen.phone .hands {
+    gap: var(--spacing-xs, 6px);
+  }
+  .screen.phone .credit {
+    flex-direction: row;
+    justify-content: center;
+    gap: var(--spacing-sm, 8px);
+    text-align: start;
+  }
+  .screen.phone .credit :global(a) {
+    flex: none;
+    white-space: nowrap;
+  }
+  /* A phone's chip row sits beside the guide contents button. Without its
+     number and with a shorter fade, the longest screen name shows whole. */
+  @media (max-width: 480px) {
+    .eight-step.eight-step :global(.pills.pills.pills.pills) {
+      mask-image: linear-gradient(
+        to right,
+        transparent,
+        #000 6px,
+        #000 calc(100% - 6px),
+        transparent
+      );
+    }
+    .eight-step.eight-step :global(.pill.pill .pill-n) {
+      display: none;
+    }
+    .eight-step.eight-step :global(.pill.pill) {
+      padding-inline: 0.5rem;
+    }
   }
 
-  /* As wide as the hand tiles, growing with the screen on 4K. On a large
-     window the hand-path row runs the full width; then the player sits
-     beside only the controls that change it. */
+  /* The player and its controls. The fit search grows the player until the
+     screen is full; the words and controls keep one size at every window.
+     Canvas left and the controls beside it, except on a tall narrow frame,
+     where the player runs the frame's width on top. */
   .spin-demo {
     width: 100%;
     max-width: calc(var(--demo-width) * max(var(--fit, 1), 1));
     margin-inline: auto;
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-lg, 20px);
+    gap: var(--spacing-md, 12px);
+  }
+  .spin-demo.spin-demo :global(.banner) {
+    flex-direction: row-reverse;
+    align-items: center;
+    gap: clamp(0.75rem, 2.5cqw, 2rem);
+  }
+  .spin-demo.spin-demo :global(.banner > .canvas-box.canvas-box) {
+    flex: 0 0 min(calc(300px * var(--fit, 1)), 52cqw);
+    width: auto;
+    margin: 0;
+    align-self: center;
+  }
+  /* A sideways phone's steps sit beside the player, and each one's width sets
+     the other's. A set size stops them settling on either of two layouts. */
+  @media (orientation: landscape) {
+    .spin-demo.phone-steps :global(.banner > .canvas-box.canvas-box) {
+      flex-basis: min(52cqw, calc(100svh - 150px));
+    }
+  }
+  .spin-demo.spin-demo :global(.banner > .banner-text) {
+    justify-content: center;
+    gap: var(--spacing-md, 12px);
+  }
+  /* A large window keeps every control on this one screen. The player stands
+     over its steps in one column, which takes the room the window adds. The
+     controls hold a set column centred against it, so more canvas never
+     stretches a control. */
+  .spin-demo.big-player {
+    max-width: none;
+  }
+  .spin-demo.big-player :global(.showcase) {
+    display: grid;
+    grid-template-columns:
+      min(calc(1000px * var(--fit, 1)), calc(100cqw - 680px))
+      minmax(0, 820px);
+    justify-content: center;
+    gap: var(--spacing-sm, 8px) clamp(0.75rem, 2.5cqw, 2rem);
+  }
+  .spin-demo.big-player :global(.showcase > .banner) {
+    display: contents;
+  }
+  .spin-demo.big-player :global(.banner > .canvas-box.canvas-box) {
+    grid-area: 1 / 1;
+  }
+  .spin-demo.big-player :global(.showcase > .guide-step-strip) {
+    grid-area: 2 / 1;
+  }
+  .spin-demo.big-player :global(.banner > .banner-text) {
+    grid-area: 1 / 2 / 3 / 3;
+    align-self: center;
+    min-width: 0;
+  }
+  @media (min-height: 1001px) {
+    .spin-demo.big-player :global(.banner > .banner-text) {
+      grid-area: 1 / 2;
+    }
+  }
+  /* The Fold upright is too narrow for controls beside a player without their
+     words wrapping, so its prop and spin screens run them under the player. */
+  .spin-demo.fold-stack :global(.banner) {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+  .spin-demo.fold-stack :global(.banner > .canvas-box.canvas-box) {
+    flex: none;
+    width: min(100%, calc(300px * var(--fit, 1)));
+    margin-inline: auto;
+  }
+  @media (max-aspect-ratio: 4/5) {
+    .spin-demo.spin-demo :global(.banner) {
+      flex-direction: column-reverse;
+      align-items: stretch;
+    }
+    .spin-demo.spin-demo :global(.banner > .canvas-box.canvas-box) {
+      flex: none;
+      width: min(100%, calc(300px * var(--fit, 1)));
+      margin-inline: auto;
+    }
+  }
+  /* The showcase's strip gap has nothing under it on a screen with no strip. */
+  .spin-demo.no-strip :global(.showcase) {
+    gap: 0;
   }
   /* Its own container, so the path columns follow the row's width. */
   .path-row {
     container-type: inline-size;
   }
-  /* Composed (a large window): player left, top-aligned with its controls,
-     the strip under the controls. The player takes 480px at the pickers'
-     own scale where the screen has the height for it; a shorter window
-     shrinks it with the rest of the screen. */
-  .spin-demo.composed :global(.banner) {
-    align-items: flex-start;
-  }
-  .spin-demo.composed :global(.banner > .canvas-box) {
-    flex-basis: calc(480px * min(var(--fit, 1), 1.6));
-    align-self: flex-start;
-  }
-  /* Under 1150px the controls would not fit beside the full player (the two
-     hand toggles need 646px side by side), so the section stacks: the player
-     first and centred, the controls full width beneath. */
-  @container (max-width: 1149.98px) {
-    .spin-demo.composed :global(.banner) {
-      flex-direction: column-reverse;
-      align-items: stretch;
-    }
-    .spin-demo.composed :global(.banner > .canvas-box) {
-      flex: none;
-      width: min(100%, calc(480px * min(var(--fit, 1), 1.6)));
-      margin-inline: auto;
-    }
-  }
-  /* The controls beside the player. Every row fills this column, so all
-     of them end on the right edge the hand-path row reaches, at every
-     width. */
   .pickers {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-md, 12px);
     container-type: inline-size;
   }
-  .pickers.standalone {
-    width: min(100%, 46rem);
-    margin-inline: auto;
-  }
-  /* The pickers scale with the screen like the player beside them, up to
-     half again on 4K and never below a readable size. */
-  .pickers {
-    zoom: clamp(0.85, var(--fit, 1), 1.6);
-  }
   .picker {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-xs, 6px);
+  }
+  .picker-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-sm, 8px);
   }
   .picker-label {
     font-size: var(--font-size-compact, 13px);
     font-weight: 600;
     color: var(--theme-text-muted);
   }
-  /* Eight props in whole rows that fill the column: two of four, one of
-     eight once the column has 900px (4K), four of two on a narrow phone.
-     The switch to eight keeps a tile under about 220px wide. */
+  /* Eight props in whole rows that fill the column: one of eight where the
+     column has 700px, two of four, four of two on a narrow phone. */
+  /* The shared control floors its buttons at 44px whatever its density; a
+     phone gives that height to the player. */
+  .picker.picker :global(.segment) {
+    min-height: var(--segment-floor, 44px);
+  }
   .picker :global(.prop-grid) {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
-  @container (min-width: 900px) {
+  @container (min-width: 700px) {
     .picker :global(.prop-grid) {
       grid-template-columns: repeat(8, minmax(0, 1fr));
     }
@@ -1006,9 +1258,40 @@
   .picker :global(.prop-option) {
     max-width: none;
   }
-  /* Four tiles across a phone: a slimmer side padding leaves the longest
-     prop name its width. */
+  /* Below a large window, and on a short one, the tiles tighten so the
+     player keeps the height. */
+  .screen.compact {
+    --prop-img-size: 26px;
+    --tile-block: 4px;
+    --tile-gap: 2px;
+    --tile-row-gap: 6px;
+  }
+  @media (max-height: 1000px) {
+    .screen.large {
+      --prop-img-size: 26px;
+      --tile-block: 4px;
+      --tile-gap: 2px;
+      --tile-row-gap: 6px;
+    }
+  }
+  .picker :global(.prop-option) {
+    padding-block: var(--tile-block, 10px 8px);
+    gap: var(--tile-gap, 6px);
+  }
+  .picker :global(.prop-grid) {
+    gap: var(--tile-row-gap, 10px);
+  }
+  /* Four tiles across a phone, or eight across a column: a slimmer side
+     padding leaves the longest prop name its width. */
   @container (max-width: 400px) {
+    .picker :global(.prop-grid) {
+      column-gap: 3px;
+    }
+    .picker :global(.prop-option) {
+      padding-inline: 0;
+    }
+  }
+  @container (min-width: 700px) {
     .picker :global(.prop-option) {
       padding-inline: 4px;
     }
@@ -1044,19 +1327,54 @@
       grid-template-columns: repeat(8, minmax(0, 1fr));
     }
   }
-  /* The path's setup and the props' element, under the pickers: a fixed
-     figure on the left (the path's rhythm, the props' element) and its
-     sentence beside it. */
-  .prop-reading {
+  /* The path's setup and the props' element: a fixed figure on the left (the
+     path's rhythm, the props' element) and its sentences beside it. Every
+     sentence the line can show sits hidden in one grid cell, so the line keeps
+     its height while the picks change it. */
+  .readings {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm, 8px);
+    min-width: 0;
+  }
+  .prop-reading.prop-reading {
     display: flex;
     align-items: center;
     gap: var(--spacing-sm, 8px);
     margin: 0;
+    max-width: none;
+    line-height: 1.4;
   }
-  .prop-element {
+  .prop-element-slot {
     flex: none;
     width: 2.25rem;
     height: 2.25rem;
+  }
+  .prop-element {
+    display: block;
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+  .line-stack {
+    flex: 1 1 0;
+    display: grid;
+    min-width: 0;
+  }
+  .line-ghost,
+  .line-live {
+    grid-area: 1 / 1;
+    min-width: 0;
+  }
+  .line-ghost {
+    visibility: hidden;
+    pointer-events: none;
+  }
+  .line-live {
+    display: block;
+  }
+  .back-note.back-note {
+    font-size: 0.9375rem;
+    line-height: 1.4;
   }
   /* The path's rhythm as two lines of three, each glyph the props glyph's
      size (2.25rem) with 3px between them. The figure's width and height come
@@ -1078,37 +1396,58 @@
     width: 2.25rem;
     height: 2.25rem;
   }
-  /* Each hand's toggle takes half the row and grows to it, labelled by
-     hand; one toggle per row where two halves would crowd their words. */
+  /* Each hand's name sits over its toggle, so the toggle has the whole width
+     for its words. A wide column, and a phone's short frame, put the name
+     beside the toggle instead to save the height. */
   .hand-motions {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--spacing-sm, 8px) var(--spacing-lg, 24px);
   }
-  @container (max-width: 599.98px) {
+  @container (max-width: 479.98px) {
     .hand-motions {
       grid-template-columns: minmax(0, 1fr);
     }
   }
   .hand-motion {
     display: flex;
-    align-items: center;
-    gap: var(--spacing-sm, 8px);
+    flex-direction: column;
+    gap: 2px;
     min-width: 0;
   }
   .hand-motion :global(.segmented-control) {
-    flex: 1 1 0;
     min-width: 0;
   }
-  /* One width for both labels, so the two toggles line up when stacked. */
   .hand-label {
-    flex: none;
-    width: 5.5rem;
     font-size: 0.875rem;
     color: var(--theme-text-dim, var(--theme-text));
   }
-  .chip {
-    margin-top: var(--spacing-sm, 8px);
+  /* One width for both names, so the two toggles line up. */
+  .screen.phone .hand-motion {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--spacing-sm, 8px);
+  }
+  .screen.phone .hand-motion :global(.segmented-control) {
+    flex: 1 1 0;
+  }
+  .screen.phone .hand-label {
+    flex: none;
+    width: 5.5rem;
+  }
+  @container (min-width: 640px) {
+    .hand-motion {
+      flex-direction: row;
+      align-items: center;
+      gap: var(--spacing-sm, 8px);
+    }
+    .hand-motion :global(.segmented-control) {
+      flex: 1 1 0;
+    }
+    .hand-label {
+      flex: none;
+      width: 5.5rem;
+    }
   }
   .poi-note {
     margin-top: var(--spacing-sm, 8px);
@@ -1117,8 +1456,24 @@
     color: var(--theme-text);
   }
 
-  /* A timing's heading, then a box per direction, side by side once each
-     has room for its canvas beside a wrapping strip. */
+  /* A timing's heading, one centred block over its boxes, then a box per
+     direction. The hidden copy and the live words share one grid cell. */
+  .box-head {
+    display: grid;
+  }
+  .head-group {
+    grid-area: 1 / 1;
+    align-self: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: var(--spacing-xs, 6px);
+    min-width: 0;
+  }
+  .head-ghost {
+    visibility: hidden;
+    pointer-events: none;
+  }
   .timing-head {
     display: flex;
     flex-direction: column;
@@ -1126,43 +1481,124 @@
     gap: 2px;
     text-align: center;
   }
+  .box-head h2 {
+    font-size: var(--head-size, 1.25rem);
+  }
   .timing-head h3 {
-    font-size: 1.375rem;
+    font-size: var(--head-size, 1.25rem);
+  }
+  .box-head p {
+    font-size: var(--head-body-size, 1rem);
+    line-height: 1.35;
+  }
+  /* A sideways phone is too short to stack the two heads over its box. */
+  @container (min-width: 640px) {
+    .screen.phone .head-group {
+      flex-direction: row;
+      align-items: center;
+      gap: var(--spacing-lg, 24px);
+    }
+    .screen.phone .timing-head {
+      flex: 1 1 0;
+    }
+    .screen.phone .paths-intro {
+      flex: 2 1 0;
+    }
   }
   .box-grid {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    gap: clamp(28px, 3vw, 48px);
+    gap: clamp(16px, 3vw, 48px);
   }
-  @container (min-width: 1100px) {
-    .box-grid.pair {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+  .box-grid.pair {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  /* A box's player sits beside its words where it can stay large there;
+     every box in a window draws it at one size. Its words sit under it in a
+     narrow column. Each box reserves the same three lines for its example, so
+     the quarter boxes' longer lines do not shrink their players. */
+  .box-grid.box-grid :global(.banner) {
+    flex-direction: row-reverse;
+    align-items: center;
+    gap: clamp(0.75rem, 3cqw, 1.5rem);
+  }
+  .box-grid.stacks {
+    --fit: 4;
+  }
+  .box-grid.box-grid :global(.banner > .canvas-box.canvas-box) {
+    flex: 0 0 min(var(--box-player, 300px), 58cqw);
+    width: auto;
+    margin: 0;
+    align-self: center;
+  }
+  .box-grid :global(.example-prose) {
+    min-height: var(--example-lines, 3lh);
+  }
+  /* A phone's box player takes a set share of the frame, so a long example
+     changes the words' room and never the player's size. */
+  .box-grid.box-grid.fixed-player :global(.banner > .canvas-box.canvas-box) {
+    flex-basis: min(52cqw, calc(100svh - 150px));
+  }
+  .box-grid.box-grid :global(.ex-ghost),
+  .box-grid.box-grid :global(.ex-live) {
+    font-size: var(--example-size, 1.0625rem);
+    line-height: 1.3;
+    text-align: start;
+  }
+  .box-grid.box-grid :global(.banner-text) {
+    justify-content: center;
+    gap: 0.4rem;
+  }
+  .box-grid.box-grid :global(.cycle) {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 0.4rem 0.7rem;
+    margin-top: 0.3rem;
+  }
+  .box-grid :global(.cycle-btn) {
+    font-size: var(--cycle-size, var(--example-size, 1.0625rem));
+    padding-inline: var(--cycle-pad, 1.05rem);
+  }
+  @container (max-width: 439.98px) {
+    .box-grid.stacks :global(.banner) {
+      flex-direction: column-reverse;
+      align-items: stretch;
     }
+    .box-grid.stacks :global(.banner > .canvas-box.canvas-box) {
+      flex: none;
+      width: min(100%, var(--box-player, 300px));
+      margin-inline: auto;
+    }
+  }
+  /* On a phone the player and the words stay side by side and the words
+     tighten, so the steps fit under them. */
+  .screen.phone {
+    --min-touch-target: 34px;
+    --head-size: 1.0625rem;
+    --head-body-size: 0.875rem;
+    --example-size: 0.9375rem;
+    --cycle-pad: 0.6rem;
+    --box-title-size: 0.9375rem;
+    --box-element-size: 1.75rem;
+    --example-lines: 0;
+    --segment-floor: 34px;
+    --cycle-pad: 0.25rem;
+    --cycle-size: 0.875rem;
   }
   /* The element names the mode the box's paths open in. */
   .box-title {
     display: flex;
     align-items: center;
     gap: var(--spacing-sm, 8px);
-    font-size: 1.125rem;
+    font-size: var(--box-title-size, 1.125rem);
     color: var(--theme-text);
   }
   .box-title .element {
-    width: 2.25rem;
-    height: 2.25rem;
+    width: var(--box-element-size, 2.25rem);
+    height: var(--box-element-size, 2.25rem);
     flex: none;
   }
-  /* Stacked, the showcase centres its example line; the title follows. */
-  @container (max-width: 600px) {
-    .box-title {
-      justify-content: center;
-    }
-  }
-
-  .links {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: var(--spacing-sm, 8px);
+  .credit {
+    font-size: 0.875rem;
   }
 </style>

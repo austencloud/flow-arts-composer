@@ -242,9 +242,10 @@ h6 {
   --surface-darker: color-mix(in srgb, var(--surface-dark) 75%, black);
   /* The panel wash laid over an opaque theme-derived floor, for menus that
      open over moving or busy content. Use as a whole background value. */
+  --surface-panel-floor: color-mix(in srgb, var(--theme-text, #fff) 8%, black);
   --surface-panel-opaque:
     linear-gradient(var(--theme-panel-bg), var(--theme-panel-bg)),
-    color-mix(in srgb, var(--theme-text, #fff) 8%, black);
+    var(--surface-panel-floor);
   --surface-inset: rgba(0, 0, 0, 0.2);
   --surface-inset-deep: rgba(0, 0, 0, 0.3);
   --surface-glass-hover: color-mix(in srgb, var(--surface-glass) 75%, black);
@@ -299,6 +300,22 @@ h6 {
      ============================================================================ */
 
   /* Duration Tiers - Progressively longer for different contexts */
+
+  /* A large surface travelling across the page: the resident player between
+     heroes, a homepage tile's glass opening into its page. Calm and
+     decelerating, with no overshoot; long enough to follow the distance, short
+     enough to stay out of the way. */
+  --duration-surface-travel: 500ms;
+  --ease-surface-travel: cubic-bezier(0.2, 0, 0, 1);
+
+  /* The launchpad tile's glass. The resting tile and the panel that flies out of
+     it (TILE FLIGHT in view-transitions.css) both read these, so the panel at
+     rest is the tile's glass by construction. */
+  --tile-glass-fill: oklch(0.16 0.018 270 / 0.45);
+  --tile-glass-blur: 14px;
+  --tile-glass-radius: 22px;
+  --tile-glass-border: oklch(0.4 0.04 270 / 0.16);
+  --tile-glass-highlight: rgba(255, 255, 255, 0.18);
 
   /* Easing Curves - Physics-based for natural motion */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1); /* Decelerate (entering) */

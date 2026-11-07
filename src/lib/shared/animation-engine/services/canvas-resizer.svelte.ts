@@ -306,6 +306,15 @@ export class CanvasResizer {
     const height = container.clientHeight;
     for (const canvas of container.children) {
       if (!(canvas instanceof HTMLCanvasElement)) continue;
+      if (canvas.dataset.animationLayer === "props" && width > 0 && height > 0) {
+        // The props raster is the engine's square. Give its element that
+        // square instead of the whole box: it looks the same as contain, and
+        // session replay snapshots a canvas at its element's size, so a
+        // box-shaped element recorded the grid and props squashed.
+        const side = `${Math.min(width, height)}px`;
+        canvas.style.width = side;
+        canvas.style.height = side;
+      }
       const scale = staleRasterScale(
         width,
         height,

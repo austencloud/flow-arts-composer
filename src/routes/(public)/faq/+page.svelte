@@ -61,7 +61,7 @@
 </svelte:head>
 
 <div class="editorial faq-editorial">
-  <header class="editorial-header" style:view-transition-name="launchpad-faq">
+  <header class="editorial-header">
     <h1 class="page-title">FAQ</h1>
     <p class="page-subtitle">{siteCopy("Getting started, props, and cost")}</p>
   </header>

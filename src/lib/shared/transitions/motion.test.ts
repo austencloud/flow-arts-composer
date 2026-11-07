@@ -26,9 +26,6 @@ describe("the Composer's motion surface is the shared package", () => {
   });
 
   it("re-exports the shared owners", () => {
-    expect(flyFade).toBe(pkg.flyFade);
-    expect(growFade).toBe(pkg.growFade);
-    expect(popIn).toBe(pkg.popIn);
     expect(arrive).toBe(pkg.arrive);
     expect(leave).toBe(pkg.leave);
     expect(reducedMotion).toBe(pkg.reducedMotion);
@@ -39,6 +36,18 @@ describe("the Composer's motion surface is the shared package", () => {
 
   it("keeps the Composer-only helpers", () => {
     expect(typeof opaqueFade).toBe("function");
+  });
+
+  it("runs the package's fades unchanged when replay is not recording", () => {
+    const node = { style: {} } as unknown as Element;
+    const ours = flyFade(node, { duration: 200, y: 8 });
+    const theirs = pkg.flyFade(node, { duration: 200, y: 8 });
+    expect(ours.duration).toBe(theirs.duration);
+    expect(ours.css?.(0.5, 0.5)).toBe(theirs.css?.(0.5, 0.5));
+    expect(typeof growFade).toBe("function");
+    expect(popIn(node, { start: 0.9 }).css?.(1, 0)).toBe(
+      pkg.popIn(node as HTMLElement, { start: 0.9 }).css?.(1, 0)
+    );
   });
 });
 

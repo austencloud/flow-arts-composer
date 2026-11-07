@@ -122,8 +122,11 @@
 </g>
 
 <style>
+	/* The lesson slot sets the --grid-label-* sizes, so its letters don't shrink
+	   with the viewport on top of the board shrinking with its stage. */
 	.label {
-		font-size: 46px;
+		--own-size: 46px;
+		font-size: var(--grid-label-size, var(--own-size));
 		font-weight: 700;
 		fill: var(--theme-text-dim, #9ca3af);
 		font-family: system-ui, -apple-system, sans-serif;
@@ -131,7 +134,16 @@
 		transform: translate(0, 0) scale(1);
 		transform-origin: center;
 		/* Sync with grid animation - same duration and easing */
-		transition: transform var(--merge-duration) var(--merge-easing);
+		transition:
+			transform var(--merge-duration) var(--merge-easing),
+			font-size var(--merge-duration) var(--merge-easing);
+	}
+
+	.label.split {
+		font-size: var(
+			--grid-label-split-size,
+			var(--grid-label-size, var(--own-size))
+		);
 	}
 
 	/* Visible state (merged position - centered, full scale) */
@@ -234,13 +246,13 @@
 
 	@media (max-width: 700px) {
 		.label {
-			font-size: 38px;
+			--own-size: 38px;
 		}
 	}
 
 	@media (max-width: 500px) {
 		.label {
-			font-size: 32px;
+			--own-size: 32px;
 		}
 	}
 

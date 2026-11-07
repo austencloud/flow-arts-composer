@@ -144,6 +144,30 @@ export function calculateOptimalColumnLayout(params: {
   });
 }
 
+// A few pixels off a tile can't be seen; a missing header on one page can.
+const HEADER_MAX_TILE_LOSS = 0.05;
+
+/**
+ * Whether a header of this height fits above the grid: the tiles come out at
+ * most HEADER_MAX_TILE_LOSS smaller with it than without.
+ */
+export function headerFitsBesideTiles(
+  params: Parameters<typeof calculateOptimalColumnLayout>[0] & {
+    headerHeight: number;
+  }
+): boolean {
+  const { headerHeight, ...grid } = params;
+  const withHeader = calculateOptimalColumnLayout({
+    ...grid,
+    availableHeight: grid.availableHeight - headerHeight,
+  });
+  return (
+    withHeader.pictographSize >=
+    calculateOptimalColumnLayout(grid).pictographSize *
+      (1 - HEADER_MAX_TILE_LOSS)
+  );
+}
+
 /**
  * Calculate pictograph size with device-specific constraints.
  *

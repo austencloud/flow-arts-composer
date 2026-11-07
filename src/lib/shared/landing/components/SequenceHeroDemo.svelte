@@ -24,9 +24,20 @@
   reactive). Keying here would remount the whole player — and the whole
   animation engine chunk-load again — on every reroll/act advance instead of
   swapping a prop.
+
+  `resident` (the homepage and /composer's main hero) borrows the one player that
+  survives navigating between those pages instead of mounting its own; see
+  resident-player.svelte.ts. Until the claim lands on the client, the stage shows
+  exactly what every other host shows, so SSR and the first frame do not change.
 -->
+<script module lang="ts">
+  /** Pinned so a visitor's persisted Compose playback speed can't skew the
+      marketing surface; every visitor sees the act at the same tempo. */
+  export const HERO_BPM = 60;
+</script>
+
 <script lang="ts">
-  import type { Snippet } from "svelte";
+  import { tick, untrack, type Snippet } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
   import { activateWhenNear } from "#lib/actions/activate-when-near.js";
   import LazyMount from "#lib/shared/components/LazyMount.svelte";
@@ -45,14 +56,25 @@
   import { AnimationVisibilityStateManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
   import { syncHeroElementalGlyphVisibility } from "#lib/shared/landing/services/hero-elemental-glyph-visibility.js";
   import { prefersReducedData } from "#lib/shared/platform/network-conditions.js";
+  import {
+    loadHeroNotationRail,
+    loadHeroPlayer,
+  } from "#lib/shared/landing/services/hero-player-chunks.js";
+  import {
+    residentPlayer,
+    type ResidentClaim,
+    type ResidentHandle,
+  } from "#lib/shared/landing/services/resident-player.svelte.js";
   import { markLanding } from "#lib/shared/performance/landing-marks.js";
   import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
   import type { ViewerCustomColorPair } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
 
   let {
+    resident = false,
     sequence,
     element = null,
-    note,
+    note = "",
+    noteContent,
     leftPropType,
     rightPropType,
     fanAppearance,
@@ -79,6 +101,9 @@
     connectionAware = false,
     serverReducedData = false,
   }: {
+    /** Use the one player that survives navigation rather than mounting one.
+        Only for a page's main hero; every other host leaves this off. */
+    resident?: boolean;
     /** Null while the host is still producing the sequence (e.g. /composer's
         per-visit generated demo) — the stage box and caption line keep their
         reserved footprint and the player mounts when it lands. */
@@ -86,7 +111,9 @@
     /** TnD element of the current sequence. Shape-matrix draws use this as the
         eligibility signal for the player's canonical elemental glyph. */
     element?: TnDElement | null;
-    note: string;
+    note?: string;
+    /** Takes the place of `note` when the words need their own markup. */
+    noteContent?: Snippet;
     /** Optional prop-type override so per-prop pages can render the same
         sequence with fans/clubs/buugeng instead of the default staves. */
     leftPropType?: string;
@@ -169,8 +196,14 @@
   const heroVisibilityManager = new AnimationVisibilityStateManager({
     ephemeral: true,
   });
+  // Null until the claim lands; stays null if this host keeps its own player.
+  let residentHandle = $state.raw<ResidentHandle | null>(null);
+  let residentRefused = $state(false);
   $effect(() => {
-    syncHeroElementalGlyphVisibility(heroVisibilityManager, element !== null);
+    syncHeroElementalGlyphVisibility(
+      residentHandle?.visibilityManager ?? heroVisibilityManager,
+      element !== null
+    );
   });
   const hiddenNotationRail =
     typeof window === "undefined"
@@ -220,17 +253,23 @@
     }
   });
 
+  const shownPlayerStatus = $derived(
+    residentHandle ? residentPlayer.playerStatus : playerLoadStatus
+  );
+  const shownNotationStatus = $derived(
+    residentHandle ? residentPlayer.railStatus : notationLoadStatus
+  );
   const pending = $derived(
     sequence
       ? !manualActivationAvailable &&
-          (playerLoadStatus === "idle" || playerLoadStatus === "loading")
+          (shownPlayerStatus === "idle" || shownPlayerStatus === "loading")
       : !errorMessage
   );
   const notationBusy = $derived(
     shouldMountNotationRail &&
       (!sequence ||
-        notationLoadStatus === "idle" ||
-        notationLoadStatus === "loading")
+        shownNotationStatus === "idle" ||
+        shownNotationStatus === "loading")
   );
   let reportedStep = $state(0);
   let reportedSequenceId = $state<string | null>(null);
@@ -281,6 +320,102 @@
     manualActivationAvailable = false;
     active = true;
   }
+
+  const playerProps = $derived({
+    sequence,
+    autoPlay,
+    chrome: "minimal",
+    fill: true,
+    cornerToggle,
+    cornerToggleAtRest,
+    leftPropType,
+    rightPropType,
+    fanAppearance,
+    primaryPropColors,
+    leftBuugengFlipped,
+    rightBuugengFlipped,
+    onLoopComplete,
+    onSequenceBoundary,
+    trailSettingsOverride,
+    tipEffectMap,
+    externalBpm: externalBpm ?? null,
+    showWordHeader,
+    visibilityManagerOverride: showWordHeader
+      ? heroVisibilityManager
+      : undefined,
+    onCanvasInitialized: () => {
+      canvasReady = true;
+      markLanding("hero:canvas-ready");
+    },
+    onStepChange: shouldMountNotationRail ? handleStepChange : undefined,
+  });
+  const railProps = $derived({
+    sequence,
+    currentStep: notationStep,
+    bpm: externalBpm ?? 60,
+    density: "compact",
+    fillHeight: true,
+    anchor: "center",
+    orientation: notationOrientation,
+    loop: false,
+    stepPulse: false,
+    leftPropType: leftPropType ?? null,
+    rightPropType: rightPropType ?? null,
+  });
+
+  let stageElement = $state<HTMLElement>();
+  let railElement = $state<HTMLElement>();
+
+  function residentClaim(
+    stage: HTMLElement,
+    railStage: HTMLElement | null
+  ): ResidentClaim {
+    return {
+      stage,
+      railStage,
+      get playerProps() {
+        return playerProps;
+      },
+      get railProps() {
+        return railProps;
+      },
+      get playerActive() {
+        return active && !!sequence;
+      },
+      get railActive() {
+        return active && !!sequence && shouldMountNotationRail;
+      },
+      placeholder: playerPlaceholder,
+      playerError,
+      railError,
+      visibilityManager: heroVisibilityManager,
+    };
+  }
+
+  // The chrome and the page tear down in the same flush but not in a promised
+  // order, so a claim that finds the old page still in place asks once more
+  // after that flush. A second refusal is real: keep this host's own player.
+  $effect(() => {
+    if (!resident || !stageElement) return;
+    const claim = residentClaim(stageElement, railElement ?? null);
+    return untrack(() => {
+      let disposed = false;
+      let handle = residentPlayer.claim(claim);
+      residentHandle = handle;
+      if (!handle) {
+        void tick().then(() => {
+          if (disposed) return;
+          handle = residentPlayer.claim(claim);
+          residentHandle = handle;
+          residentRefused = !handle;
+        });
+      }
+      return () => {
+        disposed = true;
+        handle?.release();
+      };
+    });
+  });
 </script>
 
 {#snippet playerPlaceholder()}
@@ -300,6 +435,20 @@
   </div>
 {/snippet}
 
+{#snippet playerError(_error: unknown, retry: () => void)}
+  <div class="demo-load-error" role="alert">
+    <span>The live preview could not load.</span>
+    <button type="button" onclick={retry}>Try again</button>
+  </div>
+{/snippet}
+
+{#snippet railError(_error: unknown, retry: () => void)}
+  <div class="notation-load-error" role="alert">
+    <span>Pictographs did not load.</span>
+    <button type="button" onclick={retry}>Try again</button>
+  </div>
+{/snippet}
+
 <div
   class="hero-demo"
   class:with-notation-strip={showNotationStrip}
@@ -314,68 +463,27 @@
           class:rail-attached={showNotationStrip}
           class:word-header-attached={showWordHeader}
           aria-busy={pending}
+          bind:this={stageElement}
         >
           <!-- Not keyed on sequence id — the mounted player reloads onto a new
                sequence in place (see script comment above). The reserved stage
                footprint holds constant, so no layout shift either way. -->
-          <!-- The LOOP badge's resolver is registered before the player
-               mounts, not after: the canvas reads it once per sequence (it is
-               a plain variable, not reactive), and the public landing never
-               loads the app's composition root that normally registers it.
-               Without this the hero never shows a LOOP badge. -->
-          <LazyMount
-            loader={() =>
-              Promise.all([
-                import("#lib/shared/composition-root/register-loop-display.js"),
-                import("#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte"),
-              ]).then(([loopDisplay, player]) => {
-                loopDisplay.registerLoopDisplay();
-                return player;
-              })}
-            active={active && !!sequence && !isNamedRouteMorphActive()}
-            placeholder={playerPlaceholder}
-            onStatusChange={(status) => {
-              if (status === "loaded") markLanding("hero:player-loaded");
-              playerLoadStatus = status;
-            }}
-            props={{
-              sequence,
-              autoPlay,
-              chrome: "minimal",
-              fill: true,
-              cornerToggle,
-              cornerToggleAtRest,
-              leftPropType,
-              rightPropType,
-              fanAppearance,
-              primaryPropColors,
-              leftBuugengFlipped,
-              rightBuugengFlipped,
-              onLoopComplete,
-              onSequenceBoundary,
-              trailSettingsOverride,
-              tipEffectMap,
-              externalBpm: externalBpm ?? null,
-              showWordHeader,
-              visibilityManagerOverride: showWordHeader
-                ? heroVisibilityManager
-                : undefined,
-              onCanvasInitialized: () => {
-                canvasReady = true;
-                markLanding("hero:canvas-ready");
-              },
-              onStepChange: shouldMountNotationRail
-                ? handleStepChange
-                : undefined,
-            }}
-          >
-            {#snippet error(_error: unknown, retry: () => void)}
-              <div class="demo-load-error" role="alert">
-                <span>The live preview could not load.</span>
-                <button type="button" onclick={retry}>Try again</button>
-              </div>
-            {/snippet}
-          </LazyMount>
+          {#if !residentHandle}
+            <LazyMount
+              loader={loadHeroPlayer}
+              active={active &&
+                !!sequence &&
+                !isNamedRouteMorphActive() &&
+                (!resident || residentRefused)}
+              placeholder={playerPlaceholder}
+              error={playerError}
+              onStatusChange={(status) => {
+                if (status === "loaded") markLanding("hero:player-loaded");
+                playerLoadStatus = status;
+              }}
+              props={playerProps}
+            />
+          {/if}
 
           {#if errorMessage && !sequence}
             <div class="demo-load-error" role="alert">
@@ -395,36 +503,22 @@
             ? `Pictographs for ${word}`
             : "Pictographs loading"}
           aria-busy={notationBusy}
+          bind:this={railElement}
         >
-          <LazyMount
-            loader={() => import("#lib/shared/timeline/StepStrip.svelte")}
-            active={active &&
-              canvasReady &&
-              !!sequence &&
-              shouldMountNotationRail &&
-              !isNamedRouteMorphActive()}
-            onStatusChange={(status) => (notationLoadStatus = status)}
-            props={{
-              sequence,
-              currentStep: notationStep,
-              bpm: externalBpm ?? 60,
-              density: "compact",
-              fillHeight: true,
-              anchor: "center",
-              orientation: notationOrientation,
-              loop: false,
-              stepPulse: false,
-              leftPropType: leftPropType ?? null,
-              rightPropType: rightPropType ?? null,
-            }}
-          >
-            {#snippet error(_error: unknown, retry: () => void)}
-              <div class="notation-load-error" role="alert">
-                <span>Pictographs did not load.</span>
-                <button type="button" onclick={retry}>Try again</button>
-              </div>
-            {/snippet}
-          </LazyMount>
+          {#if !residentHandle}
+            <LazyMount
+              loader={loadHeroNotationRail}
+              active={active &&
+                canvasReady &&
+                !!sequence &&
+                shouldMountNotationRail &&
+                !isNamedRouteMorphActive() &&
+                (!resident || residentRefused)}
+              error={railError}
+              onStatusChange={(status) => (notationLoadStatus = status)}
+              props={railProps}
+            />
+          {/if}
         </div>
       {/if}
     </div>
@@ -441,7 +535,9 @@
       <Crossfade key={word}>
         <span class="tka-font demo-word">{word}</span>
       </Crossfade>
-      <span class="demo-note">{note}</span>
+      <span class="demo-note"
+        >{#if noteContent}{@render noteContent()}{:else}{note}{/if}</span
+      >
     </figcaption>
   </figure>
 

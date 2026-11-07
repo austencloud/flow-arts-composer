@@ -29,6 +29,7 @@
 	import GridBackgrounds from './GridBackgrounds.svelte';
 	import RotatingGridGroup from './RotatingGridGroup.svelte';
 	import StaticGridGroup from './StaticGridGroup.svelte';
+	import PointCueArrows from './PointCueArrows.svelte';
 	import DirectionLabels from './DirectionLabels.svelte';
 	import ModeLabels from './ModeLabels.svelte';
 
@@ -52,6 +53,14 @@
 				: RESPONSIVE.DESKTOP.MAX_WIDTH_SPLIT
 	);
 
+	// The lesson slot sizes the board from its stage in these phases.
+	const isSplit = $derived(
+		phase === 'split' ||
+			phase === 'diamond-labels' ||
+			phase === 'box-labels' ||
+			phase === 'split-highlight'
+	);
+
 	// CSS custom properties for unified timing
 	const cssVars = `
 		--grid-center: ${GRID.CENTER}px;
@@ -61,10 +70,6 @@
 		--entrance-duration: ${TIMING.ENTRANCE}ms;
 		--label-duration: ${TIMING.LABEL}ms;
 		--highlight-duration: ${TIMING.HIGHLIGHT}ms;
-		--split-offset-x: ${RESPONSIVE.DESKTOP.SPLIT_OFFSET_X}px;
-		--split-offset-y: ${RESPONSIVE.DESKTOP.SPLIT_OFFSET_Y}px;
-		--split-offset-x-neg: -${RESPONSIVE.DESKTOP.SPLIT_OFFSET_X}px;
-		--split-offset-y-neg: -${RESPONSIVE.DESKTOP.SPLIT_OFFSET_Y}px;
 	`;
 </script>
 
@@ -73,11 +78,13 @@
 		viewBox="0 0 {GRID.SIZE} {GRID.SIZE}"
 		class="merge-svg"
 		class:look-pictograph={look === 'pictograph'}
+		class:split-stage={isSplit}
 		style="{cssVars} --grid-merge-default-max-width: {maxWidth}px;"
 	>
 		<GridBackgrounds {phase} {look} />
 		<RotatingGridGroup {phase} {highlightPhase} {look} />
 		<StaticGridGroup {phase} {highlightPhase} />
+		<PointCueArrows {phase} {highlightPhase} />
 		<DirectionLabels {phase} {highlightPhase} />
 		<ModeLabels {phase} />
 	</svg>
@@ -100,6 +107,12 @@
 		);
 		overflow: visible;
 		transition: max-width var(--merge-duration) var(--merge-easing);
+		/* Side by side. These sit in the stylesheet so a consumer's stylesheet
+		   can rearrange the two grids; LessonBoardSlot stacks them on a tall stage. */
+		--split-offset-x: 260px;
+		--split-offset-y: 0px;
+		--split-offset-x-neg: -260px;
+		--split-offset-y-neg: 0px;
 		/* The pictograph grid's own ink (GridSvg), so the lesson board and a
 		   pictograph card drawn over it read as one grid. */
 		--board-ink: #000;
@@ -109,21 +122,14 @@
 		--board-ink: #d0d0d0;
 	}
 
-	/* === RESPONSIVE: Update CSS variables for tablet/mobile === */
 	@media (max-width: 700px) {
 		.merge-svg {
-			--split-offset-x: 0px;
-			--split-offset-y: 200px;
-			--split-offset-x-neg: 0px;
-			--split-offset-y-neg: -200px;
 			max-width: 400px !important;
 		}
 	}
 
 	@media (max-width: 500px) {
 		.merge-svg {
-			--split-offset-y: 180px;
-			--split-offset-y-neg: -180px;
 			max-width: 340px !important;
 		}
 	}

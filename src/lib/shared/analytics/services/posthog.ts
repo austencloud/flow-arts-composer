@@ -22,6 +22,11 @@ import type {
 import { browser } from "$app/env";
 import * as staticPublicEnv from "$app/env/public";
 import { getDeviceId } from "#lib/shared/foundation/services/device-id.js";
+import {
+  REPLAY_BLOCK_CLASS,
+  replayCanvasFps,
+  setReplayRecordingProbe,
+} from "#lib/shared/analytics/replay-recording.js";
 
 // src/env.ts declares the PostHog values static, so they are inlined at build
 // time. Capacitor serves a static bundle with no Worker behind it, and inlined
@@ -388,14 +393,14 @@ async function initializePostHog(): Promise<void> {
       // observed by MutationObserver, eliminating the 6x overhead on DOM-heavy
       // areas like the virtualized gallery grid. Blocked elements appear as
       // same-size placeholder rectangles in replay.
-      blockClass: "ph-no-capture",
+      blockClass: REPLAY_BLOCK_CLASS,
       collectFonts: true,
       inlineStylesheet: true,
       // Replays showed the 2D animation and tunnel canvases solid black: canvas
-      // capture was off on both the client and the project. This records them,
-      // at posthog-js's defaults (4 fps, webp quality 0.4). rrweb's getContext
-      // patch forces preserveDrawingBuffer on WebGL contexts made while it records.
-      captureCanvas: { recordCanvas: true },
+      // capture was off on both the client and the project. This records them.
+      // rrweb's getContext patch forces preserveDrawingBuffer on WebGL contexts
+      // made while it records. Quality stays at its 0.4.
+      captureCanvas: { recordCanvas: true, canvasFps: replayCanvasFps() },
     },
 
     // Registered unconditionally (not gated on captureEnabled): capture_exceptions
@@ -408,6 +413,7 @@ async function initializePostHog(): Promise<void> {
       // Scan attribution must be registered here, before posthog-js schedules
       // the initial $pageview immediately after this callback returns.
       notifyPostHogReady(posthog);
+      setReplayRecordingProbe(() => posthog.sessionRecordingStarted());
       // Reload feature flags to ensure fresh state
       posthog.reloadFeatureFlags();
     },

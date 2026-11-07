@@ -12,6 +12,7 @@
     preview,
     showHelp = true,
     fill = false,
+    columns = 2,
     visibilityManagerOverride,
   }: {
     onSettingChange?: (previousValue: string, value: string) => void;
@@ -20,6 +21,8 @@
     /** Size the preview tiles to the box the grid is given, its height as
      *  well as its width. The host must give the grid a definite height. */
     fill?: boolean;
+    /** Preview tiles to a row: 4, 2 or 1 (a column beside the canvas). */
+    columns?: 1 | 2 | 4;
     visibilityManagerOverride?: AnimationVisibilityStateManager;
   } = $props();
 
@@ -104,18 +107,16 @@
 
   /* A preview tile is its square preview with the label under it, inside
      the tile's padding and border: about 24px taller than it is wide, with
-     the preview 20px narrower than the tile. Two tiles to a row. */
-  const PREVIEW_COLUMNS = 2;
+     the preview 20px narrower than the tile. */
   const PREVIEW_GAP = 8;
   const PREVIEW_TILE_EXTRA_HEIGHT = 24;
   const PREVIEW_INSET = 20;
-  const previewRows = Math.ceil(options.length / PREVIEW_COLUMNS);
+  const previewRows = $derived(Math.ceil(options.length / columns));
 
   // Width-driven by default. With `fill`, the tiles are the largest squares
   // that fit the grid's height too, centred in tracks wider than they are.
   const previewTileWidth = $derived.by(() => {
-    const byWidth =
-      (previewWidth - PREVIEW_GAP * (PREVIEW_COLUMNS - 1)) / PREVIEW_COLUMNS;
+    const byWidth = (previewWidth - PREVIEW_GAP * (columns - 1)) / columns;
     if (!fill || previewHeight <= 0) return byWidth;
     const byHeight =
       (previewHeight - PREVIEW_GAP * (previewRows - 1)) / previewRows -
@@ -152,6 +153,7 @@
   class="path-shape-grid"
   class:with-preview={!!preview}
   class:fill={!!preview && fill}
+  style:--tile-columns={preview ? columns : undefined}
   role="group"
   aria-label={t("animation_motion_paths")}
   bind:clientWidth={previewWidth}
@@ -212,7 +214,7 @@
 
 <style>
   .path-shape-grid.with-preview {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(var(--tile-columns, 2), minmax(0, 1fr));
     gap: var(--spacing-sm, 8px);
   }
   .path-preview {
@@ -229,7 +231,7 @@
   /* Height-limited tiles are narrower than their tracks; the tracks shrink
      to them and the pair sits centred as one block, not one tile per half. */
   .path-shape-grid.fill {
-    grid-template-columns: repeat(2, auto);
+    grid-template-columns: repeat(var(--tile-columns, 2), auto);
     grid-auto-rows: minmax(0, 1fr);
     justify-content: center;
     min-height: 0;

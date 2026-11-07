@@ -27,6 +27,30 @@ function fakeSetup() {
   return { setup, state, markThemeChosen };
 }
 
+// One click applies: the setting is written, the clicked tile is the one
+// selected tile, and no Use theme button is left to press.
+async function expectApplied(
+  onUpdate: ReturnType<typeof vi.fn>,
+  type: string,
+  name: string
+) {
+  await vi.waitFor(() =>
+    expect(onUpdate).toHaveBeenCalledWith({
+      key: "backgroundType",
+      value: type,
+    })
+  );
+  await expect
+    .element(page.getByRole("button", { name, exact: true }))
+    .toHaveAttribute("aria-pressed", "true");
+  expect(
+    document.querySelectorAll('.theme-choices button[aria-pressed="true"]')
+  ).toHaveLength(1);
+  await expect
+    .element(page.getByRole("button", { name: `Use ${name}`, exact: true }))
+    .not.toBeInTheDocument();
+}
+
 describe("Settings Theme page and the setup checklist", () => {
   it("counts opening the page as choosing a theme, once progress loads", async () => {
     const { setup, state, markThemeChosen } = fakeSetup();
@@ -41,7 +65,8 @@ describe("Settings Theme page and the setup checklist", () => {
   });
 
   // Theme folded into Settings → Display (2026-11-02). As a Display screen
-  // the showroom must still count as the choice, go back, and apply.
+  // the showroom must still count as the choice, go back, and apply on click
+  // (2026-11-06).
   it("works as the Display tab's Theme screen", async () => {
     const { setup, state, markThemeChosen } = fakeSetup();
     setup.available = true;
@@ -56,12 +81,26 @@ describe("Settings Theme page and the setup checklist", () => {
     expect(onBack).toHaveBeenCalledTimes(1);
 
     await page.getByRole("button", { name: "Ocean", exact: true }).click();
-    await page.getByRole("button", { name: "Use Ocean", exact: true }).click();
-    await vi.waitFor(() =>
-      expect(onUpdate).toHaveBeenCalledWith({
-        key: "backgroundType",
-        value: "ocean",
-      })
-    );
+    await expectApplied(onUpdate, "ocean", "Ocean");
+  });
+
+  // Theme is the first of Display's two-by-two cells (2026-11-02): the
+  // same frame, no way back, ten choices, and a click applies.
+  it("works as the Display tab's Theme cell", async () => {
+    const { state } = fakeSetup();
+    const onUpdate = vi.fn();
+    render(Harness, { state, onUpdate, cell: true });
+
+    expect(document.querySelector("[data-theme-cell]")).not.toBeNull();
+    expect(
+      document.querySelector('[data-display-section="theme"]')
+    ).not.toBeNull();
+    expect(document.querySelectorAll(".theme-choices button")).toHaveLength(10);
+    await expect
+      .element(page.getByRole("button", { name: "Back" }))
+      .not.toBeInTheDocument();
+
+    await page.getByRole("button", { name: "Celestial", exact: true }).click();
+    await expectApplied(onUpdate, "celestial", "Celestial");
   });
 });

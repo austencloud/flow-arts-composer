@@ -5,7 +5,14 @@ import {
 } from "#lib/shared/artifact-revisions/domain/artifact-revision.js";
 import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import type { MandalaPathShape } from "#lib/shared/mandala/domain/mandala-types.js";
-import type { CollectedMandala } from "./mandala-collection-types";
+import {
+  isTkaWord,
+  simplifyRepeatedWord,
+} from "#lib/shared/foundation/utils/word-simplifier.js";
+import {
+  CollectedMandalaSchema,
+  type CollectedMandala,
+} from "./mandala-collection-types";
 
 /**
  * The mandala adapter for the publication boundary: the SANITIZED public
@@ -39,6 +46,15 @@ export interface MandalaPublicRevision extends ArtifactRevisionRef {
   readonly payload: MandalaPublicPayload;
 }
 
+/**
+ * The title a mandala carries in public. A mandala saved from a word is named
+ * after the whole expanded word, so a card would read "FΨFΨFΨFΨ"; the public
+ * title is the word itself. A name someone typed ("Sunrise") stays as typed.
+ */
+export function mandalaPublicTitle(name: string): string {
+  return isTkaWord(name) ? simplifyRepeatedWord(name) : name;
+}
+
 export function mandalaPublicPayload(
   mandala: Pick<
     CollectedMandala,
@@ -58,6 +74,28 @@ export function mandalaPublicPayload(
     ...(mandala.pathShape !== undefined && { pathShape: mandala.pathShape }),
     ...(mandala.sourceWord !== undefined && { sourceWord: mandala.sourceWord }),
   };
+}
+
+/**
+ * Read a published payload back for display. Mandalas published before the
+ * left/right rename still hold motions.blue/red and redPropType/bluePropType,
+ * which the renderer reads as nothing to draw. The collection schema already
+ * owns that upgrade, so the payload goes through it with placeholders for the
+ * work fields a public payload deliberately leaves out. Null means the payload
+ * is not a mandala.
+ */
+export function mandalaPublicPayloadFromArtifact(
+  payload: unknown
+): MandalaPublicPayload | null {
+  const parsed = CollectedMandalaSchema.safeParse({
+    ...(payload as object | null),
+    id: "published",
+    name: "",
+    createdAt: 0,
+  });
+  return parsed.success
+    ? mandalaPublicPayload(parsed.data as CollectedMandala)
+    : null;
 }
 
 export async function createMandalaPublicRevision(

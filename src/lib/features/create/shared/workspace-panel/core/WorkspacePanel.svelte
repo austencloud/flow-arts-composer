@@ -66,9 +66,15 @@
     letterSources?: LetterSource[] | null;
   } = $props();
 
+  // While saving, the card is a picture of what will be saved, not an editor.
+  // Inert takes it out of reach of the pointer, focus and hover all at once.
+  // The selection itself stays, hidden, so Cancel comes back to it.
+  const stillPicture = $derived(panelState?.isSaveToLibraryPanelOpen ?? false);
+
   // Derive selection directly from sequenceState when not animating
   // This avoids stale state issues from effect-based syncing
   const effectiveSelectedStepNumber = $derived.by(() => {
+    if (stillPicture) return null;
     // Animation takes precedence - show the animating step as selected
     if (animatingStepNumber !== null) {
       return animatingStepNumber;
@@ -213,7 +219,11 @@
 </script>
 
 {#if sequenceState}
-  <div class="workspace-panel" data-testid="workspace-panel">
+  <div
+    class="workspace-panel"
+    data-testid="workspace-panel"
+    inert={stillPicture}
+  >
     <!-- Sequence Display -->
     <div class="sequence-display-container">
       <SequenceDisplay
@@ -222,7 +232,9 @@
         onStartPlacementSelected={handleStartPlacementSelected}
         onStepDelete={handleStepDelete}
         selectedStepNumber={effectiveSelectedStepNumber}
-        practiceStepNumber={animatingStepNumber ?? practiceStepIndex}
+        practiceStepNumber={stillPicture
+          ? null
+          : (animatingStepNumber ?? practiceStepIndex)}
         {isSideBySideLayout}
         {shouldOrbitAroundCenter}
         activeMode={createModuleState?.activeSection ?? null}

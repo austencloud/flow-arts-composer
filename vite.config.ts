@@ -1173,6 +1173,7 @@ const pagesRouteExcludes = [
   "/thumbnails/*",
   "/favicon.png",
   "/firebase-messaging-handler.js",
+  "/phone-sign-in-worker.js",
   "/firebase-messaging-sw.js",
   "/legacy-sw.js",
   "/manifest.webmanifest",
@@ -1717,6 +1718,9 @@ export default defineConfig(({ command, mode }) => ({
       // cost a re-optimization and a full reload under a guest's ninth step.
       "@austencloud/phone-sign-in",
       "@austencloud/phone-sign-in/client",
+      // The QR panel behind "Use your phone". Found late on 2026-11-06, the
+      // reload it caused wiped the sheet before the code could show.
+      "@austencloud/phone-sign-in/svelte",
 
       // 3D scene deps: discovered mid-session → browserHash changes → 504 on refresh
       "three",

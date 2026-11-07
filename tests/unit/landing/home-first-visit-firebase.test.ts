@@ -63,12 +63,16 @@ const FIRST_VISIT_IMPORTS: Array<[owner: string, specifier: string]> = [
   ],
   // The hero's loader registers the LOOP badge resolver alongside the player, so both are first-visit imports.
   [
-    "src/lib/shared/landing/components/SequenceHeroDemo.svelte",
+    "src/lib/shared/landing/services/hero-player-chunks.ts",
     "#lib/shared/composition-root/register-loop-display.js",
   ],
   [
-    "src/lib/shared/landing/components/SequenceHeroDemo.svelte",
+    "src/lib/shared/landing/services/hero-player-chunks.ts",
     "#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte",
+  ],
+  [
+    "src/lib/shared/landing/services/hero-player-chunks.ts",
+    "#lib/shared/timeline/StepStrip.svelte",
   ],
 ];
 

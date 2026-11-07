@@ -13,11 +13,21 @@
     title,
     eyebrow,
     children,
+    reserveTitles = [],
+    reserveLeads,
   }: {
     key: unknown;
     title: string;
     eyebrow?: string;
     children: Snippet;
+    /**
+     * Every title and lead line this heading will show, for a lesson whose
+     * title and stage must hold still from screen to screen. Hidden copies size
+     * the heading to the tallest of them, so no swap moves anything.
+     */
+    reserveTitles?: readonly string[];
+    /** Each direct child of the snippet is one screen's lead. */
+    reserveLeads?: Snippet;
   } = $props();
 </script>
 
@@ -27,37 +37,51 @@
      each other, and the box eases to the new line's height. -->
 <div class="lesson-stage-heading">
   <div class="heading-copy">
-    <Crossfade
-      key={`${eyebrow ?? ""}|${title}`}
-      duration={DURATION.normal}
-      mode="swap"
-      animateHeight
-    >
-      <div class="title-copy">
-        {#if eyebrow}<span class="eyebrow">{eyebrow}</span>{/if}
-        <!-- The course-map card's name becomes this title, and Review carries
-             the title and lead line into its first section (lesson-open-morph). -->
-        <h1
+    <div class="reserved-cell">
+      <Crossfade
+        key={`${eyebrow ?? ""}|${title}`}
+        duration={DURATION.normal}
+        mode="swap"
+        animateHeight
+      >
+        <div class="title-copy">
+          {#if eyebrow}<span class="eyebrow">{eyebrow}</span>{/if}
+          <!-- The course-map card's name becomes this title, and Review carries
+               the title and lead line into its first section (lesson-open-morph). -->
+          <h1
+            use:claimedViewTransitionName={{
+              name: "learn-lesson-title",
+              enabled: isLessonMorphRunning() || isLessonHeadingSplit(),
+            }}
+          >
+            {title}
+          </h1>
+        </div>
+      </Crossfade>
+      {#each reserveTitles as reserved}
+        <div class="title-copy reserve" aria-hidden="true">
+          <h1>{reserved}</h1>
+        </div>
+      {/each}
+    </div>
+    <div class="reserved-cell">
+      <Crossfade {key} duration={DURATION.normal} mode="swap" animateHeight>
+        <div
+          class="description"
           use:claimedViewTransitionName={{
-            name: "learn-lesson-title",
-            enabled: isLessonMorphRunning() || isLessonHeadingSplit(),
+            name: "learn-lesson-lead",
+            enabled: isLessonHeadingSplit(),
           }}
         >
-          {title}
-        </h1>
-      </div>
-    </Crossfade>
-    <Crossfade {key} duration={DURATION.normal} mode="swap" animateHeight>
-      <div
-        class="description"
-        use:claimedViewTransitionName={{
-          name: "learn-lesson-lead",
-          enabled: isLessonHeadingSplit(),
-        }}
-      >
-        {@render children()}
-      </div>
-    </Crossfade>
+          {@render children()}
+        </div>
+      </Crossfade>
+      {#if reserveLeads}
+        <div class="description reserve reserve-leads" aria-hidden="true">
+          {@render reserveLeads()}
+        </div>
+      {/if}
+    </div>
   </div>
 </div>
 
@@ -75,6 +99,32 @@
 
   .title-copy {
     justify-items: center;
+  }
+
+  /* The live line sits in one cell with its hidden copies, at the cell's top. */
+  .reserved-cell {
+    display: grid;
+    min-width: 0;
+  }
+
+  .reserved-cell > :global(*) {
+    grid-area: 1 / 1;
+    min-width: 0;
+    align-self: start;
+  }
+
+  .reserve {
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .reserve-leads {
+    display: grid;
+  }
+
+  .reserve-leads > :global(*) {
+    grid-area: 1 / 1;
+    min-width: 0;
   }
 
   .eyebrow {

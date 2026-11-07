@@ -50,10 +50,16 @@ function loadHandler(
   options: {
     clients?: ReturnType<typeof windowClient>[];
     delivered?: ReturnType<typeof shadeNotification>[];
+    signInWorker?: {
+      showPush: (payload: unknown) => Promise<boolean>;
+      ownsClick: (notification: unknown) => boolean;
+      answerClick: (action: string, data: unknown) => Promise<void>;
+    };
   } = {}
 ) {
   const listeners = new Map<string, (event: unknown) => void>();
   const self = {
+    phoneSignInWorker: options.signInWorker,
     location: new URL("/sw.js", ORIGIN),
     addEventListener(type: string, fn: (event: unknown) => void) {
       listeners.set(type, fn);
@@ -104,6 +110,13 @@ function loadHandler(
         data: body === null ? null : { json: () => JSON.parse(body) },
       });
     },
+    clickNotification(data: object, action: string) {
+      const notification = { data, close: vi.fn() };
+      return {
+        notification,
+        done: fire("notificationclick", { notification, action }),
+      };
+    },
     click(url?: string) {
       const notification = { data: url ? { url } : {}, close: vi.fn() };
       return {
@@ -114,11 +127,114 @@ function loadHandler(
   };
 }
 
+describe("phone sign-in pushes", () => {
+  const SIGN_IN = {
+    type: "phone-sign-in",
+    id: "AbCdEfGhIjKlMnOpQr12",
+    title: "Sign in Chrome on Windows?",
+    body: "Tap to sign it in. Code 123 456",
+    tag: "phone-sign-in-AbCdEfGhIjKlMnOpQr12",
+    url: "/sign-in/AbCdEfGhIjKlMnOpQr12?review=1",
+  };
+
+  function signInWorker(showPush: () => Promise<boolean>) {
+    return {
+      showPush: vi.fn(showPush),
+      ownsClick: vi.fn((n: unknown) => !!(n as { data: { signIn?: unknown } }).data.signIn),
+      answerClick: vi.fn(async () => undefined),
+    };
+  }
+
+  // A visible tab normally takes the push, and the page would never answer it.
+  it("goes to the sign-in worker even with a tab visible, never to the tab", async () => {
+    const tab = windowClient("/app", "visible");
+    const worker = signInWorker(async () => true);
+    const h = loadHandler({ clients: [tab], signInWorker: worker });
+
+    await h.push(fcmPush(SIGN_IN));
+
+    expect(worker.showPush).toHaveBeenCalledOnce();
+    expect(tab.postMessage).not.toHaveBeenCalled();
+    expect(h.self.registration.showNotification).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["the script failed to load", undefined],
+    [
+      "the worker throws",
+      {
+        showPush: async () => {
+          throw new Error("broken");
+        },
+        ownsClick: () => false,
+        answerClick: async () => undefined,
+      },
+    ],
+    [
+      "the worker turns the message down",
+      {
+        showPush: async () => false,
+        ownsClick: () => false,
+        answerClick: async () => undefined,
+      },
+    ],
+  ])("still shows plainly, and its tap opens the review page, when %s", async (_label, worker) => {
+    const h = loadHandler({
+      clients: [windowClient("/app", "visible")],
+      signInWorker: worker,
+    });
+
+    await h.push(fcmPush(SIGN_IN));
+
+    const [title, options] = h.self.registration.showNotification.mock.calls[0]!;
+    expect(title).toBe(SIGN_IN.title);
+    expect(options?.tag).toBe(SIGN_IN.tag);
+    expect(options?.data).toMatchObject({ url: SIGN_IN.url });
+  });
+
+  it("hands a click on its own notification to the sign-in worker, and opens nothing itself", async () => {
+    const worker = signInWorker(async () => true);
+    const h = loadHandler({ signInWorker: worker });
+    const data = { url: SIGN_IN.url, signIn: { id: SIGN_IN.id } };
+
+    const clicked = h.clickNotification(data, "deny");
+    await clicked.done;
+
+    expect(clicked.notification.close).toHaveBeenCalled();
+    expect(worker.answerClick).toHaveBeenCalledWith("deny", data);
+    expect(h.self.clients.openWindow).not.toHaveBeenCalled();
+  });
+
+  it("leaves other clicks to the usual routing", async () => {
+    const worker = signInWorker(async () => true);
+    const h = loadHandler({ signInWorker: worker });
+
+    await h.click("/app/inbox").done;
+
+    expect(worker.answerClick).not.toHaveBeenCalled();
+    expect(h.self.clients.openWindow).toHaveBeenCalledWith("/app/inbox");
+  });
+
+  it("survives the inbox being cleared on another device", async () => {
+    const waiting = { data: { signIn: { id: SIGN_IN.id } }, close: vi.fn() };
+    const generic = shadeNotification("generic");
+    const h = loadHandler({
+      delivered: [waiting as never, generic],
+    });
+
+    await h.push(fcmPush({ action: "dismiss-notifications", unreadCount: "0" }));
+
+    expect(waiting.close).not.toHaveBeenCalled();
+    expect(generic.close).toHaveBeenCalled();
+  });
+});
+
 describe("worker script loading", () => {
   // The reason this handler exists: first-time visitors must not download the
   // Firebase SDK from gstatic when /sw.js installs.
-  it("loads no third-party code: /sw.js imports only the handler, which imports nothing", () => {
+  it("loads no third-party code: /sw.js imports only our own two scripts, and the handler imports nothing", () => {
     expect(createSwHarness().importScripts.mock.calls).toEqual([
+      ["/phone-sign-in-worker.js"],
       ["/firebase-messaging-handler.js"],
     ]);
     expect(loadHandler().importScripts).not.toHaveBeenCalled();

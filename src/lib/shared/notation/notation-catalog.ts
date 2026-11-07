@@ -82,8 +82,12 @@ export const NOTATION_CATALOG: CatalogEntry[] = [
     // together into more complexly layered moves."
     records:
       "Parts of different moves joined into a repeating pattern. In the original forum discussion, Alien Jon describes CAPs as a way to build movement from smaller pieces.",
-    // No explore link while the CAPs page is gated in production.
     sources: [{ label: "Original 2009 forum discussion", href: HOP_CAPS }],
+    explore: {
+      kind: "explanation",
+      label: "Read the CAPs page",
+      href: "/notation/caps",
+    },
   },
   {
     id: "trochoid",
@@ -96,7 +100,6 @@ export const NOTATION_CATALOG: CatalogEntry[] = [
     // following way : Theta1 Theta2 ; Rho1 Rho2", plus the later division term.
     records:
       "The model describes a pattern with two turn counts and two radii: Theta1 Theta2 ; Rho1 Rho2. A division term specifies a fraction of the cycle. It also includes a wrap table, a condition for cycloids, and rules for which patterns are physically possible.",
-    // No explore link while the CAPs page is gated in production.
     sources: [
       {
         label: "Zaltymbunk's model, preserved by DrexFactor",

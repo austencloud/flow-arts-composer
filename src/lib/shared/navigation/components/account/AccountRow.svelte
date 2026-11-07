@@ -153,15 +153,15 @@
       {/if}
     </span>
 
-    {#if variant !== "collapsed"}
-      <span
-        class="account-label"
-        class:ph-no-capture={isFullAccount && labelIsEmail}
-        >{isFullAccount ? displayName : t("nav_ui_sign_in")}</span
-      >
-      {#if isFullAccount}
-        <i class="fas fa-chevron-up chevron" aria-hidden="true"></i>
-      {/if}
+    <!-- Always mounted, so the name moves with the sidebar's width. The button's
+         aria-label names the row in both states. -->
+    <span
+      class="account-label"
+      class:ph-no-capture={isFullAccount && labelIsEmail}
+      >{isFullAccount ? displayName : t("nav_ui_sign_in")}</span
+    >
+    {#if isFullAccount}
+      <i class="fas fa-chevron-up chevron" aria-hidden="true"></i>
     {/if}
   </button>
 {/if}
@@ -181,17 +181,18 @@
     border-radius: 12px;
     color: var(--theme-text-dim);
     cursor: pointer;
-    /* Visuals morph, layout geometry snaps. The rail→expanded swap flips this
-       button between a 44px circle and a full-width row. Width/padding/height
-       SNAP (the footer pins its end-state width and the nav's clip reveals it —
-       animating them dragged the avatar left-then-right mid-flight). But
-       border-radius is paint-only, so it IS morphed: the corner rounding eases
-       22px↔12px so the circle↔rounded-rect change animates instead of snapping. */
+    /* The rail's 44px circle opens into a full-width row on the nav's token and
+       curve, so the row's right edge keeps its distance from the nav's, as the
+       footer buttons do. The avatar column is pinned by flex-shrink:0 and never
+       moves. The radius eases 22px↔12px on the same clock. Revised 2026-11-06:
+       the width used to snap, which popped the name and cut the row on the first
+       frame of a collapse. */
     transition:
+      width var(--duration-emphasis) var(--ease-out),
       background var(--duration-normal) var(--ease-standard),
       border-color var(--duration-normal) var(--ease-standard),
       color var(--duration-normal) var(--ease-standard),
-      border-radius var(--duration-emphasis) var(--ease-out, var(--ease-out));
+      border-radius var(--duration-emphasis) var(--ease-out);
     font-size: var(--font-size-sm);
     font-weight: 500;
   }
@@ -229,9 +230,15 @@
     justify-content: center;
   }
 
+  .account-row:not(.drawer) {
+    position: relative;
+    overflow: hidden;
+  }
+
   .account-row.collapsed {
     width: var(--min-touch-target, 50px);
     height: var(--min-touch-target, 50px);
+    gap: 0;
     padding: 0;
     /* Half-height radius = a perfect circle at 44×44, but in px so it
        interpolates cleanly to the expanded 12px (a % start would blend as a
@@ -316,20 +323,27 @@
     font-weight: 600;
   }
 
+  /* Opens on the width's curve with no delay. Closes on the shorter token, so
+     it has faded before the narrowing row reaches its letters. */
   .account-label {
     flex: 1;
+    min-width: 0;
     text-align: left;
     font-weight: 500;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    animation: label-fade-in var(--duration-normal) var(--ease-standard-out)
-      var(--duration-fast) both;
+    transition: opacity var(--duration-normal) var(--ease-out);
+  }
+
+  .account-row.collapsed .account-label {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--duration-instant) var(--ease-out);
   }
 
   .drawer .account-label {
     flex: none;
-    animation: none;
   }
 
   .account-copy {
@@ -350,34 +364,31 @@
   }
 
   .chevron {
+    flex-shrink: 0;
     font-size: var(--font-size-compact, 12px);
     opacity: 0.5;
-    transition: opacity var(--duration-normal) var(--ease-standard);
+    transition: opacity var(--duration-normal) var(--ease-out);
   }
 
   .account-row:hover .chevron {
     opacity: 0.8;
   }
 
-  @keyframes label-fade-in {
-    from {
-      opacity: 0;
-      transform: translateX(-4px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
+  /* Out of flow in the rail so it adds no width, and pinned where the row's
+     right padding held it, so it fades in place rather than jumping. */
+  .account-row.collapsed .chevron,
+  .account-row.collapsed:hover .chevron {
+    position: absolute;
+    right: 12px;
+    opacity: 0;
+    transition: opacity var(--duration-instant) var(--ease-out);
   }
 
   @media (prefers-reduced-motion: reduce) {
     .account-row,
+    .account-label,
     .chevron {
       transition: none !important;
-    }
-
-    .account-label {
-      animation: none;
     }
   }
 

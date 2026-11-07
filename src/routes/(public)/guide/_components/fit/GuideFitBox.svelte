@@ -83,10 +83,13 @@
   const WIDTH_SLACK = 16;
   // Wider than the box: a drawn figure (pictograph, canvas, image) sticks
   // out past either edge. scrollWidth would also count the visually hidden
-  // notation text, which is wide but never seen.
+  // notation text, which is wide but never seen. A box marked
+  // data-fit-self-scroll scrolls its own figures (a matrix larger than its
+  // stage), so what lies past its edge is clipped, not sticking out.
   function overflowsWidth(box: HTMLElement): boolean {
     const r = box.getBoundingClientRect();
     for (const el of box.querySelectorAll("svg, canvas, img")) {
+      if (el.closest("[data-fit-self-scroll]")) continue;
       const e = el.getBoundingClientRect();
       if (e.width < 1) continue;
       // Parked off screen on purpose (an offscreen render pass), not a

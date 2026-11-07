@@ -21,7 +21,6 @@ describe("Kinetic Atlas production gate", () => {
     expect(route).toContain("UnderConstruction");
     expect(route).toContain('eyebrow="Coming soon"');
     expect(route).toContain('content="noindex, follow"');
-    expect(route).toContain('style:view-transition-name="launchpad-glossary"');
   });
 
   it("preserves the complete Atlas at its canonical development URL", () => {

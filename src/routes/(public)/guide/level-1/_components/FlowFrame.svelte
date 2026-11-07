@@ -43,6 +43,7 @@
     layout = "default",
     screen = undefined,
     detachTextChars = undefined,
+    introBesideChars = undefined,
   }: {
     content: GuideBlock[];
     darkMode?: boolean;
@@ -55,6 +56,8 @@
     screen?: number[];
     /** Passed to flowRenderItems; the host's split must use the same. */
     detachTextChars?: number;
+    /** Passed to flowRenderItems; the host's split must use the same. */
+    introBesideChars?: number;
   } = $props();
 
   // Theme handed to each pictograph: "dark" renders on the dark editorial theme
@@ -71,7 +74,10 @@
   // Which text each showcase owns, and how the page splits into screens,
   // live in flow-render-items.ts (pure, tested).
   const renderItems = $derived(
-    flowRenderItems(content, tagline, localizeLevel1Block, { detachTextChars })
+    flowRenderItems(content, tagline, localizeLevel1Block, {
+      detachTextChars,
+      introBesideChars,
+    })
   );
   // `screen` set: draw only that screen's items (the topic page's one-screen
   // view). Unset: the whole page in reading order (the reader, print-like).

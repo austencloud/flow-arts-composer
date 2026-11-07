@@ -4,8 +4,8 @@
    *
    * Wrapper for the actual workspace panel when a creation method has been selected.
    * Provides fade transitions and reserves room for the button panel at the bottom.
-   * The room is measured from the actual ButtonPanel height to adapt to different
-   * screen sizes and responsive layouts, and folds away in theater mode.
+   * The layout sets the room from the actual ButtonPanel height to adapt to
+   * different screen sizes, and it folds away in theater mode.
    *
    * Extracted from CreateModule to reduce component size.
    *
@@ -37,8 +37,10 @@
     animatingStepNumber = null,
     animationStateRef,
     currentDisplayWord,
-    buttonPanelHeight = 0,
+    roomHeight = 0,
+    roomEases = false,
     theater = false,
+    headerFolded = false,
     compactToolbar = false,
     isSideBySideLayout,
     letterSources = null,
@@ -47,10 +49,17 @@
     animatingStepNumber?: number | null;
     animationStateRef?: ReturnType<IToolPanelMethods["getAnimationStateRef"]>;
     currentDisplayWord: string;
-    buttonPanelHeight?: number;
+    /** The room under the workspace: the bar's height, or what the save
+     *  view's switch needs while it sits there. */
+    roomHeight?: number;
+    /** Slide the room to a new height with the panels instead of snapping. */
+    roomEases?: boolean;
     /** Sideways phone preview (workspace-theater): the header and the room
      *  under the workspace fold away so the player gets the whole height. */
     theater?: boolean;
+    /** Only the header folds away, for a small preview beside the save form.
+     *  The room under the workspace stays: the save view's switch is in it. */
+    headerFolded?: boolean;
     /** The word sits in the bottom rail, so the header keeps only its badges */
     compactToolbar?: boolean;
     /** Use the actual panel direction when choosing pictograph columns. */
@@ -126,8 +135,10 @@
   function stopOnEscape(event: KeyboardEvent) {
     if (event.key !== "Escape" || !playbackCandidate) return;
     if (event.defaultPrevented) return;
-    // A modal on top (save, share, clear confirm) owns Escape; the preview
-    // keeps running underneath it.
+    // A modal on top (share, clear confirm) owns Escape; the preview keeps
+    // running underneath it. Beside the save view, the view's escape layer
+    // normally takes the press first and flips back to the card itself. This
+    // handler only sees it when focus is in a form field.
     if (hasOpenModalLayer()) return;
     event.preventDefault();
     panelState.stopWorkspacePlayback();
@@ -238,11 +249,12 @@
           panelState.confirmWorkspacePlaybackReady(playbackCandidate);
         },
         onerror: (failedRun: number) => {
-          if (failedRun === playbackRun)
-            panelState.failWorkspacePlaybackPreparation(playbackCandidate!);
+          if (failedRun === playbackRun && playbackCandidate)
+            panelState.failWorkspacePlaybackPreparation(playbackCandidate);
         },
         onclose: () => panelState.stopWorkspacePlayback(),
         theaterActions,
+        saving: panelState.isSaveToLibraryPanelOpen,
         onStepChange: (step: number) => (playbackStep = Math.floor(step)),
         onPlaybackChange: (
           reportedRun: number,
@@ -282,9 +294,11 @@
        But we DON'T key the parent layout to avoid workspace visibility timing issues -->
   <!-- Folds away in theater mode, so the player gets the height. Its box
        is this wrapper, so the header keeps measuring its own full height. -->
-  {#if !theater}
+  {#if !theater && !headerFolded}
+    <!-- Inert while saving along with the card it belongs to. -->
     <div
       class="sequence-header-presence"
+      inert={panelState.isSaveToLibraryPanelOpen}
       transition:growFade={{ duration: DURATION.normal }}
     >
       <WorkspaceSequenceHeader
@@ -321,7 +335,8 @@
   {#if !theater}
     <div
       class="button-panel-room"
-      style:height="{buttonPanelHeight}px"
+      class:eases={roomEases}
+      style:height="{roomHeight}px"
       aria-hidden="true"
       transition:growFade={{ duration: DURATION.normal }}
     ></div>
@@ -344,6 +359,18 @@
   .sequence-header-presence,
   .button-panel-room {
     flex: 0 0 auto;
+  }
+
+  /* The same motion as PanelGroup's tracks, which move when the save view
+     opens, so the workspace changes size as one movement. */
+  .button-panel-room.eases {
+    transition: height var(--transition-emphasis);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .button-panel-room.eases {
+      transition: none;
+    }
   }
 
   .workspace-panel-wrapper :global(.source > .workspace-panel) {

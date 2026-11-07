@@ -16,6 +16,11 @@
   import { calculate as calculateMandalaGeometry } from "#lib/shared/mandala/services/mandala-geometry-calculator.js";
   import { buildYutaCapSequence } from "./yuta-cap-sequence";
 
+  // The loop spans y -44 to 160 in a square box. "tight" trims the empty
+  // rows above and below it so a page can sit text beside it without a band
+  // of blank space; the history archive keeps the square.
+  let { tight = false }: { tight?: boolean } = $props();
+
   const EXT_COLOR = "#38bdf8"; // extension half (PRO)
   const ANTI_COLOR = "#f472b6"; // antispin half (ANTI)
   const DRAW_MS = 2600;
@@ -97,7 +102,8 @@
 <div class="assembly">
   <svg
     class="assembly-stage"
-    viewBox="-176 -176 352 352"
+    class:tight
+    viewBox={tight ? "-176 -64 352 240" : "-176 -176 352 352"}
     role="img"
     aria-label="The two halves of the CAP drawing on and joining into one closed loop"
   >
@@ -181,6 +187,12 @@
     max-width: 100%;
     aspect-ratio: 1;
     overflow: visible;
+  }
+  .assembly-stage.tight {
+    flex: none;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 352 / 240;
   }
 
   .ghost {

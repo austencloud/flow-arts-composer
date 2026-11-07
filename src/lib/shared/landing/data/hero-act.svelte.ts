@@ -23,7 +23,10 @@ import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence
 import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
 import type { TnDElement } from "#lib/features/choreo-card/domain/tnd-element.js";
 import type { PreparedSequenceHandoff } from "#lib/shared/animation-engine/domain/chaining-types.js";
-import { generatePerVisitDemo } from "#lib/shared/landing/data/per-visit-demo.js";
+import {
+  FALLBACK_DEMO,
+  generatePerVisitDemo,
+} from "#lib/shared/landing/data/per-visit-demo.js";
 import type { PerVisitContinuity } from "#lib/shared/landing/data/per-visit-demo-core.js";
 import { runAtBackgroundPriority } from "#lib/shared/foundation/utils/background-scheduling.js";
 
@@ -171,11 +174,25 @@ export function createHeroAct(options?: {
   let started = false;
   // Once a visitor touches the hero or leaves it, the act stops advancing on
   // its own so the word they saw stays the page's word. A dice press still
-  // advances. There is no release; a reload starts fresh.
+  // advances. Arriving on a page that hosts the act (takeStage) lets it go on.
   let held = $state(false);
+  // The homepage walks through the props. /composer plays the picked prop, so
+  // there a new sequence arrives without changing it.
+  let cyclesProps = true;
 
   function hold(): void {
     held = true;
+  }
+
+  /** A page taking over the running act says how it plays there. */
+  function takeStage(stage: { cycleProps: boolean }): void {
+    cyclesProps = stage.cycleProps;
+    held = false;
+  }
+
+  /** The visitor's pick. It applies from now on, to the same running sequence. */
+  function setProp(prop: PropType): void {
+    currentProp = prop;
   }
 
   function pickInitialProp(): PropType {
@@ -339,7 +356,7 @@ export function createHeroAct(options?: {
       // its sprite crossfade from this prop-type change.
       current = draw.sequence;
       currentElement = draw.element;
-      currentProp = prop;
+      if (cyclesProps) currentProp = prop;
       passesSinceAdvance = 0;
       prepareNext(prop);
     } finally {
@@ -372,7 +389,7 @@ export function createHeroAct(options?: {
         }
         current = draw.sequence;
         currentElement = draw.element;
-        currentProp = prop;
+        if (cyclesProps) currentProp = prop;
         preparedNext = null;
         passesSinceAdvance = 0;
         prepareNext(prop);
@@ -434,8 +451,25 @@ export function createHeroAct(options?: {
       return held;
     },
     hold,
+    takeStage,
+    setProp,
     start,
     offerSequenceBoundary,
     advanceNow,
   };
+}
+
+export type HeroAct = ReturnType<typeof createHeroAct>;
+
+let residentAct: HeroAct | null = null;
+
+/**
+ * The one act the homepage and /composer both read, so the resident player keeps
+ * its sequence, prop and place crossing between them. Safe to read during SSR:
+ * nothing runs until a client calls `start()`, and it serves the same baked
+ * opening every request gets anyway.
+ */
+export function getResidentHeroAct(): HeroAct {
+  residentAct ??= createHeroAct({ initialSequence: FALLBACK_DEMO });
+  return residentAct;
 }

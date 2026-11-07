@@ -113,14 +113,12 @@
     onAuditionDismiss,
     posePicker = false,
     observeScroll = true,
+    shrinkToFit = false,
     gridJoin = null,
   } = $props<{
     steps: ReadonlyArray<StepData> | StepData[];
     startPlacement?: StartPlacementData | StepData | null;
-    onStepClick?: (
-      stepNumber: number,
-      modifiers?: StepClickModifiers
-    ) => void;
+    onStepClick?: (stepNumber: number, modifiers?: StepClickModifiers) => void;
     onStartClick?: () => void;
     onStepDelete?: (stepNumber: number) => void;
     onStepLongPress?: (stepNumber: number) => void;
@@ -191,6 +189,9 @@
     posePicker?: boolean;
     /** The hidden editor does not need to recompute overflow while playback owns the stage. */
     observeScroll?: boolean;
+    /** The save view's card is a still picture of the whole word and a phone
+     *  leaves it a short band. It can't be scrolled, so every row has to fit. */
+    shrinkToFit?: boolean;
     /**
      * The join of the sequence these steps belong to (`sequence.conjoined`).
      * Every cell, the start cell and the arrival stage draw on the joined
@@ -417,6 +418,7 @@
       popReserve: edgeReserve,
       hasStart: Boolean(startPlacement && !startPlacement.isBlank),
       isNarrow: containerWidth > 0 && containerWidth < 650,
+      shrinkToFit,
     });
   });
   const timelineBeatsPerRow = $derived(

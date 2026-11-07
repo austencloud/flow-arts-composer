@@ -158,7 +158,7 @@ function sequenceRoleFor(item: SequenceItem): {
   }
 }
 
-interface SequencePiece {
+export interface SequencePiece {
   start: number;
   end: number;
   sourceIn: number;
@@ -247,7 +247,40 @@ function splitIntoPieces(
         };
     pieces.push(intro ? { ...piece, intro: true } : piece);
   }
-  return pieces;
+  return item.kind === "animation" && item.stage3d
+    ? holdStageAfterFootage(pieces)
+    : pieces;
+}
+
+/**
+ * A 3D clip running on past its footage (under the end card, say) holds the
+ * pose the footage last landed instead of snapping back to the opening: the
+ * piece reads the last millisecond of the previous piece's source for its
+ * whole span (a clip must end after it starts, so not one instant).
+ * A 2D clip keeps the opening-pose fallback above.
+ */
+const STAGE_HOLD_SOURCE_SECONDS = 0.001;
+
+export function holdStageAfterFootage(
+  pieces: readonly SequencePiece[]
+): SequencePiece[] {
+  let last: SequencePiece | null = null;
+  return pieces.map((piece) => {
+    if (piece.useResolvedTimeMap) {
+      last = piece;
+      return piece;
+    }
+    if (!last || piece.intro) return piece;
+    return {
+      ...piece,
+      sourceIn: last.sourceOut - STAGE_HOLD_SOURCE_SECONDS,
+      sourceOut: last.sourceOut,
+      rate: last.rate,
+      useResolvedTimeMap: true,
+      timeMapRole: last.timeMapRole,
+      takeId: last.takeId,
+    };
+  });
 }
 
 /**

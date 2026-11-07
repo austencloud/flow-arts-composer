@@ -6,11 +6,19 @@
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import ValueSlider from "#lib/shared/ui/components/ValueSlider.svelte";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
-  import type {
-    PostAnimationItem,
-    PostStage3D,
-    PostStage3DShot,
+  import {
+    POST_STAGE_3D_DEFAULT_ELEVATION,
+    POST_STAGE_3D_MAX_ELEVATION,
+    POST_STAGE_3D_MAX_SPACING,
+    POST_STAGE_3D_MAX_ZOOM,
+    POST_STAGE_3D_MIN_ELEVATION,
+    POST_STAGE_3D_MIN_SPACING,
+    POST_STAGE_3D_MIN_ZOOM,
+    type PostAnimationItem,
+    type PostStage3D,
+    type PostStage3DShot,
   } from "../item-kinds";
+  import { TUNNEL_CAST_DEPTH_SPACING_M } from "#lib/shared/sequence-viewer/tunnel/tunnel-cast-3d.js";
   import { stage3DGridBpm, stage3DSecondsPerTurn } from "../stage-3d";
   import { STAGE_3D_BEATS_PER_TURN } from "../stage-3d";
   import {
@@ -23,8 +31,9 @@
 
   /**
    * An animation clip's 3D controls, at the top of its look: 2D or 3D, and in
-   * 3D the camera shot, the orbit's speed and direction, a saved angle's
-   * distance, and the scene. The scene picker is the 3D viewer's own.
+   * 3D the camera shot, the front and orbit shots' distance and height, the
+   * orbit's speed and direction, a saved angle's distance, the space between
+   * the performers, and the scene. The scene picker is the 3D viewer's own.
    *
    * The full-size shot editor uses the same controls on its draft: given
    * `draft`, every change goes to `ondraft` and nothing reaches the clip.
@@ -165,6 +174,39 @@
       ariaLabel={t("post_stage_3d_shot")}
     />
 
+    {#if stage.shot !== "saved"}
+      <!-- A diamond on each track marks the framing's own value; pressing it
+           goes back there. -->
+      <ValueSlider
+        label={t("post_stage_3d_distance")}
+        value={stage.zoom ?? 1}
+        min={POST_STAGE_3D_MIN_ZOOM}
+        max={POST_STAGE_3D_MAX_ZOOM}
+        step={0.05}
+        origin={1}
+        format={(zoom) => `${Math.round(zoom * 100)}%`}
+        fromTyped={(percent) => percent / 100}
+        marks={[1]}
+        markLabel={() => t("post_stage_3d_default_value")}
+        onmark={() => commit("zoom", withoutKey(stage, "zoom"))}
+        disabled={locked}
+        onchange={(zoom) => commit("zoom", { ...stage, zoom })}
+      />
+      <ValueSlider
+        label={t("post_stage_3d_height")}
+        value={stage.elevation ?? POST_STAGE_3D_DEFAULT_ELEVATION}
+        min={POST_STAGE_3D_MIN_ELEVATION}
+        max={POST_STAGE_3D_MAX_ELEVATION}
+        step={1}
+        format={(degrees) => `${Math.round(degrees)}°`}
+        marks={[POST_STAGE_3D_DEFAULT_ELEVATION]}
+        markLabel={() => t("post_stage_3d_default_value")}
+        onmark={() => commit("elevation", withoutKey(stage, "elevation"))}
+        disabled={locked}
+        onchange={(elevation) => commit("elevation", { ...stage, elevation })}
+      />
+    {/if}
+
     {#if stage.shot === "orbit"}
       <ValueSlider
         label={t("post_stage_3d_turn_seconds")}
@@ -235,6 +277,22 @@
           {t("post_stage_3d_reset_front")}
         </PanelButton>
       {/if}
+    {/if}
+
+    {#if item.followers?.length}
+      <ValueSlider
+        label={t("post_stage_3d_spacing")}
+        value={stage.spacing ?? TUNNEL_CAST_DEPTH_SPACING_M}
+        min={POST_STAGE_3D_MIN_SPACING}
+        max={POST_STAGE_3D_MAX_SPACING}
+        step={0.1}
+        format={(meters) => `${meters.toFixed(1)} m`}
+        marks={[TUNNEL_CAST_DEPTH_SPACING_M]}
+        markLabel={() => t("post_stage_3d_default_value")}
+        onmark={() => commit("spacing", withoutKey(stage, "spacing"))}
+        disabled={locked}
+        onchange={(spacing) => commit("spacing", { ...stage, spacing })}
+      />
     {/if}
 
     <span class="readout-name">{t("post_stage_3d_scene")}</span>

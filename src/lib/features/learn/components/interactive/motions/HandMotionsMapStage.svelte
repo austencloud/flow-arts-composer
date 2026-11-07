@@ -29,9 +29,15 @@
     /** Each move found so far, as the learner first made it. */
     found: Partial<Record<HandMove, ComboHand>>;
     onFind?: (made: ComboHand) => void;
+    /** Sized by the host's fit scale (`--fit`, the Guide's fit box) instead
+        of the window's height. The lesson sizes the stage from the window,
+        minus its own chrome; the Guide page's body is a different height on
+        every window, so it hands the stage a scale it searches until the
+        screen fits (2026-11-03, the Fold's inner screen overflowed). */
+    fitted?: boolean;
   }
 
-  let { found, onFind }: Props = $props();
+  let { found, onFind, fitted = false }: Props = $props();
 
   const handPoints = getPlacementGridPoints(GridMode.DIAMOND);
 
@@ -62,7 +68,7 @@
   }
 </script>
 
-<div class="map-stage">
+<div class="map-stage" class:fitted>
   <div class="map-layout">
     <div class="figure" data-hand-grid="map">
       <MotionMapFigure interactive demo={false} bind:lit onMove={moved} />
@@ -242,6 +248,39 @@
 
       .caption {
         align-self: start;
+      }
+    }
+  }
+
+  /* Fitted (a Guide page): the map and the slots' pictures grow with the
+     host's --fit instead of the window's height, so the host's fit box
+     finds the size that fills its screen. Stacked, the map is 16rem wide at
+     --fit 1 and each slot's picture 4.5rem; beside the slots the map takes
+     17rem at --fit 1, never more than the slots' column leaves. */
+  .fitted .map-layout {
+    --slot-art: clamp(3rem, calc(4.5rem * var(--fit, 1)), 8rem);
+  }
+  .fitted .figure {
+    width: min(100%, 48rem, calc(16rem * var(--fit, 1)));
+  }
+  .fitted .moves .art {
+    max-width: var(--slot-art);
+  }
+  @media (min-aspect-ratio: 1 / 1) {
+    @container hand-map (min-width: 40rem) {
+      .fitted .map-layout {
+        grid-template-columns:
+          min(
+            calc(17rem * var(--fit, 1)),
+            calc(100% - 15rem - var(--map-gap))
+          )
+          minmax(15rem, var(--slots));
+      }
+      .fitted .figure {
+        width: 100%;
+      }
+      .fitted .moves .art {
+        max-width: none;
       }
     }
   }

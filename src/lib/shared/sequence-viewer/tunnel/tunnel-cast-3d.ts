@@ -96,18 +96,21 @@ export interface TunnelCastStanding {
  * Where each performer stands, front first: a file along the stage's depth
  * axis, centred on the stage, the front performer on the camera's side.
  * Environments differ in which side of the stage the camera opens from, so
- * the file follows the same sign the opening camera does.
+ * the file follows the same sign the opening camera does. `spacing` is the
+ * metres between neighbours; a post can stand its pair closer than the
+ * tunnel page's arm span.
  */
 export function tunnelCastStandings(
   count: number,
-  environmentId: SceneEnvironmentId
+  environmentId: SceneEnvironmentId,
+  spacing = TUNNEL_CAST_DEPTH_SPACING_M
 ): TunnelCastStanding[] {
   const cameraSide = Math.sign(getViewerFrontStageCameraZ(0, 1, environmentId));
   const facingAngle = getViewerFrontStageFacingAngle(environmentId);
   const middle = (count - 1) / 2;
   return Array.from({ length: count }, (_, index) => ({
     x: 0,
-    z: cameraSide * (middle - index) * TUNNEL_CAST_DEPTH_SPACING_M,
+    z: cameraSide * (middle - index) * spacing,
     facingAngle,
   }));
 }
@@ -149,15 +152,21 @@ function angleBetween(a: number, b: number): number {
  * state). Runs without undo, since the cast is the page's, not an edit.
  *
  * Returns whether anyone moved or the cast changed size, so the caller can
- * reframe the camera only when the shot actually changed.
+ * reframe the camera only when the shot actually changed. `options.spacing`
+ * goes to `tunnelCastStandings`.
  */
 export function applyTunnelCastToViewer(
   viewer: TunnelCastViewer,
-  cast: readonly TunnelCastPerformer3D[]
+  cast: readonly TunnelCastPerformer3D[],
+  options: { spacing?: number } = {}
 ): boolean {
   if (cast.length === 0) return false;
   const manager = viewer.performerManager;
-  const standings = tunnelCastStandings(cast.length, viewer.environmentId);
+  const standings = tunnelCastStandings(
+    cast.length,
+    viewer.environmentId,
+    options.spacing
+  );
   let restaged = false;
 
   getSceneUndoManager().withoutUndo(() => {

@@ -28,7 +28,7 @@ export { trustedPhoneSupported } from "@austencloud/phone-sign-in/client";
  * missing user. `forceRefresh` asks for a newly minted token, for the routes
  * that only accept one from the last few minutes.
  */
-async function apiFetch(
+export async function apiFetch(
   url: string,
   init: RequestInit = {},
   options: { forceRefresh?: boolean } = {}

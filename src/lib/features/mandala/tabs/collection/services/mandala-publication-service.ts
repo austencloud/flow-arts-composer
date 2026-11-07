@@ -14,6 +14,7 @@ import {
 } from "../domain/mandala-revision";
 import {
   createMandalaPublicRevision,
+  mandalaPublicTitle,
   type MandalaPublicPayload,
 } from "../domain/mandala-public-revision";
 import type { CollectedMandala } from "../domain/mandala-collection-types";
@@ -58,7 +59,7 @@ export async function publishMandala(
     {
       artifactId: mandala.id,
       artifactType: "mandala",
-      title: mandala.name,
+      title: mandalaPublicTitle(mandala.name),
       sourceRevision,
       publicRevision,
       posterDataUrl: () =>

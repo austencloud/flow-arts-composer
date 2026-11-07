@@ -10,6 +10,8 @@ import {
   createTunnelComposition,
 } from "#lib/shared/sequence-viewer/tunnel/tunnel-composition.js";
 import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { interpolatePropAngles } from "#lib/shared/animation-engine/services/prop-interpolator.js";
+import { collectedTunnelViewerSequence } from "../collected-tunnel-source";
 import type { CollectedTunnel } from "../tunnel-collection-types";
 import { createTunnelRevision } from "../tunnel-revision";
 import {
@@ -240,6 +242,62 @@ describe("collectedTunnelFromPublicArtifact", () => {
     expect(discovered?.snapshot.tunnel.colors.mode).toBe("spectrum");
     expect(discovered?.snapshot.tunnel.colors.custom).toBeDefined();
     expect(discovered?.snapshot.tunnel.presetRecipe).toBeNull();
+  });
+
+  it("gives an authored cast published with red and blue hands moves the viewer can draw", () => {
+    const motion = (startLocation: string, endLocation: string) => ({
+      motionType: "pro",
+      rotationDirection: "cw",
+      startLocation,
+      endLocation,
+      turns: 0,
+      startOrientation: "in",
+      endOrientation: "in",
+      propType: "staff",
+    });
+    const payload = tunnelPublicPayload(
+      tunnelFixture({ composition: compositionFixture() })
+    );
+    const composition = payload.composition;
+    const lead = composition?.performers[0];
+    if (!composition || lead?.source.kind !== "independent") {
+      throw new Error("the fixture needs an independent lead");
+    }
+    const legacy = {
+      ...payload,
+      composition: {
+        ...composition,
+        performers: [
+          {
+            ...lead,
+            source: {
+              ...lead.source,
+              sequence: {
+                ...lead.source.sequence,
+                steps: [
+                  {
+                    stepNumber: 1,
+                    letter: "A",
+                    motions: { blue: motion("n", "e"), red: motion("s", "w") },
+                  },
+                ],
+              },
+            },
+          },
+          ...composition.performers.slice(1),
+        ],
+      },
+    } as unknown as typeof payload;
+
+    const discovered = collectedTunnelFromPublicArtifact(
+      publicEnvelope(),
+      legacy
+    );
+    if (!discovered) throw new Error("the old cast should still parse");
+
+    const [step] = collectedTunnelViewerSequence(discovered).steps;
+    if (!step) throw new Error("the cast lost its steps");
+    expect(interpolatePropAngles(step, 0.5).isValid).toBe(true);
   });
 
   it("rejects the wrong artifact type or an invalid revision payload", () => {

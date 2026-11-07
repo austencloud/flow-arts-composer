@@ -129,6 +129,24 @@ describe("tunnel cast in 3D", () => {
     expect(emberFront!.facingAngle).toBeCloseTo(Math.PI);
   });
 
+  it("stands the file at a custom spacing, centred on the stage", () => {
+    const [front, back] = tunnelCastStandings(2, SceneEnvironmentId.COSMIC, 0.9);
+    expect(front!.z - back!.z).toBeCloseTo(0.9);
+    expect(front!.z + back!.z).toBeCloseTo(0);
+    expect(tunnelCastStandings(3, SceneEnvironmentId.COSMIC)).toEqual(
+      tunnelCastStandings(3, SceneEnvironmentId.COSMIC, TUNNEL_CAST_DEPTH_SPACING_M)
+    );
+  });
+
+  it("moves an already-staged cast when only the spacing changes", () => {
+    const { viewer, performers, loads } = fakeViewer();
+    applyTunnelCastToViewer(viewer, cast());
+    expect(applyTunnelCastToViewer(viewer, cast(), { spacing: 0.9 })).toBe(true);
+    expect(performers[0]!.position.z - performers[1]!.position.z).toBeCloseTo(0.9);
+    expect(loads).toEqual(["front", "back"]);
+    expect(applyTunnelCastToViewer(viewer, cast(), { spacing: 0.9 })).toBe(false);
+  });
+
   it("stages the cast once and leaves an already-staged cast alone", () => {
     const { viewer, performers, loads } = fakeViewer();
     expect(applyTunnelCastToViewer(viewer, cast())).toBe(true);
